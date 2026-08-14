@@ -1,0 +1,243 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex align-items-center">
+        <a href="<?= ($BASE) ?>/po" class="btn btn-outline-secondary btn-sm me-3">
+            <i class="bi bi-arrow-left"></i> Kembali ke Daftar PO
+        </a>
+        <div>
+            <h4 class="fw-bold mb-0">
+                <i class="bi bi-file-earmark-text text-primary me-2"></i><?= ($po['nomor_po'])."
+" ?>
+            </h4>
+            <span class="text-muted small">Dibuat pada <?= (date('d F Y, H:i', strtotime($po['created_at']))) ?> WIB</span>
+        </div>
+    </div>
+    <div>
+        <span class="badge badge-status-<?= ($po['status']) ?> fs-6 px-3 py-2">
+            Status: <?= (ucfirst($po['status']))."
+" ?>
+        </span>
+    </div>
+</div>
+
+<!-- Stepper / Alur Progres Status PO -->
+<div class="card mb-4 shadow-sm">
+    <div class="card-header bg-white py-3">
+        <h6 class="m-0 fw-bold text-dark"><i class="bi bi-diagram-3 me-2 text-primary"></i>Alur Progres Dokumen PO (State Machine)</h6>
+    </div>
+    <div class="card-body">
+        <div class="row text-center g-2">
+            <div class="col">
+                <div class="p-2 border rounded <?= (in_array($po['status'], ['proposal','kontrak','po_terbit','distribusi','selesai']) ? 'bg-primary text-white fw-bold' : 'bg-light text-muted') ?>">
+                    <div class="small">Tahap 1</div>
+                    <div>Proposal</div>
+                </div>
+            </div>
+            <div class="col-auto d-flex align-items-center text-muted"><i class="bi bi-arrow-right"></i></div>
+            <div class="col">
+                <div class="p-2 border rounded <?= (in_array($po['status'], ['kontrak','po_terbit','distribusi','selesai']) ? 'bg-primary text-white fw-bold' : 'bg-light text-muted') ?>">
+                    <div class="small">Tahap 2</div>
+                    <div>Kontrak</div>
+                </div>
+            </div>
+            <div class="col-auto d-flex align-items-center text-muted"><i class="bi bi-arrow-right"></i></div>
+            <div class="col">
+                <div class="p-2 border rounded <?= (in_array($po['status'], ['po_terbit','distribusi','selesai']) ? 'bg-primary text-white fw-bold' : 'bg-light text-muted') ?>">
+                    <div class="small">Tahap 3</div>
+                    <div>PO Terbit</div>
+                </div>
+            </div>
+            <div class="col-auto d-flex align-items-center text-muted"><i class="bi bi-arrow-right"></i></div>
+            <div class="col">
+                <div class="p-2 border rounded <?= (in_array($po['status'], ['distribusi','selesai']) ? 'bg-primary text-white fw-bold' : 'bg-light text-muted') ?>">
+                    <div class="small">Tahap 4</div>
+                    <div>Distribusi</div>
+                </div>
+            </div>
+            <div class="col-auto d-flex align-items-center text-muted"><i class="bi bi-arrow-right"></i></div>
+            <div class="col">
+                <div class="p-2 border rounded <?= ($po['status'] == 'selesai' ? 'bg-success text-white fw-bold' : 'bg-light text-muted') ?>">
+                    <div class="small">Tahap 5</div>
+                    <div>Selesai</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Kolom Kiri: Informasi PO & Klien -->
+    <div class="col-lg-7">
+        <!-- Card Informasi Dokumen & Order -->
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h6 class="m-0 fw-bold text-dark"><i class="bi bi-info-circle me-2 text-primary"></i>Informasi Pekerjaan & Order Layanan</h6>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm table-borderless mb-0">
+                    <tr>
+                        <th style="width: 180px;" class="text-secondary">Judul Kegiatan:</th>
+                        <td class="fw-semibold text-dark"><?= ($po['judul_kegiatan']) ?></td>
+                    </tr>
+                    <tr>
+                        <th class="text-secondary">Deskripsi:</th>
+                        <td><?= ($po['deskripsi_order'] ?: '-') ?></td>
+                    </tr>
+                    <tr>
+                        <th class="text-secondary">Tanggal Masuk Order:</th>
+                        <td><?= (date('d/m/Y', strtotime($po['tanggal_masuk']))) ?></td>
+                    </tr>
+                    <tr>
+                        <th class="text-secondary">Estimasi Biaya:</th>
+                        <td class="fw-bold text-success">
+                            Rp <?= (number_format($po['biaya'], 0, ',', '.'))."
+" ?>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="text-secondary">Target Selesai:</th>
+                        <td><?= ($po['tanggal_target'] ? date('d/m/Y', strtotime($po['tanggal_target'])) : '-') ?></td>
+                    </tr>
+                    <tr>
+                        <th class="text-secondary">Realisasi Selesai:</th>
+                        <td><?= ($po['tanggal_realisasi'] ? date('d/m/Y', strtotime($po['tanggal_realisasi'])) : '-') ?></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- Card Data Klien -->
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h6 class="m-0 fw-bold text-dark"><i class="bi bi-building me-2 text-primary"></i>Informasi Klien / Pemohon</h6>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm table-borderless mb-0">
+                    <tr>
+                        <th style="width: 180px;" class="text-secondary">Nama Perusahaan:</th>
+                        <td class="fw-semibold text-dark"><?= ($po['nama_perusahaan']) ?></td>
+                    </tr>
+                    <tr>
+                        <th class="text-secondary">PIC:</th>
+                        <td><?= ($po['pic'] ?: '-') ?></td>
+                    </tr>
+                    <tr>
+                        <th class="text-secondary">Telepon:</th>
+                        <td><?= ($po['telepon'] ?: '-') ?></td>
+                    </tr>
+                    <tr>
+                        <th class="text-secondary">Email:</th>
+                        <td><?= ($po['email'] ?: '-') ?></td>
+                    </tr>
+                    <tr>
+                        <th class="text-secondary">Alamat:</th>
+                        <td class="small"><?= ($po['alamat'] ?: '-') ?></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kolom Kanan: Aksi Transisi Status & Audit Trail Log -->
+    <div class="col-lg-5">
+        <!-- Card Aksi Transisi Status -->
+        <div class="card mb-4 shadow-sm border-primary">
+            <div class="card-header bg-primary text-white py-3">
+                <h6 class="m-0 fw-bold"><i class="bi bi-arrow-right-circle me-2"></i>Aksi Transisi Status</h6>
+            </div>
+            <div class="card-body">
+                <?php if ($next_status): ?>
+                    
+                        <p class="small text-muted mb-3">
+                            Status saat ini adalah <strong><?= (ucfirst($po['status'])) ?></strong>. Majukan dokumen ini ke tahap selanjutnya:
+                        </p>
+                        <form action="<?= ($BASE) ?>/po/<?= ($po['id']) ?>/lanjut-status" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin memajukan status PO ini ke tahap <?= ($next_status_label) ?>?');">
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Tahap Selanjutnya:</label>
+                                <div class="form-control bg-light fw-bold text-primary">
+                                    <i class="bi bi-arrow-right me-1"></i><?= ($next_status_label)."
+" ?>
+                                </div>
+                            </div>
+
+                            <?php if (in_array($next_status, ['kontrak', 'po_terbit'])): ?>
+                                <div class="mb-3">
+                                    <label for="biaya" class="form-label small fw-bold">Perbarui Nilai Biaya (Rp)</label>
+                                    <input type="number" step="any" class="form-control form-control-sm" id="biaya" name="biaya" value="<?= ($po['biaya']) ?>">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="tanggal_target" class="form-label small fw-bold">Tanggal Target Selesai</label>
+                                    <input type="date" class="form-control form-control-sm" id="tanggal_target" name="tanggal_target" value="<?= ($po['tanggal_target']) ?>">
+                                </div>
+                            <?php endif; ?>
+
+                            <?php if ($next_status == 'selesai'): ?>
+                                <div class="mb-3">
+                                    <label for="tanggal_realisasi" class="form-label small fw-bold">Tanggal Realisasi Selesai</label>
+                                    <input type="date" class="form-control form-control-sm" id="tanggal_realisasi" name="tanggal_realisasi" value="<?= ($po['tanggal_realisasi'] ?: date('Y-m-d')) ?>">
+                                </div>
+                            <?php endif; ?>
+
+                            <div class="mb-3">
+                                <label for="catatan" class="form-label small fw-bold">Catatan Perubahan Status</label>
+                                <textarea class="form-control form-control-sm" id="catatan" name="catatan" rows="2" placeholder="Catatan progress atau tindak lanjut..."></textarea>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-check-circle me-1"></i> Majukan ke <?= ($next_status_label)."
+" ?>
+                            </button>
+                        </form>
+                    
+                    <?php else: ?>
+                        <div class="alert alert-success mb-0 text-center" role="alert">
+                            <i class="bi bi-patch-check-fill display-6 d-block mb-2"></i>
+                            <h6 class="fw-bold mb-1">Pekerjaan Selesai</h6>
+                            <p class="small mb-0">Dokumen PO ini telah mencapai status final (Selesai).</p>
+                        </div>
+                    
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- Card Histori Log Status (Audit Trail) -->
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h6 class="m-0 fw-bold text-dark"><i class="bi bi-clock-history me-2 text-primary"></i>Riwayat Audit Trail Log</h6>
+            </div>
+            <div class="card-body p-0">
+                <?php if (count($daftar_log) > 0): ?>
+                    
+                        <div class="list-group list-group-flush small">
+                            <?php foreach (($daftar_log?:[]) as $log): ?>
+                                <div class="list-group-item p-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <div>
+                                            <?php if ($log['status_lama']): ?>
+                                                
+                                                    <span class="badge bg-secondary"><?= ($log['status_lama']) ?></span>
+                                                    <i class="bi bi-arrow-right mx-1 text-muted"></i>
+                                                
+                                            <?php endif; ?>
+                                            <span class="badge bg-primary"><?= ($log['status_baru']) ?></span>
+                                        </div>
+                                        <span class="text-muted" style="font-size: 0.75rem;">
+                                            <i class="bi bi-clock me-1"></i><?= (date('d/m/Y H:i', strtotime($log['tanggal'])))."
+" ?>
+                                        </span>
+                                    </div>
+                                    <div class="text-secondary mt-1">
+                                        <?= ($log['catatan'] ?: 'Perubahan status tercatat di sistem.')."
+" ?>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    
+                    <?php else: ?>
+                        <div class="p-3 text-center text-muted small">Belum ada riwayat status.</div>
+                    
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+</div>
