@@ -1,7 +1,7 @@
-<div class="row justify-content-center">
+<div class="row justify-content-center" data-aos="fade-up">
     <div class="col-lg-8">
         <div class="d-flex align-items-center mb-3">
-            <a href="<?= ($BASE) ?>/order" class="btn btn-outline-secondary btn-sm me-3">
+            <a href="<?= ($BASE) ?>/order" class="btn-back me-3">
                 <i class="bi bi-arrow-left"></i> Kembali
             </a>
             <h4 class="fw-bold mb-0"><i class="bi bi-file-earmark-plus me-2 text-primary"></i>Tambah Order Layanan Baru</h4>
@@ -13,6 +13,8 @@
             </div>
             <div class="card-body p-4">
                 <form action="<?= ($BASE) ?>/order/simpan" method="POST">
+                    <!-- CSRF Token -->
+                    <input type="hidden" name="csrf_token" value="<?= ($csrf_token) ?>">
                     <div class="mb-3">
                         <label for="klien_id" class="form-label fw-semibold">Pilih Klien / Perusahaan <span class="text-danger">*</span></label>
                         <select class="form-select" id="klien_id" name="klien_id" required>

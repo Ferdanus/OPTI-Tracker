@@ -1,3 +1,14 @@
+<!-- Hitung Jumlah PO per Status langsung di Template Layer (Tanpa Ubah Controller/Backend) -->
+<?php $counts = ['proposal' => 0, 'kontrak' => 0, 'po_terbit' => 0, 'distribusi' => 0, 'selesai' => 0];
+  $db = \Base::instance()->get('DB');
+  if ($db) {
+      $rows = $db->exec("SELECT status, COUNT(*) AS count FROM po GROUP BY status");
+      foreach ($rows as $r) {
+          $counts[$r['status']] = (int)$r['count'];
+      }
+  }
+  \Base::instance()->set('po_counts', $counts); ?>
+
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h3 class="fw-bold mb-1"><i class="bi bi-file-earmark-check me-2 text-primary"></i>Daftar Petunjuk Operasional (PO)</h3>
@@ -5,9 +16,97 @@
     </div>
 </div>
 
+<!-- Ringkasan Status PO (Dashboard Cards) -->
+<div class="row row-cols-1 row-cols-sm-2 row-cols-md-5 g-3 mb-4" data-aos="fade-up">
+    <!-- Card Proposal -->
+    <div class="col">
+        <div class="card h-100 shadow-sm border-start border-secondary border-4">
+            <div class="card-body py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-uppercase small fw-bold text-muted" style="font-size: 0.7rem;">1. Proposal</div>
+                        <h3 class="fw-bold mb-0 mt-1 text-dark"><?= ($po_counts['proposal']) ?></h3>
+                    </div>
+                    <div class="bg-secondary bg-opacity-10 text-secondary rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px;">
+                        <i class="bi bi-file-earmark-text fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Card Kontrak -->
+    <div class="col">
+        <div class="card h-100 shadow-sm border-start border-warning border-4" style="border-left-color: var(--color-accent) !important;">
+            <div class="card-body py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-uppercase small fw-bold text-muted" style="font-size: 0.7rem;">2. Kontrak</div>
+                        <h3 class="fw-bold mb-0 mt-1 text-dark"><?= ($po_counts['kontrak']) ?></h3>
+                    </div>
+                    <div class="bg-warning bg-opacity-10 text-warning rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px; color: var(--color-accent) !important;">
+                        <i class="bi bi-journal-check fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Card PO Terbit -->
+    <div class="col">
+        <div class="card h-100 shadow-sm border-start border-primary border-4">
+            <div class="card-body py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-uppercase small fw-bold text-muted" style="font-size: 0.7rem;">3. PO Terbit</div>
+                        <h3 class="fw-bold mb-0 mt-1 text-dark"><?= ($po_counts['po_terbit']) ?></h3>
+                    </div>
+                    <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px;">
+                        <i class="bi bi-file-earmark-check fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Card Distribusi -->
+    <div class="col">
+        <div class="card h-100 shadow-sm border-start border-4" style="border-color: #6b21a8 !important; border-left-width: 4px !important;">
+            <div class="card-body py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-uppercase small fw-bold text-muted" style="font-size: 0.7rem;">4. Distribusi</div>
+                        <h3 class="fw-bold mb-0 mt-1 text-dark"><?= ($po_counts['distribusi']) ?></h3>
+                    </div>
+                    <div class="bg-purple bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px; background-color: rgba(107, 33, 168, 0.1); color: #6b21a8;">
+                        <i class="bi bi-send fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Card Selesai -->
+    <div class="col">
+        <div class="card h-100 shadow-sm border-start border-success border-4" style="border-left-color: #166534 !important;">
+            <div class="card-body py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-uppercase small fw-bold text-muted" style="font-size: 0.7rem;">5. Selesai</div>
+                        <h3 class="fw-bold mb-0 mt-1 text-dark"><?= ($po_counts['selesai']) ?></h3>
+                    </div>
+                    <div class="bg-success bg-opacity-10 text-success rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px; color: #166534 !important;">
+                        <i class="bi bi-patch-check fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Card Filter Pencarian -->
-<div class="card mb-4 shadow-sm">
-    <div class="card-body bg-light rounded">
+<div class="card mb-4 shadow-sm" data-aos="fade-up">
+    <div class="card-body bg-light bg-opacity-50 rounded">
         <form method="GET" action="<?= ($BASE) ?>/po" class="row g-3 align-items-end">
             <div class="col-md-3">
                 <label for="bulan" class="form-label small fw-bold text-secondary">Filter Bulan</label>
@@ -47,15 +146,15 @@
 </div>
 
 <!-- Tabel Daftar PO -->
-<div class="card shadow-sm">
+<div class="card shadow-sm" data-aos="fade-up">
     <div class="card-body p-0">
         <?php if (count($daftar_po) > 0): ?>
             
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
+                    <table class="table table-striped table-hover align-middle mb-0">
+                        <thead>
                             <tr>
-                                <th style="width: 50px;" class="text-center">#</th>
+                                <th style="width: 50px;" class="text-center">No</th>
                                 <th>Nomor PO</th>
                                 <th>Klien</th>
                                 <th>Judul Kegiatan</th>
@@ -67,32 +166,32 @@
                         <tbody>
                             <?php $ctr=0; foreach (($daftar_po?:[]) as $item): $ctr++; ?>
                                 <tr>
-                                    <td class="text-center text-muted small"><?= ($ctr) ?></td>
-                                    <td>
-                                        <a href="<?= ($BASE) ?>/po/<?= ($item['id']) ?>" class="fw-bold text-decoration-none">
+                                    <td class="text-center text-muted small" data-label="No"><?= ($ctr) ?></td>
+                                    <td data-label="Nomor PO">
+                                        <a href="<?= ($BASE) ?>/po/<?= ($item['id']) ?>" class="fw-bold text-decoration-none text-primary">
                                             <?= ($item['nomor_po'])."
 " ?>
                                         </a>
                                     </td>
-                                    <td>
-                                        <span class="text-dark"><?= ($item['nama_perusahaan']) ?></span>
+                                    <td data-label="Klien">
+                                        <span class="text-dark fw-semibold"><?= ($item['nama_perusahaan']) ?></span>
                                     </td>
-                                    <td>
+                                    <td data-label="Judul Kegiatan">
                                         <span class="text-secondary small"><?= ($item['judul_kegiatan']) ?></span>
                                     </td>
-                                    <td>
-                                        <span class="badge badge-status-<?= ($item['status']) ?> px-2 py-1">
+                                    <td data-label="Status PO">
+                                        <span class="badge badge-status-<?= ($item['status']) ?> px-2.5 py-1.5 rounded-pill text-uppercase" style="font-size: 0.725rem; font-weight: 600;">
                                             <?= ($list_status[$item['status']])."
 " ?>
                                         </span>
                                     </td>
-                                    <td class="small text-muted">
+                                    <td class="small text-muted" data-label="Tgl Dibuat">
                                         <?= (date('d/m/Y', strtotime($item['created_at'])))."
 " ?>
                                     </td>
-                                    <td class="text-center">
-                                        <a href="<?= ($BASE) ?>/po/<?= ($item['id']) ?>" class="btn btn-sm btn-outline-primary">
-                                            <i class="bi bi-eye me-1"></i> Detail
+                                    <td class="text-center" data-label="Aksi">
+                                        <a href="<?= ($BASE) ?>/po/<?= ($item['id']) ?>" class="btn btn-sm btn-outline-primary" title="Lihat Detail PO">
+                                            <i class="bi bi-eye-fill"></i>
                                         </a>
                                     </td>
                                 </tr>

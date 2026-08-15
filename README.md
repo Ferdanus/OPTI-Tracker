@@ -1,10 +1,10 @@
 # Mini OPTI Tracker
 
-Aplikasi latihan berbasis **PHP (Fat-Free Framework / F3)** dan **MySQL** untuk melatih konsep:
+Aplikasi berbasis **PHP (Fat-Free Framework / F3)** dan **MySQL** untuk mendemonstrasikan konsep:
 1. **CRUD & Relasi Data**: Klien, Order Layanan, dan PO.
 2. **State Machine Linear**: Alur status PO (`proposal` -> `kontrak` -> `po_terbit` -> `distribusi` -> `selesai`).
 3. **Audit Trail**: Pencatatan histori status di `po_log_status`.
-4. **Auto Document Numbering**: Penomoran otomatis format `{urut}/PO/LATIHAN/{bulan_romawi}/{tahun}`.
+4. **Auto Document Numbering**: Penomoran otomatis format `{urut}/PO/OPTI/{bulan_romawi}/{tahun}`.
 
 ## Panduan Instalasi & Menjalankan
 

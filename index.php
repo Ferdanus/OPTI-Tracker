@@ -1,7 +1,26 @@
 <?php
-// Mulai session untuk flash message
+// Keamanan Session: Konfigurasi session cookie params sebelum session start
+ini_set('session.cookie_httponly', 1);
+ini_set('session.use_only_cookies', 1);
+if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
+    ini_set('session.cookie_secure', 1);
+}
+// Set SameSite via ini_set (PHP 7.3+) agar kompatibel dengan PHP versi lama
+@ini_set('session.cookie_samesite', 'Lax');
+
+// Gunakan signature tradisional posisional yang didukung oleh semua versi PHP:
+// session_set_cookie_params($lifetime, $path, $domain, $secure, $httponly)
+$isSecure = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on');
+session_set_cookie_params(0, '/', '', $isSecure, true);
+
+// Mulai session untuk flash message dan data autentikasi
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
+}
+
+// Inisialisasi token CSRF global per session jika belum ada
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
 // Autoloader via F3
@@ -21,6 +40,7 @@ if (isset($_SERVER['REQUEST_URI'])) {
 }
 
 $f3 = \Base::instance();
+$f3->set('csrf_token', $_SESSION['csrf_token'] ?? '');
 
 // Load file konfigurasi
 $f3->config('config.ini');
@@ -52,10 +72,21 @@ $f3->set('ONERROR', function($f3) {
     echo '</div>';
 });
 
+
+
 // Route Beranda -> redirect ke /po
 $f3->route('GET /', function($f3) {
     $f3->reroute('/po');
 });
+
+// ==========================================
+// ROUTE AUTENTIKASI
+// ==========================================
+$f3->route('GET  /login', 'AuthController->loginGet');
+$f3->route('POST /login', 'AuthController->loginPost');
+$f3->route('POST /logout', 'AuthController->logout');
+$f3->route('GET  /profil', 'AuthController->profileGet');
+$f3->route('POST /profil/simpan', 'AuthController->profilePost');
 
 // ==========================================
 // ROUTE MODUL KLIEN

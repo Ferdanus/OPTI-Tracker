@@ -1,61 +1,70 @@
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div class="d-flex align-items-center">
-        <a href="{{ @BASE }}/po" class="btn btn-outline-secondary btn-sm me-3">
-            <i class="bi bi-arrow-left"></i> Kembali ke Daftar PO
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+    <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-3">
+        <a href="{{ @BASE }}/po" class="btn-back">
+            <i class="bi bi-arrow-left"></i> Kembali
         </a>
         <div>
-            <h4 class="fw-bold mb-0">
+            <h4 class="fw-bold mb-0 text-dark">
                 <i class="bi bi-file-earmark-text text-primary me-2"></i>{{ @po.nomor_po }}
             </h4>
             <span class="text-muted small">Dibuat pada {{ date('d F Y, H:i', strtotime(@po.created_at)) }} WIB</span>
         </div>
     </div>
     <div>
-        <span class="badge badge-status-{{ @po.status }} fs-6 px-3 py-2">
-            Status: {{ ucfirst(@po.status) }}
+        <span class="badge badge-status-{{ @po.status }} fs-6 px-3 py-2 text-uppercase rounded-pill" style="font-weight: 600;">
+            {{ ucfirst(@po.status) }}
         </span>
     </div>
 </div>
 
 <!-- Stepper / Alur Progres Status PO -->
-<div class="card mb-4 shadow-sm">
+<div class="card mb-4 shadow-sm" data-aos="fade-up">
     <div class="card-header bg-white py-3">
         <h6 class="m-0 fw-bold text-dark"><i class="bi bi-diagram-3 me-2 text-primary"></i>Alur Progres Dokumen PO (State Machine)</h6>
     </div>
     <div class="card-body">
-        <div class="row text-center g-2">
-            <div class="col">
-                <div class="p-2 border rounded {{ in_array(@po.status, ['proposal','kontrak','po_terbit','distribusi','selesai']) ? 'bg-primary text-white fw-bold' : 'bg-light text-muted' }}">
-                    <div class="small">Tahap 1</div>
-                    <div>Proposal</div>
+        <div class="row text-center g-2 align-items-center">
+            <!-- Step 1: Proposal -->
+            <div class="col-6 col-md">
+                <div class="p-2 border rounded {{ @po.status == 'proposal' ? 'bg-primary text-white fw-bold' : (in_array(@po.status, ['kontrak','po_terbit','distribusi','selesai']) ? 'bg-success text-white fw-bold' : 'bg-light text-muted') }}" style="{{ @po.status == 'proposal' ? 'border-color: var(--color-primary) !important;' : '' }}">
+                    <div class="small fw-semibold text-uppercase" style="font-size: 0.65rem; opacity: 0.85;">Tahap 1</div>
+                    <div class="small">Proposal</div>
                 </div>
             </div>
-            <div class="col-auto d-flex align-items-center text-muted"><i class="bi bi-arrow-right"></i></div>
-            <div class="col">
-                <div class="p-2 border rounded {{ in_array(@po.status, ['kontrak','po_terbit','distribusi','selesai']) ? 'bg-primary text-white fw-bold' : 'bg-light text-muted' }}">
-                    <div class="small">Tahap 2</div>
-                    <div>Kontrak</div>
+            <div class="col-auto text-muted d-none d-md-block"><i class="bi bi-chevron-right"></i></div>
+            
+            <!-- Step 2: Kontrak -->
+            <div class="col-6 col-md">
+                <div class="p-2 border rounded {{ @po.status == 'kontrak' ? 'bg-primary text-white fw-bold' : (in_array(@po.status, ['po_terbit','distribusi','selesai']) ? 'bg-success text-white fw-bold' : 'bg-light text-muted') }}" style="{{ @po.status == 'kontrak' ? 'border-color: var(--color-primary) !important;' : '' }}">
+                    <div class="small fw-semibold text-uppercase" style="font-size: 0.65rem; opacity: 0.85;">Tahap 2</div>
+                    <div class="small">Kontrak</div>
                 </div>
             </div>
-            <div class="col-auto d-flex align-items-center text-muted"><i class="bi bi-arrow-right"></i></div>
-            <div class="col">
-                <div class="p-2 border rounded {{ in_array(@po.status, ['po_terbit','distribusi','selesai']) ? 'bg-primary text-white fw-bold' : 'bg-light text-muted' }}">
-                    <div class="small">Tahap 3</div>
-                    <div>PO Terbit</div>
+            <div class="col-auto text-muted d-none d-md-block"><i class="bi bi-chevron-right"></i></div>
+            
+            <!-- Step 3: PO Terbit -->
+            <div class="col-6 col-md">
+                <div class="p-2 border rounded {{ @po.status == 'po_terbit' ? 'bg-primary text-white fw-bold' : (in_array(@po.status, ['distribusi','selesai']) ? 'bg-success text-white fw-bold' : 'bg-light text-muted') }}" style="{{ @po.status == 'po_terbit' ? 'border-color: var(--color-primary) !important;' : '' }}">
+                    <div class="small fw-semibold text-uppercase" style="font-size: 0.65rem; opacity: 0.85;">Tahap 3</div>
+                    <div class="small">PO Terbit</div>
                 </div>
             </div>
-            <div class="col-auto d-flex align-items-center text-muted"><i class="bi bi-arrow-right"></i></div>
-            <div class="col">
-                <div class="p-2 border rounded {{ in_array(@po.status, ['distribusi','selesai']) ? 'bg-primary text-white fw-bold' : 'bg-light text-muted' }}">
-                    <div class="small">Tahap 4</div>
-                    <div>Distribusi</div>
+            <div class="col-auto text-muted d-none d-md-block"><i class="bi bi-chevron-right"></i></div>
+            
+            <!-- Step 4: Distribusi -->
+            <div class="col-6 col-md">
+                <div class="p-2 border rounded {{ @po.status == 'distribusi' ? 'bg-primary text-white fw-bold' : (@po.status == 'selesai' ? 'bg-success text-white fw-bold' : 'bg-light text-muted') }}" style="{{ @po.status == 'distribusi' ? 'border-color: var(--color-primary) !important;' : '' }}">
+                    <div class="small fw-semibold text-uppercase" style="font-size: 0.65rem; opacity: 0.85;">Tahap 4</div>
+                    <div class="small">Distribusi</div>
                 </div>
             </div>
-            <div class="col-auto d-flex align-items-center text-muted"><i class="bi bi-arrow-right"></i></div>
-            <div class="col">
-                <div class="p-2 border rounded {{ @po.status == 'selesai' ? 'bg-success text-white fw-bold' : 'bg-light text-muted' }}">
-                    <div class="small">Tahap 5</div>
-                    <div>Selesai</div>
+            <div class="col-auto text-muted d-none d-md-block"><i class="bi bi-chevron-right"></i></div>
+            
+            <!-- Step 5: Selesai -->
+            <div class="col-12 col-md">
+                <div class="p-2 border rounded {{ @po.status == 'selesai' ? 'bg-success text-white fw-bold' : 'bg-light text-muted' }}" style="{{ @po.status == 'selesai' ? 'border-color: #166534 !important;' : '' }}">
+                    <div class="small fw-semibold text-uppercase" style="font-size: 0.65rem; opacity: 0.85;">Tahap 5</div>
+                    <div class="small">Selesai</div>
                 </div>
             </div>
         </div>
@@ -64,7 +73,7 @@
 
 <div class="row">
     <!-- Kolom Kiri: Informasi PO & Klien -->
-    <div class="col-lg-7">
+    <div class="col-lg-7" data-aos="fade-up">
         <!-- Card Informasi Dokumen & Order -->
         <div class="card mb-4 shadow-sm">
             <div class="card-header bg-white py-3">
@@ -73,30 +82,30 @@
             <div class="card-body">
                 <table class="table table-sm table-borderless mb-0">
                     <tr>
-                        <th style="width: 180px;" class="text-secondary">Judul Kegiatan:</th>
-                        <td class="fw-semibold text-dark">{{ @po.judul_kegiatan }}</td>
+                        <th style="width: 180px;" class="text-secondary fw-semibold">Judul Kegiatan:</th>
+                        <td class="fw-bold text-dark">{{ @po.judul_kegiatan }}</td>
                     </tr>
                     <tr>
-                        <th class="text-secondary">Deskripsi:</th>
-                        <td>{{ @po.deskripsi_order ?: '-' }}</td>
+                        <th class="text-secondary fw-semibold">Deskripsi:</th>
+                        <td class="text-secondary">{{ @po.deskripsi_order ?: '-' }}</td>
                     </tr>
                     <tr>
-                        <th class="text-secondary">Tanggal Masuk Order:</th>
-                        <td>{{ date('d/m/Y', strtotime(@po.tanggal_masuk)) }}</td>
+                        <th class="text-secondary fw-semibold">Tanggal Masuk Order:</th>
+                        <td class="text-secondary">{{ date('d/m/Y', strtotime(@po.tanggal_masuk)) }}</td>
                     </tr>
                     <tr>
-                        <th class="text-secondary">Estimasi Biaya:</th>
-                        <td class="fw-bold text-success">
+                        <th class="text-secondary fw-semibold">Estimasi Biaya:</th>
+                        <td class="fw-bold text-success fs-5">
                             Rp {{ number_format(@po.biaya, 0, ',', '.') }}
                         </td>
                     </tr>
                     <tr>
-                        <th class="text-secondary">Target Selesai:</th>
-                        <td>{{ @po.tanggal_target ? date('d/m/Y', strtotime(@po.tanggal_target)) : '-' }}</td>
+                        <th class="text-secondary fw-semibold">Target Selesai:</th>
+                        <td class="text-secondary">{{ @po.tanggal_target ? date('d/m/Y', strtotime(@po.tanggal_target)) : '-' }}</td>
                     </tr>
                     <tr>
-                        <th class="text-secondary">Realisasi Selesai:</th>
-                        <td>{{ @po.tanggal_realisasi ? date('d/m/Y', strtotime(@po.tanggal_realisasi)) : '-' }}</td>
+                        <th class="text-secondary fw-semibold">Realisasi Selesai:</th>
+                        <td class="text-secondary">{{ @po.tanggal_realisasi ? date('d/m/Y', strtotime(@po.tanggal_realisasi)) : '-' }}</td>
                     </tr>
                 </table>
             </div>
@@ -110,24 +119,24 @@
             <div class="card-body">
                 <table class="table table-sm table-borderless mb-0">
                     <tr>
-                        <th style="width: 180px;" class="text-secondary">Nama Perusahaan:</th>
-                        <td class="fw-semibold text-dark">{{ @po.nama_perusahaan }}</td>
+                        <th style="width: 180px;" class="text-secondary fw-semibold">Nama Perusahaan:</th>
+                        <td class="fw-bold text-dark">{{ @po.nama_perusahaan }}</td>
                     </tr>
                     <tr>
-                        <th class="text-secondary">PIC:</th>
-                        <td>{{ @po.pic ?: '-' }}</td>
+                        <th class="text-secondary fw-semibold">PIC:</th>
+                        <td class="text-secondary">{{ @po.pic ?: '-' }}</td>
                     </tr>
                     <tr>
-                        <th class="text-secondary">Telepon:</th>
-                        <td>{{ @po.telepon ?: '-' }}</td>
+                        <th class="text-secondary fw-semibold">Telepon:</th>
+                        <td class="text-secondary">{{ @po.telepon ?: '-' }}</td>
                     </tr>
                     <tr>
-                        <th class="text-secondary">Email:</th>
-                        <td>{{ @po.email ?: '-' }}</td>
+                        <th class="text-secondary fw-semibold">Email:</th>
+                        <td class="text-secondary">{{ @po.email ?: '-' }}</td>
                     </tr>
                     <tr>
-                        <th class="text-secondary">Alamat:</th>
-                        <td class="small">{{ @po.alamat ?: '-' }}</td>
+                        <th class="text-secondary fw-semibold">Alamat:</th>
+                        <td class="small text-secondary">{{ @po.alamat ?: '-' }}</td>
                     </tr>
                 </table>
             </div>
@@ -135,9 +144,9 @@
     </div>
 
     <!-- Kolom Kanan: Aksi Transisi Status & Audit Trail Log -->
-    <div class="col-lg-5">
+    <div class="col-lg-5" data-aos="fade-up">
         <!-- Card Aksi Transisi Status -->
-        <div class="card mb-4 shadow-sm border-primary">
+        <div class="card mb-4 shadow-sm border-primary" style="border-color: var(--color-primary) !important;">
             <div class="card-header bg-primary text-white py-3">
                 <h6 class="m-0 fw-bold"><i class="bi bi-arrow-right-circle me-2"></i>Aksi Transisi Status</h6>
             </div>
@@ -148,44 +157,46 @@
                             Status saat ini adalah <strong>{{ ucfirst(@po.status) }}</strong>. Majukan dokumen ini ke tahap selanjutnya:
                         </p>
                         <form action="{{ @BASE }}/po/{{ @po.id }}/lanjut-status" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin memajukan status PO ini ke tahap {{ @next_status_label }}?');">
+                            <!-- CSRF Token -->
+                            <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
                             <div class="mb-3">
-                                <label class="form-label small fw-bold">Tahap Selanjutnya:</label>
-                                <div class="form-control bg-light fw-bold text-primary">
+                                <label class="form-label small fw-bold text-secondary">Tahap Selanjutnya:</label>
+                                <div class="form-control bg-light fw-bold text-primary border-primary-subtle" style="color: var(--color-primary) !important;">
                                     <i class="bi bi-arrow-right me-1"></i>{{ @next_status_label }}
                                 </div>
                             </div>
 
                             <check if="{{ in_array(@next_status, ['kontrak', 'po_terbit']) }}">
                                 <div class="mb-3">
-                                    <label for="biaya" class="form-label small fw-bold">Perbarui Nilai Biaya (Rp)</label>
+                                    <label for="biaya" class="form-label small fw-bold text-secondary">Perbarui Nilai Biaya (Rp)</label>
                                     <input type="number" step="any" class="form-control form-control-sm" id="biaya" name="biaya" value="{{ @po.biaya }}">
                                 </div>
                                 <div class="mb-3">
-                                    <label for="tanggal_target" class="form-label small fw-bold">Tanggal Target Selesai</label>
+                                    <label for="tanggal_target" class="form-label small fw-bold text-secondary">Tanggal Target Selesai</label>
                                     <input type="date" class="form-control form-control-sm" id="tanggal_target" name="tanggal_target" value="{{ @po.tanggal_target }}">
                                 </div>
                             </check>
 
                             <check if="{{ @next_status == 'selesai' }}">
                                 <div class="mb-3">
-                                    <label for="tanggal_realisasi" class="form-label small fw-bold">Tanggal Realisasi Selesai</label>
+                                    <label for="tanggal_realisasi" class="form-label small fw-bold text-secondary">Tanggal Realisasi Selesai</label>
                                     <input type="date" class="form-control form-control-sm" id="tanggal_realisasi" name="tanggal_realisasi" value="{{ @po.tanggal_realisasi ?: date('Y-m-d') }}">
                                 </div>
                             </check>
 
                             <div class="mb-3">
-                                <label for="catatan" class="form-label small fw-bold">Catatan Perubahan Status</label>
-                                <textarea class="form-control form-control-sm" id="catatan" name="catatan" rows="2" placeholder="Catatan progress atau tindak lanjut..."></textarea>
+                                <label for="catatan" class="form-label small fw-bold text-secondary">Catatan Perubahan Status</label>
+                                <textarea class="form-control form-control-sm" id="catatan" name="catatan" rows="2" placeholder="Catatan progress atau tindak lanjut..." required></textarea>
                             </div>
 
-                            <button type="submit" class="btn btn-primary w-100">
+                            <button type="submit" class="btn btn-primary w-100 py-2">
                                 <i class="bi bi-check-circle me-1"></i> Majukan ke {{ @next_status_label }}
                             </button>
                         </form>
                     </true>
                     <false>
-                        <div class="alert alert-success mb-0 text-center" role="alert">
-                            <i class="bi bi-patch-check-fill display-6 d-block mb-2"></i>
+                        <div class="alert alert-success mb-0 text-center" role="alert" style="background-color: rgba(22, 101, 52, 0.08); border-color: rgba(22, 101, 52, 0.2); color: #166534;">
+                            <i class="bi bi-patch-check-fill display-6 d-block mb-2 text-success"></i>
                             <h6 class="fw-bold mb-1">Pekerjaan Selesai</h6>
                             <p class="small mb-0">Dokumen PO ini telah mencapai status final (Selesai).</p>
                         </div>
@@ -204,22 +215,22 @@
                     <true>
                         <div class="list-group list-group-flush small">
                             <repeat group="{{ @daftar_log }}" value="{{ @log }}">
-                                <div class="list-group-item p-3">
+                                <div class="list-group-item p-3 border-bottom border-light">
                                     <div class="d-flex justify-content-between align-items-center mb-1">
                                         <div>
                                             <check if="{{ @log.status_lama }}">
                                                 <true>
-                                                    <span class="badge bg-secondary">{{ @log.status_lama }}</span>
+                                                    <span class="badge bg-secondary rounded-pill text-uppercase" style="font-size: 0.65rem;">{{ @log.status_lama }}</span>
                                                     <i class="bi bi-arrow-right mx-1 text-muted"></i>
                                                 </true>
                                             </check>
-                                            <span class="badge bg-primary">{{ @log.status_baru }}</span>
+                                            <span class="badge badge-status-{{ @log.status_baru }} rounded-pill text-uppercase" style="font-size: 0.65rem;">{{ @log.status_baru }}</span>
                                         </div>
-                                        <span class="text-muted" style="font-size: 0.75rem;">
+                                        <span class="text-muted" style="font-size: 0.725rem;">
                                             <i class="bi bi-clock me-1"></i>{{ date('d/m/Y H:i', strtotime(@log.tanggal)) }}
                                         </span>
                                     </div>
-                                    <div class="text-secondary mt-1">
+                                    <div class="text-secondary mt-1 lh-base">
                                         {{ @log.catatan ?: 'Perubahan status tercatat di sistem.' }}
                                     </div>
                                 </div>

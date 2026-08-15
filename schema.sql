@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS order_layanan (
 CREATE TABLE IF NOT EXISTS po (
     id INT AUTO_INCREMENT PRIMARY KEY,
     order_id INT NOT NULL,
-    nomor_po VARCHAR(50) UNIQUE NOT NULL,   -- format: {urut}/PO/LATIHAN/{bulan_romawi}/{tahun}
+    nomor_po VARCHAR(50) UNIQUE NOT NULL,   -- format: {urut}/PO/OPTI/{bulan_romawi}/{tahun}
     biaya DECIMAL(15,2) DEFAULT 0,
     status ENUM('proposal','kontrak','po_terbit','distribusi','selesai') DEFAULT 'proposal',
     tanggal_target DATE,

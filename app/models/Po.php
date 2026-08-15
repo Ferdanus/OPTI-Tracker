@@ -33,7 +33,7 @@ class Po extends \DB\SQL\Mapper {
 
     /**
      * Auto-generate nomor PO dengan format:
-     * {urut}/PO/LATIHAN/{bulan_romawi}/{tahun}
+     * {urut}/PO/OPTI/{bulan_romawi}/{tahun}
      * Nomor urut akan reset setiap pergantian bulan & tahun
      */
     public function generateNomorPo() {
@@ -50,7 +50,7 @@ class Po extends \DB\SQL\Mapper {
         $totalBulanIni = (int)($hasil[0]['total'] ?? 0);
         $nomorUrut     = sprintf('%02d', $totalBulanIni + 1);
 
-        return "{$nomorUrut}/PO/LATIHAN/{$bulanRomawi}/{$tahunSekarang}";
+        return "{$nomorUrut}/PO/OPTI/{$bulanRomawi}/{$tahunSekarang}";
     }
 
     /**

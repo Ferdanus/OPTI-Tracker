@@ -1,7 +1,7 @@
-<div class="row justify-content-center">
+<div class="row justify-content-center" data-aos="fade-up">
     <div class="col-lg-8">
         <div class="d-flex align-items-center mb-3">
-            <a href="<?= ($BASE) ?>/klien" class="btn btn-outline-secondary btn-sm me-3">
+            <a href="<?= ($BASE) ?>/klien" class="btn-back me-3">
                 <i class="bi bi-arrow-left"></i> Kembali
             </a>
             <h4 class="fw-bold mb-0"><i class="bi bi-building-add me-2 text-primary"></i>Tambah Klien Baru</h4>
@@ -13,6 +13,8 @@
             </div>
             <div class="card-body p-4">
                 <form action="<?= ($BASE) ?>/klien/simpan" method="POST">
+                    <!-- CSRF Token -->
+                    <input type="hidden" name="csrf_token" value="<?= ($csrf_token) ?>">
                     <div class="mb-3">
                         <label for="nama_perusahaan" class="form-label fw-semibold">Nama Perusahaan / Mitra <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="nama_perusahaan" name="nama_perusahaan" required placeholder="Contoh: PT Selulosa Makmur Sejahtera">
