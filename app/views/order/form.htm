@@ -15,6 +15,7 @@
                 <form action="{{ @BASE }}/order/simpan" method="POST">
                     <!-- CSRF Token -->
                     <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
+                    
                     <div class="mb-3">
                         <label for="klien_id" class="form-label fw-semibold">Pilih Klien / Perusahaan <span class="text-danger">*</span></label>
                         <select class="form-select" id="klien_id" name="klien_id" required>
@@ -26,14 +27,40 @@
                         <div class="form-text">Data perusahaan yang mengajukan permohonan layanan.</div>
                     </div>
 
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="nomor_order" class="form-label fw-semibold">Nomor Order</label>
+                            <input type="text" class="form-control" id="nomor_order" name="nomor_order" placeholder="Kosongkan untuk auto-generate">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="tanggal_masuk" class="form-label fw-semibold">Tanggal Masuk Order <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="tanggal_masuk" name="tanggal_masuk" required value="{{ date('Y-m-d') }}">
+                        </div>
+                    </div>
+
                     <div class="mb-3">
                         <label for="judul_kegiatan" class="form-label fw-semibold">Judul Kegiatan Layanan <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="judul_kegiatan" name="judul_kegiatan" required placeholder="Contoh: Pengujian Karakteristik Fisik & Mekanik Pulp Selulosa">
                     </div>
 
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="jenis_layanan" class="form-label fw-semibold">Jenis Layanan OPTI <span class="text-danger">*</span></label>
+                            <select class="form-select" id="jenis_layanan" name="jenis_layanan" required>
+                                <option value="">-- Pilih Layanan --</option>
+                                <option value="selulosa">OPTI Selulosa (Kertas & Pulp)</option>
+                                <option value="lingkungan">OPTI Lingkungan (Emisi & Limbah)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="jumlah_pekerjaan" class="form-label fw-semibold">Jumlah Pekerjaan / Alat <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="jumlah_pekerjaan" name="jumlah_pekerjaan" required placeholder="Contoh: 10 sampel pulp, 2 cerobong">
+                        </div>
+                    </div>
+
                     <div class="mb-3">
-                        <label for="tanggal_masuk" class="form-label fw-semibold">Tanggal Masuk Order <span class="text-danger">*</span></label>
-                        <input type="date" class="form-control" id="tanggal_masuk" name="tanggal_masuk" required value="{{ date('Y-m-d') }}">
+                        <label for="estimasi_biaya" class="form-label fw-semibold">Estimasi Biaya (Rp)</label>
+                        <input type="number" class="form-control" id="estimasi_biaya" name="estimasi_biaya" placeholder="Masukkan nilai rupiah, contoh: 15000000">
                     </div>
 
                     <div class="mb-4">

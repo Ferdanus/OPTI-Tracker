@@ -115,11 +115,13 @@
         <h3 class="fw-bold mb-1"><i class="bi bi-building me-2 text-primary"></i>Daftar Klien</h3>
         <p class="text-muted mb-0">Kelola data mitra/perusahaan pengguna layanan OPTI.</p>
     </div>
-    <div class="align-self-end align-self-sm-center">
-        <a href="<?= ($BASE) ?>/klien/tambah" class="btn btn-primary">
-            <i class="bi bi-plus-lg me-1"></i>Tambah Klien
-        </a>
-    </div>
+    <?php if ($SESSION['role'] == 'admin_order' || $SESSION['role'] == 'superadmin'): ?>
+        <div class="align-self-end align-self-sm-center">
+            <a href="<?= ($BASE) ?>/klien/tambah" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-1"></i>Tambah Klien
+            </a>
+        </div>
+    <?php endif; ?>
 </div>
 
 <div class="card shadow-sm" data-aos="fade-up">

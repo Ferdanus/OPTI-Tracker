@@ -1,21 +1,23 @@
 <?php
 
 /**
- * Controller untuk mengelola Dokumen PO, State Machine Status, dan Histori Log
+ * Controller untuk mengelola Dokumen PO, State Machine Status, Map Kendali, dan Histori Log
  */
 class PoController extends Controller {
 
     /**
-     * Menampilkan daftar semua PO dengan filter (Bulan, Tahun, Status)
+     * Menampilkan daftar semua PO dengan filter (Bulan, Tahun, Status, Jenis Layanan, Search)
      * Route: GET /po
      */
     public function index($f3) {
         $filterBulan  = $f3->get('GET.bulan') ?? '';
         $filterTahun  = $f3->get('GET.tahun') ?? '';
         $filterStatus = $f3->get('GET.status') ?? '';
+        $filterJenisLayanan = $f3->get('GET.jenis_layanan') ?? '';
+        $search       = $f3->get('GET.q') ?? '';
 
         $poModel = new Po($this->db);
-        $daftarPo = $poModel->allWithRelasi($filterBulan, $filterTahun, $filterStatus);
+        $daftarPo = $poModel->allWithRelasi($filterBulan, $filterTahun, $filterStatus, $filterJenisLayanan, $search);
 
         // Siapkan opsi dropdown filter
         $listBulan = array(
@@ -26,11 +28,10 @@ class PoController extends Controller {
         );
 
         $listStatus = array(
-            'proposal'   => '1. Proposal',
-            'kontrak'    => '2. Kontrak',
-            'po_terbit'  => '3. PO Terbit',
-            'distribusi' => '4. Distribusi',
-            'selesai'    => '5. Selesai'
+            'belum_upload'   => '1. Belum Upload Dokumen sudah Diterima',
+            'sudah_upload'   => '2. Sudah Upload Dokumen belum Diterima',
+            'on_proses'      => '3. On Proses',
+            'kembali_selesai'=> '4. PO sudah kembali-selesai'
         );
 
         $f3->set('daftar_po', $daftarPo);
@@ -39,12 +40,14 @@ class PoController extends Controller {
         $f3->set('filter_bulan', $filterBulan);
         $f3->set('filter_tahun', $filterTahun);
         $f3->set('filter_status', $filterStatus);
+        $f3->set('filter_jenis_layanan', $filterJenisLayanan);
+        $f3->set('search_q', $search);
 
-        $this->render('po/index.htm', 'Daftar PO & Dashboard - Mini OPTI Tracker', 'po');
+        $this->render('po/index.htm', 'Daftar PO & Dashboard - OPTI Tracker', 'po');
     }
 
     /**
-     * Menampilkan detail PO, progress bar alur status, dan riwayat audit trail log
+     * Menampilkan detail PO, progress bar alur status, Map Kendali, dan riwayat audit trail log
      * Route: GET /po/@id
      */
     public function detail($f3, $params) {
@@ -71,7 +74,7 @@ class PoController extends Controller {
         $f3->set('next_status', $nextStatus);
         $f3->set('next_status_label', $nextStatusLabel);
 
-        $this->render('po/detail.htm', 'Detail Dokumen PO ' . $po['nomor_po'] . ' - Mini OPTI Tracker', 'po');
+        $this->render('po/detail.htm', 'Detail Dokumen PO ' . $po['nomor_po'] . ' - OPTI Tracker', 'po');
     }
 
     /**
@@ -83,16 +86,24 @@ class PoController extends Controller {
         $post = $f3->get('POST');
 
         $catatan          = trim($post['catatan'] ?? '');
-        $biaya            = $post['biaya'] ?? null;
-        $tanggalTarget    = $post['tanggal_target'] ?? null;
-        $tanggalRealisasi = $post['tanggal_realisasi'] ?? null;
+        $biaya            = $post['biaya'] !== '' ? (float)$post['biaya'] : null;
+        $timKerja         = trim($post['tim_kerja'] ?? '');
+        $tanggalKeluar    = !empty($post['tanggal_keluar']) ? $post['tanggal_keluar'] : null;
+        $tanggalKembali   = !empty($post['tanggal_kembali']) ? $post['tanggal_kembali'] : null;
+        $targetMulai      = !empty($post['target_mulai']) ? $post['target_mulai'] : null;
+        $targetSelesai    = !empty($post['target_selesai']) ? $post['target_selesai'] : null;
+        $realisasiSelesai = !empty($post['realisasi_selesai']) ? $post['realisasi_selesai'] : null;
 
         try {
             $poModel = new Po($this->db);
             $statusBaru = $poModel->majuStatus($id, $catatan, array(
                 'biaya'             => $biaya,
-                'tanggal_target'    => $tanggalTarget,
-                'tanggal_realisasi' => $tanggalRealisasi
+                'tim_kerja'         => $timKerja,
+                'tanggal_keluar'    => $tanggalKeluar,
+                'tanggal_kembali'   => $tanggalKembali,
+                'target_mulai'      => $targetMulai,
+                'target_selesai'    => $targetSelesai,
+                'realisasi_selesai' => $realisasiSelesai
             ));
 
             $labelBaru = Po::getStatusLabel($statusBaru);
@@ -102,5 +113,97 @@ class PoController extends Controller {
             $this->setFlashError('Gagal memajukan status PO: ' . $e->getMessage());
             $f3->reroute("/po/{$id}");
         }
+    }
+
+    /**
+     * Verifikasi & Validasi Map Kendali PO oleh Pejabat
+     * Route: POST /po/@id/approve-map/@stage
+     */
+    public function approveMap($f3, $params) {
+        $id = (int)($params['id'] ?? 0);
+        $stage = trim($params['stage'] ?? '');
+
+        try {
+            $poModel = new Po($this->db);
+            $poModel->approveMapKendali($id, $stage);
+
+            $this->setFlashSuccess("Persetujuan Map Kendali tahap <strong>" . strtoupper($stage) . "</strong> berhasil disimpan.");
+            $f3->reroute("/po/{$id}");
+        } catch (\Exception $e) {
+            $this->setFlashError('Gagal memproses persetujuan Map Kendali: ' . $e->getMessage());
+            $f3->reroute("/po/{$id}");
+        }
+    }
+
+    /**
+     * Ekspor Data Rekap PO ke Excel/CSV
+     * Route: GET /po/ekspor
+     */
+    public function ekspor($f3) {
+        $filterBulan  = $f3->get('GET.bulan') ?? '';
+        $filterTahun  = $f3->get('GET.tahun') ?? '';
+        $filterStatus = $f3->get('GET.status') ?? '';
+        $filterJenisLayanan = $f3->get('GET.jenis_layanan') ?? '';
+        $search       = $f3->get('GET.q') ?? '';
+
+        $poModel = new Po($this->db);
+        $daftarPo = $poModel->allWithRelasi($filterBulan, $filterTahun, $filterStatus, $filterJenisLayanan, $search);
+
+        // Header CSV
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename=Rekap_PO_OPTI_' . date('Ymd_His') . '.csv');
+
+        $output = fopen('php://output', 'w');
+        
+        // BOM untuk kompatibilitas MS Excel UTF-8
+        fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
+
+        // Header Kolom rekap
+        fputcsv($output, array(
+            'No',
+            'Tanggal Masuk',
+            'Nomor PO',
+            'Judul Kegiatan',
+            'Pengguna Layanan Jasa (Klien)',
+            'Tim',
+            'Jumlah Pekerjaan/Alat',
+            'Biaya',
+            'Status Pembayaran',
+            'Revisi',
+            'Target Pelaksanaan',
+            'Realisasi',
+            'Tgl Kembali PO/Selesai'
+        ), ';');
+
+        $no = 1;
+        foreach ($daftarPo as $po) {
+            // Tentukan status pembayaran (jika PO selesai, diasumsikan pembayaran tuntas)
+            $statusBayar = ($po['status'] === 'kembali_selesai') ? 'Lunas' : 'Proses';
+
+            // Target Pelaksanaan Format
+            $target = '-';
+            if ($po['target_mulai'] && $po['target_selesai']) {
+                $target = date('d/m/Y', strtotime($po['target_mulai'])) . ' - ' . date('d/m/Y', strtotime($po['target_selesai']));
+            }
+
+            fputcsv($output, array(
+                $no++,
+                $po['tanggal_masuk'] ? date('d/m/Y', strtotime($po['tanggal_masuk'])) : '-',
+                $po['nomor_po'],
+                $po['judul_kegiatan'],
+                $po['nama_perusahaan'],
+                $po['tim_kerja'] ?: '-',
+                $po['jumlah_pekerjaan'] ?: '-',
+                number_format($po['biaya'], 0, ',', '.'),
+                $statusBayar,
+                $po['tanggal_kembali'] ? date('d/m/Y', strtotime($po['tanggal_kembali'])) : '-',
+                $target,
+                $po['realisasi_selesai'] ? date('d/m/Y', strtotime($po['realisasi_selesai'])) : '-',
+                $po['tanggal_kembali'] ? date('d/m/Y', strtotime($po['tanggal_kembali'])) : ($po['realisasi_selesai'] ? date('d/m/Y', strtotime($po['realisasi_selesai'])) : '-')
+            ), ';');
+        }
+
+        fclose($output);
+        exit;
     }
 }

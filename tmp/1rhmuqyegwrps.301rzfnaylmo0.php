@@ -1,0 +1,189 @@
+<!-- Custom Style khusus untuk Responsivitas Tabel Kontrak di Mobile -->
+<style>
+    @media (max-width: 767.98px) {
+        .table-responsive {
+            border: none !important;
+            overflow-x: visible !important;
+        }
+        table, thead, tbody, th, td, tr {
+            display: block !important;
+            width: 100% !important;
+        }
+        thead {
+            display: none !important;
+        }
+        tr {
+            background-color: #ffffff !important;
+            border: 1px solid var(--color-border) !important;
+            border-radius: 12px !important;
+            padding: 16px !important;
+            margin-bottom: 16px !important;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02) !important;
+        }
+        td {
+            text-align: left !important;
+            padding: 10px 0 !important;
+            border: none !important;
+            border-bottom: 1px dashed rgba(0, 0, 0, 0.06) !important;
+            position: relative;
+            padding-left: 45% !important;
+            font-size: 0.875rem !important;
+            max-width: none !important;
+        }
+        td:last-child {
+            border-bottom: none !important;
+            padding-bottom: 0 !important;
+        }
+        td::before {
+            content: attr(data-label);
+            position: absolute;
+            left: 0;
+            width: 40%;
+            font-weight: 700;
+            font-size: 0.725rem;
+            text-transform: uppercase;
+            color: var(--color-muted);
+            letter-spacing: 0.5px;
+            top: 50%;
+            transform: translateY(-50%);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        td[data-label="No"] {
+            padding-left: 0 !important;
+            font-weight: 700;
+            color: var(--color-primary) !important;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+            padding-bottom: 10px !important;
+            margin-bottom: 6px !important;
+            font-size: 1rem !important;
+        }
+        td[data-label="No"]::before {
+            display: none !important;
+        }
+        td[data-label="No"]::after {
+            content: "Kontrak PKS";
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--color-text-dark);
+            margin-left: 8px;
+        }
+    }
+
+    /* Desktop Table Styling Kustom Premium */
+    @media (min-width: 768px) {
+        .table {
+            border-collapse: separate !important;
+            border-spacing: 0 !important;
+        }
+        .table thead th {
+            background-color: #f8fafc !important;
+            color: var(--color-text-dark) !important;
+            font-weight: 600 !important;
+            font-size: 0.8rem !important;
+            letter-spacing: 0.8px !important;
+            text-transform: uppercase !important;
+            border-top: 1px solid var(--color-border) !important;
+            border-bottom: 2px solid var(--color-primary) !important;
+            padding: 16px 20px !important;
+        }
+        .table tbody td {
+            padding: 16px 20px !important;
+            border-bottom: 1px solid var(--color-border) !important;
+            font-size: 0.9rem !important;
+            color: var(--color-text) !important;
+        }
+        .table-hover tbody tr:hover {
+            background-color: rgba(164, 30, 34, 0.02) !important;
+        }
+    }
+</style>
+
+<div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 mb-4">
+    <div>
+        <h3 class="fw-bold mb-1"><i class="bi bi-journal-text me-2 text-primary"></i>Daftar Kontrak PKS</h3>
+        <p class="text-muted mb-0">Kelola dan catat Perjanjian Kerja Sama (PKS) antara Klien dengan BBSPJI Selulosa.</p>
+    </div>
+    <?php if ($SESSION['role'] == 'admin_kontrak' || $SESSION['role'] == 'superadmin'): ?>
+        <div class="align-self-end align-self-sm-center">
+            <a href="<?= ($BASE) ?>/kontrak/tambah" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-1"></i>Tambah Kontrak PKS
+            </a>
+        </div>
+    <?php endif; ?>
+</div>
+
+<div class="card shadow-sm" data-aos="fade-up">
+    <div class="card-body p-0">
+        <?php if (count($daftar_kontrak) > 0): ?>
+            
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px;" class="text-center">No</th>
+                                <th>No Kontrak (PKS)</th>
+                                <th>Petunjuk Operasional (PO)</th>
+                                <th>Klien & Judul Kegiatan</th>
+                                <th>Nilai Kontrak</th>
+                                <th>Masa Berlaku</th>
+                                <th>Status TTD</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php $ctr=0; foreach (($daftar_kontrak?:[]) as $kontrak): $ctr++; ?>
+                                <tr>
+                                    <td class="text-center text-muted small" data-label="No"><?= ($ctr) ?></td>
+                                    <td data-label="No Kontrak (PKS)">
+                                        <div class="fw-bold text-dark" style="font-size: 0.85rem;">BBSPJI: <?= ($kontrak['nomor_pks_bbspjis']) ?></div>
+                                        <div class="small text-secondary" style="font-size: 0.8rem;">Klien: <?= ($kontrak['nomor_pks_klien']) ?></div>
+                                    </td>
+                                    <td data-label="Petunjuk Operasional (PO)">
+                                        <a href="<?= ($BASE) ?>/po/<?= ($kontrak['po_id']) ?>" class="btn btn-sm btn-outline-primary py-0.5 px-2">
+                                            <i class="bi bi-file-earmark-text me-1"></i><?= ($kontrak['nomor_po'])."
+" ?>
+                                        </a>
+                                    </td>
+                                    <td data-label="Klien & Judul Kegiatan">
+                                        <div class="fw-bold text-dark"><?= ($kontrak['nama_perusahaan']) ?></div>
+                                        <div class="small text-secondary text-truncate" style="max-width: 250px;" title="<?= ($kontrak['judul_kegiatan']) ?>"><?= ($kontrak['judul_kegiatan']) ?></div>
+                                    </td>
+                                    <td data-label="Nilai Kontrak">
+                                        <span class="fw-bold text-success">Rp <?= (number_format($kontrak['nilai_kontrak'], 0, ',', '.')) ?></span>
+                                    </td>
+                                    <td data-label="Masa Berlaku" class="small text-secondary">
+                                        <?= (date('d/m/Y', strtotime($kontrak['target_mulai']))) ?> s/d <?= (date('d/m/Y', strtotime($kontrak['target_selesai'])))."
+" ?>
+                                    </td>
+                                    <td data-label="Status TTD">
+                                        <?php if ($kontrak['status_ttd'] == 'sudah'): ?>
+                                            
+                                                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20"><i class="bi bi-check-circle-fill me-1"></i>Tuntas TTD</span>
+                                            
+                                            <?php else: ?>
+                                                <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-20 text-dark"><i class="bi bi-hourglass-split me-1"></i>Belum TTD</span>
+                                            
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            
+            <?php else: ?>
+                <div class="text-center py-5">
+                    <i class="bi bi-journal-x text-muted display-4 d-block mb-3"></i>
+                    <h5 class="text-muted">Belum ada Kontrak PKS terdaftar</h5>
+                    <p class="text-secondary small mb-3">Hubungkan dokumen Petunjuk Operasional (PO) dengan nomor PKS resmi di sini.</p>
+                    <?php if ($SESSION['role'] == 'admin_kontrak' || $SESSION['role'] == 'superadmin'): ?>
+                        <a href="<?= ($BASE) ?>/kontrak/tambah" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-plus-lg me-1"></i>Tambah Kontrak PKS
+                        </a>
+                    <?php endif; ?>
+                </div>
+            
+        <?php endif; ?>
+    </div>
+</div>

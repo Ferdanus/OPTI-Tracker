@@ -108,8 +108,17 @@ $f3->route('POST /order/@id/tolak', 'OrderController->tolak');
 // ROUTE MODUL PO (DASHBOARD & STATE MACHINE)
 // ==========================================
 $f3->route('GET  /po', 'PoController->index');
+$f3->route('GET  /po/ekspor', 'PoController->ekspor');
 $f3->route('GET  /po/@id', 'PoController->detail');
 $f3->route('POST /po/@id/lanjut-status', 'PoController->lanjutStatus');
+$f3->route('POST /po/@id/approve-map/@stage', 'PoController->approveMap');
+
+// ==========================================
+// ROUTE MODUL KONTRAK PKS [NEW]
+// ==========================================
+$f3->route('GET  /kontrak', 'KontrakController->index');
+$f3->route('GET  /kontrak/tambah', 'KontrakController->tambah');
+$f3->route('POST /kontrak/simpan', 'KontrakController->simpan');
 
 // Run application
 $f3->run();

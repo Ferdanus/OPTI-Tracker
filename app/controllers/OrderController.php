@@ -43,14 +43,24 @@ class OrderController extends Controller {
     public function simpan($f3) {
         $post = $f3->get('POST');
 
-        $klienId       = (int)($post['klien_id'] ?? 0);
-        $judulKegiatan = trim($post['judul_kegiatan'] ?? '');
-        $deskripsi     = trim($post['deskripsi'] ?? '');
-        $tanggalMasuk  = trim($post['tanggal_masuk'] ?? '');
+        $klienId         = (int)($post['klien_id'] ?? 0);
+        $nomorOrder      = trim($post['nomor_order'] ?? '');
+        $tanggalMasuk    = trim($post['tanggal_masuk'] ?? '');
+        $judulKegiatan   = trim($post['judul_kegiatan'] ?? '');
+        $jenisLayanan    = trim($post['jenis_layanan'] ?? '');
+        $jumlahPekerjaan = trim($post['jumlah_pekerjaan'] ?? '');
+        $estimasiBiaya   = (float)($post['estimasi_biaya'] ?? 0);
+        $deskripsi       = trim($post['deskripsi'] ?? '');
 
         // Validasi dasar
-        if ($klienId <= 0 || empty($judulKegiatan) || empty($tanggalMasuk)) {
-            $this->setFlashError('Klien, Judul Kegiatan, dan Tanggal Masuk wajib diisi!');
+        if ($klienId <= 0 || empty($tanggalMasuk) || empty($judulKegiatan) || empty($jenisLayanan) || empty($jumlahPekerjaan)) {
+            $this->setFlashError('Semua isian bertanda bintang (*) wajib diisi!');
+            $f3->reroute('/order/tambah');
+            return;
+        }
+
+        if (!in_array($jenisLayanan, array('selulosa', 'lingkungan'))) {
+            $this->setFlashError('Jenis layanan tidak valid!');
             $f3->reroute('/order/tambah');
             return;
         }
@@ -58,10 +68,14 @@ class OrderController extends Controller {
         try {
             $orderModel = new OrderLayanan($this->db);
             $orderModel->simpanBaru(array(
-                'klien_id'       => $klienId,
-                'judul_kegiatan' => $judulKegiatan,
-                'deskripsi'      => $deskripsi,
-                'tanggal_masuk'  => $tanggalMasuk
+                'klien_id'         => $klienId,
+                'nomor_order'      => $nomorOrder,
+                'tanggal_masuk'    => $tanggalMasuk,
+                'judul_kegiatan'   => $judulKegiatan,
+                'jenis_layanan'    => $jenisLayanan,
+                'jumlah_pekerjaan' => $jumlahPekerjaan,
+                'estimasi_biaya'   => $estimasiBiaya,
+                'deskripsi'        => $deskripsi
             ));
 
             $this->setFlashSuccess('Order Layanan baru berhasil dibuat dengan status "baru".');

@@ -92,5 +92,44 @@ class Controller {
                 return;
             }
         }
+
+        // 4. Role-Based Access Control (RBAC)
+        if (isset($_SESSION['user_id'])) {
+            $userRole = $_SESSION['role'] ?? 'tim_kerja';
+            
+            if ($userRole === 'superadmin') {
+                return;
+            }
+            
+            // Proteksi rute Klien: Semua boleh lihat, tapi tambah/simpan hanya boleh diakses oleh admin_order atau admin_kontrak (atau jadikan admin_order saja)
+            if (($path === '/klien/tambah' || $path === '/klien/simpan') && $userRole !== 'admin_order') {
+                $f3->error(403, 'Akses Ditolak: Hanya Petugas Order yang dapat menambahkan Klien.');
+                return;
+            }
+
+            // Proteksi rute Order: Tambah/Simpan hanya untuk admin_order
+            if (($path === '/order/tambah' || $path === '/order/simpan') && $userRole !== 'admin_order') {
+                $f3->error(403, 'Akses Ditolak: Hanya Petugas Order yang dapat mendaftarkan Order Layanan baru.');
+                return;
+            }
+            
+            // Proteksi rute Approve/Tolak Order atau Map Kendali PO hanya untuk pejabat
+            if ((strpos($path, '/approve') !== false || strpos($path, '/tolak') !== false) && $userRole !== 'pejabat') {
+                $f3->error(403, 'Akses Ditolak: Hanya Pejabat Berwenang yang dapat memberikan persetujuan (approval).');
+                return;
+            }
+            
+            // Proteksi rute Kontrak PKS: Semua boleh lihat, tapi tambah/simpan hanya untuk admin_kontrak
+            if (strpos($path, '/kontrak') === 0 && ($path === '/kontrak/tambah' || $path === '/kontrak/simpan') && $userRole !== 'admin_kontrak') {
+                $f3->error(403, 'Akses Ditolak: Hanya Admin Kontrak yang dapat menginput Kontrak PKS.');
+                return;
+            }
+            
+            // Proteksi rute Lanjut Status PO: Hanya untuk ketua_tim
+            if (strpos($path, '/lanjut-status') !== false && $userRole !== 'ketua_tim') {
+                $f3->error(403, 'Akses Ditolak: Hanya Ketua Tim OPTI yang dapat merubah/melanjutkan status pekerjaan PO.');
+                return;
+            }
+        }
     }
 }

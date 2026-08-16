@@ -34,6 +34,7 @@
             position: relative;
             padding-left: 45% !important; /* Menyediakan ruang untuk label kolom di kiri */
             font-size: 0.875rem !important;
+            max-width: none !important;
         }
         td:last-child {
             border-bottom: none !important;
@@ -112,6 +113,34 @@
             font-size: 0.85rem !important;
         }
     }
+
+    /* Desktop Table Styling Kustom Premium */
+    @media (min-width: 768px) {
+        .table {
+            border-collapse: separate !important;
+            border-spacing: 0 !important;
+        }
+        .table thead th {
+            background-color: #f8fafc !important;
+            color: var(--color-text-dark) !important;
+            font-weight: 600 !important;
+            font-size: 0.8rem !important;
+            letter-spacing: 0.8px !important;
+            text-transform: uppercase !important;
+            border-top: 1px solid var(--color-border) !important;
+            border-bottom: 2px solid var(--color-primary) !important;
+            padding: 16px 20px !important;
+        }
+        .table tbody td {
+            padding: 16px 20px !important;
+            border-bottom: 1px solid var(--color-border) !important;
+            font-size: 0.9rem !important;
+            color: var(--color-text) !important;
+        }
+        .table-hover tbody tr:hover {
+            background-color: rgba(164, 30, 34, 0.02) !important;
+        }
+    }
 </style>
 
 <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 mb-4" data-aos="fade-up">
@@ -119,11 +148,13 @@
         <h3 class="fw-bold mb-1"><i class="bi bi-inbox me-2 text-primary"></i>Daftar Order Layanan</h3>
         <p class="text-muted mb-0">Kelola permintaan layanan masuk dari klien dan lakukan persetujuan (approval) untuk menerbitkan PO.</p>
     </div>
-    <div class="align-self-end align-self-sm-center">
-        <a href="{{ @BASE }}/order/tambah" class="btn btn-primary">
-            <i class="bi bi-plus-lg me-1"></i>Tambah Order Layanan
-        </a>
-    </div>
+    <check if="{{ @SESSION.role == 'admin_order' || @SESSION.role == 'superadmin' }}">
+        <div class="align-self-end align-self-sm-center">
+            <a href="{{ @BASE }}/order/tambah" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-1"></i>Tambah Order Layanan
+            </a>
+        </div>
+    </check>
 </div>
 
 <div class="card shadow-sm" data-aos="fade-up">
@@ -135,32 +166,44 @@
                         <thead>
                             <tr>
                                 <th style="width: 50px;" class="text-center">No</th>
-                                <th>Tanggal</th>
-                                <th>Klien</th>
+                                <th>Info Order</th>
+                                <th>Klien & Layanan</th>
                                 <th>Judul Kegiatan</th>
                                 <th>Status Order</th>
                                 <th>Dokumen PO Terkait</th>
-                                <th class="text-center" style="width: 200px;">Aksi</th>
+                                <th class="text-center" style="width: 180px;">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
                             <repeat group="{{ @daftar_order }}" value="{{ @order }}" counter="{{ @ctr }}">
                                 <tr>
                                     <td class="text-center text-muted small" data-label="No">{{ @ctr }}</td>
-                                    <td class="small text-secondary" data-label="Tanggal">
-                                        <i class="bi bi-calendar-event me-1"></i>
-                                        {{ date('d/m/Y', strtotime(@order.tanggal_masuk)) }}
+                                    <td data-label="Info Order">
+                                        <div class="fw-bold text-primary">{{ @order.nomor_order }}</div>
+                                        <div class="small text-secondary">
+                                            <i class="bi bi-calendar-event me-1"></i>
+                                            {{ date('d/m/Y', strtotime(@order.tanggal_masuk)) }}
+                                        </div>
                                     </td>
-                                    <td data-label="Klien">
+                                    <td data-label="Klien & Layanan">
                                         <div class="fw-bold text-dark">{{ @order.nama_perusahaan }}</div>
-                                        <check if="{{ @order.pic }}">
-                                            <div class="small text-muted"><i class="bi bi-person me-1"></i>{{ @order.pic }}</div>
-                                        </check>
+                                        <div class="my-1">
+                                            <check if="{{ @order.jenis_layanan == 'selulosa' }}">
+                                                <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-20"><i class="bi bi-tag-fill me-1"></i>OPTI Selulosa</span>
+                                            </check>
+                                            <check if="{{ @order.jenis_layanan == 'lingkungan' }}">
+                                                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20"><i class="bi bi-tag-fill me-1"></i>OPTI Lingkungan</span>
+                                            </check>
+                                        </div>
+                                        <div class="small text-secondary">
+                                            <strong>Biaya:</strong> Rp {{ number_format(@order.estimasi_biaya, 0, ',', '.') }}<br>
+                                            <strong>Pek:</strong> {{ @order.jumlah_pekerjaan }}
+                                        </div>
                                     </td>
                                     <td data-label="Judul Kegiatan">
                                         <div class="fw-semibold text-dark">{{ @order.judul_kegiatan }}</div>
                                         <check if="{{ @order.deskripsi }}">
-                                            <div class="small text-secondary text-truncate" style="max-width: 300px;" title="{{ @order.deskripsi }}">{{ @order.deskripsi }}</div>
+                                            <div class="small text-secondary text-truncate" style="max-width: 250px;" title="{{ @order.deskripsi }}">{{ @order.deskripsi }}</div>
                                         </check>
                                     </td>
                                     <td data-label="Status Order">
@@ -189,22 +232,29 @@
                                     <td class="text-center" data-label="Aksi">
                                         <check if="{{ @order.status == 'baru' }}">
                                             <true>
-                                                <div class="d-flex justify-content-center gap-1">
-                                                    <!-- Form Approve -->
-                                                    <form action="{{ @BASE }}/order/{{ @order.id }}/approve" method="POST" onsubmit="return confirm('Setujui Order ini dan terbitkan dokumen PO otomatis?');">
-                                                        <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
-                                                        <button type="submit" class="btn btn-sm btn-success" title="Setujui dan Auto-Generate PO">
-                                                            <i class="bi bi-check-lg me-1"></i>Approve
-                                                        </button>
-                                                    </form>
-                                                    <!-- Form Tolak -->
-                                                    <form action="{{ @BASE }}/order/{{ @order.id }}/tolak" method="POST" onsubmit="return confirm('Tolak Order ini?');">
-                                                        <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
-                                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Tolak Order">
-                                                            <i class="bi bi-x-lg"></i>
-                                                        </button>
-                                                    </form>
-                                                </div>
+                                                <check if="{{ @SESSION.role == 'pejabat' || @SESSION.role == 'superadmin' }}">
+                                                    <true>
+                                                        <div class="d-flex justify-content-center gap-1">
+                                                            <!-- Form Approve -->
+                                                            <form action="{{ @BASE }}/order/{{ @order.id }}/approve" method="POST" onsubmit="return confirm('Setujui Order ini dan terbitkan dokumen PO otomatis?');">
+                                                                <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
+                                                                <button type="submit" class="btn btn-sm btn-success" title="Setujui dan Auto-Generate PO">
+                                                                    <i class="bi bi-check-lg me-1"></i>Approve
+                                                                </button>
+                                                            </form>
+                                                            <!-- Form Tolak -->
+                                                            <form action="{{ @BASE }}/order/{{ @order.id }}/tolak" method="POST" onsubmit="return confirm('Tolak Order ini?');">
+                                                                <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
+                                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Tolak Order">
+                                                                    <i class="bi bi-x-lg"></i>
+                                                                </button>
+                                                            </form>
+                                                        </div>
+                                                    </true>
+                                                    <false>
+                                                        <span class="badge bg-light text-muted border"><i class="bi bi-hourglass-split me-1"></i>Menunggu Verifikasi</span>
+                                                    </false>
+                                                </check>
                                             </true>
                                             <false>
                                                 <span class="badge bg-light text-secondary border">Selesai Diproses</span>
@@ -221,10 +271,12 @@
                 <div class="text-center py-5">
                     <i class="bi bi-inbox text-muted display-4 d-block mb-3"></i>
                     <h5 class="text-muted">Belum ada Order Layanan</h5>
-                    <p class="text-secondary small mb-3">Tambahkan order layanan masuk untuk memulai alur pekerjaan.</p>
-                    <a href="{{ @BASE }}/order/tambah" class="btn btn-sm btn-outline-primary">
-                        <i class="bi bi-plus-lg me-1"></i>Buat Order Layanan
-                    </a>
+                    <p class="text-secondary small mb-3">Mulai dengan menambahkan data order layanan baru.</p>
+                    <check if="{{ @SESSION.role == 'admin_order' }}">
+                        <a href="{{ @BASE }}/order/tambah" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-plus-lg me-1"></i>Buat Order Layanan
+                        </a>
+                    </check>
                 </div>
             </false>
         </check>

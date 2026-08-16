@@ -37,16 +37,34 @@ class OrderLayanan extends \DB\SQL\Mapper {
     }
 
     /**
+     * Generator Nomor Order otomatis format ORD-YYYYMM-XXX
+     */
+    public function generateNomorOrder() {
+        $prefix = 'ORD-' . date('Ym');
+        $hasil = $this->db->exec(
+            "SELECT COUNT(*) AS total FROM order_layanan WHERE nomor_order LIKE ?",
+            array(1 => $prefix . '%')
+        );
+        $total = (int)($hasil[0]['total'] ?? 0);
+        $seq = sprintf('%03d', $total + 1);
+        return $prefix . '-' . $seq;
+    }
+
+    /**
      * Simpan order layanan baru dengan status default 'baru'
      */
     public function simpanBaru(array $data) {
         $this->reset();
-        $this->klien_id       = (int)$data['klien_id'];
-        $this->judul_kegiatan = trim($data['judul_kegiatan']);
-        $this->deskripsi      = trim($data['deskripsi'] ?? '');
-        $this->tanggal_masuk  = $data['tanggal_masuk'];
-        $this->status         = 'baru';
-        $this->created_at     = date('Y-m-d H:i:s');
+        $this->klien_id         = (int)$data['klien_id'];
+        $this->nomor_order      = trim($data['nomor_order'] ?? '') ?: $this->generateNomorOrder();
+        $this->tanggal_masuk    = $data['tanggal_masuk'];
+        $this->judul_kegiatan   = trim($data['judul_kegiatan']);
+        $this->jenis_layanan    = $data['jenis_layanan']; // 'selulosa' / 'lingkungan'
+        $this->jumlah_pekerjaan = trim($data['jumlah_pekerjaan']);
+        $this->estimasi_biaya   = (float)($data['estimasi_biaya'] ?? 0);
+        $this->deskripsi        = trim($data['deskripsi'] ?? '');
+        $this->status           = 'baru';
+        $this->created_at       = date('Y-m-d H:i:s');
         $this->save();
         return $this->id;
     }
@@ -71,7 +89,9 @@ class OrderLayanan extends \DB\SQL\Mapper {
 
         // 2. Buat PO otomatis melalui model Po
         $poModel = new Po($this->db);
-        $poId = $poModel->buatDariOrder($this->id, $biaya);
+        // Gunakan estimasi_biaya dari order ini jika biaya bernilai 0
+        $biayaAwal = $biaya ?: $this->estimasi_biaya;
+        $poId = $poModel->buatDariOrder($this->id, $biayaAwal);
 
         return array(
             'order_id' => $this->id,

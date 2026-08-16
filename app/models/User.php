@@ -88,6 +88,8 @@ class User extends \DB\SQL\Mapper {
                     'id' => $user->id,
                     'username' => $user->username,
                     'nama_lengkap' => $user->nama_lengkap,
+                    'role' => $user->role,
+                    'jenis_layanan' => $user->jenis_layanan,
                     'foto_profil' => $user->foto_profil
                 )
             );

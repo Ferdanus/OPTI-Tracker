@@ -57,6 +57,8 @@ class AuthController extends Controller {
                 $_SESSION['user_id']      = $result['user']['id'];
                 $_SESSION['username']     = $result['user']['username'];
                 $_SESSION['nama_lengkap'] = $result['user']['nama_lengkap'];
+                $_SESSION['role']         = $result['user']['role'];
+                $_SESSION['jenis_layanan']= $result['user']['jenis_layanan'];
                 $_SESSION['foto_profil']  = $result['user']['foto_profil'] ?? null;
                 $_SESSION['last_activity'] = time();
 

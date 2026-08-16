@@ -596,6 +596,11 @@
                             </a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link <?= ($active_menu == 'kontrak' ? 'active' : '') ?>" href="<?= ($BASE) ?>/kontrak">
+                                Kontrak PKS
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link <?= ($active_menu == 'order' ? 'active' : '') ?>" href="<?= ($BASE) ?>/order">
                                 Order Layanan
                             </a>
@@ -623,7 +628,14 @@
                             <?php endif; ?>
                             <div class="d-none d-md-block text-start" style="line-height: 1.2;">
                                 <div class="nav-user-name fw-semibold text-dark" style="font-size: 0.875rem;"><?= (htmlspecialchars($SESSION['nama_lengkap'])) ?></div>
-                                <div class="nav-user-role text-muted" style="font-size: 0.725rem;">Administrator</div>
+                                <div class="nav-user-role text-muted" style="font-size: 0.725rem;">
+                                    <?php if ($SESSION['role'] == 'superadmin'): ?>Super Admin<?php endif; ?>
+                                    <?php if ($SESSION['role'] == 'admin_order'): ?>Petugas Order<?php endif; ?>
+                                    <?php if ($SESSION['role'] == 'ketua_tim'): ?>Ketua Tim <?= ($SESSION['jenis_layanan'] == 'selulosa' ? 'Selulosa' : 'Lingkungan') ?><?php endif; ?>
+                                    <?php if ($SESSION['role'] == 'pejabat'): ?>Pejabat Verifikator<?php endif; ?>
+                                    <?php if ($SESSION['role'] == 'tim_kerja'): ?>Tim Kerja OPTI<?php endif; ?>
+                                    <?php if ($SESSION['role'] == 'admin_kontrak'): ?>Admin Kontrak PKS<?php endif; ?>
+                                </div>
                             </div>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 mt-2 py-0" aria-labelledby="userMenuDropdown" style="min-width: 220px; overflow: hidden; border: 1px solid rgba(0,0,0,0.08) !important;">
