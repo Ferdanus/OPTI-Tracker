@@ -148,19 +148,19 @@
         <h3 class="fw-bold mb-1"><i class="bi bi-inbox me-2 text-primary"></i>Daftar Order Layanan</h3>
         <p class="text-muted mb-0">Kelola permintaan layanan masuk dari klien dan lakukan persetujuan (approval) untuk menerbitkan PO.</p>
     </div>
-    <check if="{{ @SESSION.role == 'admin_order' || @SESSION.role == 'superadmin' }}">
+    <?php if ($SESSION['role'] == 'admin_order' || $SESSION['role'] == 'superadmin'): ?>
         <div class="align-self-end align-self-sm-center">
-            <a href="{{ @BASE }}/order/tambah" class="btn btn-primary">
+            <a href="<?= ($BASE) ?>/order/tambah" class="btn btn-primary">
                 <i class="bi bi-plus-lg me-1"></i>Tambah Order Layanan
             </a>
         </div>
-    </check>
+    <?php endif; ?>
 </div>
 
 <div class="card shadow-sm" data-aos="fade-up">
     <div class="card-body p-0">
-        <check if="{{ count(@daftar_order) > 0 }}">
-            <true>
+        <?php if (count($daftar_order) > 0): ?>
+            
                 <div class="table-responsive">
                     <table class="table table-striped table-hover align-middle mb-0">
                         <thead>
@@ -175,110 +175,113 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <repeat group="{{ @daftar_order }}" value="{{ @order }}" counter="{{ @ctr }}">
+                            <?php $ctr=0; foreach (($daftar_order?:[]) as $order): $ctr++; ?>
                                 <tr>
-                                    <td class="text-center text-muted small" data-label="No">{{ @ctr }}</td>
+                                    <td class="text-center text-muted small" data-label="No"><?= ($ctr) ?></td>
                                     <td data-label="Info Order">
-                                        <div class="fw-bold text-primary">{{ @order.nomor_order }}</div>
+                                        <div class="fw-bold text-primary"><?= ($order['nomor_order']) ?></div>
                                         <div class="small text-secondary">
                                             <i class="bi bi-calendar-event me-1"></i>
-                                            {{ date('d/m/Y', strtotime(@order.tanggal_masuk)) }}
+                                            <?= (date('d/m/Y', strtotime($order['tanggal_masuk'])))."
+" ?>
                                         </div>
                                     </td>
                                     <td data-label="Klien & Layanan">
-                                        <div class="fw-bold text-dark">{{ @order.nama_perusahaan }}</div>
+                                        <div class="fw-bold text-dark"><?= ($order['nama_perusahaan']) ?></div>
                                         <div class="my-1">
-                                            <check if="{{ @order.jenis_layanan == 'selulosa' }}">
-                                                <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-20"><i class="bi bi-tag-fill me-1"></i>OPTI Selulosa</span>
-                                            </check>
-                                            <check if="{{ @order.jenis_layanan == 'lingkungan' }}">
+                                            <?php if ($order['jenis_layanan'] == 'selulosa'): ?>
+                                                <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-20"><i class="bi bi-tag-fill me-1"></i>OPTI Selulosa dan Derivat</span>
+                                            <?php endif; ?>
+                                            <?php if ($order['jenis_layanan'] == 'lingkungan'): ?>
                                                 <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20"><i class="bi bi-tag-fill me-1"></i>OPTI Lingkungan</span>
-                                            </check>
+                                            <?php endif; ?>
                                         </div>
                                         <div class="small text-secondary">
-                                            <strong>Biaya:</strong> Rp {{ number_format(@order.estimasi_biaya, 0, ',', '.') }}<br>
-                                            <strong>Pek:</strong> {{ @order.jumlah_pekerjaan }}
+                                            <strong>Biaya:</strong> Rp <?= (number_format($order['estimasi_biaya'], 0, ',', '.')) ?><br>
+                                            <strong>Pek:</strong> <?= ($order['jumlah_pekerjaan'])."
+" ?>
                                         </div>
                                     </td>
                                     <td data-label="Judul Kegiatan">
-                                        <div class="fw-semibold text-dark">{{ @order.judul_kegiatan }}</div>
-                                        <check if="{{ @order.deskripsi }}">
-                                            <div class="small text-secondary text-truncate" style="max-width: 250px;" title="{{ @order.deskripsi }}">{{ @order.deskripsi }}</div>
-                                        </check>
+                                        <div class="fw-semibold text-dark"><?= ($order['judul_kegiatan']) ?></div>
+                                        <?php if ($order['deskripsi']): ?>
+                                            <div class="small text-secondary text-truncate" style="max-width: 250px;" title="<?= ($order['deskripsi']) ?>"><?= ($order['deskripsi']) ?></div>
+                                        <?php endif; ?>
                                     </td>
                                     <td data-label="Status Order">
-                                        <check if="{{ @order.status == 'baru' }}">
+                                        <?php if ($order['status'] == 'baru'): ?>
                                             <span class="badge bg-warning text-dark"><i class="bi bi-clock me-1"></i>Baru</span>
-                                        </check>
-                                        <check if="{{ @order.status == 'disetujui' }}">
+                                        <?php endif; ?>
+                                        <?php if ($order['status'] == 'disetujui'): ?>
                                             <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Disetujui</span>
-                                        </check>
-                                        <check if="{{ @order.status == 'ditolak' }}">
+                                        <?php endif; ?>
+                                        <?php if ($order['status'] == 'ditolak'): ?>
                                             <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Ditolak</span>
-                                        </check>
+                                        <?php endif; ?>
                                     </td>
                                     <td data-label="Dokumen PO">
-                                        <check if="{{ @order.po_id }}">
-                                            <true>
-                                                <a href="{{ @BASE }}/po/{{ @order.po_id }}" class="btn btn-sm btn-outline-primary py-0">
-                                                    <i class="bi bi-file-earmark-text me-1"></i>{{ @order.nomor_po }}
+                                        <?php if ($order['po_id']): ?>
+                                            
+                                                <a href="<?= ($BASE) ?>/po/<?= ($order['po_id']) ?>" class="btn btn-sm btn-outline-primary py-0">
+                                                    <i class="bi bi-file-earmark-text me-1"></i><?= ($order['nomor_po'])."
+" ?>
                                                 </a>
-                                            </true>
-                                            <false>
+                                            
+                                            <?php else: ?>
                                                 <span class="text-muted small"><em>Belum ada PO</em></span>
-                                            </false>
-                                        </check>
+                                            
+                                        <?php endif; ?>
                                     </td>
                                     <td class="text-center" data-label="Aksi">
-                                        <check if="{{ @order.status == 'baru' }}">
-                                            <true>
-                                                <check if="{{ @SESSION.role == 'pejabat' || @SESSION.role == 'superadmin' }}">
-                                                    <true>
+                                        <?php if ($order['status'] == 'baru'): ?>
+                                            
+                                                <?php if ($SESSION['role'] == 'pejabat' || $SESSION['role'] == 'superadmin'): ?>
+                                                    
                                                         <div class="d-flex justify-content-center gap-1">
                                                             <!-- Form Approve -->
-                                                            <form action="{{ @BASE }}/order/{{ @order.id }}/approve" method="POST" onsubmit="return confirm('Setujui Order ini dan terbitkan dokumen PO otomatis?');">
-                                                                <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
+                                                            <form action="<?= ($BASE) ?>/order/<?= ($order['id']) ?>/approve" method="POST" onsubmit="return confirm('Setujui Order ini dan terbitkan dokumen PO otomatis?');">
+                                                                <input type="hidden" name="csrf_token" value="<?= ($csrf_token) ?>">
                                                                 <button type="submit" class="btn btn-sm btn-success" title="Setujui dan Auto-Generate PO">
                                                                     <i class="bi bi-check-lg me-1"></i>Approve
                                                                 </button>
                                                             </form>
                                                             <!-- Form Tolak -->
-                                                            <form action="{{ @BASE }}/order/{{ @order.id }}/tolak" method="POST" onsubmit="return confirm('Tolak Order ini?');">
-                                                                <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
+                                                            <form action="<?= ($BASE) ?>/order/<?= ($order['id']) ?>/tolak" method="POST" onsubmit="return confirm('Tolak Order ini?');">
+                                                                <input type="hidden" name="csrf_token" value="<?= ($csrf_token) ?>">
                                                                 <button type="submit" class="btn btn-sm btn-outline-danger" title="Tolak Order">
                                                                     <i class="bi bi-x-lg"></i>
                                                                 </button>
                                                             </form>
                                                         </div>
-                                                    </true>
-                                                    <false>
+                                                    
+                                                    <?php else: ?>
                                                         <span class="badge bg-light text-muted border"><i class="bi bi-hourglass-split me-1"></i>Menunggu Verifikasi</span>
-                                                    </false>
-                                                </check>
-                                            </true>
-                                            <false>
+                                                    
+                                                <?php endif; ?>
+                                            
+                                            <?php else: ?>
                                                 <span class="badge bg-light text-secondary border">Selesai Diproses</span>
-                                            </false>
-                                        </check>
+                                            
+                                        <?php endif; ?>
                                     </td>
                                 </tr>
-                            </repeat>
+                            <?php endforeach; ?>
                         </tbody>
                     </table>
                 </div>
-            </true>
-            <false>
+            
+            <?php else: ?>
                 <div class="text-center py-5">
                     <i class="bi bi-inbox text-muted display-4 d-block mb-3"></i>
                     <h5 class="text-muted">Belum ada Order Layanan</h5>
                     <p class="text-secondary small mb-3">Mulai dengan menambahkan data order layanan baru.</p>
-                    <check if="{{ @SESSION.role == 'admin_order' }}">
-                        <a href="{{ @BASE }}/order/tambah" class="btn btn-sm btn-outline-primary">
+                    <?php if ($SESSION['role'] == 'admin_order'): ?>
+                        <a href="<?= ($BASE) ?>/order/tambah" class="btn btn-sm btn-outline-primary">
                             <i class="bi bi-plus-lg me-1"></i>Buat Order Layanan
                         </a>
-                    </check>
+                    <?php endif; ?>
                 </div>
-            </false>
-        </check>
+            
+        <?php endif; ?>
     </div>
 </div>

@@ -52,6 +52,7 @@ class KontrakPks extends \DB\SQL\Mapper {
         $this->target_selesai                = $data['target_selesai'];
         $this->nilai_kontrak                 = (float)($data['nilai_kontrak'] ?? 0);
         $this->ketentuan_pembayaran          = trim($data['ketentuan_pembayaran'] ?? '');
+        $this->nomor_va                      = trim($data['nomor_va'] ?? '');
         $this->tanggal_ttd                   = !empty($data['tanggal_ttd']) ? $data['tanggal_ttd'] : null;
         $this->status_ttd                    = $data['status_ttd'] ?? 'belum';
         $this->created_at                    = date('Y-m-d H:i:s');

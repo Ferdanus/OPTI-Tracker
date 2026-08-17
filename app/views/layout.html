@@ -616,10 +616,10 @@
                         <a class="nav-user-link d-flex align-items-center gap-2 text-decoration-none dropdown-toggle" href="#" role="button" id="userMenuDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                             <check if="{{ @SESSION.foto_profil && file_exists(@SESSION.foto_profil) }}">
                                 <true>
-                                    <img src="{{ @BASE }}/{{ @SESSION.foto_profil }}" class="rounded-circle" style="width: 32px; height: 32px; object-fit: cover; border: 1px solid rgba(164, 30, 34, 0.15);" alt="Foto Profil">
+                                    <img src="{{ @BASE }}/{{ @SESSION.foto_profil }}" class="rounded-circle flex-shrink-0" style="width: 32px; height: 32px; object-fit: cover; border: 1px solid rgba(164, 30, 34, 0.15);" alt="Foto Profil">
                                 </true>
                                 <false>
-                                    <div class="nav-avatar bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; font-size: 0.85rem; border: 1px solid rgba(164, 30, 34, 0.15);">
+                                    <div class="nav-avatar bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width: 32px; height: 32px; font-size: 0.85rem; border: 1px solid rgba(164, 30, 34, 0.15);">
                                         {~ $initials = implode('', array_map(function($w) { return strtoupper($w[0] ?? ''); }, explode(' ', $_SESSION['nama_lengkap']))) ~}
                                         {{ substr($initials, 0, 2) }}
                                     </div>
@@ -716,6 +716,18 @@
                                 </false>
                             </check>
                         </check>
+
+                        <check if="{{ preg_match('/^\/kontrak/', @PATH) }}">
+                            <check if="{{ @PATH == '/kontrak' }}">
+                                <true>
+                                    <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Daftar Kontrak PKS</li>
+                                </true>
+                                <false>
+                                    <li class="breadcrumb-item"><a href="{{ @BASE }}/kontrak" class="text-decoration-none">Daftar Kontrak PKS</a></li>
+                                    <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Tambah Kontrak PKS</li>
+                                </false>
+                            </check>
+                        </check>
                     </ol>
                 </nav>
             </div>
@@ -727,7 +739,7 @@
         <!-- Flash Message Notification -->
         <check if="{{ @SESSION.flash_success }}">
             <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <i class="bi bi-check-circle-fill me-2"></i>{{ @SESSION.flash_success }}
+                <i class="bi bi-check-circle-fill me-2"></i>{{ @SESSION.flash_success | raw }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
             {~ unset($_SESSION['flash_success']) ~}
@@ -735,7 +747,7 @@
 
         <check if="{{ @SESSION.flash_error }}">
             <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ @SESSION.flash_error }}
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ @SESSION.flash_error | raw }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
             {~ unset($_SESSION['flash_error']) ~}
@@ -771,6 +783,7 @@
                     <h6 class="text-uppercase mb-3 fs-6">Navigasi Cepat</h6>
                     <ul class="list-unstyled small">
                         <li class="mb-2"><a href="{{ @BASE }}/po">Daftar PO & Dashboard</a></li>
+                        <li class="mb-2"><a href="{{ @BASE }}/kontrak">Manajemen Kontrak PKS</a></li>
                         <li class="mb-2"><a href="{{ @BASE }}/order">Permintaan Order Layanan</a></li>
                         <li class="mb-2"><a href="{{ @BASE }}/klien">Manajemen Data Klien</a></li>
                     </ul>

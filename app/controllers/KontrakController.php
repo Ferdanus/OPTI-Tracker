@@ -14,7 +14,7 @@ class KontrakController extends Controller {
         $daftarKontrak = $kontrakModel->allWithRelasi();
 
         $f3->set('daftar_kontrak', $daftarKontrak);
-        $this->render('kontrak/index.htm', 'Daftar Kontrak PKS - OPTI Tracker', 'kontrak');
+        $this->render('kontrak/index.html', 'Daftar Kontrak PKS - OPTI Tracker', 'kontrak');
     }
 
     /**
@@ -39,7 +39,7 @@ class KontrakController extends Controller {
         }
 
         $f3->set('daftar_po', $daftarPo);
-        $this->render('kontrak/form.htm', 'Input Kontrak PKS Baru - OPTI Tracker', 'kontrak');
+        $this->render('kontrak/form.html', 'Input Kontrak PKS Baru - OPTI Tracker', 'kontrak');
     }
 
     /**
@@ -61,6 +61,7 @@ class KontrakController extends Controller {
         $targetSelesai             = trim($post['target_selesai'] ?? '');
         $nilaiKontrak              = (float)($post['nilai_kontrak'] ?? 0);
         $ketentuanPembayaran       = trim($post['ketentuan_pembayaran'] ?? '');
+        $nomorVa                   = trim($post['nomor_va'] ?? '');
         $tanggalTtd                = trim($post['tanggal_ttd'] ?? '');
         $statusTtd                 = trim($post['status_ttd'] ?? 'belum');
 
@@ -86,6 +87,7 @@ class KontrakController extends Controller {
                 'target_selesai'                => $targetSelesai,
                 'nilai_kontrak'                 => $nilaiKontrak,
                 'ketentuan_pembayaran'          => $ketentuanPembayaran,
+                'nomor_va'                      => $nomorVa,
                 'tanggal_ttd'                   => $tanggalTtd ?: null,
                 'status_ttd'                    => $statusTtd
             ));

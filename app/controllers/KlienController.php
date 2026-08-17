@@ -14,7 +14,7 @@ class KlienController extends Controller {
         $daftarKlien = $klienModel->all();
 
         $f3->set('daftar_klien', $daftarKlien);
-        $this->render('klien/index.htm', 'Daftar Klien - Mini OPTI Tracker', 'klien');
+        $this->render('klien/index.html', 'Daftar Klien - Mini OPTI Tracker', 'klien');
     }
 
     /**
@@ -22,7 +22,7 @@ class KlienController extends Controller {
      * Route: GET /klien/tambah
      */
     public function tambah($f3) {
-        $this->render('klien/form.htm', 'Tambah Klien Baru - Mini OPTI Tracker', 'klien');
+        $this->render('klien/form.html', 'Tambah Klien Baru - Mini OPTI Tracker', 'klien');
     }
 
     /**

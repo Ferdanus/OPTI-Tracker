@@ -16,7 +16,7 @@ class Controller {
         $this->f3->set('content', $viewFile);
         $this->f3->set('page_title', $pageTitle);
         $this->f3->set('active_menu', $activeMenu);
-        echo \Template::instance()->render('layout.htm');
+        echo \Template::instance()->render('layout.html');
     }
 
     /**

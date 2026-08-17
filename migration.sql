@@ -146,6 +146,7 @@ CREATE TABLE kontrak_pks (
     target_selesai DATE NOT NULL,
     nilai_kontrak DECIMAL(15,2) DEFAULT 0,
     ketentuan_pembayaran TEXT NULL,
+    nomor_va VARCHAR(50) NULL,
     tanggal_ttd DATE NULL,
     status_ttd ENUM('belum', 'proses', 'selesai') DEFAULT 'belum',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,

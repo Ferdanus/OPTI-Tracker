@@ -1,7 +1,7 @@
 <div class="row justify-content-center" data-aos="fade-up">
     <div class="col-lg-8">
         <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-3 mb-4">
-            <a href="{{ @BASE }}/order" class="btn-back">
+            <a href="<?= ($BASE) ?>/order" class="btn-back">
                 <i class="bi bi-arrow-left"></i> Kembali
             </a>
             <h4 class="fw-bold mb-0"><i class="bi bi-file-earmark-plus me-2 text-primary"></i>Tambah Order Layanan Baru</h4>
@@ -12,17 +12,17 @@
                 <h6 class="m-0 font-weight-bold text-primary">Form Permintaan Layanan Klien</h6>
             </div>
             <div class="card-body p-4">
-                <form action="{{ @BASE }}/order/simpan" method="POST">
+                <form action="<?= ($BASE) ?>/order/simpan" method="POST">
                     <!-- CSRF Token -->
-                    <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
+                    <input type="hidden" name="csrf_token" value="<?= ($csrf_token) ?>">
                     
                     <div class="mb-3">
                         <label for="klien_id" class="form-label fw-semibold">Pilih Klien / Perusahaan <span class="text-danger">*</span></label>
                         <select class="form-select" id="klien_id" name="klien_id" required>
                             <option value="">-- Pilih Klien Pemohon --</option>
-                            <repeat group="{{ @daftar_klien }}" value="{{ @klien }}">
-                                <option value="{{ @klien.id }}">{{ @klien.nama_perusahaan }}{{ @klien.pic ? ' (PIC: ' . @klien.pic . ')' : '' }}</option>
-                            </repeat>
+                            <?php foreach (($daftar_klien?:[]) as $klien): ?>
+                                <option value="<?= ($klien['id']) ?>"><?= ($klien['nama_perusahaan']) ?><?= ($klien['pic'] ? ' (PIC: ' . $klien['pic'] . ')' : '') ?></option>
+                            <?php endforeach; ?>
                         </select>
                         <div class="form-text">Data perusahaan yang mengajukan permohonan layanan.</div>
                     </div>
@@ -34,7 +34,7 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="tanggal_masuk" class="form-label fw-semibold">Tanggal Masuk Order <span class="text-danger">*</span></label>
-                            <input type="date" class="form-control" id="tanggal_masuk" name="tanggal_masuk" required value="{{ date('Y-m-d') }}">
+                            <input type="date" class="form-control" id="tanggal_masuk" name="tanggal_masuk" required value="<?= (date('Y-m-d')) ?>">
                         </div>
                     </div>
 
@@ -48,7 +48,7 @@
                             <label for="jenis_layanan" class="form-label fw-semibold">Jenis Layanan OPTI <span class="text-danger">*</span></label>
                             <select class="form-select" id="jenis_layanan" name="jenis_layanan" required>
                                 <option value="">-- Pilih Layanan --</option>
-                                <option value="selulosa">OPTI Selulosa (Kertas & Pulp)</option>
+                                <option value="selulosa">OPTI Selulosa dan Derivat</option>
                                 <option value="lingkungan">OPTI Lingkungan (Emisi & Limbah)</option>
                             </select>
                         </div>
@@ -69,7 +69,7 @@
                     </div>
 
                     <div class="d-flex justify-content-end gap-2 border-top pt-3">
-                        <a href="{{ @BASE }}/order" class="btn btn-light border">Batal</a>
+                        <a href="<?= ($BASE) ?>/order" class="btn btn-light border">Batal</a>
                         <button type="submit" class="btn btn-primary px-4">
                             <i class="bi bi-save me-1"></i> Simpan Order Layanan
                         </button>

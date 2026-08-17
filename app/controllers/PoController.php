@@ -43,7 +43,7 @@ class PoController extends Controller {
         $f3->set('filter_jenis_layanan', $filterJenisLayanan);
         $f3->set('search_q', $search);
 
-        $this->render('po/index.htm', 'Daftar PO & Dashboard - OPTI Tracker', 'po');
+        $this->render('po/index.html', 'Daftar PO & Dashboard - OPTI Tracker', 'po');
     }
 
     /**
@@ -74,7 +74,7 @@ class PoController extends Controller {
         $f3->set('next_status', $nextStatus);
         $f3->set('next_status_label', $nextStatusLabel);
 
-        $this->render('po/detail.htm', 'Detail Dokumen PO ' . $po['nomor_po'] . ' - OPTI Tracker', 'po');
+        $this->render('po/detail.html', 'Detail Dokumen PO ' . $po['nomor_po'] . ' - OPTI Tracker', 'po');
     }
 
     /**

@@ -18,7 +18,7 @@ class AuthController extends Controller {
 
         // Tampilkan halaman login (tanpa memanggil render() agar tidak memuat layout umum dashboard)
         $f3->set('page_title', 'Login - Sistem OPTI Tracker');
-        echo \Template::instance()->render('auth/login.htm');
+        echo \Template::instance()->render('auth/login.html');
     }
 
     /**
@@ -125,7 +125,7 @@ class AuthController extends Controller {
             'foto_profil' => $user->foto_profil
         ));
 
-        $this->render('auth/profil.htm', 'Profil Saya - Sistem OPTI Tracker', 'profil');
+        $this->render('auth/profil.html', 'Profil Saya - Sistem OPTI Tracker', 'profil');
     }
 
     /**

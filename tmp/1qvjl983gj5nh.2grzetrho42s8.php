@@ -105,19 +105,19 @@
         <h3 class="fw-bold mb-1"><i class="bi bi-journal-text me-2 text-primary"></i>Daftar Kontrak PKS</h3>
         <p class="text-muted mb-0">Kelola dan catat Perjanjian Kerja Sama (PKS) antara Klien dengan BBSPJI Selulosa.</p>
     </div>
-    <check if="{{ @SESSION.role == 'admin_kontrak' || @SESSION.role == 'superadmin' }}">
+    <?php if ($SESSION['role'] == 'admin_kontrak' || $SESSION['role'] == 'superadmin'): ?>
         <div class="align-self-end align-self-sm-center">
-            <a href="{{ @BASE }}/kontrak/tambah" class="btn btn-primary">
+            <a href="<?= ($BASE) ?>/kontrak/tambah" class="btn btn-primary">
                 <i class="bi bi-plus-lg me-1"></i>Tambah Kontrak PKS
             </a>
         </div>
-    </check>
+    <?php endif; ?>
 </div>
 
 <div class="card shadow-sm" data-aos="fade-up">
     <div class="card-body p-0">
-        <check if="{{ count(@daftar_kontrak) > 0 }}">
-            <true>
+        <?php if (count($daftar_kontrak) > 0): ?>
+            
                 <div class="table-responsive">
                     <table class="table table-striped table-hover align-middle mb-0">
                         <thead>
@@ -132,56 +132,61 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <repeat group="{{ @daftar_kontrak }}" value="{{ @kontrak }}" counter="{{ @ctr }}">
+                            <?php $ctr=0; foreach (($daftar_kontrak?:[]) as $kontrak): $ctr++; ?>
                                 <tr>
-                                    <td class="text-center text-muted small" data-label="No">{{ @ctr }}</td>
+                                    <td class="text-center text-muted small" data-label="No"><?= ($ctr) ?></td>
                                     <td data-label="No Kontrak (PKS)">
-                                        <div class="fw-bold text-dark" style="font-size: 0.85rem;">BBSPJI: {{ @kontrak.nomor_pks_bbspjis }}</div>
-                                        <div class="small text-secondary" style="font-size: 0.8rem;">Klien: {{ @kontrak.nomor_pks_klien }}</div>
+                                        <div class="fw-bold text-dark" style="font-size: 0.85rem;">BBSPJI: <?= ($kontrak['nomor_pks_bbspjis']) ?></div>
+                                        <div class="small text-secondary" style="font-size: 0.8rem;">Klien: <?= ($kontrak['nomor_pks_klien']) ?></div>
                                     </td>
                                     <td data-label="Petunjuk Operasional (PO)">
-                                        <a href="{{ @BASE }}/po/{{ @kontrak.po_id }}" class="btn btn-sm btn-outline-primary py-0.5 px-2">
-                                            <i class="bi bi-file-earmark-text me-1"></i>{{ @kontrak.nomor_po }}
+                                        <a href="<?= ($BASE) ?>/po/<?= ($kontrak['po_id']) ?>" class="btn btn-sm btn-outline-primary py-0.5 px-2">
+                                            <i class="bi bi-file-earmark-text me-1"></i><?= ($kontrak['nomor_po'])."
+" ?>
                                         </a>
                                     </td>
                                     <td data-label="Klien & Judul Kegiatan">
-                                        <div class="fw-bold text-dark">{{ @kontrak.nama_perusahaan }}</div>
-                                        <div class="small text-secondary text-truncate" style="max-width: 250px;" title="{{ @kontrak.judul_kegiatan }}">{{ @kontrak.judul_kegiatan }}</div>
+                                        <div class="fw-bold text-dark"><?= ($kontrak['nama_perusahaan']) ?></div>
+                                        <div class="small text-secondary text-truncate" style="max-width: 250px;" title="<?= ($kontrak['judul_kegiatan']) ?>"><?= ($kontrak['judul_kegiatan']) ?></div>
                                     </td>
                                     <td data-label="Nilai Kontrak">
-                                        <span class="fw-bold text-success">Rp {{ number_format(@kontrak.nilai_kontrak, 0, ',', '.') }}</span>
+                                        <span class="fw-bold text-success">Rp <?= (number_format($kontrak['nilai_kontrak'], 0, ',', '.')) ?></span>
+                                        <?php if ($kontrak['nomor_va']): ?>
+                                            <div class="small text-muted mt-1" style="font-size: 0.775rem;"><i class="bi bi-credit-card me-1"></i>VA: <?= ($kontrak['nomor_va']) ?></div>
+                                        <?php endif; ?>
                                     </td>
                                     <td data-label="Masa Berlaku" class="small text-secondary">
-                                        {{ date('d/m/Y', strtotime(@kontrak.target_mulai)) }} s/d {{ date('d/m/Y', strtotime(@kontrak.target_selesai)) }}
+                                        <?= (date('d/m/Y', strtotime($kontrak['target_mulai']))) ?> s/d <?= (date('d/m/Y', strtotime($kontrak['target_selesai'])))."
+" ?>
                                     </td>
                                     <td data-label="Status TTD">
-                                        <check if="{{ @kontrak.status_ttd == 'sudah' }}">
-                                            <true>
+                                        <?php if ($kontrak['status_ttd'] == 'sudah'): ?>
+                                            
                                                 <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20"><i class="bi bi-check-circle-fill me-1"></i>Tuntas TTD</span>
-                                            </true>
-                                            <false>
+                                            
+                                            <?php else: ?>
                                                 <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-20 text-dark"><i class="bi bi-hourglass-split me-1"></i>Belum TTD</span>
-                                            </false>
-                                        </check>
+                                            
+                                        <?php endif; ?>
                                     </td>
                                 </tr>
-                            </repeat>
+                            <?php endforeach; ?>
                         </tbody>
                     </table>
                 </div>
-            </true>
-            <false>
+            
+            <?php else: ?>
                 <div class="text-center py-5">
                     <i class="bi bi-journal-x text-muted display-4 d-block mb-3"></i>
                     <h5 class="text-muted">Belum ada Kontrak PKS terdaftar</h5>
                     <p class="text-secondary small mb-3">Hubungkan dokumen Petunjuk Operasional (PO) dengan nomor PKS resmi di sini.</p>
-                    <check if="{{ @SESSION.role == 'admin_kontrak' || @SESSION.role == 'superadmin' }}">
-                        <a href="{{ @BASE }}/kontrak/tambah" class="btn btn-sm btn-outline-primary">
+                    <?php if ($SESSION['role'] == 'admin_kontrak' || $SESSION['role'] == 'superadmin'): ?>
+                        <a href="<?= ($BASE) ?>/kontrak/tambah" class="btn btn-sm btn-outline-primary">
                             <i class="bi bi-plus-lg me-1"></i>Tambah Kontrak PKS
                         </a>
-                    </check>
+                    <?php endif; ?>
                 </div>
-            </false>
-        </check>
+            
+        <?php endif; ?>
     </div>
 </div>

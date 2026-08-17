@@ -14,7 +14,7 @@ class OrderController extends Controller {
         $daftarOrder = $orderModel->allWithKlien();
 
         $f3->set('daftar_order', $daftarOrder);
-        $this->render('order/index.htm', 'Daftar Order Layanan - Mini OPTI Tracker', 'order');
+        $this->render('order/index.html', 'Daftar Order Layanan - Mini OPTI Tracker', 'order');
     }
 
     /**
@@ -33,7 +33,7 @@ class OrderController extends Controller {
         }
 
         $f3->set('daftar_klien', $daftarKlien);
-        $this->render('order/form.htm', 'Tambah Order Layanan - Mini OPTI Tracker', 'order');
+        $this->render('order/form.html', 'Tambah Order Layanan - Mini OPTI Tracker', 'order');
     }
 
     /**

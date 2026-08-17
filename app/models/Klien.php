@@ -21,7 +21,7 @@ class Klien extends \DB\SQL\Mapper {
     /**
      * Mencari data klien berdasarkan ID
      */
-    public function getById($id) {
+    public function getById(int $id) {
         $this->load(array('id = ?', $id));
         return $this->dry() ? null : $this;
     }
