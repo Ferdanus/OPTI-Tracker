@@ -34,6 +34,7 @@ class Po extends \DB\SQL\Mapper {
      * Auto-generate nomor PO dengan format:
      * {urut}/PO/BBSPJIS/{bulan_romawi}/{tahun}
      * Nomor urut akan reset setiap pergantian bulan & tahun
+     * TODO-KONFIRMASI: Konfirmasi apakah nomor PO dipakai bersama dengan semua layanan balai (sehingga tidak bisa auto-increment lokal).
      */
     public function generateNomorPo() {
         $bulanSekarang = (int)date('n');
@@ -55,8 +56,13 @@ class Po extends \DB\SQL\Mapper {
     /**
      * Membuat PO baru otomatis saat Order Layanan disetujui
      */
-    public function buatDariOrder($orderId, $biaya = 0) {
-        $nomorPo = $this->generateNomorPo();
+    public function buatDariOrder($orderId, $nomorPoManual = '', $biaya = 0) {
+        // TODO-KONFIRMASI: Konfirmasi apakah nomor PO diinput manual atau auto-generate tersentral.
+        // Implementasi sementara: gunakan nomor PO manual jika diisi, jika kosong gunakan generator otomatis.
+        $nomorPo = trim($nomorPoManual);
+        if (empty($nomorPo)) {
+            $nomorPo = $this->generateNomorPo();
+        }
 
         $this->reset();
         $this->order_id          = $orderId;
@@ -265,7 +271,9 @@ class Po extends \DB\SQL\Mapper {
 
         $validStages = array(
             'proposal' => 'app_proposal',
+            'proposal_val' => 'app_proposal_val',
             'kontrak' => 'app_kontrak',
+            'kontrak_val' => 'app_kontrak_val',
             'po_adm' => 'app_po_adm',
             'po_mitra' => 'app_po_mitra',
             'po_ppk' => 'app_po_ppk',

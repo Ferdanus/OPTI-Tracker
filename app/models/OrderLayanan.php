@@ -38,6 +38,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
 
     /**
      * Generator Nomor Order otomatis format ORD-YYYYMM-XXX
+     * TODO-KONFIRMASI: Konfirmasi apakah ada format nomor order khusus atau sudah ada sistem penomoran order sebelumnya.
      */
     public function generateNomorOrder() {
         $prefix = 'ORD-' . date('Ym');
@@ -72,7 +73,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
     /**
      * Menyetujui order layanan dan otomatis membuat record PO terkait
      */
-    public function approve($id, $biaya = 0) {
+    public function approve($id, $nomorPoManual = '', $biaya = 0) {
         $this->load(array('id = ?', $id));
 
         if ($this->dry()) {
@@ -91,7 +92,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
         $poModel = new Po($this->db);
         // Gunakan estimasi_biaya dari order ini jika biaya bernilai 0
         $biayaAwal = $biaya ?: $this->estimasi_biaya;
-        $poId = $poModel->buatDariOrder($this->id, $biayaAwal);
+        $poId = $poModel->buatDariOrder($this->id, $nomorPoManual, $biayaAwal);
 
         return array(
             'order_id' => $this->id,

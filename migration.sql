@@ -9,6 +9,22 @@ DROP TABLE IF EXISTS po;
 DROP TABLE IF EXISTS order_layanan;
 DROP TABLE IF EXISTS klien;
 DROP TABLE IF EXISTS user;
+DROP TABLE IF EXISTS role;
+
+-- 0. Tabel Role (Hak Akses Fleksibel - TODO-KONFIRMASI: Pemetaan role riil di Balai)
+CREATE TABLE role (
+    role_key VARCHAR(50) PRIMARY KEY,
+    role_label VARCHAR(100) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Seed Roles
+INSERT INTO role (role_key, role_label) VALUES 
+('admin_order', 'Petugas Order'),
+('ketua_tim', 'Ketua Tim OPTI'),
+('pejabat', 'Pejabat / Kepala'),
+('tim_kerja', 'Tim Kerja'),
+('admin_kontrak', 'Admin Kontrak PKS'),
+('superadmin', 'Super Admin');
 
 -- 1. Tabel User (RBAC & Login Security)
 CREATE TABLE user (
@@ -16,14 +32,15 @@ CREATE TABLE user (
     nama_lengkap VARCHAR(100) NOT NULL,
     username VARCHAR(50) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
-    role ENUM('admin_order', 'ketua_tim', 'pejabat', 'tim_kerja', 'admin_kontrak', 'superadmin') NOT NULL DEFAULT 'tim_kerja',
+    role VARCHAR(50) NOT NULL DEFAULT 'tim_kerja',
     jenis_layanan ENUM('selulosa', 'lingkungan', 'all') DEFAULT 'all', -- Khusus ketua_tim atau all
     is_active TINYINT(1) DEFAULT 1,
     foto_profil VARCHAR(255) NULL,
     last_login DATETIME NULL,
     failed_login_count INT DEFAULT 0,
     locked_until DATETIME NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (role) REFERENCES role(role_key)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Seed Users (Password: password123, fajri123 untuk fajriasa)
@@ -86,11 +103,16 @@ CREATE TABLE po (
     target_selesai DATE NULL,
     realisasi_selesai DATE NULL,
     
-    -- Map Kendali Verifikasi & Validasi Berjenjang
-    app_proposal TINYINT(1) DEFAULT 0,
+    -- Map Kendali Verifikasi & Validasi Berjenjang (4 Tahap Multi-Pihak)
+    app_proposal TINYINT(1) DEFAULT 0, -- Verifikasi Proposal
     app_proposal_date DATETIME NULL,
-    app_kontrak TINYINT(1) DEFAULT 0,
+    app_proposal_val TINYINT(1) DEFAULT 0, -- Validasi Proposal
+    app_proposal_val_date DATETIME NULL,
+    
+    app_kontrak TINYINT(1) DEFAULT 0, -- Verifikasi Kontrak
     app_kontrak_date DATETIME NULL,
+    app_kontrak_val TINYINT(1) DEFAULT 0, -- Validasi Kontrak
+    app_kontrak_val_date DATETIME NULL,
     
     app_po_adm TINYINT(1) DEFAULT 0,
     app_po_adm_date DATETIME NULL,
@@ -107,6 +129,16 @@ CREATE TABLE po (
     app_dist_kepeg_date DATETIME NULL,
     app_dist_keu TINYINT(1) DEFAULT 0,
     app_dist_keu_date DATETIME NULL,
+    
+    -- Kolom Pelacakan Laporan Perkembangan & Notulen (SOP Feedback Loop)
+    laporan_perkembangan TEXT NULL,
+    tgl_laporan_perkembangan DATE NULL,
+    notulen_masukan TEXT NULL,
+    tgl_notulen_masukan DATE NULL,
+    laporan_kegiatan_final TEXT NULL,
+    tgl_laporan_kegiatan_final DATE NULL,
+    bast_dokumen VARCHAR(255) NULL,
+    tgl_bast DATE NULL,
     
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (order_id) REFERENCES order_layanan(id) ON DELETE RESTRICT ON UPDATE CASCADE

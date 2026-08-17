@@ -136,6 +136,65 @@ class PoController extends Controller {
     }
 
     /**
+     * Memperbarui detail kemajuan pelaksanaan SOP (Draft laporan, notulen, final, BAST)
+     * Route: POST /po/@id/update-pelaksanaan
+     */
+    public function updatePelaksanaan($f3, $params) {
+        $id = (int)($params['id'] ?? 0);
+        $post = $f3->get('POST');
+
+        // Proteksi token keamanan CSRF
+        if (($post['csrf_token'] ?? '') !== $f3->get('SESSION.csrf_token')) {
+            $this->setFlashError('Token keamanan tidak valid.');
+            $f3->reroute("/po/{$id}");
+            return;
+        }
+
+        // Cek otorisasi
+        $role = $f3->get('SESSION.role');
+        if ($role !== 'ketua_tim' && $role !== 'tim_kerja' && $role !== 'superadmin') {
+            $this->setFlashError('Akses Ditolak: Anda tidak memiliki wewenang untuk memperbarui data pelaksanaan.');
+            $f3->reroute("/po/{$id}");
+            return;
+        }
+
+        // TODO-KONFIRMASI: Konfirmasi apakah tahapan "Pelaksanaan & BAST" ini disetujui untuk masuk dalam cakupan prioritas sistem.
+        try {
+            $poModel = new Po($this->db);
+            $po = $poModel->getById($id);
+            if (!$po) {
+                throw new \Exception("PO #{$id} tidak ditemukan.");
+            }
+
+            $po->laporan_perkembangan = trim($post['laporan_perkembangan'] ?? '');
+            $po->tgl_laporan_perkembangan = !empty($post['tgl_laporan_perkembangan']) ? $post['tgl_laporan_perkembangan'] : null;
+            $po->notulen_masukan = trim($post['notulen_masukan'] ?? '');
+            $po->tgl_notulen_masukan = !empty($post['tgl_notulen_masukan']) ? $post['tgl_notulen_masukan'] : null;
+            $po->laporan_kegiatan_final = trim($post['laporan_kegiatan_final'] ?? '');
+            $po->tgl_laporan_kegiatan_final = !empty($post['tgl_laporan_kegiatan_final']) ? $post['tgl_laporan_kegiatan_final'] : null;
+            $po->bast_dokumen = trim($post['bast_dokumen'] ?? '');
+            $po->tgl_bast = !empty($post['tgl_bast']) ? $post['tgl_bast'] : null;
+            
+            $po->save();
+
+            // Catat audit log
+            $logModel = new PoLogStatus($this->db);
+            $logModel->catat(
+                $id,
+                $po->status,
+                $po->status,
+                'Memperbarui data kemajuan pelaksanaan SOP (Draft laporan, notulen, final, atau BAST).'
+            );
+
+            $this->setFlashSuccess('Data kemajuan pelaksanaan SOP berhasil disimpan.');
+            $f3->reroute("/po/{$id}");
+        } catch (\Exception $e) {
+            $this->setFlashError('Gagal memperbarui data pelaksanaan: ' . $e->getMessage());
+            $f3->reroute("/po/{$id}");
+        }
+    }
+
+    /**
      * Ekspor Data Rekap PO ke Excel/CSV
      * Route: GET /po/ekspor
      */

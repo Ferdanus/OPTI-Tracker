@@ -112,6 +112,7 @@ $f3->route('GET  /po/ekspor', 'PoController->ekspor');
 $f3->route('GET  /po/@id', 'PoController->detail');
 $f3->route('POST /po/@id/lanjut-status', 'PoController->lanjutStatus');
 $f3->route('POST /po/@id/approve-map/@stage', 'PoController->approveMap');
+$f3->route('POST /po/@id/update-pelaksanaan', 'PoController->updatePelaksanaan');
 
 // ==========================================
 // ROUTE MODUL KONTRAK PKS [NEW]

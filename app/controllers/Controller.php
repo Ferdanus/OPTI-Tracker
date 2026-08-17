@@ -94,6 +94,7 @@ class Controller {
         }
 
         // 4. Role-Based Access Control (RBAC)
+        // TODO-KONFIRMASI: Konfirmasi pemetaan peran (roles) sistem dengan jabatan riil di Balai (seperti PPK BLU, Adm KS & Humas, Bag. TU, dll).
         if (isset($_SESSION['user_id'])) {
             $userRole = $_SESSION['role'] ?? 'tim_kerja';
             

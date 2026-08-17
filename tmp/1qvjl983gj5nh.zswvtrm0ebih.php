@@ -239,9 +239,10 @@
                                                     
                                                         <div class="d-flex justify-content-center gap-1">
                                                             <!-- Form Approve -->
-                                                            <form action="<?= ($BASE) ?>/order/<?= ($order['id']) ?>/approve" method="POST" onsubmit="return confirm('Setujui Order ini dan terbitkan dokumen PO otomatis?');">
+                                                            <form action="<?= ($BASE) ?>/order/<?= ($order['id']) ?>/approve" method="POST" onsubmit="var num = prompt('Masukkan Nomor PO Manual (Atau kosongkan untuk auto-generate):'); if (num === null) return false; this.nomor_po.value = num; return true;">
                                                                 <input type="hidden" name="csrf_token" value="<?= ($csrf_token) ?>">
-                                                                <button type="submit" class="btn btn-sm btn-success" title="Setujui dan Auto-Generate PO">
+                                                                <input type="hidden" name="nomor_po" value="">
+                                                                <button type="submit" class="btn btn-sm btn-success" title="Setujui Order">
                                                                     <i class="bi bi-check-lg me-1"></i>Approve
                                                                 </button>
                                                             </form>

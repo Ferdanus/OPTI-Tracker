@@ -92,13 +92,16 @@ class OrderController extends Controller {
      */
     public function approve($f3, $params) {
         $id = (int)($params['id'] ?? 0);
+        $nomorPo = trim($f3->get('POST.nomor_po') ?? '');
 
+        // TODO-KONFIRMASI: Konfirmasi apakah nomor PO diinput manual atau auto-generate tersentral.
+        // Untuk sementara, kita izinkan nomor PO diinput manual dari form/prompt. Jika kosong, kita sediakan auto-generate sebagai fallback.
         try {
             $orderModel = new OrderLayanan($this->db);
-            $hasil = $orderModel->approve($id);
+            $hasil = $orderModel->approve($id, $nomorPo);
 
             $this->setFlashSuccess(
-                "Order #{$id} disetujui! Dokumen PO berhasil dibuat otomatis dengan Nomor: <strong>{$hasil['nomor_po']}</strong>."
+                "Order #{$id} disetujui! Dokumen PO berhasil dibuat dengan Nomor: <strong>{$hasil['nomor_po']}</strong>."
             );
             $f3->reroute('/order');
         } catch (\Exception $e) {
