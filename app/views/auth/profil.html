@@ -1,381 +1,105 @@
-<!-- SweetAlert2 CDN untuk Popup Interaktif Premium -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<div class="d-flex align-items-center gap-3 mb-4">
+    <a href="{{ @BASE }}/po" class="btn-back">
+        <i class="bi bi-arrow-left"></i> Kembali
+    </a>
+    <div>
+        <h2 class="h4 fw-bold mb-1 text-dark">Profil Pengguna</h2>
+        <p class="text-muted small mb-0">Informasi akun Single Sign-On (SSO) internal Balai Besar Standardisasi dan Pelayanan Jasa Industri Selulosa.</p>
+    </div>
+</div>
 
-<style>
-    .profile-header-title {
-        font-family: 'Lora', serif;
-        font-weight: 700;
-        color: var(--color-primary-dark);
-    }
-
-    /* Premium Avatar Upload Overlay Pattern */
-    .avatar-upload-wrapper {
-        position: relative;
-        width: 150px;
-        height: 150px;
-        margin: 0 auto;
-    }
-
-    .avatar-upload-container {
-        position: relative;
-        width: 150px;
-        height: 150px;
-        border-radius: 50%;
-        cursor: pointer;
-        overflow: hidden;
-        border: 4px solid #ffffff;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        background-color: #ffffff;
-    }
-
-    .avatar-upload-container:hover {
-        transform: scale(1.02);
-        box-shadow: 0 6px 20px rgba(164, 30, 34, 0.15);
-    }
-
-    .avatar-image-preview {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
-    .avatar-initials-fallback {
-        width: 100%;
-        height: 100%;
-        background-color: rgba(164, 30, 34, 0.06);
-        color: var(--color-primary);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 3.5rem;
-        font-weight: 700;
-        transition: all 0.3s ease;
-    }
-
-    .avatar-overlay {
-        position: absolute;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(0, 0, 0, 0.6);
-        color: #ffffff;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        opacity: 0;
-        transition: opacity 0.25s ease;
-        font-size: 0.75rem;
-        font-weight: 500;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .avatar-upload-container:hover .avatar-overlay {
-        opacity: 1;
-    }
-
-    .avatar-overlay i {
-        font-size: 1.5rem;
-        margin-bottom: 0.25rem;
-        color: var(--color-accent);
-    }
-
-    /* Form Customization */
-    .form-section-title {
-        font-size: 0.825rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        color: var(--color-primary-dark);
-        border-bottom: 2px solid rgba(164, 30, 34, 0.1);
-        padding-bottom: 0.5rem;
-    }
-
-    .form-control:focus {
-        border-color: var(--color-primary);
-        box-shadow: 0 0 0 4px rgba(164, 30, 34, 0.08);
-    }
-
-    .input-group-text-gov {
-        background-color: #f8fafc;
-        border-color: #e2e8f0;
-        color: var(--color-text-muted);
-    }
-
-    /* Transition Animation for Password Expand */
-    #passwordFieldsContainer {
-        transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-        max-height: 0;
-        overflow: hidden;
-        opacity: 0;
-    }
-
-    #passwordFieldsContainer.show {
-        max-height: 300px;
-        opacity: 1;
-        margin-top: 1rem;
-    }
-
-    /* Premium Button Style kustom dengan Hover Highlight */
-    .btn-premium {
-        background-color: var(--color-primary);
-        border: 1px solid var(--color-primary);
-        color: #ffffff;
-        font-weight: 600;
-        transition: all 0.25s ease-in-out;
-        box-shadow: 0 4px 6px rgba(164, 30, 34, 0.1);
-    }
-    .btn-premium:hover, .btn-premium:focus {
-        background-color: var(--color-primary-dark);
-        border-color: var(--color-primary-dark);
-        color: #ffffff;
-        transform: translateY(-1.5px);
-        box-shadow: 0 6px 15px rgba(164, 30, 34, 0.25);
-    }
-    .btn-premium:active {
-        transform: translateY(0);
-    }
-</style>
-
-<div class="row justify-content-center" data-aos="fade-up">
-    <div class="col-lg-9">
-        
-        <!-- Header Page -->
-        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 mb-4">
-            <div class="order-2 order-sm-1">
-                <h3 class="profile-header-title mb-1">Pengaturan Profil</h3>
-                <p class="text-muted small mb-0">Kelola kredensial masuk, nama lengkap, dan foto akun Anda.</p>
+<div class="row g-4">
+    <!-- Kolom Kiri: Kartu Identitas Pengguna -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm text-center p-4">
+            <div class="d-inline-flex align-items-center justify-content-center mx-auto mb-3" style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%); color: #ffffff; font-size: 2rem; font-weight: 800; box-shadow: 0 4px 12px rgba(136, 19, 55, 0.25);">
+                {~ $initials = implode('', array_map(function($w) { return strtoupper($w[0] ?? ''); }, explode(' ', $profil['nama_user'] ?? 'U'))) ~}
+                {{ substr($initials, 0, 2) }}
             </div>
-            <a href="{{ @BASE }}/po" class="btn-back order-1 order-sm-2">
-                <i class="bi bi-arrow-left"></i> Kembali
-            </a>
+
+            <h5 class="fw-bold text-dark mb-1">{{ @profil.nama_user }}</h5>
+            <p class="text-muted small mb-2">@{{ @profil.login }}</p>
+
+            <div class="mb-3">
+                <check if="{{ @profil.role == 'superadmin' }}"><span class="badge badge-pill-primary">Super Administrator</span></check>
+                <check if="{{ @profil.role == 'admin_order' }}"><span class="badge badge-pill-info">Petugas Penerima Order</span></check>
+                <check if="{{ @profil.role == 'ketua_tim' }}"><span class="badge badge-pill-success">Ketua Tim {{ @profil.jenis_layanan_opti == 'selulosa' ? 'Selulosa' : 'Lingkungan' }}</span></check>
+                <check if="{{ @profil.role == 'pejabat' }}"><span class="badge badge-pill-warning">Kepala Balai / PPK BLU</span></check>
+                <check if="{{ @profil.role == 'tim_kerja' }}"><span class="badge badge-pill-secondary">Tim Analis Laboratorium</span></check>
+                <check if="{{ @profil.role == 'admin_kontrak' }}"><span class="badge badge-pill-primary">Admin Kontrak Kerjasama</span></check>
+            </div>
+
+            <div class="border-top pt-3 text-start small">
+                <div class="d-flex justify-content-between py-2 border-bottom">
+                    <span class="text-muted">ID User Balai:</span>
+                    <span class="fw-semibold">#{{ @profil.id_user }}</span>
+                </div>
+                <div class="d-flex justify-content-between py-2 border-bottom">
+                    <span class="text-muted">Bidang / Unit:</span>
+                    <span class="fw-semibold">{{ @profil.bidang ?: 'BBSPJI Selulosa' }}</span>
+                </div>
+                <div class="d-flex justify-content-between py-2 border-bottom">
+                    <span class="text-muted">Status Akun:</span>
+                    <span class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i>Aktif Terverifikasi</span>
+                </div>
+                <div class="d-flex justify-content-between py-2">
+                    <span class="text-muted">Notifikasi Sistem:</span>
+                    <span class="text-primary fw-bold"><i class="bi bi-bell-fill me-1"></i>Otomatis Aktif</span>
+                </div>
+            </div>
         </div>
+    </div>
 
-
-
-        <form id="profileForm" action="{{ @BASE }}/profil/simpan" method="POST" enctype="multipart/form-data" autocomplete="off">
-            <!-- CSRF Token -->
+    <!-- Kolom Kanan: Form Profil Pengguna -->
+    <div class="col-lg-8">
+        <form action="{{ @BASE }}/profil/simpan" method="POST">
             <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
 
-            <div class="row g-4">
-                <!-- Kolom Kiri: Unggah Foto Profil -->
-                <div class="col-md-4">
-                    <div class="card border-0 shadow-sm text-center py-5 h-100">
-                        <div class="card-body d-flex flex-column align-items-center justify-content-center">
-                            
-                            <!-- Premium Upload Container -->
-                            <div class="avatar-upload-wrapper mb-4">
-                                <input type="file" name="foto_profil" id="foto_profil_input" class="d-none" accept="image/*">
-                                <div class="avatar-upload-container" onclick="document.getElementById('foto_profil_input').click();" title="Klik untuk mengubah foto profil">
-                                    <check if="{{ @user_data.foto_profil && file_exists(@user_data.foto_profil) }}">
-                                        <true>
-                                            <img id="profile-preview" src="{{ @BASE }}/{{ @user_data.foto_profil }}" class="avatar-image-preview" alt="Foto Profil">
-                                        </true>
-                                        <false>
-                                            <div id="profile-initials" class="avatar-initials-fallback">
-                                                {~ $initials = implode('', array_map(function($w) { return strtoupper($w[0] ?? ''); }, explode(' ', @user_data.nama_lengkap))) ~}
-                                                {{ substr($initials, 0, 2) }}
-                                            </div>
-                                            <img id="profile-preview" class="avatar-image-preview d-none" alt="Foto Profil">
-                                        </false>
-                                    </check>
-                                    
-                                    <!-- Overlay hover state -->
-                                    <div class="avatar-overlay">
-                                        <i class="bi bi-camera-fill"></i>
-                                        <span>Ganti Foto</span>
-                                    </div>
-                                </div>
-                            </div>
+            <!-- Kartu Informasi Kontak -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h6 class="m-0 fw-bold text-dark"><i class="bi bi-person-gear text-primary me-2"></i>Informasi Akun & Data Kontak</h6>
+                </div>
+                <div class="card-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Nama Lengkap Pejabat / Staf <span class="text-danger">*</span></label>
+                        <input type="text" name="nama_user" class="form-control" value="{{ @profil.nama_user }}" required placeholder="Nama lengkap">
+                    </div>
 
-                            <h5 class="fw-bold text-dark mb-1">{{ htmlspecialchars(@user_data.nama_lengkap) }}</h5>
-                            <span class="badge bg-secondary bg-opacity-10 text-secondary px-3 py-1.5 rounded-pill small text-uppercase" style="font-size: 0.7rem; font-weight: 600;">@{{ @user_data.username }}</span>
-                            
-                            <p class="small text-muted mt-4 mb-0 px-2" style="font-size: 0.775rem;">
-                                Gunakan berkas gambar dengan format JPG, PNG, atau GIF dengan ukuran maksimal 2MB.
-                            </p>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Username SSO Balai (Read-Only)</label>
+                            <input type="text" class="form-control bg-light text-muted" value="{{ @profil.login }}" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Nomor WhatsApp / HP</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-whatsapp"></i></span>
+                                <input type="text" name="no_hp" class="form-control" placeholder="081234567890" value="{{ @profil.no_hp }}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Jenis Layanan OPTI</label>
+                            <input type="text" class="form-control bg-light text-muted" value="{{ strtoupper(@profil.jenis_layanan_opti ?: 'SEMUA') }}" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Hak Akses / Peran (Role)</label>
+                            <input type="text" class="form-control bg-light text-muted" value="{{ strtoupper(@profil.role ?: 'INTERNAL') }}" readonly>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Kolom Kanan: Pengaturan Informasi & Sandi -->
-                <div class="col-md-8">
-                    <div class="card border-0 shadow-sm h-100">
-                        <div class="card-body p-4 p-md-5">
-                            
-                            <!-- Bagian 1: Informasi Dasar -->
-                            <div class="mb-4">
-                                <h6 class="form-section-title mb-4">Informasi Identitas</h6>
-                                
-                                <!-- Username (Readonly) -->
-                                <div class="mb-3">
-                                    <label class="form-label small fw-bold text-secondary">Username Utama (Untuk Login)</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text input-group-text-gov"><i class="bi bi-lock-fill"></i></span>
-                                        <input type="text" class="form-control bg-light" value="{{ @user_data.username }}" readonly disabled>
-                                    </div>
-                                    <div class="form-text small text-muted" style="font-size: 0.75rem;">Username diatur secara internal oleh administrator sistem dan tidak dapat diubah.</div>
-                                </div>
-
-                                <!-- Nama Lengkap -->
-                                <div class="mb-3">
-                                    <label for="nama_lengkap" class="form-label small fw-bold text-secondary">Nama Lengkap <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="nama_lengkap" name="nama_lengkap" required value="{{ @user_data.nama_lengkap }}" placeholder="Masukkan nama lengkap Anda">
-                                </div>
-                            </div>
-
-                            <!-- Bagian 2: Kata Sandi -->
-                            <div class="mb-5">
-                                <h6 class="form-section-title mb-4">Keamanan Sandi</h6>
-                                
-                                <!-- Switch Switcher -->
-                                <div class="form-check form-switch mb-2">
-                                    <input class="form-check-input" type="checkbox" id="togglePasswordChange" style="cursor: pointer;">
-                                    <label class="form-check-label fw-semibold text-secondary small" for="togglePasswordChange" style="cursor: pointer; font-size: 0.85rem;">Saya ingin mengganti kata sandi akun ini</label>
-                                </div>
-
-                                <!-- Collapsing Password Input -->
-                                <div id="passwordFieldsContainer">
-                                    <div class="card bg-light bg-opacity-50 border-0 p-3 rounded-3 mb-3">
-                                        <div class="mb-3">
-                                            <label for="password_sekarang" class="form-label small fw-bold text-secondary">Kata Sandi Sekarang</label>
-                                            <input type="password" class="form-control bg-white" id="password_sekarang" name="password_sekarang" placeholder="Masukkan kata sandi saat ini">
-                                        </div>
-                                        <div>
-                                            <label for="password_baru" class="form-label small fw-bold text-secondary">Kata Sandi Baru</label>
-                                            <input type="password" class="form-control bg-white" id="password_baru" name="password_baru" placeholder="Minimal 8 karakter (huruf & angka)">
-                                            <div class="form-text small text-muted" style="font-size: 0.725rem;">Kebijakan Keamanan: Gunakan sandi unik dengan kombinasi huruf dan angka.</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Action Buttons -->
-                            <div class="d-flex justify-content-end gap-2 pt-2 border-top border-light">
-                                <a href="{{ @BASE }}/po" class="btn btn-light px-4">Batal</a>
-                                <button type="submit" class="btn btn-premium px-4">
-                                    <i class="bi bi-check-circle me-1"></i> Simpan Perubahan
-                                </button>
-                            </div>
-
-                        </div>
-                    </div>
-                </div>
+            <!-- Tombol Aksi Simpan -->
+            <div class="d-flex justify-content-end gap-2">
+                <a href="{{ @BASE }}/po" class="btn btn-outline-secondary px-4">Batal</a>
+                <button type="submit" class="btn btn-primary px-4">
+                    <i class="bi bi-save me-1"></i> Simpan Perubahan Profil
+                </button>
             </div>
         </form>
     </div>
 </div>
-
-<script>
-    // Live Preview Unggahan Foto Profil (FileReader)
-    document.getElementById('foto_profil_input').addEventListener('change', function(event) {
-        const file = event.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const previewImg = document.getElementById('profile-preview');
-                const initialsDiv = document.getElementById('profile-initials');
-
-                previewImg.src = e.target.result;
-                previewImg.classList.remove('d-none');
-
-                if (initialsDiv) {
-                    initialsDiv.classList.add('d-none');
-                }
-            };
-            reader.readAsDataURL(file);
-        }
-    });
-
-    // Toggle Ganti Password dengan Animasi Slide (Bootstrap custom collapse behavior)
-    const toggleSwitch = document.getElementById('togglePasswordChange');
-    const container = document.getElementById('passwordFieldsContainer');
-    const passwordInput = document.getElementById('password_baru');
-
-    toggleSwitch.addEventListener('change', function() {
-        const passwordSekarang = document.getElementById('password_sekarang');
-        if (this.checked) {
-            container.classList.add('show');
-            passwordSekarang.setAttribute('required', 'required');
-            passwordInput.setAttribute('required', 'required');
-            passwordSekarang.focus();
-        } else {
-            container.classList.remove('show');
-            passwordSekarang.removeAttribute('required');
-            passwordInput.removeAttribute('required');
-            passwordSekarang.value = ''; // Reset input value jika di-uncheck
-            passwordInput.value = ''; 
-        }
-    });
-
-    // AJAX Form Submission dengan SweetAlert2 (Mencegah Refresh Page)
-    document.getElementById('profileForm').addEventListener('submit', function(event) {
-        event.preventDefault(); // Mencegah reload halaman default
-
-        // Validasi HTML5 dasar
-        if (!this.checkValidity()) {
-            this.reportValidity();
-            return;
-        }
-
-        const form = this;
-        const submitBtn = form.querySelector('button[type="submit"]');
-        const formData = new FormData(form);
-
-        fetch(form.action, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.status === 'success') {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Berhasil Diperbarui',
-                    text: data.message,
-                    confirmButtonColor: '#a41e22',
-                    timer: 2000,
-                    timerProgressBar: true
-                }).then(() => {
-                    // Reload halaman agar avatar dan nama di navbar terupdate secara sinkron
-                    window.location.reload();
-                });
-            } else {
-                // Kembalikan tombol simpan ke kondisi aktif semula jika gagal
-                if (submitBtn) {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Simpan Perubahan';
-                }
-
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Perubahan Ditolak',
-                    text: data.message,
-                    confirmButtonColor: '#a41e22'
-                });
-            }
-        })
-        .catch(error => {
-            // Kembalikan tombol simpan ke kondisi aktif semula jika terjadi error koneksi
-            if (submitBtn) {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Simpan Perubahan';
-            }
-
-            Swal.fire({
-                icon: 'error',
-                title: 'Kegagalan Sistem',
-                text: 'Terjadi masalah koneksi atau server gagal merespon.',
-                confirmButtonColor: '#a41e22'
-            });
-        });
-    });
-</script>

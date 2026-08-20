@@ -1,387 +1,284 @@
-<!-- Hitung Jumlah PO per Status & Stats Layanan langsung di Template Layer -->
-{~
-  $counts = ['belum_upload' => 0, 'sudah_upload' => 0, 'on_proses' => 0, 'kembali_selesai' => 0];
-  $db = \Base::instance()->get('DB');
-  if ($db) {
-      $rows = $db->exec("SELECT status, COUNT(*) AS count FROM po GROUP BY status");
-      foreach ($rows as $r) {
-          $counts[$r['status']] = (int)$r['count'];
-      }
-      
-      $selulosaCount = $db->exec("SELECT COUNT(*) AS total FROM order_layanan WHERE jenis_layanan = 'selulosa'")[0]['total'] ?? 0;
-      $lingkunganCount = $db->exec("SELECT COUNT(*) AS total FROM order_layanan WHERE jenis_layanan = 'lingkungan'")[0]['total'] ?? 0;
-      $orderBaruCount = $db->exec("SELECT COUNT(*) AS total FROM order_layanan WHERE status = 'baru'")[0]['total'] ?? 0;
-      $poBerjalanCount = $db->exec("SELECT COUNT(*) AS total FROM po WHERE status != 'kembali_selesai'")[0]['total'] ?? 0;
-      
-      \Base::instance()->set('selulosa_count', $selulosaCount);
-      \Base::instance()->set('lingkungan_count', $lingkunganCount);
-      \Base::instance()->set('order_baru_count', $orderBaruCount);
-      \Base::instance()->set('po_berjalan_count', $poBerjalanCount);
-  }
-  \Base::instance()->set('po_counts', $counts);
-~}
-
-<!-- Custom Style khusus untuk Responsivitas Tabel PO di Mobile -->
-<style>
-    @media (max-width: 767.98px) {
-        .table-responsive {
-            border: none !important;
-            overflow-x: visible !important;
-        }
-        table, thead, tbody, th, td, tr {
-            display: block !important;
-            width: 100% !important;
-        }
-        thead {
-            display: none !important;
-        }
-        tr {
-            background-color: #ffffff !important;
-            border: 1px solid var(--color-border) !important;
-            border-radius: 12px !important;
-            padding: 16px !important;
-            margin-bottom: 16px !important;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02) !important;
-        }
-        td {
-            text-align: left !important;
-            padding: 10px 0 !important;
-            border: none !important;
-            border-bottom: 1px dashed rgba(0, 0, 0, 0.06) !important;
-            position: relative;
-            padding-left: 45% !important;
-            font-size: 0.875rem !important;
-            max-width: none !important;
-        }
-        td:last-child {
-            border-bottom: none !important;
-            padding-bottom: 0 !important;
-        }
-        td::before {
-            content: attr(data-label);
-            position: absolute;
-            left: 0;
-            width: 40%;
-            font-weight: 700;
-            font-size: 0.725rem;
-            text-transform: uppercase;
-            color: var(--color-muted);
-            letter-spacing: 0.5px;
-            top: 50%;
-            transform: translateY(-50%);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        td[data-label="No"] {
-            padding-left: 0 !important;
-            font-weight: 700;
-            color: var(--color-primary) !important;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
-            padding-bottom: 10px !important;
-            margin-bottom: 6px !important;
-            font-size: 1rem !important;
-        }
-        td[data-label="No"]::before {
-            display: none !important;
-        }
-        td[data-label="No"]::after {
-            content: "Petunjuk Operasional (PO)";
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--color-text-dark);
-            margin-left: 8px;
-        }
-        td[data-label="Aksi"] {
-            padding-top: 14px !important;
-            border-bottom: none !important;
-            padding-left: 0 !important;
-        }
-        td[data-label="Aksi"]::before {
-            display: none !important;
-        }
-        td[data-label="Aksi"] a {
-            width: 100% !important;
-            display: block !important;
-            text-align: center !important;
-            padding: 10px !important;
-        }
-    }
-
-    /* Desktop Table Styling Kustom Premium */
-    @media (min-width: 768px) {
-        .table {
-            border-collapse: separate !important;
-            border-spacing: 0 !important;
-        }
-        .table thead th {
-            background-color: #f8fafc !important;
-            color: var(--color-text-dark) !important;
-            font-weight: 600 !important;
-            font-size: 0.8rem !important;
-            letter-spacing: 0.8px !important;
-            text-transform: uppercase !important;
-            border-top: 1px solid var(--color-border) !important;
-            border-bottom: 2px solid var(--color-primary) !important;
-            padding: 16px 20px !important;
-        }
-        .table tbody td {
-            padding: 16px 20px !important;
-            border-bottom: 1px solid var(--color-border) !important;
-            font-size: 0.9rem !important;
-            color: var(--color-text) !important;
-        }
-        .table-hover tbody tr:hover {
-            background-color: rgba(164, 30, 34, 0.02) !important;
-        }
-    }
-</style>
-
-<div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 mb-4">
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
     <div>
-        <h3 class="fw-bold mb-1"><i class="bi bi-file-earmark-check me-2 text-primary"></i>Petunjuk Operasional (PO)</h3>
-        <p class="text-muted mb-0">Pantau progres dokumen kerja PO, alur status pekerjaan, dan verifikasi Map Kendali.</p>
+        <h2 class="h4 fw-bold mb-1 text-dark">Monitoring Petunjuk Operasional (PO)</h2>
+        <p class="text-muted small mb-0">Pelacakan administrasi, evaluasi pelaksanaan, dan pengawasan batas waktu proyek OPTI BBSPJI Selulosa.</p>
     </div>
-    <div class="align-self-end align-self-sm-center">
-        <a href="{{ @BASE }}/po/ekspor?bulan={{ @filter_bulan }}&tahun={{ @filter_tahun }}&status={{ @filter_status }}&jenis_layanan={{ @filter_jenis_layanan }}&q={{ @search_q }}" class="btn btn-outline-success">
-            <i class="bi bi-file-earmark-excel me-1"></i>Ekspor Rekap PO
+    <div class="d-flex gap-2">
+        <a href="{{ @BASE }}/po/ekspor" class="btn btn-outline-success">
+            <i class="bi bi-file-earmark-excel"></i> Ekspor Rekap Excel
+        </a>
+        <a href="{{ @BASE }}/order/tambah" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i> Tambah Order Baru
         </a>
     </div>
 </div>
 
-<!-- Mini Dashboard Utama (OPTI Stats) -->
-<div class="row g-3 mb-4" data-aos="fade-up">
-    <div class="col-md-3 col-sm-6">
-        <div class="card shadow-sm border-0 bg-white">
-            <div class="card-body py-3 d-flex align-items-center gap-3">
-                <div class="bg-danger bg-opacity-10 text-danger rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px;"><i class="bi bi-tag-fill fs-4"></i></div>
-                <div>
-                    <div class="text-muted small">OPTI Selulosa dan Derivat</div>
-                    <h4 class="fw-bold mb-0">{{ @selulosa_count }} <span class="text-muted fs-6 font-normal">order</span></h4>
-                </div>
+<!-- ======================================================== -->
+<!-- 4 KARTU METRIK KPI RINGKASAN -->
+<!-- ======================================================== -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="metric-card">
+            <div>
+                <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">PO Aktif Berjalan</span>
+                <h3 class="fw-bold text-dark mb-0 mt-1">{{ @po_berjalan_count }}</h3>
+                <span class="small text-muted" style="font-size: 0.75rem;">Dokumen dalam proses</span>
+            </div>
+            <div class="metric-icon-box" style="background-color: rgba(136, 19, 55, 0.1); color: #881337;">
+                <i class="bi bi-speedometer2"></i>
             </div>
         </div>
     </div>
-    <div class="col-md-3 col-sm-6">
-        <div class="card shadow-sm border-0 bg-white">
-            <div class="card-body py-3 d-flex align-items-center gap-3">
-                <div class="bg-success bg-opacity-10 text-success rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px;"><i class="bi bi-tag-fill fs-4"></i></div>
-                <div>
-                    <div class="text-muted small">OPTI Lingkungan</div>
-                    <h4 class="fw-bold mb-0">{{ @lingkungan_count }} <span class="text-muted fs-6 font-normal">order</span></h4>
-                </div>
+    <div class="col-6 col-lg-3">
+        <div class="metric-card">
+            <div>
+                <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">Order Masuk Baru</span>
+                <h3 class="fw-bold text-dark mb-0 mt-1">{{ @order_baru_count }}</h3>
+                <span class="small text-muted" style="font-size: 0.75rem;">Menunggu approval</span>
+            </div>
+            <div class="metric-icon-box" style="background-color: #fef3c7; color: #d97706;">
+                <i class="bi bi-inbox-fill"></i>
             </div>
         </div>
     </div>
-    <div class="col-md-3 col-sm-6">
-        <div class="card shadow-sm border-0 bg-white">
-            <div class="card-body py-3 d-flex align-items-center gap-3">
-                <div class="bg-warning bg-opacity-10 text-warning rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px;"><i class="bi bi-clock-history fs-4"></i></div>
-                <div>
-                    <div class="text-muted small">Order Baru</div>
-                    <h4 class="fw-bold mb-0">{{ @order_baru_count }} <span class="text-muted fs-6 font-normal">belum approve</span></h4>
-                </div>
+    <div class="col-6 col-lg-3">
+        <div class="metric-card">
+            <div>
+                <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">OPTI Selulosa</span>
+                <h3 class="fw-bold text-dark mb-0 mt-1">{{ @selulosa_count }}</h3>
+                <span class="small text-muted" style="font-size: 0.75rem;">Katim: {{ @katim_selulosa_nama }}</span>
+            </div>
+            <div class="metric-icon-box" style="background-color: #ffe4e6; color: #e11d48;">
+                <i class="bi bi-tree-fill"></i>
             </div>
         </div>
     </div>
-    <div class="col-md-3 col-sm-6">
-        <div class="card shadow-sm border-0 bg-white">
-            <div class="card-body py-3 d-flex align-items-center gap-3">
-                <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px;"><i class="bi bi-arrow-repeat fs-4"></i></div>
-                <div>
-                    <div class="text-muted small">PO Sedang Berjalan</div>
-                    <h4 class="fw-bold mb-0">{{ @po_berjalan_count }} <span class="text-muted fs-6 font-normal">progres</span></h4>
-                </div>
+    <div class="col-6 col-lg-3">
+        <div class="metric-card">
+            <div>
+                <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">OPTI Lingkungan</span>
+                <h3 class="fw-bold text-dark mb-0 mt-1">{{ @lingkungan_count }}</h3>
+                <span class="small text-muted" style="font-size: 0.75rem;">Katim: {{ @katim_lingkungan_nama }}</span>
             </div>
-        </div>
-    </div>
-</div>
-
-<!-- Ringkasan Status PO (Dashboard Cards) -->
-<div class="row row-cols-1 row-cols-sm-2 row-cols-md-4 g-3 mb-4" data-aos="fade-up">
-    <!-- Card Belum Upload -->
-    <div class="col">
-        <div class="card h-100 shadow-sm border-start border-secondary border-4">
-            <div class="card-body py-3">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="text-uppercase small fw-bold text-muted" style="font-size: 0.65rem;">1. Belum Upload Dokumen</div>
-                        <h3 class="fw-bold mb-0 mt-1 text-dark">{{ @po_counts['belum_upload'] }}</h3>
-                    </div>
-                    <div class="bg-secondary bg-opacity-10 text-secondary rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px;">
-                        <i class="bi bi-file-earmark-lock fs-5"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Card Sudah Upload -->
-    <div class="col">
-        <div class="card h-100 shadow-sm border-start border-warning border-4" style="border-left-color: var(--color-accent) !important;">
-            <div class="card-body py-3">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="text-uppercase small fw-bold text-muted" style="font-size: 0.65rem;">2. Sudah Upload Dokumen</div>
-                        <h3 class="fw-bold mb-0 mt-1 text-dark">{{ @po_counts['sudah_upload'] }}</h3>
-                    </div>
-                    <div class="bg-warning bg-opacity-10 text-warning rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px; color: var(--color-accent) !important;">
-                        <i class="bi bi-file-earmark-arrow-up fs-5"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Card On Proses -->
-    <div class="col">
-        <div class="card h-100 shadow-sm border-start border-primary border-4">
-            <div class="card-body py-3">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="text-uppercase small fw-bold text-muted" style="font-size: 0.65rem;">3. On Proses</div>
-                        <h3 class="fw-bold mb-0 mt-1 text-dark">{{ @po_counts['on_proses'] }}</h3>
-                    </div>
-                    <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px;">
-                        <i class="bi bi-gear-wide-connected fs-5"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Card PO Kembali / Selesai -->
-    <div class="col">
-        <div class="card h-100 shadow-sm border-start border-success border-4" style="border-left-color: #166534 !important;">
-            <div class="card-body py-3">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="text-uppercase small fw-bold text-muted" style="font-size: 0.65rem;">4. PO Kembali / Selesai</div>
-                        <h3 class="fw-bold mb-0 mt-1 text-dark">{{ @po_counts['kembali_selesai'] }}</h3>
-                    </div>
-                    <div class="bg-success bg-opacity-10 text-success rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px; color: #166534 !important;">
-                        <i class="bi bi-check2-all fs-5"></i>
-                    </div>
-                </div>
+            <div class="metric-icon-box" style="background-color: #ccfbf1; color: #0d9488;">
+                <i class="bi bi-water"></i>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Card Filter Pencarian -->
-<div class="card mb-4 shadow-sm" data-aos="fade-up">
-    <div class="card-body bg-light bg-opacity-50 rounded">
-        <form method="GET" action="{{ @BASE }}/po" class="row g-3 align-items-end">
-            <div class="col-md-2 col-sm-6">
-                <label for="bulan" class="form-label small fw-bold text-secondary">Filter Bulan</label>
-                <select name="bulan" id="bulan" class="form-select form-select-sm">
-                    <option value="">-- Semua Bulan --</option>
-                    <repeat group="{{ @list_bulan }}" key="{{ @k }}" value="{{ @v }}">
-                        <option value="{{ @k }}" {{ @filter_bulan == @k ? 'selected' : '' }}>{{ @v }}</option>
+<!-- ======================================================== -->
+<!-- FILTER MULTI-DIMENSI MONITORING -->
+<!-- ======================================================== -->
+<div class="card mb-4 border-0 shadow-sm">
+    <div class="card-body p-3">
+        <form method="GET" action="{{ @BASE }}/po" class="row g-2 align-items-center">
+            <div class="col-md-3">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
+                    <input type="text" class="form-control border-start-0" name="q" placeholder="Cari nomor PO, mitra, judul..." value="{{ @search_q }}">
+                </div>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select form-select-sm" name="jenis_layanan">
+                    <option value="">Semua Divisi</option>
+                    <option value="selulosa" {{ @filter_jenis_layanan == 'selulosa' ? 'selected' : '' }}>Selulosa</option>
+                    <option value="lingkungan" {{ @filter_jenis_layanan == 'lingkungan' ? 'selected' : '' }}>Lingkungan</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select form-select-sm" name="status">
+                    <option value="">Semua Status PO</option>
+                    <repeat group="{{ @list_status }}" key="{{ @statKey }}" value="{{ @statLabel }}">
+                        <option value="{{ @statKey }}" {{ @filter_status == @statKey ? 'selected' : '' }}>
+                            {{ @statLabel }}
+                        </option>
                     </repeat>
                 </select>
             </div>
-
-            <div class="col-md-2 col-sm-6">
-                <label for="tahun" class="form-label small fw-bold text-secondary">Filter Tahun</label>
-                <input type="number" name="tahun" id="tahun" class="form-control form-control-sm" placeholder="Contoh: 2026" value="{{ @filter_tahun }}">
-            </div>
-
-            <div class="col-md-2 col-sm-6">
-                <label for="jenis_layanan" class="form-label small fw-bold text-secondary">Jenis Layanan</label>
-                <select name="jenis_layanan" id="jenis_layanan" class="form-select form-select-sm">
-                    <option value="">-- Semua Layanan --</option>
-                    <option value="selulosa" {{ @filter_jenis_layanan == 'selulosa' ? 'selected' : '' }}>OPTI Selulosa dan Derivat</option>
-                    <option value="lingkungan" {{ @filter_jenis_layanan == 'lingkungan' ? 'selected' : '' }}>OPTI Lingkungan</option>
-                </select>
-            </div>
-
-            <div class="col-md-3 col-sm-6">
-                <label for="status" class="form-label small fw-bold text-secondary">Filter Status PO</label>
-                <select name="status" id="status" class="form-select form-select-sm">
-                    <option value="">-- Semua Status --</option>
-                    <repeat group="{{ @list_status }}" key="{{ @sk }}" value="{{ @sv }}">
-                        <option value="{{ @sk }}" {{ @filter_status == @sk ? 'selected' : '' }}>{{ @sv }}</option>
+            <div class="col-md-2">
+                <select class="form-select form-select-sm" name="bulan">
+                    <option value="">Semua Bulan</option>
+                    <repeat group="{{ @list_bulan }}" key="{{ @bKey }}" value="{{ @bVal }}">
+                        <option value="{{ @bKey }}" {{ @filter_bulan == @bKey ? 'selected' : '' }}>
+                            {{ @bVal }}
+                        </option>
                     </repeat>
                 </select>
             </div>
-
             <div class="col-md-3 d-flex gap-2">
-                <button type="submit" class="btn btn-sm btn-primary flex-grow-1">
-                    <i class="bi bi-filter me-1"></i> Filter
+                <select class="form-select form-select-sm" name="overdue">
+                    <option value="">Semua Waktu</option>
+                    <option value="telat" {{ @filter_overdue == 'telat' ? 'selected' : '' }}>Hanya PO Terlambat</option>
+                </select>
+                <button type="submit" class="btn btn-sm btn-primary px-3 flex-shrink-0">
+                    <i class="bi bi-filter"></i> Filter
                 </button>
-                <a href="{{ @BASE }}/po" class="btn btn-sm btn-outline-secondary">
-                    <i class="bi bi-arrow-counterclockwise"></i> Reset
+                <a href="{{ @BASE }}/po" class="btn btn-sm btn-outline-secondary px-2 flex-shrink-0" title="Reset Filter">
+                    <i class="bi bi-arrow-clockwise"></i>
                 </a>
             </div>
         </form>
     </div>
 </div>
 
-<!-- Tabel Daftar PO -->
-<div class="card shadow-sm" data-aos="fade-up">
+<!-- ======================================================== -->
+<!-- TABEL DAFTAR REKAP PO (FULL DISPLAY, TIDAK PERLU SCROLL) -->
+<!-- ======================================================== -->
+<div class="card border-0 shadow-sm overflow-hidden">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2">
+            <i class="bi bi-file-earmark-ruled text-primary"></i> Daftar Dokumen Petunjuk Operasional
+        </h6>
+        <span class="badge bg-light text-muted border">{{ is_array(@daftar_po) ? count(@daftar_po) : 0 }} Dokumen Terdaftar</span>
+    </div>
     <div class="card-body p-0">
-        <check if="{{ count(@daftar_po) > 0 }}">
+        <check if="{{ @daftar_po && count(@daftar_po) > 0 }}">
             <true>
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover align-middle mb-0">
+                <div class="table-responsive" style="overflow-x: hidden;">
+                    <table class="table table-hover align-middle w-100 mb-0">
                         <thead>
                             <tr>
-                                <th style="width: 50px;" class="text-center">No</th>
-                                <th>Nomor PO</th>
-                                <th>Klien & Layanan</th>
-                                <th>Judul Kegiatan</th>
-                                <th>Tim Kerja</th>
-                                <th>Status PO</th>
-                                <th class="text-center" style="width: 100px;">Aksi</th>
+                                <th class="text-center" style="width: 3%; min-width: 35px;">No</th>
+                                <th style="width: 17%;">Dokumen PO & Tanggal</th>
+                                <th style="width: 32%;">Proyek & Mitra Industri</th>
+                                <th style="width: 13%;">Divisi & Tim</th>
+                                <th class="text-end" style="width: 15%;">Nilai & Pembayaran</th>
+                                <th style="width: 13%;">Status & Waktu</th>
+                                <th class="text-center" style="width: 7%; min-width: 65px;">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <repeat group="{{ @daftar_po }}" value="{{ @item }}" counter="{{ @ctr }}">
+                            <repeat group="{{ @daftar_po }}" value="{{ @p }}" counter="{{ @ctr }}">
                                 <tr>
-                                    <td class="text-center text-muted small" data-label="No">{{ @ctr }}</td>
-                                    <td data-label="Nomor PO">
-                                        <a href="{{ @BASE }}/po/{{ @item.id }}" class="fw-bold text-decoration-none text-primary">
-                                            {{ @item.nomor_po }}
+                                    <!-- 1. No -->
+                                    <td class="text-center text-muted small fw-semibold">{{ @ctr }}</td>
+
+                                    <!-- 2. Dokumen PO & Tanggal -->
+                                    <td>
+                                        <a href="{{ @BASE }}/po/{{ @p.id }}" class="fw-bold text-primary text-decoration-none d-block mb-1 text-truncate" title="{{ @p.nomor_po }}">
+                                            {{ @p.nomor_po }}
                                         </a>
-                                        <check if="{{ @item.kontrak_id }}">
-                                            <div class="small text-success mt-1"><i class="bi bi-file-earmark-check-fill me-1"></i>PKS Terbit</div>
-                                        </check>
+                                        <div class="text-muted small d-flex align-items-center gap-1" style="font-size: 0.75rem;">
+                                            <i class="bi bi-calendar3 text-secondary"></i>
+                                            <span>Masuk: {{ @p.tanggal_masuk ? date('d/m/Y', strtotime(@p.tanggal_masuk)) : '-' }}</span>
+                                        </div>
                                     </td>
-                                    <td data-label="Klien & Layanan">
-                                        <span class="text-dark fw-bold">{{ @item.nama_perusahaan }}</span>
-                                        <div class="mt-1">
-                                            <check if="{{ @item.jenis_layanan == 'selulosa' }}">
-                                                <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-20" style="font-size: 0.7rem;"><i class="bi bi-tag-fill me-1"></i>OPTI Selulosa dan Derivat</span>
-                                            </check>
-                                            <check if="{{ @item.jenis_layanan == 'lingkungan' }}">
-                                                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20" style="font-size: 0.7rem;"><i class="bi bi-tag-fill me-1"></i>OPTI Lingkungan</span>
+
+                                    <!-- 3. Proyek & Mitra Industri -->
+                                    <td>
+                                        <div class="fw-bold text-dark mb-1" style="font-size: 0.85rem; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;" title="{{ @p.judul_kegiatan }}">
+                                            {{ @p.judul_kegiatan }}
+                                        </div>
+                                        <div class="small text-muted d-flex align-items-center gap-1 text-truncate" style="font-size: 0.775rem;">
+                                            <i class="bi bi-building text-secondary"></i>
+                                            <check if="{{ @mask_client_name }}">
+                                                <true>
+                                                    {~ 
+                                                        $words = explode(' ', $p['nama_perusahaan']);
+                                                        $masked = array_map(function($w) {
+                                                            return mb_strlen($w) > 1 ? mb_substr($w, 0, 1) . '***' : $w;
+                                                        }, $words);
+                                                        $namaTampil = implode(' ', $masked);
+                                                    ~}
+                                                    <span title="Nama disamarkan untuk privasi" class="fw-semibold">{{ $namaTampil }} ({{ @p.pt_cv }})</span>
+                                                </true>
+                                                <false>
+                                                    <span class="fw-semibold">{{ @p.nama_perusahaan }} ({{ @p.pt_cv }})</span>
+                                                </false>
                                             </check>
                                         </div>
                                     </td>
-                                    <td data-label="Judul Kegiatan">
-                                        <span class="text-secondary small fw-semibold">{{ @item.judul_kegiatan }}</span>
+
+                                    <!-- 4. Divisi & Tim Pelaksana -->
+                                    <td>
+                                        <div class="mb-1">
+                                            <check if="{{ @p.jenis_layanan_opti == 'selulosa' }}">
+                                                <span class="badge badge-pill-danger">Selulosa</span>
+                                            </check>
+                                            <check if="{{ @p.jenis_layanan_opti == 'lingkungan' }}">
+                                                <span class="badge badge-pill-success">Lingkungan</span>
+                                            </check>
+                                        </div>
+                                        <div class="text-muted small text-truncate" style="font-size: 0.75rem;" title="{{ @p.tim_kerja }}">
+                                            <i class="bi bi-person me-1"></i>{{ @p.tim_kerja ?: 'Tim Balai' }}
+                                        </div>
                                     </td>
-                                    <td data-label="Tim Kerja">
-                                        <span class="small text-muted">{{ @item.tim_kerja ?: 'Belum dibentuk' }}</span>
+
+                                    <!-- 5. Nilai & Pembayaran -->
+                                    <td class="text-end">
+                                        <div class="fw-bold text-dark small mb-1">
+                                            Rp {{ number_format(@p.biaya, 0, ',', '.') }}
+                                        </div>
+                                        <div>
+                                            <check if="{{ (float)@p.total_terbayar >= (float)@p.biaya && (float)@p.biaya > 0 }}">
+                                                <span class="badge badge-pill-success" style="font-size: 0.675rem;">
+                                                    <i class="bi bi-check2"></i> Lunas
+                                                </span>
+                                            </check>
+                                            <check if="{{ (float)@p.total_terbayar < (float)@p.biaya }}">
+                                                <span class="badge badge-pill-warning" style="font-size: 0.675rem;" title="Terbayar: Rp {{ number_format(@p.total_terbayar, 0, ',', '.') }}">
+                                                    Bayar: Rp {{ number_format(@p.total_terbayar, 0, ',', '.') }}
+                                                </span>
+                                            </check>
+                                        </div>
                                     </td>
-                                    <td data-label="Status PO">
-                                        <check if="{{ @item.status == 'belum_upload' }}">
-                                            <span class="badge bg-secondary px-2.5 py-1.5 rounded-pill text-uppercase" style="font-size: 0.65rem; font-weight: 600;">Belum Upload</span>
-                                        </check>
-                                        <check if="{{ @item.status == 'sudah_upload' }}">
-                                            <span class="badge bg-warning text-dark px-2.5 py-1.5 rounded-pill text-uppercase" style="font-size: 0.65rem; font-weight: 600;">Sudah Upload</span>
-                                        </check>
-                                        <check if="{{ @item.status == 'on_proses' }}">
-                                            <span class="badge bg-primary px-2.5 py-1.5 rounded-pill text-uppercase" style="font-size: 0.65rem; font-weight: 600;">On Proses</span>
-                                        </check>
-                                        <check if="{{ @item.status == 'kembali_selesai' }}">
-                                            <span class="badge bg-success px-2.5 py-1.5 rounded-pill text-uppercase" style="font-size: 0.65rem; font-weight: 600;">Selesai</span>
-                                        </check>
+
+                                    <!-- 6. Status & Batas Waktu -->
+                                    <td>
+                                        <div class="mb-2">
+                                            <check if="{{ @p.status == 'belum_upload' }}">
+                                                <span class="badge bg-light text-secondary border border-secondary-subtle px-2 py-1 fw-semibold" style="font-size: 0.72rem;">
+                                                    <i class="bi bi-circle-fill me-1" style="font-size: 0.45rem; opacity: 0.6;"></i>Menunggu Upload
+                                                </span>
+                                            </check>
+                                            <check if="{{ @p.status == 'sudah_upload' }}">
+                                                <span class="badge px-2 py-1 fw-semibold" style="font-size: 0.72rem; background-color: #fef3c7; color: #92400e; border: 1px solid #fde68a;">
+                                                    <i class="bi bi-file-earmark-check me-1"></i>Dokumen Terunggah
+                                                </span>
+                                            </check>
+                                            <check if="{{ @p.status == 'on_proses' }}">
+                                                <span class="badge px-2 py-1 fw-semibold" style="font-size: 0.72rem; background-color: rgba(136, 19, 55, 0.08); color: #881337; border: 1px solid rgba(136, 19, 55, 0.2);">
+                                                    <i class="bi bi-gear-fill me-1" style="font-size: 0.6rem;"></i>Sedang Dikerjakan
+                                                </span>
+                                            </check>
+                                            <check if="{{ @p.status == 'kembali_selesai' }}">
+                                                <span class="badge px-2 py-1 fw-semibold" style="font-size: 0.72rem; background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0;">
+                                                    <i class="bi bi-check-circle-fill me-1"></i>Selesai (BAST)
+                                                </span>
+                                            </check>
+                                        </div>
+                                        <div class="small d-flex flex-column gap-1" style="font-size: 0.72rem; line-height: 1.25;">
+                                            <div class="text-muted d-flex align-items-center gap-1">
+                                                <i class="bi bi-calendar3" style="font-size: 0.7rem;"></i>
+                                                <span>Target: <strong class="text-dark">{{ @p.target_selesai ? date('d/m/Y', strtotime(@p.target_selesai)) : '-' }}</strong></span>
+                                            </div>
+                                            <check if="{{ @p.status != 'kembali_selesai' }}">
+                                                <check if="{{ @p.overdue_info.is_overdue }}">
+                                                    <true>
+                                                        <span class="text-danger fw-bold d-flex align-items-center gap-1">
+                                                            <i class="bi bi-exclamation-triangle-fill"></i> Telat {{ @p.overdue_info.days }} hari
+                                                        </span>
+                                                    </true>
+                                                    <false>
+                                                        <span class="text-secondary d-flex align-items-center gap-1">
+                                                            <i class="bi bi-clock"></i> Sisa <strong class="text-dark">{{ @p.overdue_info.days }} hari</strong>
+                                                        </span>
+                                                    </false>
+                                                </check>
+                                            </check>
+                                            <check if="{{ @p.status == 'kembali_selesai' }}">
+                                                <span class="text-success fw-medium d-flex align-items-center gap-1">
+                                                    <i class="bi bi-check2-all text-success"></i> Tuntas
+                                                </span>
+                                            </check>
+                                        </div>
                                     </td>
-                                    <td class="text-center" data-label="Aksi">
-                                        <a href="{{ @BASE }}/po/{{ @item.id }}" class="btn btn-sm btn-outline-primary" title="Lihat Detail & Map Kendali">
-                                            <i class="bi bi-search me-1"></i> Detail
+
+                                    <!-- 7. Tombol Aksi -->
+                                    <td class="text-center">
+                                        <a href="{{ @BASE }}/po/{{ @p.id }}" class="btn btn-sm btn-primary py-1 px-2" style="font-size: 0.775rem;" title="Buka Detail PO & Map Kendali">
+                                            <i class="bi bi-eye"></i> Detail
                                         </a>
                                     </td>
                                 </tr>
@@ -392,9 +289,12 @@
             </true>
             <false>
                 <div class="text-center py-5">
-                    <i class="bi bi-file-earmark-x text-muted display-4 d-block mb-3"></i>
-                    <h5 class="text-muted">Tidak ada dokumen PO yang sesuai</h5>
-                    <p class="text-secondary small mb-0">Dokumen PO otomatis muncul ketika Order Layanan di-approve oleh Pejabat.</p>
+                    <i class="bi bi-journal-x text-muted display-4 d-block mb-3"></i>
+                    <h5 class="fw-bold text-dark">Tidak ada data dokumen PO</h5>
+                    <p class="text-muted small mb-3">Sesuaikan filter pencarian atau setujui Order Layanan yang masuk.</p>
+                    <a href="{{ @BASE }}/order" class="btn btn-sm btn-primary">
+                        <i class="bi bi-inbox me-1"></i> Buka Order Masuk
+                    </a>
                 </div>
             </false>
         </check>

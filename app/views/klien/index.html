@@ -1,192 +1,118 @@
-<!-- Custom Style khusus untuk Responsivitas Tabel Daftar Klien di Mobile -->
-<style>
-    @media (max-width: 767.98px) {
-        /* Menonaktifkan format table bawaan agar bisa dialihkan menjadi block card */
-        .table-responsive {
-            border: none !important;
-            overflow-x: visible !important;
-        }
-        table, thead, tbody, th, td, tr {
-            display: block !important;
-            width: 100% !important;
-        }
-        thead {
-            display: none !important; /* Sembunyikan header tabel horizontal */
-        }
-        tr {
-            background-color: #ffffff !important;
-            border: 1px solid var(--color-border) !important;
-            border-radius: 12px !important;
-            padding: 16px !important;
-            margin-bottom: 16px !important;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02) !important;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        tr:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.04) !important;
-        }
-        td {
-            text-align: left !important;
-            padding: 10px 0 !important;
-            border: none !important;
-            border-bottom: 1px dashed rgba(0, 0, 0, 0.06) !important;
-            position: relative;
-            padding-left: 45% !important; /* Menyediakan ruang untuk label kolom di kiri */
-            font-size: 0.875rem !important;
-            max-width: none !important; /* Menghapus batasan lebar maksimal desktop di layar mobile */
-        }
-        td:last-child {
-            border-bottom: none !important;
-            padding-bottom: 0 !important;
-        }
-        
-        /* Memunculkan Label Kolom di Sebelah Kiri Nilai */
-        td::before {
-            content: attr(data-label);
-            position: absolute;
-            left: 0;
-            width: 40%;
-            font-weight: 700;
-            font-size: 0.725rem;
-            text-transform: uppercase;
-            color: var(--color-muted);
-            letter-spacing: 0.5px;
-            top: 50%;
-            transform: translateY(-50%);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        
-        /* Kustomisasi Khusus untuk Kolom Nomor Urut sebagai Header Kartu */
-        td[data-label="No"] {
-            padding-left: 0 !important;
-            font-weight: 700;
-            color: var(--color-primary) !important;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
-            padding-bottom: 10px !important;
-            margin-bottom: 6px !important;
-            font-size: 1rem !important;
-        }
-        td[data-label="No"]::before {
-            display: none !important;
-        }
-        td[data-label="No"]::after {
-            content: "Mitra / Klien";
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--color-text-dark);
-            margin-left: 8px;
-        }
-    }
-
-    /* Desktop Table Styling Kustom Premium */
-    @media (min-width: 768px) {
-        .table {
-            border-collapse: separate !important;
-            border-spacing: 0 !important;
-        }
-        .table thead th {
-            background-color: #f8fafc !important;
-            color: var(--color-text-dark) !important;
-            font-weight: 600 !important;
-            font-size: 0.8rem !important;
-            letter-spacing: 0.8px !important;
-            text-transform: uppercase !important;
-            border-top: 1px solid var(--color-border) !important;
-            border-bottom: 2px solid var(--color-primary) !important;
-            padding: 16px 20px !important;
-        }
-        .table tbody td {
-            padding: 16px 20px !important;
-            border-bottom: 1px solid var(--color-border) !important;
-            font-size: 0.9rem !important;
-            color: var(--color-text) !important;
-        }
-        .table-hover tbody tr:hover {
-            background-color: rgba(164, 30, 34, 0.02) !important;
-        }
-    }
-</style>
-
-<div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 mb-4" data-aos="fade-up">
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
     <div>
-        <h3 class="fw-bold mb-1"><i class="bi bi-building me-2 text-primary"></i>Daftar Klien</h3>
-        <p class="text-muted mb-0">Kelola data mitra/perusahaan pengguna layanan OPTI.</p>
+        <h2 class="h4 fw-bold mb-1 text-dark">Master Data Customer / Mitra Industri</h2>
+        <p class="text-muted small mb-0">Database terpusat mitra industri balai (<code>tb_customer</code>) yang terdaftar dalam layanan OPTI.</p>
     </div>
-    <check if="{{ @SESSION.role == 'admin_order' || @SESSION.role == 'superadmin' }}">
-        <div class="align-self-end align-self-sm-center">
-            <a href="{{ @BASE }}/klien/tambah" class="btn btn-primary">
-                <i class="bi bi-plus-lg me-1"></i>Tambah Klien
-            </a>
-        </div>
-    </check>
+    <a href="{{ @BASE }}/klien/tambah" class="btn btn-primary">
+        <i class="bi bi-building-add"></i> Tambah Customer Baru
+    </a>
 </div>
 
-<div class="card shadow-sm" data-aos="fade-up">
+<!-- FILTER CUSTOMER -->
+<div class="card mb-4 border-0 shadow-sm">
+    <div class="card-body p-3">
+        <form method="GET" action="{{ @BASE }}/klien" class="row g-2 align-items-center">
+            <div class="col-md-9">
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
+                    <input type="text" class="form-control border-start-0" name="q" placeholder="Cari nama perusahaan, PIC, email, atau telepon..." value="{{ @search_q }}">
+                </div>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i> Cari Data</button>
+                <a href="{{ @BASE }}/klien" class="btn btn-outline-secondary px-2" title="Reset"><i class="bi bi-arrow-clockwise"></i></a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- TABEL CUSTOMER -->
+<div class="card border-0 shadow-sm overflow-hidden">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h6 class="m-0 fw-bold text-dark"><i class="bi bi-building text-primary me-2"></i>Daftar Mitra Industri Terdaftar</h6>
+        <span class="badge bg-light text-muted border">{{ count(@daftar_klien) }} Customer</span>
+    </div>
     <div class="card-body p-0">
         <check if="{{ count(@daftar_klien) > 0 }}">
             <true>
                 <div class="table-responsive">
-                    <table class="table table-striped table-hover align-middle mb-0">
+                    <table class="table table-hover align-middle mb-0">
                         <thead>
                             <tr>
-                                <th style="width: 50px;" class="text-center">No</th>
-                                <th>Nama Perusahaan</th>
-                                <th>PIC</th>
-                                <th>Kontak</th>
-                                <th>Alamat</th>
-                                <th>Tgl Dibuat</th>
+                                <th class="text-center" style="width: 40px;">No</th>
+                                <th>Nama Perusahaan / Industri</th>
+                                <th style="width: 110px;">Badan Usaha</th>
+                                <th style="width: 200px;">Person In Charge (PIC)</th>
+                                <th style="width: 200px;">Kontak & Email</th>
+                                <th style="width: 140px;">Layanan Balai</th>
+                                <th class="text-center" style="width: 100px;">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <repeat group="{{ @daftar_klien }}" value="{{ @klien }}" counter="{{ @ctr }}">
+                            <repeat group="{{ @daftar_klien }}" value="{{ @k }}" counter="{{ @ctr }}">
                                 <tr>
-                                    <td class="text-center text-muted small" data-label="No">{{ @ctr }}</td>
-                                    <td data-label="Nama Perusahaan">
-                                        <div class="d-flex align-items-center">
-                                            <i class="bi bi-building text-primary me-2 fs-5"></i>
-                                            <span class="fw-semibold text-dark">{{ @klien.nama_perusahaan }}</span>
-                                        </div>
-                                    </td>
-                                    <td data-label="PIC">
-                                        <check if="{{ @klien.pic }}">
-                                            <true>
-                                                <div class="d-flex align-items-center">
-                                                    <i class="bi bi-person-circle text-primary me-2"></i>
-                                                    <span class="fw-semibold text-dark">{{ @klien.pic }}</span>
-                                                </div>
-                                            </true>
-                                            <false><span class="text-muted small"><em>Belum ditentukan</em></span></false>
-                                        </check>
-                                    </td>
-                                    <td data-label="Kontak">
-                                        <div class="d-flex flex-column gap-1 small text-secondary">
-                                            <check if="{{ @klien.telepon }}">
-                                                <div><i class="bi bi-telephone text-primary me-2"></i>{{ @klien.telepon }}</div>
-                                            </check>
-                                            <check if="{{ @klien.email }}">
-                                                <div>
-                                                    <i class="bi bi-envelope text-primary me-2"></i>
-                                                    <a href="mailto:{{ @klien.email }}" class="text-decoration-none text-secondary">{{ @klien.email }}</a>
-                                                </div>
-                                            </check>
-                                            <check if="{{ !@klien.telepon && !@klien.email }}">
-                                                <span class="text-muted small"><em>Tidak ada kontak</em></span>
+                                    <td class="text-center text-muted small">{{ @ctr }}</td>
+                                    <td>
+                                        <div class="fw-bold text-dark mb-0">
+                                            <check if="{{ @mask_client_name }}">
+                                                <true>
+                                                    {~ 
+                                                        $words = explode(' ', $k['nmcustomer']);
+                                                        $masked = array_map(function($w) {
+                                                            return mb_strlen($w) > 1 ? mb_substr($w, 0, 1) . '***' : $w;
+                                                        }, $words);
+                                                        $namaTampil = implode(' ', $masked);
+                                                    ~}
+                                                    <span title="Nama disamarkan untuk privasi">{{ $namaTampil }}</span>
+                                                </true>
+                                                <false>
+                                                    {{ @k.nmcustomer }}
+                                                </false>
                                             </check>
                                         </div>
+                                        <div class="text-muted text-truncate small" style="max-width: 250px;" title="{{ @k.alamatcustomer }}">
+                                            <i class="bi bi-geo-alt me-1"></i>{{ @k.alamatcustomer ?: 'Alamat belum diisi' }}
+                                        </div>
                                     </td>
-                                    <td class="small text-muted" style="max-width: 250px;" data-label="Alamat">
-                                        <check if="{{ @klien.alamat }}">
-                                            <true>
-                                                <span class="text-secondary"><i class="bi bi-geo-alt text-primary me-1"></i>{{ @klien.alamat }}</span>
-                                            </true>
-                                            <false><span class="text-muted small"><em>Belum diisi</em></span></false>
+                                    <td>
+                                        <span class="badge badge-pill-primary">{{ @k.pt_cv ?: 'PT' }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold text-dark small">{{ @k.contactperson ?: (@k.contactperson_opti ?: '-') }}</div>
+                                        <div class="text-muted" style="font-size: 0.75rem;">
+                                            {{ @k.nohpcontactperson_opti ?: (@k.notelpcustomer ?: '-') }}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="text-truncate small" style="max-width: 180px;">
+                                            <a href="mailto:{{ @k.emailcustomer }}" class="text-decoration-none text-secondary">
+                                                <i class="bi bi-envelope me-1"></i>{{ @k.emailcustomer ?: '-' }}
+                                            </a>
+                                        </div>
+                                        <div class="small text-muted">
+                                            <i class="bi bi-telephone me-1"></i>{{ @k.notelpcustomer ?: '-' }}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <check if="{{ @k.id_layanan_optimalisasi == 1 }}">
+                                            <span class="badge badge-pill-success"><i class="bi bi-check-circle me-1"></i>Mitra OPTI</span>
+                                        </check>
+                                        <check if="{{ @k.id_layanan_optimalisasi != 1 }}">
+                                            <span class="badge badge-pill-secondary">Umum Balai</span>
                                         </check>
                                     </td>
-                                    <td class="small text-muted" data-label="Tgl Dibuat">
-                                        <span><i class="bi bi-calendar3 text-primary me-2"></i>{{ date('d/m/Y', strtotime(@klien.created_at)) }}</span>
+                                    <td class="text-center">
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ @BASE }}/klien/{{ @k.id_customer }}/edit" class="btn btn-outline-secondary py-1 px-2" title="Edit Customer">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <form action="{{ @BASE }}/klien/{{ @k.id_customer }}/hapus" method="POST" class="d-inline" onsubmit="return confirm('Hapus data customer ini dari database?');">
+                                                <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
+                                                <button type="submit" class="btn btn-outline-danger py-1 px-2" title="Hapus Customer">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
                                     </td>
                                 </tr>
                             </repeat>
@@ -196,11 +122,11 @@
             </true>
             <false>
                 <div class="text-center py-5">
-                    <i class="bi bi-building text-muted display-4 d-block mb-3"></i>
-                    <h5 class="text-muted">Belum ada data klien</h5>
-                    <p class="text-secondary small mb-3">Silakan tambahkan data klien/mitra pertama Anda.</p>
-                    <a href="{{ @BASE }}/klien/tambah" class="btn btn-sm btn-outline-primary">
-                        <i class="bi bi-plus-lg me-1"></i>Tambah Klien Sekarang
+                    <i class="bi bi-building-x text-muted display-4 d-block mb-3"></i>
+                    <h5 class="fw-bold text-dark">Customer Tidak Ditemukan</h5>
+                    <p class="text-muted small mb-3">Tidak ada data mitra industri yang sesuai dengan pencarian Anda.</p>
+                    <a href="{{ @BASE }}/klien/tambah" class="btn btn-sm btn-primary">
+                        <i class="bi bi-building-add me-1"></i> Tambah Customer Baru
                     </a>
                 </div>
             </false>

@@ -1,244 +1,165 @@
 <?php
 
 /**
- * Controller untuk menangani Autentikasi (Login & Logout)
+ * Controller untuk Autentikasi Login (terhadap tb_arsipuser), Sesi Pengguna, dan Profil
  */
 class AuthController extends Controller {
 
     /**
-     * Menampilkan Form Login
+     * Tampilkan form login
      * Route: GET /login
      */
     public function loginGet($f3) {
-        // Jika sudah login, langsung alihkan ke dashboard PO
-        if ($f3->exists('SESSION.user_id')) {
+        if ($this->isLoggedIn()) {
             $f3->reroute('/po');
             return;
         }
-
-        // Tampilkan halaman login (tanpa memanggil render() agar tidak memuat layout umum dashboard)
-        $f3->set('page_title', 'Login - Sistem OPTI Tracker');
+        $f3->set('page_title', 'Login - OPTI Tracker BBSPJI Selulosa');
         echo \Template::instance()->render('auth/login.html');
     }
 
     /**
-     * Memproses data login user
+     * Proses submit form login
      * Route: POST /login
      */
     public function loginPost($f3) {
-        $username = trim($f3->get('POST.username') ?? '');
+        $login    = trim($f3->get('POST.login') ?? ($f3->get('POST.username') ?? ''));
         $password = $f3->get('POST.password') ?? '';
 
-        // Validasi input minimal sebelum diproses
-        if (empty($username) || empty($password)) {
-            $this->setFlashError('Username dan password wajib diisi.');
+        if (empty($login) || empty($password)) {
+            $this->setFlashError('Username/Login dan password wajib diisi.');
             $f3->reroute('/login');
             return;
         }
 
-        // Batasi panjang karakter username untuk keamanan input
-        if (strlen($username) < 3 || strlen($username) > 50 || !preg_match('/^[a-zA-Z0-9_]+$/', $username)) {
-            $this->setFlashError('Format username tidak valid (hanya huruf, angka, dan underscore).');
+        $userModel = new ArsipUser($this->db);
+        $authResult = $userModel->authenticate($login, $password);
+
+        if (!$authResult['success']) {
+            $this->setFlashError($authResult['message']);
             $f3->reroute('/login');
             return;
         }
 
-        try {
-            $userModel = new User($this->db);
-            $result = $userModel->attemptLogin($username, $password);
+        $userData = $authResult['user'];
 
-            if ($result['status'] === 'success') {
-                // Keamanan Session Fixation: Regenerasi ID session setelah login berhasil
-                if (session_status() === PHP_SESSION_ACTIVE) {
-                    session_regenerate_id(true);
-                }
+        // Simpan data sesi pengguna
+        $_SESSION['user_id']            = $userData['id_user'];
+        $_SESSION['login']              = $userData['login'];
+        $_SESSION['username']           = $userData['login'];
+        $_SESSION['nama_lengkap']       = $userData['nama_user'];
+        $_SESSION['nama_user']          = $userData['nama_user'];
+        $_SESSION['role']               = $userData['role'];
+        $_SESSION['jenis_layanan_opti'] = $userData['jenis_layanan_opti'];
+        $_SESSION['bidang']             = $userData['bidang'];
+        $_SESSION['foto_profil']        = $userData['foto_profil'];
 
-                // Simpan data aman ke session
-                $_SESSION['user_id']      = $result['user']['id'];
-                $_SESSION['username']     = $result['user']['username'];
-                $_SESSION['nama_lengkap'] = $result['user']['nama_lengkap'];
-                $_SESSION['role']         = $result['user']['role'];
-                $_SESSION['jenis_layanan']= $result['user']['jenis_layanan'];
-                $_SESSION['foto_profil']  = $result['user']['foto_profil'] ?? null;
-                $_SESSION['last_activity'] = time();
+        $f3->set('SESSION.user_id', $userData['id_user']);
+        $f3->set('SESSION.login', $userData['login']);
+        $f3->set('SESSION.username', $userData['login']);
+        $f3->set('SESSION.nama_lengkap', $userData['nama_user']);
+        $f3->set('SESSION.nama_user', $userData['nama_user']);
+        $f3->set('SESSION.role', $userData['role']);
+        $f3->set('SESSION.jenis_layanan_opti', $userData['jenis_layanan_opti']);
+        $f3->set('SESSION.bidang', $userData['bidang']);
+        $f3->set('SESSION.foto_profil', $userData['foto_profil']);
 
-                $this->setFlashSuccess('Selamat datang kembali, ' . htmlspecialchars($result['user']['nama_lengkap']) . '!');
-                $f3->reroute('/po');
-            } else {
-                // Menampilkan pesan error generik (atau lockout detail)
-                $this->setFlashError($result['message']);
-                $f3->reroute('/login');
-            }
-        } catch (\Exception $e) {
-            // Hindari membocorkan detail error PHP/Database ke user umum
-            $this->setFlashError('Terjadi kesalahan pada sistem saat memproses login.');
-            $f3->reroute('/login');
-        }
+        // Load masking preference
+        $fieldConfigModel = new OptiFieldConfig($this->db);
+        $maskEnabled = $fieldConfigModel->isMaskClientNameEnabled();
+        $_SESSION['mask_client_name'] = $maskEnabled;
+        $f3->set('SESSION.mask_client_name', $maskEnabled);
+
+        $this->setFlashSuccess("Selamat datang kembali, <strong>{$userData['nama_user']}</strong>!");
+        $f3->reroute('/po');
     }
 
     /**
-     * Memproses Logout
-     * Route: POST /logout
+     * Proses logout
+     * Route: POST /logout atau GET /logout
      */
     public function logout($f3) {
-        // Hapus session data
         $_SESSION = array();
-
-        // Hapus cookie session jika ada
         if (ini_get("session.use_cookies")) {
             $params = session_get_cookie_params();
             setcookie(
-                session_name(),
-                '',
-                time() - 42000,
-                $params["path"],
-                $params["domain"],
-                $params["secure"],
+                session_name(), 
+                '', 
+                time() - 42000, 
+                $params["path"], 
+                $params["domain"], 
+                $params["secure"], 
                 $params["httponly"]
             );
         }
-
-        // Hancurkan session
-        if (session_status() === PHP_SESSION_ACTIVE) {
-            session_destroy();
-        }
-
-        // Redirect ke login
+        session_destroy();
+        $f3->clear('SESSION');
+        $this->setFlashSuccess('Anda telah berhasil keluar dari sistem OPTI Tracker.');
         $f3->reroute('/login');
     }
 
     /**
-     * Menampilkan Halaman Edit Profil
+     * Halaman profil pengguna & pengaturan alert pribadi
      * Route: GET /profil
      */
     public function profileGet($f3) {
-        $userModel = new User($this->db);
-        $user = $userModel->getById($_SESSION['user_id']);
-        if (!$user) {
-            $f3->error(404, 'User tidak ditemukan.');
-            return;
-        }
+        $this->requireAuth();
+        $idUser = (int)($f3->get('SESSION.user_id') ?? ($_SESSION['user_id'] ?? 0));
 
-        $f3->set('user_data', array(
-            'nama_lengkap' => $user->nama_lengkap,
-            'username' => $user->username,
-            'foto_profil' => $user->foto_profil
-        ));
+        $userModel = new ArsipUser($this->db);
+        $profil = $userModel->getProfil($idUser);
 
-        $this->render('auth/profil.html', 'Profil Saya - Sistem OPTI Tracker', 'profil');
+        $alertModel = new OptiUserAlertConfig($this->db);
+        $userAlerts = $alertModel->getByUserId($idUser);
+
+        $f3->set('profil', $profil);
+        $f3->set('user_alerts', $userAlerts);
+        $f3->set('alert_types', OptiUserAlertConfig::$ALERT_TYPES);
+
+        $this->render('auth/profil.html', 'Profil Pengguna & Pengaturan Alert - OPTI Tracker', 'profil');
     }
 
     /**
-     * Memproses Perubahan Profil & Upload Foto
+     * Proses update data profil pengguna
      * Route: POST /profil/simpan
      */
     public function profilePost($f3) {
-        // Selalu set Content-Type ke JSON untuk respon AJAX
-        header('Content-Type: application/json');
+        $this->requireAuth();
+        $idUser = (int)($f3->get('SESSION.user_id') ?? ($_SESSION['user_id'] ?? 0));
+        $post = $f3->get('POST');
 
-        $namaLengkap  = trim($f3->get('POST.nama_lengkap') ?? '');
-        $passwordBaru = $f3->get('POST.password_baru') ?? '';
+        $namaUser = trim($post['nama_user'] ?? '');
+        $noHp     = trim($post['no_hp'] ?? '');
 
-        if (empty($namaLengkap)) {
-            echo json_encode(array('status' => 'error', 'message' => 'Nama Lengkap tidak boleh kosong.'));
+        if (empty($namaUser)) {
+            $this->setFlashError('Nama pengguna wajib diisi.');
+            $f3->reroute('/profil');
             return;
         }
 
         try {
-            $userModel = new User($this->db);
-            $user = $userModel->getById($_SESSION['user_id']);
-            if (!$user) {
-                echo json_encode(array('status' => 'error', 'message' => 'User tidak ditemukan.'));
-                return;
+            $userModel = new ArsipUser($this->db);
+            $userModel->updateProfil($idUser, array(
+                'nama_user' => $namaUser,
+                'no_hp'     => $noHp
+            ));
+
+            $_SESSION['nama_lengkap'] = $namaUser;
+            $_SESSION['nama_user']    = $namaUser;
+            $f3->set('SESSION.nama_lengkap', $namaUser);
+            $f3->set('SESSION.nama_user', $namaUser);
+
+            // Pastikan konfigurasi alert otomatis aktif di latar belakang
+            $alertModel = new OptiUserAlertConfig($this->db);
+            foreach (OptiUserAlertConfig::$ALERT_TYPES as $alertKey => $label) {
+                $alertModel->saveUserAlert($idUser, $alertKey, true, 3);
             }
 
-            // Simpan nama lengkap lama untuk verifikasi perubahan nama lengkap
-            $namaLengkapLama = $user->nama_lengkap;
-
-            // 1. Simpan Nama Lengkap
-            $user->nama_lengkap = $namaLengkap;
-            $_SESSION['nama_lengkap'] = $namaLengkap;
-
-            // 2. Jika ada password baru atau password sekarang yang diisi
-            $passwordSekarang = $f3->get('POST.password_sekarang') ?? '';
-            if (!empty($passwordBaru) || !empty($passwordSekarang)) {
-                if (empty($passwordSekarang)) {
-                    echo json_encode(array('status' => 'error', 'message' => 'Kata sandi saat ini wajib diisi jika ingin mengganti kata sandi.'));
-                    return;
-                }
-                if (empty($passwordBaru)) {
-                    echo json_encode(array('status' => 'error', 'message' => 'Kata sandi baru wajib diisi jika ingin mengganti kata sandi.'));
-                    return;
-                }
-
-                // Verifikasi kata sandi sekarang
-                if (!password_verify($passwordSekarang, $user->password_hash)) {
-                    // Kembalikan nama lengkap session ke nilai lama karena transaksi gagal
-                    $_SESSION['nama_lengkap'] = $namaLengkapLama;
-                    echo json_encode(array('status' => 'error', 'message' => 'Kata sandi saat ini salah.'));
-                    return;
-                }
-
-                if (strlen($passwordBaru) < 8 || !preg_match('/[A-Za-z]/', $passwordBaru) || !preg_match('/[0-9]/', $passwordBaru)) {
-                    $_SESSION['nama_lengkap'] = $namaLengkapLama;
-                    echo json_encode(array('status' => 'error', 'message' => 'Password baru harus minimal 8 karakter dan mengandung kombinasi huruf & angka.'));
-                    return;
-                }
-                $user->password_hash = password_hash($passwordBaru, PASSWORD_DEFAULT);
-            }
-
-            // 3. Proses upload foto profil jika ada berkas yang dikirim
-            if (isset($_FILES['foto_profil']) && $_FILES['foto_profil']['error'] === UPLOAD_ERR_OK) {
-                $fileTmpPath   = $_FILES['foto_profil']['tmp_name'];
-                $fileName      = $_FILES['foto_profil']['name'];
-                $fileSize      = $_FILES['foto_profil']['size'];
-                $fileNameCmps  = explode(".", $fileName);
-                $fileExtension = strtolower(end($fileNameCmps));
-
-                $allowedExtensions = array('jpg', 'jpeg', 'png', 'gif');
-                if (!in_array($fileExtension, $allowedExtensions)) {
-                    $_SESSION['nama_lengkap'] = $namaLengkapLama;
-                    echo json_encode(array('status' => 'error', 'message' => 'Format file foto profil tidak didukung (gunakan JPG, JPEG, PNG, atau GIF).'));
-                    return;
-                }
-
-                // Batas ukuran 2MB
-                if ($fileSize > 2 * 1024 * 1024) {
-                    $_SESSION['nama_lengkap'] = $namaLengkapLama;
-                    echo json_encode(array('status' => 'error', 'message' => 'Ukuran file foto profil melebihi batas 2MB.'));
-                    return;
-                }
-
-                $uploadFileDir = 'uploads/profile_pics/';
-                if (!is_dir($uploadFileDir)) {
-                    mkdir($uploadFileDir, 0755, true);
-                }
-
-                $newFileName = 'profile_' . $user->id . '_' . time() . '.' . $fileExtension;
-                $destPath = $uploadFileDir . $newFileName;
-
-                if (move_uploaded_file($fileTmpPath, $destPath)) {
-                    // Hapus foto lama jika ada di disk
-                    if ($user->foto_profil && file_exists($user->foto_profil)) {
-                        @unlink($user->foto_profil);
-                    }
-                    $user->foto_profil = $destPath;
-                    $_SESSION['foto_profil'] = $destPath;
-                } else {
-                    $_SESSION['nama_lengkap'] = $namaLengkapLama;
-                    echo json_encode(array('status' => 'error', 'message' => 'Gagal memindahkan file foto profil ke server.'));
-                    return;
-                }
-            }
-
-            $user->save();
-            echo json_encode(array('status' => 'success', 'message' => 'Profil Anda berhasil diperbarui.'));
-
+            $this->setFlashSuccess('Data profil berhasil diperbarui.');
+            $f3->reroute('/profil');
         } catch (\Exception $e) {
-            if (isset($namaLengkapLama)) {
-                $_SESSION['nama_lengkap'] = $namaLengkapLama;
-            }
-            echo json_encode(array('status' => 'error', 'message' => 'Terjadi kesalahan pada sistem saat memperbarui profil.'));
+            $this->setFlashError('Gagal memperbarui profil: ' . $e->getMessage());
+            $f3->reroute('/profil');
         }
     }
 }

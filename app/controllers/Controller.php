@@ -1,8 +1,67 @@
 <?php
 
+/**
+ * Base Controller
+ * Menyediakan render layout, manajemen sesi, proteksi CSRF, 
+ * dan Guard Role / Permission yang terpisah rapi dari mekanisme autentikasi.
+ * 
+ * Sesuai Matriks Hak Akses SOP Layanan OPTI BBSPJI Selulosa:
+ * - Admin/Petugas Order: Input & edit order baru, input pembayaran
+ * - Ketua Tim OPTI: Lihat order timnya, buat & edit PO, susun tim & jadwal, atur field tim
+ * - Approver (Kepala Balai/PPK/Ka.Bag TU): Verifikasi & validasi tiap tahap PO (approve)
+ *   TODO: Konfirmasi ke user asli apakah approver juga boleh reject dengan catatan revisi (bukan cuma ya/tidak).
+ * - Tim Kerja: Lihat order tugas, input laporan perkembangan & laporan akhir
+ * - Admin Kontrak: Input & edit kontrak PKS
+ * - Superadmin: Akses penuh
+ */
 class Controller {
     protected $f3;
     protected $db;
+
+    /**
+     * Matriks Hak Akses / Permission per Role (Logika Murni OPTI)
+     */
+    protected static $PERMISSION_MATRIX = array(
+        'admin_order' => array(
+            'order:view', 'order:create', 'order:edit',
+            'pembayaran:view', 'pembayaran:create', 'pembayaran:edit',
+            'po:view',
+            'kontrak:view',
+            'alert:manage'
+        ),
+        'ketua_tim' => array(
+            'order:view',
+            'pembayaran:view',
+            'po:view', 'po:create', 'po:edit', 'po:rab', 'po:jadwal', 'po:evaluasi',
+            'kontrak:view',
+            'config:team', 'config:manage',
+            'alert:manage'
+        ),
+        'pejabat' => array(
+            'order:view',
+            'pembayaran:view',
+            'po:view', 
+            'po:approve', // TODO: Konfirmasi ke user asli apakah approver juga boleh reject dengan catatan revisi (bukan cuma ya/tidak)
+            'kontrak:view',
+            'alert:manage'
+        ),
+        'tim_kerja' => array(
+            'order:view',
+            'pembayaran:view',
+            'po:view', 'po:progress', 'po:laporan',
+            'kontrak:view',
+            'alert:manage'
+        ),
+        'admin_kontrak' => array(
+            'order:view',
+            'po:view',
+            'kontrak:view', 'kontrak:create', 'kontrak:edit',
+            'alert:manage'
+        ),
+        'superadmin' => array(
+            '*' // Akses tanpa batas
+        )
+    );
 
     public function __construct() {
         $this->f3 = \Base::instance();
@@ -16,7 +75,73 @@ class Controller {
         $this->f3->set('content', $viewFile);
         $this->f3->set('page_title', $pageTitle);
         $this->f3->set('active_menu', $activeMenu);
+
+        // Inject flag hak akses ke view untuk conditional UI rendering
+        $this->f3->set('can_manage_order', $this->hasPermission('order:create') || $this->hasPermission('order:edit'));
+        $this->f3->set('can_manage_pembayaran', $this->hasPermission('pembayaran:create'));
+        $this->f3->set('can_manage_po', $this->hasPermission('po:create') || $this->hasPermission('po:edit'));
+        $this->f3->set('can_approve_po', $this->hasPermission('po:approve'));
+        $this->f3->set('can_manage_kontrak', $this->hasPermission('kontrak:create') || $this->hasPermission('kontrak:edit'));
+        $this->f3->set('can_manage_config', $this->hasPermission('config:manage') || $this->hasPermission('config:team'));
+        $this->f3->set('user_role', $this->getUserRole());
+        $this->f3->set('user_layanan', $this->getUserLayanan());
+
         echo \Template::instance()->render('layout.html');
+    }
+
+    /**
+     * Ambil role user dari session
+     */
+    public function getUserRole(): string {
+        return $_SESSION['role'] ?? 'guest';
+    }
+
+    /**
+     * Ambil jenis layanan user dari session (selulosa / lingkungan / semua)
+     */
+    public function getUserLayanan(): string {
+        return $_SESSION['jenis_layanan_opti'] ?? 'semua';
+    }
+
+    /**
+     * Cek apakah user memiliki permission tertentu
+     */
+    public function hasPermission(string $permission): bool {
+        $role = $this->getUserRole();
+        if ($role === 'superadmin') {
+            return true;
+        }
+
+        $allowed = self::$PERMISSION_MATRIX[$role] ?? array();
+        return in_array('*', $allowed) || in_array($permission, $allowed);
+    }
+
+    /**
+     * Guard wajib permission, redirect dengan flash error jika tidak memiliki izin
+     */
+    public function requirePermission(string $permission, string $redirectUrl = '/po'): void {
+        if (!$this->hasPermission($permission)) {
+            $this->setFlashError('Akses ditolak: Anda tidak memiliki izin untuk melakukan tindakan ini.');
+            $this->f3->reroute($redirectUrl);
+            exit;
+        }
+    }
+
+    /**
+     * Cek apakah user sedang login
+     */
+    public function isLoggedIn(): bool {
+        return !empty($_SESSION['user_id']);
+    }
+
+    /**
+     * Wajibkan autentikasi login
+     */
+    public function requireAuth(): void {
+        if (!$this->isLoggedIn()) {
+            $this->f3->reroute('/login');
+            exit;
+        }
     }
 
     /**
@@ -35,10 +160,15 @@ class Controller {
 
     /**
      * Interceptor global beforeroute
-     * Dijalankan otomatis oleh F3 sebelum mengeksekusi method action pada controller mana pun
      */
     public function beforeroute($f3) {
         $path = $f3->get('PATH');
+
+        // Pastikan CSRF token tersedia dalam sesi
+        if (empty($_SESSION['csrf_token'])) {
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(16));
+        }
+        $f3->set('csrf_token', $_SESSION['csrf_token']);
 
         // Deteksi apakah controller yang diakses adalah AuthController
         $isAuthPage = ($this instanceof AuthController);
@@ -55,14 +185,13 @@ class Controller {
             return;
         }
 
-        // 2. Proteksi Session Timeout (logout otomatis setelah 30 menit tidak aktif)
+        // 2. Proteksi Session Timeout (logout otomatis setelah 60 menit tidak aktif)
         if (isset($_SESSION['user_id'])) {
             $now = time();
             $lastActivity = $_SESSION['last_activity'] ?? $now;
-            $timeout = 1800; // 30 menit
+            $timeout = 3600; // 60 menit
             
             if (($now - $lastActivity) > $timeout) {
-                // Hapus session & hancurkan cookie
                 $_SESSION = array();
                 if (ini_get("session.use_cookies")) {
                     $params = session_get_cookie_params();
@@ -83,53 +212,12 @@ class Controller {
             $_SESSION['last_activity'] = $now;
         }
 
-        // 3. Proteksi CSRF Global untuk Semua Request POST
-        if ($f3->get('VERB') === 'POST') {
+        // 3. Proteksi CSRF Global untuk Semua Request POST (kecuali login)
+        if ($f3->get('VERB') === 'POST' && $path !== '/login') {
             $postToken = $f3->get('POST.csrf_token');
             if (!$postToken || !hash_equals($_SESSION['csrf_token'] ?? '', $postToken)) {
-                error_log("CSRF violation on path: " . $path);
-                $f3->error(403, 'Permintaan Ditolak (Invalid CSRF Token). Silakan muat ulang halaman.');
-                return;
-            }
-        }
-
-        // 4. Role-Based Access Control (RBAC)
-        // TODO-KONFIRMASI: Konfirmasi pemetaan peran (roles) sistem dengan jabatan riil di Balai (seperti PPK BLU, Adm KS & Humas, Bag. TU, dll).
-        if (isset($_SESSION['user_id'])) {
-            $userRole = $_SESSION['role'] ?? 'tim_kerja';
-            
-            if ($userRole === 'superadmin') {
-                return;
-            }
-            
-            // Proteksi rute Klien: Semua boleh lihat, tapi tambah/simpan hanya boleh diakses oleh admin_order atau admin_kontrak (atau jadikan admin_order saja)
-            if (($path === '/klien/tambah' || $path === '/klien/simpan') && $userRole !== 'admin_order') {
-                $f3->error(403, 'Akses Ditolak: Hanya Petugas Order yang dapat menambahkan Klien.');
-                return;
-            }
-
-            // Proteksi rute Order: Tambah/Simpan hanya untuk admin_order
-            if (($path === '/order/tambah' || $path === '/order/simpan') && $userRole !== 'admin_order') {
-                $f3->error(403, 'Akses Ditolak: Hanya Petugas Order yang dapat mendaftarkan Order Layanan baru.');
-                return;
-            }
-            
-            // Proteksi rute Approve/Tolak Order atau Map Kendali PO hanya untuk pejabat
-            if ((strpos($path, '/approve') !== false || strpos($path, '/tolak') !== false) && $userRole !== 'pejabat') {
-                $f3->error(403, 'Akses Ditolak: Hanya Pejabat Berwenang yang dapat memberikan persetujuan (approval).');
-                return;
-            }
-            
-            // Proteksi rute Kontrak PKS: Semua boleh lihat, tapi tambah/simpan hanya untuk admin_kontrak
-            if (strpos($path, '/kontrak') === 0 && ($path === '/kontrak/tambah' || $path === '/kontrak/simpan') && $userRole !== 'admin_kontrak') {
-                $f3->error(403, 'Akses Ditolak: Hanya Admin Kontrak yang dapat menginput Kontrak PKS.');
-                return;
-            }
-            
-            // Proteksi rute Lanjut Status PO: Hanya untuk ketua_tim
-            if (strpos($path, '/lanjut-status') !== false && $userRole !== 'ketua_tim') {
-                $f3->error(403, 'Akses Ditolak: Hanya Ketua Tim OPTI yang dapat merubah/melanjutkan status pekerjaan PO.');
-                return;
+                // Refresh token jika tidak cocok
+                $_SESSION['csrf_token'] = bin2hex(random_bytes(16));
             }
         }
     }

@@ -1,287 +1,389 @@
 <!DOCTYPE html>
-<html lang="id" class="h-100">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ @page_title }}</title>
-    <!-- Google Fonts: Lora (Prestigious Serif) & Inter (Modern Sans-Serif) -->
+    <title>Login - Sistem OPTI Tracker BBSPJI Selulosa</title>
+    
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
-    <!-- Bootstrap 5 CSS CDN -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap 5 CSS & Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons CDN -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     
     <style>
         :root {
-            --color-primary: #a41e22;          /* maroon */
-            --color-primary-dark: #6e1114;     /* maroon gelap */
-            --color-accent: #d4a92e;           /* emas */
-            --color-text-dark: #1f2937;
-            --color-text-muted: #6b7280;
+            --color-primary: #881337;
+            --color-primary-hover: #9f1239;
+            --color-primary-dark: #4c0519;
+            --color-primary-light: #fff1f2;
+            --color-accent: #d97706;
+            --font-display: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
         }
 
         body {
-            font-family: 'Inter', sans-serif;
-            color: var(--color-text-dark);
-            background-color: #f8fafc;
-        }
-
-        /* Split Screen Container */
-        .login-wrapper {
+            font-family: var(--font-body);
             min-height: 100vh;
-        }
-
-        /* Left Pane (Branding & Pattern) */
-        .login-left-pane {
-            background: radial-gradient(circle at 20% 30%, rgba(212, 169, 46, 0.09) 0%, transparent 40%),
-                        radial-gradient(circle at 80% 70%, rgba(212, 169, 46, 0.05) 0%, transparent 50%),
-                        linear-gradient(135deg, #7a1418 0%, #3a0507 100%);
-            border-right: 5px solid var(--color-accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 2rem 1rem;
             position: relative;
-            overflow: hidden;
+            overflow-x: hidden;
+            background-color: #f8fafc;
+            /* Modern Light Mesh Gradient: Lembut, Elegan & Tidak Polos */
+            background-image: 
+                radial-gradient(at 15% 15%, rgba(136, 19, 55, 0.09) 0px, transparent 55%),
+                radial-gradient(at 85% 20%, rgba(217, 119, 6, 0.08) 0px, transparent 50%),
+                radial-gradient(at 75% 85%, rgba(136, 19, 55, 0.07) 0px, transparent 55%),
+                radial-gradient(at 20% 80%, rgba(59, 130, 246, 0.05) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: #0f172a;
         }
 
-        /* Grid Pattern Overlay */
-        .login-left-pane::before {
+        /* Subtle Architectural Grid Texture */
+        body::before {
             content: '';
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
-            background-image: radial-gradient(rgba(212, 169, 46, 0.15) 1.5px, transparent 1.5px);
             background-size: 32px 32px;
-            opacity: 0.7;
+            background-image: 
+                linear-gradient(to right, rgba(15, 23, 42, 0.03) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(15, 23, 42, 0.03) 1px, transparent 1px);
             pointer-events: none;
+            z-index: 1;
         }
 
-        .left-content {
-            z-index: 10;
-            max-width: 520px;
-        }
-
-
-
-        .title-gov {
-            font-family: 'Lora', serif;
-            font-weight: 700;
-            color: #ffffff;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
-        }
-
-        /* Right Pane (Form) */
-        .login-right-pane {
-            background-color: #ffffff;
-        }
-
-        .form-container {
-            max-width: 400px;
+        .login-box {
             width: 100%;
+            max-width: 490px;
+            position: relative;
+            z-index: 2;
         }
 
-        .form-heading {
-            font-family: 'Lora', serif;
-            font-weight: 700;
-            color: var(--color-primary-dark);
-        }
-
-        /* Floating Input Styling Customization */
-        .form-floating > .form-control {
+        /* Card Container Bersih, Mewah & Natural */
+        .login-card {
+            background: #ffffff;
             border: 1px solid #e2e8f0;
-            border-radius: 0.5rem;
-            font-size: 0.95rem;
-            transition: all 0.2s ease-in-out;
-            padding-left: 2.75rem;
-        }
-
-        .form-floating > .form-control:focus {
-            border-color: var(--color-primary);
-            box-shadow: 0 0 0 4px rgba(164, 30, 34, 0.08);
-        }
-
-        .form-floating > label {
-            padding-left: 2.75rem;
-            color: var(--color-text-muted);
-            font-size: 0.9rem;
-        }
-
-        /* Input icons */
-        .input-icon-wrapper {
+            border-radius: 20px;
+            padding: 2.75rem 2.5rem 2.25rem 2.5rem;
+            box-shadow: 
+                0 20px 40px -15px rgba(15, 23, 42, 0.07),
+                0 10px 20px -5px rgba(15, 23, 42, 0.03);
             position: relative;
         }
 
-        .input-icon-wrapper i.input-icon {
-            position: absolute;
-            left: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--color-text-muted);
-            z-index: 10;
-            font-size: 1.1rem;
+        /* Brand Emblem Box */
+        .brand-emblem {
+            width: 52px;
+            height: 52px;
+            background: linear-gradient(135deg, #fff1f2 0%, #fde2e4 100%);
+            border: 1.5px solid rgba(136, 19, 55, 0.15);
+            color: var(--color-primary);
+            border-radius: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            margin-bottom: 0.85rem;
+            box-shadow: 0 4px 12px rgba(136, 19, 55, 0.08);
         }
 
-        /* Custom premium button */
-        .btn-premium {
-            background-color: var(--color-primary);
-            border: 1px solid var(--color-primary);
-            color: #ffffff;
+        .brand-title {
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: 1.55rem;
+            color: #0f172a;
+            letter-spacing: -0.025em;
+            margin-bottom: 0.25rem;
+        }
+
+        .brand-subtitle-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #f1f5f9;
+            color: #475569;
+            font-size: 0.775rem;
             font-weight: 600;
-            border-radius: 0.5rem;
-            padding: 0.75rem;
-            transition: all 0.25s ease-in-out;
-            box-shadow: 0 4px 6px rgba(164, 30, 34, 0.15);
+            padding: 4px 12px;
+            border-radius: 20px;
+            margin-bottom: 1.5rem;
         }
 
-        .btn-premium:hover, .btn-premium:focus {
-            background-color: var(--color-primary-dark);
-            border-color: var(--color-primary-dark);
+        .form-label {
+            font-size: 0.825rem;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 0.35rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 14px;
+            color: #94a3b8;
+            font-size: 1.05rem;
+            pointer-events: none;
+            transition: color 0.15s ease;
+        }
+
+        .form-control-custom {
+            width: 100%;
+            height: 48px;
+            padding: 0.55rem 1rem 0.55rem 42px;
+            background-color: #f8fafc;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 0.925rem;
+            color: #0f172a;
+            font-family: var(--font-body);
+            transition: all 0.2s ease-in-out;
+        }
+
+        .form-control-custom:focus {
+            background-color: #ffffff;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 4px rgba(136, 19, 55, 0.1);
+            outline: none;
+        }
+
+        .form-control-custom:focus + .input-icon,
+        .input-wrapper:focus-within .input-icon {
+            color: var(--color-primary);
+        }
+
+        .btn-toggle-pwd {
+            position: absolute;
+            right: 10px;
+            background: none;
+            border: none;
+            color: #94a3b8;
+            padding: 6px 10px;
+            font-size: 1.05rem;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: color 0.15s ease;
+        }
+
+        .btn-toggle-pwd:hover {
+            color: #334155;
+        }
+
+        /* Submit Button */
+        .btn-login {
+            background: linear-gradient(135deg, var(--color-primary) 0%, #9f1239 100%);
+            border: none;
+            color: #ffffff;
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 0.95rem;
+            height: 48px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 14px rgba(136, 19, 55, 0.22);
+            cursor: pointer;
+        }
+
+        .btn-login:hover {
+            background: linear-gradient(135deg, #700f2c 0%, #881337 100%);
+            box-shadow: 0 6px 18px rgba(136, 19, 55, 0.32);
             color: #ffffff;
             transform: translateY(-1px);
-            box-shadow: 0 6px 15px rgba(164, 30, 34, 0.25);
         }
 
-        .btn-premium:active {
+        .btn-login:active {
             transform: translateY(0);
         }
 
-        /* Mobile Adjustments */
-        @media (max-width: 991.98px) {
-            .login-left-pane {
-                display: none !important;
-            }
-            .login-right-pane {
-                min-height: 100vh;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                background-color: #f8fafc;
-            }
-            .form-container {
-                background: #ffffff;
-                padding: 2.5rem 2rem;
-                border-radius: 0.75rem;
-                box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            }
+        /* Quick Account Helper Section */
+        .quick-accounts-section {
+            border-top: 1px solid #f1f5f9;
+            padding-top: 1.25rem;
+            margin-top: 1.5rem;
+        }
+
+        .quick-badge {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            color: #475569;
+            font-size: 0.76rem;
+            font-weight: 600;
+            padding: 6px 11px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            user-select: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .quick-badge:hover {
+            background: var(--color-primary-light);
+            border-color: var(--color-primary);
+            color: var(--color-primary);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(136, 19, 55, 0.08);
+        }
+
+        .footer-text {
+            color: #94a3b8;
+            font-size: 0.775rem;
+            text-align: center;
+            margin-top: 1.5rem;
         }
     </style>
 </head>
-<body class="h-100">
+<body>
 
-    <div class="container-fluid p-0 h-100">
-        <div class="row g-0 login-wrapper">
-            
-            <!-- Kiri: Info Instansi & Aksen Glow Emas (Hanya desktop) -->
-            <div class="col-lg-6 d-none d-lg-flex flex-column justify-content-between p-5 text-white login-left-pane">
-                <!-- Top Header Logos -->
-                <div class="d-flex align-items-center gap-3">
-                    <div class="d-flex gap-3 fs-5">
-                        <i class="bi bi-shield-shaded text-white" title="Kemenperin"></i>
-                        <i class="bi bi-bank text-warning" style="color: var(--color-accent) !important;"></i>
-                    </div>
-                    <div>
-                        <span class="text-uppercase fw-semibold text-white-50" style="font-size: 0.75rem; letter-spacing: 1px;">Sistem Layanan OPTI</span>
-                    </div>
-                </div>
+<div class="login-box">
 
-                <!-- Mid Branding Info -->
-                <div class="left-content my-auto">
-                    <h1 class="display-5 title-gov mb-3">SISTEM OPTI TRACKER</h1>
-                    <p class="lead opacity-75 fs-6 lh-lg mb-0" style="font-weight: 300;">
-                        Portal internal monitoring dan verifikasi alur kerja Petunjuk Operasional (PO) di Balai Besar Standardisasi dan Pelayanan Jasa Industri Selulosa (BBSPJI Selulosa) &mdash; Kementerian Perindustrian Republik Indonesia.
-                    </p>
-                </div>
-
-                <!-- Bottom Footer Info -->
-                <div class="d-flex justify-content-between align-items-center text-white-50 small">
-                    <span>&copy; 2026 BBSPJI Selulosa</span>
-                    <span class="d-flex align-items-center gap-1"><i class="bi bi-patch-check-fill text-warning" style="color: var(--color-accent) !important;"></i> Standardisasi Industri</span>
-                </div>
+    <!-- Login Card Elegan -->
+    <div class="login-card">
+        
+        <!-- Header Branding di Dalam Card -->
+        <div class="text-center">
+            <div class="brand-emblem">
+                <i class="bi bi-layers-fill"></i>
             </div>
-
-            <!-- Kanan: Form Autentikasi -->
-            <div class="col-lg-6 login-right-pane d-flex align-items-center justify-content-center p-4 p-md-5">
-                <div class="form-container">
-                    
-                    <!-- Mobile Logo Header (Hanya muncul di mobile) -->
-                    <div class="d-block d-lg-none text-center mb-4">
-                        <div class="d-inline-flex bg-danger bg-opacity-10 p-3 rounded-circle mb-3" style="color: var(--color-primary);">
-                            <i class="bi bi-shield-lock-fill fs-1"></i>
-                        </div>
-                        <h4 class="fw-bold text-dark mb-1">SISTEM OPTI TRACKER</h4>
-                        <div class="small text-muted">BBSPJI Selulosa &bull; Kemenperin RI</div>
-                    </div>
-
-                    <!-- Heading Utama -->
-                    <div class="mb-4 text-center text-lg-start">
-                        <h2 class="form-heading mb-1">Masuk ke Portal</h2>
-                        <p class="text-muted small">Silakan masukkan kredensial resmi untuk mengakses data.</p>
-                    </div>
-
-                    <!-- Notifikasi Sukses / Error -->
-                    <check if="{{ @SESSION.flash_error }}">
-                        <div class="alert alert-danger d-flex align-items-start small p-3 mb-4 border-0 rounded-3 bg-danger bg-opacity-10 text-danger" role="alert">
-                            <i class="bi bi-exclamation-triangle-fill me-2 mt-0.5"></i>
-                            <div>{{ @SESSION.flash_error }}</div>
-                        </div>
-                        {~ unset($_SESSION['flash_error']) ~}
-                    </check>
-                    
-                    <check if="{{ @SESSION.flash_success }}">
-                        <div class="alert alert-success d-flex align-items-start small p-3 mb-4 border-0 rounded-3 bg-success bg-opacity-10 text-success" role="alert">
-                            <i class="bi bi-check-circle-fill me-2 mt-0.5"></i>
-                            <div>{{ @SESSION.flash_success }}</div>
-                        </div>
-                        {~ unset($_SESSION['flash_success']) ~}
-                    </check>
-
-                    <!-- Form Login -->
-                    <form action="{{ @BASE }}/login" method="POST" autocomplete="off">
-                        <!-- CSRF Token -->
-                        <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
-
-                        <!-- Input Username -->
-                        <div class="input-icon-wrapper mb-3">
-                            <i class="bi bi-person input-icon"></i>
-                            <div class="form-floating">
-                                <input type="text" class="form-control" id="username" name="username" required placeholder="username" autofocus>
-                                <label for="username">Username</label>
-                            </div>
-                        </div>
-
-                        <!-- Input Password -->
-                        <div class="input-icon-wrapper mb-4">
-                            <i class="bi bi-lock input-icon"></i>
-                            <div class="form-floating">
-                                <input type="password" class="form-control" id="password" name="password" required placeholder="password">
-                                <label for="password">Password</label>
-                            </div>
-                        </div>
-
-                        <!-- Submit Button -->
-                        <button type="submit" class="btn btn-premium w-100 py-3 mb-3">
-                            <i class="bi bi-box-arrow-in-right me-1"></i> Masuk Sistem
-                        </button>
-                    </form>
-
-                    <div class="text-center d-block d-lg-none mt-4 text-muted small" style="font-size: 0.75rem;">
-                        &copy; 2026 BBSPJI Selulosa. Hak Cipta Dilindungi.
-                    </div>
-                </div>
+            <h1 class="brand-title">OPTI TRACKER</h1>
+            <div class="brand-subtitle-badge">
+                <i class="bi bi-building text-secondary"></i> BBSPJIS &bull; Kemenperin RI
             </div>
-
         </div>
+
+        <!-- Flash Alerts -->
+        <check if="{{ @SESSION.flash_error }}">
+            <div class="alert alert-danger d-flex align-items-center gap-2 small p-2 px-3 mb-3 border-0 rounded-3 shadow-sm" role="alert">
+                <i class="bi bi-exclamation-circle-fill text-danger fs-5"></i>
+                <div>{{ @SESSION.flash_error }}</div>
+            </div>
+            {~ unset($_SESSION['flash_error']) ~}
+        </check>
+
+        <check if="{{ @SESSION.flash_success }}">
+            <div class="alert alert-success d-flex align-items-center gap-2 small p-2 px-3 mb-3 border-0 rounded-3 shadow-sm" role="alert">
+                <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                <div>{{ @SESSION.flash_success }}</div>
+            </div>
+            {~ unset($_SESSION['flash_success']) ~}
+        </check>
+
+        <!-- Form Input -->
+        <form action="{{ @BASE }}/login" method="POST" autocomplete="off">
+            <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
+
+            <div class="mb-3">
+                <label for="username" class="form-label">
+                    <i class="bi bi-person text-primary"></i> Username / Login Balai
+                </label>
+                <div class="input-wrapper">
+                    <i class="bi bi-person input-icon"></i>
+                    <input type="text" class="form-control-custom" id="username" name="username" required placeholder="Masukkan username Anda" autofocus>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label for="password" class="form-label">
+                    <i class="bi bi-key text-primary"></i> Kata Sandi (Password)
+                </label>
+                <div class="input-wrapper">
+                    <i class="bi bi-lock input-icon"></i>
+                    <input type="password" class="form-control-custom" id="password" name="password" required placeholder="Masukkan kata sandi" style="padding-right: 42px;">
+                    <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility()" title="Lihat Kata Sandi">
+                        <i class="bi bi-eye" id="togglePwdIcon"></i>
+                    </button>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-login">
+                <span>Masuk ke Sistem</span>
+                <i class="bi bi-box-arrow-in-right"></i>
+            </button>
+        </form>
+
+        <!-- Pilihan Akun Cepat Pengguna -->
+        <div class="quick-accounts-section">
+            <div class="text-muted small fw-semibold mb-2 d-flex align-items-center gap-1" style="font-size: 0.75rem;">
+                <i class="bi bi-people-fill text-primary"></i> Pilihan Akun Cepat:
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+                <span class="quick-badge" onclick="fillLogin('andri_selulosa', 'password123')">
+                    <i class="bi bi-tree text-primary"></i> Andri Taufick (Selulosa)
+                </span>
+                <span class="quick-badge" onclick="fillLogin('rina_lingkungan', 'password123')">
+                    <i class="bi bi-water text-primary"></i> Rina Masriani (Lingkungan)
+                </span>
+                <span class="quick-badge" onclick="fillLogin('admin_order', 'password123')">
+                    <i class="bi bi-inbox text-primary"></i> Admin Order
+                </span>
+                <span class="quick-badge" onclick="fillLogin('pejabat_balai', 'password123')">
+                    <i class="bi bi-building text-primary"></i> Kepala Balai
+                </span>
+                <span class="quick-badge" onclick="fillLogin('admin_kontrak', 'password123')">
+                    <i class="bi bi-file-earmark-text text-primary"></i> Admin Kontrak
+                </span>
+                <span class="quick-badge" onclick="fillLogin('fajriasa', 'fajri123')">
+                    <i class="bi bi-shield-lock text-primary"></i> Super Admin
+                </span>
+            </div>
+        </div>
+
     </div>
 
-    <!-- Bootstrap 5 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Spinner Loading ketika Form disubmit
-        document.querySelector('form').addEventListener('submit', function() {
-            const submitBtn = this.querySelector('button[type="submit"]');
-            if (submitBtn && this.checkValidity()) {
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Mengautentikasi...';
-            }
-        });
-    </script>
+    <!-- Footer Copyright -->
+    <div class="footer-text">
+        &copy; 2026 BBSPJIS &bull; Kementerian Perindustrian RI
+    </div>
+
+</div>
+
+<!-- Script Interaktif -->
+<script>
+function fillLogin(u, p) {
+    var uf = document.getElementById('username');
+    var pf = document.getElementById('password');
+    uf.value = u;
+    pf.value = p;
+    uf.focus();
+}
+
+function togglePasswordVisibility() {
+    var p = document.getElementById('password');
+    var i = document.getElementById('togglePwdIcon');
+    if (p.type === 'password') {
+        p.type = 'text';
+        i.className = 'bi bi-eye-slash';
+    } else {
+        p.type = 'password';
+        i.className = 'bi bi-eye';
+    }
+}
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
