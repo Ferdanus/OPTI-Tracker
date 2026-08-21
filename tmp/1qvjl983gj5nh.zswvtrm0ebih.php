@@ -1,0 +1,226 @@
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+    <div>
+        <h2 class="h4 fw-bold mb-1 text-dark">Daftar Order Layanan OPTI</h2>
+        <p class="text-muted small mb-0">Permohonan jasa teknis baru dari mitra industri yang masuk sebelum penerbitan Petunjuk Operasional (PO).</p>
+    </div>
+    <a href="<?= ($BASE) ?>/order/tambah" class="btn btn-primary">
+        <i class="bi bi-plus-lg"></i> Tambah Order Layanan
+    </a>
+</div>
+
+<!-- ======================================================== -->
+<!-- FILTER ORDER -->
+<!-- ======================================================== -->
+<div class="card mb-4 border-0 shadow-sm">
+    <div class="card-body p-3">
+        <form method="GET" action="<?= ($BASE) ?>/order" class="row g-2 align-items-center">
+            <div class="col-md-4">
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
+                    <input type="text" class="form-control border-start-0" name="q" placeholder="Cari nomor order, mitra, judul..." value="<?= ($search_q) ?>">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" name="jenis_layanan">
+                    <option value="">Semua Divisi Layanan</option>
+                    <option value="selulosa" <?= ($filter_jenis_layanan == 'selulosa' ? 'selected' : '') ?>>OPTI Selulosa</option>
+                    <option value="lingkungan" <?= ($filter_jenis_layanan == 'lingkungan' ? 'selected' : '') ?>>OPTI Lingkungan</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" name="status">
+                    <option value="">Semua Status Order</option>
+                    <option value="draft" <?= ($filter_status == 'draft' ? 'selected' : '') ?>>Draft Permohonan</option>
+                    <option value="disetujui" <?= ($filter_status == 'disetujui' ? 'selected' : '') ?>>Disetujui (Terbit PO)</option>
+                    <option value="ditolak" <?= ($filter_status == 'ditolak' ? 'selected' : '') ?>>Ditolak</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-filter"></i> Filter</button>
+                <a href="<?= ($BASE) ?>/order" class="btn btn-outline-secondary px-2" title="Reset"><i class="bi bi-arrow-clockwise"></i></a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ======================================================== -->
+<!-- TABEL ORDER -->
+<!-- ======================================================== -->
+<div class="card border-0 shadow-sm overflow-hidden">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h6 class="m-0 fw-bold text-dark"><i class="bi bi-inbox text-primary me-2"></i>Daftar Order Layanan</h6>
+        <span class="badge bg-light text-muted border"><?= (count($daftar_order)) ?> Data Order</span>
+    </div>
+    <div class="card-body p-0">
+        <?php if (count($daftar_order) > 0): ?>
+            
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="text-center" style="width: 45px;">No</th>
+                                <th style="width: 150px;">Nomor Order</th>
+                                <th>Judul Permohonan & Klien</th>
+                                <th class="text-center" style="width: 120px;">Divisi</th>
+                                <th style="width: 160px;">Standar SPM</th>
+                                <th class="text-end" style="width: 140px;">Estimasi Biaya</th>
+                                <th class="text-center" style="width: 130px;">Status</th>
+                                <th class="text-center" style="width: 150px;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php $ctr=0; foreach (($daftar_order?:[]) as $ord): $ctr++; ?>
+                                <tr>
+                                    <td class="text-center text-muted small"><?= ($ctr) ?></td>
+                                    <td>
+                                        <div class="fw-bold text-primary small"><?= ($ord['nomor_order']) ?></div>
+                                        <div class="text-muted" style="font-size: 0.75rem;">
+                                            <i class="bi bi-calendar3 me-1"></i><?= ($ord['tanggal_masuk'] ? date('d/m/Y', strtotime($ord['tanggal_masuk'])) : '-')."
+" ?>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold text-dark mb-1" title="<?= ($ord['judul_kegiatan']) ?>">
+                                            <?= ($ord['judul_kegiatan'])."
+" ?>
+                                        </div>
+                                        <div class="small text-muted d-flex align-items-center gap-1">
+                                            <i class="bi bi-building text-secondary"></i>
+                                            <?php if ($mask_client_name): ?>
+                                                
+                                                    <?php $words = explode(' ', $ord['nama_perusahaan']);
+                                                        $masked = array_map(function($w) {
+                                                            return mb_strlen($w) > 1 ? mb_substr($w, 0, 1) . '***' : $w;
+                                                        }, $words);
+                                                        $namaTampil = implode(' ', $masked); ?>
+                                                    <span><?= ($namaTampil) ?></span>
+                                                
+                                                <?php else: ?>
+                                                    <span class="text-secondary fw-medium"><?= ($ord['nama_perusahaan']) ?> (<?= ($ord['pt_cv']) ?>)</span>
+                                                
+                                            <?php endif; ?>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <?php if ($ord['jenis_layanan_opti'] == 'selulosa'): ?>
+                                            <span class="badge badge-pill-danger">Selulosa</span>
+                                        <?php endif; ?>
+                                        <?php if ($ord['jenis_layanan_opti'] == 'lingkungan'): ?>
+                                            <span class="badge badge-pill-success">Lingkungan</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <div class="small fw-semibold text-dark mb-0"><?= ($ord['spm_layanan']) ?></div>
+                                        <div class="text-muted" style="font-size: 0.725rem;">
+                                            <i class="bi bi-tag text-muted me-1"></i>Standar Layanan
+                                        </div>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="fw-bold text-dark small">
+                                            Rp <?= (number_format($ord['estimasi_biaya'] ?: ($ord['biaya_po'] ?: 0), 0, ',', '.'))."
+" ?>
+                                        </div>
+                                        <?php if ($ord['total_terbayar'] > 0): ?>
+                                            <div class="text-success" style="font-size: 0.725rem;">
+                                                <i class="bi bi-check2 me-1"></i>Terbayar: Rp <?= (number_format($ord['total_terbayar'], 0, ',', '.'))."
+" ?>
+                                            </div>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="text-center">
+                                        <?php if ($ord['status'] == 'baru' || $ord['status'] == 'draft'): ?>
+                                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1">
+                                                <i class="bi bi-hourglass-split me-1"></i>Permohonan Baru
+                                            </span>
+                                        <?php endif; ?>
+                                        <?php if ($ord['status'] == 'disetujui'): ?>
+                                            <span class="badge badge-pill-success">
+                                                <i class="bi bi-check-circle me-1"></i>Disetujui
+                                            </span>
+                                        <?php endif; ?>
+                                        <?php if ($ord['status'] == 'ditolak'): ?>
+                                            <span class="badge badge-pill-danger">
+                                                <i class="bi bi-x-circle me-1"></i>Ditolak
+                                            </span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="d-inline-flex align-items-center gap-1">
+                                            <?php if ($ord['status'] == 'baru' || $ord['status'] == 'draft'): ?>
+                                                <button type="button" class="btn btn-sm btn-success py-1 px-2 d-inline-flex align-items-center gap-1 shadow-sm" data-bs-toggle="modal" data-bs-target="#approveModal<?= ($ord['id']) ?>" title="Setujui & Terbitkan PO">
+                                                    <i class="bi bi-check2-circle"></i> <span>Setujui</span>
+                                                </button>
+                                            <?php endif; ?>
+                                            <?php if ($ord['status'] == 'disetujui'): ?>
+                                                <a href="<?= ($BASE) ?>/po/<?= ($ord['po_id'] ?: $ord['id']) ?>" class="btn btn-sm btn-outline-primary py-1 px-2 d-inline-flex align-items-center gap-1" title="Buka Dokumen PO Terbit">
+                                                    <i class="bi bi-file-earmark-text"></i> <span>PO</span>
+                                                </a>
+                                            <?php endif; ?>
+                                            <a href="<?= ($BASE) ?>/order/<?= ($ord['id']) ?>/edit" class="btn btn-sm btn-light border py-1 px-2 text-secondary" title="Edit Order">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <form action="<?= ($BASE) ?>/order/<?= ($ord['id']) ?>/hapus" method="POST" class="d-inline" onsubmit="return confirm('Hapus order layanan ini?');">
+                                                <input type="hidden" name="csrf_token" value="<?= ($csrf_token) ?>">
+                                                <button type="submit" class="btn btn-sm btn-light border py-1 px-2 text-danger" title="Hapus Order">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+
+                                        <!-- Modal Approve Order -->
+                                        <div class="modal fade" id="approveModal<?= ($ord['id']) ?>" tabindex="-1" aria-labelledby="approveModalLabel<?= ($ord['id']) ?>" aria-hidden="true">
+                                            <div class="modal-dialog modal-dialog-centered text-start">
+                                                <div class="modal-content border-0 shadow">
+                                                    <form action="<?= ($BASE) ?>/order/<?= ($ord['id']) ?>/approve" method="POST">
+                                                        <input type="hidden" name="csrf_token" value="<?= ($csrf_token) ?>">
+                                                        <div class="modal-header">
+                                                            <h6 class="modal-title fw-bold" id="approveModalLabel<?= ($ord['id']) ?>">
+                                                                <i class="bi bi-check-circle-fill text-success me-2"></i>Persetujuan & Penerbitan PO
+                                                            </h6>
+                                                            <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <p class="small text-muted mb-3">
+                                                                Anda akan menyetujui Order <strong><?= ($ord['nomor_order']) ?></strong> dan menerbitkan nomor <strong>Petunjuk Operasional (PO)</strong> otomatis.
+                                                            </p>
+                                                            <div class="mb-3">
+                                                                <label class="form-label small">Tentukan Target Tanggal Selesai</label>
+                                                                <input type="date" name="target_selesai" class="form-control form-control-sm" value="<?= ($ord['target_selesai'] ?: date('Y-m-d', strtotime('+3 months'))) ?>" required>
+                                                                <div class="form-text" style="font-size: 0.75rem;">Default berdasarkan estimasi Standar Pelayanan Minimum (SPM).</div>
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label class="form-label small">Tim / Personil Pelaksana</label>
+                                                                <input type="text" name="tim_kerja" class="form-control form-control-sm" placeholder="Contoh: Tim Pengujian Selulosa" value="<?= ($ord['tim_kerja']) ?>">
+                                                            </div>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                                            <button type="submit" class="btn btn-sm btn-success">
+                                                                <i class="bi bi-check-circle me-1"></i> Terbitkan PO
+                                                            </button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            
+            <?php else: ?>
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox text-muted display-4 d-block mb-3"></i>
+                    <h5 class="fw-bold text-dark">Belum ada data Order Layanan</h5>
+                    <p class="text-muted small mb-3">Klik tombol di bawah untuk mendaftarkan order layanan baru.</p>
+                    <a href="<?= ($BASE) ?>/order/tambah" class="btn btn-sm btn-primary">
+                        <i class="bi bi-plus-lg me-1"></i> Tambah Order Baru
+                    </a>
+                </div>
+            
+        <?php endif; ?>
+    </div>
+</div>

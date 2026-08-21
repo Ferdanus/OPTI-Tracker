@@ -25,14 +25,14 @@ class Controller {
         'admin_order' => array(
             'order:view', 'order:create', 'order:edit',
             'pembayaran:view', 'pembayaran:create', 'pembayaran:edit',
-            'po:view',
+            'po:view', 'po:sop',
             'kontrak:view',
             'alert:manage'
         ),
         'ketua_tim' => array(
             'order:view',
             'pembayaran:view',
-            'po:view', 'po:create', 'po:edit', 'po:rab', 'po:jadwal', 'po:evaluasi',
+            'po:view', 'po:create', 'po:edit', 'po:rab', 'po:jadwal', 'po:evaluasi', 'po:sop',
             'kontrak:view',
             'config:team', 'config:manage',
             'alert:manage'
@@ -40,7 +40,7 @@ class Controller {
         'pejabat' => array(
             'order:view',
             'pembayaran:view',
-            'po:view', 
+            'po:view', 'po:sop',
             'po:approve', // TODO: Konfirmasi ke user asli apakah approver juga boleh reject dengan catatan revisi (bukan cuma ya/tidak)
             'kontrak:view',
             'alert:manage'
@@ -48,13 +48,13 @@ class Controller {
         'tim_kerja' => array(
             'order:view',
             'pembayaran:view',
-            'po:view', 'po:progress', 'po:laporan',
+            'po:view', 'po:progress', 'po:laporan', 'po:sop',
             'kontrak:view',
             'alert:manage'
         ),
         'admin_kontrak' => array(
             'order:view',
-            'po:view',
+            'po:view', 'po:sop',
             'kontrak:view', 'kontrak:create', 'kontrak:edit',
             'alert:manage'
         ),

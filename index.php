@@ -126,7 +126,10 @@ $f3->route('GET /po/@id', 'PoController->detail');
 $f3->route('POST /po/@id/update', 'PoController->update');
 $f3->route('POST /po/@id/hapus', 'PoController->hapus');
 
-// Map Kendali, RAB, Jadwal Tim, Evaluasi
+// Map Kendali, SOP 19 Tahap, RAB, Jadwal Tim, Evaluasi
+$f3->route('POST /po/@id/sop/@tahap/verifikasi', 'PoController->verifikasiSopTahap');
+$f3->route('POST /po/@id/sop/@tahap/revisi', 'PoController->revisiSopTahap');
+$f3->route('POST /po/@id/sop/skip-perkembangan', 'PoController->skipSopPerkembangan');
 $f3->route('POST /po/@id/map/@stage', 'PoController->approveMap');
 $f3->route('POST /po/@id/rab/tambah', 'PoController->tambahRab');
 $f3->route('POST /po/@id/rab/@rab_id/hapus', 'PoController->hapusRab');

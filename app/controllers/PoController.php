@@ -107,6 +107,12 @@ class PoController extends Controller {
         $fieldConfigModel = new OptiFieldConfig($this->db);
         $maskEnabled = $fieldConfigModel->isMaskClientNameEnabled();
 
+        // 6. Alur SOP Progress (19 Tahapan Resmi BBSPJIS)
+        $sopModel = new PoSopProgress($this->db);
+        $sopModel->initForPo($id, $po['status']);
+        $daftarSop = $sopModel->getByPoId($id);
+        $sopStatistik = $sopModel->getStatistik($id);
+
         $f3->set('po', $po);
         $f3->set('daftar_rab', $daftarRab);
         $f3->set('total_rab', $totalRab);
@@ -120,6 +126,8 @@ class PoController extends Controller {
         $f3->set('overdue_info', $overdueInfo);
         $f3->set('urutan_status', Po::$URUTAN_STATUS);
         $f3->set('mask_client_name', $maskEnabled);
+        $f3->set('daftar_sop', $daftarSop);
+        $f3->set('sop_statistik', $sopStatistik);
 
         $this->render('po/detail.html', "Detail PO {$po['nomor_po']} - OPTI Tracker", 'po');
     }
@@ -275,6 +283,114 @@ class PoController extends Controller {
             $f3->reroute("/po/{$poId}#map-kendali-section");
         } catch (\Exception $e) {
             $this->setFlashError('Gagal verifikasi Map Kendali: ' . $e->getMessage());
+            $f3->reroute("/po/{$poId}");
+        }
+    }
+
+    /**
+     * Verifikasi tahapan SOP Lingkungan (19 Tahap Resmi BBSPJIS)
+     * Route: POST /po/@id/sop/@tahap/verifikasi
+     */
+    public function verifikasiSopTahap($f3, $params) {
+        $poId = (int)($params['id'] ?? 0);
+        $tahapNo = (int)($params['tahap'] ?? 0);
+        $post = $f3->get('POST');
+
+        $this->requirePermission('po:sop', "/po/{$poId}");
+
+        try {
+            $catatan = trim($post['catatan'] ?? '');
+            $verifiedBy = $_SESSION['nama_user'] ?? 'Petugas Balai';
+
+            $sopModel = new PoSopProgress($this->db);
+            $sopModel->verifikasiTahap($poId, $tahapNo, $verifiedBy, $catatan);
+
+            // Jika tahap 19 selesai, auto selesaikan status PO
+            if ($tahapNo === 19) {
+                $poModel = new Po($this->db);
+                $poModel->updateData($poId, array(
+                    'status'            => 'kembali_selesai',
+                    'realisasi_selesai' => date('Y-m-d'),
+                    'catatan'           => 'Seluruh 19 tahapan SOP OPTI Lingkungan telah selesai diverifikasi & BAST telah diarsipkan.'
+                ));
+            } elseif ($tahapNo >= 3) {
+                // Pastikan status PO minimal on_proses
+                $poModel = new Po($this->db);
+                $poData = $poModel->getById($poId);
+                if ($poData && in_array($poData->status, array('belum_upload', 'sudah_upload'))) {
+                    $poModel->updateData($poId, array(
+                        'status'          => 'on_proses',
+                        'tanggal_keluar'  => !empty($poData->tanggal_keluar) ? $poData->tanggal_keluar : date('Y-m-d'),
+                        'catatan'         => "Pelaksanaan SOP Tahap {$tahapNo} berjalan (Status: On Proses)."
+                    ));
+                }
+            }
+
+            $this->setFlashSuccess("Tahapan SOP <strong>#{$tahapNo}</strong> berhasil diverifikasi & dicatat.");
+            $f3->reroute("/po/{$poId}#sop-section");
+        } catch (\Exception $e) {
+            $this->setFlashError('Gagal memverifikasi tahapan SOP: ' . $e->getMessage());
+            $f3->reroute("/po/{$poId}");
+        }
+    }
+
+    /**
+     * Minta revisi tahapan SOP Lingkungan (Feedback Loop Alur)
+     * Route: POST /po/@id/sop/@tahap/revisi
+     */
+    public function revisiSopTahap($f3, $params) {
+        $poId = (int)($params['id'] ?? 0);
+        $tahapNo = (int)($params['tahap'] ?? 0);
+        $post = $f3->get('POST');
+
+        $this->requirePermission('po:sop', "/po/{$poId}");
+
+        try {
+            $catatanRevisi = trim($post['catatan_revisi'] ?? '');
+            $targetTahapKembali = (int)($post['target_tahap'] ?? max(1, $tahapNo - 1));
+            $requestedBy = $_SESSION['nama_user'] ?? 'Petugas Balai';
+
+            if (empty($catatanRevisi)) {
+                throw new \Exception("Catatan / notulen perbaikan revisi wajib diisi.");
+            }
+
+            $sopModel = new PoSopProgress($this->db);
+            $sopModel->revisiTahap($poId, $tahapNo, $targetTahapKembali, $requestedBy, $catatanRevisi);
+
+            // Kembalikan status PO ke on_proses jika sebelumnya selesai
+            $poModel = new Po($this->db);
+            $poModel->updateData($poId, array(
+                'status'          => 'on_proses',
+                'tanggal_kembali' => date('Y-m-d'),
+                'catatan'         => "Tahap {$tahapNo} memerlukan revisi: {$catatanRevisi}. Alur kembali ke Tahap {$targetTahapKembali}."
+            ));
+
+            $this->setFlashSuccess("Catatan revisi Tahap <strong>#{$tahapNo}</strong> disimpan. Alur dikembalikan ke Tahap #{$targetTahapKembali}.");
+            $f3->reroute("/po/{$poId}#sop-section");
+        } catch (\Exception $e) {
+            $this->setFlashError('Gagal memproses revisi SOP: ' . $e->getMessage());
+            $f3->reroute("/po/{$poId}");
+        }
+    }
+
+    /**
+     * Lewati tahap laporan perkembangan (Tahap 7 - 12) jika tidak dipersyaratkan di kontrak SPK
+     * Route: POST /po/@id/sop/skip-perkembangan
+     */
+    public function skipSopPerkembangan($f3, $params) {
+        $poId = (int)($params['id'] ?? 0);
+
+        $this->requirePermission('po:sop', "/po/{$poId}");
+
+        try {
+            $actorName = $_SESSION['nama_user'] ?? 'Ketua Tim OPTI';
+            $sopModel = new PoSopProgress($this->db);
+            $sopModel->skipPerkembangan($poId, $actorName);
+
+            $this->setFlashSuccess("Tahapan Laporan Perkembangan (Tahap 7 s.d. 12) dilewati. Alur langsung ke Tahap #13 (Pemeriksaan Laporan Kegiatan).");
+            $f3->reroute("/po/{$poId}#sop-section");
+        } catch (\Exception $e) {
+            $this->setFlashError('Gagal melewati tahapan: ' . $e->getMessage());
             $f3->reroute("/po/{$poId}");
         }
     }

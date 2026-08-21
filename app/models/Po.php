@@ -369,6 +369,7 @@ class Po extends \DB\SQL\Mapper {
      * Hapus PO beserta seluruh data relasi (RAB, Jadwal, Pembayaran, Log, Kontrak)
      */
     public function hapus(int $id): bool {
+        $this->db->exec("DELETE FROM opti_po_sop_progress WHERE po_id = ?", array(1 => $id));
         $this->db->exec("DELETE FROM po_rincian_anggaran WHERE po_id = ?", array(1 => $id));
         $this->db->exec("DELETE FROM opti_po_jadwal_kerja WHERE po_id = ?", array(1 => $id));
         $this->db->exec("DELETE FROM po_log_status WHERE po_id = ?", array(1 => $id));

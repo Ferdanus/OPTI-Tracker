@@ -276,25 +276,25 @@
         </div>
 
         <!-- Flash Alerts -->
-        <check if="{{ @SESSION.flash_error }}">
+        <?php if ($SESSION['flash_error']): ?>
             <div class="alert alert-danger d-flex align-items-center gap-2 small p-2 px-3 mb-3 border-0 rounded-3 shadow-sm" role="alert">
                 <i class="bi bi-exclamation-circle-fill text-danger fs-5"></i>
-                <div>{{ @SESSION.flash_error }}</div>
+                <div><?= ($SESSION['flash_error']) ?></div>
             </div>
-            {~ unset($_SESSION['flash_error']) ~}
-        </check>
+            <?php unset($_SESSION['flash_error']) ?>
+        <?php endif; ?>
 
-        <check if="{{ @SESSION.flash_success }}">
+        <?php if ($SESSION['flash_success']): ?>
             <div class="alert alert-success d-flex align-items-center gap-2 small p-2 px-3 mb-3 border-0 rounded-3 shadow-sm" role="alert">
                 <i class="bi bi-check-circle-fill text-success fs-5"></i>
-                <div>{{ @SESSION.flash_success }}</div>
+                <div><?= ($SESSION['flash_success']) ?></div>
             </div>
-            {~ unset($_SESSION['flash_success']) ~}
-        </check>
+            <?php unset($_SESSION['flash_success']) ?>
+        <?php endif; ?>
 
         <!-- Form Input -->
-        <form action="{{ @BASE }}/login" method="POST" autocomplete="off">
-            <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
+        <form action="<?= ($BASE) ?>/login" method="POST" autocomplete="off">
+            <input type="hidden" name="csrf_token" value="<?= ($csrf_token) ?>">
 
             <div class="mb-3">
                 <label for="username" class="form-label">
@@ -325,33 +325,7 @@
             </button>
         </form>
 
-        {* Pilihan Akun Cepat Pengguna (Disembunyikan untuk keperluan dokumentasi)
-        <div class="quick-accounts-section">
-            <div class="text-muted small fw-semibold mb-2 d-flex align-items-center gap-1" style="font-size: 0.75rem;">
-                <i class="bi bi-people-fill text-primary"></i> Pilihan Akun Cepat:
-            </div>
-            <div class="d-flex flex-wrap gap-2">
-                <span class="quick-badge" onclick="fillLogin('andri_selulosa', 'password123')">
-                    <i class="bi bi-tree text-primary"></i> Andri Taufick (Selulosa)
-                </span>
-                <span class="quick-badge" onclick="fillLogin('rina_lingkungan', 'password123')">
-                    <i class="bi bi-water text-primary"></i> Rina Masriani (Lingkungan)
-                </span>
-                <span class="quick-badge" onclick="fillLogin('admin_order', 'password123')">
-                    <i class="bi bi-inbox text-primary"></i> Admin Order
-                </span>
-                <span class="quick-badge" onclick="fillLogin('pejabat_balai', 'password123')">
-                    <i class="bi bi-building text-primary"></i> Kepala Balai
-                </span>
-                <span class="quick-badge" onclick="fillLogin('admin_kontrak', 'password123')">
-                    <i class="bi bi-file-earmark-text text-primary"></i> Admin Kontrak
-                </span>
-                <span class="quick-badge" onclick="fillLogin('fajriasa', 'fajri123')">
-                    <i class="bi bi-shield-lock text-primary"></i> Super Admin
-                </span>
-            </div>
-        </div>
-        *}
+        
 
     </div>
 

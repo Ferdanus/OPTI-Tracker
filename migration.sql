@@ -8,6 +8,7 @@ USE mini_opti_tracker;
 SET FOREIGN_KEY_CHECKS = 0;
 
 DROP TABLE IF EXISTS opti_user_alert_config;
+DROP TABLE IF EXISTS opti_po_sop_progress;
 DROP TABLE IF EXISTS opti_field_config;
 DROP TABLE IF EXISTS opti_po_jadwal_kerja;
 DROP TABLE IF EXISTS po_rincian_biaya;
@@ -474,3 +475,31 @@ INSERT INTO opti_user_alert_config (id_user, alert_key, is_enabled, threshold_da
 (2, 'alert_po_deadline', 1, 5),
 (3, 'alert_po_deadline', 1, 5),
 (4, 'alert_approval_needed', 1, 2);
+
+-- ====================================================================
+-- 13. TABEL SOP JASA PELAYANAN OPTI LINGKUNGAN (19 TAHAPAN RESMI)
+-- ====================================================================
+CREATE TABLE opti_po_sop_progress (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    po_id INT NOT NULL,
+    tahap_no INT NOT NULL,
+    fase ENUM('persiapan', 'pelaksanaan', 'pengesahan', 'bast') NOT NULL DEFAULT 'persiapan',
+    nama_aktivitas VARCHAR(255) NOT NULL,
+    pelaksana_kode VARCHAR(50) NOT NULL,
+    pelaksana_label VARCHAR(100) NOT NULL,
+    mutu_kelengkapan VARCHAR(255) NOT NULL,
+    mutu_waktu VARCHAR(100) NOT NULL,
+    mutu_output VARCHAR(255) NOT NULL,
+    keterangan VARCHAR(255) NULL,
+    is_decision TINYINT(1) DEFAULT 0,
+    status ENUM('menunggu', 'berjalan', 'selesai', 'revisi', 'dilewati') DEFAULT 'menunggu',
+    catatan TEXT NULL,
+    verified_by VARCHAR(100) NULL,
+    verified_at DATETIME NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_po_tahap (po_id, tahap_no),
+    INDEX idx_po_fase (po_id, fase),
+    FOREIGN KEY (po_id) REFERENCES po(id) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+

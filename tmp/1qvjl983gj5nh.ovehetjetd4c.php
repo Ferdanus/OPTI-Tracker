@@ -1,0 +1,138 @@
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+    <div>
+        <h2 class="h4 fw-bold mb-1 text-dark">Master Data Customer / Mitra Industri</h2>
+        <p class="text-muted small mb-0">Database terpusat mitra industri balai (<code>tb_customer</code>) yang terdaftar dalam layanan OPTI.</p>
+    </div>
+    <a href="<?= ($BASE) ?>/klien/tambah" class="btn btn-primary">
+        <i class="bi bi-building-add"></i> Tambah Customer Baru
+    </a>
+</div>
+
+<!-- FILTER CUSTOMER -->
+<div class="card mb-4 border-0 shadow-sm">
+    <div class="card-body p-3">
+        <form method="GET" action="<?= ($BASE) ?>/klien" class="row g-2 align-items-center">
+            <div class="col-md-9">
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
+                    <input type="text" class="form-control border-start-0" name="q" placeholder="Cari nama perusahaan, PIC, email, atau telepon..." value="<?= ($search_q) ?>">
+                </div>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i> Cari Data</button>
+                <a href="<?= ($BASE) ?>/klien" class="btn btn-outline-secondary px-2" title="Reset"><i class="bi bi-arrow-clockwise"></i></a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- TABEL CUSTOMER -->
+<div class="card border-0 shadow-sm overflow-hidden">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h6 class="m-0 fw-bold text-dark"><i class="bi bi-building text-primary me-2"></i>Daftar Mitra Industri Terdaftar</h6>
+        <span class="badge bg-light text-muted border"><?= (count($daftar_klien)) ?> Customer</span>
+    </div>
+    <div class="card-body p-0">
+        <?php if (count($daftar_klien) > 0): ?>
+            
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th class="text-center" style="width: 40px;">No</th>
+                                <th>Nama Perusahaan / Industri</th>
+                                <th style="width: 110px;">Badan Usaha</th>
+                                <th style="width: 200px;">Person In Charge (PIC)</th>
+                                <th style="width: 200px;">Kontak & Email</th>
+                                <th style="width: 140px;">Layanan Balai</th>
+                                <th class="text-center" style="width: 100px;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php $ctr=0; foreach (($daftar_klien?:[]) as $k): $ctr++; ?>
+                                <tr>
+                                    <td class="text-center text-muted small"><?= ($ctr) ?></td>
+                                    <td>
+                                        <div class="fw-bold text-dark mb-0">
+                                            <?php if ($mask_client_name): ?>
+                                                
+                                                    <?php $words = explode(' ', $k['nmcustomer']);
+                                                        $masked = array_map(function($w) {
+                                                            return mb_strlen($w) > 1 ? mb_substr($w, 0, 1) . '***' : $w;
+                                                        }, $words);
+                                                        $namaTampil = implode(' ', $masked); ?>
+                                                    <span title="Nama disamarkan untuk privasi"><?= ($namaTampil) ?></span>
+                                                
+                                                <?php else: ?>
+                                                    <?= ($k['nmcustomer'])."
+" ?>
+                                                
+                                            <?php endif; ?>
+                                        </div>
+                                        <div class="text-muted text-truncate small" style="max-width: 250px;" title="<?= ($k['alamatcustomer']) ?>">
+                                            <i class="bi bi-geo-alt me-1"></i><?= ($k['alamatcustomer'] ?: 'Alamat belum diisi')."
+" ?>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-pill-primary"><?= ($k['pt_cv'] ?: 'PT') ?></span>
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold text-dark small"><?= ($k['contactperson'] ?: ($k['contactperson_opti'] ?: '-')) ?></div>
+                                        <div class="text-muted" style="font-size: 0.75rem;">
+                                            <?= ($k['nohpcontactperson_opti'] ?: ($k['notelpcustomer'] ?: '-'))."
+" ?>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="text-truncate small" style="max-width: 180px;">
+                                            <a href="mailto:<?= ($k['emailcustomer']) ?>" class="text-decoration-none text-secondary">
+                                                <i class="bi bi-envelope me-1"></i><?= ($k['emailcustomer'] ?: '-')."
+" ?>
+                                            </a>
+                                        </div>
+                                        <div class="small text-muted">
+                                            <i class="bi bi-telephone me-1"></i><?= ($k['notelpcustomer'] ?: '-')."
+" ?>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <?php if ($k['id_layanan_optimalisasi'] == 1): ?>
+                                            <span class="badge badge-pill-success"><i class="bi bi-check-circle me-1"></i>Mitra OPTI</span>
+                                        <?php endif; ?>
+                                        <?php if ($k['id_layanan_optimalisasi'] != 1): ?>
+                                            <span class="badge badge-pill-secondary">Umum Balai</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="<?= ($BASE) ?>/klien/<?= ($k['id_customer']) ?>/edit" class="btn btn-outline-secondary py-1 px-2" title="Edit Customer">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <form action="<?= ($BASE) ?>/klien/<?= ($k['id_customer']) ?>/hapus" method="POST" class="d-inline" onsubmit="return confirm('Hapus data customer ini dari database?');">
+                                                <input type="hidden" name="csrf_token" value="<?= ($csrf_token) ?>">
+                                                <button type="submit" class="btn btn-outline-danger py-1 px-2" title="Hapus Customer">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            
+            <?php else: ?>
+                <div class="text-center py-5">
+                    <i class="bi bi-building-x text-muted display-4 d-block mb-3"></i>
+                    <h5 class="fw-bold text-dark">Customer Tidak Ditemukan</h5>
+                    <p class="text-muted small mb-3">Tidak ada data mitra industri yang sesuai dengan pencarian Anda.</p>
+                    <a href="<?= ($BASE) ?>/klien/tambah" class="btn btn-sm btn-primary">
+                        <i class="bi bi-building-add me-1"></i> Tambah Customer Baru
+                    </a>
+                </div>
+            
+        <?php endif; ?>
+    </div>
+</div>
