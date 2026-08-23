@@ -157,5 +157,41 @@ $f3->route('POST /config/field/@id/update', 'ConfigController->updateField');
 $f3->route('POST /config/toggle-masking', 'ConfigController->toggleMasking');
 $f3->route('POST /config/set-ketua-tim', 'ConfigController->setKetuaTim');
 
+// ==========================================
+// ROUTE ADMIN_ORDER
+// ==========================================
+
+$f3->route('GET /admin-order', 'DashboardController->index');
+$f3->route('GET /kategori-uji','KategoriUjiController->index');
+ 
+$f3->route('GET /kategori-uji/tambah','KategoriUjiController->create');
+ 
+$f3->route('POST /kategori-uji/simpan','KategoriUjiController->store');
+ 
+$f3->route('GET /kategori-uji/@id/edit','KategoriUjiController->edit');
+ 
+$f3->route('POST /kategori-uji/@id/update','KategoriUjiController->update');
+ 
+$f3->route('POST /kategori-uji/@id/toggle-status','KategoriUjiController->toggleStatus');
+ 
+$f3->route('POST /kategori-uji/@id/hapus','KategoriUjiController->delete');
+
+    // ==========================================================
+    // METODE & HARGA UJI
+    // ==========================================================
+    $f3->route('GET /metode-uji','MetodeUjiController->index');
+     
+    $f3->route('GET /metode-uji/tambah','MetodeUjiController->create');
+     
+    $f3->route('POST /metode-uji/simpan','MetodeUjiController->store');
+     
+    $f3->route('GET /metode-uji/@id/edit','MetodeUjiController->edit');
+     
+    $f3->route('POST /metode-uji/@id/update','MetodeUjiController->update');
+     
+    $f3->route('POST /metode-uji/@id/toggle-status','MetodeUjiController->toggleStatus');
+     
+    $f3->route('POST /metode-uji/@id/hapus','MetodeUjiController->delete');
+
 // Jalankan aplikasi Fat-Free Framework
 $f3->run();

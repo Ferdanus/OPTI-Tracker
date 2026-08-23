@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ @page_title ?: 'Sistem OPTI Tracker - BBSPJI Selulosa' }}</title>
+    <title><?= ($page_title ?: 'Sistem OPTI Tracker - BBSPJI Selulosa') ?></title>
 
     <!-- Google Fonts: Inter & Plus Jakarta Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -511,7 +511,7 @@
 </head>
 <body>
 
-    <check if="{{ @SESSION.user_id }}">
+    <?php if ($SESSION['user_id']): ?>
 
     <div class="app-shell">
 
@@ -520,7 +520,7 @@
 
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
-            <a class="sidebar-brand" href="{{ @BASE }}/po">
+            <a class="sidebar-brand" href="<?= ($BASE) ?>/po">
                 <div class="brand-logo-badge">
                     <i class="bi bi-layers-fill"></i>
                 </div>
@@ -531,66 +531,66 @@
             </a>
 
             <ul class="sidebar-nav">
-                <check if="{{ @SESSION.role == 'superadmin' }}">
+                <?php if ($SESSION['role'] == 'superadmin'): ?>
                 <li class="sidebar-section-label">Menu Utama</li>
                 <li>
-                    <a class="sidebar-link {{ @active_menu == 'po' ? 'active' : '' }}" href="{{ @BASE }}/po">
+                    <a class="sidebar-link <?= ($active_menu == 'po' ? 'active' : '') ?>" href="<?= ($BASE) ?>/po">
                         <i class="bi bi-speedometer2"></i> <span>Dashboard PO</span>
                     </a>
                 </li>
                 <li>
-                    <a class="sidebar-link {{ @active_menu == 'order' ? 'active' : '' }}" href="{{ @BASE }}/order">
+                    <a class="sidebar-link <?= ($active_menu == 'order' ? 'active' : '') ?>" href="<?= ($BASE) ?>/order">
                         <i class="bi bi-inbox"></i> <span>Order Masuk</span>
                     </a>
                 </li>
                 <li>
-                    <a class="sidebar-link {{ @active_menu == 'klien' || @active_menu == 'customer' ? 'active' : '' }}" href="{{ @BASE }}/klien">
+                    <a class="sidebar-link <?= ($active_menu == 'klien' || $active_menu == 'customer' ? 'active' : '') ?>" href="<?= ($BASE) ?>/klien">
                         <i class="bi bi-building"></i> <span>Customer</span>
                     </a>
                 </li>
                 <li>
-                    <a class="sidebar-link {{ @active_menu == 'pembayaran' ? 'active' : '' }}" href="{{ @BASE }}/pembayaran">
+                    <a class="sidebar-link <?= ($active_menu == 'pembayaran' ? 'active' : '') ?>" href="<?= ($BASE) ?>/pembayaran">
                         <i class="bi bi-cash-stack"></i> <span>Pembayaran</span>
                     </a>
                 </li>
                 <li>
-                    <a class="sidebar-link {{ @active_menu == 'kontrak' ? 'active' : '' }}" href="{{ @BASE }}/kontrak">
+                    <a class="sidebar-link <?= ($active_menu == 'kontrak' ? 'active' : '') ?>" href="<?= ($BASE) ?>/kontrak">
                         <i class="bi bi-journal-text"></i> <span>Kontrak PKS</span>
                     </a>
                 </li>
-            </check>
-                <check if="{{ @SESSION.role == 'admin_order' }}">
+            <?php endif; ?>
+                <?php if ($SESSION['role'] == 'admin_order'): ?>
                 <li class="sidebar-section-label">Data Master</li>
                 <li>
-                    <a class="sidebar-link {{ @active_menu == 'kategori-uji' ? 'active' : '' }}" href="{{ @BASE }}/kategori-uji">
+                    <a class="sidebar-link <?= ($active_menu == 'kategori-uji' ? 'active' : '') ?>" href="<?= ($BASE) ?>/kategori-uji">
                         <i class="bi bi-sliders"></i> <span>Kategori Pengujian</span>
                     </a>
                 </li>
                 <li>
-                    <a class="sidebar-link {{ @active_menu == 'metode-uji' ? 'active' : '' }}" href="{{ @BASE }}/metode-uji">
+                    <a class="sidebar-link <?= ($active_menu == 'metode-uji' ? 'active' : '') ?>" href="<?= ($BASE) ?>/metode-uji">
                         <i class="bi bi-sliders"></i> <span>Metode Uji & Harga</span>
                     </a>
                 </li>
                 <li>
-                    <a class="sidebar-link {{ @active_menu == 'pengujian_eksternal' ? 'active' : '' }}" href="{{ @BASE }}/pengujian_eksternal">
+                    <a class="sidebar-link <?= ($active_menu == 'pengujian_eksternal' ? 'active' : '') ?>" href="<?= ($BASE) ?>/pengujian_eksternal">
                         <i class="bi bi-sliders"></i> <span>Pengujian Eksternal</span>
                     </a>
                 </li>
-            </check>
+            <?php endif; ?>
                 <!-- <li>
-                    <a class="sidebar-link" href="{{ @BASE }}/profil">
+                    <a class="sidebar-link" href="<?= ($BASE) ?>/profil">
                         <i class="bi bi-person-gear"></i> <span>Profil Pengguna</span>
                     </a>
                 </li> -->
 
                 <li class="sidebar-section-label">Pengaturan</li>
                 <li>
-                    <a class="sidebar-link {{ @active_menu == 'config' ? 'active' : '' }}" href="{{ @BASE }}/config">
+                    <a class="sidebar-link <?= ($active_menu == 'config' ? 'active' : '') ?>" href="<?= ($BASE) ?>/config">
                         <i class="bi bi-sliders"></i> <span>Konfigurasi</span>
                     </a>
                 </li>
                 <li>
-                    <a class="sidebar-link" href="{{ @BASE }}/profil">
+                    <a class="sidebar-link" href="<?= ($BASE) ?>/profil">
                         <i class="bi bi-person-gear"></i> <span>Profil Pengguna</span>
                     </a>
                 </li>
@@ -600,39 +600,40 @@
                 <div class="dropdown dropup">
                     <a class="sidebar-user dropdown-toggle" href="#" role="button" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
                         <div class="user-avatar">
-                            {~ $initials = implode('', array_map(function($w) { return strtoupper($w[0] ?? ''); }, explode(' ', $_SESSION['nama_lengkap'] ?? 'U'))) ~}
-                            {{ substr($initials, 0, 2) }}
+                            <?php $initials = implode('', array_map(function($w) { return strtoupper($w[0] ?? ''); }, explode(' ', $_SESSION['nama_lengkap'] ?? 'U'))) ?>
+                            <?= (substr($initials, 0, 2))."
+" ?>
                         </div>
                         <div class="sidebar-user-text">
-                            <div class="sidebar-user-name">{{ htmlspecialchars(@SESSION.nama_lengkap ?? 'User') }}</div>
+                            <div class="sidebar-user-name"><?= (htmlspecialchars($SESSION['nama_lengkap'] ?? 'User')) ?></div>
                             <div class="sidebar-user-role">
-                                <check if="{{ @SESSION.role == 'superadmin' }}">Super Admin</check>
-                                <check if="{{ @SESSION.role == 'admin_order' }}">Admin Order</check>
-                                <check if="{{ @SESSION.role == 'ketua_tim' }}">Ketua Tim {{ @SESSION.jenis_layanan_opti == 'selulosa' ? 'Selulosa' : (@SESSION.jenis_layanan_opti == 'lingkungan' ? 'Lingkungan' : 'OPTI') }}</check>
-                                <check if="{{ @SESSION.role == 'pejabat' }}">Kepala Balai/PPK</check>
-                                <check if="{{ @SESSION.role == 'tim_kerja' }}">Tim Analis</check>
-                                <check if="{{ @SESSION.role == 'admin_kontrak' }}">Admin PKS</check>
+                                <?php if ($SESSION['role'] == 'superadmin'): ?>Super Admin<?php endif; ?>
+                                <?php if ($SESSION['role'] == 'admin_order'): ?>Admin Order<?php endif; ?>
+                                <?php if ($SESSION['role'] == 'ketua_tim'): ?>Ketua Tim <?= ($SESSION['jenis_layanan_opti'] == 'selulosa' ? 'Selulosa' : ($SESSION['jenis_layanan_opti'] == 'lingkungan' ? 'Lingkungan' : 'OPTI')) ?><?php endif; ?>
+                                <?php if ($SESSION['role'] == 'pejabat'): ?>Kepala Balai/PPK<?php endif; ?>
+                                <?php if ($SESSION['role'] == 'tim_kerja'): ?>Tim Analis<?php endif; ?>
+                                <?php if ($SESSION['role'] == 'admin_kontrak'): ?>Admin PKS<?php endif; ?>
                             </div>
                         </div>
                     </a>
                     <ul class="dropdown-menu shadow border-0 py-2" aria-labelledby="userMenu" style="min-width: 220px; border-radius: var(--radius-md);">
                         <li class="px-3 py-2 border-bottom mb-1">
-                            <div class="fw-bold text-dark">{{ htmlspecialchars(@SESSION.nama_lengkap ?? 'User') }}</div>
-                            <div class="text-muted small">@{{ @SESSION.login ?? @SESSION.username }}</div>
+                            <div class="fw-bold text-dark"><?= (htmlspecialchars($SESSION['nama_lengkap'] ?? 'User')) ?></div>
+                            <div class="text-muted small">@<?= ($SESSION['login'] ?? $SESSION['username']) ?></div>
                         </li>
                         <li>
-                            <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ @BASE }}/profil">
+                            <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="<?= ($BASE) ?>/profil">
                                 <i class="bi bi-person-gear text-primary"></i> Profil Pengguna
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ @BASE }}/config">
+                            <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="<?= ($BASE) ?>/config">
                                 <i class="bi bi-sliders text-primary"></i> Pengaturan Konfigurasi
                             </a>
                         </li>
                         <li><hr class="dropdown-divider my-1"></li>
                         <li>
-                            <a class="dropdown-item py-2 text-danger d-flex align-items-center gap-2" href="{{ @BASE }}/logout">
+                            <a class="dropdown-item py-2 text-danger d-flex align-items-center gap-2" href="<?= ($BASE) ?>/logout">
                                 <i class="bi bi-box-arrow-right"></i> Keluar Sistem
                             </a>
                         </li>
@@ -654,29 +655,29 @@
                 </button>
 
                 <div class="flex-grow-1">
-                    <p class="topbar-title">{{ @page_title ?: 'Dashboard' }}</p>
-                    <check if="{{ @page_subtitle }}">
-                        <p class="topbar-subtitle">{{ @page_subtitle }}</p>
-                    </check>
+                    <p class="topbar-title"><?= ($page_title ?: 'Dashboard') ?></p>
+                    <?php if ($page_subtitle): ?>
+                        <p class="topbar-subtitle"><?= ($page_subtitle) ?></p>
+                    <?php endif; ?>
                 </div>
 
                 <!-- Compact user menu (also accessible from topbar on wide screens) -->
                 <div class="dropdown d-none d-lg-block">
                     <a class="user-menu-btn dropdown-toggle" href="#" role="button" id="userMenuTop" data-bs-toggle="dropdown" aria-expanded="false">
-                        <div class="user-avatar">{{ substr($initials, 0, 2) }}</div>
+                        <div class="user-avatar"><?= (substr($initials, 0, 2)) ?></div>
                         <div class="text-start" style="line-height: 1.15;">
-                            <div class="fw-bold text-dark small">{{ htmlspecialchars(@SESSION.nama_lengkap ?? 'User') }}</div>
+                            <div class="fw-bold text-dark small"><?= (htmlspecialchars($SESSION['nama_lengkap'] ?? 'User')) ?></div>
                         </div>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2 py-2" aria-labelledby="userMenuTop" style="min-width: 220px; border-radius: var(--radius-md);">
                         <li>
-                            <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ @BASE }}/profil">
+                            <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="<?= ($BASE) ?>/profil">
                                 <i class="bi bi-person-gear text-primary"></i> Profil Pengguna
                             </a>
                         </li>
                         <li><hr class="dropdown-divider my-1"></li>
                         <li>
-                            <a class="dropdown-item py-2 text-danger d-flex align-items-center gap-2" href="{{ @BASE }}/logout">
+                            <a class="dropdown-item py-2 text-danger d-flex align-items-center gap-2" href="<?= ($BASE) ?>/logout">
                                 <i class="bi bi-box-arrow-right"></i> Keluar Sistem
                             </a>
                         </li>
@@ -688,26 +689,26 @@
             <main class="main-container">
                 <div class="container-fluid px-0">
                     <!-- Flash Messages -->
-                    <check if="{{ @SESSION.flash_success }}">
+                    <?php if ($SESSION['flash_success']): ?>
                         <div class="alert alert-success d-flex align-items-center gap-2 border-0 shadow-sm rounded-3 mb-4" role="alert">
                             <i class="bi bi-check-circle-fill text-success fs-5"></i>
-                            <div>{{ @SESSION.flash_success | raw }}</div>
+                            <div><?= ($this->raw($SESSION['flash_success'])) ?></div>
                             <button type="button" class="btn-close ms-auto shadow-none" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>
-                        {~ unset($_SESSION['flash_success']) ~}
-                    </check>
+                        <?php unset($_SESSION['flash_success']) ?>
+                    <?php endif; ?>
 
-                    <check if="{{ @SESSION.flash_error }}">
+                    <?php if ($SESSION['flash_error']): ?>
                         <div class="alert alert-danger d-flex align-items-center gap-2 border-0 shadow-sm rounded-3 mb-4" role="alert">
                             <i class="bi bi-exclamation-triangle-fill text-danger fs-5"></i>
-                            <div>{{ @SESSION.flash_error | raw }}</div>
+                            <div><?= ($this->raw($SESSION['flash_error'])) ?></div>
                             <button type="button" class="btn-close ms-auto shadow-none" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>
-                        {~ unset($_SESSION['flash_error']) ~}
-                    </check>
+                        <?php unset($_SESSION['flash_error']) ?>
+                    <?php endif; ?>
 
                     <!-- Template View Injected Here -->
-                    <include href="{{ @content }}" />
+                    <?php echo $this->render($content,NULL,get_defined_vars(),0); ?>
                 </div>
             </main>
 
@@ -725,7 +726,7 @@
         </div>
     </div>
 
-    </check>
+    <?php endif; ?>
 
     <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

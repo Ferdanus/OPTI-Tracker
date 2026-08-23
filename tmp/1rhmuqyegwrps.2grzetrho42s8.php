@@ -1,0 +1,164 @@
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+    <div>
+        <h2 class="h4 fw-bold mb-1 text-dark">Daftar Perjanjian Kerjasama (PKS)</h2>
+        <p class="text-muted small mb-0">Legalitas kontrak payung dan perjanjian teknis kemitraan jasa industri BBSPJI Selulosa.</p>
+    </div>
+    <?php if ($can_manage_kontrak): ?>
+        <a href="<?= ($BASE) ?>/kontrak/tambah" class="btn btn-primary">
+            <i class="bi bi-file-earmark-plus"></i> Tambah Kontrak PKS
+        </a>
+    <?php endif; ?>
+</div>
+
+<!-- TABEL KONTRAK FULL DISPLAY BERSIH & RAPIH -->
+<div class="card border-0 shadow-sm overflow-hidden">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
+        <h6 class="m-0 fw-bold text-dark"><i class="bi bi-journal-text text-primary me-2"></i>Daftar Dokumen Kontrak PKS</h6>
+        <span class="badge bg-light text-muted border"><?= (count($daftar_kontrak)) ?> Dokumen</span>
+    </div>
+    <div class="card-body p-0">
+        <?php if (count($daftar_kontrak) > 0): ?>
+            
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" style="table-layout: fixed; width: 100%;">
+                        <thead>
+                            <tr>
+                                <th class="text-center" style="width: 4%;">NO</th>
+                                <th style="width: 22%;">NOMOR PKS & PO</th>
+                                <th style="width: 26%;">JUDUL KERJASAMA & MITRA</th>
+                                <th style="width: 20%;">PENANDATANGAN</th>
+                                <th style="width: 13%;">MASA BERLAKU</th>
+                                <th class="text-end" style="width: 15%;">NILAI KONTRAK</th>
+                                <th class="text-center" style="width: 10%;">STATUS TTD</th>
+                                <?php if ($can_manage_kontrak): ?>
+                                    <th class="text-center" style="width: 8%;">AKSI</th>
+                                <?php endif; ?>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php $ctr=0; foreach (($daftar_kontrak?:[]) as $k): $ctr++; ?>
+                                <tr>
+                                    <td class="text-center text-muted small fw-bold"><?= ($ctr) ?></td>
+                                    
+                                    <!-- Nomor PKS & PO -->
+                                    <td>
+                                        <div class="fw-bold text-primary small mb-1">
+                                            <?= ($k['nomor_pks_bbspjis'] ?: '-')."
+" ?>
+                                        </div>
+                                        <div class="text-muted small mb-1" style="font-size: 0.75rem;">
+                                            <span class="text-secondary fw-semibold">Klien:</span> <?= ($k['nomor_pks_klien'] ?: '-')."
+" ?>
+                                        </div>
+                                        <?php if ($k['nomor_po']): ?>
+                                            <a href="<?= ($BASE) ?>/po/<?= ($k['po_id']) ?>" class="text-dark text-decoration-none small d-inline-flex align-items-center gap-1" style="font-size: 0.75rem;">
+                                                <i class="bi bi-link-45deg text-primary"></i> <span class="badge badge-pill-secondary">PO: <?= ($k['nomor_po']) ?></span>
+                                            </a>
+                                        <?php endif; ?>
+                                    </td>
+
+                                    <!-- Judul Kerjasama & Mitra -->
+                                    <td>
+                                        <div class="fw-semibold text-dark mb-1" style="font-size: 0.85rem; line-height: 1.3;" title="<?= ($k['ruang_lingkup'] ?: $k['judul_kegiatan']) ?>">
+                                            <?= ($k['ruang_lingkup'] ?: ($k['judul_kegiatan'] ?: 'Perjanjian Kerjasama Jasa Industri'))."
+" ?>
+                                        </div>
+                                        <div class="small text-muted d-flex align-items-center gap-1">
+                                            <i class="bi bi-building text-secondary"></i>
+                                            <?php if ($mask_client_name): ?>
+                                                
+                                                    <?php $words = explode(' ', $k['nama_perusahaan'] ?? '');
+                                                        $masked = array_map(function($w) {
+                                                            return mb_strlen($w) > 1 ? mb_substr($w, 0, 1) . '***' : $w;
+                                                        }, $words);
+                                                        $namaTampil = implode(' ', $masked); ?>
+                                                    <span class="fw-medium text-dark"><?= ($namaTampil) ?></span>
+                                                
+                                                <?php else: ?>
+                                                    <span class="fw-medium text-dark"><?= ($k['nama_perusahaan'] ? ($k['pt_cv'] ? $k['pt_cv'] . ' ' . $k['nama_perusahaan'] : $k['nama_perusahaan']) : 'Mitra Industri') ?></span>
+                                                
+                                            <?php endif; ?>
+                                        </div>
+                                    </td>
+
+                                    <!-- Penandatangan -->
+                                    <td>
+                                        <div class="small text-dark fw-bold mb-1">
+                                            <?= ($k['nama_penandatangan_bbspjis'] ?: 'Kepala BBSPJI Selulosa')."
+" ?>
+                                            <div class="text-muted fw-normal" style="font-size: 0.72rem;"><?= ($k['jabatan_penandatangan_bbspjis'] ?: 'BBSPJI Selulosa') ?></div>
+                                        </div>
+                                        <div class="small text-secondary">
+                                            <span class="fw-semibold text-dark"><?= ($k['nama_penandatangan_klien'] ?: 'Pimpinan Mitra') ?></span>
+                                            <div class="text-muted" style="font-size: 0.72rem;"><?= ($k['jabatan_penandatangan_klien'] ?: 'Mitra Industri') ?></div>
+                                        </div>
+                                    </td>
+
+                                    <!-- Masa Berlaku -->
+                                    <td>
+                                        <?php if (!empty($k['target_mulai']) && $k['target_mulai'] != '0000-00-00'): ?>
+                                            
+                                                <div class="small text-dark fw-semibold"><?= (date('d/m/Y', strtotime($k['target_mulai']))) ?></div>
+                                                <div class="text-muted" style="font-size: 0.75rem;">s.d. <?= (!empty($k['target_selesai']) && $k['target_selesai'] != '0000-00-00' ? date('d/m/Y', strtotime($k['target_selesai'])) : '-') ?></div>
+                                            
+                                            <?php else: ?>
+                                                <span class="text-muted small">-</span>
+                                            
+                                        <?php endif; ?>
+                                    </td>
+
+                                    <!-- Nilai Kontrak -->
+                                    <td class="text-end fw-bold text-dark small">
+                                        Rp <?= (number_format($k['nilai_kontrak'], 0, ',', '.'))."
+" ?>
+                                    </td>
+
+                                    <!-- Status TTD -->
+                                    <td class="text-center">
+                                        <?php if ($k['status_ttd'] == 'sudah'): ?>
+                                            
+                                                <span class="badge badge-pill-success"><i class="bi bi-check-circle-fill"></i> Sudah TTD</span>
+                                            
+                                            <?php else: ?>
+                                                <span class="badge badge-pill-warning"><i class="bi bi-clock-history"></i> Belum TTD</span>
+                                            
+                                        <?php endif; ?>
+                                    </td>
+
+                                    <!-- Aksi -->
+                                    <?php if ($can_manage_kontrak): ?>
+                                        <td class="text-center">
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="<?= ($BASE) ?>/kontrak/<?= ($k['id']) ?>/edit" class="btn btn-outline-secondary py-1 px-2" title="Edit Kontrak">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                                <form action="<?= ($BASE) ?>/kontrak/<?= ($k['id']) ?>/hapus" method="POST" class="d-inline" onsubmit="return confirm('Hapus dokumen kontrak PKS ini?');">
+                                                    <input type="hidden" name="csrf_token" value="<?= ($csrf_token) ?>">
+                                                    <button type="submit" class="btn btn-outline-danger py-1 px-2" title="Hapus Kontrak">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    <?php endif; ?>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            
+            <?php else: ?>
+                <div class="text-center py-5">
+                    <i class="bi bi-journal-x fs-1 text-muted opacity-50 mb-2 d-block"></i>
+                    <h6 class="fw-bold text-secondary">Belum Ada Dokumen Kontrak PKS</h6>
+                    <p class="text-muted small mb-3">Dokumen kontrak kerjasama yang dibuat akan muncul di sini.</p>
+                    <?php if ($can_manage_kontrak): ?>
+                        <a href="<?= ($BASE) ?>/kontrak/tambah" class="btn btn-primary btn-sm">
+                            <i class="bi bi-plus-lg"></i> Tambah Kontrak Baru
+                        </a>
+                    <?php endif; ?>
+                </div>
+            
+        <?php endif; ?>
+    </div>
+</div>

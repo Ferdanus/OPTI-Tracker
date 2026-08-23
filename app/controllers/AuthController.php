@@ -71,6 +71,11 @@ class AuthController extends Controller {
         $f3->set('SESSION.mask_client_name', $maskEnabled);
 
         $this->setFlashSuccess("Selamat datang kembali, <strong>{$userData['nama_user']}</strong>!");
+        // Redirect berdasarkan role dari opti_user_map
+        if ($userData['role'] === 'admin_order') {
+            $f3->reroute('/admin-order');
+            return;
+        }
         $f3->reroute('/po');
     }
 

@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ @page_title ?: 'Sistem OPTI Tracker - BBSPJI Selulosa' }}</title>
+    
+    <!-- Google Fonts: Inter & Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap 5 CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Tom Select CDN for Fast Searchable Dropdowns -->
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --color-primary: #881337;          /* Maroon elegan BBSPJIS */
+            --color-primary-hover: #9f1239;    /* Maroon hover */
+            --color-primary-dark: #4c0519;     /* Maroon tua header/footer */
+            --color-accent: #d97706;           /* Emas/Amber elegan */
+            --color-bg: #f8fafc;               /* Background halaman bersih (Slate 50) */
+            --color-surface: #ffffff;          /* Card surface putih */
+            --color-text-main: #0f172a;        /* Text utama (Slate 900) */
+            --color-text-muted: #64748b;       /* Text muted (Slate 500) */
+            --color-border: #e2e8f0;           /* Border lembut (Slate 200) */
+            --color-border-subtle: #f1f5f9;    /* Border sangat tipis (Slate 100) */
+            --font-display: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 14px;
+        }
+
+        body {
+            background-color: var(--color-bg);
+            font-family: var(--font-body);
+            color: var(--color-text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        h1, h2, h3, h4, h5, h6, .font-display {
+            font-family: var(--font-display);
+            letter-spacing: -0.02em;
+        }
+
+        /* Navbar Header Instansi */
+        .navbar-main {
+            background-color: var(--color-surface);
+            border-bottom: 1px solid var(--color-border);
+            box-shadow: var(--shadow-sm);
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .navbar-brand-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            padding: 0.25rem 0;
+        }
+
+        .brand-logo-badge {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+            color: #ffffff;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            box-shadow: 0 2px 8px rgba(136, 19, 55, 0.25);
+        }
+
+        .brand-title {
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: var(--color-primary);
+            line-height: 1.15;
+            margin: 0;
+        }
+
+        .brand-subtitle {
+            font-size: 0.675rem;
+            font-weight: 600;
+            color: var(--color-text-muted);
+            letter-spacing: 0.3px;
+            margin: 0;
+        }
+
+        /* Nav Links with Clean Underline Indicator */
+        .navbar-main .nav-link {
+            font-family: var(--font-display);
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #475569;
+            padding: 0.85rem 0.85rem;
+            margin: 0 2px;
+            position: relative;
+            transition: color 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background-color: transparent !important;
+        }
+
+        .navbar-main .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0.75rem;
+            right: 0.75rem;
+            height: 3px;
+            background-color: var(--color-primary);
+            border-radius: 3px 3px 0 0;
+            transform: scaleX(0);
+            transition: transform 0.2s ease-in-out;
+        }
+
+        .navbar-main .nav-link:hover {
+            color: var(--color-primary);
+        }
+
+        .navbar-main .nav-link:hover::after {
+            transform: scaleX(0.5);
+        }
+
+        .navbar-main .nav-link.active {
+            color: var(--color-primary);
+            font-weight: 700;
+        }
+
+        .navbar-main .nav-link.active::after {
+            transform: scaleX(1);
+        }
+
+        /* User Menu Widget */
+        .user-menu-btn {
+            background-color: var(--color-bg);
+            border: 1px solid var(--color-border);
+            border-radius: 20px;
+            padding: 4px 12px 4px 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            transition: all 0.15s ease;
+        }
+
+        .user-menu-btn:hover {
+            border-color: var(--color-primary);
+            background-color: #ffffff;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--color-primary);
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Main Container */
+        .main-container {
+            flex: 1;
+            padding-top: 1.5rem;
+            padding-bottom: 3rem;
+        }
+
+        /* Card Styles */
+        .card {
+            background-color: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            transition: box-shadow 0.2s ease, transform 0.2s ease;
+        }
+
+        .card-header {
+            background-color: transparent;
+            border-bottom: 1px solid var(--color-border-subtle);
+            padding: 1rem 1.25rem;
+            font-family: var(--font-display);
+        }
+
+        .card-body {
+            padding: 1.25rem;
+        }
+
+        /* KPI Metric Cards */
+        .metric-card {
+            background-color: #ffffff;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-lg);
+            padding: 1.25rem;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .metric-icon-box {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+        }
+
+        /* Buttons Overrides */
+        .btn {
+            font-family: var(--font-display);
+            font-weight: 600;
+            font-size: 0.875rem;
+            border-radius: var(--radius-sm);
+            padding: 0.5rem 1rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.15s ease-in-out;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary {
+            background-color: var(--color-primary);
+            border-color: var(--color-primary);
+            color: #ffffff;
+        }
+
+        .btn-primary:hover, .btn-primary:focus, .btn-primary:active {
+            background-color: var(--color-primary-hover) !important;
+            border-color: var(--color-primary-hover) !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 12px rgba(136, 19, 55, 0.25);
+        }
+
+        .btn-outline-primary {
+            color: var(--color-primary);
+            border-color: rgba(136, 19, 55, 0.35);
+            background-color: rgba(136, 19, 55, 0.02);
+        }
+
+        .btn-outline-primary:hover {
+            background-color: var(--color-primary);
+            border-color: var(--color-primary);
+            color: #ffffff;
+        }
+
+        .btn-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--color-text-muted);
+            font-weight: 600;
+            font-size: 0.85rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: var(--radius-sm);
+            background: #ffffff;
+            border: 1px solid var(--color-border);
+            text-decoration: none;
+            transition: all 0.15s ease;
+        }
+
+        .btn-back:hover {
+            color: var(--color-primary);
+            border-color: var(--color-primary);
+            background-color: rgba(136, 19, 55, 0.04);
+        }
+
+        /* Form Controls */
+        .form-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 0.35rem;
+        }
+
+        .form-control, .form-select {
+            font-size: 0.875rem;
+            border-radius: var(--radius-sm);
+            border: 1px solid #cbd5e1;
+            padding: 0.55rem 0.85rem;
+            color: var(--color-text-main);
+            background-color: #ffffff;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(136, 19, 55, 0.12);
+            outline: none;
+        }
+
+        /* Clean Table Design */
+        .table {
+            color: var(--color-text-main);
+            font-size: 0.875rem;
+            margin-bottom: 0;
+            width: 100%;
+        }
+
+        .table thead th {
+            background-color: #f8fafc;
+            color: #475569;
+            font-family: var(--font-display);
+            font-size: 0.725rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 0.75rem 0.85rem;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .table tbody td {
+            padding: 0.75rem 0.85rem;
+            border-bottom: 1px solid var(--color-border-subtle);
+            vertical-align: middle;
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: rgba(136, 19, 55, 0.02);
+        }
+
+        /* Modern Status Badges */
+        .badge {
+            font-family: var(--font-display);
+            font-weight: 600;
+            font-size: 0.75rem;
+            padding: 0.3em 0.65em;
+            border-radius: 20px;
+            letter-spacing: 0.01em;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .badge-pill-success {
+            background-color: #ecfdf5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+
+        .badge-pill-warning {
+            background-color: #fffbeb;
+            color: #92400e;
+            border: 1px solid #fde68a;
+        }
+
+        .badge-pill-danger {
+            background-color: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        .badge-pill-info {
+            background-color: #f0f9ff;
+            color: #075985;
+            border: 1px solid #bae6fd;
+        }
+
+        .badge-pill-primary {
+            background-color: rgba(136, 19, 55, 0.08);
+            color: var(--color-primary);
+            border: 1px solid rgba(136, 19, 55, 0.2);
+        }
+
+        .badge-pill-secondary {
+            background-color: #f1f5f9;
+            color: #475569;
+            border: 1px solid #cbd5e1;
+        }
+
+        /* Footer */
+        .footer-gov {
+            background-color: var(--color-primary-dark);
+            color: #e2e8f0;
+            font-size: 0.8rem;
+            padding: 1.5rem 0;
+            border-top: 3px solid var(--color-accent);
+            margin-top: auto;
+        }
+
+        .footer-gov a {
+            color: #cbd5e1;
+            text-decoration: none;
+            transition: color 0.15s ease;
+        }
+
+        .footer-gov a:hover {
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar Header -->
+    <nav class="navbar navbar-expand-lg navbar-main sticky-top">
+        <div class="container-fluid px-xl-5 px-lg-4 px-3">
+            <a class="navbar-brand-wrapper" href="{{ @BASE }}/po">
+                <div class="brand-logo-badge">
+                    <i class="bi bi-layers-fill"></i>
+                </div>
+                <div>
+                    <h1 class="brand-title">OPTI TRACKER</h1>
+                    <p class="brand-subtitle">BBSPJI SELULOSA &bull; KEMENPERIN RI</p>
+                </div>
+            </a>
+
+            <check if="{{ @SESSION.user_id }}">
+                <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+                    <i class="bi bi-list fs-3 text-dark"></i>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarContent">
+                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0 me-3 align-items-lg-center">
+                        <li class="nav-item">
+                            <a class="nav-link {{ @active_menu == 'po' ? 'active' : '' }}" href="{{ @BASE }}/po">
+                                <i class="bi bi-speedometer2"></i> Dashboard PO
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ @active_menu == 'order' ? 'active' : '' }}" href="{{ @BASE }}/order">
+                                <i class="bi bi-inbox"></i> Order Masuk
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ @active_menu == 'klien' || @active_menu == 'customer' ? 'active' : '' }}" href="{{ @BASE }}/klien">
+                                <i class="bi bi-building"></i> Customer
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ @active_menu == 'pembayaran' ? 'active' : '' }}" href="{{ @BASE }}/pembayaran">
+                                <i class="bi bi-cash-stack"></i> Pembayaran
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ @active_menu == 'kontrak' ? 'active' : '' }}" href="{{ @BASE }}/kontrak">
+                                <i class="bi bi-journal-text"></i> Kontrak PKS
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ @active_menu == 'config' ? 'active' : '' }}" href="{{ @BASE }}/config">
+                                <i class="bi bi-sliders"></i> Konfigurasi
+                            </a>
+                        </li>
+                    </ul>
+
+                    <!-- User Profile Dropdown -->
+                    <div class="dropdown">
+                        <a class="user-menu-btn dropdown-toggle" href="#" role="button" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
+                            <div class="user-avatar">
+                                {~ $initials = implode('', array_map(function($w) { return strtoupper($w[0] ?? ''); }, explode(' ', $_SESSION['nama_lengkap'] ?? 'U'))) ~}
+                                {{ substr($initials, 0, 2) }}
+                            </div>
+                            <div class="text-start d-none d-md-block" style="line-height: 1.15;">
+                                <div class="fw-bold text-dark small">{{ htmlspecialchars(@SESSION.nama_lengkap ?? 'User') }}</div>
+                                <div class="text-muted" style="font-size: 0.7rem;">
+                                    <check if="{{ @SESSION.role == 'superadmin' }}">Super Admin</check>
+                                    <check if="{{ @SESSION.role == 'admin_order' }}">Admin Order</check>
+                                    <check if="{{ @SESSION.role == 'ketua_tim' }}">Ketua Tim {{ @SESSION.jenis_layanan_opti == 'selulosa' ? 'Selulosa' : (@SESSION.jenis_layanan_opti == 'lingkungan' ? 'Lingkungan' : 'OPTI') }}</check>
+                                    <check if="{{ @SESSION.role == 'pejabat' }}">Kepala Balai/PPK</check>
+                                    <check if="{{ @SESSION.role == 'tim_kerja' }}">Tim Analis</check>
+                                    <check if="{{ @SESSION.role == 'admin_kontrak' }}">Admin PKS</check>
+                                </div>
+                            </div>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2 py-2" aria-labelledby="userMenu" style="min-width: 220px; border-radius: var(--radius-md);">
+                            <li class="px-3 py-2 border-bottom mb-1">
+                                <div class="fw-bold text-dark">{{ htmlspecialchars(@SESSION.nama_lengkap ?? 'User') }}</div>
+                                <div class="text-muted small">@{{ @SESSION.login ?? @SESSION.username }}</div>
+                            </li>
+                            <li>
+                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ @BASE }}/profil">
+                                    <i class="bi bi-person-gear text-primary"></i> Profil Pengguna
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ @BASE }}/config">
+                                    <i class="bi bi-sliders text-primary"></i> Pengaturan Konfigurasi
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider my-1"></li>
+                            <li>
+                                <a class="dropdown-item py-2 text-danger d-flex align-items-center gap-2" href="{{ @BASE }}/logout">
+                                    <i class="bi bi-box-arrow-right"></i> Keluar Sistem
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </check>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="main-container">
+        <div class="container-fluid px-xl-5 px-lg-4 px-3">
+            <!-- Flash Messages -->
+            <check if="{{ @SESSION.flash_success }}">
+                <div class="alert alert-success d-flex align-items-center gap-2 border-0 shadow-sm rounded-3 mb-4" role="alert">
+                    <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                    <div>{{ @SESSION.flash_success | raw }}</div>
+                    <button type="button" class="btn-close ms-auto shadow-none" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {~ unset($_SESSION['flash_success']) ~}
+            </check>
+
+            <check if="{{ @SESSION.flash_error }}">
+                <div class="alert alert-danger d-flex align-items-center gap-2 border-0 shadow-sm rounded-3 mb-4" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill text-danger fs-5"></i>
+                    <div>{{ @SESSION.flash_error | raw }}</div>
+                    <button type="button" class="btn-close ms-auto shadow-none" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {~ unset($_SESSION['flash_error']) ~}
+            </check>
+
+            <!-- Template View Injected Here -->
+            <include href="{{ @content }}" />
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer-gov">
+        <div class="container-fluid px-xl-5 px-lg-4 px-3 d-flex flex-column flex-md-row justify-content-between align-items-center gap-2 text-center text-md-start">
+            <div>
+                <strong>Balai Besar Standardisasi dan Pelayanan Jasa Industri Selulosa (BBSPJI Selulosa)</strong><br>
+                <span class="text-white-50">Kementerian Perindustrian Republik Indonesia &bull; Jl. Raya Dayeuhkolot No. 132 Bandung</span>
+            </div>
+            <div class="text-white-50">
+                &copy; 2026 Sistem OPTI Tracker. Hak Cipta Dilindungi.
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Tom Select JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.searchable-select').forEach(function(el) {
+                if (!el.tomselect) {
+                    new TomSelect(el, {
+                        create: false,
+                        sortField: { field: "text", direction: "asc" },
+                        placeholder: el.getAttribute('placeholder') || 'Ketik untuk mencari nama...',
+                        maxOptions: 150,
+                        allowEmptyOption: true
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
