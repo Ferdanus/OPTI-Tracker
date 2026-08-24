@@ -1,1 +1,201 @@
-<h3>haii</h3>
+<div class="mb-4">
+    <h2 class="h4 fw-bold mb-1 text-dark"><i class="bi bi-speedometer2 text-primary me-1"></i> Dashboard</h2>
+    <p class="text-muted small mb-0"></p>
+</div>
+
+<!-- ======================= RINGKASAN OPERASIONAL ======================= -->
+<h6 class="fw-bold text-dark mb-3"><i class="bi bi-bar-chart-steps text-primary me-1"></i> Operasional Layanan</h6>
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <a href="{{ @BASE }}/order" class="text-decoration-none">
+            <div class="metric-card">
+                <div>
+                    <div class="text-muted small fw-semibold mb-1">Total Order</div>
+                    <div class="h4 fw-bold mb-0 text-dark">{{ @total_order ?: 0 }}</div>
+                </div>
+                <div class="metric-icon-box" style="background: rgba(136,19,55,.08); color: var(--color-primary);">
+                    <i class="bi bi-inbox"></i>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-lg-3">
+        <a href="{{ @BASE }}/klien" class="text-decoration-none">
+            <div class="metric-card">
+                <div>
+                    <div class="text-muted small fw-semibold mb-1">Total Customer</div>
+                    <div class="h4 fw-bold mb-0 text-dark">{{ @total_customer ?: 0 }}</div>
+                </div>
+                <div class="metric-icon-box" style="background: #f0f9ff; color: #075985;">
+                    <i class="bi bi-building"></i>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-lg-3">
+        <a href="{{ @BASE }}/kontrak" class="text-decoration-none">
+            <div class="metric-card">
+                <div>
+                    <div class="text-muted small fw-semibold mb-1">Kontrak Aktif</div>
+                    <div class="h4 fw-bold mb-0 text-dark">{{ @total_kontrak_aktif ?: 0 }}</div>
+                </div>
+                <div class="metric-icon-box" style="background: #ecfdf5; color: #065f46;">
+                    <i class="bi bi-journal-text"></i>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-lg-3">
+        <a href="{{ @BASE }}/pembayaran" class="text-decoration-none">
+            <div class="metric-card">
+                <div>
+                    <div class="text-muted small fw-semibold mb-1">Pembayaran Lunas</div>
+                    <div class="h4 fw-bold mb-0 text-dark">{{ @total_pembayaran_lunas ?: 0 }}</div>
+                    <check if="{{ @total_nominal_masuk }}">
+                        <div class="text-muted" style="font-size: 0.7rem;">Rp {{ number_format(@total_nominal_masuk, 0, ',', '.') }}</div>
+                    </check>
+                </div>
+                <div class="metric-icon-box" style="background: #fffbeb; color: #92400e;">
+                    <i class="bi bi-cash-stack"></i>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- ======================= RINGKASAN MASTER DATA PENGUJIAN ======================= -->
+<h6 class="fw-bold text-dark mb-3"><i class="bi bi-collection text-primary me-1"></i> Master Data Pengujian</h6>
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <a href="{{ @BASE }}/kategori-uji" class="text-decoration-none">
+            <div class="metric-card">
+                <div>
+                    <div class="text-muted small fw-semibold mb-1">Kategori Pengujian</div>
+                    <div class="h4 fw-bold mb-0 text-dark">{{ @total_kategori_aktif ?: 0 }}</div>
+                </div>
+                <div class="metric-icon-box" style="background: rgba(136,19,55,.08); color: var(--color-primary);">
+                    <i class="bi bi-collection"></i>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-lg-3">
+        <a href="{{ @BASE }}/metode-uji" class="text-decoration-none">
+            <div class="metric-card">
+                <div>
+                    <div class="text-muted small fw-semibold mb-1">Metode Uji Aktif</div>
+                    <div class="h4 fw-bold mb-0 text-dark">{{ @total_metode_aktif ?: 0 }}</div>
+                </div>
+                <div class="metric-icon-box" style="background: #f0f9ff; color: #075985;">
+                    <i class="bi bi-clipboard2-data"></i>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-lg-3">
+        <a href="{{ @BASE }}/pengujian-eksternal" class="text-decoration-none">
+            <div class="metric-card">
+                <div>
+                    <div class="text-muted small fw-semibold mb-1">Mitra Eksternal Aktif</div>
+                    <div class="h4 fw-bold mb-0 text-dark">{{ @total_mitra_eksternal_aktif ?: 0 }}</div>
+                </div>
+                <div class="metric-icon-box" style="background: #ecfdf5; color: #065f46;">
+                    <i class="bi bi-globe-americas"></i>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-lg-3">
+        <a href="{{ @BASE }}/pengujian-eksternal" class="text-decoration-none">
+            <div class="metric-card" style="{{ @total_metode_belum_ada_mitra > 0 ? 'border-color:#fde68a; background:#fffbeb;' : '' }}">
+                <div>
+                    <div class="text-muted small fw-semibold mb-1">Belum Ada Mitra</div>
+                    <div class="h4 fw-bold mb-0 text-dark">{{ @total_metode_belum_ada_mitra ?: 0 }}</div>
+                </div>
+                <div class="metric-icon-box" style="background: #fef2f2; color: #991b1b;">
+                    <i class="bi bi-exclamation-triangle"></i>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- ======================= AKSES CEPAT ======================= -->
+<h6 class="fw-bold text-dark mb-3"><i class="bi bi-lightning-charge text-primary me-1"></i> Akses Cepat</h6>
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-4 col-lg-2">
+        <a href="{{ @BASE }}/order/tambah" class="card border-0 shadow-sm text-decoration-none text-center p-3 h-100">
+            <i class="bi bi-plus-circle text-primary fs-3 mb-2"></i>
+            <div class="small fw-semibold text-dark">Order Baru</div>
+        </a>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <a href="{{ @BASE }}/klien/tambah" class="card border-0 shadow-sm text-decoration-none text-center p-3 h-100">
+            <i class="bi bi-person-plus text-primary fs-3 mb-2"></i>
+            <div class="small fw-semibold text-dark">Customer Baru</div>
+        </a>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <a href="{{ @BASE }}/kategori-uji/tambah" class="card border-0 shadow-sm text-decoration-none text-center p-3 h-100">
+            <i class="bi bi-collection text-primary fs-3 mb-2"></i>
+            <div class="small fw-semibold text-dark">Kategori Baru</div>
+        </a>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <a href="{{ @BASE }}/metode-uji/tambah" class="card border-0 shadow-sm text-decoration-none text-center p-3 h-100">
+            <i class="bi bi-clipboard2-plus text-primary fs-3 mb-2"></i>
+            <div class="small fw-semibold text-dark">Metode Baru</div>
+        </a>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <a href="{{ @BASE }}/pengujian-eksternal/tambah" class="card border-0 shadow-sm text-decoration-none text-center p-3 h-100">
+            <i class="bi bi-globe-americas text-primary fs-3 mb-2"></i>
+            <div class="small fw-semibold text-dark">Mitra Eksternal</div>
+        </a>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <a href="{{ @BASE }}/kontrak" class="card border-0 shadow-sm text-decoration-none text-center p-3 h-100">
+            <i class="bi bi-journal-text text-primary fs-3 mb-2"></i>
+            <div class="small fw-semibold text-dark">Kontrak PKS</div>
+        </a>
+    </div>
+</div>
+
+<!-- ======================= ORDER TERBARU ======================= -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h6 class="m-0 fw-bold text-dark"><i class="bi bi-clock-history text-primary me-2"></i>Order Masuk Terbaru</h6>
+        <a href="{{ @BASE }}/order" class="small fw-semibold text-decoration-none">Lihat Semua &rarr;</a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>No. Order</th>
+                    <th>Judul Kegiatan</th>
+                    <th>Tanggal Masuk</th>
+                    <th class="text-end">Biaya</th>
+                    <th class="text-center">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <check if="{{ @order_terbaru && count(@order_terbaru) > 0 }}">
+                    <repeat group="{{ @order_terbaru }}" value="{{ @o }}">
+                        <tr>
+                            <td class="fw-semibold text-dark">{{ @o.nomor_order }}</td>
+                            <td class="text-muted small">{{ @o.judul_kegiatan }}</td>
+                            <td>{{ date('d M Y', strtotime(@o.tanggal_masuk)) }}</td>
+                            <td class="text-end">Rp {{ number_format(@o.biaya, 0, ',', '.') }}</td>
+                            <td class="text-center"><span class="badge badge-pill-info">{{ @o.status }}</span></td>
+                        </tr>
+                    </repeat>
+                </check>
+                <check if="{{ !@order_terbaru || count(@order_terbaru) == 0 }}">
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">Belum ada order masuk.</td>
+                    </tr>
+                </check>
+            </tbody>
+        </table>
+    </div>
+</div>

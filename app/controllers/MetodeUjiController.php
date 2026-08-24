@@ -76,7 +76,7 @@ class MetodeUjiController
         $f3->set('filter_status', $filterStatus);
 
         $f3->set('page_title', 'Metode & Harga Uji');
-        $f3->set('active_menu', 'config');
+        $f3->set('active_menu', 'metode-uji');
         $f3->set('content', 'admin-order/metode_uji/index.html');
         echo \Template::instance()->render('layout.html');
     }
@@ -91,7 +91,7 @@ class MetodeUjiController
         $f3->set('metode', null);
 
         $f3->set('page_title', 'Tambah Metode & Harga Uji');
-        $f3->set('active_menu', 'config');
+        $f3->set('active_menu', 'metode-uji');
         $f3->set('content', 'admin-order/metode_uji/form.html');
         echo \Template::instance()->render('layout.html');
     }
@@ -112,7 +112,7 @@ class MetodeUjiController
         $f3->set('metode', $metode->cast());
 
         $f3->set('page_title', 'Edit Metode & Harga Uji');
-        $f3->set('active_menu', 'config');
+        $f3->set('active_menu', 'metode-uji');
         $f3->set('content', 'admin-order/metode_uji/form.html');
         echo \Template::instance()->render('layout.html');
     }

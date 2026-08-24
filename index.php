@@ -163,35 +163,32 @@ $f3->route('POST /config/set-ketua-tim', 'ConfigController->setKetuaTim');
 
 $f3->route('GET /admin-order', 'DashboardController->index');
 $f3->route('GET /kategori-uji','KategoriUjiController->index');
- 
 $f3->route('GET /kategori-uji/tambah','KategoriUjiController->create');
- 
 $f3->route('POST /kategori-uji/simpan','KategoriUjiController->store');
- 
 $f3->route('GET /kategori-uji/@id/edit','KategoriUjiController->edit');
- 
 $f3->route('POST /kategori-uji/@id/update','KategoriUjiController->update');
- 
 $f3->route('POST /kategori-uji/@id/toggle-status','KategoriUjiController->toggleStatus');
- 
 $f3->route('POST /kategori-uji/@id/hapus','KategoriUjiController->delete');
-
-    // ==========================================================
-    // METODE & HARGA UJI
-    // ==========================================================
-    $f3->route('GET /metode-uji','MetodeUjiController->index');
-     
-    $f3->route('GET /metode-uji/tambah','MetodeUjiController->create');
-     
-    $f3->route('POST /metode-uji/simpan','MetodeUjiController->store');
-     
-    $f3->route('GET /metode-uji/@id/edit','MetodeUjiController->edit');
-     
-    $f3->route('POST /metode-uji/@id/update','MetodeUjiController->update');
-     
-    $f3->route('POST /metode-uji/@id/toggle-status','MetodeUjiController->toggleStatus');
-     
-    $f3->route('POST /metode-uji/@id/hapus','MetodeUjiController->delete');
+// ==========================================================
+// METODE & HARGA UJI
+// ==========================================================
+$f3->route('GET /metode-uji','MetodeUjiController->index');
+$f3->route('GET /metode-uji/tambah','MetodeUjiController->create');
+$f3->route('POST /metode-uji/simpan','MetodeUjiController->store');
+$f3->route('GET /metode-uji/@id/edit','MetodeUjiController->edit');
+$f3->route('POST /metode-uji/@id/update','MetodeUjiController->update');
+$f3->route('POST /metode-uji/@id/toggle-status','MetodeUjiController->toggleStatus');
+$f3->route('POST /metode-uji/@id/hapus','MetodeUjiController->delete');
+// ==========================================================
+// Penguji EKsternal
+// ==========================================================
+$f3->route('GET /pengujian-eksternal','PengujianEksternalController->index');
+$f3->route('GET /pengujian-eksternal/tambah','PengujianEksternalController->create');
+$f3->route('POST /pengujian-eksternal/simpan','PengujianEksternalController->store');
+$f3->route('GET /pengujian-eksternal/@id/edit','PengujianEksternalController->edit');
+$f3->route('POST /pengujian-eksternal/@id/update','PengujianEksternalController->update');
+$f3->route('POST /pengujian-eksternal/@id/toggle-status','PengujianEksternalController->toggleStatus');
+$f3->route('POST /pengujian-eksternal/@id/hapus','PengujianEksternalController->delete');
 
 // Jalankan aplikasi Fat-Free Framework
 $f3->run();

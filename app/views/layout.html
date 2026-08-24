@@ -560,6 +560,12 @@
                 </li>
             </check>
                 <check if="{{ @SESSION.role == 'admin_order' }}">
+                    <li class="sidebar-section-label">Menu Utama</li>
+                <li>
+                    <a class="sidebar-link {{ @active_menu == 'admin-order' ? 'active' : '' }}" href="{{ @BASE }}/admin-order">
+                        <i class="bi bi-speedometer2"></i> <span>Dashboard</span>
+                    </a>
+                </li>
                 <li class="sidebar-section-label">Data Master</li>
                 <li>
                     <a class="sidebar-link {{ @active_menu == 'kategori-uji' ? 'active' : '' }}" href="{{ @BASE }}/kategori-uji">
@@ -572,8 +578,19 @@
                     </a>
                 </li>
                 <li>
-                    <a class="sidebar-link {{ @active_menu == 'pengujian_eksternal' ? 'active' : '' }}" href="{{ @BASE }}/pengujian_eksternal">
+                    <a class="sidebar-link {{ @active_menu == 'pengujian-eksternal' ? 'active' : '' }}" href="{{ @BASE }}/pengujian-eksternal">
                         <i class="bi bi-sliders"></i> <span>Pengujian Eksternal</span>
+                    </a>
+                </li>
+                <li class="sidebar-section-label">Pengaturan</li>
+                <!-- <li>
+                    <a class="sidebar-link {{ @active_menu == 'config' ? 'active' : '' }}" href="{{ @BASE }}/config">
+                        <i class="bi bi-sliders"></i> <span>Konfigurasi</span>
+                    </a>
+                </li> -->
+                <li>
+                    <a class="sidebar-link" href="{{ @BASE }}/profil">
+                        <i class="bi bi-person-gear"></i> <span>Profil Pengguna</span>
                     </a>
                 </li>
             </check>
@@ -583,7 +600,7 @@
                     </a>
                 </li> -->
 
-                <li class="sidebar-section-label">Pengaturan</li>
+                <!-- <li class="sidebar-section-label">Pengaturan</li>
                 <li>
                     <a class="sidebar-link {{ @active_menu == 'config' ? 'active' : '' }}" href="{{ @BASE }}/config">
                         <i class="bi bi-sliders"></i> <span>Konfigurasi</span>
@@ -593,7 +610,7 @@
                     <a class="sidebar-link" href="{{ @BASE }}/profil">
                         <i class="bi bi-person-gear"></i> <span>Profil Pengguna</span>
                     </a>
-                </li>
+                </li> -->
             </ul>
 
             <div class="sidebar-footer">

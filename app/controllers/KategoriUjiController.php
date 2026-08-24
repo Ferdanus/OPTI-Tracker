@@ -52,7 +52,7 @@ class KategoriUjiController
         $f3->set('filter_status', $status);
 
         $f3->set('page_title', 'Kategori Pengujian');
-        $f3->set('active_menu', 'config');
+        $f3->set('active_menu', 'kategori-uji');
         $f3->set('content', 'admin-order/kategori-pengujian/index.html');
         echo \Template::instance()->render('layout.html');
     }
@@ -62,7 +62,7 @@ class KategoriUjiController
     {
         $f3->set('kategori', null);
         $f3->set('page_title', 'Tambah Kategori Pengujian');
-        $f3->set('active_menu', 'config');
+        $f3->set('active_menu', 'kategori-uji');
         $f3->set('content', 'admin-order/kategori-pengujian/form.html');
         echo \Template::instance()->render('layout.html');
     }
@@ -80,7 +80,7 @@ class KategoriUjiController
 
         $f3->set('kategori', $kategori->cast());
         $f3->set('page_title', 'Edit Kategori Pengujian');
-        $f3->set('active_menu', 'config');
+        $f3->set('active_menu', 'kategori-uji');
         $f3->set('content', 'admin-order/kategori-pengujian/form.html');
         echo \Template::instance()->render('layout.html');
     }
