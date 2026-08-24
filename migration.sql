@@ -7,6 +7,8 @@ USE mini_opti_tracker;
 -- Matikan foreign key check sementara untuk reset aman
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE IF EXISTS metode_uji;
+DROP TABLE IF EXISTS kategori_pengujian;
 DROP TABLE IF EXISTS opti_user_alert_config;
 DROP TABLE IF EXISTS opti_po_sop_progress;
 DROP TABLE IF EXISTS opti_field_config;
@@ -502,4 +504,60 @@ CREATE TABLE opti_po_sop_progress (
     INDEX idx_po_fase (po_id, fase),
     FOREIGN KEY (po_id) REFERENCES po(id) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ====================================================================
+-- 14. TABEL KATEGORI PENGUJIAN & METODE UJI
+-- ====================================================================
+CREATE TABLE IF NOT EXISTS `kategori_pengujian` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `nama_kategori` VARCHAR(255) NOT NULL,
+  `deskripsi` TEXT NULL,
+  `status` ENUM('aktif', 'nonaktif') NOT NULL DEFAULT 'aktif',
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `metode_uji` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `kategori_id` INT NOT NULL,
+  `nama_metode` VARCHAR(255) NOT NULL,
+  `deskripsi_kegunaan` TEXT NULL,
+  `peralatan` VARCHAR(255) NULL,
+  `durasi_nilai` INT NOT NULL DEFAULT 1,
+  `durasi_satuan` VARCHAR(50) NOT NULL DEFAULT 'Bulan',
+  `butuh_eksternal` TINYINT(1) NOT NULL DEFAULT 0,
+  `harga` DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
+  `jumlah_sampel` INT NOT NULL DEFAULT 1,
+  `status` ENUM('aktif', 'nonaktif') NOT NULL DEFAULT 'aktif',
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX `idx_kategori_id` (`kategori_id`),
+  CONSTRAINT `fk_metode_kategori` FOREIGN KEY (`kategori_id`) REFERENCES `kategori_pengujian` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Seed Kategori Pengujian Balai
+INSERT INTO `kategori_pengujian` (`id`, `nama_kategori`, `deskripsi`, `status`) VALUES
+(1, 'Pengujian Fisik & Mekanik Pulp/Kertas', 'Pengujian sifat fisik lembaran pulp, kertas, karton, dan produk kemasan selulosa sesuai standar SNI/ISO/TAPPI.', 'aktif'),
+(2, 'Pengujian Kimia Bahan Baku & Produk Selulosa', 'Karakterisasi kimia selulosa, lignin, holoselulosa, alfa-selulosa, kadar abu, dan residu kimia.', 'aktif'),
+(3, 'Pengujian Lingkungan Industri & Air Limbah', 'Analisis parameter baku mutu air limbah industri pulp/kertas (BOD, COD, TSS, pH, Logam Berat).', 'aktif'),
+(4, 'Pengujian Emisi Gas Buang & Udara Ambien', 'Pengukuran emisi cerobong boiler/genset industri dan kualitas udara lingkungan kerja.', 'aktif'),
+(5, 'Pengujian Biodegradasi & Mikrobiologi', 'Uji kemampuan urai alami material kemasan ramah lingkungan dan kontaminasi mikroba.', 'aktif');
+
+-- Seed Metode & Tarif Uji
+INSERT INTO `metode_uji` (`id`, `kategori_id`, `nama_metode`, `deskripsi_kegunaan`, `peralatan`, `durasi_nilai`, `durasi_satuan`, `butuh_eksternal`, `harga`, `jumlah_sampel`, `status`) VALUES
+(1, 1, 'Kekuatan Tarik & Regangan (Tensile Strength)', 'Pengukuran kuat tarik lembaran kertas (SNI ISO 1924-2)', 'Tensile Tester L&W', 3, 'Hari', 0, 350000.00, 1, 'aktif'),
+(2, 1, 'Ketahanan Sobek (Tearing Resistance Elmendorf)', 'Pengujian gaya yang diperlukan untuk merobek lembaran (SNI ISO 1974)', 'Elmendorf Tear Tester', 2, 'Hari', 0, 300000.00, 1, 'aktif'),
+(3, 1, 'Ketahanan Retak (Bursting Strength Mullen)', 'Pengukuran tekanan hidrolik saat lembaran retak (SNI ISO 2758)', 'Mullen Burst Tester', 2, 'Hari', 0, 325000.00, 1, 'aktif'),
+(4, 1, 'Derajat Kecerahan ISO (Brightness)', 'Pengukuran reflektansi cahaya pada panjang gelombang 457 nm (SNI ISO 2470)', 'Spectrophotometer Elrepho', 1, 'Hari', 0, 275000.00, 1, 'aktif'),
+(5, 2, 'Kadar Alfa, Beta & Gamma Selulosa', 'Penentuan fraksi selulosa murni tahan larutan NaOH 17.5% (SNI 0444:2009)', 'Waterbath & Analytical Balance', 5, 'Hari', 0, 750000.00, 1, 'aktif'),
+(6, 2, 'Kadar Lignin Bebas Asam (Klason Lignin)', 'Penetapan kadar lignin tak larut dalam asam sulfat 72% (TAPPI T 222 om-02)', 'Digestion Apparatus & Furnace', 4, 'Hari', 0, 650000.00, 1, 'aktif'),
+(7, 2, 'Kadar Air & Kadar Abu Total', 'Penetapan kadar zat menguap dan mineral anorganik (SNI 08-7070-2005)', 'Oven Gravimetri & Muffle Furnace', 2, 'Hari', 0, 250000.00, 1, 'aktif'),
+(8, 3, 'Biochemical Oxygen Demand (BOD5)', 'Pengukuran konsumsi oksigen biologis 5 hari pada 20°C (SNI 6989.72:2009)', 'Incubator BOD & DO Meter', 5, 'Hari', 0, 450000.00, 1, 'aktif'),
+(9, 3, 'Chemical Oxygen Demand (COD Refluks)', 'Pengukuran kebutuhan oksigen kimiawi metode refluks tertutup (SNI 6989.2:2009)', 'COD Reactor & Spectrophotometer', 2, 'Hari', 0, 400000.00, 1, 'aktif'),
+(10, 3, 'Total Suspended Solids (TSS)', 'Penentuan padatan tersuspensi total gravimetri (SNI 6989.3:2019)', 'Vacuum Filter & Analytical Balance', 1, 'Hari', 0, 200000.00, 1, 'aktif'),
+(11, 4, 'Emisi Isokinetik Partikulat Cerobong', 'Pengambilan sampel partikulat gas buang cerobong industri (SNI 7117.17:2009)', 'Isokinetic Stack Sampler', 7, 'Hari', 0, 3500000.00, 1, 'aktif'),
+(12, 4, 'Gas Buang NOx, SO2, CO, CO2, O2', 'Analisis gas buang cerobong langsung / direct reading (Metode Elektrokimia)', 'Flue Gas Analyzer Testo 350', 3, 'Hari', 0, 2500000.00, 1, 'aktif'),
+(13, 5, 'Uji Biodegradabilitas Material Kemasan', 'Evaluasi laju penguraian aerobik material bioplastik/kertas dalam media tanah/kompos', 'Respirometer & Soil Chamber', 30, 'Hari', 0, 5000000.00, 1, 'aktif');
+
+
 
