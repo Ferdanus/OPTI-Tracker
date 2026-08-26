@@ -3,26 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= ($page_title ?: 'Sistem OPTI Tracker - BBSPJI Selulosa') ?></title>
-    
+    <title><?= ($page_title ?: 'Sistem OPTI Tracker - BBSPJIS') ?></title>
+
     <!-- Google Fonts: Inter & Plus Jakarta Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
+
     <!-- Bootstrap 5 CSS CDN -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons CDN -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <!-- Tom Select CDN for Fast Searchable Dropdowns -->
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
-    
+
     <style>
         :root {
             --color-primary: #881337;          /* Maroon elegan BBSPJIS */
             --color-primary-hover: #9f1239;    /* Maroon hover */
-            --color-primary-dark: #4c0519;     /* Maroon tua header/footer */
-            --color-accent: #d97706;           /* Emas/Amber elegan */
+            --color-primary-dark: #4c0519;     /* Maroon tua instansi */
+            --color-primary-darker: #360412;   /* Maroon pekat */
+            --color-accent: #d97706;           /* Emas/Amber aksen */
             --color-bg: #f8fafc;               /* Background halaman bersih (Slate 50) */
             --color-surface: #ffffff;          /* Card surface putih */
             --color-text-main: #0f172a;        /* Text utama (Slate 900) */
@@ -33,10 +34,12 @@
             --font-body: 'Inter', system-ui, -apple-system, sans-serif;
             --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
             --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+            --shadow-lg: 0 10px 25px -3px rgba(0, 0, 0, 0.18), 0 4px 6px -4px rgba(0, 0, 0, 0.08);
             --radius-sm: 6px;
             --radius-md: 10px;
             --radius-lg: 14px;
+            --sidebar-mini-width: 74px;
+            --sidebar-expanded-width: 264px;
         }
 
         body {
@@ -44,8 +47,6 @@
             font-family: var(--font-body);
             color: var(--color-text-main);
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }
@@ -55,113 +56,290 @@
             letter-spacing: -0.02em;
         }
 
-        /* Navbar Header Instansi */
-        .navbar-main {
-            background-color: var(--color-surface);
-            border-bottom: 1px solid var(--color-border);
-            box-shadow: var(--shadow-sm);
-            padding-top: 0.5rem;
-            padding-bottom: 0.5rem;
-            transition: all 0.2s ease;
+        /* ============ APP SHELL ============ */
+        .app-shell {
+            display: flex;
+            min-height: 100vh;
+            position: relative;
         }
 
-        .navbar-brand-wrapper {
+        /* ============ SIDEBAR MERAH MAROON (FULL-HEIGHT UNIFIED PILLAR) ============ */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            z-index: 1040;
+            background: linear-gradient(180deg, #4c0519 0%, #360412 100%);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            overflow-x: hidden;
+            border-right: 1px solid rgba(0, 0, 0, 0.2);
+            box-shadow: 2px 0 16px rgba(0, 0, 0, 0.1);
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255,255,255,0.15) transparent;
+        }
+
+        .sidebar::-webkit-scrollbar { width: 4px; }
+        .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 2px; }
+
+        .sidebar-brand {
             display: flex;
             align-items: center;
-            gap: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             text-decoration: none;
-            padding: 0.25rem 0;
+            flex-shrink: 0;
+            height: 64px;
+            padding: 0 18px;
+            background: rgba(0, 0, 0, 0.08);
         }
 
         .brand-logo-badge {
             width: 38px;
             height: 38px;
-            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
-            color: #ffffff;
+            flex-shrink: 0;
+            background: #ffffff;
+            color: var(--color-primary-dark);
             border-radius: var(--radius-md);
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 1.25rem;
-            box-shadow: 0 2px 8px rgba(136, 19, 55, 0.25);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
         }
 
-        .brand-title {
-            font-size: 1.05rem;
-            font-weight: 800;
-            color: var(--color-primary);
+        .sidebar-brand-text {
             line-height: 1.15;
-            margin: 0;
+            overflow: hidden;
+            white-space: nowrap;
+            margin-left: 12px;
         }
 
-        .brand-subtitle {
-            font-size: 0.675rem;
+        .sidebar-brand-title {
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: #ffffff;
+            margin: 0;
+            letter-spacing: 0.02em;
+        }
+
+        .sidebar-brand-subtitle {
+            font-size: 0.625rem;
             font-weight: 600;
-            color: var(--color-text-muted);
+            color: rgba(255, 255, 255, 0.65);
             letter-spacing: 0.3px;
             margin: 0;
         }
 
-        /* Nav Links with Clean Underline Indicator */
-        .navbar-main .nav-link {
-            font-family: var(--font-display);
-            font-size: 0.875rem;
-            font-weight: 600;
-            color: #475569;
-            padding: 0.85rem 0.85rem;
-            margin: 0 2px;
-            position: relative;
-            transition: color 0.2s ease;
+        .sidebar-nav {
+            list-style: none;
+            margin: 0;
+            padding: 0.85rem 0.5rem;
+            flex: 1;
+        }
+
+        .sidebar-section-label {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: rgba(255, 255, 255, 0.4);
+            padding: 0.85rem 0.75rem 0.35rem;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        .sidebar-link {
             display: flex;
             align-items: center;
-            gap: 6px;
-            background-color: transparent !important;
+            border-radius: var(--radius-sm);
+            color: rgba(255, 255, 255, 0.82);
+            font-family: var(--font-display);
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-decoration: none;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            height: 42px;
+            padding: 0 18px;
+            transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
         }
 
-        .navbar-main .nav-link::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0.75rem;
-            right: 0.75rem;
-            height: 3px;
-            background-color: var(--color-primary);
-            border-radius: 3px 3px 0 0;
-            transform: scaleX(0);
-            transition: transform 0.2s ease-in-out;
+        .sidebar-link i {
+            font-size: 1.15rem;
+            width: 24px;
+            text-align: center;
+            flex-shrink: 0;
+            opacity: 0.95;
+            margin-right: 12px;
         }
 
-        .navbar-main .nav-link:hover {
+        .sidebar-link span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .sidebar-link:hover {
+            background-color: rgba(255, 255, 255, 0.12);
+            color: #ffffff;
+        }
+
+        .sidebar-link.active {
+            background-color: rgba(255, 255, 255, 0.18);
+            color: #ffffff;
+            box-shadow: inset 4px 0 0 #ffffff;
+        }
+
+        /* ============ DESKTOP HOVER & SYNCHRONIZED PUSH ============ */
+        @media (min-width: 992px) {
+            .sidebar {
+                width: var(--sidebar-mini-width);
+                transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s ease;
+            }
+
+            .content-wrapper {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                min-height: 100vh;
+                margin-left: var(--sidebar-mini-width);
+                width: calc(100% - var(--sidebar-mini-width));
+                max-width: calc(100% - var(--sidebar-mini-width));
+                transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1), width 0.25s cubic-bezier(0.4, 0, 0.2, 1), max-width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+
+            /* Mini Rail: hide text labels */
+            .sidebar .sidebar-brand-text,
+            .sidebar .sidebar-section-label,
+            .sidebar .sidebar-link span {
+                opacity: 0;
+                visibility: hidden;
+                white-space: nowrap;
+                transition: opacity 0.15s ease, visibility 0.15s ease;
+            }
+
+            /* Hover Expand on Mouse Hover */
+            .sidebar:hover {
+                width: var(--sidebar-expanded-width);
+                box-shadow: 6px 0 25px rgba(0, 0, 0, 0.25);
+            }
+
+            .sidebar:hover ~ .content-wrapper {
+                margin-left: var(--sidebar-expanded-width);
+                width: calc(100% - var(--sidebar-expanded-width));
+                max-width: calc(100% - var(--sidebar-expanded-width));
+            }
+
+            .sidebar:hover .sidebar-brand-text,
+            .sidebar:hover .sidebar-section-label,
+            .sidebar:hover .sidebar-link span {
+                opacity: 1;
+                visibility: visible;
+                transition-delay: 0.05s;
+            }
+
+            .mobile-toggle-btn {
+                display: none !important;
+            }
+        }
+
+        /* ============ MOBILE OFF-CANVAS RESPONSIVE ============ */
+        .sidebar-backdrop {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(15, 23, 42, 0.5);
+            z-index: 1045;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+        .sidebar-backdrop.show { opacity: 1; pointer-events: auto; }
+
+        @media (max-width: 991.98px) {
+            .sidebar {
+                width: var(--sidebar-expanded-width);
+                transform: translateX(-100%);
+                transition: transform 0.25s ease;
+            }
+            .sidebar.show { transform: translateX(0); }
+            .sidebar .sidebar-brand-text,
+            .sidebar .sidebar-section-label,
+            .sidebar .sidebar-link span {
+                opacity: 1 !important;
+                visibility: visible !important;
+                display: block !important;
+            }
+            .content-wrapper {
+                margin-left: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+        }
+
+        /* ============ TOPBAR & HEADER ============ */
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 1020;
+            background-color: #ffffff;
+            border-bottom: 1px solid var(--color-border);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+            padding: 0.65rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .sidebar-toggle-btn {
+            width: 38px;
+            height: 38px;
+            flex-shrink: 0;
+            border: 1px solid var(--color-border);
+            background-color: #ffffff;
+            border-radius: var(--radius-sm);
             color: var(--color-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.15rem;
+            transition: all 0.15s ease;
         }
 
-        .navbar-main .nav-link:hover::after {
-            transform: scaleX(0.5);
+        .sidebar-toggle-btn:hover {
+            border-color: var(--color-primary);
+            background-color: rgba(136, 19, 55, 0.04);
         }
 
-        .navbar-main .nav-link.active {
-            color: var(--color-primary);
+        .topbar-title {
+            font-family: var(--font-display);
             font-weight: 700;
+            font-size: 1.05rem;
+            color: var(--color-text-main);
+            margin: 0;
         }
 
-        .navbar-main .nav-link.active::after {
-            transform: scaleX(1);
+        .topbar-subtitle {
+            font-size: 0.75rem;
+            color: var(--color-text-muted);
+            margin: 0;
         }
 
-        /* User Menu Widget */
-        .user-menu-btn {
+        /* User Profile Pill in Topbar */
+        .topbar-user-btn {
             background-color: var(--color-bg);
             border: 1px solid var(--color-border);
-            border-radius: 20px;
-            padding: 4px 12px 4px 4px;
+            border-radius: 24px;
+            padding: 4px 14px 4px 5px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 9px;
             text-decoration: none;
             transition: all 0.15s ease;
         }
 
-        .user-menu-btn:hover {
+        .topbar-user-btn:hover {
             border-color: var(--color-primary);
             background-color: #ffffff;
             box-shadow: var(--shadow-sm);
@@ -170,6 +348,7 @@
         .user-avatar {
             width: 32px;
             height: 32px;
+            flex-shrink: 0;
             border-radius: 50%;
             background: var(--color-primary);
             color: #ffffff;
@@ -178,13 +357,12 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
         }
 
-        /* Main Container */
         .main-container {
             flex: 1;
-            padding-top: 1.5rem;
-            padding-bottom: 3rem;
+            padding: 1.5rem 1.5rem 3rem;
         }
 
         /* Card Styles */
@@ -203,9 +381,7 @@
             font-family: var(--font-display);
         }
 
-        .card-body {
-            padding: 1.25rem;
-        }
+        .card-body { padding: 1.25rem; }
 
         /* KPI Metric Cards */
         .metric-card {
@@ -220,10 +396,7 @@
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
-        .metric-card:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
-        }
+        .metric-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
 
         .metric-icon-box {
             width: 48px;
@@ -249,13 +422,8 @@
             transition: all 0.15s ease-in-out;
         }
 
-        .btn:hover {
-            transform: translateY(-1px);
-        }
-
-        .btn:active {
-            transform: translateY(0);
-        }
+        .btn:hover { transform: translateY(-1px); }
+        .btn:active { transform: translateY(0); }
 
         .btn-primary {
             background-color: var(--color-primary);
@@ -304,12 +472,7 @@
         }
 
         /* Form Controls */
-        .form-label {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: #334155;
-            margin-bottom: 0.35rem;
-        }
+        .form-label { font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem; }
 
         .form-control, .form-select {
             font-size: 0.875rem;
@@ -328,12 +491,7 @@
         }
 
         /* Clean Table Design */
-        .table {
-            color: var(--color-text-main);
-            font-size: 0.875rem;
-            margin-bottom: 0;
-            width: 100%;
-        }
+        .table { color: var(--color-text-main); font-size: 0.875rem; margin-bottom: 0; width: 100%; }
 
         .table thead th {
             background-color: #f8fafc;
@@ -347,15 +505,8 @@
             border-bottom: 1px solid var(--color-border);
         }
 
-        .table tbody td {
-            padding: 0.75rem 0.85rem;
-            border-bottom: 1px solid var(--color-border-subtle);
-            vertical-align: middle;
-        }
-
-        .table-hover tbody tr:hover {
-            background-color: rgba(136, 19, 55, 0.02);
-        }
+        .table tbody td { padding: 0.75rem 0.85rem; border-bottom: 1px solid var(--color-border-subtle); vertical-align: middle; }
+        .table-hover tbody tr:hover { background-color: rgba(136, 19, 55, 0.02); }
 
         /* Modern Status Badges */
         .badge {
@@ -370,204 +521,354 @@
             gap: 4px;
         }
 
-        .badge-pill-success {
-            background-color: #ecfdf5;
-            color: #065f46;
-            border: 1px solid #a7f3d0;
-        }
+        .badge-pill-success { background-color: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+        .badge-pill-warning { background-color: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+        .badge-pill-danger { background-color: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+        .badge-pill-info { background-color: #f0f9ff; color: #075985; border: 1px solid #bae6fd; }
+        .badge-pill-primary { background-color: rgba(136, 19, 55, 0.08); color: var(--color-primary); border: 1px solid rgba(136, 19, 55, 0.2); }
+        .badge-pill-secondary { background-color: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
 
-        .badge-pill-warning {
-            background-color: #fffbeb;
-            color: #92400e;
-            border: 1px solid #fde68a;
-        }
-
-        .badge-pill-danger {
-            background-color: #fef2f2;
-            color: #991b1b;
-            border: 1px solid #fecaca;
-        }
-
-        .badge-pill-info {
-            background-color: #f0f9ff;
-            color: #075985;
-            border: 1px solid #bae6fd;
-        }
-
-        .badge-pill-primary {
-            background-color: rgba(136, 19, 55, 0.08);
-            color: var(--color-primary);
-            border: 1px solid rgba(136, 19, 55, 0.2);
-        }
-
-        .badge-pill-secondary {
-            background-color: #f1f5f9;
-            color: #475569;
-            border: 1px solid #cbd5e1;
-        }
-
-        /* Footer */
+        /* ============ REFINED INSTITUTIONAL FOOTER ============ */
         .footer-gov {
-            background-color: var(--color-primary-dark);
-            color: #e2e8f0;
-            font-size: 0.8rem;
-            padding: 1.5rem 0;
-            border-top: 3px solid var(--color-accent);
+            background-color: #ffffff;
+            border-top: 1px solid var(--color-border);
+            padding: 1.25rem 2rem;
             margin-top: auto;
+            font-size: 0.8125rem;
+            box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.02);
         }
 
-        .footer-gov a {
-            color: #cbd5e1;
-            text-decoration: none;
-            transition: color 0.15s ease;
+        .footer-gov-brand {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 0.875rem;
+            color: #1e293b;
+            line-height: 1.25;
+            letter-spacing: -0.01em;
         }
 
-        .footer-gov a:hover {
-            color: #ffffff;
+        .footer-gov-address {
+            font-family: var(--font-body);
+            font-size: 0.75rem;
+            color: var(--color-text-muted);
+            margin-top: 3px;
+            letter-spacing: 0.1px;
+        }
+
+        .footer-gov-copy {
+            font-family: var(--font-body);
+            font-size: 0.75rem;
+            color: #94a3b8;
+        }
+        /* ============ PAGE TRANSITION & SIMULATED CLOUD LOADER ============ */
+        .top-progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            width: 0%;
+            background: linear-gradient(90deg, #881337 0%, #e11d48 50%, #f59e0b 100%);
+            z-index: 99999;
+            transition: width 0.35s cubic-bezier(0.1, 0.9, 0.2, 1), opacity 0.3s ease;
+            box-shadow: 0 0 10px rgba(225, 29, 72, 0.6);
+            pointer-events: none;
+        }
+
+        .page-loader-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(248, 250, 252, 0.78);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 99990;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+        }
+
+        .page-loader-overlay.active {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+
+        .loader-content {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1.5rem 2rem;
+            background: #ffffff;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 12px 35px -5px rgba(15, 23, 42, 0.12);
+            animation: loaderPopIn 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes loaderPopIn {
+            from { transform: scale(0.92); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .loader-spinner-wrapper {
+            position: relative;
+            width: 52px;
+            height: 52px;
+            margin-bottom: 0.85rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .loader-spinner {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            border: 3px solid rgba(136, 19, 55, 0.12);
+            border-top-color: var(--color-primary);
+            border-right-color: #e11d48;
+            animation: spinLoader 0.75s linear infinite;
+        }
+
+        @keyframes spinLoader {
+            to { transform: rotate(360deg); }
+        }
+
+        .loader-icon {
+            color: var(--color-primary);
+            font-size: 1.25rem;
+            animation: pulseIcon 1.2s ease-in-out infinite alternate;
+        }
+
+        @keyframes pulseIcon {
+            from { transform: scale(0.9); opacity: 0.75; }
+            to { transform: scale(1.08); opacity: 1; }
+        }
+
+        .loader-text {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: #0f172a;
+            margin-bottom: 2px;
+        }
+
+        .loader-subtext {
+            font-family: var(--font-body);
+            font-size: 0.725rem;
+            color: var(--color-text-muted);
         }
     </style>
 </head>
 <body>
 
-    <!-- Navbar Header -->
-    <nav class="navbar navbar-expand-lg navbar-main sticky-top">
-        <div class="container-fluid px-xl-5 px-lg-4 px-3">
-            <a class="navbar-brand-wrapper" href="<?= ($BASE) ?>/po">
+    <!-- Top Progress Bar & Cloud Loading Simulation -->
+    <div id="topProgressBar" class="top-progress-bar"></div>
+    <div id="pageLoader" class="page-loader-overlay">
+        <div class="loader-content">
+            <div class="loader-spinner-wrapper">
+                <div class="loader-spinner"></div>
+                <div class="loader-icon">
+                    <i class="bi bi-layers-fill"></i>
+                </div>
+            </div>
+            <div class="loader-text">Memuat Data...</div>
+            <div class="loader-subtext">Menghubungkan ke Server Cloud BBSPJIS</div>
+        </div>
+    </div>
+
+    <?php if ($SESSION['user_id']): ?>
+
+    <div class="app-shell">
+
+        <!-- Sidebar Backdrop (mobile) -->
+        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+        <!-- Sidebar Merah Maroon BBSPJIS (Hover-to-Expand) -->
+        <aside class="sidebar" id="sidebar">
+            <a class="sidebar-brand" href="<?= ($BASE) ?>/po" title="OPTI Tracker - BBSPJIS">
                 <div class="brand-logo-badge">
                     <i class="bi bi-layers-fill"></i>
                 </div>
-                <div>
-                    <h1 class="brand-title">OPTI TRACKER</h1>
-                    <p class="brand-subtitle">BBSPJI SELULOSA &bull; KEMENPERIN RI</p>
+                <div class="sidebar-brand-text">
+                    <p class="sidebar-brand-title">OPTI TRACKER</p>
+                    <p class="sidebar-brand-subtitle">BBSPJIS &bull; KEMENPERIN RI</p>
                 </div>
             </a>
 
-            <?php if ($SESSION['user_id']): ?>
-                <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
-                    <i class="bi bi-list fs-3 text-dark"></i>
+            <ul class="sidebar-nav">
+                <li class="sidebar-section-label">Menu Utama</li>
+                <li>
+                    <a class="sidebar-link <?= ($active_menu == 'po' ? 'active' : '') ?>" href="<?= ($BASE) ?>/po" title="Dashboard PO">
+                        <i class="bi bi-speedometer2"></i> <span>Dashboard PO</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="sidebar-link <?= ($active_menu == 'order' ? 'active' : '') ?>" href="<?= ($BASE) ?>/order" title="Order Masuk">
+                        <i class="bi bi-inbox"></i> <span>Order Masuk</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="sidebar-link <?= ($active_menu == 'klien' || $active_menu == 'customer' ? 'active' : '') ?>" href="<?= ($BASE) ?>/klien" title="Customer">
+                        <i class="bi bi-building"></i> <span>Customer</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="sidebar-link <?= ($active_menu == 'pembayaran' ? 'active' : '') ?>" href="<?= ($BASE) ?>/pembayaran" title="Pembayaran">
+                        <i class="bi bi-cash-stack"></i> <span>Pembayaran</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="sidebar-link <?= ($active_menu == 'kontrak' ? 'active' : '') ?>" href="<?= ($BASE) ?>/kontrak" title="Kontrak PKS">
+                        <i class="bi bi-journal-text"></i> <span>Kontrak PKS</span>
+                    </a>
+                </li>
+
+                <?php if ($SESSION['role'] == 'admin_order' || $SESSION['role'] == 'superadmin'): ?>
+                    <li class="sidebar-section-label">Data Master Uji</li>
+                    <li>
+                        <a class="sidebar-link <?= ($active_menu == 'kategori-uji' ? 'active' : '') ?>" href="<?= ($BASE) ?>/kategori-uji" title="Kategori Pengujian">
+                            <i class="bi bi-collection"></i> <span>Kategori Pengujian</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="sidebar-link <?= ($active_menu == 'metode-uji' ? 'active' : '') ?>" href="<?= ($BASE) ?>/metode-uji" title="Metode & Harga Uji">
+                            <i class="bi bi-list-check"></i> <span>Metode &amp; Harga Uji</span>
+                        </a>
+                    </li>
+                <?php endif; ?>
+
+                <li class="sidebar-section-label">Pengaturan</li>
+                <li>
+                    <a class="sidebar-link <?= ($active_menu == 'config' ? 'active' : '') ?>" href="<?= ($BASE) ?>/config" title="Konfigurasi">
+                        <i class="bi bi-sliders"></i> <span>Konfigurasi</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="sidebar-link <?= ($active_menu == 'profil' ? 'active' : '') ?>" href="<?= ($BASE) ?>/profil" title="Profil Pengguna">
+                        <i class="bi bi-person-gear"></i> <span>Profil Pengguna</span>
+                    </a>
+                </li>
+            </ul>
+
+            
+        </aside>
+
+        <!-- Content Wrapper (Synchronized Push on Hover) -->
+        <div class="content-wrapper" id="contentWrapper">
+
+            <!-- Topbar Header -->
+            <nav class="topbar">
+                <button class="sidebar-toggle-btn mobile-toggle-btn" type="button" id="mobileToggleBtn" aria-label="Buka menu">
+                    <i class="bi bi-list"></i>
                 </button>
 
-                <div class="collapse navbar-collapse" id="navbarContent">
-                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0 me-3 align-items-lg-center">
-                        <li class="nav-item">
-                            <a class="nav-link <?= ($active_menu == 'po' ? 'active' : '') ?>" href="<?= ($BASE) ?>/po">
-                                <i class="bi bi-speedometer2"></i> Dashboard PO
+                <div class="flex-grow-1">
+                    <p class="topbar-title"><?= ($page_title ?: 'Dashboard') ?></p>
+                    <?php if ($page_subtitle): ?>
+                        <p class="topbar-subtitle"><?= ($page_subtitle) ?></p>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Clean User Profile Dropdown (Top-Right Nav) -->
+                <div class="dropdown">
+                    <a class="topbar-user-btn dropdown-toggle" href="#" role="button" id="userMenuTop" data-bs-toggle="dropdown" aria-expanded="false">
+                        <div class="user-avatar">
+                            <?php $initials = implode('', array_map(function($w) { return strtoupper($w[0] ?? ''); }, explode(' ', $_SESSION['nama_lengkap'] ?? 'U'))) ?>
+                            <?= (substr($initials, 0, 2))."
+" ?>
+                        </div>
+                        <div class="text-start d-none d-sm-block" style="line-height: 1.15;">
+                            <div class="fw-bold text-dark small"><?= (htmlspecialchars($SESSION['nama_lengkap'] ?? 'User')) ?></div>
+                            <div class="text-muted" style="font-size: 0.675rem;">
+                                <?php if ($SESSION['role'] == 'superadmin'): ?>Super Admin<?php endif; ?>
+                                <?php if ($SESSION['role'] == 'admin_order'): ?>Admin Order<?php endif; ?>
+                                <?php if ($SESSION['role'] == 'ketua_tim'): ?>Ketua Tim <?= ($SESSION['jenis_layanan_opti'] == 'selulosa' ? 'Selulosa' : ($SESSION['jenis_layanan_opti'] == 'lingkungan' ? 'Lingkungan' : 'OPTI')) ?><?php endif; ?>
+                                <?php if ($SESSION['role'] == 'pejabat'): ?>Kepala Balai/PPK<?php endif; ?>
+                                <?php if ($SESSION['role'] == 'tim_kerja'): ?>Tim Analis<?php endif; ?>
+                                <?php if ($SESSION['role'] == 'admin_kontrak'): ?>Admin PKS<?php endif; ?>
+                            </div>
+                        </div>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2 py-2" aria-labelledby="userMenuTop" style="min-width: 230px; border-radius: var(--radius-md);">
+                        <li class="px-3 py-2 border-bottom mb-1">
+                            <div class="fw-bold text-dark"><?= (htmlspecialchars($SESSION['nama_lengkap'] ?? 'User')) ?></div>
+                            <div class="text-muted small">@<?= ($SESSION['login'] ?? $SESSION['username']) ?></div>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="<?= ($BASE) ?>/profil">
+                                <i class="bi bi-person-gear text-primary"></i> Profil Pengguna
                             </a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link <?= ($active_menu == 'order' ? 'active' : '') ?>" href="<?= ($BASE) ?>/order">
-                                <i class="bi bi-inbox"></i> Order Masuk
+                        <li>
+                            <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="<?= ($BASE) ?>/config">
+                                <i class="bi bi-sliders text-primary"></i> Pengaturan Konfigurasi
                             </a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link <?= ($active_menu == 'klien' || $active_menu == 'customer' ? 'active' : '') ?>" href="<?= ($BASE) ?>/klien">
-                                <i class="bi bi-building"></i> Customer
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link <?= ($active_menu == 'pembayaran' ? 'active' : '') ?>" href="<?= ($BASE) ?>/pembayaran">
-                                <i class="bi bi-cash-stack"></i> Pembayaran
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link <?= ($active_menu == 'kontrak' ? 'active' : '') ?>" href="<?= ($BASE) ?>/kontrak">
-                                <i class="bi bi-journal-text"></i> Kontrak PKS
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link <?= ($active_menu == 'config' ? 'active' : '') ?>" href="<?= ($BASE) ?>/config">
-                                <i class="bi bi-sliders"></i> Konfigurasi
+                        <li><hr class="dropdown-divider my-1"></li>
+                        <li>
+                            <a class="dropdown-item py-2 text-danger d-flex align-items-center gap-2" href="<?= ($BASE) ?>/logout">
+                                <i class="bi bi-box-arrow-right"></i> Keluar Sistem
                             </a>
                         </li>
                     </ul>
+                </div>
+            </nav>
 
-                    <!-- User Profile Dropdown -->
-                    <div class="dropdown">
-                        <a class="user-menu-btn dropdown-toggle" href="#" role="button" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
-                            <div class="user-avatar">
-                                <?php $initials = implode('', array_map(function($w) { return strtoupper($w[0] ?? ''); }, explode(' ', $_SESSION['nama_lengkap'] ?? 'U'))) ?>
-                                <?= (substr($initials, 0, 2))."
-" ?>
-                            </div>
-                            <div class="text-start d-none d-md-block" style="line-height: 1.15;">
-                                <div class="fw-bold text-dark small"><?= (htmlspecialchars($SESSION['nama_lengkap'] ?? 'User')) ?></div>
-                                <div class="text-muted" style="font-size: 0.7rem;">
-                                    <?php if ($SESSION['role'] == 'superadmin'): ?>Super Admin<?php endif; ?>
-                                    <?php if ($SESSION['role'] == 'admin_order'): ?>Admin Order<?php endif; ?>
-                                    <?php if ($SESSION['role'] == 'ketua_tim'): ?>Ketua Tim <?= ($SESSION['jenis_layanan_opti'] == 'selulosa' ? 'Selulosa' : ($SESSION['jenis_layanan_opti'] == 'lingkungan' ? 'Lingkungan' : 'OPTI')) ?><?php endif; ?>
-                                    <?php if ($SESSION['role'] == 'pejabat'): ?>Kepala Balai/PPK<?php endif; ?>
-                                    <?php if ($SESSION['role'] == 'tim_kerja'): ?>Tim Analis<?php endif; ?>
-                                    <?php if ($SESSION['role'] == 'admin_kontrak'): ?>Admin PKS<?php endif; ?>
-                                </div>
-                            </div>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2 py-2" aria-labelledby="userMenu" style="min-width: 220px; border-radius: var(--radius-md);">
-                            <li class="px-3 py-2 border-bottom mb-1">
-                                <div class="fw-bold text-dark"><?= (htmlspecialchars($SESSION['nama_lengkap'] ?? 'User')) ?></div>
-                                <div class="text-muted small">@<?= ($SESSION['login'] ?? $SESSION['username']) ?></div>
-                            </li>
-                            <li>
-                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="<?= ($BASE) ?>/profil">
-                                    <i class="bi bi-person-gear text-primary"></i> Profil Pengguna
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="<?= ($BASE) ?>/config">
-                                    <i class="bi bi-sliders text-primary"></i> Pengaturan Konfigurasi
-                                </a>
-                            </li>
-                            <li><hr class="dropdown-divider my-1"></li>
-                            <li>
-                                <a class="dropdown-item py-2 text-danger d-flex align-items-center gap-2" href="<?= ($BASE) ?>/logout">
-                                    <i class="bi bi-box-arrow-right"></i> Keluar Sistem
-                                </a>
-                            </li>
-                        </ul>
+            <!-- Main Content Area -->
+            <main class="main-container">
+                <div class="container-fluid px-0">
+                    <!-- Flash Messages -->
+                    <?php if ($SESSION['flash_success']): ?>
+                        <div class="alert alert-success d-flex align-items-center gap-2 border-0 shadow-sm rounded-3 mb-4" role="alert">
+                            <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                            <div><?= ($this->raw($SESSION['flash_success'])) ?></div>
+                            <button type="button" class="btn-close ms-auto shadow-none" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                        <?php unset($_SESSION['flash_success']) ?>
+                    <?php endif; ?>
+
+                    <?php if ($SESSION['flash_error']): ?>
+                        <div class="alert alert-danger d-flex align-items-center gap-2 border-0 shadow-sm rounded-3 mb-4" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill text-danger fs-5"></i>
+                            <div><?= ($this->raw($SESSION['flash_error'])) ?></div>
+                            <button type="button" class="btn-close ms-auto shadow-none" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                        <?php unset($_SESSION['flash_error']) ?>
+                    <?php endif; ?>
+
+                    <!-- Template View Injected Here -->
+                    <?php echo $this->render($content,NULL,get_defined_vars(),0); ?>
+                </div>
+            </main>
+
+            <!-- Refined Institutional Footer -->
+            <footer class="footer-gov">
+                <div class="container-fluid px-0 d-flex flex-column flex-md-row justify-content-between align-items-center gap-2 text-center text-md-start">
+                    <div>
+                        <div class="footer-gov-brand">
+                            Balai Besar Standardisasi dan Pelayanan Jasa Industri Selulosa (BBSPJIS)
+                        </div>
+                        <div class="footer-gov-address">
+                            Kementerian Perindustrian Republik Indonesia &bull; Jl. Raya Dayeuhkolot No. 132, Bandung 40258
+                        </div>
+                    </div>
+                    <div class="text-md-end">
+                        <div class="footer-gov-copy">
+                            &copy; 2026 BBSPJIS. Hak Cipta Dilindungi.
+                        </div>
                     </div>
                 </div>
-            <?php endif; ?>
+            </footer>
+
         </div>
-    </nav>
+    </div>
 
-    <!-- Main Content Area -->
-    <main class="main-container">
-        <div class="container-fluid px-xl-5 px-lg-4 px-3">
-            <!-- Flash Messages -->
-            <?php if ($SESSION['flash_success']): ?>
-                <div class="alert alert-success d-flex align-items-center gap-2 border-0 shadow-sm rounded-3 mb-4" role="alert">
-                    <i class="bi bi-check-circle-fill text-success fs-5"></i>
-                    <div><?= ($this->raw($SESSION['flash_success'])) ?></div>
-                    <button type="button" class="btn-close ms-auto shadow-none" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-                <?php unset($_SESSION['flash_success']) ?>
-            <?php endif; ?>
-
-            <?php if ($SESSION['flash_error']): ?>
-                <div class="alert alert-danger d-flex align-items-center gap-2 border-0 shadow-sm rounded-3 mb-4" role="alert">
-                    <i class="bi bi-exclamation-triangle-fill text-danger fs-5"></i>
-                    <div><?= ($this->raw($SESSION['flash_error'])) ?></div>
-                    <button type="button" class="btn-close ms-auto shadow-none" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-                <?php unset($_SESSION['flash_error']) ?>
-            <?php endif; ?>
-
-            <!-- Template View Injected Here -->
-            <?php echo $this->render($content,NULL,get_defined_vars(),0); ?>
-        </div>
-    </main>
-
-    <!-- Footer -->
-    <footer class="footer-gov">
-        <div class="container-fluid px-xl-5 px-lg-4 px-3 d-flex flex-column flex-md-row justify-content-between align-items-center gap-2 text-center text-md-start">
-            <div>
-                <strong>Balai Besar Standardisasi dan Pelayanan Jasa Industri Selulosa (BBSPJI Selulosa)</strong><br>
-                <span class="text-white-50">Kementerian Perindustrian Republik Indonesia &bull; Jl. Raya Dayeuhkolot No. 132 Bandung</span>
-            </div>
-            <div class="text-white-50">
-                &copy; 2026 Sistem OPTI Tracker. Hak Cipta Dilindungi.
-            </div>
-        </div>
-    </footer>
+    <?php endif; ?>
 
     <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -585,6 +886,110 @@
                         allowEmptyOption: true
                     });
                 }
+            });
+
+            var sidebar = document.getElementById('sidebar');
+            var backdrop = document.getElementById('sidebarBackdrop');
+            var mobileBtn = document.getElementById('mobileToggleBtn');
+
+            // Mobile: show/hide off-canvas sidebar
+            function openMobileSidebar() {
+                if (sidebar) sidebar.classList.add('show');
+                if (backdrop) backdrop.classList.add('show');
+            }
+            function closeMobileSidebar() {
+                if (sidebar) sidebar.classList.remove('show');
+                if (backdrop) backdrop.classList.remove('show');
+            }
+            if (mobileBtn) {
+                mobileBtn.addEventListener('click', function () {
+                    if (sidebar.classList.contains('show')) {
+                        closeMobileSidebar();
+                    } else {
+                        openMobileSidebar();
+                    }
+                });
+            }
+            if (backdrop) {
+                backdrop.addEventListener('click', closeMobileSidebar);
+            }
+
+            // Close mobile sidebar automatically when a nav link is tapped on small screens
+            document.querySelectorAll('.sidebar-link').forEach(function (link) {
+                link.addEventListener('click', function () {
+                    if (window.innerWidth < 992) closeMobileSidebar();
+                });
+            });
+            // ============ SIMULATED CLOUD LOADING TRANSITION ============
+            var progressBar = document.getElementById('topProgressBar');
+            var pageLoader = document.getElementById('pageLoader');
+
+            function startLoading(customText) {
+                if (progressBar) {
+                    progressBar.style.opacity = '1';
+                    progressBar.style.width = '35%';
+                    setTimeout(function() { progressBar.style.width = '75%'; }, 120);
+                }
+                if (pageLoader) {
+                    if (customText) {
+                        var textEl = pageLoader.querySelector('.loader-text');
+                        if (textEl) textEl.textContent = customText;
+                    }
+                    pageLoader.classList.add('active');
+                }
+            }
+
+            function finishLoading() {
+                if (progressBar) {
+                    progressBar.style.width = '100%';
+                    setTimeout(function() {
+                        progressBar.style.opacity = '0';
+                        setTimeout(function() { progressBar.style.width = '0%'; }, 300);
+                    }, 180);
+                }
+                if (pageLoader) {
+                    setTimeout(function() {
+                        pageLoader.classList.remove('active');
+                    }, 120);
+                }
+            }
+
+            // Finish loading when page is fully rendered
+            window.addEventListener('pageshow', function() {
+                finishLoading();
+            });
+
+            // Intercept internal link navigation to simulate realistic cloud deployment delay
+            document.addEventListener('click', function(e) {
+                var link = e.target.closest('a');
+                if (!link) return;
+
+                var href = link.getAttribute('href');
+                var target = link.getAttribute('target');
+
+                // Ignore anchors, javascript, modals, dropdowns, new tabs, downloads
+                if (!href || href.startsWith('#') || href.startsWith('javascript:') || target === '_blank' || link.hasAttribute('download') || link.getAttribute('data-bs-toggle') || link.getAttribute('role') === 'button' && href === '#') {
+                    return;
+                }
+
+                // Check if internal domain link
+                var isInternal = href.startsWith('/') || href.startsWith('http://' + window.location.host) || href.startsWith('https://' + window.location.host) || !href.includes('://');
+
+                if (isInternal) {
+                    e.preventDefault();
+                    startLoading('Memuat Halaman...');
+                    // 320ms simulated network latency for smooth transition
+                    setTimeout(function() {
+                        window.location.href = href;
+                    }, 320);
+                }
+            });
+
+            // Intercept form submissions for realistic saving/filtering indicator
+            document.addEventListener('submit', function(e) {
+                var form = e.target;
+                if (!form) return;
+                startLoading('Memproses Data Server...');
             });
         });
     </script>

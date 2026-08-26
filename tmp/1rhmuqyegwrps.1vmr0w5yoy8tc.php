@@ -1,0 +1,74 @@
+<div class="d-flex align-items-center gap-3 mb-4">
+    <a href="<?= ($BASE) ?>/pembayaran" class="btn-back">
+        <i class="bi bi-arrow-left"></i> Kembali
+    </a>
+    <div>
+        <h2 class="h4 fw-bold mb-1 text-dark">Pencatatan Transaksi Pembayaran</h2>
+        <p class="text-muted small mb-0">Input penerimaan pembayaran termin / pelunasan dari mitra industri.</p>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h6 class="m-0 fw-bold text-dark"><i class="bi bi-receipt text-primary me-2"></i>Formulir Bukti Bayar / Kas Masuk</h6>
+            </div>
+            <div class="card-body p-4">
+                <form action="<?= ($BASE) ?>/pembayaran/simpan" method="POST">
+                    <input type="hidden" name="csrf_token" value="<?= ($csrf_token) ?>">
+
+                    <div class="mb-3">
+                        <label class="form-label">Pilih Dokumen Order Layanan / PO <span class="text-danger">*</span></label>
+                        <select name="order_id" class="form-select" required>
+                            <option value="">Pilih Order Layanan Terdaftar</option>
+                            <?php foreach (($daftar_order?:[]) as $ord): ?>
+                                <option value="<?= ($ord['id']) ?>" <?= ($selected_order_id == $ord['id'] ? 'selected' : '') ?>>
+                                    <?= ($ord['nomor_order']) ?> - <?= ($ord['nama_perusahaan']) ?> (Biaya: Rp <?= (number_format($ord['biaya'], 0, ',', '.')) ?>)
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Tahap Termin Ke- <span class="text-danger">*</span></label>
+                            <select name="termin_ke" class="form-select" required>
+                                <option value="1">Termin 1 (Uang Muka / DP)</option>
+                                <option value="2">Termin 2 (Tahap Pelaksanaan)</option>
+                                <option value="3">Termin 3 (Pelunasan Akhir)</option>
+                                <option value="4">Termin 4</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Tanggal Transaksi Bayar <span class="text-danger">*</span></label>
+                            <input type="date" name="tanggal_bayar" class="form-control" value="<?= (date('Y-m-d')) ?>" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Jumlah Nominal Pembayaran (Rp) <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text">Rp</span>
+                            <input type="number" name="jumlah" class="form-control" placeholder="0" required min="1000">
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Keterangan / Nomor Bukti Setor</label>
+                        <textarea name="keterangan" class="form-control" rows="2" placeholder="Contoh: Transfer Bank BNI Virtual Account #98877123 / Kuitansi No. 123..."></textarea>
+                    </div>
+
+                    <!-- Tombol Aksi -->
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="<?= ($BASE) ?>/pembayaran" class="btn btn-outline-secondary px-4">Batal</a>
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-save me-1"></i> Simpan Pembayaran
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

@@ -5,7 +5,7 @@
  * Menyediakan render layout, manajemen sesi, proteksi CSRF, 
  * dan Guard Role / Permission yang terpisah rapi dari mekanisme autentikasi.
  * 
- * Sesuai Matriks Hak Akses SOP Layanan OPTI BBSPJI Selulosa:
+ * Sesuai Matriks Hak Akses SOP Layanan OPTI BBSPJIS:
  * - Admin/Petugas Order: Input & edit order baru, input pembayaran
  * - Ketua Tim OPTI: Lihat order timnya, buat & edit PO, susun tim & jadwal, atur field tim
  * - Approver (Kepala Balai/PPK/Ka.Bag TU): Verifikasi & validasi tiap tahap PO (approve)

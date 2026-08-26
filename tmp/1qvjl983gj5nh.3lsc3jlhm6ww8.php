@@ -3,7 +3,7 @@
             <h2 class="h4 fw-bold mb-1 text-dark"><i class="bi bi-collection text-primary me-1"></i> Kategori Pengujian</h2>
             <p class="text-muted small mb-0">Kelompok besar jenis uji laboratorium. Tambahkan kategori baru sebelum mengisi metode & harganya.</p>
         </div>
-        <a href="<?= ($BASE) ?>/metode-uji/tambah" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Tambah Kategori</a>
+        <a href="<?= ($BASE) ?>/kategori-uji/tambah" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Tambah Kategori</a>
     </div>
 
     <div class="card border-0 shadow-sm mb-4">

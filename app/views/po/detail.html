@@ -1,3 +1,111 @@
+<style>
+    /* ======================================================== */
+    /* CUSTOM THEME STYLES - BBSPJIS MAROON & PASTEL ACCENTS */
+    /* ======================================================== */
+    .po-stepper-container {
+        position: relative;
+        padding: 0.5rem 0;
+    }
+    .po-stepper {
+        display: flex;
+        justify-content: space-between;
+        position: relative;
+    }
+    .po-stepper::before {
+        content: '';
+        position: absolute;
+        top: 19px;
+        left: 5%;
+        right: 5%;
+        height: 2px;
+        background: #e2e8f0;
+        z-index: 1;
+    }
+    .po-step-item {
+        position: relative;
+        z-index: 2;
+        text-align: center;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .po-step-circle {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.85rem;
+        background: #ffffff;
+        border: 2px solid #cbd5e1;
+        color: #64748b;
+        transition: all 0.2s ease;
+        margin-bottom: 0.45rem;
+    }
+    .po-step-item.completed .po-step-circle {
+        background: var(--color-primary);
+        border-color: var(--color-primary);
+        color: #ffffff;
+        box-shadow: 0 2px 6px rgba(136, 19, 55, 0.2);
+    }
+    .po-step-item.active .po-step-circle {
+        background: #ffffff;
+        border-color: var(--color-primary);
+        color: var(--color-primary);
+        box-shadow: 0 0 0 4px rgba(136, 19, 55, 0.15);
+        font-weight: 800;
+    }
+    .po-step-item.pending .po-step-circle {
+        background: #f8fafc;
+        border-color: #e2e8f0;
+        color: #94a3b8;
+    }
+    .po-step-label {
+        font-size: 0.775rem;
+        font-weight: 600;
+        color: #475569;
+        line-height: 1.2;
+    }
+    .po-step-item.active .po-step-label {
+        color: var(--color-primary);
+        font-weight: 700;
+    }
+    .po-step-item.completed .po-step-label {
+        color: #0f172a;
+    }
+    
+    /* Nav Pills Tab SOP Maroon Theme */
+    .sop-nav-pills .nav-link {
+        color: #475569;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        transition: all 0.15s ease;
+        padding: 6px 12px;
+    }
+    .sop-nav-pills .nav-link:hover {
+        color: var(--color-primary);
+        border-color: rgba(136, 19, 55, 0.3);
+        background: #fff1f2;
+    }
+    .sop-nav-pills .nav-link.active {
+        background-color: var(--color-primary) !important;
+        color: #ffffff !important;
+        border-color: var(--color-primary) !important;
+        box-shadow: 0 2px 8px rgba(136, 19, 55, 0.25);
+    }
+    .sop-nav-pills .nav-link.active .badge {
+        background-color: rgba(255, 255, 255, 0.25) !important;
+        color: #ffffff !important;
+    }
+</style>
+
+<!-- ======================================================== -->
+<!-- HEADER HALAMAN & QUICK ACTION BUTTONS -->
+<!-- ======================================================== -->
 <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3 mb-4">
     <div class="d-flex align-items-center gap-3">
         <a href="{{ @BASE }}/po" class="btn-back">
@@ -7,25 +115,34 @@
             <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
                 <h3 class="h4 fw-bold mb-0 text-dark">{{ @po.nomor_po }}</h3>
                 <check if="{{ @po.jenis_layanan_opti == 'selulosa' }}">
-                    <span class="badge badge-pill-danger">OPTI Selulosa</span>
+                    <span class="badge px-2 py-1 fw-semibold" style="font-size: 0.75rem; background-color: #ffe4e6; color: #be123c; border: 1px solid #fecdd3;">
+                        <i class="bi bi-tree me-1"></i>OPTI Selulosa
+                    </span>
                 </check>
                 <check if="{{ @po.jenis_layanan_opti == 'lingkungan' }}">
-                    <span class="badge badge-pill-success">OPTI Lingkungan</span>
+                    <span class="badge px-2 py-1 fw-semibold" style="font-size: 0.75rem; background-color: #ccfbf1; color: #0f766e; border: 1px solid #99f6e4;">
+                        <i class="bi bi-water me-1"></i>OPTI Lingkungan
+                    </span>
                 </check>
-                <span class="badge {{ @overdue_info.badge_class }}">{{ @overdue_info.label }}</span>
+                <span class="badge px-2 py-1 fw-medium" style="font-size: 0.75rem; background-color: #f1f5f9; color: #475569; border: 1px solid #e2e8f0;">
+                    <i class="bi bi-clock me-1"></i>{{ @overdue_info.label }}
+                </span>
             </div>
             <p class="text-muted small mb-0">{{ @po.judul_kegiatan }}</p>
         </div>
     </div>
     <div class="d-flex flex-wrap gap-2">
-        <a href="#map-kendali-section" class="btn btn-outline-primary btn-sm">
-            <i class="bi bi-check2-square"></i> Map Kendali
+        <a href="#sop-section" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-diagram-3-fill me-1"></i> Alur SOP (19 Tahap)
         </a>
-        <a href="#rab-section" class="btn btn-outline-success btn-sm">
-            <i class="bi bi-calculator"></i> RAB (Rp {{ number_format(@total_rab ?: @po.biaya, 0, ',', '.') }})
+        <a href="#rab-section" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-calculator me-1"></i> RAB (Rp {{ number_format(@total_rab ?: @po.biaya, 0, ',', '.') }})
         </a>
-        <a href="#jadwal-section" class="btn btn-outline-info btn-sm">
-            <i class="bi bi-calendar-range"></i> Jadwal Tim
+        <a href="#jadwal-section" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-calendar-range me-1"></i> Jadwal Tim
+        </a>
+        <a href="#pembayaran-section" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-credit-card me-1"></i> Pembayaran
         </a>
     </div>
 </div>
@@ -43,51 +160,87 @@
 </check>
 
 <!-- ======================================================== -->
-<!-- VISUAL WORKFLOW LIFECYCLE STEPPER (SOP BALAI) -->
+<!-- WORKFLOW LIFECYCLE STEPPER (TEMA RESMI BBSPJIS) -->
 <!-- ======================================================== -->
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-body p-3 p-md-4">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <span class="text-uppercase fw-bold text-muted" style="font-size: 0.7rem; letter-spacing: 0.05em;">
-                <i class="bi bi-arrow-repeat me-1 text-primary"></i> Alur Tahapan Proyek Jasa OPTI (SOP BBSPJIS)
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <span class="text-uppercase fw-bold text-muted" style="font-size: 0.72rem; letter-spacing: 0.05em;">
+                <i class="bi bi-diagram-2 text-primary me-1"></i> Alur Tahapan Proyek Jasa OPTI (SOP BBSPJIS)
             </span>
-            <span class="badge badge-pill-primary px-3 py-2 fw-semibold" style="font-size: 0.8rem;">Status PO: {{ @urutan_status[@po.status] ?? @po.status }}</span>
+            <span class="badge px-3 py-2 fw-semibold" style="font-size: 0.78rem; background-color: rgba(136, 19, 55, 0.08); color: #881337; border: 1px solid rgba(136, 19, 55, 0.2);">
+                Status PO: {{ @urutan_status[@po.status] ?? @po.status }}
+            </span>
         </div>
-        <div class="row g-2 text-center">
-            <div class="col-6 col-md-2">
-                <div class="p-2 rounded-3 bg-success bg-opacity-10 text-success border border-success border-opacity-25 small fw-bold">
-                    <i class="bi bi-check-circle-fill d-block fs-5 mb-1"></i>
-                    1. Order Masuk
+
+        <div class="po-stepper-container">
+            <div class="po-stepper">
+                <!-- 1. Order Masuk -->
+                <div class="po-step-item completed">
+                    <div class="po-step-circle">
+                        <i class="bi bi-check-lg"></i>
+                    </div>
+                    <span class="po-step-label">1. Order Masuk</span>
                 </div>
-            </div>
-            <div class="col-6 col-md-2">
-                <div class="p-2 rounded-3 {{ @po.app_proposal ? 'bg-success bg-opacity-10 text-success border border-success border-opacity-25' : 'bg-light text-muted border' }} small fw-bold">
-                    <i class="bi {{ @po.app_proposal ? 'bi-check-circle-fill' : 'bi-circle' }} d-block fs-5 mb-1"></i>
-                    2. Proposal
+
+                <!-- 2. Proposal -->
+                <div class="po-step-item {{ @po.app_proposal || @po.status == 'on_proses' || @po.status == 'kembali_selesai' ? 'completed' : (@po.status == 'sudah_upload' ? 'active' : 'pending') }}">
+                    <div class="po-step-circle">
+                        <check if="{{ @po.app_proposal || @po.status == 'on_proses' || @po.status == 'kembali_selesai' }}">
+                            <true><i class="bi bi-check-lg"></i></true>
+                            <false>2</false>
+                        </check>
+                    </div>
+                    <span class="po-step-label">2. Proposal</span>
                 </div>
-            </div>
-            <div class="col-6 col-md-2">
-                <div class="p-2 rounded-3 {{ @po.app_po_adm ? 'bg-success bg-opacity-10 text-success border border-success border-opacity-25' : 'bg-light text-muted border' }} small fw-bold">
-                    <i class="bi {{ @po.app_po_adm ? 'bi-check-circle-fill' : 'bi-circle' }} d-block fs-5 mb-1"></i>
-                    3. PO & Kendali
+
+                <!-- 3. PO & Kendali -->
+                <div class="po-step-item {{ @po.app_po_adm || @po.status == 'on_proses' || @po.status == 'kembali_selesai' ? 'completed' : (@po.status == 'sudah_upload' ? 'active' : 'pending') }}">
+                    <div class="po-step-circle">
+                        <check if="{{ @po.app_po_adm || @po.status == 'on_proses' || @po.status == 'kembali_selesai' }}">
+                            <true><i class="bi bi-check-lg"></i></true>
+                            <false>3</false>
+                        </check>
+                    </div>
+                    <span class="po-step-label">3. PO & Kendali</span>
                 </div>
-            </div>
-            <div class="col-6 col-md-2">
-                <div class="p-2 rounded-3 {{ @po.status == 'on_proses' || @po.status == 'kembali_selesai' ? 'bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25' : 'bg-light text-muted border' }} small fw-bold">
-                    <i class="bi {{ @po.status == 'on_proses' || @po.status == 'kembali_selesai' ? 'bi-gear-wide-connected' : 'bi-circle' }} d-block fs-5 mb-1"></i>
-                    4. Pelaksanaan
+
+                <!-- 4. Pelaksanaan -->
+                <div class="po-step-item {{ @po.status == 'kembali_selesai' ? 'completed' : (@po.status == 'on_proses' ? 'active' : 'pending') }}">
+                    <div class="po-step-circle">
+                        <check if="{{ @po.status == 'kembali_selesai' }}">
+                            <true><i class="bi bi-check-lg"></i></true>
+                            <false><i class="bi bi-gear-fill" style="font-size: 0.8rem;"></i></false>
+                        </check>
+                    </div>
+                    <span class="po-step-label">4. Pelaksanaan</span>
                 </div>
-            </div>
-            <div class="col-6 col-md-2">
-                <div class="p-2 rounded-3 {{ @po.evaluasi_status == 'disetujui' ? 'bg-success bg-opacity-10 text-success border border-success border-opacity-25' : (@po.evaluasi_status == 'perlu_revisi' ? 'bg-warning bg-opacity-10 text-dark border border-warning' : 'bg-light text-muted border') }} small fw-bold">
-                    <i class="bi {{ @po.evaluasi_status == 'disetujui' ? 'bi-check-circle-fill' : (@po.evaluasi_status == 'perlu_revisi' ? 'bi-arrow-counterclockwise' : 'bi-circle') }} d-block fs-5 mb-1"></i>
-                    5. Evaluasi Klien
+
+                <!-- 5. Evaluasi Klien -->
+                <div class="po-step-item {{ @po.evaluasi_status == 'disetujui' || @po.status == 'kembali_selesai' ? 'completed' : (@po.evaluasi_status == 'perlu_revisi' ? 'active' : 'pending') }}">
+                    <div class="po-step-circle">
+                        <check if="{{ @po.evaluasi_status == 'disetujui' || @po.status == 'kembali_selesai' }}">
+                            <true><i class="bi bi-check-lg"></i></true>
+                            <false>
+                                <check if="{{ @po.evaluasi_status == 'perlu_revisi' }}">
+                                    <true><i class="bi bi-arrow-counterclockwise"></i></true>
+                                    <false>5</false>
+                                </check>
+                            </false>
+                        </check>
+                    </div>
+                    <span class="po-step-label">5. Evaluasi Klien</span>
                 </div>
-            </div>
-            <div class="col-6 col-md-2">
-                <div class="p-2 rounded-3 {{ @po.status == 'kembali_selesai' ? 'bg-success bg-opacity-10 text-success border border-success border-opacity-25' : 'bg-light text-muted border' }} small fw-bold">
-                    <i class="bi {{ @po.status == 'kembali_selesai' ? 'bi-award-fill' : 'bi-circle' }} d-block fs-5 mb-1"></i>
-                    6. Selesai / BAST
+
+                <!-- 6. Selesai / BAST -->
+                <div class="po-step-item {{ @po.status == 'kembali_selesai' ? 'completed' : 'pending' }}">
+                    <div class="po-step-circle">
+                        <check if="{{ @po.status == 'kembali_selesai' }}">
+                            <true><i class="bi bi-award-fill"></i></true>
+                            <false>6</false>
+                        </check>
+                    </div>
+                    <span class="po-step-label">6. Selesai / BAST</span>
                 </div>
             </div>
         </div>
@@ -96,7 +249,7 @@
 
 <div class="row g-4">
     <!-- ======================================================== -->
-    <!-- KOLOM KIRI: INFO ORDER, SPESIFIKASI SAMPEL, MAP KENDALI -->
+    <!-- KOLOM KIRI: INFO ORDER, SPESIFIKASI SAMPEL, EVALUASI, LOG -->
     <!-- ======================================================== -->
     <div class="col-lg-6">
         
@@ -139,17 +292,17 @@
                     <div class="col-sm-8 text-dark">{{ @po.tanggal_masuk ? date('d F Y', strtotime(@po.tanggal_masuk)) : '-' }}</div>
 
                     <div class="col-sm-4 text-muted">Standar SPM:</div>
-                    <div class="col-sm-8"><span class="badge badge-pill-secondary">{{ @po.spm_layanan }}</span></div>
+                    <div class="col-sm-8"><span class="badge bg-light text-secondary border px-2 py-1">{{ @po.spm_layanan }}</span></div>
 
                     <div class="col-sm-4 text-muted">Lokasi Pelaksanaan:</div>
                     <div class="col-sm-8">
                         <check if="{{ @po.lokasi_pelaksanaan == 'internal' }}">
-                            <span class="badge badge-pill-primary">
+                            <span class="badge px-2 py-1 fw-semibold" style="background-color: rgba(136, 19, 55, 0.08); color: #881337; border: 1px solid rgba(136, 19, 55, 0.2);">
                                 <i class="bi bi-building me-1"></i>{{ @po.lab_internal ?: 'Laboratorium BBSPJIS' }}
                             </span>
                         </check>
                         <check if="{{ @po.lokasi_pelaksanaan == 'lapangan' }}">
-                            <span class="badge badge-pill-warning">
+                            <span class="badge px-2 py-1 fw-semibold" style="background-color: #fef3c7; color: #92400e; border: 1px solid #fde68a;">
                                 <i class="bi bi-geo-alt me-1"></i>Lapangan: {{ @po.lokasi_lapangan }}
                             </span>
                         </check>
@@ -193,7 +346,77 @@
             </div>
         </div>
 
-                <!-- KARTU 3: ALUR SOP JASA PELAYANAN OPTI LINGKUNGAN (19 TAHAPAN RESMI BBSPJIS) -->
+        <!-- KARTU 3: EVALUASI FEEDBACK LOOP CUSTOMER -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3">
+                <h6 class="m-0 fw-bold text-dark"><i class="bi bi-chat-left-text text-primary me-2"></i>Evaluasi Hasil Kerja Bersama Mitra (Feedback Loop)</h6>
+            </div>
+            <div class="card-body p-3 p-md-4">
+                <form action="{{ @BASE }}/po/{{ @po.id }}/evaluasi" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-dark mb-2">Status Hasil Evaluasi Mitra</label>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <input type="radio" class="btn-check" name="evaluasi_status" id="evaluasi_setuju" value="disetujui" autocomplete="off" {{ @po.evaluasi_status == 'disetujui' || empty(@po.evaluasi_status) || @po.evaluasi_status == 'pending' ? 'checked' : '' }}>
+                                <label class="btn btn-outline-success w-100 py-2 d-flex flex-column align-items-center justify-content-center gap-1 shadow-none" for="evaluasi_setuju" style="cursor: pointer;">
+                                    <span class="fw-bold fs-6"><i class="bi bi-check-circle me-1"></i>Disetujui</span>
+                                    <span style="font-size: 0.7rem; opacity: 0.85;">Lanjut ke Laporan Akhir</span>
+                                </label>
+                            </div>
+                            <div class="col-6">
+                                <input type="radio" class="btn-check" name="evaluasi_status" id="evaluasi_revisi" value="perlu_revisi" autocomplete="off" {{ @po.evaluasi_status == 'perlu_revisi' ? 'checked' : '' }}>
+                                <label class="btn btn-outline-danger w-100 py-2 d-flex flex-column align-items-center justify-content-center gap-1 shadow-none" for="evaluasi_revisi" style="cursor: pointer;">
+                                    <span class="fw-bold fs-6"><i class="bi bi-arrow-counterclockwise me-1"></i>Tidak Disetujui</span>
+                                    <span style="font-size: 0.7rem; opacity: 0.85;">Perlu Revisi Uji</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small">Notulen / Catatan Masukan Customer</label>
+                        <textarea name="notulen_evaluasi" class="form-control form-control-sm" rows="2" placeholder="Catatan hasil diskusi teknis, revisi parameter, atau konfirmasi kepuasan...">{{ @po.notulen_evaluasi }}</textarea>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <input type="date" name="tgl_evaluasi" class="form-control form-control-sm w-50" value="{{ @po.tgl_evaluasi ?: date('Y-m-d') }}">
+                        <button type="submit" class="btn btn-sm btn-primary">
+                            <i class="bi bi-save me-1"></i> Simpan Evaluasi
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- KARTU 4: AUDIT TRAIL LOG STATUS -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3">
+                <h6 class="m-0 fw-bold text-dark"><i class="bi bi-clock-history text-primary me-2"></i>Histori Perubahan Dokumen</h6>
+            </div>
+            <div class="card-body p-3 p-md-4">
+                <check if="{{ count(@daftar_log) > 0 }}">
+                    <div class="small">
+                        <repeat group="{{ @daftar_log }}" value="{{ @l }}">
+                            <div class="mb-2 pb-2 border-bottom">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="fw-bold text-primary">{{ @l.status_baru }}</span>
+                                    <span class="text-muted" style="font-size: 0.725rem;">{{ date('d/m/Y H:i', strtotime(@l.tanggal)) }}</span>
+                                </div>
+                                <div class="text-secondary" style="font-size: 0.8rem;">{{ @l.catatan }}</div>
+                            </div>
+                        </repeat>
+                    </div>
+                </check>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- KOLOM KANAN: ALUR SOP 19 TAHAP, RAB, JADWAL TIM, PEMBAYARAN -->
+    <!-- ======================================================== -->
+    <div class="col-lg-6">
+        
+        <!-- KARTU 5: ALUR SOP JASA PELAYANAN OPTI LINGKUNGAN (19 TAHAPAN RESMI BBSPJIS) -->
         <div class="card border-0 shadow-sm mb-4" id="sop-section">
             <div class="card-header bg-white py-3">
                 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
@@ -204,45 +427,45 @@
                         <span class="text-muted" style="font-size: 0.75rem;">19 Aktivitas & Mutu Baku Alur Pelayanan Resmi BBSPJIS</span>
                     </div>
                     <div class="text-end">
-                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2 py-1 fw-bold" style="font-size: 0.75rem;">
+                        <span class="badge px-2 py-1 fw-bold" style="font-size: 0.75rem; background-color: rgba(136, 19, 55, 0.08); color: #881337; border: 1px solid rgba(136, 19, 55, 0.2);">
                             {{ @sop_statistik.persen }}% Selesai ({{ @sop_statistik.selesai }}/{{ @sop_statistik.total }} Tahap)
                         </span>
                     </div>
                 </div>
 
                 <!-- Visual Progress Bar -->
-                <div class="progress" style="height: 7px; background-color: #f1f5f9; border-radius: 10px;">
-                    <div class="progress-bar bg-primary" role="progressbar" style="width: {{ @sop_statistik.persen }}%; border-radius: 10px;" aria-valuenow="{{ @sop_statistik.persen }}" aria-valuemin="0" aria-valuemax="100"></div>
+                <div class="progress" style="height: 6px; background-color: #f1f5f9; border-radius: 10px;">
+                    <div class="progress-bar" role="progressbar" style="width: {{ @sop_statistik.persen }}%; background-color: var(--color-primary); border-radius: 10px;" aria-valuenow="{{ @sop_statistik.persen }}" aria-valuemin="0" aria-valuemax="100"></div>
                 </div>
             </div>
 
-            <!-- Tab Navigasi 4 Fase SOP -->
+            <!-- Tab Navigasi 4 Fase SOP dengan Tema Maroon -->
             <div class="card-header bg-light p-2 border-bottom">
-                <ul class="nav nav-pills nav-fill gap-1 small" id="sopFaseTab" role="tablist" style="font-size: 0.75rem;">
+                <ul class="nav sop-nav-pills nav-fill gap-1 small" id="sopFaseTab" role="tablist" style="font-size: 0.75rem;">
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link active py-1 px-2 fw-semibold" id="fase-persiapan-tab" data-bs-toggle="pill" data-bs-target="#fase-persiapan" type="button" role="tab">
+                        <button class="nav-link active fw-semibold" id="fase-persiapan-tab" data-bs-toggle="pill" data-bs-target="#fase-persiapan" type="button" role="tab">
                             1. Persiapan <span class="badge bg-secondary bg-opacity-25 text-dark ms-1">1-5</span>
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link py-1 px-2 fw-semibold" id="fase-pelaksanaan-tab" data-bs-toggle="pill" data-bs-target="#fase-pelaksanaan" type="button" role="tab">
+                        <button class="nav-link fw-semibold" id="fase-pelaksanaan-tab" data-bs-toggle="pill" data-bs-target="#fase-pelaksanaan" type="button" role="tab">
                             2. Pelaksanaan <span class="badge bg-secondary bg-opacity-25 text-dark ms-1">6-12</span>
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link py-1 px-2 fw-semibold" id="fase-pengesahan-tab" data-bs-toggle="pill" data-bs-target="#fase-pengesahan" type="button" role="tab">
+                        <button class="nav-link fw-semibold" id="fase-pengesahan-tab" data-bs-toggle="pill" data-bs-target="#fase-pengesahan" type="button" role="tab">
                             3. Pengesahan <span class="badge bg-secondary bg-opacity-25 text-dark ms-1">13-14</span>
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link py-1 px-2 fw-semibold" id="fase-bast-tab" data-bs-toggle="pill" data-bs-target="#fase-bast" type="button" role="tab">
+                        <button class="nav-link fw-semibold" id="fase-bast-tab" data-bs-toggle="pill" data-bs-target="#fase-bast" type="button" role="tab">
                             4. BAST <span class="badge bg-secondary bg-opacity-25 text-dark ms-1">15-19</span>
                         </button>
                     </li>
                 </ul>
             </div>
 
-            <div class="card-body p-3">
+            <div class="card-body p-3" style="max-height: 480px; overflow-y: auto;">
                 <div class="tab-content" id="sopFaseTabContent">
 
                     <!-- ========================================== -->
@@ -252,23 +475,23 @@
                         <div class="d-flex flex-column gap-3">
                             <repeat group="{{ @daftar_sop }}" value="{{ @step }}">
                                 <check if="{{ @step.fase == 'persiapan' }}">
-                                    <div class="p-3 rounded-3 border {{ @step.status == 'selesai' ? 'bg-success bg-opacity-10 border-success-subtle' : (@step.status == 'berjalan' ? 'bg-primary bg-opacity-10 border-primary-subtle' : (@step.status == 'revisi' ? 'bg-danger bg-opacity-10 border-danger-subtle' : 'bg-light border-light-subtle')) }}">
+                                    <div class="p-3 rounded-3 border" style="background-color: {{ @step.status == 'selesai' ? '#f0fdf4; border-color: #bbf7d0 !important;' : (@step.status == 'berjalan' ? 'rgba(136, 19, 55, 0.04); border-color: rgba(136, 19, 55, 0.25) !important;' : (@step.status == 'revisi' ? '#fff1f2; border-color: #fecdd3 !important;' : '#ffffff; border-color: #e2e8f0 !important;')) }}">
                                         <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
                                             <div class="d-flex align-items-center gap-2">
-                                                <span class="badge {{ @step.status == 'selesai' ? 'bg-success text-white' : (@step.status == 'berjalan' ? 'bg-primary text-white' : (@step.status == 'revisi' ? 'bg-danger text-white' : 'bg-secondary bg-opacity-25 text-secondary')) }} rounded-pill px-2 py-1" style="font-size: 0.725rem;">
+                                                <span class="badge rounded-pill px-2 py-1" style="font-size: 0.725rem; {{ @step.status == 'selesai' ? 'background-color: #16a34a; color: #fff;' : (@step.status == 'berjalan' ? 'background-color: #881337; color: #fff;' : (@step.status == 'revisi' ? 'background-color: #e11d48; color: #fff;' : 'background-color: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0;')) }}">
                                                     #{{ @step.tahap_no }}
                                                 </span>
                                                 <span class="fw-bold text-dark small">{{ @step.nama_aktivitas }}</span>
                                             </div>
                                             <div>
                                                 <check if="{{ @step.status == 'selesai' }}">
-                                                    <span class="badge bg-success text-white" style="font-size: 0.7rem;"><i class="bi bi-check-circle-fill me-1"></i>Selesai</span>
+                                                    <span class="badge px-2 py-1 fw-semibold" style="font-size: 0.7rem; background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0;"><i class="bi bi-check-circle-fill me-1"></i>Selesai</span>
                                                 </check>
                                                 <check if="{{ @step.status == 'berjalan' }}">
-                                                    <span class="badge bg-primary text-white" style="font-size: 0.7rem;"><i class="bi bi-hourglass-split me-1"></i>Berjalan</span>
+                                                    <span class="badge px-2 py-1 fw-semibold" style="font-size: 0.7rem; background-color: rgba(136, 19, 55, 0.1); color: #881337; border: 1px solid rgba(136, 19, 55, 0.25);"><i class="bi bi-hourglass-split me-1"></i>Berjalan</span>
                                                 </check>
                                                 <check if="{{ @step.status == 'revisi' }}">
-                                                    <span class="badge bg-danger text-white" style="font-size: 0.7rem;"><i class="bi bi-exclamation-circle-fill me-1"></i>Revisi</span>
+                                                    <span class="badge px-2 py-1 fw-semibold" style="font-size: 0.7rem; background-color: #ffe4e6; color: #be123c; border: 1px solid #fecdd3;"><i class="bi bi-exclamation-circle-fill me-1"></i>Revisi</span>
                                                 </check>
                                                 <check if="{{ @step.status == 'menunggu' }}">
                                                     <span class="badge bg-light text-muted border" style="font-size: 0.7rem;">Menunggu</span>
@@ -276,7 +499,6 @@
                                             </div>
                                         </div>
 
-                                        <!-- Detail Pelaksana & Mutu Baku -->
                                         <div class="d-flex flex-wrap gap-2 align-items-center mb-2" style="font-size: 0.725rem;">
                                             <span class="badge bg-white text-secondary border px-2 py-1">
                                                 <i class="bi bi-person-badge text-primary me-1"></i>{{ @step.pelaksana_label }}
@@ -286,7 +508,6 @@
                                             <span class="text-muted"><i class="bi bi-file-earmark-check me-1"></i>Output: <span class="text-dark fw-medium">{{ @step.mutu_output }}</span></span>
                                         </div>
 
-                                        <!-- Log Verifikasi / Catatan -->
                                         <check if="{{ @step.verified_by }}">
                                             <div class="small text-muted mb-2 p-1 px-2 bg-white rounded border" style="font-size: 0.7rem;">
                                                 <i class="bi bi-info-circle text-primary me-1"></i>
@@ -300,10 +521,8 @@
                                             </div>
                                         </check>
 
-                                        <!-- Tombol Aksi Verifikasi & Revisi -->
                                         <div class="d-flex flex-wrap gap-2 align-items-center mt-2 pt-1 border-top border-secondary-subtle">
                                             <check if="{{ @step.status != 'selesai' }}">
-                                                <!-- Form Verifikasi -->
                                                 <form action="{{ @BASE }}/po/{{ @po.id }}/sop/{{ @step.tahap_no }}/verifikasi" method="POST" class="d-inline">
                                                     <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
                                                     <button type="submit" class="btn btn-sm btn-primary py-1 px-2" style="font-size: 0.75rem;">
@@ -311,7 +530,6 @@
                                                     </button>
                                                 </form>
 
-                                                <!-- Form Minta Revisi (Decision Step 5) -->
                                                 <check if="{{ @step.is_decision == 1 }}">
                                                     <button type="button" class="btn btn-sm btn-outline-danger py-1 px-2" style="font-size: 0.75rem;" data-bs-toggle="collapse" data-bs-target="#revisi-form-{{ @step.tahap_no }}">
                                                         <i class="bi bi-arrow-counterclockwise me-1"></i> Perlu Revisi
@@ -325,7 +543,6 @@
                                             </check>
                                         </div>
 
-                                        <!-- Collapse Form Catatan Revisi -->
                                         <check if="{{ @step.is_decision == 1 }}">
                                             <div class="collapse mt-2" id="revisi-form-{{ @step.tahap_no }}">
                                                 <form action="{{ @BASE }}/po/{{ @po.id }}/sop/{{ @step.tahap_no }}/revisi" method="POST" class="p-2 bg-white rounded border">
@@ -349,7 +566,6 @@
                     <!-- FASE 2: PELAKSANAAN & EVALUASI (6 - 12) -->
                     <!-- ========================================== -->
                     <div class="tab-pane fade" id="fase-pelaksanaan" role="tabpanel">
-                        <!-- Fast-track Box: Lewati Laporan Perkembangan -->
                         <div class="alert alert-info d-flex flex-wrap justify-content-between align-items-center p-2 mb-3 rounded-3" style="font-size: 0.75rem;">
                             <div>
                                 <i class="bi bi-info-circle-fill text-info me-1"></i>
@@ -366,23 +582,23 @@
                         <div class="d-flex flex-column gap-3">
                             <repeat group="{{ @daftar_sop }}" value="{{ @step }}">
                                 <check if="{{ @step.fase == 'pelaksanaan' }}">
-                                    <div class="p-3 rounded-3 border {{ @step.status == 'selesai' ? 'bg-success bg-opacity-10 border-success-subtle' : (@step.status == 'berjalan' ? 'bg-primary bg-opacity-10 border-primary-subtle' : (@step.status == 'revisi' ? 'bg-danger bg-opacity-10 border-danger-subtle' : (@step.status == 'dilewati' ? 'bg-secondary bg-opacity-10 border-secondary-subtle' : 'bg-light border-light-subtle'))) }}">
+                                    <div class="p-3 rounded-3 border" style="background-color: {{ @step.status == 'selesai' ? '#f0fdf4; border-color: #bbf7d0 !important;' : (@step.status == 'berjalan' ? 'rgba(136, 19, 55, 0.04); border-color: rgba(136, 19, 55, 0.25) !important;' : (@step.status == 'revisi' ? '#fff1f2; border-color: #fecdd3 !important;' : (@step.status == 'dilewati' ? '#f8fafc; border-color: #e2e8f0 !important;' : '#ffffff; border-color: #e2e8f0 !important;'))) }}">
                                         <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
                                             <div class="d-flex align-items-center gap-2">
-                                                <span class="badge {{ @step.status == 'selesai' ? 'bg-success text-white' : (@step.status == 'berjalan' ? 'bg-primary text-white' : (@step.status == 'revisi' ? 'bg-danger text-white' : (@step.status == 'dilewati' ? 'bg-secondary text-white' : 'bg-secondary bg-opacity-25 text-secondary'))) }} rounded-pill px-2 py-1" style="font-size: 0.725rem;">
+                                                <span class="badge rounded-pill px-2 py-1" style="font-size: 0.725rem; {{ @step.status == 'selesai' ? 'background-color: #16a34a; color: #fff;' : (@step.status == 'berjalan' ? 'background-color: #881337; color: #fff;' : (@step.status == 'revisi' ? 'background-color: #e11d48; color: #fff;' : (@step.status == 'dilewati' ? 'background-color: #64748b; color: #fff;' : 'background-color: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0;'))) }}">
                                                     #{{ @step.tahap_no }}
                                                 </span>
                                                 <span class="fw-bold text-dark small">{{ @step.nama_aktivitas }}</span>
                                             </div>
                                             <div>
                                                 <check if="{{ @step.status == 'selesai' }}">
-                                                    <span class="badge bg-success text-white" style="font-size: 0.7rem;"><i class="bi bi-check-circle-fill me-1"></i>Selesai</span>
+                                                    <span class="badge px-2 py-1 fw-semibold" style="font-size: 0.7rem; background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0;"><i class="bi bi-check-circle-fill me-1"></i>Selesai</span>
                                                 </check>
                                                 <check if="{{ @step.status == 'berjalan' }}">
-                                                    <span class="badge bg-primary text-white" style="font-size: 0.7rem;"><i class="bi bi-hourglass-split me-1"></i>Berjalan</span>
+                                                    <span class="badge px-2 py-1 fw-semibold" style="font-size: 0.7rem; background-color: rgba(136, 19, 55, 0.1); color: #881337; border: 1px solid rgba(136, 19, 55, 0.25);"><i class="bi bi-hourglass-split me-1"></i>Berjalan</span>
                                                 </check>
                                                 <check if="{{ @step.status == 'revisi' }}">
-                                                    <span class="badge bg-danger text-white" style="font-size: 0.7rem;"><i class="bi bi-exclamation-circle-fill me-1"></i>Revisi</span>
+                                                    <span class="badge px-2 py-1 fw-semibold" style="font-size: 0.7rem; background-color: #ffe4e6; color: #be123c; border: 1px solid #fecdd3;"><i class="bi bi-exclamation-circle-fill me-1"></i>Revisi</span>
                                                 </check>
                                                 <check if="{{ @step.status == 'dilewati' }}">
                                                     <span class="badge bg-secondary text-white" style="font-size: 0.7rem;"><i class="bi bi-skip-forward-fill me-1"></i>Dilewati</span>
@@ -393,7 +609,6 @@
                                             </div>
                                         </div>
 
-                                        <!-- Detail Pelaksana & Mutu Baku -->
                                         <div class="d-flex flex-wrap gap-2 align-items-center mb-2" style="font-size: 0.725rem;">
                                             <span class="badge bg-white text-secondary border px-2 py-1">
                                                 <i class="bi bi-person-badge text-primary me-1"></i>{{ @step.pelaksana_label }}
@@ -403,7 +618,6 @@
                                             <span class="text-muted"><i class="bi bi-file-earmark-check me-1"></i>Output: <span class="text-dark fw-medium">{{ @step.mutu_output }}</span></span>
                                         </div>
 
-                                        <!-- Log Verifikasi / Catatan -->
                                         <check if="{{ @step.verified_by }}">
                                             <div class="small text-muted mb-2 p-1 px-2 bg-white rounded border" style="font-size: 0.7rem;">
                                                 <i class="bi bi-info-circle text-primary me-1"></i>
@@ -417,10 +631,8 @@
                                             </div>
                                         </check>
 
-                                        <!-- Tombol Aksi Verifikasi & Revisi -->
                                         <div class="d-flex flex-wrap gap-2 align-items-center mt-2 pt-1 border-top border-secondary-subtle">
                                             <check if="{{ @step.status != 'selesai' && @step.status != 'dilewati' }}">
-                                                <!-- Form Verifikasi -->
                                                 <form action="{{ @BASE }}/po/{{ @po.id }}/sop/{{ @step.tahap_no }}/verifikasi" method="POST" class="d-inline">
                                                     <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
                                                     <button type="submit" class="btn btn-sm btn-primary py-1 px-2" style="font-size: 0.75rem;">
@@ -428,7 +640,6 @@
                                                     </button>
                                                 </form>
 
-                                                <!-- Form Minta Revisi (Decision Step 8) -->
                                                 <check if="{{ @step.is_decision == 1 }}">
                                                     <button type="button" class="btn btn-sm btn-outline-danger py-1 px-2" style="font-size: 0.75rem;" data-bs-toggle="collapse" data-bs-target="#revisi-form-{{ @step.tahap_no }}">
                                                         <i class="bi bi-arrow-counterclockwise me-1"></i> Perlu Revisi
@@ -447,7 +658,6 @@
                                             </check>
                                         </div>
 
-                                        <!-- Collapse Form Catatan Revisi (Tahap 8 -> kembali ke 6) -->
                                         <check if="{{ @step.is_decision == 1 }}">
                                             <div class="collapse mt-2" id="revisi-form-{{ @step.tahap_no }}">
                                                 <form action="{{ @BASE }}/po/{{ @po.id }}/sop/{{ @step.tahap_no }}/revisi" method="POST" class="p-2 bg-white rounded border">
@@ -474,23 +684,23 @@
                         <div class="d-flex flex-column gap-3">
                             <repeat group="{{ @daftar_sop }}" value="{{ @step }}">
                                 <check if="{{ @step.fase == 'pengesahan' }}">
-                                    <div class="p-3 rounded-3 border {{ @step.status == 'selesai' ? 'bg-success bg-opacity-10 border-success-subtle' : (@step.status == 'berjalan' ? 'bg-primary bg-opacity-10 border-primary-subtle' : (@step.status == 'revisi' ? 'bg-danger bg-opacity-10 border-danger-subtle' : 'bg-light border-light-subtle')) }}">
+                                    <div class="p-3 rounded-3 border" style="background-color: {{ @step.status == 'selesai' ? '#f0fdf4; border-color: #bbf7d0 !important;' : (@step.status == 'berjalan' ? 'rgba(136, 19, 55, 0.04); border-color: rgba(136, 19, 55, 0.25) !important;' : (@step.status == 'revisi' ? '#fff1f2; border-color: #fecdd3 !important;' : '#ffffff; border-color: #e2e8f0 !important;')) }}">
                                         <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
                                             <div class="d-flex align-items-center gap-2">
-                                                <span class="badge {{ @step.status == 'selesai' ? 'bg-success text-white' : (@step.status == 'berjalan' ? 'bg-primary text-white' : (@step.status == 'revisi' ? 'bg-danger text-white' : 'bg-secondary bg-opacity-25 text-secondary')) }} rounded-pill px-2 py-1" style="font-size: 0.725rem;">
+                                                <span class="badge rounded-pill px-2 py-1" style="font-size: 0.725rem; {{ @step.status == 'selesai' ? 'background-color: #16a34a; color: #fff;' : (@step.status == 'berjalan' ? 'background-color: #881337; color: #fff;' : (@step.status == 'revisi' ? 'background-color: #e11d48; color: #fff;' : 'background-color: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0;')) }}">
                                                     #{{ @step.tahap_no }}
                                                 </span>
                                                 <span class="fw-bold text-dark small">{{ @step.nama_aktivitas }}</span>
                                             </div>
                                             <div>
                                                 <check if="{{ @step.status == 'selesai' }}">
-                                                    <span class="badge bg-success text-white" style="font-size: 0.7rem;"><i class="bi bi-check-circle-fill me-1"></i>Selesai</span>
+                                                    <span class="badge px-2 py-1 fw-semibold" style="font-size: 0.7rem; background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0;"><i class="bi bi-check-circle-fill me-1"></i>Selesai</span>
                                                 </check>
                                                 <check if="{{ @step.status == 'berjalan' }}">
-                                                    <span class="badge bg-primary text-white" style="font-size: 0.7rem;"><i class="bi bi-hourglass-split me-1"></i>Berjalan</span>
+                                                    <span class="badge px-2 py-1 fw-semibold" style="font-size: 0.7rem; background-color: rgba(136, 19, 55, 0.1); color: #881337; border: 1px solid rgba(136, 19, 55, 0.25);"><i class="bi bi-hourglass-split me-1"></i>Berjalan</span>
                                                 </check>
                                                 <check if="{{ @step.status == 'revisi' }}">
-                                                    <span class="badge bg-danger text-white" style="font-size: 0.7rem;"><i class="bi bi-exclamation-circle-fill me-1"></i>Revisi</span>
+                                                    <span class="badge px-2 py-1 fw-semibold" style="font-size: 0.7rem; background-color: #ffe4e6; color: #be123c; border: 1px solid #fecdd3;"><i class="bi bi-exclamation-circle-fill me-1"></i>Revisi</span>
                                                 </check>
                                                 <check if="{{ @step.status == 'menunggu' }}">
                                                     <span class="badge bg-light text-muted border" style="font-size: 0.7rem;">Menunggu</span>
@@ -498,7 +708,6 @@
                                             </div>
                                         </div>
 
-                                        <!-- Detail Pelaksana & Mutu Baku -->
                                         <div class="d-flex flex-wrap gap-2 align-items-center mb-2" style="font-size: 0.725rem;">
                                             <span class="badge bg-white text-secondary border px-2 py-1">
                                                 <i class="bi bi-person-badge text-primary me-1"></i>{{ @step.pelaksana_label }}
@@ -508,7 +717,6 @@
                                             <span class="text-muted"><i class="bi bi-file-earmark-check me-1"></i>Output: <span class="text-dark fw-medium">{{ @step.mutu_output }}</span></span>
                                         </div>
 
-                                        <!-- Log Verifikasi / Catatan -->
                                         <check if="{{ @step.verified_by }}">
                                             <div class="small text-muted mb-2 p-1 px-2 bg-white rounded border" style="font-size: 0.7rem;">
                                                 <i class="bi bi-info-circle text-primary me-1"></i>
@@ -522,10 +730,8 @@
                                             </div>
                                         </check>
 
-                                        <!-- Tombol Aksi Verifikasi & Revisi -->
                                         <div class="d-flex flex-wrap gap-2 align-items-center mt-2 pt-1 border-top border-secondary-subtle">
                                             <check if="{{ @step.status != 'selesai' }}">
-                                                <!-- Form Verifikasi / Pengesahan -->
                                                 <form action="{{ @BASE }}/po/{{ @po.id }}/sop/{{ @step.tahap_no }}/verifikasi" method="POST" class="d-inline">
                                                     <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
                                                     <button type="submit" class="btn btn-sm btn-primary py-1 px-2" style="font-size: 0.75rem;">
@@ -533,7 +739,6 @@
                                                     </button>
                                                 </form>
 
-                                                <!-- Form Minta Revisi -->
                                                 <button type="button" class="btn btn-sm btn-outline-danger py-1 px-2" style="font-size: 0.75rem;" data-bs-toggle="collapse" data-bs-target="#revisi-form-{{ @step.tahap_no }}">
                                                     <i class="bi bi-arrow-counterclockwise me-1"></i> Perlu Revisi
                                                 </button>
@@ -545,7 +750,6 @@
                                             </check>
                                         </div>
 
-                                        <!-- Collapse Form Catatan Revisi (Tahap 13 -> ke 12, Tahap 14 -> ke 13) -->
                                         <div class="collapse mt-2" id="revisi-form-{{ @step.tahap_no }}">
                                             <form action="{{ @BASE }}/po/{{ @po.id }}/sop/{{ @step.tahap_no }}/revisi" method="POST" class="p-2 bg-white rounded border">
                                                 <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
@@ -570,23 +774,23 @@
                         <div class="d-flex flex-column gap-3">
                             <repeat group="{{ @daftar_sop }}" value="{{ @step }}">
                                 <check if="{{ @step.fase == 'bast' }}">
-                                    <div class="p-3 rounded-3 border {{ @step.status == 'selesai' ? 'bg-success bg-opacity-10 border-success-subtle' : (@step.status == 'berjalan' ? 'bg-primary bg-opacity-10 border-primary-subtle' : (@step.status == 'revisi' ? 'bg-danger bg-opacity-10 border-danger-subtle' : 'bg-light border-light-subtle')) }}">
+                                    <div class="p-3 rounded-3 border" style="background-color: {{ @step.status == 'selesai' ? '#f0fdf4; border-color: #bbf7d0 !important;' : (@step.status == 'berjalan' ? 'rgba(136, 19, 55, 0.04); border-color: rgba(136, 19, 55, 0.25) !important;' : (@step.status == 'revisi' ? '#fff1f2; border-color: #fecdd3 !important;' : '#ffffff; border-color: #e2e8f0 !important;')) }}">
                                         <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
                                             <div class="d-flex align-items-center gap-2">
-                                                <span class="badge {{ @step.status == 'selesai' ? 'bg-success text-white' : (@step.status == 'berjalan' ? 'bg-primary text-white' : (@step.status == 'revisi' ? 'bg-danger text-white' : 'bg-secondary bg-opacity-25 text-secondary')) }} rounded-pill px-2 py-1" style="font-size: 0.725rem;">
+                                                <span class="badge rounded-pill px-2 py-1" style="font-size: 0.725rem; {{ @step.status == 'selesai' ? 'background-color: #16a34a; color: #fff;' : (@step.status == 'berjalan' ? 'background-color: #881337; color: #fff;' : (@step.status == 'revisi' ? 'background-color: #e11d48; color: #fff;' : 'background-color: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0;')) }}">
                                                     #{{ @step.tahap_no }}
                                                 </span>
                                                 <span class="fw-bold text-dark small">{{ @step.nama_aktivitas }}</span>
                                             </div>
                                             <div>
                                                 <check if="{{ @step.status == 'selesai' }}">
-                                                    <span class="badge bg-success text-white" style="font-size: 0.7rem;"><i class="bi bi-check-circle-fill me-1"></i>Selesai</span>
+                                                    <span class="badge px-2 py-1 fw-semibold" style="font-size: 0.7rem; background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0;"><i class="bi bi-check-circle-fill me-1"></i>Selesai</span>
                                                 </check>
                                                 <check if="{{ @step.status == 'berjalan' }}">
-                                                    <span class="badge bg-primary text-white" style="font-size: 0.7rem;"><i class="bi bi-hourglass-split me-1"></i>Berjalan</span>
+                                                    <span class="badge px-2 py-1 fw-semibold" style="font-size: 0.7rem; background-color: rgba(136, 19, 55, 0.1); color: #881337; border: 1px solid rgba(136, 19, 55, 0.25);"><i class="bi bi-hourglass-split me-1"></i>Berjalan</span>
                                                 </check>
                                                 <check if="{{ @step.status == 'revisi' }}">
-                                                    <span class="badge bg-danger text-white" style="font-size: 0.7rem;"><i class="bi bi-exclamation-circle-fill me-1"></i>Revisi</span>
+                                                    <span class="badge px-2 py-1 fw-semibold" style="font-size: 0.7rem; background-color: #ffe4e6; color: #be123c; border: 1px solid #fecdd3;"><i class="bi bi-exclamation-circle-fill me-1"></i>Revisi</span>
                                                 </check>
                                                 <check if="{{ @step.status == 'menunggu' }}">
                                                     <span class="badge bg-light text-muted border" style="font-size: 0.7rem;">Menunggu</span>
@@ -594,7 +798,6 @@
                                             </div>
                                         </div>
 
-                                        <!-- Detail Pelaksana & Mutu Baku -->
                                         <div class="d-flex flex-wrap gap-2 align-items-center mb-2" style="font-size: 0.725rem;">
                                             <span class="badge bg-white text-secondary border px-2 py-1">
                                                 <i class="bi bi-person-badge text-primary me-1"></i>{{ @step.pelaksana_label }}
@@ -604,7 +807,6 @@
                                             <span class="text-muted"><i class="bi bi-file-earmark-check me-1"></i>Output: <span class="text-dark fw-medium">{{ @step.mutu_output }}</span></span>
                                         </div>
 
-                                        <!-- Log Verifikasi / Catatan -->
                                         <check if="{{ @step.verified_by }}">
                                             <div class="small text-muted mb-2 p-1 px-2 bg-white rounded border" style="font-size: 0.7rem;">
                                                 <i class="bi bi-info-circle text-primary me-1"></i>
@@ -618,10 +820,8 @@
                                             </div>
                                         </check>
 
-                                        <!-- Tombol Aksi Verifikasi & Revisi -->
                                         <div class="d-flex flex-wrap gap-2 align-items-center mt-2 pt-1 border-top border-secondary-subtle">
                                             <check if="{{ @step.status != 'selesai' }}">
-                                                <!-- Form Verifikasi -->
                                                 <form action="{{ @BASE }}/po/{{ @po.id }}/sop/{{ @step.tahap_no }}/verifikasi" method="POST" class="d-inline">
                                                     <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
                                                     <button type="submit" class="btn btn-sm btn-primary py-1 px-2" style="font-size: 0.75rem;">
@@ -629,7 +829,6 @@
                                                     </button>
                                                 </form>
 
-                                                <!-- Form Minta Revisi (Step 18) -->
                                                 <check if="{{ @step.is_decision == 1 }}">
                                                     <button type="button" class="btn btn-sm btn-outline-danger py-1 px-2" style="font-size: 0.75rem;" data-bs-toggle="collapse" data-bs-target="#revisi-form-{{ @step.tahap_no }}">
                                                         <i class="bi bi-arrow-counterclockwise me-1"></i> Perlu Revisi
@@ -643,7 +842,6 @@
                                             </check>
                                         </div>
 
-                                        <!-- Collapse Form Catatan Revisi (Tahap 18 -> kembali ke 17) -->
                                         <check if="{{ @step.is_decision == 1 }}">
                                             <div class="collapse mt-2" id="revisi-form-{{ @step.tahap_no }}">
                                                 <form action="{{ @BASE }}/po/{{ @po.id }}/sop/{{ @step.tahap_no }}/revisi" method="POST" class="p-2 bg-white rounded border">
@@ -666,23 +864,15 @@
                 </div>
             </div>
         </div>
-        </div>
 
-    </div>
-
-    <!-- ======================================================== -->
-    <!-- KOLOM KANAN: RAB, JADWAL TIM, PEMBAYARAN, EVALUASI -->
-    <!-- ======================================================== -->
-    <div class="col-lg-6">
-        
-        <!-- KARTU 4: RINCIAN ANGGARAN BIAYA (RAB BREAKDOWN) -->
+        <!-- KARTU 6: RINCIAN ANGGARAN BIAYA (RAB BREAKDOWN) -->
         <div class="card border-0 shadow-sm mb-4" id="rab-section">
             <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
                 <div>
                     <h6 class="m-0 fw-bold text-dark"><i class="bi bi-calculator text-primary me-2"></i>Rincian Anggaran Biaya (RAB)</h6>
                     <span class="text-muted" style="font-size: 0.75rem;">Akumulasi otomatis ke Nilai PO</span>
                 </div>
-                <span class="badge badge-pill-success fs-6 text-nowrap">
+                <span class="badge px-3 py-2 fw-bold fs-6 text-nowrap" style="background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0;">
                     Rp {{ number_format(@total_rab ?: @po.biaya, 0, ',', '.') }}
                 </span>
             </div>
@@ -701,7 +891,7 @@
                             <tbody>
                                 <repeat group="{{ @daftar_rab }}" value="{{ @rab }}">
                                     <tr>
-                                        <td class="text-nowrap"><span class="badge badge-pill-secondary" style="font-size: 0.7rem;">{{ @rab.kategori }}</span></td>
+                                        <td class="text-nowrap"><span class="badge bg-light text-secondary border" style="font-size: 0.7rem;">{{ @rab.kategori }}</span></td>
                                         <td class="small text-dark">{{ @rab.deskripsi }}</td>
                                         <td class="text-end fw-bold small text-nowrap" style="white-space: nowrap;">Rp {{ number_format(@rab.nominal, 0, ',', '.') }}</td>
                                         <td class="text-center">
@@ -746,40 +936,36 @@
             </div>
         </div>
 
-        <!-- KARTU 5: JADWAL KERJA TIM PELAKSANA (TIMELINE) -->
+        <!-- KARTU 7: JADWAL KERJA TIM PELAKSANA (TIMELINE) -->
         <div class="card border-0 shadow-sm mb-4" id="jadwal-section">
             <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                <h6 class="m-0 fw-bold text-dark"><i class="bi bi-calendar-range text-primary me-2"></i>Jadwal Kerja Tim Pelaksana (Milestone)</h6>
-                <span class="badge bg-light text-muted border">{{ count(@daftar_jadwal) }} Kegiatan</span>
+                <div>
+                    <h6 class="m-0 fw-bold text-dark"><i class="bi bi-calendar3 text-primary me-2"></i>Jadwal Kerja Tim Pelaksana</h6>
+                    <span class="text-muted" style="font-size: 0.75rem;">Timeline dan milestone kegiatan tim balai</span>
+                </div>
+                <span class="badge px-2 py-1 fw-semibold" style="font-size: 0.75rem; background-color: rgba(136, 19, 55, 0.08); color: #881337; border: 1px solid rgba(136, 19, 55, 0.2);">
+                    {{ count(@daftar_jadwal) }} Milestone
+                </span>
             </div>
             <div class="card-body p-3 p-md-4">
                 <check if="{{ count(@daftar_jadwal) > 0 }}">
-                    <div class="d-flex flex-column gap-2 mb-3">
+                    <div class="list-group list-group-flush mb-3">
                         <repeat group="{{ @daftar_jadwal }}" value="{{ @j }}">
-                            <div class="p-3 rounded-3 border bg-white shadow-xs d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
-                                <div class="me-2">
-                                    <div class="fw-bold text-dark small mb-1 d-flex align-items-center gap-2">
-                                        <check if="{{ @j.status_pekerjaan == 'selesai' }}">
-                                            <i class="bi bi-check-circle-fill text-primary"></i>
-                                        </check>
-                                        <check if="{{ @j.status_pekerjaan == 'berjalan' }}">
-                                            <i class="bi bi-play-circle-fill text-primary"></i>
-                                        </check>
-                                        <check if="{{ @j.status_pekerjaan == 'rencana' }}">
-                                            <i class="bi bi-clock-fill text-secondary"></i>
-                                        </check>
-                                        <span>{{ @j.tahap_kegiatan }}</span>
-                                    </div>
+                            <div class="list-group-item px-0 py-2 d-flex justify-content-between align-items-center">
+                                <div class="me-3">
+                                    <div class="fw-semibold text-dark small">{{ @j.tahap_kegiatan }}</div>
                                     <div class="text-muted" style="font-size: 0.75rem;">
-                                        <span class="fw-medium text-secondary"><i class="bi bi-person me-1"></i>{{ @j.personil_anggota }}</span>
-                                        <span class="mx-1">&bull;</span>
-                                        <span><i class="bi bi-calendar3 me-1"></i>{{ date('d/m/Y', strtotime(@j.tanggal_mulai)) }} s.d. {{ date('d/m/Y', strtotime(@j.tanggal_selesai)) }}</span>
+                                        <i class="bi bi-person me-1"></i>{{ @j.personil_anggota }} &bull; 
+                                        <i class="bi bi-clock me-1"></i>{{ date('d/m/y', strtotime(@j.tanggal_mulai)) }} s/d {{ date('d/m/y', strtotime(@j.tanggal_selesai)) }}
                                     </div>
+                                    <check if="{{ @j.keterangan }}">
+                                        <div class="text-secondary mt-1" style="font-size: 0.75rem;">{{ @j.keterangan }}</div>
+                                    </check>
                                 </div>
-                                <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                                <div class="d-flex align-items-center gap-2">
                                     <form action="{{ @BASE }}/po/{{ @po.id }}/jadwal/{{ @j.id }}/status" method="POST" class="d-inline">
                                         <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
-                                        <select name="status" class="form-select form-select-sm {{ @j.status_pekerjaan == 'selesai' || @j.status_pekerjaan == 'berjalan' ? 'border-primary text-primary fw-semibold bg-primary bg-opacity-10' : 'border-secondary-subtle text-secondary bg-light' }}" style="font-size: 0.75rem; min-width: 105px; height: 32px; padding: 0.25rem 1.75rem 0.25rem 0.6rem; border-radius: 6px;" onchange="this.form.submit()">
+                                        <select name="status" class="form-select form-select-sm py-1 pe-4 text-dark fw-medium border shadow-none" style="font-size: 0.75rem; width: 110px; cursor: pointer;" onchange="this.form.submit()">
                                             <option value="rencana" {{ @j.status_pekerjaan == 'rencana' ? 'selected' : '' }}>Rencana</option>
                                             <option value="berjalan" {{ @j.status_pekerjaan == 'berjalan' ? 'selected' : '' }}>Berjalan</option>
                                             <option value="selesai" {{ @j.status_pekerjaan == 'selesai' ? 'selected' : '' }}>Selesai</option>
@@ -787,7 +973,9 @@
                                     </form>
                                     <form action="{{ @BASE }}/po/{{ @po.id }}/jadwal/{{ @j.id }}/hapus" method="POST" class="d-inline" onsubmit="return confirm('Hapus jadwal ini?');">
                                         <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
-                                        <button type="submit" class="btn btn-sm btn-light border text-danger p-1 rounded-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;" title="Hapus Jadwal"><i class="bi bi-trash"></i></button>
+                                        <button type="submit" class="btn btn-sm btn-outline-danger p-0 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" title="Hapus Jadwal">
+                                            <i class="bi bi-trash" style="font-size: 0.85rem;"></i>
+                                        </button>
                                     </form>
                                 </div>
                             </div>
@@ -796,150 +984,95 @@
                 </check>
 
                 <!-- Form Tambah Jadwal -->
-                <form action="{{ @BASE }}/po/{{ @po.id }}/jadwal/tambah" method="POST" class="p-3 bg-light rounded-3 border">
+                <form action="{{ @BASE }}/po/{{ @po.id }}/jadwal/tambah" method="POST" class="p-3 bg-light rounded-3">
                     <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
                     <div class="row g-2 mb-2">
                         <div class="col-md-6">
-                            <input type="text" name="personil_anggota" class="form-control form-control-sm" placeholder="Personil / Penanggung Jawab" required>
+                            <input type="text" name="personil_anggota" class="form-control form-control-sm" placeholder="Nama personil / tim..." required>
                         </div>
                         <div class="col-md-6">
-                            <input type="text" name="tahap_kegiatan" class="form-control form-control-sm" placeholder="Uraian Tahap Kegiatan" required>
+                            <input type="text" name="tahap_kegiatan" class="form-control form-control-sm" placeholder="Uraian tahap kegiatan..." required>
                         </div>
                     </div>
-                    <div class="row g-2 align-items-center">
-                        <div class="col-md-5">
+                    <div class="row g-2 mb-2">
+                        <div class="col-6">
+                            <label class="form-label small text-muted mb-0" style="font-size: 0.7rem;">Mulai:</label>
                             <input type="date" name="tanggal_mulai" class="form-control form-control-sm" value="{{ date('Y-m-d') }}" required>
                         </div>
-                        <div class="col-md-5">
-                            <input type="date" name="tanggal_selesai" class="form-control form-control-sm" value="{{ date('Y-m-d', strtotime('+1 week')) }}" required>
-                        </div>
-                        <div class="col-md-2">
-                            <button type="submit" class="btn btn-sm btn-primary w-100 py-1 shadow-sm d-flex align-items-center justify-content-center gap-1" title="Tambah Jadwal">
-                                <i class="bi bi-plus-lg"></i> <span>Tambah</span>
-                            </button>
+                        <div class="col-6">
+                            <label class="form-label small text-muted mb-0" style="font-size: 0.7rem;">Selesai:</label>
+                            <input type="date" name="tanggal_selesai" class="form-control form-control-sm" value="{{ date('Y-m-d', strtotime('+7 days')) }}" required>
                         </div>
                     </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- KARTU 6: PEMBAYARAN MULTI-TERMIN -->
-        <div class="card border-0 shadow-sm mb-4">
-            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                <h6 class="m-0 fw-bold text-dark"><i class="bi bi-cash-stack text-primary me-2"></i>Pembayaran & Pelunasan Tagihan</h6>
-                <a href="{{ @BASE }}/pembayaran/tambah?order_id={{ @po.order_id }}" class="btn btn-sm btn-primary py-1 px-2">
-                    <i class="bi bi-plus-lg"></i> Catat Bayar
-                </a>
-            </div>
-            <div class="card-body p-3 p-md-4">
-                <div class="row g-2 text-center mb-3">
-                    <div class="col-4 p-2 border rounded bg-light">
-                        <span class="text-muted d-block" style="font-size: 0.7rem;">Nilai PO</span>
-                        <strong class="text-dark small">Rp {{ number_format(@po.biaya, 0, ',', '.') }}</strong>
-                    </div>
-                    <div class="col-4 p-2 border rounded bg-success bg-opacity-10 text-success">
-                        <span class="d-block" style="font-size: 0.7rem;">Terbayar</span>
-                        <strong class="small">Rp {{ number_format(@total_terbayar, 0, ',', '.') }}</strong>
-                    </div>
-                    <div class="col-4 p-2 border rounded {{ @sisa_tagihan > 0 ? 'bg-warning bg-opacity-10 text-dark' : 'bg-light' }}">
-                        <span class="text-muted d-block" style="font-size: 0.7rem;">Sisa Tagihan</span>
-                        <strong class="{{ @sisa_tagihan > 0 ? 'text-danger' : 'text-success' }} small">
-                            {{ @sisa_tagihan > 0 ? 'Rp ' . number_format(@sisa_tagihan, 0, ',', '.') : 'LUNAS' }}
-                        </strong>
-                    </div>
-                </div>
-
-                <check if="{{ count(@daftar_pembayaran) > 0 }}">
-                    <div class="table-responsive">
-                        <table class="table table-sm table-striped align-middle mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Termin</th>
-                                    <th>Tanggal</th>
-                                    <th class="text-end text-nowrap" style="white-space: nowrap;">Jumlah (Rp)</th>
-                                    <th style="width: 25px;"></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <repeat group="{{ @daftar_pembayaran }}" value="{{ @bayar }}">
-                                    <tr>
-                                        <td><span class="badge badge-pill-primary" style="font-size: 0.7rem;">Termin {{ @bayar.termin_ke }}</span></td>
-                                        <td class="small text-nowrap">{{ date('d/m/Y', strtotime(@bayar.tanggal_bayar)) }}</td>
-                                        <td class="text-end fw-bold small text-success text-nowrap" style="white-space: nowrap;">Rp {{ number_format(@bayar.jumlah, 0, ',', '.') }}</td>
-                                        <td>
-                                            <form action="{{ @BASE }}/pembayaran/{{ @bayar.id }}/hapus" method="POST" class="d-inline" onsubmit="return confirm('Hapus transaksi pembayaran ini?');">
-                                                <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
-                                                <input type="hidden" name="redirect_po_id" value="{{ @po.id }}">
-                                                <button type="submit" class="btn btn-sm btn-link text-danger p-0"><i class="bi bi-trash"></i></button>
-                                            </form>
-                                        </td>
-                                    </tr>
-                                </repeat>
-                            </tbody>
-                        </table>
-                    </div>
-                </check>
-            </div>
-        </div>
-
-        <!-- KARTU 7: EVALUASI FEEDBACK LOOP CUSTOMER -->
-        <div class="card border-0 shadow-sm mb-4">
-            <div class="card-header bg-white py-3">
-                <h6 class="m-0 fw-bold text-dark"><i class="bi bi-chat-left-text text-primary me-2"></i>Evaluasi Hasil Kerja Bersama Mitra (Feedback Loop)</h6>
-            </div>
-            <div class="card-body p-3 p-md-4">
-                <form action="{{ @BASE }}/po/{{ @po.id }}/evaluasi" method="POST">
-                    <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold text-dark mb-2">Status Hasil Evaluasi Mitra</label>
-                        <div class="row g-2">
-                            <div class="col-6">
-                                <input type="radio" class="btn-check" name="evaluasi_status" id="evaluasi_setuju" value="disetujui" autocomplete="off" {{ @po.evaluasi_status == 'disetujui' || empty(@po.evaluasi_status) || @po.evaluasi_status == 'pending' ? 'checked' : '' }}>
-                                <label class="btn btn-outline-success w-100 py-2 d-flex flex-column align-items-center justify-content-center gap-1 shadow-none" for="evaluasi_setuju" style="cursor: pointer;">
-                                    <span class="fw-bold fs-6"><i class="bi bi-check-circle me-1"></i>Disetujui</span>
-                                    <span style="font-size: 0.7rem; opacity: 0.85;">Lanjut ke Laporan Akhir</span>
-                                </label>
-                            </div>
-                            <div class="col-6">
-                                <input type="radio" class="btn-check" name="evaluasi_status" id="evaluasi_revisi" value="perlu_revisi" autocomplete="off" {{ @po.evaluasi_status == 'perlu_revisi' ? 'checked' : '' }}>
-                                <label class="btn btn-outline-danger w-100 py-2 d-flex flex-column align-items-center justify-content-center gap-1 shadow-none" for="evaluasi_revisi" style="cursor: pointer;">
-                                    <span class="fw-bold fs-6"><i class="bi bi-arrow-counterclockwise me-1"></i>Tidak Disetujui</span>
-                                    <span style="font-size: 0.7rem; opacity: 0.85;">Perlu Revisi Uji</span>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label small">Notulen / Catatan Masukan Customer</label>
-                        <textarea name="notulen_evaluasi" class="form-control form-control-sm" rows="2" placeholder="Catatan hasil diskusi teknis, revisi parameter, atau konfirmasi kepuasan...">{{ @po.notulen_evaluasi }}</textarea>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <input type="date" name="tgl_evaluasi" class="form-control form-control-sm w-50" value="{{ @po.tgl_evaluasi ?: date('Y-m-d') }}">
-                        <button type="submit" class="btn btn-sm btn-primary">
-                            <i class="bi bi-save me-1"></i> Simpan Evaluasi
+                    <div class="d-flex justify-content-between align-items-center gap-2">
+                        <input type="text" name="keterangan" class="form-control form-control-sm" placeholder="Catatan opsional...">
+                        <button type="submit" class="btn btn-sm btn-primary px-3 text-nowrap d-flex align-items-center gap-1">
+                            <i class="bi bi-plus-lg"></i> <span>Tambah</span>
                         </button>
                     </div>
                 </form>
             </div>
         </div>
 
-        <!-- KARTU 8: AUDIT TRAIL LOG STATUS -->
-        <div class="card border-0 shadow-sm mb-4">
-            <div class="card-header bg-white py-3">
-                <h6 class="m-0 fw-bold text-dark"><i class="bi bi-clock-history text-primary me-2"></i>Histori Perubahan Dokumen</h6>
+        <!-- KARTU 8: RIWAYAT PEMBAYARAN MULTI-TERMIN -->
+        <div class="card border-0 shadow-sm mb-4" id="pembayaran-section">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="m-0 fw-bold text-dark"><i class="bi bi-credit-card text-primary me-2"></i>Status Pembayaran Layanan</h6>
+                    <span class="text-muted" style="font-size: 0.75rem;">Multi-termin pembayaran jasa</span>
+                </div>
+                <div>
+                    <check if="{{ @total_terbayar >= @po.biaya && @po.biaya > 0 }}">
+                        <true><span class="badge px-2 py-1 fw-semibold" style="font-size: 0.72rem; background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0;">Lunas</span></true>
+                        <false><span class="badge px-2 py-1 fw-semibold" style="font-size: 0.72rem; background-color: #fef3c7; color: #92400e; border: 1px solid #fde68a;">Belum Lunas</span></false>
+                    </check>
+                </div>
             </div>
             <div class="card-body p-3 p-md-4">
-                <check if="{{ count(@daftar_log) > 0 }}">
-                    <div class="small">
-                        <repeat group="{{ @daftar_log }}" value="{{ @l }}">
-                            <div class="mb-2 pb-2 border-bottom">
-                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <span class="fw-bold text-primary">{{ @l.status_baru }}</span>
-                                    <span class="text-muted" style="font-size: 0.725rem;">{{ date('d/m/Y H:i', strtotime(@l.tanggal)) }}</span>
-                                </div>
-                                <div class="text-secondary" style="font-size: 0.8rem;">{{ @l.catatan }}</div>
-                            </div>
-                        </repeat>
+                <div class="row g-2 mb-3 small">
+                    <div class="col-6">
+                        <div class="p-2 bg-light rounded text-center">
+                            <div class="text-muted" style="font-size: 0.7rem;">Total Terbayar</div>
+                            <div class="fw-bold text-success" style="white-space: nowrap;">Rp {{ number_format(@total_terbayar, 0, ',', '.') }}</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-2 bg-light rounded text-center">
+                            <div class="text-muted" style="font-size: 0.7rem;">Sisa Tagihan</div>
+                            <div class="fw-bold text-danger" style="white-space: nowrap;">Rp {{ number_format(@sisa_tagihan, 0, ',', '.') }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <check if="{{ count(@daftar_pembayaran) > 0 }}">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover align-middle mb-0 small">
+                            <thead>
+                                <tr>
+                                    <th>Termin</th>
+                                    <th>Tanggal</th>
+                                    <th class="text-end text-nowrap" style="white-space: nowrap;">Nominal</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <repeat group="{{ @daftar_pembayaran }}" value="{{ @byr }}">
+                                    <tr>
+                                        <td>Termin {{ @byr.termin_ke }}</td>
+                                        <td>{{ date('d/m/Y', strtotime(@byr.tanggal_bayar)) }}</td>
+                                        <td class="text-end fw-bold text-nowrap" style="white-space: nowrap;">Rp {{ number_format(@byr.jumlah, 0, ',', '.') }}</td>
+                                        <td>
+                                            <check if="{{ @byr.status_verifikasi == 'terverifikasi' }}">
+                                                <span class="badge px-2 py-1 fw-semibold" style="font-size: 0.68rem; background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0;">Terverifikasi</span>
+                                            </check>
+                                            <check if="{{ @byr.status_verifikasi == 'menunggu' }}">
+                                                <span class="badge px-2 py-1 fw-semibold" style="font-size: 0.68rem; background-color: #fef3c7; color: #92400e; border: 1px solid #fde68a;">Menunggu</span>
+                                            </check>
+                                        </td>
+                                    </tr>
+                                </repeat>
+                            </tbody>
+                        </table>
                     </div>
                 </check>
             </div>

@@ -14,7 +14,7 @@ class AuthController extends Controller {
             $f3->reroute('/po');
             return;
         }
-        $f3->set('page_title', 'Login - OPTI Tracker BBSPJI Selulosa');
+        $f3->set('page_title', 'Login - OPTI Tracker BBSPJIS');
         echo \Template::instance()->render('auth/login.html');
     }
 

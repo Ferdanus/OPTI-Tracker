@@ -20,7 +20,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
         'Lainnya'                                        => 'Sesuai lingkup kegiatan'
     );
 
-    // 6 Laboratorium Resmi Pendukung OPTI di BBSPJI Selulosa
+    // 6 Laboratorium Resmi Pendukung OPTI di BBSPJIS
     public static $LAB_INTERNAL_LIST = array(
         'Pemasakan & Pemutihan'       => '1. Lab Pemasakan & Pemutihan Pulp',
         'Stock Preparation'           => '2. Lab Stock Preparation & Pengolahan Serat',

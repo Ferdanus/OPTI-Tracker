@@ -58,7 +58,7 @@ class PoController extends Controller {
         $f3->set('katim_selulosa_nama', $katimSelulosa['nama_user'] ?? 'Andri Taufick Rizaluddin');
         $f3->set('katim_lingkungan_nama', $katimLingkungan['nama_user'] ?? 'Rina Masriani');
 
-        $this->render('po/index.html', 'Dashboard & Monitoring PO - OPTI Tracker BBSPJI Selulosa', 'po');
+        $this->render('po/index.html', 'Dashboard & Monitoring PO - OPTI Tracker BBSPJIS', 'po');
     }
 
     /**
@@ -483,7 +483,7 @@ class PoController extends Controller {
     }
 
     /**
-     * Ekspor Data Rekap PO ke Format Excel/CSV sesuai standar rekap BBSPJI Selulosa
+     * Ekspor Data Rekap PO ke Format Excel/CSV sesuai standar rekap BBSPJIS
      * Route: GET /po/ekspor
      */
     public function ekspor($f3) {

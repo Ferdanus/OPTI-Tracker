@@ -189,6 +189,18 @@ $f3->route('GET /pengujian-eksternal/@id/edit','PengujianEksternalController->ed
 $f3->route('POST /pengujian-eksternal/@id/update','PengujianEksternalController->update');
 $f3->route('POST /pengujian-eksternal/@id/toggle-status','PengujianEksternalController->toggleStatus');
 $f3->route('POST /pengujian-eksternal/@id/hapus','PengujianEksternalController->delete');
+// ==========================================================
+// Surat Penawaran Mitra
+// ==========================================================
+$f3->route('GET /surat-penawaran','SuratPenawaranController->index');
+$f3->route('GET /surat-penawaran/tambah','SuratPenawaranController->create'); 
+$f3->route('POST /surat-penawaran/simpan','SuratPenawaranController->store'); 
+$f3->route('GET /surat-penawaran/@id/edit','SuratPenawaranController->edit'); 
+$f3->route('POST /surat-penawaran/@id/update','SuratPenawaranController->update'); 
+$f3->route('POST /surat-penawaran/@id/toggle-status','SuratPenawaranController->toggleStatus'); 
+$f3->route('POST /surat-penawaran/@id/hapus','SuratPenawaranController->delete');
+$f3->route('GET /surat-penawaran/@id/view',   'SuratPenawaranController->show');
+$f3->route('POST /surat-penawaran/@id/store', 'SuratPenawaranController->store');
 
 // Jalankan aplikasi Fat-Free Framework
 $f3->run();
