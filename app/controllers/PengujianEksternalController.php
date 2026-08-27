@@ -77,8 +77,8 @@ class PengujianEksternalController
         $f3->set('lembaga', $lembaga->cast());
         $f3->set('page_title', 'Edit Lembaga Pengujian Eksternal');
         $f3->set('active_menu', 'config');
-        $f3->set('content', 'lembaga-eksternal/form.htm');
-        echo \Template::instance()->render('layout.htm');
+        $f3->set('content', 'admin-order/penguji-eksternal/form.html');
+        echo \Template::instance()->render('layout.html');
     }
 
     /** POST /lembaga-eksternal/simpan */
