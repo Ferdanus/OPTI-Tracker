@@ -71,10 +71,19 @@ class SuratPenawaranController
 
         $db = $f3->get('DB');
         $sp = new DB\SQL\Mapper($db, 'tb_surat_penawaran');
+        $suratPenawaran = new DB\SQL\Mapper($db, 'surat_penawaran');
 
-        if ($id > 0) {
-            $sp->load(['id = ?', $id]);
-        }
+        if ($id > 0) { 
+            $sp->load(['id = ?', $id]); 
+    
+            // Ambil data surat_penawaran berdasarkan surat_id
+            if (!$sp->dry() && !empty($sp->surat_id)) {
+                $suratPenawaran->load([
+                    'id = ?', 
+                    $sp->surat_id
+                ]);
+            }
+        } 
 
         // kalau record baru (belum ada di DB), set default sesuai bisnis rule:
         // "Pegawai BBSPJIS" otomatis tercentang karena form ini diisi oleh staf
@@ -100,17 +109,6 @@ $daftarPegawai = $arsipUser->find(
             'email'            => 'E-mail',
             'datang_langsung'  => 'Datang langsung',
             'pegawai_bbspjis'  => 'Pegawai BBSPJIS',
-        ]);
-        $f3->set('opsi_bidang', [
-            'riset'            => 'Riset',
-            'standardisasi'    => 'Standardisasi',
-            'pengujian'        => 'Pengujian',
-            'sertifikasi'      => 'Sertifikasi',
-            'kalibrasi'        => 'Kalibrasi',
-            'konsultansi'      => 'Konsultansi',
-            'pelatihan_teknis' => 'Pelatihan Teknis',
-            'perekayasaan'     => 'Perekayasaan',
-            'lainnya'          => 'Lainnya',
         ]);
         $f3->set('opsi_kirim_ke', [
             'selulosa'    => 'Selulosa',
@@ -152,14 +150,12 @@ $daftarPegawai = $arsipUser->find(
         // hanya isi pegawai_id & kirim_ke kalau opsinya "pegawai_bbspjis"
         if ($sp->permintaan_melalui === 'pegawai_bbspjis') {
             $sp->pegawai_id = $f3->get('POST.pegawai_id') ?: null;
-            $sp->kirim_ke   = $f3->get('POST.kirim_ke') ?: null;
+        
         } else {
             $sp->pegawai_id = null;
-            $sp->kirim_ke   = null;
         }
+        $sp->jenis_layanan   = $f3->get('POST.jenis_layanan') ?: null;
 
-        $sp->bidang         = $f3->get('POST.bidang');
-        $sp->bidang_lainnya = ($sp->bidang === 'lainnya') ? $f3->get('POST.bidang_lainnya') : null;
         $sp->penjelasan     = $f3->get('POST.penjelasan');
 
         $isNew = $sp->dry();
