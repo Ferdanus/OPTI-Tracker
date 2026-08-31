@@ -1,0 +1,372 @@
+<div class="container-fluid px-4 py-4">
+    <!-- Breadcrumb & Topbar -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0" style="font-size: 0.82rem;">
+                <li class="breadcrumb-item"><a href="{{ @BASE }}/" class="text-decoration-none text-secondary">Beranda</a></li>
+                <li class="breadcrumb-item"><a href="{{ @BASE }}/order" class="text-decoration-none text-secondary">Order Layanan</a></li>
+                <li class="breadcrumb-item"><a href="{{ @BASE }}/order/{{ @order.id }}" class="text-decoration-none text-secondary">Order #{{ @order.nomor_order }}</a></li>
+                <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Proposal Teknis</li>
+            </ol>
+        </nav>
+        <div class="d-flex align-items-center gap-2">
+            <a href="{{ @BASE }}/order/{{ @order.id }}" class="btn btn-light btn-sm text-secondary px-3 py-1.5 fw-medium border rounded-pill shadow-xs">
+                <i class="bi bi-arrow-left me-1"></i> Detail Order
+            </a>
+        </div>
+    </div>
+
+    <!-- Header Banner -->
+    <div class="card border-0 rounded-4 shadow-sm mb-4 overflow-hidden" style="background: linear-gradient(135deg, #ffffff 0%, #fff1f2 100%); border-left: 5px solid var(--color-primary) !important;">
+        <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span class="badge {{ @order.jenis_layanan_opti == 'selulosa' ? 'bg-primary-subtle text-primary border border-primary-subtle' : 'bg-success-subtle text-success border border-success-subtle' }} px-3 py-1 rounded-pill fw-bold" style="font-size: 0.72rem; letter-spacing: 0.5px; text-transform: uppercase;">
+                            <i class="bi {{ @order.jenis_layanan_opti == 'selulosa' ? 'bi-tree-fill' : 'bi-shield-check' }} me-1"></i>
+                            Divisi {{ @order.jenis_layanan_opti == 'selulosa' ? 'Teknologi Selulosa' : 'Pengendalian Lingkungan' }}
+                        </span>
+                        
+                        <!-- Status Proposal Badge -->
+                        <check if="{{ @proposal && @proposal.status_proposal == 'disetujui_ketua' }}">
+                            <span class="badge bg-success text-white px-3 py-1 rounded-pill fw-bold shadow-xs" style="font-size: 0.72rem;">
+                                <i class="bi bi-check-circle-fill me-1"></i> Disetujui Ka. Tim (Siap Penawaran)
+                            </span>
+                        </check>
+                        <check if="{{ @proposal && @proposal.status_proposal == 'diajukan' }}">
+                            <span class="badge bg-info text-white px-3 py-1 rounded-pill fw-bold shadow-xs" style="font-size: 0.72rem;">
+                                <i class="bi bi-clock-history me-1"></i> Menunggu Persetujuan Ka. Tim
+                            </span>
+                        </check>
+                        <check if="{{ @proposal && @proposal.status_proposal == 'ditolak' }}">
+                            <span class="badge bg-danger text-white px-3 py-1 rounded-pill fw-bold shadow-xs" style="font-size: 0.72rem;">
+                                <i class="bi bi-exclamation-diamond-fill me-1"></i> Perlu Revisi Dokumen
+                            </span>
+                        </check>
+                        <check if="{{ !@proposal || @proposal.status_proposal == 'draft' }}">
+                            <span class="badge bg-warning text-dark px-3 py-1 rounded-pill fw-bold shadow-xs" style="font-size: 0.72rem;">
+                                <i class="bi bi-pencil-square me-1"></i> Draf Penyusunan Proposal
+                            </span>
+                        </check>
+                    </div>
+
+                    <h4 class="fw-bold text-dark font-display mb-1">Penyusunan &amp; Unggah Dokumen Proposal Teknis</h4>
+                    <p class="text-secondary mb-0" style="font-size: 0.88rem;">
+                        Order <strong class="text-dark font-monospace">#{{ @order.nomor_order }}</strong> &bull; {{ @order.nama_perusahaan }} &bull; <span class="fst-italic">{{ @order.judul_kegiatan }}</span>
+                    </p>
+                </div>
+
+                <div class="text-end">
+                    <div class="small text-muted mb-1">Estimasi Total Biaya / RAB</div>
+                    <div class="fs-4 fw-bold text-primary font-display">
+                        Rp {{ number_format(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0), 0, ',', '.') }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Catatan Revisi jika ada -->
+    <check if="{{ @proposal && @proposal.status_proposal == 'ditolak' && @proposal.catatan_revisi }}">
+        <div class="alert alert-danger border-0 rounded-4 shadow-sm p-3 mb-4 d-flex align-items-start gap-3">
+            <div class="rounded-circle bg-danger text-white p-2 flex-shrink-0 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
+                <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+            </div>
+            <div>
+                <h6 class="fw-bold mb-1 font-display text-danger">Catatan Revisi dari Ketua Tim OPTI:</h6>
+                <p class="mb-0 small text-danger-emphasis">{{ @proposal.catatan_revisi }}</p>
+            </div>
+        </div>
+    </check>
+
+    <!-- Main Content: 2-Column Grid -->
+    <div class="row g-4">
+        <!-- Kolom Kiri: Ringkasan Order & Dokumen Permohonan -->
+        <div class="col-lg-4">
+            <!-- Card 1: Info Pelanggan & Penugasan -->
+            <div class="card border-0 rounded-4 shadow-sm mb-4">
+                <div class="card-header bg-transparent border-bottom py-3 px-4">
+                    <h6 class="fw-bold text-dark mb-0 font-display d-flex align-items-center gap-2">
+                        <i class="bi bi-building text-primary"></i> Identitas Pelanggan &amp; PIC
+                    </h6>
+                </div>
+                <div class="card-body p-4">
+                    <div class="mb-3">
+                        <small class="text-muted d-block mb-1">Perusahaan / Instansi</small>
+                        <div class="fw-bold text-dark">{{ @order.nama_perusahaan }}</div>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted d-block mb-1">Narahubung / PIC Klien</small>
+                        <div class="text-dark">{{ @order.nama_pic ?: '-' }} <span class="text-muted small">({{ @order.kontak_pic ?: '-' }})</span></div>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted d-block mb-1">PIC Peneliti yang Ditugaskan</small>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="avatar-circle bg-primary-subtle text-primary fw-bold rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; font-size: 0.8rem;">
+                                <i class="bi bi-person-badge"></i>
+                            </div>
+                            <div>
+                                <strong class="text-primary font-display">{{ @order.pic_proposal_nama ?: (@proposal.pic_nama ?: 'Tim Pelaksana') }}</strong>
+                                <small class="d-block text-secondary">Spesialisasi {{ ucfirst(@order.jenis_layanan_opti) }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="border-top pt-3">
+                        <small class="text-muted d-block mb-1">Standar SPM Layanan</small>
+                        <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2.5 py-1 font-monospace fw-semibold">{{ @order.spm_layanan ?: '7 Hari Kerja' }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 2: Berkas Surat Permohonan Klien -->
+            <div class="card border-0 rounded-4 shadow-sm mb-4">
+                <div class="card-header bg-transparent border-bottom py-3 px-4">
+                    <h6 class="fw-bold text-dark mb-0 font-display d-flex align-items-center gap-2">
+                        <i class="bi bi-file-earmark-text text-primary"></i> Surat Permohonan Klien
+                    </h6>
+                </div>
+                <div class="card-body p-4">
+                    <check if="{{ @surat_masuk }}">
+                        <div class="mb-2.5">
+                            <small class="text-muted d-block mb-1">Nomor &amp; Tanggal Surat</small>
+                            <div class="fw-bold font-monospace text-dark">{{ @surat_masuk.nomor_surat }}</div>
+                            <small class="text-secondary">{{ date('d M Y', strtotime(@surat_masuk.tanggal_surat)) }}</small>
+                        </div>
+                        <div class="mb-3">
+                            <small class="text-muted d-block mb-1">Perihal Permohonan</small>
+                            <p class="small text-secondary mb-0">{{ @surat_masuk.perihal }}</p>
+                        </div>
+                        <div class="pt-2 border-top">
+                            <button type="button" class="btn btn-outline-primary btn-sm w-100 rounded-pill fw-semibold shadow-xs" data-bs-toggle="modal" data-bs-target="#modalPreviewSuratMasukProposal">
+                                <i class="bi bi-file-earmark-text me-1"></i> Buka Lembar Surat Resmi
+                            </button>
+                        </div>
+                    </check>
+                    <check if="{{ !@surat_masuk }}">
+                        <p class="small text-muted mb-0 fst-italic">Order didaftarkan langsung oleh Tim Kemitraan.</p>
+                    </check>
+                </div>
+            </div>
+
+            <!-- Card 3: Evaluasi Kelayakan Teknis (ISO 17025) -->
+            <check if="{{ @tinjauan }}">
+                <div class="card border-0 rounded-4 shadow-sm mb-4">
+                    <div class="card-header bg-transparent border-bottom py-3 px-4">
+                        <h6 class="fw-bold text-dark mb-0 font-display d-flex align-items-center gap-2">
+                            <i class="bi bi-clipboard2-check text-success"></i> Hasil Kaji Ulang Kelayakan
+                        </h6>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="mb-2">
+                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1 fw-semibold mb-2">
+                                <i class="bi bi-check-circle-fill me-1"></i> Dapat Dilaksanakan
+                            </span>
+                        </div>
+                        <div class="small text-secondary mb-2">
+                            <strong>Catatan Ka. Tim:</strong>
+                            <p class="mb-0 text-dark fst-italic">{{ @tinjauan.catatan_kelayakan ?: 'Kapasitas laboratorium, peralatan, dan personil analis memenuhi persyaratan standar.' }}</p>
+                        </div>
+                    </div>
+                </div>
+            </check>
+        </div>
+
+        <!-- Kolom Kanan: Formulir Penyusunan & Upload Dokumen Proposal -->
+        <div class="col-lg-8">
+            <div class="card border-0 rounded-4 shadow-sm mb-4">
+                <div class="card-header bg-transparent border-bottom py-3.5 px-4 d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold text-dark mb-0 font-display d-flex align-items-center gap-2">
+                        <i class="bi bi-journal-code text-primary fs-5"></i>
+                        Formulir Dokumen Proposal &amp; Rancangan Biaya
+                    </h6>
+                    <check if="{{ @proposal && @proposal.file_proposal }}">
+                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 rounded-pill small fw-semibold">
+                            <i class="bi bi-check-all me-1"></i> Berkas Telah Terunggah
+                        </span>
+                    </check>
+                </div>
+                <div class="card-body p-4">
+                    <form action="{{ @BASE }}/order/{{ @order.id }}/proposal/simpan" method="POST" enctype="multipart/form-data" id="formProposal">
+                        
+                        <!-- 1. Judul Proposal -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-dark" style="font-size: 0.88rem;">
+                                Judul Proposal Teknis <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" name="judul_proposal" class="form-control form-control-lg rounded-3 fs-6" 
+                                   value="{{ @proposal.judul_proposal ?: @order.judul_kegiatan }}" 
+                                   placeholder="Contoh: Proposal Pengujian Karakteristik Serat Kayu dan Pulp..." required {{ !@can_edit ? 'disabled' : '' }}>
+                            <div class="form-text small text-muted">Judul resmi proposal teknis yang akan diajukan kepada pelanggan.</div>
+                        </div>
+
+                        <!-- 2. Ruang Lingkup & Metodologi -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-dark" style="font-size: 0.88rem;">
+                                Ruang Lingkup &amp; Metodologi Pengujian / Riset
+                            </label>
+                            <textarea name="ruang_lingkup" class="form-control rounded-3" rows="4" 
+                                      placeholder="Jelaskan parameter uji, metodologi standar SNI/ISO/TAPPI yang diterapkan, tahapan sampling, dan alur eksperimen..." {{ !@can_edit ? 'disabled' : '' }}>{{ @proposal.ruang_lingkup }}</textarea>
+                            <div class="form-text small text-muted">Ringkasan teknis ruang lingkup kerja dan standar acuan yang digunakan.</div>
+                        </div>
+
+                        <!-- 3. Durasi & Estimasi Biaya -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold text-dark" style="font-size: 0.88rem;">
+                                    Estimasi Durasi Pelaksanaan
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-muted"><i class="bi bi-calendar-event"></i></span>
+                                    <input type="text" name="durasi_kegiatan" class="form-control rounded-end-3" 
+                                           value="{{ @proposal.durasi_kegiatan ?: '30 Hari Kerja' }}" 
+                                           placeholder="Contoh: 30 Hari Kerja / 2 Bulan" {{ !@can_edit ? 'disabled' : '' }}>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold text-dark" style="font-size: 0.88rem;">
+                                    Estimasi Total Biaya / RAB (Rp) <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-muted">Rp</span>
+                                    <input type="number" step="any" name="estimasi_total_biaya" class="form-control rounded-end-3 fw-bold text-primary font-monospace" 
+                                           value="{{ @proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0) }}" 
+                                           placeholder="0" required {{ !@can_edit ? 'disabled' : '' }}>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 4. Area Upload Berkas Dokumen Proposal -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-dark d-flex justify-content-between align-items-center" style="font-size: 0.88rem;">
+                                <span>Unggah Berkas Dokumen Proposal Teknis <span class="text-danger">*</span></span>
+                                <small class="text-muted fw-normal">Format: PDF, Word (DOC/DOCX), Excel (XLSX) &bull; Maks. 20MB</small>
+                            </label>
+
+                            <!-- File Preview Card if already uploaded -->
+                            <check if="{{ @proposal && @proposal.file_proposal }}">
+                                <div class="card border border-success-subtle bg-success-subtle bg-opacity-25 rounded-3 p-3 mb-3">
+                                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="rounded-3 bg-danger text-white p-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                <i class="bi bi-file-earmark-pdf-fill fs-5"></i>
+                                            </div>
+                                            <div>
+                                                <strong class="text-dark d-block font-monospace" style="font-size: 0.85rem;">{{ basename(@proposal.file_proposal) }}</strong>
+                                                <small class="text-secondary">Dokumen proposal teknis aktif tersimpan di server.</small>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <a href="{{ @BASE }}/{{ @proposal.file_proposal }}" target="_blank" class="btn btn-outline-primary btn-sm px-3 rounded-pill fw-semibold shadow-xs">
+                                                <i class="bi bi-download me-1"></i> Unduh Berkas
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </check>
+
+                            <!-- Input Upload File -->
+                            <check if="{{ @can_edit }}">
+                                <div class="border border-2 border-dashed rounded-3 p-4 text-center bg-light bg-opacity-50">
+                                    <i class="bi bi-cloud-arrow-up text-primary fs-1 mb-2 d-block"></i>
+                                    <div class="fw-semibold text-dark mb-1">Pilih atau Seret File Dokumen Proposal ke Sini</div>
+                                    <div class="small text-muted mb-3">Pilih berkas dokumen proposal final atau revisi</div>
+                                    <input type="file" name="file_proposal" id="file_proposal" class="form-control form-control-sm mx-auto" style="max-width: 320px;" accept=".pdf,.doc,.docx,.xls,.xlsx">
+                                </div>
+                            </check>
+                        </div>
+
+                        <!-- 5. Tombol Aksi PIC -->
+                        <check if="{{ @can_edit }}">
+                            <div class="d-flex justify-content-between align-items-center pt-3 border-top flex-wrap gap-2">
+                                <button type="submit" name="action_type" value="draft" class="btn btn-light border px-4 py-2 rounded-pill fw-semibold text-secondary">
+                                    <i class="bi bi-save me-1"></i> Simpan Draf
+                                </button>
+                                <button type="submit" name="action_type" value="ajukan" class="btn btn-primary px-4 py-2 rounded-pill fw-semibold text-white shadow-sm">
+                                    <i class="bi bi-send-fill me-1"></i> Ajukan ke Ketua Tim OPTI
+                                </button>
+                            </div>
+                        </check>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 6. Panel Review & Persetujuan Ketua Tim OPTI (Hanya Tampil untuk Ketua Tim & Superadmin) -->
+            <check if="{{ @can_review }}">
+                <div class="card border-0 rounded-4 shadow-sm mb-4" style="border-left: 5px solid #0284c7 !important;">
+                    <div class="card-header bg-transparent border-bottom py-3 px-4 d-flex justify-content-between align-items-center">
+                        <h6 class="fw-bold text-dark mb-0 font-display d-flex align-items-center gap-2">
+                            <i class="bi bi-patch-check-fill text-info fs-5"></i>
+                            Panel Review &amp; Persetujuan Ketua Tim OPTI
+                        </h6>
+                        <span class="badge bg-info-subtle text-info rounded-pill px-2.5 py-1 small fw-semibold">Wewenang Ketua Tim</span>
+                    </div>
+                    <div class="card-body p-4">
+                        <p class="small text-secondary mb-3">
+                            Ketua Tim memeriksa kesesuaian ruang lingkup, estimasi anggaran, dan kelayakan dokumen proposal yang diajukan oleh PIC. Setelah disetujui, Tim Kemitraan dapat menerbitkan Surat Penawaran Biaya resmi ke Klien.
+                        </p>
+
+                        <form action="{{ @BASE }}/order/{{ @order.id }}/proposal/review-katim" method="POST">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-dark small">Catatan Review / Catatan Revisi (Opsional jika Approve, Wajib jika Minta Revisi)</label>
+                                <textarea name="catatan_revisi" class="form-control rounded-3" rows="3" placeholder="Masukkan catatan persetujuan atau poin-poin yang harus diperbaiki oleh PIC...">{{ @proposal.catatan_revisi }}</textarea>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <button type="submit" name="action_review" value="approve" class="btn btn-success px-4 py-2 rounded-pill fw-semibold text-white shadow-sm">
+                                    <i class="bi bi-check-circle-fill me-1"></i> Setujui Proposal (Approve)
+                                </button>
+                                <button type="submit" name="action_review" value="reject" class="btn btn-outline-danger px-4 py-2 rounded-pill fw-semibold">
+                                    <i class="bi bi-arrow-counterclockwise me-1"></i> Minta Revisi Dokumen
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </check>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================== -->
+<!-- MODAL PRATINJAU LEMBAR SURAT MASUK RESMI -->
+<!-- ========================================== -->
+<check if="{{ @surat_masuk }}">
+    <div class="modal fade" id="modalPreviewSuratMasukProposal" tabindex="-1" aria-labelledby="modalPreviewSuratMasukProposalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden">
+                <div class="modal-header border-bottom py-3 px-4 bg-light">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="rounded-circle bg-primary-subtle text-primary p-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                            <i class="bi bi-file-earmark-text-fill"></i>
+                        </div>
+                        <div>
+                            <h6 class="modal-title fw-bold text-dark font-display mb-0" id="modalPreviewSuratMasukProposalLabel">Lembar Surat Permohonan Klien</h6>
+                            <small class="text-secondary font-monospace">{{ @surat_masuk.nomor_surat }} &bull; {{ @surat_masuk.instansi_pengirim }}</small>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4 bg-white">
+                    <div class="border rounded-3 p-4 bg-white shadow-xs">
+                        <div class="text-center border-bottom pb-3 mb-3">
+                            <h6 class="fw-bold text-dark text-uppercase mb-1">{{ @surat_masuk.instansi_pengirim }}</h6>
+                            <small class="text-muted">Nomor: {{ @surat_masuk.nomor_surat }} &bull; Tanggal: {{ date('d F Y', strtotime(@surat_masuk.tanggal_surat)) }}</small>
+                        </div>
+                        <div class="mb-3">
+                            <small class="text-muted d-block">Perihal:</small>
+                            <div class="fw-bold text-dark">{{ @surat_masuk.perihal }}</div>
+                        </div>
+                        <div class="mb-3">
+                            <small class="text-muted d-block">Isi / Ringkasan Permohonan:</small>
+                            <div class="p-3 bg-light rounded-3 text-secondary" style="font-size: 0.88rem; line-height: 1.6;">
+                                {{ @surat_masuk.ringkasan ?: @surat_masuk.perihal }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top py-2 px-4 bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm px-3 rounded-pill" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</check>

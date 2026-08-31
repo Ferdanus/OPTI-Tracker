@@ -143,6 +143,8 @@ $f3->route('GET /order/@id/biaya-lingkungan', 'OrderController->biayaLingkungan'
 $f3->route('POST /order/@id/biaya-lingkungan', 'OrderController->biayaLingkunganPost');
 $f3->route('GET /order/@id/form-pelayanan', 'OrderController->formPelayanan');
 $f3->route('POST /order/@id/form-pelayanan', 'OrderController->formPelayananPost');
+$f3->route('GET /order/@id/proposal', 'OrderController->proposalForm');
+$f3->route('POST /order/@id/proposal/simpan', 'OrderController->proposalSimpan');
 $f3->route('POST /order/@id/proposal/upload', 'OrderController->uploadProposalFile');
 $f3->route('POST /order/@id/proposal/kirim-katim', 'OrderController->kirimProposalKeKatim');
 $f3->route('POST /order/@id/proposal/review-katim', 'OrderController->reviewProposalKatim');

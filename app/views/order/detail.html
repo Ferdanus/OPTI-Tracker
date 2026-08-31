@@ -626,15 +626,18 @@
                                 </h4>
                                 <small class="text-secondary">PIC Penyusun: <strong>{{ @order.pic_proposal_nama ?: (@proposal.pic_nama ?: 'Tim Pelaksana') }}</strong></small>
                             </div>
-                            <div>
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <a href="{{ @BASE }}/order/{{ @order.id }}/proposal" class="btn btn-primary btn-sm fw-semibold shadow-sm">
+                                    <i class="bi bi-file-earmark-arrow-up-fill me-1"></i> Ruang Proposal &amp; Upload Dokumen
+                                </a>
                                 <check if="{{ @order.jenis_layanan_opti == 'selulosa' }}">
-                                    <a href="{{ @BASE }}/order/{{ @order.id }}/rancop-selulosa" class="btn btn-primary btn-sm fw-semibold shadow-sm">
-                                        <i class="bi {{ (@user_id == @order.pic_proposal_id || @is_tim_kerja || @is_pejabat || @is_superadmin) ? 'bi-diagram-3' : 'bi-eye' }} me-1"></i> {{ (@user_id == @order.pic_proposal_id || @is_tim_kerja || @is_pejabat || @is_superadmin) ? 'Skenario & Rancop' : 'Lihat Skenario & Rancop' }}
+                                    <a href="{{ @BASE }}/order/{{ @order.id }}/rancop-selulosa" class="btn btn-outline-primary btn-sm fw-semibold">
+                                        <i class="bi bi-diagram-3 me-1"></i> Skenario &amp; Rancop
                                     </a>
                                 </check>
                                 <check if="{{ @order.jenis_layanan_opti == 'lingkungan' }}">
-                                    <a href="{{ @BASE }}/order/{{ @order.id }}/biaya-lingkungan" class="btn btn-success btn-sm fw-semibold shadow-sm">
-                                        <i class="bi {{ (@user_id == @order.pic_proposal_id || @is_tim_kerja || @is_pejabat || @is_superadmin) ? 'bi-calculator' : 'bi-eye' }} me-1"></i> {{ (@user_id == @order.pic_proposal_id || @is_tim_kerja || @is_pejabat || @is_superadmin) ? 'Rincian Tarif SNI' : 'Lihat Tarif SNI' }}
+                                    <a href="{{ @BASE }}/order/{{ @order.id }}/biaya-lingkungan" class="btn btn-outline-success btn-sm fw-semibold">
+                                        <i class="bi bi-calculator me-1"></i> Rincian Tarif SNI
                                     </a>
                                 </check>
                             </div>
