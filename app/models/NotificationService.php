@@ -69,7 +69,7 @@ class NotificationService
 
             // Layanan matching
             if ($role === 'ketua_tim' && in_array($layanan, ['selulosa', 'lingkungan'])) {
-                $layananCond = "(target_layanan = 'semua' OR target_layanan = ?)";
+                $layananCond = "(target_layanan = 'semua' OR target_layanan = ? OR target_layanan = 'belum_ditentukan' OR target_layanan IS NULL OR target_layanan = '')";
                 $params[] = $layanan;
                 $where[] = "({$roleCond}) AND {$layananCond}";
             } else {
@@ -109,7 +109,7 @@ class NotificationService
             }
 
             if ($role === 'ketua_tim' && in_array($layanan, ['selulosa', 'lingkungan'])) {
-                $layananCond = "(target_layanan = 'semua' OR target_layanan = ?)";
+                $layananCond = "(target_layanan = 'semua' OR target_layanan = ? OR target_layanan = 'belum_ditentukan' OR target_layanan IS NULL OR target_layanan = '')";
                 $params[] = $layanan;
                 $where[] = "({$roleCond}) AND {$layananCond}";
             } else {

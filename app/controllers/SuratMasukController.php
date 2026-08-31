@@ -88,7 +88,7 @@ class SuratMasukController extends Controller {
         try {
             $orderId = $this->repo->klaimSurat($suratId, $userId);
 
-            // Kirim Notifikasi ke Ka. Tim OPTI
+            // Kirim Notifikasi ke Ka. Tim OPTI & Superadmin
             try {
                 $orderModel = new \OrderLayanan($this->db);
                 $order = $orderModel->getDetail($orderId);
@@ -96,11 +96,11 @@ class SuratMasukController extends Controller {
                     \NotificationService::send($this->db, [
                         'order_id'       => $orderId,
                         'target_role'    => 'ketua_tim',
-                        'target_layanan' => $order['jenis_layanan_opti'] ?? 'semua',
-                        'judul'          => 'Permintaan Kaji Ulang Kelayakan Teknis',
-                        'pesan'          => "Order #{$order['nomor_order']} ({$order['nama_perusahaan']}) menunggu evaluasi kelayakan teknis ISO 17025 dari Anda.",
+                        'target_layanan' => 'semua',
+                        'judul'          => 'Permintaan Masuk Baru: Evaluasi Kelayakan Teknis',
+                        'pesan'          => "Order {$order['nomor_order']} ({$order['nama_perusahaan']}) telah masuk. Mohon kaji kelayakan teknis ISO 17025 dan tentukan PIC.",
                         'tipe'           => 'primary',
-                        'icon'           => 'bi-clipboard-check-fill',
+                        'icon'           => 'bi-inbox-fill',
                         'link_url'       => "/order/{$orderId}/tinjauan",
                         'created_by'     => $userId,
                         'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Tim Kemitraan'
@@ -504,6 +504,21 @@ class SuratMasukController extends Controller {
                     ]);
                 } catch (\Exception $eLocal) {}
             }
+
+            // Kirim notifikasi ke Tim Mitra
+            try {
+                \NotificationService::send($this->db, [
+                    'target_role'    => 'admin_order',
+                    'target_layanan' => 'semua',
+                    'judul'          => 'Surat Permohonan Baru Masuk',
+                    'pesan'          => "Surat dari {$pengirim} (No: {$nomorSurat}) telah diagendakan. Siap ditinjau & diklaim di Kotak Masuk Tim Kemitraan.",
+                    'tipe'           => 'info',
+                    'icon'           => 'bi-envelope-plus-fill',
+                    'link_url'       => '/surat-masuk',
+                    'created_by'     => $userId,
+                    'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Sekretariat'
+                ]);
+            } catch (\Exception $eNotif) {}
 
             $this->setFlashSuccess("
                 Surat Permohonan dari <strong>{$pengirim}</strong> (No: <strong>{$nomorSurat}</strong>) berhasil didaftarkan dalam Buku Agenda Sekretariat dan diteruskan ke antrean Kotak Masuk Tim Kemitraan.<br>
