@@ -377,13 +377,21 @@ class SuratMasukController extends Controller {
         
         $table = $this->f3->get('db_sekretariat_table') ?: 'surat_masuk';
         $daftarSuratSimulasi = array();
+        $dbTarget = $this->dbSekretariat ?: $this->db;
         
         try {
-            $sql = "SELECT s.*, o.id as order_id, o.nomor_order, o.status as order_status, o.jenis_layanan_opti
-                    FROM `{$table}` s
-                    LEFT JOIN `order_layanan` o ON s.id = o.id_surat_masuk
-                    ORDER BY s.id DESC";
-            $daftarSuratSimulasi = $this->db->exec($sql);
+            $daftarSuratSimulasi = $dbTarget->exec("SELECT * FROM `{$table}` ORDER BY id DESC");
+            // Lengkapi dengan info order layanan dari DB utama jika sudah diklaim
+            foreach ($daftarSuratSimulasi as &$s) {
+                $order = $this->db->exec("SELECT id, nomor_order, status as order_status, jenis_layanan_opti FROM `order_layanan` WHERE id_surat_masuk = ?", [1 => $s['id']]);
+                if (!empty($order)) {
+                    $s['order_id'] = $order[0]['id'];
+                    $s['nomor_order'] = $order[0]['nomor_order'];
+                    $s['order_status'] = $order[0]['order_status'];
+                    $s['jenis_layanan_opti'] = $order[0]['jenis_layanan_opti'];
+                }
+            }
+            unset($s);
         } catch (\Exception $e) {
             $daftarSuratSimulasi = $this->db->exec("SELECT * FROM `{$table}` ORDER BY id DESC");
         }
@@ -439,33 +447,63 @@ class SuratMasukController extends Controller {
         if (empty($layanan)) $layanan = 'opti';
 
         try {
-            $sql = "INSERT INTO `{$table}` (
-                        nomor_surat, pengirim, pt_cv, alamat_pengirim, 
-                        pic_pengirim, no_telp_pengirim, email_pengirim, 
-                        tanggal_surat, nama_pengirim, perihal, file_path, 
-                        layanan, status_ambil, created_at, created_by
-                    ) VALUES (
-                        ?, ?, ?, ?, 
-                        ?, ?, ?, 
-                        ?, ?, ?, ?, 
-                        ?, 'belum', NOW(), ?
-                    )";
-            $params = [
-                1 => $nomorSurat,
-                2 => $pengirim,
-                3 => $ptCv,
-                4 => $alamat,
-                5 => $pic,
-                6 => $telp,
-                7 => $email,
-                8 => $tglSurat,
-                9 => $namaPengirim,
-                10 => $perihal,
-                11 => $filePath,
-                12 => $layanan,
-                13 => $userId
-            ];
-            $this->db->exec($sql, $params);
+            // 1. Simpan ke Database Sekretariat Eksternal jika terhubung
+            if ($this->dbSekretariat) {
+                $sqlSekr = "INSERT INTO `{$table}` (
+                                nomor_surat, perihal, pengirim, pt_cv, alamat_pengirim, 
+                                pic_pengirim, no_telp_pengirim, email_pengirim, tanggal_surat, 
+                                file_path, permohonan, layanan, status_ambil, created_at
+                            ) VALUES (
+                                ?, ?, ?, ?, ?, 
+                                ?, ?, ?, ?, 
+                                ?, 'yes', ?, 0, NOW()
+                            )";
+                $this->dbSekretariat->exec($sqlSekr, [
+                    1 => $nomorSurat,
+                    2 => $perihal,
+                    3 => $pengirim,
+                    4 => $ptCv,
+                    5 => $alamat,
+                    6 => $pic,
+                    7 => $telp,
+                    8 => $email,
+                    9 => $tglSurat,
+                    10 => $filePath,
+                    11 => $layanan
+                ]);
+            }
+
+            // 2. Simpan juga ke Database Utama Lokal untuk konsistensi fallback
+            if ($this->db !== $this->dbSekretariat) {
+                try {
+                    $sqlLocal = "INSERT INTO `{$table}` (
+                                    nomor_surat, pengirim, pt_cv, alamat_pengirim, 
+                                    pic_pengirim, no_telp_pengirim, email_pengirim, 
+                                    tanggal_surat, nama_pengirim, perihal, file_path, 
+                                    layanan, status_ambil, created_at, created_by
+                                ) VALUES (
+                                    ?, ?, ?, ?, 
+                                    ?, ?, ?, 
+                                    ?, ?, ?, ?, 
+                                    ?, 'belum', NOW(), ?
+                                )";
+                    $this->db->exec($sqlLocal, [
+                        1 => $nomorSurat,
+                        2 => $pengirim,
+                        3 => $ptCv,
+                        4 => $alamat,
+                        5 => $pic,
+                        6 => $telp,
+                        7 => $email,
+                        8 => $tglSurat,
+                        9 => $namaPengirim,
+                        10 => $perihal,
+                        11 => $filePath,
+                        12 => $layanan,
+                        13 => $userId
+                    ]);
+                } catch (\Exception $eLocal) {}
+            }
 
             $this->setFlashSuccess("
                 Surat Permohonan dari <strong>{$pengirim}</strong> (No: <strong>{$nomorSurat}</strong>) berhasil didaftarkan dalam Buku Agenda Sekretariat dan diteruskan ke antrean Kotak Masuk Tim Kemitraan.<br>
@@ -492,7 +530,16 @@ class SuratMasukController extends Controller {
         $table = $this->f3->get('db_sekretariat_table') ?: 'surat_masuk';
 
         if ($id > 0) {
-            $this->db->exec("DELETE FROM `{$table}` WHERE id = ?", [1 => $id]);
+            if ($this->dbSekretariat) {
+                try {
+                    $this->dbSekretariat->exec("DELETE FROM `{$table}` WHERE id = ?", [1 => $id]);
+                } catch (\Exception $e) {}
+            }
+            if ($this->db) {
+                try {
+                    $this->db->exec("DELETE FROM `{$table}` WHERE id = ?", [1 => $id]);
+                } catch (\Exception $e) {}
+            }
             $this->setFlashSuccess('Surat simulasi berhasil dihapus dari sistem.');
         }
 
