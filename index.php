@@ -291,5 +291,13 @@ $f3->route('GET /uploads/surat_masuk/@filename', function($f3, $params) {
     $f3->error(404, 'Berkas surat tidak ditemukan.');
 });
 
+// ==========================================
+// ROUTE PUSAT NOTIFIKASI & FLOATING MESSAGE
+// ==========================================
+$f3->route('GET /notifikasi', 'NotificationController->index');
+$f3->route('GET /notifikasi/unread', 'NotificationController->getUnread');
+$f3->route('POST /notifikasi/mark-read/@id', 'NotificationController->markRead');
+$f3->route('POST /notifikasi/mark-all-read', 'NotificationController->markAllRead');
+
 // Jalankan Fat-Free Framework Router
 $f3->run();

@@ -87,6 +87,29 @@ class SuratMasukController extends Controller {
 
         try {
             $orderId = $this->repo->klaimSurat($suratId, $userId);
+
+            // Kirim Notifikasi ke Ka. Tim OPTI
+            try {
+                $orderModel = new \OrderLayanan($this->db);
+                $order = $orderModel->getDetail($orderId);
+                if ($order) {
+                    \NotificationService::send($this->db, [
+                        'order_id'       => $orderId,
+                        'target_role'    => 'ketua_tim',
+                        'target_layanan' => $order['jenis_layanan_opti'] ?? 'semua',
+                        'judul'          => 'Permintaan Kaji Ulang Kelayakan Teknis',
+                        'pesan'          => "Order #{$order['nomor_order']} ({$order['nama_perusahaan']}) menunggu evaluasi kelayakan teknis ISO 17025 dari Anda.",
+                        'tipe'           => 'primary',
+                        'icon'           => 'bi-clipboard-check-fill',
+                        'link_url'       => "/order/{$orderId}/tinjauan",
+                        'created_by'     => $userId,
+                        'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Tim Kemitraan'
+                    ]);
+                }
+            } catch (\Exception $eNotif) {
+                // Jangan gagalkan flow jika notifikasi error
+            }
+
             $this->setFlashSuccess('Surat berhasil diterima.');
             $this->f3->reroute('/surat-masuk');
             return;

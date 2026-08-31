@@ -506,6 +506,61 @@ class OrderController extends Controller {
         try {
             $orderModel = new OrderLayanan($this->db);
             $hasil = $orderModel->simpanTinjauanKelayakan($id, $post, $userId);
+            $order = $orderModel->getDetail($id);
+
+            // Kirim notifikasi ke Tim Mitra & PIC
+            try {
+                if ($hasil['keputusan'] === 'dapat_dilaksanakan') {
+                    $picNama = !empty($post['pic_nama']) ? $post['pic_nama'] : 'PIC Terpilih';
+                    
+                    // Notif ke Tim Mitra
+                    \NotificationService::send($this->db, [
+                        'order_id'       => $id,
+                        'target_role'    => 'admin_order',
+                        'target_layanan' => 'semua',
+                        'judul'          => 'Kelayakan Teknis ISO Disetujui',
+                        'pesan'          => "Order #{$order['nomor_order']} ({$order['nama_perusahaan']}) dinyatakan 'Dapat Dilaksanakan' oleh Ka. Tim OPTI. PIC yang ditugaskan: {$picNama}.",
+                        'tipe'           => 'success',
+                        'icon'           => 'bi-check-circle-fill',
+                        'link_url'       => "/order/{$id}",
+                        'created_by'     => $userId,
+                        'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Ketua Tim OPTI'
+                    ]);
+
+                    // Notif ke PIC Peneliti / Tim Kerja
+                    if (!empty($post['pic_proposal_id'])) {
+                        \NotificationService::send($this->db, [
+                            'order_id'       => $id,
+                            'target_role'    => 'tim_kerja',
+                            'target_user_id' => (int)$post['pic_proposal_id'],
+                            'target_layanan' => $order['jenis_layanan_opti'] ?? 'semua',
+                            'judul'          => 'Penugasan Penyusunan Proposal Riset/Kalkulasi',
+                            'pesan'          => "Anda ditugaskan sebagai PIC untuk Order #{$order['nomor_order']} ({$order['judul_kegiatan']}). Silakan susun Rincian Proposal Biaya.",
+                            'tipe'           => 'primary',
+                            'icon'           => 'bi-journal-code',
+                            'link_url'       => ($order['jenis_layanan_opti'] === 'selulosa' ? "/order/{$id}/rancop-selulosa" : "/order/{$id}/biaya-lingkungan"),
+                            'created_by'     => $userId,
+                            'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Ketua Tim OPTI'
+                        ]);
+                    }
+                } else {
+                    // Notif penolakan ke Tim Mitra
+                    \NotificationService::send($this->db, [
+                        'order_id'       => $id,
+                        'target_role'    => 'admin_order',
+                        'target_layanan' => 'semua',
+                        'judul'          => 'Order Tidak Dapat Dilaksanakan',
+                        'pesan'          => "Order #{$order['nomor_order']} ({$order['nama_perusahaan']}) dinyatakan 'Tidak Dapat Dilaksanakan' oleh Ka. Tim OPTI.",
+                        'tipe'           => 'warning',
+                        'icon'           => 'bi-x-circle-fill',
+                        'link_url'       => "/order/{$id}",
+                        'created_by'     => $userId,
+                        'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Ketua Tim OPTI'
+                    ]);
+                }
+            } catch (\Exception $eNotif) {
+                // Ignore notification errors
+            }
 
             if ($hasil['keputusan'] === 'dapat_dilaksanakan') {
                 $this->setFlashSuccess("Tinjauan Kelayakan ISO berhasil disetujui! <strong>PIC Proposal</strong> telah ditugaskan untuk menyusun proposal teknis &amp; rancop.");
@@ -631,6 +686,23 @@ class OrderController extends Controller {
         try {
             $orderModel = new OrderLayanan($this->db);
             $orderModel->simpanProposalSelulosa($id, $data, $userId);
+            $order = $orderModel->getDetail($id);
+
+            // Kirim notifikasi ke Tim Mitra
+            try {
+                \NotificationService::send($this->db, [
+                    'order_id'       => $id,
+                    'target_role'    => 'admin_order',
+                    'target_layanan' => 'semua',
+                    'judul'          => 'Rancangan Anggaran Riset Disusun',
+                    'pesan'          => "Rancangan Percobaan & Anggaran Riset Order #{$order['nomor_order']} ({$order['nama_perusahaan']}) sebesar Rp " . number_format($totalBiayaAktif, 0, ',', '.') . " telah disusun. Siap diterbitkan Surat Penawaran.",
+                    'tipe'           => 'info',
+                    'icon'           => 'bi-cash-stack',
+                    'link_url'       => "/order/{$id}/penawaran/buat",
+                    'created_by'     => $userId,
+                    'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'PIC Peneliti'
+                ]);
+            } catch (\Exception $eNotif) {}
 
             if ($statusRancop === 'deal') {
                 $this->setFlashSuccess("Rancangan Percobaan (Rancop) Selulosa telah disetujui (Deal)! Anggaran Rp " . number_format($totalBiayaAktif, 0, ',', '.') . " siap dibuatkan Surat Penawaran Resmi.");
@@ -729,6 +801,39 @@ class OrderController extends Controller {
         try {
             $orderModel = new OrderLayanan($this->db);
             $hasil = $orderModel->simpanKalkulasiLingkungan($id, $items, $diskon, $tglSampel, $userId);
+            $order = $orderModel->getDetail($id);
+
+            // Kirim notifikasi ke Tim Mitra / Ka Tim
+            try {
+                $actionBtn = $post['action_btn'] ?? 'save_draft';
+                if ($actionBtn === 'kirim_katim') {
+                    \NotificationService::send($this->db, [
+                        'order_id'       => $id,
+                        'target_role'    => 'ketua_tim',
+                        'target_layanan' => 'lingkungan',
+                        'judul'          => 'Kalkulasi Pengujian Diajukan',
+                        'pesan'          => "PIC telah merampungkan kalkulasi pengujian Order #{$order['nomor_order']} ({$order['nama_perusahaan']}) dan menunggu pemeriksaan Anda.",
+                        'tipe'           => 'primary',
+                        'icon'           => 'bi-calculator-fill',
+                        'link_url'       => "/order/{$id}",
+                        'created_by'     => $userId,
+                        'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'PIC Analis'
+                    ]);
+                } else {
+                    \NotificationService::send($this->db, [
+                        'order_id'       => $id,
+                        'target_role'    => 'admin_order',
+                        'target_layanan' => 'semua',
+                        'judul'          => 'Kalkulasi Pengujian Lab Selesai',
+                        'pesan'          => "Rincian biaya pengujian Order #{$order['nomor_order']} ({$order['nama_perusahaan']}) sebesar Rp " . number_format($hasil['total_netto'], 0, ',', '.') . " siap dibuatkan penawaran resmi.",
+                        'tipe'           => 'info',
+                        'icon'           => 'bi-cash-stack',
+                        'link_url'       => "/order/{$id}/penawaran/buat",
+                        'created_by'     => $userId,
+                        'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'PIC Analis'
+                    ]);
+                }
+            } catch (\Exception $eNotif) {}
 
             $actionBtn = $post['action_btn'] ?? 'save_draft';
             if ($actionBtn === 'kirim_katim') {
@@ -761,6 +866,38 @@ class OrderController extends Controller {
         try {
             $orderModel = new OrderLayanan($this->db);
             $hasil = $orderModel->approve($id, $nomorPo, $biaya);
+            $order = $orderModel->getDetail($id);
+
+            // Kirim notifikasi ke Tim Kerja & Ka Tim
+            try {
+                \NotificationService::send($this->db, [
+                    'order_id'       => $id,
+                    'po_id'          => $hasil['po_id'] ?? null,
+                    'target_role'    => 'tim_kerja',
+                    'target_layanan' => $order['jenis_layanan_opti'] ?? 'semua',
+                    'judul'          => 'PO Resmi Aktif - Pengujian Lab Dimulai',
+                    'pesan'          => "Dokumen PO #{$hasil['nomor_po']} untuk Order #{$order['nomor_order']} ({$order['nama_perusahaan']}) resmi aktif! Pelaksanaan riset/pengujian dapat dimulai.",
+                    'tipe'           => 'success',
+                    'icon'           => 'bi-gear-wide-connected',
+                    'link_url'       => (!empty($hasil['po_id']) ? "/po/{$hasil['po_id']}" : "/po"),
+                    'created_by'     => $this->getUserId() ?? 1,
+                    'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Pimpinan Balai'
+                ]);
+
+                \NotificationService::send($this->db, [
+                    'order_id'       => $id,
+                    'po_id'          => $hasil['po_id'] ?? null,
+                    'target_role'    => 'ketua_tim',
+                    'target_layanan' => $order['jenis_layanan_opti'] ?? 'semua',
+                    'judul'          => 'PO Resmi Diterbitkan',
+                    'pesan'          => "PO #{$hasil['nomor_po']} untuk Order #{$order['nomor_order']} ({$order['nama_perusahaan']}) telah disetujui & diterbitkan.",
+                    'tipe'           => 'success',
+                    'icon'           => 'bi-patch-check-fill',
+                    'link_url'       => (!empty($hasil['po_id']) ? "/po/{$hasil['po_id']}" : "/po"),
+                    'created_by'     => $this->getUserId() ?? 1,
+                    'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Pimpinan Balai'
+                ]);
+            } catch (\Exception $eNotif) {}
 
             $this->setFlashSuccess(
                 "Order #{$id} disetujui! Dokumen PO berhasil diterbitkan dengan Nomor: <strong>{$hasil['nomor_po']}</strong>."

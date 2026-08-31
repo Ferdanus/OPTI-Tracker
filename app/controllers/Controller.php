@@ -154,6 +154,17 @@ class Controller {
         }
         $this->f3->set('jumlah_notif_surat', $notifSuratCount);
 
+        // Notifikasi Terintegrasi (Notification Service) untuk Bell Dropdown & Floating Bubble
+        try {
+            $userNotifList = \NotificationService::getUserNotifications($this->db, (int)$userId, $role, $layanan, 8);
+            $unreadNotifCount = \NotificationService::getUnreadCount($this->db, (int)$userId, $role, $layanan);
+        } catch (\Exception $eNotifSys) {
+            $userNotifList = [];
+            $unreadNotifCount = 0;
+        }
+        $this->f3->set('list_notifikasi_user', $userNotifList);
+        $this->f3->set('unread_notif_count', $unreadNotifCount);
+
         echo \Template::instance()->render('layout.html');
     }
 

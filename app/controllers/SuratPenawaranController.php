@@ -325,6 +325,24 @@ $daftarPegawai = $arsipUser->find(
             $spModel = new SuratPenawaran($this->db);
             $hasil = $spModel->buatDariOrder($orderId, $userId, $post);
 
+            // Notifikasi ke Ka Tim OPTI
+            try {
+                $orderModel = new \OrderLayanan($this->db);
+                $order = $orderModel->getDetail($orderId);
+                \NotificationService::send($this->db, [
+                    'order_id'       => $orderId,
+                    'target_role'    => 'ketua_tim',
+                    'target_layanan' => $order['jenis_layanan_opti'] ?? 'semua',
+                    'judul'          => 'Surat Penawaran Resmi Diterbitkan',
+                    'pesan'          => "Surat Penawaran No. {$hasil['nomor_surat']} senilai Rp " . number_format($hasil['nominal'], 0, ',', '.') . " telah dikirimkan ke {$order['nama_perusahaan']}.",
+                    'tipe'           => 'info',
+                    'icon'           => 'bi-send-check-fill',
+                    'link_url'       => "/order/{$orderId}",
+                    'created_by'     => $userId,
+                    'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Tim Kemitraan'
+                ]);
+            } catch (\Exception $eNotif) {}
+
             $this->setFlashSuccess(
                 "Surat Penawaran Resmi berhasil diterbitkan dengan Nomor: <strong>{$hasil['nomor_surat']}</strong> (Nominal: Rp " . number_format($hasil['nominal'], 0, ',', '.') . ")."
             );
@@ -368,7 +386,41 @@ $daftarPegawai = $arsipUser->find(
             $nominal = (float)($sp['nominal_penawaran'] ?? 0);
             $spModel->updateResponKlien((int)$sp['id'], $statusRespon, $catatanNego, $nominal);
 
+            $orderModel = new \OrderLayanan($this->db);
+            $order = $orderModel->getDetail($orderId);
+
+            // Jika status respon adalah DEAL, kirim notifikasi ke Pejabat & Ka Tim
             if ($statusRespon === 'deal') {
+                try {
+                    // Notif ke Kepala Balai / Pejabat PPK
+                    \NotificationService::send($this->db, [
+                        'order_id'       => $orderId,
+                        'target_role'    => 'pejabat',
+                        'target_layanan' => 'semua',
+                        'judul'          => 'Order DEAL - Menunggu Persetujuan PO',
+                        'pesan'          => "Klien ({$order['nama_perusahaan']}) telah menyetujui penawaran Order #{$order['nomor_order']}. Siap untuk penerbitan PO.",
+                        'tipe'           => 'success',
+                        'icon'           => 'bi-hand-thumbs-up-fill',
+                        'link_url'       => "/order/{$orderId}",
+                        'created_by'     => $this->getUserId() ?? 1,
+                        'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Tim Kemitraan'
+                    ]);
+
+                    // Notif ke Ka Tim OPTI
+                    \NotificationService::send($this->db, [
+                        'order_id'       => $orderId,
+                        'target_role'    => 'ketua_tim',
+                        'target_layanan' => $order['jenis_layanan_opti'] ?? 'semua',
+                        'judul'          => 'Penawaran Order DEAL',
+                        'pesan'          => "Klien ({$order['nama_perusahaan']}) telah sepakat dengan penawaran Order #{$order['nomor_order']}.",
+                        'tipe'           => 'success',
+                        'icon'           => 'bi-check-circle-fill',
+                        'link_url'       => "/order/{$orderId}",
+                        'created_by'     => $this->getUserId() ?? 1,
+                        'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Tim Kemitraan'
+                    ]);
+                } catch (\Exception $eNotif) {}
+
                 $this->setFlashSuccess("Klien menyetujui penawaran (<strong>DEAL</strong>). Order sekarang siap ditagihkan dan diproses ke penerbitan PO.");
             } else {
                 $this->setFlashSuccess("Status respon penawaran berhasil diperbarui menjadi: <strong>" . strtoupper($statusRespon) . "</strong>.");
