@@ -56,57 +56,58 @@
         <div>
             <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
                 <h4 class="fw-bold text-dark m-0 font-display">Penyusunan &amp; Upload Dokumen Proposal</h4>
-                <span class="badge {{ @order.jenis_layanan_opti == 'selulosa' ? 'bg-primary-subtle text-primary border border-primary-subtle' : 'bg-success-subtle text-success border border-success-subtle' }} px-2.5 py-1 text-uppercase fw-bold" style="font-size: 0.72rem;">
-                    OPTI {{ @order.jenis_layanan_opti }}
+                <span class="badge <?= ($order['jenis_layanan_opti'] == 'selulosa' ? 'bg-primary-subtle text-primary border border-primary-subtle' : 'bg-success-subtle text-success border border-success-subtle') ?> px-2.5 py-1 text-uppercase fw-bold" style="font-size: 0.72rem;">
+                    OPTI <?= ($order['jenis_layanan_opti'])."
+" ?>
                 </span>
                 
                 <!-- Status Proposal Badge -->
-                <check if="{{ @proposal && @proposal.status_proposal == 'disetujui_ketua' }}">
+                <?php if ($proposal && $proposal['status_proposal'] == 'disetujui_ketua'): ?>
                     <span class="badge badge-pill-success px-2.5 py-1">
                         <i class="bi bi-check-circle-fill me-1"></i> Disetujui Ka. Tim
                     </span>
-                </check>
-                <check if="{{ @proposal && @proposal.status_proposal == 'diajukan' }}">
+                <?php endif; ?>
+                <?php if ($proposal && $proposal['status_proposal'] == 'diajukan'): ?>
                     <span class="badge badge-pill-info px-2.5 py-1">
                         <i class="bi bi-clock-history me-1"></i> Menunggu Ka. Tim
                     </span>
-                </check>
-                <check if="{{ @proposal && @proposal.status_proposal == 'ditolak' }}">
+                <?php endif; ?>
+                <?php if ($proposal && $proposal['status_proposal'] == 'ditolak'): ?>
                     <span class="badge badge-pill-danger px-2.5 py-1">
                         <i class="bi bi-exclamation-diamond-fill me-1"></i> Perlu Revisi
                     </span>
-                </check>
-                <check if="{{ !@proposal || @proposal.status_proposal == 'draft' }}">
+                <?php endif; ?>
+                <?php if (!$proposal || $proposal['status_proposal'] == 'draft'): ?>
                     <span class="badge badge-pill-warning px-2.5 py-1">
                         <i class="bi bi-pencil-square me-1"></i> Draf PIC
                     </span>
-                </check>
+                <?php endif; ?>
             </div>
             <p class="text-secondary small mb-0">
-                Order <strong class="text-dark font-monospace">#{{ @order.nomor_order }}</strong> &bull; {{ @order.nama_perusahaan }} ({{ @order.pt_cv }}) &bull; <span class="fst-italic text-dark">{{ @order.judul_kegiatan }}</span>
+                Order <strong class="text-dark font-monospace">#<?= ($order['nomor_order']) ?></strong> &bull; <?= ($order['nama_perusahaan']) ?> (<?= ($order['pt_cv']) ?>) &bull; <span class="fst-italic text-dark"><?= ($order['judul_kegiatan']) ?></span>
             </p>
         </div>
 
         <div class="d-flex align-items-center gap-2">
-            <a href="{{ @BASE }}/proposal" class="btn btn-light btn-sm text-secondary px-3 py-1.5 fw-medium border">
+            <a href="<?= ($BASE) ?>/proposal" class="btn btn-light btn-sm text-secondary px-3 py-1.5 fw-medium border">
                 <i class="bi bi-journal-code me-1"></i> Daftar Proposal
             </a>
-            <a href="{{ @BASE }}/order/{{ @order.id }}" class="btn btn-light btn-sm text-secondary px-3 py-1.5 fw-medium border">
+            <a href="<?= ($BASE) ?>/order/<?= ($order['id']) ?>" class="btn btn-light btn-sm text-secondary px-3 py-1.5 fw-medium border">
                 <i class="bi bi-arrow-left me-1"></i> Detail Order
             </a>
         </div>
     </div>
 
     <!-- Alert Catatan Revisi jika ada -->
-    <check if="{{ @proposal && @proposal.status_proposal == 'ditolak' && @proposal.catatan_revisi }}">
+    <?php if ($proposal && $proposal['status_proposal'] == 'ditolak' && $proposal['catatan_revisi']): ?>
         <div class="alert alert-danger border-0 d-flex align-items-start gap-3 p-3 mb-4 rounded-3 shadow-xs">
             <i class="bi bi-exclamation-triangle-fill text-danger fs-5 flex-shrink-0 mt-0.5"></i>
             <div>
                 <strong class="text-danger d-block mb-1 font-display">Catatan Revisi dari Ketua Tim OPTI:</strong>
-                <p class="mb-0 small text-danger-emphasis">{{ @proposal.catatan_revisi }}</p>
+                <p class="mb-0 small text-danger-emphasis"><?= ($proposal['catatan_revisi']) ?></p>
             </div>
         </div>
-    </check>
+    <?php endif; ?>
 
     <div class="row g-4">
         <!-- Kolom Kiri: Informasi Permintaan & Surat Masuk (5 Kolom) -->
@@ -121,51 +122,51 @@
                         <div class="d-flex mb-2">
                             <span class="text-muted" style="width: 130px; flex-shrink: 0;">No. Order</span>
                             <span class="text-muted me-2">:</span>
-                            <strong class="text-dark font-monospace">{{ @order.nomor_order }}</strong>
+                            <strong class="text-dark font-monospace"><?= ($order['nomor_order']) ?></strong>
                         </div>
                         <div class="d-flex mb-2">
                             <span class="text-muted" style="width: 130px; flex-shrink: 0;">Nama Perusahaan</span>
                             <span class="text-muted me-2">:</span>
-                            <strong class="text-dark">{{ @order.nama_perusahaan }} ({{ @order.pt_cv }})</strong>
+                            <strong class="text-dark"><?= ($order['nama_perusahaan']) ?> (<?= ($order['pt_cv']) ?>)</strong>
                         </div>
                         <div class="d-flex mb-2">
                             <span class="text-muted" style="width: 130px; flex-shrink: 0;">PIC Klien</span>
                             <span class="text-muted me-2">:</span>
-                            <span class="text-dark">{{ @order.nama_pic ?: '-' }} <span class="text-muted small">({{ @order.kontak_pic ?: '-' }})</span></span>
+                            <span class="text-dark"><?= ($order['nama_pic'] ?: '-') ?> <span class="text-muted small">(<?= ($order['kontak_pic'] ?: '-') ?>)</span></span>
                         </div>
                         <div class="d-flex mb-2">
                             <span class="text-muted" style="width: 130px; flex-shrink: 0;">PIC Peneliti</span>
                             <span class="text-muted me-2">:</span>
                             <div>
-                                <strong class="text-primary font-display"><i class="bi bi-person-badge me-1"></i> {{ @order.pic_proposal_nama ?: (@proposal.pic_nama ?: 'Tim Pelaksana') }}</strong>
-                                <small class="d-block text-secondary">Spesialisasi {{ ucfirst(@order.jenis_layanan_opti) }}</small>
+                                <strong class="text-primary font-display"><i class="bi bi-person-badge me-1"></i> <?= ($order['pic_proposal_nama'] ?: ($proposal['pic_nama'] ?: 'Tim Pelaksana')) ?></strong>
+                                <small class="d-block text-secondary">Spesialisasi <?= (ucfirst($order['jenis_layanan_opti'])) ?></small>
                             </div>
                         </div>
                         <div class="d-flex mb-2">
                             <span class="text-muted" style="width: 130px; flex-shrink: 0;">Standar SPM</span>
                             <span class="text-muted me-2">:</span>
-                            <span class="badge bg-secondary-subtle text-secondary px-2 py-0.5 rounded-pill font-monospace fw-semibold">{{ @order.spm_layanan ?: '7 Hari Kerja' }}</span>
+                            <span class="badge bg-secondary-subtle text-secondary px-2 py-0.5 rounded-pill font-monospace fw-semibold"><?= ($order['spm_layanan'] ?: '7 Hari Kerja') ?></span>
                         </div>
                         <div class="d-flex">
                             <span class="text-muted" style="width: 130px; flex-shrink: 0;">Perihal Kegiatan</span>
                             <span class="text-muted me-2">:</span>
-                            <span class="text-dark fw-medium">{{ @order.judul_kegiatan }}</span>
+                            <span class="text-dark fw-medium"><?= ($order['judul_kegiatan']) ?></span>
                         </div>
                     </div>
 
                     <!-- Pratinjau Surat Permohonan jika ada -->
-                    <check if="{{ @surat_masuk }}">
+                    <?php if ($surat_masuk): ?>
                         <div class="pt-3 mt-3 border-top">
                             <button type="button" class="btn btn-outline-danger btn-sm w-100 fw-semibold d-flex align-items-center justify-content-center gap-1.5 shadow-xs" data-bs-toggle="modal" data-bs-target="#modalPreviewSuratMasukProposal">
                                 <i class="bi bi-file-earmark-text-fill text-danger fs-6"></i> Pratinjau Surat Permohonan Klien
                             </button>
                         </div>
-                    </check>
+                    <?php endif; ?>
                 </div>
             </div>
 
             <!-- Card 2: Hasil Kaji Ulang Kelayakan Teknis (ISO 17025) -->
-            <check if="{{ @tinjauan }}">
+            <?php if ($tinjauan): ?>
                 <div class="card border rounded-3 bg-white shadow-xs mb-4">
                     <div class="card-header bg-white py-3 px-3 px-md-4 border-bottom">
                         <h6 class="m-0 fw-bold text-dark font-display">Hasil Kaji Ulang Kelayakan (Ka. Tim)</h6>
@@ -178,11 +179,11 @@
                         </div>
                         <div class="small text-secondary">
                             <strong class="text-dark d-block mb-1">Catatan Evaluasi:</strong>
-                            <p class="mb-0 text-secondary fst-italic">{{ @tinjauan.catatan_kelayakan ?: 'Kapasitas laboratorium, instrumentasi pengujian, dan ketersediaan personil analis memenuhi standar.' }}</p>
+                            <p class="mb-0 text-secondary fst-italic"><?= ($tinjauan['catatan_kelayakan'] ?: 'Kapasitas laboratorium, instrumentasi pengujian, dan ketersediaan personil analis memenuhi standar.') ?></p>
                         </div>
                     </div>
                 </div>
-            </check>
+            <?php endif; ?>
         </div>
 
         <!-- Kolom Kanan: Formulir Penyusunan & Upload Dokumen Proposal (7 Kolom) -->
@@ -190,13 +191,13 @@
             <div class="card border rounded-3 bg-white shadow-xs mb-4">
                 <div class="card-header bg-white py-3 px-3 px-md-4 border-bottom d-flex justify-content-between align-items-center">
                     <h6 class="m-0 fw-bold text-dark font-display">Formulir &amp; Dokumen Proposal Teknis</h6>
-                    <check if="{{ !@can_edit }}">
+                    <?php if (!$can_edit): ?>
                         <span class="badge bg-light text-secondary border"><i class="bi bi-lock-fill me-1"></i> Mode Lihat Saja</span>
-                    </check>
+                    <?php endif; ?>
                 </div>
                 <div class="card-body p-4">
                     
-                    <form action="{{ @BASE }}/order/{{ @order.id }}/proposal/simpan" method="POST" enctype="multipart/form-data" id="formProposal">
+                    <form action="<?= ($BASE) ?>/order/<?= ($order['id']) ?>/proposal/simpan" method="POST" enctype="multipart/form-data" id="formProposal">
                         
                         <!-- 1. Judul Proposal -->
                         <div class="mb-4">
@@ -204,8 +205,8 @@
                                 Judul Proposal Teknis <span class="text-danger">*</span>
                             </label>
                             <input type="text" name="judul_proposal" class="form-control py-2 px-3" 
-                                   value="{{ @proposal.judul_proposal ?: @order.judul_kegiatan }}" 
-                                   placeholder="Judul proposal..." required {{ !@can_edit ? 'disabled' : '' }}>
+                                   value="<?= ($proposal['judul_proposal'] ?: $order['judul_kegiatan']) ?>" 
+                                   placeholder="Judul proposal..." required <?= (!$can_edit ? 'disabled' : '') ?>>
                         </div>
 
                         <!-- 2. Ruang Lingkup & Metodologi -->
@@ -214,7 +215,7 @@
                                 Ruang Lingkup &amp; Metodologi Pengujian / Riset
                             </label>
                             <textarea name="ruang_lingkup" class="form-control p-3" rows="5" 
-                                      placeholder="Uraian parameter uji, metodologi standar SNI/ISO/TAPPI, tahapan sampling, dan alur eksperimen..." {{ !@can_edit ? 'disabled' : '' }}>{{ @proposal.ruang_lingkup }}</textarea>
+                                      placeholder="Uraian parameter uji, metodologi standar SNI/ISO/TAPPI, tahapan sampling, dan alur eksperimen..." <?= (!$can_edit ? 'disabled' : '') ?>><?= ($proposal['ruang_lingkup']) ?></textarea>
                         </div>
 
                         <!-- 3. Durasi & Estimasi Biaya (RAB) -->
@@ -226,7 +227,7 @@
                                 <div class="input-group">
                                     <span class="input-group-text bg-light text-muted px-3" style="font-size: 0.84rem;"><i class="bi bi-calendar-event"></i></span>
                                     <input type="number" min="1" max="365" name="durasi_hari" class="form-control fw-semibold font-monospace py-2" style="font-size: 0.84rem;" 
-                                           value="{{ @durasi_hari ?: '30' }}" placeholder="30" required {{ !@can_edit ? 'disabled' : '' }}>
+                                           value="<?= ($durasi_hari ?: '30') ?>" placeholder="30" required <?= (!$can_edit ? 'disabled' : '') ?>>
                                     <span class="input-group-text bg-light text-secondary fw-semibold px-3" style="font-size: 0.8rem;">Hari Kerja</span>
                                 </div>
                             </div>
@@ -237,8 +238,8 @@
                                 <div class="input-group">
                                     <span class="input-group-text bg-light text-muted fw-semibold px-3" style="font-size: 0.84rem;">Rp</span>
                                     <input type="number" step="any" name="estimasi_total_biaya" class="form-control fw-bold text-primary font-monospace py-2" style="font-size: 0.84rem;" 
-                                           value="{{ @proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0) }}" 
-                                           placeholder="0" required {{ !@can_edit ? 'disabled' : '' }}>
+                                           value="<?= ($proposal['estimasi_total_biaya'] ?: ($order['estimasi_biaya'] ?: 0)) ?>" 
+                                           placeholder="0" required <?= (!$can_edit ? 'disabled' : '') ?>>
                                 </div>
                             </div>
                         </div>
@@ -251,7 +252,7 @@
                             </label>
 
                             <!-- Card Berkas / Dokumen Proposal Aktif -->
-                            <check if="{{ @proposal }}">
+                            <?php if ($proposal): ?>
                                 <div class="preview-card mb-3">
                                     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                                         <div class="d-flex align-items-center gap-3">
@@ -260,32 +261,33 @@
                                             </div>
                                             <div>
                                                 <strong class="text-dark d-block font-monospace" style="font-size: 0.88rem;">
-                                                    {{ @proposal.file_proposal ? basename(@proposal.file_proposal) : 'Proposal_Order_#' . @order.nomor_order . '.pdf' }}
+                                                    <?= ($proposal['file_proposal'] ? basename($proposal['file_proposal']) : 'Proposal_Order_#' . $order['nomor_order'] . '.pdf')."
+" ?>
                                                 </strong>
                                                 <div class="d-flex align-items-center gap-2 mt-0.5">
                                                     <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-0.5 rounded-pill" style="font-size: 0.68rem;">Tersimpan di Sistem</span>
-                                                    <span class="text-muted small" style="font-size: 0.72rem;">{{ @proposal.durasi_kegiatan ?: '30 Hari Kerja' }}</span>
+                                                    <span class="text-muted small" style="font-size: 0.72rem;"><?= ($proposal['durasi_kegiatan'] ?: '30 Hari Kerja') ?></span>
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="d-flex align-items-center gap-2">
                                             <!-- Tombol Modal Pratinjau In-App Bebas IDM -->
-                                            <button type="button" class="btn btn-outline-danger btn-sm px-3 py-1.5 fw-semibold shadow-xs" onclick="openProposalCanvasModal('{{ @BASE }}/order/{{ @order.id }}/proposal/pdf')">
+                                            <button type="button" class="btn btn-outline-danger btn-sm px-3 py-1.5 fw-semibold shadow-xs" onclick="openProposalCanvasModal('<?= ($BASE) ?>/order/<?= ($order['id']) ?>/proposal/pdf')">
                                                 <i class="bi bi-eye-fill me-1"></i> Pratinjau Dokumen
                                             </button>
                                             <!-- Tombol Download jika ada file fisik -->
-                                            <check if="{{ @proposal.file_proposal }}">
-                                                <a href="{{ @BASE }}/{{ @proposal.file_proposal }}" target="_blank" class="btn btn-light border btn-sm px-3 py-1.5 fw-semibold text-secondary" download>
+                                            <?php if ($proposal['file_proposal']): ?>
+                                                <a href="<?= ($BASE) ?>/<?= ($proposal['file_proposal']) ?>" target="_blank" class="btn btn-light border btn-sm px-3 py-1.5 fw-semibold text-secondary" download>
                                                     <i class="bi bi-download me-1"></i> Unduh
                                                 </a>
-                                            </check>
+                                            <?php endif; ?>
                                         </div>
                                     </div>
                                 </div>
-                            </check>
+                            <?php endif; ?>
 
                             <!-- Area Dropzone Besar & Interaktif -->
-                            <check if="{{ @can_edit }}">
+                            <?php if ($can_edit): ?>
                                 <div class="proposal-dropzone" id="dropzoneContainer" onclick="document.getElementById('file_proposal').click()">
                                     <div class="dropzone-icon">
                                         <i class="bi bi-cloud-arrow-up-fill fs-2"></i>
@@ -340,11 +342,11 @@
                                         </div>
                                     </div>
                                 </div>
-                            </check>
+                            <?php endif; ?>
                         </div>
 
                         <!-- 5. Tombol Aksi PIC -->
-                        <check if="{{ @can_edit }}">
+                        <?php if ($can_edit): ?>
                             <div class="d-flex justify-content-between align-items-center mt-4 flex-wrap gap-2">
                                 <button type="submit" name="action_type" value="draft" class="btn btn-light border px-3.5 py-2 fw-semibold text-secondary">
                                     <i class="bi bi-save me-1"></i> Simpan Draf
@@ -353,13 +355,13 @@
                                     <i class="bi bi-send-fill me-1"></i> Ajukan ke Ketua Tim OPTI
                                 </button>
                             </div>
-                        </check>
+                        <?php endif; ?>
                     </form>
                 </div>
             </div>
 
             <!-- 6. Panel Review & Persetujuan Ketua Tim OPTI -->
-            <check if="{{ @can_review }}">
+            <?php if ($can_review): ?>
                 <div class="card border rounded-3 bg-white shadow-xs mb-4" style="border-left: 4px solid var(--color-primary) !important;">
                     <div class="card-header bg-white py-3 px-3 px-md-4 border-bottom d-flex justify-content-between align-items-center">
                         <h6 class="m-0 fw-bold text-dark font-display d-flex align-items-center gap-2">
@@ -369,10 +371,10 @@
                         <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-0.5 small fw-semibold">Wewenang Ka. Tim</span>
                     </div>
                     <div class="card-body p-4">
-                        <form action="{{ @BASE }}/order/{{ @order.id }}/proposal/review-katim" method="POST">
+                        <form action="<?= ($BASE) ?>/order/<?= ($order['id']) ?>/proposal/review-katim" method="POST">
                             <div class="mb-4">
                                 <label class="form-label small fw-bold text-dark mb-2" style="font-size: 0.86rem;">Catatan Review / Catatan Revisi</label>
-                                <textarea name="catatan_revisi" class="form-control p-3" rows="3" placeholder="Masukkan catatan persetujuan atau catatan revisi...">{{ @proposal.catatan_revisi }}</textarea>
+                                <textarea name="catatan_revisi" class="form-control p-3" rows="3" placeholder="Masukkan catatan persetujuan atau catatan revisi..."><?= ($proposal['catatan_revisi']) ?></textarea>
                             </div>
                             
                             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2.5">
@@ -389,7 +391,7 @@
                         </form>
                     </div>
                 </div>
-            </check>
+            <?php endif; ?>
         </div>
     </div>
 </div>
@@ -397,7 +399,7 @@
 <!-- ========================================================= -->
 <!-- MODAL PRATINJAU DOKUMEN PROPOSAL (DUAL TAB VIEW)          -->
 <!-- ========================================================= -->
-<check if="{{ @proposal || @order }}">
+<?php if ($proposal || $order): ?>
     <div class="modal fade" id="modalPreviewDokumenProposal" tabindex="-1" aria-labelledby="modalPreviewDokumenProposalLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" style="max-width: 92vw;">
             <div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden" style="height: 90vh;">
@@ -410,7 +412,7 @@
                         </div>
                         <div>
                             <h6 class="modal-title fw-bold text-dark font-display mb-0" id="modalPreviewDokumenProposalLabel" style="font-size: 0.92rem;">Pratinjau Dokumen Proposal Teknis</h6>
-                            <small class="text-secondary font-monospace" style="font-size: 0.72rem;">Order #{{ @order.nomor_order }} &bull; {{ @order.nama_perusahaan }}</small>
+                            <small class="text-secondary font-monospace" style="font-size: 0.72rem;">Order #<?= ($order['nomor_order']) ?> &bull; <?= ($order['nama_perusahaan']) ?></small>
                         </div>
                     </div>
 
@@ -456,7 +458,8 @@
                                         PROPOSAL TEKNIS &amp; RANCANGAN ANGGARAN BIAYA (RAB)
                                     </h5>
                                     <span class="badge bg-secondary-subtle text-secondary px-3 py-1 rounded-pill fw-semibold font-monospace" style="font-size: 0.75rem;">
-                                        LAYANAN OPTI {{ strtoupper(@order.jenis_layanan_opti) }} &bull; NO. #{{ @order.nomor_order }}
+                                        LAYANAN OPTI <?= (strtoupper($order['jenis_layanan_opti'])) ?> &bull; NO. #<?= ($order['nomor_order'])."
+" ?>
                                     </span>
                                 </div>
 
@@ -466,15 +469,15 @@
                                     <div class="row g-2 small text-secondary" style="font-size: 0.84rem;">
                                         <div class="col-sm-6">
                                             <span class="text-muted d-block">Perusahaan Pemohon:</span>
-                                            <strong class="text-dark font-display">{{ @order.nama_perusahaan }} ({{ @order.pt_cv }})</strong>
+                                            <strong class="text-dark font-display"><?= ($order['nama_perusahaan']) ?> (<?= ($order['pt_cv']) ?>)</strong>
                                         </div>
                                         <div class="col-sm-6">
                                             <span class="text-muted d-block">PIC Peneliti Penyusun:</span>
-                                            <strong class="text-primary font-display"><i class="bi bi-person-badge me-1"></i> {{ @order.pic_proposal_nama ?: (@proposal.pic_nama ?: 'Tim Pelaksana OPTI BBSPJIS') }}</strong>
+                                            <strong class="text-primary font-display"><i class="bi bi-person-badge me-1"></i> <?= ($order['pic_proposal_nama'] ?: ($proposal['pic_nama'] ?: 'Tim Pelaksana OPTI BBSPJIS')) ?></strong>
                                         </div>
                                         <div class="col-sm-12 mt-2">
                                             <span class="text-muted d-block">Judul Proposal Teknis:</span>
-                                            <span class="text-dark fw-semibold">{{ @proposal.judul_proposal ?: @order.judul_kegiatan }}</span>
+                                            <span class="text-dark fw-semibold"><?= ($proposal['judul_proposal'] ?: $order['judul_kegiatan']) ?></span>
                                         </div>
                                     </div>
                                 </div>
@@ -483,7 +486,8 @@
                                 <div class="border rounded-3 p-3.5 mb-3.5 bg-light bg-opacity-40">
                                     <h6 class="fw-bold text-dark font-display border-bottom pb-2 mb-2.5" style="font-size: 0.88rem;">2. Ruang Lingkup &amp; Metodologi Pengujian / Riset</h6>
                                     <div class="text-secondary small" style="font-size: 0.84rem; line-height: 1.7; white-space: pre-line;">
-                                        {{ @proposal.ruang_lingkup ?: 'Pengujian parameter mutu, pengamatan karakteristik bahan baku, sampling lapangan, dan formulasi rekomendasi teknologi sesuai standar SNI/ISO/TAPPI terakreditasi ISO/IEC 17025 BBSPJIS.' }}
+                                        <?= ($proposal['ruang_lingkup'] ?: 'Pengujian parameter mutu, pengamatan karakteristik bahan baku, sampling lapangan, dan formulasi rekomendasi teknologi sesuai standar SNI/ISO/TAPPI terakreditasi ISO/IEC 17025 BBSPJIS.')."
+" ?>
                                     </div>
                                 </div>
 
@@ -494,14 +498,15 @@
                                         <div class="col-sm-6">
                                             <div class="p-3 bg-white rounded-3 border">
                                                 <small class="text-muted d-block mb-1">Estimasi Durasi:</small>
-                                                <strong class="text-dark font-monospace fs-6">{{ @proposal.durasi_kegiatan ?: '30 Hari Kerja' }}</strong>
+                                                <strong class="text-dark font-monospace fs-6"><?= ($proposal['durasi_kegiatan'] ?: '30 Hari Kerja') ?></strong>
                                             </div>
                                         </div>
                                         <div class="col-sm-6">
                                             <div class="p-3 bg-white rounded-3 border">
                                                 <small class="text-muted d-block mb-1">Estimasi Total Biaya (RAB):</small>
                                                 <strong class="text-primary font-monospace fs-5">
-                                                    Rp {{ number_format((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)), 0, ',', '.') }}
+                                                    Rp <?= (number_format((float)($proposal['estimasi_total_biaya'] ?: ($order['estimasi_biaya'] ?: 0)), 0, ',', '.'))."
+" ?>
                                                 </strong>
                                             </div>
                                         </div>
@@ -513,13 +518,13 @@
                                     <div class="col-6">
                                         <div>Penyusun Proposal (PIC Peneliti),</div>
                                         <div style="height: 55px;"></div>
-                                        <u class="fw-bold text-dark d-block">{{ @order.pic_proposal_nama ?: (@proposal.pic_nama ?: 'PIC Peneliti BBSPJIS') }}</u>
+                                        <u class="fw-bold text-dark d-block"><?= ($order['pic_proposal_nama'] ?: ($proposal['pic_nama'] ?: 'PIC Peneliti BBSPJIS')) ?></u>
                                         <small class="text-muted">BBSPJIS Kemenperin RI</small>
                                     </div>
                                     <div class="col-6">
                                         <div>Mengetahui &amp; Menyetujui,</div>
                                         <div style="height: 55px;"></div>
-                                        <u class="fw-bold text-dark d-block">Ketua Tim OPTI {{ ucfirst(@order.jenis_layanan_opti) }}</u>
+                                        <u class="fw-bold text-dark d-block">Ketua Tim OPTI <?= (ucfirst($order['jenis_layanan_opti'])) ?></u>
                                         <small class="text-muted">BBSPJIS Kemenperin RI</small>
                                     </div>
                                 </div>
@@ -572,12 +577,12 @@
             </div>
         </div>
     </div>
-</check>
+<?php endif; ?>
 
 <!-- ========================================== -->
 <!-- MODAL PRATINJAU LEMBAR SURAT MASUK RESMI -->
 <!-- ========================================== -->
-<check if="{{ @surat_masuk }}">
+<?php if ($surat_masuk): ?>
     <div class="modal fade" id="modalPreviewSuratMasukProposal" tabindex="-1" aria-labelledby="modalPreviewSuratMasukProposalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content border rounded-3 shadow-lg overflow-hidden">
@@ -588,7 +593,7 @@
                         </div>
                         <div>
                             <h6 class="modal-title fw-bold text-dark font-display mb-0" id="modalPreviewSuratMasukProposalLabel" style="font-size: 0.92rem;">Lembar Surat Permohonan Klien</h6>
-                            <small class="text-secondary font-monospace" style="font-size: 0.72rem;">{{ @surat_masuk.nomor_surat }} &bull; {{ @surat_masuk.instansi_pengirim }}</small>
+                            <small class="text-secondary font-monospace" style="font-size: 0.72rem;"><?= ($surat_masuk['nomor_surat']) ?> &bull; <?= ($surat_masuk['instansi_pengirim']) ?></small>
                         </div>
                     </div>
                     <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -596,17 +601,18 @@
                 <div class="modal-body p-4 bg-white">
                     <div class="border rounded-3 p-4 bg-white shadow-xs">
                         <div class="text-center border-bottom pb-3 mb-3">
-                            <h6 class="fw-bold text-dark text-uppercase mb-1" style="font-size: 0.95rem;">{{ @surat_masuk.instansi_pengirim }}</h6>
-                            <small class="text-muted">Nomor: {{ @surat_masuk.nomor_surat }} &bull; Tanggal: {{ date('d F Y', strtotime(@surat_masuk.tanggal_surat)) }}</small>
+                            <h6 class="fw-bold text-dark text-uppercase mb-1" style="font-size: 0.95rem;"><?= ($surat_masuk['instansi_pengirim']) ?></h6>
+                            <small class="text-muted">Nomor: <?= ($surat_masuk['nomor_surat']) ?> &bull; Tanggal: <?= (date('d F Y', strtotime($surat_masuk['tanggal_surat']))) ?></small>
                         </div>
                         <div class="mb-3">
                             <small class="text-muted d-block">Perihal:</small>
-                            <div class="fw-bold text-dark">{{ @surat_masuk.perihal }}</div>
+                            <div class="fw-bold text-dark"><?= ($surat_masuk['perihal']) ?></div>
                         </div>
                         <div class="mb-3">
                             <small class="text-muted d-block">Isi / Ringkasan Permohonan:</small>
                             <div class="p-3 bg-light rounded-3 text-secondary" style="font-size: 0.84rem; line-height: 1.6;">
-                                {{ @surat_masuk.ringkasan ?: @surat_masuk.perihal }}
+                                <?= ($surat_masuk['ringkasan'] ?: $surat_masuk['perihal'])."
+" ?>
                             </div>
                         </div>
                     </div>
@@ -617,7 +623,7 @@
             </div>
         </div>
     </div>
-</check>
+<?php endif; ?>
 
 <!-- JavaScript Drag-and-Drop, Live Preview & PDF.js Canvas Engine -->
 <script>

@@ -22,27 +22,6 @@
         </div>
     </div>
 
-    <!-- Alert / Flash Message -->
-    <?php if ($SESSION['flash_success']): ?>
-        <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
-            <div class="d-flex align-items-start gap-2">
-                <i class="bi bi-check-circle-fill text-success fs-5 mt-1"></i>
-                <div class="flex-grow-1">
-                    <?= ($this->raw($SESSION['flash_success']))."
-" ?>
-                </div>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        </div>
-    <?php endif; ?>
-    <?php if ($SESSION['flash_error']): ?>
-        <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i> <?= ($SESSION['flash_error'])."
-" ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    <?php endif; ?>
-
     <!-- KARTU TEMPLAT CEPAT PENGISIAN RESMI -->
     <div class="card border-0 shadow-sm mb-4" style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid var(--color-primary); border-radius: 8px;">
         <div class="card-body p-3">

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ @page_title ?: 'BBSPJIS' }}</title>
+    <title><?= ($page_title ?: 'BBSPJIS') ?></title>
 
     <!-- Google Fonts: Inter & Plus Jakarta Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -832,7 +832,7 @@
         </div>
     </div>
 
-    <check if="{{ @SESSION.user_id }}">
+    <?php if ($SESSION['user_id']): ?>
 
     <div class="app-shell">
 
@@ -858,76 +858,76 @@
                 
                 <!-- Surat Masuk (Admin Order, Tim Mitra, Sekretaris, Superadmin) -->
                 <li>
-                    <check if="{{ @is_superadmin || @is_admin_order || @is_sekretaris }}">
-                        <true>
-                            <a class="sidebar-link {{ @active_menu == 'surat_masuk' ? 'active' : '' }}" href="{{ @BASE }}/surat-masuk" title="Surat Masuk">
+                    <?php if ($is_superadmin || $is_admin_order || $is_sekretaris): ?>
+                        
+                            <a class="sidebar-link <?= ($active_menu == 'surat_masuk' ? 'active' : '') ?>" href="<?= ($BASE) ?>/surat-masuk" title="Surat Masuk">
                                 <i class="bi bi-envelope-paper"></i> <span>Surat Masuk</span>
-                                <check if="{{ @jumlah_notif_surat > 0 }}">
-                                    <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.68rem; padding: 0.25em 0.6em;">{{ @jumlah_notif_surat }}</span>
-                                </check>
+                                <?php if ($jumlah_notif_surat > 0): ?>
+                                    <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.68rem; padding: 0.25em 0.6em;"><?= ($jumlah_notif_surat) ?></span>
+                                <?php endif; ?>
                             </a>
-                        </true>
-                        <false>
+                        
+                        <?php else: ?>
                             <a class="sidebar-link sidebar-locked" href="javascript:void(0)" onclick="notifyLockedMenu(event, 'Surat Masuk', 'Tim Kemitraan (Admin Order) / Sekretariat')" title="Surat Masuk (Terkunci)">
                                 <i class="bi bi-envelope-paper"></i> <span>Surat Masuk</span>
                                 <i class="bi bi-lock-fill lock-indicator" title="Terkunci: Wewenang Tim Mitra / Sekretariat"></i>
                             </a>
-                        </false>
-                    </check>
+                        
+                    <?php endif; ?>
                 </li>
 
                 <!-- Permintaan Masuk (Ketua Tim, Superadmin) -->
                 <li>
-                    <check if="{{ @is_superadmin || @is_ketua_tim }}">
-                        <true>
-                            <a class="sidebar-link {{ @active_menu == 'disposisi_masuk' ? 'active' : '' }}" href="{{ @BASE }}/disposisi-masuk" title="Permintaan Masuk">
+                    <?php if ($is_superadmin || $is_ketua_tim): ?>
+                        
+                            <a class="sidebar-link <?= ($active_menu == 'disposisi_masuk' ? 'active' : '') ?>" href="<?= ($BASE) ?>/disposisi-masuk" title="Permintaan Masuk">
                                 <i class="bi bi-bell"></i> <span>Permintaan Masuk</span>
-                                <check if="{{ @jumlah_notif_katim > 0 }}">
-                                    <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.68rem; padding: 0.25em 0.6em;">{{ @jumlah_notif_katim }}</span>
-                                </check>
+                                <?php if ($jumlah_notif_katim > 0): ?>
+                                    <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.68rem; padding: 0.25em 0.6em;"><?= ($jumlah_notif_katim) ?></span>
+                                <?php endif; ?>
                             </a>
-                        </true>
-                        <false>
+                        
+                        <?php else: ?>
                             <a class="sidebar-link sidebar-locked" href="javascript:void(0)" onclick="notifyLockedMenu(event, 'Permintaan Masuk', 'Ketua Tim OPTI')" title="Permintaan Masuk (Terkunci)">
                                 <i class="bi bi-bell"></i> <span>Permintaan Masuk</span>
                                 <i class="bi bi-lock-fill lock-indicator" title="Terkunci: Wewenang Ketua Tim OPTI"></i>
                             </a>
-                        </false>
-                    </check>
+                        
+                    <?php endif; ?>
                 </li>
 
                 <!-- Daftar Order (Semua Role Teknis & Pelayanan) -->
                 <li>
-                    <check if="{{ @is_superadmin || @is_admin_order || @is_ketua_tim || @is_pejabat || @is_tim_kerja || @is_admin_kontrak }}">
-                        <true>
-                            <a class="sidebar-link {{ @active_menu == 'order' ? 'active' : '' }}" href="{{ @BASE }}/order" title="Daftar Semua Order">
+                    <?php if ($is_superadmin || $is_admin_order || $is_ketua_tim || $is_pejabat || $is_tim_kerja || $is_admin_kontrak): ?>
+                        
+                            <a class="sidebar-link <?= ($active_menu == 'order' ? 'active' : '') ?>" href="<?= ($BASE) ?>/order" title="Daftar Semua Order">
                                 <i class="bi bi-inbox"></i> <span>Daftar Order</span>
                             </a>
-                        </true>
-                        <false>
+                        
+                        <?php else: ?>
                             <a class="sidebar-link sidebar-locked" href="javascript:void(0)" onclick="notifyLockedMenu(event, 'Daftar Order', 'Tim Pelayanan OPTI')" title="Daftar Order (Terkunci)">
                                 <i class="bi bi-inbox"></i> <span>Daftar Order</span>
                                 <i class="bi bi-lock-fill lock-indicator" title="Terkunci: Wewenang Tim Pelayanan OPTI"></i>
                             </a>
-                        </false>
-                    </check>
+                        
+                    <?php endif; ?>
                 </li>
 
                 <!-- Surat Pelayanan (Admin Order, Tim Mitra, Ketua Tim, Pejabat, Superadmin) -->
                 <li>
-                    <check if="{{ @is_superadmin || @is_admin_order || @is_ketua_tim || @is_pejabat }}">
-                        <true>
-                            <a class="sidebar-link {{ @active_menu == 'surat-penawaran' ? 'active' : '' }}" href="{{ @BASE }}/surat-penawaran" title="Surat Pelayanan">
+                    <?php if ($is_superadmin || $is_admin_order || $is_ketua_tim || $is_pejabat): ?>
+                        
+                            <a class="sidebar-link <?= ($active_menu == 'surat-penawaran' ? 'active' : '') ?>" href="<?= ($BASE) ?>/surat-penawaran" title="Surat Pelayanan">
                                 <i class="bi bi-file-earmark-text"></i> <span>Surat Pelayanan</span>
                             </a>
-                        </true>
-                        <false>
+                        
+                        <?php else: ?>
                             <a class="sidebar-link sidebar-locked" href="javascript:void(0)" onclick="notifyLockedMenu(event, 'Surat Pelayanan', 'Tim Kemitraan (Admin Order) &amp; Pejabat')" title="Surat Pelayanan (Terkunci)">
                                 <i class="bi bi-file-earmark-text"></i> <span>Surat Pelayanan</span>
                                 <i class="bi bi-lock-fill lock-indicator" title="Terkunci: Wewenang Tim Kemitraan &amp; Pejabat"></i>
                             </a>
-                        </false>
-                    </check>
+                        
+                    <?php endif; ?>
                 </li>
 
                 <!-- 2. PELAKSANAAN TEKNIS -->
@@ -935,38 +935,53 @@
                 
                 <!-- Tugas Proposal Teknis (Tim Kerja / PIC Peneliti, Ketua Tim, Pejabat, Superadmin) -->
                 <li>
-                    <check if="{{ @is_superadmin || @is_ketua_tim || @is_tim_kerja || @is_pejabat }}">
-                        <true>
-                            <a class="sidebar-link {{ @active_menu == 'proposal' ? 'active' : '' }}" href="{{ @BASE }}/proposal" title="Tugas Proposal Teknis">
+                    <?php if ($is_superadmin || $is_ketua_tim || $is_tim_kerja || $is_pejabat): ?>
+                        
+                            <a class="sidebar-link <?= ($active_menu == 'proposal' ? 'active' : '') ?>" href="<?= ($BASE) ?>/proposal" title="Tugas Proposal Teknis">
                                 <i class="bi bi-journal-code"></i> <span>Tugas Proposal</span>
                             </a>
-                        </true>
-                        <false>
+                        
+                        <?php else: ?>
                             <a class="sidebar-link sidebar-locked" href="javascript:void(0)" onclick="notifyLockedMenu(event, 'Tugas Proposal', 'Tim Kerja / PIC Peneliti &amp; Ketua Tim')" title="Tugas Proposal (Terkunci)">
                                 <i class="bi bi-journal-code"></i> <span>Tugas Proposal</span>
                                 <i class="bi bi-lock-fill lock-indicator" title="Terkunci: Wewenang PIC Peneliti &amp; Ka Tim"></i>
                             </a>
-                        </false>
-                    </check>
+                        
+                    <?php endif; ?>
                 </li>
 
-                <!-- Petunjuk Operasional (PO) - Disembunyikan sementara untuk fokus fase proposal pre-kontrak -->
+                <!-- Petunjuk Operasional (PO) (Ketua Tim, Tim Kerja, Pejabat, Admin Kontrak, Superadmin) -->
+                <li>
+                    <?php if ($is_superadmin || $is_ketua_tim || $is_pejabat || $is_tim_kerja || $is_admin_kontrak): ?>
+                        
+                            <a class="sidebar-link <?= ($active_menu == 'po' ? 'active' : '') ?>" href="<?= ($BASE) ?>/po" title="Petunjuk Operasional (PO)">
+                                <i class="bi bi-speedometer2"></i> <span>Petunjuk Operasional (PO)</span>
+                            </a>
+                        
+                        <?php else: ?>
+                            <a class="sidebar-link sidebar-locked" href="javascript:void(0)" onclick="notifyLockedMenu(event, 'Petunjuk Operasional (PO)', 'Ketua Tim, Tim Kerja &amp; Pejabat')" title="PO (Terkunci)">
+                                <i class="bi bi-speedometer2"></i> <span>Petunjuk Operasional (PO)</span>
+                                <i class="bi bi-lock-fill lock-indicator" title="Terkunci: Wewenang Tim Teknis"></i>
+                            </a>
+                        
+                    <?php endif; ?>
+                </li>
 
                 <!-- Kontrak / PKS (Admin Order, Admin Kontrak, Pejabat, Superadmin) -->
                 <li>
-                    <check if="{{ @is_superadmin || @is_admin_order || @is_pejabat || @is_admin_kontrak }}">
-                        <true>
-                            <a class="sidebar-link {{ @active_menu == 'kontrak' ? 'active' : '' }}" href="{{ @BASE }}/kontrak" title="Kontrak / PKS">
+                    <?php if ($is_superadmin || $is_admin_order || $is_pejabat || $is_admin_kontrak): ?>
+                        
+                            <a class="sidebar-link <?= ($active_menu == 'kontrak' ? 'active' : '') ?>" href="<?= ($BASE) ?>/kontrak" title="Kontrak / PKS">
                                 <i class="bi bi-file-earmark-ruled"></i> <span>Kontrak / PKS</span>
                             </a>
-                        </true>
-                        <false>
+                        
+                        <?php else: ?>
                             <a class="sidebar-link sidebar-locked" href="javascript:void(0)" onclick="notifyLockedMenu(event, 'Kontrak / PKS', 'Tim Kemitraan &amp; Pejabat (PPK/Kepala Balai)')" title="Kontrak / PKS (Terkunci)">
                                 <i class="bi bi-file-earmark-ruled"></i> <span>Kontrak / PKS</span>
                                 <i class="bi bi-lock-fill lock-indicator" title="Terkunci: Wewenang Tim Kemitraan &amp; PPK"></i>
                             </a>
-                        </false>
-                    </check>
+                        
+                    <?php endif; ?>
                 </li>
 
                 <!-- 3. KEUANGAN & PENAGIHAN -->
@@ -974,19 +989,19 @@
                 
                 <!-- Pembayaran PNBP (Admin Order, Admin Kontrak, Pejabat, Superadmin) -->
                 <li>
-                    <check if="{{ @is_superadmin || @is_admin_order || @is_pejabat || @is_admin_kontrak }}">
-                        <true>
-                            <a class="sidebar-link {{ @active_menu == 'pembayaran' || @active_menu == 'invoice' ? 'active' : '' }}" href="{{ @BASE }}/pembayaran" title="Pembayaran &amp; Billing PNBP">
+                    <?php if ($is_superadmin || $is_admin_order || $is_pejabat || $is_admin_kontrak): ?>
+                        
+                            <a class="sidebar-link <?= ($active_menu == 'pembayaran' || $active_menu == 'invoice' ? 'active' : '') ?>" href="<?= ($BASE) ?>/pembayaran" title="Pembayaran &amp; Billing PNBP">
                                 <i class="bi bi-cash-stack"></i> <span>Pembayaran PNBP</span>
                             </a>
-                        </true>
-                        <false>
+                        
+                        <?php else: ?>
                             <a class="sidebar-link sidebar-locked" href="javascript:void(0)" onclick="notifyLockedMenu(event, 'Pembayaran PNBP', 'Tim Kemitraan &amp; Pejabat')" title="Pembayaran PNBP (Terkunci)">
                                 <i class="bi bi-cash-stack"></i> <span>Pembayaran PNBP</span>
                                 <i class="bi bi-lock-fill lock-indicator" title="Terkunci: Wewenang Tim Kemitraan"></i>
                             </a>
-                        </false>
-                    </check>
+                        
+                    <?php endif; ?>
                 </li>
 
                 <!-- 4. PERSURATAN -->
@@ -994,25 +1009,25 @@
                 
                 <!-- Registrasi Surat Masuk (Sekretariat, Superadmin) -->
                 <li>
-                    <check if="{{ @is_superadmin || @is_sekretaris }}">
-                        <true>
-                            <a class="sidebar-link {{ @active_menu == 'simulasi_sekretariat' ? 'active' : '' }}" href="{{ @BASE }}/simulasi-sekretariat" title="Registrasi Surat Masuk">
+                    <?php if ($is_superadmin || $is_sekretaris): ?>
+                        
+                            <a class="sidebar-link <?= ($active_menu == 'simulasi_sekretariat' ? 'active' : '') ?>" href="<?= ($BASE) ?>/simulasi-sekretariat" title="Registrasi Surat Masuk">
                                 <i class="bi bi-journal-plus"></i> <span>Registrasi Surat Masuk</span>
                             </a>
-                        </true>
-                        <false>
+                        
+                        <?php else: ?>
                             <a class="sidebar-link sidebar-locked" href="javascript:void(0)" onclick="notifyLockedMenu(event, 'Registrasi Surat Masuk', 'Sekretariat Balai')" title="Registrasi Surat Masuk (Terkunci)">
                                 <i class="bi bi-journal-plus"></i> <span>Registrasi Surat Masuk</span>
                                 <i class="bi bi-lock-fill lock-indicator" title="Terkunci: Wewenang Sekretariat Balai"></i>
                             </a>
-                        </false>
-                    </check>
+                        
+                    <?php endif; ?>
                 </li>
 
                 <!-- 5. AKUN & PROFIL -->
                 <li class="sidebar-section-label">Akun</li>
                 <li>
-                    <a class="sidebar-link {{ @active_menu == 'profil' ? 'active' : '' }}" href="{{ @BASE }}/profil" title="Profil Pengguna">
+                    <a class="sidebar-link <?= ($active_menu == 'profil' ? 'active' : '') ?>" href="<?= ($BASE) ?>/profil" title="Profil Pengguna">
                         <i class="bi bi-person-gear"></i> <span>Profil Pengguna</span>
                     </a>
                 </li>
@@ -1032,10 +1047,10 @@
                 </button>
 
                 <div class="flex-grow-1">
-                    <p class="topbar-title">{{ @page_title ?: 'Dashboard' }}</p>
-                    <check if="{{ @page_subtitle }}">
-                        <p class="topbar-subtitle">{{ @page_subtitle }}</p>
-                    </check>
+                    <p class="topbar-title"><?= ($page_title ?: 'Dashboard') ?></p>
+                    <?php if ($page_subtitle): ?>
+                        <p class="topbar-subtitle"><?= ($page_subtitle) ?></p>
+                    <?php endif; ?>
                 </div>
 
                 <!-- Topbar Right Actions (Bell Notifikasi & Profile) -->
@@ -1045,52 +1060,53 @@
                     <div class="dropdown" id="notificationDropdownContainer">
                         <button class="topbar-notif-btn" type="button" id="notifBellBtn" data-bs-toggle="dropdown" aria-expanded="false" title="Pusat Pemberitahuan">
                             <i class="bi bi-bell fs-5"></i>
-                            <check if="{{ @unread_notif_count > 0 }}">
+                            <?php if ($unread_notif_count > 0): ?>
                                 <span class="notif-badge-pill" id="notifBadgeCount">
-                                    {{ @unread_notif_count > 99 ? '99+' : @unread_notif_count }}
+                                    <?= ($unread_notif_count > 99 ? '99+' : $unread_notif_count)."
+" ?>
                                 </span>
-                            </check>
+                            <?php endif; ?>
                         </button>
                         <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-2 p-0 rounded-4" aria-labelledby="notifBellBtn" style="width: 370px; max-width: 92vw; border-radius: 14px; overflow: hidden; box-shadow: 0 12px 36px -4px rgba(15,23,42,0.18);" id="notifDropdownMenu">
                             <div class="px-3 py-2.5 bg-white border-bottom d-flex justify-content-between align-items-center">
                                 <div class="d-flex align-items-center gap-2">
                                     <span class="fw-bold text-dark font-display" style="font-size: 0.88rem;">Pemberitahuan</span>
-                                    <check if="{{ @unread_notif_count > 0 }}">
-                                        <span class="badge bg-danger-subtle text-danger rounded-pill px-2 py-0.5 font-monospace" style="font-size: 0.65rem;">{{ @unread_notif_count }} Baru</span>
-                                    </check>
+                                    <?php if ($unread_notif_count > 0): ?>
+                                        <span class="badge bg-danger-subtle text-danger rounded-pill px-2 py-0.5 font-monospace" style="font-size: 0.65rem;"><?= ($unread_notif_count) ?> Baru</span>
+                                    <?php endif; ?>
                                 </div>
-                                <check if="{{ @unread_notif_count > 0 }}">
+                                <?php if ($unread_notif_count > 0): ?>
                                     <button class="btn btn-link btn-sm text-decoration-none p-0 text-primary fw-semibold" style="font-size: 0.72rem;" onclick="window.markAllNotifRead()">
                                         <i class="bi bi-check2-all me-0.5"></i> Tandai Dibaca
                                     </button>
-                                </check>
+                                <?php endif; ?>
                             </div>
                             <div class="list-group list-group-flush" style="max-height: 360px; overflow-y: auto;" id="notifListContainer">
-                                <check if="{{ @list_notifikasi_user && count(@list_notifikasi_user) > 0 }}">
-                                    <repeat group="{{ @list_notifikasi_user }}" value="{{ @n }}">
-                                        <a href="{{ @BASE }}{{ @n.link_url }}" onclick="window.markNotifRead({{ @n.id }}, '{{ @BASE }}{{ @n.link_url }}')" class="list-group-item list-group-item-action px-3 py-2.5 {{ @n.is_read ? 'bg-white' : 'bg-light bg-opacity-40' }} border-bottom d-flex gap-2.5 align-items-start text-decoration-none transition-all">
-                                            <div class="rounded-circle p-2 d-flex align-items-center justify-content-center flex-shrink-0 {{ @n.tipe == 'success' ? 'bg-success-subtle text-success' : (@n.tipe == 'warning' ? 'bg-warning-subtle text-warning' : (@n.tipe == 'primary' ? 'bg-primary-subtle text-primary' : 'bg-info-subtle text-info')) }}" style="width: 34px; height: 34px;">
-                                                <i class="bi {{ @n.icon ?: 'bi-bell-fill' }}" style="font-size: 0.9rem;"></i>
+                                <?php if ($list_notifikasi_user && count($list_notifikasi_user) > 0): ?>
+                                    <?php foreach (($list_notifikasi_user?:[]) as $n): ?>
+                                        <a href="<?= ($BASE) ?><?= ($n['link_url']) ?>" onclick="window.markNotifRead(<?= ($n['id']) ?>, '<?= ($BASE) ?><?= ($n['link_url']) ?>')" class="list-group-item list-group-item-action px-3 py-2.5 <?= ($n['is_read'] ? 'bg-white' : 'bg-light bg-opacity-40') ?> border-bottom d-flex gap-2.5 align-items-start text-decoration-none transition-all">
+                                            <div class="rounded-circle p-2 d-flex align-items-center justify-content-center flex-shrink-0 <?= ($n['tipe'] == 'success' ? 'bg-success-subtle text-success' : ($n['tipe'] == 'warning' ? 'bg-warning-subtle text-warning' : ($n['tipe'] == 'primary' ? 'bg-primary-subtle text-primary' : 'bg-info-subtle text-info'))) ?>" style="width: 34px; height: 34px;">
+                                                <i class="bi <?= ($n['icon'] ?: 'bi-bell-fill') ?>" style="font-size: 0.9rem;"></i>
                                             </div>
                                             <div class="flex-grow-1 overflow-hidden">
                                                 <div class="d-flex justify-content-between align-items-center mb-0.5">
-                                                    <span class="fw-bold text-dark d-block text-truncate" style="font-size: 0.8rem;">{{ @n.judul }}</span>
-                                                    <small class="text-muted text-nowrap ms-2" style="font-size: 0.65rem;">{{ @n.time_ago }}</small>
+                                                    <span class="fw-bold text-dark d-block text-truncate" style="font-size: 0.8rem;"><?= ($n['judul']) ?></span>
+                                                    <small class="text-muted text-nowrap ms-2" style="font-size: 0.65rem;"><?= ($n['time_ago']) ?></small>
                                                 </div>
-                                                <p class="text-secondary small mb-0 text-truncate-2" style="font-size: 0.72rem; line-height: 1.25;">{{ @n.pesan }}</p>
+                                                <p class="text-secondary small mb-0 text-truncate-2" style="font-size: 0.72rem; line-height: 1.25;"><?= ($n['pesan']) ?></p>
                                             </div>
                                         </a>
-                                    </repeat>
-                                </check>
-                                <check if="{{ !@list_notifikasi_user || count(@list_notifikasi_user) == 0 }}">
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                                <?php if (!$list_notifikasi_user || count($list_notifikasi_user) == 0): ?>
                                     <div class="text-center py-4 text-muted">
                                         <i class="bi bi-bell-slash fs-3 d-block mb-1 opacity-40"></i>
                                         <small class="text-muted">Tidak ada pemberitahuan baru</small>
                                     </div>
-                                </check>
+                                <?php endif; ?>
                             </div>
                             <div class="px-3 py-2 text-center bg-light border-top">
-                                <a href="{{ @BASE }}/notifikasi" class="text-decoration-none small text-primary fw-semibold d-inline-flex align-items-center gap-1" style="font-size: 0.75rem;">
+                                <a href="<?= ($BASE) ?>/notifikasi" class="text-decoration-none small text-primary fw-semibold d-inline-flex align-items-center gap-1" style="font-size: 0.75rem;">
                                     Lihat Seluruh Riwayat <i class="bi bi-arrow-right"></i>
                                 </a>
                             </div>
@@ -1101,71 +1117,72 @@
                     <div class="dropdown">
                         <a class="topbar-user-btn dropdown-toggle" href="#" role="button" id="userMenuTop" data-bs-toggle="dropdown" aria-expanded="false">
                             <div class="user-avatar">
-                                {~ $initials = implode('', array_map(function($w) { return strtoupper($w[0] ?? ''); }, explode(' ', $_SESSION['nama_lengkap'] ?? 'U'))) ~}
-                                {{ substr($initials, 0, 2) }}
+                                <?php $initials = implode('', array_map(function($w) { return strtoupper($w[0] ?? ''); }, explode(' ', $_SESSION['nama_lengkap'] ?? 'U'))) ?>
+                                <?= (substr($initials, 0, 2))."
+" ?>
                             </div>
                             <div class="text-start d-none d-sm-block" style="line-height: 1.15;">
-                                <div class="fw-bold text-dark small">{{ htmlspecialchars(@SESSION.nama_lengkap ?? 'User') }}</div>
+                                <div class="fw-bold text-dark small"><?= (htmlspecialchars($SESSION['nama_lengkap'] ?? 'User')) ?></div>
                                 <div class="text-muted" style="font-size: 0.675rem;">
-                                    <check if="{{ @SESSION.role == 'superadmin' }}">Super Admin</check>
-                                    <check if="{{ @SESSION.role == 'admin_order' }}">Admin Order</check>
-                                    <check if="{{ @SESSION.role == 'ketua_tim' }}">Ketua Tim {{ @SESSION.jenis_layanan_opti == 'selulosa' ? 'Selulosa' : (@SESSION.jenis_layanan_opti == 'lingkungan' ? 'Lingkungan' : 'OPTI') }}</check>
-                                    <check if="{{ @SESSION.role == 'pejabat' }}">Kepala Balai/PPK</check>
-                                    <check if="{{ @SESSION.role == 'tim_kerja' }}">Tim Analis</check>
-                                    <check if="{{ @SESSION.role == 'admin_kontrak' }}">Admin PKS</check>
+                                    <?php if ($SESSION['role'] == 'superadmin'): ?>Super Admin<?php endif; ?>
+                                    <?php if ($SESSION['role'] == 'admin_order'): ?>Admin Order<?php endif; ?>
+                                    <?php if ($SESSION['role'] == 'ketua_tim'): ?>Ketua Tim <?= ($SESSION['jenis_layanan_opti'] == 'selulosa' ? 'Selulosa' : ($SESSION['jenis_layanan_opti'] == 'lingkungan' ? 'Lingkungan' : 'OPTI')) ?><?php endif; ?>
+                                    <?php if ($SESSION['role'] == 'pejabat'): ?>Kepala Balai/PPK<?php endif; ?>
+                                    <?php if ($SESSION['role'] == 'tim_kerja'): ?>Tim Analis<?php endif; ?>
+                                    <?php if ($SESSION['role'] == 'admin_kontrak'): ?>Admin PKS<?php endif; ?>
                                 </div>
                             </div>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2 py-2" aria-labelledby="userMenuTop" style="min-width: 260px; border-radius: var(--radius-md);">
                             <li class="px-3 py-2 border-bottom mb-1">
-                                <div class="fw-bold text-dark">{{ htmlspecialchars(@SESSION.nama_lengkap ?? 'User') }}</div>
-                                <div class="text-muted small">@{{ @SESSION.login ?? @SESSION.username }} &bull; <span class="badge bg-light text-dark border">{{ strtoupper(@SESSION.role ?? 'USER') }}</span></div>
+                                <div class="fw-bold text-dark"><?= (htmlspecialchars($SESSION['nama_lengkap'] ?? 'User')) ?></div>
+                                <div class="text-muted small">@<?= ($SESSION['login'] ?? $SESSION['username']) ?> &bull; <span class="badge bg-light text-dark border"><?= (strtoupper($SESSION['role'] ?? 'USER')) ?></span></div>
                             </li>
                             <li class="px-3 py-1 text-uppercase fw-bold text-muted" style="font-size: 0.65rem; letter-spacing: 0.5px;">Ganti Peran (1-Klik):</li>
                             <li>
-                                <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2 {{ @SESSION.role == 'superadmin' ? 'active' : '' }}" href="{{ @BASE }}/login/switch/9006">
+                                <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2 <?= ($SESSION['role'] == 'superadmin' ? 'active' : '') ?>" href="<?= ($BASE) ?>/login/switch/9006">
                                     <i class="bi bi-person-circle text-secondary"></i> Superadmin
                                 </a>
                             </li>
                             <li>
-                                <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2 {{ @SESSION.role == 'admin_order' ? 'active' : '' }}" href="{{ @BASE }}/login/switch/36">
+                                <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2 <?= ($SESSION['role'] == 'admin_order' ? 'active' : '') ?>" href="<?= ($BASE) ?>/login/switch/36">
                                     <i class="bi bi-person-circle text-secondary"></i> Tim Kemitraan
                                 </a>
                             </li>
                             <li>
-                                <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2 {{ @SESSION.role == 'ketua_tim' && @SESSION.jenis_layanan_opti == 'selulosa' ? 'active' : '' }}" href="{{ @BASE }}/login/switch/3">
+                                <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2 <?= ($SESSION['role'] == 'ketua_tim' && $SESSION['jenis_layanan_opti'] == 'selulosa' ? 'active' : '') ?>" href="<?= ($BASE) ?>/login/switch/3">
                                     <i class="bi bi-person-circle text-secondary"></i> Ka. Tim Selulosa
                                 </a>
                             </li>
                             <li>
-                                <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2 {{ @SESSION.role == 'ketua_tim' && @SESSION.jenis_layanan_opti == 'lingkungan' ? 'active' : '' }}" href="{{ @BASE }}/login/switch/61">
+                                <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2 <?= ($SESSION['role'] == 'ketua_tim' && $SESSION['jenis_layanan_opti'] == 'lingkungan' ? 'active' : '') ?>" href="<?= ($BASE) ?>/login/switch/61">
                                     <i class="bi bi-person-circle text-secondary"></i> Ka. Tim Lingkungan
                                 </a>
                             </li>
                             <li>
-                                <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2 {{ @SESSION.role == 'pejabat' ? 'active' : '' }}" href="{{ @BASE }}/login/switch/175">
+                                <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2 <?= ($SESSION['role'] == 'pejabat' ? 'active' : '') ?>" href="<?= ($BASE) ?>/login/switch/175">
                                     <i class="bi bi-person-circle text-secondary"></i> Kepala Balai / Pejabat
                                 </a>
                             </li>
                             <li>
-                                <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2 {{ @SESSION.role == 'tim_kerja' ? 'active' : '' }}" href="{{ @BASE }}/login/switch/12">
+                                <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2 <?= ($SESSION['role'] == 'tim_kerja' ? 'active' : '') ?>" href="<?= ($BASE) ?>/login/switch/12">
                                     <i class="bi bi-person-circle text-secondary"></i> Tim Kerja / Peneliti
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider my-1"></li>
                             <li>
-                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ @BASE }}/profil">
+                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="<?= ($BASE) ?>/profil">
                                     <i class="bi bi-person-gear text-primary"></i> Profil Pengguna
                                 </a>
                             </li>
                             <li>
-                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ @BASE }}/config">
+                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="<?= ($BASE) ?>/config">
                                     <i class="bi bi-sliders text-primary"></i> Pengaturan Konfigurasi
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider my-1"></li>
                             <li>
-                                <a class="dropdown-item py-2 text-danger d-flex align-items-center gap-2" href="{{ @BASE }}/logout">
+                                <a class="dropdown-item py-2 text-danger d-flex align-items-center gap-2" href="<?= ($BASE) ?>/logout">
                                     <i class="bi bi-box-arrow-right"></i> Keluar Sistem
                                 </a>
                             </li>
@@ -1178,44 +1195,26 @@
             <main class="main-container">
                 <div class="container-fluid px-0">
                     <!-- Flash Messages -->
-                    <check if="{{ @SESSION.flash_success }}">
+                    <?php if ($SESSION['flash_success']): ?>
                         <div class="alert alert-success d-flex align-items-center gap-2 border-0 shadow-sm rounded-3 mb-4" role="alert">
                             <i class="bi bi-check-circle-fill text-success fs-5"></i>
-                            <div>{{ @SESSION.flash_success | raw }}</div>
+                            <div><?= ($this->raw($SESSION['flash_success'])) ?></div>
                             <button type="button" class="btn-close ms-auto shadow-none" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>
-                        {~ unset($_SESSION['flash_success']) ~}
-                    </check>
+                        <?php unset($_SESSION['flash_success']) ?>
+                    <?php endif; ?>
 
-                    <check if="{{ @SESSION.flash_warning }}">
-                        <div class="alert alert-warning d-flex align-items-center gap-2 border-0 shadow-sm rounded-3 mb-4" role="alert">
-                            <i class="bi bi-exclamation-triangle-fill text-warning fs-5"></i>
-                            <div>{{ @SESSION.flash_warning | raw }}</div>
-                            <button type="button" class="btn-close ms-auto shadow-none" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                        {~ unset($_SESSION['flash_warning']) ~}
-                    </check>
-
-                    <check if="{{ @SESSION.flash_info }}">
-                        <div class="alert alert-info d-flex align-items-center gap-2 border-0 shadow-sm rounded-3 mb-4" role="alert">
-                            <i class="bi bi-info-circle-fill text-info fs-5"></i>
-                            <div>{{ @SESSION.flash_info | raw }}</div>
-                            <button type="button" class="btn-close ms-auto shadow-none" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                        {~ unset($_SESSION['flash_info']) ~}
-                    </check>
-
-                    <check if="{{ @SESSION.flash_error }}">
+                    <?php if ($SESSION['flash_error']): ?>
                         <div class="alert alert-danger d-flex align-items-center gap-2 border-0 shadow-sm rounded-3 mb-4" role="alert">
                             <i class="bi bi-exclamation-triangle-fill text-danger fs-5"></i>
-                            <div>{{ @SESSION.flash_error | raw }}</div>
+                            <div><?= ($this->raw($SESSION['flash_error'])) ?></div>
                             <button type="button" class="btn-close ms-auto shadow-none" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>
-                        {~ unset($_SESSION['flash_error']) ~}
-                    </check>
+                        <?php unset($_SESSION['flash_error']) ?>
+                    <?php endif; ?>
 
                     <!-- Template View Injected Here -->
-                    <include href="{{ @content }}" />
+                    <?php echo $this->render($content,NULL,get_defined_vars(),0); ?>
                 </div>
             </main>
 
@@ -1241,7 +1240,7 @@
         </div>
     </div>
 
-    </check>
+    <?php endif; ?>
 
     <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -1353,7 +1352,7 @@
                 e.preventDefault();
                 e.stopPropagation();
             }
-            var userRoleName = "{{ @SESSION.role == 'superadmin' ? 'Super Admin' : (@SESSION.role == 'admin_order' || @SESSION.role == 'tim_mitra' ? 'Tim Kemitraan (Admin Order)' : (@SESSION.role == 'ketua_tim' ? 'Ketua Tim OPTI' : (@SESSION.role == 'pejabat' ? 'Kepala Balai / PPK' : (@SESSION.role == 'tim_kerja' ? 'Tim Kerja / Analis' : (@SESSION.role == 'admin_kontrak' ? 'Admin Kontrak / PKS' : (@SESSION.role == 'sekretaris' ? 'Sekretariat' : 'Pengguna')))))) }}";
+            var userRoleName = "<?= ($SESSION['role'] == 'superadmin' ? 'Super Admin' : ($SESSION['role'] == 'admin_order' || $SESSION['role'] == 'tim_mitra' ? 'Tim Kemitraan (Admin Order)' : ($SESSION['role'] == 'ketua_tim' ? 'Ketua Tim OPTI' : ($SESSION['role'] == 'pejabat' ? 'Kepala Balai / PPK' : ($SESSION['role'] == 'tim_kerja' ? 'Tim Kerja / Analis' : ($SESSION['role'] == 'admin_kontrak' ? 'Admin Kontrak / PKS' : ($SESSION['role'] == 'sekretaris' ? 'Sekretariat' : 'Pengguna'))))))) ?>";
 
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
@@ -1541,7 +1540,7 @@
         // NOTIFICATION & FLOATING BUBBLE ENGINE
         // ==========================================
         window.markNotifRead = function(notifId, redirectUrl) {
-            fetch('{{ @BASE }}/notifikasi/mark-read/' + notifId, {
+            fetch('<?= ($BASE) ?>/notifikasi/mark-read/' + notifId, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' }
             }).then(function() {
@@ -1556,7 +1555,7 @@
         };
 
         window.markAllNotifRead = function() {
-            fetch('{{ @BASE }}/notifikasi/mark-all-read', {
+            fetch('<?= ($BASE) ?>/notifikasi/mark-all-read', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' }
             }).then(function(res) { return res.json(); }).then(function(data) {
@@ -1585,7 +1584,7 @@
                 }, 300);
             }
             if (notifId) {
-                fetch('{{ @BASE }}/notifikasi/mark-read/' + notifId, {
+                fetch('<?= ($BASE) ?>/notifikasi/mark-read/' + notifId, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
                 });
@@ -1594,7 +1593,7 @@
 
         // Live polling unread notification updates every 45 seconds
         setInterval(function() {
-            fetch('{{ @BASE }}/notifikasi/unread')
+            fetch('<?= ($BASE) ?>/notifikasi/unread')
                 .then(function(res) { return res.json(); })
                 .then(function(data) {
                     if (data && data.success) {
@@ -1623,7 +1622,7 @@
     <!-- FLOATING MESSAGE BUBBLE WIDGET (BOTTOM-RIGHT) -->
     <!-- ========================================== -->
     <div id="floatingNotificationWidget" style="position: fixed; bottom: 24px; right: 24px; z-index: 1060; max-width: 390px; width: calc(100vw - 48px); pointer-events: none;">
-        <check if="{{ @unread_notif_count > 0 && isset(@list_notifikasi_user[0]) && !@list_notifikasi_user[0]['is_read'] }}">
+        <?php if ($unread_notif_count > 0 && isset($list_notifikasi_user[0]) && !$list_notifikasi_user[0]['is_read']): ?>
             <div id="activeFloatingBubble" class="floating-bubble-card" style="pointer-events: auto;">
                 
                 <!-- TOP HEADER BADGE & CLOSE -->
@@ -1633,9 +1632,9 @@
                             <span class="pulse-glow-dot"></span>
                             Pemberitahuan Tugas
                         </span>
-                        <span class="floating-bubble-time">&bull; {{ @list_notifikasi_user[0]['time_ago'] ?: 'Baru saja' }}</span>
+                        <span class="floating-bubble-time">&bull; <?= ($list_notifikasi_user[0]['time_ago'] ?: 'Baru saja') ?></span>
                     </div>
-                    <button type="button" class="floating-bubble-close" onclick="window.dismissFloatingBubble({{ @list_notifikasi_user[0]['id'] }})" aria-label="Tutup">
+                    <button type="button" class="floating-bubble-close" onclick="window.dismissFloatingBubble(<?= ($list_notifikasi_user[0]['id']) ?>)" aria-label="Tutup">
                         <i class="bi bi-x"></i>
                     </button>
                 </div>
@@ -1643,17 +1642,17 @@
                 <!-- MAIN CARD BODY -->
                 <div class="floating-bubble-body">
                     <div class="d-flex align-items-start gap-3">
-                        <div class="floating-bubble-icon {{ @list_notifikasi_user[0]['tipe'] == 'success' ? 'icon-success' : (@list_notifikasi_user[0]['tipe'] == 'warning' ? 'icon-warning' : 'icon-primary') }}">
-                            <i class="bi {{ @list_notifikasi_user[0]['icon'] ?: 'bi-bell-fill' }}"></i>
+                        <div class="floating-bubble-icon <?= ($list_notifikasi_user[0]['tipe'] == 'success' ? 'icon-success' : ($list_notifikasi_user[0]['tipe'] == 'warning' ? 'icon-warning' : 'icon-primary')) ?>">
+                            <i class="bi <?= ($list_notifikasi_user[0]['icon'] ?: 'bi-bell-fill') ?>"></i>
                         </div>
                         <div class="flex-grow-1">
-                            <h6 class="floating-bubble-title">{{ @list_notifikasi_user[0]['judul'] }}</h6>
-                            <p class="floating-bubble-desc">{{ @list_notifikasi_user[0]['pesan'] }}</p>
+                            <h6 class="floating-bubble-title"><?= ($list_notifikasi_user[0]['judul']) ?></h6>
+                            <p class="floating-bubble-desc"><?= ($list_notifikasi_user[0]['pesan']) ?></p>
                             <div class="d-flex align-items-center gap-2 pt-1">
-                                <a href="{{ @BASE }}{{ @list_notifikasi_user[0]['link_url'] }}" onclick="window.markNotifRead({{ @list_notifikasi_user[0]['id'] }}, '{{ @BASE }}{{ @list_notifikasi_user[0]['link_url'] }}')" class="btn-bubble-action">
+                                <a href="<?= ($BASE) ?><?= ($list_notifikasi_user[0]['link_url']) ?>" onclick="window.markNotifRead(<?= ($list_notifikasi_user[0]['id']) ?>, '<?= ($BASE) ?><?= ($list_notifikasi_user[0]['link_url']) ?>')" class="btn-bubble-action">
                                     Buka Tugas <i class="bi bi-arrow-right"></i>
                                 </a>
-                                <button type="button" class="btn-bubble-dismiss" onclick="window.dismissFloatingBubble({{ @list_notifikasi_user[0]['id'] }})">
+                                <button type="button" class="btn-bubble-dismiss" onclick="window.dismissFloatingBubble(<?= ($list_notifikasi_user[0]['id']) ?>)">
                                     Nanti Saja
                                 </button>
                             </div>
@@ -1662,7 +1661,7 @@
                 </div>
 
             </div>
-        </check>
+        <?php endif; ?>
     </div>
 
     <style>

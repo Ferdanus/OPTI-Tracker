@@ -80,13 +80,25 @@ $f3->set('ONERROR', function($f3) {
     if ($f3->get('DEBUG') > 0) {
         echo '<pre style="background: #ffffff; padding: 15px; border-radius: 4px; overflow-x: auto; border: 1px solid #e2e8f0;">' . htmlspecialchars($f3->get('ERROR.trace')) . '</pre>';
     }
-    echo '<a href="' . $f3->get('BASE') . '/po" style="display: inline-block; padding: 8px 16px; background: #9f1239; color: #fff; text-decoration: none; border-radius: 4px; font-weight: bold; margin-top: 10px;">Kembali ke Beranda</a>';
+    echo '<a href="' . $f3->get('BASE') . '/order" style="display: inline-block; padding: 8px 16px; background: #9f1239; color: #fff; text-decoration: none; border-radius: 4px; font-weight: bold; margin-top: 10px;">Kembali ke Beranda</a>';
     echo '</div>';
 });
 
-// Route Beranda -> redirect ke /po
+// Route Beranda -> redirect sesuai peran pengguna
 $f3->route('GET /', function($f3) {
-    $f3->reroute('/po');
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    $role = $_SESSION['role'] ?? '';
+    if ($role === 'tim_kerja') {
+        $f3->reroute('/proposal');
+    } elseif ($role === 'ketua_tim') {
+        $f3->reroute('/disposisi-masuk');
+    } elseif ($role === 'sekretaris') {
+        $f3->reroute('/surat-masuk');
+    } else {
+        $f3->reroute('/order');
+    }
 });
 
 // ==========================================
@@ -143,11 +155,13 @@ $f3->route('GET /order/@id/biaya-lingkungan', 'OrderController->biayaLingkungan'
 $f3->route('POST /order/@id/biaya-lingkungan', 'OrderController->biayaLingkunganPost');
 $f3->route('GET /order/@id/form-pelayanan', 'OrderController->formPelayanan');
 $f3->route('POST /order/@id/form-pelayanan', 'OrderController->formPelayananPost');
+$f3->route('GET /proposal', 'OrderController->proposalIndex');
 $f3->route('GET /order/@id/proposal', 'OrderController->proposalForm');
 $f3->route('POST /order/@id/proposal/simpan', 'OrderController->proposalSimpan');
 $f3->route('POST /order/@id/proposal/upload', 'OrderController->uploadProposalFile');
 $f3->route('POST /order/@id/proposal/kirim-katim', 'OrderController->kirimProposalKeKatim');
 $f3->route('POST /order/@id/proposal/review-katim', 'OrderController->reviewProposalKatim');
+$f3->route('GET /order/@id/proposal/pdf', 'OrderController->previewProposalPdf');
 $f3->route('POST /order/@id/respon-klien', 'OrderController->responKlien');
 
 // ==========================================
@@ -245,15 +259,6 @@ $f3->route('POST /order/@id/penawaran/simpan', 'SuratPenawaranController->simpan
 $f3->route('GET /order/@id/penawaran/cetak', 'SuratPenawaranController->cetakPdf');
 $f3->route('POST /order/@id/penawaran/status', 'SuratPenawaranController->updateStatusKlien');
 
-// ==========================================
-// ROUTE PROPOSAL
-// ==========================================
-$f3->route('GET /proposal', 'SuratPenawaranController->proposal');
-$f3->route('GET /proposal/tambah', 'SuratPenawaranController->tambahProposal');
-$f3->route('POST /proposal/simpan', 'SuratPenawaranController->simpanProposal');
-$f3->route('GET /proposal/@id/edit', 'SuratPenawaranController->editProposal');
-$f3->route('POST /proposal/@id/update', 'SuratPenawaranController->updateProposal');
-$f3->route('POST /proposal/@id/hapus', 'SuratPenawaranController->hapusProposal');
 
 // ==========================================
 // ROUTE MODUL SURAT MASUK (INTEGRASI SEKRETARIAT)

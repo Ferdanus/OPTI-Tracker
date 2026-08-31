@@ -460,6 +460,42 @@
             box-shadow: var(--shadow-sm);
         }
 
+        .topbar-notif-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 1px solid var(--color-border);
+            color: var(--color-text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+            position: relative;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .topbar-notif-btn:hover {
+            border-color: var(--color-primary);
+            color: var(--color-primary);
+            background-color: #fff1f2;
+        }
+
+        .notif-badge-pill {
+            position: absolute;
+            top: -3px;
+            right: -3px;
+            background: #e11d48;
+            color: #ffffff;
+            font-size: 0.625rem;
+            font-weight: 700;
+            padding: 1.5px 5px;
+            border-radius: 999px;
+            border: 2px solid #ffffff;
+            line-height: 1;
+            box-shadow: 0 2px 4px rgba(225, 29, 72, 0.35);
+        }
+
         .user-avatar {
             width: 32px;
             height: 32px;
@@ -897,22 +933,24 @@
                 <!-- 2. PELAKSANAAN TEKNIS -->
                 <li class="sidebar-section-label">Pelaksanaan Teknis</li>
                 
-                <!-- Petunjuk Operasional (PO) (Ketua Tim, Tim Kerja, Pejabat, Admin Kontrak, Superadmin) -->
+                <!-- Tugas Proposal Teknis (Tim Kerja / PIC Peneliti, Ketua Tim, Pejabat, Superadmin) -->
                 <li>
-                    <?php if ($is_superadmin || $is_ketua_tim || $is_pejabat || $is_tim_kerja || $is_admin_kontrak): ?>
+                    <?php if ($is_superadmin || $is_ketua_tim || $is_tim_kerja || $is_pejabat): ?>
                         
-                            <a class="sidebar-link <?= ($active_menu == 'po' ? 'active' : '') ?>" href="<?= ($BASE) ?>/po" title="Petunjuk Operasional (PO)">
-                                <i class="bi bi-speedometer2"></i> <span>Petunjuk Operasional (PO)</span>
+                            <a class="sidebar-link <?= ($active_menu == 'proposal' ? 'active' : '') ?>" href="<?= ($BASE) ?>/proposal" title="Tugas Proposal Teknis">
+                                <i class="bi bi-journal-code"></i> <span>Tugas Proposal</span>
                             </a>
                         
                         <?php else: ?>
-                            <a class="sidebar-link sidebar-locked" href="javascript:void(0)" onclick="notifyLockedMenu(event, 'Petunjuk Operasional (PO)', 'Ketua Tim, Tim Kerja &amp; Pejabat')" title="PO (Terkunci)">
-                                <i class="bi bi-speedometer2"></i> <span>Petunjuk Operasional (PO)</span>
-                                <i class="bi bi-lock-fill lock-indicator" title="Terkunci: Wewenang Tim Teknis"></i>
+                            <a class="sidebar-link sidebar-locked" href="javascript:void(0)" onclick="notifyLockedMenu(event, 'Tugas Proposal', 'Tim Kerja / PIC Peneliti &amp; Ketua Tim')" title="Tugas Proposal (Terkunci)">
+                                <i class="bi bi-journal-code"></i> <span>Tugas Proposal</span>
+                                <i class="bi bi-lock-fill lock-indicator" title="Terkunci: Wewenang PIC Peneliti &amp; Ka Tim"></i>
                             </a>
                         
                     <?php endif; ?>
                 </li>
+
+                <!-- Petunjuk Operasional (PO) - Disembunyikan sementara untuk fokus fase proposal pre-kontrak -->
 
                 <!-- Kontrak / PKS (Admin Order, Admin Kontrak, Pejabat, Superadmin) -->
                 <li>
@@ -1000,80 +1038,141 @@
                     <?php endif; ?>
                 </div>
 
-                <!-- Clean User Profile Dropdown (Top-Right Nav) -->
-                <div class="dropdown">
-                    <a class="topbar-user-btn dropdown-toggle" href="#" role="button" id="userMenuTop" data-bs-toggle="dropdown" aria-expanded="false">
-                        <div class="user-avatar">
-                            <?php $initials = implode('', array_map(function($w) { return strtoupper($w[0] ?? ''); }, explode(' ', $_SESSION['nama_lengkap'] ?? 'U'))) ?>
-                            <?= (substr($initials, 0, 2))."
+                <!-- Topbar Right Actions (Bell Notifikasi & Profile) -->
+                <div class="d-flex align-items-center gap-2">
+                    
+                    <!-- Notification Bell Dropdown -->
+                    <div class="dropdown" id="notificationDropdownContainer">
+                        <button class="topbar-notif-btn" type="button" id="notifBellBtn" data-bs-toggle="dropdown" aria-expanded="false" title="Pusat Pemberitahuan">
+                            <i class="bi bi-bell fs-5"></i>
+                            <?php if ($unread_notif_count > 0): ?>
+                                <span class="notif-badge-pill" id="notifBadgeCount">
+                                    <?= ($unread_notif_count > 99 ? '99+' : $unread_notif_count)."
 " ?>
-                        </div>
-                        <div class="text-start d-none d-sm-block" style="line-height: 1.15;">
-                            <div class="fw-bold text-dark small"><?= (htmlspecialchars($SESSION['nama_lengkap'] ?? 'User')) ?></div>
-                            <div class="text-muted" style="font-size: 0.675rem;">
-                                <?php if ($SESSION['role'] == 'superadmin'): ?>Super Admin<?php endif; ?>
-                                <?php if ($SESSION['role'] == 'admin_order'): ?>Admin Order<?php endif; ?>
-                                <?php if ($SESSION['role'] == 'ketua_tim'): ?>Ketua Tim <?= ($SESSION['jenis_layanan_opti'] == 'selulosa' ? 'Selulosa' : ($SESSION['jenis_layanan_opti'] == 'lingkungan' ? 'Lingkungan' : 'OPTI')) ?><?php endif; ?>
-                                <?php if ($SESSION['role'] == 'pejabat'): ?>Kepala Balai/PPK<?php endif; ?>
-                                <?php if ($SESSION['role'] == 'tim_kerja'): ?>Tim Analis<?php endif; ?>
-                                <?php if ($SESSION['role'] == 'admin_kontrak'): ?>Admin PKS<?php endif; ?>
+                                </span>
+                            <?php endif; ?>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-2 p-0 rounded-4" aria-labelledby="notifBellBtn" style="width: 370px; max-width: 92vw; border-radius: 14px; overflow: hidden; box-shadow: 0 12px 36px -4px rgba(15,23,42,0.18);" id="notifDropdownMenu">
+                            <div class="px-3 py-2.5 bg-white border-bottom d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="fw-bold text-dark font-display" style="font-size: 0.88rem;">Pemberitahuan</span>
+                                    <?php if ($unread_notif_count > 0): ?>
+                                        <span class="badge bg-danger-subtle text-danger rounded-pill px-2 py-0.5 font-monospace" style="font-size: 0.65rem;"><?= ($unread_notif_count) ?> Baru</span>
+                                    <?php endif; ?>
+                                </div>
+                                <?php if ($unread_notif_count > 0): ?>
+                                    <button class="btn btn-link btn-sm text-decoration-none p-0 text-primary fw-semibold" style="font-size: 0.72rem;" onclick="window.markAllNotifRead()">
+                                        <i class="bi bi-check2-all me-0.5"></i> Tandai Dibaca
+                                    </button>
+                                <?php endif; ?>
+                            </div>
+                            <div class="list-group list-group-flush" style="max-height: 360px; overflow-y: auto;" id="notifListContainer">
+                                <?php if ($list_notifikasi_user && count($list_notifikasi_user) > 0): ?>
+                                    <?php foreach (($list_notifikasi_user?:[]) as $n): ?>
+                                        <a href="<?= ($BASE) ?><?= ($n['link_url']) ?>" onclick="window.markNotifRead(<?= ($n['id']) ?>, '<?= ($BASE) ?><?= ($n['link_url']) ?>')" class="list-group-item list-group-item-action px-3 py-2.5 <?= ($n['is_read'] ? 'bg-white' : 'bg-light bg-opacity-40') ?> border-bottom d-flex gap-2.5 align-items-start text-decoration-none transition-all">
+                                            <div class="rounded-circle p-2 d-flex align-items-center justify-content-center flex-shrink-0 <?= ($n['tipe'] == 'success' ? 'bg-success-subtle text-success' : ($n['tipe'] == 'warning' ? 'bg-warning-subtle text-warning' : ($n['tipe'] == 'primary' ? 'bg-primary-subtle text-primary' : 'bg-info-subtle text-info'))) ?>" style="width: 34px; height: 34px;">
+                                                <i class="bi <?= ($n['icon'] ?: 'bi-bell-fill') ?>" style="font-size: 0.9rem;"></i>
+                                            </div>
+                                            <div class="flex-grow-1 overflow-hidden">
+                                                <div class="d-flex justify-content-between align-items-center mb-0.5">
+                                                    <span class="fw-bold text-dark d-block text-truncate" style="font-size: 0.8rem;"><?= ($n['judul']) ?></span>
+                                                    <small class="text-muted text-nowrap ms-2" style="font-size: 0.65rem;"><?= ($n['time_ago']) ?></small>
+                                                </div>
+                                                <p class="text-secondary small mb-0 text-truncate-2" style="font-size: 0.72rem; line-height: 1.25;"><?= ($n['pesan']) ?></p>
+                                            </div>
+                                        </a>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                                <?php if (!$list_notifikasi_user || count($list_notifikasi_user) == 0): ?>
+                                    <div class="text-center py-4 text-muted">
+                                        <i class="bi bi-bell-slash fs-3 d-block mb-1 opacity-40"></i>
+                                        <small class="text-muted">Tidak ada pemberitahuan baru</small>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                            <div class="px-3 py-2 text-center bg-light border-top">
+                                <a href="<?= ($BASE) ?>/notifikasi" class="text-decoration-none small text-primary fw-semibold d-inline-flex align-items-center gap-1" style="font-size: 0.75rem;">
+                                    Lihat Seluruh Riwayat <i class="bi bi-arrow-right"></i>
+                                </a>
                             </div>
                         </div>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2 py-2" aria-labelledby="userMenuTop" style="min-width: 260px; border-radius: var(--radius-md);">
-                        <li class="px-3 py-2 border-bottom mb-1">
-                            <div class="fw-bold text-dark"><?= (htmlspecialchars($SESSION['nama_lengkap'] ?? 'User')) ?></div>
-                            <div class="text-muted small">@<?= ($SESSION['login'] ?? $SESSION['username']) ?> &bull; <span class="badge bg-light text-dark border"><?= (strtoupper($SESSION['role'] ?? 'USER')) ?></span></div>
-                        </li>
-                        <li class="px-3 py-1 text-uppercase fw-bold text-muted" style="font-size: 0.65rem; letter-spacing: 0.5px;">Ganti Peran (1-Klik):</li>
-                        <li>
-                            <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2 <?= ($SESSION['role'] == 'superadmin' ? 'active' : '') ?>" href="<?= ($BASE) ?>/login/switch/9006">
-                                <i class="bi bi-person-circle text-secondary"></i> Superadmin
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2 <?= ($SESSION['role'] == 'admin_order' ? 'active' : '') ?>" href="<?= ($BASE) ?>/login/switch/36">
-                                <i class="bi bi-person-circle text-secondary"></i> Tim Kemitraan
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2 <?= ($SESSION['role'] == 'ketua_tim' && $SESSION['jenis_layanan_opti'] == 'selulosa' ? 'active' : '') ?>" href="<?= ($BASE) ?>/login/switch/3">
-                                <i class="bi bi-person-circle text-secondary"></i> Ka. Tim Selulosa
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2 <?= ($SESSION['role'] == 'ketua_tim' && $SESSION['jenis_layanan_opti'] == 'lingkungan' ? 'active' : '') ?>" href="<?= ($BASE) ?>/login/switch/61">
-                                <i class="bi bi-person-circle text-secondary"></i> Ka. Tim Lingkungan
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2 <?= ($SESSION['role'] == 'pejabat' ? 'active' : '') ?>" href="<?= ($BASE) ?>/login/switch/175">
-                                <i class="bi bi-person-circle text-secondary"></i> Kepala Balai / Pejabat
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2 <?= ($SESSION['role'] == 'tim_kerja' ? 'active' : '') ?>" href="<?= ($BASE) ?>/login/switch/12">
-                                <i class="bi bi-person-circle text-secondary"></i> Tim Kerja / Peneliti
-                            </a>
-                        </li>
-                        <li><hr class="dropdown-divider my-1"></li>
-                        <li>
-                            <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="<?= ($BASE) ?>/profil">
-                                <i class="bi bi-person-gear text-primary"></i> Profil Pengguna
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="<?= ($BASE) ?>/config">
-                                <i class="bi bi-sliders text-primary"></i> Pengaturan Konfigurasi
-                            </a>
-                        </li>
-                        <li><hr class="dropdown-divider my-1"></li>
-                        <li>
-                            <a class="dropdown-item py-2 text-danger d-flex align-items-center gap-2" href="<?= ($BASE) ?>/logout">
-                                <i class="bi bi-box-arrow-right"></i> Keluar Sistem
-                            </a>
-                        </li>
-                    </ul>
+                    </div>
+
+                    <!-- Clean User Profile Dropdown (Top-Right Nav) -->
+                    <div class="dropdown">
+                        <a class="topbar-user-btn dropdown-toggle" href="#" role="button" id="userMenuTop" data-bs-toggle="dropdown" aria-expanded="false">
+                            <div class="user-avatar">
+                                <?php $initials = implode('', array_map(function($w) { return strtoupper($w[0] ?? ''); }, explode(' ', $_SESSION['nama_lengkap'] ?? 'U'))) ?>
+                                <?= (substr($initials, 0, 2))."
+" ?>
+                            </div>
+                            <div class="text-start d-none d-sm-block" style="line-height: 1.15;">
+                                <div class="fw-bold text-dark small"><?= (htmlspecialchars($SESSION['nama_lengkap'] ?? 'User')) ?></div>
+                                <div class="text-muted" style="font-size: 0.675rem;">
+                                    <?php if ($SESSION['role'] == 'superadmin'): ?>Super Admin<?php endif; ?>
+                                    <?php if ($SESSION['role'] == 'admin_order'): ?>Admin Order<?php endif; ?>
+                                    <?php if ($SESSION['role'] == 'ketua_tim'): ?>Ketua Tim <?= ($SESSION['jenis_layanan_opti'] == 'selulosa' ? 'Selulosa' : ($SESSION['jenis_layanan_opti'] == 'lingkungan' ? 'Lingkungan' : 'OPTI')) ?><?php endif; ?>
+                                    <?php if ($SESSION['role'] == 'pejabat'): ?>Kepala Balai/PPK<?php endif; ?>
+                                    <?php if ($SESSION['role'] == 'tim_kerja'): ?>Tim Analis<?php endif; ?>
+                                    <?php if ($SESSION['role'] == 'admin_kontrak'): ?>Admin PKS<?php endif; ?>
+                                </div>
+                            </div>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2 py-2" aria-labelledby="userMenuTop" style="min-width: 260px; border-radius: var(--radius-md);">
+                            <li class="px-3 py-2 border-bottom mb-1">
+                                <div class="fw-bold text-dark"><?= (htmlspecialchars($SESSION['nama_lengkap'] ?? 'User')) ?></div>
+                                <div class="text-muted small">@<?= ($SESSION['login'] ?? $SESSION['username']) ?> &bull; <span class="badge bg-light text-dark border"><?= (strtoupper($SESSION['role'] ?? 'USER')) ?></span></div>
+                            </li>
+                            <li class="px-3 py-1 text-uppercase fw-bold text-muted" style="font-size: 0.65rem; letter-spacing: 0.5px;">Ganti Peran (1-Klik):</li>
+                            <li>
+                                <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2 <?= ($SESSION['role'] == 'superadmin' ? 'active' : '') ?>" href="<?= ($BASE) ?>/login/switch/9006">
+                                    <i class="bi bi-person-circle text-secondary"></i> Superadmin
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2 <?= ($SESSION['role'] == 'admin_order' ? 'active' : '') ?>" href="<?= ($BASE) ?>/login/switch/36">
+                                    <i class="bi bi-person-circle text-secondary"></i> Tim Kemitraan
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2 <?= ($SESSION['role'] == 'ketua_tim' && $SESSION['jenis_layanan_opti'] == 'selulosa' ? 'active' : '') ?>" href="<?= ($BASE) ?>/login/switch/3">
+                                    <i class="bi bi-person-circle text-secondary"></i> Ka. Tim Selulosa
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2 <?= ($SESSION['role'] == 'ketua_tim' && $SESSION['jenis_layanan_opti'] == 'lingkungan' ? 'active' : '') ?>" href="<?= ($BASE) ?>/login/switch/61">
+                                    <i class="bi bi-person-circle text-secondary"></i> Ka. Tim Lingkungan
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2 <?= ($SESSION['role'] == 'pejabat' ? 'active' : '') ?>" href="<?= ($BASE) ?>/login/switch/175">
+                                    <i class="bi bi-person-circle text-secondary"></i> Kepala Balai / Pejabat
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2 <?= ($SESSION['role'] == 'tim_kerja' ? 'active' : '') ?>" href="<?= ($BASE) ?>/login/switch/12">
+                                    <i class="bi bi-person-circle text-secondary"></i> Tim Kerja / Peneliti
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider my-1"></li>
+                            <li>
+                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="<?= ($BASE) ?>/profil">
+                                    <i class="bi bi-person-gear text-primary"></i> Profil Pengguna
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="<?= ($BASE) ?>/config">
+                                    <i class="bi bi-sliders text-primary"></i> Pengaturan Konfigurasi
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider my-1"></li>
+                            <li>
+                                <a class="dropdown-item py-2 text-danger d-flex align-items-center gap-2" href="<?= ($BASE) ?>/logout">
+                                    <i class="bi bi-box-arrow-right"></i> Keluar Sistem
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
             </nav>
 
@@ -1088,6 +1187,24 @@
                             <button type="button" class="btn-close ms-auto shadow-none" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>
                         <?php unset($_SESSION['flash_success']) ?>
+                    <?php endif; ?>
+
+                    <?php if ($SESSION['flash_warning']): ?>
+                        <div class="alert alert-warning d-flex align-items-center gap-2 border-0 shadow-sm rounded-3 mb-4" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill text-warning fs-5"></i>
+                            <div><?= ($this->raw($SESSION['flash_warning'])) ?></div>
+                            <button type="button" class="btn-close ms-auto shadow-none" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                        <?php unset($_SESSION['flash_warning']) ?>
+                    <?php endif; ?>
+
+                    <?php if ($SESSION['flash_info']): ?>
+                        <div class="alert alert-info d-flex align-items-center gap-2 border-0 shadow-sm rounded-3 mb-4" role="alert">
+                            <i class="bi bi-info-circle-fill text-info fs-5"></i>
+                            <div><?= ($this->raw($SESSION['flash_info'])) ?></div>
+                            <button type="button" class="btn-close ms-auto shadow-none" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                        <?php unset($_SESSION['flash_info']) ?>
                     <?php endif; ?>
 
                     <?php if ($SESSION['flash_error']): ?>
@@ -1421,6 +1538,302 @@
                 startLoading('Memproses Data Server...');
             });
         });
+
+        // ==========================================
+        // NOTIFICATION & FLOATING BUBBLE ENGINE
+        // ==========================================
+        window.markNotifRead = function(notifId, redirectUrl) {
+            fetch('<?= ($BASE) ?>/notifikasi/mark-read/' + notifId, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            }).then(function() {
+                if (redirectUrl && redirectUrl !== '#') {
+                    window.location.href = redirectUrl;
+                }
+            }).catch(function() {
+                if (redirectUrl && redirectUrl !== '#') {
+                    window.location.href = redirectUrl;
+                }
+            });
+        };
+
+        window.markAllNotifRead = function() {
+            fetch('<?= ($BASE) ?>/notifikasi/mark-all-read', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            }).then(function(res) { return res.json(); }).then(function(data) {
+                var badge = document.getElementById('notifBadgeCount');
+                if (badge) badge.remove();
+                var subtext = document.getElementById('notifUnreadSubtext');
+                if (subtext) subtext.textContent = 'Semua pesan sudah dibaca';
+                var bubble = document.getElementById('activeFloatingBubble');
+                if (bubble) bubble.remove();
+                document.querySelectorAll('#notifListContainer .badge.bg-danger').forEach(function(el) { el.remove(); });
+                document.querySelectorAll('#notifListContainer .list-group-item').forEach(function(el) {
+                    el.classList.remove('bg-light', 'bg-opacity-50');
+                    el.classList.add('bg-white');
+                });
+            });
+        };
+
+        window.dismissFloatingBubble = function(notifId) {
+            var bubble = document.getElementById('activeFloatingBubble');
+            if (bubble) {
+                bubble.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+                bubble.style.opacity = '0';
+                bubble.style.transform = 'translateY(30px) scale(0.95)';
+                setTimeout(function() {
+                    bubble.remove();
+                }, 300);
+            }
+            if (notifId) {
+                fetch('<?= ($BASE) ?>/notifikasi/mark-read/' + notifId, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+            }
+        };
+
+        // Live polling unread notification updates every 45 seconds
+        setInterval(function() {
+            fetch('<?= ($BASE) ?>/notifikasi/unread')
+                .then(function(res) { return res.json(); })
+                .then(function(data) {
+                    if (data && data.success) {
+                        var btn = document.getElementById('notifBellBtn');
+                        var existingBadge = document.getElementById('notifBadgeCount');
+                        if (data.count > 0) {
+                            if (existingBadge) {
+                                existingBadge.textContent = data.count > 99 ? '99+' : data.count;
+                            } else if (btn) {
+                                var span = document.createElement('span');
+                                span.id = 'notifBadgeCount';
+                                span.className = 'position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-white';
+                                span.style.fontSize = '0.65rem';
+                                span.textContent = data.count > 99 ? '99+' : data.count;
+                                btn.appendChild(span);
+                            }
+                        } else if (existingBadge) {
+                            existingBadge.remove();
+                        }
+                    }
+                }).catch(function() {});
+        }, 45000);
     </script>
+
+    <!-- ========================================== -->
+    <!-- FLOATING MESSAGE BUBBLE WIDGET (BOTTOM-RIGHT) -->
+    <!-- ========================================== -->
+    <div id="floatingNotificationWidget" style="position: fixed; bottom: 24px; right: 24px; z-index: 1060; max-width: 390px; width: calc(100vw - 48px); pointer-events: none;">
+        <?php if ($unread_notif_count > 0 && isset($list_notifikasi_user[0]) && !$list_notifikasi_user[0]['is_read']): ?>
+            <div id="activeFloatingBubble" class="floating-bubble-card" style="pointer-events: auto;">
+                
+                <!-- TOP HEADER BADGE & CLOSE -->
+                <div class="floating-bubble-header">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="floating-bubble-badge">
+                            <span class="pulse-glow-dot"></span>
+                            Pemberitahuan Tugas
+                        </span>
+                        <span class="floating-bubble-time">&bull; <?= ($list_notifikasi_user[0]['time_ago'] ?: 'Baru saja') ?></span>
+                    </div>
+                    <button type="button" class="floating-bubble-close" onclick="window.dismissFloatingBubble(<?= ($list_notifikasi_user[0]['id']) ?>)" aria-label="Tutup">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+
+                <!-- MAIN CARD BODY -->
+                <div class="floating-bubble-body">
+                    <div class="d-flex align-items-start gap-3">
+                        <div class="floating-bubble-icon <?= ($list_notifikasi_user[0]['tipe'] == 'success' ? 'icon-success' : ($list_notifikasi_user[0]['tipe'] == 'warning' ? 'icon-warning' : 'icon-primary')) ?>">
+                            <i class="bi <?= ($list_notifikasi_user[0]['icon'] ?: 'bi-bell-fill') ?>"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="floating-bubble-title"><?= ($list_notifikasi_user[0]['judul']) ?></h6>
+                            <p class="floating-bubble-desc"><?= ($list_notifikasi_user[0]['pesan']) ?></p>
+                            <div class="d-flex align-items-center gap-2 pt-1">
+                                <a href="<?= ($BASE) ?><?= ($list_notifikasi_user[0]['link_url']) ?>" onclick="window.markNotifRead(<?= ($list_notifikasi_user[0]['id']) ?>, '<?= ($BASE) ?><?= ($list_notifikasi_user[0]['link_url']) ?>')" class="btn-bubble-action">
+                                    Buka Tugas <i class="bi bi-arrow-right"></i>
+                                </a>
+                                <button type="button" class="btn-bubble-dismiss" onclick="window.dismissFloatingBubble(<?= ($list_notifikasi_user[0]['id']) ?>)">
+                                    Nanti Saja
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        <?php endif; ?>
+    </div>
+
+    <style>
+        .floating-bubble-card {
+            background: #ffffff;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            border-left: 5px solid var(--color-primary);
+            box-shadow: 0 16px 36px -6px rgba(15, 23, 42, 0.18), 0 4px 12px -2px rgba(15, 23, 42, 0.06);
+            overflow: hidden;
+            animation: slideInUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .floating-bubble-header {
+            padding: 10px 14px 8px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8fafc;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .floating-bubble-badge {
+            background: #fff1f2;
+            color: #be123c;
+            border: 1px solid #fecdd3;
+            padding: 3px 8px;
+            border-radius: 999px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            line-height: 1;
+        }
+        .pulse-glow-dot {
+            width: 6px;
+            height: 6px;
+            background-color: #e11d48;
+            border-radius: 50%;
+            display: inline-block;
+            flex-shrink: 0;
+            box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.7);
+            animation: pulseGlow 1.8s infinite;
+        }
+        @keyframes pulseGlow {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.7);
+            }
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 5px rgba(225, 29, 72, 0);
+            }
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(225, 29, 72, 0);
+            }
+        }
+        .floating-bubble-time {
+            font-size: 0.72rem;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+        .floating-bubble-close {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            line-height: 1;
+            padding: 0;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .floating-bubble-close:hover {
+            background: #e2e8f0;
+            color: #334155;
+        }
+        .floating-bubble-body {
+            padding: 14px;
+        }
+        .floating-bubble-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 1.15rem;
+        }
+        .floating-bubble-icon.icon-primary {
+            background: #fff1f2;
+            color: #be123c;
+        }
+        .floating-bubble-icon.icon-success {
+            background: #f0fdf4;
+            color: #16a34a;
+        }
+        .floating-bubble-icon.icon-warning {
+            background: #fffbeb;
+            color: #d97706;
+        }
+        .floating-bubble-title {
+            font-size: 0.86rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 4px;
+            line-height: 1.35;
+            font-family: var(--font-display);
+        }
+        .floating-bubble-desc {
+            font-size: 0.76rem;
+            color: #64748b;
+            margin-bottom: 10px;
+            line-height: 1.45;
+        }
+        .btn-bubble-action {
+            background: var(--color-primary);
+            color: #ffffff;
+            border: none;
+            padding: 5px 14px;
+            border-radius: 999px;
+            font-size: 0.76rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 2px 6px rgba(136, 19, 55, 0.25);
+            transition: all 0.15s ease;
+        }
+        .btn-bubble-action:hover {
+            background: #9f1239;
+            color: #ffffff;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(136, 19, 55, 0.35);
+        }
+        .btn-bubble-dismiss {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 0.76rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .btn-bubble-dismiss:hover {
+            background: #e2e8f0;
+            color: #1e293b;
+        }
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.96);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+    </style>
 </body>
 </html>

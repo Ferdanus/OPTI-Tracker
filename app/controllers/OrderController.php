@@ -1146,6 +1146,114 @@ class OrderController extends Controller {
     }
 
     /**
+     * Halaman Pusat Tugas Proposal Teknis (Khusus PIC & Monitoring Ka Tim / Superadmin)
+     * Route: GET /proposal
+     */
+    public function proposalIndex($f3) {
+        $this->requireAuth();
+        $userId = (int)$this->getUserId();
+        $userRole = $this->getUserRole();
+        $isSuperadmin = $this->isSuperadmin();
+        $isKetuaTim = $this->isKetuaTim();
+        $isTimKerja = ($userRole === 'tim_kerja');
+
+        // Parameter filter status
+        $filterStatus = $f3->get('GET.status') ?: 'semua';
+        $filterSearch = trim($f3->get('GET.q') ?? '');
+
+        $sql = "SELECT o.id, o.nomor_order, c.nmcustomer AS nama_perusahaan, o.judul_kegiatan, 
+                       o.jenis_layanan_opti, o.spm_layanan, o.tanggal_masuk, o.status,
+                       o.pic_proposal_id, o.status_proposal_biaya,
+                       p.id AS proposal_id, p.judul_proposal, p.durasi_kegiatan, 
+                       p.estimasi_total_biaya, p.file_proposal, p.status_proposal, 
+                       p.catatan_revisi, p.disetujui_ketua_at,
+                       u.nama_user AS pic_nama
+                FROM order_layanan o
+                LEFT JOIN tb_customer c ON o.id_customer = c.id_customer
+                LEFT JOIN opti_proposal_riset p ON o.id = p.order_id
+                LEFT JOIN tb_arsipuser u ON o.pic_proposal_id = u.id_user
+                WHERE 1=1 ";
+        
+        $params = [];
+
+        // Scope Hak Akses Khusus:
+        // 1. Jika Tim Kerja (PIC Peneliti): HANYA tampilkan proposal yang ditugaskan ke dirinya!
+        if ($isTimKerja && !$isSuperadmin) {
+            $sql .= " AND o.pic_proposal_id = ? ";
+            $params[] = $userId;
+        } elseif ($isKetuaTim && !$isSuperadmin) {
+            // 2. Jika Ketua Tim: Tampilkan seluruh proposal di divisinya
+            $layanan = $_SESSION['jenis_layanan_opti'] ?? '';
+            if ($layanan) {
+                $sql .= " AND o.jenis_layanan_opti = ? ";
+                $params[] = $layanan;
+            }
+            $sql .= " AND (o.pic_proposal_id IS NOT NULL OR o.id IN (SELECT order_id FROM opti_tinjauan_kelayakan WHERE keputusan = 'dapat_dilaksanakan')) ";
+        } else {
+            // 3. Superadmin / Pejabat: Tampilkan seluruh order yang memiliki penugasan PIC
+            $sql .= " AND (o.pic_proposal_id IS NOT NULL OR o.id IN (SELECT order_id FROM opti_tinjauan_kelayakan WHERE keputusan = 'dapat_dilaksanakan')) ";
+        }
+
+        // Filter status proposal
+        if ($filterStatus !== 'semua') {
+            if ($filterStatus === 'draft') {
+                $sql .= " AND (p.status_proposal = 'draft' OR p.status_proposal IS NULL) ";
+            } elseif ($filterStatus === 'diajukan') {
+                $sql .= " AND p.status_proposal = 'diajukan' ";
+            } elseif ($filterStatus === 'disetujui') {
+                $sql .= " AND p.status_proposal = 'disetujui_ketua' ";
+            } elseif ($filterStatus === 'ditolak') {
+                $sql .= " AND p.status_proposal = 'ditolak' ";
+            }
+        }
+
+        // Filter pencarian teks
+        if (!empty($filterSearch)) {
+            $sql .= " AND (o.nomor_order LIKE ? OR c.nmcustomer LIKE ? OR o.judul_kegiatan LIKE ? OR p.judul_proposal LIKE ?) ";
+            $term = "%{$filterSearch}%";
+            $params[] = $term;
+            $params[] = $term;
+            $params[] = $term;
+            $params[] = $term;
+        }
+
+        $sql .= " ORDER BY o.id DESC";
+
+        $binds = [];
+        foreach ($params as $idx => $val) {
+            $binds[$idx + 1] = $val;
+        }
+
+        $listProposal = $this->db->exec($sql, $binds);
+
+        // Counter Statistik
+        $statDraft = 0;
+        $statDiajukan = 0;
+        $statDisetujui = 0;
+        $statDitolak = 0;
+
+        foreach ($listProposal as $item) {
+            $st = $item['status_proposal'] ?? 'draft';
+            if ($st === 'diajukan') $statDiajukan++;
+            elseif ($st === 'disetujui_ketua') $statDisetujui++;
+            elseif ($st === 'ditolak') $statDitolak++;
+            else $statDraft++;
+        }
+
+        $f3->set('list_proposal', $listProposal);
+        $f3->set('total_proposal', count($listProposal));
+        $f3->set('stat_draft', $statDraft);
+        $f3->set('stat_diajukan', $statDiajukan);
+        $f3->set('stat_disetujui', $statDisetujui);
+        $f3->set('stat_ditolak', $statDitolak);
+        $f3->set('filter_status', $filterStatus);
+        $f3->set('filter_q', $filterSearch);
+        $f3->set('is_tim_kerja', $isTimKerja);
+
+        $this->render('order/proposal_index.html', 'Pusat Tugas Proposal Teknis', 'proposal');
+    }
+
+    /**
      * Halaman Unggah & Penyusunan Dokumen Proposal Teknis oleh PIC
      * Route: GET /order/@id/proposal
      */
@@ -1161,12 +1269,21 @@ class OrderController extends Controller {
             return;
         }
 
-        $proposal = $orderModel->getProposalRiset($id);
         $userId = (int)$this->getUserId();
+        $userRole = $this->getUserRole();
         $isPic = ($userId > 0 && (int)($order['pic_proposal_id'] ?? 0) === $userId);
         $isSuperadmin = $this->isSuperadmin();
         $isKetuaTim = $this->isKetuaTim();
-        
+
+        // Strict Access Control:
+        // Jika user adalah Tim Kerja (PIC), HANYA PIC yang ditugaskan yang boleh membuka proposal ini!
+        if ($userRole === 'tim_kerja' && !$isPic && !$isSuperadmin) {
+            $this->setFlashError("Akses Ditolak: Anda bukan PIC yang ditugaskan untuk proposal Order #{$order['nomor_order']}. Anda hanya berwenang mengerjakan proposal yang ditugaskan secara khusus kepada Anda.");
+            $f3->reroute('/proposal');
+            return;
+        }
+
+        $proposal = $orderModel->getProposalRiset($id);
         $canEdit = ($isPic || $isSuperadmin || $this->hasPermission('order:proposal'));
         $canReview = ($isKetuaTim || $isSuperadmin);
 
@@ -1181,15 +1298,23 @@ class OrderController extends Controller {
 
         $tinjauan = $orderModel->getTinjauanKelayakan($id);
 
+        // Parse durasi kegiatan ke angka Hari Kerja
+        $durasiStr = $proposal['durasi_kegiatan'] ?? '30 Hari Kerja';
+        $durasiHari = 30;
+        if (preg_match('/^(\d+)/', trim($durasiStr), $matches)) {
+            $durasiHari = (int)$matches[1];
+        }
+
         $f3->set('order', $order);
         $f3->set('proposal', $proposal);
         $f3->set('surat_masuk', $suratMasuk);
         $f3->set('tinjauan', $tinjauan);
+        $f3->set('durasi_hari', $durasiHari);
         $f3->set('is_pic', $isPic);
         $f3->set('can_edit', $canEdit);
         $f3->set('can_review', $canReview);
 
-        $this->render('order/proposal.html', "Dokumen Proposal Teknis - Order #{$order['nomor_order']}", 'order');
+        $this->render('order/proposal.html', "Dokumen Proposal Teknis - Order #{$order['nomor_order']}", 'proposal');
     }
 
     /**
@@ -1204,22 +1329,29 @@ class OrderController extends Controller {
 
         if (!$order) {
             $this->setFlashError("Order Layanan #{$id} tidak ditemukan.");
-            $f3->reroute('/order');
+            $f3->reroute('/proposal');
             return;
         }
 
         $userId = (int)$this->getUserId();
+        $userRole = $this->getUserRole();
         $isPic = ($userId > 0 && (int)($order['pic_proposal_id'] ?? 0) === $userId);
-        if (!$isPic && !$this->isSuperadmin() && !$this->hasPermission('order:proposal')) {
-            $this->setFlashError("Akses Ditolak: Anda bukan PIC yang ditugaskan untuk menyusun proposal ini.");
-            $f3->reroute("/order/{$id}/proposal");
+        
+        // Strict Access Control:
+        if ($userRole === 'tim_kerja' && !$isPic && !$this->isSuperadmin()) {
+            $this->setFlashError("Akses Ditolak: Anda bukan PIC yang ditugaskan untuk proposal ini.");
+            $f3->reroute('/proposal');
             return;
         }
 
         $post = $f3->get('POST');
         $judulProposal = trim($post['judul_proposal'] ?? ($order['judul_kegiatan'] ?? 'Proposal Teknis OPTI'));
         $ruangLingkup = trim($post['ruang_lingkup'] ?? '');
-        $durasiKegiatan = trim($post['durasi_kegiatan'] ?? '30 Hari Kerja');
+        
+        $durasiHari = (int)($post['durasi_hari'] ?? ($post['durasi_angka'] ?? 30));
+        if ($durasiHari <= 0) $durasiHari = 30;
+        $durasiKegiatan = "{$durasiHari} Hari Kerja";
+
         $rawBiaya = str_replace(['Rp', '.', ' '], '', $post['estimasi_total_biaya'] ?? '0');
         $rawBiaya = str_replace(',', '.', $rawBiaya);
         $estimasiBiaya = (float)$rawBiaya;
@@ -1562,5 +1694,174 @@ class OrderController extends Controller {
         }
 
         $f3->reroute("/order/{$id}");
+    }
+
+    /**
+     * Stream Berkas Dokumen Proposal secara Inline (Bebas Intersepsi Download / IDM)
+     * Route: GET /order/@id/proposal/pdf
+     */
+    public function previewProposalPdf($f3, $params) {
+        $this->requireAuth();
+        $id = (int)($params['id'] ?? 0);
+        $orderModel = new OrderLayanan($this->db);
+        $order = $orderModel->getDetail($id);
+        if (!$order) {
+            $f3->error(404, 'Data order tidak ditemukan.');
+            return;
+        }
+
+        $proposal = $orderModel->getProposalRiset($id);
+        $filePath = '';
+        if (!empty($proposal['file_proposal'])) {
+            $target = 'c:/xampp/htdocs/Mini OPTI Tracker/' . ltrim($proposal['file_proposal'], "/\\");
+            if (file_exists($target)) {
+                $filePath = $target;
+            }
+        }
+
+        // Jika belum ada file fisik PDF yang diunggah, buat PDF proposal resmi secara dinamis
+        if (empty($filePath)) {
+            require_once 'c:/xampp/htdocs/Mini OPTI Tracker/app/helpers/fpdf/fpdf.php';
+            $pdf = new \FPDF('P', 'mm', 'A4');
+            $pdf->SetMargins(20, 15, 20);
+            $pdf->AddPage();
+
+            // 1. KOP RESMI BBSPJIS
+            $pdf->SetFont('Arial', 'B', 12);
+            $pdf->SetTextColor(0, 0, 0);
+            $pdf->Cell(0, 5.5, 'KEMENTERIAN PERINDUSTRIAN REPUBLIK INDONESIA', 0, 1, 'C');
+            $pdf->SetFont('Arial', 'B', 9.5);
+            $pdf->Cell(0, 4.8, 'BALAI BESAR STANDARDISASI DAN PELAYANAN JASA INDUSTRI SELULOSA', 0, 1, 'C');
+            $pdf->SetFont('Arial', '', 8);
+            $pdf->SetTextColor(70, 70, 70);
+            $pdf->Cell(0, 4, 'Jl. Raya Dayeuhkolot No. 132, Bandung 40258 | Telp. (022) 5202871 | www.bbspjis.kemenperin.go.id', 0, 1, 'C');
+            $pdf->Ln(2);
+            $pdf->SetDrawColor(0, 0, 0);
+            $pdf->SetLineWidth(0.8);
+            $pdf->Line(20, $pdf->GetY(), 190, $pdf->GetY());
+            $pdf->SetLineWidth(0.2);
+            $pdf->Line(20, $pdf->GetY() + 0.8, 190, $pdf->GetY() + 0.8);
+            $pdf->Ln(5);
+
+            // 2. JUDUL DOKUMEN PROPOSAL
+            $pdf->SetFont('Arial', 'B', 11.5);
+            $pdf->SetTextColor(136, 19, 55); // Maroon BBSPJIS
+            $pdf->Cell(0, 6, 'PROPOSAL TEKNIS & RANCANGAN ANGGARAN BIAYA (RAB)', 0, 1, 'C');
+            $pdf->SetFont('Arial', 'B', 8.5);
+            $pdf->SetTextColor(70, 70, 70);
+            $pdf->Cell(0, 4.5, 'LAYANAN OPTIMALISASI TEKNOLOGI INDUSTRI (OPTI) - ' . strtoupper($order['jenis_layanan_opti']), 0, 1, 'C');
+            $pdf->Ln(4);
+
+            // 3. METADATA ORDER
+            $pdf->SetFont('Arial', '', 9);
+            $pdf->SetTextColor(0, 0, 0);
+            $pdf->Cell(35, 5, 'Nomor Order', 0, 0);
+            $pdf->Cell(4, 5, ':', 0, 0);
+            $pdf->SetFont('Arial', 'B', 9);
+            $pdf->Cell(70, 5, '#' . $order['nomor_order'], 0, 0);
+            $pdf->SetFont('Arial', '', 9);
+            $pdf->Cell(0, 5, 'Tanggal: ' . date('d F Y'), 0, 1, 'R');
+
+            $pdf->Cell(35, 5, 'Pelanggan / Industri', 0, 0);
+            $pdf->Cell(4, 5, ':', 0, 0);
+            $pdf->SetFont('Arial', 'B', 9);
+            $pdf->Cell(0, 5, $order['nama_perusahaan'] . ' (' . ($order['pt_cv'] ?: 'Industri') . ')', 0, 1);
+
+            $pdf->SetFont('Arial', '', 9);
+            $pdf->Cell(35, 5, 'PIC Peneliti Penyusun', 0, 0);
+            $pdf->Cell(4, 5, ':', 0, 0);
+            $pdf->SetFont('Arial', 'B', 9);
+            $pdf->Cell(0, 5, $order['pic_proposal_nama'] ?: ($proposal['pic_nama'] ?? 'Tim Pelaksana OPTI BBSPJIS'), 0, 1);
+
+            $pdf->SetFont('Arial', '', 9);
+            $pdf->Cell(35, 5, 'Judul Proposal', 0, 0);
+            $pdf->Cell(4, 5, ':', 0, 0);
+            $pdf->SetFont('Arial', 'B', 9);
+            $pdf->MultiCell(0, 5, $proposal['judul_proposal'] ?: ($order['judul_kegiatan'] ?: 'Layanan Optimalisasi Teknologi Industri'), 0, 'L');
+            $pdf->Ln(3);
+
+            // 4. RUANG LINGKUP & METODOLOGI
+            $pdf->SetFont('Arial', 'B', 9.5);
+            $pdf->Cell(0, 5.5, '1. Ruang Lingkup & Metodologi Pengujian / Riset:', 0, 1);
+            $pdf->SetFont('Arial', '', 9);
+            $lingkup = $proposal['ruang_lingkup'] ?: 'Pengujian parameter mutu, pengamatan karakteristik bahan baku, sampling lapangan, dan formulasi rekomendasi teknologi sesuai standar SNI/ISO/TAPPI terakreditasi ISO/IEC 17025 BBSPJIS.';
+            $pdf->MultiCell(0, 4.8, $lingkup, 0, 'J');
+            $pdf->Ln(3);
+
+            // 5. DURASI & ESTIMASI BIAYA
+            $pdf->SetFont('Arial', 'B', 9.5);
+            $pdf->Cell(0, 5.5, '2. Rencana Pelaksanaan & Estimasi Anggaran (RAB):', 0, 1);
+            
+            $pdf->SetFont('Arial', '', 9);
+            $pdf->Cell(8, 5, '', 0, 0);
+            $pdf->Cell(45, 5, 'a. Estimasi Durasi', 0, 0);
+            $pdf->Cell(4, 5, ':', 0, 0);
+            $pdf->SetFont('Arial', 'B', 9);
+            $pdf->Cell(0, 5, $proposal['durasi_kegiatan'] ?: '30 Hari Kerja', 0, 1);
+
+            $pdf->SetFont('Arial', '', 9);
+            $pdf->Cell(8, 5, '', 0, 0);
+            $pdf->Cell(45, 5, 'b. Estimasi Total Biaya', 0, 0);
+            $pdf->Cell(4, 5, ':', 0, 0);
+            $pdf->SetFont('Arial', 'B', 9.5);
+            $pdf->SetTextColor(136, 19, 55);
+            $pdf->Cell(0, 5, 'Rp ' . number_format((float)($proposal['estimasi_total_biaya'] ?: ($order['estimasi_biaya'] ?: 0)), 0, ',', '.'), 0, 1);
+            $pdf->SetTextColor(0, 0, 0);
+            $pdf->Ln(5);
+
+            // 6. STATUS PERSETUJUAN
+            $pdf->SetFont('Arial', 'B', 9.5);
+            $pdf->Cell(0, 5.5, '3. Status Verifikasi Teknis:', 0, 1);
+            $pdf->SetFont('Arial', '', 9);
+            $statusText = 'Draf Proposal Teknis (Menunggu Persetujuan Ketua Tim OPTI)';
+            if (($proposal['status_proposal'] ?? '') === 'disetujui_ketua') {
+                $statusText = 'Disetujui Ketua Tim OPTI BBSPJIS (Siap Penerbitan Surat Penawaran Biaya)';
+            } elseif (($proposal['status_proposal'] ?? '') === 'ditolak') {
+                $statusText = 'Perlu Revisi: ' . ($proposal['catatan_revisi'] ?: '-');
+            }
+            $pdf->MultiCell(0, 4.8, $statusText, 0, 'L');
+            $pdf->Ln(8);
+
+            // 7. TANDA TANGAN
+            $pdf->SetFont('Arial', '', 9);
+            $pdf->Cell(95, 4.5, 'Penyusun Proposal (PIC Peneliti)', 0, 0, 'C');
+            $pdf->Cell(95, 4.5, 'Mengetahui & Menyetujui (Ka. Tim OPTI)', 0, 1, 'C');
+            $pdf->Ln(18);
+
+            $pdf->SetFont('Arial', 'B', 9);
+            $pdf->Cell(95, 4.5, $order['pic_proposal_nama'] ?: ($proposal['pic_nama'] ?? 'PIC Peneliti BBSPJIS'), 0, 0, 'C');
+            $pdf->Cell(95, 4.5, 'Ketua Tim OPTI ' . ucfirst($order['jenis_layanan_opti']), 0, 1, 'C');
+            
+            $pdf->SetFont('Arial', '', 8);
+            $pdf->SetTextColor(100, 100, 100);
+            $pdf->Cell(95, 4, 'BBSPJIS Kemenperin RI', 0, 0, 'C');
+            $pdf->Cell(95, 4, 'BBSPJIS Kemenperin RI', 0, 1, 'C');
+
+            $uploadDir = 'c:/xampp/htdocs/Mini OPTI Tracker/public/uploads/proposals';
+            if (!is_dir($uploadDir)) {
+                @mkdir($uploadDir, 0777, true);
+            }
+            $tempGenPath = $uploadDir . '/Generated_Proposal_Order_' . $id . '.pdf';
+            $pdf->Output('F', $tempGenPath);
+            $filePath = $tempGenPath;
+        }
+
+        $filename = basename($filePath);
+        $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+        $mime = ($ext === 'pdf') ? 'application/pdf' : 'application/octet-stream';
+
+        header('Content-Type: ' . $mime);
+        header('Content-Disposition: inline; filename="' . $filename . '"');
+        header('Content-Transfer-Encoding: binary');
+        header('Content-Length: ' . filesize($filePath));
+        header('Accept-Ranges: bytes');
+        header('Cache-Control: private, max-age=0, must-revalidate');
+        header('Pragma: public');
+        
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+        readfile($filePath);
+        exit;
     }
 }

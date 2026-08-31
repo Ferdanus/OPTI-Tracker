@@ -149,34 +149,37 @@
                                     </td>
                                     <td class="text-center">
                                         <div class="d-inline-flex align-items-center gap-1">
-                                            <?php if ($ord['status'] == 'permintaan_masuk'): ?>
-                                                
-                                                    <a href="<?= ($BASE) ?>/order/<?= ($ord['id']) ?>" class="btn btn-sm btn-warning text-dark py-1 px-2 d-inline-flex align-items-center gap-1 shadow-sm fw-semibold" title="Tentukan OPTI & Disposisikan ke Ketua Tim">
-                                                        <i class="bi bi-send-check"></i> <span>Disposisi</span>
-                                                    </a>
-                                                
-                                                <?php else: ?>
-                                                    <a href="<?= ($BASE) ?>/order/<?= ($ord['id']) ?>" class="btn btn-sm btn-primary py-1 px-2 d-inline-flex align-items-center gap-1 shadow-sm" title="Lihat Detail Order & Progres">
-                                                        <i class="bi bi-eye"></i> <span>Detail</span>
-                                                    </a>
-                                                
-                                            <?php endif; ?>
-                                            <?php if (($ord['status'] == 'baru' || $ord['status'] == 'draft') && $can_approve_po): ?>
-                                                <button type="button" class="btn btn-sm btn-success py-1 px-2 d-inline-flex align-items-center gap-1 shadow-sm" data-bs-toggle="modal" data-bs-target="#approveModal<?= ($ord['id']) ?>" title="Setujui & Terbitkan PO">
-                                                    <i class="bi bi-check2-circle"></i>
-                                                </button>
-                                            <?php endif; ?>
-                                            <?php if ($ord['status'] == 'disetujui'): ?>
-                                                <a href="<?= ($BASE) ?>/po/<?= ($ord['po_id'] ?: $ord['id']) ?>" class="btn btn-sm btn-outline-dark py-1 px-2 d-inline-flex align-items-center gap-1" title="Buka Dokumen PO Terbit">
-                                                    <i class="bi bi-speedometer2"></i>
-                                                </a>
-                                            <?php endif; ?>
-                                            <a href="<?= ($BASE) ?>/order/<?= ($ord['id']) ?>/edit" class="btn btn-sm btn-light border py-1 px-2 text-secondary" title="Edit Order">
-                                                <i class="bi bi-pencil"></i>
-                                            </a>
-                                            <button type="button" class="btn btn-sm btn-light border py-1 px-2" style="color: var(--color-primary);" data-bs-toggle="modal" data-bs-target="#modalHapusOrder<?= ($ord['id']) ?>" title="Hapus Order">
-                                                <i class="bi bi-trash3"></i>
-                                            </button>
+                                             <?php if ($ord['status'] == 'permintaan_masuk'): ?>
+                                                 
+                                                     <a href="<?= ($BASE) ?>/order/<?= ($ord['id']) ?>" class="btn btn-sm btn-warning text-dark py-1 px-2 d-inline-flex align-items-center gap-1 shadow-sm fw-semibold" title="Tentukan OPTI &amp; Disposisikan ke Ketua Tim">
+                                                         <i class="bi bi-send-check"></i> <span>Disposisi</span>
+                                                     </a>
+                                                 
+                                                 <?php else: ?>
+                                                     <a href="<?= ($BASE) ?>/order/<?= ($ord['id']) ?>" class="btn btn-sm btn-primary py-1 px-2 d-inline-flex align-items-center gap-1 shadow-sm" title="Lihat Detail Order &amp; Progres">
+                                                         <i class="bi bi-eye"></i> <span>Detail</span>
+                                                     </a>
+                                                 
+                                             <?php endif; ?>
+
+                                             <?php if (($ord['status'] == 'penawaran_deal' || $ord['status_respon_klien'] == 'deal') && $ord['status'] != 'disetujui' && !$ord['po_id'] && $can_approve_po): ?>
+                                                 <button type="button" class="btn btn-sm btn-success py-1 px-2 d-inline-flex align-items-center gap-1 shadow-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#approveModal<?= ($ord['id']) ?>" title="Klien Telah DEAL: Setujui &amp; Terbitkan PO">
+                                                     <i class="bi bi-check2-circle"></i> <span>Setujui PO</span>
+                                                 </button>
+                                             <?php endif; ?>
+
+                                             <?php if ($ord['status'] == 'disetujui' || $ord['po_id']): ?>
+                                                 <a href="<?= ($BASE) ?>/po/<?= ($ord['po_id'] ?: $ord['id']) ?>" class="btn btn-sm btn-outline-dark py-1 px-2 d-inline-flex align-items-center gap-1" title="Buka Dokumen PO Terbit">
+                                                     <i class="bi bi-speedometer2"></i>
+                                                 </a>
+                                             <?php endif; ?>
+
+                                             <a href="<?= ($BASE) ?>/order/<?= ($ord['id']) ?>/edit" class="btn btn-sm btn-light border py-1 px-2 text-secondary" title="Edit Order">
+                                                 <i class="bi bi-pencil"></i>
+                                             </a>
+                                             <button type="button" class="btn btn-sm btn-light border py-1 px-2" style="color: var(--color-primary);" data-bs-toggle="modal" data-bs-target="#modalHapusOrder<?= ($ord['id']) ?>" title="Hapus Order">
+                                                 <i class="bi bi-trash3"></i>
+                                             </button>
                                         </div>
 
                                         <!-- Modal Konfirmasi Hapus Order Bertema Merah Maroon -->

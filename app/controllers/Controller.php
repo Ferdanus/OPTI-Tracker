@@ -238,7 +238,7 @@ class Controller {
     /**
      * Guard wajib permission, redirect dengan flash error jika tidak memiliki izin
      */
-    public function requirePermission(string $permission, string $redirectUrl = '/po'): void {
+    public function requirePermission(string $permission, string $redirectUrl = '/order'): void {
         if (!$this->hasPermission($permission)) {
             $this->setFlashError('Akses ditolak: Anda tidak memiliki izin untuk melakukan tindakan ini.');
             $this->f3->reroute($redirectUrl);
@@ -292,6 +292,20 @@ class Controller {
     }
 
     /**
+     * Set notifikasi flash warning / peringatan
+     */
+    public function setFlashWarning($message) {
+        $_SESSION['flash_warning'] = $message;
+    }
+
+    /**
+     * Set notifikasi flash info
+     */
+    public function setFlashInfo($message) {
+        $_SESSION['flash_info'] = $message;
+    }
+
+    /**
      * Interceptor global beforeroute
      */
     public function beforeroute($f3) {
@@ -312,9 +326,9 @@ class Controller {
             return;
         }
 
-        // Jika user sudah masuk dan mencoba mengakses form login, langsung arahkan ke /po
+        // Jika user sudah masuk dan mencoba mengakses form login, langsung arahkan ke /order
         if ($isAuthPage && $path === '/login' && isset($_SESSION['user_id'])) {
-            $f3->reroute('/po');
+            $f3->reroute('/order');
             return;
         }
 
