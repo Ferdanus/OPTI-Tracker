@@ -62,7 +62,7 @@
 
                     <?php if ($surat_masuk && $surat_masuk['file_path']): ?>
                         <div class="pt-3 mt-3 border-top">
-                            <a href="<?= ($BASE) ?>/<?= ($surat_masuk['file_path']) ?>" target="_blank" class="btn btn-outline-danger btn-sm w-100 fw-semibold">
+                            <a href="<?= ($BASE) ?>/surat-masuk/<?= ($surat_masuk['id']) ?>/pdf" target="_blank" class="btn btn-outline-danger btn-sm w-100 fw-semibold">
                                 <i class="bi bi-file-earmark-pdf me-1"></i> Buka Surat Permohonan Klien (PDF)
                             </a>
                         </div>
