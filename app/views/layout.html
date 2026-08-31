@@ -1602,36 +1602,38 @@
     <!-- ========================================== -->
     <!-- FLOATING MESSAGE BUBBLE WIDGET (BOTTOM-RIGHT) -->
     <!-- ========================================== -->
-    <div id="floatingNotificationWidget" style="position: fixed; bottom: 24px; right: 24px; z-index: 1060; max-width: 400px; width: calc(100vw - 48px); pointer-events: none;">
+    <div id="floatingNotificationWidget" style="position: fixed; bottom: 24px; right: 24px; z-index: 1060; max-width: 390px; width: calc(100vw - 48px); pointer-events: none;">
         <check if="{{ @unread_notif_count > 0 && isset(@list_notifikasi_user[0]) && !@list_notifikasi_user[0]['is_read'] }}">
-            <div id="activeFloatingBubble" class="card border-0 rounded-4 overflow-hidden" style="pointer-events: auto; background: #ffffff; border: 1px solid rgba(15,23,42,0.1) !important; border-left: 5px solid var(--color-primary) !important; box-shadow: 0 20px 45px -8px rgba(15, 23, 42, 0.24), 0 4px 14px -2px rgba(15, 23, 42, 0.08); animation: slideInUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);">
+            <div id="activeFloatingBubble" class="floating-bubble-card" style="pointer-events: auto;">
                 
                 <!-- TOP HEADER BADGE & CLOSE -->
-                <div class="px-3.5 py-2.5 d-flex justify-content-between align-items-center border-bottom" style="background: linear-gradient(90deg, #fff5f5 0%, #ffffff 100%); border-color: rgba(225, 29, 72, 0.12) !important;">
+                <div class="floating-bubble-header">
                     <div class="d-flex align-items-center gap-2">
-                        <span class="badge rounded-pill text-white px-2.5 py-1 d-inline-flex align-items-center gap-1.5 shadow-xs" style="background: linear-gradient(135deg, #e11d48 0%, #be123c 100%); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">
-                            <span class="pulse-glow-dot-white"></span>
+                        <span class="floating-bubble-badge">
+                            <span class="pulse-glow-dot"></span>
                             Pemberitahuan Tugas
                         </span>
-                        <span class="text-danger fw-semibold" style="font-size: 0.72rem;">&bull; Baru</span>
+                        <span class="floating-bubble-time">&bull; {{ @list_notifikasi_user[0]['time_ago'] ?: 'Baru saja' }}</span>
                     </div>
-                    <button type="button" class="btn-close shadow-none p-1 text-muted" style="font-size: 0.68rem; opacity: 0.65;" onclick="window.dismissFloatingBubble({{ @list_notifikasi_user[0]['id'] }})" aria-label="Tutup"></button>
+                    <button type="button" class="floating-bubble-close" onclick="window.dismissFloatingBubble({{ @list_notifikasi_user[0]['id'] }})" aria-label="Tutup">
+                        <i class="bi bi-x"></i>
+                    </button>
                 </div>
 
                 <!-- MAIN CARD BODY -->
-                <div class="card-body p-3.5 pt-3">
+                <div class="floating-bubble-body">
                     <div class="d-flex align-items-start gap-3">
-                        <div class="flex-shrink-0 d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; background: #fff1f2; color: #881337; border: 1px solid #fecdd3; border-radius: 12px; box-shadow: 0 2px 6px rgba(136, 19, 55, 0.08);">
-                            <i class="bi {{ @list_notifikasi_user[0]['icon'] ?: 'bi-bell-fill' }} fs-5"></i>
+                        <div class="floating-bubble-icon {{ @list_notifikasi_user[0]['tipe'] == 'success' ? 'icon-success' : (@list_notifikasi_user[0]['tipe'] == 'warning' ? 'icon-warning' : 'icon-primary') }}">
+                            <i class="bi {{ @list_notifikasi_user[0]['icon'] ?: 'bi-bell-fill' }}"></i>
                         </div>
                         <div class="flex-grow-1">
-                            <h6 class="fw-bold text-dark mb-1 font-display" style="font-size: 0.88rem; line-height: 1.35; color: #0f172a !important;">{{ @list_notifikasi_user[0]['judul'] }}</h6>
-                            <p class="text-secondary mb-3" style="font-size: 0.78rem; line-height: 1.45; color: #475569 !important;">{{ @list_notifikasi_user[0]['pesan'] }}</p>
-                            <div class="d-flex align-items-center gap-2">
-                                <a href="{{ @BASE }}{{ @list_notifikasi_user[0]['link_url'] }}" onclick="window.markNotifRead({{ @list_notifikasi_user[0]['id'] }}, '{{ @BASE }}{{ @list_notifikasi_user[0]['link_url'] }}')" class="btn btn-sm py-1.5 px-3.5 rounded-pill fw-semibold text-white text-decoration-none shadow-sm d-inline-flex align-items-center gap-1.5" style="background: linear-gradient(135deg, #881337 0%, #9f1239 100%); font-size: 0.78rem; border: none;">
+                            <h6 class="floating-bubble-title">{{ @list_notifikasi_user[0]['judul'] }}</h6>
+                            <p class="floating-bubble-desc">{{ @list_notifikasi_user[0]['pesan'] }}</p>
+                            <div class="d-flex align-items-center gap-2 pt-1">
+                                <a href="{{ @BASE }}{{ @list_notifikasi_user[0]['link_url'] }}" onclick="window.markNotifRead({{ @list_notifikasi_user[0]['id'] }}, '{{ @BASE }}{{ @list_notifikasi_user[0]['link_url'] }}')" class="btn-bubble-action">
                                     Buka Tugas <i class="bi bi-arrow-right"></i>
                                 </a>
-                                <button type="button" class="btn btn-light btn-sm py-1.5 px-3 rounded-pill border text-secondary fw-semibold" style="font-size: 0.78rem; background: #f8fafc;" onclick="window.dismissFloatingBubble({{ @list_notifikasi_user[0]['id'] }})">
+                                <button type="button" class="btn-bubble-dismiss" onclick="window.dismissFloatingBubble({{ @list_notifikasi_user[0]['id'] }})">
                                     Nanti Saja
                                 </button>
                             </div>
@@ -1644,29 +1646,161 @@
     </div>
 
     <style>
-        .pulse-glow-dot-white {
+        .floating-bubble-card {
+            background: #ffffff;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            border-left: 5px solid var(--color-primary);
+            box-shadow: 0 16px 36px -6px rgba(15, 23, 42, 0.18), 0 4px 12px -2px rgba(15, 23, 42, 0.06);
+            overflow: hidden;
+            animation: slideInUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .floating-bubble-header {
+            padding: 10px 14px 8px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8fafc;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .floating-bubble-badge {
+            background: #fff1f2;
+            color: #be123c;
+            border: 1px solid #fecdd3;
+            padding: 3px 8px;
+            border-radius: 999px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            line-height: 1;
+        }
+        .pulse-glow-dot {
             width: 6px;
             height: 6px;
-            background-color: #ffffff;
+            background-color: #e11d48;
             border-radius: 50%;
             display: inline-block;
             flex-shrink: 0;
-            box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.8);
-            animation: pulseGlowWhite 1.8s infinite;
+            box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.7);
+            animation: pulseGlow 1.8s infinite;
         }
-        @keyframes pulseGlowWhite {
+        @keyframes pulseGlow {
             0% {
                 transform: scale(0.95);
-                box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.8);
+                box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.7);
             }
             70% {
                 transform: scale(1);
-                box-shadow: 0 0 0 5px rgba(255, 255, 255, 0);
+                box-shadow: 0 0 0 5px rgba(225, 29, 72, 0);
             }
             100% {
                 transform: scale(0.95);
-                box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+                box-shadow: 0 0 0 0 rgba(225, 29, 72, 0);
             }
+        }
+        .floating-bubble-time {
+            font-size: 0.72rem;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+        .floating-bubble-close {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            line-height: 1;
+            padding: 0;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .floating-bubble-close:hover {
+            background: #e2e8f0;
+            color: #334155;
+        }
+        .floating-bubble-body {
+            padding: 14px;
+        }
+        .floating-bubble-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 1.15rem;
+        }
+        .floating-bubble-icon.icon-primary {
+            background: #fff1f2;
+            color: #be123c;
+        }
+        .floating-bubble-icon.icon-success {
+            background: #f0fdf4;
+            color: #16a34a;
+        }
+        .floating-bubble-icon.icon-warning {
+            background: #fffbeb;
+            color: #d97706;
+        }
+        .floating-bubble-title {
+            font-size: 0.86rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 4px;
+            line-height: 1.35;
+            font-family: var(--font-display);
+        }
+        .floating-bubble-desc {
+            font-size: 0.76rem;
+            color: #64748b;
+            margin-bottom: 10px;
+            line-height: 1.45;
+        }
+        .btn-bubble-action {
+            background: var(--color-primary);
+            color: #ffffff;
+            border: none;
+            padding: 5px 14px;
+            border-radius: 999px;
+            font-size: 0.76rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 2px 6px rgba(136, 19, 55, 0.25);
+            transition: all 0.15s ease;
+        }
+        .btn-bubble-action:hover {
+            background: #9f1239;
+            color: #ffffff;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(136, 19, 55, 0.35);
+        }
+        .btn-bubble-dismiss {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 0.76rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .btn-bubble-dismiss:hover {
+            background: #e2e8f0;
+            color: #1e293b;
         }
         @keyframes slideInUp {
             from {
