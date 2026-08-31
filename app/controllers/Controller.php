@@ -41,6 +41,7 @@ class Controller {
             'alert:manage'
         ),
         'ketua_tim' => array(
+            'surat_masuk:view',
             'order:view', 'order:tinjau', 'order:assign_pic', 'order:proposal_review',
             'po:view', 'po:create', 'po:edit', 'po:rab', 'po:jadwal', 'po:evaluasi', 'po:sop',
             'penawaran:view',
@@ -49,6 +50,7 @@ class Controller {
             'alert:manage'
         ),
         'pejabat' => array(
+            'surat_masuk:view',
             'order:view',
             'penawaran:view',
             'po:view', 'po:sop', 'po:approve',
@@ -58,11 +60,13 @@ class Controller {
             'alert:manage'
         ),
         'tim_kerja' => array(
+            'surat_masuk:view',
             'order:view', 'order:proposal', 'order:proposal_pic', 'order:proposal_upload', 'order:kalkulasi_biaya',
             'po:view', 'po:progress', 'po:laporan', 'po:sop',
             'alert:manage'
         ),
         'admin_kontrak' => array(
+            'surat_masuk:view',
             'order:view',
             'po:view', 'po:sop',
             'kontrak:view', 'kontrak:create', 'kontrak:edit',
