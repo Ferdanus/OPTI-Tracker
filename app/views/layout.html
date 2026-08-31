@@ -1602,33 +1602,36 @@
     <!-- ========================================== -->
     <!-- FLOATING MESSAGE BUBBLE WIDGET (BOTTOM-RIGHT) -->
     <!-- ========================================== -->
-    <div id="floatingNotificationWidget" style="position: fixed; bottom: 24px; right: 24px; z-index: 1060; max-width: 380px; width: calc(100vw - 48px); pointer-events: none;">
+    <div id="floatingNotificationWidget" style="position: fixed; bottom: 24px; right: 24px; z-index: 1060; max-width: 400px; width: calc(100vw - 48px); pointer-events: none;">
         <check if="{{ @unread_notif_count > 0 && isset(@list_notifikasi_user[0]) && !@list_notifikasi_user[0]['is_read'] }}">
-            <div id="activeFloatingBubble" class="card border-0 rounded-4 overflow-hidden shadow-lg" style="pointer-events: auto; background: #ffffff; border: 1px solid rgba(15,23,42,0.12) !important; box-shadow: 0 16px 36px -6px rgba(15, 23, 42, 0.18), 0 4px 14px -2px rgba(15, 23, 42, 0.05) !important; animation: slideInUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);">
+            <div id="activeFloatingBubble" class="card border-0 rounded-4 overflow-hidden" style="pointer-events: auto; background: #ffffff; border: 1px solid rgba(15,23,42,0.1) !important; border-left: 5px solid var(--color-primary) !important; box-shadow: 0 20px 45px -8px rgba(15, 23, 42, 0.24), 0 4px 14px -2px rgba(15, 23, 42, 0.08); animation: slideInUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);">
                 
-                <!-- TOP HEADER -->
-                <div class="px-3.5 pt-3 pb-1 d-flex justify-content-between align-items-center">
+                <!-- TOP HEADER BADGE & CLOSE -->
+                <div class="px-3.5 py-2.5 d-flex justify-content-between align-items-center border-bottom" style="background: linear-gradient(90deg, #fff5f5 0%, #ffffff 100%); border-color: rgba(225, 29, 72, 0.12) !important;">
                     <div class="d-flex align-items-center gap-2">
-                        <span class="pulse-glow-dot"></span>
-                        <span class="fw-bold text-danger text-uppercase" style="font-size: 0.66rem; letter-spacing: 0.6px;">Pemberitahuan Tugas</span>
+                        <span class="badge rounded-pill text-white px-2.5 py-1 d-inline-flex align-items-center gap-1.5 shadow-xs" style="background: linear-gradient(135deg, #e11d48 0%, #be123c 100%); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">
+                            <span class="pulse-glow-dot-white"></span>
+                            Pemberitahuan Tugas
+                        </span>
+                        <span class="text-danger fw-semibold" style="font-size: 0.72rem;">&bull; Baru</span>
                     </div>
-                    <button type="button" class="btn-close shadow-none p-1 opacity-75" style="font-size: 0.65rem;" onclick="window.dismissFloatingBubble({{ @list_notifikasi_user[0]['id'] }})" aria-label="Tutup"></button>
+                    <button type="button" class="btn-close shadow-none p-1 text-muted" style="font-size: 0.68rem; opacity: 0.65;" onclick="window.dismissFloatingBubble({{ @list_notifikasi_user[0]['id'] }})" aria-label="Tutup"></button>
                 </div>
 
                 <!-- MAIN CARD BODY -->
-                <div class="card-body px-3.5 pt-2 pb-3.5">
-                    <div class="d-flex align-items-start gap-2.5">
-                        <div class="rounded-circle flex-shrink-0 d-flex align-items-center justify-content-center {{ @list_notifikasi_user[0]['tipe'] == 'success' ? 'bg-success-subtle text-success' : (@list_notifikasi_user[0]['tipe'] == 'warning' ? 'bg-warning-subtle text-warning' : 'bg-primary-subtle text-primary') }}" style="width: 34px; height: 34px; margin-top: 1px;">
-                            <i class="bi {{ @list_notifikasi_user[0]['icon'] ?: 'bi-bell-fill' }}" style="font-size: 0.95rem;"></i>
+                <div class="card-body p-3.5 pt-3">
+                    <div class="d-flex align-items-start gap-3">
+                        <div class="flex-shrink-0 d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; background: #fff1f2; color: #881337; border: 1px solid #fecdd3; border-radius: 12px; box-shadow: 0 2px 6px rgba(136, 19, 55, 0.08);">
+                            <i class="bi {{ @list_notifikasi_user[0]['icon'] ?: 'bi-bell-fill' }} fs-5"></i>
                         </div>
                         <div class="flex-grow-1">
-                            <h6 class="fw-bold text-dark mb-1 font-display" style="font-size: 0.85rem; line-height: 1.35;">{{ @list_notifikasi_user[0]['judul'] }}</h6>
-                            <p class="text-secondary small mb-2.5" style="font-size: 0.76rem; line-height: 1.42;">{{ @list_notifikasi_user[0]['pesan'] }}</p>
+                            <h6 class="fw-bold text-dark mb-1 font-display" style="font-size: 0.88rem; line-height: 1.35; color: #0f172a !important;">{{ @list_notifikasi_user[0]['judul'] }}</h6>
+                            <p class="text-secondary mb-3" style="font-size: 0.78rem; line-height: 1.45; color: #475569 !important;">{{ @list_notifikasi_user[0]['pesan'] }}</p>
                             <div class="d-flex align-items-center gap-2">
-                                <a href="{{ @BASE }}{{ @list_notifikasi_user[0]['link_url'] }}" onclick="window.markNotifRead({{ @list_notifikasi_user[0]['id'] }}, '{{ @BASE }}{{ @list_notifikasi_user[0]['link_url'] }}')" class="btn btn-primary btn-sm py-1 px-3 rounded-pill fw-semibold text-white text-decoration-none shadow-xs d-inline-flex align-items-center gap-1.5" style="font-size: 0.75rem; background: var(--color-primary); border-color: var(--color-primary);">
+                                <a href="{{ @BASE }}{{ @list_notifikasi_user[0]['link_url'] }}" onclick="window.markNotifRead({{ @list_notifikasi_user[0]['id'] }}, '{{ @BASE }}{{ @list_notifikasi_user[0]['link_url'] }}')" class="btn btn-sm py-1.5 px-3.5 rounded-pill fw-semibold text-white text-decoration-none shadow-sm d-inline-flex align-items-center gap-1.5" style="background: linear-gradient(135deg, #881337 0%, #9f1239 100%); font-size: 0.78rem; border: none;">
                                     Buka Tugas <i class="bi bi-arrow-right"></i>
                                 </a>
-                                <button type="button" class="btn btn-light btn-sm py-1 px-2.5 rounded-pill border text-secondary fw-semibold" style="font-size: 0.75rem;" onclick="window.dismissFloatingBubble({{ @list_notifikasi_user[0]['id'] }})">
+                                <button type="button" class="btn btn-light btn-sm py-1.5 px-3 rounded-pill border text-secondary fw-semibold" style="font-size: 0.78rem; background: #f8fafc;" onclick="window.dismissFloatingBubble({{ @list_notifikasi_user[0]['id'] }})">
                                     Nanti Saja
                                 </button>
                             </div>
@@ -1641,34 +1644,34 @@
     </div>
 
     <style>
-        .pulse-glow-dot {
-            width: 7px;
-            height: 7px;
-            background-color: #e11d48;
+        .pulse-glow-dot-white {
+            width: 6px;
+            height: 6px;
+            background-color: #ffffff;
             border-radius: 50%;
             display: inline-block;
             flex-shrink: 0;
-            box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.7);
-            animation: pulseGlow 1.8s infinite;
+            box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.8);
+            animation: pulseGlowWhite 1.8s infinite;
         }
-        @keyframes pulseGlow {
+        @keyframes pulseGlowWhite {
             0% {
                 transform: scale(0.95);
-                box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.7);
+                box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.8);
             }
             70% {
                 transform: scale(1);
-                box-shadow: 0 0 0 5px rgba(225, 29, 72, 0);
+                box-shadow: 0 0 0 5px rgba(255, 255, 255, 0);
             }
             100% {
                 transform: scale(0.95);
-                box-shadow: 0 0 0 0 rgba(225, 29, 72, 0);
+                box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
             }
         }
         @keyframes slideInUp {
             from {
                 opacity: 0;
-                transform: translateY(24px) scale(0.97);
+                transform: translateY(30px) scale(0.96);
             }
             to {
                 opacity: 1;
