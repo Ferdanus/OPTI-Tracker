@@ -61,9 +61,9 @@
 
                     <check if="{{ @surat_masuk && @surat_masuk.file_path }}">
                         <div class="pt-3 mt-3 border-top">
-                            <a href="{{ @BASE }}/surat-masuk/{{ @surat_masuk.id }}/pdf" target="_blank" class="btn btn-outline-danger btn-sm w-100 fw-semibold">
-                                <i class="bi bi-file-earmark-pdf me-1"></i> Buka Surat Permohonan Klien (PDF)
-                            </a>
+                            <button type="button" class="btn btn-outline-danger btn-sm w-100 fw-semibold d-flex align-items-center justify-content-center gap-1.5 shadow-xs" data-bs-toggle="modal" data-bs-target="#modalPreviewSuratMasukTinjauan">
+                                <i class="bi bi-file-earmark-text-fill text-danger fs-6"></i> Pratinjau Surat Permohonan Klien
+                            </button>
                         </div>
                     </check>
                 </div>
@@ -276,3 +276,158 @@ function toggleAlasanPenolakan() {
     color: #991b1b !important;
 }
 </style>
+
+<!-- MODAL IN-APP PRATINJAU SURAT PERMOHONAN KLIEN -->
+<check if="{{ @surat_masuk }}">
+<div class="modal fade" id="modalPreviewSuratMasukTinjauan" tabindex="-1" aria-labelledby="modalPreviewSuratMasukTinjauanLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content shadow-lg border-0 rounded-4 overflow-hidden">
+            
+            <div class="modal-header border-bottom py-2.5 px-4 bg-white d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="rounded-circle p-2 bg-danger-subtle text-danger d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                        <i class="bi bi-file-earmark-text-fill fs-5"></i>
+                    </div>
+                    <div>
+                        <h6 class="modal-title fw-bold text-dark m-0 font-display" id="modalPreviewSuratMasukTinjauanLabel">
+                            Berkas Surat Permohonan: {{ @surat_masuk.nomor_surat }}
+                        </h6>
+                        <small class="text-muted">{{ @order.nama_perusahaan }} &bull; Tanggal Surat: {{ date('d M Y', strtotime(@surat_masuk.tanggal_surat)) }}</small>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                </div>
+            </div>
+
+            <div class="modal-body p-4 bg-light" style="min-height: 70vh;">
+                <div class="official-sheet mx-auto bg-white p-4 p-md-5 rounded-3 shadow-sm border" style="max-width: 820px; font-family: 'Times New Roman', Times, serif; color: #111; line-height: 1.55;">
+                    
+                    <!-- KOP SURAT PENGIRIM -->
+                    <div class="text-center pb-2">
+                        <h4 class="fw-bold mb-0 text-uppercase letter-spacing-1" style="font-size: 1.3rem;">{{ (@surat_masuk.pt_cv ? @surat_masuk.pt_cv . ' ' : '') . @surat_masuk.pengirim }}</h4>
+                        <div class="fw-bold small text-muted text-uppercase my-1" style="font-size: 0.75rem; letter-spacing: 1px;">PRODUSEN &amp; JASA INDUSTRI TEKNOLOGI</div>
+                        <div class="small text-secondary" style="font-size: 0.825rem;">{{ @surat_masuk.alamat_pengirim ?: 'Kawasan Industri Terpadu, Indonesia' }} | Telp: {{ @surat_masuk.no_telp_pengirim ?: '-' }}</div>
+                    </div>
+                    
+                    <!-- GARIS KOP GANDA -->
+                    <div style="border-bottom: 2.5px solid #000; margin-bottom: 2px;"></div>
+                    <div style="border-bottom: 1px solid #000; margin-bottom: 24px;"></div>
+
+                    <!-- METADATA SURAT -->
+                    <div class="d-flex justify-content-between align-items-start mb-4" style="font-size: 0.95rem;">
+                        <div>
+                            <table class="table table-borderless table-sm p-0 m-0" style="width: auto;">
+                                <tr>
+                                    <td style="width: 80px; padding: 2px 0;">Nomor</td>
+                                    <td style="width: 15px; padding: 2px 0;">:</td>
+                                    <td style="padding: 2px 0;"><strong>{{ @surat_masuk.nomor_surat }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 2px 0;">Lampiran</td>
+                                    <td style="padding: 2px 0;">:</td>
+                                    <td style="padding: 2px 0;">1 (satu) berkas spesifikasi teknis</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 2px 0;">Hal</td>
+                                    <td style="padding: 2px 0;">:</td>
+                                    <td style="padding: 2px 0;"><strong>{{ @surat_masuk.perihal }}</strong></td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="text-end fw-normal" style="white-space: nowrap;">
+                            Bandung, {{ date('d F Y', strtotime(@surat_masuk.tanggal_surat)) }}
+                        </div>
+                    </div>
+
+                    <!-- TUJUAN -->
+                    <div class="mb-4" style="font-size: 0.95rem;">
+                        <div>Kepada Yth.</div>
+                        <strong>Kepala Balai Besar Standardisasi dan Pelayanan Jasa Industri Selulosa (BBSPJIS)</strong><br>
+                        Kementerian Perindustrian Republik Indonesia<br>
+                        Jl. Raya Dayeuhkolot No. 132, Bandung, Jawa Barat 40258
+                    </div>
+
+                    <!-- ISI SURAT -->
+                    <div class="mb-4" style="font-size: 0.95rem; text-align: justify;">
+                        <p>Dengan hormat,</p>
+                        <p>Sehubungan dengan rencana pengujian mutu dan optimalisasi proses teknologi industri, bersama ini kami mengajukan permohonan kerjasama pelaksanaan Layanan Optimalisasi Teknologi Industri (OPTI) dengan rincian sebagai berikut:</p>
+                        
+                        <strong class="d-block mb-1">1. Data Pemohon / Instansi:</strong>
+                        <table class="table table-borderless table-sm ms-2 mb-3" style="font-size: 0.925rem; width: 98%;">
+                            <tr>
+                                <td style="width: 150px; padding: 3px 0;">a. Nama Perusahaan</td>
+                                <td style="width: 15px; padding: 3px 0;">:</td>
+                                <td style="padding: 3px 0;"><strong>{{ (@surat_masuk.pt_cv ? @surat_masuk.pt_cv . ' ' : '') . @surat_masuk.pengirim }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 3px 0;">b. Alamat</td>
+                                <td style="padding: 3px 0;">:</td>
+                                <td style="padding: 3px 0;">{{ @surat_masuk.alamat_pengirim ?: 'Kawasan Industri Terpadu, Indonesia' }}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 3px 0;">c. Narahubung / PIC</td>
+                                <td style="padding: 3px 0;">:</td>
+                                <td style="padding: 3px 0;">{{ @surat_masuk.pic_pengirim ?: (@order.pic ?: 'Penanggung Jawab Teknis') }}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 3px 0;">d. Telepon &amp; Email</td>
+                                <td style="padding: 3px 0;">:</td>
+                                <td style="padding: 3px 0;">{{ @surat_masuk.no_telp_pengirim ?: (@order.telepon ?: '-') }} &bull; {{ @surat_masuk.email_pengirim ?: (@order.email ?: '-') }}</td>
+                            </tr>
+                        </table>
+
+                        <strong class="d-block mb-1">2. Rincian Kebutuhan Layanan OPTI:</strong>
+                        <table class="table table-borderless table-sm ms-2 mb-3" style="font-size: 0.925rem; width: 98%;">
+                            <tr>
+                                <td style="width: 150px; padding: 3px 0;">a. Judul Kegiatan</td>
+                                <td style="width: 15px; padding: 3px 0;">:</td>
+                                <td style="padding: 3px 0;"><strong>{{ @order.judul_kegiatan }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 3px 0;">b. Layanan Dimohon</td>
+                                <td style="padding: 3px 0;">:</td>
+                                <td style="padding: 3px 0;">Layanan Optimalisasi Teknologi Industri (OPTI) - Divisi {{ ucfirst(@order.jenis_layanan_opti) }}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 3px 0;">c. Ruang Lingkup</td>
+                                <td style="padding: 3px 0;">:</td>
+                                <td style="padding: 3px 0;">{{ @order.deskripsi ?: (@order.penjelasan ?: 'Kajian Teknis, Karakterisasi Laboratorium & Penerbitan Sertifikat / Laporan Hasil Pengujian Resmi Balai') }}</td>
+                            </tr>
+                        </table>
+
+                        <p>Demikian surat permohonan ini kami sampaikan. Kami berharap dapat segera menerima Tinjauan Kelayakan Permintaan serta Surat Penawaran Biaya resmi dari BBSPJIS. Atas perhatian dan kerjasama Bapak/Ibu, kami ucapkan terima kasih.</p>
+                    </div>
+
+                    <!-- TANDA TANGAN & STEMPEL -->
+                    <div class="row mt-5">
+                        <div class="col-6"></div>
+                        <div class="col-6 text-center" style="font-size: 0.95rem;">
+                            <div>Hormat kami,</div>
+                            <strong class="d-block mb-2">{{ (@surat_masuk.pt_cv ? @surat_masuk.pt_cv . ' ' : '') . @surat_masuk.pengirim }}</strong>
+                            <div class="border d-inline-block px-3 py-1 my-2 text-muted small" style="border-style: dashed !important; font-size: 0.75rem;">
+                                [ TTD &amp; STEMPEL RESMI ]
+                            </div>
+                            <div class="mt-3">
+                                <u class="fw-bold d-block">{{ @surat_masuk.pic_pengirim ?: (@order.pic ?: 'Pimpinan Perusahaan') }}</u>
+                                <span class="small text-muted">Direktur</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="modal-footer border-top py-2 px-4 bg-white d-flex justify-content-between align-items-center">
+                <span class="small text-muted font-monospace">
+                    <i class="bi bi-shield-check text-success me-1"></i> Berkas Terverifikasi Sistem Informasi Layanan BBSPJIS
+                </span>
+                <button type="button" class="btn btn-secondary btn-sm px-4 fw-semibold rounded-pill" data-bs-dismiss="modal">
+                    Tutup Pratinjau
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+</check>
