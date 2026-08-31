@@ -1,10 +1,10 @@
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
     <div>
-        <h2 class="h4 fw-bold mb-1 text-dark"><i class="bi bi-globe-americas text-primary me-1"></i> Data Pengujian Eksternal</h2>
-        <p class="text-muted small mb-0">Mitra / laboratorium rujukan untuk metode uji yang membutuhkan pengujian di luar Balai.</p>
+        <h2 class="h4 fw-bold mb-1 text-dark"><i class="bi bi-geo-alt text-primary me-1"></i> Lembaga Pengujian Eksternal</h2>
+        <p class="text-muted small mb-0">Daftar lembaga / tempat rujukan pengujian eksternal beserta alamatnya.</p>
     </div>
     <a href="{{ @BASE }}/pengujian-eksternal/tambah" class="btn btn-primary">
-        <i class="bi bi-plus-lg"></i> Tambah Mitra Eksternal
+        <i class="bi bi-plus-lg"></i> Tambah Lembaga
     </a>
 </div>
 
@@ -13,11 +13,11 @@
     <div class="col-md-4">
         <div class="metric-card">
             <div>
-                <div class="text-muted small fw-semibold mb-1">Total Mitra Terdaftar</div>
-                <div class="h4 fw-bold mb-0 text-dark">{{ @total_mitra ?: 0 }}</div>
+                <div class="text-muted small fw-semibold mb-1">Total Lembaga</div>
+                <div class="h4 fw-bold mb-0 text-dark">{{ @total_lembaga ?: 0 }}</div>
             </div>
             <div class="metric-icon-box" style="background: rgba(136,19,55,.08); color: var(--color-primary);">
-                <i class="bi bi-building-gear"></i>
+                <i class="bi bi-building"></i>
             </div>
         </div>
     </div>
@@ -45,44 +45,17 @@
     </div>
 </div>
 
-<!-- Peringatan: metode butuh eksternal tapi belum ada mitra -->
-<check if="{{ @metode_belum_ada_mitra && count(@metode_belum_ada_mitra) > 0 }}">
-    <div class="alert border-0 shadow-sm rounded-3 mb-4" style="background-color: #fffbeb; border: 1px solid #fde68a !important;">
-        <div class="d-flex align-items-start gap-2">
-            <i class="bi bi-exclamation-triangle-fill text-warning fs-5"></i>
-            <div class="flex-grow-1">
-                <div class="fw-bold text-dark small mb-1">{{ count(@metode_belum_ada_mitra) }} metode uji butuh eksternal namun belum punya mitra terdaftar</div>
-                <div class="d-flex flex-wrap gap-2 mt-2">
-                    <repeat group="{{ @metode_belum_ada_mitra }}" value="{{ @mm }}">
-                        <a href="{{ @BASE }}/pengujian-eksternal/tambah?metode={{ @mm.id }}" class="badge badge-pill-warning text-decoration-none">
-                            <i class="bi bi-plus-lg"></i> {{ @mm.nama_metode }} ({{ @mm.nama_kategori }})
-                        </a>
-                    </repeat>
-                </div>
-            </div>
-        </div>
-    </div>
-</check>
-
 <!-- Pencarian & Filter -->
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-body p-3">
         <form action="{{ @BASE }}/pengujian-eksternal" method="GET" class="row g-2 align-items-center">
-            <div class="col-md-5">
+            <div class="col-md-9">
                 <div class="input-group">
                     <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
-                    <input type="text" name="q" class="form-control border-start-0" placeholder="Cari nama lembaga / metode uji..." value="{{ @search }}">
+                    <input type="text" name="q" class="form-control border-start-0" placeholder="Cari nama lembaga / alamat..." value="{{ @search }}">
                 </div>
             </div>
-            <div class="col-md-3">
-                <select name="metode" class="form-select">
-                    <option value="">Semua Metode</option>
-                    <repeat group="{{ @semua_metode_eksternal ?: [] }}" value="{{ @mOpt }}">
-                        <option value="{{ @mOpt.id }}" {{ @filter_metode == @mOpt.id ? 'selected' : '' }}>{{ @mOpt.nama_metode }}</option>
-                    </repeat>
-                </select>
-            </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <select name="status" class="form-select">
                     <option value="">Semua Status</option>
                     <option value="aktif" {{ @filter_status == 'aktif' ? 'selected' : '' }}>Aktif (Tampil)</option>
@@ -99,75 +72,56 @@
 <!-- Tabel Data -->
 <div class="card border-0 shadow-sm">
     <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-        <h6 class="m-0 fw-bold text-dark"><i class="bi bi-table text-primary me-2"></i>Daftar Mitra Pengujian Eksternal</h6>
-        <span class="text-muted small">Total: {{ @total_mitra ?: 0 }} mitra</span>
+        <h6 class="m-0 fw-bold text-dark"><i class="bi bi-table text-primary me-2"></i>Daftar Lembaga</h6>
+        <span class="text-muted small">Total: {{ @total_lembaga ?: 0 }} lembaga</span>
     </div>
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
             <thead>
                 <tr>
-                    <th>Lembaga / Laboratorium</th>
-                    <th>Metode Terkait</th>
-                    <th>PIC & Kontak</th>
-                    <th class="text-end">Estimasi Biaya</th>
-                    <th>Estimasi Waktu</th>
+                    <th style="width:40px;">No</th>
+                    <th>Nama Lembaga / Tempat</th>
+                    <th>Alamat</th>
                     <th class="text-center">Status</th>
                     <th class="text-center" style="width:150px;">Aksi</th>
                 </tr>
             </thead>
             <tbody>
-                <check if="{{ @daftar_eksternal && count(@daftar_eksternal) > 0 }}">
-                    <repeat group="{{ @daftar_eksternal }}" value="{{ @e }}">
+                <check if="{{ @daftar_lembaga && count(@daftar_lembaga) > 0 }}">
+                    <repeat group="{{ @daftar_lembaga }}" value="{{ @l }}" key="{{ @i }}">
                         <tr>
-                            <td>
-                                <div class="fw-semibold text-dark">{{ @e.nama_lembaga }}</div>
-                                <check if="{{ @e.no_akreditasi }}">
-                                    <div class="text-muted" style="font-size: 0.72rem;"><i class="bi bi-patch-check me-1"></i>{{ @e.no_akreditasi }}</div>
-                                </check>
-                                <check if="{{ @e.alamat }}">
-                                    <div class="text-muted" style="font-size: 0.72rem;"><i class="bi bi-geo-alt me-1"></i>{{ @e.alamat }}</div>
-                                </check>
+                            <td class="text-muted">{{ @i + 1 }}</td>
+                            <td class="fw-semibold text-dark">
+                                <i class="bi bi-building text-muted me-1"></i> {{ @l.nama_lembaga }}
                             </td>
-                            <td>
-                                <div class="text-dark small fw-semibold">{{ @e.nama_metode }}</div>
-                                <span class="badge badge-pill-primary">{{ @e.nama_kategori }}</span>
-                            </td>
-                            <td>
-                                <div class="small">{{ @e.pic_nama ?: '-' }}</div>
-                                <div class="text-muted" style="font-size: 0.72rem;">{{ @e.pic_kontak ?: '-' }}</div>
-                            </td>
-                            <td class="text-end fw-semibold">
-                                <check if="{{ @e.estimasi_biaya > 0 }}">Rp {{ number_format(@e.estimasi_biaya, 0, ',', '.') }}</check>
-                                <check if="{{ !@e.estimasi_biaya || @e.estimasi_biaya == 0 }}"><span class="text-muted fw-normal">-</span></check>
-                            </td>
-                            <td>{{ @e.estimasi_nilai }} {{ @e.estimasi_satuan }}</td>
+                            <td class="text-muted small">{{ @l.alamat ?: '-' }}</td>
                             <td class="text-center">
-                                <check if="{{ @e.status == 'aktif' }}">
+                                <check if="{{ @l.status == 'aktif' }}">
                                     <span class="badge badge-pill-success"><i class="bi bi-eye"></i> Aktif</span>
                                 </check>
-                                <check if="{{ @e.status != 'aktif' }}">
+                                <check if="{{ @l.status != 'aktif' }}">
                                     <span class="badge badge-pill-secondary"><i class="bi bi-eye-slash"></i> Nonaktif</span>
                                 </check>
                             </td>
                             <td class="text-center">
                                 <div class="d-flex justify-content-center gap-1">
-                                    <a href="{{ @BASE }}/pengujian-eksternal/{{ @e.id }}/edit" class="btn btn-sm btn-outline-primary" title="Edit">
+                                    <a href="{{ @BASE }}/pengujian-eksternal/{{ @l.id }}/edit" class="btn btn-sm btn-outline-primary" title="Edit">
                                         <i class="bi bi-pencil"></i>
                                     </a>
-                                    <form action="{{ @BASE }}/pengujian-eksternal/{{ @e.id }}/toggle-status" method="POST" class="d-inline">
+                                    <form action="{{ @BASE }}/pengujian-eksternal/{{ @l.id }}/toggle-status" method="POST" class="d-inline">
                                         <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
-                                        <check if="{{ @e.status == 'aktif' }}">
+                                        <check if="{{ @l.status == 'aktif' }}">
                                             <button type="submit" class="btn btn-sm btn-outline-secondary" title="Sembunyikan">
                                                 <i class="bi bi-eye-slash"></i>
                                             </button>
                                         </check>
-                                        <check if="{{ @e.status != 'aktif' }}">
+                                        <check if="{{ @l.status != 'aktif' }}">
                                             <button type="submit" class="btn btn-sm btn-outline-success" title="Tampilkan kembali">
                                                 <i class="bi bi-eye"></i>
                                             </button>
                                         </check>
                                     </form>
-                                    <form action="{{ @BASE }}/pengujian-eksternal/{{ @e.id }}/hapus" method="POST" class="d-inline" onsubmit="return confirm('Hapus data mitra eksternal ini?');">
+                                    <form action="{{ @BASE }}/pengujian-eksternal/{{ @l.id }}/hapus" method="POST" class="d-inline" onsubmit="return confirm('Hapus lembaga ini secara permanen?');">
                                         <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
                                         <button type="submit" class="btn btn-sm btn-outline-danger" title="Hapus">
                                             <i class="bi bi-trash"></i>
@@ -178,11 +132,11 @@
                         </tr>
                     </repeat>
                 </check>
-                <check if="{{ !@daftar_eksternal || count(@daftar_eksternal) == 0 }}">
+                <check if="{{ !@daftar_lembaga || count(@daftar_lembaga) == 0 }}">
                     <tr>
-                        <td colspan="7" class="text-center text-muted py-5">
+                        <td colspan="5" class="text-center text-muted py-5">
                             <i class="bi bi-inbox fs-2 d-block mb-2"></i>
-                            Belum ada data mitra pengujian eksternal.
+                            Belum ada data lembaga pengujian eksternal.
                         </td>
                     </tr>
                 </check>

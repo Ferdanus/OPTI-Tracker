@@ -1,138 +1,67 @@
 <div class="d-flex align-items-center gap-3 mb-4">
-    <a href="{{ @BASE }}/pengujian-eksternal" class="btn-back">
+    <a href="{{ @BASE }}/penguji-eksternal" class="btn-back">
         <i class="bi bi-arrow-left"></i> Kembali
     </a>
     <div>
         <h2 class="h4 fw-bold mb-1 text-dark">
-            {{ @eksternal ? 'Edit Data Pengujian Eksternal' : 'Tambah Mitra Pengujian Eksternal' }}
+            {{ @lembaga ? 'Edit Lembaga Pengujian Eksternal' : 'Tambah Lembaga Pengujian Eksternal' }}
         </h2>
-        <p class="text-muted small mb-0">Lembaga/laboratorium rujukan tempat pengujian dilakukan saat metode uji membutuhkan pihak eksternal.</p>
+        <p class="text-muted small mb-0">Data lembaga / tempat rujukan pengujian eksternal.</p>
     </div>
 </div>
 
-<form action="{{ @eksternal ? @BASE . '/pengujian-eksternal/' . @eksternal.id . '/update' : @BASE . '/pengujian-eksternal/simpan' }}" method="POST">
+<form action="{{ @lembaga ? @BASE . '/pengujian-eksternal/' . @lembaga.id . '/update' : @BASE . '/pengujian-eksternal/simpan' }}" method="POST">
     <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
 
     <div class="row g-4">
         <!-- ======================================================== -->
-        <!-- KOLOM KIRI: METODE & INFORMASI LEMBAGA -->
+        <!-- KOLOM KIRI: INFORMASI LEMBAGA -->
         <!-- ======================================================== -->
         <div class="col-lg-7">
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-white py-3">
-                    <h6 class="m-0 fw-bold text-dark"><i class="bi bi-clipboard2-data text-primary me-2"></i>Metode Uji Terkait</h6>
+                    <h6 class="m-0 fw-bold text-dark"><i class="bi bi-building text-primary me-2"></i>Informasi Lembaga</h6>
                 </div>
                 <div class="card-body p-3 p-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Nama Lembaga / Tempat <span class="text-danger">*</span></label>
+                        <input type="text" name="nama_lembaga" class="form-control" placeholder="Contoh: Sucofindo Cabang Bandung" value="{{ @lembaga.nama_lembaga }}" required>
+                    </div>
+
                     <div class="mb-1">
-                        <label class="form-label">Metode Uji yang Membutuhkan Eksternal <span class="text-danger">*</span></label>
-                        <select name="metode_id" class="form-select searchable-select" placeholder="Ketik untuk mencari metode uji..." required>
-                            <option value="">Pilih Metode Uji</option>
-                            <repeat group="{{ @semua_metode_eksternal ?: [] }}" value="{{ @mOpt }}">
-                                <option value="{{ @mOpt.id }}" {{ @eksternal && @eksternal.metode_id == @mOpt.id ? 'selected' : '' }} {{ @metode_terpilih && @metode_terpilih == @mOpt.id ? 'selected' : '' }}>
-                                    {{ @mOpt.nama_metode }} ({{ @mOpt.nama_kategori }})
-                                </option>
-                            </repeat>
-                        </select>
-                        <div class="form-text">Hanya metode yang sudah ditandai <strong>"Membutuhkan pengujian eksternal"</strong> yang muncul di sini. Belum ada di daftar? Tandai dulu di <a href="{{ @BASE }}/metode-uji" target="_blank">menu Metode & Harga Uji</a>.</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-white py-3">
-                    <h6 class="m-0 fw-bold text-dark"><i class="bi bi-building text-primary me-2"></i>Informasi Lembaga / Laboratorium</h6>
-                </div>
-                <div class="card-body p-3 p-md-4">
-                    <div class="mb-3">
-                        <label class="form-label">Nama Lembaga / Laboratorium <span class="text-danger">*</span></label>
-                        <input type="text" name="nama_lembaga" class="form-control" placeholder="Contoh: Laboratorium Uji Rujukan Mitra" value="{{ @eksternal.nama_lembaga }}" required>
-                    </div>
-
-                    <div class="mb-3">
                         <label class="form-label">Alamat</label>
-                        <input type="text" name="alamat" class="form-control" placeholder="Contoh: Bandung, Jawa Barat" value="{{ @eksternal.alamat }}">
-                    </div>
-
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Nama PIC</label>
-                            <input type="text" name="pic_nama" class="form-control" placeholder="Nama penanggung jawab" value="{{ @eksternal.pic_nama }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Kontak PIC</label>
-                            <input type="text" name="pic_kontak" class="form-control" placeholder="No. HP / email" value="{{ @eksternal.pic_kontak }}">
-                        </div>
-                    </div>
-
-                    <div class="mb-1">
-                        <label class="form-label">No. Akreditasi</label>
-                        <input type="text" name="no_akreditasi" class="form-control" placeholder="Contoh: KAN LP-123-IDN" value="{{ @eksternal.no_akreditasi }}">
-                        <div class="form-text">Opsional.</div>
+                        <textarea name="alamat" class="form-control" rows="4" placeholder="Contoh: Jl. Cisitu Lama No.4, Bandung, Jawa Barat">{{ @lembaga.alamat }}</textarea>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- ======================================================== -->
-        <!-- KOLOM KANAN: ESTIMASI & STATUS -->
+        <!-- KOLOM KANAN: STATUS TAMPILAN -->
         <!-- ======================================================== -->
         <div class="col-lg-5">
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-white py-3">
-                    <h6 class="m-0 fw-bold text-dark"><i class="bi bi-cash-coin text-primary me-2"></i>Estimasi Biaya & Waktu</h6>
+                    <h6 class="m-0 fw-bold text-dark"><i class="bi bi-toggle-on text-primary me-2"></i>Status Tampilan</h6>
                 </div>
                 <div class="card-body p-3 p-md-4">
-                    <div class="mb-3">
-                        <label class="form-label">Estimasi Biaya dari Lembaga (Rp)</label>
-                        <div class="input-group">
-                            <span class="input-group-text">Rp</span>
-                            <input type="number" name="estimasi_biaya" class="form-control" placeholder="0" min="0" step="1000" value="{{ @eksternal ? @eksternal.estimasi_biaya : 0 }}">
-                        </div>
-                        <div class="form-text">Kosongkan / isi 0 jika biaya eksternal sudah termasuk dalam harga di Metode & Harga Uji.</div>
-                    </div>
-
-                    <div class="row g-3 mb-3">
-                        <div class="col-6">
-                            <label class="form-label">Estimasi Waktu</label>
-                            <input type="number" name="estimasi_nilai" class="form-control" placeholder="3" min="1" value="{{ @eksternal.estimasi_nilai }}">
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label">Satuan</label>
-                            <select name="estimasi_satuan" class="form-select">
-                                <option value="Hari" {{ @eksternal && @eksternal.estimasi_satuan == 'Hari' ? 'selected' : '' }}>Hari</option>
-                                <option value="Minggu" {{ @eksternal && @eksternal.estimasi_satuan == 'Minggu' ? 'selected' : '' }}>Minggu</option>
-                                <option value="Bulan" {{ !@eksternal || @eksternal.estimasi_satuan == 'Bulan' ? 'selected' : '' }}>Bulan</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="mb-1">
-                        <label class="form-label">Keterangan Tambahan</label>
-                        <textarea name="keterangan" class="form-control" rows="2" placeholder="Catatan kerja sama, syarat pengiriman sampel, dsb.">{{ @eksternal.keterangan }}</textarea>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card border-0 shadow-sm mb-4">
-                <div class="card-body p-3 p-md-4">
-                    <label class="form-label d-block mb-2">Status Tampilan pada Pilihan Order</label>
                     <div class="d-flex align-items-center justify-content-between p-3 rounded-3" style="background-color: var(--color-bg); border: 1px solid var(--color-border);">
                         <div id="statusAktifLabel" class="d-flex align-items-center gap-2 fw-semibold small text-dark">
                             <i class="bi bi-eye text-success fs-5"></i>
-                            <span>Aktif &ndash; Tampil sebagai mitra rujukan</span>
+                            <span>Aktif &ndash; Tampil di daftar</span>
                         </div>
                         <div class="form-check form-switch m-0">
-                            <input class="form-check-input" type="checkbox" role="switch" name="status" id="statusAktif" value="aktif" style="width: 2.75rem; height: 1.5rem;" {{ !@eksternal || @eksternal.status == 'aktif' ? 'checked' : '' }}>
+                            <input class="form-check-input" type="checkbox" role="switch" name="status" id="statusAktif" value="aktif" style="width: 2.75rem; height: 1.5rem;" {{ !@lembaga || @lembaga.status == 'aktif' ? 'checked' : '' }}>
                         </div>
                     </div>
-                    <div class="form-text">Nonaktifkan jika kerja sama dengan lembaga ini sedang tidak berjalan, tanpa menghapus datanya.</div>
+                    <div class="form-text">Nonaktifkan untuk menyembunyikan lembaga ini dari daftar tanpa menghapus datanya.</div>
                 </div>
             </div>
 
             <div class="d-flex justify-content-end gap-2">
-                <a href="{{ @BASE }}/pengujian-eksternal" class="btn btn-outline-secondary px-4">Batal</a>
+                <a href="{{ @BASE }}/penguji-eksternal" class="btn btn-outline-secondary px-4">Batal</a>
                 <button type="submit" class="btn btn-primary px-4">
-                    <i class="bi bi-save me-1"></i> {{ @eksternal ? 'Perbarui Data' : 'Simpan Data' }}
+                    <i class="bi bi-save me-1"></i> {{ @lembaga ? 'Perbarui Data' : 'Simpan Lembaga' }}
                 </button>
             </div>
         </div>
@@ -150,8 +79,8 @@ document.addEventListener('DOMContentLoaded', function () {
     var statusLabel = document.getElementById('statusAktifLabel');
     function renderStatusLabel() {
         statusLabel.innerHTML = statusSwitch.checked
-            ? '<i class="bi bi-eye text-success fs-5"></i><span>Aktif &ndash; Tampil sebagai mitra rujukan</span>'
-            : '<i class="bi bi-eye-slash text-muted fs-5"></i><span>Nonaktif &ndash; Disembunyikan</span>';
+            ? '<i class="bi bi-eye text-success fs-5"></i><span>Aktif &ndash; Tampil di daftar</span>'
+            : '<i class="bi bi-eye-slash text-muted fs-5"></i><span>Nonaktif &ndash; Disembunyikan dari daftar</span>';
     }
     if (statusSwitch) {
         statusSwitch.addEventListener('change', renderStatusLabel);
