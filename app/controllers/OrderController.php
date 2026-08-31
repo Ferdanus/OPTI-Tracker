@@ -1291,8 +1291,18 @@ class OrderController extends Controller {
         $suratMasuk = null;
         if (!empty($order['id_surat_masuk'])) {
             try {
-                $repoSurat = new \SuratMasukRepository($this->db, $this->dbSekretariat);
-                $suratMasuk = $repoSurat->getSuratById((int)$order['id_surat_masuk']);
+                $rowsSm = $this->db->exec("SELECT * FROM surat_masuk WHERE id = ?", [1 => (int)$order['id_surat_masuk']]);
+                if (!empty($rowsSm)) {
+                    $suratMasuk = $rowsSm[0];
+                }
+            } catch (\Exception $e) {}
+        }
+        if (!$suratMasuk && !empty($order['nama_perusahaan'])) {
+            try {
+                $rowsSm = $this->db->exec("SELECT * FROM surat_masuk WHERE pengirim LIKE ? ORDER BY id DESC LIMIT 1", [1 => '%' . $order['nama_perusahaan'] . '%']);
+                if (!empty($rowsSm)) {
+                    $suratMasuk = $rowsSm[0];
+                }
             } catch (\Exception $e) {}
         }
 
@@ -1305,10 +1315,17 @@ class OrderController extends Controller {
             $durasiHari = (int)$matches[1];
         }
 
+        // Ambil jejak audit & riwayat aktivitas order/proposal
+        $activityLogs = $this->db->exec(
+            "SELECT * FROM opti_activity_log WHERE order_id = ? ORDER BY id DESC",
+            [1 => $id]
+        );
+
         $f3->set('order', $order);
         $f3->set('proposal', $proposal);
         $f3->set('surat_masuk', $suratMasuk);
         $f3->set('tinjauan', $tinjauan);
+        $f3->set('activity_logs', $activityLogs);
         $f3->set('durasi_hari', $durasiHari);
         $f3->set('is_pic', $isPic);
         $f3->set('can_edit', $canEdit);
@@ -1395,11 +1412,15 @@ class OrderController extends Controller {
         }
 
         try {
+            $userNama = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'Aji Pisang');
+
             if ($existing) {
                 $this->db->exec(
                     "UPDATE opti_proposal_riset SET 
                         judul_proposal = ?, ruang_lingkup = ?, durasi_kegiatan = ?, 
-                        estimasi_total_biaya = ?, file_proposal = ?, status_proposal = ?
+                        estimasi_total_biaya = ?, file_proposal = ?, status_proposal = ?,
+                        " . ($actionType === 'ajukan' ? "diajukan_at = NOW(), diajukan_oleh = " . (int)$userId . "," : "") . "
+                        updated_at = NOW(), updated_by = ?
                      WHERE order_id = ?",
                     [
                         1 => $judulProposal,
@@ -1408,16 +1429,18 @@ class OrderController extends Controller {
                         4 => $estimasiBiaya,
                         5 => $filePath,
                         6 => $statusProposal,
-                        7 => $id
+                        7 => $userId,
+                        8 => $id
                     ]
                 );
             } else {
                 $this->db->exec(
                     "INSERT INTO opti_proposal_riset (
                         order_id, pic_penyusun_id, spesialisasi, judul_proposal, 
-                        ruang_lingkup, durasi_kegiatan, estimasi_total_biaya, file_proposal, status_proposal
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    [
+                        ruang_lingkup, durasi_kegiatan, estimasi_total_biaya, file_proposal, status_proposal,
+                        diajukan_at, diajukan_oleh, updated_by
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, " . ($actionType === 'ajukan' ? "NOW(), ?, ?" : "NULL, NULL, ?") . ")",
+                    $actionType === 'ajukan' ? [
                         1 => $id,
                         2 => $order['pic_proposal_id'] ?: $userId,
                         3 => $order['jenis_layanan_opti'],
@@ -1426,7 +1449,20 @@ class OrderController extends Controller {
                         6 => $durasiKegiatan,
                         7 => $estimasiBiaya,
                         8 => $filePath,
-                        9 => $statusProposal
+                        9 => $statusProposal,
+                        10 => $userId,
+                        11 => $userId
+                    ] : [
+                        1 => $id,
+                        2 => $order['pic_proposal_id'] ?: $userId,
+                        3 => $order['jenis_layanan_opti'],
+                        4 => $judulProposal,
+                        5 => $ruangLingkup,
+                        6 => $durasiKegiatan,
+                        7 => $estimasiBiaya,
+                        8 => $filePath,
+                        9 => $statusProposal,
+                        10 => $userId
                     ]
                 );
             }
@@ -1438,6 +1474,13 @@ class OrderController extends Controller {
                 [1 => $estimasiBiaya, 2 => $statusProposalBiaya, 3 => $id]
             );
 
+            // Audit Trail Activity Log
+            if ($actionType === 'ajukan') {
+                $this->logActivity($id, 'proposal', 'ajukan_ke_ketua', "Dokumen proposal teknis resmi diajukan ke Ketua Tim OPTI oleh {$userNama} (PIC Peneliti).");
+            } else {
+                $this->logActivity($id, 'proposal', 'simpan_draft', "Draf dokumen proposal teknis disimpan & diperbarui oleh {$userNama} (PIC Peneliti).");
+            }
+
             // Jika diajukan, kirim notifikasi & floating bubble ke Ka. Tim OPTI & Superadmin
             if ($actionType === 'ajukan') {
                 try {
@@ -1446,16 +1489,16 @@ class OrderController extends Controller {
                         'target_role'    => 'ketua_tim',
                         'target_layanan' => $order['jenis_layanan_opti'] ?? 'semua',
                         'judul'          => 'Proposal Teknis Siap Diperiksa',
-                        'pesan'          => "PIC Proposal telah mengunggah dokumen proposal untuk Order #{$order['nomor_order']} ({$order['nama_perusahaan']}). Mohon periksa dan berikan persetujuan.",
+                        'pesan'          => "PIC Proposal ({$userNama}) telah mengajukan dokumen proposal untuk Order #{$order['nomor_order']} ({$order['nama_perusahaan']}). Mohon periksa dan berikan persetujuan.",
                         'tipe'           => 'info',
                         'icon'           => 'bi-file-earmark-check-fill',
                         'link_url'       => "/order/{$id}/proposal",
                         'created_by'     => $userId,
-                        'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'PIC Peneliti'
+                        'created_by_name'=> $userNama
                     ]);
                 } catch (\Exception $eNotif) {}
 
-                $this->setFlashSuccess("Dokumen proposal teknis berhasil disimpan dan <strong>diajukan ke Ketua Tim OPTI</strong> untuk persetujuan.");
+                $this->setFlashSuccess("Dokumen proposal teknis berhasil disimpan dan <strong>diajukan ke Ketua Tim OPTI</strong> oleh <strong>{$userNama}</strong> pada " . date('d M Y H:i') . " WIB.");
             } else {
                 $this->setFlashSuccess("Draf dokumen proposal teknis berhasil disimpan.");
             }
@@ -1571,15 +1614,27 @@ class OrderController extends Controller {
         $catatan = trim($post['catatan_revisi'] ?? '');
 
         try {
+            $userNama = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'Ketua Tim OPTI');
+
             if ($action === 'approve') {
                 $this->db->exec(
-                    "UPDATE opti_proposal_riset SET status_proposal = 'disetujui_ketua', disetujui_ketua_at = NOW(), catatan_revisi = ? WHERE order_id = ?",
-                    array(1 => $catatan, 2 => $id)
+                    "UPDATE opti_proposal_riset SET 
+                        status_proposal = 'disetujui_ketua', 
+                        disetujui_ketua_at = NOW(), 
+                        disetujui_ketua_oleh = ?, 
+                        catatan_revisi = ?, 
+                        updated_at = NOW(), 
+                        updated_by = ? 
+                     WHERE order_id = ?",
+                    array(1 => $this->getUserId(), 2 => $catatan, 3 => $this->getUserId(), 4 => $id)
                 );
                 $this->db->exec(
                     "UPDATE order_layanan SET status_proposal_biaya = 'siap_penawaran' WHERE id = ?",
                     array(1 => $id)
                 );
+
+                // Audit Log Persetujuan
+                $this->logActivity($id, 'proposal', 'setujui_proposal', "Proposal teknis resmi disetujui (Approved) oleh {$userNama} (Ketua Tim OPTI). Siap diterbitkan Surat Penawaran.");
 
                 // Kirim notifikasi ke Tim Mitra
                 try {
@@ -1588,12 +1643,12 @@ class OrderController extends Controller {
                         'target_role'    => 'admin_order',
                         'target_layanan' => 'semua',
                         'judul'          => 'Proposal Teknis Disetujui Ka. Tim',
-                        'pesan'          => "Proposal untuk Order #{$order['nomor_order']} ({$order['nama_perusahaan']}) telah disetujui. Tim Kemitraan dapat menerbitkan Surat Penawaran resmi.",
+                        'pesan'          => "Proposal untuk Order #{$order['nomor_order']} ({$order['nama_perusahaan']}) telah disetujui oleh {$userNama}. Tim Kemitraan dapat menerbitkan Surat Penawaran resmi.",
                         'tipe'           => 'success',
                         'icon'           => 'bi-award-fill',
                         'link_url'       => "/order/{$id}",
                         'created_by'     => $this->getUserId(),
-                        'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Ketua Tim OPTI'
+                        'created_by_name'=> $userNama
                     ]);
                 } catch (\Exception $e) {}
 
@@ -1606,26 +1661,36 @@ class OrderController extends Controller {
                             'target_user_id' => (int)$order['pic_proposal_id'],
                             'target_layanan' => $order['jenis_layanan_opti'] ?? 'semua',
                             'judul'          => 'Proposal Teknis Telah Disetujui',
-                            'pesan'          => "Proposal teknis Anda untuk Order #{$order['nomor_order']} telah disetujui oleh Ka. Tim OPTI.",
+                            'pesan'          => "Proposal teknis Anda untuk Order #{$order['nomor_order']} telah disetujui oleh Ka. Tim OPTI ({$userNama}).",
                             'tipe'           => 'success',
                             'icon'           => 'bi-check-circle-fill',
                             'link_url'       => "/order/{$id}/proposal",
                             'created_by'     => $this->getUserId(),
-                            'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Ketua Tim OPTI'
+                            'created_by_name'=> $userNama
                         ]);
                     } catch (\Exception $e) {}
                 }
 
-                $this->setFlashSuccess('Proposal teknis telah <strong>disetujui (Approved)</strong> oleh Ketua Tim! Tim Mitra kini dapat menerbitkan Surat Penawaran resmi ke Pelanggan.');
+                $this->setFlashSuccess("Proposal teknis telah <strong>disetujui (Approved)</strong> oleh <strong>{$userNama}</strong> pada " . date('d M Y H:i') . " WIB. Tim Mitra kini dapat menerbitkan Surat Penawaran resmi.");
             } else {
                 $this->db->exec(
-                    "UPDATE opti_proposal_riset SET status_proposal = 'ditolak', catatan_revisi = ? WHERE order_id = ?",
-                    array(1 => $catatan, 2 => $id)
+                    "UPDATE opti_proposal_riset SET 
+                        status_proposal = 'ditolak', 
+                        catatan_revisi = ?, 
+                        direvisi_at = NOW(), 
+                        direvisi_oleh = ?, 
+                        updated_at = NOW(), 
+                        updated_by = ? 
+                     WHERE order_id = ?",
+                    array(1 => $catatan, 2 => $this->getUserId(), 3 => $this->getUserId(), 4 => $id)
                 );
                 $this->db->exec(
                     "UPDATE order_layanan SET status_proposal_biaya = 'draft' WHERE id = ?",
                     array(1 => $id)
                 );
+
+                // Audit Log Permintaan Revisi
+                $this->logActivity($id, 'proposal', 'minta_revisi', "Ketua Tim OPTI ({$userNama}) meminta revisi proposal. Catatan: \"{$catatan}\"");
 
                 // Kirim notifikasi revisi ke PIC
                 if (!empty($order['pic_proposal_id'])) {
@@ -1863,5 +1928,210 @@ class OrderController extends Controller {
         }
         readfile($filePath);
         exit;
+    }
+
+    /**
+     * Endpoint Data JSON untuk Pratinjau Proposal Bebas IDM (Zero Interception)
+     * Route: GET /order/@id/proposal/raw-data
+     */
+    public function proposalRawData($f3, $params) {
+        $this->requireAuth();
+        $id = (int)($params['id'] ?? 0);
+        $orderModel = new OrderLayanan($this->db);
+        $order = $orderModel->getDetail($id);
+        if (!$order) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Order tidak ditemukan']);
+            exit;
+        }
+
+        $proposal = $orderModel->getProposalRiset($id);
+        $filePath = '';
+        $isUploaded = false;
+        if (!empty($proposal['file_proposal'])) {
+            $target = 'c:/xampp/htdocs/Mini OPTI Tracker/' . ltrim($proposal['file_proposal'], "/\\");
+            if (file_exists($target)) {
+                $filePath = $target;
+                $isUploaded = true;
+            }
+        }
+
+        // Jika belum ada file fisik PDF yang diunggah, buat PDF proposal resmi secara dinamis
+        if (empty($filePath)) {
+            require_once 'c:/xampp/htdocs/Mini OPTI Tracker/app/helpers/fpdf/fpdf.php';
+            $pdf = new \FPDF('P', 'mm', 'A4');
+            $pdf->SetMargins(20, 15, 20);
+            $pdf->AddPage();
+
+            // KOP RESMI BBSPJIS
+            $pdf->SetFont('Arial', 'B', 12);
+            $pdf->SetTextColor(0, 0, 0);
+            $pdf->Cell(0, 5.5, 'KEMENTERIAN PERINDUSTRIAN REPUBLIK INDONESIA', 0, 1, 'C');
+            $pdf->SetFont('Arial', 'B', 9.5);
+            $pdf->Cell(0, 4.8, 'BALAI BESAR STANDARDISASI DAN PELAYANAN JASA INDUSTRI SELULOSA', 0, 1, 'C');
+            $pdf->SetFont('Arial', '', 8);
+            $pdf->SetTextColor(70, 70, 70);
+            $pdf->Cell(0, 4, 'Jl. Raya Dayeuhkolot No. 132, Bandung 40258 | Telp. (022) 5202871 | www.bbspjis.kemenperin.go.id', 0, 1, 'C');
+            $pdf->Ln(2);
+            $pdf->SetDrawColor(0, 0, 0);
+            $pdf->SetLineWidth(0.8);
+            $pdf->Line(20, $pdf->GetY(), 190, $pdf->GetY());
+            $pdf->SetLineWidth(0.2);
+            $pdf->Line(20, $pdf->GetY() + 0.8, 190, $pdf->GetY() + 0.8);
+            $pdf->Ln(5);
+
+            // JUDUL DOKUMEN PROPOSAL
+            $pdf->SetFont('Arial', 'B', 11.5);
+            $pdf->SetTextColor(136, 19, 55);
+            $pdf->Cell(0, 6, 'PROPOSAL TEKNIS & RANCANGAN ANGGARAN BIAYA (RAB)', 0, 1, 'C');
+            $pdf->SetFont('Arial', 'B', 8.5);
+            $pdf->SetTextColor(70, 70, 70);
+            $pdf->Cell(0, 4.5, 'LAYANAN OPTIMALISASI TEKNOLOGI INDUSTRI (OPTI) - ' . strtoupper($order['jenis_layanan_opti']), 0, 1, 'C');
+            $pdf->Ln(4);
+
+            // METADATA
+            $pdf->SetFont('Arial', '', 9);
+            $pdf->SetTextColor(0, 0, 0);
+            $pdf->Cell(35, 5, 'Nomor Order', 0, 0);
+            $pdf->Cell(4, 5, ':', 0, 0);
+            $pdf->SetFont('Arial', 'B', 9);
+            $pdf->Cell(70, 5, '#' . $order['nomor_order'], 0, 0);
+            $pdf->SetFont('Arial', '', 9);
+            $pdf->Cell(0, 5, 'Tanggal: ' . date('d F Y'), 0, 1, 'R');
+
+            $pdf->Cell(35, 5, 'Pelanggan / Industri', 0, 0);
+            $pdf->Cell(4, 5, ':', 0, 0);
+            $pdf->SetFont('Arial', 'B', 9);
+            $pdf->Cell(0, 5, $order['nama_perusahaan'] . ' (' . ($order['pt_cv'] ?: 'Industri') . ')', 0, 1);
+
+            $pdf->SetFont('Arial', '', 9);
+            $pdf->Cell(35, 5, 'PIC Peneliti Penyusun', 0, 0);
+            $pdf->Cell(4, 5, ':', 0, 0);
+            $pdf->SetFont('Arial', 'B', 9);
+            $pdf->Cell(0, 5, $order['pic_proposal_nama'] ?: ($proposal['pic_nama'] ?? 'Tim Pelaksana OPTI BBSPJIS'), 0, 1);
+
+            $pdf->SetFont('Arial', '', 9);
+            $pdf->Cell(35, 5, 'Judul Proposal', 0, 0);
+            $pdf->Cell(4, 5, ':', 0, 0);
+            $pdf->SetFont('Arial', 'B', 9);
+            $pdf->MultiCell(0, 5, $proposal['judul_proposal'] ?: ($order['judul_kegiatan'] ?: 'Layanan Optimalisasi Teknologi Industri'), 0, 'L');
+            $pdf->Ln(3);
+
+            // RUANG LINGKUP
+            $pdf->SetFont('Arial', 'B', 9.5);
+            $pdf->Cell(0, 5.5, '1. Ruang Lingkup & Metodologi Pengujian / Riset:', 0, 1);
+            $pdf->SetFont('Arial', '', 9);
+            $lingkup = $proposal['ruang_lingkup'] ?: 'Pengujian parameter mutu, pengamatan karakteristik bahan baku, sampling lapangan, dan formulasi rekomendasi teknologi sesuai standar SNI/ISO/TAPPI terakreditasi ISO/IEC 17025 BBSPJIS.';
+            $pdf->MultiCell(0, 4.8, $lingkup, 0, 'J');
+            $pdf->Ln(3);
+
+            // DURASI & BIAYA
+            $pdf->SetFont('Arial', 'B', 9.5);
+            $pdf->Cell(0, 5.5, '2. Rencana Pelaksanaan & Estimasi Anggaran (RAB):', 0, 1);
+            
+            $pdf->SetFont('Arial', '', 9);
+            $pdf->Cell(8, 5, '', 0, 0);
+            $pdf->Cell(45, 5, 'a. Estimasi Durasi', 0, 0);
+            $pdf->Cell(4, 5, ':', 0, 0);
+            $pdf->SetFont('Arial', 'B', 9);
+            $pdf->Cell(0, 5, $proposal['durasi_kegiatan'] ?: '30 Hari Kerja', 0, 1);
+
+            $pdf->SetFont('Arial', '', 9);
+            $pdf->Cell(8, 5, '', 0, 0);
+            $pdf->Cell(45, 5, 'b. Estimasi Total Biaya', 0, 0);
+            $pdf->Cell(4, 5, ':', 0, 0);
+            $pdf->SetFont('Arial', 'B', 9.5);
+            $pdf->SetTextColor(136, 19, 55);
+            $pdf->Cell(0, 5, 'Rp ' . number_format((float)($proposal['estimasi_total_biaya'] ?: ($order['estimasi_biaya'] ?: 0)), 0, ',', '.'), 0, 1);
+            $pdf->SetTextColor(0, 0, 0);
+            $pdf->Ln(5);
+
+            // STATUS
+            $pdf->SetFont('Arial', 'B', 9.5);
+            $pdf->Cell(0, 5.5, '3. Status Verifikasi Teknis:', 0, 1);
+            $pdf->SetFont('Arial', '', 9);
+            $statusText = 'Draf Proposal Teknis (Menunggu Persetujuan Ketua Tim OPTI)';
+            if (($proposal['status_proposal'] ?? '') === 'disetujui_ketua') {
+                $statusText = 'Disetujui Ketua Tim OPTI BBSPJIS (Siap Penerbitan Surat Penawaran Biaya)';
+            } elseif (($proposal['status_proposal'] ?? '') === 'ditolak') {
+                $statusText = 'Perlu Revisi: ' . ($proposal['catatan_revisi'] ?: '-');
+            }
+            $pdf->MultiCell(0, 4.8, $statusText, 0, 'L');
+            $pdf->Ln(8);
+
+            // TANDA TANGAN
+            $pdf->SetFont('Arial', '', 9);
+            $pdf->Cell(95, 4.5, 'Penyusun Proposal (PIC Peneliti)', 0, 0, 'C');
+            $pdf->Cell(95, 4.5, 'Mengetahui & Menyetujui (Ka. Tim OPTI)', 0, 1, 'C');
+            $pdf->Ln(18);
+
+            $pdf->SetFont('Arial', 'B', 9);
+            $pdf->Cell(95, 4.5, $order['pic_proposal_nama'] ?: ($proposal['pic_nama'] ?? 'PIC Peneliti BBSPJIS'), 0, 0, 'C');
+            $pdf->Cell(95, 4.5, 'Ketua Tim OPTI ' . ucfirst($order['jenis_layanan_opti']), 0, 1, 'C');
+            
+            $pdf->SetFont('Arial', '', 8);
+            $pdf->SetTextColor(100, 100, 100);
+            $pdf->Cell(95, 4, 'BBSPJIS Kemenperin RI', 0, 0, 'C');
+            $pdf->Cell(95, 4, 'BBSPJIS Kemenperin RI', 0, 1, 'C');
+
+            $uploadDir = 'c:/xampp/htdocs/Mini OPTI Tracker/public/uploads/proposals';
+            if (!is_dir($uploadDir)) {
+                @mkdir($uploadDir, 0777, true);
+            }
+            $tempGenPath = $uploadDir . '/Generated_Proposal_Order_' . $id . '.pdf';
+            $pdf->Output('F', $tempGenPath);
+            $filePath = $tempGenPath;
+        }
+
+        $filename = basename($filePath);
+        $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+        $isPdf = ($ext === 'pdf');
+        $fileSize = file_exists($filePath) ? filesize($filePath) : 0;
+        
+        $base64 = '';
+        if ($isPdf && file_exists($filePath)) {
+            $base64 = base64_encode(file_get_contents($filePath));
+        }
+
+        if (!headers_sent()) {
+            header('Content-Type: application/json');
+        }
+        echo json_encode([
+            'success' => true,
+            'is_pdf' => $isPdf,
+            'is_uploaded' => $isUploaded,
+            'ext' => $ext,
+            'filename' => $filename,
+            'size' => $fileSize,
+            'base64' => $base64
+        ]);
+        exit;
+    }
+
+    /**
+     * Catat Jejak Audit / Activity Log untuk Seluruh Modul OPTI
+     */
+    protected function logActivity(int $orderId, string $modul, string $aksi, string $deskripsi) {
+        $userId = (int)$this->getUserId();
+        $userNama = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'Aji Pisang');
+        $userRole = $this->getUserRole() ?? 'user';
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+
+        try {
+            $this->db->exec(
+                "INSERT INTO opti_activity_log (order_id, modul, aksi, deskripsi, user_id, user_nama, user_role, ip_address, created_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())",
+                [
+                    1 => $orderId,
+                    2 => $modul,
+                    3 => $aksi,
+                    4 => $deskripsi,
+                    5 => $userId,
+                    6 => $userNama,
+                    7 => $userRole,
+                    8 => $ip
+                ]
+            );
+        } catch (\Exception $e) {}
     }
 }

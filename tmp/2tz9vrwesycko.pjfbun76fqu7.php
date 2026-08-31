@@ -950,44 +950,7 @@
                     <?php endif; ?>
                 </li>
 
-                <!-- Petunjuk Operasional (PO) - Disembunyikan sementara untuk fokus fase proposal pre-kontrak -->
-
-                <!-- Kontrak / PKS (Admin Order, Admin Kontrak, Pejabat, Superadmin) -->
-                <li>
-                    <?php if ($is_superadmin || $is_admin_order || $is_pejabat || $is_admin_kontrak): ?>
-                        
-                            <a class="sidebar-link <?= ($active_menu == 'kontrak' ? 'active' : '') ?>" href="<?= ($BASE) ?>/kontrak" title="Kontrak / PKS">
-                                <i class="bi bi-file-earmark-ruled"></i> <span>Kontrak / PKS</span>
-                            </a>
-                        
-                        <?php else: ?>
-                            <a class="sidebar-link sidebar-locked" href="javascript:void(0)" onclick="notifyLockedMenu(event, 'Kontrak / PKS', 'Tim Kemitraan &amp; Pejabat (PPK/Kepala Balai)')" title="Kontrak / PKS (Terkunci)">
-                                <i class="bi bi-file-earmark-ruled"></i> <span>Kontrak / PKS</span>
-                                <i class="bi bi-lock-fill lock-indicator" title="Terkunci: Wewenang Tim Kemitraan &amp; PPK"></i>
-                            </a>
-                        
-                    <?php endif; ?>
-                </li>
-
-                <!-- 3. KEUANGAN & PENAGIHAN -->
-                <li class="sidebar-section-label">Keuangan &amp; Penagihan</li>
-                
-                <!-- Pembayaran PNBP (Admin Order, Admin Kontrak, Pejabat, Superadmin) -->
-                <li>
-                    <?php if ($is_superadmin || $is_admin_order || $is_pejabat || $is_admin_kontrak): ?>
-                        
-                            <a class="sidebar-link <?= ($active_menu == 'pembayaran' || $active_menu == 'invoice' ? 'active' : '') ?>" href="<?= ($BASE) ?>/pembayaran" title="Pembayaran &amp; Billing PNBP">
-                                <i class="bi bi-cash-stack"></i> <span>Pembayaran PNBP</span>
-                            </a>
-                        
-                        <?php else: ?>
-                            <a class="sidebar-link sidebar-locked" href="javascript:void(0)" onclick="notifyLockedMenu(event, 'Pembayaran PNBP', 'Tim Kemitraan &amp; Pejabat')" title="Pembayaran PNBP (Terkunci)">
-                                <i class="bi bi-cash-stack"></i> <span>Pembayaran PNBP</span>
-                                <i class="bi bi-lock-fill lock-indicator" title="Terkunci: Wewenang Tim Kemitraan"></i>
-                            </a>
-                        
-                    <?php endif; ?>
-                </li>
+                <!-- Petunjuk Operasional (PO), Kontrak PKS, & Pembayaran - Disembunyikan sementara sesuai arahan -->
 
                 <!-- 4. PERSURATAN -->
                 <li class="sidebar-section-label">Persuratan Balai</li>

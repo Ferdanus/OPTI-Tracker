@@ -162,6 +162,7 @@ $f3->route('POST /order/@id/proposal/upload', 'OrderController->uploadProposalFi
 $f3->route('POST /order/@id/proposal/kirim-katim', 'OrderController->kirimProposalKeKatim');
 $f3->route('POST /order/@id/proposal/review-katim', 'OrderController->reviewProposalKatim');
 $f3->route('GET /order/@id/proposal/pdf', 'OrderController->previewProposalPdf');
+$f3->route('GET /order/@id/proposal/raw-data', 'OrderController->proposalRawData');
 $f3->route('POST /order/@id/respon-klien', 'OrderController->responKlien');
 
 // ==========================================
@@ -267,6 +268,7 @@ $f3->route('GET /surat-masuk', 'SuratMasukController->index');
 $f3->route('POST /surat-masuk/klaim', 'SuratMasukController->klaim');
 $f3->route('POST /surat-masuk/batal', 'SuratMasukController->batalKlaim');
 $f3->route('GET /surat-masuk/@id/pdf', 'SuratMasukController->previewPdf');
+$f3->route('GET /surat-masuk/@id/raw-data', 'SuratMasukController->suratRawData');
 $f3->route('GET /surat-masuk/@id/detail', 'SuratMasukController->detailJson');
 
 // ==========================================

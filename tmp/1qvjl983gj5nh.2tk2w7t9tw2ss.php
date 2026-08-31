@@ -543,7 +543,7 @@
                                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                                     <div>
                                         <span class="text-muted d-block small">PIC Penyusun Proposal yang Ditugaskan:</span>
-                                        <strong class="text-primary fs-6 font-display"><i class="bi bi-person-badge me-1"></i> <?= ($order['pic_proposal_nama'] ?: ($proposal['pic_nama'] ?: 'Belum Ditunjuk')) ?></strong>
+                                        <strong class="text-primary fs-6 font-display"><i class="bi bi-person-badge me-1"></i> <?= ($order['pic_proposal_nama'] ?: ($proposal['pic_nama'] ?: 'Aji Pisang')) ?></strong>
                                     </div>
                                     <span class="badge bg-primary-subtle text-primary border">Tim Kerja / Peneliti Pelaksana</span>
                                 </div>
@@ -629,7 +629,7 @@
                                     Rp <?= (number_format($order['estimasi_biaya'] ?: ($proposal['estimasi_total_biaya'] ?: 0), 0, ',', '.'))."
 " ?>
                                 </h4>
-                                <small class="text-secondary">PIC Penyusun: <strong><?= ($order['pic_proposal_nama'] ?: ($proposal['pic_nama'] ?: 'Tim Pelaksana')) ?></strong></small>
+                                <small class="text-secondary">PIC Penyusun: <strong><?= ($order['pic_proposal_nama'] ?: ($proposal['pic_nama'] ?: 'Aji Pisang')) ?></strong></small>
                             </div>
                             <div class="d-flex align-items-center gap-2 flex-wrap">
                                 <a href="<?= ($BASE) ?>/order/<?= ($order['id']) ?>/proposal" class="btn btn-primary btn-sm fw-semibold shadow-sm">
@@ -932,145 +932,7 @@
                 </div>
             </div>
 
-            <!-- ======================================================== -->
-            <!-- TAHAP 6: KONTRAK / PERJANJIAN KERJA SAMA (PKS)           -->
-            <!-- ======================================================== -->
-            <div class="system-section-card">
-                <div class="system-section-header">
-                    <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2">
-                        <i class="bi bi-file-earmark-ruled text-primary"></i> 6. Dokumen Kontrak / Perjanjian Kerja Sama (PKS)
-                    </h6>
-                    <span class="badge bg-light text-secondary border">Fleksibel / Sesuai Kebutuhan</span>
-                </div>
-                <div class="system-section-body">
-                    <?php if ($kontrakPks): ?>
-                        <div class="p-3 bg-light rounded border mb-3">
-                            <div class="row g-2">
-                                <div class="col-md-6">
-                                    <div class="small text-muted">Nomor Kontrak / PKS:</div>
-                                    <div class="fw-bold text-dark"><?= ($kontrakPks['nomor_kontrak']) ?></div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="small text-muted">Nilai Kontrak:</div>
-                                    <div class="fw-bold text-success">Rp <?= (number_format($kontrakPks['nilai_kontrak'] ?: 0, 0, ',', '.')) ?></div>
-                                </div>
-                            </div>
-                        </div>
-                        <a href="<?= ($BASE) ?>/kontrak/<?= ($kontrakPks['id']) ?>" class="btn btn-outline-primary btn-sm fw-semibold">
-                            <i class="bi bi-journal-text me-1"></i> Lihat Rincian Kontrak PKS
-                        </a>
-                    <?php endif; ?>
-                    <?php if (!$kontrakPks): ?>
-                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
-                            <div>
-                                <p class="small text-muted mb-0">Dokumen Kontrak / PKS disusun apabila proyek riset memerlukan perjanjian legal formal berjangka panjang.</p>
-                            </div>
-                            <a href="<?= ($BASE) ?>/kontrak/tambah?order_id=<?= ($order['id']) ?>" class="btn btn-outline-secondary btn-sm px-3 fw-semibold text-nowrap">
-                                <i class="bi bi-plus-circle me-1"></i> Input Dokumen Kontrak PKS
-                            </a>
-                        </div>
-                    <?php endif; ?>
-                </div>
-            </div>
-
-            <!-- ======================================================== -->
-            <!-- TAHAP 7: KEUANGAN, BILLING SIMPONI & PEMBAYARAN PNBP    -->
-            <!-- ======================================================== -->
-            <div class="system-section-card">
-                <div class="system-section-header">
-                    <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2">
-                        <i class="bi bi-cash-stack text-success"></i> 7. Penagihan Billing SIMPONI &amp; Pembayaran PNBP
-                    </h6>
-                    <?php if (($rekapKeuangan['total_bayar'] ?: 0) >= ($order['estimasi_biaya'] ?: 0) && ($order['estimasi_biaya'] ?: 0) > 0): ?>
-                        <span class="badge bg-success-subtle text-success border border-success-subtle">Lunas</span>
-                    <?php endif; ?>
-                    <?php if (($rekapKeuangan['total_bayar'] ?: 0) < ($order['estimasi_biaya'] ?: 0)): ?>
-                        <span class="badge bg-warning-subtle text-dark border border-warning-subtle">Belum Lunas</span>
-                    <?php endif; ?>
-                </div>
-                <div class="system-section-body">
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-4">
-                            <div class="p-3 bg-light rounded border">
-                                <div class="small text-muted">Total Nilai Tagihan:</div>
-                                <div class="fw-bold text-dark fs-6">Rp <?= (number_format($order['estimasi_biaya'] ?: ($order['biaya_po'] ?: 0), 0, ',', '.')) ?></div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="p-3 bg-light rounded border">
-                                <div class="small text-muted">Total Terbayar:</div>
-                                <div class="fw-bold text-success fs-6">Rp <?= (number_format($rekapKeuangan['total_bayar'] ?: 0, 0, ',', '.')) ?></div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="p-3 bg-light rounded border">
-                                <div class="small text-muted">Sisa Tagihan:</div>
-                                <div class="fw-bold text-danger fs-6">
-                                    Rp <?= (number_format(max(0, ($order['estimasi_biaya'] ?: ($order['biaya_po'] ?: 0)) - ($rekapKeuangan['total_bayar'] ?: 0)), 0, ',', '.'))."
-" ?>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center">
-                        <div class="small text-muted">
-                            Pencatatan setoran PNBP terintegrasi dengan kode billing SIMPONI Kementerian Keuangan &amp; Bank Persepsi.
-                        </div>
-                        <div class="d-flex gap-2">
-                            <a href="<?= ($BASE) ?>/pembayaran/tambah?order_id=<?= ($order['id']) ?>" class="btn btn-success btn-sm px-3 fw-semibold shadow-sm">
-                                <i class="bi bi-cash-coin me-1"></i> Catat Pembayaran Setoran
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ======================================================== -->
-            <!-- TAHAP 8: BERITA ACARA SERAH TERIMA (BAST) & LAPORAN      -->
-            <!-- ======================================================== -->
-            <div class="system-section-card">
-                <div class="system-section-header">
-                    <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2">
-                        <i class="bi bi-journal-check text-primary"></i> 8. Berita Acara Serah Terima (BAST) &amp; Laporan Akhir
-                    </h6>
-                    <?php if ($bast): ?>
-                        <span class="badge bg-success-subtle text-success border border-success-subtle">BAST Terbit</span>
-                    <?php endif; ?>
-                    <?php if (!$bast): ?>
-                        <span class="badge bg-light text-secondary border">Tahap Penutupan</span>
-                    <?php endif; ?>
-                </div>
-                <div class="system-section-body">
-                    <?php if ($bast): ?>
-                        <div class="p-3 bg-light rounded border mb-3">
-                            <div class="row g-2">
-                                <div class="col-md-6">
-                                    <div class="small text-muted">Nomor BAST:</div>
-                                    <div class="fw-bold text-dark"><?= ($bast['nomor_bast']) ?></div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="small text-muted">Tanggal Serah Terima:</div>
-                                    <div class="fw-bold text-dark"><?= (date('d M Y', strtotime($bast['tanggal_bast']))) ?></div>
-                                </div>
-                            </div>
-                        </div>
-                        <a href="<?= ($BASE) ?>/bast/<?= ($bast['id']) ?>/pdf" target="_blank" class="btn btn-outline-primary btn-sm fw-semibold">
-                            <i class="bi bi-printer me-1"></i> Cetak Dokumen BAST
-                        </a>
-                    <?php endif; ?>
-                    <?php if (!$bast): ?>
-                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
-                            <div>
-                                <p class="small text-muted mb-0">BAST diterbitkan setelah pengujian selesai untuk serah terima Laporan Hasil Pengujian (LHP) / Sertifikat resmi kepada pelanggan.</p>
-                            </div>
-                            <a href="<?= ($BASE) ?>/bast/tambah?order_id=<?= ($order['id']) ?>" class="btn btn-outline-primary btn-sm px-3 fw-semibold text-nowrap">
-                                <i class="bi bi-file-earmark-check me-1"></i> Terbitkan BAST
-                            </a>
-                        </div>
-                    <?php endif; ?>
-                </div>
-            </div>
+            <!-- Tahapan Lanjutan (Kontrak, Pembayaran, BAST) - Disembunyikan sementara sesuai arahan -->
 
         </div>
     </div>

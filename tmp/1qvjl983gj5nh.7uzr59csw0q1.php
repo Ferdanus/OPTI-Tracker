@@ -165,8 +165,7 @@
     <input type="hidden" name="bidang_layanan[]" value="opti">
 
     <?php if (!$can_edit): ?>
-        <div class="alert alert-warning border-0 d-flex align-items-center gap-2 mb-3 py-2 px-3 small rounded-3">
-            <i class="bi bi-lock-fill text-warning fs-5 flex-shrink-0"></i>
+        <div class="alert alert-warning border-0 d-flex align-items-center mb-3 py-2 px-3 small rounded-3">
             <div>
                 <strong>Mode Lihat Saja (Read-Only)</strong>: Pengisian dan pengiriman Formulir Permintaan Pelayanan Jasa merupakan wewenang <strong>Tim Kemitraan (Admin Order)</strong>.
             </div>

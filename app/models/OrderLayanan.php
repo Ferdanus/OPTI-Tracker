@@ -322,17 +322,22 @@ class OrderLayanan extends \DB\SQL\Mapper {
             throw new \Exception("Order Layanan #{$orderId} tidak ditemukan.");
         }
 
-        $sdmTersedia   = isset($data['sdm_tersedia']) ? (!empty($data['sdm_tersedia']) ? 1 : 0) : 1;
-        $sdmCatatan    = trim($data['catatan_tinjauan'] ?? ($data['sdm_catatan'] ?? ''));
-        $alatTersedia  = isset($data['peralatan_tersedia']) ? (!empty($data['peralatan_tersedia']) ? 1 : 0) : 1;
+        $sdmTersedia   = !empty($data['sdm_tersedia']) ? 1 : 0;
+        $sdmCatatan    = trim($data['sdm_catatan'] ?? '');
+        $alatTersedia  = !empty($data['peralatan_tersedia']) ? 1 : 0;
         $alatCatatan   = trim($data['peralatan_catatan'] ?? '');
-        $bahanTersedia = isset($data['bahan_tersedia']) ? (!empty($data['bahan_tersedia']) ? 1 : 0) : 1;
+        $bahanTersedia = !empty($data['bahan_tersedia']) ? 1 : 0;
         $bahanCatatan  = trim($data['bahan_catatan'] ?? '');
-        $metodeTersedia= isset($data['metode_tersedia']) ? (!empty($data['metode_tersedia']) ? 1 : 0) : 1;
+        $metodeTersedia= !empty($data['metode_tersedia']) ? 1 : 0;
         $metodeCatatan = trim($data['metode_catatan'] ?? '');
 
         $keputusan = ($data['keputusan'] ?? '') === 'tidak_dapat_dilaksanakan' ? 'tidak_dapat_dilaksanakan' : 'dapat_dilaksanakan';
         $alasanPenolakan = trim($data['alasan_penolakan'] ?? '');
+
+        // Validasi: Jika 4 parameter tidak siap, tidak boleh 'dapat_dilaksanakan'
+        if ($keputusan === 'dapat_dilaksanakan' && (!$sdmTersedia || !$alatTersedia || !$bahanTersedia || !$metodeTersedia)) {
+            throw new \Exception("Semua 4 parameter kesiapan (SDM, Alat, Bahan, dan Metode Uji) harus terpenuhi untuk menyetujui status 'Dapat Dilaksanakan'.");
+        }
 
         // Hapus tinjauan lama jika ada untuk order ini
         $this->db->exec("DELETE FROM opti_tinjauan_kelayakan WHERE order_id = ?", array(1 => $orderId));

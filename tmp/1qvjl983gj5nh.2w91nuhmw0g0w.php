@@ -92,25 +92,66 @@
                             </div>
                         <?php endif; ?>
 
-                        <!-- 1. Keputusan Kelayakan -->
+                        <!-- 1. Kesiapan Sumber Daya (SDM, Alat, Bahan, Metode) -->
+                        <!-- 1. Kesiapan Sumber Daya (SDM, Alat, Bahan, Metode) -->
+                        <div class="mb-4">
+                            <label class="form-label small fw-bold text-dark mb-2">Kesiapan Sumber Daya &amp; Teknis:</label>
+                            
+                            <div class="row g-2 mb-2">
+                                <div class="col-sm-6">
+                                    <div class="p-2 border rounded bg-light d-flex align-items-center">
+                                        <input class="form-check-input mt-0 me-2" type="checkbox" name="sdm_tersedia" id="sdm_tersedia" value="1" <?= (!$tinjauan || $tinjauan['sdm_tersedia'] ? 'checked' : '') ?> <?= (!$can_edit ? 'disabled' : '') ?> onchange="checkReadinessAndLock()">
+                                        <label class="form-check-label small fw-semibold text-dark cursor-pointer mb-0" for="sdm_tersedia">
+                                            Personil / SDM Analis Siap
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="p-2 border rounded bg-light d-flex align-items-center">
+                                        <input class="form-check-input mt-0 me-2" type="checkbox" name="peralatan_tersedia" id="peralatan_tersedia" value="1" <?= (!$tinjauan || $tinjauan['peralatan_tersedia'] ? 'checked' : '') ?> <?= (!$can_edit ? 'disabled' : '') ?> onchange="checkReadinessAndLock()">
+                                        <label class="form-check-label small fw-semibold text-dark cursor-pointer mb-0" for="peralatan_tersedia">
+                                            Peralatan &amp; Alat Uji Siap
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="p-2 border rounded bg-light d-flex align-items-center">
+                                        <input class="form-check-input mt-0 me-2" type="checkbox" name="bahan_tersedia" id="bahan_tersedia" value="1" <?= (!$tinjauan || $tinjauan['bahan_tersedia'] ? 'checked' : '') ?> <?= (!$can_edit ? 'disabled' : '') ?> onchange="checkReadinessAndLock()">
+                                        <label class="form-check-label small fw-semibold text-dark cursor-pointer mb-0" for="bahan_tersedia">
+                                            Bahan Kimia &amp; Reagen Siap
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="p-2 border rounded bg-light d-flex align-items-center">
+                                        <input class="form-check-input mt-0 me-2" type="checkbox" name="metode_tersedia" id="metode_tersedia" value="1" <?= (!$tinjauan || $tinjauan['metode_tersedia'] ? 'checked' : '') ?> <?= (!$can_edit ? 'disabled' : '') ?> onchange="checkReadinessAndLock()">
+                                        <label class="form-check-label small fw-semibold text-dark cursor-pointer mb-0" for="metode_tersedia">
+                                            Metode Uji Tervalidasi
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2. Keputusan Kelayakan -->
                         <div class="mb-4">
                             <label class="form-label small fw-bold text-dark mb-2">Keputusan Kelayakan Teknis:</label>
                             <div class="row g-3">
                                 <div class="col-sm-6">
                                     <input type="radio" class="btn-check" name="keputusan" id="kep_layak" value="dapat_dilaksanakan" <?= (!$tinjauan || $tinjauan['keputusan'] == 'dapat_dilaksanakan' ? 'checked' : '') ?> <?= (!$can_edit ? 'disabled' : '') ?> onchange="toggleAlasanPenolakan()">
-                                    <label class="choice-radio-card card-layak w-100 rounded-3 text-start p-3 d-flex flex-row align-items-center" for="kep_layak" style="cursor: <?= ($can_edit ? 'pointer' : 'default') ?>; min-height: 72px;">
+                                    <label class="choice-radio-card card-layak w-100 rounded-3 text-start p-3 d-flex flex-row align-items-center" id="label_card_layak" for="kep_layak" style="cursor: <?= ($can_edit ? 'pointer' : 'default') ?>; min-height: 72px;">
                                         <div class="card-icon-wrap me-3 flex-shrink-0 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
                                             <i class="bi bi-check-circle-fill fs-4" style="line-height: 1;"></i>
                                         </div>
                                         <div class="card-text-wrap flex-grow-1">
                                             <div class="card-title fw-bold" style="font-size: 0.92rem; line-height: 1.25;">Dapat Dilaksanakan</div>
-                                            <div class="card-subtitle small mt-0.5" style="font-size: 0.74rem; line-height: 1.25;">Lab sanggup mengerjakan</div>
+                                            <div class="card-subtitle small mt-0.5" style="font-size: 0.74rem; line-height: 1.25;">Sanggup dikerjakan</div>
                                         </div>
                                     </label>
                                 </div>
                                 <div class="col-sm-6">
                                     <input type="radio" class="btn-check" name="keputusan" id="kep_tidak_layak" value="tidak_dapat_dilaksanakan" <?= ($tinjauan && $tinjauan['keputusan'] == 'tidak_dapat_dilaksanakan' ? 'checked' : '') ?> <?= (!$can_edit ? 'disabled' : '') ?> onchange="toggleAlasanPenolakan()">
-                                    <label class="choice-radio-card card-tidak-layak w-100 rounded-3 text-start p-3 d-flex flex-row align-items-center" for="kep_tidak_layak" style="cursor: <?= ($can_edit ? 'pointer' : 'default') ?>; min-height: 72px;">
+                                    <label class="choice-radio-card card-tidak-layak w-100 rounded-3 text-start p-3 d-flex flex-row align-items-center" id="label_card_tidak_layak" for="kep_tidak_layak" style="cursor: <?= ($can_edit ? 'pointer' : 'default') ?>; min-height: 72px;">
                                         <div class="card-icon-wrap me-3 flex-shrink-0 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
                                             <i class="bi bi-x-circle-fill fs-4" style="line-height: 1;"></i>
                                         </div>
@@ -121,36 +162,39 @@
                                     </label>
                                 </div>
                             </div>
+                            <div id="noticeUnready" class="small text-danger mt-2" style="display: none;">
+                                <i class="bi bi-info-circle me-1"></i> Semua 4 parameter kesiapan (SDM, Alat, Bahan, Metode) harus terisi / siap untuk dapat memilih status <strong>Dapat Dilaksanakan</strong>.
+                            </div>
                         </div>
 
-                        <!-- 2. Tunjuk PIC Proposal (Muncul jika Dapat Dilaksanakan) -->
+                        <!-- 3. Tunjuk PIC Proposal (Muncul jika Dapat Dilaksanakan) -->
                         <div id="boxPicProposal" class="mb-3" style="display: <?= (!$tinjauan || $tinjauan['keputusan'] == 'dapat_dilaksanakan' ? 'block' : 'none') ?>;">
                             <label class="form-label small fw-bold text-dark mb-1">
-                                Tunjuk PIC Penyusun Proposal &amp; Rancop: <span class="text-danger">*</span>
+                                Tunjuk PIC Penyusun Proposal: <span class="text-danger">*</span>
                             </label>
                             <select name="pic_proposal_id" class="form-select form-select-sm" id="selectPicProposal" <?= (!$can_edit ? 'disabled' : '') ?> required>
-                                <option value="">Pilih Personil Peneliti / Analis Pelaksana</option>
+                                <option value="">-- Pilih PIC Peneliti Pelaksana --</option>
                                 <?php foreach (($daftar_pic ?: []?:[]) as $p): ?>
                                     <option value="<?= ($p['id_user']) ?>" <?= (($order['pic_proposal_id'] == $p['id_user']) ? 'selected' : '') ?>>
-                                        <?= ($p['nama_user']) ?> <?= ($p['spesialisasi'] ? ' - Spesialisasi: '.$p['spesialisasi'] : '')."
+                                        <?= ($p['nama_user']) ?> <?= ($p['spesialisasi'] ? ' ('.$p['spesialisasi'].')' : '')."
 " ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
 
-                        <!-- 3. Catatan / Arahan Ka. Tim (Opsional) -->
+                        <!-- 4. Catatan / Arahan Ka. Tim (Opsional) -->
                         <div id="boxCatatan" class="mb-4" style="display: <?= (!$tinjauan || $tinjauan['keputusan'] == 'dapat_dilaksanakan' ? 'block' : 'none') ?>;">
                             <label class="form-label small fw-bold text-dark mb-1">
                                 Catatan / Arahan Ka. Tim (Opsional):
                             </label>
-                            <input type="text" name="catatan_tinjauan" class="form-control form-control-sm" placeholder="Contoh: Fokuskan pada uji sifat optik dan fisik kertas..." value="<?= ($tinjauan['sdm_catatan'] ?? '') ?>" <?= (!$can_edit ? 'disabled' : '') ?>>
+                            <input type="text" name="sdm_catatan" class="form-control form-control-sm" placeholder="Contoh: Prioritaskan pengujian sampel sesuai SNI..." value="<?= ($tinjauan['sdm_catatan'] ?? '') ?>" <?= (!$can_edit ? 'disabled' : '') ?>>
                         </div>
 
-                        <!-- 4. Alasan Penolakan (Muncul jika Tidak Dapat Dilaksanakan) -->
+                        <!-- 5. Alasan Penolakan (Muncul jika Tidak Dapat Dilaksanakan) -->
                         <div id="boxAlasanPenolakan" class="mb-4" style="display: <?= ($tinjauan && $tinjauan['keputusan'] == 'tidak_dapat_dilaksanakan' ? 'block' : 'none') ?>;">
                             <label class="form-label small fw-bold text-danger mb-1">Alasan Penolakan / Kendala Teknis:</label>
-                            <textarea name="alasan_penolakan" class="form-control form-control-sm" rows="3" placeholder="Sebutkan kendala teknis (misal: alat sedang kalibrasi, reagen khusus habis, kapasitas lab penuh)..." <?= (!$can_edit ? 'disabled' : '') ?>><?= ($tinjauan['alasan_penolakan'] ?? '') ?></textarea>
+                            <textarea name="alasan_penolakan" class="form-control form-control-sm" rows="3" placeholder="Sebutkan kendala teknis penolakan (misal: alat sedang kalibrasi, reagen habis)..." <?= (!$can_edit ? 'disabled' : '') ?>><?= ($tinjauan['alasan_penolakan'] ?? '') ?></textarea>
                         </div>
 
                         <!-- Action Buttons -->
@@ -160,12 +204,12 @@
                             </a>
                             <?php if ($can_edit): ?>
                                 <button type="submit" class="btn btn-primary btn-sm px-4 py-1.5 fw-semibold shadow-xs">
-                                    <i class="bi bi-save me-1"></i> Simpan &amp; Tugaskan PIC
+                                    Simpan &amp; Tugaskan PIC
                                 </button>
                             <?php endif; ?>
                             <?php if (!$can_edit): ?>
                                 <button type="button" class="btn btn-secondary btn-sm px-4 py-1.5 fw-semibold shadow-xs" disabled>
-                                    <i class="bi bi-lock-fill me-1"></i> Terkunci (Wewenang Ka. Tim)
+                                    Terkunci (Wewenang Ka. Tim)
                                 </button>
                             <?php endif; ?>
                         </div>
@@ -198,6 +242,59 @@ function toggleAlasanPenolakan() {
         if (selectPic) selectPic.setAttribute('required', 'required');
     }
 }
+
+function checkReadinessAndLock() {
+    var sdm = document.getElementById('sdm_tersedia');
+    var alat = document.getElementById('peralatan_tersedia');
+    var bahan = document.getElementById('bahan_tersedia');
+    var metode = document.getElementById('metode_tersedia');
+
+    var isAllReady = (sdm && sdm.checked) && 
+                     (alat && alat.checked) && 
+                     (bahan && bahan.checked) && 
+                     (metode && metode.checked);
+
+    var radioLayak = document.getElementById('kep_layak');
+    var radioTidak = document.getElementById('kep_tidak_layak');
+    var labelLayak = document.getElementById('label_card_layak');
+    var notice = document.getElementById('noticeUnready');
+
+    if (!isAllReady) {
+        if (radioLayak) {
+            radioLayak.disabled = true;
+            if (radioLayak.checked) {
+                radioLayak.checked = false;
+                if (radioTidak) {
+                    radioTidak.checked = true;
+                }
+            }
+        }
+        if (labelLayak) {
+            labelLayak.style.opacity = '0.45';
+            labelLayak.style.pointerEvents = 'none';
+            labelLayak.style.cursor = 'not-allowed';
+            labelLayak.setAttribute('title', 'Terkunci: Semua 4 parameter kesiapan harus siap');
+        }
+        if (notice) notice.style.display = 'block';
+    } else {
+        <?php if ($can_edit): ?>
+        if (radioLayak) radioLayak.disabled = false;
+        if (labelLayak) {
+            labelLayak.style.opacity = '1';
+            labelLayak.style.pointerEvents = 'auto';
+            labelLayak.style.cursor = 'pointer';
+            labelLayak.removeAttribute('title');
+        }
+        <?php endif; ?>
+        if (notice) notice.style.display = 'none';
+    }
+
+    toggleAlasanPenolakan();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    checkReadinessAndLock();
+});
 </script>
 
 <style>
