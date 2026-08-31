@@ -31,14 +31,6 @@
         </div>
     </check>
 
-    <!-- Alert / Flash Message -->
-    <check if="{{ @SESSION.flash_error }}">
-        <div class="alert alert-danger alert-dismissible fade show shadow-sm border-0 mb-4" role="alert">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ @SESSION.flash_error }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    </check>
-
     <form action="{{ @BASE }}/order/{{ @order.id }}/penawaran/simpan" method="POST">
         <div class="row g-4">
             <!-- Kolom Kiri: Sumber Anggaran Teknis -->
