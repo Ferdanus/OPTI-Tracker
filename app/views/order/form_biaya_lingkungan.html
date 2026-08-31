@@ -12,9 +12,6 @@
             <h4 class="fw-bold text-dark m-0 d-flex align-items-center gap-2 font-display">
                 <i class="bi bi-calculator text-success"></i> Kaji Ulang Teknis &amp; Kalkulator Tarif Pengujian
             </h4>
-            <p class="text-muted small m-0 mt-1">
-                Penetapan parameter uji laboratorium lingkungan, acuan standar SNI/ASTM, tarif resmi PNBP, dan estimasi waktu penyelesaian (SPM).
-            </p>
         </div>
         <div class="d-flex gap-2">
             <a href="{{ @BASE }}/order/{{ @order.id }}" class="btn btn-outline-secondary btn-sm px-3 fw-semibold shadow-sm d-flex align-items-center gap-1">
@@ -23,11 +20,12 @@
         </div>
     </div>
 
-    <!-- Alert / Flash Message -->
-    <check if="{{ @SESSION.flash_error }}">
-        <div class="alert alert-danger alert-dismissible fade show shadow-sm border-0 mb-4" role="alert">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ @SESSION.flash_error }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    <check if="{{ !@can_edit }}">
+        <div class="alert alert-warning border-0 d-flex align-items-center gap-2 mb-4 py-2 px-3 small rounded-3">
+            <i class="bi bi-lock-fill text-warning fs-5 flex-shrink-0"></i>
+            <div>
+                <strong>Mode Lihat Saja (Read-Only)</strong>: Perhitungan rincian pengujian dan kalkulasi biaya SNI merupakan wewenang <strong>PIC Proposal</strong> yang ditunjuk.
+            </div>
         </div>
     </check>
 
@@ -64,9 +62,11 @@
                 <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2">
                     <i class="bi bi-list-check text-success"></i> Parameter Pengujian Laboratorium
                 </h6>
-                <button type="button" class="btn btn-success btn-sm fw-bold shadow-sm d-flex align-items-center gap-1" onclick="addRowUji()">
-                    <i class="bi bi-plus-circle"></i> Tambah Parameter
-                </button>
+                <check if="{{ @can_edit }}">
+                    <button type="button" class="btn btn-success btn-sm fw-bold shadow-sm d-flex align-items-center gap-1" onclick="addRowUji()">
+                        <i class="bi bi-plus-circle"></i> Tambah Parameter
+                    </button>
+                </check>
             </div>
 
             <div class="card-body p-0">
@@ -195,9 +195,16 @@
                             <a href="{{ @BASE }}/order/{{ @order.id }}" class="btn btn-outline-secondary btn-sm px-3">
                                 Batal
                             </a>
-                            <button type="submit" class="btn btn-success btn-sm px-4 fw-bold shadow-sm d-flex align-items-center gap-2">
-                                <i class="bi bi-save"></i> Simpan Hasil Kalkulasi Tarif
-                            </button>
+                            <check if="{{ @can_edit }}">
+                                <button type="submit" class="btn btn-success btn-sm px-4 fw-bold shadow-sm d-flex align-items-center gap-2">
+                                    <i class="bi bi-save"></i> Simpan Hasil Kalkulasi Tarif
+                                </button>
+                            </check>
+                            <check if="{{ !@can_edit }}">
+                                <button type="button" class="btn btn-secondary btn-sm px-4 fw-semibold" disabled>
+                                    <i class="bi bi-lock-fill me-1"></i> Terkunci (Wewenang PIC Proposal)
+                                </button>
+                            </check>
                         </div>
                     </div>
                 </div>

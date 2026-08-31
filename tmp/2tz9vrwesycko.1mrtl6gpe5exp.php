@@ -11,9 +11,6 @@
             <h4 class="fw-bold text-dark m-0 d-flex align-items-center gap-2 font-display">
                 <i class="bi bi-inbox-fill text-primary"></i> Kotak Masuk Permohonan Layanan
             </h4>
-            <p class="text-muted small m-0 mt-1">
-                Pintu masuk permohonan jasa riset & pengujian dari sistem Sekretariat BBSPJIS ke alur OPTI.
-            </p>
         </div>
         <div class="d-flex gap-2">
             <a href="<?= ($BASE) ?>/simulasi-sekretariat" class="btn btn-outline-primary btn-sm px-3 fw-semibold shadow-sm d-flex align-items-center gap-2">
@@ -315,8 +312,8 @@
                                                 </td>
                                                 <td class="text-center" style="white-space: nowrap;">
                                                     <div class="d-inline-flex align-items-center gap-1">
-                                                        <a href="<?= ($BASE) ?>/order/<?= ($klaim['id']) ?>" class="btn btn-primary btn-sm px-3 py-1 fw-semibold text-nowrap shadow-sm d-inline-flex align-items-center gap-1">
-                                                            <i class="bi bi-arrow-right-circle"></i> Proses Order
+                                                        <a href="<?= ($BASE) ?>/order/<?= ($klaim['id']) ?>/form-pelayanan" class="btn btn-primary btn-sm px-3 py-1 fw-semibold text-nowrap shadow-sm d-inline-flex align-items-center gap-1">
+                                                            <i class="bi bi-file-earmark-text"></i> Isi Form Pelayanan
                                                         </a>
                                                         <!-- Tombol Buka Pop-up Konfirmasi Batal -->
                                                         <button type="button" class="btn btn-outline-danger btn-sm px-2 py-1" data-bs-toggle="modal" data-bs-target="#modalBatal_<?= ($klaim['id']) ?>" title="Batalkan Penerimaan Surat">

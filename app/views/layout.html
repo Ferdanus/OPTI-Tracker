@@ -16,6 +16,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <!-- Tom Select CDN for Fast Searchable Dropdowns -->
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+    <!-- SweetAlert2 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
         :root {
@@ -284,6 +286,35 @@
             background-color: rgba(255, 255, 255, 0.18);
             color: #ffffff;
             box-shadow: inset 4px 0 0 #ffffff;
+        }
+
+        .sidebar-link.sidebar-locked {
+            opacity: 0.52;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .sidebar-link.sidebar-locked:hover {
+            opacity: 0.95;
+            background-color: rgba(0, 0, 0, 0.28);
+            color: #fef08a;
+        }
+
+        .sidebar-link.sidebar-locked .lock-indicator {
+            color: #f59e0b;
+            font-size: 0.78rem;
+            margin-left: auto;
+            margin-right: 0;
+            width: auto;
+            min-width: auto;
+            opacity: 0.9;
+        }
+
+        body.sidebar-collapsed .sidebar .sidebar-link.sidebar-locked .lock-indicator {
+            position: absolute;
+            top: 6px;
+            right: 8px;
+            font-size: 0.65rem;
         }
 
         /* ============ DESKTOP EXPANDED & COLLAPSIBLE TOGGLE ============ */
@@ -786,77 +817,161 @@
 
             <ul class="sidebar-nav">
                 
-                <!-- 1. ALUR PELAYANAN / KEMITRAAN (Superadmin, Tim Mitra, Ketua Tim, Pejabat) -->
-                <check if="{{ @is_superadmin || @is_admin_order || @is_ketua_tim || @is_pejabat }}">
-                    <li class="sidebar-section-label">Alur Pelayanan</li>
-                    <check if="{{ @is_superadmin || @is_admin_order || @is_ketua_tim }}">
-                        <li>
+                <!-- 1. ALUR PELAYANAN / KEMITRAAN -->
+                <li class="sidebar-section-label">Alur Pelayanan</li>
+                
+                <!-- Surat Masuk (Admin Order, Tim Mitra, Sekretaris, Superadmin) -->
+                <li>
+                    <check if="{{ @is_superadmin || @is_admin_order || @is_sekretaris }}">
+                        <true>
                             <a class="sidebar-link {{ @active_menu == 'surat_masuk' ? 'active' : '' }}" href="{{ @BASE }}/surat-masuk" title="Surat Masuk">
                                 <i class="bi bi-envelope-paper"></i> <span>Surat Masuk</span>
+                                <check if="{{ @jumlah_notif_surat > 0 }}">
+                                    <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.68rem; padding: 0.25em 0.6em;">{{ @jumlah_notif_surat }}</span>
+                                </check>
                             </a>
-                        </li>
-                    </check>
-                    <li>
-                        <a class="sidebar-link {{ @active_menu == 'order' ? 'active' : '' }}" href="{{ @BASE }}/order" title="Order Masuk">
-                            <i class="bi bi-inbox"></i> <span>Order Masuk</span>
-                        </a>
-                    </li>
-                    <check if="{{ @is_superadmin || @is_admin_order || @is_ketua_tim }}">
-                        <li>
-                            <a class="sidebar-link {{ @active_menu == 'surat-penawaran' ? 'active' : '' }}" href="{{ @BASE }}/surat-penawaran" title="Surat Penawaran">
-                                <i class="bi bi-file-earmark-text"></i> <span>Surat Penawaran</span>
+                        </true>
+                        <false>
+                            <a class="sidebar-link sidebar-locked" href="javascript:void(0)" onclick="notifyLockedMenu(event, 'Surat Masuk', 'Tim Kemitraan (Admin Order) / Sekretariat')" title="Surat Masuk (Terkunci)">
+                                <i class="bi bi-envelope-paper"></i> <span>Surat Masuk</span>
+                                <i class="bi bi-lock-fill lock-indicator" title="Terkunci: Wewenang Tim Mitra / Sekretariat"></i>
                             </a>
-                        </li>
+                        </false>
                     </check>
-                </check>
+                </li>
 
-                <!-- 2. PELAKSANAAN TEKNIS (Superadmin, Ketua Tim, Pejabat, Tim Kerja, Admin Kontrak) -->
-                <check if="{{ @is_superadmin || @is_ketua_tim || @is_pejabat || @is_tim_kerja || @is_admin_kontrak }}">
-                    <li class="sidebar-section-label">Pelaksanaan Teknis</li>
-                    <check if="{{ @is_superadmin || @is_ketua_tim || @is_pejabat || @is_tim_kerja }}">
-                        <li>
+                <!-- Permintaan Masuk (Ketua Tim, Superadmin) -->
+                <li>
+                    <check if="{{ @is_superadmin || @is_ketua_tim }}">
+                        <true>
+                            <a class="sidebar-link {{ @active_menu == 'disposisi_masuk' ? 'active' : '' }}" href="{{ @BASE }}/disposisi-masuk" title="Permintaan Masuk">
+                                <i class="bi bi-bell"></i> <span>Permintaan Masuk</span>
+                                <check if="{{ @jumlah_notif_katim > 0 }}">
+                                    <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.68rem; padding: 0.25em 0.6em;">{{ @jumlah_notif_katim }}</span>
+                                </check>
+                            </a>
+                        </true>
+                        <false>
+                            <a class="sidebar-link sidebar-locked" href="javascript:void(0)" onclick="notifyLockedMenu(event, 'Permintaan Masuk', 'Ketua Tim OPTI')" title="Permintaan Masuk (Terkunci)">
+                                <i class="bi bi-bell"></i> <span>Permintaan Masuk</span>
+                                <i class="bi bi-lock-fill lock-indicator" title="Terkunci: Wewenang Ketua Tim OPTI"></i>
+                            </a>
+                        </false>
+                    </check>
+                </li>
+
+                <!-- Daftar Order (Semua Role Teknis & Pelayanan) -->
+                <li>
+                    <check if="{{ @is_superadmin || @is_admin_order || @is_ketua_tim || @is_pejabat || @is_tim_kerja || @is_admin_kontrak }}">
+                        <true>
+                            <a class="sidebar-link {{ @active_menu == 'order' ? 'active' : '' }}" href="{{ @BASE }}/order" title="Daftar Semua Order">
+                                <i class="bi bi-inbox"></i> <span>Daftar Order</span>
+                            </a>
+                        </true>
+                        <false>
+                            <a class="sidebar-link sidebar-locked" href="javascript:void(0)" onclick="notifyLockedMenu(event, 'Daftar Order', 'Tim Pelayanan OPTI')" title="Daftar Order (Terkunci)">
+                                <i class="bi bi-inbox"></i> <span>Daftar Order</span>
+                                <i class="bi bi-lock-fill lock-indicator" title="Terkunci: Wewenang Tim Pelayanan OPTI"></i>
+                            </a>
+                        </false>
+                    </check>
+                </li>
+
+                <!-- Surat Pelayanan (Admin Order, Tim Mitra, Ketua Tim, Pejabat, Superadmin) -->
+                <li>
+                    <check if="{{ @is_superadmin || @is_admin_order || @is_ketua_tim || @is_pejabat }}">
+                        <true>
+                            <a class="sidebar-link {{ @active_menu == 'surat-penawaran' ? 'active' : '' }}" href="{{ @BASE }}/surat-penawaran" title="Surat Pelayanan">
+                                <i class="bi bi-file-earmark-text"></i> <span>Surat Pelayanan</span>
+                            </a>
+                        </true>
+                        <false>
+                            <a class="sidebar-link sidebar-locked" href="javascript:void(0)" onclick="notifyLockedMenu(event, 'Surat Pelayanan', 'Tim Kemitraan (Admin Order) &amp; Pejabat')" title="Surat Pelayanan (Terkunci)">
+                                <i class="bi bi-file-earmark-text"></i> <span>Surat Pelayanan</span>
+                                <i class="bi bi-lock-fill lock-indicator" title="Terkunci: Wewenang Tim Kemitraan &amp; Pejabat"></i>
+                            </a>
+                        </false>
+                    </check>
+                </li>
+
+                <!-- 2. PELAKSANAAN TEKNIS -->
+                <li class="sidebar-section-label">Pelaksanaan Teknis</li>
+                
+                <!-- Petunjuk Operasional (PO) (Ketua Tim, Tim Kerja, Pejabat, Admin Kontrak, Superadmin) -->
+                <li>
+                    <check if="{{ @is_superadmin || @is_ketua_tim || @is_pejabat || @is_tim_kerja || @is_admin_kontrak }}">
+                        <true>
                             <a class="sidebar-link {{ @active_menu == 'po' ? 'active' : '' }}" href="{{ @BASE }}/po" title="Petunjuk Operasional (PO)">
                                 <i class="bi bi-speedometer2"></i> <span>Petunjuk Operasional (PO)</span>
                             </a>
-                        </li>
+                        </true>
+                        <false>
+                            <a class="sidebar-link sidebar-locked" href="javascript:void(0)" onclick="notifyLockedMenu(event, 'Petunjuk Operasional (PO)', 'Ketua Tim, Tim Kerja &amp; Pejabat')" title="PO (Terkunci)">
+                                <i class="bi bi-speedometer2"></i> <span>Petunjuk Operasional (PO)</span>
+                                <i class="bi bi-lock-fill lock-indicator" title="Terkunci: Wewenang Tim Teknis"></i>
+                            </a>
+                        </false>
                     </check>
-                    <check if="{{ @is_superadmin || @is_pejabat || @is_admin_kontrak }}">
-                        <li>
+                </li>
+
+                <!-- Kontrak / PKS (Admin Order, Admin Kontrak, Pejabat, Superadmin) -->
+                <li>
+                    <check if="{{ @is_superadmin || @is_admin_order || @is_pejabat || @is_admin_kontrak }}">
+                        <true>
                             <a class="sidebar-link {{ @active_menu == 'kontrak' ? 'active' : '' }}" href="{{ @BASE }}/kontrak" title="Kontrak / PKS">
                                 <i class="bi bi-file-earmark-ruled"></i> <span>Kontrak / PKS</span>
                             </a>
-                        </li>
-                    </check>
-                </check>
-
-                <!-- 3. KEUANGAN & PENAGIHAN (Superadmin, Admin Kontrak, Pejabat) -->
-                <check if="{{ @is_superadmin || @is_admin_kontrak || @is_pejabat }}">
-                    <li class="sidebar-section-label">Keuangan &amp; Penagihan</li>
-                    <li>
-                        <a class="sidebar-link {{ @active_menu == 'pembayaran' || @active_menu == 'invoice' ? 'active' : '' }}" href="{{ @BASE }}/pembayaran" title="Pembayaran &amp; Billing PNBP">
-                            <i class="bi bi-cash-stack"></i> <span>Pembayaran PNBP</span>
-                        </a>
-                    </li>
-                </check>
-
-                <!-- 4. PERSURATAN (Superadmin, Sekretariat) -->
-                <check if="{{ @is_superadmin || @is_sekretaris }}">
-                    <li class="sidebar-section-label">Persuratan Balai</li>
-                    <li>
-                        <a class="sidebar-link {{ @active_menu == 'simulasi_sekretariat' ? 'active' : '' }}" href="{{ @BASE }}/simulasi-sekretariat" title="Registrasi Surat Masuk">
-                            <i class="bi bi-journal-plus"></i> <span>Registrasi Surat Masuk</span>
-                        </a>
-                    </li>
-                    <check if="{{ @is_sekretaris }}">
-                        <li>
-                            <a class="sidebar-link {{ @active_menu == 'surat_masuk' ? 'active' : '' }}" href="{{ @BASE }}/surat-masuk" title="Buku Agenda Surat Masuk">
-                                <i class="bi bi-envelope-paper"></i> <span>Buku Agenda Surat</span>
+                        </true>
+                        <false>
+                            <a class="sidebar-link sidebar-locked" href="javascript:void(0)" onclick="notifyLockedMenu(event, 'Kontrak / PKS', 'Tim Kemitraan &amp; Pejabat (PPK/Kepala Balai)')" title="Kontrak / PKS (Terkunci)">
+                                <i class="bi bi-file-earmark-ruled"></i> <span>Kontrak / PKS</span>
+                                <i class="bi bi-lock-fill lock-indicator" title="Terkunci: Wewenang Tim Kemitraan &amp; PPK"></i>
                             </a>
-                        </li>
+                        </false>
                     </check>
-                </check>
+                </li>
 
-                <!-- 5. AKUN & PROFIL (Semua Role) -->
+                <!-- 3. KEUANGAN & PENAGIHAN -->
+                <li class="sidebar-section-label">Keuangan &amp; Penagihan</li>
+                
+                <!-- Pembayaran PNBP (Admin Order, Admin Kontrak, Pejabat, Superadmin) -->
+                <li>
+                    <check if="{{ @is_superadmin || @is_admin_order || @is_pejabat || @is_admin_kontrak }}">
+                        <true>
+                            <a class="sidebar-link {{ @active_menu == 'pembayaran' || @active_menu == 'invoice' ? 'active' : '' }}" href="{{ @BASE }}/pembayaran" title="Pembayaran &amp; Billing PNBP">
+                                <i class="bi bi-cash-stack"></i> <span>Pembayaran PNBP</span>
+                            </a>
+                        </true>
+                        <false>
+                            <a class="sidebar-link sidebar-locked" href="javascript:void(0)" onclick="notifyLockedMenu(event, 'Pembayaran PNBP', 'Tim Kemitraan &amp; Pejabat')" title="Pembayaran PNBP (Terkunci)">
+                                <i class="bi bi-cash-stack"></i> <span>Pembayaran PNBP</span>
+                                <i class="bi bi-lock-fill lock-indicator" title="Terkunci: Wewenang Tim Kemitraan"></i>
+                            </a>
+                        </false>
+                    </check>
+                </li>
+
+                <!-- 4. PERSURATAN -->
+                <li class="sidebar-section-label">Persuratan Balai</li>
+                
+                <!-- Registrasi Surat Masuk (Sekretariat, Superadmin) -->
+                <li>
+                    <check if="{{ @is_superadmin || @is_sekretaris }}">
+                        <true>
+                            <a class="sidebar-link {{ @active_menu == 'simulasi_sekretariat' ? 'active' : '' }}" href="{{ @BASE }}/simulasi-sekretariat" title="Registrasi Surat Masuk">
+                                <i class="bi bi-journal-plus"></i> <span>Registrasi Surat Masuk</span>
+                            </a>
+                        </true>
+                        <false>
+                            <a class="sidebar-link sidebar-locked" href="javascript:void(0)" onclick="notifyLockedMenu(event, 'Registrasi Surat Masuk', 'Sekretariat Balai')" title="Registrasi Surat Masuk (Terkunci)">
+                                <i class="bi bi-journal-plus"></i> <span>Registrasi Surat Masuk</span>
+                                <i class="bi bi-lock-fill lock-indicator" title="Terkunci: Wewenang Sekretariat Balai"></i>
+                            </a>
+                        </false>
+                    </check>
+                </li>
+
+                <!-- 5. AKUN & PROFIL -->
                 <li class="sidebar-section-label">Akun</li>
                 <li>
                     <a class="sidebar-link {{ @active_menu == 'profil' ? 'active' : '' }}" href="{{ @BASE }}/profil" title="Profil Pengguna">
@@ -911,33 +1026,33 @@
                         </li>
                         <li class="px-3 py-1 text-uppercase fw-bold text-muted" style="font-size: 0.65rem; letter-spacing: 0.5px;">Ganti Peran (1-Klik):</li>
                         <li>
-                            <a class="dropdown-item py-1 small d-flex align-items-center gap-2 {{ @SESSION.role == 'superadmin' ? 'active' : '' }}" href="{{ @BASE }}/login/switch/9006">
-                                <i class="bi bi-shield-lock text-dark"></i> Superadmin (Fajriasa)
+                            <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2 {{ @SESSION.role == 'superadmin' ? 'active' : '' }}" href="{{ @BASE }}/login/switch/9006">
+                                <i class="bi bi-person-circle text-secondary"></i> Superadmin
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item py-1 small d-flex align-items-center gap-2 {{ @SESSION.role == 'admin_order' ? 'active' : '' }}" href="{{ @BASE }}/login/switch/36">
-                                <i class="bi bi-inbox-fill text-danger"></i> Tim Kemitraan (Faridh)
+                            <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2 {{ @SESSION.role == 'admin_order' ? 'active' : '' }}" href="{{ @BASE }}/login/switch/36">
+                                <i class="bi bi-person-circle text-secondary"></i> Tim Kemitraan
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item py-1 small d-flex align-items-center gap-2 {{ @SESSION.role == 'ketua_tim' && @SESSION.jenis_layanan_opti == 'selulosa' ? 'active' : '' }}" href="{{ @BASE }}/login/switch/3">
-                                <i class="bi bi-diagram-3 text-primary"></i> Ka. Tim Selulosa (Bu Rina)
+                            <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2 {{ @SESSION.role == 'ketua_tim' && @SESSION.jenis_layanan_opti == 'selulosa' ? 'active' : '' }}" href="{{ @BASE }}/login/switch/3">
+                                <i class="bi bi-person-circle text-secondary"></i> Ka. Tim Selulosa
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item py-1 small d-flex align-items-center gap-2 {{ @SESSION.role == 'ketua_tim' && @SESSION.jenis_layanan_opti == 'lingkungan' ? 'active' : '' }}" href="{{ @BASE }}/login/switch/61">
-                                <i class="bi bi-calculator text-success"></i> Ka. Tim Lingkungan (Pak Andri)
+                            <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2 {{ @SESSION.role == 'ketua_tim' && @SESSION.jenis_layanan_opti == 'lingkungan' ? 'active' : '' }}" href="{{ @BASE }}/login/switch/61">
+                                <i class="bi bi-person-circle text-secondary"></i> Ka. Tim Lingkungan
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item py-1 small d-flex align-items-center gap-2 {{ @SESSION.role == 'pejabat' ? 'active' : '' }}" href="{{ @BASE }}/login/switch/175">
-                                <i class="bi bi-patch-check-fill text-warning"></i> Kepala Balai (Dodiet)
+                            <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2 {{ @SESSION.role == 'pejabat' ? 'active' : '' }}" href="{{ @BASE }}/login/switch/175">
+                                <i class="bi bi-person-circle text-secondary"></i> Kepala Balai / Pejabat
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item py-1 small d-flex align-items-center gap-2 {{ @SESSION.role == 'tim_kerja' ? 'active' : '' }}" href="{{ @BASE }}/login/switch/12">
-                                <i class="bi bi-clipboard2-pulse text-secondary"></i> Tim Kerja (Yogi)
+                            <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2 {{ @SESSION.role == 'tim_kerja' ? 'active' : '' }}" href="{{ @BASE }}/login/switch/12">
+                                <i class="bi bi-person-circle text-secondary"></i> Tim Kerja / Peneliti
                             </a>
                         </li>
                         <li><hr class="dropdown-divider my-1"></li>
@@ -1115,17 +1230,61 @@
                 }
             });
         });
-            document.querySelectorAll('.searchable-select').forEach(function(el) {
-                if (!el.tomselect) {
-                    new TomSelect(el, {
-                        create: false,
-                        sortField: { field: "text", direction: "asc" },
-                        placeholder: el.getAttribute('placeholder') || 'Ketik untuk mencari nama...',
-                        maxOptions: 150,
-                        allowEmptyOption: true
-                    });
-                }
-            });
+
+        // Global Interactive Notification for Locked Sidebar Menu Items
+        window.notifyLockedMenu = function(e, menuTitle, authorizedRole) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            var userRoleName = "{{ @SESSION.role == 'superadmin' ? 'Super Admin' : (@SESSION.role == 'admin_order' || @SESSION.role == 'tim_mitra' ? 'Tim Kemitraan (Admin Order)' : (@SESSION.role == 'ketua_tim' ? 'Ketua Tim OPTI' : (@SESSION.role == 'pejabat' ? 'Kepala Balai / PPK' : (@SESSION.role == 'tim_kerja' ? 'Tim Kerja / Analis' : (@SESSION.role == 'admin_kontrak' ? 'Admin Kontrak / PKS' : (@SESSION.role == 'sekretaris' ? 'Sekretariat' : 'Pengguna')))))) }}";
+
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'warning',
+                    title: '<span style="font-size:1.15rem;font-weight:700;color:#881337;">Akses Modul Terkunci</span>',
+                    html: `
+                        <div class="text-start small text-secondary mt-1">
+                            <p class="mb-3 text-dark">Anda tidak memiliki hak akses untuk membuka halaman <strong>${menuTitle}</strong>.</p>
+                            <div class="p-3 bg-light rounded-3 border">
+                                <div class="mb-2">
+                                    <i class="bi bi-shield-lock-fill text-warning fs-5 me-1 align-middle"></i>
+                                    <span class="text-muted">Wewenang Modul:</span><br>
+                                    <strong class="text-dark d-block ms-4">${authorizedRole}</strong>
+                                </div>
+                                <div class="pt-2 border-top">
+                                    <i class="bi bi-person-badge text-primary me-1 align-middle"></i>
+                                    <span class="text-muted">Peran Anda Saat Ini:</span>
+                                    <span class="badge bg-primary-subtle text-primary border ms-1">${userRoleName}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `,
+                    confirmButtonColor: '#881337',
+                    confirmButtonText: '<i class="bi bi-check-lg me-1"></i> Saya Mengerti',
+                    buttonsStyling: true,
+                    customClass: {
+                        popup: 'rounded-4 shadow-lg p-3',
+                        confirmButton: 'btn btn-primary px-4 py-2 fw-semibold rounded-3'
+                    }
+                });
+            } else {
+                alert('Akses Ditolak: Halaman ' + menuTitle + ' hanya dapat diakses oleh ' + authorizedRole + '. Peran Anda: ' + userRoleName);
+            }
+            return false;
+        };
+
+        document.querySelectorAll('.searchable-select').forEach(function(el) {
+            if (!el.tomselect) {
+                new TomSelect(el, {
+                    create: false,
+                    sortField: { field: "text", direction: "asc" },
+                    placeholder: el.getAttribute('placeholder') || 'Ketik untuk mencari nama...',
+                    maxOptions: 150,
+                    allowEmptyOption: true
+                });
+            }
+        });
 
             var sidebar = document.getElementById('sidebar');
             var backdrop = document.getElementById('sidebarBackdrop');

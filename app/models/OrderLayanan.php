@@ -64,10 +64,12 @@ class OrderLayanan extends \DB\SQL\Mapper {
                        COALESCE(NULLIF(c.emailcustomer, ''), c.emailcustomer_sertifikasi, '-') AS email,
                        COALESCE(NULLIF(c.alamatcustomer_baru, ''), c.alamatcustomer, '-') AS alamat,
                        p.id AS po_id, p.nomor_po, p.status AS status_po, p.biaya AS biaya_po,
+                       sp.status_respon_klien, sp.nomor_surat AS nomor_penawaran,
                        COALESCE((SELECT SUM(jumlah) FROM opti_pembayaran WHERE order_id = o.id), 0) AS total_terbayar
                 FROM order_layanan o
                 JOIN tb_customer c ON o.id_customer = c.id_customer
                 LEFT JOIN po p ON o.id = p.order_id
+                LEFT JOIN tb_surat_penawaran sp ON o.id = sp.order_id
                 WHERE 1=1";
         
         $params = array();
@@ -109,10 +111,14 @@ class OrderLayanan extends \DB\SQL\Mapper {
                     COALESCE(NULLIF(c.emailcustomer, ''), c.emailcustomer_sertifikasi, '-') AS email,
                     COALESCE(NULLIF(c.alamatcustomer_baru, ''), c.alamatcustomer, '-') AS alamat,
                     p.id AS po_id, p.nomor_po, p.status AS status_po, p.biaya AS biaya_po, p.target_selesai AS target_po,
-                    COALESCE((SELECT SUM(jumlah) FROM opti_pembayaran WHERE order_id = o.id), 0) AS total_terbayar
+                    COALESCE((SELECT SUM(jumlah) FROM opti_pembayaran WHERE order_id = o.id), 0) AS total_terbayar,
+                    u_pic.nama_user AS pic_proposal_nama,
+                    u_klaim.nama_user AS nama_pengklaim
              FROM order_layanan o
              JOIN tb_customer c ON o.id_customer = c.id_customer
              LEFT JOIN po p ON o.id = p.order_id
+             LEFT JOIN tb_arsipuser u_pic ON o.pic_proposal_id = u_pic.id_user
+             LEFT JOIN tb_arsipuser u_klaim ON o.diklaim_oleh = u_klaim.id_user
              WHERE o.id = ?",
             array(1 => $id)
         );
@@ -316,13 +322,13 @@ class OrderLayanan extends \DB\SQL\Mapper {
             throw new \Exception("Order Layanan #{$orderId} tidak ditemukan.");
         }
 
-        $sdmTersedia   = !empty($data['sdm_tersedia']) ? 1 : 0;
-        $sdmCatatan    = trim($data['sdm_catatan'] ?? '');
-        $alatTersedia  = !empty($data['peralatan_tersedia']) ? 1 : 0;
+        $sdmTersedia   = isset($data['sdm_tersedia']) ? (!empty($data['sdm_tersedia']) ? 1 : 0) : 1;
+        $sdmCatatan    = trim($data['catatan_tinjauan'] ?? ($data['sdm_catatan'] ?? ''));
+        $alatTersedia  = isset($data['peralatan_tersedia']) ? (!empty($data['peralatan_tersedia']) ? 1 : 0) : 1;
         $alatCatatan   = trim($data['peralatan_catatan'] ?? '');
-        $bahanTersedia = !empty($data['bahan_tersedia']) ? 1 : 0;
+        $bahanTersedia = isset($data['bahan_tersedia']) ? (!empty($data['bahan_tersedia']) ? 1 : 0) : 1;
         $bahanCatatan  = trim($data['bahan_catatan'] ?? '');
-        $metodeTersedia= !empty($data['metode_tersedia']) ? 1 : 0;
+        $metodeTersedia= isset($data['metode_tersedia']) ? (!empty($data['metode_tersedia']) ? 1 : 0) : 1;
         $metodeCatatan = trim($data['metode_catatan'] ?? '');
 
         $keputusan = ($data['keputusan'] ?? '') === 'tidak_dapat_dilaksanakan' ? 'tidak_dapat_dilaksanakan' : 'dapat_dilaksanakan';
@@ -352,11 +358,28 @@ class OrderLayanan extends \DB\SQL\Mapper {
             )
         );
 
-        // Update status order
+        // Update status order & Penunjukan PIC Proposal
         if ($keputusan === 'dapat_dilaksanakan') {
             $this->status_tinjauan = 'layak';
-            if ($this->status === 'permintaan_masuk') {
-                $this->status = 'baru';
+            $this->status = 'baru';
+            
+            $picProposalId = !empty($data['pic_proposal_id']) ? (int)$data['pic_proposal_id'] : null;
+            if ($picProposalId > 0) {
+                $this->pic_proposal_id = $picProposalId;
+                
+                // Pastikan ada draft proposal riset untuk PIC ini jika belum ada
+                $chkProp = $this->db->exec("SELECT id FROM opti_proposal_riset WHERE order_id = ?", array(1 => $orderId));
+                if (empty($chkProp)) {
+                    $this->db->exec(
+                        "INSERT INTO opti_proposal_riset (order_id, pic_penyusun_id, status_proposal, created_at) VALUES (?, ?, 'draft', NOW())",
+                        array(1 => $orderId, 2 => $picProposalId)
+                    );
+                } else {
+                    $this->db->exec(
+                        "UPDATE opti_proposal_riset SET pic_penyusun_id = ? WHERE order_id = ?",
+                        array(1 => $picProposalId, 2 => $orderId)
+                    );
+                }
             }
         } else {
             $this->status_tinjauan = 'tidak_layak';
@@ -576,11 +599,13 @@ class OrderLayanan extends \DB\SQL\Mapper {
      */
     public static function getPICSpesialisasiList(\DB\SQL $db): array {
         return $db->exec(
-            "SELECT u.id_user, u.login, u.nama_user, m.role_opti, m.jenis_layanan_opti 
+            "SELECT u.id_user, u.login, u.nama_user, 
+                    COALESCE(m.role_opti, u.bidang, 'Staff') AS role_opti, 
+                    COALESCE(m.jenis_layanan_opti, u.bidang, 'Umum') AS spesialisasi 
              FROM tb_arsipuser u 
-             JOIN opti_user_map m ON u.id_user = m.id_user 
-             WHERE m.is_active = 1 
-             ORDER BY m.jenis_layanan_opti ASC, u.nama_user ASC"
+             LEFT JOIN opti_user_map m ON u.id_user = m.id_user 
+             WHERE u.status = 1 OR u.status = '1' OR u.status = 'aktif' OR m.is_active = 1 
+             ORDER BY u.nama_user ASC"
         );
     }
 

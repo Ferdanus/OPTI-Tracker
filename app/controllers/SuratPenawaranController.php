@@ -14,14 +14,18 @@ class SuratPenawaranController extends Controller
         $filterLayanan = (string) $f3->get('GET.jenis_layanan');
         $filterStatus  = (string) $f3->get('GET.status');
 
-        $sql = "SELECT sp.*, COALESCE(c.nmcustomer, sp.perusahaan, '-') AS nmcustomer
-        FROM tb_surat_penawaran sp
-        LEFT JOIN tb_customer c ON c.id_customer = sp.customer_id
-        WHERE 1=1";
+        $sql = "SELECT sp.*, COALESCE(c.nmcustomer, sp.perusahaan, '-') AS nmcustomer,
+                       o.nomor_order
+                FROM tb_surat_penawaran sp
+                LEFT JOIN tb_customer c ON c.id_customer = sp.customer_id
+                LEFT JOIN order_layanan o ON o.id = sp.order_id
+                WHERE 1=1";
         $params = [];
 
         if ($search !== '') {
-            $sql      .= ' AND (sp.nomor_surat LIKE ? OR sp.perihal LIKE ? OR c.nmcustomer LIKE ?)';
+            $sql      .= ' AND (sp.nomor_surat LIKE ? OR sp.perihal LIKE ? OR c.nmcustomer LIKE ? OR sp.perusahaan LIKE ? OR o.nomor_order LIKE ?)';
+            $params[]  = '%' . $search . '%';
+            $params[]  = '%' . $search . '%';
             $params[]  = '%' . $search . '%';
             $params[]  = '%' . $search . '%';
             $params[]  = '%' . $search . '%';
@@ -31,26 +35,33 @@ class SuratPenawaranController extends Controller
             $params[]  = $filterLayanan;
         }
         if ($filterStatus !== '') {
-            $sql      .= ' AND sp.status = ?';
-            $params[]  = $filterStatus;
+            if ($filterStatus === 'deal') {
+                $sql .= " AND (sp.status_respon_klien = 'deal' OR sp.status = 'disetujui')";
+            } elseif ($filterStatus === 'terkirim') {
+                $sql .= " AND (sp.status = 'terkirim' OR sp.status_respon_klien = 'terkirim' OR sp.status_respon_klien = 'menunggu')";
+            } elseif ($filterStatus === 'draft') {
+                $sql .= " AND (sp.status = 'draft' OR sp.status_respon_klien = 'draft' OR sp.status IS NULL OR sp.status = '' OR sp.status = 'nonaktif')";
+            }
         }
         $sql .= ' ORDER BY sp.tanggal_surat DESC, sp.id DESC';
 
         $daftar = $this->db->exec($sql, $params);
 
         $totalSurat    = count($daftar);
-        $totalAktif    = count(array_filter($daftar, function ($r) { return $r['status'] === 'aktif'; }));
-        $totalNonaktif = $totalSurat - $totalAktif;
+        $totalDeal     = count(array_filter($daftar, function ($r) { return ($r['status_respon_klien'] === 'deal' || $r['status'] === 'disetujui'); }));
+        $totalTerkirim = count(array_filter($daftar, function ($r) { return ($r['status'] === 'terkirim' || $r['status_respon_klien'] === 'terkirim' || $r['status_respon_klien'] === 'menunggu'); }));
+        $totalDraft    = max(0, $totalSurat - $totalDeal - $totalTerkirim);
 
         $f3->set('daftar_penawaran', $daftar);
         $f3->set('total_surat', $totalSurat);
-        $f3->set('total_aktif', $totalAktif);
-        $f3->set('total_nonaktif', $totalNonaktif);
+        $f3->set('total_deal', $totalDeal);
+        $f3->set('total_terkirim', $totalTerkirim);
+        $f3->set('total_draft', $totalDraft);
         $f3->set('search', $search);
         $f3->set('filter_layanan', $filterLayanan);
         $f3->set('filter_status', $filterStatus);
 
-        $this->render('tim_mitra/surat Pelayanan/index.html', 'Surat Penawaran', 'surat-penawaran');
+        $this->render('tim_mitra/surat Pelayanan/index.html', 'Surat Pelayanan', 'surat-penawaran');
     }
     public function edit($f3, $params)
     {
@@ -78,7 +89,10 @@ $daftarPegawai = $arsipUser->find(
     ['order' => 'nama_user ASC']
 );
 
+        $canEdit = ($this->hasPermission('penawaran:create') || $this->hasPermission('penawaran:edit') || $this->isSuperadmin() || $this->isAdminOrder());
+
         $f3->set('sp', $sp);
+        $f3->set('can_edit', $canEdit);
         $f3->set('daftar_pegawai', $daftarPegawai);
         $f3->set('opsi_permintaan', [
             'telepon'          => 'Telepon',
@@ -171,7 +185,31 @@ $daftarPegawai = $arsipUser->find(
             $f3->set('SESSION.flash_success', "Draf surat penawaran <strong>{$nomorSurat}</strong> berhasil disimpan.");
         }
 
+        $orderId = (int)($f3->get('POST.order_id') ?: ($sp->order_id ?? 0));
+        if ($orderId > 0) {
+            $sp->order_id = $orderId;
+        }
+
         $sp->save();
+
+        if ($orderId > 0) {
+            $orderModel = new OrderLayanan($db);
+            $order = $orderModel->getById($orderId);
+            if ($order && !$order->dry()) {
+                $order->jenis_layanan_opti = $jenisLayanan;
+                if (!empty($sp->nama)) $order->pic = $sp->nama;
+                if (!empty($sp->alamat)) $order->alamat = $sp->alamat;
+                if (!empty($sp->perusahaan)) $order->nama_perusahaan = $sp->perusahaan;
+                if (!empty($sp->penjelasan)) $order->deskripsi = $sp->penjelasan;
+                if ($action === 'kirim') {
+                    $order->status = 'baru';
+                    $order->status_tinjauan = 'belum_ditinjau';
+                }
+                $order->save();
+            }
+            $f3->reroute("/order/{$orderId}");
+            return;
+        }
 
         $f3->reroute('/surat-penawaran');
     }
@@ -254,11 +292,14 @@ $daftarPegawai = $arsipUser->find(
 
         $nomorSuratOtomatis = $spModel->generateNomorSurat();
 
+        $canEdit = ($this->hasPermission('penawaran:create') || $this->hasPermission('penawaran:edit') || $this->isSuperadmin());
+
         $f3->set('order', $order);
         $f3->set('sp_existing', $spExisting);
         $f3->set('proposal', $proposal);
         $f3->set('kalkulasi', $kalkulasi);
         $f3->set('nomor_surat_otomatis', $nomorSuratOtomatis);
+        $f3->set('can_edit', $canEdit);
 
         $this->render('tim_mitra/surat Pelayanan/form_order.html', "Terbitkan Surat Penawaran - Order #{$order['nomor_order']}", 'surat-penawaran');
     }
@@ -270,6 +311,13 @@ $daftarPegawai = $arsipUser->find(
     public function simpanDariOrder($f3, $params)
     {
         $orderId = (int)($params['id'] ?? 0);
+
+        if (!$this->hasPermission('penawaran:create') && !$this->isSuperadmin()) {
+            $this->setFlashError("Akses Ditolak: Penerbitan Surat Pelayanan Resmi merupakan wewenang Tim Kemitraan.");
+            $f3->reroute("/order/{$orderId}/penawaran/buat");
+            return;
+        }
+
         $post = $f3->get('POST');
         $userId = $this->getUserId() ?? 1;
 

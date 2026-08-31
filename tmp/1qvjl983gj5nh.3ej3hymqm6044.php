@@ -1,0 +1,156 @@
+<div class="d-flex align-items-center gap-3 mb-4">
+    <a href="<?= ($BASE) ?>/kontrak" class="btn-back">
+        <i class="bi bi-arrow-left"></i> Kembali
+    </a>
+    <div>
+        <h2 class="h4 fw-bold mb-1 text-dark">
+            <?= ($kontrak ? 'Edit Kontrak Kerjasama #' . $kontrak['nomor_pks_bbspjis'] : 'Tambah Kontrak Kerjasama (PKS) Baru')."
+" ?>
+        </h2>
+        <p class="text-muted small mb-0">Legalitas perjanjian kerjasama teknis antara BBSPJIS dengan mitra industri.</p>
+    </div>
+</div>
+
+<form action="<?= ($po ? $BASE . '/po/' . $po['id'] . '/kontrak/simpan' : ($kontrak ? $BASE . '/kontrak/' . $kontrak['id'] . '/update' : $BASE . '/kontrak/simpan')) ?>" method="POST">
+    <input type="hidden" name="csrf_token" value="<?= ($csrf_token) ?>">
+
+    <div class="row g-4">
+        <!-- Kolom Kiri: Pokok Kontrak & PO -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h6 class="m-0 fw-bold text-dark"><i class="bi bi-file-earmark-text text-primary me-2"></i>Pokok Perjanjian & Nomor Legalitas</h6>
+                </div>
+                <div class="card-body p-4">
+                    <?php if ($po): ?>
+                        <input type="hidden" name="po_id" value="<?= ($po['id']) ?>">
+                        <div class="mb-3 p-3 bg-primary-subtle rounded border border-primary-subtle">
+                            <span class="small text-muted d-block">Dokumen PO Terkait:</span>
+                            <strong class="text-primary font-monospace"><?= ($po['nomor_po']) ?></strong> - <?= ($po['nama_perusahaan'])."
+" ?>
+                            <small class="d-block text-dark"><?= ($po['judul_kegiatan']) ?></small>
+                        </div>
+                    <?php endif; ?>
+                    <?php if (!$po): ?>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Pilih Petunjuk Operasional (PO) Terkait <span class="text-danger">*</span></label>
+                            <select name="po_id" class="form-select searchable-select" placeholder="Pilih PO..." required>
+                                <option value="">Pilih Dokumen PO</option>
+                                <?php foreach (($daftar_po?:[]) as $p): ?>
+                                    <option value="<?= ($p['id']) ?>" <?= ($kontrak && $kontrak['po_id'] == $p['id'] ? 'selected' : '') ?>>
+                                        PO: <?= ($p['nomor_po']) ?> - <?= ($p['nama_perusahaan']) ?> (<?= ($p['judul_kegiatan']) ?>)
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    <?php endif; ?>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Nomor PKS BBSPJIS <span class="text-danger">*</span></label>
+                            <input type="text" name="nomor_pks_bbspjis" class="form-control font-monospace" placeholder="Contoh: 102/PKS/BBSPJIS/VIII/2026" value="<?= ($kontrak ? $kontrak['nomor_pks_bbspjis'] : ($nomor_pks_otomatis ?: '')) ?>" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Nomor PKS Klien/Mitra <span class="text-danger">*</span></label>
+                            <input type="text" name="nomor_pks_klien" class="form-control" placeholder="Contoh: 089/DIR-SMS/PKS/VIII/2026" value="<?= ($kontrak['nomor_pks_klien']) ?>" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Ruang Lingkup Kegiatan Kerjasama <span class="text-danger">*</span></label>
+                        <textarea name="ruang_lingkup" class="form-control" rows="3" placeholder="Uraian ringkas lingkup pelaksanaan jasa industri OPTI..." required><?= ($kontrak['ruang_lingkup']) ?></textarea>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Nilai Kontrak (Rp) <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text">Rp</span>
+                                <input type="number" name="nilai_kontrak" class="form-control" placeholder="0" value="<?= ($kontrak ? $kontrak['nilai_kontrak'] : 0) ?>" required min="0" step="1000">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Nomor Virtual Account (VA)</label>
+                            <input type="text" name="nomor_va" class="form-control" placeholder="Contoh: 896081232370878" value="<?= ($kontrak['nomor_va']) ?>">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Ketentuan Pembayaran</label>
+                        <textarea name="ketentuan_pembayaran" class="form-control" rows="2" placeholder="Contoh: Pembayaran termin DP 40%, pelunasan 60% setelah BAST..."><?= ($kontrak['ketentuan_pembayaran']) ?></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Kolom Kanan: Penandatangan, Masa Berlaku & Status -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h6 class="m-0 fw-bold text-dark"><i class="bi bi-pen text-primary me-2"></i>Penandatangan & Masa Berlaku</h6>
+                </div>
+                <div class="card-body p-4">
+                    <!-- Pihak Balai -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Nama Penandatangan BBSPJIS <span class="text-danger">*</span></label>
+                            <input type="text" name="nama_penandatangan_bbspjis" class="form-control" placeholder="Nama pejabat balai" value="<?= ($kontrak ? $kontrak['nama_penandatangan_bbspjis'] : 'Andri Taufick Rizaluddin') ?>" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Jabatan Penandatangan BBSPJIS <span class="text-danger">*</span></label>
+                            <input type="text" name="jabatan_penandatangan_bbspjis" class="form-control" placeholder="Contoh: Kepala Balai Besar" value="<?= ($kontrak ? $kontrak['jabatan_penandatangan_bbspjis'] : 'Kepala Balai Besar') ?>" required>
+                        </div>
+                    </div>
+
+                    <!-- Pihak Mitra -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Nama Penandatangan Mitra <span class="text-danger">*</span></label>
+                            <input type="text" name="nama_penandatangan_klien" class="form-control" placeholder="Nama pimpinan mitra" value="<?= ($kontrak['nama_penandatangan_klien']) ?>" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Jabatan Penandatangan Mitra <span class="text-danger">*</span></label>
+                            <input type="text" name="jabatan_penandatangan_klien" class="form-control" placeholder="Contoh: Direktur Utama" value="<?= ($kontrak['jabatan_penandatangan_klien']) ?>" required>
+                        </div>
+                    </div>
+
+                    <!-- Masa Berlaku -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Target Mulai Berlaku <span class="text-danger">*</span></label>
+                            <input type="date" name="target_mulai" class="form-control" value="<?= ($kontrak ? $kontrak['target_mulai'] : date('Y-m-d')) ?>" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Target Selesai / Berakhir <span class="text-danger">*</span></label>
+                            <input type="date" name="target_selesai" class="form-control" value="<?= ($kontrak ? $kontrak['target_selesai'] : date('Y-m-d', strtotime('+3 months'))) ?>" required>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Status Penandatanganan</label>
+                            <select name="status_ttd" class="form-select">
+                                <option value="belum" <?= ($kontrak && $kontrak['status_ttd'] == 'belum' ? 'selected' : '') ?>>Belum Ditandatangani</option>
+                                <option value="sudah" <?= ($kontrak && $kontrak['status_ttd'] == 'sudah' ? 'selected' : '') ?>>Sudah Ditandatangani Lengkap</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Tanggal Penandatanganan (Jika Ada)</label>
+                            <input type="date" name="tanggal_ttd" class="form-control" value="<?= ($kontrak ? $kontrak['tanggal_ttd'] : '') ?>">
+                        </div>
+                    </div>
+
+                    <!-- Tombol Aksi -->
+                    <div class="d-flex justify-content-end gap-2 border-top pt-3">
+                        <a href="<?= ($BASE) ?>/kontrak" class="btn btn-outline-secondary px-4">Batal</a>
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-save me-1"></i> <?= ($kontrak ? 'Perbarui Kontrak' : 'Simpan Kontrak PKS')."
+" ?>
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</form>

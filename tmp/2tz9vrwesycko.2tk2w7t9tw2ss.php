@@ -274,57 +274,55 @@
             </div>
         </div>
 
-        <!-- 6-Tahap Progress Stepper Terintegrasi -->
+        <!-- 6-Tahap Progress Stepper Terintegrasi Sesuai 5-Swimlane Diagram -->
         <div class="mt-4 pt-3 border-top">
             <div class="stepper-progress-container">
-                <!-- Step 1: Surat Masuk -->
+                <!-- Step 1: Surat Masuk (Sekretaris) -->
                 <div class="step-checkpoint">
                     <div class="step-circle done"><i class="bi bi-check-lg"></i></div>
                     <span class="step-text done">1. Surat Masuk</span>
                 </div>
-                <!-- Step 2: Disposisi -->
+                <!-- Step 2: Form Pelayanan (Tim Mitra) -->
                 <div class="step-checkpoint">
                     <div class="step-circle <?= ($order['status'] == 'permintaan_masuk' ? 'current' : 'done') ?>">
-                        <?php if ($order['status'] == 'permintaan_masuk'): ?><i class="bi bi-send-fill"></i><?php endif; ?>
+                        <?php if ($order['status'] == 'permintaan_masuk'): ?><i class="bi bi-ui-checks"></i><?php endif; ?>
                         <?php if ($order['status'] != 'permintaan_masuk'): ?><i class="bi bi-check-lg"></i><?php endif; ?>
                     </div>
-                    <span class="step-text <?= ($order['status'] == 'permintaan_masuk' ? 'current' : 'done') ?>">2. Disposisi</span>
+                    <span class="step-text <?= ($order['status'] == 'permintaan_masuk' ? 'current' : 'done') ?>">2. Form Pelayanan</span>
                 </div>
-                <!-- Step 3: Kaji Ulang & Biaya / Rancop -->
+                <!-- Step 3: Kaji Ulang & PIC (Ketua Tim) -->
                 <div class="step-checkpoint">
-                    <div class="step-circle <?= ($order['status'] == 'baru' && !$penawaran ? 'current' : ($order['estimasi_biaya'] > 0 ? 'done' : 'waiting')) ?>">
-                        <?php if ($order['estimasi_biaya'] > 0): ?><i class="bi bi-check-lg"></i><?php endif; ?>
-                        <?php if (!($order['estimasi_biaya'] > 0)): ?>3<?php endif; ?>
+                    <div class="step-circle <?= ($tinjauan && $tinjauan['keputusan'] == 'dapat_dilaksanakan' ? 'done' : ($order['status'] != 'permintaan_masuk' && !$tinjauan ? 'current' : 'waiting')) ?>">
+                        <?php if ($tinjauan && $tinjauan['keputusan'] == 'dapat_dilaksanakan'): ?><i class="bi bi-check-lg"></i><?php endif; ?>
+                        <?php if (!($tinjauan && $tinjauan['keputusan'] == 'dapat_dilaksanakan')): ?>3<?php endif; ?>
                     </div>
-                    <span class="step-text <?= ($order['status'] == 'baru' && !$penawaran ? 'current' : ($order['estimasi_biaya'] > 0 ? 'done' : '')) ?>">
-                        <?= ($order['jenis_layanan_opti'] == 'selulosa' ? '3. Rancop & Riset' : '3. Kaji Ulang Tarif')."
-" ?>
+                    <span class="step-text <?= ($tinjauan && $tinjauan['keputusan'] == 'dapat_dilaksanakan' ? 'done' : ($order['status'] != 'permintaan_masuk' && !$tinjauan ? 'current' : '')) ?>">
+                        3. Kaji Ulang &amp; PIC
                     </span>
                 </div>
-                <!-- Step 4: Penawaran Resmi -->
+                <!-- Step 4: Proposal Teknis (PIC & Ketua Tim) -->
                 <div class="step-checkpoint">
-                    <div class="step-circle <?= ($penawaran ? ($penawaran['status_respon_klien'] == 'deal' ? 'done' : 'current') : 'waiting') ?>">
-                        <?php if ($penawaran && $penawaran['status_respon_klien'] == 'deal'): ?><i class="bi bi-check-lg"></i><?php endif; ?>
-                        <?php if ($penawaran && $penawaran['status_respon_klien'] != 'deal'): ?><i class="bi bi-send-fill"></i><?php endif; ?>
-                        <?php if (!$penawaran): ?>4<?php endif; ?>
+                    <div class="step-circle <?= ($order['status_proposal_biaya'] == 'siap_penawaran' ? 'done' : ($tinjauan && $tinjauan['keputusan'] == 'dapat_dilaksanakan' && $order['status_proposal_biaya'] != 'siap_penawaran' ? 'current' : 'waiting')) ?>">
+                        <?php if ($order['status_proposal_biaya'] == 'siap_penawaran'): ?><i class="bi bi-check-lg"></i><?php endif; ?>
+                        <?php if ($order['status_proposal_biaya'] != 'siap_penawaran'): ?>4<?php endif; ?>
                     </div>
-                    <span class="step-text <?= ($penawaran ? ($penawaran['status_respon_klien'] == 'deal' ? 'done' : 'current') : '') ?>">4. Penawaran</span>
+                    <span class="step-text <?= ($order['status_proposal_biaya'] == 'siap_penawaran' ? 'done' : ($tinjauan && $tinjauan['keputusan'] == 'dapat_dilaksanakan' ? 'current' : '')) ?>">4. Proposal Teknis</span>
                 </div>
-                <!-- Step 5: Petunjuk Operasional (PO) -->
+                <!-- Step 5: Penawaran & Deal (Tim Mitra & Klien) -->
                 <div class="step-checkpoint">
-                    <div class="step-circle <?= ($order['po_id'] ? 'done' : ($penawaran && $penawaran['status_respon_klien'] == 'deal' ? 'current' : 'waiting')) ?>">
+                    <div class="step-circle <?= (($order['status_penawaran'] == 'deal' || ($penawaran && $penawaran['status_respon_klien'] == 'deal')) ? 'done' : ($order['status_proposal_biaya'] == 'siap_penawaran' ? 'current' : 'waiting')) ?>">
+                        <?php if ($order['status_penawaran'] == 'deal' || ($penawaran && $penawaran['status_respon_klien'] == 'deal')): ?><i class="bi bi-check-lg"></i><?php endif; ?>
+                        <?php if (!($order['status_penawaran'] == 'deal' || ($penawaran && $penawaran['status_respon_klien'] == 'deal'))): ?>5<?php endif; ?>
+                    </div>
+                    <span class="step-text <?= (($order['status_penawaran'] == 'deal' || ($penawaran && $penawaran['status_respon_klien'] == 'deal')) ? 'done' : ($order['status_proposal_biaya'] == 'siap_penawaran' ? 'current' : '')) ?>">5. Penawaran &amp; Deal</span>
+                </div>
+                <!-- Step 6: PO & Pelaksanaan Lab -->
+                <div class="step-checkpoint">
+                    <div class="step-circle <?= ($order['po_id'] ? 'done' : (($order['status_penawaran'] == 'deal' || ($penawaran && $penawaran['status_respon_klien'] == 'deal')) ? 'current' : 'waiting')) ?>">
                         <?php if ($order['po_id']): ?><i class="bi bi-check-lg"></i><?php endif; ?>
-                        <?php if (!$order['po_id']): ?>5<?php endif; ?>
+                        <?php if (!$order['po_id']): ?>6<?php endif; ?>
                     </div>
-                    <span class="step-text <?= ($order['po_id'] ? 'done' : ($penawaran && $penawaran['status_respon_klien'] == 'deal' ? 'current' : '')) ?>">5. Petunjuk Operasional</span>
-                </div>
-                <!-- Step 6: BAST & Penyerahan -->
-                <div class="step-checkpoint">
-                    <div class="step-circle <?= ($bast && $bast['status'] == 'diserahkan' ? 'done' : ($order['po_id'] ? 'current' : 'waiting')) ?>">
-                        <?php if ($bast && $bast['status'] == 'diserahkan'): ?><i class="bi bi-check-lg"></i><?php endif; ?>
-                        <?php if (!($bast && $bast['status'] == 'diserahkan')): ?>6<?php endif; ?>
-                    </div>
-                    <span class="step-text <?= ($bast && $bast['status'] == 'diserahkan' ? 'done' : '') ?>">6. BAST &amp; Laporan</span>
+                    <span class="step-text <?= ($order['po_id'] ? 'done' : '') ?>">6. Pelaksanaan PO</span>
                 </div>
             </div>
         </div>
@@ -447,136 +445,92 @@
         <div class="col-lg-8">
 
             <!-- ======================================================== -->
-            <!-- FORM DISPOSISI UNIT OPTI (HERO SECTION)                  -->
+            <!-- 1. FORMULIR PERMINTAAN PELAYANAN JASA (TIM MITRA)        -->
             <!-- ======================================================== -->
-            <div class="system-section-card" id="cardDisposisi">
+            <div class="system-section-card" id="cardPelayanan">
                 <div class="system-section-header bg-white">
                     <div>
                         <h6 class="fw-bold text-dark m-0 d-flex align-items-center gap-2 font-display">
-                            <i class="bi bi-send-check-fill text-warning fs-5"></i> Disposisi & Penentuan Divisi Layanan OPTI
+                            <i class="bi bi-file-earmark-medical-fill text-primary fs-5"></i> 1. Formulir Permintaan Pelayanan Jasa
                         </h6>
-                        <small class="text-muted">Tentukan unit laboratorium pelaksana untuk menindaklanjuti permohonan ini.</small>
+                        <small class="text-muted">Disusun oleh Tim Kemitraan berdasarkan surat permohonan masuk.</small>
                     </div>
                     <?php if ($order['status'] == 'permintaan_masuk'): ?>
                         <span class="badge bg-warning text-dark fw-bold">
-                            <i class="bi bi-hourglass-split me-1"></i> Perlu Disposisi
+                            <i class="bi bi-hourglass-split me-1"></i> Perlu Dilengkapi
                         </span>
                     <?php endif; ?>
                     <?php if ($order['status'] != 'permintaan_masuk'): ?>
                         <span class="badge bg-success text-white fw-bold">
-                            <i class="bi bi-check-circle-fill me-1"></i> Sudah Didisposisikan
+                            <i class="bi bi-check-circle-fill me-1"></i> Sudah Diteruskan ke Ketua Tim
                         </span>
                     <?php endif; ?>
                 </div>
 
                 <div class="p-4">
                     <?php if ($order['status'] == 'permintaan_masuk'): ?>
-                        <form action="<?= ($BASE) ?>/order/<?= ($order['id']) ?>/disposisi" method="POST">
-                            <div class="mb-3">
-                                <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
-                                    <label class="form-label fw-bold text-dark small m-0">
-                                        Pilih Divisi Laboratorium Pelaksana <span class="text-danger">*</span>
-                                    </label>
-                                    <span class="text-muted small">
-                                        <i class="bi bi-info-circle me-1 text-primary"></i> Klik salah satu kartu untuk menentukan divisi tujuan
-                                    </span>
+                        <div class="p-3 bg-warning-subtle border border-warning-subtle rounded-3">
+                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                                <div>
+                                    <strong class="text-dark d-block mb-1">Surat Telah Diklaim oleh Tim Kemitraan</strong>
+                                    <p class="small text-muted mb-0">Silakan lengkapi formulir spesifikasi layanan, pilih divisi OPTI pelaksana, dan kirimkan ke Ketua Tim.</p>
                                 </div>
-
-                                <div class="row g-3">
-                                    <!-- Hidden input that carries selected value -->
-                                    <input type="hidden" name="jenis_layanan_opti" id="inputJenisLayananOpti" value="<?= ($order['jenis_layanan_opti'] ?: 'selulosa') ?>">
-
-                                    <!-- Option OPTI Selulosa -->
-                                    <div class="col-md-6">
-                                        <div class="choice-card-opti <?= ($order['jenis_layanan_opti'] == 'selulosa' ? 'active-selulosa' : '') ?>" id="cardSelulosa" onclick="selectDivisiOpti('selulosa')">
-                                            <div class="d-flex align-items-start gap-3">
-                                                <div class="icon-tile bg-primary-subtle text-primary">
-                                                    <i class="bi bi-file-earmark-text-fill"></i>
-                                                </div>
-                                                <div class="flex-grow-1">
-                                                    <div class="d-flex justify-content-between align-items-center mb-1">
-                                                        <h6 class="fw-bold text-primary m-0 font-display">OPTI Selulosa</h6>
-                                                        <input class="form-check-input" type="radio" name="radio_opti" id="radioSelulosa" value="selulosa" <?= ($order['jenis_layanan_opti'] == 'selulosa' ? 'checked' : '') ?> onchange="selectDivisiOpti('selulosa')">
-                                                    </div>
-                                                    <div class="small text-muted mb-2">
-                                                        Uji Pulp, Kertas & Biomaterial
-                                                    </div>
-                                                    <div class="bubble-scope-group">
-                                                        <span class="bubble-scope-tag bubble-tag-blue"><i class="bi bi-droplet-half"></i> Pemasakan Pulp</span>
-                                                        <span class="bubble-scope-tag bubble-tag-blue"><i class="bi bi-stars"></i> Pemutihan</span>
-                                                        <span class="bubble-scope-tag bubble-tag-blue"><i class="bi bi-layers-fill"></i> Derivat Selulosa</span>
-                                                        <span class="bubble-scope-tag bubble-tag-blue"><i class="bi bi-file-earmark"></i> Aditif Kertas</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Option OPTI Lingkungan -->
-                                    <div class="col-md-6">
-                                        <div class="choice-card-opti <?= ($order['jenis_layanan_opti'] == 'lingkungan' ? 'active-lingkungan' : '') ?>" id="cardLingkungan" onclick="selectDivisiOpti('lingkungan')">
-                                            <div class="d-flex align-items-start gap-3">
-                                                <div class="icon-tile bg-success-subtle text-success">
-                                                    <i class="bi bi-tree-fill"></i>
-                                                </div>
-                                                <div class="flex-grow-1">
-                                                    <div class="d-flex justify-content-between align-items-center mb-1">
-                                                        <h6 class="fw-bold text-success m-0 font-display">OPTI Lingkungan</h6>
-                                                        <input class="form-check-input" type="radio" name="radio_opti" id="radioLingkungan" value="lingkungan" <?= ($order['jenis_layanan_opti'] == 'lingkungan' ? 'checked' : '') ?> onchange="selectDivisiOpti('lingkungan')">
-                                                    </div>
-                                                    <div class="small text-muted mb-2">
-                                                        Uji Lingkungan, Toksikologi & Validasi
-                                                    </div>
-                                                    <div class="bubble-scope-group">
-                                                        <span class="bubble-scope-tag bubble-tag-green"><i class="bi bi-recycle"></i> Biodegradasi</span>
-                                                        <span class="bubble-scope-tag bubble-tag-green"><i class="bi bi-virus"></i> Toksikologi</span>
-                                                        <span class="bubble-scope-tag bubble-tag-green"><i class="bi bi-patch-check"></i> LPV</span>
-                                                        <span class="bubble-scope-tag bubble-tag-green"><i class="bi bi-water"></i> Kajian Limbah</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <a href="<?= ($BASE) ?>/order/<?= ($order['id']) ?>/form-pelayanan" class="btn btn-primary btn-sm px-4 fw-bold shadow-sm">
+                                    <i class="bi bi-pencil-square me-1"></i> Isi Formulir Pelayanan Jasa
+                                </a>
                             </div>
-
-                            <div class="mb-4">
-                                <label class="form-label fw-bold text-dark small mb-1">
-                                    Catatan / Instruksi Disposisi (Opsional)
-                                </label>
-                                <textarea class="form-control form-control-sm" name="catatan_disposisi" rows="3" placeholder="Tuliskan catatan arahan pengujian atau parameter yang diminta pelanggan..."></textarea>
-                            </div>
-
-                            <div class="d-flex justify-content-end pt-3 border-top">
-                                <button type="submit" class="btn btn-primary px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-2">
-                                    <i class="bi bi-check-circle-fill"></i> Simpan & Teruskan Disposisi
-                                </button>
-                            </div>
-                        </form>
+                        </div>
                     <?php endif; ?>
 
                     <?php if ($order['status'] != 'permintaan_masuk'): ?>
-                        <div class="p-3 rounded border <?= ($order['jenis_layanan_opti'] == 'selulosa' ? 'bg-primary-subtle border-primary-subtle' : 'bg-success-subtle border-success-subtle') ?>">
+                        <div class="p-3 rounded border <?= ($order['jenis_layanan_opti'] == 'selulosa' ? 'bg-primary-subtle border-primary-subtle' : 'bg-success-subtle border-success-subtle') ?> mb-3">
                             <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
                                 <div class="d-flex align-items-center gap-3">
                                     <div class="icon-tile bg-white shadow-sm <?= ($order['jenis_layanan_opti'] == 'selulosa' ? 'text-primary' : 'text-success') ?>">
-                                        <i class="bi <?= ($order['jenis_layanan_opti'] == 'selulosa' ? 'bi-file-earmark-text-fill' : 'bi-tree-fill') ?>"></i>
+                                        <i class="bi <?= ($order['jenis_layanan_opti'] == 'selulosa' ? 'bi-file-earmark-medical-fill' : 'bi-water') ?>"></i>
                                     </div>
                                     <div>
                                         <span class="badge <?= ($order['jenis_layanan_opti'] == 'selulosa' ? 'bg-primary' : 'bg-success') ?> text-uppercase mb-1">
                                             OPTI <?= ($order['jenis_layanan_opti'])."
 " ?>
                                         </span>
-                                        <h6 class="fw-bold text-dark m-0">
-                                            Didisposisikan ke Unit Layanan <?= ($order['jenis_layanan_opti'] == 'selulosa' ? 'OPTI Selulosa' : 'OPTI Lingkungan')."
+                                        <h6 class="fw-bold text-dark m-0 font-display">
+                                            Divisi Pelaksana: <?= ($order['jenis_layanan_opti'] == 'selulosa' ? 'OPTI Selulosa (Bu Rina Masriani)' : 'OPTI Lingkungan (Pak Andri Taufick)')."
 " ?>
                                         </h6>
-                                        <small class="text-secondary">Permohonan siap untuk kaji ulang kelayakan teknis dan penetapan tarif.</small>
+                                        <small class="text-secondary">SPM Target: <strong><?= ($order['spm_layanan'] ?: 'Sesuai Kesepakatan') ?></strong></small>
                                     </div>
                                 </div>
-                                <button type="button" class="btn btn-white btn-sm border fw-semibold shadow-sm text-secondary" data-bs-toggle="modal" data-bs-target="#modalDisposisi">
-                                    <i class="bi bi-pencil-square me-1"></i> Ubah Disposisi
-                                </button>
+                                <a href="<?= ($BASE) ?>/order/<?= ($order['id']) ?>/form-pelayanan" class="btn btn-white btn-sm border fw-semibold shadow-sm text-secondary">
+                                    <i class="bi bi-pencil me-1"></i> Ubah Formulir
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 small">
+                            <div class="col-sm-6">
+                                <div class="p-2 border rounded bg-light">
+                                    <span class="text-muted d-block" style="font-size: 0.75rem;">Jenis Sampel / Bahan:</span>
+                                    <strong class="text-dark"><?= ($order['jenis_sampel'] ?: '-') ?></strong>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="p-2 border rounded bg-light">
+                                    <span class="text-muted d-block" style="font-size: 0.75rem;">Jumlah / Volume:</span>
+                                    <strong class="text-dark"><?= ($order['volume_berat'] ?: '1 paket kegiatan') ?></strong>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="p-2 border rounded bg-light">
+                                    <span class="text-muted d-block" style="font-size: 0.75rem;">Lokasi Pelaksanaan:</span>
+                                    <span class="badge bg-light text-dark border"><?= ($order['lokasi_pelaksanaan'] == 'lapangan' ? 'On-Site Pabrik Lapangan' : 'Laboratorium Internal Balai') ?></span>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="p-2 border rounded bg-light">
+                                    <span class="text-muted d-block" style="font-size: 0.75rem;">Laboratorium Resmi:</span>
+                                    <strong class="text-dark"><?= ($order['lab_internal'] ?: 'Balai Besar Standardisasi Bandung') ?></strong>
+                                </div>
                             </div>
                         </div>
                     <?php endif; ?>
@@ -584,40 +538,43 @@
             </div>
 
             <!-- ======================================================== -->
-            <!-- 1. Kaji Ulang Kelayakan ISO                              -->
+            <!-- 2. KAJI ULANG KELAYAKAN ISO & PENUGASAN PIC (KETUA TIM)  -->
             <!-- ======================================================== -->
             <div class="system-section-card">
                 <div class="system-section-header">
-                    <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2">
-                        <i class="bi bi-clipboard-check-fill text-primary"></i> 1. Kaji Ulang Kelayakan Teknis (ISO 17025)
-                    </h6>
+                    <div>
+                        <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2 font-display">
+                            <i class="bi bi-clipboard-check-fill text-primary fs-5"></i> 2. Kaji Ulang Kelayakan Teknis (ISO 17025) &amp; Penunjukan PIC
+                        </h6>
+                        <small class="text-muted">Dilakukan oleh Ketua Tim OPTI terkait.</small>
+                    </div>
                     <?php if ($tinjauan): ?>
                         <span class="badge <?= ($tinjauan['keputusan'] == 'dapat_dilaksanakan' ? 'bg-success' : 'bg-danger') ?>">
-                            <?= ($tinjauan['keputusan'] == 'dapat_dilaksanakan' ? 'Dapat Dilaksanakan' : 'Tidak Dapat Dilaksanakan')."
+                            <?= ($tinjauan['keputusan'] == 'dapat_dilaksanakan' ? 'Dapat Dilaksanakan' : 'Tidak Dapat Dilaksanakan (Ditolak)')."
 " ?>
                         </span>
                     <?php endif; ?>
                     <?php if (!$tinjauan): ?>
                         <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">
-                            <i class="bi bi-hourglass me-1"></i> Belum Ditinjau
+                            <i class="bi bi-hourglass me-1"></i> Menunggu Kaji Ulang
                         </span>
                     <?php endif; ?>
                 </div>
                 <div class="p-4">
                     <?php if ($tinjauan): ?>
-                        <div class="row g-3 small">
+                        <div class="row g-3 small mb-3">
                             <div class="col-sm-6">
                                 <div class="p-2 border rounded bg-light">
                                     <strong class="<?= ($tinjauan['sdm_tersedia'] ? 'text-success' : 'text-danger') ?>">
                                         <i class="bi <?= ($tinjauan['sdm_tersedia'] ? 'bi-check-circle-fill' : 'bi-x-circle-fill') ?> me-1"></i> Personil / SDM Analis
                                     </strong>
-                                    <span class="text-muted d-block mt-1"><?= ($tinjauan['sdm_catatan'] ?: 'Tersedia') ?></span>
+                                    <span class="text-muted d-block mt-1"><?= ($tinjauan['sdm_catatan'] ?: 'Tersedia & Siap') ?></span>
                                 </div>
                             </div>
                             <div class="col-sm-6">
                                 <div class="p-2 border rounded bg-light">
                                     <strong class="<?= ($tinjauan['peralatan_tersedia'] ? 'text-success' : 'text-danger') ?>">
-                                        <i class="bi <?= ($tinjauan['peralatan_tersedia'] ? 'bi-check-circle-fill' : 'bi-x-circle-fill') ?> me-1"></i> Peralatan & Instrumen
+                                        <i class="bi <?= ($tinjauan['peralatan_tersedia'] ? 'bi-check-circle-fill' : 'bi-x-circle-fill') ?> me-1"></i> Peralatan &amp; Instrumen
                                     </strong>
                                     <span class="text-muted d-block mt-1"><?= ($tinjauan['peralatan_catatan'] ?: 'Siap digunakan') ?></span>
                                 </div>
@@ -625,9 +582,9 @@
                             <div class="col-sm-6">
                                 <div class="p-2 border rounded bg-light">
                                     <strong class="<?= ($tinjauan['bahan_tersedia'] ? 'text-success' : 'text-danger') ?>">
-                                        <i class="bi <?= ($tinjauan['bahan_tersedia'] ? 'bi-check-circle-fill' : 'bi-x-circle-fill') ?> me-1"></i> Bahan Kimia & Reagen
+                                        <i class="bi <?= ($tinjauan['bahan_tersedia'] ? 'bi-check-circle-fill' : 'bi-x-circle-fill') ?> me-1"></i> Bahan Kimia &amp; Reagen
                                     </strong>
-                                    <span class="text-muted d-block mt-1"><?= ($tinjauan['bahan_catatan'] ?: 'Tersedia') ?></span>
+                                    <span class="text-muted d-block mt-1"><?= ($tinjauan['bahan_catatan'] ?: 'Tersedia & Cukup') ?></span>
                                 </div>
                             </div>
                             <div class="col-sm-6">
@@ -635,23 +592,36 @@
                                     <strong class="<?= ($tinjauan['metode_tersedia'] ? 'text-success' : 'text-danger') ?>">
                                         <i class="bi <?= ($tinjauan['metode_tersedia'] ? 'bi-check-circle-fill' : 'bi-x-circle-fill') ?> me-1"></i> Kesiapan Metode Uji
                                     </strong>
-                                    <span class="text-muted d-block mt-1"><?= ($tinjauan['metode_catatan'] ?: 'Tervalidasi') ?></span>
+                                    <span class="text-muted d-block mt-1"><?= ($tinjauan['metode_catatan'] ?: 'Tervalidasi SNI/ISO') ?></span>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top small text-muted">
+                        <!-- Info Penunjukan PIC Proposal -->
+                        <div class="p-3 bg-light rounded border mb-3">
+                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                <div>
+                                    <span class="text-muted d-block small">PIC Penyusun Proposal yang Ditugaskan:</span>
+                                    <strong class="text-primary fs-6 font-display"><i class="bi bi-person-badge me-1"></i> <?= ($order['pic_proposal_nama'] ?: ($proposal['pic_nama'] ?: 'Belum Ditunjuk')) ?></strong>
+                                </div>
+                                <span class="badge bg-primary-subtle text-primary border">Tim Kerja / Peneliti Pelaksana</span>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center pt-2 border-top small text-muted">
                             <div>Ditinjau oleh: <strong><?= ($tinjauan['peninjau_nama']) ?></strong> &bull; <?= (date('d M Y H:i', strtotime($tinjauan['tanggal_tinjauan']))) ?></div>
                             <a href="<?= ($BASE) ?>/order/<?= ($order['id']) ?>/tinjauan" class="btn btn-outline-primary btn-sm fw-semibold">
-                                <i class="bi bi-pencil me-1"></i> Edit Kaji Ulang
+                                <i class="bi bi-pencil me-1"></i> Edit Kaji Ulang &amp; PIC
                             </a>
                         </div>
                     <?php endif; ?>
                     <?php if (!$tinjauan): ?>
                         <div class="text-center py-3">
-                            <p class="text-muted small mb-3">Kaji ulang kelayakan fasilitas, instrumen, dan reagen belum dilakukan.</p>
-                            <a href="<?= ($BASE) ?>/order/<?= ($order['id']) ?>/tinjauan" class="btn btn-primary btn-sm px-3 fw-semibold">
-                                <i class="bi bi-check2-circle me-1"></i> Lakukan Kaji Ulang Sekarang
+                            <i class="bi bi-clipboard-x text-muted fs-2 d-block mb-2 opacity-50"></i>
+                            <h6 class="fw-bold text-dark mb-1">Kaji Ulang Kelayakan Teknis Belum Dilakukan</h6>
+                            <p class="text-muted small mb-3">Ketua Tim OPTI perlu mengevaluasi ketersediaan personil, mesin uji, reagen, dan menunjuk PIC Proposal.</p>
+                            <a href="<?= ($BASE) ?>/order/<?= ($order['id']) ?>/tinjauan" class="btn btn-primary btn-sm px-4 fw-bold shadow-sm">
+                                <i class="bi bi-check2-circle me-1"></i> Lakukan Kaji Ulang &amp; Tunjuk PIC
                             </a>
                         </div>
                     <?php endif; ?>
@@ -659,150 +629,148 @@
             </div>
 
             <!-- ======================================================== -->
-            <!-- 2. Anggaran & Biaya Layanan / Rancop                     -->
+            <!-- 3. RUANG KERJA PROPOSAL TEKNIS (PIC & KETUA TIM)         -->
             <!-- ======================================================== -->
             <div class="system-section-card">
                 <div class="system-section-header">
-                    <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2">
-                        <i class="bi <?= ($order['jenis_layanan_opti'] == 'selulosa' ? 'bi-diagram-3-fill text-primary' : 'bi-cash-coin text-success') ?> fs-5"></i> 
-                        <?= ($order['jenis_layanan_opti'] == 'selulosa' ? '2. Rancangan Percobaan (Rancop) & Anggaran Riset' : '2. Penentuan Biaya & Draf Proposal')."
-" ?>
-                    </h6>
-                    <?php if ($order['jenis_layanan_opti'] == 'selulosa'): ?>
-                        <?php if ($order['status_rancop'] == 'deal'): ?>
-                            <span class="badge bg-success text-white"><i class="bi bi-check-circle-fill me-1"></i> Deal Disepakati</span>
-                        <?php endif; ?>
-                        <?php if ($order['status_rancop'] == 'diskusi'): ?>
-                            <span class="badge bg-primary-subtle text-primary border"><i class="bi bi-chat-dots-fill me-1"></i> Sedang Diskusi / Nego</span>
-                        <?php endif; ?>
-                        <?php if ($order['status_rancop'] == 'batal'): ?>
-                            <span class="badge bg-danger text-white"><i class="bi bi-x-circle-fill me-1"></i> Batal / Tidak Lanjut</span>
-                        <?php endif; ?>
-                        <?php if (!$order['status_rancop'] || $order['status_rancop'] == 'draft'): ?>
-                            <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i> Draf Rancop</span>
-                        <?php endif; ?>
+                    <div>
+                        <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2 font-display">
+                            <i class="bi bi-file-earmark-ruled-fill text-primary fs-5"></i> 3. Ruang Kerja Proposal Teknis &amp; Biaya
+                        </h6>
+                        <small class="text-muted">Disusun oleh PIC Proposal, kemudian diverifikasi oleh Ketua Tim.</small>
+                    </div>
+                    <?php if ($order['status_proposal_biaya'] == 'siap_penawaran'): ?>
+                        <span class="badge bg-success text-white"><i class="bi bi-check-circle-fill me-1"></i> Proposal Disetujui (Approved)</span>
                     <?php endif; ?>
-                    <?php if ($order['jenis_layanan_opti'] != 'selulosa'): ?>
-                        <span class="badge bg-light text-secondary border">Dasar Surat Penawaran</span>
+                    <?php if ($order['status_proposal_biaya'] == 'menunggu_approval'): ?>
+                        <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i> Menunggu Persetujuan Ketua Tim</span>
+                    <?php endif; ?>
+                    <?php if ($order['status_proposal_biaya'] == 'draft' || !$order['status_proposal_biaya']): ?>
+                        <span class="badge bg-light text-secondary border">Draf Penyusunan PIC</span>
                     <?php endif; ?>
                 </div>
                 <div class="p-4">
-                    <!-- Kasus Selulosa: Rancop & Multi-Tahap Riset -->
-                    <?php if ($order['jenis_layanan_opti'] == 'selulosa'): ?>
-                        <?php if ($order['estimasi_biaya'] > 0 || $proposal): ?>
-                            <div class="row g-3 mb-3 small">
-                                <div class="col-md-6">
-                                    <span class="text-muted d-block" style="font-size: 0.75rem;">Peneliti Utama (PI Utama):</span>
-                                    <strong class="text-dark"><?= ($proposal['pic_nama'] ?: ($order['pic_proposal_nama'] ?: 'Tim Peneliti Selulosa')) ?></strong>
-                                </div>
-                                <div class="col-md-6">
-                                    <span class="text-muted d-block" style="font-size: 0.75rem;">Perkiraan Durasi Kegiatan:</span>
-                                    <strong class="text-dark"><?= ($proposal['durasi_kegiatan'] ?: '3 bulan') ?></strong>
-                                </div>
-                                <?php if ($order['log_diskusi_klien']): ?>
-                                    <div class="col-12">
-                                        <span class="text-muted d-block" style="font-size: 0.75rem;">Catatan Hasil Diskusi / Meeting Klien:</span>
-                                        <div class="p-2 bg-light rounded text-secondary border small font-monospace" style="white-space: pre-line;"><?= ($order['log_diskusi_klien']) ?></div>
-                                    </div>
-                                <?php endif; ?>
-                            </div>
+                    <!-- Status & Biaya Ringkas -->
+                    <div class="d-flex justify-content-between align-items-center p-3 rounded border mb-3 <?= ($order['jenis_layanan_opti'] == 'selulosa' ? 'bg-primary-subtle border-primary-subtle' : 'bg-success-subtle border-success-subtle') ?>">
+                        <div>
+                            <span class="text-muted small d-block">Estimasi Total Biaya / Anggaran:</span>
+                            <h4 class="fw-bold m-0 font-display <?= ($order['jenis_layanan_opti'] == 'selulosa' ? 'text-primary' : 'text-success') ?>">
+                                Rp <?= (number_format($order['estimasi_biaya'] ?: ($proposal['estimasi_total_biaya'] ?: 0), 0, ',', '.'))."
+" ?>
+                            </h4>
+                            <small class="text-secondary">PIC Penyusun: <strong><?= ($order['pic_proposal_nama'] ?: ($proposal['pic_nama'] ?: 'Tim Pelaksana')) ?></strong></small>
+                        </div>
+                        <div>
+                            <?php if ($order['jenis_layanan_opti'] == 'selulosa'): ?>
+                                <a href="<?= ($BASE) ?>/order/<?= ($order['id']) ?>/rancop-selulosa" class="btn btn-primary btn-sm fw-semibold shadow-sm">
+                                    <i class="bi bi-diagram-3 me-1"></i> Skenario &amp; Rancop
+                                </a>
+                            <?php endif; ?>
+                            <?php if ($order['jenis_layanan_opti'] == 'lingkungan'): ?>
+                                <a href="<?= ($BASE) ?>/order/<?= ($order['id']) ?>/biaya-lingkungan" class="btn btn-success btn-sm fw-semibold shadow-sm">
+                                    <i class="bi bi-calculator me-1"></i> Rincian Tarif SNI
+                                </a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
 
-                            <div class="d-flex justify-content-between align-items-center p-3 bg-primary-subtle rounded border border-primary-subtle mb-3">
-                                <div>
-                                    <span class="text-muted small d-block">Total Anggaran Riset Deal:</span>
-                                    <h4 class="fw-bold text-primary m-0 font-display">Rp <?= (number_format($order['estimasi_biaya'] ?: ($proposal['estimasi_total_biaya'] ?: 0), 0, ',', '.')) ?></h4>
-                                </div>
-                                <a href="<?= ($BASE) ?>/order/<?= ($order['id']) ?>/rancop-selulosa" class="btn btn-primary btn-sm px-3 fw-semibold shadow-sm">
-                                    <i class="bi bi-pencil-square me-1"></i> Kelola Skenario Rancop
+                    <!-- Dokumen Proposal File Upload & Download -->
+                    <div class="p-3 bg-light rounded border mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <strong class="text-dark small"><i class="bi bi-file-earmark-pdf text-danger me-1"></i> Dokumen Berkas Proposal:</strong>
+                            <?php if ($proposal['file_proposal']): ?>
+                                <a href="<?= ($BASE) ?>/<?= ($proposal['file_proposal']) ?>" target="_blank" class="btn btn-sm btn-outline-primary py-0 px-2 fw-semibold">
+                                    <i class="bi bi-download me-1"></i> Unduh Berkas Proposal
                                 </a>
+                            <?php endif; ?>
+                        </div>
+
+                        <?php if ($proposal['file_proposal']): ?>
+                            <div class="text-muted small mb-2 font-monospace">
+                                File tersimpan: <?= (basename($proposal['file_proposal']))."
+" ?>
                             </div>
                         <?php endif; ?>
-                        <?php if (!($order['estimasi_biaya'] > 0) && !$proposal): ?>
-                            <div class="text-center py-3">
-                                <i class="bi bi-diagram-3 text-muted fs-2 d-block mb-2 opacity-50"></i>
-                                <h6 class="fw-bold text-dark mb-1">Rancangan Percobaan (Rancop) Belum Disusun</h6>
-                                <p class="text-muted small mb-3">Susun skenario tahapan pengujian awal (pre-trial), optimasi proses, dan perkiraan RAB riset.</p>
-                                <a href="<?= ($BASE) ?>/order/<?= ($order['id']) ?>/rancop-selulosa" class="btn btn-primary btn-sm px-4 fw-semibold shadow-sm">
-                                    <i class="bi bi-plus-circle me-1"></i> Buat Rancangan Percobaan (Rancop)
-                                </a>
-                            </div>
-                        <?php endif; ?>
+
+                        <!-- Form Upload File Proposal -->
+                        <form action="<?= ($BASE) ?>/order/<?= ($order['id']) ?>/proposal/upload" method="POST" enctype="multipart/form-data" class="d-flex gap-2 align-items-center">
+                            <input type="file" name="file_proposal" class="form-control form-control-sm" accept=".pdf,.doc,.docx,.xls,.xlsx" required>
+                            <button type="submit" class="btn btn-outline-secondary btn-sm text-nowrap fw-semibold">
+                                <i class="bi bi-cloud-arrow-up me-1"></i> Upload Dokumen
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Catatan Revisi jika ada -->
+                    <?php if ($proposal['catatan_revisi']): ?>
+                        <div class="alert alert-warning border-0 p-2 mb-3 small">
+                            <strong><i class="bi bi-chat-left-quote me-1"></i> Catatan Ketua Tim:</strong> <?= ($proposal['catatan_revisi'])."
+" ?>
+                        </div>
                     <?php endif; ?>
 
-                    <!-- Kasus Lingkungan -->
-                    <?php if ($order['jenis_layanan_opti'] == 'lingkungan'): ?>
-                        <?php if (!empty($kalkulasi_lingkungan)): ?>
-                            <div class="table-responsive mb-3">
-                                <table class="table table-sm table-bordered align-middle">
-                                    <thead class="bg-light text-secondary small text-uppercase">
-                                        <tr>
-                                            <th>Sub Layanan</th>
-                                            <th>Metode Pengujian</th>
-                                            <th class="text-end">Tarif Satuan</th>
-                                            <th class="text-center">Jumlah</th>
-                                            <th class="text-end">Subtotal</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="small">
-                                        <?php foreach (($kalkulasi_lingkungan?:[]) as $item): ?>
-                                            <tr>
-                                                <td><span class="badge bg-light text-dark border"><?= (str_replace('_', ' ', $item['sub_layanan'])) ?></span></td>
-                                                <td>
-                                                    <strong><?= ($item['nama_pengujian']) ?></strong>
-                                                    <?php if ($item['standar_rujukan']): ?>
-                                                        <small class="text-muted d-block">Standar: <?= ($item['standar_rujukan']) ?></small>
-                                                    <?php endif; ?>
-                                                </td>
-                                                <td class="text-end">Rp <?= (number_format($item['tarif_per_sampel'], 0, ',', '.')) ?></td>
-                                                <td class="text-center fw-bold"><?= ($item['jumlah_sampel']) ?></td>
-                                                <td class="text-end fw-bold">Rp <?= (number_format($item['total_biaya_item'], 0, ',', '.')) ?></td>
-                                            </tr>
-                                        <?php endforeach; ?>
-                                    </tbody>
-                                </table>
-                            </div>
+                    <!-- Aksi Berdasarkan Peran & Status -->
+                    <!-- 1. Jika Status masih Draft: Tombol Ajukan ke Ketua Tim -->
+                    <?php if ($order['status_proposal_biaya'] == 'draft' || !$order['status_proposal_biaya']): ?>
+                        <div class="d-flex justify-content-end pt-2 border-top">
+                            <form action="<?= ($BASE) ?>/order/<?= ($order['id']) ?>/proposal/kirim-katim" method="POST">
+                                <button type="submit" class="btn btn-primary btn-sm fw-bold px-4 shadow-sm">
+                                    <i class="bi bi-send-fill me-1"></i> Simpan &amp; Ajukan Proposal ke Ketua Tim
+                                </button>
+                            </form>
+                        </div>
+                    <?php endif; ?>
 
-                            <div class="d-flex justify-content-between align-items-center p-3 bg-success-subtle rounded border border-success-subtle mb-3">
-                                <div>
-                                    <?php if ($order['diskon_penawaran'] > 0): ?>
-                                        <span class="text-danger small d-block">Diskon: - Rp <?= (number_format($order['diskon_penawaran'], 0, ',', '.')) ?></span>
-                                    <?php endif; ?>
-                                    <span class="text-muted small d-block">Total Netto Penawaran:</span>
-                                    <h4 class="fw-bold text-success m-0 font-display">Rp <?= (number_format($order['estimasi_biaya'], 0, ',', '.')) ?></h4>
+                    <!-- 2. Jika Status Menunggu Approval: Card Review untuk Ketua Tim -->
+                    <?php if ($order['status_proposal_biaya'] == 'menunggu_approval'): ?>
+                        <div class="p-3 bg-warning-subtle border border-warning-subtle rounded-3">
+                            <h6 class="fw-bold text-dark mb-1"><i class="bi bi-shield-check text-warning me-1"></i> Verifikasi &amp; Persetujuan Ketua Tim OPTI</h6>
+                            <p class="small text-muted mb-3">Ketua Tim memeriksa kesesuaian ruang lingkup, estimasi anggaran, dan kelayakan dokumen proposal yang diajukan PIC.</p>
+                            
+                            <form action="<?= ($BASE) ?>/order/<?= ($order['id']) ?>/proposal/review-katim" method="POST">
+                                <div class="mb-2">
+                                    <input type="text" name="catatan_revisi" class="form-control form-control-sm" placeholder="Catatan persetujuan atau catatan perbaikan jika perlu revisi...">
                                 </div>
-                                <a href="<?= ($BASE) ?>/order/<?= ($order['id']) ?>/biaya-lingkungan" class="btn btn-outline-success btn-sm fw-semibold">
-                                    <i class="bi bi-pencil me-1"></i> Edit Rincian Uji
-                                </a>
-                            </div>
-                        <?php endif; ?>
-                        <?php if (empty($kalkulasi_lingkungan)): ?>
-                            <div class="text-center py-3">
-                                <p class="text-muted small mb-3">Parameter pengujian laboratorium dan kalkulasi tarif belum dihitung.</p>
-                                <a href="<?= ($BASE) ?>/order/<?= ($order['id']) ?>/biaya-lingkungan" class="btn btn-success btn-sm px-3 fw-semibold">
-                                    <i class="bi bi-calculator me-1"></i> Hitung Biaya Pengujian Sekarang
-                                </a>
-                            </div>
-                        <?php endif; ?>
+                                <div class="d-flex justify-content-end gap-2">
+                                    <button type="submit" name="action_review" value="reject" class="btn btn-outline-danger btn-sm fw-semibold">
+                                        <i class="bi bi-x-circle me-1"></i> Kembalikan untuk Revisi
+                                    </button>
+                                    <button type="submit" name="action_review" value="approve" class="btn btn-success btn-sm fw-bold px-3">
+                                        <i class="bi bi-check-circle-fill me-1"></i> Setujui Proposal (Approve)
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    <?php endif; ?>
+
+                    <!-- 3. Jika Status Sudah Approved -->
+                    <?php if ($order['status_proposal_biaya'] == 'siap_penawaran'): ?>
+                        <div class="d-flex justify-content-between align-items-center pt-2 border-top small text-success">
+                            <div><i class="bi bi-check-circle-fill me-1"></i> Disetujui Ketua Tim &bull; Siap diterbitkan Surat Penawaran Resmi</div>
+                        </div>
                     <?php endif; ?>
                 </div>
             </div>
 
             <!-- ======================================================== -->
-            <!-- 3. Surat Penawaran Resmi (Tema Merah Maroon BBSPJIS)      -->
+            <!-- 4. SURAT PENAWARAN RESMI & KESEPAKATAN KLIEN (TIM MITRA) -->
             <!-- ======================================================== -->
             <div class="system-section-card">
                 <div class="system-section-header">
-                    <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2">
-                        <i class="bi bi-send-fill text-primary"></i> 3. Surat Penawaran Resmi ke Klien
-                    </h6>
+                    <div>
+                        <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2 font-display">
+                            <i class="bi bi-send-fill text-primary fs-5"></i> 4. Surat Penawaran Resmi &amp; Respon Pelanggan
+                        </h6>
+                        <small class="text-muted">Diterbitkan oleh Tim Kemitraan setelah proposal disetujui Ketua Tim.</small>
+                    </div>
                     <?php if ($penawaran): ?>
-                        <span class="badge <?= ($penawaran['status_respon_klien'] == 'deal' ? 'bg-success' : ($penawaran['status_respon_klien'] == 'terkirim' ? 'bg-primary' : 'bg-warning text-dark')) ?>">
+                        <span class="badge <?= ($penawaran['status_respon_klien'] == 'deal' ? 'bg-success' : ($penawaran['status_respon_klien'] == 'batal' ? 'bg-danger' : 'bg-primary')) ?>">
                             <?= (strtoupper($penawaran['status_respon_klien']))."
 " ?>
                         </span>
                     <?php endif; ?>
                     <?php if (!$penawaran): ?>
-                        <span class="badge bg-light text-secondary border">Belum Dibuat</span>
+                        <span class="badge bg-light text-secondary border">Belum Diterbitkan</span>
                     <?php endif; ?>
                 </div>
                 <div class="p-4">
@@ -819,32 +787,27 @@
                             </div>
                         </div>
 
-                        <!-- Update Respon Klien -->
+                        <!-- Catatan & Respon Pelanggan (Deal / Tolak) -->
                         <div class="p-3 bg-light rounded border mb-3">
-                            <form action="<?= ($BASE) ?>/order/<?= ($order['id']) ?>/penawaran/status" method="POST" class="row g-2 align-items-end">
-                                <div class="col-md-4">
-                                    <label class="form-label small fw-bold text-dark">Status Respon Klien:</label>
-                                    <select name="status_respon_klien" class="form-select form-select-sm">
-                                        <option value="draft" <?= ($penawaran['status_respon_klien'] == 'draft' ? 'selected' : '') ?>>Draft Internal</option>
-                                        <option value="terkirim" <?= ($penawaran['status_respon_klien'] == 'terkirim' ? 'selected' : '') ?>>Terkirim ke Klien</option>
-                                        <option value="nego" <?= ($penawaran['status_respon_klien'] == 'nego' ? 'selected' : '') ?>>Negosiasi Tarif</option>
-                                        <option value="deal" <?= ($penawaran['status_respon_klien'] == 'deal' ? 'selected' : '') ?>>DEAL (Disepakati)</option>
-                                        <option value="batal" <?= ($penawaran['status_respon_klien'] == 'batal' ? 'selected' : '') ?>>Batal / Ditolak Klien</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-5">
-                                    <label class="form-label small fw-bold text-dark">Catatan Negosiasi:</label>
-                                    <input type="text" name="catatan_nego" class="form-control form-control-sm" placeholder="Catatan hasil diskusi..." value="<?= ($penawaran['catatan_nego'] ?? '') ?>">
-                                </div>
-                                <div class="col-md-3">
-                                    <button type="submit" class="btn btn-dark btn-sm w-100 fw-semibold">
-                                        <i class="bi bi-arrow-repeat me-1"></i> Update Status
-                                    </button>
+                            <h6 class="fw-bold text-dark small mb-2"><i class="bi bi-hand-thumbs-up-fill text-primary me-1"></i> Pencatatan Respon Pelanggan Terhadap Penawaran:</h6>
+                            <form action="<?= ($BASE) ?>/order/<?= ($order['id']) ?>/respon-klien" method="POST">
+                                <div class="row g-2 align-items-center mb-2">
+                                    <div class="col-md-8">
+                                        <input type="text" name="catatan_klien" class="form-control form-control-sm" placeholder="Catatan kesepakatan klien / hasil meeting negosiasi..." value="<?= ($penawaran['catatan_nego'] ?? '') ?>">
+                                    </div>
+                                    <div class="col-md-4 d-flex gap-2">
+                                        <button type="submit" name="keputusan_klien" value="deal" class="btn btn-success btn-sm w-100 fw-bold">
+                                            <i class="bi bi-check-circle me-1"></i> Terima (Deal)
+                                        </button>
+                                        <button type="submit" name="keputusan_klien" value="batal" class="btn btn-outline-danger btn-sm w-100 fw-semibold">
+                                            <i class="bi bi-x-circle me-1"></i> Tolak
+                                        </button>
+                                    </div>
                                 </div>
                             </form>
                         </div>
 
-                        <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex justify-content-between align-items-center pt-2 border-top">
                             <a href="<?= ($BASE) ?>/order/<?= ($order['id']) ?>/penawaran/cetak" target="_blank" class="btn btn-outline-primary btn-sm fw-semibold">
                                 <i class="bi bi-printer me-1"></i> Preview PDF Penawaran
                             </a>
@@ -853,13 +816,24 @@
                             </a>
                         </div>
                     <?php endif; ?>
+
                     <?php if (!$penawaran): ?>
-                        <div class="text-center py-3">
-                            <p class="text-muted small mb-3">Surat penawaran harga resmi belum diterbitkan.</p>
-                            <a href="<?= ($BASE) ?>/order/<?= ($order['id']) ?>/penawaran/buat" class="btn btn-primary btn-sm px-3 fw-semibold">
-                                <i class="bi bi-send-plus me-1"></i> Buat Surat Penawaran Sekarang
-                            </a>
-                        </div>
+                        <?php if ($order['status_proposal_biaya'] == 'siap_penawaran'): ?>
+                            <div class="text-center py-3">
+                                <i class="bi bi-envelope-paper-heart text-success fs-2 d-block mb-2"></i>
+                                <h6 class="fw-bold text-dark mb-1">Proposal Telah Disetujui &bull; Siap Kirim Penawaran</h6>
+                                <p class="text-muted small mb-3">Terbitkan surat penawaran harga resmi dengan rincian biaya sesuai approval Ketua Tim.</p>
+                                <a href="<?= ($BASE) ?>/order/<?= ($order['id']) ?>/penawaran/buat" class="btn btn-primary btn-sm px-4 fw-bold shadow-sm">
+                                    <i class="bi bi-send-plus me-1"></i> Buat Surat Penawaran Resmi
+                                </a>
+                            </div>
+                        <?php endif; ?>
+                        <?php if ($order['status_proposal_biaya'] != 'siap_penawaran'): ?>
+                            <div class="text-center py-3 text-muted">
+                                <i class="bi bi-lock-fill fs-3 d-block mb-2 opacity-50"></i>
+                                <p class="small mb-0">Surat penawaran resmi dapat diterbitkan setelah dokumen proposal teknis disetujui oleh <strong>Ketua Tim OPTI</strong>.</p>
+                            </div>
+                        <?php endif; ?>
                     <?php endif; ?>
                 </div>
             </div>

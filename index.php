@@ -121,6 +121,7 @@ $f3->route('POST /customer/@id/hapus', 'CustomerController->hapus');
 // ==========================================
 // ROUTE MODUL ORDER LAYANAN
 // ==========================================
+$f3->route('GET /disposisi-masuk', 'OrderController->disposisiMasuk');
 $f3->route('GET /order', 'OrderController->index');
 $f3->route('GET /order/tambah', 'OrderController->tambah');
 $f3->route('POST /order/simpan', 'OrderController->simpan');
@@ -140,6 +141,12 @@ $f3->route('GET /order/@id/rancop-selulosa', 'OrderController->rancopSelulosa');
 $f3->route('POST /order/@id/rancop-selulosa', 'OrderController->simpanRancopSelulosa');
 $f3->route('GET /order/@id/biaya-lingkungan', 'OrderController->biayaLingkungan');
 $f3->route('POST /order/@id/biaya-lingkungan', 'OrderController->biayaLingkunganPost');
+$f3->route('GET /order/@id/form-pelayanan', 'OrderController->formPelayanan');
+$f3->route('POST /order/@id/form-pelayanan', 'OrderController->formPelayananPost');
+$f3->route('POST /order/@id/proposal/upload', 'OrderController->uploadProposalFile');
+$f3->route('POST /order/@id/proposal/kirim-katim', 'OrderController->kirimProposalKeKatim');
+$f3->route('POST /order/@id/proposal/review-katim', 'OrderController->reviewProposalKatim');
+$f3->route('POST /order/@id/respon-klien', 'OrderController->responKlien');
 
 // ==========================================
 // ROUTE MODUL PEMBAYARAN MULTI-TERMIN & INVOICE
@@ -261,6 +268,28 @@ $f3->route('GET /surat-masuk/@id/detail', 'SuratMasukController->detailJson');
 $f3->route('GET /simulasi-sekretariat', 'SuratMasukController->simulasiSekretariat');
 $f3->route('POST /simulasi-sekretariat/kirim', 'SuratMasukController->kirimSimulasi');
 $f3->route('POST /simulasi-sekretariat/@id/hapus', 'SuratMasukController->hapusSimulasi');
+
+// ==========================================
+// ROUTE STATIC SERVE UPLOADS SURAT MASUK (FALLBACK)
+// ==========================================
+$f3->route('GET /uploads/surat_masuk/@filename', function($f3, $params) {
+    $file = 'uploads/surat_masuk/' . basename($params['filename']);
+    if (file_exists($file)) {
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: inline; filename="' . basename($file) . '"');
+        readfile($file);
+        exit;
+    }
+    // If not found, look up by filename in surat_masuk table and serve via dynamic previewPdf
+    $db = $f3->get('DB');
+    $row = $db->exec("SELECT id FROM surat_masuk WHERE file_path LIKE ? LIMIT 1", ['%' . $params['filename'] . '%']);
+    if (!empty($row[0]['id'])) {
+        $ctrl = new SuratMasukController();
+        $ctrl->previewPdf($f3, ['id' => $row[0]['id']]);
+        return;
+    }
+    $f3->error(404, 'Berkas surat tidak ditemukan.');
+});
 
 // Jalankan Fat-Free Framework Router
 $f3->run();

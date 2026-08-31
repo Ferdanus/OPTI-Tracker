@@ -1,185 +1,173 @@
 <div class="container-fluid px-0">
     <!-- Header -->
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
-        <div>
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb mb-1 small">
-                    <li class="breadcrumb-item"><a href="{{ @BASE }}/order" class="text-decoration-none">Order Layanan</a></li>
-                    <li class="breadcrumb-item"><a href="{{ @BASE }}/order/{{ @order.id }}" class="text-decoration-none">#{{ @order.nomor_order }}</a></li>
-                    <li class="breadcrumb-item active" aria-current="page">Tinjauan Kelayakan ISO</li>
-                </ol>
-            </nav>
-            <h4 class="fw-bold text-dark m-0 d-flex align-items-center gap-2">
-                <i class="bi bi-clipboard-check text-primary"></i>
-                Formulir Tinjauan Kelayakan Permintaan (Kartu Kendali ISO)
-            </h4>
-            <p class="text-muted small m-0 mt-1">Evaluasi kesiapan teknis laboratorium sebelum permohonan diproses menjadi proposal / penawaran resmi.</p>
-        </div>
-        <div class="d-flex gap-2">
-            <a href="{{ @BASE }}/order/{{ @order.id }}" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1">
-                <i class="bi bi-arrow-left"></i> Kembali ke Detail Order
-            </a>
-        </div>
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom flex-wrap gap-2">
+        <h4 class="fw-bold text-dark m-0 font-display">Kaji Ulang Kelayakan &amp; Penunjukan PIC</h4>
+        <a href="{{ @BASE }}/order/{{ @order.id }}" class="btn btn-light btn-sm text-secondary px-3 py-1.5 fw-medium border">
+            <i class="bi bi-arrow-left me-1"></i> Kembali ke Detail Order
+        </a>
     </div>
 
-    <!-- Alert / Flash Message -->
-    <check if="{{ @SESSION.flash_error }}">
-        <div class="alert alert-danger alert-dismissible fade show shadow-sm border-0 mb-4" role="alert">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ @SESSION.flash_error }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    </check>
-
     <div class="row g-4">
-        <!-- Kolom Ringkasan Order & Surat Asal -->
-        <div class="col-lg-4">
-            <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-white py-3 border-bottom">
-                    <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2">
-                        <i class="bi bi-info-circle text-primary"></i> Data Permintaan Klien
-                    </h6>
+        <!-- Kolom Kiri: Informasi Permintaan Masuk (5 Kolom) -->
+        <div class="col-lg-5">
+            <div class="card border rounded-3 bg-white shadow-xs">
+                <div class="card-header bg-white py-3 px-3 px-md-4 border-bottom">
+                    <h6 class="m-0 fw-bold text-dark font-display">Data Permintaan Pelanggan</h6>
                 </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <span class="text-muted small d-block">Nomor Order / Permintaan:</span>
-                        <strong class="text-primary font-monospace">{{ @order.nomor_order }}</strong>
-                        <span class="badge {{ @order.jenis_layanan_opti == 'selulosa' ? 'bg-primary' : 'bg-success' }} ms-1 text-uppercase">
-                            {{ @order.jenis_layanan_opti }}
-                        </span>
+                <div class="card-body p-3 p-md-4">
+                    <div class="small text-secondary" style="font-size: 0.84rem; line-height: 1.6;">
+                        <div class="d-flex mb-2">
+                            <span class="text-muted" style="width: 125px; flex-shrink: 0;">No. Order</span>
+                            <span class="text-muted me-2">:</span>
+                            <strong class="text-dark font-monospace">{{ @order.nomor_order }}</strong>
+                        </div>
+                        <div class="d-flex mb-2">
+                            <span class="text-muted" style="width: 125px; flex-shrink: 0;">Bidang Layanan</span>
+                            <span class="text-muted me-2">:</span>
+                            <span class="badge {{ @order.jenis_layanan_opti == 'selulosa' ? 'bg-primary text-white' : 'bg-success text-white' }} text-uppercase fw-bold px-2 py-0.5" style="font-size: 0.72rem;">
+                                OPTI {{ @order.jenis_layanan_opti }}
+                            </span>
+                        </div>
+                        <div class="d-flex mb-2">
+                            <span class="text-muted" style="width: 125px; flex-shrink: 0;">Nama Perusahaan</span>
+                            <span class="text-muted me-2">:</span>
+                            <strong class="text-dark">{{ @order.nama_perusahaan }} ({{ @order.pt_cv }})</strong>
+                        </div>
+                        <check if="{{ @order.pic && @order.pic != '-' }}">
+                            <div class="d-flex mb-2">
+                                <span class="text-muted" style="width: 125px; flex-shrink: 0;">PIC Klien</span>
+                                <span class="text-muted me-2">:</span>
+                                <span class="text-dark">{{ @order.pic }}</span>
+                            </div>
+                        </check>
+                        <check if="{{ @order.telepon && @order.telepon != '-' }}">
+                            <div class="d-flex mb-2">
+                                <span class="text-muted" style="width: 125px; flex-shrink: 0;">No. HP / Telp</span>
+                                <span class="text-muted me-2">:</span>
+                                <span class="text-dark">{{ @order.telepon }}</span>
+                            </div>
+                        </check>
+                        <div class="d-flex mb-2">
+                            <span class="text-muted" style="width: 125px; flex-shrink: 0;">Perihal</span>
+                            <span class="text-muted me-2">:</span>
+                            <span class="text-dark fw-semibold">{{ @order.judul_kegiatan }}</span>
+                        </div>
+                        <div class="d-flex">
+                            <span class="text-muted" style="width: 125px; flex-shrink: 0;">Kebutuhan</span>
+                            <span class="text-muted me-2">:</span>
+                            <span class="text-dark">{{ @order.deskripsi ?: (@order.penjelasan ?: 'Kebutuhan pelayanan jasa teknis.') }}</span>
+                        </div>
                     </div>
 
-                    <div class="mb-3">
-                        <span class="text-muted small d-block">Nama Klien / Perusahaan:</span>
-                        <div class="fw-bold text-dark">{{ @order.nama_perusahaan }}</div>
-                        <small class="text-muted">{{ @order.pic }} ({{ @order.telepon }})</small>
-                    </div>
-
-                    <div class="mb-3">
-                        <span class="text-muted small d-block">Perihal / Judul Kegiatan:</span>
-                        <div class="fw-semibold text-dark">{{ @order.judul_kegiatan }}</div>
-                    </div>
-
-                    <div class="mb-3">
-                        <span class="text-muted small d-block">Jenis & Karakteristik Sampel:</span>
-                        <div class="small text-dark">{{ @order.jenis_sampel ?: '-' }} ({{ @order.volume_berat ?: '1 paket' }})</div>
-                    </div>
-
-                    <check if="{{ @order.deskripsi }}">
-                        <div class="mb-0">
-                            <span class="text-muted small d-block">Deskripsi / Ruang Lingkup:</span>
-                            <div class="small bg-light p-2 rounded text-secondary">{{ @order.deskripsi }}</div>
+                    <check if="{{ @surat_masuk && @surat_masuk.file_path }}">
+                        <div class="pt-3 mt-3 border-top">
+                            <a href="{{ @BASE }}/surat-masuk/{{ @surat_masuk.id }}/pdf" target="_blank" class="btn btn-outline-danger btn-sm w-100 fw-semibold">
+                                <i class="bi bi-file-earmark-pdf me-1"></i> Buka Surat Permohonan Klien (PDF)
+                            </a>
                         </div>
                     </check>
                 </div>
             </div>
         </div>
 
-        <!-- Kolom Form Kartu Kendali ISO -->
-        <div class="col-lg-8">
+        <!-- Kolom Kanan: Form Evaluasi Ringkas Ka. Tim (7 Kolom) -->
+        <div class="col-lg-7">
             <form action="{{ @BASE }}/order/{{ @order.id }}/tinjauan" method="POST">
-                <div class="card border-0 shadow-sm mb-4">
-                    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
-                        <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2">
-                            <i class="bi bi-card-checklist text-primary"></i> Lembar Verifikasi 4 Parameter Kelayakan
-                        </h6>
-                        <span class="badge bg-light text-secondary border">Standar ISO 9001 / BBSPJIS</span>
+                <div class="card border rounded-3 bg-white shadow-xs">
+                    <div class="card-header bg-white py-3 px-3 px-md-4 border-bottom d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 fw-bold text-dark font-display">Evaluasi Kelayakan &amp; Penugasan PIC</h6>
+                        <check if="{{ !@can_edit }}">
+                            <span class="badge bg-light text-secondary border"><i class="bi bi-lock-fill me-1"></i> Mode Lihat Saja</span>
+                        </check>
                     </div>
-                    <div class="card-body p-4">
-                        <p class="text-muted small mb-4">
-                            Silakan periksa ketersediaan sumber daya, peralatan instrumen, bahan kimia reagen, dan metode uji sebelum menyetujui pelaksanaan layanan.
-                        </p>
-
-                        <!-- Parameter 1: SDM -->
-                        <div class="border rounded p-3 mb-3 bg-light-subtle">
-                            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 mb-2">
-                                <label class="fw-bold text-dark m-0 d-flex align-items-center gap-2">
-                                    <i class="bi bi-people-fill text-primary"></i> 1. Ketersediaan Sumber Daya Manusia (SDM / Analis)
-                                </label>
-                                <div class="form-check form-switch m-0">
-                                    <input class="form-check-input" type="checkbox" name="sdm_tersedia" id="sdm_tersedia" value="1" {{ !@tinjauan || @tinjauan.sdm_tersedia ? 'checked' : '' }}>
-                                    <label class="form-check-label small fw-semibold" for="sdm_tersedia">Tersedia / Siap</label>
+                    <div class="card-body p-3 p-md-4">
+                        
+                        <check if="{{ !@can_edit }}">
+                            <div class="alert alert-warning border-0 d-flex align-items-center gap-2 mb-3 py-2 px-3 small rounded-3">
+                                <i class="bi bi-lock-fill text-warning fs-5 flex-shrink-0"></i>
+                                <div>
+                                    <strong>Mode Lihat Saja (Read-Only)</strong>: Kaji ulang kelayakan teknis dan penunjukan PIC merupakan wewenang <strong>Ketua Tim OPTI</strong>. Anda dapat melihat data tetapi tidak dapat mengubah keputusan.
                                 </div>
                             </div>
-                            <input type="text" name="sdm_catatan" class="form-control form-control-sm bg-white" placeholder="Catatan kesiapan personil / spesialis teknis (opsional)" value="{{ @tinjauan.sdm_catatan ?? '' }}">
-                        </div>
+                        </check>
 
-                        <!-- Parameter 2: Peralatan Lab -->
-                        <div class="border rounded p-3 mb-3 bg-light-subtle">
-                            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 mb-2">
-                                <label class="fw-bold text-dark m-0 d-flex align-items-center gap-2">
-                                    <i class="bi bi-gear-wide-connected text-primary"></i> 2. Ketersediaan Peralatan & Instrumen Laboratorium
-                                </label>
-                                <div class="form-check form-switch m-0">
-                                    <input class="form-check-input" type="checkbox" name="peralatan_tersedia" id="peralatan_tersedia" value="1" {{ !@tinjauan || @tinjauan.peralatan_tersedia ? 'checked' : '' }}>
-                                    <label class="form-check-label small fw-semibold" for="peralatan_tersedia">Tersedia & Siap Operasi</label>
-                                </div>
-                            </div>
-                            <input type="text" name="peralatan_catatan" class="form-control form-control-sm bg-white" placeholder="Catatan kesiapan mesin/alat lab atau kebutuhan kalibrasi (opsional)" value="{{ @tinjauan.peralatan_catatan ?? '' }}">
-                        </div>
-
-                        <!-- Parameter 3: Bahan Kimia & Reagen -->
-                        <div class="border rounded p-3 mb-3 bg-light-subtle">
-                            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 mb-2">
-                                <label class="fw-bold text-dark m-0 d-flex align-items-center gap-2">
-                                    <i class="bi bi-eyedropper text-primary"></i> 3. Ketersediaan Bahan Kimia, Reagen & Pendukung
-                                </label>
-                                <div class="form-check form-switch m-0">
-                                    <input class="form-check-input" type="checkbox" name="bahan_tersedia" id="bahan_tersedia" value="1" {{ !@tinjauan || @tinjauan.bahan_tersedia ? 'checked' : '' }}>
-                                    <label class="form-check-label small fw-semibold" for="bahan_tersedia">Tersedia & Cukup</label>
-                                </div>
-                            </div>
-                            <input type="text" name="bahan_catatan" class="form-control form-control-sm bg-white" placeholder="Catatan stok reagen/kebutuhan pengadaan bahan kimia (opsional)" value="{{ @tinjauan.bahan_catatan ?? '' }}">
-                        </div>
-
-                        <!-- Parameter 4: Kesiapan Metode -->
-                        <div class="border rounded p-3 mb-4 bg-light-subtle">
-                            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 mb-2">
-                                <label class="fw-bold text-dark m-0 d-flex align-items-center gap-2">
-                                    <i class="bi bi-journal-bookmark-fill text-primary"></i> 4. Kesiapan Metode Uji / Prosedur Teknis
-                                </label>
-                                <div class="form-check form-switch m-0">
-                                    <input class="form-check-input" type="checkbox" name="metode_tersedia" id="metode_tersedia" value="1" {{ !@tinjauan || @tinjauan.metode_tersedia ? 'checked' : '' }}>
-                                    <label class="form-check-label small fw-semibold" for="metode_tersedia">Metode Tersedia & Tervalidasi</label>
-                                </div>
-                            </div>
-                            <input type="text" name="metode_catatan" class="form-control form-control-sm bg-white" placeholder="Catatan metode standar (SNI/ASTM/ISO/In-House) (opsional)" value="{{ @tinjauan.metode_catatan ?? '' }}">
-                        </div>
-
-                        <!-- Bagian Keputusan Akhir -->
-                        <div class="card border-primary-subtle bg-primary-subtle p-3 mb-4">
-                            <h6 class="fw-bold text-primary-emphasis mb-2 d-flex align-items-center gap-2">
-                                <i class="bi bi-check2-circle"></i> Hasil Keputusan Kelayakan
-                            </h6>
-                            <div class="d-flex flex-column flex-sm-row gap-4 my-2">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="keputusan" id="kep_layak" value="dapat_dilaksanakan" {{ !@tinjauan || @tinjauan.keputusan == 'dapat_dilaksanakan' ? 'checked' : '' }} onchange="toggleAlasanPenolakan()">
-                                    <label class="form-check-label fw-bold text-success" for="kep_layak">
-                                        <i class="bi bi-check-circle-fill me-1"></i> DAPAT DILAKSANAKAN
+                        <!-- 1. Keputusan Kelayakan -->
+                        <div class="mb-4">
+                            <label class="form-label small fw-bold text-dark mb-2">Keputusan Kelayakan Teknis:</label>
+                            <div class="row g-3">
+                                <div class="col-sm-6">
+                                    <input type="radio" class="btn-check" name="keputusan" id="kep_layak" value="dapat_dilaksanakan" {{ !@tinjauan || @tinjauan.keputusan == 'dapat_dilaksanakan' ? 'checked' : '' }} {{ !@can_edit ? 'disabled' : '' }} onchange="toggleAlasanPenolakan()">
+                                    <label class="choice-radio-card card-layak w-100 rounded-3 text-start p-3 d-flex flex-row align-items-center" for="kep_layak" style="cursor: {{ @can_edit ? 'pointer' : 'default' }}; min-height: 72px;">
+                                        <div class="card-icon-wrap me-3 flex-shrink-0 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                            <i class="bi bi-check-circle-fill fs-4" style="line-height: 1;"></i>
+                                        </div>
+                                        <div class="card-text-wrap flex-grow-1">
+                                            <div class="card-title fw-bold" style="font-size: 0.92rem; line-height: 1.25;">Dapat Dilaksanakan</div>
+                                            <div class="card-subtitle small mt-0.5" style="font-size: 0.74rem; line-height: 1.25;">Lab sanggup mengerjakan</div>
+                                        </div>
                                     </label>
-                                    <div class="text-muted small">Permohonan disetujui untuk dibuatkan proposal/kalkulasi biaya.</div>
                                 </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="keputusan" id="kep_tidak_layak" value="tidak_dapat_dilaksanakan" {{ @tinjauan && @tinjauan.keputusan == 'tidak_dapat_dilaksanakan' ? 'checked' : '' }} onchange="toggleAlasanPenolakan()">
-                                    <label class="form-check-label fw-bold text-danger" for="kep_tidak_layak">
-                                        <i class="bi bi-x-circle-fill me-1"></i> TIDAK DAPAT DILAKSANAKAN
+                                <div class="col-sm-6">
+                                    <input type="radio" class="btn-check" name="keputusan" id="kep_tidak_layak" value="tidak_dapat_dilaksanakan" {{ @tinjauan && @tinjauan.keputusan == 'tidak_dapat_dilaksanakan' ? 'checked' : '' }} {{ !@can_edit ? 'disabled' : '' }} onchange="toggleAlasanPenolakan()">
+                                    <label class="choice-radio-card card-tidak-layak w-100 rounded-3 text-start p-3 d-flex flex-row align-items-center" for="kep_tidak_layak" style="cursor: {{ @can_edit ? 'pointer' : 'default' }}; min-height: 72px;">
+                                        <div class="card-icon-wrap me-3 flex-shrink-0 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                            <i class="bi bi-x-circle-fill fs-4" style="line-height: 1;"></i>
+                                        </div>
+                                        <div class="card-text-wrap flex-grow-1">
+                                            <div class="card-title fw-bold" style="font-size: 0.92rem; line-height: 1.25;">Tidak Dapat Dilaksanakan</div>
+                                            <div class="card-subtitle small mt-0.5" style="font-size: 0.74rem; line-height: 1.25;">Ditolak / tidak sanggup</div>
+                                        </div>
                                     </label>
-                                    <div class="text-muted small">Order ditolak dan Tim Mitra menginfokan alasan ke klien.</div>
                                 </div>
                             </div>
-
-                            <div id="boxAlasanPenolakan" class="mt-3" style="display: {{ @tinjauan && @tinjauan.keputusan == 'tidak_dapat_dilaksanakan' ? 'block' : 'none' }};">
-                                <label class="form-label small fw-bold text-danger">Alasan Penolakan / Ketidaksanggupan Teknis:</label>
-                                <textarea name="alasan_penolakan" class="form-control form-control-sm" rows="3" placeholder="Sebutkan kendala teknis (misal: alat sedang maintenance, reagen impor belum tiba, kapasitas lab penuh)...">{{ @tinjauan.alasan_penolakan ?? '' }}</textarea>
-                            </div>
                         </div>
 
-                        <!-- Tombol Aksi -->
-                        <div class="d-flex justify-content-end gap-2">
-                            <a href="{{ @BASE }}/order/{{ @order.id }}" class="btn btn-outline-secondary">Batal</a>
-                            <button type="submit" class="btn btn-primary d-flex align-items-center gap-2">
-                                <i class="bi bi-save"></i> Simpan Evaluasi Kelayakan
-                            </button>
+                        <!-- 2. Tunjuk PIC Proposal (Muncul jika Dapat Dilaksanakan) -->
+                        <div id="boxPicProposal" class="mb-3" style="display: {{ !@tinjauan || @tinjauan.keputusan == 'dapat_dilaksanakan' ? 'block' : 'none' }};">
+                            <label class="form-label small fw-bold text-dark mb-1">
+                                Tunjuk PIC Penyusun Proposal &amp; Rancop: <span class="text-danger">*</span>
+                            </label>
+                            <select name="pic_proposal_id" class="form-select form-select-sm" id="selectPicProposal" {{ !@can_edit ? 'disabled' : '' }} required>
+                                <option value="">Pilih Personil Peneliti / Analis Pelaksana</option>
+                                <repeat group="{{ @daftar_pic ?: [] }}" value="{{ @p }}">
+                                    <option value="{{ @p.id_user }}" {{ (@order.pic_proposal_id == @p.id_user) ? 'selected' : '' }}>
+                                        {{ @p.nama_user }} {{ @p.spesialisasi ? ' - Spesialisasi: '.@p.spesialisasi : '' }}
+                                    </option>
+                                </repeat>
+                            </select>
                         </div>
+
+                        <!-- 3. Catatan / Arahan Ka. Tim (Opsional) -->
+                        <div id="boxCatatan" class="mb-4" style="display: {{ !@tinjauan || @tinjauan.keputusan == 'dapat_dilaksanakan' ? 'block' : 'none' }};">
+                            <label class="form-label small fw-bold text-dark mb-1">
+                                Catatan / Arahan Ka. Tim (Opsional):
+                            </label>
+                            <input type="text" name="catatan_tinjauan" class="form-control form-control-sm" placeholder="Contoh: Fokuskan pada uji sifat optik dan fisik kertas..." value="{{ @tinjauan.sdm_catatan ?? '' }}" {{ !@can_edit ? 'disabled' : '' }}>
+                        </div>
+
+                        <!-- 4. Alasan Penolakan (Muncul jika Tidak Dapat Dilaksanakan) -->
+                        <div id="boxAlasanPenolakan" class="mb-4" style="display: {{ @tinjauan && @tinjauan.keputusan == 'tidak_dapat_dilaksanakan' ? 'block' : 'none' }};">
+                            <label class="form-label small fw-bold text-danger mb-1">Alasan Penolakan / Kendala Teknis:</label>
+                            <textarea name="alasan_penolakan" class="form-control form-control-sm" rows="3" placeholder="Sebutkan kendala teknis (misal: alat sedang kalibrasi, reagen khusus habis, kapasitas lab penuh)..." {{ !@can_edit ? 'disabled' : '' }}>{{ @tinjauan.alasan_penolakan ?? '' }}</textarea>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                            <a href="{{ @BASE }}/order/{{ @order.id }}" class="btn btn-light btn-sm text-secondary px-3 py-1.5 border">
+                                Kembali
+                            </a>
+                            <check if="{{ @can_edit }}">
+                                <button type="submit" class="btn btn-primary btn-sm px-4 py-1.5 fw-semibold shadow-xs">
+                                    <i class="bi bi-save me-1"></i> Simpan &amp; Tugaskan PIC
+                                </button>
+                            </check>
+                            <check if="{{ !@can_edit }}">
+                                <button type="button" class="btn btn-secondary btn-sm px-4 py-1.5 fw-semibold shadow-xs" disabled>
+                                    <i class="bi bi-lock-fill me-1"></i> Terkunci (Wewenang Ka. Tim)
+                                </button>
+                            </check>
+                        </div>
+
                     </div>
                 </div>
             </form>
@@ -190,9 +178,101 @@
 <script>
 function toggleAlasanPenolakan() {
     var radioTidak = document.getElementById('kep_tidak_layak');
-    var box = document.getElementById('boxAlasanPenolakan');
-    if (radioTidak && box) {
-        box.style.display = radioTidak.checked ? 'block' : 'none';
+    var radioLayak = document.getElementById('kep_layak');
+    var boxTolak = document.getElementById('boxAlasanPenolakan');
+    var boxPic = document.getElementById('boxPicProposal');
+    var boxCatatan = document.getElementById('boxCatatan');
+    var selectPic = document.getElementById('selectPicProposal');
+
+    if (radioTidak && radioTidak.checked) {
+        if (boxTolak) boxTolak.style.display = 'block';
+        if (boxPic) boxPic.style.display = 'none';
+        if (boxCatatan) boxCatatan.style.display = 'none';
+        if (selectPic) selectPic.removeAttribute('required');
+    } else {
+        if (boxTolak) boxTolak.style.display = 'none';
+        if (boxPic) boxPic.style.display = 'block';
+        if (boxCatatan) boxCatatan.style.display = 'block';
+        if (selectPic) selectPic.setAttribute('required', 'required');
     }
 }
 </script>
+
+<style>
+.choice-radio-card {
+    background-color: #ffffff;
+    border: 1.5px solid #e2e8f0;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    gap: 12px;
+}
+.choice-radio-card .card-icon-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    color: #94a3b8;
+    transition: all 0.2s ease;
+}
+.choice-radio-card .card-icon-wrap i {
+    font-size: 1.25rem;
+    line-height: 1;
+    display: block;
+}
+.choice-radio-card .card-text-wrap {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+.choice-radio-card .card-title {
+    color: #1e293b;
+    font-weight: 700;
+    font-size: 0.88rem;
+    line-height: 1.25;
+}
+.choice-radio-card .card-subtitle {
+    color: #64748b;
+    font-size: 0.72rem;
+    line-height: 1.25;
+    margin-top: 2px;
+}
+
+/* Active State: Dapat Dilaksanakan */
+#kep_layak:checked + .card-layak {
+    background-color: #f0fdf4 !important;
+    border-color: #22c55e !important;
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15) !important;
+}
+#kep_layak:checked + .card-layak .card-icon-wrap {
+    color: #16a34a !important;
+}
+#kep_layak:checked + .card-layak .card-title {
+    color: #15803d !important;
+}
+#kep_layak:checked + .card-layak .card-subtitle {
+    color: #166534 !important;
+}
+
+/* Active State: Tidak Dapat Dilaksanakan */
+#kep_tidak_layak:checked + .card-tidak-layak {
+    background-color: #fef2f2 !important;
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
+}
+#kep_tidak_layak:checked + .card-tidak-layak .card-icon-wrap {
+    color: #dc2626 !important;
+}
+#kep_tidak_layak:checked + .card-tidak-layak .card-title {
+    color: #b91c1c !important;
+}
+#kep_tidak_layak:checked + .card-tidak-layak .card-subtitle {
+    color: #991b1b !important;
+}
+</style>

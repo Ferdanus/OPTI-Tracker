@@ -23,38 +23,32 @@ class Controller {
      */
     protected static $PERMISSION_MATRIX = array(
         'admin_order' => array(
-            'surat_masuk:view', 'surat_masuk:klaim', 'surat_masuk:batal', 'surat_masuk:registrasi',
-            'order:view', 'order:create', 'order:edit', 'order:disposisi', 'order:tinjau',
+            'surat_masuk:view', 'surat_masuk:klaim', 'surat_masuk:batal',
+            'order:view', 'order:create', 'order:edit', 'order:form_pelayanan', 'order:respon_klien',
             'penawaran:view', 'penawaran:create', 'penawaran:edit', 'penawaran:cetak',
+            'kontrak:view', 'kontrak:create', 'kontrak:edit',
+            'pembayaran:view', 'pembayaran:create', 'pembayaran:edit',
             'klien:view', 'klien:create', 'klien:edit',
-            'po:view', 'po:sop',
-            'kontrak:view',
-            'pembayaran:view',
             'alert:manage'
         ),
         'tim_mitra' => array(
-            'surat_masuk:view', 'surat_masuk:klaim', 'surat_masuk:batal', 'surat_masuk:registrasi',
-            'order:view', 'order:create', 'order:edit', 'order:disposisi', 'order:tinjau',
+            'surat_masuk:view', 'surat_masuk:klaim', 'surat_masuk:batal',
+            'order:view', 'order:create', 'order:edit', 'order:form_pelayanan', 'order:respon_klien',
             'penawaran:view', 'penawaran:create', 'penawaran:edit', 'penawaran:cetak',
+            'kontrak:view', 'kontrak:create', 'kontrak:edit',
+            'pembayaran:view', 'pembayaran:create', 'pembayaran:edit',
             'klien:view', 'klien:create', 'klien:edit',
-            'po:view', 'po:sop',
-            'kontrak:view',
-            'pembayaran:view',
             'alert:manage'
         ),
         'ketua_tim' => array(
-            'surat_masuk:view',
-            'order:view', 'order:tinjau', 'order:proposal', 'order:kalkulasi_biaya',
+            'order:view', 'order:tinjau', 'order:assign_pic', 'order:proposal_review',
             'po:view', 'po:create', 'po:edit', 'po:rab', 'po:jadwal', 'po:evaluasi', 'po:sop',
             'penawaran:view',
             'klien:view',
-            'kontrak:view',
-            'pembayaran:view',
             'config:team', 'config:manage',
             'alert:manage'
         ),
         'pejabat' => array(
-            'surat_masuk:view',
             'order:view',
             'penawaran:view',
             'po:view', 'po:sop', 'po:approve',
@@ -64,7 +58,7 @@ class Controller {
             'alert:manage'
         ),
         'tim_kerja' => array(
-            'order:view',
+            'order:view', 'order:proposal', 'order:proposal_pic', 'order:proposal_upload', 'order:kalkulasi_biaya',
             'po:view', 'po:progress', 'po:laporan', 'po:sop',
             'alert:manage'
         ),
@@ -101,8 +95,10 @@ class Controller {
 
         $role = $this->getUserRole();
         $layanan = $this->getUserLayanan();
+        $userId = $this->getUserId();
 
         // Inject flag hak akses granular ke view untuk conditional UI rendering
+        $this->f3->set('user_id', $userId);
         $this->f3->set('user_role', $role);
         $this->f3->set('user_layanan', $layanan);
 
@@ -124,6 +120,39 @@ class Controller {
         $this->f3->set('can_approve_po', $this->hasPermission('po:approve'));
         $this->f3->set('can_manage_kontrak', $this->hasPermission('kontrak:create') || $this->hasPermission('kontrak:edit'));
         $this->f3->set('can_manage_config', $this->hasPermission('config:manage') || $this->hasPermission('config:team'));
+
+        // Hitung notifikasi tugas / disposisi masuk untuk Ketua Tim & Superadmin
+        $notifKatimCount = 0;
+        if ($role === 'ketua_tim' || $role === 'superadmin') {
+            try {
+                $whereDiv = ($role === 'ketua_tim' && in_array($layanan, array('selulosa', 'lingkungan'))) ? "o.jenis_layanan_opti = '{$layanan}' AND" : "";
+                $sqlNotif = "SELECT COUNT(*) as c FROM order_layanan o
+                             WHERE {$whereDiv} (
+                                 (o.status = 'baru' AND o.id NOT IN (SELECT order_id FROM opti_tinjauan_kelayakan))
+                                 OR (o.status_proposal_biaya = 'menunggu_approval')
+                             )";
+                $resNotif = $this->db->exec($sqlNotif);
+                $notifKatimCount = (int)($resNotif[0]['c'] ?? 0);
+            } catch (\Exception $eNotif) {
+                $notifKatimCount = 0;
+            }
+        }
+        $this->f3->set('jumlah_notif_katim', $notifKatimCount);
+
+        // Hitung notifikasi Surat Masuk untuk Tim Mitra, Sekretaris & Superadmin
+        $notifSuratCount = 0;
+        if ($role === 'admin_order' || $role === 'tim_mitra' || $role === 'sekretaris' || $role === 'superadmin') {
+            try {
+                $repoSurat = new \SuratMasukRepository($this->db, $this->dbSekretariat);
+                $suratBelumKlaim = count($repoSurat->getDaftarSuratOpti());
+                $resOrderKlaim = $this->db->exec("SELECT COUNT(*) as c FROM order_layanan WHERE status = 'permintaan_masuk'");
+                $orderBelumDiproses = (int)($resOrderKlaim[0]['c'] ?? 0);
+                $notifSuratCount = $suratBelumKlaim + $orderBelumDiproses;
+            } catch (\Exception $eSurat) {
+                $notifSuratCount = 0;
+            }
+        }
+        $this->f3->set('jumlah_notif_surat', $notifSuratCount);
 
         echo \Template::instance()->render('layout.html');
     }
@@ -153,6 +182,42 @@ class Controller {
 
         $allowed = self::$PERMISSION_MATRIX[$role] ?? array();
         return in_array('*', $allowed) || in_array($permission, $allowed);
+    }
+
+    /**
+     * Cek apakah role aktif adalah superadmin
+     */
+    public function isSuperadmin(): bool {
+        return $this->getUserRole() === 'superadmin';
+    }
+
+    /**
+     * Cek apakah role aktif adalah Tim Kemitraan (admin_order / tim_mitra)
+     */
+    public function isAdminOrder(): bool {
+        $r = $this->getUserRole();
+        return $r === 'admin_order' || $r === 'tim_mitra';
+    }
+
+    /**
+     * Cek apakah role aktif adalah Ketua Tim
+     */
+    public function isKetuaTim(): bool {
+        return $this->getUserRole() === 'ketua_tim';
+    }
+
+    /**
+     * Cek apakah role aktif adalah Pejabat (Kepala Balai / PPK)
+     */
+    public function isPejabat(): bool {
+        return $this->getUserRole() === 'pejabat';
+    }
+
+    /**
+     * Cek apakah role aktif adalah Tim Kerja (Analis / Peneliti)
+     */
+    public function isTimKerja(): bool {
+        return $this->getUserRole() === 'tim_kerja';
     }
 
     /**
@@ -188,6 +253,13 @@ class Controller {
             $this->f3->reroute('/login');
             exit;
         }
+    }
+
+    /**
+     * Alias requireLogin untuk kompatibilitas
+     */
+    public function requireLogin(): void {
+        $this->requireAuth();
     }
 
     /**

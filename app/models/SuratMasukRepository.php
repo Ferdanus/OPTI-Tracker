@@ -274,7 +274,7 @@ class SuratMasukRepository {
                     3  => $nomorOrder,
                     4  => $surat['tanggal_surat'] ?: date('Y-m-d'),
                     5  => $perihal ?: 'Permohonan Layanan OPTI',
-                    6  => "Klaim Surat Masuk No: " . ($surat['nomor_surat'] ?? '-') . " (File: " . ($surat['file_path'] ?? '-') . ")",
+                    6  => '',
                     7  => 'Lainnya',
                     8  => $jenisLayanan,
                     9  => $userId,

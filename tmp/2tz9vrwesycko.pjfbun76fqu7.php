@@ -789,22 +789,32 @@
                 <!-- 1. ALUR PELAYANAN / KEMITRAAN (Superadmin, Tim Mitra, Ketua Tim, Pejabat) -->
                 <?php if ($is_superadmin || $is_admin_order || $is_ketua_tim || $is_pejabat): ?>
                     <li class="sidebar-section-label">Alur Pelayanan</li>
-                    <?php if ($is_superadmin || $is_admin_order || $is_ketua_tim): ?>
+                    <?php if ($is_superadmin || $is_admin_order): ?>
                         <li>
                             <a class="sidebar-link <?= ($active_menu == 'surat_masuk' ? 'active' : '') ?>" href="<?= ($BASE) ?>/surat-masuk" title="Surat Masuk">
                                 <i class="bi bi-envelope-paper"></i> <span>Surat Masuk</span>
                             </a>
                         </li>
                     <?php endif; ?>
+                    <?php if ($is_superadmin || $is_ketua_tim): ?>
+                        <li>
+                            <a class="sidebar-link <?= ($active_menu == 'disposisi_masuk' ? 'active' : '') ?>" href="<?= ($BASE) ?>/disposisi-masuk" title="Permintaan Masuk (Disposisi)">
+                                <i class="bi bi-bell"></i> <span>Permintaan Masuk</span>
+                                <?php if ($jumlah_notif_katim > 0): ?>
+                                    <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.68rem; padding: 0.25em 0.6em;"><?= ($jumlah_notif_katim) ?></span>
+                                <?php endif; ?>
+                            </a>
+                        </li>
+                    <?php endif; ?>
                     <li>
-                        <a class="sidebar-link <?= ($active_menu == 'order' ? 'active' : '') ?>" href="<?= ($BASE) ?>/order" title="Order Masuk">
-                            <i class="bi bi-inbox"></i> <span>Order Masuk</span>
+                        <a class="sidebar-link <?= ($active_menu == 'order' ? 'active' : '') ?>" href="<?= ($BASE) ?>/order" title="Daftar Semua Order">
+                            <i class="bi bi-inbox"></i> <span>Daftar Order</span>
                         </a>
                     </li>
                     <?php if ($is_superadmin || $is_admin_order || $is_ketua_tim): ?>
                         <li>
-                            <a class="sidebar-link <?= ($active_menu == 'surat-penawaran' ? 'active' : '') ?>" href="<?= ($BASE) ?>/surat-penawaran" title="Surat Penawaran">
-                                <i class="bi bi-file-earmark-text"></i> <span>Surat Penawaran</span>
+                            <a class="sidebar-link <?= ($active_menu == 'surat-penawaran' ? 'active' : '') ?>" href="<?= ($BASE) ?>/surat-penawaran" title="Surat Pelayanan">
+                                <i class="bi bi-file-earmark-text"></i> <span>Surat Pelayanan</span>
                             </a>
                         </li>
                     <?php endif; ?>
@@ -913,32 +923,32 @@
                         <li class="px-3 py-1 text-uppercase fw-bold text-muted" style="font-size: 0.65rem; letter-spacing: 0.5px;">Ganti Peran (1-Klik):</li>
                         <li>
                             <a class="dropdown-item py-1 small d-flex align-items-center gap-2 <?= ($SESSION['role'] == 'superadmin' ? 'active' : '') ?>" href="<?= ($BASE) ?>/login/switch/9006">
-                                <i class="bi bi-shield-lock text-dark"></i> Superadmin (Fajriasa)
+                                <i class="bi bi-shield-lock text-dark"></i> Superadmin
                             </a>
                         </li>
                         <li>
                             <a class="dropdown-item py-1 small d-flex align-items-center gap-2 <?= ($SESSION['role'] == 'admin_order' ? 'active' : '') ?>" href="<?= ($BASE) ?>/login/switch/36">
-                                <i class="bi bi-inbox-fill text-danger"></i> Tim Kemitraan (Faridh)
+                                <i class="bi bi-inbox-fill text-danger"></i> Tim Kemitraan
                             </a>
                         </li>
                         <li>
                             <a class="dropdown-item py-1 small d-flex align-items-center gap-2 <?= ($SESSION['role'] == 'ketua_tim' && $SESSION['jenis_layanan_opti'] == 'selulosa' ? 'active' : '') ?>" href="<?= ($BASE) ?>/login/switch/3">
-                                <i class="bi bi-diagram-3 text-primary"></i> Ka. Tim Selulosa (Bu Rina)
+                                <i class="bi bi-diagram-3 text-primary"></i> Ka. Tim Selulosa
                             </a>
                         </li>
                         <li>
                             <a class="dropdown-item py-1 small d-flex align-items-center gap-2 <?= ($SESSION['role'] == 'ketua_tim' && $SESSION['jenis_layanan_opti'] == 'lingkungan' ? 'active' : '') ?>" href="<?= ($BASE) ?>/login/switch/61">
-                                <i class="bi bi-calculator text-success"></i> Ka. Tim Lingkungan (Pak Andri)
+                                <i class="bi bi-calculator text-success"></i> Ka. Tim Lingkungan
                             </a>
                         </li>
                         <li>
                             <a class="dropdown-item py-1 small d-flex align-items-center gap-2 <?= ($SESSION['role'] == 'pejabat' ? 'active' : '') ?>" href="<?= ($BASE) ?>/login/switch/175">
-                                <i class="bi bi-patch-check-fill text-warning"></i> Kepala Balai (Dodiet)
+                                <i class="bi bi-patch-check-fill text-warning"></i> Kepala Balai / Pejabat
                             </a>
                         </li>
                         <li>
                             <a class="dropdown-item py-1 small d-flex align-items-center gap-2 <?= ($SESSION['role'] == 'tim_kerja' ? 'active' : '') ?>" href="<?= ($BASE) ?>/login/switch/12">
-                                <i class="bi bi-clipboard2-pulse text-secondary"></i> Tim Kerja (Yogi)
+                                <i class="bi bi-clipboard2-pulse text-secondary"></i> Tim Kerja / Peneliti
                             </a>
                         </li>
                         <li><hr class="dropdown-divider my-1"></li>

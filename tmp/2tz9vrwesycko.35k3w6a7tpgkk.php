@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Akses Pengguna - Sistem OPTI Tracker BBSPJIS</title>
+    <title>Akses Pengguna</title>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -219,7 +219,7 @@
                         <span class="badge bg-light text-secondary border">Tim Kerja / Analis</span>
                     </div>
                     <div class="small text-secondary fw-semibold mb-1">Pelaksana SOP Teknis</div>
-                    <small class="text-muted d-block" style="font-size: 0.75rem;">Pelaksanaan 19 langkah SOP, pencatatan progres, dan draf LHP.</small>
+                    <small class="text-muted d-block" style="font-size: 0.75rem;">Pelaksanaan pengujian laboratorium, pencatatan progres, dan draf LHP.</small>
                 </a>
             </div>
 

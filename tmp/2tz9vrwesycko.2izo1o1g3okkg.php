@@ -4,8 +4,8 @@
         <div>
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb mb-1 small">
-                    <li class="breadcrumb-item"><a href="{{ @BASE }}/order" class="text-decoration-none">Order Layanan</a></li>
-                    <li class="breadcrumb-item"><a href="{{ @BASE }}/order/{{ @order.id }}" class="text-decoration-none">#{{ @order.nomor_order }}</a></li>
+                    <li class="breadcrumb-item"><a href="<?= ($BASE) ?>/order" class="text-decoration-none">Order Layanan</a></li>
+                    <li class="breadcrumb-item"><a href="<?= ($BASE) ?>/order/<?= ($order['id']) ?>" class="text-decoration-none">#<?= ($order['nomor_order']) ?></a></li>
                     <li class="breadcrumb-item active" aria-current="page">Terbitkan Surat Penawaran</li>
                 </ol>
             </nav>
@@ -16,30 +16,31 @@
             <p class="text-muted small m-0 mt-1">Data anggaran dan ruang lingkup otomatis ditarik dari hasil analisis teknis (Proposal / Kalkulasi Uji Lab).</p>
         </div>
         <div class="d-flex gap-2">
-            <a href="{{ @BASE }}/order/{{ @order.id }}" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1">
+            <a href="<?= ($BASE) ?>/order/<?= ($order['id']) ?>" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1">
                 <i class="bi bi-arrow-left"></i> Kembali ke Detail Order
             </a>
         </div>
     </div>
 
-    <check if="{{ !@can_edit }}">
+    <?php if (!$can_edit): ?>
         <div class="alert alert-warning border-0 d-flex align-items-center gap-2 mb-4 py-2 px-3 small rounded-3">
             <i class="bi bi-lock-fill text-warning fs-5 flex-shrink-0"></i>
             <div>
                 <strong>Mode Lihat Saja (Read-Only)</strong>: Penerbitan dan pengeditan Surat Pelayanan Resmi merupakan wewenang <strong>Tim Kemitraan (Admin Order)</strong>.
             </div>
         </div>
-    </check>
+    <?php endif; ?>
 
     <!-- Alert / Flash Message -->
-    <check if="{{ @SESSION.flash_error }}">
+    <?php if ($SESSION['flash_error']): ?>
         <div class="alert alert-danger alert-dismissible fade show shadow-sm border-0 mb-4" role="alert">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ @SESSION.flash_error }}
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> <?= ($SESSION['flash_error'])."
+" ?>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
-    </check>
+    <?php endif; ?>
 
-    <form action="{{ @BASE }}/order/{{ @order.id }}/penawaran/simpan" method="POST">
+    <form action="<?= ($BASE) ?>/order/<?= ($order['id']) ?>/penawaran/simpan" method="POST">
         <div class="row g-4">
             <!-- Kolom Kiri: Sumber Anggaran Teknis -->
             <div class="col-lg-4">
@@ -52,47 +53,48 @@
                     <div class="card-body">
                         <div class="mb-3">
                             <span class="text-muted small d-block">Nomor Order:</span>
-                            <strong class="text-primary font-monospace">{{ @order.nomor_order }}</strong>
-                            <span class="badge {{ @order.jenis_layanan_opti == 'selulosa' ? 'bg-primary' : 'bg-success' }} ms-1 text-uppercase">
-                                OPTI {{ @order.jenis_layanan_opti }}
+                            <strong class="text-primary font-monospace"><?= ($order['nomor_order']) ?></strong>
+                            <span class="badge <?= ($order['jenis_layanan_opti'] == 'selulosa' ? 'bg-primary' : 'bg-success') ?> ms-1 text-uppercase">
+                                OPTI <?= ($order['jenis_layanan_opti'])."
+" ?>
                             </span>
                         </div>
 
                         <!-- Kasus Selulosa -->
-                        <check if="{{ @order.jenis_layanan_opti == 'selulosa' && @proposal }}">
+                        <?php if ($order['jenis_layanan_opti'] == 'selulosa' && $proposal): ?>
                             <div class="p-3 bg-primary-subtle rounded border border-primary-subtle mb-3">
                                 <span class="fw-bold text-primary small d-block mb-1">
                                     <i class="bi bi-file-earmark-check me-1"></i> Data Proposal Riset
                                 </span>
-                                <small class="text-dark d-block"><strong>PIC:</strong> {{ @proposal.pic_nama ?: '-' }} ({{ @proposal.spesialisasi ?: '-' }})</small>
-                                <small class="text-dark d-block"><strong>Durasi:</strong> {{ @proposal.durasi_kegiatan ?: '3 bulan' }}</small>
+                                <small class="text-dark d-block"><strong>PIC:</strong> <?= ($proposal['pic_nama'] ?: '-') ?> (<?= ($proposal['spesialisasi'] ?: '-') ?>)</small>
+                                <small class="text-dark d-block"><strong>Durasi:</strong> <?= ($proposal['durasi_kegiatan'] ?: '3 bulan') ?></small>
                                 <hr class="my-2 border-primary-subtle">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <span class="small text-muted">Total Anggaran:</span>
-                                    <strong class="text-primary">Rp {{ number_format(@proposal.estimasi_total_biaya, 0, ',', '.') }}</strong>
+                                    <strong class="text-primary">Rp <?= (number_format($proposal['estimasi_total_biaya'], 0, ',', '.')) ?></strong>
                                 </div>
                             </div>
-                        </check>
+                        <?php endif; ?>
 
                         <!-- Kasus Lingkungan -->
-                        <check if="{{ @order.jenis_layanan_opti == 'lingkungan' && !empty(@kalkulasi) }}">
+                        <?php if ($order['jenis_layanan_opti'] == 'lingkungan' && !empty($kalkulasi)): ?>
                             <div class="p-3 bg-success-subtle rounded border border-success-subtle mb-3">
                                 <span class="fw-bold text-success small d-block mb-1">
                                     <i class="bi bi-calculator me-1"></i> Kalkulasi Pengujian Lab
                                 </span>
-                                <small class="text-dark d-block mb-2">Terdiri dari <strong>{{ count(@kalkulasi) }} item metode pengujian</strong>.</small>
-                                <check if="{{ @order.diskon_penawaran > 0 }}">
+                                <small class="text-dark d-block mb-2">Terdiri dari <strong><?= (count($kalkulasi)) ?> item metode pengujian</strong>.</small>
+                                <?php if ($order['diskon_penawaran'] > 0): ?>
                                     <div class="d-flex justify-content-between small text-danger mb-1">
                                         <span>Diskon Disepakati:</span>
-                                        <span>- Rp {{ number_format(@order.diskon_penawaran, 0, ',', '.') }}</span>
+                                        <span>- Rp <?= (number_format($order['diskon_penawaran'], 0, ',', '.')) ?></span>
                                     </div>
-                                </check>
+                                <?php endif; ?>
                                 <div class="d-flex justify-content-between align-items-center pt-2 border-top border-success-subtle">
                                     <span class="small fw-bold text-dark">Total Netto:</span>
-                                    <strong class="text-success">Rp {{ number_format(@order.estimasi_biaya, 0, ',', '.') }}</strong>
+                                    <strong class="text-success">Rp <?= (number_format($order['estimasi_biaya'], 0, ',', '.')) ?></strong>
                                 </div>
                             </div>
-                        </check>
+                        <?php endif; ?>
 
                         <div class="p-3 bg-light rounded small text-secondary">
                             <i class="bi bi-info-circle-fill text-primary me-1"></i>
@@ -119,13 +121,13 @@
                                 <label class="form-label small fw-bold text-dark">Nomor Surat Penawaran Resmi:</label>
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text bg-light"><i class="bi bi-hash"></i></span>
-                                    <input type="text" name="nomor_surat" class="form-control form-control-sm font-monospace fw-bold" value="{{ @sp_existing.nomor_surat ?: @nomor_surat_otomatis }}" required>
+                                    <input type="text" name="nomor_surat" class="form-control form-control-sm font-monospace fw-bold" value="<?= ($sp_existing['nomor_surat'] ?: $nomor_surat_otomatis) ?>" required>
                                 </div>
                                 <small class="text-muted">Nomor resmi balai otomatis di-generate format: {urut}/SP/BBSPJIS/{bulan_romawi}/{tahun}.</small>
                             </div>
                             <div class="col-md-5">
                                 <label class="form-label small fw-bold text-dark">Tanggal Surat:</label>
-                                <input type="date" name="tanggal_surat" class="form-control form-control-sm" value="{{ @sp_existing.tanggal_surat ?: date('Y-m-d') }}" required>
+                                <input type="date" name="tanggal_surat" class="form-control form-control-sm" value="<?= ($sp_existing['tanggal_surat'] ?: date('Y-m-d')) ?>" required>
                             </div>
                         </div>
 
@@ -133,15 +135,15 @@
                         <div class="row g-3 mb-3">
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold text-dark">Nama Perusahaan / Instansi Klien:</label>
-                                <input type="text" name="perusahaan" class="form-control form-control-sm" value="{{ @sp_existing.perusahaan ?: @order.nama_perusahaan }}" required>
+                                <input type="text" name="perusahaan" class="form-control form-control-sm" value="<?= ($sp_existing['perusahaan'] ?: $order['nama_perusahaan']) ?>" required>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold text-dark">Nama Kontak PIC / Yang Dituju:</label>
-                                <input type="text" name="nama" class="form-control form-control-sm" value="{{ @sp_existing.nama ?: @order.pic }}" placeholder="Nama PIC Klien">
+                                <input type="text" name="nama" class="form-control form-control-sm" value="<?= ($sp_existing['nama'] ?: $order['pic']) ?>" placeholder="Nama PIC Klien">
                             </div>
                             <div class="col-12">
                                 <label class="form-label small fw-bold text-dark">Alamat Lengkap Klien:</label>
-                                <input type="text" name="alamat" class="form-control form-control-sm" value="{{ @sp_existing.alamat ?: @order.alamatcustomer }}" placeholder="Alamat pabrik / kantor klien">
+                                <input type="text" name="alamat" class="form-control form-control-sm" value="<?= ($sp_existing['alamat'] ?: $order['alamatcustomer']) ?>" placeholder="Alamat pabrik / kantor klien">
                             </div>
                         </div>
 
@@ -149,7 +151,7 @@
                         <div class="row g-3 mb-3">
                             <div class="col-md-7">
                                 <label class="form-label small fw-bold text-dark">Perihal Surat Penawaran:</label>
-                                <input type="text" name="perihal" class="form-control form-control-sm" value="{{ @sp_existing.perihal ?: 'Penawaran Layanan Jasa OPTI - ' . @order.judul_kegiatan }}" required>
+                                <input type="text" name="perihal" class="form-control form-control-sm" value="<?= ($sp_existing['perihal'] ?: 'Penawaran Layanan Jasa OPTI - ' . $order['judul_kegiatan']) ?>" required>
                             </div>
                             <div class="col-md-5">
                                 <label class="form-label small fw-bold text-dark">
@@ -157,7 +159,7 @@
                                 </label>
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text bg-light fw-bold">Rp</span>
-                                    <input type="number" name="nominal_penawaran" class="form-control form-control-sm text-end fw-bold" value="{{ @sp_existing.nominal_penawaran ?: @order.estimasi_biaya }}" required min="0" step="1000">
+                                    <input type="number" name="nominal_penawaran" class="form-control form-control-sm text-end fw-bold" value="<?= ($sp_existing['nominal_penawaran'] ?: $order['estimasi_biaya']) ?>" required min="0" step="1000">
                                 </div>
                             </div>
                         </div>
@@ -167,16 +169,16 @@
                             <div class="col-md-4">
                                 <label class="form-label small fw-bold text-dark">Media Masuk Permintaan:</label>
                                 <select name="permintaan_melalui" class="form-select form-select-sm">
-                                    <option value="email" {{ (@sp_existing && @sp_existing.permintaan_melalui == 'email') || !@sp_existing ? 'selected' : '' }}>E-mail Resmi BBSPJIS</option>
-                                    <option value="surat" {{ @sp_existing && @sp_existing.permintaan_melalui == 'surat' ? 'selected' : '' }}>Surat Fisik / Ekspedisi</option>
-                                    <option value="telepon" {{ @sp_existing && @sp_existing.permintaan_melalui == 'telepon' ? 'selected' : '' }}>Telepon / WA</option>
-                                    <option value="datang_langsung" {{ @sp_existing && @sp_existing.permintaan_melalui == 'datang_langsung' ? 'selected' : '' }}>Datang Langsung ke Balai</option>
-                                    <option value="pegawai_bbspjis" {{ @sp_existing && @sp_existing.permintaan_melalui == 'pegawai_bbspjis' ? 'selected' : '' }}>Petugas Kemitraan BBSPJIS</option>
+                                    <option value="email" <?= (($sp_existing && $sp_existing['permintaan_melalui'] == 'email') || !$sp_existing ? 'selected' : '') ?>>E-mail Resmi BBSPJIS</option>
+                                    <option value="surat" <?= ($sp_existing && $sp_existing['permintaan_melalui'] == 'surat' ? 'selected' : '') ?>>Surat Fisik / Ekspedisi</option>
+                                    <option value="telepon" <?= ($sp_existing && $sp_existing['permintaan_melalui'] == 'telepon' ? 'selected' : '') ?>>Telepon / WA</option>
+                                    <option value="datang_langsung" <?= ($sp_existing && $sp_existing['permintaan_melalui'] == 'datang_langsung' ? 'selected' : '') ?>>Datang Langsung ke Balai</option>
+                                    <option value="pegawai_bbspjis" <?= ($sp_existing && $sp_existing['permintaan_melalui'] == 'pegawai_bbspjis' ? 'selected' : '') ?>>Petugas Kemitraan BBSPJIS</option>
                                 </select>
                             </div>
                             <div class="col-md-8">
                                 <label class="form-label small fw-bold text-dark">Penjelasan / Catatan Tambahan Penawaran:</label>
-                                <textarea name="penjelasan" class="form-control form-control-sm" rows="2" placeholder="Catatan termin pembayaran, masa berlaku penawaran, dll...">{{ @sp_existing.penjelasan ?: @order.deskripsi }}</textarea>
+                                <textarea name="penjelasan" class="form-control form-control-sm" rows="2" placeholder="Catatan termin pembayaran, masa berlaku penawaran, dll..."><?= ($sp_existing['penjelasan'] ?: $order['deskripsi']) ?></textarea>
                             </div>
                         </div>
 
@@ -185,19 +187,19 @@
                             <label class="form-label small fw-bold text-dark mb-2">Status Surat & Respon Klien Saat Ini:</label>
                             <div class="d-flex flex-wrap gap-3">
                                 <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="status_respon_klien" id="resp_draft" value="draft" {{ !@sp_existing || @sp_existing.status_respon_klien == 'draft' ? 'checked' : '' }}>
+                                    <input class="form-check-input" type="radio" name="status_respon_klien" id="resp_draft" value="draft" <?= (!$sp_existing || $sp_existing['status_respon_klien'] == 'draft' ? 'checked' : '') ?>>
                                     <label class="form-check-label small fw-semibold text-secondary" for="resp_draft">
                                         <i class="bi bi-pencil me-1"></i> Draft (Disimpan)
                                     </label>
                                 </div>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="status_respon_klien" id="resp_terkirim" value="terkirim" {{ @sp_existing && @sp_existing.status_respon_klien == 'terkirim' ? 'checked' : '' }}>
+                                    <input class="form-check-input" type="radio" name="status_respon_klien" id="resp_terkirim" value="terkirim" <?= ($sp_existing && $sp_existing['status_respon_klien'] == 'terkirim' ? 'checked' : '') ?>>
                                     <label class="form-check-label small fw-semibold text-primary" for="resp_terkirim">
                                         <i class="bi bi-send-check-fill me-1"></i> Terkirim ke Klien (Menunggu Respon)
                                     </label>
                                 </div>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="status_respon_klien" id="resp_deal" value="deal" {{ @sp_existing && @sp_existing.status_respon_klien == 'deal' ? 'checked' : '' }}>
+                                    <input class="form-check-input" type="radio" name="status_respon_klien" id="resp_deal" value="deal" <?= ($sp_existing && $sp_existing['status_respon_klien'] == 'deal' ? 'checked' : '') ?>>
                                     <label class="form-check-label small fw-bold text-success" for="resp_deal">
                                         <i class="bi bi-check-circle-fill me-1"></i> Disetujui Klien (DEAL - Lanjut Invoice/PO)
                                     </label>
@@ -207,17 +209,17 @@
 
                         <!-- Tombol Aksi -->
                         <div class="d-flex justify-content-end gap-2 pt-3 border-top">
-                            <a href="{{ @BASE }}/order/{{ @order.id }}" class="btn btn-outline-secondary">Batal</a>
-                            <check if="{{ @can_edit }}">
+                            <a href="<?= ($BASE) ?>/order/<?= ($order['id']) ?>" class="btn btn-outline-secondary">Batal</a>
+                            <?php if ($can_edit): ?>
                                 <button type="submit" class="btn btn-primary d-flex align-items-center gap-2">
                                     <i class="bi bi-send-fill"></i> Simpan &amp; Terbitkan Surat Pelayanan
                                 </button>
-                            </check>
-                            <check if="{{ !@can_edit }}">
+                            <?php endif; ?>
+                            <?php if (!$can_edit): ?>
                                 <button type="button" class="btn btn-secondary" disabled>
                                     <i class="bi bi-lock-fill me-1"></i> Terkunci (Wewenang Tim Mitra)
                                 </button>
-                            </check>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>

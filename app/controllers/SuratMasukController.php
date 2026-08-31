@@ -87,12 +87,13 @@ class SuratMasukController extends Controller {
 
         try {
             $orderId = $this->repo->klaimSurat($suratId, $userId);
-            $this->setFlashSuccess('Surat berhasil diklaim! Order baru telah dibuat dengan status Permintaan Masuk.');
+            $this->setFlashSuccess('Surat berhasil diterima.');
+            $this->f3->reroute('/surat-masuk');
+            return;
         } catch (\Exception $e) {
-            $this->setFlashError('Gagal mengklaim surat: ' . $e->getMessage());
+            $this->setFlashError('Gagal menerima surat: ' . $e->getMessage());
+            $this->f3->reroute('/surat-masuk');
         }
-
-        $this->f3->reroute('/surat-masuk');
     }
 
     /**
@@ -349,7 +350,7 @@ class SuratMasukController extends Controller {
      * Route: GET /simulasi-sekretariat
      */
     public function simulasiSekretariat() {
-        $this->requireAuth();
+        $this->requirePermission('surat_masuk:registrasi', '/order');
         
         $table = $this->f3->get('db_sekretariat_table') ?: 'surat_masuk';
         $daftarSuratSimulasi = array();
