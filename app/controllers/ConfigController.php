@@ -34,7 +34,7 @@ class ConfigController extends Controller {
         $f3->set('katim_selulosa', $katimSelulosa);
         $f3->set('katim_lingkungan', $katimLingkungan);
 
-        $this->render('config/index.html', 'Pengaturan Konfigurasi Dinamis & Privasi - OPTI Tracker', 'config');
+        $this->render('config/index.html', 'Pengaturan Konfigurasi Dinamis & Privasi', 'config');
     }
 
     /**

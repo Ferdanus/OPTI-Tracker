@@ -18,7 +18,7 @@ class CustomerController extends Controller {
 
         $f3->set('daftar_klien', $daftarCustomer);
         $f3->set('daftar_customer', $daftarCustomer);
-        $this->render('klien/index.html', 'Daftar Mitra / Customer - OPTI Tracker', 'klien');
+        $this->render('klien/index.html', 'Daftar Mitra / Customer', 'klien');
     }
 
     /**
@@ -28,7 +28,7 @@ class CustomerController extends Controller {
     public function tambah($f3) {
         $f3->set('customer', null);
         $f3->set('klien', null);
-        $this->render('klien/form.html', 'Tambah Customer Baru - OPTI Tracker', 'klien');
+        $this->render('klien/form.html', 'Tambah Customer Baru', 'klien');
     }
 
     /**
@@ -38,15 +38,15 @@ class CustomerController extends Controller {
     public function simpan($f3) {
         $post = $f3->get('POST');
 
-        $namaPerusahaan = trim($post['nmcustomer'] ?? ($post['nama_perusahaan'] ?? ''));
+        $namaPerusahaan = trim($post['nmcustomer'] ?? '');
         $ptCv           = trim($post['pt_cv'] ?? 'PT');
-        $pic            = trim($post['contactperson'] ?? ($post['pic'] ?? ''));
-        $alamat         = trim($post['alamatcustomer'] ?? ($post['alamat'] ?? ''));
-        $telepon        = trim($post['notelpcustomer'] ?? ($post['telepon'] ?? ''));
-        $email          = trim($post['emailcustomer'] ?? ($post['email'] ?? ''));
+        $pic            = trim($post['contactperson_opti'] ?? $post['contactperson'] ?? '');
+        $telepon        = trim($post['nohpcontactperson_opti'] ?? $post['notelpcustomer'] ?? '');
+        $email          = trim($post['emailcustomer'] ?? '');
+        $alamat         = trim($post['alamatcustomer'] ?? '');
 
         if (empty($namaPerusahaan)) {
-            $this->setFlashError('Nama perusahaan/mitra wajib diisi.');
+            $this->setFlashError('Nama perusahaan / instansi customer wajib diisi!');
             $f3->reroute('/klien/tambah');
             return;
         }
@@ -57,17 +57,17 @@ class CustomerController extends Controller {
                 'nmcustomer'             => $namaPerusahaan,
                 'pt_cv'                  => $ptCv,
                 'contactperson'          => $pic,
-                'alamatcustomer'         => $alamat,
-                'notelpcustomer'         => $telepon,
-                'emailcustomer'          => $email,
                 'contactperson_opti'     => $pic,
-                'nohpcontactperson_opti' => $telepon
+                'notelpcustomer'         => $telepon,
+                'nohpcontactperson_opti' => $telepon,
+                'emailcustomer'          => $email,
+                'alamatcustomer'         => $alamat
             ));
 
-            $this->setFlashSuccess("Data customer '{$namaPerusahaan}' berhasil ditambahkan ke master balai.");
+            $this->setFlashSuccess("Customer <strong>{$namaPerusahaan}</strong> berhasil ditambahkan.");
             $f3->reroute('/klien');
         } catch (\Exception $e) {
-            $this->setFlashError('Gagal menyimpan data customer: ' . $e->getMessage());
+            $this->setFlashError('Gagal menyimpan customer: ' . $e->getMessage());
             $f3->reroute('/klien/tambah');
         }
     }
@@ -89,7 +89,7 @@ class CustomerController extends Controller {
 
         $f3->set('customer', $customer->cast());
         $f3->set('klien', $customer->cast());
-        $this->render('klien/form.html', 'Edit Data Customer - OPTI Tracker', 'klien');
+        $this->render('klien/form.html', 'Edit Data Customer', 'klien');
     }
 
     /**

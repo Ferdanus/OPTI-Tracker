@@ -1,0 +1,140 @@
+<div class="container-fluid px-0">
+    <!-- Header & Breadcrumbs -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1 small">
+                    <li class="breadcrumb-item"><a href="{{ @BASE }}/order" class="text-decoration-none">Order Layanan</a></li>
+                    <li class="breadcrumb-item"><a href="{{ @BASE }}/order/{{ @order.id }}" class="text-decoration-none">#{{ @order.nomor_order }}</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Berita Acara Serah Terima (BAST)</li>
+                </ol>
+            </nav>
+            <h4 class="fw-bold text-dark m-0">
+                <i class="bi bi-file-earmark-check-fill text-success me-2"></i>{{ @bast ? 'Edit Dokumen BAST' : 'Penerbitan Berita Acara Serah Terima (BAST)' }}
+            </h4>
+            <p class="text-muted small m-0 mt-1">
+                Penyerahan hasil riset / pengujian laboratorium kepada pelanggan sebagai penutup resmi siklus layanan.
+            </p>
+        </div>
+        <div>
+            <a href="{{ @BASE }}/order/{{ @order.id }}" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1">
+                <i class="bi bi-arrow-left"></i> Kembali ke Detail Order
+            </a>
+        </div>
+    </div>
+
+    <!-- Alert / Flash Message -->
+    <check if="{{ @SESSION.flash_error }}">
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm border-0 mb-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ @SESSION.flash_error | raw }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    </check>
+
+    <form action="{{ @BASE }}/order/{{ @order.id }}/bast/simpan" method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
+
+        <div class="row g-4">
+            <!-- Kolom Kiri: Nomor BAST & Data Para Pihak -->
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white py-3 border-bottom">
+                        <h6 class="m-0 fw-bold text-dark"><i class="bi bi-card-checklist text-primary me-2"></i>Nomor & Identitas Para Pihak</h6>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Nomor BAST Resmi <span class="text-danger">*</span></label>
+                                <input type="text" name="nomor_bast" class="form-control font-monospace" placeholder="Contoh: 01/BAST/BBSPJIS/VIII/2026" value="{{ @bast ? @bast.nomor_bast : @nomor_bast_otomatis }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Tanggal Serah Terima <span class="text-danger">*</span></label>
+                                <input type="date" name="tanggal_bast" class="form-control" value="{{ @bast ? @bast.tanggal_bast : date('Y-m-d') }}" required>
+                            </div>
+                        </div>
+
+                        <!-- PIHAK PERTAMA (BBSPJIS) -->
+                        <div class="p-3 bg-light rounded border mb-3">
+                            <span class="small fw-bold text-primary d-block mb-2"><i class="bi bi-building me-1"></i> PIHAK PERTAMA (Yang Menyerahkan - BBSPJIS)</span>
+                            <div class="row g-2">
+                                <div class="col-md-6">
+                                    <label class="form-label small text-muted mb-1">Nama Pejabat Balai:</label>
+                                    <input type="text" name="pihak_pertama_nama" class="form-control form-control-sm" value="{{ @bast ? @bast.pihak_pertama_nama : 'Andri Taufick Rizaluddin' }}" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small text-muted mb-1">Jabatan:</label>
+                                    <input type="text" name="pihak_pertama_jabatan" class="form-control form-control-sm" value="{{ @bast ? @bast.pihak_pertama_jabatan : 'Kepala Balai Besar / Ketua Tim' }}" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- PIHAK KEDUA (MITRA / PELANGGAN) -->
+                        <div class="p-3 bg-light rounded border mb-3">
+                            <span class="small fw-bold text-success d-block mb-2"><i class="bi bi-person-check me-1"></i> PIHAK KEDUA (Yang Menerima - Klien / Mitra)</span>
+                            <div class="row g-2">
+                                <div class="col-md-6">
+                                    <label class="form-label small text-muted mb-1">Nama Penerima:</label>
+                                    <input type="text" name="pihak_kedua_nama" class="form-control form-control-sm" value="{{ @bast ? @bast.pihak_kedua_nama : (@order.pic ?: @order.nama_perusahaan) }}" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small text-muted mb-1">Jabatan:</label>
+                                    <input type="text" name="pihak_kedua_jabatan" class="form-control form-control-sm" value="{{ @bast ? @bast.pihak_kedua_jabatan : 'Perwakilan / Direktur' }}" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-0">
+                            <label class="form-label small fw-bold">Status Dokumen BAST:</label>
+                            <select name="status_bast" class="form-select form-select-sm">
+                                <option value="draft" {{ @bast && @bast.status_bast == 'draft' ? 'selected' : '' }}>Draft BAST (Menunggu Tanda Tangan)</option>
+                                <option value="proses_ttd" {{ @bast && @bast.status_bast == 'proses_ttd' ? 'selected' : '' }}>Proses Penandatanganan Para Pihak</option>
+                                <option value="selesai" {{ @bast && @bast.status_bast == 'selesai' ? 'selected' : '' }}>Selesai (Lengkap Ditandatangani)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kolom Kanan: Rincian Serah Terima & Berkas BAST -->
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white py-3 border-bottom">
+                        <h6 class="m-0 fw-bold text-dark"><i class="bi bi-box2 text-primary me-2"></i>Objek Serah Terima & Berkas Dokumen</h6>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Judul Kegiatan / Jasa Layanan <span class="text-danger">*</span></label>
+                            <input type="text" name="judul_pekerjaan" class="form-control" value="{{ @bast ? @bast.judul_pekerjaan : @order.judul_kegiatan }}" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Rincian Dokumen & Barang yang Diserahterimakan:</label>
+                            <textarea name="ringkasan_serah_terima" class="form-control" rows="4" placeholder="Contoh:&#10;1. Dokumen Laporan Akhir Hasil Pengujian No. {{ @po ? @po.nomor_laporan_hasil : '088/LHP/BBSPJIS/VIII/2026' }} (1 Berkas Asli)&#10;2. Sertifikat Hasil Analisis Laboratorium&#10;3. Sisa contoh uji / sampel penelitian">{{ @bast ? @bast.ringkasan_serah_terima : "1. Dokumen Laporan Akhir Hasil Pengujian No. " . (@po.nomor_laporan_hasil ?: '088/LHP/BBSPJIS/VIII/2026') . "\n2. Sertifikat Hasil Analisis Laboratorium\n3. Berkas kelengkapan administrasi" }}</textarea>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label small fw-bold">Unggah Berkas Dokumen BAST (PDF Bertandatangan):</label>
+                            <input type="file" name="file_bast" class="form-control" accept=".pdf,.png,.jpg,.jpeg">
+                            <small class="text-muted d-block mt-1">Format diperbolehkan: PDF, JPG, PNG. Maksimal 10 MB.</small>
+                            <check if="{{ @bast && @bast.file_dokumen_bast }}">
+                                <div class="mt-2 p-2 bg-light rounded small">
+                                    <i class="bi bi-file-earmark-pdf text-danger me-1"></i> File BAST Terunggah: 
+                                    <a href="{{ @BASE }}/{{ @bast.file_dokumen_bast }}" target="_blank" class="fw-bold text-decoration-none">
+                                        Lihat Dokumen BAST
+                                    </a>
+                                </div>
+                            </check>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{{ @BASE }}/order/{{ @order.id }}" class="btn btn-outline-secondary">Batal</a>
+                            <button type="submit" class="btn btn-success fw-bold px-4">
+                                <i class="bi bi-save me-1"></i> Simpan Dokumen BAST
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>

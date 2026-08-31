@@ -1,0 +1,861 @@
+<div class="container-fluid px-0">
+    <!-- Header & Breadcrumb -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1 small">
+                    <li class="breadcrumb-item"><a href="{{ @BASE }}/po" class="text-decoration-none text-muted">Beranda</a></li>
+                    <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Kotak Masuk Permohonan</li>
+                </ol>
+            </nav>
+            <h4 class="fw-bold text-dark m-0 d-flex align-items-center gap-2 font-display">
+                <i class="bi bi-inbox-fill text-primary"></i> Kotak Masuk Permohonan Layanan
+            </h4>
+            <p class="text-muted small m-0 mt-1">
+                Pintu masuk permohonan jasa riset & pengujian dari sistem Sekretariat BBSPJIS ke alur OPTI.
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ @BASE }}/simulasi-sekretariat" class="btn btn-outline-primary btn-sm px-3 fw-semibold shadow-sm d-flex align-items-center gap-2">
+                <i class="bi bi-journal-plus"></i> Registrasi Surat Masuk
+            </a>
+        </div>
+    </div>
+
+    <!-- Alert DB Status jika ada masalah koneksi eksternal -->
+    <check if="{{ @error_message }}">
+        <div class="alert alert-warning d-flex align-items-center border-0 shadow-sm mb-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill flex-shrink-0 me-2 fs-5 text-warning"></i>
+            <div class="small">{{ @error_message }}</div>
+        </div>
+    </check>
+
+
+    <!-- 4 KARTU METRIK KPI RINGKASAN -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">
+            <div class="metric-card">
+                <div>
+                    <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">Surat Masuk</span>
+                    <h3 class="fw-bold text-dark mb-0 mt-1">{{ @total_surat_tersedia }}</h3>
+                    <span class="small text-muted" style="font-size: 0.75rem;">Siap diproses (FIFO)</span>
+                </div>
+                <div class="metric-icon-box" style="background-color: rgba(136, 19, 55, 0.1); color: #881337;">
+                    <i class="bi bi-inbox-fill"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="metric-card">
+                <div>
+                    <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">Surat Diterima</span>
+                    <h3 class="fw-bold text-dark mb-0 mt-1">{{ @total_klaim_aktif }}</h3>
+                    <span class="small text-muted" style="font-size: 0.75rem;">Permintaan masuk saya</span>
+                </div>
+                <div class="metric-icon-box" style="background-color: #fef3c7; color: #d97706;">
+                    <i class="bi bi-envelope-check-fill"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="metric-card">
+                <div>
+                    <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">Order Berlanjut</span>
+                    <h3 class="fw-bold text-dark mb-0 mt-1">{{ @total_klaim_selesai }}</h3>
+                    <span class="small text-muted" style="font-size: 0.75rem;">Masuk alur PO & Layanan</span>
+                </div>
+                <div class="metric-icon-box" style="background-color: #ccfbf1; color: #0d9488;">
+                    <i class="bi bi-check2-circle"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="metric-card">
+                <div>
+                    <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">Tujuan Surat</span>
+                    <h3 class="fw-bold text-dark mb-0 mt-1">OPTI</h3>
+                    <span class="small text-muted" style="font-size: 0.75rem;">Unit Kerja BBSPJIS</span>
+                </div>
+                <div class="metric-icon-box" style="background-color: #f1f5f9; color: #475569;">
+                    <i class="bi bi-shield-check"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FILTER & PENCARIAN DENGAN TOMBOL SEGARKAN TERINTEGRASI -->
+    <div class="card mb-4 border-0 shadow-sm">
+        <div class="card-body p-3">
+            <form method="GET" action="{{ @BASE }}/surat-masuk" class="row g-2 align-items-center">
+                <div class="col-md-8 col-lg-9">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" class="form-control border-start-0" name="q" placeholder="Cari nomor surat, nama perusahaan/instansi, perihal, atau nama PIC..." value="{{ @search_q }}">
+                    </div>
+                </div>
+                <div class="col-md-4 col-lg-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary btn-sm flex-fill fw-semibold text-nowrap">
+                        <i class="bi bi-search me-1"></i> Cari
+                    </button>
+                    <a href="{{ @BASE }}/surat-masuk" class="btn btn-outline-secondary btn-sm px-3 d-flex align-items-center gap-1 text-nowrap" title="Segarkan Data Surat">
+                        <i class="bi bi-arrow-clockwise"></i> Segarkan
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- CUSTOM STYLING FOR MODERN SEGMENTED PILLS NAVIGATION -->
+    <style>
+        .surat-nav-container {
+            background: #f8fafc;
+            border-bottom: 1px solid var(--color-border);
+            padding: 10px 14px;
+        }
+        .surat-nav-pills {
+            display: inline-flex;
+            gap: 6px;
+            background: #e2e8f0;
+            padding: 5px;
+            border-radius: 10px;
+            border: 1px solid #cbd5e1;
+            flex-wrap: wrap;
+        }
+        .surat-nav-pills .nav-link {
+            border-radius: 7px;
+            color: #334155;
+            font-family: var(--font-display);
+            font-weight: 600;
+            font-size: 0.82rem;
+            padding: 7px 16px;
+            border: none;
+            transition: all 0.18s ease-in-out;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+            background: transparent;
+        }
+        .surat-nav-pills .nav-link:hover {
+            background: rgba(255, 255, 255, 0.7);
+            color: var(--color-primary);
+        }
+        .surat-nav-pills .nav-link.active {
+            background: var(--color-primary) !important;
+            color: #ffffff !important;
+            box-shadow: 0 3px 10px rgba(136, 19, 55, 0.28);
+        }
+        .surat-nav-pills .nav-link.active .pill-count {
+            background-color: rgba(255, 255, 255, 0.25) !important;
+            color: #ffffff !important;
+        }
+        .pill-count {
+            font-size: 0.72rem;
+            padding: 2px 7px;
+            border-radius: 12px;
+            font-weight: 700;
+            transition: all 0.18s ease;
+        }
+    </style>
+
+    <!-- TABEL UTAMA DENGAN HIGHLIGHT SEGMENTED PILLS -->
+    <div class="card border-0 shadow-sm overflow-hidden mb-4">
+        <div class="surat-nav-container">
+            <ul class="nav surat-nav-pills" id="suratTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="tab-tersedia" data-bs-toggle="tab" data-bs-target="#content-tersedia" type="button" role="tab" aria-controls="content-tersedia" aria-selected="true">
+                        <i class="bi bi-inbox-fill"></i> Surat Masuk
+                        <span class="pill-count bg-white text-dark shadow-sm">{{ count(@daftar_surat) }}</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tab-klaim" data-bs-toggle="tab" data-bs-target="#content-klaim" type="button" role="tab" aria-controls="content-klaim" aria-selected="false">
+                        <i class="bi bi-envelope-check-fill"></i> Surat Diterima
+                        <span class="pill-count bg-warning text-dark">{{ count(@daftar_klaim) }}</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tab-riwayat" data-bs-toggle="tab" data-bs-target="#content-riwayat" type="button" role="tab" aria-controls="content-riwayat" aria-selected="false">
+                        <i class="bi bi-check2-all"></i> Riwayat Order Lanjutan
+                        <span class="pill-count bg-success text-white">{{ count(@daftar_riwayat) }}</span>
+                    </button>
+                </li>
+            </ul>
+        </div>
+
+        <div class="card-body p-0">
+            <div class="tab-content" id="suratTabsContent">
+                
+                <!-- TAB 1: SURAT MASUK (FIFO) -->
+                <div class="tab-pane fade show active" id="content-tersedia" role="tabpanel" aria-labelledby="tab-tersedia">
+                    <check if="{{ count(@daftar_surat) > 0 }}">
+                        <true>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="bg-light text-secondary small text-uppercase">
+                                        <tr>
+                                            <th class="text-center py-3" style="width: 45px;">No</th>
+                                            <th style="width: 190px;">Nomor & Tgl Surat</th>
+                                            <th style="width: 250px;">Instansi Pengirim</th>
+                                            <th>Perihal Permohonan</th>
+                                            <th class="text-center" style="width: 90px;">Berkas</th>
+                                            <th class="text-center" style="width: 140px; white-space: nowrap;">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="small">
+                                        <repeat group="{{ @daftar_surat }}" key="{{ @idx }}" value="{{ @surat }}">
+                                            <tr>
+                                                <td class="text-center text-muted fw-bold">{{ @idx + 1 }}</td>
+                                                <td>
+                                                    <div class="fw-bold text-dark font-monospace mb-1">{{ @surat.nomor_surat }}</div>
+                                                    <div class="text-muted" style="font-size: 0.8rem;">
+                                                        <i class="bi bi-calendar3 text-primary me-1"></i>{{ date('d M Y', strtotime(@surat.tanggal_surat)) }}
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="fw-bold text-dark">
+                                                        {{ @surat.pt_cv ? @surat.pt_cv . ' ' : '' }}{{ @surat.pengirim }}
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="text-dark fw-semibold mb-1">{{ @surat.perihal }}</div>
+                                                    <span class="badge bg-light text-secondary border" style="font-size: 0.7rem;">
+                                                        <i class="bi bi-envelope-paper me-1 text-primary"></i> Permohonan OPTI
+                                                    </span>
+                                                </td>
+                                                <td class="text-center">
+                                                    <check if="{{ @surat.file_path }}">
+                                                        <true>
+                                                            <button type="button" 
+                                                                class="btn btn-outline-primary btn-sm px-2 py-1 shadow-sm d-inline-flex align-items-center gap-1 btn-preview-pdf"
+                                                                data-surat-id="{{ @surat.id }}"
+                                                                data-pdf-url="{{ @BASE }}/surat-masuk/{{ @surat.id }}/pdf"
+                                                                data-nomor="{{ @surat.nomor_surat }}"
+                                                                data-pengirim="{{ (@surat.pt_cv ? @surat.pt_cv . ' ' : '') . @surat.pengirim }}"
+                                                                data-alamat="{{ @surat.alamat_pengirim ?: 'Kawasan Industri Terpadu, Indonesia' }}"
+                                                                data-telp="{{ @surat.no_telp_pengirim ?: '-' }}"
+                                                                data-email="{{ @surat.email_pengirim ?: '-' }}"
+                                                                data-pic="{{ @surat.pic_pengirim ?: 'Penanggung Jawab Teknis' }}"
+                                                                data-perihal="{{ @surat.perihal }}"
+                                                                data-tanggal="{{ date('d F Y', strtotime(@surat.tanggal_surat)) }}"
+                                                                title="Pratinjau Lembar Surat">
+                                                                <i class="bi bi-file-earmark-text text-danger"></i> <span>Lihat</span>
+                                                            </button>
+                                                        </true>
+                                                        <false>
+                                                            <span class="text-muted small fst-italic">-</span>
+                                                        </false>
+                                                    </check>
+                                                </td>
+                                                <td class="text-center" style="white-space: nowrap;">
+                                                    <!-- Tombol Buka Pop-up Konfirmasi Interaktif -->
+                                                    <button type="button" class="btn btn-primary btn-sm px-3 py-1 fw-semibold text-nowrap shadow-sm" data-bs-toggle="modal" data-bs-target="#modalKlaim_{{ @surat.id }}">
+                                                        <i class="bi bi-box-arrow-in-down me-1"></i> Ambil Surat
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </repeat>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </true>
+                        <false>
+                            <div class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox text-secondary fs-1 mb-2 d-block opacity-50"></i>
+                                <h6 class="fw-bold text-dark">Tidak Ada Surat Antrean Masuk</h6>
+                                <p class="small text-muted mb-0">Seluruh surat permohonan layanan OPTI telah berhasil diklaim atau diproses.</p>
+                            </div>
+                        </false>
+                    </check>
+                </div>
+
+                <!-- TAB 2: SURAT DITERIMA (PERMINTAAN MASUK) -->
+                <div class="tab-pane fade" id="content-klaim" role="tabpanel" aria-labelledby="tab-klaim">
+                    <check if="{{ count(@daftar_klaim) > 0 }}">
+                        <true>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="bg-light text-secondary small text-uppercase">
+                                        <tr>
+                                            <th class="text-center py-3" style="width: 45px;">No</th>
+                                            <th style="width: 170px;">Nomor Order</th>
+                                            <th style="width: 250px;">Instansi Pelanggan</th>
+                                            <th>Judul Kegiatan</th>
+                                            <th style="width: 160px;">Waktu Terima</th>
+                                            <th class="text-center" style="width: 180px; white-space: nowrap;">Aksi Lanjutan</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="small">
+                                        <repeat group="{{ @daftar_klaim }}" key="{{ @idx }}" value="{{ @klaim }}">
+                                            <tr>
+                                                <td class="text-center text-muted fw-bold">{{ @idx + 1 }}</td>
+                                                <td>
+                                                    <div class="fw-bold text-primary font-monospace">{{ @klaim.nomor_order }}</div>
+                                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle small mt-1" style="font-size: 0.7rem;">
+                                                        <i class="bi bi-hourglass-split me-1"></i>Permintaan Masuk
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <div class="fw-bold text-dark">
+                                                        {{ @klaim.pt_cv ? @klaim.pt_cv . ' ' : '' }}{{ @klaim.nmcustomer }}
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="text-dark fw-semibold mb-1">{{ @klaim.judul_kegiatan }}</div>
+                                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle" style="font-size: 0.7rem;">
+                                                        <i class="bi bi-hourglass-split me-1"></i> Menunggu Disposisi
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <div class="text-dark fw-semibold">{{ date('d M Y H:i', strtotime(@klaim.tanggal_klaim)) }}</div>
+                                                    <small class="text-muted">Petugas: {{ @klaim.nama_pengklaim ?: 'Saya' }}</small>
+                                                </td>
+                                                <td class="text-center" style="white-space: nowrap;">
+                                                    <div class="d-inline-flex align-items-center gap-1">
+                                                        <a href="{{ @BASE }}/order/{{ @klaim.id }}" class="btn btn-primary btn-sm px-3 py-1 fw-semibold text-nowrap shadow-sm d-inline-flex align-items-center gap-1">
+                                                            <i class="bi bi-arrow-right-circle"></i> Proses Order
+                                                        </a>
+                                                        <!-- Tombol Buka Pop-up Konfirmasi Batal -->
+                                                        <button type="button" class="btn btn-outline-danger btn-sm px-2 py-1" data-bs-toggle="modal" data-bs-target="#modalBatal_{{ @klaim.id }}" title="Batalkan Penerimaan Surat">
+                                                            <i class="bi bi-x-circle"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </repeat>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </true>
+                        <false>
+                            <div class="text-center py-5 text-muted">
+                                <i class="bi bi-check2-circle text-success fs-1 mb-2 d-block opacity-50"></i>
+                                <h6 class="fw-bold text-dark">Tidak Ada Surat Diterima yang Tertunda</h6>
+                                <p class="small text-muted mb-0">Seluruh surat yang Anda terima telah dilanjutkan ke tahap Tinjauan ISO dan Penawaran.</p>
+                            </div>
+                        </false>
+                    </check>
+                </div>
+
+                <!-- TAB 3: RIWAYAT ORDER DARI SURAT -->
+                <div class="tab-pane fade" id="content-riwayat" role="tabpanel" aria-labelledby="tab-riwayat">
+                    <check if="{{ count(@daftar_riwayat) > 0 }}">
+                        <true>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="bg-light text-secondary small text-uppercase">
+                                        <tr>
+                                            <th class="text-center py-3" style="width: 45px;">No</th>
+                                            <th style="width: 170px;">Nomor Order</th>
+                                            <th style="width: 260px;">Instansi Pelanggan</th>
+                                            <th>Judul Kegiatan</th>
+                                            <th class="text-center" style="width: 140px;">Status Progres</th>
+                                            <th class="text-center" style="width: 110px; white-space: nowrap;">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="small">
+                                        <repeat group="{{ @daftar_riwayat }}" key="{{ @idx }}" value="{{ @riw }}">
+                                            <tr>
+                                                <td class="text-center text-muted fw-bold">{{ @idx + 1 }}</td>
+                                                <td>
+                                                    <a href="{{ @BASE }}/order/{{ @riw.id }}" class="fw-bold text-primary font-monospace text-decoration-none">
+                                                        {{ @riw.nomor_order }}
+                                                    </a>
+                                                    <check if="{{ @riw.nomor_po }}">
+                                                        <div class="text-muted mt-1" style="font-size: 0.75rem;"><i class="bi bi-speedometer2 me-1"></i>{{ @riw.nomor_po }}</div>
+                                                    </check>
+                                                </td>
+                                                <td>
+                                                    <div class="fw-bold text-dark">{{ @riw.pt_cv ? @riw.pt_cv . ' ' : '' }}{{ @riw.nmcustomer }}</div>
+                                                    <small class="text-muted d-block"><i class="bi bi-person me-1"></i>PIC: {{ @riw.pic }}</small>
+                                                </td>
+                                                <td>
+                                                    <div class="text-dark fw-semibold mb-1">{{ @riw.judul_kegiatan }}</div>
+                                                    <span class="badge {{ @riw.jenis_layanan_opti == 'selulosa' ? 'bg-primary' : 'bg-success' }} text-uppercase" style="font-size: 0.7rem;">
+                                                        OPTI {{ @riw.jenis_layanan_opti }}
+                                                    </span>
+                                                </td>
+                                                <td class="text-center">
+                                                    <check if="{{ @riw.status == 'selesai' }}">
+                                                        <span class="badge bg-success"><i class="bi bi-patch-check-fill me-1"></i>Selesai & Arsip</span>
+                                                    </check>
+                                                    <check if="{{ @riw.status == 'disetujui' }}">
+                                                        <span class="badge bg-primary"><i class="bi bi-gear-fill me-1"></i>PO Berjalan</span>
+                                                    </check>
+                                                    <check if="{{ @riw.status == 'baru' }}">
+                                                        <span class="badge bg-info text-dark"><i class="bi bi-file-earmark-check me-1"></i>Lolos ISO</span>
+                                                    </check>
+                                                </td>
+                                                <td class="text-center" style="white-space: nowrap;">
+                                                    <a href="{{ @BASE }}/order/{{ @riw.id }}" class="btn btn-outline-primary btn-sm px-3 py-1 fw-semibold text-nowrap">
+                                                        <i class="bi bi-eye me-1"></i> Detail
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        </repeat>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </true>
+                        <false>
+                            <div class="text-center py-5 text-muted">
+                                <i class="bi bi-archive text-secondary fs-1 mb-2 d-block opacity-50"></i>
+                                <h6 class="fw-bold text-dark">Belum Ada Riwayat Order Lanjutan</h6>
+                                <p class="small text-muted mb-0">Order yang telah lolos verifikasi kelayakan ISO akan tercatat otomatis di sini.</p>
+                            </div>
+                        </false>
+                    </check>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ======================================================== -->
+<!-- MODAL BERSIH & BERSTRUKTUR: KONFIRMASI TERIMA SURAT MASUK -->
+<!-- ======================================================== -->
+<repeat group="{{ @daftar_surat }}" value="{{ @surat }}">
+    <div class="modal fade" id="modalKlaim_{{ @surat.id }}" tabindex="-1" aria-labelledby="modalKlaimLabel_{{ @surat.id }}" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content bg-white border rounded-3 shadow">
+                
+                <!-- Header Modal -->
+                <div class="modal-header border-bottom py-3 px-4 bg-white">
+                    <div>
+                        <h6 class="modal-title fw-bold text-dark fs-5 mb-0" id="modalKlaimLabel_{{ @surat.id }}">
+                            Konfirmasi Penerimaan Surat Masuk
+                        </h6>
+                        <small class="text-muted">Layanan Optimalisasi Teknologi Industri (OPTI)</small>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                </div>
+
+                <form action="{{ @BASE }}/surat-masuk/klaim" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
+                    <input type="hidden" name="surat_id" value="{{ @surat.id }}">
+
+                    <div class="modal-body p-4">
+                        
+                        <!-- Teks Penjelasan Utama -->
+                        <p class="text-dark fs-6 mb-3">
+                            Apakah Anda ingin menerima dan memproses surat permohonan dari <strong>{{ @surat.pt_cv ? @surat.pt_cv . ' ' : '' }}{{ @surat.pengirim }}</strong>?
+                        </p>
+
+                        <!-- Kotak Rincian Data Surat yang Jelas & Rapi -->
+                        <div class="border rounded-2 p-3 bg-light mb-3">
+                            <div class="row g-3">
+                                <div class="col-sm-6">
+                                    <span class="text-muted small d-block">Nomor Surat:</span>
+                                    <span class="fw-bold text-dark font-monospace">{{ @surat.nomor_surat }}</span>
+                                </div>
+                                <div class="col-sm-6">
+                                    <span class="text-muted small d-block">Tanggal Surat:</span>
+                                    <span class="fw-semibold text-dark">{{ date('d F Y', strtotime(@surat.tanggal_surat)) }}</span>
+                                </div>
+                                <div class="col-sm-6">
+                                    <span class="text-muted small d-block">Penanggung Jawab (PIC):</span>
+                                    <span class="fw-semibold text-dark">{{ @surat.pic_pengirim ?: '-' }}</span>
+                                </div>
+                                <div class="col-sm-6">
+                                    <span class="text-muted small d-block">Kontak Telepon / WA:</span>
+                                    <span class="fw-semibold text-dark">{{ @surat.no_telp_pengirim ?: '-' }}</span>
+                                </div>
+                                <div class="col-12 border-top pt-2 mt-2">
+                                    <span class="text-muted small d-block">Perihal / Topik Kegiatan:</span>
+                                    <span class="fw-semibold text-dark">{{ @surat.perihal }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Catatan Ringkas Sistem -->
+                        <div class="small text-muted d-flex align-items-center gap-2">
+                            <i class="bi bi-info-circle text-primary"></i>
+                            <span>Surat ini akan dipindahkan ke tab <strong>Surat Diterima</strong> dan otomatis diterbitkan <strong>Order Layanan Baru</strong>.</span>
+                        </div>
+
+                    </div>
+
+                    <!-- Footer Modal -->
+                    <div class="modal-footer border-top py-3 px-4 bg-light d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-2 fw-semibold" data-bs-dismiss="modal">
+                            Batal
+                        </button>
+                        <button type="submit" class="btn btn-primary btn-sm px-4 py-2 fw-bold shadow-sm">
+                            <i class="bi bi-check2-circle me-1"></i> Terima & Buat Order
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</repeat>
+
+<!-- ======================================================== -->
+<!-- MODAL BERSIH & BERSTRUKTUR: BATALKAN PENERIMAAN SURAT -->
+<!-- ======================================================== -->
+<repeat group="{{ @daftar_klaim }}" value="{{ @klaim }}">
+    <div class="modal fade" id="modalBatal_{{ @klaim.id }}" tabindex="-1" aria-labelledby="modalBatalLabel_{{ @klaim.id }}" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-white border rounded-3 shadow">
+                
+                <!-- Header Modal -->
+                <div class="modal-header border-bottom py-3 px-4 bg-white">
+                    <h6 class="modal-title fw-bold text-dark fs-5 m-0" id="modalBatalLabel_{{ @klaim.id }}">
+                        Batalkan Penerimaan Surat?
+                    </h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                </div>
+
+                <form action="{{ @BASE }}/surat-masuk/batal-klaim" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
+                    <input type="hidden" name="order_id" value="{{ @klaim.id }}">
+
+                    <div class="modal-body p-4">
+                        <p class="text-dark small mb-3">
+                            Apakah Anda yakin ingin membatalkan penerimaan surat untuk order berikut?
+                        </p>
+
+                        <!-- Box Ringkasan Order -->
+                        <div class="border rounded-2 p-3 bg-light mb-3">
+                            <div class="mb-2">
+                                <span class="text-muted small d-block">Nomor Order:</span>
+                                <span class="fw-bold text-primary font-monospace fs-6">{{ @klaim.nomor_order }}</span>
+                            </div>
+                            <div class="mb-2">
+                                <span class="text-muted small d-block">Instansi Pelanggan:</span>
+                                <span class="fw-semibold text-dark">{{ @klaim.pt_cv ? @klaim.pt_cv . ' ' : '' }}{{ @klaim.nmcustomer }}</span>
+                            </div>
+                            <div>
+                                <span class="text-muted small d-block">Judul Kegiatan:</span>
+                                <span class="text-dark small">{{ @klaim.judul_kegiatan }}</span>
+                            </div>
+                        </div>
+
+                        <div class="small text-muted d-flex align-items-center gap-2">
+                            <i class="bi bi-arrow-counterclockwise text-danger"></i>
+                            <span>Surat ini akan dikembalikan ke tab <strong>Surat Masuk (Antrean FIFO)</strong>.</span>
+                        </div>
+                    </div>
+
+                    <!-- Footer Modal -->
+                    <div class="modal-footer border-top py-3 px-4 bg-light d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-2 fw-semibold" data-bs-dismiss="modal">
+                            Tutup
+                        </button>
+                        <button type="submit" class="btn btn-danger btn-sm px-4 py-2 fw-bold shadow-sm">
+                            <i class="bi bi-x-circle me-1"></i> Ya, Batalkan
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</repeat>
+
+<!-- ======================================================== -->
+<!-- MODAL PRATINJAU DOKUMEN SURAT RESMI (ZERO DOWNLOAD BUG)   -->
+<!-- ======================================================== -->
+<!-- PDF.js CDN for In-App Canvas Rendering -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+<div class="modal fade" id="modalPdfViewerSingle" tabindex="-1" aria-labelledby="modalPdfViewerSingleLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content bg-white border-0 shadow-lg rounded-3">
+            
+            <div class="modal-header border-bottom py-2 px-4 bg-white d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-file-earmark-text-fill text-danger fs-4"></i>
+                    <div>
+                        <h6 class="modal-title fw-bold text-dark m-0" id="modalPdfTitle">
+                            Pratinjau Dokumen Surat Masuk
+                        </h6>
+                        <small class="text-muted" id="modalPdfSubtitle">Memuat berkas...</small>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <ul class="nav nav-pills nav-pills-sm me-2" id="pills-tab-preview" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active btn-sm py-1 px-3" id="tab-lembar-surat" data-bs-toggle="pill" data-bs-target="#view-lembar-surat" type="button" role="tab">
+                                <i class="bi bi-file-text me-1"></i> Lembar Dokumen
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link btn-sm py-1 px-3" id="tab-canvas-pdf" data-bs-toggle="pill" data-bs-target="#view-canvas-pdf" type="button" role="tab">
+                                <i class="bi bi-file-earmark-pdf me-1"></i> PDF Asli
+                            </button>
+                        </li>
+                    </ul>
+                    <a href="#" id="modalPdfDownloadLink" target="_blank" class="btn btn-outline-secondary btn-sm px-2 py-1 fw-semibold" title="Buka / Unduh Berkas PDF Asli">
+                        <i class="bi bi-download me-1"></i> Unduh PDF
+                    </a>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                </div>
+            </div>
+
+            <div class="modal-body p-4 bg-light" style="min-height: 75vh;">
+                <div class="tab-content" id="pills-preview-content">
+                    
+                    <!-- TAB 1: LEMBAR DOKUMEN SURAT RESMI (ZERO IDM INTERCEPTION) -->
+                    <div class="tab-pane fade show active" id="view-lembar-surat" role="tabpanel">
+                        <div class="official-sheet mx-auto bg-white p-4 p-md-5 rounded shadow-sm border" style="max-width: 820px; font-family: 'Times New Roman', Times, serif; color: #111; line-height: 1.55;">
+                            
+                            <!-- KOP SURAT PENGIRIM -->
+                            <div class="text-center pb-2">
+                                <h4 class="fw-bold mb-0 text-uppercase letter-spacing-1" id="docKopPengirim" style="font-size: 1.3rem;">NAMA PERUSAHAAN</h4>
+                                <div class="fw-bold small text-muted text-uppercase my-1" style="font-size: 0.75rem; letter-spacing: 1px;">PRODUSEN & JASA INDUSTRI TEKNOLOGI</div>
+                                <div class="small text-secondary" style="font-size: 0.825rem;" id="docKopAlamat">Kawasan Industri Terpadu, Indonesia | Telp: -</div>
+                            </div>
+                            
+                            <!-- GARIS KOP GANDA -->
+                            <div style="border-bottom: 2.5px solid #000; margin-bottom: 2px;"></div>
+                            <div style="border-bottom: 1px solid #000; margin-bottom: 24px;"></div>
+
+                            <!-- METADATA SURAT -->
+                            <div class="d-flex justify-content-between align-items-start mb-4" style="font-size: 0.95rem;">
+                                <div>
+                                    <table class="table table-borderless table-sm p-0 m-0" style="width: auto;">
+                                        <tr>
+                                            <td style="width: 80px; padding: 2px 0;">Nomor</td>
+                                            <td style="width: 15px; padding: 2px 0;">:</td>
+                                            <td style="padding: 2px 0;"><strong id="docNomorSurat">-</strong></td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 2px 0;">Lampiran</td>
+                                            <td style="padding: 2px 0;">:</td>
+                                            <td style="padding: 2px 0;">1 (satu) berkas spesifikasi teknis</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 2px 0;">Hal</td>
+                                            <td style="padding: 2px 0;">:</td>
+                                            <td style="padding: 2px 0;"><strong id="docPerihal">-</strong></td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <div class="text-end fw-normal" id="docTanggalKota" style="white-space: nowrap;">
+                                    Bandung, -
+                                </div>
+                            </div>
+
+                            <!-- TUJUAN -->
+                            <div class="mb-4" style="font-size: 0.95rem;">
+                                <div>Kepada Yth.</div>
+                                <strong>Kepala Balai Besar Standardisasi dan Pelayanan Jasa Industri Selulosa (BBSPJIS)</strong><br>
+                                Kementerian Perindustrian Republik Indonesia<br>
+                                Jl. Raya Dayeuhkolot No. 132, Bandung, Jawa Barat 40258
+                            </div>
+
+                            <!-- ISI SURAT -->
+                            <div class="mb-4" style="font-size: 0.95rem; text-align: justify;">
+                                <p>Dengan hormat,</p>
+                                <p>Sehubungan dengan rencana pengujian mutu dan optimalisasi proses industri, bersama ini kami mengajukan permohonan kerjasama pelaksanaan Layanan Optimalisasi Teknologi Industri (OPTI) dengan rincian sebagai berikut:</p>
+                                
+                                <strong class="d-block mb-1">1. Data Pemohon / Instansi:</strong>
+                                <table class="table table-borderless table-sm ms-2 mb-3" style="font-size: 0.925rem; width: 98%;">
+                                    <tr>
+                                        <td style="width: 150px; padding: 3px 0;">a. Nama Perusahaan</td>
+                                        <td style="width: 15px; padding: 3px 0;">:</td>
+                                        <td style="padding: 3px 0;"><strong id="docNamaPerusahaan">-</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 3px 0;">b. Alamat</td>
+                                        <td style="padding: 3px 0;">:</td>
+                                        <td style="padding: 3px 0;" id="docAlamatDetail">-</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 3px 0;">c. Narahubung / PIC</td>
+                                        <td style="padding: 3px 0;">:</td>
+                                        <td style="padding: 3px 0;" id="docPic">-</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 3px 0;">d. Telepon & Email</td>
+                                        <td style="padding: 3px 0;">:</td>
+                                        <td style="padding: 3px 0;" id="docKontak">-</td>
+                                    </tr>
+                                </table>
+
+                                <strong class="d-block mb-1">2. Rincian Kebutuhan Layanan OPTI:</strong>
+                                <table class="table table-borderless table-sm ms-2 mb-3" style="font-size: 0.925rem; width: 98%;">
+                                    <tr>
+                                        <td style="width: 150px; padding: 3px 0;">a. Judul Kegiatan</td>
+                                        <td style="width: 15px; padding: 3px 0;">:</td>
+                                        <td style="padding: 3px 0;"><strong id="docJudulKegiatan">-</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 3px 0;">b. Layanan Dimohon</td>
+                                        <td style="padding: 3px 0;">:</td>
+                                        <td style="padding: 3px 0;">Layanan Optimalisasi Teknologi Industri (OPTI)</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 3px 0;">c. Ruang Lingkup</td>
+                                        <td style="padding: 3px 0;">:</td>
+                                        <td style="padding: 3px 0;">Kajian Teknis, Karakterisasi Laboratorium & Penerbitan Sertifikat / Laporan Hasil Pengujian Resmi Balai</td>
+                                    </tr>
+                                </table>
+
+                                <p>Demikian surat permohonan ini kami sampaikan. Kami berharap dapat segera menerima Tinjauan Kelayakan Permintaan serta Surat Penawaran Biaya resmi dari BBSPJIS. Atas perhatian dan kerjasama Bapak/Ibu, kami ucapkan terima kasih.</p>
+                            </div>
+
+                            <!-- TANDA TANGAN & STEMPEL -->
+                            <div class="row mt-5">
+                                <div class="col-6"></div>
+                                <div class="col-6 text-center" style="font-size: 0.95rem;">
+                                    <div>Hormat kami,</div>
+                                    <strong class="d-block mb-2" id="docTtdInstansi">-</strong>
+                                    <div class="border d-inline-block px-3 py-1 my-2 text-muted small" style="border-style: dashed !important; font-size: 0.75rem;">
+                                        [ TTD & STEMPEL RESMI ]
+                                    </div>
+                                    <div class="mt-3">
+                                        <u class="fw-bold d-block" id="docTtdPic">-</u>
+                                        <span class="small text-muted">Direktur</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- TAB 2: PDF CANVAS VIEWER (PDF.JS - ZERO IDM INTERCEPTION) -->
+                    <div class="tab-pane fade" id="view-canvas-pdf" role="tabpanel">
+                        <div class="text-center py-3">
+                            <div id="canvasLoadingSpinner" class="my-5">
+                                <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
+                                <p class="small text-muted mt-2">Merender halaman PDF ke Canvas...</p>
+                            </div>
+                            <div class="d-flex justify-content-center">
+                                <canvas id="pdfCanvasViewer" class="shadow-sm border rounded bg-white" style="max-width: 100%; display: none;"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="modal-footer border-top py-2 px-4 bg-white d-flex justify-content-between align-items-center">
+                <span class="small text-muted font-monospace">
+                    <i class="bi bi-shield-check text-success me-1"></i> Berkas Terverifikasi Sistem Informasi Layanan BBSPJIS
+                </span>
+                <button type="button" class="btn btn-secondary btn-sm px-4 fw-semibold" data-bs-dismiss="modal">
+                    Tutup Pratinjau
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+var currentPdfUrl = '';
+
+if (window.pdfjsLib) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+
+function renderPdfToCanvas(url) {
+    var canvas = document.getElementById('pdfCanvasViewer');
+    var spinner = document.getElementById('canvasLoadingSpinner');
+    if (!canvas || !url || !window.pdfjsLib) return;
+
+    if (spinner) spinner.style.display = 'block';
+    canvas.style.display = 'none';
+
+    fetch(url)
+        .then(function(res) {
+            if (!res.ok) throw new Error('Gagal memuat file PDF');
+            return res.arrayBuffer();
+        })
+        .then(function(arrayBuffer) {
+            return pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        })
+        .then(function(pdf) {
+            return pdf.getPage(1);
+        })
+        .then(function(page) {
+            var scale = 1.35;
+            var viewport = page.getViewport({ scale: scale });
+            var context = canvas.getContext('2d');
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+
+            var renderContext = {
+                canvasContext: context,
+                viewport: viewport
+            };
+            return page.render(renderContext).promise;
+        })
+        .then(function() {
+            if (spinner) spinner.style.display = 'none';
+            canvas.style.display = 'block';
+        })
+        .catch(function(err) {
+            console.error('Error rendering PDF:', err);
+            if (spinner) {
+                spinner.innerHTML = '<div class="text-danger small"><i class="bi bi-exclamation-circle me-1"></i>Pratinjau Canvas PDF gagal dimuat. Silakan gunakan tab Lembar Dokumen.</div>';
+            }
+        });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    var modalEl = document.getElementById('modalPdfViewerSingle');
+    var bsModal = modalEl ? new bootstrap.Modal(modalEl) : null;
+
+    document.addEventListener('click', function(e) {
+        var btn = e.target.closest('.btn-preview-pdf');
+        if (btn) {
+            e.preventDefault();
+            var suratId = btn.getAttribute('data-surat-id') || '';
+            var pdfUrl = btn.getAttribute('data-pdf-url') || '';
+            var nomor = btn.getAttribute('data-nomor') || '-';
+            var pengirim = btn.getAttribute('data-pengirim') || '-';
+            var alamat = btn.getAttribute('data-alamat') || 'Kawasan Industri Terpadu, Indonesia';
+            var telp = btn.getAttribute('data-telp') || '-';
+            var email = btn.getAttribute('data-email') || '-';
+            var pic = btn.getAttribute('data-pic') || 'Penanggung Jawab Teknis';
+            var perihal = btn.getAttribute('data-perihal') || '-';
+            var tanggal = btn.getAttribute('data-tanggal') || '-';
+
+            currentPdfUrl = pdfUrl;
+
+            // Update Modal Header
+            document.getElementById('modalPdfTitle').textContent = 'Berkas Surat: ' + nomor;
+            document.getElementById('modalPdfSubtitle').textContent = pengirim + ' • Tanggal: ' + tanggal;
+            document.getElementById('modalPdfDownloadLink').href = pdfUrl;
+
+            // Populate Official Sheet Elements
+            document.getElementById('docKopPengirim').textContent = pengirim;
+            document.getElementById('docKopAlamat').textContent = alamat + ' | Telp: ' + telp;
+            document.getElementById('docNomorSurat').textContent = nomor;
+            document.getElementById('docPerihal').textContent = perihal;
+            document.getElementById('docTanggalKota').textContent = 'Bandung, ' + tanggal;
+            document.getElementById('docNamaPerusahaan').textContent = pengirim;
+            document.getElementById('docAlamatDetail').textContent = alamat;
+            document.getElementById('docPic').textContent = pic;
+            document.getElementById('docKontak').textContent = telp + ' / ' + email;
+            document.getElementById('docJudulKegiatan').textContent = perihal;
+            document.getElementById('docTtdInstansi').textContent = pengirim;
+            document.getElementById('docTtdPic').textContent = pic;
+
+            // Reset tab to Lembar Surat by default
+            var tabLembar = document.getElementById('tab-lembar-surat');
+            if (tabLembar && window.bootstrap) {
+                var tabTrigger = new bootstrap.Tab(tabLembar);
+                tabTrigger.show();
+            }
+
+            if (bsModal) bsModal.show();
+        }
+    });
+
+    // When clicking Canvas tab, render PDF.js
+    var tabCanvas = document.getElementById('tab-canvas-pdf');
+    if (tabCanvas) {
+        tabCanvas.addEventListener('shown.bs.tab', function() {
+            if (currentPdfUrl) {
+                renderPdfToCanvas(currentPdfUrl);
+            }
+        });
+    }
+});
+</script>

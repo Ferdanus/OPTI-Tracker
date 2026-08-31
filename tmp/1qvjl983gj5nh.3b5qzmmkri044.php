@@ -1,0 +1,168 @@
+<div class="container-fluid px-0">
+    <!-- Header -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1 small">
+                    <li class="breadcrumb-item"><a href="<?= ($BASE) ?>/order" class="text-decoration-none">Order Layanan</a></li>
+                    <li class="breadcrumb-item"><a href="<?= ($BASE) ?>/order/<?= ($order['id']) ?>" class="text-decoration-none">#<?= ($order['nomor_order']) ?></a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Terbitkan Invoice Tagihan</li>
+                </ol>
+            </nav>
+            <h4 class="fw-bold text-dark m-0 d-flex align-items-center gap-2">
+                <i class="bi bi-receipt-cutoff text-primary"></i>
+                Penerbitan Invoice Tagihan Resmi (Bagian Keuangan)
+            </h4>
+            <p class="text-muted small m-0 mt-1">Terbitkan tagihan resmi kepada pelanggan untuk pembayaran 100% atau bertahap (Termin/DP).</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="<?= ($BASE) ?>/order/<?= ($order['id']) ?>" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1">
+                <i class="bi bi-arrow-left"></i> Kembali ke Detail Order
+            </a>
+        </div>
+    </div>
+
+    <!-- Alert / Flash Message -->
+    <?php if ($SESSION['flash_error']): ?>
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm border-0 mb-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> <?= ($SESSION['flash_error'])."
+" ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    <?php endif; ?>
+
+    <div class="row g-4">
+        <!-- Kolom Kiri: Ringkasan Nilai Kontrak & Tagihan -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2">
+                        <i class="bi bi-wallet2 text-primary"></i> Status Finansial Order
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <span class="text-muted small d-block">Pelanggan / Klien:</span>
+                        <strong class="text-dark"><?= ($order['nama_perusahaan']) ?></strong>
+                        <small class="text-muted d-block"><?= ($order['pic'] ?: '-') ?></small>
+                    </div>
+
+                    <div class="p-3 bg-light rounded border mb-3 small">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Total Nilai Order/PO:</span>
+                            <strong class="text-dark">Rp <?= (number_format($rekap['total_biaya'], 0, ',', '.')) ?></strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Total Sudah Ditagih:</span>
+                            <span class="text-primary fw-semibold">Rp <?= (number_format($rekap['total_tertagih'], 0, ',', '.')) ?></span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Total Terbayar:</span>
+                            <span class="text-success fw-semibold">Rp <?= (number_format($rekap['total_terbayar'], 0, ',', '.')) ?></span>
+                        </div>
+                        <hr class="my-2">
+                        <div class="d-flex justify-content-between">
+                            <span class="fw-bold text-dark">Sisa Piutang Belum Bayar:</span>
+                            <strong class="text-danger">Rp <?= (number_format($rekap['sisa_piutang'], 0, ',', '.')) ?></strong>
+                        </div>
+                    </div>
+
+                    <!-- Riwayat Invoice Sebelumnya jika ada -->
+                    <?php if (!empty($invoices)): ?>
+                        <h6 class="fw-bold small text-secondary mb-2">Invoice yang Telah Terbit:</h6>
+                        <div class="list-group list-group-flush border rounded small mb-3">
+                            <?php foreach (($invoices?:[]) as $inv): ?>
+                                <div class="list-group-item p-2 d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="fw-bold font-monospace"><?= ($inv['nomor_invoice']) ?></div>
+                                        <div class="text-muted" style="font-size:0.75rem;"><?= ($inv['keterangan_termin']) ?> &bull; <?= (date('d/m/Y', strtotime($inv['tanggal_invoice']))) ?></div>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="fw-bold text-dark">Rp <?= (number_format($inv['nominal_tagihan'], 0, ',', '.')) ?></div>
+                                        <span class="badge <?= ($inv['status_pembayaran'] == 'lunas' ? 'bg-success' : ($inv['status_pembayaran'] == 'sebagian' ? 'bg-warning text-dark' : 'bg-secondary')) ?>">
+                                            <?= ($inv['status_pembayaran'])."
+" ?>
+                                        </span>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+
+        <!-- Kolom Kanan: Formulir Penerbitan Invoice -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2">
+                        <i class="bi bi-file-earmark-plus text-primary"></i> Formulir Surat Tagihan (Invoice) Baru
+                    </h6>
+                    <span class="badge bg-primary-subtle text-primary border">Bendahara / Keuangan</span>
+                </div>
+                <div class="card-body p-4">
+                    <form action="<?= ($BASE) ?>/order/<?= ($order['id']) ?>/invoice/simpan" method="POST">
+
+                        <!-- Baris 1: Nomor Invoice & Tanggal -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-7">
+                                <label class="form-label small fw-bold text-dark">Nomor Invoice Tagihan Resmi:</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-light"><i class="bi bi-hash"></i></span>
+                                    <input type="text" name="nomor_invoice" class="form-control form-control-sm font-monospace fw-bold" value="<?= ($nomor_invoice_otomatis) ?>" required>
+                                </div>
+                                <small class="text-muted">Format resmi: {urut}/INV/BBSPJIS/{bulan_romawi}/{tahun}.</small>
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label small fw-bold text-dark">Tanggal Invoice:</label>
+                                <input type="date" name="tanggal_invoice" class="form-control form-control-sm" value="<?= (date('Y-m-d')) ?>" required>
+                            </div>
+                        </div>
+
+                        <!-- Baris 2: Jatuh Tempo & Nominal Tagihan -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-5">
+                                <label class="form-label small fw-bold text-dark">Batas Waktu Pembayaran (Jatuh Tempo):</label>
+                                <input type="date" name="jatuh_tempo" class="form-control form-control-sm" value="<?= (date('Y-m-d', strtotime('+14 days'))) ?>" required>
+                            </div>
+                            <div class="col-md-7">
+                                <label class="form-label small fw-bold text-dark">
+                                    <i class="bi bi-cash-stack text-success me-1"></i> Nominal Tagihan Invoice (Rp): <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-light fw-bold">Rp</span>
+                                    <input type="number" name="nominal_tagihan" class="form-control form-control-sm text-end fw-bold" value="<?= ($rekap['sisa_piutang'] > 0 ? $rekap['sisa_piutang'] : $rekap['total_biaya']) ?>" required min="1" step="1000">
+                                </div>
+                                <div class="d-flex gap-2 mt-1">
+                                    <button type="button" class="btn btn-outline-secondary btn-xs py-0 px-1" style="font-size:0.75rem;" onclick="document.querySelector('input[name=nominal_tagihan]').value = '<?= ($rekap['total_biaya']) ?>'; document.querySelector('input[name=keterangan_termin]').value = 'Pembayaran 100% (Pelunasan Penuh)';">
+                                        Set 100% (Lunas)
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-xs py-0 px-1" style="font-size:0.75rem;" onclick="document.querySelector('input[name=nominal_tagihan]').value = '<?= (round($rekap['total_biaya'] * 0.5)) ?>'; document.querySelector('input[name=keterangan_termin]').value = 'Pembayaran Termin 1 (Uang Muka / DP 50%)';">
+                                        Set DP 50%
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Baris 3: Keterangan Termin -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-12">
+                                <label class="form-label small fw-bold text-dark">Keterangan Tagihan / Termin:</label>
+                                <input type="text" name="keterangan_termin" class="form-control form-control-sm" value="Tagihan Layanan Jasa OPTI <?= ($order['nomor_order']) ?>" placeholder="Contoh: Pembayaran Termin 1 (DP 50%) atau Pelunasan 100%" required>
+                            </div>
+                        </div>
+
+                        <!-- Tombol Aksi -->
+                        <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                            <a href="<?= ($BASE) ?>/order/<?= ($order['id']) ?>" class="btn btn-outline-secondary">Batal</a>
+                            <button type="submit" class="btn btn-primary d-flex align-items-center gap-2">
+                                <i class="bi bi-receipt"></i> Terbitkan Invoice Tagihan
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

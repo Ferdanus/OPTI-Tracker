@@ -10,7 +10,7 @@
     </div>
 </div>
 
-<form action="{{ @kontrak ? @BASE . '/kontrak/' . @kontrak.id . '/update' : @BASE . '/kontrak/simpan' }}" method="POST">
+<form action="{{ @po ? @BASE . '/po/' . @po.id . '/kontrak/simpan' : (@kontrak ? @BASE . '/kontrak/' . @kontrak.id . '/update' : @BASE . '/kontrak/simpan') }}" method="POST">
     <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
 
     <div class="row g-4">
@@ -21,22 +21,32 @@
                     <h6 class="m-0 fw-bold text-dark"><i class="bi bi-file-earmark-text text-primary me-2"></i>Pokok Perjanjian & Nomor Legalitas</h6>
                 </div>
                 <div class="card-body p-4">
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Pilih Petunjuk Operasional (PO) Terkait <span class="text-danger">*</span></label>
-                        <select name="po_id" class="form-select searchable-select" placeholder="Pilih PO..." required>
-                            <option value="">Pilih Dokumen PO</option>
-                            <repeat group="{{ @daftar_po }}" value="{{ @p }}">
-                                <option value="{{ @p.id }}" {{ @kontrak && @kontrak.po_id == @p.id ? 'selected' : '' }}>
-                                    PO: {{ @p.nomor_po }} - {{ @p.nama_perusahaan }} ({{ @p.judul_kegiatan }})
-                                </option>
-                            </repeat>
-                        </select>
-                    </div>
+                    <check if="{{ @po }}">
+                        <input type="hidden" name="po_id" value="{{ @po.id }}">
+                        <div class="mb-3 p-3 bg-primary-subtle rounded border border-primary-subtle">
+                            <span class="small text-muted d-block">Dokumen PO Terkait:</span>
+                            <strong class="text-primary font-monospace">{{ @po.nomor_po }}</strong> - {{ @po.nama_perusahaan }}
+                            <small class="d-block text-dark">{{ @po.judul_kegiatan }}</small>
+                        </div>
+                    </check>
+                    <check if="{{ !@po }}">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Pilih Petunjuk Operasional (PO) Terkait <span class="text-danger">*</span></label>
+                            <select name="po_id" class="form-select searchable-select" placeholder="Pilih PO..." required>
+                                <option value="">Pilih Dokumen PO</option>
+                                <repeat group="{{ @daftar_po }}" value="{{ @p }}">
+                                    <option value="{{ @p.id }}" {{ @kontrak && @kontrak.po_id == @p.id ? 'selected' : '' }}>
+                                        PO: {{ @p.nomor_po }} - {{ @p.nama_perusahaan }} ({{ @p.judul_kegiatan }})
+                                    </option>
+                                </repeat>
+                            </select>
+                        </div>
+                    </check>
 
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Nomor PKS BBSPJIS <span class="text-danger">*</span></label>
-                            <input type="text" name="nomor_pks_bbspjis" class="form-control" placeholder="Contoh: 102/PKS/BBSPJIS/VIII/2026" value="{{ @kontrak.nomor_pks_bbspjis }}" required>
+                            <input type="text" name="nomor_pks_bbspjis" class="form-control font-monospace" placeholder="Contoh: 102/PKS/BBSPJIS/VIII/2026" value="{{ @kontrak ? @kontrak.nomor_pks_bbspjis : (@nomor_pks_otomatis ?: '') }}" required>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Nomor PKS Klien/Mitra <span class="text-danger">*</span></label>

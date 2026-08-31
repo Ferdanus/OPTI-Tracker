@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ @page_title ?: 'Sistem OPTI Tracker - BBSPJIS' }}</title>
+    <title>{{ @page_title ?: 'BBSPJIS' }}</title>
 
     <!-- Google Fonts: Inter & Plus Jakarta Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -51,6 +51,58 @@
             -moz-osx-font-smoothing: grayscale;
         }
 
+        /* Global Blue Highlight Removal & BBSPJIS Theme Integration */
+        ::selection {
+            background-color: #fce7f3 !important;
+            color: #881337 !important;
+        }
+        ::-moz-selection {
+            background-color: #fce7f3 !important;
+            color: #881337 !important;
+        }
+
+        a {
+            color: var(--color-primary);
+            text-decoration: none;
+            transition: color 0.15s ease;
+        }
+        a:hover {
+            color: var(--color-primary-hover);
+        }
+
+        *:focus, *:focus-visible {
+            outline-color: var(--color-primary) !important;
+        }
+
+        .text-primary { color: var(--color-primary) !important; }
+        .bg-primary { background-color: var(--color-primary) !important; color: #ffffff !important; }
+        .bg-primary-subtle { background-color: #fdf2f8 !important; color: var(--color-primary) !important; }
+        .border-primary { border-color: var(--color-primary) !important; }
+        .border-primary-subtle { border-color: #fbcfe8 !important; }
+
+        .form-check-input:checked {
+            background-color: var(--color-primary) !important;
+            border-color: var(--color-primary) !important;
+        }
+        .form-check-input:focus {
+            border-color: var(--color-primary) !important;
+            box-shadow: 0 0 0 3px rgba(136, 19, 55, 0.15) !important;
+        }
+
+        .dropdown-item.active, .dropdown-item:active {
+            background-color: var(--color-primary) !important;
+            color: #ffffff !important;
+        }
+
+        .ts-dropdown .active, .ts-dropdown .option:hover {
+            background-color: #fdf2f8 !important;
+            color: var(--color-primary) !important;
+        }
+        .ts-control:focus, .ts-wrapper.focus .ts-control {
+            border-color: var(--color-primary) !important;
+            box-shadow: 0 0 0 3px rgba(136, 19, 55, 0.15) !important;
+        }
+
         h1, h2, h3, h4, h5, h6, .font-display {
             font-family: var(--font-display);
             letter-spacing: -0.02em;
@@ -63,7 +115,7 @@
             position: relative;
         }
 
-        /* ============ SIDEBAR MERAH MAROON (FULL-HEIGHT UNIFIED PILLAR) ============ */
+        /* ============ SIDEBAR MERAH MAROON (ULTRA-SMOOTH COLLAPSIBLE) ============ */
         .sidebar {
             position: fixed;
             top: 0;
@@ -79,25 +131,49 @@
             box-shadow: 2px 0 16px rgba(0, 0, 0, 0.1);
             scrollbar-width: thin;
             scrollbar-color: rgba(255,255,255,0.15) transparent;
+            transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+            will-change: width;
         }
 
         .sidebar::-webkit-scrollbar { width: 4px; }
         .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 2px; }
 
-        .sidebar-brand {
+        .sidebar-brand-btn {
             display: flex;
             align-items: center;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             text-decoration: none;
             flex-shrink: 0;
             height: 64px;
-            padding: 0 18px;
+            padding: 0 16px;
             background: rgba(0, 0, 0, 0.08);
+            border: none;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            user-select: none;
+            gap: 12px;
+            overflow: hidden;
+            transition: background-color 0.2s ease;
+        }
+
+        .sidebar-brand-btn:hover {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .sidebar-brand-btn:hover .brand-logo-badge {
+            transform: scale(1.06);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+        }
+
+        .sidebar-brand-btn:active .brand-logo-badge {
+            transform: scale(0.95);
         }
 
         .brand-logo-badge {
             width: 38px;
             height: 38px;
+            min-width: 38px;
             flex-shrink: 0;
             background: #ffffff;
             color: var(--color-primary-dark);
@@ -107,13 +183,17 @@
             justify-content: center;
             font-size: 1.25rem;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
         }
 
         .sidebar-brand-text {
             line-height: 1.15;
             overflow: hidden;
             white-space: nowrap;
-            margin-left: 12px;
+            opacity: 1;
+            transform: translateX(0);
+            transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+            min-width: 160px;
         }
 
         .sidebar-brand-title {
@@ -135,8 +215,9 @@
         .sidebar-nav {
             list-style: none;
             margin: 0;
-            padding: 0.85rem 0.5rem;
+            padding: 0.85rem 8px;
             flex: 1;
+            overflow-x: hidden;
         }
 
         .sidebar-section-label {
@@ -148,6 +229,9 @@
             padding: 0.85rem 0.75rem 0.35rem;
             white-space: nowrap;
             overflow: hidden;
+            opacity: 1;
+            transform: translateX(0);
+            transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .sidebar-link {
@@ -162,28 +246,38 @@
             margin-bottom: 4px;
             white-space: nowrap;
             height: 42px;
-            padding: 0 18px;
+            padding: 0 15px;
+            overflow: hidden;
             transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
         }
 
         .sidebar-link i {
             font-size: 1.15rem;
             width: 24px;
+            min-width: 24px;
             text-align: center;
             flex-shrink: 0;
             opacity: 0.95;
             margin-right: 12px;
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .sidebar-link span {
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            opacity: 1;
+            transform: translateX(0);
+            transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .sidebar-link:hover {
             background-color: rgba(255, 255, 255, 0.12);
             color: #ffffff;
+        }
+
+        .sidebar-link:hover i {
+            transform: scale(1.12);
         }
 
         .sidebar-link.active {
@@ -192,11 +286,11 @@
             box-shadow: inset 4px 0 0 #ffffff;
         }
 
-        /* ============ DESKTOP HOVER & SYNCHRONIZED PUSH ============ */
+        /* ============ DESKTOP EXPANDED & COLLAPSIBLE TOGGLE ============ */
         @media (min-width: 992px) {
+            /* Default: Expanded Sidebar (260px) */
             .sidebar {
-                width: var(--sidebar-mini-width);
-                transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s ease;
+                width: var(--sidebar-expanded-width);
             }
 
             .content-wrapper {
@@ -204,40 +298,30 @@
                 display: flex;
                 flex-direction: column;
                 min-height: 100vh;
-                margin-left: var(--sidebar-mini-width);
-                width: calc(100% - var(--sidebar-mini-width));
-                max-width: calc(100% - var(--sidebar-mini-width));
-                transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1), width 0.25s cubic-bezier(0.4, 0, 0.2, 1), max-width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-            }
-
-            /* Mini Rail: hide text labels */
-            .sidebar .sidebar-brand-text,
-            .sidebar .sidebar-section-label,
-            .sidebar .sidebar-link span {
-                opacity: 0;
-                visibility: hidden;
-                white-space: nowrap;
-                transition: opacity 0.15s ease, visibility 0.15s ease;
-            }
-
-            /* Hover Expand on Mouse Hover */
-            .sidebar:hover {
-                width: var(--sidebar-expanded-width);
-                box-shadow: 6px 0 25px rgba(0, 0, 0, 0.25);
-            }
-
-            .sidebar:hover ~ .content-wrapper {
                 margin-left: var(--sidebar-expanded-width);
                 width: calc(100% - var(--sidebar-expanded-width));
                 max-width: calc(100% - var(--sidebar-expanded-width));
+                transition: margin-left 0.28s cubic-bezier(0.4, 0, 0.2, 1), width 0.28s cubic-bezier(0.4, 0, 0.2, 1), max-width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+                will-change: margin-left, width;
             }
 
-            .sidebar:hover .sidebar-brand-text,
-            .sidebar:hover .sidebar-section-label,
-            .sidebar:hover .sidebar-link span {
-                opacity: 1;
-                visibility: visible;
-                transition-delay: 0.05s;
+            /* Minimized (Collapsed) Mode when body has .sidebar-collapsed */
+            body.sidebar-collapsed .sidebar {
+                width: var(--sidebar-mini-width);
+            }
+
+            body.sidebar-collapsed .content-wrapper {
+                margin-left: var(--sidebar-mini-width);
+                width: calc(100% - var(--sidebar-mini-width));
+                max-width: calc(100% - var(--sidebar-mini-width));
+            }
+
+            body.sidebar-collapsed .sidebar .sidebar-brand-text,
+            body.sidebar-collapsed .sidebar .sidebar-section-label,
+            body.sidebar-collapsed .sidebar .sidebar-link span {
+                opacity: 0;
+                transform: translateX(-12px);
+                pointer-events: none;
             }
 
             .mobile-toggle-btn {
@@ -513,8 +597,8 @@
             font-family: var(--font-display);
             font-weight: 600;
             font-size: 0.75rem;
-            padding: 0.3em 0.65em;
-            border-radius: 20px;
+            padding: 0.32rem 0.55rem;
+            border-radius: 4px;
             letter-spacing: 0.01em;
             display: inline-flex;
             align-items: center;
@@ -690,121 +774,96 @@
 
         <!-- Sidebar Merah Maroon BBSPJIS (Hover-to-Expand) -->
         <aside class="sidebar" id="sidebar">
-            <a class="sidebar-brand" href="{{ @BASE }}/po" title="OPTI Tracker - BBSPJIS">
-                <div class="brand-logo-badge">
+            <button class="sidebar-brand sidebar-brand-btn" id="sidebarToggleBtn" type="button" title="Klik untuk Minimize / Maximize Sidebar">
+                <div class="brand-logo-badge" title="Klik untuk Minimize / Maximize Sidebar">
                     <i class="bi bi-layers-fill"></i>
                 </div>
                 <div class="sidebar-brand-text">
                     <p class="sidebar-brand-title">OPTI TRACKER</p>
                     <p class="sidebar-brand-subtitle">BBSPJIS &bull; KEMENPERIN RI</p>
                 </div>
-            </a>
+            </button>
 
             <ul class="sidebar-nav">
-                <li class="sidebar-section-label">Menu Utama</li>
-                <li>
-                    <a class="sidebar-link {{ @active_menu == 'po' ? 'active' : '' }}" href="{{ @BASE }}/po" title="Dashboard PO">
-                        <i class="bi bi-speedometer2"></i> <span>Dashboard PO</span>
-                    </a>
-                </li>
-                <li>
-                    <a class="sidebar-link {{ @active_menu == 'order' ? 'active' : '' }}" href="{{ @BASE }}/order" title="Order Masuk">
-                        <i class="bi bi-inbox"></i> <span>Order Masuk</span>
-                    </a>
-                </li>
-                <li>
-                    <a class="sidebar-link {{ @active_menu == 'klien' || @active_menu == 'customer' ? 'active' : '' }}" href="{{ @BASE }}/klien" title="Customer">
-                        <i class="bi bi-building"></i> <span>Customer</span>
-                    </a>
-                </li>
-                <li>
-                    <a class="sidebar-link {{ @active_menu == 'pembayaran' ? 'active' : '' }}" href="{{ @BASE }}/pembayaran" title="Pembayaran">
-                        <i class="bi bi-cash-stack"></i> <span>Pembayaran</span>
-                    </a>
-                </li>
-                <li>
-                    <a class="sidebar-link {{ @active_menu == 'kontrak' ? 'active' : '' }}" href="{{ @BASE }}/kontrak" title="Kontrak PKS">
-                        <i class="bi bi-journal-text"></i> <span>Kontrak PKS</span>
-                    </a>
-                </li>
-                <li>
-                    <a class="sidebar-link {{ @active_menu == 'surat-penawaran' ? 'active' : '' }}" href="{{ @BASE }}/surat-penawaran" title="Kontrak PKS">
-                        <i class="bi bi-journal-text"></i> <span>Permintaan Pelayanan Jasa</span> 
-                    </a>
-                </li>
-                <li>
-                    <a class="sidebar-link {{ @active_menu == 'proposal' ? 'active' : '' }}" href="{{ @BASE }}/proposal" title="Kontrak PKS">
-                        <i class="bi bi-journal-text"></i> <span>Proposal</span> 
-                    </a>
-                </li>
-            </check>
-                <check if="{{ @SESSION.role == 'admin_order' }}">
-                    <li class="sidebar-section-label">Menu Utama</li>
-                <li>
-                    <a class="sidebar-link {{ @active_menu == 'admin-order' ? 'active' : '' }}" href="{{ @BASE }}/admin-order">
-                        <i class="bi bi-speedometer2"></i> <span>Dashboard</span>
-                    </a>
-                </li>
-                <li class="sidebar-section-label">Data Master</li>
-                <li>
-                    <a class="sidebar-link {{ @active_menu == 'kategori-uji' ? 'active' : '' }}" href="{{ @BASE }}/kategori-uji">
-                        <i class="bi bi-sliders"></i> <span>Kategori Pengujian</span>
-                    </a>
-                </li>
-                <li>
-                    <a class="sidebar-link {{ @active_menu == 'metode-uji' ? 'active' : '' }}" href="{{ @BASE }}/metode-uji">
-                        <i class="bi bi-sliders"></i> <span>Metode Uji & Harga</span>
-                    </a>
-                </li>
-                <li>
-                    <a class="sidebar-link {{ @active_menu == 'pengujian-eksternal' ? 'active' : '' }}" href="{{ @BASE }}/pengujian-eksternal">
-                        <i class="bi bi-sliders"></i> <span>Pengujian Eksternal</span>
-                    </a>
-                </li>
-                <li class="sidebar-section-label">Pengaturan</li>
-                <!-- <li>
-                    <a class="sidebar-link {{ @active_menu == 'config' ? 'active' : '' }}" href="{{ @BASE }}/config">
-                        <i class="bi bi-sliders"></i> <span>Konfigurasi</span>
-                    </a>
-                </li> -->
-                <li>
-                    <a class="sidebar-link" href="{{ @BASE }}/profil">
-                        <i class="bi bi-person-gear"></i> <span>Profil Pengguna</span>
-                    </a>
-                </li>
-            </check>
-                <!-- <li>
-                    <a class="sidebar-link" href="{{ @BASE }}/profil">
-                        <i class="bi bi-person-gear"></i> <span>Profil Pengguna</span>
-                    </a>
-                </li> -->
-
-
-                <check if="{{ @SESSION.role == 'admin_order' || @SESSION.role == 'superadmin' }}">
-                    <li class="sidebar-section-label">Data Master Uji</li>
+                
+                <!-- 1. ALUR PELAYANAN / KEMITRAAN (Superadmin, Tim Mitra, Ketua Tim, Pejabat) -->
+                <check if="{{ @is_superadmin || @is_admin_order || @is_ketua_tim || @is_pejabat }}">
+                    <li class="sidebar-section-label">Alur Pelayanan</li>
+                    <check if="{{ @is_superadmin || @is_admin_order || @is_ketua_tim }}">
+                        <li>
+                            <a class="sidebar-link {{ @active_menu == 'surat_masuk' ? 'active' : '' }}" href="{{ @BASE }}/surat-masuk" title="Surat Masuk">
+                                <i class="bi bi-envelope-paper"></i> <span>Surat Masuk</span>
+                            </a>
+                        </li>
+                    </check>
                     <li>
-                        <a class="sidebar-link {{ @active_menu == 'kategori-uji' ? 'active' : '' }}" href="{{ @BASE }}/kategori-uji" title="Kategori Pengujian">
-                            <i class="bi bi-collection"></i> <span>Kategori Pengujian</span>
+                        <a class="sidebar-link {{ @active_menu == 'order' ? 'active' : '' }}" href="{{ @BASE }}/order" title="Order Masuk">
+                            <i class="bi bi-inbox"></i> <span>Order Masuk</span>
                         </a>
                     </li>
+                    <check if="{{ @is_superadmin || @is_admin_order || @is_ketua_tim }}">
+                        <li>
+                            <a class="sidebar-link {{ @active_menu == 'surat-penawaran' ? 'active' : '' }}" href="{{ @BASE }}/surat-penawaran" title="Surat Penawaran">
+                                <i class="bi bi-file-earmark-text"></i> <span>Surat Penawaran</span>
+                            </a>
+                        </li>
+                    </check>
+                </check>
+
+                <!-- 2. PELAKSANAAN TEKNIS (Superadmin, Ketua Tim, Pejabat, Tim Kerja, Admin Kontrak) -->
+                <check if="{{ @is_superadmin || @is_ketua_tim || @is_pejabat || @is_tim_kerja || @is_admin_kontrak }}">
+                    <li class="sidebar-section-label">Pelaksanaan Teknis</li>
+                    <check if="{{ @is_superadmin || @is_ketua_tim || @is_pejabat || @is_tim_kerja }}">
+                        <li>
+                            <a class="sidebar-link {{ @active_menu == 'po' ? 'active' : '' }}" href="{{ @BASE }}/po" title="Petunjuk Operasional (PO)">
+                                <i class="bi bi-speedometer2"></i> <span>Petunjuk Operasional (PO)</span>
+                            </a>
+                        </li>
+                    </check>
+                    <check if="{{ @is_superadmin || @is_pejabat || @is_admin_kontrak }}">
+                        <li>
+                            <a class="sidebar-link {{ @active_menu == 'kontrak' ? 'active' : '' }}" href="{{ @BASE }}/kontrak" title="Kontrak / PKS">
+                                <i class="bi bi-file-earmark-ruled"></i> <span>Kontrak / PKS</span>
+                            </a>
+                        </li>
+                    </check>
+                </check>
+
+                <!-- 3. KEUANGAN & PENAGIHAN (Superadmin, Admin Kontrak, Pejabat) -->
+                <check if="{{ @is_superadmin || @is_admin_kontrak || @is_pejabat }}">
+                    <li class="sidebar-section-label">Keuangan &amp; Penagihan</li>
                     <li>
-                        <a class="sidebar-link {{ @active_menu == 'metode-uji' ? 'active' : '' }}" href="{{ @BASE }}/metode-uji" title="Metode & Harga Uji">
-                            <i class="bi bi-list-check"></i> <span>Metode &amp; Harga Uji</span>
+                        <a class="sidebar-link {{ @active_menu == 'pembayaran' || @active_menu == 'invoice' ? 'active' : '' }}" href="{{ @BASE }}/pembayaran" title="Pembayaran &amp; Billing PNBP">
+                            <i class="bi bi-cash-stack"></i> <span>Pembayaran PNBP</span>
                         </a>
                     </li>
                 </check>
 
-                <!-- <li class="sidebar-section-label">Pengaturan</li>
-                <li>
-                    <a class="sidebar-link {{ @active_menu == 'config' ? 'active' : '' }}" href="{{ @BASE }}/config" title="Konfigurasi">
-                        <i class="bi bi-sliders"></i> <span>Konfigurasi</span>
-                    </a>
-                </li>
+                <!-- 4. PERSURATAN (Superadmin, Sekretariat) -->
+                <check if="{{ @is_superadmin || @is_sekretaris }}">
+                    <li class="sidebar-section-label">Persuratan Balai</li>
+                    <li>
+                        <a class="sidebar-link {{ @active_menu == 'simulasi_sekretariat' ? 'active' : '' }}" href="{{ @BASE }}/simulasi-sekretariat" title="Registrasi Surat Masuk">
+                            <i class="bi bi-journal-plus"></i> <span>Registrasi Surat Masuk</span>
+                        </a>
+                    </li>
+                    <check if="{{ @is_sekretaris }}">
+                        <li>
+                            <a class="sidebar-link {{ @active_menu == 'surat_masuk' ? 'active' : '' }}" href="{{ @BASE }}/surat-masuk" title="Buku Agenda Surat Masuk">
+                                <i class="bi bi-envelope-paper"></i> <span>Buku Agenda Surat</span>
+                            </a>
+                        </li>
+                    </check>
+                </check>
+
+                <!-- 5. AKUN & PROFIL (Semua Role) -->
+                <li class="sidebar-section-label">Akun</li>
                 <li>
                     <a class="sidebar-link {{ @active_menu == 'profil' ? 'active' : '' }}" href="{{ @BASE }}/profil" title="Profil Pengguna">
                         <i class="bi bi-person-gear"></i> <span>Profil Pengguna</span>
                     </a>
-                </li> -->
+                </li>
+
             </ul>
 
             
@@ -845,11 +904,43 @@
                             </div>
                         </div>
                     </a>
-                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2 py-2" aria-labelledby="userMenuTop" style="min-width: 230px; border-radius: var(--radius-md);">
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2 py-2" aria-labelledby="userMenuTop" style="min-width: 260px; border-radius: var(--radius-md);">
                         <li class="px-3 py-2 border-bottom mb-1">
                             <div class="fw-bold text-dark">{{ htmlspecialchars(@SESSION.nama_lengkap ?? 'User') }}</div>
-                            <div class="text-muted small">@{{ @SESSION.login ?? @SESSION.username }}</div>
+                            <div class="text-muted small">@{{ @SESSION.login ?? @SESSION.username }} &bull; <span class="badge bg-light text-dark border">{{ strtoupper(@SESSION.role ?? 'USER') }}</span></div>
                         </li>
+                        <li class="px-3 py-1 text-uppercase fw-bold text-muted" style="font-size: 0.65rem; letter-spacing: 0.5px;">Ganti Peran (1-Klik):</li>
+                        <li>
+                            <a class="dropdown-item py-1 small d-flex align-items-center gap-2 {{ @SESSION.role == 'superadmin' ? 'active' : '' }}" href="{{ @BASE }}/login/switch/9006">
+                                <i class="bi bi-shield-lock text-dark"></i> Superadmin (Fajriasa)
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-1 small d-flex align-items-center gap-2 {{ @SESSION.role == 'admin_order' ? 'active' : '' }}" href="{{ @BASE }}/login/switch/36">
+                                <i class="bi bi-inbox-fill text-danger"></i> Tim Kemitraan (Faridh)
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-1 small d-flex align-items-center gap-2 {{ @SESSION.role == 'ketua_tim' && @SESSION.jenis_layanan_opti == 'selulosa' ? 'active' : '' }}" href="{{ @BASE }}/login/switch/3">
+                                <i class="bi bi-diagram-3 text-primary"></i> Ka. Tim Selulosa (Bu Rina)
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-1 small d-flex align-items-center gap-2 {{ @SESSION.role == 'ketua_tim' && @SESSION.jenis_layanan_opti == 'lingkungan' ? 'active' : '' }}" href="{{ @BASE }}/login/switch/61">
+                                <i class="bi bi-calculator text-success"></i> Ka. Tim Lingkungan (Pak Andri)
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-1 small d-flex align-items-center gap-2 {{ @SESSION.role == 'pejabat' ? 'active' : '' }}" href="{{ @BASE }}/login/switch/175">
+                                <i class="bi bi-patch-check-fill text-warning"></i> Kepala Balai (Dodiet)
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-1 small d-flex align-items-center gap-2 {{ @SESSION.role == 'tim_kerja' ? 'active' : '' }}" href="{{ @BASE }}/login/switch/12">
+                                <i class="bi bi-clipboard2-pulse text-secondary"></i> Tim Kerja (Yogi)
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider my-1"></li>
                         <li>
                             <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ @BASE }}/profil">
                                 <i class="bi bi-person-gear text-primary"></i> Profil Pengguna
@@ -927,6 +1018,103 @@
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // ==========================================
+            // OPTI BUTTON SIDEBAR MINIMIZE / MAXIMIZE TOGGLE
+            // ==========================================
+            var sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
+            var mobileSidebarToggle = document.getElementById('mobileSidebarToggle');
+            var sidebar = document.getElementById('sidebar');
+            var sidebarBackdrop = document.getElementById('sidebarBackdrop');
+
+            // Restore saved desktop preference
+            if (localStorage.getItem('opti_sidebar_collapsed') === 'true') {
+                document.body.classList.add('sidebar-collapsed');
+            }
+
+            if (sidebarToggleBtn) {
+                sidebarToggleBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    if (window.innerWidth >= 992) {
+                        var isCollapsed = document.body.classList.toggle('sidebar-collapsed');
+                        localStorage.setItem('opti_sidebar_collapsed', isCollapsed ? 'true' : 'false');
+                    } else {
+                        if (sidebar) sidebar.classList.toggle('show');
+                        if (sidebarBackdrop) sidebarBackdrop.classList.toggle('show');
+                    }
+                });
+            }
+
+            if (mobileSidebarToggle) {
+                mobileSidebarToggle.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (sidebar) sidebar.classList.toggle('show');
+                    if (sidebarBackdrop) sidebarBackdrop.classList.toggle('show');
+                });
+            }
+
+            if (sidebarBackdrop) {
+                sidebarBackdrop.addEventListener('click', function() {
+                    if (sidebar) sidebar.classList.remove('show');
+                    sidebarBackdrop.classList.remove('show');
+                });
+            }
+        // ==========================================
+        // GLOBAL SIMPLE CLEAN POPUP ENGINE (SWEETALERT2)
+        // ==========================================
+        window.appConfirm = function(options, onConfirm) {
+            Swal.fire({
+                title: options.title || 'Konfirmasi',
+                text: options.text || 'Apakah Anda yakin ingin melanjutkan?',
+                icon: options.icon || 'warning',
+                iconColor: '#64748b',
+                background: '#ffffff',
+                showCancelButton: true,
+                confirmButtonText: options.confirmText || 'Lanjutkan',
+                cancelButtonText: options.cancelText || 'Batal',
+                reverseButtons: true,
+                customClass: {
+                    popup: 'bg-white rounded-3 shadow-sm border p-4',
+                    title: 'fw-bold text-dark fs-6 mb-2',
+                    htmlContainer: 'text-secondary small my-2',
+                    confirmButton: 'btn btn-primary btn-sm px-3 py-1 fw-semibold',
+                    cancelButton: 'btn btn-outline-secondary btn-sm px-3 py-1 me-2'
+                },
+                buttonsStyling: false
+            }).then(function(result) {
+                if (result.isConfirmed && typeof onConfirm === 'function') {
+                    onConfirm();
+                }
+            });
+        };
+
+        document.addEventListener('click', function(e) {
+            var btn = e.target.closest('[data-confirm], .btn-confirm');
+            if (!btn) return;
+
+            var form = btn.closest('form');
+            var message = btn.getAttribute('data-confirm') || 'Apakah Anda yakin ingin melanjutkan tindakan ini?';
+            var title = btn.getAttribute('data-confirm-title') || 'Konfirmasi';
+            var icon = btn.getAttribute('data-confirm-icon') || 'warning';
+            var confirmBtnText = btn.getAttribute('data-confirm-btn') || 'Lanjutkan';
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.appConfirm({
+                title: title,
+                text: message,
+                icon: icon,
+                confirmText: confirmBtnText
+            }, function() {
+                if (form) {
+                    form.submit();
+                } else if (btn.getAttribute('href') && btn.getAttribute('href') !== '#') {
+                    window.location.href = btn.getAttribute('href');
+                }
+            });
+        });
             document.querySelectorAll('.searchable-select').forEach(function(el) {
                 if (!el.tomselect) {
                     new TomSelect(el, {
@@ -974,8 +1162,11 @@
             // ============ SIMULATED CLOUD LOADING TRANSITION ============
             var progressBar = document.getElementById('topProgressBar');
             var pageLoader = document.getElementById('pageLoader');
+            var loaderSafetyTimer = null;
 
             function startLoading(customText) {
+                if (loaderSafetyTimer) clearTimeout(loaderSafetyTimer);
+
                 if (progressBar) {
                     progressBar.style.opacity = '1';
                     progressBar.style.width = '35%';
@@ -988,9 +1179,18 @@
                     }
                     pageLoader.classList.add('active');
                 }
+
+                // Safety timeout: Auto-dismiss after 2.5s in case of file download or canceled navigation
+                loaderSafetyTimer = setTimeout(function() {
+                    finishLoading();
+                }, 2500);
             }
 
             function finishLoading() {
+                if (loaderSafetyTimer) {
+                    clearTimeout(loaderSafetyTimer);
+                    loaderSafetyTimer = null;
+                }
                 if (progressBar) {
                     progressBar.style.width = '100%';
                     setTimeout(function() {
@@ -1009,6 +1209,9 @@
             window.addEventListener('pageshow', function() {
                 finishLoading();
             });
+            window.addEventListener('focus', function() {
+                finishLoading();
+            });
 
             // Intercept internal link navigation to simulate realistic cloud deployment delay
             document.addEventListener('click', function(e) {
@@ -1018,8 +1221,19 @@
                 var href = link.getAttribute('href');
                 var target = link.getAttribute('target');
 
-                // Ignore anchors, javascript, modals, dropdowns, new tabs, downloads
-                if (!href || href.startsWith('#') || href.startsWith('javascript:') || target === '_blank' || link.hasAttribute('download') || link.getAttribute('data-bs-toggle') || link.getAttribute('role') === 'button' && href === '#') {
+                // Ignore anchors, javascript, modals, dropdowns, new tabs, downloads, and export links
+                if (!href || 
+                    href.startsWith('#') || 
+                    href.startsWith('javascript:') || 
+                    target === '_blank' || 
+                    link.hasAttribute('download') || 
+                    link.getAttribute('data-no-loader') === 'true' || 
+                    link.getAttribute('data-bs-toggle') || 
+                    (link.getAttribute('role') === 'button' && href === '#') ||
+                    href.includes('ekspor') || 
+                    href.includes('export') || 
+                    href.includes('download') || 
+                    /\.(csv|xlsx|xls|pdf|zip|docx|doc)$/i.test(href)) {
                     return;
                 }
 
@@ -1029,10 +1243,10 @@
                 if (isInternal) {
                     e.preventDefault();
                     startLoading('Memuat Halaman...');
-                    // 320ms simulated network latency for smooth transition
+                    // 200ms smooth network latency
                     setTimeout(function() {
                         window.location.href = href;
-                    }, 320);
+                    }, 200);
                 }
             });
 
@@ -1040,6 +1254,10 @@
             document.addEventListener('submit', function(e) {
                 var form = e.target;
                 if (!form) return;
+                var action = form.getAttribute('action') || '';
+                if (form.getAttribute('data-no-loader') === 'true' || action.includes('ekspor') || action.includes('export') || action.includes('download')) {
+                    return;
+                }
                 startLoading('Memproses Data Server...');
             });
         });

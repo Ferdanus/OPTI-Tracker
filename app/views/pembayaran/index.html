@@ -21,7 +21,7 @@
                 <h3 class="fw-bold text-dark mb-1 mt-1">Rp {{ number_format(@total_tagihan, 0, ',', '.') }}</h3>
                 <div class="small text-muted d-flex align-items-center gap-1" style="font-size: 0.75rem;">
                     <i class="bi bi-file-earmark-check text-primary"></i>
-                    <span>{{ count(@rekap_po) }} Dokumen Petunjuk Operasional Resmi</span>
+                    <span>{{ count(@rekap_po ?: []) }} Dokumen Petunjuk Operasional Resmi</span>
                 </div>
             </div>
             <div class="metric-icon-box bg-primary bg-opacity-10 text-primary p-3 rounded-3 flex-shrink-0">
@@ -91,10 +91,10 @@
         <h6 class="m-0 fw-bold text-dark">
             <i class="bi bi-pie-chart text-primary me-2"></i>Status Pelunasan Tagihan per Petunjuk Operasional (PO)
         </h6>
-        <span class="badge bg-light text-muted border">{{ count(@rekap_po) }} Dokumen PO</span>
+        <span class="badge bg-light text-muted border">{{ count(@rekap_po ?: []) }} Dokumen PO</span>
     </div>
     <div class="card-body p-0">
-        <check if="{{ count(@rekap_po) > 0 }}">
+        <check if="{{ count(@rekap_po ?: []) > 0 }}">
             <true>
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
@@ -224,7 +224,7 @@
             <h6 class="m-0 fw-bold text-dark">
                 <i class="bi bi-receipt text-primary me-2"></i>Histori Buku Kas & Transaksi Pembayaran
             </h6>
-            <span class="badge bg-light text-muted border">{{ count(@daftar_pembayaran) }} Transaksi Tercatat</span>
+            <span class="badge bg-light text-muted border">{{ count(@daftar_pembayaran ?: []) }} Transaksi Tercatat</span>
         </div>
 
         <!-- Filter & Search Bar Transaksi -->
@@ -254,7 +254,7 @@
     </div>
 
     <div class="card-body p-0">
-        <check if="{{ count(@daftar_pembayaran) > 0 }}">
+        <check if="{{ count(@daftar_pembayaran ?: []) > 0 }}">
             <true>
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">

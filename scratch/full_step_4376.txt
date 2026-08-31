@@ -1,0 +1,55 @@
+<USER_REQUEST>
+saya ingin diskusi dengan anda sebentar, jangan ngoding apa apa ya : 
+
+ini diskusi saya dengan mentor dan user, kira kira anda bisa paham ga alur yang disampaikan : 
+kita sekarang ada yang berbeda atau memang ada hal lain yang harus di sistemkan baik dari proses bisnis, alur, user, data owner dan lain-lain. Ini yang bikin dua orang opti. Jadi nanti rencananya op kita akan bikinnya itu mulai dari data order apa saja yang mau disistkan kemudian masuk ke PO ya Bu kemudian kontrak atau kerja sama jadi biar sekalian satu alur ya semua termasuk kemarin tambahannya surat ya surat surat penawaran ya biar sekaligus gitu jadi kalau konsepnya kan ee saya kurang tahu kalau di ya mungkin hampir sama dengan yang sertifikasi yang lainnya bahwa yang menginput data order data terkait biaya itu dari timnya masing-masing dikirimkan ke tim mitra nanti tim mitra yang membuatkan ee surat penawarannya mungkin kasarnya sama aja ya Bu ya. Nah, mungkin itu Bu Rina. Jadi saya mengundang Bu Rina hari ini untuk bisa memanfaatkan terkait e bisnis di Kemudian data ordernya apa saja, alur prosesnya nanti ke mana? Kalau kemarin dengan Pak Andri itu cukup di yang disistkan itu cukup di ketua tim dan ketua projjectnya aja
+
+yang loginnya operasana ya.
+
+Adminnya enggak ya?
+
+Admin itu siapa yang ikut order?
+
+Heeh.
+
+Nah, yang ikut order kemarin itu belum ya? Kemarin sama Pak Andri yang ikut order siapa?
+
+Belum ditentuin Siap aja
+
+mungkin nanti bisa sekalian Bu dari tim Ibu yang mau ikut order itu siapa? Nah, kalau memang dari tim Ibu ada perbedaan misalnya kalau ada timnya Pak Andri kan Pak Andri menginput ee tim nanti pas Pak Andri menginput tim nanti dia disposisi ke tim ketua tim proyek ya.
+
+Heeh.
+
+Nanti tim proyek yang akan menginput menginput apa kemarin tim proyek ee data ee data order lah, Bu.
+
+He
+
+atau PO PO ya, input PO ya.
+
+Heeh.
+
+Nah, kalau di Ibu mungkin seperti apa ee nanti kita combine untuk saling melengkapi sehingga nanti opti jadi satu kesatuan. Kalaupun ada perbedaan nanti ya bisa enggak harus
+<truncated 95681 bytes>
+us berinovasi, berimajinasi di situ. Oh, berarti harusnya jadi im itu gini, kalian harus kebayang ketika order itu diterima sama si ini. Oh, berarti ketika order diterima sama si ini, berarti di loginsi ini itu harusnya begini. Oh, ketika di loginsi ini begini, berarti di loginsi ini itu harusnya masih begini, belum begini, gitu ya. Nah, makanya sistem kalau namanya perkantoran itu begini. Enggak bisa kayak kita cuma bikin website jadi gitu doang. Karena ada user-user yang terlibat di sini ya. Kayak kemarin bikin website anime ya itu anime ya satu orang aja yang terlibat orang lain cuman view. Tapi kan bukan berarti maksud saya seperti itu. Cuman harus ada proses bisnis alur usernya seperti apa kendalinya gitu. Alur kendali. Oke ya paham ya. Nah nanti di situ kalian kembangkan ya. Ini kan cuman opti nih. Berarti nanti di situ pas begitu tim mitra harus dipilih untuk opti lingkungan atau opti keselulosa Terus kemarin harus yang Pak Andri diakomodir begitu nanti nginput di tim lingkungan dia nginput oh ini layanannya apa ada uji apa ujiasi LP dan lain-lain ada biaya juga gitu kan perlu kalian kembangkan.
+
+Nah itu Pak untuk biaya sampel yang kayak gitu yang kemarin yang Pak Andri itu teh diinputin sama siapa
+
+itu? Itu ada dibikin di tabel master ya itu adanya di tabel master di
+
+Iya yang yang inputnya tim opti apa
+
+opti opti lingkungan kan. itu kemarin.
+
+Iya. Eh, ketua timnya apa tim?
+
+Dibikin di ketua tim aja.
+
+Ketua tim.
+
+Heeh. Jadi nanti itu ada di bikin tabel master.
+
+Muncullah satu menu, menu master, menu biaya master. Di situ bisa di bisa ditambah-tambah atau diedit di situ untuk di opti lingkungan ya. Tapi ini kayaknya sama ya semuanya ya sama ya. Cuma kalau opsi lingkungan kemarin ada tambahan itu aja tabel master biaya terus ada layanannya itu bisa dipilih layanan yang mau uji deklarasi apa LTP atau apa kan enggak ada lanjutannya tapi tahapannya ini tetap sama. Oke ada lagi ya
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-08-26T13:50:59+07:00.
+</ADDITIONAL_METADATA>

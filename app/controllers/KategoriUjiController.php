@@ -1,18 +1,8 @@
 <?php
 
-class KategoriUjiController
+class KategoriUjiController extends Controller
 {
-    /** @var \Base */
-    protected $f3;
 
-    /** @var \DB\SQL */
-    protected $db;
-
-    public function __construct()
-    {
-        $this->f3 = \Base::instance();
-        $this->db = $this->f3->get('DB');
-    }
 
     /** GET /kategori-uji */
     public function index($f3)
@@ -51,20 +41,14 @@ class KategoriUjiController
         $f3->set('search', $search);
         $f3->set('filter_status', $status);
 
-        $f3->set('page_title', 'Kategori Pengujian');
-        $f3->set('active_menu', 'kategori-uji');
-        $f3->set('content', 'admin-order/kategori-pengujian/index.html');
-        echo \Template::instance()->render('layout.html');
+        $this->render('admin-order/kategori-pengujian/index.html', 'Kategori Pengujian', 'kategori-uji');
     }
 
     /** GET /kategori-uji/tambah */
     public function create($f3)
     {
         $f3->set('kategori', null);
-        $f3->set('page_title', 'Tambah Kategori Pengujian');
-        $f3->set('active_menu', 'kategori-uji');
-        $f3->set('content', 'admin-order/kategori-pengujian/form.html');
-        echo \Template::instance()->render('layout.html');
+        $this->render('admin-order/kategori-pengujian/form.html', 'Tambah Kategori Pengujian', 'kategori-uji');
     }
 
     /** GET /kategori-uji/@id/edit */
@@ -79,10 +63,7 @@ class KategoriUjiController
         }
 
         $f3->set('kategori', $kategori->cast());
-        $f3->set('page_title', 'Edit Kategori Pengujian');
-        $f3->set('active_menu', 'kategori-uji');
-        $f3->set('content', 'admin-order/kategori-pengujian/form.html');
-        echo \Template::instance()->render('layout.html');
+        $this->render('admin-order/kategori-pengujian/form.html', 'Edit Kategori Pengujian', 'kategori-uji');
     }
 
     /** POST /kategori-uji/simpan */

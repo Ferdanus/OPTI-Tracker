@@ -19,7 +19,7 @@ class DashboardController extends Controller
         // Tampilkan dashboard Admin Order
         $this->render(
             'admin-order/dashboard.html',
-            'Dashboard Admin Order - OPTI Tracker BBSPJIS',
+            'Dashboard Admin Order',
             'dashboard'
         );
     }

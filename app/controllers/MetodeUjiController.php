@@ -1,19 +1,9 @@
 <?php
 
 
-class MetodeUjiController
+class MetodeUjiController extends Controller
 {
-    /** @var \Base */
-    protected $f3;
 
-    /** @var \DB\SQL */
-    protected $db;
-
-    public function __construct()
-    {
-        $this->f3 = \Base::instance();
-        $this->db = $this->f3->get('DB');
-    }
 
     /** GET /metode-uji  -- accordion per kategori, dengan search & filter */
     public function index($f3)
@@ -75,10 +65,7 @@ class MetodeUjiController
         $f3->set('filter_kategori', $filterKategori);
         $f3->set('filter_status', $filterStatus);
 
-        $f3->set('page_title', 'Metode & Harga Uji');
-        $f3->set('active_menu', 'metode-uji');
-        $f3->set('content', 'admin-order/metode_uji/index.html');
-        echo \Template::instance()->render('layout.html');
+        $this->render('admin-order/metode_uji/index.html', 'Metode & Harga Uji', 'metode-uji');
     }
 
     /** GET /metode-uji/tambah  (support ?kategori=ID untuk preselect) */
@@ -90,10 +77,7 @@ class MetodeUjiController
         $f3->set('kategori_terpilih', $f3->get('GET.kategori'));
         $f3->set('metode', null);
 
-        $f3->set('page_title', 'Tambah Metode & Harga Uji');
-        $f3->set('active_menu', 'metode-uji');
-        $f3->set('content', 'admin-order/metode_uji/form.html');
-        echo \Template::instance()->render('layout.html');
+        $this->render('admin-order/metode_uji/form.html', 'Tambah Metode & Harga Uji', 'metode-uji');
     }
 
     /** GET /metode-uji/@id/edit */
@@ -111,10 +95,7 @@ class MetodeUjiController
         $f3->set('semua_kategori', $kategoriModel->find(null, ['order' => 'nama_kategori ASC']));
         $f3->set('metode', $metode->cast());
 
-        $f3->set('page_title', 'Edit Metode & Harga Uji');
-        $f3->set('active_menu', 'metode-uji');
-        $f3->set('content', 'admin-order/metode_uji/form.html');
-        echo \Template::instance()->render('layout.html');
+        $this->render('admin-order/metode_uji/form.html', 'Edit Metode & Harga Uji', 'metode-uji');
     }
 
     /** POST /metode-uji/simpan */

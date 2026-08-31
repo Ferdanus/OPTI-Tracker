@@ -111,7 +111,7 @@ class PembayaranController extends Controller {
         $f3->set('filter_jenis_layanan', $filterJenis);
         $f3->set('mask_client_name', $maskEnabled);
 
-        $this->render('pembayaran/index.html', 'Rekapitulasi Keuangan & Pembayaran - OPTI Tracker', 'pembayaran');
+        $this->render('pembayaran/index.html', 'Rekapitulasi Keuangan & Pembayaran', 'pembayaran');
     }
 
     /**
@@ -144,7 +144,7 @@ class PembayaranController extends Controller {
         $f3->set('selected_order', $selectedOrder);
         $f3->set('order_id', $orderId);
 
-        $this->render('pembayaran/form.html', 'Input Pembayaran Termin - OPTI Tracker', 'pembayaran');
+        $this->render('pembayaran/form.html', 'Input Pembayaran Termin', 'pembayaran');
     }
 
     /**
@@ -217,6 +217,152 @@ class PembayaranController extends Controller {
         } catch (\Exception $e) {
             $this->setFlashError('Gagal menghapus pembayaran: ' . $e->getMessage());
             $f3->reroute('/pembayaran');
+        }
+    }
+
+    /**
+     * Form penerbitan Invoice Tagihan baru dari Order
+     * Route: GET /order/@id/invoice/buat
+     */
+    public function invoiceForm($f3, $params) {
+        $this->requirePermission('pembayaran:create', '/order');
+
+        $orderId = (int)($params['id'] ?? 0);
+        $orderModel = new OrderLayanan($this->db);
+        $order = $orderModel->getDetail($orderId);
+
+        if (!$order) {
+            $this->setFlashError("Order Layanan #{$orderId} tidak ditemukan.");
+            $f3->reroute('/order');
+            return;
+        }
+
+        $invModel = new OptiInvoice($this->db);
+        $payModel = new OptiPembayaran($this->db);
+
+        $rekap = $payModel->getRekapKeuanganOrder($orderId);
+        $nomorInvoiceOtomatis = $invModel->generateNomorInvoice();
+        $invoices = $invModel->getByOrderId($orderId);
+
+        $f3->set('order', $order);
+        $f3->set('rekap', $rekap);
+        $f3->set('invoices', $invoices);
+        $f3->set('nomor_invoice_otomatis', $nomorInvoiceOtomatis);
+
+        $this->render('pembayaran/form_invoice.html', "Terbitkan Invoice Tagihan - Order #{$order['nomor_order']}", 'pembayaran');
+    }
+
+    /**
+     * Simpan Invoice Tagihan baru dari Order
+     * Route: POST /order/@id/invoice/simpan
+     */
+    public function invoiceSimpan($f3, $params) {
+        $this->requirePermission('pembayaran:create', '/order');
+
+        $orderId = (int)($params['id'] ?? 0);
+        $post = $f3->get('POST');
+        $userId = $this->getUserId() ?? 1;
+
+        try {
+            $invModel = new OptiInvoice($this->db);
+            $hasil = $invModel->buatInvoiceBaru($orderId, $userId, $post);
+
+            $this->setFlashSuccess("Invoice Tagihan berhasil diterbitkan dengan Nomor: <strong>{$hasil['nomor_invoice']}</strong> (Nominal: Rp " . number_format($hasil['nominal'], 0, ',', '.') . ").");
+            $f3->reroute("/order/{$orderId}");
+        } catch (\Exception $e) {
+            $this->setFlashError('Gagal menerbitkan invoice: ' . $e->getMessage());
+            $f3->reroute("/order/{$orderId}/invoice/buat");
+        }
+    }
+
+    /**
+     * Form pencatatan pembayaran masuk langsung dari halaman Order
+     * Route: GET /order/@id/pembayaran/tambah
+     */
+    public function tambahDariOrder($f3, $params) {
+        $this->requirePermission('pembayaran:create', '/order');
+
+        $orderId = (int)($params['id'] ?? 0);
+        $orderModel = new OrderLayanan($this->db);
+        $order = $orderModel->getDetail($orderId);
+
+        if (!$order) {
+            $this->setFlashError("Order Layanan #{$orderId} tidak ditemukan.");
+            $f3->reroute('/order');
+            return;
+        }
+
+        $payModel = new OptiPembayaran($this->db);
+        $invModel = new OptiInvoice($this->db);
+
+        $rekap = $payModel->getRekapKeuanganOrder($orderId);
+        $invoices = $invModel->getByOrderId($orderId);
+        $riwayatBayar = $payModel->getByOrderId($orderId);
+        $nextTermin = count($riwayatBayar) + 1;
+
+        $f3->set('order', $order);
+        $f3->set('rekap', $rekap);
+        $f3->set('invoices', $invoices);
+        $f3->set('next_termin', $nextTermin);
+
+        $this->render('pembayaran/form_bayar.html', "Catat Pembayaran Masuk - Order #{$order['nomor_order']}", 'pembayaran');
+    }
+
+    /**
+     * Simpan transaksi pembayaran masuk langsung dari Order
+     * Route: POST /order/@id/pembayaran/simpan
+     */
+    public function simpanDariOrder($f3, $params) {
+        $this->requirePermission('pembayaran:create', '/order');
+
+        $orderId = (int)($params['id'] ?? 0);
+        $post = $f3->get('POST');
+        $userId = $this->getUserId() ?? 1;
+
+        $jumlah = (float)($post['jumlah'] ?? 0);
+        if ($jumlah <= 0) {
+            $this->setFlashError("Nominal pembayaran harus lebih dari 0.");
+            $f3->reroute("/order/{$orderId}/pembayaran/tambah");
+            return;
+        }
+
+        // Upload bukti bayar jika ada
+        $buktiBayarPath = null;
+        if (!empty($_FILES['bukti_bayar']['name']) && $_FILES['bukti_bayar']['error'] === UPLOAD_ERR_OK) {
+            $uploadDir = 'uploads/bukti_bayar/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+            $ext = pathinfo($_FILES['bukti_bayar']['name'], PATHINFO_EXTENSION);
+            $fileName = 'bukti_' . $orderId . '_' . time() . '.' . $ext;
+            $targetFile = $uploadDir . $fileName;
+            if (move_uploaded_file($_FILES['bukti_bayar']['tmp_name'], $targetFile)) {
+                $buktiBayarPath = $targetFile;
+            }
+        }
+
+        try {
+            $payModel = new OptiPembayaran($this->db);
+            $payModel->tambahPembayaran([
+                'order_id'             => $orderId,
+                'po_id'                => !empty($post['po_id']) ? (int)$post['po_id'] : null,
+                'invoice_id'           => !empty($post['invoice_id']) ? (int)$post['invoice_id'] : null,
+                'termin_ke'            => (int)($post['termin_ke'] ?? 1),
+                'tanggal_bayar'        => $post['tanggal_bayar'] ?? date('Y-m-d'),
+                'jumlah'               => $jumlah,
+                'metode_pembayaran'    => $post['metode_pembayaran'] ?? 'transfer_bank',
+                'nomor_transaksi_ntpn' => trim($post['nomor_transaksi_ntpn'] ?? ''),
+                'keterangan'           => trim($post['keterangan'] ?? ''),
+                'bukti_bayar'          => $buktiBayarPath,
+                'status_verifikasi'    => 'terverifikasi',
+                'verifikator_id'       => $userId
+            ]);
+
+            $this->setFlashSuccess("Transaksi pembayaran Termin #{$post['termin_ke']} sebesar <strong>Rp " . number_format($jumlah, 0, ',', '.') . "</strong> berhasil dicatat dan diverifikasi.");
+            $f3->reroute("/order/{$orderId}");
+        } catch (\Exception $e) {
+            $this->setFlashError('Gagal mencatat pembayaran: ' . $e->getMessage());
+            $f3->reroute("/order/{$orderId}/pembayaran/tambah");
         }
     }
 }

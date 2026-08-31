@@ -58,7 +58,7 @@ class PoController extends Controller {
         $f3->set('katim_selulosa_nama', $katimSelulosa['nama_user'] ?? 'Andri Taufick Rizaluddin');
         $f3->set('katim_lingkungan_nama', $katimLingkungan['nama_user'] ?? 'Rina Masriani');
 
-        $this->render('po/index.html', 'Dashboard & Monitoring PO - OPTI Tracker BBSPJIS', 'po');
+        $this->render('po/index.html', 'Dashboard & Monitoring PO', 'po');
     }
 
     /**
@@ -129,7 +129,7 @@ class PoController extends Controller {
         $f3->set('daftar_sop', $daftarSop);
         $f3->set('sop_statistik', $sopStatistik);
 
-        $this->render('po/detail.html', "Detail PO {$po['nomor_po']} - OPTI Tracker", 'po');
+        $this->render('po/detail.html', "Detail PO {$po['nomor_po']}", 'po');
     }
 
     /**
@@ -396,6 +396,69 @@ class PoController extends Controller {
     }
 
     /**
+     * Upload berkas Draf atau Final Laporan Hasil Pengujian/Riset
+     * Route: POST /po/@id/laporan/upload
+     */
+    public function uploadLaporan($f3, $params) {
+        $poId = (int)($params['id'] ?? 0);
+        $post = $f3->get('POST');
+
+        $this->requirePermission('po:edit', "/po/{$poId}");
+
+        $nomorLaporan = trim($post['nomor_laporan_hasil'] ?? '');
+        $ringkasan    = trim($post['laporan_akhir'] ?? '');
+
+        try {
+            $poModel = new Po($this->db);
+            $poData = $poModel->getById($poId);
+            if (!$poData) {
+                throw new \Exception("PO #{$poId} tidak ditemukan.");
+            }
+
+            $fileDraf = $poData->file_draf_laporan;
+            $fileFinal = $poData->file_laporan_final;
+
+            $uploadDir = 'uploads/laporan/';
+            if (!is_dir($uploadDir)) {
+                @mkdir($uploadDir, 0777, true);
+            }
+
+            // Upload Draf
+            if (!empty($_FILES['file_draf']['name']) && $_FILES['file_draf']['error'] === UPLOAD_ERR_OK) {
+                $ext = strtolower(pathinfo($_FILES['file_draf']['name'], PATHINFO_EXTENSION));
+                $namaFile = 'draf_po_' . $poId . '_' . time() . '.' . $ext;
+                $targetFile = $uploadDir . $namaFile;
+                if (move_uploaded_file($_FILES['file_draf']['tmp_name'], $targetFile)) {
+                    $fileDraf = $targetFile;
+                }
+            }
+
+            // Upload Final
+            if (!empty($_FILES['file_final']['name']) && $_FILES['file_final']['error'] === UPLOAD_ERR_OK) {
+                $ext = strtolower(pathinfo($_FILES['file_final']['name'], PATHINFO_EXTENSION));
+                $namaFile = 'final_po_' . $poId . '_' . time() . '.' . $ext;
+                $targetFile = $uploadDir . $namaFile;
+                if (move_uploaded_file($_FILES['file_final']['tmp_name'], $targetFile)) {
+                    $fileFinal = $targetFile;
+                }
+            }
+
+            $poModel->simpanLaporan($poId, array(
+                'nomor_laporan_hasil' => $nomorLaporan,
+                'laporan_akhir'       => $ringkasan,
+                'file_draf_laporan'   => $fileDraf,
+                'file_laporan_final'  => $fileFinal
+            ));
+
+            $this->setFlashSuccess("Dokumen laporan pengujian/riset PO #{$poId} berhasil disimpan.");
+            $f3->reroute("/po/{$poId}#evaluasi-section");
+        } catch (\Exception $e) {
+            $this->setFlashError('Gagal mengunggah laporan: ' . $e->getMessage());
+            $f3->reroute("/po/{$poId}");
+        }
+    }
+
+    /**
      * Proses evaluasi dengan customer (Feedback Loop SOP)
      * Route: POST /po/@id/evaluasi
      */
@@ -407,36 +470,19 @@ class PoController extends Controller {
 
         $evaluasiStatus = $post['evaluasi_status'] ?? 'disetujui';
         $notulen        = trim($post['notulen_evaluasi'] ?? '');
-        $tglEvaluasi    = $post['tgl_evaluasi'] ?? date('Y-m-d');
+        $userId         = $_SESSION['nama_user'] ?? 'Evaluator';
 
         try {
             $poModel = new Po($this->db);
-            
+            $poModel->prosesEvaluasi($poId, $evaluasiStatus, $notulen, $userId);
+
             if ($evaluasiStatus === 'disetujui') {
-                // Lanjut ke tahap laporan akhir & selesai
-                $poModel->updateData($poId, array(
-                    'evaluasi_status'   => 'disetujui',
-                    'notulen_evaluasi'  => $notulen,
-                    'tgl_evaluasi'      => $tglEvaluasi,
-                    'status'            => 'kembali_selesai',
-                    'realisasi_selesai' => date('Y-m-d'),
-                    'catatan'           => 'Evaluasi disetujui customer. Laporan akhir disusun dan PO selesai.'
-                ));
-                $this->setFlashSuccess('Hasil evaluasi disetujui customer! Dokumen PO berhasil diselesaikan.');
+                $this->setFlashSuccess('Hasil evaluasi disetujui customer! Dokumen PO berhasil diselesaikan & siap BAST.');
             } else {
-                // Tidak disetujui -> kembali ke tahap pelaksanaan (iterasi ulang/revisi)
-                $poModel->updateData($poId, array(
-                    'evaluasi_status'  => 'perlu_revisi',
-                    'notulen_evaluasi' => $notulen,
-                    'tgl_evaluasi'     => $tglEvaluasi,
-                    'status'           => 'on_proses',
-                    'tanggal_kembali'  => date('Y-m-d'),
-                    'catatan'          => "Evaluasi belum disetujui (Revisi): {$notulen}. Dokumen kembali ke tahap pelaksanaan."
-                ));
-                $this->setFlashSuccess('Catatan revisi evaluasi disimpan. Status PO dikembalikan ke tahap Pelaksanaan (On Proses).');
+                $this->setFlashWarning('Catatan revisi evaluasi disimpan. Status PO dikembalikan ke tahap Pelaksanaan (On Proses).');
             }
 
-            $f3->reroute("/po/{$poId}");
+            $f3->reroute("/po/{$poId}#evaluasi-section");
         } catch (\Exception $e) {
             $this->setFlashError('Gagal memproses evaluasi: ' . $e->getMessage());
             $f3->reroute("/po/{$poId}");

@@ -1,0 +1,394 @@
+<div class="container-fluid px-0">
+    <!-- Header & Navigasi -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1 small">
+                    <li class="breadcrumb-item"><a href="{{ @BASE }}/order" class="text-decoration-none text-muted">Order Masuk</a></li>
+                    <li class="breadcrumb-item"><a href="{{ @BASE }}/order/{{ @order.id }}" class="text-decoration-none text-muted">Order #{{ @order.nomor_order }}</a></li>
+                    <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Kalkulator Tarif Pengujian</li>
+                </ol>
+            </nav>
+            <h4 class="fw-bold text-dark m-0 d-flex align-items-center gap-2 font-display">
+                <i class="bi bi-calculator text-success"></i> Kaji Ulang Teknis &amp; Kalkulator Tarif Pengujian
+            </h4>
+            <p class="text-muted small m-0 mt-1">
+                Penetapan parameter uji laboratorium lingkungan, acuan standar SNI/ASTM, tarif resmi PNBP, dan estimasi waktu penyelesaian (SPM).
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ @BASE }}/order/{{ @order.id }}" class="btn btn-outline-secondary btn-sm px-3 fw-semibold shadow-sm d-flex align-items-center gap-1">
+                <i class="bi bi-arrow-left"></i> Kembali ke Detail Order
+            </a>
+        </div>
+    </div>
+
+    <!-- Alert / Flash Message -->
+    <check if="{{ @SESSION.flash_error }}">
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm border-0 mb-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ @SESSION.flash_error }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    </check>
+
+    <!-- KARTU INFORMASI ORDER & KLIEN -->
+    <div class="card border-0 shadow-sm mb-4" style="background: #ffffff; border-left: 4px solid var(--color-success) !important; border-radius: 8px;">
+        <div class="card-body p-3 p-md-4">
+            <div class="row g-3 align-items-center">
+                <div class="col-md-8">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold">OPTI LINGKUNGAN</span>
+                        <span class="text-muted small font-monospace">Order #{{ @order.nomor_order }}</span>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-1">{{ @order.judul_kegiatan }}</h5>
+                    <div class="small text-secondary">
+                        <i class="bi bi-building me-1"></i> Pelanggan: <strong>{{ @order.nama_perusahaan }} ({{ @order.pt_cv }})</strong> &bull; 
+                        <i class="bi bi-person me-1"></i> PIC: {{ @order.pic ?: '-' }} ({{ @order.telepon ?: '-' }})
+                    </div>
+                </div>
+                <div class="col-md-4 text-md-end border-start-md ps-md-4">
+                    <div class="small text-muted mb-1">Status Disposisi Teknis:</div>
+                    <span class="badge bg-success text-white px-3 py-2 fw-semibold">
+                        <i class="bi bi-check-circle me-1"></i> Laboratorium Pengujian Lingkungan
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form action="{{ @BASE }}/order/{{ @order.id }}/biaya-lingkungan" method="POST" id="formKalkulasiLingkungan">
+        
+        <!-- KARTU DAFTAR PARAMETER UJI & METODE -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2">
+                    <i class="bi bi-list-check text-success"></i> Parameter Pengujian Laboratorium
+                </h6>
+                <button type="button" class="btn btn-success btn-sm fw-bold shadow-sm d-flex align-items-center gap-1" onclick="addRowUji()">
+                    <i class="bi bi-plus-circle"></i> Tambah Parameter
+                </button>
+            </div>
+
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" id="tableUjiLingkungan">
+                        <thead class="bg-light text-secondary small text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                            <tr>
+                                <th style="width: 50px;" class="text-center">No</th>
+                                <th style="width: 180px;">Kategori Layanan</th>
+                                <th>Parameter &amp; Metode Acuan Standar</th>
+                                <th style="width: 180px;" class="text-end">Tarif Satuan (Rp)</th>
+                                <th style="width: 110px;" class="text-center">Jml Sampel</th>
+                                <th style="width: 180px;" class="text-end">Subtotal (Rp)</th>
+                                <th style="width: 60px;" class="text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyUji">
+                            <!-- Baris diisi oleh JS/PHP -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="p-3 bg-light border-top d-flex justify-content-between align-items-center">
+                    <span class="small text-muted">
+                        <i class="bi bi-info-circle text-primary me-1"></i> Tarif per parameter mengacu pada Peraturan Pemerintah (PP) Tarif PNBP Kementerian Perindustrian.
+                    </span>
+                    <button type="button" class="btn btn-outline-success btn-sm fw-semibold" onclick="addRowUji()">
+                        <i class="bi bi-plus-lg me-1"></i> Tambah Baris Parameter
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- PANEL PENGATURAN WAKTU, DISKON & RINGKASAN KEUANGAN -->
+        <div class="row g-4 mb-4">
+            
+            <!-- Pengaturan Parameter Pelaksanaan & Diskon -->
+            <div class="col-lg-5">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white py-3 border-bottom">
+                        <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2">
+                            <i class="bi bi-sliders text-success"></i> Parameter Pelaksanaan &amp; Penyesuaian
+                        </h6>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-dark">
+                                <i class="bi bi-calendar-check text-primary me-1"></i> Tanggal Penerimaan Fisik Sampel di Lab:
+                            </label>
+                            <input type="date" name="tanggal_terima_sampel" id="tanggal_terima_sampel" class="form-control form-control-sm" value="{{ @order.tanggal_terima_sampel ?: date('Y-m-d') }}" onchange="recalculateTotals()">
+                            <small class="text-muted" style="font-size: 0.725rem;">Estimasi tanggal mulai pengujian dan penghitungan batas waktu (SPM).</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-dark">
+                                <i class="bi bi-clock-history text-success me-1"></i> Standar Pelayanan Minimum (SPM):
+                            </label>
+                            <div class="input-group input-group-sm">
+                                <input type="text" id="display_spm" class="form-control form-control-sm bg-light fw-bold text-dark" value="10 Hari Kerja" readonly>
+                                <span class="input-group-text bg-light text-muted small"><i class="bi bi-shield-check text-success"></i></span>
+                            </div>
+                            <small class="text-muted" style="font-size: 0.725rem;">Durasi standar pengujian laboratorium lingkungan BBSPJIS.</small>
+                        </div>
+
+                        <div class="mb-0">
+                            <label class="form-label small fw-bold text-dark">
+                                <i class="bi bi-tag text-danger me-1"></i> Potongan / Penyesuaian Diskon (Rp):
+                            </label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text bg-light fw-bold">Rp</span>
+                                <input type="number" name="diskon_penawaran" id="diskon_penawaran" class="form-control form-control-sm text-end fw-bold" value="{{ @order.diskon_penawaran ?: 0 }}" min="0" step="50000" oninput="recalculateTotals()">
+                            </div>
+                            <small class="text-muted" style="font-size: 0.725rem;">Masukkan nominal potongan harga jika terdapat persetujuan khusus pimpinan.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ringkasan Anggaran & Rekapitulasi Tarif -->
+            <div class="col-lg-7">
+                <div class="card border-0 shadow-sm h-100 bg-white">
+                    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2">
+                            <i class="bi bi-receipt-cutoff text-success"></i> Rekapitulasi Anggaran Pengujian
+                        </h6>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle">Kalkulasi Resmi</span>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-3 mb-3">
+                            <div class="col-6">
+                                <div class="p-3 bg-light rounded border text-center">
+                                    <div class="text-muted small text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">Jumlah Parameter</div>
+                                    <h4 class="fw-bold text-dark mb-0 mt-1" id="lblJmlParameter">0</h4>
+                                    <small class="text-muted" style="font-size: 0.725rem;">Metode Uji Terpilih</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="p-3 bg-light rounded border text-center">
+                                    <div class="text-muted small text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">Total Sampel / Titik</div>
+                                    <h4 class="fw-bold text-dark mb-0 mt-1" id="lblTotalSampel">0</h4>
+                                    <small class="text-muted" style="font-size: 0.725rem;">Unit Sampel Diuji</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-3 rounded border mb-4" style="background-color: #f8fafc;">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="text-secondary small">Total Tarif Bruto (Katalog PNBP):</span>
+                                <strong class="text-dark" id="lblTotalBruto">Rp 0</strong>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="text-danger small">Potongan Diskon:</span>
+                                <strong class="text-danger" id="lblTotalDiskon">- Rp 0</strong>
+                            </div>
+                            <hr class="my-2 border-secondary-subtle">
+                            <div class="d-flex justify-content-between align-items-center pt-1">
+                                <div>
+                                    <span class="fw-bold text-dark fs-6">Total Biaya Penawaran (Netto):</span>
+                                    <small class="d-block text-muted" style="font-size: 0.725rem;">Biaya resmi yang akan tercantum pada Surat Penawaran</small>
+                                </div>
+                                <h3 class="fw-bold text-success mb-0 font-monospace" id="lblTotalNetto">Rp 0</h3>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{{ @BASE }}/order/{{ @order.id }}" class="btn btn-outline-secondary btn-sm px-3">
+                                Batal
+                            </a>
+                            <button type="submit" class="btn btn-success btn-sm px-4 fw-bold shadow-sm d-flex align-items-center gap-2">
+                                <i class="bi bi-save"></i> Simpan Hasil Kalkulasi Tarif
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </form>
+</div>
+
+<!-- Master Data Metode untuk JavaScript -->
+<script>
+var MASTER_METODE = [
+    <repeat group="{{ @daftar_metode }}" value="{{ @m }}">
+    {
+        id: {{ @m.id }},
+        kategori_id: {{ @m.kategori_id }},
+        nama: "{{ addslashes(@m.nama_metode) }}",
+        standar: "{{ addslashes(@m.deskripsi_kegunaan ?? '') }}",
+        tarif: {{ (float)@m.harga }},
+        durasi_hari: {{ (int)@m.durasi_nilai * 30 }}
+    },
+    </repeat>
+];
+
+var INITIAL_ITEMS = [
+    <repeat group="{{ @kalkulasi_items }}" value="{{ @it }}">
+    {
+        sub_layanan: "{{ @it.sub_layanan }}",
+        metode_uji_id: {{ @it.metode_uji_id ?: 'null' }},
+        nama_pengujian: "{{ addslashes(@it.nama_pengujian) }}",
+        standar_rujukan: "{{ addslashes(@it.standar_rujukan) }}",
+        tarif_per_sampel: {{ (float)@it.tarif_per_sampel }},
+        jumlah_sampel: {{ (int)@it.jumlah_sampel }},
+        durasi_bulan: {{ (int)@it.durasi_bulan }},
+        is_subkontrak: {{ @it.is_subkontrak ? 'true' : 'false' }},
+        lab_eksternal_id: {{ @it.lab_eksternal_id ?: 'null' }}
+    },
+    </repeat>
+];
+
+var rowIndex = 0;
+
+function addRowUji(data) {
+    data = data || {
+        sub_layanan: 'uji_laboratorium',
+        metode_uji_id: null,
+        nama_pengujian: '',
+        standar_rujukan: '',
+        tarif_per_sampel: 0,
+        jumlah_sampel: 1,
+        durasi_bulan: 1,
+        is_subkontrak: false,
+        lab_eksternal_id: null
+    };
+
+    var tbody = document.getElementById('tbodyUji');
+    var tr = document.createElement('tr');
+    tr.id = 'row_' + rowIndex;
+
+    var idx = rowIndex;
+    rowIndex++;
+
+    var optMetodeHtml = '<option value="">-- Pilih dari Katalog Standar PNBP --</option>';
+    MASTER_METODE.forEach(function(m) {
+        var sel = (data.metode_uji_id == m.id) ? 'selected' : '';
+        optMetodeHtml += '<option value="' + m.id + '" data-tarif="' + m.tarif + '" data-standar="' + m.standar + '" data-durasi="' + m.durasi_hari + '" ' + sel + '>' + m.nama + ' (' + m.standar + ')</option>';
+    });
+
+    tr.innerHTML = `
+        <td class="text-center text-muted fw-bold small row-number">
+            ${idx + 1}
+        </td>
+        <td>
+            <select name="items[${idx}][sub_layanan]" class="form-select form-select-sm">
+                <option value="uji_laboratorium" ${data.sub_layanan == 'uji_laboratorium' ? 'selected' : ''}>Uji Laboratorium</option>
+                <option value="lpv" ${data.sub_layanan == 'lpv' ? 'selected' : ''}>Layanan LPV (Emisi/Lapangan)</option>
+                <option value="kajian_lab" ${data.sub_layanan == 'kajian_lab' ? 'selected' : ''}>Kajian Laboratorium</option>
+                <option value="konsultansi" ${data.sub_layanan == 'konsultansi' ? 'selected' : ''}>Konsultansi Lingkungan</option>
+            </select>
+        </td>
+        <td>
+            <select class="form-select form-select-sm mb-2 select-metode fw-semibold" name="items[${idx}][metode_uji_id]" onchange="onSelectMetode(${idx}, this)">
+                ${optMetodeHtml}
+            </select>
+            <div class="row g-2">
+                <div class="col-md-7">
+                    <input type="text" name="items[${idx}][nama_pengujian]" id="nama_${idx}" class="form-control form-control-sm" placeholder="Nama Parameter Uji" value="${data.nama_pengujian}" required>
+                </div>
+                <div class="col-md-5">
+                    <input type="text" name="items[${idx}][standar_rujukan]" id="standar_${idx}" class="form-control form-control-sm font-monospace text-muted" placeholder="Acuan (SNI/ASTM)" value="${data.standar_rujukan}">
+                </div>
+            </div>
+        </td>
+        <td>
+            <div class="input-group input-group-sm">
+                <span class="input-group-text bg-light">Rp</span>
+                <input type="number" name="items[${idx}][tarif_per_sampel]" id="tarif_${idx}" class="form-control form-control-sm text-end fw-bold font-monospace input-tarif" value="${data.tarif_per_sampel}" min="0" step="1000" oninput="recalculateTotals()">
+            </div>
+        </td>
+        <td>
+            <input type="number" name="items[${idx}][jumlah_sampel]" id="sampel_${idx}" class="form-control form-control-sm text-center fw-bold font-monospace input-sampel" value="${data.jumlah_sampel}" min="1" oninput="recalculateTotals()">
+        </td>
+        <td>
+            <div class="fw-bold text-end text-dark font-monospace" id="total_item_${idx}">Rp 0</div>
+        </td>
+        <td class="text-center">
+            <button type="button" class="btn btn-outline-danger btn-sm p-1" onclick="removeRowUji(${idx})" title="Hapus Baris">
+                <i class="bi bi-trash"></i>
+            </button>
+        </td>
+    `;
+
+    tbody.appendChild(tr);
+    reindexRows();
+    recalculateTotals();
+}
+
+function onSelectMetode(idx, selectEl) {
+    var opt = selectEl.options[selectEl.selectedIndex];
+    if (opt && opt.value) {
+        var tarif = parseFloat(opt.getAttribute('data-tarif')) || 0;
+        var standar = opt.getAttribute('data-standar') || '';
+
+        document.getElementById('nama_' + idx).value = opt.text.split(' (')[0];
+        document.getElementById('standar_' + idx).value = standar;
+        document.getElementById('tarif_' + idx).value = tarif;
+    }
+    recalculateTotals();
+}
+
+function removeRowUji(idx) {
+    var tr = document.getElementById('row_' + idx);
+    if (tr) {
+        tr.remove();
+    }
+    reindexRows();
+    recalculateTotals();
+}
+
+function reindexRows() {
+    var rows = document.querySelectorAll('#tbodyUji tr');
+    rows.forEach(function(tr, i) {
+        var numEl = tr.querySelector('.row-number');
+        if (numEl) {
+            numEl.textContent = i + 1;
+        }
+    });
+}
+
+function recalculateTotals() {
+    var rows = document.querySelectorAll('#tbodyUji tr');
+    var totalBruto = 0;
+    var totalSampel = 0;
+    var countParam = rows.length;
+
+    rows.forEach(function(tr) {
+        var tarifEl = tr.querySelector('.input-tarif');
+        var sampelEl = tr.querySelector('.input-sampel');
+        var itemTotalEl = tr.querySelector('[id^="total_item_"]');
+
+        var tarif = parseFloat(tarifEl ? tarifEl.value : 0) || 0;
+        var sampel = parseInt(sampelEl ? sampelEl.value : 1) || 1;
+
+        var subTotal = tarif * sampel;
+        totalBruto += subTotal;
+        totalSampel += sampel;
+
+        if (itemTotalEl) {
+            itemTotalEl.textContent = 'Rp ' + subTotal.toLocaleString('id-ID');
+        }
+    });
+
+    var diskonEl = document.getElementById('diskon_penawaran');
+    var diskon = parseFloat(diskonEl ? diskonEl.value : 0) || 0;
+    var totalNetto = Math.max(0, totalBruto - diskon);
+
+    document.getElementById('lblJmlParameter').textContent = countParam;
+    document.getElementById('lblTotalSampel').textContent = totalSampel;
+    document.getElementById('lblTotalBruto').textContent = 'Rp ' + totalBruto.toLocaleString('id-ID');
+    document.getElementById('lblTotalDiskon').textContent = '- Rp ' + diskon.toLocaleString('id-ID');
+    document.getElementById('lblTotalNetto').textContent = 'Rp ' + totalNetto.toLocaleString('id-ID');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (INITIAL_ITEMS && INITIAL_ITEMS.length > 0) {
+        INITIAL_ITEMS.forEach(function(item) {
+            addRowUji(item);
+        });
+    } else {
+        addRowUji(); // Baris pertama default
+    }
+});
+</script>

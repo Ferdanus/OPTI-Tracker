@@ -19,53 +19,76 @@ class Controller {
     protected $db;
 
     /**
-     * Matriks Hak Akses / Permission per Role (Logika Murni OPTI)
+     * Matriks Hak Akses / Permission per Role (Logika Murni OPTI BBSPJIS Sesuai Arahan Mentor)
      */
     protected static $PERMISSION_MATRIX = array(
         'admin_order' => array(
-            'order:view', 'order:create', 'order:edit',
-            'pembayaran:view', 'pembayaran:create', 'pembayaran:edit',
+            'surat_masuk:view', 'surat_masuk:klaim', 'surat_masuk:batal', 'surat_masuk:registrasi',
+            'order:view', 'order:create', 'order:edit', 'order:disposisi', 'order:tinjau',
+            'penawaran:view', 'penawaran:create', 'penawaran:edit', 'penawaran:cetak',
+            'klien:view', 'klien:create', 'klien:edit',
             'po:view', 'po:sop',
             'kontrak:view',
+            'pembayaran:view',
+            'alert:manage'
+        ),
+        'tim_mitra' => array(
+            'surat_masuk:view', 'surat_masuk:klaim', 'surat_masuk:batal', 'surat_masuk:registrasi',
+            'order:view', 'order:create', 'order:edit', 'order:disposisi', 'order:tinjau',
+            'penawaran:view', 'penawaran:create', 'penawaran:edit', 'penawaran:cetak',
+            'klien:view', 'klien:create', 'klien:edit',
+            'po:view', 'po:sop',
+            'kontrak:view',
+            'pembayaran:view',
             'alert:manage'
         ),
         'ketua_tim' => array(
-            'order:view',
-            'pembayaran:view',
+            'surat_masuk:view',
+            'order:view', 'order:tinjau', 'order:proposal', 'order:kalkulasi_biaya',
             'po:view', 'po:create', 'po:edit', 'po:rab', 'po:jadwal', 'po:evaluasi', 'po:sop',
+            'penawaran:view',
+            'klien:view',
             'kontrak:view',
+            'pembayaran:view',
             'config:team', 'config:manage',
             'alert:manage'
         ),
         'pejabat' => array(
+            'surat_masuk:view',
             'order:view',
-            'pembayaran:view',
-            'po:view', 'po:sop',
-            'po:approve', // TODO: Konfirmasi ke user asli apakah approver juga boleh reject dengan catatan revisi (bukan cuma ya/tidak)
+            'penawaran:view',
+            'po:view', 'po:sop', 'po:approve',
             'kontrak:view',
+            'pembayaran:view',
+            'klien:view',
             'alert:manage'
         ),
         'tim_kerja' => array(
             'order:view',
-            'pembayaran:view',
             'po:view', 'po:progress', 'po:laporan', 'po:sop',
-            'kontrak:view',
             'alert:manage'
         ),
         'admin_kontrak' => array(
             'order:view',
             'po:view', 'po:sop',
             'kontrak:view', 'kontrak:create', 'kontrak:edit',
+            'pembayaran:view', 'pembayaran:create', 'pembayaran:edit',
+            'klien:view',
+            'alert:manage'
+        ),
+        'sekretaris' => array(
+            'surat_masuk:view', 'surat_masuk:registrasi',
             'alert:manage'
         ),
         'superadmin' => array(
-            '*' // Akses tanpa batas
+            '*' // Akses tanpa batas ke seluruh modul
         )
     );
 
     public function __construct() {
         $this->f3 = \Base::instance();
         $this->db = $this->f3->get('DB');
+        $this->dbSekretariat = $this->f3->get('DB_SEKRETARIAT');
     }
 
     /**
@@ -76,15 +99,31 @@ class Controller {
         $this->f3->set('page_title', $pageTitle);
         $this->f3->set('active_menu', $activeMenu);
 
-        // Inject flag hak akses ke view untuk conditional UI rendering
+        $role = $this->getUserRole();
+        $layanan = $this->getUserLayanan();
+
+        // Inject flag hak akses granular ke view untuk conditional UI rendering
+        $this->f3->set('user_role', $role);
+        $this->f3->set('user_layanan', $layanan);
+
+        $this->f3->set('is_superadmin', $role === 'superadmin');
+        $this->f3->set('is_admin_order', $role === 'admin_order' || $role === 'tim_mitra');
+        $this->f3->set('is_ketua_tim', $role === 'ketua_tim');
+        $this->f3->set('is_ketua_selulosa', $role === 'ketua_tim' && $layanan === 'selulosa');
+        $this->f3->set('is_ketua_lingkungan', $role === 'ketua_tim' && $layanan === 'lingkungan');
+        $this->f3->set('is_pejabat', $role === 'pejabat');
+        $this->f3->set('is_tim_kerja', $role === 'tim_kerja');
+        $this->f3->set('is_admin_kontrak', $role === 'admin_kontrak');
+        $this->f3->set('is_sekretaris', $role === 'sekretaris');
+
         $this->f3->set('can_manage_order', $this->hasPermission('order:create') || $this->hasPermission('order:edit'));
-        $this->f3->set('can_manage_pembayaran', $this->hasPermission('pembayaran:create'));
+        $this->f3->set('can_manage_surat_masuk', $this->hasPermission('surat_masuk:klaim') || $this->hasPermission('surat_masuk:registrasi'));
+        $this->f3->set('can_manage_penawaran', $this->hasPermission('penawaran:create') || $this->hasPermission('penawaran:edit'));
+        $this->f3->set('can_manage_pembayaran', $this->hasPermission('pembayaran:create') || $this->hasPermission('pembayaran:edit'));
         $this->f3->set('can_manage_po', $this->hasPermission('po:create') || $this->hasPermission('po:edit'));
         $this->f3->set('can_approve_po', $this->hasPermission('po:approve'));
         $this->f3->set('can_manage_kontrak', $this->hasPermission('kontrak:create') || $this->hasPermission('kontrak:edit'));
         $this->f3->set('can_manage_config', $this->hasPermission('config:manage') || $this->hasPermission('config:team'));
-        $this->f3->set('user_role', $this->getUserRole());
-        $this->f3->set('user_layanan', $this->getUserLayanan());
 
         echo \Template::instance()->render('layout.html');
     }
@@ -125,6 +164,13 @@ class Controller {
             $this->f3->reroute($redirectUrl);
             exit;
         }
+    }
+
+    /**
+     * Ambil user ID dari session
+     */
+    public function getUserId(): ?int {
+        return !empty($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : null;
     }
 
     /**

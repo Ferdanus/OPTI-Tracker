@@ -40,6 +40,25 @@ try {
     );
     // Simpan object database ke hive F3 agar bisa diakses global
     $f3->set('DB', $db);
+
+    // Setup koneksi kedua (Database Eksternal Sekretariat untuk Surat Masuk)
+    try {
+        if ($f3->exists('db_sekretariat_dns') && $f3->get('db_sekretariat_dns')) {
+            $dbSekretariat = new \DB\SQL(
+                $f3->get('db_sekretariat_dns'),
+                $f3->get('db_sekretariat_user'),
+                $f3->get('db_sekretariat_pass')
+            );
+            $f3->set('DB_SEKRETARIAT', $dbSekretariat);
+        } else {
+            $f3->set('DB_SEKRETARIAT', null);
+        }
+    } catch (\Exception $eSekretariat) {
+        // Jangan gagalkan seluruh aplikasi jika DB eksternal sedang offline
+        error_log("DB Sekretariat Connection Failed: " . $eSekretariat->getMessage());
+        $f3->set('DB_SEKRETARIAT', null);
+        $f3->set('DB_SEKRETARIAT_ERROR', $eSekretariat->getMessage());
+    }
 } catch (\Exception $e) {
     // Tangani jika koneksi database gagal
     echo '<div style="font-family: sans-serif; padding: 20px; background: #fee2e2; border: 1px solid #ef4444; border-radius: 8px; margin: 20px;">';
@@ -75,6 +94,8 @@ $f3->route('GET /', function($f3) {
 // ==========================================
 $f3->route('GET /login', 'AuthController->loginGet');
 $f3->route('POST /login', 'AuthController->loginPost');
+$f3->route('GET /login/switch/@id', 'AuthController->quickLogin');
+$f3->route('POST /login/switch', 'AuthController->quickLogin');
 $f3->route('GET /logout', 'AuthController->logout');
 $f3->route('POST /logout', 'AuthController->logout');
 $f3->route('GET /profil', 'AuthController->profileGet');
@@ -103,19 +124,41 @@ $f3->route('POST /customer/@id/hapus', 'CustomerController->hapus');
 $f3->route('GET /order', 'OrderController->index');
 $f3->route('GET /order/tambah', 'OrderController->tambah');
 $f3->route('POST /order/simpan', 'OrderController->simpan');
+$f3->route('GET /order/@id', 'OrderController->detail');
 $f3->route('GET /order/@id/edit', 'OrderController->edit');
 $f3->route('POST /order/@id/update', 'OrderController->update');
+$f3->route('POST /order/@id/klien/update', 'OrderController->updateCustomer');
 $f3->route('POST /order/@id/hapus', 'OrderController->hapus');
+$f3->route('POST /order/@id/disposisi', 'OrderController->disposisi');
 $f3->route('POST /order/@id/approve', 'OrderController->approve');
 $f3->route('POST /order/@id/tolak', 'OrderController->tolak');
+$f3->route('GET /order/@id/tinjauan', 'OrderController->tinjauan');
+$f3->route('POST /order/@id/tinjauan', 'OrderController->tinjauanPost');
+$f3->route('GET /order/@id/biaya-proposal', 'OrderController->biayaProposal');
+$f3->route('POST /order/@id/biaya-proposal', 'OrderController->biayaProposalPost');
+$f3->route('GET /order/@id/rancop-selulosa', 'OrderController->rancopSelulosa');
+$f3->route('POST /order/@id/rancop-selulosa', 'OrderController->simpanRancopSelulosa');
+$f3->route('GET /order/@id/biaya-lingkungan', 'OrderController->biayaLingkungan');
+$f3->route('POST /order/@id/biaya-lingkungan', 'OrderController->biayaLingkunganPost');
 
 // ==========================================
-// ROUTE MODUL PEMBAYARAN MULTI-TERMIN
+// ROUTE MODUL PEMBAYARAN MULTI-TERMIN & INVOICE
 // ==========================================
 $f3->route('GET /pembayaran', 'PembayaranController->index');
 $f3->route('GET /pembayaran/tambah', 'PembayaranController->tambah');
 $f3->route('POST /pembayaran/simpan', 'PembayaranController->simpan');
 $f3->route('POST /pembayaran/@id/hapus', 'PembayaranController->hapus');
+$f3->route('GET /order/@id/invoice/buat', 'PembayaranController->invoiceForm');
+$f3->route('POST /order/@id/invoice/simpan', 'PembayaranController->invoiceSimpan');
+$f3->route('GET /order/@id/pembayaran/tambah', 'PembayaranController->tambahDariOrder');
+$f3->route('POST /order/@id/pembayaran/simpan', 'PembayaranController->simpanDariOrder');
+
+// ==========================================
+// ROUTE MODUL BAST & PENUTUPAN ORDER
+// ==========================================
+$f3->route('GET /order/@id/bast/buat', 'BastController->formBast');
+$f3->route('POST /order/@id/bast/simpan', 'BastController->simpanBast');
+$f3->route('POST /order/@id/bast/tutup', 'BastController->tutupOrder');
 
 // ==========================================
 // ROUTE MODUL PO (DASHBOARD & MONITORING)
@@ -137,6 +180,7 @@ $f3->route('POST /po/@id/jadwal/tambah', 'PoController->tambahJadwal');
 $f3->route('POST /po/@id/jadwal/@jadwal_id/status', 'PoController->updateJadwalStatus');
 $f3->route('POST /po/@id/jadwal/@jadwal_id/hapus', 'PoController->hapusJadwal');
 $f3->route('POST /po/@id/evaluasi', 'PoController->updateEvaluasi');
+$f3->route('POST /po/@id/laporan/upload', 'PoController->uploadLaporan');
 
 // ==========================================
 // ROUTE MODUL KONTRAK PKS
@@ -147,6 +191,8 @@ $f3->route('POST /kontrak/simpan', 'KontrakController->simpan');
 $f3->route('GET /kontrak/@id/edit', 'KontrakController->edit');
 $f3->route('POST /kontrak/@id/update', 'KontrakController->update');
 $f3->route('POST /kontrak/@id/hapus', 'KontrakController->hapus');
+$f3->route('GET /po/@id/kontrak/buat', 'KontrakController->tambahDariPo');
+$f3->route('POST /po/@id/kontrak/simpan', 'KontrakController->simpanDariPo');
 
 // ==========================================
 // ROUTE PENGATURAN KONFIGURASI DINAMIS & PRIVASI
@@ -160,47 +206,61 @@ $f3->route('POST /config/set-ketua-tim', 'ConfigController->setKetuaTim');
 // ==========================================
 // ROUTE ADMIN_ORDER
 // ==========================================
+$f3->route('GET /admin-order', 'DashboardController->adminOrder');
+$f3->route('GET /kategori-uji', 'KategoriUjiController->index');
+$f3->route('POST /kategori-uji/simpan', 'KategoriUjiController->simpan');
+$f3->route('POST /kategori-uji/update', 'KategoriUjiController->update');
+$f3->route('POST /kategori-uji/hapus', 'KategoriUjiController->hapus');
 
-$f3->route('GET /admin-order', 'DashboardController->index');
-$f3->route('GET /kategori-uji','KategoriUjiController->index');
-$f3->route('GET /kategori-uji/tambah','KategoriUjiController->create');
-$f3->route('POST /kategori-uji/simpan','KategoriUjiController->store');
-$f3->route('GET /kategori-uji/@id/edit','KategoriUjiController->edit');
-$f3->route('POST /kategori-uji/@id/update','KategoriUjiController->update');
-$f3->route('POST /kategori-uji/@id/toggle-status','KategoriUjiController->toggleStatus');
-$f3->route('POST /kategori-uji/@id/hapus','KategoriUjiController->delete');
-// ==========================================================
-// METODE & HARGA UJI
-// ==========================================================
-$f3->route('GET /metode-uji','MetodeUjiController->index');
-$f3->route('GET /metode-uji/tambah','MetodeUjiController->create');
-$f3->route('POST /metode-uji/simpan','MetodeUjiController->store');
-$f3->route('GET /metode-uji/@id/edit','MetodeUjiController->edit');
-$f3->route('POST /metode-uji/@id/update','MetodeUjiController->update');
-$f3->route('POST /metode-uji/@id/toggle-status','MetodeUjiController->toggleStatus');
-$f3->route('POST /metode-uji/@id/hapus','MetodeUjiController->delete');
-// ==========================================================
-// Penguji EKsternal
-// ==========================================================
-$f3->route('GET /pengujian-eksternal','PengujianEksternalController->index');
-$f3->route('GET /pengujian-eksternal/tambah','PengujianEksternalController->create');
-$f3->route('POST /pengujian-eksternal/simpan','PengujianEksternalController->store');
-$f3->route('GET /pengujian-eksternal/@id/edit','PengujianEksternalController->edit');
-$f3->route('POST /pengujian-eksternal/@id/update','PengujianEksternalController->update');
-$f3->route('POST /pengujian-eksternal/@id/toggle-status','PengujianEksternalController->toggleStatus');
-$f3->route('POST /pengujian-eksternal/@id/hapus','PengujianEksternalController->delete');
-// ==========================================================
-// Surat Penawaran Mitra
-// ==========================================================
-$f3->route('GET /surat-penawaran','SuratPenawaranController->index');
-$f3->route('GET /surat-penawaran/tambah','SuratPenawaranController->create'); 
-$f3->route('POST /surat-penawaran/simpan','SuratPenawaranController->store'); 
-$f3->route('GET /surat-penawaran/@id/edit','SuratPenawaranController->edit'); 
-$f3->route('POST /surat-penawaran/@id/update','SuratPenawaranController->update'); 
-$f3->route('POST /surat-penawaran/@id/toggle-status','SuratPenawaranController->toggleStatus'); 
-$f3->route('POST /surat-penawaran/@id/hapus','SuratPenawaranController->delete');
-$f3->route('GET /surat-penawaran/@id/view',   'SuratPenawaranController->show');
-$f3->route('POST /surat-penawaran/@id/store', 'SuratPenawaranController->store');
+$f3->route('GET /metode-uji', 'MetodeUjiController->index');
+$f3->route('POST /metode-uji/simpan', 'MetodeUjiController->simpan');
+$f3->route('POST /metode-uji/update', 'MetodeUjiController->update');
+$f3->route('POST /metode-uji/hapus', 'MetodeUjiController->hapus');
 
-// Jalankan aplikasi Fat-Free Framework
+$f3->route('GET /pengujian-eksternal', 'PengujianEksternalController->index');
+$f3->route('POST /pengujian-eksternal/simpan', 'PengujianEksternalController->simpan');
+$f3->route('POST /pengujian-eksternal/update', 'PengujianEksternalController->update');
+$f3->route('POST /pengujian-eksternal/hapus', 'PengujianEksternalController->hapus');
+
+// ==========================================
+// ROUTE SURAT PENAWARAN
+// ==========================================
+$f3->route('GET /surat-penawaran', 'SuratPenawaranController->index');
+$f3->route('GET /surat-penawaran/tambah', 'SuratPenawaranController->tambah');
+$f3->route('POST /surat-penawaran/simpan', 'SuratPenawaranController->simpan');
+$f3->route('GET /surat-penawaran/@id/edit', 'SuratPenawaranController->edit');
+$f3->route('POST /surat-penawaran/@id/update', 'SuratPenawaranController->update');
+$f3->route('POST /surat-penawaran/@id/hapus', 'SuratPenawaranController->hapus');
+$f3->route('GET /order/@id/penawaran/buat', 'SuratPenawaranController->buatDariOrder');
+$f3->route('POST /order/@id/penawaran/simpan', 'SuratPenawaranController->simpanDariOrder');
+$f3->route('GET /order/@id/penawaran/cetak', 'SuratPenawaranController->cetakPdf');
+$f3->route('POST /order/@id/penawaran/status', 'SuratPenawaranController->updateStatusKlien');
+
+// ==========================================
+// ROUTE PROPOSAL
+// ==========================================
+$f3->route('GET /proposal', 'SuratPenawaranController->proposal');
+$f3->route('GET /proposal/tambah', 'SuratPenawaranController->tambahProposal');
+$f3->route('POST /proposal/simpan', 'SuratPenawaranController->simpanProposal');
+$f3->route('GET /proposal/@id/edit', 'SuratPenawaranController->editProposal');
+$f3->route('POST /proposal/@id/update', 'SuratPenawaranController->updateProposal');
+$f3->route('POST /proposal/@id/hapus', 'SuratPenawaranController->hapusProposal');
+
+// ==========================================
+// ROUTE MODUL SURAT MASUK (INTEGRASI SEKRETARIAT)
+// ==========================================
+$f3->route('GET /surat-masuk', 'SuratMasukController->index');
+$f3->route('POST /surat-masuk/klaim', 'SuratMasukController->klaim');
+$f3->route('POST /surat-masuk/batal', 'SuratMasukController->batalKlaim');
+$f3->route('GET /surat-masuk/@id/pdf', 'SuratMasukController->previewPdf');
+$f3->route('GET /surat-masuk/@id/detail', 'SuratMasukController->detailJson');
+
+// ==========================================
+// ROUTE SIMULASI SEKRETARIAT (DEMO PRESENTASI)
+// ==========================================
+$f3->route('GET /simulasi-sekretariat', 'SuratMasukController->simulasiSekretariat');
+$f3->route('POST /simulasi-sekretariat/kirim', 'SuratMasukController->kirimSimulasi');
+$f3->route('POST /simulasi-sekretariat/@id/hapus', 'SuratMasukController->hapusSimulasi');
+
+// Jalankan Fat-Free Framework Router
 $f3->run();

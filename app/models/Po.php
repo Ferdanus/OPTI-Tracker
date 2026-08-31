@@ -366,6 +366,86 @@ class Po extends \DB\SQL\Mapper {
     }
 
     /**
+     * Menyimpan dokumen draf atau final laporan hasil pengujian/riset
+     */
+    public function simpanLaporan(int $id, array $data): bool {
+        $po = $this->getById($id);
+        if (!$po) {
+            throw new \Exception("PO #{$id} tidak ditemukan.");
+        }
+
+        $nomorLaporan = trim($data['nomor_laporan_hasil'] ?? $po->nomor_laporan_hasil);
+        $ringkasan    = trim($data['laporan_akhir'] ?? $po->laporan_akhir);
+        $fileDraf     = !empty($data['file_draf_laporan']) ? $data['file_draf_laporan'] : $po->file_draf_laporan;
+        $fileFinal    = !empty($data['file_laporan_final']) ? $data['file_laporan_final'] : $po->file_laporan_final;
+
+        $this->db->exec(
+            "UPDATE po SET nomor_laporan_hasil = ?, laporan_akhir = ?, file_draf_laporan = ?, file_laporan_final = ? WHERE id = ?",
+            array(1 => $nomorLaporan, 2 => $ringkasan, 3 => $fileDraf, 4 => $fileFinal, 5 => $id)
+        );
+
+        // Update status pelaksanaan order
+        if (!empty($po->order_id)) {
+            $this->db->exec(
+                "UPDATE order_layanan SET status_pelaksanaan = 'evaluasi_laporan' WHERE id = ?",
+                array(1 => $po->order_id)
+            );
+        }
+
+        $logModel = new PoLogStatus($this->db);
+        $logModel->catat($id, null, $po->status, "Laporan hasil pengujian/riset diunggah (No: {$nomorLaporan}). Menunggu evaluasi.");
+
+        return true;
+    }
+
+    /**
+     * Memproses evaluasi draf laporan (Feedback Loop: Disetujui vs Perlu Revisi)
+     */
+    public function prosesEvaluasi(int $id, string $statusEvaluasi, string $notulen, string $userId = ''): bool {
+        $po = $this->getById($id);
+        if (!$po) {
+            throw new \Exception("PO #{$id} tidak ditemukan.");
+        }
+
+        $notulen = trim($notulen);
+        $tglEvaluasi = date('Y-m-d');
+
+        if ($statusEvaluasi === 'perlu_revisi') {
+            $this->db->exec(
+                "UPDATE po SET evaluasi_status = 'perlu_revisi', notulen_evaluasi = ?, tgl_evaluasi = ?, catatan_revisi_laporan = ?, status = 'on_proses' WHERE id = ?",
+                array(1 => $notulen, 2 => $tglEvaluasi, 3 => $notulen, 4 => $id)
+            );
+
+            if (!empty($po->order_id)) {
+                $this->db->exec(
+                    "UPDATE order_layanan SET status_pelaksanaan = 'revisi_laporan' WHERE id = ?",
+                    array(1 => $po->order_id)
+                );
+            }
+
+            $logModel = new PoLogStatus($this->db);
+            $logModel->catat($id, 'evaluasi', 'on_proses', "Evaluasi Laporan: PERLU REVISI. Notulen: {$notulen}");
+        } elseif ($statusEvaluasi === 'disetujui') {
+            $this->db->exec(
+                "UPDATE po SET evaluasi_status = 'disetujui', notulen_evaluasi = ?, tgl_evaluasi = ?, status = 'kembali_selesai', realisasi_selesai = ? WHERE id = ?",
+                array(1 => $notulen, 2 => $tglEvaluasi, 3 => $tglEvaluasi, 4 => $id)
+            );
+
+            if (!empty($po->order_id)) {
+                $this->db->exec(
+                    "UPDATE order_layanan SET status_pelaksanaan = 'laporan_selesai' WHERE id = ?",
+                    array(1 => $po->order_id)
+                );
+            }
+
+            $logModel = new PoLogStatus($this->db);
+            $logModel->catat($id, 'evaluasi', 'kembali_selesai', "Evaluasi Laporan: DISETUJUI (Selesai). Laporan siap diserahkan ke pelanggan & BAST.");
+        }
+
+        return true;
+    }
+
+    /**
      * Hapus PO beserta seluruh data relasi (RAB, Jadwal, Pembayaran, Log, Kontrak)
      */
     public function hapus(int $id): bool {

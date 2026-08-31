@@ -25,7 +25,7 @@ class KontrakController extends Controller {
         $f3->set('daftar_kontrak', $daftarKontrak);
         $f3->set('mask_client_name', $maskEnabled);
 
-        $this->render('kontrak/index.html', 'Daftar Kontrak PKS - OPTI Tracker', 'kontrak');
+        $this->render('kontrak/index.html', 'Daftar Kontrak PKS', 'kontrak');
     }
 
     /**
@@ -52,7 +52,7 @@ class KontrakController extends Controller {
 
         $f3->set('kontrak', null);
         $f3->set('daftar_po', $daftarPo);
-        $this->render('kontrak/form.html', 'Input Kontrak PKS Baru - OPTI Tracker', 'kontrak');
+        $this->render('kontrak/form.html', 'Input Kontrak PKS Baru', 'kontrak');
     }
 
     /**
@@ -142,7 +142,7 @@ class KontrakController extends Controller {
 
         $f3->set('kontrak', $kontrak->cast());
         $f3->set('daftar_po', $daftarPo);
-        $this->render('kontrak/form.html', 'Edit Kontrak PKS - OPTI Tracker', 'kontrak');
+        $this->render('kontrak/form.html', 'Edit Kontrak PKS', 'kontrak');
     }
 
     /**
@@ -221,6 +221,62 @@ class KontrakController extends Controller {
         } catch (\Exception $e) {
             $this->setFlashError('Gagal menghapus Kontrak PKS: ' . $e->getMessage());
             $f3->reroute('/kontrak');
+        }
+    }
+
+    /**
+     * Form penerbitan Kontrak PKS langsung dari halaman PO
+     * Route: GET /po/@id/kontrak/buat
+     */
+    public function tambahDariPo($f3, $params) {
+        $this->requirePermission('kontrak:create', '/po');
+
+        $poId = (int)($params['id'] ?? 0);
+        $poModel = new Po($this->db);
+        $po = $poModel->getDetail($poId);
+
+        if (!$po) {
+            $this->setFlashError("Dokumen PO #{$poId} tidak ditemukan.");
+            $f3->reroute('/po');
+            return;
+        }
+
+        $kontrakModel = new KontrakPks($this->db);
+        $existing = $kontrakModel->getByPoId($poId);
+        if ($existing) {
+            $f3->reroute("/kontrak/{$existing['id']}/edit");
+            return;
+        }
+
+        $nomorPksOtomatis = $kontrakModel->generateNomorPks();
+
+        $f3->set('po', $po);
+        $f3->set('nomor_pks_otomatis', $nomorPksOtomatis);
+        $f3->set('kontrak', null);
+
+        $this->render('kontrak/form.html', "Terbitkan Kontrak PKS - PO #{$po['nomor_po']}", 'kontrak');
+    }
+
+    /**
+     * Simpan Kontrak PKS langsung dari halaman PO
+     * Route: POST /po/@id/kontrak/simpan
+     */
+    public function simpanDariPo($f3, $params) {
+        $this->requirePermission('kontrak:create', '/po');
+
+        $poId = (int)($params['id'] ?? 0);
+        $post = $f3->get('POST');
+
+        try {
+            $kontrakModel = new KontrakPks($this->db);
+            $post['po_id'] = $poId;
+            $newId = $kontrakModel->simpanBaru($post);
+
+            $this->setFlashSuccess("Kontrak PKS berhasil diterbitkan dan dihubungkan dengan PO #{$poId}.");
+            $f3->reroute("/po/{$poId}");
+        } catch (\Exception $e) {
+            $this->setFlashError('Gagal menerbitkan Kontrak PKS: ' . $e->getMessage());
+            $f3->reroute("/po/{$poId}/kontrak/buat");
         }
     }
 }

@@ -1,18 +1,8 @@
 <?php
 
-class PengujianEksternalController
+class PengujianEksternalController extends Controller
 {
-    /** @var \Base */
-    protected $f3;
 
-    /** @var \DB\SQL */
-    protected $db;
-
-    public function __construct()
-    {
-        $this->f3 = \Base::instance();
-        $this->db = $this->f3->get('DB');
-    }
 
     /** GET /pengujian-eksternal */
     public function index($f3)
@@ -83,10 +73,7 @@ class PengujianEksternalController
         $f3->set('filter_metode', $filterMetode);
         $f3->set('filter_status', $filterStatus);
 
-        $f3->set('page_title', 'Data Pengujian Eksternal');
-        $f3->set('active_menu', 'pengujian-eksternal');
-        $f3->set('content', 'admin-order/penguji-eksternal/index.html');
-        echo \Template::instance()->render('layout.html');
+        $this->render('admin-order/penguji-eksternal/index.html', 'Data Pengujian Eksternal', 'pengujian-eksternal');
     }
 
     /** GET /pengujian-eksternal/tambah  (support ?metode=ID untuk preselect) */
@@ -102,10 +89,7 @@ class PengujianEksternalController
         $f3->set('metode_terpilih', $f3->get('GET.metode'));
         $f3->set('eksternal', null);
 
-        $f3->set('page_title', 'Tambah Data Pengujian Eksternal');
-        $f3->set('active_menu', 'pengujian-eksternal');
-        $f3->set('content', 'admin-order/penguji-eksternal/form.html');
-        echo \Template::instance()->render('layout.html');
+        $this->render('admin-order/penguji-eksternal/form.html', 'Tambah Data Pengujian Eksternal', 'pengujian-eksternal');
     }
 
     /** GET /pengujian-eksternal/@id/edit */
@@ -128,10 +112,7 @@ class PengujianEksternalController
         ));
         $f3->set('eksternal', $eksternal->cast());
 
-        $f3->set('page_title', 'Edit Data Pengujian Eksternal');
-        $f3->set('active_menu', 'pengujian-eksternal');
-        $f3->set('content', 'pengujian-eksternal/form.htm');
-        echo \Template::instance()->render('layout.htm');
+        $this->render('admin-order/penguji-eksternal/form.html', 'Edit Data Pengujian Eksternal', 'pengujian-eksternal');
     }
 
     /** POST /pengujian-eksternal/simpan */
