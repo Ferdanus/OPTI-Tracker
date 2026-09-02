@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verifikasi OTP WhatsApp - OPTI Tracker BBSPJIS</title>
+    <title>Verifikasi OTP - SILOPTI BBSPJIS</title>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -23,7 +23,6 @@
             --color-primary-hover: #9f1239;
             --color-primary-dark: #4c0519;
             --color-primary-light: #fff1f2;
-            --color-whatsapp: #25D366;
             --font-display: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
             --font-body: 'Inter', system-ui, -apple-system, sans-serif;
         }
@@ -45,7 +44,7 @@
             background-color: #f8fafc;
             background-image: 
                 radial-gradient(at 15% 15%, rgba(136, 19, 55, 0.07) 0px, transparent 55%),
-                radial-gradient(at 85% 20%, rgba(37, 211, 102, 0.05) 0px, transparent 50%),
+                radial-gradient(at 85% 20%, rgba(217, 119, 6, 0.05) 0px, transparent 50%),
                 radial-gradient(at 75% 85%, rgba(136, 19, 55, 0.06) 0px, transparent 55%),
                 radial-gradient(at 20% 80%, rgba(59, 130, 246, 0.03) 0px, transparent 50%);
             background-attachment: fixed;
@@ -82,25 +81,25 @@
             position: relative;
         }
 
-        .wa-emblem-wrap {
+        .otp-emblem-wrap {
             display: inline-flex;
-            padding: 6px;
-            border-radius: 50%;
-            background: rgba(37, 211, 102, 0.12);
-            margin-bottom: 1.25rem;
+            padding: 4px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, rgba(136, 19, 55, 0.08) 0%, rgba(159, 18, 57, 0.02) 100%);
+            margin-bottom: 0.85rem;
         }
 
-        .wa-emblem {
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
-            border-radius: 50%;
+        .otp-emblem {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--color-primary) 0%, #9f1239 100%);
+            border-radius: 12px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             color: #ffffff;
-            font-size: 1.85rem;
-            box-shadow: 0 6px 18px rgba(37, 211, 102, 0.35);
+            font-size: 1.5rem;
+            box-shadow: 0 4px 14px rgba(136, 19, 55, 0.22);
         }
 
         .brand-title {
@@ -125,9 +124,9 @@
             gap: 6px;
             font-size: 0.85rem;
             font-weight: 700;
-            color: #0f172a;
-            background: #f1f5f9;
-            border: 1px solid #cbd5e1;
+            color: #881337;
+            background: #fff1f2;
+            border: 1px solid #fecdd3;
             padding: 5px 14px;
             border-radius: 20px;
             margin-top: 4px;
@@ -287,18 +286,18 @@
     <!-- OTP Card -->
     <div class="otp-card text-center">
         
-        <!-- Header WhatsApp Emblem -->
-        <div class="wa-emblem-wrap">
-            <div class="wa-emblem">
-                <i class="bi bi-whatsapp"></i>
+        <!-- Header Emblem -->
+        <div class="otp-emblem-wrap">
+            <div class="otp-emblem">
+                <i class="bi bi-shield-lock-fill"></i>
             </div>
         </div>
 
-        <h1 class="brand-title">Verifikasi WhatsApp OTP</h1>
+        <h1 class="brand-title">Verifikasi Kode OTP</h1>
         <div class="brand-subtitle">
             Kode verifikasi 6 digit telah dikirimkan ke nomor WhatsApp Anda:<br>
             <span class="phone-badge">
-                <i class="bi bi-telephone-fill text-success"></i> <?= ($masked_phone)."
+                <i class="bi bi-phone-fill text-danger"></i> <?= ($masked_phone)."
 " ?>
             </span>
         </div>

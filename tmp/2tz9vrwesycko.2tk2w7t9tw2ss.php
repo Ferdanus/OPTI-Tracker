@@ -380,7 +380,7 @@
                         <h6 class="fw-bold text-dark m-0 d-flex align-items-center gap-2 font-display">
                             <i class="bi bi-file-earmark-medical-fill text-primary fs-5"></i> 1. Formulir Permintaan Pelayanan Jasa (F.PJT-08-01/02)
                         </h6>
-                        <small class="text-muted">Wewenang: Tim Kemitraan (Admin Order)</small>
+                        <small class="text-muted">Wewenang: Tim Mitra</small>
                     </div>
                     <?php if ($order['status'] == 'permintaan_masuk'): ?>
                         <span class="badge bg-warning text-dark fw-bold">
@@ -400,7 +400,7 @@
                         <div class="p-3 bg-warning-subtle border border-warning-subtle rounded-3">
                             <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
                                 <div>
-                                    <strong class="text-dark d-block mb-1">Surat Telah Diklaim oleh Tim Kemitraan</strong>
+                                    <strong class="text-dark d-block mb-1">Surat Telah Diklaim oleh Tim Mitra</strong>
                                     <p class="small text-muted mb-0">Silakan lengkapi formulir spesifikasi layanan, pilih divisi OPTI pelaksana, dan kirimkan ke Ketua Tim.</p>
                                 </div>
                                 <?php if ($is_admin_order || $is_superadmin): ?>
@@ -617,6 +617,9 @@
                         <?php if ($order['status_proposal_biaya'] == 'menunggu_approval'): ?>
                             <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i> Menunggu Persetujuan Ketua Tim</span>
                         <?php endif; ?>
+                        <?php if ($order['status_proposal_biaya'] == 'draft_disimpan'): ?>
+                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle"><i class="bi bi-bookmark-check-fill me-1"></i> Draft Disimpan</span>
+                        <?php endif; ?>
                         <?php if ($order['status_proposal_biaya'] == 'draft' || !$order['status_proposal_biaya']): ?>
                             <span class="badge bg-light text-secondary border">Draf Penyusunan PIC</span>
                         <?php endif; ?>
@@ -699,8 +702,8 @@
                         <?php endif; ?>
 
                         <!-- Aksi Berdasarkan Peran & Status -->
-                        <!-- 1. Jika Status masih Draft: Tombol Ajukan ke Ketua Tim -->
-                        <?php if ($order['status_proposal_biaya'] == 'draft' || !$order['status_proposal_biaya']): ?>
+                        <!-- 1. Jika Status masih Draft / Draft Disimpan: Tombol Ajukan ke Ketua Tim -->
+                        <?php if ($order['status_proposal_biaya'] == 'draft' || $order['status_proposal_biaya'] == 'draft_disimpan' || !$order['status_proposal_biaya']): ?>
                             <?php if ($user_id == $order['pic_proposal_id'] || $is_tim_kerja || $is_pejabat || $is_superadmin): ?>
                                 <div class="d-flex justify-content-end pt-2 border-top">
                                     <form action="<?= ($BASE) ?>/order/<?= ($order['id']) ?>/proposal/kirim-katim" method="POST">
@@ -765,7 +768,7 @@
                         <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2 font-display">
                             <i class="bi bi-send-fill text-primary fs-5"></i> 4. Surat Pelayanan Resmi &amp; Respon Pelanggan
                         </h6>
-                        <small class="text-muted">Wewenang: Tim Kemitraan (Admin Order)</small>
+                        <small class="text-muted">Wewenang: Tim Mitra</small>
                     </div>
                     <?php if ($order['status'] == 'permintaan_masuk' || !$tinjauan || $tinjauan['keputusan'] != 'dapat_dilaksanakan' || $order['status_proposal_biaya'] != 'siap_penawaran'): ?>
                         <span class="badge bg-light text-secondary border">
@@ -789,7 +792,7 @@
                         <div class="p-4 text-center text-muted py-5 bg-light rounded-3">
                             <i class="bi bi-lock-fill fs-2 text-secondary opacity-50 d-block mb-2"></i>
                             <h6 class="fw-bold text-dark mb-1">Tahap Ini Masih Terkunci</h6>
-                            <p class="small text-secondary mb-0">Surat Pelayanan Resmi dapat diterbitkan oleh Tim Kemitraan setelah <strong>Proposal Teknis &amp; Biaya</strong> telah diverifikasi dan disetujui (*Approved*) oleh Ketua Tim.</p>
+                            <p class="small text-secondary mb-0">Surat Pelayanan Resmi dapat diterbitkan oleh Tim Mitra setelah <strong>Proposal Teknis &amp; Biaya</strong> telah diverifikasi dan disetujui (*Approved*) oleh Ketua Tim.</p>
                         </div>
                     <?php endif; ?>
                     <?php if ($order['status'] != 'permintaan_masuk' && $tinjauan && $tinjauan['keputusan'] == 'dapat_dilaksanakan' && $order['status_proposal_biaya'] == 'siap_penawaran'): ?>
@@ -925,7 +928,7 @@
                             <div class="text-center py-3">
                                 <i class="bi bi-envelope-paper-heart text-success fs-2 d-block mb-2"></i>
                                 <h6 class="fw-bold text-dark mb-1">Proposal Telah Disetujui &bull; Siap Kirim Surat Pelayanan</h6>
-                                <p class="text-muted small mb-3">Tim Kemitraan dapat menerbitkan Surat Pelayanan Resmi dan mengirimkannya kepada pihak pelanggan.</p>
+                                <p class="text-muted small mb-3">Tim Mitra dapat menerbitkan Surat Pelayanan Resmi dan mengirimkannya kepada pihak pelanggan.</p>
                                 <?php if ($is_admin_order || $is_superadmin): ?>
                                     <a href="<?= ($BASE) ?>/order/<?= ($order['id']) ?>/penawaran/buat" class="btn btn-success btn-sm px-4 fw-bold shadow-sm">
                                         <i class="bi bi-file-earmark-plus me-1"></i> Buat Surat Pelayanan Resmi

@@ -124,6 +124,7 @@ class Controller {
         $this->f3->set('user_role', $role);
         $this->f3->set('user_layanan', $layanan);
 
+        $this->f3->set('is_superadmin', $role === 'superadmin');
         $isTimMitra = ($role === 'tim_mitra_industri' || $role === 'admin_order' || $role === 'tim_mitra');
         $this->f3->set('is_tim_mitra_industri', $isTimMitra);
         $this->f3->set('is_tim_mitra', $isTimMitra);

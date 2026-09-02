@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Mini OPTI Tracker BBSPJIS</title>
+    <title>Login - SILOPTI BBSPJIS</title>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -85,23 +85,23 @@
 
         .brand-emblem-wrap {
             display: inline-flex;
-            padding: 5px;
-            border-radius: 16px;
+            padding: 4px;
+            border-radius: 14px;
             background: linear-gradient(135deg, rgba(136, 19, 55, 0.08) 0%, rgba(159, 18, 57, 0.02) 100%);
-            margin-bottom: 1rem;
+            margin-bottom: 0.35rem;
         }
 
         .brand-emblem {
-            width: 54px;
-            height: 54px;
+            width: 48px;
+            height: 48px;
             background: linear-gradient(135deg, var(--color-primary) 0%, #9f1239 100%);
-            border-radius: 13px;
+            border-radius: 11px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             color: #ffffff;
-            font-size: 1.55rem;
-            box-shadow: 0 6px 16px rgba(136, 19, 55, 0.25);
+            font-size: 1.4rem;
+            box-shadow: 0 4px 12px rgba(136, 19, 55, 0.2);
         }
 
         .brand-title {
@@ -110,7 +110,8 @@
             font-size: 1.55rem;
             color: #0f172a;
             letter-spacing: -0.03em;
-            margin-bottom: 0.25rem;
+            margin-bottom: 0.15rem;
+            line-height: 1.2;
         }
 
         .text-primary {
@@ -333,13 +334,14 @@
     <div class="login-card">
         
         <!-- Header Branding BBSPJIS -->
-        <div class="text-center">
+        <div class="text-center mb-4">
             <div class="brand-emblem-wrap">
                 <div class="brand-emblem">
                     <i class="bi bi-layers-fill"></i>
                 </div>
             </div>
-            <h1 class="brand-title mb-4">OPTI Tracker</h1>
+            <h1 class="brand-title mb-1">SILOPTI</h1>
+            <p class="text-muted small fw-medium mb-0">Sistem Informasi Layanan OPTI</p>
         </div>
 
         <!-- FORM INPUT LOGIN UTAMA -->

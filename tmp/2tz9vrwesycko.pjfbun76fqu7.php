@@ -853,6 +853,8 @@
 
             <ul class="sidebar-nav">
                 
+                <!-- Menu Dashboard Monitoring disembunyikan sementara waktu sesuai arahan -->
+
                 <!-- 1. ALUR PELAYANAN / KEMITRAAN -->
                 <?php if ($is_superadmin || $is_admin_order || $is_ketua_tim || $is_tim_kerja || $is_admin_kontrak || $is_sekretaris || $is_keuangan || $is_user_readonly): ?>
                     <li class="sidebar-section-label">Alur Pelayanan</li>
@@ -900,14 +902,16 @@
                     </li>
                 <?php endif; ?>
 
-                <!-- Pembayaran / Kasir (Keuangan, Admin Order, Superadmin) -->
-                <?php if ($is_superadmin || $is_keuangan || $is_admin_order): ?>
+                <!-- Kontrak PKS (Disembunyikan untuk Superadmin) -->
+                <?php if (!$is_superadmin && ($is_admin_kontrak || $is_admin_order)): ?>
                     <li>
-                        <a class="sidebar-link <?= ($active_menu == 'pembayaran' ? 'active' : '') ?>" href="<?= ($BASE) ?>/pembayaran" title="Pembayaran & Bukti Transfer">
-                            <i class="bi bi-cash-stack"></i> <span>Pembayaran</span>
+                        <a class="sidebar-link <?= ($active_menu == 'kontrak' ? 'active' : '') ?>" href="<?= ($BASE) ?>/kontrak" title="Kontrak PKS">
+                            <i class="bi bi-journal-text"></i> <span>Kontrak PKS</span>
                         </a>
                     </li>
                 <?php endif; ?>
+
+                <!-- Menu Pembayaran disembunyikan sementara waktu karena masih fokus revisi alur utama -->
 
                 <!-- 2. PELAKSANAAN TEKNIS -->
                 <?php if ($is_superadmin || $is_ketua_tim || $is_tim_kerja): ?>
@@ -933,17 +937,34 @@
                     </li>
                 <?php endif; ?>
 
-                <!-- 4. MASTER DATA (Superadmin, Ketua Tim) -->
-                <?php if ($is_superadmin || $is_ketua_tim): ?>
+                <!-- 4. MASTER DATA (Superadmin, Tim Mitra, Ketua Tim) -->
+                <?php if ($is_superadmin || $is_admin_order || $is_ketua_tim): ?>
                     <li class="sidebar-section-label">Master Data</li>
                     <li>
-                        <a class="sidebar-link <?= ($active_menu == 'master_pic' ? 'active' : '') ?>" href="<?= ($BASE) ?>/master-pic" title="Master PIC Peneliti">
-                            <i class="bi bi-people-fill"></i> <span>PIC Peneliti</span>
+                        <a class="sidebar-link <?= ($active_menu == 'klien' ? 'active' : '') ?>" href="<?= ($BASE) ?>/klien" title="Data Mitra Industri / Klien">
+                            <i class="bi bi-building"></i> <span>Data Klien</span>
+                        </a>
+                    </li>
+                    <?php if ($is_superadmin || $is_ketua_tim): ?>
+                        <li>
+                            <a class="sidebar-link <?= ($active_menu == 'master_pic' ? 'active' : '') ?>" href="<?= ($BASE) ?>/master-pic" title="Master PIC Peneliti">
+                                <i class="bi bi-people-fill"></i> <span>PIC Peneliti</span>
+                            </a>
+                        </li>
+                    <?php endif; ?>
+                <?php endif; ?>
+
+                <!-- 5. PENGATURAN SISTEM (Disembunyikan untuk Superadmin) -->
+                <?php if (!$is_superadmin && $is_ketua_tim): ?>
+                    <li class="sidebar-section-label">Pengaturan</li>
+                    <li>
+                        <a class="sidebar-link <?= ($active_menu == 'config' ? 'active' : '') ?>" href="<?= ($BASE) ?>/config" title="Konfigurasi Sistem & Privasi">
+                            <i class="bi bi-sliders"></i> <span>Pengaturan Sistem</span>
                         </a>
                     </li>
                 <?php endif; ?>
 
-                <!-- 5. AKUN & PROFIL -->
+                <!-- 6. AKUN & PROFIL -->
                 <li class="sidebar-section-label">Akun</li>
                 <li>
                     <a class="sidebar-link <?= ($active_menu == 'profil' ? 'active' : '') ?>" href="<?= ($BASE) ?>/profil" title="Profil Pengguna">
@@ -1102,11 +1123,13 @@
                                     <i class="bi bi-person-gear text-primary"></i> Profil Pengguna
                                 </a>
                             </li>
-                            <li>
-                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="<?= ($BASE) ?>/config">
-                                    <i class="bi bi-sliders text-primary"></i> Pengaturan Konfigurasi
-                                </a>
-                            </li>
+                            <?php if (!$is_superadmin): ?>
+                                <li>
+                                    <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="<?= ($BASE) ?>/config">
+                                        <i class="bi bi-sliders text-primary"></i> Pengaturan Konfigurasi
+                                    </a>
+                                </li>
+                            <?php endif; ?>
                             <li><hr class="dropdown-divider my-1"></li>
                             <li>
                                 <a class="dropdown-item py-2 text-danger d-flex align-items-center gap-2" href="<?= ($BASE) ?>/logout">

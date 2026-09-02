@@ -27,17 +27,32 @@ class WhatsAppService {
     }
 
     /**
-     * Masking nomor telepon untuk tampilan aman (contoh: +62 812-****-0423)
+     * Masking nomor telepon: 2 angka utama dan 4 angka terakhir yang tidak tersensor (contoh: 08******6227)
      */
     public static function maskPhoneNumber(string $phone): string {
-        $formatted = self::formatPhoneNumber($phone);
-        if (strlen($formatted) < 8) {
-            return '+62 ***-***';
+        $clean = preg_replace('/[^0-9]/', '', $phone);
+        if (empty($clean)) {
+            return '08******----';
         }
 
-        $prefix = substr($formatted, 0, 5); // 62812
-        $suffix = substr($formatted, -4);    // 0423
-        return '+' . substr($prefix, 0, 2) . ' ' . substr($prefix, 2) . '-****-' . $suffix;
+        // Normalisasi ke format 08xx
+        if (strpos($clean, '62') === 0) {
+            $clean = '0' . substr($clean, 2);
+        } elseif (strpos($clean, '8') === 0) {
+            $clean = '0' . $clean;
+        }
+
+        $len = strlen($clean);
+        if ($len <= 6) {
+            return substr($clean, 0, 2) . '****' . substr($clean, -2);
+        }
+
+        $first2 = substr($clean, 0, 2); // 2 angka utama (08)
+        $last4  = substr($clean, -4);    // 4 angka terakhir
+        $maskCount = max(4, $len - 6);
+        $maskedMiddle = str_repeat('*', $maskCount);
+
+        return $first2 . $maskedMiddle . $last4;
     }
 
     /**

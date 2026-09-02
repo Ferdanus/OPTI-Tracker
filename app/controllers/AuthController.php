@@ -240,7 +240,7 @@ class AuthController extends Controller {
         $f3->set('masked_phone', $pending['masked_phone']);
         $f3->set('nama_user', $pending['userData']['nama_user']);
         $f3->set('remaining_seconds', $remaining);
-        $f3->set('page_title', 'Verifikasi WhatsApp OTP');
+        $f3->set('page_title', 'Verifikasi Kode OTP');
 
         echo \Template::instance()->render('auth/otp.html');
     }
