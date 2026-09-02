@@ -108,6 +108,10 @@ $f3->route('GET /login', 'AuthController->loginGet');
 $f3->route('POST /login', 'AuthController->loginPost');
 $f3->route('GET /login/switch/@id', 'AuthController->quickLogin');
 $f3->route('POST /login/switch', 'AuthController->quickLogin');
+$f3->route('GET /login/otp', 'AuthController->otpGet');
+$f3->route('POST /login/otp/verify', 'AuthController->otpVerify');
+$f3->route('GET /login/otp/resend', 'AuthController->otpResend');
+$f3->route('POST /login/otp/resend', 'AuthController->otpResend');
 $f3->route('GET /logout', 'AuthController->logout');
 $f3->route('POST /logout', 'AuthController->logout');
 $f3->route('GET /profil', 'AuthController->profileGet');
@@ -129,6 +133,14 @@ $f3->route('POST /customer/simpan', 'CustomerController->simpan');
 $f3->route('GET /customer/@id/edit', 'CustomerController->edit');
 $f3->route('POST /customer/@id/update', 'CustomerController->update');
 $f3->route('POST /customer/@id/hapus', 'CustomerController->hapus');
+
+// ==========================================
+// ROUTE MASTER DATA PIC PENELITI (tb_arsipuser.si_opti)
+// ==========================================
+$f3->route('GET /master-pic', 'MasterPicController->index');
+$f3->route('POST /master-pic/simpan', 'MasterPicController->simpan');
+$f3->route('POST /master-pic/ubah-divisi', 'MasterPicController->ubahDivisi');
+$f3->route('POST /master-pic/hapus', 'MasterPicController->hapus');
 
 // ==========================================
 // ROUTE MODUL ORDER LAYANAN
@@ -255,6 +267,8 @@ $f3->route('POST /surat-penawaran/simpan', 'SuratPenawaranController->simpan');
 $f3->route('GET /surat-penawaran/@id/edit', 'SuratPenawaranController->edit');
 $f3->route('POST /surat-penawaran/@id/update', 'SuratPenawaranController->update');
 $f3->route('POST /surat-penawaran/@id/hapus', 'SuratPenawaranController->hapus');
+$f3->route('POST /surat-penawaran/@id/delete', 'SuratPenawaranController->delete');
+$f3->route('GET /surat-penawaran/@id/delete', 'SuratPenawaranController->delete');
 $f3->route('GET /order/@id/penawaran/buat', 'SuratPenawaranController->buatDariOrder');
 $f3->route('POST /order/@id/penawaran/simpan', 'SuratPenawaranController->simpanDariOrder');
 $f3->route('GET /order/@id/penawaran/cetak', 'SuratPenawaranController->cetakPdf');
@@ -267,6 +281,7 @@ $f3->route('POST /order/@id/penawaran/status', 'SuratPenawaranController->update
 $f3->route('GET /surat-masuk', 'SuratMasukController->index');
 $f3->route('POST /surat-masuk/klaim', 'SuratMasukController->klaim');
 $f3->route('POST /surat-masuk/batal', 'SuratMasukController->batalKlaim');
+$f3->route('POST /surat-masuk/tolak', 'SuratMasukController->tolak');
 $f3->route('GET /surat-masuk/@id/pdf', 'SuratMasukController->previewPdf');
 $f3->route('GET /surat-masuk/@id/raw-data', 'SuratMasukController->suratRawData');
 $f3->route('GET /surat-masuk/@id/detail', 'SuratMasukController->detailJson');

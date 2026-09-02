@@ -1,4 +1,4 @@
-# Catatan Konfirmasi Mentor & Analisis GAP Sistem (OPTI Tracker)
+# Catatan Konfirmasi Mentor & Analisis GAP Sistem (SILOPTI)
 
 Dokumen ini memuat temuan ketidaksesuaian (*GAP Analysis*) antara asumsi awal sistem dengan dokumen operasional riil (SOP 19 Langkah, Map Kendali, Data Riil List PO, dan studi kasus riil seperti PT Darusyifa Hikmah Tirta). Poin-poin ini menjadi agenda klarifikasi dengan Mentor/Analis Balai.
 

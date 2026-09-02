@@ -1,0 +1,339 @@
+<div class="container-fluid px-0">
+    <!-- Header & Breadcrumb -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1 small">
+                    <li class="breadcrumb-item"><a href="{{ @BASE }}/po" class="text-decoration-none text-muted">Beranda</a></li>
+                    <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Master PIC Peneliti</li>
+                </ol>
+            </nav>
+            <h4 class="fw-bold text-dark m-0 d-flex align-items-center gap-2 font-display">
+                <i class="bi bi-people-fill text-primary"></i> Data Master PIC Peneliti
+            </h4>
+            <p class="text-muted small mb-0 mt-1">Pengelolaan personil peneliti dan perekayasa yang ditugaskan dalam alur layanan riset SILOPTI.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-primary btn-sm px-3 fw-semibold shadow-sm d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#modalTambahPic">
+                <i class="bi bi-person-plus-fill"></i> Tambah PIC Peneliti
+            </button>
+        </div>
+    </div>
+
+    <!-- 3 KARTU RINGKASAN METRIK -->
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-md-4">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white d-flex flex-row align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">Total PIC Terdaftar</span>
+                    <h3 class="fw-bold text-dark mb-0 mt-1">{{ @count_total }}</h3>
+                    <span class="small text-muted" style="font-size: 0.75rem;">Peneliti &amp; Perekayasa</span>
+                </div>
+                <div class="d-flex align-items-center justify-content-center rounded-3" style="width: 48px; height: 48px; background-color: rgba(136, 19, 55, 0.1); color: #881337;">
+                    <i class="bi bi-people fs-4"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white d-flex flex-row align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">PIC OPTI Selulosa</span>
+                    <h3 class="fw-bold text-primary mb-0 mt-1">{{ @count_selulosa }}</h3>
+                    <span class="small text-muted" style="font-size: 0.75rem;">Spesialisasi Pulp &amp; Kertas</span>
+                </div>
+                <div class="d-flex align-items-center justify-content-center rounded-3" style="width: 48px; height: 48px; background-color: #eff6ff; color: #2563eb;">
+                    <i class="bi bi-file-earmark-medical fs-4"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white d-flex flex-row align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">PIC OPTI Lingkungan</span>
+                    <h3 class="fw-bold text-success mb-0 mt-1">{{ @count_lingkungan }}</h3>
+                    <span class="small text-muted" style="font-size: 0.75rem;">Spesialisasi Limbah &amp; Emisi</span>
+                </div>
+                <div class="d-flex align-items-center justify-content-center rounded-3" style="width: 48px; height: 48px; background-color: #f0fdf4; color: #16a34a;">
+                    <i class="bi bi-water fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FILTER & PENCARIAN -->
+    <div class="card mb-4 border-0 shadow-sm">
+        <div class="card-body p-3">
+            <form method="GET" action="{{ @BASE }}/master-pic" class="row g-2 align-items-center">
+                <div class="col-md-4 col-lg-3">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-light"><i class="bi bi-funnel text-muted"></i></span>
+                        <select name="divisi" class="form-select form-select-sm fw-semibold" onchange="this.form.submit()">
+                            <option value="">Semua Divisi Layanan</option>
+                            <option value="selulosa" {{ @filter_divisi == 'selulosa' ? 'selected' : '' }}>OPTI Selulosa</option>
+                            <option value="lingkungan" {{ @filter_divisi == 'lingkungan' ? 'selected' : '' }}>OPTI Lingkungan</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-7">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" name="q" class="form-control form-control-sm border-start-0" placeholder="Cari nama peneliti, username, bidang..." value="{{ @search_q }}">
+                    </div>
+                </div>
+                <div class="col-md-2 col-lg-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary btn-sm w-100 fw-semibold">Cari</button>
+                    <check if="{{ @filter_divisi || @search_q }}">
+                        <a href="{{ @BASE }}/master-pic" class="btn btn-light btn-sm border text-secondary" title="Reset Filter">
+                            <i class="bi bi-arrow-counterclockwise"></i>
+                        </a>
+                    </check>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- TABEL MASTER PIC PENELITI -->
+    <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+        <div class="card-header bg-white py-3 px-4 d-flex justify-content-between align-items-center border-bottom">
+            <h6 class="fw-bold text-dark m-0">Daftar Personil PIC Peneliti (tb_arsipuser)</h6>
+            <span class="text-muted small">Total: <strong class="text-dark">{{ count(@daftar_pic) }}</strong> personil</span>
+        </div>
+        <div class="card-body p-0">
+            <check if="{{ count(@daftar_pic) > 0 }}">
+                <true>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="text-center" style="width: 50px;">No</th>
+                                    <th>Nama Pegawai / Peneliti</th>
+                                    <th style="width: 150px;">Username / Akun</th>
+                                    <th style="width: 160px;">Kontak WhatsApp</th>
+                                    <th class="text-center" style="width: 140px;">Bidang Balai</th>
+                                    <th class="text-center" style="width: 160px;">Divisi Penugasan</th>
+                                    <th class="text-center" style="width: 140px;">Beban Kerja</th>
+                                    <th class="text-center" style="width: 140px;">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <repeat group="{{ @daftar_pic }}" value="{{ @pic }}" counter="{{ @ctr }}">
+                                    <tr>
+                                        <td class="text-center text-muted small">{{ @ctr }}</td>
+                                        <td>
+                                            <div class="fw-bold text-dark">{{ @pic.nama_user }}</div>
+                                            <div class="text-muted small font-monospace" style="font-size: 0.75rem;">ID Pegawai: #{{ @pic.id_user }}</div>
+                                        </td>
+                                        <td>
+                                            <span class="font-monospace small text-dark bg-light px-2 py-0.5 rounded border">{{ @pic.login }}</span>
+                                        </td>
+                                        <td>
+                                            <check if="{{ @pic.no_hp }}">
+                                                <true>
+                                                    <span class="text-dark small"><i class="bi bi-whatsapp text-success me-1"></i>{{ @pic.no_hp }}</span>
+                                                </true>
+                                                <false>
+                                                    <span class="text-muted small">-</span>
+                                                </false>
+                                            </check>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-light text-secondary border px-2 py-1 text-uppercase small">{{ @pic.bidang ?: 'SRS' }}</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <check if="{{ @pic.divisi == 'selulosa' }}">
+                                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1">OPTI Selulosa</span>
+                                            </check>
+                                            <check if="{{ @pic.divisi == 'lingkungan' }}">
+                                                <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle px-2.5 py-1">OPTI Lingkungan</span>
+                                            </check>
+                                            <check if="{{ @pic.divisi != 'selulosa' && @pic.divisi != 'lingkungan' }}">
+                                                <span class="badge bg-secondary-subtle text-secondary border px-2.5 py-1">Semua Divisi</span>
+                                            </check>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="small fw-semibold text-dark">{{ @pic.total_order_aktif }} Order Aktif</div>
+                                            <div class="text-muted" style="font-size: 0.72rem;">{{ @pic.total_proposal }} proposal disusun</div>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="d-inline-flex align-items-center gap-1.5">
+                                                <button type="button" class="btn btn-sm btn-outline-secondary px-2 py-1" data-bs-toggle="modal" data-bs-target="#modalUbahDivisi_{{ @pic.id_user }}" title="Ubah Divisi">
+                                                    <i class="bi bi-pencil-square"></i>
+                                                </button>
+                                                <form action="{{ @BASE }}/master-pic/hapus" method="POST" class="d-inline form-hapus-pic">
+                                                    <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
+                                                    <input type="hidden" name="id_user" value="{{ @pic.id_user }}">
+                                                    <button type="button" class="btn btn-sm btn-outline-danger px-2 py-1 btn-confirm-hapus" data-nama="{{ @pic.nama_user }}" title="Cabut Status PIC">
+                                                        <i class="bi bi-person-x-fill"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                    <!-- MODAL UBAH DIVISI -->
+                                    <div class="modal fade" id="modalUbahDivisi_{{ @pic.id_user }}" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog modal-dialog-centered modal-sm">
+                                            <div class="modal-content border-0 shadow">
+                                                <div class="modal-header py-2.5 px-3 border-bottom">
+                                                    <h6 class="modal-title fw-bold text-dark mb-0">Ubah Divisi Penugasan</h6>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                                                </div>
+                                                <form action="{{ @BASE }}/master-pic/ubah-divisi" method="POST">
+                                                    <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
+                                                    <input type="hidden" name="id_user" value="{{ @pic.id_user }}">
+                                                    <div class="modal-body p-3">
+                                                        <p class="small text-muted mb-2">Pilih divisi baru untuk <strong>{{ @pic.nama_user }}</strong>:</p>
+                                                        <div class="d-flex flex-column gap-2">
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="radio" name="divisi" id="div_sel_{{ @pic.id_user }}" value="selulosa" {{ @pic.divisi == 'selulosa' ? 'checked' : '' }}>
+                                                                <label class="form-check-label small fw-semibold" for="div_sel_{{ @pic.id_user }}">
+                                                                    OPTI Selulosa
+                                                                </label>
+                                                            </div>
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="radio" name="divisi" id="div_ling_{{ @pic.id_user }}" value="lingkungan" {{ @pic.divisi == 'lingkungan' ? 'checked' : '' }}>
+                                                                <label class="form-check-label small fw-semibold" for="div_ling_{{ @pic.id_user }}">
+                                                                    OPTI Lingkungan
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer py-2 px-3 border-top bg-light">
+                                                        <button type="button" class="btn btn-light btn-sm border" data-bs-dismiss="modal">Batal</button>
+                                                        <button type="submit" class="btn btn-primary btn-sm fw-semibold">Simpan Perubahan</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </repeat>
+                            </tbody>
+                        </table>
+                    </div>
+                </true>
+                <false>
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-people fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                        <h6 class="fw-bold text-dark">Belum Ada PIC Peneliti Ditemukan</h6>
+                        <p class="small text-muted mb-0">Klik tombol "Tambah PIC Peneliti" di atas untuk menugaskan personil dari database pegawai balai.</p>
+                    </div>
+                </false>
+            </check>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================== -->
+<!-- MODAL TAMBAH PIC PENELITI BARU             -->
+<!-- ========================================== -->
+<div class="modal fade" id="modalTambahPic" tabindex="-1" aria-labelledby="modalTambahPicLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header py-3 px-4 border-bottom bg-light">
+                <h6 class="modal-title fw-bold text-dark mb-0 d-flex align-items-center gap-2" id="modalTambahPicLabel">
+                    <i class="bi bi-person-plus-fill text-primary"></i> Tambah PIC Peneliti Baru
+                </h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <form action="{{ @BASE }}/master-pic/simpan" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label for="selectPegawai" class="form-label small fw-bold text-dark">
+                            Pilih Pegawai Balai (tb_arsipuser) <span class="text-danger">*</span>
+                        </label>
+                        <select name="id_user" id="selectPegawai" class="form-select form-select-sm" required>
+                            <option value="">-- Cari atau pilih pegawai --</option>
+                            <repeat group="{{ @kandidat_pegawai }}" value="{{ @peg }}">
+                                <option value="{{ @peg.id_user }}">
+                                    {{ @peg.nama_user }} ({{ @peg.login }}) - Bidang: {{ @peg.bidang ?: 'Balai' }}
+                                </option>
+                            </repeat>
+                        </select>
+                        <div class="form-text" style="font-size: 0.75rem;">
+                            Daftar di atas memuat seluruh akun pegawai aktif dari tabel master yang belum ditugaskan sebagai PIC.
+                        </div>
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label small fw-bold text-dark d-block">
+                            Divisi Layanan Penugasan <span class="text-danger">*</span>
+                        </label>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <input type="radio" class="btn-check" name="divisi" id="divisi_tambah_selulosa" value="selulosa" checked>
+                                <label class="btn btn-outline-primary btn-sm w-100 py-2.5 d-flex flex-column align-items-center gap-1" for="divisi_tambah_selulosa">
+                                    <i class="bi bi-file-earmark-medical fs-5"></i>
+                                    <span class="fw-bold">OPTI Selulosa</span>
+                                    <small style="font-size: 0.68rem;">Pulp, Kertas &amp; Kemasan</small>
+                                </label>
+                            </div>
+                            <div class="col-6">
+                                <input type="radio" class="btn-check" name="divisi" id="divisi_tambah_lingkungan" value="lingkungan">
+                                <label class="btn btn-outline-success btn-sm w-100 py-2.5 d-flex flex-column align-items-center gap-1" for="divisi_tambah_lingkungan">
+                                    <i class="bi bi-water fs-5"></i>
+                                    <span class="fw-bold">OPTI Lingkungan</span>
+                                    <small style="font-size: 0.68rem;">Limbah, Emisi &amp; Lingkungan</small>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer py-2.5 px-4 border-top bg-light d-flex justify-content-between">
+                    <button type="button" class="btn btn-light btn-sm border" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary btn-sm fw-semibold px-3">
+                        <i class="bi bi-check-lg me-1"></i> Simpan Penugasan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Inisialisasi TomSelect pada dropdown kandidat pegawai jika library tersedia
+    if (typeof TomSelect !== 'undefined') {
+        var el = document.getElementById('selectPegawai');
+        if (el) {
+            new TomSelect(el, {
+                create: false,
+                sortField: { field: "text", direction: "asc" },
+                placeholder: "Ketik nama pegawai untuk mencari..."
+            });
+        }
+    }
+
+    // Konfirmasi Cabut Status PIC Peneliti
+    document.addEventListener('click', function(e) {
+        var btn = e.target.closest('.btn-confirm-hapus');
+        if (!btn) return;
+
+        var form = btn.closest('form');
+        var nama = btn.getAttribute('data-nama') || 'pegawai ini';
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: '<span style="font-size:1.15rem; font-weight:700; color:#0f172a;">Cabut Penugasan PIC?</span>',
+                html: '<div style="font-size:0.875rem; color:#475569;">Apakah Anda yakin ingin menonaktifkan status PIC Peneliti untuk <strong>' + nama + '</strong>?<br><span class="text-muted small">Akun pegawai di sistem balai tidak akan dihapus, hanya peran PIC SILOPTI yang dinonaktifkan.</span></div>',
+                icon: 'warning',
+                iconColor: '#881337',
+                showCancelButton: true,
+                confirmButtonText: 'Ya, Cabut Status',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#881337',
+                cancelButtonColor: '#64748b',
+                customClass: { popup: 'rounded-3 shadow' }
+            }).then(function(result) {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        } else {
+            if (confirm('Cabut status penugasan PIC Peneliti untuk ' + nama + '?')) {
+                form.submit();
+            }
+        }
+    });
+});
+</script>

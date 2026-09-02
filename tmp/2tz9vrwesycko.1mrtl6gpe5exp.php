@@ -35,7 +35,7 @@
                 <div>
                     <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">Surat Masuk</span>
                     <h3 class="fw-bold text-dark mb-0 mt-1"><?= ($total_surat_tersedia) ?></h3>
-                    <span class="small text-muted" style="font-size: 0.75rem;">Siap diproses (FIFO)</span>
+                    <span class="small text-muted" style="font-size: 0.75rem;">Siap diproses</span>
                 </div>
                 <div class="metric-icon-box" style="background-color: rgba(136, 19, 55, 0.1); color: #881337;">
                     <i class="bi bi-inbox-fill"></i>
@@ -84,7 +84,18 @@
     <div class="card mb-4 border-0 shadow-sm">
         <div class="card-body p-3">
             <form method="GET" action="<?= ($BASE) ?>/surat-masuk" class="row g-2 align-items-center">
-                <div class="col-md-8 col-lg-9">
+                <div class="col-md-3 col-lg-2">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-light"><i class="bi bi-calendar-event text-muted"></i></span>
+                        <select name="tahun" class="form-select form-select-sm fw-semibold" onchange="this.form.submit()" title="Filter Berdasarkan Tahun">
+                            <?php foreach (($daftar_tahun?:[]) as $thn): ?>
+                                <option value="<?= ($thn) ?>" <?= ($filter_tahun == $thn ? 'selected' : '') ?>>Tahun <?= ($thn) ?></option>
+                            <?php endforeach; ?>
+                            <option value="all" <?= ($filter_tahun == 'all' ? 'selected' : '') ?>>Semua Tahun</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-5 col-lg-7">
                     <div class="input-group input-group-sm">
                         <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
                         <input type="text" class="form-control border-start-0" name="q" placeholder="Cari nomor surat, nama perusahaan/instansi, perihal, atau nama PIC..." value="<?= ($search_q) ?>">
@@ -177,6 +188,12 @@
                         <span class="pill-count bg-success text-white"><?= (count($daftar_riwayat)) ?></span>
                     </button>
                 </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tab-ditolak" data-bs-toggle="tab" data-bs-target="#content-ditolak" type="button" role="tab" aria-controls="content-ditolak" aria-selected="false">
+                        <i class="bi bi-x-octagon-fill text-danger"></i> Surat Ditolak
+                        <span class="pill-count bg-danger text-white"><?= (count($daftar_ditolak)) ?></span>
+                    </button>
+                </li>
             </ul>
         </div>
 
@@ -247,10 +264,16 @@
                                                     <?php endif; ?>
                                                 </td>
                                                 <td class="text-center" style="white-space: nowrap;">
-                                                    <!-- Tombol Buka Pop-up Konfirmasi Interaktif -->
-                                                    <button type="button" class="btn btn-primary btn-sm px-3 py-1 fw-semibold text-nowrap shadow-sm" data-bs-toggle="modal" data-bs-target="#modalKlaim_<?= ($surat['id']) ?>">
-                                                        <i class="bi bi-box-arrow-in-down me-1"></i> Ambil Surat
-                                                    </button>
+                                                    <div class="d-inline-flex align-items-center gap-1">
+                                                        <!-- Tombol Buka Pop-up Konfirmasi Interaktif -->
+                                                        <button type="button" class="btn btn-primary btn-sm px-3 py-1 fw-semibold text-nowrap shadow-sm" data-bs-toggle="modal" data-bs-target="#modalKlaim_<?= ($surat['id']) ?>" title="Ambil dan Proses Surat Ini">
+                                                            <i class="bi bi-box-arrow-in-down me-1"></i> Ambil Surat
+                                                        </button>
+                                                        <!-- Tombol Buka Pop-up Alasan Penolakan -->
+                                                        <button type="button" class="btn btn-outline-danger btn-sm px-2 py-1 fw-semibold text-nowrap shadow-sm d-inline-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#modalTolak_<?= ($surat['id']) ?>" title="Tolak Permohonan Order">
+                                                            <i class="bi bi-x-circle"></i> <span>Order Ditolak</span>
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         <?php endforeach; ?>
@@ -315,9 +338,13 @@
                                                         <a href="<?= ($BASE) ?>/order/<?= ($klaim['id']) ?>/form-pelayanan" class="btn btn-primary btn-sm px-3 py-1 fw-semibold text-nowrap shadow-sm d-inline-flex align-items-center gap-1">
                                                             <i class="bi bi-file-earmark-text"></i> Isi Form Pelayanan
                                                         </a>
+                                                        <!-- Tombol Buka Pop-up Konfirmasi Tolak Order -->
+                                                        <button type="button" class="btn btn-outline-danger btn-sm px-2.5 py-1 fw-semibold text-nowrap shadow-sm d-inline-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#modalTolakOrder_<?= ($klaim['id']) ?>" title="Tolak Permohonan Order">
+                                                            <i class="bi bi-x-octagon"></i> <span>Tolak</span>
+                                                        </button>
                                                         <!-- Tombol Buka Pop-up Konfirmasi Batal -->
-                                                        <button type="button" class="btn btn-outline-danger btn-sm px-2 py-1" data-bs-toggle="modal" data-bs-target="#modalBatal_<?= ($klaim['id']) ?>" title="Batalkan Penerimaan Surat">
-                                                            <i class="bi bi-x-circle"></i>
+                                                        <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-1" data-bs-toggle="modal" data-bs-target="#modalBatal_<?= ($klaim['id']) ?>" title="Batalkan Penerimaan Surat (Kembalikan ke Antrean)">
+                                                            <i class="bi bi-arrow-counterclockwise"></i>
                                                         </button>
                                                     </div>
                                                 </td>
@@ -404,6 +431,76 @@
                                 <i class="bi bi-archive text-secondary fs-1 mb-2 d-block opacity-50"></i>
                                 <h6 class="fw-bold text-dark">Belum Ada Riwayat Order Lanjutan</h6>
                                 <p class="small text-muted mb-0">Order yang telah lolos verifikasi kelayakan ISO akan tercatat otomatis di sini.</p>
+                            </div>
+                        
+                    <?php endif; ?>
+                </div>
+
+                <!-- TAB 4: SURAT DITOLAK -->
+                <div class="tab-pane fade" id="content-ditolak" role="tabpanel" aria-labelledby="tab-ditolak">
+                    <?php if (count($daftar_ditolak) > 0): ?>
+                        
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="bg-light text-secondary small text-uppercase">
+                                        <tr>
+                                            <th class="text-center py-3" style="width: 45px;">No</th>
+                                            <th style="width: 190px;">Nomor & Tgl Surat</th>
+                                            <th style="width: 230px;">Instansi Pengirim</th>
+                                            <th>Perihal Permohonan</th>
+                                            <th style="width: 170px;">Waktu & Penolak</th>
+                                            <th class="text-center" style="width: 160px; white-space: nowrap;">Alasan Penolakan</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="small">
+                                        <?php foreach (($daftar_ditolak?:[]) as $idx=>$ditolak): ?>
+                                            <tr>
+                                                <td class="text-center text-muted fw-bold"><?= ($idx + 1) ?></td>
+                                                <td>
+                                                    <div class="fw-bold text-dark font-monospace mb-1"><?= ($ditolak['nomor_surat']) ?></div>
+                                                    <div class="text-muted" style="font-size: 0.8rem;">
+                                                        <i class="bi bi-calendar3 text-secondary me-1"></i><?= (date('d M Y', strtotime($ditolak['tanggal_surat'])))."
+" ?>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="fw-bold text-dark">
+                                                        <?= ($ditolak['pt_cv'] ? $ditolak['pt_cv'] . ' ' : '') ?><?= ($ditolak['pengirim'])."
+" ?>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="text-dark fw-semibold mb-1"><?= ($ditolak['perihal']) ?></div>
+                                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle" style="font-size: 0.7rem;">
+                                                        <i class="bi bi-x-octagon-fill me-1"></i> Permohonan Ditolak
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <div class="text-dark fw-semibold"><?= ($ditolak['tanggal_tolak'] ? date('d M Y H:i', strtotime($ditolak['tanggal_tolak'])) : '-') ?></div>
+                                                    <small class="text-muted">Oleh: <?= ($ditolak['nama_penolak'] ?: 'Tim Kemitraan') ?></small>
+                                                </td>
+                                                <td class="text-center" style="white-space: nowrap;">
+                                                    <button type="button" 
+                                                        class="btn btn-outline-danger btn-sm px-2.5 py-1 shadow-sm d-inline-flex align-items-center gap-1 btn-lihat-alasan"
+                                                        data-nomor="<?= ($ditolak['nomor_surat']) ?>"
+                                                        data-pengirim="<?= ($ditolak['pt_cv'] ? $ditolak['pt_cv'] . ' ' : '') ?><?= ($ditolak['pengirim']) ?>"
+                                                        data-alasan="<?= ($ditolak['alasan_tolak'] ?: 'Tidak ada rincian alasan.') ?>"
+                                                        data-penolak="<?= ($ditolak['nama_penolak'] ?: 'Tim Kemitraan') ?>"
+                                                        data-tanggal="<?= ($ditolak['tanggal_tolak'] ? date('d F Y H:i', strtotime($ditolak['tanggal_tolak'])) : '-') ?>">
+                                                        <i class="bi bi-chat-square-text-fill"></i> <span>Lihat Alasan</span>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        
+                        <?php else: ?>
+                            <div class="text-center py-5 text-muted">
+                                <i class="bi bi-shield-check text-secondary fs-1 mb-2 d-block opacity-50"></i>
+                                <h6 class="fw-bold text-dark">Tidak Ada Permohonan Ditolak</h6>
+                                <p class="small text-muted mb-0">Belum ada surat permohonan yang ditolak oleh Tim Kemitraan.</p>
                             </div>
                         
                     <?php endif; ?>
@@ -537,7 +634,7 @@
 
                         <div class="small text-muted d-flex align-items-center gap-2">
                             <i class="bi bi-arrow-counterclockwise text-danger"></i>
-                            <span>Surat ini akan dikembalikan ke tab <strong>Surat Masuk (Antrean FIFO)</strong>.</span>
+                            <span>Surat ini akan dikembalikan ke tab <strong>Surat Masuk</strong>.</span>
                         </div>
                     </div>
 
@@ -552,6 +649,156 @@
                     </div>
 
                 </form>
+            </div>
+        </div>
+    </div>
+<?php endforeach; ?>
+
+<!-- ======================================================== -->
+<!-- MODAL PENOLAKAN PERMOHONAN ORDER (TABEL SURAT MASUK)     -->
+<!-- ======================================================== -->
+<?php foreach (($daftar_surat?:[]) as $surat): ?>
+    <div class="modal fade" id="modalTolak_<?= ($surat['id']) ?>" tabindex="-1" aria-labelledby="modalTolakLabel_<?= ($surat['id']) ?>" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content bg-white border rounded-3 shadow">
+                
+                <div class="modal-header border-bottom py-3 px-4 bg-white">
+                    <div>
+                        <h6 class="modal-title fw-bold text-danger fs-5 mb-0" id="modalTolakLabel_<?= ($surat['id']) ?>">
+                            <i class="bi bi-x-octagon-fill me-1"></i> Penolakan Permohonan Order
+                        </h6>
+                        <small class="text-muted">Surat Masuk: <span class="font-monospace text-dark fw-semibold"><?= ($surat['nomor_surat']) ?></span></small>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                </div>
+
+                <form action="<?= ($BASE) ?>/surat-masuk/tolak" method="POST">
+                    <input type="hidden" name="csrf_token" value="<?= ($csrf_token) ?>">
+                    <input type="hidden" name="surat_id" value="<?= ($surat['id']) ?>">
+
+                    <div class="modal-body p-4">
+                        <div class="border rounded-2 p-3 bg-light mb-3">
+                            <div class="row g-2 small">
+                                <div class="col-sm-6">
+                                    <span class="text-muted d-block">Instansi Pengirim:</span>
+                                    <span class="fw-bold text-dark"><?= ($surat['pt_cv'] ? $surat['pt_cv'] . ' ' : '') ?><?= ($surat['pengirim']) ?></span>
+                                </div>
+                                <div class="col-sm-6">
+                                    <span class="text-muted d-block">Tanggal Surat:</span>
+                                    <span class="fw-semibold text-dark"><?= (date('d F Y', strtotime($surat['tanggal_surat']))) ?></span>
+                                </div>
+                                <div class="col-12 mt-2 pt-2 border-top">
+                                    <span class="text-muted d-block">Perihal Permohonan:</span>
+                                    <span class="fw-semibold text-dark"><?= ($surat['perihal']) ?></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-dark small mb-1">Pilih Rekomendasi Alasan Penolakan:</label>
+                            <select class="form-select form-select-sm mb-2" onchange="applyPresetReason(this, 'alasan_surat_<?= ($surat['id']) ?>')">
+                                <option value="">-- Pilih Standar Alasan atau Tulis Langsung di Bawah --</option>
+                                <option value="Ruang lingkup pengujian / jasa teknis yang dimohonkan berada di luar akreditasi dan kapabilitas teknis BBSPJIS.">Ruang lingkup di luar kapabilitas / akreditasi BBSPJIS</option>
+                                <option value="Kapasitas antrean peralatan laboratorium dan personel penguji saat ini sedang penuh.">Kapasitas instrumen / personel lab sedang penuh</option>
+                                <option value="Persyaratan teknis atau spesifikasi sampel yang diajukan tidak memenuhi standar regulasi teknis.">Persyaratan teknis / sampel tidak memenuhi standar</option>
+                                <option value="Lainnya">Lainnya (Tulis alasan khusus pada kolom di bawah)</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-2">
+                            <label for="alasan_surat_<?= ($surat['id']) ?>" class="form-label fw-bold text-dark small mb-1">
+                                Rincian Alasan Penolakan <span class="text-danger">*</span>
+                            </label>
+                            <textarea class="form-control" id="alasan_surat_<?= ($surat['id']) ?>" name="alasan_tolak" rows="3" required placeholder="Tuliskan penjelasan detail alasan penolakan permohonan order ini..."></textarea>
+                            <div class="form-text text-muted small">Alasan ini akan disimpan secara resmi dalam database dan dapat ditinjau kapan pun pada tab Surat Ditolak.</div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer border-top py-3 px-4 bg-light d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-2 fw-semibold" data-bs-dismiss="modal">
+                            Batal
+                        </button>
+                        <button type="submit" class="btn btn-danger btn-sm px-4 py-2 fw-bold shadow-sm">
+                            <i class="bi bi-x-circle me-1"></i> Konfirmasi Tolak Order
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+<?php endforeach; ?>
+
+<!-- ======================================================== -->
+<!-- MODAL PENOLAKAN PERMOHONAN ORDER (TABEL SURAT DITERIMA)  -->
+<!-- ======================================================== -->
+<?php foreach (($daftar_klaim?:[]) as $klaim): ?>
+    <div class="modal fade" id="modalTolakOrder_<?= ($klaim['id']) ?>" tabindex="-1" aria-labelledby="modalTolakOrderLabel_<?= ($klaim['id']) ?>" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content bg-white border rounded-3 shadow">
+                
+                <div class="modal-header border-bottom py-3 px-4 bg-white">
+                    <div>
+                        <h6 class="modal-title fw-bold text-danger fs-5 mb-0" id="modalTolakOrderLabel_<?= ($klaim['id']) ?>">
+                            <i class="bi bi-x-octagon-fill me-1"></i> Penolakan Permohonan Order
+                        </h6>
+                        <small class="text-muted">Nomor Order: <span class="font-monospace text-primary fw-semibold"><?= ($klaim['nomor_order']) ?></span></small>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                </div>
+
+                <form action="<?= ($BASE) ?>/surat-masuk/tolak" method="POST">
+                    <input type="hidden" name="csrf_token" value="<?= ($csrf_token) ?>">
+                    <input type="hidden" name="order_id" value="<?= ($klaim['id']) ?>">
+
+                    <div class="modal-body p-4">
+                        <div class="border rounded-2 p-3 bg-light mb-3">
+                            <div class="row g-2 small">
+                                <div class="col-sm-6">
+                                    <span class="text-muted d-block">Instansi Pelanggan:</span>
+                                    <span class="fw-bold text-dark"><?= ($klaim['pt_cv'] ? $klaim['pt_cv'] . ' ' : '') ?><?= ($klaim['nmcustomer']) ?></span>
+                                </div>
+                                <div class="col-sm-6">
+                                    <span class="text-muted d-block">Waktu Terima:</span>
+                                    <span class="fw-semibold text-dark"><?= (date('d F Y H:i', strtotime($klaim['tanggal_klaim']))) ?></span>
+                                </div>
+                                <div class="col-12 mt-2 pt-2 border-top">
+                                    <span class="text-muted d-block">Judul Kegiatan / Topik Permohonan:</span>
+                                    <span class="fw-semibold text-dark"><?= ($klaim['judul_kegiatan']) ?></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-dark small mb-1">Pilih Rekomendasi Alasan Penolakan:</label>
+                            <select class="form-select form-select-sm mb-2" onchange="applyPresetReason(this, 'alasan_order_<?= ($klaim['id']) ?>')">
+                                <option value="">-- Pilih Standar Alasan atau Tulis Langsung di Bawah --</option>
+                                <option value="Ruang lingkup pengujian / jasa teknis yang dimohonkan berada di luar akreditasi dan kapabilitas teknis BBSPJIS.">Ruang lingkup di luar kapabilitas / akreditasi BBSPJIS</option>
+                                <option value="Kapasitas antrean peralatan laboratorium dan personel penguji saat ini sedang penuh.">Kapasitas instrumen / personel lab sedang penuh</option>
+                                <option value="Persyaratan teknis atau spesifikasi sampel yang diajukan tidak memenuhi standar regulasi teknis.">Persyaratan teknis / sampel tidak memenuhi standar</option>
+                                <option value="Lainnya">Lainnya (Tulis alasan khusus pada kolom di bawah)</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-2">
+                            <label for="alasan_order_<?= ($klaim['id']) ?>" class="form-label fw-bold text-dark small mb-1">
+                                Rincian Alasan Penolakan <span class="text-danger">*</span>
+                            </label>
+                            <textarea class="form-control" id="alasan_order_<?= ($klaim['id']) ?>" name="alasan_tolak" rows="3" required placeholder="Tuliskan penjelasan detail alasan penolakan order ini..."></textarea>
+                            <div class="form-text text-muted small">Alasan ini akan disimpan secara resmi dalam database dan dapat ditinjau kapan pun pada tab Surat Ditolak.</div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer border-top py-3 px-4 bg-light d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-2 fw-semibold" data-bs-dismiss="modal">
+                            Batal
+                        </button>
+                        <button type="submit" class="btn btn-danger btn-sm px-4 py-2 fw-bold shadow-sm">
+                            <i class="bi bi-x-circle me-1"></i> Konfirmasi Tolak Order
+                        </button>
+                    </div>
+                </form>
+
             </div>
         </div>
     </div>
@@ -859,5 +1106,60 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    // Helper: Terapkan alasan standar ke textarea penolakan
+    window.applyPresetReason = function(selectElem, targetTextareaId) {
+        var txtArea = document.getElementById(targetTextareaId);
+        if (txtArea && selectElem.value && selectElem.value !== 'Lainnya') {
+            txtArea.value = selectElem.value;
+            txtArea.focus();
+        } else if (selectElem.value === 'Lainnya') {
+            txtArea.value = '';
+            txtArea.focus();
+        }
+    };
+
+    // Helper: Tampilkan pop up rincian alasan penolakan
+    window.showAlasanTolakModal = function(noSurat, pengirim, alasan, penolak, tanggal) {
+        if (window.Swal) {
+            Swal.fire({
+                title: '<div class="fs-5 fw-bold text-danger"><i class="bi bi-x-octagon-fill me-2"></i>Rincian Alasan Penolakan Order</div>',
+                html: `
+                    <div class="text-start small mt-2">
+                        <div class="bg-light p-3 rounded-3 border mb-3">
+                            <div class="mb-1"><span class="text-muted">Nomor Surat:</span> <strong class="font-monospace text-dark">${noSurat}</strong></div>
+                            <div class="mb-1"><span class="text-muted">Instansi:</span> <strong class="text-dark">${pengirim}</strong></div>
+                            <div><span class="text-muted">Ditolak Pada:</span> <span class="text-dark">${tanggal} (Oleh: <strong>${penolak}</strong>)</span></div>
+                        </div>
+                        <label class="fw-bold text-dark mb-1">Alasan Penolakan Tercatat:</label>
+                        <div class="p-3 bg-danger-subtle text-danger-emphasis border border-danger-subtle rounded-3" style="font-size: 0.92rem; line-height: 1.6;">
+                            ${alasan}
+                        </div>
+                    </div>
+                `,
+                confirmButtonText: 'Tutup',
+                customClass: {
+                    confirmButton: 'btn btn-primary px-4 py-2 fw-semibold'
+                },
+                buttonsStyling: false
+            });
+        } else {
+            alert("Nomor Surat: " + noSurat + "\nAlasan Penolakan: " + alasan);
+        }
+    };
+
+    // Event listener untuk tombol Lihat Alasan
+    document.addEventListener('click', function(e) {
+        var btn = e.target.closest('.btn-lihat-alasan');
+        if (btn) {
+            e.preventDefault();
+            var noSurat = btn.getAttribute('data-nomor') || '-';
+            var pengirim = btn.getAttribute('data-pengirim') || '-';
+            var alasan = btn.getAttribute('data-alasan') || '-';
+            var penolak = btn.getAttribute('data-penolak') || '-';
+            var tanggal = btn.getAttribute('data-tanggal') || '-';
+            showAlasanTolakModal(noSurat, pengirim, alasan, penolak, tanggal);
+        }
+    });
 });
 </script>

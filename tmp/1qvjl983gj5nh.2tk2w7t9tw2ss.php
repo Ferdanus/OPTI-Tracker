@@ -228,7 +228,17 @@
                     <span class="text-muted">&bull;</span>
                     <span class="text-nowrap">Tgl Masuk: <span class="text-dark"><?= (date('d M Y', strtotime($order['tanggal_masuk']))) ?></span></span>
                     <span class="text-muted">&bull;</span>
-                    <span class="text-nowrap">Standar SPM: <span class="text-dark"><?= ($order['spm_layanan']) ?></span></span>
+                    <span class="text-nowrap">
+                        Waktu Pengerjaan: 
+                        <?php if (($proposal && in_array($proposal['status_proposal'], ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan'])) || in_array($order['status_proposal_biaya'], ['siap_penawaran', 'disetujui'])): ?>
+                            
+                                <span class="badge bg-success-subtle text-success fw-bold px-2 py-0.5 rounded-pill font-monospace"><i class="bi bi-clock-fill me-1"></i><?= ($proposal['durasi_kegiatan'] ?: ($order['proposal_durasi'] ?: '30 Hari Kerja')) ?></span>
+                            
+                            <?php else: ?>
+                                <span class="badge bg-secondary-subtle text-secondary px-2 py-0.5 rounded-pill"><i class="bi bi-hourglass-split me-1"></i>Belum ditentukan</span>
+                            
+                        <?php endif; ?>
+                    </span>
                 </div>
             </div>
 
@@ -543,7 +553,7 @@
                                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                                     <div>
                                         <span class="text-muted d-block small">PIC Penyusun Proposal yang Ditugaskan:</span>
-                                        <strong class="text-primary fs-6 font-display"><i class="bi bi-person-badge me-1"></i> <?= ($order['pic_proposal_nama'] ?: ($proposal['pic_nama'] ?: 'Aji Pisang')) ?></strong>
+                                        <strong class="text-primary fs-6 font-display"><?= ($order['pic_proposal_nama'] ?: ($proposal['pic_nama'] ?: 'Aji Pisang')) ?></strong>
                                     </div>
                                     <span class="badge bg-primary-subtle text-primary border">Tim Kerja / Peneliti Pelaksana</span>
                                 </div>
@@ -606,6 +616,9 @@
                         <?php endif; ?>
                         <?php if ($order['status_proposal_biaya'] == 'menunggu_approval'): ?>
                             <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i> Menunggu Persetujuan Ketua Tim</span>
+                        <?php endif; ?>
+                        <?php if ($order['status_proposal_biaya'] == 'draft_disimpan'): ?>
+                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle"><i class="bi bi-bookmark-check-fill me-1"></i> Draft Disimpan</span>
                         <?php endif; ?>
                         <?php if ($order['status_proposal_biaya'] == 'draft' || !$order['status_proposal_biaya']): ?>
                             <span class="badge bg-light text-secondary border">Draf Penyusunan PIC</span>
@@ -689,8 +702,8 @@
                         <?php endif; ?>
 
                         <!-- Aksi Berdasarkan Peran & Status -->
-                        <!-- 1. Jika Status masih Draft: Tombol Ajukan ke Ketua Tim -->
-                        <?php if ($order['status_proposal_biaya'] == 'draft' || !$order['status_proposal_biaya']): ?>
+                        <!-- 1. Jika Status masih Draft / Draft Disimpan: Tombol Ajukan ke Ketua Tim -->
+                        <?php if ($order['status_proposal_biaya'] == 'draft' || $order['status_proposal_biaya'] == 'draft_disimpan' || !$order['status_proposal_biaya']): ?>
                             <?php if ($user_id == $order['pic_proposal_id'] || $is_tim_kerja || $is_pejabat || $is_superadmin): ?>
                                 <div class="d-flex justify-content-end pt-2 border-top">
                                     <form action="<?= ($BASE) ?>/order/<?= ($order['id']) ?>/proposal/kirim-katim" method="POST">
@@ -826,21 +839,89 @@
                                 <?php endif; ?>
                             </div>
 
-                            <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 pt-2 border-top">
                                 <a href="<?= ($BASE) ?>/order/<?= ($order['id']) ?>/penawaran/cetak" target="_blank" class="btn btn-outline-primary btn-sm fw-semibold">
                                     <i class="bi bi-printer me-1"></i> Preview PDF Surat Pelayanan
                                 </a>
-                                <?php if ($is_admin_order || $is_superadmin): ?>
-                                    <a href="<?= ($BASE) ?>/order/<?= ($order['id']) ?>/penawaran/buat" class="btn btn-primary btn-sm fw-semibold">
-                                        <i class="bi bi-pencil me-1"></i> Edit Surat Pelayanan
-                                    </a>
-                                <?php endif; ?>
-                                <?php if (!$is_admin_order && !$is_superadmin): ?>
-                                    <a href="<?= ($BASE) ?>/order/<?= ($order['id']) ?>/penawaran/buat" class="btn btn-outline-secondary btn-sm fw-semibold">
-                                        <i class="bi bi-eye me-1"></i> Lihat Data Surat Pelayanan
-                                    </a>
-                                <?php endif; ?>
+                                <div class="d-flex align-items-center gap-2">
+                                    <?php if ($is_admin_order || $is_superadmin): ?>
+                                        <a href="<?= ($BASE) ?>/order/<?= ($order['id']) ?>/penawaran/buat" class="btn btn-primary btn-sm fw-semibold">
+                                            <i class="bi bi-pencil me-1"></i> Edit Surat Pelayanan
+                                        </a>
+                                        <button type="button" class="btn btn-outline-danger btn-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#modalHapusPenawaran<?= ($penawaran['id']) ?>" title="Hapus Surat Pelayanan">
+                                            <i class="bi bi-trash3 me-1"></i> Hapus
+                                        </button>
+                                    <?php endif; ?>
+                                    <?php if (!$is_admin_order && !$is_superadmin): ?>
+                                        <a href="<?= ($BASE) ?>/order/<?= ($order['id']) ?>/penawaran/buat" class="btn btn-outline-secondary btn-sm fw-semibold">
+                                            <i class="bi bi-eye me-1"></i> Lihat Data Surat Pelayanan
+                                        </a>
+                                    <?php endif; ?>
+                                </div>
                             </div>
+
+                            <!-- Modal Konfirmasi Hapus Surat Pelayanan dari Halaman Order -->
+                            <?php if ($is_admin_order || $is_superadmin): ?>
+                                <div class="modal fade" id="modalHapusPenawaran<?= ($penawaran['id']) ?>" tabindex="-1" aria-labelledby="modalHapusPenawaranLabel<?= ($penawaran['id']) ?>" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content bg-white border-0 shadow rounded-3 text-start">
+                                            <div class="modal-header border-bottom py-3 px-4 bg-white">
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <div class="rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; background-color: #ffe4e6; color: var(--color-primary);">
+                                                        <i class="bi bi-trash3-fill fs-5"></i>
+                                                    </div>
+                                                    <div>
+                                                        <h6 class="modal-title fw-bold text-dark mb-0" id="modalHapusPenawaranLabel<?= ($penawaran['id']) ?>">Konfirmasi Hapus Surat Pelayanan</h6>
+                                                        <small class="text-muted" style="font-size: 0.75rem;">Tindakan ini tidak dapat dibatalkan</small>
+                                                    </div>
+                                                </div>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                                            </div>
+
+                                            <form action="<?= ($BASE) ?>/surat-penawaran/<?= ($penawaran['id']) ?>/hapus" method="POST">
+                                                <input type="hidden" name="csrf_token" value="<?= ($csrf_token) ?>">
+                                                <input type="hidden" name="redirect" value="order">
+
+                                                <div class="modal-body p-4">
+                                                    <p class="text-dark small mb-3">
+                                                        Apakah Anda yakin ingin menghapus data surat pelayanan untuk order ini?
+                                                    </p>
+
+                                                    <!-- Box Rincian Surat Pelayanan -->
+                                                    <div class="border rounded-2 p-3 bg-light mb-3">
+                                                        <div class="mb-2">
+                                                            <span class="text-muted small d-block" style="font-size: 0.75rem;">Nomor Surat Pelayanan:</span>
+                                                            <strong class="font-monospace fs-6" style="color: var(--color-primary);"><?= ($penawaran['nomor_surat']) ?></strong>
+                                                        </div>
+                                                        <div class="mb-2">
+                                                            <span class="text-muted small d-block" style="font-size: 0.75rem;">Order Terkait:</span>
+                                                            <span class="fw-semibold text-dark">#<?= ($order['nomor_order']) ?> - <?= ($order['pt_cv'] ? $order['pt_cv'] . ' ' : '') ?><?= ($order['nmcustomer'] ?: $order['nama_perusahaan']) ?></span>
+                                                        </div>
+                                                        <div class="mb-0">
+                                                            <span class="text-muted small d-block" style="font-size: 0.75rem;">Perihal:</span>
+                                                            <span class="text-secondary small"><?= ($penawaran['perihal']) ?></span>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="p-2 mb-0 rounded-2 small d-flex align-items-center gap-2" style="font-size: 0.8rem; background-color: #fff1f2; color: #881337; border: 1px solid #fecdd3;">
+                                                        <i class="bi bi-exclamation-triangle-fill fs-6 flex-shrink-0" style="color: #881337;"></i>
+                                                        <span>Surat pelayanan akan dihapus dan status order akan kembali ke tahap sebelum penawaran terbit.</span>
+                                                    </div>
+                                                </div>
+
+                                                <div class="modal-footer border-top py-3 px-4 bg-light d-flex justify-content-end gap-2">
+                                                    <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-2 fw-semibold" data-bs-dismiss="modal">
+                                                        Batal
+                                                    </button>
+                                                    <button type="submit" class="btn btn-primary btn-sm px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-1">
+                                                        <i class="bi bi-trash3-fill"></i> Ya, Hapus Surat
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
                         <?php endif; ?>
 
                         <?php if (!$penawaran): ?>

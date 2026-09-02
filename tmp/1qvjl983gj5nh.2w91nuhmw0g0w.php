@@ -78,14 +78,13 @@
                     <div class="card-header bg-white py-3 px-3 px-md-4 border-bottom d-flex justify-content-between align-items-center">
                         <h6 class="m-0 fw-bold text-dark font-display">Evaluasi Kelayakan &amp; Penugasan PIC</h6>
                         <?php if (!$can_edit): ?>
-                            <span class="badge bg-light text-secondary border"><i class="bi bi-lock-fill me-1"></i> Mode Lihat Saja</span>
+                            <span class="badge bg-light text-secondary border">Mode Lihat Saja</span>
                         <?php endif; ?>
                     </div>
                     <div class="card-body p-3 p-md-4">
                         
                         <?php if (!$can_edit): ?>
-                            <div class="alert alert-warning border-0 d-flex align-items-center gap-2 mb-3 py-2 px-3 small rounded-3">
-                                <i class="bi bi-lock-fill text-warning fs-5 flex-shrink-0"></i>
+                            <div class="alert alert-warning border-0 d-flex align-items-center mb-3 py-2 px-3 small rounded-3">
                                 <div>
                                     <strong>Mode Lihat Saja (Read-Only)</strong>: Kaji ulang kelayakan teknis dan penunjukan PIC merupakan wewenang <strong>Ketua Tim OPTI</strong>. Anda dapat melihat data tetapi tidak dapat mengubah keputusan.
                                 </div>
@@ -100,7 +99,7 @@
                             <div class="row g-2 mb-2">
                                 <div class="col-sm-6">
                                     <div class="p-2 border rounded bg-light d-flex align-items-center">
-                                        <input class="form-check-input mt-0 me-2" type="checkbox" name="sdm_tersedia" id="sdm_tersedia" value="1" <?= (!$tinjauan || $tinjauan['sdm_tersedia'] ? 'checked' : '') ?> <?= (!$can_edit ? 'disabled' : '') ?> onchange="checkReadinessAndLock()">
+                                        <input class="form-check-input mt-0 me-2" type="checkbox" name="sdm_tersedia" id="sdm_tersedia" value="1" <?= ($tinjauan && $tinjauan['sdm_tersedia'] ? 'checked' : '') ?> <?= (!$can_edit ? 'disabled' : '') ?> onchange="checkReadinessAndLock()">
                                         <label class="form-check-label small fw-semibold text-dark cursor-pointer mb-0" for="sdm_tersedia">
                                             Personil / SDM Analis Siap
                                         </label>
@@ -108,7 +107,7 @@
                                 </div>
                                 <div class="col-sm-6">
                                     <div class="p-2 border rounded bg-light d-flex align-items-center">
-                                        <input class="form-check-input mt-0 me-2" type="checkbox" name="peralatan_tersedia" id="peralatan_tersedia" value="1" <?= (!$tinjauan || $tinjauan['peralatan_tersedia'] ? 'checked' : '') ?> <?= (!$can_edit ? 'disabled' : '') ?> onchange="checkReadinessAndLock()">
+                                        <input class="form-check-input mt-0 me-2" type="checkbox" name="peralatan_tersedia" id="peralatan_tersedia" value="1" <?= ($tinjauan && $tinjauan['peralatan_tersedia'] ? 'checked' : '') ?> <?= (!$can_edit ? 'disabled' : '') ?> onchange="checkReadinessAndLock()">
                                         <label class="form-check-label small fw-semibold text-dark cursor-pointer mb-0" for="peralatan_tersedia">
                                             Peralatan &amp; Alat Uji Siap
                                         </label>
@@ -116,7 +115,7 @@
                                 </div>
                                 <div class="col-sm-6">
                                     <div class="p-2 border rounded bg-light d-flex align-items-center">
-                                        <input class="form-check-input mt-0 me-2" type="checkbox" name="bahan_tersedia" id="bahan_tersedia" value="1" <?= (!$tinjauan || $tinjauan['bahan_tersedia'] ? 'checked' : '') ?> <?= (!$can_edit ? 'disabled' : '') ?> onchange="checkReadinessAndLock()">
+                                        <input class="form-check-input mt-0 me-2" type="checkbox" name="bahan_tersedia" id="bahan_tersedia" value="1" <?= ($tinjauan && $tinjauan['bahan_tersedia'] ? 'checked' : '') ?> <?= (!$can_edit ? 'disabled' : '') ?> onchange="checkReadinessAndLock()">
                                         <label class="form-check-label small fw-semibold text-dark cursor-pointer mb-0" for="bahan_tersedia">
                                             Bahan Kimia &amp; Reagen Siap
                                         </label>
@@ -124,7 +123,7 @@
                                 </div>
                                 <div class="col-sm-6">
                                     <div class="p-2 border rounded bg-light d-flex align-items-center">
-                                        <input class="form-check-input mt-0 me-2" type="checkbox" name="metode_tersedia" id="metode_tersedia" value="1" <?= (!$tinjauan || $tinjauan['metode_tersedia'] ? 'checked' : '') ?> <?= (!$can_edit ? 'disabled' : '') ?> onchange="checkReadinessAndLock()">
+                                        <input class="form-check-input mt-0 me-2" type="checkbox" name="metode_tersedia" id="metode_tersedia" value="1" <?= ($tinjauan && $tinjauan['metode_tersedia'] ? 'checked' : '') ?> <?= (!$can_edit ? 'disabled' : '') ?> onchange="checkReadinessAndLock()">
                                         <label class="form-check-label small fw-semibold text-dark cursor-pointer mb-0" for="metode_tersedia">
                                             Metode Uji Tervalidasi
                                         </label>
@@ -138,7 +137,7 @@
                             <label class="form-label small fw-bold text-dark mb-2">Keputusan Kelayakan Teknis:</label>
                             <div class="row g-3">
                                 <div class="col-sm-6">
-                                    <input type="radio" class="btn-check" name="keputusan" id="kep_layak" value="dapat_dilaksanakan" <?= (!$tinjauan || $tinjauan['keputusan'] == 'dapat_dilaksanakan' ? 'checked' : '') ?> <?= (!$can_edit ? 'disabled' : '') ?> onchange="toggleAlasanPenolakan()">
+                                    <input type="radio" class="btn-check" name="keputusan" id="kep_layak" value="dapat_dilaksanakan" <?= ($tinjauan && $tinjauan['keputusan'] == 'dapat_dilaksanakan' ? 'checked' : '') ?> <?= (!$can_edit ? 'disabled' : '') ?> onchange="toggleAlasanPenolakan()">
                                     <label class="choice-radio-card card-layak w-100 rounded-3 text-start p-3 d-flex flex-row align-items-center" id="label_card_layak" for="kep_layak" style="cursor: <?= ($can_edit ? 'pointer' : 'default') ?>; min-height: 72px;">
                                         <div class="card-icon-wrap me-3 flex-shrink-0 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
                                             <i class="bi bi-check-circle-fill fs-4" style="line-height: 1;"></i>
@@ -173,7 +172,7 @@
                                 Tunjuk PIC Penyusun Proposal: <span class="text-danger">*</span>
                             </label>
                             <select name="pic_proposal_id" class="form-select form-select-sm" id="selectPicProposal" <?= (!$can_edit ? 'disabled' : '') ?> required>
-                                <option value="">-- Pilih PIC Peneliti Pelaksana --</option>
+                                <option value="">Pilih PIC Peneliti Pelaksana</option>
                                 <?php foreach (($daftar_pic ?: []?:[]) as $p): ?>
                                     <option value="<?= ($p['id_user']) ?>" <?= (($order['pic_proposal_id'] == $p['id_user']) ? 'selected' : '') ?>>
                                         <?= ($p['nama_user']) ?> <?= ($p['spesialisasi'] ? ' ('.$p['spesialisasi'].')' : '')."

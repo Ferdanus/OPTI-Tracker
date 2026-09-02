@@ -75,7 +75,7 @@
                                 <option value="lainnya">Lainnya</option>
                             </select>
                             <small class="text-muted d-block mt-1" style="font-size: 0.725rem;">
-                                Berkas dengan kategori <strong>OPTI</strong> akan otomatis masuk ke antrean FIFO Kotak Masuk Tim Kemitraan.
+                                Berkas dengan kategori <strong>OPTI</strong> akan otomatis masuk ke Kotak Masuk Tim Kemitraan.
                             </small>
                         </div>
 

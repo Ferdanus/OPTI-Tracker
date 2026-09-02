@@ -48,16 +48,43 @@ class ArsipUser extends \DB\SQL\Mapper {
             return array('success' => false, 'message' => 'Password yang Anda masukkan salah.');
         }
 
-        // Ambil role OPTI dari mapping
-        $roleOpti = $row['role_opti'] ?? 'tim_kerja';
-        $jenisLayananOpti = $row['jenis_layanan_opti'] ?? 'semua';
+        // Ambil role OPTI dari kolom si_opti di tb_arsipuser (atau fallback ke opti_user_map jika ada)
+        $rawRole = !empty($row['si_opti']) ? trim($row['si_opti']) : ($row['role_opti'] ?? '');
+        $roleOpti = 'user'; // Default: Pegawai Balai umum (Read-Only)
+        $jenisLayananOpti = 'semua';
 
-        // Fallback cerdas berdasarkan data struktural jika belum ada di mapping
-        if (empty($row['role_opti'])) {
+        if (strpos($rawRole, 'tim_kerja_selulosa') !== false || $rawRole === 'pic_selulosa') {
+            $roleOpti = 'tim_kerja';
+            $jenisLayananOpti = 'selulosa';
+        } elseif (strpos($rawRole, 'tim_kerja_lingkungan') !== false || $rawRole === 'pic_lingkungan') {
+            $roleOpti = 'tim_kerja';
+            $jenisLayananOpti = 'lingkungan';
+        } elseif (strpos($rawRole, 'ketua_tim_selulosa') !== false || $rawRole === 'katim_selulosa') {
+            $roleOpti = 'ketua_tim';
+            $jenisLayananOpti = 'selulosa';
+        } elseif (strpos($rawRole, 'ketua_tim_lingkungan') !== false || $rawRole === 'katim_lingkungan') {
+            $roleOpti = 'ketua_tim';
+            $jenisLayananOpti = 'lingkungan';
+        } elseif ($rawRole === 'tim_mitra_industri' || $rawRole === 'admin_order' || $rawRole === 'tim_mitra') {
+            $roleOpti = 'tim_mitra_industri';
+            $jenisLayananOpti = 'semua';
+        } elseif ($rawRole === 'keuangan') {
+            $roleOpti = 'keuangan';
+            $jenisLayananOpti = 'semua';
+        } elseif ($rawRole === 'user' || $rawRole === 'pegawai') {
+            $roleOpti = 'user';
+            $jenisLayananOpti = 'semua';
+        } elseif (!empty($rawRole)) {
+            $roleOpti = $rawRole;
+            $jenisLayananOpti = $row['jenis_layanan_opti'] ?? 'semua';
+        }
+
+        // Fallback untuk superadmin balai
+        if (empty($rawRole)) {
             if (!empty($row['bidang']) && in_array(strtolower($row['bidang']), array('all', 'admin'))) {
                 $roleOpti = 'superadmin';
-            } elseif ((int)$row['id_struktural'] === 3 || (int)$row['id_struktural'] === 200) {
-                $roleOpti = 'pejabat';
+            } else {
+                $roleOpti = 'user';
             }
         }
 

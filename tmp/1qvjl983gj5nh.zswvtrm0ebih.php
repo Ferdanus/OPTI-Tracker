@@ -1,303 +1,535 @@
-<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
-    <div>
-        <h2 class="h4 fw-bold mb-1 text-dark">Order Masuk</h2>
-        <p class="text-muted small mb-0">Permohonan jasa teknis baru dari mitra industri yang masuk sebelum penerbitan Petunjuk Operasional (PO).</p>
-    </div>
-    <a href="<?= ($BASE) ?>/order/tambah" class="btn btn-primary">
-        <i class="bi bi-plus-lg"></i> Tambah Order Manual
-    </a>
-</div>
+<style>
+.surat-nav-container {
+    background: #f8fafc;
+    border-bottom: 1px solid var(--color-border);
+    padding: 10px 14px;
+}
+.surat-nav-pills {
+    display: inline-flex;
+    gap: 6px;
+    background: #e2e8f0;
+    padding: 5px;
+    border-radius: 10px;
+    border: 1px solid #cbd5e1;
+    flex-wrap: wrap;
+}
+.surat-nav-pills .nav-link {
+    border-radius: 7px;
+    color: #334155;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.82rem;
+    padding: 7px 16px;
+    border: none;
+    transition: all 0.18s ease-in-out;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    background: transparent;
+    text-decoration: none;
+}
+.surat-nav-pills .nav-link:hover {
+    background: rgba(255, 255, 255, 0.7);
+    color: var(--color-primary);
+}
+.surat-nav-pills .nav-link.active {
+    background: var(--color-primary) !important;
+    color: #ffffff !important;
+    box-shadow: 0 3px 10px rgba(136, 19, 55, 0.28);
+}
+.surat-nav-pills .nav-link.active .pill-count {
+    background-color: rgba(255, 255, 255, 0.25) !important;
+    color: #ffffff !important;
+}
+.pill-count {
+    font-size: 0.72rem;
+    padding: 2px 7px;
+    border-radius: 12px;
+    font-weight: 700;
+    transition: all 0.18s ease;
+}
+</style>
 
-<!-- ======================================================== -->
-<!-- FILTER ORDER -->
-<!-- ======================================================== -->
-<div class="card mb-4 border-0 shadow-sm">
-    <div class="card-body p-3">
-        <form method="GET" action="<?= ($BASE) ?>/order" class="row g-2 align-items-center">
-            <div class="col-md-4">
-                <div class="input-group">
-                    <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
-                    <input type="text" class="form-control border-start-0" name="q" placeholder="Cari nomor order, mitra, judul..." value="<?= ($search_q) ?>">
+<div class="container-fluid px-0">
+    <!-- Header & Breadcrumb -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1 small">
+                    <li class="breadcrumb-item"><a href="<?= ($BASE) ?>/po" class="text-decoration-none text-muted">Beranda</a></li>
+                    <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Daftar Order Layanan</li>
+                </ol>
+            </nav>
+            <h4 class="fw-bold text-dark m-0 d-flex align-items-center gap-2 font-display">
+                <i class="bi bi-inbox-fill text-primary"></i> Daftar Order Layanan OPTI
+            </h4>
+        </div>
+    </div>
+
+    <!-- FILTER & PENCARIAN ORDER -->
+    <div class="card mb-4 border-0 shadow-sm">
+        <div class="card-body p-3">
+            <form method="GET" action="<?= ($BASE) ?>/order" class="row g-2 align-items-center">
+                <input type="hidden" name="tab" value="<?= ($filter_tab) ?>">
+                <div class="col-md-2 col-lg-2">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-light text-muted"><i class="bi bi-calendar-event"></i></span>
+                        <select name="tahun" class="form-select form-select-sm fw-semibold" onchange="this.form.submit()" title="Filter Berdasarkan Tahun">
+                            <?php foreach (($daftar_tahun?:[]) as $thn): ?>
+                                <option value="<?= ($thn) ?>" <?= ($filter_tahun == $thn ? 'selected' : '') ?>>Tahun <?= ($thn) ?></option>
+                            <?php endforeach; ?>
+                            <option value="all" <?= ($filter_tahun == 'all' ? 'selected' : '') ?>>Semua Tahun</option>
+                        </select>
+                    </div>
                 </div>
-            </div>
-            <div class="col-md-3">
-                <select class="form-select" name="jenis_layanan">
-                    <option value="">Semua Divisi Layanan</option>
-                    <option value="selulosa" <?= ($filter_jenis_layanan == 'selulosa' ? 'selected' : '') ?>>OPTI Selulosa</option>
-                    <option value="lingkungan" <?= ($filter_jenis_layanan == 'lingkungan' ? 'selected' : '') ?>>OPTI Lingkungan</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <select class="form-select" name="status">
-                    <option value="">Semua Status Order</option>
-                    <option value="draft" <?= ($filter_status == 'draft' ? 'selected' : '') ?>>Draft Permohonan</option>
-                    <option value="disetujui" <?= ($filter_status == 'disetujui' ? 'selected' : '') ?>>Disetujui (Terbit PO)</option>
-                    <option value="ditolak" <?= ($filter_status == 'ditolak' ? 'selected' : '') ?>>Ditolak</option>
-                </select>
-            </div>
-            <div class="col-md-2 d-flex gap-2">
-                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-filter"></i> Filter</button>
-                <a href="<?= ($BASE) ?>/order" class="btn btn-outline-secondary px-2" title="Reset"><i class="bi bi-arrow-clockwise"></i></a>
-            </div>
-        </form>
+                <div class="col-md-4 col-lg-5">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control border-start-0" name="q" placeholder="Cari nomor order, mitra industri, judul kegiatan..." value="<?= ($search_q) ?>">
+                    </div>
+                </div>
+                <div class="col-md-3 col-lg-2">
+                    <?php if ($is_locked_divisi): ?>
+                        
+                            <select class="form-select form-select-sm bg-light text-secondary" disabled title="Akses dibatasi hanya untuk divisi Anda">
+                                <option value="<?= ($user_layanan) ?>" selected>Divisi <?= (ucfirst($user_layanan)) ?></option>
+                            </select>
+                            <input type="hidden" name="jenis_layanan" value="<?= ($user_layanan) ?>">
+                        
+                        <?php else: ?>
+                            <select class="form-select form-select-sm" name="jenis_layanan">
+                                <option value="">Semua Divisi</option>
+                                <option value="selulosa" <?= ($filter_jenis_layanan == 'selulosa' ? 'selected' : '') ?>>OPTI Selulosa</option>
+                                <option value="lingkungan" <?= ($filter_jenis_layanan == 'lingkungan' ? 'selected' : '') ?>>OPTI Lingkungan</option>
+                            </select>
+                        
+                    <?php endif; ?>
+                </div>
+                <div class="col-md-3 col-lg-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary btn-sm flex-fill fw-semibold text-nowrap">
+                        <i class="bi bi-search me-1"></i> Filter
+                    </button>
+                    <a href="<?= ($BASE) ?>/order?tab=<?= ($filter_tab) ?>" class="btn btn-outline-secondary btn-sm px-3 d-flex align-items-center gap-1 text-nowrap" title="Reset Filter">
+                        <i class="bi bi-arrow-clockwise"></i> Reset
+                    </a>
+                </div>
+            </form>
+        </div>
     </div>
-</div>
 
-<!-- ======================================================== -->
-<!-- TABEL ORDER -->
-<!-- ======================================================== -->
-<div class="card border-0 shadow-sm overflow-hidden">
-    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-        <h6 class="m-0 fw-bold text-dark"><i class="bi bi-inbox text-primary me-2"></i>Daftar Order Masuk</h6>
-        <span class="badge bg-light text-muted border"><?= (count($daftar_order)) ?> Data Order</span>
-    </div>
-    <div class="card-body p-0">
+    <!-- TABEL UTAMA DENGAN SEGMENTED NAVIGASI TABS -->
+    <div class="card border-0 shadow-sm overflow-hidden mb-4">
+        <div class="surat-nav-container d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <ul class="nav surat-nav-pills">
+                <li class="nav-item">
+                    <a class="nav-link <?= ($filter_tab != 'ditolak' ? 'active' : '') ?>" href="<?= ($BASE) ?>/order?tab=aktif<?= ($filter_tahun ? '&tahun='.$filter_tahun : '') ?><?= ($filter_jenis ? '&jenis_layanan='.$filter_jenis : '') ?><?= ($search_q ? '&q='.$search_q : '') ?>">
+                        <i class="bi bi-check-circle-fill"></i> Order Berlangsung
+                        <span class="pill-count <?= ($filter_tab != 'ditolak' ? '' : 'bg-white text-dark shadow-sm') ?>"><?= ($count_aktif) ?></span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <?= ($filter_tab == 'ditolak' ? 'active' : '') ?>" href="<?= ($BASE) ?>/order?tab=ditolak<?= ($filter_tahun ? '&tahun='.$filter_tahun : '') ?><?= ($filter_jenis ? '&jenis_layanan='.$filter_jenis : '') ?><?= ($search_q ? '&q='.$search_q : '') ?>">
+                        <i class="bi bi-x-octagon-fill text-danger"></i> Order Ditolak
+                        <span class="pill-count <?= ($filter_tab == 'ditolak' ? '' : 'bg-danger text-white') ?>"><?= ($count_ditolak) ?></span>
+                    </a>
+                </li>
+            </ul>
+            <span class="text-muted small fw-medium">
+                Total: <strong class="text-dark"><?= (count($daftar_order)) ?></strong> order ditampilkan
+            </span>
+        </div>
+        <div class="card-body p-0">
         <?php if (count($daftar_order) > 0): ?>
             
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="bg-light">
-                            <tr>
-                                <th class="text-center" style="width: 45px;">No</th>
-                                <th style="width: 150px;">Nomor Order</th>
-                                <th>Judul Permohonan & Klien</th>
-                                <th class="text-center" style="width: 160px;">Divisi OPTI</th>
-                                <th class="text-end" style="width: 160px;">Estimasi Biaya</th>
-                                <th class="text-center" style="width: 140px;">Status</th>
-                                <th class="text-center" style="width: 150px;">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php $ctr=0; foreach (($daftar_order?:[]) as $ord): $ctr++; ?>
-                                <tr>
-                                    <td class="text-center text-muted small"><?= ($ctr) ?></td>
-                                    <td>
-                                        <div class="fw-bold text-primary small"><?= ($ord['nomor_order']) ?></div>
-                                        <div class="text-muted" style="font-size: 0.75rem;">
-                                            <i class="bi bi-calendar3 me-1"></i><?= ($ord['tanggal_masuk'] ? date('d/m/Y', strtotime($ord['tanggal_masuk'])) : '-')."
+                    <?php if ($filter_tab == 'ditolak'): ?>
+                        
+                            <!-- TABEL ORDER DITOLAK -->
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th class="text-center" style="width: 45px;">No</th>
+                                        <th style="width: 150px;">Nomor Order</th>
+                                        <th>Judul Permohonan &amp; Klien</th>
+                                        <th class="text-center" style="width: 150px;">Divisi OPTI</th>
+                                        <th class="text-center" style="width: 160px;">Tahap Penolakan</th>
+                                        <th style="width: 170px;">Waktu &amp; Penolak</th>
+                                        <th class="text-center" style="width: 170px;">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php $ctr=0; foreach (($daftar_order?:[]) as $ord): $ctr++; ?>
+                                        <tr>
+                                            <td class="text-center text-muted small"><?= ($ctr) ?></td>
+                                            <td>
+                                                <div class="fw-bold text-danger font-monospace small"><?= ($ord['nomor_order']) ?></div>
+                                                <div class="text-muted" style="font-size: 0.75rem;">
+                                                    <i class="bi bi-calendar3 me-1"></i><?= ($ord['tanggal_masuk'] ? date('d/m/Y', strtotime($ord['tanggal_masuk'])) : '-')."
 " ?>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="fw-semibold text-dark mb-1" title="<?= ($ord['judul_kegiatan']) ?>">
-                                            <?= ($ord['judul_kegiatan'])."
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="fw-semibold text-dark mb-1" title="<?= ($ord['judul_kegiatan']) ?>">
+                                                    <?= ($ord['judul_kegiatan'])."
 " ?>
-                                        </div>
-                                        <div class="small text-muted d-flex align-items-center gap-1">
-                                            <i class="bi bi-building text-secondary"></i>
-                                            <?php if ($mask_client_name): ?>
-                                                
-                                                    <?php $words = explode(' ', $ord['nama_perusahaan']);
-                                                        $masked = array_map(function($w) {
-                                                            return mb_strlen($w) > 1 ? mb_substr($w, 0, 1) . '***' : $w;
-                                                        }, $words);
-                                                        $namaTampil = implode(' ', $masked); ?>
-                                                    <span><?= ($namaTampil) ?></span>
-                                                
-                                                <?php else: ?>
+                                                </div>
+                                                <div class="small text-muted d-flex align-items-center gap-1">
+                                                    <i class="bi bi-building text-secondary"></i>
                                                     <span class="text-secondary fw-medium"><?= ($ord['nama_perusahaan']) ?> (<?= ($ord['pt_cv']) ?>)</span>
-                                                
-                                            <?php endif; ?>
-                                        </div>
-                                    </td>
-                                    <td class="text-center">
-                                        <?php if ($ord['jenis_layanan_opti'] == 'selulosa'): ?>
-                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">OPTI Selulosa</span>
-                                        <?php endif; ?>
-                                        <?php if ($ord['jenis_layanan_opti'] == 'lingkungan'): ?>
-                                            <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle px-2 py-1">OPTI Lingkungan</span>
-                                        <?php endif; ?>
-                                        <?php if (!$ord['jenis_layanan_opti'] || $ord['jenis_layanan_opti'] == 'belum_ditentukan'): ?>
-                                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1">
-                                                <i class="bi bi-hourglass-split me-1"></i>Belum Ditentukan
-                                            </span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td class="text-end">
-                                        <div class="fw-bold text-dark small">
-                                            Rp <?= (number_format($ord['estimasi_biaya'] ?: ($ord['biaya_po'] ?: 0), 0, ',', '.'))."
+                                                </div>
+                                            </td>
+                                            <td class="text-center">
+                                                <?php if ($ord['jenis_layanan_opti'] == 'selulosa'): ?>
+                                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">OPTI Selulosa</span>
+                                                <?php endif; ?>
+                                                <?php if ($ord['jenis_layanan_opti'] == 'lingkungan'): ?>
+                                                    <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle px-2 py-1">OPTI Lingkungan</span>
+                                                <?php endif; ?>
+                                                <?php if (!$ord['jenis_layanan_opti'] || $ord['jenis_layanan_opti'] == 'belum_ditentukan'): ?>
+                                                    <span class="badge bg-secondary-subtle text-secondary border px-2 py-1">-</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge <?= ($ord['tahap_tolak_class']) ?> px-2 py-1 fw-semibold">
+                                                    <i class="bi <?= ($ord['tahap_tolak_icon']) ?> me-1"></i><?= ($ord['tahap_tolak'])."
 " ?>
-                                        </div>
-                                        <?php if ($ord['total_terbayar'] > 0): ?>
-                                            <div class="text-success" style="font-size: 0.725rem;">
-                                                <i class="bi bi-check2 me-1"></i>Terbayar: Rp <?= (number_format($ord['total_terbayar'], 0, ',', '.'))."
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="small fw-semibold text-dark">
+                                                    <i class="bi bi-calendar-x text-danger me-1"></i><?= ($ord['tanggal_tolak'] ? date('d/m/Y H:i', strtotime($ord['tanggal_tolak'])) : '-')."
 " ?>
-                                            </div>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td class="text-center">
-                                        <?php if ($ord['status'] == 'permintaan_masuk'): ?>
-                                            <span class="badge bg-warning text-dark border border-warning px-2 py-1">
-                                                <i class="bi bi-hourglass-split me-1"></i>Permintaan Masuk
-                                            </span>
-                                        <?php endif; ?>
-                                        <?php if ($ord['status'] == 'baru' || $ord['status'] == 'draft'): ?>
-                                            <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle px-2 py-1">
-                                                <i class="bi bi-file-earmark-plus me-1"></i>Order Baru
-                                            </span>
-                                        <?php endif; ?>
-                                        <?php if ($ord['status'] == 'disetujui'): ?>
-                                            <span class="badge badge-pill-success">
-                                                <i class="bi bi-check-circle me-1"></i>Disetujui (PO)
-                                            </span>
-                                        <?php endif; ?>
-                                        <?php if ($ord['status'] == 'ditolak'): ?>
-                                            <span class="badge badge-pill-danger">
-                                                <i class="bi bi-x-circle me-1"></i>Ditolak
-                                            </span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td class="text-center">
-                                        <div class="d-inline-flex align-items-center gap-1">
-                                             <?php if ($ord['status'] == 'permintaan_masuk'): ?>
-                                                 
-                                                     <a href="<?= ($BASE) ?>/order/<?= ($ord['id']) ?>" class="btn btn-sm btn-warning text-dark py-1 px-2 d-inline-flex align-items-center gap-1 shadow-sm fw-semibold" title="Tentukan OPTI &amp; Disposisikan ke Ketua Tim">
-                                                         <i class="bi bi-send-check"></i> <span>Disposisi</span>
-                                                     </a>
-                                                 
-                                                 <?php else: ?>
-                                                     <a href="<?= ($BASE) ?>/order/<?= ($ord['id']) ?>" class="btn btn-sm btn-primary py-1 px-2 d-inline-flex align-items-center gap-1 shadow-sm" title="Lihat Detail Order &amp; Progres">
-                                                         <i class="bi bi-eye"></i> <span>Detail</span>
-                                                     </a>
-                                                 
-                                             <?php endif; ?>
-
-                                             <?php if (($ord['status'] == 'penawaran_deal' || $ord['status_respon_klien'] == 'deal') && $ord['status'] != 'disetujui' && !$ord['po_id'] && $can_approve_po): ?>
-                                                 <button type="button" class="btn btn-sm btn-success py-1 px-2 d-inline-flex align-items-center gap-1 shadow-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#approveModal<?= ($ord['id']) ?>" title="Klien Telah DEAL: Setujui &amp; Terbitkan PO">
-                                                     <i class="bi bi-check2-circle"></i> <span>Setujui PO</span>
-                                                 </button>
-                                             <?php endif; ?>
-
-                                             <?php if ($ord['status'] == 'disetujui' || $ord['po_id']): ?>
-                                                 <a href="<?= ($BASE) ?>/po/<?= ($ord['po_id'] ?: $ord['id']) ?>" class="btn btn-sm btn-outline-dark py-1 px-2 d-inline-flex align-items-center gap-1" title="Buka Dokumen PO Terbit">
-                                                     <i class="bi bi-speedometer2"></i>
-                                                 </a>
-                                             <?php endif; ?>
-
-                                             <a href="<?= ($BASE) ?>/order/<?= ($ord['id']) ?>/edit" class="btn btn-sm btn-light border py-1 px-2 text-secondary" title="Edit Order">
-                                                 <i class="bi bi-pencil"></i>
-                                             </a>
-                                             <button type="button" class="btn btn-sm btn-light border py-1 px-2" style="color: var(--color-primary);" data-bs-toggle="modal" data-bs-target="#modalHapusOrder<?= ($ord['id']) ?>" title="Hapus Order">
-                                                 <i class="bi bi-trash3"></i>
-                                             </button>
-                                        </div>
-
-                                        <!-- Modal Konfirmasi Hapus Order Bertema Merah Maroon -->
-                                        <div class="modal fade" id="modalHapusOrder<?= ($ord['id']) ?>" tabindex="-1" aria-labelledby="modalHapusOrderLabel<?= ($ord['id']) ?>" aria-hidden="true">
-                                            <div class="modal-dialog modal-dialog-centered">
-                                                <div class="modal-content bg-white border-0 shadow rounded-3 text-start">
-                                                    <div class="modal-header border-bottom py-3 px-4 bg-white">
-                                                        <div class="d-flex align-items-center gap-2">
-                                                            <div class="rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; background-color: #ffe4e6; color: var(--color-primary);">
-                                                                <i class="bi bi-trash3-fill fs-5"></i>
-                                                            </div>
-                                                            <div>
-                                                                <h6 class="modal-title fw-bold text-dark fs-6 m-0" id="modalHapusOrderLabel<?= ($ord['id']) ?>">
-                                                                    Konfirmasi Hapus Order
-                                                                </h6>
-                                                                <small class="text-muted" style="font-size: 0.75rem;">Tindakan ini tidak dapat dibatalkan</small>
-                                                            </div>
+                                                </div>
+                                                <?php if ($ord['nama_penolak'] && $ord['nama_penolak'] != '-'): ?>
+                                                    
+                                                        <div class="text-muted small" style="font-size: 0.75rem;">
+                                                            Oleh: <strong class="text-dark"><?= ($ord['nama_penolak']) ?></strong>
                                                         </div>
-                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
-                                                    </div>
-
-                                                    <form action="<?= ($BASE) ?>/order/<?= ($ord['id']) ?>/hapus" method="POST">
-                                                        <input type="hidden" name="csrf_token" value="<?= ($csrf_token) ?>">
+                                                    
+                                                <?php endif; ?>
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="d-inline-flex align-items-center gap-2">
+                                                    <button type="button" class="btn btn-sm btn-outline-danger btn-lihat-alasan-order px-2.5 py-1 d-inline-flex align-items-center gap-1.5 fw-semibold shadow-none"
+                                                            data-nomor="<?= ($ord['nomor_order']) ?>"
+                                                            data-perusahaan="<?= ($ord['nama_perusahaan']) ?>"
+                                                            data-tahap="<?= ($ord['tahap_tolak']) ?>"
+                                                            data-penolak="<?= ($ord['nama_penolak'] && $ord['nama_penolak'] != '-' ? $ord['nama_penolak'] : '') ?>"
+                                                            data-tanggal="<?= ($ord['tanggal_tolak'] ? date('d/m/Y H:i', strtotime($ord['tanggal_tolak'])) : '-') ?>"
+                                                            data-alasan="<?= ($ord['alasan_tolak'] && $ord['alasan_tolak'] != '-' ? $ord['alasan_tolak'] : 'Tidak ada catatan alasan penolakan.') ?>"
+                                                            title="Lihat Alasan Penolakan">
+                                                        <i class="bi bi-chat-left-dots-fill"></i> <span>Alasan</span>
+                                                    </button>
+                                                    <a href="<?= ($BASE) ?>/order/<?= ($ord['id']) ?>" class="btn btn-sm btn-outline-secondary px-2.5 py-1 d-inline-flex align-items-center gap-1.5 fw-semibold" title="Lihat Riwayat Order">
+                                                        <i class="bi bi-eye"></i> <span>Detail</span>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        
+                        <?php else: ?>
+                            <!-- TABEL ORDER BERLANGSUNG -->
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th class="text-center" style="width: 45px;">No</th>
+                                        <th style="width: 150px;">Nomor Order</th>
+                                        <th>Judul Permohonan & Klien</th>
+                                        <th class="text-center" style="width: 160px;">Divisi OPTI</th>
+                                        <th class="text-end" style="width: 160px;">Estimasi Biaya</th>
+                                        <th class="text-center" style="width: 140px;">Status</th>
+                                        <th class="text-center" style="width: 150px;">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php $ctr=0; foreach (($daftar_order?:[]) as $ord): $ctr++; ?>
+                                        <tr>
+                                            <td class="text-center text-muted small"><?= ($ctr) ?></td>
+                                            <td>
+                                                <div class="fw-bold text-primary small"><?= ($ord['nomor_order']) ?></div>
+                                                <div class="text-muted" style="font-size: 0.75rem;">
+                                                    <i class="bi bi-calendar3 me-1"></i><?= ($ord['tanggal_masuk'] ? date('d/m/Y', strtotime($ord['tanggal_masuk'])) : '-')."
+" ?>
+                                                </div>
+                                                <div class="mt-1" style="font-size: 0.72rem;">
+                                                    <?php if (in_array($ord['status_proposal'], ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan']) || in_array($ord['status_proposal_biaya'], ['siap_penawaran', 'disetujui'])): ?>
                                                         
-                                                        <div class="modal-body p-4">
-                                                            <p class="text-dark small mb-3">
-                                                                Apakah Anda yakin ingin menghapus data permohonan order layanan berikut?
-                                                            </p>
-
-                                                            <!-- Box Rincian Order -->
-                                                            <div class="border rounded-2 p-3 bg-light mb-3">
-                                                                <div class="mb-2">
-                                                                    <span class="text-muted small d-block" style="font-size: 0.75rem;">Nomor Order:</span>
-                                                                    <strong class="font-monospace fs-6" style="color: var(--color-primary);"><?= ($ord['nomor_order']) ?></strong>
-                                                                </div>
-                                                                <div class="mb-2">
-                                                                    <span class="text-muted small d-block" style="font-size: 0.75rem;">Nama Instansi / Klien:</span>
-                                                                    <span class="fw-semibold text-dark"><?= ($ord['pt_cv'] ? $ord['pt_cv'] . ' ' : '') ?><?= ($ord['nmcustomer']) ?></span>
-                                                                </div>
-                                                                <div class="mb-0">
-                                                                    <span class="text-muted small d-block" style="font-size: 0.75rem;">Judul Kegiatan / Layanan:</span>
-                                                                    <span class="text-secondary small"><?= ($ord['judul_kegiatan']) ?></span>
-                                                                </div>
-                                                            </div>
-
-                                                            <div class="p-2 mb-0 rounded-2 small d-flex align-items-center gap-2" style="font-size: 0.8rem; background-color: #fff1f2; color: #881337; border: 1px solid #fecdd3;">
-                                                                <i class="bi bi-exclamation-triangle-fill fs-6 flex-shrink-0" style="color: #881337;"></i>
-                                                                <span>Seluruh berkas kaji ulang dan penawaran terkait order ini akan ikut terhapus dari sistem.</span>
-                                                            </div>
-                                                        </div>
-
-                                                        <div class="modal-footer border-top py-3 px-4 bg-light d-flex justify-content-end gap-2">
-                                                            <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-2 fw-semibold" data-bs-dismiss="modal">
-                                                                Batal
-                                                            </button>
-                                                            <button type="submit" class="btn btn-primary btn-sm px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-1">
-                                                                <i class="bi bi-trash3-fill"></i> Ya, Hapus Order
-                                                            </button>
-                                                        </div>
-                                                    </form>
+                                                            <span class="badge bg-success-subtle text-success border border-success-subtle px-1.5 py-0.5" title="Waktu pengerjaan disetujui Ka. Tim">
+                                                                <i class="bi bi-clock me-1"></i><?= ($ord['proposal_durasi'] ?: '30 Hari Kerja')."
+" ?>
+                                                            </span>
+                                                        
+                                                        <?php else: ?>
+                                                            <span class="text-muted fst-italic">
+                                                                <i class="bi bi-hourglass me-1"></i>Belum ditentukan
+                                                            </span>
+                                                        
+                                                    <?php endif; ?>
                                                 </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Modal Approve Order -->
-                                        <div class="modal fade" id="approveModal<?= ($ord['id']) ?>" tabindex="-1" aria-labelledby="approveModalLabel<?= ($ord['id']) ?>" aria-hidden="true">
-                                            <div class="modal-dialog modal-dialog-centered text-start">
-                                                <div class="modal-content border-0 shadow">
-                                                    <form action="<?= ($BASE) ?>/order/<?= ($ord['id']) ?>/approve" method="POST">
-                                                        <input type="hidden" name="csrf_token" value="<?= ($csrf_token) ?>">
-                                                        <div class="modal-header">
-                                                            <h6 class="modal-title fw-bold" id="approveModalLabel<?= ($ord['id']) ?>">
-                                                                <i class="bi bi-check-circle-fill text-success me-2"></i>Persetujuan & Penerbitan PO
-                                                            </h6>
-                                                            <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                        </div>
-                                                        <div class="modal-body">
-                                                            <p class="small text-muted mb-3">
-                                                                Anda akan menyetujui Order <strong><?= ($ord['nomor_order']) ?></strong> dan menerbitkan nomor <strong>Petunjuk Operasional (PO)</strong> otomatis.
-                                                            </p>
-                                                            <div class="mb-3">
-                                                                <label class="form-label small">Tentukan Target Tanggal Selesai</label>
-                                                                <input type="date" name="target_selesai" class="form-control form-control-sm" value="<?= ($ord['target_selesai'] ?: date('Y-m-d', strtotime('+3 months'))) ?>" required>
-                                                                <div class="form-text" style="font-size: 0.75rem;">Default berdasarkan estimasi Standar Pelayanan Minimum (SPM).</div>
-                                                            </div>
-                                                            <div class="mb-3">
-                                                                <label class="form-label small">Tim / Personil Pelaksana</label>
-                                                                <input type="text" name="tim_kerja" class="form-control form-control-sm" placeholder="Contoh: Tim Pengujian Selulosa" value="<?= ($ord['tim_kerja']) ?>">
-                                                            </div>
-                                                        </div>
-                                                        <div class="modal-footer">
-                                                            <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Batal</button>
-                                                            <button type="submit" class="btn btn-sm btn-success">
-                                                                <i class="bi bi-check-circle me-1"></i> Terbitkan PO
-                                                            </button>
-                                                        </div>
-                                                    </form>
+                                            </td>
+                                            <td>
+                                                <div class="fw-semibold text-dark mb-1" title="<?= ($ord['judul_kegiatan']) ?>">
+                                                    <?= ($ord['judul_kegiatan'])."
+" ?>
                                                 </div>
-                                            </div>
-                                        </div>
+                                                <div class="small text-muted d-flex align-items-center gap-1">
+                                                    <i class="bi bi-building text-secondary"></i>
+                                                    <?php if ($mask_client_name): ?>
+                                                        
+                                                            <?php $words = explode(' ', $ord['nama_perusahaan']);
+                                                                $masked = array_map(function($w) {
+                                                                    return mb_strlen($w) > 1 ? mb_substr($w, 0, 1) . '***' : $w;
+                                                                }, $words);
+                                                                $namaTampil = implode(' ', $masked); ?>
+                                                            <span><?= ($namaTampil) ?></span>
+                                                        
+                                                        <?php else: ?>
+                                                            <span class="text-secondary fw-medium"><?= ($ord['nama_perusahaan']) ?> (<?= ($ord['pt_cv']) ?>)</span>
+                                                        
+                                                    <?php endif; ?>
+                                                </div>
+                                            </td>
+                                            <td class="text-center">
+                                                <?php if ($ord['jenis_layanan_opti'] == 'selulosa'): ?>
+                                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">OPTI Selulosa</span>
+                                                <?php endif; ?>
+                                                <?php if ($ord['jenis_layanan_opti'] == 'lingkungan'): ?>
+                                                    <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle px-2 py-1">OPTI Lingkungan</span>
+                                                <?php endif; ?>
+                                                <?php if (!$ord['jenis_layanan_opti'] || $ord['jenis_layanan_opti'] == 'belum_ditentukan'): ?>
+                                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1">
+                                                        <i class="bi bi-hourglass-split me-1"></i>Belum Ditentukan
+                                                    </span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td class="text-end">
+                                                <div class="fw-bold text-dark small">
+                                                    Rp <?= (number_format($ord['estimasi_biaya'] ?: ($ord['biaya_po'] ?: 0), 0, ',', '.'))."
+" ?>
+                                                </div>
+                                                <?php if ($ord['total_terbayar'] > 0): ?>
+                                                    <div class="text-success" style="font-size: 0.725rem;">
+                                                        <i class="bi bi-check2 me-1"></i>Terbayar: Rp <?= (number_format($ord['total_terbayar'], 0, ',', '.'))."
+" ?>
+                                                    </div>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge <?= ($ord['stage_class']) ?> px-2.5 py-1 fw-semibold">
+                                                    <i class="bi <?= ($ord['stage_icon']) ?> me-1"></i><?= ($ord['stage_label'])."
+" ?>
+                                                </span>
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="d-inline-flex align-items-center gap-1">
+                                                     <?php if ($ord['status'] == 'permintaan_masuk'): ?>
+                                                         
+                                                             <a href="<?= ($BASE) ?>/order/<?= ($ord['id']) ?>" class="btn btn-sm btn-warning text-dark py-1 px-2 d-inline-flex align-items-center gap-1 shadow-sm fw-semibold" title="Tentukan OPTI &amp; Disposisikan ke Ketua Tim">
+                                                                 <i class="bi bi-send-check"></i> <span>Disposisi</span>
+                                                             </a>
+                                                         
+                                                         <?php else: ?>
+                                                             <a href="<?= ($BASE) ?>/order/<?= ($ord['id']) ?>" class="btn btn-sm btn-primary py-1 px-2 d-inline-flex align-items-center gap-1 shadow-sm" title="Lihat Detail Order &amp; Progres">
+                                                                 <i class="bi bi-eye"></i> <span>Detail</span>
+                                                             </a>
+                                                         
+                                                     <?php endif; ?>
 
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+                                                     <?php if (($ord['status'] == 'penawaran_deal' || $ord['status_respon_klien'] == 'deal') && $ord['status'] != 'disetujui' && !$ord['po_id'] && $can_approve_po): ?>
+                                                         <button type="button" class="btn btn-sm btn-success py-1 px-2 d-inline-flex align-items-center gap-1 shadow-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#approveModal<?= ($ord['id']) ?>" title="Klien Telah DEAL: Setujui &amp; Terbitkan PO">
+                                                             <i class="bi bi-check2-circle"></i> <span>Setujui PO</span>
+                                                         </button>
+                                                     <?php endif; ?>
+
+                                                     <?php if ($ord['status'] == 'disetujui' || $ord['po_id']): ?>
+                                                         <a href="<?= ($BASE) ?>/po/<?= ($ord['po_id'] ?: $ord['id']) ?>" class="btn btn-sm btn-outline-dark py-1 px-2 d-inline-flex align-items-center gap-1" title="Buka Dokumen PO Terbit">
+                                                             <i class="bi bi-speedometer2"></i>
+                                                         </a>
+                                                     <?php endif; ?>
+
+                                                     <button type="button" class="btn btn-sm btn-light border py-1 px-2" style="color: var(--color-primary);" data-bs-toggle="modal" data-bs-target="#modalHapusOrder<?= ($ord['id']) ?>" title="Hapus Order">
+                                                         <i class="bi bi-trash3"></i>
+                                                     </button>
+                                                </div>
+
+                                                <!-- Modal Konfirmasi Hapus Order Bertema Merah Maroon -->
+                                                <div class="modal fade" id="modalHapusOrder<?= ($ord['id']) ?>" tabindex="-1" aria-labelledby="modalHapusOrderLabel<?= ($ord['id']) ?>" aria-hidden="true">
+                                                    <div class="modal-dialog modal-dialog-centered">
+                                                        <div class="modal-content bg-white border-0 shadow rounded-3 text-start">
+                                                            <div class="modal-header border-bottom py-3 px-4 bg-white">
+                                                                <div class="d-flex align-items-center gap-2">
+                                                                    <div class="rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; background-color: #ffe4e6; color: var(--color-primary);">
+                                                                        <i class="bi bi-trash3-fill fs-5"></i>
+                                                                    </div>
+                                                                    <div>
+                                                                        <h6 class="modal-title fw-bold text-dark fs-6 m-0" id="modalHapusOrderLabel<?= ($ord['id']) ?>">
+                                                                            Konfirmasi Hapus Order
+                                                                        </h6>
+                                                                        <small class="text-muted" style="font-size: 0.75rem;">Tindakan ini tidak dapat dibatalkan</small>
+                                                                    </div>
+                                                                </div>
+                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                                                            </div>
+
+                                                            <form action="<?= ($BASE) ?>/order/<?= ($ord['id']) ?>/hapus" method="POST">
+                                                                <input type="hidden" name="csrf_token" value="<?= ($csrf_token) ?>">
+                                                                
+                                                                <div class="modal-body py-4 px-4 text-start">
+                                                                    <p class="text-secondary mb-3">
+                                                                        Apakah Anda yakin ingin menghapus permohonan order layanan berikut?
+                                                                    </p>
+
+                                                                    <div class="p-3 bg-light rounded-2 border mb-3">
+                                                                        <div class="d-flex justify-content-between mb-1">
+                                                                            <span class="text-muted small">Nomor Order:</span>
+                                                                            <strong class="text-dark small"><?= ($ord['nomor_order']) ?></strong>
+                                                                        </div>
+                                                                        <div class="d-flex justify-content-between mb-1">
+                                                                            <span class="text-muted small">Customer / Mitra:</span>
+                                                                            <span class="text-dark small fw-semibold"><?= ($ord['nama_perusahaan']) ?></span>
+                                                                        </div>
+                                                                        <div class="d-flex justify-content-between">
+                                                                            <span class="text-muted small">Judul Kegiatan:</span>
+                                                                            <span class="text-dark small text-truncate" style="max-width: 240px;"><?= ($ord['judul_kegiatan']) ?></span>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div class="p-2 mb-0 rounded-2 small d-flex align-items-center gap-2" style="font-size: 0.8rem; background-color: #fff1f2; color: #881337; border: 1px solid #fecdd3;">
+                                                                        <i class="bi bi-exclamation-triangle-fill fs-6 flex-shrink-0" style="color: #881337;"></i>
+                                                                        <span>Seluruh berkas kaji ulang dan penawaran terkait order ini akan ikut terhapus dari sistem.</span>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div class="modal-footer border-top py-3 px-4 bg-light d-flex justify-content-end gap-2">
+                                                                    <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-2 fw-semibold" data-bs-dismiss="modal">
+                                                                        Batal
+                                                                    </button>
+                                                                    <button type="submit" class="btn btn-primary btn-sm px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-1">
+                                                                        <i class="bi bi-trash3-fill"></i> Ya, Hapus Order
+                                                                    </button>
+                                                                </div>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Modal Approve Order -->
+                                                <div class="modal fade" id="approveModal<?= ($ord['id']) ?>" tabindex="-1" aria-labelledby="approveModalLabel<?= ($ord['id']) ?>" aria-hidden="true">
+                                                    <div class="modal-dialog modal-dialog-centered text-start">
+                                                        <div class="modal-content border-0 shadow">
+                                                            <form action="<?= ($BASE) ?>/order/<?= ($ord['id']) ?>/approve" method="POST">
+                                                                <input type="hidden" name="csrf_token" value="<?= ($csrf_token) ?>">
+                                                                <div class="modal-header">
+                                                                    <h6 class="modal-title fw-bold" id="approveModalLabel<?= ($ord['id']) ?>">
+                                                                        <i class="bi bi-check-circle-fill text-success me-2"></i>Persetujuan & Penerbitan PO
+                                                                    </h6>
+                                                                    <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                                </div>
+                                                                <div class="modal-body">
+                                                                    <p class="small text-muted mb-3">
+                                                                        Anda akan menyetujui Order <strong><?= ($ord['nomor_order']) ?></strong> dan menerbitkan nomor <strong>Petunjuk Operasional (PO)</strong> otomatis.
+                                                                    </p>
+                                                                    <div class="mb-3">
+                                                                        <label class="form-label small">Tentukan Target Tanggal Selesai</label>
+                                                                        <input type="date" name="target_selesai" class="form-control form-control-sm" value="<?= ($ord['target_selesai'] ?: date('Y-m-d', strtotime('+3 months'))) ?>" required>
+                                                                    </div>
+                                                                    <div class="mb-3">
+                                                                        <label class="form-label small">Tim / Personil Pelaksana</label>
+                                                                        <input type="text" name="tim_kerja" class="form-control form-control-sm" placeholder="Contoh: Tim Pengujian Selulosa" value="<?= ($ord['tim_kerja']) ?>">
+                                                                    </div>
+                                                                </div>
+                                                                <div class="modal-footer">
+                                                                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                                                    <button type="submit" class="btn btn-sm btn-success">
+                                                                        <i class="bi bi-check-circle me-1"></i> Terbitkan PO
+                                                                    </button>
+                                                                </div>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        
+                    <?php endif; ?>
                 </div>
             
             <?php else: ?>
-                <div class="text-center py-5">
-                    <i class="bi bi-inbox text-muted display-4 d-block mb-3"></i>
-                    <h5 class="fw-bold text-dark">Belum ada data Order Layanan</h5>
-                    <p class="text-muted small mb-3">Klik tombol di bawah untuk mendaftarkan order layanan baru.</p>
-                    <a href="<?= ($BASE) ?>/order/tambah" class="btn btn-sm btn-primary">
-                        <i class="bi bi-plus-lg me-1"></i> Tambah Order Baru
-                    </a>
-                </div>
+                <?php if ($filter_tab == 'ditolak'): ?>
+                    
+                        <div class="text-center py-5">
+                            <i class="bi bi-archive text-muted display-4 d-block mb-3 opacity-50"></i>
+                            <h5 class="fw-bold text-dark">Tidak Ada Order Ditolak</h5>
+                            <p class="text-muted small mb-0">Semua order permohonan berjalan aktif dan tidak ada yang diarsipkan dalam status ditolak.</p>
+                        </div>
+                    
+                    <?php else: ?>
+                        <div class="text-center py-5">
+                            <i class="bi bi-inbox text-muted display-4 d-block mb-3"></i>
+                            <h5 class="fw-bold text-dark">Belum Ada Order Berlangsung</h5>
+                            <p class="text-muted small mb-0">Tidak ditemukan permohonan order aktif yang sesuai dengan kriteria filter.</p>
+                        </div>
+                    
+                <?php endif; ?>
             
         <?php endif; ?>
     </div>
 </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest('.btn-lihat-alasan-order');
+        if (!btn) return;
+
+        var nomor = btn.getAttribute('data-nomor') || '-';
+        var perusahaan = btn.getAttribute('data-perusahaan') || '-';
+        var penolak = btn.getAttribute('data-penolak') || '';
+        var tahap = btn.getAttribute('data-tahap') || '';
+        var tanggal = btn.getAttribute('data-tanggal') || '-';
+        var alasan = btn.getAttribute('data-alasan') || 'Tidak ada catatan alasan penolakan.';
+
+        var tahapRow = (tahap && tahap !== '')
+            ? '<div class="d-flex justify-content-between mb-2"><strong>Tahap Penolakan:</strong> <span class="badge bg-secondary-subtle text-dark border px-2 py-1">' + tahap + '</span></div>'
+            : '';
+        var penolakRow = (penolak && penolak !== '-' && penolak !== '')
+            ? '<div class="d-flex justify-content-between mb-2"><strong>Ditolak Oleh:</strong> <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">' + penolak + '</span></div>'
+            : '';
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: '<span style="font-size:1.15rem; font-weight:700; color:#0f172a;"><i class="bi bi-x-circle-fill text-danger me-2"></i>Alasan Penolakan Order</span>',
+                html: '<div style="text-align:left; font-size:0.875rem; color:#334155;">' +
+                    '<div style="background:#f8fafc; padding:14px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:14px;">' +
+                        '<div class="d-flex justify-content-between mb-2"><strong>Nomor Order:</strong> <span style="color:#881337; font-family:monospace; font-weight:700;">' + nomor + '</span></div>' +
+                        '<div class="d-flex justify-content-between mb-2"><strong>Mitra / Customer:</strong> <span class="fw-semibold text-dark">' + perusahaan + '</span></div>' +
+                        tahapRow +
+                        penolakRow +
+                        '<div class="d-flex justify-content-between"><strong>Waktu Penolakan:</strong> <span class="text-muted">' + tanggal + ' WIB</span></div>' +
+                    '</div>' +
+                    '<div style="margin-bottom:6px; font-weight:600; color:#475569;">Alasan / Catatan Penolakan:</div>' +
+                    '<div style="background:#fff1f2; border:1px solid #fecdd3; border-left:4px solid #881337; padding:12px 14px; border-radius:6px; color:#881337; line-height:1.5;">' +
+                        alasan +
+                    '</div>' +
+                '</div>',
+                confirmButtonText: 'Tutup',
+                confirmButtonColor: '#881337',
+                customClass: {
+                    popup: 'rounded-3 shadow'
+                }
+            });
+        } else {
+            alert('Alasan Penolakan Order #' + nomor + ':\n' + alasan);
+        }
+    });
+});
+</script>

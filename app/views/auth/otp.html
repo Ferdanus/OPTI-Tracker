@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verifikasi OTP WhatsApp - SILOPTI BBSPJIS</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap 5 CSS & Icons CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <!-- SweetAlert2 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <style>
+        :root {
+            --color-primary: #881337;
+            --color-primary-hover: #9f1239;
+            --color-primary-dark: #4c0519;
+            --color-primary-light: #fff1f2;
+            --color-whatsapp: #25D366;
+            --font-display: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-body);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 2rem 1rem;
+            position: relative;
+            overflow-x: hidden;
+            background-color: #f8fafc;
+            background-image: 
+                radial-gradient(at 15% 15%, rgba(136, 19, 55, 0.07) 0px, transparent 55%),
+                radial-gradient(at 85% 20%, rgba(37, 211, 102, 0.05) 0px, transparent 50%),
+                radial-gradient(at 75% 85%, rgba(136, 19, 55, 0.06) 0px, transparent 55%),
+                radial-gradient(at 20% 80%, rgba(59, 130, 246, 0.03) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: #0f172a;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-size: 32px 32px;
+            background-image: 
+                linear-gradient(to right, rgba(15, 23, 42, 0.02) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(15, 23, 42, 0.02) 1px, transparent 1px);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .otp-box {
+            width: 100%;
+            max-width: 460px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .otp-card {
+            background: #ffffff;
+            border: 1px solid rgba(226, 232, 240, 0.85);
+            border-radius: 20px;
+            padding: 2.5rem 2.25rem;
+            box-shadow: 
+                0 25px 50px -15px rgba(15, 23, 42, 0.07),
+                0 10px 25px -5px rgba(15, 23, 42, 0.02);
+            position: relative;
+        }
+
+        .wa-emblem-wrap {
+            display: inline-flex;
+            padding: 6px;
+            border-radius: 50%;
+            background: rgba(37, 211, 102, 0.12);
+            margin-bottom: 1.25rem;
+        }
+
+        .wa-emblem {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-size: 1.85rem;
+            box-shadow: 0 6px 18px rgba(37, 211, 102, 0.35);
+        }
+
+        .brand-title {
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: 1.45rem;
+            color: #0f172a;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.35rem;
+        }
+
+        .brand-subtitle {
+            font-size: 0.875rem;
+            color: #64748b;
+            line-height: 1.5;
+            margin-bottom: 1.5rem;
+        }
+
+        .phone-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #0f172a;
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            padding: 5px 14px;
+            border-radius: 20px;
+            margin-top: 4px;
+        }
+
+        .otp-inputs-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+            margin: 1.75rem 0 1.25rem 0;
+        }
+
+        .otp-digit-input {
+            width: 100%;
+            height: 54px;
+            text-align: center;
+            font-family: var(--font-display);
+            font-size: 1.45rem;
+            font-weight: 800;
+            color: var(--color-primary);
+            background-color: #f8fafc;
+            border: 2px solid #cbd5e1;
+            border-radius: 12px;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+
+        .otp-digit-input:focus {
+            background-color: #ffffff;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 4px rgba(136, 19, 55, 0.12);
+        }
+
+        .btn-verify {
+            background: linear-gradient(135deg, var(--color-primary) 0%, #9f1239 100%);
+            border: none;
+            color: #ffffff;
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 0.95rem;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            transition: all 0.2s ease;
+            box-shadow: 0 6px 18px rgba(136, 19, 55, 0.22);
+            cursor: pointer;
+        }
+
+        .btn-verify:hover {
+            background: linear-gradient(135deg, #700f2c 0%, #881337 100%);
+            box-shadow: 0 8px 22px rgba(136, 19, 55, 0.32);
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
+
+        .btn-resend {
+            background: transparent;
+            border: 1px dashed #cbd5e1;
+            color: #64748b;
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 10px;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-resend:hover:not(.disabled) {
+            border-color: var(--color-primary);
+            color: var(--color-primary);
+            background: rgba(136, 19, 55, 0.04);
+        }
+
+        .btn-resend.disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+
+        .footer-text {
+            color: #94a3b8 !important;
+            font-size: 0.775rem !important;
+            text-align: center !important;
+            margin-top: 1.5rem !important;
+            line-height: 1.5 !important;
+        }
+
+        .swal2-popup.custom-swal-popup {
+            font-family: var(--font-body) !important;
+            border-radius: 20px !important;
+            padding: 2rem 1.75rem !important;
+        }
+
+        .swal2-title.custom-swal-title {
+            font-family: var(--font-display) !important;
+            font-weight: 800 !important;
+            font-size: 1.35rem !important;
+        }
+
+        .custom-swal-btn {
+            background: linear-gradient(135deg, var(--color-primary) 0%, #9f1239 100%) !important;
+            border: none !important;
+            border-radius: 10px !important;
+            padding: 10px 26px !important;
+            font-weight: 700 !important;
+            font-size: 0.9rem !important;
+        }
+    </style>
+</head>
+<body>
+
+<div class="otp-box">
+
+    <!-- Flash Alerts -->
+    <check if="{{ @SESSION.flash_success }}">
+        <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-3 rounded-3" role="alert">
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="small">
+                    <i class="bi bi-check-circle-fill text-success me-1"></i> {{ @SESSION.flash_success | raw }}
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        </div>
+        {~ unset($_SESSION['flash_success']) ~}
+    </check>
+
+    <check if="{{ @SESSION.flash_error }}">
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Verifikasi Gagal',
+                    html: '<div class="text-secondary small mt-1" style="font-size: 0.92rem; line-height: 1.5;">{{ addslashes(@SESSION.flash_error) }}</div>',
+                    confirmButtonText: 'Coba Lagi',
+                    customClass: {
+                        popup: 'custom-swal-popup',
+                        title: 'custom-swal-title',
+                        confirmButton: 'custom-swal-btn'
+                    },
+                    buttonsStyling: false,
+                    backdrop: `rgba(15, 23, 42, 0.5)`
+                });
+            });
+        </script>
+        {~ unset($_SESSION['flash_error']) ~}
+    </check>
+
+    <!-- OTP Card -->
+    <div class="otp-card text-center">
+        
+        <!-- Header WhatsApp Emblem -->
+        <div class="wa-emblem-wrap">
+            <div class="wa-emblem">
+                <i class="bi bi-whatsapp"></i>
+            </div>
+        </div>
+
+        <h1 class="brand-title">Verifikasi WhatsApp OTP</h1>
+        <div class="brand-subtitle">
+            Kode verifikasi 6 digit telah dikirimkan ke nomor WhatsApp Anda:<br>
+            <span class="phone-badge">
+                <i class="bi bi-telephone-fill text-success"></i> {{ @masked_phone }}
+            </span>
+        </div>
+
+        <!-- Form Input OTP -->
+        <form action="{{ @BASE }}/login/otp/verify" method="POST" id="formOtp" autocomplete="off">
+            <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
+            <input type="hidden" name="otp" id="fullOtpInput" value="">
+
+            <div class="otp-inputs-grid" id="otpInputs">
+                <input type="text" class="otp-digit-input" maxlength="1" pattern="[0-9]" inputmode="numeric" autofocus required data-index="0">
+                <input type="text" class="otp-digit-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="1">
+                <input type="text" class="otp-digit-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="2">
+                <input type="text" class="otp-digit-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="3">
+                <input type="text" class="otp-digit-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="4">
+                <input type="text" class="otp-digit-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="5">
+            </div>
+
+            <div class="d-flex align-items-center justify-content-between mb-4 mt-2 px-1">
+                <div class="small text-muted text-start">
+                    <i class="bi bi-clock-history me-1"></i> Berlaku: <strong id="timerCountdown" class="text-dark">24:00:00</strong>
+                </div>
+                <div>
+                    <a href="{{ @BASE }}/login/otp/resend" id="btnResendOtp" class="btn-resend disabled">
+                        <i class="bi bi-arrow-clockwise"></i> Kirim Ulang <span id="resendCountdown"></span>
+                    </a>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-verify mb-3" id="btnSubmitOtp">
+                <i class="bi bi-shield-check fs-5"></i>
+                <span>Verifikasi &amp; Masuk</span>
+            </button>
+
+            <div>
+                <a href="{{ @BASE }}/login" class="text-decoration-none text-muted small">
+                    <i class="bi bi-arrow-left me-1"></i> Kembali ke Form Login
+                </a>
+            </div>
+        </form>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="footer-text">
+        &copy; 2026 Balai Besar Standardisasi dan Pelayanan Jasa Industri Selulosa (BBSPJIS)
+    </div>
+
+</div>
+
+<!-- Script Interaktif OTP -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const inputs = document.querySelectorAll('.otp-digit-input');
+    const form = document.getElementById('formOtp');
+    const fullOtpInput = document.getElementById('fullOtpInput');
+    const timerDisplay = document.getElementById('timerCountdown');
+    const btnResend = document.getElementById('btnResendOtp');
+    const resendCountdown = document.getElementById('resendCountdown');
+
+    // Handle digit input & auto-focus navigation
+    inputs.forEach((input, index) => {
+        input.addEventListener('input', function (e) {
+            const val = e.target.value.replace(/[^0-9]/g, '');
+            e.target.value = val ? val.charAt(val.length - 1) : '';
+
+            if (e.target.value && index < inputs.length - 1) {
+                inputs[index + 1].focus();
+            }
+            updateFullOtp();
+        });
+
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Backspace' && !input.value && index > 0) {
+                inputs[index - 1].focus();
+            }
+        });
+
+        input.addEventListener('paste', function (e) {
+            e.preventDefault();
+            const pastedData = (e.clipboardData || window.clipboardData).getData('text').trim().replace(/[^0-9]/g, '');
+            if (pastedData) {
+                for (let i = 0; i < inputs.length; i++) {
+                    if (pastedData[i]) {
+                        inputs[i].value = pastedData[i];
+                    }
+                }
+                const focusIdx = Math.min(pastedData.length, inputs.length - 1);
+                inputs[focusIdx].focus();
+                updateFullOtp();
+                if (pastedData.length >= 6) {
+                    form.submit();
+                }
+            }
+        });
+    });
+
+    function updateFullOtp() {
+        let code = '';
+        inputs.forEach(i => code += i.value);
+        fullOtpInput.value = code;
+    }
+
+    form.addEventListener('submit', function (e) {
+        updateFullOtp();
+        if (fullOtpInput.value.length < 6) {
+            e.preventDefault();
+            Swal.fire({
+                icon: 'warning',
+                title: 'Kode OTP Belum Lengkap',
+                text: 'Harap masukkan 6 digit kode OTP yang diterima melalui WhatsApp.',
+                confirmButtonText: 'Mengerti',
+                customClass: {
+                    popup: 'custom-swal-popup',
+                    title: 'custom-swal-title',
+                    confirmButton: 'custom-swal-btn'
+                },
+                buttonsStyling: false
+            });
+        }
+    });
+
+    // Countdown Timer 1 Hari / 24 Jam (86400 detik)
+    let totalSeconds = parseInt("{{ @remaining_seconds ?: 86400 }}", 10);
+    let resendLockSeconds = 30; // 30 detik sebelum bisa kirim ulang
+
+    function updateTimer() {
+        if (totalSeconds <= 0) {
+            timerDisplay.textContent = "Kedaluwarsa";
+            timerDisplay.classList.add('text-danger');
+            inputs.forEach(i => i.disabled = true);
+            document.getElementById('btnSubmitOtp').disabled = true;
+            return;
+        }
+
+        const hours = Math.floor(totalSeconds / 3600);
+        const mins = Math.floor((totalSeconds % 3600) / 60);
+        const secs = totalSeconds % 60;
+        
+        if (hours > 0) {
+            timerDisplay.textContent = `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        } else {
+            timerDisplay.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }
+        totalSeconds--;
+
+        if (resendLockSeconds > 0) {
+            resendCountdown.textContent = `(${resendLockSeconds}s)`;
+            resendLockSeconds--;
+        } else {
+            resendCountdown.textContent = '';
+            btnResend.classList.remove('disabled');
+        }
+
+        setTimeout(updateTimer, 1000);
+    }
+
+    updateTimer();
+});
+</script>
+
+<!-- Bootstrap JS CDN -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

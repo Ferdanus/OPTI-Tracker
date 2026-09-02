@@ -1,0 +1,177 @@
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+    <div>
+        <h2 class="h4 fw-bold mb-1 text-dark">Pengaturan Konfigurasi & Fleksibilitas Sistem</h2>
+        <p class="text-muted small mb-0">Kelola penetapan pejabat ketua tim OPTI, visibilitas field per divisi, dan aktifkan perlindungan privasi data industri.</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- ======================================================== -->
+    <!-- KARTU 1: PENETAPAN PEJABAT KETUA TIM OPTI DINAMIS -->
+    <!-- ======================================================== -->
+    <div class="col-lg-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="m-0 fw-bold text-dark"><i class="bi bi-person-badge text-primary me-2"></i>Penetapan Pejabat Ketua Tim Layanan OPTI (Dinamis dari Master Balai)</h6>
+                    <span class="text-muted small">Tentukan pejabat penanggung jawab teknis untuk OPTI Selulosa dan OPTI Lingkungan. Data nama di dashboard dan seluruh formulir akan otomatis mengikuti pilihan ini tanpa perlu ketik manual.</span>
+                </div>
+            </div>
+            <div class="card-body p-4">
+                <form action="<?= ($BASE) ?>/config/set-ketua-tim" method="POST">
+                    <input type="hidden" name="csrf_token" value="<?= ($csrf_token) ?>">
+
+                    <div class="row g-4 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark">
+                                <i class="bi bi-tree text-primary me-1"></i> Ketua Tim OPTI Selulosa:
+                            </label>
+                            <select name="id_user_selulosa" class="form-select searchable-select" placeholder="Cari nama atau username personil Selulosa..." required>
+                                <?php foreach (($internal_users?:[]) as $u): ?>
+                                    <option value="<?= ($u['id_user']) ?>" <?= ($katim_selulosa && $katim_selulosa['id_user'] == $u['id_user'] ? 'selected' : '') ?>>
+                                        <?= ($u['nama_user']) ?> (@<?= ($u['login']) ?>) - Unit: <?= ($u['bidang'] ?: 'Balai')."
+" ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <div class="form-text small">Saat ini: <strong><?= ($katim_selulosa['nama_user'] ?: 'Belum ditetapkan') ?></strong></div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark">
+                                <i class="bi bi-water text-primary me-1"></i> Ketua Tim OPTI Lingkungan:
+                            </label>
+                            <select name="id_user_lingkungan" class="form-select searchable-select" placeholder="Cari nama atau username personil Lingkungan..." required>
+                                <?php foreach (($internal_users?:[]) as $u): ?>
+                                    <option value="<?= ($u['id_user']) ?>" <?= ($katim_lingkungan && $katim_lingkungan['id_user'] == $u['id_user'] ? 'selected' : '') ?>>
+                                        <?= ($u['nama_user']) ?> (@<?= ($u['login']) ?>) - Unit: <?= ($u['bidang'] ?: 'Balai')."
+" ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <div class="form-text small">Saat ini: <strong><?= ($katim_lingkungan['nama_user'] ?: 'Belum ditetapkan') ?></strong></div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end">
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-check2-circle me-1"></i> Simpan Penetapan Ketua Tim
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- KARTU 2: PERLINDUNGAN PRIVASI DATA (MASKING NAMA KLIEN) -->
+    <!-- ======================================================== -->
+    <div class="col-lg-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
+                <div>
+                    <h6 class="m-0 fw-bold text-dark"><i class="bi bi-shield-lock text-primary me-2"></i>Perlindungan Privasi Nama Klien Industri (Data Masking)</h6>
+                    <span class="text-muted small">Menyamarkan nama perusahaan di dashboard publik (misal: <code>PT S*** M*** S***</code>) untuk menjaga kerahasiaan klien balai.</span>
+                </div>
+            </div>
+            <div class="card-body p-4">
+                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 p-3 bg-light rounded-3">
+                    <div>
+                        <div class="fw-bold text-dark">Status Masking Nama Perusahaan:</div>
+                        <div class="small text-muted">
+                            Saat diaktifkan, nama klien di tabel rekap PO, Order, Pembayaran, dan Kontrak akan otomatis disamarkan.
+                        </div>
+                    </div>
+                    <form action="<?= ($BASE) ?>/config/toggle-masking" method="POST">
+                        <input type="hidden" name="csrf_token" value="<?= ($csrf_token) ?>">
+                        <?php if ($mask_client_name): ?>
+                            
+                                <button type="submit" class="btn btn-success d-flex align-items-center gap-2">
+                                    <i class="bi bi-toggle-on fs-5"></i> Masking Aktif (Klik untuk Matikan)
+                                </button>
+                            
+                            <?php else: ?>
+                                <button type="submit" class="btn btn-outline-secondary d-flex align-items-center gap-2">
+                                    <i class="bi bi-toggle-off fs-5"></i> Masking Nonaktif (Klik untuk Aktifkan)
+                                </button>
+                            
+                        <?php endif; ?>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- KARTU 3: VISIBILITAS FIELD FORMULIR & TABEL (SHOW / HIDE) -->
+    <!-- ======================================================== -->
+    <div class="col-lg-12">
+        <div class="card border-0 shadow-sm overflow-hidden">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
+                <div>
+                    <h6 class="m-0 fw-bold text-dark"><i class="bi bi-eye-slash text-primary me-2"></i>Konfigurasi Show / Hide Kolom & Field per Tim Layanan</h6>
+                    <span class="text-muted small">Sesuai arahan mentor: Atur field yang ditampilkan atau disembunyikan tanpa merusak struktur tabel database.</span>
+                </div>
+                <span class="badge bg-light text-muted border"><?= (count($field_configs)) ?> Pengaturan Field</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Formulir / Modul</th>
+                                <th>Nama Field</th>
+                                <th>Label Tampilan</th>
+                                <th>Tipe Data</th>
+                                <th>Divisi Tim</th>
+                                <th class="text-center" style="width: 150px;">Status Tampil</th>
+                                <th class="text-center" style="width: 140px;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach (($field_configs?:[]) as $fc): ?>
+                                <tr>
+                                    <td>
+                                        <span class="badge badge-pill-secondary"><?= ($fc['nama_tabel']) ?></span>
+                                    </td>
+                                    <td><code class="text-primary fw-bold"><?= ($fc['field_name']) ?></code></td>
+                                    <td class="fw-semibold text-dark"><?= ($fc['field_label']) ?></td>
+                                    <td class="text-muted small"><?= ($fc['tipe_field']) ?></td>
+                                    <td>
+                                        <?php if ($fc['jenis_layanan'] == 'selulosa'): ?>
+                                            <span class="badge badge-pill-danger">Selulosa</span>
+                                        <?php endif; ?>
+                                        <?php if ($fc['jenis_layanan'] == 'lingkungan'): ?>
+                                            <span class="badge badge-pill-success">Lingkungan</span>
+                                        <?php endif; ?>
+                                        <?php if ($fc['jenis_layanan'] == 'semua'): ?>
+                                            <span class="badge badge-pill-primary">Semua Tim</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="text-center">
+                                        <?php if ($fc['is_visible'] == 1): ?>
+                                            <span class="badge badge-pill-success"><i class="bi bi-eye"></i> Tampil</span>
+                                        <?php endif; ?>
+                                        <?php if ($fc['is_visible'] == 0): ?>
+                                            <span class="badge badge-pill-secondary"><i class="bi bi-eye-slash"></i> Sembunyi (Hide)</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="text-center">
+                                        <form action="<?= ($BASE) ?>/config/field/<?= ($fc['id']) ?>/update" method="POST" class="d-inline">
+                                            <input type="hidden" name="csrf_token" value="<?= ($csrf_token) ?>">
+                                            <input type="hidden" name="is_visible" value="<?= ($fc['is_visible'] == 1 ? 0 : 1) ?>">
+                                            <button type="submit" class="btn btn-sm <?= ($fc['is_visible'] == 1 ? 'btn-outline-secondary' : 'btn-outline-success') ?> py-1 px-2">
+                                                <?= ($fc['is_visible'] == 1 ? 'Sembunyikan' : 'Tampilkan')."
+" ?>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

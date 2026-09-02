@@ -1,4 +1,4 @@
-# Mini OPTI Tracker
+# SILOPTI
 
 Aplikasi berbasis **PHP (Fat-Free Framework / F3)** dan **MySQL** untuk mendemonstrasikan konsep:
 1. **CRUD & Relasi Data**: Klien, Order Layanan, dan PO.

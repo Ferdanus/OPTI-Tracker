@@ -152,6 +152,69 @@
                                             <i class="bi bi-file-pdf"></i>
                                         </a>
                                     </check>
+                                    <button type="button" class="btn btn-sm btn-light border py-1 px-2 text-danger" data-bs-toggle="modal" data-bs-target="#modalHapusSP{{ @sp.id }}" title="Hapus Surat Pelayanan">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
+                                </div>
+
+                                <!-- Modal Konfirmasi Hapus Surat Pelayanan -->
+                                <div class="modal fade" id="modalHapusSP{{ @sp.id }}" tabindex="-1" aria-labelledby="modalHapusSPLabel{{ @sp.id }}" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content bg-white border-0 shadow rounded-3 text-start">
+                                            <div class="modal-header border-bottom py-3 px-4 bg-white">
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <div class="rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; background-color: #ffe4e6; color: var(--color-primary);">
+                                                        <i class="bi bi-trash3-fill fs-5"></i>
+                                                    </div>
+                                                    <div>
+                                                        <h6 class="modal-title fw-bold text-dark mb-0" id="modalHapusSPLabel{{ @sp.id }}">Konfirmasi Hapus Surat Pelayanan</h6>
+                                                        <small class="text-muted" style="font-size: 0.75rem;">Tindakan ini tidak dapat dibatalkan</small>
+                                                    </div>
+                                                </div>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                                            </div>
+
+                                            <form action="{{ @BASE }}/surat-penawaran/{{ @sp.id }}/hapus" method="POST">
+                                                <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
+
+                                                <div class="modal-body p-4">
+                                                    <p class="text-dark small mb-3">
+                                                        Apakah Anda yakin ingin menghapus dokumen surat pelayanan berikut?
+                                                    </p>
+
+                                                    <!-- Box Rincian Surat Pelayanan -->
+                                                    <div class="border rounded-2 p-3 bg-light mb-3">
+                                                        <div class="mb-2">
+                                                            <span class="text-muted small d-block" style="font-size: 0.75rem;">Nomor Surat:</span>
+                                                            <strong class="font-monospace fs-6" style="color: var(--color-primary);">{{ @sp.nomor_surat }}</strong>
+                                                        </div>
+                                                        <div class="mb-2">
+                                                            <span class="text-muted small d-block" style="font-size: 0.75rem;">Nama Instansi / Perusahaan:</span>
+                                                            <span class="fw-semibold text-dark">{{ @sp.perusahaan }}</span>
+                                                        </div>
+                                                        <div class="mb-0">
+                                                            <span class="text-muted small d-block" style="font-size: 0.75rem;">Perihal:</span>
+                                                            <span class="text-secondary small">{{ @sp.perihal }}</span>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="p-2 mb-0 rounded-2 small d-flex align-items-center gap-2" style="font-size: 0.8rem; background-color: #fff1f2; color: #881337; border: 1px solid #fecdd3;">
+                                                        <i class="bi bi-exclamation-triangle-fill fs-6 flex-shrink-0" style="color: #881337;"></i>
+                                                        <span>Surat pelayanan ini akan dihapus dan status order terkait akan kembali ke tahap sebelum penawaran terbit.</span>
+                                                    </div>
+                                                </div>
+
+                                                <div class="modal-footer border-top py-3 px-4 bg-light d-flex justify-content-end gap-2">
+                                                    <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-2 fw-semibold" data-bs-dismiss="modal">
+                                                        Batal
+                                                    </button>
+                                                    <button type="submit" class="btn btn-primary btn-sm px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-1">
+                                                        <i class="bi bi-trash3-fill"></i> Ya, Hapus Surat
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
                                 </div>
                             </td>
                         </tr>

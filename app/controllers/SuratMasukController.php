@@ -27,13 +27,18 @@ class SuratMasukController extends Controller {
         $errorMessage = null;
         $searchQ = trim($this->f3->get('GET.q') ?? '');
 
+        $currentYear = date('Y');
+        $filterTahun = $this->f3->exists('GET.tahun') ? trim($this->f3->get('GET.tahun')) : $currentYear;
+        $daftarTahun = range((int)$currentYear, (int)$currentYear - 3);
+
         if (!$this->repo->isConnected()) {
             $errorMessage = "Database sekretariat belum terhubung atau sedang offline. Silakan periksa konfigurasi di config.ini.";
         } else {
             try {
-                $daftarSurat   = $this->repo->getDaftarSuratOpti();
-                $daftarKlaim   = $this->repo->getDaftarPermintaanMasuk($this->getUserRole() === 'superadmin' ? null : $userId);
-                $daftarRiwayat = $this->repo->getDaftarRiwayatSurat();
+                $daftarSurat   = $this->repo->getDaftarSuratOpti($filterTahun);
+                $daftarKlaim   = $this->repo->getDaftarPermintaanMasuk($this->getUserRole() === 'superadmin' ? null : $userId, $filterTahun);
+                $daftarRiwayat = $this->repo->getDaftarRiwayatSurat($filterTahun);
+                $daftarDitolak = $this->repo->getDaftarSuratDitolak($filterTahun);
 
                 // Apply search filter if query is present
                 if (!empty($searchQ)) {
@@ -51,6 +56,13 @@ class SuratMasukController extends Controller {
                             || strpos(strtolower($k['judul_kegiatan'] ?? ''), $qLower) !== false
                             || strpos(strtolower($k['pic'] ?? ''), $qLower) !== false;
                     }));
+
+                    $daftarDitolak = array_values(array_filter($daftarDitolak, function($d) use ($qLower) {
+                        return strpos(strtolower($d['nomor_surat'] ?? ''), $qLower) !== false
+                            || strpos(strtolower($d['pengirim'] ?? ''), $qLower) !== false
+                            || strpos(strtolower($d['perihal'] ?? ''), $qLower) !== false
+                            || strpos(strtolower($d['alasan_tolak'] ?? ''), $qLower) !== false;
+                    }));
                 }
             } catch (\Exception $e) {
                 $errorMessage = "Gagal mengambil data surat: " . $e->getMessage();
@@ -60,13 +72,17 @@ class SuratMasukController extends Controller {
         $this->f3->set('daftar_surat', $daftarSurat);
         $this->f3->set('daftar_klaim', $daftarKlaim);
         $this->f3->set('daftar_riwayat', $daftarRiwayat);
+        $this->f3->set('daftar_ditolak', $daftarDitolak);
         $this->f3->set('total_surat_tersedia', count($daftarSurat));
         $this->f3->set('total_klaim_aktif', count($daftarKlaim));
         $this->f3->set('total_klaim_selesai', count($daftarRiwayat));
+        $this->f3->set('total_ditolak', count($daftarDitolak));
+        $this->f3->set('filter_tahun', $filterTahun);
+        $this->f3->set('daftar_tahun', $daftarTahun);
         $this->f3->set('search_q', $searchQ);
         $this->f3->set('error_message', $errorMessage);
 
-        $this->render('surat_masuk/index.html', 'Kotak Masuk Permohonan - Tim Mitra', 'surat_masuk');
+        $this->render('surat_masuk/index.html', 'Kotak Masuk Permohonan', 'surat_masuk');
     }
 
     /**
@@ -103,7 +119,7 @@ class SuratMasukController extends Controller {
                         'icon'           => 'bi-inbox-fill',
                         'link_url'       => "/order/{$orderId}/tinjauan",
                         'created_by'     => $userId,
-                        'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Tim Kemitraan'
+                        'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Tim Mitra'
                     ]);
                 }
             } catch (\Exception $eNotif) {
@@ -140,6 +156,47 @@ class SuratMasukController extends Controller {
             $this->setFlashSuccess('Klaim surat berhasil dibatalkan. Status surat telah dikembalikan ke daftar surat masuk.');
         } catch (\Exception $e) {
             $this->setFlashError('Gagal membatalkan klaim: ' . $e->getMessage());
+        }
+
+        $this->f3->reroute('/surat-masuk');
+    }
+
+    /**
+     * Aksi Tolak Permohonan Surat / Order Masuk (POST)
+     */
+    public function tolak() {
+        $this->requireAuth();
+        $this->requirePermission('surat_masuk:klaim');
+
+        $suratId = (int)($this->f3->get('POST.surat_id') ?? 0);
+        $orderId = (int)($this->f3->get('POST.order_id') ?? 0);
+        $alasan  = trim($this->f3->get('POST.alasan_tolak') ?? '');
+        $userId  = $this->getUserId();
+
+        if (empty($alasan)) {
+            $this->setFlashError('Alasan penolakan surat/order wajib diisi.');
+            $this->f3->reroute('/surat-masuk');
+            return;
+        }
+
+        if ($suratId <= 0 && $orderId <= 0) {
+            $this->setFlashError('ID Surat atau ID Order tidak valid.');
+            $this->f3->reroute('/surat-masuk');
+            return;
+        }
+
+        try {
+            if ($suratId > 0) {
+                $this->repo->tolakSurat($suratId, $userId, $alasan);
+                $this->logActivity(0, 'Surat Masuk', 'Tolak Permohonan', "Menolak surat masuk ID #{$suratId} dengan alasan: {$alasan}");
+            } elseif ($orderId > 0) {
+                $this->repo->tolakOrder($orderId, $userId, $alasan);
+                $this->logActivity($orderId, 'Order Layanan', 'Tolak Order', "Menolak order ID #{$orderId} dengan alasan: {$alasan}");
+            }
+
+            $this->setFlashSuccess('Permohonan order berhasil ditolak dan alasan telah tersimpan.');
+        } catch (\Exception $e) {
+            $this->setFlashError('Gagal menolak permohonan: ' . $e->getMessage());
         }
 
         $this->f3->reroute('/surat-masuk');
@@ -690,7 +747,7 @@ class SuratMasukController extends Controller {
                     'target_role'    => 'admin_order',
                     'target_layanan' => 'semua',
                     'judul'          => 'Surat Permohonan Baru Masuk',
-                    'pesan'          => "Surat dari {$pengirim} (No: {$nomorSurat}) telah diagendakan. Siap ditinjau & diklaim di Kotak Masuk Tim Kemitraan.",
+                    'pesan'          => "Surat dari {$pengirim} (No: {$nomorSurat}) telah diagendakan. Siap ditinjau & diklaim di Kotak Masuk Tim Mitra.",
                     'tipe'           => 'info',
                     'icon'           => 'bi-envelope-plus-fill',
                     'link_url'       => '/surat-masuk',
@@ -700,10 +757,10 @@ class SuratMasukController extends Controller {
             } catch (\Exception $eNotif) {}
 
             $this->setFlashSuccess("
-                Surat Permohonan dari <strong>{$pengirim}</strong> (No: <strong>{$nomorSurat}</strong>) berhasil didaftarkan dalam Buku Agenda Sekretariat dan diteruskan ke antrean Kotak Masuk Tim Kemitraan.<br>
+                Surat Permohonan dari <strong>{$pengirim}</strong> (No: <strong>{$nomorSurat}</strong>) berhasil didaftarkan dalam Buku Agenda Sekretariat dan diteruskan ke antrean Kotak Masuk Tim Mitra.<br>
                 <div class='mt-2'>
                     <a href='{$this->f3->get('BASE')}/surat-masuk' class='btn btn-primary btn-sm fw-semibold text-white shadow-sm'>
-                        <i class='bi bi-arrow-right-circle me-1'></i> Buka Kotak Masuk Tim Kemitraan (Tinjau &amp; Klaim Surat)
+                        <i class='bi bi-arrow-right-circle me-1'></i> Buka Kotak Masuk Tim Mitra (Tinjau &amp; Klaim Surat)
                     </a>
                 </div>
             ");

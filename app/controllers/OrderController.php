@@ -77,7 +77,7 @@ class OrderController extends Controller {
         $f3->set('user_role', $role);
         $f3->set('user_layanan', $layanan);
 
-        $this->render('order/disposisi_masuk.html', 'Permintaan Masuk & Disposisi Ka. Tim', 'disposisi_masuk');
+        $this->render('order/disposisi_masuk.html', 'Permintaan Masuk & Disposisi', 'disposisi_masuk');
     }
 
     /**
@@ -87,21 +87,50 @@ class OrderController extends Controller {
     public function index($f3) {
         $this->requirePermission('order:view', '/po');
 
+        $currentYear  = date('Y');
+        $filterTahun  = $f3->exists('GET.tahun') ? trim($f3->get('GET.tahun')) : $currentYear;
+        $daftarTahun  = range((int)$currentYear, (int)$currentYear - 4);
+
+        $filterTab    = $f3->get('GET.tab') === 'ditolak' ? 'ditolak' : 'aktif';
         $filterJenis  = $f3->get('GET.jenis_layanan') ?? '';
         $filterStatus = $f3->get('GET.status') ?? '';
         $search       = $f3->get('GET.q') ?? '';
 
+        $userRole = $this->getUserRole();
+        $isSuperadmin = $this->isSuperadmin();
+        $isKetuaTim = $this->isKetuaTim();
+        $userLayanan = $_SESSION['jenis_layanan_opti'] ?? '';
+
+        // Jika Ketua Tim OPTI: Wajib kunci hanya melihat divisi layanannya sendiri (selulosa / lingkungan)
+        if ($isKetuaTim && !$isSuperadmin && in_array($userLayanan, ['selulosa', 'lingkungan'])) {
+            $filterJenis = $userLayanan;
+        }
+
         $orderModel = new OrderLayanan($this->db);
-        $daftarOrder = $orderModel->allWithRelasi($filterJenis, $filterStatus, $search);
+        
+        // Data order sesuai tab yang dipilih
+        $daftarOrder = $orderModel->allWithRelasi($filterJenis, $filterStatus, $search, $filterTahun, $filterTab);
+        
+        // Counter untuk badge tab
+        $countAktif = count($orderModel->allWithRelasi($filterJenis, '', '', $filterTahun, 'aktif'));
+        $countDitolak = count($orderModel->allWithRelasi($filterJenis, '', '', $filterTahun, 'ditolak'));
 
         $fieldConfigModel = new OptiFieldConfig($this->db);
         $maskEnabled = $fieldConfigModel->isMaskClientNameEnabled();
 
         $f3->set('daftar_order', $daftarOrder);
+        $f3->set('filter_tab', $filterTab);
+        $f3->set('count_aktif', $countAktif);
+        $f3->set('count_ditolak', $countDitolak);
+        $f3->set('filter_tahun', $filterTahun);
+        $f3->set('daftar_tahun', $daftarTahun);
+        $f3->set('filter_jenis_layanan', $filterJenis);
         $f3->set('filter_jenis', $filterJenis);
         $f3->set('filter_status', $filterStatus);
         $f3->set('search_q', $search);
         $f3->set('mask_client_name', $maskEnabled);
+        $f3->set('is_locked_divisi', ($isKetuaTim && !$isSuperadmin && in_array($userLayanan, ['selulosa', 'lingkungan'])));
+        $f3->set('user_layanan', $userLayanan);
 
         $this->render('order/index.html', 'Daftar Order Layanan', 'order');
     }
@@ -166,6 +195,9 @@ class OrderController extends Controller {
         $jumlahPekerjaan  = trim($post['jumlah_pekerjaan'] ?? '1 paket kegiatan');
         $estimasiBiaya    = (float)($post['estimasi_biaya'] ?? 0);
 
+        $actionBtn        = $post['action_btn'] ?? 'simpan';
+        $statusOrder      = ($actionBtn === 'draft' || $actionBtn === 'save_draft') ? 'draft_disimpan' : 'baru';
+
         if ($idCustomer <= 0 || empty($judulKegiatan)) {
             $this->setFlashError('Pilih customer dan isi judul kegiatan permohonan layanan.');
             $f3->reroute('/order/tambah');
@@ -191,10 +223,15 @@ class OrderController extends Controller {
                 'karakteristik_serat'=> $karakteristikSerat,
                 'karakteristik_kimia'=> $karakteristikKimia,
                 'jumlah_pekerjaan'   => $jumlahPekerjaan,
-                'estimasi_biaya'     => $estimasiBiaya
+                'estimasi_biaya'     => $estimasiBiaya,
+                'status'             => $statusOrder
             ));
 
-            $this->setFlashSuccess('Order Layanan baru berhasil didaftarkan.');
+            if ($statusOrder === 'draft_disimpan') {
+                $this->setFlashSuccess('Order Layanan berhasil disimpan (Status: <strong>Draft Disimpan</strong>).');
+            } else {
+                $this->setFlashSuccess('Order Layanan baru berhasil didaftarkan.');
+            }
             $f3->reroute('/order');
         } catch (\Exception $e) {
             $this->setFlashError('Gagal menyimpan order layanan: ' . $e->getMessage());
@@ -321,6 +358,18 @@ class OrderController extends Controller {
 
         if (!$order) {
             $this->setFlashError("Order Layanan #{$id} tidak ditemukan.");
+            $f3->reroute('/order');
+            return;
+        }
+
+        $userRole = $this->getUserRole();
+        $isSuperadmin = $this->isSuperadmin();
+        $isKetuaTim = $this->isKetuaTim();
+        $userLayanan = $_SESSION['jenis_layanan_opti'] ?? '';
+
+        // Validasi Divisi untuk Ketua Tim:
+        if ($isKetuaTim && !$isSuperadmin && in_array($userLayanan, ['selulosa', 'lingkungan']) && $order['jenis_layanan_opti'] !== $userLayanan) {
+            $this->setFlashError("Akses Ditolak: Anda hanya berwenang mengakses order untuk Divisi OPTI " . ucfirst($userLayanan) . ".");
             $f3->reroute('/order');
             return;
         }
@@ -462,8 +511,20 @@ class OrderController extends Controller {
             return;
         }
 
+        $userRole = $this->getUserRole();
+        $isSuperadmin = $this->isSuperadmin();
+        $isKetuaTim = $this->isKetuaTim();
+        $userLayanan = $_SESSION['jenis_layanan_opti'] ?? '';
+
+        // Validasi Divisi untuk Ketua Tim:
+        if ($isKetuaTim && !$isSuperadmin && in_array($userLayanan, ['selulosa', 'lingkungan']) && $order['jenis_layanan_opti'] !== $userLayanan) {
+            $this->setFlashError("Akses Ditolak: Anda hanya berwenang mengevaluasi order untuk Divisi OPTI " . ucfirst($userLayanan) . ".");
+            $f3->reroute('/order');
+            return;
+        }
+
         $tinjauan = $orderModel->getTinjauanKelayakan($id);
-        $daftarPic = OrderLayanan::getPICSpesialisasiList($this->db);
+        $daftarPic = OrderLayanan::getPICSpesialisasiList($this->db, $order['jenis_layanan_opti'] ?? null);
         
         $suratMasuk = null;
         if (!empty($order['id_surat_masuk']) && $this->dbSekretariat) {
@@ -499,7 +560,27 @@ class OrderController extends Controller {
             return;
         }
 
-        $id = (int)($params['id'] ?? 0);
+        $orderModel = new OrderLayanan($this->db);
+        $order = $orderModel->getDetail($id);
+
+        if (!$order) {
+            $this->setFlashError("Order Layanan #{$id} tidak ditemukan.");
+            $f3->reroute('/order');
+            return;
+        }
+
+        $userRole = $this->getUserRole();
+        $isSuperadmin = $this->isSuperadmin();
+        $isKetuaTim = $this->isKetuaTim();
+        $userLayanan = $_SESSION['jenis_layanan_opti'] ?? '';
+
+        // Validasi Divisi untuk Ketua Tim:
+        if ($isKetuaTim && !$isSuperadmin && in_array($userLayanan, ['selulosa', 'lingkungan']) && $order['jenis_layanan_opti'] !== $userLayanan) {
+            $this->setFlashError("Akses Ditolak: Anda hanya berwenang mengevaluasi order untuk Divisi OPTI " . ucfirst($userLayanan) . ".");
+            $f3->reroute('/order');
+            return;
+        }
+
         $post = $f3->get('POST');
         $userId = $this->getUserId() ?? 1;
 
@@ -593,7 +674,7 @@ class OrderController extends Controller {
         }
 
         $proposal = $orderModel->getProposalRiset($id);
-        $daftarPic = OrderLayanan::getPICSpesialisasiList($this->db);
+        $daftarPic = OrderLayanan::getPICSpesialisasiList($this->db, $order['jenis_layanan_opti'] ?? 'selulosa');
 
         $isPic = ((int)$this->getUserId() === (int)($order['pic_proposal_id'] ?? 0));
         $canEdit = ($this->hasPermission('order:proposal') || $this->isSuperadmin() || $isPic);
@@ -1010,12 +1091,60 @@ class OrderController extends Controller {
             return;
         }
 
+        // Sinkronisasi data dari Surat Masuk jika order berasal dari klaim surat
+        if (!empty($order['id_surat_masuk'])) {
+            $suratMasukData = null;
+            if ($this->dbSekretariat) {
+                try {
+                    $smRows = $this->dbSekretariat->exec("SELECT * FROM surat_masuk WHERE id = ?", [$order['id_surat_masuk']]);
+                    if (!empty($smRows)) {
+                        $suratMasukData = $smRows[0];
+                    }
+                } catch (\Exception $e) {}
+            }
+            if (!$suratMasukData) {
+                try {
+                    $smRows = $this->db->exec("SELECT * FROM surat_masuk WHERE id = ?", [$order['id_surat_masuk']]);
+                    if (!empty($smRows)) {
+                        $suratMasukData = $smRows[0];
+                    }
+                } catch (\Exception $e) {}
+            }
+
+            if ($suratMasukData) {
+                $picSurat = trim($suratMasukData['pic_pengirim'] ?? ($suratMasukData['nama_pengirim'] ?? ''));
+                if (!empty($picSurat)) {
+                    $order['pic'] = $picSurat;
+                }
+                $alamatSurat = trim($suratMasukData['alamat_pengirim'] ?? '');
+                if (!empty($alamatSurat)) {
+                    $order['alamat'] = $alamatSurat;
+                }
+                if (!empty($suratMasukData['pengirim'])) {
+                    $ptPrefix = !empty($suratMasukData['pt_cv']) ? $suratMasukData['pt_cv'] . ' ' : '';
+                    $order['nama_perusahaan'] = $ptPrefix . $suratMasukData['pengirim'];
+                    $order['nmcustomer'] = $suratMasukData['pengirim'];
+                    $order['pt_cv'] = $suratMasukData['pt_cv'] ?? $order['pt_cv'];
+                }
+            }
+        }
+
         $spModel = new SuratPenawaran($this->db);
         $spExisting = $spModel->getByOrderId($id);
 
         $sp = new \DB\SQL\Mapper($this->db, 'tb_surat_penawaran');
         if (!empty($spExisting['id'])) {
             $sp->load(['id = ?', (int)$spExisting['id']]);
+            // Jika surat penawaran nama/perusahaan masih kosong atau draft awal, pastikan sesuai dengan PIC surat
+            if (empty($sp->nama) || $sp->nama === '-' || $sp->nama === '—') {
+                $sp->nama = ($order['pic'] !== '-' && !empty($order['pic'])) ? $order['pic'] : '';
+            }
+            if (empty($sp->perusahaan) || $sp->perusahaan === '-' || $sp->perusahaan === '—') {
+                $sp->perusahaan = $order['nama_perusahaan'] ?: '';
+            }
+            if (empty($sp->alamat) || $sp->alamat === '-' || $sp->alamat === '—') {
+                $sp->alamat = ($order['alamat'] !== '-' && !empty($order['alamat'])) ? $order['alamat'] : '';
+            }
         } else {
             $sp->order_id            = $id;
             $sp->nama                = ($order['pic'] !== '-' && !empty($order['pic'])) ? $order['pic'] : '';
@@ -1075,7 +1204,7 @@ class OrderController extends Controller {
     public function formPelayananPost($f3, $params) {
         $id = (int)($params['id'] ?? 0);
         if (!$this->hasPermission('order:form_pelayanan') && !$this->isSuperadmin()) {
-            $this->setFlashError("Akses Ditolak: Pengisian formulir pelayanan jasa merupakan wewenang Tim Kemitraan.");
+            $this->setFlashError("Akses Ditolak: Pengisian formulir pelayanan jasa merupakan wewenang Tim Mitra.");
             $f3->reroute("/order/{$id}/form-pelayanan");
             return;
         }
@@ -1105,37 +1234,15 @@ class OrderController extends Controller {
             if (!empty($alamat)) $order->alamat = $alamat;
             if (!empty($penjelasan)) $order->deskripsi = $penjelasan;
 
-            // Simpan / update juga di tb_surat_penawaran sebagai arsip surat permintaan F.PJT-08-01/02
-            $spModel = new SuratPenawaran($this->db);
-            $spExisting = $spModel->getByOrderId($id);
-            $sp = new \DB\SQL\Mapper($this->db, 'tb_surat_penawaran');
-            if (!empty($spExisting['id'])) {
-                $sp->load(['id = ?', (int)$spExisting['id']]);
-            }
-            $sp->order_id            = $id;
-            $sp->nama                = $nama ?: $order->pic;
-            $sp->perusahaan          = $perusahaan ?: $order->nama_perusahaan;
-            $sp->alamat              = $alamat ?: $order->alamat;
-            $sp->permintaan_melalui  = $permintaanMelalui;
-            $sp->pegawai_id          = $pegawaiId;
-            $sp->jenis_layanan       = $jenisLayanan;
-            $sp->bidang              = ($jenisLayanan === 'selulosa') ? 'riset' : 'pengujian';
-            $sp->nomor_surat         = $sp->nomor_surat ?: $spModel->generateNomorSurat();
-            $sp->tanggal_surat       = $sp->tanggal_surat ?: date('Y-m-d');
-            $sp->perihal             = 'Permintaan Pelayanan Jasa OPTI ' . ucfirst($jenisLayanan);
-            $sp->penjelasan          = $penjelasan;
-            $sp->status              = ($aksi === 'kirim') ? 'terkirim' : 'draft';
-            $sp->status_respon_klien = ($aksi === 'kirim') ? 'terkirim' : 'draft';
-            $sp->save();
-
             if ($actionBtn === 'kirim_katim') {
                 $order->status = 'baru'; // Maju ke antrean Kaji Ulang Ketua Tim
                 $order->status_tinjauan = 'belum_ditinjau';
                 $order->save();
                 $this->setFlashSuccess("Surat Permintaan Pelayanan Jasa berhasil disimpan &amp; diteruskan ke <strong>Ketua Tim OPTI (" . ucfirst($jenisLayanan) . ")</strong> untuk kaji ulang kelayakan.");
             } else {
+                $order->status = 'draft_disimpan';
                 $order->save();
-                $this->setFlashSuccess("Draf Surat Permintaan Pelayanan Jasa berhasil disimpan.");
+                $this->setFlashSuccess("Draf Surat Permintaan Pelayanan Jasa berhasil disimpan (Status: <strong>Draft Disimpan</strong>).");
             }
 
             $f3->reroute("/order/{$id}");
@@ -1172,7 +1279,8 @@ class OrderController extends Controller {
                 LEFT JOIN tb_customer c ON o.id_customer = c.id_customer
                 LEFT JOIN opti_proposal_riset p ON o.id = p.order_id
                 LEFT JOIN tb_arsipuser u ON o.pic_proposal_id = u.id_user
-                WHERE 1=1 ";
+                WHERE 1=1 
+                  AND (o.status_tinjauan = 'layak' OR o.id IN (SELECT order_id FROM opti_tinjauan_kelayakan WHERE keputusan = 'dapat_dilaksanakan')) ";
         
         $params = [];
 
@@ -1188,16 +1296,16 @@ class OrderController extends Controller {
                 $sql .= " AND o.jenis_layanan_opti = ? ";
                 $params[] = $layanan;
             }
-            $sql .= " AND (o.pic_proposal_id IS NOT NULL OR o.id IN (SELECT order_id FROM opti_tinjauan_kelayakan WHERE keputusan = 'dapat_dilaksanakan')) ";
+            $sql .= " AND o.pic_proposal_id IS NOT NULL ";
         } else {
             // 3. Superadmin / Pejabat: Tampilkan seluruh order yang memiliki penugasan PIC
-            $sql .= " AND (o.pic_proposal_id IS NOT NULL OR o.id IN (SELECT order_id FROM opti_tinjauan_kelayakan WHERE keputusan = 'dapat_dilaksanakan')) ";
+            $sql .= " AND o.pic_proposal_id IS NOT NULL ";
         }
 
         // Filter status proposal
         if ($filterStatus !== 'semua') {
-            if ($filterStatus === 'draft') {
-                $sql .= " AND (p.status_proposal = 'draft' OR p.status_proposal IS NULL) ";
+            if ($filterStatus === 'draft' || $filterStatus === 'draft_disimpan') {
+                $sql .= " AND (p.status_proposal IN ('draft', 'draft_disimpan') OR p.status_proposal IS NULL) ";
             } elseif ($filterStatus === 'diajukan') {
                 $sql .= " AND p.status_proposal = 'diajukan' ";
             } elseif ($filterStatus === 'disetujui') {
@@ -1284,8 +1392,30 @@ class OrderController extends Controller {
         }
 
         $proposal = $orderModel->getProposalRiset($id);
+        $tinjauan = $orderModel->getTinjauanKelayakan($id);
+
+        $tinjauanSelesai = (
+            (!empty($tinjauan) && ($tinjauan['keputusan'] ?? '') === 'dapat_dilaksanakan') ||
+            (($order['status_tinjauan'] ?? '') === 'layak')
+        );
+        $proposalDisetujui = (
+            (!empty($proposal) && in_array($proposal['status_proposal'] ?? '', ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan'])) ||
+            in_array($order['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui'])
+        );
+
         $canEdit = ($isPic || $isSuperadmin || $this->hasPermission('order:proposal'));
         $canReview = ($isKetuaTim || $isSuperadmin);
+
+        $lockMessage = '';
+        if ($proposalDisetujui && !$isSuperadmin) {
+            $canEdit = false;
+            $lockMessage = "Dokumen proposal teknis telah disetujui oleh Ketua Tim OPTI. Formulir terkunci untuk persiapan penerbitan Surat Penawaran Resmi.";
+        } elseif (!$tinjauanSelesai) {
+            $canEdit = false;
+            $lockMessage = "Kaji Ulang Kelayakan Teknis (Tahap 2) belum selesai atau diputuskan 'Tidak Dapat Dilaksanakan'. Dokumen proposal belum dapat disusun atau diedit.";
+        } elseif (!$canEdit) {
+            $lockMessage = "Penyusunan dan pengunggahan dokumen proposal teknis merupakan wewenang PIC Proposal yang ditugaskan.";
+        }
 
         // Ambil data surat masuk jika ada
         $suratMasuk = null;
@@ -1305,8 +1435,6 @@ class OrderController extends Controller {
                 }
             } catch (\Exception $e) {}
         }
-
-        $tinjauan = $orderModel->getTinjauanKelayakan($id);
 
         // Parse durasi kegiatan ke angka Hari Kerja
         $durasiStr = $proposal['durasi_kegiatan'] ?? '30 Hari Kerja';
@@ -1330,6 +1458,7 @@ class OrderController extends Controller {
         $f3->set('is_pic', $isPic);
         $f3->set('can_edit', $canEdit);
         $f3->set('can_review', $canReview);
+        $f3->set('lock_message', $lockMessage);
 
         $this->render('order/proposal.html', "Dokumen Proposal Teknis - Order #{$order['nomor_order']}", 'proposal');
     }
@@ -1361,6 +1490,32 @@ class OrderController extends Controller {
             return;
         }
 
+        // 1. Cek apakah proposal sudah disetujui Ka. Tim (Terkunci)
+        $existing = $orderModel->getProposalRiset($id);
+        $proposalDisetujui = (
+            ($existing && in_array($existing['status_proposal'] ?? '', ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan'])) ||
+            in_array($order['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui'])
+        );
+        $actionType = $f3->get('POST.action_type') ?? 'draft'; // 'draft' atau 'ajukan'
+
+        if ($proposalDisetujui && !$this->isSuperadmin() && $actionType !== 'revisi') {
+            $this->setFlashError("Gagal: Dokumen proposal ini telah disetujui oleh Ketua Tim OPTI dan terkunci. Perubahan tidak dapat dilakukan.");
+            $f3->reroute("/order/{$id}/proposal");
+            return;
+        }
+
+        // 2. Cek Prasyarat Kaji Ulang (Tahap 2)
+        $tinjauan = $orderModel->getTinjauanKelayakan($id);
+        $tinjauanSelesai = (
+            (!empty($tinjauan) && ($tinjauan['keputusan'] ?? '') === 'dapat_dilaksanakan') ||
+            (($order['status_tinjauan'] ?? '') === 'layak')
+        );
+        if (!$tinjauanSelesai) {
+            $this->setFlashError("Gagal: Kaji Ulang Kelayakan Teknis (Tahap 2) belum selesai atau berstatus 'Tidak Dapat Dilaksanakan'. Proposal belum dapat disimpan.");
+            $f3->reroute("/order/{$id}/proposal");
+            return;
+        }
+
         $post = $f3->get('POST');
         $judulProposal = trim($post['judul_proposal'] ?? ($order['judul_kegiatan'] ?? 'Proposal Teknis OPTI'));
         $ruangLingkup = trim($post['ruang_lingkup'] ?? '');
@@ -1372,13 +1527,32 @@ class OrderController extends Controller {
         $rawBiaya = str_replace(['Rp', '.', ' '], '', $post['estimasi_total_biaya'] ?? '0');
         $rawBiaya = str_replace(',', '.', $rawBiaya);
         $estimasiBiaya = (float)$rawBiaya;
-        $actionType = $post['action_type'] ?? 'draft'; // 'draft' atau 'ajukan'
 
-        // Handle File Upload jika ada
+        // 3. Handle File Upload dengan validasi ukuran maksimal (10 MB)
         $filePath = '';
         $files = $f3->get('FILES');
-        if (!empty($files['file_proposal']['name']) && $files['file_proposal']['error'] === UPLOAD_ERR_OK) {
+        if (!empty($files['file_proposal']['name'])) {
             $file = $files['file_proposal'];
+
+            // Cek error bawaan PHP upload
+            if ($file['error'] !== UPLOAD_ERR_OK) {
+                $errorMsg = 'Terjadi kesalahan saat mengunggah file dokumen proposal.';
+                if ($file['error'] === UPLOAD_ERR_INI_SIZE || $file['error'] === UPLOAD_ERR_FORM_SIZE) {
+                    $errorMsg = 'Ukuran file melebihi batas maksimal server yang diperbolehkan.';
+                }
+                $this->setFlashError($errorMsg);
+                $f3->reroute("/order/{$id}/proposal");
+                return;
+            }
+
+            // Validasi ukuran maksimal (10 MB)
+            $maxFileSize = 10 * 1024 * 1024;
+            if ($file['size'] > $maxFileSize) {
+                $this->setFlashError('Ukuran file melebihi batas maksimal 10 MB. Harap perkecil atau kompres dokumen Anda.');
+                $f3->reroute("/order/{$id}/proposal");
+                return;
+            }
+
             $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
             $allowed = ['pdf', 'doc', 'docx', 'xls', 'xlsx'];
             if (!in_array($ext, $allowed)) {
@@ -1401,18 +1575,17 @@ class OrderController extends Controller {
             }
         }
 
-        $existing = $orderModel->getProposalRiset($id);
         if (empty($filePath) && $existing && !empty($existing['file_proposal'])) {
             $filePath = $existing['file_proposal'];
         }
 
-        $statusProposal = ($actionType === 'ajukan') ? 'diajukan' : ($existing['status_proposal'] ?? 'draft');
+        $statusProposal = ($actionType === 'ajukan') ? 'diajukan' : 'draft_disimpan';
         if ($statusProposal === 'ditolak' && $actionType === 'ajukan') {
             $statusProposal = 'diajukan';
         }
 
         try {
-            $userNama = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'Aji Pisang');
+            $userNama = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'PIC Peneliti');
 
             if ($existing) {
                 $this->db->exec(
@@ -1468,7 +1641,7 @@ class OrderController extends Controller {
             }
 
             // Sinkronkan status dan estimasi biaya ke tabel order_layanan
-            $statusProposalBiaya = ($actionType === 'ajukan') ? 'menunggu_approval' : ($order['status_proposal_biaya'] ?: 'draft');
+            $statusProposalBiaya = ($actionType === 'ajukan') ? 'menunggu_approval' : 'draft_disimpan';
             $this->db->exec(
                 "UPDATE order_layanan SET estimasi_biaya = ?, status_proposal_biaya = ? WHERE id = ?",
                 [1 => $estimasiBiaya, 2 => $statusProposalBiaya, 3 => $id]
@@ -1478,10 +1651,10 @@ class OrderController extends Controller {
             if ($actionType === 'ajukan') {
                 $this->logActivity($id, 'proposal', 'ajukan_ke_ketua', "Dokumen proposal teknis resmi diajukan ke Ketua Tim OPTI oleh {$userNama} (PIC Peneliti).");
             } else {
-                $this->logActivity($id, 'proposal', 'simpan_draft', "Draf dokumen proposal teknis disimpan & diperbarui oleh {$userNama} (PIC Peneliti).");
+                $this->logActivity($id, 'proposal', 'simpan_draft', "Draf dokumen proposal teknis disimpan (Status: Draft Disimpan) oleh {$userNama} (PIC Peneliti).");
             }
 
-            // Jika diajukan, kirim notifikasi & floating bubble ke Ka. Tim OPTI & Superadmin
+            // Jika diajukan, kirim notifikasi ke Ka. Tim OPTI & Superadmin
             if ($actionType === 'ajukan') {
                 try {
                     \NotificationService::send($this->db, [
@@ -1500,7 +1673,7 @@ class OrderController extends Controller {
 
                 $this->setFlashSuccess("Dokumen proposal teknis berhasil disimpan dan <strong>diajukan ke Ketua Tim OPTI</strong> oleh <strong>{$userNama}</strong> pada " . date('d M Y H:i') . " WIB.");
             } else {
-                $this->setFlashSuccess("Draf dokumen proposal teknis berhasil disimpan.");
+                $this->setFlashSuccess("Draf dokumen proposal teknis berhasil disimpan (Status: <strong>Draft Disimpan</strong>).");
             }
         } catch (\Exception $e) {
             $this->setFlashError("Gagal menyimpan dokumen proposal: " . $e->getMessage());
@@ -1516,6 +1689,49 @@ class OrderController extends Controller {
     public function uploadProposalFile($f3, $params) {
         $this->requireAuth();
         $id = (int)($params['id'] ?? 0);
+        $orderModel = new OrderLayanan($this->db);
+        $order = $orderModel->getDetail($id);
+
+        if (!$order) {
+            $this->setFlashError("Order Layanan #{$id} tidak ditemukan.");
+            $f3->reroute('/proposal');
+            return;
+        }
+
+        $userId = (int)$this->getUserId();
+        $userRole = $this->getUserRole();
+        $isPic = ($userId > 0 && (int)($order['pic_proposal_id'] ?? 0) === $userId);
+
+        // Strict Access Control:
+        if ($userRole === 'tim_kerja' && !$isPic && !$this->isSuperadmin()) {
+            $this->setFlashError("Akses Ditolak: Anda bukan PIC yang ditugaskan untuk mengunggah berkas proposal Order ini.");
+            $f3->reroute("/order/{$id}/proposal");
+            return;
+        }
+
+        // 1. Cek apakah proposal sudah disetujui (Terkunci)
+        $existing = $orderModel->getProposalRiset($id);
+        $proposalDisetujui = (
+            ($existing && in_array($existing['status_proposal'] ?? '', ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan'])) ||
+            in_array($order['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui'])
+        );
+        if ($proposalDisetujui && !$this->isSuperadmin()) {
+            $this->setFlashError("Dokumen proposal telah disetujui oleh Ketua Tim OPTI. Berkas terkunci dan tidak dapat diunggah ulang.");
+            $f3->reroute("/order/{$id}/proposal");
+            return;
+        }
+
+        // 2. Cek Prasyarat Kaji Ulang (Tahap 2)
+        $tinjauan = $orderModel->getTinjauanKelayakan($id);
+        $tinjauanSelesai = (
+            (!empty($tinjauan) && ($tinjauan['keputusan'] ?? '') === 'dapat_dilaksanakan') ||
+            (($order['status_tinjauan'] ?? '') === 'layak')
+        );
+        if (!$tinjauanSelesai) {
+            $this->setFlashError("Gagal: Kaji Ulang Kelayakan Teknis (Tahap 2) belum selesai atau 'Tidak Dapat Dilaksanakan'.");
+            $f3->reroute("/order/{$id}/proposal");
+            return;
+        }
         
         $files = $f3->get('FILES');
         if (empty($files['file_proposal']['name'])) {
@@ -1525,6 +1741,24 @@ class OrderController extends Controller {
         }
 
         $file = $files['file_proposal'];
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            $errorMsg = 'Terjadi kesalahan saat mengunggah file dokumen proposal.';
+            if ($file['error'] === UPLOAD_ERR_INI_SIZE || $file['error'] === UPLOAD_ERR_FORM_SIZE) {
+                $errorMsg = 'Ukuran file melebihi batas maksimal server yang diperbolehkan.';
+            }
+            $this->setFlashError($errorMsg);
+            $f3->reroute("/order/{$id}/proposal");
+            return;
+        }
+
+        // Validasi ukuran maksimal (10 MB)
+        $maxFileSize = 10 * 1024 * 1024;
+        if ($file['size'] > $maxFileSize) {
+            $this->setFlashError('Ukuran file melebihi batas maksimal 10 MB. Harap perkecil atau kompres dokumen Anda.');
+            $f3->reroute("/order/{$id}/proposal");
+            return;
+        }
+
         $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
         $allowed = ['pdf', 'doc', 'docx', 'xls', 'xlsx'];
         if (!in_array($ext, $allowed)) {
@@ -1543,10 +1777,19 @@ class OrderController extends Controller {
         $fullDest = 'c:/xampp/htdocs/Mini OPTI Tracker/' . $dest;
 
         if (move_uploaded_file($file['tmp_name'], $fullDest)) {
-            $this->db->exec(
-                "UPDATE opti_proposal_riset SET file_proposal = ? WHERE order_id = ?",
-                array(1 => $dest, 2 => $id)
-            );
+            if ($existing) {
+                $this->db->exec(
+                    "UPDATE opti_proposal_riset SET file_proposal = ?, updated_at = NOW(), updated_by = ? WHERE order_id = ?",
+                    array(1 => $dest, 2 => $userId, 3 => $id)
+                );
+            } else {
+                $this->db->exec(
+                    "INSERT INTO opti_proposal_riset (order_id, pic_penyusun_id, spesialisasi, file_proposal, status_proposal, updated_by) VALUES (?, ?, ?, ?, 'draft', ?)",
+                    array(1 => $id, 2 => $order['pic_proposal_id'] ?: $userId, 3 => $order['jenis_layanan_opti'], 4 => $dest, 5 => $userId)
+                );
+            }
+            $userNama = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'PIC Peneliti');
+            $this->logActivity($id, 'proposal', 'upload_file', "Berkas dokumen proposal baru ({$filename}) berhasil diunggah oleh {$userNama}.");
             $this->setFlashSuccess('Berkas dokumen proposal berhasil diunggah!');
         } else {
             $this->setFlashError('Gagal mengunggah file dokumen proposal.');
@@ -1643,7 +1886,7 @@ class OrderController extends Controller {
                         'target_role'    => 'admin_order',
                         'target_layanan' => 'semua',
                         'judul'          => 'Proposal Teknis Disetujui Ka. Tim',
-                        'pesan'          => "Proposal untuk Order #{$order['nomor_order']} ({$order['nama_perusahaan']}) telah disetujui oleh {$userNama}. Tim Kemitraan dapat menerbitkan Surat Penawaran resmi.",
+                        'pesan'          => "Proposal untuk Order #{$order['nomor_order']} ({$order['nama_perusahaan']}) telah disetujui oleh {$userNama}. Tim Mitra dapat menerbitkan Surat Penawaran resmi.",
                         'tipe'           => 'success',
                         'icon'           => 'bi-award-fill',
                         'link_url'       => "/order/{$id}",
@@ -2106,32 +2349,5 @@ class OrderController extends Controller {
             'base64' => $base64
         ]);
         exit;
-    }
-
-    /**
-     * Catat Jejak Audit / Activity Log untuk Seluruh Modul OPTI
-     */
-    protected function logActivity(int $orderId, string $modul, string $aksi, string $deskripsi) {
-        $userId = (int)$this->getUserId();
-        $userNama = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'Aji Pisang');
-        $userRole = $this->getUserRole() ?? 'user';
-        $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
-
-        try {
-            $this->db->exec(
-                "INSERT INTO opti_activity_log (order_id, modul, aksi, deskripsi, user_id, user_nama, user_role, ip_address, created_at)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())",
-                [
-                    1 => $orderId,
-                    2 => $modul,
-                    3 => $aksi,
-                    4 => $deskripsi,
-                    5 => $userId,
-                    6 => $userNama,
-                    7 => $userRole,
-                    8 => $ip
-                ]
-            );
-        } catch (\Exception $e) {}
     }
 }

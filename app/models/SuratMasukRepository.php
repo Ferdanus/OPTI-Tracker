@@ -30,7 +30,7 @@ class SuratMasukRepository {
      * Filter: permohonan = 'yes' AND layanan = 'opti' AND status_ambil = 0
      * Urutan: tanggal_surat ASC, id ASC (FIFO)
      */
-    public function getDaftarSuratOpti(): array {
+    public function getDaftarSuratOpti(?string $filterTahun = null): array {
         if (!$this->isConnected()) {
             return array();
         }
@@ -38,16 +38,24 @@ class SuratMasukRepository {
         $table = $this->tableSekretariat;
         $sql = "SELECT * FROM `{$table}` 
                 WHERE `layanan` = 'opti' 
-                  AND (`status_ambil` = 'belum' OR `status_ambil` = 0 OR `status_ambil` = '' OR `status_ambil` IS NULL) 
-                ORDER BY `tanggal_surat` ASC, `id` ASC";
+                  AND (`status_ambil` = 'belum' OR `status_ambil` = 0 OR `status_ambil` = '' OR `status_ambil` IS NULL)
+                  AND (`status_tolak` = 0 OR `status_tolak` IS NULL)";
+        
+        $params = array();
+        if (!empty($filterTahun) && $filterTahun !== 'all') {
+            $sql .= " AND YEAR(`tanggal_surat`) = ?";
+            $params[1] = (int)$filterTahun;
+        }
 
-        return $this->dbSekretariat->exec($sql);
+        $sql .= " ORDER BY `tanggal_surat` ASC, `id` ASC";
+
+        return $this->dbSekretariat->exec($sql, $params);
     }
 
     /**
      * Ambil daftar permintaan masuk (yang sudah diklaim oleh tim mitra tapi belum diproses lebih lanjut)
      */
-    public function getDaftarPermintaanMasuk(?int $userId = null): array {
+    public function getDaftarPermintaanMasuk(?int $userId = null, ?string $filterTahun = null): array {
         $sql = "SELECT o.*, 
                        c.nmcustomer, 
                        c.pt_cv, 
@@ -62,9 +70,15 @@ class SuratMasukRepository {
                 WHERE o.status = 'permintaan_masuk'";
 
         $params = array();
+        $idx = 1;
         if ($userId !== null) {
             $sql .= " AND o.diklaim_oleh = ?";
-            $params[1] = $userId;
+            $params[$idx++] = $userId;
+        }
+
+        if (!empty($filterTahun) && $filterTahun !== 'all') {
+            $sql .= " AND YEAR(COALESCE(o.tanggal_klaim, o.tanggal_masuk, o.created_at)) = ?";
+            $params[$idx++] = (int)$filterTahun;
         }
 
         $sql .= " ORDER BY o.tanggal_klaim DESC, o.id DESC";
@@ -75,7 +89,7 @@ class SuratMasukRepository {
     /**
      * Ambil daftar riwayat surat yang sudah selesai diklaim dan telah maju ke tahapan lanjutan
      */
-    public function getDaftarRiwayatSurat(): array {
+    public function getDaftarRiwayatSurat(?string $filterTahun = null): array {
         $sql = "SELECT o.*, 
                        c.nmcustomer, 
                        c.pt_cv, 
@@ -90,10 +104,17 @@ class SuratMasukRepository {
                 LEFT JOIN `tb_customer` c ON o.id_customer = c.id_customer
                 LEFT JOIN `tb_arsipuser` u ON o.diklaim_oleh = u.id_user
                 LEFT JOIN `po` p ON o.id = p.order_id
-                WHERE o.id_surat_masuk IS NOT NULL AND o.status != 'permintaan_masuk'
-                ORDER BY o.tanggal_klaim DESC, o.id DESC";
+                WHERE o.id_surat_masuk IS NOT NULL AND o.status != 'permintaan_masuk' AND o.status != 'ditolak'";
 
-        return $this->dbMain->exec($sql);
+        $params = array();
+        if (!empty($filterTahun) && $filterTahun !== 'all') {
+            $sql .= " AND YEAR(COALESCE(o.tanggal_klaim, o.tanggal_masuk, o.created_at)) = ?";
+            $params[1] = (int)$filterTahun;
+        }
+
+        $sql .= " ORDER BY o.tanggal_klaim DESC, o.id DESC";
+
+        return $this->dbMain->exec($sql, $params);
     }
 
     /**
@@ -191,39 +212,37 @@ class SuratMasukRepository {
                 $idCustomer = (int)$custRows[0]['id_customer'];
                 $existing = $custRows[0];
                 
-                // Update data customer yang masih kosong
+                // Update data customer dan sinkronkan PIC kontak OPTI terbaru dari surat
                 $updateCustSql = "UPDATE `tb_customer` SET `id_layanan_optimalisasi` = 1";
                 $updateCustParams = [];
                 $pIdx = 1;
                 
-                if (empty($existing['pt_cv']) && !empty($ptCv)) {
+                if (!empty($ptCv)) {
                     $updateCustSql .= ", `pt_cv` = ?";
                     $updateCustParams[$pIdx++] = $ptCv;
                 }
-                if (empty($existing['alamatcustomer']) && !empty($alamat)) {
+                if (!empty($alamat)) {
                     $updateCustSql .= ", `alamatcustomer` = ?";
                     $updateCustParams[$pIdx++] = $alamat;
                 }
-                if (empty($existing['contactperson_opti']) && !empty($pic)) {
-                    $updateCustSql .= ", `contactperson_opti` = ?, `contactperson` = COALESCE(NULLIF(`contactperson`,''), ?)";
+                if (!empty($pic)) {
+                    $updateCustSql .= ", `contactperson_opti` = ?, `contactperson` = ?";
                     $updateCustParams[$pIdx++] = $pic;
                     $updateCustParams[$pIdx++] = $pic;
                 }
-                if (empty($existing['nohpcontactperson_opti']) && !empty($telepon)) {
-                    $updateCustSql .= ", `nohpcontactperson_opti` = ?, `notelpcustomer` = COALESCE(NULLIF(`notelpcustomer`,''), ?)";
+                if (!empty($telepon)) {
+                    $updateCustSql .= ", `nohpcontactperson_opti` = ?, `notelpcustomer` = ?";
                     $updateCustParams[$pIdx++] = $telepon;
                     $updateCustParams[$pIdx++] = $telepon;
                 }
-                if (empty($existing['emailcustomer']) && !empty($email)) {
+                if (!empty($email)) {
                     $updateCustSql .= ", `emailcustomer` = ?";
                     $updateCustParams[$pIdx++] = $email;
                 }
                 $updateCustSql .= " WHERE `id_customer` = ?";
                 $updateCustParams[$pIdx] = $idCustomer;
                 
-                if (count($updateCustParams) > 1) {
-                    $this->dbMain->exec($updateCustSql, $updateCustParams);
-                }
+                $this->dbMain->exec($updateCustSql, $updateCustParams);
             } else {
                 // Buat customer baru otomatis dengan data lengkap
                 $this->dbMain->exec(
@@ -369,5 +388,114 @@ class SuratMasukRepository {
         }
         $res = $this->dbMain->exec("SELECT * FROM `surat_masuk` WHERE id = ?", [$id]);
         return !empty($res) ? $res[0] : null;
+    }
+
+    /**
+     * Ambil daftar surat masuk yang ditolak beserta alasan penolakannya
+     */
+    public function getDaftarSuratDitolak(?string $filterTahun = null): array {
+        if (!$this->isConnected()) {
+            return array();
+        }
+
+        $table = $this->tableSekretariat;
+        $sql = "SELECT s.*, 
+                       s.alasan_tolak, 
+                       s.tanggal_tolak, 
+                       s.ditolak_oleh
+                FROM `{$table}` s
+                WHERE s.status_tolak = 1";
+        
+        $params = array();
+        if (!empty($filterTahun) && $filterTahun !== 'all') {
+            $sql .= " AND YEAR(COALESCE(s.tanggal_tolak, s.tanggal_surat)) = ?";
+            $params[1] = (int)$filterTahun;
+        }
+
+        $sql .= " ORDER BY s.tanggal_tolak DESC, s.id DESC";
+
+        $rows = $this->dbSekretariat->exec($sql, $params);
+        if (empty($rows)) {
+            return array();
+        }
+
+        // Ambil pemetaan nama penolak dari database utama
+        $users = $this->dbMain->exec("SELECT id_user, nama_user FROM `tb_arsipuser`");
+        $userMap = [];
+        foreach ($users as $u) {
+            $userMap[$u['id_user']] = $u['nama_user'];
+        }
+
+        foreach ($rows as &$r) {
+            $uid = (int)($r['ditolak_oleh'] ?? 0);
+            $r['nama_penolak'] = $userMap[$uid] ?? 'Tim Mitra';
+        }
+
+        return $rows;
+    }
+
+    /**
+     * Menolak permohonan surat masuk dan menyimpan alasan penolakan
+     */
+    public function tolakSurat(int $suratId, int $userId, string $alasan): bool {
+        $waktuSekarang = date('Y-m-d H:i:s');
+        $alasan = trim($alasan);
+
+        // 1. Update di database sekretariat
+        if ($this->isConnected()) {
+            $table = $this->tableSekretariat;
+            $this->dbSekretariat->exec(
+                "UPDATE `{$table}` 
+                 SET `status_tolak` = 1, `alasan_tolak` = ?, `ditolak_oleh` = ?, `tanggal_tolak` = ?
+                 WHERE `id` = ?",
+                array(1 => $alasan, 2 => $userId, 3 => $waktuSekarang, 4 => $suratId)
+            );
+        }
+
+        // 2. Update di database lokal jika ada tabel surat_masuk
+        try {
+            $this->dbMain->exec(
+                "UPDATE `surat_masuk` 
+                 SET `status_tolak` = 1, `alasan_tolak` = ?, `ditolak_oleh` = ?, `tanggal_tolak` = ?
+                 WHERE `id` = ?",
+                array(1 => $alasan, 2 => $userId, 3 => $waktuSekarang, 4 => $suratId)
+            );
+        } catch (\Exception $e) {}
+
+        // 3. Update juga jika ada order_layanan yang terikat dengan surat ini
+        try {
+            $this->dbMain->exec(
+                "UPDATE `order_layanan` 
+                 SET `status` = 'ditolak', `alasan_tolak` = ?, `ditolak_oleh` = ?, `tanggal_tolak` = ?
+                 WHERE `id_surat_masuk` = ?",
+                array(1 => $alasan, 2 => $userId, 3 => $waktuSekarang, 4 => $suratId)
+            );
+        } catch (\Exception $e) {}
+
+        return true;
+    }
+
+    /**
+     * Menolak order yang sudah diklaim
+     */
+    public function tolakOrder(int $orderId, int $userId, string $alasan): bool {
+        $waktuSekarang = date('Y-m-d H:i:s');
+        $alasan = trim($alasan);
+
+        $order = $this->dbMain->exec("SELECT id_surat_masuk FROM `order_layanan` WHERE id = ?", array(1 => $orderId));
+        $idSuratMasuk = !empty($order) ? (int)$order[0]['id_surat_masuk'] : 0;
+
+        $this->dbMain->exec(
+            "UPDATE `order_layanan` 
+             SET `status` = 'ditolak', `alasan_tolak` = ?, `ditolak_oleh` = ?, `tanggal_tolak` = ?
+             WHERE `id` = ?",
+            array(1 => $alasan, 2 => $userId, 3 => $waktuSekarang, 4 => $orderId)
+        );
+
+        if ($idSuratMasuk > 0) {
+            $this->tolakSurat($idSuratMasuk, $userId, $alasan);
+        }
+
+        return true;
     }
 }

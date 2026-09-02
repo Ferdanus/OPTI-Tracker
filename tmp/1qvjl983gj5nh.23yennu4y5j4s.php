@@ -179,8 +179,13 @@
             <!-- TOMBOL AKSI SIMPAN -->
             <div class="d-flex justify-content-end gap-2">
                 <a href="<?= ($BASE) ?>/order" class="btn btn-outline-secondary px-4">Batal</a>
-                <button type="submit" class="btn btn-primary px-4">
-                    <i class="bi bi-save me-1"></i> <?= ($order ? 'Perbarui Order' : 'Simpan Order Layanan')."
+                <?php if (!$order || $order['status'] == 'draft_disimpan' || $order['status'] == 'draft'): ?>
+                    <button type="submit" name="action_btn" value="draft" class="btn btn-outline-primary px-3 fw-semibold">
+                        <i class="bi bi-bookmark me-1"></i> Simpan Draft
+                    </button>
+                <?php endif; ?>
+                <button type="submit" name="action_btn" value="simpan" class="btn btn-primary px-4 fw-semibold">
+                    <i class="bi bi-save me-1"></i> <?= ($order ? 'Perbarui Order' : 'Simpan &amp; Teruskan')."
 " ?>
                 </button>
             </div>

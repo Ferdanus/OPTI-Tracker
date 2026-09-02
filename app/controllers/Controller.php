@@ -22,6 +22,15 @@ class Controller {
      * Matriks Hak Akses / Permission per Role (Logika Murni OPTI BBSPJIS Sesuai Arahan Mentor)
      */
     protected static $PERMISSION_MATRIX = array(
+        'tim_mitra_industri' => array(
+            'surat_masuk:view', 'surat_masuk:klaim', 'surat_masuk:batal',
+            'order:view', 'order:create', 'order:edit', 'order:form_pelayanan', 'order:respon_klien',
+            'penawaran:view', 'penawaran:create', 'penawaran:edit', 'penawaran:cetak',
+            'kontrak:view', 'kontrak:create', 'kontrak:edit',
+            'pembayaran:view', 'pembayaran:create', 'pembayaran:edit',
+            'klien:view', 'klien:create', 'klien:edit',
+            'alert:manage'
+        ),
         'admin_order' => array(
             'surat_masuk:view', 'surat_masuk:klaim', 'surat_masuk:batal',
             'order:view', 'order:create', 'order:edit', 'order:form_pelayanan', 'order:respon_klien',
@@ -49,15 +58,24 @@ class Controller {
             'config:team', 'config:manage',
             'alert:manage'
         ),
-        'pejabat' => array(
+        'keuangan' => array(
             'surat_masuk:view',
             'order:view',
             'penawaran:view',
-            'po:view', 'po:sop', 'po:approve',
+            'po:view',
             'kontrak:view',
-            'pembayaran:view',
+            'pembayaran:view', 'pembayaran:create', 'pembayaran:edit',
             'klien:view',
             'alert:manage'
+        ),
+        'user' => array(
+            'surat_masuk:view',
+            'order:view',
+            'penawaran:view',
+            'po:view',
+            'kontrak:view',
+            'pembayaran:view',
+            'klien:view'
         ),
         'tim_kerja' => array(
             'surat_masuk:view',
@@ -92,7 +110,7 @@ class Controller {
     /**
      * Helper render view dengan layout utama
      */
-    public function render($viewFile, $pageTitle = 'Mini OPTI Tracker', $activeMenu = '') {
+    public function render($viewFile, $pageTitle = 'SILOPTI', $activeMenu = '') {
         $this->f3->set('content', $viewFile);
         $this->f3->set('page_title', $pageTitle);
         $this->f3->set('active_menu', $activeMenu);
@@ -106,15 +124,19 @@ class Controller {
         $this->f3->set('user_role', $role);
         $this->f3->set('user_layanan', $layanan);
 
-        $this->f3->set('is_superadmin', $role === 'superadmin');
-        $this->f3->set('is_admin_order', $role === 'admin_order' || $role === 'tim_mitra');
+        $isTimMitra = ($role === 'tim_mitra_industri' || $role === 'admin_order' || $role === 'tim_mitra');
+        $this->f3->set('is_tim_mitra_industri', $isTimMitra);
+        $this->f3->set('is_tim_mitra', $isTimMitra);
+        $this->f3->set('is_admin_order', $isTimMitra);
         $this->f3->set('is_ketua_tim', $role === 'ketua_tim');
         $this->f3->set('is_ketua_selulosa', $role === 'ketua_tim' && $layanan === 'selulosa');
         $this->f3->set('is_ketua_lingkungan', $role === 'ketua_tim' && $layanan === 'lingkungan');
-        $this->f3->set('is_pejabat', $role === 'pejabat');
+        $this->f3->set('is_keuangan', $role === 'keuangan');
         $this->f3->set('is_tim_kerja', $role === 'tim_kerja');
         $this->f3->set('is_admin_kontrak', $role === 'admin_kontrak');
         $this->f3->set('is_sekretaris', $role === 'sekretaris');
+        $this->f3->set('is_user_readonly', $role === 'user' || $role === 'pegawai');
+        $this->f3->set('is_pejabat', false);
 
         $this->f3->set('can_manage_order', $this->hasPermission('order:create') || $this->hasPermission('order:edit'));
         $this->f3->set('can_manage_surat_masuk', $this->hasPermission('surat_masuk:klaim') || $this->hasPermission('surat_masuk:registrasi'));
@@ -207,11 +229,15 @@ class Controller {
     }
 
     /**
-     * Cek apakah role aktif adalah Tim Kemitraan (admin_order / tim_mitra)
+     * Cek apakah role aktif adalah Tim Mitra (tim_mitra_industri / admin_order / tim_mitra)
      */
-    public function isAdminOrder(): bool {
+    public function isTimMitra(): bool {
         $r = $this->getUserRole();
-        return $r === 'admin_order' || $r === 'tim_mitra';
+        return $r === 'tim_mitra_industri' || $r === 'admin_order' || $r === 'tim_mitra';
+    }
+
+    public function isAdminOrder(): bool {
+        return $this->isTimMitra();
     }
 
     /**
@@ -222,10 +248,22 @@ class Controller {
     }
 
     /**
-     * Cek apakah role aktif adalah Pejabat (Kepala Balai / PPK)
+     * Cek apakah role aktif adalah Keuangan (Kasir / Pembayaran)
      */
+    public function isKeuangan(): bool {
+        return $this->getUserRole() === 'keuangan';
+    }
+
+    /**
+     * Cek apakah role aktif adalah Pengguna Umum / Pegawai Balai (Read-Only)
+     */
+    public function isUserReadOnly(): bool {
+        $r = $this->getUserRole();
+        return $r === 'user' || $r === 'pegawai';
+    }
+
     public function isPejabat(): bool {
-        return $this->getUserRole() === 'pejabat';
+        return false;
     }
 
     /**
@@ -367,5 +405,50 @@ class Controller {
                 $_SESSION['csrf_token'] = bin2hex(random_bytes(16));
             }
         }
+    }
+
+    /**
+     * Catat Jejak Audit / Activity Log untuk Seluruh Modul OPTI
+     */
+    protected function logActivity($orderId = 0, $modul = '', $aksi = '', $deskripsi = '') {
+        $userId = (int)$this->getUserId();
+        $userNama = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'User');
+        $userRole = $this->getUserRole() ?? 'user';
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+
+        // Penyesuaian fleksibel jika urutan argumen berbeda
+        if (is_string($orderId) && !is_numeric($orderId)) {
+            $tempAksi = $orderId;
+            $tempModul = $modul;
+            $tempOrderId = is_numeric($aksi) ? (int)$aksi : 0;
+            $tempDeskripsi = $deskripsi;
+            
+            $aksi = $tempAksi;
+            $modul = $tempModul;
+            $orderId = $tempOrderId;
+            $deskripsi = $tempDeskripsi;
+        }
+
+        $orderId = (int)$orderId;
+
+        try {
+            $db = $this->db ?? \Base::instance()->get('DB');
+            if ($db) {
+                $db->exec(
+                    "INSERT INTO opti_activity_log (order_id, modul, aksi, deskripsi, user_id, user_nama, user_role, ip_address, created_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())",
+                    [
+                        1 => $orderId,
+                        2 => (string)$modul,
+                        3 => (string)$aksi,
+                        4 => (string)$deskripsi,
+                        5 => $userId,
+                        6 => $userNama,
+                        7 => $userRole,
+                        8 => $ip
+                    ]
+                );
+            }
+        } catch (\Exception $e) {}
     }
 }

@@ -112,8 +112,13 @@
                         <i class="bi bi-exclamation-diamond-fill me-1"></i> Perlu Revisi
                     </span>
                 <?php endif; ?>
-                <?php if (!$proposal || $proposal['status_proposal'] == 'draft'): ?>
+                <?php if ($proposal['status_proposal'] == 'draft_disimpan'): ?>
                     <span class="badge badge-pill-warning px-2.5 py-1">
+                        <i class="bi bi-bookmark-check-fill me-1"></i> Draft Disimpan
+                    </span>
+                <?php endif; ?>
+                <?php if (!$proposal || $proposal['status_proposal'] == 'draft'): ?>
+                    <span class="badge badge-pill-secondary px-2.5 py-1">
                         <i class="bi bi-pencil-square me-1"></i> Draf PIC
                     </span>
                 <?php endif; ?>
@@ -167,20 +172,15 @@
                         <div class="d-flex mb-2">
                             <span class="text-muted" style="width: 130px; flex-shrink: 0;">PIC Klien</span>
                             <span class="text-muted me-2">:</span>
-                            <span class="text-dark"><?= ($order['nama_pic'] ?: '-') ?> <span class="text-muted small">(<?= ($order['kontak_pic'] ?: '-') ?>)</span></span>
+                            <span class="text-dark"><?= ($order['pic'] ?: ($surat_masuk['pic_pengirim'] ?: '-')) ?> <span class="text-muted small">(<?= ($order['telepon'] ?: ($surat_masuk['no_telp_pengirim'] ?: '-')) ?>)</span></span>
                         </div>
                         <div class="d-flex mb-2">
                             <span class="text-muted" style="width: 130px; flex-shrink: 0;">PIC Peneliti</span>
                             <span class="text-muted me-2">:</span>
                             <div>
-                                <strong class="text-primary font-display"><i class="bi bi-person-badge me-1"></i> <?= ($order['pic_proposal_nama'] ?: ($proposal['pic_nama'] ?: 'Aji Pisang')) ?></strong>
+                                <strong class="text-primary font-display"><?= ($order['pic_proposal_nama'] ?: ($proposal['pic_nama'] ?: 'Aji Pisang')) ?></strong>
                                 <small class="d-block text-secondary">Spesialisasi <?= (ucfirst($order['jenis_layanan_opti'])) ?></small>
                             </div>
-                        </div>
-                        <div class="d-flex mb-2">
-                            <span class="text-muted" style="width: 130px; flex-shrink: 0;">Standar SPM</span>
-                            <span class="text-muted me-2">:</span>
-                            <span class="badge bg-secondary-subtle text-secondary px-2 py-0.5 rounded-pill font-monospace fw-semibold"><?= ($order['spm_layanan'] ?: '7 Hari Kerja') ?></span>
                         </div>
                         <div class="d-flex">
                             <span class="text-muted" style="width: 130px; flex-shrink: 0;">Perihal Kegiatan</span>
@@ -213,8 +213,8 @@
                             </span>
                         </div>
                         <div class="small text-secondary">
-                            <strong class="text-dark d-block mb-1">Catatan Evaluasi:</strong>
-                            <p class="mb-0 text-secondary fst-italic"><?= ($tinjauan['catatan_kelayakan'] ?: 'Kapasitas laboratorium, instrumentasi pengujian, dan ketersediaan personil analis memenuhi standar.') ?></p>
+                            <strong class="text-dark d-block mb-1">Catatan / Arahan Ka. Tim:</strong>
+                            <p class="mb-0 text-secondary fst-italic"><?= ($tinjauan['sdm_catatan'] ?: ($tinjauan['catatan_kelayakan'] ?: 'Kapasitas laboratorium, instrumentasi pengujian, dan ketersediaan personil analis memenuhi standar.')) ?></p>
                         </div>
                     </div>
                 </div>
@@ -282,11 +282,20 @@
                 <div class="card-header bg-white py-3 px-3 px-md-4 border-bottom d-flex justify-content-between align-items-center">
                     <h6 class="m-0 fw-bold text-dark font-display">Formulir &amp; Dokumen Proposal Teknis</h6>
                     <?php if (!$can_edit): ?>
-                        <span class="badge bg-light text-secondary border"><i class="bi bi-lock-fill me-1"></i> Mode Lihat Saja</span>
+                        <span class="badge bg-light text-secondary border">Mode Lihat Saja</span>
                     <?php endif; ?>
                 </div>
                 <div class="card-body p-4">
                     
+                    <?php if (!$can_edit): ?>
+                        <div class="alert alert-warning border-0 d-flex align-items-center mb-4 py-2 px-3 small rounded-3">
+                            <div>
+                                <strong>Mode Lihat Saja (Read-Only)</strong>: <?= ($lock_message ?: 'Penyusunan dan pengunggahan dokumen proposal teknis merupakan wewenang PIC Proposal yang ditugaskan.')."
+" ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
                     <form action="<?= ($BASE) ?>/order/<?= ($order['id']) ?>/proposal/simpan" method="POST" enctype="multipart/form-data" id="formProposal">
                         
                         <!-- 1. Judul Proposal -->
@@ -338,7 +347,7 @@
                         <div class="mb-4">
                             <label class="form-label small fw-bold text-dark mb-2 d-flex justify-content-between align-items-center" style="font-size: 0.86rem;">
                                 <span>Dokumen Proposal Teknis <span class="text-danger">*</span></span>
-                                <small class="text-muted fw-normal">Format: PDF, DOCX, XLSX (Maks. 20MB)</small>
+                                <small class="text-muted fw-normal">Format: PDF, DOCX, XLSX (Maks. 10MB)</small>
                             </label>
 
                             <!-- Card Berkas / Dokumen Proposal Aktif -->

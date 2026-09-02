@@ -256,13 +256,39 @@ $daftarPegawai = $arsipUser->find(
 
     public function delete($f3, $params)
     {
-        $db = $f3->get('DB');
-        $sp = new DB\SQL\Mapper($db, 'tb_surat_penawaran');
-        $sp->load(['id = ?', $params['id']]);
+        $this->requirePermission('order:edit', '/surat-penawaran');
 
+        $spId = (int)($params['id'] ?? 0);
+        $db = $this->db ?? $f3->get('DB');
+        $sp = new DB\SQL\Mapper($db, 'tb_surat_penawaran');
+        $sp->load(['id = ?', $spId]);
+
+        $orderId = 0;
         if (!$sp->dry()) {
+            $orderId = (int)($sp['order_id'] ?? 0);
+            $nomorSurat = $sp['nomor_surat'] ?? "ID #{$spId}";
+
+            // Hapus surat penawaran
             $sp->erase();
-            $f3->set('SESSION.flash_success', 'Surat penawaran berhasil dihapus.');
+
+            // Kembalikan status order jika terhubung
+            if ($orderId > 0) {
+                $db->exec(
+                    "UPDATE order_layanan SET status_penawaran = 'belum_ada', surat_penawaran_id = NULL WHERE id = ?",
+                    [$orderId]
+                );
+            }
+
+            $this->logActivity($orderId, 'surat_penawaran', 'hapus', "Menghapus Surat Pelayanan {$nomorSurat}");
+            $this->setFlashSuccess("Surat Pelayanan {$nomorSurat} berhasil dihapus.");
+        } else {
+            $this->setFlashError("Surat Pelayanan tidak ditemukan.");
+        }
+
+        $redirect = $f3->get('GET.redirect') ?? $f3->get('POST.redirect') ?? '';
+        if ($redirect === 'order' && $orderId > 0) {
+            $f3->reroute("/order/{$orderId}");
+            return;
         }
 
         $f3->reroute('/surat-penawaran');
@@ -282,6 +308,44 @@ $daftarPegawai = $arsipUser->find(
             $this->setFlashError("Order Layanan #{$orderId} tidak ditemukan.");
             $f3->reroute('/order');
             return;
+        }
+
+        // Sinkronisasi data dari Surat Masuk jika order berasal dari klaim surat
+        if (!empty($order['id_surat_masuk'])) {
+            $suratMasukData = null;
+            if ($this->dbSekretariat) {
+                try {
+                    $smRows = $this->dbSekretariat->exec("SELECT * FROM surat_masuk WHERE id = ?", [$order['id_surat_masuk']]);
+                    if (!empty($smRows)) {
+                        $suratMasukData = $smRows[0];
+                    }
+                } catch (\Exception $e) {}
+            }
+            if (!$suratMasukData) {
+                try {
+                    $smRows = $this->db->exec("SELECT * FROM surat_masuk WHERE id = ?", [$order['id_surat_masuk']]);
+                    if (!empty($smRows)) {
+                        $suratMasukData = $smRows[0];
+                    }
+                } catch (\Exception $e) {}
+            }
+
+            if ($suratMasukData) {
+                $picSurat = trim($suratMasukData['pic_pengirim'] ?? ($suratMasukData['nama_pengirim'] ?? ''));
+                if (!empty($picSurat)) {
+                    $order['pic'] = $picSurat;
+                }
+                $alamatSurat = trim($suratMasukData['alamat_pengirim'] ?? '');
+                if (!empty($alamatSurat)) {
+                    $order['alamat'] = $alamatSurat;
+                }
+                if (!empty($suratMasukData['pengirim'])) {
+                    $ptPrefix = !empty($suratMasukData['pt_cv']) ? $suratMasukData['pt_cv'] . ' ' : '';
+                    $order['nama_perusahaan'] = $ptPrefix . $suratMasukData['pengirim'];
+                    $order['nmcustomer'] = $suratMasukData['pengirim'];
+                    $order['pt_cv'] = $suratMasukData['pt_cv'] ?? $order['pt_cv'];
+                }
+            }
         }
 
         $spModel = new SuratPenawaran($this->db);
@@ -313,7 +377,7 @@ $daftarPegawai = $arsipUser->find(
         $orderId = (int)($params['id'] ?? 0);
 
         if (!$this->hasPermission('penawaran:create') && !$this->isSuperadmin()) {
-            $this->setFlashError("Akses Ditolak: Penerbitan Surat Pelayanan Resmi merupakan wewenang Tim Kemitraan.");
+            $this->setFlashError("Akses Ditolak: Penerbitan Surat Pelayanan Resmi merupakan wewenang Tim Mitra.");
             $f3->reroute("/order/{$orderId}/penawaran/buat");
             return;
         }
@@ -339,7 +403,7 @@ $daftarPegawai = $arsipUser->find(
                     'icon'           => 'bi-send-check-fill',
                     'link_url'       => "/order/{$orderId}",
                     'created_by'     => $userId,
-                    'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Tim Kemitraan'
+                    'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Tim Mitra'
                 ]);
             } catch (\Exception $eNotif) {}
 
@@ -403,7 +467,7 @@ $daftarPegawai = $arsipUser->find(
                         'icon'           => 'bi-hand-thumbs-up-fill',
                         'link_url'       => "/order/{$orderId}",
                         'created_by'     => $this->getUserId() ?? 1,
-                        'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Tim Kemitraan'
+                        'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Tim Mitra'
                     ]);
 
                     // Notif ke Ka Tim OPTI
@@ -417,7 +481,7 @@ $daftarPegawai = $arsipUser->find(
                         'icon'           => 'bi-check-circle-fill',
                         'link_url'       => "/order/{$orderId}",
                         'created_by'     => $this->getUserId() ?? 1,
-                        'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Tim Kemitraan'
+                        'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Tim Mitra'
                     ]);
                 } catch (\Exception $eNotif) {}
 
@@ -650,7 +714,7 @@ $daftarPegawai = $arsipUser->find(
         $pdf->Ln(8);
         $pdf->SetX(110);
         $pdf->SetFont('Arial', 'BU', 9.5);
-        $pdf->Cell(80, 4.5, 'Tim Kemitraan BBSPJIS', 0, 1, 'C');
+        $pdf->Cell(80, 4.5, 'Tim Mitra BBSPJIS', 0, 1, 'C');
         $pdf->SetX(110);
         $pdf->SetFont('Arial', '', 8.5);
         $pdf->Cell(80, 4, 'NIP. 19850715 201012 1 002', 0, 1, 'C');

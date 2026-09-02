@@ -846,7 +846,7 @@
                     <i class="bi bi-layers-fill"></i>
                 </div>
                 <div class="sidebar-brand-text">
-                    <p class="sidebar-brand-title">OPTI TRACKER</p>
+                    <p class="sidebar-brand-title">SILOPTI</p>
                     <p class="sidebar-brand-subtitle">BBSPJIS &bull; KEMENPERIN RI</p>
                 </div>
             </button>
@@ -854,123 +854,94 @@
             <ul class="sidebar-nav">
                 
                 <!-- 1. ALUR PELAYANAN / KEMITRAAN -->
-                <li class="sidebar-section-label">Alur Pelayanan</li>
+                <?php if ($is_superadmin || $is_admin_order || $is_ketua_tim || $is_tim_kerja || $is_admin_kontrak || $is_sekretaris || $is_keuangan || $is_user_readonly): ?>
+                    <li class="sidebar-section-label">Alur Pelayanan</li>
+                <?php endif; ?>
                 
                 <!-- Surat Masuk (Admin Order, Tim Mitra, Sekretaris, Superadmin) -->
-                <li>
-                    <?php if ($is_superadmin || $is_admin_order || $is_sekretaris): ?>
-                        
-                            <a class="sidebar-link <?= ($active_menu == 'surat_masuk' ? 'active' : '') ?>" href="<?= ($BASE) ?>/surat-masuk" title="Surat Masuk">
-                                <i class="bi bi-envelope-paper"></i> <span>Surat Masuk</span>
-                                <?php if ($jumlah_notif_surat > 0): ?>
-                                    <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.68rem; padding: 0.25em 0.6em;"><?= ($jumlah_notif_surat) ?></span>
-                                <?php endif; ?>
-                            </a>
-                        
-                        <?php else: ?>
-                            <a class="sidebar-link sidebar-locked" href="javascript:void(0)" onclick="notifyLockedMenu(event, 'Surat Masuk', 'Tim Kemitraan (Admin Order) / Sekretariat')" title="Surat Masuk (Terkunci)">
-                                <i class="bi bi-envelope-paper"></i> <span>Surat Masuk</span>
-                                <i class="bi bi-lock-fill lock-indicator" title="Terkunci: Wewenang Tim Mitra / Sekretariat"></i>
-                            </a>
-                        
-                    <?php endif; ?>
-                </li>
+                <?php if ($is_superadmin || $is_admin_order || $is_sekretaris): ?>
+                    <li>
+                        <a class="sidebar-link <?= ($active_menu == 'surat_masuk' ? 'active' : '') ?>" href="<?= ($BASE) ?>/surat-masuk" title="Surat Masuk">
+                            <i class="bi bi-envelope-paper"></i> <span>Surat Masuk</span>
+                            <?php if ($jumlah_notif_surat > 0): ?>
+                                <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.68rem; padding: 0.25em 0.6em;"><?= ($jumlah_notif_surat) ?></span>
+                            <?php endif; ?>
+                        </a>
+                    </li>
+                <?php endif; ?>
 
                 <!-- Permintaan Masuk (Ketua Tim, Superadmin) -->
-                <li>
-                    <?php if ($is_superadmin || $is_ketua_tim): ?>
-                        
-                            <a class="sidebar-link <?= ($active_menu == 'disposisi_masuk' ? 'active' : '') ?>" href="<?= ($BASE) ?>/disposisi-masuk" title="Permintaan Masuk">
-                                <i class="bi bi-bell"></i> <span>Permintaan Masuk</span>
-                                <?php if ($jumlah_notif_katim > 0): ?>
-                                    <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.68rem; padding: 0.25em 0.6em;"><?= ($jumlah_notif_katim) ?></span>
-                                <?php endif; ?>
-                            </a>
-                        
-                        <?php else: ?>
-                            <a class="sidebar-link sidebar-locked" href="javascript:void(0)" onclick="notifyLockedMenu(event, 'Permintaan Masuk', 'Ketua Tim OPTI')" title="Permintaan Masuk (Terkunci)">
-                                <i class="bi bi-bell"></i> <span>Permintaan Masuk</span>
-                                <i class="bi bi-lock-fill lock-indicator" title="Terkunci: Wewenang Ketua Tim OPTI"></i>
-                            </a>
-                        
-                    <?php endif; ?>
-                </li>
+                <?php if ($is_superadmin || $is_ketua_tim): ?>
+                    <li>
+                        <a class="sidebar-link <?= ($active_menu == 'disposisi_masuk' ? 'active' : '') ?>" href="<?= ($BASE) ?>/disposisi-masuk" title="Permintaan Masuk">
+                            <i class="bi bi-bell"></i> <span>Permintaan Masuk</span>
+                            <?php if ($jumlah_notif_katim > 0): ?>
+                                <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.68rem; padding: 0.25em 0.6em;"><?= ($jumlah_notif_katim) ?></span>
+                            <?php endif; ?>
+                        </a>
+                    </li>
+                <?php endif; ?>
 
-                <!-- Daftar Order (Semua Role Teknis & Pelayanan) -->
-                <li>
-                    <?php if ($is_superadmin || $is_admin_order || $is_ketua_tim || $is_pejabat || $is_tim_kerja || $is_admin_kontrak): ?>
-                        
-                            <a class="sidebar-link <?= ($active_menu == 'order' ? 'active' : '') ?>" href="<?= ($BASE) ?>/order" title="Daftar Semua Order">
-                                <i class="bi bi-inbox"></i> <span>Daftar Order</span>
-                            </a>
-                        
-                        <?php else: ?>
-                            <a class="sidebar-link sidebar-locked" href="javascript:void(0)" onclick="notifyLockedMenu(event, 'Daftar Order', 'Tim Pelayanan OPTI')" title="Daftar Order (Terkunci)">
-                                <i class="bi bi-inbox"></i> <span>Daftar Order</span>
-                                <i class="bi bi-lock-fill lock-indicator" title="Terkunci: Wewenang Tim Pelayanan OPTI"></i>
-                            </a>
-                        
-                    <?php endif; ?>
-                </li>
+                <!-- Daftar Order (Semua Role Teknis, Pelayanan, Keuangan & Pegawai Umum) -->
+                <?php if ($is_superadmin || $is_admin_order || $is_ketua_tim || $is_tim_kerja || $is_admin_kontrak || $is_keuangan || $is_user_readonly): ?>
+                    <li>
+                        <a class="sidebar-link <?= ($active_menu == 'order' ? 'active' : '') ?>" href="<?= ($BASE) ?>/order" title="Daftar Semua Order">
+                            <i class="bi bi-inbox"></i> <span>Daftar Order</span>
+                        </a>
+                    </li>
+                <?php endif; ?>
 
-                <!-- Surat Pelayanan (Admin Order, Tim Mitra, Ketua Tim, Pejabat, Superadmin) -->
-                <li>
-                    <?php if ($is_superadmin || $is_admin_order || $is_ketua_tim || $is_pejabat): ?>
-                        
-                            <a class="sidebar-link <?= ($active_menu == 'surat-penawaran' ? 'active' : '') ?>" href="<?= ($BASE) ?>/surat-penawaran" title="Surat Pelayanan">
-                                <i class="bi bi-file-earmark-text"></i> <span>Surat Pelayanan</span>
-                            </a>
-                        
-                        <?php else: ?>
-                            <a class="sidebar-link sidebar-locked" href="javascript:void(0)" onclick="notifyLockedMenu(event, 'Surat Pelayanan', 'Tim Kemitraan (Admin Order) &amp; Pejabat')" title="Surat Pelayanan (Terkunci)">
-                                <i class="bi bi-file-earmark-text"></i> <span>Surat Pelayanan</span>
-                                <i class="bi bi-lock-fill lock-indicator" title="Terkunci: Wewenang Tim Kemitraan &amp; Pejabat"></i>
-                            </a>
-                        
-                    <?php endif; ?>
-                </li>
+                <!-- Surat Pelayanan (Admin Order, Tim Mitra, Ketua Tim, Superadmin) -->
+                <?php if ($is_superadmin || $is_admin_order || $is_ketua_tim): ?>
+                    <li>
+                        <a class="sidebar-link <?= ($active_menu == 'surat-penawaran' ? 'active' : '') ?>" href="<?= ($BASE) ?>/surat-penawaran" title="Surat Pelayanan">
+                            <i class="bi bi-file-earmark-text"></i> <span>Surat Pelayanan</span>
+                        </a>
+                    </li>
+                <?php endif; ?>
+
+                <!-- Pembayaran / Kasir (Keuangan, Admin Order, Superadmin) -->
+                <?php if ($is_superadmin || $is_keuangan || $is_admin_order): ?>
+                    <li>
+                        <a class="sidebar-link <?= ($active_menu == 'pembayaran' ? 'active' : '') ?>" href="<?= ($BASE) ?>/pembayaran" title="Pembayaran & Bukti Transfer">
+                            <i class="bi bi-cash-stack"></i> <span>Pembayaran</span>
+                        </a>
+                    </li>
+                <?php endif; ?>
 
                 <!-- 2. PELAKSANAAN TEKNIS -->
-                <li class="sidebar-section-label">Pelaksanaan Teknis</li>
-                
-                <!-- Tugas Proposal Teknis (Tim Kerja / PIC Peneliti, Ketua Tim, Pejabat, Superadmin) -->
-                <li>
-                    <?php if ($is_superadmin || $is_ketua_tim || $is_tim_kerja || $is_pejabat): ?>
-                        
-                            <a class="sidebar-link <?= ($active_menu == 'proposal' ? 'active' : '') ?>" href="<?= ($BASE) ?>/proposal" title="Tugas Proposal Teknis">
-                                <i class="bi bi-journal-code"></i> <span>Tugas Proposal</span>
-                            </a>
-                        
-                        <?php else: ?>
-                            <a class="sidebar-link sidebar-locked" href="javascript:void(0)" onclick="notifyLockedMenu(event, 'Tugas Proposal', 'Tim Kerja / PIC Peneliti &amp; Ketua Tim')" title="Tugas Proposal (Terkunci)">
-                                <i class="bi bi-journal-code"></i> <span>Tugas Proposal</span>
-                                <i class="bi bi-lock-fill lock-indicator" title="Terkunci: Wewenang PIC Peneliti &amp; Ka Tim"></i>
-                            </a>
-                        
-                    <?php endif; ?>
-                </li>
+                <?php if ($is_superadmin || $is_ketua_tim || $is_tim_kerja): ?>
+                    <li class="sidebar-section-label">Pelaksanaan Teknis</li>
+                    
+                    <!-- Tugas Proposal Teknis (Tim Kerja / PIC Peneliti, Ketua Tim, Superadmin) -->
+                    <li>
+                        <a class="sidebar-link <?= ($active_menu == 'proposal' ? 'active' : '') ?>" href="<?= ($BASE) ?>/proposal" title="Tugas Proposal Teknis">
+                            <i class="bi bi-journal-code"></i> <span>Tugas Proposal</span>
+                        </a>
+                    </li>
+                <?php endif; ?>
 
-                <!-- Petunjuk Operasional (PO), Kontrak PKS, & Pembayaran - Disembunyikan sementara sesuai arahan -->
+                <!-- 3. PERSURATAN BALAI -->
+                <?php if ($is_superadmin || $is_sekretaris): ?>
+                    <li class="sidebar-section-label">Persuratan Balai</li>
+                    
+                    <!-- Registrasi Surat Masuk (Sekretariat, Superadmin) -->
+                    <li>
+                        <a class="sidebar-link <?= ($active_menu == 'simulasi_sekretariat' ? 'active' : '') ?>" href="<?= ($BASE) ?>/simulasi-sekretariat" title="Registrasi Surat Masuk">
+                            <i class="bi bi-journal-plus"></i> <span>Registrasi Surat Masuk</span>
+                        </a>
+                    </li>
+                <?php endif; ?>
 
-                <!-- 4. PERSURATAN -->
-                <li class="sidebar-section-label">Persuratan Balai</li>
-                
-                <!-- Registrasi Surat Masuk (Sekretariat, Superadmin) -->
-                <li>
-                    <?php if ($is_superadmin || $is_sekretaris): ?>
-                        
-                            <a class="sidebar-link <?= ($active_menu == 'simulasi_sekretariat' ? 'active' : '') ?>" href="<?= ($BASE) ?>/simulasi-sekretariat" title="Registrasi Surat Masuk">
-                                <i class="bi bi-journal-plus"></i> <span>Registrasi Surat Masuk</span>
-                            </a>
-                        
-                        <?php else: ?>
-                            <a class="sidebar-link sidebar-locked" href="javascript:void(0)" onclick="notifyLockedMenu(event, 'Registrasi Surat Masuk', 'Sekretariat Balai')" title="Registrasi Surat Masuk (Terkunci)">
-                                <i class="bi bi-journal-plus"></i> <span>Registrasi Surat Masuk</span>
-                                <i class="bi bi-lock-fill lock-indicator" title="Terkunci: Wewenang Sekretariat Balai"></i>
-                            </a>
-                        
-                    <?php endif; ?>
-                </li>
+                <!-- 4. MASTER DATA (Superadmin, Ketua Tim) -->
+                <?php if ($is_superadmin || $is_ketua_tim): ?>
+                    <li class="sidebar-section-label">Master Data</li>
+                    <li>
+                        <a class="sidebar-link <?= ($active_menu == 'master_pic' ? 'active' : '') ?>" href="<?= ($BASE) ?>/master-pic" title="Master PIC Peneliti">
+                            <i class="bi bi-people-fill"></i> <span>PIC Peneliti</span>
+                        </a>
+                    </li>
+                <?php endif; ?>
 
                 <!-- 5. AKUN & PROFIL -->
                 <li class="sidebar-section-label">Akun</li>
@@ -1015,12 +986,14 @@
                                 </span>
                             <?php endif; ?>
                         </button>
-                        <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-2 p-0 rounded-4" aria-labelledby="notifBellBtn" style="width: 370px; max-width: 92vw; border-radius: 14px; overflow: hidden; box-shadow: 0 12px 36px -4px rgba(15,23,42,0.18);" id="notifDropdownMenu">
+                        <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-2 p-0 rounded-4" aria-labelledby="notifBellBtn" style="width: 380px; max-width: 92vw; border-radius: 14px; overflow: hidden; box-shadow: 0 12px 36px -4px rgba(15,23,42,0.18);" id="notifDropdownMenu">
                             <div class="px-3 py-2.5 bg-white border-bottom d-flex justify-content-between align-items-center">
                                 <div class="d-flex align-items-center gap-2">
                                     <span class="fw-bold text-dark font-display" style="font-size: 0.88rem;">Pemberitahuan</span>
                                     <?php if ($unread_notif_count > 0): ?>
-                                        <span class="badge bg-danger-subtle text-danger rounded-pill px-2 py-0.5 font-monospace" style="font-size: 0.65rem;"><?= ($unread_notif_count) ?> Baru</span>
+                                        <span class="badge rounded-pill fw-bold text-white" id="notifHeaderBadge" style="background-color: #e11d48; font-size: 0.68rem; padding: 3px 8px; vertical-align: middle;">
+                                            <?= ($unread_notif_count) ?> Baru
+                                        </span>
                                     <?php endif; ?>
                                 </div>
                                 <?php if ($unread_notif_count > 0): ?>
@@ -1032,16 +1005,16 @@
                             <div class="list-group list-group-flush" style="max-height: 360px; overflow-y: auto;" id="notifListContainer">
                                 <?php if ($list_notifikasi_user && count($list_notifikasi_user) > 0): ?>
                                     <?php foreach (($list_notifikasi_user?:[]) as $n): ?>
-                                        <a href="<?= ($BASE) ?><?= ($n['link_url']) ?>" onclick="window.markNotifRead(<?= ($n['id']) ?>, '<?= ($BASE) ?><?= ($n['link_url']) ?>')" class="list-group-item list-group-item-action px-3 py-2.5 <?= ($n['is_read'] ? 'bg-white' : 'bg-light bg-opacity-40') ?> border-bottom d-flex gap-2.5 align-items-start text-decoration-none transition-all">
-                                            <div class="rounded-circle p-2 d-flex align-items-center justify-content-center flex-shrink-0 <?= ($n['tipe'] == 'success' ? 'bg-success-subtle text-success' : ($n['tipe'] == 'warning' ? 'bg-warning-subtle text-warning' : ($n['tipe'] == 'primary' ? 'bg-primary-subtle text-primary' : 'bg-info-subtle text-info'))) ?>" style="width: 34px; height: 34px;">
-                                                <i class="bi <?= ($n['icon'] ?: 'bi-bell-fill') ?>" style="font-size: 0.9rem;"></i>
+                                        <a href="<?= ($BASE) ?><?= ($n['link_url']) ?>" onclick="window.markNotifRead(<?= ($n['id']) ?>, '<?= ($BASE) ?><?= ($n['link_url']) ?>')" class="list-group-item list-group-item-action px-3 py-3 <?= ($n['is_read'] ? 'bg-white' : 'bg-light bg-opacity-40') ?> border-bottom d-flex align-items-start text-decoration-none transition-all" style="gap: 14px;">
+                                            <div class="rounded-circle p-2 d-flex align-items-center justify-content-center flex-shrink-0 <?= ($n['tipe'] == 'success' ? 'bg-success-subtle text-success' : ($n['tipe'] == 'warning' ? 'bg-warning-subtle text-warning' : ($n['tipe'] == 'primary' ? 'bg-primary-subtle text-primary' : 'bg-info-subtle text-info'))) ?>" style="width: 36px; height: 36px; margin-top: 2px;">
+                                                <i class="bi <?= ($n['icon'] ?: 'bi-bell-fill') ?>" style="font-size: 0.95rem;"></i>
                                             </div>
-                                            <div class="flex-grow-1 overflow-hidden">
-                                                <div class="d-flex justify-content-between align-items-center mb-0.5">
-                                                    <span class="fw-bold text-dark d-block text-truncate" style="font-size: 0.8rem;"><?= ($n['judul']) ?></span>
-                                                    <small class="text-muted text-nowrap ms-2" style="font-size: 0.65rem;"><?= ($n['time_ago']) ?></small>
+                                            <div class="flex-grow-1 overflow-hidden" style="min-width: 0;">
+                                                <div class="d-flex justify-content-between align-items-baseline mb-1">
+                                                    <span class="fw-bold text-dark d-block text-truncate pe-2" style="font-size: 0.82rem;"><?= ($n['judul']) ?></span>
+                                                    <small class="text-muted text-nowrap" style="font-size: 0.68rem;"><?= ($n['time_ago']) ?></small>
                                                 </div>
-                                                <p class="text-secondary small mb-0 text-truncate-2" style="font-size: 0.72rem; line-height: 1.25;"><?= ($n['pesan']) ?></p>
+                                                <p class="text-secondary small mb-0 text-truncate-2" style="font-size: 0.74rem; line-height: 1.35;"><?= ($n['pesan']) ?></p>
                                             </div>
                                         </a>
                                     <?php endforeach; ?>
@@ -1073,11 +1046,12 @@
                                 <div class="fw-bold text-dark small"><?= (htmlspecialchars($SESSION['nama_lengkap'] ?? 'User')) ?></div>
                                 <div class="text-muted" style="font-size: 0.675rem;">
                                     <?php if ($SESSION['role'] == 'superadmin'): ?>Super Admin<?php endif; ?>
-                                    <?php if ($SESSION['role'] == 'admin_order'): ?>Admin Order<?php endif; ?>
+                                    <?php if ($SESSION['role'] == 'tim_mitra_industri' || $SESSION['role'] == 'admin_order' || $SESSION['role'] == 'tim_mitra'): ?>Tim Mitra<?php endif; ?>
                                     <?php if ($SESSION['role'] == 'ketua_tim'): ?>Ketua Tim <?= ($SESSION['jenis_layanan_opti'] == 'selulosa' ? 'Selulosa' : ($SESSION['jenis_layanan_opti'] == 'lingkungan' ? 'Lingkungan' : 'OPTI')) ?><?php endif; ?>
-                                    <?php if ($SESSION['role'] == 'pejabat'): ?>Kepala Balai/PPK<?php endif; ?>
-                                    <?php if ($SESSION['role'] == 'tim_kerja'): ?>Tim Analis<?php endif; ?>
+                                    <?php if ($SESSION['role'] == 'keuangan'): ?>Staf Keuangan<?php endif; ?>
+                                    <?php if ($SESSION['role'] == 'tim_kerja'): ?>Tim Analis / Peneliti<?php endif; ?>
                                     <?php if ($SESSION['role'] == 'admin_kontrak'): ?>Admin PKS<?php endif; ?>
+                                    <?php if ($SESSION['role'] == 'user'): ?>Pegawai Balai (Read-Only)<?php endif; ?>
                                 </div>
                             </div>
                         </a>
@@ -1086,15 +1060,15 @@
                                 <div class="fw-bold text-dark"><?= (htmlspecialchars($SESSION['nama_lengkap'] ?? 'User')) ?></div>
                                 <div class="text-muted small">@<?= ($SESSION['login'] ?? $SESSION['username']) ?> &bull; <span class="badge bg-light text-dark border"><?= (strtoupper($SESSION['role'] ?? 'USER')) ?></span></div>
                             </li>
-                            <li class="px-3 py-1 text-uppercase fw-bold text-muted" style="font-size: 0.65rem; letter-spacing: 0.5px;">Ganti Peran (1-Klik):</li>
+                            <li class="px-3 py-1 text-uppercase fw-bold text-muted" style="font-size: 0.65rem; letter-spacing: 0.5px;">Ganti Peran:</li>
                             <li>
                                 <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2 <?= ($SESSION['role'] == 'superadmin' ? 'active' : '') ?>" href="<?= ($BASE) ?>/login/switch/9006">
                                     <i class="bi bi-person-circle text-secondary"></i> Superadmin
                                 </a>
                             </li>
                             <li>
-                                <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2 <?= ($SESSION['role'] == 'admin_order' ? 'active' : '') ?>" href="<?= ($BASE) ?>/login/switch/36">
-                                    <i class="bi bi-person-circle text-secondary"></i> Tim Kemitraan
+                                <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2 <?= ($SESSION['role'] == 'tim_mitra_industri' || $SESSION['role'] == 'admin_order' || $SESSION['role'] == 'tim_mitra' ? 'active' : '') ?>" href="<?= ($BASE) ?>/login/switch/36">
+                                    <i class="bi bi-person-circle text-secondary"></i> Tim Mitra
                                 </a>
                             </li>
                             <li>
@@ -1108,13 +1082,18 @@
                                 </a>
                             </li>
                             <li>
-                                <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2 <?= ($SESSION['role'] == 'pejabat' ? 'active' : '') ?>" href="<?= ($BASE) ?>/login/switch/175">
-                                    <i class="bi bi-person-circle text-secondary"></i> Kepala Balai / Pejabat
+                                <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2 <?= ($SESSION['role'] == 'keuangan' ? 'active' : '') ?>" href="<?= ($BASE) ?>/login/switch/4">
+                                    <i class="bi bi-cash-stack text-secondary"></i> Staf Keuangan
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2 <?= ($SESSION['role'] == 'tim_kerja' ? 'active' : '') ?>" href="<?= ($BASE) ?>/login/switch/12">
                                     <i class="bi bi-person-circle text-secondary"></i> Tim Kerja / Peneliti
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2 <?= ($SESSION['role'] == 'user' ? 'active' : '') ?>" href="<?= ($BASE) ?>/login/switch/73">
+                                    <i class="bi bi-person text-secondary"></i> Pegawai Balai (Read-Only)
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider my-1"></li>
@@ -1318,7 +1297,7 @@
                 e.preventDefault();
                 e.stopPropagation();
             }
-            var userRoleName = "<?= ($SESSION['role'] == 'superadmin' ? 'Super Admin' : ($SESSION['role'] == 'admin_order' || $SESSION['role'] == 'tim_mitra' ? 'Tim Kemitraan (Admin Order)' : ($SESSION['role'] == 'ketua_tim' ? 'Ketua Tim OPTI' : ($SESSION['role'] == 'pejabat' ? 'Kepala Balai / PPK' : ($SESSION['role'] == 'tim_kerja' ? 'Tim Kerja / Analis' : ($SESSION['role'] == 'admin_kontrak' ? 'Admin Kontrak / PKS' : ($SESSION['role'] == 'sekretaris' ? 'Sekretariat' : 'Pengguna'))))))) ?>";
+            var userRoleName = "<?= ($SESSION['role'] == 'superadmin' ? 'Super Admin' : ($SESSION['role'] == 'tim_mitra_industri' || $SESSION['role'] == 'admin_order' || $SESSION['role'] == 'tim_mitra' ? 'Tim Mitra' : ($SESSION['role'] == 'ketua_tim' ? 'Ketua Tim OPTI' : ($SESSION['role'] == 'keuangan' ? 'Bagian Keuangan' : ($SESSION['role'] == 'tim_kerja' ? 'Tim Kerja / Peneliti' : ($SESSION['role'] == 'admin_kontrak' ? 'Admin Kontrak / PKS' : ($SESSION['role'] == 'sekretaris' ? 'Sekretariat' : ($SESSION['role'] == 'user' ? 'Pegawai Balai (Read-Only)' : 'Pengguna')))))))) ?>";
 
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
@@ -1527,6 +1506,8 @@
             }).then(function(res) { return res.json(); }).then(function(data) {
                 var badge = document.getElementById('notifBadgeCount');
                 if (badge) badge.remove();
+                var headerBadge = document.getElementById('notifHeaderBadge');
+                if (headerBadge) headerBadge.remove();
                 var subtext = document.getElementById('notifUnreadSubtext');
                 if (subtext) subtext.textContent = 'Semua pesan sudah dibaca';
                 var bubble = document.getElementById('activeFloatingBubble');

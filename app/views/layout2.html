@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ @page_title ?: 'Sistem OPTI Tracker - BBSPJIS' }}</title>
+    <title>{{ @page_title ?: 'SILOPTI - BBSPJIS' }}</title>
     
     <!-- Google Fonts: Inter & Plus Jakarta Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -437,7 +437,7 @@
                     <i class="bi bi-layers-fill"></i>
                 </div>
                 <div>
-                    <h1 class="brand-title">OPTI TRACKER</h1>
+                    <h1 class="brand-title">SILOPTI</h1>
                     <p class="brand-subtitle">BBSPJIS &bull; KEMENPERIN RI</p>
                 </div>
             </a>
@@ -464,11 +464,7 @@
                                 <i class="bi bi-building"></i> Customer
                             </a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ @active_menu == 'pembayaran' ? 'active' : '' }}" href="{{ @BASE }}/pembayaran">
-                                <i class="bi bi-cash-stack"></i> Pembayaran
-                            </a>
-                        </li>
+                        <!-- Menu Pembayaran disembunyikan sementara waktu -->
                         <li class="nav-item">
                             <a class="nav-link {{ @active_menu == 'kontrak' ? 'active' : '' }}" href="{{ @BASE }}/kontrak">
                                 <i class="bi bi-journal-text"></i> Kontrak PKS
@@ -563,7 +559,7 @@
                 <span class="text-white-50">Kementerian Perindustrian Republik Indonesia &bull; Jl. Raya Dayeuhkolot No. 132 Bandung</span>
             </div>
             <div class="text-white-50">
-                &copy; 2026 Sistem OPTI Tracker. Hak Cipta Dilindungi.
+                &copy; 2026 SILOPTI BBSPJIS. Hak Cipta Dilindungi.
             </div>
         </div>
     </footer>
