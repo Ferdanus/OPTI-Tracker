@@ -1201,54 +1201,297 @@ class OrderController extends Controller {
      * Memproses simpan Formulir Permintaan Pelayanan Jasa
      * Route: POST /order/@id/form-pelayanan
      */
-    public function formPelayananPost($f3, $params) {
+    // public function formPelayananPost($f3, $params) {
+    //     $id = (int)($params['id'] ?? 0);
+    //     if (!$this->hasPermission('order:form_pelayanan') && !$this->isSuperadmin()) {
+    //         $this->setFlashError("Akses Ditolak: Pengisian formulir pelayanan jasa merupakan wewenang Tim Mitra.");
+    //         $f3->reroute("/order/{$id}/form-pelayanan");
+    //         return;
+    //     }
+
+    //     $post = $f3->get('POST');
+
+    //     $aksi = $post['aksi'] ?? ($post['action_btn'] ?? 'simpan');
+    //     $actionBtn = ($aksi === 'kirim') ? 'kirim_katim' : 'save_draft';
+    //     $jenisLayanan = in_array($post['jenis_layanan'] ?? ($post['jenis_layanan_opti'] ?? ''), ['selulosa', 'lingkungan']) ? ($post['jenis_layanan'] ?? $post['jenis_layanan_opti']) : 'selulosa';
+    //     $nama = trim($post['nama'] ?? '');
+    //     $perusahaan = trim($post['perusahaan'] ?? '');
+    //     $alamat = trim($post['alamat'] ?? '');
+    //     $penjelasan = trim($post['penjelasan'] ?? ($post['deskripsi'] ?? ''));
+    //     $permintaanMelalui = trim($post['permintaan_melalui'] ?? 'email');
+    //     $pegawaiId = !empty($post['pegawai_id']) ? (int)$post['pegawai_id'] : null;
+
+    //     try {
+    //         $orderModel = new OrderLayanan($this->db);
+    //         $order = $orderModel->getById($id);
+    //         if (!$order || $order->dry()) {
+    //             throw new \Exception("Order #{$id} tidak ditemukan.");
+    //         }
+
+    //         $order->jenis_layanan_opti = $jenisLayanan;
+    //         if (!empty($nama)) $order->pic = $nama;
+    //         if (!empty($perusahaan)) $order->nama_perusahaan = $perusahaan;
+    //         if (!empty($alamat)) $order->alamat = $alamat;
+    //         if (!empty($penjelasan)) $order->deskripsi = $penjelasan;
+
+    //         if ($actionBtn === 'kirim_katim') {
+    //             $order->status = 'baru'; // Maju ke antrean Kaji Ulang Ketua Tim
+    //             $order->status_tinjauan = 'belum_ditinjau';
+    //             $order->save();
+    //             $this->setFlashSuccess("Surat Permintaan Pelayanan Jasa berhasil disimpan &amp; diteruskan ke <strong>Ketua Tim OPTI (" . ucfirst($jenisLayanan) . ")</strong> untuk kaji ulang kelayakan.");
+    //         } else {
+    //             $order->status = 'draft_disimpan';
+    //             $order->save();
+    //             $this->setFlashSuccess("Draf Surat Permintaan Pelayanan Jasa berhasil disimpan (Status: <strong>Draft Disimpan</strong>).");
+    //         }
+
+    //         $f3->reroute("/order/{$id}");
+    //     } catch (\Exception $e) {
+    //         $this->setFlashError("Gagal menyimpan form pelayanan: " . $e->getMessage());
+    //         $f3->reroute("/order/{$id}/form-pelayanan");
+    //     }
+    // }
+    public function formPelayananPost($f3, $params)
+    {
         $id = (int)($params['id'] ?? 0);
+    
         if (!$this->hasPermission('order:form_pelayanan') && !$this->isSuperadmin()) {
-            $this->setFlashError("Akses Ditolak: Pengisian formulir pelayanan jasa merupakan wewenang Tim Mitra.");
+            $this->setFlashError(
+                "Akses Ditolak: Pengisian formulir pelayanan jasa merupakan wewenang Tim Mitra."
+            );
             $f3->reroute("/order/{$id}/form-pelayanan");
             return;
         }
-
+    
         $post = $f3->get('POST');
-
-        $aksi = $post['aksi'] ?? ($post['action_btn'] ?? 'simpan');
-        $actionBtn = ($aksi === 'kirim') ? 'kirim_katim' : 'save_draft';
-        $jenisLayanan = in_array($post['jenis_layanan'] ?? ($post['jenis_layanan_opti'] ?? ''), ['selulosa', 'lingkungan']) ? ($post['jenis_layanan'] ?? $post['jenis_layanan_opti']) : 'selulosa';
+    
+        $aksi = $post['aksi'] ?? 'simpan';
+    
+        $actionBtn = ($aksi === 'kirim')
+            ? 'kirim_katim'
+            : 'save_draft';
+    
+        $jenisLayanan = $post['jenis_layanan'] ?? 'selulosa';
+    
+        if (!in_array($jenisLayanan, ['selulosa', 'lingkungan'])) {
+            $jenisLayanan = 'selulosa';
+        }
+    
         $nama = trim($post['nama'] ?? '');
         $perusahaan = trim($post['perusahaan'] ?? '');
         $alamat = trim($post['alamat'] ?? '');
-        $penjelasan = trim($post['penjelasan'] ?? ($post['deskripsi'] ?? ''));
-        $permintaanMelalui = trim($post['permintaan_melalui'] ?? 'email');
-        $pegawaiId = !empty($post['pegawai_id']) ? (int)$post['pegawai_id'] : null;
-
+    
+        $penjelasan = trim(
+            $post['penjelasan'] ??
+            ($post['deskripsi'] ?? '')
+        );
+    
+        $permintaanMelalui = trim(
+            $post['permintaan_melalui'] ?? 'email'
+        );
+    
+        $pegawaiId = !empty($post['pegawai_id'])
+            ? (int)$post['pegawai_id']
+            : null;
+    
         try {
+    
+            /*
+            |--------------------------------------------------------------------------
+            | 1. Ambil order
+            |--------------------------------------------------------------------------
+            */
+    
             $orderModel = new OrderLayanan($this->db);
+    
             $order = $orderModel->getById($id);
+    
             if (!$order || $order->dry()) {
                 throw new \Exception("Order #{$id} tidak ditemukan.");
             }
-
+    
+    
+            /*
+            |--------------------------------------------------------------------------
+            | 2. Update order_layanan
+            |--------------------------------------------------------------------------
+            */
+    
             $order->jenis_layanan_opti = $jenisLayanan;
-            if (!empty($nama)) $order->pic = $nama;
-            if (!empty($perusahaan)) $order->nama_perusahaan = $perusahaan;
-            if (!empty($alamat)) $order->alamat = $alamat;
-            if (!empty($penjelasan)) $order->deskripsi = $penjelasan;
-
-            if ($actionBtn === 'kirim_katim') {
-                $order->status = 'baru'; // Maju ke antrean Kaji Ulang Ketua Tim
-                $order->status_tinjauan = 'belum_ditinjau';
-                $order->save();
-                $this->setFlashSuccess("Surat Permintaan Pelayanan Jasa berhasil disimpan &amp; diteruskan ke <strong>Ketua Tim OPTI (" . ucfirst($jenisLayanan) . ")</strong> untuk kaji ulang kelayakan.");
-            } else {
-                $order->status = 'draft_disimpan';
-                $order->save();
-                $this->setFlashSuccess("Draf Surat Permintaan Pelayanan Jasa berhasil disimpan (Status: <strong>Draft Disimpan</strong>).");
+    
+            if (!empty($nama)) {
+                $order->pic = $nama;
             }
-
+    
+            if (!empty($perusahaan)) {
+                $order->nama_perusahaan = $perusahaan;
+            }
+    
+            if (!empty($alamat)) {
+                $order->alamat = $alamat;
+            }
+    
+            if (!empty($penjelasan)) {
+                $order->deskripsi = $penjelasan;
+            }
+    
+            $order->save();
+    
+    
+            /*
+            |--------------------------------------------------------------------------
+            | 3. Cari surat penawaran berdasarkan order_id
+            |--------------------------------------------------------------------------
+            */
+    
+            $spModel = new SuratPenawaran($this->db);
+    
+            $spExisting = $spModel->getByOrderId($id);
+    
+    
+            /*
+            |--------------------------------------------------------------------------
+            | 4. Mapper tb_surat_penawaran
+            |--------------------------------------------------------------------------
+            */
+    
+            $sp = new \DB\SQL\Mapper(
+                $this->db,
+                'tb_surat_penawaran'
+            );
+    
+    
+            /*
+            |--------------------------------------------------------------------------
+            | 5. Kalau belum ada → CREATE
+            |--------------------------------------------------------------------------
+            */
+    
+            if (empty($spExisting['id'])) {
+    
+                $sp->order_id = $id;
+    
+                $sp->nomor_surat = $spModel->generateNomorSurat();
+    
+                $sp->tanggal_surat = date('Y-m-d');
+    
+                $sp->status_respon_klien = 'draft';
+    
+                $sp->status = 'draft';
+    
+            } else {
+    
+                /*
+                |----------------------------------------------------------------------
+                | Kalau sudah ada → UPDATE
+                |----------------------------------------------------------------------
+                */
+    
+                $sp->load([
+                    'id = ?',
+                    (int)$spExisting['id']
+                ]);
+            }
+    
+    
+            /*
+            |--------------------------------------------------------------------------
+            | 6. Isi data dari form
+            |--------------------------------------------------------------------------
+            */
+    
+            $sp->nama = $nama;
+    
+            $sp->perusahaan = $perusahaan;
+    
+            $sp->alamat = $alamat;
+    
+            $sp->permintaan_melalui = $permintaanMelalui;
+    
+            $sp->pegawai_id = $pegawaiId;
+    
+            $sp->jenis_layanan = $jenisLayanan;
+    
+            $sp->penjelasan = $penjelasan;
+    
+            $sp->perihal =
+                'Permintaan Pelayanan Jasa OPTI - ' .
+                ($order->judul_kegiatan ?: '');
+    
+            $sp->nominal_penawaran =
+                (float)($order->estimasi_biaya ?: 0);
+    
+    
+            /*
+            |--------------------------------------------------------------------------
+            | 7. SIMPAN tb_surat_penawaran
+            |--------------------------------------------------------------------------
+            */
+    
+            $sp->save();
+    
+    
+            /*
+            |--------------------------------------------------------------------------
+            | 8. Hubungkan surat penawaran ke order
+            |--------------------------------------------------------------------------
+            */
+    
+            $order->surat_penawaran_id = $sp->id;
+    
+            $order->save();
+    
+    
+            /*
+            |--------------------------------------------------------------------------
+            | 9. Update status order
+            |--------------------------------------------------------------------------
+            */
+    
+            if ($actionBtn === 'kirim_katim') {
+    
+                $order->status = 'baru';
+    
+                $order->status_tinjauan = 'belum_ditinjau';
+    
+                $order->save();
+    
+                $this->setFlashSuccess(
+                    "Surat Permintaan Pelayanan Jasa berhasil disimpan &amp; diteruskan ke <strong>Ketua Tim OPTI (" .
+                    ucfirst($jenisLayanan) .
+                    ")</strong> untuk kaji ulang kelayakan."
+                );
+    
+            } else {
+    
+                $order->status = 'draft_disimpan';
+    
+                $order->save();
+    
+                $this->setFlashSuccess(
+                    "Draf Surat Permintaan Pelayanan Jasa berhasil disimpan."
+                );
+            }
+    
+    
+            /*
+            |--------------------------------------------------------------------------
+            | 10. Kembali ke detail order
+            |--------------------------------------------------------------------------
+            */
+    
             $f3->reroute("/order/{$id}");
+    
         } catch (\Exception $e) {
-            $this->setFlashError("Gagal menyimpan form pelayanan: " . $e->getMessage());
-            $f3->reroute("/order/{$id}/form-pelayanan");
+    
+            $this->setFlashError(
+                "Gagal menyimpan form pelayanan: " .
+                $e->getMessage()
+            );
+    
+            $f3->reroute(
+                "/order/{$id}/form-pelayanan"
+            );
         }
     }
 
@@ -2350,4 +2593,29 @@ class OrderController extends Controller {
         ]);
         exit;
     }
+    public function showSurat($f3, $params)
+{
+    $id = $params['id'];
+
+    $db = $f3->get('DB');
+
+    $order = new OrderLayanan($db);
+
+    // Khusus mengambil data untuk surat
+    $data = $order->getDetailSurat($id);
+
+    if (!$data) {
+        $f3->error(404);
+        return;
+    }
+
+    $f3->set('order', $data);
+    $f3->set('BASE', $f3->get('BASE'));
+
+    $this->render(
+        'order/surat.html',
+        'Daftar Order Layanan',
+        'order'
+    );
+}
 }

@@ -57,7 +57,7 @@
             <div>
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb mb-1 small">
-                        <li class="breadcrumb-item"><a href="{{ @BASE }}/po" class="text-decoration-none text-muted">Beranda</a></li>
+                        <li class="breadcrumb-item"><a href="<?= ($BASE) ?>/po" class="text-decoration-none text-muted">Beranda</a></li>
                         <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Daftar Order Layanan</li>
                     </ol>
                 </nav>
@@ -70,47 +70,47 @@
         <!-- FILTER & PENCARIAN ORDER -->
         <div class="card mb-4 border-0 shadow-sm">
             <div class="card-body p-3">
-                <form method="GET" action="{{ @BASE }}/order" class="row g-2 align-items-center">
-                    <input type="hidden" name="tab" value="{{ @filter_tab }}">
+                <form method="GET" action="<?= ($BASE) ?>/order" class="row g-2 align-items-center">
+                    <input type="hidden" name="tab" value="<?= ($filter_tab) ?>">
                     <div class="col-md-2 col-lg-2">
                         <div class="input-group input-group-sm">
                             <span class="input-group-text bg-light text-muted"><i class="bi bi-calendar-event"></i></span>
                             <select name="tahun" class="form-select form-select-sm fw-semibold" onchange="this.form.submit()" title="Filter Berdasarkan Tahun">
-                                <repeat group="{{ @daftar_tahun }}" value="{{ @thn }}">
-                                    <option value="{{ @thn }}" {{ @filter_tahun == @thn ? 'selected' : '' }}>Tahun {{ @thn }}</option>
-                                </repeat>
-                                <option value="all" {{ @filter_tahun == 'all' ? 'selected' : '' }}>Semua Tahun</option>
+                                <?php foreach (($daftar_tahun?:[]) as $thn): ?>
+                                    <option value="<?= ($thn) ?>" <?= ($filter_tahun == $thn ? 'selected' : '') ?>>Tahun <?= ($thn) ?></option>
+                                <?php endforeach; ?>
+                                <option value="all" <?= ($filter_tahun == 'all' ? 'selected' : '') ?>>Semua Tahun</option>
                             </select>
                         </div>
                     </div>
                     <div class="col-md-4 col-lg-5">
                         <div class="input-group input-group-sm">
                             <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-search"></i></span>
-                            <input type="text" class="form-control border-start-0" name="q" placeholder="Cari nomor order, mitra industri, judul kegiatan..." value="{{ @search_q }}">
+                            <input type="text" class="form-control border-start-0" name="q" placeholder="Cari nomor order, mitra industri, judul kegiatan..." value="<?= ($search_q) ?>">
                         </div>
                     </div>
                     <div class="col-md-3 col-lg-2">
-                        <check if="{{ @is_locked_divisi }}">
-                            <true>
+                        <?php if ($is_locked_divisi): ?>
+                            
                                 <select class="form-select form-select-sm bg-light text-secondary" disabled title="Akses dibatasi hanya untuk divisi Anda">
-                                    <option value="{{ @user_layanan }}" selected>Divisi {{ ucfirst(@user_layanan) }}</option>
+                                    <option value="<?= ($user_layanan) ?>" selected>Divisi <?= (ucfirst($user_layanan)) ?></option>
                                 </select>
-                                <input type="hidden" name="jenis_layanan" value="{{ @user_layanan }}">
-                            </true>
-                            <false>
+                                <input type="hidden" name="jenis_layanan" value="<?= ($user_layanan) ?>">
+                            
+                            <?php else: ?>
                                 <select class="form-select form-select-sm" name="jenis_layanan">
                                     <option value="">Semua Divisi</option>
-                                    <option value="selulosa" {{ @filter_jenis_layanan == 'selulosa' ? 'selected' : '' }}>OPTI Selulosa</option>
-                                    <option value="lingkungan" {{ @filter_jenis_layanan == 'lingkungan' ? 'selected' : '' }}>OPTI Lingkungan</option>
+                                    <option value="selulosa" <?= ($filter_jenis_layanan == 'selulosa' ? 'selected' : '') ?>>OPTI Selulosa</option>
+                                    <option value="lingkungan" <?= ($filter_jenis_layanan == 'lingkungan' ? 'selected' : '') ?>>OPTI Lingkungan</option>
                                 </select>
-                            </false>
-                        </check>
+                            
+                        <?php endif; ?>
                     </div>
                     <div class="col-md-3 col-lg-3 d-flex gap-2">
                         <button type="submit" class="btn btn-primary btn-sm flex-fill fw-semibold text-nowrap">
                             <i class="bi bi-search me-1"></i> Filter
                         </button>
-                        <a href="{{ @BASE }}/order?tab={{ @filter_tab }}" class="btn btn-outline-secondary btn-sm px-3 d-flex align-items-center gap-1 text-nowrap" title="Reset Filter">
+                        <a href="<?= ($BASE) ?>/order?tab=<?= ($filter_tab) ?>" class="btn btn-outline-secondary btn-sm px-3 d-flex align-items-center gap-1 text-nowrap" title="Reset Filter">
                             <i class="bi bi-arrow-clockwise"></i> Reset
                         </a>
                     </div>
@@ -123,28 +123,28 @@
             <div class="surat-nav-container d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <ul class="nav surat-nav-pills">
                     <li class="nav-item">
-                        <a class="nav-link {{ @filter_tab != 'ditolak' ? 'active' : '' }}" href="{{ @BASE }}/order?tab=aktif{{ @filter_tahun ? '&tahun='.@filter_tahun : '' }}{{ @filter_jenis ? '&jenis_layanan='.@filter_jenis : '' }}{{ @search_q ? '&q='.@search_q : '' }}">
+                        <a class="nav-link <?= ($filter_tab != 'ditolak' ? 'active' : '') ?>" href="<?= ($BASE) ?>/order?tab=aktif<?= ($filter_tahun ? '&tahun='.$filter_tahun : '') ?><?= ($filter_jenis ? '&jenis_layanan='.$filter_jenis : '') ?><?= ($search_q ? '&q='.$search_q : '') ?>">
                             <i class="bi bi-check-circle-fill"></i> Order Berlangsung
-                            <span class="pill-count {{ @filter_tab != 'ditolak' ? '' : 'bg-white text-dark shadow-sm' }}">{{ @count_aktif }}</span>
+                            <span class="pill-count <?= ($filter_tab != 'ditolak' ? '' : 'bg-white text-dark shadow-sm') ?>"><?= ($count_aktif) ?></span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {{ @filter_tab == 'ditolak' ? 'active' : '' }}" href="{{ @BASE }}/order?tab=ditolak{{ @filter_tahun ? '&tahun='.@filter_tahun : '' }}{{ @filter_jenis ? '&jenis_layanan='.@filter_jenis : '' }}{{ @search_q ? '&q='.@search_q : '' }}">
+                        <a class="nav-link <?= ($filter_tab == 'ditolak' ? 'active' : '') ?>" href="<?= ($BASE) ?>/order?tab=ditolak<?= ($filter_tahun ? '&tahun='.$filter_tahun : '') ?><?= ($filter_jenis ? '&jenis_layanan='.$filter_jenis : '') ?><?= ($search_q ? '&q='.$search_q : '') ?>">
                             <i class="bi bi-x-octagon-fill text-danger"></i> Order Ditolak
-                            <span class="pill-count {{ @filter_tab == 'ditolak' ? '' : 'bg-danger text-white' }}">{{ @count_ditolak }}</span>
+                            <span class="pill-count <?= ($filter_tab == 'ditolak' ? '' : 'bg-danger text-white') ?>"><?= ($count_ditolak) ?></span>
                         </a>
                     </li>
                 </ul>
                 <span class="text-muted small fw-medium">
-                    Total: <strong class="text-dark">{{ count(@daftar_order) }}</strong> order ditampilkan
+                    Total: <strong class="text-dark"><?= (count($daftar_order)) ?></strong> order ditampilkan
                 </span>
             </div>
             <div class="card-body p-0">
-            <check if="{{ count(@daftar_order) > 0 }}">
-                <true>
+            <?php if (count($daftar_order) > 0): ?>
+                
                     <div class="table-responsive">
-                        <check if="{{ @filter_tab == 'ditolak' }}">
-                            <true>
+                        <?php if ($filter_tab == 'ditolak'): ?>
+                            
                                 <!-- TABEL ORDER DITOLAK -->
                                 <table class="table table-hover align-middle mb-0">
                                     <thead class="bg-light">
@@ -159,83 +159,87 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <repeat group="{{ @daftar_order }}" value="{{ @ord }}" counter="{{ @ctr }}">
+                                        <?php $ctr=0; foreach (($daftar_order?:[]) as $ord): $ctr++; ?>
                                             <tr>
-                                                <td class="text-center text-muted small">{{ @ctr }}</td>
+                                                <td class="text-center text-muted small"><?= ($ctr) ?></td>
                                                 <td>
-                                                    <div class="fw-bold text-danger font-monospace small">{{ @ord.nomor_order }}</div>
+                                                    <div class="fw-bold text-danger font-monospace small"><?= ($ord['nomor_order']) ?></div>
                                                     <div class="text-muted" style="font-size: 0.75rem;">
-                                                        <i class="bi bi-calendar3 me-1"></i>{{ @ord.tanggal_masuk ? date('d/m/Y', strtotime(@ord.tanggal_masuk)) : '-' }}
+                                                        <i class="bi bi-calendar3 me-1"></i><?= ($ord['tanggal_masuk'] ? date('d/m/Y', strtotime($ord['tanggal_masuk'])) : '-')."
+" ?>
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    <div class="fw-semibold text-dark mb-1" title="{{ @ord.judul_kegiatan }}">
-                                                        {{ @ord.judul_kegiatan }}
+                                                    <div class="fw-semibold text-dark mb-1" title="<?= ($ord['judul_kegiatan']) ?>">
+                                                        <?= ($ord['judul_kegiatan'])."
+" ?>
                                                     </div>
                                                     <div class="small text-muted d-flex align-items-center gap-1">
                                                         <i class="bi bi-building text-secondary"></i>
-                                                        <span class="text-secondary fw-medium">{{ @ord.nama_perusahaan }} ({{ @ord.pt_cv }})</span>
+                                                        <span class="text-secondary fw-medium"><?= ($ord['nama_perusahaan']) ?> (<?= ($ord['pt_cv']) ?>)</span>
                                                     </div>
                                                 </td>
                                                 <td class="text-center">
-                                                    <check if="{{ @ord.jenis_layanan_opti == 'selulosa' }}">
+                                                    <?php if ($ord['jenis_layanan_opti'] == 'selulosa'): ?>
                                                         <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">OPTI Selulosa</span>
-                                                    </check>
-                                                    <check if="{{ @ord.jenis_layanan_opti == 'lingkungan' }}">
+                                                    <?php endif; ?>
+                                                    <?php if ($ord['jenis_layanan_opti'] == 'lingkungan'): ?>
                                                         <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle px-2 py-1">OPTI Lingkungan</span>
-                                                    </check>
-                                                    <check if="{{ !@ord.jenis_layanan_opti || @ord.jenis_layanan_opti == 'belum_ditentukan' }}">
+                                                    <?php endif; ?>
+                                                    <?php if (!$ord['jenis_layanan_opti'] || $ord['jenis_layanan_opti'] == 'belum_ditentukan'): ?>
                                                         <span class="badge bg-secondary-subtle text-secondary border px-2 py-1">-</span>
-                                                    </check>
+                                                    <?php endif; ?>
                                                 </td>
                                                 <td class="text-center">
-                                                    <span class="badge {{ @ord.tahap_tolak_class }} px-2 py-1 fw-semibold">
-                                                        <i class="bi {{ @ord.tahap_tolak_icon }} me-1"></i>{{ @ord.tahap_tolak }}
+                                                    <span class="badge <?= ($ord['tahap_tolak_class']) ?> px-2 py-1 fw-semibold">
+                                                        <i class="bi <?= ($ord['tahap_tolak_icon']) ?> me-1"></i><?= ($ord['tahap_tolak'])."
+" ?>
                                                     </span>
                                                 </td>
                                                 <td>
                                                     <div class="small fw-semibold text-dark">
-                                                        <i class="bi bi-calendar-x text-danger me-1"></i>{{ @ord.tanggal_tolak ? date('d/m/Y H:i', strtotime(@ord.tanggal_tolak)) : '-' }}
+                                                        <i class="bi bi-calendar-x text-danger me-1"></i><?= ($ord['tanggal_tolak'] ? date('d/m/Y H:i', strtotime($ord['tanggal_tolak'])) : '-')."
+" ?>
                                                     </div>
-                                                    <check if="{{ @ord.nama_penolak && @ord.nama_penolak != '-' }}">
-                                                        <true>
+                                                    <?php if ($ord['nama_penolak'] && $ord['nama_penolak'] != '-'): ?>
+                                                        
                                                             <div class="text-muted small" style="font-size: 0.75rem;">
-                                                                Oleh: <strong class="text-dark">{{ @ord.nama_penolak }}</strong>
+                                                                Oleh: <strong class="text-dark"><?= ($ord['nama_penolak']) ?></strong>
                                                             </div>
-                                                        </true>
-                                                    </check>
+                                                        
+                                                    <?php endif; ?>
                                                 </td>
                                                 <td class="text-center">
                                                     <div class="d-inline-flex align-items-center gap-2">
                                                         <button type="button" class="btn btn-sm btn-outline-danger btn-lihat-alasan-order px-2.5 py-1 d-inline-flex align-items-center gap-1.5 fw-semibold shadow-none"
-                                                                data-nomor="{{ @ord.nomor_order }}"
-                                                                data-perusahaan="{{ @ord.nama_perusahaan }}"
-                                                                data-tahap="{{ @ord.tahap_tolak }}"
-                                                                data-penolak="{{ @ord.nama_penolak && @ord.nama_penolak != '-' ? @ord.nama_penolak : '' }}"
-                                                                data-tanggal="{{ @ord.tanggal_tolak ? date('d/m/Y H:i', strtotime(@ord.tanggal_tolak)) : '-' }}"
-                                                                data-alasan="{{ @ord.alasan_tolak && @ord.alasan_tolak != '-' ? @ord.alasan_tolak : 'Tidak ada catatan alasan penolakan.' }}"
+                                                                data-nomor="<?= ($ord['nomor_order']) ?>"
+                                                                data-perusahaan="<?= ($ord['nama_perusahaan']) ?>"
+                                                                data-tahap="<?= ($ord['tahap_tolak']) ?>"
+                                                                data-penolak="<?= ($ord['nama_penolak'] && $ord['nama_penolak'] != '-' ? $ord['nama_penolak'] : '') ?>"
+                                                                data-tanggal="<?= ($ord['tanggal_tolak'] ? date('d/m/Y H:i', strtotime($ord['tanggal_tolak'])) : '-') ?>"
+                                                                data-alasan="<?= ($ord['alasan_tolak'] && $ord['alasan_tolak'] != '-' ? $ord['alasan_tolak'] : 'Tidak ada catatan alasan penolakan.') ?>"
                                                                 title="Lihat Alasan Penolakan">
                                                             <i class="bi bi-chat-left-dots-fill"></i> <span>Alasan</span>
                                                         </button>
-                                                        <a href="{{ @BASE }}/order/{{ @ord.id }}" class="btn btn-sm btn-outline-secondary px-2.5 py-1 d-inline-flex align-items-center gap-1.5 fw-semibold" title="Lihat Riwayat Order">
+                                                        <a href="<?= ($BASE) ?>/order/<?= ($ord['id']) ?>" class="btn btn-sm btn-outline-secondary px-2.5 py-1 d-inline-flex align-items-center gap-1.5 fw-semibold" title="Lihat Riwayat Order">
                                                             <i class="bi bi-eye"></i> <span>Detail</span>
                                                         </a>
-                                                         <check if="{{ @SESSION.role == 'tim_mitra_industri' }}">
-                                                            <a href="{{ @BASE }}/surat/{{ @ord.id }}"
+                                                         <?php if ($SESSION['role'] == 'tim_mitra_industri'): ?>
+                                                            <a href="<?= ($BASE) ?>/surat/<?= ($ord['id']) ?>"
                                                                class="btn btn-sm btn-outline-danger px-2.5 py-1 d-inline-flex align-items-center gap-1.5 fw-semibold"
                                                                title="Lihat Surat Pelayanan Jasa">
                                                                 <i class="bi bi-file-earmark-pdf-fill"></i>
                                                                 <!-- <span>Surat</span> -->
                                                             </a>
-                                                        </check>
+                                                        <?php endif; ?>
                                                     </div>
                                                 </td>
                                             </tr>
-                                        </repeat>
+                                        <?php endforeach; ?>
                                     </tbody>
                                 </table>
-                            </true>
-                            <false>
+                            
+                            <?php else: ?>
                                 <!-- TABEL ORDER BERLANGSUNG -->
                                 <table class="table table-hover align-middle mb-0">
                                     <thead class="bg-light">
@@ -250,123 +254,127 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <repeat group="{{ @daftar_order }}" value="{{ @ord }}" counter="{{ @ctr }}">
+                                        <?php $ctr=0; foreach (($daftar_order?:[]) as $ord): $ctr++; ?>
                                             <tr>
-                                                <td class="text-center text-muted small">{{ @ctr }}</td>
+                                                <td class="text-center text-muted small"><?= ($ctr) ?></td>
                                                 <td>
-                                                    <div class="fw-bold text-primary small">{{ @ord.nomor_order }}</div>
+                                                    <div class="fw-bold text-primary small"><?= ($ord['nomor_order']) ?></div>
                                                     <div class="text-muted" style="font-size: 0.75rem;">
-                                                        <i class="bi bi-calendar3 me-1"></i>{{ @ord.tanggal_masuk ? date('d/m/Y', strtotime(@ord.tanggal_masuk)) : '-' }}
+                                                        <i class="bi bi-calendar3 me-1"></i><?= ($ord['tanggal_masuk'] ? date('d/m/Y', strtotime($ord['tanggal_masuk'])) : '-')."
+" ?>
                                                     </div>
                                                     <div class="mt-1" style="font-size: 0.72rem;">
-                                                        <check if="{{ in_array(@ord.status_proposal, ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan']) || in_array(@ord.status_proposal_biaya, ['siap_penawaran', 'disetujui']) }}">
-                                                            <true>
+                                                        <?php if (in_array($ord['status_proposal'], ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan']) || in_array($ord['status_proposal_biaya'], ['siap_penawaran', 'disetujui'])): ?>
+                                                            
                                                                 <span class="badge bg-success-subtle text-success border border-success-subtle px-1.5 py-0.5" title="Waktu pengerjaan disetujui Ka. Tim">
-                                                                    <i class="bi bi-clock me-1"></i>{{ @ord.proposal_durasi ?: '30 Hari Kerja' }}
+                                                                    <i class="bi bi-clock me-1"></i><?= ($ord['proposal_durasi'] ?: '30 Hari Kerja')."
+" ?>
                                                                 </span>
-                                                            </true>
-                                                            <false>
+                                                            
+                                                            <?php else: ?>
                                                                 <span class="text-muted fst-italic">
                                                                     <i class="bi bi-hourglass me-1"></i>Belum ditentukan
                                                                 </span>
-                                                            </false>
-                                                        </check>
+                                                            
+                                                        <?php endif; ?>
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    <div class="fw-semibold text-dark mb-1" title="{{ @ord.judul_kegiatan }}">
-                                                        {{ @ord.judul_kegiatan }}
+                                                    <div class="fw-semibold text-dark mb-1" title="<?= ($ord['judul_kegiatan']) ?>">
+                                                        <?= ($ord['judul_kegiatan'])."
+" ?>
                                                     </div>
                                                     <div class="small text-muted d-flex align-items-center gap-1">
                                                         <i class="bi bi-building text-secondary"></i>
-                                                        <check if="{{ @mask_client_name }}">
-                                                            <true>
-                                                                {~ 
-                                                                    $words = explode(' ', $ord['nama_perusahaan']);
+                                                        <?php if ($mask_client_name): ?>
+                                                            
+                                                                <?php $words = explode(' ', $ord['nama_perusahaan']);
                                                                     $masked = array_map(function($w) {
                                                                         return mb_strlen($w) > 1 ? mb_substr($w, 0, 1) . '***' : $w;
                                                                     }, $words);
-                                                                    $namaTampil = implode(' ', $masked);
-                                                                ~}
-                                                                <span>{{ $namaTampil }}</span>
-                                                            </true>
-                                                            <false>
-                                                                <span class="text-secondary fw-medium">{{ @ord.nama_perusahaan }} ({{ @ord.pt_cv }})</span>
-                                                            </false>
-                                                        </check>
+                                                                    $namaTampil = implode(' ', $masked); ?>
+                                                                <span><?= ($namaTampil) ?></span>
+                                                            
+                                                            <?php else: ?>
+                                                                <span class="text-secondary fw-medium"><?= ($ord['nama_perusahaan']) ?> (<?= ($ord['pt_cv']) ?>)</span>
+                                                            
+                                                        <?php endif; ?>
                                                     </div>
                                                 </td>
                                                 <td class="text-center">
-                                                    <check if="{{ @ord.jenis_layanan_opti == 'selulosa' }}">
+                                                    <?php if ($ord['jenis_layanan_opti'] == 'selulosa'): ?>
                                                         <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">OPTI Selulosa</span>
-                                                    </check>
-                                                    <check if="{{ @ord.jenis_layanan_opti == 'lingkungan' }}">
+                                                    <?php endif; ?>
+                                                    <?php if ($ord['jenis_layanan_opti'] == 'lingkungan'): ?>
                                                         <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle px-2 py-1">OPTI Lingkungan</span>
-                                                    </check>
-                                                    <check if="{{ !@ord.jenis_layanan_opti || @ord.jenis_layanan_opti == 'belum_ditentukan' }}">
+                                                    <?php endif; ?>
+                                                    <?php if (!$ord['jenis_layanan_opti'] || $ord['jenis_layanan_opti'] == 'belum_ditentukan'): ?>
                                                         <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1">
                                                             <i class="bi bi-hourglass-split me-1"></i>Belum Ditentukan
                                                         </span>
-                                                    </check>
+                                                    <?php endif; ?>
                                                 </td>
                                                 <td class="text-end">
                                                     <div class="fw-bold text-dark small">
-                                                        Rp {{ number_format(@ord.estimasi_biaya ?: (@ord.biaya_po ?: 0), 0, ',', '.') }}
+                                                        Rp <?= (number_format($ord['estimasi_biaya'] ?: ($ord['biaya_po'] ?: 0), 0, ',', '.'))."
+" ?>
                                                     </div>
-                                                    <check if="{{ @ord.total_terbayar > 0 }}">
+                                                    <?php if ($ord['total_terbayar'] > 0): ?>
                                                         <div class="text-success" style="font-size: 0.725rem;">
-                                                            <i class="bi bi-check2 me-1"></i>Terbayar: Rp {{ number_format(@ord.total_terbayar, 0, ',', '.') }}
+                                                            <i class="bi bi-check2 me-1"></i>Terbayar: Rp <?= (number_format($ord['total_terbayar'], 0, ',', '.'))."
+" ?>
                                                         </div>
-                                                    </check>
+                                                    <?php endif; ?>
                                                 </td>
                                                 <td class="text-center">
-                                                    <span class="badge {{ @ord.stage_class }} px-2.5 py-1 fw-semibold">
-                                                        <i class="bi {{ @ord.stage_icon }} me-1"></i>{{ @ord.stage_label }}
+                                                    <span class="badge <?= ($ord['stage_class']) ?> px-2.5 py-1 fw-semibold">
+                                                        <i class="bi <?= ($ord['stage_icon']) ?> me-1"></i><?= ($ord['stage_label'])."
+" ?>
                                                     </span>
                                                 </td>
                                                 <td class="text-center">
                                                     <div class="d-inline-flex align-items-center gap-1">
-                                                         <check if="{{ @ord.status == 'permintaan_masuk' }}">
-                                                             <true>
-                                                                 <a href="{{ @BASE }}/order/{{ @ord.id }}" class="btn btn-sm btn-warning text-dark py-1 px-2 d-inline-flex align-items-center gap-1 shadow-sm fw-semibold" title="Tentukan OPTI &amp; Disposisikan ke Ketua Tim">
+                                                         <?php if ($ord['status'] == 'permintaan_masuk'): ?>
+                                                             
+                                                                 <a href="<?= ($BASE) ?>/order/<?= ($ord['id']) ?>" class="btn btn-sm btn-warning text-dark py-1 px-2 d-inline-flex align-items-center gap-1 shadow-sm fw-semibold" title="Tentukan OPTI &amp; Disposisikan ke Ketua Tim">
                                                                      <i class="bi bi-send-check"></i> <span>Disposisi</span>
                                                                  </a>
-                                                             </true>
-                                                             <false>
-                                                                 <a href="{{ @BASE }}/order/{{ @ord.id }}" class="btn btn-sm btn-primary py-1 px-2 d-inline-flex align-items-center gap-1 shadow-sm" title="Lihat Detail Order &amp; Progres">
+                                                             
+                                                             <?php else: ?>
+                                                                 <a href="<?= ($BASE) ?>/order/<?= ($ord['id']) ?>" class="btn btn-sm btn-primary py-1 px-2 d-inline-flex align-items-center gap-1 shadow-sm" title="Lihat Detail Order &amp; Progres">
                                                                      <i class="bi bi-eye"></i> <span>Detail</span>
                                                                  </a>
-                                                             </false>
-                                                         </check>
+                                                             
+                                                         <?php endif; ?>
     
-                                                         <check if="{{ (@ord.status == 'penawaran_deal' || @ord.status_respon_klien == 'deal') && @ord.status != 'disetujui' && !@ord.po_id && @can_approve_po }}">
-                                                             <button type="button" class="btn btn-sm btn-success py-1 px-2 d-inline-flex align-items-center gap-1 shadow-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#approveModal{{ @ord.id }}" title="Klien Telah DEAL: Setujui &amp; Terbitkan PO">
+                                                         <?php if (($ord['status'] == 'penawaran_deal' || $ord['status_respon_klien'] == 'deal') && $ord['status'] != 'disetujui' && !$ord['po_id'] && $can_approve_po): ?>
+                                                             <button type="button" class="btn btn-sm btn-success py-1 px-2 d-inline-flex align-items-center gap-1 shadow-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#approveModal<?= ($ord['id']) ?>" title="Klien Telah DEAL: Setujui &amp; Terbitkan PO">
                                                                  <i class="bi bi-check2-circle"></i> <span>Setujui PO</span>
                                                              </button>
-                                                         </check>
+                                                         <?php endif; ?>
     
-                                                         <check if="{{ @ord.status == 'disetujui' || @ord.po_id }}">
-                                                             <a href="{{ @BASE }}/po/{{ @ord.po_id ?: @ord.id }}" class="btn btn-sm btn-outline-dark py-1 px-2 d-inline-flex align-items-center gap-1" title="Buka Dokumen PO Terbit">
+                                                         <?php if ($ord['status'] == 'disetujui' || $ord['po_id']): ?>
+                                                             <a href="<?= ($BASE) ?>/po/<?= ($ord['po_id'] ?: $ord['id']) ?>" class="btn btn-sm btn-outline-dark py-1 px-2 d-inline-flex align-items-center gap-1" title="Buka Dokumen PO Terbit">
                                                                  <i class="bi bi-speedometer2"></i>
                                                              </a>
-                                                         </check>
-                                                         <check if="{{ @SESSION.role == 'tim_mitra_industri' }}">
-                                                            <a href="{{ @BASE }}/surat/{{ @ord.id }}"
+                                                         <?php endif; ?>
+                                                         <?php if ($SESSION['role'] == 'tim_mitra_industri'): ?>
+                                                            <a href="<?= ($BASE) ?>/surat/<?= ($ord['id']) ?>"
                                                                class="btn btn-sm btn-outline-danger px-2.5 py-1 d-inline-flex align-items-center gap-1.5 fw-semibold"
                                                                title="Lihat Surat Pelayanan Jasa">
                                                                 <i class="bi bi-file-earmark-pdf-fill"></i>
                                                                 <span>Surat</span>
                                                             </a>
-                                                        </check>
+                                                        <?php endif; ?>
     
-                                                         <button type="button" class="btn btn-sm btn-light border py-1 px-2" style="color: var(--color-primary);" data-bs-toggle="modal" data-bs-target="#modalHapusOrder{{ @ord.id }}" title="Hapus Order">
+                                                         <button type="button" class="btn btn-sm btn-light border py-1 px-2" style="color: var(--color-primary);" data-bs-toggle="modal" data-bs-target="#modalHapusOrder<?= ($ord['id']) ?>" title="Hapus Order">
                                                              <i class="bi bi-trash3"></i>
                                                          </button>
                                                         
                                                     </div>
     
                                                     <!-- Modal Konfirmasi Hapus Order Bertema Merah Maroon -->
-                                                    <div class="modal fade" id="modalHapusOrder{{ @ord.id }}" tabindex="-1" aria-labelledby="modalHapusOrderLabel{{ @ord.id }}" aria-hidden="true">
+                                                    <div class="modal fade" id="modalHapusOrder<?= ($ord['id']) ?>" tabindex="-1" aria-labelledby="modalHapusOrderLabel<?= ($ord['id']) ?>" aria-hidden="true">
                                                         <div class="modal-dialog modal-dialog-centered">
                                                             <div class="modal-content bg-white border-0 shadow rounded-3 text-start">
                                                                 <div class="modal-header border-bottom py-3 px-4 bg-white">
@@ -375,7 +383,7 @@
                                                                             <i class="bi bi-trash3-fill fs-5"></i>
                                                                         </div>
                                                                         <div>
-                                                                            <h6 class="modal-title fw-bold text-dark fs-6 m-0" id="modalHapusOrderLabel{{ @ord.id }}">
+                                                                            <h6 class="modal-title fw-bold text-dark fs-6 m-0" id="modalHapusOrderLabel<?= ($ord['id']) ?>">
                                                                                 Konfirmasi Hapus Order
                                                                             </h6>
                                                                             <small class="text-muted" style="font-size: 0.75rem;">Tindakan ini tidak dapat dibatalkan</small>
@@ -384,8 +392,8 @@
                                                                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
                                                                 </div>
     
-                                                                <form action="{{ @BASE }}/order/{{ @ord.id }}/hapus" method="POST">
-                                                                    <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
+                                                                <form action="<?= ($BASE) ?>/order/<?= ($ord['id']) ?>/hapus" method="POST">
+                                                                    <input type="hidden" name="csrf_token" value="<?= ($csrf_token) ?>">
                                                                     
                                                                     <div class="modal-body py-4 px-4 text-start">
                                                                         <p class="text-secondary mb-3">
@@ -395,15 +403,15 @@
                                                                         <div class="p-3 bg-light rounded-2 border mb-3">
                                                                             <div class="d-flex justify-content-between mb-1">
                                                                                 <span class="text-muted small">Nomor Order:</span>
-                                                                                <strong class="text-dark small">{{ @ord.nomor_order }}</strong>
+                                                                                <strong class="text-dark small"><?= ($ord['nomor_order']) ?></strong>
                                                                             </div>
                                                                             <div class="d-flex justify-content-between mb-1">
                                                                                 <span class="text-muted small">Customer / Mitra:</span>
-                                                                                <span class="text-dark small fw-semibold">{{ @ord.nama_perusahaan }}</span>
+                                                                                <span class="text-dark small fw-semibold"><?= ($ord['nama_perusahaan']) ?></span>
                                                                             </div>
                                                                             <div class="d-flex justify-content-between">
                                                                                 <span class="text-muted small">Judul Kegiatan:</span>
-                                                                                <span class="text-dark small text-truncate" style="max-width: 240px;">{{ @ord.judul_kegiatan }}</span>
+                                                                                <span class="text-dark small text-truncate" style="max-width: 240px;"><?= ($ord['judul_kegiatan']) ?></span>
                                                                             </div>
                                                                         </div>
     
@@ -427,28 +435,28 @@
                                                     </div>
     
                                                     <!-- Modal Approve Order -->
-                                                    <div class="modal fade" id="approveModal{{ @ord.id }}" tabindex="-1" aria-labelledby="approveModalLabel{{ @ord.id }}" aria-hidden="true">
+                                                    <div class="modal fade" id="approveModal<?= ($ord['id']) ?>" tabindex="-1" aria-labelledby="approveModalLabel<?= ($ord['id']) ?>" aria-hidden="true">
                                                         <div class="modal-dialog modal-dialog-centered text-start">
                                                             <div class="modal-content border-0 shadow">
-                                                                <form action="{{ @BASE }}/order/{{ @ord.id }}/approve" method="POST">
-                                                                    <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
+                                                                <form action="<?= ($BASE) ?>/order/<?= ($ord['id']) ?>/approve" method="POST">
+                                                                    <input type="hidden" name="csrf_token" value="<?= ($csrf_token) ?>">
                                                                     <div class="modal-header">
-                                                                        <h6 class="modal-title fw-bold" id="approveModalLabel{{ @ord.id }}">
+                                                                        <h6 class="modal-title fw-bold" id="approveModalLabel<?= ($ord['id']) ?>">
                                                                             <i class="bi bi-check-circle-fill text-success me-2"></i>Persetujuan & Penerbitan PO
                                                                         </h6>
                                                                         <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
                                                                     </div>
                                                                     <div class="modal-body">
                                                                         <p class="small text-muted mb-3">
-                                                                            Anda akan menyetujui Order <strong>{{ @ord.nomor_order }}</strong> dan menerbitkan nomor <strong>Petunjuk Operasional (PO)</strong> otomatis.
+                                                                            Anda akan menyetujui Order <strong><?= ($ord['nomor_order']) ?></strong> dan menerbitkan nomor <strong>Petunjuk Operasional (PO)</strong> otomatis.
                                                                         </p>
                                                                         <div class="mb-3">
                                                                             <label class="form-label small">Tentukan Target Tanggal Selesai</label>
-                                                                            <input type="date" name="target_selesai" class="form-control form-control-sm" value="{{ @ord.target_selesai ?: date('Y-m-d', strtotime('+3 months')) }}" required>
+                                                                            <input type="date" name="target_selesai" class="form-control form-control-sm" value="<?= ($ord['target_selesai'] ?: date('Y-m-d', strtotime('+3 months'))) ?>" required>
                                                                         </div>
                                                                         <div class="mb-3">
                                                                             <label class="form-label small">Tim / Personil Pelaksana</label>
-                                                                            <input type="text" name="tim_kerja" class="form-control form-control-sm" placeholder="Contoh: Tim Pengujian Selulosa" value="{{ @ord.tim_kerja }}">
+                                                                            <input type="text" name="tim_kerja" class="form-control form-control-sm" placeholder="Contoh: Tim Pengujian Selulosa" value="<?= ($ord['tim_kerja']) ?>">
                                                                         </div>
                                                                     </div>
                                                                     <div class="modal-footer">
@@ -464,32 +472,32 @@
     
                                                 </td>
                                             </tr>
-                                        </repeat>
+                                        <?php endforeach; ?>
                                     </tbody>
                                 </table>
-                            </false>
-                        </check>
+                            
+                        <?php endif; ?>
                     </div>
-                </true>
-                <false>
-                    <check if="{{ @filter_tab == 'ditolak' }}">
-                        <true>
+                
+                <?php else: ?>
+                    <?php if ($filter_tab == 'ditolak'): ?>
+                        
                             <div class="text-center py-5">
                                 <i class="bi bi-archive text-muted display-4 d-block mb-3 opacity-50"></i>
                                 <h5 class="fw-bold text-dark">Tidak Ada Order Ditolak</h5>
                                 <p class="text-muted small mb-0">Semua order permohonan berjalan aktif dan tidak ada yang diarsipkan dalam status ditolak.</p>
                             </div>
-                        </true>
-                        <false>
+                        
+                        <?php else: ?>
                             <div class="text-center py-5">
                                 <i class="bi bi-inbox text-muted display-4 d-block mb-3"></i>
                                 <h5 class="fw-bold text-dark">Belum Ada Order Berlangsung</h5>
                                 <p class="text-muted small mb-0">Tidak ditemukan permohonan order aktif yang sesuai dengan kriteria filter.</p>
                             </div>
-                        </false>
-                    </check>
-                </false>
-            </check>
+                        
+                    <?php endif; ?>
+                
+            <?php endif; ?>
         </div>
     </div>
     </div>

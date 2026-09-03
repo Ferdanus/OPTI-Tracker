@@ -1,0 +1,237 @@
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div>
+        <h2 class="h4 fw-bold mb-1 text-dark"><i class="bi bi-file-earmark-text text-primary me-2"></i>Surat Pelayanan Resmi</h2>
+        <p class="text-muted small mb-0">Daftar Formulir Permintaan Pelayanan Jasa &amp; Surat Penawaran Resmi Layanan OPTI BBSPJIS.</p>
+    </div>
+    <a href="<?= ($BASE) ?>/surat-penawaran/tambah" class="btn btn-primary btn-sm px-3 shadow-sm d-flex align-items-center gap-1.5 fw-semibold">
+        <i class="bi bi-plus-lg"></i> Tambah Formulir Pelayanan
+    </a>
+</div>
+
+<!-- Ringkasan Status Alur Pelayanan -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="metric-card">
+            <div>
+                <div class="text-muted small fw-semibold mb-1">Total Surat Pelayanan</div>
+                <div class="h4 fw-bold mb-0 text-dark"><?= ($total_surat ?: 0) ?></div>
+            </div>
+            <div class="metric-icon-box" style="background: rgba(136,19,55,.08); color: var(--color-primary);">
+                <i class="bi bi-file-earmark-text"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="metric-card">
+            <div>
+                <div class="text-muted small fw-semibold mb-1">Terkirim &bull; Menunggu Respon</div>
+                <div class="h4 fw-bold mb-0 text-primary"><?= ($total_terkirim ?: 0) ?></div>
+            </div>
+            <div class="metric-icon-box" style="background: #eff6ff; color: #1d4ed8;">
+                <i class="bi bi-send-check"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="metric-card">
+            <div>
+                <div class="text-muted small fw-semibold mb-1">Disepakati Klien &bull; DEAL</div>
+                <div class="h4 fw-bold mb-0 text-success"><?= ($total_deal ?: 0) ?></div>
+            </div>
+            <div class="metric-icon-box" style="background: #ecfdf5; color: #065f46;">
+                <i class="bi bi-check-circle-fill"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pencarian & Filter -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-3">
+        <form action="<?= ($BASE) ?>/surat-penawaran" method="GET" class="row g-2 align-items-center">
+            <div class="col-md-7">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                    <input type="text" name="q" class="form-control border-start-0" placeholder="Cari nomor surat / perihal / nama instansi customer..." value="<?= ($search) ?>">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select name="status" class="form-select">
+                    <option value="">Semua Status Layanan</option>
+                    <option value="draft" <?= ($filter_status == 'draft' ? 'selected' : '') ?>>Draft Formulir</option>
+                    <option value="terkirim" <?= ($filter_status == 'terkirim' ? 'selected' : '') ?>>Terkirim ke Pelanggan</option>
+                    <option value="deal" <?= ($filter_status == 'deal' ? 'selected' : '') ?>>Disepakati (DEAL)</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-1">
+                <button type="submit" class="btn btn-outline-primary flex-grow-1"><i class="bi bi-funnel me-1"></i> Filter</button>
+                <?php if ($search || $filter_status): ?>
+                    <a href="<?= ($BASE) ?>/surat-penawaran" class="btn btn-light border text-muted" title="Reset filter"><i class="bi bi-arrow-counterclockwise"></i></a>
+                <?php endif; ?>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tabel Data -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h6 class="m-0 fw-bold text-dark"><i class="bi bi-table text-primary me-2"></i>Daftar Surat Pelayanan Jasa</h6>
+        <span class="text-muted small">Total: <strong><?= ($total_surat ?: 0) ?></strong> dokumen</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>No. Surat</th>
+                    <th>Customer / Mitra</th>
+                    <th>Tanggal</th>
+                    <th>Perihal &amp; Layanan</th>
+                    <th class="text-center">Status Alur</th>
+                    <th class="text-center" style="width:130px;">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if ($daftar_penawaran && count($daftar_penawaran) > 0): ?>
+                    <?php foreach (($daftar_penawaran?:[]) as $sp): ?>
+                        <tr>
+                            <td>
+                                <div class="fw-bold font-monospace text-dark"><?= ($sp['nomor_surat']) ?></div>
+                            </td>
+                            <td>
+                                <strong class="text-dark"><?= ($sp['nmcustomer']) ?></strong>
+                                <?php if ($sp['perusahaan'] && $sp['perusahaan'] != $sp['nmcustomer']): ?>
+                                    <small class="text-muted d-block" style="font-size: 0.75rem;"><?= ($sp['perusahaan']) ?></small>
+                                <?php endif; ?>
+                            </td>
+                            <td class="text-nowrap small text-muted">
+                                <?= (date('d M Y', strtotime($sp['tanggal_surat'])))."
+" ?>
+                            </td>
+                            <td>
+                                <div class="text-dark small fw-medium text-truncate" style="max-width: 280px;" title="<?= ($sp['perihal']) ?>">
+                                    <?= ($sp['perihal'])."
+" ?>
+                                </div>
+                                <span class="badge <?= ($sp['jenis_layanan'] == 'selulosa' ? 'bg-primary-subtle text-primary' : 'bg-success-subtle text-success') ?> text-uppercase mt-1" style="font-size: 0.65rem;">
+                                    OPTI <?= ($sp['jenis_layanan'] ?: 'selulosa')."
+" ?>
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <?php if ($sp['status_respon_klien'] == 'deal' || $sp['status'] == 'disetujui'): ?>
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                                        <i class="bi bi-check-circle-fill me-1"></i> DEAL / Sepakat
+                                    </span>
+                                <?php endif; ?>
+                                <?php if (($sp['status'] == 'terkirim' || $sp['status_respon_klien'] == 'terkirim' || $sp['status_respon_klien'] == 'menunggu') && $sp['status_respon_klien'] != 'deal' && $sp['status'] != 'disetujui'): ?>
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">
+                                        <i class="bi bi-send-check me-1"></i> Terkirim
+                                    </span>
+                                <?php endif; ?>
+                                <?php if ($sp['status_respon_klien'] == 'tolak'): ?>
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">
+                                        <i class="bi bi-x-circle-fill me-1"></i> Ditolak
+                                    </span>
+                                <?php endif; ?>
+                                <?php if (($sp['status'] == 'draft' || $sp['status_respon_klien'] == 'draft' || !$sp['status'] || $sp['status'] == 'nonaktif') && $sp['status_respon_klien'] != 'deal' && $sp['status'] != 'terkirim' && $sp['status_respon_klien'] != 'terkirim' && $sp['status_respon_klien'] != 'tolak' && $sp['status'] != 'disetujui'): ?>
+                                    <span class="badge bg-light text-secondary border px-2 py-1">
+                                        <i class="bi bi-pencil-square me-1"></i> Draft
+                                    </span>
+                                <?php endif; ?>
+                            </td>
+                            <td class="text-center">
+                                <div class="d-inline-flex gap-1">
+                                    <?php if ($sp['order_id']): ?>
+                                        <a href="<?= ($BASE) ?>/order/<?= ($sp['order_id']) ?>" class="btn btn-sm btn-light border py-1 px-2 text-primary" title="Buka Detail Order">
+                                            <i class="bi bi-folder2-open"></i>
+                                        </a>
+                                    <?php endif; ?>
+                                    <a href="<?= ($BASE) ?>/surat-penawaran/<?= ($sp['id']) ?>/edit" class="btn btn-sm btn-light border py-1 px-2 text-secondary" title="Edit Surat Pelayanan">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <?php if ($sp['order_id']): ?>
+                                        <a href="<?= ($BASE) ?>/order/<?= ($sp['order_id']) ?>/penawaran/cetak" target="_blank" class="btn btn-sm btn-light border py-1 px-2 text-danger" title="Cetak Surat Penawaran PDF">
+                                            <i class="bi bi-file-pdf"></i>
+                                        </a>
+                                    <?php endif; ?>
+                                    <button type="button" class="btn btn-sm btn-light border py-1 px-2 text-danger" data-bs-toggle="modal" data-bs-target="#modalHapusSP<?= ($sp['id']) ?>" title="Hapus Surat Pelayanan">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
+                                </div>
+
+                                <!-- Modal Konfirmasi Hapus Surat Pelayanan -->
+                                <div class="modal fade" id="modalHapusSP<?= ($sp['id']) ?>" tabindex="-1" aria-labelledby="modalHapusSPLabel<?= ($sp['id']) ?>" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content bg-white border-0 shadow rounded-3 text-start">
+                                            <div class="modal-header border-bottom py-3 px-4 bg-white">
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <div class="rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; background-color: #ffe4e6; color: var(--color-primary);">
+                                                        <i class="bi bi-trash3-fill fs-5"></i>
+                                                    </div>
+                                                    <div>
+                                                        <h6 class="modal-title fw-bold text-dark mb-0" id="modalHapusSPLabel<?= ($sp['id']) ?>">Konfirmasi Hapus Surat Pelayanan</h6>
+                                                        <small class="text-muted" style="font-size: 0.75rem;">Tindakan ini tidak dapat dibatalkan</small>
+                                                    </div>
+                                                </div>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                                            </div>
+
+                                            <form action="<?= ($BASE) ?>/surat-penawaran/<?= ($sp['id']) ?>/hapus" method="POST">
+                                                <input type="hidden" name="csrf_token" value="<?= ($csrf_token) ?>">
+
+                                                <div class="modal-body p-4">
+                                                    <p class="text-dark small mb-3">
+                                                        Apakah Anda yakin ingin menghapus dokumen surat pelayanan berikut?
+                                                    </p>
+
+                                                    <!-- Box Rincian Surat Pelayanan -->
+                                                    <div class="border rounded-2 p-3 bg-light mb-3">
+                                                        <div class="mb-2">
+                                                            <span class="text-muted small d-block" style="font-size: 0.75rem;">Nomor Surat:</span>
+                                                            <strong class="font-monospace fs-6" style="color: var(--color-primary);"><?= ($sp['nomor_surat']) ?></strong>
+                                                        </div>
+                                                        <div class="mb-2">
+                                                            <span class="text-muted small d-block" style="font-size: 0.75rem;">Nama Instansi / Perusahaan:</span>
+                                                            <span class="fw-semibold text-dark"><?= ($sp['perusahaan']) ?></span>
+                                                        </div>
+                                                        <div class="mb-0">
+                                                            <span class="text-muted small d-block" style="font-size: 0.75rem;">Perihal:</span>
+                                                            <span class="text-secondary small"><?= ($sp['perihal']) ?></span>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="p-2 mb-0 rounded-2 small d-flex align-items-center gap-2" style="font-size: 0.8rem; background-color: #fff1f2; color: #881337; border: 1px solid #fecdd3;">
+                                                        <i class="bi bi-exclamation-triangle-fill fs-6 flex-shrink-0" style="color: #881337;"></i>
+                                                        <span>Surat pelayanan ini akan dihapus dan status order terkait akan kembali ke tahap sebelum penawaran terbit.</span>
+                                                    </div>
+                                                </div>
+
+                                                <div class="modal-footer border-top py-3 px-4 bg-light d-flex justify-content-end gap-2">
+                                                    <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-2 fw-semibold" data-bs-dismiss="modal">
+                                                        Batal
+                                                    </button>
+                                                    <button type="submit" class="btn btn-primary btn-sm px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-1">
+                                                        <i class="bi bi-trash3-fill"></i> Ya, Hapus Surat
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+                <?php if (!$daftar_penawaran || count($daftar_penawaran) == 0): ?>
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-5">
+                            <i class="bi bi-inbox fs-2 d-block mb-2 text-muted opacity-50"></i>
+                            Belum ada data surat pelayanan.
+                        </td>
+                    </tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+</div>

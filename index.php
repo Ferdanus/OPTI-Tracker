@@ -117,6 +117,8 @@ $f3->route('POST /logout', 'AuthController->logout');
 $f3->route('GET /profil', 'AuthController->profileGet');
 $f3->route('POST /profil/simpan', 'AuthController->profilePost');
 
+$f3->route('GET /dashboard','DashboardOptiController->index');
+
 // ==========================================
 // ROUTE MODUL CUSTOMER / KLIEN (tb_customer)
 // ==========================================
@@ -273,6 +275,9 @@ $f3->route('GET /order/@id/penawaran/buat', 'SuratPenawaranController->buatDariO
 $f3->route('POST /order/@id/penawaran/simpan', 'SuratPenawaranController->simpanDariOrder');
 $f3->route('GET /order/@id/penawaran/cetak', 'SuratPenawaranController->cetakPdf');
 $f3->route('POST /order/@id/penawaran/status', 'SuratPenawaranController->updateStatusKlien');
+
+
+$f3->route('GET /surat/@id', 'OrderController->showSurat');
 
 
 // ==========================================

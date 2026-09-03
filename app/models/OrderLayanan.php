@@ -319,6 +319,49 @@ class OrderLayanan extends \DB\SQL\Mapper {
         return $this->dry() ? null : $this;
     }
 
+    public function getDetailSurat(int $id)
+{
+    $result = $this->db->exec(
+        "SELECT 
+            o.*,
+            c.contactperson AS nama_pelanggan,
+            c.nmcustomer AS nama_perusahaan,
+            c.alamatcustomer AS alamat_customer,
+
+            t.sdm_tersedia,
+            t.sdm_catatan,
+            t.peralatan_tersedia,
+            t.peralatan_catatan,
+            t.bahan_tersedia,
+            t.bahan_catatan,
+            t.metode_tersedia,
+            t.metode_catatan,
+            t.keputusan,
+            t.alasan_penolakan,
+
+            sp.permintaan_melalui,
+            sp.pegawai_id,
+            sp.penjelasan AS sp_penjelasan,
+
+            p.nama_user AS nama_pegawai
+
+
+        FROM order_layanan o
+        LEFT JOIN tb_customer c 
+            ON c.id_customer = o.id_customer
+        LEFT JOIN opti_tinjauan_kelayakan t
+            ON t.order_id = o.id
+        LEFT JOIN tb_surat_penawaran sp
+            ON sp.order_id = o.id
+        LEFT JOIN tb_arsipuser p
+            ON p.id_user = sp.pegawai_id
+        WHERE o.id = ?",
+        [$id]
+    );
+
+    return $result[0] ?? null;
+}
+
     /**
      * Generate nomor order unik aman: ORD-YYYYMM-XXX
      */

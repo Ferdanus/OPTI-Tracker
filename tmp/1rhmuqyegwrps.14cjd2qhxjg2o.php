@@ -1,0 +1,914 @@
+    <style>
+        /* Gaya umum halaman */
+        body {
+            background: #f0f2f5;
+            padding: 20px;
+            font-family: 'Times New Roman', Times, serif;
+        }
+        /* Kontainer surat */
+        .surat-wrapper {
+            width: 210mm;
+    min-height: 297mm;
+    margin: 0 auto;
+    background: white;
+    padding: 15mm;
+    box-sizing: border-box;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    border-radius: 0;
+        }
+        /* Gaya untuk tombol aksi (tidak tercetak) */
+        .action-bar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: white;
+            padding: 15px 0;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .action-bar .btn-group {
+            display: flex;
+            gap: 8px;
+        }
+        /* Konten surat */
+        .surat-content {
+            font-family: 'Times New Roman', Times, serif !important;
+    font-size: 14px;
+    line-height: 1.6;
+
+    /* Kotak formulir */
+    border: 1px solid #000;
+    padding: 10mm 8mm;
+    box-sizing: border-box;
+
+    /* Tinggi mengikuti area HVS */
+    min-height: 267mm;
+
+    background: #fff;
+        }
+        .surat-content h1, .surat-content h2, .surat-content h3 {
+            font-weight: bold;
+        }
+        .surat-content .kop {
+            text-align: center;
+            border-bottom: 3px solid #1a3c6e;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .surat-content .kop h1 {
+            font-size: 24px;
+            color: #1a3c6e;
+            margin: 0;
+        }
+        .surat-content .kop p {
+            font-size: 12px;
+            margin: 0;
+        }
+        .surat-content .judul {
+            text-align: center;
+            font-size: 18px;
+            text-transform: uppercase;
+            margin: 20px 0;
+        }
+        .surat-content .tanggal {
+            text-align: right;
+            font-size: 12px;
+            margin-bottom: 20px;
+        }
+        .surat-content table.info {
+            width: 100%;
+            font-size: 13px;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .surat-content table.info td {
+            padding: 4px 8px;
+        }
+        .surat-content .bidang, .surat-content .penjelasan {
+            margin-bottom: 15px;
+        }
+        .surat-content .bidang p, .surat-content .penjelasan p {
+            margin: 0;
+        }
+        .surat-content .tinjauan {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ccc;
+            background: #f9f9f9;
+        }
+        .surat-content .tinjauan h3 {
+            text-align: center;
+            font-size: 14px;
+            margin: 0 0 10px 0;
+        }
+        .surat-content .status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .surat-content .ttd {
+            margin-top: 30px;
+            text-align: right;
+        }
+        .surat-content .ttd .ketua {
+            text-align: center;
+            display: inline-block;
+            width: 200px;
+        }
+        .surat-content .ttd .ketua .garis {
+          
+            padding-top: 5px;
+            margin-top: 40px;
+        }
+        .kop-surat {
+    position: relative;
+    width: 100%;
+    min-height: 100px;
+    /* border-bottom: 2px solid #000; */
+    margin-bottom: 20px;
+}
+
+/* Logo kiri */
+.kop-logo {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 150px;
+}
+
+.kop-logo img {
+    width: 130px;
+    height: auto;
+}
+
+/* Judul tengah */
+.kop-judul {
+    text-align: center;
+    font-family: 'Times New Roman', Times, serif !important;
+    padding-top: 30px;
+}
+
+.kop-judul h1 {
+    margin: 0;
+    font-family: 'Times New Roman', Times, serif !important;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.kop-judul h2 {
+    margin: 2px 0 0;
+    font-family: 'Times New Roman', Times, serif !important;
+    font-size: 18px;
+    font-weight: bold;
+}
+/* Kode dokumen kanan atas */
+.kop-kode {
+    position: absolute;
+    right: 0;
+    top: 5px;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.form-section {
+    margin-top: 25px;
+    font-family: 'Times New Roman', Times, serif !important;
+    font-size: 14px;
+}
+
+.section-title {
+    font-weight: bold;
+    font-size: 15px;
+    margin-bottom: 12px;
+}
+
+.checkbox-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 40px;
+    width: 100%;
+}
+
+.checkbox-column {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+
+.checkbox-column label {
+    display: flex;
+    align-items: center;
+    min-height: 22px;
+    line-height: 1.3;
+}
+
+.box {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    border: 1px solid #000;
+    margin-right: 9px;
+    font-size: 13px;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+.box.checked {
+    font-weight: bold;
+}
+
+.underline {
+    display: inline-block;
+    width: 170px;
+    border-bottom: 1px solid #000;
+    margin-left: 5px;
+    height: 14px;
+}
+
+.pelayanan-section {
+    margin-top: 30px;
+}
+
+.dot-line {
+    margin-top: 18px;
+    margin-left: 50%;
+    width: 48%;
+    border-bottom: 2px dotted #000;
+}
+
+.catatan {
+    margin-top: 12px;
+    margin-left: 50%;
+    width: 48%;
+    text-align: center;
+    font-style: italic;
+    font-size: 13px;
+}
+.review-section {
+    margin-top: 35px;
+    font-family: 'Times New Roman', Times, serif !important;
+    font-size: 13px;
+}
+
+.review-title {
+    text-align: center;
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 22px;
+}
+
+.review-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 40px;
+}
+
+
+.review-item {
+    display: grid;
+    grid-template-columns: 15px 85px 1fr;
+    align-items: center;
+    line-height: 1.6;
+}
+
+.review-item span:nth-child(3) {
+    white-space: nowrap;
+}
+
+.review-left {
+    font-size: 13px;
+}
+
+.review-label {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+/* BAGIAN KIRI */
+.review-item-left {
+    display: grid;
+    grid-template-columns: 15px 85px 15px auto;
+    align-items: center;
+    line-height: 1.8;
+}
+.review-item-left > span:nth-child(4) {
+    white-space: nowrap;
+}
+
+
+/* BAGIAN KANAN */
+.review-right {
+    font-size: 13px;
+    padding-top: 15px;
+}
+
+.review-item-right {
+    display: grid;
+    grid-template-columns: 15px 85px 15px 1fr;
+    align-items: center;
+    min-height: 25px;
+}
+
+.review-item-right .line {
+    display: block;
+    width: 100%;
+    border-bottom: 1px dotted #000;
+    height: 14px;
+}
+.line {
+    display: inline-block;
+    flex: 1;
+    min-width: 150px;
+    border-bottom: 1px dotted #000;
+    height: 14px;
+}
+
+.indent {
+    width: 62px;
+}
+
+
+/* TINDAK LANJUT */
+
+.follow-up {
+    margin-top: 22px;
+}
+
+.follow-title {
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.follow-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 75%;
+}
+
+.follow-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.box {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 13px;
+    height: 13px;
+    border: 1px solid #000;
+    font-size: 12px;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+.box.checked {
+    font-weight: bold;
+}
+
+
+/* PENJELASAN */
+
+.explanation {
+    margin-top: 15px;
+    font-weight: normal;
+}
+
+
+/* TANDA TANGAN */
+
+.approval {
+    margin-top: 15px;
+    margin-left: 55%;
+    text-align: center;
+    width: 40%;
+}
+
+.approval-position {
+    margin-bottom: 55px;
+}
+.doc-explain {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.doc-section-title {
+    white-space: nowrap;
+    font-weight: normal;
+}
+
+.doc-explain-content {
+    flex: 1;
+    text-align: justify;
+    line-height: 1.5;
+}
+
+.signature {
+    font-size: 14px;
+}
+.coret {
+    text-decoration: line-through;
+}
+        /* Gaya cetak */
+        @media print {
+
+@page {
+    size: A4 portrait;
+    margin: 0;
+}
+
+html,
+body {
+    width: 210mm;
+    height: 297mm;
+    margin: 0;
+    padding: 0;
+    background: white;
+}
+
+.surat-wrapper {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0;
+    padding: 15mm;
+    box-sizing: border-box;
+    background: white;
+    box-shadow: none;
+    border-radius: 0;
+}
+
+.action-bar,
+.no-print {
+    display: none !important;
+}
+
+.surat-content {
+    width: 100%;
+    min-height: 267mm;
+    border: 1px solid #000;
+    padding: 10mm 8mm;
+    box-sizing: border-box;
+
+    font-family: 'Times New Roman', Times, serif !important;
+    font-size: 14px;
+}
+}
+    </style>
+
+<div class="surat-wrapper">
+    <!-- Action Bar (tidak tercetak) -->
+    <div class="action-bar no-print">
+        <div>
+            <button class="btn btn-outline-secondary" onclick="window.history.back();">
+                <i class="bi bi-arrow-left"></i> Kembali
+            </button>
+        </div>
+        <div class="btn-group">
+            <button class="btn btn-outline-primary" onclick="downloadPDF()">
+                <i class="bi bi-download"></i> Download PDF
+            </button>
+            <button class="btn btn-primary" onclick="window.print();">
+                <i class="bi bi-printer"></i> Print
+            </button>
+        </div>
+    </div>
+
+    <!-- Konten Surat -->
+    <div id="suratContent" class="surat-content">
+        <!-- Kop -->
+        <div class="kop-surat">
+
+            <!-- Logo -->
+            <div class="kop-logo">
+                <img src="<?= ($BASE) ?>/public/photo/sijagur.png" alt="BBSPJIS">
+            </div>
+        
+            <!-- Judul -->
+            <div class="kop-judul">
+                <h1>FORMULIR SURAT PERMINTAAN</h1>
+                <h2>PELAYANAN JASA</h2>
+            </div>
+        
+            <!-- Nomor dokumen -->
+            <!-- <div class="kop-kode">
+                FJT-06-01/02
+            </div> -->
+        
+        </div>
+
+        <!-- <h2 class="judul">SURAT PERMINTAAN PELAYANAN JASA</h2> -->
+
+        <!-- <div class="tanggal">
+            <?= ($order['tanggal_masuk'] ? date('d/m/Y', strtotime($order['tanggal_masuk'])) : '-')."
+" ?>
+        </div> -->
+
+        <!-- Identitas -->
+        <table class="info">
+            <tr><td style="width:25%; font-weight:bold;">Nama</td><td style="width:2%;">:</td><td><?= ($order['nama_pelanggan'] ?: '-') ?></td></tr>
+            <tr><td style="font-weight:bold;">Perusahaan</td><td>:</td><td><?= ($order['nama_perusahaan'] ?: '-') ?></td></tr>
+            <tr><td style="font-weight:bold;">Alamat</td><td>:</td><td><?= ($order['alamat_customer'] ?: '-') ?></td></tr>
+            <!-- <tr><td style="font-weight:bold;">Nomor Order</td><td>:</td><td><?= ($order['nomor_order'] ?: 'BSPPJS/2024/001') ?></td></tr> -->
+        </table>
+
+        <!-- PERMINTAAN MELALUI -->
+<div class="form-section">
+    <div class="section-title">
+        Permintaan melalui (beri tanda □):
+    </div>
+
+    <div class="checkbox-grid">
+
+        <!-- KOLOM KIRI -->
+        <div class="checkbox-column">
+    
+            <label>
+                <span class="box">
+                    <?= ($order['permintaan_melalui'] == 'telepon' ? '✓' : '')."
+" ?>
+                </span>
+                Telepon
+            </label>
+    
+            <label>
+                <span class="box">
+                    <?= ($order['permintaan_melalui'] == 'fax' ? '✓' : '')."
+" ?>
+                </span>
+                Fax
+            </label>
+    
+            <label>
+                <span class="box">
+                    <?= ($order['permintaan_melalui'] == 'surat' ? '✓' : '')."
+" ?>
+                </span>
+                Surat
+            </label>
+    
+        </div>
+    
+    
+        <!-- KOLOM KANAN -->
+        <div class="checkbox-column">
+    
+            <label>
+                <span class="box">
+                    <?= ($order['permintaan_melalui'] == 'email' ? '✓' : '')."
+" ?>
+                </span>
+                E-mail
+            </label>
+    
+            <label>
+                <span class="box">
+                    <?= ($order['permintaan_melalui'] == 'datang_langsung' ? '✓' : '')."
+" ?>
+                </span>
+                Datang langsung
+            </label>
+    
+            <label>
+                <span class="box">
+                    <?= ($order['permintaan_melalui'] == 'pegawai_bbspjis' ? '✓' : '')."
+" ?>
+                </span>
+                Pegawai BBSPJIS (sebutkan):
+    
+                <span>
+                    <?= ($order['nama_pegawai'] ?: '')."
+" ?>
+                </span>
+            </label>
+    
+        </div>
+    
+    </div>
+</div>
+
+
+
+
+<!-- JENIS PELAYANAN -->
+<div class="form-section pelayanan-section">
+
+    <div class="section-title">
+        Mengajukan permintaan penawaran pelayanan jasa BBSPJIS di bidang
+        (beri tanda □):
+    </div>
+
+    <div class="checkbox-grid">
+
+        <!-- Kolom kiri -->
+        <div class="checkbox-column">
+
+            <label>
+                <span class="box"></span>
+                Riset
+            </label>
+
+            <label>
+                <span class="box"></span>
+                Standardisasi
+            </label>
+
+            <label>
+                <span class="box"></span>
+                Pengujian
+            </label>
+
+            <label>
+                <span class="box 
+                    <?= ($order['jenis_layanan_opti'] == 'sertifikasi' ? 'checked' : '') ?>">
+                    <?= ($order['jenis_layanan_opti'] == 'sertifikasi' ? '✓' : '')."
+" ?>
+                </span>
+                Sertifikasi
+            </label>
+
+            <label>
+                <span class="box"></span>
+                Kalibrasi
+            </label>
+
+        </div>
+
+
+        <!-- Kolom kanan -->
+        <div class="checkbox-column">
+
+            <label>
+                <span class="box"></span>
+                Konsultansi
+            </label>
+
+            <label>
+                <span class="box 
+                    <?= ($order['jenis_layanan_opti'] == 'pelatihan' ? 'checked' : '') ?>">
+                    <?= ($order['jenis_layanan_opti'] == 'pelatihan' ? '✓' : '')."
+" ?>
+                </span>
+                Pelatihan Teknis
+            </label>
+            <label>
+                <span class="box checked">✓</span>
+                Opti
+            </label>
+            <label>
+                <span class="box"></span>
+                Perekayasaan
+            </label>
+
+            <label>
+                <span class="box"></span>
+                Lainnya (sebutkan):
+                <span class="underline"></span>
+            </label>
+
+        </div>
+
+    </div>
+
+    <div class="dot-line"></div>
+
+    <!-- <div class="catatan">
+        Catatan: Yang dicentang adalah OPTI.
+    </div> -->
+
+</div>
+
+<div class="ttd">
+    <div class="ketua">
+        <p style="margin:0;">Bandung, <?= ($order['tanggal_masuk'] ? date('d', strtotime($order['tanggal_masuk'])) . ' ' . 
+            ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][date('n', strtotime($order['tanggal_masuk']))-1] 
+            . ' ' . date('Y', strtotime($order['tanggal_masuk'])) : '-') ?></p>
+        <div style="height:40px;"></div>
+        <div class="garis" style="width:100%;">(______________________)</div>
+    </div>
+</div>
+
+<!-- TINJAUAN PERMINTAAN / KONTRAK -->
+<div class="review-section">
+
+    <div class="review-title">
+        TINJAUAN PERMINTAAN / KONTRAK
+    </div>
+
+    <div class="review-content">
+
+        <!-- Bagian kiri -->
+        <div class="review-left">
+
+            <div class="review-label">
+                Cover yang tidak perlu :
+            </div>
+        
+            <div class="review-item-left">
+                <span>•</span>
+                <span>SDM</span>
+                <span>:</span>
+                <span>
+                    <span class="<?= ($order['sdm_tersedia'] == 1 ? '' : 'coret') ?>">Ya</span>
+                    /
+                    <span class="<?= ($order['sdm_tersedia'] == 0 ? '' : 'coret') ?>">Tidak</span>
+                </span>
+            </div>
+        
+            <div class="review-item-left">
+                <span>•</span>
+                <span>Peralatan</span>
+                <span>:</span>
+                <span>
+                    <span class="<?= ($order['peralatan_tersedia'] == 1 ? '' : 'coret') ?>">Ya</span>
+                    /
+                    <span class="<?= ($order['peralatan_tersedia'] == 0 ? '' : 'coret') ?>">Tidak</span>
+                </span>
+            </div>
+        
+            <div class="review-item-left">
+                <span>•</span>
+                <span>Bahan</span>
+                <span>:</span>
+                <span>
+                    <span class="<?= ($order['bahan_tersedia'] == 1 ? '' : 'coret') ?>">Ya</span>
+                    /
+                    <span class="<?= ($order['bahan_tersedia'] == 0 ? '' : 'coret') ?>">Tidak</span>
+                </span>
+            </div>
+        
+        </div>
+
+
+        <!-- Bagian kanan -->
+        <div class="review-right">
+
+            <div class="review-item-right">
+                <span>•</span>
+                <span>Lain - lain</span>
+                <span>:</span>
+                <span class="line"></span>
+            </div>
+        
+            <div class="review-item-right">
+                <span>•</span>
+                <span>Catatan</span>
+                <span>:</span>
+                <span class="line"></span>
+            </div>
+        
+            <div class="review-item-right">
+                <span></span>
+                <span></span>
+                <span></span>
+                <span class="line"></span>
+            </div>
+        
+        </div>
+
+    </div>
+
+
+    <!-- Tindak lanjut -->
+    <div class="follow-up">
+
+        <div class="follow-title">
+            Tindak lanjut permintaan pelayanan jasa (beri tanda □):
+        </div>
+
+        <div class="follow-options">
+
+            <div class="follow-option">
+                <span class="box <?= ($order['keputusan'] == 'dapat_dilaksanakan' ? 'checked' : '') ?>">
+                    <?= ($order['keputusan'] == 'dapat_dilaksanakan' ? '✓' : '')."
+" ?>
+                </span>
+                Dapat dilaksanakan
+            </div>
+
+            <div class="follow-option">
+                <span class="box <?= ($order['keputusan'] == 'tidak_dapat_dilaksanakan' ? 'checked' : '') ?>">
+                    <?= ($order['keputusan'] == 'tidak_dapat_dilaksanakan' ? '✓' : '')."
+" ?>
+                </span>
+                Tidak dapat dilaksanakan
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- Penjelasan -->
+   <!-- Penjelasan -->
+   <div class="doc-explain">
+    <div class="doc-section-title">
+        Dengan penjelasan sebagai berikut:
+    </div>
+
+    <div class="doc-explain-content">
+        <?php if ($order['keputusan'] == 'dapat_dilaksanakan'): ?>
+            <?= ($order['sdm_catatan'] ?: '-')."
+" ?>
+        <?php endif; ?>
+
+        <?php if ($order['keputusan'] == 'tidak_dapat_dilaksanakan'): ?>
+            <?= ($order['alasan_penolakan'] ?: '-')."
+" ?>
+        <?php endif; ?>
+
+        <?php if ($order['keputusan'] != 'dapat_dilaksanakan' && $order['keputusan'] != 'tidak_dapat_dilaksanakan'): ?>
+            -
+        <?php endif; ?>
+    </div>
+</div>
+
+
+</div>
+        <!-- Tanda Tangan -->
+        <div class="ttd">
+            <div class="ketua">
+                <p style="margin:0;">Ketua Tim Layanan Mitra Industri</p>
+                <div style="height:40px;"></div>
+                <div class="garis" style="width:100%;">(______________________)</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Script untuk Download PDF -->
+<script>
+    function downloadPDF() {
+    const element = document.getElementById('suratContent');
+    const btn = document.querySelector('.btn-outline-primary');
+    const originalText = btn.innerHTML;
+
+    btn.innerHTML =
+        '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Memproses...';
+    btn.disabled = true;
+
+    html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff'
+    }).then(canvas => {
+
+        const { jsPDF } = window.jspdf;
+
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4'
+        });
+
+        const pageWidth = 210;
+        const pageHeight = 297;
+
+        const margin = 15;
+
+        const contentWidth = pageWidth - (margin * 2);
+        const contentHeight = pageHeight - (margin * 2);
+
+        pdf.addImage(
+            canvas.toDataURL('image/png'),
+            'PNG',
+            margin,
+            margin,
+            contentWidth,
+            contentHeight
+        );
+
+        pdf.save(
+            'Surat_Pelayanan_Jasa_<?= ($order['nomor_order'] ?: 'order') ?>.pdf'
+        );
+
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+
+    }).catch(err => {
+
+        console.error(err);
+
+        alert('Gagal membuat PDF. Silakan coba lagi.');
+
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    });
+}
+</script>
+
+<!-- Optional: Bootstrap JS untuk beberapa interaksi jika diperlukan -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
