@@ -58,7 +58,7 @@ if (!class_exists('SiloptiSuratPenawaranPdf')) {
                 $this->SetY(10);
                 $this->SetFont('Arial', '', 9);
                 $this->SetTextColor(0, 0, 0);
-                $this->Cell(0, 5, '- ' . $this->PageNo() . ' -', 0, 1, 'C');
+                $this->Cell(0, 5, $this->PageNo(), 0, 1, 'C');
                 $this->Ln(2);
             }
         }
@@ -576,6 +576,17 @@ $daftarPegawai = $arsipUser->find(
 
         $canEdit = ($this->hasPermission('penawaran:create') || $this->hasPermission('penawaran:edit') || $this->isSuperadmin() || $this->isAdminOrder());
 
+        $defaultNominal = 0;
+        if ($order['jenis_layanan_opti'] === 'lingkungan' && !empty($kalkulasi)) {
+            $totalBruto = 0;
+            foreach ($kalkulasi as $kIt) {
+                $totalBruto += (float)$kIt['total_biaya_item'];
+            }
+            $diskonPenawaran = (float)($order['diskon_penawaran'] ?? 0);
+            $defaultNominal = max(0.0, $totalBruto - $diskonPenawaran);
+        }
+        $f3->set('default_nominal', $defaultNominal);
+
         $f3->set('order', $order);
         $f3->set('sp_existing', $spExisting);
         $f3->set('all_sp', $allSp);
@@ -1082,7 +1093,23 @@ $daftarPegawai = $arsipUser->find(
             $perusahaan = $order['pt_cv'] . ' ' . $perusahaan;
         }
         $alamat = !empty($sp['alamat']) ? trim($sp['alamat']) : (!empty($order['alamat']) ? trim($order['alamat']) : 'di Tempat');
-        $nominal = (float)($sp['nominal_penawaran'] ?? ($order['estimasi_biaya'] ?? 0));
+        
+        // Ambil kalkulasi rincian biaya lingkungan jika tersedia
+        $kalkulasiRaw = !empty($order['id']) ? $orderModel->getKalkulasiLingkungan((int)$order['id']) : [];
+        $subtotalBruto = 0;
+        if (!empty($kalkulasiRaw)) {
+            foreach ($kalkulasiRaw as $item) {
+                $subtotalBruto += (float)$item['total_biaya_item'];
+            }
+        }
+        $diskon = (float)($order['diskon_penawaran'] ?? 0);
+
+        if (!empty($kalkulasiRaw) && $subtotalBruto > 0) {
+            $nominal = max(0.0, $subtotalBruto - $diskon);
+        } else {
+            $nominal = (float)($sp['nominal_penawaran'] ?? ($order['estimasi_biaya'] ?? 0));
+        }
+
         $terbilangStr = strtolower(self::terbilang($nominal)) . ' rupiah';
         $judulKegiatan = !empty($order['judul_kegiatan']) ? $order['judul_kegiatan'] : 'Pengujian Sampel Lingkungan BBSPJIS';
         $durasiStr = !empty($order['spm_layanan']) ? $order['spm_layanan'] : '4 bulan';
@@ -1151,8 +1178,6 @@ $daftarPegawai = $arsipUser->find(
         // Tanda Tangan Cover
         $pdf->SetX(120);
         $pdf->SetFont('Arial', '', 9);
-        $pdf->Cell(70, 4.2, 'a.n. Kepala,', 0, 1, 'C');
-        $pdf->SetX(120);
         $pdf->Cell(70, 4.2, 'Kepala Bagian Tata Usaha', 0, 1, 'C');
         $pdf->Ln(18);
         $pdf->SetX(120);
@@ -1372,8 +1397,6 @@ $daftarPegawai = $arsipUser->find(
         // Tanda Tangan RAB
         $pdf->SetX(120);
         $pdf->SetFont('Arial', '', 9);
-        $pdf->Cell(70, 4.2, 'a.n. Kepala,', 0, 1, 'C');
-        $pdf->SetX(120);
         $pdf->Cell(70, 4.2, 'Kepala Bagian Tata Usaha', 0, 1, 'C');
         $pdf->Ln(18);
         $pdf->SetX(120);

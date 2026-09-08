@@ -531,7 +531,7 @@
                             <div class="input-group">
                                 <span class="input-group-text bg-light text-dark fw-bold px-3">Rp</span>
                                 <input type="text" id="inputNominalDisplay" class="form-control fw-bold fs-6 text-dark font-monospace" placeholder="0" oninput="formatNominalPenawaran(this)" autocomplete="off" required {{ !@can_edit ? 'disabled' : '' }}>
-                                <input type="hidden" name="nominal_penawaran" id="inputNominalReal" value="{{ (int)(@sp_existing.nominal_penawaran ?: @order.estimasi_biaya) }}">
+                                <input type="hidden" name="nominal_penawaran" id="inputNominalReal" value="{{ (int)(@default_nominal ?: (@sp_existing.nominal_penawaran ?: @order.estimasi_biaya)) }}">
                             </div>
                             <div class="mt-1">
                                 <div class="text-muted fw-medium font-monospace" id="textTerbilang" style="font-size: 0.74rem;">
@@ -850,7 +850,6 @@
 
                             <div style="display: flex; justify-content: flex-end; font-size: 9.5px;">
                                 <div style="text-align: center; width: 45%;">
-                                    <div>a.n. Kepala,</div>
                                     <div>Kepala Bagian Tata Usaha</div>
                                     <div style="height: 48px;"></div>
                                     <div class="fw-bold" id="d_pembuat_l">{{ @sp_existing.pembuat_nama ?: 'Joko Pratomo' }}</div>
@@ -952,7 +951,6 @@
 
                             <div style="display: flex; justify-content: flex-end; font-size: 9.5px; margin-top: 30px;">
                                 <div style="text-align: center; width: 45%;">
-                                    <div>a.n. Kepala,</div>
                                     <div>Kepala Bagian Tata Usaha</div>
                                     <div style="height: 48px;"></div>
                                     <div class="fw-bold" id="d_pembuat_rab">{{ @sp_existing.pembuat_nama ?: 'Joko Pratomo' }}</div>
