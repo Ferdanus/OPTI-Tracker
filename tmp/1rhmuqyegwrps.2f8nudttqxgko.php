@@ -80,6 +80,80 @@
     border-radius: 8px;
     padding: 0.65rem 0.85rem;
 }
+.deadline-countdown-card {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 12px;
+    padding: 16px 18px;
+}
+
+.deadline-date {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+.countdown-label {
+    font-size: 0.7rem;
+    color: #6c757d;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.countdown-time {
+    font-size: 1.4rem;
+    font-weight: 700;
+    font-family: monospace;
+    color: #0d6efd;
+    letter-spacing: 1px;
+}
+
+#countdownStatus {
+    font-size: 0.75rem;
+}
+.deadline-countdown-card {
+    border-radius: 14px;
+    padding: 18px 20px;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    transition: all .25s ease;
+}
+.deadline-countdown-card.dcard-ok {
+    background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%);
+    border-color: rgba(37, 99, 235, .2);
+}
+.deadline-countdown-card.dcard-over {
+    background: linear-gradient(135deg, #ffffff 0%, #fef2f2 100%);
+    border-color: rgba(220, 38, 38, .25);
+}
+.deadline-countdown-card.dcard-submitted {
+    background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
+    border-color: rgba(22, 163, 74, .25);
+}
+.deadline-countdown-card.dcard-neutral { background: #f8fafc; }
+
+.dcard-icon {
+    width: 46px; height: 46px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(37, 99, 235, .1); color: #2563eb;
+    font-size: 1.2rem; flex-shrink: 0;
+}
+.dcard-over .dcard-icon { background: rgba(220, 38, 38, .12); color: #dc2626; }
+.dcard-icon-submitted { background: rgba(22, 163, 74, .12); color: #16a34a; }
+
+.dcard-label { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: #64748b; margin-bottom: 2px; }
+.dcard-deadline { font-size: .84rem; color: #334155; }
+.dcard-countdown-label { font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: #94a3b8; }
+.dcard-countdown-time {
+    font-size: 1.55rem; font-weight: 800; letter-spacing: .5px;
+    font-family: 'SFMono-Regular', Consolas, monospace;
+    color: #2563eb;
+}
+.dcard-over .dcard-countdown-time { color: #dc2626; }
+.dcard-status { font-size: .78rem; color: #64748b; padding-top: 10px; margin-top: 10px; border-top: 1px dashed #e2e8f0; }
+
+@keyframes dcardPulse { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
+.dcard-critical .dcard-countdown-time { animation: dcardPulse 1.2s infinite; }
 </style>
 
 <!-- PDF.js Library for Zero-IDM-Interception in-browser rendering -->
@@ -112,12 +186,30 @@
                         <i class="bi bi-exclamation-diamond-fill me-1"></i> Perlu Revisi
                     </span>
                 <?php endif; ?>
-                <?php if (!$proposal || $proposal['status_proposal'] == 'draft'): ?>
+                <?php if ($proposal['status_proposal'] == 'draft_disimpan'): ?>
                     <span class="badge badge-pill-warning px-2.5 py-1">
+                        <i class="bi bi-bookmark-check-fill me-1"></i> Draft Disimpan
+                    </span>
+                <?php endif; ?>
+                <?php if (!$proposal || $proposal['status_proposal'] == 'draft'): ?>
+                    <span class="badge badge-pill-secondary px-2.5 py-1">
                         <i class="bi bi-pencil-square me-1"></i> Draf PIC
                     </span>
                 <?php endif; ?>
             </div>
+            <?php if ($deadline_info): ?>
+                <?php if ($deadline_info['is_telat']): ?>
+                    <span class="badge badge-pill-danger px-2.5 py-1">
+                        <i class="bi bi-alarm-fill me-1"></i> Telat <?= ($deadline_info['hari_telat']) ?> Hari Kerja
+                    </span>
+                <?php endif; ?>
+                <?php if (!$deadline_info['is_telat']): ?>
+                    <span class="badge badge-pill-secondary px-2.5 py-1">
+                        <i class="bi bi-calendar-check me-1"></i> Batas: <?= (date('d M Y', strtotime($deadline_info['tanggal_deadline'])))."
+" ?>
+                    </span>
+                <?php endif; ?>
+            <?php endif; ?>
             <p class="text-secondary small mb-0">
                 Order <strong class="text-dark font-monospace">#<?= ($order['nomor_order']) ?></strong> &bull; <?= ($order['nama_perusahaan']) ?> (<?= ($order['pt_cv']) ?>) &bull; <span class="fst-italic text-dark"><?= ($order['judul_kegiatan']) ?></span>
             </p>
@@ -167,21 +259,32 @@
                         <div class="d-flex mb-2">
                             <span class="text-muted" style="width: 130px; flex-shrink: 0;">PIC Klien</span>
                             <span class="text-muted me-2">:</span>
-                            <span class="text-dark"><?= ($order['nama_pic'] ?: '-') ?> <span class="text-muted small">(<?= ($order['kontak_pic'] ?: '-') ?>)</span></span>
+                            <span class="text-dark"><?= ($order['pic'] ?: ($surat_masuk['pic_pengirim'] ?: '-')) ?> <span class="text-muted small">(<?= ($order['telepon'] ?: ($surat_masuk['no_telp_pengirim'] ?: '-')) ?>)</span></span>
                         </div>
                         <div class="d-flex mb-2">
                             <span class="text-muted" style="width: 130px; flex-shrink: 0;">PIC Peneliti</span>
                             <span class="text-muted me-2">:</span>
                             <div>
-                                <strong class="text-primary font-display"><i class="bi bi-person-badge me-1"></i> <?= ($order['pic_proposal_nama'] ?: ($proposal['pic_nama'] ?: 'Aji Pisang')) ?></strong>
+                                <strong class="text-primary font-display"><?= ($order['pic_proposal_nama'] ?: ($proposal['pic_nama'] ?: 'Aji Pisang')) ?></strong>
                                 <small class="d-block text-secondary">Spesialisasi <?= (ucfirst($order['jenis_layanan_opti'])) ?></small>
                             </div>
                         </div>
-                        <div class="d-flex mb-2">
-                            <span class="text-muted" style="width: 130px; flex-shrink: 0;">Standar SPM</span>
-                            <span class="text-muted me-2">:</span>
-                            <span class="badge bg-secondary-subtle text-secondary px-2 py-0.5 rounded-pill font-monospace fw-semibold"><?= ($order['spm_layanan'] ?: '7 Hari Kerja') ?></span>
-                        </div>
+                        <?php if ($deadline_info): ?>
+                            <div class="d-flex mb-2">
+                                <span class="text-muted" style="width: 130px; flex-shrink: 0;">Batas Pengisian</span>
+                                <span class="text-muted me-2">:</span>
+                                <?php if ($deadline_info['is_telat']): ?>
+                                    <span class="text-danger fw-semibold">
+                                        <?= (date('d M Y', strtotime($deadline_info['tanggal_deadline']))) ?> &mdash; Telat <?= ($deadline_info['hari_telat']) ?> hari kerja
+                                    </span>
+                                <?php endif; ?>
+                                <?php if (!$deadline_info['is_telat']): ?>
+                                    <span class="text-dark">
+                                        <?= (date('d M Y', strtotime($deadline_info['tanggal_deadline']))) ?> <span class="text-muted">(maks. 5 hari kerja sejak PIC ditunjuk)</span>
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+                        <?php endif; ?>
                         <div class="d-flex">
                             <span class="text-muted" style="width: 130px; flex-shrink: 0;">Perihal Kegiatan</span>
                             <span class="text-muted me-2">:</span>
@@ -213,8 +316,8 @@
                             </span>
                         </div>
                         <div class="small text-secondary">
-                            <strong class="text-dark d-block mb-1">Catatan Evaluasi:</strong>
-                            <p class="mb-0 text-secondary fst-italic"><?= ($tinjauan['catatan_kelayakan'] ?: 'Kapasitas laboratorium, instrumentasi pengujian, dan ketersediaan personil analis memenuhi standar.') ?></p>
+                            <strong class="text-dark d-block mb-1">Catatan / Arahan Ka. Tim:</strong>
+                            <p class="mb-0 text-secondary fst-italic"><?= ($tinjauan['sdm_catatan'] ?: ($tinjauan['catatan_kelayakan'] ?: 'Kapasitas laboratorium, instrumentasi pengujian, dan ketersediaan personil analis memenuhi standar.')) ?></p>
                         </div>
                     </div>
                 </div>
@@ -282,11 +385,20 @@
                 <div class="card-header bg-white py-3 px-3 px-md-4 border-bottom d-flex justify-content-between align-items-center">
                     <h6 class="m-0 fw-bold text-dark font-display">Formulir &amp; Dokumen Proposal Teknis</h6>
                     <?php if (!$can_edit): ?>
-                        <span class="badge bg-light text-secondary border"><i class="bi bi-lock-fill me-1"></i> Mode Lihat Saja</span>
+                        <span class="badge bg-light text-secondary border">Mode Lihat Saja</span>
                     <?php endif; ?>
                 </div>
                 <div class="card-body p-4">
                     
+                    <?php if (!$can_edit): ?>
+                        <div class="alert alert-warning border-0 d-flex align-items-center mb-4 py-2 px-3 small rounded-3">
+                            <div>
+                                <strong>Mode Lihat Saja (Read-Only)</strong>: <?= ($lock_message ?: 'Penyusunan dan pengunggahan dokumen proposal teknis merupakan wewenang PIC Proposal yang ditugaskan.')."
+" ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
                     <form action="<?= ($BASE) ?>/order/<?= ($order['id']) ?>/proposal/simpan" method="POST" enctype="multipart/form-data" id="formProposal">
                         
                         <!-- 1. Judul Proposal -->
@@ -338,7 +450,7 @@
                         <div class="mb-4">
                             <label class="form-label small fw-bold text-dark mb-2 d-flex justify-content-between align-items-center" style="font-size: 0.86rem;">
                                 <span>Dokumen Proposal Teknis <span class="text-danger">*</span></span>
-                                <small class="text-muted fw-normal">Format: PDF, DOCX, XLSX (Maks. 20MB)</small>
+                                <small class="text-muted fw-normal">Format: PDF, DOCX, XLSX (Maks. 10MB)</small>
                             </label>
 
                             <!-- Card Berkas / Dokumen Proposal Aktif -->
@@ -434,6 +546,65 @@
                                 </div>
                             <?php endif; ?>
                         </div>
+
+                        <!-- Countdown Deadline Proposal -->
+                       <!-- Sudah diunggah -> tampilkan keterangan waktu upload, countdown berhenti -->
+<?php if ($proposal && $proposal['diajukan_at']): ?>
+    <div class="deadline-countdown-card dcard-submitted mt-3">
+        <div class="d-flex align-items-center gap-3">
+            <div class="dcard-icon dcard-icon-submitted"><i class="bi bi-check-circle-fill"></i></div>
+            <div class="flex-grow-1">
+                <div class="dcard-label">Proposal Sudah Diunggah</div>
+                <div class="dcard-deadline">
+                    <?= (['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'][date('w', strtotime($proposal['diajukan_at']))]) ?>,
+                    <?= (date('d F Y', strtotime($proposal['diajukan_at']))) ?> pukul <?= (date('H:i', strtotime($proposal['diajukan_at']))) ?> WIB
+                </div>
+            </div>
+            <?php if ($deadline_info): ?>
+                <?php if ($deadline_info['is_telat']): ?>
+                    <span class="badge badge-pill-danger px-2.5 py-2"><i class="bi bi-alarm-fill me-1"></i> Telat <?= ($deadline_info['hari_telat']) ?> Hari Kerja</span>
+                <?php endif; ?>
+                <?php if (!$deadline_info['is_telat']): ?>
+                    <span class="badge badge-pill-success px-2.5 py-2"><i class="bi bi-check2-circle me-1"></i> Tepat Waktu</span>
+                <?php endif; ?>
+            <?php endif; ?>
+        </div>
+    </div>
+<?php endif; ?>
+
+<!-- Belum diunggah -> countdown tetap jalan -->
+<?php if (!$proposal || !$proposal['diajukan_at']): ?>
+    <?php if ($deadline_info): ?>
+        <div class="deadline-countdown-card mt-3 <?= ($deadline_info['is_telat'] ? 'dcard-over' : 'dcard-ok') ?>" id="deadlineCard">
+            <div class="d-flex align-items-center gap-3">
+                <div class="dcard-icon">
+                    <i class="bi bi-hourglass-split"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <div class="dcard-label">Batas Pengumpulan Proposal</div>
+                    <div class="dcard-deadline">
+                        Deadline: <strong><?= (date('d F Y, H:i', strtotime($deadline_info['tanggal_deadline']))) ?></strong> WIB
+                    </div>
+                </div>
+                <div class="text-end">
+                    <div class="dcard-countdown-label">Waktu Tersisa</div>
+                    <div id="proposalCountdown" class="dcard-countdown-time">--:--:--</div>
+                </div>
+            </div>
+            <div id="countdownStatus" class="dcard-status mt-2">
+                <i class="bi bi-hourglass-split me-1"></i> Menghitung waktu...
+            </div>
+        </div>
+    <?php endif; ?>
+    <?php if (!$deadline_info): ?>
+        <div class="deadline-countdown-card dcard-neutral mt-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="dcard-icon"><i class="bi bi-clock"></i></div>
+                <div class="text-muted small">Batas waktu proposal akan mulai dihitung otomatis setelah PIC ditugaskan lewat Kaji Ulang Kelayakan.</div>
+            </div>
+        </div>
+    <?php endif; ?>
+<?php endif; ?>
 
                         <!-- 5. Tombol Aksi PIC -->
                         <?php if ($can_edit): ?>
@@ -1058,3 +1229,48 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+<script>
+    var deadlineIso = "<?= ($deadline_info['tanggal_deadline']) ?>";
+    
+    function updateProposalCountdown() {
+        var countdown = document.getElementById('proposalCountdown');
+        var status = document.getElementById('countdownStatus');
+        var card = document.getElementById('deadlineCard');
+        if (!countdown || !deadlineIso) return;
+    
+        var deadline = new Date(deadlineIso).getTime();
+        var now = new Date().getTime();
+        var selisih = deadline - now;
+    
+        if (selisih <= 0) {
+            countdown.textContent = '00:00:00';
+            if (card) { card.classList.remove('dcard-ok'); card.classList.add('dcard-over'); }
+            status.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-1"></i> Batas waktu telah terlewati';
+            return;
+        }
+    
+        var totalDetik = Math.floor(selisih / 1000);
+        var hari = Math.floor(totalDetik / 86400);
+        var jam = Math.floor((totalDetik % 86400) / 3600);
+        var menit = Math.floor((totalDetik % 3600) / 60);
+        var detik = totalDetik % 60;
+        var f = function (n) { return String(n).padStart(2, '0'); };
+    
+        countdown.textContent = hari > 0
+            ? (hari + ' Hari ' + f(jam) + ':' + f(menit) + ':' + f(detik))
+            : (f(jam) + ':' + f(menit) + ':' + f(detik));
+    
+        if (hari < 1) {
+            if (card) card.classList.add('dcard-critical');
+            status.innerHTML = '<i class="bi bi-exclamation-circle me-1"></i> Kurang dari 24 jam, segera selesaikan!';
+        } else {
+            if (card) card.classList.remove('dcard-critical');
+            status.innerHTML = '<i class="bi bi-check-circle me-1"></i> Waktu masih tersedia';
+        }
+    }
+    
+    if (deadlineIso) {
+        updateProposalCountdown();
+        setInterval(updateProposalCountdown, 1000);
+    }
+    </script>

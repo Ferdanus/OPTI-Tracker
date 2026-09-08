@@ -5,6 +5,31 @@
  * Dilengkapi Guard Permission (Order: Admin Order & Superadmin; Approve: Pejabat & Superadmin)
  */
 class OrderController extends Controller {
+    protected function tambahHariKerja(\DateTime $tanggalMulai, int $jumlahHari) {
+        $tanggal = clone $tanggalMulai;
+        $ditambahkan = 0;
+        while ($ditambahkan < $jumlahHari) {
+            $tanggal->modify('+1 day');
+            $hariKe = (int) $tanggal->format('N'); // 1=Senin ... 7=Minggu
+            if ($hariKe < 6) { // Senin-Jumat saja
+                $ditambahkan++;
+            }
+        }
+        return $tanggal;
+    }
+    protected function hitungSelisihHariKerja(\DateTime $dari, \DateTime $sampai) {
+        if ($sampai <= $dari) return 0;
+        $selisih = 0;
+        $tanggal = clone $dari;
+        while ($tanggal < $sampai) {
+            $tanggal->modify('+1 day');
+            $hariKe = (int) $tanggal->format('N');
+            if ($hariKe < 6) {
+                $selisih++;
+            }
+        }
+        return $selisih;
+    }
 
     /**
      * Halaman Notifikasi & Kotak Disposisi Masuk
@@ -1517,7 +1542,7 @@ class OrderController extends Controller {
                        o.pic_proposal_id, o.status_proposal_biaya,
                        p.id AS proposal_id, p.judul_proposal, p.durasi_kegiatan, 
                        p.estimasi_total_biaya, p.file_proposal, p.status_proposal, 
-                       p.catatan_revisi, p.disetujui_ketua_at,
+                       p.catatan_revisi, p.disetujui_ketua_at, p.tanggal_upload, p.tanggal_deadline,
                        u.nama_user AS pic_nama
                 FROM order_layanan o
                 LEFT JOIN tb_customer c ON o.id_customer = c.id_customer
@@ -1577,6 +1602,10 @@ class OrderController extends Controller {
         }
 
         $listProposal = $this->db->exec($sql, $binds);
+        foreach ($listProposal as &$item) {
+            $item['deadline_proposal'] = $item['tanggal_deadline'] ?? null;
+        }
+        unset($item);
 
         // Counter Statistik
         $statDraft = 0;
@@ -1637,6 +1666,24 @@ class OrderController extends Controller {
 
         $proposal = $orderModel->getProposalRiset($id);
         $tinjauan = $orderModel->getTinjauanKelayakan($id);
+
+        $deadlineInfo = null;
+if (!empty($tinjauan) && !empty($tinjauan['tanggal_tinjauan']) && ($tinjauan['keputusan'] ?? '') === 'dapat_dilaksanakan') {
+    $tglMulai = new \DateTime($tinjauan['tanggal_tinjauan']); // = tanggal PIC pertama kali ditunjuk
+    $tglDeadline = $this->tambahHariKerja($tglMulai, 5);
+
+    $sudahDiajukan = !empty($proposal) && !empty($proposal['diajukan_at']);
+    $tglAcuan = $sudahDiajukan ? new \DateTime($proposal['diajukan_at']) : new \DateTime();
+
+    $isTelat = $tglAcuan > $tglDeadline;
+
+    $deadlineInfo = [
+        'tanggal_deadline' =>  $tglDeadline->format('Y-m-d\TH:i:s'),
+        'sudah_diajukan'   => $sudahDiajukan,
+        'is_telat'         => $isTelat,
+        'hari_telat'       => $isTelat ? $this->hitungSelisihHariKerja($tglDeadline, $tglAcuan) : 0,
+    ];
+}
 
         $tinjauanSelesai = (
             (!empty($tinjauan) && ($tinjauan['keputusan'] ?? '') === 'dapat_dilaksanakan') ||
@@ -1701,6 +1748,7 @@ class OrderController extends Controller {
         $f3->set('can_edit', $canEdit);
         $f3->set('can_review', $canReview);
         $f3->set('lock_message', $lockMessage);
+        $f3->set('deadline_info', $deadlineInfo);
 
         $this->render('order/proposal.html', "Dokumen Proposal Teknis - Order #{$order['nomor_order']}", 'proposal');
     }
@@ -1734,6 +1782,17 @@ class OrderController extends Controller {
 
         // 1. Cek apakah proposal sudah disetujui Ka. Tim (Terkunci)
         $existing = $orderModel->getProposalRiset($id);
+        // Hitung tanggal upload dan deadline proposal
+        $tanggalUpload = new \DateTime();
+
+        $tinjauan = $orderModel->getTinjauanKelayakan($id);
+
+        $tanggalDeadline = null;
+
+        if (!empty($tinjauan) && !empty($tinjauan['tanggal_tinjauan'])) {
+            $tglMulai = new \DateTime($tinjauan['tanggal_tinjauan']);
+            $tanggalDeadline = $this->tambahHariKerja($tglMulai, 5);
+        }
         $proposalDisetujui = (
             ($existing && in_array($existing['status_proposal'] ?? '', ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan'])) ||
             in_array($order['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui'])
@@ -1757,6 +1816,14 @@ class OrderController extends Controller {
             $f3->reroute("/order/{$id}/proposal");
             return;
         }
+        // Hitung tanggal upload dan deadline proposal
+$tanggalUpload = new \DateTime();
+$tanggalDeadline = null;
+
+if (!empty($tinjauan) && !empty($tinjauan['tanggal_tinjauan'])) {
+    $tglMulai = new \DateTime($tinjauan['tanggal_tinjauan']);
+    $tanggalDeadline = $this->tambahHariKerja($tglMulai, 5);
+}
 
         $post = $f3->get('POST');
         $judulProposal = trim($post['judul_proposal'] ?? ($order['judul_kegiatan'] ?? 'Proposal Teknis OPTI'));
@@ -1833,7 +1900,7 @@ class OrderController extends Controller {
                 $this->db->exec(
                     "UPDATE opti_proposal_riset SET 
                         judul_proposal = ?, ruang_lingkup = ?, durasi_kegiatan = ?, 
-                        estimasi_total_biaya = ?, file_proposal = ?, status_proposal = ?,
+                        estimasi_total_biaya = ?, file_proposal = ?, tanggal_upload = ?, tanggal_deadline = ?, status_proposal = ?,
                         " . ($actionType === 'ajukan' ? "diajukan_at = NOW(), diajukan_oleh = " . (int)$userId . "," : "") . "
                         updated_at = NOW(), updated_by = ?
                      WHERE order_id = ?",
@@ -1843,16 +1910,18 @@ class OrderController extends Controller {
                         3 => $durasiKegiatan,
                         4 => $estimasiBiaya,
                         5 => $filePath,
-                        6 => $statusProposal,
-                        7 => $userId,
-                        8 => $id
+                        6 => $tanggalUpload->format('Y-m-d H:i:s'),
+                        7 => $tanggalDeadline ? $tanggalDeadline->format('Y-m-d H:i:s') : null,
+                        8 => $statusProposal,
+                        9 => $userId,
+                        10 => $id
                     ]
                 );
             } else {
                 $this->db->exec(
                     "INSERT INTO opti_proposal_riset (
                         order_id, pic_penyusun_id, spesialisasi, judul_proposal, 
-                        ruang_lingkup, durasi_kegiatan, estimasi_total_biaya, file_proposal, status_proposal,
+                        ruang_lingkup, durasi_kegiatan, estimasi_total_biaya, file_proposal,tanggal_upload, tanggal_deadline, status_proposal,
                         diajukan_at, diajukan_oleh, updated_by
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, " . ($actionType === 'ajukan' ? "NOW(), ?, ?" : "NULL, NULL, ?") . ")",
                     $actionType === 'ajukan' ? [
@@ -1864,9 +1933,11 @@ class OrderController extends Controller {
                         6 => $durasiKegiatan,
                         7 => $estimasiBiaya,
                         8 => $filePath,
-                        9 => $statusProposal,
-                        10 => $userId,
-                        11 => $userId
+                        9  => $tanggalUpload->format('Y-m-d H:i:s'),
+                        10 => $tanggalDeadline ? $tanggalDeadline->format('Y-m-d H:i:s') : null,
+                        11 => $statusProposal,
+                        12 => $userId,
+                        13 => $userId
                     ] : [
                         1 => $id,
                         2 => $order['pic_proposal_id'] ?: $userId,

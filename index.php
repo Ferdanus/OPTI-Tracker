@@ -277,8 +277,26 @@ $f3->route('GET /order/@id/penawaran/cetak', 'SuratPenawaranController->cetakPdf
 $f3->route('POST /order/@id/penawaran/status', 'SuratPenawaranController->updateStatusKlien');
 
 $f3->route('GET /surat/@id', 'OrderController->showSurat');
+// ==========================================
+// PO Kegiatan
+// ==========================================
+$f3->route('GET /po-kegiatan', 'PoKegiatanController->index');
+$f3->route('GET /po-kegiatan/buat', 'PoKegiatanController->create');
+$f3->route('POST /po-kegiatan/simpan', 'PoKegiatanController->store');
+$f3->route('GET /po-kegiatan/@id/edit', 'PoKegiatanController->edit');
+$f3->route('POST /po-kegiatan/@id/update', 'PoKegiatanController->update');
+$f3->route('GET /po-kegiatan/@id/preview', 'PoKegiatanController->previewFragment');
+$f3->route('GET /po-kegiatan/jadwal-kolom', 'PoKegiatanController->jadwalKolom');
 
-
+// ==========================================
+// SURAT PENAWARAN MITRA
+// ==========================================
+$f3->route('GET /surat-penawaran-mitra', 'SuratPenawaranMitraController->index');
+$f3->route('GET /surat-penawaran-mitra/tambah', 'SuratPenawaranMitraController->create');
+$f3->route('POST /surat-penawaran-mitra/simpan', 'SuratPenawaranMitraController->store');
+$f3->route('GET /surat-penawaran-mitra/@id/edit', 'SuratPenawaranMitraController->edit');
+$f3->route('POST /surat-penawaran-mitra/@id/update', 'SuratPenawaranMitraController->update');
+$f3->route('POST /surat-penawaran-mitra/@id/hapus', 'SuratPenawaranMitraController->delete');
 // ==========================================
 // ROUTE MODUL SURAT MASUK (INTEGRASI SEKRETARIAT)
 // ==========================================

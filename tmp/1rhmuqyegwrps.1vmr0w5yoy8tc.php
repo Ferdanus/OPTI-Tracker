@@ -1,5 +1,5 @@
 <!-- <div class="d-flex align-items-center gap-3 mb-4">
-    <a href="{{ @BASE }}/pembayaran" class="btn-back">
+    <a href="<?= ($BASE) ?>/pembayaran" class="btn-back">
         <i class="bi bi-arrow-left"></i> Kembali
     </a>
     <div>
@@ -15,18 +15,18 @@
                 <h6 class="m-0 fw-bold text-dark"><i class="bi bi-receipt text-primary me-2"></i>Formulir Bukti Bayar / Kas Masuk</h6>
             </div>
             <div class="card-body p-4">
-                <form action="{{ @BASE }}/pembayaran/simpan" method="POST">
-                    <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
+                <form action="<?= ($BASE) ?>/pembayaran/simpan" method="POST">
+                    <input type="hidden" name="csrf_token" value="<?= ($csrf_token) ?>">
 
                     <div class="mb-3">
                         <label class="form-label">Pilih Dokumen Order Layanan / PO <span class="text-danger">*</span></label>
                         <select name="order_id" class="form-select" required>
                             <option value="">Pilih Order Layanan Terdaftar</option>
-                            <repeat group="{{ @daftar_order }}" value="{{ @ord }}">
-                                <option value="{{ @ord.id }}" {{ @selected_order_id == @ord.id ? 'selected' : '' }}>
-                                    {{ @ord.nomor_order }} - {{ @ord.nama_perusahaan }} (Biaya: Rp {{ number_format(@ord.biaya, 0, ',', '.') }})
+                            <?php foreach (($daftar_order?:[]) as $ord): ?>
+                                <option value="<?= ($ord['id']) ?>" <?= ($selected_order_id == $ord['id'] ? 'selected' : '') ?>>
+                                    <?= ($ord['nomor_order']) ?> - <?= ($ord['nama_perusahaan']) ?> (Biaya: Rp <?= (number_format($ord['biaya'], 0, ',', '.')) ?>)
                                 </option>
-                            </repeat>
+                            <?php endforeach; ?>
                         </select>
                     </div>
 
@@ -42,7 +42,7 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Tanggal Transaksi Bayar <span class="text-danger">*</span></label>
-                            <input type="date" name="tanggal_bayar" class="form-control" value="{{ date('Y-m-d') }}" required>
+                            <input type="date" name="tanggal_bayar" class="form-control" value="<?= (date('Y-m-d')) ?>" required>
                         </div>
                     </div>
 
@@ -61,7 +61,7 @@
 
                     Tombol Aksi
                     <div class="d-flex justify-content-end gap-2">
-                        <a href="{{ @BASE }}/pembayaran" class="btn btn-outline-secondary px-4">Batal</a>
+                        <a href="<?= ($BASE) ?>/pembayaran" class="btn btn-outline-secondary px-4">Batal</a>
                         <button type="submit" class="btn btn-primary px-4">
                             <i class="bi bi-save me-1"></i> Simpan Pembayaran
                         </button>
@@ -73,7 +73,7 @@
     </div>
 </div> -->
 <div class="d-flex align-items-center gap-3 mb-4">
-    <a href="{{ @BASE }}/pembayaran" class="btn-back">
+    <a href="<?= ($BASE) ?>/pembayaran" class="btn-back">
         <i class="bi bi-arrow-left"></i> Kembali
     </a>
     <div>
@@ -88,24 +88,25 @@
                 <h6 class="m-0 fw-bold text-dark"><i class="bi bi-receipt text-primary me-2"></i>Formulir Bukti Bayar / Kas Masuk</h6>
             </div>
             <div class="card-body p-4">
-                <form action="{{ @BASE }}/pembayaran/simpan" method="POST" enctype="multipart/form-data" id="formPembayaran">
-                    <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
+                <form action="<?= ($BASE) ?>/pembayaran/simpan" method="POST" enctype="multipart/form-data" id="formPembayaran">
+                    <input type="hidden" name="csrf_token" value="<?= ($csrf_token) ?>">
                     <input type="hidden" name="po_id" id="inputPoId" value="">
 
                     <div class="mb-1">
                         <label class="form-label">Pilih Dokumen Order Layanan / PO <span class="text-danger">*</span></label>
                         <select name="order_id" id="selectOrder" class="form-select searchable-select" placeholder="Ketik nomor order / nama mitra..." required>
                             <option value="">Pilih Order Layanan Terdaftar</option>
-                            <repeat group="{{ @daftar_order }}" value="{{ @ord }}">
-                                <option value="{{ @ord.id }}"
-                                        data-po-id="{{ @ord.po_id }}"
-                                        data-sisa="{{ @ord.sisa_tagihan }}"
-                                        data-termin-berikutnya="{{ @ord.termin_berikutnya }}"
-                                        {{ @selected_order_id == @ord.id ? 'selected' : '' }}>
-                                    {{ @ord.nomor_order }} &mdash; {{ @ord.nama_perusahaan }}
-                                    (Sisa: Rp {{ number_format(@ord.sisa_tagihan, 0, ',', '.') }}, Termin ke-{{ @ord.termin_berikutnya }})
+                            <?php foreach (($daftar_order?:[]) as $ord): ?>
+                                <option value="<?= ($ord['id']) ?>"
+                                        data-po-id="<?= ($ord['po_id']) ?>"
+                                        data-sisa="<?= ($ord['sisa_tagihan']) ?>"
+                                        data-termin-berikutnya="<?= ($ord['termin_berikutnya']) ?>"
+                                        <?= ($selected_order_id == $ord['id'] ? 'selected' : '') ?>>
+                                    <?= ($ord['nomor_order']) ?> &mdash; <?= ($ord['nama_perusahaan'])."
+" ?>
+                                    (Sisa: Rp <?= (number_format($ord['sisa_tagihan'], 0, ',', '.')) ?>, Termin ke-<?= ($ord['termin_berikutnya']) ?>)
                                 </option>
-                            </repeat>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                     <div class="form-text mb-3" id="infoOrderTerpilih">Pilih order dulu buat lihat sisa tagihan &amp; saran termin.</div>
@@ -123,7 +124,7 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Tanggal Transaksi Bayar <span class="text-danger">*</span></label>
-                            <input type="date" name="tanggal_bayar" class="form-control" value="{{ date('Y-m-d') }}" required>
+                            <input type="date" name="tanggal_bayar" class="form-control" value="<?= (date('Y-m-d')) ?>" required>
                         </div>
                     </div>
 
@@ -147,7 +148,7 @@
                     </div>
 
                     <div class="d-flex justify-content-end gap-2">
-                        <a href="{{ @BASE }}/pembayaran" class="btn btn-outline-secondary px-4">Batal</a>
+                        <a href="<?= ($BASE) ?>/pembayaran" class="btn btn-outline-secondary px-4">Batal</a>
                         <button type="submit" class="btn btn-primary px-4">
                             <i class="bi bi-save me-1"></i> Simpan Pembayaran
                         </button>

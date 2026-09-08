@@ -1,0 +1,231 @@
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div>
+        <h2 class="h4 fw-bold mb-1 text-dark"><i class="bi bi-file-earmark-text text-primary me-1"></i> Surat Penawaran Mitra</h2>
+        <p class="text-muted small mb-0">Daftar surat penawaran yang diterbitkan untuk customer.</p>
+    </div>
+    <a href="<?= ($BASE) ?>/surat-penawaran-mitra/tambah" class="btn btn-primary">
+        <i class="bi bi-plus-lg"></i> Tambah Surat
+    </a>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="metric-card">
+            <div><div class="text-muted small fw-semibold mb-1">Total Surat</div><div class="h4 fw-bold mb-0 text-dark"><?= ($total_surat ?: 0) ?></div></div>
+            <div class="metric-icon-box" style="background: rgba(136,19,55,.08); color: var(--color-primary);"><i class="bi bi-file-earmark-text"></i></div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="metric-card">
+            <div><div class="text-muted small fw-semibold mb-1">Draft</div><div class="h4 fw-bold mb-0 text-dark"><?= ($total_draft ?: 0) ?></div></div>
+            <div class="metric-icon-box" style="background:#f1f5f9; color:#475569;"><i class="bi bi-pencil-square"></i></div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="metric-card">
+            <div><div class="text-muted small fw-semibold mb-1">Final</div><div class="h4 fw-bold mb-0 text-dark"><?= ($total_final ?: 0) ?></div></div>
+            <div class="metric-icon-box" style="background:#ecfdf5; color:#065f46;"><i class="bi bi-check2-circle"></i></div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-3">
+        <form action="<?= ($BASE) ?>/surat-penawaran-mitra" method="GET" class="row g-2 align-items-center">
+            <div class="col-md-8">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                    <input type="text" name="q" class="form-control border-start-0" placeholder="Cari nomor surat / nama mitra / perusahaan..." value="<?= ($search) ?>">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select name="status" class="form-select">
+                    <option value="">Semua Status</option>
+                    <option value="draft" <?= ($filter_status == 'draft' ? 'selected' : '') ?>>Draft</option>
+                    <option value="final" <?= ($filter_status == 'final' ? 'selected' : '') ?>>Final</option>
+                </select>
+            </div>
+            <div class="col-md-1">
+                <button type="submit" class="btn btn-outline-primary w-100"><i class="bi bi-funnel"></i></button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h6 class="m-0 fw-bold text-dark"><i class="bi bi-table text-primary me-2"></i>Daftar Surat</h6>
+        <span class="text-muted small">Total: <?= ($total_surat ?: 0) ?> surat</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>No</th>
+                    <th>No. Surat</th>
+                    <th>Mitra / Perusahaan</th>
+                    <th>Perihal</th>
+                    <th>Divisi</th>
+                    <!-- <th class="text-end">Nominal</th> -->
+                    <th class="text-center">Status</th>
+                    <th class="text-center" style="width:170px;">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if ($daftar_surat && count($daftar_surat) > 0): ?>
+                    <?php $no=0; foreach (($daftar_surat?:[]) as $s): $no++; ?>
+                        <tr>
+                            <td class="text-center fw-semibold"><?= ($no) ?></td>
+                            <td class="fw-semibold text-dark"><?= ($s['nomor_surat']) ?></td>
+                            <td>
+                                <div class="text-dark"><?= ($s['nama_mitra']) ?></div>
+                                <div class="text-muted small"><?= ($s['perusahaan']) ?></div>
+                            </td>
+                            <td class="text-muted small"><?= ($s['perihal']) ?></td>
+                            <td>
+                                <?php if ($s['jenis_layanan'] == 'selulosa'): ?><span class="badge badge-pill-primary">Selulosa</span><?php endif; ?>
+                                <?php if ($s['jenis_layanan'] == 'lingkungan'): ?><span class="badge badge-pill-info">Lingkungan</span><?php endif; ?>
+                            </td>
+                            <!-- <td class="text-end fw-semibold">Rp <?= (number_format($s['nominal_penawaran'], 0, ',', '.')) ?></td> -->
+                            <td class="text-center">
+                                <?php if ($s['status'] == 'draft'): ?><span class="badge badge-pill-secondary">Draft</span><?php endif; ?>
+                                <?php if ($s['status'] == 'final'): ?><span class="badge badge-pill-success">Final</span><?php endif; ?>
+                            </td>
+                            <td class="text-center">
+                                <div class="d-flex justify-content-center gap-1">
+                                    <button type="button" class="btn btn-sm btn-outline-success"
+                                        onclick="bukaPreviewIndex(this)"
+                                        data-nomor="<?= ($s['nomor_surat']) ?>"
+                                        data-nama="<?= ($s['nama_mitra']) ?>"
+                                        data-perusahaan="<?= ($s['perusahaan']) ?>"
+                                        data-alamat="<?= ($s['alamat']) ?>"
+                                        data-perihal="<?= ($s['perihal']) ?>"
+                                        data-divisi="<?= ($s['jenis_layanan'] == 'lingkungan' ? 'OPTI Lingkungan' : 'OPTI Selulosa') ?>"
+                                        data-nominal="<?= (number_format($s['nominal_penawaran'], 0, ',', '.')) ?>"
+                                        data-tanggal="<?= (date('d F Y', strtotime($s['tanggal_surat']))) ?>"
+                                        data-keterangan="<?= ($s['keterangan']) ?>"
+                                        title="Preview">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <a href="<?= ($BASE) ?>/surat-penawaran-mitra/<?= ($s['id']) ?>/edit" class="btn btn-sm btn-outline-primary" title="Edit"><i class="bi bi-pencil"></i></a>
+                                    <form action="<?= ($BASE) ?>/surat-penawaran-mitra/<?= ($s['id']) ?>/hapus" method="POST" class="d-inline" onsubmit="return confirm('Hapus surat ini?');">
+                                        <input type="hidden" name="csrf_token" value="<?= ($csrf_token) ?>">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Hapus"><i class="bi bi-trash"></i></button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+                <?php if (!$daftar_surat || count($daftar_surat) == 0): ?>
+                    <tr><td colspan="7" class="text-center text-muted py-5"><i class="bi bi-inbox fs-2 d-block mb-2"></i>Belum ada data surat penawaran.</td></tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- MODAL PREVIEW (index) — X close + Download/Print              -->
+<!-- ============================================================ -->
+<div class="modal fade" id="modalPreviewIndex" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0">
+            <div class="modal-header">
+                <h6 class="modal-title fw-bold"><i class="bi bi-file-earmark-richtext me-1"></i> Preview Surat Penawaran</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="background:#475569;">
+                <div class="doc-sheet" id="docSheetIndex">
+                    <div class="doc-head">
+                        <div>
+                            <div style="font-size:8px; font-weight:bold;">BALAI BESAR STANDARDISASI DAN PELAYANAN JASA INDUSTRI SELULOSA</div>
+                            <div style="font-size:7.5px; color:#444;">Jl. Raya Dayeuhkolot No. 132 Bandung 40258</div>
+                        </div>
+                        <div style="font-size:8px; font-weight:bold;">SURAT PENAWARAN</div>
+                    </div>
+                    <div class="doc-main-title">SURAT PENAWARAN<br>PELAYANAN JASA</div>
+                    <div class="doc-field-row"><div class="doc-field-label">No. Surat</div><div class="doc-field-colon">:</div><div class="doc-field-value" id="i_nomor"></div></div>
+                    <div class="doc-field-row"><div class="doc-field-label">Nama</div><div class="doc-field-colon">:</div><div class="doc-field-value" id="i_nama"></div></div>
+                    <div class="doc-field-row"><div class="doc-field-label">Perusahaan</div><div class="doc-field-colon">:</div><div class="doc-field-value" id="i_perusahaan"></div></div>
+                    <div class="doc-field-row"><div class="doc-field-label">Alamat</div><div class="doc-field-colon">:</div><div class="doc-field-value" id="i_alamat"></div></div>
+                    <div class="doc-field-row"><div class="doc-field-label">Perihal</div><div class="doc-field-colon">:</div><div class="doc-field-value" id="i_perihal"></div></div>
+                    <div class="doc-field-row"><div class="doc-field-label">Divisi</div><div class="doc-field-colon">:</div><div class="doc-field-value" id="i_divisi"></div></div>
+                    <div class="doc-field-row"><div class="doc-field-label">Nominal</div><div class="doc-field-colon">:</div><div class="doc-field-value" id="i_nominal"></div></div>
+                    <div class="doc-subtitle">Keterangan:</div>
+                    <div class="doc-text-box" id="i_keterangan">-</div>
+                    <div class="doc-signature">
+                        <div id="i_tanggal">Bandung, ...</div>
+                        <div style="margin-top:15px;">( .......................................... )</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-center gap-2">
+                <button type="button" class="btn btn-outline-primary" id="btnPrintIndex"><i class="bi bi-printer me-1"></i> Print</button>
+                <button type="button" class="btn btn-primary" id="btnDownloadIndex"><i class="bi bi-download me-1"></i> Download</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .doc-sheet { background:#fff; border-radius:4px; padding:22px 24px; box-shadow:0 4px 12px rgba(0,0,0,.15); font-family:'Times New Roman',Times,serif; font-size:11.5px; color:#000; line-height:1.4; }
+    .doc-head { border-bottom:1.5px solid #000; padding-bottom:6px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:flex-start; }
+    .doc-main-title { text-align:center; font-weight:bold; font-size:13px; margin-bottom:12px; }
+    .doc-field-row { display:flex; margin-bottom:4px; }
+    .doc-field-label { width:90px; flex:none; color:#333; }
+    .doc-field-colon { width:10px; flex:none; }
+    .doc-field-value { flex:1; font-weight:600; border-bottom:1px dotted #999; min-height:15px; }
+    .doc-subtitle { margin:10px 0 5px; font-weight:bold; font-size:11px; }
+    .doc-text-box { border:1px dashed #999; padding:7px 9px; border-radius:2px; min-height:34px; font-size:10.5px; white-space:pre-wrap; background:#fafafa; }
+    .doc-signature { margin-top:20px; text-align:right; font-size:11px; }
+
+    @media print {
+        body * { visibility: hidden; }
+        #docSheetIndex, #docSheetIndex * { visibility: visible; }
+        #docSheetIndex { position:fixed; top:0; left:0; width:100%; box-shadow:none; }
+    }
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+function bukaPreviewIndex(btn) {
+    document.getElementById('i_nomor').textContent = btn.dataset.nomor;
+    document.getElementById('i_nama').textContent = btn.dataset.nama;
+    document.getElementById('i_perusahaan').textContent = btn.dataset.perusahaan;
+    document.getElementById('i_alamat').textContent = btn.dataset.alamat;
+    document.getElementById('i_perihal').textContent = btn.dataset.perihal;
+    document.getElementById('i_divisi').textContent = btn.dataset.divisi;
+    document.getElementById('i_nominal').textContent = 'Rp ' + btn.dataset.nominal;
+    document.getElementById('i_keterangan').textContent = btn.dataset.keterangan || '-';
+    document.getElementById('i_tanggal').textContent = 'Bandung, ' + btn.dataset.tanggal;
+
+    new bootstrap.Modal(document.getElementById('modalPreviewIndex')).show();
+}
+
+document.getElementById('btnPrintIndex').addEventListener('click', function () {
+    window.print();
+});
+
+document.getElementById('btnDownloadIndex').addEventListener('click', function () {
+    var el = document.getElementById('docSheetIndex');
+    var btn = this;
+    var original = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Memproses...';
+    btn.disabled = true;
+
+    html2canvas(el, { scale: 2, backgroundColor: '#ffffff' }).then(function (canvas) {
+        var pdf = new jspdf.jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        var margin = 15, w = 210 - margin * 2, h = 297 - margin * 2;
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', margin, margin, w, h);
+        pdf.save('Surat-Penawaran-' + document.getElementById('i_nomor').textContent.replace(/\//g, '-') + '.pdf');
+        btn.innerHTML = original;
+        btn.disabled = false;
+    }).catch(function () {
+        alert('Gagal membuat PDF.');
+        btn.innerHTML = original;
+        btn.disabled = false;
+    });
+});
+</script>

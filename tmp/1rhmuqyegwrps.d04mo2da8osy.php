@@ -1,0 +1,185 @@
+<div class="d-flex align-items-center gap-3 mb-4">
+    <a href="<?= ($BASE) ?>/surat-penawaran-mitra" class="btn-back">
+        <i class="bi bi-arrow-left"></i> Kembali
+    </a>
+    <div>
+        <h2 class="h4 fw-bold mb-1 text-dark"><?= ($surat ? 'Edit Surat Penawaran Mitra' : 'Tambah Surat Penawaran Mitra') ?></h2>
+        <p class="text-muted small mb-0">Data sementara/dummy &mdash; sesuaikan field kalau data aslinya sudah fix.</p>
+    </div>
+</div>
+
+<form id="formSurat" action="<?= ($surat ? $BASE . '/surat-penawaran-mitra/' . $surat['id'] . '/update' : $BASE . '/surat-penawaran-mitra/simpan') ?>" method="POST">
+    <input type="hidden" name="csrf_token" value="<?= ($csrf_token) ?>">
+    <input type="hidden" name="aksi" id="inputAksi" value="final">
+    <input type="hidden" name="nominal_real" id="inputNominalReal" value="<?= ($surat ? $surat['nominal_penawaran'] : 0) ?>">
+
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white py-3"><h6 class="m-0 fw-bold text-dark"><i class="bi bi-file-earmark-text text-primary me-2"></i>Informasi Surat</h6></div>
+                <div class="card-body p-3 p-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Nomor Surat <span class="text-danger">*</span></label>
+                        <input type="text" name="nomor_surat" id="f_nomor" class="form-control" placeholder="Contoh: 003/SPM/BBSPJIS/IX/2026" value="<?= ($surat['nomor_surat']) ?>" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tanggal Surat <span class="text-danger">*</span></label>
+                        <input type="date" name="tanggal_surat" id="f_tanggal" class="form-control" value="<?= ($surat ? $surat['tanggal_surat'] : date('Y-m-d')) ?>" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Perihal <span class="text-danger">*</span></label>
+                        <input type="text" name="perihal" id="f_perihal" class="form-control" placeholder="Contoh: Penawaran Pengujian Kadar Selulosa" value="<?= ($surat['perihal']) ?>" required>
+                    </div>
+                    <div class="mb-1">
+                        <label class="form-label">Divisi Layanan</label>
+                        <select name="jenis_layanan" id="f_divisi" class="form-select">
+                            <option value="selulosa" <?= (!$surat || $surat['jenis_layanan'] == 'selulosa' ? 'selected' : '') ?>>OPTI Selulosa</option>
+                            <option value="lingkungan" <?= ($surat && $surat['jenis_layanan'] == 'lingkungan' ? 'selected' : '') ?>>OPTI Lingkungan</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white py-3"><h6 class="m-0 fw-bold text-dark"><i class="bi bi-person-lines-fill text-primary me-2"></i>Identitas Mitra</h6></div>
+                <div class="card-body p-3 p-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Nama Mitra <span class="text-danger">*</span></label>
+                        <input type="text" name="nama_mitra" id="f_nama" class="form-control" value="<?= ($surat['nama_mitra']) ?>" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Perusahaan</label>
+                        <input type="text" name="perusahaan" id="f_perusahaan" class="form-control" value="<?= ($surat['perusahaan']) ?>">
+                    </div>
+                    <div class="mb-1">
+                        <label class="form-label">Alamat</label>
+                        <input type="text" name="alamat" id="f_alamat" class="form-control" value="<?= ($surat['alamat']) ?>">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white py-3"><h6 class="m-0 fw-bold text-dark"><i class="bi bi-cash-coin text-primary me-2"></i>Nominal & Keterangan</h6></div>
+                <div class="card-body p-3 p-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Nominal Penawaran (Rp) <span class="text-danger">*</span></label>
+                        <input type="text" id="f_nominal_display" class="form-control" placeholder="0" value="<?= ($surat ? number_format($surat['nominal_penawaran'], 0, ',', '.') : '') ?>" oninput="formatNominal(this)">
+                    </div>
+                    <div class="mb-1">
+                        <label class="form-label">Keterangan</label>
+                        <textarea name="keterangan" id="f_keterangan" class="form-control" rows="4" placeholder="Catatan tambahan..."><?= ($surat['keterangan']) ?></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex flex-wrap justify-content-end gap-2">
+                <a href="<?= ($BASE) ?>/surat-penawaran-mitra" class="btn btn-outline-secondary px-4">Kembali</a>
+                <button type="submit" id="btnDraft" class="btn btn-outline-secondary px-4"><i class="bi bi-save me-1"></i> Simpan sebagai Draft</button>
+                <button type="button" id="btnPreview" class="btn btn-outline-primary px-4"><i class="bi bi-eye me-1"></i> Preview</button>
+                <button type="submit" id="btnSimpan" class="btn btn-primary px-4"><i class="bi bi-check2-circle me-1"></i> Simpan</button>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- ============================================================ -->
+<!-- MODAL PREVIEW (create/edit) — live-filled dari form, cuma X    -->
+<!-- ============================================================ -->
+<div class="modal fade" id="modalPreviewForm" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0">
+            <div class="modal-header">
+                <h6 class="modal-title fw-bold"><i class="bi bi-file-earmark-richtext me-1"></i> Preview Surat Penawaran</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="background:#475569;">
+                <div class="doc-sheet" id="docSheetForm">
+                    <div class="doc-head">
+                        <div>
+                            <div style="font-size:8px; font-weight:bold;">BALAI BESAR STANDARDISASI DAN PELAYANAN JASA INDUSTRI SELULOSA</div>
+                            <div style="font-size:7.5px; color:#444;">Jl. Raya Dayeuhkolot No. 132 Bandung 40258</div>
+                        </div>
+                        <div style="font-size:8px; font-weight:bold;">SURAT PENAWARAN</div>
+                    </div>
+                    <div class="doc-main-title">SURAT PENAWARAN<br>PELAYANAN JASA</div>
+                    <div class="doc-field-row"><div class="doc-field-label">No. Surat</div><div class="doc-field-colon">:</div><div class="doc-field-value" id="p_nomor">&mdash;</div></div>
+                    <div class="doc-field-row"><div class="doc-field-label">Nama</div><div class="doc-field-colon">:</div><div class="doc-field-value" id="p_nama">&mdash;</div></div>
+                    <div class="doc-field-row"><div class="doc-field-label">Perusahaan</div><div class="doc-field-colon">:</div><div class="doc-field-value" id="p_perusahaan">&mdash;</div></div>
+                    <div class="doc-field-row"><div class="doc-field-label">Alamat</div><div class="doc-field-colon">:</div><div class="doc-field-value" id="p_alamat">&mdash;</div></div>
+                    <div class="doc-field-row"><div class="doc-field-label">Perihal</div><div class="doc-field-colon">:</div><div class="doc-field-value" id="p_perihal">&mdash;</div></div>
+                    <div class="doc-field-row"><div class="doc-field-label">Divisi</div><div class="doc-field-colon">:</div><div class="doc-field-value" id="p_divisi">&mdash;</div></div>
+                    <div class="doc-field-row"><div class="doc-field-label">Nominal</div><div class="doc-field-colon">:</div><div class="doc-field-value" id="p_nominal">&mdash;</div></div>
+                    <div class="doc-subtitle">Keterangan:</div>
+                    <div class="doc-text-box" id="p_keterangan">-</div>
+                    <div class="doc-signature">
+                        <div id="p_tanggal">Bandung, ...</div>
+                        <div style="margin-top:15px;">( .......................................... )</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .doc-sheet { background:#fff; border-radius:4px; padding:22px 24px; box-shadow:0 4px 12px rgba(0,0,0,.15); font-family:'Times New Roman',Times,serif; font-size:11.5px; color:#000; line-height:1.4; }
+    .doc-head { border-bottom:1.5px solid #000; padding-bottom:6px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:flex-start; }
+    .doc-main-title { text-align:center; font-weight:bold; font-size:13px; margin-bottom:12px; }
+    .doc-field-row { display:flex; margin-bottom:4px; }
+    .doc-field-label { width:90px; flex:none; color:#333; }
+    .doc-field-colon { width:10px; flex:none; }
+    .doc-field-value { flex:1; font-weight:600; border-bottom:1px dotted #999; min-height:15px; }
+    .doc-subtitle { margin:10px 0 5px; font-weight:bold; font-size:11px; }
+    .doc-text-box { border:1px dashed #999; padding:7px 9px; border-radius:2px; min-height:34px; font-size:10.5px; white-space:pre-wrap; background:#fafafa; }
+    .doc-signature { margin-top:20px; text-align:right; font-size:11px; }
+</style>
+
+<script>
+function formatNominal(el) {
+    var val = el.value.replace(/[^0-9]/g, '');
+    var num = parseInt(val, 10) || 0;
+    document.getElementById('inputNominalReal').value = num;
+    el.value = num > 0 ? num.toLocaleString('id-ID') : '';
+}
+
+function isiPreviewDariForm() {
+    document.getElementById('p_nomor').textContent = document.getElementById('f_nomor').value || '-';
+    document.getElementById('p_nama').textContent = document.getElementById('f_nama').value || '-';
+    document.getElementById('p_perusahaan').textContent = document.getElementById('f_perusahaan').value || '-';
+    document.getElementById('p_alamat').textContent = document.getElementById('f_alamat').value || '-';
+    document.getElementById('p_perihal').textContent = document.getElementById('f_perihal').value || '-';
+
+    var divisiSelect = document.getElementById('f_divisi');
+    document.getElementById('p_divisi').textContent = divisiSelect.value === 'lingkungan' ? 'OPTI Lingkungan' : 'OPTI Selulosa';
+
+    var nominal = parseInt(document.getElementById('inputNominalReal').value, 10) || 0;
+    document.getElementById('p_nominal').textContent = 'Rp ' + nominal.toLocaleString('id-ID');
+
+    document.getElementById('p_keterangan').textContent = document.getElementById('f_keterangan').value || '-';
+
+    var tglRaw = document.getElementById('f_tanggal').value;
+    var tglLabel = '...';
+    if (tglRaw) {
+        var d = new Date(tglRaw + 'T00:00:00');
+        tglLabel = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+    }
+    document.getElementById('p_tanggal').textContent = 'Bandung, ' + tglLabel;
+}
+
+document.getElementById('btnPreview').addEventListener('click', function () {
+    isiPreviewDariForm();
+    new bootstrap.Modal(document.getElementById('modalPreviewForm')).show();
+});
+
+document.getElementById('btnDraft').addEventListener('click', function () {
+    document.getElementById('inputAksi').value = 'draft';
+});
+document.getElementById('btnSimpan').addEventListener('click', function () {
+    document.getElementById('inputAksi').value = 'final';
+});
+</script>

@@ -351,7 +351,7 @@
                                                              <button type="button" class="btn btn-sm btn-success py-1 px-2 d-inline-flex align-items-center gap-1 shadow-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#approveModal<?= ($ord['id']) ?>" title="Klien Telah DEAL: Setujui &amp; Terbitkan PO">
                                                                  <i class="bi bi-check2-circle"></i> <span>Setujui PO</span>
                                                              </button>
-                                                         <?php endif; ?>
+                                                         <?php endif; ?> 
     
                                                          <?php if ($ord['status'] == 'disetujui' || $ord['po_id']): ?>
                                                              <a href="<?= ($BASE) ?>/po/<?= ($ord['po_id'] ?: $ord['id']) ?>" class="btn btn-sm btn-outline-dark py-1 px-2 d-inline-flex align-items-center gap-1" title="Buka Dokumen PO Terbit">

@@ -1,0 +1,182 @@
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div>
+        <h2 class="h4 fw-bold mb-1 text-dark"><i class="bi bi-clipboard2-data text-primary me-1"></i> Petunjuk Operasional (PO)</h2>
+        <p class="text-muted small mb-0">Order dengan status keuangan Lunas / Terbayar Sebagian &mdash; siap dibuatkan Petunjuk Operasional oleh Tim Kerja.</p>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="metric-card">
+            <div><div class="text-muted small fw-semibold mb-1">Order Lunas/Terbayar Sebagian</div><div class="h4 fw-bold mb-0 text-dark"><?= ($total_order ?: 0) ?></div></div>
+            <div class="metric-icon-box" style="background: rgba(136,19,55,.08); color: var(--color-primary);"><i class="bi bi-cash-coin"></i></div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="metric-card">
+            <div><div class="text-muted small fw-semibold mb-1">Sudah Dibuatkan PO</div><div class="h4 fw-bold mb-0 text-dark"><?= ($total_po_dibuat ?: 0) ?></div></div>
+            <div class="metric-icon-box" style="background:#ecfdf5; color:#065f46;"><i class="bi bi-check2-circle"></i></div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="metric-card">
+            <div><div class="text-muted small fw-semibold mb-1">Belum Dibuatkan PO</div><div class="h4 fw-bold mb-0 text-dark"><?= ($total_belum_po ?: 0) ?></div></div>
+            <div class="metric-icon-box" style="background:#fffbeb; color:#92400e;"><i class="bi bi-hourglass-split"></i></div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h6 class="m-0 fw-bold text-dark"><i class="bi bi-table text-primary me-2"></i>Daftar Order Lunas / Terbayar Sebagian</h6>
+        <span class="text-muted small">Total: <?= ($total_order ?: 0) ?> order</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>No. Order</th>
+                    <th>Mitra / Perusahaan</th>
+                    <th>Judul Kegiatan</th>
+                    <th>Divisi</th>
+                    <th class="text-end">Estimasi Biaya</th>
+                    <th class="text-center">Status Keuangan</th>
+                    <th class="text-center">Status PO</th>
+                    <th class="text-center" style="width:150px;">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if ($daftar_order && count($daftar_order) > 0): ?>
+                    <?php foreach (($daftar_order?:[]) as $o): ?>
+                        <tr>
+                            <td class="fw-semibold text-dark"><?= ($o['nomor_order']) ?></td>
+                            <td><?= ($o['nama_mitra']) ?> <span class="text-muted small">(<?= ($o['pt_cv']) ?>)</span></td>
+                            <td class="text-muted small"><?= ($o['judul_kegiatan']) ?></td>
+                            <td>
+                                <?php if ($o['jenis_layanan_opti'] == 'selulosa'): ?><span class="badge badge-pill-primary">Selulosa</span><?php endif; ?>
+                                <?php if ($o['jenis_layanan_opti'] == 'lingkungan'): ?><span class="badge badge-pill-info">Lingkungan</span><?php endif; ?>
+                                <?php if ($o['jenis_layanan_opti'] == 'belum_ditentukan'): ?><span class="badge badge-pill-secondary">Belum Ditentukan</span><?php endif; ?>
+                            </td>
+                            <td class="text-end fw-semibold">Rp <?= (number_format($o['estimasi_biaya'], 0, ',', '.')) ?></td>
+                            <td class="text-center">
+                                <?php if ($o['status_keuangan'] == 'lunas'): ?>
+                                    <span class="badge badge-pill-success"><i class="bi bi-check2-circle"></i> Lunas</span>
+                                <?php endif; ?>
+                                <?php if ($o['status_keuangan'] == 'terbayar_sebagian'): ?>
+                                    <span class="badge badge-pill-warning"><i class="bi bi-hourglass-split"></i> Terbayar Sebagian</span>
+                                <?php endif; ?>
+                            </td>
+                            <td class="text-center">
+                                <?php if (!$o['po_id']): ?>
+                                    <span class="badge badge-pill-secondary"><i class="bi bi-dash-circle"></i> Belum Ada PO</span>
+                                <?php endif; ?>
+                                <?php if ($o['po_id'] && $o['po_status'] == 'draft'): ?>
+                                    <span class="badge badge-pill-secondary"><i class="bi bi-pencil-square"></i> Draft</span>
+                                <?php endif; ?>
+                                <?php if ($o['po_id'] && $o['po_status'] == 'terkirim'): ?>
+                                    <span class="badge badge-pill-success"><i class="bi bi-check2-circle"></i> Terkirim</span>
+                                <?php endif; ?>
+                            </td>
+                            <td class="text-center">
+                                <?php if (!$o['po_id']): ?>
+                                    <a href="<?= ($BASE) ?>/po-kegiatan/buat?order_id=<?= ($o['id']) ?>" class="btn btn-sm btn-primary">
+                                        <i class="bi bi-plus-lg"></i> Buat PO
+                                    </a>
+                                <?php endif; ?>
+                                <?php if ($o['po_id']): ?>
+                                    <button type="button" class="btn btn-sm btn-outline-success" onclick="bukaPreviewPo(<?= ($o['po_id']) ?>)">
+                                        <i class="bi bi-eye"></i> Lihat PO
+                                    </button>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+                <?php if (!$daftar_order || count($daftar_order) == 0): ?>
+                    <tr><td colspan="8" class="text-center text-muted py-5"><i class="bi bi-inbox fs-2 d-block mb-2"></i>Belum ada order dengan status keuangan lunas/terbayar sebagian.</td></tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- MODAL PREVIEW PO -->
+<!-- ============================================================ -->
+<div class="modal fade" id="modalPreviewPo" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header no-print">
+                <h6 class="modal-title fw-bold"><i class="bi bi-clipboard2-data text-primary me-2"></i>Preview Petunjuk Operasional</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0" style="background:#e9ecef;">
+                <div id="modalPoBody" class="p-3">
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="small text-muted mt-2 mb-0">Memuat PO...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer no-print justify-content-center gap-2">
+                <a href="#" id="btnEditPo" class="btn btn-outline-secondary"><i class="bi bi-pencil me-1"></i> Edit</a>
+                <button type="button" class="btn btn-outline-primary" onclick="window.print()"><i class="bi bi-printer me-1"></i> Print</button>
+                <button type="button" class="btn btn-primary" id="btnDownloadPo" onclick="downloadPoPDF()"><i class="bi bi-download me-1"></i> Download PDF</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+var currentPoId = null;
+
+function bukaPreviewPo(poId) {
+    currentPoId = poId;
+    var body = document.getElementById('modalPoBody');
+    body.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="small text-muted mt-2 mb-0">Memuat PO...</p></div>';
+    document.getElementById('btnEditPo').href = '<?= ($BASE) ?>/po-kegiatan/' + poId + '/edit';
+
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('modalPreviewPo')).show();
+
+    fetch('<?= ($BASE) ?>/po-kegiatan/' + poId + '/preview')
+        .then(function (res) { if (!res.ok) throw new Error('Gagal memuat PO'); return res.text(); })
+        .then(function (html) { body.innerHTML = html; })
+        .catch(function () {
+            body.innerHTML = '<div class="text-center text-danger py-5">Gagal memuat data PO.</div>';
+        });
+}
+
+function downloadPoPDF() {
+    var el = document.getElementById('poDocSheet');
+    if (!el) { alert('PO belum selesai dimuat.'); return; }
+
+    var btn = document.getElementById('btnDownloadPo');
+    var original = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Memproses...';
+    btn.disabled = true;
+
+    html2canvas(el, { scale: 2, backgroundColor: '#ffffff' }).then(function (canvas) {
+        var pdf = new jspdf.jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        var margin = 12, w = 210 - margin * 2, h = (canvas.height * w) / canvas.width;
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', margin, margin, w, h);
+        pdf.save('PO-' + currentPoId + '.pdf');
+        btn.innerHTML = original;
+        btn.disabled = false;
+    }).catch(function () {
+        alert('Gagal membuat PDF.');
+        btn.innerHTML = original;
+        btn.disabled = false;
+    });
+}
+</script>
+
+<style>
+    @media print {
+        body * { visibility: hidden; }
+        #poDocSheet, #poDocSheet * { visibility: visible; }
+        #poDocSheet { position: fixed; top: 0; left: 0; width: 100%; }
+        .modal-header, .modal-footer { display: none !important; }
+    }
+</style>

@@ -5,7 +5,7 @@
         </h2>
         <p class="text-muted small mb-0">Pencatatan pembayaran multi-termin (DP, cicilan, pelunasan) layanan jasa OPTI BBSPJIS.</p>
     </div>
-    <a href="{{ @BASE }}/pembayaran/tambah" class="btn btn-primary shadow-sm d-inline-flex align-items-center gap-2">
+    <a href="<?= ($BASE) ?>/pembayaran/tambah" class="btn btn-primary shadow-sm d-inline-flex align-items-center gap-2">
         <i class="bi bi-cash-stack"></i> Catat Pembayaran Baru
     </a>
 </div>
@@ -18,10 +18,10 @@
         <div class="metric-card bg-white p-3 p-md-4 rounded-3 border shadow-sm h-100 d-flex justify-content-between align-items-start">
             <div class="w-100 pe-2">
                 <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">Total Tagihan PO</span>
-                <h3 class="fw-bold text-dark mb-1 mt-1">Rp {{ number_format(@total_tagihan, 0, ',', '.') }}</h3>
+                <h3 class="fw-bold text-dark mb-1 mt-1">Rp <?= (number_format($total_tagihan, 0, ',', '.')) ?></h3>
                 <div class="small text-muted d-flex align-items-center gap-1" style="font-size: 0.75rem;">
                     <i class="bi bi-file-earmark-check text-primary"></i>
-                    <span>{{ count(@rekap_po ?: []) }} Dokumen Petunjuk Operasional Resmi</span>
+                    <span><?= (count($rekap_po ?: [])) ?> Dokumen Petunjuk Operasional Resmi</span>
                 </div>
             </div>
             <div class="metric-icon-box bg-primary bg-opacity-10 text-primary p-3 rounded-3 flex-shrink-0">
@@ -36,18 +36,18 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">Realisasi Kas Masuk</span>
                     <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold" style="font-size: 0.7rem;">
-                        {{ @persen_realisasi }}% Terbayar
+                        <?= ($persen_realisasi) ?>% Terbayar
                     </span>
                 </div>
-                <h3 class="fw-bold text-success mb-1 mt-1">Rp {{ number_format(@total_terbayar, 0, ',', '.') }}</h3>
+                <h3 class="fw-bold text-success mb-1 mt-1">Rp <?= (number_format($total_terbayar, 0, ',', '.')) ?></h3>
                 
                 <div class="progress my-2 bg-light" style="height: 6px;">
-                    <div class="progress-bar bg-success rounded" role="progressbar" style="width: {{ @persen_realisasi }}%;" aria-valuenow="{{ @persen_realisasi }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    <div class="progress-bar bg-success rounded" role="progressbar" style="width: <?= ($persen_realisasi) ?>%;" aria-valuenow="<?= ($persen_realisasi) ?>" aria-valuemin="0" aria-valuemax="100"></div>
                 </div>
 
                 <div class="small text-muted d-flex justify-content-between" style="font-size: 0.75rem;">
-                    <span><i class="bi bi-check2-circle text-primary me-1"></i>{{ @count_lunas }} PO Lunas</span>
-                    <span><i class="bi bi-clock-history text-primary me-1"></i>{{ @count_sebagian }} PO Cicilan/DP</span>
+                    <span><i class="bi bi-check2-circle text-primary me-1"></i><?= ($count_lunas) ?> PO Lunas</span>
+                    <span><i class="bi bi-clock-history text-primary me-1"></i><?= ($count_sebagian) ?> PO Cicilan/DP</span>
                 </div>
             </div>
             <div class="metric-icon-box bg-primary bg-opacity-10 text-primary p-3 rounded-3 flex-shrink-0 ms-2">
@@ -60,20 +60,21 @@
         <div class="metric-card bg-white p-3 p-md-4 rounded-3 border shadow-sm h-100 d-flex justify-content-between align-items-start">
             <div class="w-100 pe-2">
                 <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">Total Sisa Piutang</span>
-                <h3 class="fw-bold {{ @sisa_piutang > 0 ? 'text-danger' : 'text-success' }} mb-1 mt-1">
-                    Rp {{ number_format(@sisa_piutang, 0, ',', '.') }}
+                <h3 class="fw-bold <?= ($sisa_piutang > 0 ? 'text-danger' : 'text-success') ?> mb-1 mt-1">
+                    Rp <?= (number_format($sisa_piutang, 0, ',', '.'))."
+" ?>
                 </h3>
                 <div class="small text-muted d-flex align-items-center gap-1" style="font-size: 0.75rem;">
-                    <check if="{{ @sisa_piutang > 0 }}">
-                        <true>
+                    <?php if ($sisa_piutang > 0): ?>
+                        
                             <i class="bi bi-exclamation-circle text-primary"></i>
-                            <span class="text-secondary fw-semibold">{{ @count_sebagian + @count_belum }} PO</span> masih memiliki sisa tagihan
-                        </true>
-                        <false>
+                            <span class="text-secondary fw-semibold"><?= ($count_sebagian + $count_belum) ?> PO</span> masih memiliki sisa tagihan
+                        
+                        <?php else: ?>
                             <i class="bi bi-check-all text-primary"></i>
                             <span class="text-secondary fw-semibold">Semua tagihan lunas</span>
-                        </false>
-                    </check>
+                        
+                    <?php endif; ?>
                 </div>
             </div>
             <div class="metric-icon-box bg-primary bg-opacity-10 text-primary p-3 rounded-3 flex-shrink-0">
@@ -91,11 +92,11 @@
         <h6 class="m-0 fw-bold text-dark">
             <i class="bi bi-pie-chart text-primary me-2"></i>Status Pelunasan Tagihan per Petunjuk Operasional (PO)
         </h6>
-        <span class="badge bg-light text-muted border">{{ count(@rekap_po ?: []) }} Dokumen PO</span>
+        <span class="badge bg-light text-muted border"><?= (count($rekap_po ?: [])) ?> Dokumen PO</span>
     </div>
     <div class="card-body p-0">
-        <check if="{{ count(@rekap_po ?: []) > 0 }}">
-            <true>
+        <?php if (count($rekap_po ?: []) > 0): ?>
+            
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
                         <thead class="bg-light">
@@ -111,107 +112,109 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <repeat group="{{ @rekap_po }}" value="{{ @rp }}" counter="{{ @ctr }}">
+                            <?php $ctr=0; foreach (($rekap_po?:[]) as $rp): $ctr++; ?>
                                 <tr>
-                                    <td class="text-center text-muted small">{{ @ctr }}</td>
+                                    <td class="text-center text-muted small"><?= ($ctr) ?></td>
                                     <td>
                                         <div class="fw-bold text-primary small mb-1">
-                                            <a href="{{ @BASE }}/po/{{ @rp.po_id }}" class="text-decoration-none text-primary">
-                                                {{ @rp.nomor_po }}
+                                            <a href="<?= ($BASE) ?>/po/<?= ($rp['po_id']) ?>" class="text-decoration-none text-primary">
+                                                <?= ($rp['nomor_po'])."
+" ?>
                                             </a>
                                         </div>
                                         <div class="d-flex align-items-center gap-1">
-                                            <check if="{{ @rp.jenis_layanan_opti == 'selulosa' }}">
+                                            <?php if ($rp['jenis_layanan_opti'] == 'selulosa'): ?>
                                                 <span class="badge badge-pill-danger" style="font-size: 0.68rem;">Selulosa</span>
-                                            </check>
-                                            <check if="{{ @rp.jenis_layanan_opti == 'lingkungan' }}">
+                                            <?php endif; ?>
+                                            <?php if ($rp['jenis_layanan_opti'] == 'lingkungan'): ?>
                                                 <span class="badge badge-pill-success" style="font-size: 0.68rem;">Lingkungan</span>
-                                            </check>
-                                            <span class="text-muted" style="font-size: 0.72rem;">{{ @rp.nomor_order }}</span>
+                                            <?php endif; ?>
+                                            <span class="text-muted" style="font-size: 0.72rem;"><?= ($rp['nomor_order']) ?></span>
                                         </div>
                                     </td>
                                     <td>
-                                        <div class="fw-semibold text-dark mb-1" title="{{ @rp.judul_kegiatan }}">
-                                            {{ @rp.judul_kegiatan }}
+                                        <div class="fw-semibold text-dark mb-1" title="<?= ($rp['judul_kegiatan']) ?>">
+                                            <?= ($rp['judul_kegiatan'])."
+" ?>
                                         </div>
                                         <div class="small text-muted d-flex align-items-center gap-1">
                                             <i class="bi bi-building text-secondary"></i>
-                                            <check if="{{ @mask_client_name }}">
-                                                <true>
-                                                    {~ 
-                                                        $words = explode(' ', $rp['nama_perusahaan']);
+                                            <?php if ($mask_client_name): ?>
+                                                
+                                                    <?php $words = explode(' ', $rp['nama_perusahaan']);
                                                         $masked = array_map(function($w) {
                                                             return mb_strlen($w) > 1 ? mb_substr($w, 0, 1) . '***' : $w;
                                                         }, $words);
-                                                        $namaTampil = implode(' ', $masked);
-                                                    ~}
-                                                    <span>{{ $namaTampil }}</span>
-                                                </true>
-                                                <false>
-                                                    <span class="text-secondary fw-medium">{{ @rp.nama_perusahaan }} ({{ @rp.pt_cv }})</span>
-                                                </false>
-                                            </check>
+                                                        $namaTampil = implode(' ', $masked); ?>
+                                                    <span><?= ($namaTampil) ?></span>
+                                                
+                                                <?php else: ?>
+                                                    <span class="text-secondary fw-medium"><?= ($rp['nama_perusahaan']) ?> (<?= ($rp['pt_cv']) ?>)</span>
+                                                
+                                            <?php endif; ?>
                                         </div>
                                     </td>
                                     <td class="text-end fw-bold text-dark small">
-                                        Rp {{ number_format(@rp.biaya, 0, ',', '.') }}
+                                        Rp <?= (number_format($rp['biaya'], 0, ',', '.'))."
+" ?>
                                     </td>
                                     <td>
                                         <div class="d-flex justify-content-between align-items-center mb-1">
-                                            <span class="fw-bold text-success small">Rp {{ number_format(@rp.total_dibayar, 0, ',', '.') }}</span>
-                                            <span class="text-muted" style="font-size: 0.72rem;">{{ @rp.persen_lunas }}%</span>
+                                            <span class="fw-bold text-success small">Rp <?= (number_format($rp['total_dibayar'], 0, ',', '.')) ?></span>
+                                            <span class="text-muted" style="font-size: 0.72rem;"><?= ($rp['persen_lunas']) ?>%</span>
                                         </div>
                                         <div class="progress" style="height: 5px;">
-                                            <div class="progress-bar {{ @rp.persen_lunas >= 100 ? 'bg-success' : 'bg-warning' }}" role="progressbar" style="width: {{ @rp.persen_lunas }}%;"></div>
+                                            <div class="progress-bar <?= ($rp['persen_lunas'] >= 100 ? 'bg-success' : 'bg-warning') ?>" role="progressbar" style="width: <?= ($rp['persen_lunas']) ?>%;"></div>
                                         </div>
                                         <div class="text-muted mt-1" style="font-size: 0.7rem;">
-                                            <i class="bi bi-layers text-muted me-1"></i>{{ @rp.jml_termin }} kali pembayaran
+                                            <i class="bi bi-layers text-muted me-1"></i><?= ($rp['jml_termin']) ?> kali pembayaran
                                         </div>
                                     </td>
-                                    <td class="text-end fw-bold {{ @rp.sisa_piutang > 0 ? 'text-danger' : 'text-success' }} small">
-                                        Rp {{ number_format(@rp.sisa_piutang, 0, ',', '.') }}
+                                    <td class="text-end fw-bold <?= ($rp['sisa_piutang'] > 0 ? 'text-danger' : 'text-success') ?> small">
+                                        Rp <?= (number_format($rp['sisa_piutang'], 0, ',', '.'))."
+" ?>
                                     </td>
                                     <td class="text-center">
-                                        <check if="{{ @rp.status_lunas == 'lunas' }}">
+                                        <?php if ($rp['status_lunas'] == 'lunas'): ?>
                                             <span class="badge badge-pill-success">
                                                 <i class="bi bi-check-circle-fill me-1"></i>Lunas 100%
                                             </span>
-                                        </check>
-                                        <check if="{{ @rp.status_lunas == 'sebagian' }}">
+                                        <?php endif; ?>
+                                        <?php if ($rp['status_lunas'] == 'sebagian'): ?>
                                             <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1">
                                                 <i class="bi bi-hourglass-split me-1"></i>Sebagian (DP)
                                             </span>
-                                        </check>
-                                        <check if="{{ @rp.status_lunas == 'belum' }}">
+                                        <?php endif; ?>
+                                        <?php if ($rp['status_lunas'] == 'belum'): ?>
                                             <span class="badge badge-pill-danger">
                                                 <i class="bi bi-x-circle me-1"></i>Belum Bayar
                                             </span>
-                                        </check>
+                                        <?php endif; ?>
                                     </td>
                                     <td class="text-center">
                                         <div class="d-inline-flex align-items-center gap-1">
-                                            <check if="{{ @rp.sisa_piutang > 0 }}">
-                                                <a href="{{ @BASE }}/pembayaran/tambah?order_id={{ @rp.order_id }}" class="btn btn-sm btn-success py-1 px-2 d-inline-flex align-items-center gap-1" title="Catat Cicilan / Pelunasan">
+                                            <?php if ($rp['sisa_piutang'] > 0): ?>
+                                                <a href="<?= ($BASE) ?>/pembayaran/tambah?order_id=<?= ($rp['order_id']) ?>" class="btn btn-sm btn-success py-1 px-2 d-inline-flex align-items-center gap-1" title="Catat Cicilan / Pelunasan">
                                                     <i class="bi bi-plus-circle"></i> <span>Bayar</span>
                                                 </a>
-                                            </check>
-                                            <a href="{{ @BASE }}/po/{{ @rp.po_id }}" class="btn btn-sm btn-outline-primary py-1 px-2 d-inline-flex align-items-center gap-1" title="Lihat Lembar PO">
+                                            <?php endif; ?>
+                                            <a href="<?= ($BASE) ?>/po/<?= ($rp['po_id']) ?>" class="btn btn-sm btn-outline-primary py-1 px-2 d-inline-flex align-items-center gap-1" title="Lihat Lembar PO">
                                                 <i class="bi bi-file-earmark-text"></i> <span>PO</span>
                                             </a>
                                         </div>
                                     </td>
                                 </tr>
-                            </repeat>
+                            <?php endforeach; ?>
                         </tbody>
                     </table>
                 </div>
-            </true>
-            <false>
+            
+            <?php else: ?>
                 <div class="text-center py-4 text-muted small">
                     Belum ada data dokumen Petunjuk Operasional (PO) yang terdaftar.
                 </div>
-            </false>
-        </check>
+            
+        <?php endif; ?>
     </div>
 </div>
 
@@ -224,29 +227,29 @@
             <h6 class="m-0 fw-bold text-dark">
                 <i class="bi bi-receipt text-primary me-2"></i>Histori Buku Kas & Transaksi Pembayaran
             </h6>
-            <span class="badge bg-light text-muted border">{{ count(@daftar_pembayaran ?: []) }} Transaksi Tercatat</span>
+            <span class="badge bg-light text-muted border"><?= (count($daftar_pembayaran ?: [])) ?> Transaksi Tercatat</span>
         </div>
 
         Filter & Search Bar Transaksi 
-        <form method="GET" action="{{ @BASE }}/pembayaran" class="row g-2 align-items-center">
+        <form method="GET" action="<?= ($BASE) ?>/pembayaran" class="row g-2 align-items-center">
             <div class="col-md-5">
                 <div class="input-group input-group-sm">
                     <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
-                    <input type="text" class="form-control border-start-0" name="q" placeholder="Cari nomor PO, order, mitra, keterangan..." value="{{ @search_q }}">
+                    <input type="text" class="form-control border-start-0" name="q" placeholder="Cari nomor PO, order, mitra, keterangan..." value="<?= ($search_q) ?>">
                 </div>
             </div>
             <div class="col-md-4">
                 <select class="form-select form-select-sm" name="jenis_layanan">
                     <option value="">Semua Divisi Layanan</option>
-                    <option value="selulosa" {{ @filter_jenis_layanan == 'selulosa' ? 'selected' : '' }}>OPTI Selulosa</option>
-                    <option value="lingkungan" {{ @filter_jenis_layanan == 'lingkungan' ? 'selected' : '' }}>OPTI Lingkungan</option>
+                    <option value="selulosa" <?= ($filter_jenis_layanan == 'selulosa' ? 'selected' : '') ?>>OPTI Selulosa</option>
+                    <option value="lingkungan" <?= ($filter_jenis_layanan == 'lingkungan' ? 'selected' : '') ?>>OPTI Lingkungan</option>
                 </select>
             </div>
             <div class="col-md-3 d-flex gap-2">
                 <button type="submit" class="btn btn-sm btn-primary w-100 d-inline-flex align-items-center justify-content-center gap-1">
                     <i class="bi bi-filter"></i> Filter
                 </button>
-                <a href="{{ @BASE }}/pembayaran" class="btn btn-sm btn-outline-secondary px-2" title="Reset Filter">
+                <a href="<?= ($BASE) ?>/pembayaran" class="btn btn-sm btn-outline-secondary px-2" title="Reset Filter">
                     <i class="bi bi-arrow-clockwise"></i>
                 </a>
             </div>
@@ -254,8 +257,8 @@
     </div>
 
     <div class="card-body p-0">
-        <check if="{{ count(@daftar_pembayaran ?: []) > 0 }}">
-            <true>
+        <?php if (count($daftar_pembayaran ?: []) > 0): ?>
+            
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
                         <thead class="bg-light">
@@ -271,63 +274,66 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <repeat group="{{ @daftar_pembayaran }}" value="{{ @bayar }}" counter="{{ @ctr }}">
+                            <?php $ctr=0; foreach (($daftar_pembayaran?:[]) as $bayar): $ctr++; ?>
                                 <tr>
-                                    <td class="text-center text-muted small">{{ @ctr }}</td>
+                                    <td class="text-center text-muted small"><?= ($ctr) ?></td>
                                     <td>
-                                        <div class="fw-semibold text-dark small">{{ date('d/m/Y', strtotime(@bayar.tanggal_bayar)) }}</div>
+                                        <div class="fw-semibold text-dark small"><?= (date('d/m/Y', strtotime($bayar['tanggal_bayar']))) ?></div>
                                         <div class="text-muted" style="font-size: 0.72rem;">
                                             <i class="bi bi-clock me-1"></i>Kas Masuk
                                         </div>
                                     </td>
                                     <td>
-                                        <check if="{{ @bayar.nomor_po }}">
-                                            <true>
+                                        <?php if ($bayar['nomor_po']): ?>
+                                            
                                                 <div class="fw-bold text-primary small mb-1">
-                                                    <a href="{{ @BASE }}/po/{{ @bayar.po_id_real ?: @bayar.po_id }}" class="text-decoration-none text-primary">
-                                                        {{ @bayar.nomor_po }}
+                                                    <a href="<?= ($BASE) ?>/po/<?= ($bayar['po_id_real'] ?: $bayar['po_id']) ?>" class="text-decoration-none text-primary">
+                                                        <?= ($bayar['nomor_po'])."
+" ?>
                                                     </a>
                                                 </div>
-                                            </true>
-                                            <false>
+                                            
+                                            <?php else: ?>
                                                 <div class="fw-bold text-muted small mb-1">-</div>
-                                            </false>
-                                        </check>
+                                            
+                                        <?php endif; ?>
                                         <div class="text-muted" style="font-size: 0.72rem;">
-                                            {{ @bayar.nomor_order }}
+                                            <?= ($bayar['nomor_order'])."
+" ?>
                                         </div>
                                     </td>
                                     <td>
                                         <div class="fw-semibold text-dark small mb-1">
-                                            {{ @bayar.judul_kegiatan }}
+                                            <?= ($bayar['judul_kegiatan'])."
+" ?>
                                         </div>
                                         <div class="small text-muted d-flex align-items-center gap-1">
                                             <i class="bi bi-building text-secondary"></i>
-                                            <check if="{{ @mask_client_name }}">
-                                                <true>
-                                                    {~ 
-                                                        $words = explode(' ', $bayar['nama_perusahaan']);
+                                            <?php if ($mask_client_name): ?>
+                                                
+                                                    <?php $words = explode(' ', $bayar['nama_perusahaan']);
                                                         $masked = array_map(function($w) {
                                                             return mb_strlen($w) > 1 ? mb_substr($w, 0, 1) . '***' : $w;
                                                         }, $words);
-                                                        $namaTampil = implode(' ', $masked);
-                                                    ~}
-                                                    <span>{{ $namaTampil }}</span>
-                                                </true>
-                                                <false>
-                                                    <span class="text-secondary fw-medium">{{ @bayar.nama_perusahaan }} ({{ @bayar.pt_cv }})</span>
-                                                </false>
-                                            </check>
+                                                        $namaTampil = implode(' ', $masked); ?>
+                                                    <span><?= ($namaTampil) ?></span>
+                                                
+                                                <?php else: ?>
+                                                    <span class="text-secondary fw-medium"><?= ($bayar['nama_perusahaan']) ?> (<?= ($bayar['pt_cv']) ?>)</span>
+                                                
+                                            <?php endif; ?>
                                         </div>
                                     </td>
                                     <td class="text-center">
                                         <span class="badge badge-pill-primary px-2 py-1">
-                                            Termin Ke-{{ @bayar.termin_ke }}
+                                            Termin Ke-<?= ($bayar['termin_ke'])."
+" ?>
                                         </span>
                                     </td>
                                     <td class="text-end">
                                         <div class="fw-bold text-success small">
-                                            Rp {{ number_format(@bayar.jumlah, 0, ',', '.') }}
+                                            Rp <?= (number_format($bayar['jumlah'], 0, ',', '.'))."
+" ?>
                                         </div>
                                         <span class="badge bg-success-subtle text-success border border-success-subtle mt-1" style="font-size: 0.68rem;">
                                             <i class="bi bi-check-circle-fill me-1"></i>Terverifikasi
@@ -335,18 +341,19 @@
                                     </td>
                                     <td>
                                         <div class="small text-dark mb-0">
-                                            {{ @bayar.keterangan ?: 'Pembayaran layanan jasa OPTI' }}
+                                            <?= ($bayar['keterangan'] ?: 'Pembayaran layanan jasa OPTI')."
+" ?>
                                         </div>
                                     </td>
                                     <td class="text-center">
                                         <div class="d-inline-flex align-items-center gap-1">
-                                            <check if="{{ @bayar.po_id_real || @bayar.po_id }}">
-                                                <a href="{{ @BASE }}/po/{{ @bayar.po_id_real ?: @bayar.po_id }}" class="btn btn-sm btn-light border py-1 px-2 text-primary" title="Buka Dokumen PO">
+                                            <?php if ($bayar['po_id_real'] || $bayar['po_id']): ?>
+                                                <a href="<?= ($BASE) ?>/po/<?= ($bayar['po_id_real'] ?: $bayar['po_id']) ?>" class="btn btn-sm btn-light border py-1 px-2 text-primary" title="Buka Dokumen PO">
                                                     <i class="bi bi-file-earmark-text"></i>
                                                 </a>
-                                            </check>
-                                            <form action="{{ @BASE }}/pembayaran/{{ @bayar.id }}/hapus" method="POST" class="d-inline" onsubmit="return confirm('Hapus pencatatan transaksi pembayaran ini?');">
-                                                <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
+                                            <?php endif; ?>
+                                            <form action="<?= ($BASE) ?>/pembayaran/<?= ($bayar['id']) ?>/hapus" method="POST" class="d-inline" onsubmit="return confirm('Hapus pencatatan transaksi pembayaran ini?');">
+                                                <input type="hidden" name="csrf_token" value="<?= ($csrf_token) ?>">
                                                 <button type="submit" class="btn btn-sm btn-light border py-1 px-2 text-danger" title="Hapus Transaksi">
                                                     <i class="bi bi-trash"></i>
                                                 </button>
@@ -354,22 +361,22 @@
                                         </div>
                                     </td>
                                 </tr>
-                            </repeat>
+                            <?php endforeach; ?>
                         </tbody>
                     </table>
                 </div>
-            </true>
-            <false>
+            
+            <?php else: ?>
                 <div class="text-center py-5">
                     <i class="bi bi-wallet2 text-muted display-4 d-block mb-3"></i>
                     <h5 class="fw-bold text-dark">Belum ada transaksi pembayaran yang cocok</h5>
                     <p class="text-muted small mb-3">Klik tombol di bawah untuk mencatat transaksi pembayaran baru.</p>
-                    <a href="{{ @BASE }}/pembayaran/tambah" class="btn btn-sm btn-primary">
+                    <a href="<?= ($BASE) ?>/pembayaran/tambah" class="btn btn-sm btn-primary">
                         <i class="bi bi-cash-stack me-1"></i> Catat Pembayaran
                     </a>
                 </div>
-            </false>
-        </check>
+            
+        <?php endif; ?>
     </div>
 </div> -->
 
@@ -380,7 +387,7 @@
         </h2>
         <p class="text-muted small mb-0">Pencatatan pembayaran multi-termin (DP, cicilan, pelunasan) layanan jasa OPTI BBSPJIS.</p>
     </div>
-    <a href="{{ @BASE }}/pembayaran/tambah" class="btn btn-primary shadow-sm d-inline-flex align-items-center gap-2">
+    <a href="<?= ($BASE) ?>/pembayaran/tambah" class="btn btn-primary shadow-sm d-inline-flex align-items-center gap-2">
         <i class="bi bi-cash-stack"></i> Catat Pembayaran Baru
     </a>
 </div>
@@ -389,10 +396,10 @@
         <div class="metric-card bg-white p-3 p-md-4 rounded-3 border shadow-sm h-100 d-flex justify-content-between align-items-start">
             <div class="w-100 pe-2">
                 <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">Total Tagihan PO</span>
-                <h3 class="fw-bold text-dark mb-1 mt-1">Rp {{ number_format(@total_tagihan, 0, ',', '.') }}</h3>
+                <h3 class="fw-bold text-dark mb-1 mt-1">Rp <?= (number_format($total_tagihan, 0, ',', '.')) ?></h3>
                 <div class="small text-muted d-flex align-items-center gap-1" style="font-size: 0.75rem;">
                     <i class="bi bi-file-earmark-check text-primary"></i>
-                    <span>{{ count(@rekap_po ?: []) }} Dokumen Petunjuk Operasional Resmi</span>
+                    <span><?= (count($rekap_po ?: [])) ?> Dokumen Petunjuk Operasional Resmi</span>
                 </div>
             </div>
             <div class="metric-icon-box bg-primary bg-opacity-10 text-primary p-3 rounded-3 flex-shrink-0">
@@ -407,18 +414,18 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">Realisasi Kas Masuk</span>
                     <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold" style="font-size: 0.7rem;">
-                        {{ @persen_realisasi }}% Terbayar
+                        <?= ($persen_realisasi) ?>% Terbayar
                     </span>
                 </div>
-                <h3 class="fw-bold text-success mb-1 mt-1">Rp {{ number_format(@total_terbayar, 0, ',', '.') }}</h3>
+                <h3 class="fw-bold text-success mb-1 mt-1">Rp <?= (number_format($total_terbayar, 0, ',', '.')) ?></h3>
 
                 <div class="progress my-2 bg-light" style="height: 6px;">
-                    <div class="progress-bar bg-success rounded" role="progressbar" style="width: {{ @persen_realisasi }}%;" aria-valuenow="{{ @persen_realisasi }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    <div class="progress-bar bg-success rounded" role="progressbar" style="width: <?= ($persen_realisasi) ?>%;" aria-valuenow="<?= ($persen_realisasi) ?>" aria-valuemin="0" aria-valuemax="100"></div>
                 </div>
 
                 <div class="small text-muted d-flex justify-content-between" style="font-size: 0.75rem;">
-                    <span><i class="bi bi-check2-circle text-primary me-1"></i>{{ @count_lunas }} PO Lunas</span>
-                    <span><i class="bi bi-clock-history text-primary me-1"></i>{{ @count_sebagian }} PO Cicilan/DP</span>
+                    <span><i class="bi bi-check2-circle text-primary me-1"></i><?= ($count_lunas) ?> PO Lunas</span>
+                    <span><i class="bi bi-clock-history text-primary me-1"></i><?= ($count_sebagian) ?> PO Cicilan/DP</span>
                 </div>
             </div>
             <div class="metric-icon-box bg-primary bg-opacity-10 text-primary p-3 rounded-3 flex-shrink-0 ms-2">
@@ -430,20 +437,21 @@
         <div class="metric-card bg-white p-3 p-md-4 rounded-3 border shadow-sm h-100 d-flex justify-content-between align-items-start">
             <div class="w-100 pe-2">
                 <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">Total Sisa Piutang</span>
-                <h3 class="fw-bold {{ @sisa_piutang > 0 ? 'text-danger' : 'text-success' }} mb-1 mt-1">
-                    Rp {{ number_format(@sisa_piutang, 0, ',', '.') }}
+                <h3 class="fw-bold <?= ($sisa_piutang > 0 ? 'text-danger' : 'text-success') ?> mb-1 mt-1">
+                    Rp <?= (number_format($sisa_piutang, 0, ',', '.'))."
+" ?>
                 </h3>
                 <div class="small text-muted d-flex align-items-center gap-1" style="font-size: 0.75rem;">
-                    <check if="{{ @sisa_piutang > 0 }}">
-                        <true>
+                    <?php if ($sisa_piutang > 0): ?>
+                        
                             <i class="bi bi-exclamation-circle text-primary"></i>
-                            <span class="text-secondary fw-semibold">{{ @count_sebagian + @count_belum }} PO</span> masih memiliki sisa tagihan
-                        </true>
-                        <false>
+                            <span class="text-secondary fw-semibold"><?= ($count_sebagian + $count_belum) ?> PO</span> masih memiliki sisa tagihan
+                        
+                        <?php else: ?>
                             <i class="bi bi-check-all text-primary"></i>
                             <span class="text-secondary fw-semibold">Semua tagihan lunas</span>
-                        </false>
-                    </check>
+                        
+                    <?php endif; ?>
                 </div>
             </div>
             <div class="metric-icon-box bg-primary bg-opacity-10 text-primary p-3 rounded-3 flex-shrink-0">
@@ -461,11 +469,11 @@
         <h6 class="m-0 fw-bold text-dark">
             <i class="bi bi-pie-chart text-primary me-2"></i>Status Pelunasan Tagihan per Petunjuk Operasional (PO)
         </h6>
-        <span class="badge bg-light text-muted border">{{ count(@rekap_po ?: []) }} Dokumen PO</span>
+        <span class="badge bg-light text-muted border"><?= (count($rekap_po ?: [])) ?> Dokumen PO</span>
     </div>
     <div class="card-body p-0">
-        <check if="{{ count(@rekap_po ?: []) > 0 }}">
-            <true>
+        <?php if (count($rekap_po ?: []) > 0): ?>
+            
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
                         <thead class="bg-light">
@@ -481,113 +489,115 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <repeat group="{{ @rekap_po }}" value="{{ @rp }}" counter="{{ @ctr }}">
+                            <?php $ctr=0; foreach (($rekap_po?:[]) as $rp): $ctr++; ?>
                                 <tr>
-                                    <td class="text-center text-muted small">{{ @ctr }}</td>
+                                    <td class="text-center text-muted small"><?= ($ctr) ?></td>
                                     <td>
                                         <div class="fw-bold text-primary small mb-1">
-                                            <a href="{{ @BASE }}/po/{{ @rp.po_id }}" class="text-decoration-none text-primary">
-                                                {{ @rp.nomor_po }}
+                                            <a href="<?= ($BASE) ?>/po/<?= ($rp['po_id']) ?>" class="text-decoration-none text-primary">
+                                                <?= ($rp['nomor_po'])."
+" ?>
                                             </a>
                                         </div>
                                         <div class="d-flex align-items-center gap-1">
-                                            <check if="{{ @rp.jenis_layanan_opti == 'selulosa' }}">
+                                            <?php if ($rp['jenis_layanan_opti'] == 'selulosa'): ?>
                                                 <span class="badge badge-pill-danger" style="font-size: 0.68rem;">Selulosa</span>
-                                            </check>
-                                            <check if="{{ @rp.jenis_layanan_opti == 'lingkungan' }}">
+                                            <?php endif; ?>
+                                            <?php if ($rp['jenis_layanan_opti'] == 'lingkungan'): ?>
                                                 <span class="badge badge-pill-success" style="font-size: 0.68rem;">Lingkungan</span>
-                                            </check>
-                                            <span class="text-muted" style="font-size: 0.72rem;">{{ @rp.nomor_order }}</span>
+                                            <?php endif; ?>
+                                            <span class="text-muted" style="font-size: 0.72rem;"><?= ($rp['nomor_order']) ?></span>
                                         </div>
                                     </td>
                                     <td>
-                                        <div class="fw-semibold text-dark mb-1" title="{{ @rp.judul_kegiatan }}">
-                                            {{ @rp.judul_kegiatan }}
+                                        <div class="fw-semibold text-dark mb-1" title="<?= ($rp['judul_kegiatan']) ?>">
+                                            <?= ($rp['judul_kegiatan'])."
+" ?>
                                         </div>
                                         <div class="small text-muted d-flex align-items-center gap-1">
                                             <i class="bi bi-building text-secondary"></i>
-                                            <check if="{{ @mask_client_name }}">
-                                                <true>
-                                                    {~
-                                                        $words = explode(' ', $rp['nama_perusahaan']);
+                                            <?php if ($mask_client_name): ?>
+                                                
+                                                    <?php $words = explode(' ', $rp['nama_perusahaan']);
                                                         $masked = array_map(function($w) {
                                                             return mb_strlen($w) > 1 ? mb_substr($w, 0, 1) . '***' : $w;
                                                         }, $words);
-                                                        $namaTampil = implode(' ', $masked);
-                                                    ~}
-                                                    <span>{{ $namaTampil }}</span>
-                                                </true>
-                                                <false>
-                                                    <span class="text-secondary fw-medium">{{ @rp.nama_perusahaan }} ({{ @rp.pt_cv }})</span>
-                                                </false>
-                                            </check>
+                                                        $namaTampil = implode(' ', $masked); ?>
+                                                    <span><?= ($namaTampil) ?></span>
+                                                
+                                                <?php else: ?>
+                                                    <span class="text-secondary fw-medium"><?= ($rp['nama_perusahaan']) ?> (<?= ($rp['pt_cv']) ?>)</span>
+                                                
+                                            <?php endif; ?>
                                         </div>
                                     </td>
 
                                     <td class="text-end fw-bold text-dark small">
-                                        Rp {{ number_format(@rp.biaya, 0, ',', '.') }}
+                                        Rp <?= (number_format($rp['biaya'], 0, ',', '.'))."
+" ?>
                                     </td>
                                     <td>
                                         <div class="d-flex justify-content-between align-items-center mb-1">
-                                            <span class="fw-bold text-success small">Rp {{ number_format(@rp.total_dibayar, 0, ',', '.') }}</span>
-                                            <span class="text-muted" style="font-size: 0.72rem;">{{ @rp.persen_lunas }}%</span>
+                                            <span class="fw-bold text-success small">Rp <?= (number_format($rp['total_dibayar'], 0, ',', '.')) ?></span>
+                                            <span class="text-muted" style="font-size: 0.72rem;"><?= ($rp['persen_lunas']) ?>%</span>
                                         </div>
                                         <div class="progress" style="height: 5px;">
-                                            <div class="progress-bar {{ @rp.persen_lunas >= 100 ? 'bg-success' : 'bg-warning' }}" role="progressbar" style="width: {{ @rp.persen_lunas }}%;"></div>
+                                            <div class="progress-bar <?= ($rp['persen_lunas'] >= 100 ? 'bg-success' : 'bg-warning') ?>" role="progressbar" style="width: <?= ($rp['persen_lunas']) ?>%;"></div>
                                         </div>
                                         <div class="text-muted mt-1" style="font-size: 0.7rem;">
-                                            <i class="bi bi-layers text-muted me-1"></i>{{ @rp.jml_termin }} kali pembayaran
+                                            <i class="bi bi-layers text-muted me-1"></i><?= ($rp['jml_termin']) ?> kali pembayaran
                                         </div>
                                     </td>
-                                    <td class="text-end fw-bold {{ @rp.sisa_piutang > 0 ? 'text-danger' : 'text-success' }} small">
-                                        Rp {{ number_format(@rp.sisa_piutang, 0, ',', '.') }}
+                                    <td class="text-end fw-bold <?= ($rp['sisa_piutang'] > 0 ? 'text-danger' : 'text-success') ?> small">
+                                        Rp <?= (number_format($rp['sisa_piutang'], 0, ',', '.'))."
+" ?>
                                     </td>
                                     <td class="text-center">
-                                        <check if="{{ @rp.status_lunas == 'lunas' }}">
+                                        <?php if ($rp['status_lunas'] == 'lunas'): ?>
                                             <span class="badge badge-pill-success">
                                                 <i class="bi bi-check-circle-fill me-1"></i>Lunas 100%
                                             </span>
-                                        </check>
-                                        <check if="{{ @rp.status_lunas == 'sebagian' }}">
+                                        <?php endif; ?>
+                                        <?php if ($rp['status_lunas'] == 'sebagian'): ?>
                                             <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1">
                                                 <i class="bi bi-hourglass-split me-1"></i>Sebagian (DP)
                                             </span>
-                                        </check>
-                                        <check if="{{ @rp.status_lunas == 'belum' }}">
+                                        <?php endif; ?>
+                                        <?php if ($rp['status_lunas'] == 'belum'): ?>
                                             <span class="badge badge-pill-danger">
                                                 <i class="bi bi-x-circle me-1"></i>Belum Bayar
                                             </span>
-                                        </check>
+                                        <?php endif; ?>
                                     </td>
                                     <td class="text-center">
                                         <div class="d-inline-flex align-items-center gap-1">
                                             <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 d-inline-flex align-items-center gap-1"
                                                     title="Lihat Riwayat Pembayaran"
-                                                    onclick="bukaDetailPembayaran({{ @rp.order_id }}, '{{ @rp.nomor_po }}', '{{ @rp.nama_perusahaan }}')">
+                                                    onclick="bukaDetailPembayaran(<?= ($rp['order_id']) ?>, '<?= ($rp['nomor_po']) ?>', '<?= ($rp['nama_perusahaan']) ?>')">
                                                 <i class="bi bi-clock-history"></i> <span>Detail</span>
                                             </button>
-                                            <check if="{{ @rp.sisa_piutang > 0 }}">
-                                                <a href="{{ @BASE }}/pembayaran/tambah?order_id={{ @rp.order_id }}" class="btn btn-sm btn-success py-1 px-2 d-inline-flex align-items-center gap-1" title="Catat Cicilan / Pelunasan">
+                                            <?php if ($rp['sisa_piutang'] > 0): ?>
+                                                <a href="<?= ($BASE) ?>/pembayaran/tambah?order_id=<?= ($rp['order_id']) ?>" class="btn btn-sm btn-success py-1 px-2 d-inline-flex align-items-center gap-1" title="Catat Cicilan / Pelunasan">
                                                     <i class="bi bi-plus-circle"></i> <span>Bayar</span>
                                                 </a>
-                                            </check>
-                                            <a href="{{ @BASE }}/po/{{ @rp.po_id }}" class="btn btn-sm btn-outline-primary py-1 px-2 d-inline-flex align-items-center gap-1" title="Lihat Lembar PO">
+                                            <?php endif; ?>
+                                            <a href="<?= ($BASE) ?>/po/<?= ($rp['po_id']) ?>" class="btn btn-sm btn-outline-primary py-1 px-2 d-inline-flex align-items-center gap-1" title="Lihat Lembar PO">
                                                 <i class="bi bi-file-earmark-text"></i> <span>PO</span>
                                             </a>
                                         </div>
                                     </td>
                                 </tr>
-                            </repeat>
+                            <?php endforeach; ?>
                         </tbody>
                     </table>
                 </div>
-            </true>
-            <false>
+            
+            <?php else: ?>
                 <div class="text-center py-4 text-muted small">
                     Belum ada data dokumen Petunjuk Operasional (PO) yang terdaftar.
                 </div>
-            </false>
-        </check>
+            
+        <?php endif; ?>
     </div>
 </div>
 
@@ -600,36 +610,36 @@
             <h6 class="m-0 fw-bold text-dark">
                 <i class="bi bi-receipt text-primary me-2"></i>Histori Buku Kas & Transaksi Pembayaran
             </h6>
-            <span class="badge bg-light text-muted border">{{ count(@daftar_pembayaran ?: []) }} Transaksi Tercatat</span>
+            <span class="badge bg-light text-muted border"><?= (count($daftar_pembayaran ?: [])) ?> Transaksi Tercatat</span>
         </div>
 
-        <form method="GET" action="{{ @BASE }}/pembayaran" class="row g-2 align-items-center">
+        <form method="GET" action="<?= ($BASE) ?>/pembayaran" class="row g-2 align-items-center">
             <div class="col-md-5">
                 <div class="input-group input-group-sm">
                     <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
-                    <input type="text" class="form-control border-start-0" name="q" placeholder="Cari nomor PO, order, mitra, keterangan..." value="{{ @search_q }}">
+                    <input type="text" class="form-control border-start-0" name="q" placeholder="Cari nomor PO, order, mitra, keterangan..." value="<?= ($search_q) ?>">
                 </div>
             </div>
             <div class="col-md-4">
                 <select class="form-select form-select-sm" name="jenis_layanan">
                     <option value="">Semua Divisi Layanan</option>
-                    <option value="selulosa" {{ @filter_jenis_layanan == 'selulosa' ? 'selected' : '' }}>OPTI Selulosa</option>
-                    <option value="lingkungan" {{ @filter_jenis_layanan == 'lingkungan' ? 'selected' : '' }}>OPTI Lingkungan</option>
+                    <option value="selulosa" <?= ($filter_jenis_layanan == 'selulosa' ? 'selected' : '') ?>>OPTI Selulosa</option>
+                    <option value="lingkungan" <?= ($filter_jenis_layanan == 'lingkungan' ? 'selected' : '') ?>>OPTI Lingkungan</option>
                 </select>
             </div>
             <div class="col-md-3 d-flex gap-2">
                 <button type="submit" class="btn btn-sm btn-primary w-100 d-inline-flex align-items-center justify-content-center gap-1">
                     <i class="bi bi-filter"></i> Filter
                 </button>
-                <a href="{{ @BASE }}/pembayaran" class="btn btn-sm btn-outline-secondary px-2" title="Reset Filter">
+                <a href="<?= ($BASE) ?>/pembayaran" class="btn btn-sm btn-outline-secondary px-2" title="Reset Filter">
                     <i class="bi bi-arrow-clockwise"></i>
                 </a>
             </div>
         </form>
     </div>
     <div class="card-body p-0">
-        <check if="{{ count(@daftar_pembayaran ?: []) > 0 }}">
-            <true>
+        <?php if (count($daftar_pembayaran ?: []) > 0): ?>
+            
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
                         <thead class="bg-light">
@@ -645,64 +655,67 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <repeat group="{{ @daftar_pembayaran }}" value="{{ @bayar }}" counter="{{ @ctr }}">
+                            <?php $ctr=0; foreach (($daftar_pembayaran?:[]) as $bayar): $ctr++; ?>
                                 <tr>
-                                    <td class="text-center text-muted small">{{ @ctr }}</td>
+                                    <td class="text-center text-muted small"><?= ($ctr) ?></td>
                                     <td>
-                                        <div class="fw-semibold text-dark small">{{ date('d/m/Y', strtotime(@bayar.tanggal_bayar)) }}</div>
+                                        <div class="fw-semibold text-dark small"><?= (date('d/m/Y', strtotime($bayar['tanggal_bayar']))) ?></div>
                                         <div class="text-muted" style="font-size: 0.72rem;">
                                             <i class="bi bi-clock me-1"></i>Kas Masuk
                                         </div>
                                     </td>
                                     <td>
-                                        <check if="{{ @bayar.nomor_po }}">
-                                            <true>
+                                        <?php if ($bayar['nomor_po']): ?>
+                                            
                                                 <div class="fw-bold text-primary small mb-1">
-                                                    <a href="{{ @BASE }}/po/{{ @bayar.po_id_real ?: @bayar.po_id }}" class="text-decoration-none text-primary">
-                                                        {{ @bayar.nomor_po }}
+                                                    <a href="<?= ($BASE) ?>/po/<?= ($bayar['po_id_real'] ?: $bayar['po_id']) ?>" class="text-decoration-none text-primary">
+                                                        <?= ($bayar['nomor_po'])."
+" ?>
                                                     </a>
                                                 </div>
-                                            </true>
-                                            <false>
+                                            
+                                            <?php else: ?>
                                                 <div class="fw-bold text-muted small mb-1">-</div>
-                                            </false>
-                                        </check>
+                                            
+                                        <?php endif; ?>
                                         <div class="text-muted" style="font-size: 0.72rem;">
-                                            {{ @bayar.nomor_order }}
+                                            <?= ($bayar['nomor_order'])."
+" ?>
                                         </div>
                                     </td>
                                     <td>
                                         <div class="fw-semibold text-dark small mb-1">
-                                            {{ @bayar.judul_kegiatan }}
+                                            <?= ($bayar['judul_kegiatan'])."
+" ?>
                                         </div>
                                         <div class="small text-muted d-flex align-items-center gap-1">
                                             <i class="bi bi-building text-secondary"></i>
-                                            <check if="{{ @mask_client_name }}">
-                                                <true>
-                                                    {~
-                                                        $words = explode(' ', $bayar['nama_perusahaan']);
+                                            <?php if ($mask_client_name): ?>
+                                                
+                                                    <?php $words = explode(' ', $bayar['nama_perusahaan']);
                                                         $masked = array_map(function($w) {
                                                             return mb_strlen($w) > 1 ? mb_substr($w, 0, 1) . '***' : $w;
                                                         }, $words);
-                                                        $namaTampil = implode(' ', $masked);
-                                                    ~}
-                                                    <span>{{ $namaTampil }}</span>
-                                                </true>
-                                                <false>
-                                                    <span class="text-secondary fw-medium">{{ @bayar.nama_perusahaan }} ({{ @bayar.pt_cv }})</span>
-                                                </false>
-                                            </check>
+                                                        $namaTampil = implode(' ', $masked); ?>
+                                                    <span><?= ($namaTampil) ?></span>
+                                                
+                                                <?php else: ?>
+                                                    <span class="text-secondary fw-medium"><?= ($bayar['nama_perusahaan']) ?> (<?= ($bayar['pt_cv']) ?>)</span>
+                                                
+                                            <?php endif; ?>
                                         </div>
                                     </td>
 
                                     <td class="text-center">
                                         <span class="badge badge-pill-primary px-2 py-1">
-                                            Termin Ke-{{ @bayar.termin_ke }}
+                                            Termin Ke-<?= ($bayar['termin_ke'])."
+" ?>
                                         </span>
                                     </td>
                                     <td class="text-end">
                                         <div class="fw-bold text-success small">
-                                            Rp {{ number_format(@bayar.jumlah, 0, ',', '.') }}
+                                            Rp <?= (number_format($bayar['jumlah'], 0, ',', '.'))."
+" ?>
                                         </div>
                                         <span class="badge bg-success-subtle text-success border border-success-subtle mt-1" style="font-size: 0.68rem;">
                                             <i class="bi bi-check-circle-fill me-1"></i>Terverifikasi
@@ -710,18 +723,19 @@
                                     </td>
                                     <td>
                                         <div class="small text-dark mb-0">
-                                            {{ @bayar.keterangan ?: 'Pembayaran layanan jasa OPTI' }}
+                                            <?= ($bayar['keterangan'] ?: 'Pembayaran layanan jasa OPTI')."
+" ?>
                                         </div>
                                     </td>
                                     <td class="text-center">
                                         <div class="d-inline-flex align-items-center gap-1">
-                                            <check if="{{ @bayar.po_id_real || @bayar.po_id }}">
-                                                <a href="{{ @BASE }}/po/{{ @bayar.po_id_real ?: @bayar.po_id }}" class="btn btn-sm btn-light border py-1 px-2 text-primary" title="Buka Dokumen PO">
+                                            <?php if ($bayar['po_id_real'] || $bayar['po_id']): ?>
+                                                <a href="<?= ($BASE) ?>/po/<?= ($bayar['po_id_real'] ?: $bayar['po_id']) ?>" class="btn btn-sm btn-light border py-1 px-2 text-primary" title="Buka Dokumen PO">
                                                     <i class="bi bi-file-earmark-text"></i>
                                                 </a>
-                                            </check>
-                                            <form action="{{ @BASE }}/pembayaran/{{ @bayar.id }}/hapus" method="POST" class="d-inline" onsubmit="return confirm('Hapus pencatatan transaksi pembayaran ini?');">
-                                                <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
+                                            <?php endif; ?>
+                                            <form action="<?= ($BASE) ?>/pembayaran/<?= ($bayar['id']) ?>/hapus" method="POST" class="d-inline" onsubmit="return confirm('Hapus pencatatan transaksi pembayaran ini?');">
+                                                <input type="hidden" name="csrf_token" value="<?= ($csrf_token) ?>">
                                                 <button type="submit" class="btn btn-sm btn-light border py-1 px-2 text-danger" title="Hapus Transaksi">
                                                     <i class="bi bi-trash"></i>
                                                 </button>
@@ -729,23 +743,23 @@
                                         </div>
                                     </td>
                                 </tr>
-                            </repeat>
+                            <?php endforeach; ?>
                         </tbody>
 
                     </table>
                 </div>
-            </true>
-            <false>
+            
+            <?php else: ?>
                 <div class="text-center py-5">
                     <i class="bi bi-wallet2 text-muted display-4 d-block mb-3"></i>
                     <h5 class="fw-bold text-dark">Belum ada transaksi pembayaran yang cocok</h5>
                     <p class="text-muted small mb-3">Klik tombol di bawah untuk mencatat transaksi pembayaran baru.</p>
-                    <a href="{{ @BASE }}/pembayaran/tambah" class="btn btn-sm btn-primary">
+                    <a href="<?= ($BASE) ?>/pembayaran/tambah" class="btn btn-sm btn-primary">
                         <i class="bi bi-cash-stack me-1"></i> Catat Pembayaran
                     </a>
                 </div>
-            </false>
-        </check>
+            
+        <?php endif; ?>
     </div>
 </div>
 
@@ -786,7 +800,7 @@
 </div>
 
 <script>
-var semuaPembayaran = {{ @daftar_pembayaran_json | raw }};
+var semuaPembayaran = <?= ($this->raw($daftar_pembayaran_json)) ?>;
 
 function bukaDetailPembayaran(orderId, nomorPo, namaPerusahaan) {
     var label = nomorPo && nomorPo !== '' ? nomorPo : 'Order tanpa PO';

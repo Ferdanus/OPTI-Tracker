@@ -202,11 +202,11 @@
                     <span class="count-chip"><?= ($total_proposal) ?></span>
                 </a>
 
-                <!-- Draf PIC -->
+                <!-- Draft Disimpan -->
                 <a href="<?= ($BASE) ?>/proposal?status=draft<?= ($filter_q ? '&q='.$filter_q : '') ?>" 
-                   class="filter-tab-pill <?= ($filter_status == 'draft' ? 'active-draft' : '') ?>">
-                    <i class="bi bi-pencil-square"></i>
-                    <span>Draf PIC</span>
+                   class="filter-tab-pill <?= ($filter_status == 'draft' || $filter_status == 'draft_disimpan' ? 'active-draft' : '') ?>">
+                    <i class="bi bi-bookmark-check"></i>
+                    <span>Draft Disimpan</span>
                     <span class="count-chip"><?= ($stat_draft) ?></span>
                 </a>
 
@@ -307,10 +307,7 @@
                                 <!-- PIC (jika Ka Tim / Admin) -->
                                 <?php if (!$is_tim_kerja): ?>
                                     <td class="py-3 px-3">
-                                        <div class="d-flex align-items-center gap-1.5">
-                                            <i class="bi bi-person-badge text-secondary small"></i>
-                                            <span class="text-dark small fw-semibold"><?= ($row['pic_nama'] ?: 'Belum Ditunjuk') ?></span>
-                                        </div>
+                                        <span class="text-dark small fw-semibold"><?= ($row['pic_nama'] ?: 'Belum Ditunjuk') ?></span>
                                     </td>
                                 <?php endif; ?>
 
@@ -351,8 +348,13 @@
                                             <i class="bi bi-exclamation-diamond-fill me-1"></i> Perlu Revisi
                                         </span>
                                     <?php endif; ?>
-                                    <?php if (!$row['status_proposal'] || $row['status_proposal'] == 'draft'): ?>
+                                    <?php if ($row['status_proposal'] == 'draft_disimpan'): ?>
                                         <span class="badge badge-pill-warning">
+                                            <i class="bi bi-bookmark-check-fill me-1"></i> Draft Disimpan
+                                        </span>
+                                    <?php endif; ?>
+                                    <?php if (!$row['status_proposal'] || $row['status_proposal'] == 'draft'): ?>
+                                        <span class="badge badge-pill-secondary">
                                             <i class="bi bi-pencil-square me-1"></i> Draf PIC
                                         </span>
                                     <?php endif; ?>
