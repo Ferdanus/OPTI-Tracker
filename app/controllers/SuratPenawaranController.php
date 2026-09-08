@@ -173,7 +173,13 @@ class SuratPenawaranController extends Controller
                     FROM order_layanan o
                     LEFT JOIN tb_customer c ON c.id_customer = o.id_customer
                     WHERE (o.status_tinjauan = 'layak' OR o.status NOT IN ('permintaan_masuk', 'draft_disimpan'))
-                      AND (o.status_proposal_biaya = 'siap_penawaran' OR o.status_penawaran IN ('belum_ada', 'draft', ''))
+                      AND (
+                          (o.jenis_layanan_opti = 'selulosa' AND o.status_proposal_biaya = 'siap_penawaran' AND o.id IN (SELECT order_id FROM opti_proposal_riset WHERE file_proposal IS NOT NULL AND file_proposal != '' AND estimasi_total_biaya > 0 AND status_proposal IN ('disetujui', 'disetujui_ketua', 'disetujui_pimpinan')))
+                          OR
+                          (o.jenis_layanan_opti = 'lingkungan' AND o.status_proposal_biaya = 'siap_penawaran')
+                          OR
+                          (o.jenis_layanan_opti NOT IN ('selulosa', 'lingkungan') AND (o.status_proposal_biaya = 'siap_penawaran' OR o.status_penawaran IN ('belum_ada', 'draft', '')))
+                      )
                       AND (o.status_penawaran != 'deal' OR o.status_penawaran IS NULL)
                     ORDER BY o.id DESC LIMIT 20";
         $daftarOrderSiap = $this->db->exec($sqlSiap);
@@ -505,6 +511,36 @@ $daftarPegawai = $arsipUser->find(
             return;
         }
 
+        // 1. Validasi Prasyarat Kaji Ulang Kelayakan Teknis (Tahap 2)
+        $tinjauan = $orderModel->getTinjauanKelayakan($orderId);
+        $tinjauanSelesai = (
+            (!empty($tinjauan) && ($tinjauan['keputusan'] ?? '') === 'dapat_dilaksanakan') ||
+            (($order['status_tinjauan'] ?? '') === 'layak')
+        );
+        if (!$tinjauanSelesai) {
+            $this->setFlashError("Gagal: Kaji Ulang Kelayakan Teknis (Tahap 2) belum selesai atau tidak memenuhi syarat.");
+            $f3->reroute("/order/{$orderId}");
+            return;
+        }
+
+        // 2. Validasi Prasyarat Dokumen Proposal (Khusus OPTI Selulosa)
+        if (($order['jenis_layanan_opti'] ?? '') === 'selulosa') {
+            $proposalCheck = $orderModel->getProposalRiset($orderId);
+            $proposalValid = !empty($proposalCheck) && 
+                !empty($proposalCheck['file_proposal']) && 
+                (float)($proposalCheck['estimasi_total_biaya'] ?? 0) > 0;
+            $proposalApproved = $proposalValid && (
+                in_array($order['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui']) ||
+                in_array($proposalCheck['status_proposal'] ?? '', ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan'])
+            );
+
+            if (!$proposalValid || !$proposalApproved) {
+                $this->setFlashError("Gagal: Untuk OPTI Selulosa, dokumen proposal teknis harus diisi, berkas dokumen proposal wajib diunggah, dan telah disetujui (ACC) oleh Ketua Tim OPTI sebelum dapat menerbitkan Surat Penawaran.");
+                $f3->reroute("/order/{$orderId}");
+                return;
+            }
+        }
+
         // Sinkronisasi data dari Surat Masuk jika order berasal dari klaim surat
         if (!empty($order['id_surat_masuk'])) {
             $suratMasukData = null;
@@ -614,6 +650,44 @@ $daftarPegawai = $arsipUser->find(
             $this->setFlashError("Akses Ditolak: Penerbitan Surat Penawaran Resmi merupakan wewenang Tim Mitra.");
             $f3->reroute("/order/{$orderId}/penawaran/buat");
             return;
+        }
+
+        $orderModel = new OrderLayanan($this->db);
+        $order = $orderModel->getDetail($orderId);
+        if (!$order) {
+            $this->setFlashError("Order Layanan #{$orderId} tidak ditemukan.");
+            $f3->reroute('/order');
+            return;
+        }
+
+        // 1. Validasi Prasyarat Kaji Ulang Kelayakan Teknis (Tahap 2)
+        $tinjauan = $orderModel->getTinjauanKelayakan($orderId);
+        $tinjauanSelesai = (
+            (!empty($tinjauan) && ($tinjauan['keputusan'] ?? '') === 'dapat_dilaksanakan') ||
+            (($order['status_tinjauan'] ?? '') === 'layak')
+        );
+        if (!$tinjauanSelesai) {
+            $this->setFlashError("Gagal: Kaji Ulang Kelayakan Teknis (Tahap 2) belum selesai atau tidak memenuhi syarat.");
+            $f3->reroute("/order/{$orderId}");
+            return;
+        }
+
+        // 2. Validasi Prasyarat Dokumen Proposal (Khusus OPTI Selulosa)
+        if (($order['jenis_layanan_opti'] ?? '') === 'selulosa') {
+            $proposalCheck = $orderModel->getProposalRiset($orderId);
+            $proposalValid = !empty($proposalCheck) && 
+                !empty($proposalCheck['file_proposal']) && 
+                (float)($proposalCheck['estimasi_total_biaya'] ?? 0) > 0;
+            $proposalApproved = $proposalValid && (
+                in_array($order['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui']) ||
+                in_array($proposalCheck['status_proposal'] ?? '', ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan'])
+            );
+
+            if (!$proposalValid || !$proposalApproved) {
+                $this->setFlashError("Gagal: Dokumen proposal OPTI Selulosa wajib diisi, berkas harus diunggah, dan disetujui Ketua Tim sebelum Surat Penawaran dapat disimpan.");
+                $f3->reroute("/order/{$orderId}");
+                return;
+            }
         }
 
         $post = $f3->get('POST');

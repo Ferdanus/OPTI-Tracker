@@ -681,7 +681,7 @@
                         </span>
                     </check>
                     <check if="{{ @order.status != 'permintaan_masuk' && @tinjauan && @tinjauan.keputusan == 'dapat_dilaksanakan' }}">
-                        <check if="{{ @order.status_proposal_biaya == 'siap_penawaran' }}">
+                        <check if="{{ @order.status_proposal_biaya == 'siap_penawaran' && (@order.jenis_layanan_opti != 'selulosa' || @is_proposal_approved) }}">
                             <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 fw-semibold"><i class="bi bi-check-circle-fill me-1"></i> {{ @order.jenis_layanan_opti == 'lingkungan' ? 'Tarif & Parameter Disetujui' : 'Proposal Disetujui' }}</span>
                         </check>
                         <check if="{{ @order.status_proposal_biaya == 'menunggu_approval' }}">
@@ -690,12 +690,12 @@
                         <check if="{{ @order.status_proposal_biaya == 'draft_disimpan' }}">
                             <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2.5 py-1 fw-semibold"><i class="bi bi-bookmark-check-fill me-1"></i> Draft Disimpan</span>
                         </check>
-                        <check if="{{ @order.status_proposal_biaya == 'draft' || !@order.status_proposal_biaya }}">
+                        <check if="{{ @order.status_proposal_biaya == 'draft' || !@order.status_proposal_biaya || (@order.jenis_layanan_opti == 'selulosa' && !@is_proposal_approved && @order.status_proposal_biaya == 'siap_penawaran') }}">
                             <check if="{{ @penawaran }}">
                                 <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 fw-semibold"><i class="bi bi-check2-circle me-1"></i> Biaya Disepakati Penawaran</span>
                             </check>
                             <check if="{{ !@penawaran }}">
-                                <span class="badge bg-light text-secondary border px-2.5 py-1">{{ @order.jenis_layanan_opti == 'lingkungan' ? 'Draf Tarif Belum Final' : 'Opsional: Proposal / Rancop' }}</span>
+                                <span class="badge bg-light text-secondary border px-2.5 py-1">{{ @order.jenis_layanan_opti == 'lingkungan' ? 'Draf Tarif Belum Final' : 'Draf Proposal Belum Disetujui' }}</span>
                             </check>
                         </check>
                     </check>
@@ -762,7 +762,7 @@
                                         <a href="{{ @BASE }}/order/{{ @order.id }}/rancop-selulosa" class="btn btn-outline-primary btn-sm px-3.5 py-2 fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5 text-nowrap">
                                             <i class="bi bi-diagram-3"></i> Skenario &amp; Rancop
                                         </a>
-                                        <check if="{{ !@penawaran && @order.status_proposal_biaya == 'siap_penawaran' }}">
+                                        <check if="{{ !@penawaran && @order.status_proposal_biaya == 'siap_penawaran' && @is_proposal_approved }}">
                                             <a href="{{ @BASE }}/order/{{ @order.id }}/penawaran/buat" class="btn btn-success btn-sm px-3.5 py-2 fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5 text-nowrap">
                                                 <i class="bi bi-file-earmark-plus"></i> Terbitkan Penawaran
                                             </a>
@@ -884,6 +884,7 @@
                             <check if="{{ @user_id == @order.pic_proposal_id || @is_tim_kerja || @is_ketua_tim || @is_pejabat || @is_superadmin }}">
                                 <div id="uploadFileBox" class="d-none pt-2.5 mt-2.5 border-top">
                                     <form action="{{ @BASE }}/order/{{ @order.id }}/proposal/upload" method="POST" enctype="multipart/form-data" class="d-flex gap-2 align-items-center">
+                                        <input type="hidden" name="redirect" value="detail">
                                         <input type="file" name="file_proposal" class="form-control form-control-sm" accept=".pdf,.doc,.docx,.xls,.xlsx" required>
                                         <button type="submit" class="btn btn-primary btn-sm text-nowrap fw-semibold">
                                             <i class="bi bi-upload me-1"></i> Simpan File
@@ -915,12 +916,51 @@
                             </check>
                             <check if="{{ @order.jenis_layanan_opti != 'lingkungan' }}">
                                 <check if="{{ @user_id == @order.pic_proposal_id || @is_tim_kerja || @is_pejabat || @is_superadmin }}">
-                                    <div class="d-flex justify-content-end pt-2 border-top">
-                                        <form action="{{ @BASE }}/order/{{ @order.id }}/proposal/kirim-katim" method="POST">
-                                            <button type="submit" class="btn btn-primary btn-sm fw-bold px-4 shadow-sm">
-                                                <i class="bi bi-send-fill me-1"></i> Simpan &amp; Ajukan Proposal ke Ketua Tim
-                                            </button>
-                                        </form>
+                                    <div class="pt-3 border-top">
+                                        <check if="{{ @order.jenis_layanan_opti == 'selulosa' && !@proposal_has_file_cost }}">
+                                            <div class="alert alert-warning border-0 p-3 mb-3 rounded-3 d-flex align-items-start gap-3">
+                                                <i class="bi bi-exclamation-triangle-fill text-warning fs-5 flex-shrink-0 mt-0.5"></i>
+                                                <div class="small">
+                                                    <strong class="d-block text-dark mb-1">Prasyarat Pengajuan Proposal Belum Lengkap</strong>
+                                                    <span class="text-secondary d-block mb-2">Untuk mengajukan ke Ketua Tim dan menerbitkan penawaran resmi, Anda wajib melengkapi rincian proposal (ruang lingkup &amp; estimasi biaya) serta mengunggah berkas proposal.</span>
+                                                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                                                        <a href="{{ @BASE }}/order/{{ @order.id }}/proposal" class="btn btn-warning btn-sm fw-bold px-3 shadow-xs">
+                                                            <i class="bi bi-pencil-square me-1"></i> Lengkapi Proposal &amp; Upload Berkas
+                                                        </a>
+                                                        <span class="text-muted small">
+                                                            <check if="{{ !@proposal.file_proposal }}">
+                                                                <i class="bi bi-x-circle text-danger me-1"></i>Berkas belum diunggah
+                                                            </check>
+                                                            <check if="{{ @proposal.file_proposal }}">
+                                                                <i class="bi bi-check-circle text-success me-1"></i>Berkas terunggah
+                                                            </check>
+                                                            &bull;
+                                                            <check if="{{ !@proposal.estimasi_total_biaya || @proposal.estimasi_total_biaya == 0 }}">
+                                                                <i class="bi bi-x-circle text-danger me-1"></i>Biaya belum diisi
+                                                            </check>
+                                                            <check if="{{ @proposal.estimasi_total_biaya > 0 }}">
+                                                                <i class="bi bi-check-circle text-success me-1"></i>Rp {{ number_format(@proposal.estimasi_total_biaya, 0, ',', '.') }}
+                                                            </check>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="d-flex justify-content-end">
+                                                <button type="button" class="btn btn-secondary btn-sm fw-bold px-4 shadow-sm" disabled title="Lengkapi data proposal dan unggah berkas terlebih dahulu">
+                                                    <i class="bi bi-lock-fill me-1"></i> Ajukan ke Ketua Tim (Belum Lengkap)
+                                                </button>
+                                            </div>
+                                        </check>
+                                        <check if="{{ @order.jenis_layanan_opti != 'selulosa' || @proposal_has_file_cost }}">
+                                            <div class="d-flex justify-content-end">
+                                                <form action="{{ @BASE }}/order/{{ @order.id }}/proposal/kirim-katim" method="POST">
+                                                    <input type="hidden" name="redirect" value="detail">
+                                                    <button type="submit" class="btn btn-primary btn-sm fw-bold px-4 shadow-sm">
+                                                        <i class="bi bi-send-fill me-1"></i> Simpan &amp; Ajukan Proposal ke Ketua Tim
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </check>
                                     </div>
                                 </check>
                                 <check if="{{ @user_id != @order.pic_proposal_id && !@is_tim_kerja && !@is_pejabat && !@is_superadmin }}">
@@ -938,7 +978,18 @@
                                     <h6 class="fw-bold text-dark mb-1"><i class="bi bi-shield-check text-warning me-1"></i> Verifikasi &amp; Persetujuan Ketua Tim OPTI</h6>
                                     <p class="small text-muted mb-3">{{ @order.jenis_layanan_opti == 'lingkungan' ? 'Ketua Tim memeriksa kesesuaian rincian parameter dan tarif biaya pengujian laboratorium yang diajukan sebelum diterbitkan penawaran resmi.' : 'Ketua Tim memeriksa kesesuaian ruang lingkup, estimasi anggaran, dan kelayakan dokumen proposal yang diajukan.' }}</p>
                                     
+                                    <check if="{{ @order.jenis_layanan_opti == 'selulosa' && !@proposal_has_file_cost }}">
+                                        <div class="alert alert-danger border-0 p-2.5 mb-3 small rounded-3 d-flex align-items-center gap-2">
+                                            <i class="bi bi-exclamation-octagon-fill text-danger fs-5 flex-shrink-0"></i>
+                                            <div>
+                                                <strong class="text-danger d-block">Proposal Belum Lengkap!</strong>
+                                                <span>PIC belum mengisi rincian estimasi biaya atau belum mengunggah file berkas proposal resmi. Proposal tidak dapat disetujui (ACC).</span>
+                                            </div>
+                                        </div>
+                                    </check>
+
                                     <form action="{{ @BASE }}/order/{{ @order.id }}/proposal/review-katim" method="POST">
+                                        <input type="hidden" name="redirect" value="detail">
                                         <div class="mb-2">
                                             <input type="text" name="catatan_revisi" class="form-control form-control-sm" placeholder="{{ @order.jenis_layanan_opti == 'lingkungan' ? 'Catatan persetujuan tarif atau catatan revisi parameter uji...' : 'Catatan persetujuan atau catatan perbaikan jika perlu revisi...' }}">
                                         </div>
@@ -946,9 +997,16 @@
                                             <button type="submit" name="action_review" value="reject" class="btn btn-outline-danger btn-sm fw-semibold">
                                                 <i class="bi bi-x-circle me-1"></i> Kembalikan untuk Revisi
                                             </button>
-                                            <button type="submit" name="action_review" value="approve" class="btn btn-primary btn-sm fw-bold px-3">
-                                                <i class="bi bi-check-circle-fill me-1"></i> {{ @order.jenis_layanan_opti == 'lingkungan' ? 'Setujui Tarif &amp; Terbitkan Siap Penawaran' : 'Setujui Proposal &amp; Terbitkan Siap Penawaran' }}
-                                            </button>
+                                            <check if="{{ @order.jenis_layanan_opti == 'selulosa' && !@proposal_has_file_cost }}">
+                                                <button type="button" class="btn btn-secondary btn-sm fw-bold px-3" disabled title="Berkas proposal & estimasi biaya harus lengkap sebelum disetujui">
+                                                    <i class="bi bi-lock-fill me-1"></i> Setujui Proposal (Belum Lengkap)
+                                                </button>
+                                            </check>
+                                            <check if="{{ @order.jenis_layanan_opti != 'selulosa' || @proposal_has_file_cost }}">
+                                                <button type="submit" name="action_review" value="approve" class="btn btn-primary btn-sm fw-bold px-3">
+                                                    <i class="bi bi-check-circle-fill me-1"></i> {{ @order.jenis_layanan_opti == 'lingkungan' ? 'Setujui Tarif &amp; Terbitkan Siap Penawaran' : 'Setujui Proposal &amp; Terbitkan Siap Penawaran' }}
+                                                </button>
+                                            </check>
                                         </div>
                                     </form>
                                 </div>
@@ -961,7 +1019,7 @@
                         </check>
 
                         <!-- 3. Jika Status Sudah Approved / Siap Penawaran -->
-                        <check if="{{ @order.status_proposal_biaya == 'siap_penawaran' }}">
+                        <check if="{{ @order.status_proposal_biaya == 'siap_penawaran' && (@order.jenis_layanan_opti != 'selulosa' || @is_proposal_approved) }}">
                             <div class="alert alert-primary bg-primary-subtle text-primary border border-primary-subtle py-2.5 px-3 mb-0 d-flex justify-content-between align-items-center flex-wrap gap-2 small rounded-3">
                                 <div class="d-flex align-items-center gap-1.5">
                                     <i class="bi bi-check-circle-fill text-primary fs-6"></i>
@@ -993,10 +1051,10 @@
                         <check if="{{ @total_penawaran > 0 }}">
                             <span class="badge bg-secondary-subtle text-secondary border fw-normal">Total {{ @total_penawaran }}x Penawaran</span>
                         </check>
-                        <check if="{{ @order.status == 'permintaan_masuk' || !@tinjauan || @tinjauan.keputusan != 'dapat_dilaksanakan' }}">
+                        <check if="{{ @order.status == 'permintaan_masuk' || !@tinjauan || @tinjauan.keputusan != 'dapat_dilaksanakan' || (@order.jenis_layanan_opti == 'selulosa' && !@is_proposal_approved) }}">
                             <span class="badge bg-light text-secondary border">Terkunci</span>
                         </check>
-                        <check if="{{ @order.status != 'permintaan_masuk' && @tinjauan && @tinjauan.keputusan == 'dapat_dilaksanakan' }}">
+                        <check if="{{ @order.status != 'permintaan_masuk' && @tinjauan && @tinjauan.keputusan == 'dapat_dilaksanakan' && (@order.jenis_layanan_opti != 'selulosa' || @is_proposal_approved) }}">
                             <check if="{{ @penawaran }}">
                                 <check if="{{ @penawaran.status_respon_klien == 'deal' }}">
                                     <span class="badge bg-success">DEAL</span>
@@ -1024,14 +1082,19 @@
                 </div>
                 <div class="p-3">
                     <!-- Terkunci -->
-                    <check if="{{ @order.status == 'permintaan_masuk' || !@tinjauan || @tinjauan.keputusan != 'dapat_dilaksanakan' }}">
+                    <check if="{{ @order.status == 'permintaan_masuk' || !@tinjauan || @tinjauan.keputusan != 'dapat_dilaksanakan' || (@order.jenis_layanan_opti == 'selulosa' && !@is_proposal_approved) }}">
                         <div class="py-3 text-center text-muted small">
-                            <i class="bi bi-lock-fill me-1"></i> Tahap ini terbuka setelah Kaji Ulang Kelayakan Teknis dinyatakan <strong>Dapat Dilaksanakan</strong> oleh Ketua Tim OPTI.
+                            <check if="{{ @order.status == 'permintaan_masuk' || !@tinjauan || @tinjauan.keputusan != 'dapat_dilaksanakan' }}">
+                                <i class="bi bi-lock-fill me-1"></i> Tahap ini terbuka setelah Kaji Ulang Kelayakan Teknis dinyatakan <strong>Dapat Dilaksanakan</strong> oleh Ketua Tim OPTI.
+                            </check>
+                            <check if="{{ @order.status != 'permintaan_masuk' && @tinjauan && @tinjauan.keputusan == 'dapat_dilaksanakan' && @order.jenis_layanan_opti == 'selulosa' && !@is_proposal_approved }}">
+                                <i class="bi bi-lock-fill me-1 text-warning"></i> Tahap ini terkunci. Dokumen proposal teknis OPTI Selulosa harus diisi, berkas diunggah, dan telah disetujui (ACC) oleh Ketua Tim OPTI sebelum Surat Penawaran Resmi dapat diterbitkan.
+                            </check>
                         </div>
                     </check>
 
                     <!-- Terbuka -->
-                    <check if="{{ @order.status != 'permintaan_masuk' && @tinjauan && @tinjauan.keputusan == 'dapat_dilaksanakan' }}">
+                    <check if="{{ @order.status != 'permintaan_masuk' && @tinjauan && @tinjauan.keputusan == 'dapat_dilaksanakan' && (@order.jenis_layanan_opti != 'selulosa' || @is_proposal_approved) }}">
                         
                         <!-- JIKA SUDAH ADA SURAT PENAWARAN -->
                         <check if="{{ @penawaran }}">

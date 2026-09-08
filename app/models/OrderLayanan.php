@@ -151,6 +151,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
                        p.id AS po_id, p.nomor_po, p.status AS status_po, p.biaya AS biaya_po,
                        sp.status_respon_klien, sp.nomor_surat AS nomor_penawaran,
                        pr.durasi_kegiatan AS proposal_durasi, pr.status_proposal,
+                       pr.file_proposal, pr.estimasi_total_biaya,
                        COALESCE(u_tolak.nama_user, u_tinjau.nama_user, '-') AS nama_penolak,
                        COALESCE(NULLIF(o.alasan_tolak, ''), NULLIF(tk.alasan_penolakan, ''), '-') AS alasan_tolak,
                        COALESCE(o.tanggal_tolak, tk.tanggal_tinjauan) AS tanggal_tolak,
@@ -287,8 +288,14 @@ class OrderLayanan extends \DB\SQL\Mapper {
             }
         }
 
-        // Cek apakah proposal teknis/biaya sudah disetujui oleh Ka Tim
-        $proposalApproved = (in_array($o['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui']) || in_array($o['status_proposal'] ?? '', ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan']));
+        // Cek apakah proposal teknis/biaya sudah disetujui oleh Ka Tim (Khusus Selulosa wajib ada berkas & estimasi biaya)
+        $isSelulosa = (($o['jenis_layanan_opti'] ?? '') === 'selulosa');
+        $proposalComplete = !empty($o['file_proposal']) && (float)($o['estimasi_total_biaya'] ?? 0) > 0;
+        if ($isSelulosa) {
+            $proposalApproved = $proposalComplete && (in_array($o['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui']) || in_array($o['status_proposal'] ?? '', ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan']));
+        } else {
+            $proposalApproved = (in_array($o['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui']) || in_array($o['status_proposal'] ?? '', ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan']));
+        }
         
         // Cek apakah surat penawaran harga resmi telah terbit
         $hasOfferLetter = (!empty($o['surat_penawaran_id']) || in_array($o['status_penawaran'] ?? '', ['terkirim', 'nego', 'draft']));

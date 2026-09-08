@@ -466,6 +466,16 @@
                     </div>
                     <div class="card-body p-4">
                         <form action="{{ @BASE }}/order/{{ @order.id }}/proposal/review-katim" method="POST">
+                            <input type="hidden" name="redirect" value="proposal">
+                            <check if="{{ @order.jenis_layanan_opti == 'selulosa' && !@proposal_has_file_cost }}">
+                                <div class="alert alert-danger border-0 p-3 mb-3 rounded-3 d-flex align-items-center gap-2">
+                                    <i class="bi bi-exclamation-octagon-fill text-danger fs-5 flex-shrink-0"></i>
+                                    <div>
+                                        <strong class="text-danger d-block">Proposal Belum Lengkap!</strong>
+                                        <span>PIC belum mengisi rincian estimasi biaya atau belum mengunggah file berkas proposal resmi. Proposal tidak dapat disetujui (ACC).</span>
+                                    </div>
+                                </div>
+                            </check>
                             <div class="mb-4">
                                 <label class="form-label small fw-bold text-dark mb-2" style="font-size: 0.86rem;">Catatan Review / Catatan Revisi</label>
                                 <textarea name="catatan_revisi" class="form-control p-3" rows="3" placeholder="Masukkan catatan persetujuan atau catatan revisi...">{{ @proposal.catatan_revisi }}</textarea>
@@ -477,10 +487,18 @@
                                     <span>Minta Revisi Proposal</span>
                                 </button>
                                 
-                                <button type="submit" name="action_review" value="approve" class="btn btn-success px-4 py-2 fw-semibold text-white rounded-3 d-inline-flex align-items-center gap-1.5 shadow-sm">
-                                    <i class="bi bi-check2-circle fs-6"></i>
-                                    <span>Setujui Proposal (Approve)</span>
-                                </button>
+                                <check if="{{ @order.jenis_layanan_opti == 'selulosa' && !@proposal_has_file_cost }}">
+                                    <button type="button" class="btn btn-secondary px-4 py-2 fw-semibold rounded-3 d-inline-flex align-items-center gap-1.5 shadow-sm" disabled title="Berkas proposal & estimasi biaya harus lengkap sebelum disetujui">
+                                        <i class="bi bi-lock-fill fs-6"></i>
+                                        <span>Setujui Proposal (Belum Lengkap)</span>
+                                    </button>
+                                </check>
+                                <check if="{{ @order.jenis_layanan_opti != 'selulosa' || @proposal_has_file_cost }}">
+                                    <button type="submit" name="action_review" value="approve" class="btn btn-success px-4 py-2 fw-semibold text-white rounded-3 d-inline-flex align-items-center gap-1.5 shadow-sm">
+                                        <i class="bi bi-check2-circle fs-6"></i>
+                                        <span>Setujui Proposal (Approve)</span>
+                                    </button>
+                                </check>
                             </div>
                         </form>
                     </div>

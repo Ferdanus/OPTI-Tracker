@@ -450,11 +450,24 @@ class OrderController extends Controller {
         $isFormPelayananDone = !in_array($order['status'] ?? '', ['permintaan_masuk', 'draft_disimpan']) && !empty($order['jenis_layanan_opti']) && $order['jenis_layanan_opti'] !== 'belum_ditentukan';
         $isTinjauanDone = $isFormPelayananDone && (($order['status_tinjauan'] ?? '') === 'layak' || (!empty($tinjauan) && (($tinjauan['keputusan'] ?? '') === 'dapat_dilaksanakan')));
         $hasPenawaran = !empty($penawaran);
-        $isProposalApproved = $isTinjauanDone && (
-            in_array($order['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui']) ||
-            in_array($proposal['status_proposal'] ?? '', ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan']) ||
-            $hasPenawaran
-        );
+        $isSelulosa = (($order['jenis_layanan_opti'] ?? '') === 'selulosa');
+        $proposalHasFileAndCost = !empty($proposal) && !empty($proposal['file_proposal']) && (float)($proposal['estimasi_total_biaya'] ?? 0) > 0;
+
+        if ($isSelulosa) {
+            $isProposalApproved = $isTinjauanDone && (
+                ($proposalHasFileAndCost && (
+                    in_array($order['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui']) ||
+                    in_array($proposal['status_proposal'] ?? '', ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan'])
+                )) ||
+                $hasPenawaran
+            );
+        } else {
+            $isProposalApproved = $isTinjauanDone && (
+                in_array($order['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui']) ||
+                in_array($proposal['status_proposal'] ?? '', ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan']) ||
+                $hasPenawaran
+            );
+        }
         $isPenawaranDeal = $isTinjauanDone && (
             ($order['status_penawaran'] ?? '') === 'deal' ||
             (!empty($penawaran) && ($penawaran['status_respon_klien'] ?? '') === 'deal')
@@ -503,6 +516,8 @@ class OrderController extends Controller {
             8 => ['state' => $isBastDone ? 'done' : ($currentStep === 8 ? 'current' : 'waiting')],
         ];
         $f3->set('stepper', $stepper);
+        $f3->set('proposal_has_file_cost', $proposalHasFileAndCost);
+        $f3->set('is_proposal_approved', $isProposalApproved);
 
         $this->render('order/detail.html', "Detail Order #{$order['nomor_order']}", 'order');
     }
@@ -1701,6 +1716,8 @@ class OrderController extends Controller {
         $f3->set('can_edit', $canEdit);
         $f3->set('can_review', $canReview);
         $f3->set('lock_message', $lockMessage);
+        $proposalHasFileAndCost = !empty($proposal) && !empty($proposal['file_proposal']) && (float)($proposal['estimasi_total_biaya'] ?? 0) > 0;
+        $f3->set('proposal_has_file_cost', $proposalHasFileAndCost);
 
         $this->render('order/proposal.html', "Dokumen Proposal Teknis - Order #{$order['nomor_order']}", 'proposal');
     }
@@ -1819,6 +1836,25 @@ class OrderController extends Controller {
 
         if (empty($filePath) && $existing && !empty($existing['file_proposal'])) {
             $filePath = $existing['file_proposal'];
+        }
+
+        // Validasi Ketat Khusus OPTI Selulosa: Wajib ada input dan upload dokumen jika diajukan ke Ketua Tim
+        if ($actionType === 'ajukan' && ($order['jenis_layanan_opti'] ?? '') === 'selulosa') {
+            if (empty($filePath)) {
+                $this->setFlashError("Gagal: Berkas dokumen proposal resmi (.pdf/.doc/.docx/.xls/.xlsx) wajib diunggah sebelum dapat diajukan ke Ketua Tim.");
+                $f3->reroute("/order/{$id}/proposal");
+                return;
+            }
+            if ($estimasiBiaya <= 0) {
+                $this->setFlashError("Gagal: Estimasi total biaya/anggaran wajib diisi dan harus lebih dari Rp 0 sebelum proposal dapat diajukan.");
+                $f3->reroute("/order/{$id}/proposal");
+                return;
+            }
+            if (empty($ruangLingkup)) {
+                $this->setFlashError("Gagal: Ruang lingkup riset/kegiatan wajib diisi sebelum proposal dapat diajukan ke Ketua Tim.");
+                $f3->reroute("/order/{$id}/proposal");
+                return;
+            }
         }
 
         $statusProposal = ($actionType === 'ajukan') ? 'diajukan' : 'draft_disimpan';
@@ -1940,6 +1976,9 @@ class OrderController extends Controller {
             return;
         }
 
+        $redirect = $f3->get('POST.redirect');
+        $redirectUrl = ($redirect === 'detail') ? "/order/{$id}" : "/order/{$id}/proposal";
+
         $userId = (int)$this->getUserId();
         $userRole = $this->getUserRole();
         $isPic = ($userId > 0 && (int)($order['pic_proposal_id'] ?? 0) === $userId);
@@ -1947,7 +1986,7 @@ class OrderController extends Controller {
         // Strict Access Control:
         if ($userRole === 'tim_kerja' && !$isPic && !$this->isSuperadmin()) {
             $this->setFlashError("Akses Ditolak: Anda bukan PIC yang ditugaskan untuk mengunggah berkas proposal Order ini.");
-            $f3->reroute("/order/{$id}/proposal");
+            $f3->reroute($redirectUrl);
             return;
         }
 
@@ -1959,7 +1998,7 @@ class OrderController extends Controller {
         );
         if ($proposalDisetujui && !$this->isSuperadmin()) {
             $this->setFlashError("Dokumen proposal telah disetujui oleh Ketua Tim OPTI. Berkas terkunci dan tidak dapat diunggah ulang.");
-            $f3->reroute("/order/{$id}/proposal");
+            $f3->reroute($redirectUrl);
             return;
         }
 
@@ -1971,14 +2010,14 @@ class OrderController extends Controller {
         );
         if (!$tinjauanSelesai) {
             $this->setFlashError("Gagal: Kaji Ulang Kelayakan Teknis (Tahap 2) belum selesai atau 'Tidak Dapat Dilaksanakan'.");
-            $f3->reroute("/order/{$id}/proposal");
+            $f3->reroute($redirectUrl);
             return;
         }
         
         $files = $f3->get('FILES');
         if (empty($files['file_proposal']['name'])) {
             $this->setFlashError('Pilih file dokumen proposal terlebih dahulu.');
-            $f3->reroute("/order/{$id}/proposal");
+            $f3->reroute($redirectUrl);
             return;
         }
 
@@ -1989,7 +2028,7 @@ class OrderController extends Controller {
                 $errorMsg = 'Ukuran file melebihi batas maksimal server yang diperbolehkan.';
             }
             $this->setFlashError($errorMsg);
-            $f3->reroute("/order/{$id}/proposal");
+            $f3->reroute($redirectUrl);
             return;
         }
 
@@ -1997,7 +2036,7 @@ class OrderController extends Controller {
         $maxFileSize = 10 * 1024 * 1024;
         if ($file['size'] > $maxFileSize) {
             $this->setFlashError('Ukuran file melebihi batas maksimal 10 MB. Harap perkecil atau kompres dokumen Anda.');
-            $f3->reroute("/order/{$id}/proposal");
+            $f3->reroute($redirectUrl);
             return;
         }
 
@@ -2005,7 +2044,7 @@ class OrderController extends Controller {
         $allowed = ['pdf', 'doc', 'docx', 'xls', 'xlsx'];
         if (!in_array($ext, $allowed)) {
             $this->setFlashError('Format file tidak didukung. Harap upload format PDF, Word (DOC/DOCX), atau Excel (XLS/XLSX).');
-            $f3->reroute("/order/{$id}/proposal");
+            $f3->reroute($redirectUrl);
             return;
         }
 
@@ -2037,7 +2076,7 @@ class OrderController extends Controller {
             $this->setFlashError('Gagal mengunggah file dokumen proposal.');
         }
 
-        $f3->reroute("/order/{$id}/proposal");
+        $f3->reroute($redirectUrl);
     }
 
     /**
@@ -2050,15 +2089,52 @@ class OrderController extends Controller {
         $orderModel = new OrderLayanan($this->db);
         $order = $orderModel->getDetail($id);
 
+        if (!$order) {
+            $this->setFlashError("Order Layanan #{$id} tidak ditemukan.");
+            $f3->reroute('/order');
+            return;
+        }
+
+        $redirect = $f3->get('POST.redirect');
+        $redirectUrl = ($redirect === 'detail') ? "/order/{$id}" : "/order/{$id}/proposal";
+
+        // Cek Prasyarat Kaji Ulang (Tahap 2)
+        $tinjauan = $orderModel->getTinjauanKelayakan($id);
+        $tinjauanSelesai = (
+            (!empty($tinjauan) && ($tinjauan['keputusan'] ?? '') === 'dapat_dilaksanakan') ||
+            (($order['status_tinjauan'] ?? '') === 'layak')
+        );
+        if (!$tinjauanSelesai) {
+            $this->setFlashError("Gagal: Kaji Ulang Kelayakan Teknis (Tahap 2) belum selesai atau tidak memenuhi syarat.");
+            $f3->reroute($redirectUrl);
+            return;
+        }
+
+        $proposal = $orderModel->getProposalRiset($id);
+
+        // Khusus OPTI Selulosa: Wajib input rincian & upload file dokumen proposal
+        if (($order['jenis_layanan_opti'] ?? '') === 'selulosa') {
+            if (empty($proposal) || empty($proposal['file_proposal']) || (float)($proposal['estimasi_total_biaya'] ?? 0) <= 0 || empty(trim($proposal['ruang_lingkup'] ?? ''))) {
+                $this->setFlashError("Gagal: Untuk OPTI Selulosa, Anda harus mengisi data proposal (ruang lingkup & estimasi biaya) dan mengunggah dokumen proposal sebelum dapat mengajukan ke Ketua Tim.");
+                $f3->reroute($redirectUrl);
+                return;
+            }
+        }
+
         try {
+            $userId = (int)$this->getUserId();
+            $userNama = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'PIC Peneliti');
+
             $this->db->exec(
-                "UPDATE opti_proposal_riset SET status_proposal = 'diajukan' WHERE order_id = ?",
-                array(1 => $id)
+                "UPDATE opti_proposal_riset SET status_proposal = 'diajukan', diajukan_at = NOW(), diajukan_oleh = ?, updated_at = NOW(), updated_by = ? WHERE order_id = ?",
+                array(1 => $userId, 2 => $userId, 3 => $id)
             );
             $this->db->exec(
                 "UPDATE order_layanan SET status_proposal_biaya = 'menunggu_approval' WHERE id = ?",
                 array(1 => $id)
             );
+
+            $this->logActivity($id, 'proposal', 'ajukan_ke_ketua', "Dokumen proposal teknis resmi diajukan ke Ketua Tim OPTI oleh {$userNama} (PIC Peneliti).");
 
             // Notifikasi ke Ka Tim
             try {
@@ -2067,12 +2143,12 @@ class OrderController extends Controller {
                     'target_role'    => 'ketua_tim',
                     'target_layanan' => $order['jenis_layanan_opti'] ?? 'semua',
                     'judul'          => 'Proposal Teknis Siap Diperiksa',
-                    'pesan'          => "PIC Proposal telah mengajukan dokumen proposal untuk Order #{$order['nomor_order']} ({$order['nama_perusahaan']}). Mohon periksa dan berikan persetujuan.",
+                    'pesan'          => "PIC Proposal ({$userNama}) telah mengajukan dokumen proposal untuk Order #{$order['nomor_order']} ({$order['nama_perusahaan']}). Mohon periksa dan berikan persetujuan.",
                     'tipe'           => 'info',
                     'icon'           => 'bi-file-earmark-check-fill',
                     'link_url'       => "/order/{$id}/proposal",
-                    'created_by'     => $this->getUserId(),
-                    'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'PIC Peneliti'
+                    'created_by'     => $userId,
+                    'created_by_name'=> $userNama
                 ]);
             } catch (\Exception $eNotif) {}
 
@@ -2081,7 +2157,7 @@ class OrderController extends Controller {
             $this->setFlashError('Gagal mengirim proposal: ' . $e->getMessage());
         }
 
-        $f3->reroute("/order/{$id}/proposal");
+        $f3->reroute($redirectUrl);
     }
 
     /**
@@ -2093,10 +2169,29 @@ class OrderController extends Controller {
         $id = (int)($params['id'] ?? 0);
         $orderModel = new OrderLayanan($this->db);
         $order = $orderModel->getDetail($id);
-        $post = $f3->get('POST');
 
+        if (!$order) {
+            $this->setFlashError("Order Layanan #{$id} tidak ditemukan.");
+            $f3->reroute('/order');
+            return;
+        }
+
+        $redirect = $f3->get('POST.redirect');
+        $redirectUrl = ($redirect === 'detail') ? "/order/{$id}" : "/order/{$id}/proposal";
+
+        $post = $f3->get('POST');
         $action = $post['action_review'] ?? 'approve';
         $catatan = trim($post['catatan_revisi'] ?? '');
+
+        // Khusus OPTI Selulosa jika approve: Wajib ada input dan upload proposal
+        if ($action === 'approve' && ($order['jenis_layanan_opti'] ?? '') === 'selulosa') {
+            $propCheck = $orderModel->getProposalRiset($id);
+            if (empty($propCheck) || empty($propCheck['file_proposal']) || (float)($propCheck['estimasi_total_biaya'] ?? 0) <= 0) {
+                $this->setFlashError("Gagal: Dokumen proposal OPTI Selulosa belum lengkap atau file berkas proposal belum diunggah. Proposal belum dapat disetujui (ACC).");
+                $f3->reroute($redirectUrl);
+                return;
+            }
+        }
 
         try {
             $userNama = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'Ketua Tim OPTI');
@@ -2206,7 +2301,7 @@ class OrderController extends Controller {
             $this->setFlashError('Gagal memproses review proposal: ' . $e->getMessage());
         }
 
-        $f3->reroute("/order/{$id}/proposal");
+        $f3->reroute($redirectUrl);
     }
 
     /**
