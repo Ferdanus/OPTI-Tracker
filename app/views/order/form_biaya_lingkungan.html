@@ -246,7 +246,7 @@
                         <div class="d-flex align-items-center gap-2 flex-grow-1" style="max-width: 680px;">
                             <div class="flex-grow-1">
                                 <select id="quickSelectMetode" class="form-select form-select-sm" onchange="onCatalogSelectChange(this.value)" placeholder="Ketik untuk mencari parameter uji (Biodegradasi, Toksikologi, Jamur, BOD, COD, dll)...">
-                                    <option value="">-- Cari atau Pilih dari Katalog Pengujian Resmi --</option>
+                                    <option value="">Cari atau Pilih dari Katalog Pengujian Resmi</option>
                                     <repeat group="{{ @daftar_metode }}" value="{{ @m }}">
                                         <option value="{{ @m.id }}" 
                                             data-tarif="{{ (float)@m.harga }}" 

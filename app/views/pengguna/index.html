@@ -357,7 +357,7 @@
                         <check if="{{ count(@unassigned_users) > 0 }}">
                             <true>
                                 <select name="id_user" class="form-select" required>
-                                    <option value="" disabled selected>-- Pilih pegawai --</option>
+                                    <option value="" disabled selected>Pilih pegawai</option>
                                     <repeat group="{{ @unassigned_users }}" value="{{ @u }}">
                                         <option value="{{ @u.id_user }}">
                                             {{ @u.nama_user }} (#{{ @u.id_user }})
@@ -378,7 +378,7 @@
                             Role Sistem <span class="text-danger">*</span>
                         </label>
                         <select name="role_sistem" class="form-select" required>
-                            <option value="" disabled selected>-- Pilih peran / role --</option>
+                            <option value="" disabled selected>Pilih peran / role</option>
                             <repeat group="{{ @role_options }}" key="{{ @rKey }}" value="{{ @rMeta }}">
                                 <option value="{{ @rKey }}">
                                     {{ @rMeta.label }}

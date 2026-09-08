@@ -202,7 +202,7 @@
                                 Penunjukan Ketua Tim Pelaksana / PIC (Opsional):
                             </label>
                             <select name="pic_proposal_id" class="form-select form-select-sm" id="selectPicProposal" {{ !@can_edit ? 'disabled' : '' }}>
-                                <option value="">-- Tetapkan Nanti Saat PO / Terbitkan Penawaran Terlebih Dahulu --</option>
+                                <option value="">Tetapkan Nanti Saat PO / Terbitkan Penawaran Terlebih Dahulu</option>
                                 <repeat group="{{ @daftar_pic ?: [] }}" value="{{ @p }}">
                                     <option value="{{ @p.id_user }}" {{ (@order.pic_proposal_id == @p.id_user) ? 'selected' : '' }}>
                                         {{ @p.nama_user }} ({{ @p.role_label }} - Divisi {{ ucfirst(@p.spesialisasi) }})

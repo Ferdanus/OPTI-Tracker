@@ -741,7 +741,7 @@
                     <div id="pegawaiWrap" class="p-2 rounded bg-light border mb-3" style="display: none;">
                         <label class="form-label small fw-semibold mb-1" for="inputPegawai">Pilih Pegawai BBSPJIS Penerima:</label>
                         <select id="inputPegawai" name="pegawai_id" class="form-select form-select-sm" {{ !@can_edit ? 'disabled' : '' }}>
-                            <option value="">-- Pilih Pegawai --</option>
+                            <option value="">Pilih Pegawai</option>
                             <repeat group="{{ @daftar_pegawai }}" value="{{ @pegawai }}">
                                 <option value="{{ @pegawai.id_user }}" {{ @sp.pegawai_id == @pegawai.id_user ? 'selected' : '' }}>{{ @pegawai.nama_user }}</option>
                             </repeat>

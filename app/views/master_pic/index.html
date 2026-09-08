@@ -243,7 +243,7 @@
                             Pilih Pegawai Balai (tb_arsipuser) <span class="text-danger">*</span>
                         </label>
                         <select name="id_user" id="selectPegawai" class="form-select form-select-sm" required>
-                            <option value="">-- Cari atau pilih pegawai --</option>
+                            <option value="">Cari atau pilih pegawai</option>
                             <repeat group="{{ @kandidat_pegawai }}" value="{{ @peg }}">
                                 <option value="{{ @peg.id_user }}">
                                     {{ @peg.nama_user }} ({{ @peg.login }}) - Bidang: {{ @peg.bidang ?: 'Balai' }}

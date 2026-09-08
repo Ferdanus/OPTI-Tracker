@@ -81,7 +81,7 @@
                             <div class="col-md-8">
                                 <label class="form-label small fw-bold text-dark">Rujukan Invoice (Jika ada):</label>
                                 <select name="invoice_id" class="form-select form-select-sm">
-                                    <option value="">-- Tanpa Rujukan / Pembayaran Langsung --</option>
+                                    <option value="">Tanpa Rujukan / Pembayaran Langsung</option>
                                     <repeat group="{{ @invoices }}" value="{{ @inv }}">
                                         <option value="{{ @inv.id }}">
                                             {{ @inv.nomor_invoice }} (Rp {{ number_format(@inv.nominal_tagihan, 0, ',', '.') }}) - {{ @inv.keterangan_termin }}

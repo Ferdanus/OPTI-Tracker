@@ -1791,7 +1791,7 @@
                             Ketua Tim Pelaksana / PIC Laboratorium <span class="text-danger">*</span>:
                         </label>
                         <select name="pic_proposal_id" class="form-select form-select-sm" required>
-                            <option value="">-- Pilih Ketua Tim Pelaksana / PIC --</option>
+                            <option value="">Pilih Ketua Tim Pelaksana / PIC</option>
                             <repeat group="{{ @daftar_pic ?: [] }}" value="{{ @p }}">
                                 <option value="{{ @p.id_user }}" {{ (@order.pic_proposal_id == @p.id_user) ? 'selected' : '' }}>
                                     {{ @p.nama_user }} ({{ @p.role_label }} - Divisi {{ ucfirst(@p.spesialisasi) }})
