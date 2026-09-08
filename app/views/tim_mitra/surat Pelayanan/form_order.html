@@ -248,37 +248,51 @@
         border-color: #94a3b8;
     }
 
-    /* Card Dasar Perhitungan Anggaran */
+    /* Card Dasar Perhitungan Anggaran (Enterprise Clean Style) */
     .calc-source-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
         border-radius: 10px;
-        padding: 12px 14px;
-        margin-bottom: 0.65rem;
-        transition: all 0.2s ease;
+        padding: 14px 18px;
+        margin-bottom: 0.75rem;
+        box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.05);
         position: relative;
     }
     .calc-source-selulosa {
-        background: linear-gradient(135deg, #fff7f8 0%, #ffffff 100%);
-        border: 1.5px solid #fecdd3;
-        box-shadow: 0 2px 8px -2px rgba(136, 19, 55, 0.08);
+        border-left: 4px solid #881337 !important;
     }
     .calc-source-lingkungan {
-        background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
-        border: 1.5px solid #bbf7d0;
-        box-shadow: 0 2px 8px -2px rgba(22, 101, 52, 0.08);
+        border-left: 4px solid #16a34a !important;
     }
     .calc-source-neutral {
-        background: #f8fafc;
-        border: 1.5px solid #e2e8f0;
+        border-left: 4px solid #d97706 !important;
     }
-    .calc-icon-badge {
-        width: 36px;
-        height: 36px;
+    .calc-icon-box {
+        width: 38px;
+        height: 38px;
         border-radius: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.05rem;
+        font-size: 1.15rem;
         flex-shrink: 0;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+    }
+    .calc-meta-chip {
+        display: inline-flex;
+        align-items: center;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 4px 10px;
+        font-size: 0.76rem;
+        color: #475569;
+    }
+    .calc-meta-chip i {
+        font-size: 0.85rem;
+        margin-right: 6px;
+        color: #64748b;
     }
     .preview-doc-scroll {
         background: #f1f5f9;
@@ -466,33 +480,32 @@
                         <div class="calc-source-card calc-source-selulosa">
                             <div class="d-flex align-items-center justify-content-between mb-2">
                                 <div class="d-flex align-items-center gap-2.5">
-                                    <div class="calc-icon-badge" style="background: rgba(136, 19, 55, 0.1); color: #881337;">
-                                        <i class="bi bi-file-earmark-check-fill"></i>
+                                    <div class="calc-icon-box" style="color: #881337;">
+                                        <i class="bi bi-file-earmark-text-fill"></i>
                                     </div>
                                     <div>
-                                        <div class="d-flex align-items-center gap-1.5">
-                                            <span class="fw-bold text-dark" style="font-size: 0.88rem;">Proposal Riset Terverifikasi</span>
-                                            <span class="badge rounded-pill" style="background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; font-size: 0.65rem; font-weight: 600;">
-                                                <i class="bi bi-check-circle-fill me-0.5" style="color: #881337;"></i> Terverifikasi
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="fw-bold text-dark" style="font-size: 0.9rem;">Proposal Riset Selulosa</span>
+                                            <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-2 py-0.5" style="font-size: 0.68rem; font-weight: 600;">
+                                                <i class="bi bi-check-circle-fill me-1"></i>Terverifikasi
                                             </span>
                                         </div>
-                                        <div class="text-muted" style="font-size: 0.72rem;">Dasar acuan rincian rencana biaya &amp; kegiatan tim</div>
+                                        <div class="text-muted" style="font-size: 0.73rem; margin-top: 2px;">Rencana Anggaran Biaya &amp; Teknis Pelaksanaan</div>
                                     </div>
                                 </div>
-                                <div class="text-end ps-2">
-                                    <span class="text-muted d-block" style="font-size: 0.67rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Estimasi Total</span>
-                                    <span class="fw-bold font-monospace" style="font-size: 1.15rem; color: #881337;">Rp {{ number_format(@proposal.estimasi_total_biaya, 0, ',', '.') }}</span>
+                                <div class="text-end ps-3">
+                                    <span class="text-muted d-block fw-semibold" style="font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.5px;">Estimasi Anggaran</span>
+                                    <span class="fw-bold font-monospace" style="font-size: 1.18rem; color: #881337;">Rp {{ number_format(@proposal.estimasi_total_biaya, 0, ',', '.') }}</span>
                                 </div>
                             </div>
-                            <div class="d-flex align-items-center gap-3 pt-2 mt-1 border-top" style="border-color: #fecdd3 !important; font-size: 0.78rem;">
-                                <div class="d-flex align-items-center gap-1.5 text-secondary">
-                                    <i class="bi bi-person-badge" style="color: #881337;"></i>
-                                    <span>PIC Peneliti: <strong class="text-dark">{{ @proposal.pic_nama ?: '-' }}</strong></span>
+                            <div class="d-flex flex-wrap align-items-center gap-2 pt-2.5 mt-2 border-top" style="border-color: #f1f5f9 !important;">
+                                <div class="calc-meta-chip">
+                                    <i class="bi bi-person-fill text-secondary"></i>
+                                    <span>PIC Peneliti:&nbsp;<strong class="text-dark">{{ @proposal.pic_nama ?: '-' }}</strong></span>
                                 </div>
-                                <span class="text-muted opacity-50">&bull;</span>
-                                <div class="d-flex align-items-center gap-1.5 text-secondary">
-                                    <i class="bi bi-calendar3" style="color: #881337;"></i>
-                                    <span>Durasi: <strong class="text-dark">{{ @proposal.durasi_kegiatan ?: '30 Hari Kerja' }}</strong></span>
+                                <div class="calc-meta-chip">
+                                    <i class="bi bi-clock-history text-secondary"></i>
+                                    <span>Durasi:&nbsp;<strong class="text-dark">{{ @proposal.durasi_kegiatan ?: '30 Hari Kerja' }}</strong></span>
                                 </div>
                             </div>
                         </div>
@@ -503,34 +516,33 @@
                         <div class="calc-source-card calc-source-lingkungan">
                             <div class="d-flex align-items-center justify-content-between mb-2">
                                 <div class="d-flex align-items-center gap-2.5">
-                                    <div class="calc-icon-badge" style="background: rgba(22, 101, 52, 0.1); color: #166534;">
+                                    <div class="calc-icon-box" style="color: #16a34a;">
                                         <i class="bi bi-calculator-fill"></i>
                                     </div>
                                     <div>
-                                        <div class="d-flex align-items-center gap-1.5">
-                                            <span class="fw-bold text-dark" style="font-size: 0.88rem;">Rincian Pengujian Laboratorium</span>
-                                            <span class="badge rounded-pill" style="background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; font-size: 0.65rem; font-weight: 600;">
-                                                <i class="bi bi-check-circle-fill me-0.5 text-success"></i> Terverifikasi
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="fw-bold text-dark" style="font-size: 0.9rem;">Rincian Pengujian Laboratorium</span>
+                                            <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-2 py-0.5" style="font-size: 0.68rem; font-weight: 600;">
+                                                <i class="bi bi-check-circle-fill me-1"></i>Terverifikasi
                                             </span>
                                         </div>
-                                        <div class="text-muted" style="font-size: 0.72rem;">Kalkulasi baku mutu lab lingkungan</div>
+                                        <div class="text-muted" style="font-size: 0.73rem; margin-top: 2px;">Kalkulasi tarif baku mutu lab lingkungan</div>
                                     </div>
                                 </div>
-                                <div class="text-end ps-2">
-                                    <span class="text-muted d-block" style="font-size: 0.67rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Estimasi Total</span>
-                                    <span class="fw-bold font-monospace text-success" style="font-size: 1.15rem;">Rp {{ number_format(@order.estimasi_biaya, 0, ',', '.') }}</span>
+                                <div class="text-end ps-3">
+                                    <span class="text-muted d-block fw-semibold" style="font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.5px;">Estimasi Total</span>
+                                    <span class="fw-bold font-monospace text-success" style="font-size: 1.18rem;">Rp {{ number_format(@order.estimasi_biaya, 0, ',', '.') }}</span>
                                 </div>
                             </div>
-                            <div class="d-flex align-items-center gap-3 pt-2 mt-1 border-top" style="border-color: #bbf7d0 !important; font-size: 0.78rem;">
-                                <div class="d-flex align-items-center gap-1.5 text-secondary">
+                            <div class="d-flex flex-wrap align-items-center gap-2 pt-2.5 mt-2 border-top" style="border-color: #f1f5f9 !important;">
+                                <div class="calc-meta-chip">
                                     <i class="bi bi-list-check text-success"></i>
-                                    <span>Parameter Uji: <strong class="text-dark">{{ count(@kalkulasi) }} Parameter SNI</strong></span>
+                                    <span>Parameter Uji:&nbsp;<strong class="text-dark">{{ count(@kalkulasi) }} Parameter SNI</strong></span>
                                 </div>
                                 <check if="{{ @order.diskon_penawaran > 0 }}">
-                                    <span class="text-muted opacity-50">&bull;</span>
-                                    <div class="d-flex align-items-center gap-1.5 text-danger">
-                                        <i class="bi bi-tag-fill"></i>
-                                        <span>Diskon: <strong>- Rp {{ number_format(@order.diskon_penawaran, 0, ',', '.') }}</strong></span>
+                                    <div class="calc-meta-chip text-danger" style="border-color: #fecaca; background: #fff5f5;">
+                                        <i class="bi bi-tag-fill text-danger"></i>
+                                        <span>Diskon Disepakati:&nbsp;<strong>- Rp {{ number_format(@order.diskon_penawaran, 0, ',', '.') }}</strong></span>
                                     </div>
                                 </check>
                             </div>
@@ -541,17 +553,18 @@
                     <check if="{{ (@order.jenis_layanan_opti == 'selulosa' && (!@proposal || !@proposal.estimasi_total_biaya)) || (@order.jenis_layanan_opti == 'lingkungan' && empty(@kalkulasi)) }}">
                         <div class="calc-source-card calc-source-neutral">
                             <div class="d-flex align-items-center justify-content-between">
-                                <div class="d-flex align-items-center gap-2">
-                                    <div class="calc-icon-badge" style="background: rgba(217, 119, 6, 0.1); color: #d97706;">
+                                <div class="d-flex align-items-center gap-2.5">
+                                    <div class="calc-icon-box" style="color: #d97706;">
                                         <i class="bi bi-lightning-charge-fill"></i>
                                     </div>
                                     <div>
-                                        <span class="fw-semibold text-dark small d-block">Estimasi Awal Order</span>
-                                        <span class="text-muted" style="font-size: 0.72rem;">Perkiraan nilai order awal</span>
+                                        <span class="fw-bold text-dark" style="font-size: 0.9rem;">Estimasi Awal Order</span>
+                                        <div class="text-muted" style="font-size: 0.73rem;">Perkiraan nilai order sounding awal</div>
                                     </div>
                                 </div>
-                                <div class="text-end">
-                                    <span class="fw-bold font-monospace text-primary" style="font-size: 1.1rem;">Rp {{ number_format(@order.estimasi_biaya, 0, ',', '.') }}</span>
+                                <div class="text-end ps-3">
+                                    <span class="text-muted d-block fw-semibold" style="font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.5px;">Estimasi Awal</span>
+                                    <span class="fw-bold font-monospace text-primary" style="font-size: 1.15rem;">Rp {{ number_format(@order.estimasi_biaya, 0, ',', '.') }}</span>
                                 </div>
                             </div>
                         </div>
