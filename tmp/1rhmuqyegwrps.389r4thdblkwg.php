@@ -1,0 +1,286 @@
+<div class="mb-4">
+    <h2 class="h4 fw-bold mb-1 text-dark"><i class="bi bi-speedometer2 text-primary me-1"></i> Dashboard OPTI</h2>
+    <p class="text-muted small mb-0">Ringkasan status order &amp; keuangan untuk kedua divisi &mdash; tampilan ini sama untuk seluruh pengguna.</p>
+</div>
+
+<!-- ======================= RINGKASAN TOTAL (GABUNGAN) ======================= -->
+<h6 class="fw-bold text-dark mb-3"><i class="bi bi-collection text-primary me-1"></i> Total Gabungan (Selulosa + Lingkungan)</h6>
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="metric-card">
+            <div>
+                <div class="text-muted small fw-semibold mb-1">Order Diterima</div>
+                <div class="h4 fw-bold mb-0 text-dark"><?= ($stat_total['diterima'] ?: 0) ?></div>
+            </div>
+            <div class="metric-icon-box" style="background:#ecfdf5; color:#065f46;">
+                <i class="bi bi-check-circle"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="metric-card">
+            <div>
+                <div class="text-muted small fw-semibold mb-1">Order Pending</div>
+                <div class="h4 fw-bold mb-0 text-dark"><?= ($stat_total['pending'] ?: 0) ?></div>
+            </div>
+            <div class="metric-icon-box" style="background:#fffbeb; color:#92400e;">
+                <i class="bi bi-hourglass-split"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="metric-card">
+            <div>
+                <div class="text-muted small fw-semibold mb-1">Order Ditolak</div>
+                <div class="h4 fw-bold mb-0 text-dark"><?= ($stat_total['ditolak'] ?: 0) ?></div>
+            </div>
+            <div class="metric-icon-box" style="background:#fef2f2; color:#991b1b;">
+                <i class="bi bi-x-circle"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="metric-card">
+            <div>
+                <div class="text-muted small fw-semibold mb-1">Sedang Berjalan</div>
+                <div class="h4 fw-bold mb-0 text-dark"><?= ($stat_total['berjalan'] ?: 0) ?></div>
+            </div>
+            <div class="metric-icon-box" style="background:#f0f9ff; color:#075985;">
+                <i class="bi bi-arrow-repeat"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-3 p-md-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div>
+            <div class="text-muted small fw-semibold mb-1">Total Uang Sudah Diterima (Gabungan)</div>
+            <div class="h3 fw-bold mb-0" style="color: var(--color-primary);">Rp <?= (number_format($stat_total['uang_diterima'] ?: 0, 0, ',', '.')) ?></div>
+        </div>
+        <div class="metric-icon-box" style="background: rgba(136,19,55,.08); color: var(--color-primary); width:56px; height:56px; font-size:1.6rem;">
+            <i class="bi bi-cash-stack"></i>
+        </div>
+    </div>
+</div>
+
+<!-- ======================= RINGKASAN PER DIVISI ======================= -->
+<div class="row g-4 mb-4">
+    <!-- OPTI SELULOSA -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white py-3 d-flex align-items-center gap-2">
+                <span class="badge badge-pill-primary">OPTI Selulosa</span>
+                <h6 class="m-0 fw-bold text-dark">Ringkasan Divisi</h6>
+            </div>
+            <div class="card-body p-3 p-md-4">
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <div class="metric-card">
+                            <div>
+                                <div class="text-muted small fw-semibold mb-1">Diterima</div>
+                                <div class="h5 fw-bold mb-0 text-dark"><?= ($stat_selulosa['diterima'] ?: 0) ?></div>
+                            </div>
+                            <div class="metric-icon-box" style="background:#ecfdf5; color:#065f46;"><i class="bi bi-check-circle"></i></div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="metric-card">
+                            <div>
+                                <div class="text-muted small fw-semibold mb-1">Pending</div>
+                                <div class="h5 fw-bold mb-0 text-dark"><?= ($stat_selulosa['pending'] ?: 0) ?></div>
+                            </div>
+                            <div class="metric-icon-box" style="background:#fffbeb; color:#92400e;"><i class="bi bi-hourglass-split"></i></div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="metric-card">
+                            <div>
+                                <div class="text-muted small fw-semibold mb-1">Ditolak</div>
+                                <div class="h5 fw-bold mb-0 text-dark"><?= ($stat_selulosa['ditolak'] ?: 0) ?></div>
+                            </div>
+                            <div class="metric-icon-box" style="background:#fef2f2; color:#991b1b;"><i class="bi bi-x-circle"></i></div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="metric-card">
+                            <div>
+                                <div class="text-muted small fw-semibold mb-1">Berjalan</div>
+                                <div class="h5 fw-bold mb-0 text-dark"><?= ($stat_selulosa['berjalan'] ?: 0) ?></div>
+                            </div>
+                            <div class="metric-icon-box" style="background:#f0f9ff; color:#075985;"><i class="bi bi-arrow-repeat"></i></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-3 rounded-3" style="background-color: rgba(136,19,55,.04); border: 1px solid rgba(136,19,55,.15);">
+                    <div class="text-muted small fw-semibold mb-1">Total Uang Diterima</div>
+                    <div class="h5 fw-bold mb-0" style="color: var(--color-primary);">Rp <?= (number_format($stat_selulosa['uang_diterima'] ?: 0, 0, ',', '.')) ?></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- OPTI LINGKUNGAN -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white py-3 d-flex align-items-center gap-2">
+                <span class="badge badge-pill" style="background-color: #15803D; color: white;">
+                    OPTI Lingkungan
+                </span>
+                <h6 class="m-0 fw-bold text-dark">Ringkasan Divisi</h6>
+            </div>
+            <div class="card-body p-3 p-md-4">
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <div class="metric-card">
+                            <div>
+                                <div class="text-muted small fw-semibold mb-1">Diterima</div>
+                                <div class="h5 fw-bold mb-0 text-dark"><?= ($stat_lingkungan['diterima'] ?: 0) ?></div>
+                            </div>
+                            <div class="metric-icon-box" style="background:#ecfdf5; color:#065f46;"><i class="bi bi-check-circle"></i></div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="metric-card">
+                            <div>
+                                <div class="text-muted small fw-semibold mb-1">Pending</div>
+                                <div class="h5 fw-bold mb-0 text-dark"><?= ($stat_lingkungan['pending'] ?: 0) ?></div>
+                            </div>
+                            <div class="metric-icon-box" style="background:#fffbeb; color:#92400e;"><i class="bi bi-hourglass-split"></i></div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="metric-card">
+                            <div>
+                                <div class="text-muted small fw-semibold mb-1">Ditolak</div>
+                                <div class="h5 fw-bold mb-0 text-dark"><?= ($stat_lingkungan['ditolak'] ?: 0) ?></div>
+                            </div>
+                            <div class="metric-icon-box" style="background:#fef2f2; color:#991b1b;"><i class="bi bi-x-circle"></i></div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="metric-card">
+                            <div>
+                                <div class="text-muted small fw-semibold mb-1">Berjalan</div>
+                                <div class="h5 fw-bold mb-0 text-dark"><?= ($stat_lingkungan['berjalan'] ?: 0) ?></div>
+                            </div>
+                            <div class="metric-icon-box" style="background:#f0f9ff; color:#075985;"><i class="bi bi-arrow-repeat"></i></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-3 rounded-3" style="background-color: rgba(21,128,61,.05); border: 1px solid rgba(21,128,61,.15);">
+                    <div class="text-muted small fw-semibold mb-1">Total Uang Diterima</div>
+                    <div class="h5 fw-bold mb-0" style="color: #15803D;">
+                        Rp <?= (number_format($stat_lingkungan['uang_diterima'] ?: 0, 0, ',', '.'))."
+" ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ======================= DIAGRAM PERBANDINGAN ======================= -->
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white py-3">
+                <h6 class="m-0 fw-bold text-dark"><i class="bi bi-bar-chart-line text-primary me-2"></i>Perbandingan Status Order per Divisi</h6>
+            </div>
+            <div class="card-body p-3 p-md-4">
+                <canvas id="chartStatusOrder" height="240"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white py-3">
+                <h6 class="m-0 fw-bold text-dark"><i class="bi bi-pie-chart text-primary me-2"></i>Proporsi Uang Diterima</h6>
+            </div>
+            <div class="card-body p-3 p-md-4 d-flex align-items-center justify-content-center">
+                <canvas id="chartUangDiterima" height="240"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var maroon = '#881337';
+    var green = '#16A34A';
+
+    // ---- Bar chart: perbandingan status order per divisi ----
+    var ctxStatus = document.getElementById('chartStatusOrder').getContext('2d');
+    new Chart(ctxStatus, {
+        type: 'bar',
+        data: {
+            labels: ['Diterima', 'Pending', 'Ditolak', 'Berjalan'],
+            datasets: [
+                {
+                    label: 'OPTI Selulosa',
+                    backgroundColor: maroon,
+                    borderRadius: 4,
+                    data: [
+                        <?= ($stat_selulosa['diterima'] ?: 0) ?>,
+                        <?= ($stat_selulosa['pending'] ?: 0) ?>,
+                        <?= ($stat_selulosa['ditolak'] ?: 0) ?>,
+                        <?= ($stat_selulosa['berjalan'] ?: 0)."
+" ?>
+                    ]
+                },
+                {
+                    label: 'OPTI Lingkungan',
+                    backgroundColor: green,
+                    borderRadius: 4,
+                    data: [
+                        <?= ($stat_lingkungan['diterima'] ?: 0) ?>,
+                        <?= ($stat_lingkungan['pending'] ?: 0) ?>,
+                        <?= ($stat_lingkungan['ditolak'] ?: 0) ?>,
+                        <?= ($stat_lingkungan['berjalan'] ?: 0)."
+" ?>
+                    ]
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { position: 'bottom' } },
+            scales: {
+                y: { beginAtZero: true, ticks: { precision: 0 } }
+            }
+        }
+    });
+
+    // ---- Donut chart: proporsi uang diterima ----
+    var ctxUang = document.getElementById('chartUangDiterima').getContext('2d');
+    new Chart(ctxUang, {
+        type: 'doughnut',
+        data: {
+            labels: ['OPTI Selulosa', 'OPTI Lingkungan'],
+            datasets: [{
+                backgroundColor: [maroon, green],
+                data: [
+                    <?= ($stat_selulosa['uang_diterima'] ?: 0) ?>,
+                    <?= ($stat_lingkungan['uang_diterima'] ?: 0)."
+" ?>
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'bottom' },
+                tooltip: {
+                    callbacks: {
+                        label: function (ctx) {
+                            var val = ctx.parsed || 0;
+                            return ctx.label + ': Rp ' + val.toLocaleString('id-ID');
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
