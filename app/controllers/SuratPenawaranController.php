@@ -1249,26 +1249,47 @@ $daftarPegawai = $arsipUser->find(
 
         $pdf->SetFont('Arial', 'B', 9);
         $pdf->Cell(0, 4.2, 'E.  JADWAL', 0, 1);
-        $pdf->SetFont('Arial', '', 7.5);
+        $pdf->Ln(1);
 
         // Tabel Jadwal Gantt
         $pdf->SetDrawColor(0, 0, 0);
         $pdf->SetLineWidth(0.2);
 
-        $pdf->Cell(8, 7, 'No.', 1, 0, 'C');
-        $pdf->Cell(58, 7, 'Kegiatan', 1, 0, 'C');
-        $pdf->Cell(26, 3.5, 'Bulan 1', 1, 0, 'C');
-        $pdf->Cell(26, 3.5, 'Bulan 2', 1, 0, 'C');
-        $pdf->Cell(26, 3.5, 'Bulan 3', 1, 0, 'C');
-        $pdf->Cell(26, 3.5, 'Bulan 4', 1, 1, 'C');
+        $xStart = $pdf->GetX(); // 20
+        $yStart = $pdf->GetY();
+        $hHeader = 8; // Total tinggi header (4 + 4)
+        $hSub = 4;    // Tinggi baris sub-header
 
-        $pdf->SetXY(86, $pdf->GetY() - 3.5);
+        // 1. Kolom No. (rowspan 2)
+        $pdf->Rect($xStart, $yStart, 8, $hHeader);
+        $pdf->SetXY($xStart, $yStart);
+        $pdf->SetFont('Arial', 'B', 7.5);
+        $pdf->Cell(8, $hHeader, 'No.', 0, 0, 'C');
+
+        // 2. Kolom Kegiatan (rowspan 2)
+        $pdf->Rect($xStart + 8, $yStart, 58, $hHeader);
+        $pdf->SetXY($xStart + 8, $yStart);
+        $pdf->SetFont('Arial', 'B', 7.5);
+        $pdf->Cell(58, $hHeader, 'Kegiatan', 0, 0, 'C');
+
+        // 3. Header Bulan 1 s/d 4 (Baris 1)
+        $xMonth = $xStart + 8 + 58; // 86
+        for ($b = 1; $b <= 4; $b++) {
+            $pdf->SetXY($xMonth + (($b - 1) * 26), $yStart);
+            $pdf->Cell(26, $hSub, 'Bulan ' . $b, 1, 0, 'C');
+        }
+
+        // 4. Sub-kolom Minggu 1 s/d 4 untuk tiap Bulan (Baris 2)
+        $pdf->SetFont('Arial', '', 7);
+        $pdf->SetXY($xMonth, $yStart + $hSub);
         for ($b = 0; $b < 4; $b++) {
             for ($w = 1; $w <= 4; $w++) {
-                $pdf->Cell(6.5, 3.5, $w, 1, 0, 'C');
+                $pdf->Cell(6.5, $hSub, $w, 1, 0, 'C');
             }
         }
-        $pdf->Ln(3.5);
+
+        // Posisikan kursor tepat di bawah header untuk baris data
+        $pdf->SetXY($xStart, $yStart + $hHeader);
 
         $jadwalRows = [
             ['Persiapan alat dan bahan', [1, 2]],
@@ -1277,16 +1298,18 @@ $daftarPegawai = $arsipUser->find(
             ['Pengolahan data dan pembuatan laporan', [15, 16]]
         ];
 
+        $pdf->SetFont('Arial', '', 7.5);
         $pdf->SetFillColor(251, 191, 36); // Amber highlight
         foreach ($jadwalRows as $idx => $jr) {
             $pdf->Cell(8, 5, ($idx + 1), 1, 0, 'C');
-            $pdf->Cell(58, 5, $jr[0], 1, 0, 'L');
+            $pdf->Cell(58, 5, '  ' . $jr[0], 1, 0, 'L');
             for ($col = 1; $col <= 16; $col++) {
                 $isFill = in_array($col, $jr[1]);
                 $pdf->Cell(6.5, 5, '', 1, 0, 'C', $isFill);
             }
             $pdf->Ln(5);
         }
+        $pdf->Ln(1.5);
         $pdf->SetFont('Arial', 'I', 7.5);
         $pdf->Cell(0, 4, '*Estimasi waktu ini bersifat minimal, waktu pelaksanaan bisa lebih lama apabila ada kondisi-kondisi tertentu yang terjadi.', 0, 1);
 
