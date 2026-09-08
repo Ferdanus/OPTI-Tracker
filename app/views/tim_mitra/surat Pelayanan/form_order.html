@@ -204,6 +204,82 @@
         flex-wrap: wrap;
         gap: 0.5rem;
     }
+    .preview-btn-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .preview-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 0.35rem 0.75rem;
+        font-size: 0.78rem;
+        font-weight: 600;
+        border-radius: 7px;
+        line-height: 1.3;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+        white-space: nowrap;
+        border: 1px solid transparent;
+        cursor: pointer;
+    }
+    .preview-btn-primary {
+        background: #fff1f2;
+        color: #881337;
+        border-color: #fecdd3;
+    }
+    .preview-btn-primary:hover {
+        background: #881337;
+        color: #ffffff;
+        border-color: #881337;
+        box-shadow: 0 2px 6px rgba(136, 19, 55, 0.25);
+    }
+    .preview-btn-secondary {
+        background: #ffffff;
+        color: #475569;
+        border-color: #cbd5e1;
+    }
+    .preview-btn-secondary:hover {
+        background: #f8fafc;
+        color: #1e293b;
+        border-color: #94a3b8;
+    }
+
+    /* Card Dasar Perhitungan Anggaran */
+    .calc-source-card {
+        border-radius: 10px;
+        padding: 12px 14px;
+        margin-bottom: 0.65rem;
+        transition: all 0.2s ease;
+        position: relative;
+    }
+    .calc-source-selulosa {
+        background: linear-gradient(135deg, #fff7f8 0%, #ffffff 100%);
+        border: 1.5px solid #fecdd3;
+        box-shadow: 0 2px 8px -2px rgba(136, 19, 55, 0.08);
+    }
+    .calc-source-lingkungan {
+        background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
+        border: 1.5px solid #bbf7d0;
+        box-shadow: 0 2px 8px -2px rgba(22, 101, 52, 0.08);
+    }
+    .calc-source-neutral {
+        background: #f8fafc;
+        border: 1.5px solid #e2e8f0;
+    }
+    .calc-icon-badge {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.05rem;
+        flex-shrink: 0;
+    }
     .preview-doc-scroll {
         background: #f1f5f9;
         padding: 14px 14px;
@@ -387,28 +463,75 @@
                 <div class="form-section-body">
                     <!-- Kasus Selulosa dengan Proposal -->
                     <check if="{{ @order.jenis_layanan_opti == 'selulosa' && @proposal && @proposal.estimasi_total_biaya > 0 }}">
-                        <div class="p-2.5 bg-primary-subtle rounded border border-primary-subtle mb-2">
-                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                <span class="fw-bold text-primary small"><i class="bi bi-file-earmark-check me-1"></i> Proposal Riset Terverifikasi</span>
-                                <strong class="text-primary font-monospace">Rp {{ number_format(@proposal.estimasi_total_biaya, 0, ',', '.') }}</strong>
+                        <div class="calc-source-card calc-source-selulosa">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <div class="d-flex align-items-center gap-2.5">
+                                    <div class="calc-icon-badge" style="background: rgba(136, 19, 55, 0.1); color: #881337;">
+                                        <i class="bi bi-file-earmark-check-fill"></i>
+                                    </div>
+                                    <div>
+                                        <div class="d-flex align-items-center gap-1.5">
+                                            <span class="fw-bold text-dark" style="font-size: 0.88rem;">Proposal Riset Terverifikasi</span>
+                                            <span class="badge rounded-pill" style="background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; font-size: 0.65rem; font-weight: 600;">
+                                                <i class="bi bi-check-circle-fill me-0.5" style="color: #881337;"></i> Terverifikasi
+                                            </span>
+                                        </div>
+                                        <div class="text-muted" style="font-size: 0.72rem;">Dasar acuan rincian rencana biaya &amp; kegiatan tim</div>
+                                    </div>
+                                </div>
+                                <div class="text-end ps-2">
+                                    <span class="text-muted d-block" style="font-size: 0.67rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Estimasi Total</span>
+                                    <span class="fw-bold font-monospace" style="font-size: 1.15rem; color: #881337;">Rp {{ number_format(@proposal.estimasi_total_biaya, 0, ',', '.') }}</span>
+                                </div>
                             </div>
-                            <div class="small text-dark" style="font-size: 0.78rem;">
-                                PIC: <strong>{{ @proposal.pic_nama ?: '-' }}</strong> &bull; Durasi: <strong>{{ @proposal.durasi_kegiatan ?: '3 bulan' }}</strong>
+                            <div class="d-flex align-items-center gap-3 pt-2 mt-1 border-top" style="border-color: #fecdd3 !important; font-size: 0.78rem;">
+                                <div class="d-flex align-items-center gap-1.5 text-secondary">
+                                    <i class="bi bi-person-badge" style="color: #881337;"></i>
+                                    <span>PIC Peneliti: <strong class="text-dark">{{ @proposal.pic_nama ?: '-' }}</strong></span>
+                                </div>
+                                <span class="text-muted opacity-50">&bull;</span>
+                                <div class="d-flex align-items-center gap-1.5 text-secondary">
+                                    <i class="bi bi-calendar3" style="color: #881337;"></i>
+                                    <span>Durasi: <strong class="text-dark">{{ @proposal.durasi_kegiatan ?: '30 Hari Kerja' }}</strong></span>
+                                </div>
                             </div>
                         </div>
                     </check>
 
                     <!-- Kasus Lingkungan dengan Kalkulasi Lab -->
                     <check if="{{ @order.jenis_layanan_opti == 'lingkungan' && !empty(@kalkulasi) }}">
-                        <div class="p-2.5 bg-success-subtle rounded border border-success-subtle mb-2">
-                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                <span class="fw-bold text-success small"><i class="bi bi-calculator me-1"></i> Rincian Pengujian Laboratorium</span>
-                                <strong class="text-success font-monospace">Rp {{ number_format(@order.estimasi_biaya, 0, ',', '.') }}</strong>
+                        <div class="calc-source-card calc-source-lingkungan">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <div class="d-flex align-items-center gap-2.5">
+                                    <div class="calc-icon-badge" style="background: rgba(22, 101, 52, 0.1); color: #166534;">
+                                        <i class="bi bi-calculator-fill"></i>
+                                    </div>
+                                    <div>
+                                        <div class="d-flex align-items-center gap-1.5">
+                                            <span class="fw-bold text-dark" style="font-size: 0.88rem;">Rincian Pengujian Laboratorium</span>
+                                            <span class="badge rounded-pill" style="background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; font-size: 0.65rem; font-weight: 600;">
+                                                <i class="bi bi-check-circle-fill me-0.5 text-success"></i> Terverifikasi
+                                            </span>
+                                        </div>
+                                        <div class="text-muted" style="font-size: 0.72rem;">Kalkulasi baku mutu lab lingkungan</div>
+                                    </div>
+                                </div>
+                                <div class="text-end ps-2">
+                                    <span class="text-muted d-block" style="font-size: 0.67rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Estimasi Total</span>
+                                    <span class="fw-bold font-monospace text-success" style="font-size: 1.15rem;">Rp {{ number_format(@order.estimasi_biaya, 0, ',', '.') }}</span>
+                                </div>
                             </div>
-                            <div class="small text-dark" style="font-size: 0.78rem;">
-                                Terdiri dari <strong>{{ count(@kalkulasi) }} parameter uji SNI</strong>.
+                            <div class="d-flex align-items-center gap-3 pt-2 mt-1 border-top" style="border-color: #bbf7d0 !important; font-size: 0.78rem;">
+                                <div class="d-flex align-items-center gap-1.5 text-secondary">
+                                    <i class="bi bi-list-check text-success"></i>
+                                    <span>Parameter Uji: <strong class="text-dark">{{ count(@kalkulasi) }} Parameter SNI</strong></span>
+                                </div>
                                 <check if="{{ @order.diskon_penawaran > 0 }}">
-                                    (Diskon: - Rp {{ number_format(@order.diskon_penawaran, 0, ',', '.') }})
+                                    <span class="text-muted opacity-50">&bull;</span>
+                                    <div class="d-flex align-items-center gap-1.5 text-danger">
+                                        <i class="bi bi-tag-fill"></i>
+                                        <span>Diskon: <strong>- Rp {{ number_format(@order.diskon_penawaran, 0, ',', '.') }}</strong></span>
+                                    </div>
                                 </check>
                             </div>
                         </div>
@@ -416,10 +539,20 @@
 
                     <!-- Kasus Sounding Cepat / Tanpa Proposal -->
                     <check if="{{ (@order.jenis_layanan_opti == 'selulosa' && (!@proposal || !@proposal.estimasi_total_biaya)) || (@order.jenis_layanan_opti == 'lingkungan' && empty(@kalkulasi)) }}">
-                        <div class="p-2.5 bg-light rounded border mb-2">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span class="fw-semibold text-secondary small"><i class="bi bi-lightning-charge text-warning me-1"></i> Estimasi Awal Order:</span>
-                                <strong class="text-primary font-monospace">Rp {{ number_format(@order.estimasi_biaya, 0, ',', '.') }}</strong>
+                        <div class="calc-source-card calc-source-neutral">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="calc-icon-badge" style="background: rgba(217, 119, 6, 0.1); color: #d97706;">
+                                        <i class="bi bi-lightning-charge-fill"></i>
+                                    </div>
+                                    <div>
+                                        <span class="fw-semibold text-dark small d-block">Estimasi Awal Order</span>
+                                        <span class="text-muted" style="font-size: 0.72rem;">Perkiraan nilai order awal</span>
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <span class="fw-bold font-monospace text-primary" style="font-size: 1.1rem;">Rp {{ number_format(@order.estimasi_biaya, 0, ',', '.') }}</span>
+                                </div>
                             </div>
                         </div>
                     </check>
@@ -648,16 +781,16 @@
                             Live Sync
                         </span>
                     </div>
-                    <div class="d-flex align-items-center gap-1.5 flex-wrap">
-                        <a href="{{ @BASE }}/order/{{ @order.id }}/penawaran/preview-pdf?t={{ time() }}" target="_blank" class="btn btn-sm btn-outline-primary px-2.5 py-1 fw-semibold d-inline-flex align-items-center gap-1 shadow-xs" title="Buka PDF Asli di Tab Baru">
-                            <i class="bi bi-file-earmark-pdf"></i> Pratinjau PDF
+                    <div class="preview-btn-group">
+                        <a href="{{ @BASE }}/order/{{ @order.id }}/penawaran/preview-pdf?t={{ time() }}" target="_blank" class="preview-btn preview-btn-primary" title="Buka PDF Asli di Tab Baru">
+                            <i class="bi bi-file-earmark-pdf-fill"></i> Pratinjau PDF
                         </a>
                         <check if="{{ @sp_existing && @sp_existing.id }}">
-                            <a href="{{ @BASE }}/order/{{ @order.id }}/penawaran/cetak?id={{ @sp_existing.id }}&t={{ time() }}" target="_blank" class="btn btn-sm btn-outline-secondary px-2.5 py-1 fw-semibold d-inline-flex align-items-center gap-1 shadow-xs" title="Unduh Dokumen PDF Resmi">
+                            <a href="{{ @BASE }}/order/{{ @order.id }}/penawaran/cetak?id={{ @sp_existing.id }}&t={{ time() }}" target="_blank" class="preview-btn preview-btn-secondary" title="Unduh Dokumen PDF Resmi">
                                 <i class="bi bi-download text-danger"></i> Unduh PDF
                             </a>
                         </check>
-                        <button type="button" class="btn btn-sm btn-white border text-secondary shadow-xs px-2.5 py-1 fw-semibold d-inline-flex align-items-center gap-1" onclick="window.print()" title="Cetak Pratinjau Lembar Dokumen">
+                        <button type="button" class="preview-btn preview-btn-secondary" onclick="window.print()" title="Cetak Pratinjau Lembar Dokumen">
                             <i class="bi bi-printer" style="color: #881337;"></i> Cetak
                         </button>
                     </div>
