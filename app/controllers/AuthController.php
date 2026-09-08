@@ -11,7 +11,7 @@ class AuthController extends Controller {
      */
     public function loginGet($f3) {
         if ($this->isLoggedIn()) {
-            $f3->reroute('/order');
+            $f3->reroute('/dashboard');
             return;
         }
 
@@ -134,15 +134,12 @@ class AuthController extends Controller {
             $f3->set('SESSION.mask_client_name', $maskEnabled);
 
             $this->setFlashSuccess("Berhasil beralih peran sebagai <strong>{$userData['nama_user']}</strong> (" . strtoupper(str_replace('_', ' ', $roleOpti)) . ").");
-            $f3->reroute('/order');
+            $f3->reroute('/dashboard');
             return;
         }
 
         // Ambil no_hp dari tb_arsipuser (hanya untuk login awal dari luar)
         $noHp = trim($userData['no_hp'] ?? '');
-        if (empty($noHp)) {
-            $noHp = '628156006227';
-        }
 
         // Ambil OTP aktif 24 jam atau generate & kirim baru via WhatsApp jika belum ada
         $otpResult = WhatsAppService::getOrCreateDailyOtp($this->db, (int)$userData['id_user'], $userData['nama_user'], $noHp, false);
@@ -196,9 +193,6 @@ class AuthController extends Controller {
         // Ambil nomor HP dari tb_arsipuser
         $userRow = $this->db->exec("SELECT no_hp FROM tb_arsipuser WHERE id_user = ?", array(1 => (int)$userData['id_user']));
         $noHp = trim($userRow[0]['no_hp'] ?? ($userData['no_hp'] ?? ''));
-        if (empty($noHp)) {
-            $noHp = '628156006227';
-        }
 
         // Ambil OTP aktif 24 jam atau generate & kirim baru via WhatsApp jika belum ada
         $otpResult = WhatsAppService::getOrCreateDailyOtp($this->db, (int)$userData['id_user'], $userData['nama_user'], $noHp, false);
@@ -225,7 +219,7 @@ class AuthController extends Controller {
      */
     public function otpGet($f3) {
         if ($this->isLoggedIn()) {
-            $f3->reroute('/order');
+            $f3->reroute('/dashboard');
             return;
         }
 
@@ -319,7 +313,7 @@ class AuthController extends Controller {
         unset($_SESSION['otp_pending']);
 
         $this->setFlashSuccess("Verifikasi WhatsApp OTP berhasil. Selamat datang kembali, <strong>{$userData['nama_user']}</strong>!");
-        $f3->reroute('/order');
+        $f3->reroute('/dashboard');
     }
 
     /**

@@ -1,0 +1,613 @@
+<USER_REQUEST>
+saya tadi sudah diskusi dengan dengan mentor saya, kira kira ini percakapan. tolong di analisis dulu dan jangan langsung ke coding : 
+Kita juga bisa memutuskan bahwa ini tuh bisa ditindak lanjuti apa tidak gitu kan. Kenapa direkam?
+Iya.
+I biar
+biarnya lupa.
+Jadi intinya tim mitra itu harusnya sudah mengetahui layanan kita itu apa saja dan yang kedua ini bisa dilaksanakan apa tidak tergantung skop kegiatan kan.
+Nah nanti misalnya tim mitra itu mengetahui bahwa ini bisa dilaksanakan harusnya dia bisa mengeksekusi ini bisa dilaksanakan tanpa harus meminta ke tim opti dulu pendapatnya.
+He.
+Ya. Yang kedua, kalaupun misalnya sistem ini bisa dikirim ke belakang, jadi opsinya bisa dua nih. Si ini itu bisa diisi oleh tim mitra, bisa, diisi oleh tim belakang juga bisa. Cuman yang kemarin itu kan sudah oke nih. Begitu ini dikirim ke belakang, berarti harusnya yang diinput oleh tim mitra juga dapat nih. Ya kan? Misalkan diisi oleh tim mitra nih, ini bisa dilaksanakan, ini bisa dilaksanakan, SDM. ada dan lain-lain kan. Berarti tim mitra itu ngirim ke belakang itu tetap terkirim datanya ke belakang ke Opti. Cuman Opti itu statusnya bukan ngisi itu lagi tapi dia menentukan PIC dan proposal.
+Proposal
+lanjut sebetulnya.
+Tapi kalau misalkan itu belum diisi oleh tim mitra, tim Opti juga bisa ngisi itu. Ya,
+gitu aja. Mungkin kalau saling petunjuk-tunjuk gimana? Kebayang enggak?
+Ngerti kan analis analisnya ngerti bisa ngerti programnya?
+Enggak ngerti, Pak. Belum ngerti.
+Maksudnya tim belakang tuh siapa, Pak?
+Tim belakang tuh ya opti. Maksudnya kan kita ngomongin opti nih.
+Kita kan ngomongin opti nih. Bukan ngomongin sifat nih. Bukan ngomongin.
+Jadi PJT-nya enggak masuk ya, Pak?
+Apa?
+PJT-nya enggak masuk.
+PJT enggak. PJT mah enggak masuk di sini. Masuk.
+Harusnya PJT sih masuk ya. Tapi PJ PJT itu masalahnya gini, PJT itu kan tim bentukan baru baru berdiri tahun ini
+baru establish-nya tuh tahun 2026 ini dibentuknya. Tapi nanti ketika kepala balai ganti kan bisa jadi PJT itu tuh enggak ada.
+Jadi kebijakan pimpinan itu, tim PJT itu ee untuk mengurangi beban tim mitra. Tim mitra itu kan istilahnya sekarang tuh palugada ya. Jadi dia itu kalau ada penawaran, ada permintaan dan lain-lain, dia itu merespon.
+Tapi di satu sisi dia juga harus membuat marketing ke pelanggan, harus bikin terobosan-terobosan dan lain-lain gitu kan. Nah, sehingga displitlah sekarang itu timnya yang ternyata tim mitra itu segala diborong pemasaran gitu loh ya. Tim pemasaran diborong sekarang dipersempit tim mitra itu. Tim mitra itu sekarang lebih ke menangani layanan yang berjalan
+yang yang sedang berjalan nih. Tapi kalau tim PJT dia lebih kepada ekspansi pengembangan layanan. Misalnya contohnya pengujian itu belum ada pengujian ee teknik A misalnya belum ada nih pengujian teknik A. Nah, tugasnya si tim PJT mengembangkan supaya teknik A ini bisa ada
+bisa ada
+bukan dia yang ngurusin lagi nih tim karena tim mitra sudah berkutat dengan surat penawaran, bikin penagihan, kegiatan seminar dan lain-lain. dan apa pameran dan lain-lain dia sudah sibuk bikin revisi tarif itu kan dan lain-lain karena apa namanya hubungan dengan pelanggan. Jadi dia lebih kepada pelanggan yang sudah order. Kalau yang PJT lebih kepada ordernya tuh belum ada pelanggannya belum ada. Dia harus nyari pelanggan baru, nyari ruang lingkup baru, nyari ee terobosan-terobosan baru untuk dipromosikan, didapatkan, gitu. Kebayang enggak? juga
+lumayan
+ya. Jadi kalau saya mah kayak gini, kalau saya kalian itu magang ya, saya itu sudah jelas-jelas saya megang kalian. Kenapa kalian itu yang udah magang di sini saya yang megang tapi kalau yang calon magang itu Bu Yani yang menghandle ngerti enggak?
+Oh iya yang ngerti Pak
+ya. Jadi kalau yang belum-belum itu ya Bu Yani lah nguruslah bukan saya tapi saya tuh istilahnya Pak Hendi ini peserta magang sudah diterima ini. Silakan Pak Hendi urus. Jadi saya lebih mengurus yang sedang berjalan. nih nanti kalian absensinya saya ngurus, penilaian kalian saya ngurus, apalagi kalian kalau izin-zin ke saya tanda tangan misalnya parap saya kalaupun enggak tanda tangan. Nah, kalau Bu Yani lebih kepada mikirin batch berikutnya ada enggak nih kita butuh apa, IT butuh apa, dia ngurusin semua tuh saya enggak tahu menawa pokoknya saya pokoknya ke Bu Yani minta nanti Bu Yani saya mau untuk magang berikutnya saya butuh tiga orang dan gini nanti Bu Yani yang ngurus selebihnya. kebayang ya.
+Nah, itu tim mitra itu seperti itu. Jadi yang sedang berjalan kalau tim PJT itu yang akan berjalan yang mau yang mau diproses atau layanan baru, pelanggan baru, layanan baru, dan lain-lain.
+Soalnya kata Pak juga cenah ini itu harusnya ee di PJT kan, Pak. Ee cuman ini juga bisa sih diwakilin sama saya, tapi coba aja loundingin dulu sama Pak Hendy katanya gitu, Pak.
+PJT.
+Iya,
+M PJT. itu ee Andri coba ya.
+Feri enggak ada.
+Hah? Feri ada
+telepon-telepon enggak ngangkat lagi keluar katanya enggak tahu ke mana.
+Barusan sudah nelepon, Pak. Mau ke sini kan? Oh,
+udah
+sudah.
+Halo.
+Eh, ada Pak.
+Halo.
+Kak IT ya?
+Hah?
+Sekarang K IT sekarang
+L. di bagi mana? Oh, rapat.
+Bentar dong. Gerak sini gerak enggak lama.
+Oh, ini yang mau nanya magang yang lagi dibikin sistem ke sini sebentarlah kalau memang agak di situ agak ini santai ya. Bentar bentar ya.
+Iya.
+Oh, ya. Ini mumpung anak-anaknya ada di sini.
+Soalnya nanyain yang tadi sudah ke kamu cuma ada yang beberapa hal yang harus di dipikkan di sistemnya alurnya gitu
+ya. Penggambarannya kayak gimana
+soalnya semua buatnya pakai activity diagram
+kalau
+kayak aturanaturan kayak ini
+nah ini komplit kan ada Pak Andri ada ee
+gini kemarin itu yang dari ya untuk layanan order permintaan layanan opti
+kemarin tuh dari tim mitra di situ tuh ada harus ngisi form ini tuh bisa dilaksanakan apa tidak yaitu SDM apalagi Pak SDM apalagi Pak Jri alat teknik metode sama bahan kimia
+nah dari tim mitra itu mintanya dari tim teknis yang menentukan ini tuh kalau ada projek ini tuh bisa dilaksanakan apa tidak
+dari tim mitra ya ke Mari sudah diskusi dengan tim mitra.
+Jadi, jadi tim mitra itu lebih kepada menerima. Ini ada order, ada permintaan tim mitra bisa diisi enggak ini? Kalau bisa diisi dilaksanakan tim mitra akan membalas
+ke sana bahwa ini bisa dilaksanakan. Jadi bukan tim mitra yang menentukan bahwa ini itu bisa diterima apa tidak.
+Itu kan ada
+itu kan ada dua kali saringan berarti ya. Yang pertama
+ketika penawaran perintaan permintaan Oke.
+Nah, kalau misalnya proses
+ada di tim teknis berarti kan secara alur akan men akan lebih lama itu aja. Jadi kan pasti kan harus laporan dulu ke kan biasanya itu di WA ya di sini contoh
+biasanya itu di WA kan di grup di grup WA misalnya di tim itu ini bisa enggak tapi kalau masuk ke sistem itu bukannya lebih cepat jadi lama karena kan pindah
+pindah tim ya istilahnya
+ya enggak itu kan secara sistem juga nanti dapat notif ini bisa dilaksanakan enggak kamu logik Iya, tapi kan kalau kalau secara selama ini yang selama ini kan lewat WA cepat kan
+ya. Kalau WA mau tetap berjalan silakan tapi sistem juga tetap harus jalan untuk tracking record-nya dapat,
+tracking ordernya dapat.
+Ya bisa di tim teknis tapi itu ee terpisah dengan yang analisis PJT. Betul ya?
+Nah, PJT ini apakah mau dimasukkan apa enggak nih?
+Karena di di PJT juga ada analisis yang sama.
+Iya.
+Tapi setelah chat itu
+ketika buat penawarannya itu terjudul nih, Pak.
+Jadi apakah itu mau di disatukan aja berarti kalau kalau teknisnya
+enggak? Maksud saya gini di
+nanti PJT itu kan masalahnya ini belum tentu available seterusnya.
+Saya enggak tahu nih kalau dibikinkan ke dalam sistem itu akan lebih manjang.
+Jadi nanti kamu tuh cukup menerima order aja dari sistem ya dari tim mitra bahwa ini ada permintaan ini. Nanti di belakang itu kamu sounding sendiri aja ke tim mitra ke PJT ini bisa dilaksanakan apa enggak gimana
+gitu loh. Nanti kalau misalkan sounding internal itu kira-kira sudah didapatkan informasi seperti apa datanya bisa dilaksanakan, kamu tinggal input ke sistem bahwa ini bisa dilaksanakan nanti biayanya berapa seperti kemarin waktunya berapa
+ya terserah dibuat dulu aja lah.
+Iya. Jadi soalnya kalau nanti PJT harus login
+nanti nanti setelah ke depannya kan bisa ada modifikasi kan.
+Iya. Iya. Soalnya PJT kan baru berjalan tahun ini masalahnya apakah PJTnya akan nanti tahun depan tetap ada kan kita juga enggak tahu.
+Tapi kan ininya ada apa namanya si formnya itu ada form
+form evaluasinya. itu dari apa? Dari surat penawaran. Eh, dari surat dari surat
+surat penawaran. Nah, itu ngambil atau apa?
+Oh, kalau berarti kalau dari surat penawaran itu beda lagi itu udah udah udah deal berarti udah udah diskusi
+belum belum belum
+kan sudah ada surat penawaran
+belum deal. Iya belum deal. Tapi
+bukan maksudnya sudah deal bahwa project ini bisa dilaksanakan.
+Nah,
+enggak maksudnya kenapa enggak disatuin gitu. Itu kan dua kali jadinya dua kali evaluasi ya untuk hal yang sama gitu.
+Dua kali evaluasi untuk hal yang sama dibuat
+sekali aja gitu loh. Kan saya kali dua kalinya
+ya untuk hal yang sama berarti saya saya nanti input di sistem nanti PT nanya lagi gitu dimasukkan ke activity diagram
+maksudnya gimana
+benar enggak sih
+kayaknya saya juga enggak tahu ya kalau PJT itu ng-review proposal gitu ya
+ng-review penawaran
+penawaran
+iya sebentar dikat dulu di sini maksud Andri berarti PJT mer-review penawaran iya kan nah kita sebelum kita sebelum penawaran nih kita back dulu ke belakang jadi ketika ada surat permintaan dari pelanggan
+kan permintaan ini kan harus direspon nih oleh tim mitra dibalas surat penawaran.
+Nah, untuk merespon surat permintaan ini dibutuhkan data oleh tim mitra. Apakah ini memenuhi enggak? Misalkan SDM-nya ada
+untuk ee
+metodenya ada
+bahan kimia ada diisi oleh yang tim teknis bahwa ini tuh bisa dilaksanakan.
+Iya. Iya. Engak. Cuma maksudnya itu tuh nanti ketua tim
+ada evaluasi lagi gitu di tim teknis. Jadi kita tuh habisan waktu gitu maksudnya itu kan kalau misal
+evaluasi lagi evaluasinya tuh evaluasi yang mana?
+Evaluasi tim PJT pertanyaan yang sama masalahnya pertanyaannya sama
+bukan ini kan kita mau ngirim blue surat penawaran
+iya tapi kan itu kan cuma cuma ee dibuat simpel aja lah apa bisa dilakukan atau tidak gitu loh untuk
+kalau evaluasinya mulai
+ee nanti aja pas sama PCT maksudnya bisa dilakukan maksudnya dibuat simpel kalau itu kan ada
+oh yang maksud Andri itu bahwa ini SDM-nya ada
+I itu nanti aja
+itu nanti. Oh nanti ketika surat penawaran sudah dibalas sama mereka.
+Iya. Jadi yang pertama bisa atau tidak itu aja.
+Nah, berarti maksud Andri surat penawaran yang dikirim ke pelanggan itu kita mengabaikan analisa itu
+kirim.
+Iya. Analisanya ee apa namanya? Ee SDM maksudnya ee kesimpulan akhirnya aja gitu.
+Jadi ya atau tidak gitu kan.
+I
+karena karena kalau yang SDM ada atau tidak ee
+bahan kimia ada atau tidak itu kan dievalusinya nanti saya belum tahu jawabannya. bisa tapi yang yang penting itu biasanya dari tim mitra itu metodologi ya
+kita bisa ngin ini
+misalnya belum bisa ya standarnya enggak ada itu kita belum bahas SDM belum bahas bahan kimia gitu loh kan
+jadi maksudnya dari tim lingkungan kalaupun ada permintaan ini dijawab dulu ada iya dan tidak bisa tapi kan dijawab
+tapi kan dijawab ya dan tidaknya kan tetap harus dikirim surat penawaran berubah pertanyaannya
+oh
+ya dan tidak aja lah jangan jangan kalau yang pertanyaan yang itu yang apa?
+Iya, masih itu nanti aja
+nanti setelah proyek itu mau jalan atau diskusi dengan PJT.
+Belum di Iya, belum dibahas
+kita belum ngebahas
+artinya artinya kita pas respon dulu ini bisa apa tidak.
+Paling paling yang paling gampang itu kan du
+ee alat ada metode
+bisaanda itu doang masalah
+ee SDM dan bahan kimia kan beli nantinya kan.
+Hanya berarti jawab aja bisa itu mah tinggal beli dokumen-dokumen yang ada.
+Iya tapi kan belum dianalisis atau saya menerusi sorangan nantinya.
+Oh. Kalau saya ngerim, jadi intinya
+makanya saya lempar ke sini saya belum nganalisis. Jadi intinya
+untuk jawaban ceklis-cilist itu SDM bisa metode, bahan kimia dan lain-lain itu maksud dari tim lingkungan ma itu mah nanti teknisnya ketika
+ketika surat penawaran itu sudah disampaikan ke mereka ya kan
+bahwa ini pas respon kan permintaan kita jawab dulu berapa harganya dan ee waktu
+bisa dikirim dulu ke mereka bisa tidaknya ketika mereka masuk ke baru didiskusikan diskusikan.
+Jadi gini kemarin itu yang ini jadi salah satu temuan audit 91 di mitra enggak di enggak dibuat
+makanya dibuat adalah ini
+di terserah itu nanti mau setelah nanti tapi dira juga perlu ada ini gitu apa enggak apaa nanti setelah
+nanti juga dibahas gitu loh maksudnya saya sendiri
+iya jadi maksud Pak Andri itu nanti akan tetap diisi cuman diisinya kebalikan kalau yang sebelumnya adalah tim mitra sebelum menjawab surat penawaran itu harus Kalau dari tim Pak jawab dulu surat penawarannya baru nanti itu dibahas
+gitu kan maksudnya
+cuman kebalik aja tapi intinya pada prinsipnya pom itu akan diisi nanti sama nanti nanti dibahas banyak oleh
+dibahas oleh dengan tim PJT dengan tim PJT bahas internal aja ya sendiri
+ya jadi tim PJT maksud saya biar enggak terlalu banyak user login dan alur kendalinya terlalu banyak PJT tapi dibahas di tim
+iya di tim aja jadi PJT enggak dimasukkan Iya, enggak apa-apa. Tapi maksudnya saya ada waktu untuk membahas jangan di awal.
+Ee awal belum sempat.
+Jadi gini aja,
+nanti intinya form itu tetap dikirimkan ke belakang,
+tapi kamu enggak isi juga enggak apa-apa. Tapi intinya kamu menyatakan bahwa ini tuh bisa apa tidak gitu. Enggak apa-apa.
+I itu aja yang bisa rutin aja ya.
+Heeh. Jadi itu enggak apa-apa enggak diisi juga
+detailnya nanti ya.
+Oke. Sip.
+Sip.
+Sepakat ya?
+Sepakat.
+Sip. Makasih ya.
+Yuk. Sama-sama.
+Sip sip.
+Oke. Dapat ya. Enggak juga belum ngerti.
+Enggak. Ber sih kameranya, Pak. Lumayan
+ini beda sama seluros ak
+samain. Disamain
+disamain aja Mas. Enggak apa diskusi dulu sama Bu ya.
+Nah, kalau diskusi beda nanti gimana?
+Hah?
+Takutnya udah bikin kan ting kayak gini tuh kalau P kan kok gini kan
+kamu udah ini
+soalnya PJ PJT enggak diaudit sih harusnya PJT juga di
+kan PJT belum ada itunya SOP-nya apa
+iya makanya ini nganin ke PJT ini kan temuan dari
+Iya maksudnya tuh maksudnya tuh tetap itu nanti akan diisi. sama Pak Pak Andri. Cuman dia ngisinya hanya dibalik aja. Ketika kalau Peri kan tim mitra itu butuh jawabannya. Ketika saya membuat surat penawaran saya butuh jawaban kan dari orang teknis ini tuh bisa dilaksanakan apa tidak. Intinya kan gitu kan berdasarkan poin-poin tadi empat empat itu. Tapi kalau Pak Andri jawabnya gini ini bisa dilaksanakan tapi untuk poin tadi dibahas dulu sama PJP tapi ke pelanggan jawab dulu bisa gitu.
+Kenapa tinggal tinggal diis doang aja kalau misalkan bilang dia enggak bisa langsung memutuskan nanti siapa timnya. Terus
+kan ini mah cuma ceklis doang. Berarti tim ini ada ada timnya ada tim terserah nanti mau ada siapa-siapa misalnya seperti begitu tapi yaitu
+ya intinya gini aja kita untuk mengakomodir ya makasih ya per tapi ini intinya itu ya per
+ee apa tadi
+intinya ada diisi nanti terserah mau di manap oke
+terserah ketua masing-masing
+jadi itu jadi jadi maksudnya
+ada rekaman itu aja lah
+ya maksudnya nya nanti isiannya gini, isian itu begitu dari tim mitra dikirim ke belakang, isian itu tetap dikirimkan ke belakang untuk diisi. Tapi orang belakang walaupun enggak ngisi enggak apa-apa dia cuman bisi ini bisa dilaksanakan. Kalau kemarin kan bilangnya kalau ini semua diceklis baru bisa kan itu diabaikan. Intinya tuh enggak diisi juga enggak apa-apa orang belakang bisa menjawab ya dan tidak.
+Nanti begitu dikirim ke K peri ke tim mitra itu kan masih kosong tuh enggak apa-apa dia beralur aja prosesnya beralur. Nanti tim mitra menjawab surat ee penawaran
+berdasarkan yang itu tadi yang diisi oleh mereka berapa waktunya, berapa lama waktunya, berapa biayanya
+nanti generate surat penawaran diprint kan di-upload ke sistem nanti ketika di-upload lanjut ke sana ke tim ke tim keuangan
+berarti kalau kalau ke tim keuangan sudah bayar berarti maksudnya Andri baru memikirkan gitu ya.
+Iya makanya kenapa
+kenapa kan dipikirkan dulu dari awalnya Otomatis ini kan berarti harus diterima dulu kan. Semua permohonan diterima ya.
+Jadi begitu begitu dia sudah bayar baru deal. Eh sudah deal baru dia mikir.
+Itu waktu lagi kan lumayan tuh ngurusin.
+Padahal kan di surat penawaran sudah enggak. Di surat penawaran kan baru waktunya kan 30 hari. Tapi kan deal-nya itu tanggal SPM-nya dihitung kalau dia tanggal bayar dan
+apa? Ee sampel diterima, tanggal sampel diinput. Kan lebih
+enggak apa-apa misalkan nanti tanggal bayar berapa
+udah aja dihitung dari situ aja
+total bayar
+kita bayar sama sampel diterima. Kalau misalkan dia bayar tapi sampel belum diterima kan SPM enggak jalan kan?
+Ya belum jalanlah kan SPM belum jalan kan sampel
+dulu kan.
+Iya sampel diinput ya kak enggak apa-apa ngikutin user aja tapi kita bikin fleksibilitas tinggi sistem ya.
+Oke dapat ya. Beres berarties. Eh
+engak iniak dijelaskan. Oh, dapat ya. Enggak perlu dijelaskan lagi ya. Pak
+oke sudah dapat ya.
+Iya, Pak.
+Ya, jadi intinya fleksibilitasnya saya ulangi lagi kita bikin fleksibilitas tinggi karena kita enggak bisa mepush user tertentu. Kita harus ngelihat user lain karena opti ini terpisah dari dua. Kecuali kamu pisahin kalau begitu. Pilih opti akan begini, pilih selulosa akan begini.
+Biasanya mau gitu sih tapi takut.
+Nah, kalau bisa mah jangan satukan aja karena dia secara BLU
+sebetulnya satu sistem itu.
+Cuman karena kebijakan pimpinan itu displit kalau dulu tuh satu tim itu sebetulnya cuman untuk memudahkan atau gimana ya displit gitu ya. Jadi kita ulangi lagi ini dibikin fleksibel aja ngirim ke tim mitra disposisi ke belakang orang belakang cukup jawab bisa dilaksanakan atau tidak tanpa harus mengisi itu.
+Ee enggak perlu nanti begitu sampai ke tim mitra dia langsung dapat jawaban ini bisa dilaksanakan. Tugas dia adalah langsung bikin surat penawaran penawaran by system ya kan. Makanya ee sudah dapat belum contoh-contoh surat penawaran
+Pan tolong ya pan.
+Iya
+contoh-contoh surat penawaran untuk opti ya. Nah nanti di dari surat-surat penawaran itu saya yakin pasti ada beda-beda nih. Nah dari beda-beda itu tolong kalian cari persamaannya secara global apa dibikin satu template. Kalaupun di sini ada beda, ini ada beda, akomodir perbedaannya masukkan ke dalam surat itu ya. Misalkan
+di surat ini ada pernyata an apa atau tentang apa gitu ya. Di sini enggak ada. Nah, ambillah yang ini. Masukkan juga ke situ.
+Oh, jadi lebih
+lebih detail lebih lebih komplit proses.
+Heeh. Gitu ya. Nanti pas begitu sudah dari tim mitra dilakukan surat print
+surat penawaran berdasarkan data itu, Teh. Tanggal berapa lama, berapa biayanya input-input
+kirim
+ke upload ya. Upload dulu dokumen surat penawaran lalu dikirim ke tim keuangan. Itu juga kalau surat P penawarannya sudah deal ya kan dia si tim mitra itu bisa jadi ngirimnya lebih dari satu kali penawaran bisa jadi tadi harganya berapa kurangin lagi. Nah untuk pengurangan harga misalkan gini tim mitra sudah ngasih harga Rp55 juta ke sana ke pesat penawaran kan bisa jadi dia nawar kan. Nah ketika dia nawar si tim mitra ini di status order enggak perlu dikembalikan ke opti. Misalkan harganya kan turun kan misalkan dari Rp55 juta dia si pelanggan awar
+turuninah. 50
+misalnya gitu ya. Nah, tim mitra itu statusnya bukan dikirim balik ke tim Opti.
+Jadi ngubah
+tetap aja di tim mitra aja ordernya. Cuman tim mitra bisa melakukan perubahan juga biaya dan waktu.
+Oh, sama tim mitra.
+Sama tim mitra ya. Jadi tidak di-lock begitu sampai tim mitra waktu dan itu tim mitra juga bisa merubah. Heeh. Jadi nanti misalkan dirubah jadi ee
+29 hari
+biayanya jadi R juta misalkan dari 53. itu enggak apa-apa ketimpah.
+Iya,
+enggak usah di-cord si waktu sama biaya itu enggak perlu diordak ada enggak perlu ada audit gitunya
+apa gitu
+enggak usah enggak apa-apa ditimpah aja. Kenapa? Karena dia sudah ada record di surat penawaran yang di-upload.
+Oh
+iya kan di surat penawaran kan sudah di-upload bahwa ini dulu ditolak bikin lagi surat penawaran baru kan berdasarkan tanggal yang kamu edit tadi. Waktunya berubah biayanya berubah berarti kan disimpan bikin surat pan baru print. Nah nanti kalau itu disetujui
+baru surat itu order itu itu dikirimkan ke kalau misalnya
+keuangan
+kayaknya
+jadi keuangan harus ke state
+biaya yang surat penawaran yang terakhir
+ya jangan yang awal yang awal juga kalau mau dimunculkan kalian boleh munculkan sih ke bagian keuangan tapi keuangan biar enggak pusing
+yang terakhir aja
+karena dia harus bikin invoice penagihan ke mereka berapa biayanya dan kapan harus bayarnya kayak gimana
+jadi enggak dipusingkan dengan suat penawaran yang gagal dulu
+itu ya nanti ketika tim keuangan sudah bayar Tanggal bayar diinput ya. Tanggal bayar tanggal berapa oleh keuangan. Nanti dari keuangan
+kirim ke kamu
+kirim ke
+tim teknis langsung jadi gitu.
+Jangan ke usah ke tim mitra
+langsung kirimnya ke tim teknis
+langsung ke optinya ke Buina sama ke Pak Andri ketuanya Pak
+langsung ketuanya aja. Tim mitra sudah dilewat karena tim mitra ranahnya cuma sampai surat penawaran
+karena sudah deal nih. Nanti begitu sudah sampai ke ke tim mitra eh ke tim bukti ke belakang Nanti kan di situ mereka harus nginput tanggal sampel datang kayak gimana
+ya. Jadi si tim Opti belakang sama Bu Rina atau Pak Andri itu begitu dia dapat menerima order dari ke orang keuangan di situ juga harus ada inputan tanggal berapa sampel diterima.
+Nah berarti ketika tanggal sampel misalkan diinput lah sama Bu Rina atau sama Pak tanggal sampel diterima misalkan tanggal sekian. Nah berarti sudah dapat nih tanggal bayar sama tanggal
+sampel kan. Nah berarti SPM-nya dihitung mulai dari tanggal sampel itu. sudah beda.
+Jadi kalau 30 hari tadi 30 hari maka langsung ketemulah deadline-nya. Berarti deadline-nya itu kalau misalkan tanggal 1 dia nerima sampel di berarti tanggal 2 dihitung hari pertama. Jangan lihat bukan tanggal 1 dihitungnya
+hari pertama itu ya hari besoknya
+kalau itu tuh sama ee cuma hari kerja kerja aja.
+Hari kerja. Hari kerja
+hari Sabtu Minggu enggak dihitung.
+Hari Sabtu Minggu enggak dihitung terus kamu nanti ee ini apa namanya?
+Pakai nanti tanggal libur yang saya
+kirimnya Jadi kita ada tabel tanggal ibu.
+Jadi misalkan gini contohnya nih ya.
+Jangan ngisi-ngisi dulu si jadi buat dari sampai
+nih seperti ini ya.
+Iya.
+Nih kita sudah ada namanya tabel libur.
+Tabel tanggal libur. Apa lupa tabelnya? Nah ini kan tanggal libur nih
+ya kan. Nah tanggal 17 sama tanggal 25 kita masukkan ke tabel tanggal libur.
+Udah udah udah udah kita masukkan. Jadi tugas kalian adalah ketika dia ordernya masuk tanggal 3 Maka tanggal 3 itu harus dihitung 30 harinya tanggal berapa
+ya kan Sabtu Minggu dihitung plus tanggal libur dicek bisa
+ada ada berapa tanggal libur di tabel itu. Jadi maksudnya gini
+tanggal 3 logikanya gini tanggal 3 + 30 dong benar enggak
+berapa
+kecuali Sabtu Minggu dulu ya Sabtu Minggu enggak dihitung berarti tanggal 3 tanggal tambah 30 hari kerja Sabtu Minggu enggak dihitung di sistem nanti kan
+berarti otomatis misalnya tanggal
+tanggal ini ya tanggal 7 minggu
+5 minggu berarti 5 minggu tuh berarti tanggal 14
+asumsinya ya 14
+kayak gini
+ketemu di sini harus kan berarti tanggal 14 kan nanti kan ketemu nih tanggal libur tanggal 14 nanti dicek tanggal 3 sampai tanggal 14 di tanggal di tanggal libur ada enggak
+misalkan permintaan
+tanggal libur ada ternyata di antara itu tuh ada 2 hari
+ya kan berarti tanggal berapa Jadi ke 16
+t karena dua ketemu tadi
+nanti logikanya begitu kira-kira tapi nanti kamu bisa lah
+i kan intinya kamu menambahkan 30 hari dari tanggal sampel tapi dia ngecek Sabtu Minggu
+ngecek tanggal libur merah
+tanggal liburnya nanti dikirim sama Pak Pandi
+nanti kita sudah ada tanggal tabel tanggal libur
+jadi tugas Pak Pandi nanti setiap awal tahun memasukkan tanggal-tanggal libur tanggal berapa aja di di tabel itu
+untuk menghitung Yang ini untuk menghitung kayak tadi tanggal 3 sampai tanggal sekian berarti tanggal libur berarti ini ditambahkan dua
+gitu ya
+logika ini.
+Oke gitu. Terus nanti langsung dapat tanggal deadline kan di situ kan tanggal deadline sudah mereka langsung
+tanggal deadline dari ketua tim begitu nginput tanggal sampel langsung tanggal deadline muncul.
+Kalau misalkan tanggal deadline muncul
+atau tanggal sampel sudah diinput maka tugasnya adalah ketua tim atau lingkungan disposisi ke
+PIC.
+Iya.
+Jadi jangan bisa jadi sistem itu harus bisa ngecek ngirim ke PIC-nya pas kapan.
+Misalkan kalau ada sampel sudah diinput baru kirim. Kalau sampel belum diinput enggak bisa dikirim dulu. Nah, harus harus ada harus ada if-nya. Enggak bisa asal kirim-kirim aja ya. Nanti ditanyakan lebih lanjutnya ke Pak Andri kira-kira pas dikirim ke VIIC atau ke Burina itu ada kondisinya enggak? Baru ini order bisa didiskosikan. Misalkan tadi ketika sampel sudah ada Ya kan enggak mungkin kan didisposikan kalau sampelnya belum ada.
+Iya yang sudah ada gitu. Karena si ketua tim harus tahu juga bahwa ini tuh sampelnya udah sudah datang apa belum yang mau diuji yang mau dicek. Oke. Apalagi itu? Nah nanti begitu dari keuangan dikirim ke dari sudah bayar dikirim ke tim opti atau tim lingkungan baru kan mereka bisa ngisi yang itu
+ini centang-centang itu
+ya. Jadi itu tugasnya adalah ketua tim sebelum dikirim ke PIC, selain selain nginput tanggal terima order eh tanggal sampel, dia juga harus ngisi itu dulu baru bisa kirim. Jadi terpenuhi kan keinginannya tim mitra bahwa itu sesuai dengan SOP harus diisi temuan audit dapat ya.
+Nah, gitu aja caranya. Sementara kalau sebelum ada perubahan lebih lanjut mungkin gitu dulu
+ya. Tapi nanti dengan adanya inputan itu print out yang form-nya itu bisa di bisa muncul juga.
+Enggak usah diprint sih, tapi ada gitu loh.
+Di PDF,
+di PDF-kan itu bahwa ini bisa ee SDM bisa yang itu kan sudah ada di kamu kan kemarin. Oh, yang diceklis ceklist itu.
+Heeh. Yang ceklis-cek itu kan harus memenuhi SOP kan. Jadi sistem ini tuh walaupun dari manual pindah ke sistem dia tetap harus mengikuti SOP. SOP itu misalkan kayak gini nih atau sistem mutu atau prosedur mutu kalau kita ya. Nah, ini kan ada nomor-nomor nih. Nah, ini kan formulir ini tuh enggak sembarangan formulir. Sama kayak tim mitra juga dia punya formulir, IT punya formulir. Pokoknya punya formulir nih setiap bagian tapi formulir itu dia punya nomor dokumen kayak gini. Nah, ya kan? Nah, dokumen-dokumen ini walaupun istilahnya sudah bu sistem tetap ini nanti akan harus ada kan walaupun enggak dicetak ada di sistem ini. Ini review ada ya kan. Nah, nanti karena dia harus ada dokumen-dokumen itu tetap harus ada. Kalau mau diprint, diprint. Kalau enggak ya enggak apa-apa
+karena udah bu sistem gitu kan. Nah, kalau diprint berarti kan ditanda tangan nih karena manual. Nah, konsepnya nanti tanda tangan ini tidak berlaku kalau dia sudah buy sistem.
+Oh, tidak perlu tanda tangan lagi
+ya kan validasi di sistem kan divalidasi bahwa saya oke mengetahui menyetujui saya validasi iya
+berikutnya kirim. Iya.
+Sama kan dengan saya ini saya tanda tangan saya kasih ke pimpinan untuk ditanda tangan misalnya atau ke ketua tim. Nah, itu gunanya sama kayak kemarin QRCOD dari Sipat. Nah, itu kan QR code itu itu bisa nanti muncul kan kapan dia menerima, kapan dia mendisposisikan, kapan tanggal dia ini, kapan validator itu mendatang. Ini kan bisa munculnya.
+Kalau misalkan tanggalnya kosong nanti nol kan kalau tanggalnya kosong enggak mungkin dong sampai ujung secara sistem.
+Iya
+iya kan gitu. Oke bayang ya
+tugas kalian masih banyak ini baru sampai ini kan belum
+baru awalnya.
+Iya belum PO
+PO udah PO nanti kontrak sebutnya enggak masalah sih PO Kan input si ini aja siapin inputan PO kan kalian diinput apa
+banyak kan
+nomor
+ee itu kan tim kan
+iya
+tim terus RB
+sama itu yang jadwal
+jadwal heeh jadwal nah itu jadwal baru dipikirkan tuh kalau misalkan jadwalnya cuman 3 sebulan sih gampang ya 1 sampai 30 harian gitu kan tapi kalau misalkan dia sampai berbulan-bulan itu konsepnya gimana tuh
+per minggu
+ya per minggu silakan ya per minggu ya Artinya bahwa schedule itu nanti ditentukan berdasarkan
+berapa lama nih terminnya. Misalkan cukup 3 bulan.
+Oh, nanti sistem akan mendetek nih. Ketika dia nginput terminnya 3 bulan,
+maka sistem kamu akan mendeteksi. Oh, berarti nanti tampilannya seperti ini. Grafik apa tabelnya di sini mana, Pak?
+Atau inputannya kondisi.
+Tapi kalau misalkan oh lebih dar 3 bulan 6 bulan ya berarti tetap per minggu. Tapi gimana gitu
+ya. Nah, itu istilahnya tuh kalau kita sebutnya tuh kalau saya sebutnya template. Jadi kalian sudah punya template, kalau 3 bulan, maka panggil template ini. Kalau 6 bulan, panggil template yang ini. Kalau setahun panggil template yang ini, gitu. Jadi bukan kamu nanti bisa jadi kan bisa jadi kamu bikin otomatis kan 3 bulan bikin tabel otomatis generan, gitu kan daripada ini udah aja bikin template.
+Iya.
+Jadi template kalau 3 bulan panggil template Excel-nya yang ini
+kotaknya tabelnya. Kalau 6 bulan misalkan ah 6 bulan cukup panggil template yang ini. Jadi kamu siapkan dulu file-nya
+gitu ya.
+Jadi pilihannya nanti berdasarkan berapa lama panggil template biar mudah daripada pusing ini kalau 2 6 bulan setahun wah harus gimana nih generate tabelnya dan lain-lain gitu kan.
+Oh bikin
+tempinnya tuh enggak ini enggak
+okei yang login OTP tuh emang harus dikerjain sekarang atau nanti aja terakhir yang login ada nomor ke
+kalau mah untuk di awal kan biar dapat sessionnya K mending di akhir aja kali tadi kan lihat ya kata Pak
+karena itu nanti kan biar ketahuan sessionnya sebagai apa dia
+kan kamu kan pas begitu uji coba kan sekarang login
+ee tim mitra
+kayak kemarin kamu contoh klik tim mitra berikutnya klik kayak sipat juga klik siapa kan itu udah session itu otomatis berarti ngecek session dong
+iya
+berarti kalau bisa di awal tapi di awal tuh maksud saya k Enggak perlu ngikutin pakai OTP di awal tuh. Yang kemarin loh ini contohnya yang kemarin saya ngirim ke kamu tadi ngirim ke kamu tuh yang ini
+yang kayak gini kan nih. Nih yang ini.
+Nah, contohnya gini.
+Kita kan sudah banyak sistem nih di sini.
+Iya.
+Nah, contohnya gini nih. Di sini kita sudah ada banyak sistem nih.
+Ada keuangan, arsif, udara, LPH, sertifikasi, perjakin, Sport, Sifatti ya. Nah, kamu cukup gini aja. Nanti kayak misalkan contohnya ini ee SW terakhir SW cuman admin ya belum jal belum di coba yang banyak itu keuangan misalnya. Nah keuangan atau misalkan sertifikasi. Nah sertifikasi. Nah sertifikasi kan ini rule-nya kan.
+He.
+Jadi misalkan tim mitra ee rule-nya tim mitra
+i kan. Jadi login tim mitra itu siapa?
+Sendiri.
+Nah misalkan contohnya Bu Rina. Bu Rina Mas Rani ya.
+Rina kan? Rina Mas Riani.
+Nah, Rina Mas Riani. Nah, ini kan Bu Masani kan.
+Nanti di sini di opti kamu tambahkan misalkan nama ee rule-nya adalah Katin.
+Hm.
+Jadi saya ngontrolnya tuh di tabel ini untuk akses semua sistem yang ada di sini. Karena tabelnya cuman satu tabel loginnya
+yang ar user ya, Pak.
+Iya. Jadi nanti misalkan peri, kita cari peri. tadi peri ya.
+Iya.
+Peri. Peri itu apa? Nah, ini peri. Perry itu sebagai apa? Mitra kan? Ya udah
+aja mitra atau tim mitra kan?
+Tim_ mitra.
+Ah.
+Nah, udah di sini kamu.
+Oh, iya. Ngerti
+ngerti kan? Jadi nanti kamu pas begitu login kan login kan cek sini.
+Iya.
+Ini di ditangkap session-nya.
+Hm.
+Si ini.
+Baik kan? Jadi nanti di di login kamu di login
+ee apa? Diilogin ee Opti. orang doang.
+Nanti kan di sini ada istilahnya menu ee user kan?
+Iya.
+User kan?
+I.
+Nah, user itu nanti munculkan dari tabel ini data nama-namanya kamu ngambil dari tabel database ini bukan dari database opti
+yang seal 2020.
+Sale 2020. Jadi nanti ini muncul nama-nama user. Misalkan nomor ini nama.
+Nah,
+ini misalkan rule
+ya.
+Jadi nanti di sini
+muncul di sini nama-namanya itu tadi satu R nya ada tiga
+di sini peri eh apa
+ini nama ya Rina
+NS ini
+peri di sini rol-nya adalah tadi apa Rina itu
+dia memilih
+opti ya
+opti apa nih opti lingung opti apa kamu bikinnya buina
+masuk ke sini
+kalau Pakri opti apa
+opti ini K k eh bukan
+katim
+katim apa opti lingkungan
+berarti kan harus jelas kan berarti Bu Rina misalkan kamu namanya apa itu KTI selolosa.
+Nah, udah berarti di sini
+si sistem ngapain prosesnya
+jadi kayak lebih kayak
+oposa gitu udah bikin yang paling
+disebutin admin keuangan
+iya udah gitu gitu gini apa
+udah berarti berarti kan ada orang-orang yang akan sama kan aksesnya kan nah nanti misalkan gini contohnya contoh ya Contoh aja. Nah, ini kan kita ketahuan nih. Ini kan daftar pegawai BBS nih yang bisa login.
+Login cuman satu dari sini semua asisten login ngambil ini namanya single side on. Jadi satu login K pakai semua.
+Nah, kita ketahuan di sini kalau misalnya.
+Nah, kalau misalkan opti ini kan ketahuan nih yang punya yang punya rule kan cuma dua orang ini.
+Iya.
+Berarti yang kosong ini dianggap user. Dia bisa login tapi statusnya view.
+Oh iya yang view only ya. Enggak, enggak perlu disebutkan di sini user atau view only. Enggak perlu nul juga cukup itu nul juga cukup. Kalau dia misalkan statusnya nol kosong, maka statusnya dia sudah pasti
+view only.
+Oh, iya. Siap.
+Kebayang kebayang.
+Nah, jadi nanti si sifat juga di sini. Jadi semua login-login yang di kita nih ya, contoh sipisan. Sipisan itu kan banyak nih.
+Ada pengujian, inspeksi, kalibrasi,
+ada apa nih? Ada inspeksi, sertifikasi semuanya. Ini ngaturnya ini di sini aja saya nih. Walaupun ini memang belum saya bikin menunya.
+Jadi kalau ada bikin-bikin tuh ya langsung di sini aja.
+Jadi nanti opti. Cuman kalau di kamu lebih enaknya bikinlah satu menu user.
+Nanti user ini untuk menentukan role model kan nanti munculkannya tabel arsif surat ini.
+Oh
+iya kan
+itu bikin yang ini bukan gini bukan sih Pak
+yang buat tabel masalah PT atau peneliti gitu.
+Ini ngambil dari tabel ini.
+Iya.
+Iya. Nanti dari tabel ini username kan ada nih username.
+Iya,
+ada kan?
+Iya.
+Nih login.
+Kemudian ee apa namanya? Nomor WhatsApp boleh ini enggak usah. Ini aja nih username, nomor WhatsApp
+ini sebetulnya enggak usah semua
+ee apanya? Semua apanya?
+Enggak usah semua dimunculkan.
+Oh,
+jadi maksudnya gini. User di sini itu enggak usah semua dimunculkan. Kamu di sini tambahkan dulu, cari siapa di sini yang mau dimasukkan.
+Oh, jadi itu kosong dulu gitu, Pak. Oh iya, Mas.
+Karena nanti kan defultnya dia semua orang itu enggak bisa login ke sini defolnya.
+Jadi nanti kamu mendeskripsikan siapa yang bisa login ke sini.
+Oh iya.
+Tambahkan Bu Rina. Oh Bu Rina sebagai apa? Sebagai kat opti selulosa. Klik tambahkan masuk sini.
+Oh iya K pak
+gitu loh.
+Kalau yang enggak ada di sini nanti dia bisa login karena loginnya ngambil dari tabel ini. Bukan dari tabel ini. Ini hanya pendeskripsian roll.
+Nanti kasih opti eh full juga gitu ya.
+Kebayang ya
+bukan Bukan nampilin data ini, bukan.
+Jadi menu itu menambahkan siapa yang bisa login ke sistem ini. Tambahkan begitu klik cari pegawainya
+Rina.
+Nanti di situ rule-nya apa. Kamu kan tinggal pilih kan apa admin
+apa apa opti selosa apa lingkungan. Pilih misalkan kat tim selosa klik masuk aja.
+H
+gitu. Oke. Nah, kamu enggak perlu menyebutkan dia ini bisa login apa enggak nanti bisa login enggaknya dari sini dari status. Kalau dia statusnya satu maka dia bisa login di semua sistem. Jadi bukan login ke sistem kamu bisa tapi yang lain enggak bisa. Dia langsung sistem enggak bisa otomatis.
+Contohnya kayak misalkan seseorang pindahpindah udah diblokir semua. Karena kalau misalkan di kamu bisa login tapi di sistem lain login repot dong.
+Iya sih
+ya kan.
+Maka kamu cukup nama sama status dia apa
+rol-nya ya.
+Rolnya gitu aja.
+Nama roll sama nomor WhatsApp.
+Nomor WhatsApp mah enggak usah.
+Oh, enggak usah.
+Enggak usah. Nor WhatsApp enggak usah.
+Cuma dua berarti, Pak, datanya.
+Iya, gitu aja. Sama kayak ini kan sebetulnya nih. Kayak kayak si pisan tuh.
+Kalem AK.
+Kalem a jago sih, Ek.
+Enggak sih. Sajri
+suka nanya. Soalnya kayak
+aku sukanya ke pac
+tadi saya dapat-nya berapa ini PP-nya ini mana sistemnya belum mana belum ke sini buat loncat dulu salah salah
+di mana sistem mana
+yang ini ya
+Opti ah Oh, aku buatnya sequens dibuat sequens ada FD juga.
+Nah, di sini kan ada ee daftar pengguna. Nah, gini aja kan juga yang ngelogin ke sian kan namanya dari tabel sana loginnya apa, kategorinya dia apa ya handphone boleh. ditambahkan kalau men saya enggak usah
+enggak usah ya.
+Heeh. Kamu mah cukup ini aja
+nama sama
+nama sama statusnya aja.
+Status
+rol-nya.
+Iya
+ya. Jadi bukan memunculkan semua. Kebayang ya?
+Iya Pak. Kebayang.
+Oke. Nanti kasih tahu Aib ya. Eh Aib lagi full. Saya full
+saya full. Kayak gitu ya si paham ya. Paling nanya
+ada Eka
+P juga ada.
+Yaah. Udah oke. Gitu aja paling ya. Makasih ya. Makasih sudah
+saya senang kalau gini. Kalau enggak ngerti langsung tanya. Jangan dipendem, enggak usah kagok-kagok untuk ditanyakan. Nanti biar kayak tadi Pak Andri gimana ya langsung saya telepon Pak Andri biar enak. Karena kalau nanti ngambang kan kekaliannya juga ngambang.
+Ah berarti PJT enggak perlu ya, Pak? User baru lagi
+saya. PJT enggak usah.
+Enggak usah ya.
+Karena ya menurut saya untuk saat ini ya untuk saat ini enggak usah biar nanti ke PJT itu mereka manual aja lah.
+Oh siap.
+Tidak dilibatkan ke dalam sistem.
+Jadi nanti kalau hasil keputusan dengan PJT bagaimana ya cukup Pak Andri yang nginput. gitu. Karena nanti kalau login disposi ke sana sini login wah lama kya PJT baru sih belum tentu takutnya tahun depan masih ada kan kita juga enggak tahu oke oke apalagi
+sudahudah buat oke
+oke ini saya nitip tadi kasih tahu ipul maksudnya gitu ya yang tadi yang user itu masuk
+udah tapi kata Bapak harus konfirmasi dulu soal
+oh apa itu
+mau minta tabel buat salat masuknya masuk sama
+tabel Oh tabel salat masuk
+i soalnya kan saya masih yang saya buatan saya sendiri Oke, saya kirim surat masuk.
+Nah, surat masuk ya maksud saya gini sekalian saya jelaskan nih. Surat masuk. Surat masuk itu ada di tabel surat masuk. Eh, kok enggak muncul? Kok enggak muncul sampai surat masuk? Nah, kabel surat masuk itu ada di sini. K surat masuk itu ada di sini. Tabel surat masuk itu ada tabel apa ya, Pan?
+Arsib surat.
+Oh, arsif surat. surat ya, bukan surat masuk ya.
+Hah?
+Nah, ini ini dulu ceritanya mau kita integrasikan tapi gagal. Jadi, tapi karena sudah gagal jadi nanti tabel surat masuk itu dari sini cari tabel arsif surat
+ya. Nanti ee yang perlu diperhatikan itu adalah mm Eh, apa ya? Hah?
+Sakit di Ana keburinan teh ma diskusi atau kie tergantung ngestak atau gimana. He
+tapiang prosesorisan sih.
+Emang ini apa arsip surat masuknya dari ini ya?
+Iya arsip surat semuanya.
+Surat ya surat masuk ke disposisi dari hal Oh iya benar ya. Jadi nanti ini tabel arsif surat masuk ya. Terus ee surat masuk. Oh, baru surat permohonannya baru ada surat Per
+Mas ada yang Juli dong, Mas.
+Yang Juli sekalian deh. Ke manaan sekalian?
+Surat permohonan.
+Nah, di sini sudah ada ya
+surat permohonan nih. Surat D permohonan. Jadi kalau nanti dia surat masuknya itu berkaitan dengan opti
+nanti kan diinput nih ke sini. Diinput nanti surat permohonannya berarti di sini. Iya.
+Kalau dia bukan surat permohonan berarti dia statusnya surat umum. Kayak misalkan ada surat dari dinas Surat dari sekolah praktin, surat dari kalian magang hub itu kan enggak ada hubungan dengan layanan dengan permohonan.
+Tapi permohonan di sini itu berhubungan dengan permohonan layanan jasa.
+Jadi nanti kalian ee contohnya ini saya kirim tabelnya ya. Nanti kamu input aja ceritanya itu surat permohonan misalkan di sini ya. Ya, nanti kamu bikin satu f baru di sini ee bikin enum aja layanannya apa? Opti lingkungan Opti solusa itu ya. Ini surat baru opti nih ya. Berarti yang mau mau kita linkkan dengan surat surat permohonan. Kalau yang lain belum ini en oke gitu ya. Jadi
+ini saya kirim saya kirim ke saya kirim ke ya.
+Fajri. Nah, ini struktur database-nya nanti di sini tolong tambahkan ya. Tolong tambahkan sendiri ya.
+Iya.
+Tambahkan satu fil untuk nama
+layanan.
+Layanan untuk permohonan permohonan layanan misalnya tuh ee misal misal enum misalkan ya. E tipenya itu berarti ini opti selulosa opti lingkungan itu ya.
+Iya, Pak.
+Tambahkan satu opti baru. Nanti ini fil ini berkaitan dengan permohonan ya. Still permohonan. surat permohonan. Nah, jadi kalau surat permohonan, kalau surat permohonan ini diceklis, He.
+Berarti otomatis ini harus diisi nih yang minum yang nanti kamu nambahkan baru ini.
+Oh, iya.
+Ya kan? Karena ini surat permohonan berarti harus disebutkan surat permohonan untuk opti apa, opti selusa atau opti lingkungan? Nanti saya hubungkan juga dengan layanan lain. Saya tambahkan nih. Ini ada sertifikasi. kalibrasi, pengujian dan lain-lain. Cuman ini contoh yang officeosa mau kita kekkan dengan surat. Oke. Satu ya.
+Ini ini untuk surat masuk ya.
+Iya, Pak.
+Ini belum surat keluarnya nih. Tenang. Mau ke mana sih?
+Nah, ini surat keluar.
+Iya, Pak.
+Surat keluar. Surat keluar. Ya, ini surat keluar. Nah, surat keluar ini saya copy lagi. Nah, surat keluar nanti tolong kamu tambahkan di sini. Ini kan sudah ada nih. Kalau surat keluar ini sudah sinkron dengan layanan lain karena berkaitan dengan ee layanan. Kalau tadi kan surat masuk kan belum kita hubungkan dengan layanan. Tadi cuman baru permintaan. Tapi kalau misalkan surat keluar ini sudah kita hubungkan dengan pengujian sertifikasi ya dengan pengujian sama sertifikasi. Oke. Nah, berarti nanti kamu tambahkan di sini, di sini di sini tambahkan dipilih sis opti.
+Diplis opti dipilih ya. Nanti saya transangkan di sini saya tulis ini surat masuk sekarang
+surat keluar.
+Sekarang surat keluar. Nah, ini ini. nya ya. Nah, ini tolong tambahkan sama ya. Tolong tambahkan tambahkan fill ini samain aja dengan ini ya. Ini kan dipilih sistifikasi ya berarti di sini opti fill dipilih sis opti itu kan tipenya. sama kan enum ya gitu kan. Nah ini harus berkaitan dengan pil ini surat penawaran surat penawaran.
+Kebayang enggak maksudnya? Jadi maksudnya gini,
+surat penawaran ini kan ini kan surat keluar nih.
+Iya, Pak.
+Surat keluar. Surat keluar itu kan tidak harus selalu surat penawaran. surat keluar tuh bisa jadi ngebalas surat dari pusat, bisa ngebalas surat anak Prakerin, bisa surat untuk dinas, bisa surat untuk industri, tapi bukan penawaran
+kayak surat balasan
+ya. Surat balasan lah untuk surat keluar itu kan banyak kan surat keluar itu. Nah, tapi ada kita itu bikin surat keluar untuk balasan surat permintaan yang tadi itu permintaan dari pelanggan ya kan tadi kan permohonan
+berarti kalau itu permohonan ceklis kan berarti di sini di sini ada surat penawaran ceklis jadi ya. Kalau dia iya, maka nanti dia harus pilih surat penawaran itu. Surat penawaran apa? Apakah pengujian, apakah sertifikasi atau opti nanti yang kamu bikin di sini
+baru
+nanti kalau misalkan yang dipilihnya adalah opti, optinya iya, maka munculkanlah di menu surat
+penawar nanti di penawaran itu.
+Penawaran
+lumayan ya. Enggak,
+enggak lumayan, Pak. Lumayan ada tantangan. P surat peng tolong ditambahkan pil pil ini ya pil baru semangat.
+Nah itu.
+Nah ini ini namanya kita mengintegrasikan. Jadi yang sistem yang kalian bikin untuk opti itu semuanya terintegrasi dengan apa? Surat masuk terintegrasi, surat keluar terintegrasi, login terintegrasi semuanya terintegrasi. Satu data. Lumayan ya.
+Lumayan, Pak.
+Nanti kalau enggak nanya lagi aja.
+Oke, ya. Sudah saya kirim ya.
+Siap. Makasih banyak, Pak.
+Silakan.
+Maaf kalau mengganggu waktunya. Makasih, Pak.
+Makasih, Pak. Makasih, Pak.
+Ya, monggo. ketinggalan HP, Pak.
+Hah?
+Ketinggalan HP.
+Oh, iya.
+Bagaimana?
+Buka Photoshop. Yeah.
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-09-02T15:30:59+07:00.
+</ADDITIONAL_METADATA>

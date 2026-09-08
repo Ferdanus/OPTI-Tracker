@@ -60,22 +60,30 @@
                 <div class="card-body p-4">
                     <form action="{{ @BASE }}/simulasi-sekretariat/kirim" method="POST" enctype="multipart/form-data" id="formSimulasi">
                         
-                        <!-- Kategori Layanan -->
+                        <!-- Kategori Layanan & Divisi OPTI -->
                         <div class="mb-3 p-3 bg-light rounded border">
-                            <label class="form-label small fw-bold text-dark mb-1">
-                                <i class="bi bi-tags text-primary me-1"></i> Kategori Layanan Jasa Balai: <span class="text-danger">*</span>
-                            </label>
-                            <select name="layanan" id="f_layanan" class="form-select form-select-sm fw-semibold">
-                                <option value="opti" selected>OPTI (Optimalisasi Teknologi Industri - Riset &amp; Pengujian Khusus)</option>
-                                <option value="sertifikasi">Sertifikasi Produk (SPPT SNI / Halal / Industri Hijau)</option>
-                                <option value="pengujian">Pengujian Laboratorium Rutin (Standar Mutu)</option>
-                                <option value="kalibrasi">Kalibrasi Alat Ukur &amp; Instrumentasi</option>
-                                <option value="konsultansi">Konsultansi &amp; Bimbingan Teknis Industri</option>
-                                <option value="pelatihan">Pelatihan Teknis Industri</option>
-                                <option value="lainnya">Lainnya</option>
-                            </select>
-                            <small class="text-muted d-block mt-1" style="font-size: 0.725rem;">
-                                Berkas dengan kategori <strong>OPTI</strong> akan otomatis masuk ke antrean FIFO Kotak Masuk Tim Mitra.
+                            <div class="row g-2">
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold text-dark mb-1">
+                                        <i class="bi bi-tags text-primary me-1"></i> Surat Permohonan Layanan: <span class="text-danger">*</span>
+                                    </label>
+                                    <select name="surat_permohonan" id="f_surat_permohonan" class="form-select form-select-sm fw-semibold">
+                                        <option value="Y" selected>Ya (Surat Permohonan Pelayanan)</option>
+                                        <option value="N">Tidak (Surat Dinas / Non-Permohonan)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6" id="wrap_nama_layanan">
+                                    <label class="form-label small fw-bold text-dark mb-1">
+                                        <i class="bi bi-diagram-3 text-primary me-1"></i> Nama Layanan (Divisi OPTI): <span class="text-danger">*</span>
+                                    </label>
+                                    <select name="nama_layanan" id="f_nama_layanan" class="form-select form-select-sm fw-semibold">
+                                        <option value="OPTI_Selulosa" selected>OPTI Selulosa</option>
+                                        <option value="OPTI_lingkungan">OPTI Lingkungan</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <small class="text-muted d-block mt-2" style="font-size: 0.725rem;">
+                                Berkas dengan <strong>Surat Permohonan = Ya</strong> dan memilih <strong>Nama Layanan OPTI</strong> akan otomatis masuk ke antrean Surat Masuk Tim Mitra (tabel <code>tb_arsipsurat</code>).
                             </small>
                         </div>
 
@@ -196,23 +204,53 @@
                                                 <small class="text-secondary d-block text-truncate" style="max-width: 220px;" title="{{ @item.perihal }}">{{ @item.perihal }}</small>
                                             </td>
                                             <td>
-                                                <span class="badge bg-light text-dark border mb-1 d-inline-block text-uppercase" style="font-size: 0.65rem;">
-                                                    {{ strtoupper(@item.layanan ?: 'OPTI') }}
-                                                </span>
-                                                <check if="{{ @item.status_ambil == 'belum' || !@item.status_ambil || @item.status_ambil == '0' }}">
-                                                    <span class="badge bg-warning-subtle text-dark border border-warning-subtle d-block">
-                                                        <i class="bi bi-clock me-1"></i> Menunggu Tinjauan
-                                                    </span>
+                                                <check if="{{ @item.nama_layanan == 'OPTI_lingkungan' }}">
+                                                    <true>
+                                                        <span class="badge bg-success-subtle text-success border border-success-subtle mb-1 d-inline-block">
+                                                            OPTI Lingkungan
+                                                        </span>
+                                                    </true>
+                                                    <false>
+                                                        <check if="{{ @item.nama_layanan == 'OPTI_Selulosa' }}">
+                                                            <true>
+                                                                <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle mb-1 d-inline-block">
+                                                                    OPTI Selulosa
+                                                                </span>
+                                                            </true>
+                                                            <false>
+                                                                <span class="badge bg-light text-dark border mb-1 d-inline-block text-uppercase" style="font-size: 0.65rem;">
+                                                                    {{ strtoupper(@item.layanan ?: 'OPTI') }}
+                                                                </span>
+                                                            </false>
+                                                        </check>
+                                                    </false>
                                                 </check>
-                                                <check if="{{ @item.status_ambil == 'sudah' || @item.status_ambil == '1' }}">
-                                                    <span class="badge bg-success-subtle text-success border border-success-subtle d-block mb-1">
-                                                        <i class="bi bi-check-circle me-1"></i> Telah Diklaim
-                                                    </span>
-                                                    <check if="{{ @item.nomor_order }}">
-                                                        <a href="{{ @BASE }}/order/{{ @item.order_id }}" class="small text-decoration-none fw-bold text-primary">
-                                                            Order #{{ @item.nomor_order }}
-                                                        </a>
-                                                    </check>
+
+                                                <check if="{{ @item.id_pemasaran_order || @item.status_disposisi_surat == 'diklaim' || @item.status_ambil == 'sudah' || @item.status_ambil == '1' }}">
+                                                    <true>
+                                                        <span class="badge bg-success-subtle text-success border border-success-subtle d-block mb-1">
+                                                            <i class="bi bi-check-circle me-1"></i> Telah Diklaim
+                                                        </span>
+                                                        <check if="{{ @item.nomor_order }}">
+                                                            <a href="{{ @BASE }}/order/{{ @item.order_id }}" class="small text-decoration-none fw-bold text-primary">
+                                                                Order #{{ @item.nomor_order }}
+                                                            </a>
+                                                        </check>
+                                                    </true>
+                                                    <false>
+                                                        <check if="{{ @item.status_disposisi_surat == 'ditolak' }}">
+                                                            <true>
+                                                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle d-block">
+                                                                    <i class="bi bi-x-circle me-1"></i> Ditolak
+                                                                </span>
+                                                            </true>
+                                                            <false>
+                                                                <span class="badge bg-warning-subtle text-dark border border-warning-subtle d-block">
+                                                                    <i class="bi bi-clock me-1"></i> Menunggu Tinjauan
+                                                                </span>
+                                                            </false>
+                                                        </check>
+                                                    </false>
                                                 </check>
                                             </td>
                                             <td class="text-end">
@@ -245,7 +283,8 @@
 <script>
 function loadPreset(tipe) {
     if (tipe === 'selulosa') {
-        document.getElementById('f_layanan').value = 'opti';
+        if (document.getElementById('f_surat_permohonan')) document.getElementById('f_surat_permohonan').value = 'Y';
+        if (document.getElementById('f_nama_layanan')) document.getElementById('f_nama_layanan').value = 'OPTI_Selulosa';
         document.getElementById('f_nomor_surat').value = '084/RND-IKPP/VIII/' + new Date().getFullYear();
         document.getElementById('f_pt_cv').value = 'PT';
         document.getElementById('f_pengirim').value = 'Indah Kiat Pulp & Paper Tbk';
@@ -256,7 +295,8 @@ function loadPreset(tipe) {
         document.getElementById('f_email').value = 'hendra.wijaya@app.co.id';
         document.getElementById('f_perihal').value = 'Permohonan Kerjasama Riset Optimasi Formulasi Pulp & Sifat Fisik Kertas Karung';
     } else if (tipe === 'lingkungan') {
-        document.getElementById('f_layanan').value = 'opti';
+        if (document.getElementById('f_surat_permohonan')) document.getElementById('f_surat_permohonan').value = 'Y';
+        if (document.getElementById('f_nama_layanan')) document.getElementById('f_nama_layanan').value = 'OPTI_lingkungan';
         document.getElementById('f_nomor_surat').value = '127/EHS-ASTRA/VIII/' + new Date().getFullYear();
         document.getElementById('f_pt_cv').value = 'PT';
         document.getElementById('f_pengirim').value = 'Astra Honda Motor Plant Cikarang';

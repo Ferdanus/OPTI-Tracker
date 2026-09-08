@@ -126,6 +126,7 @@ class PembayaranController extends Controller {
         
         $daftarOrder = $this->db->exec(
             "SELECT o.id, o.nomor_order, o.judul_kegiatan, o.estimasi_biaya, 
+                    COALESCE(p.biaya, o.estimasi_biaya, 0) AS biaya,
                     c.nmcustomer AS nama_perusahaan,
                     p.id AS po_id, p.nomor_po, p.biaya AS biaya_po,
                     COALESCE((SELECT SUM(jumlah) FROM opti_pembayaran WHERE order_id = o.id AND status_verifikasi = 'terverifikasi'), 0) AS terbayar
@@ -143,6 +144,7 @@ class PembayaranController extends Controller {
         $f3->set('daftar_order', $daftarOrder);
         $f3->set('selected_order', $selectedOrder);
         $f3->set('order_id', $orderId);
+        $f3->set('selected_order_id', $orderId);
 
         $this->render('pembayaran/form.html', 'Input Pembayaran Termin', 'pembayaran');
     }

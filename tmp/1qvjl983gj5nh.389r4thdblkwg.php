@@ -1,0 +1,406 @@
+<div class="mb-4">
+    <h2 class="h4 fw-bold mb-0 text-dark"><i class="bi bi-speedometer2 text-primary me-1"></i> Dashboard Optimalisasi Pemanfaatan Teknologi Industri BBSPJIS</h2>
+</div>
+
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <a href="<?= ($BASE) ?>/order?tab=aktif" class="text-decoration-none text-reset d-block" title="Lihat Seluruh Order Layanan Aktif">
+            <div class="metric-card">
+                <div>
+                    <div class="text-muted small fw-semibold mb-1">Order Diterima</div>
+                    <div class="h4 fw-bold mb-0 text-dark"><?= ($stat_total['diterima'] ?: 0) ?></div>
+                </div>
+                <div class="metric-icon-box" style="background:#ecfdf5; color:#065f46;">
+                    <i class="bi bi-check-circle"></i>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-lg-3">
+        <a href="<?= ($BASE) ?>/disposisi-masuk" class="text-decoration-none text-reset d-block" title="Buka Permintaan Masuk & Kaji Ulang">
+            <div class="metric-card">
+                <div>
+                    <div class="text-muted small fw-semibold mb-1">Order Pending</div>
+                    <div class="h4 fw-bold mb-0 text-dark"><?= ($stat_total['pending'] ?: 0) ?></div>
+                </div>
+                <div class="metric-icon-box" style="background:#fffbeb; color:#92400e;">
+                    <i class="bi bi-hourglass-split"></i>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-lg-3">
+        <a href="<?= ($BASE) ?>/order?tab=ditolak" class="text-decoration-none text-reset d-block" title="Lihat Arsip Order Ditolak">
+            <div class="metric-card">
+                <div>
+                    <div class="text-muted small fw-semibold mb-1">Order Ditolak</div>
+                    <div class="h4 fw-bold mb-0 text-dark"><?= ($stat_total['ditolak'] ?: 0) ?></div>
+                </div>
+                <div class="metric-icon-box" style="background:#fef2f2; color:#991b1b;">
+                    <i class="bi bi-x-circle"></i>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-lg-3">
+        <a href="<?= ($BASE) ?>/order" class="text-decoration-none text-reset d-block" title="Buka Daftar Seluruh Order Layanan">
+            <div class="metric-card">
+                <div>
+                    <div class="text-muted small fw-semibold mb-1">Sedang Berjalan</div>
+                    <div class="h4 fw-bold mb-0 text-dark"><?= ($stat_total['berjalan'] ?: 0) ?></div>
+                </div>
+                <div class="metric-icon-box" style="background:#f0f9ff; color:#075985;">
+                    <i class="bi bi-arrow-repeat"></i>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<a href="<?= ($BASE) ?>/pembayaran" class="text-decoration-none text-reset d-block" title="Buka Rekapitulasi Pembayaran & Kas Masuk">
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-3 p-md-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div>
+                <div class="text-muted small fw-semibold mb-1">Total Uang Sudah Diterima / PNBP Masuk (Gabungan)</div>
+                <div class="h3 fw-bold mb-0" style="color: var(--color-primary);">Rp <?= (number_format($stat_total['uang_diterima'] ?: 0, 0, ',', '.')) ?></div>
+            </div>
+            <div class="metric-icon-box" style="background: rgba(136,19,55,.08); color: var(--color-primary); width:56px; height:56px; font-size:1.6rem;">
+                <i class="bi bi-cash-stack"></i>
+            </div>
+        </div>
+    </div>
+</a>
+
+<!-- ======================= RINGKASAN PER DIVISI ======================= -->
+<div class="row g-4 mb-4">
+    <!-- OPTI SELULOSA -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge badge-pill-primary">OPTI Selulosa</span>
+                    <h6 class="m-0 fw-bold text-dark">Ringkasan Divisi</h6>
+                </div>
+                <a href="<?= ($BASE) ?>/order?jenis_layanan=selulosa" class="btn btn-xs btn-outline-secondary">
+                    Buka Order Selulosa <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
+            <div class="card-body p-3 p-md-4">
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <a href="<?= ($BASE) ?>/order?jenis_layanan=selulosa&tab=aktif" class="text-decoration-none text-reset d-block" title="Lihat Order Selulosa Diterima/Aktif">
+                            <div class="metric-card">
+                                <div>
+                                    <div class="text-muted small fw-semibold mb-1">Diterima</div>
+                                    <div class="h5 fw-bold mb-0 text-dark"><?= ($stat_selulosa['diterima'] ?: 0) ?></div>
+                                </div>
+                                <div class="metric-icon-box" style="background:#ecfdf5; color:#065f46;"><i class="bi bi-check-circle"></i></div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="<?= ($BASE) ?>/disposisi-masuk" class="text-decoration-none text-reset d-block" title="Lihat Order Selulosa Pending">
+                            <div class="metric-card">
+                                <div>
+                                    <div class="text-muted small fw-semibold mb-1">Pending</div>
+                                    <div class="h5 fw-bold mb-0 text-dark"><?= ($stat_selulosa['pending'] ?: 0) ?></div>
+                                </div>
+                                <div class="metric-icon-box" style="background:#fffbeb; color:#92400e;"><i class="bi bi-hourglass-split"></i></div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="<?= ($BASE) ?>/order?jenis_layanan=selulosa&tab=ditolak" class="text-decoration-none text-reset d-block" title="Lihat Order Selulosa Ditolak">
+                            <div class="metric-card">
+                                <div>
+                                    <div class="text-muted small fw-semibold mb-1">Ditolak</div>
+                                    <div class="h5 fw-bold mb-0 text-dark"><?= ($stat_selulosa['ditolak'] ?: 0) ?></div>
+                                </div>
+                                <div class="metric-icon-box" style="background:#fef2f2; color:#991b1b;"><i class="bi bi-x-circle"></i></div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="<?= ($BASE) ?>/order?jenis_layanan=selulosa" class="text-decoration-none text-reset d-block" title="Lihat Order Selulosa Berjalan">
+                            <div class="metric-card">
+                                <div>
+                                    <div class="text-muted small fw-semibold mb-1">Berjalan</div>
+                                    <div class="h5 fw-bold mb-0 text-dark"><?= ($stat_selulosa['berjalan'] ?: 0) ?></div>
+                                </div>
+                                <div class="metric-icon-box" style="background:#f0f9ff; color:#075985;"><i class="bi bi-arrow-repeat"></i></div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+                <a href="<?= ($BASE) ?>/pembayaran" class="text-decoration-none text-reset d-block" title="Buka Rekap Keuangan Selulosa">
+                    <div class="p-3 rounded-3" style="background-color: rgba(136,19,55,.04); border: 1px solid rgba(136,19,55,.15); transition: background-color 0.2s ease;">
+                        <div class="text-muted small fw-semibold mb-1">Total Uang Diterima (PNBP Kas Selulosa)</div>
+                        <div class="h5 fw-bold mb-0" style="color: var(--color-primary);">Rp <?= (number_format($stat_selulosa['uang_diterima'] ?: 0, 0, ',', '.')) ?></div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- OPTI LINGKUNGAN -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge badge-pill" style="background-color: #15803D; color: white;">
+                        OPTI Lingkungan
+                    </span>
+                    <h6 class="m-0 fw-bold text-dark">Ringkasan Divisi</h6>
+                </div>
+                <a href="<?= ($BASE) ?>/order?jenis_layanan=lingkungan" class="btn btn-xs btn-outline-secondary">
+                    Buka Order Lingkungan <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
+            <div class="card-body p-3 p-md-4">
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <a href="<?= ($BASE) ?>/order?jenis_layanan=lingkungan&tab=aktif" class="text-decoration-none text-reset d-block" title="Lihat Order Lingkungan Diterima/Aktif">
+                            <div class="metric-card">
+                                <div>
+                                    <div class="text-muted small fw-semibold mb-1">Diterima</div>
+                                    <div class="h5 fw-bold mb-0 text-dark"><?= ($stat_lingkungan['diterima'] ?: 0) ?></div>
+                                </div>
+                                <div class="metric-icon-box" style="background:#ecfdf5; color:#065f46;"><i class="bi bi-check-circle"></i></div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="<?= ($BASE) ?>/disposisi-masuk" class="text-decoration-none text-reset d-block" title="Lihat Order Lingkungan Pending">
+                            <div class="metric-card">
+                                <div>
+                                    <div class="text-muted small fw-semibold mb-1">Pending</div>
+                                    <div class="h5 fw-bold mb-0 text-dark"><?= ($stat_lingkungan['pending'] ?: 0) ?></div>
+                                </div>
+                                <div class="metric-icon-box" style="background:#fffbeb; color:#92400e;"><i class="bi bi-hourglass-split"></i></div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="<?= ($BASE) ?>/order?jenis_layanan=lingkungan&tab=ditolak" class="text-decoration-none text-reset d-block" title="Lihat Order Lingkungan Ditolak">
+                            <div class="metric-card">
+                                <div>
+                                    <div class="text-muted small fw-semibold mb-1">Ditolak</div>
+                                    <div class="h5 fw-bold mb-0 text-dark"><?= ($stat_lingkungan['ditolak'] ?: 0) ?></div>
+                                </div>
+                                <div class="metric-icon-box" style="background:#fef2f2; color:#991b1b;"><i class="bi bi-x-circle"></i></div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="<?= ($BASE) ?>/order?jenis_layanan=lingkungan" class="text-decoration-none text-reset d-block" title="Lihat Order Lingkungan Berjalan">
+                            <div class="metric-card">
+                                <div>
+                                    <div class="text-muted small fw-semibold mb-1">Berjalan</div>
+                                    <div class="h5 fw-bold mb-0 text-dark"><?= ($stat_lingkungan['berjalan'] ?: 0) ?></div>
+                                </div>
+                                <div class="metric-icon-box" style="background:#f0f9ff; color:#075985;"><i class="bi bi-arrow-repeat"></i></div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+                <a href="<?= ($BASE) ?>/pembayaran" class="text-decoration-none text-reset d-block" title="Buka Rekap Keuangan Lingkungan">
+                    <div class="p-3 rounded-3" style="background-color: rgba(21,128,61,.05); border: 1px solid rgba(21,128,61,.15); transition: background-color 0.2s ease;">
+                        <div class="text-muted small fw-semibold mb-1">Total Uang Diterima (PNBP Kas Lingkungan)</div>
+                        <div class="h5 fw-bold mb-0" style="color: #15803D;">
+                            Rp <?= (number_format($stat_lingkungan['uang_diterima'] ?: 0, 0, ',', '.'))."
+" ?>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ======================= DIAGRAM PERBANDINGAN ======================= -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white py-3">
+                <h6 class="m-0 fw-bold text-dark"><i class="bi bi-bar-chart-line text-primary me-2"></i>Perbandingan Status Order per Divisi</h6>
+            </div>
+            <div class="card-body p-3 p-md-4">
+                <canvas id="chartStatusOrder" height="240"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white py-3">
+                <h6 class="m-0 fw-bold text-dark"><i class="bi bi-pie-chart text-primary me-2"></i>Proporsi Uang Diterima</h6>
+            </div>
+            <div class="card-body p-3 p-md-4 d-flex align-items-center justify-content-center">
+                <canvas id="chartUangDiterima" height="240"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ======================= ORDER LAYANAN TERKINI (SINKRONISASI 8 TAHAPAN) ======================= -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div>
+            <h6 class="m-0 fw-bold text-dark"><i class="bi bi-clock-history text-primary me-2"></i>Order Layanan Aktif Terkini</h6>
+            <span class="text-muted small">Daftar permohonan terkini yang sedang berjalan sesuai alur 8 tahapan layanan.</span>
+        </div>
+        <a href="<?= ($BASE) ?>/order" class="btn btn-outline-primary btn-sm">
+            Lihat Semua Order <i class="bi bi-arrow-right ms-1"></i>
+        </a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light small text-muted">
+                    <tr>
+                        <th class="ps-3" style="width: 150px;">Nomor Order</th>
+                        <th>Mitra Industri / Judul Proyek</th>
+                        <th style="width: 150px;">Divisi Layanan</th>
+                        <th style="width: 130px;">Tgl Masuk</th>
+                        <th style="width: 180px;">Tahap Berjalan</th>
+                        <th class="text-end pe-3" style="width: 100px;">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (count($daftar_order_terbaru ?: []) > 0): ?>
+                        
+                            <?php foreach (($daftar_order_terbaru?:[]) as $ord): ?>
+                                <tr>
+                                    <td class="ps-3">
+                                        <a href="<?= ($BASE) ?>/order/<?= ($ord['id']) ?>" class="fw-bold font-monospace text-decoration-none">
+                                            <?= ($ord['nomor_order'])."
+" ?>
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold text-dark"><?= ($ord['nama_perusahaan']) ?></div>
+                                        <div class="text-muted small text-truncate" style="max-width: 380px;"><?= ($ord['judul_kegiatan']) ?></div>
+                                    </td>
+                                    <td>
+                                        <?php if ($ord['jenis_layanan_opti'] == 'selulosa'): ?>
+                                            <span class="badge badge-pill-primary">OPTI Selulosa</span>
+                                        <?php endif; ?>
+                                        <?php if ($ord['jenis_layanan_opti'] == 'lingkungan'): ?>
+                                            <span class="badge badge-pill" style="background-color: #15803D; color: white;">OPTI Lingkungan</span>
+                                        <?php endif; ?>
+                                        <?php if ($ord['jenis_layanan_opti'] != 'selulosa' && $ord['jenis_layanan_opti'] != 'lingkungan'): ?>
+                                            <span class="badge bg-secondary">Belum Ditentukan</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="small text-muted">
+                                        <?= ($ord['tanggal_masuk'] ? date('d M Y', strtotime($ord['tanggal_masuk'])) : '-')."
+" ?>
+                                    </td>
+                                    <td>
+                                        <span class="badge <?= ($ord['stage_class']) ?> fw-semibold px-2 py-1">
+                                            <i class="bi <?= ($ord['stage_icon']) ?> me-1"></i><?= ($ord['stage_label'])."
+" ?>
+                                        </span>
+                                    </td>
+                                    <td class="text-end pe-3">
+                                        <a href="<?= ($BASE) ?>/order/<?= ($ord['id']) ?>" class="btn btn-xs btn-outline-secondary" title="Buka Detail Order">
+                                            <i class="bi bi-eye"></i> Detail
+                                        </a>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted small">
+                                    Belum ada order layanan aktif.
+                                </td>
+                            </tr>
+                        
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var maroon = '#881337';
+    var green = '#16A34A';
+
+    // ---- Bar chart: perbandingan status order per divisi ----
+    var ctxStatus = document.getElementById('chartStatusOrder').getContext('2d');
+    new Chart(ctxStatus, {
+        type: 'bar',
+        data: {
+            labels: ['Diterima', 'Pending', 'Ditolak', 'Berjalan'],
+            datasets: [
+                {
+                    label: 'OPTI Selulosa',
+                    backgroundColor: maroon,
+                    borderRadius: 4,
+                    data: [
+                        <?= ($stat_selulosa['diterima'] ?: 0) ?>,
+                        <?= ($stat_selulosa['pending'] ?: 0) ?>,
+                        <?= ($stat_selulosa['ditolak'] ?: 0) ?>,
+                        <?= ($stat_selulosa['berjalan'] ?: 0)."
+" ?>
+                    ]
+                },
+                {
+                    label: 'OPTI Lingkungan',
+                    backgroundColor: green,
+                    borderRadius: 4,
+                    data: [
+                        <?= ($stat_lingkungan['diterima'] ?: 0) ?>,
+                        <?= ($stat_lingkungan['pending'] ?: 0) ?>,
+                        <?= ($stat_lingkungan['ditolak'] ?: 0) ?>,
+                        <?= ($stat_lingkungan['berjalan'] ?: 0)."
+" ?>
+                    ]
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { position: 'bottom' } },
+            scales: {
+                y: { beginAtZero: true, ticks: { precision: 0 } }
+            }
+        }
+    });
+
+    // ---- Donut chart: proporsi uang diterima ----
+    var ctxUang = document.getElementById('chartUangDiterima').getContext('2d');
+    new Chart(ctxUang, {
+        type: 'doughnut',
+        data: {
+            labels: ['OPTI Selulosa', 'OPTI Lingkungan'],
+            datasets: [{
+                backgroundColor: [maroon, green],
+                data: [
+                    <?= ($stat_selulosa['uang_diterima'] ?: 0) ?>,
+                    <?= ($stat_lingkungan['uang_diterima'] ?: 0)."
+" ?>
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'bottom' },
+                tooltip: {
+                    callbacks: {
+                        label: function (ctx) {
+                            var val = ctx.parsed || 0;
+                            return ctx.label + ': Rp ' + val.toLocaleString('id-ID');
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>

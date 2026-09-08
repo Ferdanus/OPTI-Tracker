@@ -1,5 +1,5 @@
 <div class="d-flex align-items-center gap-3 mb-4">
-    <a href="<?= ($BASE) ?>/po" class="btn-back">
+    <a href="<?= ($BASE) ?>/dashboard" class="btn-back">
         <i class="bi bi-arrow-left"></i> Kembali
     </a>
     <div>
@@ -96,7 +96,7 @@
 
             <!-- Tombol Aksi Simpan -->
             <div class="d-flex justify-content-end gap-2">
-                <a href="<?= ($BASE) ?>/po" class="btn btn-outline-secondary px-4">Batal</a>
+                <a href="<?= ($BASE) ?>/dashboard" class="btn btn-outline-secondary px-4">Batal</a>
                 <button type="submit" class="btn btn-primary px-4">
                     <i class="bi bi-save me-1"></i> Simpan Perubahan Profil
                 </button>

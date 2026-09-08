@@ -13,9 +13,9 @@ class SuratMasukRepository {
 
     public function __construct(\DB\SQL $dbMain, ?\DB\SQL $dbSekretariat = null) {
         $this->dbMain = $dbMain;
-        $this->dbSekretariat = $dbSekretariat;
+        $this->dbSekretariat = $dbSekretariat ?: $dbMain;
         $f3 = \Base::instance();
-        $this->tableSekretariat = $f3->get('db_sekretariat_table') ?: 'surat_masuk';
+        $this->tableSekretariat = $f3->get('db_sekretariat_table') ?: 'tb_arsipsurat';
     }
 
     /**
@@ -25,14 +25,85 @@ class SuratMasukRepository {
         return $this->dbSekretariat !== null;
     }
 
+    private function beginTransaction(): void {
+        $this->dbSekretariat->begin();
+        if ($this->dbMain !== $this->dbSekretariat) {
+            $this->dbMain->begin();
+        }
+    }
+
+    private function commitTransaction(): void {
+        $this->dbSekretariat->commit();
+        if ($this->dbMain !== $this->dbSekretariat) {
+            $this->dbMain->commit();
+        }
+    }
+
+    private function rollbackTransaction(): void {
+        try {
+            $this->dbSekretariat->rollback();
+        } catch (\Exception $e) {}
+        if ($this->dbMain !== $this->dbSekretariat) {
+            try {
+                $this->dbMain->rollback();
+            } catch (\Exception $e) {}
+        }
+    }
+
+    /**
+     * Cek apakah menggunakan tabel tb_arsipsurat (standar SIL)
+     */
+    public function isArsipSurat(): bool {
+        return strpos($this->tableSekretariat, 'tb_arsipsurat') !== false;
+    }
+
     /**
      * Ambil daftar surat masuk OPTI yang belum diklaim
-     * Filter: permohonan = 'yes' AND layanan = 'opti' AND status_ambil = 0
      * Urutan: tanggal_surat ASC, id ASC (FIFO)
      */
     public function getDaftarSuratOpti(?string $filterTahun = null): array {
         if (!$this->isConnected()) {
             return array();
+        }
+
+        $dbName = 'sil2020';
+        try {
+            $dbNameRes = $this->dbMain->exec("SELECT DATABASE() as db");
+            if (!empty($dbNameRes[0]['db'])) $dbName = $dbNameRes[0]['db'];
+        } catch (\Exception $e) {}
+
+        if ($this->isArsipSurat()) {
+            $sql = "SELECT a.*, 
+                           a.id_arsip AS id,
+                           COALESCE(c.nmcustomer, 'Instansi / Perusahaan') AS pengirim,
+                           c.pt_cv,
+                           COALESCE(c.alamatcustomer, '-') AS alamat_pengirim,
+                           COALESCE(NULLIF(a.kontak_person, ''), c.contactperson, '-') AS pic_pengirim,
+                           COALESCE(NULLIF(a.hp_kontakperson, ''), c.notelpcustomer, '-') AS no_telp_pengirim,
+                           COALESCE(NULLIF(a.email_kontakperson, ''), c.emailcustomer, '-') AS email_pengirim,
+                           a.nama_berkas AS file_path,
+                           a.nama_layanan,
+                           CASE 
+                               WHEN a.nama_layanan = 'OPTI_lingkungan' THEN 'OPTI Lingkungan'
+                               WHEN a.nama_layanan = 'OPTI_Selulosa' THEN 'OPTI Selulosa'
+                               ELSE 'Belum Ditentukan'
+                           END AS nama_layanan_label
+                    FROM `{$this->tableSekretariat}` a
+                    LEFT JOIN `{$dbName}`.tb_customer c ON a.id_customer = c.id_customer
+                    WHERE a.surat_permohonan = 'Y'
+                      AND (a.id_pemasaran_order IS NULL OR a.id_pemasaran_order = 0)
+                      AND (a.status_disposisi_surat IS NULL OR a.status_disposisi_surat != 'ditolak')
+                      AND a.id_arsip NOT IN (SELECT id_surat_masuk FROM `{$dbName}`.order_layanan WHERE id_surat_masuk IS NOT NULL AND status != 'ditolak')";
+
+            $params = array();
+            if (!empty($filterTahun) && $filterTahun !== 'all') {
+                $sql .= " AND YEAR(a.tanggal_surat) = ?";
+                $params[1] = (int)$filterTahun;
+            }
+
+            $sql .= " ORDER BY a.tanggal_surat ASC, a.id_arsip ASC";
+
+            return $this->dbSekretariat->exec($sql, $params);
         }
 
         $table = $this->tableSekretariat;
@@ -50,6 +121,53 @@ class SuratMasukRepository {
         $sql .= " ORDER BY `tanggal_surat` ASC, `id` ASC";
 
         return $this->dbSekretariat->exec($sql, $params);
+    }
+
+    /**
+     * Hitung jumlah surat masuk OPTI yang belum diklaim secara cepat (COUNT query)
+     */
+    public function countSuratOptiBelumKlaim(?string $filterTahun = null): int {
+        if (!$this->isConnected()) {
+            return 0;
+        }
+
+        $dbName = 'sil2020';
+        try {
+            $dbNameRes = $this->dbMain->exec("SELECT DATABASE() as db");
+            if (!empty($dbNameRes[0]['db'])) $dbName = $dbNameRes[0]['db'];
+        } catch (\Exception $e) {}
+
+        if ($this->isArsipSurat()) {
+            $sql = "SELECT COUNT(*) as c FROM `{$this->tableSekretariat}` a
+                    WHERE a.surat_permohonan = 'Y'
+                      AND (a.id_pemasaran_order IS NULL OR a.id_pemasaran_order = 0)
+                      AND (a.status_disposisi_surat IS NULL OR a.status_disposisi_surat != 'ditolak')
+                      AND a.id_arsip NOT IN (SELECT id_surat_masuk FROM `{$dbName}`.order_layanan WHERE id_surat_masuk IS NOT NULL AND status != 'ditolak')";
+
+            $params = array();
+            if (!empty($filterTahun) && $filterTahun !== 'all') {
+                $sql .= " AND YEAR(a.tanggal_surat) = ?";
+                $params[1] = (int)$filterTahun;
+            }
+
+            $res = $this->dbSekretariat->exec($sql, $params);
+            return (int)($res[0]['c'] ?? 0);
+        }
+
+        $table = $this->tableSekretariat;
+        $sql = "SELECT COUNT(*) as c FROM `{$table}` 
+                WHERE `layanan` = 'opti' 
+                  AND (`status_ambil` = 'belum' OR `status_ambil` = 0 OR `status_ambil` = '' OR `status_ambil` IS NULL)
+                  AND (`status_tolak` = 0 OR `status_tolak` IS NULL)";
+        
+        $params = array();
+        if (!empty($filterTahun) && $filterTahun !== 'all') {
+            $sql .= " AND YEAR(`tanggal_surat`) = ?";
+            $params[1] = (int)$filterTahun;
+        }
+
+        $res = $this->dbSekretariat->exec($sql, $params);
+        return (int)($res[0]['c'] ?? 0);
     }
 
     /**
@@ -120,7 +238,7 @@ class SuratMasukRepository {
     /**
      * Proses klaim surat masuk menjadi order_layanan (dengan Transaction & Row Locking)
      */
-    public function klaimSurat(int $suratId, int $userId): int {
+    public function klaimSurat(int $suratId, int $userId, ?string $pilihanLayanan = null): int {
         if (!$this->isConnected()) {
             throw new \Exception("Koneksi database sekretariat tidak tersedia.");
         }
@@ -128,11 +246,123 @@ class SuratMasukRepository {
         $table = $this->tableSekretariat;
         $waktuSekarang = date('Y-m-d H:i:s');
 
-        // 1. Mulai Transaksi di kedua DB
-        $this->dbSekretariat->begin();
-        $this->dbMain->begin();
+        // 1. Mulai Transaksi
+        $this->beginTransaction();
 
         try {
+            if ($this->isArsipSurat()) {
+                $rows = $this->dbSekretariat->exec(
+                    "SELECT a.*, a.id_arsip as id FROM `{$this->tableSekretariat}` a 
+                     WHERE a.id_arsip = ? AND (a.id_pemasaran_order IS NULL OR a.id_pemasaran_order = 0) FOR UPDATE",
+                    [1 => $suratId]
+                );
+
+                if (empty($rows)) {
+                    $this->rollbackTransaction();
+                    throw new \Exception("Surat sudah diklaim oleh pengguna lain atau tidak ditemukan.");
+                }
+
+                $surat = $rows[0];
+
+                // Pencocokan Customer ke tb_customer (DB Utama)
+                $idCustomer = (int)($surat['id_customer'] ?? 1);
+                if ($idCustomer <= 0) $idCustomer = 1;
+
+                // Jika ada kontak person di surat, perbarui tb_customer
+                if (!empty($surat['kontak_person']) || !empty($surat['hp_kontakperson']) || !empty($surat['email_kontakperson'])) {
+                    $updCust = [];
+                    $updParams = [];
+                    $pI = 1;
+                    if (!empty($surat['kontak_person'])) {
+                        $updCust[] = "`contactperson_opti` = ?, `contactperson` = ?";
+                        $updParams[$pI++] = $surat['kontak_person'];
+                        $updParams[$pI++] = $surat['kontak_person'];
+                    }
+                    if (!empty($surat['hp_kontakperson'])) {
+                        $updCust[] = "`nohpcontactperson_opti` = ?, `notelpcustomer` = ?";
+                        $updParams[$pI++] = $surat['hp_kontakperson'];
+                        $updParams[$pI++] = $surat['hp_kontakperson'];
+                    }
+                    if (!empty($surat['email_kontakperson'])) {
+                        $updCust[] = "`emailcustomer` = ?";
+                        $updParams[$pI++] = $surat['email_kontakperson'];
+                    }
+                    if (!empty($updCust)) {
+                        $updParams[$pI] = $idCustomer;
+                        $this->dbMain->exec("UPDATE `tb_customer` SET " . implode(", ", $updCust) . " WHERE `id_customer` = ?", $updParams);
+                    }
+                }
+
+                // Generate Nomor Order Baru
+                $modelOrder = new \OrderLayanan($this->dbMain);
+                $nomorOrder = $modelOrder->generateNomorOrder();
+
+                // Tentukan jenis layanan: mengacu pada surat jika ada, atau 'belum_ditentukan' (ditentukan di daftar/detail order)
+                $jenisLayanan = ($surat['nama_layanan'] === 'OPTI_lingkungan') ? 'lingkungan' : (($surat['nama_layanan'] === 'OPTI_Selulosa') ? 'selulosa' : 'belum_ditentukan');
+
+                // Insert ke order_layanan internal dengan status permintaan_masuk
+                $this->dbMain->exec(
+                    "INSERT INTO `order_layanan` (
+                        `id_customer`, `id_surat_masuk`, `nomor_order`, `tanggal_masuk`, 
+                        `judul_kegiatan`, `deskripsi`, `spm_layanan`, `jenis_layanan_opti`, 
+                        `lokasi_pelaksanaan`, `jumlah_pekerjaan`, `estimasi_biaya`, 
+                        `status`, `diklaim_oleh`, `tanggal_klaim`, `created_at`
+                    ) VALUES (
+                        ?, ?, ?, ?,
+                        ?, ?, ?, ?,
+                        'internal', '1 paket kegiatan', 0.00,
+                        'permintaan_masuk', ?, ?, ?
+                    )",
+                    array(
+                        1  => $idCustomer,
+                        2  => $suratId,
+                        3  => $nomorOrder,
+                        4  => $surat['tanggal_surat'] ?: date('Y-m-d'),
+                        5  => $surat['perihal'] ?: 'Permohonan Layanan OPTI',
+                        6  => '',
+                        7  => 'Lainnya',
+                        8  => $jenisLayanan,
+                        9  => $userId,
+                        10 => $waktuSekarang,
+                        11 => $waktuSekarang
+                    )
+                );
+
+                $orderId = (int)($this->dbMain->exec("SELECT LAST_INSERT_ID() as id")[0]['id'] ?? 0);
+
+                // Update tb_arsipsurat di dbSekretariat
+                $this->dbSekretariat->exec(
+                    "UPDATE `{$this->tableSekretariat}` 
+                     SET `id_pemasaran_order` = ?, 
+                         `status_disposisi_surat` = 'diklaim', 
+                         `sie_kerjasama_tanggal_baca` = ?, 
+                         `sie_kerjasama_pc_tanggal_kirim` = ?,
+                         `progres` = 'Permintaan'
+                     WHERE `id_arsip` = ?",
+                    [1 => $orderId, 2 => $waktuSekarang, 3 => $waktuSekarang, 4 => $suratId]
+                );
+
+                // Jika ada tabel tb_arsipsurat di dbMain, sinkronkan juga
+                if ($this->dbMain !== $this->dbSekretariat) {
+                    try {
+                        $this->dbMain->exec(
+                            "UPDATE `tb_arsipsurat` 
+                             SET `id_pemasaran_order` = ?, 
+                                 `status_disposisi_surat` = 'diklaim', 
+                                 `sie_kerjasama_tanggal_baca` = ?, 
+                                 `sie_kerjasama_pc_tanggal_kirim` = ?,
+                                 `progres` = 'Permintaan'
+                             WHERE `id_arsip` = ?",
+                            [1 => $orderId, 2 => $waktuSekarang, 3 => $waktuSekarang, 4 => $suratId]
+                        );
+                    } catch (\Exception $eSync) {}
+                }
+
+                $this->commitTransaction();
+
+                return $orderId;
+            }
+
             // 2. Row Locking pada DB Eksternal (SELECT ... FOR UPDATE)
             $rows = $this->dbSekretariat->exec(
                 "SELECT * FROM `{$table}` WHERE `id` = ? AND `status_ambil` = 0 FOR UPDATE",
@@ -140,8 +370,7 @@ class SuratMasukRepository {
             );
 
             if (empty($rows)) {
-                $this->dbSekretariat->rollback();
-                $this->dbMain->rollback();
+                $this->rollbackTransaction();
                 throw new \Exception("Surat sudah diklaim oleh pengguna lain atau tidak ditemukan.");
             }
 
@@ -304,15 +533,13 @@ class SuratMasukRepository {
 
             $orderId = (int)($this->dbMain->exec("SELECT LAST_INSERT_ID() as id")[0]['id'] ?? 0);
 
-            // 8. Commit kedua transaksi
-            $this->dbSekretariat->commit();
-            $this->dbMain->commit();
+            // 8. Commit transaksi
+            $this->commitTransaction();
 
             return $orderId;
 
         } catch (\Exception $e) {
-            $this->dbSekretariat->rollback();
-            $this->dbMain->rollback();
+            $this->rollbackTransaction();
             throw $e;
         }
     }
@@ -328,8 +555,7 @@ class SuratMasukRepository {
 
         $table = $this->tableSekretariat;
 
-        $this->dbSekretariat->begin();
-        $this->dbMain->begin();
+        $this->beginTransaction();
 
         try {
             // 1. Cek State Guard pada order_layanan internal
@@ -350,6 +576,34 @@ class SuratMasukRepository {
 
             $idSuratMasuk = (int)($order['id_surat_masuk'] ?? 0);
 
+            if ($this->isArsipSurat()) {
+                if ($idSuratMasuk > 0) {
+                    $this->dbSekretariat->exec(
+                        "UPDATE `{$this->tableSekretariat}` 
+                         SET `id_pemasaran_order` = NULL, 
+                             `status_disposisi_surat` = NULL,
+                             `progres` = NULL
+                         WHERE `id_arsip` = ?",
+                        [1 => $idSuratMasuk]
+                    );
+                    if ($this->dbMain !== $this->dbSekretariat) {
+                        try {
+                            $this->dbMain->exec(
+                                "UPDATE `tb_arsipsurat` 
+                                 SET `id_pemasaran_order` = NULL, 
+                                     `status_disposisi_surat` = NULL,
+                                     `progres` = NULL
+                                 WHERE `id_arsip` = ?",
+                                [1 => $idSuratMasuk]
+                            );
+                        } catch (\Exception $eSync) {}
+                    }
+                }
+                $this->dbMain->exec("DELETE FROM `order_layanan` WHERE `id` = ?", [1 => $orderId]);
+                $this->commitTransaction();
+                return true;
+            }
+
             // 2. Kembalikan status_ambil di database eksternal
             if ($idSuratMasuk > 0) {
                 $updateSql = "UPDATE `{$table}` SET `status_ambil` = 0";
@@ -365,15 +619,13 @@ class SuratMasukRepository {
             // 3. Hapus order draft 'permintaan_masuk' di Mini OPTI
             $this->dbMain->exec("DELETE FROM `order_layanan` WHERE `id` = ?", array(1 => $orderId));
 
-            // 4. Commit kedua transaksi
-            $this->dbSekretariat->commit();
-            $this->dbMain->commit();
+            // 4. Commit transaksi
+            $this->commitTransaction();
 
             return true;
 
         } catch (\Exception $e) {
-            $this->dbSekretariat->rollback();
-            $this->dbMain->rollback();
+            $this->rollbackTransaction();
             throw $e;
         }
     }
@@ -382,6 +634,39 @@ class SuratMasukRepository {
      * Ambil data 1 surat berdasarkan ID
      */
     public function getSuratById(int $id): ?array {
+        $dbName = 'sil2020';
+        try {
+            $dbNameRes = $this->dbMain->exec("SELECT DATABASE() as db");
+            if (!empty($dbNameRes[0]['db'])) $dbName = $dbNameRes[0]['db'];
+        } catch (\Exception $e) {}
+
+        if ($this->isArsipSurat()) {
+            $sql = "SELECT a.*, 
+                           a.id_arsip AS id,
+                           COALESCE(c.nmcustomer, 'Instansi / Perusahaan') AS pengirim,
+                           c.pt_cv,
+                           COALESCE(c.alamatcustomer, '-') AS alamat_pengirim,
+                           COALESCE(NULLIF(a.kontak_person, ''), c.contactperson, '-') AS pic_pengirim,
+                           COALESCE(NULLIF(a.hp_kontakperson, ''), c.notelpcustomer, '-') AS no_telp_pengirim,
+                           COALESCE(NULLIF(a.email_kontakperson, ''), c.emailcustomer, '-') AS email_pengirim,
+                           a.nama_berkas AS file_path,
+                           a.nama_layanan,
+                           CASE 
+                               WHEN a.nama_layanan = 'OPTI_lingkungan' THEN 'OPTI Lingkungan'
+                               WHEN a.nama_layanan = 'OPTI_Selulosa' THEN 'OPTI Selulosa'
+                               ELSE 'OPTI'
+                           END AS nama_layanan_label
+                    FROM `{$this->tableSekretariat}` a
+                    LEFT JOIN `{$dbName}`.tb_customer c ON a.id_customer = c.id_customer
+                    WHERE a.id_arsip = ?";
+            if ($this->dbSekretariat) {
+                $res = $this->dbSekretariat->exec($sql, [1 => $id]);
+                if (!empty($res)) return $res[0];
+            }
+            $res = $this->dbMain->exec($sql, [1 => $id]);
+            return !empty($res) ? $res[0] : null;
+        }
+
         if ($this->dbSekretariat) {
             $res = $this->dbSekretariat->exec("SELECT * FROM `surat_masuk` WHERE id = ?", [$id]);
             if (!empty($res)) return $res[0];
@@ -396,6 +681,35 @@ class SuratMasukRepository {
     public function getDaftarSuratDitolak(?string $filterTahun = null): array {
         if (!$this->isConnected()) {
             return array();
+        }
+
+        $dbName = 'sil2020';
+        try {
+            $dbNameRes = $this->dbMain->exec("SELECT DATABASE() as db");
+            if (!empty($dbNameRes[0]['db'])) $dbName = $dbNameRes[0]['db'];
+        } catch (\Exception $e) {}
+
+        if ($this->isArsipSurat()) {
+            $sql = "SELECT a.*, 
+                           a.id_arsip AS id,
+                           COALESCE(c.nmcustomer, 'Instansi / Perusahaan') AS pengirim,
+                           c.pt_cv,
+                           COALESCE(c.alamatcustomer, '-') AS alamat_pengirim,
+                           COALESCE(NULLIF(a.kontak_person, ''), c.contactperson, '-') AS pic_pengirim,
+                           a.keterangan_proses AS alasan_tolak,
+                           a.tanggal_update AS tanggal_tolak,
+                           'Tim Mitra' AS nama_penolak
+                    FROM `{$this->tableSekretariat}` a
+                    LEFT JOIN `{$dbName}`.tb_customer c ON a.id_customer = c.id_customer
+                    WHERE a.status_disposisi_surat = 'ditolak'";
+
+            $params = [];
+            if (!empty($filterTahun) && $filterTahun !== 'all') {
+                $sql .= " AND YEAR(COALESCE(a.tanggal_update, a.tanggal_surat)) = ?";
+                $params[1] = (int)$filterTahun;
+            }
+            $sql .= " ORDER BY a.tanggal_update DESC, a.id_arsip DESC";
+            return $this->dbSekretariat->exec($sql, $params);
         }
 
         $table = $this->tableSekretariat;
@@ -440,6 +754,36 @@ class SuratMasukRepository {
     public function tolakSurat(int $suratId, int $userId, string $alasan): bool {
         $waktuSekarang = date('Y-m-d H:i:s');
         $alasan = trim($alasan);
+
+        if ($this->isArsipSurat()) {
+            if ($this->isConnected()) {
+                $this->dbSekretariat->exec(
+                    "UPDATE `{$this->tableSekretariat}` 
+                     SET `status_disposisi_surat` = 'ditolak', `keterangan_proses` = ?, `tanggal_update` = ?
+                     WHERE `id_arsip` = ?",
+                    [1 => $alasan, 2 => $waktuSekarang, 3 => $suratId]
+                );
+            }
+            if ($this->dbMain !== $this->dbSekretariat) {
+                try {
+                    $this->dbMain->exec(
+                        "UPDATE `tb_arsipsurat` 
+                         SET `status_disposisi_surat` = 'ditolak', `keterangan_proses` = ?, `tanggal_update` = ?
+                         WHERE `id_arsip` = ?",
+                        [1 => $alasan, 2 => $waktuSekarang, 3 => $suratId]
+                    );
+                } catch (\Exception $e) {}
+            }
+            try {
+                $this->dbMain->exec(
+                    "UPDATE `order_layanan` 
+                     SET `status` = 'ditolak', `alasan_tolak` = ?, `ditolak_oleh` = ?, `tanggal_tolak` = ?
+                     WHERE `id_surat_masuk` = ?",
+                    [1 => $alasan, 2 => $userId, 3 => $waktuSekarang, 4 => $suratId]
+                );
+            } catch (\Exception $e) {}
+            return true;
+        }
 
         // 1. Update di database sekretariat
         if ($this->isConnected()) {

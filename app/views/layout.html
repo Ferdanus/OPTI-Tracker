@@ -18,6 +18,9 @@
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
     <!-- SweetAlert2 CDN -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- jsPDF & html2canvas untuk download/cetak -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <style>
         :root {
@@ -622,6 +625,33 @@
             background-color: rgba(136, 19, 55, 0.04);
         }
 
+        .btn-white {
+            background-color: #ffffff !important;
+            border-color: var(--color-border) !important;
+            color: var(--color-text-main) !important;
+        }
+
+        .btn-white:hover {
+            background-color: #f8fafc !important;
+            border-color: #cbd5e1 !important;
+            color: var(--color-primary) !important;
+        }
+
+        .btn-xs {
+            padding: 0.2rem 0.5rem !important;
+            font-size: 0.75rem !important;
+            line-height: 1.25 !important;
+            border-radius: var(--radius-sm) !important;
+        }
+
+        .shadow-xs {
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+        }
+
+        .shadow-2xs {
+            box-shadow: 0 1px 1px 0 rgba(0, 0, 0, 0.03) !important;
+        }
+
         /* Form Controls */
         .form-label { font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem; }
 
@@ -813,6 +843,48 @@
             font-size: 0.725rem;
             color: var(--color-text-muted);
         }
+
+        /* ============ PENGATURAN MODAL DIALOG ============ */
+        .modal,
+        .modal-dialog,
+        .modal-content {
+            white-space: normal !important;
+        }
+
+        /* ============ PENGATURAN CETAK RESMI DOKUMEN (@MEDIA PRINT) ============ */
+        @media print {
+            .sidebar,
+            .topbar,
+            .footer-gov,
+            .sidebar-backdrop,
+            .top-progress-bar,
+            .page-loader-overlay,
+            .no-print,
+            .btn,
+            .btn-group,
+            .modal-backdrop,
+            .modal {
+                display: none !important;
+            }
+            .content-wrapper {
+                margin-left: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                padding: 0 !important;
+            }
+            .main-container {
+                padding: 0 !important;
+            }
+            body {
+                background: #ffffff !important;
+                color: #000000 !important;
+                padding: 0 !important;
+            }
+            .card {
+                box-shadow: none !important;
+                border: 1px solid #ccc !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -852,8 +924,12 @@
             </button>
 
             <ul class="sidebar-nav">
-                
-                <!-- Menu Dashboard Monitoring disembunyikan sementara waktu sesuai arahan -->
+                <li class="sidebar-section-label">Dashboard</li>
+                <li>    
+                    <a class="sidebar-link {{ @active_menu == 'dashboard' ? 'active' : '' }}" href="{{ @BASE }}/dashboard" title="Dashboard">
+                        <i class="bi bi-speedometer2"></i> <span>Dashboard</span>
+                    </a>
+                </li>
 
                 <!-- 1. ALUR PELAYANAN / KEMITRAAN -->
                 <check if="{{ @is_superadmin || @is_admin_order || @is_ketua_tim || @is_tim_kerja || @is_admin_kontrak || @is_sekretaris || @is_keuangan || @is_user_readonly }}">
@@ -893,11 +969,11 @@
                     </li>
                 </check>
 
-                <!-- Surat Pelayanan (Admin Order, Tim Mitra, Ketua Tim, Superadmin) -->
+                <!-- Surat Penawaran (Admin Order, Tim Mitra, Ketua Tim, Superadmin) -->
                 <check if="{{ @is_superadmin || @is_admin_order || @is_ketua_tim }}">
                     <li>
-                        <a class="sidebar-link {{ @active_menu == 'surat-penawaran' ? 'active' : '' }}" href="{{ @BASE }}/surat-penawaran" title="Surat Pelayanan">
-                            <i class="bi bi-file-earmark-text"></i> <span>Surat Pelayanan</span>
+                        <a class="sidebar-link {{ @active_menu == 'surat-penawaran' ? 'active' : '' }}" href="{{ @BASE }}/surat-penawaran" title="Surat Penawaran">
+                            <i class="bi bi-file-earmark-text"></i> <span>Surat Penawaran</span>
                         </a>
                     </li>
                 </check>
@@ -925,33 +1001,15 @@
                     </li>
                 </check>
 
-                <!-- 3. PERSURATAN BALAI -->
-                <check if="{{ @is_superadmin || @is_sekretaris }}">
-                    <li class="sidebar-section-label">Persuratan Balai</li>
-                    
-                    <!-- Registrasi Surat Masuk (Sekretariat, Superadmin) -->
-                    <li>
-                        <a class="sidebar-link {{ @active_menu == 'simulasi_sekretariat' ? 'active' : '' }}" href="{{ @BASE }}/simulasi-sekretariat" title="Registrasi Surat Masuk">
-                            <i class="bi bi-journal-plus"></i> <span>Registrasi Surat Masuk</span>
-                        </a>
-                    </li>
-                </check>
-
-                <!-- 4. MASTER DATA (Superadmin, Tim Mitra, Ketua Tim) -->
+                <!-- 3. MASTER DATA (Superadmin, Tim Mitra, Ketua Tim) -->
                 <check if="{{ @is_superadmin || @is_admin_order || @is_ketua_tim }}">
                     <li class="sidebar-section-label">Master Data</li>
                     <li>
-                        <a class="sidebar-link {{ @active_menu == 'klien' ? 'active' : '' }}" href="{{ @BASE }}/klien" title="Data Mitra Industri / Klien">
-                            <i class="bi bi-building"></i> <span>Data Klien</span>
+                        <a class="sidebar-link {{ @active_menu == 'pengguna' ? 'active' : '' }}" href="{{ @BASE }}/pengguna" title="Master Data Pengguna">
+                            <i class="bi bi-person-badge"></i> <span>Data Pengguna</span>
                         </a>
                     </li>
-                    <check if="{{ @is_superadmin || @is_ketua_tim }}">
-                        <li>
-                            <a class="sidebar-link {{ @active_menu == 'master_pic' ? 'active' : '' }}" href="{{ @BASE }}/master-pic" title="Master PIC Peneliti">
-                                <i class="bi bi-people-fill"></i> <span>PIC Peneliti</span>
-                            </a>
-                        </li>
-                    </check>
+                    <!-- Menu Data Klien dan PIC Peneliti disembunyikan dari sidebar -->
                 </check>
 
                 <!-- 5. PENGATURAN SISTEM (Disembunyikan untuk Superadmin) -->
@@ -1453,44 +1511,7 @@
                 finishLoading();
             });
 
-            // Intercept internal link navigation to simulate realistic cloud deployment delay
-            document.addEventListener('click', function(e) {
-                var link = e.target.closest('a');
-                if (!link) return;
-
-                var href = link.getAttribute('href');
-                var target = link.getAttribute('target');
-
-                // Ignore anchors, javascript, modals, dropdowns, new tabs, downloads, and export links
-                if (!href || 
-                    href.startsWith('#') || 
-                    href.startsWith('javascript:') || 
-                    target === '_blank' || 
-                    link.hasAttribute('download') || 
-                    link.getAttribute('data-no-loader') === 'true' || 
-                    link.getAttribute('data-bs-toggle') || 
-                    (link.getAttribute('role') === 'button' && href === '#') ||
-                    href.includes('ekspor') || 
-                    href.includes('export') || 
-                    href.includes('download') || 
-                    /\.(csv|xlsx|xls|pdf|zip|docx|doc)$/i.test(href)) {
-                    return;
-                }
-
-                // Check if internal domain link
-                var isInternal = href.startsWith('/') || href.startsWith('http://' + window.location.host) || href.startsWith('https://' + window.location.host) || !href.includes('://');
-
-                if (isInternal) {
-                    e.preventDefault();
-                    startLoading('Memuat Halaman...');
-                    // 200ms smooth network latency
-                    setTimeout(function() {
-                        window.location.href = href;
-                    }, 200);
-                }
-            });
-
-            // Intercept form submissions for realistic saving/filtering indicator
+            // Intercept form submissions for saving/filtering indicator
             document.addEventListener('submit', function(e) {
                 var form = e.target;
                 if (!form) return;

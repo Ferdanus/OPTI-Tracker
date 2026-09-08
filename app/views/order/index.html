@@ -57,7 +57,7 @@
         <div>
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb mb-1 small">
-                    <li class="breadcrumb-item"><a href="{{ @BASE }}/po" class="text-decoration-none text-muted">Beranda</a></li>
+                    <li class="breadcrumb-item"><a href="{{ @BASE }}/dashboard" class="text-decoration-none text-muted">Beranda</a></li>
                     <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Daftar Order Layanan</li>
                 </ol>
             </nav>
@@ -136,11 +136,11 @@
                 </li>
             </ul>
             <span class="text-muted small fw-medium">
-                Total: <strong class="text-dark">{{ count(@daftar_order) }}</strong> order ditampilkan
+                Total: <strong class="text-dark">{{ !empty(@daftar_order) ? count(@daftar_order) : 0 }}</strong> order ditampilkan
             </span>
         </div>
         <div class="card-body p-0">
-        <check if="{{ count(@daftar_order) > 0 }}">
+        <check if="{{ !empty(@daftar_order) && count(@daftar_order) > 0 }}">
             <true>
                 <div class="table-responsive">
                     <check if="{{ @filter_tab == 'ditolak' }}">
@@ -220,6 +220,11 @@
                                                     <a href="{{ @BASE }}/order/{{ @ord.id }}" class="btn btn-sm btn-outline-secondary px-2.5 py-1 d-inline-flex align-items-center gap-1.5 fw-semibold" title="Lihat Riwayat Order">
                                                         <i class="bi bi-eye"></i> <span>Detail</span>
                                                     </a>
+                                                    <check if="{{ @SESSION.role == 'tim_mitra_industri' || @is_superadmin }}">
+                                                        <a href="{{ @BASE }}/surat/{{ @ord.id }}" class="btn btn-sm btn-outline-danger px-2.5 py-1 d-inline-flex align-items-center gap-1.5 fw-semibold" title="Lihat Surat Pelayanan Jasa">
+                                                            <i class="bi bi-file-earmark-pdf-fill"></i>
+                                                        </a>
+                                                    </check>
                                                 </div>
                                             </td>
                                         </tr>
@@ -331,17 +336,20 @@
                                                          </false>
                                                      </check>
 
-                                                     <check if="{{ (@ord.status == 'penawaran_deal' || @ord.status_respon_klien == 'deal') && @ord.status != 'disetujui' && !@ord.po_id && @can_approve_po }}">
-                                                         <button type="button" class="btn btn-sm btn-success py-1 px-2 d-inline-flex align-items-center gap-1 shadow-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#approveModal{{ @ord.id }}" title="Klien Telah DEAL: Setujui &amp; Terbitkan PO">
-                                                             <i class="bi bi-check2-circle"></i> <span>Setujui PO</span>
-                                                         </button>
-                                                     </check>
-
                                                      <check if="{{ @ord.status == 'disetujui' || @ord.po_id }}">
                                                          <a href="{{ @BASE }}/po/{{ @ord.po_id ?: @ord.id }}" class="btn btn-sm btn-outline-dark py-1 px-2 d-inline-flex align-items-center gap-1" title="Buka Dokumen PO Terbit">
                                                              <i class="bi bi-speedometer2"></i>
                                                          </a>
                                                      </check>
+
+                                                     <check if="{{ @SESSION.role == 'tim_mitra_industri' || @is_superadmin }}">
+                                                        <a href="{{ @BASE }}/surat/{{ @ord.id }}"
+                                                           class="btn btn-sm btn-outline-danger py-1 px-2 d-inline-flex align-items-center gap-1 fw-semibold"
+                                                           title="Lihat Format Cetak Surat Pelayanan Jasa">
+                                                            <i class="bi bi-file-earmark-pdf-fill"></i>
+                                                            <span>Surat</span>
+                                                        </a>
+                                                    </check>
 
                                                      <button type="button" class="btn btn-sm btn-light border py-1 px-2" style="color: var(--color-primary);" data-bs-toggle="modal" data-bs-target="#modalHapusOrder{{ @ord.id }}" title="Hapus Order">
                                                          <i class="bi bi-trash3"></i>
@@ -349,12 +357,12 @@
                                                 </div>
 
                                                 <!-- Modal Konfirmasi Hapus Order Bertema Merah Maroon -->
-                                                <div class="modal fade" id="modalHapusOrder{{ @ord.id }}" tabindex="-1" aria-labelledby="modalHapusOrderLabel{{ @ord.id }}" aria-hidden="true">
-                                                    <div class="modal-dialog modal-dialog-centered">
-                                                        <div class="modal-content bg-white border-0 shadow rounded-3 text-start">
+                                                <div class="modal fade" id="modalHapusOrder{{ @ord.id }}" tabindex="-1" aria-labelledby="modalHapusOrderLabel{{ @ord.id }}" aria-hidden="true" style="white-space: normal;">
+                                                    <div class="modal-dialog modal-dialog-centered" style="white-space: normal;">
+                                                        <div class="modal-content bg-white border-0 shadow rounded-3 text-start text-wrap" style="white-space: normal;">
                                                             <div class="modal-header border-bottom py-3 px-4 bg-white">
                                                                 <div class="d-flex align-items-center gap-2">
-                                                                    <div class="rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; background-color: #ffe4e6; color: var(--color-primary);">
+                                                                    <div class="rounded-circle p-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 38px; height: 38px; background-color: #ffe4e6; color: var(--color-primary);">
                                                                         <i class="bi bi-trash3-fill fs-5"></i>
                                                                     </div>
                                                                     <div>
@@ -370,19 +378,19 @@
                                                             <form action="{{ @BASE }}/order/{{ @ord.id }}/hapus" method="POST">
                                                                 <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
                                                                 
-                                                                <div class="modal-body py-4 px-4 text-start">
+                                                                <div class="modal-body py-4 px-4 text-start" style="white-space: normal;">
                                                                     <p class="text-secondary mb-3">
                                                                         Apakah Anda yakin ingin menghapus permohonan order layanan berikut?
                                                                     </p>
 
-                                                                    <div class="p-3 bg-light rounded-2 border mb-3">
+                                                                    <div class="p-3 bg-light rounded-2 border mb-3" style="white-space: normal;">
                                                                         <div class="d-flex justify-content-between mb-1">
                                                                             <span class="text-muted small">Nomor Order:</span>
                                                                             <strong class="text-dark small">{{ @ord.nomor_order }}</strong>
                                                                         </div>
                                                                         <div class="d-flex justify-content-between mb-1">
                                                                             <span class="text-muted small">Customer / Mitra:</span>
-                                                                            <span class="text-dark small fw-semibold">{{ @ord.nama_perusahaan }}</span>
+                                                                            <span class="text-dark small fw-semibold text-break">{{ @ord.nama_perusahaan }}</span>
                                                                         </div>
                                                                         <div class="d-flex justify-content-between">
                                                                             <span class="text-muted small">Judul Kegiatan:</span>
@@ -390,9 +398,9 @@
                                                                         </div>
                                                                     </div>
 
-                                                                    <div class="p-2 mb-0 rounded-2 small d-flex align-items-center gap-2" style="font-size: 0.8rem; background-color: #fff1f2; color: #881337; border: 1px solid #fecdd3;">
-                                                                        <i class="bi bi-exclamation-triangle-fill fs-6 flex-shrink-0" style="color: #881337;"></i>
-                                                                        <span>Seluruh berkas kaji ulang dan penawaran terkait order ini akan ikut terhapus dari sistem.</span>
+                                                                    <div class="p-3 mb-0 rounded-2 small d-flex align-items-start gap-2" style="font-size: 0.8rem; background-color: #fff1f2; color: #881337; border: 1px solid #fecdd3; white-space: normal;">
+                                                                        <i class="bi bi-exclamation-triangle-fill fs-6 flex-shrink-0 mt-0.5" style="color: #881337;"></i>
+                                                                        <div style="white-space: normal; line-height: 1.45; word-break: break-word;">Seluruh berkas kaji ulang dan penawaran terkait order ini akan ikut terhapus dari sistem.</div>
                                                                     </div>
                                                                 </div>
 
@@ -402,42 +410,6 @@
                                                                     </button>
                                                                     <button type="submit" class="btn btn-primary btn-sm px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-1">
                                                                         <i class="bi bi-trash3-fill"></i> Ya, Hapus Order
-                                                                    </button>
-                                                                </div>
-                                                            </form>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <!-- Modal Approve Order -->
-                                                <div class="modal fade" id="approveModal{{ @ord.id }}" tabindex="-1" aria-labelledby="approveModalLabel{{ @ord.id }}" aria-hidden="true">
-                                                    <div class="modal-dialog modal-dialog-centered text-start">
-                                                        <div class="modal-content border-0 shadow">
-                                                            <form action="{{ @BASE }}/order/{{ @ord.id }}/approve" method="POST">
-                                                                <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
-                                                                <div class="modal-header">
-                                                                    <h6 class="modal-title fw-bold" id="approveModalLabel{{ @ord.id }}">
-                                                                        <i class="bi bi-check-circle-fill text-success me-2"></i>Persetujuan & Penerbitan PO
-                                                                    </h6>
-                                                                    <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                                </div>
-                                                                <div class="modal-body">
-                                                                    <p class="small text-muted mb-3">
-                                                                        Anda akan menyetujui Order <strong>{{ @ord.nomor_order }}</strong> dan menerbitkan nomor <strong>Petunjuk Operasional (PO)</strong> otomatis.
-                                                                    </p>
-                                                                    <div class="mb-3">
-                                                                        <label class="form-label small">Tentukan Target Tanggal Selesai</label>
-                                                                        <input type="date" name="target_selesai" class="form-control form-control-sm" value="{{ @ord.target_selesai ?: date('Y-m-d', strtotime('+3 months')) }}" required>
-                                                                    </div>
-                                                                    <div class="mb-3">
-                                                                        <label class="form-label small">Tim / Personil Pelaksana</label>
-                                                                        <input type="text" name="tim_kerja" class="form-control form-control-sm" placeholder="Contoh: Tim Pengujian Selulosa" value="{{ @ord.tim_kerja }}">
-                                                                    </div>
-                                                                </div>
-                                                                <div class="modal-footer">
-                                                                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Batal</button>
-                                                                    <button type="submit" class="btn btn-sm btn-success">
-                                                                        <i class="bi bi-check-circle me-1"></i> Terbitkan PO
                                                                     </button>
                                                                 </div>
                                                             </form>

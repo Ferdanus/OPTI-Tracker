@@ -611,12 +611,36 @@ class SuratMasukController extends Controller {
     public function simulasiSekretariat() {
         $this->requirePermission('surat_masuk:registrasi', '/order');
         
-        $table = $this->f3->get('db_sekretariat_table') ?: 'surat_masuk';
+        $table = $this->f3->get('db_sekretariat_table') ?: 'tb_arsipsurat';
         $daftarSuratSimulasi = array();
         $dbTarget = $this->dbSekretariat ?: $this->db;
         
         try {
-            $daftarSuratSimulasi = $dbTarget->exec("SELECT * FROM `{$table}` ORDER BY id DESC");
+            if (strpos($table, 'tb_arsipsurat') !== false) {
+                $dbName = 'sil2020';
+                try {
+                    $dbNameRes = $this->db->exec("SELECT DATABASE() as db");
+                    if (!empty($dbNameRes[0]['db'])) $dbName = $dbNameRes[0]['db'];
+                } catch (\Exception $e) {}
+
+                $sql = "SELECT a.*, 
+                               a.id_arsip AS id,
+                               COALESCE(c.nmcustomer, 'Instansi / Perusahaan') AS pengirim,
+                               c.pt_cv,
+                               COALESCE(c.alamatcustomer, '-') AS alamat_pengirim,
+                               COALESCE(NULLIF(a.kontak_person, ''), c.contactperson, '-') AS pic_pengirim,
+                               COALESCE(NULLIF(a.hp_kontakperson, ''), c.notelpcustomer, '-') AS no_telp_pengirim,
+                               COALESCE(NULLIF(a.email_kontakperson, ''), c.emailcustomer, '-') AS email_pengirim,
+                               a.nama_berkas AS file_path,
+                               a.nama_layanan
+                        FROM `{$table}` a
+                        LEFT JOIN `{$dbName}`.tb_customer c ON a.id_customer = c.id_customer
+                        ORDER BY a.id_arsip DESC";
+                $daftarSuratSimulasi = $dbTarget->exec($sql);
+            } else {
+                $daftarSuratSimulasi = $dbTarget->exec("SELECT * FROM `{$table}` ORDER BY id DESC");
+            }
+
             // Lengkapi dengan info order layanan dari DB utama jika sudah diklaim
             foreach ($daftarSuratSimulasi as &$s) {
                 $order = $this->db->exec("SELECT id, nomor_order, status as order_status, jenis_layanan_opti FROM `order_layanan` WHERE id_surat_masuk = ?", [1 => $s['id']]);
@@ -629,7 +653,7 @@ class SuratMasukController extends Controller {
             }
             unset($s);
         } catch (\Exception $e) {
-            $daftarSuratSimulasi = $this->db->exec("SELECT * FROM `{$table}` ORDER BY id DESC");
+            $daftarSuratSimulasi = [];
         }
 
         $this->f3->set('daftar_surat_simulasi', $daftarSuratSimulasi);
@@ -645,7 +669,7 @@ class SuratMasukController extends Controller {
     public function kirimSimulasi() {
         $this->requireAuth();
         
-        $table = $this->f3->get('db_sekretariat_table') ?: 'surat_masuk';
+        $table = $this->f3->get('db_sekretariat_table') ?: 'tb_arsipsurat';
         $post = $this->f3->get('POST');
         $userId = $this->getUserId() ?? 1;
 
@@ -659,6 +683,12 @@ class SuratMasukController extends Controller {
         $email = trim($post['email_pengirim'] ?? '');
         $tglSurat = !empty($post['tanggal_surat']) ? $post['tanggal_surat'] : date('Y-m-d');
         $namaPengirim = trim($post['nama_pengirim'] ?? $pic);
+
+        $suratPermohonan = trim($post['surat_permohonan'] ?? 'Y');
+        $namaLayanan = trim($post['nama_layanan'] ?? 'OPTI_Selulosa');
+        if (!in_array($namaLayanan, ['OPTI_Selulosa', 'OPTI_lingkungan'])) {
+            $namaLayanan = 'OPTI_Selulosa';
+        }
 
         if (empty($nomorSurat) || empty($pengirim) || empty($perihal)) {
             $this->setFlashError('Nomor surat, nama instansi pengirim, dan perihal wajib diisi.');
@@ -679,66 +709,79 @@ class SuratMasukController extends Controller {
             }
         }
 
-        $layanan = trim($post['layanan'] ?? 'opti');
-        if (empty($layanan)) $layanan = 'opti';
-
         try {
-            // 1. Simpan ke Database Sekretariat Eksternal jika terhubung
-            if ($this->dbSekretariat) {
+            if (strpos($table, 'tb_arsipsurat') !== false) {
+                // Pencocokan atau pembuatan data customer di tb_customer
+                $idCustomer = 1;
+                if (!empty($pengirim)) {
+                    $custRows = $this->db->exec("SELECT id_customer FROM `tb_customer` WHERE LOWER(TRIM(nmcustomer)) = LOWER(?) LIMIT 1", [1 => $pengirim]);
+                    if (!empty($custRows)) {
+                        $idCustomer = (int)$custRows[0]['id_customer'];
+                    } else {
+                        $this->db->exec("INSERT INTO `tb_customer` (nmcustomer, pt_cv, alamatcustomer, contactperson_opti, notelpcustomer, emailcustomer, id_layanan_optimalisasi, tglinput) VALUES (?, ?, ?, ?, ?, ?, 1, NOW())", [
+                            1 => $pengirim, 2 => $ptCv, 3 => $alamat, 4 => $pic, 5 => $telp, 6 => $email
+                        ]);
+                        $idCustomer = (int)($this->db->exec("SELECT LAST_INSERT_ID() as id")[0]['id'] ?? 1);
+                    }
+                }
+
                 $sqlSekr = "INSERT INTO `{$table}` (
-                                nomor_surat, perihal, pengirim, pt_cv, alamat_pengirim, 
-                                pic_pengirim, no_telp_pengirim, email_pengirim, tanggal_surat, 
-                                file_path, permohonan, layanan, status_ambil, created_at
+                                nomor_surat, perihal, tanggal_surat, tanggal_terima,
+                                id_customer, kontak_person, hp_kontakperson, email_kontakperson,
+                                surat_permohonan, nama_layanan, nama_berkas, tanggal_simpan
                             ) VALUES (
-                                ?, ?, ?, ?, ?, 
-                                ?, ?, ?, ?, 
-                                ?, 'yes', ?, 0, NOW()
+                                ?, ?, ?, ?,
+                                ?, ?, ?, ?,
+                                ?, ?, ?, NOW()
                             )";
-                $this->dbSekretariat->exec($sqlSekr, [
+                $params = [
                     1 => $nomorSurat,
                     2 => $perihal,
-                    3 => $pengirim,
-                    4 => $ptCv,
-                    5 => $alamat,
+                    3 => $tglSurat,
+                    4 => $tglSurat,
+                    5 => $idCustomer,
                     6 => $pic,
                     7 => $telp,
                     8 => $email,
-                    9 => $tglSurat,
-                    10 => $filePath,
-                    11 => $layanan
-                ]);
-            }
+                    9 => $suratPermohonan,
+                    10 => $namaLayanan,
+                    11 => $filePath
+                ];
 
-            // 2. Simpan juga ke Database Utama Lokal untuk konsistensi fallback
-            if ($this->db !== $this->dbSekretariat) {
-                try {
-                    $sqlLocal = "INSERT INTO `{$table}` (
-                                    nomor_surat, pengirim, pt_cv, alamat_pengirim, 
-                                    pic_pengirim, no_telp_pengirim, email_pengirim, 
-                                    tanggal_surat, nama_pengirim, perihal, file_path, 
-                                    layanan, status_ambil, created_at, created_by
+                if ($this->dbSekretariat) {
+                    $this->dbSekretariat->exec($sqlSekr, $params);
+                }
+                if ($this->db !== $this->dbSekretariat) {
+                    try {
+                        $this->db->exec($sqlSekr, $params);
+                    } catch (\Exception $eLocal) {}
+                }
+            } else {
+                $layanan = trim($post['layanan'] ?? 'opti');
+                if ($this->dbSekretariat) {
+                    $sqlSekr = "INSERT INTO `{$table}` (
+                                    nomor_surat, perihal, pengirim, pt_cv, alamat_pengirim, 
+                                    pic_pengirim, no_telp_pengirim, email_pengirim, tanggal_surat, 
+                                    file_path, permohonan, layanan, status_ambil, created_at
                                 ) VALUES (
+                                    ?, ?, ?, ?, ?, 
                                     ?, ?, ?, ?, 
-                                    ?, ?, ?, 
-                                    ?, ?, ?, ?, 
-                                    ?, 'belum', NOW(), ?
+                                    ?, 'yes', ?, 0, NOW()
                                 )";
-                    $this->db->exec($sqlLocal, [
+                    $this->dbSekretariat->exec($sqlSekr, [
                         1 => $nomorSurat,
-                        2 => $pengirim,
-                        3 => $ptCv,
-                        4 => $alamat,
-                        5 => $pic,
-                        6 => $telp,
-                        7 => $email,
-                        8 => $tglSurat,
-                        9 => $namaPengirim,
-                        10 => $perihal,
-                        11 => $filePath,
-                        12 => $layanan,
-                        13 => $userId
+                        2 => $perihal,
+                        3 => $pengirim,
+                        4 => $ptCv,
+                        5 => $alamat,
+                        6 => $pic,
+                        7 => $telp,
+                        8 => $email,
+                        9 => $tglSurat,
+                        10 => $filePath,
+                        11 => $layanan
                     ]);
-                } catch (\Exception $eLocal) {}
+                }
             }
 
             // Kirim notifikasi ke Tim Mitra
@@ -747,7 +790,7 @@ class SuratMasukController extends Controller {
                     'target_role'    => 'admin_order',
                     'target_layanan' => 'semua',
                     'judul'          => 'Surat Permohonan Baru Masuk',
-                    'pesan'          => "Surat dari {$pengirim} (No: {$nomorSurat}) telah diagendakan. Siap ditinjau & diklaim di Kotak Masuk Tim Mitra.",
+                    'pesan'          => "Surat dari {$pengirim} (No: {$nomorSurat} - {$namaLayanan}) telah diagendakan. Siap ditinjau & diklaim di Kotak Masuk Tim Mitra.",
                     'tipe'           => 'info',
                     'icon'           => 'bi-envelope-plus-fill',
                     'link_url'       => '/surat-masuk',
@@ -757,7 +800,7 @@ class SuratMasukController extends Controller {
             } catch (\Exception $eNotif) {}
 
             $this->setFlashSuccess("
-                Surat Permohonan dari <strong>{$pengirim}</strong> (No: <strong>{$nomorSurat}</strong>) berhasil didaftarkan dalam Buku Agenda Sekretariat dan diteruskan ke antrean Kotak Masuk Tim Mitra.<br>
+                Surat Permohonan dari <strong>{$pengirim}</strong> (No: <strong>{$nomorSurat}</strong>) berhasil didaftarkan dalam Buku Agenda Sekretariat (tabel <strong>{$table}</strong>) dan diteruskan ke antrean Kotak Masuk Tim Mitra.<br>
                 <div class='mt-2'>
                     <a href='{$this->f3->get('BASE')}/surat-masuk' class='btn btn-primary btn-sm fw-semibold text-white shadow-sm'>
                         <i class='bi bi-arrow-right-circle me-1'></i> Buka Kotak Masuk Tim Mitra (Tinjau &amp; Klaim Surat)
@@ -778,17 +821,18 @@ class SuratMasukController extends Controller {
     public function hapusSimulasi($f3, $params) {
         $this->requireAuth();
         $id = (int)($params['id'] ?? 0);
-        $table = $this->f3->get('db_sekretariat_table') ?: 'surat_masuk';
+        $table = $this->f3->get('db_sekretariat_table') ?: 'tb_arsipsurat';
+        $idCol = (strpos($table, 'tb_arsipsurat') !== false) ? 'id_arsip' : 'id';
 
         if ($id > 0) {
             if ($this->dbSekretariat) {
                 try {
-                    $this->dbSekretariat->exec("DELETE FROM `{$table}` WHERE id = ?", [1 => $id]);
+                    $this->dbSekretariat->exec("DELETE FROM `{$table}` WHERE `{$idCol}` = ?", [1 => $id]);
                 } catch (\Exception $e) {}
             }
             if ($this->db) {
                 try {
-                    $this->db->exec("DELETE FROM `{$table}` WHERE id = ?", [1 => $id]);
+                    $this->db->exec("DELETE FROM `{$table}` WHERE `{$idCol}` = ?", [1 => $id]);
                 } catch (\Exception $e) {}
             }
             $this->setFlashSuccess('Surat simulasi berhasil dihapus dari sistem.');

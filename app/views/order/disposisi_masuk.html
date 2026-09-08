@@ -111,13 +111,23 @@
     </div>
 
     <!-- ======================================================== -->
-    <!-- SEKSI 2: PROPOSAL MENUNGGU APPROVAL KETUA TIM            -->
+    <!-- SEKSI 2: PROPOSAL / KALKULASI MENUNGGU APPROVAL KETUA TIM -->
     <!-- ======================================================== -->
     <div class="card border rounded-3 mb-4 bg-white shadow-xs">
         <div class="card-header bg-white py-3 px-3 px-md-4 d-flex justify-content-between align-items-center border-bottom">
-            <h6 class="fw-bold text-dark m-0">2. Proposal Menunggu Approval</h6>
+            <h6 class="fw-bold text-dark m-0">
+                <check if="{{ @filter_divisi == 'lingkungan' }}">
+                    <true>2. Kalkulasi Tarif Pengujian Menunggu Approval</true>
+                    <false>
+                        <check if="{{ @filter_divisi == 'selulosa' }}">
+                            <true>2. Proposal Teknis Menunggu Approval</true>
+                            <false>2. Proposal &amp; Kalkulasi Tarif Menunggu Approval</false>
+                        </check>
+                    </false>
+                </check>
+            </h6>
             <span class="badge {{ count(@perlu_approval) > 0 ? 'bg-primary text-white' : 'bg-light text-secondary border' }} px-2.5 py-1 fw-semibold">
-                {{ count(@perlu_approval) }} Proposal
+                {{ count(@perlu_approval) }} {{ @filter_divisi == 'lingkungan' ? 'Kalkulasi Uji' : (@filter_divisi == 'selulosa' ? 'Proposal' : 'Berkas / Kalkulasi') }}
             </span>
         </div>
 
@@ -125,7 +135,7 @@
             <check if="{{ empty(@perlu_approval) }}">
                 <div class="text-center py-4 bg-white rounded-3 border text-secondary small">
                     <i class="bi bi-inbox text-muted fs-3 opacity-50 d-block mb-1"></i>
-                    Tidak ada proposal yang menunggu persetujuan.
+                    {{ @filter_divisi == 'lingkungan' ? 'Tidak ada kalkulasi tarif pengujian yang menunggu persetujuan.' : (@filter_divisi == 'selulosa' ? 'Tidak ada proposal teknis yang menunggu persetujuan.' : 'Tidak ada proposal atau kalkulasi tarif yang menunggu persetujuan.') }}
                 </div>
             </check>
 
@@ -146,6 +156,16 @@
                                                 <span class="text-secondary font-monospace small ms-1" style="font-size: 0.78rem;">
                                                     #{{ @p.nomor_order }}
                                                 </span>
+                                                <check if="{{ @p.jenis_layanan_opti == 'lingkungan' }}">
+                                                    <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle" style="font-size: 0.68rem;">
+                                                        <i class="bi bi-calculator me-1"></i>Kalkulasi Lab
+                                                    </span>
+                                                </check>
+                                                <check if="{{ @p.jenis_layanan_opti == 'selulosa' }}">
+                                                    <span class="badge bg-light text-secondary border" style="font-size: 0.68rem;">
+                                                        <i class="bi bi-file-earmark-text me-1"></i>Proposal Riset
+                                                    </span>
+                                                </check>
                                             </div>
                                             <span class="badge bg-warning-subtle text-warning-emphasis" style="font-size: 0.7rem;">
                                                 Menunggu Approval
@@ -165,32 +185,63 @@
                                                 <strong class="text-dark">{{ @p.nama_perusahaan }} ({{ @p.pt_cv }})</strong>
                                             </div>
                                             <div class="d-flex mb-1">
-                                                <span class="text-muted" style="width: 120px; flex-shrink: 0;">PIC Proposal</span>
+                                                <span class="text-muted" style="width: 120px; flex-shrink: 0;">
+                                                    {{ @p.jenis_layanan_opti == 'lingkungan' ? 'PIC Teknis Lab' : 'PIC Proposal' }}
+                                                </span>
                                                 <span class="text-muted me-2">:</span>
                                                 <span class="text-dark">{{ @p.pic_nama ?: '-' }}</span>
                                             </div>
-                                            <div class="d-flex">
-                                                <span class="text-muted" style="width: 120px; flex-shrink: 0;">Estimasi Biaya</span>
+                                            <div class="d-flex align-items-center">
+                                                <span class="text-muted" style="width: 120px; flex-shrink: 0;">
+                                                    {{ @p.jenis_layanan_opti == 'lingkungan' ? 'Total Tarif Uji' : 'Estimasi Biaya' }}
+                                                </span>
                                                 <span class="text-muted me-2">:</span>
                                                 <strong class="text-primary font-monospace">Rp {{ number_format(@p.estimasi_biaya ?: (@p.estimasi_total_biaya ?: 0), 0, ',', '.') }}</strong>
+                                                <check if="{{ @p.jenis_layanan_opti == 'lingkungan' && @p.total_parameter_lingkungan > 0 }}">
+                                                    <span class="badge bg-light text-secondary border ms-2" style="font-size: 0.72rem;">
+                                                        <i class="bi bi-check2-circle text-success me-1"></i>{{ @p.total_parameter_lingkungan }} Parameter
+                                                    </span>
+                                                </check>
                                             </div>
                                         </div>
                                     </div>
 
                                     <!-- Action Buttons -->
                                     <div class="d-flex justify-content-between align-items-center pt-2 border-top">
-                                        <check if="{{ @p.file_proposal }}">
-                                            <a href="{{ @BASE }}/{{ @p.file_proposal }}" target="_blank" class="btn btn-outline-danger btn-sm py-1 px-2.5 fw-medium" style="font-size: 0.78rem;">
-                                                <i class="bi bi-file-earmark-pdf me-1"></i> File
-                                            </a>
+                                        <check if="{{ @p.jenis_layanan_opti == 'lingkungan' }}">
+                                            <true>
+                                                <check if="{{ @p.file_proposal }}">
+                                                    <true>
+                                                        <a href="{{ @BASE }}/{{ @p.file_proposal }}" target="_blank" class="btn btn-outline-danger btn-sm py-1 px-2.5 fw-medium" style="font-size: 0.78rem;">
+                                                            <i class="bi bi-file-earmark-pdf me-1"></i> Berkas
+                                                        </a>
+                                                    </true>
+                                                    <false>
+                                                        <a href="{{ @BASE }}/order/{{ @p.id }}/biaya-lingkungan" class="btn btn-outline-secondary btn-sm py-1 px-2.5 fw-medium" style="font-size: 0.78rem;" title="Lihat rincian kalkulasi parameter dan tarif">
+                                                            <i class="bi bi-calculator me-1"></i> Rincian Tarif
+                                                        </a>
+                                                    </false>
+                                                </check>
+                                                <a href="{{ @BASE }}/order/{{ @p.id }}" class="btn btn-success btn-sm px-3 py-1 fw-semibold">
+                                                    <i class="bi bi-shield-check me-1"></i> Review &amp; Setujui Tarif
+                                                </a>
+                                            </true>
+                                            <false>
+                                                <check if="{{ @p.file_proposal }}">
+                                                    <true>
+                                                        <a href="{{ @BASE }}/{{ @p.file_proposal }}" target="_blank" class="btn btn-outline-danger btn-sm py-1 px-2.5 fw-medium" style="font-size: 0.78rem;">
+                                                            <i class="bi bi-file-earmark-pdf me-1"></i> File Proposal
+                                                        </a>
+                                                    </true>
+                                                    <false>
+                                                        <span class="text-muted small" style="font-size: 0.75rem;"><i class="bi bi-file-earmark me-1"></i> Draft Tanpa File</span>
+                                                    </false>
+                                                </check>
+                                                <a href="{{ @BASE }}/order/{{ @p.id }}" class="btn btn-success btn-sm px-3 py-1 fw-semibold">
+                                                    <i class="bi bi-shield-check me-1"></i> Review &amp; Approval
+                                                </a>
+                                            </false>
                                         </check>
-                                        <check if="{{ !@p.file_proposal }}">
-                                            <span class="text-muted small" style="font-size: 0.75rem;">Tanpa Berkas</span>
-                                        </check>
-
-                                        <a href="{{ @BASE }}/order/{{ @p.id }}" class="btn btn-success btn-sm px-3 py-1 fw-semibold">
-                                            <i class="bi bi-shield-check me-1"></i> Review &amp; Approval
-                                        </a>
                                     </div>
 
                                 </div>
@@ -220,7 +271,7 @@
                         <th class="ps-3 ps-md-4" style="width: 140px;">No. Order</th>
                         <th>Pelanggan</th>
                         <th>Kegiatan</th>
-                        <th>PIC Proposal</th>
+                        <th>PIC Teknis / Pelaksana</th>
                         <th>Status</th>
                         <th class="text-end pe-3 pe-md-4" style="width: 100px;">Aksi</th>
                     </tr>
@@ -257,12 +308,12 @@
                             <td>
                                 <check if="{{ @row.status_proposal_biaya == 'siap_penawaran' }}">
                                     <span class="badge bg-success-subtle text-success border border-success-subtle fw-medium">
-                                        <i class="bi bi-check-circle-fill me-1"></i> Proposal Disetujui
+                                        <i class="bi bi-check-circle-fill me-1"></i> {{ @row.jenis_layanan_opti == 'lingkungan' ? 'Tarif Disetujui' : 'Proposal Disetujui' }}
                                     </span>
                                 </check>
                                 <check if="{{ @row.status_proposal_biaya == 'draft' || !@row.status_proposal_biaya }}">
                                     <span class="badge bg-light text-secondary border fw-medium">
-                                        <i class="bi bi-pencil-square me-1"></i> PIC Menyusun Proposal
+                                        <i class="bi bi-pencil-square me-1"></i> {{ @row.jenis_layanan_opti == 'lingkungan' ? 'Penyusunan Tarif Lab' : 'Penyusunan Proposal' }}
                                     </span>
                                 </check>
                             </td>

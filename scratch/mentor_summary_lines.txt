@@ -1,0 +1,134 @@
+L10: Ya. Yang kedua, kalaupun misalnya sistem ini bisa dikirim ke belakang, jadi opsinya bisa dua nih. Si ini itu bisa diisi oleh tim mitra, bisa, diisi oleh tim belakang juga bisa. Cuman yang kemarin itu kan sudah oke nih. Begitu ini dikirim ke belakang, berarti harusnya yang diinput oleh tim mitra juga dapat nih. Ya kan? Misalkan diisi oleh tim mitra nih, ini bisa dilaksanakan, ini bisa dilaksanakan, SDM. ada dan lain-lain kan. Berarti tim mitra itu ngirim ke belakang itu tetap terkirim datanya ke belakang ke Opti. Cuman Opti itu statusnya bukan ngisi itu lagi tapi dia menentukan PIC dan proposal.
+L11: Proposal
+L20: Jadi PJT-nya enggak masuk ya, Pak?
+L22: PJT-nya enggak masuk.
+L23: PJT enggak. PJT mah enggak masuk di sini. Masuk.
+L24: Harusnya PJT sih masuk ya. Tapi PJ PJT itu masalahnya gini, PJT itu kan tim bentukan baru baru berdiri tahun ini
+L25: baru establish-nya tuh tahun 2026 ini dibentuknya. Tapi nanti ketika kepala balai ganti kan bisa jadi PJT itu tuh enggak ada.
+L26: Jadi kebijakan pimpinan itu, tim PJT itu ee untuk mengurangi beban tim mitra. Tim mitra itu kan istilahnya sekarang tuh palugada ya. Jadi dia itu kalau ada penawaran, ada permintaan dan lain-lain, dia itu merespon.
+L27: Tapi di satu sisi dia juga harus membuat marketing ke pelanggan, harus bikin terobosan-terobosan dan lain-lain gitu kan. Nah, sehingga displitlah sekarang itu timnya yang ternyata tim mitra itu segala diborong pemasaran gitu loh ya. Tim pemasaran diborong sekarang dipersempit tim mitra itu. Tim mitra itu sekarang lebih ke menangani layanan yang berjalan
+L28: yang yang sedang berjalan nih. Tapi kalau tim PJT dia lebih kepada ekspansi pengembangan layanan. Misalnya contohnya pengujian itu belum ada pengujian ee teknik A misalnya belum ada nih pengujian teknik A. Nah, tugasnya si tim PJT mengembangkan supaya teknik A ini bisa ada
+L30: bukan dia yang ngurusin lagi nih tim karena tim mitra sudah berkutat dengan surat penawaran, bikin penagihan, kegiatan seminar dan lain-lain. dan apa pameran dan lain-lain dia sudah sibuk bikin revisi tarif itu kan dan lain-lain karena apa namanya hubungan dengan pelanggan. Jadi dia lebih kepada pelanggan yang sudah order. Kalau yang PJT lebih kepada ordernya tuh belum ada pelanggannya belum ada. Dia harus nyari pelanggan baru, nyari ruang lingkup baru, nyari ee terobosan-terobosan baru untuk dipromosikan, didapatkan, gitu. Kebayang enggak? juga
+L35: Nah, itu tim mitra itu seperti itu. Jadi yang sedang berjalan kalau tim PJT itu yang akan berjalan yang mau yang mau diproses atau layanan baru, pelanggan baru, layanan baru, dan lain-lain.
+L36: Soalnya kata Pak juga cenah ini itu harusnya ee di PJT kan, Pak. Ee cuman ini juga bisa sih diwakilin sama saya, tapi coba aja loundingin dulu sama Pak Hendy katanya gitu, Pak.
+L37: PJT.
+L39: M PJT. itu ee Andri coba ya.
+L42: telepon-telepon enggak ngangkat lagi keluar katanya enggak tahu ke mana.
+L71: ketika penawaran perintaan permintaan Oke.
+L74: biasanya itu di WA kan di grup di grup WA misalnya di tim itu ini bisa enggak tapi kalau masuk ke sistem itu bukannya lebih cepat jadi lama karena kan pindah
+L79: Ya bisa di tim teknis tapi itu ee terpisah dengan yang analisis PJT. Betul ya?
+L80: Nah, PJT ini apakah mau dimasukkan apa enggak nih?
+L81: Karena di di PJT juga ada analisis yang sama.
+L84: ketika buat penawarannya itu terjudul nih, Pak.
+L87: nanti PJT itu kan masalahnya ini belum tentu available seterusnya.
+L89: Jadi nanti kamu tuh cukup menerima order aja dari sistem ya dari tim mitra bahwa ini ada permintaan ini. Nanti di belakang itu kamu sounding sendiri aja ke tim mitra ke PJT ini bisa dilaksanakan apa enggak gimana
+L92: Iya. Jadi soalnya kalau nanti PJT harus login
+L94: Iya. Iya. Soalnya PJT kan baru berjalan tahun ini masalahnya apakah PJTnya akan nanti tahun depan tetap ada kan kita juga enggak tahu.
+L96: form evaluasinya. itu dari apa? Dari surat penawaran. Eh, dari surat dari surat
+L97: surat penawaran. Nah, itu ngambil atau apa?
+L98: Oh, kalau berarti kalau dari surat penawaran itu beda lagi itu udah udah udah deal berarti udah udah diskusi
+L100: kan sudah ada surat penawaran
+L107: ya untuk hal yang sama berarti saya saya nanti input di sistem nanti PT nanya lagi gitu dimasukkan ke activity diagram
+L110: kayaknya saya juga enggak tahu ya kalau PJT itu ng-review proposal gitu ya
+L111: ng-review penawaran
+L112: penawaran
+L113: iya sebentar dikat dulu di sini maksud Andri berarti PJT mer-review penawaran iya kan nah kita sebelum kita sebelum penawaran nih kita back dulu ke belakang jadi ketika ada surat permintaan dari pelanggan
+L114: kan permintaan ini kan harus direspon nih oleh tim mitra dibalas surat penawaran.
+L115: Nah, untuk merespon surat permintaan ini dibutuhkan data oleh tim mitra. Apakah ini memenuhi enggak? Misalkan SDM-nya ada
+L122: Evaluasi tim PJT pertanyaan yang sama masalahnya pertanyaannya sama
+L123: bukan ini kan kita mau ngirim blue surat penawaran
+L129: itu nanti. Oh nanti ketika surat penawaran sudah dibalas sama mereka.
+L131: Nah, berarti maksud Andri surat penawaran yang dikirim ke pelanggan itu kita mengabaikan analisa itu
+L141: tapi kan dijawab ya dan tidaknya kan tetap harus dikirim surat penawaran berubah pertanyaannya
+L145: nanti setelah proyek itu mau jalan atau diskusi dengan PJT.
+L158: ketika surat penawaran itu sudah disampaikan ke mereka ya kan
+L160: bisa dikirim dulu ke mereka bisa tidaknya ketika mereka masuk ke baru didiskusikan diskusikan.
+L165: iya jadi maksud Pak Andri itu nanti akan tetap diisi cuman diisinya kebalikan kalau yang sebelumnya adalah tim mitra sebelum menjawab surat penawaran itu harus Kalau dari tim Pak jawab dulu surat penawarannya baru nanti itu dibahas
+L168: dibahas oleh dengan tim PJT dengan tim PJT bahas internal aja ya sendiri
+L169: ya jadi tim PJT maksud saya biar enggak terlalu banyak user login dan alur kendalinya terlalu banyak PJT tapi dibahas di tim
+L170: iya di tim aja jadi PJT enggak dimasukkan Iya, enggak apa-apa. Tapi maksudnya saya ada waktu untuk membahas jangan di awal.
+L194: soalnya PJ PJT enggak diaudit sih harusnya PJT juga di
+L195: kan PJT belum ada itunya SOP-nya apa
+L196: iya makanya ini nganin ke PJT ini kan temuan dari
+L197: Iya maksudnya tuh maksudnya tuh tetap itu nanti akan diisi. sama Pak Pak Andri. Cuman dia ngisinya hanya dibalik aja. Ketika kalau Peri kan tim mitra itu butuh jawabannya. Ketika saya membuat surat penawaran saya butuh jawaban kan dari orang teknis ini tuh bisa dilaksanakan apa tidak. Intinya kan gitu kan berdasarkan poin-poin tadi empat empat itu. Tapi kalau Pak Andri jawabnya gini ini bisa dilaksanakan tapi untuk poin tadi dibahas dulu sama PJP tapi ke pelanggan jawab dulu bisa gitu.
+L207: Nanti begitu dikirim ke K peri ke tim mitra itu kan masih kosong tuh enggak apa-apa dia beralur aja prosesnya beralur. Nanti tim mitra menjawab surat ee penawaran
+L209: nanti generate surat penawaran diprint kan di-upload ke sistem nanti ketika di-upload lanjut ke sana ke tim ke tim keuangan
+L215: Padahal kan di surat penawaran sudah enggak. Di surat penawaran kan baru waktunya kan 30 hari. Tapi kan deal-nya itu tanggal SPM-nya dihitung kalau dia tanggal bayar dan
+L232: Cuman karena kebijakan pimpinan itu displit kalau dulu tuh satu tim itu sebetulnya cuman untuk memudahkan atau gimana ya displit gitu ya. Jadi kita ulangi lagi ini dibikin fleksibel aja ngirim ke tim mitra disposisi ke belakang orang belakang cukup jawab bisa dilaksanakan atau tidak tanpa harus mengisi itu.
+L233: Ee enggak perlu nanti begitu sampai ke tim mitra dia langsung dapat jawaban ini bisa dilaksanakan. Tugas dia adalah langsung bikin surat penawaran penawaran by system ya kan. Makanya ee sudah dapat belum contoh-contoh surat penawaran
+L236: contoh-contoh surat penawaran untuk opti ya. Nah nanti di dari surat-surat penawaran itu saya yakin pasti ada beda-beda nih. Nah dari beda-beda itu tolong kalian cari persamaannya secara global apa dibikin satu template. Kalaupun di sini ada beda, ini ada beda, akomodir perbedaannya masukkan ke dalam surat itu ya. Misalkan
+L237: di surat ini ada pernyata an apa atau tentang apa gitu ya. Di sini enggak ada. Nah, ambillah yang ini. Masukkan juga ke situ.
+L240: Heeh. Gitu ya. Nanti pas begitu sudah dari tim mitra dilakukan surat print
+L241: surat penawaran berdasarkan data itu, Teh. Tanggal berapa lama, berapa biayanya input-input
+L243: ke upload ya. Upload dulu dokumen surat penawaran lalu dikirim ke tim keuangan. Itu juga kalau surat P penawarannya sudah deal ya kan dia si tim mitra itu bisa jadi ngirimnya lebih dari satu kali penawaran bisa jadi tadi harganya berapa kurangin lagi. Nah untuk pengurangan harga misalkan gini tim mitra sudah ngasih harga Rp55 juta ke sana ke pesat penawaran kan bisa jadi dia nawar kan. Nah ketika dia nawar si tim mitra ini di status order enggak perlu dikembalikan ke opti. Misalkan harganya kan turun kan misalkan dari Rp55 juta dia si pelanggan awar
+L255: enggak usah enggak apa-apa ditimpah aja. Kenapa? Karena dia sudah ada record di surat penawaran yang di-upload.
+L257: iya kan di surat penawaran kan sudah di-upload bahwa ini dulu ditolak bikin lagi surat penawaran baru kan berdasarkan tanggal yang kamu edit tadi. Waktunya berubah biayanya berubah berarti kan disimpan bikin surat pan baru print. Nah nanti kalau itu disetujui
+L258: baru surat itu order itu itu dikirimkan ke kalau misalnya
+L262: biaya yang surat penawaran yang terakhir
+L266: jadi enggak dipusingkan dengan suat penawaran yang gagal dulu
+L274: langsung ketuanya aja. Tim mitra sudah dilewat karena tim mitra ranahnya cuma sampai surat penawaran
+L286: kirimnya Jadi kita ada tabel tanggal ibu.
+L291: Nih kita sudah ada namanya tabel libur.
+L292: Tabel tanggal libur. Apa lupa tabelnya? Nah ini kan tanggal libur nih
+L293: ya kan. Nah tanggal 17 sama tanggal 25 kita masukkan ke tabel tanggal libur.
+L294: Udah udah udah udah kita masukkan. Jadi tugas kalian adalah ketika dia ordernya masuk tanggal 3 Maka tanggal 3 itu harus dihitung 30 harinya tanggal berapa
+L296: ada ada berapa tanggal libur di tabel itu. Jadi maksudnya gini
+L314: nanti kita sudah ada tanggal tabel tanggal libur
+L315: jadi tugas Pak Pandi nanti setiap awal tahun memasukkan tanggal-tanggal libur tanggal berapa aja di di tabel itu
+L322: atau tanggal sampel sudah diinput maka tugasnya adalah ketua tim atau lingkungan disposisi ke
+L340: Sama kan dengan saya ini saya tanda tangan saya kasih ke pimpinan untuk ditanda tangan misalnya atau ke ketua tim. Nah, itu gunanya sama kayak kemarin QRCOD dari Sipat. Nah, itu kan QR code itu itu bisa nanti muncul kan kapan dia menerima, kapan dia mendisposisikan, kapan tanggal dia ini, kapan validator itu mendatang. Ini kan bisa munculnya.
+L359: maka sistem kamu akan mendeteksi. Oh, berarti nanti tampilannya seperti ini. Grafik apa tabelnya di sini mana, Pak?
+L362: ya. Nah, itu istilahnya tuh kalau kita sebutnya tuh kalau saya sebutnya template. Jadi kalian sudah punya template, kalau 3 bulan, maka panggil template ini. Kalau 6 bulan, panggil template yang ini. Kalau setahun panggil template yang ini, gitu. Jadi bukan kamu nanti bisa jadi kan bisa jadi kamu bikin otomatis kan 3 bulan bikin tabel otomatis generan, gitu kan daripada ini udah aja bikin template.
+L365: kotaknya tabelnya. Kalau 6 bulan misalkan ah 6 bulan cukup panggil template yang ini. Jadi kamu siapkan dulu file-nya
+L367: Jadi pilihannya nanti berdasarkan berapa lama panggil template biar mudah daripada pusing ini kalau 2 6 bulan setahun wah harus gimana nih generate tabelnya dan lain-lain gitu kan.
+L393: Jadi saya ngontrolnya tuh di tabel ini untuk akses semua sistem yang ada di sini. Karena tabelnya cuman satu tabel loginnya
+L414: Nah, user itu nanti munculkan dari tabel ini data nama-namanya kamu ngambil dari tabel database ini bukan dari database opti
+L429: masuk ke sini
+L456: Nanti user ini untuk menentukan role model kan nanti munculkannya tabel arsif surat ini.
+L460: yang buat tabel masalah PT atau peneliti gitu.
+L461: Ini ngambil dari tabel ini.
+L463: Iya. Nanti dari tabel ini username kan ada nih username.
+L473: jadi maksudnya gini. User di sini itu enggak usah semua dimunculkan. Kamu di sini tambahkan dulu, cari siapa di sini yang mau dimasukkan.
+L478: Tambahkan Bu Rina. Oh Bu Rina sebagai apa? Sebagai kat opti selulosa. Klik tambahkan masuk sini.
+L481: Kalau yang enggak ada di sini nanti dia bisa login karena loginnya ngambil dari tabel ini. Bukan dari tabel ini. Ini hanya pendeskripsian roll.
+L488: apa apa opti selosa apa lingkungan. Pilih misalkan kat tim selosa klik masuk aja.
+L512: Nah, di sini kan ada ee daftar pengguna. Nah, gini aja kan juga yang ngelogin ke sian kan namanya dari tabel sana loginnya apa, kategorinya dia apa ya handphone boleh. ditambahkan kalau men saya enggak usah
+L528: Ah berarti PJT enggak perlu ya, Pak? User baru lagi
+L529: saya. PJT enggak usah.
+L531: Karena ya menurut saya untuk saat ini ya untuk saat ini enggak usah biar nanti ke PJT itu mereka manual aja lah.
+L534: Jadi nanti kalau hasil keputusan dengan PJT bagaimana ya cukup Pak Andri yang nginput. gitu. Karena nanti kalau login disposi ke sana sini login wah lama kya PJT baru sih belum tentu takutnya tahun depan masih ada kan kita juga enggak tahu oke oke apalagi
+L536: oke ini saya nitip tadi kasih tahu ipul maksudnya gitu ya yang tadi yang user itu masuk
+L539: mau minta tabel buat salat masuknya masuk sama
+L540: tabel Oh tabel salat masuk
+L541: i soalnya kan saya masih yang saya buatan saya sendiri Oke, saya kirim surat masuk.
+L542: Nah, surat masuk ya maksud saya gini sekalian saya jelaskan nih. Surat masuk. Surat masuk itu ada di tabel surat masuk. Eh, kok enggak muncul? Kok enggak muncul sampai surat masuk? Nah, kabel surat masuk itu ada di sini. K surat masuk itu ada di sini. Tabel surat masuk itu ada tabel apa ya, Pan?
+L543: Arsib surat.
+L544: Oh, arsif surat. surat ya, bukan surat masuk ya.
+L546: Nah, ini ini dulu ceritanya mau kita integrasikan tapi gagal. Jadi, tapi karena sudah gagal jadi nanti tabel surat masuk itu dari sini cari tabel arsif surat
+L550: Emang ini apa arsip surat masuknya dari ini ya?
+L551: Iya arsip surat semuanya.
+L552: Surat ya surat masuk ke disposisi dari hal Oh iya benar ya. Jadi nanti ini tabel arsif surat masuk ya. Terus ee surat masuk. Oh, baru surat permohonannya baru ada surat Per
+L555: Surat permohonan.
+L557: surat permohonan nih. Surat D permohonan. Jadi kalau nanti dia surat masuknya itu berkaitan dengan opti
+L558: nanti kan diinput nih ke sini. Diinput nanti surat permohonannya berarti di sini. Iya.
+L559: Kalau dia bukan surat permohonan berarti dia statusnya surat umum. Kayak misalkan ada surat dari dinas Surat dari sekolah praktin, surat dari kalian magang hub itu kan enggak ada hubungan dengan layanan dengan permohonan.
+L561: Jadi nanti kalian ee contohnya ini saya kirim tabelnya ya. Nanti kamu input aja ceritanya itu surat permohonan misalkan di sini ya. Ya, nanti kamu bikin satu f baru di sini ee bikin enum aja layanannya apa? Opti lingkungan Opti solusa itu ya. Ini surat baru opti nih ya. Berarti yang mau mau kita linkkan dengan surat surat permohonan. Kalau yang lain belum ini en oke gitu ya. Jadi
+L569: Tambahkan satu opti baru. Nanti ini fil ini berkaitan dengan permohonan ya. Still permohonan. surat permohonan. Nah, jadi kalau surat permohonan, kalau surat permohonan ini diceklis, He.
+L572: Ya kan? Karena ini surat permohonan berarti harus disebutkan surat permohonan untuk opti apa, opti selusa atau opti lingkungan? Nanti saya hubungkan juga dengan layanan lain. Saya tambahkan nih. Ini ada sertifikasi. kalibrasi, pengujian dan lain-lain. Cuman ini contoh yang officeosa mau kita kekkan dengan surat. Oke. Satu ya.
+L573: Ini ini untuk surat masuk ya.
+L575: Ini belum surat keluarnya nih. Tenang. Mau ke mana sih?
+L576: Nah, ini surat keluar.
+L578: Surat keluar. Surat keluar. Ya, ini surat keluar. Nah, surat keluar ini saya copy lagi. Nah, surat keluar nanti tolong kamu tambahkan di sini. Ini kan sudah ada nih. Kalau surat keluar ini sudah sinkron dengan layanan lain karena berkaitan dengan ee layanan. Kalau tadi kan surat masuk kan belum kita hubungkan dengan layanan. Tadi cuman baru permintaan. Tapi kalau misalkan surat keluar ini sudah kita hubungkan dengan pengujian sertifikasi ya dengan pengujian sama sertifikasi. Oke. Nah, berarti nanti kamu tambahkan di sini, di sini di sini tambahkan dipilih sis opti.
+L579: Diplis opti dipilih ya. Nanti saya transangkan di sini saya tulis ini surat masuk sekarang
+L580: surat keluar.
+L581: Sekarang surat keluar. Nah, ini ini. nya ya. Nah, ini tolong tambahkan sama ya. Tolong tambahkan tambahkan fill ini samain aja dengan ini ya. Ini kan dipilih sistifikasi ya berarti di sini opti fill dipilih sis opti itu kan tipenya. sama kan enum ya gitu kan. Nah ini harus berkaitan dengan pil ini surat penawaran surat penawaran.
+L583: surat penawaran ini kan ini kan surat keluar nih.
+L585: Surat keluar. Surat keluar itu kan tidak harus selalu surat penawaran. surat keluar tuh bisa jadi ngebalas surat dari pusat, bisa ngebalas surat anak Prakerin, bisa surat untuk dinas, bisa surat untuk industri, tapi bukan penawaran
+L586: kayak surat balasan
+L587: ya. Surat balasan lah untuk surat keluar itu kan banyak kan surat keluar itu. Nah, tapi ada kita itu bikin surat keluar untuk balasan surat permintaan yang tadi itu permintaan dari pelanggan ya kan tadi kan permohonan
+L588: berarti kalau itu permohonan ceklis kan berarti di sini di sini ada surat penawaran ceklis jadi ya. Kalau dia iya, maka nanti dia harus pilih surat penawaran itu. Surat penawaran apa? Apakah pengujian, apakah sertifikasi atau opti nanti yang kamu bikin di sini
+L590: nanti kalau misalkan yang dipilihnya adalah opti, optinya iya, maka munculkanlah di menu surat
+L591: penawar nanti di penawaran itu.
+L592: Penawaran
+L594: enggak lumayan, Pak. Lumayan ada tantangan. P surat peng tolong ditambahkan pil pil ini ya pil baru semangat.
+L596: Nah ini ini namanya kita mengintegrasikan. Jadi yang sistem yang kalian bikin untuk opti itu semuanya terintegrasi dengan apa? Surat masuk terintegrasi, surat keluar terintegrasi, login terintegrasi semuanya terintegrasi. Satu data. Lumayan ya.

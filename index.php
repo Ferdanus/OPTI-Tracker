@@ -41,7 +41,7 @@ try {
     // Simpan object database ke hive F3 agar bisa diakses global
     $f3->set('DB', $db);
 
-    // Setup koneksi kedua (Database Eksternal Sekretariat untuk Surat Masuk)
+    // Setup koneksi kedua (opsional, jika tidak ada fallback ke DB utama sil2020)
     try {
         if ($f3->exists('db_sekretariat_dns') && $f3->get('db_sekretariat_dns')) {
             $dbSekretariat = new \DB\SQL(
@@ -51,12 +51,11 @@ try {
             );
             $f3->set('DB_SEKRETARIAT', $dbSekretariat);
         } else {
-            $f3->set('DB_SEKRETARIAT', null);
+            $f3->set('DB_SEKRETARIAT', $db);
         }
     } catch (\Exception $eSekretariat) {
-        // Jangan gagalkan seluruh aplikasi jika DB eksternal sedang offline
-        error_log("DB Sekretariat Connection Failed: " . $eSekretariat->getMessage());
-        $f3->set('DB_SEKRETARIAT', null);
+        // Fallback ke DB utama jika eksternal gagal
+        $f3->set('DB_SEKRETARIAT', $db);
         $f3->set('DB_SEKRETARIAT_ERROR', $eSekretariat->getMessage());
     }
 } catch (\Exception $e) {
@@ -84,21 +83,9 @@ $f3->set('ONERROR', function($f3) {
     echo '</div>';
 });
 
-// Route Beranda -> redirect sesuai peran pengguna
+// Route Beranda -> langsung ke dashboard
 $f3->route('GET /', function($f3) {
-    if (session_status() === PHP_SESSION_NONE) {
-        session_start();
-    }
-    $role = $_SESSION['role'] ?? '';
-    if ($role === 'tim_kerja') {
-        $f3->reroute('/proposal');
-    } elseif ($role === 'ketua_tim') {
-        $f3->reroute('/disposisi-masuk');
-    } elseif ($role === 'sekretaris') {
-        $f3->reroute('/surat-masuk');
-    } else {
-        $f3->reroute('/order');
-    }
+    $f3->reroute('/dashboard');
 });
 
 // ==========================================
@@ -117,6 +104,8 @@ $f3->route('POST /logout', 'AuthController->logout');
 $f3->route('GET /profil', 'AuthController->profileGet');
 $f3->route('POST /profil/simpan', 'AuthController->profilePost');
 
+$f3->route('GET /dashboard', 'DashboardOptiController->index');
+
 // ==========================================
 // ROUTE MODUL CUSTOMER / KLIEN (tb_customer)
 // ==========================================
@@ -133,6 +122,15 @@ $f3->route('POST /customer/simpan', 'CustomerController->simpan');
 $f3->route('GET /customer/@id/edit', 'CustomerController->edit');
 $f3->route('POST /customer/@id/update', 'CustomerController->update');
 $f3->route('POST /customer/@id/hapus', 'CustomerController->hapus');
+
+// ==========================================
+// ROUTE MASTER DATA PENGGUNA (tb_arsipuser)
+// ==========================================
+$f3->route('GET /pengguna', 'PenggunaController->index');
+$f3->route('GET /data-pengguna', 'PenggunaController->index');
+$f3->route('POST /pengguna/simpan', 'PenggunaController->simpan');
+$f3->route('POST /pengguna/ubah', 'PenggunaController->ubah');
+$f3->route('POST /pengguna/hapus', 'PenggunaController->hapus');
 
 // ==========================================
 // ROUTE MASTER DATA PIC PENELITI (tb_arsipuser.si_opti)
@@ -176,6 +174,8 @@ $f3->route('POST /order/@id/proposal/review-katim', 'OrderController->reviewProp
 $f3->route('GET /order/@id/proposal/pdf', 'OrderController->previewProposalPdf');
 $f3->route('GET /order/@id/proposal/raw-data', 'OrderController->proposalRawData');
 $f3->route('POST /order/@id/respon-klien', 'OrderController->responKlien');
+$f3->route('POST /order/@id/terima-sampel', 'OrderController->simpanTerimaSampel');
+$f3->route('POST /order/@id/konfirmasi-pembayaran', 'OrderController->konfirmasiPembayaran');
 
 // ==========================================
 // ROUTE MODUL PEMBAYARAN MULTI-TERMIN & INVOICE
@@ -192,6 +192,7 @@ $f3->route('POST /order/@id/pembayaran/simpan', 'PembayaranController->simpanDar
 // ==========================================
 // ROUTE MODUL BAST & PENUTUPAN ORDER
 // ==========================================
+$f3->route('GET /order/@id/bast', 'BastController->formBast');
 $f3->route('GET /order/@id/bast/buat', 'BastController->formBast');
 $f3->route('POST /order/@id/bast/simpan', 'BastController->simpanBast');
 $f3->route('POST /order/@id/bast/tutup', 'BastController->tutupOrder');
@@ -271,8 +272,11 @@ $f3->route('POST /surat-penawaran/@id/delete', 'SuratPenawaranController->delete
 $f3->route('GET /surat-penawaran/@id/delete', 'SuratPenawaranController->delete');
 $f3->route('GET /order/@id/penawaran/buat', 'SuratPenawaranController->buatDariOrder');
 $f3->route('POST /order/@id/penawaran/simpan', 'SuratPenawaranController->simpanDariOrder');
+$f3->route('GET|POST /order/@id/penawaran/preview-pdf', 'SuratPenawaranController->previewPdf');
 $f3->route('GET /order/@id/penawaran/cetak', 'SuratPenawaranController->cetakPdf');
 $f3->route('POST /order/@id/penawaran/status', 'SuratPenawaranController->updateStatusKlien');
+
+$f3->route('GET /surat/@id', 'OrderController->showSurat');
 
 
 // ==========================================

@@ -1,7 +1,7 @@
 <div class="container-fluid px-0">
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom flex-wrap gap-2">
-        <h4 class="fw-bold text-dark m-0 font-display">Kaji Ulang Kelayakan &amp; Penunjukan PIC</h4>
+        <h4 class="fw-bold text-dark m-0 font-display">Kaji Ulang Kelayakan &amp; Penunjukan Ketua Tim Pelaksana</h4>
         <a href="{{ @BASE }}/order/{{ @order.id }}" class="btn btn-light btn-sm text-secondary px-3 py-1.5 fw-medium border">
             <i class="bi bi-arrow-left me-1"></i> Kembali ke Detail Order
         </a>
@@ -75,7 +75,7 @@
             <form action="{{ @BASE }}/order/{{ @order.id }}/tinjauan" method="POST">
                 <div class="card border rounded-3 bg-white shadow-xs">
                     <div class="card-header bg-white py-3 px-3 px-md-4 border-bottom d-flex justify-content-between align-items-center">
-                        <h6 class="m-0 fw-bold text-dark font-display">Evaluasi Kelayakan &amp; Penugasan PIC</h6>
+                        <h6 class="m-0 fw-bold text-dark font-display">Kaji Kelayakan Teknis</h6>
                         <check if="{{ !@can_edit }}">
                             <span class="badge bg-light text-secondary border">Mode Lihat Saja</span>
                         </check>
@@ -85,65 +85,25 @@
                         <check if="{{ !@can_edit }}">
                             <div class="alert alert-warning border-0 d-flex align-items-center mb-3 py-2 px-3 small rounded-3">
                                 <div>
-                                    <strong>Mode Lihat Saja (Read-Only)</strong>: Kaji ulang kelayakan teknis dan penunjukan PIC merupakan wewenang <strong>Ketua Tim OPTI</strong>. Anda dapat melihat data tetapi tidak dapat mengubah keputusan.
+                                    <strong>Mode Baca:</strong> Kaji kelayakan teknis merupakan wewenang Ketua Tim OPTI.
                                 </div>
                             </div>
                         </check>
 
-                        <!-- 1. Kesiapan Sumber Daya (SDM, Alat, Bahan, Metode) -->
-                        <!-- 1. Kesiapan Sumber Daya (SDM, Alat, Bahan, Metode) -->
+                        <!-- 1. Keputusan Kelayakan -->
                         <div class="mb-4">
-                            <label class="form-label small fw-bold text-dark mb-2">Kesiapan Sumber Daya &amp; Teknis:</label>
-                            
-                            <div class="row g-2 mb-2">
-                                <div class="col-sm-6">
-                                    <div class="p-2 border rounded bg-light d-flex align-items-center">
-                                        <input class="form-check-input mt-0 me-2" type="checkbox" name="sdm_tersedia" id="sdm_tersedia" value="1" {{ @tinjauan && @tinjauan.sdm_tersedia ? 'checked' : '' }} {{ !@can_edit ? 'disabled' : '' }} onchange="checkReadinessAndLock()">
-                                        <label class="form-check-label small fw-semibold text-dark cursor-pointer mb-0" for="sdm_tersedia">
-                                            Personil / SDM Analis Siap
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="col-sm-6">
-                                    <div class="p-2 border rounded bg-light d-flex align-items-center">
-                                        <input class="form-check-input mt-0 me-2" type="checkbox" name="peralatan_tersedia" id="peralatan_tersedia" value="1" {{ @tinjauan && @tinjauan.peralatan_tersedia ? 'checked' : '' }} {{ !@can_edit ? 'disabled' : '' }} onchange="checkReadinessAndLock()">
-                                        <label class="form-check-label small fw-semibold text-dark cursor-pointer mb-0" for="peralatan_tersedia">
-                                            Peralatan &amp; Alat Uji Siap
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="col-sm-6">
-                                    <div class="p-2 border rounded bg-light d-flex align-items-center">
-                                        <input class="form-check-input mt-0 me-2" type="checkbox" name="bahan_tersedia" id="bahan_tersedia" value="1" {{ @tinjauan && @tinjauan.bahan_tersedia ? 'checked' : '' }} {{ !@can_edit ? 'disabled' : '' }} onchange="checkReadinessAndLock()">
-                                        <label class="form-check-label small fw-semibold text-dark cursor-pointer mb-0" for="bahan_tersedia">
-                                            Bahan Kimia &amp; Reagen Siap
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="col-sm-6">
-                                    <div class="p-2 border rounded bg-light d-flex align-items-center">
-                                        <input class="form-check-input mt-0 me-2" type="checkbox" name="metode_tersedia" id="metode_tersedia" value="1" {{ @tinjauan && @tinjauan.metode_tersedia ? 'checked' : '' }} {{ !@can_edit ? 'disabled' : '' }} onchange="checkReadinessAndLock()">
-                                        <label class="form-check-label small fw-semibold text-dark cursor-pointer mb-0" for="metode_tersedia">
-                                            Metode Uji Tervalidasi
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- 2. Keputusan Kelayakan -->
-                        <div class="mb-4">
-                            <label class="form-label small fw-bold text-dark mb-2">Keputusan Kelayakan Teknis:</label>
+                            <label class="form-label small fw-bold text-dark mb-1">Keputusan Kelayakan:</label>
+                            <p class="text-muted small mb-2">Tentukan kesiapan balai dalam melayani permohonan jasa ini.</p>
                             <div class="row g-3">
                                 <div class="col-sm-6">
-                                    <input type="radio" class="btn-check" name="keputusan" id="kep_layak" value="dapat_dilaksanakan" {{ @tinjauan && @tinjauan.keputusan == 'dapat_dilaksanakan' ? 'checked' : '' }} {{ !@can_edit ? 'disabled' : '' }} onchange="toggleAlasanPenolakan()">
+                                    <input type="radio" class="btn-check" name="keputusan" id="kep_layak" value="dapat_dilaksanakan" {{ @tinjauan && @tinjauan.keputusan == 'dapat_dilaksanakan' ? 'checked' : (!@tinjauan ? 'checked' : '') }} {{ !@can_edit ? 'disabled' : '' }} onchange="toggleAlasanPenolakan()">
                                     <label class="choice-radio-card card-layak w-100 rounded-3 text-start p-3 d-flex flex-row align-items-center" id="label_card_layak" for="kep_layak" style="cursor: {{ @can_edit ? 'pointer' : 'default' }}; min-height: 72px;">
                                         <div class="card-icon-wrap me-3 flex-shrink-0 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
                                             <i class="bi bi-check-circle-fill fs-4" style="line-height: 1;"></i>
                                         </div>
                                         <div class="card-text-wrap flex-grow-1">
                                             <div class="card-title fw-bold" style="font-size: 0.92rem; line-height: 1.25;">Dapat Dilaksanakan</div>
-                                            <div class="card-subtitle small mt-0.5" style="font-size: 0.74rem; line-height: 1.25;">Sanggup dikerjakan</div>
+                                            <div class="card-subtitle small mt-0.5" style="font-size: 0.74rem; line-height: 1.25;">Sanggup dikerjakan &bull; Lanjut ke Penawaran</div>
                                         </div>
                                     </label>
                                 </div>
@@ -155,43 +115,117 @@
                                         </div>
                                         <div class="card-text-wrap flex-grow-1">
                                             <div class="card-title fw-bold" style="font-size: 0.92rem; line-height: 1.25;">Tidak Dapat Dilaksanakan</div>
-                                            <div class="card-subtitle small mt-0.5" style="font-size: 0.74rem; line-height: 1.25;">Ditolak / tidak sanggup</div>
+                                            <div class="card-subtitle small mt-0.5" style="font-size: 0.74rem; line-height: 1.25;">Ditolak / kapasitas tidak tersedia</div>
                                         </div>
                                     </label>
                                 </div>
                             </div>
-                            <div id="noticeUnready" class="small text-danger mt-2" style="display: none;">
-                                <i class="bi bi-info-circle me-1"></i> Semua 4 parameter kesiapan (SDM, Alat, Bahan, Metode) harus terisi / siap untuk dapat memilih status <strong>Dapat Dilaksanakan</strong>.
+                        </div>
+
+                        <!-- 2. Evaluasi 4 Pilar Kesiapan Laboratorium (Default Siap / Pre-Checked) -->
+                        <div id="boxPilarKesiapan" class="p-3 bg-light rounded-3 border mb-3" style="display: {{ !@tinjauan || @tinjauan.keputusan == 'dapat_dilaksanakan' ? 'block' : 'none' }};">
+                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                <label class="form-label small fw-bold text-dark mb-0">
+                                    <i class="bi bi-shield-check text-primary me-1"></i> Kesiapan Sumber Daya Laboratorium:
+                                </label>
+                                <span id="badgeStandar" class="badge bg-success-subtle text-success border border-success-subtle py-1 px-2.5 fw-semibold" style="font-size: 0.74rem;">
+                                    <i class="bi bi-check2-all me-1"></i> Standar Terpenuhi
+                                </span>
+                            </div>
+                            <p class="text-muted small mb-2" style="font-size: 0.78rem;">
+                                Semua kriteria otomatis siap. Hilangkan centang jika ada alat, bahan, atau personil yang sedang terkendala.
+                            </p>
+                            
+                            <div class="row g-2">
+                                <!-- Pilar 1: SDM / Personil -->
+                                <div class="col-sm-6">
+                                    <div class="p-2 px-3 bg-white border rounded d-flex align-items-center justify-content-between h-100" id="box_sdm">
+                                        <div class="form-check m-0 d-flex align-items-center">
+                                            <input class="form-check-input mt-0" type="checkbox" name="sdm_tersedia" id="check_sdm" value="1" {{ !@tinjauan || @tinjauan.sdm_tersedia ? 'checked' : '' }} {{ !@can_edit ? 'disabled' : '' }} onchange="cekStatusPilar()" style="cursor: pointer;">
+                                            <label class="form-check-label small fw-semibold text-dark ms-2 mb-0" for="check_sdm" style="cursor: pointer; user-select: none;">
+                                                Personil &amp; SDM Analis
+                                            </label>
+                                        </div>
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle" id="badge_sdm" style="font-size: 0.7rem;">Siap</span>
+                                    </div>
+                                </div>
+                                <!-- Pilar 2: Peralatan & Instrumen -->
+                                <div class="col-sm-6">
+                                    <div class="p-2 px-3 bg-white border rounded d-flex align-items-center justify-content-between h-100" id="box_alat">
+                                        <div class="form-check m-0 d-flex align-items-center">
+                                            <input class="form-check-input mt-0" type="checkbox" name="peralatan_tersedia" id="check_alat" value="1" {{ !@tinjauan || @tinjauan.peralatan_tersedia ? 'checked' : '' }} {{ !@can_edit ? 'disabled' : '' }} onchange="cekStatusPilar()" style="cursor: pointer;">
+                                            <label class="form-check-label small fw-semibold text-dark ms-2 mb-0" for="check_alat" style="cursor: pointer; user-select: none;">
+                                                Peralatan &amp; Instrumen
+                                            </label>
+                                        </div>
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle" id="badge_alat" style="font-size: 0.7rem;">Siap</span>
+                                    </div>
+                                </div>
+                                <!-- Pilar 3: Bahan Kimia & Reagen -->
+                                <div class="col-sm-6">
+                                    <div class="p-2 px-3 bg-white border rounded d-flex align-items-center justify-content-between h-100" id="box_bahan">
+                                        <div class="form-check m-0 d-flex align-items-center">
+                                            <input class="form-check-input mt-0" type="checkbox" name="bahan_tersedia" id="check_bahan" value="1" {{ !@tinjauan || @tinjauan.bahan_tersedia ? 'checked' : '' }} {{ !@can_edit ? 'disabled' : '' }} onchange="cekStatusPilar()" style="cursor: pointer;">
+                                            <label class="form-check-label small fw-semibold text-dark ms-2 mb-0" for="check_bahan" style="cursor: pointer; user-select: none;">
+                                                Bahan Kimia &amp; Reagen
+                                            </label>
+                                        </div>
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle" id="badge_bahan" style="font-size: 0.7rem;">Siap</span>
+                                    </div>
+                                </div>
+                                <!-- Pilar 4: Metode Pengujian -->
+                                <div class="col-sm-6">
+                                    <div class="p-2 px-3 bg-white border rounded d-flex align-items-center justify-content-between h-100" id="box_metode">
+                                        <div class="form-check m-0 d-flex align-items-center">
+                                            <input class="form-check-input mt-0" type="checkbox" name="metode_tersedia" id="check_metode" value="1" {{ !@tinjauan || @tinjauan.metode_tersedia ? 'checked' : '' }} {{ !@can_edit ? 'disabled' : '' }} onchange="cekStatusPilar()" style="cursor: pointer;">
+                                            <label class="form-check-label small fw-semibold text-dark ms-2 mb-0" for="check_metode" style="cursor: pointer; user-select: none;">
+                                                Kesiapan Metode Uji
+                                            </label>
+                                        </div>
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle" id="badge_metode" style="font-size: 0.7rem;">Siap</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Alert Dinamis jika salah satu unchecked -->
+                            <div id="alertPilarKendala" class="alert alert-warning border border-warning-subtle py-2 px-3 mt-3 mb-0 rounded-2 small shadow-none" style="display: none;">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-exclamation-triangle-fill text-warning me-2 fs-6"></i>
+                                    <span><strong>Perhatian:</strong> Kriteria yang tidak tercentang menandakan adanya kendala. Tuliskan rincian kendala pada catatan di bawah.</span>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- 3. Tunjuk PIC Proposal (Muncul jika Dapat Dilaksanakan) -->
+                        <!-- 3. Pilih Ketua Tim Pelaksana (Opsional) -->
                         <div id="boxPicProposal" class="mb-3" style="display: {{ !@tinjauan || @tinjauan.keputusan == 'dapat_dilaksanakan' ? 'block' : 'none' }};">
                             <label class="form-label small fw-bold text-dark mb-1">
-                                Tunjuk PIC Penyusun Proposal: <span class="text-danger">*</span>
+                                Penunjukan Ketua Tim Pelaksana / PIC (Opsional):
                             </label>
-                            <select name="pic_proposal_id" class="form-select form-select-sm" id="selectPicProposal" {{ !@can_edit ? 'disabled' : '' }} required>
-                                <option value="">Pilih PIC Peneliti Pelaksana</option>
+                            <select name="pic_proposal_id" class="form-select form-select-sm" id="selectPicProposal" {{ !@can_edit ? 'disabled' : '' }}>
+                                <option value="">-- Tetapkan Nanti Saat PO / Terbitkan Penawaran Terlebih Dahulu --</option>
                                 <repeat group="{{ @daftar_pic ?: [] }}" value="{{ @p }}">
                                     <option value="{{ @p.id_user }}" {{ (@order.pic_proposal_id == @p.id_user) ? 'selected' : '' }}>
-                                        {{ @p.nama_user }} {{ @p.spesialisasi ? ' ('.@p.spesialisasi.')' : '' }}
+                                        {{ @p.nama_user }} ({{ @p.role_label }} - Divisi {{ ucfirst(@p.spesialisasi) }})
                                     </option>
                                 </repeat>
                             </select>
+                            <small class="text-muted d-block mt-1" style="font-size: 0.76rem;">
+                                Opsional. PIC pelaksana teknis dapat ditentukan sekarang atau saat penerbitan PO.
+                            </small>
                         </div>
 
                         <!-- 4. Catatan / Arahan Ka. Tim (Opsional) -->
                         <div id="boxCatatan" class="mb-4" style="display: {{ !@tinjauan || @tinjauan.keputusan == 'dapat_dilaksanakan' ? 'block' : 'none' }};">
                             <label class="form-label small fw-bold text-dark mb-1">
-                                Catatan / Arahan Ka. Tim (Opsional):
+                                Catatan Teknis / Arahan Ka. Tim (Opsional):
                             </label>
-                            <input type="text" name="sdm_catatan" class="form-control form-control-sm" placeholder="Contoh: Prioritaskan pengujian sampel sesuai SNI..." value="{{ @tinjauan.sdm_catatan ?? '' }}" {{ !@can_edit ? 'disabled' : '' }}>
+                            <input type="text" name="sdm_catatan" class="form-control form-control-sm" placeholder="Contoh: Pengujian siap dilaksanakan dengan metode acuan SNI..." value="{{ @tinjauan.sdm_catatan ?? '' }}" {{ !@can_edit ? 'disabled' : '' }}>
                         </div>
 
                         <!-- 5. Alasan Penolakan (Muncul jika Tidak Dapat Dilaksanakan) -->
                         <div id="boxAlasanPenolakan" class="mb-4" style="display: {{ @tinjauan && @tinjauan.keputusan == 'tidak_dapat_dilaksanakan' ? 'block' : 'none' }};">
-                            <label class="form-label small fw-bold text-danger mb-1">Alasan Penolakan / Kendala Teknis:</label>
-                            <textarea name="alasan_penolakan" class="form-control form-control-sm" rows="3" placeholder="Sebutkan kendala teknis penolakan (misal: alat sedang kalibrasi, reagen habis)..." {{ !@can_edit ? 'disabled' : '' }}>{{ @tinjauan.alasan_penolakan ?? '' }}</textarea>
+                            <label class="form-label small fw-bold text-danger mb-1">Alasan Penolakan / Kendala Teknis: <span class="text-danger">*</span></label>
+                            <textarea name="alasan_penolakan" class="form-control form-control-sm" rows="3" placeholder="Sebutkan kendala teknis penolakan (misal: kapasitas lab penuh, alat sedang kalibrasi panjang, di luar ruang lingkup)..." {{ !@can_edit ? 'disabled' : '' }}>{{ @tinjauan.alasan_penolakan ?? '' }}</textarea>
                         </div>
 
                         <!-- Action Buttons -->
@@ -201,7 +235,7 @@
                             </a>
                             <check if="{{ @can_edit }}">
                                 <button type="submit" class="btn btn-primary btn-sm px-4 py-1.5 fw-semibold shadow-xs">
-                                    Simpan &amp; Tugaskan PIC
+                                    <i class="bi bi-check2-circle me-1"></i> Simpan Keputusan Kelayakan
                                 </button>
                             </check>
                             <check if="{{ !@can_edit }}">
@@ -219,82 +253,98 @@
 </div>
 
 <script>
+function updatePilarCard(boxId, checkId, badgeId) {
+    var box = document.getElementById(boxId);
+    var check = document.getElementById(checkId);
+    var badge = document.getElementById(badgeId);
+    if (!check) return true;
+    
+    var isReady = check.checked;
+    if (isReady) {
+        if (box) {
+            box.className = 'p-2 px-3 bg-white border rounded d-flex align-items-center justify-content-between h-100';
+            box.style.borderColor = '#e2e8f0';
+        }
+        if (badge) {
+            badge.className = 'badge bg-success-subtle text-success border border-success-subtle';
+            badge.textContent = 'Siap';
+        }
+    } else {
+        if (box) {
+            box.className = 'p-2 px-3 bg-warning-subtle border border-warning-subtle rounded d-flex align-items-center justify-content-between h-100';
+            box.style.borderColor = '';
+        }
+        if (badge) {
+            badge.className = 'badge bg-warning text-dark border border-warning';
+            badge.textContent = 'Terkendala';
+        }
+    }
+    return isReady;
+}
+
+function cekStatusPilar() {
+    var sdmReady = updatePilarCard('box_sdm', 'check_sdm', 'badge_sdm');
+    var alatReady = updatePilarCard('box_alat', 'check_alat', 'badge_alat');
+    var bahanReady = updatePilarCard('box_bahan', 'check_bahan', 'badge_bahan');
+    var metodeReady = updatePilarCard('box_metode', 'check_metode', 'badge_metode');
+
+    var allChecked = sdmReady && alatReady && bahanReady && metodeReady;
+
+    var badgeStandar = document.getElementById('badgeStandar');
+    if (badgeStandar) {
+        if (allChecked) {
+            badgeStandar.className = 'badge bg-success-subtle text-success border border-success-subtle py-1 px-2.5 fw-semibold';
+            badgeStandar.innerHTML = '<i class="bi bi-check2-all me-1"></i> Standar Terpenuhi';
+        } else {
+            badgeStandar.className = 'badge bg-warning-subtle text-warning-emphasis border border-warning-subtle py-1 px-2.5 fw-semibold';
+            badgeStandar.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-1"></i> Standar Belum Terpenuhi';
+        }
+    }
+
+    var alertKendala = document.getElementById('alertPilarKendala');
+    if (alertKendala) {
+        alertKendala.style.display = allChecked ? 'none' : 'block';
+    }
+
+    var inputCatatan = document.querySelector('input[name="sdm_catatan"]');
+    if (inputCatatan && !allChecked && !inputCatatan.value) {
+        inputCatatan.placeholder = 'Tuliskan rincian kendala (misal: alat GC-MS kalibrasi s.d 10 Sept)...';
+    }
+}
+
 function toggleAlasanPenolakan() {
     var radioTidak = document.getElementById('kep_tidak_layak');
     var radioLayak = document.getElementById('kep_layak');
     var boxTolak = document.getElementById('boxAlasanPenolakan');
+    var boxPilar = document.getElementById('boxPilarKesiapan');
     var boxPic = document.getElementById('boxPicProposal');
     var boxCatatan = document.getElementById('boxCatatan');
     var selectPic = document.getElementById('selectPicProposal');
 
     if (radioTidak && radioTidak.checked) {
         if (boxTolak) boxTolak.style.display = 'block';
+        if (boxPilar) boxPilar.style.display = 'none';
         if (boxPic) boxPic.style.display = 'none';
         if (boxCatatan) boxCatatan.style.display = 'none';
         if (selectPic) selectPic.removeAttribute('required');
     } else {
         if (boxTolak) boxTolak.style.display = 'none';
+        if (boxPilar) boxPilar.style.display = 'block';
         if (boxPic) boxPic.style.display = 'block';
         if (boxCatatan) boxCatatan.style.display = 'block';
-        if (selectPic) selectPic.setAttribute('required', 'required');
+        if (selectPic) selectPic.removeAttribute('required');
+        cekStatusPilar();
     }
-}
-
-function checkReadinessAndLock() {
-    var sdm = document.getElementById('sdm_tersedia');
-    var alat = document.getElementById('peralatan_tersedia');
-    var bahan = document.getElementById('bahan_tersedia');
-    var metode = document.getElementById('metode_tersedia');
-
-    var isAllReady = (sdm && sdm.checked) && 
-                     (alat && alat.checked) && 
-                     (bahan && bahan.checked) && 
-                     (metode && metode.checked);
-
-    var radioLayak = document.getElementById('kep_layak');
-    var radioTidak = document.getElementById('kep_tidak_layak');
-    var labelLayak = document.getElementById('label_card_layak');
-    var notice = document.getElementById('noticeUnready');
-
-    if (!isAllReady) {
-        if (radioLayak) {
-            radioLayak.disabled = true;
-            if (radioLayak.checked) {
-                radioLayak.checked = false;
-                if (radioTidak) {
-                    radioTidak.checked = true;
-                }
-            }
-        }
-        if (labelLayak) {
-            labelLayak.style.opacity = '0.45';
-            labelLayak.style.pointerEvents = 'none';
-            labelLayak.style.cursor = 'not-allowed';
-            labelLayak.setAttribute('title', 'Terkunci: Semua 4 parameter kesiapan harus siap');
-        }
-        if (notice) notice.style.display = 'block';
-    } else {
-        <check if="{{ @can_edit }}">
-        if (radioLayak) radioLayak.disabled = false;
-        if (labelLayak) {
-            labelLayak.style.opacity = '1';
-            labelLayak.style.pointerEvents = 'auto';
-            labelLayak.style.cursor = 'pointer';
-            labelLayak.removeAttribute('title');
-        }
-        </check>
-        if (notice) notice.style.display = 'none';
-    }
-
-    toggleAlasanPenolakan();
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    checkReadinessAndLock();
+    toggleAlasanPenolakan();
+    cekStatusPilar();
 });
 </script>
 
 <style>
+
 .choice-radio-card {
     background-color: #ffffff;
     border: 1.5px solid #e2e8f0;

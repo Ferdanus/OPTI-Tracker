@@ -1,211 +1,447 @@
+<style>
+/* ==========================================================================
+   BBSPJIS OPTI LINGKUNGAN - PROFESSIONAL WORKSPACE STYLING
+   ========================================================================== */
+.table-kalkulasi thead th {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #475569;
+    background-color: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 0.75rem 0.65rem;
+}
+
+.table-kalkulasi tbody td {
+    padding: 0.65rem 0.65rem;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+}
+
+.table-kalkulasi tbody tr:hover td {
+    background-color: #f8fafc;
+}
+
+.table-kalkulasi .form-control-sm,
+.table-kalkulasi .form-select-sm {
+    font-size: 0.815rem;
+    border-color: #cbd5e1;
+    border-radius: 6px;
+}
+
+.table-kalkulasi .form-control-sm:focus,
+.table-kalkulasi .form-select-sm:focus {
+    border-color: var(--color-primary, #881337);
+    box-shadow: 0 0 0 3px rgba(136, 19, 55, 0.1);
+}
+
+.btn-del-row {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    color: #ef4444;
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    transition: all 0.15s ease;
+    cursor: pointer;
+}
+
+.btn-del-row:hover:not(:disabled) {
+    background-color: #dc2626;
+    border-color: #dc2626;
+    color: #ffffff;
+    box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
+}
+
+.stepper-control {
+    display: inline-flex;
+    align-items: stretch;
+    height: 32px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #ffffff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.stepper-control .stepper-btn {
+    width: 30px;
+    height: 100%;
+    padding: 0;
+    font-weight: 700;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background-color: #f8fafc;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+}
+
+.stepper-control .stepper-btn:hover:not(:disabled) {
+    background-color: #e2e8f0;
+    color: #0f172a;
+}
+
+.stepper-control input.input-sampel {
+    width: 46px;
+    height: 100%;
+    border: none;
+    border-left: 1px solid #e2e8f0;
+    border-right: 1px solid #e2e8f0;
+    text-align: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #0f172a;
+    outline: none;
+    background: transparent;
+    padding: 0;
+}
+
+/* Chrome, Safari, Edge, Opera: hide number arrows */
+.stepper-control input::-webkit-outer-spin-button,
+.stepper-control input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.stepper-control input[type=number] {
+    -moz-appearance: textfield;
+}
+
+
+
+.ledger-card {
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 1.15rem;
+}
+
+.netto-box {
+    background-color: #fff1f2;
+    border: 1.5px solid #fecdd3;
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+}
+
+.ts-wrapper.form-select-sm, .ts-wrapper {
+    width: 100% !important;
+}
+.ts-wrapper.form-select-sm .ts-control, .ts-control {
+    font-size: 0.825rem;
+    min-height: 33px;
+    padding: 0.35rem 0.65rem;
+    border-color: #cbd5e1;
+    border-radius: 6px;
+    background-color: #ffffff;
+}
+.ts-wrapper.focus .ts-control {
+    border-color: var(--color-primary, #881337) !important;
+    box-shadow: 0 0 0 3px rgba(136, 19, 55, 0.1) !important;
+}
+
+@media (min-width: 992px) {
+    .border-end-lg {
+        border-right: 1px solid #e2e8f0 !important;
+    }
+}
+</style>
+
 <div class="container-fluid px-0">
-    <!-- Header & Navigasi -->
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+    
+    <!-- PAGE HEADER -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb mb-1 small">
-                    <li class="breadcrumb-item"><a href="{{ @BASE }}/order" class="text-decoration-none text-muted">Order Masuk</a></li>
-                    <li class="breadcrumb-item"><a href="{{ @BASE }}/order/{{ @order.id }}" class="text-decoration-none text-muted">Order #{{ @order.nomor_order }}</a></li>
-                    <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Kalkulator Tarif Pengujian</li>
+                    <li class="breadcrumb-item"><a href="{{ @BASE }}/order" class="text-decoration-none">Order Layanan</a></li>
+                    <li class="breadcrumb-item"><a href="{{ @BASE }}/order/{{ @order.id }}" class="text-decoration-none">#{{ @order.nomor_order }}</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Tarif &amp; Parameter</li>
                 </ol>
             </nav>
-            <h4 class="fw-bold text-dark m-0 d-flex align-items-center gap-2 font-display">
-                <i class="bi bi-calculator text-success"></i> Kaji Ulang Teknis &amp; Kalkulator Tarif Pengujian
-            </h4>
+            <h5 class="fw-bold text-dark m-0 font-display d-flex align-items-center gap-2">
+                <i class="bi bi-calculator-fill text-primary"></i>
+                Tarif &amp; Parameter Pengujian
+                <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-0.5 small fw-normal">
+                    OPTI Lingkungan
+                </span>
+            </h5>
         </div>
-        <div class="d-flex gap-2">
-            <a href="{{ @BASE }}/order/{{ @order.id }}" class="btn btn-outline-secondary btn-sm px-3 fw-semibold shadow-sm d-flex align-items-center gap-1">
-                <i class="bi bi-arrow-left"></i> Kembali ke Detail Order
+        <div>
+            <a href="{{ @BASE }}/order/{{ @order.id }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-1 shadow-xs">
+                <i class="bi bi-arrow-left"></i> Kembali ke Order
             </a>
         </div>
     </div>
 
+    <!-- Read-Only Notice -->
     <check if="{{ !@can_edit }}">
-        <div class="alert alert-warning border-0 d-flex align-items-center gap-2 mb-4 py-2 px-3 small rounded-3">
+        <div class="alert alert-warning border-0 d-flex align-items-center gap-3 mb-3 py-2 px-3 small rounded-3 shadow-sm">
             <i class="bi bi-lock-fill text-warning fs-5 flex-shrink-0"></i>
             <div>
-                <strong>Mode Lihat Saja (Read-Only)</strong>: Perhitungan rincian pengujian dan kalkulasi biaya SNI merupakan wewenang <strong>PIC Proposal</strong> yang ditunjuk.
+                <strong>Mode Lihat Saja (Read-Only)</strong>: Perubahan rincian pengujian merupakan wewenang <strong>Ketua Tim / Tim Pelaksana</strong>.
             </div>
         </div>
     </check>
 
-    <!-- KARTU INFORMASI ORDER & KLIEN -->
-    <div class="card border-0 shadow-sm mb-4" style="background: #ffffff; border-left: 4px solid var(--color-success) !important; border-radius: 8px;">
-        <div class="card-body p-3 p-md-4">
-            <div class="row g-3 align-items-center">
-                <div class="col-md-8">
-                    <div class="d-flex align-items-center gap-2 mb-1">
-                        <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold">OPTI LINGKUNGAN</span>
-                        <span class="text-muted small font-monospace">Order #{{ @order.nomor_order }}</span>
-                    </div>
-                    <h5 class="fw-bold text-dark mb-1">{{ @order.judul_kegiatan }}</h5>
-                    <div class="small text-secondary">
-                        <i class="bi bi-building me-1"></i> Pelanggan: <strong>{{ @order.nama_perusahaan }} ({{ @order.pt_cv }})</strong> &bull; 
-                        <i class="bi bi-person me-1"></i> PIC: {{ @order.pic ?: '-' }} ({{ @order.telepon ?: '-' }})
-                    </div>
+    <!-- COMPACT ORDER BAR -->
+    <div class="card border-0 shadow-xs mb-3 bg-light-subtle">
+        <div class="card-body py-2.5 px-3">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
+                <div class="d-flex align-items-center gap-2 flex-wrap small">
+                    <span class="badge bg-light text-dark border font-monospace fw-bold">#{{ @order.nomor_order }}</span>
+                    <strong class="text-dark"><i class="bi bi-building me-1 text-secondary"></i>{{ @order.nama_perusahaan }}</strong>
+                    <span class="text-muted">• PIC: <strong>{{ @order.pic ?: '-' }}</strong></span>
+                    <span class="text-muted">• Penanggung Jawab: <strong>{{ @order.pic_proposal_nama ?: 'Andri Taufick Rizaluddin' }}</strong></span>
                 </div>
-                <div class="col-md-4 text-md-end border-start-md ps-md-4">
-                    <div class="small text-muted mb-1">Status Disposisi Teknis:</div>
-                    <span class="badge bg-success text-white px-3 py-2 fw-semibold">
-                        <i class="bi bi-check-circle me-1"></i> Laboratorium Pengujian Lingkungan
-                    </span>
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <check if="{{ @order.status_proposal_biaya == 'siap_penawaran' }}">
+                        <span class="badge bg-success-subtle text-success border border-success-subtle">
+                            <i class="bi bi-check-circle-fill me-1"></i> Siap Penawaran
+                        </span>
+                    </check>
+                    <check if="{{ @order.status_proposal_biaya != 'siap_penawaran' }}">
+                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle">
+                            <i class="bi bi-pencil-fill me-1"></i> Draf
+                        </span>
+                    </check>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- FORM UTAMA KALKULASI LINGKUNGAN -->
     <form action="{{ @BASE }}/order/{{ @order.id }}/biaya-lingkungan" method="POST" id="formKalkulasiLingkungan">
-        
-        <!-- KARTU DAFTAR PARAMETER UJI & METODE -->
+        <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
+
+        <!-- CARD: TABEL RINCIAN PARAMETER UJI -->
         <div class="card border-0 shadow-sm mb-4">
-            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
-                <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2">
-                    <i class="bi bi-list-check text-success"></i> Parameter Pengujian Laboratorium
-                </h6>
-                <check if="{{ @can_edit }}">
-                    <button type="button" class="btn btn-success btn-sm fw-bold shadow-sm d-flex align-items-center gap-1" onclick="addRowUji()">
-                        <i class="bi bi-plus-circle"></i> Tambah Parameter
-                    </button>
-                </check>
+            
+            <!-- Card Header: Title & Counter -->
+            <div class="card-header bg-white py-2.5 px-3 border-bottom d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-flask text-primary"></i>
+                    <span class="fw-bold text-dark small">Daftar Parameter Uji</span>
+                </div>
+                <div>
+                    <span class="badge bg-light text-dark border px-2.5 py-1 font-monospace fw-semibold" id="badgeParamCount">
+                        0 Parameter
+                    </span>
+                </div>
             </div>
 
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0" id="tableUjiLingkungan">
-                        <thead class="bg-light text-secondary small text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">
-                            <tr>
-                                <th style="width: 50px;" class="text-center">No</th>
-                                <th style="width: 180px;">Kategori Layanan</th>
-                                <th>Parameter &amp; Metode Acuan Standar</th>
-                                <th style="width: 180px;" class="text-end">Tarif Satuan (Rp)</th>
-                                <th style="width: 110px;" class="text-center">Jml Sampel</th>
-                                <th style="width: 180px;" class="text-end">Subtotal (Rp)</th>
-                                <th style="width: 60px;" class="text-center">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tbodyUji">
-                            <!-- Baris diisi oleh JS/PHP -->
-                        </tbody>
-                    </table>
+            <!-- Action Toolbar: Bersih & Terpisah Tanpa Tabrakan Tombol -->
+            <check if="{{ @can_edit }}">
+                <div class="p-3 bg-light-subtle border-bottom">
+                    <div class="d-flex flex-column flex-md-row align-items-stretch align-items-md-center justify-content-between gap-2">
+                        <!-- Quick Catalog Selector -->
+                        <div class="d-flex align-items-center gap-2 flex-grow-1" style="max-width: 680px;">
+                            <div class="flex-grow-1">
+                                <select id="quickSelectMetode" class="form-select form-select-sm" onchange="onCatalogSelectChange(this.value)" placeholder="Ketik untuk mencari parameter uji (Biodegradasi, Toksikologi, Jamur, BOD, COD, dll)...">
+                                    <option value="">-- Cari atau Pilih dari Katalog Pengujian Resmi --</option>
+                                    <repeat group="{{ @daftar_metode }}" value="{{ @m }}">
+                                        <option value="{{ @m.id }}" 
+                                            data-tarif="{{ (float)@m.harga }}" 
+                                            data-standar="{{ @m.deskripsi_kegunaan }}" 
+                                            data-nama="{{ @m.nama_metode }}"
+                                            data-sampel="{{ (int)@m.jumlah_sampel ?: 1 }}"
+                                            data-durasi="{{ (@m.durasi_satuan == 'Bulan' ? (int)@m.durasi_nilai : 1) }}"
+                                            data-nilai="{{ (int)@m.durasi_nilai ?: 1 }}"
+                                            data-satuan="{{ @m.durasi_satuan ?: 'Bulan' }}"
+                                            data-eksternal="{{ !empty(@m.butuh_eksternal) ? '1' : '0' }}">
+                                            [{{ @m.nama_kategori ?: 'Layanan' }}] {{ @m.nama_metode }} &bull; Rp {{ number_format(@m.harga, 0, ',', '.') }}{{ @m.jumlah_sampel > 1 ? ' (' . @m.jumlah_sampel . ' sampel)' : '' }} ({{ @m.durasi_nilai }} {{ @m.durasi_satuan }})
+                                        </option>
+                                    </repeat>
+                                </select>
+                            </div>
+                            <button type="button" class="btn btn-primary btn-sm px-3 d-inline-flex align-items-center gap-1 flex-shrink-0 fw-semibold shadow-xs" onclick="addFromQuickCatalog()">
+                                <i class="bi bi-plus-lg"></i> Tambah
+                            </button>
+                        </div>
+                        
+                        <!-- Manual Entry Action -->
+                        <div>
+                            <button type="button" class="btn btn-outline-secondary btn-sm px-3 d-inline-flex align-items-center gap-1 shadow-xs" onclick="addRowUji()">
+                                <i class="bi bi-pencil-square"></i> + Baris Manual
+                            </button>
+                        </div>
+                    </div>
                 </div>
+            </check>
 
-                <div class="p-3 bg-light border-top d-flex justify-content-between align-items-center">
-                    <span class="small text-muted">
-                        <i class="bi bi-info-circle text-primary me-1"></i> Tarif per parameter mengacu pada Peraturan Pemerintah (PP) Tarif PNBP Kementerian Perindustrian.
-                    </span>
-                    <button type="button" class="btn btn-outline-success btn-sm fw-semibold" onclick="addRowUji()">
-                        <i class="bi bi-plus-lg me-1"></i> Tambah Baris Parameter
-                    </button>
-                </div>
+            <!-- Table Matrix: Kolom Sederhana & Luas (Tanpa dropdown Sub Layanan yang memakan tempat) -->
+            <div class="table-responsive">
+                <table class="table table-kalkulasi align-middle mb-0" id="tableUjiLingkungan">
+                    <thead>
+                        <tr>
+                            <th style="width: 45px;" class="text-center">No</th>
+                            <th>Nama Parameter Uji</th>
+                            <th style="width: 220px;">Baku Mutu / Standar</th>
+                            <th style="width: 170px;" class="text-end">Tarif Satuan (Rp)</th>
+                            <th style="width: 130px;" class="text-center">Titik / Sampel</th>
+                            <th style="width: 160px;" class="text-end">Subtotal (Rp)</th>
+                            <th style="width: 45px;" class="text-center"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyUji">
+                        <!-- Baris tabel di-generate via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Empty State Box -->
+            <div id="emptyStateTable" class="p-5 text-center" style="display: none;">
+                <i class="bi bi-clipboard-x fs-3 text-secondary opacity-50 d-block mb-1"></i>
+                <div class="fw-semibold text-dark small mb-1">Daftar Parameter Masih Kosong</div>
+                <p class="small text-muted mb-0">Silakan cari dan pilih parameter pengujian dari katalog di atas.</p>
+            </div>
+
+            <!-- Table Footer: Bersih & Tanpa Tombol Dobel -->
+            <div class="card-footer bg-white py-2 px-3 border-top">
+                <small class="text-muted" style="font-size: 0.75rem;">
+                    <i class="bi bi-info-circle text-primary me-1"></i> Subtotal otomatis dikalikan dengan jumlah titik / sampel pengujian.
+                </small>
             </div>
         </div>
 
-        <!-- PANEL PENGATURAN WAKTU, DISKON & RINGKASAN KEUANGAN -->
+        <!-- BOTTOM SECTION: EXECUTION PARAMETERS & FINANCIAL LEDGER -->
         <div class="row g-4 mb-4">
             
-            <!-- Pengaturan Parameter Pelaksanaan & Diskon -->
+            <!-- KOLOM KIRI (5 Kolom): Diskon & Sampel -->
             <div class="col-lg-5">
                 <div class="card border-0 shadow-sm h-100">
-                    <div class="card-header bg-white py-3 border-bottom">
-                        <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2">
-                            <i class="bi bi-sliders text-success"></i> Parameter Pelaksanaan &amp; Penyesuaian
+                    <div class="card-header bg-white py-2.5 px-3 border-bottom">
+                        <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2 small">
+                            <i class="bi bi-tag text-primary"></i> Diskon &amp; Sampel
                         </h6>
                     </div>
-                    <div class="card-body p-4">
+                    <div class="card-body p-3">
+                        
+                        <!-- Potongan Diskon Penawaran -->
                         <div class="mb-3">
-                            <label class="form-label small fw-bold text-dark">
-                                <i class="bi bi-calendar-check text-primary me-1"></i> Tanggal Penerimaan Fisik Sampel di Lab:
-                            </label>
-                            <input type="date" name="tanggal_terima_sampel" id="tanggal_terima_sampel" class="form-control form-control-sm" value="{{ @order.tanggal_terima_sampel ?: date('Y-m-d') }}" onchange="recalculateTotals()">
-                            <small class="text-muted" style="font-size: 0.725rem;">Estimasi tanggal mulai pengujian dan penghitungan batas waktu (SPM).</small>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold text-dark">
-                                <i class="bi bi-clock-history text-success me-1"></i> Standar Pelayanan Minimum (SPM):
+                            <label class="form-label small fw-bold text-dark mb-1" for="diskon_penawaran">
+                                Diskon Penawaran (Rp):
                             </label>
                             <div class="input-group input-group-sm">
-                                <input type="text" id="display_spm" class="form-control form-control-sm bg-light fw-bold text-dark" value="10 Hari Kerja" readonly>
-                                <span class="input-group-text bg-light text-muted small"><i class="bi bi-shield-check text-success"></i></span>
+                                <span class="input-group-text bg-light text-secondary font-monospace">Rp</span>
+                                <input type="number" name="diskon_penawaran" id="diskon_penawaran" class="form-control form-control-sm text-end fw-bold font-monospace" value="{{ @order.diskon_penawaran ?: 0 }}" min="0" step="50000" oninput="recalculateTotals()" {{ !@can_edit ? 'disabled' : '' }}>
                             </div>
-                            <small class="text-muted" style="font-size: 0.725rem;">Durasi standar pengujian laboratorium lingkungan BBSPJIS.</small>
                         </div>
 
-                        <div class="mb-0">
-                            <label class="form-label small fw-bold text-dark">
-                                <i class="bi bi-tag text-danger me-1"></i> Potongan / Penyesuaian Diskon (Rp):
+                        <!-- Estimasi Durasi Pengujian (SPM Layanan) -->
+                        <div>
+                            <label class="form-label small fw-bold text-dark mb-1" for="displaySpmLayanan">
+                                <i class="bi bi-clock-history text-secondary me-1"></i>Estimasi Durasi SPM:
                             </label>
                             <div class="input-group input-group-sm">
-                                <span class="input-group-text bg-light fw-bold">Rp</span>
-                                <input type="number" name="diskon_penawaran" id="diskon_penawaran" class="form-control form-control-sm text-end fw-bold" value="{{ @order.diskon_penawaran ?: 0 }}" min="0" step="50000" oninput="recalculateTotals()">
+                                <span class="input-group-text bg-light text-secondary">
+                                    <i class="bi bi-calendar-check"></i>
+                                </span>
+                                <input type="text" id="displaySpmLayanan" class="form-control form-control-sm bg-light fw-bold text-primary font-monospace" value="{{ preg_match('/(\d+)\s*bulan/i', @order.spm_layanan, $m_spm) ? ($m_spm[1] * 30).' Hari Kerja' : (@order.spm_layanan ?: '-') }}" readonly tabindex="-1" style="cursor: default;">
                             </div>
-                            <small class="text-muted" style="font-size: 0.725rem;">Masukkan nominal potongan harga jika terdapat persetujuan khusus pimpinan.</small>
+                            <input type="hidden" name="spm_layanan" id="spm_layanan" value="{{ preg_match('/(\d+)\s*bulan/i', @order.spm_layanan, $m_spm) ? ($m_spm[1] * 30).' Hari Kerja' : (@order.spm_layanan ?: '') }}">
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Ringkasan Anggaran & Rekapitulasi Tarif -->
+            <!-- KOLOM KANAN (7 Kolom): Rekapitulasi Biaya & Simpan -->
             <div class="col-lg-7">
-                <div class="card border-0 shadow-sm h-100 bg-white">
-                    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
-                        <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2">
-                            <i class="bi bi-receipt-cutoff text-success"></i> Rekapitulasi Anggaran Pengujian
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white py-2.5 px-3 border-bottom d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2 small">
+                            <i class="bi bi-receipt text-primary"></i> Rekapitulasi Biaya
                         </h6>
-                        <span class="badge bg-success-subtle text-success border border-success-subtle">Kalkulasi Resmi</span>
+                        <span class="badge bg-light text-secondary border">
+                            Tarif Resmi PNBP
+                        </span>
                     </div>
-                    <div class="card-body p-4">
-                        <div class="row g-3 mb-3">
+                    <div class="card-body p-3">
+                        
+                        <!-- KPI Counters -->
+                        <div class="row g-2 mb-3">
                             <div class="col-6">
-                                <div class="p-3 bg-light rounded border text-center">
-                                    <div class="text-muted small text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">Jumlah Parameter</div>
-                                    <h4 class="fw-bold text-dark mb-0 mt-1" id="lblJmlParameter">0</h4>
-                                    <small class="text-muted" style="font-size: 0.725rem;">Metode Uji Terpilih</small>
+                                <div class="p-2 bg-light rounded border text-center">
+                                    <div class="text-uppercase text-muted fw-bold" style="font-size: 0.68rem;">Parameter</div>
+                                    <h5 class="fw-bold text-dark mb-0 font-display" id="lblJmlParameter">0</h5>
                                 </div>
                             </div>
                             <div class="col-6">
-                                <div class="p-3 bg-light rounded border text-center">
-                                    <div class="text-muted small text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">Total Sampel / Titik</div>
-                                    <h4 class="fw-bold text-dark mb-0 mt-1" id="lblTotalSampel">0</h4>
-                                    <small class="text-muted" style="font-size: 0.725rem;">Unit Sampel Diuji</small>
+                                <div class="p-2 bg-light rounded border text-center">
+                                    <div class="text-uppercase text-muted fw-bold" style="font-size: 0.68rem;">Titik / Sampel</div>
+                                    <h5 class="fw-bold text-primary mb-0 font-display" id="lblTotalSampel">0</h5>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="p-3 rounded border mb-4" style="background-color: #f8fafc;">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <span class="text-secondary small">Total Tarif Bruto (Katalog PNBP):</span>
-                                <strong class="text-dark" id="lblTotalBruto">Rp 0</strong>
+                        <!-- Ledger Breakdown Table -->
+                        <div class="ledger-card mb-3 p-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1.5">
+                                <span class="text-secondary small">Total Bruto:</span>
+                                <strong class="text-dark font-monospace" id="lblTotalBruto">Rp 0</strong>
                             </div>
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <span class="text-danger small">Potongan Diskon:</span>
-                                <strong class="text-danger" id="lblTotalDiskon">- Rp 0</strong>
+                                <strong class="text-danger font-monospace" id="lblTotalDiskon">- Rp 0</strong>
                             </div>
+                            
                             <hr class="my-2 border-secondary-subtle">
-                            <div class="d-flex justify-content-between align-items-center pt-1">
-                                <div>
-                                    <span class="fw-bold text-dark fs-6">Total Biaya Penawaran (Netto):</span>
-                                    <small class="d-block text-muted" style="font-size: 0.725rem;">Biaya resmi yang akan tercantum pada Surat Penawaran</small>
+                            
+                            <!-- Netto Total Highlight Box -->
+                            <div class="netto-box mt-2 p-2.5">
+                                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
+                                    <div>
+                                        <div class="fw-bold text-dark font-display" style="font-size: 0.9rem;">
+                                            TOTAL NETTO PENAWARAN:
+                                        </div>
+                                    </div>
+                                    <h4 class="fw-bold mb-0 font-monospace text-primary" id="lblTotalNetto">
+                                        Rp 0
+                                    </h4>
                                 </div>
-                                <h3 class="fw-bold text-success mb-0 font-monospace" id="lblTotalNetto">Rp 0</h3>
+                                <div class="pt-1.5 mt-1.5 border-top border-danger-subtle small text-muted fst-italic" style="font-size: 0.74rem;">
+                                    Terbilang: <span class="fw-bold text-dark" id="lblTerbilangNetto">Nol Rupiah</span>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="d-flex justify-content-end gap-2">
-                            <a href="{{ @BASE }}/order/{{ @order.id }}" class="btn btn-outline-secondary btn-sm px-3">
-                                Batal
+                        <!-- Action Buttons Bar -->
+                        <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap pt-2 border-top">
+                            <a href="{{ @BASE }}/order/{{ @order.id }}" class="btn btn-outline-secondary btn-sm px-3 d-inline-flex align-items-center gap-1 shadow-xs">
+                                <i class="bi bi-arrow-left"></i> Kembali ke Order
                             </a>
-                            <check if="{{ @can_edit }}">
-                                <button type="submit" class="btn btn-success btn-sm px-4 fw-bold shadow-sm d-flex align-items-center gap-2">
-                                    <i class="bi bi-save"></i> Simpan Hasil Kalkulasi Tarif
-                                </button>
-                            </check>
-                            <check if="{{ !@can_edit }}">
-                                <button type="button" class="btn btn-secondary btn-sm px-4 fw-semibold" disabled>
-                                    <i class="bi bi-lock-fill me-1"></i> Terkunci (Wewenang PIC Proposal)
-                                </button>
-                            </check>
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <check if="{{ @can_edit }}">
+                                    <button type="submit" name="action_btn" value="save_draft" class="btn btn-outline-primary btn-sm px-3 d-inline-flex align-items-center gap-1 shadow-xs">
+                                        <i class="bi bi-bookmark"></i> Simpan Draf
+                                    </button>
+                                    <check if="{{ @is_ketua_tim || @is_superadmin }}">
+                                        <button type="submit" name="action_btn" value="siap_penawaran" class="btn btn-primary btn-sm px-4 d-inline-flex align-items-center gap-1 fw-bold shadow-xs">
+                                            <i class="bi bi-check2-circle"></i> Tetapkan Siap Penawaran
+                                        </button>
+                                    </check>
+                                    <check if="{{ !@is_ketua_tim && !@is_superadmin }}">
+                                        <button type="submit" name="action_btn" value="kirim_katim" class="btn btn-primary btn-sm px-4 d-inline-flex align-items-center gap-1 fw-bold shadow-xs">
+                                            <i class="bi bi-send"></i> Ajukan ke Ketua Tim
+                                        </button>
+                                    </check>
+                                </check>
+                                <check if="{{ !@can_edit }}">
+                                    <button type="button" class="btn btn-secondary btn-sm px-4" disabled>
+                                        <i class="bi bi-lock-fill me-1"></i> Terkunci
+                                    </button>
+                                </check>
+                            </div>
                         </div>
+
                     </div>
                 </div>
             </div>
@@ -215,17 +451,23 @@
     </form>
 </div>
 
-<!-- Master Data Metode untuk JavaScript -->
+<!-- JAVASCRIPT LOGIC -->
 <script>
 var MASTER_METODE = [
     <repeat group="{{ @daftar_metode }}" value="{{ @m }}">
     {
         id: {{ @m.id }},
         kategori_id: {{ @m.kategori_id }},
+        kategori_nama: "{{ addslashes(@m.nama_kategori ?? '') }}",
         nama: "{{ addslashes(@m.nama_metode) }}",
         standar: "{{ addslashes(@m.deskripsi_kegunaan ?? '') }}",
+        peralatan: "{{ addslashes(@m.peralatan ?? '') }}",
         tarif: {{ (float)@m.harga }},
-        durasi_hari: {{ (int)@m.durasi_nilai * 30 }}
+        jumlah_sampel: {{ (int)@m.jumlah_sampel ?: 1 }},
+        durasi_nilai: {{ (int)@m.durasi_nilai ?: 1 }},
+        durasi_satuan: "{{ @m.durasi_satuan ?: 'Bulan' }}",
+        durasi_bulan: {{ (@m.durasi_satuan == 'Bulan' ? (int)@m.durasi_nilai : 1) }},
+        butuh_eksternal: {{ !empty(@m.butuh_eksternal) ? 'true' : 'false' }}
     },
     </repeat>
 ];
@@ -239,6 +481,8 @@ var INITIAL_ITEMS = [
         standar_rujukan: "{{ addslashes(@it.standar_rujukan) }}",
         tarif_per_sampel: {{ (float)@it.tarif_per_sampel }},
         jumlah_sampel: {{ (int)@it.jumlah_sampel }},
+        durasi_nilai: {{ (int)(@it.master_durasi_nilai ?: (@it.durasi_bulan ?: 1)) }},
+        durasi_satuan: "{{ @it.master_durasi_satuan ?: 'Bulan' }}",
         durasi_bulan: {{ (int)@it.durasi_bulan }},
         is_subkontrak: {{ @it.is_subkontrak ? 'true' : 'false' }},
         lab_eksternal_id: {{ @it.lab_eksternal_id ?: 'null' }}
@@ -246,7 +490,9 @@ var INITIAL_ITEMS = [
     </repeat>
 ];
 
+var CAN_EDIT = {{ @can_edit ? 'true' : 'false' }};
 var rowIndex = 0;
+var tomSelectInstance = null;
 
 function addRowUji(data) {
     data = data || {
@@ -256,6 +502,8 @@ function addRowUji(data) {
         standar_rujukan: '',
         tarif_per_sampel: 0,
         jumlah_sampel: 1,
+        durasi_nilai: 1,
+        durasi_satuan: 'Bulan',
         durasi_bulan: 1,
         is_subkontrak: false,
         lab_eksternal_id: null
@@ -268,81 +516,241 @@ function addRowUji(data) {
     var idx = rowIndex;
     rowIndex++;
 
-    var optMetodeHtml = '<option value="">-- Pilih dari Katalog Standar PNBP --</option>';
-    MASTER_METODE.forEach(function(m) {
-        var sel = (data.metode_uji_id == m.id) ? 'selected' : '';
-        optMetodeHtml += '<option value="' + m.id + '" data-tarif="' + m.tarif + '" data-standar="' + m.standar + '" data-durasi="' + m.durasi_hari + '" ' + sel + '>' + m.nama + ' (' + m.standar + ')</option>';
-    });
+    var disabledAttr = CAN_EDIT ? '' : 'disabled';
 
     tr.innerHTML = `
-        <td class="text-center text-muted fw-bold small row-number">
-            ${idx + 1}
+        <td class="text-center align-middle">
+            <span class="fw-bold text-secondary small row-number">${idx + 1}</span>
+            <input type="hidden" name="items[${idx}][metode_uji_id]" id="metode_id_${idx}" value="${data.metode_uji_id || ''}">
+            <input type="hidden" name="items[${idx}][sub_layanan]" value="${data.sub_layanan || 'uji_laboratorium'}">
+            <input type="hidden" name="items[${idx}][durasi_bulan]" id="durasi_bulan_${idx}" class="row-durasi-bulan" value="${data.durasi_bulan || 1}" data-nilai="${data.durasi_nilai || data.durasi_bulan || 1}" data-satuan="${data.durasi_satuan || 'Bulan'}">
+            <input type="hidden" name="items[${idx}][is_subkontrak]" value="${data.is_subkontrak ? '1' : '0'}">
+            <input type="hidden" name="items[${idx}][lab_eksternal_id]" value="${data.lab_eksternal_id || ''}">
         </td>
-        <td>
-            <select name="items[${idx}][sub_layanan]" class="form-select form-select-sm">
-                <option value="uji_laboratorium" ${data.sub_layanan == 'uji_laboratorium' ? 'selected' : ''}>Uji Laboratorium</option>
-                <option value="lpv" ${data.sub_layanan == 'lpv' ? 'selected' : ''}>Layanan LPV (Emisi/Lapangan)</option>
-                <option value="kajian_lab" ${data.sub_layanan == 'kajian_lab' ? 'selected' : ''}>Kajian Laboratorium</option>
-                <option value="konsultansi" ${data.sub_layanan == 'konsultansi' ? 'selected' : ''}>Konsultansi Lingkungan</option>
-            </select>
+        <td class="align-middle">
+            <input type="text" name="items[${idx}][nama_pengujian]" id="nama_${idx}" class="form-control form-control-sm fw-semibold text-dark" placeholder="Nama parameter (misal: BOD5, COD, pH)" value="${data.nama_pengujian}" required ${disabledAttr}>
         </td>
-        <td>
-            <select class="form-select form-select-sm mb-2 select-metode fw-semibold" name="items[${idx}][metode_uji_id]" onchange="onSelectMetode(${idx}, this)">
-                ${optMetodeHtml}
-            </select>
-            <div class="row g-2">
-                <div class="col-md-7">
-                    <input type="text" name="items[${idx}][nama_pengujian]" id="nama_${idx}" class="form-control form-control-sm" placeholder="Nama Parameter Uji" value="${data.nama_pengujian}" required>
-                </div>
-                <div class="col-md-5">
-                    <input type="text" name="items[${idx}][standar_rujukan]" id="standar_${idx}" class="form-control form-control-sm font-monospace text-muted" placeholder="Acuan (SNI/ASTM)" value="${data.standar_rujukan}">
-                </div>
-            </div>
+        <td class="align-middle">
+            <input type="text" name="items[${idx}][standar_rujukan]" id="standar_${idx}" class="form-control form-control-sm text-secondary" placeholder="SNI / Acuan (opsional)" value="${data.standar_rujukan}" ${disabledAttr}>
         </td>
-        <td>
+        <td class="align-middle">
             <div class="input-group input-group-sm">
-                <span class="input-group-text bg-light">Rp</span>
-                <input type="number" name="items[${idx}][tarif_per_sampel]" id="tarif_${idx}" class="form-control form-control-sm text-end fw-bold font-monospace input-tarif" value="${data.tarif_per_sampel}" min="0" step="1000" oninput="recalculateTotals()">
+                <span class="input-group-text bg-light text-secondary font-monospace" style="font-size: 0.75rem;">Rp</span>
+                <input type="number" name="items[${idx}][tarif_per_sampel]" id="tarif_${idx}" class="form-control form-control-sm text-end fw-bold font-monospace input-tarif" value="${data.tarif_per_sampel}" min="0" step="1000" oninput="recalculateTotals()" ${disabledAttr}>
             </div>
         </td>
-        <td>
-            <input type="number" name="items[${idx}][jumlah_sampel]" id="sampel_${idx}" class="form-control form-control-sm text-center fw-bold font-monospace input-sampel" value="${data.jumlah_sampel}" min="1" oninput="recalculateTotals()">
+        <td class="align-middle text-center">
+            <div class="stepper-control mx-auto">
+                <button type="button" class="stepper-btn" onclick="stepQuantity(${idx}, -1)" ${disabledAttr} title="Kurangi Titik/Sampel">−</button>
+                <input type="number" name="items[${idx}][jumlah_sampel]" id="sampel_${idx}" class="input-sampel" value="${data.jumlah_sampel}" min="1" oninput="recalculateTotals()" ${disabledAttr}>
+                <button type="button" class="stepper-btn" onclick="stepQuantity(${idx}, 1)" ${disabledAttr} title="Tambah Titik/Sampel">+</button>
+            </div>
         </td>
-        <td>
-            <div class="fw-bold text-end text-dark font-monospace" id="total_item_${idx}">Rp 0</div>
+        <td class="align-middle text-end">
+            <div class="fw-bold text-dark font-monospace small" id="total_item_${idx}">Rp 0</div>
         </td>
-        <td class="text-center">
-            <button type="button" class="btn btn-outline-danger btn-sm p-1" onclick="removeRowUji(${idx})" title="Hapus Baris">
-                <i class="bi bi-trash"></i>
+        <td class="align-middle text-center">
+            ${CAN_EDIT ? `
+            <button type="button" class="btn-del-row" onclick="removeRowUji(${idx})" title="Hapus baris">
+                <i class="bi bi-trash3"></i>
             </button>
+            ` : `<span class="text-muted">-</span>`}
         </td>
     `;
 
     tbody.appendChild(tr);
+    checkEmptyState();
     reindexRows();
     recalculateTotals();
+    updateSpmFromMaster();
 }
 
-function onSelectMetode(idx, selectEl) {
-    var opt = selectEl.options[selectEl.selectedIndex];
-    if (opt && opt.value) {
-        var tarif = parseFloat(opt.getAttribute('data-tarif')) || 0;
-        var standar = opt.getAttribute('data-standar') || '';
-
-        document.getElementById('nama_' + idx).value = opt.text.split(' (')[0];
-        document.getElementById('standar_' + idx).value = standar;
-        document.getElementById('tarif_' + idx).value = tarif;
+function addFromQuickCatalog() {
+    var selectEl = document.getElementById('quickSelectMetode');
+    var id = selectEl ? selectEl.value : null;
+    if (!id) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'info',
+                title: 'Pilih Parameter Uji',
+                text: 'Silakan cari dan pilih salah satu parameter pengujian dari katalog terlebih dahulu.',
+                confirmButtonColor: '#881337'
+            });
+        } else {
+            alert('Silakan cari dan pilih salah satu parameter pengujian terlebih dahulu.');
+        }
+        return;
     }
-    recalculateTotals();
+
+    var item = MASTER_METODE.find(function(m) { return m.id == id; });
+    if (!item) {
+        var opt = selectEl ? selectEl.querySelector('option[value="' + id + '"]') : null;
+        if (opt) {
+            item = {
+                id: id,
+                nama: opt.getAttribute('data-nama') || opt.text.split(' •')[0],
+                standar: opt.getAttribute('data-standar') || '',
+                tarif: parseFloat(opt.getAttribute('data-tarif')) || 0,
+                jumlah_sampel: parseInt(opt.getAttribute('data-sampel')) || 1,
+                durasi_nilai: parseInt(opt.getAttribute('data-nilai')) || parseInt(opt.getAttribute('data-durasi')) || 1,
+                durasi_satuan: opt.getAttribute('data-satuan') || 'Bulan',
+                durasi_bulan: parseInt(opt.getAttribute('data-durasi')) || 1,
+                butuh_eksternal: opt.getAttribute('data-eksternal') === '1'
+            };
+        }
+    }
+
+    if (!item) return;
+
+    // Bersihkan baris kosong default pertama jika belum diisi apa-apa
+    var rows = document.querySelectorAll('#tbodyUji tr');
+    if (rows.length === 1) {
+        var firstNama = rows[0].querySelector('input[name*="[nama_pengujian]"]');
+        var firstTarif = rows[0].querySelector('.input-tarif');
+        if (firstNama && !firstNama.value.trim() && (!firstTarif || parseFloat(firstTarif.value) === 0)) {
+            rows[0].remove();
+        }
+    }
+
+    addRowUji({
+        sub_layanan: 'uji_laboratorium',
+        metode_uji_id: item.id,
+        nama_pengujian: item.nama,
+        standar_rujukan: item.standar,
+        tarif_per_sampel: item.tarif,
+        jumlah_sampel: item.jumlah_sampel || 1,
+        durasi_nilai: item.durasi_nilai || 1,
+        durasi_satuan: item.durasi_satuan || 'Bulan',
+        durasi_bulan: item.durasi_bulan || 1,
+        is_subkontrak: item.butuh_eksternal ? true : false,
+        lab_eksternal_id: null
+    });
+
+    if (tomSelectInstance) {
+        tomSelectInstance.clear();
+    } else if (selectEl) {
+        selectEl.selectedIndex = 0;
+    }
 }
+
+function stepQuantity(idx, delta) {
+    var el = document.getElementById('sampel_' + idx);
+    if (el) {
+        var current = parseInt(el.value) || 1;
+        var next = Math.max(1, current + delta);
+        el.value = next;
+        recalculateTotals();
+    }
+}
+
 
 function removeRowUji(idx) {
     var tr = document.getElementById('row_' + idx);
     if (tr) {
         tr.remove();
     }
+    checkEmptyState();
     reindexRows();
     recalculateTotals();
+    updateSpmFromMaster();
+}
+
+function updateSpmFromMaster() {
+    var rows = document.querySelectorAll('#tbodyUji tr');
+    var maxEquivalentDays = 0;
+    var hasValid = false;
+
+    rows.forEach(function(tr) {
+        var namaEl = tr.querySelector('input[name*="[nama_pengujian]"]');
+        if (!namaEl || !namaEl.value.trim()) return;
+
+        hasValid = true;
+        var metodeIdEl = tr.querySelector('input[name*="[metode_uji_id]"]');
+        var durasiBulanEl = tr.querySelector('.row-durasi-bulan');
+
+        var durasiNilai = 1;
+        var durasiSatuan = 'Bulan';
+
+        if (metodeIdEl && metodeIdEl.value) {
+            var m = MASTER_METODE.find(function(item) { return item.id == metodeIdEl.value; });
+            if (m) {
+                durasiNilai = parseInt(m.durasi_nilai) || 1;
+                durasiSatuan = m.durasi_satuan || 'Bulan';
+            }
+        } else if (durasiBulanEl) {
+            durasiNilai = parseInt(durasiBulanEl.getAttribute('data-nilai')) || parseInt(durasiBulanEl.value) || 1;
+            durasiSatuan = durasiBulanEl.getAttribute('data-satuan') || 'Bulan';
+        }
+
+        var eqDays = 30;
+        if (durasiSatuan === 'Bulan') {
+            eqDays = durasiNilai * 30;
+        } else if (durasiSatuan === 'Minggu') {
+            eqDays = durasiNilai * 7;
+        } else {
+            eqDays = durasiNilai;
+        }
+
+        if (eqDays > maxEquivalentDays) {
+            maxEquivalentDays = eqDays;
+        }
+    });
+
+    var spmInput = document.getElementById('spm_layanan');
+    var displaySpm = document.getElementById('displaySpmLayanan');
+
+    if (hasValid && maxEquivalentDays > 0) {
+        var labelHari = maxEquivalentDays + ' Hari Kerja';
+        if (spmInput) spmInput.value = labelHari;
+        if (displaySpm) {
+            if (displaySpm.tagName === 'INPUT') {
+                displaySpm.value = labelHari;
+            } else {
+                displaySpm.textContent = labelHari;
+            }
+        }
+    } else {
+        if (spmInput) spmInput.value = '';
+        if (displaySpm) {
+            if (displaySpm.tagName === 'INPUT') {
+                displaySpm.value = '-';
+            } else {
+                displaySpm.textContent = '-';
+            }
+        }
+    }
+}
+
+function onCatalogSelectChange(val) {
+    if (!val) return;
+    var rows = document.querySelectorAll('#tbodyUji tr');
+    // Jika tabel masih kosong, saat memilih parameter di dropdown langsung tampilkan estimasi SPM
+    if (rows.length === 0) {
+        var m = MASTER_METODE.find(function(item) { return item.id == val; });
+        if (!m) {
+            var selectEl = document.getElementById('quickSelectMetode');
+            var opt = selectEl ? selectEl.querySelector('option[value="' + val + '"]') : null;
+            if (opt) {
+                var nilai = parseInt(opt.getAttribute('data-nilai')) || parseInt(opt.getAttribute('data-durasi')) || 1;
+                var satuan = opt.getAttribute('data-satuan') || 'Bulan';
+                m = { durasi_nilai: nilai, durasi_satuan: satuan };
+            }
+        }
+        if (m) {
+            var days = (m.durasi_satuan === 'Bulan') ? (m.durasi_nilai * 30) : ((m.durasi_satuan === 'Minggu') ? (m.durasi_nilai * 7) : m.durasi_nilai);
+            var label = days + ' Hari Kerja';
+            var spmInput = document.getElementById('spm_layanan');
+            var displaySpm = document.getElementById('displaySpmLayanan');
+            if (spmInput) spmInput.value = label;
+            if (displaySpm) {
+                if (displaySpm.tagName === 'INPUT') {
+                    displaySpm.value = label;
+                } else {
+                    displaySpm.textContent = label;
+                }
+            }
+        }
+    }
 }
 
 function reindexRows() {
@@ -353,6 +761,34 @@ function reindexRows() {
             numEl.textContent = i + 1;
         }
     });
+
+    var badge = document.getElementById('badgeParamCount');
+    if (badge) {
+        badge.textContent = rows.length + ' Parameter';
+    }
+}
+
+function checkEmptyState() {
+    var rows = document.querySelectorAll('#tbodyUji tr');
+    var emptyBox = document.getElementById('emptyStateTable');
+    if (rows.length === 0) {
+        if (emptyBox) emptyBox.style.display = 'block';
+    } else {
+        if (emptyBox) emptyBox.style.display = 'none';
+    }
+}
+
+function calculateTotalBruto() {
+    var rows = document.querySelectorAll('#tbodyUji tr');
+    var total = 0;
+    rows.forEach(function(tr) {
+        var tarifEl = tr.querySelector('.input-tarif');
+        var sampelEl = tr.querySelector('.input-sampel');
+        var tarif = parseFloat(tarifEl ? tarifEl.value : 0) || 0;
+        var sampel = parseInt(sampelEl ? sampelEl.value : 1) || 1;
+        total += (tarif * sampel);
+    });
+    return total;
 }
 
 function recalculateTotals() {
@@ -382,20 +818,69 @@ function recalculateTotals() {
     var diskon = parseFloat(diskonEl ? diskonEl.value : 0) || 0;
     var totalNetto = Math.max(0, totalBruto - diskon);
 
-    document.getElementById('lblJmlParameter').textContent = countParam;
-    document.getElementById('lblTotalSampel').textContent = totalSampel;
-    document.getElementById('lblTotalBruto').textContent = 'Rp ' + totalBruto.toLocaleString('id-ID');
-    document.getElementById('lblTotalDiskon').textContent = '- Rp ' + diskon.toLocaleString('id-ID');
-    document.getElementById('lblTotalNetto').textContent = 'Rp ' + totalNetto.toLocaleString('id-ID');
+    var lblJml = document.getElementById('lblJmlParameter');
+    var lblSampel = document.getElementById('lblTotalSampel');
+    var lblBruto = document.getElementById('lblTotalBruto');
+    var lblDiskon = document.getElementById('lblTotalDiskon');
+    var lblNetto = document.getElementById('lblTotalNetto');
+    var lblTerbilang = document.getElementById('lblTerbilangNetto');
+
+    if (lblJml) lblJml.textContent = countParam;
+    if (lblSampel) lblSampel.textContent = totalSampel;
+    if (lblBruto) lblBruto.textContent = 'Rp ' + totalBruto.toLocaleString('id-ID');
+    if (lblDiskon) lblDiskon.textContent = '- Rp ' + diskon.toLocaleString('id-ID');
+    if (lblNetto) lblNetto.textContent = 'Rp ' + totalNetto.toLocaleString('id-ID');
+    if (lblTerbilang) lblTerbilang.textContent = terbilang(totalNetto);
+}
+
+function terbilang(n) {
+    n = Math.floor(Math.abs(n));
+    if (n === 0) return 'Nol Rupiah';
+    var huruf = ['', 'Satu', 'Dua', 'Tiga', 'Empat', 'Lima', 'Enam', 'Tujuh', 'Delapan', 'Sembilan', 'Sepuluh', 'Sebelas'];
+    function sebut(x) {
+        if (x < 12) return huruf[x];
+        if (x < 20) return sebut(x - 10) + ' Belas';
+        if (x < 100) return sebut(Math.floor(x / 10)) + ' Puluh' + (x % 10 ? ' ' + sebut(x % 10) : '');
+        if (x < 200) return 'Seratus' + (x - 100 ? ' ' + sebut(x - 100) : '');
+        if (x < 1000) return sebut(Math.floor(x / 100)) + ' Ratus' + (x % 100 ? ' ' + sebut(x % 100) : '');
+        if (x < 2000) return 'Seribu' + (x - 1000 ? ' ' + sebut(x - 1000) : '');
+        if (x < 1000000) return sebut(Math.floor(x / 1000)) + ' Ribu' + (x % 1000 ? ' ' + sebut(x % 1000) : '');
+        if (x < 1000000000) return sebut(Math.floor(x / 1000000)) + ' Juta' + (x % 1000000 ? ' ' + sebut(x % 1000000) : '');
+        if (x < 1000000000000) return sebut(Math.floor(x / 1000000000)) + ' Miliar' + (x % 1000000000 ? ' ' + sebut(x % 1000000000) : '');
+        return sebut(Math.floor(x / 1000000000000)) + ' Triliun' + (x % 1000000000000 ? ' ' + sebut(x % 1000000000000) : '');
+    }
+    return sebut(n).trim() + ' Rupiah';
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Inisialisasi Tom Select jika tersedia
+    if (typeof TomSelect !== 'undefined') {
+        var quickEl = document.getElementById('quickSelectMetode');
+        if (quickEl) {
+            tomSelectInstance = new TomSelect(quickEl, {
+                create: false,
+                maxItems: 1,
+                placeholder: 'Ketik untuk mencari parameter uji (BOD, COD, pH, Air Limbah, dll)...',
+                sortField: { field: 'text', direction: 'asc' },
+                onChange: function(val) {
+                    onCatalogSelectChange(val);
+                }
+            });
+        }
+    }
+
+    // Muat data awal
     if (INITIAL_ITEMS && INITIAL_ITEMS.length > 0) {
         INITIAL_ITEMS.forEach(function(item) {
             addRowUji(item);
         });
+        updateSpmFromMaster();
     } else {
-        addRowUji(); // Baris pertama default
+        // Biarkan kosong dulu jika belum ada parameter
+        checkEmptyState();
+        reindexRows();
+        recalculateTotals();
+        updateSpmFromMaster();
     }
 });
 </script>

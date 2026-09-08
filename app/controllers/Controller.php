@@ -150,9 +150,9 @@ class Controller {
 
         // Hitung notifikasi tugas / disposisi masuk untuk Ketua Tim & Superadmin
         $notifKatimCount = 0;
-        if ($role === 'ketua_tim' || $role === 'superadmin') {
-            try {
-                $whereDiv = ($role === 'ketua_tim' && in_array($layanan, array('selulosa', 'lingkungan'))) ? "o.jenis_layanan_opti = '{$layanan}' AND" : "";
+        try {
+            if ($role === 'ketua_tim') {
+                $whereDiv = in_array($layanan, array('selulosa', 'lingkungan')) ? "o.jenis_layanan_opti = '{$layanan}' AND" : "";
                 $sqlNotif = "SELECT COUNT(*) as c FROM order_layanan o
                              WHERE {$whereDiv} (
                                  (o.status = 'baru' AND o.id NOT IN (SELECT order_id FROM opti_tinjauan_kelayakan))
@@ -160,21 +160,26 @@ class Controller {
                              )";
                 $resNotif = $this->db->exec($sqlNotif);
                 $notifKatimCount = (int)($resNotif[0]['c'] ?? 0);
-            } catch (\Exception $eNotif) {
-                $notifKatimCount = 0;
+            } elseif ($role === 'superadmin') {
+                $sqlNotif = "SELECT COUNT(*) as c FROM order_layanan o
+                             WHERE (
+                                 (o.status = 'baru' AND o.id NOT IN (SELECT order_id FROM opti_tinjauan_kelayakan))
+                                 OR (o.status_proposal_biaya = 'menunggu_approval')
+                             )";
+                $resNotif = $this->db->exec($sqlNotif);
+                $notifKatimCount = (int)($resNotif[0]['c'] ?? 0);
             }
+        } catch (\Exception $eNotif) {
+            $notifKatimCount = 0;
         }
         $this->f3->set('jumlah_notif_katim', $notifKatimCount);
 
         // Hitung notifikasi Surat Masuk untuk Tim Mitra, Sekretaris & Superadmin
         $notifSuratCount = 0;
-        if ($role === 'admin_order' || $role === 'tim_mitra' || $role === 'sekretaris' || $role === 'superadmin') {
+        if ($isTimMitra || $role === 'sekretaris' || $role === 'superadmin') {
             try {
                 $repoSurat = new \SuratMasukRepository($this->db, $this->dbSekretariat);
-                $suratBelumKlaim = count($repoSurat->getDaftarSuratOpti());
-                $resOrderKlaim = $this->db->exec("SELECT COUNT(*) as c FROM order_layanan WHERE status = 'permintaan_masuk'");
-                $orderBelumDiproses = (int)($resOrderKlaim[0]['c'] ?? 0);
-                $notifSuratCount = $suratBelumKlaim + $orderBelumDiproses;
+                $notifSuratCount = $repoSurat->countSuratOptiBelumKlaim();
             } catch (\Exception $eSurat) {
                 $notifSuratCount = 0;
             }
@@ -365,9 +370,9 @@ class Controller {
             return;
         }
 
-        // Jika user sudah masuk dan mencoba mengakses form login, langsung arahkan ke /order
+        // Jika user sudah masuk dan mencoba mengakses form login, langsung arahkan ke /dashboard
         if ($isAuthPage && $path === '/login' && isset($_SESSION['user_id'])) {
-            $f3->reroute('/order');
+            $f3->reroute('/dashboard');
             return;
         }
 
