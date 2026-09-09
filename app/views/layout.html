@@ -987,14 +987,6 @@
                     </li>
                 </check>
 
-                <!-- Surat Penawaran Mitra (Admin Order & Superadmin) -->
-                <check if="{{ @is_superadmin || @is_admin_order }}">
-                    <li>
-                        <a class="sidebar-link {{ @active_menu == 'surat-penawaran-mitra' || @active_menu == 'penawaran_mitra' ? 'active' : '' }}" href="{{ @BASE }}/surat-penawaran-mitra" title="Surat Penawaran Mitra">
-                            <i class="bi bi-envelope-paper"></i> <span>Surat Penawaran Mitra</span>
-                        </a>
-                    </li>
-                </check>
 
                 <!-- Rekapitulasi Pembayaran & Keuangan -->
                 <check if="{{ @is_superadmin || @is_keuangan || @is_admin_order || @is_admin_kontrak }}">
