@@ -939,7 +939,16 @@ class OrderLayanan extends \DB\SQL\Mapper {
      * Ambil daftar Ketua Tim dan penanggung jawab teknis untuk penunjukan pelaksana order
      */
     public static function getPICSpesialisasiList(\DB\SQL $db, ?string $divisi = null): array {
-        $sql = "SELECT DISTINCT u.id_user, u.login, u.nama_user, 
+        $priorityUser = 0;
+        if ($divisi === 'lingkungan') {
+            $priorityUser = 61;
+        } elseif ($divisi === 'selulosa') {
+            $priorityUser = 3;
+        }
+
+        $sql = "SELECT DISTINCT u.id_user, u.login, u.nama_user, u.si_opti,
+                       (CASE WHEN u.id_user = {$priorityUser} THEN 1 ELSE 0 END) AS is_priority,
+                       (CASE WHEN u.si_opti LIKE '%ketua_tim%' THEN 1 ELSE 0 END) AS is_katim,
                        CASE 
                            WHEN u.si_opti LIKE '%ketua_tim%' THEN 'Ketua Tim'
                            ELSE 'Koordinator Pelaksana'
@@ -962,12 +971,10 @@ class OrderLayanan extends \DB\SQL\Mapper {
             $params[2] = $divisi;
         }
 
-        if ($divisi === 'lingkungan') {
-            $sql .= " ORDER BY (u.id_user = 61) DESC, (u.si_opti LIKE '%ketua_tim%') DESC, u.nama_user ASC";
-        } elseif ($divisi === 'selulosa') {
-            $sql .= " ORDER BY (u.id_user = 3) DESC, (u.si_opti LIKE '%ketua_tim%') DESC, u.nama_user ASC";
+        if ($priorityUser > 0) {
+            $sql .= " ORDER BY is_priority DESC, is_katim DESC, u.nama_user ASC";
         } else {
-            $sql .= " ORDER BY (u.si_opti LIKE '%ketua_tim%') DESC, u.nama_user ASC";
+            $sql .= " ORDER BY is_katim DESC, u.nama_user ASC";
         }
 
         return $db->exec($sql, $params);
