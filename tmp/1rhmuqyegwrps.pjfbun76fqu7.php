@@ -987,6 +987,18 @@
                     </li>
                 <?php endif; ?>
 
+                <!-- <?php if ($is_superadmin || $is_admin_order): ?>
+                    <li>
+                        <a class="sidebar-link <?= ($active_menu == 'surat-penawaran-mitra' ? 'active' : '') ?>" href="<?= ($BASE) ?>/surat-penawaran-mitra" title="Surat Penawaran">
+                            <i class="bi bi-envelope-paper"></i> <span>Surat Penawaran</span>
+                            <?php if ($jumlah_notif_surat > 0): ?>
+                                <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.68rem; padding: 0.25em 0.6em;"><?= ($jumlah_notif_surat) ?></span>
+                            <?php endif; ?>
+                        </a>
+                    </li>
+                <?php endif; ?> -->
+
+
                 <!-- Menu Pembayaran disembunyikan sementara waktu karena masih fokus revisi alur utama -->
 
                 <!-- 2. PELAKSANAAN TEKNIS -->

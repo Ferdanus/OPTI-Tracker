@@ -180,14 +180,23 @@ $f3->route('POST /order/@id/konfirmasi-pembayaran', 'OrderController->konfirmasi
 // ==========================================
 // ROUTE MODUL PEMBAYARAN MULTI-TERMIN & INVOICE
 // ==========================================
-$f3->route('GET /pembayaran', 'PembayaranController->index');
-$f3->route('GET /pembayaran/tambah', 'PembayaranController->tambah');
-$f3->route('POST /pembayaran/simpan', 'PembayaranController->simpan');
-$f3->route('POST /pembayaran/@id/hapus', 'PembayaranController->hapus');
-$f3->route('GET /order/@id/invoice/buat', 'PembayaranController->invoiceForm');
-$f3->route('POST /order/@id/invoice/simpan', 'PembayaranController->invoiceSimpan');
-$f3->route('GET /order/@id/pembayaran/tambah', 'PembayaranController->tambahDariOrder');
-$f3->route('POST /order/@id/pembayaran/simpan', 'PembayaranController->simpanDariOrder');
+// $f3->route('GET /pembayaran', 'PembayaranController->index');
+// $f3->route('GET /pembayaran/tambah', 'PembayaranController->tambah');
+// $f3->route('POST /pembayaran/simpan', 'PembayaranController->simpan');
+// $f3->route('POST /pembayaran/@id/hapus', 'PembayaranController->hapus');
+// $f3->route('GET /order/@id/invoice/buat', 'PembayaranController->invoiceForm');
+// $f3->route('POST /order/@id/invoice/simpan', 'PembayaranController->invoiceSimpan');
+// $f3->route('GET /order/@id/pembayaran/tambah', 'PembayaranController->tambahDariOrder');
+// $f3->route('POST /order/@id/pembayaran/simpan', 'PembayaranController->simpanDariOrder');
+
+$f3->route('GET /pembayaran', 'PembayaranOptiController->index');
+$f3->route('GET /pembayaran/tambah', 'PembayaranOptiController->tambah');
+$f3->route('POST /pembayaran/simpan', 'PembayaranOptiController->simpan');
+$f3->route('POST /pembayaran/@id/hapus', 'PembayaranOptiController->hapus');
+$f3->route('GET /order/@id/invoice/buat', 'PembayaranOptiController->invoiceForm');
+$f3->route('POST /order/@id/invoice/simpan', 'PembayaranOptiController->invoiceSimpan');
+$f3->route('GET /order/@id/pembayaran/tambah', 'PembayaranOptiController->tambahDariOrder');
+$f3->route('POST /order/@id/pembayaran/simpan', 'PembayaranOptiController->simpanDariOrder');
 
 // ==========================================
 // ROUTE MODUL BAST & PENUTUPAN ORDER

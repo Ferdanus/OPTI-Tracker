@@ -4,7 +4,7 @@
         <div>
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb mb-1 small">
-                    <li class="breadcrumb-item"><a href="<?= ($BASE) ?>/po" class="text-decoration-none text-muted">Beranda</a></li>
+                    <li class="breadcrumb-item"><a href="<?= ($BASE) ?>/dashboard" class="text-decoration-none text-muted">Beranda</a></li>
                     <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Kotak Masuk Permohonan</li>
                 </ol>
             </nav>
@@ -229,10 +229,7 @@
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    <div class="text-dark fw-semibold mb-1"><?= ($surat['perihal']) ?></div>
-                                                    <span class="badge bg-light text-secondary border" style="font-size: 0.7rem;">
-                                                        <i class="bi bi-envelope-paper me-1 text-primary"></i> Permohonan OPTI
-                                                    </span>
+                                                    <div class="text-dark fw-semibold"><?= ($surat['perihal']) ?></div>
                                                 </td>
                                                 <td class="text-center">
                                                     <?php if ($surat['file_path']): ?>
@@ -555,6 +552,7 @@
                                     <span class="text-muted small d-block">Kontak Telepon / WA:</span>
                                     <span class="fw-semibold text-dark"><?= ($surat['no_telp_pengirim'] ?: '-') ?></span>
                                 </div>
+
                                 <div class="col-12 border-top pt-2 mt-2">
                                     <span class="text-muted small d-block">Perihal / Topik Kegiatan:</span>
                                     <span class="fw-semibold text-dark"><?= ($surat['perihal']) ?></span>
