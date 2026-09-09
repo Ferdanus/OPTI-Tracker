@@ -352,18 +352,44 @@
                 <div class="system-section-header">
                     <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2">
                         <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-0.5 small fw-bold">1</span>
-                        <i class="bi bi-envelope-paper-fill text-primary"></i> Asal Surat Permohonan
+                        <i class="bi bi-person-vcard-fill text-primary"></i> Profil &amp; Asal Surat Permohonan
                     </h6>
                     <button type="button" class="btn btn-outline-primary btn-xs py-0 px-2 fw-semibold" data-bs-toggle="modal" data-bs-target="#modalEditKlien">
                         <i class="bi bi-pencil me-1"></i> Edit Data
                     </button>
                 </div>
                 <div class="p-3">
+                    <!-- 1. Identitas Profil Pelanggan / Perusahaan (Di Atas) -->
+                    <div class="mb-3">
+                        <div class="d-flex align-items-start justify-content-between gap-2 mb-1">
+                            <h6 class="fw-bold text-dark mb-0 font-display">{{ @order.nama_perusahaan }}</h6>
+                            <span class="badge bg-light text-secondary border">{{ @order.pt_cv ?: 'Perusahaan' }}</span>
+                        </div>
+
+                        <div class="mt-2.5 mb-2 small">
+                            <span class="text-muted d-block" style="font-size:0.75rem;">Nama Kontak / PIC:</span>
+                            <strong class="text-dark">{{ @order.pic ?: '-' }}</strong>
+                        </div>
+                        <div class="mb-2 small">
+                            <span class="text-muted d-block" style="font-size:0.75rem;">Telepon / WhatsApp:</span>
+                            <span class="text-dark">{{ @order.telepon ?: '-' }}</span>
+                        </div>
+                        <div class="mb-2 small">
+                            <span class="text-muted d-block" style="font-size:0.75rem;">Email:</span>
+                            <span class="text-dark">{{ @order.email ?: '-' }}</span>
+                        </div>
+                        <div class="mb-0 small">
+                            <span class="text-muted d-block" style="font-size:0.75rem;">Alamat:</span>
+                            <span class="text-secondary">{{ @order.alamat ?: '-' }}</span>
+                        </div>
+                    </div>
+
+                    <!-- 2. Asal Surat Permohonan (Di Bawah Identitas Profil) -->
                     <check if="{{ @surat_masuk }}">
-                        <div class="p-3 bg-light rounded border mb-3">
+                        <div class="p-3 bg-light rounded border mt-3">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
-                                    <i class="bi bi-file-earmark-pdf me-1"></i> Arsip Surat Masuk
+                                    <i class="bi bi-envelope-paper-fill me-1"></i> Asal Surat Permohonan
                                 </span>
                                 <small class="text-muted"><i class="bi bi-calendar3 me-1"></i>{{ date('d M Y', strtotime(@surat_masuk.tanggal_surat)) }}</small>
                             </div>
@@ -376,32 +402,12 @@
                                 <span class="text-secondary fw-semibold">{{ @surat_masuk.perihal }}</span>
                             </div>
                             <check if="{{ @surat_masuk.file_path }}">
-                                <button type="button" class="btn btn-sm btn-outline-primary w-100 py-1 fw-semibold d-flex align-items-center justify-content-center gap-1 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalPreviewSuratMasuk">
+                                <button type="button" class="btn btn-sm btn-outline-primary w-100 py-1 fw-semibold d-flex align-items-center justify-content-center gap-1 shadow-sm mt-2" data-bs-toggle="modal" data-bs-target="#modalPreviewSuratMasuk">
                                     <i class="bi bi-file-earmark-pdf text-danger me-1"></i> Pratinjau Berkas Surat PDF
                                 </button>
                             </check>
                         </div>
                     </check>
-
-                    <h6 class="fw-bold text-dark mb-1">{{ @order.nama_perusahaan }}</h6>
-                    <span class="badge bg-light text-secondary border mb-3">{{ @order.pt_cv ?: 'Perusahaan' }}</span>
-
-                    <div class="mb-2 small">
-                        <span class="text-muted d-block" style="font-size:0.75rem;">Nama Kontak / PIC:</span>
-                        <strong class="text-dark">{{ @order.pic ?: '-' }}</strong>
-                    </div>
-                    <div class="mb-2 small">
-                        <span class="text-muted d-block" style="font-size:0.75rem;">Telepon / WhatsApp:</span>
-                        <span class="text-dark">{{ @order.telepon ?: '-' }}</span>
-                    </div>
-                    <div class="mb-2 small">
-                        <span class="text-muted d-block" style="font-size:0.75rem;">Email:</span>
-                        <span class="text-dark">{{ @order.email ?: '-' }}</span>
-                    </div>
-                    <div class="mb-0 small">
-                        <span class="text-muted d-block" style="font-size:0.75rem;">Alamat:</span>
-                        <span class="text-secondary">{{ @order.alamat ?: '-' }}</span>
-                    </div>
                 </div>
             </div>
 

@@ -108,85 +108,130 @@
         </div>
     </div>
 
-    <!-- CUSTOM STYLING FOR MODERN SEGMENTED PILLS NAVIGATION -->
+    <!-- CUSTOM STYLING FOR MODERN FILTER PILLS NAVIGATION -->
     <style>
-        .surat-nav-container {
-            background: #f8fafc;
-            border-bottom: 1px solid var(--color-border);
-            padding: 10px 14px;
+        .filter-tabs-wrapper {
+            background: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 12px 18px;
         }
-        .surat-nav-pills {
-            display: inline-flex;
-            gap: 6px;
-            background: #e2e8f0;
-            padding: 5px;
-            border-radius: 10px;
-            border: 1px solid #cbd5e1;
-            flex-wrap: wrap;
+        .filter-tab-pill.nav-link,
+        .filter-tab-pill {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 0.45rem !important;
+            padding: 0.45rem 0.85rem !important;
+            border-radius: 9999px !important;
+            font-size: 0.8rem !important;
+            font-weight: 600 !important;
+            color: #475569 !important;
+            background-color: #ffffff !important;
+            border: 1px solid #e2e8f0 !important;
+            text-decoration: none !important;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            white-space: nowrap !important;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03) !important;
+            cursor: pointer !important;
+            line-height: 1.2 !important;
         }
-        .surat-nav-pills .nav-link {
-            border-radius: 7px;
-            color: #334155;
-            font-family: var(--font-display);
-            font-weight: 600;
-            font-size: 0.82rem;
-            padding: 7px 16px;
-            border: none;
-            transition: all 0.18s ease-in-out;
+        .filter-tab-pill.nav-link:hover,
+        .filter-tab-pill:hover {
+            color: #0f172a !important;
+            background-color: #f8fafc !important;
+            border-color: #cbd5e1 !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important;
+        }
+        .filter-tab-pill .count-chip {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            white-space: nowrap;
-            background: transparent;
-        }
-        .surat-nav-pills .nav-link:hover {
-            background: rgba(255, 255, 255, 0.7);
-            color: var(--color-primary);
-        }
-        .surat-nav-pills .nav-link.active {
-            background: var(--color-primary) !important;
-            color: #ffffff !important;
-            box-shadow: 0 3px 10px rgba(136, 19, 55, 0.28);
-        }
-        .surat-nav-pills .nav-link.active .pill-count {
-            background-color: rgba(255, 255, 255, 0.25) !important;
-            color: #ffffff !important;
-        }
-        .pill-count {
+            justify-content: center;
+            min-width: 20px;
+            height: 20px;
+            padding: 0 6px;
+            border-radius: 9999px;
             font-size: 0.72rem;
-            padding: 2px 7px;
-            border-radius: 12px;
             font-weight: 700;
-            transition: all 0.18s ease;
+            background-color: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s;
+        }
+        .filter-tab-pill .count-chip.chip-warning {
+            background-color: #fef3c7;
+            color: #b45309;
+            border-color: #fde68a;
+        }
+        .filter-tab-pill .count-chip.chip-success {
+            background-color: #dcfce7;
+            color: #15803d;
+            border-color: #bbf7d0;
+        }
+        .filter-tab-pill .count-chip.chip-danger {
+            background-color: #fee2e2;
+            color: #b91c1c;
+            border-color: #fecaca;
+        }
+        .filter-tab-pill.nav-link.active,
+        .filter-tab-pill.active {
+            color: #ffffff !important;
+            background-color: var(--color-primary, #881337) !important;
+            border-color: var(--color-primary, #881337) !important;
+            box-shadow: 0 2px 6px rgba(136, 19, 55, 0.25) !important;
+        }
+        .filter-tab-pill.nav-link.active .count-chip,
+        .filter-tab-pill.active .count-chip {
+            background-color: rgba(255, 255, 255, 0.25) !important;
+            border-color: transparent !important;
+            color: #ffffff !important;
+        }
+        .filter-tab-pill.nav-link.active i,
+        .filter-tab-pill.active i {
+            color: #ffffff !important;
+        }
+        .filter-tab-pill.tab-ditolak.active {
+            background-color: #dc2626 !important;
+            border-color: #dc2626 !important;
+            box-shadow: 0 2px 6px rgba(220, 38, 38, 0.25) !important;
+            color: #ffffff !important;
+        }
+        .filter-tab-pill.tab-ditolak.active .count-chip {
+            background-color: rgba(255, 255, 255, 0.25) !important;
+            border-color: transparent !important;
+            color: #ffffff !important;
         }
     </style>
 
-    <!-- TABEL UTAMA DENGAN HIGHLIGHT SEGMENTED PILLS -->
+    <!-- TABEL UTAMA DENGAN FILTER PILLS NAVIGATION -->
     <div class="card border-0 shadow-sm overflow-hidden mb-4">
-        <div class="surat-nav-container">
-            <ul class="nav surat-nav-pills" id="suratTabs" role="tablist">
+        <div class="filter-tabs-wrapper">
+            <ul class="nav d-flex align-items-center gap-2 flex-wrap mb-0 p-0 border-0" id="suratTabs" role="tablist">
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="tab-tersedia" data-bs-toggle="tab" data-bs-target="#content-tersedia" type="button" role="tab" aria-controls="content-tersedia" aria-selected="true">
-                        <i class="bi bi-inbox-fill"></i> Surat Masuk
-                        <span class="pill-count bg-white text-dark shadow-sm">{{ count(@daftar_surat) }}</span>
+                    <button class="nav-link filter-tab-pill active" id="tab-tersedia" data-bs-toggle="tab" data-bs-target="#content-tersedia" type="button" role="tab" aria-controls="content-tersedia" aria-selected="true">
+                        <i class="bi bi-inbox-fill"></i>
+                        <span>Surat Masuk</span>
+                        <span class="count-chip">{{ count(@daftar_surat) }}</span>
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="tab-klaim" data-bs-toggle="tab" data-bs-target="#content-klaim" type="button" role="tab" aria-controls="content-klaim" aria-selected="false">
-                        <i class="bi bi-envelope-check-fill"></i> Surat Diterima
-                        <span class="pill-count bg-warning text-dark">{{ count(@daftar_klaim) }}</span>
+                    <button class="nav-link filter-tab-pill" id="tab-klaim" data-bs-toggle="tab" data-bs-target="#content-klaim" type="button" role="tab" aria-controls="content-klaim" aria-selected="false">
+                        <i class="bi bi-envelope-check-fill text-warning"></i>
+                        <span>Surat Diterima</span>
+                        <span class="count-chip chip-warning">{{ count(@daftar_klaim) }}</span>
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="tab-riwayat" data-bs-toggle="tab" data-bs-target="#content-riwayat" type="button" role="tab" aria-controls="content-riwayat" aria-selected="false">
-                        <i class="bi bi-check2-all"></i> Riwayat Order Lanjutan
-                        <span class="pill-count bg-success text-white">{{ count(@daftar_riwayat) }}</span>
+                    <button class="nav-link filter-tab-pill" id="tab-riwayat" data-bs-toggle="tab" data-bs-target="#content-riwayat" type="button" role="tab" aria-controls="content-riwayat" aria-selected="false">
+                        <i class="bi bi-check2-all text-success"></i>
+                        <span>Riwayat Order Lanjutan</span>
+                        <span class="count-chip chip-success">{{ count(@daftar_riwayat) }}</span>
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="tab-ditolak" data-bs-toggle="tab" data-bs-target="#content-ditolak" type="button" role="tab" aria-controls="content-ditolak" aria-selected="false">
-                        <i class="bi bi-x-octagon-fill text-danger"></i> Surat Ditolak
-                        <span class="pill-count bg-danger text-white">{{ count(@daftar_ditolak) }}</span>
+                    <button class="nav-link filter-tab-pill tab-ditolak" id="tab-ditolak" data-bs-toggle="tab" data-bs-target="#content-ditolak" type="button" role="tab" aria-controls="content-ditolak" aria-selected="false">
+                        <i class="bi bi-x-octagon-fill text-danger"></i>
+                        <span>Surat Ditolak</span>
+                        <span class="count-chip chip-danger">{{ count(@daftar_ditolak) }}</span>
                     </button>
                 </li>
             </ul>

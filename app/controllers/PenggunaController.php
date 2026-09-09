@@ -60,7 +60,7 @@ class PenggunaController extends Controller {
                 'badge_class' => 'bg-primary-subtle text-primary border border-primary-subtle',
                 'icon' => 'bi-cash-stack',
                 'category' => 'manajemen',
-                'desc' => 'Verifikasi pembayaran dan billing'
+                'desc' => 'Verifikasi pembayaran'
             )
         );
     }

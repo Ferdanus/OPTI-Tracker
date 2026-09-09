@@ -347,20 +347,25 @@
                                 <small class="text-muted fw-normal">Format: PDF, DOCX, XLSX (Maks. 10MB)</small>
                             </label>
 
-                            <!-- Card Berkas / Dokumen Proposal Aktif -->
-                            <check if="{{ @proposal }}">
-                                <div class="preview-card mb-3">
+                            <!-- Card Berkas / Dokumen Proposal Aktif (Hanya muncul jika PIC sudah mengunggah file riil) -->
+                            <check if="{{ !empty(@proposal.file_proposal) }}">
+                                <div class="preview-card mb-3" id="savedProposalCard">
                                     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                                         <div class="d-flex align-items-center gap-3">
                                             <div class="rounded-3 bg-danger-subtle text-danger p-2.5 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">
-                                                <i class="bi bi-file-earmark-pdf-fill fs-4"></i>
+                                                <i class="bi bi-file-earmark-check-fill fs-4"></i>
                                             </div>
                                             <div>
                                                 <strong class="text-dark d-block font-monospace" style="font-size: 0.88rem;">
-                                                    {{ @proposal.file_proposal ? basename(@proposal.file_proposal) : 'Proposal_Order_#' . @order.nomor_order . '.pdf' }}
+                                                    {{ basename(@proposal.file_proposal) }}
                                                 </strong>
-                                                <div class="text-muted small mt-0.5" style="font-size: 0.76rem;">
-                                                    {{ @proposal.durasi_kegiatan ?: '30 Hari Kerja' }}
+                                                <div class="d-flex align-items-center gap-2 mt-0.5">
+                                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-0.5 rounded-pill" style="font-size: 0.70rem;">
+                                                        <i class="bi bi-check-circle-fill me-1"></i>Dokumen Tersimpan
+                                                    </span>
+                                                    <check if="{{ @proposal.durasi_kegiatan }}">
+                                                        <span class="text-muted small" style="font-size: 0.76rem;">{{ @proposal.durasi_kegiatan }}</span>
+                                                    </check>
                                                 </div>
                                             </div>
                                         </div>
@@ -369,11 +374,15 @@
                                             <button type="button" class="btn btn-outline-danger btn-sm px-3 py-1.5 fw-semibold shadow-xs" onclick="openProposalCanvasModal('{{ @order.id }}')">
                                                 <i class="bi bi-eye-fill me-1"></i> Pratinjau Dokumen
                                             </button>
-                                            <!-- Tombol Download jika ada file fisik -->
-                                            <check if="{{ @proposal.file_proposal }}">
-                                                <a href="{{ @BASE }}/{{ @proposal.file_proposal }}" target="_blank" class="btn btn-light border btn-sm px-3 py-1.5 fw-semibold text-secondary" download>
-                                                    <i class="bi bi-download me-1"></i> Unduh
-                                                </a>
+                                            <!-- Tombol Download file fisik -->
+                                            <a href="{{ @BASE }}/{{ @proposal.file_proposal }}" target="_blank" class="btn btn-light border btn-sm px-3 py-1.5 fw-semibold text-secondary" download>
+                                                <i class="bi bi-download me-1"></i> Unduh
+                                            </a>
+                                            <!-- Tombol Ganti Berkas jika can_edit -->
+                                            <check if="{{ @can_edit }}">
+                                                <button type="button" class="btn btn-light border btn-sm px-2.5 py-1.5 text-secondary" onclick="document.getElementById('file_proposal').click()" title="Unggah / Ganti berkas proposal">
+                                                    <i class="bi bi-arrow-repeat me-1"></i> Ganti Berkas
+                                                </button>
                                             </check>
                                         </div>
                                     </div>
@@ -895,7 +904,7 @@ function loadProposalData(orderId) {
         .catch(function(err) {
             console.error('Error loading PDF canvas:', err);
             if (spinner) {
-                spinner.innerHTML = '<div class="text-danger p-4"><i class="bi bi-exclamation-triangle-fill fs-3 d-block mb-2"></i>Gagal memuat berkas proposal.<br><small class="text-muted">Silakan periksa kembali koneksi Anda.</small></div>';
+                spinner.innerHTML = '<div class="text-secondary p-4"><i class="bi bi-file-earmark-x fs-2 d-block mb-2 text-muted"></i><strong class="text-dark">Belum Ada Dokumen Proposal</strong><br><small class="text-muted">' + (err.message || 'Silakan unggah dokumen proposal terlebih dahulu.') + '</small></div>';
             }
         });
 }
@@ -1077,6 +1086,32 @@ document.addEventListener('DOMContentLoaded', function() {
     if (hiddenEl && displayEl) {
         const val = parseInt(hiddenEl.value, 10) || 0;
         displayEl.value = val > 0 ? val.toLocaleString('id-ID') : '';
+    }
+
+    // Validasi Pengajuan Proposal: Pastikan berkas proposal sudah diunggah
+    const formProposal = document.getElementById('formProposal');
+    if (formProposal) {
+        formProposal.addEventListener('submit', function(e) {
+            const submitter = e.submitter;
+            const actionType = submitter ? submitter.value : '';
+            if (actionType === 'ajukan') {
+                const hasExistingFile = {{ !empty(@proposal.file_proposal) ? 'true' : 'false' }};
+                const fileInput = document.getElementById('file_proposal');
+                const hasNewFile = fileInput && fileInput.files && fileInput.files.length > 0;
+
+                if (!hasExistingFile && !hasNewFile) {
+                    e.preventDefault();
+                    alert('Harap unggah berkas dokumen proposal teknis (.pdf / .docx / .xlsx) terlebih dahulu sebelum mengajukan ke Ketua Tim OPTI.');
+                    const dropzone = document.getElementById('dropzoneContainer');
+                    if (dropzone) {
+                        dropzone.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        dropzone.style.borderColor = '#dc3545';
+                        setTimeout(() => { dropzone.style.borderColor = ''; }, 3000);
+                    }
+                    return false;
+                }
+            }
+        });
     }
 });
 </script>

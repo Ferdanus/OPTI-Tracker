@@ -1119,19 +1119,19 @@ $daftarPegawai = $arsipUser->find(
         $pdf->SetFont('Arial', '', 8);
         $pdf->Cell(76, 3.8, 'Dengan ini kami menyetujui surat penawaran ini :', 0, 1);
         $pdf->SetX(22);
-        $pdf->Cell(16, 3.8, 'Nama', 0, 0); $pdf->Cell(3, 3.8, ':', 0, 1);
+        $pdf->Cell(24, 3.8, 'Nama', 0, 0); $pdf->Cell(3, 3.8, ':', 0, 1);
         $pdf->SetX(22);
-        $pdf->Cell(16, 3.8, 'Jabatan', 0, 0); $pdf->Cell(3, 3.8, ':', 0, 1);
+        $pdf->Cell(24, 3.8, 'Jabatan', 0, 0); $pdf->Cell(3, 3.8, ':', 0, 1);
         $pdf->SetX(22);
-        $pdf->Cell(16, 3.8, 'No. Tlp', 0, 0); $pdf->Cell(3, 3.8, ':', 0, 1);
+        $pdf->Cell(24, 3.8, 'Nomor Telepon', 0, 0); $pdf->Cell(3, 3.8, ':', 0, 1);
         $pdf->SetX(22);
-        $pdf->Cell(76, 3.8, 'TTD & Stempel', 0, 1);
+        $pdf->Cell(76, 3.8, 'Tanda Tangan dan Stempel', 0, 1);
 
         // Kanan: Penandatangan Pejabat BBSPJIS
         $signerName = !empty($sp['pembuat_nama']) && $sp['pembuat_nama'] !== 'Tim Mitra Kerjasama BBSPJIS' ? $sp['pembuat_nama'] : 'Hagung Eko Pawoko';
         $pdf->SetXY(120, $yBawah + 1.5);
         $pdf->SetFont('Arial', '', 9);
-        $pdf->Cell(70, 4.2, 'plh. Kepala', 0, 1, 'C');
+        $pdf->Cell(70, 4.2, 'Kepala Balai Besar', 0, 1, 'C');
         $pdf->SetY($yBawah + 22);
         $pdf->SetX(120);
         $pdf->SetFont('Arial', 'B', 9);
@@ -1141,7 +1141,7 @@ $daftarPegawai = $arsipUser->find(
         $pdf->SetXY(20, $yBawah + 32);
         $pdf->SetFont('Arial', '', 7);
         $pdf->Cell(0, 3, 'Tembusan :', 0, 1);
-        $pdf->Cell(3, 3, '1', 0, 0); $pdf->Cell(0, 3, 'Kepala. Bagian Tata Usaha', 0, 1);
+        $pdf->Cell(3, 3, '1', 0, 0); $pdf->Cell(0, 3, 'Kepala Bagian Tata Usaha', 0, 1);
         $pdf->Cell(3, 3, '2', 0, 0); $pdf->Cell(0, 3, 'Ketua Tim Layanan Mitra Industri', 0, 1);
         $pdf->Cell(3, 3, '3', 0, 0); $pdf->Cell(0, 3, 'Ketua Tim OPTI Kertas, Selulosa dan Produk Bahan Acuan', 0, 1);
 

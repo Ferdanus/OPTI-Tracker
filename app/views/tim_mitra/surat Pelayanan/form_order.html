@@ -11,10 +11,7 @@
                 <li class="breadcrumb-item active" aria-current="page">Surat Penawaran Resmi</li>
             </ol>
         </nav>
-        <div class="d-flex align-items-center gap-2">
-            <h4 class="fw-bold mb-0 text-dark">Penerbitan Surat Penawaran Resmi</h4>
-            <span class="badge px-2 py-1 small fw-semibold" style="background-color: #fff1f2; color: #881337; border: 1px solid #fecdd3;">Tim Mitra</span>
-        </div>
+        <h4 class="fw-bold mb-0 text-dark">Penerbitan Surat Penawaran Resmi</h4>
         <p class="text-muted small m-0 mt-1">Formulir penerbitan Surat Penawaran Tarif dan Jadwal Layanan OPTI kepada pelanggan/mitra kerja.</p>
     </div>
     <div class="d-flex align-items-center gap-2">
@@ -253,25 +250,33 @@
         background: #ffffff;
         border: 1px solid #e2e8f0;
         border-radius: 12px;
-        padding: 20px 24px;
+        padding: 18px 20px;
         margin-bottom: 1.15rem;
-        box-shadow: 0 3px 12px -2px rgba(15, 23, 42, 0.05), 0 1px 4px -1px rgba(15, 23, 42, 0.02);
+        box-shadow: 0 2px 8px -1px rgba(15, 23, 42, 0.05);
         position: relative;
     }
     .calc-source-selulosa {
-        border-left: 5px solid #881337 !important;
+        border-left: 4px solid #881337 !important;
     }
     .calc-source-lingkungan {
-        border-left: 5px solid #16a34a !important;
+        border-left: 4px solid #16a34a !important;
     }
     .calc-source-neutral {
-        border-left: 5px solid #d97706 !important;
+        border-left: 4px solid #d97706 !important;
     }
     .calc-source-top {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 16px;
+        flex-wrap: wrap;
+        gap: 14px 18px;
+    }
+    .calc-source-info {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex: 1 1 240px;
+        min-width: 0;
     }
     .calc-icon-box {
         width: 46px;
@@ -280,7 +285,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.35rem;
+        font-size: 1.25rem;
         flex-shrink: 0;
     }
     .calc-icon-selulosa {
@@ -302,6 +307,20 @@
         text-align: right;
         flex-shrink: 0;
         white-space: nowrap;
+        border-radius: 10px;
+        padding: 8px 16px;
+    }
+    .calc-price-selulosa {
+        background: #fff1f2;
+        border: 1px solid #fecdd3;
+    }
+    .calc-price-lingkungan {
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+    }
+    .calc-price-neutral {
+        background: #fffbeb;
+        border: 1px solid #fde68a;
     }
     .calc-meta-chip {
         display: inline-flex;
@@ -310,25 +329,52 @@
         border: 1px solid #e2e8f0;
         border-radius: 8px;
         padding: 6px 14px;
-        font-size: 0.82rem;
+        font-size: 0.8rem;
         color: #475569;
         gap: 8px;
     }
     .calc-meta-chip i {
-        font-size: 0.95rem;
+        font-size: 0.9rem;
         color: #64748b;
     }
-    @media (max-width: 575.98px) {
+    .btn-selulosa-preview {
+        background: #ffffff;
+        border: 1px solid #fecdd3;
+        color: #881337;
+        font-weight: 600;
+        font-size: 0.8rem;
+        padding: 6px 14px;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s ease;
+        box-shadow: 0 1px 2px rgba(136, 19, 55, 0.05);
+        cursor: pointer;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+    .btn-selulosa-preview:hover {
+        background: #881337;
+        border-color: #881337;
+        color: #ffffff;
+        box-shadow: 0 2px 6px rgba(136, 19, 55, 0.2);
+    }
+    .btn-selulosa-preview:hover i {
+        color: #ffffff !important;
+    }
+    @media (max-width: 576px) {
         .calc-source-top {
             flex-direction: column;
-            align-items: flex-start !important;
-            gap: 10px !important;
+            align-items: flex-start;
         }
         .calc-price-box {
             text-align: left !important;
             width: 100%;
-            padding-top: 8px;
-            border-top: 1px dashed #e2e8f0;
+        }
+        .btn-selulosa-preview {
+            width: 100%;
+            justify-content: center;
         }
     }
     .preview-doc-scroll {
@@ -516,34 +562,40 @@
                     <check if="{{ @order.jenis_layanan_opti == 'selulosa' && @proposal && @proposal.estimasi_total_biaya > 0 }}">
                         <div class="calc-source-card calc-source-selulosa">
                             <div class="calc-source-top">
-                                <div class="d-flex align-items-center gap-3 min-w-0">
+                                <div class="calc-source-info">
                                     <div class="calc-icon-box calc-icon-selulosa">
                                         <i class="bi bi-file-earmark-text-fill"></i>
                                     </div>
                                     <div class="min-w-0">
-                                        <div class="d-flex align-items-center gap-2 mb-0.5">
-                                            <span class="fw-bold text-dark text-truncate" style="font-size: 1rem;">Proposal Riset Selulosa</span>
-                                            <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-2 py-0.5" style="font-size: 0.7rem; font-weight: 600; white-space: nowrap;">
+                                        <div class="d-flex align-items-center gap-2 flex-wrap mb-1" style="row-gap: 6px;">
+                                            <span class="fw-bold text-dark" style="font-size: 0.95rem; line-height: 1.35;">Proposal Riset Selulosa</span>
+                                            <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-2 py-0.5" style="font-size: 0.68rem; font-weight: 600;">
                                                 <i class="bi bi-check-circle-fill me-1"></i>Terverifikasi
                                             </span>
                                         </div>
-                                        <div class="text-muted text-truncate" style="font-size: 0.8rem;">Rencana Anggaran Biaya &amp; Teknis Pelaksanaan</div>
+                                        <div class="text-muted small mt-1" style="font-size: 0.78rem; line-height: 1.4;">Rencana Anggaran Biaya &amp; Teknis Pelaksanaan</div>
                                     </div>
                                 </div>
-                                <div class="calc-price-box ps-2">
-                                    <span class="text-muted d-block fw-semibold" style="font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">Estimasi Anggaran</span>
-                                    <span class="fw-bold font-monospace" style="font-size: 1.35rem; color: #881337; letter-spacing: -0.5px;">Rp {{ number_format(@proposal.estimasi_total_biaya, 0, ',', '.') }}</span>
+                                <div class="calc-price-box calc-price-selulosa">
+                                    <span class="text-muted d-block fw-semibold" style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px;">Estimasi Anggaran</span>
+                                    <span class="fw-bold font-monospace" style="font-size: 1.25rem; color: #881337; letter-spacing: -0.3px;">Rp {{ number_format(@proposal.estimasi_total_biaya, 0, ',', '.') }}</span>
                                 </div>
                             </div>
-                            <div class="d-flex flex-wrap align-items-center gap-2 pt-3 mt-3 border-top" style="border-color: #f1f5f9 !important;">
-                                <div class="calc-meta-chip">
-                                    <i class="bi bi-person-fill text-secondary"></i>
-                                    <span>PIC Peneliti:&nbsp;<strong class="text-dark">{{ @proposal.pic_nama ?: '-' }}</strong></span>
+                            <div class="d-flex flex-wrap align-items-center justify-content-between pt-3 mt-3 border-top" style="border-color: #f1f5f9 !important; gap: 12px;">
+                                <div class="d-flex flex-wrap align-items-center" style="gap: 12px;">
+                                    <div class="calc-meta-chip">
+                                        <i class="bi bi-person-fill text-secondary"></i>
+                                        <span>PIC:&nbsp;<strong class="text-dark">{{ @proposal.pic_nama ?: '-' }}</strong></span>
+                                    </div>
+                                    <div class="calc-meta-chip">
+                                        <i class="bi bi-clock-history text-secondary"></i>
+                                        <span>Durasi:&nbsp;<strong class="text-dark">{{ @proposal.durasi_kegiatan ?: '30 Hari Kerja' }}</strong></span>
+                                    </div>
                                 </div>
-                                <div class="calc-meta-chip">
-                                    <i class="bi bi-clock-history text-secondary"></i>
-                                    <span>Durasi Kegiatan:&nbsp;<strong class="text-dark">{{ @proposal.durasi_kegiatan ?: '30 Hari Kerja' }}</strong></span>
-                                </div>
+                                <button type="button" class="btn-selulosa-preview" onclick="openProposalPreviewModal('{{ @order.id }}')">
+                                    <i class="bi bi-file-earmark-pdf-fill"></i>
+                                    <span>Pratinjau Proposal PDF</span>
+                                </button>
                             </div>
                         </div>
                     </check>
@@ -552,26 +604,26 @@
                     <check if="{{ @order.jenis_layanan_opti == 'lingkungan' && !empty(@kalkulasi) }}">
                         <div class="calc-source-card calc-source-lingkungan">
                             <div class="calc-source-top">
-                                <div class="d-flex align-items-center gap-3 min-w-0">
+                                <div class="calc-source-info">
                                     <div class="calc-icon-box calc-icon-lingkungan">
                                         <i class="bi bi-calculator-fill"></i>
                                     </div>
                                     <div class="min-w-0">
-                                        <div class="d-flex align-items-center gap-2 mb-0.5">
-                                            <span class="fw-bold text-dark text-truncate" style="font-size: 1rem;">Rincian Pengujian Laboratorium</span>
-                                            <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-2 py-0.5" style="font-size: 0.7rem; font-weight: 600; white-space: nowrap;">
+                                        <div class="d-flex align-items-center gap-2 flex-wrap mb-1" style="row-gap: 6px;">
+                                            <span class="fw-bold text-dark" style="font-size: 0.95rem; line-height: 1.35;">Rincian Pengujian Laboratorium</span>
+                                            <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-2 py-0.5" style="font-size: 0.68rem; font-weight: 600;">
                                                 <i class="bi bi-check-circle-fill me-1"></i>Terverifikasi
                                             </span>
                                         </div>
-                                        <div class="text-muted text-truncate" style="font-size: 0.8rem;">Kalkulasi tarif baku mutu lab lingkungan</div>
+                                        <div class="text-muted small mt-1" style="font-size: 0.78rem; line-height: 1.4;">Kalkulasi tarif baku mutu lab lingkungan</div>
                                     </div>
                                 </div>
-                                <div class="calc-price-box ps-2">
-                                    <span class="text-muted d-block fw-semibold" style="font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">Estimasi Total</span>
-                                    <span class="fw-bold font-monospace text-success" style="font-size: 1.35rem; letter-spacing: -0.5px;">Rp {{ number_format(@order.estimasi_biaya, 0, ',', '.') }}</span>
+                                <div class="calc-price-box calc-price-lingkungan">
+                                    <span class="text-muted d-block fw-semibold" style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px;">Estimasi Total</span>
+                                    <span class="fw-bold font-monospace text-success" style="font-size: 1.25rem; letter-spacing: -0.3px;">Rp {{ number_format(@order.estimasi_biaya, 0, ',', '.') }}</span>
                                 </div>
                             </div>
-                            <div class="d-flex flex-wrap align-items-center gap-2 pt-3 mt-3 border-top" style="border-color: #f1f5f9 !important;">
+                            <div class="d-flex flex-wrap align-items-center pt-3 mt-3 border-top" style="border-color: #f1f5f9 !important; gap: 12px;">
                                 <div class="calc-meta-chip">
                                     <i class="bi bi-list-check text-success"></i>
                                     <span>Parameter Uji:&nbsp;<strong class="text-dark">{{ count(@kalkulasi) }} Parameter SNI</strong></span>
@@ -590,18 +642,18 @@
                     <check if="{{ (@order.jenis_layanan_opti == 'selulosa' && (!@proposal || !@proposal.estimasi_total_biaya)) || (@order.jenis_layanan_opti == 'lingkungan' && empty(@kalkulasi)) }}">
                         <div class="calc-source-card calc-source-neutral">
                             <div class="calc-source-top">
-                                <div class="d-flex align-items-center gap-3 min-w-0">
+                                <div class="calc-source-info">
                                     <div class="calc-icon-box calc-icon-neutral">
                                         <i class="bi bi-lightning-charge-fill"></i>
                                     </div>
                                     <div class="min-w-0">
-                                        <span class="fw-bold text-dark d-block mb-0.5" style="font-size: 1rem;">Estimasi Awal Order</span>
-                                        <div class="text-muted text-truncate" style="font-size: 0.8rem;">Perkiraan nilai order sounding awal</div>
+                                        <span class="fw-bold text-dark d-block mb-1" style="font-size: 0.95rem; line-height: 1.35;">Estimasi Awal Order</span>
+                                        <div class="text-muted small mt-1" style="font-size: 0.78rem; line-height: 1.4;">Perkiraan nilai order sounding awal</div>
                                     </div>
                                 </div>
-                                <div class="calc-price-box ps-2">
-                                    <span class="text-muted d-block fw-semibold" style="font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">Estimasi Awal</span>
-                                    <span class="fw-bold font-monospace text-primary" style="font-size: 1.35rem; letter-spacing: -0.5px;">Rp {{ number_format(@order.estimasi_biaya, 0, ',', '.') }}</span>
+                                <div class="calc-price-box calc-price-neutral">
+                                    <span class="text-muted d-block fw-semibold" style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px;">Estimasi Awal</span>
+                                    <span class="fw-bold font-monospace text-primary" style="font-size: 1.25rem; letter-spacing: -0.3px;">Rp {{ number_format(@order.estimasi_biaya, 0, ',', '.') }}</span>
                                 </div>
                             </div>
                         </div>
@@ -948,16 +1000,16 @@
                                 <div style="border: 1px solid #000; padding: 6px 10px; width: 48%; min-height: 80px; background: #fff;">
                                     <div class="fw-bold mb-1" style="font-size: 8.5px;">Dengan ini kami menyetujui surat penawaran ini :</div>
                                     <table style="width: 100%; font-size: 8.5px; line-height: 1.5;">
-                                        <tr><td style="width: 45px;">Nama</td><td style="width: 8px;">:</td><td>...................................</td></tr>
+                                        <tr><td style="width: 75px;">Nama</td><td style="width: 8px;">:</td><td>...................................</td></tr>
                                         <tr><td>Jabatan</td><td>:</td><td>...................................</td></tr>
-                                        <tr><td>No. Tlp</td><td>:</td><td>...................................</td></tr>
-                                        <tr><td colspan="3" style="padding-top: 4px;">TTD &amp; Stempel</td></tr>
+                                        <tr><td>Nomor Telepon</td><td>:</td><td>...................................</td></tr>
+                                        <tr><td colspan="3" style="padding-top: 4px;">Tanda Tangan dan Stempel</td></tr>
                                     </table>
                                 </div>
 
                                 <!-- Pejabat Penandatangan BBSPJIS -->
                                 <div style="text-align: center; width: 45%; font-size: 9.5px;">
-                                    <div>plh. Kepala</div>
+                                    <div>Kepala Balai Besar</div>
                                     <div style="height: 48px;"></div>
                                     <div class="fw-bold" id="d_pembuat">{{ @sp_existing.pembuat_nama ?: 'Hagung Eko Pawoko' }}</div>
                                 </div>
@@ -966,7 +1018,7 @@
                             <!-- Tembusan -->
                             <div style="font-size: 7.5px; line-height: 1.35; margin-bottom: 10px;">
                                 <div class="fw-bold">Tembusan :</div>
-                                <div>1. Kepala. Bagian Tata Usaha</div>
+                                <div>1. Kepala Bagian Tata Usaha</div>
                                 <div>2. Ketua Tim Layanan Mitra Industri</div>
                                 <div>3. Ketua Tim OPTI Kertas, Selulosa dan Produk Bahan Acuan</div>
                             </div>
@@ -1184,6 +1236,101 @@
 
     </div>
 </form>
+
+<!-- ========================================================= -->
+<!-- MODAL PRATINJAU DOKUMEN PROPOSAL (PURE CRISP PDF VIEWER)  -->
+<!-- ========================================================= -->
+<check if="{{ @order.jenis_layanan_opti == 'selulosa' }}">
+    <div class="modal fade" id="modalPreviewDokumenProposal" tabindex="-1" aria-labelledby="modalPreviewDokumenProposalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" style="max-width: 92vw;">
+            <div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden" style="height: 90vh;">
+                
+                <!-- Modal Header -->
+                <div class="modal-header border-bottom py-2.5 px-4 bg-light">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="rounded-circle bg-danger-subtle text-danger p-1.5 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                            <i class="bi bi-file-earmark-pdf-fill"></i>
+                        </div>
+                        <div>
+                            <h6 class="modal-title fw-bold text-dark font-display mb-0" id="modalPreviewDokumenProposalLabel" style="font-size: 0.92rem;">Pratinjau Dokumen Proposal Teknis</h6>
+                            <small class="text-secondary font-monospace" id="modalPdfFilenameHeader" style="font-size: 0.72rem;">Order #{{ @order.nomor_order }} &bull; {{ @order.nama_perusahaan }}</small>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2">
+                        <check if="{{ @proposal && @proposal.file_proposal }}">
+                            <a href="{{ @BASE }}/{{ @proposal.file_proposal }}" target="_blank" class="btn btn-sm btn-outline-secondary px-3 py-1" download>
+                                <i class="bi bi-download me-1"></i> Unduh File Asli
+                            </a>
+                        </check>
+                        <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                </div>
+                
+                <!-- Modal Body (Pure Canvas PDF Viewer) -->
+                <div class="modal-body p-3 bg-secondary bg-opacity-10 position-relative text-center overflow-auto" style="min-height: 65vh;">
+                    <!-- Loading Spinner -->
+                    <div id="canvasProposalSpinner" class="py-5 my-5">
+                        <div class="spinner-border text-danger" role="status" style="width: 2.75rem; height: 2.75rem;"></div>
+                        <p class="small text-muted mt-2 fw-medium">Memuat dan merender berkas proposal...</p>
+                    </div>
+
+                    <!-- Non-PDF Notice (Word/Excel) -->
+                    <div id="nonPdfNoticeBox" class="d-none py-5 my-3 text-center">
+                        <div class="card border-0 shadow-sm mx-auto p-4 rounded-4" style="max-width: 500px;">
+                            <div class="rounded-circle bg-primary-subtle text-primary p-3 d-inline-flex align-items-center justify-content-center mx-auto mb-3" style="width: 60px; height: 60px;">
+                                <i class="bi bi-file-earmark-word-fill fs-2"></i>
+                            </div>
+                            <h6 class="fw-bold text-dark font-display mb-1" id="nonPdfDocTitle">Berkas Dokumen Terunggah</h6>
+                            <p class="small text-muted mb-3" id="nonPdfDocSubtitle">Berkas proposal telah tersimpan dengan aman di server.</p>
+                            <div class="d-flex justify-content-center gap-2">
+                                <check if="{{ @proposal && @proposal.file_proposal }}">
+                                    <a href="{{ @BASE }}/{{ @proposal.file_proposal }}" target="_blank" class="btn btn-primary btn-sm px-3" download>
+                                        <i class="bi bi-download me-1"></i> Unduh File
+                                    </a>
+                                </check>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Canvas Element (Crisp HiDPI) -->
+                    <canvas id="proposalPdfCanvas" class="shadow border rounded bg-white mx-auto" style="display: none; max-width: 100%; height: auto;"></canvas>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="modal-footer border-top py-2 px-4 bg-white d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <!-- Page & Zoom Controls -->
+                    <div id="canvasControlsGroup" class="d-flex align-items-center gap-2" style="visibility: hidden;">
+                        <button type="button" class="btn btn-light btn-sm border px-2.5 py-1 text-secondary" id="btnProposalPrev" onclick="changeProposalPage(-1)">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                        <span class="small text-dark fw-semibold font-monospace" style="font-size: 0.82rem;">
+                            Hal. <span id="proposalCurrentPage">1</span> / <span id="proposalTotalPages">1</span>
+                        </span>
+                        <button type="button" class="btn btn-light btn-sm border px-2.5 py-1 text-secondary" id="btnProposalNext" onclick="changeProposalPage(1)">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                        
+                        <div class="vr mx-1.5 my-1"></div>
+                        
+                        <button type="button" class="btn btn-light btn-sm border px-2 py-1 text-secondary" onclick="zoomProposalPdf(-0.2)" title="Perkecil">
+                            <i class="bi bi-zoom-out"></i>
+                        </button>
+                        <button type="button" class="btn btn-light btn-sm border px-2 py-1 text-secondary" onclick="zoomProposalPdf(0.2)" title="Perbesar">
+                            <i class="bi bi-zoom-in"></i>
+                        </button>
+                    </div>
+
+                    <button type="button" class="btn btn-secondary btn-sm px-4 fw-semibold" data-bs-dismiss="modal">Tutup Pratinjau</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</check>
+
+<!-- Library PDF.js untuk Pratinjau Bebas IDM -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
 <script>
 function terbilangRupiah(angka) {
@@ -1457,4 +1604,157 @@ document.addEventListener('DOMContentLoaded', function() {
     // Jalankan sinkronisasi awal saat halaman dimuat
     syncLivePreview();
 });
+
+// ========================================================
+// PRATINJAU PROPOSAL PDF (ZERO IDM INTERCEPTION VIA PDF.JS CANVAS)
+// ========================================================
+if (window.pdfjsLib) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+
+let currentProposalDoc = null;
+let currentProposalPage = 1;
+let currentProposalScale = 1.45;
+
+function base64ToUint8Array(base64) {
+    const binary_string = window.atob(base64);
+    const len = binary_string.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+        bytes[i] = binary_string.charCodeAt(i);
+    }
+    return bytes;
+}
+
+function openProposalPreviewModal(orderId) {
+    currentProposalDoc = null;
+    currentProposalPage = 1;
+    currentProposalScale = 1.45;
+
+    const modalEl = document.getElementById('modalPreviewDokumenProposal');
+    if (!modalEl) return;
+
+    const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    bsModal.show();
+
+    loadProposalData(orderId);
+}
+
+function loadProposalData(orderId) {
+    const spinner = document.getElementById('canvasProposalSpinner');
+    const canvas = document.getElementById('proposalPdfCanvas');
+    const nonPdfNotice = document.getElementById('nonPdfNoticeBox');
+    const ctrlGroup = document.getElementById('canvasControlsGroup');
+
+    if (spinner) spinner.style.display = 'block';
+    if (canvas) canvas.style.display = 'none';
+    if (nonPdfNotice) nonPdfNotice.classList.add('d-none');
+    if (ctrlGroup) ctrlGroup.style.visibility = 'hidden';
+
+    currentProposalPage = 1;
+    currentProposalScale = 1.45;
+
+    const baseUri = '{{ @BASE }}';
+    const apiUrl = baseUri + '/order/' + orderId + '/proposal/raw-data?t=' + Date.now();
+
+    fetch(apiUrl)
+        .then(function(res) {
+            if (!res.ok) throw new Error('Gagal memuat data proposal');
+            return res.json();
+        })
+        .then(function(json) {
+            if (!json.success) throw new Error(json.message || 'Data proposal gagal diproses');
+
+            const headerEl = document.getElementById('modalPdfFilenameHeader');
+            if (headerEl && json.filename) {
+                headerEl.textContent = json.filename + ' • Order #' + '{{ @order.nomor_order }}';
+            }
+
+            if (json.is_pdf && json.base64) {
+                if (!window.pdfjsLib) {
+                    throw new Error('Library PDF.js belum siap.');
+                }
+                const uint8Array = base64ToUint8Array(json.base64);
+                return pdfjsLib.getDocument({ data: uint8Array }).promise;
+            } else {
+                if (spinner) spinner.style.display = 'none';
+                if (nonPdfNotice) {
+                    nonPdfNotice.classList.remove('d-none');
+                    const titleEl = document.getElementById('nonPdfDocTitle');
+                    const subEl = document.getElementById('nonPdfDocSubtitle');
+                    if (titleEl) titleEl.textContent = 'Berkas: ' + json.filename;
+                    if (subEl) subEl.textContent = 'Format berkas (' + (json.ext || 'doc').toUpperCase() + ') tersimpan dengan aman di server.';
+                }
+                return null;
+            }
+        })
+        .then(function(pdf) {
+            if (!pdf) return;
+            currentProposalDoc = pdf;
+            const totalPagesEl = document.getElementById('proposalTotalPages');
+            if (totalPagesEl) totalPagesEl.textContent = pdf.numPages;
+            if (ctrlGroup) ctrlGroup.style.visibility = 'visible';
+            renderProposalPage(currentProposalPage);
+        })
+        .catch(function(err) {
+            console.error('Error loading PDF canvas:', err);
+            if (spinner) {
+                spinner.innerHTML = '<div class="text-secondary p-4"><i class="bi bi-file-earmark-x fs-2 d-block mb-2 text-muted"></i><strong class="text-dark">Belum Ada Berkas Proposal</strong><br><small class="text-muted">' + (err.message || 'Silakan unggah dokumen proposal terlebih dahulu.') + '</small></div>';
+            }
+        });
+}
+
+function renderProposalPage(pageNum) {
+    if (!currentProposalDoc) return;
+    const canvas = document.getElementById('proposalPdfCanvas');
+    const spinner = document.getElementById('canvasProposalSpinner');
+    if (!canvas) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    const renderScale = currentProposalScale * Math.max(dpr, 2.0);
+
+    currentProposalDoc.getPage(pageNum).then(function(page) {
+        const unscaledViewport = page.getViewport({ scale: currentProposalScale });
+        const viewport = page.getViewport({ scale: renderScale });
+        
+        const context = canvas.getContext('2d');
+        canvas.width = Math.floor(viewport.width);
+        canvas.height = Math.floor(viewport.height);
+        canvas.style.width = Math.floor(unscaledViewport.width) + 'px';
+        canvas.style.height = Math.floor(unscaledViewport.height) + 'px';
+        canvas.style.maxWidth = '100%';
+
+        context.imageSmoothingEnabled = true;
+        context.imageSmoothingQuality = 'high';
+
+        const renderContext = {
+            canvasContext: context,
+            viewport: viewport
+        };
+        return page.render(renderContext).promise;
+    }).then(function() {
+        if (spinner) spinner.style.display = 'none';
+        canvas.style.display = 'block';
+        const curPageEl = document.getElementById('proposalCurrentPage');
+        if (curPageEl) curPageEl.textContent = pageNum;
+    });
+}
+
+function changeProposalPage(delta) {
+    if (!currentProposalDoc) return;
+    const newPage = currentProposalPage + delta;
+    if (newPage >= 1 && newPage <= currentProposalDoc.numPages) {
+        currentProposalPage = newPage;
+        renderProposalPage(currentProposalPage);
+    }
+}
+
+function zoomProposalPdf(delta) {
+    if (!currentProposalDoc) return;
+    const newScale = currentProposalScale + delta;
+    if (newScale >= 0.8 && newScale <= 3.0) {
+        currentProposalScale = newScale;
+        renderProposalPage(currentProposalPage);
+    }
+}
 </script>

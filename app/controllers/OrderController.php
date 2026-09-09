@@ -1838,22 +1838,24 @@ class OrderController extends Controller {
             $filePath = $existing['file_proposal'];
         }
 
-        // Validasi Ketat Khusus OPTI Selulosa: Wajib ada input dan upload dokumen jika diajukan ke Ketua Tim
-        if ($actionType === 'ajukan' && ($order['jenis_layanan_opti'] ?? '') === 'selulosa') {
+        // Validasi jika diajukan ke Ketua Tim: Dokumen proposal fisik wajib diunggah
+        if ($actionType === 'ajukan') {
             if (empty($filePath)) {
                 $this->setFlashError("Gagal: Berkas dokumen proposal resmi (.pdf/.doc/.docx/.xls/.xlsx) wajib diunggah sebelum dapat diajukan ke Ketua Tim.");
                 $f3->reroute("/order/{$id}/proposal");
                 return;
             }
-            if ($estimasiBiaya <= 0) {
-                $this->setFlashError("Gagal: Estimasi total biaya/anggaran wajib diisi dan harus lebih dari Rp 0 sebelum proposal dapat diajukan.");
-                $f3->reroute("/order/{$id}/proposal");
-                return;
-            }
-            if (empty($ruangLingkup)) {
-                $this->setFlashError("Gagal: Ruang lingkup riset/kegiatan wajib diisi sebelum proposal dapat diajukan ke Ketua Tim.");
-                $f3->reroute("/order/{$id}/proposal");
-                return;
+            if (($order['jenis_layanan_opti'] ?? '') === 'selulosa') {
+                if ($estimasiBiaya <= 0) {
+                    $this->setFlashError("Gagal: Estimasi total biaya/anggaran wajib diisi dan harus lebih dari Rp 0 sebelum proposal dapat diajukan.");
+                    $f3->reroute("/order/{$id}/proposal");
+                    return;
+                }
+                if (empty($ruangLingkup)) {
+                    $this->setFlashError("Gagal: Ruang lingkup riset/kegiatan wajib diisi sebelum proposal dapat diajukan ke Ketua Tim.");
+                    $f3->reroute("/order/{$id}/proposal");
+                    return;
+                }
             }
         }
 
@@ -2530,131 +2532,11 @@ class OrderController extends Controller {
             }
         }
 
-        // Jika belum ada file fisik PDF yang diunggah, buat PDF proposal resmi secara dinamis
+        // Jika belum ada file fisik yang diunggah, tidak ada proposal dummy yang ditampilkan
         if (empty($filePath)) {
-            require_once 'c:/xampp/htdocs/Mini OPTI Tracker/app/helpers/fpdf/fpdf.php';
-            $pdf = new \FPDF('P', 'mm', 'A4');
-            $pdf->SetMargins(20, 15, 20);
-            $pdf->AddPage();
-
-            // 1. KOP RESMI BBSPJIS
-            $pdf->SetFont('Arial', 'B', 12);
-            $pdf->SetTextColor(0, 0, 0);
-            $pdf->Cell(0, 5.5, 'KEMENTERIAN PERINDUSTRIAN REPUBLIK INDONESIA', 0, 1, 'C');
-            $pdf->SetFont('Arial', 'B', 9.5);
-            $pdf->Cell(0, 4.8, 'BALAI BESAR STANDARDISASI DAN PELAYANAN JASA INDUSTRI SELULOSA', 0, 1, 'C');
-            $pdf->SetFont('Arial', '', 8);
-            $pdf->SetTextColor(70, 70, 70);
-            $pdf->Cell(0, 4, 'Jl. Raya Dayeuhkolot No. 132, Bandung 40258 | Telp. (022) 5202871 | www.bbspjis.kemenperin.go.id', 0, 1, 'C');
-            $pdf->Ln(2);
-            $pdf->SetDrawColor(0, 0, 0);
-            $pdf->SetLineWidth(0.8);
-            $pdf->Line(20, $pdf->GetY(), 190, $pdf->GetY());
-            $pdf->SetLineWidth(0.2);
-            $pdf->Line(20, $pdf->GetY() + 0.8, 190, $pdf->GetY() + 0.8);
-            $pdf->Ln(5);
-
-            // 2. JUDUL DOKUMEN PROPOSAL
-            $pdf->SetFont('Arial', 'B', 11.5);
-            $pdf->SetTextColor(136, 19, 55); // Maroon BBSPJIS
-            $pdf->Cell(0, 6, 'PROPOSAL TEKNIS & RANCANGAN ANGGARAN BIAYA (RAB)', 0, 1, 'C');
-            $pdf->SetFont('Arial', 'B', 8.5);
-            $pdf->SetTextColor(70, 70, 70);
-            $pdf->Cell(0, 4.5, 'LAYANAN OPTIMALISASI TEKNOLOGI INDUSTRI (OPTI) - ' . strtoupper($order['jenis_layanan_opti']), 0, 1, 'C');
-            $pdf->Ln(4);
-
-            // 3. METADATA ORDER
-            $pdf->SetFont('Arial', '', 9);
-            $pdf->SetTextColor(0, 0, 0);
-            $pdf->Cell(35, 5, 'Nomor Order', 0, 0);
-            $pdf->Cell(4, 5, ':', 0, 0);
-            $pdf->SetFont('Arial', 'B', 9);
-            $pdf->Cell(70, 5, '#' . $order['nomor_order'], 0, 0);
-            $pdf->SetFont('Arial', '', 9);
-            $pdf->Cell(0, 5, 'Tanggal: ' . date('d F Y'), 0, 1, 'R');
-
-            $pdf->Cell(35, 5, 'Pelanggan / Industri', 0, 0);
-            $pdf->Cell(4, 5, ':', 0, 0);
-            $pdf->SetFont('Arial', 'B', 9);
-            $pdf->Cell(0, 5, $order['nama_perusahaan'] . ' (' . ($order['pt_cv'] ?: 'Industri') . ')', 0, 1);
-
-            $pdf->SetFont('Arial', '', 9);
-            $pdf->Cell(35, 5, 'PIC Peneliti Penyusun', 0, 0);
-            $pdf->Cell(4, 5, ':', 0, 0);
-            $pdf->SetFont('Arial', 'B', 9);
-            $pdf->Cell(0, 5, $order['pic_proposal_nama'] ?: ($proposal['pic_nama'] ?? 'Tim Pelaksana OPTI BBSPJIS'), 0, 1);
-
-            $pdf->SetFont('Arial', '', 9);
-            $pdf->Cell(35, 5, 'Judul Proposal', 0, 0);
-            $pdf->Cell(4, 5, ':', 0, 0);
-            $pdf->SetFont('Arial', 'B', 9);
-            $pdf->MultiCell(0, 5, $proposal['judul_proposal'] ?: ($order['judul_kegiatan'] ?: 'Layanan Optimalisasi Teknologi Industri'), 0, 'L');
-            $pdf->Ln(3);
-
-            // 4. RUANG LINGKUP & METODOLOGI
-            $pdf->SetFont('Arial', 'B', 9.5);
-            $pdf->Cell(0, 5.5, '1. Ruang Lingkup & Metodologi Pengujian / Riset:', 0, 1);
-            $pdf->SetFont('Arial', '', 9);
-            $lingkup = $proposal['ruang_lingkup'] ?: 'Pengujian parameter mutu, pengamatan karakteristik bahan baku, sampling lapangan, dan formulasi rekomendasi teknologi sesuai standar SNI/ISO/TAPPI terakreditasi ISO/IEC 17025 BBSPJIS.';
-            $pdf->MultiCell(0, 4.8, $lingkup, 0, 'J');
-            $pdf->Ln(3);
-
-            // 5. DURASI & ESTIMASI BIAYA
-            $pdf->SetFont('Arial', 'B', 9.5);
-            $pdf->Cell(0, 5.5, '2. Rencana Pelaksanaan & Estimasi Anggaran (RAB):', 0, 1);
-            
-            $pdf->SetFont('Arial', '', 9);
-            $pdf->Cell(8, 5, '', 0, 0);
-            $pdf->Cell(45, 5, 'a. Estimasi Durasi', 0, 0);
-            $pdf->Cell(4, 5, ':', 0, 0);
-            $pdf->SetFont('Arial', 'B', 9);
-            $pdf->Cell(0, 5, $proposal['durasi_kegiatan'] ?: '30 Hari Kerja', 0, 1);
-
-            $pdf->SetFont('Arial', '', 9);
-            $pdf->Cell(8, 5, '', 0, 0);
-            $pdf->Cell(45, 5, 'b. Estimasi Total Biaya', 0, 0);
-            $pdf->Cell(4, 5, ':', 0, 0);
-            $pdf->SetFont('Arial', 'B', 9.5);
-            $pdf->SetTextColor(136, 19, 55);
-            $pdf->Cell(0, 5, 'Rp ' . number_format((float)($proposal['estimasi_total_biaya'] ?: ($order['estimasi_biaya'] ?: 0)), 0, ',', '.'), 0, 1);
-            $pdf->SetTextColor(0, 0, 0);
-            $pdf->Ln(5);
-
-            // 6. STATUS PERSETUJUAN
-            $pdf->SetFont('Arial', 'B', 9.5);
-            $pdf->Cell(0, 5.5, '3. Status Verifikasi Teknis:', 0, 1);
-            $pdf->SetFont('Arial', '', 9);
-            $statusText = 'Draf Proposal Teknis (Menunggu Persetujuan Ketua Tim OPTI)';
-            if (($proposal['status_proposal'] ?? '') === 'disetujui_ketua') {
-                $statusText = 'Disetujui Ketua Tim OPTI BBSPJIS (Siap Penerbitan Surat Penawaran Biaya)';
-            } elseif (($proposal['status_proposal'] ?? '') === 'ditolak') {
-                $statusText = 'Perlu Revisi: ' . ($proposal['catatan_revisi'] ?: '-');
-            }
-            $pdf->MultiCell(0, 4.8, $statusText, 0, 'L');
-            $pdf->Ln(8);
-
-            // 7. TANDA TANGAN
-            $pdf->SetFont('Arial', '', 9);
-            $pdf->Cell(95, 4.5, 'Penyusun Proposal (PIC Peneliti)', 0, 0, 'C');
-            $pdf->Cell(95, 4.5, 'Mengetahui & Menyetujui (Ka. Tim OPTI)', 0, 1, 'C');
-            $pdf->Ln(18);
-
-            $pdf->SetFont('Arial', 'B', 9);
-            $pdf->Cell(95, 4.5, $order['pic_proposal_nama'] ?: ($proposal['pic_nama'] ?? 'PIC Peneliti BBSPJIS'), 0, 0, 'C');
-            $pdf->Cell(95, 4.5, 'Ketua Tim OPTI ' . ucfirst($order['jenis_layanan_opti']), 0, 1, 'C');
-            
-            $pdf->SetFont('Arial', '', 8);
-            $pdf->SetTextColor(100, 100, 100);
-            $pdf->Cell(95, 4, 'BBSPJIS Kemenperin RI', 0, 0, 'C');
-            $pdf->Cell(95, 4, 'BBSPJIS Kemenperin RI', 0, 1, 'C');
-
-            $uploadDir = 'c:/xampp/htdocs/Mini OPTI Tracker/public/uploads/proposals';
-            if (!is_dir($uploadDir)) {
-                @mkdir($uploadDir, 0777, true);
-            }
-            $tempGenPath = $uploadDir . '/Generated_Proposal_Order_' . $id . '.pdf';
-            $pdf->Output('F', $tempGenPath);
-            $filePath = $tempGenPath;
+            $this->setFlashError('Belum ada berkas dokumen proposal yang diunggah untuk order ini.');
+            $f3->reroute('/order/' . $id . '/proposal');
+            return;
         }
 
         $filename = basename($filePath);
@@ -2702,131 +2584,16 @@ class OrderController extends Controller {
             }
         }
 
-        // Jika belum ada file fisik PDF yang diunggah, buat PDF proposal resmi secara dinamis
+        // Jika belum ada file fisik yang diunggah, tidak ada proposal dummy yang ditampilkan
         if (empty($filePath)) {
-            require_once 'c:/xampp/htdocs/Mini OPTI Tracker/app/helpers/fpdf/fpdf.php';
-            $pdf = new \FPDF('P', 'mm', 'A4');
-            $pdf->SetMargins(20, 15, 20);
-            $pdf->AddPage();
-
-            // KOP RESMI BBSPJIS
-            $pdf->SetFont('Arial', 'B', 12);
-            $pdf->SetTextColor(0, 0, 0);
-            $pdf->Cell(0, 5.5, 'KEMENTERIAN PERINDUSTRIAN REPUBLIK INDONESIA', 0, 1, 'C');
-            $pdf->SetFont('Arial', 'B', 9.5);
-            $pdf->Cell(0, 4.8, 'BALAI BESAR STANDARDISASI DAN PELAYANAN JASA INDUSTRI SELULOSA', 0, 1, 'C');
-            $pdf->SetFont('Arial', '', 8);
-            $pdf->SetTextColor(70, 70, 70);
-            $pdf->Cell(0, 4, 'Jl. Raya Dayeuhkolot No. 132, Bandung 40258 | Telp. (022) 5202871 | www.bbspjis.kemenperin.go.id', 0, 1, 'C');
-            $pdf->Ln(2);
-            $pdf->SetDrawColor(0, 0, 0);
-            $pdf->SetLineWidth(0.8);
-            $pdf->Line(20, $pdf->GetY(), 190, $pdf->GetY());
-            $pdf->SetLineWidth(0.2);
-            $pdf->Line(20, $pdf->GetY() + 0.8, 190, $pdf->GetY() + 0.8);
-            $pdf->Ln(5);
-
-            // JUDUL DOKUMEN PROPOSAL
-            $pdf->SetFont('Arial', 'B', 11.5);
-            $pdf->SetTextColor(136, 19, 55);
-            $pdf->Cell(0, 6, 'PROPOSAL TEKNIS & RANCANGAN ANGGARAN BIAYA (RAB)', 0, 1, 'C');
-            $pdf->SetFont('Arial', 'B', 8.5);
-            $pdf->SetTextColor(70, 70, 70);
-            $pdf->Cell(0, 4.5, 'LAYANAN OPTIMALISASI TEKNOLOGI INDUSTRI (OPTI) - ' . strtoupper($order['jenis_layanan_opti']), 0, 1, 'C');
-            $pdf->Ln(4);
-
-            // METADATA
-            $pdf->SetFont('Arial', '', 9);
-            $pdf->SetTextColor(0, 0, 0);
-            $pdf->Cell(35, 5, 'Nomor Order', 0, 0);
-            $pdf->Cell(4, 5, ':', 0, 0);
-            $pdf->SetFont('Arial', 'B', 9);
-            $pdf->Cell(70, 5, '#' . $order['nomor_order'], 0, 0);
-            $pdf->SetFont('Arial', '', 9);
-            $pdf->Cell(0, 5, 'Tanggal: ' . date('d F Y'), 0, 1, 'R');
-
-            $pdf->Cell(35, 5, 'Pelanggan / Industri', 0, 0);
-            $pdf->Cell(4, 5, ':', 0, 0);
-            $pdf->SetFont('Arial', 'B', 9);
-            $pdf->Cell(0, 5, $order['nama_perusahaan'] . ' (' . ($order['pt_cv'] ?: 'Industri') . ')', 0, 1);
-
-            $pdf->SetFont('Arial', '', 9);
-            $pdf->Cell(35, 5, 'PIC Peneliti Penyusun', 0, 0);
-            $pdf->Cell(4, 5, ':', 0, 0);
-            $pdf->SetFont('Arial', 'B', 9);
-            $pdf->Cell(0, 5, $order['pic_proposal_nama'] ?: ($proposal['pic_nama'] ?? 'Tim Pelaksana OPTI BBSPJIS'), 0, 1);
-
-            $pdf->SetFont('Arial', '', 9);
-            $pdf->Cell(35, 5, 'Judul Proposal', 0, 0);
-            $pdf->Cell(4, 5, ':', 0, 0);
-            $pdf->SetFont('Arial', 'B', 9);
-            $pdf->MultiCell(0, 5, $proposal['judul_proposal'] ?: ($order['judul_kegiatan'] ?: 'Layanan Optimalisasi Teknologi Industri'), 0, 'L');
-            $pdf->Ln(3);
-
-            // RUANG LINGKUP
-            $pdf->SetFont('Arial', 'B', 9.5);
-            $pdf->Cell(0, 5.5, '1. Ruang Lingkup & Metodologi Pengujian / Riset:', 0, 1);
-            $pdf->SetFont('Arial', '', 9);
-            $lingkup = $proposal['ruang_lingkup'] ?: 'Pengujian parameter mutu, pengamatan karakteristik bahan baku, sampling lapangan, dan formulasi rekomendasi teknologi sesuai standar SNI/ISO/TAPPI terakreditasi ISO/IEC 17025 BBSPJIS.';
-            $pdf->MultiCell(0, 4.8, $lingkup, 0, 'J');
-            $pdf->Ln(3);
-
-            // DURASI & BIAYA
-            $pdf->SetFont('Arial', 'B', 9.5);
-            $pdf->Cell(0, 5.5, '2. Rencana Pelaksanaan & Estimasi Anggaran (RAB):', 0, 1);
-            
-            $pdf->SetFont('Arial', '', 9);
-            $pdf->Cell(8, 5, '', 0, 0);
-            $pdf->Cell(45, 5, 'a. Estimasi Durasi', 0, 0);
-            $pdf->Cell(4, 5, ':', 0, 0);
-            $pdf->SetFont('Arial', 'B', 9);
-            $pdf->Cell(0, 5, $proposal['durasi_kegiatan'] ?: '30 Hari Kerja', 0, 1);
-
-            $pdf->SetFont('Arial', '', 9);
-            $pdf->Cell(8, 5, '', 0, 0);
-            $pdf->Cell(45, 5, 'b. Estimasi Total Biaya', 0, 0);
-            $pdf->Cell(4, 5, ':', 0, 0);
-            $pdf->SetFont('Arial', 'B', 9.5);
-            $pdf->SetTextColor(136, 19, 55);
-            $pdf->Cell(0, 5, 'Rp ' . number_format((float)($proposal['estimasi_total_biaya'] ?: ($order['estimasi_biaya'] ?: 0)), 0, ',', '.'), 0, 1);
-            $pdf->SetTextColor(0, 0, 0);
-            $pdf->Ln(5);
-
-            // STATUS
-            $pdf->SetFont('Arial', 'B', 9.5);
-            $pdf->Cell(0, 5.5, '3. Status Verifikasi Teknis:', 0, 1);
-            $pdf->SetFont('Arial', '', 9);
-            $statusText = 'Draf Proposal Teknis (Menunggu Persetujuan Ketua Tim OPTI)';
-            if (($proposal['status_proposal'] ?? '') === 'disetujui_ketua') {
-                $statusText = 'Disetujui Ketua Tim OPTI BBSPJIS (Siap Penerbitan Surat Penawaran Biaya)';
-            } elseif (($proposal['status_proposal'] ?? '') === 'ditolak') {
-                $statusText = 'Perlu Revisi: ' . ($proposal['catatan_revisi'] ?: '-');
+            if (!headers_sent()) {
+                header('Content-Type: application/json');
             }
-            $pdf->MultiCell(0, 4.8, $statusText, 0, 'L');
-            $pdf->Ln(8);
-
-            // TANDA TANGAN
-            $pdf->SetFont('Arial', '', 9);
-            $pdf->Cell(95, 4.5, 'Penyusun Proposal (PIC Peneliti)', 0, 0, 'C');
-            $pdf->Cell(95, 4.5, 'Mengetahui & Menyetujui (Ka. Tim OPTI)', 0, 1, 'C');
-            $pdf->Ln(18);
-
-            $pdf->SetFont('Arial', 'B', 9);
-            $pdf->Cell(95, 4.5, $order['pic_proposal_nama'] ?: ($proposal['pic_nama'] ?? 'PIC Peneliti BBSPJIS'), 0, 0, 'C');
-            $pdf->Cell(95, 4.5, 'Ketua Tim OPTI ' . ucfirst($order['jenis_layanan_opti']), 0, 1, 'C');
-            
-            $pdf->SetFont('Arial', '', 8);
-            $pdf->SetTextColor(100, 100, 100);
-            $pdf->Cell(95, 4, 'BBSPJIS Kemenperin RI', 0, 0, 'C');
-            $pdf->Cell(95, 4, 'BBSPJIS Kemenperin RI', 0, 1, 'C');
-
-            $uploadDir = 'c:/xampp/htdocs/Mini OPTI Tracker/public/uploads/proposals';
-            if (!is_dir($uploadDir)) {
-                @mkdir($uploadDir, 0777, true);
-            }
-            $tempGenPath = $uploadDir . '/Generated_Proposal_Order_' . $id . '.pdf';
-            $pdf->Output('F', $tempGenPath);
-            $filePath = $tempGenPath;
+            echo json_encode([
+                'success' => false,
+                'message' => 'Belum ada dokumen proposal fisik yang diunggah untuk order ini.'
+            ]);
+            exit;
         }
 
         $filename = basename($filePath);

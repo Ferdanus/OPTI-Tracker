@@ -1,53 +1,78 @@
 <style>
-.surat-nav-container {
-    background: #f8fafc;
-    border-bottom: 1px solid var(--color-border);
-    padding: 10px 14px;
+.filter-tabs-wrapper {
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 12px 18px;
 }
-.surat-nav-pills {
-    display: inline-flex;
-    gap: 6px;
-    background: #e2e8f0;
-    padding: 5px;
-    border-radius: 10px;
-    border: 1px solid #cbd5e1;
-    flex-wrap: wrap;
-}
-.surat-nav-pills .nav-link {
-    border-radius: 7px;
-    color: #334155;
-    font-family: var(--font-display);
-    font-weight: 600;
-    font-size: 0.82rem;
-    padding: 7px 16px;
-    border: none;
-    transition: all 0.18s ease-in-out;
+.filter-tab-pill {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    white-space: nowrap;
-    background: transparent;
+    gap: 0.45rem;
+    padding: 0.45rem 0.85rem;
+    border-radius: 9999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #475569;
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
     text-decoration: none;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    cursor: pointer;
+    line-height: 1.2;
 }
-.surat-nav-pills .nav-link:hover {
-    background: rgba(255, 255, 255, 0.7);
-    color: var(--color-primary);
+.filter-tab-pill:hover {
+    color: #0f172a;
+    background-color: #f8fafc;
+    border-color: #cbd5e1;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
-.surat-nav-pills .nav-link.active {
-    background: var(--color-primary) !important;
-    color: #ffffff !important;
-    box-shadow: 0 3px 10px rgba(136, 19, 55, 0.28);
-}
-.surat-nav-pills .nav-link.active .pill-count {
-    background-color: rgba(255, 255, 255, 0.25) !important;
-    color: #ffffff !important;
-}
-.pill-count {
+.filter-tab-pill .count-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 9999px;
     font-size: 0.72rem;
-    padding: 2px 7px;
-    border-radius: 12px;
     font-weight: 700;
-    transition: all 0.18s ease;
+    background-color: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s;
+}
+.filter-tab-pill .count-chip.chip-danger {
+    background-color: #fee2e2;
+    color: #b91c1c;
+    border-color: #fecaca;
+}
+.filter-tab-pill.active {
+    color: #ffffff !important;
+    background-color: var(--color-primary, #881337) !important;
+    border-color: var(--color-primary, #881337) !important;
+    box-shadow: 0 2px 6px rgba(136, 19, 55, 0.25) !important;
+}
+.filter-tab-pill.active .count-chip {
+    background-color: rgba(255, 255, 255, 0.25) !important;
+    border-color: transparent !important;
+    color: #ffffff !important;
+}
+.filter-tab-pill.active i {
+    color: #ffffff !important;
+}
+.filter-tab-pill.tab-ditolak.active {
+    background-color: #dc2626 !important;
+    border-color: #dc2626 !important;
+    box-shadow: 0 2px 6px rgba(220, 38, 38, 0.25) !important;
+    color: #ffffff !important;
+}
+.filter-tab-pill.tab-ditolak.active .count-chip {
+    background-color: rgba(255, 255, 255, 0.25) !important;
+    border-color: transparent !important;
+    color: #ffffff !important;
 }
 </style>
 
@@ -118,23 +143,21 @@
         </div>
     </div>
 
-    <!-- TABEL UTAMA DENGAN SEGMENTED NAVIGASI TABS -->
+    <!-- TABEL UTAMA DENGAN FILTER PILLS NAVIGASI -->
     <div class="card border-0 shadow-sm overflow-hidden mb-4">
-        <div class="surat-nav-container d-flex justify-content-between align-items-center flex-wrap gap-2">
-            <ul class="nav surat-nav-pills">
-                <li class="nav-item">
-                    <a class="nav-link {{ @filter_tab != 'ditolak' ? 'active' : '' }}" href="{{ @BASE }}/order?tab=aktif{{ @filter_tahun ? '&tahun='.@filter_tahun : '' }}{{ @filter_jenis ? '&jenis_layanan='.@filter_jenis : '' }}{{ @search_q ? '&q='.@search_q : '' }}">
-                        <i class="bi bi-check-circle-fill"></i> Order Berlangsung
-                        <span class="pill-count {{ @filter_tab != 'ditolak' ? '' : 'bg-white text-dark shadow-sm' }}">{{ @count_aktif }}</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {{ @filter_tab == 'ditolak' ? 'active' : '' }}" href="{{ @BASE }}/order?tab=ditolak{{ @filter_tahun ? '&tahun='.@filter_tahun : '' }}{{ @filter_jenis ? '&jenis_layanan='.@filter_jenis : '' }}{{ @search_q ? '&q='.@search_q : '' }}">
-                        <i class="bi bi-x-octagon-fill text-danger"></i> Order Ditolak
-                        <span class="pill-count {{ @filter_tab == 'ditolak' ? '' : 'bg-danger text-white' }}">{{ @count_ditolak }}</span>
-                    </a>
-                </li>
-            </ul>
+        <div class="filter-tabs-wrapper d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <a class="filter-tab-pill {{ @filter_tab != 'ditolak' ? 'active' : '' }}" href="{{ @BASE }}/order?tab=aktif{{ @filter_tahun ? '&tahun='.@filter_tahun : '' }}{{ @filter_jenis ? '&jenis_layanan='.@filter_jenis : '' }}{{ @search_q ? '&q='.@search_q : '' }}">
+                    <i class="bi bi-check-circle-fill"></i>
+                    <span>Order Berlangsung</span>
+                    <span class="count-chip">{{ @count_aktif }}</span>
+                </a>
+                <a class="filter-tab-pill tab-ditolak {{ @filter_tab == 'ditolak' ? 'active' : '' }}" href="{{ @BASE }}/order?tab=ditolak{{ @filter_tahun ? '&tahun='.@filter_tahun : '' }}{{ @filter_jenis ? '&jenis_layanan='.@filter_jenis : '' }}{{ @search_q ? '&q='.@search_q : '' }}">
+                    <i class="bi bi-x-octagon-fill text-danger"></i>
+                    <span>Order Ditolak</span>
+                    <span class="count-chip chip-danger">{{ @count_ditolak }}</span>
+                </a>
+            </div>
             <span class="text-muted small fw-medium">
                 Total: <strong class="text-dark">{{ !empty(@daftar_order) ? count(@daftar_order) : 0 }}</strong> order ditampilkan
             </span>
