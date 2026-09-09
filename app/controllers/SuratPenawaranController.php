@@ -84,6 +84,10 @@ class SuratPenawaranController extends Controller
      */
     public function index($f3)
     {
+        $currentYear   = date('Y');
+        $filterTahun   = $f3->exists('GET.tahun') ? trim((string)$f3->get('GET.tahun')) : $currentYear;
+        $daftarTahun   = range((int)$currentYear, (int)$currentYear - 4);
+
         $search        = trim((string) $f3->get('GET.q'));
         $filterLayanan = (string) $f3->get('GET.jenis_layanan');
         $filterStatus  = (string) $f3->get('GET.status');
@@ -99,6 +103,12 @@ class SuratPenawaranController extends Controller
                 LEFT JOIN tb_surat_keluar sk ON (sk.no_surat = sp.nomor_surat AND sk.surat_penawaran = 'Y' AND sk.dipilih_sis_opti = 'Y')
                 WHERE 1=1";
         $params = [];
+
+        // Filter Tahun (sama seperti di daftar order)
+        if (!empty($filterTahun) && $filterTahun !== 'all') {
+            $sql      .= ' AND YEAR(COALESCE(sp.tanggal_surat, sp.created_at)) = ?';
+            $params[]  = (int)$filterTahun;
+        }
 
         // Secara default, hanya tampilkan Surat Penawaran aktif/terbaru per order untuk mencegah duplikasi di tabel
         if (!$tampilkanSemua) {
@@ -205,6 +215,8 @@ class SuratPenawaranController extends Controller
         $f3->set('search', $search);
         $f3->set('filter_layanan', $filterLayanan);
         $f3->set('filter_status', $filterStatus);
+        $f3->set('filter_tahun', $filterTahun);
+        $f3->set('daftar_tahun', $daftarTahun);
         $f3->set('tampilkan_semua', $tampilkanSemua);
 
         $this->render('tim_mitra/surat Pelayanan/index.html', 'Surat Penawaran', 'surat-penawaran');
