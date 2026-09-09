@@ -76,6 +76,12 @@ class PenggunaController extends Controller {
             return;
         }
 
+        if (!$this->isSuperadmin()) {
+            $this->setFlashError('Akses Ditolak: Halaman Master Data Pengguna hanya dapat diakses oleh Super Administrator.');
+            $f3->reroute('/dashboard');
+            return;
+        }
+
         $searchQ = trim($f3->get('GET.q') ?? '');
         $filterRole = trim($f3->get('GET.role') ?? '');
 
@@ -192,6 +198,12 @@ class PenggunaController extends Controller {
             return;
         }
 
+        if (!$this->isSuperadmin()) {
+            $this->setFlashError('Akses Ditolak: Pendaftaran role pengguna hanya dapat dilakukan oleh Super Administrator.');
+            $f3->reroute('/dashboard');
+            return;
+        }
+
         $idUser = (int)($f3->get('POST.id_user') ?? 0);
         $roleSistem = trim($f3->get('POST.role_sistem') ?? '');
 
@@ -239,6 +251,12 @@ class PenggunaController extends Controller {
     public function ubah($f3) {
         if (!$this->isLoggedIn()) {
             $f3->reroute('/login');
+            return;
+        }
+
+        if (!$this->isSuperadmin()) {
+            $this->setFlashError('Akses Ditolak: Perubahan role pengguna hanya dapat dilakukan oleh Super Administrator.');
+            $f3->reroute('/dashboard');
             return;
         }
 
@@ -292,6 +310,12 @@ class PenggunaController extends Controller {
     public function hapus($f3) {
         if (!$this->isLoggedIn()) {
             $f3->reroute('/login');
+            return;
+        }
+
+        if (!$this->isSuperadmin()) {
+            $this->setFlashError('Akses Ditolak: Pencabutan role pengguna hanya dapat dilakukan oleh Super Administrator.');
+            $f3->reroute('/dashboard');
             return;
         }
 

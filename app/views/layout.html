@@ -1001,8 +1001,8 @@
                     </li>
                 </check>
 
-                <!-- 3. MASTER DATA (Superadmin, Tim Mitra, Ketua Tim) -->
-                <check if="{{ @is_superadmin || @is_admin_order || @is_ketua_tim }}">
+                <!-- 3. MASTER DATA (Khusus Superadmin) -->
+                <check if="{{ @is_superadmin }}">
                     <li class="sidebar-section-label">Master Data</li>
                     <li>
                         <a class="sidebar-link {{ @active_menu == 'pengguna' ? 'active' : '' }}" href="{{ @BASE }}/pengguna" title="Master Data Pengguna">
