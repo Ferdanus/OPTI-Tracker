@@ -1,0 +1,825 @@
+<style>
+    .jadwal-dragging { user-select: none; -webkit-user-select: none; cursor: grabbing; }
+#tabelJadwal td input[type="checkbox"] { cursor: pointer; width: 16px; height: 16px; }
+</style>
+<div class="d-flex align-items-center gap-3 mb-4">
+    <a href="{{ @BASE }}/po-kegiatan" class="btn-back"><i class="bi bi-arrow-left"></i> Kembali</a>
+    <div>
+        <h2 class="h4 fw-bold mb-1 text-dark">{{ @po ? 'Edit Petunjuk Operasional' : 'Buat Petunjuk Operasional' }}</h2>
+        <p class="text-muted small mb-0">
+            Order: <strong>{{ @order.nomor_order }}</strong> &mdash; {{ @order.nama_mitra }}
+        </p>
+    </div>
+</div>
+
+<form id="formPo" action="{{ @po ? @BASE . '/po-kegiatan/' . @po.id . '/update' : @BASE . '/po-kegiatan/simpan' }}" method="POST">
+    <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
+    <input type="hidden" name="order_id" value="{{ @po ? @po.order_id : @order.id }}">
+    <input type="hidden" name="aksi" id="inputAksi" value="draft">
+    <div id="jadwalHiddenInputs"></div>
+
+    <!-- ======================================================== -->
+    <!-- INFO DASAR -->
+    <!-- ======================================================== -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3"><h6 class="m-0 fw-bold text-dark"><i class="bi bi-file-earmark-text text-primary me-2"></i>Informasi PO</h6></div>
+        <div class="card-body p-3 p-md-4">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Nomor PO <span class="text-danger">*</span></label>
+                    <input type="text" name="nomor_po" class="form-control" value="{{ @po ? @po.nomor_po : @nomor_po_saran }}" required>
+                </div>
+                <div class="col-md-8">
+                    <label class="form-label">Judul Kegiatan <span class="text-danger">*</span></label>
+                    <input type="text" name="judul_kegiatan" class="form-control" value="{{ @po ? @po.judul_kegiatan : @order.judul_kegiatan }}" required>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white py-3"><h6 class="m-0 fw-bold text-dark">1. Dasar</h6></div>
+                <div class="card-body p-3 p-md-4">
+                    <textarea name="dasar" class="form-control" rows="3" placeholder="a. ...&#10;b. ...">{{ @po ? @po.dasar : @dasar_default }}</textarea>
+                    <div class="form-text">Satu poin per baris (otomatis dianggap a, b, dst).</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white py-3"><h6 class="m-0 fw-bold text-dark">2. Tujuan</h6></div>
+                <div class="card-body p-3 p-md-4">
+                    <textarea name="tujuan" class="form-control" rows="3" placeholder="Jelaskan tujuan pelaksanaan kegiatan ini secara singkat, contoh: Membantu menjaga ketelitian dan kebenaran hasil pengujian/kalibrasi milik mitra.">{{ @po ? @po.tujuan : @tujuan_default }}</textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- 3. RUANG LINGKUP (narasi opsional + tabel opsional) -->
+    <!-- ======================================================== -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 fw-bold text-dark">3. Ruang Lingkup</h6>
+            <button type="button" class="btn btn-sm btn-outline-primary" id="btnTambahRuangLingkup"><i class="bi bi-plus-lg"></i> Tambah Alat</button>
+        </div>
+        <div class="card-body p-3 p-md-4">
+            <div class="mb-3">
+                <label class="form-label small fw-bold text-dark mb-1">Penjelasan Ruang Lingkup (opsional)</label>
+                <textarea name="ruang_lingkup_deskripsi" id="ruangLingkupDeskripsi" class="form-control" rows="3"
+                    placeholder="Contoh: Ruang lingkup kerjasama meliputi Audit Survailen SNI 6519:2016 produk Kertas Dasar..."></textarea>
+                <div class="form-text">Cocok untuk pekerjaan sertifikasi/audit yang lingkupnya berupa narasi standar/SNI, bukan daftar alat.</div>
+            </div>
+
+            <label class="form-label small fw-bold text-dark mb-1">Rincian Alat/Kegiatan (opsional)</label>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0" id="tabelRuangLingkup">
+                    <thead>
+                        <tr>
+                            <th>Nama Alat/Kegiatan</th>
+                            <th style="width:90px;">Jumlah</th>
+                            <th style="width:110px;">Waktu (menit)</th>
+                            <th style="width:110px;">Total (jam)</th>
+                            <th>Keterangan</th>
+                            <th style="width:40px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="bodyRuangLingkup"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- ALAMAT (opsional) -->
+    <!-- ======================================================== -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3"><h6 class="m-0 fw-bold text-dark">Alamat <span class="text-muted fw-normal small">(opsional)</span></h6></div>
+        <div class="card-body p-3 p-md-4">
+            <input type="text" name="alamat" class="form-control"
+            placeholder="Alamat pelaksanaan kegiatan / lokasi mitra (opsional)"
+                   value="{{ @po ? @po.alamat : @alamat_default }}">
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3"><h6 class="m-0 fw-bold text-dark">Alat dan Bahan <span class="text-muted fw-normal small">(opsional)</span></h6></div>
+        <div class="card-body p-3 p-md-4">
+    
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <label class="form-label small fw-bold text-dark mb-0">Alat</label>
+                <button type="button" class="btn btn-sm btn-outline-primary" id="btnTambahAlat"><i class="bi bi-plus-lg"></i> Tambah Alat</button>
+            </div>
+            <div id="bodyAlat" class="mb-4"></div>
+    
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <label class="form-label small fw-bold text-dark mb-0">Bahan dan Bahan Kimia</label>
+                <button type="button" class="btn btn-sm btn-outline-primary" id="btnTambahBahan"><i class="bi bi-plus-lg"></i> Tambah Bahan</button>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0" id="tabelBahan">
+                    <thead>
+                        <tr>
+                            <th>Bahan Kimia / Penolong</th>
+                            <th style="width:120px;">Jumlah</th>
+                            <th style="width:120px;">Satuan</th>
+                            <th style="width:40px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="bodyBahan"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- 4. TIM PELAKSANA (dropdown dari tb_arsipuser, searchable) -->
+    <!-- ======================================================== -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 fw-bold text-dark">4. Tim Pelaksana</h6>
+            <button type="button" class="btn btn-sm btn-outline-primary" id="btnTambahTim"><i class="bi bi-plus-lg"></i> Tambah Orang</button>
+        </div>
+        <div class="card-body p-3 p-md-4">
+            <div class="form-text mb-2">Jumlah personil bebas &mdash; tambah/hapus baris sesuai kebutuhan.</div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0" id="tabelTim">
+                    <thead>
+                        <tr>
+                            <th style="width:220px;">Nama</th>
+                            <th style="width:180px;">Tugas / Tanggung Jawab</th>
+                            <th>Uraian Tugas</th>
+                            <th style="width:40px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="bodyTim"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- 5. RAB (kategori & item dinamis, qty x qty x tarif) -->
+    <!-- ======================================================== -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3"><h6 class="m-0 fw-bold text-dark">5. Rencana Anggaran Biaya (RAB)</h6></div>
+        <div class="card-body p-3 p-md-4">
+
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="fw-bold small text-uppercase text-muted">A. Penerimaan</div>
+                <button type="button" class="btn btn-sm btn-outline-primary" id="btnTambahPenerimaan"><i class="bi bi-plus-lg"></i> Tambah Item</button>
+            </div>
+            <div id="bodyPenerimaan" class="mb-2"></div>
+            <div class="d-flex justify-content-between p-2 px-3 rounded-3 mb-4" style="background: var(--color-bg);">
+                <span class="fw-semibold">Total Penerimaan</span>
+                <span class="fw-bold" id="disp_total_penerimaan">Rp 0</span>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="fw-bold small text-uppercase text-muted">B. Rencana Pengeluaran</div>
+                <button type="button" class="btn btn-sm btn-outline-primary" id="btnTambahKategori"><i class="bi bi-plus-lg"></i> Tambah Kategori</button>
+            </div>
+            <div id="bodyKategori"></div>
+
+            <div class="d-flex justify-content-between p-2 px-3 rounded-3 mt-2" id="boxTotalPengeluaran" style="background: var(--color-bg);">
+                <span class="fw-semibold">Total Pengeluaran</span>
+                <span class="fw-bold" id="disp_total_pengeluaran">Rp 0</span>
+            </div>
+            <div class="small mt-1" id="disp_selisih"></div>
+        </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- 6. JADWAL (rentang tanggal -> kolom harian/mingguan otomatis) -->
+    <!-- ======================================================== -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 fw-bold text-dark">6. Jadwal</h6>
+            <button type="button" class="btn btn-sm btn-outline-primary" id="btnTambahJadwal"><i class="bi bi-plus-lg"></i> Tambah Kegiatan</button>
+        </div>
+        <div class="card-body p-3 p-md-4">
+            <div class="row g-3 mb-2">
+                <div class="col-md-6">
+                    <label class="form-label small fw-bold">Tanggal Mulai</label>
+                    <input type="date" id="jadwalMulai" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small fw-bold">Tanggal Selesai</label>
+                    <input type="date" id="jadwalSelesai" class="form-control form-control-sm">
+                </div>
+            </div>
+            <div id="jadwalModeInfo" class="small text-muted mb-2"></div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0" id="tabelJadwal">
+                    <thead>
+                        <tr id="jadwalTheadRow1"></tr>
+                        <tr id="jadwalTheadRow2"></tr>
+                    </thead>
+                    <tbody id="bodyJadwal"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex flex-wrap justify-content-end gap-2 mb-5">
+        <a href="{{ @BASE }}/po-kegiatan" class="btn btn-outline-secondary px-4">Kembali</a>
+        <button type="submit" id="btnDraft" class="btn btn-outline-secondary px-4"><i class="bi bi-save me-1"></i> Simpan sebagai Draft</button>
+        <button type="submit" id="btnKirim" class="btn btn-primary px-4"><i class="bi bi-send me-1"></i> Kirim</button>
+    </div>
+</form>
+
+<script>
+/* ============================================================ */
+/* HELPER UMUM                                                  */
+/* ============================================================ */
+function safeJsonParse(val, fallback) {
+    if (val === null || val === undefined || val === '') return fallback;
+    if (typeof val === 'object') return val;
+    try {
+        return JSON.parse(val);
+    } catch (e) {
+        console.warn('Gagal parse JSON, pakai fallback:', val, e);
+        return fallback;
+    }
+}
+
+function rupiah(n) { return 'Rp ' + (Math.round(n) || 0).toLocaleString('id-ID'); }
+
+/* Data dari server (null saat create, objek PO saat edit) */
+var poData = {{ @po_json | raw }};
+var daftarPegawai = {{ json_encode(@daftar_pegawai ?: []) }};
+
+/* ============================================================ */
+/* 3. RUANG LINGKUP                                              */
+/* ============================================================ */
+function tambahBarisRuangLingkup(data) {
+    data = data || {};
+    var tr = document.createElement('tr');
+
+    var tdNama = document.createElement('td');
+    var inNama = document.createElement('input');
+    inNama.type = 'text'; inNama.name = 'rl_nama[]'; inNama.className = 'form-control form-control-sm';
+    inNama.value = data.nama_alat || '';
+    tdNama.appendChild(inNama);
+
+    var tdJumlah = document.createElement('td');
+    var inJumlah = document.createElement('input');
+    inJumlah.type = 'number'; inJumlah.name = 'rl_jumlah[]'; inJumlah.className = 'form-control form-control-sm'; inJumlah.min = '0';
+    inJumlah.value = data.jumlah || '';
+    tdJumlah.appendChild(inJumlah);
+
+    var tdWaktu = document.createElement('td');
+    var inWaktu = document.createElement('input');
+    inWaktu.type = 'number'; inWaktu.name = 'rl_waktu_menit[]'; inWaktu.className = 'form-control form-control-sm'; inWaktu.min = '0';
+    inWaktu.value = data.waktu_menit || '';
+    tdWaktu.appendChild(inWaktu);
+
+    var tdTotal = document.createElement('td');
+    var inTotal = document.createElement('input');
+    inTotal.type = 'number'; inTotal.name = 'rl_total_jam[]'; inTotal.className = 'form-control form-control-sm'; inTotal.min = '0'; inTotal.step = '0.1';
+    inTotal.value = data.total_jam || '';
+    tdTotal.appendChild(inTotal);
+
+    var tdKet = document.createElement('td');
+    var inKet = document.createElement('input');
+    inKet.type = 'text'; inKet.name = 'rl_keterangan[]'; inKet.className = 'form-control form-control-sm';
+    inKet.value = data.keterangan || '';
+    tdKet.appendChild(inKet);
+
+    var tdHapus = document.createElement('td');
+    var btnHapus = document.createElement('button');
+    btnHapus.type = 'button'; btnHapus.className = 'btn btn-sm btn-outline-danger';
+    btnHapus.innerHTML = '<i class="bi bi-trash"></i>';
+    btnHapus.addEventListener('click', function () { tr.remove(); });
+    tdHapus.appendChild(btnHapus);
+
+    tr.appendChild(tdNama); tr.appendChild(tdJumlah); tr.appendChild(tdWaktu);
+    tr.appendChild(tdTotal); tr.appendChild(tdKet); tr.appendChild(tdHapus);
+    document.getElementById('bodyRuangLingkup').appendChild(tr);
+}
+
+/* ============================================================ */
+/* ALAT & BAHAN (opsional)                                       */
+/* ============================================================ */
+function tambahBarisAlat(nama) {
+    var row = document.createElement('div');
+    row.className = 'input-group input-group-sm mb-2';
+
+    var inNama = document.createElement('input');
+    inNama.type = 'text'; inNama.name = 'alat_nama[]'; inNama.className = 'form-control';
+    inNama.placeholder = 'Contoh: Crusher, Masher, Gimmick';
+    inNama.value = nama || '';
+
+    var btnHapus = document.createElement('button');
+    btnHapus.type = 'button'; btnHapus.className = 'btn btn-outline-danger';
+    btnHapus.innerHTML = '<i class="bi bi-trash"></i>';
+    btnHapus.addEventListener('click', function () { row.remove(); });
+
+    row.appendChild(inNama); row.appendChild(btnHapus);
+    document.getElementById('bodyAlat').appendChild(row);
+}
+
+function tambahBarisBahan(data) {
+    data = data || {};
+    var tr = document.createElement('tr');
+
+    var tdNama = document.createElement('td');
+    var inNama = document.createElement('input');
+    inNama.type = 'text'; inNama.name = 'bahan_nama[]'; inNama.className = 'form-control form-control-sm';
+    inNama.value = data.nama || '';
+    tdNama.appendChild(inNama);
+
+    var tdJumlah = document.createElement('td');
+    var inJumlah = document.createElement('input');
+    inJumlah.type = 'text'; inJumlah.name = 'bahan_jumlah[]'; inJumlah.className = 'form-control form-control-sm';
+    inJumlah.placeholder = '40'; inJumlah.value = data.jumlah || '';
+    tdJumlah.appendChild(inJumlah);
+
+    var tdSatuan = document.createElement('td');
+    var inSatuan = document.createElement('input');
+    inSatuan.type = 'text'; inSatuan.name = 'bahan_satuan[]'; inSatuan.className = 'form-control form-control-sm';
+    inSatuan.placeholder = 'kg / liter / mL'; inSatuan.value = data.satuan || '';
+    tdSatuan.appendChild(inSatuan);
+
+    var tdHapus = document.createElement('td');
+    var btnHapus = document.createElement('button');
+    btnHapus.type = 'button'; btnHapus.className = 'btn btn-sm btn-outline-danger';
+    btnHapus.innerHTML = '<i class="bi bi-trash"></i>';
+    btnHapus.addEventListener('click', function () { tr.remove(); });
+    tdHapus.appendChild(btnHapus);
+
+    tr.appendChild(tdNama); tr.appendChild(tdJumlah); tr.appendChild(tdSatuan); tr.appendChild(tdHapus);
+    document.getElementById('bodyBahan').appendChild(tr);
+}
+
+/* ============================================================ */
+/* 4. TIM PELAKSANA (dropdown pegawai, searchable via Tom Select) */
+/* ============================================================ */
+function buildSelectPegawai(selectedNama) {
+    var select = document.createElement('select');
+    select.name = 'tp_nama[]';
+    select.className = 'form-select form-select-sm';
+
+    var optEmpty = document.createElement('option');
+    optEmpty.value = ''; optEmpty.textContent = '-- Pilih Nama --';
+    select.appendChild(optEmpty);
+
+    daftarPegawai.forEach(function (p) {
+        var opt = document.createElement('option');
+        opt.value = p.nama_user;
+        opt.textContent = p.nama_user;
+        if (selectedNama && p.nama_user === selectedNama) opt.selected = true;
+        select.appendChild(opt);
+    });
+    return select;
+}
+
+function tambahBarisTim(data) {
+    data = data || {};
+    var tr = document.createElement('tr');
+
+    var tdNama = document.createElement('td');
+    var select = buildSelectPegawai(data.nama);
+    tdNama.appendChild(select);
+
+    var tdTugas = document.createElement('td');
+    var inTugas = document.createElement('input');
+    inTugas.type = 'text'; inTugas.name = 'tp_tugas[]'; inTugas.className = 'form-control form-control-sm';
+    inTugas.placeholder = 'Ketua Tim / Teknisi / dll'; inTugas.value = data.tugas || '';
+    tdTugas.appendChild(inTugas);
+
+    var tdUraian = document.createElement('td');
+    var inUraian = document.createElement('input');
+    inUraian.type = 'text'; inUraian.name = 'tp_uraian[]'; inUraian.className = 'form-control form-control-sm';
+    inUraian.value = data.uraian_tugas || '';
+    tdUraian.appendChild(inUraian);
+
+    var tdHapus = document.createElement('td');
+    var btnHapus = document.createElement('button');
+    btnHapus.type = 'button'; btnHapus.className = 'btn btn-sm btn-outline-danger';
+    btnHapus.innerHTML = '<i class="bi bi-trash"></i>';
+    btnHapus.addEventListener('click', function () {
+        if (select.tomselect) select.tomselect.destroy();
+        tr.remove();
+    });
+    tdHapus.appendChild(btnHapus);
+
+    tr.appendChild(tdNama); tr.appendChild(tdTugas); tr.appendChild(tdUraian); tr.appendChild(tdHapus);
+    document.getElementById('bodyTim').appendChild(tr);
+
+    new TomSelect(select, {
+        create: false,
+        sortField: { field: 'text', direction: 'asc' },
+        placeholder: 'Ketik untuk mencari nama...',
+        dropdownParent: 'body'
+    });
+}
+
+/* ============================================================ */
+/* 5. RAB                                                        */
+/* ============================================================ */
+function tambahItemPenerimaan(data) {
+    data = data || {};
+    var row = document.createElement('div');
+    row.className = 'input-group input-group-sm mb-2';
+
+    var inNama = document.createElement('input');
+    inNama.type = 'text'; inNama.name = 'pen_nama[]'; inNama.className = 'form-control';
+    inNama.placeholder = 'Contoh: Nilai Kontrak / Biaya Pengujian';
+    inNama.value = data.nama || '';
+
+    var span = document.createElement('span');
+    span.className = 'input-group-text'; span.textContent = 'Rp';
+
+    var inNominal = document.createElement('input');
+    inNominal.type = 'number'; inNominal.name = 'pen_nominal[]'; inNominal.className = 'form-control rab-input'; inNominal.min = '0';
+    inNominal.value = data.nominal || '';
+    inNominal.addEventListener('input', hitungRabLive);
+
+    var btnHapus = document.createElement('button');
+    btnHapus.type = 'button'; btnHapus.className = 'btn btn-outline-danger';
+    btnHapus.innerHTML = '<i class="bi bi-trash"></i>';
+    btnHapus.addEventListener('click', function () { row.remove(); hitungRabLive(); });
+
+    row.appendChild(inNama); row.appendChild(span); row.appendChild(inNominal); row.appendChild(btnHapus);
+    document.getElementById('bodyPenerimaan').appendChild(row);
+}
+
+var katCounter = 0;
+
+function tambahKategori(data) {
+    data = data || {};
+    var myIdx = katCounter++;
+
+    var box = document.createElement('div');
+    box.className = 'p-3 border rounded-3 mb-3';
+
+    var headerRow = document.createElement('div');
+    headerRow.className = 'd-flex gap-2 mb-2';
+
+    var inNama = document.createElement('input');
+    inNama.type = 'text'; inNama.name = 'kat_nama[' + myIdx + ']'; inNama.className = 'form-control form-control-sm fw-semibold';
+    inNama.placeholder = 'Nama kategori, mis. Biaya Layanan Kepada Klien';
+    inNama.value = data.nama || '';
+
+    var inPersen = document.createElement('input');
+    inPersen.type = 'text'; inPersen.name = 'kat_persen_manual[' + myIdx + ']'; inPersen.className = 'form-control form-control-sm';
+    inPersen.style.maxWidth = '110px'; inPersen.placeholder = '% (opsional)';
+    inPersen.value = data.persen_manual || '';
+    inPersen.addEventListener('input', hitungRabLive);
+
+    var btnHapusKat = document.createElement('button');
+    btnHapusKat.type = 'button'; btnHapusKat.className = 'btn btn-sm btn-outline-danger';
+    btnHapusKat.innerHTML = '<i class="bi bi-trash"></i>';
+    btnHapusKat.addEventListener('click', function () { box.remove(); hitungRabLive(); });
+
+    headerRow.appendChild(inNama); headerRow.appendChild(inPersen); headerRow.appendChild(btnHapusKat);
+
+    var itemBody = document.createElement('div');
+    itemBody.className = 'kat-item-body mb-2';
+
+    var btnTambahItem = document.createElement('button');
+    btnTambahItem.type = 'button'; btnTambahItem.className = 'btn btn-sm btn-outline-primary py-0';
+    btnTambahItem.innerHTML = '<i class="bi bi-plus-lg"></i> Tambah Item';
+    btnTambahItem.addEventListener('click', function () { tambahItemKategori(myIdx, itemBody); });
+
+    var subtotalLine = document.createElement('div');
+    subtotalLine.className = 'text-end fw-semibold small mt-2';
+    var subtotalSpan = document.createElement('span');
+    subtotalSpan.className = 'kat-subtotal'; subtotalSpan.textContent = 'Rp 0';
+    subtotalLine.appendChild(document.createTextNode('Subtotal: '));
+    subtotalLine.appendChild(subtotalSpan);
+
+    box.appendChild(headerRow); box.appendChild(itemBody); box.appendChild(btnTambahItem); box.appendChild(subtotalLine);
+    box.dataset.subtotalTarget = 'true';
+    document.getElementById('bodyKategori').appendChild(box);
+
+    var items = data.items && data.items.length ? data.items : [{}];
+    items.forEach(function (it) { tambahItemKategori(myIdx, itemBody, it); });
+}
+
+function tambahItemKategori(katIdx, itemBody, data) {
+    data = data || {};
+    var row = document.createElement('div');
+    row.className = 'row g-1 align-items-center mb-1';
+
+    function col(width, el) {
+        var d = document.createElement('div');
+        d.className = 'col-' + width;
+        d.appendChild(el);
+        return d;
+    }
+    function makeInput(type, name, placeholder, value, isRab) {
+        var el = document.createElement('input');
+        el.type = type; el.name = name; el.className = 'form-control form-control-sm' + (isRab ? ' rab-input' : '');
+        if (placeholder) el.placeholder = placeholder;
+        if (value !== undefined && value !== null) el.value = value;
+        if (type === 'number') el.min = '0';
+        if (isRab) el.addEventListener('input', hitungRabLive);
+        return el;
+    }
+
+    var inNama = makeInput('text', 'kat_item_nama[' + katIdx + '][]', 'Nama item', data.nama);
+    var inQtyA = makeInput('number', 'kat_item_qtya[' + katIdx + '][]', 'Qty', data.qty_a, true);
+    var inLabelA = makeInput('text', 'kat_item_labela[' + katIdx + '][]', 'satuan (orang)', data.label_a);
+    var inQtyB = makeInput('number', 'kat_item_qtyb[' + katIdx + '][]', 'Qty', data.qty_b, true);
+    var inLabelB = makeInput('text', 'kat_item_labelb[' + katIdx + '][]', 'satuan (hari)', data.label_b);
+    var inTarif = makeInput('number', 'kat_item_tarif[' + katIdx + '][]', 'Tarif', data.tarif, true);
+
+    var btnHapus = document.createElement('button');
+    btnHapus.type = 'button'; btnHapus.className = 'btn btn-sm btn-outline-danger';
+    btnHapus.innerHTML = '<i class="bi bi-trash"></i>';
+    btnHapus.addEventListener('click', function () { row.remove(); hitungRabLive(); });
+
+    row.appendChild(col(3, inNama));
+    row.appendChild(col(2, inQtyA));
+    row.appendChild(col(2, inLabelA));
+    row.appendChild(col(1, inQtyB));
+    row.appendChild(col(2, inLabelB));
+    row.appendChild(col(1, inTarif));
+    row.appendChild(col(1, btnHapus));
+
+    itemBody.appendChild(row);
+}
+
+function hitungRabLive() {
+    var totalPenerimaan = 0;
+    document.querySelectorAll('input[name="pen_nominal[]"]').forEach(function (el) { totalPenerimaan += parseFloat(el.value) || 0; });
+    document.getElementById('disp_total_penerimaan').textContent = rupiah(totalPenerimaan);
+
+    var totalPengeluaran = 0;
+    document.querySelectorAll('#bodyKategori > div').forEach(function (box) {
+        var subtotal = 0;
+        box.querySelectorAll('.kat-item-body .row').forEach(function (row) {
+            var qtyA = parseFloat(row.querySelector('input[name^="kat_item_qtya"]').value) || 1;
+            var qtyB = parseFloat(row.querySelector('input[name^="kat_item_qtyb"]').value) || 1;
+            var tarif = parseFloat(row.querySelector('input[name^="kat_item_tarif"]').value) || 0;
+            subtotal += qtyA * qtyB * tarif;
+        });
+        var subtotalEl = box.querySelector('.kat-subtotal');
+        if (subtotalEl) subtotalEl.textContent = rupiah(subtotal);
+        totalPengeluaran += subtotal;
+    });
+    document.getElementById('disp_total_pengeluaran').textContent = rupiah(totalPengeluaran);
+
+    var selisih = totalPenerimaan - totalPengeluaran;
+    var selisihEl = document.getElementById('disp_selisih');
+    var boxEl = document.getElementById('boxTotalPengeluaran');
+    if (Math.abs(selisih) < 1) {
+        selisihEl.innerHTML = '<span class="text-success"><i class="bi bi-check-circle me-1"></i>Pengeluaran sudah seimbang dengan penerimaan.</span>';
+        boxEl.style.background = 'var(--color-bg)';
+    } else {
+        selisihEl.innerHTML = '<span class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i>Selisih: ' + rupiah(Math.abs(selisih)) + ' (' + (selisih > 0 ? 'kurang' : 'lebih') + ')</span>';
+        boxEl.style.background = '#fef2f2';
+    }
+}
+
+/* ============================================================ */
+/* 6. JADWAL                                                     */
+/* ============================================================ */
+var jadwalState = [];        // [{ nama, tanda: [] }]
+var jadwalKolomCache = [];
+var jadwalBulanHeader = [];
+
+function muatKolomJadwal() {
+    var mulai = document.getElementById('jadwalMulai').value;
+    var selesai = document.getElementById('jadwalSelesai').value;
+    if (!mulai || !selesai) return;
+
+    fetch('{{ @BASE }}/po-kegiatan/jadwal-kolom?mulai=' + mulai + '&selesai=' + selesai)
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+            jadwalKolomCache = data.kolom;
+            jadwalBulanHeader = data.bulan_header;
+            document.getElementById('jadwalModeInfo').textContent = data.mode === 'harian'
+                ? 'Durasi \u2264 1 bulan \u2192 ditampilkan per hari kerja (Sabtu/Minggu/libur nasional dilewati).'
+                : 'Durasi > 1 bulan \u2192 ditampilkan per minggu.';
+
+            if (jadwalState.length === 0) {
+                ['Persiapan awal', 'Pelaksanaan', 'Evaluasi hasil', 'Penerbitan Sertifikat/Laporan'].forEach(function (nm) {
+                    jadwalState.push({ nama: nm, tanda: [] });
+                });
+            }
+            renderTabelJadwal();
+        })
+        .catch(function (err) { console.error('Gagal memuat kolom jadwal:', err); });
+}
+
+function tambahBarisJadwalRow(nama) {
+    jadwalState.push({ nama: nama || '', tanda: [] });
+    renderTabelJadwal();
+}
+
+function renderTabelJadwal() {
+  /* ==== State drag-select (klik-tahan-geser buat nandain banyak kolom sekaligus) ==== */
+var isDraggingJadwal = false;
+var dragRowIdx = null;
+var dragTargetValue = null;
+
+document.addEventListener('mouseup', function () {
+    isDraggingJadwal = false;
+    document.body.classList.remove('jadwal-dragging');
+});
+}
+function renderTabelJadwal() {
+    var theadRow1 = document.getElementById('jadwalTheadRow1');
+    var theadRow2 = document.getElementById('jadwalTheadRow2');
+    var tbody = document.getElementById('bodyJadwal');
+
+    theadRow1.innerHTML = '<th></th>' + jadwalBulanHeader.map(function (bh) {
+        return '<th colspan="' + bh.span + '" class="text-center">' + bh.label + '</th>';
+    }).join('') + '<th></th>';
+
+    theadRow2.innerHTML = '<th>Kegiatan</th>' + jadwalKolomCache.map(function (k) {
+        return '<th class="text-center" style="font-size:10px; font-weight:400;">' + k.label + '</th>';
+    }).join('') + '<th style="width:110px;"></th>';
+
+    tbody.innerHTML = '';
+    jadwalState.forEach(function (row, rowIdx) {
+        var tr = document.createElement('tr');
+
+        var tdNama = document.createElement('td');
+        var inputNama = document.createElement('input');
+        inputNama.type = 'text';
+        inputNama.className = 'form-control form-control-sm';
+        inputNama.value = row.nama;
+        inputNama.addEventListener('input', function () { jadwalState[rowIdx].nama = inputNama.value; });
+        tdNama.appendChild(inputNama);
+        tr.appendChild(tdNama);
+
+        jadwalKolomCache.forEach(function (k) {
+            var td = document.createElement('td');
+            td.className = 'text-center';
+            td.style.userSelect = 'none';
+
+            var cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.checked = row.tanda.indexOf(k.key) !== -1;
+
+            function setChecked(val) {
+                cb.checked = val;
+                var pos = jadwalState[rowIdx].tanda.indexOf(k.key);
+                if (val && pos === -1) jadwalState[rowIdx].tanda.push(k.key);
+                if (!val && pos !== -1) jadwalState[rowIdx].tanda.splice(pos, 1);
+            }
+
+            // Mulai drag dari checkbox ini
+            cb.addEventListener('mousedown', function () {
+                isDraggingJadwal = true;
+                dragRowIdx = rowIdx;
+                document.body.classList.add('jadwal-dragging');
+            });
+
+            // Klik biasa (tanpa drag) tetap toggle normal
+            cb.addEventListener('change', function () {
+                setChecked(cb.checked);
+                dragTargetValue = cb.checked; // kolom berikutnya yang dilewatin drag ikut nilai ini
+            });
+
+            // Kalau lagi drag dan mouse lewat checkbox lain di baris yang sama -> ikut ke-mark
+            cb.addEventListener('mouseenter', function () {
+                if (!isDraggingJadwal || dragRowIdx !== rowIdx) return;
+                if (cb.checked !== dragTargetValue) setChecked(dragTargetValue);
+            });
+
+            td.appendChild(cb);
+            tr.appendChild(td);
+        });
+
+        var tdAksi = document.createElement('td');
+        tdAksi.className = 'text-center';
+
+        var btnAll = document.createElement('button');
+        btnAll.type = 'button';
+        btnAll.className = 'btn btn-sm btn-outline-secondary py-0 px-1 me-1';
+        btnAll.title = 'Tandai semua kolom';
+        btnAll.innerHTML = '<i class="bi bi-check-all"></i>';
+        btnAll.addEventListener('click', function () {
+            jadwalState[rowIdx].tanda = jadwalKolomCache.map(function (k) { return k.key; });
+            renderTabelJadwal();
+        });
+
+        var btnClear = document.createElement('button');
+        btnClear.type = 'button';
+        btnClear.className = 'btn btn-sm btn-outline-secondary py-0 px-1 me-1';
+        btnClear.title = 'Kosongkan baris ini';
+        btnClear.innerHTML = '<i class="bi bi-x-lg"></i>';
+        btnClear.addEventListener('click', function () {
+            jadwalState[rowIdx].tanda = [];
+            renderTabelJadwal();
+        });
+
+        var btnHapus = document.createElement('button');
+        btnHapus.type = 'button';
+        btnHapus.className = 'btn btn-sm btn-outline-danger py-0 px-1';
+        btnHapus.innerHTML = '<i class="bi bi-trash"></i>';
+        btnHapus.addEventListener('click', function () {
+            jadwalState.splice(rowIdx, 1);
+            renderTabelJadwal();
+        });
+
+        tdAksi.appendChild(btnAll);
+        tdAksi.appendChild(btnClear);
+        tdAksi.appendChild(btnHapus);
+        tr.appendChild(tdAksi);
+
+        tbody.appendChild(tr);
+    });
+}
+
+/* ============================================================ */
+/* INIT (dijalankan setelah seluruh HTML siap)                   */
+/* ============================================================ */
+document.addEventListener('DOMContentLoaded', function () {
+
+    // ---- tombol "+ Tambah ..." statis ----
+    document.getElementById('btnTambahRuangLingkup').addEventListener('click', function () { tambahBarisRuangLingkup(); });
+    document.getElementById('btnTambahAlat').addEventListener('click', function () { tambahBarisAlat(); });
+document.getElementById('btnTambahBahan').addEventListener('click', function () { tambahBarisBahan(); });
+    document.getElementById('btnTambahTim').addEventListener('click', function () { tambahBarisTim(); });
+    document.getElementById('btnTambahPenerimaan').addEventListener('click', function () { tambahItemPenerimaan(); });
+    document.getElementById('btnTambahKategori').addEventListener('click', function () { tambahKategori(); });
+    document.getElementById('btnTambahJadwal').addEventListener('click', function () { tambahBarisJadwalRow(); });
+
+    // ---- listener rentang tanggal jadwal ----
+    document.getElementById('jadwalMulai').addEventListener('change', muatKolomJadwal);
+    document.getElementById('jadwalSelesai').addEventListener('change', muatKolomJadwal);
+
+    // ---- isi form: dari data lama (edit) atau kosong (create) ----
+    if (poData) {
+        // 3. Ruang Lingkup
+        var rl = safeJsonParse(poData.ruang_lingkup, {});
+        if (Array.isArray(rl)) rl = { deskripsi: '', items: rl }; // kompatibilitas data lama
+        document.getElementById('ruangLingkupDeskripsi').value = rl.deskripsi || '';
+        var rlItems = rl.items || [];
+        rlItems.forEach(function (r) { tambahBarisRuangLingkup(r); });
+        // Alat & Bahan (opsional, gak dipaksa ada baris kosong)
+var ab = safeJsonParse(poData.alat_bahan, {});
+(ab.alat || []).forEach(function (a) { tambahBarisAlat(a); });
+(ab.bahan || []).forEach(function (b) { tambahBarisBahan(b); });
+
+        // 4. Tim Pelaksana
+        var tp = safeJsonParse(poData.tim_pelaksana, []);
+        (tp.length ? tp : [{}]).forEach(function (t) { tambahBarisTim(t); });
+
+        // 5. RAB
+        var rab = safeJsonParse(poData.rab, {});
+        var penItems = (rab.penerimaan && rab.penerimaan.items) ? rab.penerimaan.items : [];
+        (penItems.length ? penItems : [{}]).forEach(function (p) { tambahItemPenerimaan(p); });
+
+        var katList = (rab.pengeluaran && rab.pengeluaran.kategori) ? rab.pengeluaran.kategori : [];
+        (katList.length ? katList : [{}]).forEach(function (k) { tambahKategori(k); });
+
+        // 6. Jadwal
+        document.getElementById('jadwalMulai').value = poData.jadwal_mulai || '';
+        document.getElementById('jadwalSelesai').value = poData.jadwal_selesai || '';
+        var jadwalData = safeJsonParse(poData.jadwal, []);
+        jadwalState = jadwalData.length ? jadwalData : [];
+        if (poData.jadwal_mulai && poData.jadwal_selesai) muatKolomJadwal();
+    } else {
+        // Baru: satu baris kosong tiap bagian
+        tambahBarisRuangLingkup();
+        tambahBarisTim();
+        tambahItemPenerimaan();
+        tambahKategori();
+        ['Persiapan awal', 'Pelaksanaan', 'Evaluasi hasil', 'Penerbitan Sertifikat/Laporan'].forEach(function (nm) {
+            jadwalState.push({ nama: nm, tanda: [] });
+        });
+    }
+
+    hitungRabLive();
+
+    document.getElementById('btnDraft').addEventListener('click', function () { document.getElementById('inputAksi').value = 'draft'; });
+    document.getElementById('btnKirim').addEventListener('click', function () { document.getElementById('inputAksi').value = 'kirim'; });
+
+    // ---- sebelum submit: tuang jadwalState (murni JS) jadi hidden input ----
+    document.getElementById('formPo').addEventListener('submit', function () {
+        var container = document.getElementById('jadwalHiddenInputs');
+        container.innerHTML = '';
+        var outIdx = 0;
+        jadwalState.forEach(function (row) {
+            if (!row.nama.trim()) return;
+            var inp = document.createElement('input');
+            inp.type = 'hidden'; inp.name = 'jadwal_nama[]'; inp.value = row.nama;
+            container.appendChild(inp);
+
+            row.tanda.forEach(function (key) {
+                var t = document.createElement('input');
+                t.type = 'hidden'; t.name = 'jadwal_tanda[' + outIdx + '][]'; t.value = key;
+                container.appendChild(t);
+            });
+            outIdx++;
+        });
+
+        var mulaiInp = document.createElement('input');
+        mulaiInp.type = 'hidden'; mulaiInp.name = 'jadwal_mulai'; mulaiInp.value = document.getElementById('jadwalMulai').value;
+        container.appendChild(mulaiInp);
+
+        var selesaiInp = document.createElement('input');
+        selesaiInp.type = 'hidden'; selesaiInp.name = 'jadwal_selesai'; selesaiInp.value = document.getElementById('jadwalSelesai').value;
+        container.appendChild(selesaiInp);
+    });
+});
+</script>

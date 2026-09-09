@@ -24,6 +24,7 @@ class SuratMasukController extends Controller {
         $daftarSurat = array();
         $daftarKlaim = array();
         $daftarRiwayat = array();
+        $daftarDitolak = array();
         $errorMessage = null;
         $searchQ = trim($this->f3->get('GET.q') ?? '');
 
@@ -39,6 +40,7 @@ class SuratMasukController extends Controller {
                 $daftarKlaim   = $this->repo->getDaftarPermintaanMasuk($this->getUserRole() === 'superadmin' ? null : $userId, $filterTahun);
                 $daftarRiwayat = $this->repo->getDaftarRiwayatSurat($filterTahun);
                 $daftarDitolak = $this->repo->getDaftarSuratDitolak($filterTahun);
+                
 
                 // Apply search filter if query is present
                 if (!empty($searchQ)) {

@@ -5,17 +5,19 @@
  * Dilengkapi Guard Permission (Input/Edit: Admin Order & Superadmin; View: Internal Balai)
  */
 class PembayaranController extends Controller {
-
+    protected $allowedExt  = ['pdf', 'jpg', 'jpeg', 'png'];
+    protected $allowedMime = ['application/pdf', 'image/jpeg', 'image/png'];
+    protected $maxSize     = 5242880;
     /**
      * Menampilkan daftar riwayat pembayaran dan status pelunasan
      * Route: GET /pembayaran
      */
     public function index($f3) {
         $this->requirePermission('pembayaran:view', '/po');
-
-        $search = trim($f3->get('GET.q') ?? '');
+ 
+        $search      = trim($f3->get('GET.q') ?? '');
         $filterJenis = trim($f3->get('GET.jenis_layanan') ?? '');
-
+ 
         $sql = "SELECT p.*, o.nomor_order, o.judul_kegiatan, o.estimasi_biaya, o.jenis_layanan_opti,
                        c.nmcustomer AS nama_perusahaan, c.pt_cv,
                        po.id AS po_id_real, po.nomor_po, po.biaya AS biaya_po
@@ -24,15 +26,15 @@ class PembayaranController extends Controller {
                 JOIN tb_customer c ON o.id_customer = c.id_customer
                 LEFT JOIN po ON p.po_id = po.id OR (p.po_id IS NULL AND o.id = po.order_id)
                 WHERE 1=1";
-        
+ 
         $params = array();
         $idx = 1;
-
+ 
         if (!empty($filterJenis)) {
             $sql .= " AND o.jenis_layanan_opti = ?";
             $params[$idx++] = $filterJenis;
         }
-
+ 
         if (!empty($search)) {
             $sql .= " AND (o.nomor_order LIKE ? OR po.nomor_po LIKE ? OR c.nmcustomer LIKE ? OR p.keterangan LIKE ?)";
             $wildcard = "%{$search}%";
@@ -41,10 +43,10 @@ class PembayaranController extends Controller {
             $params[$idx++] = $wildcard;
             $params[$idx++] = $wildcard;
         }
-
+ 
         $sql .= " ORDER BY p.tanggal_bayar DESC, p.id DESC";
         $daftarPembayaran = $this->db->exec($sql, $params);
-
+ 
         // Rekapitulasi Status Pembayaran Per PO Resmi
         $rekapPoRaw = $this->db->exec(
             "SELECT p.id AS po_id, p.nomor_po, p.biaya, p.tim_kerja, p.status AS status_po,
@@ -57,18 +59,18 @@ class PembayaranController extends Controller {
              JOIN tb_customer c ON o.id_customer = c.id_customer
              ORDER BY p.id ASC"
         );
-
+ 
         $rekapPo = array();
         $countLunas = 0;
         $countSebagian = 0;
         $countBelum = 0;
-
+ 
         foreach ($rekapPoRaw as $item) {
             $biaya = (float)$item['biaya'];
             $dibayar = (float)$item['total_dibayar'];
             $sisa = max(0, $biaya - $dibayar);
             $persen = $biaya > 0 ? min(100, round(($dibayar / $biaya) * 100, 1)) : 0;
-
+ 
             if ($dibayar >= $biaya && $biaya > 0) {
                 $statusLunas = 'lunas';
                 $countLunas++;
@@ -79,13 +81,13 @@ class PembayaranController extends Controller {
                 $statusLunas = 'belum';
                 $countBelum++;
             }
-
+ 
             $item['sisa_piutang'] = $sisa;
             $item['persen_lunas'] = $persen;
             $item['status_lunas'] = $statusLunas;
             $rekapPo[] = $item;
         }
-
+ 
         // Total Rekapitulasi Finansial
         $totalTerbayar = (float)($this->db->exec("SELECT SUM(jumlah) AS t FROM opti_pembayaran WHERE status_verifikasi = 'terverifikasi'")[0]['t'] ?? 0);
         $totalTagihan  = (float)($this->db->exec("SELECT SUM(biaya) AS t FROM po")[0]['t'] ?? 0);
@@ -94,11 +96,15 @@ class PembayaranController extends Controller {
         }
         $sisaPiutang = max(0, $totalTagihan - $totalTerbayar);
         $persenRealisasi = $totalTagihan > 0 ? round(($totalTerbayar / $totalTagihan) * 100, 1) : 0;
-
+ 
         $fieldConfigModel = new OptiFieldConfig($this->db);
         $maskEnabled = $fieldConfigModel->isMaskClientNameEnabled();
-
+ 
         $f3->set('daftar_pembayaran', $daftarPembayaran);
+        // [BARU] versi JSON dari data yang sama, dipakai buat difilter di sisi JS
+        // (modal "Detail" riwayat pembayaran per order/PO, tanpa request baru ke server)
+        $f3->set('daftar_pembayaran_json', json_encode($daftarPembayaran, JSON_UNESCAPED_UNICODE));
+ 
         $f3->set('rekap_po', $rekapPo);
         $f3->set('total_terbayar', $totalTerbayar);
         $f3->set('total_tagihan', $totalTagihan);
@@ -110,9 +116,113 @@ class PembayaranController extends Controller {
         $f3->set('search_q', $search);
         $f3->set('filter_jenis_layanan', $filterJenis);
         $f3->set('mask_client_name', $maskEnabled);
-
+ 
         $this->render('pembayaran/index.html', 'Rekapitulasi Keuangan & Pembayaran', 'pembayaran');
     }
+
+    // public function index($f3) {
+    //     $this->requirePermission('pembayaran:view', '/po');
+
+    //     $search = trim($f3->get('GET.q') ?? '');
+    //     $filterJenis = trim($f3->get('GET.jenis_layanan') ?? '');
+
+    //     $sql = "SELECT p.*, o.nomor_order, o.judul_kegiatan, o.estimasi_biaya, o.jenis_layanan_opti,
+    //                    c.nmcustomer AS nama_perusahaan, c.pt_cv,
+    //                    po.id AS po_id_real, po.nomor_po, po.biaya AS biaya_po
+    //             FROM opti_pembayaran p
+    //             JOIN order_layanan o ON p.order_id = o.id
+    //             JOIN tb_customer c ON o.id_customer = c.id_customer
+    //             LEFT JOIN po ON p.po_id = po.id OR (p.po_id IS NULL AND o.id = po.order_id)
+    //             WHERE 1=1";
+        
+    //     $params = array();
+    //     $idx = 1;
+
+    //     if (!empty($filterJenis)) {
+    //         $sql .= " AND o.jenis_layanan_opti = ?";
+    //         $params[$idx++] = $filterJenis;
+    //     }
+
+    //     if (!empty($search)) {
+    //         $sql .= " AND (o.nomor_order LIKE ? OR po.nomor_po LIKE ? OR c.nmcustomer LIKE ? OR p.keterangan LIKE ?)";
+    //         $wildcard = "%{$search}%";
+    //         $params[$idx++] = $wildcard;
+    //         $params[$idx++] = $wildcard;
+    //         $params[$idx++] = $wildcard;
+    //         $params[$idx++] = $wildcard;
+    //     }
+
+    //     $sql .= " ORDER BY p.tanggal_bayar DESC, p.id DESC";
+    //     $daftarPembayaran = $this->db->exec($sql, $params);
+
+    //     // Rekapitulasi Status Pembayaran Per PO Resmi
+    //     $rekapPoRaw = $this->db->exec(
+    //         "SELECT p.id AS po_id, p.nomor_po, p.biaya, p.tim_kerja, p.status AS status_po,
+    //                 o.id AS order_id, o.nomor_order, o.judul_kegiatan, o.jenis_layanan_opti,
+    //                 c.nmcustomer AS nama_perusahaan, c.pt_cv,
+    //                 COALESCE((SELECT SUM(jumlah) FROM opti_pembayaran WHERE (po_id = p.id OR (po_id IS NULL AND order_id = o.id)) AND status_verifikasi = 'terverifikasi'), 0) AS total_dibayar,
+    //                 (SELECT COUNT(id) FROM opti_pembayaran WHERE (po_id = p.id OR (po_id IS NULL AND order_id = o.id))) AS jml_termin
+    //          FROM po p
+    //          JOIN order_layanan o ON p.order_id = o.id
+    //          JOIN tb_customer c ON o.id_customer = c.id_customer
+    //          ORDER BY p.id ASC"
+    //     );
+
+    //     $rekapPo = array();
+    //     $countLunas = 0;
+    //     $countSebagian = 0;
+    //     $countBelum = 0;
+
+    //     foreach ($rekapPoRaw as $item) {
+    //         $biaya = (float)$item['biaya'];
+    //         $dibayar = (float)$item['total_dibayar'];
+    //         $sisa = max(0, $biaya - $dibayar);
+    //         $persen = $biaya > 0 ? min(100, round(($dibayar / $biaya) * 100, 1)) : 0;
+
+    //         if ($dibayar >= $biaya && $biaya > 0) {
+    //             $statusLunas = 'lunas';
+    //             $countLunas++;
+    //         } elseif ($dibayar > 0) {
+    //             $statusLunas = 'sebagian';
+    //             $countSebagian++;
+    //         } else {
+    //             $statusLunas = 'belum';
+    //             $countBelum++;
+    //         }
+
+    //         $item['sisa_piutang'] = $sisa;
+    //         $item['persen_lunas'] = $persen;
+    //         $item['status_lunas'] = $statusLunas;
+    //         $rekapPo[] = $item;
+    //     }
+
+    //     // Total Rekapitulasi Finansial
+    //     $totalTerbayar = (float)($this->db->exec("SELECT SUM(jumlah) AS t FROM opti_pembayaran WHERE status_verifikasi = 'terverifikasi'")[0]['t'] ?? 0);
+    //     $totalTagihan  = (float)($this->db->exec("SELECT SUM(biaya) AS t FROM po")[0]['t'] ?? 0);
+    //     if ($totalTagihan == 0) {
+    //         $totalTagihan = (float)($this->db->exec("SELECT SUM(estimasi_biaya) AS t FROM order_layanan")[0]['t'] ?? 0);
+    //     }
+    //     $sisaPiutang = max(0, $totalTagihan - $totalTerbayar);
+    //     $persenRealisasi = $totalTagihan > 0 ? round(($totalTerbayar / $totalTagihan) * 100, 1) : 0;
+
+    //     $fieldConfigModel = new OptiFieldConfig($this->db);
+    //     $maskEnabled = $fieldConfigModel->isMaskClientNameEnabled();
+
+    //     $f3->set('daftar_pembayaran', $daftarPembayaran);
+    //     $f3->set('rekap_po', $rekapPo);
+    //     $f3->set('total_terbayar', $totalTerbayar);
+    //     $f3->set('total_tagihan', $totalTagihan);
+    //     $f3->set('sisa_piutang', $sisaPiutang);
+    //     $f3->set('persen_realisasi', $persenRealisasi);
+    //     $f3->set('count_lunas', $countLunas);
+    //     $f3->set('count_sebagian', $countSebagian);
+    //     $f3->set('count_belum', $countBelum);
+    //     $f3->set('search_q', $search);
+    //     $f3->set('filter_jenis_layanan', $filterJenis);
+    //     $f3->set('mask_client_name', $maskEnabled);
+
+    //     $this->render('pembayaran/index.html', 'Rekapitulasi Keuangan & Pembayaran', 'pembayaran');
+    // }
 
     /**
      * Menampilkan form input pembayaran baru untuk suatu order
@@ -120,34 +230,72 @@ class PembayaranController extends Controller {
      */
     public function tambah($f3) {
         $this->requirePermission('pembayaran:create', '/pembayaran');
-
+ 
         $orderId = (int)($f3->get('GET.order_id') ?? 0);
         $orderModel = new OrderLayanan($this->db);
-        
+ 
         $daftarOrder = $this->db->exec(
             "SELECT o.id, o.nomor_order, o.judul_kegiatan, o.estimasi_biaya, 
                     COALESCE(p.biaya, o.estimasi_biaya, 0) AS biaya,
                     c.nmcustomer AS nama_perusahaan,
                     p.id AS po_id, p.nomor_po, p.biaya AS biaya_po,
-                    COALESCE((SELECT SUM(jumlah) FROM opti_pembayaran WHERE order_id = o.id AND status_verifikasi = 'terverifikasi'), 0) AS terbayar
+                    COALESCE((SELECT SUM(jumlah) FROM opti_pembayaran WHERE order_id = o.id AND status_verifikasi = 'terverifikasi'), 0) AS terbayar,
+                    COALESCE((SELECT COUNT(id) FROM opti_pembayaran WHERE order_id = o.id), 0) AS jumlah_termin_sebelumnya
              FROM order_layanan o
              JOIN tb_customer c ON o.id_customer = c.id_customer
              LEFT JOIN po p ON o.id = p.order_id
+             WHERE o.status_keuangan IN ('menunggu_pembayaran', 'terbayar_sebagian')
              ORDER BY o.id DESC"
         );
-
+ 
+        // [BARU] hitung sisa tagihan & saran nomor termin berikutnya per order
+        foreach ($daftarOrder as &$ord) {
+            $biayaAcuan = !empty($ord['biaya_po']) ? (float)$ord['biaya_po'] : (float)$ord['estimasi_biaya'];
+            $ord['biaya_acuan']       = $biayaAcuan;
+            $ord['sisa_tagihan']      = max(0, $biayaAcuan - (float)$ord['terbayar']);
+            $ord['termin_berikutnya'] = (int)$ord['jumlah_termin_sebelumnya'] + 1;
+        }
+        unset($ord);
+ 
         $selectedOrder = null;
         if ($orderId > 0) {
             $selectedOrder = $orderModel->getDetail($orderId);
         }
-
+ 
         $f3->set('daftar_order', $daftarOrder);
         $f3->set('selected_order', $selectedOrder);
         $f3->set('order_id', $orderId);
         $f3->set('selected_order_id', $orderId);
-
         $this->render('pembayaran/form.html', 'Input Pembayaran Termin', 'pembayaran');
     }
+    // public function tambah($f3) {
+    //     $this->requirePermission('pembayaran:create', '/pembayaran');
+
+    //     $orderId = (int)($f3->get('GET.order_id') ?? 0);
+    //     $orderModel = new OrderLayanan($this->db);
+        
+    //     $daftarOrder = $this->db->exec(
+    //         "SELECT o.id, o.nomor_order, o.judul_kegiatan, o.estimasi_biaya, 
+    //                 c.nmcustomer AS nama_perusahaan,
+    //                 p.id AS po_id, p.nomor_po, p.biaya AS biaya_po,
+    //                 COALESCE((SELECT SUM(jumlah) FROM opti_pembayaran WHERE order_id = o.id AND status_verifikasi = 'terverifikasi'), 0) AS terbayar
+    //          FROM order_layanan o
+    //          JOIN tb_customer c ON o.id_customer = c.id_customer
+    //          LEFT JOIN po p ON o.id = p.order_id
+    //          ORDER BY o.id DESC"
+    //     );
+
+    //     $selectedOrder = null;
+    //     if ($orderId > 0) {
+    //         $selectedOrder = $orderModel->getDetail($orderId);
+    //     }
+
+    //     $f3->set('daftar_order', $daftarOrder);
+    //     $f3->set('selected_order', $selectedOrder);
+    //     $f3->set('order_id', $orderId);
+
+    //     $this->render('pembayaran/form.html', 'Input Pembayaran Termin', 'pembayaran');
+    // }
 
     /**
      * Memproses penyimpanan data pembayaran
@@ -155,22 +303,31 @@ class PembayaranController extends Controller {
      */
     public function simpan($f3) {
         $this->requirePermission('pembayaran:create', '/pembayaran');
-
+ 
         $post = $f3->get('POST');
-
+ 
         $orderId      = (int)($post['order_id'] ?? 0);
         $poId         = !empty($post['po_id']) ? (int)$post['po_id'] : null;
         $terminKe     = (int)($post['termin_ke'] ?? 1);
         $tanggalBayar = $post['tanggal_bayar'] ?? date('Y-m-d');
         $jumlah       = (float)($post['jumlah'] ?? 0);
         $keterangan   = trim($post['keterangan'] ?? '');
-
+ 
         if ($orderId <= 0 || $jumlah <= 0) {
             $this->setFlashError('Pilih order layanan dan masukkan nominal pembayaran valid.');
             $f3->reroute('/pembayaran/tambah');
             return;
         }
-
+ 
+        // [BARU] validasi & simpan file bukti bayar (opsional -- lihat catatan di method-nya)
+        try {
+            $buktiBayarFile = $this->validateAndStoreBuktiBayar($f3->get('FILES.bukti_bayar'));
+        } catch (\Exception $e) {
+            $this->setFlashError($e->getMessage());
+            $f3->reroute('/pembayaran/tambah?order_id=' . $orderId);
+            return;
+        }
+ 
         try {
             $pembayaranModel = new OptiPembayaran($this->db);
             $pembayaranModel->tambahPembayaran(array(
@@ -180,11 +337,12 @@ class PembayaranController extends Controller {
                 'tanggal_bayar'     => $tanggalBayar,
                 'jumlah'            => $jumlah,
                 'keterangan'        => $keterangan,
+                'bukti_bayar'       => $buktiBayarFile, // [BARU]
                 'status_verifikasi' => 'terverifikasi'
             ));
-
+ 
             $this->setFlashSuccess('Transaksi pembayaran berhasil dicatat.');
-            
+ 
             if ($poId) {
                 $f3->reroute("/po/{$poId}");
             } else {
@@ -195,6 +353,48 @@ class PembayaranController extends Controller {
             $f3->reroute('/pembayaran/tambah');
         }
     }
+    // public function simpan($f3) {
+    //     $this->requirePermission('pembayaran:create', '/pembayaran');
+
+    //     $post = $f3->get('POST');
+
+    //     $orderId      = (int)($post['order_id'] ?? 0);
+    //     $poId         = !empty($post['po_id']) ? (int)$post['po_id'] : null;
+    //     $terminKe     = (int)($post['termin_ke'] ?? 1);
+    //     $tanggalBayar = $post['tanggal_bayar'] ?? date('Y-m-d');
+    //     $jumlah       = (float)($post['jumlah'] ?? 0);
+    //     $keterangan   = trim($post['keterangan'] ?? '');
+
+    //     if ($orderId <= 0 || $jumlah <= 0) {
+    //         $this->setFlashError('Pilih order layanan dan masukkan nominal pembayaran valid.');
+    //         $f3->reroute('/pembayaran/tambah');
+    //         return;
+    //     }
+
+    //     try {
+    //         $pembayaranModel = new OptiPembayaran($this->db);
+    //         $pembayaranModel->tambahPembayaran(array(
+    //             'order_id'          => $orderId,
+    //             'po_id'             => $poId,
+    //             'termin_ke'         => $terminKe,
+    //             'tanggal_bayar'     => $tanggalBayar,
+    //             'jumlah'            => $jumlah,
+    //             'keterangan'        => $keterangan,
+    //             'status_verifikasi' => 'terverifikasi'
+    //         ));
+
+    //         $this->setFlashSuccess('Transaksi pembayaran berhasil dicatat.');
+            
+    //         if ($poId) {
+    //             $f3->reroute("/po/{$poId}");
+    //         } else {
+    //             $f3->reroute('/pembayaran');
+    //         }
+    //     } catch (\Exception $e) {
+    //         $this->setFlashError('Gagal mencatat pembayaran: ' . $e->getMessage());
+    //         $f3->reroute('/pembayaran/tambah');
+    //     }
+    // }
 
     /**
      * Menghapus transaksi pembayaran
@@ -202,14 +402,14 @@ class PembayaranController extends Controller {
      */
     public function hapus($f3, $params) {
         $this->requirePermission('pembayaran:edit', '/pembayaran');
-
+ 
         $id = (int)($params['id'] ?? 0);
         $redirectPoId = (int)($f3->get('POST.redirect_po_id') ?? 0);
-
+ 
         try {
             $pembayaranModel = new OptiPembayaran($this->db);
             $pembayaranModel->hapus($id);
-
+ 
             $this->setFlashSuccess('Transaksi pembayaran berhasil dihapus.');
             if ($redirectPoId > 0) {
                 $f3->reroute("/po/{$redirectPoId}");
@@ -221,6 +421,88 @@ class PembayaranController extends Controller {
             $f3->reroute('/pembayaran');
         }
     }
+ 
+    /**
+     * [METHOD BARU]
+     * Validasi & simpan file bukti bayar dengan aman: cek ekstensi + MIME
+     * type ASLI (baca isi file, bukan percaya nama/klaim browser), simpan
+     * dengan nama acak di luar folder publik. Return null kalau memang gak
+     * ada file yang diupload (dianggap opsional -- lempar Exception di baris
+     * pertama kalau kamu mau bukti bayar WAJIB diisi).
+     */
+    protected function validateAndStoreBuktiBayar($file) {
+        if (!$file || !isset($file['error']) || is_array($file['error']) || $file['error'] === UPLOAD_ERR_NO_FILE) {
+            return null; // opsional
+        }
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            throw new \Exception('Terjadi kesalahan saat mengunggah bukti bayar.');
+        }
+        if ($file['size'] <= 0 || $file['size'] > $this->maxSize) {
+            throw new \Exception('Ukuran bukti bayar maksimal 5MB.');
+        }
+ 
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        if (!in_array($ext, $this->allowedExt, true)) {
+            throw new \Exception('Bukti bayar harus berformat PDF, JPG, atau PNG.');
+        }
+        if (!is_uploaded_file($file['tmp_name'])) {
+            throw new \Exception('Upload bukti bayar tidak valid.');
+        }
+ 
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime  = finfo_file($finfo, $file['tmp_name']);
+        finfo_close($finfo);
+        if (!in_array($mime, $this->allowedMime, true)) {
+            throw new \Exception('Isi file bukti bayar tidak sesuai format PDF/JPG/PNG yang diizinkan.');
+        }
+ 
+        $destDir = $this->f3->get('ROOT') . '/storage/pembayaran/';
+        if (!is_dir($destDir)) mkdir($destDir, 0755, true);
+ 
+        $safeName = bin2hex(random_bytes(16)) . '.' . $ext;
+        if (!move_uploaded_file($file['tmp_name'], $destDir . $safeName)) {
+            throw new \Exception('Gagal menyimpan file bukti bayar ke server.');
+        }
+ 
+        return $safeName;
+    }
+
+    // protected function validateAndStoreBuktiBayar($file) {
+    //     if (!$file || !isset($file['error']) || is_array($file['error']) || $file['error'] === UPLOAD_ERR_NO_FILE) {
+    //         return null; // opsional
+    //     }
+    //     if ($file['error'] !== UPLOAD_ERR_OK) {
+    //         throw new \Exception('Terjadi kesalahan saat mengunggah bukti bayar.');
+    //     }
+    //     if ($file['size'] <= 0 || $file['size'] > $this->maxSize) {
+    //         throw new \Exception('Ukuran bukti bayar maksimal 5MB.');
+    //     }
+ 
+    //     $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    //     if (!in_array($ext, $this->allowedExt, true)) {
+    //         throw new \Exception('Bukti bayar harus berformat PDF, JPG, atau PNG.');
+    //     }
+    //     if (!is_uploaded_file($file['tmp_name'])) {
+    //         throw new \Exception('Upload bukti bayar tidak valid.');
+    //     }
+ 
+    //     $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    //     $mime  = finfo_file($finfo, $file['tmp_name']);
+    //     finfo_close($finfo);
+    //     if (!in_array($mime, $this->allowedMime, true)) {
+    //         throw new \Exception('Isi file bukti bayar tidak sesuai format PDF/JPG/PNG yang diizinkan.');
+    //     }
+ 
+    //     $destDir = $this->f3->get('ROOT') . '/storage/pembayaran/';
+    //     if (!is_dir($destDir)) mkdir($destDir, 0755, true);
+ 
+    //     $safeName = bin2hex(random_bytes(16)) . '.' . $ext;
+    //     if (!move_uploaded_file($file['tmp_name'], $destDir . $safeName)) {
+    //         throw new \Exception('Gagal menyimpan file bukti bayar ke server.');
+    //     }
+ 
+    //     return $safeName;
+    // }
 
     /**
      * Form penerbitan Invoice Tagihan baru dari Order
@@ -366,5 +648,24 @@ class PembayaranController extends Controller {
             $this->setFlashError('Gagal mencatat pembayaran: ' . $e->getMessage());
             $f3->reroute("/order/{$orderId}/pembayaran/tambah");
         }
+    }
+    public function unduhBukti($f3, $params) {
+        $this->requireAuth();
+ 
+        $row = $this->db->exec('SELECT bukti_bayar FROM opti_pembayaran WHERE id = ?', [1 => (int) $params['id']]);
+        if (empty($row) || empty($row[0]['bukti_bayar'])) { $f3->error(404); return; }
+ 
+        $fileName = $row[0]['bukti_bayar'];
+        $path = $this->f3->get('ROOT') . '/storage/pembayaran/' . $fileName;
+        if (!is_file($path)) { $f3->error(404); return; }
+ 
+        $ext = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+        $mimeMap = ['pdf' => 'application/pdf', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png'];
+ 
+        header('Content-Type: ' . ($mimeMap[$ext] ?? 'application/octet-stream'));
+        header('Content-Disposition: inline; filename="' . $fileName . '"');
+        header('Content-Length: ' . filesize($path));
+        readfile($path);
+        exit;
     }
 }
