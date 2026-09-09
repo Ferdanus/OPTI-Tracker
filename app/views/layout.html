@@ -987,19 +987,23 @@
                     </li>
                 </check>
 
-                <!-- <check if="{{ @is_superadmin || @is_admin_order }}">
+                <!-- Surat Penawaran Mitra (Admin Order & Superadmin) -->
+                <check if="{{ @is_superadmin || @is_admin_order }}">
                     <li>
-                        <a class="sidebar-link {{ @active_menu == 'surat-penawaran-mitra' ? 'active' : '' }}" href="{{ @BASE }}/surat-penawaran-mitra" title="Surat Penawaran">
-                            <i class="bi bi-envelope-paper"></i> <span>Surat Penawaran</span>
-                            <check if="{{ @jumlah_notif_surat > 0 }}">
-                                <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.68rem; padding: 0.25em 0.6em;">{{ @jumlah_notif_surat }}</span>
-                            </check>
+                        <a class="sidebar-link {{ @active_menu == 'surat-penawaran-mitra' || @active_menu == 'penawaran_mitra' ? 'active' : '' }}" href="{{ @BASE }}/surat-penawaran-mitra" title="Surat Penawaran Mitra">
+                            <i class="bi bi-envelope-paper"></i> <span>Surat Penawaran Mitra</span>
                         </a>
                     </li>
-                </check> -->
+                </check>
 
-
-                <!-- Menu Pembayaran disembunyikan sementara waktu karena masih fokus revisi alur utama -->
+                <!-- Rekapitulasi Pembayaran & Keuangan -->
+                <check if="{{ @is_superadmin || @is_keuangan || @is_admin_order || @is_admin_kontrak }}">
+                    <li>
+                        <a class="sidebar-link {{ @active_menu == 'pembayaran' ? 'active' : '' }}" href="{{ @BASE }}/pembayaran" title="Pembayaran & Keuangan">
+                            <i class="bi bi-cash-stack"></i> <span>Pembayaran</span>
+                        </a>
+                    </li>
+                </check>
 
                 <!-- 2. PELAKSANAAN TEKNIS -->
                 <check if="{{ @is_superadmin || @is_ketua_tim || @is_tim_kerja }}">
@@ -1009,6 +1013,13 @@
                     <li>
                         <a class="sidebar-link {{ @active_menu == 'proposal' ? 'active' : '' }}" href="{{ @BASE }}/proposal" title="Tugas Proposal Teknis">
                             <i class="bi bi-journal-code"></i> <span>Tugas Proposal</span>
+                        </a>
+                    </li>
+
+                    <!-- Petunjuk Operasional (PO) Kegiatan -->
+                    <li>
+                        <a class="sidebar-link {{ @active_menu == 'po_kegiatan' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan" title="Petunjuk Operasional (PO)">
+                            <i class="bi bi-clipboard-check"></i> <span>PO Kegiatan</span>
                         </a>
                     </li>
                 </check>
