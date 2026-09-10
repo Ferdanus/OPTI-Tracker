@@ -51,9 +51,9 @@
 }
 .filter-tab-pill.active {
     color: #ffffff !important;
-    background-color: var(--color-primary, #881337) !important;
-    border-color: var(--color-primary, #881337) !important;
-    box-shadow: 0 2px 6px rgba(136, 19, 55, 0.25) !important;
+    background-color: var(--color-primary, #334155) !important;
+    border-color: var(--color-primary, #334155) !important;
+    box-shadow: 0 2px 6px rgba(51, 65, 85, 0.25) !important;
 }
 .filter-tab-pill.active .count-chip {
     background-color: rgba(255, 255, 255, 0.25) !important;
@@ -421,8 +421,8 @@
                                                                         </div>
                                                                     </div>
 
-                                                                    <div class="p-3 mb-0 rounded-2 small d-flex align-items-start gap-2" style="font-size: 0.8rem; background-color: #fff1f2; color: #881337; border: 1px solid #fecdd3; white-space: normal;">
-                                                                        <i class="bi bi-exclamation-triangle-fill fs-6 flex-shrink-0 mt-0.5" style="color: #881337;"></i>
+                                                                    <div class="p-3 mb-0 rounded-2 small d-flex align-items-start gap-2" style="font-size: 0.8rem; background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; white-space: normal;">
+                                                                        <i class="bi bi-exclamation-triangle-fill fs-6 flex-shrink-0 mt-0.5" style="color: #475569;"></i>
                                                                         <div style="white-space: normal; line-height: 1.45; word-break: break-word;">Seluruh berkas kaji ulang dan penawaran terkait order ini akan ikut terhapus dari sistem.</div>
                                                                     </div>
                                                                 </div>
@@ -497,19 +497,19 @@ document.addEventListener('DOMContentLoaded', function () {
                 title: '<span style="font-size:1.15rem; font-weight:700; color:#0f172a;"><i class="bi bi-x-circle-fill text-danger me-2"></i>Alasan Penolakan Order</span>',
                 html: '<div style="text-align:left; font-size:0.875rem; color:#334155;">' +
                     '<div style="background:#f8fafc; padding:14px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:14px;">' +
-                        '<div class="d-flex justify-content-between mb-2"><strong>Nomor Order:</strong> <span style="color:#881337; font-family:monospace; font-weight:700;">' + nomor + '</span></div>' +
+                        '<div class="d-flex justify-content-between mb-2"><strong>Nomor Order:</strong> <span style="color:#334155; font-family:monospace; font-weight:700;">' + nomor + '</span></div>' +
                         '<div class="d-flex justify-content-between mb-2"><strong>Mitra / Customer:</strong> <span class="fw-semibold text-dark">' + perusahaan + '</span></div>' +
                         tahapRow +
                         penolakRow +
                         '<div class="d-flex justify-content-between"><strong>Waktu Penolakan:</strong> <span class="text-muted">' + tanggal + ' WIB</span></div>' +
                     '</div>' +
                     '<div style="margin-bottom:6px; font-weight:600; color:#475569;">Alasan / Catatan Penolakan:</div>' +
-                    '<div style="background:#fff1f2; border:1px solid #fecdd3; border-left:4px solid #881337; padding:12px 14px; border-radius:6px; color:#881337; line-height:1.5;">' +
+                    '<div style="background:#f1f5f9; border:1px solid #cbd5e1; border-left:4px solid #475569; padding:12px 14px; border-radius:6px; color:#334155; line-height:1.5;">' +
                         alasan +
                     '</div>' +
                 '</div>',
                 confirmButtonText: 'Tutup',
-                confirmButtonColor: '#881337',
+                confirmButtonColor: '#334155',
                 customClass: {
                     popup: 'rounded-3 shadow'
                 }

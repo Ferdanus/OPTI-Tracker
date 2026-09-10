@@ -19,10 +19,10 @@
     
     <style>
         :root {
-            --color-primary: #881337;
-            --color-primary-hover: #9f1239;
-            --color-primary-dark: #4c0519;
-            --color-primary-light: #fff1f2;
+            --color-primary: #334155;
+            --color-primary-hover: #1e293b;
+            --color-primary-dark: #0f172a;
+            --color-primary-light: #f1f5f9;
             --font-display: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
             --font-body: 'Inter', system-ui, -apple-system, sans-serif;
         }
@@ -43,10 +43,10 @@
             overflow-x: hidden;
             background-color: #f8fafc;
             background-image: 
-                radial-gradient(at 15% 15%, rgba(136, 19, 55, 0.07) 0px, transparent 55%),
-                radial-gradient(at 85% 20%, rgba(217, 119, 6, 0.05) 0px, transparent 50%),
-                radial-gradient(at 75% 85%, rgba(136, 19, 55, 0.06) 0px, transparent 55%),
-                radial-gradient(at 20% 80%, rgba(59, 130, 246, 0.03) 0px, transparent 50%);
+                radial-gradient(at 15% 15%, rgba(51, 65, 85, 0.07) 0px, transparent 55%),
+                radial-gradient(at 85% 20%, rgba(100, 116, 139, 0.05) 0px, transparent 50%),
+                radial-gradient(at 75% 85%, rgba(51, 65, 85, 0.06) 0px, transparent 55%),
+                radial-gradient(at 20% 80%, rgba(148, 163, 184, 0.03) 0px, transparent 50%);
             background-attachment: fixed;
             color: #0f172a;
         }
@@ -85,21 +85,21 @@
             display: inline-flex;
             padding: 4px;
             border-radius: 14px;
-            background: linear-gradient(135deg, rgba(136, 19, 55, 0.08) 0%, rgba(159, 18, 57, 0.02) 100%);
+            background: linear-gradient(135deg, rgba(51, 65, 85, 0.08) 0%, rgba(30, 41, 59, 0.02) 100%);
             margin-bottom: 0.85rem;
         }
 
         .otp-emblem {
             width: 50px;
             height: 50px;
-            background: linear-gradient(135deg, var(--color-primary) 0%, #9f1239 100%);
+            background: linear-gradient(135deg, var(--color-primary) 0%, #1e293b 100%);
             border-radius: 12px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             color: #ffffff;
             font-size: 1.5rem;
-            box-shadow: 0 4px 14px rgba(136, 19, 55, 0.22);
+            box-shadow: 0 4px 14px rgba(51, 65, 85, 0.22);
         }
 
         .brand-title {
@@ -124,9 +124,9 @@
             gap: 6px;
             font-size: 0.85rem;
             font-weight: 700;
-            color: #881337;
-            background: #fff1f2;
-            border: 1px solid #fecdd3;
+            color: #334155;
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
             padding: 5px 14px;
             border-radius: 20px;
             margin-top: 4px;
@@ -157,11 +157,11 @@
         .otp-digit-input:focus {
             background-color: #ffffff;
             border-color: var(--color-primary);
-            box-shadow: 0 0 0 4px rgba(136, 19, 55, 0.12);
+            box-shadow: 0 0 0 4px rgba(51, 65, 85, 0.15);
         }
 
         .btn-verify {
-            background: linear-gradient(135deg, var(--color-primary) 0%, #9f1239 100%);
+            background: linear-gradient(135deg, var(--color-primary) 0%, #1e293b 100%);
             border: none;
             color: #ffffff;
             font-family: var(--font-display);
@@ -175,13 +175,13 @@
             gap: 8px;
             width: 100%;
             transition: all 0.2s ease;
-            box-shadow: 0 6px 18px rgba(136, 19, 55, 0.22);
+            box-shadow: 0 6px 18px rgba(51, 65, 85, 0.22);
             cursor: pointer;
         }
 
         .btn-verify:hover {
-            background: linear-gradient(135deg, #700f2c 0%, #881337 100%);
-            box-shadow: 0 8px 22px rgba(136, 19, 55, 0.32);
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            box-shadow: 0 8px 22px rgba(51, 65, 85, 0.32);
             color: #ffffff;
             transform: translateY(-1px);
         }
@@ -204,7 +204,7 @@
         .btn-resend:hover:not(.disabled) {
             border-color: var(--color-primary);
             color: var(--color-primary);
-            background: rgba(136, 19, 55, 0.04);
+            background: rgba(51, 65, 85, 0.05);
         }
 
         .btn-resend.disabled {
@@ -235,7 +235,7 @@
         }
 
         .custom-swal-btn {
-            background: linear-gradient(135deg, var(--color-primary) 0%, #9f1239 100%) !important;
+            background: linear-gradient(135deg, var(--color-primary) 0%, #1e293b 100%) !important;
             border: none !important;
             border-radius: 10px !important;
             padding: 10px 26px !important;
@@ -296,7 +296,7 @@
         <div class="brand-subtitle">
             Kode verifikasi 6 digit telah dikirimkan ke nomor WhatsApp Anda:<br>
             <span class="phone-badge">
-                <i class="bi bi-phone-fill text-danger"></i> {{ @masked_phone }}
+                <i class="bi bi-phone-fill text-secondary"></i> {{ @masked_phone }}
             </span>
         </div>
 

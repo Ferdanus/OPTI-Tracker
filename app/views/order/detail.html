@@ -70,9 +70,9 @@
             box-shadow: 0 0 0 4px #ecfdf5;
         }
         .step-circle.current {
-            background: var(--color-primary, #881337);
+            background: var(--color-primary, #334155);
             color: #ffffff;
-            box-shadow: 0 0 0 4px rgba(136, 19, 55, 0.15);
+            box-shadow: 0 0 0 4px rgba(51, 65, 85, 0.15);
         }
         .step-circle.waiting {
             background: #f8fafc;
@@ -85,7 +85,7 @@
             color: #64748b;
             white-space: nowrap;
         }
-        .step-text.current { color: var(--color-primary, #881337); font-weight: 700; }
+        .step-text.current { color: var(--color-primary, #334155); font-weight: 700; }
         .step-text.done { color: #059669; }
 
         /* Choice Cards for Disposisi */
@@ -104,14 +104,14 @@
             box-shadow: 0 6px 16px -2px rgba(0, 0, 0, 0.06);
         }
         .choice-card-opti.active-selulosa {
-            border-color: var(--color-primary, #881337) !important;
-            background: #fdf2f8 !important;
-            box-shadow: 0 0 0 3px rgba(136, 19, 55, 0.12) !important;
+            border-color: var(--color-primary, #334155) !important;
+            background: #f1f5f9 !important;
+            box-shadow: 0 0 0 3px rgba(51, 65, 85, 0.15) !important;
         }
         .choice-card-opti.active-lingkungan {
-            border-color: var(--color-primary, #881337) !important;
-            background: #fdf2f8 !important;
-            box-shadow: 0 0 0 3px rgba(136, 19, 55, 0.12) !important;
+            border-color: var(--color-primary, #334155) !important;
+            background: #f1f5f9 !important;
+            box-shadow: 0 0 0 3px rgba(51, 65, 85, 0.15) !important;
         }
         .choice-card-locked {
             opacity: 0.55;
@@ -151,20 +151,20 @@
             transition: all 0.15s ease;
         }
         .bubble-tag-blue {
-            background-color: #fdf2f8;
-            color: var(--color-primary, #881337);
-            border: 1px solid #fbcfe8;
+            background-color: #f1f5f9;
+            color: var(--color-primary, #334155);
+            border: 1px solid #cbd5e1;
         }
         .bubble-tag-blue:hover {
-            background-color: #fce7f3;
+            background-color: #e2e8f0;
         }
         .bubble-tag-green {
-            background-color: #fdf2f8;
-            color: var(--color-primary, #881337);
-            border: 1px solid #fbcfe8;
+            background-color: #f1f5f9;
+            color: var(--color-primary, #334155);
+            border: 1px solid #cbd5e1;
         }
         .bubble-tag-green:hover {
-            background-color: #fce7f3;
+            background-color: #e2e8f0;
         }
 
         .system-section-card {
@@ -557,7 +557,7 @@
                     <check if="{{ @order.status != 'permintaan_masuk' }}">
                         <check if="{{ @tinjauan }}">
                             <!-- Hasil Keputusan Cepat -->
-                            <div class="p-3 rounded-3 border mb-3 bg-white shadow-xs {{ @tinjauan.keputusan == 'dapat_dilaksanakan' ? 'border-primary-subtle' : 'border-danger-subtle' }}" style="{{ @tinjauan.keputusan == 'dapat_dilaksanakan' ? 'border-left: 4px solid var(--color-primary, #881337) !important;' : 'border-left: 4px solid #dc2626 !important;' }}">
+                            <div class="p-3 rounded-3 border mb-3 bg-white shadow-xs {{ @tinjauan.keputusan == 'dapat_dilaksanakan' ? 'border-primary-subtle' : 'border-danger-subtle' }}" style="{{ @tinjauan.keputusan == 'dapat_dilaksanakan' ? 'border-left: 4px solid var(--color-primary, #334155) !important;' : 'border-left: 4px solid #dc2626 !important;' }}">
                                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                                     <div class="d-flex align-items-center gap-2">
                                         <i class="bi {{ @tinjauan.keputusan == 'dapat_dilaksanakan' ? 'bi-check-circle-fill fs-4 text-primary' : 'bi-x-octagon-fill fs-4 text-danger' }}"></i>
@@ -718,7 +718,7 @@
                     </check>
                     <check if="{{ @order.status != 'permintaan_masuk' && @tinjauan && @tinjauan.keputusan == 'dapat_dilaksanakan' }}">
                         <!-- Status & Biaya Ringkas -->
-                        <div class="p-3 p-md-3 rounded-3 border bg-white mb-3 shadow-xs" style="border-left: 4px solid var(--color-primary, #881337) !important;">
+                        <div class="p-3 p-md-3 rounded-3 border bg-white mb-3 shadow-xs" style="border-left: 4px solid var(--color-primary, #334155) !important;">
                             <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
                                 <div>
                                     <span class="text-muted small text-uppercase fw-semibold d-block" style="letter-spacing: 0.5px; font-size: 0.72rem;">
@@ -1245,7 +1245,7 @@
                                                         <td class="ps-2">
                                                             <check if="{{ @sp.id == @penawaran.id }}">
                                                                 <true>
-                                                                    <span class="badge fw-bold shadow-xs" style="background-color: #881337; color: #ffffff;" title="Penawaran Terbaru">
+                                                                    <span class="badge fw-bold shadow-xs" style="background-color: var(--color-primary, #334155); color: #ffffff;" title="Penawaran Terbaru">
                                                                         #{{ @idx + 1 }}
                                                                     </span>
                                                                 </true>
@@ -1256,7 +1256,7 @@
                                                                 </false>
                                                             </check>
                                                         </td>
-                                                        <td class="font-monospace {{ @sp.id == @penawaran.id ? 'fw-bold' : '' }}" style="{{ @sp.id == @penawaran.id ? 'color: #881337;' : '' }}">{{ @sp.nomor_surat }}</td>
+                                                        <td class="font-monospace {{ @sp.id == @penawaran.id ? 'fw-bold' : '' }}" style="{{ @sp.id == @penawaran.id ? 'color: var(--color-primary, #334155);' : '' }}">{{ @sp.nomor_surat }}</td>
                                                         <td class="text-secondary">{{ @sp.tanggal_surat ? date('d/m/Y', strtotime(@sp.tanggal_surat)) : '-' }}</td>
                                                         <td class="text-dark">Rp {{ number_format(@sp.nominal_penawaran ?: 0, 0, ',', '.') }}</td>
                                                         <td>

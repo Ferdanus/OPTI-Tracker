@@ -19,11 +19,11 @@
     
     <style>
         :root {
-            --color-primary: #881337;
-            --color-primary-hover: #9f1239;
-            --color-primary-dark: #4c0519;
-            --color-primary-light: #fff1f2;
-            --color-accent: #d97706;
+            --color-primary: #334155;
+            --color-primary-hover: #1e293b;
+            --color-primary-dark: #0f172a;
+            --color-primary-light: #f1f5f9;
+            --color-accent: #64748b;
             --font-display: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
             --font-body: 'Inter', system-ui, -apple-system, sans-serif;
         }
@@ -44,10 +44,10 @@
             overflow-x: hidden;
             background-color: #f8fafc;
             background-image: 
-                radial-gradient(at 15% 15%, rgba(136, 19, 55, 0.07) 0px, transparent 55%),
-                radial-gradient(at 85% 20%, rgba(217, 119, 6, 0.05) 0px, transparent 50%),
-                radial-gradient(at 75% 85%, rgba(136, 19, 55, 0.06) 0px, transparent 55%),
-                radial-gradient(at 20% 80%, rgba(59, 130, 246, 0.03) 0px, transparent 50%);
+                radial-gradient(at 15% 15%, rgba(51, 65, 85, 0.07) 0px, transparent 55%),
+                radial-gradient(at 85% 20%, rgba(100, 116, 139, 0.05) 0px, transparent 50%),
+                radial-gradient(at 75% 85%, rgba(51, 65, 85, 0.06) 0px, transparent 55%),
+                radial-gradient(at 20% 80%, rgba(148, 163, 184, 0.03) 0px, transparent 50%);
             background-attachment: fixed;
             color: #0f172a;
         }
@@ -87,21 +87,21 @@
             display: inline-flex;
             padding: 4px;
             border-radius: 14px;
-            background: linear-gradient(135deg, rgba(136, 19, 55, 0.08) 0%, rgba(159, 18, 57, 0.02) 100%);
+            background: linear-gradient(135deg, rgba(51, 65, 85, 0.08) 0%, rgba(30, 41, 59, 0.02) 100%);
             margin-bottom: 0.35rem;
         }
 
         .brand-emblem {
             width: 48px;
             height: 48px;
-            background: linear-gradient(135deg, var(--color-primary) 0%, #9f1239 100%);
+            background: linear-gradient(135deg, var(--color-primary) 0%, #1e293b 100%);
             border-radius: 11px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             color: #ffffff;
             font-size: 1.4rem;
-            box-shadow: 0 4px 12px rgba(136, 19, 55, 0.2);
+            box-shadow: 0 4px 12px rgba(51, 65, 85, 0.2);
         }
 
         .brand-title {
@@ -178,7 +178,7 @@
         .form-control-custom:focus {
             background-color: #ffffff;
             border-color: var(--color-primary);
-            box-shadow: 0 0 0 4px rgba(136, 19, 55, 0.08);
+            box-shadow: 0 0 0 4px rgba(51, 65, 85, 0.12);
             outline: none;
         }
 
@@ -193,10 +193,11 @@
             border: none;
             color: #94a3b8;
             padding: 6px 10px;
-            font-size: 1.1rem;
             cursor: pointer;
-            border-radius: 8px;
-            z-index: 4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.15rem;
             transition: color 0.15s ease;
         }
 
@@ -205,7 +206,7 @@
         }
 
         .btn-login {
-            background: linear-gradient(135deg, var(--color-primary) 0%, #9f1239 100%);
+            background: linear-gradient(135deg, var(--color-primary) 0%, #1e293b 100%);
             border: none;
             color: #ffffff;
             font-family: var(--font-display);
@@ -219,14 +220,14 @@
             gap: 8px;
             width: 100%;
             transition: all 0.2s ease;
-            box-shadow: 0 6px 18px rgba(136, 19, 55, 0.22);
+            box-shadow: 0 6px 18px rgba(51, 65, 85, 0.22);
             cursor: pointer;
             margin-top: 0.5rem;
         }
 
         .btn-login:hover {
-            background: linear-gradient(135deg, #700f2c 0%, #881337 100%);
-            box-shadow: 0 8px 22px rgba(136, 19, 55, 0.32);
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            box-shadow: 0 8px 22px rgba(51, 65, 85, 0.32);
             color: #ffffff;
             transform: translateY(-1px);
         }
@@ -261,18 +262,18 @@
         }
 
         .custom-swal-btn {
-            background: linear-gradient(135deg, var(--color-primary) 0%, #9f1239 100%) !important;
+            background: linear-gradient(135deg, var(--color-primary) 0%, #1e293b 100%) !important;
             border: none !important;
             border-radius: 10px !important;
             padding: 10px 26px !important;
             font-weight: 700 !important;
             font-size: 0.9rem !important;
-            box-shadow: 0 4px 14px rgba(136, 19, 55, 0.25) !important;
+            box-shadow: 0 4px 14px rgba(51, 65, 85, 0.25) !important;
             transition: all 0.2s ease !important;
         }
 
         .custom-swal-btn:hover {
-            box-shadow: 0 6px 18px rgba(136, 19, 55, 0.35) !important;
+            box-shadow: 0 6px 18px rgba(51, 65, 85, 0.35) !important;
             transform: translateY(-1px) !important;
         }
 

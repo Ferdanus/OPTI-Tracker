@@ -323,7 +323,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    var maroon = '#881337';
+    var slatePrimary = '#334155';
     var green = '#16A34A';
 
     // ---- Bar chart: perbandingan status order per divisi ----
@@ -335,7 +335,7 @@ document.addEventListener('DOMContentLoaded', function () {
             datasets: [
                 {
                     label: 'OPTI Selulosa',
-                    backgroundColor: maroon,
+                    backgroundColor: slatePrimary,
                     borderRadius: 4,
                     data: [
                         {{ @stat_selulosa.diterima ?: 0 }},
@@ -373,7 +373,7 @@ document.addEventListener('DOMContentLoaded', function () {
         data: {
             labels: ['OPTI Selulosa', 'OPTI Lingkungan'],
             datasets: [{
-                backgroundColor: [maroon, green],
+                backgroundColor: [slatePrimary, green],
                 data: [
                     {{ @stat_selulosa.uang_diterima ?: 0 }},
                     {{ @stat_lingkungan.uang_diterima ?: 0 }}

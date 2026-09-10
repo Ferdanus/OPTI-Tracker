@@ -75,7 +75,7 @@
         width: 24px;
         height: 24px;
         border-radius: 6px;
-        background: #881337;
+        background: #334155;
         color: #ffffff;
         font-size: 0.75rem;
         font-weight: 700;
@@ -112,23 +112,23 @@
     }
 
     .btn-submit-theme {
-        background: linear-gradient(135deg, #881337 0%, #9f1239 100%);
-        border: 1px solid #881337;
+        background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
+        border: 1px solid #334155;
         color: #ffffff !important;
         font-weight: 600;
         font-size: 0.85rem;
         padding: 0.5rem 1.25rem;
         border-radius: 8px;
         transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-        box-shadow: 0 2px 5px rgba(136, 19, 55, 0.25);
+        box-shadow: 0 2px 5px rgba(51, 65, 85, 0.25);
         display: inline-flex;
         align-items: center;
         gap: 0.45rem;
         cursor: pointer;
     }
     .btn-submit-theme:hover {
-        background: linear-gradient(135deg, #700f2d 0%, #881337 100%);
-        box-shadow: 0 4px 12px rgba(136, 19, 55, 0.35);
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        box-shadow: 0 4px 12px rgba(51, 65, 85, 0.35);
         transform: translateY(-1px);
     }
     .btn-draft-theme {
@@ -146,10 +146,10 @@
         cursor: pointer;
     }
     .btn-draft-theme:hover {
-        background: #fff1f2;
-        border-color: #881337;
-        color: #881337;
-        box-shadow: 0 2px 5px rgba(136, 19, 55, 0.1);
+        background: #f1f5f9;
+        border-color: #334155;
+        color: #334155;
+        box-shadow: 0 2px 5px rgba(51, 65, 85, 0.1);
     }
     .btn-cancel-theme {
         background: #ffffff;
@@ -224,15 +224,15 @@
         cursor: pointer;
     }
     .preview-btn-primary {
-        background: #fff1f2;
-        color: #881337;
-        border-color: #fecdd3;
+        background: #f1f5f9;
+        color: #334155;
+        border-color: #cbd5e1;
     }
     .preview-btn-primary:hover {
-        background: #881337;
+        background: #334155;
         color: #ffffff;
-        border-color: #881337;
-        box-shadow: 0 2px 6px rgba(136, 19, 55, 0.25);
+        border-color: #334155;
+        box-shadow: 0 2px 6px rgba(51, 65, 85, 0.25);
     }
     .preview-btn-secondary {
         background: #ffffff;
@@ -256,7 +256,7 @@
         position: relative;
     }
     .calc-source-selulosa {
-        border-left: 4px solid #881337 !important;
+        border-left: 4px solid #334155 !important;
     }
     .calc-source-lingkungan {
         border-left: 4px solid #16a34a !important;
@@ -268,8 +268,6 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 14px 18px;
     }
     .calc-source-info {
         display: flex;
@@ -289,9 +287,9 @@
         flex-shrink: 0;
     }
     .calc-icon-selulosa {
-        background: #fff1f2;
-        border: 1px solid #fecdd3;
-        color: #881337;
+        background: #f1f5f9;
+        border: 1px solid #cbd5e1;
+        color: #334155;
     }
     .calc-icon-lingkungan {
         background: #f0fdf4;
@@ -311,8 +309,8 @@
         padding: 8px 16px;
     }
     .calc-price-selulosa {
-        background: #fff1f2;
-        border: 1px solid #fecdd3;
+        background: #f1f5f9;
+        border: 1px solid #cbd5e1;
     }
     .calc-price-lingkungan {
         background: #f0fdf4;
@@ -339,8 +337,8 @@
     }
     .btn-selulosa-preview {
         background: #ffffff;
-        border: 1px solid #fecdd3;
-        color: #881337;
+        border: 1px solid #cbd5e1;
+        color: #334155;
         font-weight: 600;
         font-size: 0.8rem;
         padding: 6px 14px;
@@ -349,16 +347,16 @@
         align-items: center;
         gap: 8px;
         transition: all 0.2s ease;
-        box-shadow: 0 1px 2px rgba(136, 19, 55, 0.05);
+        box-shadow: 0 1px 2px rgba(51, 65, 85, 0.05);
         cursor: pointer;
         text-decoration: none;
         white-space: nowrap;
     }
     .btn-selulosa-preview:hover {
-        background: #881337;
-        border-color: #881337;
+        background: #334155;
+        border-color: #334155;
         color: #ffffff;
-        box-shadow: 0 2px 6px rgba(136, 19, 55, 0.2);
+        box-shadow: 0 2px 6px rgba(51, 65, 85, 0.2);
     }
     .btn-selulosa-preview:hover i {
         color: #ffffff !important;
@@ -578,7 +576,7 @@
                                 </div>
                                 <div class="calc-price-box calc-price-selulosa">
                                     <span class="text-muted d-block fw-semibold" style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px;">Estimasi Anggaran</span>
-                                    <span class="fw-bold font-monospace" style="font-size: 1.25rem; color: #881337; letter-spacing: -0.3px;">Rp {{ number_format(@proposal.estimasi_total_biaya, 0, ',', '.') }}</span>
+                                    <span class="fw-bold font-monospace" style="font-size: 1.25rem; color: #334155; letter-spacing: -0.3px;">Rp {{ number_format(@proposal.estimasi_total_biaya, 0, ',', '.') }}</span>
                                 </div>
                             </div>
                             <div class="d-flex flex-wrap align-items-center justify-content-between pt-3 mt-3 border-top" style="border-color: #f1f5f9 !important; gap: 12px;">
@@ -874,12 +872,12 @@
                 <!-- Toolbar Atas Pratinjau -->
                 <div class="preview-top-toolbar">
                     <div class="d-flex align-items-center gap-2">
-                        <i class="bi bi-file-earmark-text-fill" style="color: #881337; font-size: 1.15rem;"></i>
+                        <i class="bi bi-file-earmark-text-fill" style="color: #475569; font-size: 1.15rem;"></i>
                         <div>
                             <span class="fw-bold small text-dark d-block" style="line-height: 1.2;">Pratinjau Surat Penawaran Resmi</span>
                             <span class="text-muted" style="font-size: 0.7rem;">Format {{ @order.jenis_layanan_opti == 'selulosa' ? 'OPTI Selulosa (1 Halaman)' : 'OPTI Lingkungan (4 Halaman & Lembar Persetujuan)' }}</span>
                         </div>
-                        <span class="badge px-2 py-0.5 rounded-pill small ms-1" style="background-color: #fff1f2; color: #881337; border: 1px solid #fecdd3; font-size: 0.7rem;">
+                        <span class="badge px-2 py-0.5 rounded-pill small ms-1" style="background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; font-size: 0.7rem;">
                             Live Sync
                         </span>
                     </div>
@@ -893,7 +891,7 @@
                             </a>
                         </check>
                         <button type="button" class="preview-btn preview-btn-secondary" onclick="window.print()" title="Cetak Pratinjau Lembar Dokumen">
-                            <i class="bi bi-printer" style="color: #881337;"></i> Cetak
+                            <i class="bi bi-printer" style="color: #475569;"></i> Cetak
                         </button>
                     </div>
                 </div>

@@ -29,7 +29,7 @@
                     <h3 class="fw-bold text-dark mb-0 mt-1">{{ @count_total }}</h3>
                     <span class="small text-muted" style="font-size: 0.75rem;">Peneliti &amp; Perekayasa</span>
                 </div>
-                <div class="d-flex align-items-center justify-content-center rounded-3" style="width: 48px; height: 48px; background-color: rgba(136, 19, 55, 0.1); color: #881337;">
+                <div class="d-flex align-items-center justify-content-center rounded-3" style="width: 48px; height: 48px; background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1;">
                     <i class="bi bi-people fs-4"></i>
                 </div>
             </div>
@@ -317,11 +317,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 title: '<span style="font-size:1.15rem; font-weight:700; color:#0f172a;">Cabut Penugasan PIC?</span>',
                 html: '<div style="font-size:0.875rem; color:#475569;">Apakah Anda yakin ingin menonaktifkan status PIC Peneliti untuk <strong>' + nama + '</strong>?<br><span class="text-muted small">Akun pegawai di sistem balai tidak akan dihapus, hanya peran PIC SILOPTI yang dinonaktifkan.</span></div>',
                 icon: 'warning',
-                iconColor: '#881337',
+                iconColor: '#334155',
                 showCancelButton: true,
                 confirmButtonText: 'Ya, Cabut Status',
                 cancelButtonText: 'Batal',
-                confirmButtonColor: '#881337',
+                confirmButtonColor: '#334155',
                 cancelButtonColor: '#64748b',
                 customClass: { popup: 'rounded-3 shadow' }
             }).then(function(result) {

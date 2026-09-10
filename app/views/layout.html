@@ -24,11 +24,12 @@
 
     <style>
         :root {
-            --color-primary: #881337;          /* Maroon elegan BBSPJIS */
-            --color-primary-hover: #9f1239;    /* Maroon hover */
-            --color-primary-dark: #4c0519;     /* Maroon tua instansi */
-            --color-primary-darker: #360412;   /* Maroon pekat */
-            --color-accent: #d97706;           /* Emas/Amber aksen */
+            --color-primary: #334155;          /* Slate 700 / Elegan Charcoal Gray */
+            --color-primary-hover: #1e293b;    /* Slate 800 / Dark Slate Hover */
+            --color-primary-dark: #0f172a;     /* Slate 900 / Deep Slate */
+            --color-primary-darker: #020617;   /* Slate 950 / Black Slate */
+            --color-primary-light: #f1f5f9;    /* Slate 100 / Soft Gray */
+            --color-accent: #64748b;           /* Slate 500 / Aksen Abu Netral */
             --color-bg: #f8fafc;               /* Background halaman bersih (Slate 50) */
             --color-surface: #ffffff;          /* Card surface putih */
             --color-text-main: #0f172a;        /* Text utama (Slate 900) */
@@ -56,14 +57,14 @@
             -moz-osx-font-smoothing: grayscale;
         }
 
-        /* Global Blue Highlight Removal & BBSPJIS Theme Integration */
+        /* Global Theme Integration - Gray & White Palette */
         ::selection {
-            background-color: #fce7f3 !important;
-            color: #881337 !important;
+            background-color: #e2e8f0 !important;
+            color: #1e293b !important;
         }
         ::-moz-selection {
-            background-color: #fce7f3 !important;
-            color: #881337 !important;
+            background-color: #e2e8f0 !important;
+            color: #1e293b !important;
         }
 
         a {
@@ -81,9 +82,9 @@
 
         .text-primary { color: var(--color-primary) !important; }
         .bg-primary { background-color: var(--color-primary) !important; color: #ffffff !important; }
-        .bg-primary-subtle { background-color: #fdf2f8 !important; color: var(--color-primary) !important; }
+        .bg-primary-subtle { background-color: #f1f5f9 !important; color: var(--color-primary) !important; }
         .border-primary { border-color: var(--color-primary) !important; }
-        .border-primary-subtle { border-color: #fbcfe8 !important; }
+        .border-primary-subtle { border-color: #cbd5e1 !important; }
 
         .form-check-input:checked {
             background-color: var(--color-primary) !important;
@@ -91,7 +92,7 @@
         }
         .form-check-input:focus {
             border-color: var(--color-primary) !important;
-            box-shadow: 0 0 0 3px rgba(136, 19, 55, 0.15) !important;
+            box-shadow: 0 0 0 3px rgba(51, 65, 85, 0.15) !important;
         }
 
         .dropdown-item.active, .dropdown-item:active {
@@ -100,12 +101,12 @@
         }
 
         .ts-dropdown .active, .ts-dropdown .option:hover {
-            background-color: #fdf2f8 !important;
+            background-color: #f1f5f9 !important;
             color: var(--color-primary) !important;
         }
         .ts-control:focus, .ts-wrapper.focus .ts-control {
             border-color: var(--color-primary) !important;
-            box-shadow: 0 0 0 3px rgba(136, 19, 55, 0.15) !important;
+            box-shadow: 0 0 0 3px rgba(51, 65, 85, 0.15) !important;
         }
 
         h1, h2, h3, h4, h5, h6, .font-display {
@@ -120,20 +121,20 @@
             position: relative;
         }
 
-        /* ============ SIDEBAR MERAH MAROON (ULTRA-SMOOTH COLLAPSIBLE) ============ */
+        /* ============ SIDEBAR ELEGAN SLATE GRAY (ULTRA-SMOOTH COLLAPSIBLE) ============ */
         .sidebar {
             position: fixed;
             top: 0;
             left: 0;
             bottom: 0;
             z-index: 1040;
-            background: linear-gradient(180deg, #4c0519 0%, #360412 100%);
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
             display: flex;
             flex-direction: column;
             overflow-y: auto;
             overflow-x: hidden;
-            border-right: 1px solid rgba(0, 0, 0, 0.2);
-            box-shadow: 2px 0 16px rgba(0, 0, 0, 0.1);
+            border-right: 1px solid #334155;
+            box-shadow: 2px 0 16px rgba(0, 0, 0, 0.2);
             scrollbar-width: thin;
             scrollbar-color: rgba(255,255,255,0.15) transparent;
             transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
@@ -151,7 +152,7 @@
             flex-shrink: 0;
             height: 64px;
             padding: 0 16px;
-            background: rgba(0, 0, 0, 0.08);
+            background: rgba(0, 0, 0, 0.15);
             border: none;
             width: 100%;
             text-align: left;
@@ -163,7 +164,7 @@
         }
 
         .sidebar-brand-btn:hover {
-            background: rgba(0, 0, 0, 0.2);
+            background: rgba(255, 255, 255, 0.06);
         }
 
         .sidebar-brand-btn:hover .brand-logo-badge {
@@ -181,7 +182,7 @@
             min-width: 38px;
             flex-shrink: 0;
             background: #ffffff;
-            color: var(--color-primary-dark);
+            color: #0f172a;
             border-radius: var(--radius-md);
             display: flex;
             align-items: center;
@@ -230,7 +231,7 @@
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.08em;
-            color: rgba(255, 255, 255, 0.4);
+            color: rgba(255, 255, 255, 0.45);
             padding: 0.85rem 0.75rem 0.35rem;
             white-space: nowrap;
             overflow: hidden;
@@ -243,7 +244,7 @@
             display: flex;
             align-items: center;
             border-radius: var(--radius-sm);
-            color: rgba(255, 255, 255, 0.82);
+            color: #cbd5e1;
             font-family: var(--font-display);
             font-weight: 600;
             font-size: 0.85rem;
@@ -262,9 +263,9 @@
             min-width: 24px;
             text-align: center;
             flex-shrink: 0;
-            opacity: 0.95;
+            color: #94a3b8;
             margin-right: 12px;
-            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.15s ease;
         }
 
         .sidebar-link span {
@@ -277,18 +278,23 @@
         }
 
         .sidebar-link:hover {
-            background-color: rgba(255, 255, 255, 0.12);
+            background-color: rgba(255, 255, 255, 0.08);
             color: #ffffff;
         }
 
         .sidebar-link:hover i {
             transform: scale(1.12);
+            color: #ffffff;
         }
 
         .sidebar-link.active {
-            background-color: rgba(255, 255, 255, 0.18);
+            background-color: #334155;
             color: #ffffff;
-            box-shadow: inset 4px 0 0 #ffffff;
+            box-shadow: inset 4px 0 0 #cbd5e1;
+        }
+
+        .sidebar-link.active i {
+            color: #ffffff;
         }
 
         .sidebar-link.sidebar-locked {
@@ -427,7 +433,7 @@
 
         .sidebar-toggle-btn:hover {
             border-color: var(--color-primary);
-            background-color: rgba(136, 19, 55, 0.04);
+            background-color: rgba(51, 65, 85, 0.05);
         }
 
         .topbar-title {
@@ -481,14 +487,14 @@
         .topbar-notif-btn:hover {
             border-color: var(--color-primary);
             color: var(--color-primary);
-            background-color: #fff1f2;
+            background-color: var(--color-primary-light);
         }
 
         .notif-badge-pill {
             position: absolute;
             top: -3px;
             right: -3px;
-            background: #e11d48;
+            background: var(--color-primary);
             color: #ffffff;
             font-size: 0.625rem;
             font-weight: 700;
@@ -496,7 +502,7 @@
             border-radius: 999px;
             border: 2px solid #ffffff;
             line-height: 1;
-            box-shadow: 0 2px 4px rgba(225, 29, 72, 0.35);
+            box-shadow: 0 2px 4px rgba(51, 65, 85, 0.35);
         }
 
         .user-avatar {
@@ -589,13 +595,13 @@
             background-color: var(--color-primary-hover) !important;
             border-color: var(--color-primary-hover) !important;
             color: #ffffff !important;
-            box-shadow: 0 4px 12px rgba(136, 19, 55, 0.25);
+            box-shadow: 0 4px 12px rgba(51, 65, 85, 0.25);
         }
 
         .btn-outline-primary {
             color: var(--color-primary);
-            border-color: rgba(136, 19, 55, 0.35);
-            background-color: rgba(136, 19, 55, 0.02);
+            border-color: rgba(51, 65, 85, 0.35);
+            background-color: rgba(51, 65, 85, 0.04);
         }
 
         .btn-outline-primary:hover {
@@ -622,7 +628,7 @@
         .btn-back:hover {
             color: var(--color-primary);
             border-color: var(--color-primary);
-            background-color: rgba(136, 19, 55, 0.04);
+            background-color: rgba(51, 65, 85, 0.05);
         }
 
         .btn-white {
@@ -667,7 +673,7 @@
 
         .form-control:focus, .form-select:focus {
             border-color: var(--color-primary);
-            box-shadow: 0 0 0 3px rgba(136, 19, 55, 0.12);
+            box-shadow: 0 0 0 3px rgba(51, 65, 85, 0.15);
             outline: none;
         }
 
@@ -687,7 +693,7 @@
         }
 
         .table tbody td { padding: 0.75rem 0.85rem; border-bottom: 1px solid var(--color-border-subtle); vertical-align: middle; }
-        .table-hover tbody tr:hover { background-color: rgba(136, 19, 55, 0.02); }
+        .table-hover tbody tr:hover { background-color: rgba(51, 65, 85, 0.03); }
 
         /* Modern Status Badges */
         .badge {
@@ -706,7 +712,7 @@
         .badge-pill-warning { background-color: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
         .badge-pill-danger { background-color: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
         .badge-pill-info { background-color: #f0f9ff; color: #075985; border: 1px solid #bae6fd; }
-        .badge-pill-primary { background-color: rgba(136, 19, 55, 0.08); color: var(--color-primary); border: 1px solid rgba(136, 19, 55, 0.2); }
+        .badge-pill-primary { background-color: #f1f5f9; color: var(--color-primary); border: 1px solid #cbd5e1; }
         .badge-pill-secondary { background-color: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
 
         /* ============ REFINED INSTITUTIONAL FOOTER ============ */
@@ -748,10 +754,10 @@
             left: 0;
             height: 3px;
             width: 0%;
-            background: linear-gradient(90deg, #881337 0%, #e11d48 50%, #f59e0b 100%);
+            background: linear-gradient(90deg, #1e293b 0%, #475569 50%, #94a3b8 100%);
             z-index: 99999;
             transition: width 0.35s cubic-bezier(0.1, 0.9, 0.2, 1), opacity 0.3s ease;
-            box-shadow: 0 0 10px rgba(225, 29, 72, 0.6);
+            box-shadow: 0 0 10px rgba(51, 65, 85, 0.6);
             pointer-events: none;
         }
 
@@ -809,9 +815,9 @@
             position: absolute;
             inset: 0;
             border-radius: 50%;
-            border: 3px solid rgba(136, 19, 55, 0.12);
+            border: 3px solid rgba(51, 65, 85, 0.15);
             border-top-color: var(--color-primary);
-            border-right-color: #e11d48;
+            border-right-color: #64748b;
             animation: spinLoader 0.75s linear infinite;
         }
 
@@ -942,7 +948,7 @@
                         <a class="sidebar-link {{ @active_menu == 'surat_masuk' ? 'active' : '' }}" href="{{ @BASE }}/surat-masuk" title="Surat Masuk">
                             <i class="bi bi-envelope-paper"></i> <span>Surat Masuk</span>
                             <check if="{{ @jumlah_notif_surat > 0 }}">
-                                <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.68rem; padding: 0.25em 0.6em;">{{ @jumlah_notif_surat }}</span>
+                                <span class="badge rounded-pill ms-auto" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #475569; color: #ffffff;">{{ @jumlah_notif_surat }}</span>
                             </check>
                         </a>
                     </li>
@@ -954,7 +960,7 @@
                         <a class="sidebar-link {{ @active_menu == 'disposisi_masuk' ? 'active' : '' }}" href="{{ @BASE }}/disposisi-masuk" title="Permintaan Masuk">
                             <i class="bi bi-bell"></i> <span>Permintaan Masuk</span>
                             <check if="{{ @jumlah_notif_katim > 0 }}">
-                                <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.68rem; padding: 0.25em 0.6em;">{{ @jumlah_notif_katim }}</span>
+                                <span class="badge rounded-pill ms-auto" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #475569; color: #ffffff;">{{ @jumlah_notif_katim }}</span>
                             </check>
                         </a>
                     </li>
@@ -1084,7 +1090,7 @@
                                 <div class="d-flex align-items-center gap-2">
                                     <span class="fw-bold text-dark font-display" style="font-size: 0.88rem;">Pemberitahuan</span>
                                     <check if="{{ @unread_notif_count > 0 }}">
-                                        <span class="badge rounded-pill fw-bold text-white" id="notifHeaderBadge" style="background-color: #e11d48; font-size: 0.68rem; padding: 3px 8px; vertical-align: middle;">
+                                        <span class="badge rounded-pill fw-bold text-white" id="notifHeaderBadge" style="background-color: #475569; font-size: 0.68rem; padding: 3px 8px; vertical-align: middle;">
                                             {{ @unread_notif_count }} Baru
                                         </span>
                                     </check>
@@ -1396,7 +1402,7 @@
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     icon: 'warning',
-                    title: '<span style="font-size:1.15rem;font-weight:700;color:#881337;">Akses Modul Terkunci</span>',
+                    title: '<span style="font-size:1.15rem;font-weight:700;color:#334155;">Akses Modul Terkunci</span>',
                     html: `
                         <div class="text-start small text-secondary mt-1">
                             <p class="mb-3 text-dark">Anda tidak memiliki hak akses untuk membuka halaman <strong>${menuTitle}</strong>.</p>
@@ -1414,7 +1420,7 @@
                             </div>
                         </div>
                     `,
-                    confirmButtonColor: '#881337',
+                    confirmButtonColor: '#334155',
                     confirmButtonText: '<i class="bi bi-check-lg me-1"></i> Saya Mengerti',
                     buttonsStyling: true,
                     customClass: {
@@ -1687,9 +1693,9 @@
             border-bottom: 1px solid #f1f5f9;
         }
         .floating-bubble-badge {
-            background: #fff1f2;
-            color: #be123c;
-            border: 1px solid #fecdd3;
+            background: #f1f5f9;
+            color: #334155;
+            border: 1px solid #cbd5e1;
             padding: 3px 8px;
             border-radius: 999px;
             font-size: 0.68rem;
@@ -1704,25 +1710,25 @@
         .pulse-glow-dot {
             width: 6px;
             height: 6px;
-            background-color: #e11d48;
+            background-color: #475569;
             border-radius: 50%;
             display: inline-block;
             flex-shrink: 0;
-            box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.7);
+            box-shadow: 0 0 0 0 rgba(71, 85, 105, 0.7);
             animation: pulseGlow 1.8s infinite;
         }
         @keyframes pulseGlow {
             0% {
                 transform: scale(0.95);
-                box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.7);
+                box-shadow: 0 0 0 0 rgba(71, 85, 105, 0.7);
             }
             70% {
                 transform: scale(1);
-                box-shadow: 0 0 0 5px rgba(225, 29, 72, 0);
+                box-shadow: 0 0 0 5px rgba(71, 85, 105, 0);
             }
             100% {
                 transform: scale(0.95);
-                box-shadow: 0 0 0 0 rgba(225, 29, 72, 0);
+                box-shadow: 0 0 0 0 rgba(71, 85, 105, 0);
             }
         }
         .floating-bubble-time {
@@ -1764,8 +1770,8 @@
             font-size: 1.15rem;
         }
         .floating-bubble-icon.icon-primary {
-            background: #fff1f2;
-            color: #be123c;
+            background: #f1f5f9;
+            color: #334155;
         }
         .floating-bubble-icon.icon-success {
             background: #f0fdf4;
@@ -1801,14 +1807,14 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            box-shadow: 0 2px 6px rgba(136, 19, 55, 0.25);
+            box-shadow: 0 2px 6px rgba(51, 65, 85, 0.25);
             transition: all 0.15s ease;
         }
         .btn-bubble-action:hover {
-            background: #9f1239;
+            background: #1e293b;
             color: #ffffff;
             transform: translateY(-1px);
-            box-shadow: 0 4px 10px rgba(136, 19, 55, 0.35);
+            box-shadow: 0 4px 10px rgba(51, 65, 85, 0.35);
         }
         .btn-bubble-dismiss {
             background: #f1f5f9;

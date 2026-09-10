@@ -49,13 +49,13 @@
         background: var(--color-primary);
         border-color: var(--color-primary);
         color: #ffffff;
-        box-shadow: 0 2px 6px rgba(136, 19, 55, 0.2);
+        box-shadow: 0 2px 6px rgba(51, 65, 85, 0.2);
     }
     .po-step-item.active .po-step-circle {
         background: #ffffff;
         border-color: var(--color-primary);
         color: var(--color-primary);
-        box-shadow: 0 0 0 4px rgba(136, 19, 55, 0.15);
+        box-shadow: 0 0 0 4px rgba(51, 65, 85, 0.15);
         font-weight: 800;
     }
     .po-step-item.pending .po-step-circle {
@@ -77,7 +77,7 @@
         color: #0f172a;
     }
     
-    /* Nav Pills Tab SOP Maroon Theme */
+    /* Nav Pills Tab SOP Slate Theme */
     .sop-nav-pills .nav-link {
         color: #475569;
         background: #ffffff;
@@ -88,14 +88,14 @@
     }
     .sop-nav-pills .nav-link:hover {
         color: var(--color-primary);
-        border-color: rgba(136, 19, 55, 0.3);
-        background: #fff1f2;
+        border-color: rgba(51, 65, 85, 0.3);
+        background: #f1f5f9;
     }
     .sop-nav-pills .nav-link.active {
         background-color: var(--color-primary) !important;
         color: #ffffff !important;
         border-color: var(--color-primary) !important;
-        box-shadow: 0 2px 8px rgba(136, 19, 55, 0.25);
+        box-shadow: 0 2px 8px rgba(51, 65, 85, 0.25);
     }
     .sop-nav-pills .nav-link.active .badge {
         background-color: rgba(255, 255, 255, 0.25) !important;
@@ -115,7 +115,7 @@
             <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
                 <h3 class="h4 fw-bold mb-0 text-dark">{{ @po.nomor_po }}</h3>
                 <check if="{{ @po.jenis_layanan_opti == 'selulosa' }}">
-                    <span class="badge px-2 py-1 fw-semibold" style="font-size: 0.75rem; background-color: #ffe4e6; color: #be123c; border: 1px solid #fecdd3;">
+                    <span class="badge px-2 py-1 fw-semibold" style="font-size: 0.75rem; background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1;">
                         <i class="bi bi-tree me-1"></i>OPTI Selulosa
                     </span>
                 </check>
@@ -168,7 +168,7 @@
             <span class="text-uppercase fw-bold text-muted" style="font-size: 0.72rem; letter-spacing: 0.05em;">
                 <i class="bi bi-diagram-2 text-primary me-1"></i> Alur Tahapan Proyek Jasa OPTI (SOP BBSPJIS)
             </span>
-            <span class="badge px-3 py-2 fw-semibold" style="font-size: 0.78rem; background-color: rgba(136, 19, 55, 0.08); color: #881337; border: 1px solid rgba(136, 19, 55, 0.2);">
+            <span class="badge px-3 py-2 fw-semibold" style="font-size: 0.78rem; background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1;">
                 Status PO: {{ @urutan_status[@po.status] ?? @po.status }}
             </span>
         </div>
@@ -297,7 +297,7 @@
                     <div class="col-sm-4 text-muted">Lokasi Pelaksanaan:</div>
                     <div class="col-sm-8">
                         <check if="{{ @po.lokasi_pelaksanaan == 'internal' }}">
-                            <span class="badge px-2 py-1 fw-semibold" style="background-color: rgba(136, 19, 55, 0.08); color: #881337; border: 1px solid rgba(136, 19, 55, 0.2);">
+                            <span class="badge px-2 py-1 fw-semibold" style="background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1;">
                                 <i class="bi bi-building me-1"></i>{{ @po.lab_internal ?: 'Laboratorium BBSPJIS' }}
                             </span>
                         </check>
@@ -479,7 +479,7 @@
                         <span class="text-muted" style="font-size: 0.75rem;">Tahapan operasional pengujian/riset, validasi teknis, dan pemenuhan target SPM</span>
                     </div>
                     <div class="text-end">
-                        <span class="badge px-3 py-2 fw-bold" style="font-size: 0.75rem; background-color: rgba(136, 19, 55, 0.08); color: #881337; border: 1px solid rgba(136, 19, 55, 0.2);">
+                        <span class="badge px-3 py-2 fw-bold" style="font-size: 0.75rem; background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1;">
                             {{ @sop_statistik.persen }}% Selesai
                         </span>
                     </div>
@@ -687,7 +687,7 @@
                     <h6 class="m-0 fw-bold text-dark"><i class="bi bi-calendar3 text-primary me-2"></i>Jadwal Kerja Tim Pelaksana</h6>
                     <span class="text-muted" style="font-size: 0.75rem;">Timeline dan milestone kegiatan tim balai</span>
                 </div>
-                <span class="badge px-2 py-1 fw-semibold" style="font-size: 0.75rem; background-color: rgba(136, 19, 55, 0.08); color: #881337; border: 1px solid rgba(136, 19, 55, 0.2);">
+                <span class="badge px-2 py-1 fw-semibold" style="font-size: 0.75rem; background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1;">
                     {{ count(@daftar_jadwal) }} Milestone
                 </span>
             </div>
