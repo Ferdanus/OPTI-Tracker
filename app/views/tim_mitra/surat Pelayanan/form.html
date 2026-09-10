@@ -165,6 +165,28 @@
         border-color: #334155;
         background: #f1f5f9;
     }
+    .division-card.division-selulosa.active {
+        border-color: #be123c;
+        background: #fff1f2;
+    }
+    .division-card.division-selulosa input[type="radio"] {
+        accent-color: #be123c;
+    }
+    .division-card.division-selulosa.active .division-info .div-name {
+        color: #9f1239;
+        font-weight: 700;
+    }
+    .division-card.division-lingkungan.active {
+        border-color: #0d9488;
+        background: #f0fdf4;
+    }
+    .division-card.division-lingkungan input[type="radio"] {
+        accent-color: #0d9488;
+    }
+    .division-card.division-lingkungan.active .division-info .div-name {
+        color: #0f766e;
+        font-weight: 700;
+    }
     .division-card input[type="radio"] {
         margin: 0;
         cursor: pointer;
@@ -752,14 +774,14 @@
 
                     <label class="form-label small fw-semibold text-dark mb-1">Disposisi ke Divisi OPTI:</label>
                     <div class="division-grid">
-                        <label class="division-card {{ @order.jenis_layanan_opti == 'lingkungan' ? '' : 'active' }}" for="jlSelulosa">
+                        <label class="division-card division-selulosa {{ @order.jenis_layanan_opti == 'lingkungan' ? '' : 'active' }}" for="jlSelulosa">
                             <input type="radio" name="jenis_layanan" id="jlSelulosa" value="selulosa" {{ @order.jenis_layanan_opti == 'lingkungan' ? '' : 'checked' }} {{ !@can_edit ? 'disabled' : '' }}>
                             <div class="division-info">
                                 <div class="div-name">OPTI Selulosa</div>
                                 <div class="div-desc">Pengujian pulp, kertas, &amp; serat selulosa</div>
                             </div>
                         </label>
-                        <label class="division-card {{ @order.jenis_layanan_opti == 'lingkungan' ? 'active' : '' }}" for="jlLingkungan">
+                        <label class="division-card division-lingkungan {{ @order.jenis_layanan_opti == 'lingkungan' ? 'active' : '' }}" for="jlLingkungan">
                             <input type="radio" name="jenis_layanan" id="jlLingkungan" value="lingkungan" {{ @order.jenis_layanan_opti == 'lingkungan' ? 'checked' : '' }} {{ !@can_edit ? 'disabled' : '' }}>
                             <div class="division-info">
                                 <div class="div-name">OPTI Lingkungan</div>

@@ -23,7 +23,7 @@
             <div class="mb-3">
                 <check if="{{ @profil.role == 'superadmin' }}"><span class="badge badge-pill-primary">Super Administrator</span></check>
                 <check if="{{ @profil.role == 'admin_order' }}"><span class="badge badge-pill-info">Petugas Penerima Order</span></check>
-                <check if="{{ @profil.role == 'ketua_tim' }}"><span class="badge badge-pill-success">Ketua Tim {{ @profil.jenis_layanan_opti == 'selulosa' ? 'Selulosa' : 'Lingkungan' }}</span></check>
+                <check if="{{ @profil.role == 'ketua_tim' }}"><span class="badge {{ @profil.jenis_layanan_opti == 'selulosa' ? 'badge-pill-danger' : 'badge-pill-success' }}">Ketua Tim {{ @profil.jenis_layanan_opti == 'selulosa' ? 'Selulosa' : 'Lingkungan' }}</span></check>
                 <check if="{{ @profil.role == 'pejabat' }}"><span class="badge badge-pill-warning">Kepala Balai / PPK BLU</span></check>
                 <check if="{{ @profil.role == 'tim_kerja' }}"><span class="badge badge-pill-secondary">Tim Analis Laboratorium</span></check>
                 <check if="{{ @profil.role == 'admin_kontrak' }}"><span class="badge badge-pill-primary">Admin Kontrak Kerjasama</span></check>

@@ -79,7 +79,7 @@
         <div class="card border-0 shadow-sm h-100">
             <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center gap-2">
-                    <span class="badge badge-pill-primary">OPTI Selulosa</span>
+                    <span class="badge badge-selulosa">OPTI Selulosa</span>
                     <h6 class="m-0 fw-bold text-dark">Ringkasan Divisi</h6>
                 </div>
                 <a href="{{ @BASE }}/order?jenis_layanan=selulosa" class="btn btn-xs btn-outline-secondary">
@@ -134,9 +134,9 @@
                     </div>
                 </div>
                 <a href="{{ @BASE }}/pembayaran" class="text-decoration-none text-reset d-block" title="Buka Rekap Keuangan Selulosa">
-                    <div class="p-3 rounded-3" style="background-color: rgba(136,19,55,.04); border: 1px solid rgba(136,19,55,.15); transition: background-color 0.2s ease;">
+                    <div class="p-3 rounded-3" style="background-color: #fff1f2; border: 1px solid #fecdd3; transition: background-color 0.2s ease;">
                         <div class="text-muted small fw-semibold mb-1">Total Uang Diterima (PNBP Kas Selulosa)</div>
-                        <div class="h5 fw-bold mb-0" style="color: var(--color-primary);">Rp {{ number_format(@stat_selulosa.uang_diterima ?: 0, 0, ',', '.') }}</div>
+                        <div class="h5 fw-bold mb-0" style="color: #be123c;">Rp {{ number_format(@stat_selulosa.uang_diterima ?: 0, 0, ',', '.') }}</div>
                     </div>
                 </a>
             </div>
@@ -281,10 +281,10 @@
                                     </td>
                                     <td>
                                         <check if="{{ @ord.jenis_layanan_opti == 'selulosa' }}">
-                                            <span class="badge badge-pill-primary">OPTI Selulosa</span>
+                                            <span class="badge badge-selulosa">OPTI Selulosa</span>
                                         </check>
                                         <check if="{{ @ord.jenis_layanan_opti == 'lingkungan' }}">
-                                            <span class="badge badge-pill" style="background-color: #15803D; color: white;">OPTI Lingkungan</span>
+                                            <span class="badge badge-lingkungan">OPTI Lingkungan</span>
                                         </check>
                                         <check if="{{ @ord.jenis_layanan_opti != 'selulosa' && @ord.jenis_layanan_opti != 'lingkungan' }}">
                                             <span class="badge bg-secondary">Belum Ditentukan</span>
@@ -323,7 +323,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    var slatePrimary = '#334155';
+    var selulosaRed = '#e11d48';
     var green = '#16A34A';
 
     // ---- Bar chart: perbandingan status order per divisi ----
@@ -335,7 +335,7 @@ document.addEventListener('DOMContentLoaded', function () {
             datasets: [
                 {
                     label: 'OPTI Selulosa',
-                    backgroundColor: slatePrimary,
+                    backgroundColor: selulosaRed,
                     borderRadius: 4,
                     data: [
                         {{ @stat_selulosa.diterima ?: 0 }},
@@ -373,7 +373,7 @@ document.addEventListener('DOMContentLoaded', function () {
         data: {
             labels: ['OPTI Selulosa', 'OPTI Lingkungan'],
             datasets: [{
-                backgroundColor: [slatePrimary, green],
+                backgroundColor: [selulosaRed, green],
                 data: [
                     {{ @stat_selulosa.uang_diterima ?: 0 }},
                     {{ @stat_lingkungan.uang_diterima ?: 0 }}

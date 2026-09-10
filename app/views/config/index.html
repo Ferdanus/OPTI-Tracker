@@ -24,7 +24,7 @@
                     <div class="row g-4 mb-3">
                         <div class="col-md-6">
                             <label class="form-label fw-bold text-dark">
-                                <i class="bi bi-tree text-primary me-1"></i> Ketua Tim OPTI Selulosa:
+                                <i class="bi bi-tree text-danger me-1"></i> Ketua Tim OPTI Selulosa:
                             </label>
                             <select name="id_user_selulosa" class="form-select searchable-select" placeholder="Cari nama atau username personil Selulosa..." required>
                                 <repeat group="{{ @internal_users }}" value="{{ @u }}">
@@ -38,7 +38,7 @@
 
                         <div class="col-md-6">
                             <label class="form-label fw-bold text-dark">
-                                <i class="bi bi-water text-primary me-1"></i> Ketua Tim OPTI Lingkungan:
+                                <i class="bi bi-water text-success me-1"></i> Ketua Tim OPTI Lingkungan:
                             </label>
                             <select name="id_user_lingkungan" class="form-select searchable-select" placeholder="Cari nama atau username personil Lingkungan..." required>
                                 <repeat group="{{ @internal_users }}" value="{{ @u }}">

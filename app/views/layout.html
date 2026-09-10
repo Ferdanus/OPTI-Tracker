@@ -714,6 +714,10 @@
         .badge-pill-info { background-color: #f0f9ff; color: #075985; border: 1px solid #bae6fd; }
         .badge-pill-primary { background-color: #f1f5f9; color: var(--color-primary); border: 1px solid #cbd5e1; }
         .badge-pill-secondary { background-color: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+        .badge-pill-selulosa, .badge-selulosa { background-color: #ffe4e6 !important; color: #be123c !important; border: 1px solid #fecdd3 !important; }
+        .badge-selulosa-solid { background-color: #be123c !important; color: #ffffff !important; }
+        .badge-pill-lingkungan, .badge-lingkungan { background-color: #ccfbf1 !important; color: #0f766e !important; border: 1px solid #99f6e4 !important; }
+        .badge-lingkungan-solid { background-color: #0d9488 !important; color: #ffffff !important; }
 
         /* ============ REFINED INSTITUTIONAL FOOTER ============ */
         .footer-gov {
@@ -1171,12 +1175,12 @@
                             </li>
                             <li>
                                 <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2 {{ @SESSION.role == 'ketua_tim' && @SESSION.jenis_layanan_opti == 'selulosa' ? 'active' : '' }}" href="{{ @BASE }}/login/switch/3">
-                                    <i class="bi bi-person-circle text-secondary"></i> Ka. Tim Selulosa
+                                    <i class="bi bi-person-circle text-danger"></i> Ka. Tim Selulosa
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2 {{ @SESSION.role == 'ketua_tim' && @SESSION.jenis_layanan_opti == 'lingkungan' ? 'active' : '' }}" href="{{ @BASE }}/login/switch/61">
-                                    <i class="bi bi-person-circle text-secondary"></i> Ka. Tim Lingkungan
+                                    <i class="bi bi-person-circle text-success"></i> Ka. Tim Lingkungan
                                 </a>
                             </li>
                             <li>

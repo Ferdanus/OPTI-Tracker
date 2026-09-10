@@ -289,7 +289,7 @@
                                 <!-- Pelanggan & Divisi -->
                                 <td class="py-3 px-3">
                                     <div class="fw-bold text-dark" style="font-size: 0.85rem;">{{ @row.nama_perusahaan }}</div>
-                                    <span class="badge {{ @row.jenis_layanan_opti == 'selulosa' ? 'bg-primary-subtle text-primary' : 'bg-success-subtle text-success' }} px-2 py-0.5 rounded-pill" style="font-size: 0.68rem;">
+                                    <span class="badge {{ @row.jenis_layanan_opti == 'selulosa' ? 'bg-danger-subtle text-danger border border-danger-subtle' : 'bg-success-subtle text-success border border-success-subtle' }} px-2 py-0.5 rounded-pill" style="font-size: 0.68rem;">
                                         OPTI {{ ucfirst(@row.jenis_layanan_opti) }}
                                     </span>
                                 </td>

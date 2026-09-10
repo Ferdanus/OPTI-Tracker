@@ -38,10 +38,10 @@
             <div class="card border-0 shadow-sm rounded-3 p-3 bg-white d-flex flex-row align-items-center justify-content-between">
                 <div>
                     <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">PIC OPTI Selulosa</span>
-                    <h3 class="fw-bold text-primary mb-0 mt-1">{{ @count_selulosa }}</h3>
+                    <h3 class="fw-bold text-danger mb-0 mt-1">{{ @count_selulosa }}</h3>
                     <span class="small text-muted" style="font-size: 0.75rem;">Spesialisasi Pulp &amp; Kertas</span>
                 </div>
-                <div class="d-flex align-items-center justify-content-center rounded-3" style="width: 48px; height: 48px; background-color: #eff6ff; color: #2563eb;">
+                <div class="d-flex align-items-center justify-content-center rounded-3" style="width: 48px; height: 48px; background-color: #fff1f2; color: #e11d48; border: 1px solid #fecdd3;">
                     <i class="bi bi-file-earmark-medical fs-4"></i>
                 </div>
             </div>
@@ -141,7 +141,7 @@
                                         </td>
                                         <td class="text-center">
                                             <check if="{{ @pic.divisi == 'selulosa' }}">
-                                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1">OPTI Selulosa</span>
+                                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2.5 py-1">OPTI Selulosa</span>
                                             </check>
                                             <check if="{{ @pic.divisi == 'lingkungan' }}">
                                                 <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle px-2.5 py-1">OPTI Lingkungan</span>

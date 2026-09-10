@@ -153,7 +153,7 @@
                                     {{ @sp.perihal }}
                                 </div>
                                 <check if="{{ @sp.jenis_layanan && !in_array(@sp.jenis_layanan, ['belum_ditentukan', 'opti_belum_ditentukan']) }}">
-                                    <span class="badge {{ strpos(@sp.jenis_layanan, 'selulosa') !== false ? 'bg-primary-subtle text-primary' : 'bg-success-subtle text-success' }} text-uppercase mt-1" style="font-size: 0.65rem;">
+                                    <span class="badge {{ strpos(@sp.jenis_layanan, 'selulosa') !== false ? 'bg-danger-subtle text-danger border border-danger-subtle' : 'bg-success-subtle text-success border border-success-subtle' }} text-uppercase mt-1" style="font-size: 0.65rem;">
                                         {{ str_replace('_', ' ', @sp.jenis_layanan) }}
                                     </span>
                                 </check>
@@ -327,7 +327,7 @@
                                             <span class="fw-semibold text-dark">{{ @ord.nama_perusahaan ?: (@ord.nmcustomer ?: '-') }}</span>
                                         </td>
                                         <td>
-                                            <span class="badge {{ @ord.jenis_layanan_opti == 'selulosa' ? 'bg-primary-subtle text-primary' : 'bg-success-subtle text-success' }} text-uppercase" style="font-size: 0.65rem;">
+                                            <span class="badge {{ @ord.jenis_layanan_opti == 'selulosa' ? 'bg-danger-subtle text-danger border border-danger-subtle' : 'bg-success-subtle text-success border border-success-subtle' }} text-uppercase" style="font-size: 0.65rem;">
                                                 OPTI {{ @ord.jenis_layanan_opti }}
                                             </span>
                                         </td>
