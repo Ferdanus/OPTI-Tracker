@@ -827,21 +827,21 @@
             position: fixed;
             top: 0;
             left: 0;
-            height: 3px;
+            height: 3.5px;
             width: 0%;
-            background: linear-gradient(90deg, #1e293b 0%, #475569 50%, #94a3b8 100%);
-            z-index: 99999;
-            transition: width 0.35s cubic-bezier(0.1, 0.9, 0.2, 1), opacity 0.3s ease;
-            box-shadow: 0 0 10px rgba(51, 65, 85, 0.6);
+            background: linear-gradient(90deg, #be123c 0%, #e11d48 35%, #334155 75%, #0f172a 100%);
+            z-index: 999999;
+            transition: width 0.28s cubic-bezier(0.1, 0.9, 0.2, 1), opacity 0.25s ease;
+            box-shadow: 0 0 12px rgba(225, 29, 72, 0.65);
             pointer-events: none;
         }
 
         .page-loader-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(248, 250, 252, 0.78);
-            backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
+            background: rgba(15, 23, 42, 0.45);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
             z-index: 99990;
             display: flex;
             align-items: center;
@@ -849,7 +849,7 @@
             opacity: 0;
             visibility: hidden;
             pointer-events: none;
-            transition: opacity 0.2s ease, visibility 0.2s ease;
+            transition: opacity 0.22s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.22s ease;
         }
 
         .page-loader-overlay.active {
@@ -863,16 +863,17 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 1.5rem 2rem;
+            padding: 1.6rem 2.25rem;
             background: #ffffff;
-            border: 1px solid var(--color-border);
+            border: 1px solid #e2e8f0;
             border-radius: var(--radius-lg);
-            box-shadow: 0 12px 35px -5px rgba(15, 23, 42, 0.12);
+            box-shadow: 0 20px 45px -10px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.04);
             animation: loaderPopIn 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            min-width: 240px;
         }
 
         @keyframes loaderPopIn {
-            from { transform: scale(0.92); opacity: 0; }
+            from { transform: scale(0.9); opacity: 0; }
             to { transform: scale(1); opacity: 1; }
         }
 
@@ -890,10 +891,10 @@
             position: absolute;
             inset: 0;
             border-radius: 50%;
-            border: 3px solid rgba(51, 65, 85, 0.15);
-            border-top-color: var(--color-primary);
-            border-right-color: #64748b;
-            animation: spinLoader 0.75s linear infinite;
+            border: 3.5px solid rgba(51, 65, 85, 0.12);
+            border-top-color: #be123c;
+            border-right-color: #334155;
+            animation: spinLoader 0.7s linear infinite;
         }
 
         @keyframes spinLoader {
@@ -901,28 +902,29 @@
         }
 
         .loader-icon {
-            color: var(--color-primary);
-            font-size: 1.25rem;
+            color: #be123c;
+            font-size: 1.3rem;
             animation: pulseIcon 1.2s ease-in-out infinite alternate;
         }
 
         @keyframes pulseIcon {
-            from { transform: scale(0.9); opacity: 0.75; }
-            to { transform: scale(1.08); opacity: 1; }
+            from { transform: scale(0.9); opacity: 0.8; }
+            to { transform: scale(1.1); opacity: 1; }
         }
 
         .loader-text {
             font-family: var(--font-display);
             font-weight: 700;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
             color: #0f172a;
-            margin-bottom: 2px;
+            margin-bottom: 3px;
         }
 
         .loader-subtext {
             font-family: var(--font-body);
             font-size: 0.725rem;
             color: var(--color-text-muted);
+            font-weight: 500;
         }
 
         /* ============ PENGATURAN MODAL DIALOG ============ */
@@ -980,8 +982,8 @@
                     <i class="bi bi-layers-fill"></i>
                 </div>
             </div>
-            <div class="loader-text">Memuat Data...</div>
-            <div class="loader-subtext">Menghubungkan ke Server Cloud BBSPJIS</div>
+            <div class="loader-text">Memuat Halaman...</div>
+            <div class="loader-subtext">Sistem Layanan Terpadu BBSPJIS</div>
         </div>
     </div>
 
@@ -1472,7 +1474,10 @@
                     buttonsStyling: false
                 }).then(function(result) {
                     if (result.isConfirmed) {
-                        window.location.href = '{{ @BASE }}/logout';
+                        if (window.startLoading) window.startLoading('Keluar dari akun...');
+                        setTimeout(function() {
+                            window.location.href = '{{ @BASE }}/logout';
+                        }, 180);
                     }
                 });
                 return false;
@@ -1603,13 +1608,15 @@
             var pageLoader = document.getElementById('pageLoader');
             var loaderSafetyTimer = null;
 
-            function startLoading(customText) {
+            window.startLoading = function(customText) {
                 if (loaderSafetyTimer) clearTimeout(loaderSafetyTimer);
 
                 if (progressBar) {
                     progressBar.style.opacity = '1';
                     progressBar.style.width = '35%';
-                    setTimeout(function() { progressBar.style.width = '75%'; }, 120);
+                    setTimeout(function() { 
+                        if (progressBar) progressBar.style.width = '80%'; 
+                    }, 80);
                 }
                 if (pageLoader) {
                     if (customText) {
@@ -1619,13 +1626,13 @@
                     pageLoader.classList.add('active');
                 }
 
-                // Safety timeout: Auto-dismiss after 2.5s in case of file download or canceled navigation
+                // Safety timeout: Auto-dismiss after 3.5s in case navigation is slow, canceled, or a file download
                 loaderSafetyTimer = setTimeout(function() {
-                    finishLoading();
-                }, 2500);
-            }
+                    window.finishLoading();
+                }, 3500);
+            };
 
-            function finishLoading() {
+            window.finishLoading = function() {
                 if (loaderSafetyTimer) {
                     clearTimeout(loaderSafetyTimer);
                     loaderSafetyTimer = null;
@@ -1633,23 +1640,96 @@
                 if (progressBar) {
                     progressBar.style.width = '100%';
                     setTimeout(function() {
-                        progressBar.style.opacity = '0';
-                        setTimeout(function() { progressBar.style.width = '0%'; }, 300);
-                    }, 180);
+                        if (progressBar) {
+                            progressBar.style.opacity = '0';
+                            setTimeout(function() { 
+                                if (progressBar) progressBar.style.width = '0%'; 
+                            }, 250);
+                        }
+                    }, 140);
                 }
                 if (pageLoader) {
                     setTimeout(function() {
                         pageLoader.classList.remove('active');
-                    }, 120);
+                    }, 100);
                 }
+            };
+
+            // Quick completion animation on page arrival
+            if (progressBar) {
+                progressBar.style.opacity = '1';
+                progressBar.style.width = '70%';
+                setTimeout(function() {
+                    window.finishLoading();
+                }, 80);
             }
 
-            // Finish loading when page is fully rendered
+            // Finish loading when page is fully rendered or restored from bfcache
             window.addEventListener('pageshow', function() {
-                finishLoading();
+                window.finishLoading();
             });
             window.addEventListener('focus', function() {
-                finishLoading();
+                window.finishLoading();
+            });
+
+            // Intercept internal link clicks for smooth page transitions
+            document.addEventListener('click', function(e) {
+                var anchor = e.target.closest('a');
+                if (!anchor) return;
+
+                // Ignore modified clicks (Ctrl, Cmd, Shift, Alt, middle-click)
+                if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.button !== 0) return;
+
+                // Ignore target="_blank", downloads, or explicitly disabled elements
+                if (anchor.target === '_blank' || anchor.hasAttribute('download')) return;
+                if (anchor.getAttribute('data-no-loader') === 'true') return;
+
+                // Ignore Bootstrap toggles (modal, dropdown, tab, collapse)
+                if (anchor.getAttribute('data-bs-toggle') || anchor.getAttribute('data-bs-target')) return;
+
+                // Ignore elements with confirmation dialogs (they handle their own navigation)
+                if (anchor.hasAttribute('data-confirm') || anchor.classList.contains('btn-confirm')) return;
+
+                var href = anchor.getAttribute('href');
+                if (!href || href === '#' || href.startsWith('#') || href.startsWith('javascript:') || href.startsWith('mailto:') || href.startsWith('tel:')) return;
+
+                // Check internal origin
+                var url;
+                try {
+                    url = new URL(anchor.href, window.location.origin);
+                } catch (err) {
+                    return;
+                }
+
+                if (url.origin !== window.location.origin) return;
+
+                // If same page anchor, let browser jump naturally
+                if (url.pathname === window.location.pathname && url.search === window.location.search && url.hash !== '') return;
+
+                // Skip file exports/downloads
+                var path = url.pathname.toLowerCase();
+                if (path.includes('export') || path.includes('ekspor') || path.includes('download') || path.endsWith('.pdf') || path.endsWith('.xlsx') || path.endsWith('.csv') || path.endsWith('.docx')) {
+                    return;
+                }
+
+                // Determine contextual loading message
+                var loadMessage = 'Memuat Halaman...';
+                if (anchor.classList.contains('sidebar-link')) {
+                    var titleSpan = anchor.querySelector('span:not(.badge)');
+                    if (titleSpan && titleSpan.textContent.trim()) {
+                        loadMessage = 'Membuka ' + titleSpan.textContent.trim() + '...';
+                    }
+                } else if (anchor.getAttribute('title')) {
+                    loadMessage = 'Memuat ' + anchor.getAttribute('title') + '...';
+                }
+
+                e.preventDefault();
+                window.startLoading(loadMessage);
+
+                // Smooth micro-delay so the animation is clearly and pleasantly visible
+                setTimeout(function() {
+                    window.location.href = anchor.href;
+                }, 180);
             });
 
             // Intercept form submissions for saving/filtering indicator
@@ -1660,7 +1740,7 @@
                 if (form.getAttribute('data-no-loader') === 'true' || action.includes('ekspor') || action.includes('export') || action.includes('download')) {
                     return;
                 }
-                startLoading('Memproses Data Server...');
+                window.startLoading('Memproses Data Server...');
             });
         });
 
