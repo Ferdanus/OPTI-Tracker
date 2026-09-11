@@ -392,12 +392,47 @@
                 max-width: calc(100% - var(--sidebar-mini-width));
             }
 
+            body.sidebar-collapsed .sidebar .sidebar-link {
+                position: relative;
+            }
+
             body.sidebar-collapsed .sidebar .sidebar-brand-text,
             body.sidebar-collapsed .sidebar .sidebar-section-label,
-            body.sidebar-collapsed .sidebar .sidebar-link span {
+            body.sidebar-collapsed .sidebar .sidebar-link span:not(.sidebar-notif-badge) {
                 opacity: 0;
-                transform: translateX(-12px);
+                display: none;
                 pointer-events: none;
+            }
+
+            body.sidebar-collapsed .sidebar .sidebar-notif-badge {
+                position: absolute;
+                top: 4px;
+                right: 6px;
+                margin-left: 0 !important;
+                background-color: #e11d48 !important;
+                color: #ffffff !important;
+                font-size: 0.625rem !important;
+                font-weight: 700;
+                min-width: 17px;
+                height: 17px;
+                padding: 0 4px !important;
+                display: inline-flex !important;
+                align-items: center;
+                justify-content: center;
+                border-radius: 999px;
+                border: 2px solid #0f172a;
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+                opacity: 1 !important;
+                pointer-events: auto !important;
+                z-index: 5;
+            }
+
+            body.sidebar-collapsed .sidebar .sidebar-link.active .sidebar-notif-badge {
+                border-color: #334155;
+            }
+
+            body.sidebar-collapsed .sidebar .sidebar-link:hover .sidebar-notif-badge {
+                transform: scale(1.1);
             }
 
             .mobile-toggle-btn {
@@ -988,7 +1023,7 @@
                         <a class="sidebar-link {{ @active_menu == 'surat_masuk' ? 'active' : '' }}" href="{{ @BASE }}/surat-masuk" title="Surat Masuk">
                             <i class="bi bi-envelope-paper"></i> <span>Surat Masuk</span>
                             <check if="{{ @jumlah_notif_surat > 0 }}">
-                                <span class="badge rounded-pill ms-auto" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff;">{{ @jumlah_notif_surat }}</span>
+                                <span class="badge rounded-pill ms-auto sidebar-notif-badge" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff;">{{ @jumlah_notif_surat }}</span>
                             </check>
                         </a>
                     </li>
@@ -1000,7 +1035,7 @@
                         <a class="sidebar-link {{ @active_menu == 'disposisi_masuk' ? 'active' : '' }}" href="{{ @BASE }}/disposisi-masuk" title="Permintaan Masuk">
                             <i class="bi bi-bell"></i> <span>Permintaan Masuk</span>
                             <check if="{{ @jumlah_notif_katim > 0 }}">
-                                <span class="badge rounded-pill ms-auto" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff;">{{ @jumlah_notif_katim }}</span>
+                                <span class="badge rounded-pill ms-auto sidebar-notif-badge" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff;">{{ @jumlah_notif_katim }}</span>
                             </check>
                         </a>
                     </li>
