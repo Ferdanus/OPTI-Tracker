@@ -530,7 +530,7 @@
             position: absolute;
             top: -3px;
             right: -3px;
-            background: var(--color-primary);
+            background: #e11d48;
             color: #ffffff;
             font-size: 0.625rem;
             font-weight: 700;
@@ -538,7 +538,7 @@
             border-radius: 999px;
             border: 2px solid #ffffff;
             line-height: 1;
-            box-shadow: 0 2px 4px rgba(51, 65, 85, 0.35);
+            box-shadow: 0 2px 6px rgba(225, 29, 72, 0.45);
         }
 
         .user-avatar {
@@ -988,7 +988,7 @@
                         <a class="sidebar-link {{ @active_menu == 'surat_masuk' ? 'active' : '' }}" href="{{ @BASE }}/surat-masuk" title="Surat Masuk">
                             <i class="bi bi-envelope-paper"></i> <span>Surat Masuk</span>
                             <check if="{{ @jumlah_notif_surat > 0 }}">
-                                <span class="badge rounded-pill ms-auto" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #475569; color: #ffffff;">{{ @jumlah_notif_surat }}</span>
+                                <span class="badge rounded-pill ms-auto" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff;">{{ @jumlah_notif_surat }}</span>
                             </check>
                         </a>
                     </li>
@@ -1000,7 +1000,7 @@
                         <a class="sidebar-link {{ @active_menu == 'disposisi_masuk' ? 'active' : '' }}" href="{{ @BASE }}/disposisi-masuk" title="Permintaan Masuk">
                             <i class="bi bi-bell"></i> <span>Permintaan Masuk</span>
                             <check if="{{ @jumlah_notif_katim > 0 }}">
-                                <span class="badge rounded-pill ms-auto" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #475569; color: #ffffff;">{{ @jumlah_notif_katim }}</span>
+                                <span class="badge rounded-pill ms-auto" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff;">{{ @jumlah_notif_katim }}</span>
                             </check>
                         </a>
                     </li>
@@ -1136,7 +1136,7 @@
                                 <div class="d-flex align-items-center gap-2">
                                     <span class="fw-bold text-dark font-display" style="font-size: 0.88rem;">Pemberitahuan</span>
                                     <check if="{{ @unread_notif_count > 0 }}">
-                                        <span class="badge rounded-pill fw-bold text-white" id="notifHeaderBadge" style="background-color: #475569; font-size: 0.68rem; padding: 3px 8px; vertical-align: middle;">
+                                        <span class="badge rounded-pill fw-bold text-white" id="notifHeaderBadge" style="background-color: #e11d48; font-size: 0.68rem; padding: 3px 8px; vertical-align: middle;">
                                             {{ @unread_notif_count }} Baru
                                         </span>
                                     </check>
@@ -1700,8 +1700,7 @@
                             } else if (btn) {
                                 var span = document.createElement('span');
                                 span.id = 'notifBadgeCount';
-                                span.className = 'position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-white';
-                                span.style.fontSize = '0.65rem';
+                                span.className = 'notif-badge-pill';
                                 span.textContent = data.count > 99 ? '99+' : data.count;
                                 btn.appendChild(span);
                             }
@@ -1795,25 +1794,25 @@
         .pulse-glow-dot {
             width: 6px;
             height: 6px;
-            background-color: #475569;
+            background-color: #e11d48;
             border-radius: 50%;
             display: inline-block;
             flex-shrink: 0;
-            box-shadow: 0 0 0 0 rgba(71, 85, 105, 0.7);
+            box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.7);
             animation: pulseGlow 1.8s infinite;
         }
         @keyframes pulseGlow {
             0% {
                 transform: scale(0.95);
-                box-shadow: 0 0 0 0 rgba(71, 85, 105, 0.7);
+                box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.7);
             }
             70% {
                 transform: scale(1);
-                box-shadow: 0 0 0 5px rgba(71, 85, 105, 0);
+                box-shadow: 0 0 0 5px rgba(225, 29, 72, 0);
             }
             100% {
                 transform: scale(0.95);
-                box-shadow: 0 0 0 0 rgba(71, 85, 105, 0);
+                box-shadow: 0 0 0 0 rgba(225, 29, 72, 0);
             }
         }
         .floating-bubble-time {
