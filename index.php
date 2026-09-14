@@ -290,12 +290,14 @@ $f3->route('GET /surat/@id', 'OrderController->showSurat');
 // PO Kegiatan
 // ==========================================
 $f3->route('GET /po-kegiatan', 'PoKegiatanController->index');
+$f3->route('GET /po-kegiatan/pilih', 'PoKegiatanController->pilihJenis');
 $f3->route('GET /po-kegiatan/buat', 'PoKegiatanController->create');
 $f3->route('POST /po-kegiatan/simpan', 'PoKegiatanController->store');
 $f3->route('GET /po-kegiatan/@id/edit', 'PoKegiatanController->edit');
 $f3->route('POST /po-kegiatan/@id/update', 'PoKegiatanController->update');
 $f3->route('GET /po-kegiatan/@id/preview', 'PoKegiatanController->previewFragment');
 $f3->route('GET /po-kegiatan/jadwal-kolom', 'PoKegiatanController->jadwalKolom');
+$f3->route('GET /po-kegiatan/@id/cetak', 'PoKegiatanController->cetak');
 
 // ==========================================
 // SURAT PENAWARAN MITRA
