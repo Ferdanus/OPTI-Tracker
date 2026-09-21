@@ -114,12 +114,12 @@
                                                 data-ptcv="{{ @cust.pt_cv ?: 'PT' }}"
                                                 data-nama="{{ @cust.nmcustomer }}"
                                                 data-nama-bersih="{{ @cust.nama_perusahaan_bersih }}"
-                                                data-alamat="{{ @cust.alamatcustomer ?: '' }}"
-                                                data-pic="{{ @cust.contactperson_opti ?: (@cust.contactperson ?: '') }}"
-                                                data-telp="{{ @cust.nohpcontactperson_opti ?: (@cust.notelpcustomer ?: '') }}"
-                                                data-email="{{ @cust.emailcustomer ?: '' }}"
+                                                data-alamat="{{ @cust.alamat_bersih ?: '' }}"
+                                                data-pic="{{ @cust.pic_bersih ?: '' }}"
+                                                data-telp="{{ @cust.hp_bersih != '-' ? @cust.hp_bersih : (@cust.telp_bersih != '-' ? @cust.telp_bersih : '') }}"
+                                                data-email="{{ @cust.email_bersih != '-' ? @cust.email_bersih : '' }}"
                                                 {{ @selected_cust_id == @cust.id_customer ? 'selected' : '' }}>
-                                            {{ @cust.nama_perusahaan_bersih }}
+                                            {{ @cust.nama_perusahaan_bersih }} [Kode: #{{ @cust.kodex_perusahaan }}]
                                         </option>
                                     </repeat>
                                 </select>

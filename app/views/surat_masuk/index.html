@@ -578,12 +578,15 @@
                                             data-ptcv="{{ @cust.pt_cv }}"
                                             data-nama="{{ @cust.nmcustomer }}"
                                             data-nama-bersih="{{ @cust.nama_perusahaan_bersih }}"
-                                            data-alamat="{{ @cust.alamatcustomer ?: '-' }}"
-                                            data-pic="{{ @cust.contactperson ?: (@cust.contactperson_opti ?: '-') }}"
-                                            data-telp="{{ @cust.notelpcustomer ?: (@cust.nohpcontactperson_opti ?: '-') }}"
-                                            data-email="{{ @cust.emailcustomer ?: '-' }}"
+                                            data-kode="{{ @cust.kodex_perusahaan ?: '-' }}"
+                                            data-alamat="{{ @cust.alamat_bersih ?: '-' }}"
+                                            data-pic="{{ @cust.pic_bersih ?: '-' }}"
+                                            data-hp="{{ @cust.hp_bersih ?: '-' }}"
+                                            data-telp-kantor="{{ @cust.telp_kantor_bersih ?: '-' }}"
+                                            data-telp="{{ @cust.telp_bersih ?: '-' }}"
+                                            data-email="{{ @cust.email_bersih ?: '-' }}"
                                             {{ @surat.id_customer == @cust.id_customer ? 'selected' : '' }}>
-                                        {{ @cust.nama_perusahaan_bersih }}
+                                        {{ @cust.nama_perusahaan_bersih }} [Kode: #{{ @cust.kodex_perusahaan }}]
                                     </option>
                                 </repeat>
                             </select>
@@ -591,14 +594,17 @@
 
                         <!-- 2. Preview Data Pelanggan Terpilih -->
                         <div class="border rounded-2 p-3 bg-white mb-3 shadow-xs">
-                            <div class="mb-2 pb-2 border-bottom">
+                            <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
                                 <span class="small fw-bold text-dark d-flex align-items-center gap-1">
                                     <i class="bi bi-building text-primary"></i> Data Pelanggan Terpilih
+                                </span>
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle" id="lblCustKode_{{ @surat.id }}">
+                                    Kode: #{{ @surat.kodex_perusahaan ?: '-' }}
                                 </span>
                             </div>
                             <div class="row g-2 small">
                                 <div class="col-sm-6">
-                                    <span class="text-muted d-block" style="font-size:0.72rem;">Instansi:</span>
+                                    <span class="text-muted d-block" style="font-size:0.72rem;">Instansi / Perusahaan:</span>
                                     <strong class="text-dark" id="lblCustNama_{{ @surat.id }}">{{ @surat.nama_pengirim_bersih ?: @surat.pengirim }}</strong>
                                 </div>
                                 <div class="col-sm-6">
@@ -606,15 +612,15 @@
                                     <span class="text-dark fw-semibold" id="lblCustPic_{{ @surat.id }}">{{ @surat.pic_pengirim ?: '-' }}</span>
                                 </div>
                                 <div class="col-sm-6">
-                                    <span class="text-muted d-block" style="font-size:0.72rem;">Telepon / WA:</span>
+                                    <span class="text-muted d-block" style="font-size:0.72rem;">Telepon / No. HP (WA):</span>
                                     <span class="text-dark" id="lblCustTelp_{{ @surat.id }}">{{ @surat.no_telp_pengirim ?: '-' }}</span>
                                 </div>
                                 <div class="col-sm-6">
-                                    <span class="text-muted d-block" style="font-size:0.72rem;">Email:</span>
+                                    <span class="text-muted d-block" style="font-size:0.72rem;">Email Resmi:</span>
                                     <span class="text-dark" id="lblCustEmail_{{ @surat.id }}">{{ @surat.email_pengirim ?: '-' }}</span>
                                 </div>
                                 <div class="col-12">
-                                    <span class="text-muted d-block" style="font-size:0.72rem;">Alamat:</span>
+                                    <span class="text-muted d-block" style="font-size:0.72rem;">Alamat Perusahaan:</span>
                                     <span class="text-secondary" id="lblCustAlamat_{{ @surat.id }}">{{ @surat.alamat_pengirim ?: '-' }}</span>
                                 </div>
                             </div>
@@ -1247,11 +1253,13 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!opt || !opt.value) {
                 if (submitBtn) submitBtn.disabled = true;
                 var elNama = document.getElementById('lblCustNama_' + id);
+                var elKode = document.getElementById('lblCustKode_' + id);
                 var elPic = document.getElementById('lblCustPic_' + id);
                 var elTelp = document.getElementById('lblCustTelp_' + id);
                 var elEmail = document.getElementById('lblCustEmail_' + id);
                 var elAlamat = document.getElementById('lblCustAlamat_' + id);
                 if (elNama) elNama.textContent = 'Belum dipilih';
+                if (elKode) elKode.textContent = 'Kode: -';
                 if (elPic) elPic.textContent = '-';
                 if (elTelp) elTelp.textContent = '-';
                 if (elEmail) elEmail.textContent = '-';
@@ -1262,18 +1270,21 @@ document.addEventListener('DOMContentLoaded', function() {
             if (submitBtn) submitBtn.disabled = false;
 
             var fullName = opt.getAttribute('data-nama-bersih') || opt.text;
+            var kode = opt.getAttribute('data-kode') || '-';
             var pic = opt.getAttribute('data-pic') || '-';
             var telp = opt.getAttribute('data-telp') || '-';
             var email = opt.getAttribute('data-email') || '-';
             var alamat = opt.getAttribute('data-alamat') || '-';
             
             var elNama = document.getElementById('lblCustNama_' + id);
+            var elKode = document.getElementById('lblCustKode_' + id);
             var elPic = document.getElementById('lblCustPic_' + id);
             var elTelp = document.getElementById('lblCustTelp_' + id);
             var elEmail = document.getElementById('lblCustEmail_' + id);
             var elAlamat = document.getElementById('lblCustAlamat_' + id);
             
             if (elNama) elNama.textContent = fullName;
+            if (elKode) elKode.textContent = (kode && kode !== '-') ? 'Kode: #' + kode : 'Kode: -';
             if (elPic) elPic.textContent = pic;
             if (elTelp) elTelp.textContent = telp;
             if (elEmail) elEmail.textContent = email;

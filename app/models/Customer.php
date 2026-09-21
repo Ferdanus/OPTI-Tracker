@@ -53,7 +53,11 @@ class Customer extends \DB\SQL\Mapper {
      */
     public function getRegisteredPelangganOpti(): array {
         $rows = $this->db->exec(
-            "SELECT id_customer, kodex_perusahaan, nmcustomer, pt_cv, alamatcustomer, contactperson, contactperson_opti, notelpcustomer, nohpcontactperson_opti, emailcustomer
+            "SELECT id_customer, kodex_perusahaan, nmcustomer, pt_cv, 
+                    alamatcustomer, alamatcustomer_baru, lokasi_pabrik, kode_pos,
+                    contactperson, contactperson_opti, nama_pribadi,
+                    notelpcustomer, nohpcontactperson, nohpcontactperson_opti, nofaxcustomer,
+                    emailcustomer, emailcustomer_sertifikasi
              FROM tb_customer
              WHERE kodex_perusahaan IS NOT NULL 
                AND kodex_perusahaan != ''
@@ -62,6 +66,55 @@ class Customer extends \DB\SQL\Mapper {
         );
         foreach ($rows as &$r) {
             $r['nama_perusahaan_bersih'] = self::formatNamaPerusahaan($r['pt_cv'] ?? '', $r['nmcustomer'] ?? '');
+
+            // PIC bersih
+            $pic = trim($r['contactperson'] ?? '');
+            if (empty($pic) || $pic === '-') {
+                $pic = trim($r['contactperson_opti'] ?? '');
+            }
+            if (empty($pic) || $pic === '-') {
+                $pic = trim($r['nama_pribadi'] ?? '');
+            }
+            $r['pic_bersih'] = !empty($pic) ? $pic : '-';
+
+            // No HP / WA
+            $hp = trim($r['nohpcontactperson'] ?? '');
+            if (empty($hp) || $hp === '-') {
+                $hp = trim($r['nohpcontactperson_opti'] ?? '');
+            }
+            $r['hp_bersih'] = !empty($hp) ? $hp : '-';
+
+            // Telepon Kantor
+            $telpKantor = trim($r['notelpcustomer'] ?? '');
+            if (empty($telpKantor) || $telpKantor === '-') {
+                $telpKantor = trim($r['nofaxcustomer'] ?? '');
+            }
+            $r['telp_kantor_bersih'] = !empty($telpKantor) ? $telpKantor : '-';
+
+            // Telepon Gabungan (HP / Kantor)
+            if ($r['hp_bersih'] !== '-' && $r['telp_kantor_bersih'] !== '-' && $r['hp_bersih'] !== $r['telp_kantor_bersih']) {
+                $r['telp_bersih'] = $r['hp_bersih'] . ' / ' . $r['telp_kantor_bersih'];
+            } elseif ($r['hp_bersih'] !== '-') {
+                $r['telp_bersih'] = $r['hp_bersih'];
+            } elseif ($r['telp_kantor_bersih'] !== '-') {
+                $r['telp_bersih'] = $r['telp_kantor_bersih'];
+            } else {
+                $r['telp_bersih'] = '-';
+            }
+
+            // Email bersih
+            $email = trim($r['emailcustomer'] ?? '');
+            if (empty($email) || $email === '-') {
+                $email = trim($r['emailcustomer_sertifikasi'] ?? '');
+            }
+            $r['email_bersih'] = !empty($email) ? $email : '-';
+
+            // Alamat bersih
+            $alamat = trim($r['alamatcustomer'] ?? '');
+            if (empty($alamat) || $alamat === '-') {
+                $alamat = trim($r['alamatcustomer_baru'] ?? '');
+            }
+            $r['alamat_bersih'] = !empty($alamat) ? $alamat : '-';
         }
         unset($r);
         return $rows;
