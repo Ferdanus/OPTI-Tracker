@@ -10,7 +10,7 @@ class SuratMasukRepository {
     protected $dbMain;
     protected $dbSekretariat;
     protected $tableSekretariat;
-    protected $dbMainName = 'silopti_2026';
+    protected $dbMainName = 'silopti2026';
     protected $dbSekretariatName = 'sil2020';
 
     public function __construct(\DB\SQL $dbMain, ?\DB\SQL $dbSekretariat = null) {

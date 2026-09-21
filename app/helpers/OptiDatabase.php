@@ -3,9 +3,9 @@
 /**
  * OptiDatabase
  * Extends Fat-Free DB\SQL to support pure dual-database architecture:
- * - Operational OPTI tables are located in `silopti_2026`.
+ * - Operational OPTI tables are located in `silopti2026`.
  * - Shared master tables (`tb_customer`, `tb_arsipuser`, `tb_arsipsurat`, `tb_hari_libur`, `tb_surat_keluar`)
- *   remain physically in `sil2020` without requiring SQL Views in `silopti_2026`.
+ *   remain physically in `sil2020` without requiring SQL Views in `silopti2026`.
  */
 class OptiDatabase extends \DB\SQL {
     protected static $sharedTables = [
@@ -51,6 +51,6 @@ class OptiDatabase extends \DB\SQL {
     protected function rewriteSharedTables(string $sql): string {
         $tables = implode('|', self::$sharedTables);
         // Pastikan tabel master sekretariat selalu diarahkan ke sil2020 baik ditulis dengan/tanpa prefix ataupun backtick
-        return preg_replace('/(?<![a-zA-Z0-9_])(?:`?(?:silopti_2026|sil2020)`?\.)?`?(' . $tables . ')`?(?!\w)/i', '`sil2020`.`$1`', $sql);
+        return preg_replace('/(?<![a-zA-Z0-9_])(?:`?(?:silopti2026|silopti_2026|sil2020)`?\.)?`?(' . $tables . ')`?(?!\w)/i', '`sil2020`.`$1`', $sql);
     }
 }

@@ -31,7 +31,7 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['REQUEST_URI'])) {
     }
 }
 
-// Setup koneksi PDO Database melalui SQL Wrapper F3 (OptiDatabase untuk silopti_2026 & sil2020)
+// Setup koneksi PDO Database melalui SQL Wrapper F3 (OptiDatabase untuk silopti2026 & sil2020)
 require_once __DIR__ . '/app/helpers/OptiDatabase.php';
 
 try {
