@@ -615,9 +615,16 @@
                                 <button type="submit" name="action_type" value="draft" class="btn btn-light border px-3.5 py-2 fw-semibold text-secondary">
                                     <i class="bi bi-save me-1"></i> Simpan Draf
                                 </button>
-                                <button type="submit" name="action_type" value="ajukan" class="btn btn-primary px-4 py-2 fw-semibold text-white shadow-sm">
-                                    <i class="bi bi-send-fill me-1"></i> Ajukan ke Ketua Tim OPTI
-                                </button>
+                                <div class="text-end">
+                                    <button type="submit" id="btnKirimProposal" name="action_type" value="ajukan" class="btn btn-primary px-4 py-2 fw-semibold text-white shadow-sm" {{ empty(@proposal.file_proposal) ? 'disabled' : '' }} title="{{ empty(@proposal.file_proposal) ? 'Unggah berkas proposal terlebih dahulu untuk mengaktifkan tombol kirim' : 'Kirim proposal ke Ketua Tim OPTI' }}">
+                                        <i class="bi bi-send-fill me-1"></i> Kirim
+                                    </button>
+                                    <check if="{{ empty(@proposal.file_proposal) }}">
+                                        <small class="text-muted d-block mt-1" id="hintKirimProposal" style="font-size: 0.75rem;">
+                                            <i class="bi bi-info-circle me-1"></i> Unggah berkas dokumen proposal untuk mengaktifkan tombol kirim.
+                                        </small>
+                                    </check>
+                                </div>
                             </div>
                         </check>
                     </form>
@@ -936,6 +943,17 @@ function handleFileSelect(event) {
     }
 
     previewBox.classList.remove('d-none');
+
+    // Aktifkan tombol kirim & sembunyikan hint jika ada file terpilih
+    const btnKirim = document.getElementById('btnKirimProposal');
+    const hintKirim = document.getElementById('hintKirimProposal');
+    if (btnKirim) {
+        btnKirim.disabled = false;
+        btnKirim.title = 'Kirim proposal ke Ketua Tim OPTI';
+    }
+    if (hintKirim) {
+        hintKirim.classList.add('d-none');
+    }
 }
 
 function toggleLocalPdfPreview() {
@@ -995,6 +1013,19 @@ function cancelSelectedFile() {
     if (previewBox) previewBox.classList.add('d-none');
     if (inlineWrapper) inlineWrapper.classList.add('d-none');
     selectedFileObj = null;
+
+    const hasExistingFile = {{ !empty(@proposal.file_proposal) ? 'true' : 'false' }};
+    const btnKirim = document.getElementById('btnKirimProposal');
+    const hintKirim = document.getElementById('hintKirimProposal');
+    if (!hasExistingFile) {
+        if (btnKirim) {
+            btnKirim.disabled = true;
+            btnKirim.title = 'Unggah berkas proposal terlebih dahulu untuk mengaktifkan tombol kirim';
+        }
+        if (hintKirim) {
+            hintKirim.classList.remove('d-none');
+        }
+    }
 }
 
 // ========================================================
@@ -1262,7 +1293,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 if (!hasExistingFile && !hasNewFile) {
                     e.preventDefault();
-                    alert('Harap unggah berkas dokumen proposal teknis (.pdf / .docx / .xlsx) terlebih dahulu sebelum mengajukan ke Ketua Tim OPTI.');
                     const dropzone = document.getElementById('dropzoneContainer');
                     if (dropzone) {
                         dropzone.scrollIntoView({ behavior: 'smooth', block: 'center' });
