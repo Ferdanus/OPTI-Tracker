@@ -1060,13 +1060,6 @@
                         </div>
                     </check>
                     <check if="{{ @is_tinjauan_done }}">
-                        <!-- Khusus Lingkungan: Informasi Alur Layanan -->
-                        <check if="{{ @order.jenis_layanan_opti == 'lingkungan' }}">
-                            <div class="alert alert-info border-0 py-2 px-3 mb-3 small rounded-3">
-                                <i class="bi bi-info-circle-fill text-primary me-1"></i> Parameter pengujian siap dikelola. Anda dapat menyesuaikan katalog parameter di bawah atau langsung menerbitkan penawaran resmi tanpa perlu membuat proposal di awal.
-                            </div>
-                        </check>
-
                         <!-- Status & Biaya Ringkas -->
                         <div class="p-3 p-md-3 rounded-3 border bg-white mb-3 shadow-xs" style="border-left: 4px solid var(--color-primary, #334155) !important;">
                             <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3">
@@ -1097,12 +1090,12 @@
                                 </div>
                                 <div class="d-flex align-items-center gap-2 flex-wrap flex-shrink-0">
                                     <check if="{{ @order.jenis_layanan_opti == 'lingkungan' }}">
-                                        <a href="{{ @BASE }}/order/{{ @order.id }}/biaya-lingkungan" class="btn btn-primary btn-sm px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 text-nowrap shadow-xs">
-                                            <i class="bi bi-calculator"></i> Kelola Tarif &amp; Parameter
+                                        <a href="{{ @BASE }}/order/{{ @order.id }}/biaya-lingkungan" class="btn btn-primary btn-sm px-3.5 py-2 fw-semibold d-inline-flex align-items-center gap-1.5 text-nowrap shadow-xs">
+                                            <i class="bi {{ !empty(@kalkulasi_lingkungan) ? 'bi-pencil-square' : 'bi-plus-circle' }}"></i> {{ !empty(@kalkulasi_lingkungan) ? 'Kelola Tarif &amp; Parameter' : 'Susun Parameter &amp; Tarif' }}
                                         </a>
-                                        <check if="{{ !@penawaran }}">
-                                            <a href="{{ @BASE }}/order/{{ @order.id }}/penawaran/buat" class="btn btn-outline-primary btn-sm px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 text-nowrap shadow-xs">
-                                                <i class="bi bi-file-earmark-plus"></i> Terbitkan Penawaran Langsung
+                                        <check if="{{ !@penawaran && !empty(@kalkulasi_lingkungan) && count(@kalkulasi_lingkungan) > 0 }}">
+                                            <a href="{{ @BASE }}/order/{{ @order.id }}/penawaran/buat" class="btn btn-outline-primary btn-sm px-3.5 py-2 fw-semibold d-inline-flex align-items-center gap-1.5 text-nowrap shadow-xs">
+                                                <i class="bi bi-file-earmark-plus"></i> Terbitkan Penawaran
                                             </a>
                                         </check>
                                     </check>
@@ -1189,17 +1182,12 @@
                                 </div>
                             </check>
                             <check if="{{ empty(@kalkulasi_lingkungan) || count(@kalkulasi_lingkungan) == 0 }}">
-                                <div class="card border rounded-3 p-4 text-center bg-light mb-3">
-                                    <i class="bi bi-clipboard2-pulse fs-3 text-secondary opacity-50 d-block mb-1"></i>
-                                    <div class="fw-semibold text-dark small">Daftar Parameter Uji Belum Disusun</div>
-                                    <p class="text-muted small mb-3" style="max-width: 420px; margin: 0 auto; font-size: 0.78rem;">
-                                        Pilih metode uji dari katalog tarif resmi PP PNBP Kemenperin RI untuk menghitung total biaya pengujian laboratorium.
+                                <div class="card border border-dashed rounded-3 p-4 text-center bg-light mb-3">
+                                    <i class="bi bi-clipboard2-pulse fs-2 text-secondary opacity-50 d-block mb-1"></i>
+                                    <div class="fw-bold text-dark small">Daftar Parameter Uji Belum Disusun</div>
+                                    <p class="text-muted small mb-0" style="max-width: 440px; margin: 0 auto; font-size: 0.78rem;">
+                                        Pilih metode &amp; parameter uji dari katalog tarif resmi PP 54/2021 melalui tombol <strong>Susun Parameter &amp; Tarif</strong> di atas untuk menghitung total biaya pengujian.
                                     </p>
-                                    <div>
-                                        <a href="{{ @BASE }}/order/{{ @order.id }}/biaya-lingkungan" class="btn btn-sm btn-primary px-3 shadow-xs fw-semibold">
-                                            <i class="bi bi-plus-circle me-1"></i> Mulai Susun Parameter &amp; Tarif
-                                        </a>
-                                    </div>
                                 </div>
                             </check>
                         </check>
@@ -1261,26 +1249,9 @@
                             </div>
                         </check>
 
-                        <!-- Workflow Status Bar -->
+                        <!-- Workflow Status Bar (Khusus Selulosa / Non-Lingkungan) -->
                         <!-- 1. Jika Status masih Draft / Draft Disimpan -->
                         <check if="{{ @order.status_proposal_biaya == 'draft' || @order.status_proposal_biaya == 'draft_disimpan' || !@order.status_proposal_biaya }}">
-                            <check if="{{ @order.jenis_layanan_opti == 'lingkungan' }}">
-                                <div class="alert alert-info border-0 py-2 px-3 mb-0 d-flex justify-content-between align-items-center flex-wrap gap-2 small rounded-3">
-                                    <div>
-                                        <i class="bi bi-info-circle-fill text-primary me-1"></i> Parameter pengujian siap dikelola. Anda dapat menyesuaikan katalog parameter PNBP atau langsung menerbitkan penawaran resmi.
-                                    </div>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <a href="{{ @BASE }}/order/{{ @order.id }}/biaya-lingkungan" class="btn btn-sm btn-outline-primary px-3 fw-semibold">
-                                            <i class="bi bi-pencil-square me-1"></i> Editor Parameter
-                                        </a>
-                                        <check if="{{ !@penawaran }}">
-                                            <a href="{{ @BASE }}/order/{{ @order.id }}/penawaran/buat" class="btn btn-sm btn-primary px-3 fw-semibold">
-                                                <i class="bi bi-file-earmark-plus me-1"></i> Terbitkan Penawaran
-                                            </a>
-                                        </check>
-                                    </div>
-                                </div>
-                            </check>
                             <check if="{{ @order.jenis_layanan_opti != 'lingkungan' }}">
                                 <check if="{{ @user_id == @order.pic_proposal_id || @is_tim_kerja || @is_pejabat || @is_superadmin }}">
                                     <div class="pt-3 border-top">
