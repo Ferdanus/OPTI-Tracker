@@ -626,34 +626,28 @@
 
             <!-- Card Asal Surat Permohonan & Klien -->
             <div class="system-section-card" id="cardProfil">
-                <div class="system-section-header d-flex justify-content-between align-items-center">
-                    <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2">
-                        <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-0.5 small fw-bold">1</span>
-                        <i class="bi bi-person-vcard-fill text-primary"></i> Profil &amp; Asal Surat Permohonan
-                    </h6>
+                <div class="system-section-header d-flex justify-content-between align-items-start gap-2">
+                    <div>
+                        <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2">
+                            <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-0.5 small fw-bold">1</span>
+                            <i class="bi bi-person-vcard-fill text-primary"></i> Profil &amp; Asal Surat Permohonan
+                        </h6>
+                        <div class="d-flex align-items-center flex-wrap gap-1 text-muted small mt-1" style="font-size: 0.73rem;">
+                            <span>Sekretariat &amp; Tim Mitra</span>
+                            <check if="{{ @audit_stages[1].waktu_kirim }}">
+                                <span class="opacity-50 mx-0.5">&bull;</span>
+                                <span><i class="bi bi-send text-primary me-0.5"></i> Masuk: <strong class="text-dark fw-semibold">{{ date('d M Y', strtotime(@audit_stages[1].waktu_kirim)) }}</strong></span>
+                            </check>
+                            <check if="{{ @audit_stages[1].waktu_dibaca }}">
+                                <span class="opacity-50 mx-0.5">&bull;</span>
+                                <span><i class="bi bi-eye text-info me-0.5"></i> Dibaca: <strong class="text-dark fw-semibold">{{ date('d M Y, H:i', strtotime(@audit_stages[1].waktu_dibaca)) }}</strong> <span class="text-secondary">({{ @audit_stages[1].dibaca_nama ?: @audit_stages[1].dibaca_role }})</span></span>
+                            </check>
+                        </div>
+                    </div>
                     <button type="button" class="btn btn-sm btn-outline-primary py-0.5 px-2.5 d-inline-flex align-items-center gap-1.5 shadow-xs fw-semibold rounded-2" data-bs-toggle="modal" data-bs-target="#modalEditProfilPelanggan" title="Koreksi / Edit Data Pelanggan & Asal Surat">
                         <i class="bi bi-pencil-square"></i>
                         <span>Edit</span>
                     </button>
-                </div>
-                <!-- Audit Waktu & Petugas Tahap 1 -->
-                <div class="stage-audit-banner px-3 py-2 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2" style="background-color: #f8fafc; font-size: 0.74rem;">
-                    <div>
-                        <span class="text-secondary"><i class="bi bi-send-check text-primary me-1"></i><strong class="text-dark">Masuk/Kirim:</strong></span>
-                        <check if="{{ @audit_stages[1].waktu_kirim }}">
-                            <span class="fw-bold text-dark font-monospace">{{ date('d/m/y H:i', strtotime(@audit_stages[1].waktu_kirim)) }}</span>
-                            <span class="badge bg-light text-secondary border py-0.5 px-1.5 ms-1">{{ @audit_stages[1].pengirim_role }}</span>
-                        </check>
-                        <check if="{{ !@audit_stages[1].waktu_kirim }}"><span class="text-muted fst-italic ms-1">Belum</span></check>
-                    </div>
-                    <div>
-                        <span class="text-secondary"><i class="bi bi-eye text-info me-1"></i><strong class="text-dark">Dibaca:</strong></span>
-                        <check if="{{ @audit_stages[1].waktu_dibaca }}">
-                            <span class="fw-bold text-dark font-monospace">{{ date('d/m/y H:i', strtotime(@audit_stages[1].waktu_dibaca)) }}</span>
-                            <span class="badge bg-light text-secondary border py-0.5 px-1.5 ms-1">{{ @audit_stages[1].dibaca_role }}</span>
-                        </check>
-                        <check if="{{ !@audit_stages[1].waktu_dibaca }}"><span class="text-muted fst-italic ms-1">Belum</span></check>
-                    </div>
                 </div>
                 <div class="p-3">
                     <!-- 1. Identitas Profil Pelanggan / Perusahaan (Di Atas) -->
@@ -742,7 +736,17 @@
                             <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-0.5 small fw-bold">2</span>
                             <i class="bi bi-file-earmark-medical-fill text-primary fs-5"></i> Formulir Permintaan Pelayanan Jasa (F.PJT-08-01/02)
                         </h6>
-                        <small class="text-muted">Wewenang: Tim Mitra</small>
+                        <div class="d-flex align-items-center flex-wrap gap-1 text-muted small mt-1" style="font-size: 0.73rem;">
+                            <span>Tim Mitra</span>
+                            <check if="{{ @audit_stages[2].waktu_kirim }}">
+                                <span class="opacity-50 mx-0.5">&bull;</span>
+                                <span><i class="bi bi-send text-primary me-0.5"></i> Dikirim: <strong class="text-dark fw-semibold">{{ date('d M Y, H:i', strtotime(@audit_stages[2].waktu_kirim)) }}</strong> <span class="text-secondary">({{ @audit_stages[2].pengirim_nama ?: @audit_stages[2].pengirim_role }})</span></span>
+                            </check>
+                            <check if="{{ @audit_stages[2].waktu_dibaca }}">
+                                <span class="opacity-50 mx-0.5">&bull;</span>
+                                <span><i class="bi bi-eye text-info me-0.5"></i> Dibaca: <strong class="text-dark fw-semibold">{{ date('d M Y, H:i', strtotime(@audit_stages[2].waktu_dibaca)) }}</strong> <span class="text-secondary">({{ @audit_stages[2].dibaca_nama ?: @audit_stages[2].dibaca_role }})</span></span>
+                            </check>
+                        </div>
                     </div>
                     <check if="{{ @order.status == 'permintaan_masuk' }}">
                         <span class="badge bg-warning text-dark fw-bold">
@@ -754,34 +758,6 @@
                             <i class="bi bi-check-circle-fill me-1"></i> Diteruskan ke Ka. Tim {{ @order.jenis_layanan_opti == 'selulosa' ? 'Selulosa' : (@order.jenis_layanan_opti == 'lingkungan' ? 'Lingkungan' : 'OPTI') }}
                         </span>
                     </check>
-                </div>
-
-                <!-- Audit Waktu & Petugas Tahap 2 (First Time Only) -->
-                <div class="stage-audit-banner px-4 py-2 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2" style="background-color: #f8fafc; font-size: 0.775rem;">
-                    <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <span class="text-secondary d-flex align-items-center gap-1.5"><i class="bi bi-send-check text-primary"></i> <strong class="text-dark">Diproses / Kirim:</strong></span>
-                        <check if="{{ @audit_stages[2].waktu_kirim }}">
-                            <span class="fw-bold text-dark font-monospace">{{ date('d M Y, H:i', strtotime(@audit_stages[2].waktu_kirim)) }} WIB</span>
-                            <span class="badge bg-light text-secondary border py-0.5 px-2">
-                                <i class="bi bi-person-fill me-0.5 text-muted"></i> {{ @audit_stages[2].pengirim_nama ?: 'Tim Mitra' }} ({{ @audit_stages[2].pengirim_role }})
-                            </span>
-                        </check>
-                        <check if="{{ !@audit_stages[2].waktu_kirim }}">
-                            <span class="text-muted fst-italic">Belum diproses</span>
-                        </check>
-                    </div>
-                    <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <span class="text-secondary d-flex align-items-center gap-1.5"><i class="bi bi-eye text-info"></i> <strong class="text-dark">Pertama Dibaca:</strong></span>
-                        <check if="{{ @audit_stages[2].waktu_dibaca }}">
-                            <span class="fw-bold text-dark font-monospace">{{ date('d M Y, H:i', strtotime(@audit_stages[2].waktu_dibaca)) }} WIB</span>
-                            <span class="badge bg-light text-secondary border py-0.5 px-2">
-                                <i class="bi bi-check2-all me-0.5 text-info"></i> {{ @audit_stages[2].dibaca_nama ?: 'Ketua Tim' }} ({{ @audit_stages[2].dibaca_role }})
-                            </span>
-                        </check>
-                        <check if="{{ !@audit_stages[2].waktu_dibaca }}">
-                            <span class="text-muted fst-italic">Belum dibuka / dibaca</span>
-                        </check>
-                    </div>
                 </div>
 
                 <div class="p-4">
@@ -870,7 +846,17 @@
                             <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-0.5 small fw-bold">3</span>
                             <i class="bi bi-clipboard-check-fill text-primary fs-5"></i> Kaji Kelayakan Teknis Layanan <span class="badge bg-light text-secondary border font-monospace" style="font-size: 0.75rem;" data-bs-toggle="tooltip" title="Standar Internasional ISO/IEC 17025: Persyaratan umum kompetensi laboratorium pengujian &amp; kalibrasi">ISO 17025</span>
                         </h6>
-                        <small class="text-muted">Wewenang: Ketua Tim OPTI {{ @order.jenis_layanan_opti == 'selulosa' ? 'Selulosa' : (@order.jenis_layanan_opti == 'lingkungan' ? 'Lingkungan' : '') }}</small>
+                        <div class="d-flex align-items-center flex-wrap gap-1 text-muted small mt-1" style="font-size: 0.73rem;">
+                            <span>Ketua Tim OPTI {{ @order.jenis_layanan_opti == 'selulosa' ? 'Selulosa' : (@order.jenis_layanan_opti == 'lingkungan' ? 'Lingkungan' : '') }}</span>
+                            <check if="{{ @audit_stages[3].waktu_kirim }}">
+                                <span class="opacity-50 mx-0.5">&bull;</span>
+                                <span><i class="bi bi-send text-primary me-0.5"></i> Ditetapkan: <strong class="text-dark fw-semibold">{{ date('d M Y, H:i', strtotime(@audit_stages[3].waktu_kirim)) }}</strong> <span class="text-secondary">({{ @audit_stages[3].pengirim_nama ?: @audit_stages[3].pengirim_role }})</span></span>
+                            </check>
+                            <check if="{{ @audit_stages[3].waktu_dibaca }}">
+                                <span class="opacity-50 mx-0.5">&bull;</span>
+                                <span><i class="bi bi-eye text-info me-0.5"></i> Dibaca: <strong class="text-dark fw-semibold">{{ date('d M Y, H:i', strtotime(@audit_stages[3].waktu_dibaca)) }}</strong> <span class="text-secondary">({{ @audit_stages[3].dibaca_nama ?: @audit_stages[3].dibaca_role }})</span></span>
+                            </check>
+                        </div>
                     </div>
                     <check if="{{ @order.status == 'permintaan_masuk' }}">
                         <span class="badge bg-light text-secondary border">
@@ -889,34 +875,6 @@
                             </span>
                         </check>
                     </check>
-                </div>
-
-                <!-- Audit Waktu & Petugas Tahap 3 (First Time Only) -->
-                <div class="stage-audit-banner px-4 py-2 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2" style="background-color: #f8fafc; font-size: 0.775rem;">
-                    <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <span class="text-secondary d-flex align-items-center gap-1.5"><i class="bi bi-send-check text-primary"></i> <strong class="text-dark">Diproses / Ditetapkan:</strong></span>
-                        <check if="{{ @audit_stages[3].waktu_kirim }}">
-                            <span class="fw-bold text-dark font-monospace">{{ date('d M Y, H:i', strtotime(@audit_stages[3].waktu_kirim)) }} WIB</span>
-                            <span class="badge bg-light text-secondary border py-0.5 px-2">
-                                <i class="bi bi-person-fill me-0.5 text-muted"></i> {{ @audit_stages[3].pengirim_nama ?: 'Ketua Tim OPTI' }} ({{ @audit_stages[3].pengirim_role }})
-                            </span>
-                        </check>
-                        <check if="{{ !@audit_stages[3].waktu_kirim }}">
-                            <span class="text-muted fst-italic">Belum ditetapkan</span>
-                        </check>
-                    </div>
-                    <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <span class="text-secondary d-flex align-items-center gap-1.5"><i class="bi bi-eye text-info"></i> <strong class="text-dark">Pertama Dibaca:</strong></span>
-                        <check if="{{ @audit_stages[3].waktu_dibaca }}">
-                            <span class="fw-bold text-dark font-monospace">{{ date('d M Y, H:i', strtotime(@audit_stages[3].waktu_dibaca)) }} WIB</span>
-                            <span class="badge bg-light text-secondary border py-0.5 px-2">
-                                <i class="bi bi-check2-all me-0.5 text-info"></i> {{ @audit_stages[3].dibaca_nama ?: 'Tim Teknis' }} ({{ @audit_stages[3].dibaca_role }})
-                            </span>
-                        </check>
-                        <check if="{{ !@audit_stages[3].waktu_dibaca }}">
-                            <span class="text-muted fst-italic">Belum dibuka / dibaca</span>
-                        </check>
-                    </div>
                 </div>
 
                 <div class="p-4">
@@ -1043,14 +1001,34 @@
                                 <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-0.5 small fw-bold">4</span>
                                 <i class="bi bi-calculator-fill text-primary fs-5"></i> Parameter Uji &amp; Rincian Tarif Penawaran
                             </h6>
-                            <small class="text-muted">Laboratorium OPTI Lingkungan &bull; Standar SNI / ASTM / Standard Methods &bull; <span class="badge bg-light text-secondary border" data-bs-toggle="tooltip" title="Tarif PNBP resmi Kementerian Perindustrian berdasarkan PP No. 54 Tahun 2021">PP 54/2021</span></small>
+                            <div class="d-flex align-items-center flex-wrap gap-1 text-muted small mt-1" style="font-size: 0.73rem;">
+                                <span>Lab OPTI Lingkungan &bull; SNI/ASTM/SM &bull; <span class="badge bg-light text-secondary border py-0 px-1" data-bs-toggle="tooltip" title="Tarif PNBP resmi Kementerian Perindustrian berdasarkan PP No. 54 Tahun 2021">PP 54/2021</span></span>
+                                <check if="{{ @audit_stages[4].waktu_kirim }}">
+                                    <span class="opacity-50 mx-0.5">&bull;</span>
+                                    <span><i class="bi bi-send text-primary me-0.5"></i> Diajukan: <strong class="text-dark fw-semibold">{{ date('d M Y, H:i', strtotime(@audit_stages[4].waktu_kirim)) }}</strong> <span class="text-secondary">({{ @audit_stages[4].pengirim_nama ?: @audit_stages[4].pengirim_role }})</span></span>
+                                </check>
+                                <check if="{{ @audit_stages[4].waktu_dibaca }}">
+                                    <span class="opacity-50 mx-0.5">&bull;</span>
+                                    <span><i class="bi bi-eye text-info me-0.5"></i> Dibaca: <strong class="text-dark fw-semibold">{{ date('d M Y, H:i', strtotime(@audit_stages[4].waktu_dibaca)) }}</strong> <span class="text-secondary">({{ @audit_stages[4].dibaca_nama ?: @audit_stages[4].dibaca_role }})</span></span>
+                                </check>
+                            </div>
                         </check>
                         <check if="{{ @order.jenis_layanan_opti != 'lingkungan' }}">
                             <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2 font-display">
                                 <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-0.5 small fw-bold">4</span>
                                 <i class="bi bi-file-earmark-ruled-fill text-primary fs-5"></i> Ruang Kerja Proposal Teknis &amp; Biaya
                             </h6>
-                            <small class="text-muted">Penyusunan: Tim Pelaksana &bull; Persetujuan: Ketua Tim</small>
+                            <div class="d-flex align-items-center flex-wrap gap-1 text-muted small mt-1" style="font-size: 0.73rem;">
+                                <span>Tim Pelaksana &bull; Persetujuan Ka. Tim</span>
+                                <check if="{{ @audit_stages[4].waktu_kirim }}">
+                                    <span class="opacity-50 mx-0.5">&bull;</span>
+                                    <span><i class="bi bi-send text-primary me-0.5"></i> Diajukan: <strong class="text-dark fw-semibold">{{ date('d M Y, H:i', strtotime(@audit_stages[4].waktu_kirim)) }}</strong> <span class="text-secondary">({{ @audit_stages[4].pengirim_nama ?: @audit_stages[4].pengirim_role }})</span></span>
+                                </check>
+                                <check if="{{ @audit_stages[4].waktu_dibaca }}">
+                                    <span class="opacity-50 mx-0.5">&bull;</span>
+                                    <span><i class="bi bi-eye text-info me-0.5"></i> Dibaca: <strong class="text-dark fw-semibold">{{ date('d M Y, H:i', strtotime(@audit_stages[4].waktu_dibaca)) }}</strong> <span class="text-secondary">({{ @audit_stages[4].dibaca_nama ?: @audit_stages[4].dibaca_role }})</span></span>
+                                </check>
+                            </div>
                         </check>
                     </div>
                     <check if="{{ @order.status == 'permintaan_masuk' || (@order.jenis_layanan_opti == 'selulosa' && (!@tinjauan || @tinjauan.keputusan != 'dapat_dilaksanakan')) }}">
@@ -1077,34 +1055,6 @@
                             </check>
                         </check>
                     </check>
-                </div>
-
-                <!-- Audit Waktu & Petugas Tahap 4 (First Time Only) -->
-                <div class="stage-audit-banner px-4 py-2 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2" style="background-color: #f8fafc; font-size: 0.775rem;">
-                    <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <span class="text-secondary d-flex align-items-center gap-1.5"><i class="bi bi-send-check text-primary"></i> <strong class="text-dark">Diproses / Diajukan:</strong></span>
-                        <check if="{{ @audit_stages[4].waktu_kirim }}">
-                            <span class="fw-bold text-dark font-monospace">{{ date('d M Y, H:i', strtotime(@audit_stages[4].waktu_kirim)) }} WIB</span>
-                            <span class="badge bg-light text-secondary border py-0.5 px-2">
-                                <i class="bi bi-person-fill me-0.5 text-muted"></i> {{ @audit_stages[4].pengirim_nama ?: 'PIC Teknis' }} ({{ @audit_stages[4].pengirim_role }})
-                            </span>
-                        </check>
-                        <check if="{{ !@audit_stages[4].waktu_kirim }}">
-                            <span class="text-muted fst-italic">Belum diajukan</span>
-                        </check>
-                    </div>
-                    <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <span class="text-secondary d-flex align-items-center gap-1.5"><i class="bi bi-eye text-info"></i> <strong class="text-dark">Pertama Dibaca:</strong></span>
-                        <check if="{{ @audit_stages[4].waktu_dibaca }}">
-                            <span class="fw-bold text-dark font-monospace">{{ date('d M Y, H:i', strtotime(@audit_stages[4].waktu_dibaca)) }} WIB</span>
-                            <span class="badge bg-light text-secondary border py-0.5 px-2">
-                                <i class="bi bi-check2-all me-0.5 text-info"></i> {{ @audit_stages[4].dibaca_nama ?: 'Ketua Tim' }} ({{ @audit_stages[4].dibaca_role }})
-                            </span>
-                        </check>
-                        <check if="{{ !@audit_stages[4].waktu_dibaca }}">
-                            <span class="text-muted fst-italic">Belum dibuka / dibaca</span>
-                        </check>
-                    </div>
                 </div>
 
                 <div class="p-4">
@@ -1468,6 +1418,17 @@
                             <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-0.5 small fw-bold">5</span>
                             <i class="bi bi-file-earmark-text-fill text-primary fs-5"></i> Surat Penawaran Resmi &amp; Respon Klien
                         </h6>
+                        <div class="d-flex align-items-center flex-wrap gap-1 text-muted small mt-1" style="font-size: 0.73rem;">
+                            <span>Tim Mitra</span>
+                            <check if="{{ @audit_stages[5].waktu_kirim }}">
+                                <span class="opacity-50 mx-0.5">&bull;</span>
+                                <span><i class="bi bi-send text-primary me-0.5"></i> Terbit: <strong class="text-dark fw-semibold">{{ date('d M Y, H:i', strtotime(@audit_stages[5].waktu_kirim)) }}</strong> <span class="text-secondary">({{ @audit_stages[5].pengirim_nama ?: @audit_stages[5].pengirim_role }})</span></span>
+                            </check>
+                            <check if="{{ @audit_stages[5].waktu_dibaca }}">
+                                <span class="opacity-50 mx-0.5">&bull;</span>
+                                <span><i class="bi bi-eye text-info me-0.5"></i> Dibaca: <strong class="text-dark fw-semibold">{{ date('d M Y, H:i', strtotime(@audit_stages[5].waktu_dibaca)) }}</strong> <span class="text-secondary">({{ @audit_stages[5].dibaca_nama ?: @audit_stages[5].dibaca_role }})</span></span>
+                            </check>
+                        </div>
                     </div>
                     <div class="d-flex align-items-center gap-2">
                         <check if="{{ @total_penawaran > 0 }}">
@@ -1499,34 +1460,6 @@
                                     <i class="bi bi-file-earmark-plus me-1"></i> Siap Terbit
                                 </span>
                             </check>
-                        </check>
-                    </div>
-                </div>
-
-                <!-- Audit Waktu & Petugas Tahap 5 (First Time Only) -->
-                <div class="stage-audit-banner px-4 py-2 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2" style="background-color: #f8fafc; font-size: 0.775rem;">
-                    <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <span class="text-secondary d-flex align-items-center gap-1.5"><i class="bi bi-send-check text-primary"></i> <strong class="text-dark">Diproses / Terbit:</strong></span>
-                        <check if="{{ @audit_stages[5].waktu_kirim }}">
-                            <span class="fw-bold text-dark font-monospace">{{ date('d M Y, H:i', strtotime(@audit_stages[5].waktu_kirim)) }} WIB</span>
-                            <span class="badge bg-light text-secondary border py-0.5 px-2">
-                                <i class="bi bi-person-fill me-0.5 text-muted"></i> {{ @audit_stages[5].pengirim_nama ?: 'Tim Mitra' }} ({{ @audit_stages[5].pengirim_role }})
-                            </span>
-                        </check>
-                        <check if="{{ !@audit_stages[5].waktu_kirim }}">
-                            <span class="text-muted fst-italic">Belum terbit</span>
-                        </check>
-                    </div>
-                    <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <span class="text-secondary d-flex align-items-center gap-1.5"><i class="bi bi-eye text-info"></i> <strong class="text-dark">Pertama Dibaca:</strong></span>
-                        <check if="{{ @audit_stages[5].waktu_dibaca }}">
-                            <span class="fw-bold text-dark font-monospace">{{ date('d M Y, H:i', strtotime(@audit_stages[5].waktu_dibaca)) }} WIB</span>
-                            <span class="badge bg-light text-secondary border py-0.5 px-2">
-                                <i class="bi bi-check2-all me-0.5 text-info"></i> {{ @audit_stages[5].dibaca_nama ?: 'Pelanggan' }} ({{ @audit_stages[5].dibaca_role }})
-                            </span>
-                        </check>
-                        <check if="{{ !@audit_stages[5].waktu_dibaca }}">
-                            <span class="text-muted fst-italic">Belum dibuka / direspon</span>
                         </check>
                     </div>
                 </div>
@@ -1806,6 +1739,17 @@
                             <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-0.5 small fw-bold">6</span>
                             <i class="bi bi-receipt-cutoff text-primary fs-5"></i> Bukti Pembayaran Pelanggan (Tim Keuangan)
                         </h6>
+                        <div class="d-flex align-items-center flex-wrap gap-1 text-muted small mt-1" style="font-size: 0.73rem;">
+                            <span>Bagian Keuangan</span>
+                            <check if="{{ @audit_stages[6].waktu_kirim }}">
+                                <span class="opacity-50 mx-0.5">&bull;</span>
+                                <span><i class="bi bi-send text-primary me-0.5"></i> Verifikasi: <strong class="text-dark fw-semibold">{{ date('d M Y, H:i', strtotime(@audit_stages[6].waktu_kirim)) }}</strong> <span class="text-secondary">({{ @audit_stages[6].pengirim_nama ?: @audit_stages[6].pengirim_role }})</span></span>
+                            </check>
+                            <check if="{{ @audit_stages[6].waktu_dibaca }}">
+                                <span class="opacity-50 mx-0.5">&bull;</span>
+                                <span><i class="bi bi-eye text-info me-0.5"></i> Dibaca: <strong class="text-dark fw-semibold">{{ date('d M Y, H:i', strtotime(@audit_stages[6].waktu_dibaca)) }}</strong> <span class="text-secondary">({{ @audit_stages[6].dibaca_nama ?: @audit_stages[6].dibaca_role }})</span></span>
+                            </check>
+                        </div>
                     </div>
                     <div class="d-flex align-items-center gap-2">
                         <check if="{{ @order.status_keuangan == 'lunas' || !empty(@riwayat_bayar) }}">
@@ -1824,34 +1768,6 @@
                                     <i class="bi bi-lock-fill me-1"></i> Terkunci
                                 </span>
                             </check>
-                        </check>
-                    </div>
-                </div>
-
-                <!-- Audit Waktu & Petugas Tahap 6 (First Time Only) -->
-                <div class="stage-audit-banner px-4 py-2 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2" style="background-color: #f8fafc; font-size: 0.775rem;">
-                    <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <span class="text-secondary d-flex align-items-center gap-1.5"><i class="bi bi-send-check text-primary"></i> <strong class="text-dark">Diproses / Verifikasi:</strong></span>
-                        <check if="{{ @audit_stages[6].waktu_kirim }}">
-                            <span class="fw-bold text-dark font-monospace">{{ date('d M Y, H:i', strtotime(@audit_stages[6].waktu_kirim)) }} WIB</span>
-                            <span class="badge bg-light text-secondary border py-0.5 px-2">
-                                <i class="bi bi-person-fill me-0.5 text-muted"></i> {{ @audit_stages[6].pengirim_nama ?: 'Bagian Keuangan' }} ({{ @audit_stages[6].pengirim_role }})
-                            </span>
-                        </check>
-                        <check if="{{ !@audit_stages[6].waktu_kirim }}">
-                            <span class="text-muted fst-italic">Belum lunas / diverifikasi</span>
-                        </check>
-                    </div>
-                    <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <span class="text-secondary d-flex align-items-center gap-1.5"><i class="bi bi-eye text-info"></i> <strong class="text-dark">Pertama Dibaca:</strong></span>
-                        <check if="{{ @audit_stages[6].waktu_dibaca }}">
-                            <span class="fw-bold text-dark font-monospace">{{ date('d M Y, H:i', strtotime(@audit_stages[6].waktu_dibaca)) }} WIB</span>
-                            <span class="badge bg-light text-secondary border py-0.5 px-2">
-                                <i class="bi bi-check2-all me-0.5 text-info"></i> {{ @audit_stages[6].dibaca_nama ?: 'Keuangan' }} ({{ @audit_stages[6].dibaca_role }})
-                            </span>
-                        </check>
-                        <check if="{{ !@audit_stages[6].waktu_dibaca }}">
-                            <span class="text-muted fst-italic">Belum dibuka / dibaca</span>
                         </check>
                     </div>
                 </div>
@@ -2225,10 +2141,23 @@
             <!-- ======================================================== -->
             <div class="system-section-card" id="cardSampelSpm">
                 <div class="system-section-header">
-                    <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2 font-display">
-                        <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-0.5 small fw-bold">7</span>
-                        <i class="bi bi-box-seam text-primary fs-5"></i> Penerimaan Sampel Fisik Lab &amp; Jadwal SPM <span class="badge bg-light text-secondary border font-monospace" style="font-size: 0.75rem;" data-bs-toggle="tooltip" title="Standar Pelayanan Minimal: Batas hari kerja resmi penyelesaian uji laboratorium">SPM</span>
-                    </h6>
+                    <div>
+                        <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2 font-display">
+                            <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-0.5 small fw-bold">7</span>
+                            <i class="bi bi-box-seam text-primary fs-5"></i> Penerimaan Sampel Fisik Lab &amp; Jadwal SPM <span class="badge bg-light text-secondary border font-monospace" style="font-size: 0.75rem;" data-bs-toggle="tooltip" title="Standar Pelayanan Minimal: Batas hari kerja resmi penyelesaian uji laboratorium">SPM</span>
+                        </h6>
+                        <div class="d-flex align-items-center flex-wrap gap-1 text-muted small mt-1" style="font-size: 0.73rem;">
+                            <span>Petugas Pengelola Sampel</span>
+                            <check if="{{ @audit_stages[7].waktu_kirim }}">
+                                <span class="opacity-50 mx-0.5">&bull;</span>
+                                <span><i class="bi bi-send text-primary me-0.5"></i> Diterima: <strong class="text-dark fw-semibold">{{ date('d M Y', strtotime(@audit_stages[7].waktu_kirim)) }}</strong> <span class="text-secondary">({{ @audit_stages[7].pengirim_nama ?: @audit_stages[7].pengirim_role }})</span></span>
+                            </check>
+                            <check if="{{ @audit_stages[7].waktu_dibaca }}">
+                                <span class="opacity-50 mx-0.5">&bull;</span>
+                                <span><i class="bi bi-eye text-info me-0.5"></i> Dibaca: <strong class="text-dark fw-semibold">{{ date('d M Y, H:i', strtotime(@audit_stages[7].waktu_dibaca)) }}</strong> <span class="text-secondary">({{ @audit_stages[7].dibaca_nama ?: @audit_stages[7].dibaca_role }})</span></span>
+                            </check>
+                        </div>
+                    </div>
                     <check if="{{ @order.tanggal_terima_sampel }}">
                         <span class="badge bg-success-subtle text-success border border-success-subtle">
                             <i class="bi bi-calendar-check me-1"></i> Sampel Diterima (SPM Aktif)
@@ -2242,34 +2171,6 @@
                             <span class="badge bg-light text-secondary border"><i class="bi bi-lock-fill me-1"></i> Terkunci</span>
                         </check>
                     </check>
-                </div>
-
-                <!-- Audit Waktu & Petugas Tahap 7 (First Time Only) -->
-                <div class="stage-audit-banner px-4 py-2 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2" style="background-color: #f8fafc; font-size: 0.775rem;">
-                    <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <span class="text-secondary d-flex align-items-center gap-1.5"><i class="bi bi-send-check text-primary"></i> <strong class="text-dark">Sampel Diterima:</strong></span>
-                        <check if="{{ @audit_stages[7].waktu_kirim }}">
-                            <span class="fw-bold text-dark font-monospace">{{ date('d M Y', strtotime(@audit_stages[7].waktu_kirim)) }}</span>
-                            <span class="badge bg-light text-secondary border py-0.5 px-2">
-                                <i class="bi bi-person-fill me-0.5 text-muted"></i> {{ @audit_stages[7].pengirim_nama ?: 'Petugas Sampel' }} ({{ @audit_stages[7].pengirim_role }})
-                            </span>
-                        </check>
-                        <check if="{{ !@audit_stages[7].waktu_kirim }}">
-                            <span class="text-muted fst-italic">Sampel belum diterima</span>
-                        </check>
-                    </div>
-                    <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <span class="text-secondary d-flex align-items-center gap-1.5"><i class="bi bi-eye text-info"></i> <strong class="text-dark">Pertama Dibaca:</strong></span>
-                        <check if="{{ @audit_stages[7].waktu_dibaca }}">
-                            <span class="fw-bold text-dark font-monospace">{{ date('d M Y, H:i', strtotime(@audit_stages[7].waktu_dibaca)) }} WIB</span>
-                            <span class="badge bg-light text-secondary border py-0.5 px-2">
-                                <i class="bi bi-check2-all me-0.5 text-info"></i> {{ @audit_stages[7].dibaca_nama ?: 'Laboratorium' }} ({{ @audit_stages[7].dibaca_role }})
-                            </span>
-                        </check>
-                        <check if="{{ !@audit_stages[7].waktu_dibaca }}">
-                            <span class="text-muted fst-italic">Belum dibuka / dibaca</span>
-                        </check>
-                    </div>
                 </div>
 
                 <div class="p-4">
@@ -2361,10 +2262,23 @@
             <!-- ======================================================== -->
             <div class="system-section-card" id="cardPoBast">
                 <div class="system-section-header">
-                    <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2 font-display">
-                        <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-0.5 small fw-bold">8</span>
-                        <i class="bi bi-patch-check-fill text-primary fs-5"></i> BAST
-                    </h6>
+                    <div>
+                        <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2 font-display">
+                            <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-0.5 small fw-bold">8</span>
+                            <i class="bi bi-patch-check-fill text-primary fs-5"></i> BAST
+                        </h6>
+                        <div class="d-flex align-items-center flex-wrap gap-1 text-muted small mt-1" style="font-size: 0.73rem;">
+                            <span>Tim Mitra &amp; Pihak Berwenang</span>
+                            <check if="{{ @audit_stages[8].waktu_kirim }}">
+                                <span class="opacity-50 mx-0.5">&bull;</span>
+                                <span><i class="bi bi-send text-primary me-0.5"></i> Terbit: <strong class="text-dark fw-semibold">{{ date('d M Y, H:i', strtotime(@audit_stages[8].waktu_kirim)) }}</strong> <span class="text-secondary">({{ @audit_stages[8].pengirim_nama ?: @audit_stages[8].pengirim_role }})</span></span>
+                            </check>
+                            <check if="{{ @audit_stages[8].waktu_dibaca }}">
+                                <span class="opacity-50 mx-0.5">&bull;</span>
+                                <span><i class="bi bi-eye text-info me-0.5"></i> Dibaca: <strong class="text-dark fw-semibold">{{ date('d M Y, H:i', strtotime(@audit_stages[8].waktu_dibaca)) }}</strong> <span class="text-secondary">({{ @audit_stages[8].dibaca_nama ?: @audit_stages[8].dibaca_role }})</span></span>
+                            </check>
+                        </div>
+                    </div>
                     <check if="{{ @order.po_id }}">
                         <span class="badge bg-primary-subtle text-primary border border-primary-subtle">PO Aktif: {{ @order.nomor_po }}</span>
                     </check>
@@ -2378,34 +2292,6 @@
                             </span>
                         </check>
                     </check>
-                </div>
-
-                <!-- Audit Waktu & Petugas Tahap 8 (First Time Only) -->
-                <div class="stage-audit-banner px-4 py-2 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2" style="background-color: #f8fafc; font-size: 0.775rem;">
-                    <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <span class="text-secondary d-flex align-items-center gap-1.5"><i class="bi bi-send-check text-primary"></i> <strong class="text-dark">Diproses / BAST:</strong></span>
-                        <check if="{{ @audit_stages[8].waktu_kirim }}">
-                            <span class="fw-bold text-dark font-monospace">{{ date('d M Y, H:i', strtotime(@audit_stages[8].waktu_kirim)) }} WIB</span>
-                            <span class="badge bg-light text-secondary border py-0.5 px-2">
-                                <i class="bi bi-person-fill me-0.5 text-muted"></i> {{ @audit_stages[8].pengirim_nama ?: 'Tim Mitra' }} ({{ @audit_stages[8].pengirim_role }})
-                            </span>
-                        </check>
-                        <check if="{{ !@audit_stages[8].waktu_kirim }}">
-                            <span class="text-muted fst-italic">BAST belum terbit</span>
-                        </check>
-                    </div>
-                    <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <span class="text-secondary d-flex align-items-center gap-1.5"><i class="bi bi-eye text-info"></i> <strong class="text-dark">Pertama Dibaca:</strong></span>
-                        <check if="{{ @audit_stages[8].waktu_dibaca }}">
-                            <span class="fw-bold text-dark font-monospace">{{ date('d M Y, H:i', strtotime(@audit_stages[8].waktu_dibaca)) }} WIB</span>
-                            <span class="badge bg-light text-secondary border py-0.5 px-2">
-                                <i class="bi bi-check2-all me-0.5 text-info"></i> {{ @audit_stages[8].dibaca_nama ?: 'Pihak Berwenang' }} ({{ @audit_stages[8].dibaca_role }})
-                            </span>
-                        </check>
-                        <check if="{{ !@audit_stages[8].waktu_dibaca }}">
-                            <span class="text-muted fst-italic">Belum dibuka / dibaca</span>
-                        </check>
-                    </div>
                 </div>
 
                 <div class="p-4">
@@ -2916,15 +2802,6 @@
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
     border-color: #cbd5e1 !important;
     z-index: 1060 !important;
-}
-/* Styling Stage Audit Banner */
-.stage-audit-banner {
-    background: #f8fafc;
-    border-bottom: 1px solid #e2e8f0;
-    transition: background-color 0.2s ease;
-}
-.stage-audit-banner:hover {
-    background-color: #f1f5f9;
 }
 </style>
 
