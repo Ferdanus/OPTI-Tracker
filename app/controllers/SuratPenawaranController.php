@@ -597,13 +597,10 @@ $daftarPegawai = $arsipUser->find(
         }
 
         $mode = $f3->get('GET.mode') ?? '';
-        // Hanya buat revisi baru jika ada permintaan eksplisit ?mode=baru, BUKAN otomatis saat mengedit
-        $isRevisiBaru = ($mode === 'baru');
+        // Default selalu terbitkan sebagai revisi baru jika sudah ada surat penawaran sebelumnya
+        $isRevisiBaru = !empty($spExisting);
         $nomorSuratOtomatis = $spModel->generateNomorSurat();
-        $revisiKe = count($allSp) + ($isRevisiBaru ? 1 : 0);
-        if ($revisiKe === 0) {
-            $revisiKe = 1;
-        }
+        $revisiKe = count($allSp) + 1;
 
         $proposal = ($order['jenis_layanan_opti'] === 'selulosa') ? $orderModel->getProposalRiset($orderId) : null;
         $kalkulasi = ($order['jenis_layanan_opti'] === 'lingkungan') ? $orderModel->getKalkulasiLingkungan($orderId) : [];

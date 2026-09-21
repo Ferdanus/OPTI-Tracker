@@ -822,20 +822,10 @@
                         </div>
                     </div>
 
-                    <!-- Opsi Dokumen Penawaran Baru (Revisi) -->
+                    <!-- Default Terbitkan sebagai Revisi Baru jika ada penawaran sebelumnya -->
                     <check if="{{ @sp_existing }}">
-                        <div class="p-3 bg-light rounded-3 border mt-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="is_revisi_baru" id="check_revisi_baru" value="1" {{ @is_revisi_baru ? 'checked' : '' }} {{ !@can_edit ? 'disabled' : '' }}>
-                                <label class="form-check-label small fw-bold text-dark" for="check_revisi_baru">
-                                    Terbitkan sebagai Surat Revisi Baru (Revisi Ke-{{ @revisi_ke }})
-                                </label>
-                            </div>
-                            <small class="text-muted d-block ms-4 mt-1" style="font-size: 0.75rem;">
-                                Centang jika ingin menerbitkan surat revisi baru. Surat sebelumnya ({{ @sp_existing.nomor_surat }}) tetap tersimpan aman di riwayat arsip dan tidak akan tertimpa.
-                            </small>
-                            <input type="hidden" name="penawaran_id" value="{{ @sp_existing.id }}">
-                        </div>
+                        <input type="hidden" name="is_revisi_baru" id="check_revisi_baru" value="1">
+                        <input type="hidden" name="penawaran_id" value="{{ @sp_existing.id }}">
                     </check>
                 </div>
             </div>
@@ -1567,7 +1557,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     var checkRevisi = document.getElementById('check_revisi_baru');
     var inputNomorSurat = document.getElementById('input_nomor_surat');
-    if (checkRevisi && inputNomorSurat) {
+    if (checkRevisi && checkRevisi.type === 'checkbox' && inputNomorSurat) {
         checkRevisi.addEventListener('change', function() {
             if (this.checked) {
                 inputNomorSurat.value = inputNomorSurat.dataset.nomorBaru || '';
