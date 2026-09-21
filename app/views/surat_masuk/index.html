@@ -568,29 +568,9 @@
                         
                         <!-- 1. Pemilihan Instansi Pelanggan -->
                         <div class="mb-3">
-                            <label class="form-label small fw-semibold text-dark mb-1 d-flex justify-content-between align-items-center">
-                                <span>Instansi Pelanggan <span class="text-danger">*</span></span>
-                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle fw-medium" style="font-size:0.7rem;">
-                                    <i class="bi bi-search me-1"></i>Pencarian Cepat
-                                </span>
+                            <label class="form-label small fw-semibold text-dark mb-1">
+                                Instansi Pelanggan <span class="text-danger">*</span>
                             </label>
-
-                            <check if="{{ !empty(@surat.id_customer) }}">
-                                <div class="p-2 mb-2 bg-primary-subtle border border-primary-subtle rounded-2 d-flex justify-content-between align-items-center">
-                                    <div class="small text-truncate me-2">
-                                        <i class="bi bi-magic text-primary me-1"></i>
-                                        <span class="text-muted">Sesuai berkas surat:</span>
-                                        <strong class="text-dark">{{ @surat.nama_pengirim_bersih ?: @surat.pengirim }}</strong>
-                                    </div>
-                                    <button type="button" class="btn btn-primary btn-sm py-1 px-2 fw-semibold btn-quick-pick flex-shrink-0" 
-                                            data-modal-id="{{ @surat.id }}" 
-                                            data-target-cust="{{ @surat.id_customer }}"
-                                            style="font-size:0.75rem;">
-                                        <i class="bi bi-check2-circle me-1"></i>Pilih Otomatis
-                                    </button>
-                                </div>
-                            </check>
-
                             <select name="id_customer" class="form-select form-select-sm fw-semibold select-customer-modal" data-modal-id="{{ @surat.id }}" placeholder="Ketik nama PT/CV, kode pelanggan, nama PIC, atau alamat..." required>
                                 <option value="">-- Ketik untuk mencari perusahaan (nama/kode/PIC) --</option>
                                 <repeat group="{{ @daftar_customer_opti }}" value="{{ @cust }}">
@@ -610,9 +590,6 @@
                                     </option>
                                 </repeat>
                             </select>
-                            <small class="text-muted mt-1 d-block" style="font-size:0.72rem;">
-                                <i class="bi bi-info-circle me-1"></i>Bisa mencari berdasarkan <strong>nama PT</strong>, <strong>nomor kode</strong>, atau <strong>nama PIC</strong>.
-                            </small>
                         </div>
 
                         <!-- 2. Preview Data Pelanggan Terpilih -->
@@ -1424,23 +1401,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         });
-    });
-
-    // Event listener untuk tombol 'Pilih Otomatis' sesuai rujukan berkas surat masuk
-    document.addEventListener('click', function(e) {
-        var btn = e.target.closest('.btn-quick-pick');
-        if (!btn) return;
-        var modalId = btn.getAttribute('data-modal-id');
-        var custId = btn.getAttribute('data-target-cust');
-        var select = document.querySelector('.select-customer-modal[data-modal-id="' + modalId + '"]');
-        if (select && custId) {
-            if (select.tomselect) {
-                select.tomselect.setValue(custId);
-            } else {
-                select.value = custId;
-                syncCustomerCard(select);
-            }
-        }
     });
 });
 </script>
