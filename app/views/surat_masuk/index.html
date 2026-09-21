@@ -586,7 +586,7 @@
                                             data-telp="{{ @cust.telp_bersih ?: '-' }}"
                                             data-email="{{ @cust.email_bersih ?: '-' }}"
                                             {{ @surat.id_customer == @cust.id_customer ? 'selected' : '' }}>
-                                        {{ @cust.nama_perusahaan_bersih }} [Kode: #{{ @cust.kodex_perusahaan }}]
+                                        {{ @cust.nama_perusahaan_bersih }}
                                     </option>
                                 </repeat>
                             </select>
@@ -594,12 +594,9 @@
 
                         <!-- 2. Preview Data Pelanggan Terpilih -->
                         <div class="border rounded-2 p-3 bg-white mb-3 shadow-xs">
-                            <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                            <div class="mb-2 pb-2 border-bottom">
                                 <span class="small fw-bold text-dark d-flex align-items-center gap-1">
                                     <i class="bi bi-building text-primary"></i> Data Pelanggan Terpilih
-                                </span>
-                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle" id="lblCustKode_{{ @surat.id }}">
-                                    Kode: #{{ @surat.kodex_perusahaan ?: '-' }}
                                 </span>
                             </div>
                             <div class="row g-2 small">
@@ -1343,30 +1340,26 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             render: {
                 option: function(data, escape) {
-                    var kode = data.kode && data.kode !== '-' ? '#' + escape(data.kode) : '';
                     var pic = data.pic && data.pic !== '-' ? '<span class="fw-semibold text-dark">PIC: ' + escape(data.pic) + '</span>' : '';
                     var alamat = data.alamat && data.alamat !== '-' ? escape(data.alamat) : '';
                     var sub = [pic, alamat].filter(Boolean).join(' • ');
                     return '<div class="py-2 px-3 border-bottom">' +
-                        '<div class="d-flex justify-content-between align-items-center mb-1">' +
-                            '<span class="fw-bold text-dark"><i class="bi bi-building me-2 text-primary"></i>' + escape(data.nama || data.text) + '</span>' +
-                            (kode ? '<span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace" style="font-size:0.72rem;">Kode ' + kode + '</span>' : '') +
+                        '<div class="fw-bold text-dark mb-1">' +
+                            '<i class="bi bi-building me-2 text-primary"></i>' + escape(data.nama || data.text) +
                         '</div>' +
                         (sub ? '<div class="text-muted text-truncate small" style="font-size:0.75rem; max-width:440px;">' + sub + '</div>' : '') +
                     '</div>';
                 },
                 item: function(data, escape) {
-                    var kode = data.kode && data.kode !== '-' ? ' [Kode: #' + escape(data.kode) + ']' : '';
                     return '<div class="fw-bold text-dark text-truncate">' +
                         '<i class="bi bi-building text-primary me-2"></i>' +
                         escape(data.nama || data.text) +
-                        (kode ? '<span class="text-primary small ms-1">' + kode + '</span>' : '') +
                     '</div>';
                 },
                 no_results: function(data, escape) {
                     return '<div class="p-3 text-center text-muted small">' +
                         '<i class="bi bi-exclamation-circle text-warning me-1"></i> Tidak ditemukan perusahaan dengan kata kunci "<strong>' + escape(data.input) + '</strong>".' +
-                        '<div class="mt-1 text-secondary" style="font-size:0.75rem;">Coba ketik nama instansi lain atau nomor kode pelanggan balai.</div>' +
+                        '<div class="mt-1 text-secondary" style="font-size:0.75rem;">Coba periksa ejaan atau ketik nama instansi lainnya.</div>' +
                     '</div>';
                 }
             },
