@@ -661,8 +661,9 @@
                         <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-2 fw-semibold" data-bs-dismiss="modal">
                             Batal
                         </button>
-                        <button type="submit" class="btn btn-primary btn-sm px-4 py-2 fw-bold shadow-sm" id="btnSubmitKlaim_{{ @surat.id }}" {{ empty(@surat.id_customer) ? 'disabled' : '' }}>
-                            <i class="bi bi-check2-circle me-1"></i> Terima & Buat Order
+                        <button type="submit" class="btn btn-primary btn-sm px-4 py-2 fw-bold shadow-sm" id="btnSubmitKlaim_{{ @surat.id }}" {{ empty(@surat.id_customer) ? 'disabled title="Pilih instansi pelanggan terlebih dahulu untuk memproses surat ini"' : '' }}>
+                            <i class="bi bi-{{ empty(@surat.id_customer) ? 'lock-fill' : 'check2-circle' }} me-1" id="btnSubmitKlaimIcon_{{ @surat.id }}"></i> 
+                            <span id="btnSubmitKlaimText_{{ @surat.id }}">Terima & Buat Order</span>
                         </button>
                     </div>
 
@@ -1251,7 +1252,12 @@ document.addEventListener('DOMContentLoaded', function() {
             var submitBtn = document.getElementById('btnSubmitKlaim_' + id);
 
             if (!opt || !opt.value) {
-                if (submitBtn) submitBtn.disabled = true;
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.setAttribute('title', 'Pilih instansi pelanggan terlebih dahulu untuk memproses surat ini');
+                    var icon = document.getElementById('btnSubmitKlaimIcon_' + id);
+                    if (icon) icon.className = 'bi bi-lock-fill me-1';
+                }
                 var elNama = document.getElementById('lblCustNama_' + id);
                 var elKode = document.getElementById('lblCustKode_' + id);
                 var elPic = document.getElementById('lblCustPic_' + id);
@@ -1267,7 +1273,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            if (submitBtn) submitBtn.disabled = false;
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.removeAttribute('title');
+                var icon = document.getElementById('btnSubmitKlaimIcon_' + id);
+                if (icon) icon.className = 'bi bi-check2-circle me-1';
+            }
 
             var fullName = opt.getAttribute('data-nama-bersih') || opt.text;
             var kode = opt.getAttribute('data-kode') || '-';

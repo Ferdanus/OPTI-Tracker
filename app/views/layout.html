@@ -181,6 +181,35 @@
             box-shadow: 0 0 0 3px rgba(51, 65, 85, 0.15) !important;
         }
 
+        /* ============ TOMBOL DISABLED / LOCKED (TEGAS & JELAS TIDAK AKTIF) ============ */
+        .btn:disabled,
+        .btn.disabled,
+        button:disabled,
+        input[type="submit"]:disabled {
+            background-color: #e2e8f0 !important;
+            border-color: #cbd5e1 !important;
+            color: #94a3b8 !important;
+            cursor: not-allowed !important;
+            box-shadow: none !important;
+            opacity: 1 !important;
+            pointer-events: auto !important;
+        }
+        .btn:disabled *,
+        .btn.disabled *,
+        button:disabled * {
+            color: #94a3b8 !important;
+        }
+        .btn:disabled:hover,
+        .btn.disabled:hover,
+        button:disabled:hover,
+        input[type="submit"]:disabled:hover {
+            background-color: #e2e8f0 !important;
+            border-color: #cbd5e1 !important;
+            color: #94a3b8 !important;
+            cursor: not-allowed !important;
+            box-shadow: none !important;
+        }
+
         h1, h2, h3, h4, h5, h6, .font-display {
             font-family: var(--font-display);
             letter-spacing: -0.02em;
