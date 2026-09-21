@@ -289,7 +289,7 @@ class StageAudit {
                 }
 
                 // Tahap 2: Formulir Permintaan Pelayanan Jasa
-                if (empty($result[2]['waktu_kirim']) && ($order['status'] ?? '') !== 'permintaan_masuk') {
+                if (empty($result[2]['waktu_kirim']) && !in_array($order['status'] ?? '', ['permintaan_masuk', 'draft_disimpan', 'draft'])) {
                     $tglKirim2 = !empty($extra['penawaran']['created_at']) ? $extra['penawaran']['created_at'] : $order['created_at'];
                     $pengirim2 = !empty($extra['penawaran']['pembuat_nama']) ? $extra['penawaran']['pembuat_nama'] : ($order['nama_pengklaim'] ?: 'Tim Mitra');
                     $divisi    = ($order['jenis_layanan_opti'] ?? '') === 'lingkungan' ? 'Lingkungan' : 'Selulosa';
@@ -301,7 +301,7 @@ class StageAudit {
                 }
 
                 // Tahap 3: Kaji Kelayakan Teknis
-                if (empty($result[3]['waktu_kirim']) && !empty($extra['tinjauan'])) {
+                if (empty($result[3]['waktu_kirim']) && !empty($extra['tinjauan']) && empty($extra['tinjauan']['is_draft'])) {
                     $tglKirim3 = !empty($extra['tinjauan']['tanggal_tinjauan']) ? $extra['tinjauan']['tanggal_tinjauan'] : $extra['tinjauan']['created_at'];
                     $pengirim3 = !empty($extra['tinjauan']['peninjau_nama']) ? $extra['tinjauan']['peninjau_nama'] : 'Ketua Tim OPTI';
 
@@ -311,9 +311,9 @@ class StageAudit {
                     $result[3]['pengirim_role'] = 'Ketua Tim OPTI';
                 }
 
-                // Tahap 4: Proposal Teknis / Parameter Tarif (Hanya jika Kaji Kelayakan Tahap 3 sudah disetujui & data proposal/kalkulasi ada)
-                $tinjauanLayak = (!empty($extra['tinjauan']) && ($extra['tinjauan']['keputusan'] ?? '') === 'dapat_dilaksanakan') || (($order['status_tinjauan'] ?? '') === 'layak');
-                $hasDataTahap4 = !empty($extra['proposal']['file_proposal']) || !empty($extra['proposal']['diajukan_at']) || !empty($extra['kalkulasi_lingkungan']) || !empty($extra['penawaran']) || in_array($order['status_proposal_biaya'] ?? '', ['menunggu_approval', 'siap_penawaran', 'disetujui']);
+                // Tahap 4: Proposal Teknis / Parameter Tarif (Hanya jika Kaji Kelayakan Tahap 3 sudah disetujui & data proposal/kalkulasi ada & bukan draft)
+                $tinjauanLayak = (!empty($extra['tinjauan']) && empty($extra['tinjauan']['is_draft']) && ($extra['tinjauan']['keputusan'] ?? '') === 'dapat_dilaksanakan') || (($order['status_tinjauan'] ?? '') === 'layak');
+                $hasDataTahap4 = !empty($extra['proposal']['diajukan_at']) || !empty($extra['penawaran']) || in_array($order['status_proposal_biaya'] ?? '', ['menunggu_approval', 'siap_penawaran', 'disetujui']);
 
                 if ($tinjauanLayak && $hasDataTahap4) {
                     $tglKirim4 = !empty($extra['proposal']['diajukan_at']) ? $extra['proposal']['diajukan_at'] : (!empty($extra['proposal']['created_at']) ? $extra['proposal']['created_at'] : (!empty($order['updated_at']) ? $order['updated_at'] : $order['created_at']));

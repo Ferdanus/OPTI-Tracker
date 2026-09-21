@@ -713,7 +713,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
     /**
      * Simpan / Perbarui Tinjauan Kelayakan Permintaan (Kartu Kendali ISO)
      */
-    public function simpanTinjauanKelayakan(int $orderId, array $data, int $userId): array {
+    public function simpanTinjauanKelayakan(int $orderId, array $data, int $userId, bool $isDraft = false): array {
         $this->load(array('id = ?', $orderId));
         if ($this->dry()) {
             throw new \Exception("Order Layanan #{$orderId} tidak ditemukan.");
@@ -731,17 +731,14 @@ class OrderLayanan extends \DB\SQL\Mapper {
         $keputusan = ($data['keputusan'] ?? '') === 'tidak_dapat_dilaksanakan' ? 'tidak_dapat_dilaksanakan' : 'dapat_dilaksanakan';
         $alasanPenolakan = trim($data['alasan_penolakan'] ?? '');
 
-        // Catatan: Sesuai arahan mentor, 4 parameter kesiapan bersifat fleksibel pada kaji cepat (fast response).
-        // Keputusan 'dapat_dilaksanakan' tidak diblokir jika checklist belum lengkap di tahap awal.
-
         // Hapus tinjauan lama jika ada untuk order ini
         $this->db->exec("DELETE FROM opti_tinjauan_kelayakan WHERE order_id = ?", array(1 => $orderId));
 
         // Insert tinjauan baru
         $this->db->exec(
             "INSERT INTO opti_tinjauan_kelayakan 
-            (order_id, sdm_tersedia, sdm_catatan, peralatan_tersedia, peralatan_catatan, bahan_tersedia, bahan_catatan, metode_tersedia, metode_catatan, keputusan, alasan_penolakan, ditinjau_oleh, tanggal_tinjauan) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())",
+            (order_id, sdm_tersedia, sdm_catatan, peralatan_tersedia, peralatan_catatan, bahan_tersedia, bahan_catatan, metode_tersedia, metode_catatan, keputusan, is_draft, alasan_penolakan, ditinjau_oleh, tanggal_tinjauan) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())",
             array(
                 1 => $orderId,
                 2 => $sdmTersedia,
@@ -753,47 +750,51 @@ class OrderLayanan extends \DB\SQL\Mapper {
                 8 => $metodeTersedia,
                 9 => $metodeCatatan,
                 10 => $keputusan,
-                11 => $alasanPenolakan,
-                12 => $userId
+                11 => $isDraft ? 1 : 0,
+                12 => $alasanPenolakan,
+                13 => $userId
             )
         );
 
-        // Update status order & Penunjukan PIC Proposal
-        if ($keputusan === 'dapat_dilaksanakan') {
-            $this->status_tinjauan = 'layak';
-            $this->status = 'baru';
+        $picProposalId = !empty($data['pic_proposal_id']) ? (int)$data['pic_proposal_id'] : null;
+        if ($picProposalId > 0) {
+            $this->pic_proposal_id = $picProposalId;
             
-            $picProposalId = !empty($data['pic_proposal_id']) ? (int)$data['pic_proposal_id'] : null;
-            if ($picProposalId > 0) {
-                $this->pic_proposal_id = $picProposalId;
-                
-                // Pastikan ada draft proposal riset untuk PIC ini jika belum ada
-                $chkProp = $this->db->exec("SELECT id FROM opti_proposal_riset WHERE order_id = ?", array(1 => $orderId));
-                if (empty($chkProp)) {
-                    $this->db->exec(
-                        "INSERT INTO opti_proposal_riset (order_id, pic_penyusun_id, status_proposal, created_at) VALUES (?, ?, 'draft', NOW())",
-                        array(1 => $orderId, 2 => $picProposalId)
-                    );
-                } else {
-                    $this->db->exec(
-                        "UPDATE opti_proposal_riset SET pic_penyusun_id = ? WHERE order_id = ?",
-                        array(1 => $picProposalId, 2 => $orderId)
-                    );
-                }
+            // Pastikan ada draft proposal riset untuk PIC ini jika belum ada
+            $chkProp = $this->db->exec("SELECT id FROM opti_proposal_riset WHERE order_id = ?", array(1 => $orderId));
+            if (empty($chkProp)) {
+                $this->db->exec(
+                    "INSERT INTO opti_proposal_riset (order_id, pic_penyusun_id, status_proposal, created_at) VALUES (?, ?, 'draft', NOW())",
+                    array(1 => $orderId, 2 => $picProposalId)
+                );
+            } else {
+                $this->db->exec(
+                    "UPDATE opti_proposal_riset SET pic_penyusun_id = ? WHERE order_id = ?",
+                    array(1 => $picProposalId, 2 => $orderId)
+                );
             }
-        } else {
-            $this->status_tinjauan = 'tidak_layak';
-            $this->status = 'ditolak';
-            $this->alasan_tolak = $alasanPenolakan;
-            $this->ditolak_oleh = $userId;
-            $this->tanggal_tolak = date('Y-m-d H:i:s');
-            $this->status_tolak = 1;
+        }
+
+        // Update status order jika BUKAN draft (resmi ditetapkan)
+        if (!$isDraft) {
+            if ($keputusan === 'dapat_dilaksanakan') {
+                $this->status_tinjauan = 'layak';
+                $this->status = 'baru';
+            } else {
+                $this->status_tinjauan = 'tidak_layak';
+                $this->status = 'ditolak';
+                $this->alasan_tolak = $alasanPenolakan;
+                $this->ditolak_oleh = $userId;
+                $this->tanggal_tolak = date('Y-m-d H:i:s');
+                $this->status_tolak = 1;
+            }
         }
         $this->save();
 
         return array(
             'order_id'  => $orderId,
             'keputusan' => $keputusan,
+            'is_draft'  => $isDraft,
             'status'    => $this->status
         );
     }

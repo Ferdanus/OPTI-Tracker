@@ -229,13 +229,16 @@
                         </div>
 
                         <!-- Action Buttons -->
-                        <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                        <div class="d-flex justify-content-end gap-2 pt-3 border-top flex-wrap">
                             <a href="{{ @BASE }}/order/{{ @order.id }}" class="btn btn-light btn-sm text-secondary px-3 py-1.5 border">
                                 Kembali
                             </a>
                             <check if="{{ @can_edit }}">
-                                <button type="submit" class="btn btn-primary btn-sm px-4 py-1.5 fw-semibold shadow-xs">
-                                    <i class="bi bi-check2-circle me-1"></i> Simpan Keputusan Kelayakan
+                                <button type="submit" name="action_btn" value="draft" class="btn btn-outline-primary btn-sm px-3.5 py-1.5 fw-semibold shadow-xs">
+                                    <i class="bi bi-bookmark me-1"></i> Simpan Draf
+                                </button>
+                                <button type="submit" name="action_btn" value="tetapkan" class="btn btn-primary btn-sm px-4 py-1.5 fw-semibold shadow-xs">
+                                    <i class="bi bi-check2-circle me-1"></i> Simpan &amp; Tetapkan Keputusan
                                 </button>
                             </check>
                             <check if="{{ !@can_edit }}">

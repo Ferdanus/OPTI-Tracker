@@ -492,10 +492,10 @@ class OrderController extends Controller {
         $isSuratMasukDone = true;
 
         // Step 2: Form Pelayanan (selesai jika status bukan permintaan_masuk/draft dan jenis layanan sudah ditentukan)
-        $isFormPelayananDone = !in_array($order['status'] ?? '', ['permintaan_masuk', 'draft_disimpan']) && $hasLayanan;
+        $isFormPelayananDone = !in_array($order['status'] ?? '', ['permintaan_masuk', 'draft_disimpan', 'draft']) && $hasLayanan;
 
-        // Step 3: Kaji Kelayakan (selesai jika kaji ulang kelayakan disetujui)
-        $tinjauanDisetujui = (($order['status_tinjauan'] ?? '') === 'layak') || (!empty($tinjauan) && (($tinjauan['keputusan'] ?? '') === 'dapat_dilaksanakan'));
+        // Step 3: Kaji Kelayakan (selesai jika kaji ulang kelayakan disetujui dan bukan draf)
+        $tinjauanDisetujui = (($order['status_tinjauan'] ?? '') === 'layak') || (!empty($tinjauan) && empty($tinjauan['is_draft']) && (($tinjauan['keputusan'] ?? '') === 'dapat_dilaksanakan'));
         $isTinjauanDone = $isFormPelayananDone && $tinjauanDisetujui;
 
         // Step 4: Proposal Teknis (Selulosa) / Tarif & Parameter (Lingkungan)
@@ -513,9 +513,8 @@ class OrderController extends Controller {
             );
             $isStep4Done = $isProposalApproved;
         } elseif ($isLingkungan) {
-            // Lingkungan: Tarif & parameter selesai jika parameter sudah dipilih atau penawaran sudah terbit
-            $hasKalkulasiLingkungan = !empty($kalkulasiLingkungan) || (float)($order['estimasi_biaya'] ?? 0) > 0;
-            $isStep4Done = $isTinjauanDone && ($hasKalkulasiLingkungan || in_array($order['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui']) || $hasPenawaran);
+            // Lingkungan: Tarif & parameter selesai jika sudah siap penawaran / disetujui atau penawaran sudah terbit
+            $isStep4Done = $isTinjauanDone && (in_array($order['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui']) || $hasPenawaran);
             $isProposalApproved = $isStep4Done;
         } else {
             // Layanan belum ditentukan: Step 3 dan Step 4 BELUM SELESAI
@@ -585,7 +584,9 @@ class OrderController extends Controller {
         }
         $f3->set('stepper', $stepper);
         $f3->set('current_step', $currentStep);
+        $f3->set('is_form_pelayanan_done', $isFormPelayananDone);
         $f3->set('is_tinjauan_done', $isTinjauanDone);
+        $f3->set('is_step4_done', $isStep4Done);
         $f3->set('proposal_has_file_cost', $proposalHasFileAndCost);
         $f3->set('is_proposal_approved', $isProposalApproved);
 
@@ -1067,13 +1068,21 @@ class OrderController extends Controller {
 
         $post = $f3->get('POST');
         $userId = $this->getUserId() ?? 1;
+        $actionBtn = $post['action_btn'] ?? 'tetapkan';
+        $isDraft = ($actionBtn === 'draft');
 
         try {
             $orderModel = new OrderLayanan($this->db);
-            $hasil = $orderModel->simpanTinjauanKelayakan($id, $post, $userId);
+            $hasil = $orderModel->simpanTinjauanKelayakan($id, $post, $userId, $isDraft);
             $order = $orderModel->getDetail($id);
 
-            // Catat Audit Waktu Diproses / Kirim Tahap 3 (First time only)
+            if ($isDraft) {
+                $this->setFlashSuccess("Draf Kaji Ulang Kelayakan Teknis berhasil disimpan (Status: <strong>Draft Disimpan</strong>). Anda dapat melanjutkan dan menetapkan keputusannya nanti.");
+                $f3->reroute("/order/{$id}");
+                return;
+            }
+
+            // Catat Audit Waktu Diproses / Kirim Tahap 3 (Hanya jika resmi Ditetapkan)
             $namaKetua = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'Ketua Tim OPTI');
             StageAudit::recordKirim($this->db, $id, 3, 'Kaji Kelayakan Teknis Layanan (ISO 17025)', $userId, $namaKetua, 'Ketua Tim OPTI', null, 'Kaji Kelayakan Ditetapkan');
 
@@ -1161,6 +1170,15 @@ class OrderController extends Controller {
             return;
         }
 
+        // Prasyarat Wajib: Kaji Kelayakan Teknis (Tahap 3) harus sudah selesai dan disetujui (dapat dilaksanakan)
+        $tinjauan = $orderModel->getTinjauanKelayakan($id);
+        $tinjauanSelesai = (!empty($tinjauan) && empty($tinjauan['is_draft']) && ($tinjauan['keputusan'] ?? '') === 'dapat_dilaksanakan') || (($order['status_tinjauan'] ?? '') === 'layak');
+        if (!$tinjauanSelesai) {
+            $this->setFlashError("Akses Ditolak: Kaji Ulang Kelayakan Teknis (Tahap 3) wajib diisi dan dinyatakan 'Dapat Dilaksanakan' terlebih dahulu sebelum menyusun proposal/rancop.");
+            $f3->reroute("/order/{$id}");
+            return;
+        }
+
         $proposal = $orderModel->getProposalRiset($id);
         $daftarPic = OrderLayanan::getPICSpesialisasiList($this->db, $order['jenis_layanan_opti'] ?? 'selulosa');
 
@@ -1192,6 +1210,15 @@ class OrderController extends Controller {
         if (!$this->hasPermission('order:proposal') && !$this->isSuperadmin() && !$isPic) {
             $this->setFlashError("Akses Ditolak: Penyusunan proposal teknis & rancop merupakan wewenang PIC Proposal yang ditunjuk.");
             $f3->reroute("/order/{$id}/rancop-selulosa");
+            return;
+        }
+
+        // Prasyarat Wajib: Kaji Kelayakan Teknis (Tahap 3) harus sudah selesai dan disetujui
+        $tinjauan = $orderModel->getTinjauanKelayakan($id);
+        $tinjauanSelesai = (!empty($tinjauan) && empty($tinjauan['is_draft']) && ($tinjauan['keputusan'] ?? '') === 'dapat_dilaksanakan') || (($order['status_tinjauan'] ?? '') === 'layak');
+        if (!$tinjauanSelesai) {
+            $this->setFlashError("Gagal: Kaji Ulang Kelayakan Teknis (Tahap 3) belum diselesaikan atau dinyatakan dapat dilaksanakan.");
+            $f3->reroute("/order/{$id}");
             return;
         }
 
@@ -1311,7 +1338,7 @@ class OrderController extends Controller {
 
         // Prasyarat Wajib: Kaji Kelayakan Teknis (Tahap 3) harus sudah selesai dan disetujui (dapat dilaksanakan)
         $tinjauan = $orderModel->getTinjauanKelayakan($id);
-        $tinjauanSelesai = (!empty($tinjauan) && ($tinjauan['keputusan'] ?? '') === 'dapat_dilaksanakan') || (($order['status_tinjauan'] ?? '') === 'layak');
+        $tinjauanSelesai = (!empty($tinjauan) && empty($tinjauan['is_draft']) && ($tinjauan['keputusan'] ?? '') === 'dapat_dilaksanakan') || (($order['status_tinjauan'] ?? '') === 'layak');
         if (!$tinjauanSelesai) {
             $this->setFlashError("Akses Ditolak: Kaji Ulang Kelayakan Teknis (Tahap 3) wajib diisi dan dinyatakan 'Dapat Dilaksanakan' terlebih dahulu sebelum mengelola tarif dan parameter.");
             $f3->reroute("/order/{$id}");
@@ -1369,7 +1396,7 @@ class OrderController extends Controller {
 
         // Prasyarat Wajib: Kaji Kelayakan Teknis (Tahap 3) harus sudah selesai dan disetujui
         $tinjauan = $orderModel->getTinjauanKelayakan($id);
-        $tinjauanSelesai = (!empty($tinjauan) && ($tinjauan['keputusan'] ?? '') === 'dapat_dilaksanakan') || (($order['status_tinjauan'] ?? '') === 'layak');
+        $tinjauanSelesai = (!empty($tinjauan) && empty($tinjauan['is_draft']) && ($tinjauan['keputusan'] ?? '') === 'dapat_dilaksanakan') || (($order['status_tinjauan'] ?? '') === 'layak');
         if (!$tinjauanSelesai) {
             $this->setFlashError("Gagal: Kaji Ulang Kelayakan Teknis (Tahap 3) belum diselesaikan atau dinyatakan dapat dilaksanakan.");
             $f3->reroute("/order/{$id}");
@@ -1410,7 +1437,19 @@ class OrderController extends Controller {
             $hasil = $orderModel->simpanKalkulasiLingkungan($id, $items, $diskon, $tglSampel, $userId, $spmLayanan);
             $order = $orderModel->getDetail($id);
 
-            // Audit Waktu & Petugas: Catat waktu proses / simpan kalkulasi multi-metode (First time only)
+            $actionBtn = $post['action_btn'] ?? 'siap_penawaran';
+            $isDraft = in_array($actionBtn, ['save_draft', 'draft']);
+
+            if ($isDraft) {
+                $this->db->exec("UPDATE order_layanan SET status_proposal_biaya = 'draft_disimpan' WHERE id = ?", array(1 => $id));
+                $this->setFlashSuccess(
+                    "Draf kalkulasi parameter dan tarif pengujian berhasil disimpan (Status: <strong>Draft Disimpan</strong>, Total: Rp " . number_format($hasil['total_netto'], 0, ',', '.') . "). Anda dapat melanjutkannya kembali nanti."
+                );
+                $f3->reroute("/order/{$id}");
+                return;
+            }
+
+            // Audit Waktu & Petugas: Catat waktu proses / simpan kalkulasi multi-metode (First time only) jika diajukan atau disetujui
             $currentUserNama = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'Tim Pelaksana');
             $roleLabel = ($this->isKetuaTim() ? 'Ketua Tim OPTI' : ($isPic ? 'PIC Teknis' : 'Tim Pelaksana'));
             StageAudit::recordKirim(
@@ -1427,7 +1466,6 @@ class OrderController extends Controller {
 
             // Kirim notifikasi ke Tim Mitra / Ka Tim
             try {
-                $actionBtn = $post['action_btn'] ?? 'siap_penawaran';
                 if ($actionBtn === 'kirim_katim') {
                     \NotificationService::send($this->db, [
                         'order_id'       => $id,
@@ -1457,7 +1495,6 @@ class OrderController extends Controller {
                 }
             } catch (\Exception $eNotif) {}
 
-            $actionBtn = $post['action_btn'] ?? 'siap_penawaran';
             if ($actionBtn === 'kirim_katim') {
                 $this->db->exec("UPDATE order_layanan SET status_proposal_biaya = 'menunggu_approval' WHERE id = ?", array(1 => $id));
                 $this->setFlashSuccess("Kalkulasi biaya berhasil disimpan &amp; <strong>diajukan ke Ketua Tim OPTI</strong> untuk diperiksa.");
@@ -1478,7 +1515,7 @@ class OrderController extends Controller {
                     "Kalkulasi parameter dan tarif pengujian berhasil disimpan &amp; disetujui! Status: <strong>Siap Penawaran</strong> (Total Netto: Rp " . number_format($hasil['total_netto'], 0, ',', '.') . "). Tim Mitra kini dapat menerbitkan Surat Penawaran Resmi."
                 );
             } else {
-                $this->db->exec("UPDATE order_layanan SET status_proposal_biaya = 'draft' WHERE id = ?", array(1 => $id));
+                $this->db->exec("UPDATE order_layanan SET status_proposal_biaya = 'draft_disimpan' WHERE id = ?", array(1 => $id));
                 $this->setFlashSuccess(
                     "Draf kalkulasi biaya pengujian lingkungan berhasil disimpan (Total: <strong>Rp " . number_format($hasil['total_netto'], 0, ',', '.') . "</strong>)."
                 );
@@ -2116,7 +2153,7 @@ class OrderController extends Controller {
         $tinjauan = $orderModel->getTinjauanKelayakan($id);
 
         $tinjauanSelesai = (
-            (!empty($tinjauan) && ($tinjauan['keputusan'] ?? '') === 'dapat_dilaksanakan') ||
+            (!empty($tinjauan) && empty($tinjauan['is_draft']) && ($tinjauan['keputusan'] ?? '') === 'dapat_dilaksanakan') ||
             (($order['status_tinjauan'] ?? '') === 'layak')
         );
 
@@ -2237,14 +2274,14 @@ class OrderController extends Controller {
             return;
         }
 
-        // 2. Cek Prasyarat Kaji Ulang (Tahap 2)
+        // 2. Cek Prasyarat Kaji Ulang (Tahap 3)
         $tinjauan = $orderModel->getTinjauanKelayakan($id);
         $tinjauanSelesai = (
-            (!empty($tinjauan) && ($tinjauan['keputusan'] ?? '') === 'dapat_dilaksanakan') ||
+            (!empty($tinjauan) && empty($tinjauan['is_draft']) && ($tinjauan['keputusan'] ?? '') === 'dapat_dilaksanakan') ||
             (($order['status_tinjauan'] ?? '') === 'layak')
         );
         if (!$tinjauanSelesai) {
-            $this->setFlashError("Gagal: Kaji Ulang Kelayakan Teknis (Tahap 2) belum selesai atau berstatus 'Tidak Dapat Dilaksanakan'. Proposal belum dapat disimpan.");
+            $this->setFlashError("Gagal: Kaji Ulang Kelayakan Teknis (Tahap 3) belum selesai atau berstatus 'Tidak Dapat Dilaksanakan'. Proposal belum dapat disimpan.");
             $f3->reroute("/order/{$id}/proposal");
             return;
         }
