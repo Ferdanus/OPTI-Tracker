@@ -86,8 +86,13 @@ class StageAudit {
             );
 
             if (!empty($existing)) {
-                // FIRST TIME ONLY: Jangan overwrite jika sudah ada waktu kirim
-                if (empty($existing[0]['waktu_kirim'])) {
+                // FIRST TIME ONLY: Jangan overwrite jika sudah ada waktu kirim valid
+                // (Kecuali jika sebelumnya hanya berisi tanggal dummy 00:00:00 dan sekarang tersedia timestamp jam lengkap)
+                $curWaktu = $existing[0]['waktu_kirim'] ?? '';
+                $isMidnight = (strpos($curWaktu, '00:00:00') !== false);
+                $newHasTime = (strpos($now, '00:00:00') === false);
+
+                if (empty($curWaktu) || ($isMidnight && $newHasTime)) {
                     $db->exec(
                         "UPDATE opti_stage_audit SET waktu_kirim = ?, pengirim_id = ?, pengirim_nama = ?, pengirim_role = ?, keterangan = ? WHERE id = ?",
                         [
@@ -302,7 +307,7 @@ class StageAudit {
 
                 // Tahap 3: Kaji Kelayakan Teknis
                 if (empty($result[3]['waktu_kirim']) && !empty($extra['tinjauan']) && empty($extra['tinjauan']['is_draft'])) {
-                    $tglKirim3 = !empty($extra['tinjauan']['tanggal_tinjauan']) ? $extra['tinjauan']['tanggal_tinjauan'] : $extra['tinjauan']['created_at'];
+                    $tglKirim3 = !empty($extra['tinjauan']['created_at']) ? $extra['tinjauan']['created_at'] : (!empty($extra['tinjauan']['tanggal_tinjauan']) ? ($extra['tinjauan']['tanggal_tinjauan'] . ' ' . date('H:i:s')) : $order['created_at']);
                     $pengirim3 = !empty($extra['tinjauan']['peninjau_nama']) ? $extra['tinjauan']['peninjau_nama'] : 'Ketua Tim OPTI';
 
                     self::recordKirim($db, $orderId, 3, self::getStageNames()[3], (int)($extra['tinjauan']['ditinjau_oleh'] ?? 0), $pengirim3, 'Ketua Tim OPTI', $tglKirim3, 'Kaji Kelayakan Ditetapkan');
@@ -337,8 +342,8 @@ class StageAudit {
                 }
 
                 // Tahap 5: Surat Penawaran Biaya
-                if (empty($result[5]['waktu_kirim']) && !empty($extra['penawaran']) && !empty($extra['penawaran']['nomor_surat'])) {
-                    $tglKirim5 = !empty($extra['penawaran']['tanggal_surat']) ? $extra['penawaran']['tanggal_surat'] : $extra['penawaran']['created_at'];
+                if ((empty($result[5]['waktu_kirim']) || strpos($result[5]['waktu_kirim'], '00:00:00') !== false) && !empty($extra['penawaran']) && !empty($extra['penawaran']['nomor_surat'])) {
+                    $tglKirim5 = !empty($extra['penawaran']['created_at']) ? $extra['penawaran']['created_at'] : (!empty($extra['penawaran']['tanggal_surat']) ? ($extra['penawaran']['tanggal_surat'] . ' ' . date('H:i:s')) : date('Y-m-d H:i:s'));
                     $pengirim5 = !empty($extra['penawaran']['pembuat_nama']) ? $extra['penawaran']['pembuat_nama'] : 'Tim Mitra';
                     $tglDeal5  = !empty($extra['penawaran']['disetujui_klien_at']) ? $extra['penawaran']['disetujui_klien_at'] : null;
 
@@ -357,7 +362,7 @@ class StageAudit {
                 // Tahap 6: Pembayaran
                 if (empty($result[6]['waktu_kirim']) && (!empty($extra['riwayat_bayar']) || ($order['status_keuangan'] ?? '') === 'lunas')) {
                     $firstBayar = !empty($extra['riwayat_bayar']) ? $extra['riwayat_bayar'][0] : [];
-                    $tglKirim6  = !empty($firstBayar['tanggal_pembayaran']) ? $firstBayar['tanggal_pembayaran'] : ($firstBayar['created_at'] ?? $order['created_at']);
+                    $tglKirim6  = !empty($firstBayar['created_at']) ? $firstBayar['created_at'] : (!empty($firstBayar['tanggal_pembayaran']) ? ($firstBayar['tanggal_pembayaran'] . ' ' . date('H:i:s')) : $order['created_at']);
                     $pengirim6  = !empty($firstBayar['verifikator_nama']) ? $firstBayar['verifikator_nama'] : 'Bagian Keuangan';
 
                     self::recordKirim($db, $orderId, 6, self::getStageNames()[6], (int)($firstBayar['dikonfirmasi_oleh'] ?? 0), $pengirim6, 'Keuangan', $tglKirim6, 'Pembayaran Diverifikasi Lunas');
@@ -379,7 +384,7 @@ class StageAudit {
 
                 // Tahap 8: BAST
                 if (empty($result[8]['waktu_kirim']) && !empty($extra['bast'])) {
-                    $tglKirim8 = !empty($extra['bast']['tanggal_bast']) ? $extra['bast']['tanggal_bast'] : $extra['bast']['created_at'];
+                    $tglKirim8 = !empty($extra['bast']['created_at']) ? $extra['bast']['created_at'] : (!empty($extra['bast']['tanggal_bast']) ? ($extra['bast']['tanggal_bast'] . ' ' . date('H:i:s')) : date('Y-m-d H:i:s'));
                     $pengirim8 = !empty($extra['bast']['closed_by_nama']) ? $extra['bast']['closed_by_nama'] : 'Tim Mitra';
 
                     self::recordKirim($db, $orderId, 8, self::getStageNames()[8], null, $pengirim8, 'Tim Mitra', $tglKirim8, 'BAST Diterbitkan & Selesai');

@@ -746,8 +746,20 @@ $daftarPegawai = $arsipUser->find(
 
             $isDraft = ($post['status_respon_klien'] === 'draft');
 
-            // Notifikasi ke Ka Tim OPTI hanya jika surat diterbitkan resmi / terkirim
+            // Catat audit pengiriman Tahap 5 (Surat Penawaran Resmi)
             if (!$isDraft) {
+                \StageAudit::recordKirim(
+                    $this->db,
+                    $orderId,
+                    5,
+                    'Surat Penawaran Biaya Resmi',
+                    $userId,
+                    $_SESSION['nama_lengkap'] ?? ($_SESSION['user']['nama'] ?? 'Tim Mitra'),
+                    'Tim Mitra',
+                    date('Y-m-d H:i:s'),
+                    'Surat Penawaran Resmi Diterbitkan (No: ' . $hasil['nomor_surat'] . ')'
+                );
+
                 try {
                     $orderModel = new \OrderLayanan($this->db);
                     $order = $orderModel->getDetail($orderId);
