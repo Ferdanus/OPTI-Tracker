@@ -1,138 +1,219 @@
 <div class="d-flex align-items-center gap-3 mb-4">
-    <a href="{{ @BASE }}/pembayaran" class="btn-back"><i class="bi bi-arrow-left"></i> Kembali</a>
+    <a href="{{ @BASE }}/pembayaran" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i> Kembali</a>
     <div>
         <h2 class="h4 fw-bold mb-1 text-dark">Catat Pembayaran</h2>
         <p class="text-muted small mb-0">Input penerimaan pembayaran termin / pelunasan dari mitra industri.</p>
     </div>
 </div>
 
-<div class="row justify-content-center">
-    <div class="col-lg-7">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white py-3"><h6 class="m-0 fw-bold text-dark"><i class="bi bi-receipt text-primary me-2"></i>Formulir Bukti Bayar</h6></div>
-            <div class="card-body p-4">
-                <form action="{{ @BASE }}/pembayaran/simpan" method="POST" enctype="multipart/form-data" id="formPembayaran">
-                    <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
-
-                    <div class="mb-1">
-                        <label class="form-label">Pilih Order Layanan <span class="text-danger">*</span></label>
-                        <select name="order_id" id="selectOrder" class="form-select searchable-select" placeholder="Ketik nomor order / nama mitra..." required>
-                            <option value="">Pilih Order Layanan</option>
-                            <repeat group="{{ @daftar_order }}" value="{{ @ord }}">
-                                <option value="{{ @ord.id }}"
-                                        data-sisa="{{ @ord.sisa_tagihan }}"
-                                        data-termin-berikutnya="{{ @ord.termin_berikutnya }}"
-                                        {{ @selected_order_id == @ord.id ? 'selected' : '' }}>
-                                    {{ @ord.nomor_order }} &mdash; {{ @ord.nama_perusahaan }}
-                                    (Sisa: Rp {{ number_format(@ord.sisa_tagihan, 0, ',', '.') }})
-                                </option>
-                            </repeat>
-                        </select>
-                    </div>
-                    <div class="form-text mb-3" id="infoOrderTerpilih">Pilih order dulu buat lihat sisa tagihan &amp; saran termin.</div>
-
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Tahap Termin Ke- <span class="text-danger">*</span></label>
-                            <select name="termin_ke" id="selectTermin" class="form-select" required>
-                                <option value="1">Termin 1 (Uang Muka / DP)</option>
-                                <option value="2">Termin 2</option>
-                                <option value="3">Termin 3 (Pelunasan)</option>
-                                <option value="4">Termin 4</option>
-                            </select>
-                            <div class="form-text">Otomatis kesaran, tetap bisa diganti manual.</div>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Tanggal Bayar <span class="text-danger">*</span></label>
-                            <input type="date" name="tanggal_bayar" class="form-control" value="{{ date('Y-m-d') }}" required>
-                        </div>
-                    </div>
-
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Jumlah Nominal (Rp) <span class="text-danger">*</span></label>
-                            <div class="input-group">
-                                <span class="input-group-text">Rp</span>
-                                <input type="text" id="inputJumlahDisplay" class="form-control" placeholder="0" inputmode="numeric" autocomplete="off">
-                            </div>
-                            <input type="hidden" name="jumlah" id="inputJumlah" value="">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Metode Pembayaran</label>
-                            <select name="metode_pembayaran" class="form-select">
-                                <option value="transfer_bank">Transfer Bank</option>
-                                <option value="tunai">Tunai</option>
-                                <option value="lainnya">Lainnya</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Nomor Transaksi / Bukti Transfer (opsional)</label>
-                        <input type="text" name="nomor_transaksi_ntpn" class="form-control" placeholder="Contoh: TRX-20260901-001 / No. Referensi Transfer">
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Upload Bukti Pembayaran</label>
-                        <input type="file" name="bukti_bayar" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
-                        <div class="form-text">PDF, JPG, atau PNG. Maksimal 5MB.</div>
-                    </div>
-
-                    <div class="mb-4">
-                        <label class="form-label">Keterangan</label>
-                        <textarea name="keterangan" class="form-control" rows="2" placeholder="Catatan tambahan..."></textarea>
-                    </div>
-
-                    <div class="d-flex justify-content-end gap-2">
-                        <a href="{{ @BASE }}/pembayaran" class="btn btn-outline-secondary px-4">Batal</a>
-                        <button type="submit" class="btn btn-primary px-4"><i class="bi bi-save me-1"></i> Simpan Pembayaran</button>
-                    </div>
-                </form>
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3"><i class="bi bi-receipt text-primary me-2"></i><span class="fw-bold">Formulir Bukti Bayar</span></div>
+    <div class="card-body p-3 p-md-4">
+        <check if="{{ !@order }}">
+            <div class="alert alert-warning border-0">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                Order belum ditentukan. Silakan buka halaman ini lewat tombol "Catat Pembayaran" dari daftar order.
             </div>
+        </check>
+
+        <check if="{{ @order }}">
+        <!-- ===== INFO ORDER (terkunci, dari order_id di URL -- TANPA dropdown) ===== -->
+        <div class="order-locked-card">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    <div class="fw-bold text-dark">{{ @order.nomor_order }}</div>
+                    <div class="small text-muted">{{ @order.judul_kegiatan }}</div>
+                </div>
+                <check if="{{ @order.jenis_layanan_opti == 'selulosa' }}"><span class="badge-pill-primary">Selulosa</span></check>
+                <check if="{{ @order.jenis_layanan_opti == 'lingkungan' }}"><span class="badge-pill-info">Lingkungan</span></check>
+            </div>
+            <div class="order-locked-row"><span class="order-locked-label">Mitra</span><span class="order-locked-value">{{ @order.nama_perusahaan }} {{ @order.pt_cv ? '(' . @order.pt_cv . ')' : '' }}</span></div>
+            <div class="order-locked-row"><span class="order-locked-label">Nilai Acuan</span><span class="order-locked-value">Rp {{ number_format(@order.biaya_acuan, 0, ',', '.') }}</span></div>
+            <div class="order-locked-row"><span class="order-locked-label">Sudah Terbayar</span><span class="order-locked-value text-success">Rp {{ number_format(@order.terbayar, 0, ',', '.') }}</span></div>
+            <div class="order-locked-row"><span class="order-locked-label">Sisa Tagihan</span><span class="order-locked-value text-danger">Rp {{ number_format(@order.sisa_tagihan, 0, ',', '.') }}</span></div>
+            <div class="order-locked-row"><span class="order-locked-label">Saran Termin</span><span class="order-locked-value">Termin ke-{{ @order.termin_berikutnya }}</span></div>
         </div>
+
+        <form action="{{ @BASE }}/pembayaran/simpan" method="POST" enctype="multipart/form-data" id="formPembayaran">
+            <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
+            <input type="hidden" name="order_id" value="{{ @order.id }}">
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Tahap Termin Ke- <span class="text-danger">*</span></label>
+                    <select name="termin_ke" id="selectTermin" class="form-select" required>
+                        <option value="1" {{ @order.termin_berikutnya == 1 ? 'selected' : '' }}>Termin 1</option>
+                        <option value="2" {{ @order.termin_berikutnya == 2 ? 'selected' : '' }}>Termin 2</option>
+                        <option value="3" {{ @order.termin_berikutnya == 3 ? 'selected' : '' }}>Termin 3</option>
+                        <option value="4" {{ @order.termin_berikutnya == 4 ? 'selected' : '' }}>Termin 4</option>
+                    </select>
+                    <div class="form-text">Otomatis kesaran ({{ @order.termin_berikutnya }}), tetap bisa diganti manual.</div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Tanggal Bayar <span class="text-danger">*</span></label>
+                    <input type="date" name="tanggal_bayar" class="form-control" value="{{ date('Y-m-d') }}" required>
+                </div>
+            </div>
+            
+            <div class="overpay-block-banner" id="overpayBanner">
+                <i class="bi bi-x-octagon-fill"></i>
+                <div>
+                    <div class="fw-bold">Pembayaran Tidak Dapat Disimpan</div>
+                    <div id="overpayDetailText"></div>
+                </div>
+            </div>
+            
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Jumlah Nominal (Rp) <span class="text-danger">*</span></label>
+                    <div class="input-group" id="nominalGroup">
+                        <span class="input-group-text">Rp</span>
+                        <input type="text" id="inputNominalDisplay" class="form-control" placeholder="0" inputmode="numeric" autocomplete="off">
+                        <input type="hidden" name="jumlah" id="inputNominal">
+                    </div>
+                    <div class="small mt-1" id="nominalHint"></div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Metode Pembayaran</label>
+                    <select name="metode_pembayaran" class="form-select">
+                        <option value="transfer_bank">Transfer Bank</option>
+                        <option value="tunai">Tunai</option>
+                        <option value="lainnya">Lainnya</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-bold">Nomor Transaksi / NTPN (opsional)</label>
+                <input type="text" name="nomor_transaksi_ntpn" class="form-control" placeholder="Contoh: NTPN 1234567890ABCDEF">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-bold">Upload Bukti Pembayaran <span class="text-danger">*</span></label>
+                <input type="file" name="bukti_bayar" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
+                <div class="form-text">PDF, JPG, atau PNG. Maksimal 5MB.</div>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-bold">Keterangan</label>
+                <textarea name="keterangan" class="form-control" rows="2" placeholder="Catatan tambahan..."></textarea>
+            </div>
+
+            <div class="d-flex flex-column flex-sm-row justify-content-end gap-2">
+                <a href="{{ @BASE }}/pembayaran" class="btn btn-outline-secondary px-4 order-2 order-sm-1">Batal</a>
+                <button type="button" id="btnSimpanPembayaran" class="btn btn-primary px-4 order-1 order-sm-2"><i class="bi bi-save me-1"></i> Simpan Pembayaran</button>
+            </div>
+        </form>
+        </check>
+
     </div>
 </div>
 
+<style>
+    .order-locked-card {
+        border: 1px solid var(--color-border); border-radius: 12px; padding: 18px;
+        background: var(--color-bg); margin-bottom: 24px;
+    }
+    .order-locked-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed var(--color-border); font-size: 13.5px; }
+    .order-locked-row:last-child { border-bottom: none; }
+    .order-locked-label { color: #64748b; }
+    .order-locked-value { font-weight: 600; color: #1e293b; }
+    .badge-pill-primary { background: rgba(136,19,55,.1); color: var(--color-primary); border-radius: 20px; padding: 3px 10px; font-size: 11.5px; font-weight: 600; }
+    .badge-pill-info { background: #eff6ff; color: #1d4ed8; border-radius: 20px; padding: 3px 10px; font-size: 11.5px; font-weight: 600; }
+    .overpay-block-banner {
+    display: none;
+    background: #fef2f2; border: 1.5px solid #fca5a5; border-radius: 10px;
+    padding: 12px 14px; margin-bottom: 16px; font-size: 13px; color: #991b1b;
+}
+.overpay-block-banner.show { display: flex; align-items: flex-start; gap: 8px; }
+.overpay-block-banner i { font-size: 16px; margin-top: 1px; }
+
+@keyframes shakeX {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+}
+.shake { animation: shakeX 0.4s ease; }
+</style>
+
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    var selectOrder = document.getElementById('selectOrder');
-    var selectTermin = document.getElementById('selectTermin');
-    var infoOrder = document.getElementById('infoOrderTerpilih');
-    var inputJumlahDisplay = document.getElementById('inputJumlahDisplay');
-var inputJumlahReal = document.getElementById('inputJumlah');
-
-inputJumlahDisplay.addEventListener('input', function () {
-    var angka = inputJumlahDisplay.value.replace(/[^0-9]/g, ''); // buang semua selain digit
-    var angkaNum = parseInt(angka, 10) || 0;
-
-    inputJumlahReal.value = angkaNum; // ini yang ke-submit ke server, polos tanpa titik
-    inputJumlahDisplay.value = angkaNum > 0 ? angkaNum.toLocaleString('id-ID') : '';
-});
-
-// validasi manual sebelum submit, soalnya "required" udah gak nempel di field yang keliatan
-document.getElementById('formPembayaran').addEventListener('submit', function (e) {
-    if (!inputJumlahReal.value || parseInt(inputJumlahReal.value, 10) <= 0) {
-        e.preventDefault();
-        alert('Jumlah nominal pembayaran wajib diisi.');
-        inputJumlahDisplay.focus();
-    }
-});
-
-    function syncDariOrderTerpilih() {
-        var opt = selectOrder.options[selectOrder.selectedIndex];
-        if (!opt || !opt.value) {
-            infoOrder.textContent = 'Pilih order dulu buat lihat sisa tagihan & saran termin.';
-            return;
+    document.addEventListener('DOMContentLoaded', function () {
+        var sisaTagihan = {{ @order.sisa_tagihan ?: 0 }};
+    
+        var display     = document.getElementById('inputNominalDisplay');
+        var hidden       = document.getElementById('inputNominal');
+        var hint         = document.getElementById('nominalHint');
+        var group        = document.getElementById('nominalGroup');
+        var banner       = document.getElementById('overpayBanner');
+        var detailText   = document.getElementById('overpayDetailText');
+        var form         = document.getElementById('formPembayaran');
+        var btnSimpan    = document.getElementById('btnSimpanPembayaran');
+    
+        function rupiah(n) {
+            return 'Rp ' + (Math.round(n) || 0).toLocaleString('id-ID');
         }
-        var sisa = parseFloat(opt.dataset.sisa || '0');
-        var terminSaran = parseInt(opt.dataset.terminBerikutnya || '1', 10);
-        infoOrder.innerHTML = 'Sisa tagihan order ini: <strong>Rp ' + sisa.toLocaleString('id-ID') + '</strong> &mdash; saran termin ke-' + terminSaran + '.';
-        if (selectTermin.querySelector('option[value="' + terminSaran + '"]')) {
-            selectTermin.value = String(terminSaran);
+    
+        // ===== Ketik nominal: format ribuan otomatis + hint live =====
+        if (display && hidden) {
+            display.addEventListener('input', function () {
+                var angka = parseInt(display.value.replace(/[^0-9]/g, ''), 10) || 0;
+                hidden.value = angka;
+                display.value = angka > 0 ? angka.toLocaleString('id-ID') : '';
+    
+                banner.classList.remove('show');
+    
+                if (angka <= 0) {
+                    hint.innerHTML = '';
+                    group.classList.remove('border', 'border-danger');
+                } else if (angka > sisaTagihan) {
+                    hint.innerHTML = '<span class="text-danger fw-semibold"><i class="bi bi-exclamation-triangle-fill me-1"></i>Melebihi sisa tagihan (' + rupiah(sisaTagihan) + ')</span>';
+                    group.classList.add('border', 'border-danger');
+                } else if (angka === sisaTagihan) {
+                    hint.innerHTML = '<span class="text-success fw-semibold"><i class="bi bi-check-circle-fill me-1"></i>Pas! Pembayaran ini akan MELUNASI order ini.</span>';
+                    group.classList.remove('border', 'border-danger');
+                } else {
+                    hint.innerHTML = '';
+                    group.classList.remove('border', 'border-danger');
+                }
+            });
         }
-    }
-
-    selectOrder.addEventListener('change', syncDariOrderTerpilih);
-    if (selectOrder.value) syncDariOrderTerpilih();
-});
-</script>
+    
+        // ===== Klik Simpan: validasi dulu, baru submit manual kalau lolos =====
+        // [PENTING] tombolnya type="button" (BUKAN type="submit"), biar gak ke-trigger
+        // sama script overlay/loading global punya app -- submit cuma jalan kalau
+        // validasi di bawah ini beneran lolos.
+        if (form && btnSimpan) {
+            btnSimpan.addEventListener('click', function () {
+                var angka = parseInt(hidden.value, 10) || 0;
+    
+                if (angka <= 0) {
+                    alert('Jumlah nominal pembayaran wajib diisi.');
+                    display.focus();
+                    return;
+                }
+    
+                if (angka > sisaTagihan) {
+                    var selisih = angka - sisaTagihan;
+                    detailText.textContent = 'Nominal yang dimasukkan (' + rupiah(angka) + ') melebihi sisa tagihan order ini sebesar '
+                        + rupiah(sisaTagihan) + ' (selisih ' + rupiah(selisih) + '). Mohon periksa kembali nominal yang dimasukkan, '
+                        + 'kemungkinan terdapat kesalahan penulisan angka.';
+    
+                    banner.classList.add('show');
+                    banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    banner.classList.remove('shake');
+                    void banner.offsetWidth; // reset animasi biar shake bisa diulang tiap klik
+                    banner.classList.add('shake');
+    
+                    display.focus();
+                    return;
+                }
+    
+                // Validasi lolos -- baru sekarang beneran kirim form-nya
+                form.submit();
+            });
+        }
+    });
+    </script>
+    
