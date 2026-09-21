@@ -626,11 +626,15 @@
 
             <!-- Card Asal Surat Permohonan & Klien -->
             <div class="system-section-card" id="cardProfil">
-                <div class="system-section-header">
+                <div class="system-section-header d-flex justify-content-between align-items-center">
                     <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2">
                         <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-0.5 small fw-bold">1</span>
                         <i class="bi bi-person-vcard-fill text-primary"></i> Profil &amp; Asal Surat Permohonan
                     </h6>
+                    <button type="button" class="btn btn-sm btn-outline-primary py-0.5 px-2.5 d-inline-flex align-items-center gap-1.5 shadow-xs fw-semibold rounded-2" data-bs-toggle="modal" data-bs-target="#modalEditProfilPelanggan" title="Koreksi / Edit Data Pelanggan & Asal Surat">
+                        <i class="bi bi-pencil-square"></i>
+                        <span>Edit</span>
+                    </button>
                 </div>
                 <div class="p-3">
                     <!-- 1. Identitas Profil Pelanggan / Perusahaan (Di Atas) -->
@@ -2389,6 +2393,154 @@
     </div>
 </div>
 
+<!-- Modal Edit Profil Pelanggan & Asal Surat Permohonan -->
+<div class="modal fade" id="modalEditProfilPelanggan" tabindex="-1" aria-labelledby="modalEditProfilPelangganLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content bg-white border-0 shadow-lg rounded-3">
+            <div class="modal-header border-bottom py-3 px-4 bg-white d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2.5">
+                    <div class="rounded-circle p-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 38px; height: 38px; background-color: #eff6ff; color: var(--color-primary);">
+                        <i class="bi bi-pencil-square fs-5"></i>
+                    </div>
+                    <div>
+                        <h6 class="modal-title fw-bold text-dark m-0 fs-6" id="modalEditProfilPelangganLabel">
+                            Edit Profil Pelanggan &amp; Asal Surat
+                        </h6>
+                        <small class="text-muted" style="font-size: 0.78rem;">Perbarui data identitas klien atau koreksi kesalahan input saat penerimaan surat masuk</small>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+
+            <form action="{{ @BASE }}/order/{{ @order.id }}/klien/update" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
+
+                <div class="modal-body p-4 bg-light">
+                    <!-- Identitas Pelanggan / Mitra -->
+                    <div class="bg-white p-3 p-md-4 rounded-3 border mb-3 shadow-xs">
+                        <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+                            <h6 class="fw-bold text-dark m-0 small d-flex align-items-center gap-2">
+                                <i class="bi bi-building-fill text-primary"></i> Identitas Pelanggan / Mitra
+                            </h6>
+                            <span class="badge bg-light text-muted border" style="font-size: 0.72rem;">Customer #{{ @order.id_customer }}</span>
+                        </div>
+
+                        <!-- Opsi Ganti ke Pelanggan Terdaftar Lainnya -->
+                        <div class="mb-3 p-2.5 bg-light rounded border">
+                            <label class="form-label small fw-semibold text-dark mb-1" for="selectPilihCustomer">
+                                <i class="bi bi-arrow-repeat me-1 text-primary"></i>Ganti ke Perusahaan Terdaftar Lain (Opsional):
+                            </label>
+                            <select name="pilih_id_customer" id="selectPilihCustomer" class="form-select form-select-sm" onchange="onPilihCustomerChange(this)">
+                                <option value="">-- Tetap Gunakan Perusahaan Saat Ini ({{ @order.nama_perusahaan }}) --</option>
+                                <repeat group="{{ @daftar_customer }}" value="{{ @cust }}">
+                                    <option value="{{ @cust.id_customer }}" 
+                                            data-pt="{{ @cust.pt_cv }}" 
+                                            data-nama="{{ @cust.nmcustomer }}" 
+                                            data-pic="{{ @cust.contactperson_opti ?: (@cust.contactperson ?: @cust.nama_pribadi) }}" 
+                                            data-telp="{{ @cust.nohpcontactperson_opti ?: (@cust.nohpcontactperson ?: @cust.notelpcustomer) }}" 
+                                            data-email="{{ @cust.emailcustomer ?: @cust.emailcustomer_sertifikasi }}" 
+                                            data-alamat="{{ @cust.alamatcustomer_baru ?: @cust.alamatcustomer }}"
+                                            {{ @cust.id_customer == @order.id_customer ? 'selected' : '' }}>
+                                        {{ (@cust.pt_cv ? @cust.pt_cv.' ' : '').@cust.nmcustomer }} {{ @cust.kodex_perusahaan ? '('.@cust.kodex_perusahaan.')' : '' }}
+                                    </option>
+                                </repeat>
+                            </select>
+                            <small class="text-muted d-block mt-1" style="font-size: 0.73rem;">
+                                Pilih instansi dari database jika terjadi kesalahan pemilihan perusahaan saat input surat masuk.
+                            </small>
+                        </div>
+
+                        <div class="row g-2.5">
+                            <div class="col-sm-4">
+                                <label class="form-label small fw-semibold text-dark mb-1" for="inputEditPtCv">Bentuk Badan Usaha</label>
+                                <select name="pt_cv" id="inputEditPtCv" class="form-select form-select-sm">
+                                    <option value="PT" {{ @order.pt_cv == 'PT' ? 'selected' : '' }}>PT</option>
+                                    <option value="CV" {{ @order.pt_cv == 'CV' ? 'selected' : '' }}>CV</option>
+                                    <option value="UD" {{ @order.pt_cv == 'UD' ? 'selected' : '' }}>UD</option>
+                                    <option value="Instansi Pemerintah" {{ @order.pt_cv == 'Instansi Pemerintah' ? 'selected' : '' }}>Instansi Pemerintah</option>
+                                    <option value="BUMN" {{ @order.pt_cv == 'BUMN' ? 'selected' : '' }}>BUMN</option>
+                                    <option value="Yayasan" {{ @order.pt_cv == 'Yayasan' ? 'selected' : '' }}>Yayasan</option>
+                                    <option value="Perorangan" {{ @order.pt_cv == 'Perorangan' ? 'selected' : '' }}>Perorangan</option>
+                                    <option value="Lainnya" {{ @order.pt_cv == 'Lainnya' ? 'selected' : '' }}>Lainnya</option>
+                                </select>
+                            </div>
+                            <div class="col-sm-8">
+                                <label class="form-label small fw-semibold text-dark mb-1" for="inputEditNamaPerusahaan">
+                                    Nama Perusahaan / Instansi <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" name="nmcustomer" id="inputEditNamaPerusahaan" class="form-control form-control-sm" value="{{ @order.nama_perusahaan }}" required placeholder="Contoh: Polyfin Canggih">
+                            </div>
+
+                            <div class="col-sm-6">
+                                <label class="form-label small fw-semibold text-dark mb-1" for="inputEditPic">
+                                    Nama Kontak / PIC
+                                </label>
+                                <input type="text" name="pic" id="inputEditPic" class="form-control form-control-sm" value="{{ @order.pic != '-' && @order.pic != '—' ? @order.pic : '' }}" placeholder="Nama penanggung jawab">
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label small fw-semibold text-dark mb-1" for="inputEditTelepon">
+                                    Telepon / No. WhatsApp
+                                </label>
+                                <input type="text" name="telepon" id="inputEditTelepon" class="form-control form-control-sm" value="{{ @order.telepon != '-' && @order.telepon != '—' ? @order.telepon : '' }}" placeholder="Contoh: 08123456789">
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold text-dark mb-1" for="inputEditEmail">
+                                    Alamat Email
+                                </label>
+                                <input type="email" name="email" id="inputEditEmail" class="form-control form-control-sm" value="{{ @order.email != '-' && @order.email != '—' ? @order.email : '' }}" placeholder="contoh@perusahaan.com">
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold text-dark mb-1" for="inputEditAlamat">
+                                    Alamat Kantor / Pabrik
+                                </label>
+                                <textarea name="alamat" id="inputEditAlamat" class="form-control form-control-sm" rows="2" placeholder="Alamat lengkap kantor / pabrik">{{ @order.alamat != '-' && @order.alamat != '—' ? @order.alamat : '' }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Asal Surat Permohonan (Jika ada / dikaitkan) -->
+                    <div class="bg-white p-3 p-md-4 rounded-3 border shadow-xs">
+                        <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+                            <h6 class="fw-bold text-dark m-0 small d-flex align-items-center gap-2">
+                                <i class="bi bi-envelope-paper-fill text-primary"></i> Rujukan Asal Surat Permohonan
+                            </h6>
+                            <span class="badge bg-light text-muted border" style="font-size: 0.72rem;">
+                                {{ @surat_masuk ? 'Arsip #'.@surat_masuk.id : 'Data Order' }}
+                            </span>
+                        </div>
+
+                        <div class="row g-2.5">
+                            <div class="col-sm-7">
+                                <label class="form-label small fw-semibold text-dark mb-1" for="inputEditNomorSurat">Nomor Surat Resmi</label>
+                                <input type="text" name="nomor_surat" id="inputEditNomorSurat" class="form-control form-control-sm font-monospace" value="{{ @surat_masuk.nomor_surat ?: @order.nomor_surat_masuk }}" placeholder="Nomor surat resmi klien">
+                            </div>
+                            <div class="col-sm-5">
+                                <label class="form-label small fw-semibold text-dark mb-1" for="inputEditTanggalSurat">Tanggal Surat</label>
+                                <input type="date" name="tanggal_surat" id="inputEditTanggalSurat" class="form-control form-control-sm" value="{{ @surat_masuk.tanggal_surat ? date('Y-m-d', strtotime(@surat_masuk.tanggal_surat)) : (@order.tanggal_masuk ? date('Y-m-d', strtotime(@order.tanggal_masuk)) : '') }}">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold text-dark mb-1" for="inputEditPerihal">Perihal Permohonan / Judul Kegiatan</label>
+                                <input type="text" name="perihal" id="inputEditPerihal" class="form-control form-control-sm" value="{{ @surat_masuk.perihal ?: @order.judul_kegiatan }}" placeholder="Perihal surat permohonan">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-top py-3 px-4 bg-light d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-2 fw-semibold" data-bs-dismiss="modal">
+                        Batal
+                    </button>
+                    <button type="submit" class="btn btn-primary btn-sm px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-1.5">
+                        <i class="bi bi-check2-circle fs-6"></i> Simpan Perubahan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- Modal Pratinjau Surat Masuk Resmi -->
 <check if="{{ @surat_masuk && @surat_masuk.file_path }}">
     <div class="modal fade" id="modalPreviewSuratMasuk" tabindex="-1" aria-labelledby="modalPreviewSuratMasukLabel" aria-hidden="true">
@@ -2546,6 +2698,44 @@
 </check>
 
 <script>
+function onPilihCustomerChange(select) {
+    if (!select || !select.value) return;
+    var opt = select.options[select.selectedIndex];
+    if (!opt) return;
+
+    var pt = opt.getAttribute('data-pt') || '';
+    var nama = opt.getAttribute('data-nama') || '';
+    var pic = opt.getAttribute('data-pic') || '';
+    var telp = opt.getAttribute('data-telp') || '';
+    var email = opt.getAttribute('data-email') || '';
+    var alamat = opt.getAttribute('data-alamat') || '';
+
+    if (pt) {
+        var elPt = document.getElementById('inputEditPtCv');
+        if (elPt) elPt.value = pt;
+    }
+    if (nama) {
+        var elNama = document.getElementById('inputEditNamaPerusahaan');
+        if (elNama) elNama.value = nama;
+    }
+    if (pic && pic !== '-') {
+        var elPic = document.getElementById('inputEditPic');
+        if (elPic) elPic.value = pic;
+    }
+    if (telp && telp !== '-') {
+        var elTelp = document.getElementById('inputEditTelepon');
+        if (elTelp) elTelp.value = telp;
+    }
+    if (email && email !== '-') {
+        var elEmail = document.getElementById('inputEditEmail');
+        if (elEmail) elEmail.value = email;
+    }
+    if (alamat && alamat !== '-') {
+        var elAlamat = document.getElementById('inputEditAlamat');
+        if (elAlamat) elAlamat.value = alamat;
+    }
+}
+
 function selectDivisiOpti(tipe) {
     var inputHidden = document.getElementById('inputJenisLayananOpti');
     var radioSel = document.getElementById('radioSelulosa');

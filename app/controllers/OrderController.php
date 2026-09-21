@@ -817,9 +817,82 @@ class OrderController extends Controller {
                 ));
             }
 
-            $this->setFlashSuccess("Data pelanggan / klien untuk Order #{$order['nomor_order']} berhasil diperbarui!");
+            // Update data surat masuk jika ada dan dikirimkan
+            $nomorSurat   = trim($post['nomor_surat'] ?? '');
+            $tanggalSurat = trim($post['tanggal_surat'] ?? '');
+            $perihal      = trim($post['perihal'] ?? '');
+
+            if (!empty($order['id_surat_masuk'])) {
+                $idArsip = (int)$order['id_surat_masuk'];
+                $arsipUpdates = [];
+                $arsipParams  = [];
+                if ($targetCustomerId > 0) {
+                    $arsipUpdates[] = "id_customer = ?";
+                    $arsipParams[]  = $targetCustomerId;
+                }
+                if (!empty($nomorSurat)) {
+                    $arsipUpdates[] = "nomor_surat = ?";
+                    $arsipParams[]  = $nomorSurat;
+                }
+                if (!empty($tanggalSurat)) {
+                    $arsipUpdates[] = "tanggal_surat = ?";
+                    $arsipParams[]  = $tanggalSurat;
+                }
+                if (!empty($perihal)) {
+                    $arsipUpdates[] = "perihal = ?";
+                    $arsipParams[]  = $perihal;
+                }
+                if (!empty($arsipUpdates)) {
+                    $arsipParams[] = $idArsip;
+                    try {
+                        $targetDb = $this->dbSekretariat ?: $this->db;
+                        $targetDb->exec(
+                            "UPDATE tb_arsipsurat SET " . implode(', ', $arsipUpdates) . " WHERE id_arsip = ?",
+                            $arsipParams
+                        );
+                    } catch (\Exception $eArsip) {}
+                }
+            }
+
+            // Sinkronkan order_layanan jika nomor surat, tanggal masuk, atau perihal berubah
+            $orderUpdates = [];
+            $orderParams  = [];
+            if (!empty($nomorSurat)) {
+                $orderUpdates[] = "nomor_surat_masuk = ?";
+                $orderParams[]  = $nomorSurat;
+            }
+            if (!empty($tanggalSurat)) {
+                $orderUpdates[] = "tanggal_masuk = ?";
+                $orderParams[]  = $tanggalSurat;
+            }
+            if (!empty($perihal)) {
+                $orderUpdates[] = "judul_kegiatan = ?";
+                $orderParams[]  = $perihal;
+            }
+            if (!empty($orderUpdates)) {
+                $orderParams[] = $orderId;
+                $this->db->exec(
+                    "UPDATE order_layanan SET " . implode(', ', $orderUpdates) . " WHERE id = ?",
+                    $orderParams
+                );
+            }
+
+            // Sinkronkan ke tb_surat_penawaran jika sudah ada
+            try {
+                $spModel = new \DB\SQL\Mapper($this->db, 'tb_surat_penawaran');
+                $spModel->load(['order_id = ?', $orderId]);
+                if (!$spModel->dry()) {
+                    if (!empty($namaPerusahaan)) $spModel->perusahaan = $namaPerusahaan;
+                    if (!empty($pic))            $spModel->nama       = $pic;
+                    if (!empty($alamat))         $spModel->alamat     = $alamat;
+                    $spModel->customer_id = $targetCustomerId;
+                    $spModel->save();
+                }
+            } catch (\Exception $eSp) {}
+
+            $this->setFlashSuccess("Data profil pelanggan / rujukan surat untuk Order #{$order['nomor_order']} berhasil diperbarui!");
         } catch (\Exception $e) {
-            $this->setFlashError("Gagal memperbarui data klien: " . $e->getMessage());
+            $this->setFlashError("Gagal memperbarui data: " . $e->getMessage());
         }
 
         $f3->reroute("/order/{$orderId}");
