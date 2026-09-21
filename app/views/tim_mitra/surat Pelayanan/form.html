@@ -746,33 +746,36 @@
         <!-- ============================================== -->
         <div>
 
-            <!-- 1. Identitas Klien -->
+            <!-- 1. Identitas Klien (Read Only) -->
             <div class="form-section-card">
-                <div class="form-section-header">
+                <div class="form-section-header d-flex justify-content-between align-items-center">
                     <div>
                         <div class="section-header-text">Identitas Klien / Pelanggan</div>
                         <div class="section-header-sub">Data pemohon resmi dari perusahaan mitra</div>
                     </div>
+                    <span class="badge bg-light text-muted border px-2 py-1" style="font-size: 0.72rem; font-weight: 600;">
+                        <i class="bi bi-lock-fill me-1"></i>Read Only
+                    </span>
                 </div>
                 <div class="form-section-body">
                     <div class="row g-2">
                         <div class="col-sm-6">
-                            <label class="form-label small fw-semibold text-dark mb-1" for="inputNama">
-                                Nama Pemohon / PIC <span class="text-danger">*</span>
+                            <label class="form-label small fw-semibold text-secondary mb-1" for="inputNama">
+                                Nama Pemohon / PIC
                             </label>
-                            <input type="text" id="inputNama" name="nama" class="form-control form-control-sm" placeholder="Nama lengkap penanggung jawab" value="{{ (@order.pic && @order.pic != '-' && @order.pic != '—') ? @order.pic : ((@sp.nama && @sp.nama != '-' && @sp.nama != '—') ? @sp.nama : '') }}" {{ !@can_edit ? 'disabled' : '' }} required>
+                            <input type="text" id="inputNama" name="nama" class="form-control form-control-sm bg-light text-dark fw-medium border-secondary-subtle" placeholder="Nama lengkap penanggung jawab" value="{{ (@order.pic && @order.pic != '-' && @order.pic != '—') ? @order.pic : ((@sp.nama && @sp.nama != '-' && @sp.nama != '—') ? @sp.nama : '') }}" readonly style="cursor: not-allowed;">
                         </div>
                         <div class="col-sm-6">
-                            <label class="form-label small fw-semibold text-dark mb-1" for="inputPerusahaan">
-                                Nama Perusahaan / Instansi <span class="text-danger">*</span>
+                            <label class="form-label small fw-semibold text-secondary mb-1" for="inputPerusahaan">
+                                Nama Perusahaan / Instansi
                             </label>
-                            <input type="text" id="inputPerusahaan" name="perusahaan" class="form-control form-control-sm" placeholder="Nama instansi / PT" value="{{ (@order.nama_perusahaan && @order.nama_perusahaan != '-' && @order.nama_perusahaan != '—') ? @order.nama_perusahaan : ((@sp.perusahaan && @sp.perusahaan != '-' && @sp.perusahaan != '—') ? @sp.perusahaan : '') }}" {{ !@can_edit ? 'disabled' : '' }} required>
+                            <input type="text" id="inputPerusahaan" name="perusahaan" class="form-control form-control-sm bg-light text-dark fw-medium border-secondary-subtle" placeholder="Nama instansi / PT" value="{{ (@order.nama_perusahaan && @order.nama_perusahaan != '-' && @order.nama_perusahaan != '—') ? @order.nama_perusahaan : ((@sp.perusahaan && @sp.perusahaan != '-' && @sp.perusahaan != '—') ? @sp.perusahaan : '') }}" readonly style="cursor: not-allowed;">
                         </div>
                         <div class="col-12">
-                            <label class="form-label small fw-semibold text-dark mb-1" for="inputAlamat">
+                            <label class="form-label small fw-semibold text-secondary mb-1" for="inputAlamat">
                                 Alamat Kantor / Pabrik
                             </label>
-                            <input type="text" id="inputAlamat" name="alamat" class="form-control form-control-sm" placeholder="Alamat lengkap perusahaan / klien" value="{{ (@order.alamat && @order.alamat != '-' && @order.alamat != '—') ? @order.alamat : ((@sp.alamat && @sp.alamat != '-' && @sp.alamat != '—') ? @sp.alamat : '') }}" {{ !@can_edit ? 'disabled' : '' }}>
+                            <input type="text" id="inputAlamat" name="alamat" class="form-control form-control-sm bg-light text-dark fw-medium border-secondary-subtle" placeholder="Alamat lengkap perusahaan / klien" value="{{ (@order.alamat && @order.alamat != '-' && @order.alamat != '—') ? @order.alamat : ((@sp.alamat && @sp.alamat != '-' && @sp.alamat != '—') ? @sp.alamat : '') }}" readonly style="cursor: not-allowed;">
                         </div>
                     </div>
                 </div>
