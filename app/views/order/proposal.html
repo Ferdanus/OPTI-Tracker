@@ -616,14 +616,20 @@
                                     <i class="bi bi-save me-1"></i> Simpan Draf
                                 </button>
                                 <div class="text-end">
-                                    <button type="submit" id="btnKirimProposal" name="action_type" value="ajukan" class="btn btn-primary px-4 py-2 fw-semibold text-white shadow-sm" {{ empty(@proposal.file_proposal) ? 'disabled' : '' }} title="{{ empty(@proposal.file_proposal) ? 'Unggah berkas proposal terlebih dahulu untuk mengaktifkan tombol kirim' : 'Kirim proposal ke Ketua Tim OPTI' }}">
+                                    <button type="submit" id="btnKirimProposal" name="action_type" value="ajukan" class="btn btn-primary px-4 py-2 fw-semibold text-white shadow-sm" {{ empty(@proposal.file_proposal) || ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) ? 'disabled' : '' }} title="{{ empty(@proposal.file_proposal) || ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) ? 'Lengkapi estimasi biaya dan unggah berkas proposal untuk mengaktifkan tombol kirim' : 'Kirim proposal ke Ketua Tim OPTI' }}">
                                         <i class="bi bi-send-fill me-1"></i> Kirim
                                     </button>
-                                    <check if="{{ empty(@proposal.file_proposal) }}">
-                                        <small class="text-muted d-block mt-1" id="hintKirimProposal" style="font-size: 0.75rem;">
+                                    <small class="text-muted d-block mt-1 {{ !empty(@proposal.file_proposal) && ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) > 0) ? 'd-none' : '' }}" id="hintKirimProposal" style="font-size: 0.75rem;">
+                                        <check if="{{ empty(@proposal.file_proposal) && ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) }}">
+                                            <i class="bi bi-info-circle me-1"></i> Isi estimasi total biaya (> Rp 0) dan unggah berkas proposal untuk mengaktifkan tombol kirim.
+                                        </check>
+                                        <check if="{{ empty(@proposal.file_proposal) && ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) > 0) }}">
                                             <i class="bi bi-info-circle me-1"></i> Unggah berkas dokumen proposal untuk mengaktifkan tombol kirim.
-                                        </small>
-                                    </check>
+                                        </check>
+                                        <check if="{{ !empty(@proposal.file_proposal) && ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) }}">
+                                            <i class="bi bi-info-circle me-1"></i> Isi estimasi total biaya / RAB (> Rp 0) untuk mengaktifkan tombol kirim.
+                                        </check>
+                                    </small>
                                 </div>
                             </div>
                         </check>
@@ -943,17 +949,7 @@ function handleFileSelect(event) {
     }
 
     previewBox.classList.remove('d-none');
-
-    // Aktifkan tombol kirim & sembunyikan hint jika ada file terpilih
-    const btnKirim = document.getElementById('btnKirimProposal');
-    const hintKirim = document.getElementById('hintKirimProposal');
-    if (btnKirim) {
-        btnKirim.disabled = false;
-        btnKirim.title = 'Kirim proposal ke Ketua Tim OPTI';
-    }
-    if (hintKirim) {
-        hintKirim.classList.add('d-none');
-    }
+    checkKirimButtonState();
 }
 
 function toggleLocalPdfPreview() {
@@ -1014,18 +1010,7 @@ function cancelSelectedFile() {
     if (inlineWrapper) inlineWrapper.classList.add('d-none');
     selectedFileObj = null;
 
-    const hasExistingFile = {{ !empty(@proposal.file_proposal) ? 'true' : 'false' }};
-    const btnKirim = document.getElementById('btnKirimProposal');
-    const hintKirim = document.getElementById('hintKirimProposal');
-    if (!hasExistingFile) {
-        if (btnKirim) {
-            btnKirim.disabled = true;
-            btnKirim.title = 'Unggah berkas proposal terlebih dahulu untuk mengaktifkan tombol kirim';
-        }
-        if (hintKirim) {
-            hintKirim.classList.remove('d-none');
-        }
-    }
+    checkKirimButtonState();
 }
 
 // ========================================================
@@ -1270,6 +1255,45 @@ function formatRupiahInput(el) {
     const hiddenEl = document.getElementById('inputBiayaReal');
     if (hiddenEl) hiddenEl.value = num;
     el.value = num > 0 ? num.toLocaleString('id-ID') : '';
+    checkKirimButtonState();
+}
+
+function checkKirimButtonState() {
+    const btnKirim = document.getElementById('btnKirimProposal');
+    const hintKirim = document.getElementById('hintKirimProposal');
+    if (!btnKirim) return;
+
+    const hasExistingFile = {{ !empty(@proposal.file_proposal) ? 'true' : 'false' }};
+    const fileInput = document.getElementById('file_proposal');
+    const hasNewFile = (fileInput && fileInput.files && fileInput.files.length > 0) || (typeof selectedFileObj !== 'undefined' && selectedFileObj !== null);
+    const hasFile = hasExistingFile || hasNewFile;
+
+    const hiddenBiaya = document.getElementById('inputBiayaReal');
+    const biayaVal = hiddenBiaya ? (parseFloat(hiddenBiaya.value) || 0) : 0;
+    const hasCost = biayaVal > 0;
+
+    if (hasFile && hasCost) {
+        btnKirim.disabled = false;
+        btnKirim.title = 'Kirim proposal ke Ketua Tim OPTI';
+        if (hintKirim) {
+            hintKirim.classList.add('d-none');
+        }
+    } else {
+        btnKirim.disabled = true;
+        let hintMsg = '';
+        if (!hasFile && !hasCost) {
+            hintMsg = '<i class="bi bi-info-circle me-1"></i> Isi estimasi total biaya (> Rp 0) dan unggah berkas proposal untuk mengaktifkan tombol kirim.';
+        } else if (!hasFile) {
+            hintMsg = '<i class="bi bi-info-circle me-1"></i> Unggah berkas dokumen proposal untuk mengaktifkan tombol kirim.';
+        } else {
+            hintMsg = '<i class="bi bi-info-circle me-1"></i> Isi estimasi total biaya / RAB (> Rp 0) untuk mengaktifkan tombol kirim.';
+        }
+        btnKirim.title = hintMsg.replace(/<[^>]*>?/gm, '');
+        if (hintKirim) {
+            hintKirim.innerHTML = hintMsg;
+            hintKirim.classList.remove('d-none');
+        }
+    }
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -1280,7 +1304,9 @@ document.addEventListener('DOMContentLoaded', function() {
         displayEl.value = val > 0 ? val.toLocaleString('id-ID') : '';
     }
 
-    // Validasi Pengajuan Proposal: Pastikan berkas proposal sudah diunggah
+    checkKirimButtonState();
+
+    // Validasi Pengajuan Proposal: Pastikan berkas proposal sudah diunggah & biaya > 0
     const formProposal = document.getElementById('formProposal');
     if (formProposal) {
         formProposal.addEventListener('submit', function(e) {
@@ -1289,15 +1315,28 @@ document.addEventListener('DOMContentLoaded', function() {
             if (actionType === 'ajukan') {
                 const hasExistingFile = {{ !empty(@proposal.file_proposal) ? 'true' : 'false' }};
                 const fileInput = document.getElementById('file_proposal');
-                const hasNewFile = fileInput && fileInput.files && fileInput.files.length > 0;
+                const hasNewFile = (fileInput && fileInput.files && fileInput.files.length > 0) || (typeof selectedFileObj !== 'undefined' && selectedFileObj !== null);
+                const hasFile = hasExistingFile || hasNewFile;
 
-                if (!hasExistingFile && !hasNewFile) {
+                const hiddenBiaya = document.getElementById('inputBiayaReal');
+                const biayaVal = hiddenBiaya ? (parseFloat(hiddenBiaya.value) || 0) : 0;
+                const hasCost = biayaVal > 0;
+
+                if (!hasFile || !hasCost) {
                     e.preventDefault();
-                    const dropzone = document.getElementById('dropzoneContainer');
-                    if (dropzone) {
-                        dropzone.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        dropzone.style.borderColor = '#dc3545';
-                        setTimeout(() => { dropzone.style.borderColor = ''; }, 3000);
+                    if (!hasFile) {
+                        const dropzone = document.getElementById('dropzoneContainer');
+                        if (dropzone) {
+                            dropzone.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            dropzone.style.borderColor = '#dc3545';
+                            setTimeout(() => { dropzone.style.borderColor = ''; }, 3000);
+                        }
+                    } else if (!hasCost) {
+                        const inputBiaya = document.getElementById('inputBiayaDisplay');
+                        if (inputBiaya) {
+                            inputBiaya.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            inputBiaya.focus();
+                        }
                     }
                     return false;
                 }
