@@ -570,12 +570,29 @@
                         <div class="mb-3">
                             <label class="form-label small fw-semibold text-dark mb-1 d-flex justify-content-between align-items-center">
                                 <span>Instansi Pelanggan <span class="text-danger">*</span></span>
-                                <span class="text-muted fw-normal" style="font-size:0.72rem;">
-                                    <i class="bi bi-search me-1 text-primary"></i>Ketik nama / kode perusahaan
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle fw-medium" style="font-size:0.7rem;">
+                                    <i class="bi bi-search me-1"></i>Pencarian Cepat
                                 </span>
                             </label>
-                            <select name="id_customer" class="form-select form-select-sm fw-semibold select-customer-modal" data-modal-id="{{ @surat.id }}" placeholder="Ketik nama atau kode perusahaan untuk mencari..." required>
-                                <option value="">-- Ketik atau Pilih Instansi Pelanggan --</option>
+
+                            <check if="{{ !empty(@surat.id_customer) }}">
+                                <div class="p-2 mb-2 bg-primary-subtle border border-primary-subtle rounded-2 d-flex justify-content-between align-items-center">
+                                    <div class="small text-truncate me-2">
+                                        <i class="bi bi-magic text-primary me-1"></i>
+                                        <span class="text-muted">Sesuai berkas surat:</span>
+                                        <strong class="text-dark">{{ @surat.nama_pengirim_bersih ?: @surat.pengirim }}</strong>
+                                    </div>
+                                    <button type="button" class="btn btn-primary btn-sm py-1 px-2 fw-semibold btn-quick-pick flex-shrink-0" 
+                                            data-modal-id="{{ @surat.id }}" 
+                                            data-target-cust="{{ @surat.id_customer }}"
+                                            style="font-size:0.75rem;">
+                                        <i class="bi bi-check2-circle me-1"></i>Pilih Otomatis
+                                    </button>
+                                </div>
+                            </check>
+
+                            <select name="id_customer" class="form-select form-select-sm fw-semibold select-customer-modal" data-modal-id="{{ @surat.id }}" placeholder="Ketik nama PT/CV, kode pelanggan, nama PIC, atau alamat..." required>
+                                <option value="">-- Ketik untuk mencari perusahaan (nama/kode/PIC) --</option>
                                 <repeat group="{{ @daftar_customer_opti }}" value="{{ @cust }}">
                                     <option value="{{ @cust.id_customer }}"
                                             data-ptcv="{{ @cust.pt_cv }}"
@@ -593,6 +610,9 @@
                                     </option>
                                 </repeat>
                             </select>
+                            <small class="text-muted mt-1 d-block" style="font-size:0.72rem;">
+                                <i class="bi bi-info-circle me-1"></i>Bisa mencari berdasarkan <strong>nama PT</strong>, <strong>nomor kode</strong>, atau <strong>nama PIC</strong>.
+                            </small>
                         </div>
 
                         <!-- 2. Preview Data Pelanggan Terpilih -->
@@ -1308,22 +1328,81 @@ document.addEventListener('DOMContentLoaded', function() {
         if (elAlamat) elAlamat.textContent = alamat;
     }
 
-    // Inisialisasi TomSelect searchable dropdown untuk mencari nama perusahaan atau kode
+    // Inisialisasi TomSelect searchable dropdown untuk mencari nama perusahaan, kode, PIC, atau alamat
     function initCustomerTomSelect(select) {
         if (!select || typeof TomSelect === 'undefined' || select.tomselect) return;
 
+        // Parse opsi dari native <select> lengkap dengan atribut data agar bisa dicari secara mendalam
+        var selectOptions = [];
+        Array.from(select.options).forEach(function(opt) {
+            if (!opt.value) return;
+            selectOptions.push({
+                value: opt.value,
+                text: opt.text,
+                nama: opt.getAttribute('data-nama-bersih') || opt.text,
+                kode: opt.getAttribute('data-kode') || '',
+                pic: opt.getAttribute('data-pic') || '',
+                telp: opt.getAttribute('data-telp') || '',
+                email: opt.getAttribute('data-email') || '',
+                alamat: opt.getAttribute('data-alamat') || ''
+            });
+        });
+
         var ts = new TomSelect(select, {
+            options: selectOptions,
+            valueField: 'value',
+            labelField: 'text',
+            searchField: ['nama', 'kode', 'pic', 'alamat', 'text'],
             create: false,
             maxItems: 1,
-            sortField: { field: "text", direction: "asc" },
-            placeholder: select.getAttribute('placeholder') || 'Ketik nama perusahaan atau kode...',
+            placeholder: select.getAttribute('placeholder') || 'Ketik nama PT/CV, kode pelanggan, atau nama PIC...',
             maxOptions: 300,
             allowEmptyOption: true,
+            plugins: {
+                'dropdown_input': {},
+                'clear_button': {
+                    title: 'Hapus pilihan'
+                }
+            },
+            render: {
+                option: function(data, escape) {
+                    var kode = data.kode && data.kode !== '-' ? '#' + escape(data.kode) : '';
+                    var pic = data.pic && data.pic !== '-' ? '<span class="fw-semibold text-dark">PIC: ' + escape(data.pic) + '</span>' : '';
+                    var alamat = data.alamat && data.alamat !== '-' ? escape(data.alamat) : '';
+                    var sub = [pic, alamat].filter(Boolean).join(' • ');
+                    return '<div class="py-2 px-3 border-bottom">' +
+                        '<div class="d-flex justify-content-between align-items-center mb-1">' +
+                            '<span class="fw-bold text-dark"><i class="bi bi-building me-2 text-primary"></i>' + escape(data.nama || data.text) + '</span>' +
+                            (kode ? '<span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace" style="font-size:0.72rem;">Kode ' + kode + '</span>' : '') +
+                        '</div>' +
+                        (sub ? '<div class="text-muted text-truncate small" style="font-size:0.75rem; max-width:440px;">' + sub + '</div>' : '') +
+                    '</div>';
+                },
+                item: function(data, escape) {
+                    var kode = data.kode && data.kode !== '-' ? ' [Kode: #' + escape(data.kode) + ']' : '';
+                    return '<div class="fw-bold text-dark text-truncate">' +
+                        '<i class="bi bi-building text-primary me-2"></i>' +
+                        escape(data.nama || data.text) +
+                        (kode ? '<span class="text-primary small ms-1">' + kode + '</span>' : '') +
+                    '</div>';
+                },
+                no_results: function(data, escape) {
+                    return '<div class="p-3 text-center text-muted small">' +
+                        '<i class="bi bi-exclamation-circle text-warning me-1"></i> Tidak ditemukan perusahaan dengan kata kunci "<strong>' + escape(data.input) + '</strong>".' +
+                        '<div class="mt-1 text-secondary" style="font-size:0.75rem;">Coba ketik nama instansi lain atau nomor kode pelanggan balai.</div>' +
+                    '</div>';
+                }
+            },
             onChange: function(val) {
                 select.value = val;
                 syncCustomerCard(select);
             }
         });
+
+        // Set value awal jika ada
+        if (select.value) {
+            ts.setValue(select.value, true);
+        }
     }
 
     // Pasang listener pada seluruh select-customer-modal
@@ -1346,6 +1425,23 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    // Event listener untuk tombol 'Pilih Otomatis' sesuai rujukan berkas surat masuk
+    document.addEventListener('click', function(e) {
+        var btn = e.target.closest('.btn-quick-pick');
+        if (!btn) return;
+        var modalId = btn.getAttribute('data-modal-id');
+        var custId = btn.getAttribute('data-target-cust');
+        var select = document.querySelector('.select-customer-modal[data-modal-id="' + modalId + '"]');
+        if (select && custId) {
+            if (select.tomselect) {
+                select.tomselect.setValue(custId);
+            } else {
+                select.value = custId;
+                syncCustomerCard(select);
+            }
+        }
+    });
 });
 </script>
 
@@ -1359,7 +1455,7 @@ document.addEventListener('DOMContentLoaded', function() {
     font-size: 0.875rem !important;
     font-weight: 600 !important;
     color: #1e293b !important;
-    min-height: 38px !important;
+    min-height: 40px !important;
     padding: 0.45rem 0.75rem !important;
     border-color: #cbd5e1 !important;
     background-color: #ffffff !important;
@@ -1375,13 +1471,33 @@ document.addEventListener('DOMContentLoaded', function() {
     z-index: 1065 !important;
     font-size: 0.85rem !important;
     border-radius: 0.375rem !important;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.18), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 0 12px 28px -4px rgba(0, 0, 0, 0.18), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
     border: 1px solid #cbd5e1 !important;
+    overflow: hidden;
+}
+.modal .ts-dropdown .dropdown-input-wrap {
+    padding: 0.5rem 0.65rem;
+    background-color: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+}
+.modal .ts-dropdown .dropdown-input {
+    border-radius: 0.375rem !important;
+    border: 1px solid #cbd5e1 !important;
+    padding: 0.45rem 0.75rem !important;
+    font-size: 0.85rem !important;
+    width: 100% !important;
+    outline: none !important;
+    background-color: #ffffff !important;
+}
+.modal .ts-dropdown .dropdown-input:focus {
+    border-color: #0d6efd !important;
+    box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.15) !important;
 }
 .modal .ts-dropdown .option {
-    padding: 0.55rem 0.85rem !important;
+    padding: 0.6rem 0.85rem !important;
     border-bottom: 1px solid #f1f5f9;
     cursor: pointer;
+    transition: background-color 0.15s ease;
 }
 .modal .ts-dropdown .option:last-child {
     border-bottom: none;
@@ -1390,6 +1506,15 @@ document.addEventListener('DOMContentLoaded', function() {
 .modal .ts-dropdown .option:hover {
     background-color: #eff6ff !important;
     color: #1d4ed8 !important;
-    font-weight: 600;
+}
+.modal .ts-wrapper .clear-button {
+    font-size: 1.15rem !important;
+    color: #94a3b8 !important;
+    right: 32px !important;
+    cursor: pointer !important;
+    transition: color 0.15s ease;
+}
+.modal .ts-wrapper .clear-button:hover {
+    color: #dc2626 !important;
 }
 </style>
