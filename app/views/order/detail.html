@@ -2393,7 +2393,7 @@
     </div>
 </div>
 
-<!-- Modal Edit Profil Pelanggan & Asal Surat Permohonan -->
+<!-- Modal Edit Profil Pelanggan -->
 <div class="modal fade" id="modalEditProfilPelanggan" tabindex="-1" aria-labelledby="modalEditProfilPelangganLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content bg-white border-0 shadow-lg rounded-3">
@@ -2404,9 +2404,9 @@
                     </div>
                     <div>
                         <h6 class="modal-title fw-bold text-dark m-0 fs-6" id="modalEditProfilPelangganLabel">
-                            Edit Profil Pelanggan &amp; Asal Surat
+                            Edit Profil Pelanggan
                         </h6>
-                        <small class="text-muted" style="font-size: 0.78rem;">Perbarui data identitas klien atau koreksi kesalahan input saat penerimaan surat masuk</small>
+                        <small class="text-muted" style="font-size: 0.78rem;">Koreksi data profil pelanggan atau pilih instansi terdaftar dari master database</small>
                     </div>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
@@ -2416,113 +2416,93 @@
                 <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
 
                 <div class="modal-body p-4 bg-light">
-                    <!-- Identitas Pelanggan / Mitra -->
+                    <!-- 1. Pemilihan Instansi Pelanggan (Searchable TomSelect seperti di Surat Masuk) -->
                     <div class="bg-white p-3 p-md-4 rounded-3 border mb-3 shadow-xs">
-                        <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
-                            <h6 class="fw-bold text-dark m-0 small d-flex align-items-center gap-2">
-                                <i class="bi bi-building-fill text-primary"></i> Identitas Pelanggan / Mitra
-                            </h6>
-                            <span class="badge bg-light text-muted border" style="font-size: 0.72rem;">Customer #{{ @order.id_customer }}</span>
-                        </div>
-
-                        <!-- Opsi Ganti ke Pelanggan Terdaftar Lainnya -->
-                        <div class="mb-3 p-2.5 bg-light rounded border">
-                            <label class="form-label small fw-semibold text-dark mb-1" for="selectPilihCustomer">
-                                <i class="bi bi-arrow-repeat me-1 text-primary"></i>Ganti ke Perusahaan Terdaftar Lain (Opsional):
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-dark mb-1">
+                                Cari &amp; Pilih Instansi Pelanggan:
                             </label>
-                            <select name="pilih_id_customer" id="selectPilihCustomer" class="form-select form-select-sm" onchange="onPilihCustomerChange(this)">
-                                <option value="">-- Tetap Gunakan Perusahaan Saat Ini ({{ @order.nama_perusahaan }}) --</option>
-                                <repeat group="{{ @daftar_customer }}" value="{{ @cust }}">
-                                    <option value="{{ @cust.id_customer }}" 
-                                            data-pt="{{ @cust.pt_cv }}" 
-                                            data-nama="{{ @cust.nmcustomer }}" 
-                                            data-pic="{{ @cust.contactperson_opti ?: (@cust.contactperson ?: @cust.nama_pribadi) }}" 
-                                            data-telp="{{ @cust.nohpcontactperson_opti ?: (@cust.nohpcontactperson ?: @cust.notelpcustomer) }}" 
-                                            data-email="{{ @cust.emailcustomer ?: @cust.emailcustomer_sertifikasi }}" 
-                                            data-alamat="{{ @cust.alamatcustomer_baru ?: @cust.alamatcustomer }}"
-                                            {{ @cust.id_customer == @order.id_customer ? 'selected' : '' }}>
-                                        {{ (@cust.pt_cv ? @cust.pt_cv.' ' : '').@cust.nmcustomer }} {{ @cust.kodex_perusahaan ? '('.@cust.kodex_perusahaan.')' : '' }}
+                            <select name="pilih_id_customer" id="selectEditCustomer" class="form-select form-select-sm fw-semibold select-customer-modal-edit" placeholder="Ketik nama PT/CV, kode pelanggan, nama PIC, atau alamat...">
+                                <option value="">-- Ketik nama PT/CV, kode, atau PIC untuk mencari --</option>
+                                <repeat group="{{ @daftar_customer_opti }}" value="{{ @cust }}">
+                                    <option value="{{ @cust.id_customer }}"
+                                            data-ptcv="{{ @cust.pt_cv }}"
+                                            data-nama="{{ @cust.nmcustomer }}"
+                                            data-nama-bersih="{{ @cust.nama_perusahaan_bersih }}"
+                                            data-kode="{{ @cust.kodex_perusahaan ?: '-' }}"
+                                            data-alamat="{{ @cust.alamat_bersih ?: '-' }}"
+                                            data-pic="{{ @cust.pic_bersih ?: '-' }}"
+                                            data-hp="{{ @cust.hp_bersih ?: '-' }}"
+                                            data-telp="{{ @cust.telp_bersih ?: '-' }}"
+                                            data-email="{{ @cust.email_bersih ?: '-' }}"
+                                            {{ @order.id_customer == @cust.id_customer ? 'selected' : '' }}>
+                                        {{ @cust.nama_perusahaan_bersih }}
                                     </option>
                                 </repeat>
                             </select>
                             <small class="text-muted d-block mt-1" style="font-size: 0.73rem;">
-                                Pilih instansi dari database jika terjadi kesalahan pemilihan perusahaan saat input surat masuk.
+                                <i class="bi bi-info-circle text-primary me-1"></i>Ketik nama perusahaan untuk mencari cepat seperti pada modul surat masuk. Memilih instansi akan mengisi otomatis rincian data di bawah.
                             </small>
                         </div>
 
-                        <div class="row g-2.5">
-                            <div class="col-sm-4">
-                                <label class="form-label small fw-semibold text-dark mb-1" for="inputEditPtCv">Bentuk Badan Usaha</label>
-                                <select name="pt_cv" id="inputEditPtCv" class="form-select form-select-sm">
-                                    <option value="PT" {{ @order.pt_cv == 'PT' ? 'selected' : '' }}>PT</option>
-                                    <option value="CV" {{ @order.pt_cv == 'CV' ? 'selected' : '' }}>CV</option>
-                                    <option value="UD" {{ @order.pt_cv == 'UD' ? 'selected' : '' }}>UD</option>
-                                    <option value="Instansi Pemerintah" {{ @order.pt_cv == 'Instansi Pemerintah' ? 'selected' : '' }}>Instansi Pemerintah</option>
-                                    <option value="BUMN" {{ @order.pt_cv == 'BUMN' ? 'selected' : '' }}>BUMN</option>
-                                    <option value="Yayasan" {{ @order.pt_cv == 'Yayasan' ? 'selected' : '' }}>Yayasan</option>
-                                    <option value="Perorangan" {{ @order.pt_cv == 'Perorangan' ? 'selected' : '' }}>Perorangan</option>
-                                    <option value="Lainnya" {{ @order.pt_cv == 'Lainnya' ? 'selected' : '' }}>Lainnya</option>
-                                </select>
-                            </div>
-                            <div class="col-sm-8">
-                                <label class="form-label small fw-semibold text-dark mb-1" for="inputEditNamaPerusahaan">
-                                    Nama Perusahaan / Instansi <span class="text-danger">*</span>
-                                </label>
-                                <input type="text" name="nmcustomer" id="inputEditNamaPerusahaan" class="form-control form-control-sm" value="{{ @order.nama_perusahaan }}" required placeholder="Contoh: Polyfin Canggih">
+                        <!-- 2. Rincian Data Pelanggan Terpilih -->
+                        <div class="border-top pt-3 mt-3">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <span class="small fw-bold text-dark d-flex align-items-center gap-1.5">
+                                    <i class="bi bi-building text-primary"></i> Rincian Data Pelanggan Terpilih
+                                </span>
+                                <span class="badge bg-light text-muted border" style="font-size: 0.72rem;" id="lblEditCustBadge">
+                                    Customer #{{ @order.id_customer }}
+                                </span>
                             </div>
 
-                            <div class="col-sm-6">
-                                <label class="form-label small fw-semibold text-dark mb-1" for="inputEditPic">
-                                    Nama Kontak / PIC
-                                </label>
-                                <input type="text" name="pic" id="inputEditPic" class="form-control form-control-sm" value="{{ @order.pic != '-' && @order.pic != '—' ? @order.pic : '' }}" placeholder="Nama penanggung jawab">
-                            </div>
-                            <div class="col-sm-6">
-                                <label class="form-label small fw-semibold text-dark mb-1" for="inputEditTelepon">
-                                    Telepon / No. WhatsApp
-                                </label>
-                                <input type="text" name="telepon" id="inputEditTelepon" class="form-control form-control-sm" value="{{ @order.telepon != '-' && @order.telepon != '—' ? @order.telepon : '' }}" placeholder="Contoh: 08123456789">
-                            </div>
+                            <div class="row g-2.5">
+                                <div class="col-sm-4">
+                                    <label class="form-label small fw-semibold text-dark mb-1" for="inputEditPtCv">Bentuk Badan Usaha</label>
+                                    <select name="pt_cv" id="inputEditPtCv" class="form-select form-select-sm">
+                                        <option value="PT" {{ @order.pt_cv == 'PT' ? 'selected' : '' }}>PT</option>
+                                        <option value="CV" {{ @order.pt_cv == 'CV' ? 'selected' : '' }}>CV</option>
+                                        <option value="UD" {{ @order.pt_cv == 'UD' ? 'selected' : '' }}>UD</option>
+                                        <option value="Instansi Pemerintah" {{ @order.pt_cv == 'Instansi Pemerintah' ? 'selected' : '' }}>Instansi Pemerintah</option>
+                                        <option value="BUMN" {{ @order.pt_cv == 'BUMN' ? 'selected' : '' }}>BUMN</option>
+                                        <option value="Yayasan" {{ @order.pt_cv == 'Yayasan' ? 'selected' : '' }}>Yayasan</option>
+                                        <option value="Perorangan" {{ @order.pt_cv == 'Perorangan' ? 'selected' : '' }}>Perorangan</option>
+                                        <option value="Lainnya" {{ @order.pt_cv == 'Lainnya' ? 'selected' : '' }}>Lainnya</option>
+                                    </select>
+                                </div>
+                                <div class="col-sm-8">
+                                    <label class="form-label small fw-semibold text-dark mb-1" for="inputEditNamaPerusahaan">
+                                        Nama Perusahaan / Instansi <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text" name="nmcustomer" id="inputEditNamaPerusahaan" class="form-control form-control-sm fw-semibold" value="{{ @order.nama_perusahaan }}" required placeholder="Contoh: Polyfin Canggih">
+                                </div>
 
-                            <div class="col-12">
-                                <label class="form-label small fw-semibold text-dark mb-1" for="inputEditEmail">
-                                    Alamat Email
-                                </label>
-                                <input type="email" name="email" id="inputEditEmail" class="form-control form-control-sm" value="{{ @order.email != '-' && @order.email != '—' ? @order.email : '' }}" placeholder="contoh@perusahaan.com">
-                            </div>
+                                <div class="col-sm-6">
+                                    <label class="form-label small fw-semibold text-dark mb-1" for="inputEditPic">
+                                        Nama Kontak / PIC
+                                    </label>
+                                    <input type="text" name="pic" id="inputEditPic" class="form-control form-control-sm" value="{{ @order.pic != '-' && @order.pic != '—' ? @order.pic : '' }}" placeholder="Nama penanggung jawab">
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="form-label small fw-semibold text-dark mb-1" for="inputEditTelepon">
+                                        Telepon / No. WhatsApp
+                                    </label>
+                                    <input type="text" name="telepon" id="inputEditTelepon" class="form-control form-control-sm" value="{{ @order.telepon != '-' && @order.telepon != '—' ? @order.telepon : '' }}" placeholder="Contoh: 08123456789">
+                                </div>
 
-                            <div class="col-12">
-                                <label class="form-label small fw-semibold text-dark mb-1" for="inputEditAlamat">
-                                    Alamat Kantor / Pabrik
-                                </label>
-                                <textarea name="alamat" id="inputEditAlamat" class="form-control form-control-sm" rows="2" placeholder="Alamat lengkap kantor / pabrik">{{ @order.alamat != '-' && @order.alamat != '—' ? @order.alamat : '' }}</textarea>
-                            </div>
-                        </div>
-                    </div>
+                                <div class="col-12">
+                                    <label class="form-label small fw-semibold text-dark mb-1" for="inputEditEmail">
+                                        Alamat Email
+                                    </label>
+                                    <input type="email" name="email" id="inputEditEmail" class="form-control form-control-sm" value="{{ @order.email != '-' && @order.email != '—' ? @order.email : '' }}" placeholder="contoh@perusahaan.com">
+                                </div>
 
-                    <!-- Asal Surat Permohonan (Jika ada / dikaitkan) -->
-                    <div class="bg-white p-3 p-md-4 rounded-3 border shadow-xs">
-                        <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
-                            <h6 class="fw-bold text-dark m-0 small d-flex align-items-center gap-2">
-                                <i class="bi bi-envelope-paper-fill text-primary"></i> Rujukan Asal Surat Permohonan
-                            </h6>
-                            <span class="badge bg-light text-muted border" style="font-size: 0.72rem;">
-                                {{ @surat_masuk ? 'Arsip #'.@surat_masuk.id : 'Data Order' }}
-                            </span>
-                        </div>
-
-                        <div class="row g-2.5">
-                            <div class="col-sm-7">
-                                <label class="form-label small fw-semibold text-dark mb-1" for="inputEditNomorSurat">Nomor Surat Resmi</label>
-                                <input type="text" name="nomor_surat" id="inputEditNomorSurat" class="form-control form-control-sm font-monospace" value="{{ @surat_masuk.nomor_surat ?: @order.nomor_surat_masuk }}" placeholder="Nomor surat resmi klien">
-                            </div>
-                            <div class="col-sm-5">
-                                <label class="form-label small fw-semibold text-dark mb-1" for="inputEditTanggalSurat">Tanggal Surat</label>
-                                <input type="date" name="tanggal_surat" id="inputEditTanggalSurat" class="form-control form-control-sm" value="{{ @surat_masuk.tanggal_surat ? date('Y-m-d', strtotime(@surat_masuk.tanggal_surat)) : (@order.tanggal_masuk ? date('Y-m-d', strtotime(@order.tanggal_masuk)) : '') }}">
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label small fw-semibold text-dark mb-1" for="inputEditPerihal">Perihal Permohonan / Judul Kegiatan</label>
-                                <input type="text" name="perihal" id="inputEditPerihal" class="form-control form-control-sm" value="{{ @surat_masuk.perihal ?: @order.judul_kegiatan }}" placeholder="Perihal surat permohonan">
+                                <div class="col-12">
+                                    <label class="form-label small fw-semibold text-dark mb-1" for="inputEditAlamat">
+                                        Alamat Kantor / Pabrik
+                                    </label>
+                                    <textarea name="alamat" id="inputEditAlamat" class="form-control form-control-sm" rows="2" placeholder="Alamat lengkap kantor / pabrik">{{ @order.alamat != '-' && @order.alamat != '—' ? @order.alamat : '' }}</textarea>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -2697,42 +2677,130 @@
     </div>
 </check>
 
+<style>
+/* Styling TomSelect Searchable Dropdown di Dalam Modal Edit Profil */
+#modalEditProfilPelanggan .ts-wrapper {
+    width: 100% !important;
+}
+#modalEditProfilPelanggan .ts-wrapper .ts-control {
+    border-radius: 0.375rem !important;
+    font-size: 0.875rem !important;
+    font-weight: 600 !important;
+    color: #1e293b !important;
+    min-height: 40px !important;
+    padding: 0.45rem 0.75rem !important;
+    border-color: #cbd5e1 !important;
+    background-color: #ffffff !important;
+    display: flex !important;
+    align-items: center !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+#modalEditProfilPelanggan .ts-wrapper.focus .ts-control {
+    border-color: #0d6efd !important;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15) !important;
+}
+#modalEditProfilPelanggan .ts-dropdown {
+    border-radius: 0.5rem !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+    border-color: #cbd5e1 !important;
+    z-index: 1060 !important;
+}
+</style>
+
 <script>
-function onPilihCustomerChange(select) {
-    if (!select || !select.value) return;
-    var opt = select.options[select.selectedIndex];
-    if (!opt) return;
+function initEditCustomerTomSelect() {
+    var select = document.getElementById('selectEditCustomer');
+    if (!select || typeof TomSelect === 'undefined' || select.tomselect) return;
 
-    var pt = opt.getAttribute('data-pt') || '';
-    var nama = opt.getAttribute('data-nama') || '';
-    var pic = opt.getAttribute('data-pic') || '';
-    var telp = opt.getAttribute('data-telp') || '';
-    var email = opt.getAttribute('data-email') || '';
-    var alamat = opt.getAttribute('data-alamat') || '';
+    var selectOptions = [];
+    Array.from(select.options).forEach(function(opt) {
+        if (!opt.value) return;
+        selectOptions.push({
+            value: opt.value,
+            text: opt.text,
+            nama: opt.getAttribute('data-nama-bersih') || opt.text,
+            ptcv: opt.getAttribute('data-ptcv') || '',
+            kode: opt.getAttribute('data-kode') || '',
+            pic: opt.getAttribute('data-pic') || '',
+            telp: opt.getAttribute('data-telp') || '',
+            email: opt.getAttribute('data-email') || '',
+            alamat: opt.getAttribute('data-alamat') || ''
+        });
+    });
 
-    if (pt) {
-        var elPt = document.getElementById('inputEditPtCv');
-        if (elPt) elPt.value = pt;
-    }
-    if (nama) {
-        var elNama = document.getElementById('inputEditNamaPerusahaan');
-        if (elNama) elNama.value = nama;
-    }
-    if (pic && pic !== '-') {
-        var elPic = document.getElementById('inputEditPic');
-        if (elPic) elPic.value = pic;
-    }
-    if (telp && telp !== '-') {
-        var elTelp = document.getElementById('inputEditTelepon');
-        if (elTelp) elTelp.value = telp;
-    }
-    if (email && email !== '-') {
-        var elEmail = document.getElementById('inputEditEmail');
-        if (elEmail) elEmail.value = email;
-    }
-    if (alamat && alamat !== '-') {
-        var elAlamat = document.getElementById('inputEditAlamat');
-        if (elAlamat) elAlamat.value = alamat;
+    var ts = new TomSelect(select, {
+        options: selectOptions,
+        valueField: 'value',
+        labelField: 'text',
+        searchField: ['nama', 'kode', 'pic', 'alamat', 'text'],
+        create: false,
+        maxItems: 1,
+        placeholder: 'Ketik nama PT/CV, kode pelanggan, nama PIC, atau alamat...',
+        maxOptions: 300,
+        allowEmptyOption: true,
+        plugins: {
+            'dropdown_input': {},
+            'clear_button': {
+                title: 'Hapus pilihan'
+            }
+        },
+        render: {
+            option: function(data, escape) {
+                var pic = data.pic && data.pic !== '-' ? '<span class="fw-semibold text-dark">PIC: ' + escape(data.pic) + '</span>' : '';
+                var alamat = data.alamat && data.alamat !== '-' ? escape(data.alamat) : '';
+                var sub = [pic, alamat].filter(Boolean).join(' • ');
+                return '<div class="py-2 px-3 border-bottom">' +
+                    '<div class="fw-bold text-dark mb-1" style="white-space:normal; line-height:1.35;">' +
+                        '<i class="bi bi-building me-2 text-primary"></i>' + escape(data.nama || data.text) +
+                    '</div>' +
+                    (sub ? '<div class="text-muted small" style="font-size:0.76rem; white-space:normal; line-height:1.35;">' + sub + '</div>' : '') +
+                '</div>';
+            },
+            item: function(data, escape) {
+                return '<div class="fw-bold text-dark" style="white-space:normal; line-height:1.35;">' +
+                    '<i class="bi bi-building text-primary me-2"></i>' +
+                    escape(data.nama || data.text) +
+                '</div>';
+            },
+            no_results: function(data, escape) {
+                return '<div class="p-3 text-center text-muted small">' +
+                    '<i class="bi bi-exclamation-circle text-warning me-1"></i> Tidak ditemukan perusahaan dengan kata kunci "<strong>' + escape(data.input) + '</strong>".' +
+                    '<div class="mt-1 text-secondary" style="font-size:0.75rem;">Coba periksa ejaan atau ketik nama instansi lainnya.</div>' +
+                '</div>';
+            }
+        },
+        onChange: function(val) {
+            if (!val) return;
+            var item = ts.options[val];
+            if (!item) return;
+
+            if (item.ptcv) {
+                var elPt = document.getElementById('inputEditPtCv');
+                if (elPt) elPt.value = item.ptcv;
+            }
+            if (item.nama) {
+                var elNama = document.getElementById('inputEditNamaPerusahaan');
+                if (elNama) elNama.value = item.nama;
+            }
+            var elPic = document.getElementById('inputEditPic');
+            if (elPic) elPic.value = (item.pic && item.pic !== '-') ? item.pic : '';
+
+            var elTelp = document.getElementById('inputEditTelepon');
+            if (elTelp) elTelp.value = (item.telp && item.telp !== '-') ? item.telp : '';
+
+            var elEmail = document.getElementById('inputEditEmail');
+            if (elEmail) elEmail.value = (item.email && item.email !== '-') ? item.email : '';
+
+            var elAlamat = document.getElementById('inputEditAlamat');
+            if (elAlamat) elAlamat.value = (item.alamat && item.alamat !== '-') ? item.alamat : '';
+
+            var elBadge = document.getElementById('lblEditCustBadge');
+            if (elBadge) elBadge.textContent = 'Customer #' + val;
+        }
+    });
+
+    if (select.value) {
+        ts.setValue(select.value, true);
     }
 }
 
@@ -2758,6 +2826,18 @@ function selectDivisiOpti(tipe) {
 
 document.addEventListener('DOMContentLoaded', function() {
     selectDivisiOpti('{{ @order.jenis_layanan_opti ?: "selulosa" }}');
+
+    // Inisialisasi TomSelect saat modal Edit Profil Pelanggan dibuka
+    var modalEdit = document.getElementById('modalEditProfilPelanggan');
+    if (modalEdit) {
+        modalEdit.addEventListener('shown.bs.modal', function() {
+            initEditCustomerTomSelect();
+            var select = document.getElementById('selectEditCustomer');
+            if (select && select.tomselect) {
+                select.tomselect.sync();
+            }
+        });
+    }
 
     // Inisialisasi Tooltip Bootstrap 5 untuk Penjelasan Istilah Ramah Awam
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));

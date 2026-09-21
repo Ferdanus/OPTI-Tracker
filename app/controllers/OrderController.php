@@ -427,6 +427,23 @@ class OrderController extends Controller {
         $bast = $bastModel->getByOrderId($id);
 
         $customerModel = new Customer($this->db);
+        $daftarCustomerOpti = $customerModel->getRegisteredPelangganOpti();
+        $existingIds = array_column($daftarCustomerOpti, 'id_customer');
+        if (!empty($order['id_customer']) && !in_array((int)$order['id_customer'], $existingIds)) {
+            $custCurrent = $customerModel->getById((int)$order['id_customer']);
+            if ($custCurrent && !$custCurrent->dry()) {
+                $cData = $custCurrent->cast();
+                $cData['nama_perusahaan_bersih'] = Customer::formatNamaPerusahaan($cData['pt_cv'] ?? '', $cData['nmcustomer'] ?? '');
+                $cData['pic_bersih'] = $cData['contactperson_opti'] ?: ($cData['contactperson'] ?: ($cData['nama_pribadi'] ?: '-'));
+                $cData['hp_bersih'] = $cData['nohpcontactperson_opti'] ?: ($cData['nohpcontactperson'] ?: '-');
+                $cData['telp_kantor_bersih'] = $cData['notelpcustomer'] ?: '-';
+                $cData['telp_bersih'] = $cData['nohpcontactperson_opti'] ?: ($cData['notelpcustomer'] ?: '-');
+                $cData['email_bersih'] = $cData['emailcustomer'] ?: ($cData['emailcustomer_sertifikasi'] ?: '-');
+                $cData['alamat_bersih'] = $cData['alamatcustomer_baru'] ?: ($cData['alamatcustomer'] ?: '-');
+                array_unshift($daftarCustomerOpti, $cData);
+            }
+        }
+        $f3->set('daftar_customer_opti', $daftarCustomerOpti);
         $daftarCustomer = $customerModel->all();
 
         $daftarPic = OrderLayanan::getPICSpesialisasiList($this->db, $order['jenis_layanan_opti'] ?? null);
