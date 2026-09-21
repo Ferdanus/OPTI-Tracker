@@ -170,7 +170,7 @@
                 </span>
                 
                 <!-- Status Proposal Badge -->
-                <check if="{{ @proposal && @proposal.status_proposal == 'disetujui_ketua' }}">
+                <check if="{{ @proposal && in_array(@proposal.status_proposal, ['disetujui_ketua', 'disetujui_pimpinan', 'disetujui']) }}">
                     <span class="badge badge-pill-success px-2.5 py-1">
                         <i class="bi bi-check-circle-fill me-1"></i> Disetujui Ka. Tim
                     </span>

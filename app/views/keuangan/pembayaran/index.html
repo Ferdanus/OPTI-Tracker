@@ -3,7 +3,7 @@
         <h2 class="h4 fw-bold mb-1 text-dark">
             <i class="bi bi-wallet2 text-primary me-2"></i>Rekapitulasi Keuangan & Pembayaran
         </h2>
-        <p class="text-muted small mb-0">Order dengan status Menunggu Pembayaran / Terbayar Sebagian &mdash; pencatatan multi-termin.</p>
+        <p class="text-muted small mb-0">Monitoring pencatatan uang masuk, status penagihan per order, dan histori transaksi kas balai.</p>
     </div>
     <a href="{{ @BASE }}/pembayaran/tambah" class="btn btn-primary shadow-sm d-inline-flex align-items-center gap-2">
         <i class="bi bi-cash-stack"></i> Catat Pembayaran Baru
@@ -14,10 +14,10 @@
     <div class="col-md-4">
         <div class="metric-card bg-white p-3 p-md-4 rounded-3 border shadow-sm h-100 d-flex justify-content-between align-items-start">
             <div class="w-100 pe-2">
-                <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">Total Tagihan</span>
+                <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">Total Tagihan Order</span>
                 <h3 class="fw-bold text-dark mb-1 mt-1">Rp {{ number_format(@total_tagihan, 0, ',', '.') }}</h3>
                 <div class="small text-muted" style="font-size: 0.75rem;">
-                    <i class="bi bi-file-earmark-check text-primary"></i> {{ @total_order ?: 0 }} Order Menunggu/Sebagian
+                    <i class="bi bi-file-earmark-check text-primary"></i> {{ @total_order ?: 0 }} Total Order Terdata
                 </div>
             </div>
             <div class="metric-icon-box bg-primary bg-opacity-10 text-primary p-3 rounded-3 flex-shrink-0">
@@ -39,7 +39,7 @@
                 <div class="small text-muted d-flex justify-content-between" style="font-size: 0.75rem;">
                     <span><i class="bi bi-check2-circle text-success me-1"></i>{{ @count_lunas }} Lunas</span>
                     <span><i class="bi bi-clock-history text-warning me-1"></i>{{ @count_sebagian }} Cicilan</span>
-                    <span><i class="bi bi-x-circle text-danger me-1"></i>{{ @count_belum }} Belum</span>
+                    <span><i class="bi bi-dash-circle text-muted me-1"></i>{{ @count_belum_ditagih }} Belum Ditagih</span>
                 </div>
             </div>
             <div class="metric-icon-box bg-success bg-opacity-10 text-success p-3 rounded-3 flex-shrink-0 ms-2">
@@ -54,7 +54,7 @@
                 <h3 class="fw-bold {{ @sisa_piutang > 0 ? 'text-danger' : 'text-success' }} mb-1 mt-1">Rp {{ number_format(@sisa_piutang, 0, ',', '.') }}</h3>
                 <div class="small text-muted" style="font-size: 0.75rem;">
                     <check if="{{ @sisa_piutang > 0 }}"><i class="bi bi-exclamation-circle text-danger"></i> Masih ada tagihan berjalan</check>
-                    <check if="{{ !@sisa_piutang }}"><i class="bi bi-check-all text-success"></i> Semua tagihan lunas</check>
+                    <check if="{{ !@sisa_piutang }}"><i class="bi bi-check-all text-success"></i> Semua tagihan terbayar lunas</check>
                 </div>
             </div>
             <div class="metric-icon-box bg-danger bg-opacity-10 text-danger p-3 rounded-3 flex-shrink-0">
@@ -77,7 +77,7 @@
             <div class="col-md-4">
                 <div class="input-group input-group-sm">
                     <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
-                    <input type="text" class="form-control border-start-0" name="q" placeholder="Cari nomor order / nama mitra..." value="{{ @search_q }}">
+                    <input type="text" class="form-control border-start-0" name="q" placeholder="Cari nomor order / nama mitra / kegiatan..." value="{{ @search_q }}">
                 </div>
             </div>
             <div class="col-md-3">
@@ -89,10 +89,11 @@
             </div>
             <div class="col-md-2">
                 <select class="form-select form-select-sm" name="status_pembayaran">
-                    <option value="">Semua Status</option>
-                    <option value="menunggu_pembayaran" {{ @filter_status_pembayaran == 'menunggu_pembayaran' ? 'selected' : '' }}>Menunggu</option>
-                    <option value="terbayar_sebagian" {{ @filter_status_pembayaran == 'terbayar_sebagian' ? 'selected' : '' }}>Sebagian</option>
+                    <option value="">Semua Status Pembayaran</option>
                     <option value="lunas" {{ @filter_status_pembayaran == 'lunas' ? 'selected' : '' }}>Lunas</option>
+                    <option value="terbayar_sebagian" {{ @filter_status_pembayaran == 'terbayar_sebagian' ? 'selected' : '' }}>Sebagian (Cicilan)</option>
+                    <option value="menunggu_pembayaran" {{ @filter_status_pembayaran == 'menunggu_pembayaran' ? 'selected' : '' }}>Menunggu Pembayaran</option>
+                    <option value="belum_ditagih" {{ @filter_status_pembayaran == 'belum_ditagih' ? 'selected' : '' }}>Belum Ditagih</option>
                 </select>
             </div>
             <div class="col-md-2">
@@ -147,12 +148,13 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <check if="{{ @o.jenis_layanan_opti == 'selulosa' }}"><span class="badge badge-pill-danger">Selulosa</span></check>
-                                    <check if="{{ @o.jenis_layanan_opti == 'lingkungan' }}"><span class="badge badge-pill-info">Lingkungan</span></check>
+                                    <check if="{{ @o.jenis_layanan_opti == 'selulosa' }}"><span class="badge badge-selulosa">OPTI Selulosa</span></check>
+                                    <check if="{{ @o.jenis_layanan_opti == 'lingkungan' }}"><span class="badge badge-lingkungan">OPTI Lingkungan</span></check>
+                                    <check if="{{ empty(@o.jenis_layanan_opti) || @o.jenis_layanan_opti == 'belum_ditentukan' }}"><span class="badge bg-secondary-subtle text-secondary border">Belum Ditentukan</span></check>
                                 </td>
                                 <td class="text-end fw-semibold">
                                     Rp {{ number_format(@o.biaya_acuan, 0, ',', '.') }}
-                                    <check if="{{ !@o.nominal_penawaran }}"><div class="text-muted" style="font-size:.68rem;">*estimasi</div></check>
+                                    <check if="{{ !@o.nominal_penawaran && @o.biaya_acuan > 0 }}"><div class="text-muted" style="font-size:.68rem;">*estimasi</div></check>
                                 </td>
                                 <td>
                                     <div class="d-flex justify-content-between small mb-1">
@@ -168,9 +170,10 @@
                                     Rp {{ number_format(@o.sisa_tagihan, 0, ',', '.') }}
                                 </td>
                                 <td class="text-center">
-                                    <check if="{{ @o.status_tampil == 'lunas' }}"><span class="badge badge-pill-success"><i class="bi bi-check-circle-fill me-1"></i>Lunas</span></check>
-                                    <check if="{{ @o.status_tampil == 'sebagian' }}"><span class="badge badge-pill-warning"><i class="bi bi-hourglass-split me-1"></i>Sebagian</span></check>
-                                    <check if="{{ @o.status_tampil == 'belum' }}"><span class="badge badge-pill-danger"><i class="bi bi-x-circle me-1"></i>Belum</span></check>
+                                    <check if="{{ @o.status_tampil == 'lunas' }}"><span class="status-pill status-pill-emerald"><i class="bi bi-check2-circle me-1"></i>Lunas</span></check>
+                                    <check if="{{ @o.status_tampil == 'sebagian' }}"><span class="status-pill status-pill-amber"><i class="bi bi-hourglass-split me-1"></i>Sebagian</span></check>
+                                    <check if="{{ @o.status_tampil == 'menunggu' }}"><span class="status-pill status-pill-sky"><i class="bi bi-clock me-1"></i>Menunggu</span></check>
+                                    <check if="{{ @o.status_tampil == 'belum_ditagih' }}"><span class="status-pill status-pill-slate"><i class="bi bi-dash-circle me-1"></i>Belum Ditagih</span></check>
                                 </td>
                                 <td class="text-center">
                                     <div class="d-inline-flex gap-1">
@@ -192,7 +195,7 @@
         <check if="{{ !@daftar_order || count(@daftar_order) == 0 }}">
             <div class="text-center py-5 text-muted">
                 <i class="bi bi-inbox fs-2 d-block mb-2"></i>
-                Tidak ada order yang menunggu pembayaran / masih ada sisa termin.
+                Tidak ada data order yang sesuai dengan filter pencarian.
             </div>
         </check>
     </div>
@@ -215,6 +218,7 @@
                             <th>Tanggal</th>
                             <th>No. Order</th>
                             <th>Mitra</th>
+                            <th class="text-center">Divisi</th>
                             <th class="text-center">Termin</th>
                             <th class="text-end">Nominal</th>
                             <th>Keterangan</th>
@@ -228,6 +232,10 @@
                                 <td class="small">{{ date('d/m/Y', strtotime(@bayar.tanggal_bayar)) }}</td>
                                 <td class="fw-semibold small">{{ @bayar.nomor_order }}</td>
                                 <td class="small text-muted">{{ @bayar.nama_perusahaan }}</td>
+                                <td class="text-center">
+                                    <check if="{{ @bayar.jenis_layanan_opti == 'selulosa' }}"><span class="badge badge-selulosa">Selulosa</span></check>
+                                    <check if="{{ @bayar.jenis_layanan_opti == 'lingkungan' }}"><span class="badge badge-lingkungan">Lingkungan</span></check>
+                                </td>
                                 <td class="text-center"><span class="badge badge-pill-primary">Ke-{{ @bayar.termin_ke }}</span></td>
                                 <td class="text-end fw-semibold text-success">Rp {{ number_format(@bayar.jumlah, 0, ',', '.') }}</td>
                                 <td class="small text-muted">{{ @bayar.keterangan ?: '-' }}</td>

@@ -1,268 +1,431 @@
-<div class="mb-4">
-    <h2 class="h4 fw-bold mb-0 text-dark"><i class="bi bi-speedometer2 text-primary me-1"></i> Dashboard Optimalisasi Pemanfaatan Teknologi Industri BBSPJIS</h2>
-</div>
+<style>
+/* =========================================================
+   MINIMALIST & CLEAN EXECUTIVE DASHBOARD STYLING
+   ========================================================= */
+.dash-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.dash-card:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+}
+.dash-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748b;
+}
+.dash-value {
+    font-size: 1.85rem;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.15;
+    font-family: var(--font-display, inherit);
+}
+.dash-subtext {
+    font-size: 0.75rem;
+    color: #64748b;
+}
+.dash-table th {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748b;
+    background-color: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 0.75rem 1rem;
+}
+.dash-table td {
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid #f1f5f9;
+    color: #1e293b;
+}
+.dash-table tr:last-child td {
+    border-bottom: none;
+}
 
+/* Modern Division Badges - Harmonized with Corporate Slate & Minimalist Theme */
+.badge-selulosa {
+    background-color: #f1f5f9 !important;
+    color: #1e293b !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 9999px !important;
+    font-weight: 600 !important;
+    font-size: 0.72rem !important;
+    padding: 0.24rem 0.65rem !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    letter-spacing: 0.01em !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+    white-space: nowrap !important;
+}
+.badge-selulosa::before {
+    content: "" !important;
+    display: inline-block !important;
+    width: 6px !important;
+    height: 6px !important;
+    border-radius: 50% !important;
+    background-color: #475569 !important;
+    flex-shrink: 0 !important;
+}
+.badge-lingkungan {
+    background-color: #f0fdfa !important;
+    color: #0f766e !important;
+    border: 1px solid #ccfbf1 !important;
+    border-radius: 9999px !important;
+    font-weight: 600 !important;
+    font-size: 0.72rem !important;
+    padding: 0.24rem 0.65rem !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    letter-spacing: 0.01em !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+    white-space: nowrap !important;
+}
+.badge-lingkungan::before {
+    content: "" !important;
+    display: inline-block !important;
+    width: 6px !important;
+    height: 6px !important;
+    border-radius: 50% !important;
+    background-color: #0d9488 !important;
+    flex-shrink: 0 !important;
+}
+</style>
 
-<div class="row g-3 mb-4">
-    <div class="col-6 col-lg-3">
-        <a href="{{ @BASE }}/order?tab=aktif" class="text-decoration-none text-reset d-block" title="Lihat Seluruh Order Layanan Aktif">
-            <div class="metric-card">
-                <div>
-                    <div class="text-muted small fw-semibold mb-1">Order Diterima</div>
-                    <div class="h4 fw-bold mb-0 text-dark">{{ @stat_total.diterima ?: 0 }}</div>
-                </div>
-                <div class="metric-icon-box" style="background:#ecfdf5; color:#065f46;">
-                    <i class="bi bi-check-circle"></i>
-                </div>
-            </div>
-        </a>
-    </div>
-    <div class="col-6 col-lg-3">
-        <a href="{{ @BASE }}/disposisi-masuk" class="text-decoration-none text-reset d-block" title="Buka Permintaan Masuk & Kaji Ulang">
-            <div class="metric-card">
-                <div>
-                    <div class="text-muted small fw-semibold mb-1">Order Pending</div>
-                    <div class="h4 fw-bold mb-0 text-dark">{{ @stat_total.pending ?: 0 }}</div>
-                </div>
-                <div class="metric-icon-box" style="background:#fffbeb; color:#92400e;">
-                    <i class="bi bi-hourglass-split"></i>
-                </div>
-            </div>
-        </a>
-    </div>
-    <div class="col-6 col-lg-3">
-        <a href="{{ @BASE }}/order?tab=ditolak" class="text-decoration-none text-reset d-block" title="Lihat Arsip Order Ditolak">
-            <div class="metric-card">
-                <div>
-                    <div class="text-muted small fw-semibold mb-1">Order Ditolak</div>
-                    <div class="h4 fw-bold mb-0 text-dark">{{ @stat_total.ditolak ?: 0 }}</div>
-                </div>
-                <div class="metric-icon-box" style="background:#fef2f2; color:#991b1b;">
-                    <i class="bi bi-x-circle"></i>
-                </div>
-            </div>
-        </a>
-    </div>
-    <div class="col-6 col-lg-3">
-        <a href="{{ @BASE }}/order" class="text-decoration-none text-reset d-block" title="Buka Daftar Seluruh Order Layanan">
-            <div class="metric-card">
-                <div>
-                    <div class="text-muted small fw-semibold mb-1">Sedang Berjalan</div>
-                    <div class="h4 fw-bold mb-0 text-dark">{{ @stat_total.berjalan ?: 0 }}</div>
-                </div>
-                <div class="metric-icon-box" style="background:#f0f9ff; color:#075985;">
-                    <i class="bi bi-arrow-repeat"></i>
-                </div>
-            </div>
-        </a>
-    </div>
-</div>
+<div class="container-fluid px-0">
 
-<a href="{{ @BASE }}/pembayaran" class="text-decoration-none text-reset d-block" title="Buka Rekapitulasi Pembayaran & Kas Masuk">
-    <div class="card border-0 shadow-sm mb-4">
-        <div class="card-body p-3 p-md-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
-            <div>
-                <div class="text-muted small fw-semibold mb-1">Total Uang Sudah Diterima / PNBP Masuk (Gabungan)</div>
-                <div class="h3 fw-bold mb-0" style="color: var(--color-primary);">Rp {{ number_format(@stat_total.uang_diterima ?: 0, 0, ',', '.') }}</div>
+    <!-- ======================= HEADER HALAMAN (CLEAN & MINIMALIST) ======================= -->
+    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4 pb-3 border-bottom">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1 text-xs text-muted flex-wrap">
+                <span class="fw-semibold text-uppercase tracking-wider text-slate-500">SI-OPTI BBSPJIS</span>
+                <span>&bull;</span>
+                <span><i class="bi bi-calendar3 me-1"></i>{{ @tanggal_hari_ini }}</span>
+                <check if="{{ @SESSION.role }}">
+                    <span>&bull;</span>
+                    <span class="text-capitalize"><i class="bi bi-person me-1"></i>{{ str_replace('_', ' ', @SESSION.role) }}</span>
+                </check>
             </div>
-            <div class="metric-icon-box" style="background: rgba(136,19,55,.08); color: var(--color-primary); width:56px; height:56px; font-size:1.6rem;">
-                <i class="bi bi-cash-stack"></i>
-            </div>
+            <h4 class="fw-bold mb-1 text-slate-900 font-display" style="font-size: 1.45rem;">Dashboard Monitoring Layanan</h4>
+            <span class="text-muted small">Ringkasan operasional dan progres permohonan jasa balai secara terpadu.</span>
         </div>
-    </div>
-</a>
-
-<!-- ======================= RINGKASAN PER DIVISI ======================= -->
-<div class="row g-4 mb-4">
-    <!-- OPTI SELULOSA -->
-    <div class="col-lg-6">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between">
-                <div class="d-flex align-items-center gap-2">
-                    <span class="badge badge-selulosa">OPTI Selulosa</span>
-                    <h6 class="m-0 fw-bold text-dark">Ringkasan Divisi</h6>
-                </div>
-                <a href="{{ @BASE }}/order?jenis_layanan=selulosa" class="btn btn-xs btn-outline-secondary">
-                    Buka Order Selulosa <i class="bi bi-arrow-right ms-1"></i>
-                </a>
-            </div>
-            <div class="card-body p-3 p-md-4">
-                <div class="row g-3 mb-3">
-                    <div class="col-6">
-                        <a href="{{ @BASE }}/order?jenis_layanan=selulosa&tab=aktif" class="text-decoration-none text-reset d-block" title="Lihat Order Selulosa Diterima/Aktif">
-                            <div class="metric-card">
-                                <div>
-                                    <div class="text-muted small fw-semibold mb-1">Diterima</div>
-                                    <div class="h5 fw-bold mb-0 text-dark">{{ @stat_selulosa.diterima ?: 0 }}</div>
-                                </div>
-                                <div class="metric-icon-box" style="background:#ecfdf5; color:#065f46;"><i class="bi bi-check-circle"></i></div>
-                            </div>
-                        </a>
-                    </div>
-                    <div class="col-6">
-                        <a href="{{ @BASE }}/disposisi-masuk" class="text-decoration-none text-reset d-block" title="Lihat Order Selulosa Pending">
-                            <div class="metric-card">
-                                <div>
-                                    <div class="text-muted small fw-semibold mb-1">Pending</div>
-                                    <div class="h5 fw-bold mb-0 text-dark">{{ @stat_selulosa.pending ?: 0 }}</div>
-                                </div>
-                                <div class="metric-icon-box" style="background:#fffbeb; color:#92400e;"><i class="bi bi-hourglass-split"></i></div>
-                            </div>
-                        </a>
-                    </div>
-                    <div class="col-6">
-                        <a href="{{ @BASE }}/order?jenis_layanan=selulosa&tab=ditolak" class="text-decoration-none text-reset d-block" title="Lihat Order Selulosa Ditolak">
-                            <div class="metric-card">
-                                <div>
-                                    <div class="text-muted small fw-semibold mb-1">Ditolak</div>
-                                    <div class="h5 fw-bold mb-0 text-dark">{{ @stat_selulosa.ditolak ?: 0 }}</div>
-                                </div>
-                                <div class="metric-icon-box" style="background:#fef2f2; color:#991b1b;"><i class="bi bi-x-circle"></i></div>
-                            </div>
-                        </a>
-                    </div>
-                    <div class="col-6">
-                        <a href="{{ @BASE }}/order?jenis_layanan=selulosa" class="text-decoration-none text-reset d-block" title="Lihat Order Selulosa Berjalan">
-                            <div class="metric-card">
-                                <div>
-                                    <div class="text-muted small fw-semibold mb-1">Berjalan</div>
-                                    <div class="h5 fw-bold mb-0 text-dark">{{ @stat_selulosa.berjalan ?: 0 }}</div>
-                                </div>
-                                <div class="metric-icon-box" style="background:#f0f9ff; color:#075985;"><i class="bi bi-arrow-repeat"></i></div>
-                            </div>
-                        </a>
-                    </div>
-                </div>
-                <a href="{{ @BASE }}/pembayaran" class="text-decoration-none text-reset d-block" title="Buka Rekap Keuangan Selulosa">
-                    <div class="p-3 rounded-3" style="background-color: #fff1f2; border: 1px solid #fecdd3; transition: background-color 0.2s ease;">
-                        <div class="text-muted small fw-semibold mb-1">Total Uang Diterima (PNBP Kas Selulosa)</div>
-                        <div class="h5 fw-bold mb-0" style="color: #be123c;">Rp {{ number_format(@stat_selulosa.uang_diterima ?: 0, 0, ',', '.') }}</div>
-                    </div>
-                </a>
-            </div>
+        <div class="d-flex align-items-center gap-2">
+            <a href="{{ @BASE }}/order/tambah" class="btn btn-sm text-white rounded-3 px-3 py-2 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-sm" style="background-color: var(--color-primary, #334155); border-color: var(--color-primary, #334155);">
+                <i class="bi bi-plus-lg"></i> Order Baru
+            </a>
+            <a href="{{ @BASE }}/disposisi-masuk" class="btn btn-sm btn-outline-secondary rounded-3 px-3 py-2 fw-medium d-inline-flex align-items-center gap-1.5 bg-white shadow-xs">
+                <i class="bi bi-inbox"></i> Disposisi
+                <check if="{{ @stat_total.pending > 0 }}">
+                    <span class="badge rounded-pill ms-1 px-2 py-0.5" style="background-color: #fef3c7; color: #92400e; font-size: 0.72rem;">{{ @stat_total.pending }}</span>
+                </check>
+            </a>
         </div>
     </div>
 
-    <!-- OPTI LINGKUNGAN -->
-    <div class="col-lg-6">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between">
-                <div class="d-flex align-items-center gap-2">
-                    <span class="badge badge-pill" style="background-color: #15803D; color: white;">
-                        OPTI Lingkungan
-                    </span>
-                    <h6 class="m-0 fw-bold text-dark">Ringkasan Divisi</h6>
+    <!-- ======================= 4 METRIK UTAMA (CLEAN TYPOGRAPHY) ======================= -->
+    <div class="row g-3 mb-4">
+        <!-- 1. Total Order Aktif -->
+        <div class="col-6 col-lg-3">
+            <a href="{{ @BASE }}/order?tab=aktif" class="text-decoration-none d-block h-100">
+                <div class="dash-card p-3 p-md-3.5 h-100">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="dash-label">Order Aktif</span>
+                        <i class="bi bi-folder2 text-slate-400" style="font-size: 1rem;"></i>
+                    </div>
+                    <div class="dash-value mb-1">{{ @stat_total.aktif ?: 0 }}</div>
+                    <div class="dash-subtext">Sedang dalam alur proses</div>
                 </div>
-                <a href="{{ @BASE }}/order?jenis_layanan=lingkungan" class="btn btn-xs btn-outline-secondary">
-                    Buka Order Lingkungan <i class="bi bi-arrow-right ms-1"></i>
-                </a>
-            </div>
-            <div class="card-body p-3 p-md-4">
-                <div class="row g-3 mb-3">
-                    <div class="col-6">
-                        <a href="{{ @BASE }}/order?jenis_layanan=lingkungan&tab=aktif" class="text-decoration-none text-reset d-block" title="Lihat Order Lingkungan Diterima/Aktif">
-                            <div class="metric-card">
-                                <div>
-                                    <div class="text-muted small fw-semibold mb-1">Diterima</div>
-                                    <div class="h5 fw-bold mb-0 text-dark">{{ @stat_lingkungan.diterima ?: 0 }}</div>
-                                </div>
-                                <div class="metric-icon-box" style="background:#ecfdf5; color:#065f46;"><i class="bi bi-check-circle"></i></div>
-                            </div>
-                        </a>
+            </a>
+        </div>
+
+        <!-- 2. Perlu Tindakan / Disposisi -->
+        <div class="col-6 col-lg-3">
+            <a href="{{ @BASE }}/disposisi-masuk" class="text-decoration-none d-block h-100">
+                <div class="dash-card p-3 p-md-3.5 h-100">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="dash-label">Perlu Tindakan</span>
+                        <i class="bi bi-clock-history text-slate-400" style="font-size: 1rem;"></i>
                     </div>
-                    <div class="col-6">
-                        <a href="{{ @BASE }}/disposisi-masuk" class="text-decoration-none text-reset d-block" title="Lihat Order Lingkungan Pending">
-                            <div class="metric-card">
-                                <div>
-                                    <div class="text-muted small fw-semibold mb-1">Pending</div>
-                                    <div class="h5 fw-bold mb-0 text-dark">{{ @stat_lingkungan.pending ?: 0 }}</div>
-                                </div>
-                                <div class="metric-icon-box" style="background:#fffbeb; color:#92400e;"><i class="bi bi-hourglass-split"></i></div>
-                            </div>
-                        </a>
+                    <div class="dash-value mb-1 {{ @stat_total.pending > 0 ? 'text-warning-emphasis' : '' }}">
+                        {{ @stat_total.pending ?: 0 }}
                     </div>
-                    <div class="col-6">
-                        <a href="{{ @BASE }}/order?jenis_layanan=lingkungan&tab=ditolak" class="text-decoration-none text-reset d-block" title="Lihat Order Lingkungan Ditolak">
-                            <div class="metric-card">
-                                <div>
-                                    <div class="text-muted small fw-semibold mb-1">Ditolak</div>
-                                    <div class="h5 fw-bold mb-0 text-dark">{{ @stat_lingkungan.ditolak ?: 0 }}</div>
-                                </div>
-                                <div class="metric-icon-box" style="background:#fef2f2; color:#991b1b;"><i class="bi bi-x-circle"></i></div>
-                            </div>
-                        </a>
-                    </div>
-                    <div class="col-6">
-                        <a href="{{ @BASE }}/order?jenis_layanan=lingkungan" class="text-decoration-none text-reset d-block" title="Lihat Order Lingkungan Berjalan">
-                            <div class="metric-card">
-                                <div>
-                                    <div class="text-muted small fw-semibold mb-1">Berjalan</div>
-                                    <div class="h5 fw-bold mb-0 text-dark">{{ @stat_lingkungan.berjalan ?: 0 }}</div>
-                                </div>
-                                <div class="metric-icon-box" style="background:#f0f9ff; color:#075985;"><i class="bi bi-arrow-repeat"></i></div>
-                            </div>
-                        </a>
+                    <div class="dash-subtext">
+                        <check if="{{ @stat_total.pending > 0 }}">
+                            <true>
+                                <span class="fw-semibold text-warning-emphasis"><i class="bi bi-dot"></i>{{ @stat_total.pending }} menunggu kaji</span>
+                            </true>
+                            <false>
+                                <span>Menunggu telaah / disposisi</span>
+                            </false>
+                        </check>
                     </div>
                 </div>
-                <a href="{{ @BASE }}/pembayaran" class="text-decoration-none text-reset d-block" title="Buka Rekap Keuangan Lingkungan">
-                    <div class="p-3 rounded-3" style="background-color: rgba(21,128,61,.05); border: 1px solid rgba(21,128,61,.15); transition: background-color 0.2s ease;">
-                        <div class="text-muted small fw-semibold mb-1">Total Uang Diterima (PNBP Kas Lingkungan)</div>
-                        <div class="h5 fw-bold mb-0" style="color: #15803D;">
-                            Rp {{ number_format(@stat_lingkungan.uang_diterima ?: 0, 0, ',', '.') }}
+            </a>
+        </div>
+
+        <!-- 3. Pelaksanaan Pengujian Lab -->
+        <div class="col-6 col-lg-3">
+            <a href="{{ @BASE }}/order" class="text-decoration-none d-block h-100">
+                <div class="dash-card p-3 p-md-3.5 h-100">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="dash-label">Pengujian Lab</span>
+                        <i class="bi bi-flask text-slate-400" style="font-size: 1rem;"></i>
+                    </div>
+                    <div class="dash-value mb-1">{{ @stat_total.berjalan ?: 0 }}</div>
+                    <div class="dash-subtext">Dalam analisis laboratorium</div>
+                </div>
+            </a>
+        </div>
+
+        <!-- 4. Layanan Selesai (BAST) -->
+        <div class="col-6 col-lg-3">
+            <a href="{{ @BASE }}/order" class="text-decoration-none d-block h-100">
+                <div class="dash-card p-3 p-md-3.5 h-100">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="dash-label">Selesai (BAST)</span>
+                        <i class="bi bi-check2-circle text-slate-400" style="font-size: 1rem;"></i>
+                    </div>
+                    <div class="dash-value mb-1">{{ @stat_total.selesai ?: 0 }}</div>
+                    <div class="dash-subtext">Dokumen BAST &amp; LHU tuntas</div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- ======================= REKAP KEUANGAN & BEBAN KERJA ======================= -->
+    <div class="row g-3 mb-4">
+        <!-- Total Pembayaran Masuk (Murni Data Uang dari ke-2 OPTI) -->
+        <div class="col-lg-5">
+            <div class="dash-card p-4 h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <div class="d-flex align-items-center justify-content-between mb-1">
+                        <span class="dash-label">Total Pembayaran Masuk</span>
+                        <i class="bi bi-wallet2 text-slate-400"></i>
+                    </div>
+                    <div class="h3 fw-bold text-slate-900 mb-1 font-display" style="font-size: 1.85rem;">
+                        Rp {{ number_format(@stat_total.uang_diterima ?: 0, 0, ',', '.') }}
+                    </div>
+                    <div class="dash-subtext mb-3">Akumulasi pembayaran layanan yang telah diterima</div>
+
+                    <!-- Breakdown Uang per OPTI -->
+                    <div class="rounded-3 p-2" style="background-color: #f8fafc; border: 1px solid #e2e8f0;">
+                        <div class="d-flex align-items-center justify-content-between py-2 px-2 border-bottom" style="border-color: #f1f5f9 !important;">
+                            <span class="badge badge-selulosa">OPTI Selulosa</span>
+                            <span class="fw-bold text-slate-800 text-xs font-monospace">
+                                Rp {{ number_format(@stat_selulosa.uang_diterima ?: 0, 0, ',', '.') }}
+                            </span>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between py-2 px-2">
+                            <span class="badge badge-lingkungan">OPTI Lingkungan</span>
+                            <span class="fw-bold text-slate-800 text-xs font-monospace">
+                                Rp {{ number_format(@stat_lingkungan.uang_diterima ?: 0, 0, ',', '.') }}
+                            </span>
                         </div>
                     </div>
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
+                </div>
 
-<!-- ======================= DIAGRAM PERBANDINGAN ======================= -->
-<div class="row g-4 mb-4">
-    <div class="col-lg-7">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-header bg-white py-3">
-                <h6 class="m-0 fw-bold text-dark"><i class="bi bi-bar-chart-line text-primary me-2"></i>Perbandingan Status Order per Divisi</h6>
-            </div>
-            <div class="card-body p-3 p-md-4">
-                <canvas id="chartStatusOrder" height="240"></canvas>
+                <div class="pt-3 mt-3 border-top d-flex align-items-center justify-content-between text-xs text-muted">
+                    <span><i class="bi bi-check-circle-fill text-success me-1"></i>Pembayaran Terverifikasi</span>
+                    <span class="fw-semibold text-slate-600">2 Divisi OPTI</span>
+                </div>
             </div>
         </div>
-    </div>
-    <div class="col-lg-5">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-header bg-white py-3">
-                <h6 class="m-0 fw-bold text-dark"><i class="bi bi-pie-chart text-primary me-2"></i>Proporsi Uang Diterima</h6>
-            </div>
-            <div class="card-body p-3 p-md-4 d-flex align-items-center justify-content-center">
-                <canvas id="chartUangDiterima" height="240"></canvas>
-            </div>
-        </div>
-    </div>
-</div>
 
-<!-- ======================= ORDER LAYANAN TERKINI (SINKRONISASI 8 TAHAPAN) ======================= -->
-<div class="card border-0 shadow-sm mb-4">
-    <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
-        <div>
-            <h6 class="m-0 fw-bold text-dark"><i class="bi bi-clock-history text-primary me-2"></i>Order Layanan Aktif Terkini</h6>
-            <span class="text-muted small">Daftar permohonan terkini yang sedang berjalan sesuai alur 8 tahapan layanan.</span>
+        <!-- Beban Kerja Antar Divisi (Tabel Ringkas) -->
+        <div class="col-lg-7">
+            <div class="dash-card p-4 h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <div>
+                            <h6 class="fw-bold mb-0 text-slate-900">Beban Kerja Antar Divisi</h6>
+                            <span class="text-muted text-xs">Perbandingan status permohonan aktif antara OPTI Selulosa dan OPTI Lingkungan</span>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle mb-0" style="font-size: 0.82rem;">
+                            <thead>
+                                <tr class="text-muted border-bottom" style="font-size: 0.72rem; letter-spacing: 0.04em;">
+                                    <th class="py-2.5 fw-semibold text-uppercase text-nowrap" style="min-width: 170px;">Divisi Layanan</th>
+                                    <th class="py-2.5 text-center fw-semibold text-uppercase text-nowrap" style="width: 75px;">Diterima</th>
+                                    <th class="py-2.5 text-center fw-semibold text-uppercase text-nowrap" style="width: 75px;">Uji Lab</th>
+                                    <th class="py-2.5 text-center fw-semibold text-uppercase text-nowrap" style="width: 75px;">Pending</th>
+                                    <th class="py-2.5 text-center fw-semibold text-uppercase text-nowrap" style="width: 75px;">Ditolak</th>
+                                    <th class="py-2.5 text-end fw-semibold text-uppercase text-nowrap" style="width: 80px;">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-bottom">
+                                    <td class="py-2.5 text-nowrap">
+                                        <span class="badge badge-selulosa">OPTI Selulosa</span>
+                                    </td>
+                                    <td class="text-center fw-bold text-slate-800">{{ @stat_selulosa.diterima ?: 0 }}</td>
+                                    <td class="text-center fw-bold text-slate-800">{{ @stat_selulosa.berjalan ?: 0 }}</td>
+                                    <td class="text-center">
+                                        <check if="{{ @stat_selulosa.pending > 0 }}">
+                                             <true>
+                                                 <span class="badge rounded-pill px-2 py-0.5" style="background-color: #fef3c7; color: #92400e;">{{ @stat_selulosa.pending }}</span>
+                                             </true>
+                                             <false>
+                                                 <span class="text-muted">0</span>
+                                             </false>
+                                        </check>
+                                    </td>
+                                    <td class="text-center text-muted">{{ @stat_selulosa.ditolak ?: 0 }}</td>
+                                    <td class="text-end text-nowrap">
+                                        <a href="{{ @BASE }}/order?jenis_layanan=selulosa" class="btn btn-xs btn-outline-secondary rounded-pill px-2.5 py-0.5 text-xs bg-white">
+                                            Buka <i class="bi bi-chevron-right ms-0.5"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 text-nowrap">
+                                        <span class="badge badge-lingkungan">OPTI Lingkungan</span>
+                                    </td>
+                                    <td class="text-center fw-bold text-slate-800">{{ @stat_lingkungan.diterima ?: 0 }}</td>
+                                    <td class="text-center fw-bold text-slate-800">{{ @stat_lingkungan.berjalan ?: 0 }}</td>
+                                    <td class="text-center">
+                                        <check if="{{ @stat_lingkungan.pending > 0 }}">
+                                             <true>
+                                                 <span class="badge rounded-pill px-2 py-0.5" style="background-color: #fef3c7; color: #92400e;">{{ @stat_lingkungan.pending }}</span>
+                                             </true>
+                                             <false>
+                                                 <span class="text-muted">0</span>
+                                             </false>
+                                        </check>
+                                    </td>
+                                    <td class="text-center text-muted">{{ @stat_lingkungan.ditolak ?: 0 }}</td>
+                                    <td class="text-end text-nowrap">
+                                        <a href="{{ @BASE }}/order?jenis_layanan=lingkungan" class="btn btn-xs btn-outline-secondary rounded-pill px-2.5 py-0.5 text-xs bg-white">
+                                            Buka <i class="bi bi-chevron-right ms-0.5"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="mt-3 pt-2 border-top text-xs text-muted d-flex align-items-center justify-content-between">
+                    <span>Data tersinkronisasi otomatis dengan status kaji permohonan.</span>
+                    <a href="{{ @BASE }}/order" class="text-decoration-none fw-semibold" style="color: var(--color-primary, #334155);">Semua Order &rarr;</a>
+                </div>
+            </div>
         </div>
-        <a href="{{ @BASE }}/order" class="btn btn-outline-primary btn-sm">
-            Lihat Semua Order <i class="bi bi-arrow-right ms-1"></i>
-        </a>
     </div>
-    <div class="card-body p-0">
+
+    <!-- ======================= DIAGRAM BEBAN KERJA & PERBANDINGAN UANG ======================= -->
+    <div class="row g-3 mb-4">
+        <!-- Status Beban Kerja Layanan -->
+        <div class="col-lg-7">
+            <div class="dash-card p-4 h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div>
+                            <h6 class="fw-bold mb-0 text-slate-900">Status Beban Kerja Permohonan</h6>
+                            <span class="text-muted text-xs">Perbandingan progres order layanan antara OPTI Selulosa dan OPTI Lingkungan</span>
+                        </div>
+                    </div>
+                    <div style="position: relative; height: 230px; width: 100%;">
+                        <canvas id="chartStatusOrder"></canvas>
+                    </div>
+                </div>
+                <div class="mt-2 pt-2 border-top d-flex align-items-center justify-content-between text-xs text-muted">
+                    <span><i class="bi bi-info-circle me-1"></i>Menampilkan order aktif per tahap verifikasi</span>
+                    <a href="{{ @BASE }}/order" class="text-decoration-none fw-semibold" style="color: var(--color-primary, #334155);">Daftar Lengkap &rarr;</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Perbandingan Uang Masuk Antar OPTI (Murni Data Keuangan) -->
+        <div class="col-lg-5">
+            <div class="dash-card p-4 h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <div>
+                            <h6 class="fw-bold mb-0 text-slate-900">Perbandingan Uang Masuk</h6>
+                            <span class="text-muted text-xs">Porsi uang diterima dari kedua divisi OPTI</span>
+                        </div>
+                    </div>
+
+                    <!-- Donut Chart with Center Metric Overlay -->
+                    <div style="position: relative; height: 175px; width: 100%;" class="d-flex align-items-center justify-content-center my-1">
+                        <canvas id="chartUangDiterima"></canvas>
+                        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none;">
+                            <span class="text-muted text-uppercase fw-semibold" style="font-size: 0.65rem; letter-spacing: 0.05em; display: block;">Total Masuk</span>
+                            <span class="fw-bold text-slate-900 font-monospace" style="font-size: 0.95rem; display: block; line-height: 1.2;">
+                                Rp {{ number_format(@stat_total.uang_diterima ?: 0, 0, ',', '.') }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rich Breakdown Cards with Percentages -->
+                <div class="row g-2 mt-2 pt-2 border-top">
+                    <div class="col-6">
+                        <div class="p-2 rounded-2" style="background-color: #f8fafc; border: 1px solid #e2e8f0;">
+                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                <span class="badge badge-selulosa" style="font-size: 0.68rem; padding: 0.16rem 0.48rem;">OPTI Selulosa</span>
+                                <span class="fw-bold text-xs text-slate-700 font-monospace">{{ @pct_selulosa }}%</span>
+                            </div>
+                            <div class="fw-bold text-slate-900 text-xs font-monospace text-truncate" title="Rp {{ number_format(@stat_selulosa.uang_diterima ?: 0, 0, ',', '.') }}">
+                                Rp {{ number_format(@stat_selulosa.uang_diterima ?: 0, 0, ',', '.') }}
+                            </div>
+                            <div class="progress mt-1.5" style="height: 4px; background-color: #e2e8f0; border-radius: 999px;">
+                                <div class="progress-bar" style="width: {{ @pct_selulosa }}%; background-color: #334155; border-radius: 999px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-2 rounded-2" style="background-color: #f0fdfa; border: 1px solid #ccfbf1;">
+                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                <span class="badge badge-lingkungan" style="font-size: 0.68rem; padding: 0.16rem 0.48rem;">OPTI Lingkungan</span>
+                                <span class="fw-bold text-xs text-teal-700 font-monospace">{{ @pct_lingkungan }}%</span>
+                            </div>
+                            <div class="fw-bold text-slate-900 text-xs font-monospace text-truncate" title="Rp {{ number_format(@stat_lingkungan.uang_diterima ?: 0, 0, ',', '.') }}">
+                                Rp {{ number_format(@stat_lingkungan.uang_diterima ?: 0, 0, ',', '.') }}
+                            </div>
+                            <div class="progress mt-1.5" style="height: 4px; background-color: #ccfbf1; border-radius: 999px;">
+                                <div class="progress-bar" style="width: {{ @pct_lingkungan }}%; background-color: #0d9488; border-radius: 999px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ======================= ORDER LAYANAN TERKINI (TABEL MINIMALIS) ======================= -->
+    <div class="dash-card overflow-hidden mb-4">
+        <div class="p-3 px-4 d-flex align-items-center justify-content-between border-bottom">
+            <div>
+                <h6 class="fw-bold mb-0 text-slate-900">Order Layanan Terkini</h6>
+                <span class="text-muted text-xs">Daftar permohonan aktif terbaru yang sedang diproses</span>
+            </div>
+            <a href="{{ @BASE }}/order" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1 text-xs bg-white">
+                Lihat Semua Order <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+        </div>
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light small text-muted">
+            <table class="table dash-table align-middle mb-0">
+                <thead>
                     <tr>
-                        <th class="ps-3" style="width: 150px;">Nomor Order</th>
-                        <th>Mitra Industri / Judul Proyek</th>
-                        <th style="width: 150px;">Divisi Layanan</th>
-                        <th style="width: 130px;">Tgl Masuk</th>
-                        <th style="width: 180px;">Tahap Berjalan</th>
-                        <th class="text-end pe-3" style="width: 100px;">Aksi</th>
+                        <th style="width: 150px;">Nomor Order</th>
+                        <th>Mitra Industri & Proyek</th>
+                        <th style="width: 130px;">Divisi</th>
+                        <th style="width: 120px;">Tgl Masuk</th>
+                        <th style="width: 180px;">Status Alur</th>
+                        <th class="text-end" style="width: 90px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -270,14 +433,25 @@
                         <true>
                             <repeat group="{{ @daftar_order_terbaru }}" value="{{ @ord }}">
                                 <tr>
-                                    <td class="ps-3">
-                                        <a href="{{ @BASE }}/order/{{ @ord.id }}" class="fw-bold font-monospace text-decoration-none">
+                                    <td>
+                                        <a href="{{ @BASE }}/order/{{ @ord.id }}" class="fw-bold font-monospace text-decoration-none" style="color: var(--color-primary, #334155);">
                                             {{ @ord.nomor_order }}
                                         </a>
                                     </td>
                                     <td>
-                                        <div class="fw-bold text-dark">{{ @ord.nama_perusahaan }}</div>
-                                        <div class="text-muted small text-truncate" style="max-width: 380px;">{{ @ord.judul_kegiatan }}</div>
+                                        <div class="fw-semibold text-slate-900 text-truncate" style="max-width: 320px;">
+                                            <check if="{{ @mask_client_name }}">
+                                                <true>
+                                                    {{ substr(@ord.nama_perusahaan, 0, 3) . str_repeat('*', max(0, strlen(@ord.nama_perusahaan) - 3)) }}
+                                                </true>
+                                                <false>
+                                                    {{ @ord.nama_perusahaan }}
+                                                </false>
+                                            </check>
+                                        </div>
+                                        <div class="text-muted text-xs text-truncate" style="max-width: 320px;">
+                                            {{ @ord.judul_kegiatan ?: 'Pengujian Laboratorium Standar' }}
+                                        </div>
                                     </td>
                                     <td>
                                         <check if="{{ @ord.jenis_layanan_opti == 'selulosa' }}">
@@ -287,20 +461,21 @@
                                             <span class="badge badge-lingkungan">OPTI Lingkungan</span>
                                         </check>
                                         <check if="{{ @ord.jenis_layanan_opti != 'selulosa' && @ord.jenis_layanan_opti != 'lingkungan' }}">
-                                            <span class="badge bg-secondary">Belum Ditentukan</span>
+                                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">Belum Ditentukan</span>
                                         </check>
                                     </td>
-                                    <td class="small text-muted">
+                                    <td class="text-muted text-xs">
                                         {{ @ord.tanggal_masuk ? date('d M Y', strtotime(@ord.tanggal_masuk)) : '-' }}
                                     </td>
                                     <td>
-                                        <span class="badge {{ @ord.stage_class }} fw-semibold px-2 py-1">
-                                            <i class="bi {{ @ord.stage_icon }} me-1"></i>{{ @ord.stage_label }}
+                                        <span class="{{ @ord.stage_class }}">
+                                            <i class="bi {{ @ord.stage_icon }}"></i>
+                                            <span>{{ @ord.stage_label }}</span>
                                         </span>
                                     </td>
-                                    <td class="text-end pe-3">
-                                        <a href="{{ @BASE }}/order/{{ @ord.id }}" class="btn btn-xs btn-outline-secondary" title="Buka Detail Order">
-                                            <i class="bi bi-eye"></i> Detail
+                                    <td class="text-end">
+                                        <a href="{{ @BASE }}/order/{{ @ord.id }}" class="btn btn-xs btn-outline-secondary rounded-pill px-2.5 py-1 text-xs">
+                                            Detail
                                         </a>
                                     </td>
                                 </tr>
@@ -318,82 +493,138 @@
             </table>
         </div>
     </div>
+
 </div>
 
+<!-- ======================= CHART.JS SCRIPTS ======================= -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    var selulosaRed = '#e11d48';
-    var green = '#16A34A';
+    // Clean, minimalist slate color palette
+    var colorSelulosa = '#334155'; // Slate dark
+    var colorLingkungan = '#0d9488'; // Teal slate
 
-    // ---- Bar chart: perbandingan status order per divisi ----
-    var ctxStatus = document.getElementById('chartStatusOrder').getContext('2d');
-    new Chart(ctxStatus, {
-        type: 'bar',
-        data: {
-            labels: ['Diterima', 'Pending', 'Ditolak', 'Berjalan'],
-            datasets: [
-                {
-                    label: 'OPTI Selulosa',
-                    backgroundColor: selulosaRed,
-                    borderRadius: 4,
-                    data: [
-                        {{ @stat_selulosa.diterima ?: 0 }},
-                        {{ @stat_selulosa.pending ?: 0 }},
-                        {{ @stat_selulosa.ditolak ?: 0 }},
-                        {{ @stat_selulosa.berjalan ?: 0 }}
-                    ]
-                },
-                {
-                    label: 'OPTI Lingkungan',
-                    backgroundColor: green,
-                    borderRadius: 4,
-                    data: [
-                        {{ @stat_lingkungan.diterima ?: 0 }},
-                        {{ @stat_lingkungan.pending ?: 0 }},
-                        {{ @stat_lingkungan.ditolak ?: 0 }},
-                        {{ @stat_lingkungan.berjalan ?: 0 }}
-                    ]
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            plugins: { legend: { position: 'bottom' } },
-            scales: {
-                y: { beginAtZero: true, ticks: { precision: 0 } }
-            }
-        }
-    });
-
-    // ---- Donut chart: proporsi uang diterima ----
-    var ctxUang = document.getElementById('chartUangDiterima').getContext('2d');
-    new Chart(ctxUang, {
-        type: 'doughnut',
-        data: {
-            labels: ['OPTI Selulosa', 'OPTI Lingkungan'],
-            datasets: [{
-                backgroundColor: [selulosaRed, green],
-                data: [
-                    {{ @stat_selulosa.uang_diterima ?: 0 }},
-                    {{ @stat_lingkungan.uang_diterima ?: 0 }}
+    // ---- Bar Chart: Status Beban Kerja Permohonan ----
+    var ctxStatus = document.getElementById('chartStatusOrder');
+    if (ctxStatus) {
+        new Chart(ctxStatus.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: ['Diterima', 'Uji Lab Berjalan', 'Perlu Tindakan', 'Ditolak'],
+                datasets: [
+                    {
+                        label: 'OPTI Selulosa',
+                        backgroundColor: colorSelulosa,
+                        borderRadius: 6,
+                        borderSkipped: false,
+                        data: [
+                            {{ @stat_selulosa.diterima ?: 0 }},
+                            {{ @stat_selulosa.berjalan ?: 0 }},
+                            {{ @stat_selulosa.pending ?: 0 }},
+                            {{ @stat_selulosa.ditolak ?: 0 }}
+                        ]
+                    },
+                    {
+                        label: 'OPTI Lingkungan',
+                        backgroundColor: colorLingkungan,
+                        borderRadius: 6,
+                        borderSkipped: false,
+                        data: [
+                            {{ @stat_lingkungan.diterima ?: 0 }},
+                            {{ @stat_lingkungan.berjalan ?: 0 }},
+                            {{ @stat_lingkungan.pending ?: 0 }},
+                            {{ @stat_lingkungan.ditolak ?: 0 }}
+                        ]
+                    }
                 ]
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: { position: 'bottom' },
-                tooltip: {
-                    callbacks: {
-                        label: function (ctx) {
-                            var val = ctx.parsed || 0;
-                            return ctx.label + ': Rp ' + val.toLocaleString('id-ID');
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        align: 'end',
+                        labels: {
+                            usePointStyle: true,
+                            boxWidth: 8,
+                            padding: 14,
+                            font: { size: 11, family: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" }
+                        }
+                    },
+                    tooltip: {
+                        padding: 10,
+                        cornerRadius: 6,
+                        callbacks: {
+                            label: function (ctx) {
+                                return ' ' + ctx.dataset.label + ': ' + (ctx.parsed.y || 0) + ' Order';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { size: 11 } }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: { precision: 0, font: { size: 11 } },
+                        grid: { color: 'rgba(226, 232, 240, 0.7)' }
+                    }
+                }
+            }
+        });
+    }
+
+    // ---- Donut Chart: Perbandingan Uang Masuk Antar OPTI ----
+    var ctxUang = document.getElementById('chartUangDiterima');
+    if (ctxUang) {
+        var valSelulosa = {{ @stat_selulosa.uang_diterima ?: 0 }};
+        var valLingkungan = {{ @stat_lingkungan.uang_diterima ?: 0 }};
+        var totalUang = valSelulosa + valLingkungan;
+
+        var chartData = totalUang > 0 ? [valSelulosa, valLingkungan] : [1];
+        var chartColors = totalUang > 0 ? [colorSelulosa, colorLingkungan] : ['#e2e8f0'];
+        var chartLabels = totalUang > 0 ? ['OPTI Selulosa', 'OPTI Lingkungan'] : ['Belum Ada Pembayaran'];
+
+        new Chart(ctxUang.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: chartLabels,
+                datasets: [{
+                    backgroundColor: chartColors,
+                    borderWidth: 2,
+                    borderColor: '#ffffff',
+                    borderRadius: totalUang > 0 ? 5 : 0,
+                    spacing: totalUang > 0 ? 3 : 0,
+                    data: chartData
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '76%',
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        enabled: totalUang > 0,
+                        padding: 10,
+                        cornerRadius: 6,
+                        callbacks: {
+                            label: function (ctx) {
+                                var val = ctx.parsed || 0;
+                                var pct = totalUang > 0 ? ((val / totalUang) * 100).toFixed(1) : 0;
+                                return ' ' + ctx.label + ': Rp ' + val.toLocaleString('id-ID') + ' (' + pct + '%)';
+                            }
                         }
                     }
                 }
             }
-        }
-    });
+        });
+    }
 });
 </script>
+

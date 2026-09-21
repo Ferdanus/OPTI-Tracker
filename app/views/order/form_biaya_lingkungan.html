@@ -116,7 +116,115 @@
     -moz-appearance: textfield;
 }
 
+/* DURASI CONTROL (ESTIMASI WAKTU KERJA) */
+.durasi-control {
+    display: inline-flex;
+    align-items: center;
+    height: 31px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #ffffff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    transition: all 0.15s ease;
+}
 
+.durasi-control:focus-within {
+    border-color: var(--color-primary, #334155);
+    box-shadow: 0 0 0 3px rgba(51, 65, 85, 0.12);
+}
+
+.durasi-control input.row-durasi-nilai {
+    width: 44px;
+    height: 100%;
+    border: none;
+    text-align: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #0f172a;
+    outline: none;
+    background: transparent;
+    padding: 0 4px;
+}
+
+.durasi-control input.row-durasi-nilai::placeholder {
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+.durasi-control input::-webkit-outer-spin-button,
+.durasi-control input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.durasi-control input[type=number] {
+    -moz-appearance: textfield;
+}
+
+.durasi-control select.row-durasi-satuan {
+    height: 100%;
+    border: none;
+    border-left: 1px solid #e2e8f0;
+    background-color: #f8fafc;
+    color: #475569;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0 1.25rem 0 0.5rem;
+    outline: none;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.35rem center;
+    background-size: 10px 8px;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    transition: background-color 0.15s ease;
+}
+
+.durasi-control select.row-durasi-satuan:hover:not(:disabled) {
+    background-color: #f1f5f9;
+    color: #0f172a;
+}
+
+.durasi-control select.row-durasi-satuan:disabled,
+.durasi-control input.row-durasi-nilai:disabled {
+    background-color: #f1f5f9;
+    color: #94a3b8;
+    cursor: not-allowed;
+}
+
+/* Standar Rujukan / Baku Mutu Input */
+.input-standar-acuan {
+    color: #0f172a !important;
+    font-weight: 600 !important;
+    font-size: 0.82rem;
+    background-color: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 0.32rem 0.65rem;
+    transition: all 0.15s ease-in-out;
+}
+
+.input-standar-acuan:focus {
+    color: #0f172a !important;
+    background-color: #ffffff;
+    border-color: var(--color-primary, #334155) !important;
+    box-shadow: 0 0 0 3px rgba(51, 65, 85, 0.12) !important;
+    outline: none;
+}
+
+.input-standar-acuan::placeholder {
+    color: #94a3b8 !important;
+    font-weight: 400 !important;
+}
+
+.input-standar-acuan:disabled {
+    background-color: #f8fafc;
+    color: #475569 !important;
+    border-color: #e2e8f0;
+    cursor: not-allowed;
+}
 
 .ledger-card {
     background-color: #ffffff;
@@ -279,16 +387,48 @@
 
             <!-- Table Matrix: Kolom Sederhana & Luas (Tanpa dropdown Sub Layanan yang memakan tempat) -->
             <div class="table-responsive">
+                <!-- Autocomplete Datalist Acuan Standar / Baku Mutu -->
+                <datalist id="listStandarAcuan">
+                    <!-- SNI Populer Lingkungan Hidup -->
+                    <option value="SNI 6989.72:2009">SNI 6989.72:2009 (BOD5 - Winkler / Elektrometri)</option>
+                    <option value="SNI 6989.2:2009">SNI 6989.2:2009 (COD - Refluks Tertutup)</option>
+                    <option value="SNI 6989.3:2019">SNI 6989.3:2019 (TSS - Gravimetri)</option>
+                    <option value="SNI 6989.11:2019">SNI 6989.11:2019 (pH Air - Elektrometri)</option>
+                    <option value="SNI 6989.59:2008">SNI 6989.59:2008 (Pengambilan Contoh Air Limbah)</option>
+                    <option value="SNI 7117.17:2009">SNI 7117.17:2009 (Emisi Cerobong - Isokinetik Partikulat)</option>
+                    <option value="SNI 19-7117.10-2005">SNI 19-7117.10-2005 (Emisi Gas CO, CO2, SO2, NOx)</option>
+                    <option value="SNI 19-7119.6-2005">SNI 19-7119.6-2005 (Udara Ambien - Penentuan Lokasi)</option>
+                    <option value="SNI 7231:2009">SNI 7231:2009 (Kebisingan Lingkungan Kerja)</option>
+                    <option value="SNI 16-7062-2004">SNI 16-7062-2004 (Pengukuran Intensitas Penerangan)</option>
+                    
+                    <!-- Regulasi & Peraturan Pemerintah -->
+                    <option value="PP No. 22/2021">PP No. 22 Tahun 2021 (Baku Mutu Air & Udara Nasional)</option>
+                    <option value="Permen LHK No. 68/2016">Permen LHK No. 68/2016 (Baku Mutu Air Limbah Domestik)</option>
+                    <option value="Permen LHK No. 11/2021">Permen LHK No. 11/2021 (Baku Mutu Emisi Genset / Boiler)</option>
+                    <option value="Permenaker No. 5/2018">Permenaker No. 5/2018 (K3 Lingkungan Kerja)</option>
+                    <option value="Permenkes No. 2/2023">Permenkes No. 2/2023 (Kesehatan Lingkungan / Air Minum)</option>
+
+                    <!-- Standar Internasional & Metode Uji -->
+                    <option value="ASTM D5988-18">ASTM D5988-18 (Uji Biodegradasi Plastik di Tanah)</option>
+                    <option value="ASTM D6400">ASTM D6400 (Standar Plastik Kompos / Aerobik)</option>
+                    <option value="ISO 14855-2">ISO 14855-2 (Biodegradasi Plastik Kompos - Gravimetri Lab)</option>
+                    <option value="ISO 14855-1">ISO 14855-1 (Biodegradasi Plastik Kompos - Sensor Gas CO2)</option>
+                    <option value="OECD 423">OECD 423 (Uji Toksisitas Akut Oral)</option>
+                    <option value="APHA 23rd Edition">APHA 23rd Edition (Standard Methods Water & Wastewater)</option>
+                    <option value="In-House / IK Lab">In-House / IK Lab (Instruksi Kerja Internal Lab)</option>
+                </datalist>
+
                 <table class="table table-kalkulasi align-middle mb-0" id="tableUjiLingkungan">
                     <thead>
                         <tr>
-                            <th style="width: 45px;" class="text-center">No</th>
+                            <th style="width: 40px;" class="text-center">No</th>
                             <th>Nama Parameter Uji</th>
-                            <th style="width: 220px;">Baku Mutu / Standar</th>
-                            <th style="width: 170px;" class="text-end">Tarif Satuan (Rp)</th>
-                            <th style="width: 130px;" class="text-center">Titik / Sampel</th>
-                            <th style="width: 160px;" class="text-end">Subtotal (Rp)</th>
-                            <th style="width: 45px;" class="text-center"></th>
+                            <th style="width: 195px;">Baku Mutu / Standar</th>
+                            <th style="width: 160px;" class="text-center">Estimasi Kerja</th>
+                            <th style="width: 160px;" class="text-end">Tarif Satuan (Rp)</th>
+                            <th style="width: 120px;" class="text-center">Titik / Sampel</th>
+                            <th style="width: 150px;" class="text-end">Subtotal (Rp)</th>
+                            <th style="width: 40px;" class="text-center"></th>
                         </tr>
                     </thead>
                     <tbody id="tbodyUji">
@@ -481,8 +621,8 @@ var INITIAL_ITEMS = [
         standar_rujukan: "{{ addslashes(@it.standar_rujukan) }}",
         tarif_per_sampel: {{ (float)@it.tarif_per_sampel }},
         jumlah_sampel: {{ (int)@it.jumlah_sampel }},
-        durasi_nilai: {{ (int)(@it.master_durasi_nilai ?: (@it.durasi_bulan ?: 1)) }},
-        durasi_satuan: "{{ @it.master_durasi_satuan ?: 'Bulan' }}",
+        durasi_nilai: {{ (isset(@it.durasi_nilai) && @it.durasi_nilai !== null && @it.durasi_nilai !== '') ? (int)@it.durasi_nilai : (@it.metode_uji_id ? (int)(@it.master_durasi_nilai ?: 1) : "''") }},
+        durasi_satuan: "{{ @it.durasi_satuan ?: (@it.master_durasi_satuan ?: 'Hari') }}",
         durasi_bulan: {{ (int)@it.durasi_bulan }},
         is_subkontrak: {{ @it.is_subkontrak ? 'true' : 'false' }},
         lab_eksternal_id: {{ @it.lab_eksternal_id ?: 'null' }}
@@ -502,8 +642,8 @@ function addRowUji(data) {
         standar_rujukan: '',
         tarif_per_sampel: 0,
         jumlah_sampel: 1,
-        durasi_nilai: 1,
-        durasi_satuan: 'Bulan',
+        durasi_nilai: '',
+        durasi_satuan: 'Hari',
         durasi_bulan: 1,
         is_subkontrak: false,
         lab_eksternal_id: null
@@ -517,13 +657,15 @@ function addRowUji(data) {
     rowIndex++;
 
     var disabledAttr = CAN_EDIT ? '' : 'disabled';
+    var durasiVal = (data.durasi_nilai !== null && data.durasi_nilai !== undefined && data.durasi_nilai !== '') ? data.durasi_nilai : '';
+    var durasiSat = data.durasi_satuan || 'Hari';
 
     tr.innerHTML = `
         <td class="text-center align-middle">
             <span class="fw-bold text-secondary small row-number">${idx + 1}</span>
             <input type="hidden" name="items[${idx}][metode_uji_id]" id="metode_id_${idx}" value="${data.metode_uji_id || ''}">
             <input type="hidden" name="items[${idx}][sub_layanan]" value="${data.sub_layanan || 'uji_laboratorium'}">
-            <input type="hidden" name="items[${idx}][durasi_bulan]" id="durasi_bulan_${idx}" class="row-durasi-bulan" value="${data.durasi_bulan || 1}" data-nilai="${data.durasi_nilai || data.durasi_bulan || 1}" data-satuan="${data.durasi_satuan || 'Bulan'}">
+            <input type="hidden" name="items[${idx}][durasi_bulan]" id="durasi_bulan_${idx}" class="row-durasi-bulan" value="${data.durasi_bulan || 1}">
             <input type="hidden" name="items[${idx}][is_subkontrak]" value="${data.is_subkontrak ? '1' : '0'}">
             <input type="hidden" name="items[${idx}][lab_eksternal_id]" value="${data.lab_eksternal_id || ''}">
         </td>
@@ -531,7 +673,18 @@ function addRowUji(data) {
             <input type="text" name="items[${idx}][nama_pengujian]" id="nama_${idx}" class="form-control form-control-sm fw-semibold text-dark" placeholder="Nama parameter (misal: BOD5, COD, pH)" value="${data.nama_pengujian}" required ${disabledAttr}>
         </td>
         <td class="align-middle">
-            <input type="text" name="items[${idx}][standar_rujukan]" id="standar_${idx}" class="form-control form-control-sm text-secondary" placeholder="SNI / Acuan (opsional)" value="${data.standar_rujukan}" ${disabledAttr}>
+            <input type="text" list="listStandarAcuan" name="items[${idx}][standar_rujukan]" id="standar_${idx}" class="form-control form-control-sm input-standar-acuan" placeholder="Pilih / ketik acuan..." value="${data.standar_rujukan}" autocomplete="off" ${disabledAttr} title="Baku mutu atau standar acuan pengujian (SNI/ASTM/ISO/Peraturan)">
+        </td>
+        <td class="align-middle text-center">
+            <div class="durasi-control mx-auto">
+                <input type="number" name="items[${idx}][durasi_nilai]" id="durasi_nilai_${idx}" class="row-durasi-nilai font-monospace" placeholder="-" min="1" value="${durasiVal}" oninput="updateSpmFromMaster()" ${disabledAttr} title="Estimasi hari / waktu pengerjaan">
+                <select name="items[${idx}][durasi_satuan]" id="durasi_satuan_${idx}" class="row-durasi-satuan" onchange="updateSpmFromMaster()" ${disabledAttr} title="Satuan waktu kerja">
+                    <option value="Hari" ${durasiSat === 'Hari' ? 'selected' : ''}>Hari</option>
+                    <option value="Hari Kerja" ${durasiSat === 'Hari Kerja' ? 'selected' : ''}>Hari Kerja</option>
+                    <option value="Minggu" ${durasiSat === 'Minggu' ? 'selected' : ''}>Minggu</option>
+                    <option value="Bulan" ${durasiSat === 'Bulan' ? 'selected' : ''}>Bulan</option>
+                </select>
+            </div>
         </td>
         <td class="align-middle">
             <div class="input-group input-group-sm">
@@ -620,7 +773,7 @@ function addFromQuickCatalog() {
         tarif_per_sampel: item.tarif,
         jumlah_sampel: item.jumlah_sampel || 1,
         durasi_nilai: item.durasi_nilai || 1,
-        durasi_satuan: item.durasi_satuan || 'Bulan',
+        durasi_satuan: item.durasi_satuan || 'Hari',
         durasi_bulan: item.durasi_bulan || 1,
         is_subkontrak: item.butuh_eksternal ? true : false,
         lab_eksternal_id: null
@@ -664,35 +817,51 @@ function updateSpmFromMaster() {
         var namaEl = tr.querySelector('input[name*="[nama_pengujian]"]');
         if (!namaEl || !namaEl.value.trim()) return;
 
-        hasValid = true;
-        var metodeIdEl = tr.querySelector('input[name*="[metode_uji_id]"]');
+        var durasiNilaiInput = tr.querySelector('.row-durasi-nilai');
+        var durasiSatuanInput = tr.querySelector('.row-durasi-satuan');
         var durasiBulanEl = tr.querySelector('.row-durasi-bulan');
+        var metodeIdEl = tr.querySelector('input[name*="[metode_uji_id]"]');
 
-        var durasiNilai = 1;
-        var durasiSatuan = 'Bulan';
+        var durasiNilai = 0;
+        var durasiSatuan = 'Hari';
 
-        if (metodeIdEl && metodeIdEl.value) {
+        if (durasiNilaiInput && durasiNilaiInput.value !== '') {
+            durasiNilai = parseInt(durasiNilaiInput.value) || 0;
+            durasiSatuan = durasiSatuanInput ? durasiSatuanInput.value : 'Hari';
+        } else if (metodeIdEl && metodeIdEl.value) {
             var m = MASTER_METODE.find(function(item) { return item.id == metodeIdEl.value; });
             if (m) {
                 durasiNilai = parseInt(m.durasi_nilai) || 1;
-                durasiSatuan = m.durasi_satuan || 'Bulan';
+                durasiSatuan = m.durasi_satuan || 'Hari';
             }
-        } else if (durasiBulanEl) {
-            durasiNilai = parseInt(durasiBulanEl.getAttribute('data-nilai')) || parseInt(durasiBulanEl.value) || 1;
-            durasiSatuan = durasiBulanEl.getAttribute('data-satuan') || 'Bulan';
         }
 
-        var eqDays = 30;
-        if (durasiSatuan === 'Bulan') {
-            eqDays = durasiNilai * 30;
-        } else if (durasiSatuan === 'Minggu') {
-            eqDays = durasiNilai * 7;
-        } else {
-            eqDays = durasiNilai;
+        if (durasiNilai > 0) {
+            hasValid = true;
+            var eqDays = durasiNilai;
+            if (durasiSatuan === 'Bulan') {
+                eqDays = durasiNilai * 30;
+            } else if (durasiSatuan === 'Minggu') {
+                eqDays = durasiNilai * 7;
+            } else {
+                eqDays = durasiNilai;
+            }
+
+            if (eqDays > maxEquivalentDays) {
+                maxEquivalentDays = eqDays;
+            }
         }
 
-        if (eqDays > maxEquivalentDays) {
-            maxEquivalentDays = eqDays;
+        if (durasiBulanEl) {
+            var eqBulan = 1;
+            if (durasiSatuan === 'Bulan') {
+                eqBulan = Math.max(1, durasiNilai);
+            } else if (durasiSatuan === 'Minggu') {
+                eqBulan = Math.max(1, Math.ceil(durasiNilai / 4));
+            } else {
+                eqBulan = Math.max(1, Math.ceil(durasiNilai / 30));
+            }
+            durasiBulanEl.value = eqBulan;
         }
     });
 

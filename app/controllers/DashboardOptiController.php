@@ -37,11 +37,27 @@ class DashboardOptiController extends Controller {
             'belum_ditentukan' => $belumDitentukan,
         ]);
 
-        // Muat 5 order layanan aktif terbaru untuk transparansi tracker di dashboard
+        $totalUangKas = (float) ($selulosa['uang_diterima'] + $lingkungan['uang_diterima']);
+        $f3->set('pct_selulosa', $totalUangKas > 0 ? round(($selulosa['uang_diterima'] / $totalUangKas) * 100, 1) : 0);
+        $f3->set('pct_lingkungan', $totalUangKas > 0 ? round(($lingkungan['uang_diterima'] / $totalUangKas) * 100, 1) : 0);
+
+        // Muat 6 order layanan aktif terbaru untuk transparansi tracker di dashboard
         $orderModel = new OrderLayanan($this->db);
         $semuaAktif = $orderModel->allWithRelasi('', '', '', '', 'aktif');
-        $daftarOrderTerbaru = array_slice($semuaAktif, 0, 5);
+        $daftarOrderTerbaru = array_slice($semuaAktif, 0, 6);
         $f3->set('daftar_order_terbaru', $daftarOrderTerbaru);
+
+        // Format tanggal hari ini dalam bahasa Indonesia
+        $hariArr  = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+        $bulanArr = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        $timeNow  = time();
+        $hariIni  = $hariArr[(int)date('w', $timeNow)] . ', ' . date('j', $timeNow) . ' ' . $bulanArr[(int)date('n', $timeNow)] . ' ' . date('Y', $timeNow);
+        $f3->set('tanggal_hari_ini', $hariIni);
+
+        // Pengaturan masker nama klien
+        $fieldConfigModel = new OptiFieldConfig($this->db);
+        $maskEnabled = $fieldConfigModel->isMaskClientNameEnabled();
+        $f3->set('mask_client_name', $maskEnabled);
 
         $this->render('dashboard/index.html', 'Dashboard Optimalisasi Pemanfaatan Teknologi Industri BBSPJIS', 'dashboard');
     }

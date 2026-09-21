@@ -31,9 +31,11 @@ if (PHP_SAPI !== 'cli' && isset($_SERVER['REQUEST_URI'])) {
     }
 }
 
-// Setup koneksi PDO Database melalui SQL Wrapper F3
+// Setup koneksi PDO Database melalui SQL Wrapper F3 (OptiDatabase untuk silopti_2026 & sil2020)
+require_once __DIR__ . '/app/helpers/OptiDatabase.php';
+
 try {
-    $db = new \DB\SQL(
+    $db = new \OptiDatabase(
         $f3->get('db_dns'),
         $f3->get('db_user'),
         $f3->get('db_pass')
@@ -112,6 +114,7 @@ $f3->route('GET /dashboard', 'DashboardOptiController->index');
 $f3->route('GET /klien', 'CustomerController->index');
 $f3->route('GET /klien/tambah', 'CustomerController->tambah');
 $f3->route('POST /klien/simpan', 'CustomerController->simpan');
+$f3->route('GET /klien/@id', 'CustomerController->detail');
 $f3->route('GET /klien/@id/edit', 'CustomerController->edit');
 $f3->route('POST /klien/@id/update', 'CustomerController->update');
 $f3->route('POST /klien/@id/hapus', 'CustomerController->hapus');
@@ -119,6 +122,7 @@ $f3->route('POST /klien/@id/hapus', 'CustomerController->hapus');
 $f3->route('GET /customer', 'CustomerController->index');
 $f3->route('GET /customer/tambah', 'CustomerController->tambah');
 $f3->route('POST /customer/simpan', 'CustomerController->simpan');
+$f3->route('GET /customer/@id', 'CustomerController->detail');
 $f3->route('GET /customer/@id/edit', 'CustomerController->edit');
 $f3->route('POST /customer/@id/update', 'CustomerController->update');
 $f3->route('POST /customer/@id/hapus', 'CustomerController->hapus');

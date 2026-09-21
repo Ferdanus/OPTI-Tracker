@@ -155,67 +155,33 @@ class WhatsAppService {
             // Abaikan error tabel jika terjadi kendala minor
         }
 
-        // Pesan standar WhatsApp resmi dan profesional (tanpa emoji)
-        $message = "*BBSPJIS | SILOPTI*\n"
-                 . "Kode Verifikasi Akses\n\n"
-                 . "Yth. {$namaUser},\n"
-                 . "Kode verifikasi Anda adalah:\n\n"
-                 . "*{$otp}*\n\n"
-                 . "Kode ini berlaku selama 24 jam. Demi keamanan, mohon tidak membagikan kode ini kepada pihak manapun.";
+        // Format template pesan WhatsApp OTP: Clean & Simple (tanpa emoji)
+        $message = "*SILOPTI - BBSPJIS*\n\n"
+                 . "Yth. {$namaUser},\n\n"
+                 . "Kode verifikasi (OTP) Anda adalah: *{$otp}*\n\n"
+                 . "Catatan:\n"
+                 . "- Kode ini berlaku selama 24 jam.\n"
+                 . "- Bersifat rahasia, mohon tidak membagikan kode ini kepada siapapun.\n"
+                 . "- Abaikan pesan ini jika Anda tidak merasa melakukan permintaan login.\n\n"
+                 . "Terima kasih.";
 
-        // Kirim via API Gateway jika dikonfigurasi di config.ini
-        $f3 = \Base::instance();
-        $gatewayUrl = $f3->get('wa_gateway_url') ?: '';
-        $apiKey     = $f3->get('wa_api_key') ?: '';
+        // Kirim via gateway resmi WANotif menggunakan fungsi SentWANotif
+        $waResult = self::SentWANotif($formattedPhone, $message);
+        $deliverySuccess = $waResult['success'];
+        $deliveryResponse = "HTTP {$waResult['http_code']}: " . substr((string)$waResult['response'], 0, 255);
 
-        $deliverySuccess = true;
-        $deliveryResponse = 'Simulated Local/Dev Delivery';
-
-        if (!empty($gatewayUrl) && !empty($apiKey)) {
-            try {
-                $curl = curl_init();
-                curl_setopt_array($curl, array(
-                    CURLOPT_URL => $gatewayUrl,
-                    CURLOPT_RETURNTRANSFER => true,
-                    CURLOPT_ENCODING => '',
-                    CURLOPT_MAXREDIRS => 10,
-                    CURLOPT_TIMEOUT => 10,
-                    CURLOPT_FOLLOWLOCATION => true,
-                    CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-                    CURLOPT_CUSTOMREQUEST => 'POST',
-                    CURLOPT_POSTFIELDS => array(
-                        'target' => $formattedPhone,
-                        'message' => $message,
-                        'countryCode' => '62',
-                    ),
-                    CURLOPT_HTTPHEADER => array(
-                        "Authorization: {$apiKey}"
-                    ),
-                ));
-                $response = curl_exec($curl);
-                $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-                curl_close($curl);
-
-                $deliveryResponse = "HTTP {$httpCode}: " . substr((string)$response, 0, 200);
-                $deliverySuccess = ($httpCode >= 200 && $httpCode < 300);
-            } catch (\Exception $e) {
-                $deliveryResponse = 'cURL Error: ' . $e->getMessage();
-                $deliverySuccess = false;
-            }
-
-            // Update log delivery response
-            try {
-                $db->exec(
-                    "UPDATE opti_login_otp SET delivery_status = ?, delivery_response = ? WHERE user_id = ? AND otp_code = ? ORDER BY id DESC LIMIT 1",
-                    array(
-                        1 => $deliverySuccess ? 'delivered' : 'failed',
-                        2 => $deliveryResponse,
-                        3 => $userId,
-                        4 => $otp
-                    )
-                );
-            } catch (\Exception $e) {}
-        }
+        // Update log status pengiriman ke database
+        try {
+            $db->exec(
+                "UPDATE opti_login_otp SET delivery_status = ?, delivery_response = ? WHERE user_id = ? AND otp_code = ? ORDER BY id DESC LIMIT 1",
+                array(
+                    1 => $deliverySuccess ? 'delivered' : 'failed',
+                    2 => $deliveryResponse,
+                    3 => $userId,
+                    4 => $otp
+                )
+            );
+        } catch (\Exception $e) {}
 
         return [
             'success'      => true,
@@ -223,6 +189,52 @@ class WhatsAppService {
             'masked_phone' => $maskedPhone,
             'otp'          => $otp,
             'message'      => "Kode OTP verifikasi 24 jam telah dikirimkan ke WhatsApp ({$maskedPhone})."
+        ];
+    }
+
+    /**
+     * Kirim notifikasi WhatsApp via gateway resmi WANotif (api.wanotif.id)
+     * Menggunakan cURL POST x-www-form-urlencoded sesuai script resmi dari mentor
+     */
+    public static function SentWANotif(string $noHP, string $pesanWA, ?string $apikey = null, ?string $url = null): array {
+        $f3 = class_exists('\Base') ? \Base::instance() : null;
+        $apikey = $apikey ?: ($f3 ? $f3->get('wa_api_key') : null) ?: '0nCcu32vvhazLEMjKIAasaLSeLMJ3tDZ';
+        $url    = $url ?: ($f3 ? $f3->get('wa_gateway_url') : null) ?: 'https://api.wanotif.id/v1/send';
+
+        $phone = preg_replace('/[^0-9]/', '', $noHP);
+        $message = $pesanWA;
+
+        $postData = http_build_query([
+            'Apikey'  => $apikey,
+            'Phone'   => $phone,
+            'Message' => $message,
+        ], '', '&', PHP_QUERY_RFC3986);
+
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_HEADER, 0);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 2);
+        curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, true);
+        curl_setopt($curl, CURLOPT_TIMEOUT, 30);
+        curl_setopt($curl, CURLOPT_POST, 1);
+        curl_setopt($curl, CURLOPT_POSTFIELDS, $postData);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, [
+            'Content-Type: application/x-www-form-urlencoded; charset=UTF-8'
+        ]);
+
+        $response = curl_exec($curl);
+        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($curl);
+        curl_close($curl);
+
+        $isSuccess = ($httpCode >= 200 && $httpCode < 300) && empty($curlError);
+
+        return [
+            'success'   => $isSuccess,
+            'http_code' => $httpCode,
+            'response'  => $response ?: $curlError,
+            'phone'     => $phone
         ];
     }
 
@@ -247,5 +259,14 @@ class WhatsAppService {
         }
 
         return ['valid' => true, 'message' => 'Verifikasi OTP berhasil.'];
+    }
+}
+
+if (!function_exists('SentWANotif')) {
+    /**
+     * Global wrapper fungsi SentWANotif sesuai arahan mentor
+     */
+    function SentWANotif($noHP, $pesanWA) {
+        return WhatsAppService::SentWANotif((string)$noHP, (string)$pesanWA);
     }
 }

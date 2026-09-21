@@ -13,12 +13,36 @@ class CustomerController extends Controller {
      * Route: GET /customer atau GET /klien
      */
     public function index($f3) {
+        $search = trim($f3->get('GET.q') ?? '');
         $customerModel = new Customer($this->db);
-        $daftarCustomer = $customerModel->all();
+        $daftarCustomer = $customerModel->allWithCounts($search);
 
         $f3->set('daftar_klien', $daftarCustomer);
         $f3->set('daftar_customer', $daftarCustomer);
+        $f3->set('search_q', $search);
         $this->render('klien/index.html', 'Daftar Mitra / Customer', 'klien');
+    }
+
+    /**
+     * Menampilkan detail customer lengkap dengan relasi surat masuk (tb_arsipsurat) & order layanan
+     * Route: GET /customer/@id atau GET /klien/@id
+     */
+    public function detail($f3, $params) {
+        $id = (int)($params['id'] ?? 0);
+        $customerModel = new Customer($this->db);
+        $data = $customerModel->getDetailWithRelations($id);
+
+        if (!$data) {
+            $this->setFlashError("Data Customer #{$id} tidak ditemukan.");
+            $f3->reroute('/klien');
+            return;
+        }
+
+        $f3->set('customer', $data['customer']);
+        $f3->set('surat_masuk', $data['surat_masuk']);
+        $f3->set('orders', $data['orders']);
+        $f3->set('stats', $data['stats']);
+        $this->render('klien/detail.html', "Profil Mitra: {$data['customer']['pt_cv']} {$data['customer']['nmcustomer']}", 'klien');
     }
 
     /**

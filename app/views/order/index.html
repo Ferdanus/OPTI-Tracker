@@ -74,6 +74,76 @@
     border-color: transparent !important;
     color: #ffffff !important;
 }
+
+/* Modern Status Pill (Clean, Elegant & Compact) */
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.38rem;
+    padding: 0.28rem 0.72rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.25;
+    white-space: nowrap;
+    letter-spacing: 0.01em;
+    border: 1px solid transparent;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    transition: all 0.15s ease-in-out;
+}
+.status-pill i {
+    font-size: 0.8rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
+.status-pill-blue {
+    background-color: #eff6ff !important;
+    color: #1d4ed8 !important;
+    border-color: #bfdbfe !important;
+}
+.status-pill-blue i { color: #2563eb !important; }
+
+.status-pill-sky {
+    background-color: #f0f9ff !important;
+    color: #0284c7 !important;
+    border-color: #bae6fd !important;
+}
+.status-pill-sky i { color: #0284c7 !important; }
+
+.status-pill-amber {
+    background-color: #fffbeb !important;
+    color: #b45309 !important;
+    border-color: #fde68a !important;
+}
+.status-pill-amber i { color: #d97706 !important; }
+
+.status-pill-indigo {
+    background-color: #eef2ff !important;
+    color: #4338ca !important;
+    border-color: #c7d2fe !important;
+}
+.status-pill-indigo i { color: #4f46e5 !important; }
+
+.status-pill-emerald {
+    background-color: #ecfdf5 !important;
+    color: #047857 !important;
+    border-color: #a7f3d0 !important;
+}
+.status-pill-emerald i { color: #059669 !important; }
+
+.status-pill-rose {
+    background-color: #fef2f2 !important;
+    color: #b91c1c !important;
+    border-color: #fecaca !important;
+}
+.status-pill-rose i { color: #dc2626 !important; }
+
+.status-pill-slate {
+    background-color: #f8fafc !important;
+    color: #475569 !important;
+    border-color: #e2e8f0 !important;
+}
+.status-pill-slate i { color: #64748b !important; }
 </style>
 
 <div class="container-fluid px-0">
@@ -212,8 +282,9 @@
                                                 </check>
                                             </td>
                                             <td class="text-center">
-                                                <span class="badge {{ @ord.tahap_tolak_class }} px-2 py-1 fw-semibold">
-                                                    <i class="bi {{ @ord.tahap_tolak_icon }} me-1"></i>{{ @ord.tahap_tolak }}
+                                                <span class="{{ @ord.tahap_tolak_class }}">
+                                                    <i class="bi {{ @ord.tahap_tolak_icon }}"></i>
+                                                    <span>{{ @ord.tahap_tolak }}</span>
                                                 </span>
                                             </td>
                                             <td>
@@ -265,8 +336,8 @@
                                         <th>Judul Permohonan & Klien</th>
                                         <th class="text-center" style="width: 160px;">Divisi OPTI</th>
                                         <th class="text-end" style="width: 160px;">Estimasi Biaya</th>
-                                        <th class="text-center" style="width: 140px;">Status</th>
-                                        <th class="text-center" style="width: 150px;">Aksi</th>
+                                        <th class="text-center" style="width: 175px;">Status</th>
+                                        <th class="text-center" style="width: 140px;">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -340,8 +411,9 @@
                                                 </check>
                                             </td>
                                             <td class="text-center">
-                                                <span class="badge {{ @ord.stage_class }} px-2.5 py-1 fw-semibold">
-                                                    <i class="bi {{ @ord.stage_icon }} me-1"></i>{{ @ord.stage_label }}
+                                                <span class="{{ @ord.stage_class }}">
+                                                    <i class="bi {{ @ord.stage_icon }}"></i>
+                                                    <span>{{ @ord.stage_label }}</span>
                                                 </span>
                                             </td>
                                             <td class="text-center">

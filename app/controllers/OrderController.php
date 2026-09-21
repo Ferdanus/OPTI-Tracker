@@ -34,7 +34,7 @@ class OrderController extends Controller {
                               JOIN tb_customer c ON o.id_customer = c.id_customer
                               LEFT JOIN tb_surat_penawaran sp ON o.id = sp.order_id
                               WHERE {$sqlWhere} 
-                                AND o.status = 'baru' 
+                                AND o.status IN ('baru', 'permintaan_masuk') 
                                 AND o.id NOT IN (SELECT order_id FROM opti_tinjauan_kelayakan)
                               ORDER BY o.id DESC";
         $perluKajiUlang = $this->db->exec($sqlPerluKajiUlang, $params);
@@ -376,7 +376,7 @@ class OrderController extends Controller {
         }
 
         $tinjauan = $orderModel->getTinjauanKelayakan($id);
-        $proposal = ($order['jenis_layanan_opti'] === 'selulosa') ? $orderModel->getProposalRiset($id) : null;
+        $proposal = $orderModel->getProposalRiset($id);
         $kalkulasiLingkungan = ($order['jenis_layanan_opti'] === 'lingkungan') ? $orderModel->getKalkulasiLingkungan($id) : [];
 
         $spModel = new SuratPenawaran($this->db);
@@ -402,6 +402,16 @@ class OrderController extends Controller {
             $jadwalModel = new PoJadwalKerja($this->db);
             $jadwalKerja = $jadwalModel->getByPoId((int)$order['po_id']);
         }
+
+        $poKegiatan = null;
+        try {
+            $poKegiatanModel = new PoKegiatan($this->db);
+            $poKegiatanModel->load(['order_id = ?', $id]);
+            if (!$poKegiatanModel->dry()) {
+                $poKegiatan = $poKegiatanModel->cast();
+            }
+        } catch (\Exception $e) {}
+        $f3->set('po_kegiatan', $poKegiatan);
 
         $bastModel = new OptiBast($this->db);
         $bast = $bastModel->getByOrderId($id);
@@ -447,13 +457,26 @@ class OrderController extends Controller {
         $f3->set('kalkulasi_spm', $kalkulasiSpm);
 
         // Resolusi Status 8-Tahap Progress Stepper secara berurutan (Strict Sequential Workflow BBSPJIS):
-        $isFormPelayananDone = !in_array($order['status'] ?? '', ['permintaan_masuk', 'draft_disimpan']) && !empty($order['jenis_layanan_opti']) && $order['jenis_layanan_opti'] !== 'belum_ditentukan';
-        $isTinjauanDone = $isFormPelayananDone && (($order['status_tinjauan'] ?? '') === 'layak' || (!empty($tinjauan) && (($tinjauan['keputusan'] ?? '') === 'dapat_dilaksanakan')));
-        $hasPenawaran = !empty($penawaran);
         $isSelulosa = (($order['jenis_layanan_opti'] ?? '') === 'selulosa');
+        $isLingkungan = (($order['jenis_layanan_opti'] ?? '') === 'lingkungan');
+        $hasLayanan = in_array($order['jenis_layanan_opti'] ?? '', ['selulosa', 'lingkungan']);
+
+        // Step 1: Surat Masuk (selalu selesai karena order sudah tercatat)
+        $isSuratMasukDone = true;
+
+        // Step 2: Form Pelayanan (selesai jika status bukan permintaan_masuk/draft dan jenis layanan sudah ditentukan)
+        $isFormPelayananDone = !in_array($order['status'] ?? '', ['permintaan_masuk', 'draft_disimpan']) && $hasLayanan;
+
+        // Step 3: Kaji Kelayakan (selesai jika kaji ulang kelayakan disetujui)
+        $tinjauanDisetujui = (($order['status_tinjauan'] ?? '') === 'layak') || (!empty($tinjauan) && (($tinjauan['keputusan'] ?? '') === 'dapat_dilaksanakan'));
+        $isTinjauanDone = $isFormPelayananDone && $tinjauanDisetujui;
+
+        // Step 4: Proposal Teknis (Selulosa) / Tarif & Parameter (Lingkungan)
+        $hasPenawaran = !empty($penawaran);
         $proposalHasFileAndCost = !empty($proposal) && !empty($proposal['file_proposal']) && (float)($proposal['estimasi_total_biaya'] ?? 0) > 0;
 
         if ($isSelulosa) {
+            // Selulosa: Wajib proposal lengkap & ACC Ka. Tim sebelum penawaran
             $isProposalApproved = $isTinjauanDone && (
                 ($proposalHasFileAndCost && (
                     in_array($order['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui']) ||
@@ -461,37 +484,54 @@ class OrderController extends Controller {
                 )) ||
                 $hasPenawaran
             );
+            $isStep4Done = $isProposalApproved;
+        } elseif ($isLingkungan) {
+            // Lingkungan: Tarif & parameter selesai jika parameter sudah dipilih atau penawaran sudah terbit
+            $hasKalkulasiLingkungan = !empty($kalkulasiLingkungan) || (float)($order['estimasi_biaya'] ?? 0) > 0;
+            $isStep4Done = $isTinjauanDone && ($hasKalkulasiLingkungan || in_array($order['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui']) || $hasPenawaran);
+            $isProposalApproved = $isStep4Done;
         } else {
-            $isProposalApproved = $isTinjauanDone && (
-                in_array($order['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui']) ||
-                in_array($proposal['status_proposal'] ?? '', ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan']) ||
-                $hasPenawaran
-            );
+            // Layanan belum ditentukan: Step 3 dan Step 4 BELUM SELESAI
+            $isProposalApproved = false;
+            $isStep4Done = false;
         }
-        $isPenawaranDeal = $isTinjauanDone && (
+
+        // Step 5: Penawaran DEAL
+        $isPenawaranDeal = $isStep4Done && (
             ($order['status_penawaran'] ?? '') === 'deal' ||
             (!empty($penawaran) && ($penawaran['status_respon_klien'] ?? '') === 'deal')
         );
+
+        // Step 6: Pembayaran
         $isPembayaranLunas = $isPenawaranDeal && (
             ($order['status_keuangan'] ?? '') === 'lunas' ||
             !empty($riwayatBayar)
         );
+
+        // Khusus Lingkungan: Proposal teknis diunggah pasca pembayaran
+        $proposalLingkunganUploaded = !empty($proposal) && !empty($proposal['file_proposal']);
+        $f3->set('proposal_lingkungan_uploaded', $proposalLingkunganUploaded);
+
+        // Step 7: Petunjuk Operasional (PO)
         $isPoDone = $isPembayaranLunas && !empty($order['po_id']) && (
             in_array($order['status'] ?? '', ['selesai']) ||
             ($order['status_pelaksanaan'] ?? '') === 'laporan_selesai' ||
             !empty($bast)
         );
-        $isBastDone = !empty($bast) && (
+
+        // Step 8: BAST
+        $isBastDone = $isPoDone && !empty($bast) && (
             in_array($bast['status_bast'] ?? '', ['disetujui', 'selesai', 'terbit']) ||
             ($order['status'] ?? '') === 'selesai' ||
             ($order['status_pelaksanaan'] ?? '') === 'laporan_selesai'
         );
 
+        // Tentukan tahap aktif saat ini (Sequential Step Position)
         if (!$isFormPelayananDone) {
             $currentStep = 2;
         } elseif (!$isTinjauanDone) {
             $currentStep = 3;
-        } elseif (!$isProposalApproved && !$hasPenawaran) {
+        } elseif (!$isStep4Done) {
             $currentStep = 4;
         } elseif (!$isPenawaranDeal) {
             $currentStep = 5;
@@ -505,19 +545,212 @@ class OrderController extends Controller {
             $currentStep = 8;
         }
 
-        $stepper = [
-            1 => ['state' => 'done'],
-            2 => ['state' => $isFormPelayananDone ? 'done' : ($currentStep === 2 ? 'current' : 'waiting')],
-            3 => ['state' => $isTinjauanDone ? 'done' : ($currentStep === 3 ? 'current' : 'waiting')],
-            4 => ['state' => ($isProposalApproved || $hasPenawaran) ? 'done' : ($currentStep === 4 ? 'current' : 'waiting')],
-            5 => ['state' => $isPenawaranDeal ? 'done' : ($currentStep === 5 ? 'current' : 'waiting')],
-            6 => ['state' => $isPembayaranLunas ? 'done' : ($currentStep === 6 ? 'current' : 'waiting')],
-            7 => ['state' => $isPoDone ? 'done' : ($currentStep === 7 ? 'current' : 'waiting')],
-            8 => ['state' => $isBastDone ? 'done' : ($currentStep === 8 ? 'current' : 'waiting')],
-        ];
+        // Bangun state stepper: Hanya tahap SEBELUM currentStep yang berstatus done!
+        $stepper = [];
+        for ($s = 1; $s <= 8; $s++) {
+            if ($s < $currentStep) {
+                $stepper[$s] = ['state' => 'done'];
+            } elseif ($s === $currentStep) {
+                $stepper[$s] = ['state' => ($s === 8 && $isBastDone) ? 'done' : 'current'];
+            } else {
+                $stepper[$s] = ['state' => 'waiting'];
+            }
+        }
         $f3->set('stepper', $stepper);
+        $f3->set('current_step', $currentStep);
         $f3->set('proposal_has_file_cost', $proposalHasFileAndCost);
         $f3->set('is_proposal_approved', $isProposalApproved);
+
+        // Panduan Langkah Selanjutnya yang Jelas & Ramah Awam (Non-IT)
+        $isFinished = ($isBastDone || ($order['status'] ?? '') === 'selesai' || ($order['status_pelaksanaan'] ?? '') === 'laporan_selesai');
+
+        $langkahBerikutnya = [
+            'step' => $currentStep,
+            'is_finished' => $isFinished,
+            'judul' => '',
+            'deskripsi' => '',
+            'penanggung_jawab' => '',
+            'role_icon' => 'bi-person-gear',
+            'tipe_badge' => 'primary',
+            'tombol_teks' => '',
+            'tombol_url' => '',
+            'tombol_modal' => '',
+            'tombol_icon' => 'bi-arrow-right-circle-fill',
+            'tombol_class' => 'btn-primary',
+            'target_card' => '#cardPelayanan',
+        ];
+
+        if ($isFinished) {
+            $langkahBerikutnya['judul'] = 'Layanan Selesai & Berita Acara (BAST) Telah Diterbitkan';
+            $langkahBerikutnya['deskripsi'] = 'Seluruh siklus pengujian dari pendaftaran surat, kaji kelayakan, penawaran harga, pembayaran, pengujian laboratorium, hingga penyerahan dokumen BAST dan Laporan Hasil Uji (LHU) telah tuntas diselesaikan.';
+            $langkahBerikutnya['penanggung_jawab'] = 'Layanan Selesai (Tuntas)';
+            $langkahBerikutnya['role_icon'] = 'bi-check-circle-fill';
+            $langkahBerikutnya['tipe_badge'] = 'success';
+            $langkahBerikutnya['tombol_teks'] = 'Lihat Berkas BAST & Hasil';
+            $langkahBerikutnya['tombol_url'] = '#cardPoBast';
+            $langkahBerikutnya['tombol_icon'] = 'bi-patch-check-fill';
+            $langkahBerikutnya['tombol_class'] = 'btn-success';
+            $langkahBerikutnya['target_card'] = '#cardPoBast';
+        } elseif ($currentStep === 2) {
+            $langkahBerikutnya['judul'] = 'Lengkapi Formulir Permintaan Pelayanan Jasa';
+            $langkahBerikutnya['deskripsi'] = 'Surat permohonan telah diterima. Tim Kemitraan perlu menentukan laboratorium pelaksana (Lingkungan atau Selulosa) dan mengisi spesifikasi awal sebelum diajukan ke Ketua Tim.';
+            $langkahBerikutnya['penanggung_jawab'] = 'Tim Kemitraan / Pelayanan';
+            $langkahBerikutnya['role_icon'] = 'bi-person-lines-fill';
+            $langkahBerikutnya['tipe_badge'] = 'warning';
+            $langkahBerikutnya['tombol_teks'] = 'Buka Formulir Pelayanan';
+            $langkahBerikutnya['tombol_url'] = '#cardPelayanan';
+            $langkahBerikutnya['tombol_icon'] = 'bi-file-earmark-medical-fill';
+            $langkahBerikutnya['tombol_class'] = 'btn-warning text-dark';
+            $langkahBerikutnya['target_card'] = '#cardPelayanan';
+        } elseif ($currentStep === 3) {
+            $langkahBerikutnya['judul'] = 'Lakukan Kaji Ulang Kelayakan Teknis (ISO 17025)';
+            $langkahBerikutnya['deskripsi'] = 'Formulir pelayanan telah dikirimkan. Ketua Tim OPTI perlu memeriksa ketersediaan personil, peralatan uji, bahan kimia/reagen, serta metode standar sebelum menyetujui pelaksanaan layanan.';
+            $langkahBerikutnya['penanggung_jawab'] = 'Ketua Tim OPTI ' . ($isSelulosa ? 'Selulosa' : ($isLingkungan ? 'Lingkungan' : ''));
+            $langkahBerikutnya['role_icon'] = 'bi-clipboard-check-fill';
+            $langkahBerikutnya['tipe_badge'] = 'primary';
+            $langkahBerikutnya['tombol_teks'] = 'Lakukan Kaji Kelayakan';
+            $langkahBerikutnya['tombol_url'] = $f3->get('BASE') . "/order/{$id}/tinjauan";
+            $langkahBerikutnya['tombol_icon'] = 'bi-clipboard-check-fill';
+            $langkahBerikutnya['tombol_class'] = 'btn-primary';
+            $langkahBerikutnya['target_card'] = '#cardKajiKelayakan';
+        } elseif ($currentStep === 4) {
+            if ($isLingkungan) {
+                $hasBiaya = !empty($kalkulasiLingkungan) || (float)($order['estimasi_biaya'] ?? 0) > 0;
+                if (!$hasBiaya) {
+                    $langkahBerikutnya['judul'] = 'Pilih Parameter Uji & Hitung Tarif Resmi PNBP';
+                    $langkahBerikutnya['deskripsi'] = 'Kaji kelayakan disetujui. Silakan tentukan parameter pengujian air/udara/emisi dan jumlah sampel untuk menghasilkan rincian biaya sesuai katalog PP 54/2021.';
+                    $langkahBerikutnya['penanggung_jawab'] = 'Tim Teknis Lingkungan';
+                    $langkahBerikutnya['role_icon'] = 'bi-calculator-fill';
+                    $langkahBerikutnya['tipe_badge'] = 'primary';
+                    $langkahBerikutnya['tombol_teks'] = 'Kelola Parameter & Tarif';
+                    $langkahBerikutnya['tombol_url'] = $f3->get('BASE') . "/order/{$id}/biaya-lingkungan";
+                    $langkahBerikutnya['tombol_icon'] = 'bi-calculator-fill';
+                    $langkahBerikutnya['tombol_class'] = 'btn-primary';
+                    $langkahBerikutnya['target_card'] = '#cardParameterBiaya';
+                } else {
+                    $langkahBerikutnya['judul'] = 'Terbitkan Surat Penawaran Harga Resmi';
+                    $langkahBerikutnya['deskripsi'] = 'Kalkulasi tarif pengujian sebesar Rp ' . number_format($order['estimasi_biaya'] ?? 0, 0, ',', '.') . ' telah siap. Terbitkan surat penawaran resmi untuk dikirimkan ke pelanggan.';
+                    $langkahBerikutnya['penanggung_jawab'] = 'Tim Kemitraan & Pemasaran';
+                    $langkahBerikutnya['role_icon'] = 'bi-send-check-fill';
+                    $langkahBerikutnya['tipe_badge'] = 'primary';
+                    $langkahBerikutnya['tombol_teks'] = 'Terbitkan Surat Penawaran';
+                    $langkahBerikutnya['tombol_url'] = $f3->get('BASE') . "/order/{$id}/penawaran/buat";
+                    $langkahBerikutnya['tombol_icon'] = 'bi-file-earmark-plus-fill';
+                    $langkahBerikutnya['tombol_class'] = 'btn-primary';
+                    $langkahBerikutnya['target_card'] = '#cardPenawaran';
+                }
+            } else {
+                if (!$proposalHasFileAndCost) {
+                    $langkahBerikutnya['judul'] = 'Unggah Dokumen Proposal Teknis & Estimasi Biaya';
+                    $langkahBerikutnya['deskripsi'] = 'Kaji kelayakan disetujui. Tim Teknis Selulosa perlu mengunggah berkas proposal teknis dan menginput estimasi biaya kegiatan pengujian/penelitian.';
+                    $langkahBerikutnya['penanggung_jawab'] = 'Tim Teknis Selulosa';
+                    $langkahBerikutnya['role_icon'] = 'bi-file-earmark-arrow-up-fill';
+                    $langkahBerikutnya['tipe_badge'] = 'primary';
+                    $langkahBerikutnya['tombol_teks'] = 'Kelola Proposal Teknis';
+                    $langkahBerikutnya['tombol_url'] = '#cardParameterBiaya';
+                    $langkahBerikutnya['tombol_modal'] = '#modalProposalTeknis';
+                    $langkahBerikutnya['tombol_icon'] = 'bi-upload';
+                    $langkahBerikutnya['tombol_class'] = 'btn-primary';
+                    $langkahBerikutnya['target_card'] = '#cardParameterBiaya';
+                } else {
+                    $langkahBerikutnya['judul'] = 'Menunggu Persetujuan Proposal dari Ka. Tim Selulosa';
+                    $langkahBerikutnya['deskripsi'] = 'Proposal teknis telah diunggah. Menunggu persetujuan final (ACC) dari Ketua Tim Selulosa sebelum penawaran resmi dapat diterbitkan.';
+                    $langkahBerikutnya['penanggung_jawab'] = 'Ketua Tim Selulosa';
+                    $langkahBerikutnya['role_icon'] = 'bi-shield-check';
+                    $langkahBerikutnya['tipe_badge'] = 'warning';
+                    $langkahBerikutnya['tombol_teks'] = 'Periksa Lembar Proposal';
+                    $langkahBerikutnya['tombol_url'] = '#cardParameterBiaya';
+                    $langkahBerikutnya['tombol_icon'] = 'bi-file-earmark-text-fill';
+                    $langkahBerikutnya['tombol_class'] = 'btn-outline-primary';
+                    $langkahBerikutnya['target_card'] = '#cardParameterBiaya';
+                }
+            }
+        } elseif ($currentStep === 5) {
+            if (empty($penawaran)) {
+                $langkahBerikutnya['judul'] = 'Terbitkan Surat Penawaran Harga Resmi';
+                $langkahBerikutnya['deskripsi'] = 'Parameter pengujian dan rincian biaya telah disetujui. Terbitkan surat penawaran harga resmi untuk disampaikan kepada pihak pelanggan.';
+                $langkahBerikutnya['penanggung_jawab'] = 'Tim Kemitraan & Pemasaran';
+                $langkahBerikutnya['role_icon'] = 'bi-file-earmark-plus-fill';
+                $langkahBerikutnya['tipe_badge'] = 'primary';
+                $langkahBerikutnya['tombol_teks'] = 'Buat Surat Penawaran';
+                $langkahBerikutnya['tombol_url'] = $f3->get('BASE') . "/order/{$id}/penawaran/buat";
+                $langkahBerikutnya['tombol_icon'] = 'bi-file-earmark-plus-fill';
+                $langkahBerikutnya['tombol_class'] = 'btn-primary';
+                $langkahBerikutnya['target_card'] = '#cardPenawaran';
+            } else {
+                $langkahBerikutnya['judul'] = 'Menunggu Konfirmasi Persetujuan Pelanggan (DEAL)';
+                $langkahBerikutnya['deskripsi'] = 'Surat Penawaran resmi (' . ($penawaran['nomor_penawaran'] ?? 'Draft') . ') telah diterbitkan. Lakukan komunikasi dengan pelanggan dan catat respon persetujuan (DEAL) pada form di bawah.';
+                $langkahBerikutnya['penanggung_jawab'] = 'Pelanggan & Tim Kemitraan';
+                $langkahBerikutnya['role_icon'] = 'bi-telephone-forward-fill';
+                $langkahBerikutnya['tipe_badge'] = 'warning';
+                $langkahBerikutnya['tombol_teks'] = 'Catat Respon Pelanggan';
+                $langkahBerikutnya['tombol_url'] = '#cardPenawaran';
+                $langkahBerikutnya['tombol_icon'] = 'bi-check2-circle';
+                $langkahBerikutnya['tombol_class'] = 'btn-primary';
+                $langkahBerikutnya['target_card'] = '#cardPenawaran';
+            }
+        } elseif ($currentStep === 6) {
+            $langkahBerikutnya['judul'] = 'Konfirmasi Penerimaan Pembayaran / Bukti Setor PNBP';
+            $langkahBerikutnya['deskripsi'] = 'Penawaran harga telah disetujui (DEAL) oleh pelanggan. Tim Keuangan perlu mencatat bukti transfer pembayaran atau setoran billing PNBP agar pengujian laboratorium dapat dijadwalkan.';
+            $langkahBerikutnya['penanggung_jawab'] = 'Pelanggan & Tim Keuangan';
+            $langkahBerikutnya['role_icon'] = 'bi-credit-card-2-front-fill';
+            $langkahBerikutnya['tipe_badge'] = 'warning';
+            $langkahBerikutnya['tombol_teks'] = 'Catat & Konfirmasi Pembayaran';
+            $langkahBerikutnya['tombol_url'] = '#cardPembayaran';
+            $langkahBerikutnya['tombol_icon'] = 'bi-credit-card-2-front-fill';
+            $langkahBerikutnya['tombol_class'] = 'btn-success';
+            $langkahBerikutnya['target_card'] = '#cardPembayaran';
+        } elseif ($currentStep === 7) {
+            if (empty($order['tanggal_terima_sampel'])) {
+                $langkahBerikutnya['judul'] = 'Catat Tanggal Penerimaan Fisik Sampel di Laboratorium';
+                $langkahBerikutnya['deskripsi'] = 'Pembayaran pelanggan telah dikonfirmasi. Ketika sampel fisik uji tiba di laboratorium, catat tanggal penerimaan untuk mengaktifkan perhitungan batas hari kerja resmi (SPM).';
+                $langkahBerikutnya['penanggung_jawab'] = 'Laboratorium & Petugas Penerima Sampel';
+                $langkahBerikutnya['role_icon'] = 'bi-box-seam-fill';
+                $langkahBerikutnya['tipe_badge'] = 'warning';
+                $langkahBerikutnya['tombol_teks'] = 'Catat Tanggal Sampel';
+                $langkahBerikutnya['tombol_url'] = '#cardSampelSpm';
+                $langkahBerikutnya['tombol_icon'] = 'bi-calendar-check-fill';
+                $langkahBerikutnya['tombol_class'] = 'btn-warning text-dark';
+                $langkahBerikutnya['target_card'] = '#cardSampelSpm';
+            } elseif (empty($order['po_id'])) {
+                $deadlineStr = !empty($order['tanggal_deadline_spm']) ? date('d M Y', strtotime($order['tanggal_deadline_spm'])) : '-';
+                $langkahBerikutnya['judul'] = 'Terbitkan Petunjuk Operasional (PO) Pengujian Lab';
+                $langkahBerikutnya['deskripsi'] = "Sampel fisik telah diterima dan SPM aktif sampai {$deadlineStr}. Terbitkan lembar PO agar personil analis lab segera menjalankan pengujian sesuai parameter.";
+                $langkahBerikutnya['penanggung_jawab'] = 'Ketua Tim OPTI';
+                $langkahBerikutnya['role_icon'] = 'bi-patch-check-fill';
+                $langkahBerikutnya['tipe_badge'] = 'primary';
+                $langkahBerikutnya['tombol_teks'] = 'Terbitkan Lembar PO';
+                $langkahBerikutnya['tombol_url'] = '#cardPoBast';
+                $langkahBerikutnya['tombol_modal'] = '#modalApprove';
+                $langkahBerikutnya['tombol_icon'] = 'bi-patch-check-fill';
+                $langkahBerikutnya['tombol_class'] = 'btn-primary';
+                $langkahBerikutnya['target_card'] = '#cardPoBast';
+            } else {
+                $langkahBerikutnya['judul'] = 'Laboratorium Sedang Melakukan Pengujian Sampel';
+                $langkahBerikutnya['deskripsi'] = 'Petunjuk Operasional (' . ($order['nomor_po'] ?? '-') . ') aktif. Analis laboratorium sedang melakukan pengujian parameter sesuai standar acuan kerja.';
+                $langkahBerikutnya['penanggung_jawab'] = 'Laboratorium Penguji';
+                $langkahBerikutnya['role_icon'] = 'bi-flask-fill';
+                $langkahBerikutnya['tipe_badge'] = 'primary';
+                $langkahBerikutnya['tombol_teks'] = 'Buka Monitoring PO';
+                $langkahBerikutnya['tombol_url'] = $f3->get('BASE') . "/po/" . $order['po_id'];
+                $langkahBerikutnya['tombol_icon'] = 'bi-speedometer2';
+                $langkahBerikutnya['tombol_class'] = 'btn-dark';
+                $langkahBerikutnya['target_card'] = '#cardPoBast';
+            }
+        } elseif ($currentStep === 8) {
+            $langkahBerikutnya['judul'] = 'Terbitkan Dokumen BAST & Serahkan Laporan Hasil Uji (LHU)';
+            $langkahBerikutnya['deskripsi'] = 'Pekerjaan pengujian laboratorium telah selesai. Terbitkan Berita Acara Serah Terima (BAST) untuk menyerahkan hasil pengujian resmi kepada pihak pelanggan.';
+            $langkahBerikutnya['penanggung_jawab'] = 'Tim Kemitraan & Laboratorium';
+            $langkahBerikutnya['role_icon'] = 'bi-file-earmark-check-fill';
+            $langkahBerikutnya['tipe_badge'] = 'primary';
+            $langkahBerikutnya['tombol_teks'] = 'Terbitkan Dokumen BAST';
+            $langkahBerikutnya['tombol_url'] = $f3->get('BASE') . "/order/{$id}/bast/buat";
+            $langkahBerikutnya['tombol_icon'] = 'bi-file-earmark-plus-fill';
+            $langkahBerikutnya['tombol_class'] = 'btn-primary';
+            $langkahBerikutnya['target_card'] = '#cardPoBast';
+        }
+
+        $f3->set('langkah_berikutnya', $langkahBerikutnya);
 
         $this->render('order/detail.html', "Detail Order #{$order['nomor_order']}", 'order');
     }
@@ -980,6 +1213,8 @@ class OrderController extends Controller {
                         'standar_rujukan'  => trim($item['standar_rujukan'] ?? ''),
                         'tarif_per_sampel' => (float)($item['tarif_per_sampel'] ?? 0),
                         'jumlah_sampel'    => max(1, (int)($item['jumlah_sampel'] ?? 1)),
+                        'durasi_nilai'     => (isset($item['durasi_nilai']) && $item['durasi_nilai'] !== '' && $item['durasi_nilai'] !== null) ? max(1, (int)$item['durasi_nilai']) : null,
+                        'durasi_satuan'    => !empty($item['durasi_satuan']) ? trim($item['durasi_satuan']) : 'Hari',
                         'durasi_bulan'     => max(1, (int)($item['durasi_bulan'] ?? 1)),
                         'is_subkontrak'    => !empty($item['is_subkontrak']) ? 1 : 0,
                         'lab_eksternal_id' => !empty($item['lab_eksternal_id']) ? (int)$item['lab_eksternal_id'] : null
@@ -1359,8 +1594,13 @@ class OrderController extends Controller {
         $post = $f3->get('POST');
 
         $aksi = $post['aksi'] ?? ($post['action_btn'] ?? 'simpan');
-        $actionBtn = ($aksi === 'kirim') ? 'kirim_katim' : 'save_draft';
-        $jenisLayanan = in_array($post['jenis_layanan'] ?? ($post['jenis_layanan_opti'] ?? ''), ['selulosa', 'lingkungan']) ? ($post['jenis_layanan'] ?? $post['jenis_layanan_opti']) : 'selulosa';
+        $rawJenis = $post['jenis_layanan'] ?? ($post['jenis_layanan_opti'] ?? '');
+        if ($actionBtn === 'kirim_katim' && !in_array($rawJenis, ['selulosa', 'lingkungan'])) {
+            $this->setFlashError("Silakan pilih Divisi OPTI (OPTI Selulosa atau OPTI Lingkungan) sebelum meneruskan ke Ketua Tim.");
+            $f3->reroute("/order/{$id}/form-pelayanan");
+            return;
+        }
+        $jenisLayanan = in_array($rawJenis, ['selulosa', 'lingkungan']) ? $rawJenis : 'belum_ditentukan';
         $nama = trim($post['nama'] ?? '');
         $perusahaan = trim($post['perusahaan'] ?? '');
         $alamat = trim($post['alamat'] ?? '');
@@ -1985,30 +2225,38 @@ class OrderController extends Controller {
         $userRole = $this->getUserRole();
         $isPic = ($userId > 0 && (int)($order['pic_proposal_id'] ?? 0) === $userId);
 
-        // Strict Access Control:
-        if ($userRole === 'tim_kerja' && !$isPic && !$this->isSuperadmin()) {
+        // Access Control:
+        if ($userRole === 'tim_kerja' && !empty($order['pic_proposal_id']) && !$isPic && !$this->isSuperadmin()) {
             $this->setFlashError("Akses Ditolak: Anda bukan PIC yang ditugaskan untuk mengunggah berkas proposal Order ini.");
             $f3->reroute($redirectUrl);
             return;
         }
 
+        $isSelulosa = (($order['jenis_layanan_opti'] ?? '') === 'selulosa');
+
         // 1. Cek apakah proposal sudah disetujui (Terkunci)
         $existing = $orderModel->getProposalRiset($id);
-        $proposalDisetujui = (
-            ($existing && in_array($existing['status_proposal'] ?? '', ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan'])) ||
-            in_array($order['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui'])
-        );
+        if ($isSelulosa) {
+            $proposalDisetujui = (
+                ($existing && in_array($existing['status_proposal'] ?? '', ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan'])) ||
+                in_array($order['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui'])
+            );
+        } else {
+            // Lingkungan: Proposal teknis pasca bayar terkunci jika sudah di-ACC Ketua Tim
+            $proposalDisetujui = ($existing && in_array($existing['status_proposal'] ?? '', ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan']));
+        }
         if ($proposalDisetujui && !$this->isSuperadmin()) {
             $this->setFlashError("Dokumen proposal telah disetujui oleh Ketua Tim OPTI. Berkas terkunci dan tidak dapat diunggah ulang.");
             $f3->reroute($redirectUrl);
             return;
         }
 
-        // 2. Cek Prasyarat Kaji Ulang (Tahap 2)
+        // 2. Cek Prasyarat Kaji Ulang (Tahap 2 - Khusus Selulosa)
         $tinjauan = $orderModel->getTinjauanKelayakan($id);
         $tinjauanSelesai = (
             (!empty($tinjauan) && ($tinjauan['keputusan'] ?? '') === 'dapat_dilaksanakan') ||
-            (($order['status_tinjauan'] ?? '') === 'layak')
+            (($order['status_tinjauan'] ?? '') === 'layak') ||
+            !$isSelulosa
         );
         if (!$tinjauanSelesai) {
             $this->setFlashError("Gagal: Kaji Ulang Kelayakan Teknis (Tahap 2) belum selesai atau 'Tidak Dapat Dilaksanakan'.");
@@ -2055,20 +2303,21 @@ class OrderController extends Controller {
             @mkdir('c:/xampp/htdocs/Mini OPTI Tracker/' . $targetDir, 0777, true);
         }
 
-        $filename = 'Proposal_Order_' . $id . '_' . time() . '.' . $ext;
+        $filename = ($isSelulosa ? 'Proposal_Selulosa_' : 'Proposal_Lingkungan_') . 'Order_' . $id . '_' . time() . '.' . $ext;
         $dest = $targetDir . '/' . $filename;
         $fullDest = 'c:/xampp/htdocs/Mini OPTI Tracker/' . $dest;
 
         if (move_uploaded_file($file['tmp_name'], $fullDest)) {
+            $initialStatus = (!$isSelulosa) ? 'menunggu_approval' : 'draft';
             if ($existing) {
                 $this->db->exec(
-                    "UPDATE opti_proposal_riset SET file_proposal = ?, updated_at = NOW(), updated_by = ? WHERE order_id = ?",
-                    array(1 => $dest, 2 => $userId, 3 => $id)
+                    "UPDATE opti_proposal_riset SET file_proposal = ?, status_proposal = IF(? = 'selulosa', status_proposal, 'menunggu_approval'), updated_at = NOW(), updated_by = ? WHERE order_id = ?",
+                    array(1 => $dest, 2 => $order['jenis_layanan_opti'], 3 => $userId, 4 => $id)
                 );
             } else {
                 $this->db->exec(
-                    "INSERT INTO opti_proposal_riset (order_id, pic_penyusun_id, spesialisasi, file_proposal, status_proposal, updated_by) VALUES (?, ?, ?, ?, 'draft', ?)",
-                    array(1 => $id, 2 => $order['pic_proposal_id'] ?: $userId, 3 => $order['jenis_layanan_opti'], 4 => $dest, 5 => $userId)
+                    "INSERT INTO opti_proposal_riset (order_id, pic_penyusun_id, spesialisasi, file_proposal, status_proposal, updated_by) VALUES (?, ?, ?, ?, ?, ?)",
+                    array(1 => $id, 2 => $order['pic_proposal_id'] ?: $userId, 3 => $order['jenis_layanan_opti'], 4 => $dest, 5 => $initialStatus, 6 => $userId)
                 );
             }
             $userNama = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'PIC Peneliti');

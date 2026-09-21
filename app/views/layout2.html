@@ -76,14 +76,20 @@
         .brand-logo-badge {
             width: 38px;
             height: 38px;
-            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
-            color: #ffffff;
             border-radius: var(--radius-md);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.25rem;
+            overflow: hidden;
+            background: #233548;
             box-shadow: 0 2px 8px rgba(51, 65, 85, 0.25);
+        }
+
+        .brand-logo-badge img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
         }
 
         .brand-title {
@@ -406,26 +412,67 @@
             border: 1px solid #cbd5e1;
         }
 
+        /* Modern Division Badges - Harmonized with Corporate Slate & Minimalist Theme */
         .badge-pill-selulosa, .badge-selulosa {
-            background-color: #ffe4e6 !important;
-            color: #be123c !important;
-            border: 1px solid #fecdd3 !important;
+            background-color: #f1f5f9 !important;
+            color: #1e293b !important;
+            border: 1px solid #cbd5e1 !important;
+            border-radius: 9999px !important;
+            font-weight: 600 !important;
+            font-size: 0.72rem !important;
+            padding: 0.24rem 0.65rem !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+            letter-spacing: 0.01em !important;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+            white-space: nowrap !important;
         }
-
+        .badge-pill-selulosa::before, .badge-selulosa::before {
+            content: "" !important;
+            display: inline-block !important;
+            width: 6px !important;
+            height: 6px !important;
+            border-radius: 50% !important;
+            background-color: #475569 !important;
+            flex-shrink: 0 !important;
+        }
         .badge-selulosa-solid {
-            background-color: #be123c !important;
+            background-color: #334155 !important;
             color: #ffffff !important;
+            border: 1px solid #1e293b !important;
+            border-radius: 9999px !important;
         }
 
         .badge-pill-lingkungan, .badge-lingkungan {
-            background-color: #ccfbf1 !important;
+            background-color: #f0fdfa !important;
             color: #0f766e !important;
-            border: 1px solid #99f6e4 !important;
+            border: 1px solid #ccfbf1 !important;
+            border-radius: 9999px !important;
+            font-weight: 600 !important;
+            font-size: 0.72rem !important;
+            padding: 0.24rem 0.65rem !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+            letter-spacing: 0.01em !important;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+            white-space: nowrap !important;
         }
-
+        .badge-pill-lingkungan::before, .badge-lingkungan::before {
+            content: "" !important;
+            display: inline-block !important;
+            width: 6px !important;
+            height: 6px !important;
+            border-radius: 50% !important;
+            background-color: #0d9488 !important;
+            flex-shrink: 0 !important;
+        }
         .badge-lingkungan-solid {
             background-color: #0d9488 !important;
             color: #ffffff !important;
+            border: 1px solid #0f766e !important;
+            border-radius: 9999px !important;
         }
 
         /* Footer */
@@ -456,7 +503,7 @@
         <div class="container-fluid px-xl-5 px-lg-4 px-3">
             <a class="navbar-brand-wrapper" href="{{ @BASE }}/po">
                 <div class="brand-logo-badge">
-                    <i class="bi bi-layers-fill"></i>
+                    <img src="{{ @BASE }}/public/img/silopti-logo.jpg?v=3" alt="SILOPTI">
                 </div>
                 <div>
                     <h1 class="brand-title">SILOPTI</h1>

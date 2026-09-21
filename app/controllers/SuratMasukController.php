@@ -71,10 +71,17 @@ class SuratMasukController extends Controller {
             }
         }
 
+        $daftarCustomerOpti = [];
+        try {
+            $custModel = new \Customer($this->db);
+            $daftarCustomerOpti = $custModel->getRegisteredPelangganOpti();
+        } catch (\Exception $eCust) {}
+
         $this->f3->set('daftar_surat', $daftarSurat);
         $this->f3->set('daftar_klaim', $daftarKlaim);
         $this->f3->set('daftar_riwayat', $daftarRiwayat);
         $this->f3->set('daftar_ditolak', $daftarDitolak);
+        $this->f3->set('daftar_customer_opti', $daftarCustomerOpti);
         $this->f3->set('total_surat_tersedia', count($daftarSurat));
         $this->f3->set('total_klaim_aktif', count($daftarKlaim));
         $this->f3->set('total_klaim_selesai', count($daftarRiwayat));
@@ -94,8 +101,9 @@ class SuratMasukController extends Controller {
         $this->requireAuth();
         $this->requirePermission('surat_masuk:klaim');
 
-        $suratId = (int)($this->f3->get('POST.surat_id') ?? 0);
-        $userId  = $this->getUserId();
+        $suratId    = (int)($this->f3->get('POST.surat_id') ?? 0);
+        $idCustomer = (int)($this->f3->get('POST.id_customer') ?? 0);
+        $userId     = $this->getUserId();
 
         if ($suratId <= 0) {
             $this->setFlashError('ID Surat tidak valid.');
@@ -103,8 +111,14 @@ class SuratMasukController extends Controller {
             return;
         }
 
+        if ($idCustomer <= 0) {
+            $this->setFlashError('Silakan pilih instansi pelanggan resmi dari master data tb_customer terlebih dahulu.');
+            $this->f3->reroute('/surat-masuk');
+            return;
+        }
+
         try {
-            $orderId = $this->repo->klaimSurat($suratId, $userId);
+            $orderId = $this->repo->klaimSurat($suratId, $userId, $idCustomer);
 
             // Kirim Notifikasi ke Ka. Tim OPTI & Superadmin
             try {
@@ -619,10 +633,12 @@ class SuratMasukController extends Controller {
         
         try {
             if (strpos($table, 'tb_arsipsurat') !== false) {
-                $dbName = 'sil2020';
+                $dbSekName = 'sil2020';
                 try {
-                    $dbNameRes = $this->db->exec("SELECT DATABASE() as db");
-                    if (!empty($dbNameRes[0]['db'])) $dbName = $dbNameRes[0]['db'];
+                    if ($this->dbSekretariat) {
+                        $dbSekRes = $this->dbSekretariat->exec("SELECT DATABASE() as db");
+                        if (!empty($dbSekRes[0]['db'])) $dbSekName = $dbSekRes[0]['db'];
+                    }
                 } catch (\Exception $e) {}
 
                 $sql = "SELECT a.*, 
@@ -636,7 +652,7 @@ class SuratMasukController extends Controller {
                                a.nama_berkas AS file_path,
                                a.nama_layanan
                         FROM `{$table}` a
-                        LEFT JOIN `{$dbName}`.tb_customer c ON a.id_customer = c.id_customer
+                        LEFT JOIN `{$dbSekName}`.tb_customer c ON a.id_customer = c.id_customer
                         ORDER BY a.id_arsip DESC";
                 $daftarSuratSimulasi = $dbTarget->exec($sql);
             } else {
@@ -655,8 +671,12 @@ class SuratMasukController extends Controller {
             }
             unset($s);
         } catch (\Exception $e) {
-            $daftarSuratSimulasi = [];
         }
+
+        $customerModel = new \Customer($this->db);
+        $daftarCustomerMaster = $customerModel->getRegisteredPelangganOpti();
+        $this->f3->set('daftar_customer_master', $daftarCustomerMaster);
+        $this->f3->set('selected_cust_id', (int)($this->f3->get('GET.cust_id') ?? 0));
 
         $this->f3->set('daftar_surat_simulasi', $daftarSuratSimulasi);
         $this->f3->set('total_surat', count($daftarSuratSimulasi));
@@ -713,15 +733,44 @@ class SuratMasukController extends Controller {
 
         try {
             if (strpos($table, 'tb_arsipsurat') !== false) {
-                // Pencocokan atau pembuatan data customer di tb_customer
-                $idCustomer = 1;
-                if (!empty($pengirim)) {
-                    $custRows = $this->db->exec("SELECT id_customer FROM `tb_customer` WHERE LOWER(TRIM(nmcustomer)) = LOWER(?) LIMIT 1", [1 => $pengirim]);
+                // Pencocokan atau pemilihan data customer di tb_customer
+                $idCustomer = (int)($post['id_customer'] ?? 0);
+                if ($idCustomer > 0) {
+                    // Terhubung langsung ke master tb_customer yang sudah dipilih
+                    $this->db->exec("UPDATE `tb_customer` SET id_layanan_optimalisasi = 1 WHERE id_customer = ?", [1 => $idCustomer]);
+                    // Sinkronkan data kontak terbaru
+                    $updFields = [];
+                    $updParams = [];
+                    $idxU = 1;
+                    if (!empty($pic)) {
+                        $updFields[] = "`contactperson_opti` = ?, `contactperson` = ?";
+                        $updParams[$idxU++] = $pic;
+                        $updParams[$idxU++] = $pic;
+                    }
+                    if (!empty($telp)) {
+                        $updFields[] = "`nohpcontactperson_opti` = ?, `notelpcustomer` = ?";
+                        $updParams[$idxU++] = $telp;
+                        $updParams[$idxU++] = $telp;
+                    }
+                    if (!empty($email)) {
+                        $updFields[] = "`emailcustomer` = ?";
+                        $updParams[$idxU++] = $email;
+                    }
+                    if (!empty($updFields)) {
+                        $updParams[$idxU] = $idCustomer;
+                        $this->db->exec("UPDATE `tb_customer` SET " . implode(", ", $updFields) . " WHERE `id_customer` = ?", $updParams);
+                    }
+                } else {
+                    // Cari apakah nama perusahaan sudah ada di tb_customer
+                    $cleanName = preg_replace('/^(PT\.?|PT|CV\.?|CV|UD\.?|UD)\s+/i', '', $pengirim);
+                    $cleanName = trim($cleanName ?: $pengirim);
+                    $custRows = $this->db->exec("SELECT id_customer FROM `tb_customer` WHERE LOWER(TRIM(nmcustomer)) = LOWER(?) OR LOWER(TRIM(nmcustomer)) = LOWER(?) LIMIT 1", [1 => $pengirim, 2 => $cleanName]);
                     if (!empty($custRows)) {
                         $idCustomer = (int)$custRows[0]['id_customer'];
+                        $this->db->exec("UPDATE `tb_customer` SET id_layanan_optimalisasi = 1 WHERE id_customer = ?", [1 => $idCustomer]);
                     } else {
-                        $this->db->exec("INSERT INTO `tb_customer` (nmcustomer, pt_cv, alamatcustomer, contactperson_opti, notelpcustomer, emailcustomer, id_layanan_optimalisasi, tglinput) VALUES (?, ?, ?, ?, ?, ?, 1, NOW())", [
-                            1 => $pengirim, 2 => $ptCv, 3 => $alamat, 4 => $pic, 5 => $telp, 6 => $email
+                        $this->db->exec("INSERT INTO `tb_customer` (nmcustomer, pt_cv, alamatcustomer, contactperson_opti, notelpcustomer, emailcustomer, id_layanan_optimalisasi, showhide, tglinput) VALUES (?, ?, ?, ?, ?, ?, 1, 'show', NOW())", [
+                            1 => $cleanName, 2 => $ptCv, 3 => $alamat, 4 => $pic, 5 => $telp, 6 => $email
                         ]);
                         $idCustomer = (int)($this->db->exec("SELECT LAST_INSERT_ID() as id")[0]['id'] ?? 1);
                     }

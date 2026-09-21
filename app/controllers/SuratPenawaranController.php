@@ -523,11 +523,13 @@ $daftarPegawai = $arsipUser->find(
             return;
         }
 
-        // 1. Validasi Prasyarat Kaji Ulang Kelayakan Teknis (Tahap 2)
+        // 1. Validasi Prasyarat Kaji Ulang Kelayakan Teknis (Tahap 2 - Khusus Selulosa)
         $tinjauan = $orderModel->getTinjauanKelayakan($orderId);
+        $isSelulosa = (($order['jenis_layanan_opti'] ?? '') === 'selulosa');
         $tinjauanSelesai = (
             (!empty($tinjauan) && ($tinjauan['keputusan'] ?? '') === 'dapat_dilaksanakan') ||
-            (($order['status_tinjauan'] ?? '') === 'layak')
+            (($order['status_tinjauan'] ?? '') === 'layak') ||
+            !$isSelulosa
         );
         if (!$tinjauanSelesai) {
             $this->setFlashError("Gagal: Kaji Ulang Kelayakan Teknis (Tahap 2) belum selesai atau tidak memenuhi syarat.");
@@ -672,11 +674,13 @@ $daftarPegawai = $arsipUser->find(
             return;
         }
 
-        // 1. Validasi Prasyarat Kaji Ulang Kelayakan Teknis (Tahap 2)
+        // 1. Validasi Prasyarat Kaji Ulang Kelayakan Teknis (Tahap 2 - Khusus Selulosa)
         $tinjauan = $orderModel->getTinjauanKelayakan($orderId);
+        $isSelulosa = (($order['jenis_layanan_opti'] ?? '') === 'selulosa');
         $tinjauanSelesai = (
             (!empty($tinjauan) && ($tinjauan['keputusan'] ?? '') === 'dapat_dilaksanakan') ||
-            (($order['status_tinjauan'] ?? '') === 'layak')
+            (($order['status_tinjauan'] ?? '') === 'layak') ||
+            !$isSelulosa
         );
         if (!$tinjauanSelesai) {
             $this->setFlashError("Gagal: Kaji Ulang Kelayakan Teknis (Tahap 2) belum selesai atau tidak memenuhi syarat.");

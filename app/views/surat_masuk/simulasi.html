@@ -100,8 +100,33 @@
                             </div>
                         </div>
 
-                        <!-- Baris 2: Data Perusahaan / Instansi Pengirim -->
-                        <div class="row g-3 mb-3">
+                        <!-- Baris 2: Data Perusahaan / Instansi Pengirim (Terintegrasi tb_customer) -->
+                        <div class="row g-3 mb-3 p-3 bg-light rounded border border-primary-subtle">
+                            <div class="col-12">
+                                <label class="form-label small fw-bold text-primary d-flex align-items-center justify-content-between mb-1">
+                                    <span><i class="bi bi-building-check me-1"></i>Pilih Mitra Industri dari Master Data (<code>tb_customer</code>):</span>
+                                    <a href="{{ @BASE }}/klien/tambah" target="_blank" class="text-decoration-none small"><i class="bi bi-plus-circle me-1"></i>Tambah Customer Baru</a>
+                                </label>
+                                <select name="id_customer" id="f_id_customer" class="form-select form-select-sm fw-semibold" onchange="onCustomerSelect(this)">
+                                    <option value="0">Input Bebas / Mitra Baru Belum Terdaftar</option>
+                                    <repeat group="{{ @daftar_customer_master }}" value="{{ @cust }}">
+                                        <option value="{{ @cust.id_customer }}"
+                                                data-ptcv="{{ @cust.pt_cv ?: 'PT' }}"
+                                                data-nama="{{ @cust.nmcustomer }}"
+                                                data-nama-bersih="{{ @cust.nama_perusahaan_bersih }}"
+                                                data-alamat="{{ @cust.alamatcustomer ?: '' }}"
+                                                data-pic="{{ @cust.contactperson_opti ?: (@cust.contactperson ?: '') }}"
+                                                data-telp="{{ @cust.nohpcontactperson_opti ?: (@cust.notelpcustomer ?: '') }}"
+                                                data-email="{{ @cust.emailcustomer ?: '' }}"
+                                                {{ @selected_cust_id == @cust.id_customer ? 'selected' : '' }}>
+                                            {{ @cust.nama_perusahaan_bersih }}
+                                        </option>
+                                    </repeat>
+                                </select>
+                                <div id="custInfoAlert" class="mt-2 small text-success fw-semibold d-none">
+                                    <i class="bi bi-check-circle-fill me-1"></i>Terhubung langsung dengan data master customer ID #<span id="txtCustId"></span> di <code>tb_customer</code>
+                                </div>
+                            </div>
                             <div class="col-md-3">
                                 <label class="form-label small fw-bold text-dark">Bentuk Badan:</label>
                                 <select name="pt_cv" id="f_pt_cv" class="form-select form-select-sm">
@@ -281,6 +306,32 @@
 </div>
 
 <script>
+function onCustomerSelect(select) {
+    var opt = select.options[select.selectedIndex];
+    var alertBox = document.getElementById('custInfoAlert');
+    var txtCustId = document.getElementById('txtCustId');
+
+    if (opt.value && opt.value !== '0') {
+        document.getElementById('f_pt_cv').value = opt.getAttribute('data-ptcv') || 'PT';
+        document.getElementById('f_pengirim').value = opt.getAttribute('data-nama') || '';
+        document.getElementById('f_alamat').value = opt.getAttribute('data-alamat') || '';
+        document.getElementById('f_pic').value = opt.getAttribute('data-pic') || '';
+        document.getElementById('f_telp').value = opt.getAttribute('data-telp') || '';
+        document.getElementById('f_email').value = opt.getAttribute('data-email') || '';
+        if (txtCustId) txtCustId.textContent = opt.value;
+        if (alertBox) alertBox.classList.remove('d-none');
+    } else {
+        if (alertBox) alertBox.classList.add('d-none');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    var sel = document.getElementById('f_id_customer');
+    if (sel && sel.value && sel.value !== '0') {
+        onCustomerSelect(sel);
+    }
+});
+
 function loadPreset(tipe) {
     if (tipe === 'selulosa') {
         if (document.getElementById('f_surat_permohonan')) document.getElementById('f_surat_permohonan').value = 'Y';

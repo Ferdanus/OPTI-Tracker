@@ -268,7 +268,7 @@
                                                 </td>
                                                 <td>
                                                     <div class="fw-bold text-dark">
-                                                        {{ @surat.pt_cv ? @surat.pt_cv . ' ' : '' }}{{ @surat.pengirim }}
+                                                        {{ @surat.nama_pengirim_bersih ?: ((@surat.pt_cv ? @surat.pt_cv . ' ' : '') . @surat.pengirim) }}
                                                     </div>
                                                 </td>
                                                 <td>
@@ -277,12 +277,12 @@
                                                 <td class="text-center">
                                                     <check if="{{ @surat.file_path }}">
                                                         <true>
-                                                            <button type="button" 
+                                                             <button type="button" 
                                                                 class="btn btn-outline-primary btn-sm px-2 py-1 shadow-sm d-inline-flex align-items-center gap-1 btn-preview-pdf"
                                                                 data-surat-id="{{ @surat.id }}"
                                                                 data-pdf-url="{{ @BASE }}/surat-masuk/{{ @surat.id }}/pdf"
                                                                 data-nomor="{{ @surat.nomor_surat }}"
-                                                                data-pengirim="{{ (@surat.pt_cv ? @surat.pt_cv . ' ' : '') . @surat.pengirim }}"
+                                                                data-pengirim="{{ @surat.nama_pengirim_bersih ?: ((@surat.pt_cv ? @surat.pt_cv . ' ' : '') . @surat.pengirim) }}"
                                                                 data-alamat="{{ @surat.alamat_pengirim ?: 'Kawasan Industri Terpadu, Indonesia' }}"
                                                                 data-telp="{{ @surat.no_telp_pengirim ?: '-' }}"
                                                                 data-email="{{ @surat.email_pengirim ?: '-' }}"
@@ -354,7 +354,7 @@
                                                 </td>
                                                 <td>
                                                     <div class="fw-bold text-dark">
-                                                        {{ @klaim.pt_cv ? @klaim.pt_cv . ' ' : '' }}{{ @klaim.nmcustomer }}
+                                                        {{ @klaim.nama_pengirim_bersih ?: ((@klaim.pt_cv ? @klaim.pt_cv . ' ' : '') . @klaim.nmcustomer) }}
                                                     </div>
                                                 </td>
                                                 <td>
@@ -427,7 +427,7 @@
                                                     </check>
                                                 </td>
                                                 <td>
-                                                    <div class="fw-bold text-dark">{{ @riw.pt_cv ? @riw.pt_cv . ' ' : '' }}{{ @riw.nmcustomer }}</div>
+                                                    <div class="fw-bold text-dark">{{ @riw.nama_pengirim_bersih ?: ((@riw.pt_cv ? @riw.pt_cv . ' ' : '') . @riw.nmcustomer) }}</div>
                                                     <small class="text-muted d-block"><i class="bi bi-person me-1"></i>PIC: {{ @riw.pic }}</small>
                                                 </td>
                                                 <td>
@@ -566,33 +566,77 @@
 
                     <div class="modal-body p-4">
                         
-                        <!-- Teks Penjelasan Utama -->
-                        <p class="text-dark fs-6 mb-3">
-                            Apakah Anda ingin menerima dan memproses surat permohonan dari <strong>{{ @surat.pt_cv ? @surat.pt_cv . ' ' : '' }}{{ @surat.pengirim }}</strong>?
-                        </p>
+                        <!-- 1. Pemilihan Instansi Pelanggan -->
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-dark mb-1">
+                                Instansi Pelanggan <span class="text-danger">*</span>
+                            </label>
+                            <select name="id_customer" class="form-select form-select-sm fw-semibold select-customer-modal" data-modal-id="{{ @surat.id }}" required>
+                                <option value="">Pilih Instansi Pelanggan</option>
+                                <repeat group="{{ @daftar_customer_opti }}" value="{{ @cust }}">
+                                    <option value="{{ @cust.id_customer }}"
+                                            data-ptcv="{{ @cust.pt_cv }}"
+                                            data-nama="{{ @cust.nmcustomer }}"
+                                            data-nama-bersih="{{ @cust.nama_perusahaan_bersih }}"
+                                            data-alamat="{{ @cust.alamatcustomer ?: '-' }}"
+                                            data-pic="{{ @cust.contactperson ?: (@cust.contactperson_opti ?: '-') }}"
+                                            data-telp="{{ @cust.notelpcustomer ?: (@cust.nohpcontactperson_opti ?: '-') }}"
+                                            data-email="{{ @cust.emailcustomer ?: '-' }}"
+                                            {{ @surat.id_customer == @cust.id_customer ? 'selected' : '' }}>
+                                        {{ @cust.nama_perusahaan_bersih }}
+                                    </option>
+                                </repeat>
+                            </select>
+                        </div>
 
-                        <!-- Kotak Rincian Data Surat yang Jelas & Rapi -->
-                        <div class="border rounded-2 p-3 bg-light mb-3">
-                            <div class="row g-3">
+                        <!-- 2. Preview Data Pelanggan Terpilih -->
+                        <div class="border rounded-2 p-3 bg-white mb-3 shadow-xs">
+                            <div class="mb-2 pb-2 border-bottom">
+                                <span class="small fw-bold text-dark d-flex align-items-center gap-1">
+                                    <i class="bi bi-building text-primary"></i> Data Pelanggan Terpilih
+                                </span>
+                            </div>
+                            <div class="row g-2 small">
                                 <div class="col-sm-6">
-                                    <span class="text-muted small d-block">Nomor Surat:</span>
-                                    <span class="fw-bold text-dark font-monospace">{{ @surat.nomor_surat }}</span>
+                                    <span class="text-muted d-block" style="font-size:0.72rem;">Instansi:</span>
+                                    <strong class="text-dark" id="lblCustNama_{{ @surat.id }}">{{ @surat.nama_pengirim_bersih ?: @surat.pengirim }}</strong>
                                 </div>
                                 <div class="col-sm-6">
-                                    <span class="text-muted small d-block">Tanggal Surat:</span>
+                                    <span class="text-muted d-block" style="font-size:0.72rem;">Kontak Person (PIC):</span>
+                                    <span class="text-dark fw-semibold" id="lblCustPic_{{ @surat.id }}">{{ @surat.pic_pengirim ?: '-' }}</span>
+                                </div>
+                                <div class="col-sm-6">
+                                    <span class="text-muted d-block" style="font-size:0.72rem;">Telepon / WA:</span>
+                                    <span class="text-dark" id="lblCustTelp_{{ @surat.id }}">{{ @surat.no_telp_pengirim ?: '-' }}</span>
+                                </div>
+                                <div class="col-sm-6">
+                                    <span class="text-muted d-block" style="font-size:0.72rem;">Email:</span>
+                                    <span class="text-dark" id="lblCustEmail_{{ @surat.id }}">{{ @surat.email_pengirim ?: '-' }}</span>
+                                </div>
+                                <div class="col-12">
+                                    <span class="text-muted d-block" style="font-size:0.72rem;">Alamat:</span>
+                                    <span class="text-secondary" id="lblCustAlamat_{{ @surat.id }}">{{ @surat.alamat_pengirim ?: '-' }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 3. Rincian Dokumen Surat Masuk Asli -->
+                        <div class="border rounded-2 p-3 bg-light mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
+                                <span class="small fw-bold text-dark"><i class="bi bi-envelope-paper-fill text-secondary me-1"></i> Rujukan Dokumen Surat Masuk:</span>
+                                <span class="badge bg-secondary-subtle text-secondary font-monospace">No. #{{ @surat.id }}</span>
+                            </div>
+                            <div class="row g-2 small">
+                                <div class="col-sm-6">
+                                    <span class="text-muted d-block" style="font-size:0.72rem;">Nomor Surat:</span>
+                                    <strong class="text-dark font-monospace">{{ @surat.nomor_surat }}</strong>
+                                </div>
+                                <div class="col-sm-6">
+                                    <span class="text-muted d-block" style="font-size:0.72rem;">Tanggal Surat:</span>
                                     <span class="fw-semibold text-dark">{{ date('d F Y', strtotime(@surat.tanggal_surat)) }}</span>
                                 </div>
-                                <div class="col-sm-6">
-                                    <span class="text-muted small d-block">Penanggung Jawab (PIC):</span>
-                                    <span class="fw-semibold text-dark">{{ @surat.pic_pengirim ?: '-' }}</span>
-                                </div>
-                                <div class="col-sm-6">
-                                    <span class="text-muted small d-block">Kontak Telepon / WA:</span>
-                                    <span class="fw-semibold text-dark">{{ @surat.no_telp_pengirim ?: '-' }}</span>
-                                </div>
-
-                                <div class="col-12 border-top pt-2 mt-2">
-                                    <span class="text-muted small d-block">Perihal / Topik Kegiatan:</span>
+                                <div class="col-12">
+                                    <span class="text-muted d-block" style="font-size:0.72rem;">Perihal Kegiatan:</span>
                                     <span class="fw-semibold text-dark">{{ @surat.perihal }}</span>
                                 </div>
                             </div>
@@ -611,7 +655,7 @@
                         <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-2 fw-semibold" data-bs-dismiss="modal">
                             Batal
                         </button>
-                        <button type="submit" class="btn btn-primary btn-sm px-4 py-2 fw-bold shadow-sm">
+                        <button type="submit" class="btn btn-primary btn-sm px-4 py-2 fw-bold shadow-sm" id="btnSubmitKlaim_{{ @surat.id }}" {{ empty(@surat.id_customer) ? 'disabled' : '' }}>
                             <i class="bi bi-check2-circle me-1"></i> Terima & Buat Order
                         </button>
                     </div>
@@ -1191,6 +1235,52 @@ document.addEventListener('DOMContentLoaded', function() {
             var tanggal = btn.getAttribute('data-tanggal') || '-';
             showAlasanTolakModal(noSurat, pengirim, alasan, penolak, tanggal);
         }
+    });
+
+    // Event listener untuk update kartu identitas pelanggan saat dropdown dipilih & lock/unlock tombol
+    document.querySelectorAll('.select-customer-modal').forEach(function(select) {
+        function updateCustomerCard() {
+            var opt = select.options[select.selectedIndex];
+            var id = select.getAttribute('data-modal-id');
+            var submitBtn = document.getElementById('btnSubmitKlaim_' + id);
+
+            if (!opt || !opt.value) {
+                if (submitBtn) submitBtn.disabled = true;
+                var elNama = document.getElementById('lblCustNama_' + id);
+                var elPic = document.getElementById('lblCustPic_' + id);
+                var elTelp = document.getElementById('lblCustTelp_' + id);
+                var elEmail = document.getElementById('lblCustEmail_' + id);
+                var elAlamat = document.getElementById('lblCustAlamat_' + id);
+                if (elNama) elNama.textContent = 'Belum dipilih';
+                if (elPic) elPic.textContent = '-';
+                if (elTelp) elTelp.textContent = '-';
+                if (elEmail) elEmail.textContent = '-';
+                if (elAlamat) elAlamat.textContent = '-';
+                return;
+            }
+
+            if (submitBtn) submitBtn.disabled = false;
+
+            var fullName = opt.getAttribute('data-nama-bersih') || opt.text;
+            var pic = opt.getAttribute('data-pic') || '-';
+            var telp = opt.getAttribute('data-telp') || '-';
+            var email = opt.getAttribute('data-email') || '-';
+            var alamat = opt.getAttribute('data-alamat') || '-';
+            
+            var elNama = document.getElementById('lblCustNama_' + id);
+            var elPic = document.getElementById('lblCustPic_' + id);
+            var elTelp = document.getElementById('lblCustTelp_' + id);
+            var elEmail = document.getElementById('lblCustEmail_' + id);
+            var elAlamat = document.getElementById('lblCustAlamat_' + id);
+            
+            if (elNama) elNama.textContent = fullName;
+            if (elPic) elPic.textContent = pic;
+            if (elTelp) elTelp.textContent = telp;
+            if (elEmail) elEmail.textContent = email;
+            if (elAlamat) elAlamat.textContent = alamat;
+        }
+        select.addEventListener('change', updateCustomerCard);
+        updateCustomerCard();
     });
 });
 </script>

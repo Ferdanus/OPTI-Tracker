@@ -24,19 +24,16 @@ class PembayaranOptiController extends Controller {
 
         $search       = trim($f3->get('GET.q') ?? '');
         $filterJenis  = trim($f3->get('GET.jenis_layanan') ?? '');
-        $filterStatus = trim($f3->get('GET.status_pembayaran') ?? ''); // '' | menunggu_pembayaran | terbayar_sebagian | lunas
+        $filterStatus = trim($f3->get('GET.status_pembayaran') ?? ''); // '' | lunas | terbayar_sebagian | menunggu_pembayaran | belum_ditagih
         $filterTahun  = trim($f3->get('GET.tahun') ?? '');
 
-        // [BARU] kondisi WHERE dibangun sekali, dipakai ulang di query rekap & histori
-        $whereParts = [];
+        // Kondisi filter untuk Tabel 1: Rekap Status Pembayaran per Order
+        $whereParts = ["o.status != 'ditolak'"];
         $params = [];
 
         if ($filterStatus !== '') {
             $whereParts[] = 'o.status_keuangan = ?';
             $params[] = $filterStatus;
-        } else {
-            // default: sembunyikan yang sudah lunas, fokus ke yang masih aktif
-            $whereParts[] = "o.status_keuangan IN ('menunggu_pembayaran', 'terbayar_sebagian')";
         }
 
         if (!empty($filterJenis)) {
@@ -50,8 +47,9 @@ class PembayaranOptiController extends Controller {
         }
 
         if (!empty($search)) {
-            $whereParts[] = '(o.nomor_order LIKE ? OR c.nmcustomer LIKE ?)';
+            $whereParts[] = '(o.nomor_order LIKE ? OR c.nmcustomer LIKE ? OR o.judul_kegiatan LIKE ?)';
             $wildcard = "%{$search}%";
+            $params[] = $wildcard;
             $params[] = $wildcard;
             $params[] = $wildcard;
         }
@@ -69,11 +67,11 @@ class PembayaranOptiController extends Controller {
                 JOIN tb_customer c ON o.id_customer = c.id_customer
                 LEFT JOIN tb_surat_penawaran sp ON sp.order_id = o.id AND sp.status_respon_klien = 'deal'
                 WHERE $whereClause
-                ORDER BY o.created_at DESC";
+                ORDER BY o.id DESC";
 
         $daftarOrder = $this->safeQuery($sql, $params);
 
-        $countLunas = 0; $countSebagian = 0; $countBelum = 0;
+        $countLunas = 0; $countSebagian = 0; $countMenunggu = 0; $countBelumDitagih = 0;
         $totalTagihan = 0; $totalTerbayar = 0;
 
         foreach ($daftarOrder as &$o) {
@@ -87,11 +85,17 @@ class PembayaranOptiController extends Controller {
             $o['persen_bayar'] = $persen;
 
             if ($dibayar >= $biayaAcuan && $biayaAcuan > 0) {
-                $o['status_tampil'] = 'lunas'; $countLunas++;
+                $o['status_tampil'] = 'lunas';
+                $countLunas++;
             } elseif ($dibayar > 0) {
-                $o['status_tampil'] = 'sebagian'; $countSebagian++;
+                $o['status_tampil'] = 'sebagian';
+                $countSebagian++;
+            } elseif ($o['status_keuangan'] === 'menunggu_pembayaran') {
+                $o['status_tampil'] = 'menunggu';
+                $countMenunggu++;
             } else {
-                $o['status_tampil'] = 'belum'; $countBelum++;
+                $o['status_tampil'] = 'belum_ditagih';
+                $countBelumDitagih++;
             }
 
             $totalTagihan  += $biayaAcuan;
@@ -99,20 +103,46 @@ class PembayaranOptiController extends Controller {
         }
         unset($o);
 
-        // ---- Tabel 2: histori transaksi mentah -- [DIUBAH] sekarang pakai $whereClause + $params yang SAMA ----
-        $riwayatSql = "SELECT p.*, o.nomor_order, c.nmcustomer AS nama_perusahaan
+        // ---- Tabel 2: histori transaksi pembayaran (Buku Kas) ----
+        $riwayatWhere = ["1=1"];
+        $riwayatParams = [];
+
+        if (!empty($filterJenis)) {
+            $riwayatWhere[] = 'o.jenis_layanan_opti = ?';
+            $riwayatParams[] = $filterJenis;
+        }
+
+        if (!empty($filterTahun)) {
+            $riwayatWhere[] = 'YEAR(p.tanggal_bayar) = ?';
+            $riwayatParams[] = $filterTahun;
+        }
+
+        if (!empty($search)) {
+            $riwayatWhere[] = '(o.nomor_order LIKE ? OR c.nmcustomer LIKE ? OR p.keterangan LIKE ?)';
+            $wildcard = "%{$search}%";
+            $riwayatParams[] = $wildcard;
+            $riwayatParams[] = $wildcard;
+            $riwayatParams[] = $wildcard;
+        }
+
+        $riwayatWhereClause = implode(' AND ', $riwayatWhere);
+
+        $riwayatSql = "SELECT p.*, o.nomor_order, c.nmcustomer AS nama_perusahaan, o.jenis_layanan_opti
                         FROM opti_pembayaran p
                         JOIN order_layanan o ON p.order_id = o.id
                         JOIN tb_customer c ON o.id_customer = c.id_customer
-                        WHERE $whereClause
+                        WHERE $riwayatWhereClause
                         ORDER BY p.tanggal_bayar DESC, p.id DESC";
-        $daftarPembayaran = $this->safeQuery($riwayatSql, $params);
+        $daftarPembayaran = $this->safeQuery($riwayatSql, $riwayatParams);
 
-        // [BARU] daftar tahun buat dropdown filter, diambil dari data yang beneran ada
+        // Daftar tahun untuk dropdown filter
         $tahunRows = $this->safeQuery(
-            "SELECT DISTINCT YEAR(tanggal_masuk) AS thn FROM order_layanan WHERE tanggal_masuk IS NOT NULL ORDER BY thn DESC"
+            "SELECT DISTINCT YEAR(COALESCE(tanggal_masuk, created_at)) AS thn FROM order_layanan WHERE tanggal_masuk IS NOT NULL ORDER BY thn DESC"
         );
         $daftarTahun = array_column($tahunRows, 'thn');
+        if (empty($daftarTahun)) {
+            $daftarTahun = [(int)date('Y')];
+        }
 
         $sisaPiutang     = max(0, $totalTagihan - $totalTerbayar);
         $persenRealisasi = $totalTagihan > 0 ? round(($totalTerbayar / $totalTagihan) * 100, 1) : 0;
@@ -129,12 +159,13 @@ class PembayaranOptiController extends Controller {
         $f3->set('persen_realisasi', $persenRealisasi);
         $f3->set('count_lunas', $countLunas);
         $f3->set('count_sebagian', $countSebagian);
-        $f3->set('count_belum', $countBelum);
+        $f3->set('count_menunggu', $countMenunggu);
+        $f3->set('count_belum_ditagih', $countBelumDitagih);
 
         $f3->set('search_q', $search);
         $f3->set('filter_jenis_layanan', $filterJenis);
-        $f3->set('filter_status_pembayaran', $filterStatus); // [BARU]
-        $f3->set('filter_tahun', $filterTahun);               // [BARU]
+        $f3->set('filter_status_pembayaran', $filterStatus);
+        $f3->set('filter_tahun', $filterTahun);
         $f3->set('mask_client_name', $this->isMaskClientNameEnabled());
 
         $this->render('keuangan/pembayaran/index.html', 'Rekapitulasi Keuangan & Pembayaran', 'pembayaran');
@@ -155,8 +186,8 @@ class PembayaranOptiController extends Controller {
              FROM order_layanan o
              JOIN tb_customer c ON o.id_customer = c.id_customer
              LEFT JOIN tb_surat_penawaran sp ON sp.order_id = o.id AND sp.status_respon_klien = 'deal'
-             WHERE o.status_keuangan IN ('menunggu_pembayaran', 'terbayar_sebagian')
-             ORDER BY o.id DESC"
+             WHERE o.status != 'ditolak'
+             ORDER BY (o.status_keuangan != 'lunas') DESC, o.id DESC"
         );
 
         foreach ($daftarOrder as &$ord) {
