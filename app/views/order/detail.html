@@ -2459,49 +2459,40 @@
                             <div class="row g-2.5">
                                 <div class="col-sm-4">
                                     <label class="form-label small fw-semibold text-dark mb-1" for="inputEditPtCv">Bentuk Badan Usaha</label>
-                                    <select name="pt_cv" id="inputEditPtCv" class="form-select form-select-sm">
-                                        <option value="PT" {{ @order.pt_cv == 'PT' ? 'selected' : '' }}>PT</option>
-                                        <option value="CV" {{ @order.pt_cv == 'CV' ? 'selected' : '' }}>CV</option>
-                                        <option value="UD" {{ @order.pt_cv == 'UD' ? 'selected' : '' }}>UD</option>
-                                        <option value="Instansi Pemerintah" {{ @order.pt_cv == 'Instansi Pemerintah' ? 'selected' : '' }}>Instansi Pemerintah</option>
-                                        <option value="BUMN" {{ @order.pt_cv == 'BUMN' ? 'selected' : '' }}>BUMN</option>
-                                        <option value="Yayasan" {{ @order.pt_cv == 'Yayasan' ? 'selected' : '' }}>Yayasan</option>
-                                        <option value="Perorangan" {{ @order.pt_cv == 'Perorangan' ? 'selected' : '' }}>Perorangan</option>
-                                        <option value="Lainnya" {{ @order.pt_cv == 'Lainnya' ? 'selected' : '' }}>Lainnya</option>
-                                    </select>
+                                    <input type="text" name="pt_cv" id="inputEditPtCv" class="form-control form-control-sm bg-light" value="{{ @order.pt_cv ?: 'PT' }}" readonly>
                                 </div>
                                 <div class="col-sm-8">
                                     <label class="form-label small fw-semibold text-dark mb-1" for="inputEditNamaPerusahaan">
                                         Nama Perusahaan / Instansi <span class="text-danger">*</span>
                                     </label>
-                                    <input type="text" name="nmcustomer" id="inputEditNamaPerusahaan" class="form-control form-control-sm fw-semibold" value="{{ @order.nama_perusahaan }}" required placeholder="Contoh: Polyfin Canggih">
+                                    <input type="text" name="nmcustomer" id="inputEditNamaPerusahaan" class="form-control form-control-sm fw-semibold bg-light" value="{{ @order.nama_perusahaan }}" readonly required placeholder="-">
                                 </div>
 
                                 <div class="col-sm-6">
                                     <label class="form-label small fw-semibold text-dark mb-1" for="inputEditPic">
                                         Nama Kontak / PIC
                                     </label>
-                                    <input type="text" name="pic" id="inputEditPic" class="form-control form-control-sm" value="{{ @order.pic != '-' && @order.pic != '—' ? @order.pic : '' }}" placeholder="Nama penanggung jawab">
+                                    <input type="text" name="pic" id="inputEditPic" class="form-control form-control-sm bg-light" value="{{ @order.pic != '-' && @order.pic != '—' ? @order.pic : '' }}" readonly placeholder="-">
                                 </div>
                                 <div class="col-sm-6">
                                     <label class="form-label small fw-semibold text-dark mb-1" for="inputEditTelepon">
                                         Telepon / No. WhatsApp
                                     </label>
-                                    <input type="text" name="telepon" id="inputEditTelepon" class="form-control form-control-sm" value="{{ @order.telepon != '-' && @order.telepon != '—' ? @order.telepon : '' }}" placeholder="Contoh: 08123456789">
+                                    <input type="text" name="telepon" id="inputEditTelepon" class="form-control form-control-sm bg-light" value="{{ @order.telepon != '-' && @order.telepon != '—' ? @order.telepon : '' }}" readonly placeholder="-">
                                 </div>
 
                                 <div class="col-12">
                                     <label class="form-label small fw-semibold text-dark mb-1" for="inputEditEmail">
                                         Alamat Email
                                     </label>
-                                    <input type="email" name="email" id="inputEditEmail" class="form-control form-control-sm" value="{{ @order.email != '-' && @order.email != '—' ? @order.email : '' }}" placeholder="contoh@perusahaan.com">
+                                    <input type="email" name="email" id="inputEditEmail" class="form-control form-control-sm bg-light" value="{{ @order.email != '-' && @order.email != '—' ? @order.email : '' }}" readonly placeholder="-">
                                 </div>
 
                                 <div class="col-12">
                                     <label class="form-label small fw-semibold text-dark mb-1" for="inputEditAlamat">
                                         Alamat Kantor / Pabrik
                                     </label>
-                                    <textarea name="alamat" id="inputEditAlamat" class="form-control form-control-sm" rows="2" placeholder="Alamat lengkap kantor / pabrik">{{ @order.alamat != '-' && @order.alamat != '—' ? @order.alamat : '' }}</textarea>
+                                    <textarea name="alamat" id="inputEditAlamat" class="form-control form-control-sm bg-light" rows="2" readonly placeholder="-">{{ @order.alamat != '-' && @order.alamat != '—' ? @order.alamat : '' }}</textarea>
                                 </div>
                             </div>
                         </div>
