@@ -1576,11 +1576,6 @@
                                         <a href="{{ @BASE }}/order/{{ @order.id }}/penawaran/cetak?id={{ @penawaran.id }}&t={{ time() }}" target="_blank" class="btn btn-sm btn-white border fw-semibold text-secondary shadow-xs d-inline-flex align-items-center gap-1.5" title="Cetak Surat Penawaran Resmi format PDF">
                                             <i class="bi bi-file-earmark-pdf text-danger"></i> Cetak PDF
                                         </a>
-                                        <check if="{{ !empty(@penawaran.file_lampiran) }}">
-                                            <a href="{{ @BASE }}/{{ @penawaran.file_lampiran }}?t={{ time() }}" target="_blank" class="btn btn-sm btn-white border fw-semibold text-secondary shadow-xs d-inline-flex align-items-center gap-1.5" title="Unduh Berkas Lampiran Aktif">
-                                                <i class="bi bi-paperclip text-primary"></i> Berkas Lampiran
-                                            </a>
-                                        </check>
                                         <check if="{{ @is_admin_order || @is_superadmin }}">
                                             <button type="button" class="btn btn-sm btn-white border text-danger shadow-xs d-inline-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#modalHapusPenawaran{{ @penawaran.id }}" title="Hapus Dokumen Penawaran Ini">
                                                 <i class="bi bi-trash3"></i> Hapus
@@ -1681,16 +1676,9 @@
                                                             {{ @sp.catatan_nego ?: '-' }}
                                                         </td>
                                                         <td class="text-end pe-2">
-                                                            <div class="btn-group btn-group-sm">
-                                                                <check if="{{ !empty(@sp.file_lampiran) }}">
-                                                                    <a href="{{ @BASE }}/{{ @sp.file_lampiran }}" target="_blank" class="btn btn-white border py-0.5 px-2 text-primary" title="Unduh Berkas Lampiran">
-                                                                        <i class="bi bi-paperclip"></i>
-                                                                    </a>
-                                                                </check>
-                                                                <a href="{{ @BASE }}/order/{{ @order.id }}/penawaran/cetak?id={{ @sp.id }}" target="_blank" class="btn btn-white border py-0.5 px-2 text-danger fw-semibold d-inline-flex align-items-center gap-1" title="Cetak PDF Dokumen Surat Penawaran Ini">
-                                                                    <i class="bi bi-file-earmark-pdf"></i> PDF
-                                                                </a>
-                                                            </div>
+                                                            <a href="{{ @BASE }}/order/{{ @order.id }}/penawaran/cetak?id={{ @sp.id }}" target="_blank" class="btn btn-white border py-0.5 px-2 text-danger fw-semibold d-inline-flex align-items-center gap-1 shadow-xs" title="Cetak PDF Dokumen Surat Penawaran Ini">
+                                                                <i class="bi bi-file-earmark-pdf"></i> PDF
+                                                            </a>
                                                         </td>
                                                     </tr>
                                                 </repeat>
