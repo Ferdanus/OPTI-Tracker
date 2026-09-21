@@ -792,6 +792,24 @@
                             </label>
                             <textarea name="penjelasan" id="input_penjelasan" class="form-control form-control-sm" rows="2" placeholder="Catatan termin pembayaran, masa berlaku penawaran, dll..." {{ !@can_edit ? 'disabled' : '' }}>{{ @sp_existing.penjelasan ?: @order.deskripsi }}</textarea>
                         </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-dark mb-1">
+                                Jabatan Penandatangan BBSPJIS
+                            </label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text bg-light text-muted"><i class="bi bi-award"></i></span>
+                                <input type="text" name="jabatan_pejabat" id="input_jabatan_pejabat" class="form-control form-control-sm" value="{{ @sp_existing.jabatan_pejabat ?: 'plh. Kepala' }}" placeholder="plh. Kepala" {{ !@can_edit ? 'disabled' : '' }}>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-dark mb-1">
+                                Nama Pejabat Penandatangan
+                            </label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text bg-light text-muted"><i class="bi bi-person-badge"></i></span>
+                                <input type="text" name="pembuat_nama" id="input_pembuat_nama" class="form-control form-control-sm fw-semibold" value="{{ @sp_existing.pembuat_nama ?: 'Hagung Eko Pawoko' }}" placeholder="Hagung Eko Pawoko" {{ !@can_edit ? 'disabled' : '' }}>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -986,29 +1004,29 @@
                             <div style="display: flex; justify-content: space-between; align-items: flex-start; font-size: 8.5px; margin-bottom: 12px;">
                                 <!-- Kotak Persetujuan Pelanggan -->
                                 <div style="border: 1px solid #000; padding: 6px 10px; width: 48%; min-height: 80px; background: #fff;">
-                                    <div class="fw-bold mb-1" style="font-size: 8.5px;">Dengan ini kami menyetujui surat penawaran ini :</div>
+                                    <div style="font-size: 8.5px; margin-bottom: 4px;">Dengan ini kami menyetujui surat penawaran ini :</div>
                                     <table style="width: 100%; font-size: 8.5px; line-height: 1.5;">
-                                        <tr><td style="width: 75px;">Nama</td><td style="width: 8px;">:</td><td>...................................</td></tr>
-                                        <tr><td>Jabatan</td><td>:</td><td>...................................</td></tr>
-                                        <tr><td>Nomor Telepon</td><td>:</td><td>...................................</td></tr>
-                                        <tr><td colspan="3" style="padding-top: 4px;">Tanda Tangan dan Stempel</td></tr>
+                                        <tr><td style="width: 60px;">Nama</td><td style="width: 8px;">:</td><td></td></tr>
+                                        <tr><td>Jabatan</td><td>:</td><td></td></tr>
+                                        <tr><td>No. Tlp</td><td>:</td><td></td></tr>
+                                        <tr><td colspan="3" style="padding-top: 4px;">TTD &amp; Stempel</td></tr>
                                     </table>
                                 </div>
 
                                 <!-- Pejabat Penandatangan BBSPJIS -->
                                 <div style="text-align: center; width: 45%; font-size: 9.5px;">
-                                    <div>Kepala Balai Besar</div>
+                                    <div id="d_jabatan_pejabat">{{ @sp_existing.jabatan_pejabat ?: 'plh. Kepala' }}</div>
                                     <div style="height: 48px;"></div>
-                                    <div class="fw-bold" id="d_pembuat">{{ @sp_existing.pembuat_nama ?: 'Hagung Eko Pawoko' }}</div>
+                                    <div id="d_pembuat">{{ @sp_existing.pembuat_nama ?: 'Hagung Eko Pawoko' }}</div>
                                 </div>
                             </div>
 
                             <!-- Tembusan -->
                             <div style="font-size: 7.5px; line-height: 1.35; margin-bottom: 10px;">
-                                <div class="fw-bold">Tembusan :</div>
-                                <div>1. Kepala Bagian Tata Usaha</div>
-                                <div>2. Ketua Tim Layanan Mitra Industri</div>
-                                <div>3. Ketua Tim OPTI Kertas, Selulosa dan Produk Bahan Acuan</div>
+                                <div>Tembusan :</div>
+                                <div>1&nbsp;&nbsp;Kepala. Bagian Tata Usaha</div>
+                                <div>2&nbsp;&nbsp;Ketua Tim Layanan Mitra Industri</div>
+                                <div>3&nbsp;&nbsp;Ketua Tim OPTI Kertas, Selulosa dan Produk Bahan Acuan</div>
                             </div>
                         </div>
                     </check>
@@ -1536,6 +1554,16 @@ function syncLivePreview() {
             dPenjelasanBox.style.display = 'none';
         }
     }
+
+    // 10. Penandatangan Pejabat BBSPJIS
+    var elJabatan = document.getElementById('input_jabatan_pejabat');
+    var elPembuat = document.getElementById('input_pembuat_nama');
+    var valJabatan = (elJabatan && elJabatan.value.trim()) ? elJabatan.value.trim() : 'plh. Kepala';
+    var valPembuat = (elPembuat && elPembuat.value.trim()) ? elPembuat.value.trim() : 'Hagung Eko Pawoko';
+    var dJabatan = document.getElementById('d_jabatan_pejabat');
+    var dPembuat = document.getElementById('d_pembuat');
+    if (dJabatan) dJabatan.textContent = valJabatan;
+    if (dPembuat) dPembuat.textContent = valPembuat;
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -1573,7 +1601,9 @@ document.addEventListener('DOMContentLoaded', function() {
         'input_perihal',
         'input_penjelasan',
         'inputDurasiHari',
-        'select_permintaan_melalui'
+        'select_permintaan_melalui',
+        'input_jabatan_pejabat',
+        'input_pembuat_nama'
     ];
 
     formInputs.forEach(function(id) {
