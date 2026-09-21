@@ -1000,7 +1000,7 @@
                                     <span class="me-3">Diajukan: <span class="text-dark fw-medium">{{ date('d M Y, H:i', strtotime(@audit_stages[4].waktu_kirim)) }}</span> <span class="text-secondary text-nowrap">({{ @audit_stages[4].pengirim_nama ?: @audit_stages[4].pengirim_role }})</span></span>
                                 </check>
                                 <check if="{{ @audit_stages[4].waktu_dibaca }}">
-                                    <span>Dibaca: <span class="text-dark fw-medium">{{ date('d M Y, H:i', strtotime(@audit_stages[4].waktu_dibaca)) }}</span> <span class="text-secondary text-nowrap">({{ @audit_stages[4].dibaca_nama ?: @audit_stages[4].dibaca_role }})</span></span>
+                                    <span>Dibuka Form: <span class="text-dark fw-medium">{{ date('d M Y, H:i', strtotime(@audit_stages[4].waktu_dibaca)) }}</span> <span class="text-secondary text-nowrap">({{ @audit_stages[4].dibaca_nama ?: @audit_stages[4].dibaca_role }})</span></span>
                                 </check>
                             </div>
                         </check>

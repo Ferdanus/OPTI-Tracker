@@ -1332,6 +1332,13 @@ class OrderController extends Controller {
         $f3->set('daftar_lab_eksternal', $daftarLabEksternal);
         $f3->set('can_edit', $canEdit);
 
+        // Catat "Dibaca" tahap 4 saat form biaya lingkungan pertama kali dibuka
+        $openUserId   = (int)$this->getUserId();
+        $openUserNama = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'Petugas');
+        if ($openUserId > 0) {
+            StageAudit::recordDibaca($this->db, $id, 4, $openUserId, $openUserNama, 'Pengelola Tarif');
+        }
+
         $this->render('order/form_biaya_lingkungan.html', "Kalkulasi Biaya Pengujian Lingkungan", 'order');
     }
 
