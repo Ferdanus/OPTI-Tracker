@@ -433,6 +433,18 @@
         transform: translateY(0);
         box-shadow: 0 1px 3px rgba(51, 65, 85, 0.2);
     }
+    .btn-submit-theme:disabled,
+    .btn-submit-theme[disabled],
+    .btn-submit-theme.disabled {
+        background: #94a3b8 !important;
+        border-color: #cbd5e1 !important;
+        color: #f1f5f9 !important;
+        cursor: not-allowed !important;
+        box-shadow: none !important;
+        transform: none !important;
+        opacity: 0.65;
+        pointer-events: auto !important;
+    }
 
     .btn-draft-theme {
         background: #ffffff;
@@ -962,7 +974,7 @@
                         <button type="submit" class="btn-draft-theme" id="btnSimpan">
                             <i class="bi bi-save me-1"></i> Simpan Draft
                         </button>
-                        <button type="submit" class="btn-submit-theme" id="btnKirim">
+                        <button type="submit" class="btn-submit-theme {{ empty(@order.jenis_layanan_opti) ? 'disabled' : '' }}" id="btnKirim" {{ empty(@order.jenis_layanan_opti) ? 'disabled title="Pilih Disposisi ke Divisi OPTI terlebih dahulu"' : '' }}>
                             <i class="bi bi-send-fill me-1"></i> <span id="textBtnKirim">{{ @tinjauan ? 'Simpan &amp; Tetapkan Kaji Kelayakan' : 'Kirim' }}</span>
                         </button>
                     </div>
@@ -1243,6 +1255,20 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('d_divisi_line').textContent = jenis ? ('OPTI ' + (jenis === 'lingkungan' ? 'Lingkungan' : 'Selulosa')) : 'OPTI (Belum Ditentukan)';
         }
 
+        // Kunci tombol Kirim jika belum memilih Disposisi ke Divisi OPTI
+        var btnKirim = document.getElementById('btnKirim');
+        if (btnKirim) {
+            if (!jenis) {
+                btnKirim.disabled = true;
+                btnKirim.classList.add('disabled');
+                btnKirim.setAttribute('title', 'Pilih Disposisi ke Divisi OPTI terlebih dahulu');
+            } else {
+                btnKirim.disabled = false;
+                btnKirim.classList.remove('disabled');
+                btnKirim.removeAttribute('title');
+            }
+        }
+
         // Update Disposisi & Kaji Kelayakan di Pratinjau Dokumen
         var inputKaji = document.getElementById('inputSertakanKaji');
         var isKajiActive = inputKaji && inputKaji.value === '1';
@@ -1451,7 +1477,13 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
     if (btnKirim) {
-        btnKirim.addEventListener('click', function () {
+        btnKirim.addEventListener('click', function (e) {
+            var jenisChecked = document.querySelector('input[name="jenis_layanan"]:checked');
+            if (!jenisChecked) {
+                e.preventDefault();
+                alert('Silakan pilih Disposisi ke Divisi OPTI (OPTI Selulosa atau OPTI Lingkungan) terlebih dahulu.');
+                return false;
+            }
             document.getElementById('inputAksi').value = 'kirim';
         });
     }
