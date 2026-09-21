@@ -1,0 +1,85 @@
+<div class="d-flex align-items-center gap-3 mb-4">
+    <a href="{{ @BASE }}/po-kegiatan" class="btn-back"><i class="bi bi-arrow-left"></i> Kembali</a>
+    <div>
+        <h2 class="h4 fw-bold mb-1 text-dark">Buat Petunjuk Operasional</h2>
+        <p class="text-muted small mb-0">Pilih jenis PO, lalu pilih order.</p>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-4">
+        <label class="form-label fw-bold mb-3">1. Jenis PO</label>
+        <div class="row g-2" id="gridJenisPo">
+            <repeat group="{{ @jenis_po_list }}" value="{{ @j }}">
+                <div class="col-md-3 col-sm-6">
+                    <div class="jenis-po-card" data-slug="{{ @j.slug }}">
+                        <i class="bi {{ @j.icon }} fs-3 mb-2"></i>
+                        <div class="small fw-semibold">{{ @j.label }}</div>
+                    </div>
+                </div>
+            </repeat>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4 d-none" id="cardPilihOrder">
+    <div class="card-body p-4">
+        <label class="form-label fw-bold mb-2">2. Pilih Order</label>
+        <select id="selectOrderPo" class="form-select searchable-select" placeholder="Ketik nomor order / nama mitra...">
+            <option value="">-- Pilih Order (status: layak) --</option>
+            <repeat group="{{ @daftar_order }}" value="{{ @ord }}">
+                <option value="{{ @ord.id }}">{{ @ord.nomor_order }} &mdash; {{ @ord.nama_mitra }}</option>
+            </repeat>
+        </select>
+        <div class="form-text mt-2">Begitu order dipilih, kamu langsung diarahkan ke formulir PO.</div>
+
+        <check if="{{ !@daftar_order || count(@daftar_order) == 0 }}">
+            <div class="alert alert-warning border-0 mt-3 small mb-0">
+                Tidak ada order berstatus "layak" yang belum dibuatkan PO.
+            </div>
+        </check>
+    </div>
+</div>
+
+<div class="alert border-0 d-none" id="boxJenisLain" style="background:#fffbeb; border:1px solid #fde68a !important;">
+    <i class="bi bi-info-circle-fill text-warning me-1"></i>
+    Modul untuk jenis PO ini belum terintegrasi di halaman ini. Silakan gunakan modul PO terkait, atau hubungi admin.
+</div>
+
+<style>
+    .jenis-po-card {
+        border: 1.5px solid var(--color-border, #e2e8f0); border-radius: 12px; padding: 18px 14px;
+        text-align: center; cursor: pointer; transition: all .15s ease; color: var(--color-text-muted, #64748b);
+    }
+    .jenis-po-card:hover { border-color: var(--color-primary, #881337); background: rgba(136,19,55,.03); }
+    .jenis-po-card.active { border-color: var(--color-primary, #881337); background: rgba(136,19,55,.06); color: var(--color-primary, #881337); font-weight: 700; }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var cards = document.querySelectorAll('.jenis-po-card');
+    var cardPilihOrder = document.getElementById('cardPilihOrder');
+    var boxJenisLain = document.getElementById('boxJenisLain');
+    var selectOrderPo = document.getElementById('selectOrderPo');
+
+    cards.forEach(function (card) {
+        card.addEventListener('click', function () {
+            cards.forEach(function (c) { c.classList.remove('active'); });
+            card.classList.add('active');
+
+            if (card.dataset.slug === 'opti') {
+                cardPilihOrder.classList.remove('d-none');
+                boxJenisLain.classList.add('d-none');
+            } else {
+                cardPilihOrder.classList.add('d-none');
+                boxJenisLain.classList.remove('d-none');
+            }
+        });
+    });
+
+    selectOrderPo.addEventListener('change', function () {
+        if (!selectOrderPo.value) return;
+        window.location.href = '{{ @BASE }}/po-kegiatan/buat?order_id=' + selectOrderPo.value;
+    });
+});
+</script>

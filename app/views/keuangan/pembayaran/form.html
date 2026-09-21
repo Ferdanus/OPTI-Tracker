@@ -24,7 +24,7 @@
                                         data-termin-berikutnya="{{ @ord.termin_berikutnya }}"
                                         {{ @selected_order_id == @ord.id ? 'selected' : '' }}>
                                     {{ @ord.nomor_order }} &mdash; {{ @ord.nama_perusahaan }}
-                                    (Sisa: Rp {{ number_format(@ord.sisa_tagihan, 0, ',', '.') }}, Termin ke-{{ @ord.termin_berikutnya }})
+                                    (Sisa: Rp {{ number_format(@ord.sisa_tagihan, 0, ',', '.') }})
                                 </option>
                             </repeat>
                         </select>
@@ -53,8 +53,9 @@
                             <label class="form-label">Jumlah Nominal (Rp) <span class="text-danger">*</span></label>
                             <div class="input-group">
                                 <span class="input-group-text">Rp</span>
-                                <input type="number" name="jumlah" id="inputJumlah" class="form-control" placeholder="0" required min="1000">
+                                <input type="text" id="inputJumlahDisplay" class="form-control" placeholder="0" inputmode="numeric" autocomplete="off">
                             </div>
+                            <input type="hidden" name="jumlah" id="inputJumlah" value="">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Metode Pembayaran</label>
@@ -97,6 +98,25 @@ document.addEventListener('DOMContentLoaded', function () {
     var selectOrder = document.getElementById('selectOrder');
     var selectTermin = document.getElementById('selectTermin');
     var infoOrder = document.getElementById('infoOrderTerpilih');
+    var inputJumlahDisplay = document.getElementById('inputJumlahDisplay');
+var inputJumlahReal = document.getElementById('inputJumlah');
+
+inputJumlahDisplay.addEventListener('input', function () {
+    var angka = inputJumlahDisplay.value.replace(/[^0-9]/g, ''); // buang semua selain digit
+    var angkaNum = parseInt(angka, 10) || 0;
+
+    inputJumlahReal.value = angkaNum; // ini yang ke-submit ke server, polos tanpa titik
+    inputJumlahDisplay.value = angkaNum > 0 ? angkaNum.toLocaleString('id-ID') : '';
+});
+
+// validasi manual sebelum submit, soalnya "required" udah gak nempel di field yang keliatan
+document.getElementById('formPembayaran').addEventListener('submit', function (e) {
+    if (!inputJumlahReal.value || parseInt(inputJumlahReal.value, 10) <= 0) {
+        e.preventDefault();
+        alert('Jumlah nominal pembayaran wajib diisi.');
+        inputJumlahDisplay.focus();
+    }
+});
 
     function syncDariOrderTerpilih() {
         var opt = selectOrder.options[selectOrder.selectedIndex];

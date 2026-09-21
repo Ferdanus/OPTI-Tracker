@@ -1,6 +1,6 @@
 {
     "require": {
         "bcosca/fatfree-core": "^3.9",
-        "dompdf/dompdf": "*"
+        "dompdf/dompdf": "^3.1"
     }
 }

@@ -1,0 +1,636 @@
+<style>
+.filter-field-box {
+    width: 220px;
+    flex: 0 0 220px;
+}
+@media (max-width: 576px) {
+    .filter-field-box {
+        width: 100%;
+        flex: 1 1 100%;
+    }
+}
+.filter-field-control {
+    height: 38px !important;
+    min-height: 38px !important;
+    max-height: 38px !important;
+}
+.filter-field-control .input-group-text,
+.filter-field-control .form-control,
+.filter-select-field {
+    height: 38px !important;
+    min-height: 38px !important;
+    max-height: 38px !important;
+    font-size: 0.875rem !important;
+    line-height: 1.5 !important;
+    border-color: #cbd5e1 !important;
+    box-sizing: border-box !important;
+}
+.filter-field-control .input-group-text {
+    background-color: #ffffff !important;
+    border-top-left-radius: 8px !important;
+    border-bottom-left-radius: 8px !important;
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+    padding: 0.375rem 0.5rem 0.375rem 0.85rem !important;
+    color: #64748b !important;
+    transition: border-color 0.15s ease-in-out;
+}
+.filter-field-control .form-control {
+    border-top-right-radius: 8px !important;
+    border-bottom-right-radius: 8px !important;
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+    padding: 0.375rem 0.75rem 0.375rem 0.35rem !important;
+    color: #1e293b !important;
+    box-shadow: none !important;
+}
+.filter-field-control:focus-within .input-group-text,
+.filter-field-control:focus-within .form-control {
+    border-color: #881337 !important;
+}
+.filter-field-control:focus-within {
+    box-shadow: 0 0 0 0.2rem rgba(136, 19, 55, 0.12) !important;
+    border-radius: 8px !important;
+}
+.filter-select-field {
+    border-radius: 8px !important;
+    color: #1e293b !important;
+    padding: 0.375rem 2.25rem 0.375rem 0.85rem !important;
+    background-color: #ffffff !important;
+    cursor: pointer;
+}
+.filter-select-field:focus {
+    border-color: #881337 !important;
+    box-shadow: 0 0 0 0.2rem rgba(136, 19, 55, 0.12) !important;
+    outline: none !important;
+}
+.filter-reset-btn {
+    height: 38px !important;
+    width: 38px !important;
+    min-width: 38px !important;
+    border-radius: 8px !important;
+    border-color: #cbd5e1 !important;
+    color: #64748b !important;
+    background-color: #ffffff !important;
+    padding: 0 !important;
+    font-size: 0.875rem !important;
+    transition: all 0.15s ease-in-out;
+}
+.filter-reset-btn:hover {
+    background-color: #f1f5f9 !important;
+    border-color: #94a3b8 !important;
+    color: #0f172a !important;
+}
+</style>
+
+<div class="container-fluid px-0">
+    <!-- Header & Breadcrumb -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1 small">
+                    <li class="breadcrumb-item"><a href="<?= ($BASE) ?>/dashboard" class="text-decoration-none text-muted">Beranda</a></li>
+                    <li class="breadcrumb-item text-muted">Master Data</li>
+                    <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Data Pengguna</li>
+                </ol>
+            </nav>
+            <h4 class="fw-bold text-dark m-0 d-flex align-items-center gap-2 font-display">
+                <i class="bi bi-person-gear text-primary"></i> Data Pengguna
+            </h4>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-primary btn-sm fw-semibold shadow-sm px-3 py-2 d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#modalTambahPengguna">
+                <i class="bi bi-person-plus-fill"></i> Tambah Pengguna
+            </button>
+        </div>
+    </div>
+
+    <!-- 5 KARTU RINGKASAN METRIK -->
+    <div class="row row-cols-2 row-cols-sm-3 row-cols-lg-5 g-3 mb-4">
+        <!-- 1. Tim Mitra -->
+        <div class="col">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted text-uppercase fw-semibold" style="font-size: 0.68rem; letter-spacing: 0.05em;">Tim Mitra</span>
+                    <div class="rounded-3 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; background-color: #fef3c7; color: #b45309;">
+                        <i class="bi bi-briefcase-fill fs-6"></i>
+                    </div>
+                </div>
+                <h3 class="fw-bold text-dark mb-0 font-display"><?= ($cnt_mitra) ?></h3>
+                <small class="text-muted" style="font-size: 0.73rem;">Pelayanan &amp; Order</small>
+            </div>
+        </div>
+
+        <!-- 2. Tim Keuangan -->
+        <div class="col">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted text-uppercase fw-semibold" style="font-size: 0.68rem; letter-spacing: 0.05em;">Tim Keuangan</span>
+                    <div class="rounded-3 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; background-color: #e0f2fe; color: #0369a1;">
+                        <i class="bi bi-cash-stack fs-6"></i>
+                    </div>
+                </div>
+                <h3 class="fw-bold text-dark mb-0 font-display"><?= ($cnt_keuangan) ?></h3>
+                <small class="text-muted" style="font-size: 0.73rem;">Billing &amp; Kasir</small>
+            </div>
+        </div>
+
+        <!-- 3. Ka Tim OPTI -->
+        <div class="col">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted text-uppercase fw-semibold" style="font-size: 0.68rem; letter-spacing: 0.05em;">Ka Tim OPTI</span>
+                    <div class="rounded-3 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; background-color: #fce7f3; color: #9d174d;">
+                        <i class="bi bi-star-fill fs-6"></i>
+                    </div>
+                </div>
+                <h3 class="fw-bold text-dark mb-0 font-display"><?= ($cnt_katim) ?></h3>
+                <small class="text-muted" style="font-size: 0.73rem;">Selulosa &amp; Lingkungan</small>
+            </div>
+        </div>
+
+        <!-- 4. PIC Pelaksana -->
+        <div class="col">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted text-uppercase fw-semibold" style="font-size: 0.68rem; letter-spacing: 0.05em;">PIC Pelaksana</span>
+                    <div class="rounded-3 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; background-color: #ecfdf5; color: #047857;">
+                        <i class="bi bi-eyedropper fs-6"></i>
+                    </div>
+                </div>
+                <h3 class="fw-bold text-dark mb-0 font-display"><?= ($cnt_pelaksana) ?></h3>
+                <small class="text-muted" style="font-size: 0.73rem;">Peneliti &amp; Analis</small>
+            </div>
+        </div>
+
+        <!-- 5. User Non-Role -->
+        <div class="col">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted text-uppercase fw-semibold" style="font-size: 0.68rem; letter-spacing: 0.05em;">User Non-Role</span>
+                    <div class="rounded-3 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; background-color: #f8fafc; color: #64748b; border: 1px solid #e2e8f0;">
+                        <i class="bi bi-person-slash fs-6"></i>
+                    </div>
+                </div>
+                <h3 class="fw-bold text-dark mb-0 font-display"><?= ($cnt_non_role) ?></h3>
+                <small class="text-muted" style="font-size: 0.73rem;">Status View-Only</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- TABEL MASTER DATA PENGGUNA DENGAN INTEGRASI TOOLBAR PENCARIAN -->
+    <div class="card border-0 shadow-sm overflow-hidden rounded-3">
+        <div class="card-header bg-white py-3 px-4 border-bottom">
+            <div class="row g-3 align-items-center">
+                <div class="col-12 col-md-5 d-flex align-items-center gap-2">
+                    <h6 class="m-0 fw-bold text-dark font-display">Daftar Pengguna Aktif</h6>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-1 small fw-semibold" id="headerCountBadge">
+                        <?= (count($daftar_pengguna)) ?> Akun
+                    </span>
+                </div>
+                <div class="col-12 col-md-7">
+                    <form method="GET" action="<?= ($BASE) ?>/pengguna" id="formFilterPengguna" class="d-flex flex-column flex-sm-row align-items-stretch align-items-sm-center justify-content-md-end gap-2 m-0">
+                        <div class="filter-field-box">
+                            <div class="input-group filter-field-control">
+                                <span class="input-group-text bg-white border-end-0 text-muted ps-3 pe-2">
+                                    <i class="bi bi-search text-secondary" style="font-size: 0.85rem;"></i>
+                                </span>
+                                <input type="text" 
+                                       id="inputSearchPengguna"
+                                       class="form-control border-start-0 ps-1" 
+                                       name="q" 
+                                       placeholder="Cari nama atau ID..." 
+                                       value="<?= ($search_q) ?>"
+                                       autocomplete="off">
+                            </div>
+                        </div>
+                        <div class="filter-field-box">
+                            <select name="role" id="selectFilterRole" class="form-select filter-field-control filter-select-field">
+                                <option value="">Semua Role</option>
+                                <?php foreach (($role_options?:[]) as $rKey=>$rMeta): ?>
+                                    <option value="<?= ($rKey) ?>" <?= ($filter_role == $rKey ? 'selected' : '') ?>>
+                                        <?= ($rMeta['label'])."
+" ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <button type="button" 
+                                id="btnResetFilter" 
+                                class="btn btn-outline-secondary filter-reset-btn d-flex align-items-center justify-content-center" 
+                                title="Reset Filter"
+                                style="<?= ((empty($search_q) && empty($filter_role)) ? 'display: none !important;' : '') ?>">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <?php if (count($daftar_pengguna) > 0): ?>
+                
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" id="tabelPengguna" style="font-size: 0.875rem;">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-center text-muted fw-bold" style="width: 55px; font-size: 0.72rem; letter-spacing: 0.04em;">NO</th>
+                                    <th class="text-muted fw-bold" style="width: 90px; font-size: 0.72rem; letter-spacing: 0.04em;">ID</th>
+                                    <th class="text-muted fw-bold" style="font-size: 0.72rem; letter-spacing: 0.04em;">NAMA LENGKAP</th>
+                                    <th class="text-muted fw-bold" style="width: 300px; font-size: 0.72rem; letter-spacing: 0.04em;">ROLE DI SISTEM</th>
+                                    <th class="text-end text-muted fw-bold" style="width: 180px; font-size: 0.72rem; letter-spacing: 0.04em;">AKSI</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyPengguna">
+                                <?php $ctr=0; foreach (($daftar_pengguna?:[]) as $p): $ctr++; ?>
+                                    <tr class="pengguna-row" 
+                                        data-id="<?= ($p['id']) ?>" 
+                                        data-nama="<?= (strtolower($p['nama_lengkap'])) ?>" 
+                                        data-role="<?= ($p['role_sistem']) ?>" 
+                                        data-role-label="<?= (strtolower($p['role_label'])) ?>">
+                                        <td class="text-center text-muted small row-number"><?= ($ctr) ?></td>
+                                        <td>
+                                            <span class="text-secondary font-monospace fw-semibold" style="font-size: 0.85rem;">
+                                                #<?= ($p['id'])."
+" ?>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="fw-bold text-dark d-block" style="font-size: 0.88rem;"><?= ($p['nama_lengkap']) ?></span>
+                                        </td>
+                                        <td>
+                                            <?php if ($p['role_sistem'] == 'superadmin'): ?>
+                                                
+                                                    <span class="badge px-2.5 py-1.5 fw-medium text-white shadow-xs" style="background-color: #881337 !important; border: 1px solid #700f2b; font-size: 0.78rem; border-radius: 6px;">
+                                                        Super Administrator
+                                                    </span>
+                                                
+                                                <?php else: ?>
+                                                    <span class="badge <?= ($p['role_badge_class']) ?> px-2.5 py-1.5 fw-medium" style="<?= ($p['role_badge_style']) ?>; font-size: 0.78rem; border-radius: 6px;">
+                                                        <?= ($p['role_label'])."
+" ?>
+                                                    </span>
+                                                
+                                            <?php endif; ?>
+                                        </td>
+                                        <td class="text-end">
+                                            <div class="d-inline-flex align-items-center justify-content-end gap-2">
+                                                <?php if ($p['id'] == 9006): ?>
+                                                    
+                                                        <span class="badge bg-light text-muted border py-1.5 px-2.5 small d-inline-flex align-items-center gap-1" title="Super Administrator Utama">
+                                                            <i class="bi bi-shield-lock-fill text-secondary"></i> Utama
+                                                        </span>
+                                                    
+                                                    <?php else: ?>
+                                                        <button type="button" 
+                                                                class="btn btn-outline-secondary btn-sm px-2.5 py-1.5 btn-ubah-role d-inline-flex align-items-center gap-1.5" 
+                                                                title="Ubah Role"
+                                                                data-id="<?= ($p['id']) ?>"
+                                                                data-nama="<?= ($p['nama_lengkap']) ?>"
+                                                                data-role="<?= ($p['role_sistem']) ?>">
+                                                            <i class="bi bi-pencil"></i> Ubah
+                                                        </button>
+                                                        <button type="button" 
+                                                                class="btn btn-outline-danger btn-sm px-2.5 py-1.5 btn-hapus-role d-inline-flex align-items-center gap-1.5" 
+                                                                title="Cabut Hak Akses"
+                                                                data-id="<?= ($p['id']) ?>"
+                                                                data-nama="<?= ($p['nama_lengkap']) ?>">
+                                                            <i class="bi bi-person-x"></i> Cabut
+                                                        </button>
+                                                    
+                                                <?php endif; ?>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                                <tr id="emptySearchRow" style="display: none;">
+                                    <td colspan="5" class="py-5 text-center text-muted">
+                                        <i class="bi bi-search fs-2 text-secondary opacity-50 d-block mb-2"></i>
+                                        <h6 class="fw-bold text-dark mb-1">Pengguna Tidak Ditemukan</h6>
+                                        <p class="small text-secondary mb-0">Tidak ada pengguna aktif yang cocok dengan kata kunci pencarian Anda.</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                
+                <?php else: ?>
+                    <div class="p-5 text-center text-muted">
+                        <i class="bi bi-person-x fs-1 text-secondary opacity-50 d-block mb-2"></i>
+                        <h6 class="fw-bold text-dark mb-1">Tidak Ada Data Pengguna</h6>
+                        <p class="small text-secondary mb-3">Tidak ada data pengguna yang sesuai dengan pencarian atau filter.</p>
+                        <a href="<?= ($BASE) ?>/pengguna" class="btn btn-sm btn-outline-primary px-3 fw-semibold">
+                            <i class="bi bi-arrow-clockwise me-1"></i> Reset Pencarian
+                        </a>
+                    </div>
+                
+            <?php endif; ?>
+        </div>
+        <div class="card-footer bg-white py-2.5 px-4 border-top d-flex justify-content-between align-items-center">
+            <small class="text-muted" style="font-size: 0.78rem;">
+                Menampilkan <strong><span id="countVisible"><?= (count($daftar_pengguna)) ?></span></strong> pengguna aktif dari <strong><?= ($count_db_total) ?></strong> akun pegawai
+            </small>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL 1: TAMBAH PENGGUNA DARI DATABASE KE SILOPTI -->
+<!-- ========================================================================= -->
+<div class="modal fade" id="modalTambahPengguna" tabindex="-1" aria-labelledby="modalTambahPenggunaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-bottom py-3 px-4" style="background: linear-gradient(135deg, #881337 0%, #4c0519 100%); color: white;">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="rounded-circle p-1.5 bg-white bg-opacity-20 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                        <i class="bi bi-person-plus-fill text-white"></i>
+                    </div>
+                    <div>
+                        <h6 class="modal-title fw-bold font-display mb-0" id="modalTambahPenggunaLabel">Tambah Pengguna SILOPTI</h6>
+                        <small class="text-white-50" style="font-size: 0.72rem;">Pilih pegawai dan tentukan peran operasional</small>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="<?= ($BASE) ?>/pengguna/simpan">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-dark">
+                            Pilih Pegawai <span class="text-danger">*</span>
+                        </label>
+                        <?php if (count($unassigned_users) > 0): ?>
+                            
+                                <select name="id_user" class="form-select" required>
+                                    <option value="" disabled selected>-- Pilih pegawai --</option>
+                                    <?php foreach (($unassigned_users?:[]) as $u): ?>
+                                        <option value="<?= ($u['id_user']) ?>">
+                                            <?= ($u['nama_user']) ?> (#<?= ($u['id_user']) ?>)
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            
+                            <?php else: ?>
+                                <div class="alert alert-warning small mb-0 py-2">
+                                    <i class="bi bi-info-circle me-1"></i> Seluruh pegawai telah memiliki role operasional.
+                                </div>
+                            
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-dark">
+                            Role Sistem <span class="text-danger">*</span>
+                        </label>
+                        <select name="role_sistem" class="form-select" required>
+                            <option value="" disabled selected>-- Pilih peran / role --</option>
+                            <?php foreach (($role_options?:[]) as $rKey=>$rMeta): ?>
+                                <option value="<?= ($rKey) ?>">
+                                    <?= ($rMeta['label'])."
+" ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-2 px-4 border-top">
+                    <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Batal</button>
+                    <?php if (count($unassigned_users) > 0): ?>
+                        <button type="submit" class="btn btn-primary btn-sm fw-semibold px-3">
+                            <i class="bi bi-check-circle me-1"></i> Simpan Pengguna
+                        </button>
+                    <?php endif; ?>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL 2: UBAH ROLE PENGGUNA -->
+<!-- ========================================================================= -->
+<div class="modal fade" id="modalUbahRole" tabindex="-1" aria-labelledby="modalUbahRoleLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-bottom py-3 px-4 bg-light">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-pencil-square text-primary fs-5"></i>
+                    <h6 class="modal-title fw-bold font-display text-dark mb-0" id="modalUbahRoleLabel">Ubah Role Pengguna</h6>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="<?= ($BASE) ?>/pengguna/ubah">
+                <input type="hidden" name="id_user" id="edit_id_user" value="">
+                <div class="modal-body p-4">
+                    <div class="mb-3 p-3 bg-light rounded-3 border">
+                        <span class="text-muted small d-block" style="font-size: 0.75rem;">Nama Pengguna:</span>
+                        <strong class="text-dark fs-6 font-display d-block" id="edit_nama_user">-</strong>
+                        <span class="text-muted font-monospace small">User ID: #<span id="edit_id_display">-</span></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-dark">
+                            Pilih Role Baru <span class="text-danger">*</span>
+                        </label>
+                        <select name="role_sistem" id="edit_role_sistem" class="form-select" required>
+                            <?php foreach (($role_options?:[]) as $rKey=>$rMeta): ?>
+                                <option value="<?= ($rKey) ?>">
+                                    <?= ($rMeta['label'])."
+" ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-2 px-4 border-top">
+                    <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary btn-sm fw-semibold px-3">
+                        <i class="bi bi-check-circle me-1"></i> Perbarui Role
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL 3: CABUT HAK AKSES ROLE (VIEW ONLY) -->
+<!-- ========================================================================= -->
+<div class="modal fade" id="modalHapusRole" tabindex="-1" aria-labelledby="modalHapusRoleLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-bottom py-3 px-4 bg-danger bg-opacity-10 text-danger">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+                    <h6 class="modal-title fw-bold font-display mb-0" id="modalHapusRoleLabel">Cabut Hak Akses</h6>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="<?= ($BASE) ?>/pengguna/hapus">
+                <input type="hidden" name="id_user" id="hapus_id_user" value="">
+                <div class="modal-body p-4">
+                    <p class="mb-2 text-dark">
+                        Apakah Anda yakin ingin mencabut hak akses role untuk pengguna berikut?
+                    </p>
+                    <div class="p-3 bg-light rounded-3 border mb-3">
+                        <strong class="text-dark fs-6 d-block font-display" id="hapus_nama_user">-</strong>
+                        <span class="text-muted font-monospace small">User ID: #<span id="hapus_id_display">-</span></span>
+                    </div>
+                    <small class="text-muted d-block">
+                        Akun ini akan dikembalikan statusnya menjadi pengguna biasa (view only).
+                    </small>
+                </div>
+                <div class="modal-footer bg-light py-2 px-4 border-top">
+                    <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-danger btn-sm fw-semibold px-3">
+                        <i class="bi bi-person-x me-1"></i> Cabut Hak Akses
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handler Modal Ubah Role
+    const modalUbahEl = document.getElementById('modalUbahRole');
+    const modalUbah = new bootstrap.Modal(modalUbahEl);
+    document.querySelectorAll('.btn-ubah-role').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            const nama = this.getAttribute('data-nama');
+            const role = this.getAttribute('data-role');
+
+            document.getElementById('edit_id_user').value = id;
+            document.getElementById('edit_id_display').innerText = id;
+            document.getElementById('edit_nama_user').innerText = nama;
+            document.getElementById('edit_role_sistem').value = role;
+
+            modalUbah.show();
+        });
+    });
+
+    // Handler Modal Hapus / Cabut Role
+    const modalHapusEl = document.getElementById('modalHapusRole');
+    const modalHapus = new bootstrap.Modal(modalHapusEl);
+    document.querySelectorAll('.btn-hapus-role').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            const nama = this.getAttribute('data-nama');
+
+            document.getElementById('hapus_id_user').value = id;
+            document.getElementById('hapus_id_display').innerText = id;
+            document.getElementById('hapus_nama_user').innerText = nama;
+
+            modalHapus.show();
+        });
+    });
+
+    // =========================================================================
+    // FITUR LIVE INSTANT SEARCH (OTOMATIS CARI KETIKA KETIK HURUF PER HURUF)
+    // =========================================================================
+    const searchInput = document.getElementById('inputSearchPengguna');
+    const roleSelect = document.getElementById('selectFilterRole');
+    const resetBtn = document.getElementById('btnResetFilter');
+    const tbody = document.getElementById('tbodyPengguna');
+    const emptyRow = document.getElementById('emptySearchRow');
+    const headerBadge = document.getElementById('headerCountBadge');
+    const countVisible = document.getElementById('countVisible');
+
+    function performLiveFilter() {
+        const query = (searchInput ? searchInput.value : '').trim().toLowerCase();
+        const selectedRole = (roleSelect ? roleSelect.value : '').trim();
+        const rows = tbody ? Array.from(tbody.querySelectorAll('tr.pengguna-row')) : [];
+        let visibleCount = 0;
+
+        rows.forEach(function(row) {
+            const id = (row.getAttribute('data-id') || '').toLowerCase();
+            const nama = (row.getAttribute('data-nama') || '').toLowerCase();
+            const role = row.getAttribute('data-role') || '';
+            const roleLabel = (row.getAttribute('data-role-label') || '').toLowerCase();
+
+            // Cek kecocokan filter role
+            const matchRole = !selectedRole || role === selectedRole;
+
+            // Cek kecocokan pencarian nama, ID, atau label role
+            const matchQuery = !query || 
+                               id.includes(query) || 
+                               ('#' + id).includes(query) || 
+                               nama.includes(query) || 
+                               roleLabel.includes(query);
+
+            if (matchRole && matchQuery) {
+                row.style.display = '';
+                visibleCount++;
+                const counterEl = row.querySelector('.row-number');
+                if (counterEl) {
+                    counterEl.textContent = visibleCount;
+                }
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        // Tampilkan baris kosong jika tidak ada yang cocok
+        if (emptyRow) {
+            emptyRow.style.display = (visibleCount === 0 && rows.length > 0) ? '' : 'none';
+        }
+
+        // Perbarui badge counter di header & footer secara real-time
+        if (headerBadge) {
+            headerBadge.textContent = visibleCount + ' Akun';
+        }
+        if (countVisible) {
+            countVisible.textContent = visibleCount;
+        }
+
+        // Tampilkan atau sembunyikan tombol reset filter
+        if (resetBtn) {
+            if (query.length > 0 || selectedRole.length > 0) {
+                resetBtn.style.setProperty('display', 'flex', 'important');
+            } else {
+                resetBtn.style.setProperty('display', 'none', 'important');
+            }
+        }
+
+        // Sinkronkan parameter URL secara mulus tanpa reload halaman
+        try {
+            const url = new URL(window.location);
+            if (query) {
+                url.searchParams.set('q', query);
+            } else {
+                url.searchParams.delete('q');
+            }
+            if (selectedRole) {
+                url.searchParams.set('role', selectedRole);
+            } else {
+                url.searchParams.delete('role');
+            }
+            window.history.replaceState({}, '', url);
+        } catch (e) {}
+    }
+
+    if (searchInput) {
+        // Event input terpanggil otomatis di setiap ketikan huruf (tanpa menunggu enter)
+        searchInput.addEventListener('input', performLiveFilter);
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault(); // Tidak perlu reload saat ditekan enter
+            }
+        });
+    }
+
+    if (roleSelect) {
+        roleSelect.addEventListener('change', performLiveFilter);
+    }
+
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (searchInput) searchInput.value = '';
+            if (roleSelect) roleSelect.value = '';
+            performLiveFilter();
+            if (searchInput) searchInput.focus();
+        });
+    }
+});
+</script>

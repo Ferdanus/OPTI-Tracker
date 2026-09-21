@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+    @page { margin: 20mm 20mm 20mm 30mm; }
+    body { font-family: 'Times New Roman', Times, serif; color: #000; font-size: 11pt; }
+    .doc-title { text-align: center; font-weight: bold; font-size: 14pt; margin-bottom: 4px; }
+    .doc-nomor { text-align: center; font-size: 12pt; margin-bottom: 18px; }
+    .doc-judul { font-weight: bold; margin-bottom: 14px; font-size: 12pt; }
+    .section-title { font-weight: bold; font-size: 12pt; margin: 18px 0 8px; text-transform: uppercase; }
+    .sub-title { font-weight: bold; font-size: 11pt; margin: 8px 0 4px; }
+
+    table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+    table.isi th, table.isi td { border: 1px solid #000; padding: 5px 8px; vertical-align: middle; font-size: 11pt; }
+    table.isi th { background: #f1f5f9; font-weight: bold; text-align: center; }
+
+    .point-row { margin-bottom: 3px; }
+    .point-marker { display: inline-block; width: 22px; font-weight: bold; }
+
+    .jadwal-table { table-layout: fixed; font-size: 7.5pt; }
+    .jadwal-table th, .jadwal-table td { border: 1px solid #000; padding: 3px 2px; text-align: center; }
+    .jadwal-table th { background: #f1f5f9; font-weight: bold; }
+    .jadwal-table th.kegiatan-col, .jadwal-table td.kegiatan-col { width: 26mm; text-align: left; font-size: 8pt; padding-left: 6px; }
+    .jadwal-tahap-title { font-weight: bold; font-size: 10pt; margin: 8px 0 4px; }
+    .jadwal-keterangan { font-size: 9pt; color: #555; font-style: italic; margin-top: 6px; }
+
+    .signature-table { margin-top: 30px; font-size: 11pt; }
+    .signature-table td { border: none; text-align: center; width: 50%; padding: 0 20mm; }
+    .signature-space { height: 50px; }
+</style>
+</head>
+<body>
+
+<div class="doc-title">PETUNJUK OPERASIONAL (PO)</div>
+<div class="doc-nomor">Nomor: {{ @po.nomor_po }}</div>
+<div class="doc-judul">Judul: {{ @po.judul_kegiatan }}</div>
+
+<div class="section-title">1. Dasar</div>
+<div style="white-space:pre-line;">{{ @po.dasar ?: '-' }}</div>
+
+<div class="section-title">2. Tujuan</div>
+<div style="white-space:pre-line;">{{ @po.tujuan ?: '-' }}</div>
+
+<div class="section-title">3. Ruang Lingkup</div>
+<check if="{{ @po.ruang_lingkup_deskripsi_lines && count(@po.ruang_lingkup_deskripsi_lines) > 0 }}">
+    <repeat group="{{ @po.ruang_lingkup_deskripsi_lines }}" value="{{ @dl }}">
+        <check if="{{ @dl.marker }}">
+            <div class="point-row"><span class="point-marker">{{ @dl.marker }}</span>{{ @dl.teks }}</div>
+        </check>
+        <check if="{{ !@dl.marker }}">
+            <div class="point-row">{{ @dl.teks }}</div>
+        </check>
+    </repeat>
+</check>
+<check if="{{ @po.ruang_lingkup_items && count(@po.ruang_lingkup_items) > 0 }}">
+    <table class="isi">
+        <thead><tr><th>Nama Alat/Kegiatan</th><th>Jumlah</th><th>Waktu (menit)</th><th>Total (jam)</th><th>Keterangan</th></tr></thead>
+        <tbody>
+            <repeat group="{{ @po.ruang_lingkup_items }}" value="{{ @rl }}">
+                <tr>
+                    <td>{{ @rl.nama_alat }}</td>
+                    <td style="text-align:center;">{{ @rl.jumlah }}</td>
+                    <td style="text-align:center;">{{ @rl.waktu_menit }}</td>
+                    <td style="text-align:center;">{{ @rl.total_jam }}</td>
+                    <td>{{ @rl.keterangan }}</td>
+                </tr>
+            </repeat>
+        </tbody>
+    </table>
+</check>
+
+<check if="{{ @po.nomor_alat_bahan }}">
+    <div class="section-title">{{ @po.nomor_alat_bahan }}. {{ @po.sub_nomor_alat ? 'ALAT DAN BAHAN' : 'ALAT & BAHAN' }}</div>
+
+    <check if="{{ @po.sub_nomor_alat }}"><div class="sub-title">{{ @po.nomor_alat_bahan }}.{{ @po.sub_nomor_alat }} Alat</div></check>
+    <check if="{{ @po.alat_bahan_lines && count(@po.alat_bahan_lines) > 0 }}">
+        <repeat group="{{ @po.alat_bahan_lines }}" value="{{ @dl }}">
+            <check if="{{ @dl.marker }}"><div class="point-row"><span class="point-marker">{{ @dl.marker }}</span>{{ @dl.teks }}</div></check>
+            <check if="{{ !@dl.marker }}"><div class="point-row">{{ @dl.teks }}</div></check>
+        </repeat>
+    </check>
+
+    <check if="{{ @po.sub_nomor_bahan_kimia }}">
+        <div class="sub-title">{{ @po.nomor_alat_bahan }}.{{ @po.sub_nomor_bahan_kimia }} Bahan dan Bahan Kimia</div>
+        <table class="isi">
+            <thead><tr><th style="width:30px;">No</th><th>Bahan Kimia / Penolong</th><th>Jumlah</th><th>Satuan</th></tr></thead>
+            <tbody>
+                <repeat group="{{ @po.bahan_kimia_items }}" value="{{ @bk }}" key="{{ @bki }}">
+                    <tr><td style="text-align:center;">{{ @bki + 1 }}</td><td>{{ @bk.nama }}</td><td style="text-align:center;">{{ @bk.jumlah }}</td><td style="text-align:center;">{{ @bk.satuan }}</td></tr>
+                </repeat>
+            </tbody>
+        </table>
+    </check>
+
+    <check if="{{ @po.sub_nomor_metode }}">
+        <div class="sub-title">{{ @po.nomor_alat_bahan }}.{{ @po.sub_nomor_metode }} Metode</div>
+        <repeat group="{{ @po.metoda_lines }}" value="{{ @dl }}">
+            <check if="{{ @dl.marker }}"><div class="point-row"><span class="point-marker">{{ @dl.marker }}</span>{{ @dl.teks }}</div></check>
+            <check if="{{ !@dl.marker }}"><div class="point-row">{{ @dl.teks }}</div></check>
+        </repeat>
+    </check>
+
+    <check if="{{ !@po.sub_nomor_alat && @po.metoda_lines && count(@po.metoda_lines) > 0 }}">
+        <!-- Lingkungan: Metoda jadi section TERSENDIRI, dirender terpisah di bawah, bukan di sini -->
+    </check>
+
+    <check if="{{ @po.kebutuhan_tambahan_hitung && count(@po.kebutuhan_tambahan_hitung) > 0 }}">
+        <repeat group="{{ @po.kebutuhan_tambahan_hitung }}" value="{{ @kat }}">
+            <div class="sub-title">{{ @po.nomor_alat_bahan }}.{{ @kat.sub_nomor }} Rincian Kebutuhan {{ @kat.nama }}</div>
+            <table class="isi">
+                <thead><tr><th style="width:30px;">No</th><th>Nama Barang</th><th>Jumlah</th><th>Satuan</th><th>Harga</th><th>Total Harga</th></tr></thead>
+                <tbody>
+                    <repeat group="{{ @kat.items }}" value="{{ @it }}" key="{{ @iti }}">
+                        <tr>
+                            <td style="text-align:center;">{{ @iti + 1 }}</td>
+                            <td>{{ @it.nama }}</td>
+                            <td style="text-align:center;">{{ @it.jumlah }}</td>
+                            <td style="text-align:center;">{{ @it.satuan }}</td>
+                            <td style="text-align:right;">Rp {{ number_format(@it.harga, 0, ',', '.') }}</td>
+                            <td style="text-align:right;">Rp {{ number_format(@it.total, 0, ',', '.') }}</td>
+                        </tr>
+                    </repeat>
+                    <tr><td colspan="5" style="text-align:right;"><strong>Total</strong></td><td style="text-align:right;"><strong>Rp {{ number_format(@kat.subtotal, 0, ',', '.') }}</strong></td></tr>
+                </tbody>
+            </table>
+        </repeat>
+    </check>
+</check>
+
+<check if="{{ !@po.sub_nomor_alat && @po.nomor_metoda }}">
+    <div class="section-title">{{ @po.nomor_metoda }}. METODA</div>
+    <repeat group="{{ @po.metoda_lines }}" value="{{ @dl }}">
+        <check if="{{ @dl.marker }}"><div class="point-row"><span class="point-marker">{{ @dl.marker }}</span>{{ @dl.teks }}</div></check>
+        <check if="{{ !@dl.marker }}"><div class="point-row">{{ @dl.teks }}</div></check>
+    </repeat>
+</check>
+
+<check if="{{ @po.alamat }}">
+    <div class="section-title">{{ @po.nomor_alamat }}. ALAMAT</div>
+    <div>{{ @po.alamat }}</div>
+</check>
+
+<div class="section-title">{{ @po.nomor_tim }}. TIM PELAKSANA</div>
+<table class="isi">
+    <thead><tr><th style="width:30px;">No</th><th>Nama</th><th>Tugas/Tanggung Jawab</th><th>Uraian Tugas</th></tr></thead>
+    <tbody>
+        <check if="{{ @po.tim_pelaksana && count(@po.tim_pelaksana) > 0 }}">
+            <repeat group="{{ @po.tim_pelaksana }}" value="{{ @tp }}" key="{{ @i }}">
+                <tr>
+                    <td style="text-align:center;">{{ @i + 1 }}</td>
+                    <td>{{ @tp.nama }}</td>
+                    <td>{{ @tp.tugas }}</td>
+                    <td>{{ @tp.uraian_tugas }}</td>
+                </tr>
+            </repeat>
+        </check>
+        <check if="{{ !@po.tim_pelaksana || count(@po.tim_pelaksana) == 0 }}">
+            <tr><td colspan="4" style="text-align:center; color:#999;">-</td></tr>
+        </check>
+    </tbody>
+</table>
+
+<div class="section-title">{{ @po.nomor_rab }}. RENCANA ANGGARAN BIAYA (RAB)</div>
+<table class="isi">
+    <tbody>
+        <tr><td colspan="2" style="background:#f8fafc;"><strong>A. Penerimaan</strong></td></tr>
+        <repeat group="{{ @po.rab_hitung.penerimaan_items }}" value="{{ @p }}">
+            <tr><td>{{ @p.nama }}</td><td style="text-align:right;">Rp {{ number_format(@p.nominal, 0, ',', '.') }}</td></tr>
+        </repeat>
+        <tr><td><strong>Total Penerimaan</strong></td><td style="text-align:right;"><strong>Rp {{ number_format(@po.rab_hitung.total_penerimaan, 0, ',', '.') }}</strong></td></tr>
+
+        <tr><td colspan="2" style="background:#f8fafc;"><strong>B. Rencana Pengeluaran</strong></td></tr>
+        <repeat group="{{ @po.rab_hitung.kategori }}" value="{{ @kat }}" key="{{ @ki }}">
+            <tr><td>{{ @ki + 1 }}. {{ @kat.nama }} ({{ @kat.persen_tampil }})</td><td style="text-align:right;">Rp {{ number_format(@kat.subtotal, 0, ',', '.') }}</td></tr>
+            <repeat group="{{ @kat.items }}" value="{{ @it }}">
+                <tr>
+                    <td style="padding-left:22px;">
+                        {{ @it.nama }}
+                        <check if="{{ @it.label_a }}"> ({{ @it.qty_a }} {{ @it.label_a }}<check if="{{ @it.label_b }}">, {{ @it.qty_b }} {{ @it.label_b }}</check> @ Rp{{ number_format(@it.tarif, 0, ',', '.') }})</check>
+                    </td>
+                    <td style="text-align:right;">Rp {{ number_format(@it.nominal, 0, ',', '.') }}</td>
+                </tr>
+            </repeat>
+        </repeat>
+
+        <tr><td><strong>Total Pengeluaran</strong></td><td style="text-align:right;"><strong>Rp {{ number_format(@po.rab_hitung.total_pengeluaran, 0, ',', '.') }}</strong></td></tr>
+    </tbody>
+</table>
+
+<div class="section-title">{{ @po.nomor_jadwal }}. JADWAL</div>
+<check if="{{ @po.jadwal_kolom && count(@po.jadwal_kolom) > 0 }}">
+    <repeat group="{{ @po.jadwal_groups }}" value="{{ @group }}">
+        <check if="{{ @group.nama_tahap }}"><div class="jadwal-tahap-title">{{ @group.nama_tahap }}</div></check>
+        <check if="{{ @group.kegiatan && count(@group.kegiatan) > 0 }}">
+            <table class="jadwal-table">
+                <thead>
+                    <tr>
+                        <th class="kegiatan-col"></th>
+                        <repeat group="{{ @po.jadwal_bulan_header }}" value="{{ @bh }}">
+                            <th colspan="{{ @bh.span }}">{{ @bh.label }}</th>
+                        </repeat>
+                    </tr>
+                    <tr>
+                        <th class="kegiatan-col">Kegiatan</th>
+                        <repeat group="{{ @po.jadwal_kolom }}" value="{{ @k }}">
+                            <th style="{{ @k.libur ? 'background:#d1d5db;' : '' }}">{{ @k.label }}</th>
+                        </repeat>
+                    </tr>
+                </thead>
+                <tbody>
+                    <repeat group="{{ @group.kegiatan }}" value="{{ @keg }}">
+                        <tr>
+                            <td class="kegiatan-col">{{ @keg.nama }}</td>
+                            <repeat group="{{ @po.jadwal_kolom }}" value="{{ @k }}">
+                                <check if="{{ @k.libur }}">
+                                    <td style="background:{{ in_array(@k.key, @keg.tanda ?: []) ? '#374151' : '#e5e7eb' }}; color:{{ in_array(@k.key, @keg.tanda ?: []) ? '#fff' : '#6b7280' }};">L</td>
+                                </check>
+                                <check if="{{ !@k.libur }}">
+                                    <td style="background:{{ in_array(@k.key, @keg.tanda ?: []) ? '#6b7280' : '#fff' }};"></td>
+                                </check>
+                            </repeat>
+                        </tr>
+                    </repeat>
+                </tbody>
+            </table>
+        </check>
+    </repeat>
+</check>
+<check if="{{ @po.jadwal_keterangan_lines && count(@po.jadwal_keterangan_lines) > 0 }}">
+    <div class="jadwal-keterangan">
+        <repeat group="{{ @po.jadwal_keterangan_lines }}" value="{{ @dl }}">
+            <check if="{{ @dl.marker }}"><div><span class="point-marker" style="width:18px;">{{ @dl.marker }}</span>{{ @dl.teks }}</div></check>
+            <check if="{{ !@dl.marker }}"><div>{{ @dl.teks }}</div></check>
+        </repeat>
+    </div>
+</check>
+
+<table class="signature-table">
+    <tr>
+        <td>
+            Menyetujui<br>Pejabat Pembuat Komitmen
+            <div class="signature-space"></div>
+            ( ............................. )
+        </td>
+        <td>
+            Pelaksana Kegiatan<br>Ketua Tim Kerja
+            <div class="signature-space"></div>
+            ( ............................. )
+        </td>
+    </tr>
+</table>
+
+</body>
+</html>
