@@ -186,6 +186,14 @@ $f3->set('info_pembayaran_json', json_encode($infoPembayaran, JSON_UNESCAPED_UNI
         $f3->set('nomor_rab', $nomor['rab']);
         $f3->set('nomor_jadwal', $nomor['jadwal']);
 
+        // Audit Tahap 7: PO dibuka/dikelola
+        $sessionUser = $f3->get('SESSION.user') ?? [];
+        $userId = (int)($sessionUser['id'] ?? ($this->getUserId() ?? 0));
+        $userNama = $sessionUser['nama'] ?? ($sessionUser['nama_lengkap'] ?? 'Laboratorium / Tim Pelaksana');
+        if ($userId > 0 && $orderId > 0) {
+            \StageAudit::recordDibaca($this->db, $orderId, 7, $userId, $userNama, 'Laboratorium / Tim Pelaksana');
+        }
+
         $this->render('katim_kerja/po-kegiatan/form.html', 'Buat Petunjuk Operasional', 'po_kegiatan');
     }
 
@@ -225,6 +233,15 @@ $f3->set('info_pembayaran_json', json_encode($infoPembayaran, JSON_UNESCAPED_UNI
         $f3->set('nomor_rab', $nomor['rab']);
         $f3->set('nomor_jadwal', $nomor['jadwal']);
 
+        // Audit Tahap 7: PO dibuka/diedit
+        $sessionUser = $f3->get('SESSION.user') ?? [];
+        $userId = (int)($sessionUser['id'] ?? ($this->getUserId() ?? 0));
+        $userNama = $sessionUser['nama'] ?? ($sessionUser['nama_lengkap'] ?? 'Laboratorium / Tim Pelaksana');
+        $poOrderId = (int)($po->order_id ?? 0);
+        if ($userId > 0 && $poOrderId > 0) {
+            \StageAudit::recordDibaca($this->db, $poOrderId, 7, $userId, $userNama, 'Laboratorium / Tim Pelaksana');
+        }
+
         $this->render('katim_kerja/po-kegiatan/form.html', 'Edit Petunjuk Operasional', 'po_kegiatan');
     }
 
@@ -263,11 +280,12 @@ $f3->set('info_pembayaran_json', json_encode($infoPembayaran, JSON_UNESCAPED_UNI
 
         try {
             $this->bind($po, $f3, true);
+            $po->updated_at = date('Y-m-d H:i:s');
             $po->save();
 
             $this->setFlashSuccess($f3->get('POST.aksi') === 'kirim'
-                ? 'PO berhasil dikirim.'
-                : 'Perubahan PO disimpan sebagai draft.');
+                ? 'PO berhasil diperbarui dan dikirim.'
+                : 'PO berhasil diperbarui sebagai draft.');
         } catch (\Exception $e) {
             $this->setFlashError('Gagal memperbarui PO: ' . $e->getMessage());
         }
@@ -292,6 +310,15 @@ $f3->set('info_pembayaran_json', json_encode($infoPembayaran, JSON_UNESCAPED_UNI
         $f3->set('order', $orderData ?: null);
         $f3->set('po', $poData);
     
+        // Audit Tahap 7: PO dilihat di modal preview
+        $sessionUser = $f3->get('SESSION.user') ?? [];
+        $userId = (int)($sessionUser['id'] ?? ($this->getUserId() ?? 0));
+        $userNama = $sessionUser['nama'] ?? ($sessionUser['nama_lengkap'] ?? 'Laboratorium / Tim Pelaksana');
+        $poOrderId = (int)($po->order_id ?? 0);
+        if ($userId > 0 && $poOrderId > 0) {
+            \StageAudit::recordDibaca($this->db, $poOrderId, 7, $userId, $userNama, 'Laboratorium / Tim Pelaksana');
+        }
+
         echo \Template::instance()->render('katim_kerja/po-kegiatan/preview_fragment.html');
     }
 

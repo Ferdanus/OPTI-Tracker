@@ -38,6 +38,14 @@ class BastController extends Controller {
         $f3->set('bast', $bast);
         $f3->set('nomor_bast_otomatis', $nomorBastOtomatis);
 
+        // Audit Tahap 8: BAST dibuka/dikelola Tim Mitra
+        $sessionUser = $f3->get('SESSION.user') ?? [];
+        $userId = (int)($sessionUser['id'] ?? ($this->getUserId() ?? 0));
+        $userNama = $sessionUser['nama'] ?? ($sessionUser['nama_lengkap'] ?? 'Tim Mitra');
+        if ($userId > 0 && $orderId > 0) {
+            \StageAudit::recordDibaca($this->db, $orderId, 8, $userId, $userNama, 'Tim Mitra');
+        }
+
         $this->render('bast/form.html', "Berita Acara Serah Terima - Order #{$order['nomor_order']}", 'order');
     }
 

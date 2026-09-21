@@ -789,38 +789,9 @@ class OrderController extends Controller {
         $currentUserRole = $this->getUserRole() ?? 'user';
 
         if ($currentUserId > 0) {
-            // Tahap 1: Dibaca saat Tim Mitra / Admin membuka detail order
+            // Tahap 1: Dibaca saat Tim Mitra / Admin membuka detail order pertama kali
             if (in_array($currentUserRole, ['tim_mitra', 'superadmin', 'admin'])) {
                 StageAudit::recordDibaca($this->db, $id, 1, $currentUserId, $currentUserNama, 'Tim Mitra');
-            }
-            // Tahap 2: Dibaca saat Ketua Tim membuka order yang telah diteruskan
-            if (($order['status'] ?? '') !== 'permintaan_masuk' && in_array($currentUserRole, ['ketua_tim', 'superadmin'])) {
-                $divisiKetua = (($order['jenis_layanan_opti'] ?? '') === 'lingkungan') ? 'Ka. Tim Lingkungan' : 'Ka. Tim Selulosa';
-                StageAudit::recordDibaca($this->db, $id, 2, $currentUserId, $currentUserNama, $divisiKetua);
-            }
-            // Tahap 3: Dibaca saat Kaji Kelayakan selesai dibuka oleh PIC / Tim Kerja / Ka Tim
-            if ($isTinjauanDone && in_array($currentUserRole, ['tim_kerja', 'ketua_tim', 'superadmin'])) {
-                StageAudit::recordDibaca($this->db, $id, 3, $currentUserId, $currentUserNama, 'Tim Teknis / PIC');
-            }
-            // Tahap 4: Disetujui / Diperiksa saat Proposal / Tarif dibuka oleh Ketua Tim / Superadmin
-            if ($isTinjauanDone && $isStep4Done && in_array($order['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui']) && in_array($currentUserRole, ['ketua_tim', 'superadmin'])) {
-                StageAudit::recordDisetujui($this->db, $id, 4, $currentUserId, $currentUserNama, 'Ketua Tim OPTI');
-            }
-            // Tahap 5: Dibaca saat Surat Penawaran resmi dibuka
-            if (!empty($penawaran) && in_array($currentUserRole, ['tim_mitra', 'superadmin'])) {
-                StageAudit::recordDibaca($this->db, $id, 5, $currentUserId, $currentUserNama, 'Tim Mitra');
-            }
-            // Tahap 6: Dibaca saat Pembayaran diverifikasi Keuangan
-            if ($isPenawaranDeal && in_array($currentUserRole, ['keuangan', 'tim_mitra', 'superadmin'])) {
-                StageAudit::recordDibaca($this->db, $id, 6, $currentUserId, $currentUserNama, 'Bagian Keuangan');
-            }
-            // Tahap 7: Dibaca saat Sampel & PO dibuka analis lab
-            if (!empty($order['tanggal_terima_sampel']) && in_array($currentUserRole, ['ketua_tim', 'tim_kerja', 'superadmin'])) {
-                StageAudit::recordDibaca($this->db, $id, 7, $currentUserId, $currentUserNama, 'Laboratorium / Ka. Tim');
-            }
-            // Tahap 8: Dibaca saat BAST diterbitkan
-            if (!empty($bast) && in_array($currentUserRole, ['tim_mitra', 'superadmin'])) {
-                StageAudit::recordDibaca($this->db, $id, 8, $currentUserId, $currentUserNama, 'Tim Mitra');
             }
         }
 
@@ -1028,6 +999,13 @@ class OrderController extends Controller {
         $f3->set('daftar_pic', $daftarPic);
         $f3->set('surat_masuk', $suratMasuk);
         $f3->set('can_edit', $canEdit);
+
+        // Audit Tahap 3: Kaji Kelayakan Teknis dibuka / dibaca
+        $currentUserId = (int)$this->getUserId();
+        $currentUserNama = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'Petugas');
+        if ($currentUserId > 0) {
+            StageAudit::recordDibaca($this->db, $id, 3, $currentUserId, $currentUserNama, $isKetuaTim ? 'Ketua Tim OPTI' : 'Tim Teknis / PIC');
+        }
 
         $this->render('order/tinjauan_kelayakan.html', "Tinjauan Kelayakan Order #{$order['nomor_order']}", 'order');
     }
@@ -3181,6 +3159,14 @@ class OrderController extends Controller {
 
         $f3->set('order', $data);
         $f3->set('BASE', $f3->get('BASE'));
+
+        // Audit Tahap 2: Formulir Permintaan Pelayanan Jasa dibuka/dibaca
+        $currentUserId = (int)$this->getUserId();
+        $currentUserNama = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'Petugas');
+        if ($currentUserId > 0) {
+            $divisiKetua = (($data['jenis_layanan_opti'] ?? '') === 'lingkungan') ? 'Ka. Tim Lingkungan' : 'Ka. Tim Selulosa';
+            StageAudit::recordDibaca($this->db, $id, 2, $currentUserId, $currentUserNama, $divisiKetua);
+        }
 
         $this->render(
             'order/surat.html',

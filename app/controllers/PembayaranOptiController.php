@@ -150,6 +150,13 @@ public function tambah($f3) {
     $order['sisa_tagihan']      = max(0, $biayaAcuan - (float)$order['terbayar']);
     $order['termin_berikutnya'] = (int)$order['jumlah_termin_sebelumnya'] + 1;
 
+    // Audit Tahap 6: Halaman pencatatan pembayaran dibuka/dibaca oleh Bagian Keuangan
+    $userId = (int)$this->getUserId();
+    if ($userId > 0 && $orderId > 0) {
+        $userNama = $_SESSION['nama_lengkap'] ?? ($_SESSION['user']['nama'] ?? 'Bagian Keuangan');
+        \StageAudit::recordDibaca($this->db, $orderId, 6, $userId, $userNama, 'Bagian Keuangan');
+    }
+
     $f3->set('order', $order);
 
     $this->render('keuangan/pembayaran/form.html', 'Catat Pembayaran', 'pembayaran');

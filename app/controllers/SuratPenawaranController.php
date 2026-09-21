@@ -641,6 +641,12 @@ $daftarPegawai = $arsipUser->find(
         $f3->set('pembuat_nama', $pembuatNama);
         $f3->set('can_edit', $canEdit);
 
+        // Audit Tahap 5: Surat Penawaran resmi dibuka / dikelola Tim Mitra
+        $userId = (int)$this->getUserId();
+        if ($userId > 0) {
+            \StageAudit::recordDibaca($this->db, $orderId, 5, $userId, $pembuatNama, 'Tim Mitra');
+        }
+
         $this->render('tim_mitra/surat Pelayanan/form_order.html', "Terbitkan Surat Penawaran - Order #{$order['nomor_order']}", 'surat-penawaran');
     }
 
