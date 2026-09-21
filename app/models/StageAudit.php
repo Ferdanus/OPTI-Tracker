@@ -311,19 +311,16 @@ class StageAudit {
                     $result[3]['pengirim_role'] = 'Ketua Tim OPTI';
                 }
 
-                // Tahap 4: Proposal Teknis / Parameter Tarif
-                if (!empty($extra['proposal']) || !empty($order['estimasi_biaya']) || in_array($order['status_proposal_biaya'] ?? '', ['menunggu_approval', 'siap_penawaran', 'disetujui'])) {
+                // Tahap 4: Proposal Teknis / Parameter Tarif (Hanya jika Kaji Kelayakan Tahap 3 sudah disetujui & data proposal/kalkulasi ada)
+                $tinjauanLayak = (!empty($extra['tinjauan']) && ($extra['tinjauan']['keputusan'] ?? '') === 'dapat_dilaksanakan') || (($order['status_tinjauan'] ?? '') === 'layak');
+                $hasDataTahap4 = !empty($extra['proposal']['file_proposal']) || !empty($extra['proposal']['diajukan_at']) || !empty($extra['kalkulasi_lingkungan']) || !empty($extra['penawaran']) || in_array($order['status_proposal_biaya'] ?? '', ['menunggu_approval', 'siap_penawaran', 'disetujui']);
+
+                if ($tinjauanLayak && $hasDataTahap4) {
                     $tglKirim4 = !empty($extra['proposal']['diajukan_at']) ? $extra['proposal']['diajukan_at'] : (!empty($extra['proposal']['created_at']) ? $extra['proposal']['created_at'] : (!empty($order['updated_at']) ? $order['updated_at'] : $order['created_at']));
                     $pengirim4 = !empty($extra['proposal']['pic_nama']) ? $extra['proposal']['pic_nama'] : ($order['pic_proposal_nama'] ?: 'PIC Teknis');
                     $tglAcc4   = !empty($extra['proposal']['disetujui_ketua_at']) ? $extra['proposal']['disetujui_ketua_at'] : null;
 
-                    if (empty($result[4]['waktu_dibaca'])) {
-                        self::recordDibaca($db, $orderId, 4, (int)($extra['proposal']['pic_penyusun_id'] ?? ($order['pic_proposal_id'] ?? 0)), $pengirim4, 'PIC Teknis', $tglKirim4);
-                        $result[4]['waktu_dibaca'] = $tglKirim4;
-                        $result[4]['dibaca_nama']  = $pengirim4;
-                        $result[4]['dibaca_role']  = 'PIC Teknis';
-                    }
-
+                    // Catatan: WAKTU DIBACA HANYA DICATAT SAAT HALAMAN KELOLA TARIF / PROPOSAL BENAR-BENAR DIBUKA SECARA NYATA
                     if (empty($result[4]['waktu_kirim'])) {
                         self::recordKirim($db, $orderId, 4, self::getStageNames()[4], (int)($extra['proposal']['pic_penyusun_id'] ?? ($order['pic_proposal_id'] ?? 0)), $pengirim4, 'PIC Teknis', $tglKirim4, 'Proposal / Tarif Disusun');
                         $result[4]['waktu_kirim']   = $tglKirim4;

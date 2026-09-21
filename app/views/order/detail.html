@@ -1026,12 +1026,12 @@
                             </div>
                         </check>
                     </div>
-                    <check if="{{ @order.status == 'permintaan_masuk' || (@order.jenis_layanan_opti == 'selulosa' && (!@tinjauan || @tinjauan.keputusan != 'dapat_dilaksanakan')) }}">
+                    <check if="{{ !@is_tinjauan_done }}">
                         <span class="badge bg-light text-secondary border">
                             <i class="bi bi-lock-fill me-1"></i> Terkunci
                         </span>
                     </check>
-                    <check if="{{ @order.status != 'permintaan_masuk' && (@order.jenis_layanan_opti != 'selulosa' || (@tinjauan && @tinjauan.keputusan == 'dapat_dilaksanakan')) }}">
+                    <check if="{{ @is_tinjauan_done }}">
                         <check if="{{ @order.status_proposal_biaya == 'siap_penawaran' && (@order.jenis_layanan_opti != 'selulosa' || @is_proposal_approved) }}">
                             <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 fw-semibold"><i class="bi bi-check-circle-fill me-1"></i> {{ @order.jenis_layanan_opti == 'lingkungan' ? 'Tarif & Parameter Disetujui' : 'Proposal Disetujui' }}</span>
                         </check>
@@ -1053,13 +1053,13 @@
                 </div>
 
                 <div class="p-4">
-                    <check if="{{ @order.status == 'permintaan_masuk' || (@order.jenis_layanan_opti == 'selulosa' && (!@tinjauan || @tinjauan.keputusan != 'dapat_dilaksanakan')) }}">
+                    <check if="{{ !@is_tinjauan_done }}">
                         <div class="p-3 text-center text-muted bg-light rounded-3 small">
                             <i class="bi bi-lock-fill text-secondary opacity-50 me-1"></i>
                             Ruang kerja penentuan parameter &amp; tarif penawaran akan terbuka setelah <strong>Kaji Ulang Kelayakan Teknis (Tahap 3)</strong> disetujui.
                         </div>
                     </check>
-                    <check if="{{ @order.status != 'permintaan_masuk' && (@order.jenis_layanan_opti != 'selulosa' || (@tinjauan && @tinjauan.keputusan == 'dapat_dilaksanakan')) }}">
+                    <check if="{{ @is_tinjauan_done }}">
                         <!-- Khusus Lingkungan: Informasi Alur Layanan -->
                         <check if="{{ @order.jenis_layanan_opti == 'lingkungan' }}">
                             <div class="alert alert-info border-0 py-2 px-3 mb-3 small rounded-3">
