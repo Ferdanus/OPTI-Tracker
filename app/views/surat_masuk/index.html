@@ -1344,14 +1344,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     var alamat = data.alamat && data.alamat !== '-' ? escape(data.alamat) : '';
                     var sub = [pic, alamat].filter(Boolean).join(' • ');
                     return '<div class="py-2 px-3 border-bottom">' +
-                        '<div class="fw-bold text-dark mb-1">' +
+                        '<div class="fw-bold text-dark mb-1" style="white-space:normal; line-height:1.35;">' +
                             '<i class="bi bi-building me-2 text-primary"></i>' + escape(data.nama || data.text) +
                         '</div>' +
-                        (sub ? '<div class="text-muted text-truncate small" style="font-size:0.75rem; max-width:440px;">' + sub + '</div>' : '') +
+                        (sub ? '<div class="text-muted small" style="font-size:0.76rem; white-space:normal; line-height:1.35;">' + sub + '</div>' : '') +
                     '</div>';
                 },
                 item: function(data, escape) {
-                    return '<div class="fw-bold text-dark text-truncate">' +
+                    return '<div class="fw-bold text-dark" style="white-space:normal; line-height:1.35;">' +
                         '<i class="bi bi-building text-primary me-2"></i>' +
                         escape(data.nama || data.text) +
                     '</div>';
@@ -1450,7 +1450,13 @@ document.addEventListener('DOMContentLoaded', function() {
     padding: 0.6rem 0.85rem !important;
     border-bottom: 1px solid #f1f5f9;
     cursor: pointer;
+    white-space: normal !important;
+    word-break: break-word !important;
     transition: background-color 0.15s ease;
+}
+.modal .ts-control .item {
+    white-space: normal !important;
+    word-break: break-word !important;
 }
 .modal .ts-dropdown .option:last-child {
     border-bottom: none;
