@@ -64,12 +64,7 @@ if (!class_exists('SiloptiSuratPenawaranPdf')) {
         }
 
         public function Footer() {
-            if ($this->jenisLayanan === 'selulosa') {
-                $this->SetY(-14);
-                $this->SetFont('Arial', '', 7.5);
-                $this->SetTextColor(37, 99, 235); // Biru Zona Integritas BBSPJIS
-                $this->Cell(0, 5, 'Balai Besar Standardisasi dan Pelayanan Jasa Industri Selulosa adalah Wilayah Zona Integritas - Tolak Gratifikasi', 0, 0, 'C');
-            }
+            // Footer kosong
         }
     }
 }
