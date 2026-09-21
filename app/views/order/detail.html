@@ -734,7 +734,6 @@
                             <i class="bi bi-file-earmark-medical-fill text-primary fs-5"></i> Formulir Permintaan Pelayanan Jasa (F.PJT-08-01/02)
                         </h6>
                         <div class="d-flex align-items-center flex-wrap gap-2 text-muted small mt-1" style="font-size: 0.72rem; line-height: 1.4; column-gap: 16px; row-gap: 4px;">
-                            <span class="me-3">Tim Mitra</span>
                             <check if="{{ @audit_stages[2].waktu_kirim }}">
                                 <span class="me-3">Dikirim: <span class="text-dark fw-medium">{{ date('d M Y, H:i', strtotime(@audit_stages[2].waktu_kirim)) }}</span> <span class="text-secondary text-nowrap">({{ @audit_stages[2].pengirim_nama ?: @audit_stages[2].pengirim_role }})</span></span>
                             </check>
@@ -842,7 +841,6 @@
                             <i class="bi bi-clipboard-check-fill text-primary fs-5"></i> Kaji Kelayakan Teknis Layanan <span class="badge bg-light text-secondary border font-monospace" style="font-size: 0.75rem;" data-bs-toggle="tooltip" title="Standar Internasional ISO/IEC 17025: Persyaratan umum kompetensi laboratorium pengujian &amp; kalibrasi">ISO 17025</span>
                         </h6>
                         <div class="d-flex align-items-center flex-wrap gap-2 text-muted small mt-1" style="font-size: 0.72rem; line-height: 1.4; column-gap: 16px; row-gap: 4px;">
-                            <span class="me-3">Ketua Tim OPTI {{ @order.jenis_layanan_opti == 'selulosa' ? 'Selulosa' : (@order.jenis_layanan_opti == 'lingkungan' ? 'Lingkungan' : '') }}</span>
                             <check if="{{ @audit_stages[3].waktu_kirim }}">
                                 <span class="me-3">Ditetapkan: <span class="text-dark fw-medium">{{ date('d M Y, H:i', strtotime(@audit_stages[3].waktu_kirim)) }}</span> <span class="text-secondary text-nowrap">({{ @audit_stages[3].pengirim_nama ?: @audit_stages[3].pengirim_role }})</span></span>
                             </check>
@@ -995,7 +993,6 @@
                                 <i class="bi bi-calculator-fill text-primary fs-5"></i> Parameter Uji &amp; Rincian Tarif Penawaran
                             </h6>
                             <div class="d-flex align-items-center flex-wrap gap-2 text-muted small mt-1" style="font-size: 0.72rem; line-height: 1.4; column-gap: 16px; row-gap: 4px;">
-                                <span class="me-3">Lab OPTI Lingkungan / SNI / <span class="badge bg-light text-secondary border py-0 px-1" data-bs-toggle="tooltip" title="Tarif PNBP resmi Kementerian Perindustrian berdasarkan PP No. 54 Tahun 2021">PP 54/2021</span></span>
                                 <check if="{{ @audit_stages[4].waktu_dibaca }}">
                                     <span class="me-3">Dibaca: <span class="text-dark fw-medium">{{ date('d M Y, H:i', strtotime(@audit_stages[4].waktu_dibaca)) }}</span> <span class="text-secondary text-nowrap">({{ @audit_stages[4].dibaca_nama ?: @audit_stages[4].dibaca_role }})</span></span>
                                 </check>
@@ -1013,7 +1010,6 @@
                                 <i class="bi bi-file-earmark-ruled-fill text-primary fs-5"></i> Ruang Kerja Proposal Teknis &amp; Biaya
                             </h6>
                             <div class="d-flex align-items-center flex-wrap gap-2 text-muted small mt-1" style="font-size: 0.72rem; line-height: 1.4; column-gap: 16px; row-gap: 4px;">
-                                <span class="me-3">Tim Pelaksana / Ka. Tim</span>
                                 <check if="{{ @audit_stages[4].waktu_dibaca }}">
                                     <span class="me-3">Dibaca: <span class="text-dark fw-medium">{{ date('d M Y, H:i', strtotime(@audit_stages[4].waktu_dibaca)) }}</span> <span class="text-secondary text-nowrap">({{ @audit_stages[4].dibaca_nama ?: @audit_stages[4].dibaca_role }})</span></span>
                                 </check>
@@ -1385,7 +1381,6 @@
                             <i class="bi bi-file-earmark-text-fill text-primary fs-5"></i> Surat Penawaran Resmi &amp; Respon Klien
                         </h6>
                         <div class="d-flex align-items-center flex-wrap gap-2 text-muted small mt-1" style="font-size: 0.72rem; line-height: 1.4; column-gap: 16px; row-gap: 4px;">
-                            <span class="me-3">Tim Mitra</span>
                             <check if="{{ @audit_stages[5].waktu_kirim }}">
                                 <span class="me-3">Terbit: <span class="text-dark fw-medium">{{ date('d M Y, H:i', strtotime(@audit_stages[5].waktu_kirim)) }}</span> <span class="text-secondary text-nowrap">({{ @audit_stages[5].pengirim_nama ?: @audit_stages[5].pengirim_role }})</span></span>
                             </check>
@@ -1704,7 +1699,6 @@
                             <i class="bi bi-receipt-cutoff text-primary fs-5"></i> Bukti Pembayaran Pelanggan (Tim Keuangan)
                         </h6>
                         <div class="d-flex align-items-center flex-wrap gap-2 text-muted small mt-1" style="font-size: 0.72rem; line-height: 1.4; column-gap: 16px; row-gap: 4px;">
-                            <span class="me-3">Bagian Keuangan</span>
                             <check if="{{ @audit_stages[6].waktu_kirim }}">
                                 <span class="me-3">Verifikasi: <span class="text-dark fw-medium">{{ date('d M Y, H:i', strtotime(@audit_stages[6].waktu_kirim)) }}</span> <span class="text-secondary text-nowrap">({{ @audit_stages[6].pengirim_nama ?: @audit_stages[6].pengirim_role }})</span></span>
                             </check>
@@ -2109,7 +2103,6 @@
                             <i class="bi bi-box-seam text-primary fs-5"></i> Penerimaan Sampel Fisik Lab &amp; Jadwal SPM <span class="badge bg-light text-secondary border font-monospace" style="font-size: 0.75rem;" data-bs-toggle="tooltip" title="Standar Pelayanan Minimal: Batas hari kerja resmi penyelesaian uji laboratorium">SPM</span>
                         </h6>
                         <div class="d-flex align-items-center flex-wrap gap-2 text-muted small mt-1" style="font-size: 0.72rem; line-height: 1.4; column-gap: 16px; row-gap: 4px;">
-                            <span class="me-3">Petugas Pengelola Sampel</span>
                             <check if="{{ @audit_stages[7].waktu_kirim }}">
                                 <span class="me-3">Diterima: <span class="text-dark fw-medium">{{ date('d M Y', strtotime(@audit_stages[7].waktu_kirim)) }}</span> <span class="text-secondary text-nowrap">({{ @audit_stages[7].pengirim_nama ?: @audit_stages[7].pengirim_role }})</span></span>
                             </check>
@@ -2169,7 +2162,7 @@
                                             </button>
                                         </check>
                                         <button type="button" class="btn btn-outline-secondary btn-sm ms-1" data-bs-toggle="collapse" data-bs-target="#collapseEditSampel" title="Ubah tanggal sampel">
-                                            <i class="bi bi-pencil"></i>
+                                             <i class="bi bi-pencil"></i>
                                         </button>
                                     </div>
                                 </div>
@@ -2228,7 +2221,6 @@
                             <i class="bi bi-patch-check-fill text-primary fs-5"></i> BAST
                         </h6>
                         <div class="d-flex align-items-center flex-wrap gap-2 text-muted small mt-1" style="font-size: 0.72rem; line-height: 1.4; column-gap: 16px; row-gap: 4px;">
-                            <span class="me-3">Tim Mitra &amp; Pihak Berwenang</span>
                             <check if="{{ @audit_stages[8].waktu_kirim }}">
                                 <span class="me-3">Terbit: <span class="text-dark fw-medium">{{ date('d M Y, H:i', strtotime(@audit_stages[8].waktu_kirim)) }}</span> <span class="text-secondary text-nowrap">({{ @audit_stages[8].pengirim_nama ?: @audit_stages[8].pengirim_role }})</span></span>
                             </check>
