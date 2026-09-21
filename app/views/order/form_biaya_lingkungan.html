@@ -36,6 +36,37 @@
     box-shadow: 0 0 0 3px rgba(51, 65, 85, 0.15);
 }
 
+.table-kalkulasi textarea.input-nama-uji {
+    resize: none;
+    min-height: 33px;
+    height: 33px;
+    line-height: 1.4;
+    padding: 0.35rem 0.65rem;
+    font-size: 0.815rem;
+    word-break: break-word;
+    white-space: pre-wrap;
+    overflow-y: hidden;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    background-color: #ffffff;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.table-kalkulasi textarea.input-nama-uji:focus {
+    border-color: var(--color-primary, #334155);
+    box-shadow: 0 0 0 3px rgba(51, 65, 85, 0.15);
+    outline: none;
+}
+
+.table-kalkulasi textarea.input-nama-uji:disabled {
+    background-color: #f8fafc;
+    color: #475569 !important;
+    border-color: #e2e8f0;
+    cursor: not-allowed;
+}
+
 .btn-del-row {
     width: 32px;
     height: 32px;
@@ -418,16 +449,16 @@
                     <option value="In-House / IK Lab">In-House / IK Lab (Instruksi Kerja Internal Lab)</option>
                 </datalist>
 
-                <table class="table table-kalkulasi align-middle mb-0" id="tableUjiLingkungan">
+                <table class="table table-kalkulasi align-middle mb-0" id="tableUjiLingkungan" style="min-width: 1060px;">
                     <thead>
                         <tr>
-                            <th style="width: 40px;" class="text-center">No</th>
-                            <th>Nama Parameter Uji</th>
-                            <th style="width: 195px;">Baku Mutu / Standar</th>
-                            <th style="width: 160px;" class="text-center">Estimasi Kerja</th>
-                            <th style="width: 160px;" class="text-end">Tarif Satuan (Rp)</th>
-                            <th style="width: 120px;" class="text-center">Titik / Sampel</th>
-                            <th style="width: 150px;" class="text-end">Subtotal (Rp)</th>
+                            <th style="width: 38px;" class="text-center">No</th>
+                            <th style="min-width: 320px;">Nama Parameter Uji</th>
+                            <th style="width: 180px; min-width: 160px;">Baku Mutu / Standar</th>
+                            <th style="width: 145px; min-width: 135px;" class="text-center">Estimasi Kerja</th>
+                            <th style="width: 155px; min-width: 140px;" class="text-end">Tarif Satuan (Rp)</th>
+                            <th style="width: 115px; min-width: 105px;" class="text-center">Titik / Sampel</th>
+                            <th style="width: 145px; min-width: 135px;" class="text-end">Subtotal (Rp)</th>
                             <th style="width: 40px;" class="text-center"></th>
                         </tr>
                     </thead>
@@ -670,7 +701,7 @@ function addRowUji(data) {
             <input type="hidden" name="items[${idx}][lab_eksternal_id]" value="${data.lab_eksternal_id || ''}">
         </td>
         <td class="align-middle">
-            <input type="text" name="items[${idx}][nama_pengujian]" id="nama_${idx}" class="form-control form-control-sm fw-semibold text-dark" placeholder="Nama parameter (misal: BOD5, COD, pH)" value="${data.nama_pengujian}" required ${disabledAttr}>
+            <textarea name="items[${idx}][nama_pengujian]" id="nama_${idx}" class="form-control form-control-sm fw-semibold text-dark input-nama-uji" rows="1" placeholder="Nama parameter (misal: BOD5, COD, pH)" required ${disabledAttr} oninput="autoResizeTextarea(this)"></textarea>
         </td>
         <td class="align-middle">
             <input type="text" list="listStandarAcuan" name="items[${idx}][standar_rujukan]" id="standar_${idx}" class="form-control form-control-sm input-standar-acuan" placeholder="Pilih / ketik acuan..." value="${data.standar_rujukan}" autocomplete="off" ${disabledAttr} title="Baku mutu atau standar acuan pengujian (SNI/ASTM/ISO/Peraturan)">
@@ -712,6 +743,29 @@ function addRowUji(data) {
     `;
 
     tbody.appendChild(tr);
+
+    var txtNama = tr.querySelector('#nama_' + idx);
+    if (txtNama) {
+        txtNama.value = data.nama_pengujian || '';
+        txtNama.title = data.nama_pengujian || '';
+        autoResizeTextarea(txtNama);
+        txtNama.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                this.blur();
+            }
+        });
+        txtNama.addEventListener('input', function() {
+            this.title = this.value;
+            autoResizeTextarea(this);
+        });
+    }
+
+    var txtStandar = tr.querySelector('#standar_' + idx);
+    if (txtStandar && data.standar_rujukan) {
+        txtStandar.title = data.standar_rujukan;
+    }
+
     checkEmptyState();
     reindexRows();
     recalculateTotals();
@@ -758,7 +812,7 @@ function addFromQuickCatalog() {
     // Bersihkan baris kosong default pertama jika belum diisi apa-apa
     var rows = document.querySelectorAll('#tbodyUji tr');
     if (rows.length === 1) {
-        var firstNama = rows[0].querySelector('input[name*="[nama_pengujian]"]');
+        var firstNama = rows[0].querySelector('[name*="[nama_pengujian]"]');
         var firstTarif = rows[0].querySelector('.input-tarif');
         if (firstNama && !firstNama.value.trim() && (!firstTarif || parseFloat(firstTarif.value) === 0)) {
             rows[0].remove();
@@ -814,7 +868,7 @@ function updateSpmFromMaster() {
     var hasValid = false;
 
     rows.forEach(function(tr) {
-        var namaEl = tr.querySelector('input[name*="[nama_pengujian]"]');
+        var namaEl = tr.querySelector('[name*="[nama_pengujian]"]');
         if (!namaEl || !namaEl.value.trim()) return;
 
         var durasiNilaiInput = tr.querySelector('.row-durasi-nilai');
@@ -921,6 +975,17 @@ function onCatalogSelectChange(val) {
         }
     }
 }
+
+function autoResizeTextarea(el) {
+    if (!el) return;
+    el.style.height = 'auto';
+    var targetHeight = Math.max(33, el.scrollHeight);
+    el.style.height = targetHeight + 'px';
+}
+
+window.addEventListener('resize', function() {
+    document.querySelectorAll('.input-nama-uji').forEach(autoResizeTextarea);
+});
 
 function reindexRows() {
     var rows = document.querySelectorAll('#tbodyUji tr');
@@ -1044,6 +1109,9 @@ document.addEventListener('DOMContentLoaded', function() {
             addRowUji(item);
         });
         updateSpmFromMaster();
+        setTimeout(function() {
+            document.querySelectorAll('.input-nama-uji').forEach(autoResizeTextarea);
+        }, 50);
     } else {
         // Biarkan kosong dulu jika belum ada parameter
         checkEmptyState();
