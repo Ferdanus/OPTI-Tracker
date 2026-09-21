@@ -800,9 +800,9 @@ class OrderController extends Controller {
             if ($isTinjauanDone && in_array($currentUserRole, ['tim_kerja', 'ketua_tim', 'superadmin'])) {
                 StageAudit::recordDibaca($this->db, $id, 3, $currentUserId, $currentUserNama, 'Tim Teknis / PIC');
             }
-            // Tahap 4: Dibaca saat Proposal / Tarif dibuka oleh Ketua Tim / Tim Mitra
-            if ($isStep4Done && in_array($currentUserRole, ['ketua_tim', 'tim_mitra', 'superadmin'])) {
-                StageAudit::recordDibaca($this->db, $id, 4, $currentUserId, $currentUserNama, 'Ketua Tim OPTI');
+            // Tahap 4: Disetujui / Diperiksa saat Proposal / Tarif dibuka oleh Ketua Tim / Superadmin
+            if ($isStep4Done && in_array($currentUserRole, ['ketua_tim', 'superadmin'])) {
+                StageAudit::recordDisetujui($this->db, $id, 4, $currentUserId, $currentUserNama, 'Ketua Tim OPTI');
             }
             // Tahap 5: Dibaca saat Surat Penawaran resmi dibuka
             if (!empty($penawaran) && in_array($currentUserRole, ['tim_mitra', 'superadmin'])) {
@@ -1332,12 +1332,11 @@ class OrderController extends Controller {
         $f3->set('daftar_lab_eksternal', $daftarLabEksternal);
         $f3->set('can_edit', $canEdit);
 
-        // Catat "Dibaca" tahap 4 saat form biaya lingkungan pertama kali dibuka
-        $openUserId   = (int)$this->getUserId();
-        $openUserNama = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'Petugas');
-        if ($openUserId > 0) {
-            StageAudit::recordDibaca($this->db, $id, 4, $openUserId, $openUserNama, 'Pengelola Tarif');
-        }
+        // Audit Waktu & Petugas: Catat waktu pertama kali halaman kelola tarif dibuka
+        $currentUserId = (int)$this->getUserId();
+        $currentUserNama = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'Tim Pelaksana');
+        $roleLabel = ($this->isKetuaTim() ? 'Ketua Tim OPTI' : ($isPic ? 'PIC Teknis' : 'Tim Pelaksana'));
+        StageAudit::recordDibaca($this->db, $id, 4, $currentUserId, $currentUserNama, $roleLabel);
 
         $this->render('order/form_biaya_lingkungan.html', "Kalkulasi Biaya Pengujian Lingkungan", 'order');
     }
@@ -1392,6 +1391,21 @@ class OrderController extends Controller {
             $hasil = $orderModel->simpanKalkulasiLingkungan($id, $items, $diskon, $tglSampel, $userId, $spmLayanan);
             $order = $orderModel->getDetail($id);
 
+            // Audit Waktu & Petugas: Catat waktu proses / simpan kalkulasi multi-metode (First time only)
+            $currentUserNama = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'Tim Pelaksana');
+            $roleLabel = ($this->isKetuaTim() ? 'Ketua Tim OPTI' : ($isPic ? 'PIC Teknis' : 'Tim Pelaksana'));
+            StageAudit::recordKirim(
+                $this->db,
+                $id,
+                4,
+                'Parameter Uji & Rincian Tarif Penawaran',
+                $userId,
+                $currentUserNama,
+                $roleLabel,
+                null,
+                'Parameter & Tarif Disusun'
+            );
+
             // Kirim notifikasi ke Tim Mitra / Ka Tim
             try {
                 $actionBtn = $post['action_btn'] ?? 'siap_penawaran';
@@ -1430,6 +1444,17 @@ class OrderController extends Controller {
                 $this->setFlashSuccess("Kalkulasi biaya berhasil disimpan &amp; <strong>diajukan ke Ketua Tim OPTI</strong> untuk diperiksa.");
             } elseif ($actionBtn === 'siap_penawaran' || $this->isKetuaTim() || $this->isSuperadmin()) {
                 $this->db->exec("UPDATE order_layanan SET status_proposal_biaya = 'siap_penawaran' WHERE id = ?", array(1 => $id));
+                
+                // Audit Persetujuan jika langsung siap penawaran / dilakukan Ka Tim
+                StageAudit::recordDisetujui(
+                    $this->db,
+                    $id,
+                    4,
+                    $userId,
+                    $currentUserNama,
+                    'Ketua Tim OPTI'
+                );
+
                 $this->setFlashSuccess(
                     "Kalkulasi parameter dan tarif pengujian berhasil disimpan &amp; disetujui! Status: <strong>Siap Penawaran</strong> (Total Netto: Rp " . number_format($hasil['total_netto'], 0, ',', '.') . "). Tim Mitra kini dapat menerbitkan Surat Penawaran Resmi."
                 );
@@ -2137,6 +2162,11 @@ class OrderController extends Controller {
         $proposalHasFileAndCost = !empty($proposal) && !empty($proposal['file_proposal']) && (float)($proposal['estimasi_total_biaya'] ?? 0) > 0;
         $f3->set('proposal_has_file_cost', $proposalHasFileAndCost);
 
+        // Audit Waktu & Petugas: Catat waktu pertama kali ruang kerja proposal dibuka (Tahap 4)
+        $currentUserNama = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'PIC Peneliti');
+        $roleLabel = ($isKetuaTim ? 'Ketua Tim OPTI' : ($isPic ? 'PIC Peneliti' : 'Tim Kerja'));
+        StageAudit::recordDibaca($this->db, $id, 4, $userId, $currentUserNama, $roleLabel);
+
         $this->render('order/proposal.html', "Dokumen Proposal Teknis - Order #{$order['nomor_order']}", 'proposal');
     }
 
@@ -2565,6 +2595,17 @@ class OrderController extends Controller {
 
             $this->logActivity($id, 'proposal', 'ajukan_ke_ketua', "Dokumen proposal teknis resmi diajukan ke Ketua Tim OPTI oleh {$userNama} (PIC Peneliti).");
 
+            // Record Audit Stage 4 (Pengajuan Proposal Teknis)
+            \StageAudit::recordKirim(
+                $this->db,
+                $id,
+                4,
+                'Proposal Teknis / Parameter Tarif',
+                $userId,
+                $userNama,
+                'PIC Proposal'
+            );
+
             // Notifikasi ke Ka Tim
             try {
                 \NotificationService::send($this->db, [
@@ -2648,6 +2689,16 @@ class OrderController extends Controller {
 
                 // Audit Log Persetujuan
                 $this->logActivity($id, 'proposal', 'setujui_proposal', "{$labelKapital} resmi disetujui (Approved) oleh {$userNama} (Ketua Tim OPTI). Siap diterbitkan Surat Penawaran.");
+
+                // Audit Disetujui Tahap 4
+                \StageAudit::recordDisetujui(
+                    $this->db,
+                    $id,
+                    4,
+                    $this->getUserId(),
+                    $userNama,
+                    'Ketua Tim OPTI'
+                );
 
                 // Kirim notifikasi ke Tim Mitra
                 try {

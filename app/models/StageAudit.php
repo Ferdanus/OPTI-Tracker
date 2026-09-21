@@ -40,12 +40,26 @@ class StageAudit {
                 dibaca_id INT NULL,
                 dibaca_nama VARCHAR(150) NULL,
                 dibaca_role VARCHAR(50) NULL,
+                waktu_disetujui DATETIME NULL,
+                disetujui_id INT NULL,
+                disetujui_nama VARCHAR(150) NULL,
+                disetujui_role VARCHAR(50) NULL,
                 keterangan VARCHAR(255) NULL,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 UNIQUE KEY uk_order_tahap (order_id, tahap),
                 KEY idx_order_id (order_id)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+            // Pastikan kolom waktu_disetujui ada jika tabel dibuat dari versi sebelumnya
+            $cols = $db->exec("SHOW COLUMNS FROM opti_stage_audit LIKE 'waktu_disetujui'");
+            if (empty($cols)) {
+                $db->exec("ALTER TABLE opti_stage_audit 
+                    ADD COLUMN waktu_disetujui DATETIME NULL AFTER dibaca_role,
+                    ADD COLUMN disetujui_id INT NULL AFTER waktu_disetujui,
+                    ADD COLUMN disetujui_nama VARCHAR(150) NULL AFTER disetujui_id,
+                    ADD COLUMN disetujui_role VARCHAR(50) NULL AFTER disetujui_nama");
+            }
             $checked = true;
         } catch (\Exception $e) {}
     }
@@ -164,6 +178,59 @@ class StageAudit {
     }
 
     /**
+     * Catat Waktu dan Petugas saat tahapan disetujui / diperiksa (terutama Tahap 4 oleh Ketua Tim)
+     * Prinsip: FIRST TIME ONLY.
+     */
+    public static function recordDisetujui(\DB\SQL $db, int $orderId, int $tahap, ?int $userId = null, string $userNama = '', string $userRole = '', ?string $waktuDisetujui = null): bool {
+        if ($orderId <= 0 || $tahap <= 0) return false;
+        self::ensureTable($db);
+
+        $now = $waktuDisetujui ?: date('Y-m-d H:i:s');
+
+        try {
+            $existing = $db->exec(
+                "SELECT id, waktu_disetujui FROM opti_stage_audit WHERE order_id = ? AND tahap = ?",
+                [1 => $orderId, 2 => $tahap]
+            );
+
+            if (!empty($existing)) {
+                if (empty($existing[0]['waktu_disetujui'])) {
+                    $db->exec(
+                        "UPDATE opti_stage_audit SET waktu_disetujui = ?, disetujui_id = ?, disetujui_nama = ?, disetujui_role = ? WHERE id = ?",
+                        [
+                            1 => $now,
+                            2 => $userId ?: null,
+                            3 => $userNama,
+                            4 => $userRole,
+                            5 => (int)$existing[0]['id']
+                        ]
+                    );
+                }
+            } else {
+                $stageNames = self::getStageNames();
+                $namaTahap = $stageNames[$tahap] ?? ('Tahap ' . $tahap);
+                $db->exec(
+                    "INSERT INTO opti_stage_audit (order_id, tahap, nama_tahap, waktu_disetujui, disetujui_id, disetujui_nama, disetujui_role, created_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    [
+                        1 => $orderId,
+                        2 => $tahap,
+                        3 => $namaTahap,
+                        4 => $now,
+                        5 => $userId ?: null,
+                        6 => $userNama,
+                        7 => $userRole,
+                        8 => $now
+                    ]
+                );
+            }
+            return true;
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+
+    /**
      * Ambil seluruh data audit waktu per tahapan untuk order tertentu
      * Dilengkapi auto-backfill cerdas untuk order lama/data eksisting yang belum masuk tabel audit
      */
@@ -171,15 +238,18 @@ class StageAudit {
         $result = [];
         for ($i = 1; $i <= 8; $i++) {
             $result[$i] = [
-                'tahap'        => $i,
-                'nama_tahap'   => self::getStageNames()[$i] ?? ('Tahap ' . $i),
-                'waktu_kirim'  => null,
-                'pengirim_nama'=> null,
-                'pengirim_role'=> null,
-                'waktu_dibaca' => null,
-                'dibaca_nama'  => null,
-                'dibaca_role'  => null,
-                'keterangan'   => null
+                'tahap'          => $i,
+                'nama_tahap'     => self::getStageNames()[$i] ?? ('Tahap ' . $i),
+                'waktu_kirim'    => null,
+                'pengirim_nama'  => null,
+                'pengirim_role'  => null,
+                'waktu_dibaca'   => null,
+                'dibaca_nama'    => null,
+                'dibaca_role'    => null,
+                'waktu_disetujui'=> null,
+                'disetujui_nama' => null,
+                'disetujui_role' => null,
+                'keterangan'     => null
             ];
         }
 
@@ -242,21 +312,31 @@ class StageAudit {
                 }
 
                 // Tahap 4: Proposal Teknis / Parameter Tarif
-                if (empty($result[4]['waktu_kirim']) && !empty($extra['proposal'])) {
-                    $tglKirim4 = !empty($extra['proposal']['diajukan_at']) ? $extra['proposal']['diajukan_at'] : $extra['proposal']['created_at'];
+                if (!empty($extra['proposal']) || !empty($order['estimasi_biaya']) || in_array($order['status_proposal_biaya'] ?? '', ['menunggu_approval', 'siap_penawaran', 'disetujui'])) {
+                    $tglKirim4 = !empty($extra['proposal']['diajukan_at']) ? $extra['proposal']['diajukan_at'] : (!empty($extra['proposal']['created_at']) ? $extra['proposal']['created_at'] : (!empty($order['updated_at']) ? $order['updated_at'] : $order['created_at']));
                     $pengirim4 = !empty($extra['proposal']['pic_nama']) ? $extra['proposal']['pic_nama'] : ($order['pic_proposal_nama'] ?: 'PIC Teknis');
                     $tglAcc4   = !empty($extra['proposal']['disetujui_ketua_at']) ? $extra['proposal']['disetujui_ketua_at'] : null;
 
-                    self::recordKirim($db, $orderId, 4, self::getStageNames()[4], (int)($extra['proposal']['pic_penyusun_id'] ?? 0), $pengirim4, 'PIC Teknis', $tglKirim4, 'Proposal Diajukan');
-                    if ($tglAcc4) {
-                        self::recordDibaca($db, $orderId, 4, null, 'Ketua Tim OPTI', 'Ketua Tim', $tglAcc4);
-                        $result[4]['waktu_dibaca'] = $tglAcc4;
-                        $result[4]['dibaca_nama']  = 'Ketua Tim OPTI';
-                        $result[4]['dibaca_role']  = 'Ketua Tim';
+                    if (empty($result[4]['waktu_dibaca'])) {
+                        self::recordDibaca($db, $orderId, 4, (int)($extra['proposal']['pic_penyusun_id'] ?? ($order['pic_proposal_id'] ?? 0)), $pengirim4, 'PIC Teknis', $tglKirim4);
+                        $result[4]['waktu_dibaca'] = $tglKirim4;
+                        $result[4]['dibaca_nama']  = $pengirim4;
+                        $result[4]['dibaca_role']  = 'PIC Teknis';
                     }
-                    $result[4]['waktu_kirim']   = $tglKirim4;
-                    $result[4]['pengirim_nama'] = $pengirim4;
-                    $result[4]['pengirim_role'] = 'PIC Teknis';
+
+                    if (empty($result[4]['waktu_kirim'])) {
+                        self::recordKirim($db, $orderId, 4, self::getStageNames()[4], (int)($extra['proposal']['pic_penyusun_id'] ?? ($order['pic_proposal_id'] ?? 0)), $pengirim4, 'PIC Teknis', $tglKirim4, 'Proposal / Tarif Disusun');
+                        $result[4]['waktu_kirim']   = $tglKirim4;
+                        $result[4]['pengirim_nama'] = $pengirim4;
+                        $result[4]['pengirim_role'] = 'PIC Teknis';
+                    }
+
+                    if ($tglAcc4 && empty($result[4]['waktu_disetujui'])) {
+                        self::recordDisetujui($db, $orderId, 4, null, 'Ketua Tim OPTI', 'Ketua Tim', $tglAcc4);
+                        $result[4]['waktu_disetujui'] = $tglAcc4;
+                        $result[4]['disetujui_nama']  = 'Ketua Tim OPTI';
+                        $result[4]['disetujui_role']  = 'Ketua Tim';
+                    }
                 }
 
                 // Tahap 5: Surat Penawaran Biaya

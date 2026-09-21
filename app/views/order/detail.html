@@ -996,11 +996,14 @@
                             </h6>
                             <div class="d-flex align-items-center flex-wrap gap-2 text-muted small mt-1" style="font-size: 0.72rem; line-height: 1.4; column-gap: 16px; row-gap: 4px;">
                                 <span class="me-3">Lab OPTI Lingkungan / SNI / <span class="badge bg-light text-secondary border py-0 px-1" data-bs-toggle="tooltip" title="Tarif PNBP resmi Kementerian Perindustrian berdasarkan PP No. 54 Tahun 2021">PP 54/2021</span></span>
-                                <check if="{{ @audit_stages[4].waktu_kirim }}">
-                                    <span class="me-3">Diajukan: <span class="text-dark fw-medium">{{ date('d M Y, H:i', strtotime(@audit_stages[4].waktu_kirim)) }}</span> <span class="text-secondary text-nowrap">({{ @audit_stages[4].pengirim_nama ?: @audit_stages[4].pengirim_role }})</span></span>
-                                </check>
                                 <check if="{{ @audit_stages[4].waktu_dibaca }}">
-                                    <span>Dibuka Form: <span class="text-dark fw-medium">{{ date('d M Y, H:i', strtotime(@audit_stages[4].waktu_dibaca)) }}</span> <span class="text-secondary text-nowrap">({{ @audit_stages[4].dibaca_nama ?: @audit_stages[4].dibaca_role }})</span></span>
+                                    <span class="me-3">Dibaca: <span class="text-dark fw-medium">{{ date('d M Y, H:i', strtotime(@audit_stages[4].waktu_dibaca)) }}</span> <span class="text-secondary text-nowrap">({{ @audit_stages[4].dibaca_nama ?: @audit_stages[4].dibaca_role }})</span></span>
+                                </check>
+                                <check if="{{ @audit_stages[4].waktu_kirim }}">
+                                    <span class="me-3">Diproses: <span class="text-dark fw-medium">{{ date('d M Y, H:i', strtotime(@audit_stages[4].waktu_kirim)) }}</span> <span class="text-secondary text-nowrap">({{ @audit_stages[4].pengirim_nama ?: @audit_stages[4].pengirim_role }})</span></span>
+                                </check>
+                                <check if="{{ @audit_stages[4].waktu_disetujui }}">
+                                    <span>Disetujui: <span class="text-dark fw-medium">{{ date('d M Y, H:i', strtotime(@audit_stages[4].waktu_disetujui)) }}</span> <span class="text-secondary text-nowrap">({{ @audit_stages[4].disetujui_nama ?: @audit_stages[4].disetujui_role }})</span></span>
                                 </check>
                             </div>
                         </check>
@@ -1011,11 +1014,14 @@
                             </h6>
                             <div class="d-flex align-items-center flex-wrap gap-2 text-muted small mt-1" style="font-size: 0.72rem; line-height: 1.4; column-gap: 16px; row-gap: 4px;">
                                 <span class="me-3">Tim Pelaksana / Ka. Tim</span>
+                                <check if="{{ @audit_stages[4].waktu_dibaca }}">
+                                    <span class="me-3">Dibaca: <span class="text-dark fw-medium">{{ date('d M Y, H:i', strtotime(@audit_stages[4].waktu_dibaca)) }}</span> <span class="text-secondary text-nowrap">({{ @audit_stages[4].dibaca_nama ?: @audit_stages[4].dibaca_role }})</span></span>
+                                </check>
                                 <check if="{{ @audit_stages[4].waktu_kirim }}">
                                     <span class="me-3">Diajukan: <span class="text-dark fw-medium">{{ date('d M Y, H:i', strtotime(@audit_stages[4].waktu_kirim)) }}</span> <span class="text-secondary text-nowrap">({{ @audit_stages[4].pengirim_nama ?: @audit_stages[4].pengirim_role }})</span></span>
                                 </check>
-                                <check if="{{ @audit_stages[4].waktu_dibaca }}">
-                                    <span>Dibaca: <span class="text-dark fw-medium">{{ date('d M Y, H:i', strtotime(@audit_stages[4].waktu_dibaca)) }}</span> <span class="text-secondary text-nowrap">({{ @audit_stages[4].dibaca_nama ?: @audit_stages[4].dibaca_role }})</span></span>
+                                <check if="{{ @audit_stages[4].waktu_disetujui }}">
+                                    <span>Disetujui: <span class="text-dark fw-medium">{{ date('d M Y, H:i', strtotime(@audit_stages[4].waktu_disetujui)) }}</span> <span class="text-secondary text-nowrap">({{ @audit_stages[4].disetujui_nama ?: @audit_stages[4].disetujui_role }})</span></span>
                                 </check>
                             </div>
                         </check>
