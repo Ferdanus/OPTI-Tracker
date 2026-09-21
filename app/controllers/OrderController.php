@@ -92,7 +92,14 @@ class OrderController extends Controller {
         $filterTahun  = $f3->exists('GET.tahun') ? trim($f3->get('GET.tahun')) : $currentYear;
         $daftarTahun  = range((int)$currentYear, (int)$currentYear - 4);
 
-        $filterTab    = $f3->get('GET.tab') === 'ditolak' ? 'ditolak' : 'aktif';
+        $tabGet       = $f3->get('GET.tab');
+        if ($tabGet === 'ditolak') {
+            $filterTab = 'ditolak';
+        } elseif ($tabGet === 'berlangsung') {
+            $filterTab = 'berlangsung';
+        } else {
+            $filterTab = 'masuk';
+        }
         $filterJenis  = $f3->get('GET.jenis_layanan') ?? '';
         $filterStatus = $f3->get('GET.status') ?? '';
         $search       = $f3->get('GET.q') ?? '';
@@ -112,17 +119,20 @@ class OrderController extends Controller {
         // Data order sesuai tab yang dipilih
         $daftarOrder = $orderModel->allWithRelasi($filterJenis, $filterStatus, $search, $filterTahun, $filterTab);
         
-        // Counter untuk badge tab
-        $countAktif = count($orderModel->allWithRelasi($filterJenis, '', '', $filterTahun, 'aktif'));
-        $countDitolak = count($orderModel->allWithRelasi($filterJenis, '', '', $filterTahun, 'ditolak'));
+        // Counter untuk badge 3 tab navigasi
+        $countMasuk       = count($orderModel->allWithRelasi($filterJenis, '', '', $filterTahun, 'masuk'));
+        $countBerlangsung = count($orderModel->allWithRelasi($filterJenis, '', '', $filterTahun, 'berlangsung'));
+        $countDitolak     = count($orderModel->allWithRelasi($filterJenis, '', '', $filterTahun, 'ditolak'));
 
         $fieldConfigModel = new OptiFieldConfig($this->db);
         $maskEnabled = $fieldConfigModel->isMaskClientNameEnabled();
 
         $f3->set('daftar_order', $daftarOrder);
         $f3->set('filter_tab', $filterTab);
-        $f3->set('count_aktif', $countAktif);
+        $f3->set('count_masuk', $countMasuk);
+        $f3->set('count_berlangsung', $countBerlangsung);
         $f3->set('count_ditolak', $countDitolak);
+        $f3->set('count_aktif', $countMasuk + $countBerlangsung);
         $f3->set('filter_tahun', $filterTahun);
         $f3->set('daftar_tahun', $daftarTahun);
         $f3->set('filter_jenis_layanan', $filterJenis);

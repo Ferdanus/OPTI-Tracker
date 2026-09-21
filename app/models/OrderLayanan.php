@@ -171,11 +171,24 @@ class OrderLayanan extends \DB\SQL\Mapper {
         $params = array();
         $idx = 1;
 
-        // Filter tab: aktif (hanya yang sedang berlangsung / acc) vs ditolak (arsip penampungan ditolak)
-        if ($filterTab === 'aktif') {
-            $sql .= " AND o.status != 'ditolak' AND (o.status_tinjauan != 'tidak_layak' OR o.status_tinjauan IS NULL)";
+        // Filter tab: masuk (tahap sebelum deal), berlangsung (sudah terjadi deal), ditolak, atau aktif
+        if ($filterTab === 'masuk') {
+            $sql .= " AND o.status != 'ditolak' AND (o.status_tinjauan != 'tidak_layak' OR o.status_tinjauan IS NULL)
+                      AND (sp.status_respon_klien NOT IN ('ditolak', 'batal') OR sp.status_respon_klien IS NULL)
+                      AND (sp.status_respon_klien IS NULL OR sp.status_respon_klien != 'deal')
+                      AND (o.status_penawaran IS NULL OR o.status_penawaran != 'deal')
+                      AND p.id IS NULL
+                      AND b.id IS NULL
+                      AND o.status NOT IN ('penawaran_deal', 'disetujui', 'po_dibuat', 'proses', 'selesai', 'lapor_selesai')";
+        } elseif ($filterTab === 'berlangsung') {
+            $sql .= " AND o.status != 'ditolak' AND (o.status_tinjauan != 'tidak_layak' OR o.status_tinjauan IS NULL)
+                      AND (sp.status_respon_klien NOT IN ('ditolak', 'batal') OR sp.status_respon_klien IS NULL)
+                      AND ((sp.status_respon_klien = 'deal') OR (o.status_penawaran = 'deal') OR (p.id IS NOT NULL) OR (b.id IS NOT NULL) OR (o.status IN ('penawaran_deal', 'disetujui', 'po_dibuat', 'proses', 'selesai', 'lapor_selesai')))";
         } elseif ($filterTab === 'ditolak') {
-            $sql .= " AND (o.status = 'ditolak' OR o.status_tinjauan = 'tidak_layak')";
+            $sql .= " AND (o.status = 'ditolak' OR o.status_tinjauan = 'tidak_layak' OR sp.status_respon_klien IN ('ditolak', 'batal'))";
+        } elseif ($filterTab === 'aktif') {
+            $sql .= " AND o.status != 'ditolak' AND (o.status_tinjauan != 'tidak_layak' OR o.status_tinjauan IS NULL)
+                      AND (sp.status_respon_klien NOT IN ('ditolak', 'batal') OR sp.status_respon_klien IS NULL)";
         }
 
         if (!empty($filterTahun) && $filterTahun !== 'all') {
