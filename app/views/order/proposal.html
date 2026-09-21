@@ -600,25 +600,35 @@
 
                         <!-- 5. Tombol Aksi PIC -->
                         <check if="{{ @can_edit }}">
-                            <div class="d-flex justify-content-between align-items-center mt-4 flex-wrap gap-2">
-                                <button type="submit" name="action_type" value="draft" class="btn btn-light border px-3.5 py-2 fw-semibold text-secondary">
-                                    <i class="bi bi-save me-1"></i> Simpan Draf
-                                </button>
-                                <div class="text-end">
-                                    <button type="submit" id="btnKirimProposal" name="action_type" value="ajukan" class="btn btn-primary px-4 py-2 fw-semibold text-white shadow-sm" {{ empty(@proposal.file_proposal) || ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) ? 'disabled' : '' }} title="{{ empty(@proposal.file_proposal) || ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) ? 'Lengkapi estimasi biaya dan unggah berkas proposal untuk mengaktifkan tombol kirim' : 'Kirim proposal ke Ketua Tim OPTI' }}">
-                                        <i class="bi bi-send-fill me-1"></i> Kirim
+                            <div class="pt-4 mt-4 border-top">
+                                <!-- Petunjuk Kunci Tombol Kirim -->
+                                <div class="mb-3 {{ !empty(@proposal.file_proposal) && ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) > 0) ? 'd-none' : '' }}" id="hintKirimProposal">
+                                    <div class="alert alert-light border d-flex align-items-center gap-2 py-2 px-3 mb-0 rounded-3 text-secondary" style="font-size: 0.82rem; background-color: #f8fafc;">
+                                        <i class="bi bi-info-circle-fill text-primary flex-shrink-0"></i>
+                                        <div id="hintKirimProposalText">
+                                            <check if="{{ empty(@proposal.file_proposal) && ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) }}">
+                                                Isi estimasi total biaya (> Rp 0) dan unggah berkas proposal untuk mengaktifkan tombol kirim.
+                                            </check>
+                                            <check if="{{ empty(@proposal.file_proposal) && ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) > 0) }}">
+                                                Unggah berkas dokumen proposal untuk mengaktifkan tombol kirim.
+                                            </check>
+                                            <check if="{{ !empty(@proposal.file_proposal) && ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) }}">
+                                                Isi estimasi total biaya / RAB (> Rp 0) untuk mengaktifkan tombol kirim.
+                                            </check>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Baris Tombol Aksi Sejajar -->
+                                <div class="d-flex justify-content-between align-items-center gap-3">
+                                    <button type="submit" name="action_type" value="draft" class="btn btn-light border px-4 py-2 fw-semibold text-secondary d-inline-flex align-items-center gap-1.5 shadow-2xs">
+                                        <i class="bi bi-save"></i>
+                                        <span>Simpan Draf</span>
                                     </button>
-                                    <small class="text-muted d-block mt-1 {{ !empty(@proposal.file_proposal) && ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) > 0) ? 'd-none' : '' }}" id="hintKirimProposal" style="font-size: 0.75rem;">
-                                        <check if="{{ empty(@proposal.file_proposal) && ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) }}">
-                                            <i class="bi bi-info-circle me-1"></i> Isi estimasi total biaya (> Rp 0) dan unggah berkas proposal untuk mengaktifkan tombol kirim.
-                                        </check>
-                                        <check if="{{ empty(@proposal.file_proposal) && ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) > 0) }}">
-                                            <i class="bi bi-info-circle me-1"></i> Unggah berkas dokumen proposal untuk mengaktifkan tombol kirim.
-                                        </check>
-                                        <check if="{{ !empty(@proposal.file_proposal) && ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) }}">
-                                            <i class="bi bi-info-circle me-1"></i> Isi estimasi total biaya / RAB (> Rp 0) untuk mengaktifkan tombol kirim.
-                                        </check>
-                                    </small>
+                                    <button type="submit" id="btnKirimProposal" name="action_type" value="ajukan" class="btn btn-primary px-4 py-2 fw-semibold text-white shadow-sm d-inline-flex align-items-center gap-1.5" {{ empty(@proposal.file_proposal) || ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) ? 'disabled' : '' }} title="{{ empty(@proposal.file_proposal) || ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) ? 'Lengkapi estimasi biaya dan unggah berkas proposal untuk mengaktifkan tombol kirim' : 'Kirim proposal ke Ketua Tim OPTI' }}">
+                                        <i class="bi bi-send-fill"></i>
+                                        <span>Kirim</span>
+                                    </button>
                                 </div>
                             </div>
                         </check>
@@ -1322,15 +1332,18 @@ function checkKirimButtonState() {
         btnKirim.disabled = true;
         let hintMsg = '';
         if (!hasFile && !hasCost) {
-            hintMsg = '<i class="bi bi-info-circle me-1"></i> Isi estimasi total biaya (> Rp 0) dan unggah berkas proposal untuk mengaktifkan tombol kirim.';
+            hintMsg = 'Isi estimasi total biaya (> Rp 0) dan unggah berkas proposal untuk mengaktifkan tombol kirim.';
         } else if (!hasFile) {
-            hintMsg = '<i class="bi bi-info-circle me-1"></i> Unggah berkas dokumen proposal untuk mengaktifkan tombol kirim.';
+            hintMsg = 'Unggah berkas dokumen proposal untuk mengaktifkan tombol kirim.';
         } else {
-            hintMsg = '<i class="bi bi-info-circle me-1"></i> Isi estimasi total biaya / RAB (> Rp 0) untuk mengaktifkan tombol kirim.';
+            hintMsg = 'Isi estimasi total biaya / RAB (> Rp 0) untuk mengaktifkan tombol kirim.';
         }
-        btnKirim.title = hintMsg.replace(/<[^>]*>?/gm, '');
+        btnKirim.title = hintMsg;
+        const hintTextEl = document.getElementById('hintKirimProposalText');
+        if (hintTextEl) {
+            hintTextEl.textContent = hintMsg;
+        }
         if (hintKirim) {
-            hintKirim.innerHTML = hintMsg;
             hintKirim.classList.remove('d-none');
         }
     }
