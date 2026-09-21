@@ -147,11 +147,19 @@ class SuratPenawaran extends \DB\SQL\Mapper
         $penawaranIdInput = (int)($data['penawaran_id'] ?? 0);
         $existing = $this->getByOrderId($orderId);
 
-        if (!$isRevisiBaru && ($penawaranIdInput > 0 || $existing)) {
+        // KASUS UPDATE (Bukan revisi baru):
+        // 1. Status respon klien adalah DEAL atau BATAL (mengubah status penawaran yang ada), ATAU
+        // 2. Tidak ada penanda is_revisi_baru dan penawaran sudah ada
+        $isUpdateExisting = $existing && ($statusRespon === 'deal' || $statusRespon === 'batal' || !$isRevisiBaru);
+
+        if ($isUpdateExisting) {
             $targetId = $penawaranIdInput > 0 ? $penawaranIdInput : (int)$existing['id'];
             if (empty($fileLampiran) && !empty($existing['file_lampiran'])) {
                 $fileLampiran = $existing['file_lampiran'];
             }
+            // Jika DEAL atau BATAL, pertahankan nomor surat asli jika tidak diubah secara eksplisit
+            $nomorSuratFinal = ($statusRespon === 'deal' || $statusRespon === 'batal') ? ($existing['nomor_surat'] ?: $nomorSurat) : $nomorSurat;
+
             $this->db->exec(
                 "UPDATE tb_surat_penawaran SET 
                     nomor_surat = ?, perihal = ?, tanggal_surat = ?, jenis_layanan = ?, 
@@ -160,7 +168,7 @@ class SuratPenawaran extends \DB\SQL\Mapper
                     status_respon_klien = ?, catatan_nego = ?, updated_at = NOW()
                  WHERE id = ?",
                 array(
-                    1 => $nomorSurat,
+                    1 => $nomorSuratFinal,
                     2 => $perihal,
                     3 => $tanggalSurat,
                     4 => 'opti_' . $order['jenis_layanan_opti'],
@@ -177,8 +185,19 @@ class SuratPenawaran extends \DB\SQL\Mapper
                 )
             );
             $penawaranId = $targetId;
+            $nomorSurat = $nomorSuratFinal;
+
+            // Jika status berubah menjadi DEAL, pastikan seluruh penawaran revisi sebelumnya dibatalkan
+            if ($statusRespon === 'deal') {
+                $this->db->exec(
+                    "UPDATE tb_surat_penawaran 
+                     SET status_respon_klien = 'batal', updated_at = NOW() 
+                     WHERE order_id = ? AND id != ? AND status_respon_klien IN ('nego', 'draft', 'terkirim')",
+                    array(1 => $orderId, 2 => $targetId)
+                );
+            }
         } else {
-            // INSERT sebagai riwayat penawaran baru (audit trail revisi)
+            // KASUS INSERT: Terbitkan Dokumen Penawaran Baru (Revisi Negosiasi)
             $this->db->exec(
                 "INSERT INTO tb_surat_penawaran 
                 (customer_id, order_id, nomor_surat, perihal, nominal_penawaran, tanggal_surat, jenis_layanan, nama, perusahaan, alamat, permintaan_melalui, penjelasan, file_lampiran, status, status_respon_klien, catatan_nego, dibuat_oleh, created_at) 
@@ -203,6 +222,15 @@ class SuratPenawaran extends \DB\SQL\Mapper
                 )
             );
             $penawaranId = (int)$this->db->exec("SELECT LAST_INSERT_ID() AS id")[0]['id'];
+
+            // PENTING: Otomatis ubah status penawaran lama menjadi 'batal'
+            // sehingga status NEGO hanya ada 1 (yaitu revisi terbaru yang aktif)
+            $this->db->exec(
+                "UPDATE tb_surat_penawaran 
+                 SET status_respon_klien = 'batal', updated_at = NOW() 
+                 WHERE order_id = ? AND id != ? AND status_respon_klien IN ('nego', 'draft', 'terkirim')",
+                array(1 => $orderId, 2 => $penawaranId)
+            );
         }
 
         // Sinkronisasi status, ID surat penawaran, nominal biaya, durasi (SPM), dan status proposal ke order_layanan

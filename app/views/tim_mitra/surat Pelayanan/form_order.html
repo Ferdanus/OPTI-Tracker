@@ -1555,14 +1555,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    var checkRevisi = document.getElementById('check_revisi_baru');
+    var selectStatus = document.getElementById('select_status_respon_klien');
     var inputNomorSurat = document.getElementById('input_nomor_surat');
-    if (checkRevisi && checkRevisi.type === 'checkbox' && inputNomorSurat) {
-        checkRevisi.addEventListener('change', function() {
-            if (this.checked) {
-                inputNomorSurat.value = inputNomorSurat.dataset.nomorBaru || '';
-            } else {
-                inputNomorSurat.value = inputNomorSurat.dataset.nomorLama || inputNomorSurat.dataset.nomorBaru || '';
+    if (selectStatus && inputNomorSurat && inputNomorSurat.dataset.nomorLama) {
+        selectStatus.addEventListener('change', function() {
+            if (this.value === 'deal' || this.value === 'batal') {
+                inputNomorSurat.value = inputNomorSurat.dataset.nomorLama || inputNomorSurat.dataset.nomorBaru;
+            } else if (this.value === 'nego') {
+                inputNomorSurat.value = inputNomorSurat.dataset.nomorBaru || inputNomorSurat.dataset.nomorLama;
             }
             syncLivePreview();
         });
