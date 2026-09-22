@@ -190,7 +190,8 @@
                                     <check if="{{ @sp.order_id }}">
                                         <button type="button" 
                                                 class="btn btn-outline-danger btn-sm py-1 px-2 d-inline-flex align-items-center gap-1 fw-semibold btn-preview-pdf" 
-                                                data-pdf-url="{{ @BASE }}/order/{{ @sp.order_id }}/penawaran/cetak?id={{ @sp.id }}&t={{ time() }}"
+                                                data-raw-url="{{ @BASE }}/order/{{ @sp.order_id }}/penawaran/raw-data?id={{ @sp.id }}&t={{ time() }}"
+                                                data-download-url="{{ @BASE }}/order/{{ @sp.order_id }}/penawaran/cetak?id={{ @sp.id }}"
                                                 data-nomor="{{ @sp.nomor_surat }}"
                                                 data-perusahaan="{{ @sp.display_perusahaan ?: @sp.perusahaan }}"
                                                 title="Pratinjau Surat Penawaran PDF">
@@ -206,7 +207,8 @@
                                     <check if="{{ !@sp.order_id }}">
                                         <button type="button" 
                                                 class="btn btn-outline-danger btn-sm py-1 px-2 d-inline-flex align-items-center gap-1 fw-semibold btn-preview-pdf" 
-                                                data-pdf-url="{{ @BASE }}/surat-penawaran/{{ @sp.id }}/pdf?t={{ time() }}"
+                                                data-raw-url="{{ @BASE }}/surat-penawaran/{{ @sp.id }}/raw-data?t={{ time() }}"
+                                                data-download-url="{{ @BASE }}/surat-penawaran/{{ @sp.id }}/pdf"
                                                 data-nomor="{{ @sp.nomor_surat }}"
                                                 data-perusahaan="{{ @sp.display_perusahaan ?: @sp.perusahaan }}"
                                                 title="Pratinjau Surat Penawaran PDF">
@@ -499,6 +501,16 @@ document.addEventListener('DOMContentLoaded', function() {
     var currentPdfArrayBuffer = null;
     var currentNomorSurat = '';
 
+    function base64ToUint8Array(base64) {
+        var binary_string = window.atob(base64);
+        var len = binary_string.length;
+        var bytes = new Uint8Array(len);
+        for (var i = 0; i < len; i++) {
+            bytes[i] = binary_string.charCodeAt(i);
+        }
+        return bytes;
+    }
+
     function updateZoomBadge() {
         if (zoomPercentEl) {
             zoomPercentEl.textContent = Math.round((currentPdfScale / 1.35) * 100) + '%';
@@ -597,11 +609,11 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.btn-preview-pdf').forEach(function(btn) {
         btn.addEventListener('click', function(e) {
             e.preventDefault();
-            var pdfUrl = this.getAttribute('data-pdf-url');
+            var rawUrl = this.getAttribute('data-raw-url');
             var nomorSurat = this.getAttribute('data-nomor') || '-';
             var namaPerusahaan = this.getAttribute('data-perusahaan') || '';
 
-            if (!pdfUrl) return;
+            if (!rawUrl) return;
 
             currentNomorSurat = nomorSurat;
             currentPdfDoc = null;
@@ -624,25 +636,35 @@ document.addEventListener('DOMContentLoaded', function() {
             // Tampilkan modal
             modalPreviewPdf.show();
 
-            // Fetch PDF binary array buffer (Internal fetch tidak memicu IDM)
-            fetch(pdfUrl, {
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            // Fetch JSON data base64 (Application/JSON 100% bebas dari cegatan IDM)
+            fetch(rawUrl, {
+                headers: { 'Accept': 'application/json' }
             })
             .then(function(res) {
-                if (!res.ok) throw new Error('Gagal mengunduh berkas PDF');
-                return res.arrayBuffer();
+                if (!res.ok) throw new Error('Gagal menghubungi server');
+                return res.json();
             })
-            .then(function(arrayBuffer) {
-                currentPdfArrayBuffer = arrayBuffer;
-                if (!window.pdfjsLib) throw new Error('Library PDF.js belum dimuat');
-                return pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            .then(function(json) {
+                if (!json.success || !json.base64) {
+                    throw new Error(json.message || 'Gagal memproses data surat penawaran.');
+                }
+                
+                if (badgeNomorEl && json.nomor_surat) badgeNomorEl.textContent = json.nomor_surat;
+                if (subtitleEl && json.perusahaan) subtitleEl.textContent = 'Surat Penawaran Resmi untuk ' + json.perusahaan;
+                if (json.filename) currentNomorSurat = json.filename.replace(/\.pdf$/i, '');
+
+                if (!window.pdfjsLib) throw new Error('Library PDF.js belum siap.');
+
+                var uint8Array = base64ToUint8Array(json.base64);
+                currentPdfArrayBuffer = uint8Array.buffer;
+                return pdfjsLib.getDocument({ data: uint8Array }).promise;
             })
             .then(function(pdf) {
                 currentPdfDoc = pdf;
                 renderAllPages(pdf);
             })
             .catch(function(err) {
-                console.error('Error rendering PDF with PDF.js:', err);
+                console.error('Error loading PDF canvas:', err);
                 if (spinnerEl) {
                     spinnerEl.innerHTML = '<div class="text-white p-4 text-center"><i class="bi bi-exclamation-triangle-fill fs-3 d-block mb-2 text-warning"></i><strong>Gagal Memuat Pratinjau Dokumen</strong><br><small class="text-white-50">' + (err.message || 'Silakan coba beberapa saat lagi.') + '</small></div>';
                 }

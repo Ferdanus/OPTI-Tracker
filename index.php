@@ -298,9 +298,11 @@ $f3->route('POST /surat-penawaran/@id/delete', 'SuratPenawaranController->delete
 $f3->route('GET /surat-penawaran/@id/delete', 'SuratPenawaranController->delete');
 $f3->route('GET /surat-penawaran/@id/pdf', 'SuratPenawaranController->cetakPdf');
 $f3->route('GET /surat-penawaran/@id/cetak', 'SuratPenawaranController->cetakPdf');
+$f3->route('GET /surat-penawaran/@id/raw-data', 'SuratPenawaranController->penawaranRawData');
 $f3->route('GET /order/@id/penawaran/buat', 'SuratPenawaranController->buatDariOrder');
 $f3->route('POST /order/@id/penawaran/simpan', 'SuratPenawaranController->simpanDariOrder');
 $f3->route('GET|POST /order/@id/penawaran/preview-pdf', 'SuratPenawaranController->previewPdf');
+$f3->route('GET /order/@id/penawaran/raw-data', 'SuratPenawaranController->penawaranRawData');
 $f3->route('GET /order/@id/penawaran/cetak', 'SuratPenawaranController->cetakPdf');
 $f3->route('POST /order/@id/penawaran/status', 'SuratPenawaranController->updateStatusKlien');
 

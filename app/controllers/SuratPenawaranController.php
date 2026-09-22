@@ -985,6 +985,89 @@ $daftarPegawai = $arsipUser->find(
     }
 
     /**
+     * Endpoint Data JSON Base64 untuk Pratinjau Surat Penawaran Bebas IDM (Zero Interception)
+     * Route: GET /surat-penawaran/@id/raw-data
+     * Route: GET /order/@id/penawaran/raw-data
+     */
+    public function penawaranRawData($f3, $params)
+    {
+        $this->requireAuth();
+        $targetId = (int)($params['id'] ?? 0);
+        $spModel  = new SuratPenawaran($this->db);
+        $orderModel = new OrderLayanan($this->db);
+
+        $order = $orderModel->getDetail($targetId);
+        $sp    = null;
+
+        if ($order) {
+            $spId = (int)($f3->get('GET.id') ?? 0);
+            if ($spId > 0) {
+                $sp = $spModel->getById($spId);
+                if ($sp && (int)$sp['order_id'] !== $targetId) {
+                    $sp = null;
+                }
+            }
+            if (!$sp) {
+                $sp = $spModel->getByOrderId($targetId);
+            }
+        } else {
+            $sp = $spModel->getById($targetId);
+            if ($sp && !empty($sp['order_id'])) {
+                $order = $orderModel->getDetail((int)$sp['order_id']);
+            }
+        }
+
+        if (!$sp) {
+            if (!headers_sent()) header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Surat penawaran tidak ditemukan.']);
+            exit;
+        }
+
+        if (!$order) {
+            $order = [
+                'id'                 => (int)($sp['order_id'] ?? 0),
+                'nomor_order'        => 'ORD-OFFLINE',
+                'nama_perusahaan'    => $sp['perusahaan'] ?? 'Mitra Balai',
+                'pt_cv'              => '',
+                'pic'                => $sp['nama'] ?? '-',
+                'telepon'            => '-',
+                'email'              => '-',
+                'alamat'             => $sp['alamat'] ?? '-',
+                'jenis_layanan_opti' => $sp['jenis_layanan'] ?? 'selulosa',
+                'judul_kegiatan'     => $sp['perihal'] ?? 'Penawaran Layanan Jasa OPTI',
+                'estimasi_biaya'     => (float)($sp['nominal_penawaran'] ?? 0),
+                'spm_layanan'        => '30 Hari Kerja'
+            ];
+        }
+
+        try {
+            $pdf = $this->generatePdfObject($order, $sp);
+            $pdfContent = $pdf->Output('S');
+            $base64 = base64_encode($pdfContent);
+
+            $safeFilename = 'Surat_Penawaran_' . preg_replace('/[^A-Za-z0-9_\-]/', '_', $sp['nomor_surat'] ?: 'BBSPJIS') . '.pdf';
+
+            if (!headers_sent()) {
+                header('Content-Type: application/json');
+                header('Cache-Control: no-cache, no-store, must-revalidate');
+            }
+            echo json_encode([
+                'success'     => true,
+                'is_pdf'      => true,
+                'filename'    => $safeFilename,
+                'nomor_surat' => $sp['nomor_surat'] ?? '',
+                'perusahaan'  => $order['nama_perusahaan'] ?? ($sp['perusahaan'] ?? ''),
+                'base64'      => $base64
+            ]);
+            exit;
+        } catch (\Exception $e) {
+            if (!headers_sent()) header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Gagal memproses dokumen PDF: ' . $e->getMessage()]);
+            exit;
+        }
+    }
+
+    /**
      * Endpoint Live Preview PDF Surat Penawaran (Menerima input live dari form)
      * Route: GET|POST /order/@id/penawaran/preview-pdf
      */
