@@ -300,9 +300,18 @@
                             <tr>
                                 <!-- No. Order -->
                                 <td class="py-3 px-4">
-                                    <a href="{{ @BASE }}/order/{{ @row.id }}/proposal" class="fw-bold font-monospace text-primary text-decoration-none d-block">
-                                        {{ @row.nomor_order }}
-                                    </a>
+                                    <check if="{{ @row.jenis_layanan_opti == 'lingkungan' }}">
+                                        <true>
+                                            <a href="{{ @BASE }}/order/{{ @row.id }}/biaya-lingkungan" class="fw-bold font-monospace text-primary text-decoration-none d-block">
+                                                {{ @row.nomor_order }}
+                                            </a>
+                                        </true>
+                                        <false>
+                                            <a href="{{ @BASE }}/order/{{ @row.id }}/proposal" class="fw-bold font-monospace text-primary text-decoration-none d-block">
+                                                {{ @row.nomor_order }}
+                                            </a>
+                                        </false>
+                                    </check>
                                     <small class="text-muted" style="font-size: 0.72rem;">{{ date('d M Y', strtotime(@row.tanggal_masuk)) }}</small>
                                 </td>
 
@@ -329,9 +338,9 @@
                                     </td>
                                 </check>
 
-                                <!-- Estimasi Biaya (RAB) -->
+                                <!-- Estimasi Biaya (RAB / Tarif Uji) -->
                                 <td class="py-3 px-3 font-monospace fw-bold text-dark" style="font-size: 0.84rem;">
-                                    Rp {{ number_format(@row.estimasi_total_biaya ?: 0, 0, ',', '.') }}
+                                    Rp {{ number_format(@row.estimasi_total_biaya ?: (@row.estimasi_biaya ?: 0), 0, ',', '.') }}
                                 </td>
 
                                 <!-- Berkas Upload -->
@@ -379,10 +388,20 @@
 
                                 <!-- Aksi -->
                                 <td class="py-3 px-4 text-end">
-                                    <a href="{{ @BASE }}/order/{{ @row.id }}/proposal" class="btn btn-primary btn-sm px-3 py-1 rounded-pill fw-semibold text-white shadow-xs d-inline-flex align-items-center gap-1" style="font-size: 0.76rem;">
-                                        <i class="bi {{ @is_tim_kerja ? 'bi-pencil-fill' : 'bi-journal-check' }}"></i>
-                                        {{ @is_tim_kerja ? 'Kerjakan' : 'Kelola' }}
-                                    </a>
+                                    <check if="{{ @row.jenis_layanan_opti == 'lingkungan' }}">
+                                        <true>
+                                            <a href="{{ @BASE }}/order/{{ @row.id }}/biaya-lingkungan" class="btn btn-primary btn-sm px-3 py-1 rounded-pill fw-semibold text-white shadow-xs d-inline-flex align-items-center gap-1" style="font-size: 0.76rem;">
+                                                <i class="bi {{ @is_tim_kerja ? 'bi-calculator-fill' : 'bi-sliders' }}"></i>
+                                                {{ @is_tim_kerja ? 'Tarif & Parameter' : 'Kelola' }}
+                                            </a>
+                                        </true>
+                                        <false>
+                                            <a href="{{ @BASE }}/order/{{ @row.id }}/proposal" class="btn btn-primary btn-sm px-3 py-1 rounded-pill fw-semibold text-white shadow-xs d-inline-flex align-items-center gap-1" style="font-size: 0.76rem;">
+                                                <i class="bi {{ @is_tim_kerja ? 'bi-pencil-fill' : 'bi-journal-check' }}"></i>
+                                                {{ @is_tim_kerja ? 'Kerjakan' : 'Kelola' }}
+                                            </a>
+                                        </false>
+                                    </check>
                                 </td>
                             </tr>
                         </repeat>

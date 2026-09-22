@@ -2006,7 +2006,7 @@ class OrderController extends Controller {
 
         $sql = "SELECT o.id, o.nomor_order, c.nmcustomer AS nama_perusahaan, o.judul_kegiatan, 
                        o.jenis_layanan_opti, o.spm_layanan, o.tanggal_masuk, o.status,
-                       o.pic_proposal_id, o.status_proposal_biaya,
+                       o.pic_proposal_id, o.status_proposal_biaya, o.estimasi_biaya,
                        p.id AS proposal_id, p.judul_proposal, p.durasi_kegiatan, 
                        p.estimasi_total_biaya, p.file_proposal, p.status_proposal, 
                        p.catatan_revisi, p.disetujui_ketua_at,
@@ -2110,6 +2110,12 @@ class OrderController extends Controller {
         if (!$order) {
             $this->setFlashError("Order Layanan #{$id} tidak ditemukan.");
             $f3->reroute('/order');
+            return;
+        }
+
+        // Jika order adalah OPTI Lingkungan, arahkan ke modul Tarif & Parameter
+        if (($order['jenis_layanan_opti'] ?? '') === 'lingkungan') {
+            $f3->reroute("/order/{$id}/biaya-lingkungan");
             return;
         }
 
