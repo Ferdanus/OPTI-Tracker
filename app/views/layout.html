@@ -1256,6 +1256,9 @@
                     <li>
                         <a class="sidebar-link {{ @active_menu == 'proposal' ? 'active' : '' }}" href="{{ @BASE }}/proposal" title="Tugas Proposal Teknis">
                             <i class="bi bi-journal-code"></i> <span>Tugas Proposal</span>
+                            <check if="{{ @jumlah_notif_proposal > 0 }}">
+                                <span class="badge rounded-pill ms-auto sidebar-notif-badge" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff;">{{ @jumlah_notif_proposal }}</span>
+                            </check>
                         </a>
                     </li>
 

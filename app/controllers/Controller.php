@@ -186,6 +186,43 @@ class Controller {
         }
         $this->f3->set('jumlah_notif_surat', $notifSuratCount);
 
+        // Hitung notifikasi Tugas Proposal Teknis (Tim Kerja, Ketua Tim, Superadmin)
+        $notifProposalCount = 0;
+        try {
+            if ($role === 'tim_kerja') {
+                $sqlProposal = "SELECT COUNT(*) as c 
+                                FROM order_layanan o
+                                LEFT JOIN opti_proposal_riset p ON o.id = p.order_id
+                                WHERE o.pic_proposal_id = ?
+                                  AND (o.status_tinjauan = 'layak' OR o.id IN (SELECT order_id FROM opti_tinjauan_kelayakan WHERE keputusan = 'dapat_dilaksanakan'))
+                                  AND (p.status_proposal IN ('draft', 'draft_disimpan', 'ditolak') OR p.status_proposal IS NULL)";
+                $resProp = $this->db->exec($sqlProposal, array(1 => (int)$userId));
+                $notifProposalCount = (int)($resProp[0]['c'] ?? 0);
+            } elseif ($role === 'ketua_tim') {
+                $whereDivProp = in_array($layanan, array('selulosa', 'lingkungan')) ? "o.jenis_layanan_opti = '{$layanan}' AND" : "";
+                $sqlProposal = "SELECT COUNT(*) as c 
+                                FROM order_layanan o
+                                LEFT JOIN opti_proposal_riset p ON o.id = p.order_id
+                                WHERE {$whereDivProp} (o.status_tinjauan = 'layak' OR o.id IN (SELECT order_id FROM opti_tinjauan_kelayakan WHERE keputusan = 'dapat_dilaksanakan'))
+                                  AND o.pic_proposal_id IS NOT NULL
+                                  AND (p.status_proposal = 'diajukan' OR o.status_proposal_biaya = 'menunggu_approval')";
+                $resProp = $this->db->exec($sqlProposal);
+                $notifProposalCount = (int)($resProp[0]['c'] ?? 0);
+            } elseif ($role === 'superadmin') {
+                $sqlProposal = "SELECT COUNT(*) as c 
+                                FROM order_layanan o
+                                LEFT JOIN opti_proposal_riset p ON o.id = p.order_id
+                                WHERE (o.status_tinjauan = 'layak' OR o.id IN (SELECT order_id FROM opti_tinjauan_kelayakan WHERE keputusan = 'dapat_dilaksanakan'))
+                                  AND o.pic_proposal_id IS NOT NULL
+                                  AND (p.status_proposal = 'diajukan' OR o.status_proposal_biaya = 'menunggu_approval')";
+                $resProp = $this->db->exec($sqlProposal);
+                $notifProposalCount = (int)($resProp[0]['c'] ?? 0);
+            }
+        } catch (\Exception $eProp) {
+            $notifProposalCount = 0;
+        }
+        $this->f3->set('jumlah_notif_proposal', $notifProposalCount);
+
         // Notifikasi Terintegrasi (Notification Service) untuk Bell Dropdown & Floating Bubble
         try {
             $userNotifList = \NotificationService::getUserNotifications($this->db, (int)$userId, $role, $layanan, 8);
