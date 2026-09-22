@@ -112,15 +112,23 @@
             <h4 class="fw-bold mb-0 text-slate-900 font-display" style="font-size: 1.55rem; letter-spacing: -0.02em;">Dashboard Monitoring Layanan</h4>
         </div>
         <div class="d-flex align-items-center">
-            <div class="d-inline-flex align-items-center gap-2.5 px-3.5 py-2 rounded-3 bg-white border border-slate-200 shadow-xs">
-                <div class="d-flex align-items-center gap-2 text-xs fw-semibold text-slate-700">
-                    <i class="bi bi-calendar3 text-slate-500"></i>
-                    <span id="liveDateDisplay">{{ @tanggal_hari_ini }}</span>
+            <div class="d-inline-flex align-items-center px-3.5 py-2 rounded-pill bg-white border border-slate-200 shadow-xs" style="gap: 12px;">
+                <!-- Tanggal -->
+                <div class="d-flex align-items-center gap-2 pe-3 border-end border-slate-200">
+                    <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-slate-100 text-slate-600" style="width: 26px; height: 26px; font-size: 0.78rem;">
+                        <i class="bi bi-calendar3"></i>
+                    </span>
+                    <span id="liveDateDisplay" class="fw-semibold text-slate-700" style="font-size: 0.835rem;">{{ @tanggal_hari_ini }}</span>
                 </div>
-                <span class="text-slate-300">&bull;</span>
-                <div class="d-flex align-items-center gap-1.5 text-xs fw-bold text-slate-800 font-monospace">
-                    <i class="bi bi-clock text-slate-500"></i>
-                    <span id="liveClockDisplay">--:--:-- WIB</span>
+                <!-- Jam Real-Time -->
+                <div class="d-flex align-items-center gap-2">
+                    <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-emerald-50 text-emerald-600" style="width: 26px; height: 26px; font-size: 0.82rem;">
+                        <i class="bi bi-clock-history"></i>
+                    </span>
+                    <div class="d-flex align-items-center gap-1.5">
+                        <span id="liveClockDisplay" class="fw-bold text-slate-900" style="font-size: 0.875rem; letter-spacing: 0.05em; font-family: 'Plus Jakarta Sans', system-ui, sans-serif;">--:--:--</span>
+                        <span class="badge bg-slate-100 text-slate-500 border border-slate-200 rounded px-1.5 py-0.5 fw-bold" style="font-size: 0.65rem; letter-spacing: 0.05em;">WIB</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -643,7 +651,7 @@ document.addEventListener('DOMContentLoaded', function () {
             dateElem.textContent = dayName + ', ' + date + ' ' + monthName + ' ' + year;
         }
         if (clockElem) {
-            clockElem.textContent = hours + ':' + minutes + ':' + seconds + ' WIB';
+            clockElem.textContent = hours + ':' + minutes + ':' + seconds;
         }
     }
     updateLiveClock();
