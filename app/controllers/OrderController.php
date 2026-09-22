@@ -861,9 +861,12 @@ class OrderController extends Controller {
             }
 
             // Update data surat masuk jika ada dan dikirimkan
-            $nomorSurat   = trim($post['nomor_surat'] ?? '');
-            $tanggalSurat = trim($post['tanggal_surat'] ?? '');
-            $perihal      = trim($post['perihal'] ?? '');
+            $nomorSurat    = trim($post['nomor_surat'] ?? '');
+            $tanggalSurat  = trim($post['tanggal_surat'] ?? '');
+            $perihal       = trim($post['perihal'] ?? '');
+            $picSurat      = trim($post['pic_surat'] ?? ($post['kontak_person'] ?? ''));
+            $hpPicSurat    = trim($post['hp_pic_surat'] ?? ($post['hp_kontakperson'] ?? ''));
+            $emailPicSurat = trim($post['email_pic_surat'] ?? ($post['email_kontakperson'] ?? ''));
 
             if (!empty($order['id_surat_masuk'])) {
                 $idArsip = (int)$order['id_surat_masuk'];
@@ -884,6 +887,18 @@ class OrderController extends Controller {
                 if (!empty($perihal)) {
                     $arsipUpdates[] = "perihal = ?";
                     $arsipParams[]  = $perihal;
+                }
+                if ($picSurat !== '') {
+                    $arsipUpdates[] = "kontak_person = ?";
+                    $arsipParams[]  = $picSurat;
+                }
+                if ($hpPicSurat !== '') {
+                    $arsipUpdates[] = "hp_kontakperson = ?";
+                    $arsipParams[]  = $hpPicSurat;
+                }
+                if ($emailPicSurat !== '') {
+                    $arsipUpdates[] = "email_kontakperson = ?";
+                    $arsipParams[]  = $emailPicSurat;
                 }
                 if (!empty($arsipUpdates)) {
                     $arsipParams[] = $idArsip;

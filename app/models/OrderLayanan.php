@@ -454,7 +454,10 @@ class OrderLayanan extends \DB\SQL\Mapper {
                     a.nomor_surat AS nomor_surat_masuk,
                     a.tanggal_surat AS tanggal_surat_masuk,
                     a.perihal AS perihal_surat_masuk,
-                    a.nama_berkas AS file_surat_masuk
+                    a.nama_berkas AS file_surat_masuk,
+                    a.kontak_person AS pic_surat_masuk,
+                    a.hp_kontakperson AS hp_pic_surat_masuk,
+                    a.email_kontakperson AS email_pic_surat_masuk
              FROM order_layanan o
              JOIN tb_customer c ON o.id_customer = c.id_customer
              LEFT JOIN tb_arsipsurat a ON o.id_surat_masuk = a.id_arsip

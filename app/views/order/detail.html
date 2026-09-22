@@ -684,10 +684,19 @@
                                     </span>
                                     <small class="text-muted"><i class="bi bi-calendar3 me-1"></i>{{ date('d M Y', strtotime(@surat_masuk.tanggal_surat)) }}</small>
                                 </div>
-                                <div class="mb-1 small">
+                                <div class="mb-1.5 small">
                                     <span class="text-muted d-block" style="font-size:0.75rem;">Nomor Surat Resmi:</span>
                                     <strong class="text-dark font-monospace">{{ @surat_masuk.nomor_surat }}</strong>
                                 </div>
+                                <check if="{{ @surat_masuk.kontak_person || @surat_masuk.pic_pengirim || @order.pic_surat_masuk }}">
+                                    <div class="mb-1.5 small">
+                                        <span class="text-muted d-block" style="font-size:0.75rem;">PIC Surat:</span>
+                                        <strong class="text-dark">{{ @surat_masuk.kontak_person ?: (@surat_masuk.pic_pengirim ?: @order.pic_surat_masuk) }}</strong>
+                                        <check if="{{ @surat_masuk.hp_kontakperson || @surat_masuk.no_telp_pengirim || @order.hp_pic_surat_masuk }}">
+                                            <span class="text-secondary ms-1">({{ @surat_masuk.hp_kontakperson ?: (@surat_masuk.no_telp_pengirim ?: @order.hp_pic_surat_masuk) }})</span>
+                                        </check>
+                                    </div>
+                                </check>
                                 <div class="mb-2 small">
                                     <span class="text-muted d-block" style="font-size:0.75rem;">Perihal:</span>
                                     <span class="text-secondary fw-semibold">{{ @surat_masuk.perihal }}</span>
@@ -707,10 +716,25 @@
                                             <i class="bi bi-envelope-paper me-1"></i> Rujukan Surat Masuk
                                         </span>
                                     </div>
-                                    <div class="mb-1 small">
+                                    <div class="mb-1.5 small">
                                         <span class="text-muted d-block" style="font-size:0.75rem;">Nomor Surat:</span>
                                         <strong class="text-dark font-monospace">{{ @order.nomor_surat_masuk }}</strong>
                                     </div>
+                                    <check if="{{ @order.pic_surat_masuk }}">
+                                        <div class="mb-1.5 small">
+                                            <span class="text-muted d-block" style="font-size:0.75rem;">PIC Surat:</span>
+                                            <strong class="text-dark">{{ @order.pic_surat_masuk }}</strong>
+                                            <check if="{{ @order.hp_pic_surat_masuk }}">
+                                                <span class="text-secondary ms-1">({{ @order.hp_pic_surat_masuk }})</span>
+                                            </check>
+                                        </div>
+                                    </check>
+                                    <check if="{{ @order.perihal_surat_masuk }}">
+                                        <div class="mb-1 small">
+                                            <span class="text-muted d-block" style="font-size:0.75rem;">Perihal:</span>
+                                            <span class="text-secondary">{{ @order.perihal_surat_masuk }}</span>
+                                        </div>
+                                    </check>
                                 </div>
                             </check>
                         </false>
@@ -2499,10 +2523,12 @@
     </div>
 </div>
 
-<!-- Modal Edit Profil Pelanggan -->
+<!-- Modal Edit Profil Pelanggan & Rujukan Surat -->
 <div class="modal fade" id="modalEditProfilPelanggan" tabindex="-1" aria-labelledby="modalEditProfilPelangganLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content bg-white border-0 shadow-lg rounded-3">
+        <form class="modal-content bg-white border-0 shadow-lg rounded-3" action="{{ @BASE }}/order/{{ @order.id }}/klien/update" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
+
             <div class="modal-header border-bottom py-3 px-4 bg-white d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center gap-2.5">
                     <div class="rounded-circle p-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 38px; height: 38px; background-color: #eff6ff; color: var(--color-primary);">
@@ -2510,102 +2536,159 @@
                     </div>
                     <div>
                         <h6 class="modal-title fw-bold text-dark m-0 fs-6" id="modalEditProfilPelangganLabel">
-                            Edit Profil Pelanggan
+                            Edit Profil Pelanggan &amp; Rujukan Surat
                         </h6>
-                        <small class="text-muted" style="font-size: 0.78rem;">Koreksi data profil pelanggan atau pilih instansi terdaftar dari master database</small>
+                        <small class="text-muted" style="font-size: 0.78rem;">Koreksi data profil pelanggan, PIC surat, atau pilih instansi terdaftar dari master database</small>
                     </div>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
             </div>
 
-            <form action="{{ @BASE }}/order/{{ @order.id }}/klien/update" method="POST">
-                <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
+            <div class="modal-body p-4 bg-light" style="max-height: calc(82vh - 130px); overflow-y: auto;">
+                
+                <!-- 1. Pemilihan Instansi Pelanggan (Searchable TomSelect seperti di Surat Masuk) -->
+                <div class="bg-white p-3 p-md-4 rounded-3 border mb-3 shadow-xs">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-dark mb-1">
+                            Cari &amp; Pilih Instansi Pelanggan:
+                        </label>
+                        <select name="pilih_id_customer" id="selectEditCustomer" class="form-select form-select-sm fw-semibold select-customer-modal-edit" placeholder="Ketik nama PT/CV, kode pelanggan, nama PIC, atau alamat...">
+                            <option value="">-- Ketik nama PT/CV, kode, atau PIC untuk mencari --</option>
+                            <repeat group="{{ @daftar_customer_opti }}" value="{{ @cust }}">
+                                <option value="{{ @cust.id_customer }}"
+                                        data-ptcv="{{ @cust.pt_cv }}"
+                                        data-nama="{{ @cust.nmcustomer }}"
+                                        data-nama-bersih="{{ @cust.nama_perusahaan_bersih }}"
+                                        data-kode="{{ @cust.kodex_perusahaan ?: '-' }}"
+                                        data-alamat="{{ @cust.alamat_bersih ?: '-' }}"
+                                        data-pic="{{ @cust.pic_bersih ?: '-' }}"
+                                        data-hp="{{ @cust.hp_bersih ?: '-' }}"
+                                        data-telp="{{ @cust.telp_bersih ?: '-' }}"
+                                        data-email="{{ @cust.email_bersih ?: '-' }}"
+                                        {{ @order.id_customer == @cust.id_customer ? 'selected' : '' }}>
+                                    {{ @cust.nama_perusahaan_bersih }}
+                                </option>
+                            </repeat>
+                        </select>
+                        <small class="text-muted d-block mt-1" style="font-size: 0.73rem;">
+                            <i class="bi bi-info-circle text-primary me-1"></i>Ketik nama perusahaan untuk mencari cepat seperti pada modul surat masuk. Memilih instansi akan mengisi otomatis rincian data di bawah.
+                        </small>
+                    </div>
 
-                <div class="modal-body p-4 bg-light">
-                    <!-- 1. Pemilihan Instansi Pelanggan (Searchable TomSelect seperti di Surat Masuk) -->
-                    <div class="bg-white p-3 p-md-4 rounded-3 border mb-3 shadow-xs">
-                        <div class="mb-3">
-                            <label class="form-label small fw-semibold text-dark mb-1">
-                                Cari &amp; Pilih Instansi Pelanggan:
-                            </label>
-                            <select name="pilih_id_customer" id="selectEditCustomer" class="form-select form-select-sm fw-semibold select-customer-modal-edit" placeholder="Ketik nama PT/CV, kode pelanggan, nama PIC, atau alamat...">
-                                <option value="">-- Ketik nama PT/CV, kode, atau PIC untuk mencari --</option>
-                                <repeat group="{{ @daftar_customer_opti }}" value="{{ @cust }}">
-                                    <option value="{{ @cust.id_customer }}"
-                                            data-ptcv="{{ @cust.pt_cv }}"
-                                            data-nama="{{ @cust.nmcustomer }}"
-                                            data-nama-bersih="{{ @cust.nama_perusahaan_bersih }}"
-                                            data-kode="{{ @cust.kodex_perusahaan ?: '-' }}"
-                                            data-alamat="{{ @cust.alamat_bersih ?: '-' }}"
-                                            data-pic="{{ @cust.pic_bersih ?: '-' }}"
-                                            data-hp="{{ @cust.hp_bersih ?: '-' }}"
-                                            data-telp="{{ @cust.telp_bersih ?: '-' }}"
-                                            data-email="{{ @cust.email_bersih ?: '-' }}"
-                                            {{ @order.id_customer == @cust.id_customer ? 'selected' : '' }}>
-                                        {{ @cust.nama_perusahaan_bersih }}
-                                    </option>
-                                </repeat>
-                            </select>
-                            <small class="text-muted d-block mt-1" style="font-size: 0.73rem;">
-                                <i class="bi bi-info-circle text-primary me-1"></i>Ketik nama perusahaan untuk mencari cepat seperti pada modul surat masuk. Memilih instansi akan mengisi otomatis rincian data di bawah.
-                            </small>
+                    <!-- 2. Rincian Data Pelanggan Terpilih -->
+                    <div class="border-top pt-3 mt-3">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <span class="small fw-bold text-dark d-flex align-items-center gap-1.5">
+                                <i class="bi bi-building text-primary"></i> Rincian Data Pelanggan Terpilih
+                            </span>
+                            <span class="badge bg-light text-muted border" style="font-size: 0.72rem;" id="lblEditCustBadge">
+                                Customer #{{ @order.id_customer }}
+                            </span>
                         </div>
 
-                        <!-- 2. Rincian Data Pelanggan Terpilih -->
-                        <div class="border-top pt-3 mt-3">
-                            <div class="d-flex align-items-center justify-content-between mb-3">
-                                <span class="small fw-bold text-dark d-flex align-items-center gap-1.5">
-                                    <i class="bi bi-building text-primary"></i> Rincian Data Pelanggan Terpilih
-                                </span>
-                                <span class="badge bg-light text-muted border" style="font-size: 0.72rem;" id="lblEditCustBadge">
-                                    Customer #{{ @order.id_customer }}
-                                </span>
+                        <div class="row g-2.5">
+                            <div class="col-sm-4">
+                                <label class="form-label small fw-semibold text-dark mb-1" for="inputEditPtCv">Bentuk Badan Usaha</label>
+                                <input type="text" name="pt_cv" id="inputEditPtCv" class="form-control form-control-sm bg-light" value="{{ @order.pt_cv ?: 'PT' }}" readonly>
+                            </div>
+                            <div class="col-sm-8">
+                                <label class="form-label small fw-semibold text-dark mb-1" for="inputEditNamaPerusahaan">
+                                    Nama Perusahaan / Instansi <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" name="nmcustomer" id="inputEditNamaPerusahaan" class="form-control form-control-sm fw-semibold bg-light" value="{{ @order.nama_perusahaan }}" readonly required placeholder="-">
                             </div>
 
-                            <div class="row g-2.5">
-                                <div class="col-sm-4">
-                                    <label class="form-label small fw-semibold text-dark mb-1" for="inputEditPtCv">Bentuk Badan Usaha</label>
-                                    <input type="text" name="pt_cv" id="inputEditPtCv" class="form-control form-control-sm bg-light" value="{{ @order.pt_cv ?: 'PT' }}" readonly>
-                                </div>
-                                <div class="col-sm-8">
-                                    <label class="form-label small fw-semibold text-dark mb-1" for="inputEditNamaPerusahaan">
-                                        Nama Perusahaan / Instansi <span class="text-danger">*</span>
-                                    </label>
-                                    <input type="text" name="nmcustomer" id="inputEditNamaPerusahaan" class="form-control form-control-sm fw-semibold bg-light" value="{{ @order.nama_perusahaan }}" readonly required placeholder="-">
-                                </div>
+                            <div class="col-sm-6">
+                                <label class="form-label small fw-semibold text-dark mb-1" for="inputEditPic">
+                                    Nama Kontak / PIC Pelanggan
+                                </label>
+                                <input type="text" name="pic" id="inputEditPic" class="form-control form-control-sm bg-light" value="{{ @order.pic != '-' && @order.pic != '—' ? @order.pic : '' }}" readonly placeholder="-">
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label small fw-semibold text-dark mb-1" for="inputEditTelepon">
+                                    Telepon / No. WhatsApp
+                                </label>
+                                <input type="text" name="telepon" id="inputEditTelepon" class="form-control form-control-sm bg-light" value="{{ @order.telepon != '-' && @order.telepon != '—' ? @order.telepon : '' }}" readonly placeholder="-">
+                            </div>
 
-                                <div class="col-sm-6">
-                                    <label class="form-label small fw-semibold text-dark mb-1" for="inputEditPic">
-                                        Nama Kontak / PIC
-                                    </label>
-                                    <input type="text" name="pic" id="inputEditPic" class="form-control form-control-sm bg-light" value="{{ @order.pic != '-' && @order.pic != '—' ? @order.pic : '' }}" readonly placeholder="-">
-                                </div>
-                                <div class="col-sm-6">
-                                    <label class="form-label small fw-semibold text-dark mb-1" for="inputEditTelepon">
-                                        Telepon / No. WhatsApp
-                                    </label>
-                                    <input type="text" name="telepon" id="inputEditTelepon" class="form-control form-control-sm bg-light" value="{{ @order.telepon != '-' && @order.telepon != '—' ? @order.telepon : '' }}" readonly placeholder="-">
-                                </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold text-dark mb-1" for="inputEditEmail">
+                                    Alamat Email
+                                </label>
+                                <input type="email" name="email" id="inputEditEmail" class="form-control form-control-sm bg-light" value="{{ @order.email != '-' && @order.email != '—' ? @order.email : '' }}" readonly placeholder="-">
+                            </div>
 
-                                <div class="col-12">
-                                    <label class="form-label small fw-semibold text-dark mb-1" for="inputEditEmail">
-                                        Alamat Email
-                                    </label>
-                                    <input type="email" name="email" id="inputEditEmail" class="form-control form-control-sm bg-light" value="{{ @order.email != '-' && @order.email != '—' ? @order.email : '' }}" readonly placeholder="-">
-                                </div>
-
-                                <div class="col-12">
-                                    <label class="form-label small fw-semibold text-dark mb-1" for="inputEditAlamat">
-                                        Alamat Kantor / Pabrik
-                                    </label>
-                                    <textarea name="alamat" id="inputEditAlamat" class="form-control form-control-sm bg-light" rows="2" readonly placeholder="-">{{ @order.alamat != '-' && @order.alamat != '—' ? @order.alamat : '' }}</textarea>
-                                </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold text-dark mb-1" for="inputEditAlamat">
+                                    Alamat Kantor / Pabrik
+                                </label>
+                                <textarea name="alamat" id="inputEditAlamat" class="form-control form-control-sm bg-light" rows="2" readonly placeholder="-">{{ @order.alamat != '-' && @order.alamat != '—' ? @order.alamat : '' }}</textarea>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="modal-footer border-top py-3 px-4 bg-light d-flex justify-content-end gap-2">
+                <!-- 2. Data Rujukan Surat Masuk & PIC Surat (Input Manual) -->
+                <div class="bg-white p-3 p-md-4 rounded-3 border shadow-xs">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span class="small fw-bold text-dark d-flex align-items-center gap-1.5">
+                            <i class="bi bi-envelope-paper-fill text-danger"></i> Data Rujukan Surat Masuk &amp; PIC Surat
+                        </span>
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size: 0.72rem;">
+                            <i class="bi bi-pencil-fill me-1"></i> Input Manual
+                        </span>
+                    </div>
+
+                    <div class="row g-2.5">
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-semibold text-dark mb-1" for="inputEditPicSurat">
+                                PIC Surat <span class="badge bg-light text-secondary border ms-1" style="font-size: 0.68rem;">Manual</span>
+                            </label>
+                            <input type="text" name="pic_surat" id="inputEditPicSurat" class="form-control form-control-sm fw-semibold" value="{{ @surat_masuk.kontak_person ?: (@surat_masuk.pic_pengirim ?: (@order.pic_surat_masuk ?: '')) }}" placeholder="Contoh: Bpk. Bambang Sudarmono, S.T.">
+                            <small class="text-muted d-block mt-0.5" style="font-size: 0.7rem;">Nama narahubung/PIC yang tercantum di surat permohonan</small>
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-semibold text-dark mb-1" for="inputEditHpPicSurat">
+                                No. HP / Telepon PIC Surat
+                            </label>
+                            <input type="text" name="hp_pic_surat" id="inputEditHpPicSurat" class="form-control form-control-sm" value="{{ @surat_masuk.hp_kontakperson ?: (@surat_masuk.no_telp_pengirim ?: (@order.hp_pic_surat_masuk ?: '')) }}" placeholder="Contoh: 081234567890">
+                        </div>
+
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-semibold text-dark mb-1" for="inputEditEmailPicSurat">
+                                Email PIC Surat
+                            </label>
+                            <input type="email" name="email_pic_surat" id="inputEditEmailPicSurat" class="form-control form-control-sm" value="{{ @surat_masuk.email_kontakperson ?: (@surat_masuk.email_pengirim ?: (@order.email_pic_surat_masuk ?: '')) }}" placeholder="Contoh: pic.surat@perusahaan.co.id">
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-semibold text-dark mb-1" for="inputEditNomorSurat">
+                                Nomor Surat Resmi
+                            </label>
+                            <input type="text" name="nomor_surat" id="inputEditNomorSurat" class="form-control form-control-sm font-monospace fw-semibold" value="{{ @surat_masuk.nomor_surat ?: (@order.nomor_surat_masuk ?: '') }}" placeholder="Contoh: 012/EXT/MKT/2026">
+                        </div>
+
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-semibold text-dark mb-1" for="inputEditTanggalSurat">
+                                Tanggal Surat
+                            </label>
+                            <input type="date" name="tanggal_surat" id="inputEditTanggalSurat" class="form-control form-control-sm" value="{{ @surat_masuk.tanggal_surat ?: (@order.tanggal_surat_masuk ?: '') }}">
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-semibold text-dark mb-1" for="inputEditPerihal">
+                                Perihal Surat Permohonan
+                            </label>
+                            <input type="text" name="perihal" id="inputEditPerihal" class="form-control form-control-sm" value="{{ @surat_masuk.perihal ?: (@order.perihal_surat_masuk ?: @order.judul_kegiatan) }}" placeholder="Perihal permohonan jasa layanan...">
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="modal-footer border-top py-3 px-4 bg-white d-flex justify-content-between align-items-center">
+                <div class="text-muted small" style="font-size: 0.78rem;">
+                    <i class="bi bi-shield-check text-success me-1"></i> Perubahan data akan langsung disinkronkan ke sistem.
+                </div>
+                <div class="d-flex align-items-center gap-2">
                     <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-2 fw-semibold" data-bs-dismiss="modal">
                         Batal
                     </button>
@@ -2613,8 +2696,8 @@
                         <i class="bi bi-check2-circle fs-6"></i> Simpan Perubahan
                     </button>
                 </div>
-            </form>
-        </div>
+            </div>
+        </form>
     </div>
 </div>
 
