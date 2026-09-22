@@ -106,28 +106,23 @@
     <!-- ======================= HEADER HALAMAN (CLEAN & MINIMALIST) ======================= -->
     <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4 pb-3 border-bottom">
         <div>
-            <div class="d-flex align-items-center gap-2 mb-1 text-xs text-muted flex-wrap">
-                <span class="fw-semibold text-uppercase tracking-wider text-slate-500">SI-OPTI BBSPJIS</span>
-                <span>&bull;</span>
-                <span><i class="bi bi-calendar3 me-1"></i>{{ @tanggal_hari_ini }}</span>
-                <check if="{{ @SESSION.role }}">
-                    <span>&bull;</span>
-                    <span class="text-capitalize"><i class="bi bi-person me-1"></i>{{ str_replace('_', ' ', @SESSION.role) }}</span>
-                </check>
+            <div class="d-flex align-items-center gap-2 mb-1.5 text-xs text-muted flex-wrap">
+                <span class="fw-semibold text-uppercase tracking-wider text-slate-500" style="font-size: 0.75rem; letter-spacing: 0.06em;">SILOPTI BBSPJIS</span>
             </div>
-            <h4 class="fw-bold mb-1 text-slate-900 font-display" style="font-size: 1.45rem;">Dashboard Monitoring Layanan</h4>
-            <span class="text-muted small">Ringkasan operasional dan progres permohonan jasa balai secara terpadu.</span>
+            <h4 class="fw-bold mb-0 text-slate-900 font-display" style="font-size: 1.55rem; letter-spacing: -0.02em;">Dashboard Monitoring Layanan</h4>
         </div>
-        <div class="d-flex align-items-center gap-2">
-            <a href="{{ @BASE }}/order/tambah" class="btn btn-sm text-white rounded-3 px-3 py-2 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-sm" style="background-color: var(--color-primary, #334155); border-color: var(--color-primary, #334155);">
-                <i class="bi bi-plus-lg"></i> Order Baru
-            </a>
-            <a href="{{ @BASE }}/disposisi-masuk" class="btn btn-sm btn-outline-secondary rounded-3 px-3 py-2 fw-medium d-inline-flex align-items-center gap-1.5 bg-white shadow-xs">
-                <i class="bi bi-inbox"></i> Disposisi
-                <check if="{{ @stat_total.pending > 0 }}">
-                    <span class="badge rounded-pill ms-1 px-2 py-0.5" style="background-color: #fef3c7; color: #92400e; font-size: 0.72rem;">{{ @stat_total.pending }}</span>
-                </check>
-            </a>
+        <div class="d-flex align-items-center">
+            <div class="d-inline-flex align-items-center gap-2.5 px-3.5 py-2 rounded-3 bg-white border border-slate-200 shadow-xs">
+                <div class="d-flex align-items-center gap-2 text-xs fw-semibold text-slate-700">
+                    <i class="bi bi-calendar3 text-slate-500"></i>
+                    <span id="liveDateDisplay">{{ @tanggal_hari_ini }}</span>
+                </div>
+                <span class="text-slate-300">&bull;</span>
+                <div class="d-flex align-items-center gap-1.5 text-xs fw-bold text-slate-800 font-monospace">
+                    <i class="bi bi-clock text-slate-500"></i>
+                    <span id="liveClockDisplay">--:--:-- WIB</span>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -625,6 +620,34 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     }
+
+    // Live Real-Time Clock & Date
+    function updateLiveClock() {
+        var now = new Date();
+        var days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+        var months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+        var dayName = days[now.getDay()];
+        var date = now.getDate();
+        var monthName = months[now.getMonth()];
+        var year = now.getFullYear();
+
+        var hours = String(now.getHours()).padStart(2, '0');
+        var minutes = String(now.getMinutes()).padStart(2, '0');
+        var seconds = String(now.getSeconds()).padStart(2, '0');
+
+        var dateElem = document.getElementById('liveDateDisplay');
+        var clockElem = document.getElementById('liveClockDisplay');
+
+        if (dateElem) {
+            dateElem.textContent = dayName + ', ' + date + ' ' + monthName + ' ' + year;
+        }
+        if (clockElem) {
+            clockElem.textContent = hours + ':' + minutes + ':' + seconds + ' WIB';
+        }
+    }
+    updateLiveClock();
+    setInterval(updateLiveClock, 1000);
 });
 </script>
 
