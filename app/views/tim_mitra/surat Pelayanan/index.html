@@ -397,55 +397,74 @@
     </script>
 </check>
 
-<!-- Modal Preview PDF Surat Penawaran Resmi -->
+<!-- PDF.js Library for Zero-IDM-Interception in-browser rendering -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+<!-- Modal Preview PDF Surat Penawaran Resmi (Zero-IDM PDF.js Canvas) -->
 <div class="modal fade" id="modalPreviewPenawaranPdf" tabindex="-1" aria-labelledby="modalPreviewPenawaranPdfLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-centered" style="max-width: 92vw; height: 92vh; margin: 4vh auto;">
-        <div class="modal-content border-0 shadow-lg d-flex flex-column h-100" style="border-radius: 12px; overflow: hidden; background: #fff;">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" style="max-width: 94vw;">
+        <div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden" style="height: 92vh; display: flex; flex-direction: column;">
+            
             <!-- Header Modal -->
-            <div class="modal-header py-2.5 px-4 bg-white border-bottom d-flex align-items-center justify-content-between flex-shrink-0">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="rounded-circle p-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px; background-color: #fee2e2; color: #dc2626;">
+            <div class="modal-header border-bottom py-2.5 px-4 bg-white d-flex justify-content-between align-items-center flex-shrink-0">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="rounded-circle bg-danger-subtle text-danger p-1.5 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 38px; height: 38px;">
                         <i class="bi bi-file-earmark-pdf-fill fs-5"></i>
                     </div>
                     <div>
                         <div class="d-flex align-items-center gap-2">
-                            <h6 class="modal-title fw-bold text-dark mb-0" id="modalPreviewPenawaranPdfLabel">Pratinjau Dokumen Surat Penawaran Resmi</h6>
+                            <h6 class="modal-title fw-bold text-dark font-display mb-0" id="modalPreviewPenawaranPdfLabel" style="font-size: 0.95rem;">Pratinjau Surat Penawaran Resmi</h6>
                             <span class="badge bg-danger-subtle text-danger border border-danger-subtle font-monospace px-2 py-0.5" style="font-size: 0.72rem;" id="modalPdfBadgeNomor">-</span>
                         </div>
-                        <small class="text-muted d-block mt-0.5" style="font-size: 0.78rem;" id="modalPdfSubtitle">Pratinjau surat penawaran dalam format PDF resmi</small>
+                        <small class="text-secondary font-monospace" id="modalPdfSubtitle" style="font-size: 0.75rem;">Dokumen Penawaran Resmi BBSPJIS</small>
                     </div>
                 </div>
+
+                <!-- Toolbar Controls -->
                 <div class="d-flex align-items-center gap-2">
-                    <a href="#" id="modalPdfBtnUnduh" class="btn btn-outline-danger btn-sm px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-sm" download title="Unduh Dokumen PDF">
-                        <i class="bi bi-download"></i> Unduh PDF
-                    </a>
-                    <button type="button" id="modalPdfBtnCetak" class="btn btn-outline-secondary btn-sm px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5" title="Cetak Dokumen">
+                    <!-- Zoom & Page Counter -->
+                    <div id="spZoomControls" class="d-flex align-items-center gap-1.5 bg-light p-1 rounded-3 border" style="visibility: hidden;">
+                        <span class="badge bg-dark text-white px-2 py-1 font-monospace" id="spTotalPagesBadge" style="font-size: 0.72rem;">-- Halaman</span>
+                        <div class="vr mx-1 my-1"></div>
+                        <button type="button" class="btn btn-white btn-sm border shadow-2xs px-2 py-1 text-secondary" id="btnZoomOut" title="Perkecil Zoom">
+                            <i class="bi bi-zoom-out"></i>
+                        </button>
+                        <span id="spZoomPercent" class="small fw-bold text-dark font-monospace px-1" style="font-size: 0.78rem; min-width: 44px; text-align: center;">100%</span>
+                        <button type="button" class="btn btn-white btn-sm border shadow-2xs px-2 py-1 text-secondary" id="btnZoomIn" title="Perbesar Zoom">
+                            <i class="bi bi-zoom-in"></i>
+                        </button>
+                        <button type="button" class="btn btn-light btn-sm border px-2 py-1 text-secondary" id="btnZoomReset" title="Reset Ukuran (100%)">
+                            <i class="bi bi-aspect-ratio"></i>
+                        </button>
+                    </div>
+
+                    <!-- Print & Download Actions -->
+                    <button type="button" id="modalPdfBtnCetak" class="btn btn-outline-secondary btn-sm px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-2xs" title="Cetak Dokumen">
                         <i class="bi bi-printer"></i> Cetak
                     </button>
-                    <a href="#" id="modalPdfBtnTabBaru" target="_blank" class="btn btn-outline-secondary btn-sm px-2.5 py-1.5 fw-semibold" title="Buka di Tab Baru">
-                        <i class="bi bi-box-arrow-up-right"></i>
-                    </a>
-                    <button type="button" class="btn-close ms-2" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                    <button type="button" id="modalPdfBtnUnduh" class="btn btn-outline-danger btn-sm px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-2xs" title="Unduh Dokumen PDF">
+                        <i class="bi bi-download"></i> Unduh PDF
+                    </button>
+                    <button type="button" class="btn-close shadow-none ms-2" data-bs-dismiss="modal" aria-label="Tutup"></button>
                 </div>
             </div>
-
-            <!-- Body Modal (Viewer PDF) -->
-            <div class="modal-body p-0 position-relative flex-grow-1 bg-light" style="min-height: 480px; overflow: hidden;">
+            
+            <!-- Modal Body (Continuous Multi-Page Workspace) -->
+            <div class="modal-body p-4 position-relative overflow-auto flex-grow-1" id="spModalBody" style="background-color: #525659;">
                 <!-- Loading Spinner -->
-                <div id="modalPdfLoading" class="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center bg-light" style="z-index: 5;">
-                    <div class="spinner-border text-danger mb-2" role="status" style="width: 2.2rem; height: 2.2rem;">
-                        <span class="visually-hidden">Memuat PDF...</span>
-                    </div>
-                    <span class="text-muted small fw-semibold">Memuat Pratinjau Dokumen PDF...</span>
+                <div id="spCanvasSpinner" class="py-5 my-5 text-center">
+                    <div class="spinner-border text-light" role="status" style="width: 2.75rem; height: 2.75rem;"></div>
+                    <p class="small text-white-50 mt-2 fw-medium">Memuat dan merender pratinjau dokumen PDF...</p>
                 </div>
-                <!-- Iframe Viewer -->
-                <iframe id="modalPdfIframe" class="w-100 h-100 border-0" style="display: block; min-height: 100%;" src="about:blank"></iframe>
+
+                <!-- Canvas Pages Container -->
+                <div id="spPagesContainer" class="d-none flex-column align-items-center justify-content-start w-100"></div>
             </div>
 
             <!-- Footer Modal -->
             <div class="modal-footer py-2 px-4 bg-white border-top d-flex justify-content-between align-items-center flex-shrink-0">
                 <small class="text-muted" style="font-size: 0.76rem;">
-                    <i class="bi bi-info-circle me-1 text-primary"></i> Anda dapat menggulir halaman, memperbesar, mencetak, atau mengunduh dokumen langsung dari pratinjau ini.
+                    <i class="bi bi-shield-check me-1 text-success"></i> Pratinjau dirender langsung secara native via Canvas (Bebas interupsi IDM/Download Manager).
                 </small>
                 <button type="button" class="btn btn-secondary btn-sm px-3 py-1.5 fw-semibold" data-bs-dismiss="modal">
                     Tutup
@@ -456,18 +475,123 @@
 </div>
 
 <script>
+if (window.pdfjsLib) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     var modalPreviewPdfEl = document.getElementById('modalPreviewPenawaranPdf');
     if (!modalPreviewPdfEl) return;
 
     var modalPreviewPdf = new bootstrap.Modal(modalPreviewPdfEl);
-    var iframeEl = document.getElementById('modalPdfIframe');
-    var loadingEl = document.getElementById('modalPdfLoading');
+    var spinnerEl = document.getElementById('spCanvasSpinner');
+    var pagesContainerEl = document.getElementById('spPagesContainer');
+    var zoomControlsEl = document.getElementById('spZoomControls');
+    var totalPagesBadgeEl = document.getElementById('spTotalPagesBadge');
+    var zoomPercentEl = document.getElementById('spZoomPercent');
     var badgeNomorEl = document.getElementById('modalPdfBadgeNomor');
     var subtitleEl = document.getElementById('modalPdfSubtitle');
     var btnUnduhEl = document.getElementById('modalPdfBtnUnduh');
-    var btnTabBaruEl = document.getElementById('modalPdfBtnTabBaru');
     var btnCetakEl = document.getElementById('modalPdfBtnCetak');
+
+    var currentPdfDoc = null;
+    var currentPdfScale = 1.35;
+    var currentPdfArrayBuffer = null;
+    var currentNomorSurat = '';
+
+    function updateZoomBadge() {
+        if (zoomPercentEl) {
+            zoomPercentEl.textContent = Math.round((currentPdfScale / 1.35) * 100) + '%';
+        }
+    }
+
+    function renderAllPages(pdf) {
+        if (!pagesContainerEl) return;
+        pagesContainerEl.innerHTML = '';
+        pagesContainerEl.classList.remove('d-none');
+        pagesContainerEl.style.display = 'flex';
+        
+        if (spinnerEl) spinnerEl.style.display = 'none';
+        if (totalPagesBadgeEl) totalPagesBadgeEl.textContent = pdf.numPages + ' Halaman';
+        if (zoomControlsEl) zoomControlsEl.style.visibility = 'visible';
+
+        var dpr = window.devicePixelRatio || 1;
+        var renderScale = currentPdfScale * Math.max(dpr, 1.8);
+
+        for (var pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+            var pageCard = document.createElement('div');
+            pageCard.className = 'position-relative d-flex flex-column align-items-center mb-4';
+
+            var pageLabel = document.createElement('div');
+            pageLabel.className = 'badge bg-dark bg-opacity-75 text-white-50 px-2.5 py-1 mb-2 font-monospace';
+            pageLabel.style.fontSize = '0.72rem';
+            pageLabel.textContent = 'Halaman ' + pageNum + ' dari ' + pdf.numPages;
+
+            var canvas = document.createElement('canvas');
+            canvas.className = 'rounded-2 shadow bg-white sp-rendered-canvas';
+            canvas.style.display = 'block';
+            canvas.style.maxWidth = '100%';
+            canvas.style.height = 'auto';
+
+            pageCard.appendChild(pageLabel);
+            pageCard.appendChild(canvas);
+            pagesContainerEl.appendChild(pageCard);
+
+            (function(pNum, cEl) {
+                pdf.getPage(pNum).then(function(page) {
+                    var unscaledViewport = page.getViewport({ scale: currentPdfScale });
+                    var viewport = page.getViewport({ scale: renderScale });
+
+                    cEl.width = Math.floor(viewport.width);
+                    cEl.height = Math.floor(viewport.height);
+                    cEl.style.width = Math.floor(unscaledViewport.width) + 'px';
+                    cEl.style.height = Math.floor(unscaledViewport.height) + 'px';
+
+                    var context = cEl.getContext('2d');
+                    context.imageSmoothingEnabled = true;
+                    context.imageSmoothingQuality = 'high';
+
+                    var renderContext = {
+                        canvasContext: context,
+                        viewport: viewport
+                    };
+                    page.render(renderContext);
+                });
+            })(pageNum, canvas);
+        }
+    }
+
+    // Zoom handlers
+    var btnZoomIn = document.getElementById('btnZoomIn');
+    var btnZoomOut = document.getElementById('btnZoomOut');
+    var btnZoomReset = document.getElementById('btnZoomReset');
+
+    if (btnZoomIn) {
+        btnZoomIn.addEventListener('click', function() {
+            if (!currentPdfDoc) return;
+            currentPdfScale = Math.min(2.6, currentPdfScale + 0.2);
+            updateZoomBadge();
+            renderAllPages(currentPdfDoc);
+        });
+    }
+
+    if (btnZoomOut) {
+        btnZoomOut.addEventListener('click', function() {
+            if (!currentPdfDoc) return;
+            currentPdfScale = Math.max(0.6, currentPdfScale - 0.2);
+            updateZoomBadge();
+            renderAllPages(currentPdfDoc);
+        });
+    }
+
+    if (btnZoomReset) {
+        btnZoomReset.addEventListener('click', function() {
+            if (!currentPdfDoc) return;
+            currentPdfScale = 1.35;
+            updateZoomBadge();
+            renderAllPages(currentPdfDoc);
+        });
+    }
 
     // Handle klik tombol PDF di tabel
     document.querySelectorAll('.btn-preview-pdf').forEach(function(btn) {
@@ -479,59 +603,120 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (!pdfUrl) return;
 
+            currentNomorSurat = nomorSurat;
+            currentPdfDoc = null;
+            currentPdfArrayBuffer = null;
+            currentPdfScale = 1.35;
+            updateZoomBadge();
+
             // Update UI modal
             if (badgeNomorEl) badgeNomorEl.textContent = nomorSurat;
-            if (subtitleEl) subtitleEl.textContent = namaPerusahaan ? ('Surat Penawaran Resmi untuk ' + namaPerusahaan) : 'Pratinjau surat penawaran resmi';
-            if (btnUnduhEl) btnUnduhEl.setAttribute('href', pdfUrl);
-            if (btnTabBaruEl) btnTabBaruEl.setAttribute('href', pdfUrl);
+            if (subtitleEl) subtitleEl.textContent = namaPerusahaan ? ('Surat Penawaran Resmi untuk ' + namaPerusahaan) : 'Dokumen Penawaran Resmi BBSPJIS';
 
-            // Tampilkan loading spinner
-            if (loadingEl) {
-                loadingEl.classList.remove('d-none');
-                loadingEl.style.display = 'flex';
+            // Reset modal workspace
+            if (pagesContainerEl) {
+                pagesContainerEl.innerHTML = '';
+                pagesContainerEl.classList.add('d-none');
             }
-
-            // Set iframe src dengan anchor toolbar PDF browser standar
-            var previewUrl = pdfUrl + (pdfUrl.indexOf('#') === -1 ? '#toolbar=1&navpanes=0' : '');
-            if (iframeEl) {
-                iframeEl.src = previewUrl;
-
-                // Sembunyikan loading setelah iframe selesai dimuat
-                iframeEl.onload = function() {
-                    if (loadingEl) {
-                        loadingEl.classList.add('d-none');
-                        loadingEl.style.display = 'none';
-                    }
-                };
-            }
+            if (spinnerEl) spinnerEl.style.display = 'block';
+            if (zoomControlsEl) zoomControlsEl.style.visibility = 'hidden';
 
             // Tampilkan modal
             modalPreviewPdf.show();
+
+            // Fetch PDF binary array buffer (Internal fetch tidak memicu IDM)
+            fetch(pdfUrl, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(function(res) {
+                if (!res.ok) throw new Error('Gagal mengunduh berkas PDF');
+                return res.arrayBuffer();
+            })
+            .then(function(arrayBuffer) {
+                currentPdfArrayBuffer = arrayBuffer;
+                if (!window.pdfjsLib) throw new Error('Library PDF.js belum dimuat');
+                return pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            })
+            .then(function(pdf) {
+                currentPdfDoc = pdf;
+                renderAllPages(pdf);
+            })
+            .catch(function(err) {
+                console.error('Error rendering PDF with PDF.js:', err);
+                if (spinnerEl) {
+                    spinnerEl.innerHTML = '<div class="text-white p-4 text-center"><i class="bi bi-exclamation-triangle-fill fs-3 d-block mb-2 text-warning"></i><strong>Gagal Memuat Pratinjau Dokumen</strong><br><small class="text-white-50">' + (err.message || 'Silakan coba beberapa saat lagi.') + '</small></div>';
+                }
+            });
         });
     });
 
-    // Handle tombol Cetak di header modal
+    // Handle tombol Cetak dari Canvas (Bebas IDM)
     if (btnCetakEl) {
         btnCetakEl.addEventListener('click', function() {
-            try {
-                if (iframeEl && iframeEl.contentWindow) {
-                    iframeEl.contentWindow.focus();
-                    iframeEl.contentWindow.print();
-                }
-            } catch (err) {
-                // Jika cross-origin/sandbox memblokir direct print, buka tab baru untuk print
-                window.open(btnUnduhEl.getAttribute('href'), '_blank');
+            var canvases = document.querySelectorAll('.sp-rendered-canvas');
+            if (!canvases || canvases.length === 0) {
+                alert('Dokumen belum selesai dimuat untuk dicetak.');
+                return;
             }
+
+            var printWin = window.open('', '_blank');
+            if (!printWin) {
+                alert('Mohon izinkan pop-up browser untuk mencetak dokumen.');
+                return;
+            }
+
+            var html = '<!DOCTYPE html><html><head><title>Cetak Surat Penawaran - ' + (currentNomorSurat || 'BBSPJIS') + '</title>';
+            html += '<style>@page { size: A4 portrait; margin: 0; } body { margin: 0; padding: 0; background: #fff; } img { width: 100%; max-width: 210mm; display: block; margin: 0 auto; page-break-after: always; } img:last-child { page-break-after: auto; }</style></head><body>';
+
+            canvases.forEach(function(cv) {
+                html += '<img src="' + cv.toDataURL('image/png') + '" />';
+            });
+
+            html += '<script>window.onload = function() { window.focus(); window.print(); window.close(); }<\/script></body></html>';
+            
+            printWin.document.open();
+            printWin.document.write(html);
+            printWin.document.close();
         });
     }
 
-    // Reset iframe saat modal ditutup agar tidak membebani memori browser
+    // Handle tombol Unduh PDF (Blob Download - Bebas interupsi IDM)
+    if (btnUnduhEl) {
+        btnUnduhEl.addEventListener('click', function() {
+            if (!currentPdfArrayBuffer) {
+                alert('Dokumen belum selesai dimuat.');
+                return;
+            }
+
+            var blob = new Blob([currentPdfArrayBuffer], { type: 'application/pdf' });
+            var blobUrl = URL.createObjectURL(blob);
+            var safeFilename = 'Surat_Penawaran_' + (currentNomorSurat.replace(/[^a-zA-Z0-9_-]/g, '_') || 'BBSPJIS') + '.pdf';
+
+            var tempLink = document.createElement('a');
+            tempLink.href = blobUrl;
+            tempLink.download = safeFilename;
+            document.body.appendChild(tempLink);
+            tempLink.click();
+            document.body.removeChild(tempLink);
+
+            setTimeout(function() {
+                URL.revokeObjectURL(blobUrl);
+            }, 5000);
+        });
+    }
+
+    // Reset saat modal ditutup
     modalPreviewPdfEl.addEventListener('hidden.bs.modal', function() {
-        if (iframeEl) iframeEl.src = 'about:blank';
-        if (loadingEl) {
-            loadingEl.classList.remove('d-none');
-            loadingEl.style.display = 'flex';
+        if (pagesContainerEl) {
+            pagesContainerEl.innerHTML = '';
+            pagesContainerEl.classList.add('d-none');
         }
+        if (spinnerEl) {
+            spinnerEl.innerHTML = '<div class="spinner-border text-light" role="status" style="width: 2.75rem; height: 2.75rem;"></div><p class="small text-white-50 mt-2 fw-medium">Memuat dan merender pratinjau dokumen PDF...</p>';
+            spinnerEl.style.display = 'block';
+        }
+        currentPdfDoc = null;
+        currentPdfArrayBuffer = null;
     });
 });
 </script>
