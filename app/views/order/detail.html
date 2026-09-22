@@ -661,6 +661,10 @@
                             <strong class="text-dark">{{ @order.pic ?: '-' }}</strong>
                         </div>
                         <div class="mb-2 small">
+                            <span class="text-muted d-block" style="font-size:0.75rem;">PIC Surat:</span>
+                            <strong class="text-dark">{{ @surat_masuk.kontak_person ?: (@surat_masuk.pic_pengirim ?: (@order.pic_surat_masuk ?: '-')) }}</strong>
+                        </div>
+                        <div class="mb-2 small">
                             <span class="text-muted d-block" style="font-size:0.75rem;">Telepon / WhatsApp:</span>
                             <span class="text-dark">{{ @order.telepon ?: '-' }}</span>
                         </div>
