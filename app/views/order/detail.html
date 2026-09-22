@@ -2523,7 +2523,7 @@
     </div>
 </div>
 
-<!-- Modal Edit Profil Pelanggan & Rujukan Surat -->
+<!-- Modal Edit Profil Pelanggan -->
 <div class="modal fade" id="modalEditProfilPelanggan" tabindex="-1" aria-labelledby="modalEditProfilPelangganLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <form class="modal-content bg-white border-0 shadow-lg rounded-3" action="{{ @BASE }}/order/{{ @order.id }}/klien/update" method="POST">
@@ -2536,9 +2536,9 @@
                     </div>
                     <div>
                         <h6 class="modal-title fw-bold text-dark m-0 fs-6" id="modalEditProfilPelangganLabel">
-                            Edit Profil Pelanggan &amp; Rujukan Surat
+                            Edit Profil Pelanggan
                         </h6>
-                        <small class="text-muted" style="font-size: 0.78rem;">Koreksi data profil pelanggan, PIC surat, atau pilih instansi terdaftar dari master database</small>
+                        <small class="text-muted" style="font-size: 0.78rem;">Koreksi data profil pelanggan atau pilih instansi terdaftar dari master database</small>
                     </div>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
@@ -2600,7 +2600,7 @@
 
                             <div class="col-sm-6">
                                 <label class="form-label small fw-semibold text-dark mb-1" for="inputEditPic">
-                                    Nama Kontak / PIC Pelanggan
+                                    Nama Kontak / PIC
                                 </label>
                                 <input type="text" name="pic" id="inputEditPic" class="form-control form-control-sm bg-light" value="{{ @order.pic != '-' && @order.pic != '—' ? @order.pic : '' }}" readonly placeholder="-">
                             </div>
@@ -2609,6 +2609,16 @@
                                     Telepon / No. WhatsApp
                                 </label>
                                 <input type="text" name="telepon" id="inputEditTelepon" class="form-control form-control-sm bg-light" value="{{ @order.telepon != '-' && @order.telepon != '—' ? @order.telepon : '' }}" readonly placeholder="-">
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold text-dark mb-1" for="inputEditPicSurat">
+                                    PIC Surat <span class="badge bg-primary-subtle text-primary border border-primary-subtle ms-1" style="font-size: 0.68rem;">Manual</span>
+                                </label>
+                                <input type="text" name="pic_surat" id="inputEditPicSurat" class="form-control form-control-sm fw-semibold" value="{{ @surat_masuk.kontak_person ?: (@surat_masuk.pic_pengirim ?: (@order.pic_surat_masuk ?: '')) }}" placeholder="Ketik nama PIC Surat (diisi manual)...">
+                                <small class="text-muted d-block mt-0.5" style="font-size: 0.72rem;">
+                                    <i class="bi bi-info-circle text-primary me-1"></i>Nama PIC / narahubung yang tercantum khusus di surat permohonan (diisi manual).
+                                </small>
                             </div>
 
                             <div class="col-12">
@@ -2628,74 +2638,15 @@
                     </div>
                 </div>
 
-                <!-- 2. Data Rujukan Surat Masuk & PIC Surat (Input Manual) -->
-                <div class="bg-white p-3 p-md-4 rounded-3 border shadow-xs">
-                    <div class="d-flex align-items-center justify-content-between mb-3">
-                        <span class="small fw-bold text-dark d-flex align-items-center gap-1.5">
-                            <i class="bi bi-envelope-paper-fill text-danger"></i> Data Rujukan Surat Masuk &amp; PIC Surat
-                        </span>
-                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size: 0.72rem;">
-                            <i class="bi bi-pencil-fill me-1"></i> Input Manual
-                        </span>
-                    </div>
-
-                    <div class="row g-2.5">
-                        <div class="col-sm-6">
-                            <label class="form-label small fw-semibold text-dark mb-1" for="inputEditPicSurat">
-                                PIC Surat <span class="badge bg-light text-secondary border ms-1" style="font-size: 0.68rem;">Manual</span>
-                            </label>
-                            <input type="text" name="pic_surat" id="inputEditPicSurat" class="form-control form-control-sm fw-semibold" value="{{ @surat_masuk.kontak_person ?: (@surat_masuk.pic_pengirim ?: (@order.pic_surat_masuk ?: '')) }}" placeholder="Contoh: Bpk. Bambang Sudarmono, S.T.">
-                            <small class="text-muted d-block mt-0.5" style="font-size: 0.7rem;">Nama narahubung/PIC yang tercantum di surat permohonan</small>
-                        </div>
-                        <div class="col-sm-6">
-                            <label class="form-label small fw-semibold text-dark mb-1" for="inputEditHpPicSurat">
-                                No. HP / Telepon PIC Surat
-                            </label>
-                            <input type="text" name="hp_pic_surat" id="inputEditHpPicSurat" class="form-control form-control-sm" value="{{ @surat_masuk.hp_kontakperson ?: (@surat_masuk.no_telp_pengirim ?: (@order.hp_pic_surat_masuk ?: '')) }}" placeholder="Contoh: 081234567890">
-                        </div>
-
-                        <div class="col-sm-6">
-                            <label class="form-label small fw-semibold text-dark mb-1" for="inputEditEmailPicSurat">
-                                Email PIC Surat
-                            </label>
-                            <input type="email" name="email_pic_surat" id="inputEditEmailPicSurat" class="form-control form-control-sm" value="{{ @surat_masuk.email_kontakperson ?: (@surat_masuk.email_pengirim ?: (@order.email_pic_surat_masuk ?: '')) }}" placeholder="Contoh: pic.surat@perusahaan.co.id">
-                        </div>
-                        <div class="col-sm-6">
-                            <label class="form-label small fw-semibold text-dark mb-1" for="inputEditNomorSurat">
-                                Nomor Surat Resmi
-                            </label>
-                            <input type="text" name="nomor_surat" id="inputEditNomorSurat" class="form-control form-control-sm font-monospace fw-semibold" value="{{ @surat_masuk.nomor_surat ?: (@order.nomor_surat_masuk ?: '') }}" placeholder="Contoh: 012/EXT/MKT/2026">
-                        </div>
-
-                        <div class="col-sm-6">
-                            <label class="form-label small fw-semibold text-dark mb-1" for="inputEditTanggalSurat">
-                                Tanggal Surat
-                            </label>
-                            <input type="date" name="tanggal_surat" id="inputEditTanggalSurat" class="form-control form-control-sm" value="{{ @surat_masuk.tanggal_surat ?: (@order.tanggal_surat_masuk ?: '') }}">
-                        </div>
-                        <div class="col-sm-6">
-                            <label class="form-label small fw-semibold text-dark mb-1" for="inputEditPerihal">
-                                Perihal Surat Permohonan
-                            </label>
-                            <input type="text" name="perihal" id="inputEditPerihal" class="form-control form-control-sm" value="{{ @surat_masuk.perihal ?: (@order.perihal_surat_masuk ?: @order.judul_kegiatan) }}" placeholder="Perihal permohonan jasa layanan...">
-                        </div>
-                    </div>
-                </div>
-
             </div>
 
-            <div class="modal-footer border-top py-3 px-4 bg-white d-flex justify-content-between align-items-center">
-                <div class="text-muted small" style="font-size: 0.78rem;">
-                    <i class="bi bi-shield-check text-success me-1"></i> Perubahan data akan langsung disinkronkan ke sistem.
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                    <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-2 fw-semibold" data-bs-dismiss="modal">
-                        Batal
-                    </button>
-                    <button type="submit" class="btn btn-primary btn-sm px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-1.5">
-                        <i class="bi bi-check2-circle fs-6"></i> Simpan Perubahan
-                    </button>
-                </div>
+            <div class="modal-footer border-top py-3 px-4 bg-white d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-2 fw-semibold" data-bs-dismiss="modal">
+                    Batal
+                </button>
+                <button type="submit" class="btn btn-primary btn-sm px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-1.5">
+                    <i class="bi bi-check2-circle fs-6"></i> Simpan Perubahan
+                </button>
             </div>
         </form>
     </div>
