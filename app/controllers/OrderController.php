@@ -2006,9 +2006,11 @@ class OrderController extends Controller {
 
         $sql = "SELECT o.id, o.nomor_order, c.nmcustomer AS nama_perusahaan, o.judul_kegiatan, 
                        o.jenis_layanan_opti, o.spm_layanan, o.tanggal_masuk, o.status,
-                       o.pic_proposal_id, o.status_proposal_biaya, o.estimasi_biaya,
+                       o.pic_proposal_id, o.status_proposal_biaya,
+                       COALESCE(NULLIF(o.estimasi_biaya, 0), (SELECT SUM(total_biaya_item) FROM opti_kalkulasi_uji_lingkungan WHERE order_id = o.id), p.estimasi_total_biaya, 0) AS estimasi_total_biaya,
+                       COALESCE(NULLIF(o.estimasi_biaya, 0), (SELECT SUM(total_biaya_item) FROM opti_kalkulasi_uji_lingkungan WHERE order_id = o.id), p.estimasi_total_biaya, 0) AS estimasi_biaya,
                        p.id AS proposal_id, p.judul_proposal, p.durasi_kegiatan, 
-                       p.estimasi_total_biaya, p.file_proposal, p.status_proposal, 
+                       p.file_proposal, p.status_proposal, 
                        p.catatan_revisi, p.disetujui_ketua_at,
                        u.nama_user AS pic_nama
                 FROM order_layanan o
@@ -2016,7 +2018,8 @@ class OrderController extends Controller {
                 LEFT JOIN opti_proposal_riset p ON o.id = p.order_id
                 LEFT JOIN tb_arsipuser u ON o.pic_proposal_id = u.id_user
                 WHERE 1=1 
-                  AND (o.status_tinjauan = 'layak' OR o.id IN (SELECT order_id FROM opti_tinjauan_kelayakan WHERE keputusan = 'dapat_dilaksanakan')) ";
+                  AND (o.status_tinjauan = 'layak' OR o.id IN (SELECT order_id FROM opti_tinjauan_kelayakan WHERE keputusan = 'dapat_dilaksanakan'))
+                  AND o.status NOT IN ('batal', 'ditolak') ";
         
         $params = [];
 
@@ -2041,13 +2044,17 @@ class OrderController extends Controller {
         // Filter status proposal
         if ($filterStatus !== 'semua') {
             if ($filterStatus === 'draft' || $filterStatus === 'draft_disimpan') {
-                $sql .= " AND (p.status_proposal IN ('draft', 'draft_disimpan') OR p.status_proposal IS NULL) ";
+                $sql .= " AND (
+                    (o.jenis_layanan_opti = 'lingkungan' AND (o.status_proposal_biaya IN ('draft', 'draft_disimpan') OR o.status_proposal_biaya IS NULL))
+                    OR
+                    (o.jenis_layanan_opti != 'lingkungan' AND (p.status_proposal IN ('draft', 'draft_disimpan') OR p.status_proposal IS NULL))
+                ) ";
             } elseif ($filterStatus === 'diajukan') {
-                $sql .= " AND p.status_proposal = 'diajukan' ";
+                $sql .= " AND (p.status_proposal = 'diajukan' OR o.status_proposal_biaya = 'menunggu_approval') ";
             } elseif ($filterStatus === 'disetujui') {
-                $sql .= " AND p.status_proposal = 'disetujui_ketua' ";
+                $sql .= " AND (p.status_proposal IN ('disetujui', 'disetujui_ketua', 'disetujui_pimpinan') OR o.status_proposal_biaya = 'siap_penawaran') ";
             } elseif ($filterStatus === 'ditolak') {
-                $sql .= " AND p.status_proposal = 'ditolak' ";
+                $sql .= " AND (p.status_proposal = 'ditolak' OR o.status_proposal_biaya = 'perlu_revisi') ";
             }
         }
 
@@ -2077,11 +2084,31 @@ class OrderController extends Controller {
         $statDitolak = 0;
 
         foreach ($listProposal as $item) {
-            $st = $item['status_proposal'] ?? 'draft';
-            if ($st === 'diajukan') $statDiajukan++;
-            elseif ($st === 'disetujui_ketua') $statDisetujui++;
-            elseif ($st === 'ditolak') $statDitolak++;
-            else $statDraft++;
+            $stProp = $item['status_proposal'] ?? '';
+            $stBiaya = $item['status_proposal_biaya'] ?? '';
+            $isLing = (($item['jenis_layanan_opti'] ?? '') === 'lingkungan');
+
+            if ($isLing) {
+                if ($stBiaya === 'siap_penawaran') {
+                    $statDisetujui++;
+                } elseif ($stBiaya === 'menunggu_approval') {
+                    $statDiajukan++;
+                } elseif ($stBiaya === 'perlu_revisi') {
+                    $statDitolak++;
+                } else {
+                    $statDraft++;
+                }
+            } else {
+                if ($stProp === 'diajukan' || $stBiaya === 'menunggu_approval') {
+                    $statDiajukan++;
+                } elseif (in_array($stProp, ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan']) || $stBiaya === 'siap_penawaran') {
+                    $statDisetujui++;
+                } elseif ($stProp === 'ditolak' || $stBiaya === 'perlu_revisi') {
+                    $statDitolak++;
+                } else {
+                    $statDraft++;
+                }
+            }
         }
 
         $f3->set('list_proposal', $listProposal);
