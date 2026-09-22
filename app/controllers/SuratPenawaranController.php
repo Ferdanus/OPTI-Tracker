@@ -921,33 +921,54 @@ $daftarPegawai = $arsipUser->find(
     public function cetakPdf($f3, $params)
     {
         $this->requireAuth();
-        $orderId = (int)($params['id'] ?? 0);
-
+        $targetId = (int)($params['id'] ?? 0);
+        $spModel  = new SuratPenawaran($this->db);
         $orderModel = new OrderLayanan($this->db);
-        $order = $orderModel->getDetail($orderId);
 
-        if (!$order) {
-            $this->f3->error(404, 'Order tidak ditemukan');
-            return;
-        }
+        $order = $orderModel->getDetail($targetId);
+        $sp    = null;
 
-        $spModel = new SuratPenawaran($this->db);
-        $spId = (int)($f3->get('GET.id') ?? 0);
-        $sp = null;
-        if ($spId > 0) {
-            $sp = $spModel->getById($spId);
-            if ($sp && (int)$sp['order_id'] !== $orderId) {
-                $sp = null;
+        if ($order) {
+            $spId = (int)($f3->get('GET.id') ?? 0);
+            if ($spId > 0) {
+                $sp = $spModel->getById($spId);
+                if ($sp && (int)$sp['order_id'] !== $targetId) {
+                    $sp = null;
+                }
+            }
+            if (!$sp) {
+                $sp = $spModel->getByOrderId($targetId);
+            }
+        } else {
+            // Coba cari sebagai ID Surat Penawaran langsung
+            $sp = $spModel->getById($targetId);
+            if ($sp && !empty($sp['order_id'])) {
+                $order = $orderModel->getDetail((int)$sp['order_id']);
             }
         }
-        if (!$sp) {
-            $sp = $spModel->getByOrderId($orderId);
-        }
 
         if (!$sp) {
-            $this->setFlashError('Surat penawaran untuk order ini belum diterbitkan. Silakan buat penawaran terlebih dahulu.');
-            $f3->reroute("/order/{$orderId}/penawaran/buat");
+            $this->setFlashError('Surat penawaran tidak ditemukan.');
+            $f3->reroute('/surat-penawaran');
             return;
+        }
+
+        if (!$order) {
+            // Fallback order info dari data surat penawaran
+            $order = [
+                'id'                 => (int)($sp['order_id'] ?? 0),
+                'nomor_order'        => 'ORD-OFFLINE',
+                'nama_perusahaan'    => $sp['perusahaan'] ?? 'Mitra Balai',
+                'pt_cv'              => '',
+                'pic'                => $sp['nama'] ?? '-',
+                'telepon'            => '-',
+                'email'              => '-',
+                'alamat'             => $sp['alamat'] ?? '-',
+                'jenis_layanan_opti' => $sp['jenis_layanan'] ?? 'selulosa',
+                'judul_kegiatan'     => $sp['perihal'] ?? 'Penawaran Layanan Jasa OPTI',
+                'estimasi_biaya'     => (float)($sp['nominal_penawaran'] ?? 0),
+                'spm_layanan'        => '30 Hari Kerja'
+            ];
         }
 
         $pdf = $this->generatePdfObject($order, $sp);

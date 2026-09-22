@@ -188,9 +188,14 @@
                             <td class="text-center text-nowrap">
                                 <div class="d-inline-flex align-items-center gap-1">
                                     <check if="{{ @sp.order_id }}">
-                                        <a href="{{ @BASE }}/order/{{ @sp.order_id }}/penawaran/cetak?id={{ @sp.id }}&t={{ time() }}" target="_blank" class="btn btn-outline-danger btn-sm py-1 px-2 d-inline-flex align-items-center gap-1 fw-semibold" title="Cetak Surat Penawaran PDF">
+                                        <button type="button" 
+                                                class="btn btn-outline-danger btn-sm py-1 px-2 d-inline-flex align-items-center gap-1 fw-semibold btn-preview-pdf" 
+                                                data-pdf-url="{{ @BASE }}/order/{{ @sp.order_id }}/penawaran/cetak?id={{ @sp.id }}&t={{ time() }}"
+                                                data-nomor="{{ @sp.nomor_surat }}"
+                                                data-perusahaan="{{ @sp.display_perusahaan ?: @sp.perusahaan }}"
+                                                title="Pratinjau Surat Penawaran PDF">
                                             <i class="bi bi-file-earmark-pdf"></i> PDF
-                                        </a>
+                                        </button>
                                         <a href="{{ @BASE }}/order/{{ @sp.order_id }}" class="btn btn-light border btn-sm py-1 px-2 text-primary" title="Buka Detail Order">
                                             <i class="bi bi-folder2-open"></i>
                                         </a>
@@ -199,6 +204,14 @@
                                         </a>
                                     </check>
                                     <check if="{{ !@sp.order_id }}">
+                                        <button type="button" 
+                                                class="btn btn-outline-danger btn-sm py-1 px-2 d-inline-flex align-items-center gap-1 fw-semibold btn-preview-pdf" 
+                                                data-pdf-url="{{ @BASE }}/surat-penawaran/{{ @sp.id }}/pdf?t={{ time() }}"
+                                                data-nomor="{{ @sp.nomor_surat }}"
+                                                data-perusahaan="{{ @sp.display_perusahaan ?: @sp.perusahaan }}"
+                                                title="Pratinjau Surat Penawaran PDF">
+                                            <i class="bi bi-file-earmark-pdf"></i> PDF
+                                        </button>
                                         <a href="{{ @BASE }}/surat-penawaran/{{ @sp.id }}/edit" class="btn btn-light border btn-sm py-1 px-2 text-secondary" title="Edit Surat Penawaran">
                                             <i class="bi bi-pencil"></i>
                                         </a>
@@ -383,3 +396,142 @@
         });
     </script>
 </check>
+
+<!-- Modal Preview PDF Surat Penawaran Resmi -->
+<div class="modal fade" id="modalPreviewPenawaranPdf" tabindex="-1" aria-labelledby="modalPreviewPenawaranPdfLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered" style="max-width: 92vw; height: 92vh; margin: 4vh auto;">
+        <div class="modal-content border-0 shadow-lg d-flex flex-column h-100" style="border-radius: 12px; overflow: hidden; background: #fff;">
+            <!-- Header Modal -->
+            <div class="modal-header py-2.5 px-4 bg-white border-bottom d-flex align-items-center justify-content-between flex-shrink-0">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle p-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px; background-color: #fee2e2; color: #dc2626;">
+                        <i class="bi bi-file-earmark-pdf-fill fs-5"></i>
+                    </div>
+                    <div>
+                        <div class="d-flex align-items-center gap-2">
+                            <h6 class="modal-title fw-bold text-dark mb-0" id="modalPreviewPenawaranPdfLabel">Pratinjau Dokumen Surat Penawaran Resmi</h6>
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle font-monospace px-2 py-0.5" style="font-size: 0.72rem;" id="modalPdfBadgeNomor">-</span>
+                        </div>
+                        <small class="text-muted d-block mt-0.5" style="font-size: 0.78rem;" id="modalPdfSubtitle">Pratinjau surat penawaran dalam format PDF resmi</small>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <a href="#" id="modalPdfBtnUnduh" class="btn btn-outline-danger btn-sm px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-sm" download title="Unduh Dokumen PDF">
+                        <i class="bi bi-download"></i> Unduh PDF
+                    </a>
+                    <button type="button" id="modalPdfBtnCetak" class="btn btn-outline-secondary btn-sm px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5" title="Cetak Dokumen">
+                        <i class="bi bi-printer"></i> Cetak
+                    </button>
+                    <a href="#" id="modalPdfBtnTabBaru" target="_blank" class="btn btn-outline-secondary btn-sm px-2.5 py-1.5 fw-semibold" title="Buka di Tab Baru">
+                        <i class="bi bi-box-arrow-up-right"></i>
+                    </a>
+                    <button type="button" class="btn-close ms-2" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                </div>
+            </div>
+
+            <!-- Body Modal (Viewer PDF) -->
+            <div class="modal-body p-0 position-relative flex-grow-1 bg-light" style="min-height: 480px; overflow: hidden;">
+                <!-- Loading Spinner -->
+                <div id="modalPdfLoading" class="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center bg-light" style="z-index: 5;">
+                    <div class="spinner-border text-danger mb-2" role="status" style="width: 2.2rem; height: 2.2rem;">
+                        <span class="visually-hidden">Memuat PDF...</span>
+                    </div>
+                    <span class="text-muted small fw-semibold">Memuat Pratinjau Dokumen PDF...</span>
+                </div>
+                <!-- Iframe Viewer -->
+                <iframe id="modalPdfIframe" class="w-100 h-100 border-0" style="display: block; min-height: 100%;" src="about:blank"></iframe>
+            </div>
+
+            <!-- Footer Modal -->
+            <div class="modal-footer py-2 px-4 bg-white border-top d-flex justify-content-between align-items-center flex-shrink-0">
+                <small class="text-muted" style="font-size: 0.76rem;">
+                    <i class="bi bi-info-circle me-1 text-primary"></i> Anda dapat menggulir halaman, memperbesar, mencetak, atau mengunduh dokumen langsung dari pratinjau ini.
+                </small>
+                <button type="button" class="btn btn-secondary btn-sm px-3 py-1.5 fw-semibold" data-bs-dismiss="modal">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var modalPreviewPdfEl = document.getElementById('modalPreviewPenawaranPdf');
+    if (!modalPreviewPdfEl) return;
+
+    var modalPreviewPdf = new bootstrap.Modal(modalPreviewPdfEl);
+    var iframeEl = document.getElementById('modalPdfIframe');
+    var loadingEl = document.getElementById('modalPdfLoading');
+    var badgeNomorEl = document.getElementById('modalPdfBadgeNomor');
+    var subtitleEl = document.getElementById('modalPdfSubtitle');
+    var btnUnduhEl = document.getElementById('modalPdfBtnUnduh');
+    var btnTabBaruEl = document.getElementById('modalPdfBtnTabBaru');
+    var btnCetakEl = document.getElementById('modalPdfBtnCetak');
+
+    // Handle klik tombol PDF di tabel
+    document.querySelectorAll('.btn-preview-pdf').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            var pdfUrl = this.getAttribute('data-pdf-url');
+            var nomorSurat = this.getAttribute('data-nomor') || '-';
+            var namaPerusahaan = this.getAttribute('data-perusahaan') || '';
+
+            if (!pdfUrl) return;
+
+            // Update UI modal
+            if (badgeNomorEl) badgeNomorEl.textContent = nomorSurat;
+            if (subtitleEl) subtitleEl.textContent = namaPerusahaan ? ('Surat Penawaran Resmi untuk ' + namaPerusahaan) : 'Pratinjau surat penawaran resmi';
+            if (btnUnduhEl) btnUnduhEl.setAttribute('href', pdfUrl);
+            if (btnTabBaruEl) btnTabBaruEl.setAttribute('href', pdfUrl);
+
+            // Tampilkan loading spinner
+            if (loadingEl) {
+                loadingEl.classList.remove('d-none');
+                loadingEl.style.display = 'flex';
+            }
+
+            // Set iframe src dengan anchor toolbar PDF browser standar
+            var previewUrl = pdfUrl + (pdfUrl.indexOf('#') === -1 ? '#toolbar=1&navpanes=0' : '');
+            if (iframeEl) {
+                iframeEl.src = previewUrl;
+
+                // Sembunyikan loading setelah iframe selesai dimuat
+                iframeEl.onload = function() {
+                    if (loadingEl) {
+                        loadingEl.classList.add('d-none');
+                        loadingEl.style.display = 'none';
+                    }
+                };
+            }
+
+            // Tampilkan modal
+            modalPreviewPdf.show();
+        });
+    });
+
+    // Handle tombol Cetak di header modal
+    if (btnCetakEl) {
+        btnCetakEl.addEventListener('click', function() {
+            try {
+                if (iframeEl && iframeEl.contentWindow) {
+                    iframeEl.contentWindow.focus();
+                    iframeEl.contentWindow.print();
+                }
+            } catch (err) {
+                // Jika cross-origin/sandbox memblokir direct print, buka tab baru untuk print
+                window.open(btnUnduhEl.getAttribute('href'), '_blank');
+            }
+        });
+    }
+
+    // Reset iframe saat modal ditutup agar tidak membebani memori browser
+    modalPreviewPdfEl.addEventListener('hidden.bs.modal', function() {
+        if (iframeEl) iframeEl.src = 'about:blank';
+        if (loadingEl) {
+            loadingEl.classList.remove('d-none');
+            loadingEl.style.display = 'flex';
+        }
+    });
+});
+</script>
