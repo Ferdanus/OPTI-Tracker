@@ -2613,12 +2613,9 @@
 
                             <div class="col-12">
                                 <label class="form-label small fw-semibold text-dark mb-1" for="inputEditPicSurat">
-                                    PIC Surat <span class="badge bg-primary-subtle text-primary border border-primary-subtle ms-1" style="font-size: 0.68rem;">Manual</span>
+                                    PIC Surat
                                 </label>
-                                <input type="text" name="pic_surat" id="inputEditPicSurat" class="form-control form-control-sm fw-semibold" value="{{ @surat_masuk.kontak_person ?: (@surat_masuk.pic_pengirim ?: (@order.pic_surat_masuk ?: '')) }}" placeholder="Ketik nama PIC Surat (diisi manual)...">
-                                <small class="text-muted d-block mt-0.5" style="font-size: 0.72rem;">
-                                    <i class="bi bi-info-circle text-primary me-1"></i>Nama PIC / narahubung yang tercantum khusus di surat permohonan (diisi manual).
-                                </small>
+                                <input type="text" name="pic_surat" id="inputEditPicSurat" class="form-control form-control-sm" value="{{ @surat_masuk.kontak_person ?: (@surat_masuk.pic_pengirim ?: (@order.pic_surat_masuk ?: '')) }}" placeholder="-">
                             </div>
 
                             <div class="col-12">
