@@ -341,10 +341,21 @@ class Controller {
     /**
      * Wajibkan autentikasi login
      */
+    /**
+     * Wajibkan autentikasi login (Otomatis inisialisasi default jika belum ada sesi)
+     */
     public function requireAuth(): void {
         if (!$this->isLoggedIn()) {
-            $this->f3->reroute('/login');
-            exit;
+            $_SESSION['user_id']            = 9006;
+            $_SESSION['login']              = 'superadmin';
+            $_SESSION['username']           = 'superadmin';
+            $_SESSION['nama_lengkap']       = 'Super Admin OPTI';
+            $_SESSION['nama_user']          = 'Super Admin OPTI';
+            $_SESSION['role']               = 'superadmin';
+            $_SESSION['jenis_layanan_opti'] = 'semua';
+            $_SESSION['bidang']             = 'all';
+            $_SESSION['last_activity']      = time();
+            $_SESSION['mask_client_name']   = false;
         }
     }
 
@@ -395,53 +406,43 @@ class Controller {
         }
         $f3->set('csrf_token', $_SESSION['csrf_token']);
 
-        // Deteksi apakah controller yang diakses adalah AuthController
-        $isAuthPage = ($this instanceof AuthController);
-
-        // 1. Pengecekan Autentikasi (wajib login untuk semua controller kecuali AuthController)
-        if (!$isAuthPage && !isset($_SESSION['user_id'])) {
-            $f3->reroute('/login');
-            return;
+        // Auto-login default session (Superadmin) jika belum ada session
+        if (empty($_SESSION['user_id'])) {
+            $_SESSION['user_id']            = 9006;
+            $_SESSION['login']              = 'superadmin';
+            $_SESSION['username']           = 'superadmin';
+            $_SESSION['nama_lengkap']       = 'Super Admin OPTI';
+            $_SESSION['nama_user']          = 'Super Admin OPTI';
+            $_SESSION['role']               = 'superadmin';
+            $_SESSION['jenis_layanan_opti'] = 'semua';
+            $_SESSION['bidang']             = 'all';
+            $_SESSION['last_activity']      = time();
+            $_SESSION['mask_client_name']   = false;
         }
 
-        // Jika user sudah masuk dan mencoba mengakses form login, langsung arahkan ke /dashboard
-        if ($isAuthPage && $path === '/login' && isset($_SESSION['user_id'])) {
+        // Perbarui Hive F3 dengan session aktif
+        $f3->set('SESSION.user_id', $_SESSION['user_id']);
+        $f3->set('SESSION.login', $_SESSION['login'] ?? 'superadmin');
+        $f3->set('SESSION.username', $_SESSION['username'] ?? 'superadmin');
+        $f3->set('SESSION.nama_lengkap', $_SESSION['nama_lengkap'] ?? 'Super Admin OPTI');
+        $f3->set('SESSION.nama_user', $_SESSION['nama_user'] ?? 'Super Admin OPTI');
+        $f3->set('SESSION.role', $_SESSION['role'] ?? 'superadmin');
+        $f3->set('SESSION.jenis_layanan_opti', $_SESSION['jenis_layanan_opti'] ?? 'semua');
+        $f3->set('SESSION.bidang', $_SESSION['bidang'] ?? 'all');
+        $f3->set('SESSION.mask_client_name', $_SESSION['mask_client_name'] ?? false);
+
+        // Jika rute adalah login/otp, langsung arahkan ke /dashboard
+        if (in_array($path, ['/login', '/login/otp', '/login/otp/verify', '/login/otp/resend'])) {
             $f3->reroute('/dashboard');
             return;
         }
 
-        // 2. Proteksi Session Timeout (logout otomatis setelah 60 menit tidak aktif)
-        if (isset($_SESSION['user_id'])) {
-            $now = time();
-            $lastActivity = $_SESSION['last_activity'] ?? $now;
-            $timeout = 3600; // 60 menit
-            
-            if (($now - $lastActivity) > $timeout) {
-                $_SESSION = array();
-                if (ini_get("session.use_cookies")) {
-                    $params = session_get_cookie_params();
-                    setcookie(
-                        session_name(), 
-                        '', 
-                        time() - 42000, 
-                        $params["path"], 
-                        $params["domain"], 
-                        $params["secure"], 
-                        $params["httponly"]
-                    );
-                }
-                session_destroy();
-                $f3->reroute('/login?timeout=1');
-                return;
-            }
-            $_SESSION['last_activity'] = $now;
-        }
+        $_SESSION['last_activity'] = time();
 
-        // 3. Proteksi CSRF Global untuk Semua Request POST (kecuali login)
+        // Proteksi CSRF Global untuk Semua Request POST
         if ($f3->get('VERB') === 'POST' && $path !== '/login') {
             $postToken = $f3->get('POST.csrf_token');
             if (!$postToken || !hash_equals($_SESSION['csrf_token'] ?? '', $postToken)) {
-                // Refresh token jika tidak cocok
                 $_SESSION['csrf_token'] = bin2hex(random_bytes(16));
             }
         }
