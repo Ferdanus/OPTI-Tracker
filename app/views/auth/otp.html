@@ -305,6 +305,7 @@
         <!-- Form Input OTP -->
         <form action="{{ @BASE }}/login/otp/verify" method="POST" id="formOtp" autocomplete="off">
             <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
+            <input type="hidden" name="user_id" value="{{ @user_id }}">
             <input type="hidden" name="otp" id="fullOtpInput" value="">
 
             <div class="otp-inputs-grid" id="otpInputs">
@@ -321,7 +322,7 @@
                     <i class="bi bi-clock-history me-1"></i> Berlaku: <strong id="timerCountdown" class="text-dark">24:00:00</strong>
                 </div>
                 <div>
-                    <a href="{{ @BASE }}/login/otp/resend" id="btnResendOtp" class="btn-resend disabled">
+                    <a href="{{ @BASE }}/login/otp/resend?user_id={{ @user_id }}" id="btnResendOtp" class="btn-resend disabled">
                         <i class="bi bi-arrow-clockwise"></i> Kirim Ulang <span id="resendCountdown"></span>
                     </a>
                 </div>

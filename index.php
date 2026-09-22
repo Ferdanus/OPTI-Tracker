@@ -7,12 +7,25 @@ if (file_exists(__DIR__ . '/vendor/autoload.php')) {
 
 // Inisialisasi Session Native PHP dengan cookie path global '/' kompatibel PHP 7.2+
 if (session_status() === PHP_SESSION_NONE) {
-    session_set_cookie_params(0, '/', '', false, true);
+    if (version_compare(PHP_VERSION, '7.3.0') >= 0) {
+        session_set_cookie_params([
+            'lifetime' => 0,
+            'path'     => '/',
+            'domain'   => '',
+            'secure'   => false,
+            'httponly' => true,
+            'samesite' => 'Lax'
+        ]);
+    } else {
+        session_set_cookie_params(0, '/', '', false, true);
+    }
     session_start();
 }
 
 // Inisialisasi Fat-Free Framework
 $f3 = \Base::instance();
+$f3->set('JAR.path', '/');
+$f3->set('JAR.samesite', 'Lax');
 
 // Muat file konfigurasi
 $f3->config('config.ini');

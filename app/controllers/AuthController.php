@@ -140,24 +140,37 @@ class AuthController extends Controller {
 
         // Ambil no_hp dari tb_arsipuser (hanya untuk login awal dari luar)
         $noHp = trim($userData['no_hp'] ?? '');
+        if (empty($noHp)) {
+            $this->setFlashError("Akun <strong>{$userData['nama_user']}</strong> belum memiliki nomor WhatsApp terdaftar pada profil.");
+            $f3->reroute('/login');
+            return;
+        }
 
         // Ambil OTP aktif 24 jam atau generate & kirim baru via WhatsApp jika belum ada
         $otpResult = WhatsAppService::getOrCreateDailyOtp($this->db, (int)$userData['id_user'], $userData['nama_user'], $noHp, false);
 
-        $_SESSION['otp_pending'] = array(
+        if (!$otpResult['success']) {
+            $this->setFlashError($otpResult['message'] ?? 'Gagal mengirimkan kode OTP ke WhatsApp.');
+            $f3->reroute('/login');
+            return;
+        }
+
+        $pendingData = array(
             'user_id'          => (int)$userData['id_user'],
             'userData'         => $userData,
             'roleOpti'         => $roleOpti,
             'jenisLayananOpti' => $jenisLayananOpti,
-            'otp_code'         => $otpResult['otp'],
-            'no_hp'            => $otpResult['phone'],
-            'masked_phone'     => $otpResult['masked_phone'],
-            'expires_at'       => $otpResult['expires_at'],
+            'otp_code'         => $otpResult['otp'] ?? '',
+            'no_hp'            => $otpResult['phone'] ?? $noHp,
+            'masked_phone'     => $otpResult['masked_phone'] ?? WhatsAppService::maskPhoneNumber($noHp),
+            'expires_at'       => $otpResult['expires_at'] ?? (time() + 86400),
             'attempts'         => 0
         );
+        $_SESSION['otp_pending'] = $pendingData;
+        $f3->set('SESSION.otp_pending', $pendingData);
 
         $this->setFlashSuccess($otpResult['message']);
-        $f3->reroute('/login/otp');
+        $f3->reroute('/login/otp?user_id=' . (int)$userData['id_user']);
     }
 
     /**
@@ -194,23 +207,37 @@ class AuthController extends Controller {
         $userRow = $this->db->exec("SELECT no_hp FROM tb_arsipuser WHERE id_user = ?", array(1 => (int)$userData['id_user']));
         $noHp = trim($userRow[0]['no_hp'] ?? ($userData['no_hp'] ?? ''));
 
+        if (empty($noHp)) {
+            $this->setFlashError("Akun <strong>{$userData['nama_user']}</strong> belum memiliki nomor WhatsApp terdaftar pada sistem. Hubungi administrator.");
+            $f3->reroute('/login');
+            return;
+        }
+
         // Ambil OTP aktif 24 jam atau generate & kirim baru via WhatsApp jika belum ada
         $otpResult = WhatsAppService::getOrCreateDailyOtp($this->db, (int)$userData['id_user'], $userData['nama_user'], $noHp, false);
 
-        $_SESSION['otp_pending'] = array(
+        if (!$otpResult['success']) {
+            $this->setFlashError($otpResult['message'] ?? 'Gagal mengirimkan kode OTP ke WhatsApp.');
+            $f3->reroute('/login');
+            return;
+        }
+
+        $pendingData = array(
             'user_id'          => (int)$userData['id_user'],
             'userData'         => $userData,
             'roleOpti'         => $userData['role'],
             'jenisLayananOpti' => $userData['jenis_layanan_opti'],
-            'otp_code'         => $otpResult['otp'],
-            'no_hp'            => $otpResult['phone'],
-            'masked_phone'     => $otpResult['masked_phone'],
-            'expires_at'       => $otpResult['expires_at'],
+            'otp_code'         => $otpResult['otp'] ?? '',
+            'no_hp'            => $otpResult['phone'] ?? $noHp,
+            'masked_phone'     => $otpResult['masked_phone'] ?? WhatsAppService::maskPhoneNumber($noHp),
+            'expires_at'       => $otpResult['expires_at'] ?? (time() + 86400),
             'attempts'         => 0
         );
+        $_SESSION['otp_pending'] = $pendingData;
+        $f3->set('SESSION.otp_pending', $pendingData);
 
         $this->setFlashSuccess($otpResult['message']);
-        $f3->reroute('/login/otp');
+        $f3->reroute('/login/otp?user_id=' . (int)$userData['id_user']);
     }
 
     /**
@@ -223,16 +250,82 @@ class AuthController extends Controller {
             return;
         }
 
-        if (empty($_SESSION['otp_pending'])) {
+        $pending = $_SESSION['otp_pending'] ?? ($f3->get('SESSION.otp_pending') ?? null);
+        $userId = (int)($pending['user_id'] ?? ($f3->get('GET.user_id') ?? 0));
+
+        // Jika session pending kosong tapi ada user_id di parameter GET, pulihkan data user
+        if (empty($pending) && $userId > 0) {
+            $userModel = new ArsipUser($this->db);
+            $profil = $userModel->getProfil($userId);
+            if ($profil) {
+                $rawRole = !empty($profil['si_opti']) ? trim($profil['si_opti']) : ($profil['role_opti'] ?? '');
+                $roleOpti = 'user';
+                $jenisLayananOpti = 'semua';
+
+                if (strpos($rawRole, 'tim_kerja_selulosa') !== false || $rawRole === 'pic_selulosa') {
+                    $roleOpti = 'tim_kerja';
+                    $jenisLayananOpti = 'selulosa';
+                } elseif (strpos($rawRole, 'tim_kerja_lingkungan') !== false || $rawRole === 'pic_lingkungan') {
+                    $roleOpti = 'tim_kerja';
+                    $jenisLayananOpti = 'lingkungan';
+                } elseif (strpos($rawRole, 'ketua_tim_selulosa') !== false || $rawRole === 'katim_selulosa') {
+                    $roleOpti = 'ketua_tim';
+                    $jenisLayananOpti = 'selulosa';
+                } elseif (strpos($rawRole, 'ketua_tim_lingkungan') !== false || $rawRole === 'katim_lingkungan') {
+                    $roleOpti = 'ketua_tim';
+                    $jenisLayananOpti = 'lingkungan';
+                } elseif ($rawRole === 'tim_mitra_industri' || $rawRole === 'admin_order' || $rawRole === 'tim_mitra') {
+                    $roleOpti = 'tim_mitra_industri';
+                    $jenisLayananOpti = 'semua';
+                } elseif ($rawRole === 'keuangan') {
+                    $roleOpti = 'keuangan';
+                    $jenisLayananOpti = 'semua';
+                } elseif ($rawRole === 'user' || $rawRole === 'pegawai') {
+                    $roleOpti = 'user';
+                    $jenisLayananOpti = 'semua';
+                } elseif (!empty($rawRole)) {
+                    $roleOpti = $rawRole;
+                    $jenisLayananOpti = $profil['jenis_layanan_opti'] ?? 'semua';
+                }
+
+                if (empty($rawRole)) {
+                    if (!empty($profil['bidang']) && in_array(strtolower($profil['bidang']), array('all', 'admin'))) {
+                        $roleOpti = 'superadmin';
+                    } else {
+                        $roleOpti = 'user';
+                    }
+                }
+
+                $activeOtp = WhatsAppService::getActiveOtp($this->db, $userId);
+                $noHp = $profil['no_hp'] ?? '';
+                $expTime = !empty($activeOtp) ? strtotime($activeOtp['expired_at']) : (time() + 86400);
+
+                $pending = array(
+                    'user_id'          => $userId,
+                    'userData'         => $profil,
+                    'roleOpti'         => $roleOpti,
+                    'jenisLayananOpti' => $jenisLayananOpti,
+                    'otp_code'         => $activeOtp['otp_code'] ?? '',
+                    'no_hp'            => $noHp,
+                    'masked_phone'     => WhatsAppService::maskPhoneNumber($noHp),
+                    'expires_at'       => $expTime,
+                    'attempts'         => 0
+                );
+                $_SESSION['otp_pending'] = $pending;
+                $f3->set('SESSION.otp_pending', $pending);
+            }
+        }
+
+        if (empty($pending)) {
             $f3->reroute('/login');
             return;
         }
 
-        $pending = $_SESSION['otp_pending'];
-        $remaining = max(0, (int)($pending['expires_at'] - time()));
+        $remaining = max(0, (int)(($pending['expires_at'] ?? (time() + 86400)) - time()));
 
-        $f3->set('masked_phone', $pending['masked_phone']);
-        $f3->set('nama_user', $pending['userData']['nama_user']);
+        $f3->set('user_id', $pending['user_id'] ?? 0);
+        $f3->set('masked_phone', $pending['masked_phone'] ?? '');
+        $f3->set('nama_user', $pending['userData']['nama_user'] ?? 'Pengguna');
         $f3->set('remaining_seconds', $remaining);
         $f3->set('page_title', 'Verifikasi Kode OTP');
 
@@ -244,36 +337,104 @@ class AuthController extends Controller {
      * Route: POST /login/otp/verify
      */
     public function otpVerify($f3) {
-        if (empty($_SESSION['otp_pending'])) {
+        $pending = $_SESSION['otp_pending'] ?? ($f3->get('SESSION.otp_pending') ?? null);
+        $userId = (int)($pending['user_id'] ?? ($f3->get('POST.user_id') ?? 0));
+        $inputOtp = trim((string)($f3->get('POST.otp') ?? ''));
+
+        if ($userId <= 0) {
             $this->setFlashError('Sesi verifikasi login telah berakhir. Silakan login kembali.');
             $f3->reroute('/login');
             return;
         }
 
-        $pending = $_SESSION['otp_pending'];
+        // Jika session pending hilang tapi ada user_id dari POST, pulihkan data user dari database
+        if (empty($pending)) {
+            $userModel = new ArsipUser($this->db);
+            $profil = $userModel->getProfil($userId);
+            if (!$profil) {
+                $this->setFlashError('Sesi verifikasi login telah berakhir. Silakan login kembali.');
+                $f3->reroute('/login');
+                return;
+            }
+
+            $rawRole = !empty($profil['si_opti']) ? trim($profil['si_opti']) : ($profil['role_opti'] ?? '');
+            $roleOpti = 'user';
+            $jenisLayananOpti = 'semua';
+
+            if (strpos($rawRole, 'tim_kerja_selulosa') !== false || $rawRole === 'pic_selulosa') {
+                $roleOpti = 'tim_kerja';
+                $jenisLayananOpti = 'selulosa';
+            } elseif (strpos($rawRole, 'tim_kerja_lingkungan') !== false || $rawRole === 'pic_lingkungan') {
+                $roleOpti = 'tim_kerja';
+                $jenisLayananOpti = 'lingkungan';
+            } elseif (strpos($rawRole, 'ketua_tim_selulosa') !== false || $rawRole === 'katim_selulosa') {
+                $roleOpti = 'ketua_tim';
+                $jenisLayananOpti = 'selulosa';
+            } elseif (strpos($rawRole, 'ketua_tim_lingkungan') !== false || $rawRole === 'katim_lingkungan') {
+                $roleOpti = 'ketua_tim';
+                $jenisLayananOpti = 'lingkungan';
+            } elseif ($rawRole === 'tim_mitra_industri' || $rawRole === 'admin_order' || $rawRole === 'tim_mitra') {
+                $roleOpti = 'tim_mitra_industri';
+                $jenisLayananOpti = 'semua';
+            } elseif ($rawRole === 'keuangan') {
+                $roleOpti = 'keuangan';
+                $jenisLayananOpti = 'semua';
+            } elseif ($rawRole === 'user' || $rawRole === 'pegawai') {
+                $roleOpti = 'user';
+                $jenisLayananOpti = 'semua';
+            } elseif (!empty($rawRole)) {
+                $roleOpti = $rawRole;
+                $jenisLayananOpti = $profil['jenis_layanan_opti'] ?? 'semua';
+            }
+
+            if (empty($rawRole)) {
+                if (!empty($profil['bidang']) && in_array(strtolower($profil['bidang']), array('all', 'admin'))) {
+                    $roleOpti = 'superadmin';
+                } else {
+                    $roleOpti = 'user';
+                }
+            }
+
+            $activeOtp = WhatsAppService::getActiveOtp($this->db, $userId);
+            $expTime = !empty($activeOtp) ? strtotime($activeOtp['expired_at']) : (time() + 86400);
+
+            $pending = array(
+                'user_id'          => $userId,
+                'userData'         => $profil,
+                'roleOpti'         => $roleOpti,
+                'jenisLayananOpti' => $jenisLayananOpti,
+                'otp_code'         => $activeOtp['otp_code'] ?? '',
+                'expires_at'       => $expTime,
+                'attempts'         => 0
+            );
+        }
 
         // Cek kedaluwarsa waktu OTP
-        if (time() > (int)$pending['expires_at']) {
+        if (!empty($pending['expires_at']) && time() > (int)$pending['expires_at']) {
             $this->setFlashError('Kode OTP telah kedaluwarsa. Silakan klik tombol kirim ulang.');
-            $f3->reroute('/login/otp');
+            $f3->reroute('/login/otp?user_id=' . $userId);
             return;
         }
 
         // Cek batasan percobaan (maksimal 5 kali)
-        $_SESSION['otp_pending']['attempts'] = (int)($pending['attempts'] ?? 0) + 1;
-        if ($_SESSION['otp_pending']['attempts'] > 5) {
+        $attempts = (int)($pending['attempts'] ?? 0) + 1;
+        if (isset($_SESSION['otp_pending'])) {
+            $_SESSION['otp_pending']['attempts'] = $attempts;
+            $f3->set('SESSION.otp_pending.attempts', $attempts);
+        }
+        if ($attempts > 5) {
             unset($_SESSION['otp_pending']);
+            $f3->clear('SESSION.otp_pending');
             $this->setFlashError('Batas percobaan OTP terlampaui. Silakan login kembali dari awal.');
             $f3->reroute('/login');
             return;
         }
 
-        $inputOtp = trim((string)($f3->get('POST.otp') ?? ''));
         $verifyResult = WhatsAppService::verifyOtp($this->db, (int)$pending['user_id'], $inputOtp);
 
-        if (!$verifyResult['valid'] && $inputOtp !== (string)$pending['otp_code']) {
+        if (!$verifyResult['valid'] && (empty($pending['otp_code']) || $inputOtp !== (string)$pending['otp_code'])) {
             $this->setFlashError('Kode OTP yang Anda masukkan salah.');
-            $f3->reroute('/login/otp');
+            $f3->reroute('/login/otp?user_id=' . $userId);
             return;
         }
 
@@ -287,7 +448,7 @@ class AuthController extends Controller {
         $_SESSION['role']               = $pending['roleOpti'];
         $_SESSION['jenis_layanan_opti'] = $pending['jenisLayananOpti'];
         $_SESSION['bidang']             = $userData['bidang'] ?? 'all';
-        $_SESSION['foto_profil']        = $userData['foto_profil'] ?? null;
+        $_SESSION['foto_profil']        = $userData['foto_profil'] ?? ($userData['nama_avatar'] ?? null);
         $_SESSION['last_activity']      = time();
 
         $f3->set('SESSION.user_id', $userData['id_user']);
@@ -298,7 +459,7 @@ class AuthController extends Controller {
         $f3->set('SESSION.role', $pending['roleOpti']);
         $f3->set('SESSION.jenis_layanan_opti', $pending['jenisLayananOpti']);
         $f3->set('SESSION.bidang', $userData['bidang'] ?? 'all');
-        $f3->set('SESSION.foto_profil', $userData['foto_profil'] ?? null);
+        $f3->set('SESSION.foto_profil', $userData['foto_profil'] ?? ($userData['nama_avatar'] ?? null));
 
         // Load masking preference
         $fieldConfigModel = new OptiFieldConfig($this->db);
@@ -311,6 +472,7 @@ class AuthController extends Controller {
 
         // Hapus pending OTP
         unset($_SESSION['otp_pending']);
+        $f3->clear('SESSION.otp_pending');
 
         $this->setFlashSuccess("Verifikasi WhatsApp OTP berhasil. Selamat datang kembali, <strong>{$userData['nama_user']}</strong>!");
         $f3->reroute('/dashboard');
@@ -321,21 +483,48 @@ class AuthController extends Controller {
      * Route: GET /login/otp/resend & POST /login/otp/resend
      */
     public function otpResend($f3) {
-        if (empty($_SESSION['otp_pending'])) {
+        $pending = $_SESSION['otp_pending'] ?? ($f3->get('SESSION.otp_pending') ?? null);
+        $userId = (int)($pending['user_id'] ?? ($f3->get('GET.user_id') ?? ($f3->get('POST.user_id') ?? 0)));
+
+        if ($userId <= 0) {
             $this->setFlashError('Sesi verifikasi login telah berakhir. Silakan login kembali.');
             $f3->reroute('/login');
             return;
         }
 
-        $pending = $_SESSION['otp_pending'];
-        $otpResult = WhatsAppService::getOrCreateDailyOtp($this->db, (int)$pending['user_id'], $pending['userData']['nama_user'], $pending['no_hp'], true);
+        if (empty($pending)) {
+            $userModel = new ArsipUser($this->db);
+            $userData = $userModel->getProfil($userId);
+            if (!$userData) {
+                $this->setFlashError('Akun pengguna tidak ditemukan.');
+                $f3->reroute('/login');
+                return;
+            }
+            $noHp = $userData['no_hp'] ?? '';
+            $namaUser = $userData['nama_user'] ?? 'Pengguna';
+        } else {
+            $userData = $pending['userData'];
+            $noHp = $pending['no_hp'] ?? ($userData['no_hp'] ?? '');
+            $namaUser = $userData['nama_user'] ?? 'Pengguna';
+        }
 
-        $_SESSION['otp_pending']['otp_code']   = $otpResult['otp'];
-        $_SESSION['otp_pending']['expires_at'] = $otpResult['expires_at'];
-        $_SESSION['otp_pending']['attempts']   = 0;
+        $otpResult = WhatsAppService::getOrCreateDailyOtp($this->db, $userId, $namaUser, $noHp, true);
+
+        if (!$otpResult['success']) {
+            $this->setFlashError($otpResult['message'] ?? 'Gagal mengirim ulang OTP ke WhatsApp.');
+            $f3->reroute('/login/otp?user_id=' . $userId);
+            return;
+        }
+
+        if (!empty($_SESSION['otp_pending'])) {
+            $_SESSION['otp_pending']['otp_code']   = $otpResult['otp'] ?? '';
+            $_SESSION['otp_pending']['expires_at'] = $otpResult['expires_at'] ?? (time() + 86400);
+            $_SESSION['otp_pending']['attempts']   = 0;
+            $f3->set('SESSION.otp_pending', $_SESSION['otp_pending']);
+        }
 
         $this->setFlashSuccess("Kode OTP baru telah berhasil dikirimkan ke WhatsApp ({$otpResult['masked_phone']}).");
-        $f3->reroute('/login/otp');
+        $f3->reroute('/login/otp?user_id=' . $userId);
     }
 
     /**
