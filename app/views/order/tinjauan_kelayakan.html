@@ -1,7 +1,7 @@
 <div class="container-fluid px-0">
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom flex-wrap gap-2">
-        <h4 class="fw-bold text-dark m-0 font-display">Kaji Ulang Kelayakan &amp; Penunjukan Ketua Tim Pelaksana</h4>
+        <h4 class="fw-bold text-dark m-0 font-display">Kaji Ulang Kelayakan &amp; Penunjukan PIC Proposal</h4>
         <a href="{{ @BASE }}/order/{{ @order.id }}" class="btn btn-light btn-sm text-secondary px-3 py-1.5 fw-medium border">
             <i class="bi bi-arrow-left me-1"></i> Kembali ke Detail Order
         </a>
@@ -196,10 +196,10 @@
                             </div>
                         </div>
 
-                        <!-- 3. Pilih Ketua Tim Pelaksana (Opsional) -->
+                        <!-- 3. Pilih PIC Proposal (Opsional) -->
                         <div id="boxPicProposal" class="mb-3" style="display: {{ !@tinjauan || @tinjauan.keputusan == 'dapat_dilaksanakan' ? 'block' : 'none' }};">
                             <label class="form-label small fw-bold text-dark mb-1">
-                                Penunjukan Ketua Tim Pelaksana / PIC (Opsional):
+                                PIC Proposal (Opsional):
                             </label>
                             <select name="pic_proposal_id" class="form-select form-select-sm" id="selectPicProposal" {{ !@can_edit ? 'disabled' : '' }}>
                                 <option value="">Tetapkan Nanti Saat PO / Terbitkan Penawaran Terlebih Dahulu</option>
@@ -210,7 +210,7 @@
                                 </repeat>
                             </select>
                             <small class="text-muted d-block mt-1" style="font-size: 0.76rem;">
-                                Opsional. PIC pelaksana teknis dapat ditentukan sekarang atau saat penerbitan PO.
+                                Opsional. PIC penyusun proposal dapat ditentukan sekarang atau saat penerbitan PO.
                             </small>
                         </div>
 
