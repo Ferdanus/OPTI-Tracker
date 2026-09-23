@@ -807,20 +807,45 @@
                     <span class="section-badge-num">2</span>
                     <div>
                         <div class="section-header-text">Ketentuan Penawaran, Biaya &amp; Durasi</div>
-                        <div class="section-header-sub">Ruang lingkup layanan, tarif resmi, dan SPM kerja</div>
+                        <div class="section-header-sub">Ruang lingkup layanan, tarif resmi, jadwal, dan pejabat penandatangan</div>
                     </div>
                 </div>
                 <div class="form-section-body">
                     <div class="row g-3">
-                        <div class="col-md-7">
-                            <label class="form-label small fw-semibold text-dark mb-1">
-                                Perihal Surat Penawaran <span class="text-danger">*</span>
-                            </label>
-                            <div class="input-group input-group-sm">
-                                <span class="input-group-text bg-light text-muted"><i class="bi bi-card-heading"></i></span>
-                                <input type="text" name="perihal" id="input_perihal" class="form-control form-control-sm fw-semibold" value="{{ @sp_existing.perihal ?: 'Penawaran Layanan Jasa OPTI - ' . @order.judul_kegiatan }}" required {{ !@can_edit ? 'disabled' : '' }}>
+                        <check if="{{ @order.jenis_layanan_opti == 'selulosa' }}">
+                            <div class="col-md-7">
+                                <label class="form-label small fw-semibold text-dark mb-1">
+                                    Hal / Perihal Surat <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-light text-muted"><i class="bi bi-card-heading"></i></span>
+                                    <input type="text" name="hal" id="input_hal" class="form-control form-control-sm fw-semibold" value="{{ @sp_existing.hal ?: (@default_hal ?: 'Biaya OPTI') }}" required {{ !@can_edit ? 'disabled' : '' }}>
+                                    <input type="hidden" name="perihal" id="input_perihal" value="{{ @sp_existing.perihal ?: 'Penawaran Layanan Jasa OPTI - ' . @order.judul_kegiatan }}">
+                                </div>
                             </div>
-                        </div>
+                            <div class="col-md-5">
+                                <label class="form-label small fw-semibold text-dark mb-1">
+                                    Keterangan Lampiran
+                                </label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-light text-muted"><i class="bi bi-paperclip"></i></span>
+                                    <input type="text" name="lampiran_teks" id="input_lampiran_teks" class="form-control form-control-sm" value="{{ @sp_existing.lampiran_teks ?: (@default_lampiran_teks ?: '1 (satu) lembar') }}" placeholder="1 (satu) lembar" {{ !@can_edit ? 'disabled' : '' }}>
+                                </div>
+                            </div>
+                        </check>
+
+                        <check if="{{ @order.jenis_layanan_opti != 'selulosa' }}">
+                            <div class="col-md-7">
+                                <label class="form-label small fw-semibold text-dark mb-1">
+                                    Perihal Surat Penawaran <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-light text-muted"><i class="bi bi-card-heading"></i></span>
+                                    <input type="text" name="perihal" id="input_perihal" class="form-control form-control-sm fw-semibold" value="{{ @sp_existing.perihal ?: 'Penawaran Layanan Jasa OPTI - ' . @order.judul_kegiatan }}" required {{ !@can_edit ? 'disabled' : '' }}>
+                                </div>
+                            </div>
+                        </check>
+
                         <div class="col-md-5">
                             <label class="form-label small fw-semibold text-dark mb-1">Media Permintaan Masuk</label>
                             <div class="input-group input-group-sm">
@@ -834,6 +859,7 @@
                                 </select>
                             </div>
                         </div>
+
                         <div class="col-md-6">
                             <label class="form-label small fw-semibold text-dark mb-1">
                                 Nilai Penawaran Resmi <span class="text-danger">*</span>
@@ -849,33 +875,79 @@
                                 </div>
                             </div>
                         </div>
+
                         <div class="col-md-6">
                             <label class="form-label small fw-semibold text-dark mb-1">
                                 Durasi Pelaksanaan Layanan <span class="text-danger">*</span>
                             </label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light text-muted"><i class="bi bi-clock-history"></i></span>
-                                <input type="number" name="durasi_hari" id="inputDurasiHari" class="form-control fw-bold font-monospace text-dark" min="1" max="365" step="1" value="{{ @durasi_hari ?: 30 }}" placeholder="30" required oninput="updateDurasiHari(this)" {{ !@can_edit ? 'disabled' : '' }}>
+                                <input type="number" name="durasi_hari" id="inputDurasiHari" class="form-control fw-bold font-monospace text-dark" min="1" max="365" step="1" value="{{ @durasi_hari ?: 20 }}" placeholder="20" required oninput="updateDurasiHari(this)" {{ !@can_edit ? 'disabled' : '' }}>
                                 <span class="input-group-text bg-light text-secondary fw-semibold">Hari Kerja</span>
-                                <input type="hidden" name="spm_layanan" id="inputSpmLayanan" value="{{ (@durasi_hari ?: 30) . ' Hari Kerja' }}">
+                                <input type="hidden" name="spm_layanan" id="inputSpmLayanan" value="{{ (@durasi_hari ?: 20) . ' Hari Kerja' }}">
                             </div>
                             <div class="mt-1">
-                                <small class="text-muted" style="font-size: 0.72rem;">Dihitung sejak sampel &amp; administrasi lengkap diterima.</small>
+                                <small class="text-muted" style="font-size: 0.72rem;">Total waktu pelaksanaan pekerjaan dalam hari kerja.</small>
                             </div>
                         </div>
-                        <div class="col-12">
-                            <label class="form-label small fw-semibold text-dark mb-1">
-                                Penjelasan / Catatan Tambahan Penawaran
-                            </label>
-                            <textarea name="penjelasan" id="input_penjelasan" class="form-control form-control-sm" rows="2" placeholder="Catatan termin pembayaran, masa berlaku penawaran, dll..." {{ !@can_edit ? 'disabled' : '' }}>{{ @sp_existing.penjelasan ?: @order.deskripsi }}</textarea>
-                        </div>
+
+                        <check if="{{ @order.jenis_layanan_opti == 'selulosa' }}">
+                            <!-- Ruang Lingkup Pekerjaan (Poin 1 Selulosa) -->
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <label class="form-label small fw-semibold text-dark mb-0">
+                                        Rincian Ruang Lingkup Pekerjaan (Poin 1) <span class="text-danger">*</span>
+                                    </label>
+                                    <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" style="font-size: 0.74rem;" onclick="prefillDefaultRuangLingkup()">
+                                        <i class="bi bi-arrow-counterclockwise"></i> Reset ke Format Standar
+                                    </button>
+                                </div>
+                                <textarea name="ruang_lingkup" id="input_ruang_lingkup" class="form-control font-monospace" rows="6" style="font-size: 0.8rem; line-height: 1.5;" placeholder="1 baris per ruang lingkup..." required {{ !@can_edit ? 'disabled' : '' }}>{{ @sp_existing.ruang_lingkup ?: @default_ruang_lingkup }}</textarea>
+                                <small class="text-muted d-block mt-1" style="font-size: 0.72rem;">
+                                    <i class="bi bi-info-circle me-1"></i> Tuliskan 1 baris untuk tiap poin. Sistem PDF dan Pratinjau akan otomatis memformat penomoran menjadi 1), 2), 3), dst.
+                                </small>
+                            </div>
+
+                            <!-- Jadwal Pelaksanaan (Poin 2 Selulosa) -->
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold text-dark mb-1">
+                                    Jadwal Pelaksanaan Kegiatan (Poin 2)
+                                </label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-light text-muted"><i class="bi bi-calendar-check"></i></span>
+                                    <input type="text" name="jadwal_pelaksanaan" id="input_jadwal_pelaksanaan" class="form-control form-control-sm" value="{{ @sp_existing.jadwal_pelaksanaan ?: @default_jadwal }}" placeholder="Pelaksanaan kegiatan untuk ruang lingkup 1) sampai dengan 4) akan dilakukan pada tanggal..." {{ !@can_edit ? 'disabled' : '' }}>
+                                </div>
+                            </div>
+
+                            <!-- Catatan Bahan / Aditif (Poin 4 Selulosa) -->
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold text-dark mb-1">
+                                    Catatan Bahan / Sampel Aditif (Poin 4 - Opsional)
+                                </label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-light text-muted"><i class="bi bi-flask"></i></span>
+                                    <input type="text" name="catatan_sampel" id="input_catatan_sampel" class="form-control form-control-sm" value="{{ @sp_existing.catatan_sampel ?: @default_catatan_sampel }}" placeholder="Contoh aditif yang perlu disediakan sebanyak 50 ml. (Kosongkan bila tidak ada)" {{ !@can_edit ? 'disabled' : '' }}>
+                                </div>
+                            </div>
+                        </check>
+
+                        <check if="{{ @order.jenis_layanan_opti != 'selulosa' }}">
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold text-dark mb-1">
+                                    Penjelasan / Catatan Tambahan Penawaran
+                                </label>
+                                <textarea name="penjelasan" id="input_penjelasan" class="form-control form-control-sm" rows="2" placeholder="Catatan termin pembayaran, masa berlaku penawaran, dll..." {{ !@can_edit ? 'disabled' : '' }}>{{ @sp_existing.penjelasan ?: @order.deskripsi }}</textarea>
+                            </div>
+                        </check>
+
+                        <!-- Pejabat Penandatangan BBSPJIS -->
                         <div class="col-md-6">
                             <label class="form-label small fw-semibold text-dark mb-1">
                                 Jabatan Penandatangan BBSPJIS
                             </label>
                             <div class="input-group input-group-sm">
                                 <span class="input-group-text bg-light text-muted"><i class="bi bi-award"></i></span>
-                                <input type="text" name="jabatan_pejabat" id="input_jabatan_pejabat" class="form-control form-control-sm" value="{{ @sp_existing.jabatan_pejabat ?: 'plh. Kepala' }}" placeholder="plh. Kepala" {{ !@can_edit ? 'disabled' : '' }}>
+                                <input type="text" name="jabatan_pejabat" id="input_jabatan_pejabat" class="form-control form-control-sm" value="{{ @sp_existing.jabatan_pejabat ?: (@default_jabatan_pejabat ?: 'Kepala') }}" placeholder="Kepala" {{ !@can_edit ? 'disabled' : '' }}>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -884,7 +956,8 @@
                             </label>
                             <div class="input-group input-group-sm">
                                 <span class="input-group-text bg-light text-muted"><i class="bi bi-person-badge"></i></span>
-                                <input type="text" name="pembuat_nama" id="input_pembuat_nama" class="form-control form-control-sm fw-semibold" value="{{ @sp_existing.pembuat_nama ?: 'Hagung Eko Pawoko' }}" placeholder="Hagung Eko Pawoko" {{ !@can_edit ? 'disabled' : '' }}>
+                                <input type="text" name="pejabat_nama" id="input_pejabat_nama" class="form-control form-control-sm fw-semibold" value="{{ @sp_existing.pejabat_nama ?: (@sp_existing.pembuat_nama ?: (@default_pejabat_nama ?: 'Dodiet Prasetyo')) }}" placeholder="Dodiet Prasetyo" {{ !@can_edit ? 'disabled' : '' }}>
+                                <input type="hidden" name="pembuat_nama" id="input_pembuat_nama" value="{{ @sp_existing.pejabat_nama ?: (@sp_existing.pembuat_nama ?: (@default_pejabat_nama ?: 'Dodiet Prasetyo')) }}">
                             </div>
                         </div>
                     </div>
@@ -960,7 +1033,7 @@
                         <i class="bi bi-file-earmark-text-fill" style="color: #475569; font-size: 1.15rem;"></i>
                         <div>
                             <span class="fw-bold small text-dark d-block" style="line-height: 1.2;">Pratinjau Surat Penawaran Resmi</span>
-                            <span class="text-muted" style="font-size: 0.7rem;">Format {{ @order.jenis_layanan_opti == 'selulosa' ? 'OPTI Selulosa (1 Halaman)' : 'OPTI Lingkungan (4 Halaman & Lembar Persetujuan)' }}</span>
+                            <span class="text-muted" style="font-size: 0.7rem;">Format {{ @order.jenis_layanan_opti == 'selulosa' ? 'OPTI Selulosa (2 Halaman)' : 'OPTI Lingkungan (4 Halaman)' }}</span>
                         </div>
                         <span class="badge px-2 py-0.5 rounded-pill small ms-1" style="background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; font-size: 0.7rem;">
                             Live Sync
@@ -981,6 +1054,14 @@
                     </div>
                 </div>
 
+                <check if="{{ @order.jenis_layanan_opti == 'selulosa' }}">
+                    <!-- Navigasi Halaman untuk Dokumen Selulosa (2 Halaman) -->
+                    <div class="d-flex border-bottom bg-light px-2 pt-2 gap-1" id="selulosaTabNav" style="font-size: 0.72rem;">
+                        <button type="button" class="btn btn-sm btn-white border border-bottom-0 active fw-bold py-1 px-2.5 tab-btn" id="btnSelPage1" onclick="switchSelPage(1)">Hal 1: Cover Surat Penawaran</button>
+                        <button type="button" class="btn btn-sm btn-light border-0 py-1 px-2.5 tab-btn text-muted" id="btnSelPage2" onclick="switchSelPage(2)">Hal 2: Lembar Persetujuan</button>
+                    </div>
+                </check>
+
                 <check if="{{ @order.jenis_layanan_opti == 'lingkungan' }}">
                     <!-- Navigasi Halaman untuk Dokumen Lingkungan (Multi-Page) -->
                     <div class="d-flex border-bottom bg-light px-2 pt-2 gap-1" id="lingkunganTabNav" style="font-size: 0.72rem;">
@@ -996,9 +1077,9 @@
 
                     <check if="{{ @order.jenis_layanan_opti == 'selulosa' }}">
                         <!-- ======================================================= -->
-                        <!-- FORMAT 1: SELULOSA (1 HALAMAN SESUAI PENAWARAN IPB)    -->
+                        <!-- FORMAT SELULOSA HALAMAN 1: COVER SURAT PENAWARAN       -->
                         <!-- ======================================================= -->
-                        <div class="doc-sheet" id="docSheet">
+                        <div class="doc-sheet sel-page" id="selPage1">
                             <!-- Kop BBSPJIS Selulosa -->
                             <div style="border-bottom: 3px double #000; padding-bottom: 6px; margin-bottom: 12px; display: flex; align-items: center; gap: 16px;">
                                 <img src="{{ @BASE }}/app/helpers/fpdf/kemenperin_logo.png?v={{ time() }}" style="width: 140px; height: auto;" alt="Logo Kemenperin">
@@ -1016,55 +1097,61 @@
                                 <table style="font-size: 9.5px; line-height: 1.4;">
                                     <tr>
                                         <td style="width: 60px;">Nomor</td><td style="width: 10px;">:</td>
-                                        <td><strong id="d_nomor">{{ @is_revisi_baru ? @nomor_surat_otomatis : (@sp_existing.nomor_surat ?: @nomor_surat_otomatis) }}</strong></td>
+                                        <td><strong id="d_sel_nomor">{{ @is_revisi_baru ? @nomor_surat_otomatis : (@sp_existing.nomor_surat ?: @nomor_surat_otomatis) }}</strong></td>
                                     </tr>
                                     <tr>
                                         <td>Lampiran</td><td>:</td>
-                                        <td>-</td>
+                                        <td><span id="d_sel_lampiran">{{ @sp_existing.lampiran_teks ?: (@default_lampiran_teks ?: '1 (satu) lembar') }}</span></td>
                                     </tr>
                                     <tr>
                                         <td>Hal</td><td>:</td>
-                                        <td><span id="d_perihal">{{ @sp_existing.perihal ?: 'Biaya layanan jasa' }}</span></td>
+                                        <td><span id="d_sel_hal">{{ @sp_existing.hal ?: (@default_hal ?: 'Biaya OPTI') }}</span></td>
                                     </tr>
                                 </table>
-                                <div style="font-size: 9.5px; text-align: right;" id="d_tanggal">Bandung, -</div>
+                                <div style="font-size: 9.5px; text-align: right;" id="d_sel_tanggal">Bandung, -</div>
                             </div>
 
-                            <!-- Penerima (Yth.) -->
+                            <!-- Penerima (Yth. Pimpinan) -->
                             <div style="font-size: 9.5px; line-height: 1.4; margin-bottom: 12px;">
-                                <div>Yth. <strong id="d_perusahaan">{{ @sp_existing.perusahaan ?: @order.nama_perusahaan }}</strong></div>
-                                <div id="d_kota">di Tempat</div>
-                                <div id="d_pic_wrap" style="{{ (!@sp_existing.nama && !@order.pic) ? 'display: none;' : '' }}">
-                                    u.p. <span id="d_pic">{{ @sp_existing.nama ?: @order.pic }}</span>
+                                <div>Yth. Pimpinan <strong id="d_sel_perusahaan">{{ @sp_existing.perusahaan ?: @order.nama_perusahaan }}</strong></div>
+                                <div id="d_sel_kota">di Tempat</div>
+                                <div id="d_sel_pic_wrap" style="{{ (!@sp_existing.nama && !@order.pic) ? 'display: none;' : '' }}">
+                                    u.p. <span id="d_sel_pic">{{ @sp_existing.nama ?: @order.pic }}</span>
                                 </div>
                             </div>
 
                             <!-- Paragraf Pembuka -->
                             <div style="font-size: 9.5px; line-height: 1.45; text-align: justify; margin-bottom: 8px;">
-                                Menanggapi permintaan Saudara perihal "<span id="d_judul_pembuka" class="fw-bold">{{ @order.judul_kegiatan }}</span>", dengan ini kami informasikan kegiatan untuk tahap pelaksanaan adalah sebagai berikut:
+                                Menanggapi permintaan Saudara perihal "<span id="d_sel_judul_pembuka" class="fw-bold">{{ @order.judul_kegiatan }}</span>", dengan ini kami informasikan rincian kegiatan dan penawaran biaya layanan sebagai berikut:
                             </div>
 
-                            <!-- 3 Poin Utama -->
-                            <div style="font-size: 9.5px; line-height: 1.45; margin-bottom: 10px; padding-left: 4px;">
-                                <div class="d-flex gap-2 mb-1">
-                                    <span style="width: 16px;">1.</span>
-                                    <div>Judul kegiatan: <span id="d_judul_poin" class="fw-bold">{{ @order.judul_kegiatan }}</span>.</div>
+                            <!-- Poin 1, 2, 3, 4 Naskah Surat BBSPJIS -->
+                            <div style="font-size: 9.5px; line-height: 1.45; margin-bottom: 10px; padding-left: 2px;">
+                                <div class="mb-1">
+                                    1. Biaya layanan adalah sebesar <strong id="d_sel_biaya">Rp 0,- (nol rupiah)</strong>, dengan ruang lingkup pekerjaan sebagai berikut:
+                                    <div id="d_sel_ruang_lingkup_list" class="ps-3 my-1" style="font-size: 9px; line-height: 1.45;">
+                                        <!-- Rendered dynamically by JS -->
+                                    </div>
                                 </div>
-                                <div class="d-flex gap-2 mb-1">
+                                <div class="d-flex gap-2 mb-1" id="d_sel_jadwal_wrap">
                                     <span style="width: 16px;">2.</span>
-                                    <div>Biaya kegiatan sebesar <strong id="d_biaya_selulosa">Rp 0,- (Nol Rupiah)</strong>.</div>
+                                    <div id="d_sel_jadwal">{{ @sp_existing.jadwal_pelaksanaan ?: @default_jadwal }}</div>
                                 </div>
                                 <div class="d-flex gap-2 mb-1">
                                     <span style="width: 16px;">3.</span>
-                                    <div>Ruang lingkup pekerjaan dan waktu pelaksanaan pekerjaan tercantum dalam proposal terlampir.</div>
+                                    <div>Total waktu pelaksanaan pekerjaan selama <strong id="d_sel_durasi">{{ @durasi_hari ?: 20 }}</strong> hari kerja.</div>
+                                </div>
+                                <div class="d-flex gap-2 mb-1" id="d_sel_catatan_wrap" style="{{ empty(@sp_existing.catatan_sampel ?: @default_catatan_sampel) ? 'display: none;' : '' }}">
+                                    <span style="width: 16px;">4.</span>
+                                    <div id="d_sel_catatan">{{ @sp_existing.catatan_sampel ?: @default_catatan_sampel }}</div>
                                 </div>
                             </div>
 
-                            <!-- Ketentuan 1-5 -->
-                            <div style="font-size: 9.5px; line-height: 1.4; margin-bottom: 8px;">
+                            <!-- Ketentuan Standar 1-5 -->
+                            <div style="font-size: 9.5px; line-height: 1.4; margin-bottom: 6px;">
                                 Disamping itu perlu kami sampaikan pula ketentuan sebagai berikut :
                             </div>
-                            <div style="font-size: 9px; line-height: 1.4; margin-bottom: 10px; padding-left: 4px;">
+                            <div style="font-size: 8.8px; line-height: 1.4; margin-bottom: 10px; padding-left: 4px;">
                                 <div class="d-flex gap-2 mb-1"><span style="width: 16px;">1.</span><div>Persetujuan terhadap biaya pengujian mohon disampaikan secara tertulis melalui faks atau e-mail.</div></div>
                                 <div class="d-flex gap-2 mb-1"><span style="width: 16px;">2.</span><div>Pengujian dilaksanakan setelah pembayaran biaya pekerjaan dilakukan dan setelah sampel diterima di laboratorium.</div></div>
                                 <div class="d-flex gap-2 mb-1"><span style="width: 16px;">3.</span><div>Pembayaran biaya pengujian dilakukan dengan transfer melalui Virtual Account Bank.</div></div>
@@ -1077,33 +1164,69 @@
                                 Kami menunggu konfirmasi lebih lanjut. Atas perhatian dan kerjasama yang baik, kami sampaikan terima kasih.
                             </div>
 
-                            <!-- Bagian Bawah Bersebelahan: Kotak Persetujuan Kiri & TTD Kanan -->
-                            <div style="display: flex; justify-content: space-between; align-items: flex-start; font-size: 8.5px; margin-bottom: 12px;">
-                                <!-- Kotak Persetujuan Pelanggan -->
-                                <div style="border: 1px solid #000; padding: 6px 10px; width: 48%; min-height: 80px; background: #fff;">
-                                    <div style="font-size: 8.5px; margin-bottom: 4px;">Dengan ini kami menyetujui surat penawaran ini :</div>
-                                    <table style="width: 100%; font-size: 8.5px; line-height: 1.5;">
-                                        <tr><td style="width: 60px;">Nama</td><td style="width: 8px;">:</td><td></td></tr>
-                                        <tr><td>Jabatan</td><td>:</td><td></td></tr>
-                                        <tr><td>No. Tlp</td><td>:</td><td></td></tr>
-                                        <tr><td colspan="3" style="padding-top: 4px;">TTD &amp; Stempel</td></tr>
-                                    </table>
-                                </div>
-
-                                <!-- Pejabat Penandatangan BBSPJIS -->
-                                <div style="text-align: center; width: 45%; font-size: 9.5px;">
-                                    <div id="d_jabatan_pejabat">{{ @sp_existing.jabatan_pejabat ?: 'plh. Kepala' }}</div>
+                            <!-- Pejabat Penandatangan BBSPJIS Kanan Bawah -->
+                            <div style="display: flex; justify-content: flex-end; font-size: 9.5px; margin-top: 10px;">
+                                <div style="text-align: center; width: 45%;">
+                                    <div id="d_sel_jabatan_pejabat">{{ @sp_existing.jabatan_pejabat ?: (@default_jabatan_pejabat ?: 'Kepala') }}</div>
                                     <div style="height: 48px;"></div>
-                                    <div id="d_pembuat">{{ @sp_existing.pembuat_nama ?: 'Hagung Eko Pawoko' }}</div>
+                                    <div class="fw-bold" id="d_sel_pejabat">{{ @sp_existing.pejabat_nama ?: (@sp_existing.pembuat_nama ?: (@default_pejabat_nama ?: 'Dodiet Prasetyo')) }}</div>
                                 </div>
                             </div>
+                        </div>
 
-                            <!-- Tembusan -->
-                            <div style="font-size: 7.5px; line-height: 1.35; margin-bottom: 10px;">
-                                <div>Tembusan :</div>
-                                <div>1&nbsp;&nbsp;Kepala. Bagian Tata Usaha</div>
-                                <div>2&nbsp;&nbsp;Ketua Tim Layanan Mitra Industri</div>
-                                <div>3&nbsp;&nbsp;Ketua Tim OPTI Kertas, Selulosa dan Produk Bahan Acuan</div>
+                        <!-- ======================================================= -->
+                        <!-- FORMAT SELULOSA HALAMAN 2: LEMBAR PERSETUJUAN           -->
+                        <!-- ======================================================= -->
+                        <div class="doc-sheet sel-page d-none" id="selPage2">
+                            <div style="text-align: center; font-size: 9px; font-weight: bold; margin-bottom: 8px;">- 2 -</div>
+                            <div style="text-align: right; font-size: 9px; line-height: 1.35; margin-bottom: 14px;">
+                                <div>Lampiran I Surat</div>
+                                <div>Nomor : <span id="d_sel_p2_nomor">{{ @is_revisi_baru ? @nomor_surat_otomatis : (@sp_existing.nomor_surat ?: @nomor_surat_otomatis) }}</span></div>
+                                <div>Tanggal : <span id="d_sel_p2_tanggal">-</span></div>
+                            </div>
+
+                            <div class="text-center fw-bold mb-3" style="font-size: 11px;">
+                                LEMBAR PERSETUJUAN SURAT PENAWARAN
+                            </div>
+
+                            <div style="font-size: 9.5px; line-height: 1.45; text-align: justify; margin-bottom: 8px;">
+                                Dengan ini menyatakan bahwa telah membaca, memahami, dan menyetujui Surat Penawaran Balai Besar Standardisasi dan Pelayanan Jasa Industri Selulosa (BBSPJIS) Nomor <strong id="d_sel_p2_nomor_isi">{{ @is_revisi_baru ? @nomor_surat_otomatis : (@sp_existing.nomor_surat ?: @nomor_surat_otomatis) }}</strong> tanggal <strong id="d_sel_p2_tanggal_isi">-</strong>.
+                            </div>
+                            <div style="font-size: 9.5px; line-height: 1.45; margin-bottom: 8px;">
+                                Selanjutnya kami menyatakan:
+                            </div>
+                            <ol style="font-size: 9px; line-height: 1.45;" class="ps-3 mb-3">
+                                <li>Menyetujui ruang lingkup pekerjaan, biaya layanan, serta syarat dan ketentuan yang tercantum dalam surat penawaran.</li>
+                                <li>Bersedia memenuhi kewajiban pembayaran sesuai ketentuan yang berlaku setelah diterbitkan tagihan (invoice) oleh BBSPJIS.</li>
+                                <li>Persetujuan ini menjadi dasar bagi BBSPJIS untuk memproses permohonan layanan sesuai dengan ketentuan yang berlaku.</li>
+                                <li>Apabila terdapat perubahan ruang lingkup pekerjaan setelah persetujuan ini diberikan, maka akan dilakukan penyesuaian melalui kesepakatan kedua belah pihak.</li>
+                            </ol>
+
+                            <div style="font-size: 9.5px; line-height: 1.45; margin-bottom: 12px;">
+                                Demikian Lembar Persetujuan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya.
+                            </div>
+
+                            <table class="table table-bordered table-sm mb-3" style="font-size: 9px; border-color: #000;">
+                                <tr><td style="width: 140px;">Tempat, Tanggal</td><td>Bandung, ............................................ 2026</td></tr>
+                                <tr><td>Menyetujui,</td><td></td></tr>
+                                <tr><td>Nama Perusahaan/Instansi</td><td><strong id="d_sel_p2_perusahaan">{{ @sp_existing.perusahaan ?: @order.nama_perusahaan }}</strong></td></tr>
+                                <tr><td>Nama Pemohon</td><td><span id="d_sel_p2_pic">{{ @sp_existing.nama ?: @order.pic }}</span></td></tr>
+                                <tr><td>Jabatan</td><td>........................................................</td></tr>
+                                <tr><td>Nomor Telepon (WhatsApp)</td><td><span id="d_sel_p2_telp">{{ @order.telepon ?: '........................................................' }}</span></td></tr>
+                                <tr><td style="height: 60px; vertical-align: top;">Tanda Tangan dan Cap</td><td></td></tr>
+                            </table>
+
+                            <div style="font-size: 8px; line-height: 1.35; margin-bottom: 16px;" class="text-muted">
+                                <strong>Catatan:</strong> Mohon mengembalikan lembar persetujuan ini kepada BBSPJIS melalui email atau media komunikasi yang telah ditentukan sebagai dasar proses penerbitan invoice dan pelaksanaan layanan.
+                            </div>
+
+                            <!-- Pejabat Penandatangan BBSPJIS Kanan Bawah Lampiran -->
+                            <div style="display: flex; justify-content: flex-end; font-size: 9.5px; margin-top: 10px;">
+                                <div style="text-align: center; width: 45%;">
+                                    <div id="d_sel_p2_jabatan_pejabat">{{ @sp_existing.jabatan_pejabat ?: (@default_jabatan_pejabat ?: 'Kepala') }}</div>
+                                    <div style="height: 48px;"></div>
+                                    <div class="fw-bold" id="d_sel_p2_pejabat">{{ @sp_existing.pejabat_nama ?: (@sp_existing.pembuat_nama ?: (@default_pejabat_nama ?: 'Dodiet Prasetyo')) }}</div>
+                                </div>
                             </div>
                         </div>
                     </check>
@@ -1163,12 +1286,154 @@
 
                             <div style="display: flex; justify-content: flex-end; font-size: 9.5px;">
                                 <div style="text-align: center; width: 45%;">
-                                    <div>Kepala Bagian Tata Usaha</div>
+                                    <div id="d_jabatan_pejabat_l">{{ @sp_existing.jabatan_pejabat ?: 'Kepala Bagian Tata Usaha' }}</div>
                                     <div style="height: 48px;"></div>
-                                    <div class="fw-bold" id="d_pembuat_l">{{ @sp_existing.pembuat_nama ?: 'Joko Pratomo' }}</div>
+                                    <div class="fw-bold" id="d_pembuat_l">{{ @sp_existing.pejabat_nama ?: (@sp_existing.pembuat_nama ?: 'Joko Pratomo') }}</div>
                                 </div>
                             </div>
                         </div>
+
+                        <!-- HALAMAN 2: LAMPIRAN I (TEKNIS & JADWAL) -->
+                        <div class="doc-sheet ling-page d-none" id="lingPage2">
+                            <div style="text-align: right; font-size: 9px; line-height: 1.35; margin-bottom: 12px;">
+                                <div>Lampiran I</div>
+                                <div>Nomor : <span id="d_nomor_l2">{{ @is_revisi_baru ? @nomor_surat_otomatis : (@sp_existing.nomor_surat ?: @nomor_surat_otomatis) }}</span></div>
+                                <div>Tanggal : <span id="d_tanggal_l2">September 2026</span></div>
+                            </div>
+
+                            <div class="text-center fw-bold mb-3" style="font-size: 10px;">
+                                <span id="d_judul_lamp1">{{ strtoupper(@order.judul_kegiatan) }}</span>
+                            </div>
+
+                            <div style="font-size: 9px; line-height: 1.45;">
+                                <div class="fw-bold">A.  METODE</div>
+                                <div class="ms-3 mb-2">OECD 301D Closed Bottle Test / Standar Baku Mutu Terakreditasi</div>
+
+                                <div class="fw-bold">B.  LATAR BELAKANG</div>
+                                <div class="mb-2 text-justify">Pelaksanaan uji dengan metode standar untuk menilai sifat biodegradability atau karakteristik mutu lingkungan dalam rangka pemenuhan regulasi atau sertifikasi ecolabel tipe 2 swadeklarasi.</div>
+
+                                <div class="fw-bold">C.  RUANG LINGKUP</div>
+                                <ol class="ps-3 mb-2">
+                                    <li>Metode mencakup pengujian ready biodegradability / baku mutu sampel uji.</li>
+                                    <li>Contoh uji berupa 1 sampel produk <span id="d_perusahaan_l2">{{ @order.nama_perusahaan }}</span>.</li>
+                                    <li>Pengujian dilakukan di laboratorium Biodetox / Lingkungan BBSPJIS.</li>
+                                    <li>Validitas metode sesuai standar operasional yang terakreditasi.</li>
+                                    <li>Periode uji dilakukan dengan tahapan persiapan mikroba, pengujian inkubasi, dan evaluasi laporan.</li>
+                                </ol>
+
+                                <div class="fw-bold">D.  TAHAPAN KEGIATAN</div>
+                                <ol class="ps-3 mb-2">
+                                    <li>Persiapan alat dan bahan</li>
+                                    <li>Persiapan media dan mikroba uji</li>
+                                    <li>Pelaksanaan uji laboratorium</li>
+                                    <li>Pengolahan data dan pembuatan laporan</li>
+                                </ol>
+
+                                <div class="fw-bold mb-1">E.  JADWAL PELAKSANAAN</div>
+                                <table class="table table-bordered table-sm text-center align-middle mb-1" style="font-size: 7.5px; border-color: #000;">
+                                    <thead>
+                                        <tr style="background: #f8fafc;">
+                                            <th rowspan="2" style="width: 25px;">No</th>
+                                            <th rowspan="2" style="text-align: left;">Kegiatan</th>
+                                            <th colspan="4">Bulan 1</th>
+                                            <th colspan="4">Bulan 2</th>
+                                            <th colspan="4">Bulan 3</th>
+                                            <th colspan="4">Bulan 4</th>
+                                        </tr>
+                                        <tr style="font-size: 7px;">
+                                            <th>1</th><th>2</th><th>3</th><th>4</th>
+                                            <th>1</th><th>2</th><th>3</th><th>4</th>
+                                            <th>1</th><th>2</th><th>3</th><th>4</th>
+                                            <th>1</th><th>2</th><th>3</th><th>4</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td>1</td><td style="text-align: left;">Persiapan alat &amp; bahan</td><td class="bg-warning"></td><td class="bg-warning"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                                        <tr><td>2</td><td style="text-align: left;">Persiapan media &amp; mikroba</td><td></td><td class="bg-warning"></td><td class="bg-warning"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                                        <tr><td>3</td><td style="text-align: left;">Pelaksanaan uji</td><td></td><td></td><td></td><td class="bg-warning"></td><td class="bg-warning"></td><td class="bg-warning"></td><td class="bg-warning"></td><td class="bg-warning"></td><td class="bg-warning"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                                        <tr><td>4</td><td style="text-align: left;">Pengolahan data &amp; laporan</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="bg-warning"></td><td class="bg-warning"></td></tr>
+                                    </tbody>
+                                </table>
+                                <div class="fst-italic text-muted" style="font-size: 7.5px;">*Estimasi waktu ini bersifat minimal, waktu pelaksanaan bisa lebih lama apabila ada kondisi tertentu.</div>
+                            </div>
+                        </div>
+
+                        <!-- HALAMAN 3: LAMPIRAN II (RAB) -->
+                        <div class="doc-sheet ling-page d-none" id="lingPage3">
+                            <div class="fw-bold mb-3" style="font-size: 10px;">F.  RANCANGAN ANGGARAN BIAYA (RAB)</div>
+                            <table class="table table-bordered table-sm mb-3" style="font-size: 8.5px; border-color: #000;">
+                                <thead style="background: #f8fafc;">
+                                    <tr>
+                                        <th style="width: 25px; text-align: center;">No</th>
+                                        <th>Uraian Kegiatan / Parameter Pengujian</th>
+                                        <th style="width: 100px; text-align: right;">Biaya (Rp)</th>
+                                        <th style="width: 110px; text-align: right;">Total Biaya (Rp)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td>1</td><td class="fw-bold">Tahap Persiapan</td><td></td><td></td></tr>
+                                    <tr><td></td><td class="ps-3">a. Pengadaan bahan dan operasional</td><td class="text-end" id="d_rab_ops1">-</td><td></td></tr>
+                                    <tr><td></td><td class="ps-3">b. Jasa Tahap Persiapan</td><td class="text-end" id="d_rab_jasa1">-</td><td></td></tr>
+                                    <tr><td>2</td><td class="fw-bold">Tahap Pengujian dan Analisis Data</td><td></td><td class="text-end fw-bold" id="d_rab_subtotal">-</td></tr>
+                                    <tr><td></td><td class="ps-3">a. Operasional Pengujian</td><td class="text-end" id="d_rab_ops2">-</td><td></td></tr>
+                                    <tr><td></td><td class="ps-3">b. Jasa pengamatan &amp; analisis</td><td class="text-end" id="d_rab_jasa2">-</td><td></td></tr>
+                                    <tr><td>3</td><td class="fw-bold">Interpretasi Hasil, Evaluasi &amp; Pelaporan</td><td class="text-end" id="d_rab_laporan">-</td><td></td></tr>
+                                    <tr style="background: #f1f5f9;" class="fw-bold">
+                                        <td colspan="3" class="text-end">TOTAL BIAYA PENAWARAN:</td>
+                                        <td class="text-end" id="d_rab_total">Rp 0</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <div style="display: flex; justify-content: flex-end; font-size: 9.5px; margin-top: 30px;">
+                                <div style="text-align: center; width: 45%;">
+                                    <div id="d_rab_jabatan_pejabat">{{ @sp_existing.jabatan_pejabat ?: 'Kepala Bagian Tata Usaha' }}</div>
+                                    <div style="height: 48px;"></div>
+                                    <div class="fw-bold" id="d_pembuat_rab">{{ @sp_existing.pejabat_nama ?: (@sp_existing.pembuat_nama ?: 'Joko Pratomo') }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- HALAMAN 4: LEMBAR PERSETUJUAN -->
+                        <div class="doc-sheet ling-page d-none" id="lingPage4">
+                            <div class="text-center fw-bold mb-3" style="font-size: 11px;">Lembar Persetujuan Surat Penawaran</div>
+
+                            <div style="font-size: 9.5px; line-height: 1.45; text-align: justify; margin-bottom: 8px;">
+                                Dengan ini menyatakan bahwa telah membaca, memahami, dan menyetujui Surat Penawaran BBSPJIS.
+                            </div>
+                            <div style="font-size: 9.5px; line-height: 1.45; margin-bottom: 8px;">
+                                Selanjutnya kami menyatakan:
+                            </div>
+                            <ol style="font-size: 9px; line-height: 1.45;" class="ps-3 mb-3">
+                                <li>Menyetujui ruang lingkup pekerjaan, biaya layanan, serta syarat dan ketentuan yang tercantum dalam surat penawaran.</li>
+                                <li>Bersedia memenuhi kewajiban pembayaran sesuai ketentuan yang berlaku setelah diterbitkan tagihan (invoice) oleh BBSPJIS.</li>
+                                <li>Persetujuan ini menjadi dasar bagi BBSPJIS untuk memproses permohonan layanan sesuai dengan ketentuan yang berlaku.</li>
+                                <li>Apabila terdapat perubahan ruang lingkup pekerjaan setelah persetujuan ini diberikan, maka akan dilakukan penyesuaian melalui kesepakatan kedua belah pihak.</li>
+                            </ol>
+
+                            <div style="font-size: 9.5px; line-height: 1.45; margin-bottom: 12px;">
+                                Demikian Lembar Persetujuan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya.
+                            </div>
+
+                            <table class="table table-bordered table-sm mb-3" style="font-size: 9px; border-color: #000;">
+                                <tr><td style="width: 140px;">Tempat, Tanggal</td><td>Bandung, ............................................ 2026</td></tr>
+                                <tr><td>Menyetujui,</td><td></td></tr>
+                                <tr><td>Nama Perusahaan/Instansi</td><td><strong id="d_persetujuan_perusahaan">{{ @sp_existing.perusahaan ?: @order.nama_perusahaan }}</strong></td></tr>
+                                <tr><td>Nama Pemohon</td><td><span id="d_persetujuan_pic">{{ @sp_existing.nama ?: @order.pic }}</span></td></tr>
+                                <tr><td>Jabatan</td><td>........................................................</td></tr>
+                                <tr><td>Nomor Telepon (WhatsApp)</td><td><span id="d_persetujuan_telp">{{ @order.telepon ?: '........................................................' }}</span></td></tr>
+                                <tr><td style="height: 60px; vertical-align: top;">Tanda Tangan dan Cap</td><td></td></tr>
+                            </table>
+
+                            <div style="font-size: 8px; line-height: 1.35;" class="text-muted">
+                                <strong>Catatan:</strong> Mohon mengembalikan lembar persetujuan ini kepada BBSPJIS melalui email atau media komunikasi yang telah ditentukan sebagai dasar proses penerbitan invoice dan pelaksanaan layanan.
+                            </div>
+                        </div>
+                    </check>
+
+                </div>
+            </div>
+        </div>
 
                         <!-- HALAMAN 2: LAMPIRAN I (TEKNIS & JADWAL) -->
                         <div class="doc-sheet ling-page d-none" id="lingPage2">
@@ -1523,20 +1788,59 @@ function switchLingPage(page) {
     }
 }
 
+function switchSelPage(page) {
+    for (var i = 1; i <= 2; i++) {
+        var pageEl = document.getElementById('selPage' + i);
+        var btnEl = document.getElementById('btnSelPage' + i);
+        if (pageEl) {
+            if (i === page) {
+                pageEl.classList.remove('d-none');
+            } else {
+                pageEl.classList.add('d-none');
+            }
+        }
+        if (btnEl) {
+            if (i === page) {
+                btnEl.classList.add('btn-white', 'border', 'border-bottom-0', 'active', 'fw-bold');
+                btnEl.classList.remove('btn-light', 'border-0', 'text-muted');
+            } else {
+                btnEl.classList.remove('btn-white', 'border', 'border-bottom-0', 'active', 'fw-bold');
+                btnEl.classList.add('btn-light', 'border-0', 'text-muted');
+            }
+        }
+    }
+}
+
+function prefillDefaultRuangLingkup() {
+    var ta = document.getElementById('input_ruang_lingkup');
+    if (ta) {
+        var perName = '{{ @order.nama_perusahaan ?: "klien" }}';
+        ta.value = "Beating LBKP hingga 300 mL CSF\nPenyediaan stock sebanyak 2 variasi.\nPembuatan handsheet dengan variasi penambahan aditif 2 variasi (sesuai b).\nPenampungan air dari pembuatan handsheet setiap variasi ditampung untuk dibawa ke " + perName + "\nPengujian handsheet meliputi: massa handsheet, gramatur, uji brightness, % retensi.\nEvaluasi dan penyusunan laporan teknis.";
+        syncLivePreview();
+    }
+}
+
 function syncLivePreview() {
     var elNomor = document.getElementById('input_nomor_surat');
     var elTanggal = document.getElementById('input_tanggal_surat');
     var elPerusahaan = document.getElementById('input_perusahaan');
     var elNama = document.getElementById('input_nama');
     var elAlamat = document.getElementById('input_alamat');
+    var elHal = document.getElementById('input_hal');
+    var elLampiranTeks = document.getElementById('input_lampiran_teks');
     var elPerihal = document.getElementById('input_perihal');
+    var elRuangLingkup = document.getElementById('input_ruang_lingkup');
+    var elJadwal = document.getElementById('input_jadwal_pelaksanaan');
+    var elCatatanSampel = document.getElementById('input_catatan_sampel');
     var elPenjelasan = document.getElementById('input_penjelasan');
     var elNominalReal = document.getElementById('inputNominalReal');
     var elDurasi = document.getElementById('inputDurasiHari');
+    var elJabatan = document.getElementById('input_jabatan_pejabat');
+    var elPejabatNama = document.getElementById('input_pejabat_nama') || document.getElementById('input_pembuat_nama');
 
     // 1. Nomor Surat
     var valNomor = (elNomor && elNomor.value.trim()) ? elNomor.value.trim() : '-';
-    ['d_nomor', 'd_nomor_l', 'd_nomor_l2'].forEach(function(id) {
+    ['d_nomor', 'd_nomor_l', 'd_nomor_l2', 'd_sel_nomor', 'd_sel_p2_nomor', 'd_sel_p2_nomor_isi'].forEach(function(id) {
         var el = document.getElementById(id);
         if (el) el.textContent = valNomor;
     });
@@ -1544,14 +1848,24 @@ function syncLivePreview() {
     // 2. Tanggal Surat
     var valTanggal = elTanggal ? elTanggal.value : '';
     var formattedTgl = formatTanggalIndo(valTanggal);
-    var dTanggal = document.getElementById('d_tanggal');
-    if (dTanggal) dTanggal.textContent = 'Bandung, ' + formattedTgl;
-    var dTanggalL = document.getElementById('d_tanggal_l');
-    if (dTanggalL) dTanggalL.textContent = 'Bandung, ' + formattedTgl;
-    var dTanggalL2 = document.getElementById('d_tanggal_l2');
-    if (dTanggalL2) dTanggalL2.textContent = formattedTgl;
+    ['d_tanggal', 'd_tanggal_l', 'd_sel_tanggal'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.textContent = 'Bandung, ' + formattedTgl;
+    });
+    ['d_tanggal_l2', 'd_sel_p2_tanggal', 'd_sel_p2_tanggal_isi'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.textContent = formattedTgl;
+    });
 
-    // 3. Perihal
+    // 3. Hal & Lampiran
+    var valHal = (elHal && elHal.value.trim()) ? elHal.value.trim() : ((elPerihal && elPerihal.value.trim()) ? elPerihal.value.trim() : 'Biaya OPTI');
+    var dSelHal = document.getElementById('d_sel_hal');
+    if (dSelHal) dSelHal.textContent = valHal;
+
+    var valLampiran = (elLampiranTeks && elLampiranTeks.value.trim()) ? elLampiranTeks.value.trim() : '1 (satu) lembar';
+    var dSelLampiran = document.getElementById('d_sel_lampiran');
+    if (dSelLampiran) dSelLampiran.textContent = valLampiran;
+
     var valPerihal = (elPerihal && elPerihal.value.trim()) ? elPerihal.value.trim() : '-';
     ['d_perihal', 'd_perihal_l'].forEach(function(id) {
         var el = document.getElementById(id);
@@ -1560,14 +1874,14 @@ function syncLivePreview() {
 
     // 4. Perusahaan
     var valPerusahaan = (elPerusahaan && elPerusahaan.value.trim()) ? elPerusahaan.value.trim() : 'Perusahaan Pemohon';
-    ['d_perusahaan', 'd_perusahaan_l', 'd_perusahaan_l2', 'd_persetujuan_perusahaan'].forEach(function(id) {
+    ['d_perusahaan', 'd_perusahaan_l', 'd_perusahaan_l2', 'd_persetujuan_perusahaan', 'd_sel_perusahaan', 'd_sel_p2_perusahaan'].forEach(function(id) {
         var el = document.getElementById(id);
         if (el) el.textContent = valPerusahaan;
     });
 
     // 5. PIC
     var valNama = (elNama && elNama.value.trim()) ? elNama.value.trim() : '';
-    ['d_pic', 'd_persetujuan_pic'].forEach(function(id) {
+    ['d_pic', 'd_persetujuan_pic', 'd_sel_pic', 'd_sel_p2_pic'].forEach(function(id) {
         var el = document.getElementById(id);
         if (el) el.textContent = valNama;
     });
@@ -1575,27 +1889,30 @@ function syncLivePreview() {
     if (dPicWrap) {
         dPicWrap.style.display = (valNama && valNama !== '-' && valNama.toLowerCase() !== valPerusahaan.toLowerCase()) ? 'block' : 'none';
     }
+    var dSelPicWrap = document.getElementById('d_sel_pic_wrap');
+    if (dSelPicWrap) {
+        dSelPicWrap.style.display = (valNama && valNama !== '-' && valNama.toLowerCase() !== valPerusahaan.toLowerCase()) ? 'block' : 'none';
+    }
 
     // 6. Alamat & Kota
     var valAlamat = (elAlamat && elAlamat.value.trim()) ? elAlamat.value.trim() : 'di Tempat';
-    var dAlamat = document.getElementById('d_alamat');
-    if (dAlamat) dAlamat.textContent = valAlamat;
     var dAlamatL = document.getElementById('d_alamat_l');
     if (dAlamatL) dAlamatL.textContent = valAlamat;
 
-    var dKota = document.getElementById('d_kota');
-    if (dKota) {
-        var lines = valAlamat.split(/\r?\n|,/);
-        var lastLine = lines[lines.length - 1].trim();
-        dKota.textContent = lastLine ? 'di ' + lastLine : 'di Tempat';
-    }
+    var lines = valAlamat.split(/\r?\n|,/);
+    var lastLine = lines[lines.length - 1].trim();
+    var kotaTeks = lastLine ? 'di ' + lastLine : 'di Tempat';
+    ['d_kota', 'd_sel_kota'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.textContent = kotaTeks;
+    });
 
     // 7. Durasi Hari
-    var valDurasi = (elDurasi && elDurasi.value) ? parseInt(elDurasi.value, 10) : 30;
-    var dDurasi = document.getElementById('d_durasi');
-    if (dDurasi) dDurasi.textContent = valDurasi + ' Hari Kerja';
+    var valDurasi = (elDurasi && elDurasi.value) ? parseInt(elDurasi.value, 10) : 20;
     var dDurasiL = document.getElementById('d_durasi_l');
     if (dDurasiL) dDurasiL.textContent = valDurasi + ' Hari Kerja';
+    var dSelDurasi = document.getElementById('d_sel_durasi');
+    if (dSelDurasi) dSelDurasi.textContent = valDurasi;
 
     // 8. Nominal & Terbilang
     var valNominal = (elNominalReal && elNominalReal.value) ? parseInt(elNominalReal.value, 10) : 0;
@@ -1605,6 +1922,10 @@ function syncLivePreview() {
     var dBiayaSelulosa = document.getElementById('d_biaya_selulosa');
     if (dBiayaSelulosa) {
         dBiayaSelulosa.textContent = textRupiah + ',- (' + textTerbilang.toLowerCase() + ')';
+    }
+    var dSelBiaya = document.getElementById('d_sel_biaya');
+    if (dSelBiaya) {
+        dSelBiaya.textContent = textRupiah + ' (' + textTerbilang.toLowerCase() + ')';
     }
 
     var dBiayaL = document.getElementById('d_biaya_l');
@@ -1631,35 +1952,77 @@ function syncLivePreview() {
     setTxt('d_rab_laporan', rabLap.toLocaleString('id-ID'));
     setTxt('d_rab_total', textRupiah);
 
-    var dBiaya = document.getElementById('d_biaya');
-    var dTotal = document.getElementById('d_total');
-    var dTerbilang = document.getElementById('d_terbilang');
-    if (dBiaya) dBiaya.textContent = textRupiah;
-    if (dTotal) dTotal.textContent = textRupiah;
-    if (dTerbilang) dTerbilang.textContent = 'Terbilang: ' + textTerbilang;
+    // 9. Ruang Lingkup Selulosa (Poin 1 List)
+    var dSelRuangLingkupList = document.getElementById('d_sel_ruang_lingkup_list');
+    if (dSelRuangLingkupList && elRuangLingkup) {
+        var rawLines = elRuangLingkup.value.split(/\r?\n/);
+        var htmlList = '';
+        var itemIdx = 1;
+        rawLines.forEach(function(line) {
+            var trimmed = line.trim();
+            if (trimmed.length > 0) {
+                // Strip existing leading bullet or numbers like 1), 1., -, *
+                var cleanLine = trimmed.replace(/^(\d+[\.\)]|\-|\*|\•)\s*/, '');
+                htmlList += '<div class="d-flex gap-2 mb-0.5">' +
+                    '<span style="width: 18px; flex-shrink: 0; font-weight: 500;">' + itemIdx + ')</span>' +
+                    '<div>' + escapeHtml(cleanLine) + '</div>' +
+                '</div>';
+                itemIdx++;
+            }
+        });
+        dSelRuangLingkupList.innerHTML = htmlList;
+    }
 
-    // 9. Catatan Khusus / Penjelasan
-    var valPenjelasan = (elPenjelasan && elPenjelasan.value.trim()) ? elPenjelasan.value.trim() : '';
-    var dPenjelasanBox = document.getElementById('d_penjelasan_box');
-    var dPenjelasan = document.getElementById('d_penjelasan');
-    if (dPenjelasanBox && dPenjelasan) {
-        if (valPenjelasan) {
-            dPenjelasan.textContent = valPenjelasan;
-            dPenjelasanBox.style.display = 'block';
+    // 10. Jadwal Pelaksanaan Selulosa (Poin 2)
+    var dSelJadwal = document.getElementById('d_sel_jadwal');
+    var dSelJadwalWrap = document.getElementById('d_sel_jadwal_wrap');
+    if (dSelJadwal && elJadwal) {
+        var valJadwal = elJadwal.value.trim();
+        if (valJadwal) {
+            dSelJadwal.textContent = valJadwal;
+            if (dSelJadwalWrap) dSelJadwalWrap.style.display = 'flex';
         } else {
-            dPenjelasanBox.style.display = 'none';
+            if (dSelJadwalWrap) dSelJadwalWrap.style.display = 'none';
         }
     }
 
-    // 10. Penandatangan Pejabat BBSPJIS
-    var elJabatan = document.getElementById('input_jabatan_pejabat');
-    var elPembuat = document.getElementById('input_pembuat_nama');
-    var valJabatan = (elJabatan && elJabatan.value.trim()) ? elJabatan.value.trim() : 'plh. Kepala';
-    var valPembuat = (elPembuat && elPembuat.value.trim()) ? elPembuat.value.trim() : 'Hagung Eko Pawoko';
-    var dJabatan = document.getElementById('d_jabatan_pejabat');
-    var dPembuat = document.getElementById('d_pembuat');
-    if (dJabatan) dJabatan.textContent = valJabatan;
-    if (dPembuat) dPembuat.textContent = valPembuat;
+    // 11. Catatan Sampel / Aditif Selulosa (Poin 4)
+    var dSelCatatan = document.getElementById('d_sel_catatan');
+    var dSelCatatanWrap = document.getElementById('d_sel_catatan_wrap');
+    if (dSelCatatan && elCatatanSampel) {
+        var valCatatan = elCatatanSampel.value.trim();
+        if (valCatatan) {
+            dSelCatatan.textContent = valCatatan;
+            if (dSelCatatanWrap) dSelCatatanWrap.style.display = 'flex';
+        } else {
+            if (dSelCatatanWrap) dSelCatatanWrap.style.display = 'none';
+        }
+    }
+
+    // 12. Penandatangan Pejabat BBSPJIS
+    var valJabatan = (elJabatan && elJabatan.value.trim()) ? elJabatan.value.trim() : 'Kepala';
+    var valPembuat = (elPejabatNama && elPejabatNama.value.trim()) ? elPejabatNama.value.trim() : 'Dodiet Prasetyo';
+    
+    ['d_jabatan_pejabat', 'd_jabatan_pejabat_l', 'd_rab_jabatan_pejabat', 'd_sel_jabatan_pejabat', 'd_sel_p2_jabatan_pejabat'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.textContent = valJabatan;
+    });
+
+    ['d_pembuat', 'd_pembuat_l', 'd_pembuat_rab', 'd_sel_pejabat', 'd_sel_p2_pejabat'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.textContent = valPembuat;
+    });
+}
+
+function escapeHtml(text) {
+    var map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, function(m) { return map[m]; });
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -1697,11 +2060,17 @@ document.addEventListener('DOMContentLoaded', function() {
         'input_perusahaan',
         'input_nama',
         'input_alamat',
+        'input_hal',
+        'input_lampiran_teks',
         'input_perihal',
+        'input_ruang_lingkup',
+        'input_jadwal_pelaksanaan',
+        'input_catatan_sampel',
         'input_penjelasan',
         'inputDurasiHari',
         'select_permintaan_melalui',
         'input_jabatan_pejabat',
+        'input_pejabat_nama',
         'input_pembuat_nama'
     ];
 

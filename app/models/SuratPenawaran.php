@@ -9,7 +9,36 @@ class SuratPenawaran extends \DB\SQL\Mapper
 {
     public function __construct(\DB\SQL $db)
     {
+        self::ensureColumns($db);
         parent::__construct($db, 'tb_surat_penawaran');
+    }
+
+    /**
+     * Pastikan kolom-kolom baru tersedia di tb_surat_penawaran
+     */
+    public static function ensureColumns(\DB\SQL $db): void
+    {
+        static $checked = false;
+        if ($checked) return;
+        try {
+            $cols = [
+                'ruang_lingkup'      => 'TEXT NULL',
+                'jadwal_pelaksanaan' => 'TEXT NULL',
+                'catatan_sampel'     => 'TEXT NULL',
+                'jabatan_pejabat'    => 'VARCHAR(100) NULL DEFAULT "Kepala"',
+                'pejabat_nama'       => 'VARCHAR(150) NULL DEFAULT "Dodiet Prasetyo"',
+                'hal'                => 'VARCHAR(150) NULL DEFAULT "Biaya OPTI"',
+                'lampiran_teks'      => 'VARCHAR(100) NULL DEFAULT "1 (satu) lembar"'
+            ];
+            foreach ($cols as $col => $def) {
+                try {
+                    $db->exec("ALTER TABLE tb_surat_penawaran ADD COLUMN {$col} {$def}");
+                } catch (\Exception $e) {
+                    // Column already exists, ignore
+                }
+            }
+            $checked = true;
+        } catch (\Exception $e) {}
     }
 
     /**
@@ -135,9 +164,27 @@ class SuratPenawaran extends \DB\SQL\Mapper
         $statusRespon = in_array($data['status_respon_klien'] ?? '', ['draft', 'terkirim', 'nego', 'deal', 'batal']) ? $data['status_respon_klien'] : 'draft';
         $catatanNego  = trim($data['catatan_nego'] ?? '');
 
+        $ruangLingkup      = isset($data['ruang_lingkup']) ? trim($data['ruang_lingkup']) : null;
+        $jadwalPelaksanaan = isset($data['jadwal_pelaksanaan']) ? trim($data['jadwal_pelaksanaan']) : null;
+        $catatanSampel     = isset($data['catatan_sampel']) ? trim($data['catatan_sampel']) : null;
+        $jabatanPejabat    = !empty($data['jabatan_pejabat']) ? trim($data['jabatan_pejabat']) : 'Kepala';
+        $pejabatNama       = !empty($data['pejabat_nama']) ? trim($data['pejabat_nama']) : (!empty($data['pembuat_nama']) && $data['pembuat_nama'] !== 'Tim Mitra BBSPJIS' ? trim($data['pembuat_nama']) : 'Dodiet Prasetyo');
+        $hal               = !empty($data['hal']) ? trim($data['hal']) : 'Biaya OPTI';
+        $lampiranTeks      = !empty($data['lampiran_teks']) ? trim($data['lampiran_teks']) : '1 (satu) lembar';
+
+        // Jika ada proposal selulosa dan ruang_lingkup kosong, coba ambil dari proposal
+        if (empty($ruangLingkup) && $order['jenis_layanan_opti'] === 'selulosa') {
+            $prop = $orderModel->getProposalRiset($orderId);
+            if (!empty($prop['ruang_lingkup'])) {
+                $ruangLingkup = $prop['ruang_lingkup'];
+            }
+        }
+
         // Jika ada proposal selulosa, ambil file lampirannya jika belum ada upload baru
         if (empty($fileLampiran) && $order['jenis_layanan_opti'] === 'selulosa') {
-            $prop = $orderModel->getProposalRiset($orderId);
+            if (!isset($prop)) {
+                $prop = $orderModel->getProposalRiset($orderId);
+            }
             if (!empty($prop['file_proposal'])) {
                 $fileLampiran = $prop['file_proposal'];
             }
@@ -165,6 +212,8 @@ class SuratPenawaran extends \DB\SQL\Mapper
                     nomor_surat = ?, perihal = ?, tanggal_surat = ?, jenis_layanan = ?, 
                     nama = ?, perusahaan = ?, alamat = ?, nominal_penawaran = ?, 
                     permintaan_melalui = ?, penjelasan = ?, file_lampiran = ?, 
+                    ruang_lingkup = ?, jadwal_pelaksanaan = ?, catatan_sampel = ?, 
+                    jabatan_pejabat = ?, pejabat_nama = ?, hal = ?, lampiran_teks = ?,
                     status_respon_klien = ?, catatan_nego = ?, updated_at = NOW()
                  WHERE id = ?",
                 array(
@@ -179,9 +228,16 @@ class SuratPenawaran extends \DB\SQL\Mapper
                     9 => $permintaanMelalui,
                     10 => $penjelasan,
                     11 => $fileLampiran,
-                    12 => $statusRespon,
-                    13 => $catatanNego,
-                    14 => $targetId
+                    12 => $ruangLingkup,
+                    13 => $jadwalPelaksanaan,
+                    14 => $catatanSampel,
+                    15 => $jabatanPejabat,
+                    16 => $pejabatNama,
+                    17 => $hal,
+                    18 => $lampiranTeks,
+                    19 => $statusRespon,
+                    20 => $catatanNego,
+                    21 => $targetId
                 )
             );
             $penawaranId = $targetId;
@@ -200,8 +256,8 @@ class SuratPenawaran extends \DB\SQL\Mapper
             // KASUS INSERT: Terbitkan Dokumen Penawaran Baru (Revisi Negosiasi)
             $this->db->exec(
                 "INSERT INTO tb_surat_penawaran 
-                (customer_id, order_id, nomor_surat, perihal, nominal_penawaran, tanggal_surat, jenis_layanan, nama, perusahaan, alamat, permintaan_melalui, penjelasan, file_lampiran, status, status_respon_klien, catatan_nego, dibuat_oleh, created_at) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'aktif', ?, ?, ?, NOW())",
+                (customer_id, order_id, nomor_surat, perihal, nominal_penawaran, tanggal_surat, jenis_layanan, nama, perusahaan, alamat, permintaan_melalui, penjelasan, file_lampiran, ruang_lingkup, jadwal_pelaksanaan, catatan_sampel, jabatan_pejabat, pejabat_nama, hal, lampiran_teks, status, status_respon_klien, catatan_nego, dibuat_oleh, created_at) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'aktif', ?, ?, ?, NOW())",
                 array(
                     1 => $order['id_customer'],
                     2 => $orderId,
@@ -216,9 +272,16 @@ class SuratPenawaran extends \DB\SQL\Mapper
                     11 => $permintaanMelalui,
                     12 => $penjelasan,
                     13 => $fileLampiran,
-                    14 => $statusRespon,
-                    15 => $catatanNego,
-                    16 => $userId
+                    14 => $ruangLingkup,
+                    15 => $jadwalPelaksanaan,
+                    16 => $catatanSampel,
+                    17 => $jabatanPejabat,
+                    18 => $pejabatNama,
+                    19 => $hal,
+                    20 => $lampiranTeks,
+                    21 => $statusRespon,
+                    22 => $catatanNego,
+                    23 => $userId
                 )
             );
             $penawaranId = (int)$this->db->exec("SELECT LAST_INSERT_ID() AS id")[0]['id'];

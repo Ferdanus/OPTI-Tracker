@@ -629,6 +629,26 @@ $daftarPegawai = $arsipUser->find(
         }
         $f3->set('default_nominal', $defaultNominal);
 
+        // Prefill default untuk Selulosa jika belum ada
+        $defaultRuangLingkup = '';
+        if ($order['jenis_layanan_opti'] === 'selulosa') {
+            if (!empty($proposal['ruang_lingkup'])) {
+                $defaultRuangLingkup = $proposal['ruang_lingkup'];
+            } else {
+                $defaultRuangLingkup = "Beating LBKP hingga 300 mL CSF\nPenyediaan stock sebanyak 2 variasi.\nPembuatan handsheet dengan variasi penambahan aditif 2 variasi (sesuai b).\nPenampungan air dari pembuatan handsheet setiap variasi ditampung untuk dibawa ke " . ($order['nama_perusahaan'] ?: 'klien') . "\nPengujian handsheet meliputi: massa handsheet, gramatur, uji brightness, % retensi.\nEvaluasi dan penyusunan laporan teknis.";
+            }
+        }
+        $f3->set('default_ruang_lingkup', $defaultRuangLingkup);
+
+        $tglFormatted = self::formatTanggalIndoSurat($spExisting['tanggal_surat'] ?? date('Y-m-d'));
+        $defaultJadwal = "Pelaksanaan kegiatan untuk ruang lingkup 1) sampai dengan 4) akan dilakukan pada tanggal " . $tglFormatted . ".";
+        $f3->set('default_jadwal', $defaultJadwal);
+        $f3->set('default_catatan_sampel', 'Contoh aditif yang perlu disediakan sebanyak 50 ml.');
+        $f3->set('default_pejabat_nama', 'Dodiet Prasetyo');
+        $f3->set('default_jabatan_pejabat', 'Kepala');
+        $f3->set('default_hal', 'Biaya OPTI');
+        $f3->set('default_lampiran_teks', '1 (satu) lembar');
+
         $f3->set('order', $order);
         $f3->set('sp_existing', $spExisting);
         $f3->set('all_sp', $allSp);
@@ -1102,14 +1122,22 @@ $daftarPegawai = $arsipUser->find(
         $spmLayanan   = trim((string)($f3->get('POST.spm_layanan') ?? $f3->get('GET.spm_layanan') ?? ($durasiHari > 0 ? "{$durasiHari} Hari Kerja" : ($order['spm_layanan'] ?? '30 Hari Kerja'))));
 
         $spPreview = [
-            'nomor_surat'       => $nomorSurat,
-            'tanggal_surat'     => $tanggalSurat,
-            'perusahaan'        => $perusahaan,
-            'nama'              => $pic,
-            'alamat'            => $alamat,
-            'perihal'           => $perihal,
-            'nominal_penawaran' => $nominal,
-            'pembuat_nama'      => $_SESSION['user']['nama'] ?? ($_SESSION['nama_lengkap'] ?? ($existingSp['pembuat_nama'] ?? 'Tim Mitra BBSPJIS'))
+            'nomor_surat'        => $nomorSurat,
+            'tanggal_surat'      => $tanggalSurat,
+            'perusahaan'         => $perusahaan,
+            'nama'               => $pic,
+            'alamat'             => $alamat,
+            'perihal'            => $perihal,
+            'hal'                => trim((string)($f3->get('POST.hal') ?? $f3->get('GET.hal') ?? ($existingSp['hal'] ?? 'Biaya OPTI'))),
+            'lampiran_teks'      => trim((string)($f3->get('POST.lampiran_teks') ?? $f3->get('GET.lampiran_teks') ?? ($existingSp['lampiran_teks'] ?? '1 (satu) lembar'))),
+            'nominal_penawaran'  => $nominal,
+            'durasi_hari'        => $durasiHari,
+            'ruang_lingkup'      => $f3->get('POST.ruang_lingkup') ?? $f3->get('GET.ruang_lingkup') ?? ($existingSp['ruang_lingkup'] ?? null),
+            'jadwal_pelaksanaan' => $f3->get('POST.jadwal_pelaksanaan') ?? $f3->get('GET.jadwal_pelaksanaan') ?? ($existingSp['jadwal_pelaksanaan'] ?? null),
+            'catatan_sampel'     => $f3->get('POST.catatan_sampel') ?? $f3->get('GET.catatan_sampel') ?? ($existingSp['catatan_sampel'] ?? null),
+            'jabatan_pejabat'    => $f3->get('POST.jabatan_pejabat') ?? $f3->get('GET.jabatan_pejabat') ?? ($existingSp['jabatan_pejabat'] ?? 'Kepala'),
+            'pejabat_nama'       => $f3->get('POST.pejabat_nama') ?? $f3->get('GET.pejabat_nama') ?? ($existingSp['pejabat_nama'] ?? 'Dodiet Prasetyo'),
+            'pembuat_nama'       => $_SESSION['user']['nama'] ?? ($_SESSION['nama_lengkap'] ?? ($existingSp['pembuat_nama'] ?? 'Tim Mitra BBSPJIS'))
         ];
 
         if (!empty($spmLayanan)) {
@@ -1131,11 +1159,8 @@ $daftarPegawai = $arsipUser->find(
 
     /**
      * Membangun objek PDF Surat Penawaran Resmi SILOPTI sesuai Tata Naskah Dinas BBSPJIS
-     */
-    /**
-     * Membangun objek PDF Surat Penawaran Resmi SILOPTI
      * Mendukung 2 format resmi BBSPJIS:
-     * 1. Selulosa: Format 1-halaman presisi (Referensi: Penawaran IPB)
+     * 1. Selulosa: Format 2-halaman (Halaman 1 Surat Penawaran Resmi + Halaman 2 Lembar Persetujuan)
      * 2. Lingkungan: Format 4-halaman resmi berlampiran & lembar persetujuan (Referensi: PT Tritunggal Artha Makmur)
      */
     public function generatePdfObject(array $order, array $sp): SiloptiSuratPenawaranPdf
@@ -1148,32 +1173,37 @@ $daftarPegawai = $arsipUser->find(
     }
 
     /**
-     * Format 1: Surat Penawaran Layanan Jasa Selulosa (1 Halaman A4 Presisi Sesuai Penawaran IPB)
+     * Format 1: Surat Penawaran Layanan Jasa Selulosa (2 Halaman Presisi: Cover Penawaran + Lembar Persetujuan)
      */
     private function buildPdfSelulosa(array $order, array $sp): SiloptiSuratPenawaranPdf
     {
         $pdf = new SiloptiSuratPenawaranPdf('P', 'mm', 'A4');
         $pdf->jenisLayanan = 'selulosa';
         $pdf->AliasNbPages();
-        $pdf->SetMargins(20, 12, 20);
+        $pdf->SetMargins(20, 10, 20);
         $pdf->SetAutoPageBreak(false);
+
+        // ==========================================
+        // HALAMAN 1: SURAT PENAWARAN RESMI
+        // ==========================================
         $pdf->AddPage();
 
         $tglFormatted = self::formatTanggalIndoSurat($sp['tanggal_surat'] ?? date('Y-m-d'));
-        $noSurat = $sp['nomor_surat'] ?: ('04/SP/BBSPJIS/IX/' . date('Y'));
+        $noSurat = $sp['nomor_surat'] ?: ('01/SP/BBSPJIS/IX/' . date('Y'));
+        $lampiranTeks = !empty($sp['lampiran_teks']) ? $sp['lampiran_teks'] : '1 (satu) lembar';
+        $halSurat = !empty($sp['hal']) ? $sp['hal'] : (!empty($sp['perihal']) ? $sp['perihal'] : 'Biaya OPTI');
 
-        // Metadata Surat
+        // Metadata Kiri & Tanggal Kanan
         $yMeta = $pdf->GetY();
         $pdf->SetFont('Arial', '', 9);
         $pdf->SetTextColor(0, 0, 0);
-        $pdf->Cell(18, 4.5, 'Nomor', 0, 0); $pdf->Cell(4, 4.5, ':', 0, 0); $pdf->Cell(70, 4.5, $noSurat, 0, 1);
-        $pdf->Cell(18, 4.5, 'Lampiran', 0, 0); $pdf->Cell(4, 4.5, ':', 0, 0); $pdf->Cell(70, 4.5, '-', 0, 1);
-        $halSurat = !empty($sp['perihal']) ? $sp['perihal'] : 'Biaya layanan jasa';
-        $pdf->Cell(18, 4.5, 'Hal', 0, 0); $pdf->Cell(4, 4.5, ':', 0, 0); $pdf->Cell(70, 4.5, $halSurat, 0, 1);
+        $pdf->Cell(18, 4.3, 'Nomor', 0, 0); $pdf->Cell(4, 4.3, ':', 0, 0); $pdf->Cell(70, 4.3, $noSurat, 0, 1);
+        $pdf->Cell(18, 4.3, 'Lampiran', 0, 0); $pdf->Cell(4, 4.3, ':', 0, 0); $pdf->Cell(70, 4.3, $lampiranTeks, 0, 1);
+        $pdf->Cell(18, 4.3, 'Hal', 0, 0); $pdf->Cell(4, 4.3, ':', 0, 0); $pdf->Cell(70, 4.3, $halSurat, 0, 1);
 
         $pdf->SetXY(110, $yMeta);
-        $pdf->Cell(80, 4.5, 'Bandung, ' . $tglFormatted, 0, 1, 'R');
-        $pdf->SetY($yMeta + 17);
+        $pdf->Cell(80, 4.3, 'Bandung, ' . $tglFormatted, 0, 1, 'R');
+        $pdf->SetY($yMeta + 16);
 
         // Penerima Surat (Yth.)
         $perusahaan = !empty($sp['perusahaan']) ? trim($sp['perusahaan']) : (!empty($order['nama_perusahaan']) ? trim($order['nama_perusahaan']) : 'Pimpinan Perusahaan/Instansi');
@@ -1184,97 +1214,210 @@ $daftarPegawai = $arsipUser->find(
             ? 'Pimpinan ' . $perusahaan
             : $perusahaan;
 
-        $pic = !empty($sp['nama']) ? trim($sp['nama']) : (!empty($order['pic']) ? trim($order['pic']) : '');
-        $alamat = !empty($sp['alamat']) ? trim($sp['alamat']) : (!empty($order['alamat']) ? trim($order['alamat']) : '');
-
-        // Tentukan kota dari alamat jika tersedia
-        $kotaTujuan = 'di Tempat';
-        if (!empty($alamat)) {
-            $lines = preg_split('/[\r\n,]+/', $alamat);
-            $lastLine = trim(end($lines));
-            if (!empty($lastLine)) {
-                $kotaTujuan = 'di ' . $lastLine;
-            }
-        }
+        $alamat = !empty($sp['alamat']) ? trim($sp['alamat']) : (!empty($order['alamatcustomer']) ? trim($order['alamatcustomer']) : (!empty($order['alamat']) ? trim($order['alamat']) : ''));
 
         $pdf->SetFont('Arial', '', 9);
         $pdf->Cell(0, 4.2, 'Yth. ' . $ythTitle, 0, 1);
-        $pdf->Cell(0, 4.2, $kotaTujuan, 0, 1);
-        if (!empty($pic) && strcasecmp($pic, $perusahaan) !== 0) {
-            $pdf->Cell(0, 4.2, 'u.p. ' . $pic, 0, 1);
+        if (!empty($alamat)) {
+            $alamatLines = explode("\n", str_replace(["\r\n", "\r"], "\n", $alamat));
+            foreach ($alamatLines as $alLine) {
+                $alLine = trim($alLine);
+                if (!empty($alLine)) {
+                    $pdf->Cell(0, 4.2, $alLine, 0, 1);
+                }
+            }
+        } else {
+            $pdf->Cell(0, 4.2, 'di Tempat', 0, 1);
         }
-        $pdf->Ln(3);
+        $pdf->Ln(2.5);
 
         // Paragraf Pembuka
-        $judulKegiatan = !empty($order['judul_kegiatan']) ? $order['judul_kegiatan'] : 'Layanan Jasa Optimalisasi Teknologi Industri (OPTI)';
-        $pdf->MultiCell(0, 4.2, 'Menanggapi permintaan Saudara perihal "' . $judulKegiatan . '", dengan ini kami informasikan kegiatan untuk tahap pelaksanaan adalah sebagai berikut:', 0, 'J');
-        $pdf->Ln(1.5);
+        $judulKegiatan = !empty($order['judul_kegiatan']) ? $order['judul_kegiatan'] : (!empty($sp['perihal']) ? $sp['perihal'] : 'Layanan Jasa Optimalisasi Teknologi Industri (OPTI)');
+        $pdf->MultiCell(0, 4.2, 'Menanggapi permintaan Saudara perihal "' . $judulKegiatan . '", dengan ini kami informasikan biaya kegiatan tersebut sebagai:', 0, 'J');
+        $pdf->Ln(1.2);
 
-        // Poin 1, 2, 3
+        // Poin 1: Biaya layanan dan Ruang Lingkup
         $nominal = (float)($sp['nominal_penawaran'] ?? ($order['estimasi_biaya'] ?? 0));
-        $terbilangStr = strtolower(self::terbilang($nominal)) . ' rupiah';
+        $terbilangStr = strtolower(self::terbilang($nominal));
 
         $pdf->Cell(5, 4.2, '1.', 0, 0);
-        $pdf->MultiCell(165, 4.2, 'Judul kegiatan: ' . $judulKegiatan . '.', 0, 'J');
+        $pdf->MultiCell(165, 4.2, 'Biaya layanan adalah sebesar Rp ' . number_format($nominal, 0, ',', '.') . ' (' . $terbilangStr . ' rupiah), dengan ruang lingkup pekerjaan sebagai berikut:', 0, 'J');
 
+        // Sub-poin Ruang Lingkup 1), 2), 3)...
+        $rawLingkup = !empty($sp['ruang_lingkup']) ? $sp['ruang_lingkup'] : (!empty($order['ruang_lingkup']) ? $order['ruang_lingkup'] : '');
+        $lingkupItems = [];
+        if (!empty($rawLingkup)) {
+            $rawLines = explode("\n", str_replace(["\r\n", "\r"], "\n", $rawLingkup));
+            foreach ($rawLines as $l) {
+                $l = trim($l);
+                if (!empty($l)) {
+                    $cleanL = preg_replace('/^(\d+[\.\)]|\-|\*)\s*/', '', $l);
+                    if (!empty($cleanL)) {
+                        $lingkupItems[] = $cleanL;
+                    }
+                }
+            }
+        }
+
+        if (empty($lingkupItems)) {
+            $lingkupItems = [
+                'Beating LBKP hingga 300 mL CSF',
+                'Penyediaan stock sebanyak 2 variasi.',
+                'Pembuatan handsheet dengan variasi penambahan aditif 2 variasi (sesuai b).',
+                'Penampungan air dari pembuatan handsheet setiap variasi ditampung untuk dibawa ke ' . $perusahaan,
+                'Pengujian handsheet meliputi: massa handsheet, gramatur, uji brightness, % retensi.',
+                'Evaluasi dan penyusunan laporan teknis.'
+            ];
+        }
+
+        foreach ($lingkupItems as $idx => $itemText) {
+            $pdf->SetX(25);
+            $pdf->Cell(6, 3.9, ($idx + 1) . ')', 0, 0);
+            $pdf->MultiCell(159, 3.9, $itemText, 0, 'J');
+        }
+
+        // Poin 2: Pelaksanaan kegiatan untuk ruang lingkup
+        $jadwalPelaksanaan = !empty($sp['jadwal_pelaksanaan']) ? trim($sp['jadwal_pelaksanaan']) : '';
+        if (empty($jadwalPelaksanaan)) {
+            $jadwalPelaksanaan = 'Pelaksanaan kegiatan untuk ruang lingkup 1) sampai dengan 4) akan dilakukan pada tanggal ' . $tglFormatted . '.';
+        }
         $pdf->Cell(5, 4.2, '2.', 0, 0);
-        $pdf->MultiCell(165, 4.2, 'Biaya kegiatan sebesar Rp ' . number_format($nominal, 0, ',', '.') . ',- (' . $terbilangStr . ').', 0, 'J');
+        $pdf->MultiCell(165, 4.2, $jadwalPelaksanaan, 0, 'J');
 
+        // Poin 3: Total waktu pelaksanaan pekerjaan
+        $durasiAngka = (int)($sp['durasi_hari'] ?? (preg_match('/(\d+)/', (string)($order['spm_layanan'] ?? ''), $dm) ? (int)$dm[1] : 20));
+        if ($durasiAngka <= 0) $durasiAngka = 20;
         $pdf->Cell(5, 4.2, '3.', 0, 0);
-        $pdf->MultiCell(165, 4.2, 'Ruang lingkup pekerjaan dan waktu pelaksanaan pekerjaan tercantum dalam proposal terlampir.', 0, 'J');
-        $pdf->Ln(2);
+        $pdf->MultiCell(165, 4.2, 'Total waktu pelaksanaan pekerjaan selama ' . $durasiAngka . ' hari kerja.', 0, 'J');
 
-        // Ketentuan 1 - 5
-        $pdf->MultiCell(0, 4.2, 'Disamping itu perlu kami sampaikan pula ketentuan sebagai berikut :', 0, 'L');
+        // Poin 4: Contoh bahan / aditif (Opsional jika ada)
+        $catatanSampel = !empty($sp['catatan_sampel']) ? trim($sp['catatan_sampel']) : '';
+        if (!empty($catatanSampel)) {
+            $pdf->Cell(5, 4.2, '4.', 0, 0);
+            $pdf->MultiCell(165, 4.2, $catatanSampel, 0, 'J');
+        }
+
+        $pdf->Ln(1.5);
+
+        // Ketentuan Tambahan (Standard 5 points BBSPJIS)
+        $pdf->MultiCell(0, 4.1, 'Disamping itu perlu kami sampaikan pula ketentuan sebagai berikut :', 0, 'L');
         $ketentuan = [
-            'Persetujuan terhadap biaya pengujian mohon disampaikan secara tertulis melalui faks atau e-mail.',
-            'Pengujian dilaksanakan setelah pembayaran biaya pekerjaan dilakukan dan setelah sampel diterima di laboratorium.',
-            'Pembayaran biaya pengujian dilakukan dengan transfer melalui Virtual Account Bank.',
-            'Untuk informasi lebih lanjut, dapat menghubungi Bagian Pemasaran pada nomor: 0813 8686 6808 / 0856 590 88 926.',
-            'Dilarang memberi gratifikasi dalam bentuk apa pun atas layanan jasa yang kami berikan. Jika terdapat pemberian dan penerimaan gratifikasi, mohon dapat dilaporkan : http://bbs.kemenperin.go.id/kontak-kami/pengaduan-gratifikasi.'
+            'Persetujuan terhadap biaya pengujian mohon disampaikan secara tertulis melalui email.',
+            'Pengujian dilaksanakan setelah pembayaran biaya dilakukan dan sampel kami terima.',
+            'Pembayaran biaya pengujian dilakukan dengan transfer melalui virtual account bank.',
+            'Untuk informasi lebih lanjut dapat menghubungi Bagian Layanan nomor: 0813 8686 6808.',
+            'Dilarang memberi gratifikasi dalam bentuk apapun atas layanan jasa yang kami berikan, jika terdapat pemberian dan penerimaan gratifikasi mohon dapat dilaporkan ke : http://bbs.kemenperin.go.id/kontak-kami/pengaduan-gratifikasi.'
         ];
         foreach ($ketentuan as $idx => $k) {
-            $pdf->Cell(5, 4.2, ($idx + 1) . '.', 0, 0);
-            $pdf->MultiCell(165, 4.2, $k, 0, 'J');
+            $pdf->Cell(5, 3.9, ($idx + 1) . '.', 0, 0);
+            $pdf->MultiCell(165, 3.9, $k, 0, 'J');
         }
-        $pdf->Ln(2);
+        $pdf->Ln(1.5);
 
-        $pdf->MultiCell(0, 4.2, 'Kami menunggu konfirmasi lebih lanjut. Atas perhatian dan kerjasama yang baik, kami sampaikan terima kasih.', 0, 'J');
+        // Paragraf Penutup
+        $pdf->MultiCell(0, 4.1, 'Kami menunggu konfirmasi lebih lanjut. Atas perhatian dan kerja sama yang baik, kami sampaikan terima kasih.', 0, 'J');
+        $pdf->Ln(4);
+
+        // Tanda Tangan Halaman 1
+        $signerRole = !empty($sp['jabatan_pejabat']) ? $sp['jabatan_pejabat'] : 'Kepala';
+        $signerName = !empty($sp['pejabat_nama']) ? $sp['pejabat_nama'] : (!empty($sp['pembuat_nama']) && $sp['pembuat_nama'] !== 'Tim Mitra BBSPJIS' ? $sp['pembuat_nama'] : 'Dodiet Prasetyo');
+
+        $pdf->SetX(120);
+        $pdf->SetFont('Arial', '', 9);
+        $pdf->Cell(70, 4.2, $signerRole . ',', 0, 1, 'C');
+        $pdf->Ln(16);
+        $pdf->SetX(120);
+        $pdf->SetFont('Arial', '', 9);
+        $pdf->Cell(70, 4.2, $signerName, 0, 1, 'C');
+
+        // ==========================================
+        // HALAMAN 2: LAMPIRAN I (LEMBAR PERSETUJUAN)
+        // ==========================================
+        $pdf->AddPage();
+        $pdf->SetY(12);
+        
+        // Nomor Halaman -2-
+        $pdf->SetFont('Arial', '', 9);
+        $pdf->Cell(0, 4.5, '-2-', 0, 1, 'C');
+
+        // Header Lampiran Kanan Atas
+        $pdf->SetY(18);
+        $pdf->SetX(120);
+        $pdf->SetFont('Arial', '', 8.5);
+        $pdf->Cell(70, 4, 'Lampiran I Surat', 0, 1, 'L');
+        $pdf->SetX(120);
+        $pdf->Cell(15, 4, 'Nomor', 0, 0); $pdf->Cell(3, 4, ':', 0, 0); $pdf->Cell(52, 4, $noSurat, 0, 1);
+        $pdf->SetX(120);
+        $pdf->Cell(15, 4, 'Tanggal', 0, 0); $pdf->Cell(3, 4, ':', 0, 0); $pdf->Cell(52, 4, $tglFormatted, 0, 1);
+        $pdf->Ln(5);
+
+        // Judul Lampiran
+        $pdf->SetFont('Arial', 'B', 10.5);
+        $pdf->Cell(0, 5, 'Lembar Persetujuan Surat Penawaran', 0, 1, 'C');
+        $pdf->Ln(4);
+
+        // Isi Pernyataan
+        $pdf->SetFont('Arial', '', 9);
+        $pdf->MultiCell(0, 4.3, 'Dengan ini menyatakan bahwa telah membaca memahami dan menyetujui Surat Penawaran BBSPJIS.', 0, 'J');
+        $pdf->Ln(1);
+        $pdf->Cell(0, 4.3, 'Selanjutnya kami menyatakan:', 0, 1);
+        $pernyataan = [
+            'Menyetujui ruang lingkup pekerjaan biaya layanan serta syarat dan ketentuan yang tercantum dalam surat penawaran.',
+            'Bersedia memenuhi kewajiban pembayaran sesuai ketentuan yang berlaku setelah diterbitkan tagihan (invoice) oleh BBSPJIS.',
+            'Persetujuan ini menjadi dasar bagi BBSPJIS untuk memproses permohonan layanan sesuai dengan ketentuan yang berlaku.',
+            'Apabila terdapat perubahan ruang lingkup pekerjaan setelah persetujuan ini diberikan maka akan dilakukan penyesuaian melalui kesepakatan kedua belah pihak.'
+        ];
+        foreach ($pernyataan as $idx => $pText) {
+            $pdf->Cell(5, 4.1, ($idx + 1) . '.', 0, 0);
+            $pdf->MultiCell(165, 4.1, $pText, 0, 'J');
+        }
+        $pdf->Ln(1);
+        $pdf->MultiCell(0, 4.3, 'Demikian Lembar Persetujuan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya.', 0, 'J');
+        $pdf->Ln(4);
+
+        // Tabel Isian Konfirmasi Klien (Bordered Table)
+        $picName = !empty($sp['nama']) ? trim($sp['nama']) : (!empty($order['pic']) ? trim($order['pic']) : '');
+        $tblW1 = 55;
+        $tblW2 = 115;
+        $rowH = 5.6;
+
+        $pdf->SetFont('Arial', '', 8.5);
+        $pdf->Cell($tblW1, $rowH, ' Tempat Tanggal', 1, 0, 'L');
+        $pdf->Cell($tblW2, $rowH, '', 1, 1, 'L');
+
+        $pdf->Cell($tblW1, $rowH, ' Menyetujui', 1, 0, 'L');
+        $pdf->Cell($tblW2, $rowH, '', 1, 1, 'L');
+
+        $pdf->Cell($tblW1, $rowH, ' Nama Perusahaan/Instansi', 1, 0, 'L');
+        $pdf->Cell($tblW2, $rowH, ' ' . $perusahaan, 1, 1, 'L');
+
+        $pdf->Cell($tblW1, $rowH, ' Nama Pemohon', 1, 0, 'L');
+        $pdf->Cell($tblW2, $rowH, ' ' . $picName, 1, 1, 'L');
+
+        $pdf->Cell($tblW1, $rowH, ' Jabatan', 1, 0, 'L');
+        $pdf->Cell($tblW2, $rowH, '', 1, 1, 'L');
+
+        $pdf->Cell($tblW1, $rowH, ' Nomor Telepon (WhatsApp)', 1, 0, 'L');
+        $pdf->Cell($tblW2, $rowH, '', 1, 1, 'L');
+
+        $pdf->Cell($tblW1, 26, ' Tanda Tangan dan Cap', 1, 0, 'L');
+        $pdf->Cell($tblW2, 26, '', 1, 1, 'L');
         $pdf->Ln(3);
 
-        // Bagian Bawah Bersebelahan: Kotak Persetujuan Kiri & Tanda Tangan Kanan
-        $yBawah = $pdf->GetY();
-        $pdf->Rect(20, $yBawah, 75, 29);
-        $pdf->SetXY(22, $yBawah + 1.5);
+        // Catatan Bawah
         $pdf->SetFont('Arial', '', 8);
-        $pdf->Cell(71, 3.8, 'Dengan ini kami menyetujui surat penawaran ini :', 0, 1);
-        $pdf->SetX(22);
-        $pdf->Cell(20, 3.8, 'Nama', 0, 0); $pdf->Cell(3, 3.8, ':', 0, 1);
-        $pdf->SetX(22);
-        $pdf->Cell(20, 3.8, 'Jabatan', 0, 0); $pdf->Cell(3, 3.8, ':', 0, 1);
-        $pdf->SetX(22);
-        $pdf->Cell(20, 3.8, 'No. Tlp', 0, 0); $pdf->Cell(3, 3.8, ':', 0, 1);
-        $pdf->SetX(22);
-        $pdf->Cell(71, 3.8, 'TTD & Stempel', 0, 1);
+        $pdf->Cell(0, 3.8, 'Catatan:', 0, 1);
+        $pdf->MultiCell(170, 3.8, 'Mohon mengembalikan lembar persetujuan ini kepada BBSPJIS melalui email atau media komunikasi yang telah ditentukan sebagai dasar proses penerbitan invoice dan pelaksanaan layanan.', 0, 'J');
+        $pdf->Ln(3);
 
-        // Kanan: Penandatangan Pejabat BBSPJIS
-        $signerRole = !empty($sp['jabatan_pejabat']) ? $sp['jabatan_pejabat'] : 'plh. Kepala';
-        $signerName = !empty($sp['pembuat_nama']) && $sp['pembuat_nama'] !== 'Tim Mitra Kerjasama BBSPJIS' ? $sp['pembuat_nama'] : 'Hagung Eko Pawoko';
-        $pdf->SetXY(115, $yBawah + 1.5);
+        // Tanda Tangan BBSPJIS Halaman 2
+        $pdf->SetX(120);
         $pdf->SetFont('Arial', '', 9);
-        $pdf->Cell(75, 4.2, $signerRole, 0, 1, 'C');
-        $pdf->SetY($yBawah + 21);
-        $pdf->SetX(115);
+        $pdf->Cell(70, 4.2, $signerRole . ',', 0, 1, 'C');
+        $pdf->Ln(16);
+        $pdf->SetX(120);
         $pdf->SetFont('Arial', '', 9);
-        $pdf->Cell(75, 4.2, $signerName, 0, 1, 'C');
-
-        // Tembusan (di bawah kotak persetujuan)
-        $pdf->SetXY(20, $yBawah + 31);
-        $pdf->SetFont('Arial', '', 7);
-        $pdf->Cell(0, 3, 'Tembusan :', 0, 1);
-        $pdf->Cell(4, 3, '1', 0, 0); $pdf->Cell(0, 3, 'Kepala. Bagian Tata Usaha', 0, 1);
-        $pdf->Cell(4, 3, '2', 0, 0); $pdf->Cell(0, 3, 'Ketua Tim Layanan Mitra Industri', 0, 1);
-        $pdf->Cell(4, 3, '3', 0, 0); $pdf->Cell(0, 3, 'Ketua Tim OPTI Kertas, Selulosa dan Produk Bahan Acuan', 0, 1);
+        $pdf->Cell(70, 4.2, $signerName, 0, 1, 'C');
 
         return $pdf;
     }
