@@ -2,6 +2,21 @@
 /* =========================================================
    MINIMALIST & CLEAN EXECUTIVE DASHBOARD STYLING
    ========================================================= */
+/* Utility Colors & Fonts */
+.text-slate-900 { color: #0f172a !important; }
+.text-slate-800 { color: #1e293b !important; }
+.text-slate-700 { color: #334155 !important; }
+.text-slate-600 { color: #475569 !important; }
+.text-slate-500 { color: #64748b !important; }
+.text-slate-400 { color: #94a3b8 !important; }
+.bg-slate-50    { background-color: #f8fafc !important; }
+.bg-slate-100   { background-color: #f1f5f9 !important; }
+.bg-slate-200   { background-color: #e2e8f0 !important; }
+.border-slate-100 { border-color: #f1f5f9 !important; }
+.border-slate-200 { border-color: #e2e8f0 !important; }
+.font-display   { font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important; }
+.text-xs        { font-size: 0.75rem !important; }
+
 .dash-card {
     background: #ffffff;
     border: 1px solid #e2e8f0;
@@ -48,6 +63,94 @@
 }
 .dash-table tr:last-child td {
     border-bottom: none;
+}
+
+/* Live Real-Time Header Badge (Pixel-Perfect Symmetrical & Clean) */
+.dash-live-badge {
+    display: inline-flex;
+    align-items: center;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    padding: 6px 14px;
+    border-radius: 9999px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    gap: 12px;
+    font-size: 0.835rem;
+    transition: border-color 0.15s ease;
+}
+.dash-live-badge:hover {
+    border-color: #cbd5e1;
+}
+.dash-live-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    line-height: 1;
+}
+.dash-live-item i.bi {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: 0 !important;
+    font-size: 0.88rem;
+    line-height: 1;
+    color: #94a3b8;
+}
+.dash-live-divider {
+    width: 1px;
+    height: 14px;
+    background: #e2e8f0;
+    flex-shrink: 0;
+}
+.dash-live-date {
+    font-size: 0.835rem;
+    font-weight: 600;
+    color: #334155;
+    line-height: 1;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+}
+.dash-live-clock {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, monospace;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: 0.02em;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+}
+.dash-live-wib {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #64748b;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    padding: 2.5px 5.5px;
+    border-radius: 4px;
+    letter-spacing: 0.04em;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@media (max-width: 576px) {
+    .dash-live-badge {
+        width: 100%;
+        justify-content: space-between;
+        padding: 0.35rem 0.65rem;
+        gap: 6px;
+    }
+    .dash-live-date {
+        font-size: 0.76rem;
+    }
+    .dash-live-clock {
+        font-size: 0.82rem;
+        min-width: 54px;
+    }
 }
 
 /* Modern Division Badges - Harmonized with Corporate Slate & Minimalist Theme */
@@ -104,31 +207,30 @@
 <div class="container-fluid px-0">
 
     <!-- ======================= HEADER HALAMAN (CLEAN & MINIMALIST) ======================= -->
-    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4 pb-3 border-bottom">
+    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4 pb-3 border-bottom border-slate-200">
         <div>
             <div class="d-flex align-items-center gap-2 mb-1.5 text-xs text-muted flex-wrap">
-                <span class="fw-semibold text-uppercase tracking-wider text-slate-500" style="font-size: 0.75rem; letter-spacing: 0.06em;">SILOPTI BBSPJIS</span>
+                <span class="badge bg-slate-100 text-slate-700 border border-slate-200 fw-semibold text-uppercase tracking-wider px-2 py-1" style="font-size: 0.68rem; letter-spacing: 0.06em;">
+                    <i class="bi bi-shield-check text-primary me-1"></i>SILOPTI BBSPJIS
+                </span>
             </div>
             <h4 class="fw-bold mb-0 text-slate-900 font-display" style="font-size: 1.55rem; letter-spacing: -0.02em;">Dashboard Monitoring Layanan</h4>
         </div>
         <div class="d-flex align-items-center">
-            <div class="d-inline-flex align-items-center px-3.5 py-2 rounded-pill bg-white border border-slate-200 shadow-xs" style="gap: 12px;">
+            <!-- Clean Live Date & Clock -->
+            <div class="dash-live-badge">
                 <!-- Tanggal -->
-                <div class="d-flex align-items-center gap-2 pe-3 border-end border-slate-200">
-                    <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-slate-100 text-slate-600" style="width: 26px; height: 26px; font-size: 0.78rem;">
-                        <i class="bi bi-calendar3"></i>
-                    </span>
-                    <span id="liveDateDisplay" class="fw-semibold text-slate-700" style="font-size: 0.835rem;">{{ @tanggal_hari_ini }}</span>
+                <div class="dash-live-item">
+                    <i class="bi bi-calendar3 text-slate-400" style="font-size: 0.85rem;"></i>
+                    <span id="liveDateDisplay" class="dash-live-date">{{ @tanggal_hari_ini }}</span>
                 </div>
+                <!-- Divider -->
+                <div class="dash-live-divider"></div>
                 <!-- Jam Real-Time -->
-                <div class="d-flex align-items-center gap-2">
-                    <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-emerald-50 text-emerald-600" style="width: 26px; height: 26px; font-size: 0.82rem;">
-                        <i class="bi bi-clock-history"></i>
-                    </span>
-                    <div class="d-flex align-items-center gap-1.5">
-                        <span id="liveClockDisplay" class="fw-bold text-slate-900" style="font-size: 0.875rem; letter-spacing: 0.05em; font-family: 'Plus Jakarta Sans', system-ui, sans-serif;">--:--:--</span>
-                        <span class="badge bg-slate-100 text-slate-500 border border-slate-200 rounded px-1.5 py-0.5 fw-bold" style="font-size: 0.65rem; letter-spacing: 0.05em;">WIB</span>
-                    </div>
+                <div class="dash-live-item">
+                    <i class="bi bi-clock text-slate-400" style="font-size: 0.85rem;"></i>
+                    <span id="liveClockDisplay" class="dash-live-clock">--:--:--</span>
+                    <span class="dash-live-wib">WIB</span>
                 </div>
             </div>
         </div>

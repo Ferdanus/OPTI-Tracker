@@ -250,46 +250,47 @@
         background: #ffffff;
         border: 1px solid #e2e8f0;
         border-radius: 12px;
-        padding: 18px 20px;
+        padding: 13px 16px;
         margin-bottom: 1.15rem;
         box-shadow: 0 2px 8px -1px rgba(15, 23, 42, 0.05);
         position: relative;
     }
     .calc-source-selulosa {
-        border-left: 4px solid #be123c !important;
+        border-left: 3px solid #94a3b8 !important;
     }
     .calc-source-lingkungan {
-        border-left: 4px solid #16a34a !important;
+        border-left: 3px solid #10b981 !important;
     }
     .calc-source-neutral {
-        border-left: 4px solid #d97706 !important;
+        border-left: 3px solid #cbd5e1 !important;
     }
     .calc-source-top {
         display: flex;
         align-items: center;
         justify-content: space-between;
+        gap: 12px;
     }
     .calc-source-info {
         display: flex;
         align-items: center;
-        gap: 14px;
-        flex: 1 1 240px;
+        gap: 10px;
+        flex: 1 1 auto;
         min-width: 0;
     }
     .calc-icon-box {
-        width: 46px;
-        height: 46px;
-        border-radius: 10px;
+        width: 38px;
+        height: 38px;
+        border-radius: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.25rem;
+        font-size: 1.1rem;
         flex-shrink: 0;
     }
     .calc-icon-selulosa {
-        background: #ffe4e6;
-        border: 1px solid #fecdd3;
-        color: #be123c;
+        background: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        color: #475569;
     }
     .calc-icon-lingkungan {
         background: #f0fdf4;
@@ -297,78 +298,142 @@
         color: #16a34a;
     }
     .calc-icon-neutral {
-        background: #fffbeb;
-        border: 1px solid #fde68a;
-        color: #d97706;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        color: #64748b;
     }
-    .calc-price-box {
-        text-align: right;
+    .calc-price-panel {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 4px 8px;
+        min-width: 140px;
         flex-shrink: 0;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+        font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    }
+    .calc-price-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        line-height: 1.2;
+    }
+    .calc-price-row .label-text {
+        font-size: 0.68rem;
+        font-weight: 600;
+        color: #64748b;
+        letter-spacing: 0.1px;
         white-space: nowrap;
-        border-radius: 10px;
-        padding: 8px 16px;
     }
-    .calc-price-selulosa {
-        background: #ffe4e6;
-        border: 1px solid #fecdd3;
+    .calc-price-row .value-text {
+        font-size: 0.84rem;
+        font-weight: 700;
+        color: #334155;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+        letter-spacing: -0.2px;
     }
-    .calc-price-lingkungan {
-        background: #f0fdf4;
-        border: 1px solid #bbf7d0;
+    .calc-price-panel .box-nego-ditawarkan {
+        border-top: 1px dashed #cbd5e1;
+        margin-top: 3px;
+        padding-top: 3px;
     }
-    .calc-price-neutral {
-        background: #fffbeb;
-        border: 1px solid #fde68a;
+    .nego-badge-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 2.5px;
+        font-size: 0.62rem;
+        font-weight: 700;
+        color: #047857;
+        background: #ecfdf5;
+        border: 1px solid #a7f3d0;
+        border-radius: 3.5px;
+        padding: 1px 4px;
+        line-height: 1.15;
+        white-space: nowrap;
+    }
+    .nego-badge-tag i {
+        font-size: 0.58rem;
+    }
+    .calc-price-row .value-nego {
+        font-size: 0.84rem;
+        font-weight: 700;
+        color: #047857;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+        letter-spacing: -0.2px;
+    }
+    .calc-source-footer {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        padding-top: 10px;
+        margin-top: 12px;
+        border-top: 1px solid #f1f5f9;
     }
     .calc-meta-chip {
         display: inline-flex;
         align-items: center;
         background: #f8fafc;
         border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 6px 14px;
-        font-size: 0.8rem;
-        color: #475569;
-        gap: 8px;
+        border-radius: 6px;
+        padding: 4px 10px;
+        font-size: 0.74rem;
+        color: #64748b;
+        gap: 6px;
+        line-height: 1.25;
+        white-space: nowrap;
     }
     .calc-meta-chip i {
-        font-size: 0.9rem;
+        font-size: 0.8rem;
         color: #64748b;
+    }
+    .calc-meta-chip strong {
+        color: #1e293b;
+        font-weight: 600;
     }
     .btn-selulosa-preview {
         background: #ffffff;
-        border: 1px solid #fecdd3;
-        color: #be123c;
+        border: 1px solid #e2e8f0;
+        color: #334155;
         font-weight: 600;
-        font-size: 0.8rem;
-        padding: 6px 14px;
-        border-radius: 8px;
+        font-size: 0.74rem;
+        padding: 4px 10px;
+        border-radius: 6px;
         display: inline-flex;
         align-items: center;
-        gap: 8px;
-        transition: all 0.2s ease;
-        box-shadow: 0 1px 2px rgba(190, 18, 60, 0.05);
+        gap: 6px;
+        line-height: 1.25;
+        transition: all 0.15s ease;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
         cursor: pointer;
         text-decoration: none;
         white-space: nowrap;
     }
     .btn-selulosa-preview:hover {
-        background: #be123c;
-        border-color: #be123c;
-        color: #ffffff;
-        box-shadow: 0 2px 6px rgba(190, 18, 60, 0.25);
+        background: #fdf2f4;
+        border-color: #fecdd3;
+        color: #be123c;
+        box-shadow: 0 1px 3px rgba(225, 29, 72, 0.1);
     }
-    .btn-selulosa-preview:hover i {
-        color: #ffffff !important;
+    .btn-selulosa-preview i {
+        color: #e11d48;
+        font-size: 0.8rem;
     }
     @media (max-width: 576px) {
         .calc-source-top {
             flex-direction: column;
             align-items: flex-start;
+            gap: 12px;
         }
-        .calc-price-box {
-            text-align: left !important;
+        .calc-price-panel {
             width: 100%;
+            min-width: unset;
         }
         .btn-selulosa-preview {
             width: 100%;
@@ -565,30 +630,31 @@
                                         <i class="bi bi-file-earmark-text-fill"></i>
                                     </div>
                                     <div class="min-w-0">
-                                        <div class="d-flex align-items-center gap-2 flex-wrap mb-1" style="row-gap: 6px;">
-                                            <span class="fw-bold text-dark" style="font-size: 0.95rem; line-height: 1.35;">Proposal Riset Selulosa</span>
-                                            <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-2 py-0.5" style="font-size: 0.68rem; font-weight: 600;">
-                                                <i class="bi bi-check-circle-fill me-1"></i>Terverifikasi
-                                            </span>
-                                        </div>
-                                        <div class="text-muted small mt-1" style="font-size: 0.78rem; line-height: 1.4;">Rencana Anggaran Biaya &amp; Teknis Pelaksanaan</div>
+                                        <div class="fw-bold text-dark mb-0.5" style="font-size: 0.92rem; line-height: 1.25;">Proposal Riset Selulosa</div>
+                                        <div class="text-muted small text-truncate" style="font-size: 0.74rem; line-height: 1.25;">Rencana Anggaran Biaya &amp; Teknis Pelaksanaan</div>
                                     </div>
                                 </div>
-                                <div class="calc-price-box calc-price-selulosa">
-                                    <span class="text-muted d-block fw-semibold" style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px;">Estimasi Anggaran</span>
-                                    <span class="fw-bold font-monospace" style="font-size: 1.25rem; color: #be123c; letter-spacing: -0.3px;">Rp {{ number_format(@proposal.estimasi_total_biaya, 0, ',', '.') }}</span>
+                                <div class="calc-price-panel">
+                                    <div class="calc-price-row">
+                                        <span class="label-text">Estimasi</span>
+                                        <span class="value-text">Rp {{ number_format(@proposal.estimasi_total_biaya, 0, ',', '.') }}</span>
+                                    </div>
+                                    <div class="box-nego-ditawarkan calc-price-row" style="{{ (!@sp_existing || !@sp_existing.nominal_penawaran) ? 'display: none !important;' : '' }}">
+                                        <span class="nego-badge-tag">
+                                            <i class="bi bi-tag-fill"></i> Nego
+                                        </span>
+                                        <span class="label-nego-nominal value-nego">Rp {{ number_format(@sp_existing.nominal_penawaran ?: @default_nominal, 0, ',', '.') }}</span>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="d-flex flex-wrap align-items-center justify-content-between pt-3 mt-3 border-top" style="border-color: #f1f5f9 !important; gap: 12px;">
-                                <div class="d-flex flex-wrap align-items-center" style="gap: 12px;">
-                                    <div class="calc-meta-chip">
-                                        <i class="bi bi-person-fill text-secondary"></i>
-                                        <span>PIC:&nbsp;<strong class="text-dark">{{ @proposal.pic_nama ?: '-' }}</strong></span>
-                                    </div>
-                                    <div class="calc-meta-chip">
-                                        <i class="bi bi-clock-history text-secondary"></i>
-                                        <span>Durasi:&nbsp;<strong class="text-dark">{{ @proposal.durasi_kegiatan ?: '30 Hari Kerja' }}</strong></span>
-                                    </div>
+                            <div class="calc-source-footer">
+                                <div class="calc-meta-chip">
+                                    <i class="bi bi-person text-secondary"></i>
+                                    <span>PIC:&nbsp;<strong class="text-dark">{{ @proposal.pic_nama ?: '-' }}</strong></span>
+                                </div>
+                                <div class="calc-meta-chip">
+                                    <i class="bi bi-clock text-secondary"></i>
+                                    <span>Durasi:&nbsp;<strong class="text-dark">{{ @proposal.durasi_kegiatan ?: '30 Hari Kerja' }}</strong></span>
                                 </div>
                                 <button type="button" class="btn-selulosa-preview" onclick="openProposalPreviewModal('{{ @order.id }}')">
                                     <i class="bi bi-file-earmark-pdf-fill"></i>
@@ -607,21 +673,24 @@
                                         <i class="bi bi-calculator-fill"></i>
                                     </div>
                                     <div class="min-w-0">
-                                        <div class="d-flex align-items-center gap-2 flex-wrap mb-1" style="row-gap: 6px;">
-                                            <span class="fw-bold text-dark" style="font-size: 0.95rem; line-height: 1.35;">Rincian Pengujian Laboratorium</span>
-                                            <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-2 py-0.5" style="font-size: 0.68rem; font-weight: 600;">
-                                                <i class="bi bi-check-circle-fill me-1"></i>Terverifikasi
-                                            </span>
-                                        </div>
-                                        <div class="text-muted small mt-1" style="font-size: 0.78rem; line-height: 1.4;">Kalkulasi tarif baku mutu lab lingkungan</div>
+                                        <div class="fw-bold text-dark mb-0.5" style="font-size: 0.92rem; line-height: 1.25;">Rincian Pengujian Laboratorium</div>
+                                        <div class="text-muted small text-truncate" style="font-size: 0.74rem; line-height: 1.25;">Kalkulasi tarif baku mutu lab lingkungan</div>
                                     </div>
                                 </div>
-                                <div class="calc-price-box calc-price-lingkungan">
-                                    <span class="text-muted d-block fw-semibold" style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px;">Estimasi Total</span>
-                                    <span class="fw-bold font-monospace text-success" style="font-size: 1.25rem; letter-spacing: -0.3px;">Rp {{ number_format(@order.estimasi_biaya, 0, ',', '.') }}</span>
+                                <div class="calc-price-panel">
+                                    <div class="calc-price-row">
+                                        <span class="label-text">Estimasi</span>
+                                        <span class="value-text">Rp {{ number_format(@order.estimasi_biaya, 0, ',', '.') }}</span>
+                                    </div>
+                                    <div class="box-nego-ditawarkan calc-price-row" style="{{ (!@sp_existing || !@sp_existing.nominal_penawaran) ? 'display: none !important;' : '' }}">
+                                        <span class="nego-badge-tag">
+                                            <i class="bi bi-tag-fill"></i> Nego
+                                        </span>
+                                        <span class="label-nego-nominal value-nego">Rp {{ number_format(@sp_existing.nominal_penawaran ?: @default_nominal, 0, ',', '.') }}</span>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="d-flex flex-wrap align-items-center pt-3 mt-3 border-top" style="border-color: #f1f5f9 !important; gap: 12px;">
+                            <div class="calc-source-footer">
                                 <div class="calc-meta-chip">
                                     <i class="bi bi-list-check text-success"></i>
                                     <span>Parameter Uji:&nbsp;<strong class="text-dark">{{ count(@kalkulasi) }} Parameter SNI</strong></span>
@@ -645,13 +714,21 @@
                                         <i class="bi bi-lightning-charge-fill"></i>
                                     </div>
                                     <div class="min-w-0">
-                                        <span class="fw-bold text-dark d-block mb-1" style="font-size: 0.95rem; line-height: 1.35;">Estimasi Awal Order</span>
-                                        <div class="text-muted small mt-1" style="font-size: 0.78rem; line-height: 1.4;">Perkiraan nilai order sounding awal</div>
+                                        <span class="fw-bold text-dark d-block mb-0.5" style="font-size: 0.90rem; line-height: 1.25; white-space: nowrap;">Estimasi Awal Order</span>
+                                        <div class="text-muted small text-truncate" style="font-size: 0.74rem; line-height: 1.25;">Perkiraan nilai order sounding awal</div>
                                     </div>
                                 </div>
-                                <div class="calc-price-box calc-price-neutral">
-                                    <span class="text-muted d-block fw-semibold" style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px;">Estimasi Awal</span>
-                                    <span class="fw-bold font-monospace text-primary" style="font-size: 1.25rem; letter-spacing: -0.3px;">Rp {{ number_format(@order.estimasi_biaya, 0, ',', '.') }}</span>
+                                <div class="calc-price-panel">
+                                    <div class="calc-price-row">
+                                        <span class="label-text">Estimasi</span>
+                                        <span class="value-text">Rp {{ number_format(@order.estimasi_biaya, 0, ',', '.') }}</span>
+                                    </div>
+                                    <div class="box-nego-ditawarkan calc-price-row" style="{{ (!@sp_existing || !@sp_existing.nominal_penawaran) ? 'display: none !important;' : '' }}">
+                                        <span class="nego-badge-tag">
+                                            <i class="bi bi-tag-fill"></i> Nego
+                                        </span>
+                                        <span class="label-nego-nominal value-nego">Rp {{ number_format(@sp_existing.nominal_penawaran ?: @default_nominal, 0, ',', '.') }}</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1379,6 +1456,24 @@ function formatTanggalIndo(dateStr) {
     return d + ' ' + (months[m] || '') + ' ' + y;
 }
 
+function updateNegoDitawarkanBox(num) {
+    var negoBoxes = document.querySelectorAll('.box-nego-ditawarkan');
+    var labelNominals = document.querySelectorAll('.label-nego-nominal');
+    
+    if (num > 0) {
+        labelNominals.forEach(function(el) {
+            el.textContent = 'Rp ' + num.toLocaleString('id-ID');
+        });
+        negoBoxes.forEach(function(box) {
+            box.style.setProperty('display', 'flex', 'important');
+        });
+    } else {
+        negoBoxes.forEach(function(box) {
+            box.style.setProperty('display', 'none', 'important');
+        });
+    }
+}
+
 function formatNominalPenawaran(el) {
     var raw = el.value.replace(/[^0-9]/g, '');
     var num = parseInt(raw, 10) || 0;
@@ -1390,6 +1485,7 @@ function formatNominalPenawaran(el) {
     if (terbilangEl) {
         terbilangEl.textContent = num > 0 ? 'Terbilang: ' + terbilangRupiah(num) : 'Terbilang: Nol Rupiah';
     }
+    updateNegoDitawarkanBox(num);
     syncLivePreview();
 }
 
@@ -1576,6 +1672,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (terbilangEl) {
             terbilangEl.textContent = val > 0 ? 'Terbilang: ' + terbilangRupiah(val) : 'Terbilang: Nol Rupiah';
         }
+        <check if="{{ @sp_existing && @sp_existing.nominal_penawaran > 0 }}">
+        updateNegoDitawarkanBox(val);
+        </check>
     }
 
     var selectStatus = document.getElementById('select_status_respon_klien');

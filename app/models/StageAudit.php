@@ -294,15 +294,29 @@ class StageAudit {
                 }
 
                 // Tahap 2: Formulir Permintaan Pelayanan Jasa
-                if (empty($result[2]['waktu_kirim']) && !in_array($order['status'] ?? '', ['permintaan_masuk', 'draft_disimpan', 'draft'])) {
-                    $tglKirim2 = !empty($extra['penawaran']['created_at']) ? $extra['penawaran']['created_at'] : $order['created_at'];
-                    $pengirim2 = !empty($extra['penawaran']['pembuat_nama']) ? $extra['penawaran']['pembuat_nama'] : ($order['nama_pengklaim'] ?: 'Tim Mitra');
-                    $divisi    = ($order['jenis_layanan_opti'] ?? '') === 'lingkungan' ? 'Lingkungan' : 'Selulosa';
+                $isTahap2Submitted = !in_array($order['status'] ?? '', ['permintaan_masuk', 'draft_disimpan', 'draft']);
+                if ($isTahap2Submitted) {
+                    $divisi = ($order['jenis_layanan_opti'] ?? '') === 'lingkungan' ? 'Ka. Tim Lingkungan' : 'Ka. Tim Selulosa';
+                    if (empty($result[2]['waktu_kirim'])) {
+                        $tglKirim2 = !empty($extra['penawaran']['created_at']) ? $extra['penawaran']['created_at'] : $order['created_at'];
+                        $pengirim2 = !empty($extra['penawaran']['pembuat_nama']) ? $extra['penawaran']['pembuat_nama'] : ($order['nama_pengklaim'] ?: 'Tim Mitra');
 
-                    self::recordKirim($db, $orderId, 2, self::getStageNames()[2], (int)($extra['penawaran']['dibuat_oleh'] ?? ($order['diklaim_oleh'] ?? 0)), $pengirim2, 'Tim Mitra', $tglKirim2, 'Diteruskan ke Ka. Tim ' . $divisi);
-                    $result[2]['waktu_kirim']   = $tglKirim2;
-                    $result[2]['pengirim_nama'] = $pengirim2;
-                    $result[2]['pengirim_role'] = 'Tim Mitra';
+                        self::recordKirim($db, $orderId, 2, self::getStageNames()[2], (int)($extra['penawaran']['dibuat_oleh'] ?? ($order['diklaim_oleh'] ?? 0)), $pengirim2, 'Tim Mitra', $tglKirim2, 'Diteruskan ke ' . $divisi);
+                        $result[2]['waktu_kirim']   = $tglKirim2;
+                        $result[2]['pengirim_nama'] = $pengirim2;
+                        $result[2]['pengirim_role'] = 'Tim Mitra';
+                    }
+
+                    if (empty($result[2]['waktu_dibaca'])) {
+                        $tglBaca2 = !empty($extra['tinjauan']['created_at']) ? $extra['tinjauan']['created_at'] : (!empty($extra['tinjauan']['tanggal_tinjauan']) ? ($extra['tinjauan']['tanggal_tinjauan'] . ' ' . date('H:i:s')) : (!empty($order['updated_at']) ? $order['updated_at'] : (!empty($order['tanggal_klaim']) ? $order['tanggal_klaim'] : $order['created_at'])));
+                        $pembaca2 = !empty($extra['tinjauan']['peninjau_nama']) ? $extra['tinjauan']['peninjau_nama'] : ($order['peninjau_nama'] ?? $divisi);
+                        $roleBaca2 = $divisi;
+
+                        self::recordDibaca($db, $orderId, 2, (int)($extra['tinjauan']['ditinjau_oleh'] ?? 0), $pembaca2, $roleBaca2, $tglBaca2);
+                        $result[2]['waktu_dibaca'] = $tglBaca2;
+                        $result[2]['dibaca_nama']  = $pembaca2;
+                        $result[2]['dibaca_role']  = $roleBaca2;
+                    }
                 }
 
                 // Tahap 3: Kaji Kelayakan Teknis

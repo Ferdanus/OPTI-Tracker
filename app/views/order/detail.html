@@ -379,6 +379,165 @@
             align-items: center;
             justify-content: space-between;
         }
+
+        /* ======================================================== */
+        /* 8-STAGE FULL-WIDTH GRID NAVIGATION (PROMINENT BADGES)    */
+        /* ======================================================== */
+        .stage-nav-bar {
+            background: #ffffff;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+            padding: 6px;
+            margin-bottom: 1.25rem;
+            width: 100%;
+        }
+
+        .stage-nav-grid {
+            display: grid;
+            grid-template-columns: repeat(8, minmax(0, 1fr));
+            gap: 6px;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            width: 100%;
+        }
+
+        .stage-nav-item {
+            min-width: 0;
+            width: 100%;
+        }
+
+        .stage-nav-btn {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            padding: 0.45rem 0.2rem;
+            min-height: 52px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            color: #475569;
+            text-decoration: none;
+            transition: all 0.15s ease;
+            cursor: pointer;
+            user-select: none;
+            text-align: center;
+        }
+
+        .stage-nav-btn:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            color: #0f172a;
+        }
+
+        .stage-nav-btn.active {
+            background: #1e293b !important;
+            color: #ffffff !important;
+            border-color: #1e293b !important;
+            box-shadow: 0 2px 6px rgba(30, 41, 59, 0.2);
+        }
+
+        .stage-nav-title-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            width: 100%;
+            min-width: 0;
+        }
+
+        .stage-nav-badge {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #e2e8f0;
+            color: #475569;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .stage-nav-btn.active .stage-nav-badge {
+            background: rgba(255, 255, 255, 0.25);
+            color: #ffffff;
+        }
+
+        .stage-nav-text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: 0.74rem;
+            font-weight: 700;
+        }
+
+        .stage-nav-status-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .stage-status-badge {
+            font-size: 0.62rem !important;
+            padding: 0.12rem 0.45rem !important;
+            border-radius: 4px !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.2px;
+            line-height: 1.15;
+            white-space: nowrap;
+        }
+
+        /* Active styling overrides for badges */
+        .stage-nav-btn.active .stage-status-badge.bg-success-subtle {
+            background-color: #059669 !important;
+            color: #ffffff !important;
+            border-color: transparent !important;
+        }
+        .stage-nav-btn.active .stage-status-badge.bg-warning {
+            background-color: #f59e0b !important;
+            color: #1e293b !important;
+            border-color: transparent !important;
+        }
+        .stage-nav-btn.active .stage-status-badge.bg-primary {
+            background-color: #3b82f6 !important;
+            color: #ffffff !important;
+            border-color: transparent !important;
+        }
+        .stage-nav-btn.active .stage-status-badge.bg-light {
+            background-color: rgba(255, 255, 255, 0.18) !important;
+            color: #e2e8f0 !important;
+            border-color: transparent !important;
+        }
+        .stage-nav-btn.active .stage-status-badge.bg-info-subtle {
+            background-color: #0284c7 !important;
+            color: #ffffff !important;
+            border-color: transparent !important;
+        }
+        .stage-nav-btn.active .stage-status-badge.bg-success {
+            background-color: #10b981 !important;
+            color: #ffffff !important;
+            border-color: transparent !important;
+        }
+
+        @media (max-width: 991.98px) {
+            .stage-nav-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 6px;
+            }
+        }
+        @media (max-width: 575.98px) {
+            .stage-nav-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 6px;
+            }
+        }
     </style>
 
     <!-- Header & Info Bar -->
@@ -568,62 +727,224 @@
     </div>
 
     <!-- ======================================================== -->
-    <!-- ACTION HERO BANNER: PANDUAN LANGKAH SELANJUTNYA          -->
+    <!-- 8-TAHAP FULL-WIDTH GRID NAVIGATION BAR                   -->
     <!-- ======================================================== -->
-    <check if="{{ @langkah_berikutnya }}">
-        <div class="action-guide-card type-{{ @langkah_berikutnya.tipe_badge }} mb-4">
-            <div class="action-guide-body">
-                <div class="action-guide-main">
-                    <!-- Icon Status -->
-                    <div class="action-guide-icon type-{{ @langkah_berikutnya.tipe_badge }}">
-                        <i class="bi {{ @langkah_berikutnya.role_icon }}"></i>
+    <div class="stage-nav-bar mb-3" id="orderStageNavigation">
+        <ul class="nav stage-nav-grid" id="stageTabNav" role="tablist">
+            <!-- Tahap 1 -->
+            <li class="stage-nav-item" role="presentation">
+                <button class="stage-nav-btn {{ @current_step == 1 ? 'active' : '' }}" id="tab-stage-1" data-bs-toggle="pill" data-bs-target="#pane-stage-1" type="button" role="tab" aria-controls="pane-stage-1" aria-selected="{{ @current_step == 1 ? 'true' : 'false' }}">
+                    <div class="stage-nav-title-row">
+                        <span class="stage-nav-badge">1</span>
+                        <span class="stage-nav-text">Surat Masuk</span>
                     </div>
-                    <!-- Keterangan & Judul Langkah -->
-                    <div class="action-guide-content">
-                        <div class="action-guide-meta">
-                            <span class="action-guide-step-badge">
-                                <check if="{{ @langkah_berikutnya.is_finished }}">
-                                    <true><i class="bi bi-check-all me-1"></i>LAYANAN SELESAI</true>
-                                    <false>TAHAP {{ @current_step }} DARI 8</false>
+                    <div class="stage-nav-status-row">
+                        <span class="badge bg-success-subtle text-success stage-status-badge">Selesai</span>
+                    </div>
+                </button>
+            </li>
+            <!-- Tahap 2 -->
+            <li class="stage-nav-item" role="presentation">
+                <button class="stage-nav-btn {{ @current_step == 2 ? 'active' : '' }}" id="tab-stage-2" data-bs-toggle="pill" data-bs-target="#pane-stage-2" type="button" role="tab" aria-controls="pane-stage-2" aria-selected="{{ @current_step == 2 ? 'true' : 'false' }}">
+                    <div class="stage-nav-title-row">
+                        <span class="stage-nav-badge">2</span>
+                        <span class="stage-nav-text">Pelayanan</span>
+                    </div>
+                    <div class="stage-nav-status-row">
+                        <check if="{{ in_array(@order.status, ['draft_disimpan', 'draft']) }}">
+                            <true><span class="badge bg-warning text-dark stage-status-badge">Draft</span></true>
+                            <false>
+                                <check if="{{ @stepper[2].state == 'done' }}">
+                                    <true><span class="badge bg-success-subtle text-success stage-status-badge">Selesai</span></true>
+                                    <false>
+                                        <check if="{{ @stepper[2].state == 'current' }}">
+                                            <true><span class="badge bg-primary text-white stage-status-badge">Aktif</span></true>
+                                            <false><span class="badge bg-light text-muted stage-status-badge">Menunggu</span></false>
+                                        </check>
+                                    </false>
                                 </check>
-                            </span>
-                            <span class="action-guide-role-badge">
-                                <i class="bi bi-person-fill-gear text-primary me-1"></i>Penanggung Jawab: <strong>{{ @langkah_berikutnya.penanggung_jawab }}</strong>
-                            </span>
-                        </div>
-                        <h5 class="action-guide-title">
-                            {{ @langkah_berikutnya.judul }}
-                        </h5>
-                        <p class="action-guide-desc">
-                            {{ @langkah_berikutnya.deskripsi }}
-                        </p>
+                            </false>
+                        </check>
                     </div>
-                </div>
+                </button>
+            </li>
+            <!-- Tahap 3 -->
+            <li class="stage-nav-item" role="presentation">
+                <button class="stage-nav-btn {{ @current_step == 3 ? 'active' : '' }}" id="tab-stage-3" data-bs-toggle="pill" data-bs-target="#pane-stage-3" type="button" role="tab" aria-controls="pane-stage-3" aria-selected="{{ @current_step == 3 ? 'true' : 'false' }}">
+                    <div class="stage-nav-title-row">
+                        <span class="stage-nav-badge">3</span>
+                        <span class="stage-nav-text">Kelayakan</span>
+                    </div>
+                    <div class="stage-nav-status-row">
+                        <check if="{{ !empty(@tinjauan) && !empty(@tinjauan.is_draft) }}">
+                            <true><span class="badge bg-warning text-dark stage-status-badge">Draft</span></true>
+                            <false>
+                                <check if="{{ @stepper[3].state == 'done' }}">
+                                    <true><span class="badge bg-success-subtle text-success stage-status-badge">Selesai</span></true>
+                                    <false>
+                                        <check if="{{ @stepper[3].state == 'current' }}">
+                                            <true><span class="badge bg-primary text-white stage-status-badge">Aktif</span></true>
+                                            <false><span class="badge bg-light text-muted stage-status-badge">Menunggu</span></false>
+                                        </check>
+                                    </false>
+                                </check>
+                            </false>
+                        </check>
+                    </div>
+                </button>
+            </li>
+            <!-- Tahap 4 -->
+            <li class="stage-nav-item" role="presentation">
+                <button class="stage-nav-btn {{ @current_step == 4 ? 'active' : '' }}" id="tab-stage-4" data-bs-toggle="pill" data-bs-target="#pane-stage-4" type="button" role="tab" aria-controls="pane-stage-4" aria-selected="{{ @current_step == 4 ? 'true' : 'false' }}">
+                    <div class="stage-nav-title-row">
+                        <span class="stage-nav-badge">4</span>
+                        <span class="stage-nav-text">{{ @order.jenis_layanan_opti == 'lingkungan' ? 'Tarif/Param' : 'Proposal' }}</span>
+                    </div>
+                    <div class="stage-nav-status-row">
+                        <check if="{{ @order.jenis_layanan_opti == 'selulosa' && !empty(@proposal) && @proposal.status_proposal == 'draft' }}">
+                            <true><span class="badge bg-warning text-dark stage-status-badge">Draft</span></true>
+                            <false>
+                                <check if="{{ @stepper[4].state == 'done' }}">
+                                    <true><span class="badge bg-success-subtle text-success stage-status-badge">Selesai</span></true>
+                                    <false>
+                                        <check if="{{ @stepper[4].state == 'current' }}">
+                                            <true><span class="badge bg-primary text-white stage-status-badge">Aktif</span></true>
+                                            <false><span class="badge bg-light text-muted stage-status-badge">Menunggu</span></false>
+                                        </check>
+                                    </false>
+                                </check>
+                            </false>
+                        </check>
+                    </div>
+                </button>
+            </li>
+            <!-- Tahap 5 -->
+            <li class="stage-nav-item" role="presentation">
+                <button class="stage-nav-btn {{ @current_step == 5 ? 'active' : '' }}" id="tab-stage-5" data-bs-toggle="pill" data-bs-target="#pane-stage-5" type="button" role="tab" aria-controls="pane-stage-5" aria-selected="{{ @current_step == 5 ? 'true' : 'false' }}">
+                    <div class="stage-nav-title-row">
+                        <span class="stage-nav-badge">5</span>
+                        <span class="stage-nav-text">Penawaran</span>
+                    </div>
+                    <div class="stage-nav-status-row">
+                        <check if="{{ !empty(@penawaran) && @penawaran.status_respon_klien == 'deal' }}">
+                            <true><span class="badge bg-success text-white stage-status-badge">DEAL</span></true>
+                            <false>
+                                <check if="{{ !empty(@penawaran) && @penawaran.status_respon_klien == 'revisi' }}">
+                                    <true><span class="badge bg-warning text-dark stage-status-badge">Revisi</span></true>
+                                    <false>
+                                        <check if="{{ !empty(@penawaran) && @penawaran.status_respon_klien == 'draft' }}">
+                                            <true><span class="badge bg-warning text-dark stage-status-badge">Draft</span></true>
+                                            <false>
+                                                <check if="{{ @stepper[5].state == 'done' }}">
+                                                    <true><span class="badge bg-success-subtle text-success stage-status-badge">Selesai</span></true>
+                                                    <false>
+                                                        <check if="{{ @stepper[5].state == 'current' }}">
+                                                            <true><span class="badge bg-primary text-white stage-status-badge">Aktif</span></true>
+                                                            <false><span class="badge bg-light text-muted stage-status-badge">Menunggu</span></false>
+                                                        </check>
+                                                    </false>
+                                                </check>
+                                            </false>
+                                        </check>
+                                    </false>
+                                </check>
+                            </false>
+                        </check>
+                    </div>
+                </button>
+            </li>
+            <!-- Tahap 6 -->
+            <li class="stage-nav-item" role="presentation">
+                <button class="stage-nav-btn {{ @current_step == 6 ? 'active' : '' }}" id="tab-stage-6" data-bs-toggle="pill" data-bs-target="#pane-stage-6" type="button" role="tab" aria-controls="pane-stage-6" aria-selected="{{ @current_step == 6 ? 'true' : 'false' }}">
+                    <div class="stage-nav-title-row">
+                        <span class="stage-nav-badge">6</span>
+                        <span class="stage-nav-text">Pembayaran</span>
+                    </div>
+                    <div class="stage-nav-status-row">
+                        <check if="{{ (@order.status_keuangan == 'lunas') || !empty(@riwayat_bayar) }}">
+                            <true><span class="badge bg-success text-white stage-status-badge">Lunas</span></true>
+                            <false>
+                                <check if="{{ @stepper[6].state == 'done' }}">
+                                    <true><span class="badge bg-success-subtle text-success stage-status-badge">Selesai</span></true>
+                                    <false>
+                                        <check if="{{ @stepper[6].state == 'current' }}">
+                                            <true><span class="badge bg-primary text-white stage-status-badge">Aktif</span></true>
+                                            <false><span class="badge bg-light text-muted stage-status-badge">Menunggu</span></false>
+                                        </check>
+                                    </false>
+                                </check>
+                            </false>
+                        </check>
+                    </div>
+                </button>
+            </li>
+            <!-- Tahap 7 -->
+            <li class="stage-nav-item" role="presentation">
+                <button class="stage-nav-btn {{ @current_step == 7 ? 'active' : '' }}" id="tab-stage-7" data-bs-toggle="pill" data-bs-target="#pane-stage-7" type="button" role="tab" aria-controls="pane-stage-7" aria-selected="{{ @current_step == 7 ? 'true' : 'false' }}">
+                    <div class="stage-nav-title-row">
+                        <span class="stage-nav-badge">7</span>
+                        <span class="stage-nav-text">Sampel &amp; PO</span>
+                    </div>
+                    <div class="stage-nav-status-row">
+                        <check if="{{ !empty(@order.tanggal_terima_sampel) }}">
+                            <true><span class="badge bg-info-subtle text-info-emphasis stage-status-badge">Diterima</span></true>
+                            <false>
+                                <check if="{{ @stepper[7].state == 'done' }}">
+                                    <true><span class="badge bg-success-subtle text-success stage-status-badge">Selesai</span></true>
+                                    <false>
+                                        <check if="{{ @stepper[7].state == 'current' }}">
+                                            <true><span class="badge bg-primary text-white stage-status-badge">Aktif</span></true>
+                                            <false><span class="badge bg-light text-muted stage-status-badge">Menunggu</span></false>
+                                        </check>
+                                    </false>
+                                </check>
+                            </false>
+                        </check>
+                    </div>
+                </button>
+            </li>
+            <!-- Tahap 8 -->
+            <li class="stage-nav-item" role="presentation">
+                <button class="stage-nav-btn {{ @current_step == 8 ? 'active' : '' }}" id="tab-stage-8" data-bs-toggle="pill" data-bs-target="#pane-stage-8" type="button" role="tab" aria-controls="pane-stage-8" aria-selected="{{ @current_step == 8 ? 'true' : 'false' }}">
+                    <div class="stage-nav-title-row">
+                        <span class="stage-nav-badge">8</span>
+                        <span class="stage-nav-text">BAST</span>
+                    </div>
+                    <div class="stage-nav-status-row">
+                        <check if="{{ !empty(@bast) && in_array(@bast.status_bast, ['disetujui', 'selesai', 'terbit']) }}">
+                            <true><span class="badge bg-success text-white stage-status-badge">Selesai</span></true>
+                            <false>
+                                <check if="{{ !empty(@order.nomor_po) }}">
+                                    <true><span class="badge bg-info-subtle text-info-emphasis stage-status-badge">PO Terbit</span></true>
+                                    <false>
+                                        <check if="{{ @stepper[8].state == 'done' }}">
+                                            <true><span class="badge bg-success-subtle text-success stage-status-badge">Selesai</span></true>
+                                            <false>
+                                                <check if="{{ @stepper[8].state == 'current' }}">
+                                                    <true><span class="badge bg-primary text-white stage-status-badge">Aktif</span></true>
+                                                    <false><span class="badge bg-light text-muted stage-status-badge">Menunggu</span></false>
+                                                </check>
+                                            </false>
+                                        </check>
+                                    </false>
+                                </check>
+                            </false>
+                        </check>
+                    </div>
+                </button>
+            </li>
+        </ul>
+    </div>
 
-                <!-- Tombol Aksi Instan (Direct CTA Shortcut) -->
-                <div class="action-guide-action">
-                    <check if="{{ @langkah_berikutnya.tombol_modal }}">
-                        <true>
-                            <button type="button" class="btn {{ @langkah_berikutnya.tombol_class }} action-guide-btn" data-bs-toggle="modal" data-bs-target="{{ @langkah_berikutnya.tombol_modal }}">
-                                <i class="bi {{ @langkah_berikutnya.tombol_icon }}"></i> <span>{{ @langkah_berikutnya.tombol_teks }}</span>
-                            </button>
-                        </true>
-                        <false>
-                            <a href="{{ @langkah_berikutnya.tombol_url }}" class="btn {{ @langkah_berikutnya.tombol_class }} action-guide-btn">
-                                <i class="bi {{ @langkah_berikutnya.tombol_icon }}"></i> <span>{{ @langkah_berikutnya.tombol_teks }}</span>
-                            </a>
-                        </false>
-                    </check>
-                </div>
-            </div>
-        </div>
-    </check>
+    <!-- ======================================================== -->
+    <!-- 8-TAHAP TAB CONTENT WRAPPER                              -->
+    <!-- ======================================================== -->
+    <div class="tab-content" id="stageTabContent">
 
-    <!-- Layout 2 Kolom -->
-    <div class="row g-4">
-        <!-- Kolom Kiri: Dokumen Surat & Data Pelanggan (4 Kolom) -->
-        <div class="col-lg-4">
-
+        <!-- ======================================================== -->
+        <!-- PANE TAHAP 1: SURAT MASUK & PROFIL PELANGGAN             -->
+        <!-- ======================================================== -->
+        <div class="tab-pane fade {{ @current_step == 1 ? 'show active' : '' }}" id="pane-stage-1" role="tabpanel" aria-labelledby="tab-stage-1">
             <!-- Card Asal Surat Permohonan & Klien -->
             <div class="system-section-card" id="cardProfil">
                 <div class="system-section-header d-block">
@@ -647,113 +968,116 @@
                     </div>
                 </div>
                 <div class="p-3">
-                    <!-- 1. Identitas Profil Pelanggan / Perusahaan (Di Atas) -->
-                    <div class="mb-3">
-                        <div class="d-flex align-items-start justify-content-between gap-2 mb-1">
-                            <h6 class="fw-bold text-dark mb-0 font-display">
-                                {{ @order.nama_perusahaan }}
-                            </h6>
-                            <span class="badge bg-light text-secondary border">{{ @order.pt_cv ?: 'Perusahaan' }}</span>
+                    <div class="row g-3">
+                        <div class="col-lg-6">
+                            <!-- 1. Identitas Profil Pelanggan / Perusahaan -->
+                            <div class="p-3 bg-light rounded border h-100">
+                                <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
+                                    <h6 class="fw-bold text-dark mb-0 font-display">
+                                        {{ @order.nama_perusahaan }}
+                                    </h6>
+                                    <span class="badge bg-white text-secondary border">{{ @order.pt_cv ?: 'Perusahaan' }}</span>
+                                </div>
+
+                                <div class="mt-2.5 mb-2 small">
+                                    <span class="text-muted d-block" style="font-size:0.75rem;">Nama Kontak / PIC:</span>
+                                    <strong class="text-dark">{{ @order.pic ?: '-' }}</strong>
+                                </div>
+                                <div class="mb-2 small">
+                                    <span class="text-muted d-block" style="font-size:0.75rem;">PIC Surat:</span>
+                                    <strong class="text-dark">{{ @surat_masuk.kontak_person ?: (@surat_masuk.pic_pengirim ?: (@order.pic_surat_masuk ?: '-')) }}</strong>
+                                </div>
+                                <div class="mb-2 small">
+                                    <span class="text-muted d-block" style="font-size:0.75rem;">Telepon / WhatsApp:</span>
+                                    <span class="text-dark">{{ @order.telepon ?: '-' }}</span>
+                                </div>
+                                <div class="mb-2 small">
+                                    <span class="text-muted d-block" style="font-size:0.75rem;">Email:</span>
+                                    <span class="text-dark">{{ @order.email ?: '-' }}</span>
+                                </div>
+                                <div class="mb-0 small">
+                                    <span class="text-muted d-block" style="font-size:0.75rem;">Alamat:</span>
+                                    <span class="text-secondary">{{ @order.alamat ?: '-' }}</span>
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="mt-2.5 mb-2 small">
-                            <span class="text-muted d-block" style="font-size:0.75rem;">Nama Kontak / PIC:</span>
-                            <strong class="text-dark">{{ @order.pic ?: '-' }}</strong>
-                        </div>
-                        <div class="mb-2 small">
-                            <span class="text-muted d-block" style="font-size:0.75rem;">PIC Surat:</span>
-                            <strong class="text-dark">{{ @surat_masuk.kontak_person ?: (@surat_masuk.pic_pengirim ?: (@order.pic_surat_masuk ?: '-')) }}</strong>
-                        </div>
-                        <div class="mb-2 small">
-                            <span class="text-muted d-block" style="font-size:0.75rem;">Telepon / WhatsApp:</span>
-                            <span class="text-dark">{{ @order.telepon ?: '-' }}</span>
-                        </div>
-                        <div class="mb-2 small">
-                            <span class="text-muted d-block" style="font-size:0.75rem;">Email:</span>
-                            <span class="text-dark">{{ @order.email ?: '-' }}</span>
-                        </div>
-                        <div class="mb-0 small">
-                            <span class="text-muted d-block" style="font-size:0.75rem;">Alamat:</span>
-                            <span class="text-secondary">{{ @order.alamat ?: '-' }}</span>
-                        </div>
-                    </div>
-
-                    <!-- 2. Asal Surat Permohonan (Di Bawah Identitas Profil) -->
-                    <check if="{{ @surat_masuk }}">
-                        <true>
-                            <div class="p-3 bg-light rounded border mt-3">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
-                                        <i class="bi bi-envelope-paper-fill me-1"></i> Asal Surat Permohonan
-                                    </span>
-                                    <small class="text-muted"><i class="bi bi-calendar3 me-1"></i>{{ date('d M Y', strtotime(@surat_masuk.tanggal_surat)) }}</small>
-                                </div>
-                                <div class="mb-1.5 small">
-                                    <span class="text-muted d-block" style="font-size:0.75rem;">Nomor Surat Resmi:</span>
-                                    <strong class="text-dark font-monospace">{{ @surat_masuk.nomor_surat }}</strong>
-                                </div>
-                                <check if="{{ @surat_masuk.kontak_person || @surat_masuk.pic_pengirim || @order.pic_surat_masuk }}">
-                                    <div class="mb-1.5 small">
-                                        <span class="text-muted d-block" style="font-size:0.75rem;">PIC Surat:</span>
-                                        <strong class="text-dark">{{ @surat_masuk.kontak_person ?: (@surat_masuk.pic_pengirim ?: @order.pic_surat_masuk) }}</strong>
-                                        <check if="{{ @surat_masuk.hp_kontakperson || @surat_masuk.no_telp_pengirim || @order.hp_pic_surat_masuk }}">
-                                            <span class="text-secondary ms-1">({{ @surat_masuk.hp_kontakperson ?: (@surat_masuk.no_telp_pengirim ?: @order.hp_pic_surat_masuk) }})</span>
+                        <div class="col-lg-6">
+                            <!-- 2. Asal Surat Permohonan (Di Bawah Identitas Profil) -->
+                            <check if="{{ @surat_masuk }}">
+                                <true>
+                                    <div class="p-3 bg-light rounded border h-100">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                                                <i class="bi bi-envelope-paper-fill me-1"></i> Asal Surat Permohonan
+                                            </span>
+                                            <small class="text-muted"><i class="bi bi-calendar3 me-1"></i>{{ date('d M Y', strtotime(@surat_masuk.tanggal_surat)) }}</small>
+                                        </div>
+                                        <div class="mb-1.5 small">
+                                            <span class="text-muted d-block" style="font-size:0.75rem;">Nomor Surat Resmi:</span>
+                                            <strong class="text-dark font-monospace">{{ @surat_masuk.nomor_surat }}</strong>
+                                        </div>
+                                        <check if="{{ @surat_masuk.kontak_person || @surat_masuk.pic_pengirim || @order.pic_surat_masuk }}">
+                                            <div class="mb-1.5 small">
+                                                <span class="text-muted d-block" style="font-size:0.75rem;">PIC Surat:</span>
+                                                <strong class="text-dark">{{ @surat_masuk.kontak_person ?: (@surat_masuk.pic_pengirim ?: @order.pic_surat_masuk) }}</strong>
+                                                <check if="{{ @surat_masuk.hp_kontakperson || @surat_masuk.no_telp_pengirim || @order.hp_pic_surat_masuk }}">
+                                                    <span class="text-secondary ms-1">({{ @surat_masuk.hp_kontakperson ?: (@surat_masuk.no_telp_pengirim ?: @order.hp_pic_surat_masuk) }})</span>
+                                                </check>
+                                            </div>
+                                        </check>
+                                        <div class="mb-2 small">
+                                            <span class="text-muted d-block" style="font-size:0.75rem;">Perihal:</span>
+                                            <span class="text-secondary fw-semibold">{{ @surat_masuk.perihal }}</span>
+                                        </div>
+                                        <check if="{{ @surat_masuk.file_path }}">
+                                            <button type="button" class="btn btn-sm btn-outline-primary w-100 py-1 fw-semibold d-flex align-items-center justify-content-center gap-1 shadow-sm mt-2" data-bs-toggle="modal" data-bs-target="#modalPreviewSuratMasuk">
+                                                <i class="bi bi-file-earmark-pdf text-danger me-1"></i> Pratinjau Berkas Surat PDF
+                                            </button>
                                         </check>
                                     </div>
-                                </check>
-                                <div class="mb-2 small">
-                                    <span class="text-muted d-block" style="font-size:0.75rem;">Perihal:</span>
-                                    <span class="text-secondary fw-semibold">{{ @surat_masuk.perihal }}</span>
-                                </div>
-                                <check if="{{ @surat_masuk.file_path }}">
-                                    <button type="button" class="btn btn-sm btn-outline-primary w-100 py-1 fw-semibold d-flex align-items-center justify-content-center gap-1 shadow-sm mt-2" data-bs-toggle="modal" data-bs-target="#modalPreviewSuratMasuk">
-                                        <i class="bi bi-file-earmark-pdf text-danger me-1"></i> Pratinjau Berkas Surat PDF
-                                    </button>
-                                </check>
-                            </div>
-                        </true>
-                        <false>
-                            <check if="{{ @order.nomor_surat_masuk }}">
-                                <div class="p-3 bg-light rounded border mt-3">
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <span class="badge bg-secondary-subtle text-secondary border">
-                                            <i class="bi bi-envelope-paper me-1"></i> Rujukan Surat Masuk
-                                        </span>
-                                    </div>
-                                    <div class="mb-1.5 small">
-                                        <span class="text-muted d-block" style="font-size:0.75rem;">Nomor Surat:</span>
-                                        <strong class="text-dark font-monospace">{{ @order.nomor_surat_masuk }}</strong>
-                                    </div>
-                                    <check if="{{ @order.pic_surat_masuk }}">
-                                        <div class="mb-1.5 small">
-                                            <span class="text-muted d-block" style="font-size:0.75rem;">PIC Surat:</span>
-                                            <strong class="text-dark">{{ @order.pic_surat_masuk }}</strong>
-                                            <check if="{{ @order.hp_pic_surat_masuk }}">
-                                                <span class="text-secondary ms-1">({{ @order.hp_pic_surat_masuk }})</span>
+                                </true>
+                                <false>
+                                    <check if="{{ @order.nomor_surat_masuk }}">
+                                        <div class="p-3 bg-light rounded border h-100">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <span class="badge bg-secondary-subtle text-secondary border">
+                                                    <i class="bi bi-envelope-paper me-1"></i> Rujukan Surat Masuk
+                                                </span>
+                                            </div>
+                                            <div class="mb-1.5 small">
+                                                <span class="text-muted d-block" style="font-size:0.75rem;">Nomor Surat:</span>
+                                                <strong class="text-dark font-monospace">{{ @order.nomor_surat_masuk }}</strong>
+                                            </div>
+                                            <check if="{{ @order.pic_surat_masuk }}">
+                                                <div class="mb-1.5 small">
+                                                    <span class="text-muted d-block" style="font-size:0.75rem;">PIC Surat:</span>
+                                                    <strong class="text-dark">{{ @order.pic_surat_masuk }}</strong>
+                                                    <check if="{{ @order.hp_pic_surat_masuk }}">
+                                                        <span class="text-secondary ms-1">({{ @order.hp_pic_surat_masuk }})</span>
+                                                    </check>
+                                                </div>
+                                            </check>
+                                            <check if="{{ @order.perihal_surat_masuk }}">
+                                                <div class="mb-1 small">
+                                                    <span class="text-muted d-block" style="font-size:0.75rem;">Perihal:</span>
+                                                    <span class="text-secondary">{{ @order.perihal_surat_masuk }}</span>
+                                                </div>
                                             </check>
                                         </div>
                                     </check>
-                                    <check if="{{ @order.perihal_surat_masuk }}">
-                                        <div class="mb-1 small">
-                                            <span class="text-muted d-block" style="font-size:0.75rem;">Perihal:</span>
-                                            <span class="text-secondary">{{ @order.perihal_surat_masuk }}</span>
-                                        </div>
-                                    </check>
-                                </div>
+                                </false>
                             </check>
-                        </false>
-                    </check>
+                        </div>
+                    </div>
                 </div>
             </div>
-
         </div>
 
-        <!-- Kolom Kanan: Rangkaian Form Disposisi & SOP (8 Kolom) -->
-        <div class="col-lg-8">
-
-            <!-- ======================================================== -->
-            <!-- 2. FORMULIR PERMINTAAN PELAYANAN JASA (TIM MITRA)        -->
-            <!-- ======================================================== -->
+        <!-- ======================================================== -->
+        <!-- PANE TAHAP 2: FORMULIR PELAYANAN (TIM MITRA)             -->
+        <!-- ======================================================== -->
+        <div class="tab-pane fade {{ @current_step == 2 ? 'show active' : '' }}" id="pane-stage-2" role="tabpanel" aria-labelledby="tab-stage-2">
             <div class="system-section-card" id="cardPelayanan">
                 <div class="system-section-header bg-white">
                     <div>
@@ -883,10 +1207,12 @@
                     </check>
                 </div>
             </div>
+        </div>
 
-            <!-- ======================================================== -->
-            <!-- KAJI ULANG KELAYAKAN TEKNIS & KEPUTUSAN AWAL             -->
-            <!-- ======================================================== -->
+        <!-- ======================================================== -->
+        <!-- PANE TAHAP 3: KAJI ULANG KELAYAKAN TEKNIS (ISO 17025)    -->
+        <!-- ======================================================== -->
+        <div class="tab-pane fade {{ @current_step == 3 ? 'show active' : '' }}" id="pane-stage-3" role="tabpanel" aria-labelledby="tab-stage-3">
             <div class="system-section-card" id="cardKajiKelayakan">
                 <div class="system-section-header">
                     <div>
@@ -1066,10 +1392,12 @@
                     </check>
                 </div>
             </div>
+        </div>
 
-            <!-- ======================================================== -->
-            <!-- 4. RUANG KERJA PROPOSAL TEKNIS / PARAMETER & TARIF        -->
-            <!-- ======================================================== -->
+        <!-- ======================================================== -->
+        <!-- PANE TAHAP 4: RUANG KERJA PROPOSAL TEKNIS & BIAYA / TARIF-->
+        <!-- ======================================================== -->
+        <div class="tab-pane fade {{ @current_step == 4 ? 'show active' : '' }}" id="pane-stage-4" role="tabpanel" aria-labelledby="tab-stage-4">
             <div class="system-section-card" id="cardParameterBiaya">
                 <div class="system-section-header">
                     <div>
@@ -1458,10 +1786,12 @@
                     </check>
                 </div>
             </div>
+        </div>
 
-            <!-- ======================================================== -->
-            <!-- 5. SURAT PENAWARAN RESMI & RESPON KLIEN                   -->
-            <!-- ======================================================== -->
+        <!-- ======================================================== -->
+        <!-- PANE TAHAP 5: SURAT PENAWARAN RESMI & RESPON KLIEN       -->
+        <!-- ======================================================== -->
+        <div class="tab-pane fade {{ @current_step == 5 ? 'show active' : '' }}" id="pane-stage-5" role="tabpanel" aria-labelledby="tab-stage-5">
             <div class="system-section-card" id="cardPenawaran">
                 <div class="system-section-header">
                     <div>
@@ -1764,10 +2094,12 @@
                     </check>
                 </div>
             </div>
+        </div>
 
-            <!-- ======================================================== -->
-            <!-- 6. BUKTI PEMBAYARAN PELANGGAN (TIM KEUANGAN)             -->
-            <!-- ======================================================== -->
+        <!-- ======================================================== -->
+        <!-- PANE TAHAP 6: BUKTI PEMBAYARAN & PROPOSAL LINGKUNGAN     -->
+        <!-- ======================================================== -->
+        <div class="tab-pane fade {{ @current_step == 6 ? 'show active' : '' }}" id="pane-stage-6" role="tabpanel" aria-labelledby="tab-stage-6">
             <div class="system-section-card" id="cardPembayaran">
                 <div class="system-section-header">
                     <div>
@@ -2168,10 +2500,12 @@
                     </div>
                 </div>
             </check>
+        </div>
 
-            <!-- ======================================================== -->
-            <!-- 7. PENERIMAAN FISIK SAMPEL & DEADLINE SPM                -->
-            <!-- ======================================================== -->
+        <!-- ======================================================== -->
+        <!-- PANE TAHAP 7: PENERIMAAN FISIK SAMPEL & DEADLINE SPM     -->
+        <!-- ======================================================== -->
+        <div class="tab-pane fade {{ @current_step == 7 ? 'show active' : '' }}" id="pane-stage-7" role="tabpanel" aria-labelledby="tab-stage-7">
             <div class="system-section-card" id="cardSampelSpm">
                 <div class="system-section-header">
                     <div>
@@ -2286,10 +2620,12 @@
                     </check>
                 </div>
             </div>
+        </div>
 
-            <!-- ======================================================== -->
-            <!-- 8. BAST                                                  -->
-            <!-- ======================================================== -->
+        <!-- ======================================================== -->
+        <!-- PANE TAHAP 8: BERITA ACARA SERAH TERIMA (BAST) & PO      -->
+        <!-- ======================================================== -->
+        <div class="tab-pane fade {{ @current_step == 8 ? 'show active' : '' }}" id="pane-stage-8" role="tabpanel" aria-labelledby="tab-stage-8">
             <div class="system-section-card" id="cardPoBast">
                 <div class="system-section-header">
                     <div>
@@ -2410,13 +2746,12 @@
                             </div>
                         </check>
                     </check>
-                </div>
             </div>
-
-            <!-- Tahapan Lanjutan (Kontrak, Pembayaran, BAST) - Disembunyikan sementara sesuai arahan -->
-
         </div>
+        <!-- End of Pane Stage 8 -->
+
     </div>
+    <!-- End of #stageTabContent -->
 </div>
 
 <!-- ======================================================== -->
@@ -3212,8 +3547,66 @@ function selectDivisiOpti(tipe) {
     }
 }
 
+function switchStage(stageNum, smoothScroll) {
+    if (!stageNum) return;
+    var tabBtn = document.getElementById('tab-stage-' + stageNum);
+    if (tabBtn) {
+        var tabTrigger = bootstrap.Tab.getOrCreateInstance(tabBtn);
+        tabTrigger.show();
+        document.querySelectorAll('.stage-nav-btn').forEach(function(btn) { btn.classList.remove('active'); });
+        tabBtn.classList.add('active');
+    }
+    if (smoothScroll) {
+        var navEl = document.getElementById('orderStageNavigation');
+        if (navEl) navEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     selectDivisiOpti('{{ @order.jenis_layanan_opti ?: "selulosa" }}');
+
+    var stepMap = {
+        '#cardProfil': 1,
+        '#cardPelayanan': 2,
+        '#cardKajiKelayakan': 3,
+        '#cardParameterBiaya': 4,
+        '#cardPenawaran': 5,
+        '#cardPembayaran': 6,
+        '#cardProposalTeknis': 6,
+        '#cardSampelSpm': 7,
+        '#cardPoBast': 8
+    };
+
+    // Stepper checkpoint click synchronization
+    document.querySelectorAll('.step-checkpoint').forEach(function(cp, idx) {
+        cp.addEventListener('click', function(e) {
+            e.preventDefault();
+            var stage = idx + 1;
+            switchStage(stage, true);
+        });
+    });
+
+    // Handle internal links targeting stage cards (e.g. action guide CTA buttons)
+    document.querySelectorAll('a[href^="#card"]').forEach(function(anchor) {
+        anchor.addEventListener('click', function(e) {
+            var href = this.getAttribute('href');
+            if (stepMap[href]) {
+                e.preventDefault();
+                switchStage(stepMap[href], true);
+            }
+        });
+    });
+
+    // Check URL hash on page load
+    if (window.location.hash) {
+        var hash = window.location.hash;
+        if (hash.startsWith('#tahap-')) {
+            var s = parseInt(hash.replace('#tahap-', ''));
+            if (s >= 1 && s <= 8) switchStage(s, false);
+        } else if (stepMap[hash]) {
+            switchStage(stepMap[hash], false);
+        }
+    }
 
     // Inisialisasi TomSelect saat modal Edit Profil Pelanggan dibuka
     var modalEdit = document.getElementById('modalEditProfilPelanggan');

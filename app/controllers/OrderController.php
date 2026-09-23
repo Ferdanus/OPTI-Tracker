@@ -793,6 +793,13 @@ class OrderController extends Controller {
             if (in_array($currentUserRole, ['tim_mitra', 'superadmin', 'admin'])) {
                 StageAudit::recordDibaca($this->db, $id, 1, $currentUserId, $currentUserNama, 'Tim Mitra');
             }
+
+            // Tahap 2: Dibaca saat Formulir Pelayanan telah dikirim dan dibuka oleh Ka. Tim / Admin / Tim Teknis / Tim Mitra
+            if (!in_array($order['status'] ?? '', ['permintaan_masuk', 'draft_disimpan', 'draft'])) {
+                $divisiKetua = (($order['jenis_layanan_opti'] ?? '') === 'lingkungan') ? 'Ka. Tim Lingkungan' : 'Ka. Tim Selulosa';
+                $roleLabel = ($currentUserRole === 'ketua_tim') ? $divisiKetua : (($currentUserRole === 'superadmin' || $currentUserRole === 'admin') ? 'Administrator' : ($currentUserRole === 'tim_mitra' ? 'Tim Mitra' : 'Tim Teknis / PIC'));
+                StageAudit::recordDibaca($this->db, $id, 2, $currentUserId, $currentUserNama, $roleLabel);
+            }
         }
 
         $auditStages = StageAudit::getAuditByOrder($this->db, $id, $order, [
@@ -1015,10 +1022,12 @@ class OrderController extends Controller {
         $f3->set('surat_masuk', $suratMasuk);
         $f3->set('can_edit', $canEdit);
 
-        // Audit Tahap 3: Kaji Kelayakan Teknis dibuka / dibaca
+        // Audit Tahap 2 & 3: Formulir Pelayanan & Kaji Kelayakan Teknis dibuka / dibaca
         $currentUserId = (int)$this->getUserId();
         $currentUserNama = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'Petugas');
         if ($currentUserId > 0) {
+            $divisiKetua = (($order['jenis_layanan_opti'] ?? '') === 'lingkungan') ? 'Ka. Tim Lingkungan' : 'Ka. Tim Selulosa';
+            StageAudit::recordDibaca($this->db, $id, 2, $currentUserId, $currentUserNama, $divisiKetua);
             StageAudit::recordDibaca($this->db, $id, 3, $currentUserId, $currentUserNama, $isKetuaTim ? 'Ketua Tim OPTI' : 'Tim Teknis / PIC');
         }
 
