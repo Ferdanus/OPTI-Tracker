@@ -632,10 +632,17 @@ $daftarPegawai = $arsipUser->find(
         $defaultRuangLingkup = '';
         $f3->set('default_ruang_lingkup', $defaultRuangLingkup);
 
-        $f3->set('default_pejabat_nama', 'Dodiet Prasetyo');
-        $f3->set('default_jabatan_pejabat', 'Kepala');
-        $f3->set('default_hal', 'Biaya OPTI');
-        $f3->set('default_lampiran_teks', '1 (satu) lembar');
+        if ($order['jenis_layanan_opti'] === 'lingkungan') {
+            $f3->set('default_pejabat_nama', 'Joko Pratomo');
+            $f3->set('default_jabatan_pejabat', 'Kepala Bagian Tata Usaha');
+            $f3->set('default_hal', 'Biaya Penentuan Daya Biodegradasi');
+            $f3->set('default_lampiran_teks', '1 (satu) berkas');
+        } else {
+            $f3->set('default_pejabat_nama', 'Dodiet Prasetyo');
+            $f3->set('default_jabatan_pejabat', 'Kepala');
+            $f3->set('default_hal', 'Biaya OPTI');
+            $f3->set('default_lampiran_teks', '1 (satu) lembar');
+        }
 
         $f3->set('order', $order);
         $f3->set('sp_existing', $spExisting);
@@ -1461,48 +1468,71 @@ $daftarPegawai = $arsipUser->find(
         $pdf->MultiCell(0, 4.2, 'Menanggapi permintaan Saudara perihal "' . $judulKegiatan . '", dengan ini kami informasikan sebagai berikut:', 0, 'J');
         $pdf->Ln(1.5);
 
-        // Poin 1 s/d 4
-        $pdf->Cell(5, 4.2, '1.', 0, 0);
-        $pdf->MultiCell(165, 4.2, 'Pelaksanaan pekerjaan mengacu pada metode pengujian standar terakreditasi (OECD 301D: Closed Bottle Test / SNI acuan).', 0, 'J');
+        // Naskah Poin Rincian Penawaran Lingkungan (Parsed Dinamis / Draf Standar)
+        $rawNaskah = !empty($sp['ruang_lingkup']) ? trim($sp['ruang_lingkup']) : '';
+        if (empty($rawNaskah)) {
+            $rawNaskah = "1. Pelaksanaan pekerjaan mengacu pada metode OECD 301D: Closed Bottle Test.\n" .
+                "2. Biaya pekerjaan tersebut adalah sebesar Rp " . number_format($nominal, 0, ',', '.') . ",- (" . $terbilangStr . ") untuk 1 sampel\n" .
+                "3. Waktu pelaksanaan selama " . $durasiStr . " dengan jadwal pelaksanaan seperti dalam lampiran.\n" .
+                "4. Biaya dan rincian pekerjaan terlampir, dengan ketentuan sebagai berikut:\n" .
+                "   a. Biaya pekerjaan ditagihkan dan dibayar melalui Virtual Account Mandiri.\n" .
+                "   b. Persetujuan terhadap biaya pekerjaan tersebut mohon disampaikan secara tertulis melalui fax atau e-mail.\n" .
+                "   c. Jadwal pelaksanaan pekerjaan akan disampaikan setelah pembayaran biaya pekerjaan dilakukan.\n" .
+                "   d. Dilarang memberi gratifikasi dalam bentuk apapun atas layanan jasa yang kami berikan, jika terdapat pemberian dan penerimaan gratifikasi mohon dapat dilaporkan ke : http://bbs.kemenperin.go.id/kontak-kami/pengaduan-gratifikasi.";
+        }
 
-        $pdf->Cell(5, 4.2, '2.', 0, 0);
-        $pdf->MultiCell(165, 4.2, 'Biaya pekerjaan tersebut adalah sebesar Rp ' . number_format($nominal, 0, ',', '.') . ',- (' . $terbilangStr . ') untuk 1 sampel.', 0, 'J');
+        $lines = explode("\n", str_replace(["\r\n", "\r"], "\n", $rawNaskah));
+        foreach ($lines as $line) {
+            $lineTrim = trim($line);
+            if ($lineTrim === '') continue;
 
-        $pdf->Cell(5, 4.2, '3.', 0, 0);
-        $pdf->MultiCell(165, 4.2, 'Waktu pelaksanaan selama ' . $durasiStr . ' dengan jadwal pelaksanaan seperti dalam lampiran.', 0, 'J');
-
-        $pdf->Cell(5, 4.2, '4.', 0, 0);
-        $pdf->MultiCell(165, 4.2, 'Biaya dan rincian pekerjaan terlampir, dengan ketentuan sebagai berikut:', 0, 'J');
-
-        $subPoin = [
-            'a' => 'Biaya pekerjaan ditagihkan dan dibayar melalui Virtual Account Mandiri.',
-            'b' => 'Persetujuan terhadap biaya pekerjaan tersebut mohon disampaikan secara tertulis melalui fax atau e-mail.',
-            'c' => 'Jadwal pelaksanaan pekerjaan akan disampaikan setelah pembayaran biaya pekerjaan dilakukan.',
-            'd' => 'Dilarang memberi gratifikasi dalam bentuk apapun atas layanan jasa yang kami berikan, jika terdapat pemberian dan penerimaan gratifikasi mohon dapat dilaporkan ke : http://bbs.kemenperin.go.id/kontak-kami/pengaduan-gratifikasi.'
-        ];
-        foreach ($subPoin as $k => $v) {
-            $pdf->SetX(25);
-            $pdf->Cell(5, 4.2, $k . '.', 0, 0);
-            $pdf->MultiCell(160, 4.2, $v, 0, 'J');
+            if (preg_match('/^(\d+)\.\s*(.*)/', $lineTrim, $mPoint)) {
+                $pdf->Cell(5, 4.2, $mPoint[1] . '.', 0, 0);
+                $pdf->MultiCell(165, 4.2, $mPoint[2], 0, 'J');
+            } elseif (preg_match('/^(\d+\)|[a-z]\)|\-|\*|\•)\s*(.*)/i', $lineTrim, $mSub)) {
+                $bullet = $mSub[1];
+                if (strlen($bullet) == 1 && ($bullet == '-' || $bullet == '*' || $bullet == '•')) {
+                    $bullet = '-';
+                }
+                $pdf->SetX(25);
+                $pdf->Cell(6, 3.9, $bullet, 0, 0);
+                $pdf->MultiCell(159, 3.9, $mSub[2], 0, 'J');
+            } else {
+                $pdf->SetX(20);
+                $pdf->MultiCell(170, 4.2, $lineTrim, 0, 'J');
+            }
         }
         $pdf->Ln(2);
 
         $pdf->MultiCell(0, 4.2, 'Kami menunggu konfirmasi lebih lanjut. Atas perhatian dan kerja sama yang baik, kami sampaikan terima kasih.', 0, 'J');
         $pdf->Ln(6);
 
-        // Tanda Tangan Cover
+        // Tanda Tangan Cover Halaman 1 (Sesuai Referensi BBSPJIS: a.n. Kepala, Kepala Bagian Tata Usaha)
         $pdf->SetX(120);
         $pdf->SetFont('Arial', '', 9);
+        $pdf->Cell(70, 4.2, 'a.n. Kepala,', 0, 1, 'C');
+        $pdf->SetX(120);
         $pdf->Cell(70, 4.2, 'Kepala Bagian Tata Usaha', 0, 1, 'C');
         $pdf->Ln(18);
         $pdf->SetX(120);
-        $pdf->SetFont('Arial', 'B', 9);
+        $pdf->SetFont('Arial', '', 9);
         $pdf->Cell(70, 4.2, $signerLing, 0, 1, 'C');
 
         // ==========================================
         // HALAMAN 2: LAMPIRAN I (TEKNIS & JADWAL)
         // ==========================================
         $pdf->AddPage();
+        
+        // Format Bulan Tahun untuk Lampiran (Contoh: September 2026)
+        $timeSurat = !empty($sp['tanggal_surat']) ? strtotime($sp['tanggal_surat']) : time();
+        $bulanIndo = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+        ];
+        $mNum = (int)date('n', $timeSurat);
+        $tglBulanTahun = ($bulanIndo[$mNum] ?? date('F', $timeSurat)) . ' ' . date('Y', $timeSurat);
+
         $pdf->SetY(18);
         $pdf->SetX(130);
         $pdf->SetFont('Arial', '', 8.5);
@@ -1510,7 +1540,7 @@ $daftarPegawai = $arsipUser->find(
         $pdf->SetX(130);
         $pdf->Cell(15, 4, 'Nomor', 0, 0); $pdf->Cell(3, 4, ':', 0, 0); $pdf->Cell(42, 4, $noSurat, 0, 1);
         $pdf->SetX(130);
-        $pdf->Cell(15, 4, 'Tanggal', 0, 0); $pdf->Cell(3, 4, ':', 0, 0); $pdf->Cell(42, 4, $tglFormatted, 0, 1);
+        $pdf->Cell(15, 4, 'Tanggal', 0, 0); $pdf->Cell(3, 4, ':', 0, 0); $pdf->Cell(42, 4, $tglBulanTahun, 0, 1);
         $pdf->Ln(4);
 
         $pdf->SetFont('Arial', 'B', 9.5);
@@ -1732,13 +1762,15 @@ $daftarPegawai = $arsipUser->find(
         }
         $pdf->Ln(12);
 
-        // Tanda Tangan RAB
+        // Tanda Tangan RAB Halaman 3 (Sesuai Referensi BBSPJIS: a.n. Kepala, Kepala Bagian Tata Usaha)
         $pdf->SetX(120);
         $pdf->SetFont('Arial', '', 9);
+        $pdf->Cell(70, 4.2, 'a.n. Kepala,', 0, 1, 'C');
+        $pdf->SetX(120);
         $pdf->Cell(70, 4.2, 'Kepala Bagian Tata Usaha', 0, 1, 'C');
         $pdf->Ln(18);
         $pdf->SetX(120);
-        $pdf->SetFont('Arial', 'B', 9);
+        $pdf->SetFont('Arial', '', 9);
         $pdf->Cell(70, 4.2, $signerLing, 0, 1, 'C');
 
         // ==========================================
