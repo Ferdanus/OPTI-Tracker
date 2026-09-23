@@ -54,11 +54,11 @@ if (!class_exists('SiloptiSuratPenawaranPdf')) {
                 $this->SetLineWidth(0.2); // reset default
                 $this->SetY($yLine + 4.5);
             } else {
-                // Halaman 2 ke atas (Standar Dokumen Berlampiran)
+                // Halaman 2 ke atas (Standar Dokumen Berlampiran BBSPJIS: - 2 -, - 3 -, dst)
                 $this->SetY(10);
                 $this->SetFont('Arial', '', 9);
                 $this->SetTextColor(0, 0, 0);
-                $this->Cell(0, 5, $this->PageNo(), 0, 1, 'C');
+                $this->Cell(0, 5, '- ' . $this->PageNo() . ' -', 0, 1, 'C');
                 $this->Ln(2);
             }
         }
@@ -629,21 +629,9 @@ $daftarPegawai = $arsipUser->find(
         }
         $f3->set('default_nominal', $defaultNominal);
 
-        // Prefill default untuk Selulosa jika belum ada
         $defaultRuangLingkup = '';
-        if ($order['jenis_layanan_opti'] === 'selulosa') {
-            if (!empty($proposal['ruang_lingkup'])) {
-                $defaultRuangLingkup = $proposal['ruang_lingkup'];
-            } else {
-                $defaultRuangLingkup = "Beating LBKP hingga 300 mL CSF\nPenyediaan stock sebanyak 2 variasi.\nPembuatan handsheet dengan variasi penambahan aditif 2 variasi (sesuai b).\nPenampungan air dari pembuatan handsheet setiap variasi ditampung untuk dibawa ke " . ($order['nama_perusahaan'] ?: 'klien') . "\nPengujian handsheet meliputi: massa handsheet, gramatur, uji brightness, % retensi.\nEvaluasi dan penyusunan laporan teknis.";
-            }
-        }
         $f3->set('default_ruang_lingkup', $defaultRuangLingkup);
 
-        $tglFormatted = self::formatTanggalIndoSurat($spExisting['tanggal_surat'] ?? date('Y-m-d'));
-        $defaultJadwal = "Pelaksanaan kegiatan untuk ruang lingkup 1) sampai dengan 4) akan dilakukan pada tanggal " . $tglFormatted . ".";
-        $f3->set('default_jadwal', $defaultJadwal);
-        $f3->set('default_catatan_sampel', 'Contoh aditif yang perlu disediakan sebanyak 50 ml.');
         $f3->set('default_pejabat_nama', 'Dodiet Prasetyo');
         $f3->set('default_jabatan_pejabat', 'Kepala');
         $f3->set('default_hal', 'Biaya OPTI');
@@ -1233,68 +1221,52 @@ $daftarPegawai = $arsipUser->find(
 
         // Paragraf Pembuka
         $judulKegiatan = !empty($order['judul_kegiatan']) ? $order['judul_kegiatan'] : (!empty($sp['perihal']) ? $sp['perihal'] : 'Layanan Jasa Optimalisasi Teknologi Industri (OPTI)');
-        $pdf->MultiCell(0, 4.2, 'Menanggapi permintaan Saudara perihal "' . $judulKegiatan . '", dengan ini kami informasikan biaya kegiatan tersebut sebagai:', 0, 'J');
+        $pdf->MultiCell(0, 4.2, 'Menanggapi permintaan Saudara perihal "' . $judulKegiatan . '", dengan ini kami informasikan rincian kegiatan dan penawaran biaya layanan sebagai berikut:', 0, 'J');
         $pdf->Ln(1.2);
 
-        // Poin 1: Biaya layanan dan Ruang Lingkup
-        $nominal = (float)($sp['nominal_penawaran'] ?? ($order['estimasi_biaya'] ?? 0));
-        $terbilangStr = strtolower(self::terbilang($nominal));
+        // Naskah Poin Rincian Penawaran (1 Input Terpadu)
+        $rawNaskah = !empty($sp['ruang_lingkup']) ? trim($sp['ruang_lingkup']) : '';
+        if (empty($rawNaskah)) {
+            $nominal = (float)($sp['nominal_penawaran'] ?? ($order['estimasi_biaya'] ?? 0));
+            $terbilangStr = strtolower(self::terbilang($nominal));
+            $durasiAngka = (int)($sp['durasi_hari'] ?? (preg_match('/(\d+)/', (string)($order['spm_layanan'] ?? ''), $dm) ? (int)$dm[1] : 20));
+            if ($durasiAngka <= 0) $durasiAngka = 20;
 
-        $pdf->Cell(5, 4.2, '1.', 0, 0);
-        $pdf->MultiCell(165, 4.2, 'Biaya layanan adalah sebesar Rp ' . number_format($nominal, 0, ',', '.') . ' (' . $terbilangStr . ' rupiah), dengan ruang lingkup pekerjaan sebagai berikut:', 0, 'J');
+            $rawNaskah = "1. Biaya layanan adalah sebesar Rp " . number_format($nominal, 0, ',', '.') . " (" . $terbilangStr . " rupiah), dengan ruang lingkup pekerjaan sebagai berikut:\n" .
+                "   1) Beating LBKP hingga 300 mL CSF\n" .
+                "   2) Penyediaan stock sebanyak 2 variasi.\n" .
+                "   3) Pembuatan handsheet dengan variasi penambahan aditif 2 variasi (sesuai b).\n" .
+                "   4) Penampungan air dari pembuatan handsheet setiap variasi ditampung untuk dibawa ke " . $perusahaan . "\n" .
+                "   5) Pengujian handsheet meliputi: massa handsheet, gramatur, uji brightness, % retensi.\n" .
+                "   6) Evaluasi dan penyusunan laporan teknis.\n" .
+                "2. Pelaksanaan kegiatan untuk ruang lingkup 1) sampai dengan 4) akan dilakukan pada tanggal " . $tglFormatted . ".\n" .
+                "3. Total waktu pelaksanaan pekerjaan selama " . $durasiAngka . " hari kerja.\n" .
+                "4. Contoh aditif yang perlu disediakan sebanyak 50 ml.";
+        }
 
-        // Sub-poin Ruang Lingkup 1), 2), 3)...
-        $rawLingkup = !empty($sp['ruang_lingkup']) ? $sp['ruang_lingkup'] : (!empty($order['ruang_lingkup']) ? $order['ruang_lingkup'] : '');
-        $lingkupItems = [];
-        if (!empty($rawLingkup)) {
-            $rawLines = explode("\n", str_replace(["\r\n", "\r"], "\n", $rawLingkup));
-            foreach ($rawLines as $l) {
-                $l = trim($l);
-                if (!empty($l)) {
-                    $cleanL = preg_replace('/^(\d+[\.\)]|\-|\*)\s*/', '', $l);
-                    if (!empty($cleanL)) {
-                        $lingkupItems[] = $cleanL;
-                    }
+        $lines = explode("\n", str_replace(["\r\n", "\r"], "\n", $rawNaskah));
+        foreach ($lines as $line) {
+            $lineTrim = trim($line);
+            if ($lineTrim === '') continue;
+
+            if (preg_match('/^(\d+)\.\s*(.*)/', $lineTrim, $mPoint)) {
+                // Poin Utama: 1., 2., 3., 4.
+                $pdf->Cell(5, 4.2, $mPoint[1] . '.', 0, 0);
+                $pdf->MultiCell(165, 4.2, $mPoint[2], 0, 'J');
+            } elseif (preg_match('/^(\d+\)|[a-z]\)|\-|\*|\•)\s*(.*)/i', $lineTrim, $mSub)) {
+                // Sub-Poin: 1), 2), a), -
+                $bullet = $mSub[1];
+                if (strlen($bullet) == 1 && ($bullet == '-' || $bullet == '*' || $bullet == '•')) {
+                    $bullet = '-';
                 }
+                $pdf->SetX(25);
+                $pdf->Cell(6, 3.9, $bullet, 0, 0);
+                $pdf->MultiCell(159, 3.9, $mSub[2], 0, 'J');
+            } else {
+                // Paragraf / baris lanjutan
+                $pdf->SetX(20);
+                $pdf->MultiCell(170, 4.2, $lineTrim, 0, 'J');
             }
-        }
-
-        if (empty($lingkupItems)) {
-            $lingkupItems = [
-                'Beating LBKP hingga 300 mL CSF',
-                'Penyediaan stock sebanyak 2 variasi.',
-                'Pembuatan handsheet dengan variasi penambahan aditif 2 variasi (sesuai b).',
-                'Penampungan air dari pembuatan handsheet setiap variasi ditampung untuk dibawa ke ' . $perusahaan,
-                'Pengujian handsheet meliputi: massa handsheet, gramatur, uji brightness, % retensi.',
-                'Evaluasi dan penyusunan laporan teknis.'
-            ];
-        }
-
-        foreach ($lingkupItems as $idx => $itemText) {
-            $pdf->SetX(25);
-            $pdf->Cell(6, 3.9, ($idx + 1) . ')', 0, 0);
-            $pdf->MultiCell(159, 3.9, $itemText, 0, 'J');
-        }
-
-        // Poin 2: Pelaksanaan kegiatan untuk ruang lingkup
-        $jadwalPelaksanaan = !empty($sp['jadwal_pelaksanaan']) ? trim($sp['jadwal_pelaksanaan']) : '';
-        if (empty($jadwalPelaksanaan)) {
-            $jadwalPelaksanaan = 'Pelaksanaan kegiatan untuk ruang lingkup 1) sampai dengan 4) akan dilakukan pada tanggal ' . $tglFormatted . '.';
-        }
-        $pdf->Cell(5, 4.2, '2.', 0, 0);
-        $pdf->MultiCell(165, 4.2, $jadwalPelaksanaan, 0, 'J');
-
-        // Poin 3: Total waktu pelaksanaan pekerjaan
-        $durasiAngka = (int)($sp['durasi_hari'] ?? (preg_match('/(\d+)/', (string)($order['spm_layanan'] ?? ''), $dm) ? (int)$dm[1] : 20));
-        if ($durasiAngka <= 0) $durasiAngka = 20;
-        $pdf->Cell(5, 4.2, '3.', 0, 0);
-        $pdf->MultiCell(165, 4.2, 'Total waktu pelaksanaan pekerjaan selama ' . $durasiAngka . ' hari kerja.', 0, 'J');
-
-        // Poin 4: Contoh bahan / aditif (Opsional jika ada)
-        $catatanSampel = !empty($sp['catatan_sampel']) ? trim($sp['catatan_sampel']) : '';
-        if (!empty($catatanSampel)) {
-            $pdf->Cell(5, 4.2, '4.', 0, 0);
-            $pdf->MultiCell(165, 4.2, $catatanSampel, 0, 'J');
         }
 
         $pdf->Ln(1.5);
@@ -1334,11 +1306,6 @@ $daftarPegawai = $arsipUser->find(
         // HALAMAN 2: LAMPIRAN I (LEMBAR PERSETUJUAN)
         // ==========================================
         $pdf->AddPage();
-        $pdf->SetY(12);
-        
-        // Nomor Halaman -2-
-        $pdf->SetFont('Arial', '', 9);
-        $pdf->Cell(0, 4.5, '-2-', 0, 1, 'C');
 
         // Header Lampiran Kanan Atas
         $pdf->SetY(18);

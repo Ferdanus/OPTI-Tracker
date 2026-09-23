@@ -579,6 +579,79 @@
         min-width: 150px;
     }
 
+    /* EDITOR TOOLBAR STYLES */
+    .editor-wrapper-box {
+        border-radius: 6px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .editor-toolbar-box {
+        background: #ffffff;
+        border: 1px solid #ced4da;
+        border-bottom: 1px solid #e9ecef;
+        border-radius: 6px 6px 0 0;
+        padding: 5px 8px;
+        display: flex;
+        align-items: center;
+        flex-wrap: nowrap;
+        gap: 5px;
+        width: 100%;
+    }
+    .editor-tool-btn {
+        background: #ffffff !important;
+        color: #2b3035 !important;
+        border: 1px solid #ced4da !important;
+        border-radius: 4px;
+        padding: 2px 7px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        transition: all 0.15s ease-in-out;
+        cursor: pointer;
+        line-height: 1.35;
+        white-space: nowrap;
+    }
+    .editor-tool-btn:hover {
+        background: #f8f9fa !important;
+        border-color: #0d6efd !important;
+        color: #0d6efd !important;
+        box-shadow: 0 2px 4px rgba(13,110,253,0.12);
+    }
+    .editor-tool-btn:active {
+        background: #e9ecef !important;
+        box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+    }
+    .editor-tool-badge {
+        display: inline-block;
+        padding: 0px 4px;
+        font-weight: 700;
+        font-size: 0.70rem;
+        border-radius: 3px;
+        background: #f1f3f5;
+        border: 1px solid #dee2e6;
+        color: #212529;
+    }
+    .editor-tool-btn:hover .editor-tool-badge {
+        background: #e7f1ff;
+        border-color: #bad5ff;
+        color: #0d6efd;
+    }
+    .editor-tool-reset:hover {
+        border-color: #6c757d !important;
+        color: #495057 !important;
+    }
+    .editor-textarea-attached {
+        border-top: none !important;
+        border-top-left-radius: 0 !important;
+        border-top-right-radius: 0 !important;
+    }
+    .editor-textarea-attached:focus {
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+    }
+
     /* PRINT STYLESHEET */
     @media print {
         body * {
@@ -813,7 +886,7 @@
                 <div class="form-section-body">
                     <div class="row g-3">
                         <check if="{{ @order.jenis_layanan_opti == 'selulosa' }}">
-                            <div class="col-md-7">
+                            <div class="col-12">
                                 <label class="form-label small fw-semibold text-dark mb-1">
                                     Hal / Perihal Surat <span class="text-danger">*</span>
                                 </label>
@@ -823,7 +896,7 @@
                                     <input type="hidden" name="perihal" id="input_perihal" value="{{ @sp_existing.perihal ?: 'Penawaran Layanan Jasa OPTI - ' . @order.judul_kegiatan }}">
                                 </div>
                             </div>
-                            <div class="col-md-5">
+                            <div class="col-md-6">
                                 <label class="form-label small fw-semibold text-dark mb-1">
                                     Keterangan Lampiran
                                 </label>
@@ -832,10 +905,23 @@
                                     <input type="text" name="lampiran_teks" id="input_lampiran_teks" class="form-control form-control-sm" value="{{ @sp_existing.lampiran_teks ?: (@default_lampiran_teks ?: '1 (satu) lembar') }}" placeholder="1 (satu) lembar" {{ !@can_edit ? 'disabled' : '' }}>
                                 </div>
                             </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold text-dark mb-1">Media Permintaan Masuk</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-light text-muted"><i class="bi bi-inbox"></i></span>
+                                    <select name="permintaan_melalui" id="select_permintaan_melalui" class="form-select form-select-sm" {{ !@can_edit ? 'disabled' : '' }}>
+                                        <option value="email" {{ (@sp_existing && @sp_existing.permintaan_melalui == 'email') || !@sp_existing ? 'selected' : '' }}>E-mail Resmi</option>
+                                        <option value="surat" {{ @sp_existing && @sp_existing.permintaan_melalui == 'surat' ? 'selected' : '' }}>Surat Fisik / Ekspedisi</option>
+                                        <option value="telepon" {{ @sp_existing && @sp_existing.permintaan_melalui == 'telepon' ? 'selected' : '' }}>Telepon / WhatsApp</option>
+                                        <option value="datang_langsung" {{ @sp_existing && @sp_existing.permintaan_melalui == 'datang_langsung' ? 'selected' : '' }}>Datang Langsung</option>
+                                        <option value="pegawai_bbspjis" {{ @sp_existing && @sp_existing.permintaan_melalui == 'pegawai_bbspjis' ? 'selected' : '' }}>Petugas Kemitraan</option>
+                                    </select>
+                                </div>
+                            </div>
                         </check>
 
                         <check if="{{ @order.jenis_layanan_opti != 'selulosa' }}">
-                            <div class="col-md-7">
+                            <div class="col-12">
                                 <label class="form-label small fw-semibold text-dark mb-1">
                                     Perihal Surat Penawaran <span class="text-danger">*</span>
                                 </label>
@@ -844,21 +930,20 @@
                                     <input type="text" name="perihal" id="input_perihal" class="form-control form-control-sm fw-semibold" value="{{ @sp_existing.perihal ?: 'Penawaran Layanan Jasa OPTI - ' . @order.judul_kegiatan }}" required {{ !@can_edit ? 'disabled' : '' }}>
                                 </div>
                             </div>
-                        </check>
-
-                        <div class="col-md-5">
-                            <label class="form-label small fw-semibold text-dark mb-1">Media Permintaan Masuk</label>
-                            <div class="input-group input-group-sm">
-                                <span class="input-group-text bg-light text-muted"><i class="bi bi-inbox"></i></span>
-                                <select name="permintaan_melalui" id="select_permintaan_melalui" class="form-select form-select-sm" {{ !@can_edit ? 'disabled' : '' }}>
-                                    <option value="email" {{ (@sp_existing && @sp_existing.permintaan_melalui == 'email') || !@sp_existing ? 'selected' : '' }}>E-mail Resmi</option>
-                                    <option value="surat" {{ @sp_existing && @sp_existing.permintaan_melalui == 'surat' ? 'selected' : '' }}>Surat Fisik / Ekspedisi</option>
-                                    <option value="telepon" {{ @sp_existing && @sp_existing.permintaan_melalui == 'telepon' ? 'selected' : '' }}>Telepon / WhatsApp</option>
-                                    <option value="datang_langsung" {{ @sp_existing && @sp_existing.permintaan_melalui == 'datang_langsung' ? 'selected' : '' }}>Datang Langsung</option>
-                                    <option value="pegawai_bbspjis" {{ @sp_existing && @sp_existing.permintaan_melalui == 'pegawai_bbspjis' ? 'selected' : '' }}>Petugas Kemitraan</option>
-                                </select>
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold text-dark mb-1">Media Permintaan Masuk</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-light text-muted"><i class="bi bi-inbox"></i></span>
+                                    <select name="permintaan_melalui" id="select_permintaan_melalui" class="form-select form-select-sm" {{ !@can_edit ? 'disabled' : '' }}>
+                                        <option value="email" {{ (@sp_existing && @sp_existing.permintaan_melalui == 'email') || !@sp_existing ? 'selected' : '' }}>E-mail Resmi</option>
+                                        <option value="surat" {{ @sp_existing && @sp_existing.permintaan_melalui == 'surat' ? 'selected' : '' }}>Surat Fisik / Ekspedisi</option>
+                                        <option value="telepon" {{ @sp_existing && @sp_existing.permintaan_melalui == 'telepon' ? 'selected' : '' }}>Telepon / WhatsApp</option>
+                                        <option value="datang_langsung" {{ @sp_existing && @sp_existing.permintaan_melalui == 'datang_langsung' ? 'selected' : '' }}>Datang Langsung</option>
+                                        <option value="pegawai_bbspjis" {{ @sp_existing && @sp_existing.permintaan_melalui == 'pegawai_bbspjis' ? 'selected' : '' }}>Petugas Kemitraan</option>
+                                    </select>
+                                </div>
                             </div>
-                        </div>
+                        </check>
 
                         <div class="col-md-6">
                             <label class="form-label small fw-semibold text-dark mb-1">
@@ -882,51 +967,54 @@
                             </label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light text-muted"><i class="bi bi-clock-history"></i></span>
-                                <input type="number" name="durasi_hari" id="inputDurasiHari" class="form-control fw-bold font-monospace text-dark" min="1" max="365" step="1" value="{{ @durasi_hari ?: 20 }}" placeholder="20" required oninput="updateDurasiHari(this)" {{ !@can_edit ? 'disabled' : '' }}>
+                                <input type="number" name="durasi_hari" id="inputDurasiHari" class="form-control fw-bold fs-6 font-monospace text-dark bg-light" min="1" max="365" step="1" value="{{ @durasi_hari ?: 20 }}" placeholder="20" required readonly>
                                 <span class="input-group-text bg-light text-secondary fw-semibold">Hari Kerja</span>
                                 <input type="hidden" name="spm_layanan" id="inputSpmLayanan" value="{{ (@durasi_hari ?: 20) . ' Hari Kerja' }}">
-                            </div>
-                            <div class="mt-1">
-                                <small class="text-muted" style="font-size: 0.72rem;">Total waktu pelaksanaan pekerjaan dalam hari kerja.</small>
                             </div>
                         </div>
 
                         <check if="{{ @order.jenis_layanan_opti == 'selulosa' }}">
-                            <!-- Ruang Lingkup Pekerjaan (Poin 1 Selulosa) -->
+                            <!-- 1 Unified Input: Rincian Poin-Poin Penawaran & Ruang Lingkup -->
                             <div class="col-12">
-                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <label class="form-label small fw-semibold text-dark mb-0">
-                                        Rincian Ruang Lingkup Pekerjaan (Poin 1) <span class="text-danger">*</span>
-                                    </label>
-                                    <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" style="font-size: 0.74rem;" onclick="prefillDefaultRuangLingkup()">
-                                        <i class="bi bi-arrow-counterclockwise"></i> Reset ke Format Standar
-                                    </button>
-                                </div>
-                                <textarea name="ruang_lingkup" id="input_ruang_lingkup" class="form-control font-monospace" rows="6" style="font-size: 0.8rem; line-height: 1.5;" placeholder="1 baris per ruang lingkup..." required {{ !@can_edit ? 'disabled' : '' }}>{{ @sp_existing.ruang_lingkup ?: @default_ruang_lingkup }}</textarea>
-                                <small class="text-muted d-block mt-1" style="font-size: 0.72rem;">
-                                    <i class="bi bi-info-circle me-1"></i> Tuliskan 1 baris untuk tiap poin. Sistem PDF dan Pratinjau akan otomatis memformat penomoran menjadi 1), 2), 3), dst.
-                                </small>
-                            </div>
-
-                            <!-- Jadwal Pelaksanaan (Poin 2 Selulosa) -->
-                            <div class="col-12">
-                                <label class="form-label small fw-semibold text-dark mb-1">
-                                    Jadwal Pelaksanaan Kegiatan (Poin 2)
+                                <label class="form-label small fw-semibold text-dark mb-1 d-block">
+                                    Rincian Poin-Poin Penawaran &amp; Ruang Lingkup <span class="text-danger">*</span>
                                 </label>
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text bg-light text-muted"><i class="bi bi-calendar-check"></i></span>
-                                    <input type="text" name="jadwal_pelaksanaan" id="input_jadwal_pelaksanaan" class="form-control form-control-sm" value="{{ @sp_existing.jadwal_pelaksanaan ?: @default_jadwal }}" placeholder="Pelaksanaan kegiatan untuk ruang lingkup 1) sampai dengan 4) akan dilakukan pada tanggal..." {{ !@can_edit ? 'disabled' : '' }}>
+                                
+                                <div class="editor-wrapper-box">
+                                    <!-- Toolbar Editor Putih Terpadu & Jelas (1 Baris Sejajar Penuh) -->
+                                    <div class="editor-toolbar-box">
+                                        <span class="text-secondary fw-semibold text-nowrap" style="font-size: 0.74rem;">
+                                            <i class="bi bi-pencil-square text-primary me-1"></i>Format:
+                                        </span>
+                                        <button type="button" class="editor-tool-btn text-nowrap" onclick="insertNumberingPattern('main')" title="Sisipkan / Format Poin Utama (1., 2., 3.)">
+                                            <i class="bi bi-list-ol text-primary"></i>
+                                            <span class="editor-tool-badge">1.</span>
+                                            <span>Poin Utama</span>
+                                        </button>
+                                        <button type="button" class="editor-tool-btn text-nowrap" onclick="insertNumberingPattern('sub')" title="Sisipkan / Format Sub-Poin Berinden (1), 2), 3))">
+                                            <i class="bi bi-list-nested text-success"></i>
+                                            <span class="editor-tool-badge">1)</span>
+                                            <span>Sub-Poin</span>
+                                        </button>
+                                        <button type="button" class="editor-tool-btn text-nowrap" onclick="insertNumberingPattern('sub_alpha')" title="Sisipkan / Format Sub-Poin Huruf (a), b), c))">
+                                            <i class="bi bi-fonts text-info"></i>
+                                            <span class="editor-tool-badge">a)</span>
+                                            <span>Huruf</span>
+                                        </button>
+                                        <div class="vr mx-1 my-auto text-muted opacity-50" style="height: 18px;"></div>
+                                        <button type="button" class="editor-tool-btn text-nowrap ms-auto" onclick="prefillDefaultRuangLingkup()" title="Sisipkan naskah draf standar resmi yang otomatis disesuaikan dengan data order saat ini">
+                                            <i class="bi bi-file-earmark-text text-primary"></i>
+                                            <span>Sisipkan Draf Standar</span>
+                                        </button>
+                                    </div>
+                                    
+                                    <textarea name="ruang_lingkup" id="input_ruang_lingkup" class="form-control font-monospace editor-textarea-attached" rows="12" style="font-size: 0.82rem; line-height: 1.55; background: #ffffff;" placeholder="Tuliskan naskah rincian poin penawaran secara kustom, atau klik 'Sisipkan Draf Standar' di atas..." required {{ !@can_edit ? 'disabled' : '' }}>{{ @sp_existing.ruang_lingkup }}</textarea>
                                 </div>
-                            </div>
 
-                            <!-- Catatan Bahan / Aditif (Poin 4 Selulosa) -->
-                            <div class="col-12">
-                                <label class="form-label small fw-semibold text-dark mb-1">
-                                    Catatan Bahan / Sampel Aditif (Poin 4 - Opsional)
-                                </label>
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text bg-light text-muted"><i class="bi bi-flask"></i></span>
-                                    <input type="text" name="catatan_sampel" id="input_catatan_sampel" class="form-control form-control-sm" value="{{ @sp_existing.catatan_sampel ?: @default_catatan_sampel }}" placeholder="Contoh aditif yang perlu disediakan sebanyak 50 ml. (Kosongkan bila tidak ada)" {{ !@can_edit ? 'disabled' : '' }}>
+                                <div class="mt-1.5">
+                                    <small class="text-muted" style="font-size: 0.72rem;">
+                                        <i class="bi bi-info-circle me-1 text-primary"></i> Klik tombol <strong>1.</strong> atau <strong>1)</strong> untuk menyisipkan nomor, atau tekan <strong>Enter</strong> di dalam kotak untuk melanjutkan nomor otomatis.
+                                    </small>
                                 </div>
                             </div>
                         </check>
@@ -1125,26 +1213,9 @@
                                 Menanggapi permintaan Saudara perihal "<span id="d_sel_judul_pembuka" class="fw-bold">{{ @order.judul_kegiatan }}</span>", dengan ini kami informasikan rincian kegiatan dan penawaran biaya layanan sebagai berikut:
                             </div>
 
-                            <!-- Poin 1, 2, 3, 4 Naskah Surat BBSPJIS -->
-                            <div style="font-size: 9.5px; line-height: 1.45; margin-bottom: 10px; padding-left: 2px;">
-                                <div class="mb-1">
-                                    1. Biaya layanan adalah sebesar <strong id="d_sel_biaya">Rp 0,- (nol rupiah)</strong>, dengan ruang lingkup pekerjaan sebagai berikut:
-                                    <div id="d_sel_ruang_lingkup_list" class="ps-3 my-1" style="font-size: 9px; line-height: 1.45;">
-                                        <!-- Rendered dynamically by JS -->
-                                    </div>
-                                </div>
-                                <div class="d-flex gap-2 mb-1" id="d_sel_jadwal_wrap">
-                                    <span style="width: 16px;">2.</span>
-                                    <div id="d_sel_jadwal">{{ @sp_existing.jadwal_pelaksanaan ?: @default_jadwal }}</div>
-                                </div>
-                                <div class="d-flex gap-2 mb-1">
-                                    <span style="width: 16px;">3.</span>
-                                    <div>Total waktu pelaksanaan pekerjaan selama <strong id="d_sel_durasi">{{ @durasi_hari ?: 20 }}</strong> hari kerja.</div>
-                                </div>
-                                <div class="d-flex gap-2 mb-1" id="d_sel_catatan_wrap" style="{{ empty(@sp_existing.catatan_sampel ?: @default_catatan_sampel) ? 'display: none;' : '' }}">
-                                    <span style="width: 16px;">4.</span>
-                                    <div id="d_sel_catatan">{{ @sp_existing.catatan_sampel ?: @default_catatan_sampel }}</div>
-                                </div>
+                            <!-- Poin 1, 2, 3, 4 Naskah Surat BBSPJIS (Rendered Dinamis dari 1 Input) -->
+                            <div id="d_sel_poin_utama_container" style="font-size: 9.5px; line-height: 1.45; margin-bottom: 10px; padding-left: 2px;">
+                                <!-- Rendered dynamically by JS syncLivePreview() -->
                             </div>
 
                             <!-- Ketentuan Standar 1-5 -->
@@ -1811,12 +1882,279 @@ function switchSelPage(page) {
     }
 }
 
+function insertNumberingPattern(type) {
+    var ta = document.getElementById('input_ruang_lingkup');
+    if (!ta) return;
+
+    var start = ta.selectionStart;
+    var end = ta.selectionEnd;
+    var val = ta.value;
+
+    if (start !== end) {
+        // Selection formatting: format each line selected
+        var selectedText = val.substring(start, end);
+        var lines = selectedText.split(/\r?\n/);
+        var formattedLines = [];
+        var num = 1;
+        var charCode = 97; // 'a'
+
+        lines.forEach(function(line) {
+            if (line.trim().length === 0) {
+                formattedLines.push(line);
+                return;
+            }
+            var cleanLine = line.replace(/^\s*(\d+[\.\)]|[a-zA-Z][\.\)]|\-|\*|\•)\s*/, '');
+            if (type === 'main') {
+                formattedLines.push(num + '. ' + cleanLine);
+                num++;
+            } else if (type === 'sub') {
+                formattedLines.push('   ' + num + ') ' + cleanLine);
+                num++;
+            } else if (type === 'sub_alpha') {
+                formattedLines.push('   ' + String.fromCharCode(charCode) + ') ' + cleanLine);
+                charCode++;
+            }
+        });
+
+        var replacement = formattedLines.join('\n');
+        ta.value = val.substring(0, start) + replacement + val.substring(end);
+        ta.selectionStart = start;
+        ta.selectionEnd = start + replacement.length;
+    } else {
+        // Cursor insertion
+        var textBefore = val.substring(0, start);
+        var textAfter = val.substring(end);
+        var currentLineStart = textBefore.lastIndexOf('\n') + 1;
+        var currentLine = textBefore.substring(currentLineStart);
+
+        var insertPrefix = '';
+        if (type === 'main') {
+            var mainMatches = val.match(/^(\d+)\.\s/gm);
+            var nextNum = 1;
+            if (mainMatches && mainMatches.length > 0) {
+                mainMatches.forEach(function(m) {
+                    var n = parseInt(m, 10);
+                    if (n >= nextNum) nextNum = n + 1;
+                });
+            }
+            insertPrefix = (currentLine.trim() === '' ? '' : '\n') + nextNum + '. ';
+        } else if (type === 'sub') {
+            var subMatches = textBefore.match(/^\s*(\d+)\)\s/gm);
+            var nextSub = 1;
+            if (subMatches && subMatches.length > 0) {
+                subMatches.forEach(function(sm) {
+                    var n = parseInt(sm.replace(/[^\d]/g, ''), 10);
+                    if (n >= nextSub) nextSub = n + 1;
+                });
+            }
+            insertPrefix = (currentLine.trim() === '' ? '' : '\n') + '   ' + nextSub + ') ';
+        } else if (type === 'sub_alpha') {
+            insertPrefix = (currentLine.trim() === '' ? '' : '\n') + '   a) ';
+        }
+
+        ta.value = textBefore + insertPrefix + textAfter;
+        var newPos = start + insertPrefix.length;
+        ta.selectionStart = newPos;
+        ta.selectionEnd = newPos;
+    }
+
+    ta.focus();
+    syncLivePreview();
+}
+
+function handleRuangLingkupKeydown(e) {
+    var ta = e.target;
+    if (e.key === 'Enter') {
+        var start = ta.selectionStart;
+        var val = ta.value;
+        var textBefore = val.substring(0, start);
+        var currentLineStart = textBefore.lastIndexOf('\n') + 1;
+        var currentLine = textBefore.substring(currentLineStart);
+
+        var mMain = currentLine.match(/^(\d+)\.\s*(.*)$/);
+        var mSub = currentLine.match(/^(\s*)(\d+)\)\s*(.*)$/);
+        var mAlpha = currentLine.match(/^(\s*)([a-zA-Z])\)\s*(.*)$/);
+
+        if (mMain) {
+            var mainNum = parseInt(mMain[1], 10);
+            var content = mMain[2];
+            if (content.trim() === '') {
+                e.preventDefault();
+                ta.value = val.substring(0, currentLineStart) + val.substring(start);
+                ta.selectionStart = currentLineStart;
+                ta.selectionEnd = currentLineStart;
+                syncLivePreview();
+                return;
+            } else {
+                e.preventDefault();
+                var nextMain = '\n' + (mainNum + 1) + '. ';
+                ta.value = val.substring(0, start) + nextMain + val.substring(start);
+                var newPos = start + nextMain.length;
+                ta.selectionStart = newPos;
+                ta.selectionEnd = newPos;
+                syncLivePreview();
+                return;
+            }
+        }
+
+        if (mSub) {
+            var indent = mSub[1] || '   ';
+            var subNum = parseInt(mSub[2], 10);
+            var contentSub = mSub[3];
+            if (contentSub.trim() === '') {
+                e.preventDefault();
+                ta.value = val.substring(0, currentLineStart) + val.substring(start);
+                ta.selectionStart = currentLineStart;
+                ta.selectionEnd = currentLineStart;
+                syncLivePreview();
+                return;
+            } else {
+                e.preventDefault();
+                var nextSub = '\n' + indent + (subNum + 1) + ') ';
+                ta.value = val.substring(0, start) + nextSub + val.substring(start);
+                var newPosSub = start + nextSub.length;
+                ta.selectionStart = newPosSub;
+                ta.selectionEnd = newPosSub;
+                syncLivePreview();
+                return;
+            }
+        }
+
+        if (mAlpha) {
+            var indentAlpha = mAlpha[1] || '   ';
+            var alphaChar = mAlpha[2];
+            var nextChar = String.fromCharCode(alphaChar.charCodeAt(0) + 1);
+            var contentAlpha = mAlpha[3];
+            if (contentAlpha.trim() === '') {
+                e.preventDefault();
+                ta.value = val.substring(0, currentLineStart) + val.substring(start);
+                ta.selectionStart = currentLineStart;
+                ta.selectionEnd = currentLineStart;
+                syncLivePreview();
+                return;
+            } else {
+                e.preventDefault();
+                var nextAlpha = '\n' + indentAlpha + nextChar + ') ';
+                ta.value = val.substring(0, start) + nextAlpha + val.substring(start);
+                var newPosAlpha = start + nextAlpha.length;
+                ta.selectionStart = newPosAlpha;
+                ta.selectionEnd = newPosAlpha;
+                syncLivePreview();
+                return;
+            }
+        }
+    } else if (e.key === 'Tab') {
+        e.preventDefault();
+        var start = ta.selectionStart;
+        var end = ta.selectionEnd;
+        var val = ta.value;
+
+        if (e.shiftKey) {
+            var textBefore = val.substring(0, start);
+            var currentLineStart = textBefore.lastIndexOf('\n') + 1;
+            var linePrefix = val.substring(currentLineStart, start);
+            var outdented = linePrefix.replace(/^ {1,3}/, '');
+            var diff = linePrefix.length - outdented.length;
+            ta.value = val.substring(0, currentLineStart) + outdented + val.substring(start);
+            ta.selectionStart = Math.max(currentLineStart, start - diff);
+            ta.selectionEnd = Math.max(currentLineStart, end - diff);
+        } else {
+            var indentStr = '   ';
+            ta.value = val.substring(0, start) + indentStr + val.substring(end);
+            ta.selectionStart = start + indentStr.length;
+            ta.selectionEnd = start + indentStr.length;
+        }
+        syncLivePreview();
+    }
+}
+
+function applyStandardDraft() {
+    var ta = document.getElementById('input_ruang_lingkup');
+    if (!ta) return;
+    
+    var realEl = document.getElementById('inputNominalReal');
+    var valNominal = (realEl && realEl.value) ? parseInt(realEl.value, 10) : 0;
+    var textRupiah = 'Rp ' + valNominal.toLocaleString('id-ID');
+    var textTerbilang = terbilangRupiah(valNominal).toLowerCase();
+    
+    var elPerusahaan = document.getElementById('input_perusahaan');
+    var perName = (elPerusahaan && elPerusahaan.value.trim()) ? elPerusahaan.value.trim() : '{{ @order.nama_perusahaan ?: "Pihak Mitra" }}';
+    
+    var elTanggal = document.getElementById('input_tanggal_surat');
+    var tglFormatted = formatTanggalIndo(elTanggal ? elTanggal.value : '');
+    
+    var elDurasi = document.getElementById('inputDurasiHari');
+    var durasiVal = (elDurasi && elDurasi.value) ? elDurasi.value : '30';
+    
+    ta.value = "1. Biaya layanan adalah sebesar " + textRupiah + " (" + textTerbilang + "), dengan ruang lingkup pekerjaan sebagai berikut:\n" +
+        "   1) Persiapan peralatan, bahan, dan pengkondisian sampel uji.\n" +
+        "   2) Pelaksanaan pengujian / analisis teknis sesuai metode dan parameter yang disepakati.\n" +
+        "   3) Pengolahan data hasil analisis pengujian.\n" +
+        "   4) Evaluasi teknis dan penyusunan laporan hasil pelaksanaan pekerjaan.\n" +
+        "2. Pelaksanaan kegiatan pengujian / layanan akan dilaksanakan mulai tanggal " + tglFormatted + ".\n" +
+        "3. Total waktu pelaksanaan pekerjaan selama " + durasiVal + " hari kerja.\n" +
+        "4. Sampel dan bahan pendukung disediakan oleh pihak " + perName + " sesuai spesifikasi pengujian.";
+        
+    ta.focus();
+    syncLivePreview();
+}
+
 function prefillDefaultRuangLingkup() {
     var ta = document.getElementById('input_ruang_lingkup');
-    if (ta) {
-        var perName = '{{ @order.nama_perusahaan ?: "klien" }}';
-        ta.value = "Beating LBKP hingga 300 mL CSF\nPenyediaan stock sebanyak 2 variasi.\nPembuatan handsheet dengan variasi penambahan aditif 2 variasi (sesuai b).\nPenampungan air dari pembuatan handsheet setiap variasi ditampung untuk dibawa ke " + perName + "\nPengujian handsheet meliputi: massa handsheet, gramatur, uji brightness, % retensi.\nEvaluasi dan penyusunan laporan teknis.";
-        syncLivePreview();
+    if (!ta) return;
+
+    if (ta.value.trim() !== '') {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Sisipkan Draf Standar?',
+                text: 'Isi naskah saat ini akan diganti dengan draf standar sesuai data order.',
+                icon: 'question',
+                iconColor: '#0d6efd',
+                background: '#ffffff',
+                showCancelButton: true,
+                confirmButtonText: '<i class="bi bi-file-earmark-check me-1"></i> Ya, Sisipkan',
+                cancelButtonText: 'Batal',
+                reverseButtons: true,
+                customClass: {
+                    popup: 'bg-white rounded-3 shadow border p-4',
+                    title: 'fw-bold text-dark fs-6 mb-1',
+                    htmlContainer: 'text-muted small mb-3',
+                    confirmButton: 'btn btn-primary btn-sm px-3 py-1.5 fw-semibold',
+                    cancelButton: 'btn btn-outline-secondary btn-sm px-3 py-1.5 me-2'
+                },
+                buttonsStyling: false
+            }).then(function(result) {
+                if (result.isConfirmed) {
+                    applyStandardDraft();
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: 'Draf standar berhasil disisipkan',
+                        showConfirmButton: false,
+                        timer: 2000,
+                        timerProgressBar: true
+                    });
+                }
+            });
+        } else {
+            if (confirm('Isi naskah saat ini akan diganti dengan draf standar. Lanjutkan?')) {
+                applyStandardDraft();
+            }
+        }
+    } else {
+        applyStandardDraft();
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: 'Draf standar berhasil disisipkan',
+                showConfirmButton: false,
+                timer: 2200,
+                timerProgressBar: true
+            });
+        }
     }
 }
 
@@ -1830,8 +2168,6 @@ function syncLivePreview() {
     var elLampiranTeks = document.getElementById('input_lampiran_teks');
     var elPerihal = document.getElementById('input_perihal');
     var elRuangLingkup = document.getElementById('input_ruang_lingkup');
-    var elJadwal = document.getElementById('input_jadwal_pelaksanaan');
-    var elCatatanSampel = document.getElementById('input_catatan_sampel');
     var elPenjelasan = document.getElementById('input_penjelasan');
     var elNominalReal = document.getElementById('inputNominalReal');
     var elDurasi = document.getElementById('inputDurasiHari');
@@ -1911,8 +2247,6 @@ function syncLivePreview() {
     var valDurasi = (elDurasi && elDurasi.value) ? parseInt(elDurasi.value, 10) : 20;
     var dDurasiL = document.getElementById('d_durasi_l');
     if (dDurasiL) dDurasiL.textContent = valDurasi + ' Hari Kerja';
-    var dSelDurasi = document.getElementById('d_sel_durasi');
-    if (dSelDurasi) dSelDurasi.textContent = valDurasi;
 
     // 8. Nominal & Terbilang
     var valNominal = (elNominalReal && elNominalReal.value) ? parseInt(elNominalReal.value, 10) : 0;
@@ -1922,10 +2256,6 @@ function syncLivePreview() {
     var dBiayaSelulosa = document.getElementById('d_biaya_selulosa');
     if (dBiayaSelulosa) {
         dBiayaSelulosa.textContent = textRupiah + ',- (' + textTerbilang.toLowerCase() + ')';
-    }
-    var dSelBiaya = document.getElementById('d_sel_biaya');
-    if (dSelBiaya) {
-        dSelBiaya.textContent = textRupiah + ' (' + textTerbilang.toLowerCase() + ')';
     }
 
     var dBiayaL = document.getElementById('d_biaya_l');
@@ -1952,54 +2282,38 @@ function syncLivePreview() {
     setTxt('d_rab_laporan', rabLap.toLocaleString('id-ID'));
     setTxt('d_rab_total', textRupiah);
 
-    // 9. Ruang Lingkup Selulosa (Poin 1 List)
-    var dSelRuangLingkupList = document.getElementById('d_sel_ruang_lingkup_list');
-    if (dSelRuangLingkupList && elRuangLingkup) {
-        var rawLines = elRuangLingkup.value.split(/\r?\n/);
-        var htmlList = '';
-        var itemIdx = 1;
+    // 9. Naskah Poin-Poin Utama Selulosa (1 Input Terpadu Real-Time Renderer)
+    var dSelPoinContainer = document.getElementById('d_sel_poin_utama_container');
+    if (dSelPoinContainer && elRuangLingkup) {
+        var rawText = elRuangLingkup.value;
+        var rawLines = rawText.split(/\r?\n/);
+        var html = '';
         rawLines.forEach(function(line) {
             var trimmed = line.trim();
-            if (trimmed.length > 0) {
-                // Strip existing leading bullet or numbers like 1), 1., -, *
-                var cleanLine = trimmed.replace(/^(\d+[\.\)]|\-|\*|\•)\s*/, '');
-                htmlList += '<div class="d-flex gap-2 mb-0.5">' +
-                    '<span style="width: 18px; flex-shrink: 0; font-weight: 500;">' + itemIdx + ')</span>' +
-                    '<div>' + escapeHtml(cleanLine) + '</div>' +
+            if (!trimmed) return;
+
+            var mPoint = trimmed.match(/^(\d+)\.\s*(.*)/);
+            var mSub = trimmed.match(/^(\d+\)|[a-z]\)|\-|\*|\•)\s*(.*)/i);
+
+            if (mPoint) {
+                html += '<div class="d-flex gap-2 mb-1 mt-1.5">' +
+                    '<span style="width: 18px; flex-shrink: 0; font-weight: bold;">' + mPoint[1] + '.</span>' +
+                    '<div style="text-align: justify;">' + escapeHtml(mPoint[2]) + '</div>' +
                 '</div>';
-                itemIdx++;
+            } else if (mSub) {
+                var bullet = mSub[1];
+                html += '<div class="d-flex gap-2 mb-0.5 ms-4">' +
+                    '<span style="width: 20px; flex-shrink: 0; font-weight: 500;">' + bullet + '</span>' +
+                    '<div style="text-align: justify;">' + escapeHtml(mSub[2]) + '</div>' +
+                '</div>';
+            } else {
+                html += '<div class="mb-1" style="text-align: justify;">' + escapeHtml(trimmed) + '</div>';
             }
         });
-        dSelRuangLingkupList.innerHTML = htmlList;
+        dSelPoinContainer.innerHTML = html;
     }
 
-    // 10. Jadwal Pelaksanaan Selulosa (Poin 2)
-    var dSelJadwal = document.getElementById('d_sel_jadwal');
-    var dSelJadwalWrap = document.getElementById('d_sel_jadwal_wrap');
-    if (dSelJadwal && elJadwal) {
-        var valJadwal = elJadwal.value.trim();
-        if (valJadwal) {
-            dSelJadwal.textContent = valJadwal;
-            if (dSelJadwalWrap) dSelJadwalWrap.style.display = 'flex';
-        } else {
-            if (dSelJadwalWrap) dSelJadwalWrap.style.display = 'none';
-        }
-    }
-
-    // 11. Catatan Sampel / Aditif Selulosa (Poin 4)
-    var dSelCatatan = document.getElementById('d_sel_catatan');
-    var dSelCatatanWrap = document.getElementById('d_sel_catatan_wrap');
-    if (dSelCatatan && elCatatanSampel) {
-        var valCatatan = elCatatanSampel.value.trim();
-        if (valCatatan) {
-            dSelCatatan.textContent = valCatatan;
-            if (dSelCatatanWrap) dSelCatatanWrap.style.display = 'flex';
-        } else {
-            if (dSelCatatanWrap) dSelCatatanWrap.style.display = 'none';
-        }
-    }
-
-    // 12. Penandatangan Pejabat BBSPJIS
+    // 10. Penandatangan Pejabat BBSPJIS
     var valJabatan = (elJabatan && elJabatan.value.trim()) ? elJabatan.value.trim() : 'Kepala';
     var valPembuat = (elPejabatNama && elPejabatNama.value.trim()) ? elPejabatNama.value.trim() : 'Dodiet Prasetyo';
     
@@ -2064,8 +2378,6 @@ document.addEventListener('DOMContentLoaded', function() {
         'input_lampiran_teks',
         'input_perihal',
         'input_ruang_lingkup',
-        'input_jadwal_pelaksanaan',
-        'input_catatan_sampel',
         'input_penjelasan',
         'inputDurasiHari',
         'select_permintaan_melalui',
@@ -2081,6 +2393,11 @@ document.addEventListener('DOMContentLoaded', function() {
             target.addEventListener('change', syncLivePreview);
         }
     });
+
+    var elRuangLingkup = document.getElementById('input_ruang_lingkup');
+    if (elRuangLingkup) {
+        elRuangLingkup.addEventListener('keydown', handleRuangLingkupKeydown);
+    }
 
     // Jalankan sinkronisasi awal saat halaman dimuat
     syncLivePreview();
