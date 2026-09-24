@@ -1367,9 +1367,33 @@
                                 Menanggapi permintaan Saudara perihal "<span id="d_judul_pembuka_l" class="fw-bold">{{ @order.judul_kegiatan }}</span>", dengan ini kami informasikan sebagai berikut:
                             </div>
 
-                            <!-- Poin 1, 2, 3, 4 Naskah Surat Lingkungan (Rendered Dinamis dari Editor) -->
-                            <div id="d_ling_poin_utama_container" style="font-size: 9.5px; line-height: 1.45; margin-bottom: 10px; padding-left: 2px;">
+                            <!-- Poin 1, 2, 3 Naskah Surat Lingkungan (Rendered Dinamis dari Editor) -->
+                            <div id="d_ling_poin_utama_container" style="font-size: 9.5px; line-height: 1.45; margin-bottom: 2px; padding-left: 2px;">
                                 <!-- Rendered dynamically by JS syncLivePreview() -->
+                            </div>
+
+                            <!-- Poin 4 Ketentuan Standar Lingkungan (Auto Fill di Template) -->
+                            <div id="d_ling_ketentuan_tetap" style="font-size: 9.5px; line-height: 1.45; margin-bottom: 10px; padding-left: 2px;">
+                                <div class="d-flex gap-2 mb-1 mt-1">
+                                    <span style="width: 18px; flex-shrink: 0; font-weight: bold;">4.</span>
+                                    <div style="text-align: justify;">Biaya dan rincian pekerjaan terlampir, dengan ketentuan sebagai berikut:</div>
+                                </div>
+                                <div class="d-flex gap-2 mb-0.5 ms-4">
+                                    <span style="width: 20px; flex-shrink: 0; font-weight: 500;">a.</span>
+                                    <div style="text-align: justify;">Biaya pekerjaan ditagihkan dan dibayar melalui Virtual Account Mandiri.</div>
+                                </div>
+                                <div class="d-flex gap-2 mb-0.5 ms-4">
+                                    <span style="width: 20px; flex-shrink: 0; font-weight: 500;">b.</span>
+                                    <div style="text-align: justify;">Persetujuan terhadap biaya pekerjaan tersebut mohon disampaikan secara tertulis melalui fax atau e-mail.</div>
+                                </div>
+                                <div class="d-flex gap-2 mb-0.5 ms-4">
+                                    <span style="width: 20px; flex-shrink: 0; font-weight: 500;">c.</span>
+                                    <div style="text-align: justify;">Jadwal pelaksanaan pekerjaan akan disampaikan setelah pembayaran biaya pekerjaan dilakukan.</div>
+                                </div>
+                                <div class="d-flex gap-2 mb-0.5 ms-4">
+                                    <span style="width: 20px; flex-shrink: 0; font-weight: 500;">d.</span>
+                                    <div style="text-align: justify;">Dilarang memberi gratifikasi dalam bentuk apapun atas layanan jasa yang kami berikan, jika terdapat pemberian dan penerimaan gratifikasi mohon dapat dilaporkan ke : <span class="text-primary">http://bbs.kemenperin.go.id/kontak-kami/pengaduan-gratifikasi</span>.</div>
+                                </div>
                             </div>
 
                             <div style="font-size: 9.5px; line-height: 1.45; text-align: justify; margin-bottom: 16px;">
@@ -1846,12 +1870,7 @@ function applyStandardDraft() {
     if (isLingkungan) {
         ta.value = "1. Pelaksanaan pekerjaan mengacu pada metode OECD 301D: Closed Bottle Test.\n" +
             "2. Biaya pekerjaan tersebut adalah sebesar " + textRupiah + ",- (" + textTerbilang + ") untuk 1 sampel\n" +
-            "3. Waktu pelaksanaan selama 4 bulan dengan jadwal pelaksanaan seperti dalam lampiran.\n" +
-            "4. Biaya dan rincian pekerjaan terlampir, dengan ketentuan sebagai berikut:\n" +
-            "   a. Biaya pekerjaan ditagihkan dan dibayar melalui Virtual Account Mandiri.\n" +
-            "   b. Persetujuan terhadap biaya pekerjaan tersebut mohon disampaikan secara tertulis melalui fax atau e-mail.\n" +
-            "   c. Jadwal pelaksanaan pekerjaan akan disampaikan setelah pembayaran biaya pekerjaan dilakukan.\n" +
-            "   d. Dilarang memberi gratifikasi dalam bentuk apapun atas layanan jasa yang kami berikan, jika terdapat pemberian dan penerimaan gratifikasi mohon dapat dilaporkan ke : http://bbs.kemenperin.go.id/kontak-kami/pengaduan-gratifikasi.";
+            "3. Waktu pelaksanaan selama 4 bulan dengan jadwal pelaksanaan seperti dalam lampiran.";
     } else {
         ta.value = "1. Biaya layanan adalah sebesar " + textRupiah + " (" + textTerbilang + "), dengan ruang lingkup pekerjaan sebagai berikut:\n" +
             "   1) Persiapan peralatan, bahan, dan pengkondisian sampel uji.\n" +
@@ -2090,8 +2109,12 @@ function syncLivePreview() {
     }
 
     var dLingPoinContainer = document.getElementById('d_ling_poin_utama_container');
+    var dLingKetentuanTetap = document.getElementById('d_ling_ketentuan_tetap');
     if (dLingPoinContainer) {
         var rawLingText = (elRuangLingkup && elRuangLingkup.value.trim()) ? elRuangLingkup.value.trim() : '';
+        if (dLingKetentuanTetap) {
+            dLingKetentuanTetap.style.display = (rawLingText.indexOf('Virtual Account Mandiri') !== -1) ? 'none' : 'block';
+        }
         if (!rawLingText) {
             dLingPoinContainer.innerHTML = '';
         } else {

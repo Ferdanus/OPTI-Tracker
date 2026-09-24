@@ -1493,6 +1493,23 @@ $daftarPegawai = $arsipUser->find(
                 $pdf->MultiCell(170, 4.2, $lineTrim, 0, 'J');
             }
         }
+
+        // Poin 4 Ketentuan Standar Lingkungan (Auto Fill Template)
+        if (stripos($rawNaskah, 'Virtual Account Mandiri') === false) {
+            $pdf->Cell(5, 4.2, '4.', 0, 0);
+            $pdf->MultiCell(165, 4.2, 'Biaya dan rincian pekerjaan terlampir, dengan ketentuan sebagai berikut:', 0, 'J');
+            $ketentuanLing = [
+                'a' => 'Biaya pekerjaan ditagihkan dan dibayar melalui Virtual Account Mandiri.',
+                'b' => 'Persetujuan terhadap biaya pekerjaan tersebut mohon disampaikan secara tertulis melalui fax atau e-mail.',
+                'c' => 'Jadwal pelaksanaan pekerjaan akan disampaikan setelah pembayaran biaya pekerjaan dilakukan.',
+                'd' => 'Dilarang memberi gratifikasi dalam bentuk apapun atas layanan jasa yang kami berikan, jika terdapat pemberian dan penerimaan gratifikasi mohon dapat dilaporkan ke : http://bbs.kemenperin.go.id/kontak-kami/pengaduan-gratifikasi.'
+            ];
+            foreach ($ketentuanLing as $subK => $subV) {
+                $pdf->SetX(25);
+                $pdf->Cell(6, 3.9, $subK . '.', 0, 0);
+                $pdf->MultiCell(159, 3.9, $subV, 0, 'J');
+            }
+        }
         $pdf->Ln(2);
 
         $pdf->MultiCell(0, 4.2, 'Kami menunggu konfirmasi lebih lanjut. Atas perhatian dan kerja sama yang baik, kami sampaikan terima kasih.', 0, 'J');
