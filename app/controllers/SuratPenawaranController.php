@@ -1471,6 +1471,7 @@ $daftarPegawai = $arsipUser->find(
 
         // Naskah Poin Rincian Penawaran Lingkungan (Parsed Dinamis)
         $rawNaskah = !empty($sp['ruang_lingkup']) ? trim($sp['ruang_lingkup']) : '';
+        $nextPointNum = 1;
 
         $lines = explode("\n", str_replace(["\r\n", "\r"], "\n", $rawNaskah));
         foreach ($lines as $line) {
@@ -1478,6 +1479,10 @@ $daftarPegawai = $arsipUser->find(
             if ($lineTrim === '') continue;
 
             if (preg_match('/^(\d+)\.\s*(.*)/', $lineTrim, $mPoint)) {
+                $pNum = (int)$mPoint[1];
+                if ($pNum >= $nextPointNum) {
+                    $nextPointNum = $pNum + 1;
+                }
                 $pdf->Cell(5, 4.2, $mPoint[1] . '.', 0, 0);
                 $pdf->MultiCell(165, 4.2, $mPoint[2], 0, 'J');
             } elseif (preg_match('/^(\d+\)|[a-z]\)|\-|\*|\•)\s*(.*)/i', $lineTrim, $mSub)) {
@@ -1494,9 +1499,9 @@ $daftarPegawai = $arsipUser->find(
             }
         }
 
-        // Poin 4 Ketentuan Standar Lingkungan (Auto Fill Template)
+        // Poin Ketentuan Standar Lingkungan (Auto Fill Template dengan nomor urut dinamis)
         if (stripos($rawNaskah, 'Virtual Account Mandiri') === false) {
-            $pdf->Cell(5, 4.2, '4.', 0, 0);
+            $pdf->Cell(5, 4.2, $nextPointNum . '.', 0, 0);
             $pdf->MultiCell(165, 4.2, 'Biaya dan rincian pekerjaan terlampir, dengan ketentuan sebagai berikut:', 0, 'J');
             $ketentuanLing = [
                 'a' => 'Biaya pekerjaan ditagihkan dan dibayar melalui Virtual Account Mandiri.',

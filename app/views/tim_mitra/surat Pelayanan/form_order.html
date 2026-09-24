@@ -1372,10 +1372,10 @@
                                 <!-- Rendered dynamically by JS syncLivePreview() -->
                             </div>
 
-                            <!-- Poin 4 Ketentuan Standar Lingkungan (Auto Fill di Template) -->
+                            <!-- Poin Ketentuan Standar Lingkungan (Auto Fill di Template) -->
                             <div id="d_ling_ketentuan_tetap" style="font-size: 9.5px; line-height: 1.45; margin-bottom: 10px; padding-left: 2px;">
                                 <div class="d-flex gap-2 mb-1 mt-1">
-                                    <span style="width: 18px; flex-shrink: 0; font-weight: bold;">4.</span>
+                                    <span id="d_ling_ketentuan_num" style="width: 18px; flex-shrink: 0; font-weight: bold;">1.</span>
                                     <div style="text-align: justify;">Biaya dan rincian pekerjaan terlampir, dengan ketentuan sebagai berikut:</div>
                                 </div>
                                 <div class="d-flex gap-2 mb-0.5 ms-4">
@@ -2110,11 +2110,13 @@ function syncLivePreview() {
 
     var dLingPoinContainer = document.getElementById('d_ling_poin_utama_container');
     var dLingKetentuanTetap = document.getElementById('d_ling_ketentuan_tetap');
+    var dLingKetentuanNum = document.getElementById('d_ling_ketentuan_num');
     if (dLingPoinContainer) {
         var rawLingText = (elRuangLingkup && elRuangLingkup.value.trim()) ? elRuangLingkup.value.trim() : '';
         if (dLingKetentuanTetap) {
             dLingKetentuanTetap.style.display = (rawLingText.indexOf('Virtual Account Mandiri') !== -1) ? 'none' : 'block';
         }
+        var nextPointNum = 1;
         if (!rawLingText) {
             dLingPoinContainer.innerHTML = '';
         } else {
@@ -2128,6 +2130,10 @@ function syncLivePreview() {
                 var mSub = trimmed.match(/^(\d+\)|[a-z]\)|\-|\*|\•)\s*(.*)/i);
 
                 if (mPoint) {
+                    var pNum = parseInt(mPoint[1], 10);
+                    if (pNum >= nextPointNum) {
+                        nextPointNum = pNum + 1;
+                    }
                     htmlLing += '<div class="d-flex gap-2 mb-1 mt-1.5">' +
                         '<span style="width: 18px; flex-shrink: 0; font-weight: bold;">' + mPoint[1] + '.</span>' +
                         '<div style="text-align: justify;">' + escapeHtml(mPoint[2]) + '</div>' +
@@ -2143,6 +2149,9 @@ function syncLivePreview() {
                 }
             });
             dLingPoinContainer.innerHTML = htmlLing;
+        }
+        if (dLingKetentuanNum) {
+            dLingKetentuanNum.textContent = nextPointNum + '.';
         }
     }
 
