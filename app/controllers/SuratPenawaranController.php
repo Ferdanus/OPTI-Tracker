@@ -579,6 +579,27 @@ $daftarPegawai = $arsipUser->find(
             }
         }
 
+        // Ambil alamat customer terlengkap dari database tb_customer
+        $alamatCust = '';
+        if (!empty($order['id_customer'])) {
+            $custRow = $this->db->exec("SELECT nmcustomer, pt_cv, contactperson, contactperson_opti, nama_pribadi, alamatcustomer, alamatcustomer_baru, lokasi_pabrik, kode_pos FROM tb_customer WHERE id_customer = ?", [1 => (int)$order['id_customer']]);
+            if (!empty($custRow)) {
+                $cR = $custRow[0];
+                $alamatCust = trim($cR['alamatcustomer_baru'] ?: ($cR['alamatcustomer'] ?: ($cR['lokasi_pabrik'] ?: '')));
+                if (empty($order['pic']) || $order['pic'] === '-') {
+                    $order['pic'] = trim($cR['contactperson_opti'] ?: ($cR['contactperson'] ?: ($cR['nama_pribadi'] ?: '-')));
+                }
+            }
+        }
+        if (empty($alamatCust) && !empty($order['alamat']) && $order['alamat'] !== '-') {
+            $alamatCust = trim($order['alamat']);
+        }
+        $order['alamat_lengkap'] = $alamatCust;
+        $order['alamatcustomer'] = $alamatCust;
+        if (empty($order['alamat']) || $order['alamat'] === '-') {
+            $order['alamat'] = $alamatCust;
+        }
+
         $spModel = new SuratPenawaran($this->db);
         $allSp = $spModel->getAllByOrderId($orderId);
         $spExisting = $spModel->getByOrderId($orderId);
@@ -1209,7 +1230,8 @@ $daftarPegawai = $arsipUser->find(
             ? 'Pimpinan ' . $perusahaan
             : $perusahaan;
 
-        $alamat = !empty($sp['alamat']) ? trim($sp['alamat']) : (!empty($order['alamatcustomer']) ? trim($order['alamatcustomer']) : (!empty($order['alamat']) ? trim($order['alamat']) : ''));
+        $alamat = !empty($sp['alamat']) ? trim($sp['alamat']) : (!empty($order['alamat_lengkap']) ? trim($order['alamat_lengkap']) : (!empty($order['alamatcustomer']) ? trim($order['alamatcustomer']) : (!empty($order['alamat']) && $order['alamat'] !== '-' ? trim($order['alamat']) : '')));
+        $picSurat = !empty($sp['nama']) ? trim($sp['nama']) : (!empty($order['pic']) ? trim($order['pic']) : '');
 
         $pdf->SetFont('Arial', '', 9);
         $pdf->Cell(0, 4.2, 'Yth. ' . $ythTitle, 0, 1);
@@ -1223,6 +1245,9 @@ $daftarPegawai = $arsipUser->find(
             }
         } else {
             $pdf->Cell(0, 4.2, 'di Tempat', 0, 1);
+        }
+        if (!empty($picSurat) && $picSurat !== '-' && stripos($ythTitle, $picSurat) === false) {
+            $pdf->Cell(0, 4.2, 'u.p. ' . $picSurat, 0, 1);
         }
         $pdf->Ln(2.5);
 
@@ -1416,7 +1441,8 @@ $daftarPegawai = $arsipUser->find(
         if (!empty($order['pt_cv']) && stripos($perusahaan, $order['pt_cv']) === false) {
             $perusahaan = $order['pt_cv'] . ' ' . $perusahaan;
         }
-        $alamat = !empty($sp['alamat']) ? trim($sp['alamat']) : (!empty($order['alamat']) ? trim($order['alamat']) : 'di Tempat');
+        $alamat = !empty($sp['alamat']) ? trim($sp['alamat']) : (!empty($order['alamat_lengkap']) ? trim($order['alamat_lengkap']) : (!empty($order['alamatcustomer']) ? trim($order['alamatcustomer']) : (!empty($order['alamat']) && $order['alamat'] !== '-' ? trim($order['alamat']) : 'di Tempat')));
+        $picSurat = !empty($sp['nama']) ? trim($sp['nama']) : (!empty($order['pic']) ? trim($order['pic']) : '');
         
         // Ambil kalkulasi rincian biaya lingkungan jika tersedia
         $kalkulasiRaw = !empty($order['id']) ? $orderModel->getKalkulasiLingkungan((int)$order['id']) : [];

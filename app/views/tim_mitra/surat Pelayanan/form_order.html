@@ -877,31 +877,52 @@
                                 <input type="date" name="tanggal_surat" id="input_tanggal_surat" class="form-control form-control-sm" value="{{ @sp_existing.tanggal_surat ?: date('Y-m-d') }}" required {{ !@can_edit ? 'disabled' : '' }}>
                             </div>
                         </div>
+                        <!-- 1. Nama Perusahaan / Instansi (Read Only) -->
                         <div class="col-md-6">
-                            <label class="form-label small fw-semibold text-dark mb-1">
-                                Nama Perusahaan / Instansi <span class="text-danger">*</span>
+                            <label class="form-label small fw-semibold text-dark mb-1 d-flex justify-content-between align-items-center">
+                                <span>Nama Perusahaan / Instansi <span class="text-danger">*</span></span>
+                                <span class="badge bg-secondary-subtle text-secondary border font-monospace" style="font-size: 0.68rem;"><i class="bi bi-lock-fill me-1"></i>Read Only</span>
                             </label>
                             <div class="input-group input-group-sm">
                                 <span class="input-group-text bg-light text-muted"><i class="bi bi-building"></i></span>
-                                <input type="text" name="perusahaan" id="input_perusahaan" class="form-control form-control-sm fw-semibold" value="{{ @sp_existing.perusahaan ?: @order.nama_perusahaan }}" required {{ !@can_edit ? 'disabled' : '' }}>
+                                <input type="text" name="perusahaan" id="input_perusahaan" class="form-control form-control-sm fw-semibold bg-light text-dark" value="{{ @sp_existing.perusahaan ?: @order.nama_perusahaan }}" readonly title="Data perusahaan terkunci sesuai database">
                             </div>
                         </div>
+
+                        <!-- 2. PIC Klien Order (Read Only) -->
                         <div class="col-md-6">
-                            <label class="form-label small fw-semibold text-dark mb-1">
-                                Nama Kontak PIC Klien
+                            <label class="form-label small fw-semibold text-dark mb-1 d-flex justify-content-between align-items-center">
+                                <span>Nama Kontak PIC Klien</span>
+                                <span class="badge bg-secondary-subtle text-secondary border font-monospace" style="font-size: 0.68rem;"><i class="bi bi-lock-fill me-1"></i>Database</span>
                             </label>
                             <div class="input-group input-group-sm">
                                 <span class="input-group-text bg-light text-muted"><i class="bi bi-person"></i></span>
-                                <input type="text" name="nama" id="input_nama" class="form-control form-control-sm" value="{{ @sp_existing.nama ?: @order.pic }}" placeholder="Nama PIC Klien" {{ !@can_edit ? 'disabled' : '' }}>
+                                <input type="text" id="input_pic_klien" class="form-control form-control-sm bg-light text-dark" value="{{ @order.pic }}" readonly placeholder="PIC Klien dari Database" title="Data PIC Klien dari permohonan order">
                             </div>
                         </div>
-                        <div class="col-12">
-                            <label class="form-label small fw-semibold text-dark mb-1">
-                                Alamat Lengkap Klien
+
+                        <!-- 3. PIC Surat (Penerima u.p. - Editable) -->
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-dark mb-1 d-flex justify-content-between align-items-center">
+                                <span>Nama PIC Surat (Penerima u.p.)</span>
+                                <span class="badge bg-primary-subtle text-primary border font-monospace" style="font-size: 0.68rem;"><i class="bi bi-pencil-fill me-1"></i>Bisa Diedit</span>
+                            </label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text bg-light text-primary"><i class="bi bi-person-badge-fill"></i></span>
+                                <input type="text" name="nama" id="input_nama" class="form-control form-control-sm fw-medium" value="{{ @sp_existing.nama ?: (@order.pic_surat_masuk ?: @order.pic) }}" placeholder="Nama PIC yang dituju pada surat..." {{ !@can_edit ? 'disabled' : '' }}>
+                            </div>
+                            <small class="text-muted" style="font-size: 0.7rem;">Nama penerima surat (u.p.) yang tercantum pada surat penawaran.</small>
+                        </div>
+
+                        <!-- 4. Alamat Lengkap Klien (Read Only) -->
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-dark mb-1 d-flex justify-content-between align-items-center">
+                                <span>Alamat Lengkap Klien</span>
+                                <span class="badge bg-secondary-subtle text-secondary border font-monospace" style="font-size: 0.68rem;"><i class="bi bi-lock-fill me-1"></i>Read Only</span>
                             </label>
                             <div class="input-group input-group-sm">
                                 <span class="input-group-text bg-light text-muted"><i class="bi bi-geo-alt"></i></span>
-                                <input type="text" name="alamat" id="input_alamat" class="form-control form-control-sm" value="{{ @sp_existing.alamat ?: @order.alamatcustomer }}" placeholder="Alamat pabrik / kantor klien" {{ !@can_edit ? 'disabled' : '' }}>
+                                <input type="text" name="alamat" id="input_alamat" class="form-control form-control-sm bg-light text-dark" value="{{ @sp_existing.alamat ?: (@order.alamat_lengkap ?: (@order.alamat != '-' ? @order.alamat : @order.alamatcustomer)) }}" readonly placeholder="Alamat pabrik / kantor klien" title="Alamat klien sesuai database">
                             </div>
                         </div>
                     </div>
