@@ -1,3 +1,14 @@
+<style>
+    .kb-badge-none {
+    display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #94a3b8;
+    border: 1px dashed #cbd5e1; border-radius: 20px; padding: 3px 8px; white-space: nowrap;
+}
+.kb-badge-ada {
+    display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: #92400e;
+    background: #fef3c7; border-radius: 20px; padding: 3px 8px; white-space: nowrap; text-decoration: none;
+}
+.kb-badge-ada:hover { background: #fde68a; color: #78350f; }
+</style>
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
     <div>
         <h2 class="h4 fw-bold mb-1 text-dark"><i class="bi bi-file-earmark-text text-primary me-2"></i>Surat Penawaran Resmi</h2>
@@ -119,172 +130,161 @@
         <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
                 <tr>
+                    <th style="width: 36px;">No.</th>
                     <th>No. Surat</th>
                     <th>Customer / Mitra</th>
                     <th>Tanggal</th>
                     <th>Perihal &amp; Layanan</th>
                     <th class="text-center">Status Alur</th>
-                    <th class="text-center text-nowrap" style="width: 165px; min-width: 165px;">Aksi</th>
+                    <th class="text-center text-nowrap" style="width: 150px; min-width: 150px;">Aksi</th>
                 </tr>
             </thead>
             <tbody>
                 <check if="{{ @daftar_penawaran && count(@daftar_penawaran) > 0 }}">
-                    <repeat group="{{ @daftar_penawaran }}" value="{{ @sp }}">
+                    <repeat group="{{ @daftar_penawaran }}" value="{{ @sp }}" key="{{ @i }}">
                         <tr>
-                            <td>
-                                <div class="fw-bold font-monospace text-dark">{{ @sp.nomor_surat }}</div>
-                            </td>
-                            <td>
-                                <strong class="text-dark">{{ @sp.display_perusahaan ?: @sp.nmcustomer }}</strong>
-                                <check if="{{ !empty(@sp.sub_info) }}">
-                                    <small class="text-muted d-block" style="font-size: 0.75rem;">
-                                        <check if="{{ strpos(@sp.sub_info, 'PIC:') === 0 }}">
-                                            <i class="bi bi-person me-1"></i>
-                                        </check>
-                                        {{ @sp.sub_info }}
-                                    </small>
-                                </check>
-                            </td>
-                            <td class="text-nowrap small text-muted">
-                                {{ date('d M Y', strtotime(@sp.tanggal_surat)) }}
-                            </td>
-                            <td>
-                                <div class="text-dark small fw-medium text-truncate" style="max-width: 280px;" title="{{ @sp.perihal }}">
-                                    {{ @sp.perihal }}
-                                </div>
-                                <check if="{{ @sp.jenis_layanan && !in_array(@sp.jenis_layanan, ['belum_ditentukan', 'opti_belum_ditentukan']) }}">
-                                    <span class="badge {{ strpos(@sp.jenis_layanan, 'selulosa') !== false ? 'bg-danger-subtle text-danger border border-danger-subtle' : 'bg-success-subtle text-success border border-success-subtle' }} text-uppercase mt-1" style="font-size: 0.65rem;">
-                                        {{ str_replace('_', ' ', @sp.jenis_layanan) }}
-                                    </span>
-                                </check>
-                            </td>
-                            <td class="text-center">
-                                <check if="{{ @sp.status_respon_klien == 'deal' || @sp.status == 'disetujui' }}">
-                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
-                                        <i class="bi bi-check-circle-fill me-1"></i> DEAL / Sepakat
-                                    </span>
-                                </check>
-                                <check if="{{ @sp.status_respon_klien == 'nego' }}">
-                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1">
-                                        <i class="bi bi-chat-dots me-1"></i> Negosiasi
-                                    </span>
-                                </check>
-                                <check if="{{ (@sp.status == 'terkirim' || @sp.status_respon_klien == 'terkirim' || @sp.status_respon_klien == 'menunggu') && @sp.status_respon_klien != 'deal' && @sp.status_respon_klien != 'nego' && @sp.status != 'disetujui' }}">
-                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">
-                                        <i class="bi bi-send-check me-1"></i> Terkirim
-                                    </span>
-                                </check>
-                                <check if="{{ @sp.status_respon_klien == 'tolak' || @sp.status_respon_klien == 'batal' }}">
-                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">
-                                        <i class="bi bi-x-circle-fill me-1"></i> Ditolak
-                                    </span>
-                                </check>
-                                <check if="{{ (@sp.status == 'draft' || @sp.status_respon_klien == 'draft' || !@sp.status || @sp.status == 'nonaktif') && @sp.status_respon_klien != 'deal' && @sp.status_respon_klien != 'nego' && @sp.status != 'terkirim' && @sp.status_respon_klien != 'terkirim' && @sp.status_respon_klien != 'tolak' && @sp.status_respon_klien != 'batal' && @sp.status != 'disetujui' }}">
-                                    <span class="badge bg-light text-secondary border px-2 py-1">
-                                        <i class="bi bi-pencil-square me-1"></i> Draft
-                                    </span>
-                                </check>
-                            </td>
-                            <td class="text-center text-nowrap">
-                                <div class="d-inline-flex align-items-center gap-1">
-                                    <check if="{{ @sp.order_id }}">
-                                        <button type="button" 
-                                                class="btn btn-outline-danger btn-sm py-1 px-2 d-inline-flex align-items-center gap-1 fw-semibold btn-preview-pdf" 
-                                                data-raw-url="{{ @BASE }}/order/{{ @sp.order_id }}/penawaran/raw-data?id={{ @sp.id }}&t={{ time() }}"
-                                                data-download-url="{{ @BASE }}/order/{{ @sp.order_id }}/penawaran/cetak?id={{ @sp.id }}"
-                                                data-nomor="{{ @sp.nomor_surat }}"
-                                                data-perusahaan="{{ @sp.display_perusahaan ?: @sp.perusahaan }}"
-                                                title="Pratinjau Surat Penawaran PDF">
-                                            <i class="bi bi-file-earmark-pdf"></i> PDF
-                                        </button>
-                                        <a href="{{ @BASE }}/order/{{ @sp.order_id }}" class="btn btn-light border btn-sm py-1 px-2 text-primary" title="Buka Detail Order">
-                                            <i class="bi bi-folder2-open"></i>
-                                        </a>
-                                        <a href="{{ @BASE }}/order/{{ @sp.order_id }}/penawaran/buat" class="btn btn-light border btn-sm py-1 px-2 text-secondary" title="Edit / Revisi Surat Penawaran">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
-                                    </check>
-                                    <check if="{{ !@sp.order_id }}">
-                                        <button type="button" 
-                                                class="btn btn-outline-danger btn-sm py-1 px-2 d-inline-flex align-items-center gap-1 fw-semibold btn-preview-pdf" 
-                                                data-raw-url="{{ @BASE }}/surat-penawaran/{{ @sp.id }}/raw-data?t={{ time() }}"
-                                                data-download-url="{{ @BASE }}/surat-penawaran/{{ @sp.id }}/pdf"
-                                                data-nomor="{{ @sp.nomor_surat }}"
-                                                data-perusahaan="{{ @sp.display_perusahaan ?: @sp.perusahaan }}"
-                                                title="Pratinjau Surat Penawaran PDF">
-                                            <i class="bi bi-file-earmark-pdf"></i> PDF
-                                        </button>
-                                        <a href="{{ @BASE }}/surat-penawaran/{{ @sp.id }}/edit" class="btn btn-light border btn-sm py-1 px-2 text-secondary" title="Edit Surat Penawaran">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
-                                    </check>
-                                    <button type="button" class="btn btn-light border btn-sm py-1 px-2 text-danger" data-bs-toggle="modal" data-bs-target="#modalHapusSP{{ @sp.id }}" title="Hapus Surat Penawaran">
-                                        <i class="bi bi-trash3"></i>
-                                    </button>
-                                </div>
+                            <td class="text-muted small">{{ @i + 1 }}</td>
+<td>
+    <div class="fw-bold font-monospace text-dark">{{ @sp.nomor_surat }}</div>
+</td>
+<td>
+    <strong class="text-dark">{{ @sp.display_perusahaan ?: @sp.nmcustomer }}</strong>
+    <check if="{{ !empty(@sp.sub_info) }}">
+        <small class="text-muted d-block" style="font-size: 0.75rem;">
+            <check if="{{ strpos(@sp.sub_info, 'PIC:') === 0 }}">
+                <i class="bi bi-person me-1"></i>
+            </check>
+            {{ @sp.sub_info }}
+        </small>
+    </check>
+</td>
+<td class="text-nowrap small text-muted">
+    {{ date('d M Y', strtotime(@sp.tanggal_surat)) }}
+</td>
+<td>
+    <div class="text-dark small fw-medium text-truncate" style="max-width: 220px;" title="{{ @sp.perihal }}">
+        {{ @sp.perihal }}
+    </div>
+    <check if="{{ @sp.jenis_layanan && !in_array(@sp.jenis_layanan, ['belum_ditentukan', 'opti_belum_ditentukan']) }}">
+        <span class="badge {{ strpos(@sp.jenis_layanan, 'selulosa') !== false ? 'bg-danger-subtle text-danger border border-danger-subtle' : 'bg-success-subtle text-success border border-success-subtle' }} text-uppercase mt-1" style="font-size: 0.65rem;">
+            {{ str_replace('_', ' ', @sp.jenis_layanan) }}
+        </span>
+    </check>
+    <br>
+    <check if="{{ !empty(@sp.surat_kesanggupan_bayar) }}">
+        <a href="{{ @BASE }}/surat-penawaran/{{ @sp.id }}/surat-kesanggupan/preview" target="_blank"
+           class="kb-badge-ada mt-1" title="Sudah ada Surat Kesanggupan Bayar -- klik untuk lihat PDF">
+            <i class="bi bi-file-earmark-pdf-fill"></i> PDF Kesanggupan
+        </a>
+    </check>
+    <check if="{{ empty(@sp.surat_kesanggupan_bayar) }}">
+        <span class="kb-badge-none mt-1" title="Belum ada Surat Kesanggupan Bayar">
+            <i class="bi bi-dash-circle"></i> Belum ada Kesanggupan
+        </span>
+    </check>
+</td>
+<td class="text-center">
+    <check if="{{ @sp.status_respon_klien == 'deal' || @sp.status == 'disetujui' }}">
+        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+            <i class="bi bi-check-circle-fill me-1"></i> DEAL / Sepakat
+        </span>
+    </check>
+    <check if="{{ @sp.status_respon_klien == 'nego' }}">
+        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1">
+            <i class="bi bi-chat-dots me-1"></i> Negosiasi
+        </span>
+    </check>
+    <check if="{{ (@sp.status == 'terkirim' || @sp.status_respon_klien == 'terkirim' || @sp.status_respon_klien == 'menunggu') && @sp.status_respon_klien != 'deal' && @sp.status_respon_klien != 'nego' && @sp.status != 'disetujui' }}">
+        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">
+            <i class="bi bi-send-check me-1"></i> Terkirim
+        </span>
+    </check>
+    <check if="{{ @sp.status_respon_klien == 'tolak' || @sp.status_respon_klien == 'batal' }}">
+        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">
+            <i class="bi bi-x-circle-fill me-1"></i> Ditolak
+        </span>
+    </check>
+    <check if="{{ (@sp.status == 'draft' || @sp.status_respon_klien == 'draft' || !@sp.status || @sp.status == 'nonaktif') && @sp.status_respon_klien != 'deal' && @sp.status_respon_klien != 'nego' && @sp.status != 'terkirim' && @sp.status_respon_klien != 'terkirim' && @sp.status_respon_klien != 'tolak' && @sp.status_respon_klien != 'batal' && @sp.status != 'disetujui' }}">
+        <span class="badge bg-light text-secondary border px-2 py-1">
+            <i class="bi bi-pencil-square me-1"></i> Draft
+        </span>
+    </check>
+</td>
+<td class="text-center text-nowrap">
+    <div class="d-inline-flex align-items-center gap-1">
+        <check if="{{ @sp.order_id }}">
+            <a href="{{ @BASE }}/order/{{ @sp.order_id }}/penawaran/cetak?id={{ @sp.id }}&t={{ time() }}" target="_blank" class="btn btn-outline-danger btn-sm py-1 px-2" title="Cetak Surat Penawaran PDF">
+                <i class="bi bi-file-earmark-pdf"></i>
+            </a>
+            <a href="{{ @BASE }}/order/{{ @sp.order_id }}" class="btn btn-light border btn-sm py-1 px-2 text-primary" title="Buka Detail Order">
+                <i class="bi bi-folder2-open"></i>
+            </a>
+        </check>
+        <button type="button" class="btn btn-outline-primary btn-sm py-1 px-2" data-bs-toggle="modal" data-bs-target="#modalUploadSKB{{ @sp.id }}"
+                title="{{ !empty(@sp.surat_kesanggupan_bayar) ? 'Ganti' : 'Upload' }} Surat Kesanggupan Bayar">
+            <i class="bi bi-cloud-arrow-up"></i>
+        </button>
+        <div class="dropdown d-inline-block">
+            <button class="btn btn-light border btn-sm py-1 px-2" data-bs-toggle="dropdown" title="Lainnya">
+                <i class="bi bi-three-dots-vertical"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <check if="{{ @sp.order_id }}">
+                    <li><a class="dropdown-item" href="{{ @BASE }}/order/{{ @sp.order_id }}/penawaran/buat"><i class="bi bi-pencil me-2"></i>Edit / Revisi</a></li>
+                </check>
+                <check if="{{ !@sp.order_id }}">
+                    <li><a class="dropdown-item" href="{{ @BASE }}/surat-penawaran/{{ @sp.id }}/edit"><i class="bi bi-pencil me-2"></i>Edit</a></li>
+                </check>
+                <li><a class="dropdown-item text-danger" href="#" data-bs-toggle="modal" data-bs-target="#modalHapusSP{{ @sp.id }}"><i class="bi bi-trash3 me-2"></i>Hapus</a></li>
+            </ul>
+        </div>
+    </div>
+</td>
+            </tr>
 
-                                <!-- Modal Konfirmasi Hapus Surat Penawaran -->
-                                <div class="modal fade" id="modalHapusSP{{ @sp.id }}" tabindex="-1" aria-labelledby="modalHapusSPLabel{{ @sp.id }}" aria-hidden="true" style="white-space: normal;">
-                                    <div class="modal-dialog modal-dialog-centered" style="white-space: normal;">
-                                        <div class="modal-content bg-white border-0 shadow rounded-3 text-start text-wrap" style="white-space: normal;">
-                                            <div class="modal-header border-bottom py-3 px-4 bg-white">
-                                                <div class="d-flex align-items-center gap-2">
-                                                    <div class="rounded-circle p-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 38px; height: 38px; background-color: #ffe4e6; color: #dc2626;">
-                                                        <i class="bi bi-trash3-fill fs-5"></i>
-                                                    </div>
-                                                    <div>
-                                                        <h6 class="modal-title fw-bold text-dark mb-0" id="modalHapusSPLabel{{ @sp.id }}">Konfirmasi Hapus Surat Penawaran</h6>
-                                                        <small class="text-muted" style="font-size: 0.75rem;">Tindakan ini tidak dapat dibatalkan</small>
-                                                    </div>
-                                                </div>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
-                                            </div>
+            <!-- Modal Upload Surat Kesanggupan Bayar -->
+            <div class="modal fade" id="modalUploadSKB{{ @sp.id }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content border-0 shadow">
+                        <form action="{{ @BASE }}/surat-penawaran/{{ @sp.id }}/surat-kesanggupan/upload" method="POST" enctype="multipart/form-data">
+                            <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
+                            <div class="modal-header">
+                                <h6 class="modal-title fw-bold"><i class="bi bi-file-earmark-lock2 text-primary me-2"></i>Upload Surat Kesanggupan Bayar</h6>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="small text-muted mb-3">Untuk: <strong class="text-dark">{{ @sp.nomor_surat }}</strong></div>
+                                <label class="form-label fw-semibold small">Berkas Surat Kesanggupan <span class="text-danger">*</span></label>
+                                <input type="file" name="surat_kesanggupan_bayar" class="form-control" accept=".pdf,.doc,.docx" required>
+                                <div class="form-text">Format PDF atau Word (.doc/.docx). Maksimal 5MB.</div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+                                <button type="submit" class="btn btn-primary"><i class="bi bi-upload me-1"></i> Upload &amp; Simpan</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
 
-                                            <form action="{{ @BASE }}/surat-penawaran/{{ @sp.id }}/hapus" method="POST">
-                                                 <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
-
-                                                <div class="modal-body p-4" style="white-space: normal;">
-                                                    <p class="text-dark small mb-3">
-                                                        Apakah Anda yakin ingin menghapus dokumen surat penawaran berikut?
-                                                    </p>
-
-                                                    <!-- Box Rincian Surat Penawaran -->
-                                                    <div class="border rounded-2 p-3 bg-light mb-3" style="white-space: normal;">
-                                                        <div class="mb-2">
-                                                            <span class="text-muted small d-block" style="font-size: 0.75rem;">Nomor Surat:</span>
-                                                            <strong class="font-monospace fs-6 text-primary">{{ @sp.nomor_surat }}</strong>
-                                                        </div>
-                                                        <div class="mb-2">
-                                                            <span class="text-muted small d-block" style="font-size: 0.75rem;">Nama Instansi / Perusahaan:</span>
-                                                            <span class="fw-semibold text-dark text-break">{{ @sp.perusahaan }}</span>
-                                                        </div>
-                                                        <div class="mb-0">
-                                                            <span class="text-muted small d-block" style="font-size: 0.75rem;">Perihal:</span>
-                                                            <span class="text-secondary small text-break">{{ @sp.perihal }}</span>
-                                                        </div>
-                                                    </div>
-
-                                                    <div class="p-3 mb-0 rounded-2 small d-flex align-items-start gap-2" style="font-size: 0.8rem; background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; white-space: normal;">
-                                                        <i class="bi bi-exclamation-triangle-fill fs-6 flex-shrink-0 mt-0.5" style="color: #475569;"></i>
-                                                        <div style="white-space: normal; line-height: 1.45; word-break: break-word;">Dokumen surat penawaran ini akan dihapus dan status order terkait akan kembali ke tahap sebelum penawaran terbit.</div>
-                                                    </div>
-                                                </div>
-
-                                                <div class="modal-footer border-top py-3 px-4 bg-light d-flex justify-content-end gap-2">
-                                                    <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-2 fw-semibold" data-bs-dismiss="modal">
-                                                        Batal
-                                                    </button>
-                                                    <button type="submit" class="btn btn-danger btn-sm px-4 py-2 fw-bold shadow-sm d-inline-flex align-items-center gap-1">
-                                                        <i class="bi bi-trash3-fill"></i> Ya, Hapus Penawaran
-                                                    </button>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                    </repeat>
+            <!-- Modal Konfirmasi Hapus Surat Penawaran -->
+            <div class="modal fade" id="modalHapusSP{{ @sp.id }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-sm">
+                    <div class="modal-content bg-white border-0 shadow rounded-3">
+                        <form action="{{ @BASE }}/surat-penawaran/{{ @sp.id }}/hapus" method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
+                            <div class="modal-body p-3 text-center">
+                                <p class="small text-dark mb-0">Hapus surat penawaran <strong>{{ @sp.nomor_surat }}</strong>?</p>
+                            </div>
+                            <div class="modal-footer border-0 p-2 d-flex justify-content-center gap-2">
+                                <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Batal</button>
+                                <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </repeat>
                 </check>
                 <check if="{{ !@daftar_penawaran || count(@daftar_penawaran) == 0 }}">
                     <tr>
@@ -739,6 +739,34 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         currentPdfDoc = null;
         currentPdfArrayBuffer = null;
+    });
+    document.querySelectorAll('.table-responsive .dropdown').forEach(function (dropdownWrap) {
+        var menu = dropdownWrap.querySelector('.dropdown-menu');
+        var toggleBtn = dropdownWrap.querySelector('[data-bs-toggle="dropdown"]');
+        if (!menu || !toggleBtn) return;
+
+        var placeholderAnchor = document.createComment('dropdown-anchor');
+        dropdownWrap.addEventListener('show.bs.dropdown', function () {
+            menu.parentNode.insertBefore(placeholderAnchor, menu);
+            document.body.appendChild(menu);
+
+            var rect = toggleBtn.getBoundingClientRect();
+            menu.style.position = 'fixed';
+            menu.style.top = (rect.bottom + 4) + 'px';
+            menu.style.right = (window.innerWidth - rect.right) + 'px';
+            menu.style.left = 'auto';
+            menu.style.zIndex = 3000;
+        });
+
+        dropdownWrap.addEventListener('hide.bs.dropdown', function () {
+            placeholderAnchor.parentNode.insertBefore(menu, placeholderAnchor);
+            placeholderAnchor.remove();
+            menu.style.position = '';
+            menu.style.top = '';
+            menu.style.right = '';
+            menu.style.left = '';
+            menu.style.zIndex = '';
+        });
     });
 });
 </script>

@@ -24,15 +24,13 @@ class PembayaranOptiController extends Controller {
     
         // ---- Tab 1: Baru Masuk (menunggu_pembayaran, belum ada pembayaran sama sekali) ----
         $sqlBaru = "SELECT o.id, o.nomor_order, o.judul_kegiatan, o.estimasi_biaya, o.tanggal_masuk,
-                           o.jenis_layanan_opti,
-                           c.nmcustomer AS nama_perusahaan, c.pt_cv,
-                           sp.nominal_penawaran
-                    FROM order_layanan o
-                    JOIN tb_customer c ON o.id_customer = c.id_customer
-                    LEFT JOIN tb_surat_penawaran sp ON sp.order_id = o.id AND sp.status_respon_klien = 'deal'
-                    WHERE o.status_keuangan = 'menunggu_pembayaran'
-                      AND o.id NOT IN (SELECT DISTINCT order_id FROM opti_pembayaran)
-                    ORDER BY o.tanggal_masuk DESC";
+                   o.jenis_layanan_opti,
+                   c.nmcustomer AS nama_perusahaan, c.pt_cv
+            FROM order_layanan o
+            JOIN tb_customer c ON o.id_customer = c.id_customer
+            WHERE o.status_penawaran = 'deal'
+              AND o.id NOT IN (SELECT DISTINCT order_id FROM opti_pembayaran)
+            ORDER BY o.tanggal_masuk DESC";
        $daftarBaru = $this->safeQuery($sqlBaru);
        foreach ($daftarBaru as &$o) {
            $o['biaya_acuan'] = !empty($o['nominal_penawaran']) ? (float)$o['nominal_penawaran'] : (float)$o['estimasi_biaya'];

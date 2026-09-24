@@ -108,7 +108,7 @@ class SuratPenawaranController extends Controller
         // Secara default, hanya tampilkan Surat Penawaran aktif/terbaru per order untuk mencegah duplikasi di tabel
         if (!$tampilkanSemua) {
             $sql .= " AND (sp.id IN (
-                SELECT COALESCE(o2.surat_penawaran_id, MAX(sp2.id))
+                SELECT COALESCE(ANY_VALUE(o2.surat_penawaran_id), MAX(sp2.id))
                 FROM tb_surat_penawaran sp2
                 LEFT JOIN order_layanan o2 ON o2.id = sp2.order_id
                 GROUP BY COALESCE(sp2.order_id, sp2.id)
@@ -1635,4 +1635,129 @@ $daftarPegawai = $arsipUser->find(
         }
         return trim(preg_replace('/\s+/', ' ', $temp));
     }
+    /** POST /surat-penawaran/@id/surat-kesanggupan/upload */
+    public function uploadKesanggupanBayar($f3, $params)
+    {
+        $id = (int)($params['id'] ?? 0);
+        $file = $f3->get('FILES.surat_kesanggupan_bayar');
+        $referer = $f3->get('HEADERS.Referer') ?: '/surat-penawaran';
+        $isAjax = $f3->get('POST.ajax') == '1'; // [BARU] dari Detail Order (fetch), bukan form biasa
+    
+        $gagal = function ($pesan) use ($f3, $referer, $isAjax) {
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => $pesan]);
+                exit;
+            }
+            $this->setFlashError($pesan);
+            $f3->reroute($referer);
+        };
+    
+        if (empty($file) || !isset($file['error']) || $file['error'] === UPLOAD_ERR_NO_FILE) {
+            $gagal('File Surat Kesanggupan Bayar wajib diunggah.');
+            return;
+        }
+    
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            $gagal('Gagal mengunggah file (kode error: ' . $file['error'] . ').');
+            return;
+        }
+    
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        $allowedExt = ['pdf', 'doc', 'docx'];
+        if (!in_array($ext, $allowedExt, true)) {
+            $gagal('Surat Kesanggupan Bayar harus berformat PDF atau Word (.doc/.docx).');
+            return;
+        }
+    
+        $maxSize = 5 * 1024 * 1024;
+        if ($file['size'] > $maxSize) {
+            $gagal('Ukuran file maksimal 5MB.');
+            return;
+        }
+    
+        $mimeAsli = mime_content_type($file['tmp_name']);
+        $mimeDiizinkan = [
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/zip',
+        ];
+        if (!in_array($mimeAsli, $mimeDiizinkan, true)) {
+            $gagal('Isi file tidak valid atau tidak sesuai format yang diizinkan (PDF/Word).');
+            return;
+        }
+    
+        $dir = $f3->get('ROOT') . '/storage/kesanggupan_bayar';
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+        $namaFile = 'skb_' . $id . '_' . time() . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
+        $tujuan = $dir . '/' . $namaFile;
+    
+        if (!move_uploaded_file($file['tmp_name'], $tujuan)) {
+            $gagal('Gagal menyimpan file ke server.');
+            return;
+        }
+    
+        $spLama = $this->db->exec('SELECT surat_kesanggupan_bayar FROM tb_surat_penawaran WHERE id = ?', [1 => $id]);
+        if (!empty($spLama[0]['surat_kesanggupan_bayar'])) {
+            $pathLama = $dir . '/' . basename($spLama[0]['surat_kesanggupan_bayar']);
+            if (is_file($pathLama)) { @unlink($pathLama); }
+        }
+    
+        $this->db->exec(
+            'UPDATE tb_surat_penawaran SET surat_kesanggupan_bayar = ? WHERE id = ?',
+            [1 => $namaFile, 2 => $id]
+        );
+    
+        // ===== Sukses =====
+        if ($isAjax) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => true,
+                'message' => 'Surat Kesanggupan Bayar berhasil diunggah.',
+                'preview_url' => $f3->get('BASE') . '/surat-penawaran/' . $id . '/surat-kesanggupan/preview',
+            ]);
+            exit;
+        }
+    
+        $this->setFlashSuccess('Surat Kesanggupan Bayar berhasil diunggah.');
+        $f3->reroute($referer);
+    }
+/** GET /surat-penawaran/@id/surat-kesanggupan/preview */
+public function previewKesanggupanBayar($f3, $params)
+{
+    $id = (int)($params['id'] ?? 0);
+
+    $row = $this->db->exec('SELECT surat_kesanggupan_bayar FROM tb_surat_penawaran WHERE id = ?', [1 => $id]);
+    if (empty($row) || empty($row[0]['surat_kesanggupan_bayar'])) {
+        $f3->error(404, 'Surat Kesanggupan Bayar tidak ditemukan.');
+        return;
+    }
+
+    // [KEAMANAN] basename() buang semua path (../ dkk) dari nama file yang tersimpan di DB,
+    // jadi walau DB ke-tamper, gak bisa dipakai buat baca file di luar folder ini.
+    $namaFile = basename($row[0]['surat_kesanggupan_bayar']);
+    $path = $f3->get('ROOT') . '/storage/kesanggupan_bayar/' . $namaFile;
+
+    if (!is_file($path)) {
+        $f3->error(404, 'File tidak ditemukan di server.');
+        return;
+    }
+
+    $ext = strtolower(pathinfo($namaFile, PATHINFO_EXTENSION));
+    $mimeMap = [
+        'pdf'  => 'application/pdf',
+        'doc'  => 'application/msword',
+        'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ];
+
+    header('Content-Type: ' . ($mimeMap[$ext] ?? 'application/octet-stream'));
+    header('Content-Disposition: inline; filename="' . $namaFile . '"');
+    header('X-Content-Type-Options: nosniff'); // browser gak boleh "nebak" tipe file sendiri
+    header('Content-Length: ' . filesize($path));
+    readfile($path);
+    exit;
+}
 }

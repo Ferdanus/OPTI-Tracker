@@ -2096,6 +2096,54 @@
             </div>
         </div>
 
+        <!-- Kartu Surat Kesanggupan Bayar -- muncul cuma pas status Deal -->
+        <check if="{{ @penawaran.status_respon_klien == 'deal' }}">
+            <div class="card border rounded-3 mt-3 shadow-xs" id="cardKesanggupanBayar">
+                <div class="p-3 bg-white d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-file-earmark-lock2 text-primary fs-5"></i>
+                        <div>
+                            <div class="fw-bold text-dark small">Surat Kesanggupan Bayar</div>
+                            <div class="text-muted" style="font-size: 0.75rem;">Untuk pelanggan yang berkomitmen membayar di kemudian hari</div>
+                        </div>
+                    </div>
+                    <div id="kbStatusWrap">
+                        <check if="{{ !empty(@penawaran.surat_kesanggupan_bayar) }}">
+                            <a href="{{ @BASE }}/surat-penawaran/{{ @penawaran.id }}/surat-kesanggupan/preview" target="_blank"
+                               class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1" id="kbLihatBtn">
+                                <i class="bi bi-file-earmark-check-fill text-success"></i> Lihat Berkas
+                            </a>
+                            <button type="button" class="btn btn-sm btn-outline-secondary ms-1" id="kbGantiBtn">
+                                <i class="bi bi-arrow-repeat"></i> Ganti
+                            </button>
+                        </check>
+                        <check if="{{ empty(@penawaran.surat_kesanggupan_bayar) }}">
+                            <button type="button" class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1" id="kbUploadBtn">
+                                <i class="bi bi-cloud-arrow-up"></i> Upload Berkas
+                            </button>
+                        </check>
+                    </div>
+                </div>
+
+                <div class="px-3 pb-3 d-none" id="kbFormWrap">
+                    <div class="border-top pt-3">
+                        <input type="file" class="form-control form-control-sm" id="kbFileInput" accept=".pdf,.doc,.docx">
+                        <div class="form-text">Format PDF atau Word (.doc/.docx). Maksimal 5MB.</div>
+                        <div class="d-flex gap-2 mt-2">
+                            <button type="button" class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1" id="kbSimpanBtn">
+                                <span class="spinner-border spinner-border-sm d-none" id="kbSpinner" role="status"></span>
+                                <span id="kbSimpanLabel"><i class="bi bi-upload me-1"></i>Simpan</span>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="kbBatalBtn">Batal</button>
+                        </div>
+                        <div class="small text-danger mt-2 d-none" id="kbErrorMsg"></div>
+                    </div>
+                </div>
+            </div>
+        </check>
+
+<!-- Modal Konfirmasi Hapus Surat Penawaran -->
+
         <!-- ======================================================== -->
         <!-- PANE TAHAP 6: BUKTI PEMBAYARAN & PROPOSAL LINGKUNGAN     -->
         <!-- ======================================================== -->
@@ -3576,6 +3624,69 @@ document.addEventListener('DOMContentLoaded', function() {
         '#cardSampelSpm': 7,
         '#cardPoBast': 8
     };
+    var wrapForm = document.getElementById('kbFormWrap');
+    var wrapStatus = document.getElementById('kbStatusWrap');
+    var fileInput = document.getElementById('kbFileInput');
+    var errorMsg = document.getElementById('kbErrorMsg');
+    var spinner = document.getElementById('kbSpinner');
+    if (!wrapForm) return; // kartu ini gak ada di halaman (order-nya belum Deal), skip semua
+
+function bukaForm() {
+    wrapForm.classList.remove('d-none');
+    errorMsg.classList.add('d-none');
+    fileInput.value = '';
+}
+function tutupForm() { wrapForm.classList.add('d-none'); }
+
+document.addEventListener('click', function (e) {
+    if (e.target.closest('#kbUploadBtn') || e.target.closest('#kbGantiBtn')) bukaForm();
+    if (e.target.closest('#kbBatalBtn')) tutupForm();
+});
+
+var btnSimpan = document.getElementById('kbSimpanBtn');
+btnSimpan.addEventListener('click', function () {
+    if (!fileInput.files.length) {
+        errorMsg.textContent = 'Pilih berkas terlebih dahulu.';
+        errorMsg.classList.remove('d-none');
+        return;
+    }
+
+    var fd = new FormData();
+    fd.append('surat_kesanggupan_bayar', fileInput.files[0]);
+    fd.append('csrf_token', '{{ @csrf_token }}');
+    fd.append('ajax', '1');
+
+    btnSimpan.disabled = true;
+    spinner.classList.remove('d-none');
+    errorMsg.classList.add('d-none');
+
+    fetch('{{ @BASE }}/surat-penawaran/{{ @penawaran.id }}/surat-kesanggupan/upload', { method: 'POST', body: fd })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+            btnSimpan.disabled = false;
+            spinner.classList.add('d-none');
+
+            if (!data.success) {
+                errorMsg.textContent = data.message || 'Gagal mengunggah berkas.';
+                errorMsg.classList.remove('d-none');
+                return;
+            }
+
+            // [PENTING] update tampilan status DI TEMPAT, tanpa reload halaman
+            wrapStatus.innerHTML =
+                '<a href="' + data.preview_url + '" target="_blank" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1" id="kbLihatBtn">' +
+                    '<i class="bi bi-file-earmark-check-fill text-success"></i> Lihat Berkas</a>' +
+                '<button type="button" class="btn btn-sm btn-outline-secondary ms-1" id="kbGantiBtn"><i class="bi bi-arrow-repeat"></i> Ganti</button>';
+
+            tutupForm();
+        })
+        .catch(function () {
+            btnSimpan.disabled = false;
+            spinner.classList.add('d-none');
+            errorMsg.textContent = 'Gagal mengunggah berkas. Coba lagi.';
+            errorMsg.classList.remove('d-none');
+        });
+});
 
     // Stepper checkpoint click synchronization
     document.querySelectorAll('.step-checkpoint').forEach(function(cp, idx) {

@@ -305,8 +305,11 @@ $f3->route('GET|POST /order/@id/penawaran/preview-pdf', 'SuratPenawaranControlle
 $f3->route('GET /order/@id/penawaran/raw-data', 'SuratPenawaranController->penawaranRawData');
 $f3->route('GET /order/@id/penawaran/cetak', 'SuratPenawaranController->cetakPdf');
 $f3->route('POST /order/@id/penawaran/status', 'SuratPenawaranController->updateStatusKlien');
+$f3->route('POST /surat-penawaran/@id/surat-kesanggupan/upload', 'SuratPenawaranController->uploadKesanggupanBayar');
+$f3->route('GET /surat-penawaran/@id/surat-kesanggupan/preview', 'SuratPenawaranController->previewKesanggupanBayar');
 
 $f3->route('GET /surat/@id', 'OrderController->showSurat');
+$f3->route('GET /surat/@id/fragment', 'OrderController->showSuratFragment');
 // ==========================================
 // PO Kegiatan
 // ==========================================

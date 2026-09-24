@@ -73,27 +73,28 @@
                     </div>
                     <div class="small mt-1" id="nominalHint"></div>
                 </div>
-                <div class="col-md-6">
+                <!-- <div class="col-md-6">
                     <label class="form-label fw-bold">Metode Pembayaran</label>
                     <select name="metode_pembayaran" class="form-select">
                         <option value="transfer_bank">Transfer Bank</option>
                         <option value="tunai">Tunai</option>
                         <option value="lainnya">Lainnya</option>
                     </select>
+                </div> -->
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Upload Bukti Pembayaran <span class="text-danger">*</span></label>
+                    <input type="file" name="bukti_bayar" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
+                    <div class="form-text">PDF, JPG, atau PNG. Maksimal 5MB.</div>
                 </div>
+    
             </div>
 
-            <div class="mb-3">
+            <!-- <div class="mb-3">
                 <label class="form-label fw-bold">Nomor Transaksi / NTPN (opsional)</label>
                 <input type="text" name="nomor_transaksi_ntpn" class="form-control" placeholder="Contoh: NTPN 1234567890ABCDEF">
-            </div>
+            </div> -->
 
-            <div class="mb-3">
-                <label class="form-label fw-bold">Upload Bukti Pembayaran <span class="text-danger">*</span></label>
-                <input type="file" name="bukti_bayar" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
-                <div class="form-text">PDF, JPG, atau PNG. Maksimal 5MB.</div>
-            </div>
-
+           
             <div class="mb-4">
                 <label class="form-label fw-bold">Keterangan</label>
                 <textarea name="keterangan" class="form-control" rows="2" placeholder="Catatan tambahan..."></textarea>
