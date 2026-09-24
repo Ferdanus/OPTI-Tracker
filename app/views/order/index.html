@@ -75,6 +75,51 @@
     color: #ffffff !important;
 }
 
+/* 3 Pill Button Divisi */
+.divisi-pill-group {
+    display: inline-flex;
+    align-items: center;
+    background-color: #f1f5f9;
+    padding: 3px;
+    border-radius: 9999px;
+    border: 1px solid #e2e8f0;
+    gap: 3px;
+}
+.divisi-pill-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.35rem 0.95rem;
+    border-radius: 9999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #64748b;
+    background: transparent;
+    border: none;
+    text-decoration: none;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+    cursor: pointer;
+    line-height: 1.25;
+}
+.divisi-pill-btn:hover {
+    color: #0f172a;
+    background-color: rgba(255, 255, 255, 0.85);
+}
+.divisi-pill-btn.active {
+    background-color: var(--color-primary, #334155) !important;
+    color: #ffffff !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+.divisi-pill-btn.pill-selulosa.active {
+    background-color: #b91c1c !important;
+    color: #ffffff !important;
+}
+.divisi-pill-btn.pill-lingkungan.active {
+    background-color: #047857 !important;
+    color: #ffffff !important;
+}
+
 /* Modern Status Pill (Clean, Elegant & Compact) */
 .status-pill {
     display: inline-flex;
@@ -165,9 +210,11 @@
     <!-- FILTER & PENCARIAN ORDER -->
     <div class="card mb-4 border-0 shadow-sm">
         <div class="card-body p-3">
-            <form method="GET" action="{{ @BASE }}/order" class="row g-2 align-items-center">
+            <form id="filterOrderForm" method="GET" action="{{ @BASE }}/order" class="row g-2 align-items-center">
                 <input type="hidden" name="tab" value="{{ @filter_tab }}">
-                <div class="col-md-2 col-lg-2">
+                
+                <!-- Filter Tahun -->
+                <div class="col-12 col-sm-auto col-md-3 col-lg-2">
                     <div class="input-group input-group-sm">
                         <span class="input-group-text bg-light text-muted"><i class="bi bi-calendar-event"></i></span>
                         <select name="tahun" class="form-select form-select-sm fw-semibold" onchange="this.form.submit()" title="Filter Berdasarkan Tahun">
@@ -178,36 +225,44 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-4 col-lg-5">
+
+                <!-- Input Pencarian (Auto Live Search kata per kata) -->
+                <div class="col-12 col-sm flex-grow-1">
                     <div class="input-group input-group-sm">
                         <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-search"></i></span>
-                        <input type="text" class="form-control border-start-0" name="q" placeholder="Cari nomor order, mitra industri, judul kegiatan..." value="{{ @search_q }}">
+                        <input type="text" id="orderSearchInput" class="form-control border-start-0" name="q" placeholder="Cari nomor order, mitra industri, judul kegiatan..." value="{{ @search_q }}" autocomplete="off">
+                        <button class="btn btn-outline-secondary border-start-0 text-muted d-none" type="button" id="btnClearSearch" title="Hapus pencarian">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
                     </div>
                 </div>
-                <div class="col-md-3 col-lg-2">
+
+                <!-- 3 Pill Button Divisi (Semua, Selulosa, Lingkungan) -->
+                <div class="col-12 col-sm-auto d-flex justify-content-sm-end">
                     <check if="{{ @is_locked_divisi }}">
                         <true>
-                            <select class="form-select form-select-sm bg-light text-secondary" disabled title="Akses dibatasi hanya untuk divisi Anda">
-                                <option value="{{ @user_layanan }}" selected>Divisi {{ ucfirst(@user_layanan) }}</option>
-                            </select>
                             <input type="hidden" name="jenis_layanan" value="{{ @user_layanan }}">
+                            <div class="divisi-pill-group">
+                                <span class="divisi-pill-btn active {{ @user_layanan == 'selulosa' ? 'pill-selulosa' : (@user_layanan == 'lingkungan' ? 'pill-lingkungan' : '') }}" title="Akses dibatasi hanya untuk divisi Anda">
+                                    <i class="bi bi-lock-fill me-1 small"></i>{{ ucfirst(@user_layanan) }}
+                                </span>
+                            </div>
                         </true>
                         <false>
-                            <select class="form-select form-select-sm" name="jenis_layanan">
-                                <option value="">Semua Divisi</option>
-                                <option value="selulosa" {{ @filter_jenis_layanan == 'selulosa' ? 'selected' : '' }}>OPTI Selulosa</option>
-                                <option value="lingkungan" {{ @filter_jenis_layanan == 'lingkungan' ? 'selected' : '' }}>OPTI Lingkungan</option>
-                            </select>
+                            <input type="hidden" name="jenis_layanan" id="filterJenisLayanan" value="{{ @filter_jenis_layanan }}">
+                            <div class="divisi-pill-group" role="group" aria-label="Filter Divisi">
+                                <button type="button" class="divisi-pill-btn {{ empty(@filter_jenis_layanan) ? 'active' : '' }}" onclick="selectDivisi('')" title="Semua Divisi">
+                                    Semua
+                                </button>
+                                <button type="button" class="divisi-pill-btn pill-selulosa {{ @filter_jenis_layanan == 'selulosa' ? 'active' : '' }}" onclick="selectDivisi('selulosa')" title="Divisi OPTI Selulosa">
+                                    Selulosa
+                                </button>
+                                <button type="button" class="divisi-pill-btn pill-lingkungan {{ @filter_jenis_layanan == 'lingkungan' ? 'active' : '' }}" onclick="selectDivisi('lingkungan')" title="Divisi OPTI Lingkungan">
+                                    Lingkungan
+                                </button>
+                            </div>
                         </false>
                     </check>
-                </div>
-                <div class="col-md-3 col-lg-3 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary btn-sm flex-fill fw-semibold text-nowrap">
-                        <i class="bi bi-search me-1"></i> Filter
-                    </button>
-                    <a href="{{ @BASE }}/order?tab={{ @filter_tab }}" class="btn btn-outline-secondary btn-sm px-3 d-flex align-items-center gap-1 text-nowrap" title="Reset Filter">
-                        <i class="bi bi-arrow-clockwise"></i> Reset
-                    </a>
                 </div>
             </form>
         </div>
@@ -234,7 +289,7 @@
                 </a>
             </div>
             <span class="text-muted small fw-medium">
-                Total: <strong class="text-dark">{{ !empty(@daftar_order) ? count(@daftar_order) : 0 }}</strong> order ditampilkan
+                Total: <strong class="text-dark" id="orderTotalCount">{{ !empty(@daftar_order) ? count(@daftar_order) : 0 }}</strong> order ditampilkan
             </span>
         </div>
         <div class="card-body p-0">
@@ -561,7 +616,115 @@
 </div>
 
 <script>
+function selectDivisi(val) {
+    var input = document.getElementById('filterJenisLayanan');
+    if (input) {
+        input.value = val;
+    }
+    var form = document.getElementById('filterOrderForm');
+    if (form) {
+        form.submit();
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function () {
+    // === AUTO LIVE SEARCH KATA PER KATA ===
+    var searchInput = document.getElementById('orderSearchInput');
+    var btnClear = document.getElementById('btnClearSearch');
+    var totalCountEl = document.getElementById('orderTotalCount');
+    var table = document.querySelector('.table-responsive table');
+    var tbody = table ? table.querySelector('tbody') : null;
+    var rows = tbody ? Array.from(tbody.querySelectorAll('tr:not(.no-search-result-row)')) : [];
+
+    function escapeHtml(str) {
+        return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function doLiveSearch() {
+        if (!searchInput) return;
+        var query = searchInput.value;
+        var trimmed = query.trim();
+
+        if (btnClear) {
+            if (trimmed.length > 0) {
+                btnClear.classList.remove('d-none');
+            } else {
+                btnClear.classList.add('d-none');
+            }
+        }
+
+        var words = trimmed.toLowerCase().split(/\s+/).filter(Boolean);
+        var visibleCount = 0;
+
+        rows.forEach(function (row) {
+            if (row.classList.contains('no-search-result-row')) return;
+            var text = row.textContent.toLowerCase();
+            
+            // Cek apakah setiap kata ditemukan di dalam baris (kata per kata)
+            var match = words.every(function (w) {
+                return text.indexOf(w) !== -1;
+            });
+
+            if (match) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        if (totalCountEl && rows.length > 0) {
+            totalCountEl.textContent = visibleCount;
+        }
+
+        // Tampilkan pesan kosong jika tidak ada hasil pencarian live
+        if (tbody && rows.length > 0) {
+            var noResultRow = tbody.querySelector('.no-search-result-row');
+            if (visibleCount === 0) {
+                var colCount = (table.querySelectorAll('thead th').length) || 7;
+                if (!noResultRow) {
+                    noResultRow = document.createElement('tr');
+                    noResultRow.className = 'no-search-result-row text-center';
+                    noResultRow.innerHTML = '<td colspan="' + colCount + '" class="text-muted py-5">' +
+                        '<i class="bi bi-search display-6 d-block mb-2 text-secondary opacity-50"></i>' +
+                        '<div class="fw-semibold text-dark mb-1">Tidak ada order yang cocok</div>' +
+                        '<small class="text-muted">Pencarian untuk kata kunci "<strong>' + escapeHtml(trimmed) + '</strong>" tidak ditemukan.</small>' +
+                        '</td>';
+                    tbody.appendChild(noResultRow);
+                } else {
+                    noResultRow.style.display = '';
+                    noResultRow.querySelector('td').innerHTML = 
+                        '<i class="bi bi-search display-6 d-block mb-2 text-secondary opacity-50"></i>' +
+                        '<div class="fw-semibold text-dark mb-1">Tidak ada order yang cocok</div>' +
+                        '<small class="text-muted">Pencarian untuk kata kunci "<strong>' + escapeHtml(trimmed) + '</strong>" tidak ditemukan.</small>';
+                }
+            } else if (noResultRow) {
+                noResultRow.style.display = 'none';
+            }
+        }
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener('input', doLiveSearch);
+        searchInput.addEventListener('keyup', doLiveSearch);
+
+        // Jika ada nilai awal saat load
+        if (searchInput.value.trim().length > 0) {
+            doLiveSearch();
+        }
+    }
+
+    if (btnClear) {
+        btnClear.addEventListener('click', function () {
+            if (searchInput) {
+                searchInput.value = '';
+                searchInput.focus();
+                doLiveSearch();
+            }
+        });
+    }
+
+    // Modal Lihat Alasan Penolakan Order
     document.addEventListener('click', function (e) {
         var btn = e.target.closest('.btn-lihat-alasan-order');
         if (!btn) return;
