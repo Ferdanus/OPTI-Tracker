@@ -635,8 +635,8 @@ $daftarPegawai = $arsipUser->find(
         if ($order['jenis_layanan_opti'] === 'lingkungan') {
             $f3->set('default_pejabat_nama', 'Joko Pratomo');
             $f3->set('default_jabatan_pejabat', 'Kepala Bagian Tata Usaha');
-            $f3->set('default_hal', 'Biaya Penentuan Daya Biodegradasi');
-            $f3->set('default_lampiran_teks', '1 (satu) berkas');
+            $f3->set('default_hal', '');
+            $f3->set('default_lampiran_teks', '');
         } else {
             $f3->set('default_pejabat_nama', 'Dodiet Prasetyo');
             $f3->set('default_jabatan_pejabat', 'Kepala');
@@ -1123,8 +1123,8 @@ $daftarPegawai = $arsipUser->find(
             'nama'               => $pic,
             'alamat'             => $alamat,
             'perihal'            => $perihal,
-            'hal'                => trim((string)($f3->get('POST.hal') ?? $f3->get('GET.hal') ?? ($existingSp['hal'] ?? 'Biaya OPTI'))),
-            'lampiran_teks'      => trim((string)($f3->get('POST.lampiran_teks') ?? $f3->get('GET.lampiran_teks') ?? ($existingSp['lampiran_teks'] ?? '1 (satu) lembar'))),
+            'hal'                => trim((string)($f3->get('POST.hal') ?? $f3->get('GET.hal') ?? ($existingSp['hal'] ?? ''))),
+            'lampiran_teks'      => trim((string)($f3->get('POST.lampiran_teks') ?? $f3->get('GET.lampiran_teks') ?? ($existingSp['lampiran_teks'] ?? ''))),
             'nominal_penawaran'  => $nominal,
             'durasi_hari'        => $durasiHari,
             'ruang_lingkup'      => $f3->get('POST.ruang_lingkup') ?? $f3->get('GET.ruang_lingkup') ?? ($existingSp['ruang_lingkup'] ?? null),
@@ -1444,8 +1444,9 @@ $daftarPegawai = $arsipUser->find(
         $yMeta = $pdf->GetY();
         $pdf->SetFont('Arial', '', 9);
         $pdf->Cell(18, 4.5, 'Nomor', 0, 0); $pdf->Cell(4, 4.5, ':', 0, 0); $pdf->Cell(70, 4.5, $noSurat, 0, 1);
-        $pdf->Cell(18, 4.5, 'Lampiran', 0, 0); $pdf->Cell(4, 4.5, ':', 0, 0); $pdf->Cell(70, 4.5, '1 (satu) berkas', 0, 1);
-        $halLing = !empty($sp['perihal']) ? $sp['perihal'] : ('Biaya Layanan ' . $judulKegiatan);
+        $lampTeks = !empty($sp['lampiran_teks']) ? $sp['lampiran_teks'] : '-';
+        $pdf->Cell(18, 4.5, 'Lampiran', 0, 0); $pdf->Cell(4, 4.5, ':', 0, 0); $pdf->Cell(70, 4.5, $lampTeks, 0, 1);
+        $halLing = !empty($sp['perihal']) ? $sp['perihal'] : (!empty($sp['hal']) ? $sp['hal'] : '-');
         $pdf->Cell(18, 4.5, 'Hal', 0, 0); $pdf->Cell(4, 4.5, ':', 0, 0); $pdf->Cell(70, 4.5, substr($halLing, 0, 45), 0, 1);
 
         $pdf->SetXY(110, $yMeta);
@@ -1468,18 +1469,8 @@ $daftarPegawai = $arsipUser->find(
         $pdf->MultiCell(0, 4.2, 'Menanggapi permintaan Saudara perihal "' . $judulKegiatan . '", dengan ini kami informasikan sebagai berikut:', 0, 'J');
         $pdf->Ln(1.5);
 
-        // Naskah Poin Rincian Penawaran Lingkungan (Parsed Dinamis / Draf Standar)
+        // Naskah Poin Rincian Penawaran Lingkungan (Parsed Dinamis)
         $rawNaskah = !empty($sp['ruang_lingkup']) ? trim($sp['ruang_lingkup']) : '';
-        if (empty($rawNaskah)) {
-            $rawNaskah = "1. Pelaksanaan pekerjaan mengacu pada metode OECD 301D: Closed Bottle Test.\n" .
-                "2. Biaya pekerjaan tersebut adalah sebesar Rp " . number_format($nominal, 0, ',', '.') . ",- (" . $terbilangStr . ") untuk 1 sampel\n" .
-                "3. Waktu pelaksanaan selama " . $durasiStr . " dengan jadwal pelaksanaan seperti dalam lampiran.\n" .
-                "4. Biaya dan rincian pekerjaan terlampir, dengan ketentuan sebagai berikut:\n" .
-                "   a. Biaya pekerjaan ditagihkan dan dibayar melalui Virtual Account Mandiri.\n" .
-                "   b. Persetujuan terhadap biaya pekerjaan tersebut mohon disampaikan secara tertulis melalui fax atau e-mail.\n" .
-                "   c. Jadwal pelaksanaan pekerjaan akan disampaikan setelah pembayaran biaya pekerjaan dilakukan.\n" .
-                "   d. Dilarang memberi gratifikasi dalam bentuk apapun atas layanan jasa yang kami berikan, jika terdapat pemberian dan penerimaan gratifikasi mohon dapat dilaporkan ke : http://bbs.kemenperin.go.id/kontak-kami/pengaduan-gratifikasi.";
-        }
 
         $lines = explode("\n", str_replace(["\r\n", "\r"], "\n", $rawNaskah));
         foreach ($lines as $line) {

@@ -152,7 +152,8 @@ class SuratPenawaran extends \DB\SQL\Mapper
 
         $tanggalSurat = !empty($data['tanggal_surat']) ? $data['tanggal_surat'] : date('Y-m-d');
         $nomorSurat   = !empty($data['nomor_surat']) ? trim($data['nomor_surat']) : $this->generateNomorSurat($tanggalSurat);
-        $perihal      = !empty($data['perihal']) ? trim($data['perihal']) : 'Penawaran Layanan Jasa OPTI - ' . $order['judul_kegiatan'];
+        $isLingkungan = ($order['jenis_layanan_opti'] ?? '') === 'lingkungan';
+        $perihal      = isset($data['perihal']) ? trim($data['perihal']) : ($isLingkungan ? '' : 'Penawaran Layanan Jasa OPTI - ' . $order['judul_kegiatan']);
         $nominal      = isset($data['nominal_penawaran']) ? (float)$data['nominal_penawaran'] : (float)$order['estimasi_biaya'];
         $namaPic      = !empty($data['nama']) ? trim($data['nama']) : ($order['pic'] ?? '');
         $perusahaan   = !empty($data['perusahaan']) ? trim($data['perusahaan']) : ($order['nama_perusahaan'] ?? '');
@@ -167,10 +168,10 @@ class SuratPenawaran extends \DB\SQL\Mapper
         $ruangLingkup      = isset($data['ruang_lingkup']) ? trim($data['ruang_lingkup']) : null;
         $jadwalPelaksanaan = isset($data['jadwal_pelaksanaan']) ? trim($data['jadwal_pelaksanaan']) : null;
         $catatanSampel     = isset($data['catatan_sampel']) ? trim($data['catatan_sampel']) : null;
-        $jabatanPejabat    = !empty($data['jabatan_pejabat']) ? trim($data['jabatan_pejabat']) : 'Kepala';
-        $pejabatNama       = !empty($data['pejabat_nama']) ? trim($data['pejabat_nama']) : (!empty($data['pembuat_nama']) && $data['pembuat_nama'] !== 'Tim Mitra BBSPJIS' ? trim($data['pembuat_nama']) : 'Dodiet Prasetyo');
-        $hal               = !empty($data['hal']) ? trim($data['hal']) : 'Biaya OPTI';
-        $lampiranTeks      = !empty($data['lampiran_teks']) ? trim($data['lampiran_teks']) : '1 (satu) lembar';
+        $jabatanPejabat    = !empty($data['jabatan_pejabat']) ? trim($data['jabatan_pejabat']) : ($isLingkungan ? 'Kepala Bagian Tata Usaha' : 'Kepala');
+        $pejabatNama       = !empty($data['pejabat_nama']) ? trim($data['pejabat_nama']) : (!empty($data['pembuat_nama']) && $data['pembuat_nama'] !== 'Tim Mitra BBSPJIS' ? trim($data['pembuat_nama']) : ($isLingkungan ? 'Joko Pratomo' : 'Dodiet Prasetyo'));
+        $hal               = isset($data['hal']) ? trim($data['hal']) : ($isLingkungan ? $perihal : 'Biaya OPTI');
+        $lampiranTeks      = isset($data['lampiran_teks']) ? trim($data['lampiran_teks']) : ($isLingkungan ? '' : '1 (satu) lembar');
 
         // Jika ada proposal selulosa dan ruang_lingkup kosong, coba ambil dari proposal
         if (empty($ruangLingkup) && $order['jenis_layanan_opti'] === 'selulosa') {

@@ -955,13 +955,22 @@
                         </check>
 
                         <check if="{{ @order.jenis_layanan_opti != 'selulosa' }}">
-                            <div class="col-12">
+                            <div class="col-md-6">
                                 <label class="form-label small fw-semibold text-dark mb-1">
-                                    Perihal Surat Penawaran <span class="text-danger">*</span>
+                                    Hal / Perihal Surat <span class="text-danger">*</span>
                                 </label>
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text bg-light text-muted"><i class="bi bi-card-heading"></i></span>
-                                    <input type="text" name="perihal" id="input_perihal" class="form-control form-control-sm fw-semibold" value="{{ @sp_existing.perihal ?: 'Penawaran Layanan Jasa OPTI - ' . @order.judul_kegiatan }}" required {{ !@can_edit ? 'disabled' : '' }}>
+                                    <input type="text" name="perihal" id="input_perihal" class="form-control form-control-sm fw-semibold" value="{{ @sp_existing.perihal ?: (@sp_existing.hal ?: @default_hal) }}" placeholder="Contoh: Biaya Penentuan Daya Biodegradasi" required {{ !@can_edit ? 'disabled' : '' }}>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold text-dark mb-1">
+                                    Keterangan Lampiran
+                                </label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-light text-muted"><i class="bi bi-paperclip"></i></span>
+                                    <input type="text" name="lampiran_teks" id="input_lampiran_teks" class="form-control form-control-sm" value="{{ @sp_existing.lampiran_teks ?: @default_lampiran_teks }}" placeholder="Contoh: 1 (satu) berkas" {{ !@can_edit ? 'disabled' : '' }}>
                                 </div>
                             </div>
                             <div class="col-12">
@@ -1346,8 +1355,8 @@
                             <div style="display: flex; justify-content: space-between; font-size: 9.5px; margin-bottom: 12px;">
                                 <table style="font-size: 9.5px; line-height: 1.4;">
                                     <tr><td style="width: 60px;">Nomor</td><td style="width: 10px;">:</td><td><strong id="d_nomor_l">{{ @is_revisi_baru ? @nomor_surat_otomatis : (@sp_existing.nomor_surat ?: @nomor_surat_otomatis) }}</strong></td></tr>
-                                    <tr><td>Lampiran</td><td>:</td><td><span id="d_lampiran_l">{{ @sp_existing.lampiran_teks ?: (@default_lampiran_teks ?: '1 (satu) berkas') }}</span></td></tr>
-                                    <tr><td>Hal</td><td>:</td><td><span id="d_perihal_l">{{ @sp_existing.hal ?: (@default_hal ?: ('Biaya Penawaran ' . @order.judul_kegiatan)) }}</span></td></tr>
+                                    <tr><td>Lampiran</td><td>:</td><td><span id="d_lampiran_l">{{ @sp_existing.lampiran_teks ?: (@default_lampiran_teks ?: '-') }}</span></td></tr>
+                                    <tr><td>Hal</td><td>:</td><td><span id="d_perihal_l">{{ @sp_existing.perihal ?: (@sp_existing.hal ?: (@default_hal ?: '-')) }}</span></td></tr>
                                 </table>
                                 <div style="font-size: 9.5px; text-align: right;" id="d_tanggal_l">Bandung, -</div>
                             </div>
@@ -2146,14 +2155,14 @@ function syncLivePreview() {
 
     // 3. Hal & Lampiran
     var isLingkungan = '{{ @order.jenis_layanan_opti }}' === 'lingkungan';
-    var defaultHal = isLingkungan ? 'Biaya Penentuan Daya Biodegradasi' : 'Biaya OPTI';
+    var defaultHal = isLingkungan ? '-' : 'Biaya OPTI';
     var valHal = (elHal && elHal.value.trim()) ? elHal.value.trim() : ((elPerihal && elPerihal.value.trim()) ? elPerihal.value.trim() : defaultHal);
     ['d_sel_hal', 'd_perihal_l'].forEach(function(id) {
         var el = document.getElementById(id);
         if (el) el.textContent = valHal;
     });
 
-    var defaultLamp = isLingkungan ? '1 (satu) berkas' : '1 (satu) lembar';
+    var defaultLamp = isLingkungan ? '-' : '1 (satu) lembar';
     var valLampiran = (elLampiranTeks && elLampiranTeks.value.trim()) ? elLampiranTeks.value.trim() : defaultLamp;
     ['d_sel_lampiran', 'd_lampiran_l'].forEach(function(id) {
         var el = document.getElementById(id);
@@ -2275,40 +2284,34 @@ function syncLivePreview() {
     if (dLingPoinContainer) {
         var rawLingText = (elRuangLingkup && elRuangLingkup.value.trim()) ? elRuangLingkup.value.trim() : '';
         if (!rawLingText) {
-            rawLingText = "1. Pelaksanaan pekerjaan mengacu pada metode OECD 301D: Closed Bottle Test.\n" +
-                "2. Biaya pekerjaan tersebut adalah sebesar " + textRupiah + ",- (" + textTerbilang.toLowerCase() + ") untuk 1 sampel\n" +
-                "3. Waktu pelaksanaan selama 4 bulan dengan jadwal pelaksanaan seperti dalam lampiran.\n" +
-                "4. Biaya dan rincian pekerjaan terlampir, dengan ketentuan sebagai berikut:\n" +
-                "   a. Biaya pekerjaan ditagihkan dan dibayar melalui Virtual Account Mandiri.\n" +
-                "   b. Persetujuan terhadap biaya pekerjaan tersebut mohon disampaikan secara tertulis melalui fax atau e-mail.\n" +
-                "   c. Jadwal pelaksanaan pekerjaan akan disampaikan setelah pembayaran biaya pekerjaan dilakukan.\n" +
-                "   d. Dilarang memberi gratifikasi dalam bentuk apapun atas layanan jasa yang kami berikan, jika terdapat pemberian dan penerimaan gratifikasi mohon dapat dilaporkan ke : http://bbs.kemenperin.go.id/kontak-kami/pengaduan-gratifikasi.";
+            dLingPoinContainer.innerHTML = '';
+        } else {
+            var rawLinesLing = rawLingText.split(/\r?\n/);
+            var htmlLing = '';
+            rawLinesLing.forEach(function(line) {
+                var trimmed = line.trim();
+                if (!trimmed) return;
+
+                var mPoint = trimmed.match(/^(\d+)\.\s*(.*)/);
+                var mSub = trimmed.match(/^(\d+\)|[a-z]\)|\-|\*|\•)\s*(.*)/i);
+
+                if (mPoint) {
+                    htmlLing += '<div class="d-flex gap-2 mb-1 mt-1.5">' +
+                        '<span style="width: 18px; flex-shrink: 0; font-weight: bold;">' + mPoint[1] + '.</span>' +
+                        '<div style="text-align: justify;">' + escapeHtml(mPoint[2]) + '</div>' +
+                    '</div>';
+                } else if (mSub) {
+                    var bullet = mSub[1];
+                    htmlLing += '<div class="d-flex gap-2 mb-0.5 ms-4">' +
+                        '<span style="width: 20px; flex-shrink: 0; font-weight: 500;">' + bullet + '</span>' +
+                        '<div style="text-align: justify;">' + escapeHtml(mSub[2]) + '</div>' +
+                    '</div>';
+                } else {
+                    htmlLing += '<div class="mb-1" style="text-align: justify;">' + escapeHtml(trimmed) + '</div>';
+                }
+            });
+            dLingPoinContainer.innerHTML = htmlLing;
         }
-        var rawLinesLing = rawLingText.split(/\r?\n/);
-        var htmlLing = '';
-        rawLinesLing.forEach(function(line) {
-            var trimmed = line.trim();
-            if (!trimmed) return;
-
-            var mPoint = trimmed.match(/^(\d+)\.\s*(.*)/);
-            var mSub = trimmed.match(/^(\d+\)|[a-z]\)|\-|\*|\•)\s*(.*)/i);
-
-            if (mPoint) {
-                htmlLing += '<div class="d-flex gap-2 mb-1 mt-1.5">' +
-                    '<span style="width: 18px; flex-shrink: 0; font-weight: bold;">' + mPoint[1] + '.</span>' +
-                    '<div style="text-align: justify;">' + escapeHtml(mPoint[2]) + '</div>' +
-                '</div>';
-            } else if (mSub) {
-                var bullet = mSub[1];
-                htmlLing += '<div class="d-flex gap-2 mb-0.5 ms-4">' +
-                    '<span style="width: 20px; flex-shrink: 0; font-weight: 500;">' + bullet + '</span>' +
-                    '<div style="text-align: justify;">' + escapeHtml(mSub[2]) + '</div>' +
-                '</div>';
-            } else {
-                htmlLing += '<div class="mb-1" style="text-align: justify;">' + escapeHtml(trimmed) + '</div>';
-            }
-        });
-        dLingPoinContainer.innerHTML = htmlLing;
     }
 
     // 10. Penandatangan Pejabat BBSPJIS
