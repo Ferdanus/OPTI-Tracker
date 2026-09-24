@@ -1228,7 +1228,9 @@ $daftarPegawai = $arsipUser->find(
 
         // Paragraf Pembuka
         $judulKegiatan = !empty($order['judul_kegiatan']) ? $order['judul_kegiatan'] : (!empty($sp['perihal']) ? $sp['perihal'] : 'Layanan Jasa Optimalisasi Teknologi Industri (OPTI)');
-        $pdf->MultiCell(0, 4.2, 'Menanggapi permintaan Saudara perihal "' . $judulKegiatan . '", dengan ini kami informasikan rincian kegiatan dan penawaran biaya layanan sebagai berikut:', 0, 'J');
+        $mediaRaw = !empty($sp['permintaan_melalui']) ? $sp['permintaan_melalui'] : (!empty($order['permintaan_melalui']) ? $order['permintaan_melalui'] : 'email');
+        $mediaPhrase = self::formatMediaPermintaan($mediaRaw);
+        $pdf->MultiCell(0, 4.2, 'Menanggapi permintaan Saudara ' . $mediaPhrase . ' perihal "' . $judulKegiatan . '", dengan ini kami informasikan rincian kegiatan dan penawaran biaya layanan sebagai berikut:', 0, 'J');
         $pdf->Ln(1.2);
 
         // Naskah Poin Rincian Penawaran (1 Input Terpadu)
@@ -1466,7 +1468,9 @@ $daftarPegawai = $arsipUser->find(
         $pdf->Ln(3);
 
         // Paragraf Pembuka
-        $pdf->MultiCell(0, 4.2, 'Menanggapi permintaan Saudara perihal "' . $judulKegiatan . '", dengan ini kami informasikan sebagai berikut:', 0, 'J');
+        $mediaRaw = !empty($sp['permintaan_melalui']) ? $sp['permintaan_melalui'] : (!empty($order['permintaan_melalui']) ? $order['permintaan_melalui'] : 'email');
+        $mediaPhrase = self::formatMediaPermintaan($mediaRaw);
+        $pdf->MultiCell(0, 4.2, 'Menanggapi permintaan Saudara ' . $mediaPhrase . ' perihal "' . $judulKegiatan . '", dengan ini kami informasikan sebagai berikut:', 0, 'J');
         $pdf->Ln(1.5);
 
         // Naskah Poin Rincian Penawaran Lingkungan (Parsed Dinamis)
@@ -1532,6 +1536,28 @@ $daftarPegawai = $arsipUser->find(
         $pdf->Cell(70, 4.2, $signerLing, 0, 1, 'C');
 
         return $pdf;
+    }
+
+    /**
+     * Helper penyebutan media permintaan masuk pada naskah pembuka surat penawaran
+     */
+    public static function formatMediaPermintaan(?string $media): string
+    {
+        switch (strtolower(trim((string)$media))) {
+            case 'surat':
+                return 'melalui surat';
+            case 'telepon':
+            case 'whatsapp':
+            case 'wa':
+                return 'melalui telepon/WhatsApp';
+            case 'datang_langsung':
+                return 'secara langsung';
+            case 'pegawai_bbspjis':
+                return 'melalui Petugas Kemitraan';
+            case 'email':
+            default:
+                return 'melalui e-mail';
+        }
     }
 
     /**

@@ -1234,7 +1234,7 @@
 
                             <!-- Paragraf Pembuka -->
                             <div style="font-size: 9.5px; line-height: 1.45; text-align: justify; margin-bottom: 8px;">
-                                Menanggapi permintaan Saudara perihal "<span id="d_sel_judul_pembuka" class="fw-bold">{{ @order.judul_kegiatan }}</span>", dengan ini kami informasikan rincian kegiatan dan penawaran biaya layanan sebagai berikut:
+                                Menanggapi permintaan Saudara <span id="d_sel_media_pembuka">melalui e-mail</span> perihal "<span id="d_sel_judul_pembuka" class="fw-bold">{{ @order.judul_kegiatan }}</span>", dengan ini kami informasikan rincian kegiatan dan penawaran biaya layanan sebagai berikut:
                             </div>
 
                             <!-- Poin 1, 2, 3, 4 Naskah Surat BBSPJIS (Rendered Dinamis dari 1 Input) -->
@@ -1359,7 +1359,7 @@
                             </div>
 
                             <div style="font-size: 9.5px; line-height: 1.45; text-align: justify; margin-bottom: 8px;">
-                                Menanggapi permintaan Saudara perihal "<span id="d_judul_pembuka_l" class="fw-bold">{{ @order.judul_kegiatan }}</span>", dengan ini kami informasikan sebagai berikut:
+                                Menanggapi permintaan Saudara <span id="d_media_pembuka_l">melalui e-mail</span> perihal "<span id="d_judul_pembuka_l" class="fw-bold">{{ @order.judul_kegiatan }}</span>", dengan ini kami informasikan sebagai berikut:
                             </div>
 
                             <!-- Poin 1, 2, 3 Naskah Surat Lingkungan (Rendered Dinamis dari Editor) -->
@@ -1996,6 +1996,24 @@ function syncLivePreview() {
     ['d_perihal'].forEach(function(id) {
         var el = document.getElementById(id);
         if (el) el.textContent = valPerihal;
+    });
+
+    // 3b. Media Permintaan Masuk
+    var elMedia = document.getElementById('select_permintaan_melalui');
+    var valMedia = elMedia ? elMedia.value : 'email';
+    var textMedia = 'melalui e-mail';
+    if (valMedia === 'surat') {
+        textMedia = 'melalui surat';
+    } else if (valMedia === 'telepon') {
+        textMedia = 'melalui telepon/WhatsApp';
+    } else if (valMedia === 'datang_langsung') {
+        textMedia = 'secara langsung';
+    } else if (valMedia === 'pegawai_bbspjis') {
+        textMedia = 'melalui Petugas Kemitraan';
+    }
+    ['d_sel_media_pembuka', 'd_media_pembuka_l'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.textContent = textMedia;
     });
 
     // 4. Perusahaan
