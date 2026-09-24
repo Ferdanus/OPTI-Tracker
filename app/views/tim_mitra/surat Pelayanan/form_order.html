@@ -473,6 +473,40 @@
         max-width: 650px;
         box-sizing: border-box;
     }
+    /* Table Jadwal Gantt Lingkungan (18 Kolom Presisi agar Pas di Lembar A4) */
+    .table-jadwal-lingkungan {
+        width: 100% !important;
+        max-width: 100% !important;
+        table-layout: fixed !important;
+        border-collapse: collapse !important;
+        margin-bottom: 4px !important;
+        border: 1px solid #000 !important;
+    }
+    .table-jadwal-lingkungan th,
+    .table-jadwal-lingkungan td {
+        border: 1px solid #000 !important;
+        padding: 2px 1px !important;
+        text-align: center !important;
+        vertical-align: middle !important;
+        box-sizing: border-box !important;
+        font-size: 7px !important;
+        line-height: 1.15 !important;
+    }
+    .table-jadwal-lingkungan th {
+        background-color: #f8fafc !important;
+        font-weight: bold !important;
+    }
+    .table-jadwal-lingkungan .col-kegiatan {
+        text-align: left !important;
+        padding-left: 4px !important;
+        padding-right: 2px !important;
+        word-break: break-word !important;
+        white-space: normal !important;
+    }
+    .table-jadwal-lingkungan td.bg-warning,
+    .table-jadwal-lingkungan td.bar-active {
+        background-color: #fbbf24 !important;
+    }
     .doc-head {
         border-bottom: 3px double #000;
         padding-bottom: 6px;
@@ -1385,30 +1419,80 @@
                                 </ol>
 
                                 <div class="fw-bold mb-1">E.  JADWAL</div>
-                                <table class="table table-bordered table-sm text-center align-middle mb-1" style="font-size: 7.5px; border-color: #000;">
-                                    <thead>
-                                        <tr style="background: #f8fafc;">
-                                            <th rowspan="2" style="width: 25px;">No</th>
-                                            <th rowspan="2" style="text-align: left;">Kegiatan</th>
-                                            <th colspan="4">Bulan 1</th>
-                                            <th colspan="4">Bulan 2</th>
-                                            <th colspan="4">Bulan 3</th>
-                                            <th colspan="4">Bulan 4</th>
-                                        </tr>
-                                        <tr style="font-size: 7px;">
-                                            <th>1</th><th>2</th><th>3</th><th>4</th>
-                                            <th>1</th><th>2</th><th>3</th><th>4</th>
-                                            <th>1</th><th>2</th><th>3</th><th>4</th>
-                                            <th>1</th><th>2</th><th>3</th><th>4</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr><td>1</td><td style="text-align: left;">Persiapan alat dan bahan</td><td class="bg-warning"></td><td class="bg-warning"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                                        <tr><td>2</td><td style="text-align: left;">Persiapan media dan mikroba uji</td><td></td><td class="bg-warning"></td><td class="bg-warning"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                                        <tr><td>3</td><td style="text-align: left;">Pelaksanaan uji</td><td></td><td></td><td></td><td class="bg-warning"></td><td class="bg-warning"></td><td class="bg-warning"></td><td class="bg-warning"></td><td class="bg-warning"></td><td class="bg-warning"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                                        <tr><td>4</td><td style="text-align: left;">Pengolahan data dan pembuatan laporan</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="bg-warning"></td><td class="bg-warning"></td></tr>
-                                    </tbody>
-                                </table>
+                                <div style="width: 100%; overflow: hidden; margin-bottom: 4px;">
+                                    <table class="table-jadwal-lingkungan mb-1">
+                                        <colgroup>
+                                            <col style="width: 5%;">
+                                            <col style="width: 35%;">
+                                            <col style="width: 3.75%;">
+                                            <col style="width: 3.75%;">
+                                            <col style="width: 3.75%;">
+                                            <col style="width: 3.75%;">
+                                            <col style="width: 3.75%;">
+                                            <col style="width: 3.75%;">
+                                            <col style="width: 3.75%;">
+                                            <col style="width: 3.75%;">
+                                            <col style="width: 3.75%;">
+                                            <col style="width: 3.75%;">
+                                            <col style="width: 3.75%;">
+                                            <col style="width: 3.75%;">
+                                            <col style="width: 3.75%;">
+                                            <col style="width: 3.75%;">
+                                            <col style="width: 3.75%;">
+                                            <col style="width: 3.75%;">
+                                        </colgroup>
+                                        <thead>
+                                            <tr>
+                                                <th rowspan="2">No</th>
+                                                <th rowspan="2" class="col-kegiatan" style="text-align: center !important;">Kegiatan</th>
+                                                <th colspan="4">Bulan 1</th>
+                                                <th colspan="4">Bulan 2</th>
+                                                <th colspan="4">Bulan 3</th>
+                                                <th colspan="4">Bulan 4</th>
+                                            </tr>
+                                            <tr style="font-size: 6.5px;">
+                                                <th>1</th><th>2</th><th>3</th><th>4</th>
+                                                <th>1</th><th>2</th><th>3</th><th>4</th>
+                                                <th>1</th><th>2</th><th>3</th><th>4</th>
+                                                <th>1</th><th>2</th><th>3</th><th>4</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>1</td>
+                                                <td class="col-kegiatan">Persiapan alat dan bahan</td>
+                                                <td class="bar-active"></td><td class="bar-active"></td><td></td><td></td>
+                                                <td></td><td></td><td></td><td></td>
+                                                <td></td><td></td><td></td><td></td>
+                                                <td></td><td></td><td></td><td></td>
+                                            </tr>
+                                            <tr>
+                                                <td>2</td>
+                                                <td class="col-kegiatan">Persiapan media dan mikroba uji</td>
+                                                <td></td><td class="bar-active"></td><td class="bar-active"></td><td></td>
+                                                <td></td><td></td><td></td><td></td>
+                                                <td></td><td></td><td></td><td></td>
+                                                <td></td><td></td><td></td><td></td>
+                                            </tr>
+                                            <tr>
+                                                <td>3</td>
+                                                <td class="col-kegiatan">Pelaksanaan uji</td>
+                                                <td></td><td></td><td></td><td class="bar-active"></td>
+                                                <td class="bar-active"></td><td class="bar-active"></td><td class="bar-active"></td><td class="bar-active"></td>
+                                                <td class="bar-active"></td><td></td><td></td><td></td>
+                                                <td></td><td></td><td></td><td></td>
+                                            </tr>
+                                            <tr>
+                                                <td>4</td>
+                                                <td class="col-kegiatan">Pengolahan data dan pembuatan laporan</td>
+                                                <td></td><td></td><td></td><td></td>
+                                                <td></td><td></td><td></td><td></td>
+                                                <td></td><td></td><td></td><td></td>
+                                                <td></td><td></td><td class="bar-active"></td><td class="bar-active"></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
                                 <div class="fst-italic text-muted" style="font-size: 7.5px;">*Estimasi waktu ini bersifat minimal,waktu pelaksanaan bisa lebih lama apabila ada kondisi-kondisi tertentu yang terjadi.</div>
                             </div>
                         </div>
