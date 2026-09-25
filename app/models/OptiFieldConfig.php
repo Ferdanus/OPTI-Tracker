@@ -68,4 +68,35 @@ class OptiFieldConfig extends \DB\SQL\Mapper {
         );
         return true;
     }
+
+    /**
+     * Cek apakah pengeditan data yang telah dikirim / didisposisi diizinkan untuk non-superadmin
+     * Default: 1 (ON / Diizinkan). Jika 0 (OFF / Terkunci), hanya Superadmin yang boleh mengedit data yang sudah terkirim / disposisi.
+     */
+    public function isAllowEditSubmittedData(): bool {
+        $res = $this->db->exec("SELECT is_visible FROM opti_field_config WHERE field_name = 'allow_edit_submitted_data' LIMIT 1");
+        if (empty($res)) {
+            return true; // Default ON (Bebas Edit)
+        }
+        return (bool)$res[0]['is_visible'];
+    }
+
+    /**
+     * Toggle status izin edit data yang telah dikirim / disposisi
+     */
+    public function toggleAllowEditSubmittedData(bool $enabled): bool {
+        $exists = $this->db->exec("SELECT id FROM opti_field_config WHERE field_name = 'allow_edit_submitted_data' LIMIT 1");
+        if (empty($exists)) {
+            $this->db->exec(
+                "INSERT INTO opti_field_config (jenis_layanan_opti, entity, field_name, field_label, is_visible, is_required, default_value, mask_for_privacy) VALUES ('global', 'order', 'allow_edit_submitted_data', 'Izin Edit Data yang Telah Dikirim / Disposisi', ?, 0, NULL, 0)",
+                array(1 => $enabled ? 1 : 0)
+            );
+        } else {
+            $this->db->exec(
+                "UPDATE opti_field_config SET is_visible = ?, updated_at = NOW() WHERE field_name = 'allow_edit_submitted_data'",
+                array(1 => $enabled ? 1 : 0)
+            );
+        }
+        return true;
+    }
 }

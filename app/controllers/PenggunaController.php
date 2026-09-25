@@ -14,51 +14,57 @@ class PenggunaController extends Controller {
         return array(
             'superadmin' => array(
                 'label' => 'Super Administrator',
-                'badge_class' => 'text-white',
-                'badge_style' => 'background-color: #881337 !important; border: 1px solid #700f2b;',
-                'icon' => 'bi-shield-check',
+                'badge_class' => 'role-badge role-badge-superadmin',
+                'badge_style' => '',
+                'icon' => 'bi-shield-fill-check',
                 'category' => 'admin',
                 'desc' => 'Akses penuh ke seluruh modul dan konfigurasi sistem'
             ),
             'ketua_tim_selulosa' => array(
                 'label' => 'Ketua Tim Selulosa',
-                'badge_class' => 'bg-danger-subtle text-danger border border-danger-subtle',
-                'icon' => 'bi-person-gear',
+                'badge_class' => 'role-badge role-badge-katim-selulosa',
+                'badge_style' => '',
+                'icon' => 'bi-award-fill',
                 'category' => 'manajemen',
                 'desc' => 'Disposisi & penugasan teknis layanan Selulosa'
             ),
             'ketua_tim_lingkungan' => array(
                 'label' => 'Ketua Tim Lingkungan',
-                'badge_class' => 'bg-danger-subtle text-danger border border-danger-subtle',
-                'icon' => 'bi-person-gear',
+                'badge_class' => 'role-badge role-badge-katim-lingkungan',
+                'badge_style' => '',
+                'icon' => 'bi-award-fill',
                 'category' => 'manajemen',
                 'desc' => 'Disposisi & penugasan teknis layanan Lingkungan'
             ),
             'tim_kerja_selulosa' => array(
                 'label' => 'Tim Kerja Selulosa',
-                'badge_class' => 'bg-info-subtle text-info-emphasis border border-info-subtle',
+                'badge_class' => 'role-badge role-badge-tk-selulosa',
+                'badge_style' => '',
                 'icon' => 'bi-eyedropper',
                 'category' => 'teknis',
                 'desc' => 'Pelaksana pengujian laboratorium Selulosa'
             ),
             'tim_kerja_lingkungan' => array(
                 'label' => 'Tim Kerja Lingkungan',
-                'badge_class' => 'bg-success-subtle text-success border border-success-subtle',
-                'icon' => 'bi-flask',
+                'badge_class' => 'role-badge role-badge-tk-lingkungan',
+                'badge_style' => '',
+                'icon' => 'bi-flask-fill',
                 'category' => 'teknis',
                 'desc' => 'Pelaksana analisis pengujian laboratorium Lingkungan'
             ),
             'tim_mitra_industri' => array(
                 'label' => 'Tim Mitra Industri',
-                'badge_class' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle',
-                'icon' => 'bi-briefcase',
+                'badge_class' => 'role-badge role-badge-mitra',
+                'badge_style' => '',
+                'icon' => 'bi-briefcase-fill',
                 'category' => 'manajemen',
                 'desc' => 'Penerimaan order dan administrasi klien'
             ),
             'keuangan' => array(
                 'label' => 'Tim Keuangan',
-                'badge_class' => 'bg-primary-subtle text-primary border border-primary-subtle',
-                'icon' => 'bi-cash-stack',
+                'badge_class' => 'role-badge role-badge-keuangan',
+                'badge_style' => '',
+                'icon' => 'bi-wallet2',
                 'category' => 'manajemen',
                 'desc' => 'Verifikasi pembayaran'
             )
@@ -396,6 +402,19 @@ class PenggunaController extends Controller {
      * Helper pemetaan Role di Sistem ke Label dan Badge Color
      */
     public static function resolveRoleMeta(int $id, string $roleKey): array {
+        $roleAliases = array(
+            'admin_order' => 'tim_mitra_industri',
+            'tim_mitra' => 'tim_mitra_industri',
+            'katim_selulosa' => 'ketua_tim_selulosa',
+            'katim_lingkungan' => 'ketua_tim_lingkungan',
+            'tk_selulosa' => 'tim_kerja_selulosa',
+            'tk_lingkungan' => 'tim_kerja_lingkungan'
+        );
+
+        if (isset($roleAliases[$roleKey])) {
+            $roleKey = $roleAliases[$roleKey];
+        }
+
         $roles = self::getRoleOptions();
         if (isset($roles[$roleKey])) {
             $meta = $roles[$roleKey];
@@ -405,7 +424,7 @@ class PenggunaController extends Controller {
 
         return array(
             'label' => !empty($roleKey) ? ucwords(str_replace('_', ' ', $roleKey)) : 'Pengguna Biasa (View Only)',
-            'badge_class' => 'bg-light text-secondary border',
+            'badge_class' => 'role-badge role-badge-default',
             'badge_style' => '',
             'icon' => 'bi-person',
             'category' => 'manajemen',

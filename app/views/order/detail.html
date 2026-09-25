@@ -953,7 +953,7 @@
                             <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-0.5 small fw-bold">1</span>
                             <span>Profil &amp; Asal Surat Permohonan</span>
                         </h6>
-                        <button type="button" class="btn btn-sm btn-outline-primary py-0.5 px-2 d-inline-flex align-items-center gap-1 shadow-xs fw-semibold rounded-2 flex-shrink-0" data-bs-toggle="modal" data-bs-target="#modalEditProfilPelanggan" title="Koreksi / Edit Data Pelanggan & Asal Surat">
+                        <button type="button" class="btn btn-sm btn-outline-primary py-0.5 px-2 d-inline-flex align-items-center gap-1 shadow-xs fw-semibold rounded-2 flex-shrink-0" data-bs-toggle="modal" data-bs-target="#modalEditProfilPelanggan" onclick="triggerStageRead(1)" title="Koreksi / Edit Data Pelanggan & Asal Surat">
                             <i class="bi bi-pencil-square"></i>
                             <span class="small">Edit</span>
                         </button>
@@ -962,9 +962,7 @@
                         <check if="{{ @audit_stages[1].waktu_kirim }}">
                             <span class="me-3">Masuk: <span class="text-dark fw-medium">{{ date('d M Y', strtotime(@audit_stages[1].waktu_kirim)) }}</span></span>
                         </check>
-                        <check if="{{ @audit_stages[1].waktu_dibaca }}">
-                            <span>Dibaca: <span class="text-dark fw-medium">{{ date('d M Y, H:i', strtotime(@audit_stages[1].waktu_dibaca)) }}</span> <span class="text-secondary text-nowrap">({{ @audit_stages[1].dibaca_nama ?: @audit_stages[1].dibaca_role }})</span></span>
-                        </check>
+                        <span id="audit-dibaca-stage-1" class="audit-dibaca-stage-1 {{ !@audit_stages[1].waktu_dibaca ? 'd-none' : '' }}">Dibaca: <span class="text-dark fw-medium audit-dibaca-time">{{ @audit_stages[1].waktu_dibaca ? date('d M Y, H:i', strtotime(@audit_stages[1].waktu_dibaca)) : '' }}</span> <span class="text-secondary text-nowrap audit-dibaca-name">({{ @audit_stages[1].dibaca_nama ?: @audit_stages[1].dibaca_role }})</span></span>
                     </div>
                 </div>
                 <div class="p-3">
@@ -1089,9 +1087,7 @@
                             <check if="{{ @audit_stages[2].waktu_kirim }}">
                                 <span class="me-3">Dikirim: <span class="text-dark fw-medium">{{ date('d M Y, H:i', strtotime(@audit_stages[2].waktu_kirim)) }}</span> <span class="text-secondary text-nowrap">({{ @audit_stages[2].pengirim_nama ?: @audit_stages[2].pengirim_role }})</span></span>
                             </check>
-                            <check if="{{ @audit_stages[2].waktu_dibaca }}">
-                                <span>Dibaca: <span class="text-dark fw-medium">{{ date('d M Y, H:i', strtotime(@audit_stages[2].waktu_dibaca)) }}</span> <span class="text-secondary text-nowrap">({{ @audit_stages[2].dibaca_nama ?: @audit_stages[2].dibaca_role }})</span></span>
-                            </check>
+                            <span id="audit-dibaca-stage-2" class="audit-dibaca-stage-2 {{ !@audit_stages[2].waktu_dibaca ? 'd-none' : '' }}">Dibaca: <span class="text-dark fw-medium audit-dibaca-time">{{ @audit_stages[2].waktu_dibaca ? date('d M Y, H:i', strtotime(@audit_stages[2].waktu_dibaca)) : '' }}</span> <span class="text-secondary text-nowrap audit-dibaca-name">({{ @audit_stages[2].dibaca_nama ?: @audit_stages[2].dibaca_role }})</span></span>
                         </div>
                     </div>
                     <check if="{{ @order.status == 'draft_disimpan' }}">
@@ -1120,12 +1116,12 @@
                                     <p class="small text-muted mb-0">Formulir pelayanan belum diteruskan ke Ketua Tim. Silakan lengkapi atau ubah formulir dan klik "Kirim ke Ketua Tim" agar tahap kaji kelayakan terbuka.</p>
                                 </div>
                                 <check if="{{ @is_admin_order || @is_superadmin }}">
-                                    <a href="{{ @BASE }}/order/{{ @order.id }}/form-pelayanan" class="btn btn-primary btn-sm px-4 fw-bold shadow-sm">
-                                        <i class="bi bi-pencil-square me-1"></i> Lanjutkan Edit &amp; Kirim Formulir
+                                    <a href="{{ @BASE }}/order/{{ @order.id }}/form-pelayanan" class="btn btn-primary btn-sm px-4 fw-bold shadow-sm" onclick="triggerStageRead(2)">
+                                        <i class="bi bi-send-fill me-1"></i> Lanjutkan Edit &amp; Kirim Formulir
                                     </a>
                                 </check>
                                 <check if="{{ !@is_admin_order && !@is_superadmin }}">
-                                    <a href="{{ @BASE }}/order/{{ @order.id }}/form-pelayanan" class="btn btn-outline-primary btn-sm px-3 fw-semibold shadow-xs">
+                                    <a href="{{ @BASE }}/order/{{ @order.id }}/form-pelayanan" class="btn btn-outline-primary btn-sm px-3 fw-semibold shadow-xs" onclick="triggerStageRead(2)">
                                         <i class="bi bi-eye me-1"></i> Lihat Draf Formulir
                                     </a>
                                 </check>
@@ -1141,12 +1137,12 @@
                                     <p class="small text-muted mb-0">Silakan lengkapi formulir spesifikasi layanan, pilih divisi OPTI pelaksana, dan kirimkan ke Ketua Tim.</p>
                                 </div>
                                 <check if="{{ @is_admin_order || @is_superadmin }}">
-                                    <a href="{{ @BASE }}/order/{{ @order.id }}/form-pelayanan" class="btn btn-primary btn-sm px-4 fw-bold shadow-sm">
+                                    <a href="{{ @BASE }}/order/{{ @order.id }}/form-pelayanan" class="btn btn-primary btn-sm px-4 fw-bold shadow-sm" onclick="triggerStageRead(2)">
                                         <i class="bi bi-pencil-square me-1"></i> Isi Formulir Pelayanan Jasa
                                     </a>
                                 </check>
                                 <check if="{{ !@is_admin_order && !@is_superadmin }}">
-                                    <a href="{{ @BASE }}/order/{{ @order.id }}/form-pelayanan" class="btn btn-outline-primary btn-sm px-3 fw-semibold shadow-xs">
+                                    <a href="{{ @BASE }}/order/{{ @order.id }}/form-pelayanan" class="btn btn-outline-primary btn-sm px-3 fw-semibold shadow-xs" onclick="triggerStageRead(2)">
                                         <i class="bi bi-eye me-1"></i> Lihat Formulir (Read-Only)
                                     </a>
                                 </check>
@@ -1172,12 +1168,12 @@
                                     </div>
                                 </div>
                                 <check if="{{ @is_admin_order || @is_superadmin }}">
-                                    <a href="{{ @BASE }}/order/{{ @order.id }}/form-pelayanan" class="btn btn-white btn-sm border fw-semibold shadow-sm text-secondary">
+                                    <a href="{{ @BASE }}/order/{{ @order.id }}/form-pelayanan" class="btn btn-white btn-sm border fw-semibold shadow-sm text-secondary" onclick="triggerStageRead(2)">
                                         <i class="bi bi-pencil me-1"></i> Ubah Formulir
                                     </a>
                                 </check>
                                 <check if="{{ !@is_admin_order && !@is_superadmin }}">
-                                    <a href="{{ @BASE }}/order/{{ @order.id }}/form-pelayanan" class="btn btn-white btn-sm border fw-semibold shadow-sm text-secondary">
+                                    <a href="{{ @BASE }}/order/{{ @order.id }}/form-pelayanan" class="btn btn-white btn-sm border fw-semibold shadow-sm text-secondary" onclick="triggerStageRead(2)">
                                         <i class="bi bi-eye me-1"></i> Lihat Formulir
                                     </a>
                                 </check>
@@ -1224,9 +1220,7 @@
                             <check if="{{ @audit_stages[3].waktu_kirim }}">
                                 <span class="me-3">Ditetapkan: <span class="text-dark fw-medium">{{ date('d M Y, H:i', strtotime(@audit_stages[3].waktu_kirim)) }}</span> <span class="text-secondary text-nowrap">({{ @audit_stages[3].pengirim_nama ?: @audit_stages[3].pengirim_role }})</span></span>
                             </check>
-                            <check if="{{ @audit_stages[3].waktu_dibaca }}">
-                                <span>Dibaca: <span class="text-dark fw-medium">{{ date('d M Y, H:i', strtotime(@audit_stages[3].waktu_dibaca)) }}</span> <span class="text-secondary text-nowrap">({{ @audit_stages[3].dibaca_nama ?: @audit_stages[3].dibaca_role }})</span></span>
-                            </check>
+                            <span id="audit-dibaca-stage-3" class="audit-dibaca-stage-3 {{ !@audit_stages[3].waktu_dibaca ? 'd-none' : '' }}">Dibaca: <span class="text-dark fw-medium audit-dibaca-time">{{ @audit_stages[3].waktu_dibaca ? date('d M Y, H:i', strtotime(@audit_stages[3].waktu_dibaca)) : '' }}</span> <span class="text-secondary text-nowrap audit-dibaca-name">({{ @audit_stages[3].dibaca_nama ?: @audit_stages[3].dibaca_role }})</span></span>
                         </div>
                     </div>
                     <check if="{{ !@is_form_pelayanan_done }}">
@@ -1275,12 +1269,12 @@
                                         </div>
                                     </div>
                                     <check if="{{ @is_ketua_tim || @is_superadmin }}">
-                                        <a href="{{ @BASE }}/order/{{ @order.id }}/tinjauan" class="btn btn-warning btn-sm px-4 fw-bold shadow-xs">
-                                            <i class="bi bi-pencil-square me-1"></i> Lanjutkan &amp; Tetapkan Keputusan
+                                        <a href="{{ @BASE }}/order/{{ @order.id }}/tinjauan" class="btn btn-warning btn-sm px-4 fw-bold shadow-xs" onclick="triggerStageRead(3)">
+                                            <i class="bi bi-send-fill me-1"></i> Lanjutkan &amp; Tetapkan Keputusan
                                         </a>
                                     </check>
                                     <check if="{{ !@is_ketua_tim && !@is_superadmin }}">
-                                        <a href="{{ @BASE }}/order/{{ @order.id }}/tinjauan" class="btn btn-outline-secondary btn-sm px-3 fw-semibold">
+                                        <a href="{{ @BASE }}/order/{{ @order.id }}/tinjauan" class="btn btn-outline-secondary btn-sm px-3 fw-semibold" onclick="triggerStageRead(3)">
                                             <i class="bi bi-eye me-1"></i> Lihat Draf (Read-Only)
                                         </a>
                                     </check>
@@ -1361,12 +1355,12 @@
                             <div class="d-flex justify-content-between align-items-center pt-2 border-top small text-muted">
                                 <div>Ditinjau oleh: <strong>{{ @tinjauan.peninjau_nama }}</strong> &bull; {{ date('d M Y H:i', strtotime(@tinjauan.tanggal_tinjauan)) }}</div>
                                 <check if="{{ @is_ketua_tim || @is_superadmin }}">
-                                    <a href="{{ @BASE }}/order/{{ @order.id }}/tinjauan" class="btn btn-outline-primary btn-sm fw-semibold">
+                                    <a href="{{ @BASE }}/order/{{ @order.id }}/tinjauan" class="btn btn-outline-primary btn-sm fw-semibold" onclick="triggerStageRead(3)">
                                         <i class="bi bi-pencil me-1"></i> {{ @tinjauan.is_draft ? 'Lanjutkan Kaji Ulang' : 'Edit Kaji Ulang Kelayakan' }}
                                     </a>
                                 </check>
                                 <check if="{{ !@is_ketua_tim && !@is_superadmin }}">
-                                    <a href="{{ @BASE }}/order/{{ @order.id }}/tinjauan" class="btn btn-outline-secondary btn-sm fw-semibold">
+                                    <a href="{{ @BASE }}/order/{{ @order.id }}/tinjauan" class="btn btn-outline-secondary btn-sm fw-semibold" onclick="triggerStageRead(3)">
                                         <i class="bi bi-eye me-1"></i> Lihat Lembar Kaji Ulang
                                     </a>
                                 </check>
@@ -1378,12 +1372,12 @@
                                 <h6 class="fw-bold text-dark mb-1">Kaji Ulang Kelayakan Teknis Belum Dilakukan</h6>
                                 <p class="text-muted small mb-3">Ketua Tim OPTI perlu mengevaluasi ketersediaan personil, mesin uji, reagen, dan menunjuk PIC Proposal.</p>
                                 <check if="{{ @is_ketua_tim || @is_superadmin }}">
-                                    <a href="{{ @BASE }}/order/{{ @order.id }}/tinjauan" class="btn btn-primary btn-sm px-4 fw-bold shadow-sm">
+                                    <a href="{{ @BASE }}/order/{{ @order.id }}/tinjauan" class="btn btn-primary btn-sm px-4 fw-bold shadow-sm" onclick="triggerStageRead(3)">
                                         <i class="bi bi-check2-circle me-1"></i> Lakukan Kaji Ulang &amp; Tunjuk PIC
                                     </a>
                                 </check>
                                 <check if="{{ !@is_ketua_tim && !@is_superadmin }}">
-                                    <a href="{{ @BASE }}/order/{{ @order.id }}/tinjauan" class="btn btn-outline-secondary btn-sm px-3 fw-semibold">
+                                    <a href="{{ @BASE }}/order/{{ @order.id }}/tinjauan" class="btn btn-outline-secondary btn-sm px-3 fw-semibold" onclick="triggerStageRead(3)">
                                         <i class="bi bi-eye me-1"></i> Buka Lembar Kaji Ulang (Read-Only)
                                     </a>
                                 </check>
@@ -1407,9 +1401,7 @@
                                 <i class="bi bi-calculator-fill text-primary fs-5"></i> Parameter Uji &amp; Rincian Tarif Penawaran
                             </h6>
                             <div class="d-flex align-items-center flex-wrap gap-2 text-muted small mt-1" style="font-size: 0.72rem; line-height: 1.4; column-gap: 16px; row-gap: 4px;">
-                                <check if="{{ @audit_stages[4].waktu_dibaca }}">
-                                    <span class="me-3">Dibaca: <span class="text-dark fw-medium">{{ date('d M Y, H:i', strtotime(@audit_stages[4].waktu_dibaca)) }}</span> <span class="text-secondary text-nowrap">({{ @audit_stages[4].dibaca_nama ?: @audit_stages[4].dibaca_role }})</span></span>
-                                </check>
+                                <span class="audit-dibaca-stage-4 me-3 {{ !@audit_stages[4].waktu_dibaca ? 'd-none' : '' }}">Dibaca: <span class="text-dark fw-medium audit-dibaca-time">{{ @audit_stages[4].waktu_dibaca ? date('d M Y, H:i', strtotime(@audit_stages[4].waktu_dibaca)) : '' }}</span> <span class="text-secondary text-nowrap audit-dibaca-name">({{ @audit_stages[4].dibaca_nama ?: @audit_stages[4].dibaca_role }})</span></span>
                                 <check if="{{ @audit_stages[4].waktu_kirim }}">
                                     <span class="me-3">Diproses: <span class="text-dark fw-medium">{{ date('d M Y, H:i', strtotime(@audit_stages[4].waktu_kirim)) }}</span> <span class="text-secondary text-nowrap">({{ @audit_stages[4].pengirim_nama ?: @audit_stages[4].pengirim_role }})</span></span>
                                 </check>
@@ -1424,9 +1416,7 @@
                                 <i class="bi bi-file-earmark-ruled-fill text-primary fs-5"></i> Ruang Kerja Proposal Teknis &amp; Biaya
                             </h6>
                             <div class="d-flex align-items-center flex-wrap gap-2 text-muted small mt-1" style="font-size: 0.72rem; line-height: 1.4; column-gap: 16px; row-gap: 4px;">
-                                <check if="{{ @audit_stages[4].waktu_dibaca }}">
-                                    <span class="me-3">Dibaca: <span class="text-dark fw-medium">{{ date('d M Y, H:i', strtotime(@audit_stages[4].waktu_dibaca)) }}</span> <span class="text-secondary text-nowrap">({{ @audit_stages[4].dibaca_nama ?: @audit_stages[4].dibaca_role }})</span></span>
-                                </check>
+                                <span class="audit-dibaca-stage-4 me-3 {{ !@audit_stages[4].waktu_dibaca ? 'd-none' : '' }}">Dibaca: <span class="text-dark fw-medium audit-dibaca-time">{{ @audit_stages[4].waktu_dibaca ? date('d M Y, H:i', strtotime(@audit_stages[4].waktu_dibaca)) : '' }}</span> <span class="text-secondary text-nowrap audit-dibaca-name">({{ @audit_stages[4].dibaca_nama ?: @audit_stages[4].dibaca_role }})</span></span>
                                 <check if="{{ @audit_stages[4].waktu_kirim }}">
                                     <span class="me-3">Diajukan: <span class="text-dark fw-medium">{{ date('d M Y, H:i', strtotime(@audit_stages[4].waktu_kirim)) }}</span> <span class="text-secondary text-nowrap">({{ @audit_stages[4].pengirim_nama ?: @audit_stages[4].pengirim_role }})</span></span>
                                 </check>
@@ -1500,24 +1490,24 @@
                                 </div>
                                 <div class="d-flex align-items-center gap-2 flex-wrap flex-shrink-0">
                                     <check if="{{ @order.jenis_layanan_opti == 'lingkungan' }}">
-                                        <a href="{{ @BASE }}/order/{{ @order.id }}/biaya-lingkungan" class="btn btn-primary btn-sm px-3.5 py-2 fw-semibold d-inline-flex align-items-center gap-1.5 text-nowrap shadow-xs">
+                                        <a href="{{ @BASE }}/order/{{ @order.id }}/biaya-lingkungan" class="btn btn-primary btn-sm px-3.5 py-2 fw-semibold d-inline-flex align-items-center gap-1.5 text-nowrap shadow-xs" onclick="triggerStageRead(4)">
                                             <i class="bi {{ !empty(@kalkulasi_lingkungan) ? 'bi-pencil-square' : 'bi-plus-circle' }}"></i> {{ !empty(@kalkulasi_lingkungan) ? 'Kelola Tarif &amp; Parameter' : 'Susun Parameter &amp; Tarif' }}
                                         </a>
                                         <check if="{{ !@penawaran && !empty(@kalkulasi_lingkungan) && count(@kalkulasi_lingkungan) > 0 }}">
-                                            <a href="{{ @BASE }}/order/{{ @order.id }}/penawaran/buat" class="btn btn-outline-primary btn-sm px-3.5 py-2 fw-semibold d-inline-flex align-items-center gap-1.5 text-nowrap shadow-xs">
+                                            <a href="{{ @BASE }}/order/{{ @order.id }}/penawaran/buat" class="btn btn-outline-primary btn-sm px-3.5 py-2 fw-semibold d-inline-flex align-items-center gap-1.5 text-nowrap shadow-xs" onclick="triggerStageRead(5)">
                                                 <i class="bi bi-file-earmark-plus"></i> Terbitkan Penawaran
                                             </a>
                                         </check>
                                     </check>
                                     <check if="{{ @order.jenis_layanan_opti == 'selulosa' }}">
-                                        <a href="{{ @BASE }}/order/{{ @order.id }}/proposal" class="btn btn-danger btn-sm px-3.5 py-2 fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5 text-nowrap">
+                                        <a href="{{ @BASE }}/order/{{ @order.id }}/proposal" class="btn btn-danger btn-sm px-3.5 py-2 fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5 text-nowrap" onclick="triggerStageRead(4)">
                                             <i class="bi bi-file-earmark-text"></i> Ruang Proposal
                                         </a>
-                                        <a href="{{ @BASE }}/order/{{ @order.id }}/rancop-selulosa" class="btn btn-outline-danger btn-sm px-3.5 py-2 fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5 text-nowrap">
+                                        <a href="{{ @BASE }}/order/{{ @order.id }}/rancop-selulosa" class="btn btn-outline-danger btn-sm px-3.5 py-2 fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5 text-nowrap" onclick="triggerStageRead(4)">
                                             <i class="bi bi-diagram-3"></i> Skenario &amp; Rancop
                                         </a>
                                         <check if="{{ !@penawaran && @order.status_proposal_biaya == 'siap_penawaran' && @is_proposal_approved }}">
-                                            <a href="{{ @BASE }}/order/{{ @order.id }}/penawaran/buat" class="btn btn-success btn-sm px-3.5 py-2 fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5 text-nowrap">
+                                            <a href="{{ @BASE }}/order/{{ @order.id }}/penawaran/buat" class="btn btn-success btn-sm px-3.5 py-2 fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5 text-nowrap" onclick="triggerStageRead(5)">
                                                 <i class="bi bi-file-earmark-plus"></i> Terbitkan Penawaran
                                             </a>
                                         </check>
@@ -1537,7 +1527,7 @@
                                         </div>
                                         <div class="d-flex align-items-center gap-2">
                                             <span class="badge bg-light text-dark border font-monospace">{{ count(@kalkulasi_lingkungan) }} Parameter</span>
-                                            <a href="{{ @BASE }}/order/{{ @order.id }}/biaya-lingkungan" class="btn btn-sm btn-outline-secondary py-0 px-2 small" style="font-size: 0.75rem;">
+                                            <a href="{{ @BASE }}/order/{{ @order.id }}/biaya-lingkungan" class="btn btn-sm btn-outline-secondary py-0 px-2 small" style="font-size: 0.75rem;" onclick="triggerStageRead(4)">
                                                 <i class="bi bi-pencil me-1"></i> Ubah
                                             </a>
                                         </div>
@@ -1634,7 +1624,7 @@
                                             </a>
                                         </check>
                                         <check if="{{ @user_id == @order.pic_proposal_id || @is_tim_kerja || @is_ketua_tim || @is_pejabat || @is_superadmin }}">
-                                            <button type="button" class="btn btn-sm btn-outline-secondary px-2.5 py-1" onclick="document.getElementById('uploadFileBox').classList.toggle('d-none')">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary px-2.5 py-1 fw-semibold shadow-xs" onclick="document.getElementById('uploadFileBox').classList.toggle('d-none')">
                                                 <i class="bi bi-cloud-arrow-up me-1"></i> {{ @proposal.file_proposal ? 'Ganti File' : 'Upload File' }}
                                             </button>
                                         </check>
@@ -1643,7 +1633,7 @@
                                 
                                 <check if="{{ @user_id == @order.pic_proposal_id || @is_tim_kerja || @is_ketua_tim || @is_pejabat || @is_superadmin }}">
                                     <div id="uploadFileBox" class="d-none pt-2.5 mt-2.5 border-top">
-                                        <form action="{{ @BASE }}/order/{{ @order.id }}/proposal/upload" method="POST" enctype="multipart/form-data" class="d-flex gap-2 align-items-center">
+                                        <form action="{{ @BASE }}/order/{{ @order.id }}/proposal/upload" method="POST" enctype="multipart/form-data" class="d-flex gap-2 align-items-center" onsubmit="var b=this.querySelector('button[type=submit]'); if(b){b.disabled=true; b.innerHTML='<span class=\'spinner-border spinner-border-sm me-1\'></span> Menyimpan...';}">
                                             <input type="hidden" name="redirect" value="detail">
                                             <input type="file" name="file_proposal" class="form-control form-control-sm" accept=".pdf,.doc,.docx,.xls,.xlsx" required>
                                             <button type="submit" class="btn btn-primary btn-sm text-nowrap fw-semibold">
@@ -1675,7 +1665,7 @@
                                                     <strong class="d-block text-dark mb-1">Prasyarat Pengajuan Proposal Belum Lengkap</strong>
                                                     <span class="text-secondary d-block mb-2">Untuk mengajukan ke Ketua Tim dan menerbitkan penawaran resmi, Anda wajib melengkapi rincian proposal (ruang lingkup &amp; estimasi biaya) serta mengunggah berkas proposal.</span>
                                                     <div class="d-flex align-items-center gap-2 flex-wrap">
-                                                        <a href="{{ @BASE }}/order/{{ @order.id }}/proposal" class="btn btn-warning btn-sm fw-bold px-3 shadow-xs">
+                                                        <a href="{{ @BASE }}/order/{{ @order.id }}/proposal" class="btn btn-warning btn-sm fw-bold px-3 shadow-xs" onclick="triggerStageRead(4)">
                                                             <i class="bi bi-pencil-square me-1"></i> Lengkapi Proposal &amp; Upload Berkas
                                                         </a>
                                                         <span class="text-muted small">
@@ -1706,7 +1696,7 @@
                                             <div class="d-flex justify-content-end">
                                                 <form action="{{ @BASE }}/order/{{ @order.id }}/proposal/kirim-katim" method="POST">
                                                     <input type="hidden" name="redirect" value="detail">
-                                                    <button type="submit" class="btn btn-primary btn-sm fw-bold px-4 shadow-sm">
+                                                    <button type="button" class="btn btn-primary btn-sm fw-bold px-4 shadow-sm" onclick="triggerStageRead(4); confirmKirimKatimProposal(this)">
                                                         <i class="bi bi-send-fill me-1"></i> Kirim
                                                     </button>
                                                 </form>
@@ -1777,7 +1767,7 @@
                                     <span>{{ @order.jenis_layanan_opti == 'lingkungan' ? 'Rincian Parameter & Tarif SNI telah Disetujui' : 'Proposal Teknis Disetujui Ketua Tim' }} &bull; Siap diterbitkan Surat Penawaran Resmi</span>
                                 </div>
                                 <check if="{{ !@penawaran }}">
-                                    <a href="{{ @BASE }}/order/{{ @order.id }}/penawaran/buat" class="btn btn-sm btn-primary fw-bold shadow-xs">
+                                    <a href="{{ @BASE }}/order/{{ @order.id }}/penawaran/buat" class="btn btn-sm btn-primary fw-bold shadow-xs" onclick="triggerStageRead(5)">
                                         <i class="bi bi-file-earmark-plus me-1"></i> Buat Surat Penawaran
                                     </a>
                                 </check>
@@ -1803,9 +1793,7 @@
                             <check if="{{ @audit_stages[5].waktu_kirim }}">
                                 <span class="me-3">Terbit: <span class="text-dark fw-medium">{{ date('d M Y, H:i', strtotime(@audit_stages[5].waktu_kirim)) }}</span> <span class="text-secondary text-nowrap">({{ @audit_stages[5].pengirim_nama ?: @audit_stages[5].pengirim_role }})</span></span>
                             </check>
-                            <check if="{{ @audit_stages[5].waktu_dibaca }}">
-                                <span>Dibaca: <span class="text-dark fw-medium">{{ date('d M Y, H:i', strtotime(@audit_stages[5].waktu_dibaca)) }}</span> <span class="text-secondary text-nowrap">({{ @audit_stages[5].dibaca_nama ?: @audit_stages[5].dibaca_role }})</span></span>
-                            </check>
+                            <span id="audit-dibaca-stage-5" class="audit-dibaca-stage-5 {{ !@audit_stages[5].waktu_dibaca ? 'd-none' : '' }}">Dibaca: <span class="text-dark fw-medium audit-dibaca-time">{{ @audit_stages[5].waktu_dibaca ? date('d M Y, H:i', strtotime(@audit_stages[5].waktu_dibaca)) : '' }}</span> <span class="text-secondary text-nowrap audit-dibaca-name">({{ @audit_stages[5].dibaca_nama ?: @audit_stages[5].dibaca_role }})</span></span>
                         </div>
                     </div>
                     <div class="d-flex align-items-center gap-2">
@@ -1879,7 +1867,7 @@
                                             </check>
                                             <check if="{{ @penawaran.status_respon_klien == 'draft' }}">
                                                 <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2.5 py-1 fw-bold">
-                                                    <i class="bi bi-pencil me-1"></i> DRAFT INTERNAL
+                                                    <i class="bi bi-bookmark me-1"></i> DRAFT INTERNAL
                                                 </span>
                                             </check>
                                             <check if="{{ @penawaran.status_respon_klien != 'deal' && @penawaran.status_respon_klien != 'batal' && @penawaran.status_respon_klien != 'draft' }}">
@@ -1940,9 +1928,9 @@
                                             </button>
                                         </check>
                                     </div>
-                                    <div>
+                                    <div class="d-flex align-items-center gap-2 flex-wrap">
                                         <check if="{{ @is_admin_order || @is_superadmin }}">
-                                            <a href="{{ @BASE }}/order/{{ @order.id }}/penawaran/buat" class="btn btn-sm btn-primary fw-semibold px-3 d-inline-flex align-items-center gap-1.5 shadow-xs" title="Buka Halaman Surat Penawaran Order">
+                                            <a href="{{ @BASE }}/order/{{ @order.id }}/penawaran/buat" class="btn btn-sm btn-primary fw-semibold px-3 d-inline-flex align-items-center gap-1.5 shadow-xs" onclick="triggerStageRead(5)" title="Buka Halaman Surat Penawaran Order">
                                                 <i class="bi bi-box-arrow-up-right"></i> Buka Surat Penawaran
                                             </a>
                                         </check>
@@ -1997,7 +1985,7 @@
                                                 <repeat group="{{ @riwayat_penawaran }}" key="{{ @idx }}" value="{{ @sp }}">
                                                     <tr class="{{ @sp.id == @penawaran.id ? 'table-light fw-medium' : '' }}">
                                                         <td class="ps-2">
-                                                            <check if="{{ @sp.id == @penawaran.id }}">
+                                                             <check if="{{ @sp.id == @penawaran.id }}">
                                                                 <true>
                                                                     <span class="badge fw-bold shadow-xs" style="background-color: var(--color-primary, #334155); color: #ffffff;" title="Penawaran Terbaru">
                                                                         #{{ @idx + 1 }}
@@ -2045,6 +2033,42 @@
                                     </div>
                                 </div>
                             </check>
+
+                            <!-- Tombol Aksi Disposisi ke Tim Keuangan (Di Bawah Riwayat Penawaran) -->
+                            <check if="{{ (@has_penawaran_deal || (@penawaran && @penawaran.status_respon_klien == 'deal')) }}">
+                                <check if="{{ !@is_disposisi_keuangan }}">
+                                    <div class="mt-3 pt-3 border-top d-flex justify-content-between align-items-center flex-wrap gap-2 bg-light p-3 rounded-3 border">
+                                        <div class="d-flex align-items-center gap-2 text-muted small">
+                                            <i class="bi bi-info-circle-fill text-primary fs-5"></i>
+                                            <div>
+                                                <span class="fw-bold text-dark d-block">Penawaran Telah Disetujui (DEAL)</span>
+                                                <span>Lanjutkan order dengan mendisposisikan ke Tim Keuangan agar tahap pembayaran terbuka.</span>
+                                            </div>
+                                        </div>
+                                        <form action="{{ @BASE }}/order/{{ @order.id }}/penawaran/disposisi-keuangan" method="POST" class="d-inline" id="formDisposisiKeuanganDetail" onsubmit="triggerStageRead(5)">
+                                            <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
+                                            <input type="hidden" name="redirect" value="order">
+                                            <button type="button" class="btn btn-dark btn-sm fw-semibold px-3 py-2 d-inline-flex align-items-center gap-1.5 shadow-sm" onclick="triggerStageRead(5); confirmDisposisiKeuanganDetail('{{ @order.nomor_order }}', '{{ @penawaran ? @penawaran.nomor_surat : @order.nomor_order }}')">
+                                                <i class="bi bi-send-check-fill"></i> Disposisi ke Keuangan
+                                            </button>
+                                        </form>
+                                    </div>
+                                </check>
+                                <check if="{{ @is_disposisi_keuangan }}">
+                                    <div class="mt-3 pt-3 border-top d-flex justify-content-between align-items-center flex-wrap gap-2 bg-success-subtle p-3 rounded-3 border border-success-subtle">
+                                        <div class="d-flex align-items-center gap-2 text-success small">
+                                            <i class="bi bi-check-circle-fill fs-5"></i>
+                                            <div>
+                                                <span class="fw-bold text-dark d-block">Telah Didisposisikan ke Tim Keuangan</span>
+                                                <span class="text-secondary">Tagihan dan order telah diteruskan ke Tim Keuangan. Tahap pembayaran telah terbuka.</span>
+                                            </div>
+                                        </div>
+                                        <span class="badge bg-success text-white px-2.5 py-1.5 fw-semibold">
+                                            <i class="bi bi-check2-all me-1"></i> Disposisi Terkirim
+                                        </span>
+                                    </div>
+                                </check>
+                            </check>
                         </check>
 
                         <!-- JIKA BELUM ADA SURAT PENAWARAN -->
@@ -2081,7 +2105,7 @@
                                         </div>
                                     </div>
                                     <check if="{{ @is_admin_order || @is_tim_mitra || @is_superadmin || @can_manage_penawaran || @order.jenis_layanan_opti == 'lingkungan' }}">
-                                        <a href="{{ @BASE }}/order/{{ @order.id }}/penawaran/buat" class="btn btn-primary btn-sm fw-bold px-3 py-2 shadow-xs d-inline-flex align-items-center gap-2">
+                                        <a href="{{ @BASE }}/order/{{ @order.id }}/penawaran/buat" class="btn btn-primary btn-sm fw-bold px-3 py-2 shadow-xs d-inline-flex align-items-center gap-2" onclick="triggerStageRead(5)">
                                             <i class="bi bi-file-earmark-plus"></i> Terbitkan Surat Penawaran
                                         </a>
                                     </check>
@@ -2111,9 +2135,7 @@
                             <check if="{{ @audit_stages[6].waktu_kirim }}">
                                 <span class="me-3">Verifikasi: <span class="text-dark fw-medium">{{ date('d M Y, H:i', strtotime(@audit_stages[6].waktu_kirim)) }}</span> <span class="text-secondary text-nowrap">({{ @audit_stages[6].pengirim_nama ?: @audit_stages[6].pengirim_role }})</span></span>
                             </check>
-                            <check if="{{ @audit_stages[6].waktu_dibaca }}">
-                                <span>Dibaca: <span class="text-dark fw-medium">{{ date('d M Y, H:i', strtotime(@audit_stages[6].waktu_dibaca)) }}</span> <span class="text-secondary text-nowrap">({{ @audit_stages[6].dibaca_nama ?: @audit_stages[6].dibaca_role }})</span></span>
-                            </check>
+                            <span id="audit-dibaca-stage-6" class="audit-dibaca-stage-6 {{ !@audit_stages[6].waktu_dibaca ? 'd-none' : '' }}">Dibaca: <span class="text-dark fw-medium audit-dibaca-time">{{ @audit_stages[6].waktu_dibaca ? date('d M Y, H:i', strtotime(@audit_stages[6].waktu_dibaca)) : '' }}</span> <span class="text-secondary text-nowrap audit-dibaca-name">({{ @audit_stages[6].dibaca_nama ?: @audit_stages[6].dibaca_role }})</span></span>
                         </div>
                     </div>
                     <div class="d-flex align-items-center gap-2">
@@ -2123,12 +2145,12 @@
                             </span>
                         </check>
                         <check if="{{ @order.status_keuangan != 'lunas' && empty(@riwayat_bayar) }}">
-                            <check if="{{ @penawaran && @penawaran.status_respon_klien == 'deal' }}">
+                            <check if="{{ @is_disposisi_keuangan }}">
                                 <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle fw-semibold px-2.5 py-1">
                                     <i class="bi bi-hourglass-split me-1"></i> Menunggu Bukti Pembayaran
                                 </span>
                             </check>
-                            <check if="{{ !@penawaran || @penawaran.status_respon_klien != 'deal' }}">
+                            <check if="{{ !@is_disposisi_keuangan }}">
                                 <span class="badge bg-light text-secondary border">
                                     <i class="bi bi-lock-fill me-1"></i> Terkunci
                                 </span>
@@ -2138,16 +2160,21 @@
                 </div>
 
                 <div class="p-4">
-                    <!-- Kasus 1: Penawaran belum DEAL (Terkunci) -->
-                    <check if="{{ !@penawaran || @penawaran.status_respon_klien != 'deal' }}">
+                    <!-- Kasus 1: Belum Disposisi ke Tim Keuangan (Terkunci) -->
+                    <check if="{{ !@is_disposisi_keuangan && @order.status_keuangan != 'lunas' && empty(@riwayat_bayar) }}">
                         <div class="p-3 text-center text-muted bg-light rounded-3 small">
                             <i class="bi bi-lock-fill text-secondary opacity-50 me-1"></i>
-                            Tahap konfirmasi pembayaran terbuka setelah Surat Penawaran berstatus <strong>DEAL</strong>.
+                            <check if="{{ !@has_penawaran_deal }}">
+                                Tahap konfirmasi pembayaran terbuka setelah Surat Penawaran berstatus <strong>DEAL</strong> dan didisposisikan ke Tim Keuangan.
+                            </check>
+                            <check if="{{ @has_penawaran_deal }}">
+                                Surat Penawaran telah berstatus <strong>DEAL</strong>. Silakan klik tombol <strong>Disposisi ke Keuangan</strong> pada Tahap 5 (Surat Penawaran) untuk membuka tahap pembayaran ini.
+                            </check>
                         </div>
                     </check>
 
-                    <!-- Kasus 2: Penawaran sudah DEAL -->
-                    <check if="{{ @penawaran && @penawaran.status_respon_klien == 'deal' }}">
+                    <!-- Kasus 2: Sudah Disposisi ke Keuangan / Lunas (Terbuka) -->
+                    <check if="{{ @is_disposisi_keuangan || @order.status_keuangan == 'lunas' || !empty(@riwayat_bayar) }}">
 
                         <!-- Sub-kasus 2A: Bukti Pembayaran Sudah Diunggah -->
                         <check if="{{ !empty(@riwayat_bayar) }}">
@@ -2208,7 +2235,7 @@
                             <!-- Collapse Form Unggah Ulang Bukti Pembayaran -->
                             <check if="{{ @is_keuangan || @is_admin_order || @is_superadmin || @can_manage_pembayaran }}">
                                 <div class="collapse mt-3" id="collapseGantiBukti">
-                                    <form action="{{ @BASE }}/order/{{ @order.id }}/konfirmasi-pembayaran" method="POST" enctype="multipart/form-data" class="p-3 bg-light border rounded-3">
+                                    <form action="{{ @BASE }}/order/{{ @order.id }}/konfirmasi-pembayaran" method="POST" enctype="multipart/form-data" class="p-3 bg-light border rounded-3" onsubmit="triggerStageRead(6)">
                                         <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
                                         <input type="hidden" name="is_edit" value="1">
                                         <input type="hidden" name="jumlah" value="{{ @penawaran.nominal_penawaran ?: @order.estimasi_biaya }}">
@@ -2257,7 +2284,7 @@
                             <!-- Form Upload Bukti Pembayaran (Khusus Tim Keuangan / Admin) -->
                             <check if="{{ @is_keuangan || @is_admin_order || @is_superadmin || @can_manage_pembayaran }}">
                                 <true>
-                                    <form action="{{ @BASE }}/order/{{ @order.id }}/konfirmasi-pembayaran" method="POST" enctype="multipart/form-data" class="p-3 bg-white border rounded-3 shadow-xs">
+                                    <form action="{{ @BASE }}/order/{{ @order.id }}/konfirmasi-pembayaran" method="POST" enctype="multipart/form-data" class="p-3 bg-white border rounded-3 shadow-xs" onsubmit="triggerStageRead(6)">
                                         <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
                                         <input type="hidden" name="jumlah" value="{{ @penawaran.nominal_penawaran ?: @order.estimasi_biaya }}">
                                         
@@ -2517,9 +2544,7 @@
                             <check if="{{ @audit_stages[7].waktu_kirim }}">
                                 <span class="me-3">Diterima: <span class="text-dark fw-medium">{{ date('d M Y', strtotime(@audit_stages[7].waktu_kirim)) }}</span> <span class="text-secondary text-nowrap">({{ @audit_stages[7].pengirim_nama ?: @audit_stages[7].pengirim_role }})</span></span>
                             </check>
-                            <check if="{{ @audit_stages[7].waktu_dibaca }}">
-                                <span>Dibaca: <span class="text-dark fw-medium">{{ date('d M Y, H:i', strtotime(@audit_stages[7].waktu_dibaca)) }}</span> <span class="text-secondary text-nowrap">({{ @audit_stages[7].dibaca_nama ?: @audit_stages[7].dibaca_role }})</span></span>
-                            </check>
+                            <span id="audit-dibaca-stage-7" class="audit-dibaca-stage-7 {{ !@audit_stages[7].waktu_dibaca ? 'd-none' : '' }}">Dibaca: <span class="text-dark fw-medium audit-dibaca-time">{{ @audit_stages[7].waktu_dibaca ? date('d M Y, H:i', strtotime(@audit_stages[7].waktu_dibaca)) : '' }}</span> <span class="text-secondary text-nowrap audit-dibaca-name">({{ @audit_stages[7].dibaca_nama ?: @audit_stages[7].dibaca_role }})</span></span>
                         </div>
                     </div>
                     <check if="{{ @order.tanggal_terima_sampel }}">
@@ -2568,7 +2593,7 @@
                                     </div>
                                     <div class="col-md-5 text-md-end">
                                         <check if="{{ !@order.po_id }}">
-                                            <button type="button" class="btn btn-warning btn-sm fw-bold text-dark shadow-sm" data-bs-toggle="modal" data-bs-target="#modalApprove">
+                                            <button type="button" class="btn btn-warning btn-sm fw-bold text-dark shadow-sm" data-bs-toggle="modal" data-bs-target="#modalApprove" onclick="triggerStageRead(7)">
                                                 <i class="bi bi-patch-check-fill me-1"></i> Terbitkan PO Sekarang
                                             </button>
                                         </check>
@@ -2582,7 +2607,7 @@
 
                         <!-- FORM INPUT TANGGAL SAMPEL (TERBUKA JIKA BELUM ADA, COLLAPSE JIKA SUDAH ADA) -->
                         <div class="collapse {{ !@order.tanggal_terima_sampel ? 'show' : '' }}" id="collapseEditSampel">
-                            <form action="{{ @BASE }}/order/{{ @order.id }}/terima-sampel" method="POST" class="p-3 border rounded bg-white mb-2">
+                            <form action="{{ @BASE }}/order/{{ @order.id }}/terima-sampel" method="POST" class="p-3 border rounded bg-white mb-2" onsubmit="triggerStageRead(7)">
                                 <div class="row g-2 align-items-end">
                                     <div class="col-sm-5">
                                         <label class="form-label small fw-bold text-dark mb-1">Tanggal Terima Fisik Sampel di Lab:</label>
@@ -2637,9 +2662,7 @@
                             <check if="{{ @audit_stages[8].waktu_kirim }}">
                                 <span class="me-3">Terbit: <span class="text-dark fw-medium">{{ date('d M Y, H:i', strtotime(@audit_stages[8].waktu_kirim)) }}</span> <span class="text-secondary text-nowrap">({{ @audit_stages[8].pengirim_nama ?: @audit_stages[8].pengirim_role }})</span></span>
                             </check>
-                            <check if="{{ @audit_stages[8].waktu_dibaca }}">
-                                <span>Dibaca: <span class="text-dark fw-medium">{{ date('d M Y, H:i', strtotime(@audit_stages[8].waktu_dibaca)) }}</span> <span class="text-secondary text-nowrap">({{ @audit_stages[8].dibaca_nama ?: @audit_stages[8].dibaca_role }})</span></span>
-                            </check>
+                            <span id="audit-dibaca-stage-8" class="audit-dibaca-stage-8 {{ !@audit_stages[8].waktu_dibaca ? 'd-none' : '' }}">Dibaca: <span class="text-dark fw-medium audit-dibaca-time">{{ @audit_stages[8].waktu_dibaca ? date('d M Y, H:i', strtotime(@audit_stages[8].waktu_dibaca)) : '' }}</span> <span class="text-secondary text-nowrap audit-dibaca-name">({{ @audit_stages[8].dibaca_nama ?: @audit_stages[8].dibaca_role }})</span></span>
                         </div>
                     </div>
                     <check if="{{ @order.po_id }}">
@@ -2673,7 +2696,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-5 text-md-end">
-                                    <a href="{{ @BASE }}/po/{{ @order.po_id }}" class="btn btn-dark btn-sm px-3 fw-semibold shadow-sm">
+                                    <a href="{{ @BASE }}/po/{{ @order.po_id }}" class="btn btn-dark btn-sm px-3 fw-semibold shadow-sm" onclick="triggerStageRead(8)">
                                         <i class="bi bi-speedometer2 me-1"></i> Buka Dashboard Monitoring PO
                                     </a>
                                 </div>
@@ -2691,7 +2714,7 @@
                                         Penerbitan dokumen serah terima hasil pengujian kepada pelanggan untuk penutupan resmi siklus layanan.
                                     </span>
                                 </div>
-                                <a href="{{ @BASE }}/order/{{ @order.id }}/bast/buat" class="btn btn-outline-primary btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5">
+                                <a href="{{ @BASE }}/order/{{ @order.id }}/bast/buat" class="btn btn-outline-primary btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5" onclick="triggerStageRead(8)">
                                     <i class="bi bi-file-earmark-plus"></i> Terbitkan Dokumen BAST
                                 </a>
                             </div>
@@ -2733,7 +2756,7 @@
                                             Batas waktu pengerjaan resmi: <strong>{{ date('d M Y', strtotime(@order.tanggal_deadline_spm)) }}</strong>
                                         </div>
                                     </div>
-                                    <button type="button" class="btn btn-warning btn-sm fw-bold text-dark shadow-sm" data-bs-toggle="modal" data-bs-target="#modalApprove">
+                                    <button type="button" class="btn btn-warning btn-sm fw-bold text-dark shadow-sm" data-bs-toggle="modal" data-bs-target="#modalApprove" onclick="triggerStageRead(7)">
                                         <i class="bi bi-patch-check-fill me-1"></i> Terbitkan PO Sekarang
                                     </button>
                                 </div>
@@ -2764,7 +2787,7 @@
 <div class="modal fade" id="modalApprove" tabindex="-1" aria-labelledby="modalApproveLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content border-0 shadow">
-            <form action="{{ @BASE }}/order/{{ @order.id }}/approve" method="POST">
+            <form action="{{ @BASE }}/order/{{ @order.id }}/approve" method="POST" onsubmit="triggerStageRead(8)">
                 <div class="modal-header bg-warning-subtle border-0 py-3">
                     <h6 class="modal-title fw-bold text-dark d-flex align-items-center gap-2" id="modalApproveLabel">
                         <i class="bi bi-patch-check-fill text-warning fs-5"></i> Setujui &amp; Terbitkan Petunjuk Operasional (PO)
@@ -3547,6 +3570,41 @@ function selectDivisiOpti(tipe) {
     }
 }
 
+var readRecordedStages = {};
+function triggerStageRead(stageNum) {
+    if (!stageNum || stageNum < 1 || stageNum > 8) return;
+    if (readRecordedStages[stageNum]) return;
+    readRecordedStages[stageNum] = true;
+
+    var orderId = {{ @order.id }};
+    var url = '{{ @BASE }}/order/' + orderId + '/stage/' + stageNum + '/baca';
+
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(function(res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+    })
+    .then(function(data) {
+        if (data && data.success && data.waktu_dibaca_formatted) {
+            var elContainers = document.querySelectorAll('.audit-dibaca-stage-' + stageNum + ', #audit-dibaca-stage-' + stageNum);
+            elContainers.forEach(function(el) {
+                el.classList.remove('d-none');
+                var timeEl = el.querySelector('.audit-dibaca-time');
+                var nameEl = el.querySelector('.audit-dibaca-name');
+                if (timeEl) timeEl.textContent = data.waktu_dibaca_formatted;
+                if (nameEl) nameEl.textContent = '(' + (data.dibaca_nama || 'Petugas') + ')';
+            });
+        }
+    })
+    .catch(function(err) {});
+}
+
 function switchStage(stageNum, smoothScroll) {
     if (!stageNum) return;
     var tabBtn = document.getElementById('tab-stage-' + stageNum);
@@ -3626,4 +3684,88 @@ document.addEventListener('DOMContentLoaded', function() {
         return new bootstrap.Tooltip(tooltipTriggerEl);
     });
 });
+
+function confirmKirimKatimProposal(btn) {
+    var form = btn.closest('form');
+    if (!form) return;
+
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: 'Kirim Proposal ke Ketua Tim?',
+            text: 'Apakah Anda yakin ingin mengirimkan proposal ini kepada Ketua Tim OPTI untuk ditinjau?',
+            icon: 'question',
+            iconColor: '#0d6efd',
+            background: '#ffffff',
+            showCancelButton: true,
+            confirmButtonText: '<i class="bi bi-send-fill me-1"></i> Ya, Kirim',
+            cancelButtonText: 'Batal',
+            reverseButtons: true,
+            customClass: {
+                popup: 'bg-white rounded-3 shadow border p-4',
+                title: 'fw-bold text-dark fs-6 mb-1',
+                htmlContainer: 'text-muted small mb-3',
+                confirmButton: 'btn btn-primary btn-sm px-3 py-1.5 fw-semibold',
+                cancelButton: 'btn btn-outline-secondary btn-sm px-3 py-1.5 me-2'
+            },
+            buttonsStyling: false
+        }).then(function(result) {
+            if (result.isConfirmed) {
+                if (typeof Swal !== 'undefined' && Swal.close) {
+                    Swal.close();
+                }
+                if (typeof window.startLoading === 'function') {
+                    window.startLoading('Mengirim Proposal ke Ketua Tim...');
+                }
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Mengirim...';
+                }
+                form.submit();
+            }
+        });
+    } else {
+        if (confirm('Apakah Anda yakin ingin mengirimkan proposal ini kepada Ketua Tim OPTI?')) {
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Mengirim...';
+            }
+            form.submit();
+        }
+    }
+}
+
+function confirmDisposisiKeuanganDetail(nomorOrder, nomorSurat) {
+    var form = document.getElementById('formDisposisiKeuanganDetail');
+    if (!form) return;
+
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: 'Disposisi ke Tim Keuangan?',
+            text: 'Penawaran DEAL (Order #' + nomorOrder + ') akan diteruskan ke antrean Tim Keuangan untuk pencatatan pembayaran & PNBP.',
+            icon: 'question',
+            iconColor: '#0f172a',
+            background: '#ffffff',
+            showCancelButton: true,
+            confirmButtonText: '<i class="bi bi-send-check-fill me-1"></i> Ya, Disposisikan',
+            cancelButtonText: 'Batal',
+            reverseButtons: true,
+            customClass: {
+                popup: 'bg-white rounded-3 shadow border p-4',
+                title: 'fw-bold text-dark fs-6 mb-1',
+                htmlContainer: 'text-muted small mb-3',
+                confirmButton: 'btn btn-dark btn-sm px-3 py-1.5 fw-semibold',
+                cancelButton: 'btn btn-outline-secondary btn-sm px-3 py-1.5 me-2'
+            },
+            buttonsStyling: false
+        }).then(function(result) {
+            if (result.isConfirmed) {
+                form.submit();
+            }
+        });
+    } else {
+        if (confirm('Disposisikan penawaran DEAL ke Tim Keuangan?')) {
+            form.submit();
+        }
+    }
+}
 </script>

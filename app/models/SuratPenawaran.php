@@ -55,7 +55,8 @@ class SuratPenawaran extends \DB\SQL\Mapper
     }
 
     /**
-     * Generate nomor surat penawaran resmi format balai: {urut}/SP/BBSPJIS/{bulan_romawi}/{tahun}
+     * Generate nomor surat penawaran resmi format balai: {urut}/BBSPJIS/MS/{bulan_romawi}/{tahun}
+     * Otomatis sinkron dan mengambil nomor urut berikutnya dari tabel surat keluar (tb_surat_keluar) & tb_surat_penawaran
      */
     public function generateNomorSurat(string $tanggal = ''): string
     {
@@ -66,23 +67,69 @@ class SuratPenawaran extends \DB\SQL\Mapper
         $tahun       = date('Y', $time);
         $bulanRomawi = self::bulanKeRomawi($bulanAngka);
 
-        // Ambil nomor urut tertinggi pada bulan dan tahun yang bersangkutan
-        $pattern = "%/SP/BBSPJIS/{$bulanRomawi}/{$tahun}";
-        $res = $this->db->exec(
-            "SELECT nomor_surat FROM tb_surat_penawaran WHERE nomor_surat LIKE ? ORDER BY id DESC LIMIT 1",
-            array(1 => $pattern)
-        );
+        $maxUrut = 0;
+        $patternBulanTahun = "%/{$bulanRomawi}/{$tahun}%";
+        $firstDay = "{$tahun}-" . str_pad((string)$bulanAngka, 2, '0', STR_PAD_LEFT) . "-01";
+        $lastDay  = date('Y-m-t', $time);
 
-        $urut = 1;
-        if (!empty($res) && !empty($res[0]['nomor_surat'])) {
-            $parts = explode('/', $res[0]['nomor_surat']);
-            if (isset($parts[0]) && is_numeric($parts[0])) {
-                $urut = (int) $parts[0] + 1;
+        // 1. Cek dari tb_surat_keluar (database saat ini dan database sekretariat jika terpisah)
+        $f3 = \Base::instance();
+        $targetDbs = [$this->db];
+        if ($f3->exists('DB_SEKRETARIAT')) {
+            $dbSekretariat = $f3->get('DB_SEKRETARIAT');
+            if ($dbSekretariat && $dbSekretariat !== $this->db) {
+                $targetDbs[] = $dbSekretariat;
             }
         }
 
-        $nomorUrutPadded = str_pad((string)$urut, 2, '0', STR_PAD_LEFT);
-        return "{$nomorUrutPadded}/SP/BBSPJIS/{$bulanRomawi}/{$tahun}";
+        $allNumbers = [];
+        foreach ($targetDbs as $tDb) {
+            try {
+                $checkTbl = $tDb->exec("SHOW TABLES LIKE 'tb_surat_keluar'");
+                if (!empty($checkTbl)) {
+                    $rows = $tDb->exec(
+                        "SELECT no_surat FROM tb_surat_keluar WHERE no_surat LIKE ? OR (tanggal_surat >= ? AND tanggal_surat <= ?)",
+                        [1 => $patternBulanTahun, 2 => $firstDay, 3 => $lastDay]
+                    );
+                    if (!empty($rows)) {
+                        foreach ($rows as $r) {
+                            if (!empty($r['no_surat'])) {
+                                $allNumbers[] = trim($r['no_surat']);
+                            }
+                        }
+                    }
+                }
+            } catch (\Exception $e) {}
+        }
+
+        // 2. Cek dari tb_surat_penawaran
+        try {
+            $rowsSp = $this->db->exec(
+                "SELECT nomor_surat FROM tb_surat_penawaran WHERE nomor_surat LIKE ? OR (tanggal_surat >= ? AND tanggal_surat <= ?)",
+                [1 => $patternBulanTahun, 2 => $firstDay, 3 => $lastDay]
+            );
+            if (!empty($rowsSp)) {
+                foreach ($rowsSp as $r) {
+                    if (!empty($r['nomor_surat'])) {
+                        $allNumbers[] = trim($r['nomor_surat']);
+                    }
+                }
+            }
+        } catch (\Exception $e) {}
+
+        // Ambil nilai urutan tertinggi pada bulan dan tahun terkait
+        foreach (array_unique($allNumbers) as $no) {
+            if (preg_match('/^(\d+)/', trim($no), $m)) {
+                $val = (int)$m[1];
+                if ($val > $maxUrut) {
+                    $maxUrut = $val;
+                }
+            }
+        }
+
+        $nextUrut = $maxUrut + 1;
+        $nomorUrutPadded = str_pad((string)$nextUrut, 2, '0', STR_PAD_LEFT);
+        return "{$nomorUrutPadded}/BBSPJIS/MS/{$bulanRomawi}/{$tahun}";
     }
 
     /**
@@ -361,11 +408,10 @@ class SuratPenawaran extends \DB\SQL\Mapper
         // Sinkronisasi ke order jika terhubung
         if (!empty($this->order_id)) {
             $statusRancop = ($statusRespon === 'deal') ? 'deal' : (($statusRespon === 'batal') ? 'batal' : 'diskusi');
-            $statusKeuanganUpdate = ($statusRespon === 'deal') ? ", status_keuangan = IF(status_keuangan = 'lunas', 'lunas', 'menunggu_pembayaran')" : "";
             
             $updateSql = "UPDATE order_layanan SET 
                 status_penawaran = ?, 
-                status_rancop = ?" . $statusKeuanganUpdate . ",
+                status_rancop = ?,
                 estimasi_biaya = " . ($nominalBaru > 0 ? (float)$nominalBaru : "estimasi_biaya");
 
             $params = [

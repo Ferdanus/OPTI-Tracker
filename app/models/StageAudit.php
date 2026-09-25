@@ -274,23 +274,17 @@ class StageAudit {
                 }
             }
 
-            // AUTO-BACKFILL UNTUK DATA EKSISTING (Agar order lama tetap memiliki jejak audit lengkap)
+            // AUTO-BACKFILL UNTUK DATA EKSISTING (Agar order lama tetap memiliki jejak waktu kirim)
             if (!empty($order)) {
                 // Tahap 1: Surat Masuk Resmi
                 if (empty($result[1]['waktu_kirim'])) {
                     $tglKirim1 = !empty($extra['surat_masuk']['tanggal_surat']) ? $extra['surat_masuk']['tanggal_surat'] : ($order['tanggal_masuk'] ?: $order['created_at']);
                     $pengirim1 = !empty($extra['surat_masuk']['pengirim']) ? $extra['surat_masuk']['pengirim'] : ($order['nama_perusahaan'] ?: 'Instansi Pemohon');
-                    $tglBaca1  = !empty($order['tanggal_klaim']) ? $order['tanggal_klaim'] : $order['created_at'];
-                    $pembaca1  = !empty($order['nama_pengklaim']) ? $order['nama_pengklaim'] : 'Tim Mitra';
 
                     self::recordKirim($db, $orderId, 1, self::getStageNames()[1], null, $pengirim1, 'Pemohon / Pelanggan', $tglKirim1, 'Penerimaan Permohonan Resmi');
-                    self::recordDibaca($db, $orderId, 1, (int)($order['diklaim_oleh'] ?? 0), $pembaca1, 'Tim Mitra', $tglBaca1);
                     $result[1]['waktu_kirim']   = $tglKirim1;
                     $result[1]['pengirim_nama'] = $pengirim1;
                     $result[1]['pengirim_role'] = 'Pemohon / Pelanggan';
-                    $result[1]['waktu_dibaca']  = $tglBaca1;
-                    $result[1]['dibaca_nama']   = $pembaca1;
-                    $result[1]['dibaca_role']   = 'Tim Mitra';
                 }
 
                 // Tahap 2: Formulir Permintaan Pelayanan Jasa
@@ -305,17 +299,6 @@ class StageAudit {
                         $result[2]['waktu_kirim']   = $tglKirim2;
                         $result[2]['pengirim_nama'] = $pengirim2;
                         $result[2]['pengirim_role'] = 'Tim Mitra';
-                    }
-
-                    if (empty($result[2]['waktu_dibaca'])) {
-                        $tglBaca2 = !empty($extra['tinjauan']['created_at']) ? $extra['tinjauan']['created_at'] : (!empty($extra['tinjauan']['tanggal_tinjauan']) ? ($extra['tinjauan']['tanggal_tinjauan'] . ' ' . date('H:i:s')) : (!empty($order['updated_at']) ? $order['updated_at'] : (!empty($order['tanggal_klaim']) ? $order['tanggal_klaim'] : $order['created_at'])));
-                        $pembaca2 = !empty($extra['tinjauan']['peninjau_nama']) ? $extra['tinjauan']['peninjau_nama'] : ($order['peninjau_nama'] ?? $divisi);
-                        $roleBaca2 = $divisi;
-
-                        self::recordDibaca($db, $orderId, 2, (int)($extra['tinjauan']['ditinjau_oleh'] ?? 0), $pembaca2, $roleBaca2, $tglBaca2);
-                        $result[2]['waktu_dibaca'] = $tglBaca2;
-                        $result[2]['dibaca_nama']  = $pembaca2;
-                        $result[2]['dibaca_role']  = $roleBaca2;
                     }
                 }
 
@@ -339,7 +322,6 @@ class StageAudit {
                     $pengirim4 = !empty($extra['proposal']['pic_nama']) ? $extra['proposal']['pic_nama'] : ($order['pic_proposal_nama'] ?: 'PIC Teknis');
                     $tglAcc4   = !empty($extra['proposal']['disetujui_ketua_at']) ? $extra['proposal']['disetujui_ketua_at'] : null;
 
-                    // Catatan: WAKTU DIBACA HANYA DICATAT SAAT HALAMAN KELOLA TARIF / PROPOSAL BENAR-BENAR DIBUKA SECARA NYATA
                     if (empty($result[4]['waktu_kirim'])) {
                         self::recordKirim($db, $orderId, 4, self::getStageNames()[4], (int)($extra['proposal']['pic_penyusun_id'] ?? ($order['pic_proposal_id'] ?? 0)), $pengirim4, 'PIC Teknis', $tglKirim4, 'Proposal / Tarif Disusun');
                         $result[4]['waktu_kirim']   = $tglKirim4;
@@ -359,15 +341,8 @@ class StageAudit {
                 if ((empty($result[5]['waktu_kirim']) || strpos($result[5]['waktu_kirim'], '00:00:00') !== false) && !empty($extra['penawaran']) && !empty($extra['penawaran']['nomor_surat'])) {
                     $tglKirim5 = !empty($extra['penawaran']['created_at']) ? $extra['penawaran']['created_at'] : (!empty($extra['penawaran']['tanggal_surat']) ? ($extra['penawaran']['tanggal_surat'] . ' ' . date('H:i:s')) : date('Y-m-d H:i:s'));
                     $pengirim5 = !empty($extra['penawaran']['pembuat_nama']) ? $extra['penawaran']['pembuat_nama'] : 'Tim Mitra';
-                    $tglDeal5  = !empty($extra['penawaran']['disetujui_klien_at']) ? $extra['penawaran']['disetujui_klien_at'] : null;
 
                     self::recordKirim($db, $orderId, 5, self::getStageNames()[5], (int)($extra['penawaran']['dibuat_oleh'] ?? 0), $pengirim5, 'Tim Mitra', $tglKirim5, 'Surat Penawaran Resmi Terbit');
-                    if ($tglDeal5) {
-                        self::recordDibaca($db, $orderId, 5, null, $order['nama_perusahaan'] ?: 'Pelanggan', 'Pelanggan', $tglDeal5);
-                        $result[5]['waktu_dibaca'] = $tglDeal5;
-                        $result[5]['dibaca_nama']  = $order['nama_perusahaan'] ?: 'Pelanggan';
-                        $result[5]['dibaca_role']  = 'Pelanggan (Respon Deal)';
-                    }
                     $result[5]['waktu_kirim']   = $tglKirim5;
                     $result[5]['pengirim_nama'] = $pengirim5;
                     $result[5]['pengirim_role'] = 'Tim Mitra';

@@ -1229,21 +1229,15 @@
                     </li>
                 </check>
 
-                <!-- Kontrak PKS (Disembunyikan untuk Superadmin) -->
-                <check if="{{ !@is_superadmin && (@is_admin_kontrak || @is_admin_order) }}">
-                    <li>
-                        <a class="sidebar-link {{ @active_menu == 'kontrak' ? 'active' : '' }}" href="{{ @BASE }}/kontrak" title="Kontrak PKS">
-                            <i class="bi bi-journal-text"></i> <span>Kontrak PKS</span>
-                        </a>
-                    </li>
-                </check>
-
 
                 <!-- Rekapitulasi Pembayaran & Keuangan -->
                 <check if="{{ @is_superadmin || @is_keuangan || @is_admin_order || @is_admin_kontrak }}">
                     <li>
                         <a class="sidebar-link {{ @active_menu == 'pembayaran' ? 'active' : '' }}" href="{{ @BASE }}/pembayaran" title="Pembayaran & Keuangan">
                             <i class="bi bi-cash-stack"></i> <span>Pembayaran</span>
+                            <check if="{{ @jumlah_notif_keuangan > 0 }}">
+                                <span class="badge rounded-pill ms-auto sidebar-notif-badge" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #0284c7; color: #ffffff;">{{ @jumlah_notif_keuangan }}</span>
+                            </check>
                         </a>
                     </li>
                 </check>
@@ -1286,8 +1280,8 @@
                     <!-- Menu Data Klien dan PIC Peneliti disembunyikan dari sidebar -->
                 </check>
 
-                <!-- 5. PENGATURAN SISTEM (Disembunyikan untuk Superadmin) -->
-                <check if="{{ !@is_superadmin && @is_ketua_tim }}">
+                <!-- 5. PENGATURAN SISTEM (Khusus Superadmin) -->
+                <check if="{{ @is_superadmin }}">
                     <li class="sidebar-section-label">Pengaturan</li>
                     <li>
                         <a class="sidebar-link {{ @active_menu == 'config' ? 'active' : '' }}" href="{{ @BASE }}/config" title="Konfigurasi Sistem & Privasi">
@@ -1459,7 +1453,7 @@
                                     <i class="bi bi-person-gear text-primary"></i> Profil Pengguna
                                 </a>
                             </li>
-                            <check if="{{ !@is_superadmin }}">
+                            <check if="{{ @is_superadmin }}">
                                 <li>
                                     <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ @BASE }}/config">
                                         <i class="bi bi-sliders text-primary"></i> Pengaturan Konfigurasi
@@ -1910,6 +1904,7 @@
 
             // Intercept form submissions for saving/filtering indicator
             document.addEventListener('submit', function(e) {
+                if (e.defaultPrevented) return;
                 var form = e.target;
                 if (!form) return;
                 var action = form.getAttribute('action') || '';

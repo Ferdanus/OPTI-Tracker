@@ -731,10 +731,10 @@
     <input type="hidden" name="bidang_layanan[]" value="opti">
 
     <check if="{{ !@can_edit }}">
-        <div class="alert alert-warning border-0 d-flex align-items-center mb-3 py-2 px-3 small rounded-3 shadow-sm">
-            <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+        <div class="alert alert-warning border-0 d-flex align-items-center gap-2 mb-3 py-2 px-3 small rounded-3 shadow-xs text-warning-emphasis">
+            <i class="bi bi-lock-fill me-2 fs-5 text-warning flex-shrink-0"></i>
             <div>
-                <strong>Mode Lihat Saja (Read-Only)</strong>: Pengisian dan pengiriman Formulir Permintaan Pelayanan Jasa merupakan wewenang <strong>Tim Mitra</strong>.
+                <strong>Status Edit Dikunci:</strong> Tidak bisa merubah data, silakan hubungi superadmin.
             </div>
         </div>
     </check>
@@ -960,16 +960,16 @@
                 <check if="{{ @can_edit }}">
                     <div class="d-flex gap-2">
                         <button type="submit" class="btn-draft-theme" id="btnSimpan">
-                            <i class="bi bi-save me-1"></i> Simpan Draft
+                            <i class="bi bi-bookmark me-1"></i> Simpan Draf
                         </button>
-                        <button type="submit" class="btn-submit-theme" id="btnKirim">
+                        <button type="button" class="btn-submit-theme" id="btnKirim">
                             <i class="bi bi-send-fill me-1"></i> <span id="textBtnKirim">{{ @tinjauan ? 'Simpan &amp; Tetapkan Kaji Kelayakan' : 'Kirim' }}</span>
                         </button>
                     </div>
                 </check>
                 <check if="{{ !@can_edit }}">
-                    <button type="button" class="btn btn-secondary btn-sm px-4" disabled>
-                        <i class="bi bi-lock-fill me-1"></i> Terkunci (Wewenang Tim Mitra)
+                    <button type="button" class="btn btn-secondary btn-sm px-4" disabled title="Status edit dikunci. Hubungi Superadmin jika perlu membuka akses.">
+                        <i class="bi bi-lock-fill me-1"></i> Status Edit Dikunci
                     </button>
                 </check>
             </div>
@@ -1452,7 +1452,50 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     if (btnKirim) {
         btnKirim.addEventListener('click', function () {
-            document.getElementById('inputAksi').value = 'kirim';
+            var form = document.getElementById('formPenawaran');
+            if (form && !form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            var textLabel = document.getElementById('textBtnKirim') ? document.getElementById('textBtnKirim').textContent.trim() : 'Kirim';
+            var isTetapkan = textLabel.includes('Tetapkan');
+            var title = isTetapkan ? 'Tetapkan Kaji Kelayakan?' : 'Kirim Formulir Pelayanan?';
+            var text = isTetapkan 
+                ? 'Apakah Anda yakin ingin menyimpan dan menetapkan kaji kelayakan ini?' 
+                : 'Apakah Anda yakin ingin mengirimkan formulir permohonan pelayanan ini ke tahap berikutnya?';
+
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: title,
+                    text: text,
+                    icon: 'question',
+                    iconColor: '#0d6efd',
+                    background: '#ffffff',
+                    showCancelButton: true,
+                    confirmButtonText: '<i class="bi bi-send-fill me-1"></i> Ya, ' + (isTetapkan ? 'Tetapkan' : 'Kirim'),
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true,
+                    customClass: {
+                        popup: 'bg-white rounded-3 shadow border p-4',
+                        title: 'fw-bold text-dark fs-6 mb-1',
+                        htmlContainer: 'text-muted small mb-3',
+                        confirmButton: 'btn btn-primary btn-sm px-3 py-1.5 fw-semibold',
+                        cancelButton: 'btn btn-outline-secondary btn-sm px-3 py-1.5 me-2'
+                    },
+                    buttonsStyling: false
+                }).then(function(result) {
+                    if (result.isConfirmed) {
+                        document.getElementById('inputAksi').value = 'kirim';
+                        form.submit();
+                    }
+                });
+            } else {
+                if (confirm(text)) {
+                    document.getElementById('inputAksi').value = 'kirim';
+                    form.submit();
+                }
+            }
         });
     }
 

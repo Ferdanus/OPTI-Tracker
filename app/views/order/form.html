@@ -31,7 +31,7 @@
                             <option value="">Pilih Customer Terdaftar</option>
                             <repeat group="{{ @daftar_customer ?: (@daftar_klien ?: []) }}" value="{{ @c }}">
                                 <option value="{{ @c.id_customer }}" {{ @order && @order.id_customer == @c.id_customer ? 'selected' : '' }}>
-                                    {{ @c.nmcustomer }} ({{ @c.pt_cv }}) - PIC: {{ @c.contactperson ?: (@c.contactperson_opti ?: '-') }}
+                                    {{ @c.nmcustomer }} - PIC: {{ @c.contactperson ?: (@c.contactperson_opti ?: '-') }}
                                 </option>
                             </repeat>
                         </select>
@@ -182,7 +182,7 @@
                     </button>
                 </check>
                 <button type="submit" name="action_btn" value="simpan" class="btn btn-primary px-4 fw-semibold">
-                    <i class="bi bi-save me-1"></i> {{ @order ? 'Perbarui Order' : 'Simpan &amp; Teruskan' }}
+                    <i class="bi bi-send-fill me-1"></i> {{ @order ? 'Perbarui Order' : 'Simpan &amp; Teruskan' }}
                 </button>
             </div>
 

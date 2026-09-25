@@ -316,8 +316,8 @@
 
     <div class="d-flex flex-wrap justify-content-end gap-2 mb-5">
         <a href="{{ @BASE }}/po-kegiatan" class="btn btn-outline-secondary px-4">Kembali</a>
-        <button type="submit" id="btnDraft" class="btn btn-outline-secondary px-4"><i class="bi bi-save me-1"></i> Simpan sebagai Draft</button>
-        <button type="submit" id="btnKirim" class="btn btn-primary px-4"><i class="bi bi-send me-1"></i> Kirim</button>
+        <button type="submit" id="btnDraft" class="btn btn-outline-secondary px-4"><i class="bi bi-bookmark me-1"></i> Simpan sebagai Draft</button>
+        <button type="button" id="btnKirim" class="btn btn-primary px-4"><i class="bi bi-send-fill me-1"></i> Kirim</button>
     </div>
 </form>
 
@@ -1278,7 +1278,61 @@ renderRuangLingkupPreview();
     hitungRabLive();
 
     document.getElementById('btnDraft').addEventListener('click', function () { document.getElementById('inputAksi').value = 'draft'; });
-    document.getElementById('btnKirim').addEventListener('click', function () { document.getElementById('inputAksi').value = 'kirim'; });
+    
+    var btnKirimEl = document.getElementById('btnKirim');
+    if (btnKirimEl) {
+        btnKirimEl.addEventListener('click', function () {
+            var form = document.getElementById('formPo');
+            if (form && !form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Kirim PO Kegiatan?',
+                    text: 'Apakah Anda yakin ingin mengirimkan dokumen PO Kegiatan dan jadwal pelaksanaan ini?',
+                    icon: 'question',
+                    iconColor: '#0d6efd',
+                    background: '#ffffff',
+                    showCancelButton: true,
+                    confirmButtonText: '<i class="bi bi-send-fill me-1"></i> Ya, Kirim',
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true,
+                    customClass: {
+                        popup: 'bg-white rounded-3 shadow border p-4',
+                        title: 'fw-bold text-dark fs-6 mb-1',
+                        htmlContainer: 'text-muted small mb-3',
+                        confirmButton: 'btn btn-primary btn-sm px-3 py-1.5 fw-semibold',
+                        cancelButton: 'btn btn-outline-secondary btn-sm px-3 py-1.5 me-2'
+                    },
+                    buttonsStyling: false
+                }).then(function(result) {
+                    if (result.isConfirmed) {
+                        document.getElementById('inputAksi').value = 'kirim';
+                        if (typeof form.requestSubmit === 'function') {
+                            form.requestSubmit();
+                        } else {
+                            var evt = new Event('submit', { cancelable: true });
+                            form.dispatchEvent(evt);
+                            form.submit();
+                        }
+                    }
+                });
+            } else {
+                if (confirm('Apakah Anda yakin ingin mengirimkan PO Kegiatan ini?')) {
+                    document.getElementById('inputAksi').value = 'kirim';
+                    if (typeof form.requestSubmit === 'function') {
+                        form.requestSubmit();
+                    } else {
+                        var evt = new Event('submit', { cancelable: true });
+                        form.dispatchEvent(evt);
+                        form.submit();
+                    }
+                }
+            }
+        });
+    }
 
     // ---- sebelum submit: tuang jadwalState (murni JS) jadi hidden input ----
     document.getElementById('formPo').addEventListener('submit', function () {

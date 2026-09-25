@@ -3,7 +3,7 @@
 /**
  * Controller untuk mengelola Konfigurasi Dinamis Show/Hide Field per Tim,
  * Penetapan Pejabat/Ketua Tim OPTI, dan Privasi Data Masking
- * Dilengkapi Guard Permission (Ketua Tim, Admin & Superadmin)
+ * Khusus diakses dan dikelola oleh Super Administrator
  */
 class ConfigController extends Controller {
 
@@ -12,12 +12,22 @@ class ConfigController extends Controller {
      * Route: GET /config atau GET /pengaturan
      */
     public function index($f3) {
-        $this->requirePermission('config:team', '/po');
+        if (!$this->isLoggedIn()) {
+            $f3->reroute('/login');
+            return;
+        }
+
+        if (!$this->isSuperadmin()) {
+            $this->setFlashError('Akses Ditolak: Halaman Pengaturan Sistem hanya dapat diakses oleh Super Administrator.');
+            $f3->reroute('/dashboard');
+            return;
+        }
 
         $fieldConfigModel = new OptiFieldConfig($this->db);
         $allConfigs = $fieldConfigModel->getAll() ?: array();
 
         $maskEnabled = $fieldConfigModel->isMaskClientNameEnabled();
+        $allowEditSubmitted = $fieldConfigModel->isAllowEditSubmittedData();
 
         // Ambil data personil balai dan ketua tim aktif secara dinamis dari database master
         $userModel = new ArsipUser($this->db);
@@ -29,6 +39,8 @@ class ConfigController extends Controller {
         $f3->set('field_configs', $allConfigs);
         $f3->set('mask_enabled', $maskEnabled);
         $f3->set('mask_client_name', $maskEnabled);
+        $f3->set('allow_edit_submitted', $allowEditSubmitted);
+        $f3->set('allow_edit_submitted_data', $allowEditSubmitted);
 
         $f3->set('internal_users', $allInternalUsers);
         $f3->set('katim_selulosa', $katimSelulosa);
@@ -42,7 +54,16 @@ class ConfigController extends Controller {
      * Route: POST /config/set-ketua-tim
      */
     public function setKetuaTim($f3) {
-        $this->requirePermission('config:team', '/config');
+        if (!$this->isLoggedIn()) {
+            $f3->reroute('/login');
+            return;
+        }
+
+        if (!$this->isSuperadmin()) {
+            $this->setFlashError('Akses Ditolak: Pengaturan Pejabat Ketua Tim hanya dapat diubah oleh Super Administrator.');
+            $f3->reroute('/dashboard');
+            return;
+        }
 
         $post = $f3->get('POST');
         $idSelulosa   = (int)($post['id_user_selulosa'] ?? 0);
@@ -72,7 +93,16 @@ class ConfigController extends Controller {
      * Route: POST /config/field/@id/update
      */
     public function updateField($f3, $params) {
-        $this->requirePermission('config:team', '/config');
+        if (!$this->isLoggedIn()) {
+            $f3->reroute('/login');
+            return;
+        }
+
+        if (!$this->isSuperadmin()) {
+            $this->setFlashError('Akses Ditolak: Konfigurasi Field hanya dapat diubah oleh Super Administrator.');
+            $f3->reroute('/dashboard');
+            return;
+        }
 
         $id = (int)($params['id'] ?? 0);
         $post = $f3->get('POST');
@@ -98,7 +128,16 @@ class ConfigController extends Controller {
      * Route: POST /config/toggle-masking
      */
     public function toggleMasking($f3) {
-        $this->requirePermission('config:team', '/config');
+        if (!$this->isLoggedIn()) {
+            $f3->reroute('/login');
+            return;
+        }
+
+        if (!$this->isSuperadmin()) {
+            $this->setFlashError('Akses Ditolak: Pengaturan Privasi Data hanya dapat diubah oleh Super Administrator.');
+            $f3->reroute('/dashboard');
+            return;
+        }
 
         $fieldConfigModel = new OptiFieldConfig($this->db);
         $currentMask = $fieldConfigModel->isMaskClientNameEnabled();
@@ -114,6 +153,40 @@ class ConfigController extends Controller {
             $f3->reroute('/config');
         } catch (\Exception $e) {
             $this->setFlashError('Gagal memperbarui pengaturan privasi: ' . $e->getMessage());
+            $f3->reroute('/config');
+        }
+    }
+
+    /**
+     * Toggle izin edit data yang telah dikirim / didisposisi (Edit Lock)
+     * Route: POST /config/toggle-edit-lock
+     */
+    public function toggleEditLock($f3) {
+        if (!$this->isLoggedIn()) {
+            $f3->reroute('/login');
+            return;
+        }
+
+        if (!$this->isSuperadmin()) {
+            $this->setFlashError('Akses Ditolak: Pengaturan Kunci Edit Data hanya dapat diubah oleh Super Administrator.');
+            $f3->reroute('/dashboard');
+            return;
+        }
+
+        $fieldConfigModel = new OptiFieldConfig($this->db);
+        $current = $fieldConfigModel->isAllowEditSubmittedData();
+        $newStatus = !$current;
+
+        try {
+            $fieldConfigModel->toggleAllowEditSubmittedData($newStatus);
+
+            $statusText = $newStatus 
+                ? 'Bebas Edit (Data yang telah dikirim/disposisi dapat diedit kembali oleh staf berwenang)' 
+                : 'Data Terkunci (Data yang telah dikirim/disposisi hanya dapat diedit oleh Superadmin)';
+            $this->setFlashSuccess("Pengaturan status izin edit berhasil diperbarui: {$statusText}.");
+            $f3->reroute('/config');
+        } catch (\Exception $e) {
+            $this->setFlashError('Gagal memperbarui izin edit data: ' . $e->getMessage());
             $f3->reroute('/config');
         }
     }

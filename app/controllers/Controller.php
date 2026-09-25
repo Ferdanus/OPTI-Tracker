@@ -55,7 +55,6 @@ class Controller {
             'po:view', 'po:create', 'po:edit', 'po:rab', 'po:jadwal', 'po:evaluasi', 'po:sop',
             'penawaran:view',
             'klien:view',
-            'config:team', 'config:manage',
             'alert:manage'
         ),
         'keuangan' => array(
@@ -146,7 +145,13 @@ class Controller {
         $this->f3->set('can_manage_po', $this->hasPermission('po:create') || $this->hasPermission('po:edit'));
         $this->f3->set('can_approve_po', $this->hasPermission('po:approve'));
         $this->f3->set('can_manage_kontrak', $this->hasPermission('kontrak:create') || $this->hasPermission('kontrak:edit'));
-        $this->f3->set('can_manage_config', $this->hasPermission('config:manage') || $this->hasPermission('config:team'));
+        $this->f3->set('can_manage_config', $role === 'superadmin');
+
+        // Load status izin edit data yang telah dikirim / disposisi
+        $fieldConfigModel = new OptiFieldConfig($this->db);
+        $allowEditSubmitted = $fieldConfigModel->isAllowEditSubmittedData();
+        $this->f3->set('allow_edit_submitted_data', $allowEditSubmitted);
+        $this->f3->set('allow_edit_submitted', $allowEditSubmitted);
 
         // Hitung notifikasi tugas / disposisi masuk untuk Ketua Tim & Superadmin
         $notifKatimCount = 0;
@@ -219,6 +224,21 @@ class Controller {
             $notifProposalCount = 0;
         }
         $this->f3->set('jumlah_notif_proposal', $notifProposalCount);
+
+        // Hitung notifikasi antrean Pembayaran untuk Tim Keuangan & Superadmin
+        $notifKeuanganCount = 0;
+        if ($role === 'keuangan' || $role === 'superadmin' || $isTimMitra) {
+            try {
+                $sqlKeuangan = "SELECT COUNT(*) as c FROM order_layanan o
+                                WHERE o.status_keuangan = 'menunggu_pembayaran'
+                                  AND o.id NOT IN (SELECT DISTINCT order_id FROM opti_pembayaran)";
+                $resKeuangan = $this->db->exec($sqlKeuangan);
+                $notifKeuanganCount = (int)($resKeuangan[0]['c'] ?? 0);
+            } catch (\Exception $eKeuangan) {
+                $notifKeuanganCount = 0;
+            }
+        }
+        $this->f3->set('jumlah_notif_keuangan', $notifKeuanganCount);
 
         // Notifikasi Terintegrasi (Notification Service) untuk Bell Dropdown & Floating Bubble
         try {
@@ -311,6 +331,23 @@ class Controller {
      */
     public function isTimKerja(): bool {
         return $this->getUserRole() === 'tim_kerja';
+    }
+
+    /**
+     * Cek apakah pengguna berwenang mengedit data yang sudah dikirim / didisposisi
+     * Jika konfigurasi 'allow_edit_submitted_data' OFF (false), hanya Superadmin yang boleh mengedit data yang sudah dikirim / didisposisi.
+     * @param bool $isDataSubmitted True jika data sudah bukan draf / sudah dikirim / didisposisi
+     * @return bool
+     */
+    public function canEditSubmittedData(bool $isDataSubmitted = false): bool {
+        if ($this->isSuperadmin()) {
+            return true;
+        }
+        if (!$isDataSubmitted) {
+            return true; // Data masih draft / baru -> boleh diedit oleh pembuat / tim berwenang
+        }
+        $fieldConfigModel = new OptiFieldConfig($this->db);
+        return $fieldConfigModel->isAllowEditSubmittedData();
     }
 
     /**

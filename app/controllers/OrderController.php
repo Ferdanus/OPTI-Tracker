@@ -458,6 +458,19 @@ class OrderController extends Controller {
             }
         }
 
+        $hasPenawaranDeal = false;
+        if (!empty($riwayatPenawaran)) {
+            foreach ($riwayatPenawaran as $spItem) {
+                if (($spItem['status_respon_klien'] ?? '') === 'deal') {
+                    $hasPenawaranDeal = true;
+                    break;
+                }
+            }
+        }
+        if (!$hasPenawaranDeal && !empty($penawaran) && ($penawaran['status_respon_klien'] ?? '') === 'deal') {
+            $hasPenawaranDeal = true;
+        }
+
         $f3->set('order', $order);
         $f3->set('surat_masuk', $suratMasuk);
         $f3->set('tinjauan', $tinjauan);
@@ -466,6 +479,7 @@ class OrderController extends Controller {
         $f3->set('penawaran', $penawaran);
         $f3->set('riwayat_penawaran', $riwayatPenawaran);
         $f3->set('total_penawaran', $totalPenawaran);
+        $f3->set('has_penawaran_deal', $hasPenawaranDeal);
         $f3->set('invoices', $invoices);
         $f3->set('riwayat_bayar', $riwayatBayar);
         $f3->set('rekap_keuangan', $rekapKeuangan);
@@ -522,14 +536,18 @@ class OrderController extends Controller {
             $isStep4Done = false;
         }
 
-        // Step 5: Penawaran DEAL
-        $isPenawaranDeal = $isStep4Done && (
-            ($order['status_penawaran'] ?? '') === 'deal' ||
-            (!empty($penawaran) && ($penawaran['status_respon_klien'] ?? '') === 'deal')
+        // Step 5: Penawaran DEAL & Sudah Didisposisikan ke Tim Keuangan
+        $isDisposisiKeuangan = $hasPenawaranDeal && (
+            in_array($order['status_keuangan'] ?? '', ['menunggu_pembayaran', 'terbayar_sebagian', 'lunas']) ||
+            !empty($riwayatBayar)
         );
+        $f3->set('is_disposisi_keuangan', $isDisposisiKeuangan);
+
+        // Tahap 5 selesai jika Step 4 Selesai, Penawaran DEAL, dan Telah Didisposisikan ke Keuangan
+        $isStep5Done = $isStep4Done && $hasPenawaranDeal && $isDisposisiKeuangan;
 
         // Step 6: Pembayaran
-        $isPembayaranLunas = $isPenawaranDeal && (
+        $isPembayaranLunas = $isStep5Done && (
             ($order['status_keuangan'] ?? '') === 'lunas' ||
             !empty($riwayatBayar)
         );
@@ -559,7 +577,7 @@ class OrderController extends Controller {
             $currentStep = 3;
         } elseif (!$isStep4Done) {
             $currentStep = 4;
-        } elseif (!$isPenawaranDeal) {
+        } elseif (!$isStep5Done) {
             $currentStep = 5;
         } elseif (!$isPembayaranLunas) {
             $currentStep = 6;
@@ -783,25 +801,8 @@ class OrderController extends Controller {
 
         // ========================================================
         // AUDIT WAKTU & PETUGAS PER TAHAPAN (FIRST TIME ONLY)
+        // Status dibaca dipicu saat user membuka detail tahap tersebut (bukan saat render halaman penuh)
         // ========================================================
-        $currentUserId = (int)$this->getUserId();
-        $currentUserNama = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'Petugas');
-        $currentUserRole = $this->getUserRole() ?? 'user';
-
-        if ($currentUserId > 0) {
-            // Tahap 1: Dibaca saat Tim Mitra / Admin membuka detail order pertama kali
-            if (in_array($currentUserRole, ['tim_mitra', 'superadmin', 'admin'])) {
-                StageAudit::recordDibaca($this->db, $id, 1, $currentUserId, $currentUserNama, 'Tim Mitra');
-            }
-
-            // Tahap 2: Dibaca saat Formulir Pelayanan telah dikirim dan dibuka oleh Ka. Tim / Admin / Tim Teknis / Tim Mitra
-            if (!in_array($order['status'] ?? '', ['permintaan_masuk', 'draft_disimpan', 'draft'])) {
-                $divisiKetua = (($order['jenis_layanan_opti'] ?? '') === 'lingkungan') ? 'Ka. Tim Lingkungan' : 'Ka. Tim Selulosa';
-                $roleLabel = ($currentUserRole === 'ketua_tim') ? $divisiKetua : (($currentUserRole === 'superadmin' || $currentUserRole === 'admin') ? 'Administrator' : ($currentUserRole === 'tim_mitra' ? 'Tim Mitra' : 'Tim Teknis / PIC'));
-                StageAudit::recordDibaca($this->db, $id, 2, $currentUserId, $currentUserNama, $roleLabel);
-            }
-        }
-
         $auditStages = StageAudit::getAuditByOrder($this->db, $id, $order, [
             'surat_masuk'   => $suratMasuk,
             'penawaran'     => $penawaran,
@@ -813,6 +814,71 @@ class OrderController extends Controller {
         $f3->set('audit_stages', $auditStages);
 
         $this->render('order/detail.html', "Detail Order #{$order['nomor_order']}", 'order');
+    }
+
+    /**
+     * Catat status dibaca untuk tahapan tertentu saat pengguna membuka/melihat tahap tersebut
+     * Route: POST /order/@id/stage/@tahap/baca
+     */
+    public function catatTahapDibaca($f3, $params) {
+        $orderId = (int)($params['id'] ?? 0);
+        $tahap   = (int)($params['tahap'] ?? 0);
+
+        if ($orderId <= 0 || $tahap < 1 || $tahap > 8) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Parameter order atau tahap tidak valid.']);
+            return;
+        }
+
+        $userId = (int)$this->getUserId();
+        if ($userId <= 0) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Sesi tidak valid.']);
+            return;
+        }
+
+        $userNama = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'Petugas');
+        $userRole = $this->getUserRole() ?? 'user';
+
+        // Tentukan label role yang representatif untuk audit jejak baca
+        $roleLabel = 'Petugas';
+        if ($userRole === 'superadmin' || $userRole === 'admin') {
+            $roleLabel = 'Administrator';
+        } elseif ($userRole === 'ketua_tim') {
+            $layanan = $this->getUserLayanan();
+            $roleLabel = ($layanan === 'lingkungan') ? 'Ka. Tim Lingkungan' : 'Ka. Tim Selulosa';
+        } elseif ($userRole === 'tim_mitra' || $userRole === 'tim_mitra_industri' || $userRole === 'admin_order') {
+            $roleLabel = 'Tim Mitra';
+        } elseif ($userRole === 'tim_kerja') {
+            $roleLabel = 'Tim Teknis / PIC';
+        } elseif ($userRole === 'keuangan') {
+            $roleLabel = 'Bagian Keuangan';
+        } elseif ($userRole === 'sekretaris') {
+            $roleLabel = 'Sekretariat';
+        }
+
+        // Catat waktu dibaca (Prinsip FIRST TIME ONLY)
+        StageAudit::recordDibaca($this->db, $orderId, $tahap, $userId, $userNama, $roleLabel);
+
+        // Ambil data audit tersimpan untuk tahapan ini
+        $auditData = $this->db->exec(
+            "SELECT waktu_dibaca, dibaca_nama, dibaca_role FROM opti_stage_audit WHERE order_id = ? AND tahap = ?",
+            [1 => $orderId, 2 => $tahap]
+        );
+
+        $waktuDibaca = !empty($auditData[0]['waktu_dibaca']) ? $auditData[0]['waktu_dibaca'] : null;
+        $dibacaNama  = !empty($auditData[0]['dibaca_nama']) ? $auditData[0]['dibaca_nama'] : (!empty($auditData[0]['dibaca_role']) ? $auditData[0]['dibaca_role'] : $userNama);
+        $formattedTime = $waktuDibaca ? date('d M Y, H:i', strtotime($waktuDibaca)) : date('d M Y, H:i');
+
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => true,
+            'order_id' => $orderId,
+            'tahap' => $tahap,
+            'waktu_dibaca' => $waktuDibaca,
+            'waktu_dibaca_formatted' => $formattedTime,
+            'dibaca_nama' => $dibacaNama
+        ]);
     }
 
     /**
@@ -1014,7 +1080,8 @@ class OrderController extends Controller {
             }
         }
 
-        $canEdit = ($this->hasPermission('order:tinjau') || $this->isSuperadmin() || $this->isTimMitra());
+        $isSubmitted = !empty($tinjauan) || (($order['status'] ?? 'baru') !== 'baru');
+        $canEdit = ($this->hasPermission('order:tinjau') || $this->isSuperadmin() || $this->isTimMitra()) && $this->canEditSubmittedData($isSubmitted);
 
         $f3->set('order', $order);
         $f3->set('tinjauan', $tinjauan);
@@ -1022,12 +1089,10 @@ class OrderController extends Controller {
         $f3->set('surat_masuk', $suratMasuk);
         $f3->set('can_edit', $canEdit);
 
-        // Audit Tahap 2 & 3: Formulir Pelayanan & Kaji Kelayakan Teknis dibuka / dibaca
+        // Audit Tahap 3: Kaji Kelayakan Teknis dibuka / dibaca
         $currentUserId = (int)$this->getUserId();
         $currentUserNama = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'Petugas');
         if ($currentUserId > 0) {
-            $divisiKetua = (($order['jenis_layanan_opti'] ?? '') === 'lingkungan') ? 'Ka. Tim Lingkungan' : 'Ka. Tim Selulosa';
-            StageAudit::recordDibaca($this->db, $id, 2, $currentUserId, $currentUserNama, $divisiKetua);
             StageAudit::recordDibaca($this->db, $id, 3, $currentUserId, $currentUserNama, $isKetuaTim ? 'Ketua Tim OPTI' : 'Tim Teknis / PIC');
         }
 
@@ -1185,7 +1250,8 @@ class OrderController extends Controller {
         $daftarPic = OrderLayanan::getPICSpesialisasiList($this->db, $order['jenis_layanan_opti'] ?? 'selulosa');
 
         $isPic = ((int)$this->getUserId() === (int)($order['pic_proposal_id'] ?? 0));
-        $canEdit = ($this->hasPermission('order:proposal') || $this->isSuperadmin() || $isPic);
+        $isSubmitted = !empty($proposal) && in_array($proposal['status_proposal'] ?? '', ['diajukan', 'disetujui', 'diterbitkan']);
+        $canEdit = ($this->hasPermission('order:proposal') || $this->isSuperadmin() || $isPic) && $this->canEditSubmittedData($isSubmitted);
 
         $f3->set('order', $order);
         $f3->set('proposal', $proposal);
@@ -1363,7 +1429,8 @@ class OrderController extends Controller {
         $daftarLabEksternal = $this->db->exec("SELECT * FROM pengujian_eksternal WHERE status = 'aktif' ORDER BY nama_lembaga ASC");
 
         $isPic = ((int)$this->getUserId() === (int)($order['pic_proposal_id'] ?? 0));
-        $canEdit = ($this->hasPermission('order:kalkulasi_biaya') || $this->isSuperadmin() || $this->isKetuaTim() || $this->isTimMitra() || $isPic);
+        $isSubmitted = in_array($order['status_proposal_biaya'] ?? '', ['menunggu_approval', 'disetujui']) || in_array($order['status'] ?? '', ['penawaran', 'negosiasi', 'po_terbit', 'selesai']);
+        $canEdit = ($this->hasPermission('order:kalkulasi_biaya') || $this->isSuperadmin() || $this->isKetuaTim() || $this->isTimMitra() || $isPic) && $this->canEditSubmittedData($isSubmitted);
 
         $f3->set('order', $order);
         $f3->set('kalkulasi_items', $kalkulasiItems);
@@ -1790,7 +1857,8 @@ class OrderController extends Controller {
         $arsipUser = new \DB\SQL\Mapper($this->db, 'tb_arsipuser');
         $daftarPegawai = $arsipUser->find(null, ['order' => 'nama_user ASC']);
 
-        $canEdit = ($this->hasPermission('order:form_pelayanan') || $this->isSuperadmin());
+        $isSubmitted = !empty($sp) || (($order['status'] ?? 'baru') !== 'baru');
+        $canEdit = ($this->hasPermission('order:form_pelayanan') || $this->isSuperadmin()) && $this->canEditSubmittedData($isSubmitted);
 
         $tinjauan = $orderModel->getTinjauanKelayakan($id);
 
@@ -1822,6 +1890,13 @@ class OrderController extends Controller {
             'selulosa'    => 'Selulosa',
             'lingkungan'  => 'Lingkungan',
         ]);
+
+        // Audit Tahap 2: Formulir Permintaan Pelayanan Jasa dibuka / diisi pertama kali
+        $currentUserId = (int)$this->getUserId();
+        $currentUserNama = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'Petugas');
+        if ($currentUserId > 0) {
+            StageAudit::recordDibaca($this->db, $id, 2, $currentUserId, $currentUserNama, 'Tim Mitra');
+        }
 
         $this->render('tim_mitra/surat Pelayanan/form.html', 'Formulir Pelayanan Jasa', 'order');
     }
@@ -2203,18 +2278,19 @@ class OrderController extends Controller {
             in_array($order['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui'])
         );
 
-        $canEdit = ($isPic || $isSuperadmin || $this->hasPermission('order:proposal'));
+        $isSubmitted = !empty($proposal) && in_array($order['status_proposal_biaya'] ?? '', ['menunggu_approval', 'siap_penawaran', 'disetujui']);
+        $canEdit = ($isPic || $isSuperadmin || $this->hasPermission('order:proposal')) && $this->canEditSubmittedData($isSubmitted);
         $canReview = ($isKetuaTim || $isSuperadmin);
 
         $lockMessage = '';
         if ($proposalDisetujui && !$isSuperadmin) {
             $canEdit = false;
-            $lockMessage = "Dokumen proposal teknis telah disetujui oleh Ketua Tim OPTI. Formulir terkunci untuk persiapan penerbitan Surat Penawaran Resmi.";
+            $lockMessage = "Proposal telah disetujui. Tidak bisa merubah data, silakan hubungi superadmin.";
         } elseif (!$tinjauanSelesai) {
             $canEdit = false;
-            $lockMessage = "Kaji Ulang Kelayakan Teknis (Tahap 2) belum selesai atau diputuskan 'Tidak Dapat Dilaksanakan'. Dokumen proposal belum dapat disusun atau diedit.";
+            $lockMessage = "Kaji kelayakan belum selesai. Tidak bisa merubah data, silakan hubungi superadmin.";
         } elseif (!$canEdit) {
-            $lockMessage = "Penyusunan dan pengunggahan dokumen proposal teknis merupakan wewenang PIC Proposal yang ditugaskan.";
+            $lockMessage = "Tidak bisa merubah data, silakan hubungi superadmin.";
         }
 
         // Ambil data surat masuk jika ada
@@ -2476,6 +2552,17 @@ class OrderController extends Controller {
             // Audit Trail Activity Log
             if ($actionType === 'ajukan') {
                 $this->logActivity($id, 'proposal', 'ajukan_ke_ketua', "Dokumen proposal teknis resmi diajukan ke Ketua Tim OPTI oleh {$userNama} (PIC Peneliti).");
+                
+                // Record Audit Stage 4 (Pengajuan Proposal Teknis)
+                \StageAudit::recordKirim(
+                    $this->db,
+                    $id,
+                    4,
+                    'Proposal Teknis / Parameter Tarif',
+                    $userId,
+                    $userNama,
+                    'PIC Proposal'
+                );
             } else {
                 $this->logActivity($id, 'proposal', 'simpan_draft', "Draf dokumen proposal teknis disimpan (Status: Draft Disimpan) oleh {$userNama} (PIC Peneliti).");
             }
@@ -2968,6 +3055,12 @@ class OrderController extends Controller {
             $namaPetugas = $_SESSION['nama_lengkap'] ?? 'Ketua Tim Teknis';
             $this->logActivity('order', $id, 'terima_sampel', "Penerimaan fisik sampel dicatat tanggal {$tanggalSampel}. Deadline SPM dihitung resmi: {$kalkulasi['tanggal_deadline_spm']} ({$durasiHariKerja} hari kerja). Dilakukan oleh {$namaPetugas}.");
 
+            // Audit Tahap 7: Penerimaan Fisik Sampel dicatat (FIRST TIME ONLY)
+            $currentUserId = (int)$this->getUserId();
+            if ($currentUserId > 0) {
+                StageAudit::recordDibaca($this->db, $id, 7, $currentUserId, $namaPetugas, 'Ketua Tim OPTI');
+            }
+
             $msg = "Penerimaan sampel berhasil dicatat! Batas pengerjaan (SPM) otomatis dihitung mulai H+1 kerja: <strong>{$deadlineFormatted}</strong> ({$durasiHariKerja} hari kerja";
             if ($jmlLibur > 0) {
                 $msg .= ", melewati {$jmlLibur} hari libur nasional";
@@ -3076,6 +3169,12 @@ class OrderController extends Controller {
 
             $namaPetugas = $_SESSION['nama_lengkap'] ?? 'Tim Keuangan';
             $this->logActivity('order', $id, 'konfirmasi_bayar', "Bukti pembayaran diunggah dan diverifikasi lunas oleh {$namaPetugas}. Tahap pengerjaan pengujian laboratorium dibuka untuk Tim OPTI.");
+
+            // Audit Tahap 6: Pembayaran diverifikasi / diunggah (FIRST TIME ONLY)
+            $currentUserId = (int)$this->getUserId();
+            if ($currentUserId > 0) {
+                StageAudit::recordDibaca($this->db, $id, 6, $currentUserId, $namaPetugas, 'Tim Keuangan');
+            }
 
             $this->setFlashSuccess("Bukti pembayaran berhasil diunggah! Status pembayaran: <strong>Lunas</strong>. Tim OPTI dapat segera memulai pelaksanaan pengujian laboratorium.");
         } catch (\Exception $e) {

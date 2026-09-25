@@ -227,6 +227,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
 
         $rows = $this->db->exec($sql, $params);
         foreach ($rows as &$r) {
+            $r['nama_perusahaan'] = Customer::formatNamaPerusahaan($r['pt_cv'] ?? '', $r['nama_perusahaan'] ?? '');
             $st = self::resolveStageStatus($r);
             $r['stage_label'] = $st['label'];
             $r['stage_class'] = $st['class'];
@@ -474,6 +475,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
             return null;
         }
         $detail = $res[0];
+        $detail['nama_perusahaan'] = Customer::formatNamaPerusahaan($detail['pt_cv'] ?? '', $detail['nama_perusahaan'] ?? '');
         $st = self::resolveStageStatus($detail);
         $detail['stage_label'] = $st['label'];
         $detail['stage_class'] = $st['class'];

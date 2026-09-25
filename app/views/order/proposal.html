@@ -209,7 +209,7 @@
                 </check>
             </check>
             <p class="text-secondary small mb-0">
-                Order <strong class="text-dark font-monospace">#{{ @order.nomor_order }}</strong> &bull; {{ @order.nama_perusahaan }} ({{ @order.pt_cv }}) &bull; <span class="fst-italic text-dark">{{ @order.judul_kegiatan }}</span>
+                Order <strong class="text-dark font-monospace">#{{ @order.nomor_order }}</strong> &bull; {{ @order.nama_perusahaan }} &bull; <span class="fst-italic text-dark">{{ @order.judul_kegiatan }}</span>
             </p>
         </div>
 
@@ -252,7 +252,7 @@
                         <div class="d-flex mb-2">
                             <span class="text-muted" style="width: 130px; flex-shrink: 0;">Nama Perusahaan</span>
                             <span class="text-muted me-2">:</span>
-                            <strong class="text-dark">{{ @order.nama_perusahaan }} ({{ @order.pt_cv }})</strong>
+                            <strong class="text-dark">{{ @order.nama_perusahaan }}</strong>
                         </div>
                         <div class="d-flex mb-2">
                             <span class="text-muted" style="width: 130px; flex-shrink: 0;">PIC Klien</span>
@@ -388,14 +388,15 @@
                 <div class="card-body p-4">
                     
                     <check if="{{ !@can_edit }}">
-                        <div class="alert alert-warning border-0 d-flex align-items-center mb-4 py-2 px-3 small rounded-3">
+                        <div class="alert alert-warning border-0 d-flex align-items-center gap-2 mb-4 py-2 px-3 small rounded-3 shadow-xs text-warning-emphasis">
+                            <i class="bi bi-lock-fill fs-5 flex-shrink-0 text-warning"></i>
                             <div>
-                                <strong>Mode Lihat Saja (Read-Only)</strong>: {{ @lock_message ?: 'Penyusunan dan pengunggahan dokumen proposal teknis merupakan wewenang PIC Proposal yang ditugaskan.' }}
+                                <strong>Status Edit Dikunci:</strong> {{ @lock_message ?: 'Tidak bisa merubah data, silakan hubungi superadmin.' }}
                             </div>
                         </div>
                     </check>
 
-                    <form action="{{ @BASE }}/order/{{ @order.id }}/proposal/simpan" method="POST" enctype="multipart/form-data" id="formProposal">
+                    <form action="{{ @BASE }}/order/{{ @order.id }}/proposal/simpan" method="POST" enctype="multipart/form-data" id="formProposal" data-no-loader="true">
                         
                         <!-- 1. Judul Proposal -->
                         <div class="mb-4">
@@ -477,12 +478,12 @@
                                                 <i class="bi bi-eye-fill me-1"></i> Pratinjau Dokumen
                                             </button>
                                             <!-- Tombol Download file fisik -->
-                                            <a href="{{ @BASE }}/{{ @proposal.file_proposal }}" target="_blank" class="btn btn-light border btn-sm px-3 py-1.5 fw-semibold text-secondary" download>
+                                            <a href="{{ @BASE }}/{{ @proposal.file_proposal }}" target="_blank" class="btn btn-outline-primary btn-sm px-3 py-1.5 fw-semibold shadow-xs" download>
                                                 <i class="bi bi-download me-1"></i> Unduh
                                             </a>
                                             <!-- Tombol Ganti Berkas jika can_edit -->
                                             <check if="{{ @can_edit }}">
-                                                <button type="button" class="btn btn-light border btn-sm px-2.5 py-1.5 text-secondary" onclick="document.getElementById('file_proposal').click()" title="Unggah / Ganti berkas proposal">
+                                                <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-1.5 fw-semibold shadow-xs" onclick="document.getElementById('file_proposal').click()" title="Unggah / Ganti berkas proposal">
                                                     <i class="bi bi-arrow-repeat me-1"></i> Ganti Berkas
                                                 </button>
                                             </check>
@@ -621,11 +622,11 @@
 
                                 <!-- Baris Tombol Aksi Sejajar -->
                                 <div class="d-flex justify-content-between align-items-center gap-3">
-                                    <button type="submit" name="action_type" value="draft" class="btn btn-light border px-4 py-2 fw-semibold text-secondary d-inline-flex align-items-center gap-1.5 shadow-2xs">
-                                        <i class="bi bi-save"></i>
+                                    <button type="submit" name="action_type" value="draft" class="btn btn-outline-primary px-4 py-2 fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5">
+                                        <i class="bi bi-bookmark"></i>
                                         <span>Simpan Draf</span>
                                     </button>
-                                    <button type="submit" id="btnKirimProposal" name="action_type" value="ajukan" class="btn btn-primary px-4 py-2 fw-semibold text-white shadow-sm d-inline-flex align-items-center gap-1.5" {{ empty(@proposal.file_proposal) || ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) ? 'disabled' : '' }} title="{{ empty(@proposal.file_proposal) || ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) ? 'Lengkapi estimasi biaya dan unggah berkas proposal untuk mengaktifkan tombol kirim' : 'Kirim proposal ke Ketua Tim OPTI' }}">
+                                    <button type="button" id="btnKirimProposal" class="btn btn-primary px-4 py-2 fw-semibold text-white shadow-sm d-inline-flex align-items-center gap-1.5" onclick="confirmKirimProposalAction()" {{ empty(@proposal.file_proposal) || ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) ? 'disabled' : '' }} title="{{ empty(@proposal.file_proposal) || ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) ? 'Lengkapi estimasi biaya dan unggah berkas proposal untuk mengaktifkan tombol kirim' : 'Kirim proposal ke Ketua Tim OPTI' }}">
                                         <i class="bi bi-send-fill"></i>
                                         <span>Kirim</span>
                                     </button>
@@ -1359,44 +1360,113 @@ document.addEventListener('DOMContentLoaded', function() {
 
     checkKirimButtonState();
 
-    // Validasi Pengajuan Proposal: Pastikan berkas proposal sudah diunggah & biaya > 0
+    // Handle submit form untuk tombol Simpan Draf
     const formProposal = document.getElementById('formProposal');
     if (formProposal) {
         formProposal.addEventListener('submit', function(e) {
             const submitter = e.submitter;
-            const actionType = submitter ? submitter.value : '';
-            if (actionType === 'ajukan') {
-                const hasExistingFile = {{ !empty(@proposal.file_proposal) ? 'true' : 'false' }};
-                const fileInput = document.getElementById('file_proposal');
-                const hasNewFile = (fileInput && fileInput.files && fileInput.files.length > 0) || (typeof selectedFileObj !== 'undefined' && selectedFileObj !== null);
-                const hasFile = hasExistingFile || hasNewFile;
-
-                const hiddenBiaya = document.getElementById('inputBiayaReal');
-                const biayaVal = hiddenBiaya ? (parseFloat(hiddenBiaya.value) || 0) : 0;
-                const hasCost = biayaVal > 0;
-
-                if (!hasFile || !hasCost) {
-                    e.preventDefault();
-                    if (!hasFile) {
-                        const dropzone = document.getElementById('dropzoneContainer');
-                        if (dropzone) {
-                            dropzone.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            dropzone.style.borderColor = '#dc3545';
-                            setTimeout(() => { dropzone.style.borderColor = ''; }, 3000);
-                        }
-                    } else if (!hasCost) {
-                        const inputBiaya = document.getElementById('inputBiayaDisplay');
-                        if (inputBiaya) {
-                            inputBiaya.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            inputBiaya.focus();
-                        }
-                    }
-                    return false;
+            const actionType = submitter ? submitter.value : (document.getElementById('hiddenActionType') ? document.getElementById('hiddenActionType').value : 'draft');
+            if (actionType === 'draft') {
+                if (submitter) {
+                    submitter.disabled = true;
+                    submitter.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Menyimpan...';
                 }
             }
         });
     }
 });
+
+// Fungsi khusus konfirmasi Kirim Proposal (Tidak memicu loader global saat pop up konfirmasi)
+function confirmKirimProposalAction() {
+    const form = document.getElementById('formProposal');
+    if (!form) return;
+
+    const hasExistingFile = {{ !empty(@proposal.file_proposal) ? 'true' : 'false' }};
+    const fileInput = document.getElementById('file_proposal');
+    const hasNewFile = (fileInput && fileInput.files && fileInput.files.length > 0) || (typeof selectedFileObj !== 'undefined' && selectedFileObj !== null);
+    const hasFile = hasExistingFile || hasNewFile;
+
+    const hiddenBiaya = document.getElementById('inputBiayaReal');
+    const biayaVal = hiddenBiaya ? (parseFloat(hiddenBiaya.value) || 0) : 0;
+    const hasCost = biayaVal > 0;
+
+    if (!hasFile || !hasCost) {
+        if (!hasFile) {
+            const dropzone = document.getElementById('dropzoneContainer');
+            if (dropzone) {
+                dropzone.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                dropzone.style.borderColor = '#dc3545';
+                setTimeout(() => { dropzone.style.borderColor = ''; }, 3000);
+            }
+        } else if (!hasCost) {
+            const inputBiaya = document.getElementById('inputBiayaDisplay');
+            if (inputBiaya) {
+                inputBiaya.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                inputBiaya.focus();
+            }
+        }
+        return false;
+    }
+
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: 'Kirim Proposal ke Ketua Tim?',
+            text: 'Apakah Anda yakin ingin mengirimkan berkas proposal dan estimasi biaya ini kepada Ketua Tim OPTI?',
+            icon: 'question',
+            iconColor: '#0d6efd',
+            background: '#ffffff',
+            showCancelButton: true,
+            confirmButtonText: '<i class="bi bi-send-fill me-1"></i> Ya, Kirim',
+            cancelButtonText: 'Batal',
+            reverseButtons: true,
+            customClass: {
+                popup: 'bg-white rounded-3 shadow border p-4',
+                title: 'fw-bold text-dark fs-6 mb-1',
+                htmlContainer: 'text-muted small mb-3',
+                confirmButton: 'btn btn-primary btn-sm px-3 py-1.5 fw-semibold',
+                cancelButton: 'btn btn-outline-secondary btn-sm px-3 py-1.5 me-2'
+            },
+            buttonsStyling: false
+        }).then(function(result) {
+            if (result.isConfirmed) {
+                const btn = document.getElementById('btnKirimProposal');
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Mengirim...';
+                }
+
+                let actInput = document.getElementById('hiddenActionType');
+                if (!actInput) {
+                    actInput = document.createElement('input');
+                    actInput.type = 'hidden';
+                    actInput.name = 'action_type';
+                    actInput.id = 'hiddenActionType';
+                    form.appendChild(actInput);
+                }
+                actInput.value = 'ajukan';
+                form.submit();
+            }
+        });
+    } else {
+        if (confirm('Apakah Anda yakin ingin mengirimkan berkas proposal dan estimasi biaya ini kepada Ketua Tim OPTI?')) {
+            const btn = document.getElementById('btnKirimProposal');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Mengirim...';
+            }
+            let actInput = document.getElementById('hiddenActionType');
+            if (!actInput) {
+                actInput = document.createElement('input');
+                actInput.type = 'hidden';
+                actInput.name = 'action_type';
+                actInput.id = 'hiddenActionType';
+                form.appendChild(actInput);
+            }
+            actInput.value = 'ajukan';
+            form.submit();
+        }
+    }
+}
 </script>
 <script>
     var deadlineIso = "{{ @deadline_info.tanggal_deadline }}";

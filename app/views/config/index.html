@@ -52,7 +52,7 @@
                     </div>
 
                     <div class="d-flex justify-content-end">
-                        <button type="submit" class="btn btn-primary px-4">
+                        <button type="button" class="btn btn-primary px-4" onclick="confirmSetKetuaTim(this)">
                             <i class="bi bi-check2-circle me-1"></i> Simpan Penetapan Ketua Tim
                         </button>
                     </div>
@@ -62,35 +62,93 @@
     </div>
 
     <!-- ======================================================== -->
-    <!-- KARTU 2: PERLINDUNGAN PRIVASI DATA (MASKING NAMA KLIEN) -->
+    <!-- FITUR KHUSUS: PRIVASI DATA & KONTROL IZIN EDIT (WHITE THEME) -->
     <!-- ======================================================== -->
-    <div class="col-lg-12">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
+    <div class="col-lg-6 col-12">
+        <div class="card border border-2 shadow-sm rounded-3 h-100 bg-white" style="border-color: #e2e8f0 !important;">
+            <div class="card-body p-4 d-flex flex-column justify-content-between">
                 <div>
-                    <h6 class="m-0 fw-bold text-dark"><i class="bi bi-shield-lock text-primary me-2"></i>Perlindungan Privasi Nama Klien Industri (Data Masking)</h6>
-                    <span class="text-muted small">Menyamarkan nama perusahaan di dashboard publik (misal: <code>PT S*** M*** S***</code>) untuk menjaga kerahasiaan klien balai.</span>
-                </div>
-            </div>
-            <div class="card-body p-4">
-                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 p-3 bg-light rounded-3">
-                    <div>
-                        <div class="fw-bold text-dark">Status Masking Nama Perusahaan:</div>
-                        <div class="small text-muted">
-                            Saat diaktifkan, nama klien di tabel rekap PO, Order, Pembayaran, dan Kontrak akan otomatis disamarkan.
+                    <div class="d-flex align-items-start gap-3 mb-3">
+                        <div class="d-flex align-items-center justify-content-center flex-shrink-0 rounded-3 bg-white border" style="width: 44px; height: 44px; border-color: #cbd5e1 !important;">
+                            <i class="bi bi-shield-lock text-dark fs-5"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="fw-bold text-dark mb-1 fs-6">Perlindungan Privasi (Data Masking)</h6>
+                            <p class="text-muted small mb-0" style="line-height: 1.45;">
+                                Menyamarkan nama perusahaan/klien pada tabel rekap publik (misal: <code>PT S*** M*** S***</code>) untuk menjaga kerahasiaan klien industri.
+                            </p>
                         </div>
                     </div>
-                    <form action="{{ @BASE }}/config/toggle-masking" method="POST">
+                </div>
+
+                <div class="d-flex align-items-center justify-content-between p-3 rounded-3 bg-white border mt-3" style="border-color: #e2e8f0 !important; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                    <div>
+                        <div class="small text-muted mb-0">Status Masking:</div>
+                        <div class="fw-bold text-dark fs-6">
+                            <check if="{{ @mask_client_name }}">
+                                <true><span class="text-dark"><i class="bi bi-check-circle-fill text-dark me-1"></i>Aktif (Nama Disamarkan)</span></true>
+                                <false><span class="text-secondary"><i class="bi bi-dash-circle me-1"></i>Nonaktif (Tampil Penuh)</span></false>
+                            </check>
+                        </div>
+                    </div>
+                    <form action="{{ @BASE }}/config/toggle-masking" method="POST" class="m-0">
                         <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
                         <check if="{{ @mask_client_name }}">
                             <true>
-                                <button type="submit" class="btn btn-success d-flex align-items-center gap-2">
-                                    <i class="bi bi-toggle-on fs-5"></i> Masking Aktif (Klik untuk Matikan)
+                                <button type="button" class="btn btn-dark btn-sm px-3 py-2 fw-semibold d-flex align-items-center gap-2 shadow-sm" onclick="confirmToggleMasking(this, false)">
+                                    <i class="bi bi-toggle-on fs-5"></i> Masking Aktif
                                 </button>
                             </true>
                             <false>
-                                <button type="submit" class="btn btn-outline-secondary d-flex align-items-center gap-2">
-                                    <i class="bi bi-toggle-off fs-5"></i> Masking Nonaktif (Klik untuk Aktifkan)
+                                <button type="button" class="btn btn-outline-dark btn-sm px-3 py-2 fw-semibold d-flex align-items-center gap-2 bg-white" onclick="confirmToggleMasking(this, true)">
+                                    <i class="bi bi-toggle-off fs-5 text-muted"></i> Masking Nonaktif
+                                </button>
+                            </false>
+                        </check>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 col-12">
+        <div class="card border border-2 shadow-sm rounded-3 h-100 bg-white" style="border-color: #e2e8f0 !important;">
+            <div class="card-body p-4 d-flex flex-column justify-content-between">
+                <div>
+                    <div class="d-flex align-items-start gap-3 mb-3">
+                        <div class="d-flex align-items-center justify-content-center flex-shrink-0 rounded-3 bg-white border" style="width: 44px; height: 44px; border-color: #cbd5e1 !important;">
+                            <i class="bi bi-lock text-dark fs-5"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="fw-bold text-dark mb-1 fs-6">Izin Perubahan Data (Edit Lock)</h6>
+                            <p class="text-muted small mb-0" style="line-height: 1.45;">
+                                Atur izin pengeditan berkas: Pilih apakah data yang sudah dikirim atau didisposisi masih boleh diubah oleh staf, atau dikunci total agar hanya bisa diubah oleh <strong>Superadmin</strong>.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center justify-content-between p-3 rounded-3 bg-white border mt-3" style="border-color: #e2e8f0 !important; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                    <div>
+                        <div class="small text-muted mb-0">Status Data:</div>
+                        <div class="fw-bold text-dark fs-6">
+                            <check if="{{ @allow_edit_submitted }}">
+                                <true><span class="text-dark"><i class="bi bi-unlock-fill text-dark me-1"></i>Bebas Edit</span></true>
+                                <false><span class="text-secondary"><i class="bi bi-lock-fill me-1"></i>Data Terkunci</span></false>
+                            </check>
+                        </div>
+                    </div>
+                    <form action="{{ @BASE }}/config/toggle-edit-lock" method="POST" class="m-0">
+                        <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
+                        <check if="{{ @allow_edit_submitted }}">
+                            <true>
+                                <button type="button" class="btn btn-dark btn-sm px-3 py-2 fw-semibold d-flex align-items-center gap-2 shadow-sm" onclick="confirmToggleEditLock(this, false)">
+                                    <i class="bi bi-toggle-on fs-5"></i> Bebas Edit
+                                </button>
+                            </true>
+                            <false>
+                                <button type="button" class="btn btn-outline-dark btn-sm px-3 py-2 fw-semibold d-flex align-items-center gap-2 bg-white" onclick="confirmToggleEditLock(this, true)">
+                                    <i class="bi bi-toggle-off fs-5 text-muted"></i> Data Terkunci
                                 </button>
                             </false>
                         </check>
@@ -172,3 +230,147 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof TomSelect !== 'undefined') {
+        document.querySelectorAll('.searchable-select').forEach(function(el) {
+            new TomSelect(el, {
+                create: false,
+                maxItems: 1,
+                sortField: { field: 'text', direction: 'asc' }
+            });
+        });
+    }
+});
+
+function confirmSetKetuaTim(btn) {
+    var form = btn.closest('form');
+    if (!form) return;
+
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: 'Simpan Penetapan Ketua Tim?',
+            text: 'Nama pejabat Ketua Tim OPTI Selulosa & Lingkungan di seluruh sistem akan diperbarui secara dinamis.',
+            icon: 'question',
+            iconColor: '#0d6efd',
+            background: '#ffffff',
+            showCancelButton: true,
+            confirmButtonText: '<i class="bi bi-check2-circle me-1"></i> Ya, Simpan',
+            cancelButtonText: 'Batal',
+            reverseButtons: true,
+            customClass: {
+                popup: 'bg-white rounded-3 shadow border p-4',
+                title: 'fw-bold text-dark fs-6 mb-1',
+                htmlContainer: 'text-muted small mb-3',
+                confirmButton: 'btn btn-primary btn-sm px-3 py-1.5 fw-semibold',
+                cancelButton: 'btn btn-outline-secondary btn-sm px-3 py-1.5 me-2'
+            },
+            buttonsStyling: false
+        }).then(function(result) {
+            if (result.isConfirmed) {
+                form.submit();
+            }
+        });
+    } else {
+        if (confirm('Apakah Anda yakin ingin menyimpan penetapan pejabat Ketua Tim OPTI ini?')) {
+            form.submit();
+        }
+    }
+}
+
+function confirmToggleMasking(btn, willEnable) {
+    var form = btn.closest('form');
+    if (!form) return;
+
+    var title = willEnable ? 'Aktifkan Data Masking Klien?' : 'Matikan Data Masking Klien?';
+    var text = willEnable 
+        ? 'Nama perusahaan/klien industri di seluruh tabel rekap akan disamarkan untuk privasi data.' 
+        : 'Nama perusahaan/klien industri di seluruh tabel akan ditampilkan secara utuh.';
+    var icon = 'question';
+    var iconColor = '#0f172a';
+    var confirmText = willEnable 
+        ? '<i class="bi bi-toggle-on me-1"></i> Ya, Aktifkan' 
+        : '<i class="bi bi-toggle-off me-1"></i> Ya, Matikan';
+
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: title,
+            text: text,
+            icon: icon,
+            iconColor: iconColor,
+            background: '#ffffff',
+            showCancelButton: true,
+            confirmButtonText: confirmText,
+            cancelButtonText: 'Batal',
+            reverseButtons: true,
+            customClass: {
+                popup: 'bg-white rounded-3 shadow border p-4',
+                title: 'fw-bold text-dark fs-6 mb-1',
+                htmlContainer: 'text-muted small mb-3',
+                confirmButton: 'btn btn-dark btn-sm px-3 py-1.5 fw-semibold',
+                cancelButton: 'btn btn-outline-secondary btn-sm px-3 py-1.5 me-2'
+            },
+            buttonsStyling: false
+        }).then(function(result) {
+            if (result.isConfirmed) {
+                form.submit();
+            }
+        });
+    } else {
+        if (confirm(text)) {
+            form.submit();
+        }
+    }
+}
+
+function confirmToggleEditLock(btn, willEnable) {
+    var form = btn.closest('form');
+    if (!form) return;
+
+    var title = willEnable ? 'Ubah Status ke Bebas Edit?' : 'Ubah Status ke Data Terkunci?';
+    var text = willEnable 
+        ? 'Data dan berkas yang telah dikirim atau didisposisi akan DAPAT DIUBAH KEMBALI oleh staf berwenang.' 
+        : 'Data dan berkas yang telah dikirim atau didisposisi akan DIKUNCI sehingga TIDAK DAPAT DIUBAH lagi oleh staf (hanya Superadmin yang dapat mengedit).';
+    var icon = 'question';
+    var iconColor = '#0f172a';
+    var confirmText = willEnable 
+        ? '<i class="bi bi-unlock-fill me-1"></i> Ya, Bebas Edit' 
+        : '<i class="bi bi-lock-fill me-1"></i> Ya, Kunci Data';
+
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: title,
+            text: text,
+            icon: icon,
+            iconColor: iconColor,
+            background: '#ffffff',
+            showCancelButton: true,
+            confirmButtonText: confirmText,
+            cancelButtonText: 'Batal',
+            reverseButtons: true,
+            customClass: {
+                popup: 'bg-white rounded-3 shadow border p-4',
+                title: 'fw-bold text-dark fs-6 mb-1',
+                htmlContainer: 'text-muted small mb-3',
+                confirmButton: 'btn btn-dark btn-sm px-3 py-1.5 fw-semibold',
+                cancelButton: 'btn btn-outline-secondary btn-sm px-3 py-1.5 me-2'
+            },
+            buttonsStyling: false
+        }).then(function(result) {
+            if (result.isConfirmed) {
+                form.submit();
+            }
+        });
+    } else {
+        if (confirm(text)) {
+            form.submit();
+        }
+    }
+}
+</script>

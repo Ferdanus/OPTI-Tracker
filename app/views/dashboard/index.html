@@ -530,7 +530,7 @@
                         <th style="width: 130px;">Divisi</th>
                         <th style="width: 120px;">Tgl Masuk</th>
                         <th style="width: 180px;">Status Alur</th>
-                        <th class="text-end" style="width: 90px;">Aksi</th>
+                        <th class="text-center" style="width: 100px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -544,7 +544,7 @@
                                         </a>
                                     </td>
                                     <td>
-                                        <div class="fw-semibold text-slate-900 text-truncate" style="max-width: 320px;">
+                                        <div class="fw-semibold text-slate-900">
                                             <check if="{{ @mask_client_name }}">
                                                 <true>
                                                     {{ substr(@ord.nama_perusahaan, 0, 3) . str_repeat('*', max(0, strlen(@ord.nama_perusahaan) - 3)) }}
@@ -554,7 +554,7 @@
                                                 </false>
                                             </check>
                                         </div>
-                                        <div class="text-muted text-xs text-truncate" style="max-width: 320px;">
+                                        <div class="text-muted text-xs">
                                             {{ @ord.judul_kegiatan ?: 'Pengujian Laboratorium Standar' }}
                                         </div>
                                     </td>
@@ -578,8 +578,8 @@
                                             <span>{{ @ord.stage_label }}</span>
                                         </span>
                                     </td>
-                                    <td class="text-end">
-                                        <a href="{{ @BASE }}/order/{{ @ord.id }}" class="btn btn-xs btn-outline-secondary rounded-pill px-2.5 py-1 text-xs">
+                                    <td class="text-center">
+                                        <a href="{{ @BASE }}/order/{{ @ord.id }}" class="btn btn-xs btn-outline-secondary rounded-pill px-3 py-1 text-xs">
                                             Detail
                                         </a>
                                     </td>

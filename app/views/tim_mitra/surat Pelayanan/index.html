@@ -149,7 +149,7 @@
                                 {{ date('d M Y', strtotime(@sp.tanggal_surat)) }}
                             </td>
                             <td>
-                                <div class="text-dark small fw-medium text-truncate" style="max-width: 280px;" title="{{ @sp.perihal }}">
+                                <div class="text-dark small fw-medium">
                                     {{ @sp.perihal }}
                                 </div>
                                 <check if="{{ @sp.jenis_layanan && !in_array(@sp.jenis_layanan, ['belum_ditentukan', 'opti_belum_ditentukan']) }}">
@@ -181,7 +181,7 @@
                                 </check>
                                 <check if="{{ (@sp.status == 'draft' || @sp.status_respon_klien == 'draft' || !@sp.status || @sp.status == 'nonaktif') && @sp.status_respon_klien != 'deal' && @sp.status_respon_klien != 'nego' && @sp.status != 'terkirim' && @sp.status_respon_klien != 'terkirim' && @sp.status_respon_klien != 'tolak' && @sp.status_respon_klien != 'batal' && @sp.status != 'disetujui' }}">
                                     <span class="badge bg-light text-secondary border px-2 py-1">
-                                        <i class="bi bi-pencil-square me-1"></i> Draft
+                                        <i class="bi bi-bookmark me-1"></i> Draft
                                     </span>
                                 </check>
                             </td>
@@ -197,6 +197,15 @@
                                                 title="Pratinjau Surat Penawaran PDF">
                                             <i class="bi bi-file-earmark-pdf"></i> PDF
                                         </button>
+                                        <check if="{{ @sp.status_respon_klien == 'deal' }}">
+                                            <form action="{{ @BASE }}/order/{{ @sp.order_id }}/penawaran/disposisi-keuangan" method="POST" class="d-inline" id="formDispList{{ @sp.id }}">
+                                                <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
+                                                <input type="hidden" name="redirect" value="surat_penawaran">
+                                                <button type="button" class="btn btn-light border btn-sm py-1 px-2 text-secondary" onclick="confirmDisposisiKeuanganList('{{ @sp.id }}', '{{ @sp.nomor_surat }}')" title="Disposisi ke Tim Keuangan">
+                                                    <i class="bi bi-send-check-fill"></i>
+                                                </button>
+                                            </form>
+                                        </check>
                                         <a href="{{ @BASE }}/order/{{ @sp.order_id }}" class="btn btn-light border btn-sm py-1 px-2 text-primary" title="Buka Detail Order">
                                             <i class="bi bi-folder2-open"></i>
                                         </a>
@@ -741,4 +750,39 @@ document.addEventListener('DOMContentLoaded', function() {
         currentPdfArrayBuffer = null;
     });
 });
+
+function confirmDisposisiKeuanganList(id, nomorSurat) {
+    var form = document.getElementById('formDispList' + id);
+    if (!form) return;
+
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: 'Disposisi ke Tim Keuangan?',
+            text: 'Penawaran ' + nomorSurat + ' (DEAL) akan diteruskan ke antrean Tim Keuangan untuk pencatatan pembayaran & PNBP.',
+            icon: 'question',
+            iconColor: '#0f172a',
+            background: '#ffffff',
+            showCancelButton: true,
+            confirmButtonText: '<i class="bi bi-send-check-fill me-1"></i> Ya, Disposisikan',
+            cancelButtonText: 'Batal',
+            reverseButtons: true,
+            customClass: {
+                popup: 'bg-white rounded-3 shadow border p-4',
+                title: 'fw-bold text-dark fs-6 mb-1',
+                htmlContainer: 'text-muted small mb-3',
+                confirmButton: 'btn btn-dark btn-sm px-3 py-1.5 fw-semibold',
+                cancelButton: 'btn btn-outline-secondary btn-sm px-3 py-1.5 me-2'
+            },
+            buttonsStyling: false
+        }).then(function(result) {
+            if (result.isConfirmed) {
+                form.submit();
+            }
+        });
+    } else {
+        if (confirm('Disposisikan penawaran DEAL ini ke Tim Keuangan?')) {
+            form.submit();
+        }
+    }
+}
 </script>

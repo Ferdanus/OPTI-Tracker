@@ -168,6 +168,7 @@ $f3->route('GET /order/@id', 'OrderController->detail');
 $f3->route('GET /order/@id/edit', 'OrderController->edit');
 $f3->route('POST /order/@id/update', 'OrderController->update');
 $f3->route('POST /order/@id/klien/update', 'OrderController->updateCustomer');
+$f3->route('POST /order/@id/stage/@tahap/baca', 'OrderController->catatTahapDibaca');
 $f3->route('POST /order/@id/hapus', 'OrderController->hapus');
 $f3->route('POST /order/@id/disposisi', 'OrderController->disposisi');
 $f3->route('POST /order/@id/approve', 'OrderController->approve');
@@ -264,6 +265,7 @@ $f3->route('GET /config', 'ConfigController->index');
 $f3->route('GET /pengaturan', 'ConfigController->index');
 $f3->route('POST /config/field/@id/update', 'ConfigController->updateField');
 $f3->route('POST /config/toggle-masking', 'ConfigController->toggleMasking');
+$f3->route('POST /config/toggle-edit-lock', 'ConfigController->toggleEditLock');
 $f3->route('POST /config/set-ketua-tim', 'ConfigController->setKetuaTim');
 
 // ==========================================
@@ -303,8 +305,9 @@ $f3->route('GET /order/@id/penawaran/buat', 'SuratPenawaranController->buatDariO
 $f3->route('POST /order/@id/penawaran/simpan', 'SuratPenawaranController->simpanDariOrder');
 $f3->route('GET|POST /order/@id/penawaran/preview-pdf', 'SuratPenawaranController->previewPdf');
 $f3->route('GET /order/@id/penawaran/raw-data', 'SuratPenawaranController->penawaranRawData');
-$f3->route('GET /order/@id/penawaran/cetak', 'SuratPenawaranController->cetakPdf');
 $f3->route('POST /order/@id/penawaran/status', 'SuratPenawaranController->updateStatusKlien');
+$f3->route('POST /order/@id/penawaran/disposisi-keuangan', 'SuratPenawaranController->disposisiKeuangan');
+$f3->route('POST /surat-penawaran/@id/disposisi-keuangan', 'SuratPenawaranController->disposisiKeuangan');
 
 $f3->route('GET /surat/@id', 'OrderController->showSurat');
 // ==========================================

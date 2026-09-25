@@ -247,7 +247,8 @@ $daftarPegawai = $arsipUser->find(
     ['order' => 'nama_user ASC']
 );
 
-        $canEdit = ($this->hasPermission('penawaran:create') || $this->hasPermission('penawaran:edit') || $this->isSuperadmin() || $this->isAdminOrder());
+        $isSubmitted = !empty($sp) && !empty($sp['nomor_surat']);
+        $canEdit = ($this->hasPermission('penawaran:create') || $this->hasPermission('penawaran:edit') || $this->isSuperadmin() || $this->isAdminOrder()) && $this->canEditSubmittedData($isSubmitted);
 
         $f3->set('sp', $sp);
         $f3->set('can_edit', $canEdit);
@@ -637,7 +638,8 @@ $daftarPegawai = $arsipUser->find(
         }
         $f3->set('durasi_hari', $durasiHari);
 
-        $canEdit = ($this->hasPermission('penawaran:create') || $this->hasPermission('penawaran:edit') || $this->isSuperadmin() || $this->isAdminOrder());
+        $isSubmitted = !empty($spExisting) && !empty($spExisting['nomor_surat']);
+        $canEdit = ($this->hasPermission('penawaran:create') || $this->hasPermission('penawaran:edit') || $this->isSuperadmin() || $this->isAdminOrder()) && $this->canEditSubmittedData($isSubmitted);
 
         $defaultNominal = 0;
         if ($order['jenis_layanan_opti'] === 'lingkungan' && !empty($kalkulasi)) {
@@ -664,6 +666,10 @@ $daftarPegawai = $arsipUser->find(
             $f3->set('default_hal', 'Biaya OPTI');
             $f3->set('default_lampiran_teks', '1 (satu) lembar');
         }
+
+        list($penandatanganList, $jabatanList) = $this->getMasterPenandatanganData();
+        $f3->set('daftar_penandatangan', $penandatanganList);
+        $f3->set('daftar_jabatan', $jabatanList);
 
         $f3->set('order', $order);
         $f3->set('sp_existing', $spExisting);
@@ -867,29 +873,14 @@ $daftarPegawai = $arsipUser->find(
 
             // Jika status respon adalah DEAL, kirim notifikasi ke Pejabat & Ka Tim
             if ($statusRespon === 'deal') {
-                $this->db->exec("UPDATE order_layanan SET status_keuangan = 'menunggu_pembayaran' WHERE id = ? AND (status_keuangan IS NULL OR status_keuangan = '' OR status_keuangan = 'belum_ditagih')", [1 => $orderId]);
                 try {
-                    // Notif ke Kepala Balai / Pejabat PPK
-                    \NotificationService::send($this->db, [
-                        'order_id'       => $orderId,
-                        'target_role'    => 'pejabat',
-                        'target_layanan' => 'semua',
-                        'judul'          => 'Order DEAL - Menunggu Pembayaran',
-                        'pesan'          => "Klien ({$order['nama_perusahaan']}) telah menyetujui penawaran Order #{$order['nomor_order']}. Menunggu verifikasi pembayaran oleh Tim Keuangan.",
-                        'tipe'           => 'success',
-                        'icon'           => 'bi-hand-thumbs-up-fill',
-                        'link_url'       => "/order/{$orderId}",
-                        'created_by'     => $this->getUserId() ?? 1,
-                        'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Tim Mitra'
-                    ]);
-
                     // Notif ke Ka Tim OPTI
                     \NotificationService::send($this->db, [
                         'order_id'       => $orderId,
                         'target_role'    => 'ketua_tim',
                         'target_layanan' => $order['jenis_layanan_opti'] ?? 'semua',
                         'judul'          => 'Penawaran Order DEAL',
-                        'pesan'          => "Klien ({$order['nama_perusahaan']}) telah sepakat dengan penawaran Order #{$order['nomor_order']}. Menunggu konfirmasi pembayaran.",
+                        'pesan'          => "Klien ({$order['nama_perusahaan']}) telah sepakat dengan penawaran Order #{$order['nomor_order']}. Silakan lakukan Disposisi ke Tim Keuangan.",
                         'tipe'           => 'success',
                         'icon'           => 'bi-check-circle-fill',
                         'link_url'       => "/order/{$orderId}",
@@ -898,7 +889,7 @@ $daftarPegawai = $arsipUser->find(
                     ]);
                 } catch (\Exception $eNotif) {}
 
-                $this->setFlashSuccess("Klien menyetujui penawaran (<strong>DEAL</strong>). Status order beralih menjadi <strong>Menunggu Pembayaran</strong> oleh Tim Keuangan.");
+                $this->setFlashSuccess("Penawaran telah disetujui klien (<strong>DEAL</strong>). Silakan klik <strong>Disposisi ke Keuangan</strong> untuk meneruskan tagihan & membuka tahap pembayaran.");
             } else {
                 $this->setFlashSuccess("Status respon penawaran berhasil diperbarui menjadi: <strong>" . strtoupper($statusRespon) . "</strong>.");
             }
@@ -929,10 +920,7 @@ $daftarPegawai = $arsipUser->find(
             $hasil = $spModel->updateResponKlien($penawaranId, $statusRespon, $catatanNego, $nominalBaru);
 
             if ($statusRespon === 'deal') {
-                if ($orderId > 0) {
-                    $this->db->exec("UPDATE order_layanan SET status_keuangan = 'menunggu_pembayaran' WHERE id = ? AND (status_keuangan IS NULL OR status_keuangan = '' OR status_keuangan = 'belum_ditagih')", [1 => $orderId]);
-                }
-                $this->setFlashSuccess("Klien menyetujui penawaran (<strong>DEAL</strong>). Status order beralih menjadi <strong>Menunggu Pembayaran</strong> oleh Tim Keuangan.");
+                $this->setFlashSuccess("Penawaran disetujui (<strong>DEAL</strong>). Silakan lakukan <strong>Disposisi ke Keuangan</strong> untuk membuka tahap pembayaran.");
             } elseif ($statusRespon === 'nego') {
                 $this->setFlashWarning("Catatan negosiasi harga klien telah disimpan. Nominal penawaran disesuaikan.");
             } else {
@@ -948,6 +936,187 @@ $daftarPegawai = $arsipUser->find(
             $this->setFlashError('Gagal memperbarui respon penawaran: ' . $e->getMessage());
             $f3->reroute($orderId > 0 ? "/order/{$orderId}" : '/surat-penawaran');
         }
+    }
+
+    /**
+     * Disposisi Surat Penawaran DEAL ke Tim Keuangan
+     * Route: POST /order/@id/penawaran/disposisi-keuangan & POST /surat-penawaran/@id/disposisi-keuangan
+     */
+    public function disposisiKeuangan($f3, $params)
+    {
+        $orderId = (int)($params['id'] ?? 0);
+        $userId = (int)($this->getUserId() ?? 1);
+        $userNama = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'Tim Mitra');
+
+        $orderModel = new \OrderLayanan($this->db);
+        $order = $orderModel->getDetail($orderId);
+        if (!$order) {
+            $this->setFlashError("Order Layanan #{$orderId} tidak ditemukan.");
+            $f3->reroute('/order');
+            return;
+        }
+
+        $spModel = new \SuratPenawaran($this->db);
+        $sp = $spModel->getByOrderId($orderId);
+        if (!$sp) {
+            $this->setFlashError("Surat penawaran untuk order ini belum diterbitkan.");
+            $f3->reroute("/order/{$orderId}");
+            return;
+        }
+
+        try {
+            // Update status penawaran ke DEAL jika belum
+            $nominal = (float)($sp['nominal_penawaran'] ?? ($order['estimasi_biaya'] ?? 0));
+            $spModel->updateResponKlien((int)$sp['id'], 'deal', $sp['catatan_nego'] ?? '', $nominal);
+
+            // Update status keuangan order ke 'menunggu_pembayaran'
+            $this->db->exec(
+                "UPDATE order_layanan SET status_keuangan = 'menunggu_pembayaran', status = 'penawaran' WHERE id = ?",
+                [1 => $orderId]
+            );
+
+            // 1. Kirim Notifikasi ke Tim Keuangan
+            \NotificationService::send($this->db, [
+                'order_id'        => $orderId,
+                'target_role'     => 'keuangan',
+                'target_layanan'  => 'semua',
+                'judul'           => 'Disposisi Pembayaran: Order #' . $order['nomor_order'],
+                'pesan'           => "Penawaran {$order['nama_perusahaan']} (No: {$sp['nomor_surat']}, Nilai: Rp " . number_format($nominal, 0, ',', '.') . ") telah DEAL dan didisposisikan ke Tim Keuangan untuk proses pencatatan pembayaran & PNBP.",
+                'tipe'            => 'success',
+                'icon'            => 'bi-wallet2',
+                'link_url'        => "/pembayaran/tambah?order_id={$orderId}",
+                'created_by'      => $userId,
+                'created_by_name' => $userNama
+            ]);
+
+            // 2. Kirim Notifikasi ke Ketua Tim OPTI
+            \NotificationService::send($this->db, [
+                'order_id'        => $orderId,
+                'target_role'     => 'ketua_tim',
+                'target_layanan'  => $order['jenis_layanan_opti'] ?? 'semua',
+                'judul'           => 'Penawaran Order DEAL - Didisposisikan ke Keuangan',
+                'pesan'           => "Penawaran {$order['nama_perusahaan']} telah disepakati (DEAL) dan didisposisikan ke Tim Keuangan.",
+                'tipe'            => 'info',
+                'icon'            => 'bi-send-check-fill',
+                'link_url'        => "/order/{$orderId}",
+                'created_by'      => $userId,
+                'created_by_name' => $userNama
+            ]);
+
+            // Catat StageAudit Tahap 5
+            \StageAudit::recordKirim(
+                $this->db,
+                $orderId,
+                5,
+                'Disposisi ke Tim Keuangan',
+                $userId,
+                $userNama,
+                'Tim Mitra',
+                date('Y-m-d H:i:s'),
+                "Penawaran DEAL didisposisikan ke Tim Keuangan (Nominal: Rp " . number_format($nominal, 0, ',', '.') . ")"
+            );
+
+            $this->logActivity($orderId, 'Penawaran', 'Disposisi Keuangan', "Order #{$order['nomor_order']} didisposisikan ke Tim Keuangan untuk proses pembayaran.");
+
+            $this->setFlashSuccess("Penawaran DEAL berhasil didisposisikan ke <strong>Tim Keuangan</strong>. Notifikasi telah dikirim dan order kini masuk ke antrean <strong>Pembayaran</strong>.");
+        } catch (\Exception $e) {
+            $this->setFlashError("Gagal mendisposisikan ke Tim Keuangan: " . $e->getMessage());
+        }
+
+        $redirect = $f3->get('POST.redirect') ?: 'order';
+        if ($redirect === 'pembayaran') {
+            $f3->reroute("/pembayaran/tambah?order_id={$orderId}");
+        } elseif ($redirect === 'surat_penawaran') {
+            $f3->reroute("/surat-penawaran");
+        } else {
+            $f3->reroute("/order/{$orderId}");
+        }
+    }
+
+    /**
+     * Mengambil daftar penandatangan dan daftar jabatan dari master mst_penandatangan_lhu database sil2020
+     */
+    public function getMasterPenandatanganData()
+    {
+        $penandatanganList = [];
+        $jabatanList = [];
+        try {
+            $dbSekre = $this->dbSekretariat ?: $this->db;
+            $rows = $dbSekre->exec("SELECT id_penandatangan, jabatan, nama, nip, showhide FROM mst_penandatangan_lhu ORDER BY FIELD(showhide, 'show', 'hide'), id_penandatangan DESC");
+            $seenKey = [];
+            $seenJab = [];
+            foreach ($rows as $r) {
+                $rawJab = str_ireplace(['<br>', '<br/>', '<br />', '&nbsp;'], ' ', $r['jabatan'] ?? '');
+                $cleanJab = strip_tags($rawJab);
+                $cleanJab = preg_replace('/\s+/', ' ', $cleanJab);
+                $cleanJab = trim($cleanJab, " \t\n\r\0\x0B,");
+
+                // Hapus "a.n. Kepala" jika diikuti jabatan definitif (misal: a.n Kepala Kepala Bagian... -> Kepala Bagian...)
+                $cleanJab = preg_replace('/^a\.?n\.?\s+Kepala[,\s]+(Kepala|Ketua|Plt|Plh|Sekretaris|Bendahara)/i', '$1', $cleanJab);
+                // Hapus prefix a.n. / an. / a.n / an
+                $cleanJab = preg_replace('/^(a\.?n\.?|an\.)\s*/i', '', $cleanJab);
+                // Hapus prefix Plh. / Plh / p.l.h. / p.l.h / plh
+                $cleanJab = preg_replace('/^(p\.?l\.?h\.?|plh\.)\s*/i', '', $cleanJab);
+                // Hapus prefix Plt. / Plt / p.l.t. / p.l.t / plt / a.n.t / ant
+                $cleanJab = preg_replace('/^(p\.?l\.?t\.?|plt\.|a\.?n\.?t\.?|ant\.)\s*/i', '', $cleanJab);
+                // Rapihkan spasi dan trailing koma
+                $cleanJab = trim(preg_replace('/\s+/', ' ', $cleanJab), " \t\n\r\0\x0B,");
+
+                $cleanNm = trim($r['nama'] ?? '');
+
+                if (!empty($cleanJab) && !isset($seenJab[$cleanJab])) {
+                    $seenJab[$cleanJab] = true;
+                    $jabatanList[] = $cleanJab;
+                }
+
+                $key = strtolower($cleanNm . '|' . $cleanJab);
+                if (!isset($seenKey[$key]) && !empty($cleanNm)) {
+                    $seenKey[$key] = true;
+
+                    // Klasifikasi kategori & ikon badge agar tampilan dropdown rapi dan terstruktur
+                    $kategori = 'Pejabat & Unit Kerja';
+                    $badgeClass = 'bg-secondary-subtle text-secondary border border-secondary-subtle';
+                    $icon = 'bi-person-badge';
+
+                    if (stripos($cleanJab, 'Ketua Tim') !== false) {
+                        $kategori = 'Ketua Tim Kerja';
+                        $badgeClass = 'bg-info-subtle text-info-emphasis border border-info-subtle';
+                        $icon = 'bi-people';
+                    } elseif (stripos($cleanJab, 'Kepala') !== false || stripos($cleanJab, 'Plh.') !== false || stripos($cleanJab, 'a.n') !== false) {
+                        if (stripos($cleanJab, 'Bidang') !== false || stripos($cleanJab, 'Seksi') !== false) {
+                            $kategori = 'Pejabat Bidang & Teknis';
+                            $badgeClass = 'bg-warning-subtle text-warning-emphasis border border-warning-subtle';
+                            $icon = 'bi-briefcase';
+                        } else {
+                            $kategori = 'Pimpinan Balai & Manajemen';
+                            $badgeClass = 'bg-primary-subtle text-primary border border-primary-subtle';
+                            $icon = 'bi-award';
+                        }
+                    }
+
+                    $penandatanganList[] = [
+                        'id'         => $r['id_penandatangan'],
+                        'nama'       => $cleanNm,
+                        'jabatan'    => $cleanJab,
+                        'kategori'   => $kategori,
+                        'badgeClass' => $badgeClass,
+                        'icon'       => $icon,
+                        'nip'        => trim($r['nip'] ?? '')
+                    ];
+                }
+            }
+        } catch (\Exception $e) {
+            $penandatanganList = [
+                ['id' => 21, 'nama' => 'Dodiet Prasetyo', 'jabatan' => 'Kepala', 'kategori' => 'Pimpinan Balai & Manajemen', 'badgeClass' => 'bg-primary-subtle text-primary border border-primary-subtle', 'icon' => 'bi-award', 'nip' => ''],
+                ['id' => 18, 'nama' => 'Joko Pratomo', 'jabatan' => 'Kepala Bagian Tata Usaha', 'kategori' => 'Pimpinan Balai & Manajemen', 'badgeClass' => 'bg-primary-subtle text-primary border border-primary-subtle', 'icon' => 'bi-award', 'nip' => ''],
+                ['id' => 20, 'nama' => 'Andar Hermawan', 'jabatan' => 'Ketua Tim Pelaksanaan Mitra Industri', 'kategori' => 'Ketua Tim Kerja', 'badgeClass' => 'bg-info-subtle text-info-emphasis border border-info-subtle', 'icon' => 'bi-people', 'nip' => ''],
+                ['id' => 8,  'nama' => 'Emma Safarina Ertaviani', 'jabatan' => 'Ketua Tim Layanan Mitra Industri', 'kategori' => 'Ketua Tim Kerja', 'badgeClass' => 'bg-info-subtle text-info-emphasis border border-info-subtle', 'icon' => 'bi-people', 'nip' => ''],
+                ['id' => 10, 'nama' => 'Hendra Yetty', 'jabatan' => 'Kepala', 'kategori' => 'Pimpinan Balai & Manajemen', 'badgeClass' => 'bg-primary-subtle text-primary border border-primary-subtle', 'icon' => 'bi-award', 'nip' => '']
+            ];
+            $jabatanList = ['Kepala', 'Kepala Bagian Tata Usaha', 'Ketua Tim Pelaksanaan Mitra Industri', 'Ketua Tim Layanan Mitra Industri'];
+        }
+
+        return [$penandatanganList, $jabatanList];
     }
 
     /**
@@ -1205,7 +1374,7 @@ $daftarPegawai = $arsipUser->find(
         $pdf->AddPage();
 
         $tglFormatted = self::formatTanggalIndoSurat($sp['tanggal_surat'] ?? date('Y-m-d'));
-        $noSurat = $sp['nomor_surat'] ?: ('01/SP/BBSPJIS/IX/' . date('Y'));
+        $noSurat = $sp['nomor_surat'] ?: ('01/BBSPJIS/MS/' . SuratPenawaran::bulanKeRomawi((int)date('n')) . '/' . date('Y'));
         $lampiranTeks = !empty($sp['lampiran_teks']) ? $sp['lampiran_teks'] : '1 (satu) lembar';
         $halSurat = !empty($sp['hal']) ? $sp['hal'] : (!empty($sp['perihal']) ? $sp['perihal'] : 'Biaya OPTI');
 
@@ -1436,7 +1605,7 @@ $daftarPegawai = $arsipUser->find(
         $pdf->SetAutoPageBreak(true, 15);
 
         $tglFormatted = self::formatTanggalIndoSurat($sp['tanggal_surat'] ?? date('Y-m-d'));
-        $noSurat = $sp['nomor_surat'] ?: ('01/SP/BBSPJIS/MS/' . date('m/Y'));
+        $noSurat = $sp['nomor_surat'] ?: ('01/BBSPJIS/MS/' . SuratPenawaran::bulanKeRomawi((int)date('n')) . '/' . date('Y'));
         $perusahaan = !empty($sp['perusahaan']) ? trim($sp['perusahaan']) : (!empty($order['nama_perusahaan']) ? trim($order['nama_perusahaan']) : 'Pimpinan Perusahaan/Instansi');
         if (!empty($order['pt_cv']) && stripos($perusahaan, $order['pt_cv']) === false) {
             $perusahaan = $order['pt_cv'] . ' ' . $perusahaan;

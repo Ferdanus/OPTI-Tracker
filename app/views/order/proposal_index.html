@@ -287,10 +287,10 @@
                     <check if="{{ !@is_tim_kerja }}">
                         <th class="py-3 px-3">PIC Peneliti</th>
                     </check>
-                    <th class="py-3 px-3">Estimasi Biaya</th>
+                    <th class="py-3 px-3 text-nowrap" style="min-width: 140px; white-space: nowrap;">Estimasi Biaya</th>
                     <th class="py-3 px-3 text-center">Berkas</th>
                     <th class="py-3 px-3 text-center">Status Proposal</th>
-                    <th class="py-3 px-4 text-end" style="width: 150px;">Aksi</th>
+                    <th class="py-3 px-3 text-center" style="width: 130px; white-space: nowrap;">Aksi</th>
                 </tr>
             </thead>
             <tbody>
@@ -339,7 +339,7 @@
                                 </check>
 
                                 <!-- Estimasi Biaya (RAB / Tarif Uji) -->
-                                <td class="py-3 px-3 font-monospace fw-bold text-dark" style="font-size: 0.84rem;">
+                                <td class="py-3 px-3 font-monospace fw-bold text-dark text-nowrap" style="font-size: 0.84rem; white-space: nowrap;">
                                     Rp {{ number_format(@row.estimasi_total_biaya ?: (@row.estimasi_biaya ?: 0), 0, ',', '.') }}
                                 </td>
 
@@ -348,7 +348,7 @@
                                     <check if="{{ @row.file_proposal }}">
                                         <true>
                                             <a href="{{ @BASE }}/{{ @row.file_proposal }}" target="_blank" class="btn btn-sm btn-outline-danger p-1 px-2 rounded-pill shadow-xs" title="Unduh Berkas Proposal">
-                                                <i class="bi bi-file-earmark-pdf-fill"></i>
+                                                 <i class="bi bi-file-earmark-pdf-fill"></i>
                                             </a>
                                         </true>
                                         <false>
@@ -387,16 +387,16 @@
                                 </td>
 
                                 <!-- Aksi -->
-                                <td class="py-3 px-4 text-end">
+                                <td class="py-3 px-3 text-center text-nowrap" style="white-space: nowrap;">
                                     <check if="{{ @row.jenis_layanan_opti == 'lingkungan' }}">
                                         <true>
-                                            <a href="{{ @BASE }}/order/{{ @row.id }}/biaya-lingkungan" class="btn btn-primary btn-sm px-3 py-1 rounded-pill fw-semibold text-white shadow-xs d-inline-flex align-items-center gap-1" style="font-size: 0.76rem;">
+                                            <a href="{{ @BASE }}/order/{{ @row.id }}/biaya-lingkungan" class="btn btn-primary btn-sm px-3 py-1 rounded-pill fw-semibold text-white shadow-xs d-inline-flex align-items-center gap-1.5" style="font-size: 0.76rem;">
                                                 <i class="bi {{ @is_tim_kerja ? 'bi-calculator-fill' : 'bi-sliders' }}"></i>
                                                 {{ @is_tim_kerja ? 'Tarif & Parameter' : 'Kelola' }}
                                             </a>
                                         </true>
                                         <false>
-                                            <a href="{{ @BASE }}/order/{{ @row.id }}/proposal" class="btn btn-primary btn-sm px-3 py-1 rounded-pill fw-semibold text-white shadow-xs d-inline-flex align-items-center gap-1" style="font-size: 0.76rem;">
+                                            <a href="{{ @BASE }}/order/{{ @row.id }}/proposal" class="btn btn-primary btn-sm px-3 py-1 rounded-pill fw-semibold text-white shadow-xs d-inline-flex align-items-center gap-1.5" style="font-size: 0.76rem;">
                                                 <i class="bi {{ @is_tim_kerja ? 'bi-pencil-fill' : 'bi-journal-check' }}"></i>
                                                 {{ @is_tim_kerja ? 'Kerjakan' : 'Kelola' }}
                                             </a>

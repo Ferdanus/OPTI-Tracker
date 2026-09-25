@@ -81,6 +81,83 @@
     border-color: #94a3b8 !important;
     color: #0f172a !important;
 }
+
+/* ========================================================================= */
+/* MODERN ROLE BADGE DESIGN SYSTEM (TEXT ONLY)                              */
+/* ========================================================================= */
+.role-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.775rem;
+    font-weight: 600;
+    padding: 0.35rem 0.85rem;
+    border-radius: 9999px;
+    letter-spacing: 0.015em;
+    line-height: 1.35;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+/* 1. Super Administrator (Dark Prestige Badge) */
+.role-badge-superadmin {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    color: #f8fafc !important;
+    border: 1px solid #334155;
+    box-shadow: 0 2px 5px rgba(15, 23, 42, 0.18);
+}
+
+/* 2. Ketua Tim Selulosa (Rose Ruby Tint) */
+.role-badge-katim-selulosa {
+    background: #fff1f2;
+    color: #9f1239 !important;
+    border: 1px solid #fecdd3;
+}
+
+/* 3. Ketua Tim Lingkungan (Emerald Forest Tint) */
+.role-badge-katim-lingkungan {
+    background: #f0fdf4;
+    color: #166534 !important;
+    border: 1px solid #bbf7d0;
+}
+
+/* 4. Tim Kerja Selulosa (Cyan Sky Tint) */
+.role-badge-tk-selulosa {
+    background: #ecfeff;
+    color: #0e7490 !important;
+    border: 1px solid #a5f3fc;
+}
+
+/* 5. Tim Kerja Lingkungan (Teal Mint Tint) */
+.role-badge-tk-lingkungan {
+    background: #f0fdfa;
+    color: #0f766e !important;
+    border: 1px solid #99f6e4;
+}
+
+/* 6. Tim Mitra Industri (Warm Amber Gold Tint) */
+.role-badge-mitra {
+    background: #fffbeb;
+    color: #b45309 !important;
+    border: 1px solid #fde68a;
+}
+
+/* 7. Tim Keuangan (Royal Indigo Blue Tint) */
+.role-badge-keuangan {
+    background: #eff6ff;
+    color: #1d4ed8 !important;
+    border: 1px solid #bfdbfe;
+}
+
+/* Default / Fallback */
+.role-badge-default {
+    background: #f8fafc;
+    color: #475569 !important;
+    border: 1px solid #e2e8f0;
+}
+.role-badge-default i {
+    color: #64748b;
+}
 </style>
 
 <div class="container-fluid px-0">
@@ -256,18 +333,9 @@
                                             <span class="fw-bold text-dark d-block" style="font-size: 0.88rem;">{{ @p.nama_lengkap }}</span>
                                         </td>
                                         <td>
-                                            <check if="{{ @p.role_sistem == 'superadmin' }}">
-                                                <true>
-                                                    <span class="badge px-2.5 py-1.5 fw-medium text-white shadow-xs" style="background-color: #334155 !important; border: 1px solid #1e293b; font-size: 0.78rem; border-radius: 6px;">
-                                                        Super Administrator
-                                                    </span>
-                                                </true>
-                                                <false>
-                                                    <span class="badge {{ @p.role_badge_class }} px-2.5 py-1.5 fw-medium" style="{{ @p.role_badge_style }}; font-size: 0.78rem; border-radius: 6px;">
-                                                        {{ @p.role_label }}
-                                                    </span>
-                                                </false>
-                                            </check>
+                                            <span class="{{ @p.role_badge_class }}">
+                                                {{ @p.role_label }}
+                                            </span>
                                         </td>
                                         <td class="text-end">
                                             <div class="d-inline-flex align-items-center justify-content-end gap-2">

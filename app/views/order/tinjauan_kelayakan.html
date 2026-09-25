@@ -31,7 +31,7 @@
                         <div class="d-flex mb-2">
                             <span class="text-muted" style="width: 125px; flex-shrink: 0;">Nama Perusahaan</span>
                             <span class="text-muted me-2">:</span>
-                            <strong class="text-dark">{{ @order.nama_perusahaan }} ({{ @order.pt_cv }})</strong>
+                            <strong class="text-dark">{{ @order.nama_perusahaan }}</strong>
                         </div>
                         <check if="{{ @order.pic && @order.pic != '-' }}">
                             <div class="d-flex mb-2">
@@ -72,7 +72,7 @@
 
         <!-- Kolom Kanan: Form Evaluasi Ringkas Ka. Tim (7 Kolom) -->
         <div class="col-lg-7">
-            <form action="{{ @BASE }}/order/{{ @order.id }}/tinjauan" method="POST">
+            <form action="{{ @BASE }}/order/{{ @order.id }}/tinjauan" method="POST" id="formTinjauan">
                 <div class="card border rounded-3 bg-white shadow-xs">
                     <div class="card-header bg-white py-3 px-3 px-md-4 border-bottom d-flex justify-content-between align-items-center">
                         <h6 class="m-0 fw-bold text-dark font-display">Kaji Kelayakan Teknis</h6>
@@ -83,9 +83,10 @@
                     <div class="card-body p-3 p-md-4">
                         
                         <check if="{{ !@can_edit }}">
-                            <div class="alert alert-warning border-0 d-flex align-items-center mb-3 py-2 px-3 small rounded-3">
+                            <div class="alert alert-warning border-0 d-flex align-items-center gap-2 mb-3 py-2 px-3 small rounded-3 shadow-xs text-warning-emphasis">
+                                <i class="bi bi-lock-fill fs-5 flex-shrink-0 text-warning"></i>
                                 <div>
-                                    <strong>Mode Baca:</strong> Kaji kelayakan teknis merupakan wewenang Ketua Tim OPTI.
+                                    <strong>Status Edit Dikunci:</strong> Tidak bisa merubah data, silakan hubungi superadmin.
                                 </div>
                             </div>
                         </check>
@@ -103,7 +104,7 @@
                                         </div>
                                         <div class="card-text-wrap flex-grow-1">
                                             <div class="card-title fw-bold" style="font-size: 0.92rem; line-height: 1.25;">Dapat Dilaksanakan</div>
-                                            <div class="card-subtitle small mt-0.5" style="font-size: 0.74rem; line-height: 1.25;">Sanggup dikerjakan &bull; Lanjut ke Penawaran</div>
+                                            <div class="card-subtitle small mt-0.5" style="font-size: 0.74rem; line-height: 1.25;">Sanggup dikerjakan</div>
                                         </div>
                                     </label>
                                 </div>
@@ -237,13 +238,13 @@
                                 <button type="submit" name="action_btn" value="draft" class="btn btn-outline-primary btn-sm px-3.5 py-1.5 fw-semibold shadow-xs">
                                     <i class="bi bi-bookmark me-1"></i> Simpan Draf
                                 </button>
-                                <button type="submit" name="action_btn" value="tetapkan" class="btn btn-primary btn-sm px-4 py-1.5 fw-semibold shadow-xs">
-                                    <i class="bi bi-check2-circle me-1"></i> Simpan &amp; Tetapkan Keputusan
+                                <button type="button" class="btn btn-primary btn-sm px-4 py-1.5 fw-semibold shadow-xs" onclick="confirmTetapkanKeputusan()">
+                                    <i class="bi bi-send-fill me-1"></i> Simpan &amp; Tetapkan Keputusan
                                 </button>
                             </check>
                             <check if="{{ !@can_edit }}">
-                                <button type="button" class="btn btn-secondary btn-sm px-4 py-1.5 fw-semibold shadow-xs" disabled>
-                                    Terkunci (Wewenang Ka. Tim)
+                                <button type="button" class="btn btn-secondary btn-sm px-4 py-1.5 fw-semibold shadow-xs" disabled title="Status edit dikunci. Hubungi Superadmin jika perlu membuka akses.">
+                                    <i class="bi bi-lock-fill me-1"></i> Status Edit Dikunci
                                 </button>
                             </check>
                         </div>
@@ -344,6 +345,94 @@ document.addEventListener('DOMContentLoaded', function() {
     toggleAlasanPenolakan();
     cekStatusPilar();
 });
+
+function confirmTetapkanKeputusan() {
+    var form = document.getElementById('formTinjauan');
+    if (!form) return;
+
+    var radioTidak = document.getElementById('kep_tidak_layak');
+    var isTidakLayak = radioTidak && radioTidak.checked;
+    
+    if (isTidakLayak) {
+        var txtAlasan = form.querySelector('textarea[name="alasan_penolakan"]');
+        if (txtAlasan && txtAlasan.value.trim() === '') {
+            txtAlasan.focus();
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'warning',
+                    iconColor: '#dc3545',
+                    title: 'Alasan Penolakan Wajib Diisi',
+                    text: 'Silakan isi alasan penolakan atau kendala teknis terlebih dahulu.',
+                    customClass: {
+                        popup: 'bg-white rounded-3 shadow border p-4',
+                        title: 'fw-bold text-dark fs-6 mb-1',
+                        htmlContainer: 'text-muted small mb-3',
+                        confirmButton: 'btn btn-primary btn-sm px-3 py-1.5 fw-semibold'
+                    },
+                    buttonsStyling: false
+                });
+            } else {
+                alert('Silakan isi alasan penolakan terlebih dahulu.');
+            }
+            return;
+        }
+    }
+
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+
+    var title = isTidakLayak ? 'Tetapkan Penolakan Permohonan?' : 'Tetapkan Keputusan Layak?';
+    var text = isTidakLayak 
+        ? 'Permohonan akan ditetapkan TIDAK DAPAT DILAKSANAKAN dan dihentikan dengan alasan kendala yang tercantum.' 
+        : 'Permohonan akan ditetapkan DAPAT DILAKSANAKAN dan dilanjutkan ke tahap kalkulasi penawaran biaya.';
+    var icon = isTidakLayak ? 'warning' : 'question';
+    var iconColor = isTidakLayak ? '#dc3545' : '#0d6efd';
+    var confirmText = isTidakLayak 
+        ? '<i class="bi bi-x-circle me-1"></i> Ya, Tetapkan Tolak' 
+        : '<i class="bi bi-check2-circle me-1"></i> Ya, Tetapkan Keputusan';
+
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: title,
+            text: text,
+            icon: icon,
+            iconColor: iconColor,
+            background: '#ffffff',
+            showCancelButton: true,
+            confirmButtonText: confirmText,
+            cancelButtonText: 'Batal',
+            reverseButtons: true,
+            customClass: {
+                popup: 'bg-white rounded-3 shadow border p-4',
+                title: 'fw-bold text-dark fs-6 mb-1',
+                htmlContainer: 'text-muted small mb-3',
+                confirmButton: (isTidakLayak ? 'btn btn-danger' : 'btn btn-primary') + ' btn-sm px-3 py-1.5 fw-semibold',
+                cancelButton: 'btn btn-outline-secondary btn-sm px-3 py-1.5 me-2'
+            },
+            buttonsStyling: false
+        }).then(function(result) {
+            if (result.isConfirmed) {
+                var hiddenBtn = document.createElement('input');
+                hiddenBtn.type = 'hidden';
+                hiddenBtn.name = 'action_btn';
+                hiddenBtn.value = 'tetapkan';
+                form.appendChild(hiddenBtn);
+                form.submit();
+            }
+        });
+    } else {
+        if (confirm(text)) {
+            var hiddenBtn = document.createElement('input');
+            hiddenBtn.type = 'hidden';
+            hiddenBtn.name = 'action_btn';
+            hiddenBtn.value = 'tetapkan';
+            form.appendChild(hiddenBtn);
+            form.submit();
+        }
+    }
+}
 </script>
 
 <style>

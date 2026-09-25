@@ -323,10 +323,10 @@
 
     <!-- Read-Only Notice -->
     <check if="{{ !@can_edit }}">
-        <div class="alert alert-warning border-0 d-flex align-items-center gap-3 mb-3 py-2 px-3 small rounded-3 shadow-sm">
+        <div class="alert alert-warning border-0 d-flex align-items-center gap-2 mb-3 py-2 px-3 small rounded-3 shadow-xs text-warning-emphasis">
             <i class="bi bi-lock-fill text-warning fs-5 flex-shrink-0"></i>
             <div>
-                <strong>Mode Lihat Saja (Read-Only)</strong>: Perubahan rincian pengujian merupakan wewenang <strong>Ketua Tim / Tim Pelaksana</strong>.
+                <strong>Status Edit Dikunci:</strong> Tidak bisa merubah data, silakan hubungi superadmin.
             </div>
         </div>
     </check>
@@ -349,7 +349,7 @@
                     </check>
                     <check if="{{ @order.status_proposal_biaya != 'siap_penawaran' }}">
                         <span class="badge bg-warning-subtle text-warning border border-warning-subtle">
-                            <i class="bi bi-pencil-fill me-1"></i> Draf
+                            <i class="bi bi-bookmark me-1"></i> Draf
                         </span>
                     </check>
                 </div>
@@ -595,19 +595,19 @@
                                         <i class="bi bi-bookmark"></i> Simpan Draf
                                     </button>
                                     <check if="{{ @is_ketua_tim || @is_superadmin }}">
-                                        <button type="submit" name="action_btn" value="siap_penawaran" class="btn btn-primary btn-sm px-4 d-inline-flex align-items-center gap-1 fw-bold shadow-xs">
-                                            <i class="bi bi-check2-circle"></i> Tetapkan Siap Penawaran
+                                        <button type="button" class="btn btn-primary btn-sm px-4 d-inline-flex align-items-center gap-1 fw-bold shadow-xs" onclick="confirmSubmitLingkungan('siap_penawaran')">
+                                            <i class="bi bi-send-fill"></i> Tetapkan Siap Penawaran
                                         </button>
                                     </check>
                                     <check if="{{ !@is_ketua_tim && !@is_superadmin }}">
-                                        <button type="submit" name="action_btn" value="kirim_katim" class="btn btn-primary btn-sm px-4 d-inline-flex align-items-center gap-1 fw-bold shadow-xs">
-                                            <i class="bi bi-send"></i> Ajukan ke Ketua Tim
+                                        <button type="button" class="btn btn-primary btn-sm px-4 d-inline-flex align-items-center gap-1 fw-bold shadow-xs" onclick="confirmSubmitLingkungan('kirim_katim')">
+                                            <i class="bi bi-send-fill"></i> Ajukan ke Ketua Tim
                                         </button>
                                     </check>
                                 </check>
                                 <check if="{{ !@can_edit }}">
-                                    <button type="button" class="btn btn-secondary btn-sm px-4" disabled>
-                                        <i class="bi bi-lock-fill me-1"></i> Terkunci
+                                    <button type="button" class="btn btn-secondary btn-sm px-4 fw-semibold" disabled title="Status edit dikunci. Hubungi Superadmin jika perlu membuka akses.">
+                                        <i class="bi bi-lock-fill me-1"></i> Status Edit Dikunci
                                     </button>
                                 </check>
                             </div>
@@ -1120,4 +1120,61 @@ document.addEventListener('DOMContentLoaded', function() {
         updateSpmFromMaster();
     }
 });
+
+function confirmSubmitLingkungan(actionVal) {
+    var form = document.getElementById('formKalkulasiLingkungan');
+    if (form && !form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+
+    var isKirim = actionVal === 'kirim_katim';
+    var title = isKirim ? 'Ajukan ke Ketua Tim?' : 'Tetapkan Siap Penawaran?';
+    var text = isKirim 
+        ? 'Apakah Anda yakin ingin mengajukan rincian biaya pengujian ini ke Ketua Tim OPTI?' 
+        : 'Apakah Anda yakin ingin menetapkan biaya pengujian ini siap diterbitkan Surat Penawaran?';
+    var confirmText = isKirim 
+        ? '<i class="bi bi-send-fill me-1"></i> Ya, Ajukan' 
+        : '<i class="bi bi-check2-circle me-1"></i> Ya, Tetapkan';
+
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: title,
+            text: text,
+            icon: 'question',
+            iconColor: '#0d6efd',
+            background: '#ffffff',
+            showCancelButton: true,
+            confirmButtonText: confirmText,
+            cancelButtonText: 'Batal',
+            reverseButtons: true,
+            customClass: {
+                popup: 'bg-white rounded-3 shadow border p-4',
+                title: 'fw-bold text-dark fs-6 mb-1',
+                htmlContainer: 'text-muted small mb-3',
+                confirmButton: 'btn btn-primary btn-sm px-3 py-1.5 fw-semibold',
+                cancelButton: 'btn btn-outline-secondary btn-sm px-3 py-1.5 me-2'
+            },
+            buttonsStyling: false
+        }).then(function(result) {
+            if (result.isConfirmed) {
+                var hiddenBtn = document.createElement('input');
+                hiddenBtn.type = 'hidden';
+                hiddenBtn.name = 'action_btn';
+                hiddenBtn.value = actionVal;
+                form.appendChild(hiddenBtn);
+                form.submit();
+            }
+        });
+    } else {
+        if (confirm(text)) {
+            var hiddenBtn = document.createElement('input');
+            hiddenBtn.type = 'hidden';
+            hiddenBtn.name = 'action_btn';
+            hiddenBtn.value = actionVal;
+            form.appendChild(hiddenBtn);
+            form.submit();
+        }
+    }
+}
 </script>

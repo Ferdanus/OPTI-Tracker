@@ -37,11 +37,14 @@ class Customer extends \DB\SQL\Mapper {
         if (empty($nama)) {
             return $ptCv;
         }
+        // Bersihkan jika ada penulisan badan usaha berulang (misal "PT PT Tanjung...", "PT. PT. Sinar...", "PT PT PT...")
+        $nama = preg_replace('/^((PT|CV|UD|BUMN|PERUM|PERSERO|Yayasan|Koperasi)\.?\s*)+/i', '$2 ', $nama);
+        $nama = trim($nama);
         if (empty($ptCv)) {
             return $nama;
         }
         // Jika nama sudah diawali bentuk badan hukum yang sama/sejenis, jangan prepend lagi
-        if (preg_match('/^(PT\.?|CV\.?|UD\.?|BUMN|PERUM|PERSERO)\b/i', $nama)) {
+        if (preg_match('/^(PT\.?|CV\.?|UD\.?|BUMN|PERUM|PERSERO|Yayasan|Koperasi)\b/i', $nama)) {
             return $nama;
         }
         return $ptCv . ' ' . $nama;

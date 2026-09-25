@@ -79,7 +79,7 @@
                                             <div class="d-flex mb-1">
                                                 <span class="text-muted" style="width: 120px; flex-shrink: 0;">Nama Perusahaan</span>
                                                 <span class="text-muted me-2">:</span>
-                                                <strong class="text-dark">{{ @item.nama_perusahaan }} ({{ @item.pt_cv }})</strong>
+                                                <strong class="text-dark">{{ @item.nama_perusahaan }}</strong>
                                             </div>
                                             <div class="d-flex mb-1">
                                                 <span class="text-muted" style="width: 120px; flex-shrink: 0;">PIC</span>
@@ -198,7 +198,7 @@
                                             <div class="d-flex mb-1">
                                                 <span class="text-muted" style="width: 120px; flex-shrink: 0;">Nama Perusahaan</span>
                                                 <span class="text-muted me-2">:</span>
-                                                <strong class="text-dark">{{ @p.nama_perusahaan }} ({{ @p.pt_cv }})</strong>
+                                                <strong class="text-dark">{{ @p.nama_perusahaan }}</strong>
                                             </div>
                                             <div class="d-flex mb-1">
                                                 <span class="text-muted" style="width: 120px; flex-shrink: 0;">
@@ -250,7 +250,7 @@
                                                         </a>
                                                     </true>
                                                     <false>
-                                                        <span class="text-muted small" style="font-size: 0.75rem;"><i class="bi bi-file-earmark me-1"></i> Draft Tanpa File</span>
+                                                        <span class="text-muted small" style="font-size: 0.75rem;"><i class="bi bi-bookmark me-1"></i> Draft Tanpa File</span>
                                                     </false>
                                                 </check>
                                                 <a href="{{ @BASE }}/order/{{ @p.id }}" class="btn btn-success btn-sm px-3 py-1 fw-semibold">
@@ -316,7 +316,6 @@
                             </td>
                             <td>
                                 <strong class="text-dark">{{ @row.nama_perusahaan }}</strong>
-                                <small class="text-muted d-block">({{ @row.pt_cv }})</small>
                             </td>
                             <td>
                                 <div class="text-dark fw-semibold text-truncate" style="max-width: 280px;" title="{{ @row.judul_kegiatan }}">
