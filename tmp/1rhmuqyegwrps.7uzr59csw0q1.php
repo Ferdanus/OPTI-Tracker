@@ -13,7 +13,7 @@
         </nav>
         <div class="d-flex align-items-center gap-2">
             <h4 class="fw-bold mb-0 text-dark">Formulir Permintaan Pelayanan Jasa</h4>
-            <span class="badge px-2 py-1 small fw-semibold" style="background-color: #fff1f2; color: #881337; border: 1px solid #fecdd3;">F.PJT-08-01/02</span>
+            <span class="badge px-2 py-1 small fw-semibold" style="background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1;">F.PJT-08-01/02</span>
         </div>
     </div>
     <div class="d-flex align-items-center gap-2">
@@ -25,19 +25,23 @@
 
 <style>
     /* ========================================================= */
-    /* LAYOUT UTAMA: RESPONSIVE SPLIT-SCREEN 2-KOLOM (SIDE-BY-SIDE) */
+    /* LAYOUT UTAMA: FORMULIR ISIAN TUNGGAL (FULL / CENTERED)    */
     /* ========================================================= */
     .form-preview-grid {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 1.5rem;
-        align-items: start;
+        display: block;
+        max-width: 920px;
+        margin: 0 auto;
     }
 
     @media (min-width: 992px) {
         .form-preview-grid {
-            grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+            max-width: 920px;
+            margin: 0 auto;
         }
+    }
+
+    .preview-sticky-wrapper {
+        display: none !important;
     }
 
     /* CARD SECTION FORMULIR (KOLOM KIRI) */
@@ -69,7 +73,7 @@
         width: 24px;
         height: 24px;
         border-radius: 6px;
-        background: #881337;
+        background: #334155;
         color: #ffffff;
         font-size: 0.75rem;
         font-weight: 700;
@@ -116,17 +120,17 @@
         user-select: none;
     }
     .channel-tile:hover {
-        border-color: #fecdd3;
-        background: #fff9f9;
+        border-color: #cbd5e1;
+        background: #f8fafc;
     }
     .channel-tile.active {
-        border-color: #881337;
-        background: #fff1f2;
+        border-color: #334155;
+        background: #f1f5f9;
     }
     .channel-tile input[type="radio"] {
         margin: 0;
         cursor: pointer;
-        accent-color: #881337;
+        accent-color: #334155;
     }
     .channel-tile-label {
         font-size: 0.82rem;
@@ -136,7 +140,7 @@
         line-height: 1.2;
     }
     .channel-tile.active .channel-tile-label {
-        color: #881337;
+        color: #334155;
         font-weight: 700;
     }
 
@@ -159,17 +163,39 @@
         user-select: none;
     }
     .division-card:hover {
-        border-color: #fecdd3;
-        background: #fff9f9;
+        border-color: #cbd5e1;
+        background: #f8fafc;
     }
     .division-card.active {
-        border-color: #881337;
+        border-color: #334155;
+        background: #f1f5f9;
+    }
+    .division-card.division-selulosa.active {
+        border-color: #be123c;
         background: #fff1f2;
+    }
+    .division-card.division-selulosa input[type="radio"] {
+        accent-color: #be123c;
+    }
+    .division-card.division-selulosa.active .division-info .div-name {
+        color: #9f1239;
+        font-weight: 700;
+    }
+    .division-card.division-lingkungan.active {
+        border-color: #0d9488;
+        background: #f0fdf4;
+    }
+    .division-card.division-lingkungan input[type="radio"] {
+        accent-color: #0d9488;
+    }
+    .division-card.division-lingkungan.active .division-info .div-name {
+        color: #0f766e;
+        font-weight: 700;
     }
     .division-card input[type="radio"] {
         margin: 0;
         cursor: pointer;
-        accent-color: #881337;
+        accent-color: #334155;
     }
     .division-info .div-name {
         font-size: 0.85rem;
@@ -181,7 +207,7 @@
         color: #64748b;
     }
     .division-card.active .division-info .div-name {
-        color: #881337;
+        color: #334155;
         font-weight: 700;
     }
 
@@ -204,19 +230,19 @@
         user-select: none;
     }
     .decision-card:hover {
-        border-color: #fecdd3;
+        border-color: #cbd5e1;
     }
     .decision-card input[type="radio"] {
         margin: 0;
         cursor: pointer;
-        accent-color: #881337;
+        accent-color: #334155;
     }
     .decision-card.layak.active {
-        border-color: #881337;
-        background: #fff1f2;
+        border-color: #334155;
+        background: #f1f5f9;
     }
     .decision-card.layak.active .decision-text {
-        color: #881337;
+        color: #334155;
         font-weight: 700;
     }
     .decision-card.tidak.active {
@@ -247,17 +273,17 @@
         user-select: none;
     }
     .param-tile:hover {
-        border-color: #fecdd3;
-        background: #fff9f9;
+        border-color: #cbd5e1;
+        background: #f8fafc;
     }
     .param-tile.active {
-        border-color: #881337;
-        background: #fff1f2;
+        border-color: #334155;
+        background: #f1f5f9;
     }
     .param-tile input[type="checkbox"] {
         margin: 0;
         cursor: pointer;
-        accent-color: #881337;
+        accent-color: #334155;
     }
     .param-tile-label {
         font-size: 0.82rem;
@@ -266,7 +292,7 @@
         line-height: 1.2;
     }
     .param-tile.active .param-tile-label {
-        color: #881337;
+        color: #334155;
         font-weight: 700;
     }
 
@@ -283,15 +309,54 @@
         gap: 0.75rem;
     }
 
+    /* CALLOUT KAJI KELAYAKAN */
+    .card-kaji-callout {
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        border: 1px solid #cbd5e1;
+        border-left: 4px solid #334155 !important;
+        border-radius: 10px;
+        padding: 1.25rem 1.45rem;
+        margin-bottom: 1.35rem;
+        box-shadow: 0 2px 8px -2px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .card-kaji-callout:hover {
+        border-color: #94a3b8;
+        box-shadow: 0 4px 14px -2px rgba(15, 23, 42, 0.1);
+    }
+    .card-kaji-callout.active {
+        background: linear-gradient(135deg, #f0fdf4 0%, #f8fafc 100%);
+        border-color: #86efac;
+        border-left: 4px solid #16a34a !important;
+    }
+
+    .kaji-icon-box {
+        width: 42px;
+        height: 42px;
+        background: #ffffff;
+        border: 1.5px solid #cbd5e1;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: #334155;
+        font-size: 1.25rem;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+    }
+    .card-kaji-callout.active .kaji-icon-box {
+        color: #16a34a;
+        border-color: #86efac;
+    }
+
     /* THEME BUTTONS */
     .btn-toggle-kaji {
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
-        padding: 0.5rem 1.15rem;
-        font-size: 0.815rem;
+        padding: 0.52rem 1.2rem;
+        font-size: 0.835rem;
         font-weight: 600;
-        border-radius: 9999px;
+        border-radius: 8px;
         transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         cursor: pointer;
         text-decoration: none;
@@ -300,21 +365,29 @@
         white-space: nowrap;
     }
     .btn-toggle-kaji.btn-state-closed {
-        background: linear-gradient(135deg, #881337 0%, #9f1239 100%);
-        border: 1.5px solid #700f2b;
+        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        border: 1px solid #0f172a;
         color: #ffffff;
-        box-shadow: 0 2px 8px rgba(136, 19, 55, 0.28), 0 1px 0 rgba(255, 255, 255, 0.18) inset;
+        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.18), 0 1px 0 rgba(255, 255, 255, 0.12) inset;
+    }
+    .btn-toggle-kaji.btn-state-closed i {
+        color: #93c5fd;
+        font-size: 0.95rem;
+        transition: transform 0.2s ease;
     }
     .btn-toggle-kaji.btn-state-closed:hover {
-        background: linear-gradient(135deg, #9f1239 0%, #be123c 100%);
-        border-color: #881337;
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        border-color: #0f172a;
         color: #ffffff;
-        box-shadow: 0 4px 14px rgba(136, 19, 55, 0.38);
+        box-shadow: 0 4px 14px rgba(15, 23, 42, 0.28);
         transform: translateY(-1px);
+    }
+    .btn-toggle-kaji.btn-state-closed:hover i {
+        transform: scale(1.18);
     }
     .btn-toggle-kaji.btn-state-closed:active {
         transform: translateY(0);
-        box-shadow: 0 1px 4px rgba(136, 19, 55, 0.25);
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.2);
     }
     .btn-toggle-kaji.btn-state-open {
         background: #ffffff;
@@ -322,11 +395,15 @@
         color: #475569;
         box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
     }
+    .btn-toggle-kaji.btn-state-open i {
+        color: #dc2626;
+        font-size: 0.95rem;
+    }
     .btn-toggle-kaji.btn-state-open:hover {
-        background: #fff1f2;
-        border-color: #fca5a5;
-        color: #991b1b;
-        box-shadow: 0 3px 8px rgba(153, 27, 27, 0.12);
+        background: #f8fafc;
+        border-color: #94a3b8;
+        color: #0f172a;
+        box-shadow: 0 3px 8px rgba(15, 23, 42, 0.1);
         transform: translateY(-1px);
     }
     .btn-toggle-kaji.btn-state-open:active {
@@ -334,28 +411,28 @@
     }
 
     .btn-submit-theme {
-        background: linear-gradient(135deg, #881337 0%, #9f1239 100%);
-        border: 1px solid #881337;
+        background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
+        border: 1px solid #334155;
         color: #ffffff !important;
         font-weight: 600;
         font-size: 0.85rem;
         padding: 0.5rem 1.25rem;
         border-radius: 8px;
         transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-        box-shadow: 0 2px 5px rgba(136, 19, 55, 0.25);
+        box-shadow: 0 2px 5px rgba(51, 65, 85, 0.25);
         display: inline-flex;
         align-items: center;
         gap: 0.45rem;
         cursor: pointer;
     }
     .btn-submit-theme:hover {
-        background: linear-gradient(135deg, #700f2d 0%, #881337 100%);
-        box-shadow: 0 4px 12px rgba(136, 19, 55, 0.35);
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        box-shadow: 0 4px 12px rgba(51, 65, 85, 0.35);
         transform: translateY(-1px);
     }
     .btn-submit-theme:active {
         transform: translateY(0);
-        box-shadow: 0 1px 3px rgba(136, 19, 55, 0.2);
+        box-shadow: 0 1px 3px rgba(51, 65, 85, 0.2);
     }
 
     .btn-draft-theme {
@@ -373,10 +450,10 @@
         cursor: pointer;
     }
     .btn-draft-theme:hover {
-        background: #fff1f2;
-        border-color: #881337;
-        color: #881337;
-        box-shadow: 0 2px 5px rgba(136, 19, 55, 0.1);
+        background: #f1f5f9;
+        border-color: #334155;
+        color: #334155;
+        box-shadow: 0 2px 5px rgba(51, 65, 85, 0.1);
     }
 
     .btn-cancel-theme {
@@ -670,33 +747,36 @@
         <!-- ============================================== -->
         <div>
 
-            <!-- 1. Identitas Klien -->
+            <!-- 1. Identitas Klien (Read Only) -->
             <div class="form-section-card">
-                <div class="form-section-header">
+                <div class="form-section-header d-flex justify-content-between align-items-center">
                     <div>
                         <div class="section-header-text">Identitas Klien / Pelanggan</div>
                         <div class="section-header-sub">Data pemohon resmi dari perusahaan mitra</div>
                     </div>
+                    <span class="badge bg-light text-muted border px-2 py-1" style="font-size: 0.72rem; font-weight: 600;">
+                        <i class="bi bi-lock-fill me-1"></i>Read Only
+                    </span>
                 </div>
                 <div class="form-section-body">
                     <div class="row g-2">
                         <div class="col-sm-6">
-                            <label class="form-label small fw-semibold text-dark mb-1" for="inputNama">
-                                Nama Pemohon / PIC <span class="text-danger">*</span>
+                            <label class="form-label small fw-semibold text-secondary mb-1" for="inputNama">
+                                Nama Pemohon / PIC
                             </label>
-                            <input type="text" id="inputNama" name="nama" class="form-control form-control-sm" placeholder="Nama lengkap penanggung jawab" value="<?= (($order['pic'] && $order['pic'] != '-' && $order['pic'] != '—') ? $order['pic'] : (($sp['nama'] && $sp['nama'] != '-' && $sp['nama'] != '—') ? $sp['nama'] : '')) ?>" <?= (!$can_edit ? 'disabled' : '') ?> required>
+                            <input type="text" id="inputNama" name="nama" class="form-control form-control-sm bg-light text-dark fw-medium border-secondary-subtle" placeholder="Nama lengkap penanggung jawab" value="<?= (($order['pic'] && $order['pic'] != '-' && $order['pic'] != '—') ? $order['pic'] : (($sp['nama'] && $sp['nama'] != '-' && $sp['nama'] != '—') ? $sp['nama'] : '')) ?>" readonly style="cursor: not-allowed;">
                         </div>
                         <div class="col-sm-6">
-                            <label class="form-label small fw-semibold text-dark mb-1" for="inputPerusahaan">
-                                Nama Perusahaan / Instansi <span class="text-danger">*</span>
+                            <label class="form-label small fw-semibold text-secondary mb-1" for="inputPerusahaan">
+                                Nama Perusahaan / Instansi
                             </label>
-                            <input type="text" id="inputPerusahaan" name="perusahaan" class="form-control form-control-sm" placeholder="Nama instansi / PT" value="<?= (($order['nama_perusahaan'] && $order['nama_perusahaan'] != '-' && $order['nama_perusahaan'] != '—') ? $order['nama_perusahaan'] : (($sp['perusahaan'] && $sp['perusahaan'] != '-' && $sp['perusahaan'] != '—') ? $sp['perusahaan'] : '')) ?>" <?= (!$can_edit ? 'disabled' : '') ?> required>
+                            <input type="text" id="inputPerusahaan" name="perusahaan" class="form-control form-control-sm bg-light text-dark fw-medium border-secondary-subtle" placeholder="Nama instansi / PT" value="<?= (($order['nama_perusahaan'] && $order['nama_perusahaan'] != '-' && $order['nama_perusahaan'] != '—') ? $order['nama_perusahaan'] : (($sp['perusahaan'] && $sp['perusahaan'] != '-' && $sp['perusahaan'] != '—') ? $sp['perusahaan'] : '')) ?>" readonly style="cursor: not-allowed;">
                         </div>
                         <div class="col-12">
-                            <label class="form-label small fw-semibold text-dark mb-1" for="inputAlamat">
+                            <label class="form-label small fw-semibold text-secondary mb-1" for="inputAlamat">
                                 Alamat Kantor / Pabrik
                             </label>
-                            <input type="text" id="inputAlamat" name="alamat" class="form-control form-control-sm" placeholder="Alamat lengkap perusahaan / klien" value="<?= (($order['alamat'] && $order['alamat'] != '-' && $order['alamat'] != '—') ? $order['alamat'] : (($sp['alamat'] && $sp['alamat'] != '-' && $sp['alamat'] != '—') ? $sp['alamat'] : '')) ?>" <?= (!$can_edit ? 'disabled' : '') ?>>
+                            <input type="text" id="inputAlamat" name="alamat" class="form-control form-control-sm bg-light text-dark fw-medium border-secondary-subtle" placeholder="Alamat lengkap perusahaan / klien" value="<?= (($order['alamat'] && $order['alamat'] != '-' && $order['alamat'] != '—') ? $order['alamat'] : (($sp['alamat'] && $sp['alamat'] != '-' && $sp['alamat'] != '—') ? $sp['alamat'] : '')) ?>" readonly style="cursor: not-allowed;">
                         </div>
                     </div>
                 </div>
@@ -753,14 +833,14 @@
 
                     <label class="form-label small fw-semibold text-dark mb-1">Disposisi ke Divisi OPTI:</label>
                     <div class="division-grid">
-                        <label class="division-card <?= ($order['jenis_layanan_opti'] == 'lingkungan' ? '' : 'active') ?>" for="jlSelulosa">
-                            <input type="radio" name="jenis_layanan" id="jlSelulosa" value="selulosa" <?= ($order['jenis_layanan_opti'] == 'lingkungan' ? '' : 'checked') ?> <?= (!$can_edit ? 'disabled' : '') ?>>
+                        <label class="division-card division-selulosa <?= (($order['jenis_layanan_opti'] == 'selulosa' || empty($order['jenis_layanan_opti']) || $order['jenis_layanan_opti'] == 'belum_ditentukan') ? 'active' : '') ?>" for="jlSelulosa">
+                            <input type="radio" name="jenis_layanan" id="jlSelulosa" value="selulosa" <?= (($order['jenis_layanan_opti'] == 'selulosa' || empty($order['jenis_layanan_opti']) || $order['jenis_layanan_opti'] == 'belum_ditentukan') ? 'checked' : '') ?> <?= (!$can_edit ? 'disabled' : '') ?>>
                             <div class="division-info">
                                 <div class="div-name">OPTI Selulosa</div>
                                 <div class="div-desc">Pengujian pulp, kertas, &amp; serat selulosa</div>
                             </div>
                         </label>
-                        <label class="division-card <?= ($order['jenis_layanan_opti'] == 'lingkungan' ? 'active' : '') ?>" for="jlLingkungan">
+                        <label class="division-card division-lingkungan <?= ($order['jenis_layanan_opti'] == 'lingkungan' ? 'active' : '') ?>" for="jlLingkungan">
                             <input type="radio" name="jenis_layanan" id="jlLingkungan" value="lingkungan" <?= ($order['jenis_layanan_opti'] == 'lingkungan' ? 'checked' : '') ?> <?= (!$can_edit ? 'disabled' : '') ?>>
                             <div class="division-info">
                                 <div class="div-name">OPTI Lingkungan</div>
@@ -774,33 +854,31 @@
             <!-- Input Hidden Status Sertakan Kaji Kelayakan -->
             <input type="hidden" name="sertakan_kaji_kelayakan" id="inputSertakanKaji" value="<?= ($tinjauan ? '1' : '0') ?>">
 
-            <!-- Kartu Opsi Kaji Kelayakan Awal -->
-            <div class="card border rounded-3 p-3 bg-white shadow-2xs mb-3" style="border-left: 4px solid #881337 !important; border-top: 1px solid #fecdd3; border-right: 1px solid #fecdd3; border-bottom: 1px solid #fecdd3;">
-                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="d-inline-flex align-items-center justify-content-center rounded-3 flex-shrink-0 shadow-2xs" style="width: 38px; height: 38px; background-color: #fff1f2; color: #881337; border: 1.5px solid #fecdd3;">
-                            <i class="bi bi-clipboard-check fs-5"></i>
-                        </div>
-                        <div>
-                            <div class="d-flex align-items-center gap-2 flex-wrap mb-0.5">
-                                <h6 class="fw-bold text-dark m-0 font-display" style="font-size: 0.92rem; letter-spacing: -0.01em;">
-                                    Kaji Ulang Kelayakan Teknis &amp; PIC
-                                </h6>
-                                <span class="badge rounded-pill fw-semibold" id="badgeKajiStatus" style="<?= ($tinjauan ? 'background-color: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;' : 'background-color: #fff1f2; color: #881337; border: 1px solid #fecdd3;') ?> font-size: 0.7rem; padding: 0.25rem 0.65rem;">
-                                    <?= ($tinjauan ? 'Aktif Disertakan' : 'Opsional untuk Tim Mitra')."
-" ?>
-                                </span>
-                            </div>
-                            <div class="small text-muted" style="font-size: 0.77rem; line-height: 1.35;">
-                                Pemeriksaan kesiapan laboratorium dan penunjukan PIC akan dilakukan oleh <strong>Ketua Tim OPTI</strong> setelah formulir ini dikirim.
-                            </div>
-                        </div>
+            <!-- Kartu Opsi Kaji Kelayakan Awal (Callout Banner) -->
+            <div class="card-kaji-callout <?= ($tinjauan ? 'active' : '') ?>" id="cardCalloutKaji">
+                <div class="d-flex align-items-start gap-3">
+                    <div class="kaji-icon-box flex-shrink-0">
+                        <i class="bi bi-clipboard-check"></i>
                     </div>
-                    <div>
-                        <button type="button" class="btn-toggle-kaji <?= ($tinjauan ? 'btn-state-open' : 'btn-state-closed') ?>" id="btnToggleKajiSection" onclick="toggleKajiSection()">
-                            <i class="bi <?= ($tinjauan ? 'bi-dash-circle' : 'bi-plus-circle-fill') ?>" id="iconToggleKaji"></i>
-                            <span id="textToggleKaji"><?= ($tinjauan ? 'Lewati (Serahkan ke Ka. Tim)' : 'Sertakan Kaji Kelayakan Sekarang') ?></span>
-                        </button>
+                    <div class="flex-grow-1">
+                        <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                            <h6 class="fw-bold text-dark m-0 font-display" style="font-size: 0.96rem; letter-spacing: -0.01em;">
+                                Kaji Ulang Kelayakan Teknis
+                            </h6>
+                            <span class="badge rounded-pill fw-semibold" id="badgeKajiStatus" style="<?= ($tinjauan ? 'background-color: #dcfce7; color: #15803d; border: 1px solid #86efac;' : 'background-color: #e2e8f0; color: #334155; border: 1px solid #cbd5e1;') ?> font-size: 0.72rem; padding: 0.25rem 0.65rem;">
+                                <?= ($tinjauan ? 'Aktif Disertakan' : 'Opsional untuk Tim Mitra')."
+" ?>
+                            </span>
+                        </div>
+                        <p class="text-muted mb-3" style="font-size: 0.825rem; line-height: 1.5;">
+                            Bagian ini opsional. Anda bisa langsung mengirim formulir ini tanpa perlu mengisi tahap ini agar kesiapan lab dikaji oleh <strong>Ketua Tim OPTI</strong>, atau klik tombol di bawah ini jika ingin mengisinya sekarang.
+                        </p>
+                        <div>
+                            <button type="button" class="btn-toggle-kaji <?= ($tinjauan ? 'btn-state-open' : 'btn-state-closed') ?>" id="btnToggleKajiSection" onclick="toggleKajiSection()">
+                                <i class="bi <?= ($tinjauan ? 'bi-dash-circle' : 'bi-plus-circle-fill') ?>" id="iconToggleKaji"></i>
+                                <span id="textToggleKaji"><?= ($tinjauan ? 'Lewati (Serahkan ke Ka. Tim)' : 'Sertakan Kaji Kelayakan Sekarang') ?></span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -809,7 +887,7 @@
             <div class="form-section-card" id="cardKajiKelayakan" style="display: <?= ($tinjauan ? 'block' : 'none') ?>;">
                 <div class="form-section-header">
                     <div>
-                        <div class="section-header-text">Kaji Ulang Kelayakan Teknis &amp; PIC</div>
+                        <div class="section-header-text">Kaji Ulang Kelayakan Teknis</div>
                         <div class="section-header-sub">Penilaian ketersediaan sumber daya laboratorium (Wewenang Ketua Tim OPTI)</div>
                     </div>
                 </div>
@@ -878,16 +956,18 @@
 
             <!-- Tombol Aksi -->
             <div class="form-action-bar mb-4">
-                <a href="<?= ($order['id'] ? $BASE.'/order/'.$order['id'] : $BASE.'/surat-penawaran') ?>" class="btn-cancel-theme">
-                    <i class="bi bi-x-circle me-1"></i> Batal
-                </a>
+                <a href="<?= ($order['id'] ? $BASE.'/order/'.$order['id'] : $BASE.'/surat-penawaran') ?>"
+   class="btn-cancel-theme btn-batal-kembali"
+   title="Kembali ke halaman sebelumnya">
+    <i class="bi bi-x-circle me-1"></i> Batal
+</a>
                 <?php if ($can_edit): ?>
                     <div class="d-flex gap-2">
                         <button type="submit" class="btn-draft-theme" id="btnSimpan">
                             <i class="bi bi-save me-1"></i> Simpan Draft
                         </button>
                         <button type="submit" class="btn-submit-theme" id="btnKirim">
-                            <i class="bi bi-send-check-fill me-1"></i> <span id="textBtnKirim"><?= ($tinjauan ? 'Simpan &amp; Tetapkan Kaji Kelayakan' : 'Simpan &amp; Teruskan ke Ka. Tim') ?></span>
+                            <i class="bi bi-send-fill me-1"></i> <span id="textBtnKirim"><?= ($tinjauan ? 'Simpan &amp; Tetapkan Kaji Kelayakan' : 'Kirim') ?></span>
                         </button>
                     </div>
                 <?php endif; ?>
@@ -903,20 +983,20 @@
         <!-- ============================================== -->
         <!-- KOLOM KANAN: DOKUMEN PREVIEW (LIVE STICKY)     -->
         <!-- ============================================== -->
-        <div class="preview-sticky-wrapper">
+        <div class="preview-sticky-wrapper d-none">
             <div class="preview-frame">
                 <!-- Toolbar Atas Pratinjau -->
                 <div class="preview-top-toolbar">
                     <div class="d-flex align-items-center gap-2">
-                        <i class="bi bi-file-earmark-text-fill" style="color: #881337;"></i>
+                        <i class="bi bi-file-earmark-text-fill" style="color: #475569;"></i>
                         <span class="fw-bold small text-dark">Pratinjau Lembar F.PJT-08-01/02</span>
-                        <span class="badge px-2 py-0.5 rounded-pill small" style="background-color: #fff1f2; color: #881337; border: 1px solid #fecdd3; font-size: 0.7rem;">
+                        <span class="badge px-2 py-0.5 rounded-pill small" style="background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; font-size: 0.7rem;">
                             Live Sync
                         </span>
                     </div>
                     <div>
                         <button type="button" class="btn btn-sm btn-white border text-secondary shadow-xs px-2.5 py-1 fw-semibold d-inline-flex align-items-center gap-1" onclick="window.print()" title="Cetak Lembar Dokumen">
-                            <i class="bi bi-printer" style="color: #881337;"></i> Cetak Pratinjau
+                            <i class="bi bi-printer" style="color: #475569;"></i> Cetak Pratinjau
                         </button>
                     </div>
                 </div>
@@ -1162,9 +1242,9 @@ document.addEventListener('DOMContentLoaded', function () {
         renderCheckGroup(document.getElementById('d_grup_bidang'), bidangOrder, bidangLabels, ['opti']);
 
         var jenisEl = document.querySelector('input[name="jenis_layanan"]:checked');
-        var jenis = jenisEl ? jenisEl.value : 'selulosa';
+        var jenis = jenisEl ? jenisEl.value : '';
         if (document.getElementById('d_divisi_line')) {
-            document.getElementById('d_divisi_line').textContent = 'OPTI ' + (jenis === 'lingkungan' ? 'Lingkungan' : 'Selulosa');
+            document.getElementById('d_divisi_line').textContent = jenis ? ('OPTI ' + (jenis === 'lingkungan' ? 'Lingkungan' : 'Selulosa')) : 'OPTI (Belum Ditentukan)';
         }
 
         // Update Disposisi & Kaji Kelayakan di Pratinjau Dokumen
@@ -1232,6 +1312,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function toggleKajiSection() {
+        var cardCallout = document.getElementById('cardCalloutKaji');
         var cardKaji = document.getElementById('cardKajiKelayakan');
         var inputKaji = document.getElementById('inputSertakanKaji');
         var btn = document.getElementById('btnToggleKajiSection');
@@ -1242,28 +1323,30 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (inputKaji && inputKaji.value === '1') {
             inputKaji.value = '0';
+            if (cardCallout) cardCallout.classList.remove('active');
             if (cardKaji) cardKaji.style.display = 'none';
             if (icon) icon.className = 'bi bi-plus-circle-fill me-1';
             if (text) text.textContent = 'Sertakan Kaji Kelayakan Sekarang';
             if (badge) {
-                badge.style.backgroundColor = '#fff1f2';
-                badge.style.color = '#881337';
-                badge.style.borderColor = '#fecdd3';
+                badge.style.backgroundColor = '#e2e8f0';
+                badge.style.color = '#1e293b';
+                badge.style.borderColor = '#cbd5e1';
                 badge.textContent = 'Opsional untuk Tim Mitra';
             }
             if (btn) {
                 btn.className = 'btn-toggle-kaji btn-state-closed';
             }
-            if (textBtnKirim) textBtnKirim.textContent = 'Simpan & Teruskan ke Ka. Tim';
+            if (textBtnKirim) textBtnKirim.textContent = 'Kirim';
         } else if (inputKaji) {
             inputKaji.value = '1';
+            if (cardCallout) cardCallout.classList.add('active');
             if (cardKaji) cardKaji.style.display = 'block';
-            if (icon) icon.className = 'bi bi-dash-circle me-1';
+            if (icon) icon.className = 'bi bi-dash-circle me-1 text-danger';
             if (text) text.textContent = 'Lewati (Serahkan ke Ka. Tim)';
             if (badge) {
-                badge.style.backgroundColor = '#f0fdf4';
-                badge.style.color = '#166534';
-                badge.style.borderColor = '#bbf7d0';
+                badge.style.backgroundColor = '#dcfce7';
+                badge.style.color = '#15803d';
+                badge.style.borderColor = '#86efac';
                 badge.textContent = 'Aktif Disertakan';
             }
             if (btn) {
@@ -1379,5 +1462,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
     toggleFormAlasanTolak();
     updatePreview();
+});
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.btn-batal-kembali').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+            // Kalau ada riwayat halaman sebelumnya (bukan buka langsung/tab baru), balik ke situ.
+            // Kalau enggak ada riwayat sama sekali, biarin href fallback yang jalan.
+            if (window.history.length > 1) {
+                e.preventDefault();
+                window.history.back();
+            }
+        });
+    });
 });
 </script>

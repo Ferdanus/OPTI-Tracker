@@ -1242,6 +1242,15 @@
                     </li>
                 </check>
 
+
+                <check if="{{ @is_superadmin || @is_ketua_tim || @is_tim_kerja }}">
+                    <li>
+                        <a class="sidebar-link {{ @active_menu == 'ketua-tim-po' ? 'active' : '' }}" href="{{ @BASE }}/ketua-tim/siap-po" title="Pembayaran & Keuangan">
+                            <i class="bi bi-cash-stack"></i> <span>Daftar Order Lunas</span>
+                        </a>
+                    </li>
+                </check>
+
                 <!-- 2. PELAKSANAAN TEKNIS -->
                 <check if="{{ @is_superadmin || @is_ketua_tim || @is_tim_kerja }}">
                     <li class="sidebar-section-label">Pelaksanaan Teknis</li>
@@ -1418,7 +1427,7 @@
                                 </a>
                             </li>
                             <li>
-                                <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2 {{ @SESSION.role == 'tim_mitra_industri' || @SESSION.role == 'admin_order' || @SESSION.role == 'tim_mitra' ? 'active' : '' }}" href="{{ @BASE }}/login/switch/36">
+                                <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2 {{ @SESSION.role == 'tim_mitra_industri' || @SESSION.role == 'admin_order' || @SESSION.role == 'tim_mitra' ? 'active' : '' }}" href="{{ @BASE }}/login/switch/9016">
                                     <i class="bi bi-person-circle text-secondary"></i> Tim Mitra
                                 </a>
                             </li>
@@ -1433,7 +1442,7 @@
                                 </a>
                             </li>
                             <li>
-                                <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2 {{ @SESSION.role == 'keuangan' ? 'active' : '' }}" href="{{ @BASE }}/login/switch/4">
+                                <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2 {{ @SESSION.role == 'keuangan' ? 'active' : '' }}" href="{{ @BASE }}/login/switch/9017">
                                     <i class="bi bi-cash-stack text-secondary"></i> Staf Keuangan
                                 </a>
                             </li>

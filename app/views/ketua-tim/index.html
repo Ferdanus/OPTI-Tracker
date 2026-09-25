@@ -1,0 +1,317 @@
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div>
+        <h2 class="h4 fw-bold mb-1 text-dark"><i class="bi bi-clipboard2-check text-primary me-2"></i>Order Siap Ditindaklanjuti</h2>
+        <p class="text-muted small mb-0">Order yang sudah Lunas dan didisposisikan ke Divisi Anda.</p>
+    </div>
+</div>
+
+<div class="ktp-tab-nav">
+    <button class="ktp-tab-btn active" data-tab="belum">Baru Lunas <span class="ktp-tab-count" id="cBelum">0</span></button>
+    <button class="ktp-tab-btn" data-tab="sudah">Sudah Ditunjuk <span class="ktp-tab-count" id="cSudah">0</span></button>
+</div>
+
+<div class="ktp-panel-box">
+    <div class="ktp-filter-bar">
+        <input type="text" id="fSearch" placeholder="Cari nomor order / nama mitra...">
+        <check if="{{ @is_superadmin }}">
+            <select id="fDivisi">
+                <option value="">Semua Divisi</option>
+                <option value="selulosa">Selulosa</option>
+                <option value="lingkungan">Lingkungan</option>
+            </select>
+        </check>
+        <check if="{{ !@is_superadmin }}">
+            <input type="hidden" id="fDivisi" value="">
+        </check>
+        <select id="fBulan" class="ktp-fp" style="display:none;">
+            <option value="">Semua Bulan</option>
+            <option value="1">Januari</option><option value="2">Februari</option><option value="3">Maret</option>
+            <option value="4">April</option><option value="5">Mei</option><option value="6">Juni</option>
+            <option value="7">Juli</option><option value="8">Agustus</option><option value="9">September</option>
+            <option value="10">Oktober</option><option value="11">November</option><option value="12">Desember</option>
+        </select>
+        <select id="fTahun" class="ktp-fp" style="display:none;">
+            <repeat group="{{ @daftar_tahun }}" value="{{ @thn }}">
+                <option value="{{ @thn }}">{{ @thn }}</option>
+            </repeat>
+        </select>
+    </div>
+    <div class="ktp-period-note" id="pNote" style="display:none;"></div>
+
+    <table class="ktp-table d-none d-md-table">
+        <thead>
+            <tr>
+                <th style="width:36px;">No.</th>
+                <th>No. Order</th>
+                <th>Mitra</th>
+                <th>Perihal</th>
+                <th style="width:120px;">Tanggal Lunas</th>
+                <th style="width:190px; text-align:center;">Aksi</th>
+            </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+    </table>
+    <div class="modal fade" id="modalPilihPelaksana" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow-lg overflow-hidden" style="border-radius: 16px;">
+                <div class="ktp-modal-header">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="ktp-modal-icon"><i class="bi bi-person-plus-fill"></i></div>
+                        <div>
+                            <div class="fw-bold text-white" style="font-size: 15px;">Pilih Ketua Pelaksana</div>
+                            <div class="text-white" style="font-size: 11.5px; opacity: .8;" id="mppNomor">-</div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+    
+                <div class="ktp-modal-info" id="mppInfo"></div>
+    
+                <form action="" method="POST" id="formPilihPelaksana">
+                    <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
+                    <div class="px-4 pt-3 pb-1">
+                        <label class="form-label fw-bold small">Ketua Pelaksana <span class="text-danger">*</span></label>
+                        <select name="ketua_pelaksana_id" id="selectPelaksana" class="form-select searchable-select" required>
+                            <option value="">Cari nama pegawai...</option>
+                        </select>
+                    </div>
+                    <div class="px-4 pb-4 pt-3 d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-sm px-4" style="background:#64748b; color:#fff;"><i class="bi bi-check-lg me-1"></i>Tunjuk Ketua Pelaksana</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="ktp-mobile-cards d-block d-md-none" id="mobileList"></div>
+</div>
+
+<style>
+    :root { --ktp-bg: #f1f5f9; }
+
+    .ktp-tab-nav { display: flex; gap: 4px; background: #fff; border-radius: 14px 14px 0 0; padding: 8px; box-shadow: 0 1px 2px rgba(0,0,0,.05); }
+    .ktp-tab-btn { flex: 1; border: none; background: transparent; padding: 12px 10px; border-radius: 10px; font-weight: 700; font-size: 13.5px; color: #64748b; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+    .ktp-tab-btn.active { background: var(--ktp-bg); color: #64748b; }
+.ktp-tab-count { background: #f1f5f9; color: #64748b; border-radius: 12px; padding: 1px 8px; font-size: 11.5px; }
+.ktp-tab-btn.active .ktp-tab-count { background: #64748b; color: #fff; }
+
+    .ktp-panel-box { background: #fff; border-radius: 0 0 14px 14px; padding: 18px; box-shadow: 0 1px 2px rgba(0,0,0,.05); }
+
+    .ktp-filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+    .ktp-filter-bar input, .ktp-filter-bar select { border: 1px solid var(--color-border, #e5e7eb); border-radius: 9px; padding: 8px 10px; font-size: 12.5px; background: #fff; }
+    .ktp-filter-bar input { flex: 1; min-width: 160px; }
+
+    .ktp-period-note { font-size: 12px; color: #64748b; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 8px 12px; margin-bottom: 14px; }
+
+    .ktp-table { width: 100%; border-collapse: collapse; }
+    .ktp-table thead th { text-align: left; font-size: 10.5px; text-transform: uppercase; letter-spacing: .3px; color: #94a3b8; font-weight: 700; padding: 0 10px 10px; border-bottom: 1px solid var(--color-border, #e5e7eb); }
+    .ktp-table tbody td { padding: 12px 10px; border-bottom: 1px solid var(--color-border, #e5e7eb); vertical-align: middle; font-size: 13px; }
+    .ktp-table tbody tr:last-child td { border-bottom: none; }
+    .ktp-table tbody tr:hover { background: #fafafa; }
+
+    .ktp-cell-order { display: flex; align-items: center; gap: 10px; }
+    
+    .ktp-nomor { font-weight: 700; font-size: 12.5px; color: #1e293b; font-family: 'Courier New', monospace; }
+    .ktp-divisi { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 20px; display: inline-block; margin-top: 3px; }
+    .ktp-divisi.sel { background: #fef2f2; color: #64748b; }
+    .ktp-divisi.ling { background: #ecfdf5; color: #047857; }
+
+    .ktp-cell-perihal { color: #64748b; font-size: 12.5px; max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ktp-cell-tanggal { color: #475569; font-size: 12.5px; }
+
+    .ktp-status { font-size: 10.5px; font-weight: 700; padding: 3px 9px; border-radius: 20px; display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; }
+    .ktp-status.ok { background: #ecfdf5; color: #047857; }
+    .ktp-status.done { background: #eff6ff; color: #1d4ed8; }
+
+    .ktp-btn { border: none; border-radius: 9px; padding: 7px 13px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; text-decoration: none; }
+    .ktp-btn-primary { background: #64748b; color: #fff; }
+    .ktp-btn-outline { background: #fff; border: 1.5px solid var(--color-border, #e5e7eb); color: #475569; }
+
+    .ktp-empty { text-align: center; padding: 50px 20px; color: #94a3b8; font-size: 13px; }
+
+    .ktp-mobile-cards .ktp-mcard { border: 1px solid var(--color-border, #e5e7eb); border-radius: 12px; padding: 12px; margin-bottom: 10px; }
+    .ktp-mobile-cards .ktp-mcard .mitra { font-size: 12px; color: #64748b; margin-top: 2px; }
+    .ktp-mobile-cards .ktp-mcard .perihal { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+    .ktp-mobile-cards .ktp-mcard .foot { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--color-border, #e5e7eb); }
+    .ktp-mobile-cards .ktp-mcard .ktp-btn { width: 100%; justify-content: center; margin-top: 8px; }
+    .ktp-modal-header {
+    background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+    padding: 18px 22px; display: flex; align-items: center; justify-content: space-between;
+}
+.ktp-modal-icon {
+    width: 42px; height: 42px; border-radius: 12px; background: rgba(255,255,255,0.15);
+    color: #fff; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;
+}
+.ktp-modal-info {
+    background: #f8fafc; margin: -14px 22px 0; border-radius: 12px; padding: 12px 16px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.06); font-size: 12.5px; position: relative;
+}
+.ktp-modal-info .row-line { display: flex; justify-content: space-between; padding: 3px 0; }
+.ktp-modal-info .row-line .label { color: #94a3b8; }
+.ktp-modal-info .row-line .value { font-weight: 700; color: #1e293b; }
+.ktp-modal-header { padding: 22px 28px; }
+.ktp-modal-icon { width: 50px; height: 50px; font-size: 21px; }
+.ktp-modal-info { margin: -16px 28px 0; padding: 16px 20px; font-size: 13.5px; }
+#formPilihPelaksana .px-4 { padding-left: 28px !important; padding-right: 28px !important; }
+</style>
+
+<script>
+var BASE = '{{ @BASE }}';
+var BULAN = ['', 'Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
+var BULAN_FULL = ['', 'Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+var DATA_BELUM = {{ @daftar_belum_json | raw }};
+var DATA_SUDAH = {{ @daftar_sudah_json | raw }};
+var bulanSekarang = {{ @bulan_sekarang }};
+var tahunSekarang = {{ @tahun_sekarang }};
+
+var tab = 'belum';
+var bSel = document.getElementById('fBulan');
+var tSel = document.getElementById('fTahun');
+
+function tgl(s) {
+    if (!s) return '-';
+    var d = new Date(s.replace(' ', 'T'));
+    return d.getDate() + ' ' + BULAN[d.getMonth() + 1] + ' ' + d.getFullYear();
+}
+function initial(nama) { return (nama || '?').replace(/^(PT|CV|UD)\.?\s+/i, '').trim().charAt(0).toUpperCase(); }
+function divisiPill(d) { return d === 'selulosa' ? '<span class="ktp-divisi sel">Selulosa</span>' : '<span class="ktp-divisi ling">Lingkungan</span>'; }
+
+document.querySelectorAll('.ktp-tab-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+        document.querySelectorAll('.ktp-tab-btn').forEach(function (b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        tab = btn.dataset.tab;
+        document.getElementById('fSearch').value = '';
+        document.querySelectorAll('.ktp-fp').forEach(function (el) { el.style.display = tab === 'sudah' ? 'inline-block' : 'none'; });
+        if (tab === 'sudah') { bSel.value = String(bulanSekarang); tSel.value = String(tahunSekarang); }
+        render();
+    });
+});
+['fSearch', 'fDivisi', 'fBulan', 'fTahun'].forEach(function (id) {
+    document.getElementById(id).addEventListener('input', render);
+    document.getElementById(id).addEventListener('change', render);
+});
+
+function aksiBelum(o) {
+    return '<button type="button" class="ktp-btn ktp-btn-primary btn-buka-modal-pelaksana"' +
+        ' data-order-id="' + o.id + '" data-nomor="' + o.nomor_order + '"' +
+        ' data-mitra="' + (o.nama_perusahaan + (o.pt_cv ? ' (' + o.pt_cv + ')' : '')).replace(/"/g, '&quot;') + '"' +
+        ' data-judul="' + o.judul_kegiatan.replace(/"/g, '&quot;') + '"' +
+        ' data-nilai="' + o.biaya_acuan + '" data-tanggal="' + o.tanggal_lunas + '">' +
+        '<i class="bi bi-person-plus"></i>Pilih Pelaksana</button>';
+}
+function aksiSudah(o) {
+    if (o.sudah_ada_po) {
+        return '<a href="' + BASE + '/po-kegiatan/' + o.po_id + '" class="ktp-btn ktp-btn-outline"><i class="bi bi-eye"></i>Lihat PO</a>';
+    }
+    return '<span class="text-muted small">Menunggu PO</span>';
+}
+
+function render() {
+    var q = document.getElementById('fSearch').value.trim().toLowerCase();
+    var divisi = document.getElementById('fDivisi').value;
+    var bulan = document.getElementById('fBulan').value;
+    var tahun = document.getElementById('fTahun').value;
+
+    document.getElementById('cBelum').textContent = DATA_BELUM.length;
+    document.getElementById('cSudah').textContent = DATA_SUDAH.length;
+
+    var sumber = tab === 'belum' ? DATA_BELUM : DATA_SUDAH;
+    var hasil = sumber.filter(function (o) {
+        if (divisi && o.jenis_layanan_opti !== divisi) return false;
+        var cocok = !q || ((o.nomor_order || '') + ' ' + (o.nama_perusahaan || '')).toLowerCase().indexOf(q) !== -1;
+        if (tab === 'sudah') {
+            if (q) return cocok;
+            if (bulan && String(o.bulan_tunjuk) !== bulan) return false;
+            if (tahun && String(o.tahun_tunjuk) !== tahun) return false;
+            return true;
+        }
+        return cocok;
+    });
+
+    var note = document.getElementById('pNote');
+    var showNote = tab === 'sudah' && !q;
+    note.style.display = showNote ? 'block' : 'none';
+    if (showNote) note.textContent = 'Menampilkan data ' + (bulan ? BULAN_FULL[bulan] : 'Semua Bulan') + ' ' + (tahun || 'Semua Tahun') + '. Ketik di kolom cari untuk menjangkau semua periode.';
+
+    var tbody = document.getElementById('tbody');
+    var mobileList = document.getElementById('mobileList');
+
+    if (hasil.length === 0) {
+        var pesan = tab === 'belum' ? 'Belum ada order yang siap ditunjuk.' : 'Tidak ada order di periode ini.';
+        tbody.innerHTML = '<tr><td colspan="6" class="ktp-empty">' + pesan + '</td></tr>';
+        mobileList.innerHTML = '<div class="ktp-empty">' + pesan + '</div>';
+        return;
+    }
+
+    tbody.innerHTML = hasil.map(function (o, idx) {
+        var aksi = tab === 'belum' ? aksiBelum(o) : aksiSudah(o);
+        var status = tab === 'sudah'
+            ? '<div>' + (o.sudah_ada_po ? '<span class="ktp-status done">PO Sudah Dibuat</span>' : '<span class="ktp-status ok">Ketua Pelaksana Terpilih</span>') + '</div>'
+            : '';
+
+        return '<tr>' +
+            '<td style="color:#94a3b8;">' + (idx + 1) + '</td>' +
+            '<td><div class="ktp-cell-order"><div><div class="ktp-nomor">' + o.nomor_order + '</div>' + divisiPill(o.jenis_layanan_opti) + '</div></div></td>' +
+            '<td>' + o.nama_perusahaan + (o.pt_cv ? ' (' + o.pt_cv + ')' : '') + '</td>' +
+            '<td class="ktp-cell-perihal" title="' + o.judul_kegiatan + '">' + o.judul_kegiatan + '</td>' +
+            '<td class="ktp-cell-tanggal">' + tgl(o.tanggal_lunas) + '</td>' +
+            '<td style="text-align:center;">' + aksi + status + '</td>' +
+        '</tr>';
+    }).join('');
+
+    mobileList.innerHTML = hasil.map(function (o) {
+        var aksi = tab === 'belum' ? aksiBelum(o) : aksiSudah(o);
+        var foot = tab === 'sudah'
+            ? (o.sudah_ada_po ? '<span class="ktp-status done">PO Sudah Dibuat</span>' : '<span class="ktp-status ok">Ketua Pelaksana Terpilih</span>')
+            : '<span class="ktp-cell-tanggal">Lunas ' + tgl(o.tanggal_lunas) + '</span>';
+
+        return '<div class="ktp-mcard">' +
+            '<div class="ktp-cell-order"><div><div class="ktp-nomor">' + o.nomor_order + '</div>' + divisiPill(o.jenis_layanan_opti) + '</div></div>' +
+            '<div class="mitra">' + o.nama_perusahaan + (o.pt_cv ? ' (' + o.pt_cv + ')' : '') + '</div>' +
+            '<div class="perihal">' + o.judul_kegiatan + '</div>' +
+            '<div class="foot">' + foot + '</div>' +
+            aksi +
+        '</div>';
+    }).join('');
+}
+
+var DATA_PELAKSANA = {{ @daftar_pelaksana_json | raw }};
+
+document.addEventListener('click', function (e) {
+    var btn = e.target.closest('.btn-buka-modal-pelaksana');
+    if (!btn) return;
+
+    var orderId = btn.getAttribute('data-order-id');
+    document.getElementById('mppNomor').textContent = btn.getAttribute('data-nomor');
+    document.getElementById('mppInfo').innerHTML =
+        '<div class="row-line"><span class="label">Mitra</span><span class="value">' + btn.getAttribute('data-mitra') + '</span></div>' +
+        '<div class="row-line"><span class="label">Perihal</span><span class="value">' + btn.getAttribute('data-judul') + '</span></div>' +
+        '<div class="row-line"><span class="label">Nilai Kontrak</span><span class="value">Rp ' + Math.round(btn.getAttribute('data-nilai')).toLocaleString('id-ID') + '</span></div>' +
+        '<div class="row-line"><span class="label">Tanggal Lunas</span><span class="value">' + tgl(btn.getAttribute('data-tanggal')) + '</span></div>';
+
+    document.getElementById('formPilihPelaksana').action = BASE + '/ketua-tim/' + orderId + '/pilih-pelaksana';
+
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('modalPilihPelaksana')).show();
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+    var selectEl = document.getElementById('selectPelaksana');
+    DATA_PELAKSANA.forEach(function (u) {
+        var opt = document.createElement('option');
+        opt.value = u.id_user;
+        opt.textContent = u.nama_user;
+        selectEl.appendChild(opt);
+    });
+
+    new TomSelect(selectEl, {
+        create: false,
+        sortField: { field: "text", direction: "asc" },
+        placeholder: 'Ketik untuk mencari nama pegawai...',
+        maxOptions: 200,
+    });
+});
+
+render();
+</script>

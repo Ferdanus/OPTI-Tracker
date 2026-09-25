@@ -97,6 +97,46 @@
         </div>
 
     </div>
+    <!-- ===== MODAL 1: DETAIL PEMBAYARAN LUNAS ===== -->
+<div class="modal fade" id="modalDetailLunas" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header py-2 px-3 border-bottom">
+                <div>
+                    <h6 class="modal-title fw-bold mb-0"><i class="bi bi-receipt-cutoff text-primary me-2"></i>Detail Pembayaran</h6>
+                    <div class="text-muted small" id="detailLunasSub">-</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-3">
+                <div class="order-locked-card mb-3" id="detailLunasInfo"></div>
+                <div class="small fw-bold text-muted text-uppercase mb-2">Riwayat Termin</div>
+                <div id="detailLunasList"></div>
+            </div>
+            <div class="modal-footer py-2 border-top">
+                <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MODAL 2: PREVIEW BUKTI PEMBAYARAN (numpuk di atas modal 1) ===== -->
+<div class="modal fade" id="modalBuktiPembayaran" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg" style="height: 85vh;">
+            <div class="modal-header py-2 px-3 border-bottom">
+                <h6 class="modal-title fw-bold mb-0"><i class="bi bi-file-earmark-check text-success me-2"></i>Bukti Pembayaran</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0" style="background:#e9ecef;">
+                <iframe id="iframeBuktiPembayaran" src="" style="width:100%; height:100%; border:none;"></iframe>
+            </div>
+            <div class="modal-footer py-2 border-top">
+                <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
 </div>
 
 <style>
@@ -137,9 +177,75 @@
         .row.g-2.mb-3 > .col-md-2,
         .row.g-2.mb-3 > .col-md-3:first-of-type { flex: 0 0 calc(50% - 4px); max-width: calc(50% - 4px); }
     }
+    .kb-badge-none {
+    display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #94a3b8;
+    border: 1px dashed #cbd5e1; border-radius: 20px; padding: 3px 8px; white-space: nowrap;
+}
+.kb-badge-ada {
+    display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: #92400e;
+    background: #fef3c7; border-radius: 20px; padding: 3px 8px; white-space: nowrap; text-decoration: none;
+}
+.kb-badge-ada:hover { background: #fde68a; color: #78350f; }
+.termin-item { border: 1px solid var(--color-border); border-radius: 10px; padding: 12px; margin-bottom: 8px; }
+.termin-item .row-info { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
 </style>
 
 <script>
+    document.addEventListener('show.bs.modal', function (e) {
+    var jumlahModalTerbuka = document.querySelectorAll('.modal.show').length;
+    var zIndex = 1055 + (10 * jumlahModalTerbuka);
+    e.target.style.zIndex = zIndex;
+    setTimeout(function () {
+        var backdrops = document.querySelectorAll('.modal-backdrop:not(.modal-stack-fixed)');
+        var backdropTeratas = backdrops[backdrops.length - 1];
+        if (backdropTeratas) {
+            backdropTeratas.style.zIndex = zIndex - 1;
+            backdropTeratas.classList.add('modal-stack-fixed');
+        }
+    }, 0);
+});
+function bukaBuktiPembayaran(itemId) {
+    document.getElementById('iframeBuktiPembayaran').src = BASE + '/pembayaran/bukti/' + itemId;
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('modalBuktiPembayaran')).show();
+}
+
+document.getElementById('modalBuktiPembayaran').addEventListener('hidden.bs.modal', function () {
+    document.getElementById('iframeBuktiPembayaran').src = '';
+});
+function bukaDetailLunas(orderId) {
+    var order = DATA_LUNAS.find(function (o) { return String(o.id) === String(orderId); });
+    if (!order) return;
+
+    document.getElementById('detailLunasSub').textContent = order.nomor_order;
+    document.getElementById('detailLunasInfo').innerHTML =
+        '<div class="order-locked-row"><span class="order-locked-label">Mitra</span><span class="order-locked-value">' + order.nama_perusahaan + ' (' + (order.pt_cv || '') + ')</span></div>' +
+        '<div class="order-locked-row"><span class="order-locked-label">Nilai Acuan</span><span class="order-locked-value">' + rupiah(order.biaya_acuan) + '</span></div>' +
+        '<div class="order-locked-row"><span class="order-locked-label">Tanggal Lunas</span><span class="order-locked-value text-success">' + tglIndo(order.tanggal_lunas) + '</span></div>';
+
+    var terminList = DATA_HISTORI.filter(function (h) { return String(h.order_id) === String(orderId); });
+    terminList.sort(function (a, b) { return new Date(a.tanggal_bayar) - new Date(b.tanggal_bayar); });
+
+    var listEl = document.getElementById('detailLunasList');
+    listEl.innerHTML = terminList.length === 0
+        ? '<div class="text-muted small text-center py-3">Belum ada riwayat termin.</div>'
+        : terminList.map(function (h) {
+            var btnBukti = h.bukti_bayar
+                ? '<button type="button" class="btn btn-sm btn-outline-primary" onclick="bukaBuktiPembayaran(' + h.id + ')"><i class="bi bi-eye me-1"></i>Lihat Bukti</button>'
+                : '<span class="text-muted small">Tanpa bukti</span>';
+            return '<div class="termin-item">' +
+                '<div class="row-info">' +
+                    '<span class="badge badge-pill-primary">Termin ke-' + h.termin_ke + '</span>' +
+                    '<span class="fw-bold text-success">' + rupiah(h.jumlah) + '</span>' +
+                '</div>' +
+                '<div class="row-info mt-1">' +
+                    '<span class="small text-muted">' + tglIndo(h.tanggal_bayar) + (h.keterangan ? ' &mdash; ' + h.keterangan : '') + '</span>' +
+                    btnBukti +
+                '</div>' +
+            '</div>';
+        }).join('');
+
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('modalDetailLunas')).show();
+}
 var BASE = '{{ @BASE }}';
 var CSRF = '{{ @csrf_token }}';
 var BULAN_INDO = ['', 'Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
@@ -162,6 +268,12 @@ function divisiBadge(d) {
     if (d === 'selulosa') return '<span class="badge badge-pill-primary">Selulosa</span>';
     if (d === 'lingkungan') return '<span class="badge badge-pill-info">Lingkungan</span>';
     return '-';
+}
+function skbBadge(o) {
+    if (o.surat_kesanggupan_bayar) {
+        return '<div class="mt-1"><a href="' + BASE + '/surat-penawaran/' + o.sp_id + '/surat-kesanggupan/preview" target="_blank" class="kb-badge-ada" onclick="event.stopPropagation();"><i class="bi bi-file-earmark-check-fill"></i> Kesanggupan Bayar</a></div>';
+    }
+    return '<div class="mt-1"><span class="kb-badge-none"><i class="bi bi-dash-circle"></i> Belum ada Kesanggupan</span></div>';
 }
 
 var currentTab = 'baru';
@@ -267,7 +379,7 @@ function renderBaru(list) {
     body.innerHTML = list.length === 0
         ? '<tr><td colspan="7" class="text-center text-muted py-5"><i class="bi bi-inbox fs-2 d-block mb-2"></i>Tidak ada order baru.</td></tr>'
         : list.map(function (o, idx) {
-            return '<tr><td class="text-muted small">' + (idx + 1) + '</td><td class="fw-semibold">' + o.nomor_order + '</td><td>' + o.judul_kegiatan + '<div class="text-muted small">' + o.nama_perusahaan + ' (' + (o.pt_cv || '') + ')</div></td><td>' + divisiBadge(o.jenis_layanan_opti) + '</td>' +
+            return '<tr><td class="text-muted small">' + (idx + 1) + '</td><td class="fw-semibold">' + o.nomor_order + skbBadge(o) + '</td><td>' + o.judul_kegiatan + '<div class="text-muted small">' + o.nama_perusahaan + ' (' + (o.pt_cv || '') + ')</div></td><td>' + divisiBadge(o.jenis_layanan_opti) + '</td>' +
                 '<td class="text-end">' + rupiah(o.biaya_acuan) + (o.nominal_penawaran ? '' : '<div class="text-muted" style="font-size:.68rem;">*estimasi</div>') + '</td>' +
                 '<td class="small text-muted">' + tglIndo(o.tanggal_masuk) + '</td>' +
                 '<td class="text-center"><a href="' + BASE + '/pembayaran/tambah?order_id=' + o.id + '" class="btn btn-sm btn-success"><i class="bi bi-plus-circle"></i> Catat Pembayaran</a></td></tr>';
@@ -289,7 +401,11 @@ function renderBerjalan(list) {
     body.innerHTML = list.length === 0
         ? '<tr><td colspan="8" class="text-center text-muted py-5"><i class="bi bi-arrow-repeat fs-2 d-block mb-2"></i>Tidak ada pembayaran berjalan.</td></tr>'
         : list.map(function (o, idx) {
-            return '<tr><td class="text-muted small">' + (idx + 1) + '</td><td class="fw-semibold">' + o.nomor_order + '</td><td>' + o.judul_kegiatan + '<div class="text-muted small">' + o.nama_perusahaan + ' (' + (o.pt_cv || '') + ')</div></td><td>' + divisiBadge(o.jenis_layanan_opti) + '</td>' +
+            var kbBadge = o.punya_kesanggupan_bayar
+                ? '<div><span class="kb-badge-ada mt-1"><i class="bi bi-file-earmark-check-fill"></i> Kesanggupan Bayar</span></div>'
+                : '';
+
+            return '<tr><td class="text-muted small">' + (idx + 1) + '</td><td class="fw-semibold">' + o.nomor_order + skbBadge(o) + '</td><td>' + o.judul_kegiatan + '<div class="text-muted small">' + o.nama_perusahaan + ' (' + (o.pt_cv || '') + ')</div></td><td>' + divisiBadge(o.jenis_layanan_opti) + '</td>' +
                 '<td class="text-end">' + rupiah(o.biaya_acuan) + '</td>' +
                 '<td><div class="d-flex justify-content-between small mb-1"><span class="text-success fw-semibold">' + rupiah(o.total_terbayar) + '</span><span class="text-muted">' + o.persen_bayar + '%</span></div><div class="progress" style="height:5px;"><div class="progress-bar bg-warning" style="width:' + o.persen_bayar + '%;"></div></div><div class="text-muted mt-1" style="font-size:.7rem;">' + o.jumlah_termin + 'x bayar</div></td>' +
                 '<td class="text-end fw-bold text-danger">' + rupiah(o.sisa_tagihan) + '</td>' +
@@ -308,16 +424,16 @@ function renderBerjalan(list) {
         }).join('');
 }
 
-function renderLunas(list) {
+        function renderLunas(list) {
     var body = document.getElementById('bodyLunas');
     body.innerHTML = list.length === 0
         ? '<tr><td colspan="8" class="text-center text-muted py-5"><i class="bi bi-inbox fs-2 d-block mb-2"></i>Tidak ada order lunas di periode ini.</td></tr>'
         : list.map(function (o, idx) {
-            return '<tr><td class="text-muted small">' + (idx + 1) + '</td><td class="fw-semibold">' + o.nomor_order + '</td><td>' + o.judul_kegiatan + '<div class="text-muted small">' + o.nama_perusahaan + ' (' + (o.pt_cv || '') + ')</div></td><td>' + divisiBadge(o.jenis_layanan_opti) + '</td>' +
+                return '<tr><td class="text-muted small">' + (idx + 1) + '</td><td class="fw-semibold">' + o.nomor_order + skbBadge(o) + '</td><td>' + o.judul_kegiatan + '<div class="text-muted small">' + o.nama_perusahaan + ' (' + (o.pt_cv || '') + ')</div></td><td>' + divisiBadge(o.jenis_layanan_opti) + '</td>' +
                 '<td class="text-end">' + rupiah(o.biaya_acuan) + '</td>' +
                 '<td class="small">' + tglIndo(o.tanggal_lunas) + '</td>' +
                 '<td class="text-center"><span class="badge badge-pill-success">' + o.jumlah_termin + 'x bayar</span></td>' +
-                '<td class="text-center text-muted small">-</td></tr>';
+                '<td class="text-center"><button type="button" class="btn btn-sm btn-outline-secondary" onclick="bukaDetailLunas(' + o.id + ')"><i class="bi bi-eye me-1"></i>Detail</button></td></tr>';
         }).join('');
 
     var cards = document.getElementById('cardsLunas');
@@ -361,4 +477,30 @@ document.getElementById('filterTahun').addEventListener('change', terapkanFilter
 
 muatFilterDariState(currentTab);
 terapkanFilter();
+
+document.addEventListener('click', function (e) {
+    var btn = e.target.closest('.btn-disposisi-katim');
+    if (!btn) return;
+
+    if (!confirm('Kirim notifikasi ke Ketua Tim bahwa order ini sudah Deal?')) return;
+
+    var orderId = btn.getAttribute('data-order-id');
+    btn.disabled = true;
+
+    fetch(BASE + '/pembayaran/' + orderId + '/disposisi-katim', { method: 'POST' })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+            if (data.success) {
+                location.reload(); // paling simpel & aman: refresh data biar semua tab ikut sinkron
+            } else {
+                alert(data.message || 'Gagal mengirim disposisi.');
+                btn.disabled = false;
+            }
+        })
+        .catch(function () {
+            alert('Gagal mengirim disposisi.');
+            btn.disabled = false;
+        });
+    
+});
 </script>

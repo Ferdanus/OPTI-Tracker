@@ -194,6 +194,11 @@ $f3->route('GET /order/@id/proposal/raw-data', 'OrderController->proposalRawData
 $f3->route('POST /order/@id/respon-klien', 'OrderController->responKlien');
 $f3->route('POST /order/@id/terima-sampel', 'OrderController->simpanTerimaSampel');
 $f3->route('POST /order/@id/konfirmasi-pembayaran', 'OrderController->konfirmasiPembayaran');
+$f3->route('POST /pembayaran/@id/disposisi-katim', 'PembayaranOptiController->disposisiKatim');
+
+
+$f3->route('GET /ketua-tim/siap-po', 'KetuaTimController->index');
+$f3->route('POST /ketua-tim/@id/pilih-pelaksana', 'KetuaTimController->simpanPelaksana');
 
 // ==========================================
 // ROUTE MODUL PEMBAYARAN MULTI-TERMIN & INVOICE
@@ -308,8 +313,11 @@ $f3->route('GET /order/@id/penawaran/raw-data', 'SuratPenawaranController->penaw
 $f3->route('POST /order/@id/penawaran/status', 'SuratPenawaranController->updateStatusKlien');
 $f3->route('POST /order/@id/penawaran/disposisi-keuangan', 'SuratPenawaranController->disposisiKeuangan');
 $f3->route('POST /surat-penawaran/@id/disposisi-keuangan', 'SuratPenawaranController->disposisiKeuangan');
+$f3->route('POST /surat-penawaran/@id/surat-kesanggupan/upload', 'SuratPenawaranController->uploadKesanggupanBayar');
+$f3->route('GET /surat-penawaran/@id/surat-kesanggupan/preview', 'SuratPenawaranController->previewKesanggupanBayar');
 
 $f3->route('GET /surat/@id', 'OrderController->showSurat');
+$f3->route('GET /surat/@id/fragment', 'OrderController->showSuratFragment');
 // ==========================================
 // PO Kegiatan
 // ==========================================

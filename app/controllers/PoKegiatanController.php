@@ -73,28 +73,183 @@ protected function getHariLiburSet() {
     $rows = $this->safeQuery('SELECT tanggal_libur FROM tb_tanggal_libur');
     return array_map(function ($r) { return date('Y-m-d', strtotime($r['tanggal_libur'])); }, $rows);
 }
+protected function bind(PoKegiatan $po, $f3, $isUpdate) {
+    $post = $f3->get('POST');
+
+    if (!$isUpdate) {
+        $po->order_id = (int) ($post['order_id'] ?? 0);
+    }
+
+    $po->nomor_po       = trim((string) ($post['nomor_po'] ?? ''));
+    $po->judul_kegiatan = trim((string) ($post['judul_kegiatan'] ?? ''));
+    $po->dasar          = trim((string) ($post['dasar'] ?? ''));
+    $po->dasar_struktur = json_encode([
+        'nomor_urut'   => trim((string) ($post['dasar_nomor_urut'] ?? '')),
+        'bulan_romawi' => trim((string) ($post['dasar_bulan_romawi'] ?? '')),
+        'tahun'        => trim((string) ($post['dasar_tahun'] ?? '')),
+        'tanggal'      => trim((string) ($post['dasar_tanggal'] ?? '')),
+        'tentang'      => trim((string) ($post['dasar_tentang'] ?? '')),
+    ], JSON_UNESCAPED_UNICODE);
+    $po->tujuan         = trim((string) ($post['tujuan'] ?? ''));
+
+    $ruangLingkupItems = [];
+    $rlNama = $post['rl_nama'] ?? [];
+    foreach ($rlNama as $i => $nama) {
+        if (trim($nama) === '') continue;
+        $ruangLingkupItems[] = [
+            'nama_alat'   => trim($nama),
+            'jumlah'      => (int) ($post['rl_jumlah'][$i] ?? 0),
+            'waktu_menit' => (int) ($post['rl_waktu_menit'][$i] ?? 0),
+            'total_jam'   => (float) ($post['rl_total_jam'][$i] ?? 0),
+            'keterangan'  => trim((string) ($post['rl_keterangan'][$i] ?? '')),
+        ];
+    }
+    $po->ruang_lingkup = json_encode([
+        'deskripsi' => trim((string) ($post['ruang_lingkup_deskripsi'] ?? '')),
+        'items'     => $ruangLingkupItems,
+    ], JSON_UNESCAPED_UNICODE);
+
+    $po->alat_bahan = trim((string) ($post['alat_bahan'] ?? ''));
+    $po->metoda     = trim((string) ($post['metoda'] ?? ''));
+    // 4.2 Bahan dan Bahan Kimia (khusus Selulosa) -- Nama/Jumlah/Satuan, tanpa harga
+    $bahanKimiaList = [];
+    $bkNama = $post['bahan_kimia_nama'] ?? [];
+    foreach ($bkNama as $i => $nama) {
+        if (trim($nama) === '') continue;
+        $bahanKimiaList[] = [
+            'nama'   => trim($nama),
+            'jumlah' => trim((string) ($post['bahan_kimia_jumlah'][$i] ?? '')),
+            'satuan' => trim((string) ($post['bahan_kimia_satuan'][$i] ?? '')),
+        ];
+    }
+    $po->bahan_kimia = json_encode($bahanKimiaList, JSON_UNESCAPED_UNICODE);
+
+    // Rincian Kebutuhan Lain -- opsional & dinamis (bisa banyak kategori: ATK, Computer Supply, dll)
+    $kebutuhanList = [];
+    $kebNama = $post['keb_nama'] ?? [];
+    foreach ($kebNama as $katIdx => $namaKategori) {
+        if (trim($namaKategori) === '') continue;
+        $items = [];
+        $itemNamaList = $post['keb_item_nama'][$katIdx] ?? [];
+        foreach ($itemNamaList as $i => $namaItem) {
+            if (trim($namaItem) === '') continue;
+            $items[] = [
+                'nama'   => trim($namaItem),
+                'jumlah' => (float) ($post['keb_item_jumlah'][$katIdx][$i] ?? 0),
+                'satuan' => trim((string) ($post['keb_item_satuan'][$katIdx][$i] ?? '')),
+                'harga'  => (float) ($post['keb_item_harga'][$katIdx][$i] ?? 0),
+            ];
+        }
+        if (empty($items)) continue;
+        $kebutuhanList[] = ['nama' => trim($namaKategori), 'items' => $items];
+    }
+    $po->kebutuhan_tambahan = json_encode($kebutuhanList, JSON_UNESCAPED_UNICODE);
+
+    $po->alamat = trim((string) ($post['alamat'] ?? ''));
+    $timPelaksana = [];
+    $tpNama = $post['tp_nama'] ?? [];
+    foreach ($tpNama as $i => $nama) {
+        if (trim($nama) === '') continue;
+        $timPelaksana[] = [
+            'nama'         => trim($nama),
+            'tugas'        => trim((string) ($post['tp_tugas'][$i] ?? '')),
+            'uraian_tugas' => trim((string) ($post['tp_uraian'][$i] ?? '')),
+        ];
+    }
+    $po->tim_pelaksana = json_encode($timPelaksana, JSON_UNESCAPED_UNICODE);
+
+    $penerimaanItems = [];
+    foreach (($post['pen_nama'] ?? []) as $i => $nama) {
+        if (trim($nama) === '') continue;
+        $penerimaanItems[] = ['nama' => trim($nama), 'nominal' => (float) ($post['pen_nominal'][$i] ?? 0)];
+    }
+
+    $kategoriList = [];
+    $katNama = $post['kat_nama'] ?? [];
+    foreach ($katNama as $catIdx => $namaKategori) {
+        if (trim($namaKategori) === '') continue;
+        $items = [];
+        $itemNamaList = $post['kat_item_nama'][$catIdx] ?? [];
+        foreach ($itemNamaList as $i => $namaItem) {
+            if (trim($namaItem) === '') continue;
+            $items[] = [
+                'nama'    => trim($namaItem),
+                'qty_a'   => (float) ($post['kat_item_qtya'][$catIdx][$i] ?? 1) ?: 1,
+                'label_a' => trim((string) ($post['kat_item_labela'][$catIdx][$i] ?? '')),
+                'qty_b'   => (float) ($post['kat_item_qtyb'][$catIdx][$i] ?? 1) ?: 1,
+                'label_b' => trim((string) ($post['kat_item_labelb'][$catIdx][$i] ?? '')),
+                'tarif'   => (float) ($post['kat_item_tarif'][$catIdx][$i] ?? 0),
+            ];
+        }
+        $kategoriList[] = [
+            'nama'          => trim($namaKategori),
+            'persen_manual' => trim((string) ($post['kat_persen_manual'][$catIdx] ?? '')),
+            'items'         => $items,
+        ];
+    }
+    $po->rab = json_encode([
+        'penerimaan'  => ['items' => $penerimaanItems],
+        'pengeluaran' => ['kategori' => $kategoriList],
+    ], JSON_UNESCAPED_UNICODE);
+
+    $po->jadwal_mulai   = $post['jadwal_mulai'] ?: null;
+$po->jadwal_selesai = $post['jadwal_selesai'] ?: null;
+
+$tahapNamaList    = $post['tahap_nama'] ?? [];
+$kegiatanNamaAll  = $post['jadwal_kegiatan_nama'] ?? [];
+$kegiatanTandaAll = $post['jadwal_kegiatan_tanda'] ?? [];
+
+$groups = [];
+foreach ($tahapNamaList as $gIdx => $namaTahap) {
+$kegiatanList = [];
+$namaList = $kegiatanNamaAll[$gIdx] ?? [];
+foreach ($namaList as $kIdx => $namaKeg) {
+    if (trim($namaKeg) === '') continue;
+    $kegiatanList[] = [
+        'nama'  => trim($namaKeg),
+        'tanda' => array_map('strval', $kegiatanTandaAll[$gIdx][$kIdx] ?? []),
+    ];
+}
+$groups[] = ['nama_tahap' => trim($namaTahap), 'kegiatan' => $kegiatanList];
+}
+
+$po->jadwal = json_encode([
+'groups'     => $groups,
+'keterangan' => trim((string) ($post['jadwal_keterangan'] ?? '')),
+], JSON_UNESCAPED_UNICODE);
+
+    $po->status = ($post['aksi'] ?? '') === 'kirim' ? 'terkirim' : 'draft';
+}
 
     /** GET /po-kegiatan -- cuma nampilin PO yang SUDAH dibuat */
-    public function index($f3) {
-        $this->requireAuth();
+    /** GET /po-kegiatan -- PO yang sudah dibuat + order yang udah ditunjuk tapi PO-nya belum dibuat */
+public function index($f3) {
+    $this->requireAuth();
 
-        $sql = "SELECT p.id AS po_id, p.nomor_po, p.status AS po_status, p.created_at AS po_created_at,
-                       o.id AS order_id, o.nomor_order, o.judul_kegiatan, o.jenis_layanan_opti, o.status_tinjauan,
-                       c.nmcustomer AS nama_mitra, c.pt_cv
-                FROM po_kegiatan p
-                INNER JOIN order_layanan o ON o.id = p.order_id
-                INNER JOIN tb_customer c ON o.id_customer = c.id_customer
-                ORDER BY p.created_at DESC";
+    $sql = "SELECT p.id AS po_id, p.nomor_po, p.status AS po_status, p.created_at AS po_created_at,
+                   o.id AS order_id, o.nomor_order, o.judul_kegiatan, o.jenis_layanan_opti, o.status_tinjauan,
+                   o.ketua_pelaksana_id, o.ketua_pelaksana_at,
+                   c.nmcustomer AS nama_mitra, c.pt_cv
+            FROM order_layanan o
+            JOIN tb_customer c ON o.id_customer = c.id_customer
+            LEFT JOIN po_kegiatan p ON p.order_id = o.id
+            WHERE o.ketua_pelaksana_id IS NOT NULL
+            ORDER BY COALESCE(p.created_at, o.ketua_pelaksana_at) DESC";
 
-        $daftarPo = $this->safeQuery($sql);
+    $daftarPo = $this->safeQuery($sql);
 
-        $f3->set('daftar_po', $daftarPo);
-        $f3->set('total_po', count($daftarPo));
-        $f3->set('total_draft', count(array_filter($daftarPo, function ($r) { return $r['po_status'] === 'draft'; })));
-        $f3->set('total_terkirim', count(array_filter($daftarPo, function ($r) { return $r['po_status'] === 'terkirim'; })));
+    $totalMenunggu = count(array_filter($daftarPo, function ($r) { return empty($r['po_id']); }));
+    $totalDraft    = count(array_filter($daftarPo, function ($r) { return $r['po_status'] === 'draft'; }));
+    $totalTerkirim = count(array_filter($daftarPo, function ($r) { return $r['po_status'] === 'terkirim'; }));
 
-        $this->render('katim_kerja/po-kegiatan/index.html', 'Petunjuk Operasional (PO)', 'po_kegiatan');
-    }
+    $f3->set('daftar_po', $daftarPo);
+    $f3->set('total_po', count($daftarPo));
+    $f3->set('total_menunggu', $totalMenunggu);
+    $f3->set('total_draft', $totalDraft);
+    $f3->set('total_terkirim', $totalTerkirim);
+
+    $this->render('katim_kerja/po-kegiatan/index.html', 'Petunjuk Operasional (PO)', 'po_kegiatan');
+}
 
     /**
      * GET /po-kegiatan/pilih
@@ -583,153 +738,5 @@ protected function siapkanDataPo($po, $orderData) {
         } catch (\Exception $e) {
             return [];
         }
-    }
-
-    protected function bind(PoKegiatan $po, $f3, $isUpdate) {
-        $post = $f3->get('POST');
-
-        if (!$isUpdate) {
-            $po->order_id = (int) ($post['order_id'] ?? 0);
-        }
-
-        $po->nomor_po       = trim((string) ($post['nomor_po'] ?? ''));
-        $po->judul_kegiatan = trim((string) ($post['judul_kegiatan'] ?? ''));
-        $po->dasar          = trim((string) ($post['dasar'] ?? ''));
-        $po->dasar_struktur = json_encode([
-            'nomor_urut'   => trim((string) ($post['dasar_nomor_urut'] ?? '')),
-            'bulan_romawi' => trim((string) ($post['dasar_bulan_romawi'] ?? '')),
-            'tahun'        => trim((string) ($post['dasar_tahun'] ?? '')),
-            'tanggal'      => trim((string) ($post['dasar_tanggal'] ?? '')),
-            'tentang'      => trim((string) ($post['dasar_tentang'] ?? '')),
-        ], JSON_UNESCAPED_UNICODE);
-        $po->tujuan         = trim((string) ($post['tujuan'] ?? ''));
-
-        $ruangLingkupItems = [];
-        $rlNama = $post['rl_nama'] ?? [];
-        foreach ($rlNama as $i => $nama) {
-            if (trim($nama) === '') continue;
-            $ruangLingkupItems[] = [
-                'nama_alat'   => trim($nama),
-                'jumlah'      => (int) ($post['rl_jumlah'][$i] ?? 0),
-                'waktu_menit' => (int) ($post['rl_waktu_menit'][$i] ?? 0),
-                'total_jam'   => (float) ($post['rl_total_jam'][$i] ?? 0),
-                'keterangan'  => trim((string) ($post['rl_keterangan'][$i] ?? '')),
-            ];
-        }
-        $po->ruang_lingkup = json_encode([
-            'deskripsi' => trim((string) ($post['ruang_lingkup_deskripsi'] ?? '')),
-            'items'     => $ruangLingkupItems,
-        ], JSON_UNESCAPED_UNICODE);
-
-        $po->alat_bahan = trim((string) ($post['alat_bahan'] ?? ''));
-        $po->metoda     = trim((string) ($post['metoda'] ?? ''));
-        // 4.2 Bahan dan Bahan Kimia (khusus Selulosa) -- Nama/Jumlah/Satuan, tanpa harga
-        $bahanKimiaList = [];
-        $bkNama = $post['bahan_kimia_nama'] ?? [];
-        foreach ($bkNama as $i => $nama) {
-            if (trim($nama) === '') continue;
-            $bahanKimiaList[] = [
-                'nama'   => trim($nama),
-                'jumlah' => trim((string) ($post['bahan_kimia_jumlah'][$i] ?? '')),
-                'satuan' => trim((string) ($post['bahan_kimia_satuan'][$i] ?? '')),
-            ];
-        }
-        $po->bahan_kimia = json_encode($bahanKimiaList, JSON_UNESCAPED_UNICODE);
-
-        // Rincian Kebutuhan Lain -- opsional & dinamis (bisa banyak kategori: ATK, Computer Supply, dll)
-        $kebutuhanList = [];
-        $kebNama = $post['keb_nama'] ?? [];
-        foreach ($kebNama as $katIdx => $namaKategori) {
-            if (trim($namaKategori) === '') continue;
-            $items = [];
-            $itemNamaList = $post['keb_item_nama'][$katIdx] ?? [];
-            foreach ($itemNamaList as $i => $namaItem) {
-                if (trim($namaItem) === '') continue;
-                $items[] = [
-                    'nama'   => trim($namaItem),
-                    'jumlah' => (float) ($post['keb_item_jumlah'][$katIdx][$i] ?? 0),
-                    'satuan' => trim((string) ($post['keb_item_satuan'][$katIdx][$i] ?? '')),
-                    'harga'  => (float) ($post['keb_item_harga'][$katIdx][$i] ?? 0),
-                ];
-            }
-            if (empty($items)) continue;
-            $kebutuhanList[] = ['nama' => trim($namaKategori), 'items' => $items];
-        }
-        $po->kebutuhan_tambahan = json_encode($kebutuhanList, JSON_UNESCAPED_UNICODE);
-
-        $po->alamat = trim((string) ($post['alamat'] ?? ''));
-        $timPelaksana = [];
-        $tpNama = $post['tp_nama'] ?? [];
-        foreach ($tpNama as $i => $nama) {
-            if (trim($nama) === '') continue;
-            $timPelaksana[] = [
-                'nama'         => trim($nama),
-                'tugas'        => trim((string) ($post['tp_tugas'][$i] ?? '')),
-                'uraian_tugas' => trim((string) ($post['tp_uraian'][$i] ?? '')),
-            ];
-        }
-        $po->tim_pelaksana = json_encode($timPelaksana, JSON_UNESCAPED_UNICODE);
-
-        $penerimaanItems = [];
-        foreach (($post['pen_nama'] ?? []) as $i => $nama) {
-            if (trim($nama) === '') continue;
-            $penerimaanItems[] = ['nama' => trim($nama), 'nominal' => (float) ($post['pen_nominal'][$i] ?? 0)];
-        }
-
-        $kategoriList = [];
-        $katNama = $post['kat_nama'] ?? [];
-        foreach ($katNama as $catIdx => $namaKategori) {
-            if (trim($namaKategori) === '') continue;
-            $items = [];
-            $itemNamaList = $post['kat_item_nama'][$catIdx] ?? [];
-            foreach ($itemNamaList as $i => $namaItem) {
-                if (trim($namaItem) === '') continue;
-                $items[] = [
-                    'nama'    => trim($namaItem),
-                    'qty_a'   => (float) ($post['kat_item_qtya'][$catIdx][$i] ?? 1) ?: 1,
-                    'label_a' => trim((string) ($post['kat_item_labela'][$catIdx][$i] ?? '')),
-                    'qty_b'   => (float) ($post['kat_item_qtyb'][$catIdx][$i] ?? 1) ?: 1,
-                    'label_b' => trim((string) ($post['kat_item_labelb'][$catIdx][$i] ?? '')),
-                    'tarif'   => (float) ($post['kat_item_tarif'][$catIdx][$i] ?? 0),
-                ];
-            }
-            $kategoriList[] = [
-                'nama'          => trim($namaKategori),
-                'persen_manual' => trim((string) ($post['kat_persen_manual'][$catIdx] ?? '')),
-                'items'         => $items,
-            ];
-        }
-        $po->rab = json_encode([
-            'penerimaan'  => ['items' => $penerimaanItems],
-            'pengeluaran' => ['kategori' => $kategoriList],
-        ], JSON_UNESCAPED_UNICODE);
-
-        $po->jadwal_mulai   = $post['jadwal_mulai'] ?: null;
-$po->jadwal_selesai = $post['jadwal_selesai'] ?: null;
-
-$tahapNamaList    = $post['tahap_nama'] ?? [];
-$kegiatanNamaAll  = $post['jadwal_kegiatan_nama'] ?? [];
-$kegiatanTandaAll = $post['jadwal_kegiatan_tanda'] ?? [];
-
-$groups = [];
-foreach ($tahapNamaList as $gIdx => $namaTahap) {
-    $kegiatanList = [];
-    $namaList = $kegiatanNamaAll[$gIdx] ?? [];
-    foreach ($namaList as $kIdx => $namaKeg) {
-        if (trim($namaKeg) === '') continue;
-        $kegiatanList[] = [
-            'nama'  => trim($namaKeg),
-            'tanda' => array_map('strval', $kegiatanTandaAll[$gIdx][$kIdx] ?? []),
-        ];
-    }
-    $groups[] = ['nama_tahap' => trim($namaTahap), 'kegiatan' => $kegiatanList];
-}
-
-$po->jadwal = json_encode([
-    'groups'     => $groups,
-    'keterangan' => trim((string) ($post['jadwal_keterangan'] ?? '')),
-], JSON_UNESCAPED_UNICODE);
-
-        $po->status = ($post['aksi'] ?? '') === 'kirim' ? 'terkirim' : 'draft';
     }
 }

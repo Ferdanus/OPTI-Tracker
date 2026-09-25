@@ -954,9 +954,11 @@
 
             <!-- Tombol Aksi -->
             <div class="form-action-bar mb-4">
-                <a href="{{ @order.id ? @BASE.'/order/'.$order['id'] : @BASE.'/surat-penawaran' }}" class="btn-cancel-theme">
-                    <i class="bi bi-x-circle me-1"></i> Batal
-                </a>
+                <a href="{{ @order.id ? @BASE.'/order/'.$order['id'] : @BASE.'/surat-penawaran' }}"
+   class="btn-cancel-theme btn-batal-kembali"
+   title="Kembali ke halaman sebelumnya">
+    <i class="bi bi-x-circle me-1"></i> Batal
+</a>
                 <check if="{{ @can_edit }}">
                     <div class="d-flex gap-2">
                         <button type="submit" class="btn-draft-theme" id="btnSimpan">
@@ -1501,5 +1503,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
     toggleFormAlasanTolak();
     updatePreview();
+});
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.btn-batal-kembali').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+            // Kalau ada riwayat halaman sebelumnya (bukan buka langsung/tab baru), balik ke situ.
+            // Kalau enggak ada riwayat sama sekali, biarin href fallback yang jalan.
+            if (window.history.length > 1) {
+                e.preventDefault();
+                window.history.back();
+            }
+        });
+    });
 });
 </script>

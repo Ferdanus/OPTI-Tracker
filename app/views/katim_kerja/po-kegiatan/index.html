@@ -36,7 +36,7 @@
         <table class="table table-hover align-middle mb-0">
             <thead>
                 <tr>
-                    <th>Nomor PO</th>
+                    <th>No</th>
                     <th>No. Order</th>
                     <th>Mitra</th>
                     <th>Divisi</th>
@@ -62,13 +62,21 @@
                             </td>
                             <td class="text-muted small">{{ @p.judul_kegiatan }}</td>
                             <td class="text-center">
-                                <check if="{{ @p.po_status == 'draft' }}"><span class="badge badge-pill-secondary">Draft</span></check>
-                                <check if="{{ @p.po_status == 'terkirim' }}"><span class="badge badge-pill-success">Terkirim</span></check>
+                                <check if="{{ !@p.po_id }}"><span class="badge badge-pill-secondary">Menunggu PO</span></check>
+                                <check if="{{ @p.po_id && @p.po_status == 'draft' }}"><span class="badge badge-pill-secondary">Draft</span></check>
+                                <check if="{{ @p.po_id && @p.po_status == 'terkirim' }}"><span class="badge badge-pill-success">Terkirim</span></check>
                             </td>
                             <td class="text-center">
-                                <button type="button" class="btn btn-sm btn-outline-success" onclick="bukaPreviewPo({{ @p.po_id }})">
-                                    <i class="bi bi-eye"></i> Lihat
-                                </button>
+                                <check if="{{ !@p.po_id }}">
+                                    <a href="{{ @BASE }}/po-kegiatan/buat?order_id={{ @p.order_id }}" class="btn btn-sm btn-primary">
+                                        <i class="bi bi-file-earmark-plus"></i>
+                                    </a>
+                                </check>
+                                <check if="{{ @p.po_id }}">
+                                    <button type="button" class="btn btn-sm btn-outline-success" onclick="bukaPreviewPo({{ @p.po_id }})">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </check>
                             </td>
                         </tr>
                     </repeat>

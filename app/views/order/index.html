@@ -506,12 +506,15 @@
                                                      </check>
 
                                                      <check if="{{ @SESSION.role == 'tim_mitra_industri' || @is_superadmin }}">
-                                                        <a href="{{ @BASE }}/surat/{{ @ord.id }}"
-                                                           class="btn btn-sm btn-outline-danger py-1 px-2 d-inline-flex align-items-center gap-1 fw-semibold"
-                                                           title="Lihat Format Cetak Surat Pelayanan Jasa">
+                                                        <button type="button"
+                                                            class="btn btn-sm btn-outline-danger py-1 px-2 d-inline-flex align-items-center gap-1 fw-semibold btn-preview-surat-order"
+                                                            data-bs-toggle="modal" data-bs-target="#modalPreviewSuratOrder"
+                                                            data-surat-url="{{ @BASE }}/surat/{{ @ord.id }}/fragment"
+                                                            data-nomor-order="{{ @ord.nomor_order }}"
+                                                            title="Lihat Format Cetak Surat Pelayanan Jasa">
                                                             <i class="bi bi-file-earmark-pdf-fill"></i>
                                                             <span>Surat</span>
-                                                        </a>
+                                                        </button>
                                                     </check>
 
                                                      <button type="button" class="btn btn-sm btn-light border py-1 px-2" style="color: var(--color-primary);" data-bs-toggle="modal" data-bs-target="#modalHapusOrder{{ @ord.id }}" title="Hapus Order">
@@ -585,6 +588,34 @@
                                     </repeat>
                                 </tbody>
                             </table>
+                            <!-- ===== MODAL PREVIEW SURAT PERMINTAAN PELAYANAN JASA ===== -->
+<div class="modal fade" id="modalPreviewSuratOrder" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content border-0 shadow-lg" style="height: 90vh;">
+            <div class="modal-header py-2 px-3 border-bottom">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-file-earmark-text-fill text-danger fs-4"></i>
+                    <div>
+                        <h6 class="modal-title fw-bold mb-0">Surat Permintaan Pelayanan Jasa</h6>
+                        <div class="text-muted small" id="modalPreviewSuratOrderSub">-</div>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2 ms-auto">
+                    <button type="button" id="btnUnduhPdfSuratOrder" class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-1">
+                        <i class="bi bi-download"></i> Unduh PDF
+                    </button>
+                </div>
+            </div>
+            <div class="modal-body p-0" style="background:#e9ecef; overflow:hidden;">
+                <iframe id="iframePreviewSuratOrder" src="" style="width:100%; height:100%; border:none; display:block;"></iframe>
+            </div>
+            <div class="modal-footer py-2 border-top d-flex align-items-center justify-content-between">
+                <span class="small text-muted"><i class="bi bi-info-circle me-1"></i>Tombol cetak/unduh PDF tersedia di dalam pratinjau.</span>
+                <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">Tutup Pratinjau</button>
+            </div>
+        </div>
+    </div>
+</div>
                         </false>
                     </check>
                 </div>
@@ -835,5 +866,44 @@ document.addEventListener('DOMContentLoaded', function () {
             alert('Alasan Penolakan Order #' + nomor + ':\n' + alasan);
         }
     });
+});
+document.addEventListener('DOMContentLoaded', function () {
+    var modalSurat = document.getElementById('modalPreviewSuratOrder');
+    var iframeSurat = document.getElementById('iframePreviewSuratOrder');
+    var subSurat = document.getElementById('modalPreviewSuratOrderSub');
+    var btnUnduh = document.getElementById('btnUnduhPdfSuratOrder');
+
+    document.querySelectorAll('.btn-preview-surat-order').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var url = btn.getAttribute('data-surat-url');
+            var nomorOrder = btn.getAttribute('data-nomor-order');
+
+            iframeSurat.src = url;
+            subSurat.textContent = 'Order ' + nomorOrder;
+        });
+    });
+
+    if (btnUnduh) {
+        btnUnduh.addEventListener('click', function () {
+            // [PENTING] manggil fungsi downloadPDF() yang ADA DI DALAM iframe (bukan di halaman ini),
+            // lewat contentWindow -- ini aman karena iframe-nya masih 1 domain/aplikasi yang sama.
+            try {
+                if (iframeSurat.contentWindow && typeof iframeSurat.contentWindow.downloadPDF === 'function') {
+                    iframeSurat.contentWindow.downloadPDF();
+                } else {
+                    alert('Dokumen belum selesai dimuat, coba lagi sebentar.');
+                }
+            } catch (err) {
+                console.error('Gagal memanggil downloadPDF() di dalam iframe:', err);
+                alert('Gagal mengunduh PDF. Coba lagi.');
+            }
+        });
+    }
+
+    if (modalSurat) {
+        modalSurat.addEventListener('hidden.bs.modal', function () {
+            iframeSurat.src = '';
+        });
+    }
 });
 </script>
