@@ -37,73 +37,103 @@
         <form action="{{ @BASE }}/pembayaran/simpan" method="POST" enctype="multipart/form-data" id="formPembayaran">
             <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
             <input type="hidden" name="order_id" value="{{ @order.id }}">
-
-            <div class="row g-3 mb-3">
-                <div class="col-md-6">
-                    <label class="form-label fw-bold">Tahap Termin Ke- <span class="text-danger">*</span></label>
-                    <select name="termin_ke" id="selectTermin" class="form-select" required>
-                        <option value="1" {{ @order.termin_berikutnya == 1 ? 'selected' : '' }}>Termin 1</option>
-                        <option value="2" {{ @order.termin_berikutnya == 2 ? 'selected' : '' }}>Termin 2</option>
-                        <option value="3" {{ @order.termin_berikutnya == 3 ? 'selected' : '' }}>Termin 3</option>
-                        <option value="4" {{ @order.termin_berikutnya == 4 ? 'selected' : '' }}>Termin 4</option>
-                    </select>
-                    <div class="form-text">Otomatis kesaran ({{ @order.termin_berikutnya }}), tetap bisa diganti manual.</div>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label fw-bold">Tanggal Bayar <span class="text-danger">*</span></label>
-                    <input type="date" name="tanggal_bayar" class="form-control" value="{{ date('Y-m-d') }}" required>
-                </div>
-            </div>
-            
-            <div class="overpay-block-banner" id="overpayBanner">
-                <i class="bi bi-x-octagon-fill"></i>
-                <div>
-                    <div class="fw-bold">Pembayaran Tidak Dapat Disimpan</div>
-                    <div id="overpayDetailText"></div>
-                </div>
-            </div>
-            
-            <div class="row g-3 mb-3">
-                <div class="col-md-6">
-                    <label class="form-label fw-bold">Jumlah Nominal (Rp) <span class="text-danger">*</span></label>
-                    <div class="input-group" id="nominalGroup">
-                        <span class="input-group-text">Rp</span>
-                        <input type="text" id="inputNominalDisplay" class="form-control" placeholder="0" inputmode="numeric" autocomplete="off">
-                        <input type="hidden" name="jumlah" id="inputNominal">
+            <input type="hidden" name="is_kesanggupan_bayar" id="inputIsKesanggupan" value="0">
+        
+            <check if="{{ !empty(@order.surat_kesanggupan_bayar) }}">
+                <div class="mb-3 p-3 border rounded-3 bg-light d-flex align-items-center justify-content-between">
+                    <div class="small">
+                        <i class="bi bi-file-earmark-check-fill text-success me-1"></i>
+                        Order ini punya <strong>Surat Kesanggupan Bayar</strong> terlampir.
                     </div>
-                    <div class="small mt-1" id="nominalHint"></div>
+                    <a href="{{ @BASE }}/surat-penawaran/{{ @order.sp_id }}/surat-kesanggupan/preview" target="_blank" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-eye me-1"></i> Lihat Dokumen
+                    </a>
                 </div>
-                <!-- <div class="col-md-6">
-                    <label class="form-label fw-bold">Metode Pembayaran</label>
-                    <select name="metode_pembayaran" class="form-select">
-                        <option value="transfer_bank">Transfer Bank</option>
-                        <option value="tunai">Tunai</option>
-                        <option value="lainnya">Lainnya</option>
-                    </select>
-                </div> -->
-                <div class="col-md-6">
-                    <label class="form-label fw-bold">Upload Bukti Pembayaran <span class="text-danger">*</span></label>
-                    <input type="file" name="bukti_bayar" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
-                    <div class="form-text">PDF, JPG, atau PNG. Maksimal 5MB.</div>
+        
+                <check if="{{ !@order.sudah_ada_pembayaran }}">
+                    <div class="kb-toggle-card" id="kbToggleCard">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="kbSkipToggle" style="width:2.5em; height:1.4em;">
+                            <label class="form-check-label fw-semibold ms-2" for="kbSkipToggle">
+                                Skip pencatatan pembayaran sekarang &mdash; pelanggan sudah punya Surat Kesanggupan Bayar
+                            </label>
+                        </div>
+                        <div class="small text-muted mt-1">Aktifkan ini kalau belum ada dana masuk, tapi pelanggan sudah berkomitmen bayar nanti. Order akan masuk ke tab "Sedang Berjalan" tanpa nominal.</div>
+                    </div>
+                </check>
+            </check>
+        
+            <div class="form-fields-normal active" id="fieldsNormal">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Tahap Termin Ke- <span class="text-danger">*</span></label>
+                        <select name="termin_ke" id="selectTermin" class="form-select">
+                            <option value="1" {{ @order.termin_berikutnya == 1 ? 'selected' : '' }}>Termin 1</option>
+                            <option value="2" {{ @order.termin_berikutnya == 2 ? 'selected' : '' }}>Termin 2</option>
+                            <option value="3" {{ @order.termin_berikutnya == 3 ? 'selected' : '' }}>Termin 3</option>
+                            <option value="4" {{ @order.termin_berikutnya == 4 ? 'selected' : '' }}>Termin 4</option>
+                            <option value="5" {{ @order.termin_berikutnya == 5 ? 'selected' : '' }}>Termin 5</option>
+                            <option value="6" {{ @order.termin_berikutnya == 6 ? 'selected' : '' }}>Termin 6</option>
+                        </select>
+                        <div class="form-text">Otomatis kesaran ({{ @order.termin_berikutnya }}), tetap bisa diganti manual.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Tanggal Bayar <span class="text-danger">*</span></label>
+                        <input type="date" name="tanggal_bayar" class="form-control" value="{{ date('Y-m-d') }}">
+                    </div>
                 </div>
-    
+        
+                <div class="overpay-block-banner" id="overpayBanner">
+                    <i class="bi bi-x-octagon-fill"></i>
+                    <div>
+                        <div class="fw-bold">Pembayaran Tidak Dapat Disimpan</div>
+                        <div id="overpayDetailText"></div>
+                    </div>
+                </div>
+        
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Jumlah Nominal (Rp) <span class="text-danger">*</span></label>
+                        <div class="input-group" id="nominalGroup">
+                            <span class="input-group-text">Rp</span>
+                            <input type="text" id="inputNominalDisplay" class="form-control" placeholder="0" inputmode="numeric" autocomplete="off">
+                            <input type="hidden" name="jumlah" id="inputNominal">
+                        </div>
+                        <div class="pt-1.5 mt-1.5 border-top border-secondary-subtle small text-muted fst-italic" style="font-size: 0.74rem;">
+                            Terbilang: <span class="fw-bold text-dark" id="nominalTerbilang">Nol Rupiah</span>
+                        </div>
+                        <div class="small mt-1" id="nominalHint"></div>
+                    
+                    </div>
+                    <input type="hidden" name="metode_pembayaran" value="transfer_bank">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Upload Bukti Pembayaran <span class="text-danger">*</span></label>
+                        <input type="file" name="bukti_bayar" id="inputBukti" class="form-control" accept=".pdf">
+                        <div class="form-text">Format PDF. Maksimal 5MB.</div>
+                    </div>
+                </div>
+        
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Keterangan</label>
+                    <textarea name="keterangan" id="inputKeteranganNormal" class="form-control" rows="2" placeholder="Catatan tambahan..."></textarea>
+                </div>
+            </div>
+        
+            <div class="form-fields-kb" id="fieldsKb">
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Keterangan</label>
+                    <textarea id="inputKeteranganKb" class="form-control" rows="2" placeholder="Contoh: Pelanggan janji bayar setelah laporan hasil pengujian terbit."></textarea>
+                </div>
             </div>
 
-            <!-- <div class="mb-3">
-                <label class="form-label fw-bold">Nomor Transaksi / NTPN (opsional)</label>
-                <input type="text" name="nomor_transaksi_ntpn" class="form-control" placeholder="Contoh: NTPN 1234567890ABCDEF">
-            </div> -->
+            <input type="hidden" name="disposisi_langsung" id="inputDisposisiLangsung" value="0">
 
-           
-            <div class="mb-4">
-                <label class="form-label fw-bold">Keterangan</label>
-                <textarea name="keterangan" class="form-control" rows="2" placeholder="Catatan tambahan..."></textarea>
-            </div>
-
-            <div class="d-flex flex-column flex-sm-row justify-content-end gap-2">
-                <a href="{{ @BASE }}/pembayaran" class="btn btn-outline-secondary px-4 order-2 order-sm-1">Batal</a>
-                <button type="button" id="btnSimpanPembayaran" class="btn btn-primary px-4 order-1 order-sm-2"><i class="bi bi-save me-1"></i> Simpan Pembayaran</button>
-            </div>
+<div class="d-flex flex-column flex-sm-row justify-content-end gap-2">
+    <a href="{{ @BASE }}/pembayaran" class="btn btn-outline-secondary px-4 order-3 order-sm-1">Batal</a>
+    <button type="button" id="btnSimpanSaja" class="btn btn-outline-primary px-4 order-2 order-sm-2 d-none">Simpan</button>
+    <button type="button" id="btnSimpanDisposisi" class="btn btn-primary px-4 order-1 order-sm-3 d-none"><i class="bi bi-send-check me-1"></i> Simpan &amp; Disposisi</button>
+    <button type="button" id="btnSimpanPembayaran" class="btn btn-primary px-4 order-1 order-sm-3"><i class="bi bi-save me-1"></i> Simpan Pembayaran</button>
+</div>
         </form>
         </check>
 
@@ -137,11 +167,25 @@
     80% { transform: translateX(4px); }
 }
 .shake { animation: shakeX 0.4s ease; }
+.form-fields-normal, .form-fields-kb { display: none; }
+.form-fields-normal.active, .form-fields-kb.active { display: block; }
+.kb-toggle-card {
+    border: 1.5px solid #fde68a; background: #fffbeb; border-radius: 12px; padding: 16px 18px; margin-bottom: 20px;
+}
+.kb-toggle-card.checked { border-color: var(--color-primary); background: rgba(136,19,55,.04); }
 </style>
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         var sisaTagihan = {{ @order.sisa_tagihan ?: 0 }};
+var sudahDisposisi = {{ @order.disposisi_katim_at ? 'true' : 'false' }};
+var divisiOrder = '{{ @order.jenis_layanan_opti }}';
+
+function labelDivisi() {
+    if (divisiOrder === 'selulosa') return 'Selulosa';
+    if (divisiOrder === 'lingkungan') return 'Lingkungan';
+    return 'OPTI';
+}
     
         var display     = document.getElementById('inputNominalDisplay');
         var hidden       = document.getElementById('inputNominal');
@@ -150,7 +194,48 @@
         var banner       = document.getElementById('overpayBanner');
         var detailText   = document.getElementById('overpayDetailText');
         var form         = document.getElementById('formPembayaran');
-        var btnSimpan    = document.getElementById('btnSimpanPembayaran');
+        var btnSimpan = document.getElementById('btnSimpanPembayaran');
+var btnSimpanSaja = document.getElementById('btnSimpanSaja');
+var btnSimpanDisposisi = document.getElementById('btnSimpanDisposisi');
+var inputDisposisi = document.getElementById('inputDisposisiLangsung');
+
+btnSimpanSaja.addEventListener('click', function () {
+    inputDisposisi.value = '0';
+    btnSimpan.click(); // pinjem logic validasi & submit yang udah ada di listener btnSimpan
+});
+
+btnSimpanDisposisi.addEventListener('click', function () {
+    var pesan = 'Pembayaran akan disimpan, dan order ini akan didisposisikan ke <strong>Ketua Tim ' + labelDivisi() + '</strong>.';
+
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            icon: 'question',
+            title: 'Disposisi ke Ketua Tim ' + labelDivisi() + '?',
+            html: '<div class="text-start small text-secondary">' + pesan + '</div>',
+            showCancelButton: true,
+            confirmButtonText: '<i class="bi bi-send-check me-1"></i> Ya, Simpan & Disposisi',
+            cancelButtonText: 'Batal',
+            confirmButtonColor: '#881337',
+            reverseButtons: true,
+            customClass: {
+                popup: 'rounded-4 shadow-lg p-2',
+                confirmButton: 'btn btn-primary px-3 py-2 fw-semibold rounded-3 mx-1',
+                cancelButton: 'btn btn-outline-secondary px-3 py-2 fw-semibold rounded-3 mx-1'
+            },
+            buttonsStyling: false
+        }).then(function (result) {
+            if (result.isConfirmed) {
+                inputDisposisi.value = '1';
+                btnSimpan.click();
+            }
+        });
+    } else {
+        if (confirm('Pembayaran akan disimpan dan didisposisikan ke Ketua Tim ' + labelDivisi() + '. Lanjutkan?')) {
+            inputDisposisi.value = '1';
+            btnSimpan.click();
+        }
+    }
+});
     
         function rupiah(n) {
             return 'Rp ' + (Math.round(n) || 0).toLocaleString('id-ID');
@@ -162,6 +247,8 @@
                 var angka = parseInt(display.value.replace(/[^0-9]/g, ''), 10) || 0;
                 hidden.value = angka;
                 display.value = angka > 0 ? angka.toLocaleString('id-ID') : '';
+                
+                document.getElementById('nominalTerbilang').textContent = angka > 0 ? angkaKeTerbilang(angka) : 'Nol Rupiah';
     
                 banner.classList.remove('show');
     
@@ -178,8 +265,59 @@
                     hint.innerHTML = '';
                     group.classList.remove('border', 'border-danger');
                 }
+                perbaruiTombolSimpan();
             });
         }
+        function angkaKeTerbilang(n) {
+    n = Math.floor(n);
+    if (n <= 0) return '';
+
+    var satuan = ['', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan'];
+
+    function terbilangRatusan(num) {
+        var s = '';
+        if (num >= 100) {
+            var ratus = Math.floor(num / 100);
+            s += (ratus === 1 ? 'seratus' : satuan[ratus] + ' ratus') + ' ';
+            num %= 100;
+        }
+        if (num >= 11 && num <= 19) {
+            s += satuan[num - 10] + ' belas ';
+            num = 0;
+        } else if (num === 10) {
+            s += 'sepuluh ';
+            num = 0;
+        } else if (num >= 20) {
+            var puluh = Math.floor(num / 10);
+            s += satuan[puluh] + ' puluh ';
+            num %= 10;
+        }
+        if (num > 0) s += satuan[num] + ' ';
+        return s.trim();
+    }
+
+    var units = ['', 'ribu', 'juta', 'miliar', 'triliun'];
+    var groups = [];
+    while (n > 0) {
+        groups.push(n % 1000);
+        n = Math.floor(n / 1000);
+    }
+
+    var parts = [];
+    for (var i = groups.length - 1; i >= 0; i--) {
+        if (groups[i] === 0) continue;
+        var teks = terbilangRatusan(groups[i]);
+        if (i === 1 && groups[i] === 1) {
+            teks = 'seribu';
+        } else if (units[i]) {
+            teks += ' ' + units[i];
+        }
+        parts.push(teks);
+    }
+
+    var hasil = parts.join(' ').trim();
+    return hasil.charAt(0).toUpperCase() + hasil.slice(1) + ' Rupiah';
+}
     
         // ===== Klik Simpan: validasi dulu, baru submit manual kalau lolos =====
         // [PENTING] tombolnya type="button" (BUKAN type="submit"), biar gak ke-trigger
@@ -187,9 +325,17 @@
         // validasi di bawah ini beneran lolos.
         if (form && btnSimpan) {
             btnSimpan.addEventListener('click', function () {
-                var angka = parseInt(hidden.value, 10) || 0;
-    
-                if (angka <= 0) {
+    if (document.getElementById('inputIsKesanggupan').value === '1') {
+        var taKb = document.getElementById('inputKeteranganKb');
+        var taNormalHidden = document.getElementById('inputKeteranganNormal');
+        if (taNormalHidden) taNormalHidden.value = taKb ? taKb.value : '';
+        form.submit();
+        return;
+    }
+
+    var angka = parseInt(hidden.value, 10) || 0;
+
+    if (angka <= 0) {
                     alert('Jumlah nominal pembayaran wajib diisi.');
                     display.focus();
                     return;
@@ -215,6 +361,64 @@
                 form.submit();
             });
         }
+        var toggleKb = document.getElementById('kbSkipToggle');
+if (toggleKb) {
+    toggleKb.addEventListener('change', function () {
+        var card = document.getElementById('kbToggleCard');
+        var normal = document.getElementById('fieldsNormal');
+        var kb = document.getElementById('fieldsKb');
+        var inputFlag = document.getElementById('inputIsKesanggupan');
+
+        inputFlag.value = this.checked ? '1' : '0';
+
+        if (this.checked) {
+            card.classList.add('checked');
+            normal.classList.remove('active');
+            kb.classList.add('active');
+            document.getElementById('selectTermin').removeAttribute('required');
+            document.getElementById('inputBukti').removeAttribute('required');
+        } else {
+            card.classList.remove('checked');
+            normal.classList.add('active');
+            kb.classList.remove('active');
+        }
+        perbaruiTombolSimpan();
+    });
+}
+function perbaruiTombolSimpan() {
+    var btnNormal = document.getElementById('btnSimpanPembayaran');
+    var btnSaja = document.getElementById('btnSimpanSaja');
+    var btnDisposisi = document.getElementById('btnSimpanDisposisi');
+
+    if (sudahDisposisi) {
+        btnNormal.classList.remove('d-none');
+        btnSaja.classList.add('d-none');
+        btnDisposisi.classList.add('d-none');
+        return;
+    }
+
+    var modeSkip = document.getElementById('inputIsKesanggupan').value === '1';
+    var angka = parseInt(hidden.value, 10) || 0;
+    var modeLunasPas = (!modeSkip && angka > 0 && angka === sisaTagihan);
+
+    if (modeSkip) {
+        // Kesanggupan Bayar: uang belum beneran masuk, tetap dikasih pilihan
+        btnNormal.classList.add('d-none');
+        btnSaja.classList.remove('d-none');
+        btnDisposisi.classList.remove('d-none');
+    } else if (modeLunasPas) {
+        // Bayar beneran & pas lunas: gak perlu milih, langsung 1 tombol "Simpan & Disposisi"
+        btnNormal.classList.add('d-none');
+        btnSaja.classList.add('d-none');
+        btnDisposisi.classList.remove('d-none');
+    } else {
+        // Belum lunas, pembayaran termin biasa
+        btnNormal.classList.remove('d-none');
+        btnSaja.classList.add('d-none');
+        btnDisposisi.classList.add('d-none');
+    }
+}
+perbaruiTombolSimpan();
     });
     </script>
     

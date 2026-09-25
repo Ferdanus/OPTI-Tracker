@@ -193,6 +193,11 @@ $f3->route('GET /order/@id/proposal/raw-data', 'OrderController->proposalRawData
 $f3->route('POST /order/@id/respon-klien', 'OrderController->responKlien');
 $f3->route('POST /order/@id/terima-sampel', 'OrderController->simpanTerimaSampel');
 $f3->route('POST /order/@id/konfirmasi-pembayaran', 'OrderController->konfirmasiPembayaran');
+$f3->route('POST /pembayaran/@id/disposisi-katim', 'PembayaranOptiController->disposisiKatim');
+
+
+$f3->route('GET /ketua-tim/siap-po', 'KetuaTimController->index');
+$f3->route('POST /ketua-tim/@id/pilih-pelaksana', 'KetuaTimController->simpanPelaksana');
 
 // ==========================================
 // ROUTE MODUL PEMBAYARAN MULTI-TERMIN & INVOICE
