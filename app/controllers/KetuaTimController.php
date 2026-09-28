@@ -52,6 +52,7 @@ public function index($f3) {
         // [FIX] gak cek "beneran lunas" lagi -- disposisi_katim_at aja udah cukup
         // jadi syarat, soalnya order Kesanggupan Bayar (total_terbayar=0) juga
         // valid buat masuk sini, sesuai desain di modul Pembayaran.
+        $o['nama_perusahaan'] = \Customer::formatNamaPerusahaan($o['pt_cv'] ?? '', $o['nama_perusahaan'] ?? '');
         $o['biaya_acuan'] = !empty($o['nominal_penawaran']) ? (float) $o['nominal_penawaran'] : (float) $o['estimasi_biaya'];
 
         if (!empty($o['ketua_pelaksana_id'])) {

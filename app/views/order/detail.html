@@ -3088,7 +3088,7 @@
                         
                         <!-- KOP SURAT PENGIRIM -->
                         <div class="text-center pb-2">
-                            <h4 class="fw-bold mb-0 text-uppercase letter-spacing-1" style="font-size: 1.3rem;">{{ (@surat_masuk.pt_cv ? @surat_masuk.pt_cv . ' ' : '') . @surat_masuk.pengirim }}</h4>
+                            <h4 class="fw-bold mb-0 text-uppercase letter-spacing-1" style="font-size: 1.3rem;">{{ \Customer::formatNamaPerusahaan(@surat_masuk.pt_cv, @surat_masuk.pengirim) }}</h4>
                             <div class="fw-bold small text-muted text-uppercase my-1" style="font-size: 0.75rem; letter-spacing: 1px;">PRODUSEN & JASA INDUSTRI TEKNOLOGI</div>
                             <div class="small text-secondary" style="font-size: 0.825rem;">{{ @surat_masuk.alamat_pengirim ?: 'Kawasan Industri Terpadu, Indonesia' }} | Telp: {{ @surat_masuk.no_telp_pengirim ?: '-' }}</div>
                         </div>
