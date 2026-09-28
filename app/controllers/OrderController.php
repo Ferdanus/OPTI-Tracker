@@ -3033,9 +3033,43 @@ class OrderController extends Controller {
             }
 
             if ($keputusan === 'deal') {
-                $this->db->exec("UPDATE order_layanan SET status_keuangan = 'menunggu_pembayaran' WHERE id = ? AND (status_keuangan IS NULL OR status_keuangan = '' OR status_keuangan = 'belum_ditagih')", [1 => $id]);
+                $this->db->exec("UPDATE order_layanan SET status_penawaran = 'deal', status_keuangan = 'menunggu_pembayaran' WHERE id = ?", [1 => $id]);
                 $displayNominal = $nominalBaru > 0 ? $nominalBaru : ($sp['nominal_penawaran'] ?? 0);
-                $this->setFlashSuccess("Pelanggan telah <strong>menyetujui penawaran (DEAL)</strong> senilai Rp " . number_format($displayNominal, 0, ',', '.') . "! Status order beralih menjadi <strong>Menunggu Pembayaran</strong>.");
+
+                $orderModel = new \OrderLayanan($this->db);
+                $order = $orderModel->getDetail($id);
+
+                try {
+                    // Notif ke Tim Keuangan
+                    \NotificationService::send($this->db, [
+                        'order_id'        => $id,
+                        'target_role'     => 'keuangan',
+                        'target_layanan'  => 'semua',
+                        'judul'           => 'Disposisi Pembayaran: Order #' . ($order['nomor_order'] ?? $id),
+                        'pesan'           => "Penawaran " . ($order['nama_perusahaan'] ?? 'Klien') . " telah disepakati (DEAL senilai Rp " . number_format($displayNominal, 0, ',', '.') . "). Siap untuk proses pembayaran & PNBP.",
+                        'tipe'            => 'success',
+                        'icon'            => 'bi-wallet2',
+                        'link_url'        => "/pembayaran/tambah?order_id={$id}",
+                        'created_by'      => $this->getUserId() ?? 1,
+                        'created_by_name' => $_SESSION['nama_lengkap'] ?? 'Tim Mitra'
+                    ]);
+
+                    // Notif ke Ka Tim OPTI
+                    \NotificationService::send($this->db, [
+                        'order_id'        => $id,
+                        'target_role'     => 'ketua_tim',
+                        'target_layanan'  => $order['jenis_layanan_opti'] ?? 'semua',
+                        'judul'           => 'Penawaran Order DEAL',
+                        'pesan'           => "Klien (" . ($order['nama_perusahaan'] ?? 'Klien') . ") telah sepakat dengan penawaran Order #" . ($order['nomor_order'] ?? $id) . ".",
+                        'tipe'            => 'success',
+                        'icon'            => 'bi-check-circle-fill',
+                        'link_url'        => "/order/{$id}",
+                        'created_by'      => $this->getUserId() ?? 1,
+                        'created_by_name' => $_SESSION['nama_lengkap'] ?? 'Tim Mitra'
+                    ]);
+                } catch (\Exception $eNotif) {}
+
+                $this->setFlashSuccess("Pelanggan telah <strong>menyetujui penawaran (DEAL)</strong> senilai Rp " . number_format($displayNominal, 0, ',', '.') . "! Notifikasi telah dikirim ke <strong>Tim Keuangan</strong> untuk proses pembayaran.");
             } elseif ($keputusan === 'nego') {
                 $this->setFlashWarning("Hasil negosiasi harga &amp; waktu berhasil disimpan. Penawaran telah diperbarui.");
             } else {
