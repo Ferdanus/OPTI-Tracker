@@ -2316,26 +2316,26 @@
                         <!-- Sub-kasus 2B: Bukti Pembayaran Belum Diunggah -->
                         <check if="{{ empty(@riwayat_bayar) }}">
                             <div class="p-3 bg-light rounded-3 border mb-3">
-                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
                                     <div>
                                         <span class="text-muted small d-block" style="font-size: 0.78rem;">Nilai Tagihan Penawaran DEAL:</span>
                                         <h4 class="fw-bold text-dark m-0 font-display">
                                             Rp {{ number_format(@penawaran.nominal_penawaran ?: @order.estimasi_biaya, 0, ',', '.') }}
                                         </h4>
                                     </div>
-                                    <div class="d-flex align-items-center gap-2">
+                                    <div>
                                         <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2.5 py-1.5 small fw-semibold">
                                             <i class="bi bi-hourglass-split me-1"></i> Menunggu Upload Bukti Pembayaran
                                         </span>
-                                        <a href="{{ @BASE }}/pembayaran/tambah?order_id={{ @order.id }}" class="btn btn-sm btn-primary fw-semibold px-3 py-1.5 shadow-xs d-inline-flex align-items-center gap-1.5 rounded-2">
-                                            <i class="bi bi-box-arrow-up-right"></i> Buka Halaman Pembayaran
-                                        </a>
                                     </div>
                                 </div>
-                                <div class="mt-2 pt-2 border-top border-light-subtle">
-                                    <p class="small text-secondary mb-0">
-                                        Tagihan telah diterbitkan melalui sistem invoice balai. Tim Keuangan dapat mengunggah bukti pembayaran di bawah ini atau melalui <a href="{{ @BASE }}/pembayaran/tambah?order_id={{ @order.id }}" class="fw-semibold text-primary text-decoration-none">Halaman Detail Pembayaran <i class="bi bi-arrow-right"></i></a> agar Tim OPTI dapat segera memulai pengujian sampel.
+                                <div class="pt-2 border-top border-light-subtle">
+                                    <p class="small text-secondary mb-2">
+                                        Unggah bukti transfer pembayaran di bawah ini atau kelola langsung melalui halaman pembayaran order.
                                     </p>
+                                    <a href="{{ @BASE }}/pembayaran/tambah?order_id={{ @order.id }}" class="btn btn-sm btn-outline-primary fw-semibold px-3 py-1 shadow-xs d-inline-flex align-items-center gap-1.5 rounded-2">
+                                        <i class="bi bi-box-arrow-up-right"></i> Buka Halaman Pembayaran
+                                    </a>
                                 </div>
                             </div>
 
