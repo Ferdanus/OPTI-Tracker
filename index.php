@@ -331,12 +331,14 @@ $f3->route('POST /po-kegiatan/@id/update', 'PoKegiatanController->update');
 $f3->route('GET /po-kegiatan/@id/preview', 'PoKegiatanController->previewFragment');
 $f3->route('GET /po-kegiatan/jadwal-kolom', 'PoKegiatanController->jadwalKolom');
 $f3->route('GET /po-kegiatan/@id/cetak', 'PoKegiatanController->cetak');
-$f3->route('GET /po-kegiatan/daftar',            'PoReviewController->index');
-$f3->route('GET /po-kegiatan/notif',             'PoReviewController->notifJson');
-$f3->route('GET /po-kegiatan/@id/chat',          'PoReviewController->chatList');
-$f3->route('POST /po-kegiatan/@id/chat',         'PoReviewController->chatKirim');
-$f3->route('POST /po-kegiatan/@id/chat/baca',    'PoReviewController->chatBaca');
-$f3->route('POST /po-kegiatan/@id/review',       'PoReviewController->tandaiReview');
+$f3->route('GET /po-kegiatan/daftar', 'PoReviewController->index');
+$f3->route('GET /po-kegiatan/notif', 'PoReviewController->notifJson');
+$f3->route('GET /po-kegiatan/@id/chat', 'PoReviewController->chatList');
+$f3->route('POST /po-kegiatan/@id/chat', 'PoReviewController->chatKirim');
+$f3->route('POST /po-kegiatan/@id/chat/baca', 'PoReviewController->chatBaca');
+$f3->route('POST /po-kegiatan/@id/dibuka', 'PoReviewController->tandaiDibuka');
+$f3->route('POST /po-kegiatan/@id/setujui', 'PoReviewController->setujui');
+$f3->route('POST /po-kegiatan/@id/buka-kembali', 'PoReviewController->bukaKembali');
 
 // ==========================================
 // SURAT PENAWARAN MITRA

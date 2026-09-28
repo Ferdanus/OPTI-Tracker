@@ -2,15 +2,21 @@
 /**
  * PoReviewController
  *
- * Halaman "Daftar PO" untuk Ketua Tim: PO berstatus 'terkirim', di-review lewat panel,
- * plus chat dengan Ketua Pelaksana (pembuat PO). Ketua Pelaksana memakai halaman yang sama
- * (mode 'pembuat') untuk membaca dan membalas catatan.
+ * Halaman "Daftar PO" untuk Ketua Tim (review, setujui + disposisi Humas, buka kembali, chat)
+ * dan "Diskusi PO" untuk Ketua Pelaksana pembuat PO (baca catatan, balas, edit PO).
+ *
+ * Siklus status_review:
+ *   menunggu_review --(pembuat mengubah PO setelah reviewed_at terisi)--> revisi
+ *   menunggu_review / revisi --(Ketua Tim: Setujui + disposisi Humas)--> disetujui (PO dikunci)
+ *   disetujui --(Ketua Tim: Buka kembali)--> revisi
+ *
+ * reviewed_at = PERTAMA KALI panel review dibuka Ketua Tim (penanda "sudah dilihat").
  *
  * Aturan sisi:
- *  - superadmin dan ketua_tim  -> sisi 'katim'   (ketua_tim dibatasi ke divisinya, sama seperti KetuaTimController)
- *  - tim_kerja                 -> sisi 'pembuat' (hanya PO yang ketua_pelaksana_id-nya = dirinya)
+ *  - superadmin dan ketua_tim -> sisi 'katim' (ketua_tim dibatasi ke divisinya)
+ *  - tim_kerja                -> sisi 'pembuat' (hanya PO yang ketua_pelaksana_id-nya = dirinya)
  *
- * Kompatibel PHP 7.2. Tabel: po_chat, po_kegiatan.reviewed_at (lihat migration_po_review_chat.sql).
+ * Kompatibel PHP 7.2. Butuh: migration_po_review_chat.sql + migration_po_status_review.sql
  */
 class PoReviewController extends Controller {
 
@@ -36,7 +42,7 @@ class PoReviewController extends Controller {
 
         $sql = "SELECT p.id, p.nomor_po,
                        COALESCE(p.updated_at, p.created_at) AS dikirim_at,
-                       p.reviewed_at,
+                       p.reviewed_at, p.status_review, p.disetujui_at,
                        o.nomor_order, o.judul_kegiatan, o.jenis_layanan_opti, o.ketua_pelaksana_id,
                        c.nmcustomer AS nama_perusahaan, c.pt_cv,
                        (SELECT COUNT(*) FROM po_chat pc
@@ -55,7 +61,7 @@ class PoReviewController extends Controller {
         try {
             $rows = $this->db->exec($sql, $params);
         } catch (\Exception $e) {
-            $errorMessage = 'Gagal memuat daftar PO: ' . $e->getMessage() . ' (sudah menjalankan migration_po_review_chat.sql?)';
+            $errorMessage = 'Gagal memuat daftar PO: ' . $e->getMessage() . ' (sudah menjalankan kedua file migration?)';
         }
 
         $idPembuat = [];
@@ -66,16 +72,17 @@ class PoReviewController extends Controller {
         foreach ($rows as $r) {
             $idp = (int) $r['ketua_pelaksana_id'];
             $daftar[] = [
-                'id'       => (int) $r['id'],
-                'nomor'    => (string) $r['nomor_po'],
-                'order'    => (string) $r['nomor_order'],
-                'mitra'    => $this->formatMitra($r['nama_perusahaan'], $r['pt_cv']),
-                'judul'    => (string) $r['judul_kegiatan'],
-                'divisi'   => (string) $r['jenis_layanan_opti'],
-                'pembuat'  => isset($peta[$idp]) ? $peta[$idp] : '-',
-                'dikirim'  => substr((string) $r['dikirim_at'], 0, 10),
-                'reviewed' => !empty($r['reviewed_at']),
-                'unread'   => (int) $r['chat_unread'],
+                'id'            => (int) $r['id'],
+                'nomor'         => (string) $r['nomor_po'],
+                'order'         => (string) $r['nomor_order'],
+                'mitra'         => $this->formatMitra($r['nama_perusahaan'], $r['pt_cv']),
+                'judul'         => (string) $r['judul_kegiatan'],
+                'divisi'        => (string) $r['jenis_layanan_opti'],
+                'pembuat'       => isset($peta[$idp]) ? $peta[$idp] : '-',
+                'dikirim'       => substr((string) $r['dikirim_at'], 0, 10),
+                'dibuka'        => !empty($r['reviewed_at']),
+                'status_review' => (string) $r['status_review'],
+                'unread'        => (int) $r['chat_unread'],
             ];
         }
 
@@ -88,7 +95,7 @@ class PoReviewController extends Controller {
     }
 
     /* ============================================================
-     * API (JSON)
+     * API: CHAT
      * ============================================================ */
 
     /** GET /po-kegiatan/@id/chat -- seluruh pesan pada satu PO */
@@ -96,10 +103,14 @@ class PoReviewController extends Controller {
         list($po, $sisi) = $this->akses((int) $params['id']);
         $uid = (int) $this->getUserId();
 
-        $rows = $this->db->exec(
-            "SELECT id, pengirim_id, sisi, pesan, created_at FROM po_chat WHERE po_id = ? ORDER BY id ASC",
-            [1 => (int) $po['id']]
-        );
+        try {
+            $rows = $this->db->exec(
+                "SELECT id, pengirim_id, sisi, pesan, sistem, created_at FROM po_chat WHERE po_id = ? ORDER BY id ASC",
+                [1 => (int) $po['id']]
+            );
+        } catch (\Exception $e) {
+            $this->keluarkanJson(['ok' => false, 'pesan' => 'Gagal memuat chat. Pastikan kedua file migration sudah dijalankan. Detail: ' . $e->getMessage()], 500);
+        }
 
         $ids = [];
         foreach ($rows as $r) { $ids[] = $r['pengirim_id']; }
@@ -128,16 +139,16 @@ class PoReviewController extends Controller {
 
         try {
             $this->db->exec(
-                "INSERT INTO po_chat (po_id, pengirim_id, sisi, pesan, created_at) VALUES (?, ?, ?, ?, NOW())",
+                "INSERT INTO po_chat (po_id, pengirim_id, sisi, pesan, sistem, created_at) VALUES (?, ?, ?, ?, 0, NOW())",
                 [1 => (int) $po['id'], 2 => $uid, 3 => $sisi, 4 => $teks]
             );
             $newId = (int) $this->db->lastInsertId();
             $baris = $this->db->exec(
-                "SELECT id, pengirim_id, sisi, pesan, created_at FROM po_chat WHERE id = ?",
+                "SELECT id, pengirim_id, sisi, pesan, sistem, created_at FROM po_chat WHERE id = ?",
                 [1 => $newId]
             );
         } catch (\Exception $e) {
-            $this->keluarkanJson(['ok' => false, 'pesan' => 'Gagal mengirim pesan.'], 500);
+            $this->keluarkanJson(['ok' => false, 'pesan' => 'Gagal mengirim pesan. Detail: ' . $e->getMessage()], 500);
         }
 
         $peta = $this->petaNamaUser([$uid]);
@@ -161,28 +172,91 @@ class PoReviewController extends Controller {
         $this->keluarkanJson(['ok' => true]);
     }
 
-    /** POST /po-kegiatan/@id/review -- Ketua Tim menandai PO sudah direview */
-    public function tandaiReview($f3, $params) {
+    /* ============================================================
+     * API: REVIEW (khusus sisi Ketua Tim)
+     * ============================================================ */
+
+    /** POST /po-kegiatan/@id/dibuka -- dipanggil saat Ketua Tim membuka panel review. Mengisi reviewed_at sekali saja. */
+    public function tandaiDibuka($f3, $params) {
         list($po, $sisi) = $this->akses((int) $params['id']);
 
-        if ($sisi !== 'katim') {
-            $this->keluarkanJson(['ok' => false, 'pesan' => 'Hanya Ketua Tim yang dapat menandai review.'], 403);
-        }
-        if ($po['status'] !== 'terkirim') {
-            $this->keluarkanJson(['ok' => false, 'pesan' => 'Hanya PO berstatus terkirim yang dapat direview.'], 422);
-        }
-
-        try {
-            $this->db->exec(
-                "UPDATE po_kegiatan SET reviewed_at = NOW(), reviewed_by = ? WHERE id = ? AND reviewed_at IS NULL",
-                [1 => (int) $this->getUserId(), 2 => (int) $po['id']]
-            );
-        } catch (\Exception $e) {
-            $this->keluarkanJson(['ok' => false, 'pesan' => 'Gagal menyimpan status review.'], 500);
+        if ($sisi === 'katim' && $po['status'] === 'terkirim' && empty($po['reviewed_at'])) {
+            try {
+                $this->db->exec(
+                    "UPDATE po_kegiatan SET reviewed_at = NOW(), reviewed_by = ? WHERE id = ? AND reviewed_at IS NULL",
+                    [1 => (int) $this->getUserId(), 2 => (int) $po['id']]
+                );
+            } catch (\Exception $e) {
+                $this->keluarkanJson(['ok' => false, 'pesan' => 'Gagal mencatat pembukaan PO.'], 500);
+            }
         }
 
         $this->keluarkanJson(['ok' => true]);
     }
+
+    /** POST /po-kegiatan/@id/setujui -- setujui dan disposisikan ke Humas. PO dikunci setelahnya. */
+    public function setujui($f3, $params) {
+        list($po, $sisi) = $this->akses((int) $params['id']);
+        $uid = (int) $this->getUserId();
+
+        if ($sisi !== 'katim') {
+            $this->keluarkanJson(['ok' => false, 'pesan' => 'Hanya Ketua Tim yang dapat menyetujui PO.'], 403);
+        }
+        if ($po['status'] !== 'terkirim') {
+            $this->keluarkanJson(['ok' => false, 'pesan' => 'Hanya PO berstatus terkirim yang dapat disetujui.'], 422);
+        }
+
+        try {
+            $diubah = $this->db->exec(
+                "UPDATE po_kegiatan
+                    SET status_review = 'disetujui', disetujui_at = NOW(), disetujui_by = ?, disposisi_humas_at = NOW(),
+                        reviewed_at = COALESCE(reviewed_at, NOW()), reviewed_by = COALESCE(reviewed_by, ?)
+                  WHERE id = ? AND status_review <> 'disetujui'",
+                [1 => $uid, 2 => $uid, 3 => (int) $po['id']]
+            );
+        } catch (\Exception $e) {
+            $this->keluarkanJson(['ok' => false, 'pesan' => 'Gagal menyimpan persetujuan.'], 500);
+        }
+
+        if ((int) $diubah === 0) {
+            $this->keluarkanJson(['ok' => false, 'pesan' => 'PO ini sudah disetujui.'], 422);
+        }
+
+        self::catatPesanSistem($this->db, $po['id'], $uid, 'katim', 'PO disetujui Ketua Tim dan didisposisikan ke Humas. PO dikunci.');
+        $this->keluarkanJson(['ok' => true, 'status_review' => 'disetujui']);
+    }
+
+    /** POST /po-kegiatan/@id/buka-kembali -- Ketua Tim membuka PO yang sudah disetujui supaya bisa diperbaiki. */
+    public function bukaKembali($f3, $params) {
+        list($po, $sisi) = $this->akses((int) $params['id']);
+        $uid = (int) $this->getUserId();
+
+        if ($sisi !== 'katim') {
+            $this->keluarkanJson(['ok' => false, 'pesan' => 'Hanya Ketua Tim yang dapat membuka kembali PO.'], 403);
+        }
+
+        try {
+            $diubah = $this->db->exec(
+                "UPDATE po_kegiatan
+                    SET status_review = 'revisi', disetujui_at = NULL, disetujui_by = NULL, disposisi_humas_at = NULL
+                  WHERE id = ? AND status_review = 'disetujui'",
+                [1 => (int) $po['id']]
+            );
+        } catch (\Exception $e) {
+            $this->keluarkanJson(['ok' => false, 'pesan' => 'Gagal membuka kembali PO.'], 500);
+        }
+
+        if ((int) $diubah === 0) {
+            $this->keluarkanJson(['ok' => false, 'pesan' => 'PO ini belum berstatus disetujui.'], 422);
+        }
+
+        self::catatPesanSistem($this->db, $po['id'], $uid, 'katim', 'PO dibuka kembali oleh Ketua Tim untuk diperbaiki. Disposisi ke Humas dibatalkan.');
+        $this->keluarkanJson(['ok' => true, 'status_review' => 'revisi']);
+    }
+
+    /* ============================================================
+     * API: NOTIFIKASI
+     * ============================================================ */
 
     /**
      * GET /po-kegiatan/notif -- ringkasan pesan belum dibaca (satu baris per PO), untuk dropdown lonceng.
@@ -244,6 +318,49 @@ class PoReviewController extends Controller {
     }
 
     /* ============================================================
+     * DIPANGGIL DARI PoKegiatanController (static, tanpa instance)
+     * ============================================================ */
+
+    /**
+     * Panggil SETELAH $po->save() berhasil di PoKegiatanController::update().
+     * Kalau PO sudah pernah dibuka Ketua Tim (reviewed_at terisi) dan belum disetujui:
+     * status_review menjadi 'revisi' dan Ketua Tim dapat catatan otomatis di chat (maksimal satu yang belum dibaca).
+     */
+    public static function tandaiRevisiBilaPerlu($db, $poId, $userId) {
+        try {
+            $rows = $db->exec("SELECT reviewed_at, status_review FROM po_kegiatan WHERE id = ?", [1 => (int) $poId]);
+            if (empty($rows) || empty($rows[0]['reviewed_at'])) { return; }   // belum pernah dibuka Ketua Tim
+            if ($rows[0]['status_review'] === 'disetujui') { return; }         // terkunci; update() harus sudah menolaknya
+
+            if ($rows[0]['status_review'] !== 'revisi') {
+                $db->exec("UPDATE po_kegiatan SET status_review = 'revisi' WHERE id = ?", [1 => (int) $poId]);
+            }
+            self::catatPesanSistem($db, $poId, $userId, 'pembuat', 'PO diperbarui oleh pembuat setelah dibuka Ketua Tim. Mohon dicek ulang.', true);
+        } catch (\Exception $e) {
+            // jangan menggagalkan penyimpanan PO hanya karena pencatatan status
+        }
+    }
+
+    /** Catat pesan otomatis di thread PO. $sekaliSaja: lewati kalau sudah ada pesan sistem dari sisi yang sama yang belum dibaca. */
+    public static function catatPesanSistem($db, $poId, $pengirimId, $sisi, $teks, $sekaliSaja = false) {
+        try {
+            if ($sekaliSaja) {
+                $ada = $db->exec(
+                    "SELECT id FROM po_chat WHERE po_id = ? AND sisi = ? AND sistem = 1 AND dibaca_at IS NULL LIMIT 1",
+                    [1 => (int) $poId, 2 => $sisi]
+                );
+                if (!empty($ada)) { return; }
+            }
+            $db->exec(
+                "INSERT INTO po_chat (po_id, pengirim_id, sisi, pesan, sistem, created_at) VALUES (?, ?, ?, ?, 1, NOW())",
+                [1 => (int) $poId, 2 => (int) $pengirimId, 3 => $sisi, 4 => $teks]
+            );
+        } catch (\Exception $e) {
+            // catatan sistem bersifat pelengkap
+        }
+    }
+
+    /* ============================================================
      * HELPER
      * ============================================================ */
 
@@ -277,10 +394,10 @@ class PoReviewController extends Controller {
         }
     }
 
-    /** Ambil PO + order + mitra. Null kalau tidak ada. */
+    /** Ambil PO + order. Null kalau tidak ada. */
     protected function ambilPo($poId) {
         $rows = $this->db->exec(
-            "SELECT p.id, p.nomor_po, p.status, p.reviewed_at,
+            "SELECT p.id, p.nomor_po, p.status, p.status_review, p.reviewed_at,
                     o.id AS order_id, o.jenis_layanan_opti, o.ketua_pelaksana_id
              FROM po_kegiatan p
              JOIN order_layanan o ON o.id = p.order_id
@@ -309,7 +426,11 @@ class PoReviewController extends Controller {
     protected function akses($poId) {
         $this->requireAuth();
 
-        $po = ($poId > 0) ? $this->ambilPo($poId) : null;
+        try {
+            $po = ($poId > 0) ? $this->ambilPo($poId) : null;
+        } catch (\Exception $e) {
+            $this->keluarkanJson(['ok' => false, 'pesan' => 'Gagal membaca data PO. Pastikan kedua file migration sudah dijalankan. Detail: ' . $e->getMessage()], 500);
+        }
         if (!$po) {
             $this->keluarkanJson(['ok' => false, 'pesan' => 'PO tidak ditemukan.'], 404);
         }
@@ -323,12 +444,13 @@ class PoReviewController extends Controller {
     protected function bentukPesan(array $r, array $peta, $uid) {
         $idp = (int) $r['pengirim_id'];
         return [
-            'id'    => (int) $r['id'],
-            'sisi'  => $r['sisi'],
-            'nama'  => isset($peta[$idp]) ? $peta[$idp] : '-',
-            'pesan' => (string) $r['pesan'],
-            'waktu' => (string) $r['created_at'],
-            'saya'  => ($idp === (int) $uid),
+            'id'     => (int) $r['id'],
+            'sisi'   => $r['sisi'],
+            'nama'   => isset($peta[$idp]) ? $peta[$idp] : '-',
+            'pesan'  => (string) $r['pesan'],
+            'sistem' => !empty($r['sistem']),
+            'waktu'  => (string) $r['created_at'],
+            'saya'   => ($idp === (int) $uid),
         ];
     }
 

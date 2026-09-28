@@ -62,6 +62,8 @@
     .dpo-paper { background: #fff; border: 1px solid var(--dpo-border); border-radius: 6px; max-width: 210mm; margin: 0 auto; overflow-x: auto; }
     
     .dpo-dock { background: #fff; border-top: 1px solid var(--dpo-border); }
+    .dpo-dock-right { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+    .dpo-lock-note { font-size: .75rem; color: var(--dpo-muted); display: inline-flex; align-items: center; gap: 6px; }
     .dpo-dock-bar { display: flex; gap: 10px; align-items: center; justify-content: space-between; padding: 12px 18px; padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
     .dpo-chat { display: flex; flex-direction: column; height: min(340px, 46vh); border-bottom: 1px solid var(--dpo-border); }
     .dpo-chat-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 18px; border-bottom: 1px solid var(--dpo-border); font-family: var(--dpo-display); font-weight: 700; font-size: .82rem; }
@@ -70,6 +72,8 @@
     .dpo-msg { max-width: 78%; padding: 9px 12px; border-radius: 14px; font-size: .85rem; overflow-wrap: anywhere; }
     .dpo-msg.me { align-self: flex-end; background: var(--dpo-primary); color: #fff; border-bottom-right-radius: 4px; }
     .dpo-msg.other { align-self: flex-start; background: #fff; border: 1px solid var(--dpo-border); border-bottom-left-radius: 4px; }
+    .dpo-msg.sys { align-self: center; max-width: 90%; background: #e2e8f0; color: #475569; border-radius: 10px; font-size: .75rem; text-align: center; padding: 6px 12px; }
+    .dpo-msg.sys .tm { text-align: center; margin-top: 1px; }
     .dpo-msg .nm { font-size: .68rem; font-weight: 700; margin-bottom: 2px; opacity: .8; }
     .dpo-msg .tm { font-size: .65rem; opacity: .65; margin-top: 3px; text-align: right; }
     .dpo-chat-empty { margin: auto; text-align: center; color: #94a3b8; font-size: .8rem; max-width: 260px; }
@@ -116,7 +120,12 @@
                     <button type="button" class="btn btn-white position-relative" id="dpoBtnChat" aria-expanded="false">
                         <i class="bi bi-chat-dots"></i><span id="dpoBtnChatLabel">Chat</span><span class="dpo-dot" id="dpoBtnChatDot" hidden></span>
                     </button>
-                    <button type="button" class="btn btn-primary" id="dpoBtnReview" hidden></button>
+                    <div class="dpo-dock-right">
+                        <span class="dpo-lock-note" id="dpoLockNote" hidden><i class="bi bi-lock-fill"></i>PO dikunci. Minta Ketua Tim membuka kembali.</span>
+                        <a class="btn btn-white" id="dpoBtnEdit" href="#" hidden><i class="bi bi-pencil"></i>Edit PO</a>
+                        <button type="button" class="btn btn-white" id="dpoBtnReopen" hidden><i class="bi bi-unlock"></i>Buka kembali</button>
+                        <button type="button" class="btn btn-primary" id="dpoBtnApprove" hidden><i class="bi bi-check2-circle"></i>Setujui dan disposisi ke Humas</button>
+                    </div>
                 </div>
             </footer>
         </section>
@@ -151,6 +160,8 @@
         function firstName(n) { return String(n || '').split(' ')[0]; }
         function pill(warna, ikon, teks) { return '<span class="status-pill status-pill-' + warna + '"><i class="bi ' + ikon + '"></i>' + teks + '</span>'; }
     
+        function URL_PO(id) { return BASE + '/po-kegiatan/' + id; }
+    
         /* ---------- API ---------- */
         function api(url, opts) {
             opts = opts || {};
@@ -159,7 +170,7 @@
             return fetch(url, opts).then(function (r) {
                 return r.text().then(function (t) {
                     var j;
-                    try { j = JSON.parse(t); } catch (e) { throw new Error('Sesi berakhir atau server bermasalah. Muat ulang halaman.'); }
+                    try { j = JSON.parse(t); } catch (e) { throw new Error('Server membalas ' + r.status + ' (bukan JSON). Bisa sesi berakhir, route belum terpasang, atau error PHP. Buka F12 > Network untuk melihat isinya.'); }
                     if (!r.ok || !j.ok) { throw new Error(j.pesan || 'Terjadi kesalahan.'); }
                     return j;
                 });
@@ -171,7 +182,6 @@
             Object.keys(data || {}).forEach(function (k) { body.append(k, data[k]); });
             return api(url, { method: 'POST', body: body });
         }
-        var URL_PO = function (id) { return BASE + '/po-kegiatan/' + id; };
     
         /* ---------- State ---------- */
         var tab = 'perlu';
@@ -185,7 +195,7 @@
     
         /* ---------- Sinkron angka di sidebar (badge diberi id="notifDaftarPo") ---------- */
         function syncBadge() {
-            var n = pos.filter(function (p) { return MODE === 'katim' ? (!p.reviewed || p.unread > 0) : p.unread > 0; }).length;
+            var n = pos.filter(function (p) { return MODE === 'katim' ? (p.status_review !== 'disetujui' || p.unread > 0) : p.unread > 0; }).length;
             var el = $('notifDaftarPo');
             if (el) { el.textContent = n; el.style.display = n > 0 ? '' : 'none'; }
         }
@@ -193,8 +203,8 @@
         /* ---------- Halaman daftar ---------- */
         function renderShell() {
             var head = MODE === 'katim'
-                ? ['Daftar PO', 'PO yang sudah dikirim pelaksana. Buka untuk review, lalu beri catatan lewat chat. PO berstatus draft tidak muncul di sini.']
-                : ['Diskusi PO', 'PO yang sudah Anda kirim. Catatan dari Ketua Tim muncul di sini dan bisa Anda balas.'];
+                ? ['Daftar PO', 'PO yang sudah dikirim pelaksana. Buka untuk review, beri catatan lewat chat, lalu setujui dan disposisikan ke Humas. PO berstatus draft tidak muncul di sini.']
+                : ['Diskusi PO', 'PO yang sudah Anda kirim. Lihat status review, balas catatan Ketua Tim, dan edit PO yang belum dikunci.'];
             $('dpoContent').innerHTML = '<div class="dpo-head"><h1>' + head[0] + '</h1><p>' + head[1] + '</p></div>' +
                 '<div class="card">' + (MODE === 'katim' ? '<div class="dpo-tabs" id="dpoTabs"></div>' : '') +
                 '<div class="card-body"><input id="dpoSearch" type="search" class="form-control form-control-sm mb-3" style="max-width:380px;" placeholder="Cari nomor PO, mitra, atau pembuat" aria-label="Cari PO"><div id="dpoList"></div></div></div>';
@@ -203,23 +213,35 @@
     
         function renderTabs() {
             if (MODE !== 'katim') { return; }
-            var n1 = pos.filter(function (p) { return !p.reviewed; }).length;
+            var n1 = pos.filter(function (p) { return p.status_review !== 'disetujui'; }).length;
             var n2 = pos.length - n1;
             $('dpoTabs').innerHTML =
                 '<button type="button" class="dpo-tab' + (tab === 'perlu' ? ' on' : '') + '" data-dpo-tab="perlu">Perlu direview <span class="dpo-cnt">' + n1 + '</span></button>' +
-                '<button type="button" class="dpo-tab' + (tab === 'sudah' ? ' on' : '') + '" data-dpo-tab="sudah">Sudah direview <span class="dpo-cnt">' + n2 + '</span></button>';
+                '<button type="button" class="dpo-tab' + (tab === 'sudah' ? ' on' : '') + '" data-dpo-tab="sudah">Disetujui <span class="dpo-cnt">' + n2 + '</span></button>';
         }
     
         function pillsFor(p) {
-            var h = p.reviewed
-                ? pill('emerald', 'bi-check-circle', 'Sudah direview')
-                : pill('amber', 'bi-hourglass-split', MODE === 'katim' ? 'Perlu direview' : 'Menunggu review');
-            if (p.unread) { h += pill('rose', 'bi-chat-dots-fill', p.unread + ' pesan baru'); }
+            var h;
+            if (p.status_review === 'disetujui') {
+                h = pill('emerald', 'bi-check-circle', 'Disetujui');
+            } else if (p.status_review === 'revisi') {
+                h = pill('rose', 'bi-arrow-repeat', 'Revisi');
+            } else {
+                h = pill('amber', 'bi-hourglass-split', MODE === 'katim' ? 'Perlu direview' : 'Menunggu review');
+            }
+            if (MODE === 'pembuat' && p.dibuka && p.status_review === 'menunggu_review') { h += pill('slate', 'bi-eye', 'Sudah dibuka Ketua Tim'); }
+            if (p.unread) { h += pill('blue', 'bi-chat-dots-fill', p.unread + ' pesan baru'); }
             return '<div class="dpo-pills">' + h + '</div>';
         }
     
         function actsFor(p) {
-            return '<div class="dpo-acts">' +
+            var edit = '';
+            if (MODE === 'pembuat') {
+                edit = p.status_review === 'disetujui'
+                    ? '<button type="button" class="btn btn-white btn-sm" disabled title="PO dikunci. Minta Ketua Tim membuka kembali."><i class="bi bi-lock-fill"></i></button>'
+                    : '<a class="btn btn-white btn-sm" href="' + URL_PO(p.id) + '/edit" title="Edit PO"><i class="bi bi-pencil"></i></a>';
+            }
+            return '<div class="dpo-acts">' + edit +
                 '<button type="button" class="btn btn-white btn-sm position-relative" data-dpo-chat="' + p.id + '" aria-label="Chat untuk ' + esc(p.nomor) + '"><i class="bi bi-chat-dots"></i>' + (p.unread ? '<span class="dpo-dot">' + p.unread + '</span>' : '') + '</button>' +
                 '<button type="button" class="btn btn-primary btn-sm" data-dpo-open="' + p.id + '"><i class="bi bi-eye"></i>' + (MODE === 'katim' ? 'Review PO' : 'Buka PO') + '</button></div>';
         }
@@ -227,8 +249,8 @@
         function renderList() {
             var rows = pos.filter(function (p) {
                 if (MODE === 'katim') {
-                    if (tab === 'perlu' && p.reviewed) { return false; }
-                    if (tab === 'sudah' && !p.reviewed) { return false; }
+                    if (tab === 'perlu' && p.status_review === 'disetujui') { return false; }
+                    if (tab === 'sudah' && p.status_review !== 'disetujui') { return false; }
                 }
                 if (q) {
                     var hay = (p.nomor + ' ' + p.mitra + ' ' + p.judul + ' ' + p.pembuat).toLowerCase();
@@ -238,7 +260,7 @@
             });
     
             if (!rows.length) {
-                var pesan = q ? 'Tidak ada PO yang cocok dengan pencarian.' : (MODE === 'katim' && tab === 'perlu' ? 'Semua PO sudah direview.' : 'Belum ada PO di daftar ini.');
+                var pesan = q ? 'Tidak ada PO yang cocok dengan pencarian.' : (MODE === 'katim' && tab === 'perlu' ? 'Semua PO sudah disetujui.' : 'Belum ada PO di daftar ini.');
                 $('dpoList').innerHTML = '<div class="dpo-empty"><i class="bi bi-inbox"></i>' + pesan + '</div>';
                 return;
             }
@@ -266,17 +288,18 @@
         function renderDock() {
             var p = curPo();
             if (!p) { return; }
+            var disetujui = p.status_review === 'disetujui';
             $('dpoBtnChatLabel').textContent = 'Chat dengan ' + (MODE === 'katim' ? firstName(p.pembuat) : 'Ketua Tim');
             $('dpoBtnChatDot').hidden = p.unread === 0 || chatOpen;
             $('dpoBtnChatDot').textContent = p.unread;
-            var br = $('dpoBtnReview');
-            if (MODE === 'katim') {
-                br.hidden = false;
-                br.disabled = p.reviewed;
-                br.innerHTML = p.reviewed ? '<i class="bi bi-check-circle-fill"></i>Sudah direview' : '<i class="bi bi-check2-square"></i>Tandai sudah direview';
-            } else {
-                br.hidden = true;
-            }
+    
+            $('dpoBtnApprove').hidden = !(MODE === 'katim' && !disetujui);
+            $('dpoBtnReopen').hidden = !(MODE === 'katim' && disetujui);
+            $('dpoBtnEdit').hidden = !(MODE === 'pembuat' && !disetujui);
+            $('dpoLockNote').hidden = !(MODE === 'pembuat' && disetujui);
+            if (MODE === 'pembuat') { $('dpoBtnEdit').setAttribute('href', URL_PO(p.id) + '/edit'); }
+            $('dpoBtnApprove').disabled = false;
+            $('dpoBtnReopen').disabled = false;
         }
     
         function renderChat() {
@@ -289,6 +312,7 @@
                 return;
             }
             $('dpoChatLog').innerHTML = chatMsgs.map(function (m) {
+                if (m.sistem) { return '<div class="dpo-msg sys">' + esc(m.pesan) + '<div class="tm">' + esc(waktu(m.waktu)) + '</div></div>'; }
                 return '<div class="dpo-msg ' + (m.saya ? 'me' : 'other') + '"><div class="nm">' + (m.saya ? 'Anda' : esc(m.nama)) + '</div>' + esc(m.pesan).replace(/\n/g, '<br>') + '<div class="tm">' + esc(waktu(m.waktu)) + '</div></div>';
             }).join('');
             $('dpoChatLog').scrollTop = $('dpoChatLog').scrollHeight;
@@ -352,6 +376,7 @@
             $('dpoSheetTitle').textContent = p.mitra + ': ' + p.judul;
             $('dpoSheetMeta').innerHTML = pill('blue', 'bi-send-check', 'Terkirim ' + tgl(p.dikirim)) + pill('slate', 'bi-person', 'Pembuat: ' + esc(p.pembuat));
             muatDokumen(p);
+            catatDibuka(p);
             $('dpoSheet').classList.add('open');
             $('dpoScrim').classList.add('open');
             $('dpoSheet').querySelector('.dpo-sheet-body').scrollTop = 0;
@@ -360,6 +385,12 @@
             chatMsgs = [];
             renderDock();
             if (withChat) { setChat(true); } else { setTimeout(function () { $('dpoSheetClose').focus(); }, 60); }
+        }
+    
+        // Ketua Tim membuka panel: reviewed_at terisi sekali di server (penanda "sudah dilihat").
+        function catatDibuka(p) {
+            if (MODE !== 'katim' || p.dibuka) { return; }
+            post(URL_PO(p.id) + '/dibuka').then(function () { p.dibuka = true; }).catch(function () { /* tidak kritis, dicoba lagi saat dibuka berikutnya */ });
         }
     
         function closeSheet() {
@@ -388,14 +419,29 @@
             });
         }
     
-        function tandaiReview() {
+        function setujui() {
             var p = curPo();
-            if (!p || MODE !== 'katim' || p.reviewed) { return; }
-            $('dpoBtnReview').disabled = true;
-            post(URL_PO(p.id) + '/review').then(function () {
-                p.reviewed = true;
+            if (!p || MODE !== 'katim' || p.status_review === 'disetujui') { return; }
+            if (!window.confirm('Setujui PO ' + p.nomor + ' dan disposisikan ke Humas?\n\nSetelah disetujui, PO dikunci dan tidak bisa diedit pembuat sampai Anda membukanya kembali.')) { return; }
+            $('dpoBtnApprove').disabled = true;
+            post(URL_PO(p.id) + '/setujui').then(function () {
+                p.status_review = 'disetujui';
                 renderAll();
-                toast('PO ' + p.nomor + ' ditandai sudah direview.');
+                if (chatOpen) { muatChat(true); }
+                toast('PO ' + p.nomor + ' disetujui dan didisposisikan ke Humas.');
+            }).catch(function (e) { toast(e.message, true); renderDock(); });
+        }
+    
+        function bukaKembali() {
+            var p = curPo();
+            if (!p || MODE !== 'katim' || p.status_review !== 'disetujui') { return; }
+            if (!window.confirm('Buka kembali PO ' + p.nomor + '?\n\nDisposisi ke Humas dibatalkan dan pembuat bisa mengedit PO. Anda perlu menyetujui ulang setelah diperbaiki.')) { return; }
+            $('dpoBtnReopen').disabled = true;
+            post(URL_PO(p.id) + '/buka-kembali').then(function () {
+                p.status_review = 'revisi';
+                renderAll();
+                if (chatOpen) { muatChat(true); }
+                toast('PO ' + p.nomor + ' dibuka kembali. Pembuat bisa mengedit.');
             }).catch(function (e) { toast(e.message, true); renderDock(); });
         }
     
@@ -431,7 +477,8 @@
         $('dpoChatText').addEventListener('keydown', function (e) {
             if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
         });
-        $('dpoBtnReview').addEventListener('click', tandaiReview);
+        $('dpoBtnApprove').addEventListener('click', setujui);
+        $('dpoBtnReopen').addEventListener('click', bukaKembali);
         $('dpoSheetClose').addEventListener('click', closeSheet);
         $('dpoScrim').addEventListener('click', closeSheet);
         document.addEventListener('keydown', function (e) {
