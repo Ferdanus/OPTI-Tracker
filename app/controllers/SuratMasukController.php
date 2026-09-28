@@ -294,10 +294,30 @@ class SuratMasukController extends Controller {
             return;
         }
 
-        $filePath = 'c:/xampp/htdocs/Mini OPTI Tracker/' . ltrim($surat['file_path'], "/\\");
-        if (!file_exists($filePath)) {
+        $relatifPath = ltrim($surat['file_path'], "/\\");
+$root = $this->f3->get('ROOT');
+
+$kandidatPath = [
+    $root . '/' . $relatifPath,
+    $root . '/public/' . $relatifPath,
+    rtrim($root, '/\\') . '/../' . $relatifPath,
+];
+
+$filePath = null;
+foreach ($kandidatPath as $kandidat) {
+    if (file_exists($kandidat)) {
+        $filePath = $kandidat;
+        break;
+    }
+}
+
+if (!$filePath) {
+    $filePath = $root . '/' . $relatifPath; // fallback lokasi default buat di-generate FPDF di bawah
+}
+
+if (!file_exists($filePath)) {
             // Generate clean structured official letter
-            require_once 'c:/xampp/htdocs/Mini OPTI Tracker/app/helpers/fpdf/fpdf.php';
+            require_once $this->f3->get('ROOT') . '/app/helpers/fpdf/fpdf.php';
             $pdf = new \FPDF('P', 'mm', 'A4');
             $pdf->SetMargins(20, 15, 20);
             $pdf->AddPage();
@@ -469,10 +489,10 @@ class SuratMasukController extends Controller {
             exit;
         }
 
-        $filePath = 'c:/xampp/htdocs/Mini OPTI Tracker/' . ltrim($surat['file_path'] ?? '', "/\\");
+        $filePath = $this->f3->get('ROOT') . '/' . ltrim($surat['file_path'] ?? '', "/\\");
         if (empty($surat['file_path']) || !file_exists($filePath)) {
             // Generate clean structured official letter
-            require_once 'c:/xampp/htdocs/Mini OPTI Tracker/app/helpers/fpdf/fpdf.php';
+            require_once $this->f3->get('ROOT') . '/app/helpers/fpdf/fpdf.php';
             $pdf = new \FPDF('P', 'mm', 'A4');
             $pdf->SetMargins(20, 15, 20);
             $pdf->AddPage();
@@ -598,7 +618,7 @@ class SuratMasukController extends Controller {
             $pdf->SetFont('Arial', '', 8.5);
             $pdf->Cell(80, 4, 'Direktur', 0, 1, 'C');
 
-            $uploadDir = 'c:/xampp/htdocs/Mini OPTI Tracker/public/uploads/surat_masuk';
+            $uploadDir = $this->f3->get('ROOT') . '/public/uploads/surat_masuk';
             if (!is_dir($uploadDir)) @mkdir($uploadDir, 0777, true);
             $tempPath = $uploadDir . '/Surat_Masuk_' . $suratId . '.pdf';
             $pdf->Output('F', $tempPath);
@@ -722,7 +742,7 @@ class SuratMasukController extends Controller {
         $filePath = '';
         $files = $this->f3->get('FILES.file_dokumen');
         if (!empty($files['name']) && $files['error'] === UPLOAD_ERR_OK) {
-            $uploadDir = 'c:/xampp/htdocs/Mini OPTI Tracker/uploads/surat_masuk/';
+            $uploadDir = $this->f3->get('ROOT') . '/uploads/surat_masuk/';
             if (!is_dir($uploadDir)) @mkdir($uploadDir, 0777, true);
             $ext = strtolower(pathinfo($files['name'], PATHINFO_EXTENSION));
             $newFileName = 'surat_' . time() . '_' . rand(100, 999) . '.' . $ext;
