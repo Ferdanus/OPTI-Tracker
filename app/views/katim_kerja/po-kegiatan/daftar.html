@@ -1,0 +1,445 @@
+<!--
+    app/views/katim_kerja/po-kegiatan/daftar.html
+    Daftar PO Ketua Tim (mode katim) / Diskusi PO Ketua Pelaksana (mode pembuat).
+    Fragment: dirender di dalam layout lewat $this->render(). Data dari PoReviewController::index().
+    Memakai komponen layout: .card, .btn, .btn-primary, .btn-white, .table, .form-control, .status-pill-*.
+    Semua class custom berawalan "dpo-".
+-->
+<style>
+    .dpo-root {
+        --dpo-primary: var(--color-primary, #334155);
+        --dpo-primary-light: var(--color-primary-light, #f1f5f9);
+        --dpo-border: var(--color-border, #e2e8f0);
+        --dpo-muted: var(--color-text-muted, #64748b);
+        --dpo-text: var(--color-text-main, #0f172a);
+        --dpo-display: var(--font-display, inherit);
+        --dpo-radius: var(--radius-md, 10px);
+        --dpo-danger: #e11d48;
+        color: var(--dpo-text);
+    }
+    .dpo-root [hidden] { display: none !important; }
+    .dpo-root :focus-visible { outline-width: 2px; outline-style: solid; outline-offset: 2px; }
+    .dpo-root .btn { white-space: nowrap; }
+    .dpo-root .btn.btn-sm { padding: .4rem .8rem; font-size: .8rem; }
+    
+    .dpo-head h1 { font-size: 1.35rem; font-weight: 800; margin: 0 0 4px; }
+    .dpo-head p { margin: 0 0 18px; color: var(--dpo-muted); font-size: .85rem; max-width: 640px; }
+    
+    .dpo-tabs { display: flex; gap: 4px; padding: 8px; border-bottom: 1px solid var(--dpo-border); }
+    .dpo-tab { flex: 1; border: 0; background: transparent; padding: .65rem .5rem; border-radius: var(--dpo-radius); font-family: var(--dpo-display); font-weight: 700; font-size: .85rem; color: var(--dpo-muted); display: flex; align-items: center; justify-content: center; gap: 7px; cursor: pointer; }
+    .dpo-tab.on { background: var(--dpo-primary-light); color: var(--dpo-primary); }
+    .dpo-cnt { background: #e2e8f0; color: var(--dpo-muted); border-radius: 12px; padding: 1px 8px; font-size: .72rem; }
+    .dpo-tab.on .dpo-cnt { background: var(--dpo-primary); color: #fff; }
+    
+    .dpo-no { font-family: 'Courier New', monospace; font-weight: 700; font-size: .8rem; }
+    .dpo-sub { font-size: .75rem; color: var(--dpo-muted); }
+    .dpo-mitra { font-weight: 600; }
+    .dpo-judul { font-size: .8rem; color: var(--dpo-muted); max-width: 300px; }
+    .dpo-who { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+    .dpo-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--dpo-primary-light); color: var(--dpo-primary); font-weight: 700; font-size: .68rem; display: inline-grid; place-items: center; flex-shrink: 0; }
+    .dpo-pills { display: flex; flex-wrap: wrap; gap: 5px; }
+    .dpo-acts { display: flex; gap: 6px; justify-content: flex-end; }
+    .dpo-dot { position: absolute; top: -7px; right: -7px; background: var(--dpo-danger); color: #fff; font-size: .65rem; font-weight: 700; min-width: 18px; height: 18px; border-radius: 999px; display: grid; place-items: center; padding: 0 5px; border: 2px solid #fff; }
+    .dpo-empty { text-align: center; padding: 44px 16px; color: #94a3b8; font-size: .85rem; }
+    .dpo-empty i { display: block; font-size: 28px; margin-bottom: 6px; }
+    
+    .dpo-mob { display: none; }
+    .dpo-pcard { border: 1px solid var(--dpo-border); border-radius: var(--dpo-radius); padding: 13px; margin-bottom: 10px; }
+    .dpo-pcard .dpo-foot { margin-top: 12px; padding-top: 12px; border-top: 1px solid #f1f5f9; }
+    .dpo-pcard .dpo-acts .btn-primary { flex: 1; }
+    
+    /* ---------- Panel review ---------- */
+    .dpo-scrim { position: fixed; inset: 0; background: rgba(15,23,42,.5); opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 1050; }
+    .dpo-scrim.open { opacity: 1; pointer-events: auto; }
+    .dpo-sheet { position: fixed; top: 0; right: 0; bottom: 0; width: min(860px, 100vw); background: #f1f5f9; z-index: 1055; display: flex; flex-direction: column; transform: translateX(100%); visibility: hidden; transition: transform .24s ease, visibility 0s .24s; }
+    .dpo-sheet.open { transform: none; visibility: visible; transition: transform .24s ease, visibility 0s; }
+    .dpo-sheet-head { background: #fff; border-bottom: 1px solid var(--dpo-border); padding: 14px 18px; display: flex; gap: 12px; align-items: flex-start; }
+    .dpo-sheet-head .dpo-grow { flex: 1; min-width: 0; }
+    .dpo-sheet-head h2 { font-size: 1.05rem; font-weight: 800; margin: 2px 0 8px; }
+    .dpo-close { border: 1px solid var(--dpo-border); background: #fff; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; color: var(--dpo-muted); font-size: 15px; flex-shrink: 0; cursor: pointer; }
+    .dpo-close:hover { color: var(--dpo-primary); border-color: var(--dpo-primary); }
+    .dpo-sheet-body { flex: 1; overflow: auto; padding: 18px; }
+    .dpo-paper { background: #fff; border: 1px solid var(--dpo-border); border-radius: 6px; max-width: 210mm; margin: 0 auto; overflow-x: auto; }
+    
+    .dpo-dock { background: #fff; border-top: 1px solid var(--dpo-border); }
+    .dpo-dock-bar { display: flex; gap: 10px; align-items: center; justify-content: space-between; padding: 12px 18px; padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
+    .dpo-chat { display: flex; flex-direction: column; height: min(340px, 46vh); border-bottom: 1px solid var(--dpo-border); }
+    .dpo-chat-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 18px; border-bottom: 1px solid var(--dpo-border); font-family: var(--dpo-display); font-weight: 700; font-size: .82rem; }
+    .dpo-link { border: 0; background: none; color: var(--dpo-primary); font-weight: 600; font-size: .75rem; padding: 0; white-space: nowrap; cursor: pointer; }
+    .dpo-chat-log { flex: 1; overflow: auto; padding: 12px 18px; background: #f8fafc; display: flex; flex-direction: column; gap: 10px; }
+    .dpo-msg { max-width: 78%; padding: 9px 12px; border-radius: 14px; font-size: .85rem; overflow-wrap: anywhere; }
+    .dpo-msg.me { align-self: flex-end; background: var(--dpo-primary); color: #fff; border-bottom-right-radius: 4px; }
+    .dpo-msg.other { align-self: flex-start; background: #fff; border: 1px solid var(--dpo-border); border-bottom-left-radius: 4px; }
+    .dpo-msg .nm { font-size: .68rem; font-weight: 700; margin-bottom: 2px; opacity: .8; }
+    .dpo-msg .tm { font-size: .65rem; opacity: .65; margin-top: 3px; text-align: right; }
+    .dpo-chat-empty { margin: auto; text-align: center; color: #94a3b8; font-size: .8rem; max-width: 260px; }
+    .dpo-chat-input { display: flex; gap: 8px; padding: 10px 18px; background: #fff; border-top: 1px solid var(--dpo-border); align-items: flex-end; }
+    .dpo-chat-input textarea { flex: 1; resize: none; max-height: 90px; }
+    
+    .dpo-toast { position: fixed; left: 50%; top: 16px; transform: translate(-50%, -14px); background: #1e293b; color: #fff; padding: 11px 14px; border-radius: 12px; font-size: .82rem; display: flex; gap: 12px; align-items: center; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 1080; max-width: calc(100vw - 24px); }
+    .dpo-toast.show { opacity: 1; transform: translate(-50%, 0); }
+    .dpo-toast.err { background: #b91c1c; }
+    
+    @media (max-width: 767.98px) { .dpo-desk { display: none; } .dpo-mob { display: block; } .dpo-tab { font-size: .78rem; padding: .6rem .3rem; } }
+    @media (prefers-reduced-motion: reduce) { .dpo-root * { transition: none !important; animation: none !important; } }
+    </style>
+    
+    <div class="dpo-root" id="dpoRoot">
+    
+        <check if="{{ @error_message }}">
+            <div class="alert alert-danger" role="alert">{{ @error_message }}</div>
+        </check>
+    
+        <div id="dpoContent"></div>
+    
+        <div class="dpo-scrim" id="dpoScrim"></div>
+        <section class="dpo-sheet" id="dpoSheet" role="dialog" aria-modal="true" aria-labelledby="dpoSheetTitle">
+            <header class="dpo-sheet-head">
+                <div class="dpo-grow">
+                    <div class="dpo-no" id="dpoSheetNo"></div>
+                    <h2 id="dpoSheetTitle"></h2>
+                    <div class="dpo-pills" id="dpoSheetMeta"></div>
+                </div>
+                <button type="button" class="dpo-close" id="dpoSheetClose" aria-label="Tutup"><i class="bi bi-x-lg"></i></button>
+            </header>
+            <div class="dpo-sheet-body"><article class="dpo-paper" id="dpoPaper"></article></div>
+            <footer class="dpo-dock">
+                <div class="dpo-chat" id="dpoChat" hidden>
+                    <div class="dpo-chat-head"><span id="dpoChatTitle">Diskusi PO</span><button type="button" class="dpo-link" id="dpoChatMin">Sembunyikan</button></div>
+                    <div class="dpo-chat-log" id="dpoChatLog" aria-live="polite"></div>
+                    <div class="dpo-chat-input">
+                        <textarea id="dpoChatText" class="form-control" rows="1" maxlength="2000" placeholder="Tulis pesan. Enter untuk kirim, Shift+Enter untuk baris baru."></textarea>
+                        <button type="button" class="btn btn-primary" id="dpoChatSend" aria-label="Kirim pesan"><i class="bi bi-send-fill"></i></button>
+                    </div>
+                </div>
+                <div class="dpo-dock-bar">
+                    <button type="button" class="btn btn-white position-relative" id="dpoBtnChat" aria-expanded="false">
+                        <i class="bi bi-chat-dots"></i><span id="dpoBtnChatLabel">Chat</span><span class="dpo-dot" id="dpoBtnChatDot" hidden></span>
+                    </button>
+                    <button type="button" class="btn btn-primary" id="dpoBtnReview" hidden></button>
+                </div>
+            </footer>
+        </section>
+    
+        <div class="dpo-toast" id="dpoToast" role="status"></div>
+    </div>
+    
+    <script>
+    (function () {
+        var BASE = '{{ @BASE }}';
+        var CSRF = '{{ @csrf_token }}';
+        var MODE = '{{ @mode }}';                      // 'katim' | 'pembuat'
+        var pos = {{ @daftar_po_json | raw }};
+        var BULAN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
+    
+        function $(id) { return document.getElementById(id); }
+        function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+        function tgl(iso) { if (!iso) { return '-'; } var d = new Date(iso + 'T00:00:00'); return d.getDate() + ' ' + BULAN[d.getMonth()] + ' ' + d.getFullYear(); }
+        function pad(n) { return (n < 10 ? '0' : '') + n; }
+        function waktu(s) {
+            if (!s) { return ''; }
+            var d = new Date(String(s).replace(' ', 'T'));
+            if (isNaN(d.getTime())) { return s; }
+            var jam = pad(d.getHours()) + '.' + pad(d.getMinutes());
+            var hari = new Date(); hari.setHours(0, 0, 0, 0);
+            var sel = Math.round((hari - new Date(d.getFullYear(), d.getMonth(), d.getDate())) / 86400000);
+            if (sel === 0) { return 'Hari ini, ' + jam; }
+            if (sel === 1) { return 'Kemarin, ' + jam; }
+            return d.getDate() + ' ' + BULAN[d.getMonth()] + ' ' + d.getFullYear() + ', ' + jam;
+        }
+        function initials(n) { return String(n || '?').split(' ').map(function (x) { return x.charAt(0); }).slice(0, 2).join('').toUpperCase(); }
+        function firstName(n) { return String(n || '').split(' ')[0]; }
+        function pill(warna, ikon, teks) { return '<span class="status-pill status-pill-' + warna + '"><i class="bi ' + ikon + '"></i>' + teks + '</span>'; }
+    
+        /* ---------- API ---------- */
+        function api(url, opts) {
+            opts = opts || {};
+            opts.credentials = 'same-origin';
+            opts.headers = Object.assign({ 'X-Requested-With': 'XMLHttpRequest' }, opts.headers || {});
+            return fetch(url, opts).then(function (r) {
+                return r.text().then(function (t) {
+                    var j;
+                    try { j = JSON.parse(t); } catch (e) { throw new Error('Sesi berakhir atau server bermasalah. Muat ulang halaman.'); }
+                    if (!r.ok || !j.ok) { throw new Error(j.pesan || 'Terjadi kesalahan.'); }
+                    return j;
+                });
+            });
+        }
+        function post(url, data) {
+            var body = new URLSearchParams();
+            body.append('csrf_token', CSRF);
+            Object.keys(data || {}).forEach(function (k) { body.append(k, data[k]); });
+            return api(url, { method: 'POST', body: body });
+        }
+        var URL_PO = function (id) { return BASE + '/po-kegiatan/' + id; };
+    
+        /* ---------- State ---------- */
+        var tab = 'perlu';
+        var q = '';
+        var current = null;
+        var chatOpen = false;
+        var chatMsgs = [];
+        var pollTimer = null;
+    
+        function curPo() { return pos.filter(function (p) { return p.id === current; })[0]; }
+    
+        /* ---------- Sinkron angka di sidebar (badge diberi id="notifDaftarPo") ---------- */
+        function syncBadge() {
+            var n = pos.filter(function (p) { return MODE === 'katim' ? (!p.reviewed || p.unread > 0) : p.unread > 0; }).length;
+            var el = $('notifDaftarPo');
+            if (el) { el.textContent = n; el.style.display = n > 0 ? '' : 'none'; }
+        }
+    
+        /* ---------- Halaman daftar ---------- */
+        function renderShell() {
+            var head = MODE === 'katim'
+                ? ['Daftar PO', 'PO yang sudah dikirim pelaksana. Buka untuk review, lalu beri catatan lewat chat. PO berstatus draft tidak muncul di sini.']
+                : ['Diskusi PO', 'PO yang sudah Anda kirim. Catatan dari Ketua Tim muncul di sini dan bisa Anda balas.'];
+            $('dpoContent').innerHTML = '<div class="dpo-head"><h1>' + head[0] + '</h1><p>' + head[1] + '</p></div>' +
+                '<div class="card">' + (MODE === 'katim' ? '<div class="dpo-tabs" id="dpoTabs"></div>' : '') +
+                '<div class="card-body"><input id="dpoSearch" type="search" class="form-control form-control-sm mb-3" style="max-width:380px;" placeholder="Cari nomor PO, mitra, atau pembuat" aria-label="Cari PO"><div id="dpoList"></div></div></div>';
+            $('dpoSearch').addEventListener('input', function () { q = this.value.trim().toLowerCase(); renderList(); });
+        }
+    
+        function renderTabs() {
+            if (MODE !== 'katim') { return; }
+            var n1 = pos.filter(function (p) { return !p.reviewed; }).length;
+            var n2 = pos.length - n1;
+            $('dpoTabs').innerHTML =
+                '<button type="button" class="dpo-tab' + (tab === 'perlu' ? ' on' : '') + '" data-dpo-tab="perlu">Perlu direview <span class="dpo-cnt">' + n1 + '</span></button>' +
+                '<button type="button" class="dpo-tab' + (tab === 'sudah' ? ' on' : '') + '" data-dpo-tab="sudah">Sudah direview <span class="dpo-cnt">' + n2 + '</span></button>';
+        }
+    
+        function pillsFor(p) {
+            var h = p.reviewed
+                ? pill('emerald', 'bi-check-circle', 'Sudah direview')
+                : pill('amber', 'bi-hourglass-split', MODE === 'katim' ? 'Perlu direview' : 'Menunggu review');
+            if (p.unread) { h += pill('rose', 'bi-chat-dots-fill', p.unread + ' pesan baru'); }
+            return '<div class="dpo-pills">' + h + '</div>';
+        }
+    
+        function actsFor(p) {
+            return '<div class="dpo-acts">' +
+                '<button type="button" class="btn btn-white btn-sm position-relative" data-dpo-chat="' + p.id + '" aria-label="Chat untuk ' + esc(p.nomor) + '"><i class="bi bi-chat-dots"></i>' + (p.unread ? '<span class="dpo-dot">' + p.unread + '</span>' : '') + '</button>' +
+                '<button type="button" class="btn btn-primary btn-sm" data-dpo-open="' + p.id + '"><i class="bi bi-eye"></i>' + (MODE === 'katim' ? 'Review PO' : 'Buka PO') + '</button></div>';
+        }
+    
+        function renderList() {
+            var rows = pos.filter(function (p) {
+                if (MODE === 'katim') {
+                    if (tab === 'perlu' && p.reviewed) { return false; }
+                    if (tab === 'sudah' && !p.reviewed) { return false; }
+                }
+                if (q) {
+                    var hay = (p.nomor + ' ' + p.mitra + ' ' + p.judul + ' ' + p.pembuat).toLowerCase();
+                    if (hay.indexOf(q) === -1) { return false; }
+                }
+                return true;
+            });
+    
+            if (!rows.length) {
+                var pesan = q ? 'Tidak ada PO yang cocok dengan pencarian.' : (MODE === 'katim' && tab === 'perlu' ? 'Semua PO sudah direview.' : 'Belum ada PO di daftar ini.');
+                $('dpoList').innerHTML = '<div class="dpo-empty"><i class="bi bi-inbox"></i>' + pesan + '</div>';
+                return;
+            }
+    
+            var kolomPembuat = MODE === 'katim' ? '<th>Pembuat</th>' : '';
+            var table = '<div class="table-responsive dpo-desk"><table class="table table-hover align-middle mb-0"><thead><tr><th style="width:150px;">Nomor PO</th><th>Mitra dan kegiatan</th>' + kolomPembuat + '<th>Status</th><th></th></tr></thead><tbody>' +
+                rows.map(function (p) {
+                    return '<tr><td><div class="dpo-no">' + esc(p.nomor) + '</div><div class="dpo-sub">Dikirim ' + tgl(p.dikirim) + '</div></td>' +
+                        '<td><div class="dpo-mitra">' + esc(p.mitra) + '</div><div class="dpo-judul">' + esc(p.judul) + '</div></td>' +
+                        (MODE === 'katim' ? '<td><div class="dpo-who"><span class="dpo-avatar">' + esc(initials(p.pembuat)) + '</span>' + esc(p.pembuat) + '</div></td>' : '') +
+                        '<td>' + pillsFor(p) + '</td><td>' + actsFor(p) + '</td></tr>';
+                }).join('') + '</tbody></table></div>';
+    
+            var cards = '<div class="dpo-mob">' + rows.map(function (p) {
+                return '<div class="dpo-pcard"><div class="dpo-no">' + esc(p.nomor) + '</div><div class="dpo-mitra">' + esc(p.mitra) + '</div>' +
+                    '<div class="dpo-judul" style="max-width:none;margin:2px 0 8px;">' + esc(p.judul) + '</div>' +
+                    (MODE === 'katim' ? '<div class="dpo-who dpo-sub" style="margin-bottom:8px;"><span class="dpo-avatar">' + esc(initials(p.pembuat)) + '</span>' + esc(p.pembuat) + ', dikirim ' + tgl(p.dikirim) + '</div>' : '<div class="dpo-sub" style="margin-bottom:8px;">Dikirim ' + tgl(p.dikirim) + '</div>') +
+                    pillsFor(p) + '<div class="dpo-foot">' + actsFor(p) + '</div></div>';
+            }).join('') + '</div>';
+    
+            $('dpoList').innerHTML = table + cards;
+        }
+    
+        /* ---------- Panel review ---------- */
+        function renderDock() {
+            var p = curPo();
+            if (!p) { return; }
+            $('dpoBtnChatLabel').textContent = 'Chat dengan ' + (MODE === 'katim' ? firstName(p.pembuat) : 'Ketua Tim');
+            $('dpoBtnChatDot').hidden = p.unread === 0 || chatOpen;
+            $('dpoBtnChatDot').textContent = p.unread;
+            var br = $('dpoBtnReview');
+            if (MODE === 'katim') {
+                br.hidden = false;
+                br.disabled = p.reviewed;
+                br.innerHTML = p.reviewed ? '<i class="bi bi-check-circle-fill"></i>Sudah direview' : '<i class="bi bi-check2-square"></i>Tandai sudah direview';
+            } else {
+                br.hidden = true;
+            }
+        }
+    
+        function renderChat() {
+            var p = curPo();
+            if (!p) { return; }
+            var lawan = MODE === 'katim' ? p.pembuat : 'Ketua Tim';
+            $('dpoChatTitle').textContent = 'Diskusi ' + p.nomor + ' dengan ' + lawan;
+            if (!chatMsgs.length) {
+                $('dpoChatLog').innerHTML = '<div class="dpo-chat-empty">Belum ada pesan. Tulis catatan untuk ' + esc(lawan) + ' tentang PO ini.</div>';
+                return;
+            }
+            $('dpoChatLog').innerHTML = chatMsgs.map(function (m) {
+                return '<div class="dpo-msg ' + (m.saya ? 'me' : 'other') + '"><div class="nm">' + (m.saya ? 'Anda' : esc(m.nama)) + '</div>' + esc(m.pesan).replace(/\n/g, '<br>') + '<div class="tm">' + esc(waktu(m.waktu)) + '</div></div>';
+            }).join('');
+            $('dpoChatLog').scrollTop = $('dpoChatLog').scrollHeight;
+        }
+    
+        function tandaiDibaca(p) {
+            if (!p || p.unread === 0) { return; }
+            post(URL_PO(p.id) + '/chat/baca').then(function () {
+                p.unread = 0;
+                renderAll();
+            }).catch(function () { /* diam: akan dicoba lagi saat chat dibuka berikutnya */ });
+        }
+    
+        function muatChat(silent) {
+            var p = curPo();
+            if (!p) { return; }
+            var idPo = p.id;
+            api(URL_PO(idPo) + '/chat').then(function (j) {
+                if (current !== idPo) { return; }
+                var berubah = j.pesan.length !== chatMsgs.length;
+                var adaDariLawan = j.pesan.some(function (m) { return !m.saya; });
+                chatMsgs = j.pesan;
+                if (berubah || !silent) { renderChat(); }
+                if (adaDariLawan && (berubah || !silent)) { p.unread = p.unread || 0; tandaiDibaca(pakaiUnread(p, berubah)); }
+            }).catch(function (e) { if (!silent) { toast(e.message, true); } });
+        }
+        // Saat pesan baru masuk ketika chat terbuka, tandai dibaca ke server walau angka lokal masih 0.
+        function pakaiUnread(p, berubah) { if (berubah && p.unread === 0) { p.unread = 1; } return p; }
+    
+        function mulaiPoll() { hentikanPoll(); pollTimer = setInterval(function () { if (chatOpen && !document.hidden) { muatChat(true); } }, 8000); }
+        function hentikanPoll() { if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } }
+    
+        function setChat(open) {
+            chatOpen = open;
+            $('dpoChat').hidden = !open;
+            $('dpoBtnChat').setAttribute('aria-expanded', open ? 'true' : 'false');
+            if (open) {
+                chatMsgs = [];
+                renderChat();
+                muatChat(false);
+                mulaiPoll();
+                setTimeout(function () { $('dpoChatText').focus(); }, 60);
+            } else {
+                hentikanPoll();
+            }
+            renderDock();
+        }
+    
+        function muatDokumen(p) {
+            $('dpoPaper').innerHTML = '<div class="dpo-empty"><i class="bi bi-hourglass-split"></i>Memuat dokumen PO...</div>';
+            fetch(URL_PO(p.id) + '/preview', { credentials: 'same-origin' })
+                .then(function (r) { if (!r.ok) { throw new Error('gagal'); } return r.text(); })
+                .then(function (html) { if (current === p.id) { $('dpoPaper').innerHTML = html; } })
+                .catch(function () { if (current === p.id) { $('dpoPaper').innerHTML = '<div class="dpo-empty"><i class="bi bi-exclamation-triangle"></i>Dokumen PO gagal dimuat. Tutup panel lalu buka lagi.</div>'; } });
+        }
+    
+        function openSheet(id, withChat) {
+            current = id;
+            var p = curPo();
+            $('dpoSheetNo').textContent = p.nomor;
+            $('dpoSheetTitle').textContent = p.mitra + ': ' + p.judul;
+            $('dpoSheetMeta').innerHTML = pill('blue', 'bi-send-check', 'Terkirim ' + tgl(p.dikirim)) + pill('slate', 'bi-person', 'Pembuat: ' + esc(p.pembuat));
+            muatDokumen(p);
+            $('dpoSheet').classList.add('open');
+            $('dpoScrim').classList.add('open');
+            $('dpoSheet').querySelector('.dpo-sheet-body').scrollTop = 0;
+            chatOpen = false;
+            $('dpoChat').hidden = true;
+            chatMsgs = [];
+            renderDock();
+            if (withChat) { setChat(true); } else { setTimeout(function () { $('dpoSheetClose').focus(); }, 60); }
+        }
+    
+        function closeSheet() {
+            hentikanPoll();
+            $('dpoSheet').classList.remove('open');
+            $('dpoScrim').classList.remove('open');
+            current = null;
+            chatOpen = false;
+            chatMsgs = [];
+        }
+    
+        var mengirim = false;
+        function sendMsg() {
+            var p = curPo();
+            var txt = $('dpoChatText').value.trim();
+            if (!p || !txt || mengirim) { return; }
+            mengirim = true;
+            $('dpoChatSend').disabled = true;
+            post(URL_PO(p.id) + '/chat', { pesan: txt }).then(function (j) {
+                if (current === p.id) { chatMsgs.push(j.pesan); renderChat(); }
+                $('dpoChatText').value = '';
+                toast(MODE === 'katim' ? 'Pesan terkirim. ' + p.pembuat + ' menerima notifikasi.' : 'Pesan terkirim ke Ketua Tim.');
+            }).catch(function (e) { toast(e.message, true); }).then(function () {
+                mengirim = false;
+                $('dpoChatSend').disabled = false;
+            });
+        }
+    
+        function tandaiReview() {
+            var p = curPo();
+            if (!p || MODE !== 'katim' || p.reviewed) { return; }
+            $('dpoBtnReview').disabled = true;
+            post(URL_PO(p.id) + '/review').then(function () {
+                p.reviewed = true;
+                renderAll();
+                toast('PO ' + p.nomor + ' ditandai sudah direview.');
+            }).catch(function (e) { toast(e.message, true); renderDock(); });
+        }
+    
+        /* ---------- Toast ---------- */
+        var toastTimer;
+        function toast(text, galat) {
+            var t = $('dpoToast');
+            t.textContent = text;
+            t.classList.toggle('err', !!galat);
+            t.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(function () { t.classList.remove('show'); }, 4500);
+        }
+    
+        /* ---------- Render gabungan ---------- */
+        function renderAll() {
+            renderTabs();
+            renderList();
+            syncBadge();
+            if (current) { renderDock(); }
+        }
+    
+        /* ---------- Event ---------- */
+        $('dpoRoot').addEventListener('click', function (e) {
+            var el;
+            if ((el = e.target.closest('[data-dpo-tab]'))) { tab = el.getAttribute('data-dpo-tab'); renderTabs(); renderList(); return; }
+            if ((el = e.target.closest('[data-dpo-open]'))) { openSheet(parseInt(el.getAttribute('data-dpo-open'), 10), false); return; }
+            if ((el = e.target.closest('[data-dpo-chat]'))) { openSheet(parseInt(el.getAttribute('data-dpo-chat'), 10), true); return; }
+        });
+        $('dpoBtnChat').addEventListener('click', function () { setChat(!chatOpen); });
+        $('dpoChatMin').addEventListener('click', function () { setChat(false); });
+        $('dpoChatSend').addEventListener('click', sendMsg);
+        $('dpoChatText').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
+        });
+        $('dpoBtnReview').addEventListener('click', tandaiReview);
+        $('dpoSheetClose').addEventListener('click', closeSheet);
+        $('dpoScrim').addEventListener('click', closeSheet);
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && $('dpoSheet').classList.contains('open')) { closeSheet(); }
+        });
+    
+        renderShell();
+        renderAll();
+    })();
+    </script>
+    

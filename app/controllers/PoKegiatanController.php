@@ -30,6 +30,11 @@ protected function divisiDariRequest($f3) {
     $d = strtolower(trim((string) $f3->get('GET.divisi')));
     return in_array($d, ['lingkungan', 'selulosa'], true) ? $d : '';
 }
+protected function urlDaftarPoDariOrder($orderId) {
+    $r = $this->safeQuery('SELECT jenis_layanan_opti FROM order_layanan WHERE id = ?', [1 => (int) $orderId]);
+    $d = strtolower((string) ($r[0]['jenis_layanan_opti'] ?? ''));
+    return '/po-kegiatan' . (in_array($d, ['lingkungan', 'selulosa'], true) ? '?divisi=' . $d : '');
+}
 protected function getInfoPembayaranOtomatis($orderId, $statusKeuangan) {
     if ($statusKeuangan !== 'lunas') {
         return '-';
@@ -445,7 +450,7 @@ $f3->set('info_pembayaran_json', json_encode($infoPembayaran, JSON_UNESCAPED_UNI
             $this->setFlashError('Gagal menyimpan PO: ' . $e->getMessage());
         }
 
-        $f3->reroute('/po-kegiatan');
+        $f3->reroute($this->urlDaftarPoDariOrder((int) $f3->get('POST.order_id')));
     }
 
     /** POST /po-kegiatan/@id/update */
@@ -473,7 +478,7 @@ $f3->set('info_pembayaran_json', json_encode($infoPembayaran, JSON_UNESCAPED_UNI
             $this->setFlashError('Gagal memperbarui PO: ' . $e->getMessage());
         }
 
-        $f3->reroute('/po-kegiatan');
+        $f3->reroute($this->urlDaftarPoDariOrder((int) $f3->get('POST.order_id')));
     }
 
     /** GET /po-kegiatan/@id/preview -- fragment AJAX buat modal preview di index */

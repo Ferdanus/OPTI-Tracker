@@ -33,7 +33,7 @@
 .wajib-error-msg.show { display: block; }
 </style>
 <div class="d-flex align-items-center gap-3 mb-4">
-    <a href="{{ @BASE }}/po-kegiatan" class="btn-back"><i class="bi bi-arrow-left"></i> Kembali</a>
+    <a href="{{ @BASE }}/po-kegiatan?divisi={{ @order.jenis_layanan_opti }}" class="btn-back"><i class="bi bi-arrow-left"></i> Kembali</a>
     <div>
         <h2 class="h4 fw-bold mb-1 text-dark">{{ @po ? 'Edit Petunjuk Operasional' : 'Buat Petunjuk Operasional' }}</h2>
         <p class="text-muted small mb-0">
@@ -323,7 +323,7 @@
     </div>
 
     <div class="d-flex flex-wrap justify-content-end gap-2 mb-5">
-        <a href="{{ @BASE }}/po-kegiatan" class="btn btn-outline-secondary px-4">Kembali</a>
+        <a href="{{ @BASE }}/po-kegiatan?divisi={{ @order.jenis_layanan_opti }}" class="btn btn-outline-secondary px-4">Kembali</a>
         <button type="button" id="btnDraft" class="btn btn-outline-secondary px-4"><i class="bi bi-save me-1"></i> Simpan sebagai Draft</button>
         <button type="button" id="btnKirim" class="btn btn-primary px-4"><i class="bi bi-send me-1"></i> Kirim</button>
     </div>
@@ -1285,7 +1285,7 @@ renderRuangLingkupPreview();
         tambahItemPenerimaan({ nama: 'Nilai Kontrak', nominal: estimasiBiayaAwal });
         tambahKategori();
         ['Persiapan awal', 'Pelaksanaan', 'Evaluasi hasil', 'Penerbitan Sertifikat/Laporan'].forEach(function (nm) {
-            jadwalState.push({ nama: nm, tanda: [] });
+            groups.push({ nama_tahap: nm, kegiatan: [] });
         });
     }
 
