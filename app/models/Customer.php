@@ -29,22 +29,26 @@ class Customer extends \DB\SQL\Mapper {
     }
 
     /**
-     * Bersihkan nama perusahaan dari awalan bentuk badan usaha yang berulang atau redundan
-     * Contoh: "PT PT Tanjung Enim", "PT. PT. PT Sinar Syno", "CV. CV Abadi" -> "Tanjung Enim", "Sinar Syno", "Abadi"
+     * Bersihkan nama perusahaan dari awalan/akhiran bentuk badan usaha yang berulang atau redundan
+     * Contoh: "PT PT Tanjung Enim", "PT. PT. PT Sinar Syno", "CV. CV Abadi", "Aspex Kumbong (PT)", "PT Aspex Kumbong, PT"
      */
     public static function cleanNamaPerusahaan(?string $nama, ?string $ptCv = null): string {
         $nama = trim($nama ?? '');
         if (empty($nama)) {
             return '';
         }
-        // Hapus semua awalan bentuk badan usaha yang berulang atau redundan di awal string dengan word-boundary ketat
-        $cleaned = preg_replace('/^(\s*\b(PT|CV|UD|BUMN|PERUM|PERSERO|Yayasan|Koperasi)\b\.?\s*)+/i', '', $nama);
-        $cleaned = trim($cleaned);
+        // Hapus penutup kurung badan usaha di ujung: " (PT)", " (CV)", " [PT]", "(PT.)", " (Persero)", dll
+        $cleaned = preg_replace('/\s*[\(\[]\s*(PT|CV|UD|BUMN|PERUM|PERSERO|Yayasan|Koperasi|Perorangan)\.?\s*[\)\]]\s*$/i', '', $nama);
+        // Hapus pengulangan awalan bentuk badan usaha di awal string (misal: "PT PT PT", "PT. PT.", "CV CV ", "PT/CV")
+        $cleaned = preg_replace('/^(\s*(\b(PT|CV|UD|BUMN|PERUM|PERSERO|Yayasan|Koperasi)\b\.?|PT\.|CV\.|UD\.)\s*)+/i', '', $cleaned);
+        // Ulangi sekali lagi jika masih tersisa kombinasi
+        $cleaned = preg_replace('/^(\s*(\b(PT|CV|UD|BUMN|PERUM|PERSERO|Yayasan|Koperasi)\b\.?|PT\.|CV\.|UD\.)\s*)+/i', '', $cleaned);
+        $cleaned = trim(rtrim($cleaned, ','));
         return !empty($cleaned) ? $cleaned : $nama;
     }
 
     /**
-     * Format nama perusahaan agar tidak terjadi duplikasi bentuk badan (misal: "PT PT...")
+     * Format nama perusahaan agar terstandarisasi rapi dan tidak terjadi duplikasi bentuk badan (misal: "PT PT...")
      */
     public static function formatNamaPerusahaan(?string $ptCv, ?string $nama): string {
         $nama = trim($nama ?? '');
@@ -53,18 +57,27 @@ class Customer extends \DB\SQL\Mapper {
             return $ptCv;
         }
 
-        // Jika pt_cv kosong, cek apakah di awal nama terdapat entitas badan usaha
+        // Ekstrak dan bersihkan nama murni
+        $cleanNama = self::cleanNamaPerusahaan($nama, $ptCv);
+
+        // Jika pt_cv kosong, coba deteksi dari nama asli
         if (empty($ptCv)) {
             if (preg_match('/^\s*\b(PT|CV|UD|BUMN|PERUM|PERSERO|Yayasan|Koperasi)\b\.?\s+/i', $nama, $matches)) {
                 $ptCv = strtoupper(rtrim($matches[1], '.'));
             }
         }
 
-        // Bersihkan jika ada penulisan badan usaha berulang
-        $cleanNama = self::cleanNamaPerusahaan($nama, $ptCv);
-        if (empty($ptCv) || strcasecmp($ptCv, 'Lainnya') === 0 || strcasecmp($ptCv, 'Instansi Pemerintah') === 0) {
+        if (empty($ptCv) || strcasecmp($ptCv, 'Lainnya') === 0 || strcasecmp($ptCv, 'Instansi Pemerintah') === 0 || strcasecmp($ptCv, 'Perorangan') === 0) {
             return $cleanNama;
         }
+
+        $ptCv = strtoupper($ptCv);
+
+        // Jika nama yang dibersihkan sudah diawali $ptCv yang sama, jangan dobel
+        if (preg_match('/^' . preg_quote($ptCv, '/') . '\b\.?\s*/i', $cleanNama)) {
+            return $cleanNama;
+        }
+
         return $ptCv . ' ' . $cleanNama;
     }
 

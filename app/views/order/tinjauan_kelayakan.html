@@ -543,7 +543,7 @@ function confirmTetapkanKeputusan() {
                     
                     <!-- KOP SURAT PENGIRIM -->
                     <div class="text-center pb-2">
-                        <h4 class="fw-bold mb-0 text-uppercase letter-spacing-1" style="font-size: 1.3rem;">{{ (@surat_masuk.pt_cv ? @surat_masuk.pt_cv . ' ' : '') . @surat_masuk.pengirim }}</h4>
+                        <h4 class="fw-bold mb-0 text-uppercase letter-spacing-1" style="font-size: 1.3rem;">{{ \Customer::formatNamaPerusahaan(@surat_masuk.pt_cv, @surat_masuk.pengirim) }}</h4>
                         <div class="fw-bold small text-muted text-uppercase my-1" style="font-size: 0.75rem; letter-spacing: 1px;">PRODUSEN &amp; JASA INDUSTRI TEKNOLOGI</div>
                         <div class="small text-secondary" style="font-size: 0.825rem;">{{ @surat_masuk.alamat_pengirim ?: 'Kawasan Industri Terpadu, Indonesia' }} | Telp: {{ @surat_masuk.no_telp_pengirim ?: '-' }}</div>
                     </div>
@@ -596,7 +596,7 @@ function confirmTetapkanKeputusan() {
                             <tr>
                                 <td style="width: 150px; padding: 3px 0;">a. Nama Perusahaan</td>
                                 <td style="width: 15px; padding: 3px 0;">:</td>
-                                <td style="padding: 3px 0;"><strong>{{ (@surat_masuk.pt_cv ? @surat_masuk.pt_cv . ' ' : '') . @surat_masuk.pengirim }}</strong></td>
+                                <td style="padding: 3px 0;"><strong>{{ \Customer::formatNamaPerusahaan(@surat_masuk.pt_cv, @surat_masuk.pengirim) }}</strong></td>
                             </tr>
                             <tr>
                                 <td style="padding: 3px 0;">b. Alamat</td>
@@ -642,7 +642,7 @@ function confirmTetapkanKeputusan() {
                         <div class="col-6"></div>
                         <div class="col-6 text-center" style="font-size: 0.95rem;">
                             <div>Hormat kami,</div>
-                            <strong class="d-block mb-2">{{ (@surat_masuk.pt_cv ? @surat_masuk.pt_cv . ' ' : '') . @surat_masuk.pengirim }}</strong>
+                            <strong class="d-block mb-2">{{ \Customer::formatNamaPerusahaan(@surat_masuk.pt_cv, @surat_masuk.pengirim) }}</strong>
                             <div class="border d-inline-block px-3 py-1 my-2 text-muted small" style="border-style: dashed !important; font-size: 0.75rem;">
                                 [ TTD &amp; STEMPEL RESMI ]
                             </div>

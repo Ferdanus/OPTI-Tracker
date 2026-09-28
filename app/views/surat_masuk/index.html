@@ -489,7 +489,7 @@
                                                 </td>
                                                 <td>
                                                     <div class="fw-bold text-dark">
-                                                        {{ @ditolak.pt_cv ? @ditolak.pt_cv . ' ' : '' }}{{ @ditolak.pengirim }}
+                                                        {{ \Customer::formatNamaPerusahaan(@ditolak.pt_cv, @ditolak.pengirim) }}
                                                     </div>
                                                 </td>
                                                 <td>
@@ -506,7 +506,7 @@
                                                     <button type="button" 
                                                         class="btn btn-outline-danger btn-sm px-2.5 py-1 shadow-sm d-inline-flex align-items-center gap-1 btn-lihat-alasan"
                                                         data-nomor="{{ @ditolak.nomor_surat }}"
-                                                        data-pengirim="{{ @ditolak.pt_cv ? @ditolak.pt_cv . ' ' : '' }}{{ @ditolak.pengirim }}"
+                                                        data-pengirim="{{ \Customer::formatNamaPerusahaan(@ditolak.pt_cv, @ditolak.pengirim) }}"
                                                         data-alasan="{{ @ditolak.alasan_tolak ?: 'Tidak ada rincian alasan.' }}"
                                                         data-penolak="{{ @ditolak.nama_penolak ?: 'Tim Mitra' }}"
                                                         data-tanggal="{{ @ditolak.tanggal_tolak ? date('d F Y H:i', strtotime(@ditolak.tanggal_tolak)) : '-' }}">
@@ -696,7 +696,7 @@
                             </div>
                             <div class="mb-2">
                                 <span class="text-muted small d-block">Instansi Pelanggan:</span>
-                                <span class="fw-semibold text-dark">{{ @klaim.pt_cv ? @klaim.pt_cv . ' ' : '' }}{{ @klaim.nmcustomer }}</span>
+                                <span class="fw-semibold text-dark">{{ \Customer::formatNamaPerusahaan(@klaim.pt_cv, @klaim.nmcustomer) }}</span>
                             </div>
                             <div>
                                 <span class="text-muted small d-block">Judul Kegiatan:</span>
@@ -753,7 +753,7 @@
                             <div class="row g-2 small">
                                 <div class="col-sm-6">
                                     <span class="text-muted d-block">Instansi Pengirim:</span>
-                                    <span class="fw-bold text-dark">{{ @surat.pt_cv ? @surat.pt_cv . ' ' : '' }}{{ @surat.pengirim }}</span>
+                                    <span class="fw-bold text-dark">{{ \Customer::formatNamaPerusahaan(@surat.pt_cv, @surat.pengirim) }}</span>
                                 </div>
                                 <div class="col-sm-6">
                                     <span class="text-muted d-block">Tanggal Surat:</span>
@@ -828,7 +828,7 @@
                             <div class="row g-2 small">
                                 <div class="col-sm-6">
                                     <span class="text-muted d-block">Instansi Pelanggan:</span>
-                                    <span class="fw-bold text-dark">{{ @klaim.pt_cv ? @klaim.pt_cv . ' ' : '' }}{{ @klaim.nmcustomer }}</span>
+                                    <span class="fw-bold text-dark">{{ \Customer::formatNamaPerusahaan(@klaim.pt_cv, @klaim.nmcustomer) }}</span>
                                 </div>
                                 <div class="col-sm-6">
                                     <span class="text-muted d-block">Waktu Terima:</span>

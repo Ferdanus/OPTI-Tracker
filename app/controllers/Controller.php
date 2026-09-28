@@ -272,8 +272,15 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
         if ($role === 'keuangan' || $role === 'superadmin' || $isTimMitra) {
             try {
                 $sqlKeuangan = "SELECT COUNT(*) as c FROM order_layanan o
-                                WHERE o.status_keuangan = 'menunggu_pembayaran'
-                                  AND o.id NOT IN (SELECT DISTINCT order_id FROM opti_pembayaran)";
+                                LEFT JOIN tb_surat_penawaran sp ON sp.order_id = o.id
+                                WHERE (o.status_keuangan = 'menunggu_pembayaran' 
+                                       OR o.status_penawaran = 'deal' 
+                                       OR o.status_rancop = 'deal'
+                                       OR (sp.id IS NOT NULL AND (sp.status_respon_klien = 'deal' OR (sp.surat_kesanggupan_bayar IS NOT NULL AND sp.surat_kesanggupan_bayar != '')))
+                                       OR o.status IN ('penawaran_deal', 'menunggu_pembayaran'))
+                                  AND o.id NOT IN (SELECT DISTINCT order_id FROM opti_pembayaran)
+                                  AND (o.status_keuangan IS NULL OR o.status_keuangan != 'lunas')
+                                  AND (o.status IS NULL OR o.status NOT IN ('batal', 'ditolak'))";
                 $resKeuangan = $this->db->exec($sqlKeuangan);
                 $notifKeuanganCount = (int)($resKeuangan[0]['c'] ?? 0);
             } catch (\Exception $eKeuangan) {

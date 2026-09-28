@@ -203,8 +203,8 @@ document.querySelectorAll('.ktp-tab-btn').forEach(function (btn) {
 function aksiBelum(o) {
     return '<button type="button" class="ktp-btn ktp-btn-primary btn-buka-modal-pelaksana"' +
         ' data-order-id="' + o.id + '" data-nomor="' + o.nomor_order + '"' +
-        ' data-mitra="' + (o.nama_perusahaan + (o.pt_cv ? ' (' + o.pt_cv + ')' : '')).replace(/"/g, '&quot;') + '"' +
-        ' data-judul="' + o.judul_kegiatan.replace(/"/g, '&quot;') + '"' +
+        ' data-mitra="' + (o.nama_perusahaan || '').replace(/"/g, '&quot;') + '"' +
+        ' data-judul="' + (o.judul_kegiatan || '').replace(/"/g, '&quot;') + '"' +
         ' data-nilai="' + o.biaya_acuan + '" data-tanggal="' + o.tanggal_lunas + '">' +
         '<i class="bi bi-person-plus"></i>Pilih Pelaksana</button>';
 }
@@ -268,7 +268,7 @@ function render() {
         return '<tr>' +
             '<td style="color:#94a3b8;">' + (idx + 1) + '</td>' +
             '<td><div class="ktp-cell-order"><div><div class="ktp-nomor">' + o.nomor_order + '</div>' + divisiPill(o.jenis_layanan_opti) + '</div></div></td>' +
-            '<td>' + o.nama_perusahaan + (o.pt_cv ? ' (' + o.pt_cv + ')' : '') + '</td>' +
+            '<td>' + o.nama_perusahaan + '</td>' +
             '<td class="ktp-cell-perihal" title="' + o.judul_kegiatan + '">' + o.judul_kegiatan + '</td>' +
             '<td class="ktp-cell-tanggal">' + tgl(o.tanggal_lunas) + '</td>' +
             '<td style="text-align:center;">' + aksi + status + '</td>' +
@@ -281,7 +281,7 @@ function render() {
 
         return '<div class="ktp-mcard">' +
             '<div class="ktp-cell-order"><div><div class="ktp-nomor">' + o.nomor_order + '</div>' + divisiPill(o.jenis_layanan_opti) + '</div></div>' +
-            '<div class="mitra">' + o.nama_perusahaan + (o.pt_cv ? ' (' + o.pt_cv + ')' : '') + '</div>' +
+            '<div class="mitra">' + o.nama_perusahaan + '</div>' +
             '<div class="perihal">' + o.judul_kegiatan + '</div>' +
             '<div class="foot">' + foot + '</div>' +
             aksi +
