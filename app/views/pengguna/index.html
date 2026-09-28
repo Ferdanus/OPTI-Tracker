@@ -567,7 +567,12 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const occupiedKetua = JSON.parse('{{ @occupied_ketua_json ?: "{}" }}');
+    let occupiedKetua = {};
+    try {
+        occupiedKetua = {{ @occupied_ketua_json ?: '{}' | raw }};
+    } catch (err) {
+        occupiedKetua = {};
+    }
 
     function checkKetuaOccupied(role, currentUserId, warningEl, warningTextEl, submitBtn) {
         if (!role || !occupiedKetua[role]) {
@@ -600,9 +605,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Handler Modal Ubah Role
+    // Modal Instance & Elements
     const modalUbahEl = document.getElementById('modalUbahRole');
-    const modalUbah = new bootstrap.Modal(modalUbahEl);
+    const modalUbah = modalUbahEl ? new bootstrap.Modal(modalUbahEl) : null;
+    const modalHapusEl = document.getElementById('modalHapusRole');
+    const modalHapus = modalHapusEl ? new bootstrap.Modal(modalHapusEl) : null;
+
     const selectEditRole = document.getElementById('edit_role_sistem');
     const warningEdit = document.getElementById('edit_ketua_warning');
     const warningEditText = document.getElementById('edit_ketua_warning_text');
@@ -615,37 +623,48 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    document.querySelectorAll('.btn-ubah-role').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            const id = this.getAttribute('data-id');
-            const nama = this.getAttribute('data-nama');
-            const role = this.getAttribute('data-role');
+    // Event Delegation: Handler Klik Tombol Ubah & Cabut Role (Tahan terhadap filter/render ulang)
+    document.addEventListener('click', function(e) {
+        const btnUbah = e.target.closest('.btn-ubah-role');
+        if (btnUbah && modalUbah) {
+            e.preventDefault();
+            const id = btnUbah.getAttribute('data-id');
+            const nama = btnUbah.getAttribute('data-nama');
+            const role = btnUbah.getAttribute('data-role');
 
-            document.getElementById('edit_id_user').value = id;
-            document.getElementById('edit_id_display').innerText = id;
-            document.getElementById('edit_nama_user').innerText = nama;
-            document.getElementById('edit_role_sistem').value = role;
+            const inputId = document.getElementById('edit_id_user');
+            const displayId = document.getElementById('edit_id_display');
+            const displayNama = document.getElementById('edit_nama_user');
+            const selectRole = document.getElementById('edit_role_sistem');
+
+            if (inputId) inputId.value = id;
+            if (displayId) displayId.innerText = id;
+            if (displayNama) displayNama.innerText = nama;
+            if (selectRole) selectRole.value = role;
 
             checkKetuaOccupied(role, parseInt(id), warningEdit, warningEditText, btnSubmitUbah);
 
             modalUbah.show();
-        });
-    });
+            return;
+        }
 
-    // Handler Modal Hapus / Cabut Role
-    const modalHapusEl = document.getElementById('modalHapusRole');
-    const modalHapus = new bootstrap.Modal(modalHapusEl);
-    document.querySelectorAll('.btn-hapus-role').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            const id = this.getAttribute('data-id');
-            const nama = this.getAttribute('data-nama');
+        const btnHapus = e.target.closest('.btn-hapus-role');
+        if (btnHapus && modalHapus) {
+            e.preventDefault();
+            const id = btnHapus.getAttribute('data-id');
+            const nama = btnHapus.getAttribute('data-nama');
 
-            document.getElementById('hapus_id_user').value = id;
-            document.getElementById('hapus_id_display').innerText = id;
-            document.getElementById('hapus_nama_user').innerText = nama;
+            const inputIdHapus = document.getElementById('hapus_id_user');
+            const displayIdHapus = document.getElementById('hapus_id_display');
+            const displayNamaHapus = document.getElementById('hapus_nama_user');
+
+            if (inputIdHapus) inputIdHapus.value = id;
+            if (displayIdHapus) displayIdHapus.innerText = id;
+            if (displayNamaHapus) displayNamaHapus.innerText = nama;
 
             modalHapus.show();
-        });
+            return;
+        }
     });
 
     // =========================================================================
