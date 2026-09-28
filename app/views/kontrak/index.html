@@ -1,161 +1,219 @@
-<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
-    <div>
-        <h2 class="h4 fw-bold mb-1 text-dark">Daftar Perjanjian Kerjasama (PKS)</h2>
-        <p class="text-muted small mb-0">Legalitas kontrak payung dan perjanjian teknis kemitraan jasa industri BBSPJIS.</p>
-    </div>
-    <check if="{{ @can_manage_kontrak }}">
-        <a href="{{ @BASE }}/kontrak/tambah" class="btn btn-primary">
-            <i class="bi bi-file-earmark-plus"></i> Tambah Kontrak PKS
-        </a>
-    </check>
-</div>
-
-<!-- TABEL KONTRAK FULL DISPLAY BERSIH & RAPIH -->
-<div class="card border-0 shadow-sm overflow-hidden">
-    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
-        <h6 class="m-0 fw-bold text-dark"><i class="bi bi-journal-text text-primary me-2"></i>Daftar Dokumen Kontrak PKS</h6>
-        <span class="badge bg-light text-muted border">{{ count(@daftar_kontrak) }} Dokumen</span>
-    </div>
-    <div class="card-body p-0">
-        <check if="{{ count(@daftar_kontrak) > 0 }}">
-            <true>
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0" style="table-layout: fixed; width: 100%;">
-                        <thead>
-                            <tr>
-                                <th class="text-center" style="width: 4%;">NO</th>
-                                <th style="width: 22%;">NOMOR PKS & PO</th>
-                                <th style="width: 26%;">JUDUL KERJASAMA & MITRA</th>
-                                <th style="width: 20%;">PENANDATANGAN</th>
-                                <th style="width: 13%;">MASA BERLAKU</th>
-                                <th class="text-end" style="width: 15%;">NILAI KONTRAK</th>
-                                <th class="text-center" style="width: 10%;">STATUS TTD</th>
-                                <check if="{{ @can_manage_kontrak }}">
-                                    <th class="text-center" style="width: 8%;">AKSI</th>
-                                </check>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <repeat group="{{ @daftar_kontrak }}" value="{{ @k }}" counter="{{ @ctr }}">
-                                <tr>
-                                    <td class="text-center text-muted small fw-bold">{{ @ctr }}</td>
-                                    
-                                    <!-- Nomor PKS & PO -->
-                                    <td>
-                                        <div class="fw-bold text-primary small mb-1">
-                                            {{ @k.nomor_pks_bbspjis ?: '-' }}
-                                        </div>
-                                        <div class="text-muted small mb-1" style="font-size: 0.75rem;">
-                                            <span class="text-secondary fw-semibold">Klien:</span> {{ @k.nomor_pks_klien ?: '-' }}
-                                        </div>
-                                        <check if="{{ @k.nomor_po }}">
-                                            <a href="{{ @BASE }}/po/{{ @k.po_id }}" class="text-dark text-decoration-none small d-inline-flex align-items-center gap-1" style="font-size: 0.75rem;">
-                                                <i class="bi bi-link-45deg text-primary"></i> <span class="badge badge-pill-secondary">PO: {{ @k.nomor_po }}</span>
-                                            </a>
-                                        </check>
-                                    </td>
-
-                                    <!-- Judul Kerjasama & Mitra -->
-                                    <td>
-                                        <div class="fw-semibold text-dark mb-1" style="font-size: 0.85rem; line-height: 1.3;" title="{{ @k.ruang_lingkup ?: @k.judul_kegiatan }}">
-                                            {{ @k.ruang_lingkup ?: (@k.judul_kegiatan ?: 'Perjanjian Kerjasama Jasa Industri') }}
-                                        </div>
-                                        <div class="small text-muted d-flex align-items-center gap-1">
-                                            <i class="bi bi-building text-secondary"></i>
-                                            <check if="{{ @mask_client_name }}">
-                                                <true>
-                                                    {~ 
-                                                        $words = explode(' ', $k['nama_perusahaan'] ?? '');
-                                                        $masked = array_map(function($w) {
-                                                            return mb_strlen($w) > 1 ? mb_substr($w, 0, 1) . '***' : $w;
-                                                        }, $words);
-                                                        $namaTampil = implode(' ', $masked);
-                                                    ~}
-                                                    <span class="fw-medium text-dark">{{ $namaTampil }}</span>
-                                                </true>
-                                                <false>
-                                                    <span class="fw-medium text-dark">{{ @k.nama_perusahaan ?: 'Mitra Industri' }}</span>
-                                                </false>
-                                            </check>
-                                        </div>
-                                    </td>
-
-                                    <!-- Penandatangan -->
-                                    <td>
-                                        <div class="small text-dark fw-bold mb-1">
-                                            {{ @k.nama_penandatangan_bbspjis ?: 'Kepala BBSPJIS' }}
-                                            <div class="text-muted fw-normal" style="font-size: 0.72rem;">{{ @k.jabatan_penandatangan_bbspjis ?: 'BBSPJIS' }}</div>
-                                        </div>
-                                        <div class="small text-secondary">
-                                            <span class="fw-semibold text-dark">{{ @k.nama_penandatangan_klien ?: 'Pimpinan Mitra' }}</span>
-                                            <div class="text-muted" style="font-size: 0.72rem;">{{ @k.jabatan_penandatangan_klien ?: 'Mitra Industri' }}</div>
-                                        </div>
-                                    </td>
-
-                                    <!-- Masa Berlaku -->
-                                    <td>
-                                        <check if="{{ !empty(@k.target_mulai) && @k.target_mulai != '0000-00-00' }}">
-                                            <true>
-                                                <div class="small text-dark fw-semibold">{{ date('d/m/Y', strtotime(@k.target_mulai)) }}</div>
-                                                <div class="text-muted" style="font-size: 0.75rem;">s.d. {{ !empty(@k.target_selesai) && @k.target_selesai != '0000-00-00' ? date('d/m/Y', strtotime(@k.target_selesai)) : '-' }}</div>
-                                            </true>
-                                            <false>
-                                                <span class="text-muted small">-</span>
-                                            </false>
-                                        </check>
-                                    </td>
-
-                                    <!-- Nilai Kontrak -->
-                                    <td class="text-end fw-bold text-dark small">
-                                        Rp {{ number_format(@k.nilai_kontrak, 0, ',', '.') }}
-                                    </td>
-
-                                    <!-- Status TTD -->
-                                    <td class="text-center">
-                                        <check if="{{ @k.status_ttd == 'sudah' }}">
-                                            <true>
-                                                <span class="badge badge-pill-success"><i class="bi bi-check-circle-fill"></i> Sudah TTD</span>
-                                            </true>
-                                            <false>
-                                                <span class="badge badge-pill-warning"><i class="bi bi-clock-history"></i> Belum TTD</span>
-                                            </false>
-                                        </check>
-                                    </td>
-
-                                    <!-- Aksi -->
-                                    <check if="{{ @can_manage_kontrak }}">
-                                        <td class="text-center">
-                                            <div class="btn-group btn-group-sm">
-                                                <a href="{{ @BASE }}/kontrak/{{ @k.id }}/edit" class="btn btn-outline-secondary py-1 px-2" title="Edit Kontrak">
-                                                    <i class="bi bi-pencil"></i>
-                                                </a>
-                                                <form action="{{ @BASE }}/kontrak/{{ @k.id }}/hapus" method="POST" class="d-inline" onsubmit="return confirm('Hapus dokumen kontrak PKS ini?');">
-                                                    <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
-                                                    <button type="submit" class="btn btn-outline-danger py-1 px-2" title="Hapus Kontrak">
-                                                        <i class="bi bi-trash"></i>
-                                                    </button>
-                                                </form>
-                                            </div>
-                                        </td>
-                                    </check>
-                                </tr>
-                            </repeat>
-                        </tbody>
-                    </table>
-                </div>
-            </true>
-            <false>
-                <div class="text-center py-5">
-                    <i class="bi bi-journal-x fs-1 text-muted opacity-50 mb-2 d-block"></i>
-                    <h6 class="fw-bold text-secondary">Belum Ada Dokumen Kontrak PKS</h6>
-                    <p class="text-muted small mb-3">Dokumen kontrak kerjasama yang dibuat akan muncul di sini.</p>
-                    <check if="{{ @can_manage_kontrak }}">
-                        <a href="{{ @BASE }}/kontrak/tambah" class="btn btn-primary btn-sm">
-                            <i class="bi bi-plus-lg"></i> Tambah Kontrak Baru
-                        </a>
-                    </check>
-                </div>
-            </false>
+<!--
+    app/views/kontrak/index.html
+    Index kontrak (PKS): PO yang sudah disetujui dan didisposisikan ke Humas.
+    Fragment (dirender di dalam layout lewat $this->render()). Class berawalan "dpk-", id berawalan "dpk".
+    Data dari PksKontrakController::index(). Tab Selesai memuat tombol Unduh Word.
+-->
+<style>
+    .dpk-root {
+        --dpk-primary: var(--color-primary, #334155);
+        --dpk-primary-hover: var(--color-primary-hover, #1e293b);
+        --dpk-primary-light: var(--color-primary-light, #f1f5f9);
+        --dpk-border: var(--color-border, #e2e8f0);
+        --dpk-muted: var(--color-text-muted, #64748b);
+        --dpk-text: var(--color-text-main, #0f172a);
+        --dpk-display: var(--font-display, inherit);
+        --dpk-radius: var(--radius-md, 10px);
+        color: var(--dpk-text);
+    }
+    .dpk-root *, .dpk-root *::before, .dpk-root *::after { box-sizing: border-box; }
+    .dpk-root [hidden] { display: none !important; }
+    .dpk-root button { font-family: inherit; cursor: pointer; }
+    .dpk-root :focus-visible { outline: 2px solid var(--dpk-primary); outline-offset: 2px; }
+    
+    .dpk-head h1 { font-size: 1.35rem; font-weight: 800; margin: 0 0 4px; font-family: var(--dpk-display); }
+    .dpk-head p { margin: 0 0 16px; color: var(--dpk-muted); font-size: .85rem; max-width: 660px; }
+    .dpk-alert { background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; border-radius: var(--dpk-radius); padding: 10px 14px; margin-bottom: 14px; font-size: .85rem; }
+    
+    .dpk-btn { border: 1.5px solid var(--dpk-border); background: #fff; color: #334155; border-radius: 9px; padding: .5rem .95rem; font-size: .82rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; text-decoration: none; }
+    .dpk-btn:hover { border-color: var(--dpk-primary); color: var(--dpk-primary); }
+    .dpk-btn.pri { background: var(--dpk-primary); border-color: var(--dpk-primary); color: #fff; }
+    .dpk-btn.pri:hover { background: var(--dpk-primary-hover); color: #fff; }
+    .dpk-btn.sm { padding: .38rem .8rem; font-size: .78rem; }
+    .dpk-btn[disabled] { opacity: .65; cursor: progress; }
+    
+    .dpk-panel { background: #fff; border: 1px solid var(--dpk-border); border-radius: var(--dpk-radius); }
+    .dpk-tabs { display: flex; gap: 4px; padding: 8px; border-bottom: 1px solid var(--dpk-border); }
+    .dpk-tab { flex: 1; border: 0; background: transparent; padding: .65rem .5rem; border-radius: var(--dpk-radius); font-family: var(--dpk-display); font-weight: 700; font-size: .85rem; color: var(--dpk-muted); display: flex; align-items: center; justify-content: center; gap: 7px; }
+    .dpk-tab.on { background: var(--dpk-primary-light); color: var(--dpk-primary); }
+    .dpk-cnt { background: #e2e8f0; color: var(--dpk-muted); border-radius: 12px; padding: 1px 8px; font-size: .72rem; }
+    .dpk-tab.on .dpk-cnt { background: var(--dpk-primary); color: #fff; }
+    .dpk-body { padding: 16px; }
+    .dpk-search { width: 100%; max-width: 380px; border: 1px solid var(--dpk-border); border-radius: 9px; padding: .5rem .75rem; font: inherit; font-size: .85rem; margin-bottom: 14px; }
+    .dpk-search:focus { border-color: var(--dpk-primary); outline: 0; box-shadow: 0 0 0 3px rgba(51,65,85,.12); }
+    table.dpk-table { width: 100%; border-collapse: collapse; border: 0; }
+    .dpk-table th { text-align: left; font-size: .72rem; color: var(--dpk-muted); font-weight: 700; padding: 0 10px 10px; border-bottom: 1px solid var(--dpk-border); }
+    .dpk-table td { padding: 13px 10px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    .dpk-table tr:last-child td { border-bottom: 0; }
+    .dpk-table tbody tr:hover { background: #fcfcfd; }
+    .dpk-no { font-family: 'Courier New', monospace; font-weight: 700; font-size: .8rem; }
+    .dpk-sub { font-size: .75rem; color: var(--dpk-muted); }
+    .dpk-mitra { font-weight: 600; }
+    .dpk-judul { font-size: .8rem; color: var(--dpk-muted); max-width: 320px; }
+    .dpk-pill { font-size: .7rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; border: 1px solid transparent; }
+    .dpk-pill.amber { background: #fffbeb; color: #b45309; border-color: #fde68a; }
+    .dpk-pill.blue { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+    .dpk-pill.emerald { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
+    .dpk-pill.slate { background: #f1f5f9; color: #475569; border-color: #e2e8f0; }
+    .dpk-pill.tiny { font-size: .65rem; padding: 1px 8px; margin-top: 4px; }
+    .dpk-mini { margin-top: 6px; width: 130px; }
+    .dpk-mini .b { height: 5px; background: #e2e8f0; border-radius: 5px; overflow: hidden; }
+    .dpk-mini .b i { display: block; height: 100%; background: #2563eb; }
+    .dpk-mini .t { font-size: .68rem; color: var(--dpk-muted); margin-top: 2px; }
+    .dpk-acts { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: wrap; }
+    .dpk-empty { text-align: center; padding: 44px 16px; color: #94a3b8; font-size: .85rem; }
+    .dpk-empty i { display: block; font-size: 28px; margin-bottom: 6px; }
+    .dpk-mob { display: none; }
+    .dpk-pcard { border: 1px solid var(--dpk-border); border-radius: var(--dpk-radius); padding: 13px; margin-bottom: 10px; }
+    .dpk-pcard .foot { margin-top: 12px; padding-top: 12px; border-top: 1px solid #f1f5f9; }
+    .dpk-pcard .foot .dpk-acts .dpk-btn { flex: 1; }
+    
+    .dpk-toast { position: fixed; left: 50%; top: 16px; transform: translate(-50%, -14px); background: #1e293b; color: #fff; padding: 11px 16px; border-radius: 12px; font-size: .82rem; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 1100; max-width: calc(100vw - 24px); }
+    .dpk-toast.show { opacity: 1; transform: translate(-50%, 0); }
+    .dpk-toast.err { background: #b91c1c; }
+    
+    @media (max-width: 767.98px) {
+        .dpk-desk { display: none; }
+        .dpk-mob { display: block; }
+        .dpk-tab { font-size: .78rem; padding: .6rem .3rem; }
+    }
+    @media (prefers-reduced-motion: reduce) { .dpk-root * { transition: none !important; } }
+    </style>
+    
+    <div class="dpk-root" id="dpkRoot">
+        <div class="dpk-head">
+            <h1>Kontrak (PKS)</h1>
+            <p>PO yang sudah disetujui dan didisposisikan ke Humas. Pilih PO, lalu buat kontraknya. Data PO diambil otomatis ke form. Kontrak yang sudah selesai bisa diunduh sebagai Word di tab Selesai.</p>
+        </div>
+    
+        <check if="{{ @error_message }}">
+            <div class="dpk-alert" role="alert">{{ @error_message }}</div>
         </check>
+    
+        <div class="dpk-panel">
+            <div class="dpk-tabs" id="dpkTabs"></div>
+            <div class="dpk-body">
+                <input type="search" class="dpk-search" id="dpkCari" placeholder="Cari nomor PO, mitra, judul, atau divisi" aria-label="Cari PO">
+                <div id="dpkList"></div>
+            </div>
+        </div>
+    
+        <div class="dpk-toast" id="dpkToast" role="status"></div>
     </div>
-</div>
+    
+    <script>
+    (function () {
+        var BASE = '{{ @BASE }}';
+        var DATA = {{ @daftar_kontrak_json | raw }};
+        var tab = {{ @tab_awal_json | raw }};
+        var PESAN_AWAL = {{ @pesan_awal_json | raw }};
+        var BULAN_PENDEK = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
+        var TAB_LABEL = { baru: 'Perlu dibuat', draft: 'Draft', selesai: 'Selesai' };
+        var q = '';
+    
+        function $(id) { return document.getElementById(id); }
+        function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+        function rp(n) { return Math.round(n).toLocaleString('id-ID'); }
+        function tglPendek(s) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || ''); return m ? (+m[3]) + ' ' + BULAN_PENDEK[+m[2] - 1] + ' ' + m[1] : '-'; }
+    
+        function statusHtml(p) {
+            if (p.status === 'baru') { return '<span class="dpk-pill amber"><i class="bi bi-hourglass-split"></i>Belum dibuat</span>'; }
+            if (p.status === 'selesai') { return '<span class="dpk-pill emerald"><i class="bi bi-check-circle"></i>Selesai</span><div class="dpk-sub" style="margin-top:4px;">' + esc(p.nomor_pks) + '</div>'; }
+            var pct = p.total ? Math.round(p.terisi / p.total * 100) : 0;
+            return '<span class="dpk-pill blue"><i class="bi bi-pencil-square"></i>Draft</span><div class="dpk-mini"><div class="b"><i style="width:' + pct + '%"></i></div><div class="t">' + p.terisi + ' dari ' + p.total + ' isian wajib</div></div>';
+        }
+    
+        function divisiHtml(p) { return p.divisi ? '<span class="dpk-pill slate tiny">' + esc(p.divisi) + '</span>' : ''; }
+    
+        function aksiHtml(p) {
+            var form = BASE + '/kontrak/' + p.id + '/form';
+            if (p.status === 'selesai') {
+                return '<div class="dpk-acts"><button type="button" class="dpk-btn pri sm" data-unduh="' + p.id + '"><i class="bi bi-file-earmark-word"></i>Unduh Word</button>' +
+                    '<a class="dpk-btn sm" href="' + form + '"><i class="bi bi-eye"></i>Buka</a></div>';
+            }
+            var label = p.status === 'baru' ? '<i class="bi bi-file-earmark-plus"></i>Buat kontrak' : '<i class="bi bi-pencil"></i>Lanjutkan';
+            return '<div class="dpk-acts"><a class="dpk-btn pri sm" href="' + form + '">' + label + '</a></div>';
+        }
+    
+        function render() {
+            var jml = { baru: 0, draft: 0, selesai: 0 };
+            DATA.forEach(function (p) { jml[p.status]++; });
+            $('dpkTabs').innerHTML = ['baru', 'draft', 'selesai'].map(function (k) {
+                return '<button type="button" class="dpk-tab' + (tab === k ? ' on' : '') + '" data-tab="' + k + '">' + TAB_LABEL[k] + ' <span class="dpk-cnt">' + jml[k] + '</span></button>';
+            }).join('');
+    
+            var rows = DATA.filter(function (p) {
+                if (p.status !== tab) { return false; }
+                if (q) { return (p.nomor + ' ' + p.mitra + ' ' + p.judul + ' ' + (p.divisi || '')).toLowerCase().indexOf(q) !== -1; }
+                return true;
+            });
+    
+            if (!rows.length) {
+                var pesan = q ? 'Tidak ada PO yang cocok dengan pencarian.' : (tab === 'baru' ? 'Semua PO sudah dibuatkan kontrak.' : 'Belum ada kontrak di tab ini.');
+                $('dpkList').innerHTML = '<div class="dpk-empty"><i class="bi bi-inbox"></i>' + pesan + '</div>';
+                return;
+            }
+    
+            var tabel = '<div class="dpk-desk"><table class="dpk-table"><thead><tr><th style="width:170px;">Nomor PO</th><th>Mitra dan kegiatan</th><th>Status kontrak</th><th></th></tr></thead><tbody>' +
+                rows.map(function (p) {
+                    return '<tr><td><div class="dpk-no">' + esc(p.nomor) + '</div><div class="dpk-sub">Disposisi ' + tglPendek(p.disposisi) + '</div>' + divisiHtml(p) + '</td>' +
+                        '<td><div class="dpk-mitra">' + esc(p.mitra) + '</div><div class="dpk-judul">' + esc(p.judul) + '</div><div class="dpk-sub">Nilai Rp ' + rp(p.biaya) + '</div></td>' +
+                        '<td>' + statusHtml(p) + '</td><td>' + aksiHtml(p) + '</td></tr>';
+                }).join('') + '</tbody></table></div>';
+            var kartu = '<div class="dpk-mob">' + rows.map(function (p) {
+                return '<div class="dpk-pcard"><div class="dpk-no">' + esc(p.nomor) + '</div>' + divisiHtml(p) + '<div class="dpk-mitra" style="margin-top:4px;">' + esc(p.mitra) + '</div>' +
+                    '<div class="dpk-judul" style="max-width:none;margin:2px 0 6px;">' + esc(p.judul) + '</div><div class="dpk-sub" style="margin-bottom:8px;">Disposisi ' + tglPendek(p.disposisi) + ' &nbsp;|&nbsp; Rp ' + rp(p.biaya) + '</div>' +
+                    statusHtml(p) + '<div class="foot">' + aksiHtml(p) + '</div></div>';
+            }).join('') + '</div>';
+            $('dpkList').innerHTML = tabel + kartu;
+        }
+    
+        /* ---------- Unduh Word: lewat fetch supaya kegagalan tampil sebagai pesan, bukan halaman error ---------- */
+        function unduhWord(id, tombol) {
+            var awal = tombol.innerHTML;
+            tombol.disabled = true;
+            tombol.innerHTML = '<i class="bi bi-hourglass-split"></i>Menyiapkan...';
+            fetch(BASE + '/kontrak/' + id + '/unduh', { credentials: 'same-origin' }).then(function (r) {
+                var tipe = r.headers.get('Content-Type') || '';
+                if (!r.ok || tipe.indexOf('wordprocessingml') === -1) { throw new Error('Server membalas ' + r.status + '. Dokumen Word gagal dibuat: cek template di storage/templates, ekstensi zip PHP, dan log server.'); }
+                var cd = r.headers.get('Content-Disposition') || '';
+                var m = /filename="?([^";]+)"?/.exec(cd);
+                var nama = m ? m[1] : 'PKS.docx';
+                return r.blob().then(function (blob) {
+                    var url = URL.createObjectURL(blob);
+                    var a = document.createElement('a');
+                    a.href = url; a.download = nama;
+                    document.body.appendChild(a); a.click(); a.remove();
+                    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+                    toast('Mengunduh ' + nama);
+                });
+            }).catch(function (e) {
+                toast(e.message, true);
+            }).then(function () {
+                tombol.disabled = false;
+                tombol.innerHTML = awal;
+            });
+        }
+    
+        var toastTimer;
+        function toast(text, galat) {
+            var t = $('dpkToast');
+            t.textContent = text;
+            t.classList.toggle('err', !!galat);
+            t.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(function () { t.classList.remove('show'); }, galat ? 7000 : 4200);
+        }
+    
+        $('dpkRoot').addEventListener('click', function (e) {
+            var el;
+            if ((el = e.target.closest('[data-tab]'))) { tab = el.getAttribute('data-tab'); render(); return; }
+            if ((el = e.target.closest('[data-unduh]'))) { unduhWord(el.getAttribute('data-unduh'), el); return; }
+        });
+        $('dpkCari').addEventListener('input', function () { q = this.value.trim().toLowerCase(); render(); });
+    
+        render();
+        if (PESAN_AWAL) { toast(PESAN_AWAL); }
+    })();
+    </script>
+    

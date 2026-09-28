@@ -80,10 +80,33 @@
     .dpo-chat-input { display: flex; gap: 8px; padding: 10px 18px; background: #fff; border-top: 1px solid var(--dpo-border); align-items: flex-end; }
     .dpo-chat-input textarea { flex: 1; resize: none; max-height: 90px; }
     
+    /* ---------- Popup konfirmasi / alert ---------- */
+    .dpo-dlg { position: fixed; inset: 0; z-index: 1090; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(15,23,42,.55); opacity: 0; transition: opacity .15s; }
+    .dpo-dlg.show { opacity: 1; }
+    .dpo-dlg-box { background: #fff; border-radius: 16px; width: 100%; max-width: 400px; padding: 28px 24px 22px; text-align: center; box-shadow: 0 24px 60px rgba(15,23,42,.3); transform: translateY(8px) scale(.98); transition: transform .15s; }
+    .dpo-dlg.show .dpo-dlg-box { transform: none; }
+    .dpo-dlg-icon { width: 60px; height: 60px; border-radius: 50%; display: grid; place-items: center; margin: 0 auto 14px; font-size: 28px; }
+    .dpo-dlg-icon.ok { background: #ecfdf5; color: #059669; }
+    .dpo-dlg-icon.warn { background: #fffbeb; color: #d97706; }
+    .dpo-dlg-icon.err { background: #fff1f2; color: #e11d48; }
+    .dpo-dlg-icon.info { background: #eff6ff; color: #2563eb; }
+    .dpo-dlg-box h5 { font-family: var(--dpo-display); font-size: 1.05rem; font-weight: 800; margin: 0 0 6px; }
+    .dpo-dlg-box p { color: var(--dpo-muted); font-size: .85rem; margin: 0 0 14px; overflow-wrap: anywhere; }
+    .dpo-dlg-info { background: #f8fafc; border: 1px solid var(--dpo-border); border-radius: 10px; padding: 8px 12px; margin: 0 0 16px; font-size: .78rem; text-align: left; }
+    .dpo-dlg-info b { display: block; font-family: 'Courier New', monospace; font-size: .78rem; }
+    .dpo-dlg-btns { display: flex; gap: 10px; }
+    .dpo-dlg-btns .btn { flex: 1; justify-content: center; }
+    
     .dpo-toast { position: fixed; left: 50%; top: 16px; transform: translate(-50%, -14px); background: #1e293b; color: #fff; padding: 11px 14px; border-radius: 12px; font-size: .82rem; display: flex; gap: 12px; align-items: center; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 1080; max-width: calc(100vw - 24px); }
     .dpo-toast.show { opacity: 1; transform: translate(-50%, 0); }
     .dpo-toast.err { background: #b91c1c; }
     
+    @media (max-width: 575.98px) {
+        .dpo-dock-bar { flex-wrap: wrap; }
+        .dpo-dock-bar > .btn, .dpo-dock-right { flex: 1 1 100%; }
+        .dpo-dock-right .btn { flex: 1; }
+        .dpo-dock-right .dpo-lock-note { flex: 1 1 100%; }
+    }
     @media (max-width: 767.98px) { .dpo-desk { display: none; } .dpo-mob { display: block; } .dpo-tab { font-size: .78rem; padding: .6rem .3rem; } }
     @media (prefers-reduced-motion: reduce) { .dpo-root * { transition: none !important; animation: none !important; } }
     </style>
@@ -129,6 +152,19 @@
                 </div>
             </footer>
         </section>
+    
+        <div class="dpo-dlg" id="dpoDlg" hidden>
+            <div class="dpo-dlg-box" role="alertdialog" aria-modal="true" aria-labelledby="dpoDlgTitle" aria-describedby="dpoDlgMsg">
+                <div class="dpo-dlg-icon" id="dpoDlgIcon"></div>
+                <h5 id="dpoDlgTitle"></h5>
+                <p id="dpoDlgMsg"></p>
+                <div class="dpo-dlg-info" id="dpoDlgInfo" hidden></div>
+                <div class="dpo-dlg-btns">
+                    <button type="button" class="btn btn-white" id="dpoDlgCancel">Batal</button>
+                    <button type="button" class="btn btn-primary" id="dpoDlgOk">Ya</button>
+                </div>
+            </div>
+        </div>
     
         <div class="dpo-toast" id="dpoToast" role="status"></div>
     </div>
@@ -422,27 +458,83 @@
         function setujui() {
             var p = curPo();
             if (!p || MODE !== 'katim' || p.status_review === 'disetujui') { return; }
-            if (!window.confirm('Setujui PO ' + p.nomor + ' dan disposisikan ke Humas?\n\nSetelah disetujui, PO dikunci dan tidak bisa diedit pembuat sampai Anda membukanya kembali.')) { return; }
-            $('dpoBtnApprove').disabled = true;
-            post(URL_PO(p.id) + '/setujui').then(function () {
-                p.status_review = 'disetujui';
-                renderAll();
-                if (chatOpen) { muatChat(true); }
-                toast('PO ' + p.nomor + ' disetujui dan didisposisikan ke Humas.');
-            }).catch(function (e) { toast(e.message, true); renderDock(); });
+            dialog({
+                tipe: 'ok', judul: 'Setujui dan disposisi ke Humas?',
+                pesan: 'Setelah disetujui, PO dikunci dan tidak bisa diedit pembuat sampai Anda membukanya kembali.',
+                info: [p.nomor, p.mitra], ya: 'Ya, setujui'
+            }).then(function (ya) {
+                if (!ya) { return; }
+                $('dpoBtnApprove').disabled = true;
+                return post(URL_PO(p.id) + '/setujui').then(function () {
+                    p.status_review = 'disetujui';
+                    renderAll();
+                    if (chatOpen) { muatChat(true); }
+                    return dialog({ tipe: 'ok', judul: 'PO disetujui', pesan: 'PO ' + p.nomor + ' sudah didisposisikan ke Humas dan dikunci.', ya: 'Tutup', batal: null });
+                });
+            }).catch(function (e) {
+                renderDock();
+                return dialog({ tipe: 'err', judul: 'Gagal menyetujui PO', pesan: e.message, ya: 'Tutup', batal: null });
+            });
         }
     
         function bukaKembali() {
             var p = curPo();
             if (!p || MODE !== 'katim' || p.status_review !== 'disetujui') { return; }
-            if (!window.confirm('Buka kembali PO ' + p.nomor + '?\n\nDisposisi ke Humas dibatalkan dan pembuat bisa mengedit PO. Anda perlu menyetujui ulang setelah diperbaiki.')) { return; }
-            $('dpoBtnReopen').disabled = true;
-            post(URL_PO(p.id) + '/buka-kembali').then(function () {
-                p.status_review = 'revisi';
-                renderAll();
-                if (chatOpen) { muatChat(true); }
-                toast('PO ' + p.nomor + ' dibuka kembali. Pembuat bisa mengedit.');
-            }).catch(function (e) { toast(e.message, true); renderDock(); });
+            dialog({
+                tipe: 'warn', ikon: 'bi-unlock', judul: 'Buka kembali PO ini?',
+                pesan: 'Disposisi ke Humas dibatalkan dan pembuat bisa mengedit PO. Anda perlu menyetujui ulang setelah diperbaiki.',
+                info: [p.nomor, p.mitra], ya: 'Ya, buka kembali'
+            }).then(function (ya) {
+                if (!ya) { return; }
+                $('dpoBtnReopen').disabled = true;
+                return post(URL_PO(p.id) + '/buka-kembali').then(function () {
+                    p.status_review = 'revisi';
+                    renderAll();
+                    if (chatOpen) { muatChat(true); }
+                    return dialog({ tipe: 'info', judul: 'PO dibuka kembali', pesan: 'Pembuat sekarang bisa mengedit PO ' + p.nomor + '.', ya: 'Tutup', batal: null });
+                });
+            }).catch(function (e) {
+                renderDock();
+                return dialog({ tipe: 'err', judul: 'Gagal membuka kembali PO', pesan: e.message, ya: 'Tutup', batal: null });
+            });
+        }
+    
+        /* ---------- Popup konfirmasi / alert ----------
+           dialog({tipe:'ok|warn|err|info', judul, pesan, info, ya, batal})  ->  Promise<boolean>
+           batal:null = mode alert (satu tombol). Menutup lewat tombol, klik di luar kotak, atau Escape = false. */
+        var dlgResolve = null, dlgFokus = null, dlgTimer = null;
+        var IKON_DLG = { ok: 'bi-check2-circle', warn: 'bi-exclamation-triangle', err: 'bi-x-circle', info: 'bi-info-circle' };
+    
+        function dialog(o) {
+            return new Promise(function (resolve) {
+                if (dlgResolve) { dlgResolve(false); }
+                clearTimeout(dlgTimer);
+                dlgResolve = resolve;
+                dlgFokus = document.activeElement;
+                var tipe = o.tipe || 'info';
+                $('dpoDlgIcon').className = 'dpo-dlg-icon ' + tipe;
+                $('dpoDlgIcon').innerHTML = '<i class="bi ' + (o.ikon || IKON_DLG[tipe]) + '"></i>';
+                $('dpoDlgTitle').textContent = o.judul || '';
+                $('dpoDlgMsg').textContent = o.pesan || '';
+                $('dpoDlgInfo').hidden = !o.info;
+                $('dpoDlgInfo').innerHTML = o.info ? '<b>' + esc(o.info[0]) + '</b>' + esc(o.info[1] || '') : '';
+                $('dpoDlgCancel').hidden = o.batal === null;
+                $('dpoDlgCancel').textContent = o.batal || 'Batal';
+                $('dpoDlgOk').textContent = o.ya || 'OK';
+                $('dpoDlg').hidden = false;
+                requestAnimationFrame(function () { $('dpoDlg').classList.add('show'); });
+                setTimeout(function () { $('dpoDlgOk').focus(); }, 30);
+            });
+        }
+    
+        function tutupDialog(hasil) {
+            if (!dlgResolve) { return; }
+            var r = dlgResolve;
+            dlgResolve = null;
+            $('dpoDlg').classList.remove('show');
+            dlgTimer = setTimeout(function () { $('dpoDlg').hidden = true; }, 160);
+            if (dlgFokus && dlgFokus.focus) { try { dlgFokus.focus(); } catch (e) {} }
+            r(hasil);
         }
     
         /* ---------- Toast ---------- */
@@ -481,7 +573,20 @@
         $('dpoBtnReopen').addEventListener('click', bukaKembali);
         $('dpoSheetClose').addEventListener('click', closeSheet);
         $('dpoScrim').addEventListener('click', closeSheet);
+        $('dpoDlgOk').addEventListener('click', function () { tutupDialog(true); });
+        $('dpoDlgCancel').addEventListener('click', function () { tutupDialog(false); });
+        $('dpoDlg').addEventListener('click', function (e) { if (e.target === $('dpoDlg')) { tutupDialog(false); } });
         document.addEventListener('keydown', function (e) {
+            if (dlgResolve) {
+                if (e.key === 'Escape') { e.preventDefault(); tutupDialog(false); return; }
+                if (e.key === 'Tab') {
+                    var tombol = [$('dpoDlgCancel'), $('dpoDlgOk')].filter(function (b) { return !b.hidden; });
+                    var i = tombol.indexOf(document.activeElement);
+                    e.preventDefault();
+                    tombol[(i + (e.shiftKey ? tombol.length - 1 : 1)) % tombol.length].focus();
+                }
+                return;
+            }
             if (e.key === 'Escape' && $('dpoSheet').classList.contains('open')) { closeSheet(); }
         });
     

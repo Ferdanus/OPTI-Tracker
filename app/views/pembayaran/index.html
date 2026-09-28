@@ -372,6 +372,72 @@
         </check>
     </div>
 </div> -->
+<style>
+    .rpd-modal { border: 0; border-radius: var(--radius-lg, 14px); overflow: hidden; box-shadow: var(--shadow-lg, 0 10px 25px rgba(0,0,0,.18)); }
+    .rpd-head { display: flex; align-items: center; gap: 14px; padding: 18px 22px; border-bottom: 1px solid var(--color-border, #e2e8f0); background: linear-gradient(180deg, #fff, #f8fafc); }
+    .rpd-icon { width: 46px; height: 46px; border-radius: 13px; background: var(--color-primary-light, #f1f5f9); color: var(--color-primary, #334155); display: grid; place-items: center; font-size: 22px; flex-shrink: 0; }
+    .rpd-headtext { flex: 1; min-width: 0; }
+    .rpd-head .modal-title { font-family: var(--font-display, inherit); font-weight: 800; font-size: 1.05rem; margin: 0; color: var(--color-text-main, #0f172a); }
+    .rpd-sub { font-size: .8rem; color: var(--color-text-muted, #64748b); margin-top: 2px; overflow-wrap: anywhere; }
+    .rpd-sub .no { font-family: 'Courier New', monospace; font-weight: 700; color: var(--color-text-main, #0f172a); }
+    .rpd-head .btn-close { margin: 0; flex-shrink: 0; }
+    
+    .rpd-body { padding: 18px 22px 20px; background: #f8fafc; }
+    .rpd-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+    .rpd-stat { background: #fff; border: 1px solid var(--color-border, #e2e8f0); border-radius: var(--radius-md, 10px); padding: 11px 14px; min-width: 0; }
+    .rpd-stat .l { font-size: .7rem; font-weight: 600; color: var(--color-text-muted, #64748b); margin-bottom: 3px; }
+    .rpd-stat .v { font-family: var(--font-display, inherit); font-weight: 800; font-size: 1rem; color: var(--color-text-main, #0f172a); overflow-wrap: anywhere; }
+    .rpd-stat .v.ok { color: #047857; }
+    .rpd-stat .v.warn { color: #b45309; }
+    .rpd-progress { background: #fff; border: 1px solid var(--color-border, #e2e8f0); border-radius: var(--radius-md, 10px); padding: 11px 14px; margin-bottom: 16px; }
+    .rpd-progress .t { display: flex; justify-content: space-between; gap: 8px; font-size: .75rem; color: var(--color-text-muted, #64748b); margin-bottom: 6px; }
+    .rpd-progress .t b { color: var(--color-text-main, #0f172a); }
+    .rpd-progress .b { height: 7px; background: #e2e8f0; border-radius: 7px; overflow: hidden; }
+    .rpd-progress .b i { display: block; height: 100%; background: #059669; border-radius: 7px; }
+    
+    .rpd-list { list-style: none; margin: 0; padding: 0; }
+    .rpd-item { position: relative; padding-left: 30px; padding-bottom: 12px; }
+    .rpd-item:last-child { padding-bottom: 0; }
+    .rpd-item::before { content: ''; position: absolute; left: 9px; top: 22px; bottom: -2px; width: 2px; background: #e2e8f0; }
+    .rpd-item:last-child::before { display: none; }
+    .rpd-dot { position: absolute; left: 0; top: 14px; width: 20px; height: 20px; border-radius: 50%; background: #fff; border: 2px solid #94a3b8; display: grid; place-items: center; font-size: 11px; line-height: 1; }
+    .rpd-item.ok .rpd-dot { border-color: #059669; color: #059669; }
+    .rpd-item.warn .rpd-dot { border-color: #d97706; color: #d97706; }
+    .rpd-item.err .rpd-dot { border-color: #e11d48; color: #e11d48; }
+    .rpd-card { background: #fff; border: 1px solid var(--color-border, #e2e8f0); border-radius: var(--radius-md, 10px); padding: 13px 15px; }
+    .rpd-item.err .rpd-card { background: #fffafb; border-color: #fecdd3; }
+    .rpd-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .rpd-termin { font-family: var(--font-display, inherit); font-weight: 700; font-size: .85rem; color: var(--color-text-main, #0f172a); }
+    .rpd-tgl { font-size: .75rem; color: var(--color-text-muted, #64748b); margin-top: 1px; }
+    .rpd-nominal { font-family: var(--font-display, inherit); font-weight: 800; font-size: 1.05rem; color: #047857; white-space: nowrap; }
+    .rpd-item.warn .rpd-nominal { color: #b45309; }
+    .rpd-item.err .rpd-nominal { color: #9f1239; text-decoration: line-through; }
+    .rpd-detail { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 16px; margin-top: 11px; padding-top: 11px; border-top: 1px dashed var(--color-border, #e2e8f0); }
+    .rpd-detail .l { font-size: .68rem; font-weight: 600; color: var(--color-text-muted, #64748b); }
+    .rpd-detail .v { font-size: .8rem; color: var(--color-text-main, #0f172a); overflow-wrap: anywhere; }
+    .rpd-detail .v.mono { font-family: 'Courier New', monospace; }
+    .rpd-detail .full { grid-column: 1 / -1; }
+    .rpd-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 11px; }
+    .rpd-nobukti { font-size: .75rem; color: #94a3b8; }
+    .rpd-empty { text-align: center; padding: 42px 16px; color: #94a3b8; font-size: .85rem; background: #fff; border: 1px dashed var(--color-border, #e2e8f0); border-radius: var(--radius-md, 10px); }
+    .rpd-empty i { display: block; font-size: 30px; margin-bottom: 6px; }
+    
+    .rpd-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 22px; border-top: 1px solid var(--color-border, #e2e8f0); background: #fff; }
+    .rpd-total .l { font-size: .7rem; font-weight: 600; color: var(--color-text-muted, #64748b); display: block; }
+    .rpd-total .v { font-family: var(--font-display, inherit); font-weight: 800; font-size: 1.2rem; color: #047857; line-height: 1.2; }
+    .rpd-total .n { display: block; font-size: .7rem; color: #b45309; margin-top: 1px; }
+    .rpd-total .n:empty { display: none; }
+    
+    @media (max-width: 575.98px) {
+        .rpd-head { padding: 14px 16px; }
+        .rpd-body { padding: 14px 14px 16px; }
+        .rpd-foot { padding: 12px 16px; }
+        .rpd-stats { grid-template-columns: 1fr 1fr; }
+        .rpd-stats .rpd-stat:first-child { grid-column: 1 / -1; }
+        .rpd-top { flex-direction: column; gap: 4px; }
+        .rpd-detail { grid-template-columns: 1fr; }
+    }
+    </style>
 
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
     <div>
@@ -561,9 +627,9 @@
                                     </td>
                                     <td class="text-center">
                                         <div class="d-inline-flex align-items-center gap-1">
-                                            <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 d-inline-flex align-items-center gap-1"
+                                            <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 d-inline-flex align-items-center gap-1 js-detail-bayar"
                                                     title="Lihat Riwayat Pembayaran"
-                                                    onclick="bukaDetailPembayaran({{ @rp.order_id }}, '{{ @rp.nomor_po }}', '{{ @rp.nama_perusahaan }}')">
+                                                    data-order-id="{{ @rp.order_id }}" data-nomor-po="{{ @rp.nomor_po }}" data-mitra="{{ @rp.nama_perusahaan }}" data-nilai="{{ @rp.biaya }}">
                                                 <i class="bi bi-clock-history"></i> <span>Detail</span>
                                             </button>
                                             <check if="{{ @rp.sisa_piutang > 0 }}">
@@ -752,34 +818,29 @@
 <!-- ======================================================== -->
 <!-- MODAL: RIWAYAT PEMBAYARAN PER ORDER -->
 <!-- ======================================================== -->
-<div class="modal fade" id="modalDetailPembayaran" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="modalDetailPembayaran" tabindex="-1" aria-labelledby="detailPembayaranJudul" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header">
-                <h6 class="modal-title fw-bold">
-                    <i class="bi bi-clock-history text-primary me-2"></i>Riwayat Pembayaran
-                    <span id="detailPoLabel" class="text-muted fw-normal small d-block mt-1"></span>
-                </h6>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="bg-light">
-                            <tr>
-                                <th>Tanggal</th>
-                                <th class="text-center">Termin</th>
-                                <th class="text-end">Nominal</th>
-                                <th>Keterangan</th>
-                            </tr>
-                        </thead>
-                        <tbody id="detailPembayaranBody"></tbody>
-                    </table>
+        <div class="modal-content rpd-modal">
+            <div class="modal-header rpd-head">
+                <div class="rpd-icon"><i class="bi bi-receipt-cutoff"></i></div>
+                <div class="rpd-headtext">
+                    <h6 class="modal-title" id="detailPembayaranJudul">Riwayat Pembayaran</h6>
+                    <div class="rpd-sub" id="detailPoLabel"></div>
                 </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
             </div>
-            <div class="modal-footer justify-content-between">
-                <div class="fw-bold text-dark">Total: <span id="detailPembayaranTotal" class="text-success">Rp 0</span></div>
-                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
+            <div class="modal-body rpd-body">
+                <div class="rpd-stats" id="detailPembayaranStat"></div>
+                <div class="rpd-progress" id="detailPembayaranProgress" hidden></div>
+                <ol class="rpd-list" id="detailPembayaranBody"></ol>
+            </div>
+            <div class="modal-footer rpd-foot">
+                <div class="rpd-total">
+                    <span class="l" id="detailPembayaranTotalLabel">Total terverifikasi</span>
+                    <span class="v" id="detailPembayaranTotal">Rp 0</span>
+                    <span class="n" id="detailPembayaranCatatan"></span>
+                </div>
+                <button type="button" class="btn btn-white btn-sm" data-bs-dismiss="modal">Tutup</button>
             </div>
         </div>
     </div>
@@ -787,40 +848,115 @@
 
 <script>
 var semuaPembayaran = {{ @daftar_pembayaran_json | raw }};
+var RPD_BASE = '{{ @BASE }}';
 
-function bukaDetailPembayaran(orderId, nomorPo, namaPerusahaan) {
-    var label = nomorPo && nomorPo !== '' ? nomorPo : 'Order tanpa PO';
-    document.getElementById('detailPoLabel').textContent = label + ' — ' + namaPerusahaan;
+/* ===== Modal riwayat pembayaran ===== */
+var RPD_BULAN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
+var RPD_STATUS = {
+    terverifikasi: { kelas: 'ok',   pill: 'emerald', ikon: 'bi-check-circle',    label: 'Terverifikasi' },
+    menunggu:      { kelas: 'warn', pill: 'amber',   ikon: 'bi-hourglass-split', label: 'Menunggu verifikasi' },
+    ditolak:       { kelas: 'err',  pill: 'rose',    ikon: 'bi-x-circle',        label: 'Ditolak' },
+    tercatat:      { kelas: 'ok',   pill: 'slate',   ikon: 'bi-check2',          label: 'Tercatat' }   // data tanpa kolom status_verifikasi
+};
 
-    var body = document.getElementById('detailPembayaranBody');
-    body.innerHTML = '';
+function rpdEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function rpdRp(n) { return 'Rp ' + Math.round(parseFloat(n) || 0).toLocaleString('id-ID'); }
+function rpdAda(p, k) { return Object.prototype.hasOwnProperty.call(p, k); }
+function rpdTgl(s) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s || '');
+    return m ? (+m[3]) + ' ' + RPD_BULAN[+m[2] - 1] + ' ' + m[1] : '-';
+}
+function rpdStatus(p) {
+    if (!rpdAda(p, 'status_verifikasi') || !p.status_verifikasi) { return 'tercatat'; }
+    return RPD_STATUS[p.status_verifikasi] ? p.status_verifikasi : 'menunggu';
+}
+function rpdBukti(p) {
+    if (!rpdAda(p, 'bukti_bayar')) { return ''; }   // kolom tidak dikirim controller: tidak ditampilkan
+    if (!p.bukti_bayar) { return '<span class="rpd-nobukti"><i class="bi bi-file-earmark-x me-1"></i>Tanpa bukti bayar</span>'; }
+    var kunci = p.bukti_token || p.id;
+    return '<a class="btn btn-white btn-sm" href="' + RPD_BASE + '/pembayaran/bukti/' + encodeURIComponent(kunci) + '" target="_blank" rel="noopener"><i class="bi bi-file-earmark-text me-1"></i>Lihat bukti</a>';
+}
 
-    var riwayat = semuaPembayaran.filter(function (p) {
-        return parseInt(p.order_id, 10) === parseInt(orderId, 10);
+/* Mengisi modal. riwayat = baris opti_pembayaran satu order; meta = { label, mitra, nilai } (nilai kontrak boleh kosong). */
+function renderRiwayatPembayaran(riwayat, meta) {
+    meta = meta || {};
+    riwayat = riwayat.slice().sort(function (a, b) {
+        return (parseInt(a.termin_ke, 10) || 0) - (parseInt(b.termin_ke, 10) || 0) || String(a.tanggal_bayar).localeCompare(String(b.tanggal_bayar));
     });
 
-    var total = 0;
-    if (riwayat.length === 0) {
-        body.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">Belum ada transaksi untuk order ini.</td></tr>';
-    } else {
-        riwayat.forEach(function (p) {
-            total += parseFloat(p.jumlah) || 0;
-            var tgl = new Date(p.tanggal_bayar);
-            var tglLabel = ('0' + tgl.getDate()).slice(-2) + '/' + ('0' + (tgl.getMonth() + 1)).slice(-2) + '/' + tgl.getFullYear();
+    document.getElementById('detailPoLabel').innerHTML =
+        (meta.label ? '<span class="no">' + rpdEsc(meta.label) + '</span>' : '') + (meta.label && meta.mitra ? ' &nbsp;|&nbsp; ' : '') + rpdEsc(meta.mitra || '');
 
-            var tr = document.createElement('tr');
-            tr.innerHTML =
-                '<td>' + tglLabel + '</td>' +
-                '<td class="text-center"><span class="badge badge-pill-primary">Termin ke-' + p.termin_ke + '</span></td>' +
-                '<td class="text-end fw-semibold text-success">Rp ' + (parseFloat(p.jumlah) || 0).toLocaleString('id-ID') + '</td>' +
-                '<td class="small text-muted">' + (p.keterangan || '-') + '</td>';
-            body.appendChild(tr);
-        });
+    var adaStatus = riwayat.some(function (p) { return rpdAda(p, 'status_verifikasi') && p.status_verifikasi; });
+    var terhitung = 0, menunggu = 0, tglTerakhir = '';
+    riwayat.forEach(function (p) {
+        var j = parseFloat(p.jumlah) || 0, st = rpdStatus(p);
+        if (st === 'terverifikasi' || st === 'tercatat') {
+            terhitung += j;
+            if (String(p.tanggal_bayar) > tglTerakhir) { tglTerakhir = String(p.tanggal_bayar); }
+        } else if (st === 'menunggu') {
+            menunggu += j;
+        }
+    });
+
+    var nilai = parseFloat(meta.nilai) || 0;
+    var sisa = nilai > 0 ? Math.max(0, nilai - terhitung) : null;
+
+    var tile = function (l, v, kelas) { return '<div class="rpd-stat"><div class="l">' + l + '</div><div class="v ' + (kelas || '') + '">' + v + '</div></div>'; };
+    document.getElementById('detailPembayaranStat').innerHTML =
+        tile('Jumlah termin', riwayat.length + ' termin') +
+        tile('Terakhir dibayar', tglTerakhir ? rpdTgl(tglTerakhir) : '-') +
+        (sisa === null
+            ? tile('Status', terhitung > 0 && menunggu === 0 ? 'Terbayar' : (menunggu > 0 ? 'Ada yang menunggu' : 'Belum ada'), terhitung > 0 && menunggu === 0 ? 'ok' : 'warn')
+            : tile('Sisa tagihan', sisa === 0 ? 'Lunas' : rpdRp(sisa), sisa === 0 ? 'ok' : 'warn'));
+
+    var prog = document.getElementById('detailPembayaranProgress');
+    if (nilai > 0) {
+        var pct = Math.min(100, Math.round(terhitung / nilai * 100));
+        prog.hidden = false;
+        prog.innerHTML = '<div class="t"><span>Terbayar <b>' + rpdRp(terhitung) + '</b> dari nilai kontrak <b>' + rpdRp(nilai) + '</b></span><b>' + pct + '%</b></div><div class="b"><i style="width:' + pct + '%"></i></div>';
+    } else {
+        prog.hidden = true;
+        prog.innerHTML = '';
     }
 
-    document.getElementById('detailPembayaranTotal').textContent = 'Rp ' + total.toLocaleString('id-ID');
+    var body = document.getElementById('detailPembayaranBody');
+    if (!riwayat.length) {
+        body.innerHTML = '<li><div class="rpd-empty"><i class="bi bi-inbox"></i>Belum ada transaksi untuk order ini.</div></li>';
+    } else {
+        body.innerHTML = riwayat.map(function (p) {
+            var kunciSt = rpdStatus(p), st = RPD_STATUS[kunciSt];
+            var rincian = '';
+            if (rpdAda(p, 'metode_pembayaran')) { rincian += '<div><div class="l">Metode pembayaran</div><div class="v">' + rpdEsc(p.metode_pembayaran || '-') + '</div></div>'; }
+            if (rpdAda(p, 'nomor_transaksi_ntpn')) { rincian += '<div><div class="l">No. transaksi / NTPN</div><div class="v mono">' + rpdEsc(p.nomor_transaksi_ntpn || '-') + '</div></div>'; }
+            if (p.keterangan) { rincian += '<div class="full"><div class="l">Keterangan</div><div class="v">' + rpdEsc(p.keterangan) + '</div></div>'; }
+            return '<li class="rpd-item ' + st.kelas + '"><span class="rpd-dot"><i class="bi ' + st.ikon + '"></i></span><div class="rpd-card">' +
+                '<div class="rpd-top"><div><div class="rpd-termin">Termin ke-' + rpdEsc(p.termin_ke) + '</div><div class="rpd-tgl">' + rpdTgl(p.tanggal_bayar) + '</div></div>' +
+                '<div class="rpd-nominal">' + rpdRp(p.jumlah) + '</div></div>' +
+                (rincian ? '<div class="rpd-detail">' + rincian + '</div>' : '') +
+                '<div class="rpd-bar"><span class="status-pill status-pill-' + st.pill + '"><i class="bi ' + st.ikon + '"></i>' + st.label + '</span>' + rpdBukti(p) + '</div>' +
+                '</div></li>';
+        }).join('');
+    }
 
+    document.getElementById('detailPembayaranTotalLabel').textContent = adaStatus ? 'Total terverifikasi' : 'Total dibayar';
+    document.getElementById('detailPembayaranTotal').textContent = rpdRp(terhitung);
+    document.getElementById('detailPembayaranCatatan').textContent = menunggu > 0 ? '+ ' + rpdRp(menunggu) + ' menunggu verifikasi' : '';
+}
+
+/* nilaiKontrak opsional: kalau diisi, tampil progres dan sisa tagihan. */
+function bukaDetailPembayaran(orderId, nomorPo, namaPerusahaan, nilaiKontrak) {
+    var label = nomorPo && nomorPo !== '' ? nomorPo : 'Order tanpa PO';
+    var riwayat = semuaPembayaran.filter(function (p) { return parseInt(p.order_id, 10) === parseInt(orderId, 10); });
+    renderRiwayatPembayaran(riwayat, { label: label, mitra: namaPerusahaan, nilai: nilaiKontrak });
     bootstrap.Modal.getOrCreateInstance(document.getElementById('modalDetailPembayaran')).show();
 }
+
+/* Tombol Detail memakai data-attribute (aman untuk nama berisi tanda petik atau &). */
+document.addEventListener('click', function (e) {
+    var b = e.target.closest('.js-detail-bayar');
+    if (!b) { return; }
+    bukaDetailPembayaran(b.getAttribute('data-order-id'), b.getAttribute('data-nomor-po'), b.getAttribute('data-mitra'), b.getAttribute('data-nilai'));
+});
 </script>
 

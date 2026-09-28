@@ -397,5 +397,15 @@ $f3->route('GET /notifikasi/unread', 'NotificationController->getUnread');
 $f3->route('POST /notifikasi/mark-read/@id', 'NotificationController->markRead');
 $f3->route('POST /notifikasi/mark-all-read', 'NotificationController->markAllRead');
 
+// ==========================================
+// kontrak
+// ==========================================
+$f3->route('GET /kontrak',               'PksKontrakController->index');
+$f3->route('GET /kontrak/@id/form',      'PksKontrakController->form');
+$f3->route('POST /kontrak/@id/simpan',   'PksKontrakController->simpan');    
+$f3->route('POST /kontrak/@id/selesai',  'PksKontrakController->selesai');  
+$f3->route('GET /kontrak/@id/unduh',     'PksKontrakController->unduh');     
+$f3->route('GET /kontrak/@id/logo',      'PksKontrakController->logo');  
+
 // Jalankan Fat-Free Framework Router
 $f3->run();

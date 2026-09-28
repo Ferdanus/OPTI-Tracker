@@ -1,153 +1,829 @@
-<div class="d-flex align-items-center gap-3 mb-4">
-    <a href="{{ @BASE }}/kontrak" class="btn-back">
-        <i class="bi bi-arrow-left"></i> Kembali
-    </a>
-    <div>
-        <h2 class="h4 fw-bold mb-1 text-dark">
-            {{ @kontrak ? 'Edit Kontrak Kerjasama #' . @kontrak.nomor_pks_bbspjis : 'Tambah Kontrak Kerjasama (PKS) Baru' }}
-        </h2>
-        <p class="text-muted small mb-0">Legalitas perjanjian kerjasama teknis antara BBSPJIS dengan mitra industri.</p>
-    </div>
-</div>
-
-<form action="{{ @po ? @BASE . '/po/' . @po.id . '/kontrak/simpan' : (@kontrak ? @BASE . '/kontrak/' . @kontrak.id . '/update' : @BASE . '/kontrak/simpan') }}" method="POST">
-    <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
-
-    <div class="row g-4">
-        <!-- Kolom Kiri: Pokok Kontrak & PO -->
-        <div class="col-lg-6">
-            <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-white py-3 border-bottom">
-                    <h6 class="m-0 fw-bold text-dark"><i class="bi bi-file-earmark-text text-primary me-2"></i>Pokok Perjanjian & Nomor Legalitas</h6>
-                </div>
-                <div class="card-body p-4">
-                    <check if="{{ @po }}">
-                        <input type="hidden" name="po_id" value="{{ @po.id }}">
-                        <div class="mb-3 p-3 bg-primary-subtle rounded border border-primary-subtle">
-                            <span class="small text-muted d-block">Dokumen PO Terkait:</span>
-                            <strong class="text-primary font-monospace">{{ @po.nomor_po }}</strong> - {{ @po.nama_perusahaan }}
-                            <small class="d-block text-dark">{{ @po.judul_kegiatan }}</small>
-                        </div>
-                    </check>
-                    <check if="{{ !@po }}">
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Pilih Petunjuk Operasional (PO) Terkait <span class="text-danger">*</span></label>
-                            <select name="po_id" class="form-select searchable-select" placeholder="Pilih PO..." required>
-                                <option value="">Pilih Dokumen PO</option>
-                                <repeat group="{{ @daftar_po }}" value="{{ @p }}">
-                                    <option value="{{ @p.id }}" {{ @kontrak && @kontrak.po_id == @p.id ? 'selected' : '' }}>
-                                        PO: {{ @p.nomor_po }} - {{ @p.nama_perusahaan }} ({{ @p.judul_kegiatan }})
-                                    </option>
-                                </repeat>
-                            </select>
-                        </div>
-                    </check>
-
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">Nomor PKS BBSPJIS <span class="text-danger">*</span></label>
-                            <input type="text" name="nomor_pks_bbspjis" class="form-control font-monospace" placeholder="Contoh: 102/PKS/BBSPJIS/VIII/2026" value="{{ @kontrak ? @kontrak.nomor_pks_bbspjis : (@nomor_pks_otomatis ?: '') }}" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">Nomor PKS Klien/Mitra <span class="text-danger">*</span></label>
-                            <input type="text" name="nomor_pks_klien" class="form-control" placeholder="Contoh: 089/DIR-SMS/PKS/VIII/2026" value="{{ @kontrak.nomor_pks_klien }}" required>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Ruang Lingkup Kegiatan Kerjasama <span class="text-danger">*</span></label>
-                        <textarea name="ruang_lingkup" class="form-control" rows="3" placeholder="Uraian ringkas lingkup pelaksanaan jasa industri OPTI..." required>{{ @kontrak.ruang_lingkup }}</textarea>
-                    </div>
-
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">Nilai Kontrak (Rp) <span class="text-danger">*</span></label>
-                            <div class="input-group">
-                                <span class="input-group-text">Rp</span>
-                                <input type="number" name="nilai_kontrak" class="form-control" placeholder="0" value="{{ @kontrak ? @kontrak.nilai_kontrak : 0 }}" required min="0" step="1000">
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">Nomor Virtual Account (VA)</label>
-                            <input type="text" name="nomor_va" class="form-control" placeholder="Contoh: 896081232370878" value="{{ @kontrak.nomor_va }}">
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Ketentuan Pembayaran</label>
-                        <textarea name="ketentuan_pembayaran" class="form-control" rows="2" placeholder="Contoh: Pembayaran termin DP 40%, pelunasan 60% setelah BAST...">{{ @kontrak.ketentuan_pembayaran }}</textarea>
-                    </div>
+<!--
+    app/views/kontrak/form.html
+    Form kontrak (PKS) dengan pratinjau dokumen live. Fragment (dirender di dalam layout lewat $this->render()).
+    Data dari PksKontrakController::form(). Tombol bawah: Kembali, Simpan draft, Selesai.
+    Isian berlabel BIRU = dari PO/database, KUNING = diisi manual, ABU = tetap (data BBSPJIS).
+    Class berawalan "dpk-", id berawalan "dpk".
+-->
+<style>
+    .dpk-root {
+        --dpk-primary: var(--color-primary, #334155);
+        --dpk-primary-hover: var(--color-primary-hover, #1e293b);
+        --dpk-primary-light: var(--color-primary-light, #f1f5f9);
+        --dpk-border: var(--color-border, #e2e8f0);
+        --dpk-muted: var(--color-text-muted, #64748b);
+        --dpk-text: var(--color-text-main, #0f172a);
+        --dpk-display: var(--font-display, inherit);
+        --dpk-radius: var(--radius-md, 10px);
+        --dpk-db: #2563eb; --dpk-db-bg: #eff6ff;
+        --dpk-man: #b45309; --dpk-man-bg: #fffbeb;
+        --dpk-danger: #e11d48;
+        --dpk-logo-w: 150px; --dpk-logo-h: 52px;   /* kotak logo di dokumen (rasio 250:86 = kotak logo Kemenperin di template Word); dipakai logo klien dan logo BBSPJIS */
+        color: var(--dpk-text);
+    }
+    .dpk-root *, .dpk-root *::before, .dpk-root *::after { box-sizing: border-box; }
+    .dpk-root [hidden] { display: none !important; }
+    .dpk-root button { font-family: inherit; cursor: pointer; }
+    .dpk-root :focus-visible { outline: 2px solid var(--dpk-primary); outline-offset: 2px; }
+    
+    .dpk-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+    .dpk-head h1 { font-size: 1.35rem; font-weight: 800; margin: 0 0 4px; font-family: var(--dpk-display); }
+    .dpk-head p { margin: 0; color: var(--dpk-muted); font-size: .85rem; max-width: 660px; }
+    .dpk-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .dpk-btn { border: 1.5px solid var(--dpk-border); background: #fff; color: #334155; border-radius: 9px; padding: .5rem .95rem; font-size: .82rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; text-decoration: none; }
+    .dpk-btn:hover { border-color: var(--dpk-primary); color: var(--dpk-primary); }
+    .dpk-btn.pri { background: var(--dpk-primary); border-color: var(--dpk-primary); color: #fff; }
+    .dpk-btn.pri:hover { background: var(--dpk-primary-hover); }
+    .dpk-btn.sm { padding: .38rem .8rem; font-size: .78rem; }
+    .dpk-back { border: 0; background: none; color: var(--dpk-muted); font-weight: 700; font-size: .8rem; padding: 0; display: inline-flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+    .dpk-back:hover { color: var(--dpk-primary); }
+    
+    /* ---------- Editor ---------- */
+    .dpk-bar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; background: #fff; border: 1px solid var(--dpk-border); border-radius: var(--dpk-radius); padding: 9px 14px; margin-bottom: 14px; font-size: .78rem; }
+    .dpk-legend { display: flex; gap: 12px; flex-wrap: wrap; color: var(--dpk-muted); }
+    .dpk-legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .dpk-sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+    .dpk-sw.db { background: var(--dpk-db-bg); border: 1.5px solid var(--dpk-db); }
+    .dpk-sw.man { background: var(--dpk-man-bg); border: 1.5px solid var(--dpk-man); }
+    .dpk-sw.tetap { background: #f1f5f9; border: 1.5px solid #94a3b8; }
+    .dpk-toggle { margin-left: auto; display: inline-flex; align-items: center; gap: 7px; color: var(--dpk-muted); cursor: pointer; }
+    .dpk-prog { flex: 1 1 180px; min-width: 160px; }
+    .dpk-prog-t { display: flex; justify-content: space-between; margin-bottom: 3px; color: var(--dpk-muted); }
+    .dpk-prog-b { height: 6px; background: #e2e8f0; border-radius: 6px; overflow: hidden; }
+    .dpk-prog-b i { display: block; height: 100%; background: #059669; width: 0; transition: width .2s; }
+    
+    .dpk-mtabs { display: none; gap: 4px; background: #fff; border: 1px solid var(--dpk-border); border-radius: var(--dpk-radius); padding: 4px; margin-bottom: 12px; }
+    .dpk-mtabs button { flex: 1; border: 0; background: transparent; padding: .55rem; border-radius: 8px; font-weight: 700; font-size: .82rem; color: var(--dpk-muted); }
+    .dpk-mtabs button.on { background: var(--dpk-primary-light); color: var(--dpk-primary); }
+    
+    .dpk-split { display: grid; grid-template-columns: minmax(340px, 5fr) 6fr; gap: 16px; align-items: start; }
+    .dpk-form, .dpk-preview { max-height: calc(100vh - 290px); min-height: 420px; overflow: auto; border-radius: var(--dpk-radius); }
+    .dpk-form { padding-right: 4px; }
+    .dpk-preview { background: #e2e8f0; padding: 14px; border: 1px solid var(--dpk-border); }
+    
+    .dpk-card { background: #fff; border: 1px solid var(--dpk-border); border-radius: var(--dpk-radius); padding: 14px 16px; margin-bottom: 12px; }
+    .dpk-card > h3, .dpk-card > summary { font-family: var(--dpk-display); font-size: .92rem; font-weight: 800; margin: 0 0 10px; }
+    .dpk-card > summary { cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between; margin: 0; }
+    .dpk-card > summary::-webkit-details-marker { display: none; }
+    .dpk-card[open] > summary { margin-bottom: 10px; }
+    .dpk-po-info { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 8px; font-size: .75rem; color: var(--dpk-muted); }
+    .dpk-po-info b { color: var(--dpk-text); }
+    .dpk-f { margin-bottom: 12px; }
+    .dpk-f:last-child { margin-bottom: 0; }
+    .dpk-fl { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+    .dpk-fl label { font-size: .78rem; font-weight: 700; margin: 0; }
+    .dpk-src { font-size: .65rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+    .dpk-src.db { background: var(--dpk-db-bg); color: var(--dpk-db); }
+    .dpk-src.manual { background: var(--dpk-man-bg); color: var(--dpk-man); }
+    .dpk-src.tetap { background: #f1f5f9; color: #475569; }
+    .dpk-fin { display: flex; gap: 6px; align-items: flex-start; }
+    .dpk-input { flex: 1; width: 100%; min-width: 0; border: 1px solid var(--dpk-border); border-radius: 9px; padding: .5rem .7rem; font: inherit; font-size: .85rem; background: #fff; color: var(--dpk-text); }
+    textarea.dpk-input { resize: vertical; }
+    .dpk-input.ro { background: #f8fafc; color: #475569; cursor: default; }
+    .dpk-input:focus { border-color: var(--dpk-primary); outline: 0; box-shadow: 0 0 0 3px rgba(51,65,85,.12); }
+    .dpk-un { border: 0; background: none; color: var(--dpk-primary); font-size: .72rem; font-weight: 700; padding: .5rem 2px; white-space: nowrap; }
+    .dpk-un.rst { color: var(--dpk-danger); }
+    .dpk-chg { font-size: .65rem; font-weight: 700; color: var(--dpk-danger); }
+    .dpk-hint { font-size: .7rem; color: #94a3b8; margin-top: 3px; }
+    .dpk-chk { display: flex; align-items: center; gap: 8px; font-size: .85rem; }
+    .dpk-derived { background: #f8fafc; border: 1px dashed var(--dpk-border); border-radius: 9px; padding: 8px 10px; font-size: .75rem; color: #475569; margin-top: 6px; }
+    .dpk-derived b { font-family: 'Courier New', monospace; color: var(--dpk-text); }
+    
+    /* ---------- Unggah logo ---------- */
+    .dpk-drop { border: 1.5px dashed #94a3b8; border-radius: 10px; background: #f8fafc; padding: 14px; text-align: center; color: var(--dpk-muted); font-size: .8rem; transition: background .15s, border-color .15s; cursor: pointer; }
+    .dpk-drop:hover, .dpk-drop.over, .dpk-drop:focus-visible { background: #eff6ff; border-color: var(--dpk-db); color: var(--dpk-db); }
+    .dpk-drop i { display: block; font-size: 22px; margin-bottom: 2px; }
+    .dpk-drop b { color: var(--dpk-text); }
+    .dpk-logo-ok { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .dpk-logo-frame { width: var(--dpk-logo-w); height: var(--dpk-logo-h); border: 1px dashed #cbd5e1; background: #fff; display: flex; align-items: center; justify-content: flex-start; flex-shrink: 0; }
+    .dpk-logo-frame img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+    .dpk-logo-ok .k { font-size: .72rem; color: var(--dpk-muted); flex: 1 1 140px; }
+    
+    /* ---------- Pratinjau dokumen ---------- */
+    .dpk-sheet { background: #fff; width: 100%; max-width: 660px; margin: 0 auto 14px; padding: 30px 38px 22px; min-height: 780px; box-shadow: 0 2px 10px rgba(15,23,42,.15); font-family: Arial, Helvetica, sans-serif; font-size: 12.5px; line-height: 1.5; color: #111; text-align: justify; position: relative; display: flex; flex-direction: column; }
+    .dpk-sheet .body { flex: 1; }
+    .dpk-sheet p { margin: 0 0 8px; }
+    .dpk-sheet .c { text-align: center; }
+    .dpk-logos { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .dpk-logo-slot { width: var(--dpk-logo-w); height: var(--dpk-logo-h); display: flex; align-items: center; justify-content: flex-start; padding: 0; border: 0; background: none; cursor: pointer; }
+    .dpk-logo-slot img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+    .dpk-logo-slot.empty { border: 1.5px dashed #94a3b8; border-radius: 4px; background: #f8fafc; justify-content: center; color: #1d4ed8; font-weight: 700; font-size: 10px; letter-spacing: .3px; }
+    .dpk-logo-slot.empty:hover { background: #eff6ff; border-color: #2563eb; }
+    .dpk-km { width: var(--dpk-logo-w); height: var(--dpk-logo-h); object-fit: contain; object-position: right center; display: block; }
+    .dpk-cover-title { font-weight: 700; font-size: 14px; text-align: center; margin: 4px 0 10px; }
+    .dpk-nomor { font-weight: 700; margin: 12px auto 12px; width: fit-content; text-align: left; }
+    .dpk-sheet table.k { border-collapse: collapse; margin: 2px 0 6px 18px; font-size: 12.5px; }
+    .dpk-sheet table.k td { padding: 0 6px 0 0; vertical-align: top; text-align: left; }
+    .dpk-sheet table.k td.no { width: 20px; }
+    .dpk-sheet table.k td.n { width: 66px; }
+    .dpk-sheet table.k td.t { width: 12px; }
+    .dpk-para { margin-left: 18px; }
+    .dpk-pasal { text-align: center; font-weight: 700; margin: 14px 0 6px; }
+    .dpk-li { padding-left: 26px; text-indent: -26px; margin-bottom: 2px; }
+    .dpk-li.sub { padding-left: 46px; }
+    .dpk-foot { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 14px; font-size: 10.5px; }
+    .dpk-foot table { border-collapse: collapse; font-size: 8px; }
+    .dpk-foot td { border: 1px solid #555; padding: 1px 4px; }
+    .dpk-foot td.e { width: 24px; }
+    .dpk-ttd { display: flex; justify-content: space-between; gap: 20px; margin-top: 18px; text-align: center; }
+    .dpk-ttd > div { flex: 1; }
+    .dpk-ttd .sp { height: 64px; }
+    .dpk-ttd b.n { text-decoration: underline; }
+    
+    .dpk-v { border-radius: 3px; padding: 0 1px; transition: background .2s; cursor: pointer; }
+    .dpk-hl .dpk-v.db { background: var(--dpk-db-bg); box-shadow: inset 0 -1.5px 0 var(--dpk-db); }
+    .dpk-hl .dpk-v.manual { background: var(--dpk-man-bg); box-shadow: inset 0 -1.5px 0 var(--dpk-man); }
+    .dpk-hl .dpk-v.tetap { background: #f1f5f9; box-shadow: inset 0 -1.5px 0 #94a3b8; }
+    .dpk-v.empty { color: #b91c1c; }
+    .dpk-v.flash { animation: dpkFlash 1.1s ease; }
+    @keyframes dpkFlash { 0%, 60% { background: #fde68a; box-shadow: 0 0 0 3px #fde68a; } 100% { box-shadow: 0 0 0 0 transparent; } }
+    
+    /* ---------- Popup ---------- */
+    .dpk-dlg { position: fixed; inset: 0; z-index: 1090; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(15,23,42,.55); opacity: 0; transition: opacity .15s; }
+    .dpk-dlg.show { opacity: 1; }
+    .dpk-dlg-box { background: #fff; border-radius: 16px; width: 100%; max-width: 400px; padding: 28px 24px 22px; text-align: center; box-shadow: 0 24px 60px rgba(15,23,42,.3); transform: translateY(8px) scale(.98); transition: transform .15s; }
+    .dpk-dlg.show .dpk-dlg-box { transform: none; }
+    .dpk-dlg-icon { width: 60px; height: 60px; border-radius: 50%; display: grid; place-items: center; margin: 0 auto 14px; font-size: 28px; background: #fffbeb; color: #d97706; }
+    .dpk-dlg-box h5 { font-family: var(--dpk-display); font-size: 1.05rem; font-weight: 800; margin: 0 0 6px; }
+    .dpk-dlg-box p { color: var(--dpk-muted); font-size: .85rem; margin: 0 0 16px; }
+    .dpk-dlg-btns { display: flex; gap: 10px; }
+    .dpk-dlg-btns .dpk-btn { flex: 1; }
+    
+    .dpk-toast { position: fixed; left: 50%; top: 16px; transform: translate(-50%, -14px); background: #1e293b; color: #fff; padding: 11px 16px; border-radius: 12px; font-size: .82rem; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 1100; max-width: calc(100vw - 24px); }
+    .dpk-toast.show { opacity: 1; transform: translate(-50%, 0); }
+    .dpk-toast.err { background: #b91c1c; }
+    
+    @media (max-width: 991.98px) {
+        .dpk-mtabs { display: flex; }
+        .dpk-split { grid-template-columns: 1fr; }
+        .dpk-form, .dpk-preview { max-height: none; overflow: visible; }
+        .dpk-root:not(.show-preview) .dpk-preview { display: none; }
+        .dpk-root.show-preview .dpk-form { display: none; }
+        .dpk-sheet { padding: 22px 18px 16px; min-height: 0; }
+        .dpk-toggle { margin-left: 0; }
+    }
+    @media (max-width: 767.98px) {
+        .dpk-desk { display: none; }
+        .dpk-mob { display: block; }
+        .dpk-tab { font-size: .78rem; padding: .6rem .3rem; }
+    }
+    @media (prefers-reduced-motion: reduce) { .dpk-root * { transition: none !important; animation: none !important; } }
+    
+    /* ---------- Bar tombol bawah ---------- */
+    .dpk-footbar { position: sticky; bottom: 0; z-index: 30; margin-top: 14px; background: #fff; border: 1px solid var(--dpk-border); border-radius: var(--dpk-radius); box-shadow: 0 -6px 18px rgba(15,23,42,.07); padding: 10px 14px; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .dpk-footbar .hint { font-size: .75rem; color: var(--dpk-muted); flex: 1 1 200px; }
+    .dpk-footbar .grp { display: flex; gap: 8px; margin-left: auto; }
+    .dpk-btn[disabled] { opacity: .6; cursor: progress; }
+    .dpk-alert { background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; border-radius: var(--dpk-radius); padding: 10px 14px; margin-bottom: 14px; font-size: .85rem; }
+    @media (max-width: 575.98px) { .dpk-footbar .grp { width: 100%; } .dpk-footbar .grp .dpk-btn { flex: 1; } .dpk-footbar .dpk-btn.kembali { flex: 1 1 100%; } }
+    </style>
+    
+    <div class="dpk-root" id="dpkRoot">
+        <div class="dpk-head">
+            <div>
+                <a class="dpk-back" href="{{ @BASE }}/kontrak" data-dpk-act="kembali"><i class="bi bi-arrow-left"></i>Daftar kontrak</a>
+                <h1 id="dpkEdJudul">Buat Kontrak (PKS)</h1>
+                <p>Isian biru diambil dari PO/database, isian kuning diisi manual. Pratinjau dokumen ikut berubah saat Anda mengetik.</p>
+            </div>
+        </div>
+    
+        <div class="dpk-bar">
+            <div class="dpk-legend">
+                <span><i class="dpk-sw db"></i>Dari PO/database</span>
+                <span><i class="dpk-sw man"></i>Isi manual</span>
+                <span><i class="dpk-sw tetap"></i>Tetap (BBSPJIS)</span>
+            </div>
+            <div class="dpk-prog">
+                <div class="dpk-prog-t"><span id="dpkProgTxt">Kelengkapan</span><span id="dpkProgPct"></span></div>
+                <div class="dpk-prog-b"><i id="dpkProgBar"></i></div>
+            </div>
+            <label class="dpk-toggle"><input type="checkbox" id="dpkSorot" checked>Sorot isian di pratinjau</label>
+        </div>
+    
+        <div class="dpk-mtabs" role="tablist">
+            <button type="button" class="on" data-dpk-tab="form">Form</button>
+            <button type="button" data-dpk-tab="preview">Pratinjau</button>
+        </div>
+    
+        <div class="dpk-split">
+            <section class="dpk-form" id="dpkForm" aria-label="Form kontrak"></section>
+            <section class="dpk-preview dpk-hl" id="dpkPages" aria-label="Pratinjau kontrak"></section>
+        </div>
+    
+        <div class="dpk-footbar">
+            <a class="dpk-btn kembali" href="{{ @BASE }}/kontrak" id="dpkBtnKembali" data-dpk-act="kembali"><i class="bi bi-arrow-left"></i>Kembali</a>
+            <div class="hint" id="dpkHint"></div>
+            <div class="grp">
+                <button type="button" class="dpk-btn" id="dpkSimpan"><i class="bi bi-save"></i>Simpan draft</button>
+                <button type="button" class="dpk-btn pri" id="dpkSelesai"><i class="bi bi-check2-circle"></i>Selesai</button>
+            </div>
+        </div>
+    
+        <div class="dpk-dlg" id="dpkDlg" hidden>
+            <div class="dpk-dlg-box" role="alertdialog" aria-modal="true" aria-labelledby="dpkDlgTitle" aria-describedby="dpkDlgMsg">
+                <div class="dpk-dlg-icon" id="dpkDlgIcon"><i class="bi bi-exclamation-triangle"></i></div>
+                <h5 id="dpkDlgTitle"></h5>
+                <p id="dpkDlgMsg"></p>
+                <div class="dpk-dlg-btns">
+                    <button type="button" class="dpk-btn" id="dpkDlgNo">Buang</button>
+                    <button type="button" class="dpk-btn pri" id="dpkDlgYes">Simpan</button>
                 </div>
             </div>
         </div>
-
-        <!-- Kolom Kanan: Penandatangan, Masa Berlaku & Status -->
-        <div class="col-lg-6">
-            <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-white py-3 border-bottom">
-                    <h6 class="m-0 fw-bold text-dark"><i class="bi bi-pen text-primary me-2"></i>Penandatangan & Masa Berlaku</h6>
-                </div>
-                <div class="card-body p-4">
-                    <!-- Pihak Balai -->
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">Nama Penandatangan BBSPJIS <span class="text-danger">*</span></label>
-                            <input type="text" name="nama_penandatangan_bbspjis" class="form-control" placeholder="Nama pejabat balai" value="{{ @kontrak ? @kontrak.nama_penandatangan_bbspjis : 'Andri Taufick Rizaluddin' }}" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">Jabatan Penandatangan BBSPJIS <span class="text-danger">*</span></label>
-                            <input type="text" name="jabatan_penandatangan_bbspjis" class="form-control" placeholder="Contoh: Kepala Balai Besar" value="{{ @kontrak ? @kontrak.jabatan_penandatangan_bbspjis : 'Kepala Balai Besar' }}" required>
-                        </div>
-                    </div>
-
-                    <!-- Pihak Mitra -->
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">Nama Penandatangan Mitra <span class="text-danger">*</span></label>
-                            <input type="text" name="nama_penandatangan_klien" class="form-control" placeholder="Nama pimpinan mitra" value="{{ @kontrak.nama_penandatangan_klien }}" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">Jabatan Penandatangan Mitra <span class="text-danger">*</span></label>
-                            <input type="text" name="jabatan_penandatangan_klien" class="form-control" placeholder="Contoh: Direktur Utama" value="{{ @kontrak.jabatan_penandatangan_klien }}" required>
-                        </div>
-                    </div>
-
-                    <!-- Masa Berlaku -->
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">Target Mulai Berlaku <span class="text-danger">*</span></label>
-                            <input type="date" name="target_mulai" class="form-control" value="{{ @kontrak ? @kontrak.target_mulai : date('Y-m-d') }}" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">Target Selesai / Berakhir <span class="text-danger">*</span></label>
-                            <input type="date" name="target_selesai" class="form-control" value="{{ @kontrak ? @kontrak.target_selesai : date('Y-m-d', strtotime('+3 months')) }}" required>
-                        </div>
-                    </div>
-
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">Status Penandatanganan</label>
-                            <select name="status_ttd" class="form-select">
-                                <option value="belum" {{ @kontrak && @kontrak.status_ttd == 'belum' ? 'selected' : '' }}>Belum Ditandatangani</option>
-                                <option value="sudah" {{ @kontrak && @kontrak.status_ttd == 'sudah' ? 'selected' : '' }}>Sudah Ditandatangani Lengkap</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">Tanggal Penandatanganan (Jika Ada)</label>
-                            <input type="date" name="tanggal_ttd" class="form-control" value="{{ @kontrak ? @kontrak.tanggal_ttd : '' }}">
-                        </div>
-                    </div>
-
-                    <!-- Tombol Aksi -->
-                    <div class="d-flex justify-content-end gap-2 border-top pt-3">
-                        <a href="{{ @BASE }}/kontrak" class="btn btn-outline-secondary px-4">Batal</a>
-                        <button type="submit" class="btn btn-primary px-4">
-                            <i class="bi bi-save me-1"></i> {{ @kontrak ? 'Perbarui Kontrak' : 'Simpan Kontrak PKS' }}
-                        </button>
-                    </div>
-
-                </div>
-            </div>
-        </div>
+    
+        <input type="file" id="dpk_logoKlien" data-fid="logoKlien" accept="image/png,image/jpeg" hidden>
+        <div class="dpk-toast" id="dpkToast" role="status"></div>
     </div>
-</form>
+    
+    <script>
+    (function () {
+        var BASE = '{{ @BASE }}';
+        var CSRF = '{{ @csrf_token }}';
+        var KONTRAK = {{ @kontrak_json | raw }};
+        var BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+        var BULAN_PENDEK = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
+        var HARI = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+        var ROMAWI = ['','I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
+        var LOGO_KEMENPERIN = 'data:image/png;base64,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';
+        var LOGO_MAKS_BYTE = 2 * 1024 * 1024;
+    
+        function $(id) { return document.getElementById(id); }
+        function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+        function br(s) { return esc(s).replace(/\n/g, '<br>'); }
+        function pad2(n) { return (n < 10 ? '0' : '') + n; }
+        function rp(n) { return Math.round(n).toLocaleString('id-ID'); }
+        function parseTgl(s) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || ''); if (!m) { return null; } var d = new Date(+m[1], +m[2] - 1, +m[3]); return isNaN(d.getTime()) ? null : d; }
+        function tglPendek(s) { var d = parseTgl(s); return d ? d.getDate() + ' ' + BULAN_PENDEK[d.getMonth()] + ' ' + d.getFullYear() : '-'; }
+        function salin(o) { return JSON.parse(JSON.stringify(o)); }
+    
+        var SATUAN = ['', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan', 'sepuluh', 'sebelas'];
+        function terbilang(n) {
+            n = Math.floor(n);
+            if (n === 0) { return 'nol'; }
+            function t(x) {
+                if (x < 12) { return SATUAN[x]; }
+                if (x < 20) { return t(x - 10) + ' belas'; }
+                if (x < 100) { return t(Math.floor(x / 10)) + ' puluh' + (x % 10 ? ' ' + t(x % 10) : ''); }
+                if (x < 200) { return 'seratus' + (x - 100 ? ' ' + t(x - 100) : ''); }
+                if (x < 1000) { return t(Math.floor(x / 100)) + ' ratus' + (x % 100 ? ' ' + t(x % 100) : ''); }
+                if (x < 2000) { return 'seribu' + (x - 1000 ? ' ' + t(x - 1000) : ''); }
+                if (x < 1e6) { return t(Math.floor(x / 1000)) + ' ribu' + (x % 1000 ? ' ' + t(x % 1000) : ''); }
+                if (x < 1e9) { return t(Math.floor(x / 1e6)) + ' juta' + (x % 1e6 ? ' ' + t(x % 1e6) : ''); }
+                if (x < 1e12) { return t(Math.floor(x / 1e9)) + ' miliar' + (x % 1e9 ? ' ' + t(x % 1e9) : ''); }
+                return t(Math.floor(x / 1e12)) + ' triliun' + (x % 1e12 ? ' ' + t(x % 1e12) : '');
+            }
+            return t(n);
+        }
+    
+        
+        /* ---------- Definisi isian ---------- */
+        var SECTIONS = [
+            { id: 'nomor', judul: 'Nomor dan tanggal' },
+            { id: 'pihak1', judul: 'Pihak Pertama (klien)' },
+            { id: 'kerja', judul: 'Pekerjaan (dari PO)' },
+            { id: 'notif', judul: 'Alamat pemberitahuan Pihak Pertama (Pasal 10)' },
+            { id: 'tetap', judul: 'Data BBSPJIS (tetap)', lipat: true }
+        ];
+        var FIELDS = [
+            { id: 'nomorUrut', sec: 'nomor', label: 'Nomor urut PKS', src: 'manual', ph: 'mis. 041', req: true, hint: 'Bagian tengah pada B/.../BBSPJIS/HK/bulan/tahun. Nanti bisa otomatis dari nomor terakhir + 1.', ph2: '.....' },
+            { id: 'nomorPihakPertama', sec: 'nomor', label: 'Nomor perjanjian versi klien', src: 'manual', ph: 'Opsional', hint: 'Nomor Pihak Pertama, kalau klien punya.', ph2: '.........................' },
+            { id: 'tanggal', sec: 'nomor', label: 'Tanggal perjanjian', src: 'manual', type: 'date', req: true, hint: 'Hari, tanggal, bulan, angka romawi, dan tahun dalam huruf dihitung otomatis.', derived: 'tanggal', ph2: '..............' },
+            { id: 'perusahaan', sec: 'pihak1', label: 'Nama perusahaan', src: 'db', req: true, hint: 'tb_customer: pt_cv + nmcustomer', ph2: 'PT .........................' },
+            { id: 'alamatPerusahaan', sec: 'pihak1', label: 'Alamat perusahaan', src: 'db', type: 'textarea', rows: 2, req: true, hint: 'tb_customer.alamatcustomer', ph2: '.................................................' },
+            { id: 'ttdNama', sec: 'pihak1', label: 'Nama penandatangan', src: 'manual', req: true, ph: 'Pejabat klien yang menandatangani', ph2: '..........................' },
+            { id: 'ttdJabatan', sec: 'pihak1', label: 'Jabatan penandatangan', src: 'manual', req: true, ph: 'mis. Direktur Utama', ph2: '..........................' },
+            { id: 'logoKlien', sec: 'pihak1', label: 'Logo perusahaan', src: 'manual', type: 'logo' },
+            { id: 'judul', sec: 'kerja', label: 'Judul pekerjaan', src: 'db', type: 'textarea', rows: 2, req: true, hint: 'po_kegiatan.judul_kegiatan', ph2: '.........................................' },
+            { id: 'ruangLingkup', sec: 'kerja', label: 'Ruang lingkup (satu poin per baris)', src: 'db', type: 'textarea', rows: 5, req: true, hint: 'po_kegiatan.ruang_lingkup', ph2: '.....................................................' },
+            { id: 'mulai', sec: 'kerja', label: 'Tanggal mulai', src: 'db', type: 'date', req: true, hint: 'po_kegiatan.jadwal_mulai', ph2: '..........' },
+            { id: 'selesai', sec: 'kerja', label: 'Tanggal selesai', src: 'db', type: 'date', req: true, hint: 'po_kegiatan.jadwal_selesai', derived: 'durasi', ph2: '..........' },
+            { id: 'biaya', sec: 'kerja', label: 'Nilai kontrak (Rp)', src: 'db', type: 'money', req: true, hint: 'Nominal penawaran yang disepakati (deal), atau total penerimaan RAB.', derived: 'terbilang', ph2: 'Rp 00.000.000,00 (terbilang)' },
+            { id: 'sampel', sec: 'kerja', label: 'Klien menyiapkan sampel', src: 'manual', type: 'check', hint: 'Memunculkan Pasal 6 ayat (1) huruf b.' },
+            { id: 'upNama', sec: 'notif', label: 'UP (nama kontak)', src: 'db', req: true, hint: 'tb_customer.contactperson_opti', ph2: '.............................' },
+            { id: 'upJabatan', sec: 'notif', label: 'Jabatan kontak', src: 'manual', ph: 'Opsional', ph2: '.............................' },
+            { id: 'alamatNotif', sec: 'notif', label: 'Alamat', src: 'db', type: 'textarea', rows: 2, req: true, hint: 'Default sama dengan alamat perusahaan.', ph2: '............................................' },
+            { id: 'telepon', sec: 'notif', label: 'Telepon', src: 'db', req: true, hint: 'tb_customer (jika kolomnya ada)', ph2: '............................................' },
+            { id: 'whatsapp', sec: 'notif', label: 'Whats App', src: 'manual', ph: 'Opsional', ph2: '............................................' },
+            { id: 'email', sec: 'notif', label: 'Email', src: 'db', req: true, hint: 'tb_customer (jika kolomnya ada)', ph2: '............................................' },
+            { id: 'kepalaNama', sec: 'tetap', label: 'Nama Kepala (Pihak Kedua)', src: 'tetap' },
+            { id: 'kepalaJabatan', sec: 'tetap', label: 'Jabatan', src: 'tetap' },
+            { id: 'kepalaAlamat', sec: 'tetap', label: 'Alamat BBSPJIS', src: 'tetap', type: 'textarea', rows: 2 },
+            { id: 'kedUpNama', sec: 'tetap', label: 'UP Pihak Kedua', src: 'tetap' },
+            { id: 'kedUpJabatan', sec: 'tetap', label: 'Jabatan UP', src: 'tetap' },
+            { id: 'kedTelepon', sec: 'tetap', label: 'Telepon', src: 'tetap' },
+            { id: 'kedWa', sec: 'tetap', label: 'Whats App', src: 'tetap' },
+            { id: 'kedEmail', sec: 'tetap', label: 'Email', src: 'tetap' }
+        ];
+        var SRC = {}, F = {};
+        FIELDS.forEach(function (f) { SRC[f.id] = f.src; F[f.id] = f; });
+        var SRC_LABEL = { db: ['bi-database', 'Dari PO'], manual: ['bi-pencil', 'Manual'], tetap: ['bi-pin-angle', 'Tetap'] };
+        var REQ = FIELDS.filter(function (f) { return f.req; });
+    
+        /* ---------- Turunan tanggal, nomor, kelengkapan (fungsi murni, dipakai index dan editor) ---------- */
+        function infoTanggal(s) {
+            var d = parseTgl(s);
+            if (!d) { return null; }
+            return { hari: HARI[d.getDay()], tgl: d.getDate(), tglKata: terbilang(d.getDate()), bulan: BULAN[d.getMonth()], tahun: d.getFullYear(), tahunKata: terbilang(d.getFullYear()),
+                     angka: pad2(d.getDate()) + '-' + pad2(d.getMonth() + 1) + '-' + d.getFullYear(), romawi: ROMAWI[d.getMonth() + 1] };
+        }
+        function nomorDari(v) { var ti = infoTanggal(v.tanggal); return 'B/' + (v.nomorUrut || '.....') + '/BBSPJIS/HK/' + (ti ? ti.romawi : 'Bulan') + '/' + (ti ? ti.tahun : 'Tahun'); }
+        function hariAntara(a, b) { var x = parseTgl(a), y = parseTgl(b); return (x && y && y >= x) ? Math.round((y - x) / 86400000) + 1 : 0; }
+        function kosongDi(v, f) { var x = v[f.id]; return f.type === 'money' ? !(x > 0) : String(x == null ? '' : x).trim() === ''; }
+        function daftarKosongDi(v) { return REQ.filter(function (f) { return kosongDi(v, f); }); }
+    
+        
+        /* ---------- State (dari server) ---------- */
+        var poAktif = KONTRAK.po;
+        var dbv = salin(KONTRAK.db);
+        var vals = salin(KONTRAK.vals);
+        var status = KONTRAK.status;                 // 'baru' | 'draft' | 'selesai'
+        var unlocked = {};
+        var logoSrc = KONTRAK.logoUrl || '';         // URL logo tersimpan, atau data URL logo baru yang dipilih
+        var logoFile = null;                         // File baru yang belum disimpan
+        var hapusLogoFlag = false;
+        var dirty = false;
+        var sedangProses = false;
+    
+        /* ---------- Form ---------- */
+        function fmtVal(f, v) { return f.type === 'money' ? (v ? rp(v) : '') : (v == null ? '' : v); }
+    
+        function logoFieldHtml() {
+            var ada = !!logoSrc;
+            return '<div id="dpkLogoBox">' + (ada
+                ? '<div class="dpk-logo-ok"><div class="dpk-logo-frame"><img src="' + logoSrc + '" alt="Logo perusahaan"></div><div class="k">Ukuran di dokumen sama dengan logo BBSPJIS (6,6 x 2,3 cm), gambar disesuaikan tanpa mengubah proporsi.</div>' +
+                  '<button type="button" class="dpk-btn sm" data-logo="pilih"><i class="bi bi-arrow-repeat"></i>Ganti</button><button type="button" class="dpk-btn sm" data-logo="hapus"><i class="bi bi-trash"></i>Hapus</button></div>'
+                : '<div class="dpk-drop" id="dpkDrop" tabindex="0" role="button" aria-label="Unggah logo perusahaan"><i class="bi bi-cloud-arrow-up"></i><b>Klik atau seret logo ke sini</b><div>PNG atau JPG. Maksimal 2 MB.</div></div>') + '</div>';
+        }
+    
+        function fieldHtml(f) {
+            var locked = f.src !== 'manual';
+            var s = SRC_LABEL[f.src];
+            var idn = 'dpk_' + f.id;
+            var kontrol;
+            if (f.type === 'logo') { kontrol = logoFieldHtml(); }
+            else if (f.type === 'check') {
+                kontrol = '<label class="dpk-chk"><input type="checkbox" id="' + idn + '" data-fid="' + f.id + '"' + (vals[f.id] ? ' checked' : '') + '>Ya, klien menyiapkan sampel</label>';
+            } else if (f.type === 'textarea') {
+                kontrol = '<div class="dpk-fin"><textarea class="dpk-input' + (locked ? ' ro' : '') + '" id="' + idn + '" data-fid="' + f.id + '" rows="' + (f.rows || 2) + '"' + (locked ? ' readonly' : '') + '>' + esc(vals[f.id]) + '</textarea>' + (locked ? '<button type="button" class="dpk-un" data-un="' + f.id + '">Ubah</button>' : '') + '</div>';
+            } else {
+                var tipe = f.type === 'date' ? 'date' : 'text';
+                kontrol = '<div class="dpk-fin"><input class="dpk-input' + (locked ? ' ro' : '') + '" type="' + tipe + '" id="' + idn + '" data-fid="' + f.id + '"' + (f.type === 'money' ? ' inputmode="numeric"' : '') + ' value="' + esc(fmtVal(f, vals[f.id])) + '"' + (f.ph ? ' placeholder="' + esc(f.ph) + '"' : '') + (locked ? ' readonly' : '') + ' autocomplete="off">' + (locked ? '<button type="button" class="dpk-un" data-un="' + f.id + '">Ubah</button>' : '') + '</div>';
+            }
+            var turunan = f.derived ? '<div class="dpk-derived" id="dpkDer_' + f.id + '"></div>' : '';
+            var label = f.type === 'logo' ? '<span>' + esc(f.label) + '</span>' : '<label for="' + idn + '">' + esc(f.label) + (f.req ? ' <span style="color:#e11d48">*</span>' : '') + '</label>';
+            return '<div class="dpk-f" data-ff="' + f.id + '"><div class="dpk-fl">' + label.replace('<span>', '<label style="font-size:.78rem;font-weight:700;margin:0">').replace('</span>', '</label>') +
+                '<span class="dpk-src ' + f.src + '"><i class="bi ' + s[0] + '"></i>' + s[1] + '<span class="dpk-chg" id="dpkChg_' + f.id + '" hidden> diubah</span></span></div>' +
+                kontrol + turunan + (f.hint ? '<div class="dpk-hint">' + esc(f.hint) + '</div>' : '') + '</div>';
+        }
+    
+        function renderForm() {
+            var h = '<div class="dpk-card"><h3>Sumber data</h3>' +
+                '<div class="dpk-no">' + esc(poAktif.nomor) + '</div><div class="dpk-mitra">' + esc(poAktif.mitra) + '</div>' +
+                '<div class="dpk-po-info"><span>Divisi <b>' + esc(poAktif.divisi) + '</b></span><span>Disposisi <b>' + tglPendek(poAktif.disposisi) + '</b></span><span>Status PO <b>Disetujui</b></span></div></div>';
+            SECTIONS.forEach(function (s) {
+                var isi = FIELDS.filter(function (f) { return f.sec === s.id; }).map(fieldHtml).join('');
+                h += s.lipat
+                    ? '<details class="dpk-card"><summary>' + esc(s.judul) + '<span class="dpk-hint" style="margin:0">Buka untuk mengubah</span></summary>' + isi + '</details>'
+                    : '<div class="dpk-card"><h3>' + esc(s.judul) + '</h3>' + isi + '</div>';
+            });
+            $('dpkForm').innerHTML = h;
+            FIELDS.forEach(function (f) { updMeta(f.id); });
+            updDerived();
+        }
+    
+        function updMeta(fid) {
+            var f = F[fid];
+            if (f.src === 'manual') { return; }
+            var inp = $('dpk_' + fid), btn = document.querySelector('[data-un="' + fid + '"]'), chg = $('dpkChg_' + fid);
+            if (!inp || !btn) { return; }
+            var diubah = String(vals[fid]) !== String(dbv[fid]);
+            chg.hidden = !diubah;
+            inp.classList.toggle('ro', !unlocked[fid]);
+            if (unlocked[fid] || diubah) { inp.removeAttribute('readonly'); } else { inp.setAttribute('readonly', 'readonly'); }
+            if (diubah) { btn.textContent = 'Kembalikan'; btn.classList.add('rst'); }
+            else { btn.textContent = unlocked[fid] ? 'Kunci' : 'Ubah'; btn.classList.remove('rst'); }
+        }
+    
+        function updDerived() {
+            var ti = infoTanggal(vals.tanggal);
+            if ($('dpkDer_tanggal')) { $('dpkDer_tanggal').innerHTML = ti ? 'Nomor PKS: <b>' + esc(nomorDari(vals)) + '</b><br>Hari: <b>' + ti.hari + '</b>, tanggal <b>' + esc(ti.tglKata) + '</b>, tahun <b>' + esc(ti.tahunKata) + '</b>' : 'Isi tanggal yang valid.'; }
+            var n = hariAntara(vals.mulai, vals.selesai);
+            if ($('dpkDer_durasi')) { $('dpkDer_durasi').innerHTML = n ? 'Jangka waktu: <b>' + n + ' (' + esc(terbilang(n)) + ') hari</b>' : 'Tanggal selesai harus sama atau setelah tanggal mulai.'; }
+            if ($('dpkDer_terbilang')) { $('dpkDer_terbilang').innerHTML = vals.biaya > 0 ? 'Terbilang: <b>' + esc(terbilang(vals.biaya)) + ' rupiah</b>' : 'Isi nilai kontrak.'; }
+        }
+    
+        
+        /* ---------- Pratinjau ---------- */
+        function V(fid, html) {
+            var src = SRC[fid] || 'manual';
+            if (html === '' || html == null) { return '<span class="dpk-v empty ' + src + '" data-f="' + fid + '">' + esc(F[fid] && F[fid].ph2 ? F[fid].ph2 : '..........') + '</span>'; }
+            return '<span class="dpk-v ' + src + '" data-f="' + fid + '">' + html + '</span>';
+        }
+        function T(fid) { return br(vals[fid]); }
+        function kv(no, label, isi) { return '<tr><td class="no">' + no + '</td><td class="n">' + label + '</td><td class="t">:</td><td>' + isi + '</td></tr>'; }
+        function li(no, html, sub) { return '<div class="dpk-li' + (sub ? ' sub' : '') + '">' + no + '&nbsp; ' + html + '</div>'; }
+        function pasal(no, judul) { return '<div class="dpk-pasal"><div>Pasal ' + no + '</div><div>' + judul + '</div></div>'; }
+        function sheet(n, isi) {
+            return '<div class="dpk-sheet"><div class="body">' + isi + '</div><div class="dpk-foot"><span><b>' + n + '</b> dari <b>5</b></span><table><tr><td>PIHAK PERTAMA</td><td class="e"></td><td class="e"></td></tr><tr><td>PIHAK KEDUA</td><td class="e"></td><td class="e"></td></tr></table></div></div>';
+        }
+    
+        function renderDoc() {
+            var ti = infoTanggal(vals.tanggal);
+            var n = hariAntara(vals.mulai, vals.selesai);
+            var m = infoTanggal(vals.mulai), s = infoTanggal(vals.selesai);
+            var perusahaan = V('perusahaan', T('perusahaan'));
+            var judul = V('judul', T('judul'));
+            var poin = String(vals.ruangLingkup || '').split('\n').map(function (x) { return x.trim(); }).filter(Boolean);
+            var logoKiri = logoSrc
+                ? '<button type="button" class="dpk-logo-slot" data-logo="pilih" title="Klik untuk mengganti logo" aria-label="Ganti logo perusahaan"><img src="' + logoSrc + '" alt="Logo perusahaan"></button>'
+                : '<button type="button" class="dpk-logo-slot empty" data-logo="pilih" title="Klik untuk mengunggah logo" aria-label="Unggah logo perusahaan">LOGO PERUSAHAAN</button>';
+    
+            var tanggalKalimat = 'Perjanjian ini dibuat pada hari ' + V('tanggal', ti ? ti.hari : '') + ', tanggal ' + V('tanggal', ti ? esc(ti.tglKata) : '') + ' bulan ' + V('tanggal', ti ? ti.bulan : '') + ' tahun ' + V('tanggal', ti ? esc(ti.tahunKata) : '') + ' (' + V('tanggal', ti ? ti.angka : '') + '), kami yang bertanda tangan di bawah ini:';
+            var nomor = 'B/' + V('nomorUrut', esc(vals.nomorUrut)) + '/BBSPJIS/HK/' + V('tanggal', ti ? ti.romawi : 'Bulan') + '/' + V('tanggal', ti ? ti.tahun : 'Tahun');
+    
+            var s1 = '<div class="dpk-logos">' + logoKiri + '<img class="dpk-km" src="' + LOGO_KEMENPERIN + '" alt="Kementerian Perindustrian"></div>' +
+                '<div class="dpk-cover-title">PERJANJIAN KERJA SAMA</div>' +
+                '<p class="c">ANTARA</p><p class="c"><b>' + perusahaan + '</b></p><p class="c">DENGAN</p>' +
+                '<p class="c"><b>BALAI BESAR STANDARDISASI DAN PELAYANAN<br>JASA INDUSTRI SELULOSA</b></p>' +
+                '<p class="c">TENTANG</p><p class="c"><b>' + judul + '</b></p>' +
+                '<div class="dpk-nomor">NOMOR : ' + V('nomorPihakPertama', T('nomorPihakPertama')) + ' &nbsp;(Nomor Pihak Pertama)<br>NOMOR : ' + nomor + '</div>' +
+                '<p>' + tanggalKalimat + '</p>' +
+                '<table class="k">' + kv('1.', 'Nama', V('ttdNama', T('ttdNama'))) + kv('', 'Jabatan', V('ttdJabatan', T('ttdJabatan'))) + kv('', 'Alamat', V('alamatPerusahaan', T('alamatPerusahaan'))) + '</table>' +
+                '<p class="dpk-para">dalam hal ini bertindak untuk dan atas nama ' + perusahaan + ', untuk selanjutnya disebut PIHAK PERTAMA</p>' +
+                '<table class="k">' + kv('2.', 'Nama', V('kepalaNama', T('kepalaNama'))) + kv('', 'Jabatan', V('kepalaJabatan', T('kepalaJabatan'))) + kv('', 'Alamat', V('kepalaAlamat', T('kepalaAlamat'))) + '</table>' +
+                '<p class="dpk-para">dalam hal ini bertindak untuk dan atas nama Balai Besar Standardisasi dan pelayanan Jasa Industri Selulosa Kementerian Perindustrian, selanjutnya disebut PIHAK KEDUA.</p>' +
+                '<p class="c"><b>MENGINGAT</b></p>' +
+                '<p>PIHAK PERTAMA dan PIHAK KEDUA selanjutnya secara bersama-sama disebut PARA PIHAK bersepakat mengadakan Perjanjian Kerja Sama pekerjaan &rdquo;' + judul + '&rdquo;, dengan ketentuan sebagaimana dijelaskan dalam pasal-pasal berikut ini:</p>';
+    
+            var lingkup = poin.length
+                ? poin.map(function (x, i) { return li('(' + (i + 1) + ')', V('ruangLingkup', esc(x))); }).join('')
+                : li('(1)', V('ruangLingkup', '')) + li('(2)', '.....................................................') + li('(3)', '.....................................................');
+    
+            var jangka = 'Jangka waktu pelaksanaan pekerjaan adalah ' + V('selesai', n ? n + ' (' + esc(terbilang(n)) + ') hari' : '') + ', terhitung sejak tanggal ' + V('mulai', m ? m.tgl : '') + ' bulan ' + V('mulai', m ? m.bulan : '') + ' tahun ' + V('mulai', m ? m.tahun : '') + ' sampai dengan tanggal ' + V('selesai', s ? s.tgl : '') + ' bulan ' + V('selesai', s ? s.bulan : '') + ' tahun ' + V('selesai', s ? s.tahun : '') + ', dan sejak Perjanjian Kerja Sama ditandatangani oleh PARA PIHAK.';
+            var biaya = 'Biaya pelaksanaan pekerjaan telah disepakati oleh PARA PIHAK yaitu sebesar ' + V('biaya', vals.biaya > 0 ? 'Rp ' + rp(vals.biaya) + ',00 (' + esc(terbilang(vals.biaya)) + ' rupiah)' : '') + '.';
+    
+            var s2 = pasal(1, 'TUGAS PEKERJAAN') +
+                '<p>PIHAK PERTAMA menyetujui untuk memberikan pekerjaan kepada PIHAK KEDUA dan PIHAK KEDUA menyatakan kesanggupannya untuk melaksanakan pekerjaan &rdquo; ' + judul + '&rdquo;.</p>' +
+                pasal(2, 'RUANG LINGKUP PEKERJAAN') + '<p>Ruang lingkup pekerjaan adalah :</p>' + lingkup +
+                pasal(3, 'JANGKA WAKTU PELAKSANAAN PEKERJAAN') + '<p>' + jangka + '</p>' +
+                pasal(4, 'BIAYA') + '<p>' + biaya + '</p>' +
+                pasal(5, 'PEMBAYARAN') +
+                li('(1)', 'Pembayaran dilaksanakan oleh PIHAK PERTAMA kepada PIHAK KEDUA sebelum pekerjaan dimulai.') +
+                li('(2)', 'PIHAK PERTAMA akan melakukan pembayaran setelah menerima <i>invoice</i> (surat tagihan) dari PIHAK KEDUA.') +
+                li('(3)', 'Pembayaran dari PIHAK PERTAMA kepada PIHAK KEDUA dilakukan secara transfer melalui Bank Mandiri <i>Virtual Account Billing</i> (VA) dengan nomor VA sesuai dengan invoice yang diterbitkan.') +
+                li('(4)', 'Apabila ada biaya kliring transfer, maka dibebankan kepada PIHAK PERTAMA.') +
+                li('(5)', 'PIHAK KEDUA bukan Pengusaha Kena Pajak (non PKP) sehingga tidak dapat menerbitkan faktur pajak.');
+    
+            var s3 = pasal(6, 'KEWAJIBAN DAN HAK PARA PIHAK') +
+                li('(1)', 'Kewajiban PIHAK PERTAMA adalah:') +
+                li('a.', 'Membayar kepada PIHAK KEDUA seluruh biaya pekerjaan sebagaimana dimaksud pada Pasal 4 (Biaya) sesuai dengan ketentuan pembayaran sebagaimana dimaksud pada Pasal 5 (Pembayaran).', true) +
+                (vals.sampel ? li('b.', '<span class="dpk-v manual" data-f="sampel">Menyiapkan sampel yang dibutuhkan oleh PIHAK KEDUA.</span>', true) : '') +
+                li('(2)', 'Hak PIHAK PERTAMA adalah :') +
+                li('a.', 'Menerima laporan teknis dari PIHAK KEDUA.', true) +
+                li('b.', 'Menerima hasil pekerjaan dari PIHAK KEDUA sesuai dengan jadwal yang telah ditetapkan.', true) +
+                li('(3)', 'Kewajiban PIHAK KEDUA adalah :') +
+                li('a.', 'Melaksanakan pekerjaan sebagaimana dimaksud pada Pasal 2 (Ruang Lingkup) dalam jangka waktu sebagaimana dimaksud dalam Pasal 3 (Jangka Waktu Pelaksanaan Pekerjaan).', true) +
+                li('b.', 'Menyerahkan laporan sebagaimana dimaksud pada Pasal 2 (Ruang Lingkup) Perjanjian Kerja Sama ini kepada PIHAK PERTAMA.', true) +
+                li('(4)', 'Hak PIHAK KEDUA adalah menerima pembayaran dari PIHAK PERTAMA yang telah ditentukan pada pasal 5 (Pembayaran) dalam perjanjian ini.') +
+                pasal(7, 'PERSELISIHAN') +
+                li('(1)', 'Perjanjian ini tunduk, diatur dan ditafsirkan menurut ketentuan hukum yang berlaku di Indonesia.') +
+                li('(2)', 'PARA PIHAK sepakat jika terjadi perselisihan Kerja Sama terkait dengan pelaksanaan pekerjaan ini, maka akan diselesaikan secara musyawarah dan mufakat.') +
+                li('(3)', 'Perselisihan yang timbul dari atau berkenaan dengan Perjanjian Kerja Sama ini yang tidak dapat diselesaikan secara damai dalam waktu 30 (tiga puluh) hari kalender setelah perselisihan ini yang diberitahukan secara tertulis oleh PIHAK yang satu kepada PIHAK lainnya akan diselesaikan melalui pengadilan. PARA PIHAK dengan ini memilih domisili hukum yang umum dan tetap di kantor Panitera Pengadilan Negeri Bandung.');
+    
+            var s4 = pasal(8, 'KOMITMEN ANTI GRATIFIKASI') +
+                li('(1)', 'PARA PIHAK berkomitmen untuk melaksanakan Perjanjian Kerja Sama ini dengan menjunjung tinggi prinsip integritas, profesionalisme, transparansi, dan akuntabilitas, serta berperan aktif dalam upaya pencegahan dan pemberantasan Korupsi, Kolusi, dan Nepotisme (KKN), serta tidak melakukan atau terlibat dalam perbuatan yang bertentangan dengan ketentuan peraturan perundang-undangan.') +
+                li('(2)', 'PARA PIHAK sepakat untuk tidak meminta, menerima, menawarkan, menjanjikan, atau memberikan secara langsung maupun tidak langsung segala bentuk suap, gratifikasi yang bertentangan dengan ketentuan peraturan perundang-undangan, atau pemberian lainnya yang dapat memengaruhi independensi dan objektivitas dalam pelaksanaan Perjanjian Kerja Sama ini.') +
+                li('(3)', 'PARA PIHAK dilarang menyalahgunakan jabatan, kewenangan, maupun pengaruh yang dimiliki untuk memperoleh keuntungan pribadi dan/atau menguntungkan pihak tertentu yang bertentangan dengan ketentuan peraturan perundang-undangan.') +
+                li('(4)', 'Apabila di kemudian hari terbukti terjadi pelanggaran terhadap ketentuan sebagaimana dimaksud pada ayat (1), ayat (2), dan ayat (3), PARA PIHAK sepakat untuk menerima konsekuensi sesuai dengan ketentuan peraturan perundang-undangan dan ketentuan lain yang berlaku.') +
+                pasal(9, 'FORCE MAJEURE') +
+                li('(1)', '<i>Force majeure</i> atau keadaan kahar adalah suatu kejadian yang terjadi diluar kehendak PARA PIHAK dan tidak dapat diperkirakan sebelumnya sehingga kewajiban dari masing-masing PARA PIHAK yang ditentukan dalam Perjanjian Kerja Sama ini tidak dapat dipenuhi.') +
+                li('(2)', 'Dalam hal sebagaimana dimaksud pada ayat (1) pasal ini yang tidak dapat diatasi sehingga mengakibatkan terhentinya kegiatan Kerja Sama, maka PARA PIHAK akan berunding untuk menentukan kelanjutan dari Perjanjian Kerja Sama ini.') +
+                li('(3)', 'PIHAK yang terkena dampak peristiwa Keadaan Kahar tersebut wajib memberitahukan kepada PIHAK lainnya secara tertulis selambat-lambatnya 7 (tujuh) hari sejak terjadinya Keadaan Kahar disertasi bukti-bukti yang sah sepanjang jangka waktu tersebut wajar dengan mempertimbangkan peristiwa Keadaan Kahar tersebut.') +
+                li('(4)', 'Semua biaya dan kerugian yang timbul atau dialami oleh salah satu PIHAK karena kejadian <i>majeure</i> tidak dapat dibebankan kepada PIHAK lainnya dan tidak dapat diwajibkan untuk membayar uang denda.');
+    
+            var s5 = pasal(10, 'PEMBERITAHUAN') +
+                '<p>Seluruh pemberitahuan atau komunikasi yang dilaksanakan berdasarkan Perjanjian Kerja Sama ini harus dialamatkan ke:</p>' +
+                '<p><b>PIHAK PERTAMA</b><br><b>' + perusahaan + '</b></p>' +
+                '<table class="k">' + kv('', 'UP', V('upNama', T('upNama')) + ' &nbsp;' + V('upJabatan', T('upJabatan'))) + kv('', 'Alamat', V('alamatNotif', T('alamatNotif'))) + kv('', 'Telepon', V('telepon', T('telepon'))) + kv('', 'Whats App', V('whatsapp', T('whatsapp'))) + kv('', 'Email', V('email', T('email'))) + '</table>' +
+                '<p><b>PIHAK KEDUA</b><br><b>Balai Besar Standardisasi dan Pelayanan Jasa Industri Selulosa</b></p>' +
+                '<table class="k">' + kv('', 'UP', V('kedUpNama', T('kedUpNama')) + '<br>' + V('kedUpJabatan', T('kedUpJabatan'))) + kv('', 'Alamat', V('kepalaAlamat', T('kepalaAlamat'))) + kv('', 'Telepon', V('kedTelepon', T('kedTelepon'))) + kv('', 'Whats App', V('kedWa', T('kedWa'))) + kv('', 'Email', V('kedEmail', T('kedEmail'))) + '</table>' +
+                pasal(11, 'KETENTUAN UMUM') +
+                li('(1)', 'Perjanjian Kerja Sama inibersifat mengikat sesuai dengan ketentuan sebagaimana dimaksud dalam perjanjian ini berdasarkan kesepakatan PARA PIHAK.') +
+                li('(2)', 'Hal lain yang belum diatur dalam Perjanjian Kerja Sama ini, termasuk perubahan yang dianggap perlu oleh PARA PIHAK akan diatur dalam perjanjian tambahan (<i>adendum</i>) dan merupakan bagian tidak terpisahkan dari Perjanjian Kerja Sama ini.') +
+                li('(3)', 'Perjanjian Kerja Sama ini dibuat dan ditandatangani pada hari dan tanggal sebagaimana tersebut diatas, dalam rangkap 2 (dua) dan bermeterai untuk masing-masing pihak, serta mempunyai kekuatan hukum yang sama bagi PARA PIHAK.') +
+                '<div class="dpk-ttd"><div><b>PIHAK KEDUA</b><br><b>Balai Besar Standardisasi dan Pelayanan Jasa Industri Selulosa</b><div class="sp"></div><b class="n">' + V('kepalaNama', T('kepalaNama')) + '</b><br>' + V('kepalaJabatan', T('kepalaJabatan')) + '</div>' +
+                '<div><b>PIHAK PERTAMA</b><br><b>' + perusahaan + '</b><div class="sp"></div><b class="n">' + V('ttdNama', T('ttdNama')) + '</b><br>' + V('ttdJabatan', T('ttdJabatan')) + '</div></div>';
+    
+            var box = $('dpkPages');
+            var atas = box.scrollTop;
+            box.innerHTML = sheet(1, s1) + sheet(2, s2) + sheet(3, s3) + sheet(4, s4) + sheet(5, s5);
+            box.scrollTop = atas;
+        }
+    
+        
+        /* ---------- Kelengkapan ---------- */
+        function updProgress() {
+            var terisi = REQ.length - daftarKosongDi(vals).length;
+            var pct = Math.round(terisi / REQ.length * 100);
+            $('dpkProgTxt').textContent = terisi + ' dari ' + REQ.length + ' isian wajib terisi';
+            $('dpkProgPct').textContent = pct + '%';
+            $('dpkProgBar').style.width = pct + '%';
+        }
+    
+        
+        /* ---------- Logo ---------- */
+        function setLogo(file) {
+            if (!file) { return; }
+            if (!/^image\/(png|jpeg)$/.test(file.type)) { toast('Format logo harus PNG atau JPG.', true); return; }
+            if (file.size > LOGO_MAKS_BYTE) { toast('Ukuran logo maksimal 2 MB. File ini ' + (file.size / 1048576).toFixed(1).replace('.', ',') + ' MB.', true); return; }
+            var rd = new FileReader();
+            rd.onload = function () { logoSrc = String(rd.result); logoFile = file; hapusLogoFlag = false; dirty = true; $('dpkLogoBox').outerHTML = logoFieldHtml(); renderDoc(); toast('Logo terpasang. Ukurannya disamakan dengan logo BBSPJIS.'); };
+            rd.onerror = function () { toast('Logo gagal dibaca. Coba file lain.', true); };
+            rd.readAsDataURL(file);
+        }
+        function hapusLogo() { logoSrc = ''; logoFile = null; hapusLogoFlag = true; dirty = true; $('dpkLogoBox').outerHTML = logoFieldHtml(); renderDoc(); }
+    
+        /* ---------- Sinkron form dan pratinjau ---------- */
+        function kilas(fid, gulir) {
+            var box = $('dpkPages');
+            var els = box.querySelectorAll('[data-f="' + fid + '"]');
+            if (!els.length) { return; }
+            if (gulir && getComputedStyle(box).overflow !== 'visible') {
+                var y = els[0].getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop - box.clientHeight / 3;
+                box.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+            }
+            els.forEach(function (e) { e.classList.remove('flash'); void e.offsetWidth; e.classList.add('flash'); });
+        }
+    
+        function onInput(e) {
+            var el = e.target, fid = el.getAttribute('data-fid');
+            if (!fid) { return; }
+            var f = F[fid];
+            if (f.type === 'check') { vals[fid] = el.checked; }
+            else if (f.type === 'money') {
+                var angka = parseInt(String(el.value).replace(/[^0-9]/g, ''), 10) || 0;
+                vals[fid] = angka;
+                el.value = angka ? rp(angka) : '';
+            } else { vals[fid] = el.value; }
+            dirty = true;
+            if (fid === 'alamatPerusahaan' && !unlocked.alamatNotif && String(vals.alamatNotif) === String(dbv.alamatNotif)) {
+                dbv.alamatNotif = vals[fid]; vals.alamatNotif = vals[fid];
+                if ($('dpk_alamatNotif')) { $('dpk_alamatNotif').value = vals[fid]; }
+                updMeta('alamatNotif');
+            }
+            updMeta(fid);
+            updDerived();
+            renderDoc();
+            updProgress();
+            kilas(fid, false);
+        }
+    
+        function onClick(e) {
+            var t = e.target, el;
+            if ((el = t.closest('[data-idx-tab]'))) { idxTab = el.getAttribute('data-idx-tab'); renderIndex(); return; }
+            if ((el = t.closest('[data-dpk-open]'))) { bukaEditor(parseInt(el.getAttribute('data-dpk-open'), 10)); return; }
+            if (t.closest('[data-dpk-act="kembali"]')) { kembali(); return; }
+            if ((el = t.closest('[data-logo]'))) {
+                var aksi = el.getAttribute('data-logo');
+                if (aksi === 'hapus') { hapusLogo(); } else { $('dpk_logoKlien').click(); }
+                return;
+            }
+            if (t.closest('#dpkDrop')) { $('dpk_logoKlien').click(); return; }
+            if ((el = t.closest('[data-un]'))) {
+                var fid = el.getAttribute('data-un'), inp = $('dpk_' + fid);
+                if (String(vals[fid]) !== String(dbv[fid])) { vals[fid] = dbv[fid]; inp.value = fmtVal(F[fid], dbv[fid]); unlocked[fid] = false; }
+                else { unlocked[fid] = !unlocked[fid]; if (unlocked[fid]) { inp.focus(); } }
+                dirty = true;
+                updMeta(fid); updDerived(); renderDoc(); updProgress();
+                return;
+            }
+            if ((el = t.closest('[data-dpk-tab]'))) {
+                var lihat = el.getAttribute('data-dpk-tab') === 'preview';
+                $('dpkRoot').classList.toggle('show-preview', lihat);
+                document.querySelectorAll('.dpk-mtabs button').forEach(function (b) { b.classList.toggle('on', b === el); });
+                return;
+            }
+            if ((el = t.closest('.dpk-v[data-f]'))) {
+                var target = $('dpk_' + el.getAttribute('data-f'));
+                if (!target) { return; }
+                if (window.matchMedia('(max-width: 991.98px)').matches) {
+                    $('dpkRoot').classList.remove('show-preview');
+                    document.querySelectorAll('.dpk-mtabs button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-dpk-tab') === 'form'); });
+                }
+                var kartu = target.closest('details'); if (kartu) { kartu.open = true; }
+                target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                setTimeout(function () { target.focus({ preventScroll: true }); }, 250);
+            }
+        }
+    
+        
+        /* ---------- Simpan ke server ---------- */
+        function buatForm() {
+            var fd = new FormData();
+            fd.append('csrf_token', CSRF);
+            FIELDS.forEach(function (f) {
+                if (f.type === 'logo') { return; }
+                var v = vals[f.id];
+                if (f.type === 'check') { v = v ? '1' : '0'; }
+                fd.append(f.id, v == null ? '' : v);
+            });
+            if (logoFile) { fd.append('logo', logoFile); }
+            else if (hapusLogoFlag) { fd.append('hapus_logo', '1'); }
+            return fd;
+        }
+    
+        function kirim(aksi) {
+            return fetch(BASE + '/kontrak/' + poAktif.id + '/' + aksi, { method: 'POST', body: buatForm(), credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } }).then(function (r) {
+                return r.text().then(function (t) {
+                    var j;
+                    try { j = JSON.parse(t); } catch (e) { throw new Error('Server membalas ' + r.status + ' (bukan JSON). Bisa sesi berakhir atau error PHP. Buka F12 > Network untuk melihat isinya.'); }
+                    if (!r.ok || !j.ok) { var er = new Error(j.pesan || 'Terjadi kesalahan.'); er.kosong = j.kosong || []; throw er; }
+                    return j;
+                });
+            });
+        }
+    
+        function kunciTombol(v) {
+            sedangProses = v;
+            $('dpkSimpan').disabled = v; $('dpkSelesai').disabled = v;
+        }
+    
+        function terapkanHasilSimpan(j) {
+            dirty = false; status = j.status; logoFile = null; hapusLogoFlag = false;
+            if (typeof j.logoUrl === 'string') { logoSrc = j.logoUrl; $('dpkLogoBox').outerHTML = logoFieldHtml(); renderDoc(); }
+            updHint();
+        }
+    
+        function simpanDraft() {
+            if (sedangProses) { return Promise.resolve(false); }
+            kunciTombol(true);
+            return kirim('simpan').then(function (j) {
+                terapkanHasilSimpan(j);
+                toast('Draft tersimpan. Kontrak untuk ' + poAktif.nomor + ' ada di tab Draft.');
+                return true;
+            }).catch(function (e) { toast(e.message, true); return false; }).then(function (ok) { kunciTombol(false); return ok; });
+        }
+    
+        function selesai() {
+            if (sedangProses) { return; }
+            var k = daftarKosongDi(vals);
+            if (k.length) {
+                toast('Masih ada ' + k.length + ' isian wajib kosong: ' + k.map(function (f) { return f.label; }).slice(0, 3).join(', ') + (k.length > 3 ? ', dan lainnya' : '') + '.', true);
+                kilas(k[0].id, true);
+                return;
+            }
+            if (hariAntara(vals.mulai, vals.selesai) === 0) { toast('Tanggal selesai harus sama atau setelah tanggal mulai.', true); kilas('selesai', true); return; }
+            dialog({ judul: 'Tandai kontrak selesai?', pesan: 'Kontrak ' + nomorDari(vals) + ' akan masuk tab Selesai dan bisa diunduh sebagai Word.', ya: 'Ya, selesai', tidak: 'Periksa lagi', ikon: 'bi-check2-circle', warna: 'ok' }).then(function (h) {
+                if (h !== 'ya') { return; }
+                kunciTombol(true);
+                kirim('selesai').then(function () {
+                    dirty = false;
+                    window.location.href = BASE + '/kontrak?tab=selesai&pesan=selesai';
+                }).catch(function (e) {
+                    kunciTombol(false);
+                    toast(e.message, true);
+                    if (e.kosong && e.kosong.length) { kilas(e.kosong[0], true); }
+                });
+            });
+        }
+    
+        function tabKembali() { return status === 'selesai' ? 'selesai' : (status === 'draft' ? 'draft' : 'baru'); }
+        function keIndex() { window.location.href = BASE + '/kontrak?tab=' + tabKembali(); }
+    
+        function kembali() {
+            if (!dirty) { keIndex(); return; }
+            dialog({ judul: 'Simpan perubahan?', pesan: 'Ada perubahan yang belum disimpan pada kontrak ' + poAktif.nomor + '.', ya: 'Simpan draft', tidak: 'Buang perubahan', ikon: 'bi-exclamation-triangle', warna: 'warn' }).then(function (h) {
+                if (h === 'batal') { return; }
+                if (h === 'tidak') { dirty = false; keIndex(); return; }
+                simpanDraft().then(function (ok) { if (ok) { keIndex(); } });
+            });
+        }
+    
+        function updHint() {
+            $('dpkHint').textContent = status === 'selesai'
+                ? 'Kontrak ini sudah selesai. Menyimpan sebagai draft memindahkannya kembali ke tab Draft.'
+                : (status === 'draft' ? 'Draft tersimpan. Tekan Selesai kalau semua isian wajib sudah lengkap.' : 'Belum pernah disimpan.');
+        }
+    
+        function onInput(e) {
+            var el = e.target, fid = el.getAttribute('data-fid');
+            if (!fid) { return; }
+            var f = F[fid];
+            if (f.type === 'check') { vals[fid] = el.checked; }
+            else if (f.type === 'money') {
+                var angka = parseInt(String(el.value).replace(/[^0-9]/g, ''), 10) || 0;
+                vals[fid] = angka;
+                el.value = angka ? rp(angka) : '';
+            } else { vals[fid] = el.value; }
+            dirty = true;
+            if (fid === 'alamatPerusahaan' && !unlocked.alamatNotif && String(vals.alamatNotif) === String(dbv.alamatNotif)) {
+                dbv.alamatNotif = vals[fid]; vals.alamatNotif = vals[fid];
+                if ($('dpk_alamatNotif')) { $('dpk_alamatNotif').value = vals[fid]; }
+                updMeta('alamatNotif');
+            }
+            updMeta(fid);
+            updDerived();
+            renderDoc();
+            updProgress();
+            kilas(fid, false);
+        }
+    
+        function onClick(e) {
+            var t = e.target, el;
+            if ((el = t.closest('[data-dpk-act="kembali"]'))) { e.preventDefault(); kembali(); return; }
+            if ((el = t.closest('[data-logo]'))) {
+                var aksi = el.getAttribute('data-logo');
+                if (aksi === 'hapus') { hapusLogo(); } else { $('dpk_logoKlien').click(); }
+                return;
+            }
+            if (t.closest('#dpkDrop')) { $('dpk_logoKlien').click(); return; }
+            if ((el = t.closest('[data-un]'))) {
+                var fid = el.getAttribute('data-un'), inp = $('dpk_' + fid);
+                if (String(vals[fid]) !== String(dbv[fid])) { vals[fid] = dbv[fid]; inp.value = fmtVal(F[fid], dbv[fid]); unlocked[fid] = false; }
+                else { unlocked[fid] = !unlocked[fid]; if (unlocked[fid]) { inp.focus(); } }
+                dirty = true;
+                updMeta(fid); updDerived(); renderDoc(); updProgress();
+                return;
+            }
+            if ((el = t.closest('[data-dpk-tab]'))) {
+                var lihat = el.getAttribute('data-dpk-tab') === 'preview';
+                $('dpkRoot').classList.toggle('show-preview', lihat);
+                document.querySelectorAll('.dpk-mtabs button').forEach(function (b) { b.classList.toggle('on', b === el); });
+                return;
+            }
+            if ((el = t.closest('.dpk-v[data-f]'))) {
+                var target = $('dpk_' + el.getAttribute('data-f'));
+                if (!target) { return; }
+                if (window.matchMedia('(max-width: 991.98px)').matches) {
+                    $('dpkRoot').classList.remove('show-preview');
+                    document.querySelectorAll('.dpk-mtabs button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-dpk-tab') === 'form'); });
+                }
+                var kartu = target.closest('details'); if (kartu) { kartu.open = true; }
+                target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                setTimeout(function () { target.focus({ preventScroll: true }); }, 250);
+            }
+        }
+    
+        /* ---------- Popup ---------- */
+        var dlgResolve = null, dlgTimer = null, dlgFokus = null;
+        function dialog(o) {
+            return new Promise(function (resolve) {
+                if (dlgResolve) { dlgResolve('batal'); }
+                clearTimeout(dlgTimer);
+                dlgResolve = resolve; dlgFokus = document.activeElement;
+                $('dpkDlgIcon').className = 'dpk-dlg-icon' + (o.warna === 'ok' ? ' ok' : '');
+                $('dpkDlgIcon').innerHTML = '<i class="bi ' + (o.ikon || 'bi-exclamation-triangle') + '"></i>';
+                $('dpkDlgTitle').textContent = o.judul; $('dpkDlgMsg').textContent = o.pesan;
+                $('dpkDlgYes').textContent = o.ya; $('dpkDlgNo').textContent = o.tidak;
+                $('dpkDlg').hidden = false;
+                requestAnimationFrame(function () { $('dpkDlg').classList.add('show'); });
+                setTimeout(function () { $('dpkDlgYes').focus(); }, 30);
+            });
+        }
+        function tutupDialog(hasil) {
+            if (!dlgResolve) { return; }
+            var r = dlgResolve; dlgResolve = null;
+            $('dpkDlg').classList.remove('show');
+            dlgTimer = setTimeout(function () { $('dpkDlg').hidden = true; }, 160);
+            if (dlgFokus && dlgFokus.focus) { try { dlgFokus.focus(); } catch (e) {} }
+            r(hasil);
+        }
+    
+        /* ---------- Toast ---------- */
+        var toastTimer;
+        function toast(text, galat) {
+            var t = $('dpkToast');
+            t.textContent = text;
+            t.classList.toggle('err', !!galat);
+            t.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(function () { t.classList.remove('show'); }, galat ? 7000 : 4200);
+        }
+    
+        /* ---------- Event ---------- */
+        $('dpkRoot').addEventListener('click', onClick);
+        $('dpkForm').addEventListener('input', onInput);
+        $('dpkForm').addEventListener('focusin', function (e) {
+            var fid = e.target.getAttribute && e.target.getAttribute('data-fid');
+            if (fid && window.matchMedia('(min-width: 992px)').matches) { kilas(fid, true); }
+        });
+        $('dpk_logoKlien').addEventListener('change', function () { setLogo(this.files && this.files[0]); this.value = ''; });
+        $('dpkForm').addEventListener('keydown', function (e) {
+            if ((e.key === 'Enter' || e.key === ' ') && e.target.id === 'dpkDrop') { e.preventDefault(); $('dpk_logoKlien').click(); }
+        });
+        ['dragenter', 'dragover'].forEach(function (n) { $('dpkForm').addEventListener(n, function (e) { if (e.target.closest && e.target.closest('#dpkDrop')) { e.preventDefault(); $('dpkDrop').classList.add('over'); } }); });
+        ['dragleave', 'drop'].forEach(function (n) { $('dpkForm').addEventListener(n, function () { var d = $('dpkDrop'); if (d) { d.classList.remove('over'); } }); });
+        $('dpkForm').addEventListener('drop', function (e) { if (e.target.closest && e.target.closest('#dpkDrop')) { e.preventDefault(); setLogo(e.dataTransfer.files && e.dataTransfer.files[0]); } });
+        $('dpkSorot').addEventListener('change', function () { $('dpkPages').classList.toggle('dpk-hl', this.checked); });
+        $('dpkSimpan').addEventListener('click', simpanDraft);
+        $('dpkSelesai').addEventListener('click', selesai);
+        $('dpkDlgYes').addEventListener('click', function () { tutupDialog('ya'); });
+        $('dpkDlgNo').addEventListener('click', function () { tutupDialog('tidak'); });
+        $('dpkDlg').addEventListener('click', function (e) { if (e.target === $('dpkDlg')) { tutupDialog('batal'); } });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && dlgResolve) { e.preventDefault(); tutupDialog('batal'); } });
+    
+        $('dpkEdJudul').textContent = 'Kontrak untuk ' + poAktif.nomor;
+        renderForm(); renderDoc(); updProgress(); updHint();
+    })();
+    </script>
+    
