@@ -68,6 +68,14 @@ class PenggunaController extends Controller {
                 'category' => 'manajemen',
                 'desc' => 'Penerimaan order dan administrasi klien'
             ),
+            'ketua_tim_keuangan' => array(
+                'label' => 'Ketua Tim Keuangan',
+                'badge_class' => 'role-badge role-badge-katim-keuangan',
+                'badge_style' => '',
+                'icon' => 'bi-award-fill',
+                'category' => 'manajemen',
+                'desc' => 'Koordinator verifikasi pembayaran & alur keuangan'
+            ),
             'keuangan' => array(
                 'label' => 'Tim Keuangan',
                 'badge_class' => 'role-badge role-badge-keuangan',
@@ -87,7 +95,8 @@ class PenggunaController extends Controller {
             'superadmin'           => 'Super Administrator',
             'ketua_tim_selulosa'   => 'Ketua Tim Selulosa',
             'ketua_tim_lingkungan' => 'Ketua Tim Lingkungan',
-            'ketua_tim_mitra'      => 'Ketua Tim Mitra'
+            'ketua_tim_mitra'      => 'Ketua Tim Mitra',
+            'ketua_tim_keuangan'   => 'Ketua Tim Keuangan'
         );
     }
 
@@ -102,6 +111,7 @@ class PenggunaController extends Controller {
             'katim_lingkungan'          => 'ketua_tim_lingkungan',
             'katim_mitra'               => 'ketua_tim_mitra',
             'ketua_tim_mitra_industri'  => 'ketua_tim_mitra',
+            'katim_keuangan'            => 'ketua_tim_keuangan',
             'tk_selulosa'               => 'tim_kerja_selulosa',
             'tk_lingkungan'             => 'tim_kerja_lingkungan'
         );
@@ -198,8 +208,8 @@ class PenggunaController extends Controller {
         $statsRaw = $this->db->exec("
             SELECT 
                 SUM(CASE WHEN si_opti IN ('tim_mitra_industri', 'admin_order', 'tim_mitra', 'ketua_tim_mitra', 'katim_mitra', 'ketua_tim_mitra_industri') THEN 1 ELSE 0 END) AS cnt_mitra,
-                SUM(CASE WHEN si_opti = 'keuangan' THEN 1 ELSE 0 END) AS cnt_keuangan,
-                SUM(CASE WHEN si_opti IN ('ketua_tim_selulosa', 'ketua_tim_lingkungan', 'ketua_tim_mitra', 'katim_selulosa', 'katim_lingkungan', 'katim_mitra', 'ketua_tim_mitra_industri') THEN 1 ELSE 0 END) AS cnt_katim,
+                SUM(CASE WHEN si_opti IN ('keuangan', 'ketua_tim_keuangan', 'katim_keuangan') THEN 1 ELSE 0 END) AS cnt_keuangan,
+                SUM(CASE WHEN si_opti IN ('ketua_tim_selulosa', 'ketua_tim_lingkungan', 'ketua_tim_mitra', 'ketua_tim_keuangan', 'katim_selulosa', 'katim_lingkungan', 'katim_mitra', 'katim_keuangan', 'ketua_tim_mitra_industri') THEN 1 ELSE 0 END) AS cnt_katim,
                 SUM(CASE WHEN si_opti IN ('tim_kerja_selulosa', 'tim_kerja_lingkungan', 'tk_selulosa', 'tk_lingkungan') THEN 1 ELSE 0 END) AS cnt_pelaksana,
                 SUM(CASE WHEN si_opti IS NULL OR si_opti = '' OR si_opti = 'user' THEN 1 ELSE 0 END) AS cnt_non_role
             FROM tb_arsipuser
@@ -215,7 +225,7 @@ class PenggunaController extends Controller {
         $currentKetuaList = $this->db->exec("
             SELECT id_user, nama_user, si_opti 
             FROM tb_arsipuser 
-            WHERE si_opti IN ('superadmin', 'ketua_tim_selulosa', 'ketua_tim_lingkungan', 'ketua_tim_mitra', 'katim_selulosa', 'katim_lingkungan', 'katim_mitra', 'ketua_tim_mitra_industri')
+            WHERE si_opti IN ('superadmin', 'ketua_tim_selulosa', 'ketua_tim_lingkungan', 'ketua_tim_mitra', 'ketua_tim_keuangan', 'katim_selulosa', 'katim_lingkungan', 'katim_mitra', 'katim_keuangan', 'ketua_tim_mitra_industri')
         ");
         $occupiedKetua = array();
         foreach ($currentKetuaList as $k) {
@@ -292,6 +302,8 @@ class PenggunaController extends Controller {
             } elseif ($normRole === 'ketua_tim_mitra') {
                 $aliasList[] = 'katim_mitra';
                 $aliasList[] = 'ketua_tim_mitra_industri';
+            } elseif ($normRole === 'ketua_tim_keuangan') {
+                $aliasList[] = 'katim_keuangan';
             }
 
             $placeholders = implode(',', array_fill(0, count($aliasList), '?'));
@@ -388,6 +400,8 @@ class PenggunaController extends Controller {
             } elseif ($normRole === 'ketua_tim_mitra') {
                 $aliasList[] = 'katim_mitra';
                 $aliasList[] = 'ketua_tim_mitra_industri';
+            } elseif ($normRole === 'ketua_tim_keuangan') {
+                $aliasList[] = 'katim_keuangan';
             }
 
             $placeholders = implode(',', array_fill(0, count($aliasList), '?'));
@@ -497,6 +511,9 @@ class PenggunaController extends Controller {
             $layanan = 'lingkungan';
         } elseif ($siOpti === 'ketua_tim_mitra' || $siOpti === 'katim_mitra' || $siOpti === 'ketua_tim_mitra_industri') {
             $roleOpti = 'ketua_tim_mitra';
+            $layanan = 'semua';
+        } elseif ($siOpti === 'ketua_tim_keuangan' || $siOpti === 'katim_keuangan') {
+            $roleOpti = 'ketua_tim_keuangan';
             $layanan = 'semua';
         } elseif ($siOpti === 'tim_kerja_selulosa' || $siOpti === 'tk_selulosa') {
             $roleOpti = 'tim_kerja';

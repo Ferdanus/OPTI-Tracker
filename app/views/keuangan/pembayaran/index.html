@@ -121,23 +121,6 @@
     </div>
 </div>
 
-<!-- ===== MODAL 2: PREVIEW BUKTI PEMBAYARAN (numpuk di atas modal 1) ===== -->
-<div class="modal fade" id="modalBuktiPembayaran" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content border-0 shadow-lg" style="height: 85vh;">
-            <div class="modal-header py-2 px-3 border-bottom">
-                <h6 class="modal-title fw-bold mb-0"><i class="bi bi-file-earmark-check text-success me-2"></i>Bukti Pembayaran</h6>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body p-0" style="background:#e9ecef;">
-                <iframe id="iframeBuktiPembayaran" src="" style="width:100%; height:100%; border:none;"></iframe>
-            </div>
-            <div class="modal-footer py-2 border-top">
-                <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">Tutup</button>
-            </div>
-        </div>
-    </div>
-</div>
 </div>
 
 <style>
@@ -206,13 +189,11 @@
     }, 0);
 });
 function bukaBuktiPembayaran(itemId) {
-    document.getElementById('iframeBuktiPembayaran').src = BASE + '/pembayaran/bukti/' + itemId;
-    bootstrap.Modal.getOrCreateInstance(document.getElementById('modalBuktiPembayaran')).show();
+    var url = BASE + '/pembayaran/bukti/' + itemId;
+    if (typeof openPdfPreviewModal === 'function') {
+        openPdfPreviewModal(url, 'Bukti Pembayaran', 'Termin Pembayaran');
+    }
 }
-
-document.getElementById('modalBuktiPembayaran').addEventListener('hidden.bs.modal', function () {
-    document.getElementById('iframeBuktiPembayaran').src = '';
-});
 function bukaDetailLunas(orderId) {
     var order = DATA_LUNAS.find(function (o) { return String(o.id) === String(orderId); });
     if (!order) return;
@@ -272,7 +253,7 @@ function divisiBadge(d) {
 }
 function skbBadge(o) {
     if (o.surat_kesanggupan_bayar) {
-        return '<div class="mt-1"><a href="' + BASE + '/surat-penawaran/' + o.sp_id + '/surat-kesanggupan/preview" target="_blank" class="kb-badge-ada" onclick="event.stopPropagation();"><i class="bi bi-file-earmark-check-fill"></i> Kesanggupan Bayar</a></div>';
+        return '<div class="mt-1"><button type="button" class="kb-badge-ada btn-preview-pdf border-0" data-preview-pdf="' + BASE + '/surat-penawaran/' + o.sp_id + '/surat-kesanggupan/preview" data-title="Surat Kesanggupan Bayar" data-subtitle="Order: ' + o.nomor_order + '" onclick="event.stopPropagation();"><i class="bi bi-file-earmark-check-fill"></i> Kesanggupan Bayar</button></div>';
     }
     return '<div class="mt-1"><span class="kb-badge-none"><i class="bi bi-dash-circle"></i> Belum ada Kesanggupan</span></div>';
 }
@@ -452,7 +433,7 @@ function renderHistori(list) {
     body.innerHTML = list.length === 0
         ? '<tr><td colspan="9" class="text-center text-muted py-5"><i class="bi bi-wallet2 fs-2 d-block mb-2"></i>Tidak ada transaksi di periode ini.</td></tr>'
         : list.map(function (h, idx) {
-            var buktiCol = h.bukti_bayar ? '<a href="' + BASE + '/pembayaran/bukti/' + h.id + '" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary py-0"><i class="bi bi-eye"></i></a>' : '<span class="text-muted small">-</span>';
+            var buktiCol = h.bukti_bayar ? '<button type="button" class="btn btn-sm btn-outline-secondary py-0 btn-preview-pdf" data-preview-pdf="' + BASE + '/pembayaran/bukti/' + h.id + '" data-title="Bukti Pembayaran" data-subtitle="Order: ' + h.nomor_order + ' &bull; Termin Ke-' + h.termin_ke + '" title="Pratinjau Bukti Pembayaran"><i class="bi bi-eye"></i></button>' : '<span class="text-muted small">-</span>';
             return '<tr><td class="text-muted small">' + (idx + 1) + '</td><td class="small">' + tglIndo(h.tanggal_bayar) + '</td><td class="fw-semibold small">' + h.nomor_order + '</td><td class="small text-muted">' + h.nama_perusahaan + '</td>' +
                 '<td class="text-center"><span class="badge badge-pill-primary">Ke-' + h.termin_ke + '</span></td>' +
                 '<td class="text-end fw-semibold text-success">' + rupiah(h.jumlah) + '</td>' +

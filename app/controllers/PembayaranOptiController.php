@@ -253,6 +253,8 @@ if ($isKesanggupan) {
         $pembayaran->created_at           = date('Y-m-d H:i:s');
         $pembayaran->save();
 
+        $this->logActivity($orderId, 'pembayaran', 'verifikasi_pembayaran', "Mencatat bukti kesanggupan bayar dari pelanggan (Status Keuangan: Berjalan)");
+
 if (!empty($post['disposisi_langsung'])) {
     $this->lakukanDisposisiKatim($orderId, $this->getUserId());
     $this->setFlashSuccess('Order dicatat sebagai Kesanggupan Bayar & sudah didisposisikan ke Ketua Tim.');
@@ -326,6 +328,8 @@ if ($sisaSebelumBayar !== null && $jumlah > $sisaSebelumBayar) {
             // [PENTING] ini yang nge-update order_layanan.status_keuangan otomatis
             $statusBaru = $this->recalcStatusKeuangan($orderId);
 
+            $this->logActivity($orderId, 'pembayaran', 'verifikasi_pembayaran', "Mencatat dan memverifikasi pembayaran Termin ke-{$terminKe} sebesar Rp " . number_format($jumlah, 0, ',', '.') . " (" . strtoupper(str_replace('_', ' ', $metode)) . ") - Status: " . ucfirst($statusBaru));
+
 if ($statusBaru === 'lunas' && !empty($post['disposisi_langsung'])) {
     $this->lakukanDisposisiKatim($orderId, $this->getUserId());
     $pesanSukses = 'Pembayaran tercatat. Order dinyatakan LUNAS & sudah didisposisikan ke Ketua Tim.';
@@ -356,6 +360,7 @@ $this->setFlashSuccess($pesanSukses);
             $orderId = $pembayaran->order_id;
             $pembayaran->erase();
             $this->recalcStatusKeuangan($orderId);
+            $this->logActivity($orderId, 'pembayaran', 'hapus_pembayaran', "Menghapus transaksi pembayaran ID #{$id}");
             $this->setFlashSuccess('Transaksi pembayaran berhasil dihapus.');
         } else {
             $this->setFlashError('Transaksi tidak ditemukan.');
@@ -371,16 +376,47 @@ $this->setFlashSuccess($pesanSukses);
         $row = $this->safeQuery('SELECT bukti_bayar FROM opti_pembayaran WHERE id = ?', [(int)$params['id']]);
         if (empty($row) || empty($row[0]['bukti_bayar'])) { $f3->error(404); return; }
 
-        $fileName = $row[0]['bukti_bayar'];
-        $path = $this->f3->get('ROOT') . '/storage/pembayaran/' . $fileName;
-        if (!is_file($path)) { $f3->error(404); return; }
+        $rawPath = $row[0]['bukti_bayar'];
+        $root = rtrim($this->f3->get('ROOT') ?: '', '/\\');
 
+        $candidates = [
+            $root . '/' . ltrim($rawPath, '/\\'),
+            $root . '/storage/pembayaran/' . basename($rawPath),
+            $root . '/uploads/bukti_bayar/' . basename($rawPath),
+            $rawPath,
+            dirname(__DIR__, 2) . '/' . ltrim($rawPath, '/\\'),
+            dirname(__DIR__, 2) . '/storage/pembayaran/' . basename($rawPath),
+            dirname(__DIR__, 2) . '/uploads/bukti_bayar/' . basename($rawPath),
+        ];
+
+        $path = null;
+        foreach ($candidates as $candidate) {
+            if (!empty($candidate) && is_file($candidate)) {
+                $path = $candidate;
+                break;
+            }
+        }
+
+        if (!$path) {
+            $f3->error(404);
+            return;
+        }
+
+        $fileName = basename($path);
         $ext = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
-        $mimeMap = ['pdf' => 'application/pdf', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png'];
+        $mimeMap = [
+            'pdf'  => 'application/pdf',
+            'jpg'  => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'png'  => 'image/png',
+            'gif'  => 'image/gif',
+            'webp' => 'image/webp'
+        ];
 
         header('Content-Type: ' . ($mimeMap[$ext] ?? 'application/octet-stream'));
         header('Content-Disposition: inline; filename="' . $fileName . '"');
         header('Content-Length: ' . filesize($path));
+        header('Cache-Control: private, max-age=3600');
         readfile($path);
         exit;
     }
@@ -521,7 +557,9 @@ $this->setFlashSuccess($pesanSukses);
             "UPDATE order_layanan SET disposisi_katim_at = NOW(), disposisi_katim_oleh = ? WHERE id = ?",
             [1 => $userId, 2 => $orderId]
         );
-    
+
+        $this->logActivity($orderId, 'pembayaran', 'disposisi_katim', "Mendisposisikan status deal/lunas keuangan Order #{$order['nomor_order']} ke Ketua Tim OPTI");
+
         try {
             \NotificationService::send($this->db, [
                 'order_id'        => $orderId,

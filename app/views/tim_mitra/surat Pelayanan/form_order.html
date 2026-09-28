@@ -864,7 +864,7 @@
                                     <i class="bi bi-clock text-secondary"></i>
                                     <span>Durasi:&nbsp;<strong class="text-dark">{{ @proposal.durasi_kegiatan ?: '30 Hari Kerja' }}</strong></span>
                                 </div>
-                                <button type="button" class="btn-selulosa-preview" onclick="openProposalPreviewModal('{{ @order.id }}')">
+                                <button type="button" class="btn-selulosa-preview btn-preview-pdf" data-preview-pdf="{{ @BASE }}/order/{{ @order.id }}/proposal" data-title="Proposal Teknis" data-subtitle="Order #{{ @order.nomor_order }} &bull; {{ @order.nama_perusahaan }}">
                                     <i class="bi bi-file-earmark-pdf-fill"></i>
                                     <span>Pratinjau Proposal PDF</span>
                                 </button>
@@ -1286,13 +1286,13 @@
                         </span>
                     </div>
                     <div class="preview-btn-group">
-                        <a href="{{ @BASE }}/order/{{ @order.id }}/penawaran/preview-pdf?t={{ time() }}" target="_blank" class="preview-btn preview-btn-primary" title="Buka PDF Asli di Tab Baru">
+                        <button type="button" class="preview-btn preview-btn-primary btn-preview-pdf" data-preview-pdf="{{ @BASE }}/order/{{ @order.id }}/penawaran/cetak{{ @sp_existing && @sp_existing.id ? ('?id=' . @sp_existing.id) : '' }}" data-title="Surat Penawaran Resmi" data-subtitle="{{ @order.nama_perusahaan }}">
                             <i class="bi bi-file-earmark-pdf-fill"></i> Pratinjau PDF
-                        </a>
+                        </button>
                         <check if="{{ @sp_existing && @sp_existing.id }}">
-                            <a href="{{ @BASE }}/order/{{ @order.id }}/penawaran/cetak?id={{ @sp_existing.id }}&t={{ time() }}" target="_blank" class="preview-btn preview-btn-secondary" title="Unduh Dokumen PDF Resmi">
-                                <i class="bi bi-download text-danger"></i> Unduh PDF
-                            </a>
+                            <button type="button" class="preview-btn preview-btn-secondary btn-preview-pdf" data-preview-pdf="{{ @BASE }}/order/{{ @order.id }}/penawaran/cetak?id={{ @sp_existing.id }}&t={{ time() }}" data-title="Surat Penawaran Resmi" data-subtitle="{{ @sp_existing.nomor_surat }}">
+                                <i class="bi bi-file-earmark-arrow-down text-danger"></i> Unduh PDF
+                            </button>
                         </check>
                         <button type="button" class="preview-btn preview-btn-secondary" onclick="window.print()" title="Cetak Pratinjau Lembar Dokumen">
                             <i class="bi bi-printer" style="color: #475569;"></i> Cetak

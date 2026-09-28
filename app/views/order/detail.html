@@ -532,11 +532,150 @@
                 gap: 6px;
             }
         }
-        @media (max-width: 575.98px) {
-            .stage-nav-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 6px;
-            }
+        /* ======================================================== */
+        /* PREMIUM ACTIVITY TRACKER TIMELINE STYLING                */
+        /* ======================================================== */
+        .activity-tracker-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            background: #ffffff;
+            margin-top: 1.75rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 6px 16px -4px rgba(0, 0, 0, 0.03);
+            overflow: hidden;
+        }
+        .activity-tracker-header {
+            background: #ffffff;
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .activity-header-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.15rem;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            flex-shrink: 0;
+            border: 1px solid #cbd5e1;
+        }
+        .activity-timeline {
+            position: relative;
+            padding: 1.5rem 1.5rem 1rem 1.5rem;
+            background: #fbfcfe;
+        }
+        .activity-timeline::before {
+            content: '';
+            position: absolute;
+            top: 2rem;
+            bottom: 2rem;
+            left: calc(1.5rem + 17px);
+            width: 2px;
+            background: #e2e8f0;
+            z-index: 1;
+        }
+        .activity-item {
+            position: relative;
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            margin-bottom: 1.25rem;
+            z-index: 2;
+            transition: all 0.2s ease;
+        }
+        .activity-item:last-child {
+            margin-bottom: 0.5rem;
+        }
+        .activity-node {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            background: #ffffff;
+            border: 2px solid #cbd5e1;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+            font-size: 0.95rem;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-top: 4px;
+        }
+        .activity-item:hover .activity-node {
+            transform: scale(1.12);
+        }
+        .activity-node.node-view {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+            color: #64748b;
+        }
+        .activity-node.node-claim {
+            background: #eff6ff;
+            border-color: #93c5fd;
+            color: #2563eb;
+        }
+        .activity-node.node-success {
+            background: #f0fdf4;
+            border-color: #86efac;
+            color: #16a34a;
+        }
+        .activity-node.node-warn {
+            background: #fffbeb;
+            border-color: #fde68a;
+            color: #d97706;
+        }
+        .activity-node.node-primary {
+            background: #faf5ff;
+            border-color: #d8b4fe;
+            color: #9333ea;
+        }
+        .activity-card {
+            flex: 1 1 auto;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+            transition: all 0.2s ease;
+        }
+        .activity-card:hover {
+            border-color: #cbd5e1;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+            transform: translateY(-1px);
+        }
+        .activity-filter-btn {
+            font-size: 0.78rem;
+            font-weight: 600;
+            padding: 0.35rem 0.85rem;
+            border-radius: 20px;
+            border: 1px solid #cbd5e1;
+            background: #ffffff;
+            color: #475569;
+            transition: all 0.15s ease;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .activity-filter-btn:hover {
+            background: #f8fafc;
+            border-color: #94a3b8;
+            color: #0f172a;
+        }
+        .activity-filter-btn.active {
+            background: #0f172a;
+            color: #ffffff;
+            border-color: #0f172a;
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25);
         }
     </style>
 
@@ -1919,9 +2058,9 @@
                                 <!-- Action Footer: Tombol terstruktur rapi & sejajar -->
                                 <div class="px-3 py-2 bg-light border-top d-flex justify-content-between align-items-center flex-wrap gap-2">
                                     <div class="d-flex align-items-center gap-2 flex-wrap">
-                                        <a href="{{ @BASE }}/order/{{ @order.id }}/penawaran/cetak?id={{ @penawaran.id }}&t={{ time() }}" target="_blank" class="btn btn-sm btn-white border fw-semibold text-secondary shadow-xs d-inline-flex align-items-center gap-1.5" title="Cetak Surat Penawaran Resmi format PDF">
+                                        <button type="button" class="btn btn-sm btn-white border fw-semibold text-secondary shadow-xs d-inline-flex align-items-center gap-1.5 btn-preview-pdf" data-preview-pdf="{{ @BASE }}/order/{{ @order.id }}/penawaran/cetak?id={{ @penawaran.id }}&t={{ time() }}" data-title="Surat Penawaran Resmi" data-subtitle="{{ @penawaran.nomor_surat }}" title="Pratinjau Surat Penawaran Resmi format PDF">
                                             <i class="bi bi-file-earmark-pdf text-danger"></i> Cetak PDF
-                                        </a>
+                                        </button>
                                         <check if="{{ @is_admin_order || @is_superadmin }}">
                                             <button type="button" class="btn btn-sm btn-white border text-danger shadow-xs d-inline-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#modalHapusPenawaran{{ @penawaran.id }}" title="Hapus Dokumen Penawaran Ini">
                                                 <i class="bi bi-trash3"></i> Hapus
@@ -2022,9 +2161,9 @@
                                                             {{ @sp.catatan_nego ?: '-' }}
                                                         </td>
                                                         <td class="text-end pe-2">
-                                                            <a href="{{ @BASE }}/order/{{ @order.id }}/penawaran/cetak?id={{ @sp.id }}" target="_blank" class="btn btn-white border py-0.5 px-2 text-danger fw-semibold d-inline-flex align-items-center gap-1 shadow-xs" title="Cetak PDF Dokumen Surat Penawaran Ini">
+                                                            <button type="button" class="btn btn-white border py-0.5 px-2 text-danger fw-semibold d-inline-flex align-items-center gap-1 shadow-xs btn-preview-pdf" data-preview-pdf="{{ @BASE }}/order/{{ @order.id }}/penawaran/cetak?id={{ @sp.id }}" data-title="Surat Penawaran" data-subtitle="{{ @sp.nomor_surat }}" title="Pratinjau PDF Surat Penawaran Ini">
                                                                 <i class="bi bi-file-earmark-pdf"></i> PDF
-                                                            </a>
+                                                            </button>
                                                         </td>
                                                     </tr>
                                                 </repeat>
@@ -2133,10 +2272,10 @@
                     </div>
                     <div id="kbStatusWrap">
                         <check if="{{ !empty(@penawaran.surat_kesanggupan_bayar) }}">
-                            <a href="{{ @BASE }}/surat-penawaran/{{ @penawaran.id }}/surat-kesanggupan/preview" target="_blank"
-                               class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1" id="kbLihatBtn">
+                            <button type="button"
+                               class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1 btn-preview-pdf" id="kbLihatBtn" data-preview-pdf="{{ @BASE }}/surat-penawaran/{{ @penawaran.id }}/surat-kesanggupan/preview" data-title="Surat Kesanggupan Bayar" data-subtitle="Order: {{ @order.nomor_order }}">
                                 <i class="bi bi-file-earmark-check-fill text-success"></i> Lihat Berkas
-                            </a>
+                            </button>
                             <button type="button" class="btn btn-sm btn-outline-secondary ms-1" id="kbGantiBtn">
                                 <i class="bi bi-arrow-repeat"></i> Ganti
                             </button>
@@ -2260,9 +2399,9 @@
                                         </div>
                                         <div class="col-sm-4 text-sm-end d-flex flex-wrap justify-content-sm-end gap-2">
                                             <check if="{{ !empty(@riwayat_bayar[0].bukti_bayar) }}">
-                                                <a href="{{ @BASE }}/{{ @riwayat_bayar[0].bukti_bayar }}" target="_blank" class="btn btn-outline-primary btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5">
+                                                <button type="button" class="btn btn-outline-primary btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5 btn-preview-pdf" data-preview-pdf="{{ @BASE }}/{{ @riwayat_bayar[0].bukti_bayar }}" data-title="Bukti Pembayaran" data-subtitle="Termin 1 &bull; {{ @order.nomor_order }}">
                                                     <i class="bi bi-file-earmark-check-fill text-primary"></i> Lihat Bukti
-                                                </a>
+                                                </button>
                                             </check>
                                             <a href="{{ @BASE }}/pembayaran/tambah?order_id={{ @order.id }}" class="btn btn-white border btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5 text-dark" title="Buka detail transaksi pembayaran">
                                                 <i class="bi bi-box-arrow-up-right text-muted"></i> Detail Pembayaran
@@ -2449,9 +2588,9 @@
                                     </div>
                                     <div class="d-flex align-items-center gap-2">
                                         <check if="{{ @proposal && @proposal.file_proposal }}">
-                                            <a href="{{ @BASE }}/{{ @proposal.file_proposal }}" target="_blank" class="btn btn-sm btn-outline-primary px-3 py-1.5 fw-semibold shadow-xs">
-                                                <i class="bi bi-download me-1"></i> Unduh Dokumen
-                                            </a>
+                                            <button type="button" class="btn btn-sm btn-outline-danger px-3 py-1.5 fw-semibold shadow-xs btn-preview-pdf" data-preview-pdf="{{ @BASE }}/{{ @proposal.file_proposal }}" data-title="Proposal Teknis" data-subtitle="Order: {{ @order.nomor_order }}">
+                                                <i class="bi bi-eye-fill me-1"></i> Pratinjau Dokumen
+                                            </button>
                                         </check>
                                         <check if="{{ !@proposal || !@proposal.disetujui_ketua_at || @is_superadmin }}">
                                             <button type="button" class="btn btn-sm btn-outline-secondary px-3 py-1.5 fw-semibold shadow-xs" onclick="document.getElementById('uploadProposalLingkunganBox').classList.toggle('d-none')">
@@ -2756,9 +2895,9 @@
                                     </div>
                                     <div class="d-flex align-items-center gap-2">
                                         <check if="{{ @bast.file_dokumen_bast }}">
-                                            <a href="{{ @BASE }}/{{ @bast.file_dokumen_bast }}" target="_blank" class="btn btn-outline-primary btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1">
+                                            <button type="button" class="btn btn-outline-primary btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1 btn-preview-pdf" data-preview-pdf="{{ @BASE }}/{{ @bast.file_dokumen_bast }}" data-title="Dokumen BAST" data-subtitle="Nomor: {{ @bast.nomor_bast }}">
                                                 <i class="bi bi-file-earmark-pdf-fill me-1"></i> Unduh Berkas BAST
-                                            </a>
+                                            </button>
                                         </check>
                                     </div>
                                 </div>
@@ -2794,6 +2933,181 @@
 
     </div>
     <!-- End of #stageTabContent -->
+
+    <!-- ======================================================== -->
+    <!-- RIWAYAT AKTIVITAS & JEJAK AUDIT (ACTIVITY TRACKER)       -->
+    <!-- ======================================================== -->
+    <div class="activity-tracker-card" id="cardActivityTracker">
+        <div class="activity-tracker-header">
+            <div class="d-flex align-items-center gap-3">
+                <div class="activity-header-icon">
+                    <i class="bi bi-clock-history"></i>
+                </div>
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-0.5">
+                        <h6 class="fw-bold text-dark m-0 font-display fs-6">
+                            Riwayat Aktivitas &amp; Jejak Audit
+                        </h6>
+                        <span class="badge bg-dark text-white rounded-pill px-2.5 py-0.5 font-monospace" style="font-size: 0.72rem;" id="badgeActivityCount">
+                            {{ @total_activity ?: 0 }} Aktivitas
+                        </span>
+                    </div>
+                    <p class="text-muted mb-0 small" style="font-size: 0.8rem;">
+                        Rekaman kronologis mutasi status, disposisi, formulir, persetujuan, pembayaran, dan log akses order.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Filter Buttons -->
+            <div class="d-flex align-items-center gap-1.5 flex-wrap">
+                <button type="button" class="activity-filter-btn active" data-filter="all" onclick="filterActivityLogs('all', this)">
+                    <i class="bi bi-list-stars"></i> Semua ({{ @total_activity ?: 0 }})
+                </button>
+                <button type="button" class="activity-filter-btn" data-filter="alur" onclick="filterActivityLogs('alur', this)">
+                    <i class="bi bi-diagram-3"></i> Alur &amp; Status
+                </button>
+                <button type="button" class="activity-filter-btn" data-filter="dokumen" onclick="filterActivityLogs('dokumen', this)">
+                    <i class="bi bi-file-earmark-text"></i> Dokumen
+                </button>
+                <button type="button" class="activity-filter-btn" data-filter="akses" onclick="filterActivityLogs('akses', this)">
+                    <i class="bi bi-eye"></i> Log Akses
+                </button>
+            </div>
+        </div>
+
+        <div class="activity-timeline" id="activityTimelineList">
+            <check if="{{ @activity_logs && count(@activity_logs) > 0 }}">
+                <repeat group="{{ @activity_logs }}" value="{{ @act }}">
+                    <set is_view_log="{{ @act.aksi == 'melihat_detail' || @act.aksi == 'melihat_proposal' || @act.aksi == 'baca_tahap' || strpos(@act.aksi, 'melihat') !== false }}" />
+                    <set is_dokumen_log="{{ strpos(@act.aksi, 'proposal') !== false || strpos(@act.aksi, 'penawaran') !== false || strpos(@act.aksi, 'bast') !== false || strpos(@act.aksi, 'po') !== false || strpos(@act.aksi, 'upload') !== false || strpos(@act.aksi, 'laporan') !== false }}" />
+                    <set log_cat="{{ @is_view_log ? 'akses' : (@is_dokumen_log ? 'dokumen' : 'alur') }}" />
+                    <set is_success_act="{{ in_array(@act.aksi, ['approve_proposal', 'setujui_proposal', 'simpan_tinjauan', 'verifikasi_pembayaran', 'terbitkan_bast', 'tutup_order', 'terbitkan_po', 'respon_penawaran', 'simpan_form_pelayanan']) }}" />
+                    <set is_warn_act="{{ in_array(@act.aksi, ['batal_klaim', 'tolak_surat', 'revisi_proposal', 'minta_revisi', 'tolak_order', 'tolak_form_pelayanan', 'tolak_tinjauan', 'hapus_order', 'hapus_pembayaran']) }}" />
+                    <set is_claim_act="{{ in_array(@act.aksi, ['klaim_surat', 'penugasan_pic', 'disposisi_layanan', 'disposisi_katim']) }}" />
+
+                    <div class="activity-item activity-cat-{{ @log_cat }}" data-cat="{{ @log_cat }}">
+                        <!-- Icon Node -->
+                        <div class="activity-node {{ @is_view_log ? 'node-view' : (@is_success_act ? 'node-success' : (@is_warn_act ? 'node-warn' : (@is_claim_act ? 'node-claim' : 'node-primary'))) }}">
+                            <check if="{{ @is_view_log }}">
+                                <i class="bi bi-eye-fill"></i>
+                            </check>
+                            <check if="{{ @act.aksi == 'klaim_surat' }}">
+                                <i class="bi bi-inbox-fill"></i>
+                            </check>
+                            <check if="{{ @act.aksi == 'penugasan_pic' }}">
+                                <i class="bi bi-person-badge-fill"></i>
+                            </check>
+                            <check if="{{ @act.aksi == 'disposisi_layanan' || @act.aksi == 'disposisi_katim' }}">
+                                <i class="bi bi-arrow-right-circle-fill"></i>
+                            </check>
+                            <check if="{{ @is_warn_act }}">
+                                <i class="bi bi-exclamation-triangle-fill"></i>
+                            </check>
+                            <check if="{{ @act.aksi == 'simpan_tinjauan' || @act.aksi == 'tinjauan_kelayakan' }}">
+                                <i class="bi bi-clipboard-check-fill"></i>
+                            </check>
+                            <check if="{{ @act.aksi == 'simpan_form_pelayanan' || @act.aksi == 'simpan_draft' }}">
+                                <i class="bi bi-ui-checks"></i>
+                            </check>
+                            <check if="{{ @act.aksi == 'simpan_proposal' || @act.aksi == 'ajukan_approval' || @act.aksi == 'ajukan_ke_ketua' || @act.aksi == 'ajukan_kalkulasi' }}">
+                                <i class="bi bi-file-earmark-text-fill"></i>
+                            </check>
+                            <check if="{{ @act.aksi == 'approve_proposal' || @act.aksi == 'setujui_proposal' }}">
+                                <i class="bi bi-patch-check-fill"></i>
+                            </check>
+                            <check if="{{ @act.aksi == 'buat_penawaran' || @act.aksi == 'kirim_penawaran' || @act.aksi == 'simpan_draft_penawaran' }}">
+                                <i class="bi bi-send-fill"></i>
+                            </check>
+                            <check if="{{ @act.aksi == 'respon_penawaran' }}">
+                                <i class="bi bi-hand-thumbs-up-fill"></i>
+                            </check>
+                            <check if="{{ @act.aksi == 'verifikasi_pembayaran' }}">
+                                <i class="bi bi-cash-stack"></i>
+                            </check>
+                            <check if="{{ @act.aksi == 'terima_sampel' }}">
+                                <i class="bi bi-box-seam-fill"></i>
+                            </check>
+                            <check if="{{ @act.aksi == 'terbitkan_po' || @act.aksi == 'verifikasi_sop' }}">
+                                <i class="bi bi-journal-check"></i>
+                            </check>
+                            <check if="{{ @act.aksi == 'terbitkan_bast' || @act.aksi == 'tutup_order' }}">
+                                <i class="bi bi-award-fill"></i>
+                            </check>
+                            <check if="{{ @act.aksi == 'upload_file' || @act.aksi == 'upload_kesanggupan_bayar' || @act.aksi == 'upload_laporan' }}">
+                                <i class="bi bi-cloud-arrow-up-fill"></i>
+                            </check>
+                            <check if="{{ @act.aksi == 'update_customer' || @act.aksi == 'update_order' || @act.aksi == 'tambah_order' }}">
+                                <i class="bi bi-pencil-square"></i>
+                            </check>
+                            <check if="{{ !@is_view_log && !in_array(@act.aksi, ['klaim_surat', 'penugasan_pic', 'disposisi_layanan', 'disposisi_katim', 'batal_klaim', 'tolak_surat', 'revisi_proposal', 'minta_revisi', 'tolak_order', 'tolak_form_pelayanan', 'tolak_tinjauan', 'hapus_order', 'hapus_pembayaran', 'simpan_tinjauan', 'tinjauan_kelayakan', 'simpan_form_pelayanan', 'simpan_draft', 'simpan_proposal', 'ajukan_approval', 'ajukan_ke_ketua', 'ajukan_kalkulasi', 'approve_proposal', 'setujui_proposal', 'buat_penawaran', 'kirim_penawaran', 'simpan_draft_penawaran', 'respon_penawaran', 'verifikasi_pembayaran', 'terima_sampel', 'terbitkan_po', 'verifikasi_sop', 'terbitkan_bast', 'tutup_order', 'upload_file', 'upload_kesanggupan_bayar', 'upload_laporan', 'update_customer', 'update_order', 'tambah_order']) }}">
+                                <i class="bi bi-activity"></i>
+                            </check>
+                        </div>
+
+                        <!-- Card Body -->
+                        <div class="activity-card">
+                            <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-2">
+                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                    <check if="{{ @is_view_log }}">
+                                        <span class="badge rounded-pill bg-light text-secondary border px-2 py-0.5" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.3px;">
+                                            <i class="bi bi-eye me-1"></i>DIBACA
+                                        </span>
+                                    </check>
+                                    <check if="{{ !@is_view_log }}">
+                                        <span class="badge rounded-pill {{ @is_warn_act ? 'bg-danger-subtle text-danger border border-danger-subtle' : (@is_success_act ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-primary-subtle text-primary border border-primary-subtle') }} px-2 py-0.5" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.3px;">
+                                            <i class="bi bi-check2-circle me-1"></i>DIPROSES
+                                        </span>
+                                    </check>
+                                    <span class="badge border rounded-pill px-2.5 py-0.5 text-uppercase" style="font-size: 0.66rem; font-weight: 700; letter-spacing: 0.4px; background-color: {{ @is_view_log ? '#f1f5f9' : '#e0f2fe' }}; color: {{ @is_view_log ? '#475569' : '#0369a1' }}; border-color: {{ @is_view_log ? '#cbd5e1' : '#bae6fd' }} !important;">
+                                        {{ str_replace('_', ' ', @act.modul) }}
+                                    </span>
+                                    <span class="fw-bold text-dark font-display" style="font-size: 0.92rem; line-height: 1.4;">
+                                        {{ @act.deskripsi }}
+                                    </span>
+                                </div>
+                                
+                                <div class="d-flex align-items-center gap-1.5 text-secondary small font-monospace" style="font-size: 0.76rem;" title="{{ date('d F Y, H:i:s', strtotime(@act.created_at)) }} WIB">
+                                    <i class="bi bi-clock me-1 text-slate-400"></i>
+                                    <span class="fw-semibold text-dark">{{ @act.time_ago }}</span>
+                                    <span class="text-muted opacity-50 mx-1 d-none d-md-inline">&bull;</span>
+                                    <span class="text-muted d-none d-md-inline">{{ date('d M Y, H:i', strtotime(@act.created_at)) }} WIB</span>
+                                </div>
+                            </div>
+
+                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2 border-top border-light">
+                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                    <div class="d-flex align-items-center gap-1.5">
+                                        <div class="rounded-circle d-flex align-items-center justify-content-center bg-light text-secondary border" style="width: 24px; height: 24px; font-size: 0.72rem;">
+                                            <i class="bi bi-person-fill"></i>
+                                        </div>
+                                        <span class="fw-bold text-dark" style="font-size: 0.82rem;">
+                                            {{ @act.user_nama ?: 'Sistem Otomatis' }}
+                                        </span>
+                                    </div>
+                                    <span class="badge rounded-pill px-2.5 py-0.5" style="font-size: 0.7rem; font-weight: 600; background-color: #f8fafc; color: #334155; border: 1px solid #e2e8f0;">
+                                        {{ ucwords(str_replace('_', ' ', @act.user_role ?: 'User')) }}
+                                    </span>
+                                </div>
+
+                                <check if="{{ @act.ip_address && @act.ip_address != '127.0.0.1' && @act.ip_address != '::1' }}">
+                                    <div class="text-muted font-monospace" style="font-size: 0.7rem; opacity: 0.75;">
+                                        <i class="bi bi-geo-alt me-1"></i>{{ @act.ip_address }}
+                                    </div>
+                                </check>
+                            </div>
+                        </div>
+                    </div>
+                </repeat>
+            </check>
+            <check if="{{ !@activity_logs || count(@activity_logs) == 0 }}">
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-clock-history fs-1 opacity-25 d-block mb-2"></i>
+                    <p class="mb-0 fw-medium">Belum ada rekaman aktivitas untuk order ini.</p>
+                    <small class="text-secondary opacity-75">Aktivitas akan tercatat otomatis seiring berjalannya alur pelayanan.</small>
+                </div>
+            </check>
+        </div>
+    </div>
 </div>
 
 <!-- ======================================================== -->
@@ -3047,9 +3361,9 @@
                         </div>
                     </div>
                     <div class="d-flex align-items-center gap-2">
-                        <a href="{{ @BASE }}/surat-masuk/{{ @surat_masuk.id }}/pdf" target="_blank" class="btn btn-outline-secondary btn-sm px-2 py-1 fw-semibold">
-                            <i class="bi bi-download me-1"></i> Unduh PDF
-                        </a>
+                        <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-1 fw-semibold btn-preview-pdf" data-preview-pdf="{{ @BASE }}/surat-masuk/{{ @surat_masuk.id }}/pdf" data-title="Surat Masuk Resmi" data-subtitle="{{ @surat_masuk.nomor_surat }}">
+                            <i class="bi bi-file-earmark-pdf me-1"></i> Lihat PDF
+                        </button>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
                     </div>
                 </div>
@@ -3704,8 +4018,8 @@ btnSimpan.addEventListener('click', function () {
 
             // [PENTING] update tampilan status DI TEMPAT, tanpa reload halaman
             wrapStatus.innerHTML =
-                '<a href="' + data.preview_url + '" target="_blank" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1" id="kbLihatBtn">' +
-                    '<i class="bi bi-file-earmark-check-fill text-success"></i> Lihat Berkas</a>' +
+                '<button type="button" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1 btn-preview-pdf" id="kbLihatBtn" data-preview-pdf="' + data.preview_url + '" data-title="Surat Kesanggupan Bayar">' +
+                    '<i class="bi bi-file-earmark-check-fill text-success"></i> Lihat Berkas</button>' +
                 '<button type="button" class="btn btn-sm btn-outline-secondary ms-1" id="kbGantiBtn"><i class="bi bi-arrow-repeat"></i> Ganti</button>';
 
             tutupForm();
@@ -3849,6 +4163,29 @@ function confirmDisposisiKeuanganDetail(nomorOrder, nomorSurat) {
         if (confirm('Disposisikan penawaran DEAL ke Tim Keuangan?')) {
             form.submit();
         }
+    }
+}
+
+function filterActivityLogs(cat, btn) {
+    document.querySelectorAll('.activity-filter-btn').forEach(function(b) {
+        b.classList.remove('active');
+    });
+    if (btn) btn.classList.add('active');
+
+    var items = document.querySelectorAll('.activity-item');
+    var visibleCount = 0;
+    items.forEach(function(item) {
+        if (cat === 'all' || item.getAttribute('data-cat') === cat) {
+            item.style.display = 'flex';
+            visibleCount++;
+        } else {
+            item.style.display = 'none';
+        }
+    });
+
+    var badge = document.getElementById('badgeActivityCount');
+    if (badge) {
+        badge.textContent = visibleCount + ' Aktivitas';
     }
 }
 </script>

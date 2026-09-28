@@ -212,10 +212,12 @@ $f3->route('POST /ketua-tim/@id/pilih-pelaksana', 'KetuaTimController->simpanPel
 // $f3->route('GET /order/@id/pembayaran/tambah', 'PembayaranController->tambahDariOrder');
 // $f3->route('POST /order/@id/pembayaran/simpan', 'PembayaranController->simpanDariOrder');
 
+$f3->route('GET|POST /api/doc-preview', 'UniversalPreviewController->getPreviewData');
 $f3->route('GET /pembayaran', 'PembayaranOptiController->index');
 $f3->route('GET /pembayaran/tambah', 'PembayaranOptiController->tambah');
 $f3->route('POST /pembayaran/simpan', 'PembayaranOptiController->simpan');
 $f3->route('POST /pembayaran/@id/hapus', 'PembayaranOptiController->hapus');
+$f3->route('GET /pembayaran/bukti/@id', 'PembayaranOptiController->unduhBukti');
 $f3->route('GET /order/@id/invoice/buat', 'PembayaranOptiController->invoiceForm');
 $f3->route('POST /order/@id/invoice/simpan', 'PembayaranOptiController->invoiceSimpan');
 $f3->route('GET /order/@id/pembayaran/tambah', 'PembayaranOptiController->tambahDariOrder');

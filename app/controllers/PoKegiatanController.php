@@ -537,7 +537,7 @@ $options->set('defaultFont', 'Times-Roman');
 
     $namaFile = 'PO-' . preg_replace('/[^A-Za-z0-9_-]/', '_', $poData['nomor_po'] ?? $po->id) . '.pdf';
 
-    $dompdf->stream($namaFile, ['Attachment' => true]);
+    $dompdf->stream($namaFile, ['Attachment' => false]);
     exit;
 }
 

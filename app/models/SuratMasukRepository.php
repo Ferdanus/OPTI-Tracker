@@ -144,14 +144,11 @@ class SuratMasukRepository {
 
         if ($this->isArsipSurat()) {
             $sql = "SELECT COUNT(*) as c FROM `{$this->tableSekretariat}` a
-                    INNER JOIN `{$this->dbSekretariatName}`.tb_customer c ON a.id_customer = c.id_customer
-                    WHERE a.surat_permohonan = 'Y'
-                      AND (a.id_pemasaran_order IS NULL OR a.id_pemasaran_order = 0)
-                      AND (a.status_disposisi_surat IS NULL OR a.status_disposisi_surat != 'ditolak')
-                      AND c.kodex_perusahaan IS NOT NULL
-                      AND c.kodex_perusahaan != ''
-                      AND c.id_layanan_optimalisasi = 1
-                      AND a.id_arsip NOT IN (SELECT id_surat_masuk FROM `{$this->dbMainName}`.order_layanan WHERE id_surat_masuk IS NOT NULL AND status != 'ditolak')";
+                    LEFT JOIN `{$this->dbSekretariatName}`.tb_customer c ON a.id_customer = c.id_customer
+                    WHERE a.id_layanan = 1
+                      AND a.nama_layanan_opti IS NOT NULL
+                      AND a.surat_permohonan = 'Y'
+                      AND a.status_klaim = 'N'";
 
             $params = array();
             if (!empty($filterTahun) && $filterTahun !== 'all') {
@@ -564,7 +561,8 @@ class SuratMasukRepository {
                         "UPDATE `{$this->tableSekretariat}` 
                          SET `id_pemasaran_order` = NULL, 
                              `status_disposisi_surat` = NULL,
-                             `progres` = NULL
+                             `status_klaim` = 'N',
+                             `progres` = 'Permintaan'
                          WHERE `id_arsip` = ?",
                         [1 => $idSuratMasuk]
                     );

@@ -47,41 +47,64 @@ class NotificationService
     }
 
     /**
+     * Build WHERE clause condition and parameters for target user / role matching
+     */
+    protected static function buildTargetCondition(int $userId, string $role, string $layanan = 'semua'): array
+    {
+        if ($role === 'superadmin') {
+            return ['1=1', []];
+        }
+
+        $params = [];
+        $conditions = [];
+
+        // 1. Direct user target (e.g. PIC Proposal, specific assignee)
+        if ($userId > 0) {
+            $conditions[] = "target_user_id = ?";
+            $params[] = $userId;
+        }
+
+        // 2. Role-based matching (only when target_user_id IS NULL or 0)
+        $roleMatch = [];
+        if ($role === 'ketua_tim_mitra') {
+            $roleMatch[] = "target_role IN ('ketua_tim_mitra', 'tim_mitra_industri', 'admin_order', 'tim_mitra', 'all')";
+        } elseif ($role === 'tim_mitra_industri' || $role === 'admin_order' || $role === 'tim_mitra') {
+            // Staf tim mitra does NOT get ketua_tim_mitra notifications
+            $roleMatch[] = "target_role IN ('tim_mitra_industri', 'admin_order', 'tim_mitra', 'all')";
+        } elseif ($role === 'ketua_tim_keuangan') {
+            $roleMatch[] = "target_role IN ('ketua_tim_keuangan', 'keuangan', 'all')";
+        } elseif ($role === 'keuangan') {
+            // Staf keuangan does NOT get ketua_tim_keuangan notifications
+            $roleMatch[] = "target_role IN ('keuangan', 'all')";
+        } elseif ($role === 'ketua_tim') {
+            $roleMatch[] = "target_role IN ('ketua_tim', 'all')";
+        } elseif ($role === 'tim_kerja') {
+            $roleMatch[] = "target_role IN ('tim_kerja', 'all')";
+        } else {
+            $roleMatch[] = "(target_role = ? OR target_role = 'all')";
+            $params[] = $role;
+        }
+
+        $roleSql = implode(' OR ', $roleMatch);
+
+        // Filter layanan for ketua_tim & tim_kerja when matching role-based
+        if (in_array($role, ['ketua_tim', 'tim_kerja']) && in_array($layanan, ['selulosa', 'lingkungan'])) {
+            $roleSql = "({$roleSql}) AND (target_layanan = 'semua' OR target_layanan = ? OR target_layanan = 'belum_ditentukan' OR target_layanan IS NULL OR target_layanan = '')";
+            $params[] = $layanan;
+        }
+
+        $conditions[] = "((target_user_id IS NULL OR target_user_id = 0) AND ({$roleSql}))";
+
+        $fullCondition = "(" . implode(' OR ', $conditions) . ")";
+        return [$fullCondition, $params];
+    }
+
+    /**
      * Ambil daftar notifikasi untuk user yang sedang login
      */
     public static function getUserNotifications(\DB\SQL $db, int $userId, string $role, string $layanan = 'semua', int $limit = 15): array
     {
-        $where = [];
-        $params = [];
-
-        if ($role === 'superadmin') {
-            // Superadmin melihat semua notifikasi alur
-            $where[] = "1=1";
-        } else {
-            // Role matching / targeted user
-            if ($role === 'ketua_tim_mitra' || $role === 'tim_mitra_industri' || $role === 'admin_order' || $role === 'tim_mitra') {
-                $roleCond = "(target_role = 'all' OR target_role IN ('ketua_tim_mitra', 'tim_mitra_industri', 'admin_order', 'tim_mitra'))";
-            } else {
-                $roleCond = "(target_role = 'all' OR target_role = ?)";
-                $params[] = $role;
-            }
-
-            if ($userId > 0) {
-                $roleCond .= " OR target_user_id = ?";
-                $params[] = $userId;
-            }
-
-            // Layanan matching
-            if ($role === 'ketua_tim' && in_array($layanan, ['selulosa', 'lingkungan'])) {
-                $layananCond = "(target_layanan = 'semua' OR target_layanan = ? OR target_layanan = 'belum_ditentukan' OR target_layanan IS NULL OR target_layanan = '')";
-                $params[] = $layanan;
-                $where[] = "({$roleCond}) AND {$layananCond}";
-            } else {
-                $where[] = "({$roleCond})";
-            }
-        }
-
-        $whereClause = implode(' AND ', $where);
+        list($whereClause, $params) = self::buildTargetCondition($userId, $role, $layanan);
         $sql = "SELECT * FROM `opti_notifikasi` WHERE {$whereClause} ORDER BY created_at DESC, id DESC LIMIT " . (int)$limit;
 
         $rows = $db->exec($sql, $params);
@@ -98,35 +121,8 @@ class NotificationService
      */
     public static function getUnreadCount(\DB\SQL $db, int $userId, string $role, string $layanan = 'semua'): int
     {
-        $where = ["is_read = 0"];
-        $params = [];
-
-        if ($role === 'superadmin') {
-            // Superadmin
-        } else {
-            if ($role === 'ketua_tim_mitra' || $role === 'tim_mitra_industri' || $role === 'admin_order' || $role === 'tim_mitra') {
-                $roleCond = "(target_role = 'all' OR target_role IN ('ketua_tim_mitra', 'tim_mitra_industri', 'admin_order', 'tim_mitra'))";
-            } else {
-                $roleCond = "(target_role = 'all' OR target_role = ?)";
-                $params[] = $role;
-            }
-
-            if ($userId > 0) {
-                $roleCond .= " OR target_user_id = ?";
-                $params[] = $userId;
-            }
-
-            if ($role === 'ketua_tim' && in_array($layanan, ['selulosa', 'lingkungan'])) {
-                $layananCond = "(target_layanan = 'semua' OR target_layanan = ? OR target_layanan = 'belum_ditentukan' OR target_layanan IS NULL OR target_layanan = '')";
-                $params[] = $layanan;
-                $where[] = "({$roleCond}) AND {$layananCond}";
-            } else {
-                $where[] = "({$roleCond})";
-            }
-        }
-
-        $whereClause = implode(' AND ', $where);
-        $sql = "SELECT COUNT(*) as c FROM `opti_notifikasi` WHERE {$whereClause}";
+        list($whereClause, $params) = self::buildTargetCondition($userId, $role, $layanan);
+        $sql = "SELECT COUNT(*) as c FROM `opti_notifikasi` WHERE is_read = 0 AND {$whereClause}";
         $res = $db->exec($sql, $params);
 
         return (int)($res[0]['c'] ?? 0);
@@ -146,31 +142,9 @@ class NotificationService
      */
     public static function markAllAsRead(\DB\SQL $db, int $userId, string $role, string $layanan = 'semua'): bool
     {
-        if ($role === 'superadmin') {
-            $db->exec("UPDATE `opti_notifikasi` SET is_read = 1 WHERE is_read = 0");
-        } else {
-            $where = ["is_read = 0"];
-            $params = [];
-
-            $roleCond = "(target_role = 'all' OR target_role = ?)";
-            $params[] = $role;
-
-            if ($userId > 0) {
-                $roleCond .= " OR target_user_id = ?";
-                $params[] = $userId;
-            }
-
-            if ($role === 'ketua_tim' && in_array($layanan, ['selulosa', 'lingkungan'])) {
-                $layananCond = "(target_layanan = 'semua' OR target_layanan = ?)";
-                $params[] = $layanan;
-                $where[] = "({$roleCond}) AND {$layananCond}";
-            } else {
-                $where[] = "({$roleCond})";
-            }
-
-            $whereClause = implode(' AND ', $where);
-            $db->exec("UPDATE `opti_notifikasi` SET is_read = 1 WHERE {$whereClause}", $params);
-        }
+        list($whereClause, $params) = self::buildTargetCondition($userId, $role, $layanan);
+        $sql = "UPDATE `opti_notifikasi` SET is_read = 1 WHERE is_read = 0 AND {$whereClause}";
+        $db->exec($sql, $params);
         return true;
     }
 
