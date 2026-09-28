@@ -2315,7 +2315,7 @@
 
                         <!-- Sub-kasus 2B: Bukti Pembayaran Belum Diunggah -->
                         <check if="{{ empty(@riwayat_bayar) }}">
-                            <div class="p-3 bg-light rounded-3 border mb-3">
+                            <div class="p-3 bg-light rounded-3 border mb-0">
                                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
                                     <div>
                                         <span class="text-muted small d-block" style="font-size: 0.78rem;">Nilai Tagihan Penawaran DEAL:</span>
@@ -2339,45 +2339,6 @@
                                 </div>
                             </div>
 
-                            <!-- Form Upload Bukti Pembayaran (Khusus Tim Keuangan / Admin) -->
-                            <check if="{{ @is_keuangan || @is_admin_order || @is_superadmin || @can_manage_pembayaran }}">
-                                <true>
-                                    <form action="{{ @BASE }}/order/{{ @order.id }}/konfirmasi-pembayaran" method="POST" enctype="multipart/form-data" class="p-3 bg-white border rounded-3 shadow-xs" onsubmit="triggerStageRead(6)">
-                                        <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
-                                        <input type="hidden" name="jumlah" value="{{ @penawaran.nominal_penawaran ?: @order.estimasi_biaya }}">
-                                        
-                                        <div class="row g-3 align-items-end">
-                                            <div class="col-md-5">
-                                                <label class="form-label small fw-bold text-dark mb-1">
-                                                    Unggah Berkas Bukti Pembayaran <span class="text-danger">*</span>:
-                                                </label>
-                                                <input type="file" name="bukti_bayar" class="form-control form-control-sm" accept=".pdf,.jpg,.jpeg,.png" required>
-                                                <small class="text-muted d-block mt-0.5" style="font-size: 0.72rem;">Format: JPG, PNG, atau PDF (Struk / Bukti Transfer)</small>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <label class="form-label small fw-bold text-dark mb-1">
-                                                    Tanggal Pembayaran <span class="text-danger">*</span>:
-                                                </label>
-                                                <input type="date" name="tanggal_bayar" class="form-control form-control-sm" value="{{ date('Y-m-d') }}" required>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <button type="submit" class="btn btn-success btn-sm w-100 fw-bold py-2 shadow-xs d-inline-flex align-items-center justify-content-center gap-1.5">
-                                                    <i class="bi bi-cloud-arrow-up-fill fs-6"></i> Unggah Bukti &amp; Konfirmasi
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </form>
-                                </true>
-                                <false>
-                                    <div class="p-4 bg-white border rounded-3 shadow-xs text-center">
-                                        <i class="bi bi-hourglass-split text-warning fs-2 d-block mb-2"></i>
-                                        <h6 class="fw-bold text-dark mb-1">Menunggu Konfirmasi Pembayaran dari Tim Keuangan</h6>
-                                        <p class="small text-muted mb-0">
-                                            Surat Penawaran telah disetujui (DEAL). Tim Keuangan akan mengunggah berkas bukti transfer pelanggan untuk membuka tahap penerimaan sampel dan pengerjaan laboratorium.
-                                        </p>
-                                    </div>
-                                </false>
-                            </check>
                         </check>
 
                     </check>
