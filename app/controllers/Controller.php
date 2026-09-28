@@ -266,25 +266,29 @@ class Controller {
         $switchUsers = array();
         try {
             $switchUsersRaw = $this->db->exec(
-                "SELECT id_user AS id, 
-                        nama_user AS nama_lengkap, 
-                        si_opti AS role_sistem, 
-                        login, 
-                        bidang, 
-                        foto_profil
-                 FROM tb_arsipuser
-                 WHERE (si_opti IS NOT NULL AND si_opti != '' AND si_opti != 'user')
-                   AND (status = 1 OR status = '1' OR status = 'aktif')
+                "SELECT u.id_user AS id, 
+                        u.nama_user AS nama_lengkap, 
+                        COALESCE(NULLIF(u.si_opti, ''), m.role_opti) AS role_sistem, 
+                        u.login, 
+                        u.bidang, 
+                        u.nama_avatar
+                 FROM tb_arsipuser u
+                 LEFT JOIN opti_user_map m ON u.id_user = m.id_user
+                 WHERE (
+                     (u.si_opti IS NOT NULL AND u.si_opti != '' AND u.si_opti != 'user')
+                     OR (m.role_opti IS NOT NULL AND m.role_opti != '' AND m.role_opti != 'user' AND (m.is_active = 1 OR m.is_active = '1'))
+                 )
+                 AND (u.status = 1 OR u.status = '1' OR u.status = 'aktif')
                  ORDER BY 
                     CASE 
-                        WHEN si_opti = 'superadmin' THEN 1
-                        WHEN si_opti LIKE 'ketua_tim%' OR si_opti LIKE 'katim%' THEN 2
-                        WHEN si_opti = 'tim_mitra_industri' OR si_opti = 'admin_order' OR si_opti = 'tim_mitra' THEN 3
-                        WHEN si_opti = 'keuangan' THEN 4
-                        WHEN si_opti LIKE 'tim_kerja%' OR si_opti LIKE 'tk_%' THEN 5
+                        WHEN COALESCE(NULLIF(u.si_opti, ''), m.role_opti) = 'superadmin' THEN 1
+                        WHEN COALESCE(NULLIF(u.si_opti, ''), m.role_opti) LIKE 'ketua_tim%' OR COALESCE(NULLIF(u.si_opti, ''), m.role_opti) LIKE 'katim%' THEN 2
+                        WHEN COALESCE(NULLIF(u.si_opti, ''), m.role_opti) = 'tim_mitra_industri' OR COALESCE(NULLIF(u.si_opti, ''), m.role_opti) = 'admin_order' OR COALESCE(NULLIF(u.si_opti, ''), m.role_opti) = 'tim_mitra' THEN 3
+                        WHEN COALESCE(NULLIF(u.si_opti, ''), m.role_opti) = 'keuangan' THEN 4
+                        WHEN COALESCE(NULLIF(u.si_opti, ''), m.role_opti) LIKE 'tim_kerja%' OR COALESCE(NULLIF(u.si_opti, ''), m.role_opti) LIKE 'tk_%' THEN 5
                         ELSE 6
                     END ASC,
-                    nama_user ASC"
+                    u.nama_user ASC"
             );
 
             if (!empty($switchUsersRaw)) {
