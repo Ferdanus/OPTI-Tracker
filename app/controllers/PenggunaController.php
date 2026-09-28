@@ -36,6 +36,14 @@ class PenggunaController extends Controller {
                 'category' => 'manajemen',
                 'desc' => 'Disposisi & penugasan teknis layanan Lingkungan'
             ),
+            'ketua_tim_mitra' => array(
+                'label' => 'Ketua Tim Mitra',
+                'badge_class' => 'role-badge role-badge-katim-mitra',
+                'badge_style' => '',
+                'icon' => 'bi-award-fill',
+                'category' => 'manajemen',
+                'desc' => 'Koordinator layanan & administrasi kemitraan industri'
+            ),
             'tim_kerja_selulosa' => array(
                 'label' => 'Tim Kerja Selulosa',
                 'badge_class' => 'role-badge role-badge-tk-selulosa',
@@ -69,6 +77,34 @@ class PenggunaController extends Controller {
                 'desc' => 'Verifikasi pembayaran'
             )
         );
+    }
+
+    /**
+     * Master daftar role Ketua Tim (posisi kepemimpinan yang dibatasi maksimal 1 orang per role)
+     */
+    public static function getKetuaRoles(): array {
+        return array(
+            'ketua_tim_selulosa'   => 'Ketua Tim Selulosa',
+            'ketua_tim_lingkungan' => 'Ketua Tim Lingkungan',
+            'ketua_tim_mitra'      => 'Ketua Tim Mitra'
+        );
+    }
+
+    /**
+     * Helper normalisasi alias role key
+     */
+    public static function normalizeRoleKey(string $roleKey): string {
+        $roleAliases = array(
+            'admin_order'               => 'tim_mitra_industri',
+            'tim_mitra'                 => 'tim_mitra_industri',
+            'katim_selulosa'            => 'ketua_tim_selulosa',
+            'katim_lingkungan'          => 'ketua_tim_lingkungan',
+            'katim_mitra'               => 'ketua_tim_mitra',
+            'ketua_tim_mitra_industri'  => 'ketua_tim_mitra',
+            'tk_selulosa'               => 'tim_kerja_selulosa',
+            'tk_lingkungan'             => 'tim_kerja_lingkungan'
+        );
+        return $roleAliases[$roleKey] ?? $roleKey;
     }
 
     /**
@@ -160,10 +196,10 @@ class PenggunaController extends Controller {
         // Hitung statistik untuk 5 kartu ringkasan: Tim Mitra, Tim Keuangan, Ka Tim OPTI, PIC Pelaksana, User Non-Role
         $statsRaw = $this->db->exec("
             SELECT 
-                SUM(CASE WHEN si_opti IN ('tim_mitra_industri', 'admin_order', 'tim_mitra') THEN 1 ELSE 0 END) AS cnt_mitra,
+                SUM(CASE WHEN si_opti IN ('tim_mitra_industri', 'admin_order', 'tim_mitra', 'ketua_tim_mitra', 'katim_mitra', 'ketua_tim_mitra_industri') THEN 1 ELSE 0 END) AS cnt_mitra,
                 SUM(CASE WHEN si_opti = 'keuangan' THEN 1 ELSE 0 END) AS cnt_keuangan,
-                SUM(CASE WHEN si_opti IN ('ketua_tim_selulosa', 'ketua_tim_lingkungan') THEN 1 ELSE 0 END) AS cnt_katim,
-                SUM(CASE WHEN si_opti IN ('tim_kerja_selulosa', 'tim_kerja_lingkungan') THEN 1 ELSE 0 END) AS cnt_pelaksana,
+                SUM(CASE WHEN si_opti IN ('ketua_tim_selulosa', 'ketua_tim_lingkungan', 'ketua_tim_mitra', 'katim_selulosa', 'katim_lingkungan', 'katim_mitra', 'ketua_tim_mitra_industri') THEN 1 ELSE 0 END) AS cnt_katim,
+                SUM(CASE WHEN si_opti IN ('tim_kerja_selulosa', 'tim_kerja_lingkungan', 'tk_selulosa', 'tk_lingkungan') THEN 1 ELSE 0 END) AS cnt_pelaksana,
                 SUM(CASE WHEN si_opti IS NULL OR si_opti = '' OR si_opti = 'user' THEN 1 ELSE 0 END) AS cnt_non_role
             FROM tb_arsipuser
         ");
@@ -174,9 +210,26 @@ class PenggunaController extends Controller {
         $cntPelaksana = (int)($statsRaw[0]['cnt_pelaksana'] ?? 0);
         $cntNonRole = (int)($statsRaw[0]['cnt_non_role'] ?? 0);
 
+        // Ambil daftar ketua yang saat ini sedang aktif menjabat (untuk validasi & info UI)
+        $currentKetuaList = $this->db->exec("
+            SELECT id_user, nama_user, si_opti 
+            FROM tb_arsipuser 
+            WHERE si_opti IN ('ketua_tim_selulosa', 'ketua_tim_lingkungan', 'ketua_tim_mitra', 'katim_selulosa', 'katim_lingkungan', 'katim_mitra', 'ketua_tim_mitra_industri')
+        ");
+        $occupiedKetua = array();
+        foreach ($currentKetuaList as $k) {
+            $norm = self::normalizeRoleKey($k['si_opti']);
+            $occupiedKetua[$norm] = array(
+                'id_user' => (int)$k['id_user'],
+                'nama_user' => $k['nama_user']
+            );
+        }
+
         $f3->set('daftar_pengguna', $daftarPengguna);
         $f3->set('unassigned_users', $unassignedUsers);
         $f3->set('role_options', self::getRoleOptions());
+        $f3->set('occupied_ketua', $occupiedKetua);
+        $f3->set('occupied_ketua_json', json_encode($occupiedKetua, JSON_UNESCAPED_UNICODE));
         $f3->set('count_total', $countTotal);
         $f3->set('count_db_total', $countDbTotal);
         $f3->set('count_unassigned', count($unassignedUsers));
@@ -224,6 +277,40 @@ class PenggunaController extends Controller {
             $this->setFlashError('Pilih role sistem yang valid.');
             $f3->reroute('/pengguna');
             return;
+        }
+
+        // Validasi aturan: Setiap posisi Ketua Tim hanya boleh dijabat oleh 1 orang pengguna
+        $normRole = self::normalizeRoleKey($roleSistem);
+        $ketuaRoles = self::getKetuaRoles();
+        if (isset($ketuaRoles[$normRole])) {
+            $aliasList = array($normRole);
+            if ($normRole === 'ketua_tim_selulosa') {
+                $aliasList[] = 'katim_selulosa';
+            } elseif ($normRole === 'ketua_tim_lingkungan') {
+                $aliasList[] = 'katim_lingkungan';
+            } elseif ($normRole === 'ketua_tim_mitra') {
+                $aliasList[] = 'katim_mitra';
+                $aliasList[] = 'ketua_tim_mitra_industri';
+            }
+
+            $placeholders = implode(',', array_fill(0, count($aliasList), '?'));
+            $sqlCheck = "SELECT id_user, nama_user FROM tb_arsipuser WHERE si_opti IN ({$placeholders}) AND id_user != ?";
+            $checkParams = array();
+            $pIdx = 1;
+            foreach ($aliasList as $al) {
+                $checkParams[$pIdx++] = $al;
+            }
+            $checkParams[$pIdx] = $idUser;
+
+            $existingKetua = $this->db->exec($sqlCheck, $checkParams);
+            if (!empty($existingKetua)) {
+                $currKetuaName = $existingKetua[0]['nama_user'];
+                $currKetuaId = $existingKetua[0]['id_user'];
+                $roleTitle = $ketuaRoles[$normRole];
+                $this->setFlashError("Peran <strong>{$roleTitle}</strong> saat ini sudah dijabat oleh <strong>{$currKetuaName}</strong> (#{$currKetuaId}). Setiap posisi Ketua Tim hanya dapat diisi oleh maksimal 1 orang. Silakan ubah atau cabut peran pengguna tersebut terlebih dahulu.");
+                $f3->reroute('/pengguna');
+                return;
+            }
         }
 
         // Cek apakah pegawai ada di tb_arsipuser
@@ -286,6 +373,40 @@ class PenggunaController extends Controller {
             $this->setFlashError('Peran Super Administrator Utama (Fajriasa Erdanus) tidak dapat diubah ke peran lain demi integritas sistem.');
             $f3->reroute('/pengguna');
             return;
+        }
+
+        // Validasi aturan: Setiap posisi Ketua Tim hanya boleh dijabat oleh 1 orang pengguna
+        $normRole = self::normalizeRoleKey($roleSistem);
+        $ketuaRoles = self::getKetuaRoles();
+        if (isset($ketuaRoles[$normRole])) {
+            $aliasList = array($normRole);
+            if ($normRole === 'ketua_tim_selulosa') {
+                $aliasList[] = 'katim_selulosa';
+            } elseif ($normRole === 'ketua_tim_lingkungan') {
+                $aliasList[] = 'katim_lingkungan';
+            } elseif ($normRole === 'ketua_tim_mitra') {
+                $aliasList[] = 'katim_mitra';
+                $aliasList[] = 'ketua_tim_mitra_industri';
+            }
+
+            $placeholders = implode(',', array_fill(0, count($aliasList), '?'));
+            $sqlCheck = "SELECT id_user, nama_user FROM tb_arsipuser WHERE si_opti IN ({$placeholders}) AND id_user != ?";
+            $checkParams = array();
+            $pIdx = 1;
+            foreach ($aliasList as $al) {
+                $checkParams[$pIdx++] = $al;
+            }
+            $checkParams[$pIdx] = $idUser;
+
+            $existingKetua = $this->db->exec($sqlCheck, $checkParams);
+            if (!empty($existingKetua)) {
+                $currKetuaName = $existingKetua[0]['nama_user'];
+                $currKetuaId = $existingKetua[0]['id_user'];
+                $roleTitle = $ketuaRoles[$normRole];
+                $this->setFlashError("Peran <strong>{$roleTitle}</strong> saat ini sudah dijabat oleh <strong>{$currKetuaName}</strong> (#{$currKetuaId}). Setiap posisi Ketua Tim hanya dapat diisi oleh maksimal 1 orang. Silakan ubah atau cabut peran pengguna tersebut terlebih dahulu.");
+                $f3->reroute('/pengguna');
+                return;
+            }
         }
 
         $userCheck = $this->db->exec("SELECT id_user, nama_user FROM tb_arsipuser WHERE id_user = ?", array(1 => $idUser));
@@ -367,20 +488,26 @@ class PenggunaController extends Controller {
         if ($siOpti === 'superadmin') {
             $roleOpti = 'superadmin';
             $layanan = 'semua';
-        } elseif ($siOpti === 'ketua_tim_selulosa') {
+        } elseif ($siOpti === 'ketua_tim_selulosa' || $siOpti === 'katim_selulosa') {
             $roleOpti = 'ketua_tim';
             $layanan = 'selulosa';
-        } elseif ($siOpti === 'ketua_tim_lingkungan') {
+        } elseif ($siOpti === 'ketua_tim_lingkungan' || $siOpti === 'katim_lingkungan') {
             $roleOpti = 'ketua_tim';
             $layanan = 'lingkungan';
-        } elseif ($siOpti === 'tim_kerja_selulosa') {
+        } elseif ($siOpti === 'ketua_tim_mitra' || $siOpti === 'katim_mitra' || $siOpti === 'ketua_tim_mitra_industri') {
+            $roleOpti = 'ketua_tim_mitra';
+            $layanan = 'semua';
+        } elseif ($siOpti === 'tim_kerja_selulosa' || $siOpti === 'tk_selulosa') {
             $roleOpti = 'tim_kerja';
             $layanan = 'selulosa';
-        } elseif ($siOpti === 'tim_kerja_lingkungan') {
+        } elseif ($siOpti === 'tim_kerja_lingkungan' || $siOpti === 'tk_lingkungan') {
             $roleOpti = 'tim_kerja';
             $layanan = 'lingkungan';
-        } elseif ($siOpti === 'tim_mitra_industri') {
+        } elseif ($siOpti === 'tim_mitra_industri' || $siOpti === 'admin_order' || $siOpti === 'tim_mitra') {
             $roleOpti = 'admin_order';
+            $layanan = 'semua';
+        } elseif ($siOpti === 'keuangan') {
+            $roleOpti = 'keuangan';
             $layanan = 'semua';
         }
 
@@ -402,22 +529,11 @@ class PenggunaController extends Controller {
      * Helper pemetaan Role di Sistem ke Label dan Badge Color
      */
     public static function resolveRoleMeta(int $id, string $roleKey): array {
-        $roleAliases = array(
-            'admin_order' => 'tim_mitra_industri',
-            'tim_mitra' => 'tim_mitra_industri',
-            'katim_selulosa' => 'ketua_tim_selulosa',
-            'katim_lingkungan' => 'ketua_tim_lingkungan',
-            'tk_selulosa' => 'tim_kerja_selulosa',
-            'tk_lingkungan' => 'tim_kerja_lingkungan'
-        );
-
-        if (isset($roleAliases[$roleKey])) {
-            $roleKey = $roleAliases[$roleKey];
-        }
+        $normKey = self::normalizeRoleKey($roleKey);
 
         $roles = self::getRoleOptions();
-        if (isset($roles[$roleKey])) {
-            $meta = $roles[$roleKey];
+        if (isset($roles[$normKey])) {
+            $meta = $roles[$normKey];
             $meta['badge_style'] = $meta['badge_style'] ?? '';
             return $meta;
         }

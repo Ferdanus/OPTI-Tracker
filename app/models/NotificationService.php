@@ -59,8 +59,12 @@ class NotificationService
             $where[] = "1=1";
         } else {
             // Role matching / targeted user
-            $roleCond = "(target_role = 'all' OR target_role = ?)";
-            $params[] = $role;
+            if ($role === 'ketua_tim_mitra' || $role === 'tim_mitra_industri' || $role === 'admin_order' || $role === 'tim_mitra') {
+                $roleCond = "(target_role = 'all' OR target_role IN ('ketua_tim_mitra', 'tim_mitra_industri', 'admin_order', 'tim_mitra'))";
+            } else {
+                $roleCond = "(target_role = 'all' OR target_role = ?)";
+                $params[] = $role;
+            }
 
             if ($userId > 0) {
                 $roleCond .= " OR target_user_id = ?";
@@ -100,8 +104,12 @@ class NotificationService
         if ($role === 'superadmin') {
             // Superadmin
         } else {
-            $roleCond = "(target_role = 'all' OR target_role = ?)";
-            $params[] = $role;
+            if ($role === 'ketua_tim_mitra' || $role === 'tim_mitra_industri' || $role === 'admin_order' || $role === 'tim_mitra') {
+                $roleCond = "(target_role = 'all' OR target_role IN ('ketua_tim_mitra', 'tim_mitra_industri', 'admin_order', 'tim_mitra'))";
+            } else {
+                $roleCond = "(target_role = 'all' OR target_role = ?)";
+                $params[] = $role;
+            }
 
             if ($userId > 0) {
                 $roleCond .= " OR target_user_id = ?";

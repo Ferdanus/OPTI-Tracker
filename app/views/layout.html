@@ -1406,6 +1406,7 @@
                                 <div class="fw-bold text-dark small">{{ htmlspecialchars(@SESSION.nama_lengkap ?? 'User') }}</div>
                                 <div class="text-muted" style="font-size: 0.675rem;">
                                     <check if="{{ @SESSION.role == 'superadmin' }}">Super Admin</check>
+                                    <check if="{{ @SESSION.role == 'ketua_tim_mitra' }}">Ketua Tim Mitra</check>
                                     <check if="{{ @SESSION.role == 'tim_mitra_industri' || @SESSION.role == 'admin_order' || @SESSION.role == 'tim_mitra' }}">Tim Mitra</check>
                                     <check if="{{ @SESSION.role == 'ketua_tim' }}">Ketua Tim {{ @SESSION.jenis_layanan_opti == 'selulosa' ? 'Selulosa' : (@SESSION.jenis_layanan_opti == 'lingkungan' ? 'Lingkungan' : 'OPTI') }}</check>
                                     <check if="{{ @SESSION.role == 'keuangan' }}">Staf Keuangan</check>
@@ -1701,7 +1702,7 @@
                 e.preventDefault();
                 e.stopPropagation();
             }
-            var userRoleName = "{{ @SESSION.role == 'superadmin' ? 'Super Admin' : (@SESSION.role == 'tim_mitra_industri' || @SESSION.role == 'admin_order' || @SESSION.role == 'tim_mitra' ? 'Tim Mitra' : (@SESSION.role == 'ketua_tim' ? 'Ketua Tim OPTI' : (@SESSION.role == 'keuangan' ? 'Bagian Keuangan' : (@SESSION.role == 'tim_kerja' ? 'Tim Kerja / Peneliti' : (@SESSION.role == 'admin_kontrak' ? 'Admin Kontrak / PKS' : (@SESSION.role == 'sekretaris' ? 'Sekretariat' : (@SESSION.role == 'user' ? 'Pegawai Balai (Read-Only)' : 'Pengguna'))))))) }}";
+            var userRoleName = "{{ @SESSION.role == 'superadmin' ? 'Super Admin' : (@SESSION.role == 'ketua_tim_mitra' ? 'Ketua Tim Mitra' : (@SESSION.role == 'tim_mitra_industri' || @SESSION.role == 'admin_order' || @SESSION.role == 'tim_mitra' ? 'Tim Mitra' : (@SESSION.role == 'ketua_tim' ? 'Ketua Tim OPTI' : (@SESSION.role == 'keuangan' ? 'Bagian Keuangan' : (@SESSION.role == 'tim_kerja' ? 'Tim Kerja / Peneliti' : (@SESSION.role == 'admin_kontrak' ? 'Admin Kontrak / PKS' : (@SESSION.role == 'sekretaris' ? 'Sekretariat' : (@SESSION.role == 'user' ? 'Pegawai Balai (Read-Only)' : 'Pengguna')))))))) }}";
 
             if (typeof Swal !== 'undefined') {
                 Swal.fire({

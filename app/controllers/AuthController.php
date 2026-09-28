@@ -36,13 +36,14 @@ class AuthController extends Controller {
             ORDER BY 
                 CASE 
                     WHEN u.si_opti = 'superadmin' OR m.role_opti = 'superadmin' OR u.bidang = 'all' THEN 1
-                    WHEN u.si_opti = 'admin_order' OR m.role_opti = 'admin_order' THEN 2
-                    WHEN u.si_opti = 'ketua_tim_selulosa' OR (m.role_opti = 'ketua_tim' AND m.jenis_layanan_opti = 'selulosa') THEN 3
-                    WHEN u.si_opti = 'ketua_tim_lingkungan' OR (m.role_opti = 'ketua_tim' AND m.jenis_layanan_opti = 'lingkungan') THEN 4
-                    WHEN u.si_opti = 'keuangan' THEN 5
-                    WHEN u.si_opti LIKE 'tim_kerja%' OR m.role_opti = 'tim_kerja' THEN 6
-                    WHEN u.si_opti = 'admin_kontrak' OR m.role_opti = 'admin_kontrak' THEN 7
-                    ELSE 8
+                    WHEN u.si_opti IN ('ketua_tim_mitra', 'katim_mitra', 'ketua_tim_mitra_industri') OR m.role_opti = 'ketua_tim_mitra' THEN 2
+                    WHEN u.si_opti = 'admin_order' OR u.si_opti = 'tim_mitra_industri' OR m.role_opti = 'admin_order' THEN 3
+                    WHEN u.si_opti = 'ketua_tim_selulosa' OR (m.role_opti = 'ketua_tim' AND m.jenis_layanan_opti = 'selulosa') THEN 4
+                    WHEN u.si_opti = 'ketua_tim_lingkungan' OR (m.role_opti = 'ketua_tim' AND m.jenis_layanan_opti = 'lingkungan') THEN 5
+                    WHEN u.si_opti = 'keuangan' THEN 6
+                    WHEN u.si_opti LIKE 'tim_kerja%' OR m.role_opti = 'tim_kerja' THEN 7
+                    WHEN u.si_opti = 'admin_kontrak' OR m.role_opti = 'admin_kontrak' THEN 8
+                    ELSE 9
                 END ASC,
                 u.id_user ASC
         ");
@@ -94,6 +95,12 @@ class AuthController extends Controller {
         } elseif (strpos($rawRole, 'ketua_tim_lingkungan') !== false || $rawRole === 'katim_lingkungan') {
             $roleOpti = 'ketua_tim';
             $jenisLayananOpti = 'lingkungan';
+        } elseif (strpos($rawRole, 'ketua_tim_mitra') !== false || $rawRole === 'katim_mitra') {
+            $roleOpti = 'ketua_tim_mitra';
+            $jenisLayananOpti = 'semua';
+        } elseif ($rawRole === 'tim_mitra_industri' || $rawRole === 'admin_order' || $rawRole === 'tim_mitra') {
+            $roleOpti = 'tim_mitra_industri';
+            $jenisLayananOpti = 'semua';
         } elseif ($rawRole === 'keuangan') {
             $roleOpti = 'keuangan';
             $jenisLayananOpti = 'semua';
@@ -251,8 +258,15 @@ class AuthController extends Controller {
                 } elseif (strpos($rawRole, 'ketua_tim_lingkungan') !== false || $rawRole === 'katim_lingkungan') {
                     $roleOpti = 'ketua_tim';
                     $jenisLayananOpti = 'lingkungan';
+                } elseif (strpos($rawRole, 'ketua_tim_mitra') !== false || $rawRole === 'katim_mitra') {
+                    $roleOpti = 'ketua_tim_mitra';
+                    $jenisLayananOpti = 'semua';
+                } elseif ($rawRole === 'tim_mitra_industri' || $rawRole === 'admin_order' || $rawRole === 'tim_mitra') {
+                    $roleOpti = 'tim_mitra_industri';
+                    $jenisLayananOpti = 'semua';
                 } elseif ($rawRole === 'keuangan') {
                     $roleOpti = 'keuangan';
+                    $jenisLayananOpti = 'semua';
                 } elseif (!empty($rawRole)) {
                     $roleOpti = $rawRole;
                     $jenisLayananOpti = $profil['jenis_layanan_opti'] ?? 'semua';
@@ -322,8 +336,15 @@ class AuthController extends Controller {
                 } elseif (strpos($rawRole, 'ketua_tim_lingkungan') !== false || $rawRole === 'katim_lingkungan') {
                     $roleOpti = 'ketua_tim';
                     $jenisLayananOpti = 'lingkungan';
+                } elseif (strpos($rawRole, 'ketua_tim_mitra') !== false || $rawRole === 'katim_mitra') {
+                    $roleOpti = 'ketua_tim_mitra';
+                    $jenisLayananOpti = 'semua';
+                } elseif ($rawRole === 'tim_mitra_industri' || $rawRole === 'admin_order' || $rawRole === 'tim_mitra') {
+                    $roleOpti = 'tim_mitra_industri';
+                    $jenisLayananOpti = 'semua';
                 } elseif ($rawRole === 'keuangan') {
                     $roleOpti = 'keuangan';
+                    $jenisLayananOpti = 'semua';
                 } elseif (!empty($rawRole)) {
                     $roleOpti = $rawRole;
                     $jenisLayananOpti = $profil['jenis_layanan_opti'] ?? 'semua';

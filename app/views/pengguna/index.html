@@ -121,6 +121,13 @@
     border: 1px solid #bbf7d0;
 }
 
+/* 3b. Ketua Tim Mitra (Warm Amber/Gold Tint) */
+.role-badge-katim-mitra {
+    background: #fff7ed;
+    color: #c2410c !important;
+    border: 1px solid #fed7aa;
+}
+
 /* 4. Tim Kerja Selulosa (Cyan Sky Tint) */
 .role-badge-tk-selulosa {
     background: #ecfeff;
@@ -222,7 +229,7 @@
                     </div>
                 </div>
                 <h3 class="fw-bold text-dark mb-0 font-display">{{ @cnt_katim }}</h3>
-                <small class="text-muted" style="font-size: 0.73rem;">Selulosa &amp; Lingkungan</small>
+                <small class="text-muted" style="font-size: 0.73rem;">Selulosa, Lingkungan &amp; Mitra</small>
             </div>
         </div>
 
@@ -445,7 +452,7 @@
                         <label class="form-label small fw-bold text-dark">
                             Role Sistem <span class="text-danger">*</span>
                         </label>
-                        <select name="role_sistem" class="form-select" required>
+                        <select name="role_sistem" id="tambah_role_sistem" class="form-select" required>
                             <option value="" disabled selected>Pilih peran / role</option>
                             <repeat group="{{ @role_options }}" key="{{ @rKey }}" value="{{ @rMeta }}">
                                 <option value="{{ @rKey }}">
@@ -453,12 +460,15 @@
                                 </option>
                             </repeat>
                         </select>
+                        <div id="tambah_ketua_warning" class="alert alert-warning py-2 px-3 small mt-2 mb-0 d-none">
+                            <i class="bi bi-exclamation-triangle-fill me-1"></i> <span id="tambah_ketua_warning_text"></span>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer bg-light py-2 px-4 border-top">
                     <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Batal</button>
                     <check if="{{ count(@unassigned_users) > 0 }}">
-                        <button type="submit" class="btn btn-primary btn-sm fw-semibold px-3">
+                        <button type="submit" id="btnSubmitTambah" class="btn btn-primary btn-sm fw-semibold px-3">
                             <i class="bi bi-check-circle me-1"></i> Simpan Pengguna
                         </button>
                     </check>
@@ -501,11 +511,14 @@
                                 </option>
                             </repeat>
                         </select>
+                        <div id="edit_ketua_warning" class="alert alert-warning py-2 px-3 small mt-2 mb-0 d-none">
+                            <i class="bi bi-exclamation-triangle-fill me-1"></i> <span id="edit_ketua_warning_text"></span>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer bg-light py-2 px-4 border-top">
                     <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary btn-sm fw-semibold px-3">
+                    <button type="submit" id="btnSubmitUbah" class="btn btn-primary btn-sm fw-semibold px-3">
                         <i class="bi bi-check-circle me-1"></i> Perbarui Role
                     </button>
                 </div>
@@ -554,9 +567,54 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const occupiedKetua = JSON.parse('{{ @occupied_ketua_json ?: "{}" }}');
+
+    function checkKetuaOccupied(role, currentUserId, warningEl, warningTextEl, submitBtn) {
+        if (!role || !occupiedKetua[role]) {
+            if (warningEl) warningEl.classList.add('d-none');
+            if (submitBtn) submitBtn.disabled = false;
+            return;
+        }
+        const curr = occupiedKetua[role];
+        if (curr.id_user && parseInt(curr.id_user) !== parseInt(currentUserId)) {
+            if (warningTextEl) {
+                warningTextEl.innerHTML = 'Posisi Ketua Tim ini saat ini sudah dijabat oleh <strong>' + curr.nama_user + '</strong> (#' + curr.id_user + '). Sesuai aturan sistem, posisi Ketua Tim hanya dapat diisi oleh maksimal 1 orang. Silakan ubah/cabut peran dari <strong>' + curr.nama_user + '</strong> terlebih dahulu.';
+            }
+            if (warningEl) warningEl.classList.remove('d-none');
+            if (submitBtn) submitBtn.disabled = true;
+        } else {
+            if (warningEl) warningEl.classList.add('d-none');
+            if (submitBtn) submitBtn.disabled = false;
+        }
+    }
+
+    // Listener Modal Tambah Pengguna
+    const selectTambahRole = document.getElementById('tambah_role_sistem');
+    const warningTambah = document.getElementById('tambah_ketua_warning');
+    const warningTambahText = document.getElementById('tambah_ketua_warning_text');
+    const btnSubmitTambah = document.getElementById('btnSubmitTambah');
+
+    if (selectTambahRole) {
+        selectTambahRole.addEventListener('change', function() {
+            checkKetuaOccupied(this.value, 0, warningTambah, warningTambahText, btnSubmitTambah);
+        });
+    }
+
     // Handler Modal Ubah Role
     const modalUbahEl = document.getElementById('modalUbahRole');
     const modalUbah = new bootstrap.Modal(modalUbahEl);
+    const selectEditRole = document.getElementById('edit_role_sistem');
+    const warningEdit = document.getElementById('edit_ketua_warning');
+    const warningEditText = document.getElementById('edit_ketua_warning_text');
+    const btnSubmitUbah = document.getElementById('btnSubmitUbah');
+
+    if (selectEditRole) {
+        selectEditRole.addEventListener('change', function() {
+            const currId = parseInt(document.getElementById('edit_id_user').value || 0);
+            checkKetuaOccupied(this.value, currId, warningEdit, warningEditText, btnSubmitUbah);
+        });
+    }
+
     document.querySelectorAll('.btn-ubah-role').forEach(function(btn) {
         btn.addEventListener('click', function() {
             const id = this.getAttribute('data-id');
@@ -567,6 +625,8 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('edit_id_display').innerText = id;
             document.getElementById('edit_nama_user').innerText = nama;
             document.getElementById('edit_role_sistem').value = role;
+
+            checkKetuaOccupied(role, parseInt(id), warningEdit, warningEditText, btnSubmitUbah);
 
             modalUbah.show();
         });

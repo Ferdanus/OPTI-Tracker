@@ -65,6 +65,9 @@ class ArsipUser extends \DB\SQL\Mapper {
         } elseif (strpos($rawRole, 'ketua_tim_lingkungan') !== false || $rawRole === 'katim_lingkungan') {
             $roleOpti = 'ketua_tim';
             $jenisLayananOpti = 'lingkungan';
+        } elseif (strpos($rawRole, 'ketua_tim_mitra') !== false || $rawRole === 'katim_mitra') {
+            $roleOpti = 'ketua_tim_mitra';
+            $jenisLayananOpti = 'semua';
         } elseif ($rawRole === 'tim_mitra_industri' || $rawRole === 'admin_order' || $rawRole === 'tim_mitra') {
             $roleOpti = 'tim_mitra_industri';
             $jenisLayananOpti = 'semua';

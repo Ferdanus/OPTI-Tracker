@@ -22,6 +22,15 @@ class Controller {
      * Matriks Hak Akses / Permission per Role (Logika Murni OPTI BBSPJIS Sesuai Arahan Mentor)
      */
     protected static $PERMISSION_MATRIX = array(
+        'ketua_tim_mitra' => array(
+            'surat_masuk:view', 'surat_masuk:klaim', 'surat_masuk:batal',
+            'order:view', 'order:create', 'order:edit', 'order:form_pelayanan', 'order:respon_klien',
+            'penawaran:view', 'penawaran:create', 'penawaran:edit', 'penawaran:cetak',
+            'kontrak:view', 'kontrak:create', 'kontrak:edit',
+            'pembayaran:view', 'pembayaran:create', 'pembayaran:edit',
+            'klien:view', 'klien:create', 'klien:edit',
+            'alert:manage'
+        ),
         'tim_mitra_industri' => array(
             'surat_masuk:view', 'surat_masuk:klaim', 'surat_masuk:batal',
             'order:view', 'order:create', 'order:edit', 'order:form_pelayanan', 'order:respon_klien',
@@ -124,10 +133,12 @@ class Controller {
         $this->f3->set('user_layanan', $layanan);
 
         $this->f3->set('is_superadmin', $role === 'superadmin');
-        $isTimMitra = ($role === 'tim_mitra_industri' || $role === 'admin_order' || $role === 'tim_mitra');
+        $isTimMitra = ($role === 'tim_mitra_industri' || $role === 'admin_order' || $role === 'tim_mitra' || $role === 'ketua_tim_mitra');
         $this->f3->set('is_tim_mitra_industri', $isTimMitra);
         $this->f3->set('is_tim_mitra', $isTimMitra);
         $this->f3->set('is_admin_order', $isTimMitra);
+        $this->f3->set('is_ketua_tim_mitra', $role === 'ketua_tim_mitra');
+        $this->f3->set('is_ketua_mitra', $role === 'ketua_tim_mitra');
         $this->f3->set('is_ketua_tim', $role === 'ketua_tim');
         $this->f3->set('is_ketua_selulosa', $role === 'ketua_tim' && $layanan === 'selulosa');
         $this->f3->set('is_ketua_lingkungan', $role === 'ketua_tim' && $layanan === 'lingkungan');
@@ -289,11 +300,18 @@ class Controller {
     }
 
     /**
-     * Cek apakah role aktif adalah Tim Mitra (tim_mitra_industri / admin_order / tim_mitra)
+     * Cek apakah role aktif adalah Tim Mitra (tim_mitra_industri / admin_order / tim_mitra / ketua_tim_mitra)
      */
     public function isTimMitra(): bool {
         $r = $this->getUserRole();
-        return $r === 'tim_mitra_industri' || $r === 'admin_order' || $r === 'tim_mitra';
+        return $r === 'tim_mitra_industri' || $r === 'admin_order' || $r === 'tim_mitra' || $r === 'ketua_tim_mitra';
+    }
+
+    /**
+     * Cek apakah role aktif adalah Ketua Tim Mitra
+     */
+    public function isKetuaTimMitra(): bool {
+        return $this->getUserRole() === 'ketua_tim_mitra';
     }
 
     public function isAdminOrder(): bool {
