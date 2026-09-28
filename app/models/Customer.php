@@ -29,6 +29,21 @@ class Customer extends \DB\SQL\Mapper {
     }
 
     /**
+     * Bersihkan nama perusahaan dari awalan bentuk badan usaha yang berulang atau redundan
+     * Contoh: "PT PT Tanjung Enim", "PT. PT. PT Sinar Syno", "CV. CV Abadi" -> "Tanjung Enim", "Sinar Syno", "Abadi"
+     */
+    public static function cleanNamaPerusahaan(?string $nama, ?string $ptCv = null): string {
+        $nama = trim($nama ?? '');
+        if (empty($nama)) {
+            return '';
+        }
+        // Hapus semua awalan bentuk badan usaha yang berulang atau redundan di awal string dengan word-boundary ketat
+        $cleaned = preg_replace('/^(\s*\b(PT|CV|UD|BUMN|PERUM|PERSERO|Yayasan|Koperasi)\b\.?\s*)+/i', '', $nama);
+        $cleaned = trim($cleaned);
+        return !empty($cleaned) ? $cleaned : $nama;
+    }
+
+    /**
      * Format nama perusahaan agar tidak terjadi duplikasi bentuk badan (misal: "PT PT...")
      */
     public static function formatNamaPerusahaan(?string $ptCv, ?string $nama): string {
@@ -37,17 +52,20 @@ class Customer extends \DB\SQL\Mapper {
         if (empty($nama)) {
             return $ptCv;
         }
-        // Bersihkan jika ada penulisan badan usaha berulang (misal "PT PT Tanjung...", "PT. PT. Sinar...", "PT PT PT...")
-        $nama = preg_replace('/^((PT|CV|UD|BUMN|PERUM|PERSERO|Yayasan|Koperasi)\.?\s*)+/i', '$2 ', $nama);
-        $nama = trim($nama);
+
+        // Jika pt_cv kosong, cek apakah di awal nama terdapat entitas badan usaha
         if (empty($ptCv)) {
-            return $nama;
+            if (preg_match('/^\s*\b(PT|CV|UD|BUMN|PERUM|PERSERO|Yayasan|Koperasi)\b\.?\s+/i', $nama, $matches)) {
+                $ptCv = strtoupper(rtrim($matches[1], '.'));
+            }
         }
-        // Jika nama sudah diawali bentuk badan hukum yang sama/sejenis, jangan prepend lagi
-        if (preg_match('/^(PT\.?|CV\.?|UD\.?|BUMN|PERUM|PERSERO|Yayasan|Koperasi)\b/i', $nama)) {
-            return $nama;
+
+        // Bersihkan jika ada penulisan badan usaha berulang
+        $cleanNama = self::cleanNamaPerusahaan($nama, $ptCv);
+        if (empty($ptCv) || strcasecmp($ptCv, 'Lainnya') === 0 || strcasecmp($ptCv, 'Instansi Pemerintah') === 0) {
+            return $cleanNama;
         }
-        return $ptCv . ' ' . $nama;
+        return $ptCv . ' ' . $cleanNama;
     }
 
     /**
@@ -68,6 +86,7 @@ class Customer extends \DB\SQL\Mapper {
              ORDER BY nmcustomer ASC"
         );
         foreach ($rows as &$r) {
+            $r['nmcustomer_murni'] = self::cleanNamaPerusahaan($r['nmcustomer'] ?? '', $r['pt_cv'] ?? '');
             $r['nama_perusahaan_bersih'] = self::formatNamaPerusahaan($r['pt_cv'] ?? '', $r['nmcustomer'] ?? '');
 
             // PIC bersih
@@ -136,8 +155,10 @@ class Customer extends \DB\SQL\Mapper {
      */
     public function simpanBaru(array $data): int {
         $this->reset();
-        $this->nmcustomer                 = trim($data['nmcustomer'] ?? ($data['nama_perusahaan'] ?? ''));
-        $this->pt_cv                      = trim($data['pt_cv'] ?? 'PT');
+        $ptCv = trim($data['pt_cv'] ?? 'PT');
+        $rawNama = trim($data['nmcustomer'] ?? ($data['nama_perusahaan'] ?? ''));
+        $this->pt_cv                      = $ptCv;
+        $this->nmcustomer                 = self::cleanNamaPerusahaan($rawNama, $ptCv);
         $this->alamatcustomer             = trim($data['alamatcustomer'] ?? ($data['alamat'] ?? ''));
         $this->emailcustomer              = trim($data['emailcustomer'] ?? ($data['email'] ?? ''));
         $this->notelpcustomer             = trim($data['notelpcustomer'] ?? ($data['telepon'] ?? ''));
@@ -163,8 +184,10 @@ class Customer extends \DB\SQL\Mapper {
             throw new \Exception("Customer dengan ID #{$idCustomer} tidak ditemukan.");
         }
 
-        $this->nmcustomer                 = trim($data['nmcustomer'] ?? ($data['nama_perusahaan'] ?? $this->nmcustomer));
-        $this->pt_cv                      = trim($data['pt_cv'] ?? $this->pt_cv);
+        $ptCv = trim($data['pt_cv'] ?? $this->pt_cv);
+        $rawNama = trim($data['nmcustomer'] ?? ($data['nama_perusahaan'] ?? $this->nmcustomer));
+        $this->pt_cv                      = $ptCv;
+        $this->nmcustomer                 = self::cleanNamaPerusahaan($rawNama, $ptCv);
         $this->alamatcustomer             = trim($data['alamatcustomer'] ?? ($data['alamat'] ?? $this->alamatcustomer));
         $this->emailcustomer              = trim($data['emailcustomer'] ?? ($data['email'] ?? $this->emailcustomer));
         $this->notelpcustomer             = trim($data['notelpcustomer'] ?? ($data['telepon'] ?? $this->notelpcustomer));
@@ -202,6 +225,7 @@ class Customer extends \DB\SQL\Mapper {
 
         $rows = $this->db->exec($sql, $params);
         foreach ($rows as &$r) {
+            $r['nmcustomer_murni'] = self::cleanNamaPerusahaan($r['nmcustomer'] ?? '', $r['pt_cv'] ?? '');
             $r['nama_perusahaan_bersih'] = self::formatNamaPerusahaan($r['pt_cv'] ?? '', $r['nmcustomer'] ?? '');
         }
         unset($r);
@@ -218,6 +242,7 @@ class Customer extends \DB\SQL\Mapper {
         }
 
         $customer = $custRows[0];
+        $customer['nmcustomer_murni'] = self::cleanNamaPerusahaan($customer['nmcustomer'] ?? '', $customer['pt_cv'] ?? '');
         $customer['nama_perusahaan_bersih'] = self::formatNamaPerusahaan($customer['pt_cv'] ?? '', $customer['nmcustomer'] ?? '');
 
         // Ambil riwayat surat masuk dari tb_arsipsurat

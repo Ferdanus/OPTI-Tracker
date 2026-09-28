@@ -39,6 +39,7 @@ public function index($f3) {
         ORDER BY o.tanggal_masuk DESC";
     $daftarBaru = $this->safeQuery($sqlBaru);
     foreach ($daftarBaru as &$o) {
+        $o['nama_perusahaan'] = \Customer::formatNamaPerusahaan($o['pt_cv'] ?? '', $o['nama_perusahaan'] ?? '');
         $o['biaya_acuan'] = !empty($o['nominal_penawaran']) ? (float)$o['nominal_penawaran'] : (float)$o['estimasi_biaya'];
         $t = strtotime($o['tanggal_masuk']);
         $o['tahun_masuk'] = $t ? (int) date('Y', $t) : null;
@@ -65,6 +66,7 @@ public function index($f3) {
     $daftarLunas = [];
 
     foreach ($rowsPembayaran as $o) {
+        $o['nama_perusahaan'] = \Customer::formatNamaPerusahaan($o['pt_cv'] ?? '', $o['nama_perusahaan'] ?? '');
         $biayaAcuan = !empty($o['nominal_penawaran']) ? (float) $o['nominal_penawaran'] : (float) $o['estimasi_biaya'];
         $terbayar   = (float) $o['total_terbayar'];
 
@@ -163,6 +165,7 @@ public function tambah($f3) {
     }
 
     $order = $rows[0];
+    $order['nama_perusahaan']   = \Customer::formatNamaPerusahaan($order['pt_cv'] ?? '', $order['nama_perusahaan'] ?? '');
     $biayaAcuan = !empty($order['nominal_penawaran']) ? (float)$order['nominal_penawaran'] : (float)$order['estimasi_biaya'];
     $order['biaya_acuan']       = $biayaAcuan;
     $order['sisa_tagihan']      = max(0, $biayaAcuan - (float)$order['terbayar']);

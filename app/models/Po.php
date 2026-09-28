@@ -213,7 +213,11 @@ class Po extends \DB\SQL\Mapper {
             array(1 => $id)
         );
 
-        return $hasil[0] ?? null;
+        if (!empty($hasil[0])) {
+            $hasil[0]['nama_perusahaan'] = \Customer::formatNamaPerusahaan($hasil[0]['pt_cv'] ?? '', $hasil[0]['nama_perusahaan'] ?? '');
+            return $hasil[0];
+        }
+        return null;
     }
 
     /**
@@ -269,6 +273,7 @@ class Po extends \DB\SQL\Mapper {
         $daftar = $this->db->exec($sql, $params);
 
         foreach ($daftar as &$item) {
+            $item['nama_perusahaan'] = \Customer::formatNamaPerusahaan($item['pt_cv'] ?? '', $item['nama_perusahaan'] ?? '');
             $item['overdue_info'] = self::hitungOverdue(
                 $item['target_selesai'],
                 $item['realisasi_selesai'],

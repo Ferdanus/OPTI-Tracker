@@ -35,7 +35,7 @@
                         </div>
                         <div class="col-md-8">
                             <label class="form-label">Nama Perusahaan / Industri <span class="text-danger">*</span></label>
-                            <input type="text" name="nmcustomer" class="form-control" placeholder="Contoh: Sinar Selulosa Mandiri" value="{{ @klien.nmcustomer }}" required>
+                            <input type="text" name="nmcustomer" class="form-control" placeholder="Contoh: Sinar Selulosa Mandiri" value="{{ @klien.nmcustomer_murni ?: @klien.nmcustomer }}" required>
                         </div>
                     </div>
 

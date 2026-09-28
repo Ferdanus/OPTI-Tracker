@@ -433,6 +433,7 @@ class OrderController extends Controller {
             $custCurrent = $customerModel->getById((int)$order['id_customer']);
             if ($custCurrent && !$custCurrent->dry()) {
                 $cData = $custCurrent->cast();
+                $cData['nmcustomer_murni'] = Customer::cleanNamaPerusahaan($cData['nmcustomer'] ?? '', $cData['pt_cv'] ?? '');
                 $cData['nama_perusahaan_bersih'] = Customer::formatNamaPerusahaan($cData['pt_cv'] ?? '', $cData['nmcustomer'] ?? '');
                 $cData['pic_bersih'] = $cData['contactperson_opti'] ?: ($cData['contactperson'] ?: ($cData['nama_pribadi'] ?: '-'));
                 $cData['hp_bersih'] = $cData['nohpcontactperson_opti'] ?: ($cData['nohpcontactperson'] ?: '-');
@@ -1814,9 +1815,9 @@ class OrderController extends Controller {
                     $order['alamat'] = $alamatSurat;
                 }
                 if (!empty($suratMasukData['pengirim'])) {
-                    $ptPrefix = !empty($suratMasukData['pt_cv']) ? $suratMasukData['pt_cv'] . ' ' : '';
-                    $order['nama_perusahaan'] = $ptPrefix . $suratMasukData['pengirim'];
-                    $order['nmcustomer'] = $suratMasukData['pengirim'];
+                    $order['nama_perusahaan'] = \Customer::formatNamaPerusahaan($suratMasukData['pt_cv'] ?? '', $suratMasukData['pengirim']);
+                    $order['nmcustomer'] = \Customer::cleanNamaPerusahaan($suratMasukData['pengirim'], $suratMasukData['pt_cv'] ?? '');
+                    $order['nmcustomer_murni'] = $order['nmcustomer'];
                     $order['pt_cv'] = $suratMasukData['pt_cv'] ?? $order['pt_cv'];
                 }
             }
@@ -1965,8 +1966,9 @@ class OrderController extends Controller {
                 $custUpdates = [];
                 $custParams = [];
                 if (!empty($perusahaan)) {
+                    $cleanPerusahaan = \Customer::cleanNamaPerusahaan($perusahaan, $order->pt_cv ?? 'PT');
                     $custUpdates[] = "nmcustomer = ?";
-                    $custParams[] = $perusahaan;
+                    $custParams[] = $cleanPerusahaan;
                 }
                 if (!empty($nama)) {
                     $custUpdates[] = "contactperson_opti = ?";
@@ -2140,23 +2142,6 @@ class OrderController extends Controller {
             $sql .= " AND o.pic_proposal_id IS NOT NULL ";
         }
 
-        // Filter status proposal
-        if ($filterStatus !== 'semua') {
-            if ($filterStatus === 'draft' || $filterStatus === 'draft_disimpan') {
-                $sql .= " AND (
-                    (o.jenis_layanan_opti = 'lingkungan' AND (o.status_proposal_biaya IN ('draft', 'draft_disimpan') OR o.status_proposal_biaya IS NULL))
-                    OR
-                    (o.jenis_layanan_opti != 'lingkungan' AND (p.status_proposal IN ('draft', 'draft_disimpan') OR p.status_proposal IS NULL))
-                ) ";
-            } elseif ($filterStatus === 'diajukan') {
-                $sql .= " AND (p.status_proposal = 'diajukan' OR o.status_proposal_biaya = 'menunggu_approval') ";
-            } elseif ($filterStatus === 'disetujui') {
-                $sql .= " AND (p.status_proposal IN ('disetujui', 'disetujui_ketua', 'disetujui_pimpinan') OR o.status_proposal_biaya = 'siap_penawaran') ";
-            } elseif ($filterStatus === 'ditolak') {
-                $sql .= " AND (p.status_proposal = 'ditolak' OR o.status_proposal_biaya = 'perlu_revisi') ";
-            }
-        }
-
         // Filter pencarian teks
         if (!empty($filterSearch)) {
             $sql .= " AND (o.nomor_order LIKE ? OR c.nmcustomer LIKE ? OR o.judul_kegiatan LIKE ? OR p.judul_proposal LIKE ?) ";
@@ -2174,15 +2159,16 @@ class OrderController extends Controller {
             $binds[$idx + 1] = $val;
         }
 
-        $listProposal = $this->db->exec($sql, $binds);
+        // Ambil seluruh proposal dalam lingkup pengguna (unfiltered status) untuk kalkulasi statistik yang konsisten
+        $allProposals = $this->db->exec($sql, $binds);
 
-        // Counter Statistik
+        // Counter Statistik Konsisten di Semua Tab
         $statDraft = 0;
         $statDiajukan = 0;
         $statDisetujui = 0;
         $statDitolak = 0;
 
-        foreach ($listProposal as $item) {
+        foreach ($allProposals as $item) {
             $stProp = $item['status_proposal'] ?? '';
             $stBiaya = $item['status_proposal_biaya'] ?? '';
             $isLing = (($item['jenis_layanan_opti'] ?? '') === 'lingkungan');
@@ -2210,8 +2196,46 @@ class OrderController extends Controller {
             }
         }
 
+        // Filter data tabel berdasarkan tab status yang sedang aktif
+        if ($filterStatus === 'semua') {
+            $listProposal = $allProposals;
+        } else {
+            $listProposal = array_values(array_filter($allProposals, function($item) use ($filterStatus) {
+                $stProp = $item['status_proposal'] ?? '';
+                $stBiaya = $item['status_proposal_biaya'] ?? '';
+                $isLing = (($item['jenis_layanan_opti'] ?? '') === 'lingkungan');
+
+                if ($filterStatus === 'draft' || $filterStatus === 'draft_disimpan') {
+                    if ($isLing) {
+                        return in_array($stBiaya, ['draft', 'draft_disimpan', '']) || $stBiaya === null;
+                    } else {
+                        return in_array($stProp, ['draft', 'draft_disimpan', '']) || $stProp === null;
+                    }
+                } elseif ($filterStatus === 'diajukan') {
+                    if ($isLing) {
+                        return $stBiaya === 'menunggu_approval';
+                    } else {
+                        return $stProp === 'diajukan' || $stBiaya === 'menunggu_approval';
+                    }
+                } elseif ($filterStatus === 'disetujui') {
+                    if ($isLing) {
+                        return $stBiaya === 'siap_penawaran';
+                    } else {
+                        return in_array($stProp, ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan']) || $stBiaya === 'siap_penawaran';
+                    }
+                } elseif ($filterStatus === 'ditolak') {
+                    if ($isLing) {
+                        return $stBiaya === 'perlu_revisi';
+                    } else {
+                        return $stProp === 'ditolak' || $stBiaya === 'perlu_revisi';
+                    }
+                }
+                return true;
+            }));
+        }
+
         $f3->set('list_proposal', $listProposal);
-        $f3->set('total_proposal', count($listProposal));
+        $f3->set('total_proposal', count($allProposals));
         $f3->set('stat_draft', $statDraft);
         $f3->set('stat_diajukan', $statDiajukan);
         $f3->set('stat_disetujui', $statDisetujui);

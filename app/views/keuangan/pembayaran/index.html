@@ -218,7 +218,7 @@ function bukaDetailLunas(orderId) {
 
     document.getElementById('detailLunasSub').textContent = order.nomor_order;
     document.getElementById('detailLunasInfo').innerHTML =
-        '<div class="order-locked-row"><span class="order-locked-label">Mitra</span><span class="order-locked-value">' + order.nama_perusahaan + ' (' + (order.pt_cv || '') + ')</span></div>' +
+        '<div class="order-locked-row"><span class="order-locked-label">Mitra</span><span class="order-locked-value">' + order.nama_perusahaan + '</span></div>' +
         '<div class="order-locked-row"><span class="order-locked-label">Nilai Acuan</span><span class="order-locked-value">' + rupiah(order.biaya_acuan) + '</span></div>' +
         '<div class="order-locked-row"><span class="order-locked-label">Tanggal Lunas</span><span class="order-locked-value text-success">' + tglIndo(order.tanggal_lunas) + '</span></div>';
 
@@ -379,7 +379,7 @@ function renderBaru(list) {
     body.innerHTML = list.length === 0
         ? '<tr><td colspan="7" class="text-center text-muted py-5"><i class="bi bi-inbox fs-2 d-block mb-2"></i>Tidak ada order baru.</td></tr>'
         : list.map(function (o, idx) {
-            return '<tr><td class="text-muted small">' + (idx + 1) + '</td><td class="fw-semibold">' + o.nomor_order + skbBadge(o) + '</td><td>' + o.judul_kegiatan + '<div class="text-muted small">' + o.nama_perusahaan + ' (' + (o.pt_cv || '') + ')</div></td><td>' + divisiBadge(o.jenis_layanan_opti) + '</td>' +
+            return '<tr><td class="text-muted small">' + (idx + 1) + '</td><td class="fw-semibold">' + o.nomor_order + skbBadge(o) + '</td><td>' + o.judul_kegiatan + '<div class="text-muted small">' + o.nama_perusahaan + '</div></td><td>' + divisiBadge(o.jenis_layanan_opti) + '</td>' +
                 '<td class="text-end">' + rupiah(o.biaya_acuan) + (o.nominal_penawaran ? '' : '<div class="text-muted" style="font-size:.68rem;">*estimasi</div>') + '</td>' +
                 '<td class="small text-muted">' + tglIndo(o.tanggal_masuk) + '</td>' +
                 '<td class="text-center"><a href="' + BASE + '/pembayaran/tambah?order_id=' + o.id + '" class="btn btn-sm btn-success"><i class="bi bi-plus-circle"></i> Catat Pembayaran</a></td></tr>';
@@ -405,7 +405,7 @@ function renderBerjalan(list) {
                 ? '<div><span class="kb-badge-ada mt-1"><i class="bi bi-file-earmark-check-fill"></i> Kesanggupan Bayar</span></div>'
                 : '';
 
-            return '<tr><td class="text-muted small">' + (idx + 1) + '</td><td class="fw-semibold">' + o.nomor_order + skbBadge(o) + '</td><td>' + o.judul_kegiatan + '<div class="text-muted small">' + o.nama_perusahaan + ' (' + (o.pt_cv || '') + ')</div></td><td>' + divisiBadge(o.jenis_layanan_opti) + '</td>' +
+            return '<tr><td class="text-muted small">' + (idx + 1) + '</td><td class="fw-semibold">' + o.nomor_order + skbBadge(o) + '</td><td>' + o.judul_kegiatan + '<div class="text-muted small">' + o.nama_perusahaan + '</div></td><td>' + divisiBadge(o.jenis_layanan_opti) + '</td>' +
                 '<td class="text-end">' + rupiah(o.biaya_acuan) + '</td>' +
                 '<td><div class="d-flex justify-content-between small mb-1"><span class="text-success fw-semibold">' + rupiah(o.total_terbayar) + '</span><span class="text-muted">' + o.persen_bayar + '%</span></div><div class="progress" style="height:5px;"><div class="progress-bar bg-warning" style="width:' + o.persen_bayar + '%;"></div></div><div class="text-muted mt-1" style="font-size:.7rem;">' + o.jumlah_termin + 'x bayar</div></td>' +
                 '<td class="text-end fw-bold text-danger">' + rupiah(o.sisa_tagihan) + '</td>' +
@@ -429,7 +429,7 @@ function renderBerjalan(list) {
     body.innerHTML = list.length === 0
         ? '<tr><td colspan="8" class="text-center text-muted py-5"><i class="bi bi-inbox fs-2 d-block mb-2"></i>Tidak ada order lunas di periode ini.</td></tr>'
         : list.map(function (o, idx) {
-                return '<tr><td class="text-muted small">' + (idx + 1) + '</td><td class="fw-semibold">' + o.nomor_order + skbBadge(o) + '</td><td>' + o.judul_kegiatan + '<div class="text-muted small">' + o.nama_perusahaan + ' (' + (o.pt_cv || '') + ')</div></td><td>' + divisiBadge(o.jenis_layanan_opti) + '</td>' +
+                return '<tr><td class="text-muted small">' + (idx + 1) + '</td><td class="fw-semibold">' + o.nomor_order + skbBadge(o) + '</td><td>' + o.judul_kegiatan + '<div class="text-muted small">' + o.nama_perusahaan + '</div></td><td>' + divisiBadge(o.jenis_layanan_opti) + '</td>' +
                 '<td class="text-end">' + rupiah(o.biaya_acuan) + '</td>' +
                 '<td class="small">' + tglIndo(o.tanggal_lunas) + '</td>' +
                 '<td class="text-center"><span class="badge badge-pill-success">' + o.jumlah_termin + 'x bayar</span></td>' +

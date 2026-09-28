@@ -2967,7 +2967,7 @@
                             <repeat group="{{ @daftar_customer_opti }}" value="{{ @cust }}">
                                 <option value="{{ @cust.id_customer }}"
                                         data-ptcv="{{ @cust.pt_cv }}"
-                                        data-nama="{{ @cust.nmcustomer }}"
+                                        data-nama="{{ @cust.nmcustomer_murni ?: @cust.nmcustomer }}"
                                         data-nama-bersih="{{ @cust.nama_perusahaan_bersih }}"
                                         data-kode="{{ @cust.kodex_perusahaan ?: '-' }}"
                                         data-alamat="{{ @cust.alamat_bersih ?: '-' }}"
@@ -3005,7 +3005,7 @@
                                 <label class="form-label small fw-semibold text-dark mb-1" for="inputEditNamaPerusahaan">
                                     Nama Perusahaan / Instansi <span class="text-danger">*</span>
                                 </label>
-                                <input type="text" name="nmcustomer" id="inputEditNamaPerusahaan" class="form-control form-control-sm fw-semibold bg-light" value="{{ @order.nama_perusahaan }}" readonly required placeholder="-">
+                                <input type="text" name="nmcustomer" id="inputEditNamaPerusahaan" class="form-control form-control-sm fw-semibold bg-light" value="{{ @order.nmcustomer_murni ?: (@order.nmcustomer ?: @order.nama_perusahaan) }}" readonly required placeholder="-">
                             </div>
 
                             <div class="col-sm-6">
@@ -3513,6 +3513,7 @@ function initEditCustomerTomSelect() {
             value: opt.value,
             text: opt.text,
             nama: opt.getAttribute('data-nama-bersih') || opt.text,
+            namaMurni: opt.getAttribute('data-nama') || opt.text,
             ptcv: opt.getAttribute('data-ptcv') || '',
             kode: opt.getAttribute('data-kode') || '',
             pic: opt.getAttribute('data-pic') || '',
@@ -3572,9 +3573,9 @@ function initEditCustomerTomSelect() {
                 var elPt = document.getElementById('inputEditPtCv');
                 if (elPt) elPt.value = item.ptcv;
             }
-            if (item.nama) {
+            if (item.namaMurni || item.nama) {
                 var elNama = document.getElementById('inputEditNamaPerusahaan');
-                if (elNama) elNama.value = item.nama;
+                if (elNama) elNama.value = item.namaMurni || item.nama;
             }
             var elPic = document.getElementById('inputEditPic');
             if (elPic) elPic.value = (item.pic && item.pic !== '-') ? item.pic : '';

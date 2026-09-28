@@ -27,7 +27,7 @@
                 <check if="{{ @order.jenis_layanan_opti == 'selulosa' }}"><span class="badge-pill-primary">Selulosa</span></check>
                 <check if="{{ @order.jenis_layanan_opti == 'lingkungan' }}"><span class="badge-pill-info">Lingkungan</span></check>
             </div>
-            <div class="order-locked-row"><span class="order-locked-label">Mitra</span><span class="order-locked-value">{{ @order.nama_perusahaan }} {{ @order.pt_cv ? '(' . @order.pt_cv . ')' : '' }}</span></div>
+            <div class="order-locked-row"><span class="order-locked-label">Mitra</span><span class="order-locked-value">{{ @order.nama_perusahaan }}</span></div>
             <div class="order-locked-row"><span class="order-locked-label">Nilai Acuan</span><span class="order-locked-value">Rp {{ number_format(@order.biaya_acuan, 0, ',', '.') }}</span></div>
             <div class="order-locked-row"><span class="order-locked-label">Sudah Terbayar</span><span class="order-locked-value text-success">Rp {{ number_format(@order.terbayar, 0, ',', '.') }}</span></div>
             <div class="order-locked-row"><span class="order-locked-label">Sisa Tagihan</span><span class="order-locked-value text-danger">Rp {{ number_format(@order.sisa_tagihan, 0, ',', '.') }}</span></div>

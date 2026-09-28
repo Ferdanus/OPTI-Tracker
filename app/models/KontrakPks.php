@@ -61,7 +61,7 @@ class KontrakPks extends \DB\SQL\Mapper {
      * Ambil semua data kontrak lengkap dengan detail PO, Order, dan Customer
      */
     public function allWithRelasi(): array {
-        return $this->db->exec(
+        $rows = $this->db->exec(
             "SELECT c.*, 
                     p.nomor_po, p.status AS po_status,
                     o.judul_kegiatan, o.jenis_layanan_opti, o.spm_layanan,
@@ -72,6 +72,11 @@ class KontrakPks extends \DB\SQL\Mapper {
              JOIN tb_customer cust ON o.id_customer = cust.id_customer
              ORDER BY c.id DESC"
         );
+        foreach ($rows as &$r) {
+            $r['nama_perusahaan'] = \Customer::formatNamaPerusahaan($r['pt_cv'] ?? '', $r['nama_perusahaan'] ?? '');
+        }
+        unset($r);
+        return $rows;
     }
 
     /**

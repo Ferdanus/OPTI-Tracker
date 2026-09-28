@@ -88,7 +88,8 @@ class CustomerController extends Controller {
                 'alamatcustomer'         => $alamat
             ));
 
-            $this->setFlashSuccess("Customer <strong>{$namaPerusahaan}</strong> berhasil ditambahkan.");
+            $namaTampil = Customer::formatNamaPerusahaan($ptCv, $namaPerusahaan);
+            $this->setFlashSuccess("Customer <strong>{$namaTampil}</strong> berhasil ditambahkan.");
             $f3->reroute('/klien');
         } catch (\Exception $e) {
             $this->setFlashError('Gagal menyimpan customer: ' . $e->getMessage());
@@ -111,8 +112,12 @@ class CustomerController extends Controller {
             return;
         }
 
-        $f3->set('customer', $customer->cast());
-        $f3->set('klien', $customer->cast());
+        $custData = $customer->cast();
+        $custData['nmcustomer_murni'] = Customer::cleanNamaPerusahaan($custData['nmcustomer'] ?? '', $custData['pt_cv'] ?? '');
+        $custData['nama_perusahaan_bersih'] = Customer::formatNamaPerusahaan($custData['pt_cv'] ?? '', $custData['nmcustomer'] ?? '');
+
+        $f3->set('customer', $custData);
+        $f3->set('klien', $custData);
         $this->render('klien/form.html', 'Edit Data Customer', 'klien');
     }
 
@@ -150,7 +155,8 @@ class CustomerController extends Controller {
                 'nohpcontactperson_opti' => $telepon
             ));
 
-            $this->setFlashSuccess("Data customer '{$namaPerusahaan}' berhasil diperbarui.");
+            $namaTampil = Customer::formatNamaPerusahaan($ptCv, $namaPerusahaan);
+            $this->setFlashSuccess("Data customer '{$namaTampil}' berhasil diperbarui.");
             $f3->reroute('/klien');
         } catch (\Exception $e) {
             $this->setFlashError('Gagal memperbarui customer: ' . $e->getMessage());

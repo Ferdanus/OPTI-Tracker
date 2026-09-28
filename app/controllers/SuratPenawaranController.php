@@ -147,14 +147,14 @@ class SuratPenawaranController extends Controller
             $rawCust = trim($item['nmcustomer'] ?? '');
             $rawPer = trim($item['perusahaan'] ?? '');
 
-            $cleanCust = preg_replace('/^((?:PT|CV|UD|PD|Yayasan)\.?\s*){2,}/i', '$1 ', $rawCust);
-            $cleanPer = preg_replace('/^((?:PT|CV|UD|PD|Yayasan)\.?\s*){2,}/i', '$1 ', $rawPer);
+            $cleanCust = \Customer::formatNamaPerusahaan($item['pt_cv'] ?? '', $rawCust);
+            $cleanPer = \Customer::formatNamaPerusahaan('', $rawPer);
 
             $item['nmcustomer'] = $cleanCust;
             $item['perusahaan'] = $cleanPer;
 
-            $coreCust = strtolower(trim(preg_replace('/^(PT|CV|UD|PD|Yayasan)\.?\s*/i', '', $cleanCust)));
-            $corePer = strtolower(trim(preg_replace('/^(PT|CV|UD|PD|Yayasan)\.?\s*/i', '', $cleanPer)));
+            $coreCust = strtolower(\Customer::cleanNamaPerusahaan($cleanCust));
+            $corePer = strtolower(\Customer::cleanNamaPerusahaan($cleanPer));
 
             if ($coreCust === $corePer || empty($cleanPer) || $cleanPer === '-') {
                 $item['display_perusahaan'] = !empty($cleanCust) && $cleanCust !== '-' ? $cleanCust : $cleanPer;
@@ -189,14 +189,7 @@ class SuratPenawaranController extends Controller
                     ORDER BY o.id DESC LIMIT 20";
         $daftarOrderSiap = $this->db->exec($sqlSiap);
         foreach ($daftarOrderSiap as &$ord) {
-            $nm = trim($ord['nmcustomer'] ?? '');
-            $ptCv = trim($ord['pt_cv'] ?? '');
-            if (!empty($ptCv) && stripos($nm, $ptCv) !== 0) {
-                $comp = $ptCv . ' ' . $nm;
-            } else {
-                $comp = $nm ?: '-';
-            }
-            $ord['nama_perusahaan'] = preg_replace('/^(PT|CV|UD|PD)\.?\s+(PT|CV|UD|PD)\.?\s+/i', '$1 ', $comp);
+            $ord['nama_perusahaan'] = \Customer::formatNamaPerusahaan($ord['pt_cv'] ?? '', $ord['nmcustomer'] ?? ($ord['nama_perusahaan'] ?? ''));
         }
         unset($ord);
 

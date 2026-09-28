@@ -74,7 +74,7 @@
                                                     <span class="fw-medium text-dark">{{ $namaTampil }}</span>
                                                 </true>
                                                 <false>
-                                                    <span class="fw-medium text-dark">{{ @k.nama_perusahaan ? (@k.pt_cv ? @k.pt_cv . ' ' . @k.nama_perusahaan : @k.nama_perusahaan) : 'Mitra Industri' }}</span>
+                                                    <span class="fw-medium text-dark">{{ @k.nama_perusahaan ?: 'Mitra Industri' }}</span>
                                                 </false>
                                             </check>
                                         </div>

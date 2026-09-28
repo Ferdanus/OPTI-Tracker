@@ -237,6 +237,10 @@ public function index($f3) {
             ORDER BY COALESCE(p.created_at, o.ketua_pelaksana_at) DESC";
 
     $daftarPo = $this->safeQuery($sql);
+    foreach ($daftarPo as &$r) {
+        $r['nama_mitra'] = \Customer::formatNamaPerusahaan($r['pt_cv'] ?? '', $r['nama_mitra'] ?? '');
+    }
+    unset($r);
 
     $totalMenunggu = count(array_filter($daftarPo, function ($r) { return empty($r['po_id']); }));
     $totalDraft    = count(array_filter($daftarPo, function ($r) { return $r['po_status'] === 'draft'; }));
@@ -281,6 +285,10 @@ public function index($f3) {
                AND o.id NOT IN (SELECT order_id FROM po_kegiatan)
              ORDER BY o.id DESC"
         );
+        foreach ($daftarOrder as &$r) {
+            $r['nama_mitra'] = \Customer::formatNamaPerusahaan($r['pt_cv'] ?? '', $r['nama_mitra'] ?? '');
+        }
+        unset($r);
 
         $f3->set('daftar_pegawai', $this->safeQuery('SELECT id_user, nama_user FROM tb_arsipuser ORDER BY nama_user ASC'));
         $f3->set('nomor_po_saran', $this->generateNomorPo());
@@ -610,7 +618,11 @@ protected function siapkanDataPo($po, $orderData) {
                 LIMIT 1";
 
         $rows = $this->safeQuery($sql, [1 => $orderId]);
-        return $rows[0] ?? null;
+        if (!empty($rows[0])) {
+            $rows[0]['nama_mitra'] = \Customer::formatNamaPerusahaan($rows[0]['pt_cv'] ?? '', $rows[0]['nama_mitra'] ?? '');
+            return $rows[0];
+        }
+        return null;
     }
 
     /** [PERLU DIVERIFIKASI ULANG tiap tahun sesuai SKB 3 Menteri] */

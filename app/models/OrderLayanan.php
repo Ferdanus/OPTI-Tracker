@@ -227,6 +227,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
 
         $rows = $this->db->exec($sql, $params);
         foreach ($rows as &$r) {
+            $r['nmcustomer_murni'] = Customer::cleanNamaPerusahaan($r['nmcustomer'] ?? ($r['nama_perusahaan'] ?? ''), $r['pt_cv'] ?? '');
             $r['nama_perusahaan'] = Customer::formatNamaPerusahaan($r['pt_cv'] ?? '', $r['nama_perusahaan'] ?? '');
             $st = self::resolveStageStatus($r);
             $r['stage_label'] = $st['label'];
@@ -475,6 +476,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
             return null;
         }
         $detail = $res[0];
+        $detail['nmcustomer_murni'] = Customer::cleanNamaPerusahaan($detail['nmcustomer'] ?? ($detail['nama_perusahaan'] ?? ''), $detail['pt_cv'] ?? '');
         $detail['nama_perusahaan'] = Customer::formatNamaPerusahaan($detail['pt_cv'] ?? '', $detail['nama_perusahaan'] ?? '');
         $st = self::resolveStageStatus($detail);
         $detail['stage_label'] = $st['label'];
