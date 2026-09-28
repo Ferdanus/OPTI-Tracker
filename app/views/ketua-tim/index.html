@@ -154,6 +154,12 @@
 .ktp-modal-icon { width: 50px; height: 50px; font-size: 21px; }
 .ktp-modal-info { margin: -16px 28px 0; padding: 16px 20px; font-size: 13.5px; }
 #formPilihPelaksana .px-4 { padding-left: 28px !important; padding-right: 28px !important; }
+.ktp-badge-skb {
+    display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: #92400e;
+    background: #fef3c7; border-radius: 20px; padding: 3px 9px; text-decoration: none; white-space: nowrap;
+}
+.ktp-badge-skb:hover { background: #fde68a; color: #78350f; }
+.ktp-status.draft { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
 </style>
 
 <script>
@@ -203,9 +209,18 @@ function aksiBelum(o) {
 }
 function aksiSudah(o) {
     if (o.sudah_ada_po) {
-        return '<a href="' + BASE + '/po-kegiatan/' + o.po_id + '" class="ktp-btn ktp-btn-outline"><i class="bi bi-eye"></i>Lihat PO</a>';
+        return ''; // status PO udah keliatan dari badge -- review PO ada di halaman terpisah
     }
     return '<span class="text-muted small">Menunggu PO</span>';
+}
+function statusPoBadge(o) {
+    if (!o.sudah_ada_po) {
+        return '<span class="ktp-status ok">Ketua Pelaksana Terpilih</span>';
+    }
+    if (o.po_status === 'terkirim') {
+        return '<span class="ktp-status done">PO Sudah Dibuat</span>';
+    }
+    return '<span class="ktp-status draft">PO Sedang Dibuat</span>';
 }
 
 function render() {
@@ -247,9 +262,7 @@ function render() {
 
     tbody.innerHTML = hasil.map(function (o, idx) {
         var aksi = tab === 'belum' ? aksiBelum(o) : aksiSudah(o);
-        var status = tab === 'sudah'
-            ? '<div>' + (o.sudah_ada_po ? '<span class="ktp-status done">PO Sudah Dibuat</span>' : '<span class="ktp-status ok">Ketua Pelaksana Terpilih</span>') + '</div>'
-            : '';
+        var status = tab === 'sudah' ? '<div>' + statusPoBadge(o) + '</div>' : '';
 
         return '<tr>' +
             '<td style="color:#94a3b8;">' + (idx + 1) + '</td>' +
@@ -263,9 +276,7 @@ function render() {
 
     mobileList.innerHTML = hasil.map(function (o) {
         var aksi = tab === 'belum' ? aksiBelum(o) : aksiSudah(o);
-        var foot = tab === 'sudah'
-            ? (o.sudah_ada_po ? '<span class="ktp-status done">PO Sudah Dibuat</span>' : '<span class="ktp-status ok">Ketua Pelaksana Terpilih</span>')
-            : '<span class="ktp-cell-tanggal">Lunas ' + tgl(o.tanggal_lunas) + '</span>';
+        var foot = tab === 'sudah' ? statusPoBadge(o) : kolomTanggal(o);
 
         return '<div class="ktp-mcard">' +
             '<div class="ktp-cell-order"><div><div class="ktp-nomor">' + o.nomor_order + '</div>' + divisiPill(o.jenis_layanan_opti) + '</div></div>' +

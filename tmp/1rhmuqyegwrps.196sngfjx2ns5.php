@@ -9,7 +9,7 @@
                 <a href="<?= ($BASE) ?>/disposisi-masuk" class="text-decoration-none px-3 py-1 rounded-pill small fw-semibold transition-all <?= (empty($filter_divisi) ? 'bg-white text-dark shadow-xs' : 'text-secondary') ?>">
                     <i class="bi bi-grid-fill me-1 opacity-50"></i> Semua
                 </a>
-                <a href="<?= ($BASE) ?>/disposisi-masuk?divisi=selulosa" class="text-decoration-none px-3 py-1 rounded-pill small fw-semibold transition-all <?= ($filter_divisi == 'selulosa' ? 'bg-white text-primary shadow-xs' : 'text-secondary') ?>">
+                <a href="<?= ($BASE) ?>/disposisi-masuk?divisi=selulosa" class="text-decoration-none px-3 py-1 rounded-pill small fw-semibold transition-all <?= ($filter_divisi == 'selulosa' ? 'bg-white text-danger shadow-xs' : 'text-secondary') ?>">
                     <i class="bi bi-file-earmark-medical me-1"></i> Selulosa
                 </a>
                 <a href="<?= ($BASE) ?>/disposisi-masuk?divisi=lingkungan" class="text-decoration-none px-3 py-1 rounded-pill small fw-semibold transition-all <?= ($filter_divisi == 'lingkungan' ? 'bg-white text-success shadow-xs' : 'text-secondary') ?>">
@@ -49,10 +49,17 @@
                                         <!-- Header: Tag Divisi, Nomor Order, Tanggal -->
                                         <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
                                             <div class="d-flex align-items-center gap-2">
-                                                <span class="badge <?= ($item['jenis_layanan_opti'] == 'selulosa' ? 'bg-primary-subtle text-primary border border-primary-subtle' : 'bg-success-subtle text-success border border-success-subtle') ?> text-uppercase fw-semibold px-2 py-1" style="font-size: 0.68rem;">
-                                                    OPTI <?= ($item['jenis_layanan_opti'])."
-" ?>
-                                                </span>
+                                                <?php if ($item['jenis_layanan_opti'] == 'selulosa'): ?>
+                                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle text-uppercase fw-semibold px-2 py-1" style="font-size: 0.68rem;">OPTI Selulosa</span>
+                                                <?php endif; ?>
+                                                <?php if ($item['jenis_layanan_opti'] == 'lingkungan'): ?>
+                                                    <span class="badge bg-success-subtle text-success border border-success-subtle text-uppercase fw-semibold px-2 py-1" style="font-size: 0.68rem;">OPTI Lingkungan</span>
+                                                <?php endif; ?>
+                                                <?php if (empty($item['jenis_layanan_opti']) || $item['jenis_layanan_opti'] == 'belum_ditentukan'): ?>
+                                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle fw-semibold px-2 py-1" style="font-size: 0.68rem;">
+                                                        <i class="bi bi-hourglass-split me-1"></i>Belum Ditentukan
+                                                    </span>
+                                                <?php endif; ?>
                                                 <span class="text-secondary font-monospace small ms-1" style="font-size: 0.78rem;">
                                                     #<?= ($item['nomor_order'])."
 " ?>
@@ -75,7 +82,7 @@
                                             <div class="d-flex mb-1">
                                                 <span class="text-muted" style="width: 120px; flex-shrink: 0;">Nama Perusahaan</span>
                                                 <span class="text-muted me-2">:</span>
-                                                <strong class="text-dark"><?= ($item['nama_perusahaan']) ?> (<?= ($item['pt_cv']) ?>)</strong>
+                                                <strong class="text-dark"><?= ($item['nama_perusahaan']) ?></strong>
                                             </div>
                                             <div class="d-flex mb-1">
                                                 <span class="text-muted" style="width: 120px; flex-shrink: 0;">PIC</span>
@@ -156,10 +163,17 @@
                                         <!-- Header -->
                                         <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
                                             <div class="d-flex align-items-center gap-2">
-                                                <span class="badge <?= ($p['jenis_layanan_opti'] == 'selulosa' ? 'bg-primary-subtle text-primary border border-primary-subtle' : 'bg-success-subtle text-success border border-success-subtle') ?> text-uppercase fw-semibold px-2 py-1" style="font-size: 0.68rem;">
-                                                    OPTI <?= ($p['jenis_layanan_opti'])."
-" ?>
-                                                </span>
+                                                <?php if ($p['jenis_layanan_opti'] == 'selulosa'): ?>
+                                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle text-uppercase fw-semibold px-2 py-1" style="font-size: 0.68rem;">OPTI Selulosa</span>
+                                                <?php endif; ?>
+                                                <?php if ($p['jenis_layanan_opti'] == 'lingkungan'): ?>
+                                                    <span class="badge bg-success-subtle text-success border border-success-subtle text-uppercase fw-semibold px-2 py-1" style="font-size: 0.68rem;">OPTI Lingkungan</span>
+                                                <?php endif; ?>
+                                                <?php if (empty($p['jenis_layanan_opti']) || $p['jenis_layanan_opti'] == 'belum_ditentukan'): ?>
+                                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle fw-semibold px-2 py-1" style="font-size: 0.68rem;">
+                                                        <i class="bi bi-hourglass-split me-1"></i>Belum Ditentukan
+                                                    </span>
+                                                <?php endif; ?>
                                                 <span class="text-secondary font-monospace small ms-1" style="font-size: 0.78rem;">
                                                     #<?= ($p['nomor_order'])."
 " ?>
@@ -191,7 +205,7 @@
                                             <div class="d-flex mb-1">
                                                 <span class="text-muted" style="width: 120px; flex-shrink: 0;">Nama Perusahaan</span>
                                                 <span class="text-muted me-2">:</span>
-                                                <strong class="text-dark"><?= ($p['nama_perusahaan']) ?> (<?= ($p['pt_cv']) ?>)</strong>
+                                                <strong class="text-dark"><?= ($p['nama_perusahaan']) ?></strong>
                                             </div>
                                             <div class="d-flex mb-1">
                                                 <span class="text-muted" style="width: 120px; flex-shrink: 0;">
@@ -245,7 +259,7 @@
                                                         </a>
                                                     
                                                     <?php else: ?>
-                                                        <span class="text-muted small" style="font-size: 0.75rem;"><i class="bi bi-file-earmark me-1"></i> Draft Tanpa File</span>
+                                                        <span class="text-muted small" style="font-size: 0.75rem;"><i class="bi bi-bookmark me-1"></i> Draft Tanpa File</span>
                                                     
                                                 <?php endif; ?>
                                                 <a href="<?= ($BASE) ?>/order/<?= ($p['id']) ?>" class="btn btn-success btn-sm px-3 py-1 fw-semibold">
@@ -299,14 +313,18 @@
                         <tr>
                             <td class="ps-3 ps-md-4">
                                 <span class="badge bg-light text-dark border font-monospace"><?= ($row['nomor_order']) ?></span>
-                                <span class="badge <?= ($row['jenis_layanan_opti'] == 'selulosa' ? 'bg-primary-subtle text-primary' : 'bg-success-subtle text-success') ?> text-uppercase d-block mt-1" style="font-size: 0.65rem;">
-                                    <?= ($row['jenis_layanan_opti'])."
-" ?>
-                                </span>
+                                <?php if ($row['jenis_layanan_opti'] == 'selulosa'): ?>
+                                    <span class="badge bg-danger-subtle text-danger text-uppercase d-block mt-1" style="font-size: 0.65rem;">Selulosa</span>
+                                <?php endif; ?>
+                                <?php if ($row['jenis_layanan_opti'] == 'lingkungan'): ?>
+                                    <span class="badge bg-success-subtle text-success text-uppercase d-block mt-1" style="font-size: 0.65rem;">Lingkungan</span>
+                                <?php endif; ?>
+                                <?php if (empty($row['jenis_layanan_opti']) || $row['jenis_layanan_opti'] == 'belum_ditentukan'): ?>
+                                    <span class="badge bg-warning-subtle text-warning-emphasis text-uppercase d-block mt-1" style="font-size: 0.65rem;">Belum Ditentukan</span>
+                                <?php endif; ?>
                             </td>
                             <td>
                                 <strong class="text-dark"><?= ($row['nama_perusahaan']) ?></strong>
-                                <small class="text-muted d-block">(<?= ($row['pt_cv']) ?>)</small>
                             </td>
                             <td>
                                 <div class="text-dark fw-semibold text-truncate" style="max-width: 280px;" title="<?= ($row['judul_kegiatan']) ?>">

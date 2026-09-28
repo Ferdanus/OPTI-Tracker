@@ -79,43 +79,36 @@ class SuratMasukRepository {
         if (!$this->isConnected()) {
             return array();
         }
-
+    
         if ($this->isArsipSurat()) {
             $sql = "SELECT a.*, 
                            a.id_arsip AS id,
-                           COALESCE(c.nmcustomer, 'Instansi / Perusahaan') AS pengirim,
+                           COALESCE(NULLIF(c.nmcustomer, ''), 'Belum Diketahui') AS pengirim,
                            c.pt_cv,
-                           c.kodex_perusahaan,
-                           c.id_customer,
-                           COALESCE(c.alamatcustomer, '-') AS alamat_pengirim,
-                           COALESCE(NULLIF(a.kontak_person, ''), NULLIF(c.contactperson, ''), NULLIF(c.contactperson_opti, ''), NULLIF(c.nama_pribadi, ''), '-') AS pic_pengirim,
-                           COALESCE(NULLIF(a.hp_kontakperson, ''), NULLIF(c.nohpcontactperson, ''), NULLIF(c.nohpcontactperson_opti, ''), NULLIF(c.notelpcustomer, ''), '-') AS no_telp_pengirim,
-                           COALESCE(NULLIF(a.email_kontakperson, ''), NULLIF(c.emailcustomer, ''), NULLIF(c.emailcustomer_sertifikasi, ''), '-') AS email_pengirim,
+                           COALESCE(NULLIF(a.kontak_person, ''), NULLIF(c.contactperson_opti, ''), NULLIF(c.contactperson, ''), '-') AS pic_pengirim,
+                           COALESCE(NULLIF(a.hp_kontakperson, ''), NULLIF(c.nohpcontactperson_opti, ''), NULLIF(c.notelpcustomer, ''), '-') AS no_telp_pengirim,
+                           COALESCE(NULLIF(a.email_kontakperson, ''), NULLIF(c.emailcustomer, ''), '-') AS email_pengirim,
                            a.nama_berkas AS file_path,
-                           a.nama_layanan,
+                           a.nama_layanan_opti,
                            CASE 
-                               WHEN a.nama_layanan = 'OPTI_lingkungan' THEN 'OPTI Lingkungan'
-                               WHEN a.nama_layanan = 'OPTI_Selulosa' THEN 'OPTI Selulosa'
+                               WHEN a.nama_layanan_opti = 'lingkungan' THEN 'OPTI Lingkungan'
+                               WHEN a.nama_layanan_opti = 'selulosa' THEN 'OPTI Selulosa'
                                ELSE 'Belum Ditentukan'
                            END AS nama_layanan_label
                     FROM `{$this->tableSekretariat}` a
-                    INNER JOIN `{$this->dbSekretariatName}`.tb_customer c ON a.id_customer = c.id_customer
-                    WHERE a.surat_permohonan = 'Y'
-                      AND (a.id_pemasaran_order IS NULL OR a.id_pemasaran_order = 0)
-                      AND (a.status_disposisi_surat IS NULL OR a.status_disposisi_surat != 'ditolak')
-                      AND c.kodex_perusahaan IS NOT NULL
-                      AND c.kodex_perusahaan != ''
-                      AND c.id_layanan_optimalisasi = 1
-                      AND a.id_arsip NOT IN (SELECT id_surat_masuk FROM `{$this->dbMainName}`.order_layanan WHERE id_surat_masuk IS NOT NULL AND status != 'ditolak')";
-
+                    LEFT JOIN `{$this->dbSekretariatName}`.tb_customer c ON a.id_customer = c.id_customer
+                    WHERE a.id_layanan = 1
+                      AND a.nama_layanan_opti IS NOT NULL
+                      AND a.surat_permohonan = 'Y'
+                      AND a.status_klaim = 'N'";
+    
             $params = array();
             if (!empty($filterTahun) && $filterTahun !== 'all') {
                 $sql .= " AND YEAR(a.tanggal_surat) = ?";
                 $params[1] = (int)$filterTahun;
             }
-
             $sql .= " ORDER BY a.tanggal_surat ASC, a.id_arsip ASC";
-
+    
             $rows = $this->dbSekretariat->exec($sql, $params);
             foreach ($rows as &$r) {
                 $r['nama_pengirim_bersih'] = \Customer::formatNamaPerusahaan($r['pt_cv'] ?? '', $r['pengirim'] ?? '');
@@ -123,7 +116,7 @@ class SuratMasukRepository {
             unset($r);
             return $rows;
         }
-
+    
         $table = $this->tableSekretariat;
         $sql = "SELECT * FROM `{$table}` 
                 WHERE `layanan` = 'opti' 
@@ -135,9 +128,9 @@ class SuratMasukRepository {
             $sql .= " AND YEAR(`tanggal_surat`) = ?";
             $params[1] = (int)$filterTahun;
         }
-
+    
         $sql .= " ORDER BY `tanggal_surat` ASC, `id` ASC";
-
+    
         return $this->dbSekretariat->exec($sql, $params);
     }
 
@@ -269,62 +262,55 @@ class SuratMasukRepository {
         if (!$this->isConnected()) {
             throw new \Exception("Koneksi database sekretariat tidak tersedia.");
         }
-
-        $table = $this->tableSekretariat;
+    
         $waktuSekarang = date('Y-m-d H:i:s');
-
-        // 1. Mulai Transaksi
+    
         $this->beginTransaction();
-
+    
         try {
             if ($this->isArsipSurat()) {
                 $rows = $this->dbSekretariat->exec(
                     "SELECT a.*, a.id_arsip as id FROM `{$this->tableSekretariat}` a 
-                     WHERE a.id_arsip = ? AND (a.id_pemasaran_order IS NULL OR a.id_pemasaran_order = 0) FOR UPDATE",
+                     WHERE a.id_arsip = ? AND a.status_klaim = 'N' FOR UPDATE",
                     [1 => $suratId]
                 );
-
+    
                 if (empty($rows)) {
                     throw new \Exception("Surat sudah diklaim oleh pengguna lain atau tidak ditemukan.");
                 }
-
+    
                 $surat = $rows[0];
-
-                // Validasi dan penentuan Customer resmi dari tb_customer
+    
                 $idCustomer = $selectedCustomerId ? (int)$selectedCustomerId : (int)($surat['id_customer'] ?? 0);
                 if ($idCustomer <= 0) {
                     throw new \Exception("Pilih instansi pelanggan terdaftar dari master tb_customer terlebih dahulu.");
                 }
-
-                // Periksa customer di tb_customer: harus terdaftar, memiliki kodex_perusahaan dan id_layanan_optimalisasi = 1
+    
                 $custRows = $this->dbMain->exec(
                     "SELECT id_customer, kodex_perusahaan, nmcustomer, pt_cv, alamatcustomer, contactperson, contactperson_opti, notelpcustomer, nohpcontactperson_opti, emailcustomer, id_layanan_optimalisasi
                      FROM `tb_customer` 
                      WHERE `id_customer` = ?",
                     [1 => $idCustomer]
                 );
-
+    
                 if (empty($custRows)) {
                     throw new \Exception("Instansi pelanggan #{$idCustomer} tidak ditemukan dalam database master tb_customer.");
                 }
-
+    
                 $customer = $custRows[0];
                 if (empty($customer['kodex_perusahaan'])) {
                     throw new \Exception("Perusahaan {$customer['nmcustomer']} belum memiliki Kode Pelanggan (kodex_perusahaan). Hanya surat dari pelanggan resmi yang dapat diterima.");
                 }
-
+    
                 if ((int)$customer['id_layanan_optimalisasi'] !== 1) {
                     throw new \Exception("Perusahaan {$customer['nmcustomer']} belum terdaftar untuk Layanan Optimalisasi Teknologi Industri (OPTI).");
                 }
-
-                // Generate Nomor Order Baru
+    
                 $modelOrder = new \OrderLayanan($this->dbMain);
                 $nomorOrder = $modelOrder->generateNomorOrder();
-
-                // Tentukan jenis layanan: saat surat pertama kali diklaim menjadi order_layanan, belum ditentukan (menunggu disposisi / form pelayanan tim mitra)
+    
                 $jenisLayanan = (!empty($pilihanLayanan) && in_array($pilihanLayanan, ['selulosa', 'lingkungan'])) ? $pilihanLayanan : 'belum_ditentukan';
-
-                // Insert ke order_layanan internal dengan status permintaan_masuk
+    
                 $this->dbMain->exec(
                     "INSERT INTO `order_layanan` (
                         `id_customer`, `id_surat_masuk`, `nomor_order`, `tanggal_masuk`, 
@@ -351,46 +337,44 @@ class SuratMasukRepository {
                         11 => $waktuSekarang
                     )
                 );
-
                 $orderId = (int)($this->dbMain->exec("SELECT LAST_INSERT_ID() as id")[0]['id'] ?? 0);
-
-                // Update tb_arsipsurat di dbSekretariat: simpan id_customer yang dipilih dan kaitkan orderId
+    
                 $this->dbSekretariat->exec(
                     "UPDATE `{$this->tableSekretariat}` 
                      SET `id_customer` = ?,
                          `id_pemasaran_order` = ?, 
                          `status_disposisi_surat` = 'diklaim', 
+                         `status_klaim` = 'Y',
                          `sie_kerjasama_tanggal_baca` = ?, 
                          `sie_kerjasama_pc_tanggal_kirim` = ?,
                          `progres` = 'Permintaan'
                      WHERE `id_arsip` = ?",
                     [1 => $idCustomer, 2 => $orderId, 3 => $waktuSekarang, 4 => $waktuSekarang, 5 => $suratId]
                 );
-
+    
                 $this->commitTransaction();
-
+    
                 return $orderId;
             }
-
-            // 2. Row Locking pada DB Eksternal (SELECT ... FOR UPDATE)
+    
+            // ---- Jalur non-arsip-surat (sistem lama, layanan != OPTI) ----
+            $table = $this->tableSekretariat;
             $rows = $this->dbSekretariat->exec(
                 "SELECT * FROM `{$table}` WHERE `id` = ? AND `status_ambil` = 0 FOR UPDATE",
                 array(1 => $suratId)
             );
-
+    
             if (empty($rows)) {
                 $this->rollbackTransaction();
                 throw new \Exception("Surat sudah diklaim oleh pengguna lain atau tidak ditemukan.");
             }
-
+    
             $surat = $rows[0];
-
-            // 3. Update status_ambil pada DB Eksternal (Write-back)
+    
             $updateSql = "UPDATE `{$table}` SET `status_ambil` = 1";
             $updateParams = array();
             $paramIndex = 1;
-
-            // Deteksi kolom dinamis
+    
             $checkCols = $this->dbSekretariat->exec("SHOW COLUMNS FROM `{$table}` LIKE 'diambil_oleh'");
             if (!empty($checkCols)) {
                 $updateSql .= ", `diambil_oleh` = ?, `tanggal_ambil` = ?";
@@ -399,18 +383,16 @@ class SuratMasukRepository {
             }
             $updateSql .= " WHERE `id` = ?";
             $updateParams[$paramIndex] = $suratId;
-
+    
             $this->dbSekretariat->exec($updateSql, $updateParams);
-
-            // 4. Pencocokan Customer ke tb_customer (DB Utama) dengan Smart Matching
+    
             $namaPengirim = trim($surat['pengirim'] ?? ($surat['nama_pengirim'] ?? ''));
             $ptCv         = trim($surat['pt_cv'] ?? '');
             $alamat       = trim($surat['alamat_pengirim'] ?? '');
             $pic          = trim($surat['pic_pengirim'] ?? ($surat['contact_person'] ?? ''));
             $telepon      = trim($surat['no_telp_pengirim'] ?? ($surat['telepon'] ?? ''));
             $email        = trim($surat['email_pengirim'] ?? ($surat['email'] ?? ''));
-
-            // Deteksi otomatis awalan PT / CV / UD
+    
             if (empty($ptCv)) {
                 if (preg_match('/^(PT\.?|PT|PERSEROAN TERBATAS)\s+/i', $namaPengirim)) {
                     $ptCv = 'PT';
@@ -429,8 +411,7 @@ class SuratMasukRepository {
                 $cleanName = preg_replace('/^(PT\.?|PT|CV\.?|CV|UD\.?|UD)\s+/i', '', $namaPengirim);
             }
             $cleanName = trim($cleanName);
-
-            // Cari customer di tb_customer
+    
             $custRows = $this->dbMain->exec(
                 "SELECT id_customer, pt_cv, alamatcustomer, contactperson, contactperson_opti, notelpcustomer, nohpcontactperson_opti, emailcustomer 
                  FROM `tb_customer` 
@@ -445,16 +426,14 @@ class SuratMasukRepository {
                     4 => $cleanName
                 )
             );
-
+    
             if (!empty($custRows)) {
                 $idCustomer = (int)$custRows[0]['id_customer'];
-                $existing = $custRows[0];
-                
-                // Update data customer dan sinkronkan PIC kontak OPTI terbaru dari surat
+    
                 $updateCustSql = "UPDATE `tb_customer` SET `id_layanan_optimalisasi` = 1";
                 $updateCustParams = [];
                 $pIdx = 1;
-                
+    
                 if (!empty($ptCv)) {
                     $updateCustSql .= ", `pt_cv` = ?";
                     $updateCustParams[$pIdx++] = $ptCv;
@@ -479,10 +458,9 @@ class SuratMasukRepository {
                 }
                 $updateCustSql .= " WHERE `id_customer` = ?";
                 $updateCustParams[$pIdx] = $idCustomer;
-                
+    
                 $this->dbMain->exec($updateCustSql, $updateCustParams);
             } else {
-                // Buat customer baru otomatis dengan data lengkap
                 $this->dbMain->exec(
                     "INSERT INTO `tb_customer` (
                         `nmcustomer`, `pt_cv`, `alamatcustomer`, 
@@ -504,15 +482,12 @@ class SuratMasukRepository {
                 );
                 $idCustomer = (int)($this->dbMain->exec("SELECT LAST_INSERT_ID() as id")[0]['id'] ?? 0);
             }
-
-            // 5. Generate Nomor Order Baru
+    
             $modelOrder = new \OrderLayanan($this->dbMain);
             $nomorOrder = $modelOrder->generateNomorOrder();
-
-            // 6. Jenis layanan OPTI belum ditentukan saat surat pertama kali diklaim (menunggu disposisi tim mitra)
             $jenisLayanan = 'belum_ditentukan';
-
-            // 7. Insert ke order_layanan internal dengan status permintaan_masuk
+            $perihal = $surat['perihal'] ?? '';
+    
             $this->dbMain->exec(
                 "INSERT INTO `order_layanan` (
                     `id_customer`, `id_surat_masuk`, `nomor_order`, `tanggal_masuk`, 
@@ -539,14 +514,12 @@ class SuratMasukRepository {
                     11 => $waktuSekarang
                 )
             );
-
             $orderId = (int)($this->dbMain->exec("SELECT LAST_INSERT_ID() as id")[0]['id'] ?? 0);
-
-            // 8. Commit transaksi
+    
             $this->commitTransaction();
-
+    
             return $orderId;
-
+    
         } catch (\Exception $e) {
             $this->rollbackTransaction();
             throw $e;
