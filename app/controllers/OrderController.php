@@ -838,7 +838,7 @@ class OrderController extends Controller {
                     }
                 }
                 if ($shouldLogView) {
-                    $this->logActivity($id, 'order', 'melihat_detail', 'Melihat detail order layanan (Mode Pratinjau / Read-Only)');
+                    $this->logActivity($id, 'order', 'melihat_detail', 'Melihat detail order layanan');
                 }
             } catch (\Exception $eView) {}
         }
@@ -851,6 +851,40 @@ class OrderController extends Controller {
             );
             foreach ($activityLogs as &$act) {
                 $act['time_ago'] = \NotificationService::timeAgo($act['created_at']);
+                
+                // Format & persingkat deskripsi agar ringkas dan rapi
+                $desc = $act['deskripsi'];
+                $desc = str_replace(' (Mode Pratinjau / Read-Only)', '', $desc);
+                $desc = str_replace('Menetapkan Kaji Ulang Kelayakan Teknis ISO 17025: ', 'Kaji kelayakan: ', $desc);
+                $desc = str_replace('Mengisi Formulir Permintaan Pelayanan Jasa dan mendisposisikan ke ', 'Disposisi layanan ke ', $desc);
+                $desc = str_replace('Mengisi Formulir Permintaan Pelayanan Jasa & Kaji Kelayakan ', 'Formulir layanan & kaji kelayakan ', $desc);
+                $desc = str_replace('Menyimpan Rancangan Percobaan & Estimasi Biaya Riset Selulosa sebesar ', 'RAB Selulosa ', $desc);
+                $desc = str_replace('Menyimpan draf parameter dan tarif pengujian laboratorium lingkungan ', 'Draf tarif lab lingkungan ', $desc);
+                $desc = str_replace('Mengajukan kalkulasi tarif pengujian laboratorium lingkungan ke ', 'Ajukan tarif lab ke ', $desc);
+                $desc = str_replace('Menetapkan parameter & estimasi biaya pengujian laboratorium lingkungan sebesar ', 'Tarif lab lingkungan ', $desc);
+                $desc = str_replace('Dokumen proposal teknis resmi diajukan ke Ketua Tim OPTI oleh ', 'Pengajuan proposal teknis oleh ', $desc);
+                $desc = str_replace('Menerbitkan Surat Penawaran Biaya Resmi No. ', 'Terbitkan penawaran No. ', $desc);
+                $desc = str_replace('Menyimpan draf Surat Penawaran Biaya No. ', 'Draf penawaran No. ', $desc);
+                $desc = str_replace('Mencatat respon penawaran dari pelanggan: ', 'Respon penawaran: ', $desc);
+                $desc = str_replace('Menyetujui SOP pengujian dan menerbitkan Petunjuk Operasional (PO) #', 'Terbitkan PO #', $desc);
+                $desc = str_replace('Mencatat dan memverifikasi pembayaran ', 'Verifikasi pembayaran ', $desc);
+                $desc = str_replace('Menerbitkan Berita Acara Serah Terima (BAST) Resmi No. ', 'Terbitkan BAST No. ', $desc);
+                $desc = str_replace('Memperbarui dokumen Berita Acara Serah Terima (BAST) No. ', 'Perbarui BAST No. ', $desc);
+                $desc = str_replace('Menutup dan menyelesaikan seluruh siklus Order Layanan (Closing Order)', 'Selesaikan order (Closing Order)', $desc);
+                $desc = str_replace('Menerima dan mengklaim surat permohonan masuk ke antrean order', 'Klaim surat permohonan ke order', $desc);
+                $desc = str_replace('Membatalkan klaim surat permohonan layanan', 'Batal klaim surat permohonan', $desc);
+                $desc = str_replace('Mendisposisikan order ke ', 'Disposisi order ke ', $desc);
+                $desc = str_replace('Mencatat bukti kesanggupan bayar dari pelanggan (Status Keuangan: Berjalan)', 'Unggah surat kesanggupan bayar (Berjalan)', $desc);
+                $desc = str_replace('Mengunggah dokumen Surat Kesanggupan Bayar dari pelanggan', 'Unggah surat kesanggupan bayar', $desc);
+                $desc = str_replace('Verifikasi pelaksanaan SOP Pengujian ', 'Verifikasi ', $desc);
+                $desc = str_replace('Mengunggah berkas laporan hasil pengujian/riset', 'Unggah laporan pengujian', $desc);
+                $desc = preg_replace('/Proposal Teknis & RAB Selulosa resmi disetujui \(Approved\) oleh .*$/', 'Persetujuan proposal teknis (Approved)', $desc);
+                $desc = preg_replace('/Kalkulasi Biaya Pengujian Lingkungan resmi disetujui \(Approved\) oleh .*$/', 'Persetujuan estimasi biaya lingkungan (Approved)', $desc);
+                $desc = preg_replace('/Penerimaan fisik sampel dicatat tanggal ([^.]+)\. Deadline SPM dihitung resmi: ([^.]+)\. Dilakukan oleh .*$/', 'Terima sampel (Deadline SPM: $2)', $desc);
+                $desc = preg_replace('/Bukti pembayaran diunggah dan diverifikasi lunas \(Nominal: (Rp [^)]+)\) oleh .*$/', 'Verifikasi pembayaran lunas ($1)', $desc);
+                $desc = preg_replace('/ \(PIC Peneliti\)\.?$/', '', $desc);
+                $desc = preg_replace('/ \(Status: Draft Disimpan\)\.?/', '', $desc);
+                $act['deskripsi'] = $desc;
             }
             unset($act);
         } catch (\Exception $eAct) {}
@@ -1623,7 +1657,7 @@ class OrderController extends Controller {
 
             if ($actionBtn === 'kirim_katim') {
                 $this->db->exec("UPDATE order_layanan SET status_proposal_biaya = 'menunggu_approval' WHERE id = ?", array(1 => $id));
-                $this->logActivity($id, 'kalkulasi_lingkungan', 'ajukan_kalkulasi', 'Mengajukan kalkulasi tarif pengujian laboratorium lingkungan ke Ketua Tim OPTI (Total: Rp ' . number_format($hasil['total_netto'], 0, ',', '.') . ')');
+                $this->logActivity($id, 'kalkulasi_lingkungan', 'ajukan_kalkulasi', 'Ajukan tarif lab lingkungan ke Ka. Tim (Rp ' . number_format($hasil['total_netto'], 0, ',', '.') . ')');
                 $this->setFlashSuccess("Kalkulasi biaya berhasil disimpan &amp; <strong>diajukan ke Ketua Tim OPTI</strong> untuk diperiksa.");
             } elseif ($actionBtn === 'siap_penawaran' || $this->isKetuaTim() || $this->isSuperadmin()) {
                 $this->db->exec("UPDATE order_layanan SET status_proposal_biaya = 'siap_penawaran' WHERE id = ?", array(1 => $id));
@@ -1638,14 +1672,14 @@ class OrderController extends Controller {
                     'Ketua Tim OPTI'
                 );
 
-                $this->logActivity($id, 'kalkulasi_lingkungan', 'simpan_kalkulasi', 'Menetapkan parameter & estimasi biaya pengujian laboratorium lingkungan sebesar Rp ' . number_format($hasil['total_netto'], 0, ',', '.') . ' (Status: Siap Penawaran)');
+                $this->logActivity($id, 'kalkulasi_lingkungan', 'simpan_kalkulasi', 'Tarif lab lingkungan Rp ' . number_format($hasil['total_netto'], 0, ',', '.') . ' (Siap Penawaran)');
 
                 $this->setFlashSuccess(
                     "Kalkulasi parameter dan tarif pengujian berhasil disimpan &amp; disetujui! Status: <strong>Siap Penawaran</strong> (Total Netto: Rp " . number_format($hasil['total_netto'], 0, ',', '.') . "). Tim Mitra kini dapat menerbitkan Surat Penawaran Resmi."
                 );
             } else {
                 $this->db->exec("UPDATE order_layanan SET status_proposal_biaya = 'draft_disimpan' WHERE id = ?", array(1 => $id));
-                $this->logActivity($id, 'kalkulasi_lingkungan', 'simpan_kalkulasi', 'Menyimpan kalkulasi biaya pengujian lingkungan sebesar Rp ' . number_format($hasil['total_netto'], 0, ',', '.'));
+                $this->logActivity($id, 'kalkulasi_lingkungan', 'simpan_kalkulasi', 'Draf tarif lab lingkungan Rp ' . number_format($hasil['total_netto'], 0, ',', '.'));
                 $this->setFlashSuccess(
                     "Draf kalkulasi biaya pengujian lingkungan berhasil disimpan (Total: <strong>Rp " . number_format($hasil['total_netto'], 0, ',', '.') . "</strong>)."
                 );
@@ -1735,7 +1769,7 @@ class OrderController extends Controller {
                 ]);
             } catch (\Exception $eNotif) {}
 
-            $this->logActivity($id, 'po', 'terbitkan_po', "Menyetujui SOP pengujian dan menerbitkan Petunjuk Operasional (PO) #{$hasil['nomor_po']} senilai Rp " . number_format($biaya, 0, ',', '.'));
+            $this->logActivity($id, 'po', 'terbitkan_po', "Terbitkan PO #{$hasil['nomor_po']} (Rp " . number_format($biaya, 0, ',', '.') . ")");
 
             $this->setFlashSuccess(
                 "Order #{$id} disetujui! Dokumen PO berhasil diterbitkan dengan Nomor: <strong>{$hasil['nomor_po']}</strong>."
@@ -2091,7 +2125,7 @@ class OrderController extends Controller {
                         $order->status_tinjauan = 'layak';
                         $order->status_proposal_biaya = 'draft';
                         $order->save();
-                        $this->logActivity($id, 'form_pelayanan', 'simpan_form_pelayanan', 'Mengisi Formulir Permintaan Pelayanan Jasa & Kaji Kelayakan (Divisi OPTI ' . ucfirst($jenisLayanan) . ' - Disetujui Dapat Dilaksanakan)');
+                        $this->logActivity($id, 'form_pelayanan', 'simpan_form_pelayanan', 'Formulir layanan & kaji kelayakan disetujui (OPTI ' . ucfirst($jenisLayanan) . ')');
                         $this->setFlashSuccess("Permintaan Pelayanan Jasa &amp; Kaji Kelayakan berhasil disimpan (Status: <strong>Order Aktif</strong> - Divisi " . ucfirst($jenisLayanan) . "). Silakan lanjutkan ke Step 4: Perhitungan Biaya / Parameter Uji.");
                     } else {
                         $order->status = 'ditolak';
@@ -2100,7 +2134,7 @@ class OrderController extends Controller {
                         $order->tanggal_tolak = date('Y-m-d H:i:s');
                         $order->ditolak_oleh = $userId;
                         $order->save();
-                        $this->logActivity($id, 'form_pelayanan', 'tolak_form_pelayanan', 'Mengisi Formulir Permintaan Pelayanan Jasa (Ditolak / Tidak Dapat Dilaksanakan. Alasan: ' . $alasanPenolakan . ')');
+                        $this->logActivity($id, 'form_pelayanan', 'tolak_form_pelayanan', 'Formulir layanan ditolak (Alasan: ' . $alasanPenolakan . ')');
                         $this->setFlashWarning("Permintaan Pelayanan Jasa ditandai <strong>Tidak Dapat Dilaksanakan (Ditolak)</strong>.");
                     }
                 } else {
@@ -2116,7 +2150,7 @@ class OrderController extends Controller {
                     if (!empty($penjelasan)) $order->deskripsi = $penjelasan;
                     $order->save();
 
-                    $this->logActivity($id, 'form_pelayanan', 'disposisi_layanan', 'Mengisi Formulir Permintaan Pelayanan Jasa dan mendisposisikan ke Ka. Tim OPTI ' . ucfirst($jenisLayanan));
+                    $this->logActivity($id, 'form_pelayanan', 'disposisi_layanan', 'Disposisi layanan ke Ka. Tim OPTI ' . ucfirst($jenisLayanan));
 
                     // Audit Waktu & Pengirim Tahap 2 (First time only)
                     StageAudit::recordKirim(
@@ -2136,7 +2170,7 @@ class OrderController extends Controller {
             } else {
                 $order->status = 'draft_disimpan';
                 $order->save();
-                $this->logActivity($id, 'form_pelayanan', 'simpan_draft', 'Menyimpan draf Formulir Permintaan Pelayanan Jasa (Divisi OPTI ' . ucfirst($jenisLayanan) . ')');
+                $this->logActivity($id, 'form_pelayanan', 'simpan_draft', 'Simpan draf formulir pelayanan (OPTI ' . ucfirst($jenisLayanan) . ')');
                 $this->setFlashSuccess("Draf Surat Permintaan Pelayanan Jasa berhasil disimpan (Status: <strong>Draft Disimpan</strong>).");
             }
 
@@ -2644,7 +2678,7 @@ class OrderController extends Controller {
 
             // Audit Trail Activity Log
             if ($actionType === 'ajukan') {
-                $this->logActivity($id, 'proposal', 'ajukan_ke_ketua', "Dokumen proposal teknis resmi diajukan ke Ketua Tim OPTI oleh {$userNama} (PIC Peneliti).");
+                $this->logActivity($id, 'proposal', 'ajukan_ke_ketua', "Pengajuan proposal teknis ke Ka. Tim OPTI");
                 
                 // Record Audit Stage 4 (Pengajuan Proposal Teknis)
                 \StageAudit::recordKirim(
@@ -2657,7 +2691,7 @@ class OrderController extends Controller {
                     'PIC Proposal'
                 );
             } else {
-                $this->logActivity($id, 'proposal', 'simpan_draft', "Draf dokumen proposal teknis disimpan (Status: Draft Disimpan) oleh {$userNama} (PIC Peneliti).");
+                $this->logActivity($id, 'proposal', 'simpan_draft', "Simpan draf proposal teknis");
             }
 
             // Jika diajukan, kirim notifikasi ke Ka. Tim OPTI & Superadmin
@@ -2806,8 +2840,7 @@ class OrderController extends Controller {
                     array(1 => $id, 2 => $order['pic_proposal_id'] ?: $userId, 3 => $order['jenis_layanan_opti'], 4 => $dest, 5 => $initialStatus, 6 => $userId)
                 );
             }
-            $userNama = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'PIC Peneliti');
-            $this->logActivity($id, 'proposal', 'upload_file', "Berkas dokumen proposal baru ({$filename}) berhasil diunggah oleh {$userNama}.");
+            $this->logActivity($id, 'proposal', 'upload_file', "Unggah berkas proposal ({$filename})");
             $this->setFlashSuccess('Berkas dokumen proposal berhasil diunggah!');
         } else {
             $this->setFlashError('Gagal mengunggah file dokumen proposal.');
@@ -2871,7 +2904,7 @@ class OrderController extends Controller {
                 array(1 => $id)
             );
 
-            $this->logActivity($id, 'proposal', 'ajukan_ke_ketua', "Dokumen proposal teknis resmi diajukan ke Ketua Tim OPTI oleh {$userNama} (PIC Peneliti).");
+            $this->logActivity($id, 'proposal', 'ajukan_ke_ketua', "Pengajuan proposal teknis ke Ka. Tim OPTI");
 
             // Record Audit Stage 4 (Pengajuan Proposal Teknis)
             \StageAudit::recordKirim(
@@ -2966,7 +2999,7 @@ class OrderController extends Controller {
                 );
 
                 // Audit Log Persetujuan
-                $this->logActivity($id, 'proposal', 'setujui_proposal', "{$labelKapital} resmi disetujui (Approved) oleh {$userNama} (Ketua Tim OPTI). Siap diterbitkan Surat Penawaran.");
+                $this->logActivity($id, 'proposal', 'setujui_proposal', "Persetujuan {$labelDokumen} (Approved)");
 
                 // Audit Disetujui Tahap 4
                 \StageAudit::recordDisetujui(
@@ -3032,7 +3065,7 @@ class OrderController extends Controller {
                 );
 
                 // Audit Log Permintaan Revisi
-                $this->logActivity($id, 'proposal', 'minta_revisi', "Ketua Tim OPTI ({$userNama}) meminta revisi {$labelDokumen}. Catatan: \"{$catatan}\"");
+                $this->logActivity($id, 'proposal', 'minta_revisi', "Permintaan revisi {$labelDokumen}" . (!empty($catatan) ? ": \"{$catatan}\"" : ""));
 
                 // Kirim notifikasi revisi ke PIC
                 if (!empty($order['pic_proposal_id'])) {
@@ -3146,7 +3179,7 @@ class OrderController extends Controller {
             }
 
             $displayNominal = $nominalBaru > 0 ? $nominalBaru : ($sp['nominal_penawaran'] ?? 0);
-            $this->logActivity($id, 'penawaran', 'respon_penawaran', "Mencatat respon penawaran dari pelanggan: " . strtoupper($keputusan) . ($displayNominal > 0 ? " (Nominal: Rp " . number_format($displayNominal, 0, ',', '.') . ")" : "") . (!empty($catatan) ? " - Catatan: {$catatan}" : ""));
+            $this->logActivity($id, 'penawaran', 'respon_penawaran', "Respon penawaran: " . strtoupper($keputusan) . ($displayNominal > 0 ? " (Rp " . number_format($displayNominal, 0, ',', '.') . ")" : "") . (!empty($catatan) ? " - {$catatan}" : ""));
         } catch (\Exception $e) {
             $this->setFlashError('Gagal mencatat respon pelanggan: ' . $e->getMessage());
         }
@@ -3183,7 +3216,7 @@ class OrderController extends Controller {
 
             // Jejak Audit Activity Log
             $namaPetugas = $_SESSION['nama_lengkap'] ?? 'Ketua Tim Teknis';
-            $this->logActivity($id, 'sampel', 'terima_sampel', "Penerimaan fisik sampel dicatat tanggal {$tanggalSampel}. Deadline SPM dihitung resmi: {$kalkulasi['tanggal_deadline_spm']} ({$durasiHariKerja} hari kerja). Dilakukan oleh {$namaPetugas}.");
+            $this->logActivity($id, 'sampel', 'terima_sampel', "Terima fisik sampel (Deadline SPM: {$kalkulasi['tanggal_deadline_spm']}, {$durasiHariKerja} hari kerja)");
 
             // Audit Tahap 7: Penerimaan Fisik Sampel dicatat (FIRST TIME ONLY)
             $currentUserId = (int)$this->getUserId();
@@ -3298,7 +3331,7 @@ class OrderController extends Controller {
             );
 
             $namaPetugas = $_SESSION['nama_lengkap'] ?? 'Tim Keuangan';
-            $this->logActivity($id, 'pembayaran', 'verifikasi_pembayaran', "Bukti pembayaran diunggah dan diverifikasi lunas (Nominal: Rp " . number_format($jumlah, 0, ',', '.') . ") oleh {$namaPetugas}. Tahap pengerjaan pengujian laboratorium dibuka untuk Tim OPTI.");
+            $this->logActivity($id, 'pembayaran', 'verifikasi_pembayaran', "Verifikasi pembayaran lunas (Rp " . number_format($jumlah, 0, ',', '.') . ")");
 
             // Audit Tahap 6: Pembayaran diverifikasi / diunggah (FIRST TIME ONLY)
             $currentUserId = (int)$this->getUserId();

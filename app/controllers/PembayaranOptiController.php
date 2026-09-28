@@ -253,7 +253,7 @@ if ($isKesanggupan) {
         $pembayaran->created_at           = date('Y-m-d H:i:s');
         $pembayaran->save();
 
-        $this->logActivity($orderId, 'pembayaran', 'verifikasi_pembayaran', "Mencatat bukti kesanggupan bayar dari pelanggan (Status Keuangan: Berjalan)");
+        $this->logActivity($orderId, 'pembayaran', 'verifikasi_pembayaran', "Unggah surat kesanggupan bayar (Berjalan)");
 
 if (!empty($post['disposisi_langsung'])) {
     $this->lakukanDisposisiKatim($orderId, $this->getUserId());
@@ -328,7 +328,7 @@ if ($sisaSebelumBayar !== null && $jumlah > $sisaSebelumBayar) {
             // [PENTING] ini yang nge-update order_layanan.status_keuangan otomatis
             $statusBaru = $this->recalcStatusKeuangan($orderId);
 
-            $this->logActivity($orderId, 'pembayaran', 'verifikasi_pembayaran', "Mencatat dan memverifikasi pembayaran Termin ke-{$terminKe} sebesar Rp " . number_format($jumlah, 0, ',', '.') . " (" . strtoupper(str_replace('_', ' ', $metode)) . ") - Status: " . ucfirst($statusBaru));
+            $this->logActivity($orderId, 'pembayaran', 'verifikasi_pembayaran', "Verifikasi pembayaran Termin #{$terminKe} Rp " . number_format($jumlah, 0, ',', '.') . " (" . strtoupper(str_replace('_', ' ', $metode)) . ") - " . ucfirst($statusBaru));
 
 if ($statusBaru === 'lunas' && !empty($post['disposisi_langsung'])) {
     $this->lakukanDisposisiKatim($orderId, $this->getUserId());
@@ -558,7 +558,7 @@ $this->setFlashSuccess($pesanSukses);
             [1 => $userId, 2 => $orderId]
         );
 
-        $this->logActivity($orderId, 'pembayaran', 'disposisi_katim', "Mendisposisikan status deal/lunas keuangan Order #{$order['nomor_order']} ke Ketua Tim OPTI");
+        $this->logActivity($orderId, 'pembayaran', 'disposisi_katim', "Disposisi status lunas ke Ka. Tim OPTI");
 
         try {
             \NotificationService::send($this->db, [

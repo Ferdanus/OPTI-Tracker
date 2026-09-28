@@ -3046,54 +3046,53 @@
 
                         <!-- Card Body -->
                         <div class="activity-card">
-                            <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-2">
-                                <div class="d-flex align-items-center gap-2 flex-wrap">
-                                    <check if="{{ @is_view_log }}">
-                                        <span class="badge rounded-pill bg-light text-secondary border px-2 py-0.5" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.3px;">
-                                            <i class="bi bi-eye me-1"></i>DIBACA
-                                        </span>
-                                    </check>
-                                    <check if="{{ !@is_view_log }}">
-                                        <span class="badge rounded-pill {{ @is_warn_act ? 'bg-danger-subtle text-danger border border-danger-subtle' : (@is_success_act ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-primary-subtle text-primary border border-primary-subtle') }} px-2 py-0.5" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.3px;">
-                                            <i class="bi bi-check2-circle me-1"></i>DIPROSES
-                                        </span>
-                                    </check>
-                                    <span class="badge border rounded-pill px-2.5 py-0.5 text-uppercase" style="font-size: 0.66rem; font-weight: 700; letter-spacing: 0.4px; background-color: {{ @is_view_log ? '#f1f5f9' : '#e0f2fe' }}; color: {{ @is_view_log ? '#475569' : '#0369a1' }}; border-color: {{ @is_view_log ? '#cbd5e1' : '#bae6fd' }} !important;">
-                                        {{ str_replace('_', ' ', @act.modul) }}
+                            <!-- Top Row: Badges + Description -->
+                            <div class="d-flex align-items-center gap-2 flex-wrap mb-2">
+                                <check if="{{ @is_view_log }}">
+                                    <span class="badge rounded-pill bg-light text-secondary border px-2 py-0.5" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.3px;">
+                                        <i class="bi bi-eye me-1"></i>DIBACA
                                     </span>
-                                    <span class="fw-bold text-dark font-display" style="font-size: 0.92rem; line-height: 1.4;">
-                                        {{ @act.deskripsi }}
+                                </check>
+                                <check if="{{ !@is_view_log }}">
+                                    <span class="badge rounded-pill {{ @is_warn_act ? 'bg-danger-subtle text-danger border border-danger-subtle' : (@is_success_act ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-primary-subtle text-primary border border-primary-subtle') }} px-2 py-0.5" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.3px;">
+                                        <i class="bi bi-check2-circle me-1"></i>DIPROSES
                                     </span>
-                                </div>
-                                
-                                <div class="d-flex align-items-center gap-1.5 text-secondary small font-monospace" style="font-size: 0.76rem;" title="{{ date('d F Y, H:i:s', strtotime(@act.created_at)) }} WIB">
-                                    <i class="bi bi-clock me-1 text-slate-400"></i>
-                                    <span class="fw-semibold text-dark">{{ @act.time_ago }}</span>
-                                    <span class="text-muted opacity-50 mx-1 d-none d-md-inline">&bull;</span>
-                                    <span class="text-muted d-none d-md-inline">{{ date('d M Y, H:i', strtotime(@act.created_at)) }} WIB</span>
-                                </div>
+                                </check>
+                                <span class="badge border rounded-pill px-2.5 py-0.5 text-uppercase" style="font-size: 0.66rem; font-weight: 700; letter-spacing: 0.4px; background-color: {{ @is_view_log ? '#f1f5f9' : '#e0f2fe' }}; color: {{ @is_view_log ? '#475569' : '#0369a1' }}; border-color: {{ @is_view_log ? '#cbd5e1' : '#bae6fd' }} !important;">
+                                    {{ str_replace('_', ' ', @act.modul) }}
+                                </span>
+                                <span class="fw-bold text-dark font-display" style="font-size: 0.9rem; line-height: 1.4;">
+                                    {{ @act.deskripsi }}
+                                </span>
                             </div>
 
+                            <!-- Bottom Row (Footer): Left: User & Role | Right: Timestamp & IP -->
                             <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2 border-top border-light">
                                 <div class="d-flex align-items-center gap-2 flex-wrap">
                                     <div class="d-flex align-items-center gap-1.5">
-                                        <div class="rounded-circle d-flex align-items-center justify-content-center bg-light text-secondary border" style="width: 24px; height: 24px; font-size: 0.72rem;">
+                                        <div class="rounded-circle d-flex align-items-center justify-content-center bg-light text-secondary border" style="width: 22px; height: 22px; font-size: 0.7rem;">
                                             <i class="bi bi-person-fill"></i>
                                         </div>
-                                        <span class="fw-bold text-dark" style="font-size: 0.82rem;">
+                                        <span class="fw-bold text-dark" style="font-size: 0.8rem;">
                                             {{ @act.user_nama ?: 'Sistem Otomatis' }}
                                         </span>
                                     </div>
-                                    <span class="badge rounded-pill px-2.5 py-0.5" style="font-size: 0.7rem; font-weight: 600; background-color: #f8fafc; color: #334155; border: 1px solid #e2e8f0;">
+                                    <span class="badge rounded-pill px-2 py-0.5" style="font-size: 0.68rem; font-weight: 600; background-color: #f8fafc; color: #475569; border: 1px solid #e2e8f0;">
                                         {{ ucwords(str_replace('_', ' ', @act.user_role ?: 'User')) }}
                                     </span>
                                 </div>
 
-                                <check if="{{ @act.ip_address && @act.ip_address != '127.0.0.1' && @act.ip_address != '::1' }}">
-                                    <div class="text-muted font-monospace" style="font-size: 0.7rem; opacity: 0.75;">
-                                        <i class="bi bi-geo-alt me-1"></i>{{ @act.ip_address }}
+                                <div class="d-flex align-items-center gap-2 text-secondary small font-monospace" style="font-size: 0.74rem;">
+                                    <div class="d-flex align-items-center gap-1" title="{{ date('d F Y, H:i:s', strtotime(@act.created_at)) }} WIB">
+                                        <i class="bi bi-clock text-slate-400"></i>
+                                        <span class="text-dark fw-medium">{{ date('d M Y, H:i', strtotime(@act.created_at)) }} WIB</span>
+                                        <span class="badge bg-light text-muted border rounded-pill px-1.5 py-0.5 ms-1" style="font-size: 0.68rem; font-weight: 600;">{{ @act.time_ago }}</span>
                                     </div>
-                                </check>
+                                    <check if="{{ @act.ip_address && @act.ip_address != '127.0.0.1' && @act.ip_address != '::1' }}">
+                                        <span class="text-muted opacity-50">&bull;</span>
+                                        <span class="text-muted" style="font-size: 0.68rem;"><i class="bi bi-geo-alt me-0.5"></i>{{ @act.ip_address }}</span>
+                                    </check>
+                                </div>
                             </div>
                         </div>
                     </div>
