@@ -120,6 +120,9 @@ class SuratMasukController extends Controller {
         try {
             $orderId = $this->repo->klaimSurat($suratId, $userId, $idCustomer);
 
+            // Catat Jejak Audit / Activity Log
+            $this->logActivity($orderId, 'surat_masuk', 'klaim_surat', 'Menerima dan mengklaim surat permohonan masuk ke antrean order');
+
             // Kirim Notifikasi ke Ka. Tim OPTI & Superadmin
             try {
                 $orderModel = new \OrderLayanan($this->db);
@@ -169,6 +172,7 @@ class SuratMasukController extends Controller {
 
         try {
             $this->repo->batalkanKlaim($orderId, $userId);
+            $this->logActivity($orderId, 'surat_masuk', 'batal_klaim', 'Membatalkan klaim surat permohonan layanan');
             $this->setFlashSuccess('Klaim surat berhasil dibatalkan. Status surat telah dikembalikan ke daftar surat masuk.');
         } catch (\Exception $e) {
             $this->setFlashError('Gagal membatalkan klaim: ' . $e->getMessage());
@@ -855,10 +859,10 @@ if (!file_exists($filePath)) {
                 }
             }
 
-            // Kirim notifikasi ke Tim Mitra
+            // Kirim notifikasi ke Ketua Tim Mitra
             try {
                 \NotificationService::send($this->db, [
-                    'target_role'    => 'admin_order',
+                    'target_role'    => 'ketua_tim_mitra',
                     'target_layanan' => 'semua',
                     'judul'          => 'Surat Permohonan Baru Masuk',
                     'pesan'          => "Surat dari {$pengirim} (No: {$nomorSurat} - {$namaLayanan}) telah diagendakan. Siap ditinjau & diklaim di Kotak Masuk Tim Mitra.",

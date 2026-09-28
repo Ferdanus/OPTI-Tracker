@@ -378,9 +378,9 @@
                             <input type="file" name="file_draf" class="form-control form-control-sm">
                             <check if="{{ @po.file_draf_laporan }}">
                                 <div class="mt-1 small">
-                                    <a href="{{ @BASE }}/{{ @po.file_draf_laporan }}" target="_blank" class="text-primary text-decoration-none">
+                                    <button type="button" class="btn btn-link p-0 text-primary text-decoration-none btn-preview-pdf" data-preview-pdf="{{ @BASE }}/{{ @po.file_draf_laporan }}" data-title="Draf Laporan Hasil">
                                         <i class="bi bi-file-earmark-pdf me-1"></i>Lihat Draf
-                                    </a>
+                                    </button>
                                 </div>
                             </check>
                         </div>
@@ -389,9 +389,9 @@
                             <input type="file" name="file_final" class="form-control form-control-sm">
                             <check if="{{ @po.file_laporan_final }}">
                                 <div class="mt-1 small">
-                                    <a href="{{ @BASE }}/{{ @po.file_laporan_final }}" target="_blank" class="text-success fw-bold text-decoration-none">
+                                    <button type="button" class="btn btn-link p-0 text-success fw-bold text-decoration-none btn-preview-pdf" data-preview-pdf="{{ @BASE }}/{{ @po.file_laporan_final }}" data-title="Laporan Final Bertandatangan">
                                         <i class="bi bi-file-earmark-check me-1"></i>Lihat Final
-                                    </a>
+                                    </button>
                                 </div>
                             </check>
                         </div>

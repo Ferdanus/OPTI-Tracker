@@ -102,9 +102,11 @@ class BastController extends Controller {
 
             if ($existing) {
                 $bastModel->updateData((int)$existing['id'], $data);
+                $this->logActivity($orderId, 'bast', 'terbitkan_bast', "Memperbarui dokumen Berita Acara Serah Terima (BAST) No. {$data['nomor_bast']} (Status: " . ucfirst($data['status_bast']) . ")");
                 $this->setFlashSuccess("Dokumen BAST #{$order['nomor_order']} berhasil diperbarui.");
             } else {
                 $bastModel->simpanBaru($data);
+                $this->logActivity($orderId, 'bast', 'terbitkan_bast', "Menerbitkan Berita Acara Serah Terima (BAST) Resmi No. {$data['nomor_bast']} (Status: " . ucfirst($data['status_bast']) . ")");
                 $this->setFlashSuccess("Dokumen BAST resmi berhasil diterbitkan untuk Order #{$order['nomor_order']}.");
             }
 
@@ -154,6 +156,7 @@ class BastController extends Controller {
 
             $bastModel->tutupOrder($bastId, $orderId, $catatan, $userId);
 
+            $this->logActivity($orderId, 'bast', 'tutup_order', "Menutup dan menyelesaikan seluruh siklus Order Layanan (Closing Order). Catatan: {$catatan}");
             $this->setFlashSuccess("Order Layanan #{$orderId} berhasil DITUTUP & DIARSIPKAN (Selesai). Seluruh siklus layanan tuntas!");
             $f3->reroute("/order/{$orderId}");
         } catch (\Exception $e) {

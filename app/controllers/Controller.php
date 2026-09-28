@@ -66,6 +66,16 @@ class Controller {
             'klien:view',
             'alert:manage'
         ),
+        'ketua_tim_keuangan' => array(
+            'surat_masuk:view',
+            'order:view',
+            'penawaran:view',
+            'po:view',
+            'kontrak:view',
+            'pembayaran:view', 'pembayaran:create', 'pembayaran:edit',
+            'klien:view',
+            'alert:manage'
+        ),
         'keuangan' => array(
             'surat_masuk:view',
             'order:view',
@@ -142,7 +152,9 @@ class Controller {
         $this->f3->set('is_ketua_tim', $role === 'ketua_tim');
         $this->f3->set('is_ketua_selulosa', $role === 'ketua_tim' && $layanan === 'selulosa');
         $this->f3->set('is_ketua_lingkungan', $role === 'ketua_tim' && $layanan === 'lingkungan');
-        $this->f3->set('is_keuangan', $role === 'keuangan');
+        $isKeuangan = ($role === 'keuangan' || $role === 'ketua_tim_keuangan');
+        $this->f3->set('is_keuangan', $isKeuangan);
+        $this->f3->set('is_ketua_tim_keuangan', $role === 'ketua_tim_keuangan');
         $this->f3->set('is_tim_kerja', $role === 'tim_kerja');
         $this->f3->set('is_admin_kontrak', $role === 'admin_kontrak');
         $this->f3->set('is_sekretaris', $role === 'sekretaris');
@@ -269,7 +281,7 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
 
         // Hitung notifikasi antrean Pembayaran untuk Tim Keuangan & Superadmin
         $notifKeuanganCount = 0;
-        if ($role === 'keuangan' || $role === 'superadmin' || $isTimMitra) {
+        if ($role === 'keuangan' || $role === 'ketua_tim_keuangan' || $role === 'superadmin' || $isTimMitra) {
             try {
                 $sqlKeuangan = "SELECT COUNT(*) as c FROM order_layanan o
                                 LEFT JOIN tb_surat_penawaran sp ON sp.order_id = o.id
@@ -424,7 +436,15 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
      * Cek apakah role aktif adalah Keuangan (Kasir / Pembayaran)
      */
     public function isKeuangan(): bool {
-        return $this->getUserRole() === 'keuangan';
+        $r = $this->getUserRole();
+        return $r === 'keuangan' || $r === 'ketua_tim_keuangan';
+    }
+
+    /**
+     * Cek apakah role aktif adalah Ketua Tim Keuangan
+     */
+    public function isKetuaTimKeuangan(): bool {
+        return $this->getUserRole() === 'ketua_tim_keuangan';
     }
 
     /**
@@ -601,26 +621,41 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
     /**
      * Catat Jejak Audit / Activity Log untuk Seluruh Modul OPTI
      */
-    protected function logActivity($orderId = 0, $modul = '', $aksi = '', $deskripsi = '') {
+    protected function logActivity($arg1 = 0, $arg2 = '', $arg3 = '', $arg4 = '') {
         $userId = (int)$this->getUserId();
         $userNama = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'User');
         $userRole = $this->getUserRole() ?? 'user';
         $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
 
-        // Penyesuaian fleksibel jika urutan argumen berbeda
-        if (is_string($orderId) && !is_numeric($orderId)) {
-            $tempAksi = $orderId;
-            $tempModul = $modul;
-            $tempOrderId = is_numeric($aksi) ? (int)$aksi : 0;
-            $tempDeskripsi = $deskripsi;
-            
-            $aksi = $tempAksi;
-            $modul = $tempModul;
-            $orderId = $tempOrderId;
-            $deskripsi = $tempDeskripsi;
-        }
+        $orderId = 0;
+        $modul = 'order';
+        $aksi = 'proses';
+        $deskripsi = '';
 
-        $orderId = (int)$orderId;
+        if (is_numeric($arg1) && (int)$arg1 > 0) {
+            // Pattern 1: ($orderId, $modul, $aksi, $deskripsi)
+            $orderId = (int)$arg1;
+            $modul = (string)$arg2;
+            $aksi = (string)$arg3;
+            $deskripsi = (string)$arg4;
+        } elseif (is_numeric($arg2) && (int)$arg2 > 0) {
+            // Pattern 2: ($modul, $orderId, $aksi, $deskripsi)
+            $orderId = (int)$arg2;
+            $modul = (string)$arg1;
+            $aksi = (string)$arg3;
+            $deskripsi = (string)$arg4;
+        } elseif (is_numeric($arg3) && (int)$arg3 > 0) {
+            // Pattern 3: ($aksi, $modul, $orderId, $deskripsi)
+            $orderId = (int)$arg3;
+            $aksi = (string)$arg1;
+            $modul = (string)$arg2;
+            $deskripsi = (string)$arg4;
+        } else {
+            $orderId = is_numeric($arg1) ? (int)$arg1 : (is_numeric($arg2) ? (int)$arg2 : 0);
+            $modul = (string)$arg2;
+            $aksi = (string)$arg3;
+            $deskripsi = (string)$arg4;
+        }
 
         try {
             $db = $this->db ?? \Base::instance()->get('DB');

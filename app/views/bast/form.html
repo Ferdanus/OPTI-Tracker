@@ -111,9 +111,9 @@
                             <check if="{{ @bast && @bast.file_dokumen_bast }}">
                                 <div class="mt-2 p-2 bg-light rounded small">
                                     <i class="bi bi-file-earmark-pdf text-danger me-1"></i> File BAST Terunggah: 
-                                    <a href="{{ @BASE }}/{{ @bast.file_dokumen_bast }}" target="_blank" class="fw-bold text-decoration-none">
+                                    <button type="button" class="btn btn-link p-0 fw-bold text-decoration-none btn-preview-pdf" data-preview-pdf="{{ @BASE }}/{{ @bast.file_dokumen_bast }}" data-title="Dokumen BAST Terunggah">
                                         Lihat Dokumen BAST
-                                    </a>
+                                    </button>
                                 </div>
                             </check>
                         </div>

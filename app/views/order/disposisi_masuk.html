@@ -228,9 +228,9 @@
                                             <true>
                                                 <check if="{{ @p.file_proposal }}">
                                                     <true>
-                                                        <a href="{{ @BASE }}/{{ @p.file_proposal }}" target="_blank" class="btn btn-outline-danger btn-sm py-1 px-2.5 fw-medium" style="font-size: 0.78rem;">
+                                                        <button type="button" class="btn btn-outline-danger btn-sm py-1 px-2.5 fw-medium btn-preview-pdf" data-preview-pdf="{{ @BASE }}/{{ @p.file_proposal }}" data-title="Proposal Teknis" data-subtitle="Order: {{ @p.nomor_order }}" style="font-size: 0.78rem;">
                                                             <i class="bi bi-file-earmark-pdf me-1"></i> Berkas
-                                                        </a>
+                                                        </button>
                                                     </true>
                                                     <false>
                                                         <a href="{{ @BASE }}/order/{{ @p.id }}/biaya-lingkungan" class="btn btn-outline-secondary btn-sm py-1 px-2.5 fw-medium" style="font-size: 0.78rem;" title="Lihat rincian kalkulasi parameter dan tarif">
@@ -245,9 +245,9 @@
                                             <false>
                                                 <check if="{{ @p.file_proposal }}">
                                                     <true>
-                                                        <a href="{{ @BASE }}/{{ @p.file_proposal }}" target="_blank" class="btn btn-outline-danger btn-sm py-1 px-2.5 fw-medium" style="font-size: 0.78rem;">
+                                                        <button type="button" class="btn btn-outline-danger btn-sm py-1 px-2.5 fw-medium btn-preview-pdf" data-preview-pdf="{{ @BASE }}/{{ @p.file_proposal }}" data-title="Proposal Teknis" data-subtitle="Order: {{ @p.nomor_order }}" style="font-size: 0.78rem;">
                                                             <i class="bi bi-file-earmark-pdf me-1"></i> File Proposal
-                                                        </a>
+                                                        </button>
                                                     </true>
                                                     <false>
                                                         <span class="text-muted small" style="font-size: 0.75rem;"><i class="bi bi-bookmark me-1"></i> Draft Tanpa File</span>

@@ -240,7 +240,7 @@ $daftarPegawai = $arsipUser->find(
     ['order' => 'nama_user ASC']
 );
 
-        $isSubmitted = !empty($sp) && !empty($sp['nomor_surat']);
+        $isSubmitted = !$sp->dry() && !empty($sp->nomor_surat) && ($sp->status !== 'draft');
         $canEdit = ($this->hasPermission('penawaran:create') || $this->hasPermission('penawaran:edit') || $this->isSuperadmin() || $this->isAdminOrder()) && $this->canEditSubmittedData($isSubmitted);
 
         $f3->set('sp', $sp);
@@ -631,8 +631,8 @@ $daftarPegawai = $arsipUser->find(
         }
         $f3->set('durasi_hari', $durasiHari);
 
-        $isSubmitted = !empty($spExisting) && !empty($spExisting['nomor_surat']);
-        $canEdit = ($this->hasPermission('penawaran:create') || $this->hasPermission('penawaran:edit') || $this->isSuperadmin() || $this->isAdminOrder()) && $this->canEditSubmittedData($isSubmitted);
+        $isSubmitted = !empty($spExisting) && !empty($spExisting['nomor_surat']) && (($spExisting['status'] ?? '') !== 'draft') && !$isRevisiBaru;
+        $canEdit = ($this->hasPermission('penawaran:create') || $this->hasPermission('penawaran:edit') || $this->isSuperadmin() || $this->isAdminOrder()) && ($isRevisiBaru || $this->canEditSubmittedData($isSubmitted));
 
         $defaultNominal = 0;
         if ($order['jenis_layanan_opti'] === 'lingkungan' && !empty($kalkulasi)) {
@@ -813,10 +813,14 @@ $daftarPegawai = $arsipUser->find(
                     ]);
                 } catch (\Exception $eNotif) {}
 
+                $this->logActivity($orderId, 'penawaran', 'buat_penawaran', "Menerbitkan Surat Penawaran Biaya Resmi No. {$hasil['nomor_surat']} senilai Rp " . number_format($hasil['nominal'], 0, ',', '.'));
+
                 $this->setFlashSuccess(
                     "Surat Penawaran Resmi berhasil diterbitkan dengan Nomor: <strong>{$hasil['nomor_surat']}</strong> (Status: Negosiasi, Nominal: Rp " . number_format($hasil['nominal'], 0, ',', '.') . ")."
                 );
             } else {
+                $this->logActivity($orderId, 'penawaran', 'simpan_draft_penawaran', "Menyimpan draf Surat Penawaran Biaya No. {$hasil['nomor_surat']} senilai Rp " . number_format($hasil['nominal'], 0, ',', '.'));
+
                 $this->setFlashSuccess(
                     "Draf Surat Penawaran Nomor <strong>{$hasil['nomor_surat']}</strong> berhasil disimpan (Status: Draft Internal)."
                 );
@@ -872,10 +876,10 @@ $daftarPegawai = $arsipUser->find(
                         [1 => $orderId]
                     );
 
-                    // Notif ke Tim Keuangan
+                    // Notif ke Ketua Tim Keuangan
                     \NotificationService::send($this->db, [
                         'order_id'        => $orderId,
-                        'target_role'     => 'keuangan',
+                        'target_role'     => 'ketua_tim_keuangan',
                         'target_layanan'  => 'semua',
                         'judul'           => 'Disposisi Pembayaran: Order #' . ($order['nomor_order'] ?? $orderId),
                         'pesan'           => "Penawaran {$order['nama_perusahaan']} telah disepakati (DEAL senilai Rp " . number_format($nominal, 0, ',', '.') . "). Siap untuk proses pembayaran.",
@@ -944,7 +948,7 @@ $daftarPegawai = $arsipUser->find(
                         try {
                             \NotificationService::send($this->db, [
                                 'order_id'        => $orderId,
-                                'target_role'     => 'keuangan',
+                                'target_role'     => 'ketua_tim_keuangan',
                                 'target_layanan'  => 'semua',
                                 'judul'           => 'Disposisi Pembayaran: Order #' . ($order['nomor_order'] ?? $orderId),
                                 'pesan'           => "Penawaran {$order['nama_perusahaan']} telah disepakati (DEAL senilai Rp " . number_format($nominalBaru, 0, ',', '.') . "). Siap untuk proses pembayaran.",
@@ -965,6 +969,7 @@ $daftarPegawai = $arsipUser->find(
             }
 
             if ($orderId > 0) {
+                $this->logActivity($orderId, 'penawaran', 'respon_penawaran', "Mencatat respon penawaran dari pelanggan: " . strtoupper($statusRespon) . ($nominalBaru > 0 ? " (Nominal: Rp " . number_format($nominalBaru, 0, ',', '.') . ")" : "") . (!empty($catatanNego) ? " - Catatan: {$catatanNego}" : ""));
                 $f3->reroute("/order/{$orderId}");
             } else {
                 $f3->reroute('/surat-penawaran');
@@ -1012,10 +1017,10 @@ $daftarPegawai = $arsipUser->find(
                 [1 => $orderId]
             );
 
-            // 1. Kirim Notifikasi ke Tim Keuangan
+            // 1. Kirim Notifikasi ke Ketua Tim Keuangan
             \NotificationService::send($this->db, [
                 'order_id'        => $orderId,
-                'target_role'     => 'keuangan',
+                'target_role'     => 'ketua_tim_keuangan',
                 'target_layanan'  => 'semua',
                 'judul'           => 'Disposisi Pembayaran: Order #' . $order['nomor_order'],
                 'pesan'           => "Penawaran {$order['nama_perusahaan']} (No: {$sp['nomor_surat']}, Nilai: Rp " . number_format($nominal, 0, ',', '.') . ") telah DEAL dan didisposisikan ke Tim Keuangan untuk proses pencatatan pembayaran.",
@@ -1916,7 +1921,13 @@ $daftarPegawai = $arsipUser->find(
             'UPDATE tb_surat_penawaran SET surat_kesanggupan_bayar = ? WHERE id = ?',
             [1 => $namaFile, 2 => $id]
         );
-    
+
+        $spRow = $this->db->exec('SELECT order_id FROM tb_surat_penawaran WHERE id = ?', [1 => $id]);
+        $orderId = (int)($spRow[0]['order_id'] ?? 0);
+        if ($orderId > 0) {
+            $this->logActivity($orderId, 'penawaran', 'upload_kesanggupan_bayar', 'Mengunggah dokumen Surat Kesanggupan Bayar dari pelanggan');
+        }
+
         // ===== Sukses =====
         if ($isAjax) {
             header('Content-Type: application/json');
@@ -1927,7 +1938,7 @@ $daftarPegawai = $arsipUser->find(
             ]);
             exit;
         }
-    
+
         $this->setFlashSuccess('Surat Kesanggupan Bayar berhasil diunggah.');
         $f3->reroute($referer);
     }

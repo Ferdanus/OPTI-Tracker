@@ -279,9 +279,9 @@
                                                         <true>
                                                             <button type="button"
                                                                 class="btn btn-outline-primary btn-sm px-2 py-1 shadow-sm d-inline-flex align-items-center gap-1 btn-preview-pdf"
-                                                                data-bs-toggle="modal" data-bs-target="#modalPreviewSurat"
-                                                                data-pdf-url="{{ @BASE }}/surat-masuk/{{ @surat.id }}/pdf"
-                                                                data-nomor="{{ @surat.nomor_surat }}"
+                                                                data-preview-pdf="{{ @BASE }}/surat-masuk/{{ @surat.id }}/pdf"
+                                                                data-title="Berkas Surat Resmi"
+                                                                data-subtitle="{{ @surat.nomor_surat }}"
                                                                 title="Buka PDF Asli Surat">
                                                                 <i class="bi bi-file-earmark-pdf text-danger"></i> <span>Lihat</span>
                                                             </button>
@@ -876,76 +876,7 @@
     </div>
 </repeat>
 
-<!-- ======================================================== -->
-<!-- MODAL PRATINJAU DOKUMEN SURAT RESMI (ZERO DOWNLOAD BUG)   -->
-<!-- ======================================================== -->
-<!-- PDF.js CDN for In-App Canvas Rendering -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-
-<div class="modal fade" id="modalPreviewSurat" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-xl">
-        <div class="modal-content border-0 shadow-lg" style="height: 90vh;">
-            <div class="modal-header py-2 px-3 border-bottom">
-                <div class="d-flex align-items-center gap-2">
-                    <i class="bi bi-file-earmark-pdf-fill text-danger fs-4"></i>
-                    <div>
-                        <h6 class="modal-title fw-bold mb-0" id="modalPreviewSuratLabel">Berkas Surat</h6>
-                        <div class="text-muted small" id="modalPreviewSuratSub">-</div>
-                    </div>
-                </div>
-                <div class="d-flex align-items-center gap-2 ms-auto">
-                    <a href="#" id="btnUnduhPdfPreview" download class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-1">
-                        <i class="bi bi-download"></i> Unduh PDF
-                    </a>
-                    <button type="button" class="btn-close ms-2" data-bs-dismiss="modal"></button>
-                </div>
-            </div>
-            <div class="modal-body p-3" style="background:#e9ecef; overflow:auto;">
-                <div class="bg-white shadow-sm mx-auto" style="max-width: 850px; min-height: 100%; border-radius: 6px; overflow: hidden;">
-                    <iframe id="iframePreviewSurat" src="" style="width:100%; height:80vh; border:none; display:block;"></iframe>
-                </div>
-            </div>
-            <div class="modal-footer py-2 border-top d-flex align-items-center justify-content-between">
-                <span class="small text-muted"><i class="bi bi-shield-check text-success me-1"></i>Berkas Terverifikasi Sistem Informasi Layanan BBSPJIS</span>
-                <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">Tutup Pratinjau</button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <script>
-var currentPdfUrl = '';
-
-if (window.pdfjsLib) {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-}
-    document.addEventListener('DOMContentLoaded', function () {
-    var modalPreview = document.getElementById('modalPreviewSurat');
-    var iframePreview = document.getElementById('iframePreviewSurat');
-    var labelPreview = document.getElementById('modalPreviewSuratLabel');
-    var subPreview = document.getElementById('modalPreviewSuratSub');
-    var btnUnduh = document.getElementById('btnUnduhPdfPreview');
-
-    document.querySelectorAll('.btn-preview-pdf').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            var url = btn.getAttribute('data-pdf-url');
-            var nomor = btn.getAttribute('data-nomor');
-
-            iframePreview.src = url + '#toolbar=0&navpanes=0&view=FitH';
-            labelPreview.textContent = 'Berkas Surat: ' + nomor;
-            subPreview.textContent = 'Nomor ' + nomor;
-            btnUnduh.href = url;
-        });
-    });
-
-    if (modalPreview) {
-        modalPreview.addEventListener('hidden.bs.modal', function () {
-            iframePreview.src = '';
-        });
-    }
-});
-
-
     // Helper: Terapkan alasan standar ke textarea penolakan
     window.applyPresetReason = function(selectElem, targetTextareaId) {
         var txtArea = document.getElementById(targetTextareaId);

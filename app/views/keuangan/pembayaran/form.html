@@ -45,9 +45,9 @@
                         <i class="bi bi-file-earmark-check-fill text-success me-1"></i>
                         Order ini punya <strong>Surat Kesanggupan Bayar</strong> terlampir.
                     </div>
-                    <a href="{{ @BASE }}/surat-penawaran/{{ @order.sp_id }}/surat-kesanggupan/preview" target="_blank" class="btn btn-sm btn-outline-primary">
+                    <button type="button" class="btn btn-sm btn-outline-primary btn-preview-pdf" data-preview-pdf="{{ @BASE }}/surat-penawaran/{{ @order.sp_id }}/surat-kesanggupan/preview" data-title="Surat Kesanggupan Bayar" data-subtitle="Order: {{ @order.nomor_order }}">
                         <i class="bi bi-eye me-1"></i> Lihat Dokumen
-                    </a>
+                    </button>
                 </div>
         
                 <check if="{{ !@order.sudah_ada_pembayaran }}">

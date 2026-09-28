@@ -128,6 +128,13 @@
     border: 1px solid #fed7aa;
 }
 
+/* 3c. Ketua Tim Keuangan (Violet/Purple Tint) */
+.role-badge-katim-keuangan {
+    background: #ede9fe;
+    color: #5b21b6 !important;
+    border: 1px solid #ddd6fe;
+}
+
 /* 4. Tim Kerja Selulosa (Cyan Sky Tint) */
 .role-badge-tk-selulosa {
     background: #ecfeff;
@@ -586,7 +593,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 'superadmin': 'Super Administrator',
                 'ketua_tim_selulosa': 'Ketua Tim Selulosa',
                 'ketua_tim_lingkungan': 'Ketua Tim Lingkungan',
-                'ketua_tim_mitra': 'Ketua Tim Mitra'
+                'ketua_tim_mitra': 'Ketua Tim Mitra',
+                'ketua_tim_keuangan': 'Ketua Tim Keuangan'
             };
             const label = roleLabels[role] || 'posisi ini';
             if (warningTextEl) {

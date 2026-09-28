@@ -326,6 +326,11 @@ class PoController extends Controller {
                 }
             }
 
+            $orderRow = $this->db->exec("SELECT id, nomor_order FROM order_layanan WHERE po_id = ?", [1 => $poId]);
+            if (!empty($orderRow[0]['id'])) {
+                $this->logActivity((int)$orderRow[0]['id'], 'po', 'verifikasi_sop', "Verifikasi pelaksanaan SOP Pengujian Tahap #{$tahapNo}" . (!empty($catatan) ? " (Catatan: {$catatan})" : ""));
+            }
+
             $this->setFlashSuccess("Tahapan SOP <strong>#{$tahapNo}</strong> berhasil diverifikasi & dicatat.");
             $f3->reroute("/po/{$poId}#sop-section");
         } catch (\Exception $e) {
@@ -449,6 +454,11 @@ class PoController extends Controller {
                 'file_draf_laporan'   => $fileDraf,
                 'file_laporan_final'  => $fileFinal
             ));
+
+            $orderRow = $this->db->exec("SELECT id FROM order_layanan WHERE po_id = ?", [1 => $poId]);
+            if (!empty($orderRow[0]['id'])) {
+                $this->logActivity((int)$orderRow[0]['id'], 'po', 'upload_laporan', "Mengunggah berkas laporan hasil pengujian/riset" . (!empty($nomorLaporan) ? " (No: {$nomorLaporan})" : ""));
+            }
 
             $this->setFlashSuccess("Dokumen laporan pengujian/riset PO #{$poId} berhasil disimpan.");
             $f3->reroute("/po/{$poId}#evaluasi-section");
