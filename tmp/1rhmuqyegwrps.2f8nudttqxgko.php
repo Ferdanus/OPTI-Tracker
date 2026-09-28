@@ -10,17 +10,17 @@
     position: relative;
 }
 .proposal-dropzone:hover, .proposal-dropzone.dragover {
-    border-color: var(--color-primary, #881337);
-    background-color: #fff1f2;
+    border-color: var(--color-primary, #334155);
+    background-color: #f1f5f9;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(136, 19, 55, 0.08);
+    box-shadow: 0 4px 12px rgba(51, 65, 85, 0.08);
 }
 .proposal-dropzone .dropzone-icon {
     width: 60px;
     height: 60px;
     border-radius: 50%;
     background-color: #ffffff;
-    color: var(--color-primary, #881337);
+    color: var(--color-primary, #334155);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -165,13 +165,13 @@
         <div>
             <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
                 <h4 class="fw-bold text-dark m-0 font-display">Penyusunan &amp; Upload Dokumen Proposal</h4>
-                <span class="badge <?= ($order['jenis_layanan_opti'] == 'selulosa' ? 'bg-primary-subtle text-primary border border-primary-subtle' : 'bg-success-subtle text-success border border-success-subtle') ?> px-2.5 py-1 text-uppercase fw-bold" style="font-size: 0.72rem;">
+                <span class="badge <?= ($order['jenis_layanan_opti'] == 'selulosa' ? 'bg-danger-subtle text-danger border border-danger-subtle' : 'bg-success-subtle text-success border border-success-subtle') ?> px-2.5 py-1 text-uppercase fw-bold" style="font-size: 0.72rem;">
                     OPTI <?= ($order['jenis_layanan_opti'])."
 " ?>
                 </span>
                 
                 <!-- Status Proposal Badge -->
-                <?php if ($proposal && $proposal['status_proposal'] == 'disetujui_ketua'): ?>
+                <?php if ($proposal && in_array($proposal['status_proposal'], ['disetujui_ketua', 'disetujui_pimpinan', 'disetujui'])): ?>
                     <span class="badge badge-pill-success px-2.5 py-1">
                         <i class="bi bi-check-circle-fill me-1"></i> Disetujui Ka. Tim
                     </span>
@@ -211,7 +211,7 @@
                 <?php endif; ?>
             <?php endif; ?>
             <p class="text-secondary small mb-0">
-                Order <strong class="text-dark font-monospace">#<?= ($order['nomor_order']) ?></strong> &bull; <?= ($order['nama_perusahaan']) ?> (<?= ($order['pt_cv']) ?>) &bull; <span class="fst-italic text-dark"><?= ($order['judul_kegiatan']) ?></span>
+                Order <strong class="text-dark font-monospace">#<?= ($order['nomor_order']) ?></strong> &bull; <?= ($order['nama_perusahaan']) ?> &bull; <span class="fst-italic text-dark"><?= ($order['judul_kegiatan']) ?></span>
             </p>
         </div>
 
@@ -254,7 +254,7 @@
                         <div class="d-flex mb-2">
                             <span class="text-muted" style="width: 130px; flex-shrink: 0;">Nama Perusahaan</span>
                             <span class="text-muted me-2">:</span>
-                            <strong class="text-dark"><?= ($order['nama_perusahaan']) ?> (<?= ($order['pt_cv']) ?>)</strong>
+                            <strong class="text-dark"><?= ($order['nama_perusahaan']) ?></strong>
                         </div>
                         <div class="d-flex mb-2">
                             <span class="text-muted" style="width: 130px; flex-shrink: 0;">PIC Klien</span>
@@ -391,15 +391,16 @@
                 <div class="card-body p-4">
                     
                     <?php if (!$can_edit): ?>
-                        <div class="alert alert-warning border-0 d-flex align-items-center mb-4 py-2 px-3 small rounded-3">
+                        <div class="alert alert-warning border-0 d-flex align-items-center gap-2 mb-4 py-2 px-3 small rounded-3 shadow-xs text-warning-emphasis">
+                            <i class="bi bi-lock-fill fs-5 flex-shrink-0 text-warning"></i>
                             <div>
-                                <strong>Mode Lihat Saja (Read-Only)</strong>: <?= ($lock_message ?: 'Penyusunan dan pengunggahan dokumen proposal teknis merupakan wewenang PIC Proposal yang ditugaskan.')."
+                                <strong>Status Edit Dikunci:</strong> <?= ($lock_message ?: 'Tidak bisa merubah data, silakan hubungi superadmin.')."
 " ?>
                             </div>
                         </div>
                     <?php endif; ?>
 
-                    <form action="<?= ($BASE) ?>/order/<?= ($order['id']) ?>/proposal/simpan" method="POST" enctype="multipart/form-data" id="formProposal">
+                    <form action="<?= ($BASE) ?>/order/<?= ($order['id']) ?>/proposal/simpan" method="POST" enctype="multipart/form-data" id="formProposal" data-no-loader="true">
                         
                         <!-- 1. Judul Proposal -->
                         <div class="mb-4">
@@ -453,22 +454,26 @@
                                 <small class="text-muted fw-normal">Format: PDF, DOCX, XLSX (Maks. 10MB)</small>
                             </label>
 
-                            <!-- Card Berkas / Dokumen Proposal Aktif -->
-                            <?php if ($proposal): ?>
-                                <div class="preview-card mb-3">
+                            <!-- Card Berkas / Dokumen Proposal Aktif (Hanya muncul jika PIC sudah mengunggah file riil) -->
+                            <?php if (!empty($proposal['file_proposal'])): ?>
+                                <div class="preview-card mb-3" id="savedProposalCard">
                                     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                                         <div class="d-flex align-items-center gap-3">
                                             <div class="rounded-3 bg-danger-subtle text-danger p-2.5 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">
-                                                <i class="bi bi-file-earmark-pdf-fill fs-4"></i>
+                                                <i class="bi bi-file-earmark-check-fill fs-4"></i>
                                             </div>
                                             <div>
                                                 <strong class="text-dark d-block font-monospace" style="font-size: 0.88rem;">
-                                                    <?= ($proposal['file_proposal'] ? basename($proposal['file_proposal']) : 'Proposal_Order_#' . $order['nomor_order'] . '.pdf')."
+                                                    <?= (basename($proposal['file_proposal']))."
 " ?>
                                                 </strong>
-                                                <div class="text-muted small mt-0.5" style="font-size: 0.76rem;">
-                                                    <?= ($proposal['durasi_kegiatan'] ?: '30 Hari Kerja')."
-" ?>
+                                                <div class="d-flex align-items-center gap-2 mt-0.5">
+                                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-0.5 rounded-pill" style="font-size: 0.70rem;">
+                                                        <i class="bi bi-check-circle-fill me-1"></i>Dokumen Tersimpan
+                                                    </span>
+                                                    <?php if ($proposal['durasi_kegiatan']): ?>
+                                                        <span class="text-muted small" style="font-size: 0.76rem;"><?= ($proposal['durasi_kegiatan']) ?></span>
+                                                    <?php endif; ?>
                                                 </div>
                                             </div>
                                         </div>
@@ -477,11 +482,15 @@
                                             <button type="button" class="btn btn-outline-danger btn-sm px-3 py-1.5 fw-semibold shadow-xs" onclick="openProposalCanvasModal('<?= ($order['id']) ?>')">
                                                 <i class="bi bi-eye-fill me-1"></i> Pratinjau Dokumen
                                             </button>
-                                            <!-- Tombol Download jika ada file fisik -->
-                                            <?php if ($proposal['file_proposal']): ?>
-                                                <a href="<?= ($BASE) ?>/<?= ($proposal['file_proposal']) ?>" target="_blank" class="btn btn-light border btn-sm px-3 py-1.5 fw-semibold text-secondary" download>
-                                                    <i class="bi bi-download me-1"></i> Unduh
-                                                </a>
+                                            <!-- Tombol Download file fisik -->
+                                            <a href="<?= ($BASE) ?>/<?= ($proposal['file_proposal']) ?>" target="_blank" class="btn btn-outline-primary btn-sm px-3 py-1.5 fw-semibold shadow-xs" download>
+                                                <i class="bi bi-download me-1"></i> Unduh
+                                            </a>
+                                            <!-- Tombol Ganti Berkas jika can_edit -->
+                                            <?php if ($can_edit): ?>
+                                                <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-1.5 fw-semibold shadow-xs" onclick="document.getElementById('file_proposal').click()" title="Unggah / Ganti berkas proposal">
+                                                    <i class="bi bi-arrow-repeat me-1"></i> Ganti Berkas
+                                                </button>
                                             <?php endif; ?>
                                         </div>
                                     </div>
@@ -524,23 +533,12 @@
                                             </div>
                                         </div>
                                         <div class="d-flex align-items-center gap-2">
-                                            <button type="button" id="btnPreviewSelectedPdf" class="btn btn-outline-primary btn-sm px-3 py-1.5 fw-semibold d-none" onclick="toggleLocalPdfPreview()">
-                                                <i class="bi bi-eye me-1"></i> Pratinjau File
+                                            <button type="button" id="btnPreviewSelectedPdf" class="btn btn-outline-primary btn-sm px-3 py-1.5 fw-semibold d-none" onclick="openLocalProposalModal()">
+                                                <i class="bi bi-eye me-1"></i> Pratinjau Dokumen
                                             </button>
                                             <button type="button" class="btn btn-light border btn-sm px-2.5 py-1.5 text-danger" onclick="cancelSelectedFile()" title="Batalkan Pilihan">
                                                 <i class="bi bi-x-lg"></i>
                                             </button>
-                                        </div>
-                                    </div>
-
-                                    <!-- Inline PDF Canvas Viewer Container (Zero IDM Trigger) -->
-                                    <div id="inlinePdfPreviewWrapper" class="mt-3 pt-3 border-top d-none">
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <small class="fw-bold text-dark font-monospace"><i class="bi bi-filetype-pdf text-danger me-1"></i> Pratinjau Tampilan Berkas PDF (Halaman 1):</small>
-                                            <button type="button" class="btn btn-sm btn-link text-secondary p-0 text-decoration-none" onclick="toggleLocalPdfPreview()"><i class="bi bi-chevron-up"></i> Tutup</button>
-                                        </div>
-                                        <div class="p-3 bg-secondary bg-opacity-10 rounded-3 border text-center overflow-auto" style="max-height: 500px;">
-                                            <canvas id="localPdfCanvas" class="shadow-sm border rounded bg-white mx-auto" style="max-width: 100%; height: auto;"></canvas>
                                         </div>
                                     </div>
                                 </div>
@@ -608,13 +606,36 @@
 
                         <!-- 5. Tombol Aksi PIC -->
                         <?php if ($can_edit): ?>
-                            <div class="d-flex justify-content-between align-items-center mt-4 flex-wrap gap-2">
-                                <button type="submit" name="action_type" value="draft" class="btn btn-light border px-3.5 py-2 fw-semibold text-secondary">
-                                    <i class="bi bi-save me-1"></i> Simpan Draf
-                                </button>
-                                <button type="submit" name="action_type" value="ajukan" class="btn btn-primary px-4 py-2 fw-semibold text-white shadow-sm">
-                                    <i class="bi bi-send-fill me-1"></i> Ajukan ke Ketua Tim OPTI
-                                </button>
+                            <div class="pt-4 mt-4 border-top">
+                                <!-- Petunjuk Kunci Tombol Kirim -->
+                                <div class="mb-3 <?= (!empty($proposal['file_proposal']) && ((float)($proposal['estimasi_total_biaya'] ?: ($order['estimasi_biaya'] ?: 0)) > 0) ? 'd-none' : '') ?>" id="hintKirimProposal">
+                                    <div class="alert alert-light border d-flex align-items-center gap-2 py-2 px-3 mb-0 rounded-3 text-secondary" style="font-size: 0.82rem; background-color: #f8fafc;">
+                                        <i class="bi bi-info-circle-fill text-primary flex-shrink-0"></i>
+                                        <div id="hintKirimProposalText">
+                                            <?php if (empty($proposal['file_proposal']) && ((float)($proposal['estimasi_total_biaya'] ?: ($order['estimasi_biaya'] ?: 0)) <= 0)): ?>
+                                                Isi estimasi total biaya (> Rp 0) dan unggah berkas proposal untuk mengaktifkan tombol kirim.
+                                            <?php endif; ?>
+                                            <?php if (empty($proposal['file_proposal']) && ((float)($proposal['estimasi_total_biaya'] ?: ($order['estimasi_biaya'] ?: 0)) > 0)): ?>
+                                                Unggah berkas dokumen proposal untuk mengaktifkan tombol kirim.
+                                            <?php endif; ?>
+                                            <?php if (!empty($proposal['file_proposal']) && ((float)($proposal['estimasi_total_biaya'] ?: ($order['estimasi_biaya'] ?: 0)) <= 0)): ?>
+                                                Isi estimasi total biaya / RAB (> Rp 0) untuk mengaktifkan tombol kirim.
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Baris Tombol Aksi Sejajar -->
+                                <div class="d-flex justify-content-between align-items-center gap-3">
+                                    <button type="submit" name="action_type" value="draft" class="btn btn-outline-primary px-4 py-2 fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5">
+                                        <i class="bi bi-bookmark"></i>
+                                        <span>Simpan Draf</span>
+                                    </button>
+                                    <button type="button" id="btnKirimProposal" class="btn btn-primary px-4 py-2 fw-semibold text-white shadow-sm d-inline-flex align-items-center gap-1.5" onclick="confirmKirimProposalAction()" <?= (empty($proposal['file_proposal']) || ((float)($proposal['estimasi_total_biaya'] ?: ($order['estimasi_biaya'] ?: 0)) <= 0) ? 'disabled' : '') ?> title="<?= (empty($proposal['file_proposal']) || ((float)($proposal['estimasi_total_biaya'] ?: ($order['estimasi_biaya'] ?: 0)) <= 0) ? 'Lengkapi estimasi biaya dan unggah berkas proposal untuk mengaktifkan tombol kirim' : 'Kirim proposal ke Ketua Tim OPTI') ?>">
+                                        <i class="bi bi-send-fill"></i>
+                                        <span>Kirim</span>
+                                    </button>
+                                </div>
                             </div>
                         <?php endif; ?>
                     </form>
@@ -633,6 +654,16 @@
                     </div>
                     <div class="card-body p-4">
                         <form action="<?= ($BASE) ?>/order/<?= ($order['id']) ?>/proposal/review-katim" method="POST">
+                            <input type="hidden" name="redirect" value="proposal">
+                            <?php if ($order['jenis_layanan_opti'] == 'selulosa' && !$proposal_has_file_cost): ?>
+                                <div class="alert alert-danger border-0 p-3 mb-3 rounded-3 d-flex align-items-center gap-2">
+                                    <i class="bi bi-exclamation-octagon-fill text-danger fs-5 flex-shrink-0"></i>
+                                    <div>
+                                        <strong class="text-danger d-block">Proposal Belum Lengkap!</strong>
+                                        <span>PIC belum mengisi rincian estimasi biaya atau belum mengunggah file berkas proposal resmi. Proposal tidak dapat disetujui (ACC).</span>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
                             <div class="mb-4">
                                 <label class="form-label small fw-bold text-dark mb-2" style="font-size: 0.86rem;">Catatan Review / Catatan Revisi</label>
                                 <textarea name="catatan_revisi" class="form-control p-3" rows="3" placeholder="Masukkan catatan persetujuan atau catatan revisi..."><?= ($proposal['catatan_revisi']) ?></textarea>
@@ -644,10 +675,18 @@
                                     <span>Minta Revisi Proposal</span>
                                 </button>
                                 
-                                <button type="submit" name="action_review" value="approve" class="btn btn-success px-4 py-2 fw-semibold text-white rounded-3 d-inline-flex align-items-center gap-1.5 shadow-sm">
-                                    <i class="bi bi-check2-circle fs-6"></i>
-                                    <span>Setujui Proposal (Approve)</span>
-                                </button>
+                                <?php if ($order['jenis_layanan_opti'] == 'selulosa' && !$proposal_has_file_cost): ?>
+                                    <button type="button" class="btn btn-secondary px-4 py-2 fw-semibold rounded-3 d-inline-flex align-items-center gap-1.5 shadow-sm" disabled title="Berkas proposal & estimasi biaya harus lengkap sebelum disetujui">
+                                        <i class="bi bi-lock-fill fs-6"></i>
+                                        <span>Setujui Proposal (Belum Lengkap)</span>
+                                    </button>
+                                <?php endif; ?>
+                                <?php if ($order['jenis_layanan_opti'] != 'selulosa' || $proposal_has_file_cost): ?>
+                                    <button type="submit" name="action_review" value="approve" class="btn btn-success px-4 py-2 fw-semibold text-white rounded-3 d-inline-flex align-items-center gap-1.5 shadow-sm">
+                                        <i class="bi bi-check2-circle fs-6"></i>
+                                        <span>Setujui Proposal (Approve)</span>
+                                    </button>
+                                <?php endif; ?>
                             </div>
                         </form>
                     </div>
@@ -658,87 +697,85 @@
 </div>
 
 <!-- ========================================================= -->
-<!-- MODAL PRATINJAU DOKUMEN PROPOSAL (PURE CRISP PDF VIEWER)  -->
+<!-- MODAL PRATINJAU DOKUMEN PROPOSAL (CONTINUOUS MULTI-PAGE)  -->
 <!-- ========================================================= -->
 <?php if ($proposal || $order): ?>
     <div class="modal fade" id="modalPreviewDokumenProposal" tabindex="-1" aria-labelledby="modalPreviewDokumenProposalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" style="max-width: 92vw;">
-            <div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden" style="height: 90vh;">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" style="max-width: 94vw;">
+            <div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden" style="height: 92vh; display: flex; flex-direction: column;">
                 
                 <!-- Modal Header -->
-                <div class="modal-header border-bottom py-2.5 px-4 bg-light">
+                <div class="modal-header border-bottom py-2.5 px-4 bg-white d-flex justify-content-between align-items-center">
                     <div class="d-flex align-items-center gap-2">
-                        <div class="rounded-circle bg-danger-subtle text-danger p-1.5 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
-                            <i class="bi bi-file-earmark-pdf-fill"></i>
+                        <div class="rounded-circle bg-danger-subtle text-danger p-1.5 d-flex align-items-center justify-content-center" style="width: 34px; height: 34px;">
+                            <i class="bi bi-file-earmark-pdf-fill fs-5"></i>
                         </div>
                         <div>
-                            <h6 class="modal-title fw-bold text-dark font-display mb-0" id="modalPreviewDokumenProposalLabel" style="font-size: 0.92rem;">Pratinjau Dokumen Proposal Teknis</h6>
-                            <small class="text-secondary font-monospace" id="modalPdfFilenameHeader" style="font-size: 0.72rem;">Order #<?= ($order['nomor_order']) ?> &bull; <?= ($order['nama_perusahaan']) ?></small>
+                            <h6 class="modal-title fw-bold text-dark font-display mb-0" id="modalPreviewDokumenProposalLabel" style="font-size: 0.95rem;">Pratinjau Dokumen Proposal Teknis</h6>
+                            <small class="text-secondary font-monospace" id="modalPdfFilenameHeader" style="font-size: 0.75rem;">Order #<?= ($order['nomor_order']) ?> &bull; <?= ($order['nama_perusahaan']) ?></small>
                         </div>
                     </div>
 
+                    <!-- Toolbar Controls -->
                     <div class="d-flex align-items-center gap-2">
+                        <div id="proposalZoomControls" class="d-flex align-items-center gap-1.5 bg-light p-1 rounded-3 border">
+                            <span class="badge bg-dark text-white px-2 py-1 font-monospace" id="proposalTotalPagesBadge" style="font-size: 0.72rem;">-- Halaman</span>
+                            <div class="vr mx-1 my-1"></div>
+                            <button type="button" class="btn btn-white btn-sm border shadow-2xs px-2 py-1 text-secondary" onclick="zoomProposalPdf(-0.2)" title="Perkecil Zoom">
+                                <i class="bi bi-zoom-out"></i>
+                            </button>
+                            <span id="proposalZoomPercent" class="small fw-bold text-dark font-monospace px-1" style="font-size: 0.78rem; min-width: 44px; text-align: center;">100%</span>
+                            <button type="button" class="btn btn-white btn-sm border shadow-2xs px-2 py-1 text-secondary" onclick="zoomProposalPdf(0.2)" title="Perbesar Zoom">
+                                <i class="bi bi-zoom-in"></i>
+                            </button>
+                            <button type="button" class="btn btn-light btn-sm border px-2 py-1 text-secondary" onclick="resetProposalZoom()" title="Reset Ukuran (100%)">
+                                <i class="bi bi-aspect-ratio"></i>
+                            </button>
+                        </div>
+
                         <?php if ($proposal && $proposal['file_proposal']): ?>
-                            <a href="<?= ($BASE) ?>/<?= ($proposal['file_proposal']) ?>" target="_blank" class="btn btn-sm btn-outline-secondary px-3 py-1" download>
-                                <i class="bi bi-download me-1"></i> Unduh File Asli
+                            <a href="<?= ($BASE) ?>/<?= ($proposal['file_proposal']) ?>" target="_blank" class="btn btn-sm btn-outline-secondary px-3 py-1.5 fw-semibold" id="btnDownloadProposalModal" download>
+                                <i class="bi bi-download me-1"></i> Unduh File
                             </a>
                         <?php endif; ?>
-                        <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <button type="button" class="btn-close shadow-none ms-2" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                 </div>
                 
-                <!-- Modal Body (Pure Canvas PDF Viewer) -->
-                <div class="modal-body p-3 bg-secondary bg-opacity-10 position-relative text-center overflow-auto" style="min-height: 65vh;">
+                <!-- Modal Body (Continuous Multi-Page Workspace) -->
+                <div class="modal-body p-4 position-relative overflow-auto flex-grow-1" id="proposalModalBody" style="background-color: #525659;">
                     <!-- Loading Spinner -->
-                    <div id="canvasProposalSpinner" class="py-5 my-5">
-                        <div class="spinner-border text-primary" role="status" style="width: 2.75rem; height: 2.75rem;"></div>
-                        <p class="small text-muted mt-2 fw-medium">Memuat dan merender berkas proposal...</p>
+                    <div id="canvasProposalSpinner" class="py-5 my-5 text-center">
+                        <div class="spinner-border text-light" role="status" style="width: 2.75rem; height: 2.75rem;"></div>
+                        <p class="small text-white-50 mt-2 fw-medium">Memuat dan merender seluruh halaman dokumen...</p>
                     </div>
 
                     <!-- Non-PDF Notice (Word/Excel) -->
                     <div id="nonPdfNoticeBox" class="d-none py-5 my-3 text-center">
-                        <div class="card border-0 shadow-sm mx-auto p-4 rounded-4" style="max-width: 500px;">
+                        <div class="card border-0 shadow-sm mx-auto p-4 rounded-4" style="max-width: 500px; background: white;">
                             <div class="rounded-circle bg-primary-subtle text-primary p-3 d-inline-flex align-items-center justify-content-center mx-auto mb-3" style="width: 60px; height: 60px;">
                                 <i class="bi bi-file-earmark-word-fill fs-2"></i>
                             </div>
-                            <h6 class="fw-bold text-dark font-display mb-1" id="nonPdfDocTitle">Berkas Dokumen Office Terunggah</h6>
+                            <h6 class="fw-bold text-dark font-display mb-1" id="nonPdfDocTitle">Berkas Dokumen Terunggah</h6>
                             <p class="small text-muted mb-3" id="nonPdfDocSubtitle">Berkas proposal telah tersimpan dengan aman di server.</p>
                             <div class="d-flex justify-content-center gap-2">
                                 <a href="<?= ($BASE) ?>/<?= ($proposal['file_proposal']) ?>" target="_blank" class="btn btn-primary btn-sm px-3" download>
-                                    <i class="bi bi-download me-1"></i> Unduh File Office
+                                    <i class="bi bi-download me-1"></i> Unduh File
                                 </a>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Canvas Element (Crisp HiDPI) -->
-                    <canvas id="proposalPdfCanvas" class="shadow border rounded bg-white mx-auto" style="display: none; max-width: 100%; height: auto;"></canvas>
+                    <!-- Continuous Multi-Page Container -->
+                    <div id="proposalPagesContainer" class="d-flex flex-column align-items-center gap-4 py-2" style="display: none;">
+                    </div>
                 </div>
 
                 <!-- Modal Footer -->
-                <div class="modal-footer border-top py-2 px-4 bg-white d-flex justify-content-between align-items-center flex-wrap gap-2">
-                    <!-- Page & Zoom Controls -->
-                    <div id="canvasControlsGroup" class="d-flex align-items-center gap-2">
-                        <button type="button" class="btn btn-light btn-sm border px-2.5 py-1 text-secondary" id="btnProposalPrev" onclick="changeProposalPage(-1)">
-                            <i class="bi bi-chevron-left"></i>
-                        </button>
-                        <span class="small text-dark fw-semibold font-monospace" style="font-size: 0.82rem;">
-                            Hal. <span id="proposalCurrentPage">1</span> / <span id="proposalTotalPages">1</span>
-                        </span>
-                        <button type="button" class="btn btn-light btn-sm border px-2.5 py-1 text-secondary" id="btnProposalNext" onclick="changeProposalPage(1)">
-                            <i class="bi bi-chevron-right"></i>
-                        </button>
-                        
-                        <div class="vr mx-1.5 my-1"></div>
-                        
-                        <button type="button" class="btn btn-light btn-sm border px-2 py-1 text-secondary" onclick="zoomProposalPdf(-0.2)" title="Perkecil">
-                            <i class="bi bi-zoom-out"></i>
-                        </button>
-                        <button type="button" class="btn btn-light btn-sm border px-2 py-1 text-secondary" onclick="zoomProposalPdf(0.2)" title="Perbesar">
-                            <i class="bi bi-zoom-in"></i>
-                        </button>
+                <div class="modal-footer border-top py-2 px-4 bg-white d-flex justify-content-between align-items-center">
+                    <div class="text-muted small">
+                        <i class="bi bi-mouse me-1"></i> Gulir ke bawah untuk membaca seluruh halaman
                     </div>
-
                     <button type="button" class="btn btn-secondary btn-sm px-4 fw-semibold" data-bs-dismiss="modal">Tutup Pratinjau</button>
                 </div>
 
@@ -748,66 +785,65 @@
 <?php endif; ?>
 
 <!-- ========================================================= -->
-<!-- MODAL PRATINJAU SURAT MASUK (PURE CRISP PDF VIEWER)       -->
+<!-- MODAL PRATINJAU SURAT MASUK (CONTINUOUS MULTI-PAGE)       -->
 <!-- ========================================================= -->
 <?php if ($surat_masuk): ?>
     <div class="modal fade" id="modalPreviewSuratMasukProposal" tabindex="-1" aria-labelledby="modalPreviewSuratMasukProposalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" style="max-width: 92vw;">
-            <div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden" style="height: 90vh;">
-                <div class="modal-header border-bottom py-2.5 px-4 bg-light">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" style="max-width: 94vw;">
+            <div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden" style="height: 92vh; display: flex; flex-direction: column;">
+                <div class="modal-header border-bottom py-2.5 px-4 bg-white d-flex justify-content-between align-items-center">
                     <div class="d-flex align-items-center gap-2">
-                        <div class="rounded-circle bg-primary-subtle text-primary p-1.5 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
-                            <i class="bi bi-file-earmark-pdf-fill"></i>
+                        <div class="rounded-circle bg-primary-subtle text-primary p-1.5 d-flex align-items-center justify-content-center" style="width: 34px; height: 34px;">
+                            <i class="bi bi-file-earmark-pdf-fill fs-5"></i>
                         </div>
                         <div>
-                            <h6 class="modal-title fw-bold text-dark font-display mb-0" id="modalPreviewSuratMasukProposalLabel" style="font-size: 0.92rem;">Lembar Surat Permohonan Klien</h6>
-                            <small class="text-secondary font-monospace" id="modalSmFilenameHeader" style="font-size: 0.72rem;"><?= ($surat_masuk['nomor_surat']) ?> &bull; <?= ($surat_masuk['pengirim']) ?></small>
+                            <h6 class="modal-title fw-bold text-dark font-display mb-0" id="modalPreviewSuratMasukProposalLabel" style="font-size: 0.95rem;">Lembar Surat Permohonan Klien</h6>
+                            <small class="text-secondary font-monospace" id="modalSmFilenameHeader" style="font-size: 0.75rem;"><?= ($surat_masuk['nomor_surat']) ?> &bull; <?= ($surat_masuk['pengirim']) ?></small>
                         </div>
                     </div>
+                    
+                    <!-- Toolbar Controls -->
                     <div class="d-flex align-items-center gap-2">
+                        <div id="smZoomControls" class="d-flex align-items-center gap-1.5 bg-light p-1 rounded-3 border">
+                            <span class="badge bg-dark text-white px-2 py-1 font-monospace" id="smTotalPagesBadge" style="font-size: 0.72rem;">-- Halaman</span>
+                            <div class="vr mx-1 my-1"></div>
+                            <button type="button" class="btn btn-white btn-sm border shadow-2xs px-2 py-1 text-secondary" onclick="zoomSmPdf(-0.2)" title="Perkecil Zoom">
+                                <i class="bi bi-zoom-out"></i>
+                            </button>
+                            <span id="smZoomPercent" class="small fw-bold text-dark font-monospace px-1" style="font-size: 0.78rem; min-width: 44px; text-align: center;">100%</span>
+                            <button type="button" class="btn btn-white btn-sm border shadow-2xs px-2 py-1 text-secondary" onclick="zoomSmPdf(0.2)" title="Perbesar Zoom">
+                                <i class="bi bi-zoom-in"></i>
+                            </button>
+                            <button type="button" class="btn btn-light btn-sm border px-2 py-1 text-secondary" onclick="resetSmZoom()" title="Reset Ukuran (100%)">
+                                <i class="bi bi-aspect-ratio"></i>
+                            </button>
+                        </div>
+
                         <?php if ($surat_masuk['file_path']): ?>
-                            <a href="<?= ($BASE) ?>/<?= ($surat_masuk['file_path']) ?>" target="_blank" class="btn btn-sm btn-outline-secondary px-3 py-1" download>
+                            <a href="<?= ($BASE) ?>/<?= ($surat_masuk['file_path']) ?>" target="_blank" class="btn btn-sm btn-outline-secondary px-3 py-1.5 fw-semibold" download>
                                 <i class="bi bi-download me-1"></i> Unduh File
                             </a>
                         <?php endif; ?>
-                        <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <button type="button" class="btn-close shadow-none ms-2" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                 </div>
                 
-                <div class="modal-body p-3 bg-secondary bg-opacity-10 position-relative text-center overflow-auto" style="min-height: 65vh;">
+                <div class="modal-body p-4 position-relative overflow-auto flex-grow-1" id="smModalBody" style="background-color: #525659;">
                     <!-- Loading Spinner -->
-                    <div id="canvasSmSpinner" class="py-5 my-5">
-                        <div class="spinner-border text-primary" role="status" style="width: 2.75rem; height: 2.75rem;"></div>
-                        <p class="small text-muted mt-2 fw-medium">Memuat dan merender surat permohonan...</p>
+                    <div id="canvasSmSpinner" class="py-5 my-5 text-center">
+                        <div class="spinner-border text-light" role="status" style="width: 2.75rem; height: 2.75rem;"></div>
+                        <p class="small text-white-50 mt-2 fw-medium">Memuat dan merender surat permohonan...</p>
                     </div>
 
-                    <!-- Canvas Element (Crisp HiDPI) -->
-                    <canvas id="suratMasukPdfCanvas" class="shadow border rounded bg-white mx-auto" style="display: none; max-width: 100%; height: auto;"></canvas>
+                    <!-- Continuous Multi-Page Container -->
+                    <div id="smPagesContainer" class="d-flex flex-column align-items-center gap-4 py-2" style="display: none;">
+                    </div>
                 </div>
 
-                <div class="modal-footer border-top py-2 px-4 bg-white d-flex justify-content-between align-items-center flex-wrap gap-2">
-                    <!-- Page & Zoom Controls -->
-                    <div id="canvasSmControlsGroup" class="d-flex align-items-center gap-2">
-                        <button type="button" class="btn btn-light btn-sm border px-2.5 py-1 text-secondary" onclick="changeSmPage(-1)">
-                            <i class="bi bi-chevron-left"></i>
-                        </button>
-                        <span class="small text-dark fw-semibold font-monospace" style="font-size: 0.82rem;">
-                            Hal. <span id="smCurrentPage">1</span> / <span id="smTotalPages">1</span>
-                        </span>
-                        <button type="button" class="btn btn-light btn-sm border px-2.5 py-1 text-secondary" onclick="changeSmPage(1)">
-                            <i class="bi bi-chevron-right"></i>
-                        </button>
-                        
-                        <div class="vr mx-1.5 my-1"></div>
-                        
-                        <button type="button" class="btn btn-light btn-sm border px-2 py-1 text-secondary" onclick="zoomSmPdf(-0.2)" title="Perkecil">
-                            <i class="bi bi-zoom-out"></i>
-                        </button>
-                        <button type="button" class="btn btn-light btn-sm border px-2 py-1 text-secondary" onclick="zoomSmPdf(0.2)" title="Perbesar">
-                            <i class="bi bi-zoom-in"></i>
-                        </button>
+                <div class="modal-footer border-top py-2 px-4 bg-white d-flex justify-content-between align-items-center">
+                    <div class="text-muted small">
+                        <i class="bi bi-mouse me-1"></i> Gulir ke bawah untuk membaca seluruh halaman
                     </div>
-
                     <button type="button" class="btn btn-secondary btn-sm px-4 fw-semibold" data-bs-dismiss="modal">Tutup Pratinjau</button>
                 </div>
             </div>
@@ -824,12 +860,10 @@ if (window.pdfjsLib) {
 let selectedFileObj = null;
 let currentOrderId = null;
 let currentPdfDoc = null;
-let currentPdfPage = 1;
-let currentPdfScale = 1.45;
+let currentPdfScale = 1.35;
 
 let currentSmDoc = null;
-let currentSmPage = 1;
-let currentSmScale = 1.45;
+let currentSmScale = 1.35;
 
 function base64ToUint8Array(base64) {
     const binary_string = window.atob(base64);
@@ -882,7 +916,6 @@ function handleFileSelect(event) {
     const sizeEl = document.getElementById('selectedFileSize');
     const iconBox = document.getElementById('fileIconBox');
     const btnPreview = document.getElementById('btnPreviewSelectedPdf');
-    const inlineWrapper = document.getElementById('inlinePdfPreviewWrapper');
 
     if (!previewBox) return;
 
@@ -896,88 +929,250 @@ function handleFileSelect(event) {
     if (ext === 'pdf') {
         iconBox.className = 'rounded-3 bg-danger text-white p-2.5 d-flex align-items-center justify-content-center';
         iconBox.innerHTML = '<i class="bi bi-filetype-pdf fs-4"></i>';
-        btnPreview.classList.remove('d-none');
+        if (btnPreview) btnPreview.classList.remove('d-none');
     } else if (ext === 'doc' || ext === 'docx') {
         iconBox.className = 'rounded-3 bg-primary text-white p-2.5 d-flex align-items-center justify-content-center';
         iconBox.innerHTML = '<i class="bi bi-filetype-docx fs-4"></i>';
-        btnPreview.classList.add('d-none');
-        if (inlineWrapper) inlineWrapper.classList.add('d-none');
+        if (btnPreview) btnPreview.classList.add('d-none');
     } else if (ext === 'xls' || ext === 'xlsx') {
         iconBox.className = 'rounded-3 bg-success text-white p-2.5 d-flex align-items-center justify-content-center';
         iconBox.innerHTML = '<i class="bi bi-filetype-xlsx fs-4"></i>';
-        btnPreview.classList.add('d-none');
-        if (inlineWrapper) inlineWrapper.classList.add('d-none');
+        if (btnPreview) btnPreview.classList.add('d-none');
     } else {
         iconBox.className = 'rounded-3 bg-secondary text-white p-2.5 d-flex align-items-center justify-content-center';
         iconBox.innerHTML = '<i class="bi bi-file-earmark-fill fs-4"></i>';
-        btnPreview.classList.add('d-none');
-        if (inlineWrapper) inlineWrapper.classList.add('d-none');
+        if (btnPreview) btnPreview.classList.add('d-none');
     }
 
     previewBox.classList.remove('d-none');
-}
-
-function toggleLocalPdfPreview() {
-    const inlineWrapper = document.getElementById('inlinePdfPreviewWrapper');
-    const canvas = document.getElementById('localPdfCanvas');
-    if (!inlineWrapper || !canvas || !selectedFileObj) return;
-
-    if (!inlineWrapper.classList.contains('d-none')) {
-        inlineWrapper.classList.add('d-none');
-        return;
-    }
-
-    inlineWrapper.classList.remove('d-none');
-
-    // Render local PDF ArrayBuffer directly in memory (HD HiDPI Crisp Scale)
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const typedarray = new Uint8Array(e.target.result);
-        pdfjsLib.getDocument({ data: typedarray }).promise.then(function(pdf) {
-            return pdf.getPage(1);
-        }).then(function(page) {
-            const dpr = window.devicePixelRatio || 1;
-            const targetScale = 1.35;
-            const renderScale = targetScale * Math.max(dpr, 2.0);
-
-            const unscaledViewport = page.getViewport({ scale: targetScale });
-            const viewport = page.getViewport({ scale: renderScale });
-
-            const context = canvas.getContext('2d');
-            canvas.width = Math.floor(viewport.width);
-            canvas.height = Math.floor(viewport.height);
-            canvas.style.width = Math.floor(unscaledViewport.width) + 'px';
-            canvas.style.height = Math.floor(unscaledViewport.height) + 'px';
-            canvas.style.maxWidth = '100%';
-
-            context.imageSmoothingEnabled = true;
-            context.imageSmoothingQuality = 'high';
-
-            const renderContext = {
-                canvasContext: context,
-                viewport: viewport
-            };
-            return page.render(renderContext).promise;
-        }).catch(function(err) {
-            console.error('Error rendering local PDF:', err);
-        });
-    };
-    reader.readAsArrayBuffer(selectedFileObj);
+    checkKirimButtonState();
 }
 
 function cancelSelectedFile() {
     const input = document.getElementById('file_proposal');
     const previewBox = document.getElementById('selectedFilePreview');
-    const inlineWrapper = document.getElementById('inlinePdfPreviewWrapper');
 
     if (input) input.value = '';
     if (previewBox) previewBox.classList.add('d-none');
-    if (inlineWrapper) inlineWrapper.classList.add('d-none');
     selectedFileObj = null;
+
+    checkKirimButtonState();
 }
 
 // ========================================================
-// BASE64 JSON PDF.JS CANVAS VIEWER (PROPOSAL)
+// ZOOM & PERCENTAGE CONTROLS
+// ========================================================
+function updateProposalZoomBadge() {
+    const el = document.getElementById('proposalZoomPercent');
+    if (el) el.textContent = Math.round((currentPdfScale / 1.35) * 100) + '%';
+}
+
+function updateSmZoomBadge() {
+    const el = document.getElementById('smZoomPercent');
+    if (el) el.textContent = Math.round((currentSmScale / 1.35) * 100) + '%';
+}
+
+function resetProposalZoom() {
+    currentPdfScale = 1.35;
+    updateProposalZoomBadge();
+    if (currentPdfDoc) renderAllProposalPages(currentPdfDoc);
+}
+
+function zoomProposalPdf(delta) {
+    if (!currentPdfDoc) return;
+    const newScale = Math.max(0.6, Math.min(2.6, currentPdfScale + delta));
+    if (newScale !== currentPdfScale) {
+        currentPdfScale = newScale;
+        updateProposalZoomBadge();
+        renderAllProposalPages(currentPdfDoc);
+    }
+}
+
+function resetSmZoom() {
+    currentSmScale = 1.35;
+    updateSmZoomBadge();
+    if (currentSmDoc) renderAllSmPages(currentSmDoc);
+}
+
+function zoomSmPdf(delta) {
+    if (!currentSmDoc) return;
+    const newScale = Math.max(0.6, Math.min(2.6, currentSmScale + delta));
+    if (newScale !== currentSmScale) {
+        currentSmScale = newScale;
+        updateSmZoomBadge();
+        renderAllSmPages(currentSmDoc);
+    }
+}
+
+// ========================================================
+// CONTINUOUS MULTI-PAGE RENDERERS
+// ========================================================
+function renderAllProposalPages(pdf) {
+    const container = document.getElementById('proposalPagesContainer');
+    const spinner = document.getElementById('canvasProposalSpinner');
+    const totalPagesBadge = document.getElementById('proposalTotalPagesBadge');
+    if (!container) return;
+
+    container.innerHTML = '';
+    container.style.display = 'flex';
+    if (spinner) spinner.style.display = 'none';
+    if (totalPagesBadge) totalPagesBadge.textContent = pdf.numPages + ' Halaman';
+
+    const dpr = window.devicePixelRatio || 1;
+    const renderScale = currentPdfScale * Math.max(dpr, 1.8);
+
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        const pageCard = document.createElement('div');
+        pageCard.className = 'position-relative d-flex flex-column align-items-center mb-4';
+        
+        const pageLabel = document.createElement('div');
+        pageLabel.className = 'badge bg-dark bg-opacity-75 text-white-50 px-2.5 py-1 mb-2 font-monospace';
+        pageLabel.style.fontSize = '0.72rem';
+        pageLabel.textContent = `Halaman ${pageNum} dari ${pdf.numPages}`;
+        
+        const canvas = document.createElement('canvas');
+        canvas.className = 'rounded-2 shadow bg-white';
+        canvas.style.display = 'block';
+        canvas.style.maxWidth = '100%';
+        canvas.style.height = 'auto';
+
+        pageCard.appendChild(pageLabel);
+        pageCard.appendChild(canvas);
+        container.appendChild(pageCard);
+
+        (function(pNum, cEl) {
+            pdf.getPage(pNum).then(function(page) {
+                const unscaledViewport = page.getViewport({ scale: currentPdfScale });
+                const viewport = page.getViewport({ scale: renderScale });
+
+                cEl.width = Math.floor(viewport.width);
+                cEl.height = Math.floor(viewport.height);
+                cEl.style.width = Math.floor(unscaledViewport.width) + 'px';
+                cEl.style.height = Math.floor(unscaledViewport.height) + 'px';
+
+                const context = cEl.getContext('2d');
+                context.imageSmoothingEnabled = true;
+                context.imageSmoothingQuality = 'high';
+
+                const renderContext = {
+                    canvasContext: context,
+                    viewport: viewport
+                };
+                return page.render(renderContext).promise;
+            }).catch(function(err) {
+                console.error(`Error rendering proposal page ${pNum}:`, err);
+            });
+        })(pageNum, canvas);
+    }
+}
+
+function renderAllSmPages(pdf) {
+    const container = document.getElementById('smPagesContainer');
+    const spinner = document.getElementById('canvasSmSpinner');
+    const totalPagesBadge = document.getElementById('smTotalPagesBadge');
+    if (!container) return;
+
+    container.innerHTML = '';
+    container.style.display = 'flex';
+    if (spinner) spinner.style.display = 'none';
+    if (totalPagesBadge) totalPagesBadge.textContent = pdf.numPages + ' Halaman';
+
+    const dpr = window.devicePixelRatio || 1;
+    const renderScale = currentSmScale * Math.max(dpr, 1.8);
+
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        const pageCard = document.createElement('div');
+        pageCard.className = 'position-relative d-flex flex-column align-items-center mb-4';
+        
+        const pageLabel = document.createElement('div');
+        pageLabel.className = 'badge bg-dark bg-opacity-75 text-white-50 px-2.5 py-1 mb-2 font-monospace';
+        pageLabel.style.fontSize = '0.72rem';
+        pageLabel.textContent = `Halaman ${pageNum} dari ${pdf.numPages}`;
+        
+        const canvas = document.createElement('canvas');
+        canvas.className = 'rounded-2 shadow bg-white';
+        canvas.style.display = 'block';
+        canvas.style.maxWidth = '100%';
+        canvas.style.height = 'auto';
+
+        pageCard.appendChild(pageLabel);
+        pageCard.appendChild(canvas);
+        container.appendChild(pageCard);
+
+        (function(pNum, cEl) {
+            pdf.getPage(pNum).then(function(page) {
+                const unscaledViewport = page.getViewport({ scale: currentSmScale });
+                const viewport = page.getViewport({ scale: renderScale });
+
+                cEl.width = Math.floor(viewport.width);
+                cEl.height = Math.floor(viewport.height);
+                cEl.style.width = Math.floor(unscaledViewport.width) + 'px';
+                cEl.style.height = Math.floor(unscaledViewport.height) + 'px';
+
+                const context = cEl.getContext('2d');
+                context.imageSmoothingEnabled = true;
+                context.imageSmoothingQuality = 'high';
+
+                const renderContext = {
+                    canvasContext: context,
+                    viewport: viewport
+                };
+                return page.render(renderContext).promise;
+            }).catch(function(err) {
+                console.error(`Error rendering SM page ${pNum}:`, err);
+            });
+        })(pageNum, canvas);
+    }
+}
+
+// Preview file lokal yang baru dipilih
+function openLocalProposalModal() {
+    if (!selectedFileObj) return;
+
+    const modalEl = document.getElementById('modalPreviewDokumenProposal');
+    if (!modalEl) return;
+
+    const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    bsModal.show();
+
+    const spinner = document.getElementById('canvasProposalSpinner');
+    const container = document.getElementById('proposalPagesContainer');
+    const nonPdfNotice = document.getElementById('nonPdfNoticeBox');
+    const zoomControls = document.getElementById('proposalZoomControls');
+    const headerEl = document.getElementById('modalPdfFilenameHeader');
+
+    if (spinner) spinner.style.display = 'block';
+    if (container) {
+        container.innerHTML = '';
+        container.style.display = 'none';
+    }
+    if (nonPdfNotice) nonPdfNotice.classList.add('d-none');
+    if (zoomControls) zoomControls.style.visibility = 'visible';
+
+    if (headerEl) {
+        headerEl.textContent = selectedFileObj.name + ' • Berkas Lokal Terpilih';
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const typedarray = new Uint8Array(e.target.result);
+        pdfjsLib.getDocument({ data: typedarray }).promise.then(function(pdf) {
+            currentPdfDoc = pdf;
+            currentPdfScale = 1.35;
+            updateProposalZoomBadge();
+            renderAllProposalPages(pdf);
+        }).catch(function(err) {
+            console.error('Error rendering local PDF:', err);
+            if (spinner) {
+                spinner.innerHTML = '<div class="text-white p-4 text-center"><i class="bi bi-exclamation-triangle-fill fs-2 d-block mb-2 text-warning"></i><strong>Gagal Membaca File PDF</strong><br><small class="text-white-50">' + (err.message || 'Format PDF tidak valid.') + '</small></div>';
+            }
+        });
+    };
+    reader.readAsArrayBuffer(selectedFileObj);
+}
+
+// ========================================================
+// BASE64 JSON PDF.JS CANVAS VIEWER (PROPOSAL SERVER)
 // ========================================================
 function openProposalCanvasModal(orderId) {
     currentOrderId = orderId;
@@ -993,17 +1188,20 @@ function openProposalCanvasModal(orderId) {
 
 function loadProposalData(orderId) {
     const spinner = document.getElementById('canvasProposalSpinner');
-    const canvas = document.getElementById('proposalPdfCanvas');
+    const container = document.getElementById('proposalPagesContainer');
     const nonPdfNotice = document.getElementById('nonPdfNoticeBox');
-    const ctrlGroup = document.getElementById('canvasControlsGroup');
+    const zoomControls = document.getElementById('proposalZoomControls');
 
     if (spinner) spinner.style.display = 'block';
-    if (canvas) canvas.style.display = 'none';
+    if (container) {
+        container.innerHTML = '';
+        container.style.display = 'none';
+    }
     if (nonPdfNotice) nonPdfNotice.classList.add('d-none');
-    if (ctrlGroup) ctrlGroup.style.visibility = 'hidden';
+    if (zoomControls) zoomControls.style.visibility = 'hidden';
 
-    currentPdfPage = 1;
-    currentPdfScale = 1.45;
+    currentPdfScale = 1.35;
+    updateProposalZoomBadge();
 
     const baseUri = '<?= ($BASE) ?>';
     const apiUrl = baseUri + '/order/' + orderId + '/proposal/raw-data?t=' + Date.now();
@@ -1037,69 +1235,15 @@ function loadProposalData(orderId) {
         .then(function(pdf) {
             if (!pdf) return;
             currentPdfDoc = pdf;
-            document.getElementById('proposalTotalPages').textContent = pdf.numPages;
-            if (ctrlGroup) ctrlGroup.style.visibility = 'visible';
-            renderProposalPage(currentPdfPage);
+            if (zoomControls) zoomControls.style.visibility = 'visible';
+            renderAllProposalPages(pdf);
         })
         .catch(function(err) {
             console.error('Error loading PDF canvas:', err);
             if (spinner) {
-                spinner.innerHTML = '<div class="text-danger p-4"><i class="bi bi-exclamation-triangle-fill fs-3 d-block mb-2"></i>Gagal memuat berkas proposal.<br><small class="text-muted">Silakan periksa kembali koneksi Anda.</small></div>';
+                spinner.innerHTML = '<div class="text-white p-4 text-center"><i class="bi bi-file-earmark-x fs-2 d-block mb-2 text-warning"></i><strong>Belum Ada Dokumen Proposal</strong><br><small class="text-white-50">' + (err.message || 'Silakan unggah dokumen proposal terlebih dahulu.') + '</small></div>';
             }
         });
-}
-
-function renderProposalPage(pageNum) {
-    if (!currentPdfDoc) return;
-    const canvas = document.getElementById('proposalPdfCanvas');
-    const spinner = document.getElementById('canvasProposalSpinner');
-    if (!canvas) return;
-
-    const dpr = window.devicePixelRatio || 1;
-    const renderScale = currentPdfScale * Math.max(dpr, 2.0);
-
-    currentPdfDoc.getPage(pageNum).then(function(page) {
-        const unscaledViewport = page.getViewport({ scale: currentPdfScale });
-        const viewport = page.getViewport({ scale: renderScale });
-        
-        const context = canvas.getContext('2d');
-        canvas.width = Math.floor(viewport.width);
-        canvas.height = Math.floor(viewport.height);
-        canvas.style.width = Math.floor(unscaledViewport.width) + 'px';
-        canvas.style.height = Math.floor(unscaledViewport.height) + 'px';
-        canvas.style.maxWidth = '100%';
-
-        context.imageSmoothingEnabled = true;
-        context.imageSmoothingQuality = 'high';
-
-        const renderContext = {
-            canvasContext: context,
-            viewport: viewport
-        };
-        return page.render(renderContext).promise;
-    }).then(function() {
-        if (spinner) spinner.style.display = 'none';
-        canvas.style.display = 'block';
-        document.getElementById('proposalCurrentPage').textContent = pageNum;
-    });
-}
-
-function changeProposalPage(delta) {
-    if (!currentPdfDoc) return;
-    const newPage = currentPdfPage + delta;
-    if (newPage >= 1 && newPage <= currentPdfDoc.numPages) {
-        currentPdfPage = newPage;
-        renderProposalPage(currentPdfPage);
-    }
-}
-
-function zoomProposalPdf(delta) {
-    if (!currentPdfDoc) return;
-    const newScale = currentPdfScale + delta;
-    if (newScale >= 0.8 && newScale <= 3.0) {
-        currentPdfScale = newScale;
-        renderProposalPage(currentPdfPage);
-    }
 }
 
 // ========================================================
@@ -1117,15 +1261,18 @@ function openSuratMasukCanvasModal(suratId) {
 
 function loadSuratMasukData(suratId) {
     const spinner = document.getElementById('canvasSmSpinner');
-    const canvas = document.getElementById('suratMasukPdfCanvas');
-    const ctrlGroup = document.getElementById('canvasSmControlsGroup');
+    const container = document.getElementById('smPagesContainer');
+    const zoomControls = document.getElementById('smZoomControls');
 
     if (spinner) spinner.style.display = 'block';
-    if (canvas) canvas.style.display = 'none';
-    if (ctrlGroup) ctrlGroup.style.visibility = 'hidden';
+    if (container) {
+        container.innerHTML = '';
+        container.style.display = 'none';
+    }
+    if (zoomControls) zoomControls.style.visibility = 'hidden';
 
-    currentSmPage = 1;
-    currentSmScale = 1.45;
+    currentSmScale = 1.35;
+    updateSmZoomBadge();
     currentSmDoc = null;
 
     const baseUri = '<?= ($BASE) ?>';
@@ -1144,69 +1291,15 @@ function loadSuratMasukData(suratId) {
         .then(function(pdf) {
             if (!pdf) return;
             currentSmDoc = pdf;
-            document.getElementById('smTotalPages').textContent = pdf.numPages;
-            if (ctrlGroup) ctrlGroup.style.visibility = 'visible';
-            renderSmPage(currentSmPage);
+            if (zoomControls) zoomControls.style.visibility = 'visible';
+            renderAllSmPages(pdf);
         })
         .catch(function(err) {
             console.error('Error loading SM PDF:', err);
             if (spinner) {
-                spinner.innerHTML = '<div class="text-danger p-4"><i class="bi bi-exclamation-triangle-fill fs-3 d-block mb-2"></i>Gagal memuat dokumen surat.<br><small class="text-muted">Silakan periksa kembali koneksi Anda.</small></div>';
+                spinner.innerHTML = '<div class="text-white p-4 text-center"><i class="bi bi-exclamation-triangle-fill fs-3 d-block mb-2 text-warning"></i><strong>Gagal memuat dokumen surat.</strong><br><small class="text-white-50">Silakan periksa kembali berkas atau koneksi Anda.</small></div>';
             }
         });
-}
-
-function renderSmPage(pageNum) {
-    if (!currentSmDoc) return;
-    const canvas = document.getElementById('suratMasukPdfCanvas');
-    const spinner = document.getElementById('canvasSmSpinner');
-    if (!canvas) return;
-
-    const dpr = window.devicePixelRatio || 1;
-    const renderScale = currentSmScale * Math.max(dpr, 2.0);
-
-    currentSmDoc.getPage(pageNum).then(function(page) {
-        const unscaledViewport = page.getViewport({ scale: currentSmScale });
-        const viewport = page.getViewport({ scale: renderScale });
-        
-        const context = canvas.getContext('2d');
-        canvas.width = Math.floor(viewport.width);
-        canvas.height = Math.floor(viewport.height);
-        canvas.style.width = Math.floor(unscaledViewport.width) + 'px';
-        canvas.style.height = Math.floor(unscaledViewport.height) + 'px';
-        canvas.style.maxWidth = '100%';
-
-        context.imageSmoothingEnabled = true;
-        context.imageSmoothingQuality = 'high';
-
-        const renderContext = {
-            canvasContext: context,
-            viewport: viewport
-        };
-        return page.render(renderContext).promise;
-    }).then(function() {
-        if (spinner) spinner.style.display = 'none';
-        canvas.style.display = 'block';
-        document.getElementById('smCurrentPage').textContent = pageNum;
-    });
-}
-
-function changeSmPage(delta) {
-    if (!currentSmDoc) return;
-    const newPage = currentSmPage + delta;
-    if (newPage >= 1 && newPage <= currentSmDoc.numPages) {
-        currentSmPage = newPage;
-        renderSmPage(currentSmPage);
-    }
-}
-
-function zoomSmPdf(delta) {
-    if (!currentSmDoc) return;
-    const newScale = currentSmScale + delta;
-    if (newScale >= 0.8 && newScale <= 3.0) {
-        currentSmScale = newScale;
-        renderSmPage(currentSmPage);
-    }
 }
 
 // ========================================================
@@ -1218,6 +1311,48 @@ function formatRupiahInput(el) {
     const hiddenEl = document.getElementById('inputBiayaReal');
     if (hiddenEl) hiddenEl.value = num;
     el.value = num > 0 ? num.toLocaleString('id-ID') : '';
+    checkKirimButtonState();
+}
+
+function checkKirimButtonState() {
+    const btnKirim = document.getElementById('btnKirimProposal');
+    const hintKirim = document.getElementById('hintKirimProposal');
+    if (!btnKirim) return;
+
+    const hasExistingFile = <?= (!empty($proposal['file_proposal']) ? 'true' : 'false') ?>;
+    const fileInput = document.getElementById('file_proposal');
+    const hasNewFile = (fileInput && fileInput.files && fileInput.files.length > 0) || (typeof selectedFileObj !== 'undefined' && selectedFileObj !== null);
+    const hasFile = hasExistingFile || hasNewFile;
+
+    const hiddenBiaya = document.getElementById('inputBiayaReal');
+    const biayaVal = hiddenBiaya ? (parseFloat(hiddenBiaya.value) || 0) : 0;
+    const hasCost = biayaVal > 0;
+
+    if (hasFile && hasCost) {
+        btnKirim.disabled = false;
+        btnKirim.title = 'Kirim proposal ke Ketua Tim OPTI';
+        if (hintKirim) {
+            hintKirim.classList.add('d-none');
+        }
+    } else {
+        btnKirim.disabled = true;
+        let hintMsg = '';
+        if (!hasFile && !hasCost) {
+            hintMsg = 'Isi estimasi total biaya (> Rp 0) dan unggah berkas proposal untuk mengaktifkan tombol kirim.';
+        } else if (!hasFile) {
+            hintMsg = 'Unggah berkas dokumen proposal untuk mengaktifkan tombol kirim.';
+        } else {
+            hintMsg = 'Isi estimasi total biaya / RAB (> Rp 0) untuk mengaktifkan tombol kirim.';
+        }
+        btnKirim.title = hintMsg;
+        const hintTextEl = document.getElementById('hintKirimProposalText');
+        if (hintTextEl) {
+            hintTextEl.textContent = hintMsg;
+        }
+        if (hintKirim) {
+            hintKirim.classList.remove('d-none');
+        }
+    }
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -1227,7 +1362,116 @@ document.addEventListener('DOMContentLoaded', function() {
         const val = parseInt(hiddenEl.value, 10) || 0;
         displayEl.value = val > 0 ? val.toLocaleString('id-ID') : '';
     }
+
+    checkKirimButtonState();
+
+    // Handle submit form untuk tombol Simpan Draf
+    const formProposal = document.getElementById('formProposal');
+    if (formProposal) {
+        formProposal.addEventListener('submit', function(e) {
+            const submitter = e.submitter;
+            const actionType = submitter ? submitter.value : (document.getElementById('hiddenActionType') ? document.getElementById('hiddenActionType').value : 'draft');
+            if (actionType === 'draft') {
+                if (submitter) {
+                    submitter.disabled = true;
+                    submitter.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Menyimpan...';
+                }
+            }
+        });
+    }
 });
+
+// Fungsi khusus konfirmasi Kirim Proposal (Tidak memicu loader global saat pop up konfirmasi)
+function confirmKirimProposalAction() {
+    const form = document.getElementById('formProposal');
+    if (!form) return;
+
+    const hasExistingFile = <?= (!empty($proposal['file_proposal']) ? 'true' : 'false') ?>;
+    const fileInput = document.getElementById('file_proposal');
+    const hasNewFile = (fileInput && fileInput.files && fileInput.files.length > 0) || (typeof selectedFileObj !== 'undefined' && selectedFileObj !== null);
+    const hasFile = hasExistingFile || hasNewFile;
+
+    const hiddenBiaya = document.getElementById('inputBiayaReal');
+    const biayaVal = hiddenBiaya ? (parseFloat(hiddenBiaya.value) || 0) : 0;
+    const hasCost = biayaVal > 0;
+
+    if (!hasFile || !hasCost) {
+        if (!hasFile) {
+            const dropzone = document.getElementById('dropzoneContainer');
+            if (dropzone) {
+                dropzone.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                dropzone.style.borderColor = '#dc3545';
+                setTimeout(() => { dropzone.style.borderColor = ''; }, 3000);
+            }
+        } else if (!hasCost) {
+            const inputBiaya = document.getElementById('inputBiayaDisplay');
+            if (inputBiaya) {
+                inputBiaya.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                inputBiaya.focus();
+            }
+        }
+        return false;
+    }
+
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: 'Kirim Proposal ke Ketua Tim?',
+            text: 'Apakah Anda yakin ingin mengirimkan berkas proposal dan estimasi biaya ini kepada Ketua Tim OPTI?',
+            icon: 'question',
+            iconColor: '#0d6efd',
+            background: '#ffffff',
+            showCancelButton: true,
+            confirmButtonText: '<i class="bi bi-send-fill me-1"></i> Ya, Kirim',
+            cancelButtonText: 'Batal',
+            reverseButtons: true,
+            customClass: {
+                popup: 'bg-white rounded-3 shadow border p-4',
+                title: 'fw-bold text-dark fs-6 mb-1',
+                htmlContainer: 'text-muted small mb-3',
+                confirmButton: 'btn btn-primary btn-sm px-3 py-1.5 fw-semibold',
+                cancelButton: 'btn btn-outline-secondary btn-sm px-3 py-1.5 me-2'
+            },
+            buttonsStyling: false
+        }).then(function(result) {
+            if (result.isConfirmed) {
+                const btn = document.getElementById('btnKirimProposal');
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Mengirim...';
+                }
+
+                let actInput = document.getElementById('hiddenActionType');
+                if (!actInput) {
+                    actInput = document.createElement('input');
+                    actInput.type = 'hidden';
+                    actInput.name = 'action_type';
+                    actInput.id = 'hiddenActionType';
+                    form.appendChild(actInput);
+                }
+                actInput.value = 'ajukan';
+                form.submit();
+            }
+        });
+    } else {
+        if (confirm('Apakah Anda yakin ingin mengirimkan berkas proposal dan estimasi biaya ini kepada Ketua Tim OPTI?')) {
+            const btn = document.getElementById('btnKirimProposal');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Mengirim...';
+            }
+            let actInput = document.getElementById('hiddenActionType');
+            if (!actInput) {
+                actInput = document.createElement('input');
+                actInput.type = 'hidden';
+                actInput.name = 'action_type';
+                actInput.id = 'hiddenActionType';
+                form.appendChild(actInput);
+            }
+            actInput.value = 'ajukan';
+            form.submit();
+        }
+    }
+}
 </script>
 <script>
     var deadlineIso = "<?= ($deadline_info['tanggal_deadline']) ?>";

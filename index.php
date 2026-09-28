@@ -220,6 +220,7 @@ $f3->route('GET /order/@id/invoice/buat', 'PembayaranOptiController->invoiceForm
 $f3->route('POST /order/@id/invoice/simpan', 'PembayaranOptiController->invoiceSimpan');
 $f3->route('GET /order/@id/pembayaran/tambah', 'PembayaranOptiController->tambahDariOrder');
 $f3->route('POST /order/@id/pembayaran/simpan', 'PembayaranOptiController->simpanDariOrder');
+$f3->route('GET /pembayaran/bukti/@id', 'PembayaranOptiController->unduhBukti');
 
 // ==========================================
 // ROUTE MODUL BAST & PENUTUPAN ORDER

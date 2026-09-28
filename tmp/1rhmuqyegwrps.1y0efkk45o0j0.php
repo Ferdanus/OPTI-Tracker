@@ -46,10 +46,10 @@
 }
 .filter-field-control:focus-within .input-group-text,
 .filter-field-control:focus-within .form-control {
-    border-color: #881337 !important;
+    border-color: #334155 !important;
 }
 .filter-field-control:focus-within {
-    box-shadow: 0 0 0 0.2rem rgba(136, 19, 55, 0.12) !important;
+    box-shadow: 0 0 0 0.2rem rgba(51, 65, 85, 0.12) !important;
     border-radius: 8px !important;
 }
 .filter-select-field {
@@ -60,8 +60,8 @@
     cursor: pointer;
 }
 .filter-select-field:focus {
-    border-color: #881337 !important;
-    box-shadow: 0 0 0 0.2rem rgba(136, 19, 55, 0.12) !important;
+    border-color: #334155 !important;
+    box-shadow: 0 0 0 0.2rem rgba(51, 65, 85, 0.12) !important;
     outline: none !important;
 }
 .filter-reset-btn {
@@ -80,6 +80,90 @@
     background-color: #f1f5f9 !important;
     border-color: #94a3b8 !important;
     color: #0f172a !important;
+}
+
+/* ========================================================================= */
+/* MODERN ROLE BADGE DESIGN SYSTEM (TEXT ONLY)                              */
+/* ========================================================================= */
+.role-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.775rem;
+    font-weight: 600;
+    padding: 0.35rem 0.85rem;
+    border-radius: 9999px;
+    letter-spacing: 0.015em;
+    line-height: 1.35;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+/* 1. Super Administrator (Dark Prestige Badge) */
+.role-badge-superadmin {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    color: #f8fafc !important;
+    border: 1px solid #334155;
+    box-shadow: 0 2px 5px rgba(15, 23, 42, 0.18);
+}
+
+/* 2. Ketua Tim Selulosa (Rose Ruby Tint) */
+.role-badge-katim-selulosa {
+    background: #fff1f2;
+    color: #9f1239 !important;
+    border: 1px solid #fecdd3;
+}
+
+/* 3. Ketua Tim Lingkungan (Emerald Forest Tint) */
+.role-badge-katim-lingkungan {
+    background: #f0fdf4;
+    color: #166534 !important;
+    border: 1px solid #bbf7d0;
+}
+
+/* 3b. Ketua Tim Mitra (Warm Amber/Gold Tint) */
+.role-badge-katim-mitra {
+    background: #fff7ed;
+    color: #c2410c !important;
+    border: 1px solid #fed7aa;
+}
+
+/* 4. Tim Kerja Selulosa (Cyan Sky Tint) */
+.role-badge-tk-selulosa {
+    background: #ecfeff;
+    color: #0e7490 !important;
+    border: 1px solid #a5f3fc;
+}
+
+/* 5. Tim Kerja Lingkungan (Teal Mint Tint) */
+.role-badge-tk-lingkungan {
+    background: #f0fdfa;
+    color: #0f766e !important;
+    border: 1px solid #99f6e4;
+}
+
+/* 6. Tim Mitra Industri (Warm Amber Gold Tint) */
+.role-badge-mitra {
+    background: #fffbeb;
+    color: #b45309 !important;
+    border: 1px solid #fde68a;
+}
+
+/* 7. Tim Keuangan (Royal Indigo Blue Tint) */
+.role-badge-keuangan {
+    background: #eff6ff;
+    color: #1d4ed8 !important;
+    border: 1px solid #bfdbfe;
+}
+
+/* Default / Fallback */
+.role-badge-default {
+    background: #f8fafc;
+    color: #475569 !important;
+    border: 1px solid #e2e8f0;
+}
+.role-badge-default i {
+    color: #64748b;
 }
 </style>
 
@@ -131,7 +215,7 @@
                     </div>
                 </div>
                 <h3 class="fw-bold text-dark mb-0 font-display"><?= ($cnt_keuangan) ?></h3>
-                <small class="text-muted" style="font-size: 0.73rem;">Billing &amp; Kasir</small>
+                <small class="text-muted" style="font-size: 0.73rem;">Pembayaran</small>
             </div>
         </div>
 
@@ -145,7 +229,7 @@
                     </div>
                 </div>
                 <h3 class="fw-bold text-dark mb-0 font-display"><?= ($cnt_katim) ?></h3>
-                <small class="text-muted" style="font-size: 0.73rem;">Selulosa &amp; Lingkungan</small>
+                <small class="text-muted" style="font-size: 0.73rem;">Selulosa, Lingkungan &amp; Mitra</small>
             </div>
         </div>
 
@@ -258,19 +342,10 @@
                                             <span class="fw-bold text-dark d-block" style="font-size: 0.88rem;"><?= ($p['nama_lengkap']) ?></span>
                                         </td>
                                         <td>
-                                            <?php if ($p['role_sistem'] == 'superadmin'): ?>
-                                                
-                                                    <span class="badge px-2.5 py-1.5 fw-medium text-white shadow-xs" style="background-color: #881337 !important; border: 1px solid #700f2b; font-size: 0.78rem; border-radius: 6px;">
-                                                        Super Administrator
-                                                    </span>
-                                                
-                                                <?php else: ?>
-                                                    <span class="badge <?= ($p['role_badge_class']) ?> px-2.5 py-1.5 fw-medium" style="<?= ($p['role_badge_style']) ?>; font-size: 0.78rem; border-radius: 6px;">
-                                                        <?= ($p['role_label'])."
+                                            <span class="<?= ($p['role_badge_class']) ?>">
+                                                <?= ($p['role_label'])."
 " ?>
-                                                    </span>
-                                                
-                                            <?php endif; ?>
+                                            </span>
                                         </td>
                                         <td class="text-end">
                                             <div class="d-inline-flex align-items-center justify-content-end gap-2">
@@ -339,7 +414,7 @@
 <div class="modal fade" id="modalTambahPengguna" tabindex="-1" aria-labelledby="modalTambahPenggunaLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow">
-            <div class="modal-header border-bottom py-3 px-4" style="background: linear-gradient(135deg, #881337 0%, #4c0519 100%); color: white;">
+            <div class="modal-header border-bottom py-3 px-4" style="background: linear-gradient(135deg, #334155 0%, #0f172a 100%); color: white;">
                 <div class="d-flex align-items-center gap-2">
                     <div class="rounded-circle p-1.5 bg-white bg-opacity-20 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
                         <i class="bi bi-person-plus-fill text-white"></i>
@@ -360,7 +435,7 @@
                         <?php if (count($unassigned_users) > 0): ?>
                             
                                 <select name="id_user" class="form-select" required>
-                                    <option value="" disabled selected>-- Pilih pegawai --</option>
+                                    <option value="" disabled selected>Pilih pegawai</option>
                                     <?php foreach (($unassigned_users?:[]) as $u): ?>
                                         <option value="<?= ($u['id_user']) ?>">
                                             <?= ($u['nama_user']) ?> (#<?= ($u['id_user']) ?>)
@@ -380,8 +455,8 @@
                         <label class="form-label small fw-bold text-dark">
                             Role Sistem <span class="text-danger">*</span>
                         </label>
-                        <select name="role_sistem" class="form-select" required>
-                            <option value="" disabled selected>-- Pilih peran / role --</option>
+                        <select name="role_sistem" id="tambah_role_sistem" class="form-select" required>
+                            <option value="" disabled selected>Pilih peran / role</option>
                             <?php foreach (($role_options?:[]) as $rKey=>$rMeta): ?>
                                 <option value="<?= ($rKey) ?>">
                                     <?= ($rMeta['label'])."
@@ -389,12 +464,15 @@
                                 </option>
                             <?php endforeach; ?>
                         </select>
+                        <div id="tambah_ketua_warning" class="alert alert-warning py-2 px-3 small mt-2 mb-0 d-none">
+                            <i class="bi bi-exclamation-triangle-fill me-1"></i> <span id="tambah_ketua_warning_text"></span>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer bg-light py-2 px-4 border-top">
                     <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Batal</button>
                     <?php if (count($unassigned_users) > 0): ?>
-                        <button type="submit" class="btn btn-primary btn-sm fw-semibold px-3">
+                        <button type="submit" id="btnSubmitTambah" class="btn btn-primary btn-sm fw-semibold px-3">
                             <i class="bi bi-check-circle me-1"></i> Simpan Pengguna
                         </button>
                     <?php endif; ?>
@@ -438,11 +516,14 @@
                                 </option>
                             <?php endforeach; ?>
                         </select>
+                        <div id="edit_ketua_warning" class="alert alert-warning py-2 px-3 small mt-2 mb-0 d-none">
+                            <i class="bi bi-exclamation-triangle-fill me-1"></i> <span id="edit_ketua_warning_text"></span>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer bg-light py-2 px-4 border-top">
                     <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary btn-sm fw-semibold px-3">
+                    <button type="submit" id="btnSubmitUbah" class="btn btn-primary btn-sm fw-semibold px-3">
                         <i class="bi bi-check-circle me-1"></i> Perbarui Role
                     </button>
                 </div>
@@ -491,38 +572,111 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Handler Modal Ubah Role
-    const modalUbahEl = document.getElementById('modalUbahRole');
-    const modalUbah = new bootstrap.Modal(modalUbahEl);
-    document.querySelectorAll('.btn-ubah-role').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            const id = this.getAttribute('data-id');
-            const nama = this.getAttribute('data-nama');
-            const role = this.getAttribute('data-role');
+    let occupiedKetua = {};
+    try {
+        occupiedKetua = <?= ($this->raw($occupied_ketua_json ?: '{}')) ?>;
+    } catch (err) {
+        occupiedKetua = {};
+    }
 
-            document.getElementById('edit_id_user').value = id;
-            document.getElementById('edit_id_display').innerText = id;
-            document.getElementById('edit_nama_user').innerText = nama;
-            document.getElementById('edit_role_sistem').value = role;
+    function checkKetuaOccupied(role, currentUserId, warningEl, warningTextEl, submitBtn) {
+        if (!role || !occupiedKetua[role]) {
+            if (warningEl) warningEl.classList.add('d-none');
+            if (submitBtn) submitBtn.disabled = false;
+            return;
+        }
+        const curr = occupiedKetua[role];
+        if (curr.id_user && parseInt(curr.id_user) !== parseInt(currentUserId)) {
+            const roleLabels = {
+                'superadmin': 'Super Administrator',
+                'ketua_tim_selulosa': 'Ketua Tim Selulosa',
+                'ketua_tim_lingkungan': 'Ketua Tim Lingkungan',
+                'ketua_tim_mitra': 'Ketua Tim Mitra'
+            };
+            const label = roleLabels[role] || 'posisi ini';
+            if (warningTextEl) {
+                warningTextEl.innerHTML = 'Peran <strong>' + label + '</strong> saat ini sudah dijabat oleh <strong>' + curr.nama_user + '</strong> (#' + curr.id_user + '). Sesuai aturan sistem, posisi ' + label + ' hanya dapat diisi oleh maksimal 1 orang. Silakan ubah/cabut peran dari <strong>' + curr.nama_user + '</strong> terlebih dahulu.';
+            }
+            if (warningEl) warningEl.classList.remove('d-none');
+            if (submitBtn) submitBtn.disabled = true;
+        } else {
+            if (warningEl) warningEl.classList.add('d-none');
+            if (submitBtn) submitBtn.disabled = false;
+        }
+    }
+
+    // Listener Modal Tambah Pengguna
+    const selectTambahRole = document.getElementById('tambah_role_sistem');
+    const warningTambah = document.getElementById('tambah_ketua_warning');
+    const warningTambahText = document.getElementById('tambah_ketua_warning_text');
+    const btnSubmitTambah = document.getElementById('btnSubmitTambah');
+
+    if (selectTambahRole) {
+        selectTambahRole.addEventListener('change', function() {
+            checkKetuaOccupied(this.value, 0, warningTambah, warningTambahText, btnSubmitTambah);
+        });
+    }
+
+    // Modal Instance & Elements
+    const modalUbahEl = document.getElementById('modalUbahRole');
+    const modalUbah = modalUbahEl ? new bootstrap.Modal(modalUbahEl) : null;
+    const modalHapusEl = document.getElementById('modalHapusRole');
+    const modalHapus = modalHapusEl ? new bootstrap.Modal(modalHapusEl) : null;
+
+    const selectEditRole = document.getElementById('edit_role_sistem');
+    const warningEdit = document.getElementById('edit_ketua_warning');
+    const warningEditText = document.getElementById('edit_ketua_warning_text');
+    const btnSubmitUbah = document.getElementById('btnSubmitUbah');
+
+    if (selectEditRole) {
+        selectEditRole.addEventListener('change', function() {
+            const currId = parseInt(document.getElementById('edit_id_user').value || 0);
+            checkKetuaOccupied(this.value, currId, warningEdit, warningEditText, btnSubmitUbah);
+        });
+    }
+
+    // Event Delegation: Handler Klik Tombol Ubah & Cabut Role (Tahan terhadap filter/render ulang)
+    document.addEventListener('click', function(e) {
+        const btnUbah = e.target.closest('.btn-ubah-role');
+        if (btnUbah && modalUbah) {
+            e.preventDefault();
+            const id = btnUbah.getAttribute('data-id');
+            const nama = btnUbah.getAttribute('data-nama');
+            const role = btnUbah.getAttribute('data-role');
+
+            const inputId = document.getElementById('edit_id_user');
+            const displayId = document.getElementById('edit_id_display');
+            const displayNama = document.getElementById('edit_nama_user');
+            const selectRole = document.getElementById('edit_role_sistem');
+
+            if (inputId) inputId.value = id;
+            if (displayId) displayId.innerText = id;
+            if (displayNama) displayNama.innerText = nama;
+            if (selectRole) selectRole.value = role;
+
+            checkKetuaOccupied(role, parseInt(id), warningEdit, warningEditText, btnSubmitUbah);
 
             modalUbah.show();
-        });
-    });
+            return;
+        }
 
-    // Handler Modal Hapus / Cabut Role
-    const modalHapusEl = document.getElementById('modalHapusRole');
-    const modalHapus = new bootstrap.Modal(modalHapusEl);
-    document.querySelectorAll('.btn-hapus-role').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            const id = this.getAttribute('data-id');
-            const nama = this.getAttribute('data-nama');
+        const btnHapus = e.target.closest('.btn-hapus-role');
+        if (btnHapus && modalHapus) {
+            e.preventDefault();
+            const id = btnHapus.getAttribute('data-id');
+            const nama = btnHapus.getAttribute('data-nama');
 
-            document.getElementById('hapus_id_user').value = id;
-            document.getElementById('hapus_id_display').innerText = id;
-            document.getElementById('hapus_nama_user').innerText = nama;
+            const inputIdHapus = document.getElementById('hapus_id_user');
+            const displayIdHapus = document.getElementById('hapus_id_display');
+            const displayNamaHapus = document.getElementById('hapus_nama_user');
+
+            if (inputIdHapus) inputIdHapus.value = id;
+            if (displayIdHapus) displayIdHapus.innerText = id;
+            if (displayNamaHapus) displayNamaHapus.innerText = nama;
 
             modalHapus.show();
-        });
+            return;
+        }
     });
 
     // =========================================================================

@@ -41,9 +41,9 @@
 /* Active State: Semua */
 .filter-tab-pill.active-all {
     color: #ffffff !important;
-    background-color: var(--color-primary, #881337) !important;
-    border-color: var(--color-primary, #881337) !important;
-    box-shadow: 0 2px 6px rgba(136, 19, 55, 0.25) !important;
+    background-color: var(--color-primary, #334155) !important;
+    border-color: var(--color-primary, #334155) !important;
+    box-shadow: 0 2px 6px rgba(51, 65, 85, 0.25) !important;
 }
 .filter-tab-pill.active-all .count-chip {
     background-color: rgba(255, 255, 255, 0.25) !important;
@@ -92,7 +92,7 @@
 
 /* Active State: Perlu Revisi */
 .filter-tab-pill.active-revisi {
-    color: #881337 !important;
+    color: #991b1b !important;
     background-color: #ffe4e6 !important;
     border-color: #fca5a5 !important;
     box-shadow: 0 2px 6px rgba(225, 29, 72, 0.15) !important;
@@ -101,6 +101,26 @@
     background-color: #e11d48 !important;
     border-color: #be123c !important;
     color: #ffffff !important;
+}
+
+/* Status Proposal Badges - High Contrast & Harmonized Theme */
+.badge-pill-success { background-color: #ecfdf5 !important; color: #065f46 !important; border: 1px solid #a7f3d0 !important; }
+.badge-pill-warning { background-color: #fffbeb !important; color: #92400e !important; border: 1px solid #fde68a !important; }
+.badge-pill-danger { background-color: #fef2f2 !important; color: #991b1b !important; border: 1px solid #fecaca !important; }
+.badge-pill-info { background-color: #f0f9ff !important; color: #0369a1 !important; border: 1px solid #bae6fd !important; }
+.badge-pill-secondary { background-color: #f1f5f9 !important; color: #334155 !important; border: 1px solid #cbd5e1 !important; }
+.badge-pill-primary { background-color: #eff6ff !important; color: #1d4ed8 !important; border: 1px solid #bfdbfe !important; }
+
+.table td .badge {
+    font-size: 0.74rem !important;
+    font-weight: 600 !important;
+    padding: 0.35rem 0.75rem !important;
+    border-radius: 9999px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03) !important;
+    white-space: nowrap !important;
 }
 </style>
 
@@ -118,8 +138,9 @@
     </div>
     <div class="d-flex gap-2">
         <?php if (!$is_tim_kerja): ?>
-            <a href="<?= ($BASE) ?>/disposisi-masuk" class="btn btn-outline-primary btn-sm px-3 py-1.5 fw-semibold">
-                <i class="bi bi-inbox me-1"></i> Permintaan Masuk
+            <a href="<?= ($BASE) ?>/disposisi-masuk" class="btn btn-primary btn-sm px-3 py-2 fw-semibold shadow-sm d-inline-flex align-items-center gap-2">
+                <i class="bi bi-inbox-fill"></i>
+                <span>Permintaan Masuk</span>
             </a>
         <?php endif; ?>
     </div>
@@ -266,10 +287,10 @@
                     <?php if (!$is_tim_kerja): ?>
                         <th class="py-3 px-3">PIC Peneliti</th>
                     <?php endif; ?>
-                    <th class="py-3 px-3">Estimasi Biaya</th>
+                    <th class="py-3 px-3 text-nowrap" style="min-width: 140px; white-space: nowrap;">Estimasi Biaya</th>
                     <th class="py-3 px-3 text-center">Berkas</th>
                     <th class="py-3 px-3 text-center">Status Proposal</th>
-                    <th class="py-3 px-4 text-end" style="width: 150px;">Aksi</th>
+                    <th class="py-3 px-3 text-center" style="width: 130px; white-space: nowrap;">Aksi</th>
                 </tr>
             </thead>
             <tbody>
@@ -279,17 +300,27 @@
                             <tr>
                                 <!-- No. Order -->
                                 <td class="py-3 px-4">
-                                    <a href="<?= ($BASE) ?>/order/<?= ($row['id']) ?>/proposal" class="fw-bold font-monospace text-primary text-decoration-none d-block">
-                                        <?= ($row['nomor_order'])."
+                                    <?php if ($row['jenis_layanan_opti'] == 'lingkungan'): ?>
+                                        
+                                            <a href="<?= ($BASE) ?>/order/<?= ($row['id']) ?>/biaya-lingkungan" class="fw-bold font-monospace text-primary text-decoration-none d-block">
+                                                <?= ($row['nomor_order'])."
 " ?>
-                                    </a>
+                                            </a>
+                                        
+                                        <?php else: ?>
+                                            <a href="<?= ($BASE) ?>/order/<?= ($row['id']) ?>/proposal" class="fw-bold font-monospace text-primary text-decoration-none d-block">
+                                                <?= ($row['nomor_order'])."
+" ?>
+                                            </a>
+                                        
+                                    <?php endif; ?>
                                     <small class="text-muted" style="font-size: 0.72rem;"><?= (date('d M Y', strtotime($row['tanggal_masuk']))) ?></small>
                                 </td>
 
                                 <!-- Pelanggan & Divisi -->
                                 <td class="py-3 px-3">
                                     <div class="fw-bold text-dark" style="font-size: 0.85rem;"><?= ($row['nama_perusahaan']) ?></div>
-                                    <span class="badge <?= ($row['jenis_layanan_opti'] == 'selulosa' ? 'bg-primary-subtle text-primary' : 'bg-success-subtle text-success') ?> px-2 py-0.5 rounded-pill" style="font-size: 0.68rem;">
+                                    <span class="badge <?= ($row['jenis_layanan_opti'] == 'selulosa' ? 'bg-danger-subtle text-danger border border-danger-subtle' : 'bg-success-subtle text-success border border-success-subtle') ?> px-2 py-0.5 rounded-pill" style="font-size: 0.68rem;">
                                         OPTI <?= (ucfirst($row['jenis_layanan_opti']))."
 " ?>
                                     </span>
@@ -311,9 +342,9 @@
                                     </td>
                                 <?php endif; ?>
 
-                                <!-- Estimasi Biaya (RAB) -->
-                                <td class="py-3 px-3 font-monospace fw-bold text-dark" style="font-size: 0.84rem;">
-                                    Rp <?= (number_format($row['estimasi_total_biaya'] ?: 0, 0, ',', '.'))."
+                                <!-- Estimasi Biaya (RAB / Tarif Uji) -->
+                                <td class="py-3 px-3 font-monospace fw-bold text-dark text-nowrap" style="font-size: 0.84rem; white-space: nowrap;">
+                                    Rp <?= (number_format($row['estimasi_total_biaya'] ?: ($row['estimasi_biaya'] ?: 0), 0, ',', '.'))."
 " ?>
                                 </td>
 
@@ -322,7 +353,7 @@
                                     <?php if ($row['file_proposal']): ?>
                                         
                                             <a href="<?= ($BASE) ?>/<?= ($row['file_proposal']) ?>" target="_blank" class="btn btn-sm btn-outline-danger p-1 px-2 rounded-pill shadow-xs" title="Unduh Berkas Proposal">
-                                                <i class="bi bi-file-earmark-pdf-fill"></i>
+                                                 <i class="bi bi-file-earmark-pdf-fill"></i>
                                             </a>
                                         
                                         <?php else: ?>
@@ -333,27 +364,27 @@
 
                                 <!-- Status Proposal -->
                                 <td class="py-3 px-3 text-center">
-                                    <?php if ($row['status_proposal'] == 'disetujui_ketua'): ?>
+                                    <?php if ($row['status_proposal'] == 'disetujui_ketua' || $row['status_proposal'] == 'disetujui_pimpinan' || $row['status_proposal'] == 'disetujui' || $row['status_proposal_biaya'] == 'siap_penawaran'): ?>
                                         <span class="badge badge-pill-success">
                                             <i class="bi bi-check-circle-fill me-1"></i> Disetujui Ka. Tim
                                         </span>
                                     <?php endif; ?>
-                                    <?php if ($row['status_proposal'] == 'diajukan'): ?>
+                                    <?php if ($row['status_proposal'] == 'diajukan' || $row['status_proposal_biaya'] == 'menunggu_approval'): ?>
                                         <span class="badge badge-pill-info">
                                             <i class="bi bi-clock-history me-1"></i> Menunggu Review
                                         </span>
                                     <?php endif; ?>
-                                    <?php if ($row['status_proposal'] == 'ditolak'): ?>
+                                    <?php if ($row['status_proposal'] == 'ditolak' || $row['status_proposal_biaya'] == 'perlu_revisi'): ?>
                                         <span class="badge badge-pill-danger">
                                             <i class="bi bi-exclamation-diamond-fill me-1"></i> Perlu Revisi
                                         </span>
                                     <?php endif; ?>
-                                    <?php if ($row['status_proposal'] == 'draft_disimpan'): ?>
+                                    <?php if ($row['status_proposal'] == 'draft_disimpan' || $row['status_proposal_biaya'] == 'draft_disimpan'): ?>
                                         <span class="badge badge-pill-warning">
                                             <i class="bi bi-bookmark-check-fill me-1"></i> Draft Disimpan
                                         </span>
                                     <?php endif; ?>
-                                    <?php if (!$row['status_proposal'] || $row['status_proposal'] == 'draft'): ?>
+                                    <?php if ((!$row['status_proposal'] || $row['status_proposal'] == 'draft') && $row['status_proposal_biaya'] != 'siap_penawaran' && $row['status_proposal_biaya'] != 'menunggu_approval' && $row['status_proposal_biaya'] != 'draft_disimpan'): ?>
                                         <span class="badge badge-pill-secondary">
                                             <i class="bi bi-pencil-square me-1"></i> Draf PIC
                                         </span>
@@ -361,12 +392,23 @@
                                 </td>
 
                                 <!-- Aksi -->
-                                <td class="py-3 px-4 text-end">
-                                    <a href="<?= ($BASE) ?>/order/<?= ($row['id']) ?>/proposal" class="btn btn-primary btn-sm px-3 py-1 rounded-pill fw-semibold text-white shadow-xs d-inline-flex align-items-center gap-1" style="font-size: 0.76rem;">
-                                        <i class="bi <?= ($is_tim_kerja ? 'bi-pencil-fill' : 'bi-journal-check') ?>"></i>
-                                        <?= ($is_tim_kerja ? 'Kerjakan' : 'Kelola')."
+                                <td class="py-3 px-3 text-center text-nowrap" style="white-space: nowrap;">
+                                    <?php if ($row['jenis_layanan_opti'] == 'lingkungan'): ?>
+                                        
+                                            <a href="<?= ($BASE) ?>/order/<?= ($row['id']) ?>/biaya-lingkungan" class="btn btn-primary btn-sm px-3 py-1 rounded-pill fw-semibold text-white shadow-xs d-inline-flex align-items-center gap-1.5" style="font-size: 0.76rem;">
+                                                <i class="bi <?= ($is_tim_kerja ? 'bi-calculator-fill' : 'bi-sliders') ?>"></i>
+                                                <?= ($is_tim_kerja ? 'Tarif & Parameter' : 'Kelola')."
 " ?>
-                                    </a>
+                                            </a>
+                                        
+                                        <?php else: ?>
+                                            <a href="<?= ($BASE) ?>/order/<?= ($row['id']) ?>/proposal" class="btn btn-primary btn-sm px-3 py-1 rounded-pill fw-semibold text-white shadow-xs d-inline-flex align-items-center gap-1.5" style="font-size: 0.76rem;">
+                                                <i class="bi <?= ($is_tim_kerja ? 'bi-pencil-fill' : 'bi-journal-check') ?>"></i>
+                                                <?= ($is_tim_kerja ? 'Kerjakan' : 'Kelola')."
+" ?>
+                                            </a>
+                                        
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                         <?php endforeach; ?>

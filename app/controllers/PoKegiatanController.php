@@ -26,6 +26,10 @@ class PoKegiatanController extends Controller {
  * Lunas -> "dibayarkan pada tanggal [tanggal pembayaran terakhir]"
  * Belum lunas (termin/kosong) -> "-"
  */
+protected function divisiDariRequest($f3) {
+    $d = strtolower(trim((string) $f3->get('GET.divisi')));
+    return in_array($d, ['lingkungan', 'selulosa'], true) ? $d : '';
+}
 protected function getInfoPembayaranOtomatis($orderId, $statusKeuangan) {
     if ($statusKeuangan !== 'lunas') {
         return '-';
@@ -225,7 +229,12 @@ $po->jadwal = json_encode([
     /** GET /po-kegiatan -- PO yang sudah dibuat + order yang udah ditunjuk tapi PO-nya belum dibuat */
 public function index($f3) {
     $this->requireAuth();
+    $divisi = $this->divisiDariRequest($f3);
+    $params = $divisi ? [1 => $divisi] : [];
 
+    // [FIX] kondisi divisi sebelumnya dihitung ($where) tapi kelupaan gak
+    // ditempelin ke $sql, jadi klik "PO Lingkungan"/"PO Selulosa" di sidebar
+    // sama sekali gak nyaring data -- sekarang beneran ditempelin ke WHERE-nya.
     $sql = "SELECT p.id AS po_id, p.nomor_po, p.status AS po_status, p.created_at AS po_created_at,
                    o.id AS order_id, o.nomor_order, o.judul_kegiatan, o.jenis_layanan_opti, o.status_tinjauan,
                    o.ketua_pelaksana_id, o.ketua_pelaksana_at,
@@ -233,26 +242,25 @@ public function index($f3) {
             FROM order_layanan o
             JOIN tb_customer c ON o.id_customer = c.id_customer
             LEFT JOIN po_kegiatan p ON p.order_id = o.id
-            WHERE o.ketua_pelaksana_id IS NOT NULL
+            WHERE o.ketua_pelaksana_id IS NOT NULL"
+            . ($divisi ? " AND o.jenis_layanan_opti = ?" : "") . "
             ORDER BY COALESCE(p.created_at, o.ketua_pelaksana_at) DESC";
 
-    $daftarPo = $this->safeQuery($sql);
-    foreach ($daftarPo as &$r) {
-        $r['nama_mitra'] = \Customer::formatNamaPerusahaan($r['pt_cv'] ?? '', $r['nama_mitra'] ?? '');
-    }
-    unset($r);
+$daftarPo = $this->safeQuery($sql, $params);
+
 
     $totalMenunggu = count(array_filter($daftarPo, function ($r) { return empty($r['po_id']); }));
     $totalDraft    = count(array_filter($daftarPo, function ($r) { return $r['po_status'] === 'draft'; }));
     $totalTerkirim = count(array_filter($daftarPo, function ($r) { return $r['po_status'] === 'terkirim'; }));
 
     $f3->set('daftar_po', $daftarPo);
+    $f3->set('divisi', $divisi);
     $f3->set('total_po', count($daftarPo));
     $f3->set('total_menunggu', $totalMenunggu);
     $f3->set('total_draft', $totalDraft);
     $f3->set('total_terkirim', $totalTerkirim);
 
-    $this->render('katim_kerja/po-kegiatan/index.html', 'Petunjuk Operasional (PO)', 'po_kegiatan');
+    $this->render('katim_kerja/po-kegiatan/index.html', 'Petunjuk Operasional (PO)', $divisi ? 'po_' . $divisi : 'po_kegiatan');
 }
 
     /**
@@ -275,27 +283,39 @@ public function index($f3) {
             ['slug' => 'uji_profesiensi',     'label' => 'Uji Profesiensi',                             'icon' => 'bi-award'],
         ];
 
-        // Order yang boleh dibikinin PO: status_tinjauan = 'layak' DAN belum pernah punya PO
-        $daftarOrder = $this->safeQuery(
-            "SELECT o.id, o.nomor_order, o.judul_kegiatan, o.tanggal_masuk, o.jenis_layanan_opti,
+        $divisi = $this->divisiDariRequest($f3);
+
+$sqlOrder = "SELECT o.id, o.nomor_order, o.judul_kegiatan, o.tanggal_masuk, o.jenis_layanan_opti,
                     c.nmcustomer AS nama_mitra, c.alamatcustomer AS alamat_mitra, c.pt_cv
              FROM order_layanan o
              JOIN tb_customer c ON o.id_customer = c.id_customer
-             WHERE o.status_tinjauan = 'layak'
-               AND o.id NOT IN (SELECT order_id FROM po_kegiatan)
-             ORDER BY o.id DESC"
-        );
-        foreach ($daftarOrder as &$r) {
-            $r['nama_mitra'] = \Customer::formatNamaPerusahaan($r['pt_cv'] ?? '', $r['nama_mitra'] ?? '');
-        }
-        unset($r);
 
-        $f3->set('daftar_pegawai', $this->safeQuery('SELECT id_user, nama_user FROM tb_arsipuser ORDER BY nama_user ASC'));
-        $f3->set('nomor_po_saran', $this->generateNomorPo());
-        $f3->set('jenis_po_list', $jenisPoList);
-        $f3->set('daftar_order', $daftarOrder);
+             WHERE o.ketua_pelaksana_id IS NOT NULL
+               AND NOT EXISTS (SELECT 1 FROM po_kegiatan p WHERE p.order_id = o.id)
+               AND o.status NOT IN ('batal', 'ditolak', 'selesai')";
+$paramsOrder = [];
+$i = 1;
 
-        $this->render('katim_kerja/po-kegiatan/pilih_jenis.html', 'Buat Petunjuk Operasional', 'po_kegiatan');
+
+if ($divisi) {
+    $sqlOrder .= " AND o.jenis_layanan_opti = ?";
+    $paramsOrder[$i++] = $divisi;
+}
+if ($this->getUserRole() === 'tim_kerja') {
+    $sqlOrder .= " AND o.ketua_pelaksana_id = ?";
+    $paramsOrder[$i++] = (int) $this->getUserId();
+}
+$sqlOrder .= " ORDER BY o.id DESC";
+
+$daftarOrder = $this->safeQuery($sqlOrder, $paramsOrder);
+
+$f3->set('daftar_pegawai', $this->safeQuery('SELECT id_user, nama_user FROM tb_arsipuser ORDER BY nama_user ASC'));
+$f3->set('nomor_po_saran', $this->generateNomorPo());
+$f3->set('jenis_po_list', $jenisPoList);
+$f3->set('daftar_order', $daftarOrder);
+$f3->set('divisi', $divisi);
+
+$this->render('katim_kerja/po-kegiatan/pilih_jenis.html', 'Buat Petunjuk Operasional', $divisi ? 'po_' . $divisi : 'po_kegiatan');
     }
 
     /**

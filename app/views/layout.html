@@ -1267,13 +1267,19 @@
 
                     <!-- Petunjuk Operasional (PO) Kegiatan -->
                     <li>
-                        <a class="sidebar-link {{ @active_menu == 'po_kegiatan' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan" title="Petunjuk Operasional (PO)">
+                        <a class="sidebar-link {{ @active_menu == 'po_lingkungan' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?divisi=lingkungan" title="Petunjuk Operasional Lingkungan">
                             <i class="bi bi-clipboard-check"></i> <span>PO Lingkungan</span>
+                            <check if="{{ @jumlah_notif_po_lingkungan > 0 }}">
+                                <span class="badge rounded-pill bg-danger ms-auto">{{ @jumlah_notif_po_lingkungan }}</span>
+                            </check>
                         </a>
                     </li>
                     <li>
-                        <a class="sidebar-link {{ @active_menu == 'po_kegiatan' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan" title="Petunjuk Operasional (PO)">
+                        <a class="sidebar-link {{ @active_menu == 'po_selulosa' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?divisi=selulosa" title="Petunjuk Operasional Selulosa">
                             <i class="bi bi-clipboard-check"></i> <span>PO Selulosa</span>
+                            <check if="{{ @jumlah_notif_po_selulosa > 0 }}">
+                                <span class="badge rounded-pill bg-danger ms-auto">{{ @jumlah_notif_po_selulosa }}</span>
+                            </check>
                         </a>
                     </li>
                 </check>

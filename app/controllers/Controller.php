@@ -236,6 +236,37 @@ class Controller {
         }
         $this->f3->set('jumlah_notif_proposal', $notifProposalCount);
 
+        $notifPo = array('lingkungan' => 0, 'selulosa' => 0);
+try {
+    if (in_array($role, array('tim_kerja', 'ketua_tim', 'superadmin'))) {
+        $sqlPo = "SELECT o.jenis_layanan_opti AS divisi, COUNT(*) AS c
+                  FROM order_layanan o
+                  WHERE o.ketua_pelaksana_id IS NOT NULL
+                    AND o.jenis_layanan_opti IN ('lingkungan', 'selulosa')
+                    AND NOT EXISTS (SELECT 1 FROM po_kegiatan p WHERE p.order_id = o.id)
+                    AND o.status NOT IN ('batal', 'ditolak', 'selesai')";
+        $paramsPo = array();
+
+        if ($role === 'tim_kerja') {
+            $sqlPo .= " AND o.ketua_pelaksana_id = ?";
+            $paramsPo[1] = (int)$userId;
+        } elseif ($role === 'ketua_tim' && in_array($layanan, array('selulosa', 'lingkungan'))) {
+            $sqlPo .= " AND o.jenis_layanan_opti = ?";
+            $paramsPo[1] = $layanan;
+        }
+
+        $sqlPo .= " GROUP BY o.jenis_layanan_opti";
+
+        foreach ($this->db->exec($sqlPo, $paramsPo) as $r) {
+            $notifPo[strtolower($r['divisi'])] = (int)$r['c'];
+        }
+    }
+} catch (\Exception $ePo) {
+    $notifPo = array('lingkungan' => 0, 'selulosa' => 0);
+}
+$this->f3->set('jumlah_notif_po_lingkungan', $notifPo['lingkungan']);
+$this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
+
         // Hitung notifikasi antrean Pembayaran untuk Tim Keuangan & Superadmin
         $notifKeuanganCount = 0;
         if ($role === 'keuangan' || $role === 'superadmin' || $isTimMitra) {

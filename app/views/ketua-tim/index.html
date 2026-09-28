@@ -180,6 +180,7 @@ function tgl(s) {
     var d = new Date(s.replace(' ', 'T'));
     return d.getDate() + ' ' + BULAN[d.getMonth() + 1] + ' ' + d.getFullYear();
 }
+
 function initial(nama) { return (nama || '?').replace(/^(PT|CV|UD)\.?\s+/i, '').trim().charAt(0).toUpperCase(); }
 function divisiPill(d) { return d === 'selulosa' ? '<span class="ktp-divisi sel">Selulosa</span>' : '<span class="ktp-divisi ling">Lingkungan</span>'; }
 
