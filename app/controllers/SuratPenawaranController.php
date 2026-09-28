@@ -108,7 +108,7 @@ class SuratPenawaranController extends Controller
         // Secara default, hanya tampilkan Surat Penawaran aktif/terbaru per order untuk mencegah duplikasi di tabel
         if (!$tampilkanSemua) {
             $sql .= " AND (sp.id IN (
-                SELECT COALESCE(ANY_VALUE(o2.surat_penawaran_id), MAX(sp2.id))
+                SELECT COALESCE(MAX(o2.surat_penawaran_id), MAX(sp2.id))
                 FROM tb_surat_penawaran sp2
                 LEFT JOIN order_layanan o2 ON o2.id = sp2.order_id
                 GROUP BY COALESCE(sp2.order_id, sp2.id)
