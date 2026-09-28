@@ -262,6 +262,59 @@ class Controller {
         $this->f3->set('list_notifikasi_user', $userNotifList);
         $this->f3->set('unread_notif_count', $unreadNotifCount);
 
+        // Daftar Pengguna Aktif untuk Fitur Pop-Up "Ganti User"
+        $switchUsers = array();
+        try {
+            $switchUsersRaw = $this->db->exec(
+                "SELECT id_user AS id, 
+                        nama_user AS nama_lengkap, 
+                        si_opti AS role_sistem, 
+                        login, 
+                        bidang, 
+                        foto_profil
+                 FROM tb_arsipuser
+                 WHERE (si_opti IS NOT NULL AND si_opti != '' AND si_opti != 'user')
+                   AND (status = 1 OR status = '1' OR status = 'aktif')
+                 ORDER BY 
+                    CASE 
+                        WHEN si_opti = 'superadmin' THEN 1
+                        WHEN si_opti LIKE 'ketua_tim%' OR si_opti LIKE 'katim%' THEN 2
+                        WHEN si_opti = 'tim_mitra_industri' OR si_opti = 'admin_order' OR si_opti = 'tim_mitra' THEN 3
+                        WHEN si_opti = 'keuangan' THEN 4
+                        WHEN si_opti LIKE 'tim_kerja%' OR si_opti LIKE 'tk_%' THEN 5
+                        ELSE 6
+                    END ASC,
+                    nama_user ASC"
+            );
+
+            if (!empty($switchUsersRaw)) {
+                foreach ($switchUsersRaw as $u) {
+                    $roleMeta = class_exists('\PenggunaController') 
+                        ? \PenggunaController::resolveRoleMeta((int)$u['id'], trim($u['role_sistem'] ?? '')) 
+                        : array('label' => ucwords(str_replace('_', ' ', $u['role_sistem'])), 'badge_class' => 'role-badge role-badge-default', 'icon' => 'bi-person');
+                    
+                    $u['role_label'] = $roleMeta['label'] ?? ucwords(str_replace('_', ' ', $u['role_sistem']));
+                    $u['role_badge_class'] = $roleMeta['badge_class'] ?? 'role-badge role-badge-default';
+                    $u['role_icon'] = $roleMeta['icon'] ?? 'bi-person';
+                    $u['role_category'] = $roleMeta['category'] ?? 'manajemen';
+                    
+                    $initials = '';
+                    $words = explode(' ', trim($u['nama_lengkap'] ?? 'User'));
+                    foreach ($words as $w) {
+                        if (!empty($w)) {
+                            $initials .= strtoupper($w[0]);
+                        }
+                    }
+                    $u['initials'] = substr($initials, 0, 2) ?: 'U';
+                    $u['is_current'] = ((int)$u['id'] === (int)$userId);
+                    $switchUsers[] = $u;
+                }
+            }
+        } catch (\Exception $eSwitch) {
+            $switchUsers = array();
+        }
+        $this->f3->set('switch_users_list', $switchUsers);
+
         echo \Template::instance()->render('layout.html');
     }
 
