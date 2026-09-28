@@ -2187,6 +2187,9 @@
                         </div>
                     </div>
                     <div class="d-flex align-items-center gap-2">
+                        <a href="{{ @BASE }}/pembayaran/tambah?order_id={{ @order.id }}" class="btn btn-sm btn-outline-primary fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5" title="Buka Halaman Detail Pembayaran Order">
+                            <i class="bi bi-credit-card-2-front"></i> Buka Halaman Pembayaran
+                        </a>
                         <check if="{{ @order.status_keuangan == 'lunas' || !empty(@riwayat_bayar) }}">
                             <span class="badge bg-success-subtle text-success border border-success-subtle fw-semibold px-2.5 py-1">
                                 <i class="bi bi-check2-all me-1"></i> Pembayaran Terkonfirmasi (Lunas)
@@ -2258,7 +2261,10 @@
                                                 </check>
                                             </span>
                                         </div>
-                                        <div class="col-sm-3 text-sm-end">
+                                        <div class="col-sm-3 text-sm-end d-flex flex-wrap justify-content-sm-end gap-2">
+                                            <a href="{{ @BASE }}/pembayaran/tambah?order_id={{ @order.id }}" class="btn btn-outline-secondary btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5">
+                                                <i class="bi bi-credit-card-2-front"></i> Detail Pembayaran
+                                            </a>
                                             <check if="{{ !empty(@riwayat_bayar[0].bukti_bayar) }}">
                                                 <a href="{{ @BASE }}/{{ @riwayat_bayar[0].bukti_bayar }}" target="_blank" class="btn btn-outline-primary btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5">
                                                     <i class="bi bi-file-earmark-check-fill text-primary"></i> Lihat Bukti Transfer
@@ -2320,12 +2326,17 @@
                                             Rp {{ number_format(@penawaran.nominal_penawaran ?: @order.estimasi_biaya, 0, ',', '.') }}
                                         </h4>
                                     </div>
-                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1 small">
-                                        <i class="bi bi-hourglass-split me-1"></i> Menunggu Upload Bukti Pembayaran
-                                    </span>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <a href="{{ @BASE }}/pembayaran/tambah?order_id={{ @order.id }}" class="btn btn-sm btn-primary fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5">
+                                            <i class="bi bi-credit-card-2-front"></i> Buka Halaman Pembayaran
+                                        </a>
+                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1 small">
+                                            <i class="bi bi-hourglass-split me-1"></i> Menunggu Upload Bukti Pembayaran
+                                        </span>
+                                    </div>
                                 </div>
                                 <p class="small text-secondary mb-0">
-                                    Tagihan telah diterbitkan melalui sistem invoice balai. Tim Keuangan cukup mengunggah bukti pembayaran di bawah ini agar Tim OPTI dapat segera memulai pengujian sampel.
+                                    Tagihan telah diterbitkan melalui sistem invoice balai. Tim Keuangan dapat mengunggah bukti pembayaran di bawah ini atau melalui <a href="{{ @BASE }}/pembayaran/tambah?order_id={{ @order.id }}" class="fw-semibold text-primary text-decoration-none">Halaman Detail Pembayaran <i class="bi bi-arrow-right"></i></a> agar Tim OPTI dapat segera memulai pengujian sampel.
                                 </p>
                             </div>
 
