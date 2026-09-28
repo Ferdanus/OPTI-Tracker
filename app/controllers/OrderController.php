@@ -738,8 +738,8 @@ class OrderController extends Controller {
                 $langkahBerikutnya['target_card'] = '#cardPenawaran';
             }
         } elseif ($currentStep === 6) {
-            $langkahBerikutnya['judul'] = 'Konfirmasi Penerimaan Pembayaran / Bukti Setor PNBP';
-            $langkahBerikutnya['deskripsi'] = 'Penawaran harga telah disetujui (DEAL) oleh pelanggan. Tim Keuangan perlu mencatat bukti transfer pembayaran atau setoran billing PNBP agar pengujian laboratorium dapat dijadwalkan.';
+            $langkahBerikutnya['judul'] = 'Konfirmasi Penerimaan Pembayaran';
+            $langkahBerikutnya['deskripsi'] = 'Penawaran harga telah disetujui (DEAL) oleh pelanggan. Tim Keuangan perlu mencatat bukti transfer pembayaran agar pengujian laboratorium dapat dijadwalkan.';
             $langkahBerikutnya['penanggung_jawab'] = 'Pelanggan & Tim Keuangan';
             $langkahBerikutnya['role_icon'] = 'bi-credit-card-2-front-fill';
             $langkahBerikutnya['tipe_badge'] = 'warning';
@@ -3046,7 +3046,7 @@ class OrderController extends Controller {
                         'target_role'     => 'keuangan',
                         'target_layanan'  => 'semua',
                         'judul'           => 'Disposisi Pembayaran: Order #' . ($order['nomor_order'] ?? $id),
-                        'pesan'           => "Penawaran " . ($order['nama_perusahaan'] ?? 'Klien') . " telah disepakati (DEAL senilai Rp " . number_format($displayNominal, 0, ',', '.') . "). Siap untuk proses pembayaran & PNBP.",
+                        'pesan'           => "Penawaran " . ($order['nama_perusahaan'] ?? 'Klien') . " telah disepakati (DEAL senilai Rp " . number_format($displayNominal, 0, ',', '.') . "). Siap untuk proses pembayaran.",
                         'tipe'            => 'success',
                         'icon'            => 'bi-wallet2',
                         'link_url'        => "/pembayaran/tambah?order_id={$id}",

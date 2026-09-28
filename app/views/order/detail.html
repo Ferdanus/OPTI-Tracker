@@ -684,7 +684,7 @@
                     </a>
 
                     <!-- Step 6: Pembayaran (Tim Keuangan) -->
-                    <a href="#cardPembayaran" class="step-checkpoint" data-bs-toggle="tooltip" title="Tahap 6: Konfirmasi bukti transfer pembayaran / setoran PNBP kas negara">
+                    <a href="#cardPembayaran" class="step-checkpoint" data-bs-toggle="tooltip" title="Tahap 6: Konfirmasi bukti transfer pembayaran">
                         <div class="step-circle {{ @stepper[6].state }}">
                             <check if="{{ @stepper[6].state == 'done' }}"><i class="bi bi-check-lg"></i></check>
                             <check if="{{ @stepper[6].state == 'current' }}"><i class="bi bi-receipt-cutoff"></i></check>
@@ -3853,7 +3853,7 @@ function confirmDisposisiKeuanganDetail(nomorOrder, nomorSurat) {
     if (typeof Swal !== 'undefined') {
         Swal.fire({
             title: 'Disposisi ke Tim Keuangan?',
-            text: 'Penawaran DEAL (Order #' + nomorOrder + ') akan diteruskan ke antrean Tim Keuangan untuk pencatatan pembayaran & PNBP.',
+            text: 'Penawaran DEAL (Order #' + nomorOrder + ') akan diteruskan ke antrean Tim Keuangan untuk pencatatan pembayaran.',
             icon: 'question',
             iconColor: '#0f172a',
             background: '#ffffff',
