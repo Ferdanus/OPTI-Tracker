@@ -80,10 +80,11 @@ class PenggunaController extends Controller {
     }
 
     /**
-     * Master daftar role Ketua Tim (posisi kepemimpinan yang dibatasi maksimal 1 orang per role)
+     * Master daftar role Terbatas / Tunggal (Super Administrator & Ketua Tim yang dibatasi maksimal 1 orang per role)
      */
     public static function getKetuaRoles(): array {
         return array(
+            'superadmin'           => 'Super Administrator',
             'ketua_tim_selulosa'   => 'Ketua Tim Selulosa',
             'ketua_tim_lingkungan' => 'Ketua Tim Lingkungan',
             'ketua_tim_mitra'      => 'Ketua Tim Mitra'
@@ -210,11 +211,11 @@ class PenggunaController extends Controller {
         $cntPelaksana = (int)($statsRaw[0]['cnt_pelaksana'] ?? 0);
         $cntNonRole = (int)($statsRaw[0]['cnt_non_role'] ?? 0);
 
-        // Ambil daftar ketua yang saat ini sedang aktif menjabat (untuk validasi & info UI)
+        // Ambil daftar role tunggal (Superadmin & Ketua Tim) yang saat ini sedang aktif menjabat (untuk validasi & info UI)
         $currentKetuaList = $this->db->exec("
             SELECT id_user, nama_user, si_opti 
             FROM tb_arsipuser 
-            WHERE si_opti IN ('ketua_tim_selulosa', 'ketua_tim_lingkungan', 'ketua_tim_mitra', 'katim_selulosa', 'katim_lingkungan', 'katim_mitra', 'ketua_tim_mitra_industri')
+            WHERE si_opti IN ('superadmin', 'ketua_tim_selulosa', 'ketua_tim_lingkungan', 'ketua_tim_mitra', 'katim_selulosa', 'katim_lingkungan', 'katim_mitra', 'ketua_tim_mitra_industri')
         ");
         $occupiedKetua = array();
         foreach ($currentKetuaList as $k) {
@@ -279,7 +280,7 @@ class PenggunaController extends Controller {
             return;
         }
 
-        // Validasi aturan: Setiap posisi Ketua Tim hanya boleh dijabat oleh 1 orang pengguna
+        // Validasi aturan: Posisi Superadmin & Ketua Tim hanya boleh dijabat oleh 1 orang pengguna
         $normRole = self::normalizeRoleKey($roleSistem);
         $ketuaRoles = self::getKetuaRoles();
         if (isset($ketuaRoles[$normRole])) {
@@ -307,7 +308,7 @@ class PenggunaController extends Controller {
                 $currKetuaName = $existingKetua[0]['nama_user'];
                 $currKetuaId = $existingKetua[0]['id_user'];
                 $roleTitle = $ketuaRoles[$normRole];
-                $this->setFlashError("Peran <strong>{$roleTitle}</strong> saat ini sudah dijabat oleh <strong>{$currKetuaName}</strong> (#{$currKetuaId}). Setiap posisi Ketua Tim hanya dapat diisi oleh maksimal 1 orang. Silakan ubah atau cabut peran pengguna tersebut terlebih dahulu.");
+                $this->setFlashError("Peran <strong>{$roleTitle}</strong> saat ini sudah dijabat oleh <strong>{$currKetuaName}</strong> (#{$currKetuaId}). Sesuai aturan sistem, posisi {$roleTitle} hanya dapat diisi oleh maksimal 1 orang. Silakan ubah atau cabut peran pengguna tersebut terlebih dahulu.");
                 $f3->reroute('/pengguna');
                 return;
             }
@@ -375,7 +376,7 @@ class PenggunaController extends Controller {
             return;
         }
 
-        // Validasi aturan: Setiap posisi Ketua Tim hanya boleh dijabat oleh 1 orang pengguna
+        // Validasi aturan: Posisi Superadmin & Ketua Tim hanya boleh dijabat oleh 1 orang pengguna
         $normRole = self::normalizeRoleKey($roleSistem);
         $ketuaRoles = self::getKetuaRoles();
         if (isset($ketuaRoles[$normRole])) {
@@ -403,7 +404,7 @@ class PenggunaController extends Controller {
                 $currKetuaName = $existingKetua[0]['nama_user'];
                 $currKetuaId = $existingKetua[0]['id_user'];
                 $roleTitle = $ketuaRoles[$normRole];
-                $this->setFlashError("Peran <strong>{$roleTitle}</strong> saat ini sudah dijabat oleh <strong>{$currKetuaName}</strong> (#{$currKetuaId}). Setiap posisi Ketua Tim hanya dapat diisi oleh maksimal 1 orang. Silakan ubah atau cabut peran pengguna tersebut terlebih dahulu.");
+                $this->setFlashError("Peran <strong>{$roleTitle}</strong> saat ini sudah dijabat oleh <strong>{$currKetuaName}</strong> (#{$currKetuaId}). Sesuai aturan sistem, posisi {$roleTitle} hanya dapat diisi oleh maksimal 1 orang. Silakan ubah atau cabut peran pengguna tersebut terlebih dahulu.");
                 $f3->reroute('/pengguna');
                 return;
             }

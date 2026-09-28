@@ -582,8 +582,15 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         const curr = occupiedKetua[role];
         if (curr.id_user && parseInt(curr.id_user) !== parseInt(currentUserId)) {
+            const roleLabels = {
+                'superadmin': 'Super Administrator',
+                'ketua_tim_selulosa': 'Ketua Tim Selulosa',
+                'ketua_tim_lingkungan': 'Ketua Tim Lingkungan',
+                'ketua_tim_mitra': 'Ketua Tim Mitra'
+            };
+            const label = roleLabels[role] || 'posisi ini';
             if (warningTextEl) {
-                warningTextEl.innerHTML = 'Posisi Ketua Tim ini saat ini sudah dijabat oleh <strong>' + curr.nama_user + '</strong> (#' + curr.id_user + '). Sesuai aturan sistem, posisi Ketua Tim hanya dapat diisi oleh maksimal 1 orang. Silakan ubah/cabut peran dari <strong>' + curr.nama_user + '</strong> terlebih dahulu.';
+                warningTextEl.innerHTML = 'Peran <strong>' + label + '</strong> saat ini sudah dijabat oleh <strong>' + curr.nama_user + '</strong> (#' + curr.id_user + '). Sesuai aturan sistem, posisi ' + label + ' hanya dapat diisi oleh maksimal 1 orang. Silakan ubah/cabut peran dari <strong>' + curr.nama_user + '</strong> terlebih dahulu.';
             }
             if (warningEl) warningEl.classList.remove('d-none');
             if (submitBtn) submitBtn.disabled = true;
