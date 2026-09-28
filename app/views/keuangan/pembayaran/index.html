@@ -40,6 +40,7 @@
             </div>
             <div class="col-md-3">
                 <select class="form-select form-select-sm" id="filterTahun">
+                    <option value="">Semua Tahun</option>
                     <repeat group="{{ @daftar_tahun }}" value="{{ @thn }}">
                         <option value="{{ @thn }}">{{ @thn }}</option>
                     </repeat>
@@ -280,8 +281,8 @@ var currentTab = 'baru';
 var filterState = {
     baru:     { q: '', divisi: '', bulan: '', tahun: '' },
     berjalan: { q: '', divisi: '', bulan: '', tahun: '' },
-    lunas:    { q: '', divisi: '', bulan: String(bulanSekarang), tahun: String(tahunSekarang) },
-    histori:  { q: '', divisi: '', bulan: String(bulanSekarang), tahun: String(tahunSekarang) }
+    lunas:    { q: '', divisi: '', bulan: '', tahun: '' },
+    histori:  { q: '', divisi: '', bulan: '', tahun: '' }
 };
 
 function simpanFilterAktifKeState() {

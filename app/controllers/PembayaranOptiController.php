@@ -18,145 +18,178 @@ class PembayaranOptiController extends Controller {
 protected $allowedMime = ['application/pdf'];
     protected $maxSize     = 5242880; // 5MB
 
-    /** GET /pembayaran */
-    /** GET /pembayaran */
-public function index($f3) {
-    $this->requirePermission('pembayaran:view', '/dashboard');
-    $userRole    = $this->getUserRole();
-    $isKetuaTim  = ($userRole === 'ketua_tim');
-    $divisiKatim = $_SESSION['jenis_layanan_opti'] ?? '';
-
-    // ---- Tab 1: Baru Masuk ----
-    $sqlBaru = "SELECT o.id, o.nomor_order, o.judul_kegiatan, o.estimasi_biaya, o.tanggal_masuk,
-               o.jenis_layanan_opti,
-               c.nmcustomer AS nama_perusahaan, c.pt_cv,
-               sp.id AS sp_id, sp.surat_kesanggupan_bayar
-        FROM order_layanan o
-        JOIN tb_customer c ON o.id_customer = c.id_customer
-        LEFT JOIN tb_surat_penawaran sp ON sp.order_id = o.id AND sp.status_respon_klien = 'deal'
-        WHERE o.status_penawaran = 'deal'
-          AND o.id NOT IN (SELECT DISTINCT order_id FROM opti_pembayaran)
-        ORDER BY o.tanggal_masuk DESC";
-    $daftarBaru = $this->safeQuery($sqlBaru);
-    foreach ($daftarBaru as &$o) {
-        $o['nama_perusahaan'] = \Customer::formatNamaPerusahaan($o['pt_cv'] ?? '', $o['nama_perusahaan'] ?? '');
-        $o['biaya_acuan'] = !empty($o['nominal_penawaran']) ? (float)$o['nominal_penawaran'] : (float)$o['estimasi_biaya'];
-        $t = strtotime($o['tanggal_masuk']);
-        $o['tahun_masuk'] = $t ? (int) date('Y', $t) : null;
-        $o['bulan_masuk'] = $t ? (int) date('n', $t) : null;
+    protected function ensureSchema(): void {
+        static $done = false;
+        if ($done) return;
+        try {
+            $colsSp = $this->db->exec("SHOW COLUMNS FROM tb_surat_penawaran LIKE 'surat_kesanggupan_bayar'");
+            if (empty($colsSp)) {
+                $this->db->exec("ALTER TABLE tb_surat_penawaran ADD COLUMN surat_kesanggupan_bayar VARCHAR(255) NULL AFTER status_respon_klien");
+            }
+            $colsPay = $this->db->exec("SHOW COLUMNS FROM opti_pembayaran LIKE 'is_kesanggupan_bayar'");
+            if (empty($colsPay)) {
+                $this->db->exec("ALTER TABLE opti_pembayaran ADD COLUMN is_kesanggupan_bayar TINYINT(1) NOT NULL DEFAULT 0 AFTER status_verifikasi");
+            }
+            $done = true;
+        } catch (\Exception $e) {}
     }
-    unset($o);
 
-    // ---- Tab 2 & 3 digabung -- basis opti_pembayaran LANGSUNG, bukan status_keuangan ----
-    $sqlPunyaPembayaran = "SELECT o.id, o.nomor_order, o.judul_kegiatan, o.estimasi_biaya, o.created_at,
-                                  o.jenis_layanan_opti, o.disposisi_katim_at,
-                                  c.nmcustomer AS nama_perusahaan, c.pt_cv,
-                                  sp.id AS sp_id, sp.surat_kesanggupan_bayar, sp.nominal_penawaran,
-                                  COALESCE((SELECT SUM(p.jumlah) FROM opti_pembayaran p WHERE p.order_id = o.id AND p.status_verifikasi = 'terverifikasi'), 0) AS total_terbayar,
-                                  COALESCE((SELECT COUNT(p.id) FROM opti_pembayaran p WHERE p.order_id = o.id AND p.is_kesanggupan_bayar = 0), 0) AS jumlah_termin,
-                                  COALESCE((SELECT MAX(p.is_kesanggupan_bayar) FROM opti_pembayaran p WHERE p.order_id = o.id), 0) AS punya_kesanggupan_bayar,
-                                  (SELECT MAX(p.tanggal_bayar) FROM opti_pembayaran p WHERE p.order_id = o.id AND p.status_verifikasi = 'terverifikasi') AS tanggal_bayar_terakhir
-                           FROM order_layanan o
-                           JOIN tb_customer c ON o.id_customer = c.id_customer
-                           LEFT JOIN tb_surat_penawaran sp ON sp.order_id = o.id AND sp.status_respon_klien = 'deal'
-                           WHERE o.id IN (SELECT DISTINCT order_id FROM opti_pembayaran)";
-    $rowsPembayaran = $this->safeQuery($sqlPunyaPembayaran);
+    /** GET /pembayaran */
+    public function index($f3) {
+        $this->requirePermission('pembayaran:view', '/dashboard');
+        $this->ensureSchema();
+        $userRole    = $this->getUserRole();
+        $isKetuaTim  = ($userRole === 'ketua_tim');
+        $divisiKatim = $_SESSION['jenis_layanan_opti'] ?? '';
 
-    $daftarBerjalan = [];
-    $daftarLunas = [];
-
-    foreach ($rowsPembayaran as $o) {
-        $o['nama_perusahaan'] = \Customer::formatNamaPerusahaan($o['pt_cv'] ?? '', $o['nama_perusahaan'] ?? '');
-        $biayaAcuan = !empty($o['nominal_penawaran']) ? (float) $o['nominal_penawaran'] : (float) $o['estimasi_biaya'];
-        $terbayar   = (float) $o['total_terbayar'];
-
-        if ($biayaAcuan > 0 && $terbayar >= $biayaAcuan) {
-            $t = strtotime($o['tanggal_bayar_terakhir']);
-            $o['biaya_acuan']   = $biayaAcuan;
-            $o['tanggal_lunas'] = $o['tanggal_bayar_terakhir'];
-            $o['tahun_lunas']   = $t ? (int) date('Y', $t) : null;
-            $o['bulan_lunas']   = $t ? (int) date('n', $t) : null;
-            $daftarLunas[] = $o;
-        } else {
-            $o['biaya_acuan']  = $biayaAcuan;
-            $o['sisa_tagihan'] = max(0, $biayaAcuan - $terbayar);
-            $o['persen_bayar'] = $biayaAcuan > 0 ? min(100, round(($terbayar / $biayaAcuan) * 100, 1)) : 0;
-            $daftarBerjalan[] = $o;
+        // ---- Tab 1: Baru Masuk (Order yang sudah Deal / Siap Bayar tapi belum ada transaksi pembayaran) ----
+        $sqlBaru = "SELECT o.id, o.nomor_order, o.judul_kegiatan, o.estimasi_biaya, o.tanggal_masuk, o.created_at,
+                           o.jenis_layanan_opti, o.status_keuangan, o.status_penawaran, o.status_rancop,
+                           c.nmcustomer AS nama_perusahaan, c.pt_cv,
+                           sp.id AS sp_id, sp.surat_kesanggupan_bayar, sp.nominal_penawaran
+                    FROM order_layanan o
+                    JOIN tb_customer c ON o.id_customer = c.id_customer
+                    LEFT JOIN tb_surat_penawaran sp ON sp.order_id = o.id
+                    WHERE (
+                        o.status_penawaran = 'deal'
+                        OR o.status_rancop = 'deal'
+                        OR o.status_keuangan = 'menunggu_pembayaran'
+                        OR (sp.id IS NOT NULL AND (sp.status_respon_klien = 'deal' OR (sp.surat_kesanggupan_bayar IS NOT NULL AND sp.surat_kesanggupan_bayar != '')))
+                        OR o.status IN ('penawaran_deal', 'menunggu_pembayaran')
+                    )
+                    AND o.id NOT IN (SELECT DISTINCT order_id FROM opti_pembayaran)
+                    AND (o.status_keuangan IS NULL OR o.status_keuangan != 'lunas')
+                    AND (o.status IS NULL OR o.status NOT IN ('batal', 'ditolak'))
+                    AND (o.status_rancop IS NULL OR o.status_rancop != 'batal')
+                    ORDER BY o.id DESC";
+        $daftarBaru = $this->safeQuery($sqlBaru);
+        foreach ($daftarBaru as &$o) {
+            $o['nama_perusahaan'] = \Customer::formatNamaPerusahaan($o['pt_cv'] ?? '', $o['nama_perusahaan'] ?? '');
+            $o['biaya_acuan'] = !empty($o['nominal_penawaran']) ? (float)$o['nominal_penawaran'] : (float)$o['estimasi_biaya'];
+            $t = !empty($o['tanggal_masuk']) ? strtotime($o['tanggal_masuk']) : (!empty($o['created_at']) ? strtotime($o['created_at']) : null);
+            $o['tahun_masuk'] = $t ? (int) date('Y', $t) : null;
+            $o['bulan_masuk'] = $t ? (int) date('n', $t) : null;
         }
+        unset($o);
+
+        // ---- Tab 2 & 3: Sedang Berjalan & Lunas ----
+        $sqlPunyaPembayaran = "SELECT o.id, o.nomor_order, o.judul_kegiatan, o.estimasi_biaya, o.created_at, o.tanggal_masuk,
+                                      o.jenis_layanan_opti, o.disposisi_katim_at, o.status_keuangan,
+                                      c.nmcustomer AS nama_perusahaan, c.pt_cv,
+                                      sp.id AS sp_id, sp.surat_kesanggupan_bayar, sp.nominal_penawaran,
+                                      COALESCE((SELECT SUM(p.jumlah) FROM opti_pembayaran p WHERE p.order_id = o.id AND p.status_verifikasi = 'terverifikasi'), 0) AS total_terbayar,
+                                      COALESCE((SELECT COUNT(p.id) FROM opti_pembayaran p WHERE p.order_id = o.id AND (p.is_kesanggupan_bayar = 0 OR p.is_kesanggupan_bayar IS NULL)), 0) AS jumlah_termin,
+                                      COALESCE((SELECT MAX(p.is_kesanggupan_bayar) FROM opti_pembayaran p WHERE p.order_id = o.id), 0) AS punya_kesanggupan_bayar,
+                                      (SELECT MAX(p.tanggal_bayar) FROM opti_pembayaran p WHERE p.order_id = o.id AND p.status_verifikasi = 'terverifikasi') AS tanggal_bayar_terakhir
+                               FROM order_layanan o
+                               JOIN tb_customer c ON o.id_customer = c.id_customer
+                               LEFT JOIN tb_surat_penawaran sp ON sp.order_id = o.id
+                               WHERE o.id IN (SELECT DISTINCT order_id FROM opti_pembayaran)
+                                  OR o.status_keuangan IN ('lunas', 'sebagian', 'terbayar_sebagian')
+                               ORDER BY o.id DESC";
+        $rowsPembayaran = $this->safeQuery($sqlPunyaPembayaran);
+
+        $daftarBerjalan = [];
+        $daftarLunas = [];
+
+        foreach ($rowsPembayaran as $o) {
+            $o['nama_perusahaan'] = \Customer::formatNamaPerusahaan($o['pt_cv'] ?? '', $o['nama_perusahaan'] ?? '');
+            $biayaAcuan = !empty($o['nominal_penawaran']) ? (float) $o['nominal_penawaran'] : (float) $o['estimasi_biaya'];
+            $terbayar   = (float) $o['total_terbayar'];
+
+            if (($biayaAcuan > 0 && $terbayar >= $biayaAcuan) || ($o['status_keuangan'] ?? '') === 'lunas') {
+                $tglLunas = !empty($o['tanggal_bayar_terakhir']) ? $o['tanggal_bayar_terakhir'] : (!empty($o['tanggal_masuk']) ? $o['tanggal_masuk'] : date('Y-m-d'));
+                $t = strtotime($tglLunas);
+                $o['biaya_acuan']   = $biayaAcuan;
+                $o['tanggal_lunas'] = $tglLunas;
+                $o['tahun_lunas']   = $t ? (int) date('Y', $t) : null;
+                $o['bulan_lunas']   = $t ? (int) date('n', $t) : null;
+                $daftarLunas[] = $o;
+            } else {
+                $o['biaya_acuan']  = $biayaAcuan;
+                $o['sisa_tagihan'] = max(0, $biayaAcuan - $terbayar);
+                $o['persen_bayar'] = $biayaAcuan > 0 ? min(100, round(($terbayar / $biayaAcuan) * 100, 1)) : 0;
+                $daftarBerjalan[] = $o;
+            }
+        }
+
+        usort($daftarLunas, function ($a, $b) { return strtotime($b['tanggal_lunas'] ?? '') <=> strtotime($a['tanggal_lunas'] ?? ''); });
+        usort($daftarBerjalan, function ($a, $b) { return strtotime($b['created_at'] ?? '') <=> strtotime($a['created_at'] ?? ''); });
+
+        // ---- Tab 4: Histori Transaksi ----
+        $sqlHistori = "SELECT p.*, o.nomor_order, o.jenis_layanan_opti, c.nmcustomer AS nama_perusahaan
+                       FROM opti_pembayaran p
+                       JOIN order_layanan o ON p.order_id = o.id
+                       JOIN tb_customer c ON o.id_customer = c.id_customer
+                       ORDER BY p.tanggal_bayar DESC, p.id DESC";
+        $daftarHistori = $this->safeQuery($sqlHistori);
+        foreach ($daftarHistori as &$h) {
+            $t = strtotime($h['tanggal_bayar']);
+            $h['tahun_bayar'] = $t ? (int) date('Y', $t) : null;
+            $h['bulan_bayar'] = $t ? (int) date('n', $t) : null;
+        }
+        unset($h);
+
+        // [Ketua Tim] filter data sesuai divisinya jika diset (selulosa / lingkungan)
+        if ($isKetuaTim && in_array($divisiKatim, ['selulosa', 'lingkungan'], true)) {
+            $daftarBaru = array_values(array_filter($daftarBaru, function ($o) use ($divisiKatim) {
+                return ($o['jenis_layanan_opti'] ?? '') === $divisiKatim;
+            }));
+
+            $daftarBerjalan = array_values(array_filter($daftarBerjalan, function ($o) use ($divisiKatim) {
+                return ($o['jenis_layanan_opti'] ?? '') === $divisiKatim;
+            }));
+
+            $daftarLunas = array_values(array_filter($daftarLunas, function ($o) use ($divisiKatim) {
+                return ($o['jenis_layanan_opti'] ?? '') === $divisiKatim;
+            }));
+
+            $daftarHistori = array_values(array_filter($daftarHistori, function ($h) use ($divisiKatim) {
+                return ($h['jenis_layanan_opti'] ?? '') === $divisiKatim;
+            }));
+        }
+
+        $tahunSekarang = (int) date('Y');
+        $daftarTahun = [];
+        for ($i = 0; $i < 5; $i++) { $daftarTahun[] = $tahunSekarang - $i; }
+
+        $f3->set('daftar_baru_json', json_encode($daftarBaru, JSON_UNESCAPED_UNICODE));
+        $f3->set('daftar_berjalan_json', json_encode($daftarBerjalan, JSON_UNESCAPED_UNICODE));
+        $f3->set('daftar_lunas_json', json_encode($daftarLunas, JSON_UNESCAPED_UNICODE));
+        $f3->set('daftar_histori_json', json_encode($daftarHistori, JSON_UNESCAPED_UNICODE));
+        $f3->set('daftar_tahun', $daftarTahun);
+        $f3->set('bulan_sekarang', (int) date('n'));
+        $f3->set('tahun_sekarang', $tahunSekarang);
+        $this->render('keuangan/pembayaran/index.html', 'Rekapitulasi Keuangan & Pembayaran', 'pembayaran');
     }
-
-    usort($daftarLunas, function ($a, $b) { return strtotime($b['tanggal_lunas']) <=> strtotime($a['tanggal_lunas']); });
-    usort($daftarBerjalan, function ($a, $b) { return strtotime($b['created_at']) <=> strtotime($a['created_at']); });
-
-    // [Ketua Tim] cuma boleh liat Lunas + Kesanggupan Bayar, dibatasin ke divisinya
-    if ($isKetuaTim && in_array($divisiKatim, ['selulosa', 'lingkungan'], true)) {
-        $daftarBaru = [];
-
-        $daftarBerjalan = array_values(array_filter($daftarBerjalan, function ($o) use ($divisiKatim) {
-            return !empty($o['punya_kesanggupan_bayar']) && $o['jenis_layanan_opti'] === $divisiKatim;
-        }));
-
-        $daftarLunas = array_values(array_filter($daftarLunas, function ($o) use ($divisiKatim) {
-            return $o['jenis_layanan_opti'] === $divisiKatim;
-        }));
-
-        $daftarHistori = [];
-    }
-
-    // ---- Tab 4: Histori ----
-    $sqlHistori = "SELECT p.*, o.nomor_order, o.jenis_layanan_opti, c.nmcustomer AS nama_perusahaan
-                   FROM opti_pembayaran p
-                   JOIN order_layanan o ON p.order_id = o.id
-                   JOIN tb_customer c ON o.id_customer = c.id_customer
-                   ORDER BY p.tanggal_bayar DESC, p.id DESC";
-    $daftarHistori = $this->safeQuery($sqlHistori);
-    foreach ($daftarHistori as &$h) {
-        $t = strtotime($h['tanggal_bayar']);
-        $h['tahun_bayar'] = $t ? (int) date('Y', $t) : null;
-        $h['bulan_bayar'] = $t ? (int) date('n', $t) : null;
-    }
-    unset($h);
-
-    $tahunSekarang = (int) date('Y');
-    $daftarTahun = [];
-    for ($i = 0; $i < 5; $i++) { $daftarTahun[] = $tahunSekarang - $i; }
-
-    $f3->set('daftar_baru_json', json_encode($daftarBaru, JSON_UNESCAPED_UNICODE));
-    $f3->set('daftar_berjalan_json', json_encode($daftarBerjalan, JSON_UNESCAPED_UNICODE));
-    $f3->set('daftar_lunas_json', json_encode($daftarLunas, JSON_UNESCAPED_UNICODE));
-    $f3->set('daftar_histori_json', json_encode($daftarHistori, JSON_UNESCAPED_UNICODE));
-    $f3->set('daftar_tahun', $daftarTahun);
-    $f3->set('bulan_sekarang', (int) date('n'));
-    $f3->set('tahun_sekarang', $tahunSekarang);
-    $this->render('keuangan/pembayaran/index.html', 'Rekapitulasi Keuangan & Pembayaran', 'pembayaran');
-}
 
     /** GET /pembayaran/tambah */
     /** GET /pembayaran/tambah?order_id=X */
-public function tambah($f3) {
-    $this->requirePermission('pembayaran:create', '/pembayaran');
-    $orderId = (int)($f3->get('GET.order_id') ?? 0);
+    public function tambah($f3) {
+        $this->requirePermission('pembayaran:create', '/pembayaran');
+        $this->ensureSchema();
+        $orderId = (int)($f3->get('GET.order_id') ?? 0);
 
-    if ($orderId <= 0) {
-        $f3->set('order', null);
-        $this->render('keuangan/pembayaran/form.html', 'Catat Pembayaran', 'pembayaran');
-        return;
-    }
+        if ($orderId <= 0) {
+            $f3->set('order', null);
+            $this->render('keuangan/pembayaran/form.html', 'Catat Pembayaran', 'pembayaran');
+            return;
+        }
 
-    $rows = $this->safeQuery(
-        "SELECT o.id, o.nomor_order, o.judul_kegiatan, o.estimasi_biaya, o.jenis_layanan_opti, o.disposisi_katim_at,
-                c.nmcustomer AS nama_perusahaan, c.pt_cv,
-                sp.id AS sp_id, sp.nominal_penawaran, sp.surat_kesanggupan_bayar,
-                COALESCE((SELECT SUM(jumlah) FROM opti_pembayaran WHERE order_id = o.id AND status_verifikasi = 'terverifikasi'), 0) AS terbayar,
-                COALESCE((SELECT COUNT(id) FROM opti_pembayaran WHERE order_id = o.id AND is_kesanggupan_bayar = 0), 0) AS jumlah_termin_sebelumnya,
-                COALESCE((SELECT COUNT(id) FROM opti_pembayaran WHERE order_id = o.id), 0) AS jumlah_baris_total
-         FROM order_layanan o
-         JOIN tb_customer c ON o.id_customer = c.id_customer
-         LEFT JOIN tb_surat_penawaran sp ON sp.order_id = o.id AND sp.status_respon_klien = 'deal'
-         WHERE o.id = ?
-         LIMIT 1",
-        [$orderId]
-    );
+        $rows = $this->safeQuery(
+            "SELECT o.id, o.nomor_order, o.judul_kegiatan, o.estimasi_biaya, o.jenis_layanan_opti, o.disposisi_katim_at,
+                    c.nmcustomer AS nama_perusahaan, c.pt_cv,
+                    sp.id AS sp_id, sp.nominal_penawaran, sp.surat_kesanggupan_bayar,
+                    COALESCE((SELECT SUM(jumlah) FROM opti_pembayaran WHERE order_id = o.id AND status_verifikasi = 'terverifikasi'), 0) AS terbayar,
+                    COALESCE((SELECT COUNT(id) FROM opti_pembayaran WHERE order_id = o.id AND (is_kesanggupan_bayar = 0 OR is_kesanggupan_bayar IS NULL)), 0) AS jumlah_termin_sebelumnya,
+                    COALESCE((SELECT COUNT(id) FROM opti_pembayaran WHERE order_id = o.id), 0) AS jumlah_baris_total
+             FROM order_layanan o
+             JOIN tb_customer c ON o.id_customer = c.id_customer
+             LEFT JOIN tb_surat_penawaran sp ON sp.order_id = o.id
+             WHERE o.id = ?
+             LIMIT 1",
+            [$orderId]
+        );
 
     if (empty($rows)) {
         $f3->set('order', null);
