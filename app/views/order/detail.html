@@ -2187,9 +2187,6 @@
                         </div>
                     </div>
                     <div class="d-flex align-items-center gap-2">
-                        <a href="{{ @BASE }}/pembayaran/tambah?order_id={{ @order.id }}" class="btn btn-sm btn-outline-primary fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5" title="Buka Halaman Detail Pembayaran Order">
-                            <i class="bi bi-credit-card-2-front"></i> Buka Halaman Pembayaran
-                        </a>
                         <check if="{{ @order.status_keuangan == 'lunas' || !empty(@riwayat_bayar) }}">
                             <span class="badge bg-success-subtle text-success border border-success-subtle fw-semibold px-2.5 py-1">
                                 <i class="bi bi-check2-all me-1"></i> Pembayaran Terkonfirmasi (Lunas)
@@ -2252,7 +2249,7 @@
                                                 Rp {{ number_format(@riwayat_bayar[0].jumlah ?: (@penawaran.nominal_penawaran ?: @order.estimasi_biaya), 0, ',', '.') }}
                                             </span>
                                         </div>
-                                        <div class="col-sm-5">
+                                        <div class="col-sm-4">
                                             <span class="text-muted small d-block" style="font-size: 0.75rem;">Keterangan / Verifikator</span>
                                             <span class="small text-dark">
                                                 {{ @riwayat_bayar[0].keterangan ?: 'Pembayaran lunas via tagihan balai' }}
@@ -2261,15 +2258,15 @@
                                                 </check>
                                             </span>
                                         </div>
-                                        <div class="col-sm-3 text-sm-end d-flex flex-wrap justify-content-sm-end gap-2">
-                                            <a href="{{ @BASE }}/pembayaran/tambah?order_id={{ @order.id }}" class="btn btn-outline-secondary btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5">
-                                                <i class="bi bi-credit-card-2-front"></i> Detail Pembayaran
-                                            </a>
+                                        <div class="col-sm-4 text-sm-end d-flex flex-wrap justify-content-sm-end gap-2">
                                             <check if="{{ !empty(@riwayat_bayar[0].bukti_bayar) }}">
                                                 <a href="{{ @BASE }}/{{ @riwayat_bayar[0].bukti_bayar }}" target="_blank" class="btn btn-outline-primary btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5">
-                                                    <i class="bi bi-file-earmark-check-fill text-primary"></i> Lihat Bukti Transfer
+                                                    <i class="bi bi-file-earmark-check-fill text-primary"></i> Lihat Bukti
                                                 </a>
                                             </check>
+                                            <a href="{{ @BASE }}/pembayaran/tambah?order_id={{ @order.id }}" class="btn btn-white border btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5 text-dark" title="Buka detail transaksi pembayaran">
+                                                <i class="bi bi-box-arrow-up-right text-muted"></i> Detail Pembayaran
+                                            </a>
                                         </div>
                                     </div>
                                 </div>
@@ -2319,25 +2316,27 @@
                         <!-- Sub-kasus 2B: Bukti Pembayaran Belum Diunggah -->
                         <check if="{{ empty(@riwayat_bayar) }}">
                             <div class="p-3 bg-light rounded-3 border mb-3">
-                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                                     <div>
-                                        <span class="text-muted small d-block">Nilai Tagihan Penawaran DEAL:</span>
+                                        <span class="text-muted small d-block" style="font-size: 0.78rem;">Nilai Tagihan Penawaran DEAL:</span>
                                         <h4 class="fw-bold text-dark m-0 font-display">
                                             Rp {{ number_format(@penawaran.nominal_penawaran ?: @order.estimasi_biaya, 0, ',', '.') }}
                                         </h4>
                                     </div>
                                     <div class="d-flex align-items-center gap-2">
-                                        <a href="{{ @BASE }}/pembayaran/tambah?order_id={{ @order.id }}" class="btn btn-sm btn-primary fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5">
-                                            <i class="bi bi-credit-card-2-front"></i> Buka Halaman Pembayaran
-                                        </a>
-                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1 small">
+                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2.5 py-1.5 small fw-semibold">
                                             <i class="bi bi-hourglass-split me-1"></i> Menunggu Upload Bukti Pembayaran
                                         </span>
+                                        <a href="{{ @BASE }}/pembayaran/tambah?order_id={{ @order.id }}" class="btn btn-sm btn-primary fw-semibold px-3 py-1.5 shadow-xs d-inline-flex align-items-center gap-1.5 rounded-2">
+                                            <i class="bi bi-box-arrow-up-right"></i> Buka Halaman Pembayaran
+                                        </a>
                                     </div>
                                 </div>
-                                <p class="small text-secondary mb-0">
-                                    Tagihan telah diterbitkan melalui sistem invoice balai. Tim Keuangan dapat mengunggah bukti pembayaran di bawah ini atau melalui <a href="{{ @BASE }}/pembayaran/tambah?order_id={{ @order.id }}" class="fw-semibold text-primary text-decoration-none">Halaman Detail Pembayaran <i class="bi bi-arrow-right"></i></a> agar Tim OPTI dapat segera memulai pengujian sampel.
-                                </p>
+                                <div class="mt-2 pt-2 border-top border-light-subtle">
+                                    <p class="small text-secondary mb-0">
+                                        Tagihan telah diterbitkan melalui sistem invoice balai. Tim Keuangan dapat mengunggah bukti pembayaran di bawah ini atau melalui <a href="{{ @BASE }}/pembayaran/tambah?order_id={{ @order.id }}" class="fw-semibold text-primary text-decoration-none">Halaman Detail Pembayaran <i class="bi bi-arrow-right"></i></a> agar Tim OPTI dapat segera memulai pengujian sampel.
+                                    </p>
+                                </div>
                             </div>
 
                             <!-- Form Upload Bukti Pembayaran (Khusus Tim Keuangan / Admin) -->
