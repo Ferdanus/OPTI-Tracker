@@ -99,27 +99,32 @@
 
     </div>
     <!-- ===== MODAL 1: DETAIL PEMBAYARAN LUNAS ===== -->
-<div class="modal fade" id="modalDetailLunas" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header py-2 px-3 border-bottom">
-                <div>
-                    <h6 class="modal-title fw-bold mb-0"><i class="bi bi-receipt-cutoff text-primary me-2"></i>Detail Pembayaran</h6>
-                    <div class="text-muted small" id="detailLunasSub">-</div>
+    <div class="modal fade" id="modalDetailLunas" tabindex="-1" aria-labelledby="detailLunasJudul" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+            <div class="modal-content rpd-modal">
+                <div class="modal-header rpd-head">
+                    <div class="rpd-icon"><i class="bi bi-receipt-cutoff"></i></div>
+                    <div class="rpd-headtext">
+                        <h6 class="modal-title" id="detailLunasJudul">Detail Pembayaran</h6>
+                        <div class="rpd-sub" id="detailLunasSub">-</div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
                 </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body p-3">
-                <div class="order-locked-card mb-3" id="detailLunasInfo"></div>
-                <div class="small fw-bold text-muted text-uppercase mb-2">Riwayat Termin</div>
-                <div id="detailLunasList"></div>
-            </div>
-            <div class="modal-footer py-2 border-top">
-                <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">Tutup</button>
+                <div class="modal-body rpd-body">
+                    <div class="rpd-stats" id="detailLunasInfo"></div>
+                    <div class="rpd-section-title">Riwayat Termin</div>
+                    <ol class="rpd-list" id="detailLunasList"></ol>
+                </div>
+                <div class="modal-footer rpd-foot">
+                    <!-- <div class="rpd-total">
+                        <span class="l">Total termin</span>
+                        <span class="v" id="detailLunasTotal">Rp 0</span>
+                    </div> -->
+                    <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">Tutup</button>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
 </div>
 
@@ -173,69 +178,52 @@
 .termin-item { border: 1px solid var(--color-border); border-radius: 10px; padding: 12px; margin-bottom: 8px; }
 .termin-item .row-info { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
 .rpd-modal { border: 0; border-radius: var(--radius-lg, 14px); overflow: hidden; box-shadow: var(--shadow-lg, 0 10px 25px rgba(0,0,0,.18)); }
-    .rpd-head { display: flex; align-items: center; gap: 14px; padding: 18px 22px; border-bottom: 1px solid var(--color-border, #e2e8f0); background: linear-gradient(180deg, #fff, #f8fafc); }
-    .rpd-icon { width: 46px; height: 46px; border-radius: 13px; background: var(--color-primary-light, #f1f5f9); color: var(--color-primary, #334155); display: grid; place-items: center; font-size: 22px; flex-shrink: 0; }
-    .rpd-headtext { flex: 1; min-width: 0; }
-    .rpd-head .modal-title { font-family: var(--font-display, inherit); font-weight: 800; font-size: 1.05rem; margin: 0; color: var(--color-text-main, #0f172a); }
-    .rpd-sub { font-size: .8rem; color: var(--color-text-muted, #64748b); margin-top: 2px; overflow-wrap: anywhere; }
-    .rpd-sub .no { font-family: 'Courier New', monospace; font-weight: 700; color: var(--color-text-main, #0f172a); }
-    .rpd-head .btn-close { margin: 0; flex-shrink: 0; }
-    
-    .rpd-body { padding: 18px 22px 20px; background: #f8fafc; }
-    .rpd-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
-    .rpd-stat { background: #fff; border: 1px solid var(--color-border, #e2e8f0); border-radius: var(--radius-md, 10px); padding: 11px 14px; min-width: 0; }
-    .rpd-stat .l { font-size: .7rem; font-weight: 600; color: var(--color-text-muted, #64748b); margin-bottom: 3px; }
-    .rpd-stat .v { font-family: var(--font-display, inherit); font-weight: 800; font-size: 1rem; color: var(--color-text-main, #0f172a); overflow-wrap: anywhere; }
-    .rpd-stat .v.ok { color: #047857; }
-    .rpd-stat .v.warn { color: #b45309; }
-    .rpd-progress { background: #fff; border: 1px solid var(--color-border, #e2e8f0); border-radius: var(--radius-md, 10px); padding: 11px 14px; margin-bottom: 16px; }
-    .rpd-progress .t { display: flex; justify-content: space-between; gap: 8px; font-size: .75rem; color: var(--color-text-muted, #64748b); margin-bottom: 6px; }
-    .rpd-progress .t b { color: var(--color-text-main, #0f172a); }
-    .rpd-progress .b { height: 7px; background: #e2e8f0; border-radius: 7px; overflow: hidden; }
-    .rpd-progress .b i { display: block; height: 100%; background: #059669; border-radius: 7px; }
-    
-    .rpd-list { list-style: none; margin: 0; padding: 0; }
-    .rpd-item { position: relative; padding-left: 30px; padding-bottom: 12px; }
-    .rpd-item:last-child { padding-bottom: 0; }
-    .rpd-item::before { content: ''; position: absolute; left: 9px; top: 22px; bottom: -2px; width: 2px; background: #e2e8f0; }
-    .rpd-item:last-child::before { display: none; }
-    .rpd-dot { position: absolute; left: 0; top: 14px; width: 20px; height: 20px; border-radius: 50%; background: #fff; border: 2px solid #94a3b8; display: grid; place-items: center; font-size: 11px; line-height: 1; }
-    .rpd-item.ok .rpd-dot { border-color: #059669; color: #059669; }
-    .rpd-item.warn .rpd-dot { border-color: #d97706; color: #d97706; }
-    .rpd-item.err .rpd-dot { border-color: #e11d48; color: #e11d48; }
-    .rpd-card { background: #fff; border: 1px solid var(--color-border, #e2e8f0); border-radius: var(--radius-md, 10px); padding: 13px 15px; }
-    .rpd-item.err .rpd-card { background: #fffafb; border-color: #fecdd3; }
-    .rpd-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-    .rpd-termin { font-family: var(--font-display, inherit); font-weight: 700; font-size: .85rem; color: var(--color-text-main, #0f172a); }
-    .rpd-tgl { font-size: .75rem; color: var(--color-text-muted, #64748b); margin-top: 1px; }
-    .rpd-nominal { font-family: var(--font-display, inherit); font-weight: 800; font-size: 1.05rem; color: #047857; white-space: nowrap; }
-    .rpd-item.warn .rpd-nominal { color: #b45309; }
-    .rpd-item.err .rpd-nominal { color: #9f1239; text-decoration: line-through; }
-    .rpd-detail { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 16px; margin-top: 11px; padding-top: 11px; border-top: 1px dashed var(--color-border, #e2e8f0); }
-    .rpd-detail .l { font-size: .68rem; font-weight: 600; color: var(--color-text-muted, #64748b); }
-    .rpd-detail .v { font-size: .8rem; color: var(--color-text-main, #0f172a); overflow-wrap: anywhere; }
-    .rpd-detail .v.mono { font-family: 'Courier New', monospace; }
-    .rpd-detail .full { grid-column: 1 / -1; }
-    .rpd-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 11px; }
-    .rpd-nobukti { font-size: .75rem; color: #94a3b8; }
-    .rpd-empty { text-align: center; padding: 42px 16px; color: #94a3b8; font-size: .85rem; background: #fff; border: 1px dashed var(--color-border, #e2e8f0); border-radius: var(--radius-md, 10px); }
-    .rpd-empty i { display: block; font-size: 30px; margin-bottom: 6px; }
-    
-    .rpd-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 22px; border-top: 1px solid var(--color-border, #e2e8f0); background: #fff; }
-    .rpd-total .l { font-size: .7rem; font-weight: 600; color: var(--color-text-muted, #64748b); display: block; }
-    .rpd-total .v { font-family: var(--font-display, inherit); font-weight: 800; font-size: 1.2rem; color: #047857; line-height: 1.2; }
-    .rpd-total .n { display: block; font-size: .7rem; color: #b45309; margin-top: 1px; }
-    .rpd-total .n:empty { display: none; }
-    
-    @media (max-width: 575.98px) {
-        .rpd-head { padding: 14px 16px; }
-        .rpd-body { padding: 14px 14px 16px; }
-        .rpd-foot { padding: 12px 16px; }
-        .rpd-stats { grid-template-columns: 1fr 1fr; }
-        .rpd-stats .rpd-stat:first-child { grid-column: 1 / -1; }
-        .rpd-top { flex-direction: column; gap: 4px; }
-        .rpd-detail { grid-template-columns: 1fr; }
-    }
+.rpd-head { display: flex; align-items: center; gap: 14px; padding: 18px 22px; border-bottom: 1px solid var(--color-border, #e2e8f0); background: linear-gradient(180deg, #fff, #f8fafc); }
+.rpd-icon { width: 46px; height: 46px; border-radius: 13px; background: var(--color-primary-light, #f1f5f9); color: var(--color-primary, #334155); display: grid; place-items: center; font-size: 22px; flex-shrink: 0; }
+.rpd-headtext { flex: 1; min-width: 0; }
+.rpd-head .modal-title { font-family: var(--font-display, inherit); font-weight: 800; font-size: 1.05rem; margin: 0; color: var(--color-text-main, #0f172a); }
+.rpd-sub { font-size: .8rem; color: var(--color-text-muted, #64748b); margin-top: 2px; overflow-wrap: anywhere; }
+.rpd-sub .no { font-family: 'Courier New', monospace; font-weight: 700; color: var(--color-text-main, #0f172a); }
+.rpd-head .btn-close { margin: 0; flex-shrink: 0; }
+
+.rpd-body { padding: 18px 22px 20px; background: #f8fafc; }
+.rpd-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 18px; }
+.rpd-stat { background: #fff; border: 1px solid var(--color-border, #e2e8f0); border-radius: var(--radius-md, 10px); padding: 11px 14px; min-width: 0; }
+.rpd-stat .l { font-size: .7rem; font-weight: 600; color: var(--color-text-muted, #64748b); margin-bottom: 3px; }
+.rpd-stat .v { font-family: var(--font-display, inherit); font-weight: 800; font-size: 1rem; color: var(--color-text-main, #0f172a); overflow-wrap: anywhere; }
+.rpd-stat .v.ok { color: #047857; }
+
+.rpd-section-title { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--color-text-muted, #64748b); margin-bottom: 10px; }
+
+.rpd-list { list-style: none; margin: 0; padding: 0; }
+.rpd-item { position: relative; padding-left: 30px; padding-bottom: 12px; }
+.rpd-item:last-child { padding-bottom: 0; }
+.rpd-item::before { content: ''; position: absolute; left: 9px; top: 22px; bottom: -2px; width: 2px; background: #e2e8f0; }
+.rpd-item:last-child::before { display: none; }
+.rpd-dot { position: absolute; left: 0; top: 14px; width: 20px; height: 20px; border-radius: 50%; background: #fff; border: 2px solid #059669; color: #059669; display: grid; place-items: center; font-size: 11px; line-height: 1; }
+.rpd-card { background: #fff; border: 1px solid var(--color-border, #e2e8f0); border-radius: var(--radius-md, 10px); padding: 13px 15px; }
+.rpd-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.rpd-termin { font-family: var(--font-display, inherit); font-weight: 700; font-size: .85rem; color: var(--color-text-main, #0f172a); }
+.rpd-tgl { font-size: .75rem; color: var(--color-text-muted, #64748b); margin-top: 1px; }
+.rpd-nominal { font-family: var(--font-display, inherit); font-weight: 800; font-size: 1.05rem; color: #047857; white-space: nowrap; }
+.rpd-ket { font-size: .8rem; color: var(--color-text-muted, #64748b); margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--color-border, #e2e8f0); overflow-wrap: anywhere; }
+.rpd-bar { display: flex; align-items: center; justify-content: flex-end; margin-top: 10px; }
+.rpd-nobukti { font-size: .75rem; color: #94a3b8; }
+.rpd-empty { text-align: center; padding: 30px 16px; color: #94a3b8; font-size: .85rem; background: #fff; border: 1px dashed var(--color-border, #e2e8f0); border-radius: var(--radius-md, 10px); }
+.rpd-empty i { display: block; font-size: 26px; margin-bottom: 6px; }
+
+.rpd-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 22px; border-top: 1px solid var(--color-border, #e2e8f0); background: #fff; }
+.rpd-total .l { font-size: .7rem; font-weight: 600; color: var(--color-text-muted, #64748b); display: block; }
+.rpd-total .v { font-family: var(--font-display, inherit); font-weight: 800; font-size: 1.2rem; color: #047857; line-height: 1.2; }
+
+@media (max-width: 575.98px) {
+    .rpd-head { padding: 14px 16px; }
+    .rpd-body { padding: 14px 14px 16px; }
+    .rpd-foot { padding: 12px 16px; }
+    .rpd-stats { grid-template-columns: 1fr 1fr; }
+    .rpd-stats .rpd-stat:first-child { grid-column: 1 / -1; }
+    .rpd-top { flex-direction: column; gap: 4px; }
+}
 </style>
 
 <script>
