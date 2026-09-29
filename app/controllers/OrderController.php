@@ -823,21 +823,14 @@ class OrderController extends Controller {
         $userId = (int)$this->getUserId();
         if ($userId > 0) {
             try {
-                // Debounce view log: hanya catat jika belum pernah dilihat dalam 15 menit terakhir
-                $lastView = $this->db->exec(
-                    "SELECT created_at FROM opti_activity_log 
+                // FIRST TIME ONLY: Hanya catat 1x saat user pertama kali melihat order ini
+                $hasViewed = $this->db->exec(
+                    "SELECT id FROM opti_activity_log 
                      WHERE order_id = ? AND user_id = ? AND aksi = 'melihat_detail' 
-                     ORDER BY id DESC LIMIT 1",
+                     LIMIT 1",
                     [1 => $id, 2 => $userId]
                 );
-                $shouldLogView = true;
-                if (!empty($lastView)) {
-                    $lastTime = strtotime($lastView[0]['created_at']);
-                    if (time() - $lastTime < 900) { // 15 menit
-                        $shouldLogView = false;
-                    }
-                }
-                if ($shouldLogView) {
+                if (empty($hasViewed)) {
                     $this->logActivity($id, 'order', 'melihat_detail', 'Melihat detail order layanan');
                 }
             } catch (\Exception $eView) {}
@@ -845,10 +838,23 @@ class OrderController extends Controller {
 
         $activityLogs = [];
         try {
-            $activityLogs = $this->db->exec(
+            $rawLogs = $this->db->exec(
                 "SELECT * FROM opti_activity_log WHERE order_id = ? ORDER BY id DESC LIMIT 100",
                 [1 => $id]
             );
+
+            // Deduplikasi: Untuk aksi 'melihat_detail', pastikan per user hanya muncul 1x (First Time Only)
+            $seenViewUsers = [];
+            foreach ($rawLogs as $act) {
+                if ($act['aksi'] === 'melihat_detail') {
+                    $uKey = $act['user_id'] . '_' . ($act['user_nama'] ?? '');
+                    if (isset($seenViewUsers[$uKey])) {
+                        continue; // Lewatkan duplikat pembacaan per user
+                    }
+                    $seenViewUsers[$uKey] = true;
+                }
+                $activityLogs[] = $act;
+            }
             foreach ($activityLogs as &$act) {
                 $act['time_ago'] = \NotificationService::timeAgo($act['created_at']);
                 
