@@ -38,12 +38,21 @@ class BastController extends Controller {
         $f3->set('bast', $bast);
         $f3->set('nomor_bast_otomatis', $nomorBastOtomatis);
 
-        // Audit Tahap 8: BAST dibuka/dikelola Tim Mitra
+        // Audit Tahap 8: BAST dibuka/dikelola Tim Mitra (First Time Only)
         $sessionUser = $f3->get('SESSION.user') ?? [];
         $userId = (int)($sessionUser['id'] ?? ($this->getUserId() ?? 0));
         $userNama = $sessionUser['nama'] ?? ($sessionUser['nama_lengkap'] ?? 'Tim Mitra');
         if ($userId > 0 && $orderId > 0) {
             \StageAudit::recordDibaca($this->db, $orderId, 8, $userId, $userNama, 'Tim Mitra');
+            try {
+                $hasLogged = $this->db->exec(
+                    "SELECT id FROM opti_activity_log WHERE order_id = ? AND user_id = ? AND (aksi = 'melihat_tahap_8' OR aksi = 'melihat_tahap_bast') LIMIT 1",
+                    [1 => $orderId, 2 => $userId]
+                );
+                if (empty($hasLogged)) {
+                    $this->logActivity($orderId, 'bast', 'melihat_tahap_bast', 'Melihat dokumen BAST');
+                }
+            } catch (\Exception $e) {}
         }
 
         $this->render('bast/form.html', "Berita Acara Serah Terima - Order #{$order['nomor_order']}", 'order');
@@ -102,11 +111,11 @@ class BastController extends Controller {
 
             if ($existing) {
                 $bastModel->updateData((int)$existing['id'], $data);
-                $this->logActivity($orderId, 'bast', 'terbitkan_bast', "Memperbarui dokumen Berita Acara Serah Terima (BAST) No. {$data['nomor_bast']} (Status: " . ucfirst($data['status_bast']) . ")");
+                $this->logActivity($orderId, 'bast', 'terbitkan_bast', "Perbarui BAST No. {$data['nomor_bast']} (" . ucfirst($data['status_bast']) . ")");
                 $this->setFlashSuccess("Dokumen BAST #{$order['nomor_order']} berhasil diperbarui.");
             } else {
                 $bastModel->simpanBaru($data);
-                $this->logActivity($orderId, 'bast', 'terbitkan_bast', "Menerbitkan Berita Acara Serah Terima (BAST) Resmi No. {$data['nomor_bast']} (Status: " . ucfirst($data['status_bast']) . ")");
+                $this->logActivity($orderId, 'bast', 'terbitkan_bast', "Terbitkan BAST No. {$data['nomor_bast']} (" . ucfirst($data['status_bast']) . ")");
                 $this->setFlashSuccess("Dokumen BAST resmi berhasil diterbitkan untuk Order #{$order['nomor_order']}.");
             }
 
@@ -156,7 +165,7 @@ class BastController extends Controller {
 
             $bastModel->tutupOrder($bastId, $orderId, $catatan, $userId);
 
-            $this->logActivity($orderId, 'bast', 'tutup_order', "Menutup dan menyelesaikan seluruh siklus Order Layanan (Closing Order). Catatan: {$catatan}");
+            $this->logActivity($orderId, 'bast', 'tutup_order', "Selesaikan order (Closing Order)" . (!empty($catatan) ? " - {$catatan}" : ""));
             $this->setFlashSuccess("Order Layanan #{$orderId} berhasil DITUTUP & DIARSIPKAN (Selesai). Seluruh siklus layanan tuntas!");
             $f3->reroute("/order/{$orderId}");
         } catch (\Exception $e) {

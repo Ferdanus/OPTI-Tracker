@@ -3046,54 +3046,53 @@
 
                         <!-- Card Body -->
                         <div class="activity-card">
-                            <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-2">
-                                <div class="d-flex align-items-center gap-2 flex-wrap">
-                                    <check if="{{ @is_view_log }}">
-                                        <span class="badge rounded-pill bg-light text-secondary border px-2 py-0.5" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.3px;">
-                                            <i class="bi bi-eye me-1"></i>DIBACA
-                                        </span>
-                                    </check>
-                                    <check if="{{ !@is_view_log }}">
-                                        <span class="badge rounded-pill {{ @is_warn_act ? 'bg-danger-subtle text-danger border border-danger-subtle' : (@is_success_act ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-primary-subtle text-primary border border-primary-subtle') }} px-2 py-0.5" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.3px;">
-                                            <i class="bi bi-check2-circle me-1"></i>DIPROSES
-                                        </span>
-                                    </check>
-                                    <span class="badge border rounded-pill px-2.5 py-0.5 text-uppercase" style="font-size: 0.66rem; font-weight: 700; letter-spacing: 0.4px; background-color: {{ @is_view_log ? '#f1f5f9' : '#e0f2fe' }}; color: {{ @is_view_log ? '#475569' : '#0369a1' }}; border-color: {{ @is_view_log ? '#cbd5e1' : '#bae6fd' }} !important;">
-                                        {{ str_replace('_', ' ', @act.modul) }}
+                            <!-- Top Row: Badges + Description -->
+                            <div class="d-flex align-items-center gap-2 flex-wrap mb-2">
+                                <check if="{{ @is_view_log }}">
+                                    <span class="badge rounded-pill bg-light text-secondary border px-2 py-0.5" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.3px;">
+                                        <i class="bi bi-eye me-1"></i>DIBACA
                                     </span>
-                                    <span class="fw-bold text-dark font-display" style="font-size: 0.92rem; line-height: 1.4;">
-                                        {{ @act.deskripsi }}
+                                </check>
+                                <check if="{{ !@is_view_log }}">
+                                    <span class="badge rounded-pill {{ @is_warn_act ? 'bg-danger-subtle text-danger border border-danger-subtle' : (@is_success_act ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-primary-subtle text-primary border border-primary-subtle') }} px-2 py-0.5" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.3px;">
+                                        <i class="bi bi-check2-circle me-1"></i>DIPROSES
                                     </span>
-                                </div>
-                                
-                                <div class="d-flex align-items-center gap-1.5 text-secondary small font-monospace" style="font-size: 0.76rem;" title="{{ date('d F Y, H:i:s', strtotime(@act.created_at)) }} WIB">
-                                    <i class="bi bi-clock me-1 text-slate-400"></i>
-                                    <span class="fw-semibold text-dark">{{ @act.time_ago }}</span>
-                                    <span class="text-muted opacity-50 mx-1 d-none d-md-inline">&bull;</span>
-                                    <span class="text-muted d-none d-md-inline">{{ date('d M Y, H:i', strtotime(@act.created_at)) }} WIB</span>
-                                </div>
+                                </check>
+                                <span class="badge border rounded-pill px-2.5 py-0.5 text-uppercase" style="font-size: 0.66rem; font-weight: 700; letter-spacing: 0.4px; background-color: {{ @is_view_log ? '#f1f5f9' : '#e0f2fe' }}; color: {{ @is_view_log ? '#475569' : '#0369a1' }}; border-color: {{ @is_view_log ? '#cbd5e1' : '#bae6fd' }} !important;">
+                                    {{ str_replace('_', ' ', @act.modul) }}
+                                </span>
+                                <span class="fw-bold text-dark font-display" style="font-size: 0.9rem; line-height: 1.4;">
+                                    {{ @act.deskripsi }}
+                                </span>
                             </div>
 
+                            <!-- Bottom Row (Footer): Left: User & Role | Right: Timestamp & IP -->
                             <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2 border-top border-light">
                                 <div class="d-flex align-items-center gap-2 flex-wrap">
-                                    <div class="d-flex align-items-center gap-1.5">
-                                        <div class="rounded-circle d-flex align-items-center justify-content-center bg-light text-secondary border" style="width: 24px; height: 24px; font-size: 0.72rem;">
+                                    <div class="d-flex align-items-center" style="gap: 8px;">
+                                        <div class="rounded-circle d-flex align-items-center justify-content-center bg-light text-secondary border flex-shrink-0" style="width: 24px; height: 24px; font-size: 0.72rem;">
                                             <i class="bi bi-person-fill"></i>
                                         </div>
                                         <span class="fw-bold text-dark" style="font-size: 0.82rem;">
                                             {{ @act.user_nama ?: 'Sistem Otomatis' }}
                                         </span>
                                     </div>
-                                    <span class="badge rounded-pill px-2.5 py-0.5" style="font-size: 0.7rem; font-weight: 600; background-color: #f8fafc; color: #334155; border: 1px solid #e2e8f0;">
+                                    <span class="badge rounded-pill px-2.5 py-0.5" style="font-size: 0.68rem; font-weight: 600; background-color: #f8fafc; color: #475569; border: 1px solid #e2e8f0;">
                                         {{ ucwords(str_replace('_', ' ', @act.user_role ?: 'User')) }}
                                     </span>
                                 </div>
 
-                                <check if="{{ @act.ip_address && @act.ip_address != '127.0.0.1' && @act.ip_address != '::1' }}">
-                                    <div class="text-muted font-monospace" style="font-size: 0.7rem; opacity: 0.75;">
-                                        <i class="bi bi-geo-alt me-1"></i>{{ @act.ip_address }}
+                                <div class="d-flex align-items-center gap-2 text-secondary small font-monospace" style="font-size: 0.74rem;">
+                                    <div class="d-flex align-items-center gap-1" title="{{ date('d F Y, H:i:s', strtotime(@act.created_at)) }} WIB">
+                                        <i class="bi bi-clock text-slate-400"></i>
+                                        <span class="text-dark fw-medium">{{ date('d M Y, H:i', strtotime(@act.created_at)) }} WIB</span>
+                                        <span class="badge bg-light text-muted border rounded-pill px-1.5 py-0.5 ms-1" style="font-size: 0.68rem; font-weight: 600;">{{ @act.time_ago }}</span>
                                     </div>
-                                </check>
+                                    <check if="{{ @act.ip_address && @act.ip_address != '127.0.0.1' && @act.ip_address != '::1' }}">
+                                        <span class="text-muted opacity-50">&bull;</span>
+                                        <span class="text-muted" style="font-size: 0.68rem;"><i class="bi bi-geo-alt me-0.5"></i>{{ @act.ip_address }}</span>
+                                    </check>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -3948,6 +3947,7 @@ function switchStage(stageNum, smoothScroll) {
         document.querySelectorAll('.stage-nav-btn').forEach(function(btn) { btn.classList.remove('active'); });
         tabBtn.classList.add('active');
     }
+    triggerStageRead(stageNum);
     if (smoothScroll) {
         var navEl = document.getElementById('orderStageNavigation');
         if (navEl) navEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -3956,6 +3956,20 @@ function switchStage(stageNum, smoothScroll) {
 
 document.addEventListener('DOMContentLoaded', function() {
     selectDivisiOpti('{{ @order.jenis_layanan_opti ?: "selulosa" }}');
+
+    // Catat pembacaan tahap aktif saat halaman pertama dimuat
+    var initStep = {{ (int)(@current_step ?: 1) }};
+    if (initStep >= 1 && initStep <= 8) {
+        triggerStageRead(initStep);
+    }
+
+    // Klik tombol navigasi tab tahapan
+    document.querySelectorAll('.stage-nav-btn').forEach(function(btn, idx) {
+        btn.addEventListener('click', function() {
+            var sNum = idx + 1;
+            triggerStageRead(sNum);
+        });
+    });
 
     var stepMap = {
         '#cardProfil': 1,
@@ -3968,69 +3982,82 @@ document.addEventListener('DOMContentLoaded', function() {
         '#cardSampelSpm': 7,
         '#cardPoBast': 8
     };
+
     var wrapForm = document.getElementById('kbFormWrap');
     var wrapStatus = document.getElementById('kbStatusWrap');
     var fileInput = document.getElementById('kbFileInput');
     var errorMsg = document.getElementById('kbErrorMsg');
     var spinner = document.getElementById('kbSpinner');
-    if (!wrapForm) return; // kartu ini gak ada di halaman (order-nya belum Deal), skip semua
 
-function bukaForm() {
-    wrapForm.classList.remove('d-none');
-    errorMsg.classList.add('d-none');
-    fileInput.value = '';
-}
-function tutupForm() { wrapForm.classList.add('d-none'); }
+    if (wrapForm) {
+        function bukaForm() {
+            wrapForm.classList.remove('d-none');
+            if (errorMsg) errorMsg.classList.add('d-none');
+            if (fileInput) fileInput.value = '';
+        }
+        function tutupForm() { 
+            wrapForm.classList.add('d-none'); 
+        }
 
-document.addEventListener('click', function (e) {
-    if (e.target.closest('#kbUploadBtn') || e.target.closest('#kbGantiBtn')) bukaForm();
-    if (e.target.closest('#kbBatalBtn')) tutupForm();
-});
-
-var btnSimpan = document.getElementById('kbSimpanBtn');
-btnSimpan.addEventListener('click', function () {
-    if (!fileInput.files.length) {
-        errorMsg.textContent = 'Pilih berkas terlebih dahulu.';
-        errorMsg.classList.remove('d-none');
-        return;
-    }
-
-    var fd = new FormData();
-    fd.append('surat_kesanggupan_bayar', fileInput.files[0]);
-    fd.append('csrf_token', '{{ @csrf_token }}');
-    fd.append('ajax', '1');
-
-    btnSimpan.disabled = true;
-    spinner.classList.remove('d-none');
-    errorMsg.classList.add('d-none');
-
-    fetch('{{ @BASE }}/surat-penawaran/{{ @penawaran.id }}/surat-kesanggupan/upload', { method: 'POST', body: fd })
-        .then(function (res) { return res.json(); })
-        .then(function (data) {
-            btnSimpan.disabled = false;
-            spinner.classList.add('d-none');
-
-            if (!data.success) {
-                errorMsg.textContent = data.message || 'Gagal mengunggah berkas.';
-                errorMsg.classList.remove('d-none');
-                return;
-            }
-
-            // [PENTING] update tampilan status DI TEMPAT, tanpa reload halaman
-            wrapStatus.innerHTML =
-                '<button type="button" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1 btn-preview-pdf" id="kbLihatBtn" data-preview-pdf="' + data.preview_url + '" data-title="Surat Kesanggupan Bayar">' +
-                    '<i class="bi bi-file-earmark-check-fill text-success"></i> Lihat Berkas</button>' +
-                '<button type="button" class="btn btn-sm btn-outline-secondary ms-1" id="kbGantiBtn"><i class="bi bi-arrow-repeat"></i> Ganti</button>';
-
-            tutupForm();
-        })
-        .catch(function () {
-            btnSimpan.disabled = false;
-            spinner.classList.add('d-none');
-            errorMsg.textContent = 'Gagal mengunggah berkas. Coba lagi.';
-            errorMsg.classList.remove('d-none');
+        document.addEventListener('click', function (e) {
+            if (e.target.closest('#kbUploadBtn') || e.target.closest('#kbGantiBtn')) bukaForm();
+            if (e.target.closest('#kbBatalBtn')) tutupForm();
         });
-});
+
+        var btnSimpan = document.getElementById('kbSimpanBtn');
+        if (btnSimpan) {
+            btnSimpan.addEventListener('click', function () {
+                if (!fileInput || !fileInput.files.length) {
+                    if (errorMsg) {
+                        errorMsg.textContent = 'Pilih berkas terlebih dahulu.';
+                        errorMsg.classList.remove('d-none');
+                    }
+                    return;
+                }
+
+                var fd = new FormData();
+                fd.append('surat_kesanggupan_bayar', fileInput.files[0]);
+                fd.append('csrf_token', '{{ @csrf_token }}');
+                fd.append('ajax', '1');
+
+                btnSimpan.disabled = true;
+                if (spinner) spinner.classList.remove('d-none');
+                if (errorMsg) errorMsg.classList.add('d-none');
+
+                fetch('{{ @BASE }}/surat-penawaran/{{ @penawaran.id }}/surat-kesanggupan/upload', { method: 'POST', body: fd })
+                    .then(function (res) { return res.json(); })
+                    .then(function (data) {
+                        btnSimpan.disabled = false;
+                        if (spinner) spinner.classList.add('d-none');
+
+                        if (!data.success) {
+                            if (errorMsg) {
+                                errorMsg.textContent = data.message || 'Gagal mengunggah berkas.';
+                                errorMsg.classList.remove('d-none');
+                            }
+                            return;
+                        }
+
+                        if (wrapStatus) {
+                            wrapStatus.innerHTML =
+                                '<button type="button" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1 btn-preview-pdf" id="kbLihatBtn" data-preview-pdf="' + data.preview_url + '" data-title="Surat Kesanggupan Bayar">' +
+                                    '<i class="bi bi-file-earmark-check-fill text-success"></i> Lihat Berkas</button>' +
+                                '<button type="button" class="btn btn-sm btn-outline-secondary ms-1" id="kbGantiBtn"><i class="bi bi-arrow-repeat"></i> Ganti</button>';
+                        }
+
+                        tutupForm();
+                    })
+                    .catch(function () {
+                        btnSimpan.disabled = false;
+                        if (spinner) spinner.classList.add('d-none');
+                        if (errorMsg) {
+                            errorMsg.textContent = 'Gagal mengunggah berkas. Coba lagi.';
+                            errorMsg.classList.remove('d-none');
+                        }
+                    });
+            });
+        }
+    }
 
     // Stepper checkpoint click synchronization
     document.querySelectorAll('.step-checkpoint').forEach(function(cp, idx) {

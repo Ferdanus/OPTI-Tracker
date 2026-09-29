@@ -15,8 +15,19 @@
 class PembayaranOptiController extends Controller {
 
     protected $allowedExt  = ['pdf'];
-protected $allowedMime = ['application/pdf'];
+    protected $allowedMime = ['application/pdf'];
     protected $maxSize     = 5242880; // 5MB
+
+    public function beforeRoute($f3) {
+        parent::beforeRoute($f3);
+        $this->requireAuth();
+        $role = $this->getUserRole();
+        if ($role !== 'superadmin' && $role !== 'ketua_tim') {
+            $this->setFlashError('Akses Ditolak: Modul Pembayaran hanya dapat diakses oleh Ketua Tim OPTI dan Superadmin.');
+            $f3->reroute('/dashboard');
+            return;
+        }
+    }
 
     protected function ensureSchema(): void {
         static $done = false;
@@ -205,11 +216,20 @@ protected $allowedMime = ['application/pdf'];
     $order['termin_berikutnya']    = (int)$order['jumlah_termin_sebelumnya'] + 1;
 $order['sudah_ada_pembayaran'] = ((int)$order['jumlah_baris_total']) > 0;
 
-    // Audit Tahap 6: Halaman pencatatan pembayaran dibuka/dibaca oleh Bagian Keuangan
+    // Audit Tahap 6: Halaman pencatatan pembayaran dibuka/dibaca oleh Bagian Keuangan (First Time Only)
     $userId = (int)$this->getUserId();
     if ($userId > 0 && $orderId > 0) {
         $userNama = $_SESSION['nama_lengkap'] ?? ($_SESSION['user']['nama'] ?? 'Bagian Keuangan');
         \StageAudit::recordDibaca($this->db, $orderId, 6, $userId, $userNama, 'Bagian Keuangan');
+        try {
+            $hasLogged = $this->db->exec(
+                "SELECT id FROM opti_activity_log WHERE order_id = ? AND user_id = ? AND aksi = 'melihat_tahap_6' LIMIT 1",
+                [1 => $orderId, 2 => $userId]
+            );
+            if (empty($hasLogged)) {
+                $this->logActivity($orderId, 'pembayaran', 'melihat_tahap_6', 'Melihat invoice & bukti pembayaran');
+            }
+        } catch (\Exception $e) {}
     }
 
     $f3->set('order', $order);
@@ -253,7 +273,7 @@ if ($isKesanggupan) {
         $pembayaran->created_at           = date('Y-m-d H:i:s');
         $pembayaran->save();
 
-        $this->logActivity($orderId, 'pembayaran', 'verifikasi_pembayaran', "Mencatat bukti kesanggupan bayar dari pelanggan (Status Keuangan: Berjalan)");
+        $this->logActivity($orderId, 'pembayaran', 'verifikasi_pembayaran', "Unggah surat kesanggupan bayar (Berjalan)");
 
 if (!empty($post['disposisi_langsung'])) {
     $this->lakukanDisposisiKatim($orderId, $this->getUserId());
@@ -328,7 +348,7 @@ if ($sisaSebelumBayar !== null && $jumlah > $sisaSebelumBayar) {
             // [PENTING] ini yang nge-update order_layanan.status_keuangan otomatis
             $statusBaru = $this->recalcStatusKeuangan($orderId);
 
-            $this->logActivity($orderId, 'pembayaran', 'verifikasi_pembayaran', "Mencatat dan memverifikasi pembayaran Termin ke-{$terminKe} sebesar Rp " . number_format($jumlah, 0, ',', '.') . " (" . strtoupper(str_replace('_', ' ', $metode)) . ") - Status: " . ucfirst($statusBaru));
+            $this->logActivity($orderId, 'pembayaran', 'verifikasi_pembayaran', "Verifikasi pembayaran Termin #{$terminKe} Rp " . number_format($jumlah, 0, ',', '.') . " (" . strtoupper(str_replace('_', ' ', $metode)) . ") - " . ucfirst($statusBaru));
 
 if ($statusBaru === 'lunas' && !empty($post['disposisi_langsung'])) {
     $this->lakukanDisposisiKatim($orderId, $this->getUserId());
@@ -558,7 +578,7 @@ $this->setFlashSuccess($pesanSukses);
             [1 => $userId, 2 => $orderId]
         );
 
-        $this->logActivity($orderId, 'pembayaran', 'disposisi_katim', "Mendisposisikan status deal/lunas keuangan Order #{$order['nomor_order']} ke Ketua Tim OPTI");
+        $this->logActivity($orderId, 'pembayaran', 'disposisi_katim', "Disposisi status lunas ke Ka. Tim OPTI");
 
         try {
             \NotificationService::send($this->db, [

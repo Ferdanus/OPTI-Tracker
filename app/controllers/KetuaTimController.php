@@ -1,10 +1,19 @@
 <?php
 class KetuaTimController extends Controller {
 
+    public function beforeRoute($f3) {
+        parent::beforeRoute($f3);
+        $this->requireAuth();
+        $role = $this->getUserRole();
+        if ($role !== 'superadmin' && $role !== 'ketua_tim') {
+            $this->setFlashError('Akses Ditolak: Halaman Daftar Order Lunas hanya dapat diakses oleh Ketua Tim OPTI dan Superadmin.');
+            $f3->reroute('/dashboard');
+            return;
+        }
+    }
+
     /** GET /ketua-tim/siap-po */
-   /** GET /ketua-tim/siap-po */
-/** GET /ketua-tim/siap-po */
-public function index($f3) {
+    public function index($f3) {
     $this->requireAuth();
     $this->requirePermission('order:tinjau');
 
