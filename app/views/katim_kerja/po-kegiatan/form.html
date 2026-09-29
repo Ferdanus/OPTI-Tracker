@@ -94,8 +94,23 @@
                     <input type="text" name="nomor_po" class="form-control" value="{{ @po ? @po.nomor_po : @nomor_po_saran }}" required data-wajib="1">
                 </div>
                 <div class="col-md-8">
-                    <label class="form-label">Judul Kegiatan <span class="text-danger">*</span></label>
-                    <input type="text" name="judul_kegiatan" class="form-control" value="{{ @po ? @po.judul_kegiatan : @order.judul_kegiatan }}" required data-wajib="1">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-1">
+                        <label class="form-label mb-0">Judul Kegiatan <span class="text-danger">*</span></label>
+                        <check if="{{ @surat_masuk_terkait }}">
+                            <div class="d-flex align-items-center gap-2">
+                                <span id="badgeJudulSuratMasuk" class="badge rounded-pill d-none"></span>
+                                <button type="button"
+                                    class="btn btn-outline-primary btn-sm px-2 py-1 shadow-sm d-inline-flex align-items-center gap-1 btn-preview-pdf"
+                                    data-preview-pdf="{{ @BASE }}/surat-masuk/{{ @order.id_surat_masuk }}/pdf"
+                                    data-title="Berkas Surat Masuk"
+                                    data-subtitle="{{ @order.nomor_order }}"
+                                    title="Buka PDF Asli Surat Masuk">
+                                    <i class="bi bi-file-earmark-pdf text-danger"></i> <span>Lihat Surat Masuk</span>
+                                </button>
+                            </div>
+                        </check>
+                    </div>
+                    <input type="text" name="judul_kegiatan" id="inputJudulKegiatan" class="form-control" value="{{ @po ? @po.judul_kegiatan : @order.judul_kegiatan }}" data-judul-asli-surat="{{ @surat_masuk_terkait.perihal }}" required data-wajib="1">
                 </div>
             </div>
         </div>
@@ -1971,6 +1986,31 @@ document.addEventListener('mouseup', function () {
 /* INIT (dijalankan setelah seluruh HTML siap)                   */
 /* ============================================================ */
 document.addEventListener('DOMContentLoaded', function () {
+    // [BARU] Penanda "masih sama kaya judul surat masuk apa udah diubah"
+    (function () {
+        var inp = document.getElementById('inputJudulKegiatan');
+        var badge = document.getElementById('badgeJudulSuratMasuk');
+        if (!inp || !badge) return;
+        var judulAsli = (inp.getAttribute('data-judul-asli-surat') || '').trim();
+        if (!judulAsli) return;
+
+        function normalisasiJudul(s) {
+            return (s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+        }
+        function cekJudulSuratMasuk() {
+            badge.classList.remove('d-none');
+            if (normalisasiJudul(inp.value) === normalisasiJudul(judulAsli)) {
+                badge.className = 'badge rounded-pill bg-success-subtle text-success border border-success-subtle d-inline-flex align-items-center gap-1';
+                badge.innerHTML = '<i class="bi bi-check-circle"></i> Sesuai Surat Masuk';
+            } else {
+                badge.className = 'badge rounded-pill bg-warning-subtle text-warning-emphasis border border-warning-subtle d-inline-flex align-items-center gap-1';
+                badge.innerHTML = '<i class="bi bi-pencil-square"></i> Sudah Diubah dari Surat Masuk';
+            }
+        }
+        cekJudulSuratMasuk();
+        inp.addEventListener('input', cekJudulSuratMasuk);
+    })();
+
     ['dasarNomorUrut', 'dasarBulanRomawi', 'dasarTahun', 'dasarTanggal', 'dasarTentang'].forEach(function (id) {
     var el = document.getElementById(id);
     el.addEventListener('input', komposeDasar);

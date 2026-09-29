@@ -91,6 +91,16 @@ protected function bind(PoKegiatan $po, $f3, $isUpdate) {
 
     $po->nomor_po       = trim((string) ($post['nomor_po'] ?? ''));
     $po->judul_kegiatan = trim((string) ($post['judul_kegiatan'] ?? ''));
+
+    // [BARU] Judul Kegiatan diedit dari form PO -> sinkronkan juga ke
+    // order_layanan.judul_kegiatan biar PO dan Order gak beda-beda lagi.
+    if ((int) $po->order_id > 0 && $po->judul_kegiatan !== '') {
+        $this->db->exec(
+            'UPDATE order_layanan SET judul_kegiatan = ? WHERE id = ?',
+            [1 => $po->judul_kegiatan, 2 => (int) $po->order_id]
+        );
+    }
+
     $po->dasar          = trim((string) ($post['dasar'] ?? ''));
     $po->dasar_struktur = json_encode([
         'nomor_urut'   => trim((string) ($post['dasar_nomor_urut'] ?? '')),
@@ -391,6 +401,7 @@ $f3->set('info_pembayaran_json', json_encode($infoPembayaran, JSON_UNESCAPED_UNI
         $f3->set('order', $orderData);
         $f3->set('po', null);
         $f3->set('po_json', 'null');
+        $f3->set('surat_masuk_terkait', $this->getSuratMasukTerkait($orderData));
         $f3->set('nomor_po_saran', $this->generateNomorPo());
         $f3->set('daftar_pegawai', $this->safeQuery('SELECT id_user, nama_user FROM tb_arsipuser ORDER BY nama_user ASC'));
 
@@ -439,6 +450,7 @@ $f3->set('info_pembayaran_json', json_encode($infoPembayaran, JSON_UNESCAPED_UNI
         $f3->set('order', $orderData ?: null);
         $f3->set('po', $poData);
         $f3->set('po_json', json_encode($poData, JSON_UNESCAPED_UNICODE));
+        $f3->set('surat_masuk_terkait', $orderData ? $this->getSuratMasukTerkait($orderData) : null);
         $f3->set('daftar_pegawai', $this->safeQuery('SELECT id_user, nama_user FROM tb_arsipuser ORDER BY nama_user ASC'));
 
         $nomor = $this->hitungNomorSection($orderData['jenis_layanan_opti'] ?? '');
@@ -683,6 +695,18 @@ protected function siapkanDataPo($po, $orderData) {
             return $rows[0];
         }
         return null;
+    }
+
+    /**
+     * [BARU] Ambil data surat masuk yang jadi asal Order ini (kalau ada),
+     * buat tombol "Lihat Surat Masuk" + penanda judul di form PO.
+     */
+    protected function getSuratMasukTerkait($orderData) {
+        $idSurat = (int) ($orderData['id_surat_masuk'] ?? 0);
+        if ($idSurat <= 0) return null;
+
+        $repo = new \SuratMasukRepository($this->db, $this->dbSekretariat);
+        return $repo->getSuratById($idSurat);
     }
 
     /** [PERLU DIVERIFIKASI ULANG tiap tahun sesuai SKB 3 Menteri] */

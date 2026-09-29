@@ -235,13 +235,23 @@ class UniversalPreviewController extends Controller
 
     protected function handleSuratMasuk($suratId)
     {
-        $rows = $this->db->exec('SELECT * FROM surat_masuk WHERE id = ?', [1 => $suratId]);
-        if (empty($rows)) {
+        // [FIX] Sebelumnya query manual ke tabel "surat_masuk" di database utama -- salah dua-duanya:
+        // (1) tabelnya ada di database SEKRETARIAT (sil2020), bukan database utama, dan (2) nama
+        // tabel/kolomnya sendiri udah beda (tb_arsipsurat, id_arsip, nama_berkas, dst), bukan lagi
+        // surat_masuk/id/file_path yang lama. Dipake ulang SuratMasukRepository::getSuratById() yang
+        // udah nangani kompatibilitas tabel/kolom itu (termasuk join data pengirim dari tb_customer),
+        // biar gak dobel logic & otomatis ikut kalau nanti skema sekretariatnya berubah lagi.
+        $repo = new \SuratMasukRepository($this->db, $this->dbSekretariat);
+        $surat = $repo->getSuratById($suratId);
+        if (empty($surat)) {
             $this->jsonResponse(['success' => false, 'message' => 'Data surat permohonan masuk tidak ditemukan.']);
             return;
         }
 
-        $surat = $rows[0];
+        // [FIX] Berkas surat masuk yang bener itu di uploads/surat_masuk (root project), BUKAN
+        // public/uploads/surat_masuk -- sempat salah nambahin public/ sebagai kandidat duluan,
+        // jadinya kepilih berkas yang salah/nyasar dari folder public. Balikin ke uploads/surat_masuk
+        // sebagai yang dicoba duluan.
         $filePath = $this->resolveFilePath($surat['file_path'] ?? '', ['uploads/surat_masuk', 'storage/surat_masuk']);
 
         if (!empty($filePath) && is_file($filePath)) {
