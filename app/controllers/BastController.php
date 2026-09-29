@@ -38,12 +38,21 @@ class BastController extends Controller {
         $f3->set('bast', $bast);
         $f3->set('nomor_bast_otomatis', $nomorBastOtomatis);
 
-        // Audit Tahap 8: BAST dibuka/dikelola Tim Mitra
+        // Audit Tahap 8: BAST dibuka/dikelola Tim Mitra (First Time Only)
         $sessionUser = $f3->get('SESSION.user') ?? [];
         $userId = (int)($sessionUser['id'] ?? ($this->getUserId() ?? 0));
         $userNama = $sessionUser['nama'] ?? ($sessionUser['nama_lengkap'] ?? 'Tim Mitra');
         if ($userId > 0 && $orderId > 0) {
             \StageAudit::recordDibaca($this->db, $orderId, 8, $userId, $userNama, 'Tim Mitra');
+            try {
+                $hasLogged = $this->db->exec(
+                    "SELECT id FROM opti_activity_log WHERE order_id = ? AND user_id = ? AND (aksi = 'melihat_tahap_8' OR aksi = 'melihat_tahap_bast') LIMIT 1",
+                    [1 => $orderId, 2 => $userId]
+                );
+                if (empty($hasLogged)) {
+                    $this->logActivity($orderId, 'bast', 'melihat_tahap_bast', 'Melihat dokumen BAST');
+                }
+            } catch (\Exception $e) {}
         }
 
         $this->render('bast/form.html', "Berita Acara Serah Terima - Order #{$order['nomor_order']}", 'order');

@@ -216,11 +216,20 @@ class PembayaranOptiController extends Controller {
     $order['termin_berikutnya']    = (int)$order['jumlah_termin_sebelumnya'] + 1;
 $order['sudah_ada_pembayaran'] = ((int)$order['jumlah_baris_total']) > 0;
 
-    // Audit Tahap 6: Halaman pencatatan pembayaran dibuka/dibaca oleh Bagian Keuangan
+    // Audit Tahap 6: Halaman pencatatan pembayaran dibuka/dibaca oleh Bagian Keuangan (First Time Only)
     $userId = (int)$this->getUserId();
     if ($userId > 0 && $orderId > 0) {
         $userNama = $_SESSION['nama_lengkap'] ?? ($_SESSION['user']['nama'] ?? 'Bagian Keuangan');
         \StageAudit::recordDibaca($this->db, $orderId, 6, $userId, $userNama, 'Bagian Keuangan');
+        try {
+            $hasLogged = $this->db->exec(
+                "SELECT id FROM opti_activity_log WHERE order_id = ? AND user_id = ? AND aksi = 'melihat_tahap_6' LIMIT 1",
+                [1 => $orderId, 2 => $userId]
+            );
+            if (empty($hasLogged)) {
+                $this->logActivity($orderId, 'pembayaran', 'melihat_tahap_6', 'Melihat invoice & bukti pembayaran');
+            }
+        } catch (\Exception $e) {}
     }
 
     $f3->set('order', $order);

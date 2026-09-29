@@ -843,13 +843,13 @@ class OrderController extends Controller {
                 [1 => $id]
             );
 
-            // Deduplikasi: Untuk aksi 'melihat_detail', pastikan per user hanya muncul 1x (First Time Only)
+            // Deduplikasi: Untuk aksi pembacaan ('melihat_...' atau 'baca_tahap'), pastikan per user per tahap hanya muncul 1x (First Time Only)
             $seenViewUsers = [];
             foreach ($rawLogs as $act) {
-                if ($act['aksi'] === 'melihat_detail') {
-                    $uKey = $act['user_id'] . '_' . ($act['user_nama'] ?? '');
+                if (strpos($act['aksi'], 'melihat') !== false || $act['aksi'] === 'baca_tahap') {
+                    $uKey = $act['user_id'] . '_' . ($act['user_nama'] ?? '') . '_' . $act['aksi'];
                     if (isset($seenViewUsers[$uKey])) {
-                        continue; // Lewatkan duplikat pembacaan per user
+                        continue; // Lewatkan duplikat pembacaan per user per tahap
                     }
                     $seenViewUsers[$uKey] = true;
                 }
@@ -921,6 +921,14 @@ class OrderController extends Controller {
             return;
         }
 
+        $orderModel = new OrderLayanan($this->db);
+        $order = $orderModel->getDetail($orderId);
+        if (!$order) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Order tidak ditemukan.']);
+            return;
+        }
+
         $userNama = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'Petugas');
         $userRole = $this->getUserRole() ?? 'user';
 
@@ -941,8 +949,69 @@ class OrderController extends Controller {
             $roleLabel = 'Sekretariat';
         }
 
-        // Catat waktu dibaca (Prinsip FIRST TIME ONLY)
+        // Catat waktu dibaca (Prinsip FIRST TIME ONLY) ke opti_stage_audit
         StageAudit::recordDibaca($this->db, $orderId, $tahap, $userId, $userNama, $roleLabel);
+
+        // Catat ke opti_activity_log (Prinsip FIRST TIME ONLY per user per tahap)
+        $modulKey = 'order';
+        $aksiKey = 'melihat_tahap_' . $tahap;
+        $deskripsi = 'Melihat detail order layanan';
+
+        $isLingkungan = (($order['jenis_layanan_opti'] ?? '') === 'lingkungan');
+
+        switch ($tahap) {
+            case 1:
+                $modulKey = 'order';
+                $aksiKey = 'melihat_detail';
+                $deskripsi = 'Melihat detail order layanan';
+                break;
+            case 2:
+                $modulKey = 'order';
+                $aksiKey = 'melihat_tahap_2';
+                $deskripsi = 'Melihat disposisi permohonan layanan';
+                break;
+            case 3:
+                $modulKey = 'tinjauan';
+                $aksiKey = 'melihat_tahap_3';
+                $deskripsi = 'Melihat kaji kelayakan teknis';
+                break;
+            case 4:
+                $modulKey = $isLingkungan ? 'kalkulasi_lingkungan' : 'proposal';
+                $aksiKey = 'melihat_tahap_4';
+                $deskripsi = $isLingkungan ? 'Melihat formulir tarif & parameter' : 'Melihat proposal teknis';
+                break;
+            case 5:
+                $modulKey = 'penawaran';
+                $aksiKey = 'melihat_tahap_5';
+                $isDeal = in_array($order['status'] ?? '', ['penawaran_deal', 'pembayaran', 'proses_uji', 'selesai']) || ($order['status_penawaran'] ?? '') === 'deal';
+                $deskripsi = $isDeal ? 'Melihat penawaran DEAL' : 'Melihat surat penawaran';
+                break;
+            case 6:
+                $modulKey = 'pembayaran';
+                $aksiKey = 'melihat_tahap_6';
+                $deskripsi = 'Melihat invoice & bukti pembayaran';
+                break;
+            case 7:
+                $modulKey = 'sampel';
+                $aksiKey = 'melihat_tahap_7';
+                $deskripsi = 'Melihat penerimaan fisik sampel & SPM';
+                break;
+            case 8:
+                $modulKey = 'po';
+                $aksiKey = 'melihat_tahap_8';
+                $deskripsi = 'Melihat petunjuk operasional (PO)';
+                break;
+        }
+
+        try {
+            $hasLogged = $this->db->exec(
+                "SELECT id FROM opti_activity_log WHERE order_id = ? AND user_id = ? AND (aksi = ? OR (aksi = 'melihat_detail' AND ? = 1)) LIMIT 1",
+                [1 => $orderId, 2 => $userId, 3 => $aksiKey, 4 => $tahap]
+            );
+            if (empty($hasLogged)) {
+                $this->logActivity($orderId, $modulKey, $aksiKey, $deskripsi);
+            }
+        } catch (\Exception $eLog) {}
 
         // Ambil data audit tersimpan untuk tahapan ini
         $auditData = $this->db->exec(
@@ -1174,11 +1243,20 @@ class OrderController extends Controller {
         $f3->set('surat_masuk', $suratMasuk);
         $f3->set('can_edit', $canEdit);
 
-        // Audit Tahap 3: Kaji Kelayakan Teknis dibuka / dibaca
+        // Audit Tahap 3: Kaji Kelayakan Teknis dibuka / dibaca (First Time Only)
         $currentUserId = (int)$this->getUserId();
         $currentUserNama = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'Petugas');
         if ($currentUserId > 0) {
             StageAudit::recordDibaca($this->db, $id, 3, $currentUserId, $currentUserNama, $isKetuaTim ? 'Ketua Tim OPTI' : 'Tim Teknis / PIC');
+            try {
+                $hasLogged = $this->db->exec(
+                    "SELECT id FROM opti_activity_log WHERE order_id = ? AND user_id = ? AND aksi = 'melihat_tahap_3' LIMIT 1",
+                    [1 => $id, 2 => $currentUserId]
+                );
+                if (empty($hasLogged)) {
+                    $this->logActivity($id, 'tinjauan', 'melihat_tahap_3', 'Melihat kaji kelayakan teknis');
+                }
+            } catch (\Exception $e) {}
         }
 
         $this->render('order/tinjauan_kelayakan.html', "Tinjauan Kelayakan Order #{$order['nomor_order']}", 'order');
@@ -1361,6 +1439,22 @@ class OrderController extends Controller {
         $f3->set('daftar_pic', $daftarPic);
         $f3->set('can_edit', $canEdit);
         $f3->set('lock_message', $lockMessage);
+
+        // Audit Tahap 4: Rancop & Proposal Selulosa dibuka / dibaca (First Time Only)
+        $currentUserId = (int)$this->getUserId();
+        $currentUserNama = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'PIC Peneliti');
+        if ($currentUserId > 0) {
+            StageAudit::recordDibaca($this->db, $id, 4, $currentUserId, $currentUserNama, $this->isKetuaTim() ? 'Ketua Tim OPTI' : ($isPic ? 'PIC Peneliti' : 'Tim Kerja'));
+            try {
+                $hasLogged = $this->db->exec(
+                    "SELECT id FROM opti_activity_log WHERE order_id = ? AND user_id = ? AND aksi = 'melihat_tahap_4' LIMIT 1",
+                    [1 => $id, 2 => $currentUserId]
+                );
+                if (empty($hasLogged)) {
+                    $this->logActivity($id, 'proposal', 'melihat_tahap_4', 'Melihat skenario & rancop selulosa');
+                }
+            } catch (\Exception $e) {}
+        }
 
         $this->render('order/rancop_selulosa.html', "Rancangan Percobaan (Rancop) Selulosa", 'order');
     }
@@ -1563,11 +1657,20 @@ class OrderController extends Controller {
         $f3->set('can_edit', $canEdit);
         $f3->set('lock_message', $lockMessage);
 
-        // Audit Waktu & Petugas: Catat waktu pertama kali halaman kelola tarif dibuka
+        // Audit Waktu & Petugas: Catat waktu pertama kali halaman kelola tarif dibuka (First Time Only)
         $currentUserId = (int)$this->getUserId();
         $currentUserNama = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'Tim Pelaksana');
         $roleLabel = ($this->isKetuaTim() ? 'Ketua Tim OPTI' : ($isPic ? 'PIC Teknis' : 'Tim Pelaksana'));
         StageAudit::recordDibaca($this->db, $id, 4, $currentUserId, $currentUserNama, $roleLabel);
+        try {
+            $hasLogged = $this->db->exec(
+                "SELECT id FROM opti_activity_log WHERE order_id = ? AND user_id = ? AND aksi = 'melihat_tahap_4' LIMIT 1",
+                [1 => $id, 2 => $currentUserId]
+            );
+            if (empty($hasLogged)) {
+                $this->logActivity($id, 'kalkulasi_lingkungan', 'melihat_tahap_4', 'Melihat formulir tarif & parameter');
+            }
+        } catch (\Exception $e) {}
 
         $this->render('order/form_biaya_lingkungan.html', "Kalkulasi Biaya Pengujian Lingkungan", 'order');
     }
@@ -2034,11 +2137,20 @@ class OrderController extends Controller {
             'lingkungan'  => 'Lingkungan',
         ]);
 
-        // Audit Tahap 2: Formulir Permintaan Pelayanan Jasa dibuka / diisi pertama kali
+        // Audit Tahap 2: Formulir Permintaan Pelayanan Jasa dibuka / diisi pertama kali (First Time Only)
         $currentUserId = (int)$this->getUserId();
         $currentUserNama = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'Petugas');
         if ($currentUserId > 0) {
             StageAudit::recordDibaca($this->db, $id, 2, $currentUserId, $currentUserNama, 'Tim Mitra');
+            try {
+                $hasLogged = $this->db->exec(
+                    "SELECT id FROM opti_activity_log WHERE order_id = ? AND user_id = ? AND aksi = 'melihat_tahap_2' LIMIT 1",
+                    [1 => $id, 2 => $currentUserId]
+                );
+                if (empty($hasLogged)) {
+                    $this->logActivity($id, 'order', 'melihat_tahap_2', 'Melihat disposisi permohonan layanan');
+                }
+            } catch (\Exception $e) {}
         }
 
         $this->render('tim_mitra/surat Pelayanan/form.html', 'Formulir Pelayanan Jasa', 'order');
@@ -2514,10 +2626,19 @@ class OrderController extends Controller {
         $proposalHasFileAndCost = !empty($proposal) && !empty($proposal['file_proposal']) && (float)($proposal['estimasi_total_biaya'] ?? 0) > 0;
         $f3->set('proposal_has_file_cost', $proposalHasFileAndCost);
 
-        // Audit Waktu & Petugas: Catat waktu pertama kali ruang kerja proposal dibuka (Tahap 4)
+        // Audit Waktu & Petugas: Catat waktu pertama kali ruang kerja proposal dibuka (Tahap 4 - First Time Only)
         $currentUserNama = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'PIC Peneliti');
         $roleLabel = ($isKetuaTim ? 'Ketua Tim OPTI' : ($isPic ? 'PIC Peneliti' : 'Tim Kerja'));
         StageAudit::recordDibaca($this->db, $id, 4, $userId, $currentUserNama, $roleLabel);
+        try {
+            $hasLogged = $this->db->exec(
+                "SELECT id FROM opti_activity_log WHERE order_id = ? AND user_id = ? AND aksi = 'melihat_tahap_4' LIMIT 1",
+                [1 => $id, 2 => $userId]
+            );
+            if (empty($hasLogged)) {
+                $this->logActivity($id, 'proposal', 'melihat_tahap_4', 'Melihat proposal teknis');
+            }
+        } catch (\Exception $e) {}
 
         $this->render('order/proposal.html', "Dokumen Proposal Teknis - Order #{$order['nomor_order']}", 'proposal');
     }

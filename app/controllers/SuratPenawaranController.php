@@ -676,10 +676,21 @@ $daftarPegawai = $arsipUser->find(
         $f3->set('pembuat_nama', $pembuatNama);
         $f3->set('can_edit', $canEdit);
 
-        // Audit Tahap 5: Surat Penawaran resmi dibuka / dikelola Tim Mitra
+        // Audit Tahap 5: Surat Penawaran resmi dibuka / dikelola Tim Mitra (First Time Only)
         $userId = (int)$this->getUserId();
         if ($userId > 0) {
             \StageAudit::recordDibaca($this->db, $orderId, 5, $userId, $pembuatNama, 'Tim Mitra');
+            try {
+                $hasLogged = $this->db->exec(
+                    "SELECT id FROM opti_activity_log WHERE order_id = ? AND user_id = ? AND aksi = 'melihat_tahap_5' LIMIT 1",
+                    [1 => $orderId, 2 => $userId]
+                );
+                if (empty($hasLogged)) {
+                    $isDeal = in_array($order['status'] ?? '', ['penawaran_deal', 'pembayaran', 'proses_uji', 'selesai']) || ($order['status_penawaran'] ?? '') === 'deal';
+                    $deskripsi = $isDeal ? 'Melihat penawaran DEAL' : 'Melihat surat penawaran';
+                    $this->logActivity($orderId, 'penawaran', 'melihat_tahap_5', $deskripsi);
+                }
+            } catch (\Exception $e) {}
         }
 
         $this->render('tim_mitra/surat Pelayanan/form_order.html', "Terbitkan Surat Penawaran - Order #{$order['nomor_order']}", 'surat-penawaran');
