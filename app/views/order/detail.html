@@ -3069,15 +3069,15 @@
                             <!-- Bottom Row (Footer): Left: User & Role | Right: Timestamp & IP -->
                             <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2 border-top border-light">
                                 <div class="d-flex align-items-center gap-2 flex-wrap">
-                                    <div class="d-flex align-items-center gap-1.5">
-                                        <div class="rounded-circle d-flex align-items-center justify-content-center bg-light text-secondary border" style="width: 22px; height: 22px; font-size: 0.7rem;">
+                                    <div class="d-flex align-items-center" style="gap: 8px;">
+                                        <div class="rounded-circle d-flex align-items-center justify-content-center bg-light text-secondary border flex-shrink-0" style="width: 24px; height: 24px; font-size: 0.72rem;">
                                             <i class="bi bi-person-fill"></i>
                                         </div>
-                                        <span class="fw-bold text-dark" style="font-size: 0.8rem;">
+                                        <span class="fw-bold text-dark" style="font-size: 0.82rem;">
                                             {{ @act.user_nama ?: 'Sistem Otomatis' }}
                                         </span>
                                     </div>
-                                    <span class="badge rounded-pill px-2 py-0.5" style="font-size: 0.68rem; font-weight: 600; background-color: #f8fafc; color: #475569; border: 1px solid #e2e8f0;">
+                                    <span class="badge rounded-pill px-2.5 py-0.5" style="font-size: 0.68rem; font-weight: 600; background-color: #f8fafc; color: #475569; border: 1px solid #e2e8f0;">
                                         {{ ucwords(str_replace('_', ' ', @act.user_role ?: 'User')) }}
                                     </span>
                                 </div>
