@@ -1344,13 +1344,23 @@ class OrderController extends Controller {
         $daftarPic = OrderLayanan::getPICSpesialisasiList($this->db, $order['jenis_layanan_opti'] ?? 'selulosa');
 
         $isPic = ((int)$this->getUserId() === (int)($order['pic_proposal_id'] ?? 0));
-        $isSubmitted = !empty($proposal) && in_array($proposal['status_proposal'] ?? '', ['diajukan', 'disetujui', 'diterbitkan']);
-        $canEdit = ($this->hasPermission('order:proposal') || $this->isSuperadmin() || $isPic) && $this->canEditSubmittedData($isSubmitted);
+        $hasProposalFile = !empty($proposal) && !empty($proposal['file_proposal']);
+        $isSubmitted = $hasProposalFile && in_array($proposal['status_proposal'] ?? '', ['diajukan', 'disetujui', 'disetujui_ketua', 'disetujui_pimpinan', 'diterbitkan']);
+        $hasRoleAccess = ($this->hasPermission('order:proposal') || $this->isSuperadmin() || $this->isKetuaTim() || $this->isTimMitra() || $this->isTimKerja() || $this->isAdminOrder() || $isPic);
+        $canEdit = $hasRoleAccess && $this->canEditSubmittedData($isSubmitted);
+
+        $lockMessage = '';
+        if ($isSubmitted && !$this->canEditSubmittedData(true)) {
+            $lockMessage = "Rancangan/Proposal telah diajukan atau disetujui. Pengeditan dikunci, silakan hubungi superadmin.";
+        } elseif (!$hasRoleAccess) {
+            $lockMessage = "Anda tidak memiliki hak akses untuk mengubah rancangan percobaan ini.";
+        }
 
         $f3->set('order', $order);
         $f3->set('proposal', $proposal);
         $f3->set('daftar_pic', $daftarPic);
         $f3->set('can_edit', $canEdit);
+        $f3->set('lock_message', $lockMessage);
 
         $this->render('order/rancop_selulosa.html', "Rancangan Percobaan (Rancop) Selulosa", 'order');
     }
@@ -1369,8 +1379,18 @@ class OrderController extends Controller {
         $order = $orderModel->getDetail($id);
 
         $isPic = ($order && (int)$this->getUserId() === (int)($order['pic_proposal_id'] ?? 0));
-        if (!$this->hasPermission('order:proposal') && !$this->isSuperadmin() && !$isPic) {
-            $this->setFlashError("Akses Ditolak: Penyusunan proposal teknis & rancop merupakan wewenang PIC Proposal yang ditunjuk.");
+        $hasRoleAccess = ($this->hasPermission('order:proposal') || $this->isSuperadmin() || $this->isKetuaTim() || $this->isTimMitra() || $this->isTimKerja() || $this->isAdminOrder() || $isPic);
+        if (!$hasRoleAccess) {
+            $this->setFlashError("Akses Ditolak: Penyusunan proposal teknis & rancop merupakan wewenang Tim Pelaksana / PIC yang ditunjuk.");
+            $f3->reroute("/order/{$id}/rancop-selulosa");
+            return;
+        }
+
+        $existing = $orderModel->getProposalRiset($id);
+        $hasProposalFile = !empty($existing) && !empty($existing['file_proposal']);
+        $isSubmitted = $hasProposalFile && in_array($existing['status_proposal'] ?? '', ['diajukan', 'disetujui', 'disetujui_ketua', 'disetujui_pimpinan', 'diterbitkan']);
+        if ($isSubmitted && !$this->canEditSubmittedData(true)) {
+            $this->setFlashError("Gagal: Fitur edit data dikunci. Perubahan pada data yang sudah diajukan/disetujui tidak diperbolehkan.");
             $f3->reroute("/order/{$id}/rancop-selulosa");
             return;
         }
@@ -1525,14 +1545,23 @@ class OrderController extends Controller {
         $daftarLabEksternal = $this->db->exec("SELECT * FROM pengujian_eksternal WHERE status = 'aktif' ORDER BY nama_lembaga ASC");
 
         $isPic = ((int)$this->getUserId() === (int)($order['pic_proposal_id'] ?? 0));
-        $isSubmitted = in_array($order['status_proposal_biaya'] ?? '', ['menunggu_approval', 'disetujui']) || in_array($order['status'] ?? '', ['penawaran', 'negosiasi', 'po_terbit', 'selesai']);
-        $canEdit = ($this->hasPermission('order:kalkulasi_biaya') || $this->isSuperadmin() || $this->isKetuaTim() || $this->isTimMitra() || $isPic) && $this->canEditSubmittedData($isSubmitted);
+        $isSubmitted = !empty($kalkulasiItems) && (in_array($order['status_proposal_biaya'] ?? '', ['menunggu_approval', 'disetujui']) || (!empty($order['penawaran_id']) && in_array($order['status'] ?? '', ['penawaran', 'negosiasi', 'po_terbit', 'selesai'])));
+        $hasRoleAccess = ($this->hasPermission('order:kalkulasi_biaya') || $this->hasPermission('order:proposal') || $this->isSuperadmin() || $this->isKetuaTim() || $this->isTimMitra() || $this->isTimKerja() || $this->isAdminOrder() || $isPic);
+        $canEdit = $hasRoleAccess && $this->canEditSubmittedData($isSubmitted);
+
+        $lockMessage = '';
+        if ($isSubmitted && !$this->canEditSubmittedData(true)) {
+            $lockMessage = "Rincian tarif dan parameter telah diajukan atau disetujui. Pengeditan dikunci, silakan hubungi superadmin.";
+        } elseif (!$hasRoleAccess) {
+            $lockMessage = "Anda tidak memiliki hak akses untuk mengubah kalkulasi tarif pengujian ini.";
+        }
 
         $f3->set('order', $order);
         $f3->set('kalkulasi_items', $kalkulasiItems);
         $f3->set('daftar_metode', $daftarMetode);
         $f3->set('daftar_lab_eksternal', $daftarLabEksternal);
         $f3->set('can_edit', $canEdit);
+        $f3->set('lock_message', $lockMessage);
 
         // Audit Waktu & Petugas: Catat waktu pertama kali halaman kelola tarif dibuka
         $currentUserId = (int)$this->getUserId();
@@ -1553,8 +1582,17 @@ class OrderController extends Controller {
         $order = $orderModel->getDetail($id);
 
         $isPic = ($order && (int)$this->getUserId() === (int)($order['pic_proposal_id'] ?? 0));
-        if (!$this->hasPermission('order:kalkulasi_biaya') && !$this->isSuperadmin() && !$this->isKetuaTim() && !$this->isTimMitra() && !$isPic) {
+        $hasRoleAccess = ($this->hasPermission('order:kalkulasi_biaya') || $this->hasPermission('order:proposal') || $this->isSuperadmin() || $this->isKetuaTim() || $this->isTimMitra() || $this->isTimKerja() || $this->isAdminOrder() || $isPic);
+        if (!$hasRoleAccess) {
             $this->setFlashError("Akses Ditolak: Perhitungan rincian pengujian merupakan wewenang Ketua Tim / Tim Pelaksana.");
+            $f3->reroute("/order/{$id}/biaya-lingkungan");
+            return;
+        }
+
+        $existingKalkulasi = $orderModel->getKalkulasiLingkungan($id);
+        $isSubmitted = !empty($existingKalkulasi) && (in_array($order['status_proposal_biaya'] ?? '', ['menunggu_approval', 'disetujui']) || (!empty($order['penawaran_id']) && in_array($order['status'] ?? '', ['penawaran', 'negosiasi', 'po_terbit', 'selesai'])));
+        if ($isSubmitted && !$this->canEditSubmittedData(true)) {
+            $this->setFlashError("Gagal: Fitur edit data dikunci. Perubahan pada data yang sudah diajukan/disetujui tidak diperbolehkan.");
             $f3->reroute("/order/{$id}/biaya-lingkungan");
             return;
         }
@@ -2385,8 +2423,8 @@ class OrderController extends Controller {
         $isKetuaTim = $this->isKetuaTim();
 
         // Strict Access Control:
-        // Jika user adalah Tim Kerja (PIC), HANYA PIC yang ditugaskan yang boleh membuka proposal ini!
-        if ($userRole === 'tim_kerja' && !$isPic && !$isSuperadmin) {
+        // Jika user adalah Tim Kerja (PIC), HANYA PIC yang ditugaskan yang boleh membuka proposal ini jika PIC sudah ditunjuk
+        if ($userRole === 'tim_kerja' && !empty($order['pic_proposal_id']) && !$isPic && !$isSuperadmin) {
             $this->setFlashError("Akses Ditolak: Anda bukan PIC yang ditugaskan untuk proposal Order #{$order['nomor_order']}. Anda hanya berwenang mengerjakan proposal yang ditugaskan secara khusus kepada Anda.");
             $f3->reroute('/proposal');
             return;
@@ -2406,24 +2444,31 @@ class OrderController extends Controller {
             return;
         }
 
+        $hasProposalFile = !empty($proposal) && !empty($proposal['file_proposal']);
         $proposalDisetujui = (
-            (!empty($proposal) && in_array($proposal['status_proposal'] ?? '', ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan'])) ||
-            in_array($order['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui'])
+            ($hasProposalFile && in_array($proposal['status_proposal'] ?? '', ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan'])) ||
+            ($hasProposalFile && in_array($order['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui']))
         );
 
-        $isSubmitted = !empty($proposal) && in_array($order['status_proposal_biaya'] ?? '', ['menunggu_approval', 'siap_penawaran', 'disetujui']);
-        $canEdit = ($isPic || $isSuperadmin || $this->hasPermission('order:proposal')) && $this->canEditSubmittedData($isSubmitted);
+        // Data hanya dianggap "submitted" jika proposal sudah pernah dibuat/diisi berkasnya dan diajukan/disetujui
+        $isSubmitted = $hasProposalFile && in_array($proposal['status_proposal'] ?? '', ['diajukan', 'disetujui', 'disetujui_ketua', 'disetujui_pimpinan']);
+        $hasRoleAccess = ($isPic || $isSuperadmin || $isKetuaTim || $this->isTimKerja() || $this->isTimMitra() || $this->isAdminOrder() || $this->hasPermission('order:proposal'));
+        $canEdit = $hasRoleAccess && $this->canEditSubmittedData($isSubmitted);
         $canReview = ($isKetuaTim || $isSuperadmin);
 
         $lockMessage = '';
-        if ($proposalDisetujui && !$isSuperadmin) {
-            $canEdit = false;
-            $lockMessage = "Proposal telah disetujui. Tidak bisa merubah data, silakan hubungi superadmin.";
-        } elseif (!$tinjauanSelesai) {
+        if (!$tinjauanSelesai) {
             $canEdit = false;
             $lockMessage = "Kaji kelayakan belum selesai. Tidak bisa merubah data, silakan hubungi superadmin.";
-        } elseif (!$canEdit) {
-            $lockMessage = "Tidak bisa merubah data, silakan hubungi superadmin.";
+        } elseif ($proposalDisetujui && !$isSuperadmin && !$this->canEditSubmittedData(true)) {
+            $canEdit = false;
+            $lockMessage = "Proposal telah disetujui. Fitur edit data dikunci, silakan hubungi superadmin.";
+        } elseif ($isSubmitted && !$this->canEditSubmittedData(true)) {
+            $canEdit = false;
+            $lockMessage = "Proposal telah diajukan ke Ketua Tim. Fitur edit data dikunci, silakan hubungi superadmin.";
+        } elseif (!$hasRoleAccess) {
+            $canEdit = false;
+            $lockMessage = "Anda tidak memiliki hak akses untuk mengubah dokumen proposal ini.";
         }
 
         // Ambil data surat masuk jika ada
@@ -2496,24 +2541,28 @@ class OrderController extends Controller {
         $userId = (int)$this->getUserId();
         $userRole = $this->getUserRole();
         $isPic = ($userId > 0 && (int)($order['pic_proposal_id'] ?? 0) === $userId);
+        $hasRoleAccess = ($isPic || $this->isSuperadmin() || $this->isKetuaTim() || $this->isTimKerja() || $this->isTimMitra() || $this->isAdminOrder() || $this->hasPermission('order:proposal'));
         
         // Strict Access Control:
-        if ($userRole === 'tim_kerja' && !$isPic && !$this->isSuperadmin()) {
+        if (!$hasRoleAccess || ($userRole === 'tim_kerja' && !empty($order['pic_proposal_id']) && !$isPic && !$this->isSuperadmin())) {
             $this->setFlashError("Akses Ditolak: Anda bukan PIC yang ditugaskan untuk proposal ini.");
             $f3->reroute('/proposal');
             return;
         }
 
-        // 1. Cek apakah proposal sudah disetujui Ka. Tim (Terkunci)
+        // 1. Cek apakah proposal sudah disetujui Ka. Tim / diajukan dan edit dikunci
         $existing = $orderModel->getProposalRiset($id);
+        $hasProposalFile = !empty($existing) && !empty($existing['file_proposal']);
         $proposalDisetujui = (
-            ($existing && in_array($existing['status_proposal'] ?? '', ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan'])) ||
-            in_array($order['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui'])
+            ($hasProposalFile && in_array($existing['status_proposal'] ?? '', ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan'])) ||
+            ($hasProposalFile && in_array($order['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui']))
         );
         $actionType = $f3->get('POST.action_type') ?? 'draft'; // 'draft' atau 'ajukan'
 
-        if ($proposalDisetujui && !$this->isSuperadmin() && $actionType !== 'revisi') {
-            $this->setFlashError("Gagal: Dokumen proposal ini telah disetujui oleh Ketua Tim OPTI dan terkunci. Perubahan tidak dapat dilakukan.");
+        $isSubmitted = $hasProposalFile && in_array($existing['status_proposal'] ?? '', ['diajukan', 'disetujui', 'disetujui_ketua', 'disetujui_pimpinan']);
+
+        if ($isSubmitted && !$this->canEditSubmittedData(true) && $actionType !== 'revisi') {
+            $this->setFlashError("Gagal: Fitur edit data dikunci. Perubahan pada proposal yang sudah diajukan/disetujui tidak diperbolehkan.");
             $f3->reroute("/order/{$id}/proposal");
             return;
         }
@@ -2750,9 +2799,10 @@ class OrderController extends Controller {
         $userId = (int)$this->getUserId();
         $userRole = $this->getUserRole();
         $isPic = ($userId > 0 && (int)($order['pic_proposal_id'] ?? 0) === $userId);
+        $hasRoleAccess = ($isPic || $this->isSuperadmin() || $this->isKetuaTim() || $this->isTimKerja() || $this->isTimMitra() || $this->isAdminOrder() || $this->hasPermission('order:proposal'));
 
         // Access Control:
-        if ($userRole === 'tim_kerja' && !empty($order['pic_proposal_id']) && !$isPic && !$this->isSuperadmin()) {
+        if (!$hasRoleAccess || ($userRole === 'tim_kerja' && !empty($order['pic_proposal_id']) && !$isPic && !$this->isSuperadmin())) {
             $this->setFlashError("Akses Ditolak: Anda bukan PIC yang ditugaskan untuk mengunggah berkas proposal Order ini.");
             $f3->reroute($redirectUrl);
             return;
@@ -2762,17 +2812,18 @@ class OrderController extends Controller {
 
         // 1. Cek apakah proposal sudah disetujui (Terkunci)
         $existing = $orderModel->getProposalRiset($id);
+        $hasProposalFile = !empty($existing) && !empty($existing['file_proposal']);
         if ($isSelulosa) {
             $proposalDisetujui = (
-                ($existing && in_array($existing['status_proposal'] ?? '', ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan'])) ||
-                in_array($order['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui'])
+                ($hasProposalFile && in_array($existing['status_proposal'] ?? '', ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan'])) ||
+                ($hasProposalFile && in_array($order['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui']))
             );
         } else {
             // Lingkungan: Proposal teknis pasca bayar terkunci jika sudah di-ACC Ketua Tim
-            $proposalDisetujui = ($existing && in_array($existing['status_proposal'] ?? '', ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan']));
+            $proposalDisetujui = ($hasProposalFile && in_array($existing['status_proposal'] ?? '', ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan']));
         }
-        if ($proposalDisetujui && !$this->isSuperadmin()) {
-            $this->setFlashError("Dokumen proposal telah disetujui oleh Ketua Tim OPTI. Berkas terkunci dan tidak dapat diunggah ulang.");
+        if ($proposalDisetujui && !$this->isSuperadmin() && !$this->canEditSubmittedData(true)) {
+            $this->setFlashError("Dokumen proposal telah disetujui oleh Ketua Tim OPTI. Fitur edit data dikunci, berkas tidak dapat diunggah ulang.");
             $f3->reroute($redirectUrl);
             return;
         }
