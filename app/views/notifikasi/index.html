@@ -81,24 +81,41 @@
 }
 
 .notif-tab-group {
+    position: relative;
     background-color: #f1f5f9;
-    padding: 4px;
+    padding: 3px;
     border-radius: 9999px;
     display: inline-flex;
     align-items: center;
-    gap: 4px;
     border: 1px solid #e2e8f0;
     height: 38px;
+    user-select: none;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+.notif-tab-glider {
+    position: absolute;
+    top: 3px;
+    bottom: 3px;
+    left: 0;
+    width: 0;
+    border-radius: 9999px;
+    background-color: #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+    transition: transform 0.24s cubic-bezier(0.4, 0, 0.2, 1), width 0.24s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+    z-index: 1;
 }
 .notif-tab-btn {
+    position: relative;
+    z-index: 2;
     border: none;
-    background: transparent;
+    background: transparent !important;
     padding: 0.38rem 0.95rem;
     border-radius: 9999px;
     font-size: 0.78rem;
     font-weight: 600;
     color: #64748b;
-    transition: all 0.2s ease;
+    transition: color 0.2s ease;
     display: inline-flex;
     align-items: center;
     gap: 0.45rem;
@@ -110,10 +127,8 @@
     color: #0f172a;
 }
 .notif-tab-btn.active {
-    background-color: #ffffff;
-    color: #0f172a;
+    color: #0f172a !important;
     font-weight: 700;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 .notif-row-item {
     transition: background-color 0.18s ease;
@@ -160,8 +175,9 @@
                 </button>
             </div>
 
-            <!-- Filter Tabs -->
-            <div class="notif-tab-group flex-shrink-0" role="group">
+            <!-- Filter Tabs with Glider -->
+            <div class="notif-tab-group flex-shrink-0" role="group" id="notifTabGroup">
+                <div class="notif-tab-glider" id="notifTabGlider"></div>
                 <button type="button" class="notif-tab-btn active" id="btnFilterSemua" onclick="filterNotif('all', this)">
                     Semua <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2 py-0.5" style="font-size: 0.68rem;" id="allTabCount">{{ @totalSemua }}</span>
                 </button>
@@ -232,6 +248,33 @@
 <script>
     var currentTabType = 'all';
 
+    function updateNotifGlider(targetBtn, animate) {
+        var group = document.getElementById('notifTabGroup');
+        var glider = document.getElementById('notifTabGlider');
+        if (!group || !glider) return;
+
+        var activeBtn = targetBtn || group.querySelector('.notif-tab-btn.active');
+        if (!activeBtn) return;
+
+        if (!animate) {
+            glider.style.transition = 'none';
+        } else {
+            glider.style.transition = 'transform 0.24s cubic-bezier(0.4, 0, 0.2, 1), width 0.24s cubic-bezier(0.4, 0, 0.2, 1)';
+        }
+
+        var groupRect = group.getBoundingClientRect();
+        var btnRect = activeBtn.getBoundingClientRect();
+        var offsetLeft = btnRect.left - groupRect.left;
+
+        glider.style.transform = 'translateX(' + offsetLeft + 'px)';
+        glider.style.width = btnRect.width + 'px';
+
+        if (!animate) {
+            glider.offsetHeight; // Force reflow
+            glider.style.transition = 'transform 0.24s cubic-bezier(0.4, 0, 0.2, 1), width 0.24s cubic-bezier(0.4, 0, 0.2, 1)';
+        }
+    }
+
     function handleNotifSearch(query) {
         var btnClear = document.getElementById('btnClearSearch');
         if (btnClear) {
@@ -257,6 +300,7 @@
         });
         if (btn) {
             btn.classList.add('active');
+            updateNotifGlider(btn, true);
         }
 
         applyFilterAndSearch();
@@ -335,8 +379,16 @@
         return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
     }
 
-    // Initial check on load if query exists
+    // Initial check on load
     document.addEventListener('DOMContentLoaded', function() {
+        updateNotifGlider(null, false);
+        window.addEventListener('resize', function() {
+            updateNotifGlider(null, false);
+        });
+        setTimeout(function() {
+            updateNotifGlider(null, false);
+        }, 80);
+
         var searchInput = document.getElementById('notifSearchInput');
         if (searchInput && searchInput.value.trim().length > 0) {
             handleNotifSearch(searchInput.value);
