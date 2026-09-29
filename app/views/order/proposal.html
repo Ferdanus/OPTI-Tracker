@@ -324,13 +324,13 @@
             <!-- Card 3: Jejak Audit & Riwayat Tracking -->
             <div class="card border rounded-3 bg-white shadow-xs mb-4">
                 <div class="card-header bg-white py-2.5 px-3 px-md-4 border-bottom d-flex justify-content-between align-items-center">
-                    <div class="d-flex align-items-center gap-2">
-                        <div class="rounded-circle bg-primary-subtle text-primary p-1 d-flex align-items-center justify-content-center" style="width: 26px; height: 26px;">
-                            <i class="bi bi-clock-history" style="font-size: 0.8rem;"></i>
+                    <div class="d-flex align-items-center gap-2.5">
+                        <div class="rounded-circle bg-primary-subtle text-primary p-1.5 d-flex align-items-center justify-content-center" style="width: 28px; height: 28px;">
+                            <i class="bi bi-clock-history" style="font-size: 0.85rem;"></i>
                         </div>
                         <h6 class="m-0 fw-bold text-dark font-display" style="font-size: 0.88rem;">Riwayat &amp; Audit Waktu</h6>
                     </div>
-                    <span class="badge bg-light text-secondary border font-monospace" style="font-size: 0.68rem;">
+                    <span class="badge bg-light text-secondary border font-monospace px-2.5 py-1" style="font-size: 0.68rem;">
                         {{ !empty(@activity_logs) ? count(@activity_logs) : 0 }} Aktivitas
                     </span>
                 </div>
@@ -350,15 +350,15 @@
                                     
                                     <!-- Event Content Bubble -->
                                     <div class="audit-bubble shadow-none">
-                                        <div class="d-flex justify-content-between align-items-center mb-1 flex-wrap gap-1">
+                                        <div class="d-flex justify-content-between align-items-center mb-1 flex-wrap gap-2">
                                             <div class="d-flex align-items-center gap-2">
                                                 <strong class="text-dark font-display" style="font-size: 0.84rem;">{{ @log.user_nama ?: 'Sistem' }}</strong>
                                                 <span class="badge {{ @log.user_role == 'ketua_tim' ? 'bg-primary-subtle text-primary border border-primary-subtle' : 'bg-secondary-subtle text-secondary' }} px-2 py-0.5 rounded-pill" style="font-size: 0.68rem; letter-spacing: 0.2px;">
                                                     {{ @log.user_role == 'ketua_tim' ? 'Ka. Tim OPTI' : 'PIC Peneliti' }}
                                                 </span>
                                             </div>
-                                            <small class="text-muted font-monospace" style="font-size: 0.7rem;">
-                                                <i class="bi bi-clock me-0.5"></i>{{ date('d M Y, H:i', strtotime(@log.created_at)) }} WIB
+                                            <small class="text-muted font-monospace d-inline-flex align-items-center gap-1.5" style="font-size: 0.72rem;">
+                                                <i class="bi bi-clock text-muted opacity-75"></i> <span>{{ date('d M Y, H:i', strtotime(@log.created_at)) }} WIB</span>
                                             </small>
                                         </div>
                                         <p class="text-secondary mb-0" style="font-size: 0.78rem; line-height: 1.45;">{{ @log.deskripsi }}</p>
