@@ -340,11 +340,12 @@
                             <repeat group="{{ @activity_logs }}" value="{{ @log }}">
                                 <div class="audit-item">
                                     <!-- Bullet Dot Indicator -->
-                                    <div class="audit-dot {{ @log.aksi == 'ajukan_ke_ketua' ? 'border-primary text-primary' : (@log.aksi == 'setujui_proposal' ? 'border-success text-success' : (@log.aksi == 'minta_revisi' ? 'border-danger text-danger' : 'border-secondary text-secondary')) }}">
+                                    <div class="audit-dot {{ @log.aksi == 'ajukan_ke_ketua' ? 'border-primary text-primary' : (@log.aksi == 'setujui_proposal' ? 'border-success text-success' : (@log.aksi == 'minta_revisi' ? 'border-danger text-danger' : (@log.aksi == 'upload_file' ? 'border-info text-info' : 'border-secondary text-secondary'))) }}">
                                         <check if="{{ @log.aksi == 'ajukan_ke_ketua' }}"><i class="bi bi-send-fill"></i></check>
-                                        <check if="{{ @log.aksi == 'setujui_proposal' }}"><i class="bi bi-check2"></i></check>
+                                        <check if="{{ @log.aksi == 'setujui_proposal' }}"><i class="bi bi-check2-circle"></i></check>
                                         <check if="{{ @log.aksi == 'minta_revisi' }}"><i class="bi bi-arrow-counterclockwise"></i></check>
                                         <check if="{{ @log.aksi == 'simpan_draft' }}"><i class="bi bi-pencil-fill"></i></check>
+                                        <check if="{{ @log.aksi == 'upload_file' }}"><i class="bi bi-file-earmark-arrow-up-fill"></i></check>
                                     </div>
                                     
                                     <!-- Event Content Bubble -->
