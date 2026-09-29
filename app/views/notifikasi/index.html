@@ -26,21 +26,35 @@
 ~}
 
 <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
-    <div class="card-header bg-white py-3 px-4 d-flex flex-wrap justify-content-between align-items-center border-bottom gap-2">
+    <div class="card-header bg-white py-3 px-4 d-flex flex-wrap justify-content-between align-items-center border-bottom gap-3">
         <div class="d-flex align-items-center gap-3">
             <h6 class="m-0 fw-bold text-dark font-display">Daftar Pemberitahuan</h6>
             <span class="badge bg-light text-dark border rounded-pill px-2.5 py-1 font-monospace" style="font-size: 0.72rem;" id="totalNotifLabel">{{ @totalSemua }} Total Pesan</span>
         </div>
-        <div class="btn-group btn-group-sm p-0.5 bg-light rounded-pill border filter-btn-group" role="group">
-            <button type="button" class="btn btn-white rounded-pill px-3 fw-semibold active shadow-xs" id="btnFilterSemua" onclick="filterNotif('all', this)" style="font-size: 0.75rem;">
-                Semua <span class="badge bg-secondary-subtle text-secondary rounded-pill ms-1" style="font-size: 0.65rem;">{{ @totalSemua }}</span>
-            </button>
-            <button type="button" class="btn btn-transparent text-secondary rounded-pill px-3 fw-semibold" id="btnFilterUnread" onclick="filterNotif('unread', this)" style="font-size: 0.75rem;">
-                Belum Dibaca <span class="badge bg-danger text-white rounded-pill ms-1" style="font-size: 0.65rem;" id="unreadTabCount">{{ @totalUnread }}</span>
-            </button>
-            <button type="button" class="btn btn-transparent text-secondary rounded-pill px-3 fw-semibold" id="btnFilterRead" onclick="filterNotif('read', this)" style="font-size: 0.75rem;">
-                Riwayat <span class="badge bg-light text-muted border rounded-pill ms-1" style="font-size: 0.65rem;">{{ @totalRead }}</span>
-            </button>
+        <div class="d-flex flex-wrap align-items-center gap-2.5">
+            <!-- Search Bar -->
+            <div class="input-group input-group-sm" style="max-width: 300px; min-width: 220px;">
+                <span class="input-group-text bg-light border-end-0 rounded-start-pill ps-3 text-muted">
+                    <i class="bi bi-search"></i>
+                </span>
+                <input type="text" class="form-control bg-light border-start-0 border-end-0 ps-1" id="notifSearchInput" placeholder="Cari notifikasi, pengirim..." value="{{ @search_query }}" oninput="handleNotifSearch(this.value)" autocomplete="off">
+                <button class="btn btn-light border border-start-0 rounded-end-pill pe-3 text-muted" type="button" id="btnClearSearch" onclick="clearNotifSearch()" style="display: {{ empty(@search_query) ? 'none' : 'block' }};" title="Hapus pencarian">
+                    <i class="bi bi-x-circle-fill text-secondary"></i>
+                </button>
+            </div>
+
+            <!-- Tab Filters -->
+            <div class="btn-group btn-group-sm p-0.5 bg-light rounded-pill border filter-btn-group" role="group">
+                <button type="button" class="btn btn-white rounded-pill px-3 fw-semibold active shadow-xs" id="btnFilterSemua" onclick="filterNotif('all', this)" style="font-size: 0.75rem;">
+                    Semua <span class="badge bg-secondary-subtle text-secondary rounded-pill ms-1" style="font-size: 0.65rem;" id="allTabCount">{{ @totalSemua }}</span>
+                </button>
+                <button type="button" class="btn btn-transparent text-secondary rounded-pill px-3 fw-semibold" id="btnFilterUnread" onclick="filterNotif('unread', this)" style="font-size: 0.75rem;">
+                    Belum Dibaca <span class="badge bg-danger text-white rounded-pill ms-1" style="font-size: 0.65rem;" id="unreadTabCount">{{ @totalUnread }}</span>
+                </button>
+                <button type="button" class="btn btn-transparent text-secondary rounded-pill px-3 fw-semibold" id="btnFilterRead" onclick="filterNotif('read', this)" style="font-size: 0.75rem;">
+                    Riwayat <span class="badge bg-light text-muted border rounded-pill ms-1" style="font-size: 0.65rem;" id="readTabCount">{{ @totalRead }}</span>
+                </button>
+            </div>
         </div>
     </div>
     <div class="card-body p-0">
@@ -48,13 +62,13 @@
             <true>
                 <div class="list-group list-group-flush" id="fullNotifList">
                     <repeat group="{{ @daftar_notifikasi_semua }}" value="{{ @item }}">
-                        <div class="list-group-item p-3.5 notif-row-item {{ @item.is_read ? 'bg-white is-read' : 'bg-light bg-opacity-40 is-unread' }} d-flex align-items-start gap-3 border-bottom transition-all" data-is-read="{{ @item.is_read ? '1' : '0' }}">
+                        <div class="list-group-item p-3.5 notif-row-item {{ @item.is_read ? 'bg-white is-read' : 'bg-light bg-opacity-40 is-unread' }} d-flex align-items-start gap-3 border-bottom transition-all" data-is-read="{{ @item.is_read ? '1' : '0' }}" data-search-text="{{ strtolower(@item.judul . ' ' . @item.pesan . ' ' . @item.created_by_name) }}">
                             <div class="rounded-circle p-2.5 d-flex align-items-center justify-content-center flex-shrink-0 {{ @item.tipe == 'success' ? 'bg-success-subtle text-success' : (@item.tipe == 'warning' ? 'bg-warning-subtle text-warning' : (@item.tipe == 'primary' ? 'bg-primary-subtle text-primary' : 'bg-info-subtle text-info')) }}" style="width: 44px; height: 44px;">
                                 <i class="bi {{ @item.icon ?: 'bi-bell-fill' }} fs-5"></i>
                             </div>
                             <div class="flex-grow-1">
                                 <div class="d-flex justify-content-between align-items-start mb-1">
-                                    <h6 class="fw-bold text-dark mb-0 font-display {{ @item.is_read ? '' : 'text-primary' }}" style="font-size: 0.9rem;">{{ @item.judul }}</h6>
+                                    <h6 class="fw-bold text-dark mb-0 font-display notif-title {{ @item.is_read ? '' : 'text-primary' }}" style="font-size: 0.9rem;">{{ @item.judul }}</h6>
                                     <div class="d-flex align-items-center gap-2">
                                         <small class="text-muted" style="font-size: 0.72rem;"><i class="bi bi-clock me-1"></i>{{ @item.time_ago }}</small>
                                         <check if="{{ !@item.is_read }}">
@@ -62,25 +76,28 @@
                                         </check>
                                     </div>
                                 </div>
-                                <p class="text-secondary small mb-2.5" style="font-size: 0.8rem; line-height: 1.4;">{{ @item.pesan }}</p>
+                                <p class="text-secondary small mb-2.5 notif-desc" style="font-size: 0.8rem; line-height: 1.4;">{{ @item.pesan }}</p>
                                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                                     <div class="d-flex align-items-center gap-2">
                                         <a href="{{ @BASE }}{{ @item.link_url }}" onclick="window.markNotifRead({{ @item.id }}, '{{ @BASE }}{{ @item.link_url }}')" class="btn btn-sm btn-primary py-1 px-3 rounded-pill text-white text-decoration-none fw-semibold shadow-xs d-inline-flex align-items-center gap-1" style="font-size: 0.75rem;">
                                             Buka Dokumen <i class="bi bi-arrow-right"></i>
                                         </a>
                                     </div>
-                                    <span class="text-muted small" style="font-size: 0.72rem;">Oleh: <strong>{{ @item.created_by_name ?: 'Sistem OPTI' }}</strong></span>
+                                    <span class="text-muted small notif-sender" style="font-size: 0.72rem;">Oleh: <strong>{{ @item.created_by_name ?: 'Sistem OPTI' }}</strong></span>
                                 </div>
                             </div>
                         </div>
                     </repeat>
                 </div>
 
-                <!-- Dynamic Empty Box for Filter -->
+                <!-- Dynamic Empty Box for Filter / Search -->
                 <div class="text-center py-5 text-muted" id="notifEmptyFilter" style="display: none;">
-                    <i class="bi bi-inbox fs-1 text-muted opacity-40 d-block mb-2"></i>
+                    <i class="bi bi-search fs-1 text-muted opacity-40 d-block mb-2" id="notifEmptyFilterIcon"></i>
                     <h6 class="fw-bold text-dark" id="notifEmptyFilterTitle">Tidak Ada Pesan</h6>
-                    <p class="small text-muted mb-0" id="notifEmptyFilterDesc">Tidak ditemukan pesan pada kategori filter yang dipilih.</p>
+                    <p class="small text-muted mb-3" id="notifEmptyFilterDesc">Tidak ditemukan pesan pada kategori filter yang dipilih.</p>
+                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 shadow-xs" id="btnResetSearchInEmpty" onclick="clearNotifSearch()" style="display: none;">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i> Reset Pencarian
+                    </button>
                 </div>
             </true>
             <false>
@@ -95,32 +112,67 @@
 </div>
 
 <script>
+    var currentTabType = 'all';
+
+    function handleNotifSearch(query) {
+        var btnClear = document.getElementById('btnClearSearch');
+        if (btnClear) {
+            btnClear.style.display = query && query.trim().length > 0 ? 'block' : 'none';
+        }
+        applyFilterAndSearch();
+    }
+
+    function clearNotifSearch() {
+        var input = document.getElementById('notifSearchInput');
+        if (input) {
+            input.value = '';
+            handleNotifSearch('');
+            input.focus();
+        }
+    }
+
     function filterNotif(type, btn) {
+        currentTabType = type;
         // Toggle Button Active State
         document.querySelectorAll('.filter-btn-group .btn').forEach(function(b) {
             b.classList.remove('btn-white', 'active', 'shadow-xs');
             b.classList.add('btn-transparent', 'text-secondary');
         });
-        btn.classList.remove('btn-transparent', 'text-secondary');
-        btn.classList.add('btn-white', 'active', 'shadow-xs');
+        if (btn) {
+            btn.classList.remove('btn-transparent', 'text-secondary');
+            btn.classList.add('btn-white', 'active', 'shadow-xs');
+        }
 
-        // Filter Rows
+        applyFilterAndSearch();
+    }
+
+    function applyFilterAndSearch() {
+        var searchInput = document.getElementById('notifSearchInput');
+        var query = searchInput ? searchInput.value.toLowerCase().trim() : '';
         var rows = document.querySelectorAll('.notif-row-item');
         var visibleCount = 0;
 
         rows.forEach(function(r) {
             var isRead = r.getAttribute('data-is-read') === '1';
-            var shouldShow = false;
+            var searchText = (r.getAttribute('data-search-text') || r.innerText).toLowerCase();
 
-            if (type === 'all') {
-                shouldShow = true;
-            } else if (type === 'unread') {
-                shouldShow = !isRead;
-            } else if (type === 'read') {
-                shouldShow = isRead;
+            // Check Tab Condition
+            var matchesTab = false;
+            if (currentTabType === 'all') {
+                matchesTab = true;
+            } else if (currentTabType === 'unread') {
+                matchesTab = !isRead;
+            } else if (currentTabType === 'read') {
+                matchesTab = isRead;
             }
 
-            if (shouldShow) {
+            // Check Search Condition
+            var matchesSearch = true;
+            if (query.length > 0) {
+                matchesSearch = searchText.indexOf(query) !== -1;
+            }
+
+            if (matchesTab && matchesSearch) {
                 r.style.setProperty('display', 'flex', 'important');
                 visibleCount++;
             } else {
@@ -132,23 +184,46 @@
         var emptyBox = document.getElementById('notifEmptyFilter');
         var emptyTitle = document.getElementById('notifEmptyFilterTitle');
         var emptyDesc = document.getElementById('notifEmptyFilterDesc');
+        var emptyIcon = document.getElementById('notifEmptyFilterIcon');
+        var btnResetEmpty = document.getElementById('btnResetSearchInEmpty');
 
         if (emptyBox) {
             if (visibleCount === 0 && rows.length > 0) {
                 emptyBox.style.display = 'block';
-                if (type === 'unread') {
-                    emptyTitle.textContent = 'Semua Pesan Sudah Dibaca';
-                    emptyDesc.textContent = 'Tidak ada pemberitahuan baru yang belum dibaca saat ini.';
-                } else if (type === 'read') {
-                    emptyTitle.textContent = 'Belum Ada Riwayat Pesan';
-                    emptyDesc.textContent = 'Pesan yang sudah Anda baca akan muncul di tab riwayat ini.';
+                if (query.length > 0) {
+                    if (emptyIcon) emptyIcon.className = 'bi bi-search fs-1 text-muted opacity-40 d-block mb-2';
+                    emptyTitle.textContent = 'Tidak Ditemukan Hasil';
+                    emptyDesc.innerHTML = 'Tidak ada pemberitahuan yang cocok dengan kata kunci "<strong>' + escapeHtml(query) + '</strong>".';
+                    if (btnResetEmpty) btnResetEmpty.style.display = 'inline-flex';
                 } else {
-                    emptyTitle.textContent = 'Tidak Ada Pesan';
-                    emptyDesc.textContent = 'Tidak ditemukan notifikasi.';
+                    if (emptyIcon) emptyIcon.className = 'bi bi-inbox fs-1 text-muted opacity-40 d-block mb-2';
+                    if (btnResetEmpty) btnResetEmpty.style.display = 'none';
+                    if (currentTabType === 'unread') {
+                        emptyTitle.textContent = 'Semua Pesan Sudah Dibaca';
+                        emptyDesc.textContent = 'Tidak ada pemberitahuan baru yang belum dibaca saat ini.';
+                    } else if (currentTabType === 'read') {
+                        emptyTitle.textContent = 'Belum Ada Riwayat Pesan';
+                        emptyDesc.textContent = 'Pesan yang sudah Anda baca akan muncul di tab riwayat ini.';
+                    } else {
+                        emptyTitle.textContent = 'Tidak Ada Pesan';
+                        emptyDesc.textContent = 'Tidak ditemukan notifikasi.';
+                    }
                 }
             } else {
                 emptyBox.style.display = 'none';
             }
         }
     }
+
+    function escapeHtml(str) {
+        return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
+    // Initial check on load if query exists
+    document.addEventListener('DOMContentLoaded', function() {
+        var searchInput = document.getElementById('notifSearchInput');
+        if (searchInput && searchInput.value.trim().length > 0) {
+            handleNotifSearch(searchInput.value);
+        }
+    });
 </script>
