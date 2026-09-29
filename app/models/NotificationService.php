@@ -102,10 +102,20 @@ class NotificationService
     /**
      * Ambil daftar notifikasi untuk user yang sedang login
      */
-    public static function getUserNotifications(\DB\SQL $db, int $userId, string $role, string $layanan = 'semua', int $limit = 15): array
+    public static function getUserNotifications(\DB\SQL $db, int $userId, string $role, string $layanan = 'semua', int $limit = 15, string $search = ''): array
     {
         list($whereClause, $params) = self::buildTargetCondition($userId, $role, $layanan);
-        $sql = "SELECT * FROM `opti_notifikasi` WHERE {$whereClause} ORDER BY created_at DESC, id DESC LIMIT " . (int)$limit;
+        
+        $searchSql = '';
+        if (!empty(trim($search))) {
+            $searchSql = " AND (judul LIKE ? OR pesan LIKE ? OR created_by_name LIKE ?)";
+            $keyword = '%' . trim($search) . '%';
+            $params[] = $keyword;
+            $params[] = $keyword;
+            $params[] = $keyword;
+        }
+
+        $sql = "SELECT * FROM `opti_notifikasi` WHERE {$whereClause}{$searchSql} ORDER BY created_at DESC, id DESC LIMIT " . (int)$limit;
 
         $rows = $db->exec($sql, $params);
         foreach ($rows as &$r) {

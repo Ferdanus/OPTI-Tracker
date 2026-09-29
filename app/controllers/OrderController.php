@@ -2607,9 +2607,13 @@ class OrderController extends Controller {
             $durasiHari = (int)$matches[1];
         }
 
-        // Ambil jejak audit & riwayat aktivitas order/proposal
+        // Ambil jejak audit & riwayat aktivitas khusus proposal teknis (Pengerjaan, Revisian, dan ACC antara Ka Tim OPTI & PIC)
         $activityLogs = $this->db->exec(
-            "SELECT * FROM opti_activity_log WHERE order_id = ? ORDER BY id DESC",
+            "SELECT * FROM opti_activity_log 
+             WHERE order_id = ? 
+               AND modul = 'proposal' 
+               AND aksi IN ('simpan_draft', 'upload_file', 'ajukan_ke_ketua', 'minta_revisi', 'setujui_proposal')
+             ORDER BY id DESC",
             [1 => $id]
         );
 

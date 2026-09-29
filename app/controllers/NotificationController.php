@@ -68,8 +68,10 @@ class NotificationController extends Controller
         $role    = $this->getUserRole();
         $layanan = $this->getUserLayanan();
 
-        $allNotif = NotificationService::getUserNotifications($this->db, $userId, $role, $layanan, 50);
+        $q = trim($f3->get('GET.q') ?? '');
+        $allNotif = NotificationService::getUserNotifications($this->db, $userId, $role, $layanan, 100, $q);
         $f3->set('daftar_notifikasi_semua', $allNotif);
+        $f3->set('search_query', $q);
 
         $this->render('notifikasi/index.html', 'Pusat Pemberitahuan & Notifikasi', 'dashboard');
     }
