@@ -1247,7 +1247,7 @@
                 </check>
 
                 <!-- Surat Penawaran (Admin Order, Tim Mitra, Ketua Tim, Superadmin) -->
-                <check if="{{ @is_superadmin || @is_admin_order || @is_ketua_tim }}">
+                <check if="{{ @is_superadmin || @is_tim_mitra }}">
                     <li>
                         <a class="sidebar-link {{ @active_menu == 'surat-penawaran' ? 'active' : '' }}" href="{{ @BASE }}/surat-penawaran" title="Surat Penawaran">
                             <i class="bi bi-file-earmark-text"></i> <span>Surat Penawaran</span>
@@ -1257,7 +1257,7 @@
 
 
                 <!-- Rekapitulasi Pembayaran & Keuangan (Khusus Ka Tim OPTI & Superadmin) -->
-                <check if="{{ @is_superadmin || @is_ketua_tim }}">
+                <check if="{{ @is_superadmin || @is_keuangan }}">
                     <li>
                         <a class="sidebar-link {{ @active_menu == 'pembayaran' ? 'active' : '' }}" href="{{ @BASE }}/pembayaran" title="Pembayaran & Keuangan">
                             <i class="bi bi-cash-stack"></i> <span>Pembayaran</span>
@@ -1282,6 +1282,7 @@
                     <li class="sidebar-section-label">Pelaksanaan Teknis</li>
                     
                     <!-- Tugas Proposal Teknis (Tim Kerja / PIC Peneliti, Ketua Tim, Superadmin) -->
+                    <check if="{{ @is_superadmin || @is_tim_kerja }}">
                     <li>
                         <a class="sidebar-link {{ @active_menu == 'proposal' ? 'active' : '' }}" href="{{ @BASE }}/proposal" title="Tugas Proposal Teknis">
                             <i class="bi bi-journal-code"></i> <span>Tugas Proposal</span>
@@ -1290,6 +1291,7 @@
                             </check>
                         </a>
                     </li>
+                    </check>
                     <check if="{{ @is_superadmin || @is_ketua_tim || @is_tim_kerja }}">
                     <li>
                         <a class="sidebar-link {{ @active_menu == 'daftar_po' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan/daftar" title="Petunjuk Operasional Selulosa">
@@ -1301,6 +1303,7 @@
                     </li>
                 </check>
                     <!-- Petunjuk Operasional (PO) Kegiatan -->
+                    <check if="{{ @is_superadmin || @is_tim_kerja }}">
                     <li>
                         <a class="sidebar-link {{ @active_menu == 'po_lingkungan' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?divisi=lingkungan" title="Petunjuk Operasional Lingkungan">
                             <i class="bi bi-clipboard-check"></i> <span>PO Lingkungan</span>
@@ -1309,6 +1312,8 @@
                             </check>
                         </a>
                     </li>
+                    </check>
+                    <check if="{{ @is_superadmin || @is_tim_kerja }}">
                     <li>
                         <a class="sidebar-link {{ @active_menu == 'po_selulosa' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?divisi=selulosa" title="Petunjuk Operasional Selulosa">
                             <i class="bi bi-clipboard-check"></i> <span>PO Selulosa</span>
@@ -1317,7 +1322,25 @@
                             </check>
                         </a>
                     </li>
+                    </check>
                 </check>
+
+                <!-- 2. PELAKSANAAN TEKNIS -->
+                <check if="{{ @is_superadmin }}">
+                    <li class="sidebar-section-label">Perjanjian Kerja Sama</li>
+                    
+                    <!-- Tugas Proposal Teknis (Tim Kerja / PIC Peneliti, Ketua Tim, Superadmin) -->
+                    <li>
+                        <a class="sidebar-link {{ @active_menu == 'kontrak' ? 'active' : '' }}" href="{{ @BASE }}/kontrak" title="Tugas Proposal Teknis">
+                            <i class="bi bi-journal-code"></i> <span>Kontrak</span>
+                            <check if="{{ @jumlah_notif_kontrak > 0 }}">
+                                <span class="badge rounded-pill ms-auto sidebar-notif-badge" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff;">{{ @jumlah_notif_proposal }}</span>
+                            </check>
+                        </a>
+                    </li>
+                
+                </check>
+
 
                 <!-- 3. MASTER DATA (Khusus Superadmin) -->
                 <check if="{{ @is_superadmin }}">

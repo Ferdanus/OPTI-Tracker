@@ -31,6 +31,40 @@
     color: #dc3545; font-size: 11.5px; margin-top: 2px; display: none;
 }
 .wajib-error-msg.show { display: block; }
+
+/* [BARU] tabel item biaya RAB (lingkungan) -- kolom Kali/Jumlah/Satuan/Hari/Harga Satuan/Biaya
+   biar strukturnya samain kaya format RAB kertas aslinya. */
+.rab-item-table { font-size: 13px; }
+.rab-item-table th { font-weight: 600; text-align: center; vertical-align: middle; white-space: nowrap; }
+.rab-item-table td { padding: 4px; vertical-align: middle; }
+.rab-item-table .form-control { min-width: 44px; }
+/* [FIX] spinner angka bawaan browser (panah atas-bawah) makan hampir semua lebar kolom
+   yang sempit (Kali/Jumlah/Hari), jadi angkanya ketutupan & keliatan kosong. Dimatiin
+   spinnernya biar full lebar kolom kepake buat nampilin angkanya. */
+.rab-item-table input[type="number"] { -moz-appearance: textfield; text-align: center; }
+.rab-item-table input[type="number"]::-webkit-outer-spin-button,
+.rab-item-table input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.rab-item-satuankata { white-space: nowrap; }
+.rab-item-total { min-height: 31px; display: flex; align-items: center; justify-content: flex-end; }
+.rab-kat-nested .rab-kegiatan-box, .rab-kat-nested .rab-grup-box { background: #fff; }
+/* [BARU] baris "Item Lembur" -- kolom Kali/Jumlah/Hari/Satuan digabung jadi satu sel lebar
+   (colspan) isinya form mini Hari x Jam x Tarif OJ x %Lembur + Uang Makan, soalnya rumusnya
+   beda dari item biasa (Kali x Jumlah x Hari x Satuan). */
+.rab-item-row.rab-item-lembur td { background: #fffdf2; }
+.rab-lembur-form { white-space: normal; }
+.rab-lembur-form .rab-lembur-inline { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.rab-lembur-form .form-control { width: 70px; display: inline-block; }
+.rab-lembur-form .rab-lembur-oj, .rab-lembur-form .rab-lembur-uangmakan { width: 95px; }
+.rab-lembur-form .rab-lembur-label { color: #6c757d; white-space: nowrap; }
+/* [BARU] baris item RAB yang nyambung ke "Rincian Kebutuhan Lain" (selulosa) -- kolom
+   Kali/Jumlah/Hari/Satuan digabung jadi satu sel isinya dropdown kategori kebutuhan. */
+.rab-item-row.rab-item-kebutuhan td { background: #f2faff; }
+.rab-keb-form { white-space: normal; }
+.rab-keb-form select.rab-keb-kategori { max-width: 280px; display: inline-block; width: auto; }
+.kat-tanpa-rincian-toggle:checked, .rab-grup-disediakan-toggle:checked { accent-color: var(--color-primary, #0d6efd); }
 </style>
 <div class="d-flex align-items-center gap-3 mb-4">
     <a href="{{ @BASE }}/po-kegiatan?divisi={{ @order.jenis_layanan_opti }}" class="btn-back"><i class="bi bi-arrow-left"></i> Kembali</a>
@@ -402,6 +436,14 @@ function rupiah(n) { return 'Rp ' + (Math.round(n) || 0).toLocaleString('id-ID')
 var poData = {{ @po_json | raw }};
 var daftarPegawai = {{ json_encode(@daftar_pegawai ?: []) }};
 var estimasiBiayaAwal = {{ @order.estimasi_biaya ?: 0 }};
+var divisiOrder = {{ json_encode(@order.jenis_layanan_opti ?: '') }};
+// [BARU] RAB berjenjang (Kegiatan -> Lokasi/Kelompok -> Item) dipakai buat lingkungan DAN
+// selulosa sekarang (mesinnya sama, selulosa cuma biasanya lebih dikit levelnya).
+var pakaiRabBaru = (divisiOrder === 'lingkungan' || divisiOrder === 'selulosa');
+// CATATAN: nama PT/mitra buat auto-isi "Disediakan oleh PT" pake namaPerusahaanDasar yang
+// udah didefinisikan di bagian "1. DASAR" (@order.nama_mitra, udah dibungkus decodeHtmlEntities
+// biar aman) -- JANGAN bikin variabel baru lagi di sini, itu penyebab bug "nama PT gak ke-isi"
+// yang udah pernah kejadian & ke-fix sebelumnya (variabel duplikat gak lewat decodeHtmlEntities).
 
 /* ============================================================ */
 /* 3. RUANG LINGKUP                                              */
@@ -562,10 +604,13 @@ function tambahKategoriKebutuhan(data) {
     var inNama = document.createElement('input');
     inNama.type = 'text'; inNama.name = 'keb_nama[' + myIdx + ']'; inNama.className = 'form-control form-control-sm fw-semibold';
     inNama.placeholder = 'Nama kategori, mis. ATK / Computer Supply'; inNama.value = data.nama || '';
+    // [BARU] Nama kategori ini dipakai item RAB tipe "Rincian Kebutuhan" (selulosa) buat
+    // nyambungin biayanya -- pilihan di dropdown itu harus ikut ke-update pas nama diganti.
+    inNama.addEventListener('input', refreshKebutuhanKategoriOptions);
     var btnHapusKat = document.createElement('button');
     btnHapusKat.type = 'button'; btnHapusKat.className = 'btn btn-sm btn-outline-danger';
     btnHapusKat.innerHTML = '<i class="bi bi-trash"></i>';
-    btnHapusKat.addEventListener('click', function () { box.remove(); });
+    btnHapusKat.addEventListener('click', function () { box.remove(); refreshKebutuhanKategoriOptions(); });
     headerRow.appendChild(inNama); headerRow.appendChild(btnHapusKat);
     var targetInfo = document.createElement('div');
 targetInfo.className = 'small mb-2 kat-target-info';
@@ -651,6 +696,9 @@ function hitungKebutuhanLive() {
         });
         box.querySelector('.keb-total').textContent = rupiah(totalKategori);
     });
+    // [BARU] Item RAB tipe "Rincian Kebutuhan" (selulosa) nyambung ke total kategori di sini --
+    // tiap angkanya berubah, RAB-nya ikut ke-refresh biar selalu sinkron.
+    hitungRabLive();
 }
 
 
@@ -757,10 +805,22 @@ function tambahItemPenerimaan(data) {
     var row = document.createElement('div');
     row.className = 'input-group input-group-sm mb-2';
 
+    // [BARU] lingkungan & selulosa: Penerimaan cuma "Nilai Kontrak" -- satu angka doang,
+    // nama-nya dikunci & gak bisa dihapus/nambah baris lagi. Tapi kalo ini data LAMA yang
+    // namanya udah kadung beda (bukan "Nilai Kontrak"), jangan dipaksa timpa -- biarin apa
+    // adanya biar data lama gak ke-rename diem-diem.
+    var isNilaiKontrak = pakaiRabBaru && (!data.nama || data.nama === 'Nilai Kontrak');
+
     var inNama = document.createElement('input');
     inNama.type = 'text'; inNama.name = 'pen_nama[]'; inNama.className = 'form-control';
     inNama.placeholder = 'Contoh: Nilai Kontrak / Biaya Pengujian';
     inNama.value = data.nama || '';
+
+    if (isNilaiKontrak) {
+        inNama.value = 'Nilai Kontrak';
+        inNama.readOnly = true;
+        inNama.classList.add('fw-semibold', 'bg-light');
+    }
 
     var span = document.createElement('span');
     span.className = 'input-group-text'; span.textContent = 'Rp';
@@ -772,7 +832,8 @@ function tambahItemPenerimaan(data) {
     btnHapus.innerHTML = '<i class="bi bi-trash"></i>';
     btnHapus.addEventListener('click', function () { row.remove(); hitungRabLive(); });
 
-    row.appendChild(inNama); row.appendChild(span); row.appendChild(pasanganNominal.display); row.appendChild(pasanganNominal.hidden); row.appendChild(btnHapus);
+    row.appendChild(inNama); row.appendChild(span); row.appendChild(pasanganNominal.display); row.appendChild(pasanganNominal.hidden);
+    if (!isNilaiKontrak) row.appendChild(btnHapus);
     document.getElementById('bodyPenerimaan').appendChild(row);
 }
 
@@ -813,33 +874,763 @@ function tambahKategori(data) {
 
     headerRow.appendChild(inNama); headerRow.appendChild(inPersen); headerRow.appendChild(btnHapusKat);
 
-    var itemBody = document.createElement('div');
-    itemBody.className = 'kat-item-body mb-2';
+    // [BARU] Toggle "tanpa rincian" -- kategori kayak Biaya Penunjang Pelayanan Klien yang
+    // nilainya cuma persen x Nilai Kontrak, tanpa perlu isi Kegiatan/Lokasi/Item sama sekali.
+    var tanpaRincianWrap = document.createElement('div');
+    tanpaRincianWrap.className = 'form-check mb-2';
+    var chkTanpaRincian = document.createElement('input');
+    chkTanpaRincian.type = 'checkbox'; chkTanpaRincian.className = 'form-check-input kat-tanpa-rincian-toggle';
+    chkTanpaRincian.id = 'katTanpaRincian' + myIdx;
+    chkTanpaRincian.checked = !!data.tanpa_rincian;
+    var hiddenTanpaRincian = document.createElement('input');
+    hiddenTanpaRincian.type = 'hidden'; hiddenTanpaRincian.name = 'kat_tanpa_rincian[' + myIdx + ']';
+    hiddenTanpaRincian.value = data.tanpa_rincian ? '1' : '';
+    var lblTanpaRincian = document.createElement('label');
+    lblTanpaRincian.className = 'form-check-label small text-muted';
+    lblTanpaRincian.htmlFor = chkTanpaRincian.id;
+    lblTanpaRincian.textContent = 'Tanpa rincian item (nilainya langsung dari % x Nilai Kontrak)';
+    tanpaRincianWrap.appendChild(chkTanpaRincian);
+    tanpaRincianWrap.appendChild(hiddenTanpaRincian);
+    tanpaRincianWrap.appendChild(lblTanpaRincian);
 
     var targetInfo = document.createElement('div');
     targetInfo.className = 'small mb-2 kat-target-info';
 
-    var btnTambahItem = document.createElement('button');
-    btnTambahItem.type = 'button'; btnTambahItem.className = 'btn btn-sm btn-outline-primary py-0';
-    btnTambahItem.innerHTML = '<i class="bi bi-plus-lg"></i> Tambah Item';
-    btnTambahItem.addEventListener('click', function () { tambahItemKategori(myIdx, itemBody); hitungRabLive(); });
+    var subtotalLine = document.createElement('div');
+    subtotalLine.className = 'text-end fw-semibold small mt-2';
+    var subtotalSpan = document.createElement('span');
+    subtotalSpan.className = 'kat-subtotal'; subtotalSpan.textContent = 'Rp 0';
+    var persenSpan = document.createElement('span');
+    persenSpan.className = 'kat-persen text-muted'; persenSpan.textContent = ' (0%)';
+    subtotalLine.appendChild(document.createTextNode('Subtotal: '));
+    subtotalLine.appendChild(subtotalSpan);
+    subtotalLine.appendChild(persenSpan);
+
+    box.appendChild(headerRow); box.appendChild(tanpaRincianWrap); box.appendChild(targetInfo);
+    box.dataset.subtotalTarget = 'true';
+
+    // Elemen detail (Kegiatan atau Item, tergantung mode) yang disembunyiin kalau "tanpa rincian" dicentang.
+    var elDetailToHide = [];
+    function terapkanTanpaRincian() {
+        var aktif = chkTanpaRincian.checked;
+        hiddenTanpaRincian.value = aktif ? '1' : '';
+        elDetailToHide.forEach(function (el) { el.style.display = aktif ? 'none' : ''; });
+        hitungRabLive();
+    }
+    chkTanpaRincian.addEventListener('change', terapkanTanpaRincian);
+
+    // [BARU] Struktur RAB berjenjang (Kegiatan -> Lokasi/Kelompok -> Item Biaya) dipakai lingkungan
+    // & selulosa. Tapi kalo ini kategori data LAMA (udah ada "items" datar tapi belum ada
+    // "kegiatan") -- tetep tampilin mode lama biar datanya gak ilang diem-diem pas dibuka lagi.
+    var adaDataLamaDatar = !!((data.items && data.items.length) && !(data.kegiatan && data.kegiatan.length));
+    var pakaiKegiatanUI = pakaiRabBaru && !adaDataLamaDatar;
+
+    if (pakaiKegiatanUI) {
+        // Struktur RAB berjenjang Kegiatan -> Lokasi/Kelompok -> Item Biaya (Lumpsum/Transport/
+        // Hotel/ATK/dll, masing-masing Kali x Orang-atau-Kamar x Hari x Tarif Satuan, atau Lembur),
+        // biar hasil cetaknya kaya contoh dokumen RAB yang dipakai selama ini.
+        box.classList.add('rab-kat-nested');
+
+        var kegiatanBody = document.createElement('div');
+        kegiatanBody.className = 'rab-kegiatan-body mb-2';
+
+        var btnTambahKegiatan = document.createElement('button');
+        btnTambahKegiatan.type = 'button'; btnTambahKegiatan.className = 'btn btn-sm btn-outline-primary py-0';
+        btnTambahKegiatan.innerHTML = '<i class="bi bi-plus-lg"></i> Tambah Kegiatan';
+        btnTambahKegiatan.addEventListener('click', function () { tambahKegiatanRab(kegiatanBody, {}); hitungRabLive(); });
+
+        var hiddenKegiatanJson = document.createElement('input');
+        hiddenKegiatanJson.type = 'hidden';
+        hiddenKegiatanJson.name = 'kat_kegiatan_json[' + myIdx + ']';
+
+        box.appendChild(kegiatanBody);
+        box.appendChild(btnTambahKegiatan);
+        box.appendChild(hiddenKegiatanJson);
+        box.appendChild(subtotalLine);
+        document.getElementById('bodyKategori').appendChild(box);
+
+        var kegiatanData = data.kegiatan && data.kegiatan.length ? data.kegiatan : [{}];
+        kegiatanData.forEach(function (k) { tambahKegiatanRab(kegiatanBody, k); });
+
+        elDetailToHide.push(kegiatanBody, btnTambahKegiatan);
+    } else {
+        var itemBody = document.createElement('div');
+        itemBody.className = 'kat-item-body mb-2';
+
+        var btnTambahItem = document.createElement('button');
+        btnTambahItem.type = 'button'; btnTambahItem.className = 'btn btn-sm btn-outline-primary py-0';
+        btnTambahItem.innerHTML = '<i class="bi bi-plus-lg"></i> Tambah Item';
+        btnTambahItem.addEventListener('click', function () { tambahItemKategori(myIdx, itemBody); hitungRabLive(); });
+
+        box.appendChild(itemBody); box.appendChild(btnTambahItem); box.appendChild(subtotalLine);
+        document.getElementById('bodyKategori').appendChild(box);
+
+        var items = data.items && data.items.length ? data.items : [{}];
+        items.forEach(function (it) { tambahItemKategori(myIdx, itemBody, it); });
+
+        elDetailToHide.push(itemBody, btnTambahItem);
+    }
+
+    terapkanTanpaRincian();
+}
+
+/* ============================================================ */
+/* 5b. RAB LINGKUNGAN -- Kegiatan -> Lokasi/Kelompok -> Item Biaya */
+/* ============================================================ */
+function tambahKegiatanRab(kegiatanBody, data) {
+    data = data || {};
+    var box = document.createElement('div');
+    box.className = 'border rounded-3 p-3 mb-3 rab-kegiatan-box';
+
+    var headerRow = document.createElement('div');
+    headerRow.className = 'd-flex gap-2 mb-2 align-items-center';
+
+    var badge = document.createElement('span');
+    badge.className = 'badge bg-secondary rab-kegiatan-nomor';
+    headerRow.appendChild(badge);
+
+    var inNama = document.createElement('input');
+    inNama.type = 'text'; inNama.className = 'form-control form-control-sm fw-semibold rab-kegiatan-nama';
+    inNama.placeholder = 'Nama kegiatan, mis. Perjalanan Dinas';
+    inNama.value = data.nama || '';
+
+    var btnHapus = document.createElement('button');
+    btnHapus.type = 'button'; btnHapus.className = 'btn btn-sm btn-outline-danger';
+    btnHapus.innerHTML = '<i class="bi bi-trash"></i>';
+    btnHapus.addEventListener('click', function () { box.remove(); renomorKegiatan(kegiatanBody); hitungRabLive(); });
+
+    headerRow.appendChild(inNama); headerRow.appendChild(btnHapus);
+
+    var itemLangsungBox = buatTabelItemBiaya();
+    var itemLangsungContainer = itemLangsungBox.tbody;
+
+    var btnTambahItemLangsung = document.createElement('button');
+    btnTambahItemLangsung.type = 'button'; btnTambahItemLangsung.className = 'btn btn-sm btn-outline-secondary py-0 me-2';
+    btnTambahItemLangsung.innerHTML = '<i class="bi bi-plus-lg"></i> Tambah Item Langsung';
+    btnTambahItemLangsung.addEventListener('click', function () { tambahItemBiaya(itemLangsungContainer, {}); hitungRabLive(); });
+
+    var btnTambahLemburLangsung = document.createElement('button');
+    btnTambahLemburLangsung.type = 'button'; btnTambahLemburLangsung.className = 'btn btn-sm btn-outline-secondary py-0 me-2';
+    btnTambahLemburLangsung.innerHTML = '<i class="bi bi-plus-lg"></i> Tambah Item Lembur';
+    btnTambahLemburLangsung.addEventListener('click', function () { tambahItemLembur(itemLangsungContainer, {}); hitungRabLive(); });
+
+    var btnTambahKebLangsung = document.createElement('button');
+    btnTambahKebLangsung.type = 'button'; btnTambahKebLangsung.className = 'btn btn-sm btn-outline-secondary py-0 me-2';
+    btnTambahKebLangsung.innerHTML = '<i class="bi bi-plus-lg"></i> Tambah Rincian Kebutuhan';
+    btnTambahKebLangsung.addEventListener('click', function () { tambahItemKebutuhanRef(itemLangsungContainer, {}); hitungRabLive(); });
+
+    var grupContainer = document.createElement('div');
+    grupContainer.className = 'rab-grup-container ps-3 mt-2';
+    grupContainer.dataset.depth = '0';
+
+    var btnTambahGrup = document.createElement('button');
+    btnTambahGrup.type = 'button'; btnTambahGrup.className = 'btn btn-sm btn-outline-primary py-0';
+    btnTambahGrup.innerHTML = '<i class="bi bi-plus-lg"></i> Tambah Lokasi/Kelompok';
+    btnTambahGrup.addEventListener('click', function () { tambahGrup(grupContainer, {}, 0); hitungRabLive(); });
 
     var subtotalLine = document.createElement('div');
-subtotalLine.className = 'text-end fw-semibold small mt-2';
-var subtotalSpan = document.createElement('span');
-subtotalSpan.className = 'kat-subtotal'; subtotalSpan.textContent = 'Rp 0';
-var persenSpan = document.createElement('span');
-persenSpan.className = 'kat-persen text-muted'; persenSpan.textContent = ' (0%)';
-subtotalLine.appendChild(document.createTextNode('Subtotal: '));
-subtotalLine.appendChild(subtotalSpan);
-subtotalLine.appendChild(persenSpan);
+    subtotalLine.className = 'text-end small fw-semibold mt-2 rab-kegiatan-subtotal';
+    subtotalLine.textContent = 'Rp 0';
 
-box.appendChild(headerRow); box.appendChild(targetInfo); box.appendChild(itemBody); box.appendChild(btnTambahItem); box.appendChild(subtotalLine);
-    box.dataset.subtotalTarget = 'true';
-    document.getElementById('bodyKategori').appendChild(box);
+    box.appendChild(headerRow);
+    box.appendChild(itemLangsungBox.wrap);
+    box.appendChild(btnTambahItemLangsung);
+    // [BARU] Tombol "Tambah Item Lembur" & "Tambah Rincian Kebutuhan" cuma buat selulosa --
+    // tampilan lingkungan gak berubah sama sekali, tetep persis kaya sebelumnya.
+    if (divisiOrder === 'selulosa') {
+        box.appendChild(btnTambahLemburLangsung);
+        box.appendChild(btnTambahKebLangsung);
+    }
+    box.appendChild(btnTambahGrup);
+    box.appendChild(grupContainer);
+    box.appendChild(subtotalLine);
 
-    var items = data.items && data.items.length ? data.items : [{}];
-    items.forEach(function (it) { tambahItemKategori(myIdx, itemBody, it); });
+    kegiatanBody.appendChild(box);
+    renomorKegiatan(kegiatanBody);
+
+    (data.items && data.items.length ? data.items : []).forEach(function (it) { tambahItemUmum(itemLangsungContainer, it); });
+    (data.grup && data.grup.length ? data.grup : [{}]).forEach(function (g) { tambahGrup(grupContainer, g, 0); });
+}
+
+function renomorKegiatan(kegiatanBody) {
+    var boxes = kegiatanBody.querySelectorAll(':scope > .rab-kegiatan-box');
+    boxes.forEach(function (box, idx) {
+        var badge = box.querySelector(':scope > .d-flex > .rab-kegiatan-nomor');
+        if (badge) badge.textContent = (idx + 1) + '.';
+    });
+}
+
+var RAB_GRUP_LABEL_STYLE = ['angka', 'alpha', 'romawi'];
+function rabLabelUrutan(style, idx) {
+    if (style === 'alpha') {
+        var s = ''; var n = idx;
+        do { s = String.fromCharCode(97 + (n % 26)) + s; n = Math.floor(n / 26) - 1; } while (n >= 0);
+        return s + '.';
+    }
+    if (style === 'romawi') {
+        var romawi = ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x', 'xi', 'xii', 'xiii', 'xiv', 'xv'];
+        return (romawi[idx] || (idx + 1)) + '.';
+    }
+    return (idx + 1) + '.';
+}
+
+function tambahGrup(container, data, depth) {
+    data = data || {};
+    var box = document.createElement('div');
+    box.className = 'border rounded-3 p-2 mb-2 rab-grup-box';
+
+    var headerRow = document.createElement('div');
+    headerRow.className = 'd-flex gap-2 mb-2 align-items-center';
+
+    var badge = document.createElement('span');
+    badge.className = 'badge bg-light text-dark border rab-grup-nomor';
+    headerRow.appendChild(badge);
+
+    var inNama = document.createElement('input');
+    inNama.type = 'text'; inNama.className = 'form-control form-control-sm rab-grup-nama';
+    inNama.placeholder = 'Nama lokasi / instansi / kelompok';
+    inNama.value = data.nama || '';
+
+    var btnHapus = document.createElement('button');
+    btnHapus.type = 'button'; btnHapus.className = 'btn btn-sm btn-outline-danger';
+    btnHapus.innerHTML = '<i class="bi bi-trash"></i>';
+    btnHapus.addEventListener('click', function () { box.remove(); renomorGrup(container); hitungRabLive(); });
+
+    headerRow.appendChild(inNama); headerRow.appendChild(btnHapus);
+
+    // [BARU] "Disediakan PT" -- biaya lokasi/kelompok ini ditanggung penuh sama partner,
+    // jadi gak usah diisi Item Biaya / Sub-Kelompok sama sekali, cukup nama PT-nya doang.
+    var disediakanWrap = document.createElement('div');
+    disediakanWrap.className = 'form-check mb-2';
+    var chkDisediakan = document.createElement('input');
+    chkDisediakan.type = 'checkbox'; chkDisediakan.className = 'form-check-input rab-grup-disediakan-toggle';
+    chkDisediakan.id = 'rabDisediakan' + Math.random().toString(36).slice(2);
+    chkDisediakan.checked = !!data.disediakan_pt;
+    var lblDisediakan = document.createElement('label');
+    lblDisediakan.className = 'form-check-label small text-muted';
+    lblDisediakan.htmlFor = chkDisediakan.id;
+    lblDisediakan.textContent = 'Disediakan oleh PT (biaya ditanggung partner, gak usah diisi rincian)';
+    disediakanWrap.appendChild(chkDisediakan);
+    disediakanWrap.appendChild(lblDisediakan);
+
+    var inPtNama = document.createElement('input');
+    inPtNama.type = 'text'; inPtNama.className = 'form-control form-control-sm rab-grup-pt-nama mb-2';
+    inPtNama.placeholder = 'Nama PT/mitra yang menyediakan, mis. PT IKT';
+    inPtNama.value = data.disediakan_pt || '';
+    inPtNama.addEventListener('input', hitungRabLive);
+
+    var itemBox = buatTabelItemBiaya();
+    var itemContainer = itemBox.tbody;
+    itemBox.wrap.classList.add('ps-3');
+
+    var childContainer = document.createElement('div');
+    childContainer.className = 'rab-grup-container ps-3';
+    childContainer.dataset.depth = String(depth + 1);
+
+    var btnActions = document.createElement('div');
+    btnActions.className = 'd-flex gap-2 mt-1 mb-1';
+
+    var btnTambahItem = document.createElement('button');
+    btnTambahItem.type = 'button'; btnTambahItem.className = 'btn btn-sm btn-outline-secondary py-0';
+    btnTambahItem.innerHTML = '<i class="bi bi-plus-lg"></i> Tambah Item Biaya';
+    btnTambahItem.addEventListener('click', function () { tambahItemBiaya(itemContainer, {}); hitungRabLive(); });
+
+    var btnTambahLembur = document.createElement('button');
+    btnTambahLembur.type = 'button'; btnTambahLembur.className = 'btn btn-sm btn-outline-secondary py-0';
+    btnTambahLembur.innerHTML = '<i class="bi bi-plus-lg"></i> Tambah Item Lembur';
+    btnTambahLembur.addEventListener('click', function () { tambahItemLembur(itemContainer, {}); hitungRabLive(); });
+
+    var btnTambahKeb = document.createElement('button');
+    btnTambahKeb.type = 'button'; btnTambahKeb.className = 'btn btn-sm btn-outline-secondary py-0';
+    btnTambahKeb.innerHTML = '<i class="bi bi-plus-lg"></i> Tambah Rincian Kebutuhan';
+    btnTambahKeb.addEventListener('click', function () { tambahItemKebutuhanRef(itemContainer, {}); hitungRabLive(); });
+
+    var btnTambahAnak = document.createElement('button');
+    btnTambahAnak.type = 'button'; btnTambahAnak.className = 'btn btn-sm btn-outline-primary py-0';
+    btnTambahAnak.innerHTML = '<i class="bi bi-plus-lg"></i> Tambah Sub-Kelompok';
+    btnTambahAnak.addEventListener('click', function () { tambahGrup(childContainer, {}, depth + 1); hitungRabLive(); });
+
+    btnActions.appendChild(btnTambahItem);
+    // [BARU] Tombol "Tambah Item Lembur" & "Tambah Rincian Kebutuhan" cuma buat selulosa --
+    // tampilan lingkungan gak berubah sama sekali, tetep persis kaya sebelumnya.
+    if (divisiOrder === 'selulosa') {
+        btnActions.appendChild(btnTambahLembur);
+        btnActions.appendChild(btnTambahKeb);
+    }
+    btnActions.appendChild(btnTambahAnak);
+
+    var subtotalLine = document.createElement('div');
+    subtotalLine.className = 'text-end small text-muted mt-1 rab-grup-subtotal';
+    subtotalLine.textContent = 'Rp 0';
+
+    function terapkanDisediakan() {
+        var aktif = chkDisediakan.checked;
+        // [BARU] Auto-isi nama PT dari customer punya order ini pas pertama kali dicentang
+        // (belum pernah diisi manual sebelumnya) -- tetep bisa diganti/diedit manual habis itu.
+        // Pakai namaPerusahaanDasar yang sama kaya di bagian "1. DASAR" (udah kebukti jalan).
+        if (aktif && !inPtNama.value.trim() && namaPerusahaanDasar) {
+            inPtNama.value = namaPerusahaanDasar;
+        }
+        inPtNama.style.display = aktif ? '' : 'none';
+        itemBox.wrap.style.display = aktif ? 'none' : '';
+        btnActions.style.display = aktif ? 'none' : '';
+        childContainer.style.display = aktif ? 'none' : '';
+        hitungRabLive();
+    }
+    chkDisediakan.addEventListener('change', terapkanDisediakan);
+
+    box.appendChild(headerRow);
+    box.appendChild(disediakanWrap);
+    box.appendChild(inPtNama);
+    box.appendChild(itemBox.wrap);
+    box.appendChild(btnActions);
+    box.appendChild(childContainer);
+    box.appendChild(subtotalLine);
+
+    container.appendChild(box);
+    renomorGrup(container);
+
+    (data.items && data.items.length ? data.items : []).forEach(function (it) { tambahItemUmum(itemContainer, it); });
+    (data.children || []).forEach(function (g) { tambahGrup(childContainer, g, depth + 1); });
+
+    terapkanDisediakan();
+}
+
+function renomorGrup(container) {
+    var depth = parseInt(container.dataset.depth || '0', 10);
+    var style = RAB_GRUP_LABEL_STYLE[depth % RAB_GRUP_LABEL_STYLE.length];
+    var boxes = container.querySelectorAll(':scope > .rab-grup-box');
+    boxes.forEach(function (box, idx) {
+        var badge = box.querySelector(':scope > .d-flex > .rab-grup-nomor');
+        if (badge) badge.textContent = rabLabelUrutan(style, idx);
+    });
+}
+
+/* [BARU] Tabel item biaya (Kali | Jumlah | Satuan | Hari | Harga Satuan | Biaya) -- kolomnya
+   dibikin sama persis kaya struktur RAB kertas (tiap angka + satuannya kolom sendiri-sendiri),
+   biar pas diisi udah langsung kebayang hasil cetak/preview-nya bakal kaya gimana.
+   Dipakai bareng buat "Item Langsung" (level Kegiatan) & "Item Biaya" (level Lokasi/Kelompok). */
+function buatTabelItemBiaya() {
+    var wrap = document.createElement('div');
+    wrap.className = 'table-responsive rab-item-wrap mb-2';
+
+    var table = document.createElement('table');
+    table.className = 'table table-sm table-bordered align-middle mb-0 rab-item-table';
+
+    var thead = document.createElement('thead');
+    thead.innerHTML =
+        '<tr class="small text-muted">' +
+        '<th style="min-width:150px;">Jenis Biaya</th>' +
+        '<th style="width:56px;">Kali</th>' +
+        '<th style="width:38px;"></th>' +
+        '<th style="width:56px;">Jumlah</th>' +
+        '<th style="min-width:90px;">Satuan</th>' +
+        '<th style="width:56px;">Hari</th>' +
+        '<th style="width:38px;"></th>' +
+        '<th style="min-width:130px;">Harga Satuan</th>' +
+        '<th style="min-width:110px;">Biaya</th>' +
+        '<th style="width:38px;"></th>' +
+        '</tr>';
+
+    var tbody = document.createElement('tbody');
+    tbody.className = 'rab-item-container';
+
+    table.appendChild(thead);
+    table.appendChild(tbody);
+    wrap.appendChild(table);
+
+    return { wrap: wrap, tbody: tbody };
+}
+
+function tambahItemBiaya(container, data) {
+    data = data || {};
+    var row = document.createElement('tr');
+    row.className = 'rab-item-row';
+
+    function td(el, cls) {
+        var cell = document.createElement('td');
+        if (cls) cell.className = cls;
+        cell.appendChild(el);
+        return cell;
+    }
+    function tdKata(text) {
+        var cell = document.createElement('td');
+        cell.className = 'text-muted small text-center rab-item-satuankata';
+        cell.textContent = text;
+        return cell;
+    }
+    function makeInput(type, value, placeholder, cls) {
+        var el = document.createElement('input');
+        el.type = type; el.className = 'form-control form-control-sm ' + cls;
+        if (value !== undefined && value !== null && value !== '') el.value = value;
+        if (placeholder) el.placeholder = placeholder;
+        if (type === 'number') el.min = '0';
+        el.addEventListener('input', hitungRabLive);
+        return el;
+    }
+
+    var inJenis = makeInput('text', data.jenis, 'Lumpsum/Transport/Hotel/dll', 'rab-item-jenis');
+    var inKali = makeInput('number', data.kali != null ? data.kali : 1, '1', 'rab-item-kali text-center');
+    var inDim2 = makeInput('number', data.dim2, '-', 'rab-item-dim2 text-center');
+    var inDim2Label = makeInput('text', data.dim2_label, 'orang/kamar', 'rab-item-dim2label');
+    var inHari = makeInput('number', data.hari, '-', 'rab-item-hari text-center');
+
+    var pasanganSatuan = buatPasanganNominal('', '0', data.satuan);
+    pasanganSatuan.hidden.classList.add('rab-item-satuan');
+    var satuanGroup = document.createElement('div'); satuanGroup.className = 'input-group input-group-sm';
+    var satuanPrefix = document.createElement('span'); satuanPrefix.className = 'input-group-text'; satuanPrefix.textContent = 'Rp';
+    satuanGroup.appendChild(satuanPrefix); satuanGroup.appendChild(pasanganSatuan.display); satuanGroup.appendChild(pasanganSatuan.hidden);
+
+    var totalBox = document.createElement('div');
+    totalBox.className = 'fw-semibold text-end rab-item-total';
+    totalBox.textContent = 'Rp 0';
+
+    var btnHapus = document.createElement('button');
+    btnHapus.type = 'button'; btnHapus.className = 'btn btn-sm btn-outline-danger';
+    btnHapus.innerHTML = '<i class="bi bi-trash"></i>';
+    btnHapus.addEventListener('click', function () { row.remove(); hitungRabLive(); });
+
+    row.appendChild(td(inJenis));
+    row.appendChild(td(inKali));
+    row.appendChild(tdKata('kali'));
+    row.appendChild(td(inDim2));
+    row.appendChild(td(inDim2Label));
+    row.appendChild(td(inHari));
+    row.appendChild(tdKata('hari'));
+    row.appendChild(td(satuanGroup));
+    row.appendChild(td(totalBox));
+    row.appendChild(td(btnHapus, 'text-center'));
+
+    container.appendChild(row);
+}
+
+/* [BARU] Item "Lembur" -- rumusnya beda dari item biasa (Kali x Jumlah x Hari x Satuan):
+   Biaya Lembur = Hari x Jam x Tarif per-OJ x %Lembur, ditambah Uang Makan = Hari x Rp/hari.
+   Kolom Kali/Jumlah/Satuan/Hari digabung jadi satu sel lebar (colspan) isinya form mini ini,
+   soalnya struktur datanya beda sendiri & jarang kepake di luar kasus lembur/piket. */
+function tambahItemLembur(container, data) {
+    data = data || {};
+    var row = document.createElement('tr');
+    row.className = 'rab-item-row rab-item-lembur';
+    row.dataset.tipe = 'lembur';
+
+    function makeInput(type, value, placeholder, cls) {
+        var el = document.createElement('input');
+        el.type = type; el.className = 'form-control form-control-sm ' + cls;
+        if (value !== undefined && value !== null && value !== '') el.value = value;
+        if (placeholder) el.placeholder = placeholder;
+        if (type === 'number') el.min = '0';
+        el.addEventListener('input', hitungRabLive);
+        return el;
+    }
+    function labelSpan(text) {
+        var span = document.createElement('span');
+        span.className = 'rab-lembur-label small';
+        span.textContent = text;
+        return span;
+    }
+
+    var tdJenis = document.createElement('td');
+    var inJenis = makeInput('text', data.jenis, 'Lembur 1 orang Gol III', 'rab-item-jenis');
+    tdJenis.appendChild(inJenis);
+
+    var tdForm = document.createElement('td');
+    tdForm.colSpan = 7;
+    tdForm.className = 'rab-lembur-form';
+    var inline = document.createElement('div');
+    inline.className = 'rab-lembur-inline';
+
+    var inHari = makeInput('number', data.hari, '0', 'rab-lembur-hari text-center');
+    var inJam = makeInput('number', data.jam, '0', 'rab-lembur-jam text-center');
+    var inOj = makeInput('number', data.oj, '0', 'rab-lembur-oj text-center');
+    var inPersen = makeInput('number', data.persen != null ? data.persen : 200, '200', 'rab-lembur-persen text-center');
+    var inUangMakan = makeInput('number', data.uang_makan, '0', 'rab-lembur-uangmakan text-center');
+
+    inline.appendChild(inHari); inline.appendChild(labelSpan('hari x'));
+    inline.appendChild(inJam); inline.appendChild(labelSpan('jam x Rp'));
+    inline.appendChild(inOj); inline.appendChild(labelSpan('/OJ x'));
+    inline.appendChild(inPersen); inline.appendChild(labelSpan('% lembur + Rp'));
+    inline.appendChild(inUangMakan); inline.appendChild(labelSpan('/hari uang makan'));
+    tdForm.appendChild(inline);
+
+    var totalBox = document.createElement('div');
+    totalBox.className = 'fw-semibold text-end rab-item-total';
+    totalBox.textContent = 'Rp 0';
+    var tdTotal = document.createElement('td');
+    tdTotal.appendChild(totalBox);
+
+    var btnHapus = document.createElement('button');
+    btnHapus.type = 'button'; btnHapus.className = 'btn btn-sm btn-outline-danger';
+    btnHapus.innerHTML = '<i class="bi bi-trash"></i>';
+    btnHapus.addEventListener('click', function () { row.remove(); hitungRabLive(); });
+    var tdHapus = document.createElement('td');
+    tdHapus.className = 'text-center';
+    tdHapus.appendChild(btnHapus);
+
+    row.appendChild(tdJenis);
+    row.appendChild(tdForm);
+    row.appendChild(tdTotal);
+    row.appendChild(tdHapus);
+
+    container.appendChild(row);
+}
+
+/* [BARU] Item RAB yang nyambung ke kategori "Rincian Kebutuhan Lain" (bagian 2. Alat dan
+   Bahan) -- biar biaya kayak "Computer supplies"/"ATK" gak usah diketik ulang manual, cukup
+   pilih kategorinya, terus otomatis ke-ambil & sinkron dari total kategori itu. Khusus selulosa. */
+function parseRupiah(str) {
+    var digits = (str || '').replace(/[^0-9]/g, '');
+    return digits ? parseInt(digits, 10) : 0;
+}
+
+function daftarNamaKebutuhan() {
+    var namaList = [];
+    document.querySelectorAll('#bodyKebutuhanTambahan > div').forEach(function (box) {
+        var inNama = box.querySelector(':scope > .d-flex input');
+        var v = inNama ? inNama.value.trim() : '';
+        if (v) namaList.push(v);
+    });
+    return namaList;
+}
+
+function cariSubtotalKebutuhan(namaKategori) {
+    if (!namaKategori) return 0;
+    var hasil = 0;
+    document.querySelectorAll('#bodyKebutuhanTambahan > div').forEach(function (box) {
+        var inNama = box.querySelector(':scope > .d-flex input');
+        if (inNama && inNama.value.trim() === namaKategori) {
+            var totalSpan = box.querySelector('.keb-total');
+            if (totalSpan) hasil = parseRupiah(totalSpan.textContent);
+        }
+    });
+    return hasil;
+}
+
+function buatSelectKebutuhanKategori(selectedValue) {
+    var select = document.createElement('select');
+    select.className = 'form-select form-select-sm rab-keb-kategori';
+    var optKosong = document.createElement('option');
+    optKosong.value = ''; optKosong.textContent = '-- pilih kategori Rincian Kebutuhan --';
+    select.appendChild(optKosong);
+    var namaList = daftarNamaKebutuhan();
+    var adaSelected = false;
+    namaList.forEach(function (nama) {
+        var opt = document.createElement('option');
+        opt.value = nama; opt.textContent = nama;
+        if (nama === selectedValue) adaSelected = true;
+        select.appendChild(opt);
+    });
+    if (selectedValue && !adaSelected) {
+        var optStale = document.createElement('option');
+        optStale.value = selectedValue; optStale.textContent = selectedValue + ' (kategori tidak ditemukan)';
+        select.appendChild(optStale);
+    }
+    select.value = selectedValue || '';
+    select.addEventListener('change', hitungRabLive);
+    return select;
+}
+
+/* Dipanggil tiap kali kategori "Rincian Kebutuhan Lain" ditambah/dihapus/diganti nama --
+   nyegerin pilihan di semua dropdown item RAB yang nyambung ke situ, tanpa ngilangin
+   pilihan yang masih valid. */
+function refreshKebutuhanKategoriOptions() {
+    document.querySelectorAll('.rab-keb-kategori').forEach(function (select) {
+        var current = select.value;
+        var baru = buatSelectKebutuhanKategori(current);
+        select.innerHTML = baru.innerHTML;
+        select.value = current;
+    });
+    hitungRabLive();
+}
+
+function tambahItemKebutuhanRef(container, data) {
+    data = data || {};
+    var row = document.createElement('tr');
+    row.className = 'rab-item-row rab-item-kebutuhan';
+    row.dataset.tipe = 'kebutuhan';
+
+    // [UBAH] Ga ada input "Jenis"/nama manual lagi -- nama di RAB langsung ngikut nama
+    // kategori Rincian Kebutuhan yang dipilih, jadi kolom "Jenis" digabung ke kolom dropdown.
+    var tdForm = document.createElement('td');
+    tdForm.colSpan = 8;
+    tdForm.className = 'rab-keb-form';
+    tdForm.appendChild(buatSelectKebutuhanKategori(data.keb_kategori || ''));
+    var hint = document.createElement('span');
+    hint.className = 'small text-muted ms-2';
+    hint.textContent = '(nama & biaya ngikut kategori itu di "Rincian Kebutuhan Lain")';
+    tdForm.appendChild(hint);
+
+    var totalBox = document.createElement('div');
+    totalBox.className = 'fw-semibold text-end rab-item-total';
+    totalBox.textContent = 'Rp 0';
+    var tdTotal = document.createElement('td');
+    tdTotal.appendChild(totalBox);
+
+    var btnHapus = document.createElement('button');
+    btnHapus.type = 'button'; btnHapus.className = 'btn btn-sm btn-outline-danger';
+    btnHapus.innerHTML = '<i class="bi bi-trash"></i>';
+    btnHapus.addEventListener('click', function () { row.remove(); hitungRabLive(); });
+    var tdHapus = document.createElement('td');
+    tdHapus.className = 'text-center';
+    tdHapus.appendChild(btnHapus);
+
+    row.appendChild(tdForm);
+    row.appendChild(tdTotal);
+    row.appendChild(tdHapus);
+
+    container.appendChild(row);
+}
+
+/* Dispatcher dipakai pas muat ulang data tersimpan (edit), soalnya satu list item bisa
+   campuran item biasa, lembur, & rincian-kebutuhan -- masing-masing baris ke fungsi
+   pembuat yang cocok. */
+function tambahItemUmum(container, data) {
+    if (data && data.tipe_item === 'lembur') { tambahItemLembur(container, data); }
+    else if (data && data.tipe_item === 'kebutuhan') { tambahItemKebutuhanRef(container, data); }
+    else { tambahItemBiaya(container, data); }
+}
+
+function hitungItemBiaya(row) {
+    if (row.dataset.tipe === 'lembur') { return hitungItemLembur(row); }
+    if (row.dataset.tipe === 'kebutuhan') { return hitungItemKebutuhanRef(row); }
+    var kali = parseFloat(row.querySelector('.rab-item-kali').value) || 0;
+    var dim2Raw = row.querySelector('.rab-item-dim2').value;
+    var hariRaw = row.querySelector('.rab-item-hari').value;
+    var dim2 = dim2Raw !== '' ? (parseFloat(dim2Raw) || 0) : null;
+    var hari = hariRaw !== '' ? (parseFloat(hariRaw) || 0) : null;
+    var satuan = parseFloat(row.querySelector('.rab-item-satuan').value) || 0;
+    var biaya = kali * (dim2 || 1) * (hari || 1) * satuan;
+    var totalEl = row.querySelector('.rab-item-total');
+    if (totalEl) totalEl.textContent = rupiah(biaya);
+    return biaya;
+}
+
+function hitungItemLembur(row) {
+    var hari = parseFloat(row.querySelector('.rab-lembur-hari').value) || 0;
+    var jam = parseFloat(row.querySelector('.rab-lembur-jam').value) || 0;
+    var oj = parseFloat(row.querySelector('.rab-lembur-oj').value) || 0;
+    var persen = parseFloat(row.querySelector('.rab-lembur-persen').value) || 0;
+    var uangMakan = parseFloat(row.querySelector('.rab-lembur-uangmakan').value) || 0;
+    var biaya = (hari * jam * oj * (persen / 100)) + (hari * uangMakan);
+    var totalEl = row.querySelector('.rab-item-total');
+    if (totalEl) totalEl.textContent = rupiah(biaya);
+    return biaya;
+}
+
+function hitungItemKebutuhanRef(row) {
+    var select = row.querySelector('.rab-keb-kategori');
+    var subtotal = cariSubtotalKebutuhan(select ? select.value : '');
+    var totalEl = row.querySelector('.rab-item-total');
+    if (totalEl) totalEl.textContent = rupiah(subtotal);
+    return subtotal;
+}
+
+function hitungGrupBiaya(grupBox) {
+    var subtotal = 0;
+
+    // [BARU] Lokasi/Kelompok "Disediakan PT" -- biayanya 0, gak usah ngitung item/anaknya.
+    var chkDisediakan = grupBox.querySelector(':scope > .form-check > .rab-grup-disediakan-toggle');
+    if (chkDisediakan && chkDisediakan.checked) {
+        var subElDisediakan = grupBox.querySelector(':scope > .rab-grup-subtotal');
+        if (subElDisediakan) subElDisediakan.textContent = rupiah(0);
+        return 0;
+    }
+
+    var itemContainer = grupBox.querySelector(':scope .rab-item-container');
+    if (itemContainer) {
+        itemContainer.querySelectorAll(':scope > .rab-item-row').forEach(function (row) { subtotal += hitungItemBiaya(row); });
+    }
+    var childContainer = grupBox.querySelector(':scope > .rab-grup-container');
+    if (childContainer) {
+        childContainer.querySelectorAll(':scope > .rab-grup-box').forEach(function (g) { subtotal += hitungGrupBiaya(g); });
+    }
+    var subEl = grupBox.querySelector(':scope > .rab-grup-subtotal');
+    if (subEl) subEl.textContent = rupiah(subtotal);
+    return subtotal;
+}
+
+function hitungNestedRab(katBox) {
+    var subtotalKat = 0;
+    var body = katBox.querySelector(':scope > .rab-kegiatan-body');
+    if (!body) return 0;
+    body.querySelectorAll(':scope > .rab-kegiatan-box').forEach(function (kegBox) {
+        var subtotalKeg = 0;
+        var itemContainer = kegBox.querySelector(':scope .rab-item-container');
+        if (itemContainer) {
+            itemContainer.querySelectorAll(':scope > .rab-item-row').forEach(function (row) { subtotalKeg += hitungItemBiaya(row); });
+        }
+        var grupContainer = kegBox.querySelector(':scope > .rab-grup-container');
+        if (grupContainer) {
+            grupContainer.querySelectorAll(':scope > .rab-grup-box').forEach(function (g) { subtotalKeg += hitungGrupBiaya(g); });
+        }
+        var subEl = kegBox.querySelector(':scope > .rab-kegiatan-subtotal');
+        if (subEl) subEl.textContent = rupiah(subtotalKeg);
+        subtotalKat += subtotalKeg;
+    });
+    return subtotalKat;
+}
+
+function serializeItemRow(row) {
+    if (row.dataset.tipe === 'lembur') {
+        return {
+            tipe_item: 'lembur',
+            jenis: row.querySelector('.rab-item-jenis').value.trim(),
+            hari: parseFloat(row.querySelector('.rab-lembur-hari').value) || 0,
+            jam: parseFloat(row.querySelector('.rab-lembur-jam').value) || 0,
+            oj: parseFloat(row.querySelector('.rab-lembur-oj').value) || 0,
+            persen: parseFloat(row.querySelector('.rab-lembur-persen').value) || 0,
+            uang_makan: parseFloat(row.querySelector('.rab-lembur-uangmakan').value) || 0
+        };
+    }
+    if (row.dataset.tipe === 'kebutuhan') {
+        var selectKeb = row.querySelector('.rab-keb-kategori');
+        return {
+            tipe_item: 'kebutuhan',
+            keb_kategori: selectKeb ? selectKeb.value.trim() : ''
+        };
+    }
+    var dim2Raw = row.querySelector('.rab-item-dim2').value;
+    var hariRaw = row.querySelector('.rab-item-hari').value;
+    return {
+        tipe_item: 'biasa',
+        jenis: row.querySelector('.rab-item-jenis').value.trim(),
+        kali: parseFloat(row.querySelector('.rab-item-kali').value) || 0,
+        dim2: dim2Raw !== '' ? (parseFloat(dim2Raw) || 0) : null,
+        dim2_label: row.querySelector('.rab-item-dim2label').value.trim(),
+        hari: hariRaw !== '' ? (parseFloat(hariRaw) || 0) : null,
+        satuan: parseFloat(row.querySelector('.rab-item-satuan').value) || 0
+    };
+}
+
+function serializeGrup(grupBox) {
+    var namaEl = grupBox.querySelector(':scope > .d-flex .rab-grup-nama');
+
+    // [BARU] Lokasi/Kelompok "Disediakan PT" -- gak usah bawa items/children-nya, cukup
+    // nama PT-nya doang (controller yang bakal render jadi baris "Disediakan PT X", biaya 0).
+    var chkDisediakan = grupBox.querySelector(':scope > .form-check > .rab-grup-disediakan-toggle');
+    if (chkDisediakan && chkDisediakan.checked) {
+        var ptEl = grupBox.querySelector(':scope > .rab-grup-pt-nama');
+        return { nama: namaEl ? namaEl.value.trim() : '', disediakan_pt: ptEl ? ptEl.value.trim() : '', items: [], children: [] };
+    }
+
+    var items = [];
+    var itemContainer = grupBox.querySelector(':scope .rab-item-container');
+    if (itemContainer) itemContainer.querySelectorAll(':scope > .rab-item-row').forEach(function (row) { items.push(serializeItemRow(row)); });
+    var children = [];
+    var childContainer = grupBox.querySelector(':scope > .rab-grup-container');
+    if (childContainer) childContainer.querySelectorAll(':scope > .rab-grup-box').forEach(function (g) { children.push(serializeGrup(g)); });
+    return { nama: namaEl ? namaEl.value.trim() : '', items: items, children: children };
+}
+
+function serializeKegiatanBox(kegBox) {
+    var items = [];
+    var itemContainer = kegBox.querySelector(':scope .rab-item-container');
+    if (itemContainer) itemContainer.querySelectorAll(':scope > .rab-item-row').forEach(function (row) { items.push(serializeItemRow(row)); });
+    var grup = [];
+    var grupContainer = kegBox.querySelector(':scope > .rab-grup-container');
+    if (grupContainer) grupContainer.querySelectorAll(':scope > .rab-grup-box').forEach(function (g) { grup.push(serializeGrup(g)); });
+    var namaEl = kegBox.querySelector(':scope > .d-flex .rab-kegiatan-nama');
+    return { nama: namaEl ? namaEl.value.trim() : '', items: items, grup: grup };
 }
 
 function tambahItemKategori(katIdx, itemBody, data) {
@@ -926,17 +1717,30 @@ function hitungRabLive() {
     document.querySelectorAll('#bodyKategori > div').forEach(function (box) {
         var subtotal = 0;
 
-        box.querySelectorAll('.kat-item-body > .kat-item-card').forEach(function (row) {
-            var qtyA = parseFloat(row.querySelector('input[name^="kat_item_qtya"]').value) || 1;
-            var qtyB = parseFloat(row.querySelector('input[name^="kat_item_qtyb"]').value) || 1;
-            var tarif = parseFloat(row.querySelector('input[name^="kat_item_tarif"]').value) || 0;
-            var totalBaris = qtyA * qtyB * tarif;
+        // [BARU] Kategori "tanpa rincian" -- nilainya langsung persen x Nilai Kontrak,
+        // gak perlu ngitung dari Kegiatan/Lokasi/Item atau kartu item flat sama sekali.
+        var chkTanpaRincian = box.querySelector('.kat-tanpa-rincian-toggle');
+        var isTanpaRincian = chkTanpaRincian && chkTanpaRincian.checked;
 
-            var totalEl = row.querySelector('.kat-item-total');
-            if (totalEl) totalEl.textContent = rupiah(totalBaris);
+        if (isTanpaRincian) {
+            var persenAwalInput = box.querySelector('input[name^="kat_persen_manual"]');
+            var persenAwalStr = persenAwalInput ? persenAwalInput.value.trim().replace(/%/g, '').replace(',', '.') : '';
+            subtotal = ((parseFloat(persenAwalStr) || 0) / 100) * totalPenerimaan;
+        } else if (box.classList.contains('rab-kat-nested')) {
+            subtotal = hitungNestedRab(box);
+        } else {
+            box.querySelectorAll('.kat-item-body > .kat-item-card').forEach(function (row) {
+                var qtyA = parseFloat(row.querySelector('input[name^="kat_item_qtya"]').value) || 1;
+                var qtyB = parseFloat(row.querySelector('input[name^="kat_item_qtyb"]').value) || 1;
+                var tarif = parseFloat(row.querySelector('input[name^="kat_item_tarif"]').value) || 0;
+                var totalBaris = qtyA * qtyB * tarif;
 
-            subtotal += totalBaris;
-        });
+                var totalEl = row.querySelector('.kat-item-total');
+                if (totalEl) totalEl.textContent = rupiah(totalBaris);
+
+                subtotal += totalBaris;
+            });
+        }
 
         var subtotalEl = box.querySelector('.kat-subtotal');
         if (subtotalEl) subtotalEl.textContent = rupiah(subtotal);
@@ -1225,6 +2029,15 @@ if (btnTambahKebutuhan) btnTambahKebutuhan.addEventListener('click', function ()
 autoGrowTextarea(taRuangLingkup); // set tinggi awal (penting buat mode edit yang udah ada isinya)
     document.getElementById('btnTambahTim').addEventListener('click', function () { tambahBarisTim(); });
     document.getElementById('btnTambahPenerimaan').addEventListener('click', function () { tambahItemPenerimaan(); });
+    // [BARU] lingkungan & selulosa: Penerimaan dikunci jadi "Nilai Kontrak" doang, gak bisa
+    // nambah item lain lagi (item lama yang udah kadung beda nama tetep dibiarin apa adanya).
+    if (pakaiRabBaru) {
+        document.getElementById('btnTambahPenerimaan').style.display = 'none';
+        var judulPenerimaan = document.querySelector('.fw-bold.small.text-uppercase.text-muted');
+        if (judulPenerimaan && judulPenerimaan.textContent.trim() === 'A. Penerimaan') {
+            judulPenerimaan.textContent = 'A. Penerimaan (Nilai Kontrak)';
+        }
+    }
     document.getElementById('btnTambahKategori').addEventListener('click', function () { tambahKategori(); hitungRabLive(); });
     document.getElementById('btnTambahTahap').addEventListener('click', function () { tambahTahap(); });
 
@@ -1276,6 +2089,9 @@ groups = (jadwalData.groups && jadwalData.groups.length) ? jadwalData.groups : [
 document.getElementById('jadwalKeterangan').value = jadwalData.keterangan || '';
 autoGrowTextarea(document.getElementById('jadwalKeterangan'));
 if (poData.jadwal_mulai && poData.jadwal_selesai) muatKolomJadwal();
+        // Safety net: pastiin dropdown "Rincian Kebutuhan" di item RAB kepilih bener sesuai
+        // data tersimpan, sekarang bagian Kebutuhan Tambahan & RAB udah kebentuk semua.
+        refreshKebutuhanKategoriOptions();
     } else {
         // Baru: satu baris kosong tiap bagian
         if (document.getElementById('bodyRuangLingkup')) tambahBarisRuangLingkup();
@@ -1324,6 +2140,20 @@ renderRuangLingkupPreview();
 
 // ---- sebelum submit: tuang jadwalState (murni JS) jadi hidden input ----
 document.getElementById('formPo').addEventListener('submit', function (e) {
+    // [BARU] RAB lingkungan (Kegiatan -> Lokasi/Kelompok -> Item Biaya): tuang isi form
+    // jadi JSON di hidden input kat_kegiatan_json[idx] punya masing-masing kategori.
+    document.querySelectorAll('#bodyKategori > .rab-kat-nested').forEach(function (katBox) {
+        var kegiatanList = [];
+        var body = katBox.querySelector(':scope > .rab-kegiatan-body');
+        if (body) {
+            body.querySelectorAll(':scope > .rab-kegiatan-box').forEach(function (kegBox) {
+                kegiatanList.push(serializeKegiatanBox(kegBox));
+            });
+        }
+        var hidden = katBox.querySelector('input[name^="kat_kegiatan_json"]');
+        if (hidden) hidden.value = JSON.stringify(kegiatanList);
+    });
+
     // [BARU] Validasi wajib isi -- cuma jalan kalau lagi mau "Kirim", bukan "Draft"
     var container = document.getElementById('jadwalHiddenInputs');
     container.innerHTML = '';

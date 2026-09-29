@@ -27,6 +27,14 @@
     }
     .po-doc-sheet table th { background: #f1f5f9; font-weight: bold; text-align: center; }
 
+    /* [BARU] tabel RAB berjenjang (lingkungan) -- banyak kolom sempit (Kali/Jumlah/Hari),
+       padding & font dikecilin dikit biar gak kepenuhan / kepotong di kertas A4. */
+    .rab-table th, .rab-table td { padding: 4px 5px; font-size: 10pt; }
+    /* [BARU] nilai Rupiah (Satuan Biaya/Biaya/Total Biaya/Nilai Kontrak) -- dipaksa satu baris
+       biar sejajar antar baris (gak ada yang "Rp" turun baris misahin dari angkanya), tanpa
+       ngubah lebar kolom/tabelnya -- fontnya dikecilin dikit biar tetep muat satu baris. */
+    .rab-table .rab-uang { white-space: nowrap; font-size: 8.5pt; }
+
     .po-badge-status { font-size: 11px; font-weight: bold; padding: 3px 10px; border-radius: 12px; }
     .po-status-draft { background: #f1f5f9; color: #475569; }
     .po-status-terkirim { background: #ecfdf5; color: #065f46; }
@@ -249,31 +257,300 @@
         </table>
 
         <div class="po-section-title">{{ @po.nomor_rab ?: 5 }}. RENCANA ANGGARAN BIAYA (RAB)</div>
-        <table>
-            <tbody>
-                <tr><td colspan="2" style="background:#f8fafc;"><strong>A. Penerimaan</strong></td></tr>
-                <repeat group="{{ @po.rab_hitung.penerimaan_items }}" value="{{ @p }}">
-                    <tr><td>{{ @p.nama }}</td><td class="text-end">Rp {{ number_format(@p.nominal, 0, ',', '.') }}</td></tr>
-                </repeat>
-                <tr><td><strong>Total Penerimaan</strong></td><td class="text-end"><strong>Rp {{ number_format(@po.rab_hitung.total_penerimaan, 0, ',', '.') }}</strong></td></tr>
-        
-                <tr><td colspan="2" style="background:#f8fafc;"><strong>B. Rencana Pengeluaran</strong></td></tr>
-                <repeat group="{{ @po.rab_hitung.kategori }}" value="{{ @kat }}" key="{{ @ki }}">
-                    <tr><td>{{ @ki + 1 }}. {{ @kat.nama }} ({{ @kat.persen_tampil }})</td><td class="text-end">Rp {{ number_format(@kat.subtotal, 0, ',', '.') }}</td></tr>
-                    <repeat group="{{ @kat.items }}" value="{{ @it }}">
+
+        <!-- [BARU] Format RAB berjenjang khusus SELULOSA -- ngikutin format RAB fisik (contoh
+             "RAB KS Chitose"/"RAB KS Pusat Studi Sawit IPB"): a. Penerimaan / Nilai kontrak,
+             lalu b. Rencana Pengeluaran dengan kategori berlabel huruf besar (A./B./dst), tiap
+             Kegiatan di bawahnya diberi nomor urut (1./2./dst) tanpa baris "Kegiatan" terpisah,
+             item tunggal digabung nempel ke baris nomornya, dan item "Lembur" yang beruntun
+             dikumpulin jadi satu mini-tabel Hari|Jam|OJ|%|Uang Makan. Beda dari format lingkungan
+             di bawah -- makanya dipisah blok sendiri, gak nyampur pengaruhnya ke lingkungan. -->
+        <check if="{{ @po.rab_hitung.is_rab_baru && @order.jenis_layanan_opti == 'selulosa' }}">
+            <table class="rab-table" style="margin-bottom:6px;">
+                <colgroup>
+                    <col style="width:52%;"><col style="width:16%;"><col style="width:32%;">
+                </colgroup>
+                <tbody>
+                    <tr style="background:#f1f5f9;">
+                        <td colspan="3"><strong>a. Penerimaan</strong></td>
+                    </tr>
+                    <tr>
+                        <td style="padding-left:14px;">Nilai kontrak</td>
+                        <td></td>
+                        <td class="text-end rab-uang"><strong>Rp&nbsp;{{ number_format(@po.rab_hitung.total_penerimaan, 0, ',', '.') }}</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <table class="rab-table">
+                <colgroup>
+                    <col style="width:6%;"><col style="width:44%;"><col style="width:22%;">
+                    <col style="width:16%;"><col style="width:12%;">
+                </colgroup>
+                <thead>
+                    <tr style="background:#f1f5f9;">
+                        <th colspan="2" class="text-start">b. Rencana Pengeluaran</th>
+                        <th>Rincian</th>
+                        <th class="text-end">Rp</th>
+                        <th class="text-end">%</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <repeat group="{{ @po.rab_hitung.kategori }}" value="{{ @kat }}">
+                        <tr style="background:#f8fafc;">
+                            <td class="text-center"><strong>{{ @kat.label_huruf }}.</strong></td>
+                            <td colspan="2"><strong>{{ @kat.nama }}</strong></td>
+                            <td class="text-end rab-uang"><strong>Rp&nbsp;{{ number_format(@kat.subtotal, 0, ',', '.') }}</strong></td>
+                            <td class="text-end">{{ @kat.persen_tampil }}</td>
+                        </tr>
+
+                        <check if="{{ @kat.kegiatan_selulosa }}">
+                            <repeat group="{{ @kat.kegiatan_selulosa }}" value="{{ @keg }}">
+                                <tr>
+                                    <td></td>
+                                    <td style="padding-left:14px;">{{ @keg.nomor }} {{ @keg.nama }}</td>
+                                    <check if="{{ @keg.gabung }}">
+                                        <td>{{ @keg.rincian }}</td>
+                                    </check>
+                                    <check if="{{ !@keg.gabung }}">
+                                        <td></td>
+                                    </check>
+                                    <td class="text-end rab-uang">Rp&nbsp;{{ number_format(@keg.biaya, 0, ',', '.') }}</td>
+                                    <td></td>
+                                </tr>
+
+                                <check if="{{ !@keg.gabung }}">
+                                    <repeat group="{{ @keg.anak }}" value="{{ @a }}">
+                                        <check if="{{ @a.tipe == 'lembur_group' }}">
+                                            <tr>
+                                                <td></td>
+                                                <td colspan="4" style="padding-left:28px;">
+                                                    <table class="rab-table" style="margin:2px 0;">
+                                                        <thead>
+                                                            <tr style="background:#f1f5f9;">
+                                                                <th>Uraian</th>
+                                                                <th class="text-center">Hari</th>
+                                                                <th class="text-center">Jam</th>
+                                                                <th class="text-end">OJ</th>
+                                                                <th class="text-center">%</th>
+                                                                <th class="text-end">Uang Makan</th>
+                                                                <th class="text-end">Biaya</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <repeat group="{{ @a.items }}" value="{{ @l }}">
+                                                                <tr>
+                                                                    <td>{{ @l.nama }}</td>
+                                                                    <td class="text-center">{{ @l.hari }}</td>
+                                                                    <td class="text-center">{{ @l.jam }}</td>
+                                                                    <td class="text-end rab-uang">{{ number_format(@l.oj, 0, ',', '.') }}</td>
+                                                                    <td class="text-center">{{ @l.persen }}%</td>
+                                                                    <td class="text-end rab-uang">{{ number_format(@l.uang_makan, 0, ',', '.') }}</td>
+                                                                    <td class="text-end rab-uang">Rp&nbsp;{{ number_format(@l.biaya, 0, ',', '.') }}</td>
+                                                                </tr>
+                                                            </repeat>
+                                                        </tbody>
+                                                    </table>
+                                                </td>
+                                            </tr>
+                                        </check>
+
+                                        <check if="{{ @a.tipe == 'item' || @a.tipe == 'kebutuhan' }}">
+                                            <tr>
+                                                <td></td>
+                                                <td style="padding-left:28px;">- {{ @a.nama }}</td>
+                                                <td>{{ @a.rincian }}</td>
+                                                <td class="text-end rab-uang">Rp&nbsp;{{ number_format(@a.biaya, 0, ',', '.') }}</td>
+                                                <td></td>
+                                            </tr>
+                                        </check>
+
+                                        <check if="{{ @a.tipe == 'grup' }}">
+                                            <tr>
+                                                <td></td>
+                                                <td style="padding-left:28px;">{{ @a.nama }}</td>
+                                                <check if="{{ @a.disediakan_pt }}">
+                                                    <td colspan="2" class="text-muted">Disediakan {{ @a.disediakan_pt }}</td>
+                                                </check>
+                                                <check if="{{ !@a.disediakan_pt }}">
+                                                    <td></td>
+                                                    <td class="text-end rab-uang">Rp&nbsp;{{ number_format(@a.biaya, 0, ',', '.') }}</td>
+                                                </check>
+                                                <td></td>
+                                            </tr>
+                                            <repeat group="{{ @a.anak }}" value="{{ @a2 }}">
+                                                <tr>
+                                                    <td></td>
+                                                    <td style="padding-left:42px;">- {{ @a2.nama }}</td>
+                                                    <td>{{ @a2.rincian }}</td>
+                                                    <td class="text-end rab-uang">Rp&nbsp;{{ number_format(@a2.biaya, 0, ',', '.') }}</td>
+                                                    <td></td>
+                                                </tr>
+                                            </repeat>
+                                        </check>
+                                    </repeat>
+                                </check>
+                            </repeat>
+                        </check>
+                    </repeat>
+                    <tr>
+                        <td colspan="3" class="text-end"><strong>Total Pengeluaran</strong></td>
+                        <td class="text-end rab-uang"><strong>Rp&nbsp;{{ number_format(@po.rab_hitung.total_pengeluaran, 0, ',', '.') }}</strong></td>
+                        <td></td>
+                    </tr>
+                </tbody>
+            </table>
+        </check>
+
+        <!-- [BARU] Format RAB baru (lingkungan): persentase per kategori ditampilin di ATAS
+             (nempel sama Nilai Kontrak, gantiin A.Penerimaan lama), baru tabel rincian item
+             per kegiatan di bawahnya (No | Kegiatan | Rincian | Satuan Biaya | Biaya | Total
+             Biaya). Kategori "tanpa rincian" (mis. Biaya Penunjang Klien) cuma nongol di
+             ringkasan persen ini, gak usah punya baris rincian sama sekali. Khusus LINGKUNGAN --
+             selulosa punya format sendiri di atas. -->
+        <check if="{{ @po.rab_hitung.is_rab_baru && @order.jenis_layanan_opti != 'selulosa' }}">
+            <table class="rab-table" style="margin-bottom:6px;">
+                <colgroup>
+                    <col style="width:52%;"><col style="width:16%;"><col style="width:32%;">
+                </colgroup>
+                <tbody>
+                    <tr style="background:#f8fafc;">
+                        <td colspan="2"><strong>Nilai Kontrak</strong></td>
+                        <td class="text-end"><strong>Rp&nbsp;{{ number_format(@po.rab_hitung.total_penerimaan, 0, ',', '.') }}</strong></td>
+                    </tr>
+                    <repeat group="{{ @po.rab_hitung.kategori }}" value="{{ @kat }}" key="{{ @ki }}">
                         <tr>
-                            <td style="padding-left:22px;">
-                                {{ @it.nama }}
-                                <check if="{{ @it.label_a }}"> ({{ @it.qty_a }} {{ @it.label_a }}<check if="{{ @it.label_b }}">, {{ @it.qty_b }} {{ @it.label_b }}</check> @ Rp{{ number_format(@it.tarif, 0, ',', '.') }})</check>
-                            </td>
-                            <td class="text-end">Rp {{ number_format(@it.nominal, 0, ',', '.') }}</td>
+                            <td>{{ @ki + 1 }}. {{ @kat.nama }}</td>
+                            <td class="text-center">{{ @kat.persen_tampil }}</td>
+                            <td class="text-end rab-uang">Rp&nbsp;{{ number_format(@kat.subtotal, 0, ',', '.') }}</td>
                         </tr>
                     </repeat>
-                </repeat>
-        
-                <tr><td><strong>Total Pengeluaran</strong></td><td class="text-end"><strong>Rp {{ number_format(@po.rab_hitung.total_pengeluaran, 0, ',', '.') }}</strong></td></tr>
-            </tbody>
-        </table>
+                </tbody>
+            </table>
+
+            <table class="rab-table">
+                <colgroup>
+                    <col style="width:6%;"><col style="width:28%;"><col style="width:22%;">
+                    <col style="width:16%;"><col style="width:14%;"><col style="width:14%;">
+                </colgroup>
+                <thead>
+                    <tr style="background:#f1f5f9;">
+                        <th class="text-center">No</th>
+                        <th>Kegiatan</th>
+                        <th>Rincian</th>
+                        <th class="text-end">Satuan Biaya</th>
+                        <th class="text-end">Biaya</th>
+                        <th class="text-end">Total Biaya</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <repeat group="{{ @po.rab_hitung.kategori }}" value="{{ @kat }}" key="{{ @ki }}">
+                        <!-- Kategori RAB berjenjang (Kegiatan -> Lokasi/Kelompok -> Item), sudah
+                             diratakan jadi @kat.baris di controller. -->
+                        <check if="{{ @kat.baris }}">
+                            <tr style="background:#f8fafc;">
+                                <td colspan="6"><strong>{{ @ki + 1 }}. {{ @kat.nama }}</strong></td>
+                            </tr>
+                            <repeat group="{{ @kat.baris }}" value="{{ @b }}">
+                                <check if="{{ @b.tipe == 'kegiatan' }}">
+                                    <tr>
+                                        <td class="text-center">{{ @b.nomor }}</td>
+                                        <td style="padding-left: {{ (@b.depth * 14) }}px;"><strong>{{ @b.nama }}</strong></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td class="text-end rab-uang"><strong>Rp&nbsp;{{ number_format(@b.biaya, 0, ',', '.') }}</strong></td>
+                                    </tr>
+                                </check>
+                                <check if="{{ @b.tipe == 'grup' }}">
+                                    <tr>
+                                        <td></td>
+                                        <td style="padding-left: {{ (@b.depth * 14) }}px;">{{ @b.nomor }} {{ @b.nama }}</td>
+                                        <check if="{{ @b.disediakan_pt }}">
+                                            <td colspan="4" class="text-muted">Disediakan {{ @b.disediakan_pt }}</td>
+                                        </check>
+                                        <check if="{{ !@b.disediakan_pt }}">
+                                            <td></td><td></td><td></td><td></td>
+                                        </check>
+                                    </tr>
+                                </check>
+                                <check if="{{ @b.tipe == 'item' }}">
+                                    <tr>
+                                        <td></td>
+                                        <td style="padding-left: {{ (@b.depth * 14) }}px;">{{ @b.nama }}</td>
+                                        <td>{{ @b.rincian }}</td>
+                                        <td class="text-end rab-uang">Rp&nbsp;{{ number_format(@b.satuan_biaya, 0, ',', '.') }}</td>
+                                        <td class="text-end rab-uang">Rp&nbsp;{{ number_format(@b.biaya, 0, ',', '.') }}</td>
+                                        <td></td>
+                                    </tr>
+                                </check>
+                            </repeat>
+                            <tr>
+                                <td colspan="5" class="text-end"><strong>Total</strong></td>
+                                <td class="text-end rab-uang"><strong>Rp&nbsp;{{ number_format(@kat.subtotal, 0, ',', '.') }}</strong></td>
+                            </tr>
+                        </check>
+
+                        <!-- Fallback: kategori item datar (belum sempat diisi ulang pakai struktur
+                             kegiatan baru), tetep ditampilin biar datanya gak hilang. -->
+                        <check if="{{ !@kat.baris && @kat.items && count(@kat.items) > 0 }}">
+                            <tr style="background:#f8fafc;">
+                                <td colspan="6"><strong>{{ @ki + 1 }}. {{ @kat.nama }}</strong></td>
+                            </tr>
+                            <repeat group="{{ @kat.items }}" value="{{ @it }}">
+                                <tr>
+                                    <td></td>
+                                    <td>{{ @it.nama }}</td>
+                                    <td><check if="{{ @it.label_a }}">{{ @it.qty_a }} {{ @it.label_a }}<check if="{{ @it.label_b }}">, {{ @it.qty_b }} {{ @it.label_b }}</check></check></td>
+                                    <td class="text-end rab-uang">Rp&nbsp;{{ number_format(@it.tarif, 0, ',', '.') }}</td>
+                                    <td class="text-end rab-uang">Rp&nbsp;{{ number_format(@it.nominal, 0, ',', '.') }}</td>
+                                    <td></td>
+                                </tr>
+                            </repeat>
+                            <tr>
+                                <td colspan="5" class="text-end"><strong>Total Biaya {{ @kat.nama }}</strong></td>
+                                <td class="text-end rab-uang"><strong>Rp&nbsp;{{ number_format(@kat.subtotal, 0, ',', '.') }}</strong></td>
+                            </tr>
+                        </check>
+                    </repeat>
+                </tbody>
+            </table>
+        </check>
+
+        <!-- Format RAB lama (selulosa): A. Penerimaan / B. Rencana Pengeluaran, gak diubah sama sekali. -->
+        <check if="{{ !@po.rab_hitung.is_rab_baru }}">
+            <table class="rab-table">
+                <colgroup>
+                    <col style="width:26%;"><col style="width:6%;"><col style="width:6%;">
+                    <col style="width:6%;"><col style="width:8%;"><col style="width:6%;">
+                    <col style="width:6%;"><col style="width:14%;"><col style="width:22%;">
+                </colgroup>
+                <tbody>
+                    <tr><td colspan="9" style="background:#f8fafc;"><strong>A. Penerimaan</strong></td></tr>
+                    <repeat group="{{ @po.rab_hitung.penerimaan_items }}" value="{{ @p }}">
+                        <tr><td colspan="8">{{ @p.nama }}</td><td class="text-end">Rp {{ number_format(@p.nominal, 0, ',', '.') }}</td></tr>
+                    </repeat>
+                    <tr><td colspan="8"><strong>Total Penerimaan</strong></td><td class="text-end"><strong>Rp {{ number_format(@po.rab_hitung.total_penerimaan, 0, ',', '.') }}</strong></td></tr>
+
+                    <tr><td colspan="9" style="background:#f8fafc;"><strong>B. Rencana Pengeluaran</strong></td></tr>
+                    <repeat group="{{ @po.rab_hitung.kategori }}" value="{{ @kat }}" key="{{ @ki }}">
+                        <tr><td colspan="8">{{ @ki + 1 }}. {{ @kat.nama }} ({{ @kat.persen_tampil }})</td><td class="text-end">Rp {{ number_format(@kat.subtotal, 0, ',', '.') }}</td></tr>
+
+                        <repeat group="{{ @kat.items }}" value="{{ @it }}">
+                            <tr>
+                                <td colspan="8" style="padding-left:22px;">
+                                    {{ @it.nama }}
+                                    <check if="{{ @it.label_a }}"> ({{ @it.qty_a }} {{ @it.label_a }}<check if="{{ @it.label_b }}">, {{ @it.qty_b }} {{ @it.label_b }}</check> @ Rp{{ number_format(@it.tarif, 0, ',', '.') }})</check>
+                                </td>
+                                <td class="text-end">Rp {{ number_format(@it.nominal, 0, ',', '.') }}</td>
+                            </tr>
+                        </repeat>
+                    </repeat>
+
+                    <tr><td colspan="8"><strong>Total Pengeluaran</strong></td><td class="text-end"><strong>Rp {{ number_format(@po.rab_hitung.total_pengeluaran, 0, ',', '.') }}</strong></td></tr>
+                </tbody>
+            </table>
+        </check>
         <div class="po-section-title">{{ @po.nomor_jadwal }}. JADWAL</div>
         <check if="{{ @po.jadwal_kolom && count(@po.jadwal_kolom) > 0 }}">
             <repeat group="{{ @po.jadwal_groups }}" value="{{ @group }}">

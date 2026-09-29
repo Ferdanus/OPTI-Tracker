@@ -177,6 +177,33 @@ protected function bind(PoKegiatan $po, $f3, $isUpdate) {
     $katNama = $post['kat_nama'] ?? [];
     foreach ($katNama as $catIdx => $namaKategori) {
         if (trim($namaKategori) === '') continue;
+
+        // [BARU] Kategori "tanpa rincian" (mis. Biaya Penunjang Pelayanan Klien): nilainya
+        // dihitung langsung dari persen x Nilai Kontrak di hitungRab(), gak perlu isi
+        // Kegiatan/Lokasi/Item ataupun items flat sama sekali.
+        if (!empty($post['kat_tanpa_rincian'][$catIdx])) {
+            $kategoriList[] = [
+                'nama'          => trim($namaKategori),
+                'persen_manual' => trim((string) ($post['kat_persen_manual'][$catIdx] ?? '')),
+                'tanpa_rincian' => true,
+            ];
+            continue;
+        }
+
+        // [BARU] RAB lingkungan: struktur berjenjang Kegiatan -> Lokasi/Kelompok -> Item Biaya,
+        // dikirim JS sebagai satu blok JSON per kategori (kat_kegiatan_json[idx]).
+        $kegiatanJsonRaw = $post['kat_kegiatan_json'][$catIdx] ?? '';
+        $kegiatanDecoded = $kegiatanJsonRaw !== '' ? json_decode($kegiatanJsonRaw, true) : null;
+
+        if (is_array($kegiatanDecoded) && !empty($kegiatanDecoded)) {
+            $kategoriList[] = [
+                'nama'          => trim($namaKategori),
+                'persen_manual' => trim((string) ($post['kat_persen_manual'][$catIdx] ?? '')),
+                'kegiatan'      => $kegiatanDecoded,
+            ];
+            continue;
+        }
+
         $items = [];
         $itemNamaList = $post['kat_item_nama'][$catIdx] ?? [];
         foreach ($itemNamaList as $i => $namaItem) {
@@ -570,8 +597,16 @@ protected function siapkanDataPo($po, $orderData) {
 
     $poData['tim_pelaksana'] = json_decode($poData['tim_pelaksana'] ?? '[]', true) ?: [];
 
+    // [BARU] Peta nama-kategori -> hasil hitung "Rincian Kebutuhan Lain" (bagian 2. Alat dan
+    // Bahan), dipakai item RAB tipe "kebutuhan" (selulosa) yang nyambung ke sini biar biayanya
+    // gak usah diketik ulang manual -- cukup pilih kategorinya di form.
+    $kebutuhanMap = [];
+    foreach ($kebutuhanHitung as $kat) {
+        if (($kat['nama'] ?? '') !== '') { $kebutuhanMap[$kat['nama']] = $kat; }
+    }
+
     $rab = json_decode($poData['rab'] ?? '{}', true) ?: [];
-    $poData['rab_hitung'] = $this->hitungRab($rab);
+    $poData['rab_hitung'] = $this->hitungRab($rab, $kebutuhanMap);
 
     $kolomInfo = $this->generateJadwalKolom($poData['jadwal_mulai'] ?? null, $poData['jadwal_selesai'] ?? null);
     $poData['jadwal_kolom']        = $kolomInfo['kolom'];
@@ -721,7 +756,7 @@ protected function siapkanDataPo($po, $orderData) {
         return $groups;
     }
 
-    protected function hitungRab($rab) {
+    protected function hitungRab($rab, $kebutuhanMap = []) {
         $penerimaanItems = $rab['penerimaan']['items'] ?? [];
         $totalPenerimaan = array_sum(array_column($penerimaanItems, 'nominal'));
 
@@ -730,6 +765,42 @@ protected function siapkanDataPo($po, $orderData) {
         $totalPengeluaran = 0;
 
         foreach ($kategoriList as $kat) {
+            // [BARU] Kategori "tanpa rincian" (mis. Biaya Penunjang Pelayanan Klien): nilainya
+            // langsung persen x Nilai Kontrak (Total Penerimaan), tanpa itemisasi Kegiatan/
+            // Lokasi/Item sama sekali -- 'baris' & 'items' sengaja gak diisi biar templatenya
+            // gak nampilin rincian apa-apa di bawah baris kategori ini.
+            if (!empty($kat['tanpa_rincian'])) {
+                $persenManual = trim((string) ($kat['persen_manual'] ?? ''));
+                $persenNum = (float) str_replace(',', '.', str_replace('%', '', $persenManual));
+                $subtotal = $totalPenerimaan > 0 ? round(($persenNum / 100) * $totalPenerimaan) : 0;
+                $kategoriHasil[] = [
+                    'nama'          => $kat['nama'] ?? '',
+                    'persen_manual' => $persenManual,
+                    'tanpa_rincian' => true,
+                    'subtotal'      => $subtotal,
+                ];
+                $totalPengeluaran += $subtotal;
+                continue;
+            }
+
+            // [BARU] Kategori dengan struktur RAB berjenjang (lingkungan): Kegiatan -> Lokasi/
+            // Kelompok -> Item Biaya. Diratakan (flatten) jadi daftar baris ber-depth biar
+            // gampang dirender di template tanpa perlu <repeat> rekursif.
+            if (!empty($kat['kegiatan'])) {
+                $hasilKeg = $this->hitungKegiatanRab($kat['kegiatan'], $kebutuhanMap);
+                $kategoriHasil[] = [
+                    'nama'          => $kat['nama'] ?? '',
+                    'persen_manual' => $kat['persen_manual'] ?? '',
+                    'baris'         => $hasilKeg['baris'],
+                    'subtotal'      => $hasilKeg['subtotal'],
+                    // [BARU] Struktur khusus tampilan preview/cetak RAB selulosa (kegiatan diberi
+                    // nomor urut, item tunggal digabung ke baris nomornya, lembur dikelompokkan).
+                    'kegiatan_selulosa' => $this->susunKegiatanSelulosa($kat['kegiatan'], $kebutuhanMap),
+                ];
+                $totalPengeluaran += $hasilKeg['subtotal'];
+                continue;
+            }
+
             $subtotal = 0;
             $itemHasil = [];
             foreach (($kat['items'] ?? []) as $item) {
@@ -749,12 +820,24 @@ protected function siapkanDataPo($po, $orderData) {
             $totalPengeluaran += $subtotal;
         }
 
-        foreach ($kategoriHasil as &$kat) {
+        // [BARU] Label huruf besar (A./B./dst) per kategori pengeluaran, dipakai di tampilan
+        // RAB selulosa yang formatnya ngikutin RAB fisik (bukan "1. Nama Kategori" kaya lingkungan).
+        $hurufKategori = range('A', 'Z');
+        foreach ($kategoriHasil as $idxKat => &$kat) {
             $kat['persen_tampil'] = ($kat['persen_manual'] !== '')
                 ? $kat['persen_manual']
                 : ($totalPenerimaan > 0 ? round($kat['subtotal'] / $totalPenerimaan * 100, 1) . '%' : '0%');
+            $kat['label_huruf'] = $hurufKategori[$idxKat] ?? (string) ($idxKat + 1);
         }
         unset($kat);
+
+        // [BARU] Format RAB baru (lingkungan): Nilai Kontrak dipecah ke kategori berpersen,
+        // salah satunya (atau lebih) punya rincian Kegiatan->Lokasi->Item. Dipakai buat milih
+        // tampilan mana yang dirender di preview/cetak (RAB baru vs A.Penerimaan/B.Pengeluaran lama).
+        $isRabBaru = false;
+        foreach ($kategoriHasil as $kat) {
+            if (!empty($kat['baris']) || !empty($kat['tanpa_rincian'])) { $isRabBaru = true; break; }
+        }
 
         return [
             'penerimaan_items'  => $penerimaanItems,
@@ -762,7 +845,330 @@ protected function siapkanDataPo($po, $orderData) {
             'kategori'          => $kategoriHasil,
             'total_pengeluaran' => $totalPengeluaran,
             'selisih'           => $totalPenerimaan - $totalPengeluaran,
+            'is_rab_baru'       => $isRabBaru,
         ];
+    }
+
+    /**
+     * [BARU] Ratakan struktur RAB berjenjang (lingkungan) -- Kegiatan -> Lokasi/Kelompok
+     * (bisa nested) -> Item Biaya (Lumpsum/Transport/Hotel/dll) -- jadi daftar baris flat
+     * bertanda depth & nomor, biar template gak perlu <repeat> rekursif.
+     * @return array{baris: array, subtotal: float}
+     */
+    protected function hitungKegiatanRab($kegiatanList, $kebutuhanMap = []) {
+        $baris = [];
+        $subtotalTotal = 0;
+        $noKeg = 0;
+
+        foreach ($kegiatanList as $keg) {
+            $namaKeg = trim($keg['nama'] ?? '');
+            if ($namaKeg === '') continue;
+            $noKeg++;
+
+            $subtotalKeg = 0;
+            $barisKeg = [];
+            $this->flattenRabItems($keg['items'] ?? [], 1, $barisKeg, $subtotalKeg, $kebutuhanMap);
+            $this->flattenRabGrup($keg['grup'] ?? [], 0, $barisKeg, $subtotalKeg, $kebutuhanMap);
+
+            $baris[] = ['tipe' => 'kegiatan', 'depth' => 0, 'nomor' => $noKeg . '.', 'nama' => $namaKeg, 'biaya' => $subtotalKeg];
+            foreach ($barisKeg as $b) { $baris[] = $b; }
+            $subtotalTotal += $subtotalKeg;
+        }
+
+        return ['baris' => $baris, 'subtotal' => $subtotalTotal];
+    }
+
+    /** Grup/Lokasi/Kelompok, bisa bersarang (children) tak terbatas. $depth: 0 = anak langsung Kegiatan. */
+    protected function flattenRabGrup($grupList, $depth, &$baris, &$subtotalAcc, $kebutuhanMap = []) {
+        $alpha  = range('a', 'z');
+        $romawi = ['i','ii','iii','iv','v','vi','vii','viii','ix','x','xi','xii','xiii','xiv','xv'];
+
+        $no = 0;
+        foreach ($grupList as $grup) {
+            $namaGrup = trim($grup['nama'] ?? '');
+            $ptNama   = trim((string) ($grup['disediakan_pt'] ?? ''));
+            $no++;
+
+            if ($depth === 0)      { $label = $no . '.'; }
+            elseif ($depth === 1)  { $label = ($alpha[$no - 1] ?? $no) . '.'; }
+            else                   { $label = ($romawi[$no - 1] ?? $no) . '.'; }
+
+            // [BARU] Lokasi/Kelompok "Disediakan PT X" -- biaya ditanggung partner, jadi Rp 0
+            // dan gak usah masuk itemisasi (items/children-nya diabaikan sama sekali).
+            if ($ptNama !== '') {
+                $baris[] = [
+                    'tipe' => 'grup', 'depth' => $depth, 'nomor' => $label, 'nama' => $namaGrup,
+                    'biaya' => 0, 'disediakan_pt' => $ptNama,
+                ];
+                continue;
+            }
+
+            $subtotalGrup = 0;
+            $barisAnak = [];
+            $this->flattenRabItems($grup['items'] ?? [], $depth + 1, $barisAnak, $subtotalGrup, $kebutuhanMap);
+            $this->flattenRabGrup($grup['children'] ?? [], $depth + 1, $barisAnak, $subtotalGrup, $kebutuhanMap);
+
+            $baris[] = ['tipe' => 'grup', 'depth' => $depth, 'nomor' => $label, 'nama' => $namaGrup, 'biaya' => $subtotalGrup];
+            foreach ($barisAnak as $b) { $baris[] = $b; }
+            $subtotalAcc += $subtotalGrup;
+        }
+    }
+
+    /** Baris biaya (Lumpsum/Transport/Hotel/dll): Kali x (Orang/Kamar) x Hari x Tarif Satuan. */
+    protected function flattenRabItems($items, $depth, &$baris, &$subtotalAcc, $kebutuhanMap = []) {
+        foreach ($items as $item) {
+            // [BARU] Item yang nyambung ke kategori "Rincian Kebutuhan Lain" (bagian 2. Alat
+            // dan Bahan) -- biayanya diambil dari subtotal kategori itu, bukan diketik manual,
+            // biar jelas asalnya darimana & gak dobel-input (dipakai khusus selulosa). Nama di
+            // RAB-nya juga langsung ngikut nama kategorinya, gak ada input "Jenis" terpisah lagi.
+            if (($item['tipe_item'] ?? '') === 'kebutuhan') {
+                $namaKategori = trim((string) ($item['keb_kategori'] ?? ''));
+                if ($namaKategori === '') continue;
+
+                $kebKat  = $kebutuhanMap[$namaKategori] ?? null;
+                $biaya   = (float) ($kebKat['subtotal'] ?? 0);
+                $barangList = array_map(function ($it) {
+                    $jumlah = trim($this->formatAngkaRab((float) ($it['jumlah'] ?? 0)));
+                    $satuan = trim((string) ($it['satuan'] ?? ''));
+                    return trim($it['nama'] ?? '') . ' (' . $jumlah . ($satuan !== '' ? ' ' . $satuan : '') . ')';
+                }, $kebKat['items'] ?? []);
+                $rincian = $barangList
+                    ? ('Rincian Kebutuhan Lain -- ' . implode(', ', $barangList))
+                    : 'Rincian Kebutuhan Lain';
+
+                $baris[] = [
+                    'tipe'         => 'item',
+                    'depth'        => $depth,
+                    'nomor'        => '',
+                    'nama'         => $namaKategori,
+                    'rincian'      => $rincian,
+                    'kali_fmt'     => '',
+                    'dim2_fmt'     => '',
+                    'dim2_label'   => '',
+                    'hari_fmt'     => '',
+                    'satuan_biaya' => 0,
+                    'biaya'        => $biaya,
+                ];
+                $subtotalAcc += $biaya;
+                continue;
+            }
+
+            $jenis = trim($item['jenis'] ?? '');
+            if ($jenis === '') continue;
+
+            // [BARU] Item "Lembur" -- rumusnya beda dari item biasa (Kali x Jumlah x Hari x
+            // Satuan): Biaya Lembur = Hari x Jam x Tarif per-OJ x %Lembur, ditambah Uang Makan
+            // = Hari x Rp/hari. Dipakai buat kasus kayak "RAB KS Chitose" yang gak ngikutin
+            // pola qty x harga biasa.
+            if (($item['tipe_item'] ?? '') === 'lembur') {
+                $hari      = (float) ($item['hari'] ?? 0);
+                $jam       = (float) ($item['jam'] ?? 0);
+                $oj        = (float) ($item['oj'] ?? 0);
+                $persen    = (float) ($item['persen'] ?? 200);
+                $uangMakan = (float) ($item['uang_makan'] ?? 0);
+
+                $biayaLembur = $hari * $jam * $oj * ($persen / 100);
+                $biayaMakan  = $hari * $uangMakan;
+                $biaya       = $biayaLembur + $biayaMakan;
+
+                $rincian = $this->formatAngkaRab($hari) . ' hari x ' . $this->formatAngkaRab($jam) . ' jam x Rp'
+                    . number_format($oj, 0, ',', '.') . '/OJ x ' . $this->formatAngkaRab($persen) . '%'
+                    . ($uangMakan > 0 ? ' + Rp' . number_format($uangMakan, 0, ',', '.') . '/hari uang makan' : '');
+
+                $baris[] = [
+                    'tipe'         => 'item',
+                    'depth'        => $depth,
+                    'nomor'        => '',
+                    'nama'         => $jenis,
+                    'rincian'      => $rincian,
+                    'kali_fmt'     => '',
+                    'dim2_fmt'     => '',
+                    'dim2_label'   => '',
+                    'hari_fmt'     => $this->formatAngkaRab($hari),
+                    'satuan_biaya' => $oj,
+                    'biaya'        => $biaya,
+                ];
+                $subtotalAcc += $biaya;
+                continue;
+            }
+
+            $kali   = (float) ($item['kali'] ?? 0);
+            $dim2   = (($item['dim2'] ?? null) !== null && $item['dim2'] !== '') ? (float) $item['dim2'] : null;
+            $hari   = (($item['hari'] ?? null) !== null && $item['hari'] !== '') ? (float) $item['hari'] : null;
+            $satuan = (float) ($item['satuan'] ?? 0);
+            $biaya  = $kali * ($dim2 ?: 1) * ($hari ?: 1) * $satuan;
+
+            $rincian = [$this->formatAngkaRab($kali) . ' kali'];
+            if ($dim2 !== null) { $rincian[] = $this->formatAngkaRab($dim2) . ' ' . trim((string) ($item['dim2_label'] ?? '')); }
+            if ($hari !== null) { $rincian[] = $this->formatAngkaRab($hari) . ' hari'; }
+
+            // [BARU] Kolom terpisah (Kali | Jumlah | Hari) biar tabel cetak/preview-nya
+            // persis kaya format RAB asli (tiap angka + satuannya kolom sendiri-sendiri),
+            // bukan digabung jadi satu teks "rincian".
+            $baris[] = [
+                'tipe'         => 'item',
+                'depth'        => $depth,
+                'nomor'        => '',
+                'nama'         => $jenis,
+                'rincian'      => trim(implode(', ', $rincian)),
+                'kali_fmt'     => $this->formatAngkaRab($kali),
+                'dim2_fmt'     => $dim2 !== null ? $this->formatAngkaRab($dim2) : '',
+                'dim2_label'   => trim((string) ($item['dim2_label'] ?? '')),
+                'hari_fmt'     => $hari !== null ? $this->formatAngkaRab($hari) : '',
+                'satuan_biaya' => $satuan,
+                'biaya'        => $biaya,
+            ];
+            $subtotalAcc += $biaya;
+        }
+    }
+
+    /**
+     * [BARU] Susun ulang data Kegiatan->Grup->Item RAB selulosa jadi struktur siap-tampil yang
+     * ngikutin format RAB fisik (mis. "RAB KS Chitose"): kategori dikasih label huruf besar
+     * (A./B./dst -- lihat 'label_huruf' di hitungRab), dan tiap Kegiatan diberi nomor urut
+     * (1./2./dst) TANPA baris "Kegiatan" terpisah kaya di preview lingkungan. Kalau Kegiatan
+     * cuma punya 1 anak (1 item biasa/kebutuhan, gak ada Lokasi/Grup), rincian qty/satuannya
+     * digabung nempel di baris nomor yang sama (kaya "2. Konsumsi rapat  50 pax  Rp60.000").
+     * Kalau lebih dari 1 anak, tiap anak ditampilin baris tersendiri di bawahnya pakai tanda "-".
+     * Item "Lembur" yang beruntun dikumpulin jadi satu blok mini-tabel Hari|Jam|OJ|%|Uang Makan,
+     * persis kaya contoh RAB fisik yang nunjukin beberapa baris lembur di bawah satu judul "Lembur".
+     */
+    protected function susunKegiatanSelulosa($kegiatanList, $kebutuhanMap = []) {
+        $hasil = [];
+        $no = 0;
+
+        foreach ($kegiatanList as $keg) {
+            $namaKeg = trim($keg['nama'] ?? '');
+            if ($namaKeg === '') continue;
+            $no++;
+
+            $anak = [];
+            $subtotalKeg = 0;
+            $this->kumpulkanAnakSelulosa($keg['items'] ?? [], $anak, $subtotalKeg, $kebutuhanMap);
+            $this->kumpulkanGrupSelulosa($keg['grup'] ?? [], $anak, $subtotalKeg, $kebutuhanMap);
+
+            if (count($anak) === 1 && in_array($anak[0]['tipe'], ['item', 'kebutuhan'], true)) {
+                $hasil[] = [
+                    'nomor'        => $no . '.',
+                    'nama'         => $namaKeg,
+                    'biaya'        => $subtotalKeg,
+                    'gabung'       => true,
+                    'rincian'      => $anak[0]['rincian'],
+                    'satuan_biaya' => $anak[0]['satuan_biaya'],
+                ];
+            } else {
+                $hasil[] = [
+                    'nomor'  => $no . '.',
+                    'nama'   => $namaKeg,
+                    'biaya'  => $subtotalKeg,
+                    'gabung' => false,
+                    'anak'   => $anak,
+                ];
+            }
+        }
+
+        return $hasil;
+    }
+
+    /** Kumpulin item (biasa/lembur/kebutuhan) jadi baris "anak" tampilan selulosa. */
+    protected function kumpulkanAnakSelulosa($items, &$anak, &$subtotalAcc, $kebutuhanMap) {
+        foreach ($items as $item) {
+            if (($item['tipe_item'] ?? '') === 'kebutuhan') {
+                $namaKategori = trim((string) ($item['keb_kategori'] ?? ''));
+                if ($namaKategori === '') continue;
+
+                $kebKat = $kebutuhanMap[$namaKategori] ?? null;
+                $biaya  = (float) ($kebKat['subtotal'] ?? 0);
+                $barangList = array_map(function ($it) {
+                    $jumlah = trim($this->formatAngkaRab((float) ($it['jumlah'] ?? 0)));
+                    $satuan = trim((string) ($it['satuan'] ?? ''));
+                    return trim($it['nama'] ?? '') . ' (' . $jumlah . ($satuan !== '' ? ' ' . $satuan : '') . ')';
+                }, $kebKat['items'] ?? []);
+
+                $anak[] = [
+                    'tipe'         => 'kebutuhan',
+                    'nama'         => $namaKategori,
+                    'rincian'      => $barangList ? implode(', ', $barangList) : '',
+                    'satuan_biaya' => 0,
+                    'biaya'        => $biaya,
+                ];
+                $subtotalAcc += $biaya;
+                continue;
+            }
+
+            if (($item['tipe_item'] ?? '') === 'lembur') {
+                $hari      = (float) ($item['hari'] ?? 0);
+                $jam       = (float) ($item['jam'] ?? 0);
+                $oj        = (float) ($item['oj'] ?? 0);
+                $persen    = (float) ($item['persen'] ?? 200);
+                $uangMakan = (float) ($item['uang_makan'] ?? 0);
+                $biaya     = ($hari * $jam * $oj * ($persen / 100)) + ($hari * $uangMakan);
+                $jenis     = trim($item['jenis'] ?? '');
+
+                $baris = [
+                    'nama' => $jenis, 'hari' => $hari, 'jam' => $jam, 'oj' => $oj,
+                    'persen' => $persen, 'uang_makan' => $uangMakan, 'biaya' => $biaya,
+                ];
+
+                $lastIdx = count($anak) - 1;
+                if ($lastIdx >= 0 && $anak[$lastIdx]['tipe'] === 'lembur_group') {
+                    $anak[$lastIdx]['items'][] = $baris;
+                    $anak[$lastIdx]['subtotal'] += $biaya;
+                } else {
+                    $anak[] = ['tipe' => 'lembur_group', 'nama' => 'Lembur', 'subtotal' => $biaya, 'items' => [$baris]];
+                }
+                $subtotalAcc += $biaya;
+                continue;
+            }
+
+            $jenis = trim($item['jenis'] ?? '');
+            if ($jenis === '') continue;
+
+            $kali   = (float) ($item['kali'] ?? 0);
+            $dim2   = (($item['dim2'] ?? null) !== null && $item['dim2'] !== '') ? (float) $item['dim2'] : null;
+            $hari   = (($item['hari'] ?? null) !== null && $item['hari'] !== '') ? (float) $item['hari'] : null;
+            $satuan = (float) ($item['satuan'] ?? 0);
+            $biaya  = $kali * ($dim2 ?: 1) * ($hari ?: 1) * $satuan;
+
+            $rincianParts = [$this->formatAngkaRab($kali) . ' kali'];
+            if ($dim2 !== null) { $rincianParts[] = $this->formatAngkaRab($dim2) . ' ' . trim((string) ($item['dim2_label'] ?? '')); }
+            if ($hari !== null) { $rincianParts[] = $this->formatAngkaRab($hari) . ' hari'; }
+
+            $anak[] = [
+                'tipe'         => 'item',
+                'nama'         => $jenis,
+                'rincian'      => trim(implode(', ', $rincianParts)),
+                'satuan_biaya' => $satuan,
+                'biaya'        => $biaya,
+            ];
+            $subtotalAcc += $biaya;
+        }
+    }
+
+    /** Kumpulin Lokasi/Kelompok (bisa nested) jadi baris "anak" tampilan selulosa. */
+    protected function kumpulkanGrupSelulosa($grupList, &$anak, &$subtotalAcc, $kebutuhanMap) {
+        foreach ($grupList as $grup) {
+            $namaGrup = trim($grup['nama'] ?? '');
+            $ptNama   = trim((string) ($grup['disediakan_pt'] ?? ''));
+
+            if ($ptNama !== '') {
+                $anak[] = ['tipe' => 'grup', 'nama' => $namaGrup, 'biaya' => 0, 'disediakan_pt' => $ptNama, 'anak' => []];
+                continue;
+            }
+
+            $anakGrup = [];
+            $subtotalGrup = 0;
+            $this->kumpulkanAnakSelulosa($grup['items'] ?? [], $anakGrup, $subtotalGrup, $kebutuhanMap);
+            $this->kumpulkanGrupSelulosa($grup['children'] ?? [], $anakGrup, $subtotalGrup, $kebutuhanMap);
+
+            $anak[] = ['tipe' => 'grup', 'nama' => $namaGrup, 'biaya' => $subtotalGrup, 'anak' => $anakGrup];
+            $subtotalAcc += $subtotalGrup;
+        }
+    }
+
+    protected function formatAngkaRab($n) {
+        if ((float) $n == (int) $n) return (string) (int) $n;
+        return rtrim(rtrim(number_format((float) $n, 2, ',', '.'), '0'), ',');
     }
 
     protected function generateNomorPo() {
