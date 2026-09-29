@@ -15,8 +15,19 @@
 class PembayaranOptiController extends Controller {
 
     protected $allowedExt  = ['pdf'];
-protected $allowedMime = ['application/pdf'];
+    protected $allowedMime = ['application/pdf'];
     protected $maxSize     = 5242880; // 5MB
+
+    public function beforeRoute($f3) {
+        parent::beforeRoute($f3);
+        $this->requireAuth();
+        $role = $this->getUserRole();
+        if ($role !== 'superadmin' && $role !== 'ketua_tim') {
+            $this->setFlashError('Akses Ditolak: Modul Pembayaran hanya dapat diakses oleh Ketua Tim OPTI dan Superadmin.');
+            $f3->reroute('/dashboard');
+            return;
+        }
+    }
 
     protected function ensureSchema(): void {
         static $done = false;

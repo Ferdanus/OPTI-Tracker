@@ -27,7 +27,6 @@ class Controller {
             'order:view', 'order:create', 'order:edit', 'order:form_pelayanan', 'order:respon_klien',
             'penawaran:view', 'penawaran:create', 'penawaran:edit', 'penawaran:cetak',
             'kontrak:view', 'kontrak:create', 'kontrak:edit',
-            'pembayaran:view', 'pembayaran:create', 'pembayaran:edit',
             'klien:view', 'klien:create', 'klien:edit',
             'alert:manage'
         ),
@@ -36,7 +35,6 @@ class Controller {
             'order:view', 'order:create', 'order:edit', 'order:form_pelayanan', 'order:respon_klien',
             'penawaran:view', 'penawaran:create', 'penawaran:edit', 'penawaran:cetak',
             'kontrak:view', 'kontrak:create', 'kontrak:edit',
-            'pembayaran:view', 'pembayaran:create', 'pembayaran:edit',
             'klien:view', 'klien:create', 'klien:edit',
             'alert:manage'
         ),
@@ -45,7 +43,6 @@ class Controller {
             'order:view', 'order:create', 'order:edit', 'order:form_pelayanan', 'order:respon_klien',
             'penawaran:view', 'penawaran:create', 'penawaran:edit', 'penawaran:cetak',
             'kontrak:view', 'kontrak:create', 'kontrak:edit',
-            'pembayaran:view', 'pembayaran:create', 'pembayaran:edit',
             'klien:view', 'klien:create', 'klien:edit',
             'alert:manage'
         ),
@@ -54,7 +51,6 @@ class Controller {
             'order:view', 'order:create', 'order:edit', 'order:form_pelayanan', 'order:respon_klien',
             'penawaran:view', 'penawaran:create', 'penawaran:edit', 'penawaran:cetak',
             'kontrak:view', 'kontrak:create', 'kontrak:edit',
-            'pembayaran:view', 'pembayaran:create', 'pembayaran:edit',
             'klien:view', 'klien:create', 'klien:edit',
             'alert:manage'
         ),
@@ -63,6 +59,7 @@ class Controller {
             'order:view', 'order:tinjau', 'order:assign_pic', 'order:proposal_review',
             'po:view', 'po:create', 'po:edit', 'po:rab', 'po:jadwal', 'po:evaluasi', 'po:sop',
             'penawaran:view',
+            'pembayaran:view', 'pembayaran:create', 'pembayaran:edit',
             'klien:view',
             'alert:manage'
         ),
@@ -72,7 +69,6 @@ class Controller {
             'penawaran:view',
             'po:view',
             'kontrak:view',
-            'pembayaran:view', 'pembayaran:create', 'pembayaran:edit',
             'klien:view',
             'alert:manage'
         ),
@@ -82,7 +78,6 @@ class Controller {
             'penawaran:view',
             'po:view',
             'kontrak:view',
-            'pembayaran:view', 'pembayaran:create', 'pembayaran:edit',
             'klien:view',
             'alert:manage'
         ),
@@ -92,7 +87,6 @@ class Controller {
             'penawaran:view',
             'po:view',
             'kontrak:view',
-            'pembayaran:view',
             'klien:view'
         ),
         'tim_kerja' => array(
@@ -106,7 +100,6 @@ class Controller {
             'order:view',
             'po:view', 'po:sop',
             'kontrak:view', 'kontrak:create', 'kontrak:edit',
-            'pembayaran:view', 'pembayaran:create', 'pembayaran:edit',
             'klien:view',
             'alert:manage'
         ),
@@ -279,13 +272,14 @@ try {
 $this->f3->set('jumlah_notif_po_lingkungan', $notifPo['lingkungan']);
 $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
 
-        // Hitung notifikasi antrean Pembayaran untuk Tim Keuangan & Superadmin
+        // Hitung notifikasi antrean Pembayaran untuk Ka Tim OPTI & Superadmin
         $notifKeuanganCount = 0;
-        if ($role === 'keuangan' || $role === 'ketua_tim_keuangan' || $role === 'superadmin' || $isTimMitra) {
+        if ($role === 'ketua_tim' || $role === 'superadmin') {
             try {
+                $whereDivPay = ($role === 'ketua_tim' && in_array($layanan, array('selulosa', 'lingkungan'))) ? "o.jenis_layanan_opti = '{$layanan}' AND" : "";
                 $sqlKeuangan = "SELECT COUNT(*) as c FROM order_layanan o
                                 LEFT JOIN tb_surat_penawaran sp ON sp.order_id = o.id
-                                WHERE (o.status_keuangan = 'menunggu_pembayaran' 
+                                WHERE {$whereDivPay} (o.status_keuangan = 'menunggu_pembayaran' 
                                        OR o.status_penawaran = 'deal' 
                                        OR o.status_rancop = 'deal'
                                        OR (sp.id IS NOT NULL AND (sp.status_respon_klien = 'deal' OR (sp.surat_kesanggupan_bayar IS NOT NULL AND sp.surat_kesanggupan_bayar != '')))

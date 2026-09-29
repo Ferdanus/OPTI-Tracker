@@ -1256,8 +1256,8 @@
                 </check>
 
 
-                <!-- Rekapitulasi Pembayaran & Keuangan -->
-                <check if="{{ @is_superadmin || @is_keuangan || @is_admin_order || @is_admin_kontrak }}">
+                <!-- Rekapitulasi Pembayaran & Keuangan (Khusus Ka Tim OPTI & Superadmin) -->
+                <check if="{{ @is_superadmin || @is_ketua_tim }}">
                     <li>
                         <a class="sidebar-link {{ @active_menu == 'pembayaran' ? 'active' : '' }}" href="{{ @BASE }}/pembayaran" title="Pembayaran & Keuangan">
                             <i class="bi bi-cash-stack"></i> <span>Pembayaran</span>
@@ -1268,11 +1268,11 @@
                     </li>
                 </check>
 
-
-                <check if="{{ @is_superadmin || @is_ketua_tim || @is_tim_kerja }}">
+                <!-- Daftar Order Lunas (Khusus Ka Tim OPTI & Superadmin) -->
+                <check if="{{ @is_superadmin || @is_ketua_tim }}">
                     <li>
-                        <a class="sidebar-link {{ @active_menu == 'ketua-tim-po' ? 'active' : '' }}" href="{{ @BASE }}/ketua-tim/siap-po" title="Pembayaran & Keuangan">
-                            <i class="bi bi-cash-stack"></i> <span>Daftar Order Lunas</span>
+                        <a class="sidebar-link {{ @active_menu == 'ketua-tim-po' ? 'active' : '' }}" href="{{ @BASE }}/ketua-tim/siap-po" title="Daftar Order Lunas">
+                            <i class="bi bi-check2-circle"></i> <span>Daftar Order Lunas</span>
                         </a>
                     </li>
                 </check>
