@@ -29,7 +29,7 @@
 .notif-card-header {
     background: #ffffff;
     border-bottom: 1px solid #e2e8f0;
-    padding: 1rem 1.25rem;
+    padding: 1.15rem 1.35rem;
 }
 .notif-search-box {
     position: relative;
@@ -37,11 +37,11 @@
     max-width: 100%;
 }
 .notif-search-input {
-    height: 36px;
-    padding-left: 2.25rem;
-    padding-right: 2rem;
+    height: 38px;
+    padding-left: 2.35rem;
+    padding-right: 2.2rem;
     border-radius: 9999px;
-    font-size: 0.8rem;
+    font-size: 0.82rem;
     border: 1px solid #cbd5e1;
     background-color: #f8fafc;
     color: #334155;
@@ -55,23 +55,23 @@
 }
 .notif-search-icon {
     position: absolute;
-    left: 0.85rem;
+    left: 0.95rem;
     top: 50%;
     transform: translateY(-50%);
     color: #94a3b8;
-    font-size: 0.85rem;
+    font-size: 0.88rem;
     pointer-events: none;
 }
 .notif-search-clear {
     position: absolute;
-    right: 0.5rem;
+    right: 0.65rem;
     top: 50%;
     transform: translateY(-50%);
     background: none;
     border: none;
     color: #94a3b8;
     padding: 0.25rem;
-    font-size: 0.85rem;
+    font-size: 0.88rem;
     cursor: pointer;
     line-height: 1;
     display: none;
@@ -82,25 +82,26 @@
 
 .notif-tab-group {
     background-color: #f1f5f9;
-    padding: 3px;
+    padding: 4px;
     border-radius: 9999px;
     display: inline-flex;
     align-items: center;
+    gap: 4px;
     border: 1px solid #e2e8f0;
-    height: 36px;
+    height: 38px;
 }
 .notif-tab-btn {
     border: none;
     background: transparent;
-    padding: 0.35rem 0.85rem;
+    padding: 0.38rem 0.95rem;
     border-radius: 9999px;
-    font-size: 0.76rem;
+    font-size: 0.78rem;
     font-weight: 600;
     color: #64748b;
     transition: all 0.2s ease;
     display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
+    gap: 0.45rem;
     white-space: nowrap;
     cursor: pointer;
     line-height: 1.2;
@@ -137,8 +138,8 @@
             <span class="badge bg-light text-secondary border rounded-pill px-2.5 py-1 font-monospace" style="font-size: 0.72rem;" id="totalNotifLabel">{{ @totalSemua }} Total Pesan</span>
         </div>
 
-        <!-- Controls: Search & Tabs side-by-side -->
-        <div class="d-flex flex-wrap flex-sm-nowrap align-items-center gap-2.5">
+        <!-- Controls: Search & Tabs side-by-side with generous gap -->
+        <div class="d-flex flex-wrap flex-sm-nowrap align-items-center gap-3 gap-md-4">
             <!-- Search Bar -->
             <div class="notif-search-box flex-grow-1 flex-sm-grow-0">
                 <i class="bi bi-search notif-search-icon"></i>
@@ -162,13 +163,13 @@
             <!-- Filter Tabs -->
             <div class="notif-tab-group flex-shrink-0" role="group">
                 <button type="button" class="notif-tab-btn active" id="btnFilterSemua" onclick="filterNotif('all', this)">
-                    Semua <span class="badge bg-secondary-subtle text-secondary rounded-pill px-1.5" style="font-size: 0.65rem;" id="allTabCount">{{ @totalSemua }}</span>
+                    Semua <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2 py-0.5" style="font-size: 0.68rem;" id="allTabCount">{{ @totalSemua }}</span>
                 </button>
                 <button type="button" class="notif-tab-btn" id="btnFilterUnread" onclick="filterNotif('unread', this)">
-                    Belum Dibaca <span class="badge bg-danger text-white rounded-pill px-1.5" style="font-size: 0.65rem;" id="unreadTabCount">{{ @totalUnread }}</span>
+                    Belum Dibaca <span class="badge bg-danger text-white rounded-pill px-2 py-0.5" style="font-size: 0.68rem;" id="unreadTabCount">{{ @totalUnread }}</span>
                 </button>
                 <button type="button" class="notif-tab-btn" id="btnFilterRead" onclick="filterNotif('read', this)">
-                    Riwayat <span class="badge bg-secondary-subtle text-muted rounded-pill px-1.5" style="font-size: 0.65rem;" id="readTabCount">{{ @totalRead }}</span>
+                    Riwayat <span class="badge bg-secondary-subtle text-muted rounded-pill px-2 py-0.5" style="font-size: 0.68rem;" id="readTabCount">{{ @totalRead }}</span>
                 </button>
             </div>
         </div>
