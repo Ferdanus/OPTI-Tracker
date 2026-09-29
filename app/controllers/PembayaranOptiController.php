@@ -21,9 +21,8 @@ class PembayaranOptiController extends Controller {
     public function beforeRoute($f3) {
         parent::beforeRoute($f3);
         $this->requireAuth();
-        $role = $this->getUserRole();
-        if ($role !== 'superadmin' && $role !== 'ketua_tim') {
-            $this->setFlashError('Akses Ditolak: Modul Pembayaran hanya dapat diakses oleh Ketua Tim OPTI dan Superadmin.');
+        if (!$this->isSuperadmin() && !$this->isKeuangan()) {
+            $this->setFlashError('Akses Ditolak: Modul Pembayaran hanya dapat diakses oleh Tim Keuangan dan Superadmin.');
             $f3->reroute('/dashboard');
             return;
         }

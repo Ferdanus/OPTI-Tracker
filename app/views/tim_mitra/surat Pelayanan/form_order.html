@@ -1170,12 +1170,12 @@
                         <!-- Pejabat Penandatangan BBSPJIS (Selection Terpadu Master mst_penandatangan_lhu sil2020) -->
                         <div class="col-12">
                             <label class="form-label small fw-semibold text-dark mb-1">
-                                <i class="bi bi-person-badge text-primary me-1.5"></i> Jabatan &amp; Nama Pejabat Penandatangan BBSPJIS <span class="text-danger">*</span>
+                                <i class="bi bi-person-badge text-primary me-1.5"></i> Pejabat Penandatangan BBSPJIS <span class="text-danger">*</span>
                             </label>
                             <div class="pdt-select-wrapper">
                                 <select id="select_penandatangan_master" class="form-select form-select-sm fw-semibold" onchange="onSelectPenandatanganMaster(this)" {{ !@can_edit ? 'disabled' : '' }} placeholder="Ketik atau cari nama pejabat / jabatan...">
                                     <repeat group="{{ @daftar_penandatangan }}" value="{{ @pdt }}">
-                                        <option value="{{ @pdt.nama }}" 
+                                        <option value="{{ @pdt.jabatan }}||{{ @pdt.nama }}" 
                                                 data-nama="{{ @pdt.nama }}" 
                                                 data-jabatan="{{ @pdt.jabatan }}" 
                                                 data-kategori="{{ @pdt.kategori }}"
@@ -1186,7 +1186,7 @@
                                         </option>
                                     </repeat>
                                     <check if="{{ @sp_existing.pejabat_nama && !in_array(@sp_existing.pejabat_nama, array_column(@daftar_penandatangan, 'nama')) }}">
-                                        <option value="{{ @sp_existing.pejabat_nama }}" 
+                                        <option value="{{ @sp_existing.jabatan_pejabat }}||{{ @sp_existing.pejabat_nama }}" 
                                                 data-nama="{{ @sp_existing.pejabat_nama }}" 
                                                 data-jabatan="{{ @sp_existing.jabatan_pejabat }}" 
                                                 data-kategori="Pejabat Tersimpan"
@@ -1524,7 +1524,6 @@
                             <!-- Tanda Tangan Pejabat BBSPJIS Cover Lingkungan -->
                             <div style="display: flex; justify-content: flex-end; font-size: 9.5px;">
                                 <div style="text-align: center; width: 45%;">
-                                    <div>a.n. Kepala,</div>
                                     <div id="d_jabatan_pejabat_l">{{ @sp_existing.jabatan_pejabat ?: (@default_jabatan_pejabat ?: 'Kepala Bagian Tata Usaha') }}</div>
                                     <div style="height: 48px;"></div>
                                     <div class="fw-bold" id="d_pembuat_l">{{ @sp_existing.pejabat_nama ?: (@sp_existing.pembuat_nama ?: (@default_pejabat_nama ?: 'Joko Pratomo')) }}</div>
@@ -2383,7 +2382,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     var selMaster = document.getElementById('select_penandatangan_master');
     if (selMaster) {
-        onSelectPenandatanganMaster(selMaster);
         initPenandatanganTomSelect();
     }
 
@@ -2596,20 +2594,31 @@ function confirmKirimPenawaran() {
 
 function onSelectPenandatanganMaster(selectEl) {
     if (!selectEl) return;
-    var opt = selectEl.options[selectEl.selectedIndex];
-    if (opt) {
-        var nama = opt.getAttribute('data-nama') || opt.value || '';
-        var jabatan = opt.getAttribute('data-jabatan') || '';
+    var val = selectEl.value || '';
+    var nama = '';
+    var jabatan = '';
 
-        var inputNama = document.getElementById('input_pejabat_nama');
-        if (inputNama) inputNama.value = nama;
-
-        var inputJabatan = document.getElementById('input_jabatan_pejabat');
-        if (inputJabatan) inputJabatan.value = jabatan;
-
-        var inputPembuat = document.getElementById('input_pembuat_nama');
-        if (inputPembuat) inputPembuat.value = nama;
+    if (val.indexOf('||') !== -1) {
+        var parts = val.split('||');
+        jabatan = parts[0] || '';
+        nama = parts[1] || '';
+    } else {
+        var opt = selectEl.options[selectEl.selectedIndex];
+        if (opt) {
+            nama = opt.getAttribute('data-nama') || opt.value || '';
+            jabatan = opt.getAttribute('data-jabatan') || '';
+        }
     }
+
+    var inputNama = document.getElementById('input_pejabat_nama');
+    if (inputNama && nama) inputNama.value = nama;
+
+    var inputJabatan = document.getElementById('input_jabatan_pejabat');
+    if (inputJabatan && jabatan) inputJabatan.value = jabatan;
+
+    var inputPembuat = document.getElementById('input_pembuat_nama');
+    if (inputPembuat && nama) inputPembuat.value = nama;
+
     syncLivePreview();
 }
 
@@ -2680,17 +2689,29 @@ function initPenandatanganTomSelect() {
             }
         },
         onChange: function(value) {
-            var optData = this.options[value];
-            if (optData) {
-                var inputNama = document.getElementById('input_pejabat_nama');
-                if (inputNama) inputNama.value = optData.nama || '';
-
-                var inputJabatan = document.getElementById('input_jabatan_pejabat');
-                if (inputJabatan) inputJabatan.value = optData.jabatan || '';
-
-                var inputPembuat = document.getElementById('input_pembuat_nama');
-                if (inputPembuat) inputPembuat.value = optData.nama || '';
+            var nama = '';
+            var jabatan = '';
+            if (value && value.indexOf('||') !== -1) {
+                var parts = value.split('||');
+                jabatan = parts[0] || '';
+                nama = parts[1] || '';
+            } else {
+                var optData = this.options[value];
+                if (optData) {
+                    nama = optData.nama || '';
+                    jabatan = optData.jabatan || '';
+                }
             }
+
+            var inputNama = document.getElementById('input_pejabat_nama');
+            if (inputNama && nama) inputNama.value = nama;
+
+            var inputJabatan = document.getElementById('input_jabatan_pejabat');
+            if (inputJabatan && jabatan) inputJabatan.value = jabatan;
+
+            var inputPembuat = document.getElementById('input_pembuat_nama');
+            if (inputPembuat && nama) inputPembuat.value = nama;
+
             syncLivePreview();
         }
     });

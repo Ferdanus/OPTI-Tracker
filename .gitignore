@@ -1,2 +1,6 @@
 /tmp/*
 !/tmp/.gitkeep
+/uploads/*
+!/uploads/.gitkeep
+/public/uploads/*
+!/public/uploads/.gitkeep

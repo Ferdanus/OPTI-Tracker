@@ -348,6 +348,15 @@ class StageAudit {
                     $result[5]['pengirim_role'] = 'Tim Mitra';
                 }
 
+                $isPenawaranDeal = (!empty($extra['penawaran']) && ($extra['penawaran']['status_respon_klien'] ?? '') === 'deal') || (($order['status_penawaran'] ?? '') === 'deal') || (($order['status'] ?? '') === 'penawaran_deal');
+                if (empty($result[5]['waktu_disetujui']) && $isPenawaranDeal) {
+                    $tglDeal5 = !empty($extra['penawaran']['disetujui_klien_at']) ? $extra['penawaran']['disetujui_klien_at'] : (!empty($extra['penawaran']['updated_at']) ? $extra['penawaran']['updated_at'] : (!empty($result[5]['waktu_kirim']) ? $result[5]['waktu_kirim'] : date('Y-m-d H:i:s')));
+                    self::recordDisetujui($db, $orderId, 5, null, 'Pelanggan / Klien', 'Pelanggan', $tglDeal5);
+                    $result[5]['waktu_disetujui'] = $tglDeal5;
+                    $result[5]['disetujui_nama']  = 'Pelanggan / Klien';
+                    $result[5]['disetujui_role']  = 'Pelanggan';
+                }
+
                 // Tahap 6: Pembayaran
                 if (empty($result[6]['waktu_kirim']) && (!empty($extra['riwayat_bayar']) || ($order['status_keuangan'] ?? '') === 'lunas')) {
                     $firstBayar = !empty($extra['riwayat_bayar']) ? $extra['riwayat_bayar'][0] : [];

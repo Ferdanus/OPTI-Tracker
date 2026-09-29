@@ -59,7 +59,6 @@ class Controller {
             'order:view', 'order:tinjau', 'order:assign_pic', 'order:proposal_review',
             'po:view', 'po:create', 'po:edit', 'po:rab', 'po:jadwal', 'po:evaluasi', 'po:sop',
             'penawaran:view',
-            'pembayaran:view', 'pembayaran:create', 'pembayaran:edit',
             'klien:view',
             'alert:manage'
         ),
@@ -67,6 +66,7 @@ class Controller {
             'surat_masuk:view',
             'order:view',
             'penawaran:view',
+            'pembayaran:view', 'pembayaran:create', 'pembayaran:edit',
             'po:view',
             'kontrak:view',
             'klien:view',
@@ -76,6 +76,7 @@ class Controller {
             'surat_masuk:view',
             'order:view',
             'penawaran:view',
+            'pembayaran:view', 'pembayaran:create', 'pembayaran:edit',
             'po:view',
             'kontrak:view',
             'klien:view',
