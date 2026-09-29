@@ -1256,8 +1256,8 @@
                 </check>
 
 
-                <!-- Rekapitulasi Pembayaran & Keuangan (Khusus Ka Tim OPTI & Superadmin) -->
-                <check if="{{ @is_superadmin || @is_ketua_tim }}">
+                <!-- Rekapitulasi Pembayaran & Keuangan (Khusus Tim Keuangan & Superadmin) -->
+                <check if="{{ @is_superadmin || @is_keuangan }}">
                     <li>
                         <a class="sidebar-link {{ @active_menu == 'pembayaran' ? 'active' : '' }}" href="{{ @BASE }}/pembayaran" title="Pembayaran & Keuangan">
                             <i class="bi bi-cash-stack"></i> <span>Pembayaran</span>
