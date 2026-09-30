@@ -54,24 +54,16 @@ class PembayaranOptiController extends Controller {
 
         // ---- Tab 1: Baru Masuk (Order yang sudah Deal / Siap Bayar tapi belum ada transaksi pembayaran) ----
         $sqlBaru = "SELECT o.id, o.nomor_order, o.judul_kegiatan, o.estimasi_biaya, o.tanggal_masuk, o.created_at,
-                           o.jenis_layanan_opti, o.status_keuangan, o.status_penawaran, o.status_rancop,
-                           c.nmcustomer AS nama_perusahaan, c.pt_cv,
-                           sp.id AS sp_id, sp.surat_kesanggupan_bayar, sp.nominal_penawaran
-                    FROM order_layanan o
-                    JOIN tb_customer c ON o.id_customer = c.id_customer
-                    LEFT JOIN tb_surat_penawaran sp ON sp.order_id = o.id
-                    WHERE (
-                        o.status_penawaran = 'deal'
-                        OR o.status_rancop = 'deal'
-                        OR o.status_keuangan = 'menunggu_pembayaran'
-                        OR (sp.id IS NOT NULL AND (sp.status_respon_klien = 'deal' OR (sp.surat_kesanggupan_bayar IS NOT NULL AND sp.surat_kesanggupan_bayar != '')))
-                        OR o.status IN ('penawaran_deal', 'menunggu_pembayaran')
-                    )
-                    AND o.id NOT IN (SELECT DISTINCT order_id FROM opti_pembayaran)
-                    AND (o.status_keuangan IS NULL OR o.status_keuangan != 'lunas')
-                    AND (o.status IS NULL OR o.status NOT IN ('batal', 'ditolak'))
-                    AND (o.status_rancop IS NULL OR o.status_rancop != 'batal')
-                    ORDER BY o.id DESC";
+        o.jenis_layanan_opti, o.status_keuangan, o.status_penawaran, o.status_rancop,
+        c.nmcustomer AS nama_perusahaan, c.pt_cv,
+        sp.id AS sp_id, sp.surat_kesanggupan_bayar, sp.nominal_penawaran
+ FROM order_layanan o
+ JOIN tb_customer c ON o.id_customer = c.id_customer
+ LEFT JOIN tb_surat_penawaran sp ON sp.order_id = o.id
+ WHERE o.status_penawaran = 'deal'
+   AND o.status_keuangan = 'menunggu_pembayaran'
+   AND o.id NOT IN (SELECT DISTINCT order_id FROM opti_pembayaran)
+ ORDER BY o.id DESC";
         $daftarBaru = $this->safeQuery($sqlBaru);
         foreach ($daftarBaru as &$o) {
             $o['nama_perusahaan'] = \Customer::formatNamaPerusahaan($o['pt_cv'] ?? '', $o['nama_perusahaan'] ?? '');

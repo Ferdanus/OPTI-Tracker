@@ -60,10 +60,19 @@
                                                         <i class="bi bi-hourglass-split me-1"></i>Belum Ditentukan
                                                     </span>
                                                 <?php endif; ?>
-                                                <span class="text-secondary font-monospace small ms-1" style="font-size: 0.78rem;">
-                                                    #<?= ($item['nomor_order'])."
+                                                <?php if (!empty($item['nomor_order'])): ?>
+                                                    
+                                                        <span class="text-secondary font-monospace small ms-1" style="font-size: 0.78rem;">
+                                                            #<?= ($item['nomor_order'])."
 " ?>
-                                                </span>
+                                                        </span>
+                                                    
+                                                    <?php else: ?>
+                                                        <span class="badge bg-secondary-subtle text-muted border font-monospace ms-1" style="font-size: 0.68rem;">
+                                                            Belum Ada No. Order
+                                                        </span>
+                                                    
+                                                <?php endif; ?>
                                             </div>
                                             <span class="text-muted small" style="font-size: 0.75rem;">
                                                 <?= (date('d M Y', strtotime($item['tanggal_masuk'])))."

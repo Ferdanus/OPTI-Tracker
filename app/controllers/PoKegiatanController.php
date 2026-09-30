@@ -279,17 +279,73 @@ public function index($f3) {
     // sama sekali gak nyaring data -- sekarang beneran ditempelin ke WHERE-nya.
     $sql = "SELECT p.id AS po_id, p.nomor_po, p.status AS po_status, p.created_at AS po_created_at,
                    o.id AS order_id, o.nomor_order, o.judul_kegiatan, o.jenis_layanan_opti, o.status_tinjauan,
-                   o.ketua_pelaksana_id, o.ketua_pelaksana_at,
-                   c.nmcustomer AS nama_mitra, c.pt_cv
+                   o.ketua_pelaksana_id, o.ketua_pelaksana_at, o.id_surat_masuk, o.status_keuangan,
+                   c.nmcustomer AS nama_mitra, c.pt_cv,
+                   sp.id AS sp_id, sp.surat_kesanggupan_bayar,
+                   (SELECT id FROM opti_proposal_riset pr WHERE pr.order_id = o.id ORDER BY pr.id DESC LIMIT 1) AS proposal_id,
+                   COALESCE((SELECT MAX(pb.is_kesanggupan_bayar) FROM opti_pembayaran pb WHERE pb.order_id = o.id), 0) AS punya_kesanggupan_bayar,
+                   (SELECT MAX(COALESCE(pb.created_at, pb.tanggal_bayar)) FROM opti_pembayaran pb WHERE pb.order_id = o.id AND pb.is_kesanggupan_bayar = 1) AS tanggal_surat_kesanggupan,
+                   (SELECT MAX(pb.tanggal_bayar) FROM opti_pembayaran pb WHERE pb.order_id = o.id AND pb.status_verifikasi = 'terverifikasi' AND (pb.is_kesanggupan_bayar = 0 OR pb.is_kesanggupan_bayar IS NULL)) AS tanggal_bayar_terakhir
             FROM order_layanan o
             JOIN tb_customer c ON o.id_customer = c.id_customer
             LEFT JOIN po_kegiatan p ON p.order_id = o.id
+            LEFT JOIN tb_surat_penawaran sp ON sp.order_id = o.id AND sp.status_respon_klien = 'deal'
             WHERE o.ketua_pelaksana_id IS NOT NULL"
             . ($divisi ? " AND o.jenis_layanan_opti = ?" : "") . "
             ORDER BY COALESCE(p.created_at, o.ketua_pelaksana_at) DESC";
 
 $daftarPo = $this->safeQuery($sql, $params);
 
+    // [BARU] Riwayat Bukti Pembayaran per-termin buat modal "Lihat File" -- diambil
+    // sekali buat semua order yang tampil di halaman ini, terus dikelompokin per
+    // order_id di PHP (bukan JOIN langsung, soalnya 1 order bisa punya banyak termin).
+    // Baris is_kesanggupan_bayar=1 (termin_ke=0, jumlah=0, tanpa bukti) sengaja
+    // DIKELUARIN dari sini -- itu bukan termin pembayaran beneran, cuma penanda
+    // "pakai Surat Kesanggupan Bayar", jadi ditampilin terpisah di bawah.
+    $orderIdUnik = array_values(array_unique(array_map(function ($r) {
+        return (int) $r['order_id'];
+    }, $daftarPo)));
+
+    $pembayaranByOrder = [];
+    if (!empty($orderIdUnik)) {
+        $placeholder = implode(',', array_fill(0, count($orderIdUnik), '?'));
+        $rowsBayar = $this->safeQuery(
+            "SELECT id, order_id, termin_ke, tanggal_bayar, jumlah, keterangan, bukti_bayar
+             FROM opti_pembayaran
+             WHERE order_id IN ($placeholder) AND (is_kesanggupan_bayar = 0 OR is_kesanggupan_bayar IS NULL)
+             ORDER BY termin_ke ASC",
+            $orderIdUnik
+        );
+        foreach ($rowsBayar as $rb) {
+            $pembayaranByOrder[(int) $rb['order_id']][] = $rb;
+        }
+    }
+    foreach ($daftarPo as &$p) {
+        $p['daftar_pembayaran'] = $pembayaranByOrder[(int) $p['order_id']] ?? [];
+    }
+    unset($p);
+
+    // [BARU] Label+tanggal yang ditampilin di modal "Berkas Terkait": kalo
+    // order-nya udah beneran lunas (status_keuangan='lunas' & ada tanggal
+    // pembayaran riil yang terverifikasi) -> "Tanggal Bayar" pake tanggal
+    // pembayaran terakhir; kalo belum lunas tapi pakai Surat Kesanggupan
+    // Bayar -> "Tanggal Surat Kesanggupan" pake tanggal baris opti_pembayaran
+    // (is_kesanggupan_bayar=1) itu dicatat, alias tanggal surat itu diunggah.
+    foreach ($daftarPo as &$p) {
+        $sudahLunas = ($p['status_keuangan'] ?? '') === 'lunas' && !empty($p['tanggal_bayar_terakhir']);
+        $p['sudah_lunas'] = $sudahLunas;
+        $p['label_tanggal_pembayaran'] = null;
+        $p['tanggal_pembayaran_ditampilkan'] = null;
+
+        if ($sudahLunas) {
+            $p['label_tanggal_pembayaran'] = 'Tanggal Bayar';
+            $p['tanggal_pembayaran_ditampilkan'] = $p['tanggal_bayar_terakhir'];
+        } elseif (!empty($p['punya_kesanggupan_bayar']) && !empty($p['tanggal_surat_kesanggupan'])) {
+            $p['label_tanggal_pembayaran'] = 'Tanggal Surat Kesanggupan';
+            $p['tanggal_pembayaran_ditampilkan'] = $p['tanggal_surat_kesanggupan'];
+        }
+    }
+    unset($p);
 
     $totalMenunggu = count(array_filter($daftarPo, function ($r) { return empty($r['po_id']); }));
     $totalDraft    = count(array_filter($daftarPo, function ($r) { return $r['po_status'] === 'draft'; }));

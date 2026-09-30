@@ -67,16 +67,21 @@
                                 <check if="{{ @p.po_id && @p.po_status == 'terkirim' }}"><span class="badge badge-pill-success">Terkirim</span></check>
                             </td>
                             <td class="text-center">
-                                <check if="{{ !@p.po_id }}">
-                                    <a href="{{ @BASE }}/po-kegiatan/buat?order_id={{ @p.order_id }}" class="btn btn-sm btn-primary">
-                                        <i class="bi bi-file-earmark-plus"></i>
-                                    </a>
-                                </check>
-                                <check if="{{ @p.po_id }}">
-                                    <button type="button" class="btn btn-sm btn-outline-success" onclick="bukaPreviewPo({{ @p.po_id }})">
-                                        <i class="bi bi-eye"></i>
+                                <div class="d-inline-flex align-items-center gap-1">
+                                    <check if="{{ !@p.po_id }}">
+                                        <a href="{{ @BASE }}/po-kegiatan/buat?order_id={{ @p.order_id }}" class="btn btn-sm btn-primary" title="Buat PO">
+                                            <i class="bi bi-file-earmark-plus"></i>
+                                        </a>
+                                    </check>
+                                    <check if="{{ @p.po_id }}">
+                                        <button type="button" class="btn btn-sm btn-outline-success" onclick="bukaPreviewPo({{ @p.po_id }})" title="Preview PO">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </check>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalFile_{{ @p.order_id }}" title="Lihat Berkas Terkait">
+                                        <i class="bi bi-folder2-open"></i>
                                     </button>
-                                </check>
+                                </div>
                             </td>
                         </tr>
                     </repeat>
@@ -88,6 +93,139 @@
         </table>
     </div>
 </div>
+
+<!-- ============================================================ -->
+<!-- MODAL LIHAT BERKAS TERKAIT (per Order) -->
+<!-- ============================================================ -->
+<check if="{{ @daftar_po && count(@daftar_po) > 0 }}">
+    <repeat group="{{ @daftar_po }}" value="{{ @p }}">
+        <div class="modal fade" id="modalFile_{{ @p.order_id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content bg-white border rounded-3 shadow">
+                    <div class="modal-header border-bottom py-3 px-4 bg-white">
+                        <div>
+                            <h6 class="modal-title fw-bold text-dark mb-0"><i class="bi bi-folder2-open text-primary me-2"></i>Berkas Terkait</h6>
+                            <small class="text-muted font-monospace">{{ @p.nomor_order }}</small>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                    </div>
+                    <div class="modal-body p-4">
+
+                        <!-- 1. Surat Penawaran -->
+                        <div class="doc-row">
+                            <div class="doc-row-icon"><i class="bi bi-file-earmark-text-fill"></i></div>
+                            <div class="doc-row-info">
+                                <div class="doc-row-title">Surat Penawaran</div>
+                                <div class="doc-row-sub">Penawaran harga yang disepakati</div>
+                            </div>
+                            <div class="doc-row-action">
+                                <check if="{{ @p.sp_id }}">
+                                    <button type="button" class="btn btn-sm btn-outline-primary btn-preview-pdf" data-preview-pdf="{{ @BASE }}/surat-penawaran/{{ @p.sp_id }}/lampiran" data-title="Surat Penawaran" data-subtitle="{{ @p.nomor_order }}"><i class="bi bi-eye me-1"></i>Lihat</button>
+                                </check>
+                                <check if="{{ !@p.sp_id }}">
+                                    <span class="text-muted small">Belum ada</span>
+                                </check>
+                            </div>
+                        </div>
+
+                        <!-- 2. Bukti Pembayaran (bisa banyak termin) -->
+                        <div class="doc-section-title">Bukti Pembayaran</div>
+                        <check if="{{ count(@p.daftar_pembayaran) > 0 }}">
+                            <repeat group="{{ @p.daftar_pembayaran }}" value="{{ @bayar }}">
+                                <div class="termin-item">
+                                    <div class="row-info">
+                                        <span class="badge badge-pill-primary">Termin ke-{{ @bayar.termin_ke }}</span>
+                                        <span class="fw-bold text-success">Rp {{ number_format(@bayar.jumlah, 0, ',', '.') }}</span>
+                                    </div>
+                                    <div class="row-info mt-1">
+                                        <span class="small text-muted">{{ date('d M Y', strtotime(@bayar.tanggal_bayar)) }}{{ @bayar.keterangan ? ' — ' . @bayar.keterangan : '' }}</span>
+                                    </div>
+                                    <check if="{{ @bayar.bukti_bayar }}">
+                                        <div class="pdf-inline-embed mt-2" data-pdf-url="{{ @BASE }}/pembayaran/bukti/{{ @bayar.id }}">
+                                            <div class="text-center text-muted small py-3"><span class="spinner-border spinner-border-sm me-1"></span>Memuat bukti pembayaran...</div>
+                                        </div>
+                                    </check>
+                                    <check if="{{ !@bayar.bukti_bayar }}">
+                                        <div class="text-muted small mt-2">Tanpa bukti pembayaran.</div>
+                                    </check>
+                                </div>
+                            </repeat>
+                        </check>
+                        <check if="{{ count(@p.daftar_pembayaran) == 0 }}">
+                            <div class="text-muted small text-center py-2 mb-2">Belum ada pembayaran tercatat.</div>
+                        </check>
+
+                        <!-- 2b. Tanggal Bayar / Tanggal Surat Kesanggupan (kondisional) -->
+                        <check if="{{ @p.label_tanggal_pembayaran }}">
+                            <div class="tanggal-info-row mb-3">
+                                <check if="{{ @p.sudah_lunas }}"><i class="bi bi-calendar2-check-fill text-success me-2"></i></check>
+                                <check if="{{ !@p.sudah_lunas }}"><i class="bi bi-calendar2-event-fill text-warning me-2"></i></check>
+                                <span class="fw-semibold text-dark me-1">{{ @p.label_tanggal_pembayaran }}:</span>
+                                <span class="text-muted">{{ date('d M Y', strtotime(@p.tanggal_pembayaran_ditampilkan)) }}</span>
+                            </div>
+                        </check>
+
+                        <!-- 2c. Surat Kesanggupan Bayar (kalau pernah diunggah) -->
+                        <check if="{{ @p.surat_kesanggupan_bayar }}">
+                            <div class="doc-row">
+                                <div class="doc-row-icon"><i class="bi bi-file-earmark-check-fill"></i></div>
+                                <div class="doc-row-info">
+                                    <div class="doc-row-title">Surat Kesanggupan Bayar</div>
+                                    <div class="doc-row-sub">Surat pernyataan sanggup membayar</div>
+                                </div>
+                                <div class="doc-row-action">
+                                    <button type="button" class="btn btn-sm btn-outline-primary btn-preview-pdf" data-preview-pdf="{{ @BASE }}/surat-penawaran/{{ @p.sp_id }}/surat-kesanggupan/preview" data-title="Surat Kesanggupan Bayar" data-subtitle="{{ @p.nomor_order }}"><i class="bi bi-eye me-1"></i>Lihat</button>
+                                </div>
+                            </div>
+                        </check>
+
+                        <!-- 3. Dokumen Pendukung -->
+                        <div class="doc-section-title">Dokumen Pendukung</div>
+
+                        <div class="doc-row">
+                            <div class="doc-row-icon"><i class="bi bi-envelope-paper-fill"></i></div>
+                            <div class="doc-row-info">
+                                <div class="doc-row-title">Surat Masuk</div>
+                                <div class="doc-row-sub">Surat permohonan awal dari mitra</div>
+                            </div>
+                            <div class="doc-row-action">
+                                <check if="{{ @p.id_surat_masuk }}">
+                                    <button type="button" class="btn btn-sm btn-outline-primary btn-preview-pdf" data-preview-pdf="{{ @BASE }}/surat-masuk/{{ @p.id_surat_masuk }}/pdf" data-title="Surat Masuk" data-subtitle="{{ @p.nomor_order }}"><i class="bi bi-eye me-1"></i>Lihat</button>
+                                </check>
+                                <check if="{{ !@p.id_surat_masuk }}">
+                                    <span class="text-muted small">Belum ada</span>
+                                </check>
+                            </div>
+                        </div>
+
+                        <!-- Proposal Teknis -- khusus Selulosa, Lingkungan gak pakai proposal -->
+                        <check if="{{ @p.jenis_layanan_opti == 'selulosa' }}">
+                            <div class="doc-row">
+                                <div class="doc-row-icon"><i class="bi bi-journal-code"></i></div>
+                                <div class="doc-row-info">
+                                    <div class="doc-row-title">Proposal Teknis</div>
+                                    <div class="doc-row-sub">Proposal riset (khusus Selulosa)</div>
+                                </div>
+                                <div class="doc-row-action">
+                                    <check if="{{ @p.proposal_id }}">
+                                        <button type="button" class="btn btn-sm btn-outline-primary btn-preview-pdf" data-preview-pdf="{{ @BASE }}/order/{{ @p.order_id }}/proposal" data-title="Proposal Teknis" data-subtitle="{{ @p.nomor_order }}"><i class="bi bi-eye me-1"></i>Lihat</button>
+                                    </check>
+                                    <check if="{{ !@p.proposal_id }}">
+                                        <span class="text-muted small">Belum ada</span>
+                                    </check>
+                                </div>
+                            </div>
+                        </check>
+
+                    </div>
+                    <div class="modal-footer border-top py-3 px-4 bg-light">
+                        <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Tutup</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </repeat>
+</check>
 
 <!-- ============================================================ -->
 <!-- MODAL PREVIEW PO -->
@@ -121,6 +259,75 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
+var BASE_FILE = '{{ @BASE }}';
+
+// [BARU] Bukti pembayaran di modal "Berkas Terkait" langsung tampil inline
+// (gak perlu diklik lagi), dimuat begitu modalnya dibuka (lazy-load per modal).
+document.addEventListener('shown.bs.modal', function (e) {
+    if (!e.target.id || e.target.id.indexOf('modalFile_') !== 0) return;
+    var embeds = e.target.querySelectorAll('.pdf-inline-embed:not([data-loaded])');
+    embeds.forEach(function (el) { muatPdfInline(el); });
+});
+
+async function muatPdfInline(container) {
+    container.setAttribute('data-loaded', '1');
+    var url = container.getAttribute('data-pdf-url');
+    if (!url) return;
+
+    try {
+        var apiUrl = BASE_FILE + '/api/doc-preview?url=' + encodeURIComponent(url) + '&t=' + Date.now();
+        var res = await fetch(apiUrl, { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' });
+        if (!res.ok) throw new Error('Server mengembalikan status HTTP ' + res.status);
+
+        var json = await res.json();
+        if (!json.success) throw new Error(json.message || 'Dokumen gagal diproses di server.');
+
+        if (json.is_pdf && json.base64) {
+            var pdfjsLib = await ensurePdfJsLoaded();
+            var bytes = base64ToUint8ArrayUniversal(json.base64);
+            var pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
+            renderInlinePdfPages(pdf, container);
+        } else if (json.base64) {
+            container.innerHTML = '<img src="data:' + (json.mime || 'image/jpeg') + ';base64,' + json.base64 + '" alt="Bukti Pembayaran">';
+        } else {
+            throw new Error('Format berkas tidak didukung untuk pratinjau langsung.');
+        }
+    } catch (err) {
+        container.innerHTML = '<div class="text-center text-danger small py-3"><i class="bi bi-exclamation-triangle me-1"></i>' + (err.message || 'Gagal memuat dokumen.') + '</div>';
+    }
+}
+
+function renderInlinePdfPages(pdf, container) {
+    container.innerHTML = '';
+    var scale = 1.1;
+    var dpr = window.devicePixelRatio || 1;
+    var renderScale = scale * Math.max(dpr, 1.5);
+
+    for (var pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        (function (pNum) {
+            pdf.getPage(pNum).then(function (page) {
+                var unscaled = page.getViewport({ scale: scale });
+                var viewport = page.getViewport({ scale: renderScale });
+
+                var canvas = document.createElement('canvas');
+                canvas.className = 'rounded-2 shadow-sm bg-white';
+                canvas.width = Math.floor(viewport.width);
+                canvas.height = Math.floor(viewport.height);
+                canvas.style.width = Math.floor(unscaled.width) + 'px';
+                canvas.style.height = Math.floor(unscaled.height) + 'px';
+                container.appendChild(canvas);
+
+                var ctx = canvas.getContext('2d');
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
+                return page.render({ canvasContext: ctx, viewport: viewport }).promise;
+            }).catch(function (err) {
+                console.error('Error rendering page ' + pNum + ':', err);
+            });
+        })(pageNum);
+    }
+}
+
 var currentPoId = null;
 
 function bukaPreviewPo(poId) {
@@ -195,4 +402,21 @@ function downloadPoPDF() {
 
         .modal-header, .modal-footer { display: none !important; }
     }
+
+    /* ==== Modal "Lihat File" (Berkas Terkait per Order) ==== */
+    .doc-row { display: flex; align-items: center; gap: 12px; padding: 11px 12px; border: 1px solid var(--color-border, #e5e7eb); border-radius: 10px; margin-bottom: 8px; }
+    .doc-row-icon { width: 38px; height: 38px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; background: #f1f5f9; color: #475569; }
+    .doc-row-info { flex: 1; min-width: 0; }
+    .doc-row-title { font-weight: 700; font-size: 13px; color: #1e293b; }
+    .doc-row-sub { font-size: 11.5px; color: #94a3b8; }
+    .doc-row-action { flex-shrink: 0; }
+    .doc-section-title { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: #94a3b8; margin: 16px 0 8px; }
+    .tanggal-info-row { display: flex; align-items: center; padding: 9px 12px; background: #f8fafc; border: 1px dashed var(--color-border, #e5e7eb); border-radius: 10px; font-size: 12.5px; }
+    .termin-item { border: 1px solid var(--color-border, #e5e7eb); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
+    .termin-item:last-child { margin-bottom: 0; }
+    .termin-item .row-info { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .pdf-inline-embed { background: #f1f5f9; border-radius: 10px; padding: 10px; max-height: 420px; overflow-y: auto; }
+    .pdf-inline-embed canvas { display: block; max-width: 100%; height: auto; margin: 0 auto 8px; }
+    .pdf-inline-embed canvas:last-child { margin-bottom: 0; }
+    .pdf-inline-embed img { max-width: 100%; height: auto; border-radius: 8px; display: block; margin: 0 auto; }
 </style>

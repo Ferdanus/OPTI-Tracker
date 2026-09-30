@@ -27,8 +27,9 @@ class KetuaTimController extends Controller {
     }
 
     $sql = "SELECT o.id, o.nomor_order, o.judul_kegiatan, o.estimasi_biaya,
-                   o.jenis_layanan_opti, o.disposisi_katim_at,
-                   o.ketua_pelaksana_id, o.ketua_pelaksana_at,
+               o.jenis_layanan_opti, o.disposisi_katim_at,
+               o.status_keuangan, o.tanggal_terima_sampel,
+               o.ketua_pelaksana_id, o.ketua_pelaksana_at, o.pic_proposal_id,
                    c.nmcustomer AS nama_perusahaan, c.pt_cv,
                    sp.id AS sp_id, sp.nominal_penawaran, sp.surat_kesanggupan_bayar,
                    COALESCE((SELECT SUM(p.jumlah) FROM opti_pembayaran p WHERE p.order_id = o.id AND p.status_verifikasi = 'terverifikasi'), 0) AS total_terbayar,
@@ -39,7 +40,9 @@ class KetuaTimController extends Controller {
             FROM order_layanan o
             JOIN tb_customer c ON o.id_customer = c.id_customer
             LEFT JOIN tb_surat_penawaran sp ON sp.order_id = o.id AND sp.status_respon_klien = 'deal'
-            WHERE o.disposisi_katim_at IS NOT NULL";
+            WHERE o.disposisi_katim_at IS NOT NULL
+              AND o.status_keuangan = 'lunas'
+              AND o.tanggal_terima_sampel IS NOT NULL";
 
     $params = [];
     if ($filterDivisi) {
@@ -58,9 +61,9 @@ class KetuaTimController extends Controller {
     $daftarSudah = [];
 
     foreach ($rows as $o) {
-        // [FIX] gak cek "beneran lunas" lagi -- disposisi_katim_at aja udah cukup
-        // jadi syarat, soalnya order Kesanggupan Bayar (total_terbayar=0) juga
-        // valid buat masuk sini, sesuai desain di modul Pembayaran.
+        // [FIX] sekarang wajib dua syarat: status_keuangan = 'lunas' DAN tanggal_terima_sampel
+// sudah terisi. Order Kesanggupan Bayar yang belum ada tanggal terima sampelnya
+// TIDAK boleh masuk sini walau status_keuangan-nya sudah lunas.
         $o['nama_perusahaan'] = \Customer::formatNamaPerusahaan($o['pt_cv'] ?? '', $o['nama_perusahaan'] ?? '');
         $o['biaya_acuan'] = !empty($o['nominal_penawaran']) ? (float) $o['nominal_penawaran'] : (float) $o['estimasi_biaya'];
 
@@ -87,29 +90,43 @@ $daftarPelaksana = $this->dbSekretariat->exec("SELECT id_user, nama_user FROM tb
     // [BARU] Nama Ketua Pelaksana yang udah ditunjuk -- dicari by ID (bukan cuma
     // dari $daftarPelaksana di atas) soalnya orangnya bisa aja udah gak lagi
     // ke-filter 'tim_kerja' pas dicek sekarang, padahal dulu pernah ditunjuk.
-    $idPelaksanaUnik = array_values(array_unique(array_map(function ($o) {
-        return (int) $o['ketua_pelaksana_id'];
-    }, $daftarSudah)));
+    // [BARU] Nama Ketua Pelaksana (tab Sudah) DAN nama PIC Proposal buat order Lingkungan
+// (tab Belum) -- digabung jadi satu query biar gak query dua kali ke tb_arsipuser.
+$idNamaUnik = [];
+foreach ($daftarSudah as $o) {
+    if (!empty($o['ketua_pelaksana_id'])) { $idNamaUnik[(int) $o['ketua_pelaksana_id']] = true; }
+}
+foreach ($daftarBelum as $o) {
+    if (($o['jenis_layanan_opti'] ?? '') === 'lingkungan' && !empty($o['pic_proposal_id'])) {
+        $idNamaUnik[(int) $o['pic_proposal_id']] = true;
+    }
+}
 
-    $mapNamaPelaksana = [];
-    if (!empty($idPelaksanaUnik)) {
-        $placeholder = implode(',', array_fill(0, count($idPelaksanaUnik), '?'));
-        try {
-            $rowsPelaksana = $this->dbSekretariat->exec(
-                "SELECT id_user, nama_user FROM tb_arsipuser WHERE id_user IN ($placeholder)",
-                $idPelaksanaUnik
-            );
-            foreach ($rowsPelaksana as $rp) {
-                $mapNamaPelaksana[(int) $rp['id_user']] = $rp['nama_user'];
-            }
-        } catch (\Exception $e) {
-            // biarin kosong, tampilkan '-' di view
+$mapNamaPelaksana = [];
+if (!empty($idNamaUnik)) {
+    $placeholder = implode(',', array_fill(0, count($idNamaUnik), '?'));
+    try {
+        $rowsNama = $this->dbSekretariat->exec(
+            "SELECT id_user, nama_user FROM tb_arsipuser WHERE id_user IN ($placeholder)",
+            array_values(array_keys($idNamaUnik))
+        );
+        foreach ($rowsNama as $rn) {
+            $mapNamaPelaksana[(int) $rn['id_user']] = $rn['nama_user'];
         }
+    } catch (\Exception $e) {
+        // biarin kosong, tampilkan '-' di view
     }
-    foreach ($daftarSudah as &$o) {
-        $o['nama_pelaksana'] = $mapNamaPelaksana[(int) $o['ketua_pelaksana_id']] ?? '-';
+}
+foreach ($daftarSudah as &$o) {
+    $o['nama_pelaksana'] = $mapNamaPelaksana[(int) $o['ketua_pelaksana_id']] ?? '-';
+}
+unset($o);
+foreach ($daftarBelum as &$o) {
+    if (($o['jenis_layanan_opti'] ?? '') === 'lingkungan') {
+        $o['nama_pic_proposal'] = !empty($o['pic_proposal_id']) ? ($mapNamaPelaksana[(int) $o['pic_proposal_id']] ?? '-') : null;
     }
-    unset($o);
+}
+unset($o);
 
     $tahunSekarang = (int) date('Y');
     $daftarTahun = [];

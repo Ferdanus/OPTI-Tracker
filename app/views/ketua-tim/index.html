@@ -95,14 +95,17 @@
                 <div class="modal-body p-4">
                     <div class="border rounded-2 p-3 bg-light mb-3" id="mppInfo"></div>
 
-                    <label class="form-label fw-bold small">Ketua Pelaksana <span class="text-danger">*</span></label>
-                    <select name="ketua_pelaksana_id" id="selectPelaksana" class="form-select searchable-select" required>
-                        <option value="">Cari nama pegawai...</option>
-                    </select>
+                    <label class="form-label fw-bold small" id="mppSelectLabel">Ketua Pelaksana <span class="text-danger">*</span></label>
+<select name="ketua_pelaksana_id" id="selectPelaksana" class="form-select searchable-select" required>
+    <option value="">Cari nama pegawai...</option>
+</select>
+<div class="form-text" id="mppHintLingkungan" style="display:none;">
+    <i class="bi bi-info-circle me-1"></i>Order Lingkungan otomatis didisposisikan ke PIC yang menyusun proposal, tidak bisa dipilih manual.
+</div>
                 </div>
                 <div class="modal-footer border-top py-3 px-4 bg-light d-flex justify-content-end gap-2">
                     <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary btn-sm px-4"><i class="bi bi-check-lg me-1"></i>Tunjuk Ketua Pelaksana</button>
+                    <button type="submit" class="btn btn-primary btn-sm px-4" id="mppBtnSubmit"><i class="bi bi-check-lg me-1"></i>Tunjuk Ketua Pelaksana</button>
                 </div>
             </form>
         </div>
@@ -194,12 +197,16 @@ document.querySelectorAll('.filter-tab-pill').forEach(function (btn) {
 });
 
 function aksiBelum(o) {
-    return '<button type="button" class="btn btn-sm btn-primary btn-buka-modal-pelaksana" title="Pilih Ketua Pelaksana"' +
-        ' data-order-id="' + o.id + '" data-nomor="' + o.nomor_order + '"' +
+    var divisi = o.jenis_layanan_opti;
+    var ikon = divisi === 'lingkungan' ? 'bi-send-check' : 'bi-person-plus';
+    var judulTombol = divisi === 'lingkungan' ? 'Disposisikan ke PIC Proposal' : 'Pilih Ketua Pelaksana';
+    return '<button type="button" class="btn btn-sm btn-primary btn-buka-modal-pelaksana" title="' + judulTombol + '"' +
+        ' data-order-id="' + o.id + '" data-nomor="' + o.nomor_order + '" data-divisi="' + divisi + '"' +
         ' data-mitra="' + (o.nama_perusahaan || '').replace(/"/g, '&quot;') + '"' +
         ' data-judul="' + (o.judul_kegiatan || '').replace(/"/g, '&quot;') + '"' +
-        ' data-nilai="' + o.biaya_acuan + '" data-tanggal="' + o.tanggal_lunas + '">' +
-        '<i class="bi bi-person-plus"></i></button>';
+        ' data-nilai="' + o.biaya_acuan + '" data-tanggal="' + o.tanggal_lunas + '"' +
+        ' data-pic-id="' + (o.pic_proposal_id || '') + '" data-pic-nama="' + (o.nama_pic_proposal || '').replace(/"/g, '&quot;') + '">' +
+        '<i class="bi ' + ikon + '"></i></button>';
 }
 function statusPoBadge(o) {
     if (!o.sudah_ada_po) {
@@ -286,11 +293,17 @@ function render() {
 
 var DATA_PELAKSANA = {{ @daftar_pelaksana_json | raw }};
 
+var tomPelaksana = null; // instance TomSelect, diisi pas DOMContentLoaded
+
 document.addEventListener('click', function (e) {
     var btn = e.target.closest('.btn-buka-modal-pelaksana');
     if (!btn) return;
 
     var orderId = btn.getAttribute('data-order-id');
+    var divisi = btn.getAttribute('data-divisi');
+    var picId = btn.getAttribute('data-pic-id');
+    var picNama = btn.getAttribute('data-pic-nama');
+
     document.getElementById('mppNomor').textContent = btn.getAttribute('data-nomor');
     document.getElementById('mppInfo').innerHTML =
         '<div class="row g-2 small">' +
@@ -298,9 +311,36 @@ document.addEventListener('click', function (e) {
         '<div class="col-sm-6"><span class="text-muted d-block" style="font-size:.72rem;">Nilai Kontrak</span><strong class="text-dark">Rp ' + Math.round(btn.getAttribute('data-nilai')).toLocaleString('id-ID') + '</strong></div>' +
         '<div class="col-12"><span class="text-muted d-block" style="font-size:.72rem;">Perihal</span><span class="text-dark fw-semibold">' + btn.getAttribute('data-judul') + '</span></div>' +
         '<div class="col-sm-6"><span class="text-muted d-block" style="font-size:.72rem;">Tanggal Lunas</span><span class="text-dark">' + tgl(btn.getAttribute('data-tanggal')) + '</span></div>' +
+        (divisi === 'lingkungan' ? '<div class="col-sm-6"><span class="text-muted d-block" style="font-size:.72rem;">PIC Proposal</span><span class="text-dark fw-semibold">' + (picNama || '-') + '</span></div>' : '') +
         '</div>';
 
     document.getElementById('formPilihPelaksana').action = BASE + '/ketua-tim/' + orderId + '/pilih-pelaksana';
+
+    if (divisi === 'lingkungan') {
+        document.getElementById('mppLabel').textContent = 'Disposisikan ke PIC Proposal';
+        document.getElementById('mppSelectLabel').textContent = 'Pelaksana (otomatis dari PIC Proposal)';
+        document.getElementById('mppHintLingkungan').style.display = 'block';
+        document.getElementById('mppBtnSubmit').innerHTML = '<i class="bi bi-send-check me-1"></i>Disposisikan';
+
+        if (tomPelaksana) {
+            tomPelaksana.clear();
+            if (picId) {
+                if (!tomPelaksana.options[picId]) { tomPelaksana.addOption({ value: picId, text: picNama || ('User #' + picId) }); }
+                tomPelaksana.setValue(picId);
+            }
+            tomPelaksana.lock();
+        }
+    } else {
+        document.getElementById('mppLabel').textContent = 'Pilih Ketua Pelaksana';
+        document.getElementById('mppSelectLabel').innerHTML = 'Ketua Pelaksana <span class="text-danger">*</span>';
+        document.getElementById('mppHintLingkungan').style.display = 'none';
+        document.getElementById('mppBtnSubmit').innerHTML = '<i class="bi bi-check-lg me-1"></i>Tunjuk Ketua Pelaksana';
+
+        if (tomPelaksana) {
+            tomPelaksana.unlock();
+            tomPelaksana.clear();
+        }
+    }
 
     bootstrap.Modal.getOrCreateInstance(document.getElementById('modalPilihPelaksana')).show();
 });
@@ -322,6 +362,7 @@ document.addEventListener('DOMContentLoaded', function () {
             maxOptions: 200,
         });
     }
+    tomPelaksana = selectEl.tomselect;
 });
 
 render();

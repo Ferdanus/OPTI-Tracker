@@ -342,11 +342,12 @@
                             <?php foreach (($activity_logs?:[]) as $log): ?>
                                 <div class="audit-item">
                                     <!-- Bullet Dot Indicator -->
-                                    <div class="audit-dot <?= ($log['aksi'] == 'ajukan_ke_ketua' ? 'border-primary text-primary' : ($log['aksi'] == 'setujui_proposal' ? 'border-success text-success' : ($log['aksi'] == 'minta_revisi' ? 'border-danger text-danger' : 'border-secondary text-secondary'))) ?>">
+                                    <div class="audit-dot <?= ($log['aksi'] == 'ajukan_ke_ketua' ? 'border-primary text-primary' : ($log['aksi'] == 'setujui_proposal' ? 'border-success text-success' : ($log['aksi'] == 'minta_revisi' ? 'border-danger text-danger' : ($log['aksi'] == 'upload_file' ? 'border-info text-info' : 'border-secondary text-secondary')))) ?>">
                                         <?php if ($log['aksi'] == 'ajukan_ke_ketua'): ?><i class="bi bi-send-fill"></i><?php endif; ?>
-                                        <?php if ($log['aksi'] == 'setujui_proposal'): ?><i class="bi bi-check2"></i><?php endif; ?>
+                                        <?php if ($log['aksi'] == 'setujui_proposal'): ?><i class="bi bi-check2-circle"></i><?php endif; ?>
                                         <?php if ($log['aksi'] == 'minta_revisi'): ?><i class="bi bi-arrow-counterclockwise"></i><?php endif; ?>
                                         <?php if ($log['aksi'] == 'simpan_draft'): ?><i class="bi bi-pencil-fill"></i><?php endif; ?>
+                                        <?php if ($log['aksi'] == 'upload_file'): ?><i class="bi bi-file-earmark-arrow-up-fill"></i><?php endif; ?>
                                     </div>
                                     
                                     <!-- Event Content Bubble -->
@@ -359,8 +360,8 @@
 " ?>
                                                 </span>
                                             </div>
-                                            <small class="text-muted font-monospace" style="font-size: 0.7rem;">
-                                                <i class="bi bi-clock me-0.5"></i><?= (date('d M Y, H:i', strtotime($log['created_at']))) ?> WIB
+                                            <small class="text-muted font-monospace d-inline-flex align-items-center gap-1.5" style="font-size: 0.72rem;">
+                                                <i class="bi bi-clock text-secondary"></i><span><?= (date('d M Y, H:i', strtotime($log['created_at']))) ?> WIB</span>
                                             </small>
                                         </div>
                                         <p class="text-secondary mb-0" style="font-size: 0.78rem; line-height: 1.45;"><?= ($log['deskripsi']) ?></p>

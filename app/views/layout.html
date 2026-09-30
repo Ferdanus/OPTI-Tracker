@@ -1272,7 +1272,7 @@
                 <check if="{{ @is_superadmin || @is_ketua_tim }}">
                     <li>
                         <a class="sidebar-link {{ @active_menu == 'ketua-tim-po' ? 'active' : '' }}" href="{{ @BASE }}/ketua-tim/siap-po" title="Daftar Order Lunas">
-                            <i class="bi bi-check2-circle"></i> <span>Daftar Order Lunas</span>
+                            <i class="bi bi-check2-circle"></i> <span>Penunjukan Pelaksana</span>
                         </a>
                     </li>
                 </check>
@@ -1295,7 +1295,7 @@
                     <check if="{{ @is_superadmin || @is_ketua_tim || @is_tim_kerja }}">
                     <li>
                         <a class="sidebar-link {{ @active_menu == 'daftar_po' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan/daftar" title="Petunjuk Operasional Selulosa">
-                            <i class="bi bi-clipboard-check"></i> <span>Daftar PO</span>
+                            <i class="bi bi-clipboard-check"></i> <span>Daftar Review PO</span>
                             <check if="{{ @jumlah_notif_po_selulosa > 0 }}">
                                 <span class="badge rounded-pill bg-danger ms-auto">{{ @jumlah_notif_daftar_po }}</span>
                             </check>
@@ -1306,7 +1306,7 @@
                     <check if="{{ @is_superadmin || (@is_tim_kerja && @divisi_tim_kerja == 'lingkungan') }}">
                     <li>
                         <a class="sidebar-link {{ @active_menu == 'po_lingkungan' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?divisi=lingkungan" title="Petunjuk Operasional Lingkungan">
-                            <i class="bi bi-clipboard-check"></i> <span>PO Lingkungan</span>
+                            <i class="bi bi-clipboard-check"></i> <span>Daftar PO Lingkungan</span>
                             <check if="{{ @jumlah_notif_po_lingkungan > 0 }}">
                                 <span class="badge rounded-pill bg-danger ms-auto">{{ @jumlah_notif_po_lingkungan }}</span>
                             </check>
@@ -1316,7 +1316,7 @@
                     <check if="{{ @is_superadmin || (@is_tim_kerja && @divisi_tim_kerja == 'selulosa') }}">
                     <li>
                         <a class="sidebar-link {{ @active_menu == 'po_selulosa' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?divisi=selulosa" title="Petunjuk Operasional Selulosa">
-                            <i class="bi bi-clipboard-check"></i> <span>PO Selulosa</span>
+                            <i class="bi bi-clipboard-check"></i> <span>Daftar PO Selulosa</span>
                             <check if="{{ @jumlah_notif_po_selulosa > 0 }}">
                                 <span class="badge rounded-pill bg-danger ms-auto">{{ @jumlah_notif_po_selulosa }}</span>
                             </check>
