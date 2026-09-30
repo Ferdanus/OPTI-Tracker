@@ -1303,7 +1303,7 @@
                     </li>
                 </check>
                     <!-- Petunjuk Operasional (PO) Kegiatan -->
-                    <check if="{{ @is_superadmin || @is_tim_kerja }}">
+                    <check if="{{ @is_superadmin || (@is_tim_kerja && @divisi_tim_kerja == 'lingkungan') }}">
                     <li>
                         <a class="sidebar-link {{ @active_menu == 'po_lingkungan' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?divisi=lingkungan" title="Petunjuk Operasional Lingkungan">
                             <i class="bi bi-clipboard-check"></i> <span>PO Lingkungan</span>
@@ -1313,7 +1313,7 @@
                         </a>
                     </li>
                     </check>
-                    <check if="{{ @is_superadmin || @is_tim_kerja }}">
+                    <check if="{{ @is_superadmin || (@is_tim_kerja && @divisi_tim_kerja == 'selulosa') }}">
                     <li>
                         <a class="sidebar-link {{ @active_menu == 'po_selulosa' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?divisi=selulosa" title="Petunjuk Operasional Selulosa">
                             <i class="bi bi-clipboard-check"></i> <span>PO Selulosa</span>

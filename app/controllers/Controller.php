@@ -149,6 +149,7 @@ class Controller {
         $this->f3->set('is_keuangan', $isKeuangan);
         $this->f3->set('is_ketua_tim_keuangan', $role === 'ketua_tim_keuangan');
         $this->f3->set('is_tim_kerja', $role === 'tim_kerja');
+        $this->f3->set('divisi_tim_kerja', $this->getDivisiTimKerja());
         $this->f3->set('is_admin_kontrak', $role === 'admin_kontrak');
         $this->f3->set('is_sekretaris', $role === 'sekretaris');
         $this->f3->set('is_user_readonly', $role === 'user' || $role === 'pegawai');
@@ -378,6 +379,35 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
      */
     public function getUserLayanan(): string {
         return $_SESSION['jenis_layanan_opti'] ?? 'semua';
+    }
+    public function getDivisiTimKerja(): string {
+        if ($this->isSuperadmin()) {
+            return '';
+        }
+        $uid = (int) $this->getUserId();
+        if (isset($_SESSION['divisi_tim_kerja']) && (int) ($_SESSION['divisi_tim_kerja_uid'] ?? 0) === $uid) {
+            return $_SESSION['divisi_tim_kerja'];
+        }
+        $divisi = '';
+        try {
+            $r = $this->dbSekretariat->exec(
+                "SELECT si_opti FROM tb_arsipuser WHERE id_user = ? LIMIT 1",
+                [1 => $uid]
+            );
+            if (!empty($r)) {
+                $siOpti = strtolower(trim((string) $r[0]['si_opti']));
+                if ($siOpti === 'tim_kerja_selulosa') {
+                    $divisi = 'selulosa';
+                } elseif ($siOpti === 'tim_kerja_lingkungan') {
+                    $divisi = 'lingkungan';
+                }
+            }
+        } catch (\Exception $e) {
+            $divisi = '';
+        }
+        $_SESSION['divisi_tim_kerja'] = $divisi;
+        $_SESSION['divisi_tim_kerja_uid'] = $uid; // <-- kunci cache-nya ke id user, biar gak nyangkut pas ganti user
+        return $divisi;
     }
 
     /**

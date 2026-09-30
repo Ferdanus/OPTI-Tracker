@@ -76,10 +76,40 @@ class KetuaTimController extends Controller {
     }
 
     try {
-        $daftarPelaksana = $this->dbSekretariat->exec("SELECT id_user, nama_user FROM tb_arsipuser WHERE si_opti LIKE '%tim_kerja%' ORDER BY nama_user ASC");
+        // [SEMENTARA] cuma tim_kerja_selulosa dulu. Lingkungan gak lewat alur "pilih pelaksana" ini,
+// nanti pakai mekanisme disposisi langsung yang beda -- nyusul kalau udah dibahas.
+$daftarPelaksana = $this->dbSekretariat->exec("SELECT id_user, nama_user FROM tb_arsipuser WHERE si_opti = 'tim_kerja_selulosa' ORDER BY nama_user ASC");
+        // $daftarPelaksana = $this->dbSekretariat->exec("SELECT id_user, nama_user FROM tb_arsipuser WHERE si_opti LIKE '%tim_kerja%' ORDER BY nama_user ASC");
     } catch (\Exception $e) {
         $daftarPelaksana = [];
     }
+
+    // [BARU] Nama Ketua Pelaksana yang udah ditunjuk -- dicari by ID (bukan cuma
+    // dari $daftarPelaksana di atas) soalnya orangnya bisa aja udah gak lagi
+    // ke-filter 'tim_kerja' pas dicek sekarang, padahal dulu pernah ditunjuk.
+    $idPelaksanaUnik = array_values(array_unique(array_map(function ($o) {
+        return (int) $o['ketua_pelaksana_id'];
+    }, $daftarSudah)));
+
+    $mapNamaPelaksana = [];
+    if (!empty($idPelaksanaUnik)) {
+        $placeholder = implode(',', array_fill(0, count($idPelaksanaUnik), '?'));
+        try {
+            $rowsPelaksana = $this->dbSekretariat->exec(
+                "SELECT id_user, nama_user FROM tb_arsipuser WHERE id_user IN ($placeholder)",
+                $idPelaksanaUnik
+            );
+            foreach ($rowsPelaksana as $rp) {
+                $mapNamaPelaksana[(int) $rp['id_user']] = $rp['nama_user'];
+            }
+        } catch (\Exception $e) {
+            // biarin kosong, tampilkan '-' di view
+        }
+    }
+    foreach ($daftarSudah as &$o) {
+        $o['nama_pelaksana'] = $mapNamaPelaksana[(int) $o['ketua_pelaksana_id']] ?? '-';
+    }
+    unset($o);
 
     $tahunSekarang = (int) date('Y');
     $daftarTahun = [];
