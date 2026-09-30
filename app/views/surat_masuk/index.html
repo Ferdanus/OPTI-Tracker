@@ -340,7 +340,14 @@
                                             <tr>
                                                 <td class="text-center text-muted fw-bold">{{ @idx + 1 }}</td>
                                                 <td>
-                                                    <div class="fw-bold text-primary font-monospace">{{ @klaim.nomor_order }}</div>
+                                                    <check if="{{ !empty(@klaim.nomor_order) }}">
+                                                        <true>
+                                                            <div class="fw-bold text-primary font-monospace">{{ @klaim.nomor_order }}</div>
+                                                        </true>
+                                                        <false>
+                                                            <span class="badge bg-secondary-subtle text-muted border font-monospace" style="font-size: 0.72rem;">Belum Ada No. Order</span>
+                                                        </false>
+                                                    </check>
                                                     <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle small mt-1" style="font-size: 0.7rem;">
                                                         <i class="bi bi-hourglass-split me-1"></i>Permintaan Masuk
                                                     </span>
@@ -692,7 +699,14 @@
                         <div class="border rounded-2 p-3 bg-light mb-3">
                             <div class="mb-2">
                                 <span class="text-muted small d-block">Nomor Order:</span>
-                                <span class="fw-bold text-primary font-monospace fs-6">{{ @klaim.nomor_order }}</span>
+                                <check if="{{ !empty(@klaim.nomor_order) }}">
+                                    <true>
+                                        <span class="fw-bold text-primary font-monospace fs-6">{{ @klaim.nomor_order }}</span>
+                                    </true>
+                                    <false>
+                                        <span class="badge bg-secondary-subtle text-muted border font-monospace">Belum Diterbitkan</span>
+                                    </false>
+                                </check>
                             </div>
                             <div class="mb-2">
                                 <span class="text-muted small d-block">Instansi Pelanggan:</span>

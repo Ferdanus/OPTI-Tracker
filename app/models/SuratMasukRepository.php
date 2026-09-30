@@ -303,8 +303,7 @@ class SuratMasukRepository {
                     throw new \Exception("Perusahaan {$customer['nmcustomer']} belum terdaftar untuk Layanan Optimalisasi Teknologi Industri (OPTI).");
                 }
     
-                $modelOrder = new \OrderLayanan($this->dbMain);
-                $nomorOrder = $modelOrder->generateNomorOrder();
+                $nomorOrder = null;
     
                 $jenisLayanan = (!empty($pilihanLayanan) && in_array($pilihanLayanan, ['selulosa', 'lingkungan'])) ? $pilihanLayanan : 'belum_ditentukan';
     
@@ -480,8 +479,7 @@ class SuratMasukRepository {
                 $idCustomer = (int)($this->dbMain->exec("SELECT LAST_INSERT_ID() as id")[0]['id'] ?? 0);
             }
     
-            $modelOrder = new \OrderLayanan($this->dbMain);
-            $nomorOrder = $modelOrder->generateNomorOrder();
+            $nomorOrder = null;
             $jenisLayanan = 'belum_ditentukan';
             $perihal = $surat['perihal'] ?? '';
     

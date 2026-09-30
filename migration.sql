@@ -209,7 +209,7 @@ INSERT INTO `tb_customer` VALUES
 CREATE TABLE order_layanan (
     id INT AUTO_INCREMENT PRIMARY KEY,
     id_customer INT NOT NULL,
-    nomor_order VARCHAR(50) UNIQUE NOT NULL,
+    nomor_order VARCHAR(50) NULL DEFAULT NULL,
     tanggal_masuk DATE NOT NULL,
     judul_kegiatan VARCHAR(200) NOT NULL,
     deskripsi TEXT NULL,

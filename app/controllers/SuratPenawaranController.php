@@ -824,11 +824,31 @@ $daftarPegawai = $arsipUser->find(
                     ]);
                 } catch (\Exception $eNotif) {}
 
-                $this->logActivity($orderId, 'penawaran', 'buat_penawaran', "Terbitkan penawaran No. {$hasil['nomor_surat']} (Rp " . number_format($hasil['nominal'], 0, ',', '.') . ")");
-
-                $this->setFlashSuccess(
-                    "Surat Penawaran Resmi berhasil diterbitkan dengan Nomor: <strong>{$hasil['nomor_surat']}</strong> (Status: Negosiasi, Nominal: Rp " . number_format($hasil['nominal'], 0, ',', '.') . ")."
-                );
+                if ($isDeal) {
+                    \StageAudit::recordDisetujui(
+                        $this->db,
+                        $orderId,
+                        5,
+                        $userId,
+                        $_SESSION['nama_lengkap'] ?? ($_SESSION['user']['nama'] ?? 'Tim Mitra'),
+                        'Tim Mitra',
+                        date('Y-m-d H:i:s')
+                    );
+                    $this->logActivity($orderId, 'penawaran', 'deal_penawaran', "Persetujuan Penawaran (DEAL) No. {$hasil['nomor_surat']} (Rp " . number_format($hasil['nominal'], 0, ',', '.') . ")");
+                    $this->setFlashSuccess(
+                        "Surat Penawaran Resmi berhasil diterbitkan dengan Nomor: <strong>{$hasil['nomor_surat']}</strong> (Status: DEAL / Disetujui, Nominal: Rp " . number_format($hasil['nominal'], 0, ',', '.') . ")."
+                    );
+                } elseif (($post['status_respon_klien'] ?? '') === 'nego') {
+                    $this->logActivity($orderId, 'penawaran', 'nego_penawaran', "Terbitkan penawaran No. {$hasil['nomor_surat']} - Negosiasi (Rp " . number_format($hasil['nominal'], 0, ',', '.') . ")");
+                    $this->setFlashSuccess(
+                        "Surat Penawaran Resmi berhasil diterbitkan dengan Nomor: <strong>{$hasil['nomor_surat']}</strong> (Status: Negosiasi, Nominal: Rp " . number_format($hasil['nominal'], 0, ',', '.') . ")."
+                    );
+                } else {
+                    $this->logActivity($orderId, 'penawaran', 'buat_penawaran', "Terbitkan penawaran No. {$hasil['nomor_surat']} (Rp " . number_format($hasil['nominal'], 0, ',', '.') . ")");
+                    $this->setFlashSuccess(
+                        "Surat Penawaran Resmi berhasil diterbitkan dengan Nomor: <strong>{$hasil['nomor_surat']}</strong> (Nominal: Rp " . number_format($hasil['nominal'], 0, ',', '.') . ")."
+                    );
+                }
             } else {
                 $this->logActivity($orderId, 'penawaran', 'simpan_draft_penawaran', "Draf penawaran No. {$hasil['nomor_surat']} (Rp " . number_format($hasil['nominal'], 0, ',', '.') . ")");
 
@@ -948,6 +968,7 @@ $daftarPegawai = $arsipUser->find(
 
             if ($statusRespon === 'deal') {
                 if ($orderId > 0) {
+                    \StageAudit::recordDisetujui($this->db, $orderId, 5, $this->getUserId() ?? 1, 'Pelanggan / Klien', 'Pelanggan', date('Y-m-d H:i:s'));
                     $orderModel = new \OrderLayanan($this->db);
                     $order = $orderModel->getDetail($orderId);
                     if ($order) {
@@ -980,7 +1001,14 @@ $daftarPegawai = $arsipUser->find(
             }
 
             if ($orderId > 0) {
-                $this->logActivity($orderId, 'penawaran', 'respon_penawaran', "Respon penawaran: " . strtoupper($statusRespon) . ($nominalBaru > 0 ? " (Rp " . number_format($nominalBaru, 0, ',', '.') . ")" : "") . (!empty($catatanNego) ? " - {$catatanNego}" : ""));
+                $aksiLog = ($statusRespon === 'deal') ? 'deal_penawaran' : (($statusRespon === 'nego') ? 'nego_penawaran' : (($statusRespon === 'batal') ? 'batal_penawaran' : 'respon_penawaran'));
+                $nominalTampil = $nominalBaru > 0 ? $nominalBaru : ((float)($hasil['nominal'] ?? 0));
+                $descRespon = ($statusRespon === 'deal')
+                    ? "Persetujuan Penawaran (DEAL)" . ($nominalTampil > 0 ? " (Rp " . number_format($nominalTampil, 0, ',', '.') . ")" : "") . (!empty($catatanNego) ? " - Catatan: {$catatanNego}" : "")
+                    : (($statusRespon === 'nego')
+                        ? "Negosiasi Penawaran Klien" . ($nominalTampil > 0 ? " (Rp " . number_format($nominalTampil, 0, ',', '.') . ")" : "") . (!empty($catatanNego) ? " - Catatan: {$catatanNego}" : "")
+                        : "Respon penawaran: " . strtoupper($statusRespon) . (!empty($catatanNego) ? " - Catatan: {$catatanNego}" : ""));
+                $this->logActivity($orderId, 'penawaran', $aksiLog, $descRespon);
                 $f3->reroute("/order/{$orderId}");
             } else {
                 $f3->reroute('/surat-penawaran');
@@ -1373,8 +1401,8 @@ $daftarPegawai = $arsipUser->find(
             'ruang_lingkup'      => $f3->get('POST.ruang_lingkup') ?? $f3->get('GET.ruang_lingkup') ?? ($existingSp['ruang_lingkup'] ?? null),
             'jadwal_pelaksanaan' => $f3->get('POST.jadwal_pelaksanaan') ?? $f3->get('GET.jadwal_pelaksanaan') ?? ($existingSp['jadwal_pelaksanaan'] ?? null),
             'catatan_sampel'     => $f3->get('POST.catatan_sampel') ?? $f3->get('GET.catatan_sampel') ?? ($existingSp['catatan_sampel'] ?? null),
-            'jabatan_pejabat'    => $f3->get('POST.jabatan_pejabat') ?? $f3->get('GET.jabatan_pejabat') ?? ($existingSp['jabatan_pejabat'] ?? 'Kepala'),
-            'pejabat_nama'       => $f3->get('POST.pejabat_nama') ?? $f3->get('GET.pejabat_nama') ?? ($existingSp['pejabat_nama'] ?? 'Dodiet Prasetyo'),
+            'jabatan_pejabat'    => $f3->get('POST.jabatan_pejabat') ?? $f3->get('GET.jabatan_pejabat') ?? ($existingSp['jabatan_pejabat'] ?? (($order['jenis_layanan_opti'] ?? '') === 'lingkungan' ? 'Kepala Bagian Tata Usaha' : 'Kepala')),
+            'pejabat_nama'       => $f3->get('POST.pejabat_nama') ?? $f3->get('GET.pejabat_nama') ?? ($existingSp['pejabat_nama'] ?? (($order['jenis_layanan_opti'] ?? '') === 'lingkungan' ? 'Joko Pratomo' : 'Dodiet Prasetyo')),
             'pembuat_nama'       => $_SESSION['user']['nama'] ?? ($_SESSION['nama_lengkap'] ?? ($existingSp['pembuat_nama'] ?? 'Tim Mitra BBSPJIS'))
         ];
 
@@ -1547,12 +1575,12 @@ $daftarPegawai = $arsipUser->find(
         $pdf->Ln(4);
 
         // Tanda Tangan Halaman 1
-        $signerRole = !empty($sp['jabatan_pejabat']) ? $sp['jabatan_pejabat'] : 'Kepala';
-        $signerName = !empty($sp['pejabat_nama']) ? $sp['pejabat_nama'] : (!empty($sp['pembuat_nama']) && $sp['pembuat_nama'] !== 'Tim Mitra BBSPJIS' ? $sp['pembuat_nama'] : 'Dodiet Prasetyo');
+        $signerRole = !empty($sp['jabatan_pejabat']) ? trim($sp['jabatan_pejabat']) : 'Kepala';
+        $signerName = !empty($sp['pejabat_nama']) ? trim($sp['pejabat_nama']) : (!empty($sp['pembuat_nama']) && $sp['pembuat_nama'] !== 'Tim Mitra BBSPJIS' ? trim($sp['pembuat_nama']) : 'Dodiet Prasetyo');
 
         $pdf->SetX(120);
         $pdf->SetFont('Arial', '', 9);
-        $pdf->Cell(70, 4.2, $signerRole . ',', 0, 1, 'C');
+        $pdf->Cell(70, 4.2, rtrim($signerRole, ',') . ',', 0, 1, 'C');
         $pdf->Ln(16);
         $pdf->SetX(120);
         $pdf->SetFont('Arial', '', 9);
@@ -1636,7 +1664,7 @@ $daftarPegawai = $arsipUser->find(
         // Tanda Tangan BBSPJIS Halaman 2
         $pdf->SetX(120);
         $pdf->SetFont('Arial', '', 9);
-        $pdf->Cell(70, 4.2, $signerRole . ',', 0, 1, 'C');
+        $pdf->Cell(70, 4.2, rtrim($signerRole, ',') . ',', 0, 1, 'C');
         $pdf->Ln(16);
         $pdf->SetX(120);
         $pdf->SetFont('Arial', '', 9);
@@ -1685,7 +1713,8 @@ $daftarPegawai = $arsipUser->find(
         $terbilangStr = strtolower(self::terbilang($nominal)) . ' rupiah';
         $judulKegiatan = !empty($order['judul_kegiatan']) ? $order['judul_kegiatan'] : 'Pengujian Sampel Lingkungan BBSPJIS';
         $durasiStr = !empty($order['spm_layanan']) ? $order['spm_layanan'] : '4 bulan';
-        $signerLing = !empty($sp['pembuat_nama']) && $sp['pembuat_nama'] !== 'Tim Mitra Kerjasama BBSPJIS' ? $sp['pembuat_nama'] : 'Joko Pratomo';
+        $signerRoleLing = !empty($sp['jabatan_pejabat']) ? trim($sp['jabatan_pejabat']) : 'Kepala Bagian Tata Usaha';
+        $signerNameLing = !empty($sp['pejabat_nama']) ? trim($sp['pejabat_nama']) : (!empty($sp['pembuat_nama']) && $sp['pembuat_nama'] !== 'Tim Mitra BBSPJIS' && $sp['pembuat_nama'] !== 'Tim Mitra Kerjasama BBSPJIS' ? trim($sp['pembuat_nama']) : 'Joko Pratomo');
 
         // ==========================================
         // HALAMAN 1: SURAT PENGANTAR PENAWARAN RESMI
@@ -1772,16 +1801,14 @@ $daftarPegawai = $arsipUser->find(
         $pdf->MultiCell(0, 4.2, 'Kami menunggu konfirmasi lebih lanjut. Atas perhatian dan kerja sama yang baik, kami sampaikan terima kasih.', 0, 'J');
         $pdf->Ln(6);
 
-        // Tanda Tangan Cover Halaman 1 (Sesuai Referensi BBSPJIS: a.n. Kepala, Kepala Bagian Tata Usaha)
+        // Tanda Tangan Cover Halaman 1
         $pdf->SetX(120);
         $pdf->SetFont('Arial', '', 9);
-        $pdf->Cell(70, 4.2, 'a.n. Kepala,', 0, 1, 'C');
-        $pdf->SetX(120);
-        $pdf->Cell(70, 4.2, 'Kepala Bagian Tata Usaha', 0, 1, 'C');
+        $pdf->Cell(70, 4.2, rtrim($signerRoleLing, ',') . ',', 0, 1, 'C');
         $pdf->Ln(18);
         $pdf->SetX(120);
         $pdf->SetFont('Arial', '', 9);
-        $pdf->Cell(70, 4.2, $signerLing, 0, 1, 'C');
+        $pdf->Cell(70, 4.2, $signerNameLing, 0, 1, 'C');
 
         return $pdf;
     }

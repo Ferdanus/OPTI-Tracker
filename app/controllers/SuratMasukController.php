@@ -133,7 +133,7 @@ class SuratMasukController extends Controller {
                         'target_role'    => 'ketua_tim',
                         'target_layanan' => 'semua',
                         'judul'          => 'Permintaan Masuk Baru: Evaluasi Kelayakan Teknis',
-                        'pesan'          => "Order {$order['nomor_order']} ({$order['nama_perusahaan']}) telah masuk. Mohon kaji kelayakan teknis ISO 17025 dan tentukan PIC.",
+                        'pesan'          => "Permohonan layanan dari {$order['nama_perusahaan']} ({$order['judul_kegiatan']}) telah masuk. Mohon kaji kelayakan teknis ISO 17025 dan tentukan PIC.",
                         'tipe'           => 'primary',
                         'icon'           => 'bi-inbox-fill',
                         'link_url'       => "/order/{$orderId}/tinjauan",

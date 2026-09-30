@@ -572,7 +572,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
     public function simpanBaru(array $data): int {
         $this->reset();
         $this->id_customer          = (int)$data['id_customer'];
-        $this->nomor_order          = trim($data['nomor_order'] ?? '') ?: $this->generateNomorOrder();
+        $this->nomor_order          = !empty($data['nomor_order']) ? trim($data['nomor_order']) : null;
         $this->tanggal_masuk        = $data['tanggal_masuk'];
         $this->judul_kegiatan       = trim($data['judul_kegiatan']);
         $this->deskripsi            = trim($data['deskripsi'] ?? '');
@@ -787,6 +787,10 @@ class OrderLayanan extends \DB\SQL\Mapper {
             if ($keputusan === 'dapat_dilaksanakan') {
                 $this->status_tinjauan = 'layak';
                 $this->status = 'baru';
+                // [PEROMBAKAN] Terbitkan Nomor Order Resmi HANYA saat kaji kelayakan disetujui & dapat dilaksanakan
+                if (empty($this->nomor_order)) {
+                    $this->nomor_order = $this->generateNomorOrder();
+                }
             } else {
                 $this->status_tinjauan = 'tidak_layak';
                 $this->status = 'ditolak';

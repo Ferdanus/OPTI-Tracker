@@ -19,7 +19,14 @@
                         <div class="d-flex mb-2">
                             <span class="text-muted" style="width: 125px; flex-shrink: 0;">No. Order</span>
                             <span class="text-muted me-2">:</span>
-                            <strong class="text-dark font-monospace">{{ @order.nomor_order }}</strong>
+                            <check if="{{ !empty(@order.nomor_order) }}">
+                                <true>
+                                    <strong class="text-dark font-monospace">{{ @order.nomor_order }}</strong>
+                                </true>
+                                <false>
+                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle font-monospace" style="font-size: 0.72rem;">Diterbitkan saat ACC Kelayakan</span>
+                                </false>
+                            </check>
                         </div>
                         <div class="d-flex mb-2">
                             <span class="text-muted" style="width: 125px; flex-shrink: 0;">Bidang Layanan</span>

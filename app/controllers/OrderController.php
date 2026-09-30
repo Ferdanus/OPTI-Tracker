@@ -612,6 +612,9 @@ class OrderController extends Controller {
         $f3->set('proposal_has_file_cost', $proposalHasFileAndCost);
         $f3->set('is_proposal_approved', $isProposalApproved);
 
+        $perluPenunjukanPicSelulosa = ($isSelulosa && $isTinjauanDone && empty($order['pic_proposal_id']));
+        $f3->set('perlu_penunjukan_pic_selulosa', $perluPenunjukanPicSelulosa);
+
         // Panduan Langkah Selanjutnya yang Jelas & Ramah Awam (Non-IT)
         $isFinished = ($isBastDone || ($order['status'] ?? '') === 'selesai' || ($order['status_pelaksanaan'] ?? '') === 'laporan_selesai');
 
@@ -691,29 +694,40 @@ class OrderController extends Controller {
                     $langkahBerikutnya['target_card'] = '#cardPenawaran';
                 }
             } else {
-                if (!$proposalHasFileAndCost) {
+                if (empty($order['pic_proposal_id'])) {
+                    $langkahBerikutnya['judul'] = 'Penetapan PIC Proposal Teknis (OPTI Selulosa)';
+                    $langkahBerikutnya['deskripsi'] = 'Kaji kelayakan permohonan telah disetujui, namun personil PIC Peneliti belum ditetapkan. Ketua Tim OPTI Selulosa perlu menunjuk PIC Proposal agar dokumen proposal teknis dapat mulai disusun.';
+                    $langkahBerikutnya['penanggung_jawab'] = 'Ketua Tim OPTI Selulosa';
+                    $langkahBerikutnya['role_icon'] = 'bi-person-exclamation';
+                    $langkahBerikutnya['tipe_badge'] = 'warning';
+                    $langkahBerikutnya['tombol_teks'] = 'Tunjuk PIC Proposal';
+                    $langkahBerikutnya['tombol_url'] = '#modalTunjukPic';
+                    $langkahBerikutnya['tombol_modal'] = '#modalTunjukPic';
+                    $langkahBerikutnya['tombol_icon'] = 'bi-person-check-fill';
+                    $langkahBerikutnya['tombol_class'] = 'btn-warning text-dark';
+                    $langkahBerikutnya['target_card'] = '#pane-stage-4';
+                } elseif (!$proposalHasFileAndCost) {
                     $langkahBerikutnya['judul'] = 'Unggah Dokumen Proposal Teknis & Estimasi Biaya';
-                    $langkahBerikutnya['deskripsi'] = 'Kaji kelayakan disetujui. Tim Teknis Selulosa perlu mengunggah berkas proposal teknis dan menginput estimasi biaya kegiatan pengujian/penelitian.';
-                    $langkahBerikutnya['penanggung_jawab'] = 'Tim Teknis Selulosa';
+                    $langkahBerikutnya['deskripsi'] = 'Kaji kelayakan disetujui. PIC Peneliti (' . ($order['pic_proposal_nama'] ?? 'PIC') . ') perlu mengunggah berkas proposal teknis dan mengisi data estimasi biaya riset.';
+                    $langkahBerikutnya['penanggung_jawab'] = 'PIC Peneliti (' . ($order['pic_proposal_nama'] ?? 'PIC') . ')';
                     $langkahBerikutnya['role_icon'] = 'bi-file-earmark-arrow-up-fill';
                     $langkahBerikutnya['tipe_badge'] = 'primary';
-                    $langkahBerikutnya['tombol_teks'] = 'Kelola Proposal Teknis';
-                    $langkahBerikutnya['tombol_url'] = '#cardParameterBiaya';
-                    $langkahBerikutnya['tombol_modal'] = '#modalProposalTeknis';
-                    $langkahBerikutnya['tombol_icon'] = 'bi-upload';
+                    $langkahBerikutnya['tombol_teks'] = 'Buka Ruang Proposal';
+                    $langkahBerikutnya['tombol_url'] = $f3->get('BASE') . "/order/{$id}/proposal";
+                    $langkahBerikutnya['tombol_icon'] = 'bi-file-earmark-text-fill';
                     $langkahBerikutnya['tombol_class'] = 'btn-primary';
-                    $langkahBerikutnya['target_card'] = '#cardParameterBiaya';
+                    $langkahBerikutnya['target_card'] = '#pane-stage-4';
                 } else {
                     $langkahBerikutnya['judul'] = 'Menunggu Persetujuan Proposal dari Ka. Tim Selulosa';
-                    $langkahBerikutnya['deskripsi'] = 'Proposal teknis telah diunggah. Menunggu persetujuan final (ACC) dari Ketua Tim Selulosa sebelum penawaran resmi dapat diterbitkan.';
+                    $langkahBerikutnya['deskripsi'] = 'Proposal teknis telah diajukan. Menunggu persetujuan final (ACC) dari Ketua Tim Selulosa sebelum penawaran resmi dapat diterbitkan.';
                     $langkahBerikutnya['penanggung_jawab'] = 'Ketua Tim Selulosa';
                     $langkahBerikutnya['role_icon'] = 'bi-shield-check';
                     $langkahBerikutnya['tipe_badge'] = 'warning';
                     $langkahBerikutnya['tombol_teks'] = 'Periksa Lembar Proposal';
-                    $langkahBerikutnya['tombol_url'] = '#cardParameterBiaya';
+                    $langkahBerikutnya['tombol_url'] = $f3->get('BASE') . "/order/{$id}/proposal";
                     $langkahBerikutnya['tombol_icon'] = 'bi-file-earmark-text-fill';
                     $langkahBerikutnya['tombol_class'] = 'btn-outline-primary';
-                    $langkahBerikutnya['target_card'] = '#cardParameterBiaya';
+                    $langkahBerikutnya['target_card'] = '#pane-stage-4';
                 }
             }
         } elseif ($currentStep === 5) {
@@ -800,6 +814,11 @@ class OrderController extends Controller {
             $langkahBerikutnya['tombol_class'] = 'btn-primary';
             $langkahBerikutnya['target_card'] = '#cardPoBast';
         }
+
+        $langkahBerikutnya['tahap'] = $langkahBerikutnya['step'] ?? $currentStep;
+        $langkahBerikutnya['tipe'] = $langkahBerikutnya['tipe_badge'] ?? 'primary';
+        $langkahBerikutnya['role'] = $langkahBerikutnya['penanggung_jawab'] ?? '';
+        $langkahBerikutnya['tombol_label'] = $langkahBerikutnya['tombol_teks'] ?? 'Lanjutkan';
 
         $f3->set('langkah_berikutnya', $langkahBerikutnya);
 
@@ -1393,208 +1412,27 @@ class OrderController extends Controller {
     }
 
     /**
-     * Menampilkan form Rancangan Percobaan (Rancop) & Anggaran Riset (Divisi Selulosa)
+     * Redirect legacy Rancop / Biaya Proposal ke Ruang Proposal Resmi
      * Route: GET /order/@id/biaya-proposal & GET /order/@id/rancop-selulosa
      */
     public function biayaProposal($f3, $params) {
-        $this->requireAuth();
-
         $id = (int)($params['id'] ?? 0);
-        $orderModel = new OrderLayanan($this->db);
-        $order = $orderModel->getDetail($id);
-
-        if (!$order) {
-            $this->setFlashError("Order Layanan #{$id} tidak ditemukan.");
-            $f3->reroute('/order');
-            return;
-        }
-
-        // Prasyarat Wajib: Kaji Kelayakan Teknis (Tahap 3) harus sudah selesai dan disetujui (dapat dilaksanakan)
-        $tinjauan = $orderModel->getTinjauanKelayakan($id);
-        $tinjauanSelesai = (!empty($tinjauan) && empty($tinjauan['is_draft']) && ($tinjauan['keputusan'] ?? '') === 'dapat_dilaksanakan') || (($order['status_tinjauan'] ?? '') === 'layak');
-        if (!$tinjauanSelesai) {
-            $this->setFlashError("Akses Ditolak: Kaji Ulang Kelayakan Teknis (Tahap 3) wajib diisi dan dinyatakan 'Dapat Dilaksanakan' terlebih dahulu sebelum menyusun proposal/rancop.");
-            $f3->reroute("/order/{$id}");
-            return;
-        }
-
-        $proposal = $orderModel->getProposalRiset($id);
-        $daftarPic = OrderLayanan::getPICSpesialisasiList($this->db, $order['jenis_layanan_opti'] ?? 'selulosa');
-
-        $isPic = ((int)$this->getUserId() === (int)($order['pic_proposal_id'] ?? 0));
-        $hasProposalFile = !empty($proposal) && !empty($proposal['file_proposal']);
-        $isSubmitted = $hasProposalFile && in_array($proposal['status_proposal'] ?? '', ['diajukan', 'disetujui', 'disetujui_ketua', 'disetujui_pimpinan', 'diterbitkan']);
-        $hasRoleAccess = ($this->hasPermission('order:proposal') || $this->isSuperadmin() || $this->isKetuaTim() || $this->isTimMitra() || $this->isTimKerja() || $this->isAdminOrder() || $isPic);
-        $canEdit = $hasRoleAccess && $this->canEditSubmittedData($isSubmitted);
-
-        $lockMessage = '';
-        if ($isSubmitted && !$this->canEditSubmittedData(true)) {
-            $lockMessage = "Rancangan/Proposal telah diajukan atau disetujui. Pengeditan dikunci, silakan hubungi superadmin.";
-        } elseif (!$hasRoleAccess) {
-            $lockMessage = "Anda tidak memiliki hak akses untuk mengubah rancangan percobaan ini.";
-        }
-
-        $f3->set('order', $order);
-        $f3->set('proposal', $proposal);
-        $f3->set('daftar_pic', $daftarPic);
-        $f3->set('can_edit', $canEdit);
-        $f3->set('lock_message', $lockMessage);
-
-        // Audit Tahap 4: Rancop & Proposal Selulosa dibuka / dibaca (First Time Only)
-        $currentUserId = (int)$this->getUserId();
-        $currentUserNama = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'PIC Peneliti');
-        if ($currentUserId > 0) {
-            StageAudit::recordDibaca($this->db, $id, 4, $currentUserId, $currentUserNama, $this->isKetuaTim() ? 'Ketua Tim OPTI' : ($isPic ? 'PIC Peneliti' : 'Tim Kerja'));
-            try {
-                $hasLogged = $this->db->exec(
-                    "SELECT id FROM opti_activity_log WHERE order_id = ? AND user_id = ? AND aksi = 'melihat_tahap_4' LIMIT 1",
-                    [1 => $id, 2 => $currentUserId]
-                );
-                if (empty($hasLogged)) {
-                    $this->logActivity($id, 'proposal', 'melihat_tahap_4', 'Melihat skenario & rancop selulosa');
-                }
-            } catch (\Exception $e) {}
-        }
-
-        $this->render('order/rancop_selulosa.html', "Rancangan Percobaan (Rancop) Selulosa", 'order');
+        $f3->reroute("/order/{$id}/proposal");
     }
 
     public function rancopSelulosa($f3, $params) {
-        return $this->biayaProposal($f3, $params);
+        $id = (int)($params['id'] ?? 0);
+        $f3->reroute("/order/{$id}/proposal");
     }
 
-    /**
-     * Memproses simpan Rancangan Percobaan & RAB dinamis (Divisi Selulosa)
-     * Route: POST /order/@id/biaya-proposal & POST /order/@id/rancop-selulosa
-     */
     public function biayaProposalPost($f3, $params) {
         $id = (int)($params['id'] ?? 0);
-        $orderModel = new OrderLayanan($this->db);
-        $order = $orderModel->getDetail($id);
-
-        $isPic = ($order && (int)$this->getUserId() === (int)($order['pic_proposal_id'] ?? 0));
-        $hasRoleAccess = ($this->hasPermission('order:proposal') || $this->isSuperadmin() || $this->isKetuaTim() || $this->isTimMitra() || $this->isTimKerja() || $this->isAdminOrder() || $isPic);
-        if (!$hasRoleAccess) {
-            $this->setFlashError("Akses Ditolak: Penyusunan proposal teknis & rancop merupakan wewenang Tim Pelaksana / PIC yang ditunjuk.");
-            $f3->reroute("/order/{$id}/rancop-selulosa");
-            return;
-        }
-
-        $existing = $orderModel->getProposalRiset($id);
-        $hasProposalFile = !empty($existing) && !empty($existing['file_proposal']);
-        $isSubmitted = $hasProposalFile && in_array($existing['status_proposal'] ?? '', ['diajukan', 'disetujui', 'disetujui_ketua', 'disetujui_pimpinan', 'diterbitkan']);
-        if ($isSubmitted && !$this->canEditSubmittedData(true)) {
-            $this->setFlashError("Gagal: Fitur edit data dikunci. Perubahan pada data yang sudah diajukan/disetujui tidak diperbolehkan.");
-            $f3->reroute("/order/{$id}/rancop-selulosa");
-            return;
-        }
-
-        // Prasyarat Wajib: Kaji Kelayakan Teknis (Tahap 3) harus sudah selesai dan disetujui
-        $tinjauan = $orderModel->getTinjauanKelayakan($id);
-        $tinjauanSelesai = (!empty($tinjauan) && empty($tinjauan['is_draft']) && ($tinjauan['keputusan'] ?? '') === 'dapat_dilaksanakan') || (($order['status_tinjauan'] ?? '') === 'layak');
-        if (!$tinjauanSelesai) {
-            $this->setFlashError("Gagal: Kaji Ulang Kelayakan Teknis (Tahap 3) belum diselesaikan atau dinyatakan dapat dilaksanakan.");
-            $f3->reroute("/order/{$id}");
-            return;
-        }
-
-        $id = (int)($params['id'] ?? 0);
-        $post = $f3->get('POST');
-        $userId = $this->getUserId() ?? 1;
-
-        // Tentukan status rancop & status proposal
-        $statusRancop = $post['status_rancop'] ?? 'draft';
-        if (($post['action_btn'] ?? '') === 'save_deal') {
-            $statusRancop = 'deal';
-        }
-
-        // Parse list tahapan eksperimen
-        $tahapanList = [];
-        $totalBiayaAktif = 0.0;
-        if (!empty($post['tahapan']) && is_array($post['tahapan'])) {
-            foreach ($post['tahapan'] as $stg) {
-                if (!empty($stg['nama'])) {
-                    $isActive = !empty($stg['is_active']);
-                    $biayaStg = (float)($stg['biaya'] ?? 0);
-                    if ($isActive) {
-                        $totalBiayaAktif += $biayaStg;
-                    }
-                    $tahapanList[] = [
-                        'nama'       => trim($stg['nama']),
-                        'keterangan' => trim($stg['keterangan'] ?? ''),
-                        'biaya'      => $biayaStg,
-                        'is_active'  => $isActive
-                    ];
-                }
-            }
-        }
-
-        // Jika tidak ada input tahapan dinamis, gunakan input total manual
-        if (empty($tahapanList)) {
-            $totalBiayaAktif = (float)($post['estimasi_total_biaya'] ?? 0);
-        }
-
-        // Status proposal F3 kompatibilitas
-        $statusProposal = 'draft';
-        if ($statusRancop === 'deal') {
-            $statusProposal = 'disetujui_pimpinan';
-        } elseif ($statusRancop === 'diskusi') {
-            $statusProposal = 'diajukan';
-        }
-
-        $data = [
-            'pic_penyusun_id'      => !empty($post['pic_penyusun_id']) ? (int)$post['pic_penyusun_id'] : null,
-            'spesialisasi'         => $post['spesialisasi'] ?? '',
-            'judul_proposal'       => $post['judul_proposal'] ?? '',
-            'ruang_lingkup'        => $post['ruang_lingkup'] ?? '',
-            'durasi_kegiatan'      => $post['durasi_kegiatan'] ?? '3 bulan',
-            'estimasi_total_biaya' => $totalBiayaAktif,
-            'status_proposal'      => $statusProposal,
-            'status_rancop'        => $statusRancop,
-            'log_diskusi_klien'    => $post['log_diskusi_klien'] ?? '',
-            'tahapan_riset_json'   => json_encode($tahapanList, JSON_UNESCAPED_UNICODE)
-        ];
-
-        try {
-            $orderModel = new OrderLayanan($this->db);
-            $orderModel->simpanProposalSelulosa($id, $data, $userId);
-            $order = $orderModel->getDetail($id);
-
-            // Kirim notifikasi ke Ketua Tim Mitra
-            try {
-                \NotificationService::send($this->db, [
-                    'order_id'       => $id,
-                    'target_role'    => 'ketua_tim_mitra',
-                    'target_layanan' => 'semua',
-                    'judul'          => 'Rancangan Anggaran Riset Disusun',
-                    'pesan'          => "Rancangan Percobaan & Anggaran Riset Order #{$order['nomor_order']} ({$order['nama_perusahaan']}) sebesar Rp " . number_format($totalBiayaAktif, 0, ',', '.') . " telah disusun. Siap diterbitkan Surat Penawaran.",
-                    'tipe'           => 'info',
-                    'icon'           => 'bi-cash-stack',
-                    'link_url'       => "/order/{$id}/penawaran/buat",
-                    'created_by'     => $userId,
-                    'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'PIC Peneliti'
-                ]);
-            } catch (\Exception $eNotif) {}
-
-            $this->logActivity($id, 'rancop_selulosa', 'simpan_rancop', 'Menyimpan Rancangan Percobaan & Estimasi Biaya Riset Selulosa sebesar Rp ' . number_format($totalBiayaAktif, 0, ',', '.') . ' (Status: ' . ucfirst($statusRancop) . ')');
-
-            if ($statusRancop === 'deal') {
-                $this->setFlashSuccess("Rancangan Percobaan (Rancop) Selulosa telah disetujui (Deal)! Anggaran Rp " . number_format($totalBiayaAktif, 0, ',', '.') . " siap dibuatkan Surat Penawaran Resmi.");
-            } elseif ($statusRancop === 'batal') {
-                $this->setFlashWarning("Permohonan riset telah ditandai Batal / Tidak Berlanjut.");
-            } else {
-                $this->setFlashSuccess("Draf Rancangan Percobaan (Rancop) & Anggaran Riset Selulosa berhasil diperbarui.");
-            }
-
-            $f3->reroute("/order/{$id}");
-        } catch (\Exception $e) {
-            $this->setFlashError('Gagal menyimpan rancop: ' . $e->getMessage());
-            $f3->reroute("/order/{$id}/rancop-selulosa");
-        }
+        $f3->reroute("/order/{$id}/proposal");
     }
 
     public function simpanRancopSelulosa($f3, $params) {
-        return $this->biayaProposalPost($f3, $params);
+        $id = (int)($params['id'] ?? 0);
+        $f3->reroute("/order/{$id}/proposal");
     }
 
     /**
@@ -1640,13 +1478,16 @@ class OrderController extends Controller {
 
         $isPic = ((int)$this->getUserId() === (int)($order['pic_proposal_id'] ?? 0));
         $isSubmitted = !empty($kalkulasiItems) && (in_array($order['status_proposal_biaya'] ?? '', ['menunggu_approval', 'disetujui']) || (!empty($order['penawaran_id']) && in_array($order['status'] ?? '', ['penawaran', 'negosiasi', 'po_terbit', 'selesai'])));
-        $hasRoleAccess = ($this->hasPermission('order:kalkulasi_biaya') || $this->hasPermission('order:proposal') || $this->isSuperadmin() || $this->isKetuaTim() || $this->isTimMitra() || $this->isTimKerja() || $this->isAdminOrder() || $isPic);
-        $canEdit = $hasRoleAccess && $this->canEditSubmittedData($isSubmitted);
+        $canEditRole = ($this->hasPermission('order:kalkulasi_biaya') || $this->isSuperadmin() || $this->isKetuaTim() || $isPic || ($this->isTimKerja() && empty($order['pic_proposal_id'])));
+        $canEdit = $canEditRole && $this->canEditSubmittedData($isSubmitted);
 
         $lockMessage = '';
-        if ($isSubmitted && !$this->canEditSubmittedData(true)) {
+        if ($this->isTimMitra() && !$this->isSuperadmin()) {
+            $canEdit = false;
+            $lockMessage = "Mode Pratinjau (Read-Only): Tim Mitra hanya dapat memantau rincian tarif dan parameter pengujian yang disusun oleh PIC / Ketua Tim.";
+        } elseif ($isSubmitted && !$this->canEditSubmittedData(true)) {
             $lockMessage = "Rincian tarif dan parameter telah diajukan atau disetujui. Pengeditan dikunci, silakan hubungi superadmin.";
-        } elseif (!$hasRoleAccess) {
+        } elseif (!$canEditRole) {
             $lockMessage = "Anda tidak memiliki hak akses untuk mengubah kalkulasi tarif pengujian ini.";
         }
 
@@ -1684,8 +1525,14 @@ class OrderController extends Controller {
         $orderModel = new OrderLayanan($this->db);
         $order = $orderModel->getDetail($id);
 
+        if ($this->isTimMitra() && !$this->isSuperadmin()) {
+            $this->setFlashError("Akses Ditolak: Tim Mitra tidak memiliki wewenang untuk menyusun atau mengubah tarif dan parameter pengujian laboratorium.");
+            $f3->reroute("/order/{$id}");
+            return;
+        }
+
         $isPic = ($order && (int)$this->getUserId() === (int)($order['pic_proposal_id'] ?? 0));
-        $hasRoleAccess = ($this->hasPermission('order:kalkulasi_biaya') || $this->hasPermission('order:proposal') || $this->isSuperadmin() || $this->isKetuaTim() || $this->isTimMitra() || $this->isTimKerja() || $this->isAdminOrder() || $isPic);
+        $hasRoleAccess = ($this->hasPermission('order:kalkulasi_biaya') || $this->isSuperadmin() || $this->isKetuaTim() || $isPic || ($this->isTimKerja() && empty($order['pic_proposal_id'])));
         if (!$hasRoleAccess) {
             $this->setFlashError("Akses Ditolak: Perhitungan rincian pengujian merupakan wewenang Ketua Tim / Tim Pelaksana.");
             $f3->reroute("/order/{$id}/biaya-lingkungan");
@@ -2027,6 +1874,80 @@ class OrderController extends Controller {
     }
 
     /**
+     * Ketua Tim OPTI / Superadmin Menunjuk & Menetapkan PIC Proposal
+     * Route: POST /order/@id/tunjuk-pic
+     */
+    public function tunjukPicProposal($f3, $params) {
+        $this->requireAuth();
+        $id = (int)($params['id'] ?? 0);
+        $orderModel = new OrderLayanan($this->db);
+        $order = $orderModel->getDetail($id);
+
+        if (!$order) {
+            $this->setFlashError("Order Layanan #{$id} tidak ditemukan.");
+            $f3->reroute('/order');
+            return;
+        }
+
+        if (!$this->isKetuaTim() && !$this->isSuperadmin()) {
+            $this->setFlashError("Akses Ditolak: Penunjukan PIC Proposal merupakan wewenang Ketua Tim OPTI atau Superadmin.");
+            $f3->reroute("/order/{$id}");
+            return;
+        }
+
+        $post = $f3->get('POST');
+        $picId = !empty($post['pic_proposal_id']) ? (int)$post['pic_proposal_id'] : 0;
+
+        if ($picId <= 0) {
+            $this->setFlashError("Silakan pilih personil PIC Peneliti yang ditugaskan.");
+            $f3->reroute("/order/{$id}");
+            return;
+        }
+
+        $userPic = $this->db->exec("SELECT id_user, nama_user FROM tb_arsipuser WHERE id_user = ?", [1 => $picId]);
+        $picNama = !empty($userPic) ? $userPic[0]['nama_user'] : 'PIC Peneliti';
+
+        try {
+            $this->db->exec(
+                "UPDATE order_layanan SET pic_proposal_id = ? WHERE id = ?",
+                [1 => $picId, 2 => $id]
+            );
+
+            // Update jika sudah ada record di opti_proposal_riset
+            $this->db->exec(
+                "UPDATE opti_proposal_riset SET pic_penyusun_id = ? WHERE order_id = ?",
+                [1 => $picId, 2 => $id]
+            );
+
+            $userNama = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'Ketua Tim OPTI');
+            $this->logActivity($id, 'proposal', 'tunjuk_pic', "Menunjuk {$picNama} sebagai PIC Proposal Teknis");
+
+            // Kirim notifikasi ke PIC yang baru ditunjuk
+            try {
+                \NotificationService::send($this->db, [
+                    'order_id'       => $id,
+                    'target_role'    => 'tim_kerja',
+                    'target_user_id' => $picId,
+                    'target_layanan' => $order['jenis_layanan_opti'] ?? 'selulosa',
+                    'judul'          => 'Penugasan Dokumen Proposal Teknis',
+                    'pesan'          => "Anda telah ditunjuk oleh Ketua Tim OPTI ({$userNama}) sebagai PIC Peneliti untuk menyusun proposal teknis Order #{$order['nomor_order']} ({$order['nama_perusahaan']}).",
+                    'tipe'           => 'primary',
+                    'icon'           => 'bi-person-check-fill',
+                    'link_url'       => "/order/{$id}/proposal",
+                    'created_by'     => (int)$this->getUserId(),
+                    'created_by_name'=> $userNama
+                ]);
+            } catch (\Exception $eNotif) {}
+
+            $this->setFlashSuccess("PIC Proposal berhasil ditetapkan: <strong>{$picNama}</strong>. Notifikasi penugasan telah dikirim ke personil terkait.");
+        } catch (\Exception $e) {
+            $this->setFlashError("Gagal menetapkan PIC: " . $e->getMessage());
+        }
+
+        $f3->reroute("/order/{$id}");
+    }
+
+    /**
      * Menampilkan Formulir Permintaan Pelayanan Jasa untuk Tim Mitra
      * Route: GET /order/@id/form-pelayanan
      */
@@ -2282,6 +2203,25 @@ class OrderController extends Controller {
                         $order->status_proposal_biaya = 'draft';
                         $order->save();
                         $this->logActivity($id, 'form_pelayanan', 'simpan_form_pelayanan', 'Formulir layanan & kaji kelayakan disetujui (OPTI ' . ucfirst($jenisLayanan) . ')');
+
+                        // Notifikasi Khusus ke Ketua Tim OPTI Selulosa jika belum ditunjuk PIC
+                        if ($jenisLayanan === 'selulosa' && empty($order->pic_proposal_id)) {
+                            try {
+                                \NotificationService::send($this->db, [
+                                    'order_id'       => $id,
+                                    'target_role'    => 'ketua_tim',
+                                    'target_layanan' => 'selulosa',
+                                    'judul'          => 'Perlu Penunjukan PIC Proposal Selulosa',
+                                    'pesan'          => "Tim Mitra telah menyetujui kelayakan untuk Order #{$order->nomor_order} ({$perusahaan}), namun belum menetapkan PIC Peneliti. Mohon Ketua Tim segera menetapkan PIC Proposal agar proposal teknis dapat mulai disusun.",
+                                    'tipe'           => 'warning',
+                                    'icon'           => 'bi-person-exclamation',
+                                    'link_url'       => "/order/{$id}",
+                                    'created_by'     => $userId,
+                                    'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Tim Mitra'
+                                ]);
+                            } catch (\Exception $eNotif) {}
+                        }
+
                         $this->setFlashSuccess("Permintaan Pelayanan Jasa &amp; Kaji Kelayakan berhasil disimpan (Status: <strong>Order Aktif</strong> - Divisi " . ucfirst($jenisLayanan) . "). Silakan lanjutkan ke Step 4: Perhitungan Biaya / Parameter Uji.");
                     } else {
                         $order->status = 'ditolak';
@@ -2359,6 +2299,12 @@ class OrderController extends Controller {
         $isSuperadmin = $this->isSuperadmin();
         $isKetuaTim = $this->isKetuaTim();
         $isTimKerja = ($userRole === 'tim_kerja');
+
+        if ($this->isTimMitra() && !$isSuperadmin) {
+            $this->setFlashError("Akses Ditolak: Halaman Tugas Proposal Teknis hanya untuk Tim Kerja (PIC Peneliti) dan Ketua Tim OPTI.");
+            $f3->reroute('/order');
+            return;
+        }
 
         // Parameter filter status
         $filterStatus = $f3->get('GET.status') ?: 'semua';
@@ -2564,12 +2510,15 @@ class OrderController extends Controller {
 
         // Data hanya dianggap "submitted" jika proposal sudah pernah dibuat/diisi berkasnya dan diajukan/disetujui
         $isSubmitted = $hasProposalFile && in_array($proposal['status_proposal'] ?? '', ['diajukan', 'disetujui', 'disetujui_ketua', 'disetujui_pimpinan']);
-        $hasRoleAccess = ($isPic || $isSuperadmin || $isKetuaTim || $this->isTimKerja() || $this->isTimMitra() || $this->isAdminOrder() || $this->hasPermission('order:proposal'));
-        $canEdit = $hasRoleAccess && $this->canEditSubmittedData($isSubmitted);
+        $canEditRole = ($isPic || $isSuperadmin || $isKetuaTim || ($this->isTimKerja() && empty($order['pic_proposal_id'])) || $this->hasPermission('order:proposal'));
+        $canEdit = $canEditRole && $this->canEditSubmittedData($isSubmitted);
         $canReview = ($isKetuaTim || $isSuperadmin);
 
         $lockMessage = '';
-        if (!$tinjauanSelesai) {
+        if ($this->isTimMitra() && !$isSuperadmin) {
+            $canEdit = false;
+            $lockMessage = "Mode Pratinjau (Read-Only): Penyusunan dan pengelolaan proposal teknis merupakan tugas PIC Peneliti / Tim Kerja.";
+        } elseif (!$tinjauanSelesai) {
             $canEdit = false;
             $lockMessage = "Kaji kelayakan belum selesai. Tidak bisa merubah data, silakan hubungi superadmin.";
         } elseif ($proposalDisetujui && !$isSuperadmin && !$this->canEditSubmittedData(true)) {
@@ -2578,7 +2527,7 @@ class OrderController extends Controller {
         } elseif ($isSubmitted && !$this->canEditSubmittedData(true)) {
             $canEdit = false;
             $lockMessage = "Proposal telah diajukan ke Ketua Tim. Fitur edit data dikunci, silakan hubungi superadmin.";
-        } elseif (!$hasRoleAccess) {
+        } elseif (!$canEditRole) {
             $canEdit = false;
             $lockMessage = "Anda tidak memiliki hak akses untuk mengubah dokumen proposal ini.";
         }
@@ -2663,10 +2612,16 @@ class OrderController extends Controller {
             return;
         }
 
+        if ($this->isTimMitra() && !$this->isSuperadmin()) {
+            $this->setFlashError("Akses Ditolak: Tim Mitra tidak memiliki wewenang untuk mengubah atau menyimpan proposal teknis.");
+            $f3->reroute("/order/{$id}");
+            return;
+        }
+
         $userId = (int)$this->getUserId();
         $userRole = $this->getUserRole();
         $isPic = ($userId > 0 && (int)($order['pic_proposal_id'] ?? 0) === $userId);
-        $hasRoleAccess = ($isPic || $this->isSuperadmin() || $this->isKetuaTim() || $this->isTimKerja() || $this->isTimMitra() || $this->isAdminOrder() || $this->hasPermission('order:proposal'));
+        $hasRoleAccess = ($isPic || $this->isSuperadmin() || $this->isKetuaTim() || ($this->isTimKerja() && empty($order['pic_proposal_id'])) || $this->hasPermission('order:proposal'));
         
         // Strict Access Control:
         if (!$hasRoleAccess || ($userRole === 'tim_kerja' && !empty($order['pic_proposal_id']) && !$isPic && !$this->isSuperadmin())) {
@@ -2921,10 +2876,16 @@ class OrderController extends Controller {
         $redirect = $f3->get('POST.redirect');
         $redirectUrl = ($redirect === 'detail') ? "/order/{$id}" : "/order/{$id}/proposal";
 
+        if ($this->isTimMitra() && !$this->isSuperadmin()) {
+            $this->setFlashError("Akses Ditolak: Tim Mitra tidak memiliki wewenang untuk mengunggah berkas proposal.");
+            $f3->reroute($redirectUrl);
+            return;
+        }
+
         $userId = (int)$this->getUserId();
         $userRole = $this->getUserRole();
         $isPic = ($userId > 0 && (int)($order['pic_proposal_id'] ?? 0) === $userId);
-        $hasRoleAccess = ($isPic || $this->isSuperadmin() || $this->isKetuaTim() || $this->isTimKerja() || $this->isTimMitra() || $this->isAdminOrder() || $this->hasPermission('order:proposal'));
+        $hasRoleAccess = ($isPic || $this->isSuperadmin() || $this->isKetuaTim() || ($this->isTimKerja() && empty($order['pic_proposal_id'])) || $this->hasPermission('order:proposal'));
 
         // Access Control:
         if (!$hasRoleAccess || ($userRole === 'tim_kerja' && !empty($order['pic_proposal_id']) && !$isPic && !$this->isSuperadmin())) {
@@ -3049,6 +3010,13 @@ class OrderController extends Controller {
 
         $redirect = $f3->get('POST.redirect');
         $redirectUrl = ($redirect === 'detail') ? "/order/{$id}" : "/order/{$id}/proposal";
+
+        // Tim Mitra tidak boleh mengajukan proposal (hanya PIC Peneliti / Superadmin)
+        if ($this->isTimMitra() && !$this->isSuperadmin()) {
+            $this->setFlashError("Akses Ditolak: Pengajuan proposal ke Ketua Tim hanya dapat dilakukan oleh PIC Peneliti.");
+            $f3->reroute($redirectUrl);
+            return;
+        }
 
         // Cek Prasyarat Kaji Ulang (Tahap 2)
         $tinjauan = $orderModel->getTinjauanKelayakan($id);

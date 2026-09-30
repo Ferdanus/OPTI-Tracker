@@ -324,7 +324,14 @@
                                         <tr>
                                             <td class="text-center text-muted small">{{ @ctr }}</td>
                                             <td>
-                                                <div class="fw-bold text-danger font-monospace small">{{ @ord.nomor_order }}</div>
+                                                <check if="{{ !empty(@ord.nomor_order) }}">
+                                                    <true>
+                                                        <div class="fw-bold text-danger font-monospace small">{{ @ord.nomor_order }}</div>
+                                                    </true>
+                                                    <false>
+                                                        <span class="badge bg-secondary-subtle text-muted border px-1.5 py-0.5 font-monospace" style="font-size: 0.68rem;">(Tanpa No. Order)</span>
+                                                    </false>
+                                                </check>
                                                 <div class="text-muted" style="font-size: 0.75rem;">
                                                     <i class="bi bi-calendar3 me-1"></i>{{ @ord.tanggal_masuk ? date('d/m/Y', strtotime(@ord.tanggal_masuk)) : '-' }}
                                                 </div>
@@ -413,7 +420,14 @@
                                         <tr>
                                             <td class="text-center text-muted small">{{ @ctr }}</td>
                                             <td>
-                                                <div class="fw-bold text-primary small">{{ @ord.nomor_order }}</div>
+                                                <check if="{{ !empty(@ord.nomor_order) }}">
+                                                    <true>
+                                                        <div class="fw-bold text-primary small font-monospace">{{ @ord.nomor_order }}</div>
+                                                    </true>
+                                                    <false>
+                                                        <span class="badge bg-secondary-subtle text-muted border px-1.5 py-0.5 font-monospace" style="font-size: 0.68rem;" title="Nomor order diterbitkan setelah Kaji Kelayakan disetujui">Menunggu Kelayakan</span>
+                                                    </false>
+                                                </check>
                                                 <div class="text-muted" style="font-size: 0.75rem;">
                                                     <i class="bi bi-calendar3 me-1"></i>{{ @ord.tanggal_masuk ? date('d/m/Y', strtotime(@ord.tanggal_masuk)) : '-' }}
                                                 </div>
