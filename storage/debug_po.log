@@ -1,0 +1,225 @@
+===== 2026-10-01 10:10:13 =====
+PESAN: PDOStatement: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near '"nomor_urut":"","bulan_romawi":"I","tahun":"2026","tanggal":"","tentang":""}) AS' at line 1
+POST : {
+    "csrf_token": "9a2fe0efbece4c0225ffe1eb6506ebf5",
+    "order_id": "6",
+    "aksi": "draft",
+    "tahap_nama": [
+        "",
+        "Persiapan awal",
+        "Pelaksanaan",
+        "Evaluasi hasil",
+        "Penerbitan Sertifikat\/Laporan"
+    ],
+    "jadwal_mulai": "",
+    "jadwal_selesai": "",
+    "tanggal_po": "2026-10-01",
+    "judul_kegiatan": "Optimalisasi Formasi Lembaran & Efisiensi Energi Mesin Kertas Pulp",
+    "dasar_nomor_urut": "",
+    "dasar_bulan_romawi": "I",
+    "dasar_tahun": "2026",
+    "dasar_tanggal": "",
+    "dasar_tentang": "",
+    "dasar": "a. Persetujuan biaya kerjasama BBSPJIS dengan PT Kertas Padalarang nomor B\/...\/BBSPJIS\/MS\/I\/2026 tanggal ... tentang ....\r\nb. Pembayaran: dibayarkan pada tanggal 30 September 2026.",
+    "tujuan": "",
+    "ruang_lingkup_deskripsi": "",
+    "alat_bahan": "",
+    "bahan_kimia_nama": [
+        ""
+    ],
+    "bahan_kimia_jumlah": [
+        ""
+    ],
+    "bahan_kimia_satuan": [
+        ""
+    ],
+    "metoda": "",
+    "alamat": "",
+    "tp_nama": [
+        ""
+    ],
+    "tp_tugas": [
+        ""
+    ],
+    "tp_uraian": [
+        ""
+    ],
+    "pen_nama": [
+        "Nilai Kontrak"
+    ],
+    "pen_nominal": [
+        "1500000"
+    ],
+    "kat_nama": [
+        ""
+    ],
+    "kat_persen_manual": [
+        ""
+    ],
+    "kat_tanpa_rincian": [
+        ""
+    ],
+    "kat_kegiatan_json": [
+        "[{\"nama\":\"\",\"items\":[],\"grup\":[{\"nama\":\"\",\"items\":[],\"children\":[]}]}]"
+    ],
+    "jadwal_keterangan": ""
+}
+TRACE: #0 C:\laragon\www\OPTI-Tracker\app\helpers\OptiDatabase.php(28): DB\SQL->exec(Array, Array, 0, true, false)
+#1 C:\laragon\www\OPTI-Tracker\vendor\bcosca\fatfree-core\db\sql\mapper.php(308): OptiDatabase->exec('SELECT `id`,`or...', Array, 0)
+#2 C:\laragon\www\OPTI-Tracker\vendor\bcosca\fatfree-core\db\sql\mapper.php(348): DB\SQL\Mapper->select('`id`,`order_id`...', Array, Array, 0)
+#3 C:\laragon\www\OPTI-Tracker\vendor\bcosca\fatfree-core\db\cursor.php(179): DB\SQL\Mapper->find(Array, Array, 0)
+#4 C:\laragon\www\OPTI-Tracker\vendor\bcosca\fatfree-core\db\sql\mapper.php(497): DB\Cursor->load(Array)
+#5 C:\laragon\www\OPTI-Tracker\vendor\bcosca\fatfree-core\db\cursor.php(246): DB\SQL\Mapper->insert()
+#6 C:\laragon\www\OPTI-Tracker\app\controllers\PoKegiatanController.php(574): DB\Cursor->save()
+#7 C:\laragon\www\OPTI-Tracker\vendor\bcosca\fatfree-core\base.php(2088): PoKegiatanController->store(Object(Base), Array, 'PoKegiatanContr...')
+#8 C:\laragon\www\OPTI-Tracker\vendor\bcosca\fatfree-core\base.php(1889): Base->call(Array, Array, Array)
+#9 C:\laragon\www\OPTI-Tracker\index.php(426): Base->run()
+#10 {main}
+
+===== 2026-10-01 10:26:41 =====
+PESAN: PDOStatement: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near '"nomor_urut":"","bulan_romawi":"I","tahun":"2026","tanggal":"","tentang":""}) AS' at line 1
+POST : {
+    "csrf_token": "568c7b635d046687452711d556bc17df",
+    "order_id": "8",
+    "aksi": "draft",
+    "tahap_nama": [
+        "",
+        "Persiapan awal",
+        "Pelaksanaan",
+        "Evaluasi hasil",
+        "Penerbitan Sertifikat\/Laporan"
+    ],
+    "jadwal_mulai": "",
+    "jadwal_selesai": "",
+    "tanggal_po": "2026-10-01",
+    "judul_kegiatan": "Uji Emisi Cerobong & Pengujian Efisiensi Pengolahan Limbah Cair Industri",
+    "dasar_nomor_urut": "",
+    "dasar_bulan_romawi": "I",
+    "dasar_tahun": "2026",
+    "dasar_tanggal": "",
+    "dasar_tentang": "",
+    "dasar": "a. Persetujuan biaya kerjasama BBSPJIS dengan PT Polyfin Canggih nomor B\/...\/BBSPJIS\/MS\/I\/2026 tanggal ... tentang ....\r\nb. Pembayaran: dibayarkan pada tanggal 1 Oktober 2026.",
+    "tujuan": "",
+    "ruang_lingkup_deskripsi": "",
+    "alat_bahan": "",
+    "metoda": "",
+    "alamat": "",
+    "tp_nama": [
+        ""
+    ],
+    "tp_tugas": [
+        ""
+    ],
+    "tp_uraian": [
+        ""
+    ],
+    "pen_nama": [
+        "Nilai Kontrak"
+    ],
+    "pen_nominal": [
+        "189500000"
+    ],
+    "kat_nama": [
+        ""
+    ],
+    "kat_persen_manual": [
+        ""
+    ],
+    "kat_tanpa_rincian": [
+        ""
+    ],
+    "kat_kegiatan_json": [
+        "[{\"nama\":\"\",\"items\":[],\"grup\":[{\"nama\":\"\",\"items\":[],\"children\":[]}]}]"
+    ],
+    "jadwal_keterangan": ""
+}
+TRACE: #0 C:\laragon\www\OPTI-Tracker\app\helpers\OptiDatabase.php(28): DB\SQL->exec(Array, Array, 0, true, false)
+#1 C:\laragon\www\OPTI-Tracker\vendor\bcosca\fatfree-core\db\sql\mapper.php(308): OptiDatabase->exec('SELECT `id`,`or...', Array, 0)
+#2 C:\laragon\www\OPTI-Tracker\vendor\bcosca\fatfree-core\db\sql\mapper.php(348): DB\SQL\Mapper->select('`id`,`order_id`...', Array, Array, 0)
+#3 C:\laragon\www\OPTI-Tracker\vendor\bcosca\fatfree-core\db\cursor.php(179): DB\SQL\Mapper->find(Array, Array, 0)
+#4 C:\laragon\www\OPTI-Tracker\vendor\bcosca\fatfree-core\db\sql\mapper.php(497): DB\Cursor->load(Array)
+#5 C:\laragon\www\OPTI-Tracker\vendor\bcosca\fatfree-core\db\cursor.php(246): DB\SQL\Mapper->insert()
+#6 C:\laragon\www\OPTI-Tracker\app\controllers\PoKegiatanController.php(574): DB\Cursor->save()
+#7 C:\laragon\www\OPTI-Tracker\vendor\bcosca\fatfree-core\base.php(2088): PoKegiatanController->store(Object(Base), Array, 'PoKegiatanContr...')
+#8 C:\laragon\www\OPTI-Tracker\vendor\bcosca\fatfree-core\base.php(1889): Base->call(Array, Array, Array)
+#9 C:\laragon\www\OPTI-Tracker\index.php(426): Base->run()
+#10 {main}
+
+===== 2026-10-01 10:40:09 =====
+PESAN: PDOStatement: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near ') AS `metoda`,([]) AS `bahan_kimia`,([]) AS `kebutuhan_tambahan` FROM `po_kegiat' at line 1
+POST : {
+    "csrf_token": "2ea292bf524cbf46305597a3f9fc6d78",
+    "order_id": "9",
+    "aksi": "draft",
+    "tahap_nama": [
+        "",
+        "Persiapan awal",
+        "Pelaksanaan",
+        "Evaluasi hasil",
+        "Penerbitan Sertifikat\/Laporan"
+    ],
+    "jadwal_mulai": "",
+    "jadwal_selesai": "",
+    "tanggal_po": "2026-10-01",
+    "judul_kegiatan": "Uji Karakterisasi Kekakuan (Stiffness) & Uji Cekik Chipboard Industri",
+    "dasar_nomor_urut": "1",
+    "dasar_bulan_romawi": "X",
+    "dasar_tahun": "2026",
+    "dasar_tanggal": "",
+    "dasar_tentang": "",
+    "dasar": "a. Persetujuan biaya kerjasama BBSPJIS dengan PT Papertech Indonesia nomor B\/1\/BBSPJIS\/MS\/X\/2026 tanggal ... tentang ....\r\nb. Pembayaran: dibayarkan pada tanggal 1 Oktober 2026.",
+    "tujuan": "",
+    "ruang_lingkup_deskripsi": "",
+    "alat_bahan": "",
+    "bahan_kimia_nama": [
+        ""
+    ],
+    "bahan_kimia_jumlah": [
+        ""
+    ],
+    "bahan_kimia_satuan": [
+        ""
+    ],
+    "metoda": "",
+    "alamat": "",
+    "tp_nama": [
+        ""
+    ],
+    "tp_tugas": [
+        ""
+    ],
+    "tp_uraian": [
+        ""
+    ],
+    "pen_nama": [
+        "Nilai Kontrak"
+    ],
+    "pen_nominal": [
+        "5000000"
+    ],
+    "kat_nama": [
+        ""
+    ],
+    "kat_persen_manual": [
+        ""
+    ],
+    "kat_tanpa_rincian": [
+        ""
+    ],
+    "kat_kegiatan_json": [
+        "[{\"nama\":\"\",\"items\":[],\"grup\":[{\"nama\":\"\",\"items\":[],\"children\":[]}]}]"
+    ],
+    "jadwal_keterangan": ""
+}
+TRACE: #0 C:\laragon\www\OPTI-Tracker\app\helpers\OptiDatabase.php(28): DB\SQL->exec(Array, Array, 0, true, false)
+#1 C:\laragon\www\OPTI-Tracker\vendor\bcosca\fatfree-core\db\sql\mapper.php(308): OptiDatabase->exec('SELECT `id`,`or...', Array, 0)
+#2 C:\laragon\www\OPTI-Tracker\vendor\bcosca\fatfree-core\db\sql\mapper.php(348): DB\SQL\Mapper->select('`id`,`order_id`...', Array, Array, 0)
+#3 C:\laragon\www\OPTI-Tracker\vendor\bcosca\fatfree-core\db\cursor.php(179): DB\SQL\Mapper->find(Array, Array, 0)
+#4 C:\laragon\www\OPTI-Tracker\vendor\bcosca\fatfree-core\db\sql\mapper.php(497): DB\Cursor->load(Array)
+#5 C:\laragon\www\OPTI-Tracker\vendor\bcosca\fatfree-core\db\cursor.php(246): DB\SQL\Mapper->insert()
+#6 C:\laragon\www\OPTI-Tracker\app\controllers\PoKegiatanController.php(574): DB\Cursor->save()
+#7 C:\laragon\www\OPTI-Tracker\vendor\bcosca\fatfree-core\base.php(2088): PoKegiatanController->store(Object(Base), Array, 'PoKegiatanContr...')
+#8 C:\laragon\www\OPTI-Tracker\vendor\bcosca\fatfree-core\base.php(1889): Base->call(Array, Array, Array)
+#9 C:\laragon\www\OPTI-Tracker\index.php(426): Base->run()
+#10 {main}
+

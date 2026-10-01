@@ -1292,7 +1292,7 @@
                         </a>
                     </li>
                     </check>
-                    <check if="{{ @is_superadmin || @is_ketua_tim || @is_tim_kerja }}">
+                    <check if="{{ @is_superadmin || @is_ketua_tim || @is_tim_kerja || @is_keuangan || @is_user_readonly }}">
                     <li>
                         <a class="sidebar-link {{ @active_menu == 'daftar_po' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan/daftar" title="Petunjuk Operasional Selulosa">
                             <i class="bi bi-clipboard-check"></i> <span>Daftar Review PO</span>

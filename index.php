@@ -201,6 +201,18 @@ $f3->route('POST /pembayaran/@id/disposisi-katim', 'PembayaranOptiController->di
 $f3->route('GET /ketua-tim/siap-po', 'KetuaTimController->index');
 $f3->route('POST /ketua-tim/@id/pilih-pelaksana', 'KetuaTimController->simpanPelaksana');
 
+
+
+$f3->route('GET /po-kegiatan/validasi-mitra',     'PoValidasiMitraController->index');
+$f3->route('GET /po-kegiatan/@id/validasi-detail',   'PoValidasiMitraController->detailJson');
+$f3->route('POST /po-kegiatan/@id/catatan',          'PoValidasiMitraController->simpanCatatan');
+$f3->route('POST /po-kegiatan/@id/validasi',         'PoValidasiMitraController->validasi');
+
+$f3->route('GET /order/@id/berkas',       'BerkasController->index');
+$f3->route('GET /penawaran/@id/lampiran', 'BerkasController->lampiranPenawaran');
+$f3->route('GET /proposal/@id/file',      'BerkasController->fileProposal');
+$f3->route('GET /penawaran/surat-kesanggupan/@id', 'BerkasController->suratKesanggupan');
+
 // ==========================================
 // ROUTE MODUL PEMBAYARAN MULTI-TERMIN & INVOICE
 // ==========================================

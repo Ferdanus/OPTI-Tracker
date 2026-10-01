@@ -89,7 +89,29 @@ protected function bind(PoKegiatan $po, $f3, $isUpdate) {
         $po->order_id = (int) ($post['order_id'] ?? 0);
     }
 
-    $po->nomor_po       = trim((string) ($post['nomor_po'] ?? ''));
+    $this->ensureSchemaNomorPo();
+
+    // [BARU] Tanggal Surat PO -- tanggal resmi dokumen PO ini, diisi dari form
+    // "Informasi PO". Dipakai juga buat nentuin bulan-romawi & tahun di Nomor PO.
+    $tanggalPoPost = trim((string) ($post['tanggal_po'] ?? ''));
+    $po->tanggal_po = $tanggalPoPost !== '' ? $tanggalPoPost : date('Y-m-d');
+
+    // [BARU] Nomor PO SEKARANG otomatis (gak lagi input manual) -- digenerate
+    // dari tabel master po_nomor_urut pas PO ini PERTAMA KALI disimpan (baik
+    // "Simpan Draft" maupun "Kirim"). Tabel po_nomor_urut nyimpen SATU BARIS per
+    // nomor yang pernah diterbitkan (bukan cuma counter), kolom detail_nomor-nya
+    // itu yang jadi "361/PO/BBSPJIS/VII/2026"-nya -- po_kegiatan cuma nyimpen
+    // id_nomor_urut (nunjuk ke baris itu), nomor_po dipertahanin juga sebagai
+    // salinan buat kompatibel sama bagian lain yang masih baca po.nomor_po
+    // (cetak PO, notifikasi, dll). Kalau PO ini udah punya nomor (lagi diedit),
+    // dipertahanin apa adanya -- gak di-generate ulang & gak bisa diubah manual,
+    // biar gak bentrok sama nomor PO lain yang udah terlanjur jalan.
+    if (empty($po->nomor_po)) {
+        $nomorBaru      = $this->generateNomorPoBaru($po->tanggal_po);
+        $po->id_nomor_urut = $nomorBaru['id'];
+        $po->nomor_po      = $nomorBaru['detail_nomor'];
+    }
+
     $po->judul_kegiatan = trim((string) ($post['judul_kegiatan'] ?? ''));
 
     // [BARU] Judul Kegiatan diedit dari form PO -> sinkronkan juga ke
@@ -495,6 +517,19 @@ $f3->set('info_pembayaran_json', json_encode($infoPembayaran, JSON_UNESCAPED_UNI
         $orderData = $this->getOrderDenganMitra((int) $po->order_id);
         $poData = $po->cast();
 
+        // [BARU] Nomor PO yang ditampilin di view ngambil langsung dari
+        // po_nomor_urut.detail_nomor (sumber aslinya), bukan dari po_kegiatan.nomor_po
+        // -- biar selalu sinkron sama tabel master, walaupun nomor_po cuma salinan.
+        if (!empty($poData['id_nomor_urut'])) {
+            $rowNomor = $this->safeQuery(
+                'SELECT detail_nomor FROM po_nomor_urut WHERE id = ?',
+                [1 => (int) $poData['id_nomor_urut']]
+            );
+            if (!empty($rowNomor[0]['detail_nomor'])) {
+                $poData['nomor_po'] = $rowNomor[0]['detail_nomor'];
+            }
+        }
+
         $tahunSekarang = (int) date('Y');
     $daftarTahun = [];
     for ($i = 0; $i < 5; $i++) { $daftarTahun[] = $tahunSekarang - $i; }
@@ -542,6 +577,19 @@ $f3->set('info_pembayaran_json', json_encode($infoPembayaran, JSON_UNESCAPED_UNI
                 ? 'PO berhasil dibuat dan dikirim.'
                 : 'PO berhasil disimpan sebagai draft.');
         } catch (\Exception $e) {
+            // [DEBUG-SEMENTARA] Nyatet detail lengkap pas gagal simpan PO -- POST
+            // data + pesan error + trace -- ke file log biar gampang dilacak akar
+            // masalahnya. Aman dihapus abis kelar debug (lihat storage/debug_po.log).
+            try {
+                $dir = $f3->get('ROOT') . '/storage';
+                if (!is_dir($dir)) { @mkdir($dir, 0755, true); }
+                $isi = "===== " . date('Y-m-d H:i:s') . " =====\n"
+                     . "PESAN: " . $e->getMessage() . "\n"
+                     . "POST : " . json_encode($f3->get('POST'), JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n"
+                     . "TRACE: " . $e->getTraceAsString() . "\n\n";
+                @file_put_contents($dir . '/debug_po.log', $isi, FILE_APPEND);
+            } catch (\Exception $e2) {}
+
             $this->setFlashError('Gagal menyimpan PO: ' . $e->getMessage());
         }
 
@@ -1253,6 +1301,147 @@ protected function siapkanDataPo($po, $orderData) {
 
     protected function generateNomorPo() {
         return rand(100, 999) . '/PO/BBSPJIS/' . date('m') . '/' . date('Y');
+    }
+
+    /**
+     * [BARU] Pastiin kolom po_kegiatan.tanggal_po & id_nomor_urut, plus tabel
+     * master po_nomor_urut, udah ada di DB -- dibuat/di-migrasi otomatis kalau
+     * belum ada/masih skema lama (pola self-healing yang sama kaya
+     * ensureSchema() di PembayaranOptiController), jadi gak perlu migrasi
+     * manual di server produksi.
+     */
+    protected function ensureSchemaNomorPo(): void {
+        static $done = false;
+        if ($done) return;
+        try {
+            $colsTgl = $this->db->exec("SHOW COLUMNS FROM po_kegiatan LIKE 'tanggal_po'");
+            if (empty($colsTgl)) {
+                $this->db->exec("ALTER TABLE po_kegiatan ADD COLUMN tanggal_po DATE NULL AFTER nomor_po");
+            }
+            $colsIdNomor = $this->db->exec("SHOW COLUMNS FROM po_kegiatan LIKE 'id_nomor_urut'");
+            if (empty($colsIdNomor)) {
+                $this->db->exec("ALTER TABLE po_kegiatan ADD COLUMN id_nomor_urut INT UNSIGNED NULL AFTER nomor_po");
+            }
+
+            // [FIX] dasar_struktur ternyata BUKAN kolom asli di po_kegiatan (cuma
+            // properti yang di-set langsung di bind() tanpa pernah dibikinin
+            // kolomnya). Akibatnya F3 Mapper nganggep ini "adhoc field" & nyimpen
+            // nilainya (JSON) sebagai ekspresi SQL MENTAH (gak di-escape/bind),
+            // yang bikin query SELECT reload setelah INSERT jadi rusak & error
+            // "...}) AS" pas bikin PO baru. Fix-nya: bikinin kolom asli biar F3
+            // nganggep ini kolom biasa (ke-bind aman kaya kolom lain).
+            $colsDasarStruktur = $this->db->exec("SHOW COLUMNS FROM po_kegiatan LIKE 'dasar_struktur'");
+            if (empty($colsDasarStruktur)) {
+                $this->db->exec("ALTER TABLE po_kegiatan ADD COLUMN dasar_struktur TEXT NULL AFTER dasar");
+            }
+
+            $tabelAda = $this->db->exec("SHOW TABLES LIKE 'po_nomor_urut'");
+            if (!empty($tabelAda)) {
+                $colsDetail = $this->db->exec("SHOW COLUMNS FROM po_nomor_urut LIKE 'detail_nomor'");
+                if (empty($colsDetail)) {
+                    // [MIGRASI] Skema lama po_nomor_urut cuma 1 baris counter per
+                    // bulan+tahun (tanpa detail_nomor) -- strukturnya beda total
+                    // sama skema baru (1 baris per nomor yang DITERBITKAN). Fitur
+                    // ini baru aja dipasang & belum sempet kepake buat PO beneran,
+                    // jadi aman di-drop & dibikin ulang pakai skema baru.
+                    $this->db->exec("DROP TABLE po_nomor_urut");
+                }
+            }
+
+            $this->db->exec(
+                "CREATE TABLE IF NOT EXISTS po_nomor_urut (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    nomor_urut INT UNSIGNED NOT NULL,
+                    bulan TINYINT UNSIGNED NOT NULL,
+                    tahun SMALLINT UNSIGNED NOT NULL,
+                    detail_nomor VARCHAR(60) NOT NULL,
+                    updated_at DATETIME NULL,
+                    UNIQUE KEY uniq_bulan_tahun_urut (bulan, tahun, nomor_urut),
+                    UNIQUE KEY uniq_detail_nomor (detail_nomor)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+            );
+            $done = true;
+        } catch (\Exception $e) {}
+    }
+
+    /** [BARU] 1-12 -> angka romawi (I..XII), buat format Nomor PO. */
+    protected function angkaRomawi($bulan) {
+        $peta = [1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V', 6 => 'VI',
+                 7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII'];
+        return $peta[(int) $bulan] ?? 'I';
+    }
+
+    /**
+     * [BARU] Cari nomor urut tertinggi yang KEBACA dari nomor_po lama yang
+     * masih free-text di po_kegiatan (sebelum tabel master po_nomor_urut ini
+     * ada) buat bulan+tahun tertentu -- dipakai cuma sebagai FALLBACK waktu
+     * bulan itu belum punya satupun baris di po_nomor_urut, biar nomor baru
+     * yang digenerate gak bentrok sama PO lain yang nomornya udah kepakai
+     * duluan (misalnya diisi manual sebelum fitur auto-generate ini ada).
+     */
+    protected function cariUrutanTertinggiBulanIni($bulan, $tahun) {
+        $romawi = $this->angkaRomawi($bulan);
+        $rows = $this->safeQuery(
+            "SELECT nomor_po FROM po_kegiatan WHERE nomor_po LIKE ?",
+            [1 => '%/' . $romawi . '/' . $tahun]
+        );
+        $max = 0;
+        foreach ($rows as $r) {
+            if (preg_match('/^\s*(\d+)\s*\//', (string) ($r['nomor_po'] ?? ''), $m)) {
+                $max = max($max, (int) $m[1]);
+            }
+        }
+        return $max;
+    }
+
+    /**
+     * [BARU] Generate Nomor PO beneran (bukan sekadar saran kaya generateNomorPo()
+     * di atas) -- tabel master po_nomor_urut nyimpen SATU BARIS per nomor yang
+     * PERNAH DITERBITKAN (bukan cuma counter), kolom detail_nomor-nya langsung
+     * nyimpen hasil gabungannya ("361/PO/BBSPJIS/VII/2026"). Nomor urut baru =
+     * MAX(nomor_urut) yang udah tercatat buat bulan+tahun itu + 1 (fallback ke
+     * cariUrutanTertinggiBulanIni() kalau bulan itu belum ada baris sama sekali
+     * di tabel master -- biar gak bentrok sama PO lama yang nomornya manual).
+     * detail_nomor dijagain UNIK lewat UNIQUE KEY di tabelnya -- kalau somehow
+     * ada 2 proses barengan dapet nomor urut yang sama, INSERT-nya bakal gagal
+     * & otomatis dicoba ulang dari angka berikutnya (lihat retry di bawah).
+     * Dipanggil SEKALI doang per PO, pas pertama kali disimpan (lihat bind()).
+     *
+     * @return array{id:int, detail_nomor:string}
+     */
+    protected function generateNomorPoBaru($tanggalPo) {
+        $this->ensureSchemaNomorPo();
+
+        $ts    = strtotime((string) $tanggalPo) ?: time();
+        $bulan = (int) date('n', $ts);
+        $tahun = (int) date('Y', $ts);
+
+        for ($percobaan = 0; $percobaan < 5; $percobaan++) {
+            $row = $this->safeQuery(
+                'SELECT COALESCE(MAX(nomor_urut), 0) AS maxu FROM po_nomor_urut WHERE bulan = ? AND tahun = ?',
+                [1 => $bulan, 2 => $tahun]
+            );
+            $maxTercatat = (int) ($row[0]['maxu'] ?? 0);
+            $maxLegacy   = $maxTercatat > 0 ? 0 : $this->cariUrutanTertinggiBulanIni($bulan, $tahun);
+            $urutanBaru  = max($maxTercatat, $maxLegacy) + 1;
+            $detailNomor = $urutanBaru . '/PO/BBSPJIS/' . $this->angkaRomawi($bulan) . '/' . $tahun;
+
+            try {
+                $this->db->exec(
+                    'INSERT INTO po_nomor_urut (nomor_urut, bulan, tahun, detail_nomor, updated_at) VALUES (?, ?, ?, ?, NOW())',
+                    [1 => $urutanBaru, 2 => $bulan, 3 => $tahun, 4 => $detailNomor]
+                );
+                $idBaru = (int) ($this->db->exec('SELECT LAST_INSERT_ID() AS id')[0]['id'] ?? 0);
+                return ['id' => $idBaru, 'detail_nomor' => $detailNomor];
+            } catch (\Exception $e) {
+                // Bentrok UNIQUE KEY -- ada proses lain yang keduluan ambil nomor urut
+                // yang sama persis di antara SELECT MAX() & INSERT di atas. Coba lagi
+                // dari angka berikutnya (maksimal 5x) biar gak ada nomor yang sama.
+                continue;
+            }
+        }
+
+        throw new \Exception('Gagal membuat Nomor PO baru, silakan coba simpan ulang.');
     }
 
     protected function safeQuery($sql, $params = []) {

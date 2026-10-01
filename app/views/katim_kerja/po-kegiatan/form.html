@@ -89,11 +89,21 @@
         <div class="card-header bg-white py-3"><h6 class="m-0 fw-bold text-dark"><i class="bi bi-file-earmark-text text-primary me-2"></i>Informasi PO</h6></div>
         <div class="card-body p-3 p-md-4">
             <div class="row g-3">
-                <div class="col-md-4">
-                    <label class="form-label">Nomor PO <span class="text-danger">*</span></label>
-                    <input type="text" name="nomor_po" class="form-control" value="{{ @po ? @po.nomor_po : @nomor_po_saran }}" required data-wajib="1">
+                <div class="col-md-3">
+                    <label class="form-label">Nomor PO</label>
+                    <check if="{{ @po && @po.nomor_po }}">
+                        <div class="form-control bg-light fw-semibold text-dark" style="cursor:not-allowed;">{{ @po.nomor_po }}</div>
+                    </check>
+                    <check if="{{ !@po || !@po.nomor_po }}">
+                        <div class="form-control bg-light text-muted fst-italic" style="cursor:not-allowed;">Otomatis saat disimpan</div>
+                    </check>
+                    <div class="form-text">Digenerate otomatis & terkunci, gak bisa diubah manual.</div>
                 </div>
-                <div class="col-md-8">
+                <div class="col-md-3">
+                    <label class="form-label">Tanggal Surat PO <span class="text-danger">*</span></label>
+                    <input type="date" name="tanggal_po" class="form-control" value="{{ @po && @po.tanggal_po ? date('Y-m-d', strtotime(@po.tanggal_po)) : date('Y-m-d') }}" required data-wajib="1">
+                </div>
+                <div class="col-md-6">
                     <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-1">
                         <label class="form-label mb-0">Judul Kegiatan <span class="text-danger">*</span></label>
                         <check if="{{ @surat_masuk_terkait }}">
