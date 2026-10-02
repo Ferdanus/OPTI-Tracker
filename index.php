@@ -290,6 +290,15 @@ $f3->route('POST /config/toggle-edit-lock', 'ConfigController->toggleEditLock');
 $f3->route('POST /config/set-ketua-tim', 'ConfigController->setKetuaTim');
 
 // ==========================================
+// ROUTE MASTER DATA TIM PELAKSANA (per divisi)
+// ==========================================
+$f3->route('GET /master-tim-pelaksana/@divisi', 'MasterTimPelaksanaController->index');
+$f3->route('POST /master-tim-pelaksana/@divisi/simpan', 'MasterTimPelaksanaController->simpan');
+$f3->route('POST /master-tim-pelaksana/@divisi/@id/update', 'MasterTimPelaksanaController->update');
+$f3->route('POST /master-tim-pelaksana/@divisi/@id/toggle-status', 'MasterTimPelaksanaController->toggleStatus');
+$f3->route('POST /master-tim-pelaksana/@divisi/@id/hapus', 'MasterTimPelaksanaController->hapus');
+
+// ==========================================
 // ROUTE ADMIN_ORDER
 // ==========================================
 $f3->route('GET /admin-order', 'DashboardController->adminOrder');
@@ -411,6 +420,19 @@ $f3->route('GET /notifikasi', 'NotificationController->index');
 $f3->route('GET /notifikasi/unread', 'NotificationController->getUnread');
 $f3->route('POST /notifikasi/mark-read/@id', 'NotificationController->markRead');
 $f3->route('POST /notifikasi/mark-all-read', 'NotificationController->markAllRead');
+
+// ==========================================
+// ROUTE WEB PUSH NOTIFICATION (desktop) -- revisi PO Keuangan ke Ketua Pelaksana
+// [PENTING] Path Service Worker SENGAJA tanpa ekstensi ".js" (bukan "/sw.js") --
+// PHP built-in dev server (php -S) nganggep path berakhiran ".js" sebagai file
+// statis dan langsung 404 duluan TANPA pernah masuk ke index.php/router F3 kalau
+// file fisiknya gak ada. Browser gak masalah daftar Service Worker dari path tanpa
+// ekstensi, asal Content-Type response-nya "application/javascript" (sudah diatur
+// di PushController::serviceWorker()).
+// ==========================================
+$f3->route('GET /service-worker', 'PushController->serviceWorker');
+$f3->route('POST /push/subscribe', 'PushController->subscribe');
+$f3->route('POST /push/unsubscribe', 'PushController->unsubscribe');
 
 // ==========================================
 // kontrak

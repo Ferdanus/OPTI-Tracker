@@ -2,19 +2,41 @@
 /**
  * PoReviewController
  *
- * Halaman "Daftar PO" untuk Ketua Tim (review, setujui + disposisi Humas, buka kembali, chat)
+ * Halaman "Daftar PO" untuk Keuangan (review, setujui, buka kembali, chat)
  * dan "Diskusi PO" untuk Ketua Pelaksana pembuat PO (baca catatan, balas, edit PO).
  *
- * Siklus status_review:
- *   menunggu_review --(pembuat mengubah PO setelah reviewed_at terisi)--> revisi
- *   menunggu_review / revisi --(Ketua Tim: Setujui + disposisi Humas)--> disetujui (PO dikunci)
- *   disetujui --(Ketua Tim: Buka kembali)--> revisi
+ * [PERUBAHAN] Sisi review awalnya Ketua Tim, sekarang dipindah ke Keuangan.
+ * Gak ada disposisi ke pihak/divisi mana pun -- Keuangan yang menyetujui adalah
+ * tahap FINAL buat PO ini.
  *
- * reviewed_at = PERTAMA KALI panel review dibuka Ketua Tim (penanda "sudah dilihat").
+ * Alurnya: PO terkirim -> Tim Mitra validasi (tervalidasi_mitra_at/_by terisi,
+ * lihat PoValidasiMitraController) -> BARU masuk daftar di sini -> Keuangan
+ * cek & diskusi lewat chat (bisa ada revisi bolak-balik) -> kalau udah gak ada
+ * revisi lagi, Keuangan Setujui -> status PO jadi 'disetujui' (FINAL, dikunci),
+ * validasi_keuangan_at/validasi_keuangan_by tercatat.
+ *
+ * [PENTING] index() cuma nampilin PO yang tervalidasi_mitra_at DAN
+ * tervalidasi_mitra_by-nya udah terisi -- PO yang belum divalidasi Tim Mitra
+ * (masih NULL) TIDAK muncul di daftar ini sama sekali.
+ *
+ * Siklus status_review (dipakai buat tab/badge halaman ini -- JANGAN dihapus,
+ * tampilan "Perlu Divalidasi" vs "Sudah Disetujui" & badge menunggu/revisi/
+ * disetujui di daftar.html bergantung ke field ini):
+ *   menunggu_review --(pembuat mengubah PO setelah reviewed_at terisi)--> revisi
+ *   menunggu_review / revisi --(Keuangan: Setujui)--> disetujui (PO dikunci,
+ *     status (kolom utama) ikut jadi 'disetujui', validasi_keuangan_at/_by terisi)
+ *   disetujui --(Keuangan: Buka kembali)--> revisi (status balik ke 'disetujui_mitra',
+ *     validasi_keuangan_at/_by dikosongkan lagi)
+ *
+ * reviewed_at = PERTAMA KALI panel review dibuka Keuangan (penanda "sudah dilihat").
+ *
+ * [CATATAN] Field lama disetujui_at/disetujui_by udah gak dipakai lagi di sini --
+ * diganti validasi_keuangan_at/validasi_keuangan_by.
  *
  * Aturan sisi:
- *  - superadmin dan ketua_tim -> sisi 'katim' (ketua_tim dibatasi ke divisinya)
- *  - tim_kerja                -> sisi 'pembuat' (hanya PO yang ketua_pelaksana_id-nya = dirinya)
+ *  - superadmin, keuangan, ketua_tim_keuangan -> sisi 'katim' (nama internal lama,
+ *    gak dibatasi divisi -- Keuangan nangani PO dari kedua divisi)
+ *  - tim_kerja                                -> sisi 'pembuat' (hanya PO yang ketua_pelaksana_id-nya = dirinya)
  *
  * Kompatibel PHP 7.2. Butuh: migration_po_review_chat.sql + migration_po_status_review.sql
  */
@@ -30,10 +52,11 @@ class PoReviewController extends Controller {
     /** GET /po-kegiatan/daftar */
     public function index($f3) {
         $this->requireAuth();
+        $this->ensureSchemaValidasiKeuangan();
 
         $mode = $this->modeHalaman();
         if ($mode === null) {
-            $f3->error(403, 'Halaman ini hanya untuk Ketua Tim dan Ketua Pelaksana.');
+            $f3->error(403, 'Halaman ini hanya untuk Keuangan dan Ketua Pelaksana.');
             return;
         }
 
@@ -50,7 +73,7 @@ class PoReviewController extends Controller {
                 FROM po_kegiatan p
                 JOIN order_layanan o ON o.id = p.order_id
                 JOIN tb_customer c ON c.id_customer = o.id_customer
-                WHERE p.status = 'terkirim'";
+                WHERE p.tervalidasi_mitra_at IS NOT NULL AND p.tervalidasi_mitra_by IS NOT NULL";
         $params = [1 => $sisiLawan];
         $idx = 2;
         $this->tambahScope($mode, $uid, $sql, $params, $idx);
@@ -152,6 +175,14 @@ class PoReviewController extends Controller {
         }
 
         $peta = $this->petaNamaUser([$uid]);
+
+        // [BARU] Keuangan ngirim pesan (revisi) -- kasih tau Ketua Pelaksana lewat
+        // notifikasi lonceng + Web Push desktop, soalnya dia bisa aja gak lagi
+        // stand by / udah logout dari tab website-nya.
+        if ($sisi === 'katim') {
+            $this->notifikasiRevisiKePembuat($po, $teks);
+        }
+
         $this->keluarkanJson(['ok' => true, 'pesan' => $this->bentukPesan($baris[0], $peta, $uid)]);
     }
 
@@ -173,14 +204,14 @@ class PoReviewController extends Controller {
     }
 
     /* ============================================================
-     * API: REVIEW (khusus sisi Ketua Tim)
+     * API: REVIEW (khusus sisi Keuangan)
      * ============================================================ */
 
-    /** POST /po-kegiatan/@id/dibuka -- dipanggil saat Ketua Tim membuka panel review. Mengisi reviewed_at sekali saja. */
+    /** POST /po-kegiatan/@id/dibuka -- dipanggil saat Keuangan membuka panel review. Mengisi reviewed_at sekali saja. */
     public function tandaiDibuka($f3, $params) {
         list($po, $sisi) = $this->akses((int) $params['id']);
 
-        if ($sisi === 'katim' && $po['status'] === 'terkirim' && empty($po['reviewed_at'])) {
+        if ($sisi === 'katim' && $po['status_review'] !== 'disetujui' && empty($po['reviewed_at'])) {
             try {
                 $this->db->exec(
                     "UPDATE po_kegiatan SET reviewed_at = NOW(), reviewed_by = ? WHERE id = ? AND reviewed_at IS NULL",
@@ -194,22 +225,23 @@ class PoReviewController extends Controller {
         $this->keluarkanJson(['ok' => true]);
     }
 
-    /** POST /po-kegiatan/@id/setujui -- setujui dan disposisikan ke Humas. PO dikunci setelahnya. */
+    /** POST /po-kegiatan/@id/setujui -- Keuangan setujui, tahap final. PO dikunci setelahnya. */
     public function setujui($f3, $params) {
         list($po, $sisi) = $this->akses((int) $params['id']);
         $uid = (int) $this->getUserId();
 
         if ($sisi !== 'katim') {
-            $this->keluarkanJson(['ok' => false, 'pesan' => 'Hanya Ketua Tim yang dapat menyetujui PO.'], 403);
+            $this->keluarkanJson(['ok' => false, 'pesan' => 'Hanya Keuangan yang dapat menyetujui PO.'], 403);
         }
-        if ($po['status'] !== 'terkirim') {
-            $this->keluarkanJson(['ok' => false, 'pesan' => 'Hanya PO berstatus terkirim yang dapat disetujui.'], 422);
+        if (empty($po['tervalidasi_mitra_at'])) {
+            $this->keluarkanJson(['ok' => false, 'pesan' => 'PO ini belum divalidasi Tim Mitra, belum bisa disetujui Keuangan.'], 422);
         }
 
         try {
             $diubah = $this->db->exec(
                 "UPDATE po_kegiatan
-                    SET status_review = 'disetujui', disetujui_at = NOW(), disetujui_by = ?, disposisi_humas_at = NOW(),
+                    SET status = 'disetujui', validasi_keuangan_at = NOW(), validasi_keuangan_by = ?,
+                        status_review = 'disetujui',
                         reviewed_at = COALESCE(reviewed_at, NOW()), reviewed_by = COALESCE(reviewed_by, ?)
                   WHERE id = ? AND status_review <> 'disetujui'",
                 [1 => $uid, 2 => $uid, 3 => (int) $po['id']]
@@ -222,23 +254,24 @@ class PoReviewController extends Controller {
             $this->keluarkanJson(['ok' => false, 'pesan' => 'PO ini sudah disetujui.'], 422);
         }
 
-        self::catatPesanSistem($this->db, $po['id'], $uid, 'katim', 'PO disetujui Ketua Tim dan didisposisikan ke Humas. PO dikunci.');
+        self::catatPesanSistem($this->db, $po['id'], $uid, 'katim', 'PO disetujui Keuangan. Ini tahap final -- PO dikunci.');
         $this->keluarkanJson(['ok' => true, 'status_review' => 'disetujui']);
     }
 
-    /** POST /po-kegiatan/@id/buka-kembali -- Ketua Tim membuka PO yang sudah disetujui supaya bisa diperbaiki. */
+    /** POST /po-kegiatan/@id/buka-kembali -- Keuangan membuka PO yang sudah disetujui supaya bisa diperbaiki. */
     public function bukaKembali($f3, $params) {
         list($po, $sisi) = $this->akses((int) $params['id']);
         $uid = (int) $this->getUserId();
 
         if ($sisi !== 'katim') {
-            $this->keluarkanJson(['ok' => false, 'pesan' => 'Hanya Ketua Tim yang dapat membuka kembali PO.'], 403);
+            $this->keluarkanJson(['ok' => false, 'pesan' => 'Hanya Keuangan yang dapat membuka kembali PO.'], 403);
         }
 
         try {
             $diubah = $this->db->exec(
                 "UPDATE po_kegiatan
-                    SET status_review = 'revisi', disetujui_at = NULL, disetujui_by = NULL, disposisi_humas_at = NULL
+                    SET status_review = 'revisi', status = 'disetujui_mitra',
+                        validasi_keuangan_at = NULL, validasi_keuangan_by = NULL
                   WHERE id = ? AND status_review = 'disetujui'",
                 [1 => (int) $po['id']]
             );
@@ -250,7 +283,8 @@ class PoReviewController extends Controller {
             $this->keluarkanJson(['ok' => false, 'pesan' => 'PO ini belum berstatus disetujui.'], 422);
         }
 
-        self::catatPesanSistem($this->db, $po['id'], $uid, 'katim', 'PO dibuka kembali oleh Ketua Tim untuk diperbaiki. Disposisi ke Humas dibatalkan.');
+        self::catatPesanSistem($this->db, $po['id'], $uid, 'katim', 'PO dibuka kembali oleh Keuangan untuk diperbaiki.');
+        $this->notifikasiRevisiKePembuat($po, 'PO dibuka kembali oleh Keuangan untuk diperbaiki.');
         $this->keluarkanJson(['ok' => true, 'status_review' => 'revisi']);
     }
 
@@ -323,19 +357,19 @@ class PoReviewController extends Controller {
 
     /**
      * Panggil SETELAH $po->save() berhasil di PoKegiatanController::update().
-     * Kalau PO sudah pernah dibuka Ketua Tim (reviewed_at terisi) dan belum disetujui:
-     * status_review menjadi 'revisi' dan Ketua Tim dapat catatan otomatis di chat (maksimal satu yang belum dibaca).
+     * Kalau PO sudah pernah dibuka Keuangan (reviewed_at terisi) dan belum disetujui:
+     * status_review menjadi 'revisi' dan Keuangan dapat catatan otomatis di chat (maksimal satu yang belum dibaca).
      */
     public static function tandaiRevisiBilaPerlu($db, $poId, $userId) {
         try {
             $rows = $db->exec("SELECT reviewed_at, status_review FROM po_kegiatan WHERE id = ?", [1 => (int) $poId]);
-            if (empty($rows) || empty($rows[0]['reviewed_at'])) { return; }   // belum pernah dibuka Ketua Tim
+            if (empty($rows) || empty($rows[0]['reviewed_at'])) { return; }   // belum pernah dibuka Keuangan
             if ($rows[0]['status_review'] === 'disetujui') { return; }         // terkunci; update() harus sudah menolaknya
 
             if ($rows[0]['status_review'] !== 'revisi') {
                 $db->exec("UPDATE po_kegiatan SET status_review = 'revisi' WHERE id = ?", [1 => (int) $poId]);
             }
-            self::catatPesanSistem($db, $poId, $userId, 'pembuat', 'PO diperbarui oleh pembuat setelah dibuka Ketua Tim. Mohon dicek ulang.', true);
+            self::catatPesanSistem($db, $poId, $userId, 'pembuat', 'PO diperbarui oleh pembuat setelah dibuka Keuangan. Mohon dicek ulang.', true);
         } catch (\Exception $e) {
             // jangan menggagalkan penyimpanan PO hanya karena pencatatan status
         }
@@ -360,24 +394,60 @@ class PoReviewController extends Controller {
         }
     }
 
+    /**
+     * [BARU] Kirim notifikasi (lonceng/riwayat + Web Push desktop) ke Ketua Pelaksana
+     * pembuat PO ini. Dipanggil cuma dari sisi Keuangan (chatKirim saat $sisi === 'katim',
+     * dan bukaKembali). NotificationService::send() nyimpen barisnya ke tabel
+     * opti_notifikasi (buat lonceng & riwayat) -- PushService::kirimKeUser() "ngetok pintu"
+     * browser Ketua Pelaksana kalau dia lagi gak stand by/logout, isi notifikasinya tetep
+     * ditarik Service Worker dari endpoint /notifikasi/unread yang barisnya baru disimpan
+     * oleh send() di atas. Gak lewat email atau WhatsApp sama sekali.
+     */
+    protected function notifikasiRevisiKePembuat($po, $pesanSingkat) {
+        $pembuatId = (int) $po['ketua_pelaksana_id'];
+        if ($pembuatId <= 0) { return; }
+
+        $cuplikan = mb_substr(trim((string) $pesanSingkat), 0, 150, 'UTF-8');
+
+        try {
+            \NotificationService::send($this->db, [
+                'order_id'       => $po['order_id'],
+                'po_id'          => $po['id'],
+                'target_role'    => 'tim_kerja',
+                'target_user_id' => $pembuatId,
+                'judul'          => 'Revisi PO dari Keuangan',
+                'pesan'          => $cuplikan,
+                'tipe'           => 'warning',
+                'icon'           => 'bi-chat-left-text-fill',
+                'link_url'       => $this->f3->get('BASE') . '/po-kegiatan/daftar',
+            ]);
+        } catch (\Exception $e) {
+            // notifikasi lonceng bersifat pelengkap, jangan gagalin alur utama chat/buka-kembali
+        }
+
+        try {
+            \PushService::kirimKeUser($this->db, $pembuatId);
+        } catch (\Exception $e) {
+            // push desktop juga bersifat pelengkap
+        }
+    }
+
     /* ============================================================
      * HELPER
      * ============================================================ */
 
-    /** 'katim' | 'pembuat' | null, berdasarkan peran login. */
+    /** 'katim' (sisi Keuangan) | 'pembuat' | null, berdasarkan peran login. */
     protected function modeHalaman() {
         if ($this->isSuperadmin()) { return 'katim'; }
         $role = $this->getUserRole();
-        if ($role === 'ketua_tim') { return 'katim'; }
+        if ($role === 'keuangan' || $role === 'ketua_tim_keuangan') { return 'katim'; }
         if ($role === 'tim_kerja') { return 'pembuat'; }
         return null;
     }
 
-    /** Divisi Ketua Tim ('' = semua divisi). Superadmin selalu semua. */
+    /** [FIX] Keuangan nangani PO dari kedua divisi -- gak ada lagi pembatasan divisi di sisi 'katim'. */
     protected function divisiKatim() {
-        if ($this->isSuperadmin()) { return ''; }
-        $d = isset($_SESSION['jenis_layanan_opti']) ? (string) $_SESSION['jenis_layanan_opti'] : '';
-        return in_array($d, self::DIVISI_VALID, true) ? $d : '';
+        return '';
     }
 
     /** Tambah filter cakupan data ke SQL (alias tabel: o = order_layanan). */
@@ -394,10 +464,43 @@ class PoReviewController extends Controller {
         }
     }
 
+    /**
+     * [FIX] Nambahin kolom validasi_keuangan_at/validasi_keuangan_by kalau belum ada,
+     * dan lebar-in kolom status kalau masih ENUM lama yang belum punya nilai 'disetujui'.
+     * Pola sama kayak ensureSchemaStatusMitra() di PoValidasiMitraController, jadi gak
+     * perlu migration manual di server produksi.
+     */
+    protected function ensureSchemaValidasiKeuangan(): void {
+        static $done = false;
+        if ($done) return;
+        try {
+            $colsAt = $this->db->exec("SHOW COLUMNS FROM po_kegiatan LIKE 'validasi_keuangan_at'");
+            if (empty($colsAt)) {
+                $this->db->exec("ALTER TABLE po_kegiatan ADD COLUMN validasi_keuangan_at DATETIME NULL");
+            }
+            $colsBy = $this->db->exec("SHOW COLUMNS FROM po_kegiatan LIKE 'validasi_keuangan_by'");
+            if (empty($colsBy)) {
+                $this->db->exec("ALTER TABLE po_kegiatan ADD COLUMN validasi_keuangan_by INT UNSIGNED NULL");
+            }
+            $colsStatus = $this->db->exec("SHOW COLUMNS FROM po_kegiatan LIKE 'status'");
+            if (!empty($colsStatus)) {
+                $type = strtolower((string) $colsStatus[0]['Type']);
+                if (strpos($type, 'enum') !== false && strpos($type, "'disetujui'") === false) {
+                    $this->db->exec("ALTER TABLE po_kegiatan MODIFY COLUMN status VARCHAR(30) NOT NULL DEFAULT 'draft'");
+                }
+            }
+        } catch (\Exception $e) {
+            // biarin -- kalau gagal alter, query tetap dicoba jalan apa adanya, cuma gak self-healing.
+        }
+        $done = true;
+    }
+
     /** Ambil PO + order. Null kalau tidak ada. */
     protected function ambilPo($poId) {
         $rows = $this->db->exec(
             "SELECT p.id, p.nomor_po, p.status, p.status_review, p.reviewed_at,
+                    p.tervalidasi_mitra_at, p.tervalidasi_mitra_by,
+                    p.validasi_keuangan_at, p.validasi_keuangan_by,
                     o.id AS order_id, o.jenis_layanan_opti, o.ketua_pelaksana_id
              FROM po_kegiatan p
              JOIN order_layanan o ON o.id = p.order_id
@@ -425,6 +528,7 @@ class PoReviewController extends Controller {
     /** Wajib login + berhak atas PO. Mengembalikan [$po, $sisi] atau langsung menjawab JSON error. */
     protected function akses($poId) {
         $this->requireAuth();
+        $this->ensureSchemaValidasiKeuangan();
 
         try {
             $po = ($poId > 0) ? $this->ambilPo($poId) : null;

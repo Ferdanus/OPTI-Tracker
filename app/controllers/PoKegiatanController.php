@@ -78,6 +78,20 @@ protected function hitungNomorSection($divisi) {
     return ['alat_bahan' => null, 'metoda' => null, 'tim' => 4, 'rab' => 5, 'jadwal' => 6];
 }
 
+/**
+ * Ambil daftar Tim Pelaksana aktif dari Data Master (per divisi: lingkungan/selulosa)
+ * buat ngisi dropdown "Nama" di bagian Tim Pelaksana form PO -- begitu nama dipilih,
+ * Tugas/Tanggung Jawab otomatis keisi dari data master ini (lihat form.html).
+ * Return [] kalau divisi-nya gak dikenali atau controller master-nya gak ada.
+ */
+protected function ambilMasterPelaksanaUntukPo($divisi) {
+    $d = strtolower(trim((string) $divisi));
+    if (!in_array($d, ['lingkungan', 'selulosa'], true) || !class_exists('MasterTimPelaksanaController')) {
+        return [];
+    }
+    return \MasterTimPelaksanaController::ambilAktif($this->db, $d);
+}
+
 protected function getHariLiburSet() {
     $rows = $this->safeQuery('SELECT tanggal_libur FROM tb_tanggal_libur');
     return array_map(function ($r) { return date('Y-m-d', strtotime($r['tanggal_libur'])); }, $rows);
@@ -286,7 +300,16 @@ $po->jadwal = json_encode([
 'keterangan' => trim((string) ($post['jadwal_keterangan'] ?? '')),
 ], JSON_UNESCAPED_UNICODE);
 
-    $po->status = ($post['aksi'] ?? '') === 'kirim' ? 'terkirim' : 'draft';
+    // [FIX] PO yang udah lewat tahap validasi Tim Mitra (status 'disetujui_mitra')
+    // atau udah final disetujui Keuangan (status 'disetujui') -- statusnya JANGAN
+    // direset balik ke 'terkirim'/'draft' cuma gara-gara pembuat edit & kirim ulang
+    // pas lagi revisi. Status cuma boleh maju lewat PoValidasiMitraController::validasi()
+    // / PoReviewController::setujui(), dan cuma boleh mundur lewat PoReviewController::
+    // bukaKembali(). Edit biasa (revisi) gak boleh ngubah tahapnya.
+    $statusSaatIni = $isUpdate ? (string) ($po->status ?? '') : '';
+    if (!in_array($statusSaatIni, ['disetujui_mitra', 'disetujui'], true)) {
+        $po->status = ($post['aksi'] ?? '') === 'kirim' ? 'terkirim' : 'draft';
+    }
 }
 
     /** GET /po-kegiatan -- cuma nampilin PO yang SUDAH dibuat */
@@ -482,6 +505,10 @@ $f3->set('info_pembayaran_json', json_encode($infoPembayaran, JSON_UNESCAPED_UNI
         $f3->set('surat_masuk_terkait', $this->getSuratMasukTerkait($orderData));
         $f3->set('nomor_po_saran', $this->generateNomorPo());
         $f3->set('daftar_pegawai', $this->safeQuery('SELECT id_user, nama_user FROM tb_arsipuser ORDER BY nama_user ASC'));
+        $f3->set('daftar_master_pelaksana_json', json_encode(
+            $this->ambilMasterPelaksanaUntukPo($orderData['jenis_layanan_opti'] ?? ''),
+            JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP
+        ));
 
         $nomor = $this->hitungNomorSection($orderData['jenis_layanan_opti'] ?? '');
         $f3->set('nomor_alat_bahan', $nomor['alat_bahan']);
@@ -543,6 +570,10 @@ $f3->set('info_pembayaran_json', json_encode($infoPembayaran, JSON_UNESCAPED_UNI
         $f3->set('po_json', json_encode($poData, JSON_UNESCAPED_UNICODE));
         $f3->set('surat_masuk_terkait', $orderData ? $this->getSuratMasukTerkait($orderData) : null);
         $f3->set('daftar_pegawai', $this->safeQuery('SELECT id_user, nama_user FROM tb_arsipuser ORDER BY nama_user ASC'));
+        $f3->set('daftar_master_pelaksana_json', json_encode(
+            $this->ambilMasterPelaksanaUntukPo($orderData['jenis_layanan_opti'] ?? ''),
+            JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP
+        ));
 
         $nomor = $this->hitungNomorSection($orderData['jenis_layanan_opti'] ?? '');
         $f3->set('nomor_alat_bahan', $nomor['alat_bahan']);
@@ -559,6 +590,13 @@ $f3->set('info_pembayaran_json', json_encode($infoPembayaran, JSON_UNESCAPED_UNI
         if ($userId > 0 && $poOrderId > 0) {
             \StageAudit::recordDibaca($this->db, $poOrderId, 7, $userId, $userNama, 'Laboratorium / Tim Pelaksana');
         }
+
+        // [FIX] Dibawa dari query string (?dari=daftar) pas link edit-nya datang dari
+        // halaman "Daftar Review PO"/"Diskusi PO" -- disimpan di hidden field form biar
+        // kebawa lagi pas submit, jadi update() tau harus reroute balik ke mana.
+        $dariValid = ['daftar'];
+        $dari = (string) $f3->get('GET.dari');
+        $f3->set('dari', in_array($dari, $dariValid, true) ? $dari : '');
 
         $this->render('katim_kerja/po-kegiatan/form.html', 'Edit Petunjuk Operasional', 'po_kegiatan');
     }
@@ -614,11 +652,30 @@ $f3->set('info_pembayaran_json', json_encode($infoPembayaran, JSON_UNESCAPED_UNI
             $po->updated_at = date('Y-m-d H:i:s');
             $po->save();
 
+            // [FIX] Ini sebelumnya gak pernah dipanggil -- jadi revisi dari pembuat
+            // gak pernah nandain status_review jadi 'revisi' atau ngirim notifikasi
+            // chat ke Keuangan. Dipanggil di sini, SETELAH save() berhasil.
+            if (class_exists('PoReviewController')) {
+                try {
+                    \PoReviewController::tandaiRevisiBilaPerlu($this->db, (int) $po->id, (int) $this->getUserId());
+                } catch (\Exception $eRevisi) {
+                    // catatan revisi bersifat pelengkap -- jangan gagalkan penyimpanan PO
+                }
+            }
+
             $this->setFlashSuccess($f3->get('POST.aksi') === 'kirim'
                 ? 'PO berhasil diperbarui dan dikirim.'
                 : 'PO berhasil diperbarui sebagai draft.');
         } catch (\Exception $e) {
             $this->setFlashError('Gagal memperbarui PO: ' . $e->getMessage());
+        }
+
+        // [FIX] Kalau edit ini datang dari halaman "Daftar Review PO"/"Diskusi PO"
+        // (hidden field 'dari' = 'daftar'), reroute balik ke situ -- bukan ke daftar PO
+        // per-divisi yang biasa.
+        if ((string) $f3->get('POST.dari') === 'daftar') {
+            $f3->reroute('/po-kegiatan/daftar');
+            return;
         }
 
         $f3->reroute($this->urlDaftarPoDariOrder((int) $f3->get('POST.order_id')));

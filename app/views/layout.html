@@ -1255,6 +1255,14 @@
                     </li>
                 </check>
 
+                <check if="{{ @is_superadmin || @is_tim_mitra }}">
+                    <li>
+                        <a class="sidebar-link {{ @active_menu == 'validasi-mitra' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan/validasi-mitra" title="Surat Penawaran">
+                            <i class="bi bi-file-earmark-text"></i> <span>Validasi PO</span>
+                        </a>
+                    </li>
+                </check>
+
                 <!-- Rekapitulasi Pembayaran & Keuangan (Khusus Tim Keuangan & Superadmin) -->
 
                 <check if="{{ @is_superadmin || @is_keuangan }}">
@@ -1278,7 +1286,7 @@
                 </check>
 
                 <!-- 2. PELAKSANAAN TEKNIS -->
-                <check if="{{ @is_superadmin || @is_ketua_tim || @is_tim_kerja }}">
+                <check if="{{ @is_superadmin || @is_ketua_tim || @is_tim_kerja || @is_keuangan }}">
                     <li class="sidebar-section-label">Pelaksanaan Teknis</li>
                     
                     <!-- Tugas Proposal Teknis (Tim Kerja / PIC Peneliti, Ketua Tim, Superadmin) -->
@@ -1292,9 +1300,30 @@
                         </a>
                     </li>
                     </check>
-                    <check if="{{ @is_superadmin || @is_ketua_tim || @is_tim_kerja || @is_keuangan || @is_user_readonly }}">
+                    <!-- Petunjuk Operasional (PO) Kegiatan -->
+                    <check if="{{ @is_superadmin || (@is_tim_kerja && @divisi_tim_kerja == 'lingkungan') }}">
+                        <li>
+                            <a class="sidebar-link {{ @active_menu == 'po_lingkungan' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?divisi=lingkungan" title="Petunjuk Operasional Lingkungan">
+                                <i class="bi bi-clipboard-check"></i> <span>Daftar PO Lingkungan</span>
+                                <check if="{{ @jumlah_notif_po_lingkungan > 0 }}">
+                                    <span class="badge rounded-pill bg-danger ms-auto">{{ @jumlah_notif_po_lingkungan }}</span>
+                                </check>
+                            </a>
+                        </li>
+                        </check>
+                        <check if="{{ @is_superadmin || (@is_tim_kerja && @divisi_tim_kerja == 'selulosa') }}">
+                        <li>
+                            <a class="sidebar-link {{ @active_menu == 'po_selulosa' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?divisi=selulosa" title="Petunjuk Operasional Selulosa">
+                                <i class="bi bi-clipboard-check"></i> <span>Daftar PO Selulosa</span>
+                                <check if="{{ @jumlah_notif_po_selulosa > 0 }}">
+                                    <span class="badge rounded-pill bg-danger ms-auto">{{ @jumlah_notif_po_selulosa }}</span>
+                                </check>
+                            </a>
+                        </li>
+                        </check>
+                    <check if="{{ @is_superadmin || @is_tim_kerja || @is_keuangan }}">
                     <li>
-                        <a class="sidebar-link {{ @active_menu == 'daftar_po' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan/daftar" title="Petunjuk Operasional Selulosa">
+                        <a class="sidebar-link {{ @active_menu == 'daftar_po' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan/daftar" title="Daftar Review PO">
                             <i class="bi bi-clipboard-check"></i> <span>Daftar Review PO</span>
                             <check if="{{ @jumlah_notif_po_selulosa > 0 }}">
                                 <span class="badge rounded-pill bg-danger ms-auto">{{ @jumlah_notif_daftar_po }}</span>
@@ -1302,27 +1331,22 @@
                         </a>
                     </li>
                 </check>
-                    <!-- Petunjuk Operasional (PO) Kegiatan -->
-                    <check if="{{ @is_superadmin || (@is_tim_kerja && @divisi_tim_kerja == 'lingkungan') }}">
+                    <!-- Master Data Tim Pelaksana (per divisi) -->
+                    <check if="{{ @is_superadmin || @is_ketua_lingkungan }}">
                     <li>
-                        <a class="sidebar-link {{ @active_menu == 'po_lingkungan' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?divisi=lingkungan" title="Petunjuk Operasional Lingkungan">
-                            <i class="bi bi-clipboard-check"></i> <span>Daftar PO Lingkungan</span>
-                            <check if="{{ @jumlah_notif_po_lingkungan > 0 }}">
-                                <span class="badge rounded-pill bg-danger ms-auto">{{ @jumlah_notif_po_lingkungan }}</span>
-                            </check>
+                        <a class="sidebar-link {{ @active_menu == 'master_tim_pelaksana_lingkungan' ? 'active' : '' }}" href="{{ @BASE }}/master-tim-pelaksana/lingkungan" title="Tim Pelaksana Lingkungan">
+                            <i class="bi bi-people"></i> <span>Tim Pelaksana Lingkungan</span>
                         </a>
                     </li>
                     </check>
-                    <check if="{{ @is_superadmin || (@is_tim_kerja && @divisi_tim_kerja == 'selulosa') }}">
+                    <check if="{{ @is_superadmin || @is_ketua_selulosa }}">
                     <li>
-                        <a class="sidebar-link {{ @active_menu == 'po_selulosa' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?divisi=selulosa" title="Petunjuk Operasional Selulosa">
-                            <i class="bi bi-clipboard-check"></i> <span>Daftar PO Selulosa</span>
-                            <check if="{{ @jumlah_notif_po_selulosa > 0 }}">
-                                <span class="badge rounded-pill bg-danger ms-auto">{{ @jumlah_notif_po_selulosa }}</span>
-                            </check>
+                        <a class="sidebar-link {{ @active_menu == 'master_tim_pelaksana_selulosa' ? 'active' : '' }}" href="{{ @BASE }}/master-tim-pelaksana/selulosa" title="Tim Pelaksana Selulosa">
+                            <i class="bi bi-people"></i> <span>Tim Pelaksana Selulosa</span>
                         </a>
                     </li>
                     </check>
+
                 </check>
 
                 <!-- 2. PELAKSANAAN TEKNIS -->
@@ -2767,6 +2791,81 @@
             }
         });
     </script>
+
+    <!-- [BARU] Web Push Notification (desktop) -- revisi PO dari Keuangan ke Ketua
+         Pelaksana. Cuma didaftarkan buat Tim Kerja & Superadmin (buat testing), sisi
+         Keuangan gak perlu dengerin notif ini. TIDAK lewat email atau WhatsApp. -->
+    <check if="{{ @is_superadmin || @is_tim_kerja }}">
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+                return; // browser ini gak dukung Web Push
+            }
+
+            var OPTI_BASE = '{{ @BASE }}';
+            var VAPID_PUBLIC_KEY = '{{ @vapid_public_key }}';
+
+            function keyKeUint8Array(base64String) {
+                var padding = '='.repeat((4 - base64String.length % 4) % 4);
+                var base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+                var rawData = window.atob(base64);
+                var outputArray = new Uint8Array(rawData.length);
+                for (var i = 0; i < rawData.length; i++) {
+                    outputArray[i] = rawData.charCodeAt(i);
+                }
+                return outputArray;
+            }
+
+            function daftarPush(registration) {
+                if (!VAPID_PUBLIC_KEY) { return; }
+                registration.pushManager.getSubscription().then(function (existing) {
+                    if (existing) { return; } // udah pernah daftar di browser ini
+
+                    registration.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: keyKeUint8Array(VAPID_PUBLIC_KEY)
+                    }).then(function (sub) {
+                        var fd = new FormData();
+                        fd.append('csrf_token', '{{ @csrf_token }}');
+                        fd.append('subscription', JSON.stringify(sub));
+                        fetch(OPTI_BASE + '/push/subscribe', { method: 'POST', body: fd, credentials: 'include' });
+                    }).catch(function () {
+                        // izin browser ditolak atau gagal daftar -- biarin, gak ganggu alur aplikasi
+                    });
+                });
+            }
+
+            // [PENTING] Path Service Worker SENGAJA tanpa ekstensi ".js" -- lihat
+            // catatan di index.php soal kenapa "/sw.js" gak bisa dipakai di PHP
+            // built-in dev server. Browser tetap mau daftar Service Worker dari
+            // path tanpa ekstensi, asal Content-Type-nya benar dari server.
+            navigator.serviceWorker.register(OPTI_BASE + '/service-worker').then(function (registration) {
+                if (Notification.permission === 'granted') {
+                    daftarPush(registration);
+                } else if (Notification.permission !== 'denied') {
+                    // Minta izin notifikasi browser pas pengguna pertama kali interaksi di
+                    // halaman (klik lonceng atau di mana aja), biar gak muncul popup izin
+                    // mendadak pas halaman baru kebuka.
+                    var sudahDitanya = false;
+                    var mintaIzin = function () {
+                        if (sudahDitanya) { return; }
+                        sudahDitanya = true;
+                        Notification.requestPermission().then(function (perm) {
+                            if (perm === 'granted') { daftarPush(registration); }
+                        });
+                    };
+                    var lonceng = document.getElementById('notifBellBtn');
+                    if (lonceng) {
+                        lonceng.addEventListener('click', mintaIzin, { once: true });
+                    }
+                    document.addEventListener('click', mintaIzin, { once: true });
+                }
+            }).catch(function () {
+                // registrasi Service Worker gagal (mis. browser lama) -- aplikasi tetap jalan normal
+            });
+        });
+    </script>
+    </check>
 
     <style>
         /* Modern Role Badge System for Global Use */

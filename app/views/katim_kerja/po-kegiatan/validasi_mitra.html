@@ -37,15 +37,27 @@
     .dpo-tanggal { font-size: .78rem; color: var(--dpo-muted); }
     .dpo-tanggal b { color: var(--dpo-text); }
     
+    .dpo-desk { border: 1px solid var(--dpo-border); border-radius: var(--dpo-radius); overflow: hidden; }
     table.dpo-table { width: 100%; border-collapse: collapse; border: 0; }
-    .dpo-table th { text-align: left; font-size: .68rem; text-transform: uppercase; color: var(--dpo-muted); font-weight: 700; padding: 0 10px 10px; border-bottom: 1px solid var(--dpo-border); }
-    .dpo-table td { padding: 12px 10px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; font-size: .82rem; }
-    .dpo-table tr:last-child td { border-bottom: 0; }
-    .dpo-table tbody tr:hover { background: #fcfcfd; }
-    .dpo-no { font-family: 'Courier New', monospace; font-weight: 700; font-size: .8rem; }
-    .dpo-sub { font-size: .72rem; color: var(--dpo-muted); }
+    .dpo-table thead th {
+        text-align: left; font-size: .68rem; text-transform: uppercase; letter-spacing: .03em;
+        color: var(--dpo-muted); font-weight: 700; padding: 11px 16px; background: #f8fafc;
+        border-bottom: 1px solid var(--dpo-border); white-space: nowrap;
+    }
+    .dpo-table td { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; font-size: .82rem; }
+    .dpo-table tbody tr:last-child td { border-bottom: 0; }
+    .dpo-table tbody tr:hover { background: #f8fafc; }
+    /* [BARU] Garis halus vertikal antar kolom biar tabelnya kebaca kayak grid, bukan cuma garis horizontal doang. */
+    .dpo-table th:not(:last-child), .dpo-table td:not(:last-child) { border-right: 1px solid #f1f5f9; }
+    .dpo-table th.dpo-col-aksi, .dpo-table td.dpo-col-aksi { width: 132px; text-align: right; }
+    .dpo-table th.dpo-col-mid, .dpo-table td.dpo-col-mid { width: 170px; }
+    .dpo-table th.dpo-col-no, .dpo-table td.dpo-col-no { width: 180px; }
+    .dpo-table th.dpo-col-urut, .dpo-table td.dpo-col-urut { width: 44px; text-align: center; color: var(--dpo-muted); }
+    .dpo-table th.dpo-col-mitra, .dpo-table td.dpo-col-mitra { width: 160px; }
+    .dpo-no { font-family: 'Courier New', monospace; font-weight: 700; font-size: .8rem; letter-spacing: .01em; }
+    .dpo-sub { font-size: .72rem; color: var(--dpo-muted); margin-top: 2px; }
     .dpo-mitra { font-weight: 600; }
-    .dpo-judul { font-size: .8rem; color: var(--dpo-muted); max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dpo-judul { font-size: .8rem; color: var(--dpo-muted); max-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
     .dpo-pill { font-size: .68rem; font-weight: 700; padding: 3px 9px; border-radius: 20px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; border: 1px solid transparent; margin: 1px 3px 1px 0; }
     .dpo-pill.emerald { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
     .dpo-pill.amber { background: #fffbeb; color: #b45309; border-color: #fde68a; }
@@ -147,9 +159,32 @@
             </div>
         </div>
     
+        <!-- [BARU] Modal preview PO -- pakai fragment HTML yang sama kayak "Review PO"
+             di halaman Daftar PO (bukan cetak PDF, soalnya PO belum tentu punya file
+             PDF jadi -- ini di-generate dari data langsung). Cuma buat dilihat, jadi
+             aksinya cuma Tutup. -->
+        <div class="modal fade" id="modalPreviewPoFile" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+                <div class="modal-content border-0 shadow-lg">
+                    <div class="modal-header">
+                        <h6 class="modal-title fw-bold"><i class="bi bi-file-earmark-pdf text-primary me-2"></i>File PO</h6>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                    </div>
+                    <div class="modal-body p-0" style="background:#e9ecef;">
+                        <div id="dpoPreviewPoBody" class="p-3">
+                            <div class="dpo-loading"><i class="bi bi-hourglass-split d-block mb-1" style="font-size:22px;"></i>Memuat PO...</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer justify-content-center">
+                        <button type="button" class="btn btn-white btn-sm" data-bs-dismiss="modal">Tutup</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="dpo-toast" id="dpoToast" role="status"></div>
     </div>
-    
+
     <script>
     (function () {
         var BASE = '{{ @BASE }}';
@@ -241,12 +276,14 @@
                 return;
             }
 
-            var tabel = '<div class="dpo-desk"><table class="dpo-table"><thead><tr><th style="width:150px;">Nomor PO</th><th>Mitra dan kegiatan</th><th>Status bayar</th><th></th></tr></thead><tbody>' +
-                rows.map(function (p) {
-                    return '<tr><td><div class="dpo-no">' + esc(p.nomor) + '</div><div class="dpo-sub">' + esc(p.order) + ' &middot; Dikirim ' + tglSingkat(p.dikirim) + '</div></td>' +
-                        '<td><div class="dpo-mitra">' + esc(p.mitra) + '</div><div class="dpo-judul">' + esc(p.judul) + '</div></td>' +
-                        '<td>' + pillsFor(p) + '</td>' +
-                        '<td><button type="button" class="btn btn-primary btn-sm" data-buka="' + p.id + '"><i class="bi bi-search me-1"></i>Review</button></td></tr>';
+            var tabel = '<div class="dpo-desk"><table class="dpo-table"><thead><tr><th class="dpo-col-urut">No</th><th class="dpo-col-no">No PO</th><th class="dpo-col-mitra">Mitra</th><th>Kegiatan</th><th class="dpo-col-mid">Status bayar</th><th class="dpo-col-aksi">Aksi</th></tr></thead><tbody>' +
+                rows.map(function (p, idx) {
+                    return '<tr><td class="dpo-col-urut">' + (idx + 1) + '</td>' +
+                        '<td class="dpo-col-no"><div class="dpo-no">' + esc(p.nomor) + '</div><div class="dpo-sub">' + esc(p.order) + ' &middot; Dikirim ' + tglSingkat(p.dikirim) + '</div></td>' +
+                        '<td class="dpo-col-mitra"><div class="dpo-mitra">' + esc(p.mitra) + '</div></td>' +
+                        '<td><div class="dpo-judul">' + esc(p.judul) + '</div></td>' +
+                        '<td class="dpo-col-mid">' + pillsFor(p) + '</td>' +
+                        '<td class="dpo-col-aksi"><button type="button" class="btn btn-primary btn-sm" data-buka="' + p.id + '"><i class="bi bi-search me-1"></i>Review</button></td></tr>';
                 }).join('') + '</tbody></table></div>';
 
             var kartu = '<div class="dpo-mob">' + rows.map(function (p) {
@@ -265,13 +302,15 @@
                 return;
             }
 
-            var tabel = '<div class="dpo-desk"><table class="dpo-table"><thead><tr><th style="width:150px;">Nomor PO</th><th>Mitra dan kegiatan</th><th>Divisi</th><th>Disetujui</th><th></th></tr></thead><tbody>' +
-                rows.map(function (p) {
-                    return '<tr><td><div class="dpo-no">' + esc(p.nomor) + '</div><div class="dpo-sub">' + esc(p.order) + '</div></td>' +
-                        '<td><div class="dpo-mitra">' + esc(p.mitra) + '</div><div class="dpo-judul">' + esc(p.judul) + '</div></td>' +
-                        '<td>' + divisiPill(p.divisi) + '</td>' +
-                        '<td><div class="dpo-tanggal"><b>' + tglSingkat(p.tanggal) + '</b></div></td>' +
-                        '<td><button type="button" class="btn btn-white btn-sm" data-buka="' + p.id + '"><i class="bi bi-eye me-1"></i>Lihat</button></td></tr>';
+            var tabel = '<div class="dpo-desk"><table class="dpo-table"><thead><tr><th class="dpo-col-urut">No</th><th class="dpo-col-no">No PO</th><th class="dpo-col-mitra">Mitra</th><th>Kegiatan</th><th class="dpo-col-mid">Divisi</th><th class="dpo-col-mid">Disetujui</th><th class="dpo-col-aksi">Aksi</th></tr></thead><tbody>' +
+                rows.map(function (p, idx) {
+                    return '<tr><td class="dpo-col-urut">' + (idx + 1) + '</td>' +
+                        '<td class="dpo-col-no"><div class="dpo-no">' + esc(p.nomor) + '</div><div class="dpo-sub">' + esc(p.order) + '</div></td>' +
+                        '<td class="dpo-col-mitra"><div class="dpo-mitra">' + esc(p.mitra) + '</div></td>' +
+                        '<td><div class="dpo-judul">' + esc(p.judul) + '</div></td>' +
+                        '<td class="dpo-col-mid">' + divisiPill(p.divisi) + '</td>' +
+                        '<td class="dpo-col-mid"><div class="dpo-tanggal"><b>' + tglSingkat(p.tanggal) + '</b></div></td>' +
+                        '<td class="dpo-col-aksi"><button type="button" class="btn btn-white btn-sm" data-buka="' + p.id + '"><i class="bi bi-eye me-1"></i>Lihat</button></td></tr>';
                 }).join('') + '</tbody></table></div>';
 
             var kartu = '<div class="dpo-mob">' + rows.map(function (p) {
@@ -312,7 +351,13 @@
                 '<div class="dpo-stat"><div class="l">Total terbayar</div><div class="v ' + (j.lunas ? 'ok' : 'warn') + '">' + rp(j.total_terbayar) + '</div></div>' +
                 '</div>';
     
-            var kat = '<div class="dpo-cat"><div class="dpo-cat-top"><div class="dpo-cat-ic"><i class="bi bi-file-earmark-text"></i></div><div class="dpo-cat-label">Surat Kesanggupan Bayar</div>' +
+            // [BARU] Lihat isi PO-nya sendiri -- PO gak selalu punya file PDF jadi,
+            // jadi dipakein fragment preview yang sama kayak "Review PO" di halaman
+            // Daftar PO (digenerate dari data, bukan dari file).
+            var kat = '<div class="dpo-cat"><div class="dpo-cat-top"><div class="dpo-cat-ic"><i class="bi bi-file-earmark-pdf"></i></div><div class="dpo-cat-label">File PO</div>' +
+                '<button type="button" class="btn btn-white btn-sm" data-preview-po="' + j.po.id + '"><i class="bi bi-eye me-1"></i>Lihat file PO</button>' + '</div></div>';
+
+            kat += '<div class="dpo-cat"><div class="dpo-cat-top"><div class="dpo-cat-ic"><i class="bi bi-file-earmark-text"></i></div><div class="dpo-cat-label">Surat Kesanggupan Bayar</div>' +
                 (j.kesanggupan.ada ? '<a class="btn btn-white btn-sm" href="' + j.kesanggupan.url + '" target="_blank" rel="noopener"><i class="bi bi-eye me-1"></i>Lihat file</a>' : '<span class="dpo-cat-kosong">Tidak ada</span>') + '</div></div>';
     
             kat += '<div class="dpo-cat"><div class="dpo-cat-top"><div class="dpo-cat-ic"><i class="bi bi-receipt"></i></div><div class="dpo-cat-label">Bukti Pembayaran</div>' +
@@ -327,7 +372,7 @@
     
             var gate;
             if (j.po.sudah_disetujui) {
-                gate = '<div class="dpo-gate ok"><i class="bi bi-check2-circle"></i><span>PO ini sudah divalidasi &amp; didisposisikan ke Humas.</span></div>';
+                gate = '<div class="dpo-gate ok"><i class="bi bi-check2-circle"></i><span>PO ini sudah divalidasi &amp; didisposisikan ke Keuangan.</span></div>';
             } else {
                 gate = j.bisa_validasi
                     ? '<div class="dpo-gate ok"><i class="bi bi-check-circle"></i><span>Syarat terpenuhi. PO ini bisa divalidasi.</span></div>'
@@ -366,6 +411,18 @@
             toastTimer = setTimeout(function () { t.classList.remove('show'); }, galat ? 6000 : 4000);
         }
     
+        function bukaPreviewPoFile(id) {
+            var body = $('dpoPreviewPoBody');
+            body.innerHTML = '<div class="dpo-loading"><i class="bi bi-hourglass-split d-block mb-1" style="font-size:22px;"></i>Memuat PO...</div>';
+            bootstrap.Modal.getOrCreateInstance($('modalPreviewPoFile')).show();
+            fetch(BASE + '/po-kegiatan/' + id + '/preview', { credentials: 'same-origin' })
+                .then(function (res) { if (!res.ok) throw new Error('Gagal memuat PO'); return res.text(); })
+                .then(function (html) { body.innerHTML = html; })
+                .catch(function () {
+                    body.innerHTML = '<div class="text-center text-danger py-5"><i class="bi bi-exclamation-triangle d-block mb-1" style="font-size:22px;"></i>Gagal memuat data PO.</div>';
+                });
+        }
+
         document.addEventListener('click', function (e) {
             var el = e.target.closest('[data-buka]');
             if (el) { bukaModal(el.getAttribute('data-buka')); return; }
@@ -374,7 +431,10 @@
                 tab = tabBtn.getAttribute('data-tab');
                 document.querySelectorAll('#dpoTabs .dpo-tab').forEach(function (b) { b.classList.toggle('active', b === tabBtn); });
                 render();
+                return;
             }
+            var previewBtn = e.target.closest('[data-preview-po]');
+            if (previewBtn) { bukaPreviewPoFile(previewBtn.getAttribute('data-preview-po')); }
         });
         $('dpoSearch').addEventListener('input', function () { q = this.value.trim().toLowerCase(); render(); });
         $('dpoDivisi').addEventListener('change', function () { divisi = this.value; render(); });
@@ -389,20 +449,20 @@
                 .catch(function (e) { toast(e.message, true); });
         });
     
-        $('dvValidasi').addEventListener('click', function () {
-            if (!current) { return; }
-            if (!window.confirm('Validasi PO ini dan disposisikan ke Humas? PO akan terkunci setelah divalidasi.')) { return; }
+        // [BARU] Popup konfirmasi validasi disamain kayak popup "Disposisi ke Tim
+        // Keuangan" di halaman Detail Order (SweetAlert2), bukan window.confirm()
+        // bawaan browser lagi -- jatuh balik ke confirm() biasa kalau SweetAlert2
+        // kebetulan belum/gagal kemuat.
+        function jalankanValidasi(btn) {
             var catatan = $('dvCatatan') ? $('dvCatatan').value : '';
-            var btn = this;
             btn.disabled = true;
             post(BASE + '/po-kegiatan/' + current + '/validasi', { catatan: catatan }).then(function () {
                 // [BARU] Begitu divalidasi, PO-nya pindah dari tab "Perlu Divalidasi"
                 // ke tab "Sudah Disetujui" tanpa perlu reload halaman -- tanggalnya
                 // dicatet pakai waktu sekarang di browser (hampir pasti sama kayak
                 // NOW() di server).
-                var idx = -1;
-                DATA_PERLU = DATA_PERLU.filter(function (p, i) { if (p.id == current) { idx = i; return false; } return true; });
-                var lama = idx >= 0 ? DATA_PERLU[idx] : null;
+                var lama = DATA_PERLU.find(function (p) { return p.id == current; }) || null;
+                DATA_PERLU = DATA_PERLU.filter(function (p) { return p.id != current; });
                 var sekarang = new Date();
                 DATA_DISETUJUI.unshift({
                     id: Number(current),
@@ -420,11 +480,42 @@
                 isiOpsiFilter();
                 render();
                 bootstrap.Modal.getOrCreateInstance($('modalValidasi')).hide();
-                toast('PO berhasil divalidasi dan didisposisikan ke Humas.');
+                toast('PO berhasil divalidasi dan didisposisikan ke Keuangan.');
             }).catch(function (e) {
                 toast(e.message, true);
                 btn.disabled = false;
             });
+        }
+
+        $('dvValidasi').addEventListener('click', function () {
+            if (!current) { return; }
+            var btn = this;
+
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Validasi PO ini?',
+                    text: 'PO akan ditandai disetujui dan didisposisikan ke Keuangan. PO akan terkunci setelah divalidasi.',
+                    icon: 'question',
+                    iconColor: '#0f172a',
+                    background: '#ffffff',
+                    showCancelButton: true,
+                    confirmButtonText: '<i class="bi bi-check2-circle me-1"></i> Ya, Validasi dan disposisikan',
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true,
+                    customClass: {
+                        popup: 'bg-white rounded-3 shadow border p-4',
+                        title: 'fw-bold text-dark fs-6 mb-1',
+                        htmlContainer: 'text-muted small mb-3',
+                        confirmButton: 'btn btn-dark btn-sm px-3 py-1.5 fw-semibold',
+                        cancelButton: 'btn btn-outline-secondary btn-sm px-3 py-1.5 me-2'
+                    },
+                    buttonsStyling: false
+                }).then(function (result) {
+                    if (result.isConfirmed) { jalankanValidasi(btn); }
+                });
+            } else if (window.confirm('Validasi PO ini dan disposisikan ke Keuangan? PO akan terkunci setelah divalidasi.')) {
+                jalankanValidasi(btn);
+            }
         });
 
         isiOpsiFilter();

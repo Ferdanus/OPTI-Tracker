@@ -65,6 +65,8 @@
                                 <check if="{{ !@p.po_id }}"><span class="badge badge-pill-secondary">Menunggu PO</span></check>
                                 <check if="{{ @p.po_id && @p.po_status == 'draft' }}"><span class="badge badge-pill-secondary">Draft</span></check>
                                 <check if="{{ @p.po_id && @p.po_status == 'terkirim' }}"><span class="badge badge-pill-success">Terkirim</span></check>
+                                <check if="{{ @p.po_id && @p.po_status == 'disetujui_mitra' }}"><span class="badge badge-pill-success">Disetujui Mitra</span></check>
+                                <check if="{{ @p.po_id && @p.po_status == 'disetujui' }}"><span class="badge badge-pill-success">Disetujui</span></check>
                             </td>
                             <td class="text-center">
                                 <div class="d-inline-flex align-items-center gap-1">

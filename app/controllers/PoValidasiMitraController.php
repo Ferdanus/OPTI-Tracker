@@ -1,24 +1,33 @@
 <?php
 /**
- * PoValidasiKeuanganController
+ * PoValidasiMitraController
  *
- * PO yang sudah terkirim (status = 'terkirim') langsung masuk ke sini -- TIDAK lewat approval
- * Ketua Tim lagi. Tim Mitra mengecek bukti pembayaran order terkait (surat kesanggupan bayar
- * dan/atau bukti transfer per termin), menulis catatan, lalu memvalidasi.
+ * PO yang sudah terkirim (status = 'terkirim') masuk ke sini -- TIDAK lewat approval
+ * Ketua Tim lagi. Tim Mitra mengecek bukti pembayaran order terkait (surat kesanggupan
+ * bayar dan/atau bukti transfer per termin), menulis catatan, lalu memvalidasi.
  *
  * Tombol Validasi hanya aktif kalau order-nya SUDAH LUNAS atau PUNYA surat kesanggupan bayar.
- * Validasi menyetel status_review='disetujui' + disposisi_humas_at -- field yang SAMA dipakai
- * PksKontrakController, jadi begitu divalidasi, PO otomatis muncul di halaman Kontrak Humas
- * tanpa controller itu perlu diubah. PO juga otomatis terkunci dari edit (guard sudah ada
- * di PoKegiatanController berdasarkan status_review).
  *
- *   GET  /po-kegiatan/validasi-keuangan        index: daftar PO terkirim yang belum divalidasi
+ * Halaman ini punya 2 tab:
+ *   - "Perlu Divalidasi"  -> PO dengan status = 'terkirim' (belum divalidasi Tim Mitra).
+ *   - "Sudah Disetujui"   -> PO dengan status = 'disetujui_mitra', dikelompokkan per
+ *                            bulan+tahun dari tervalidasi_mitra_at (default bulan berjalan,
+ *                            bulan lain bisa dibuka lewat filter bulan/tahun atau search).
+ *
+ * [PENTING] Validasi di sini HANYA mengubah status PO (terkirim -> disetujui_mitra) +
+ * tervalidasi_mitra_at/tervalidasi_mitra_by. Field status_review & disposisi_humas_at
+ * SENGAJA tidak disentuh (tetap NULL/apa adanya) karena alur PO ini TIDAK melalui
+ * disposisi Humas -- beda dengan alur PksKontrakController yang baca status_review /
+ * disposisi_humas_at untuk PO lain. Jadi PO yang divalidasi lewat halaman ini TIDAK
+ * akan otomatis muncul di halaman Kontrak Humas.
+ *
+ *   GET  /po-kegiatan/validasi-mitra           index: 2 tab (perlu divalidasi / sudah disetujui)
  *   GET  /po-kegiatan/@id/validasi-detail      JSON: info pembayaran order + dokumen + catatan
  *   POST /po-kegiatan/@id/catatan              simpan catatan saja (tanpa validasi)
- *   POST /po-kegiatan/@id/validasi              validasi -> disetujui + disposisi ke Humas
+ *   POST /po-kegiatan/@id/validasi             validasi -> status jadi disetujui_mitra
  *
  * Akses: Tim Mitra (tim_mitra_industri / admin_order / tim_mitra / ketua_tim_mitra) + Superadmin.
- * Kompatibel PHP 7.2. Butuh migration_po_validasi_keuangan.sql.
+ * Kompatibel PHP 7.2.
  */
 class PoValidasiMitraController extends Controller {
 
@@ -26,15 +35,18 @@ class PoValidasiMitraController extends Controller {
      * HALAMAN
      * ============================================================ */
 
-    /** GET /po-kegiatan/validasi-keuangan */
+    /** GET /po-kegiatan/validasi-mitra */
     public function index($f3) {
         $this->izinkan();
+        $this->ensureSchemaStatusMitra();
 
         $errorMessage = null;
+
+        // Tab 1: "Perlu Divalidasi" -- PO yang sudah terkirim tapi belum divalidasi Tim Mitra.
         $daftar = [];
         try {
             $rows = $this->db->exec(
-                "SELECT p.id, p.nomor_po, p.status_review, p.created_at, p.updated_at,
+                "SELECT p.id, p.nomor_po, p.created_at, p.updated_at,
                         o.id AS order_id, o.nomor_order, o.judul_kegiatan, o.jenis_layanan_opti, o.estimasi_biaya,
                         c.nmcustomer, c.pt_cv,
                         sp.nominal_penawaran, sp.surat_kesanggupan_bayar,
@@ -46,15 +58,14 @@ class PoValidasiMitraController extends Controller {
                  JOIN order_layanan o ON o.id = p.order_id
                  JOIN tb_customer c ON c.id_customer = o.id_customer
                  LEFT JOIN tb_surat_penawaran sp ON sp.order_id = o.id AND sp.status_respon_klien = 'deal'
-                 WHERE p.status = 'terkirim' AND p.status_review <> 'disetujui'
+                 WHERE p.status = 'terkirim'
                  ORDER BY p.created_at DESC"
             );
         } catch (\Exception $e) {
             $rows = [];
-            $errorMessage = 'Gagal memuat daftar: ' . $e->getMessage() . ' (sudah menjalankan migration_po_validasi_keuangan.sql?)';
+            $errorMessage = 'Gagal memuat daftar: ' . $e->getMessage();
         }
 
-        $daftar = [];
         foreach ($rows as $r) {
             $nilai = !empty($r['nominal_penawaran']) ? (float) $r['nominal_penawaran'] : (float) $r['estimasi_biaya'];
             $terbayar = (float) $r['total_terbayar'];
@@ -73,21 +84,19 @@ class PoValidasiMitraController extends Controller {
                 'lunas'              => $lunas,
                 'punya_kesanggupan'  => $punyaKesanggupan,
                 'bisa_validasi'      => $lunas || $punyaKesanggupan,
-                'status_review'      => (string) $r['status_review'],
-                'dikirim'            => substr((string) $r['updated_at'] ?: $r['created_at'], 0, 10),
+                'dikirim'            => substr((string) ($r['updated_at'] ?: $r['created_at']), 0, 10),
                 'tanggal_bayar'      => $r['tanggal_bayar_terakhir'],
             ];
         }
 
-        // [BARU] Tab ke-2 "Sudah Disetujui" -- PO yang udah divalidasi Tim Mitra.
-        // Dikelompokkan per bulan+tahun dari tervalidasi_mitra_at (selalu keisi
-        // bareng status_review='disetujui', lihat validasi() di bawah), biar
-        // frontend bisa nampilin cuma bulan berjalan secara default & browsing
-        // bulan lain lewat filter bulan/tahun atau pencarian.
+        // Tab 2: "Sudah Disetujui" -- PO yang udah divalidasi Tim Mitra.
+        // Dikelompokkan per bulan+tahun dari tervalidasi_mitra_at, biar frontend bisa
+        // nampilin cuma bulan berjalan secara default & browsing bulan lain lewat
+        // filter bulan/tahun atau pencarian.
         $daftarDisetujui = [];
         try {
             $rowsDisetujui = $this->db->exec(
-                "SELECT p.id, p.nomor_po, p.catatan_tim_mitra, p.tervalidasi_mitra_at, p.disposisi_humas_at,
+                "SELECT p.id, p.nomor_po, p.catatan_tim_mitra, p.tervalidasi_mitra_at,
                         o.nomor_order, o.judul_kegiatan, o.jenis_layanan_opti, o.estimasi_biaya,
                         c.nmcustomer, c.pt_cv,
                         sp.nominal_penawaran
@@ -95,30 +104,28 @@ class PoValidasiMitraController extends Controller {
                  JOIN order_layanan o ON o.id = p.order_id
                  JOIN tb_customer c ON c.id_customer = o.id_customer
                  LEFT JOIN tb_surat_penawaran sp ON sp.order_id = o.id AND sp.status_respon_klien = 'deal'
-                 WHERE p.status_review = 'disetujui'
+                 WHERE p.status = 'disetujui_mitra'
                  ORDER BY p.tervalidasi_mitra_at DESC"
             );
         } catch (\Exception $e) {
             $rowsDisetujui = [];
         }
-
         foreach ($rowsDisetujui as $r) {
             $nilai = !empty($r['nominal_penawaran']) ? (float) $r['nominal_penawaran'] : (float) $r['estimasi_biaya'];
-            $tglValidasi = (string) ($r['tervalidasi_mitra_at'] ?: $r['disposisi_humas_at'] ?: '');
+            $tglValidasi = (string) ($r['tervalidasi_mitra_at'] ?? '');
             $ts = $tglValidasi !== '' ? strtotime($tglValidasi) : false;
-
             $daftarDisetujui[] = [
-                'id'       => (int) $r['id'],
-                'nomor'    => (string) $r['nomor_po'],
-                'order'    => (string) $r['nomor_order'],
-                'mitra'    => $this->formatMitra($r['nmcustomer'], $r['pt_cv']),
-                'judul'    => (string) $r['judul_kegiatan'],
-                'divisi'   => (string) $r['jenis_layanan_opti'],
-                'nilai'    => $nilai,
-                'catatan'  => (string) ($r['catatan_tim_mitra'] ?? ''),
-                'tanggal'  => $tglValidasi !== '' ? substr($tglValidasi, 0, 10) : null,
-                'bulan'    => $ts ? (int) date('n', $ts) : null,
-                'tahun'    => $ts ? (int) date('Y', $ts) : null,
+                'id'      => (int) $r['id'],
+                'nomor'   => (string) $r['nomor_po'],
+                'order'   => (string) $r['nomor_order'],
+                'mitra'   => $this->formatMitra($r['nmcustomer'], $r['pt_cv']),
+                'judul'   => (string) $r['judul_kegiatan'],
+                'divisi'  => (string) $r['jenis_layanan_opti'],
+                'nilai'   => $nilai,
+                'catatan' => (string) ($r['catatan_tim_mitra'] ?? ''),
+                'tanggal' => $tglValidasi !== '' ? substr($tglValidasi, 0, 10) : null,
+                'bulan'   => $ts ? (int) date('n', $ts) : null,
+                'tahun'   => $ts ? (int) date('Y', $ts) : null,
             ];
         }
 
@@ -127,7 +134,7 @@ class PoValidasiMitraController extends Controller {
         $f3->set('bulan_ini', (int) date('n'));
         $f3->set('tahun_ini', (int) date('Y'));
         $f3->set('error_message', $errorMessage);
-        $this->render('katim_kerja/po-kegiatan/validasi_mitra.html', 'Validasi Pembayaran PO', 'po_validasi_keuangan');
+        $this->render('katim_kerja/po-kegiatan/validasi_mitra.html', 'Validasi Mitra', 'po_validasi_mitra');
     }
 
     /* ============================================================
@@ -173,7 +180,7 @@ class PoValidasiMitraController extends Controller {
                 'id' => (int) $po['id'],
                 'nomor' => (string) $po['nomor_po'],
                 'catatan' => (string) ($po['catatan_tim_mitra'] ?? ''),
-                'sudah_disetujui' => $po['status_review'] === 'disetujui',
+                'sudah_disetujui' => $po['status'] === 'disetujui_mitra',
             ],
             'order' => ['nomor' => (string) $order['nomor_order'], 'judul' => (string) $order['judul_kegiatan']],
             'nilai' => $nilai,
@@ -206,7 +213,7 @@ class PoValidasiMitraController extends Controller {
         list($po, $order) = $this->akses((int) $params['id']);
         $uid = (int) $this->getUserId();
 
-        if ($po['status_review'] === 'disetujui') {
+        if ($po['status'] === 'disetujui_mitra') {
             $this->keluarkanJson(['ok' => false, 'pesan' => 'PO ini sudah divalidasi sebelumnya.'], 422);
         }
 
@@ -231,14 +238,17 @@ class PoValidasiMitraController extends Controller {
 
         $catatan = trim((string) $f3->get('POST.catatan'));
 
+        // [PENTING] status -> 'disetujui_mitra' (bukan status_review), dan
+        // disposisi_humas_at SENGAJA TIDAK disentuh (tetap NULL) -- alur PO ini
+        // gak ada bagian Humas mendisposisi.
         try {
             $this->db->exec(
                 "UPDATE po_kegiatan
-                    SET status_review = 'disetujui', disposisi_humas_at = NOW(),
+                    SET status = 'disetujui_mitra',
                         tervalidasi_mitra_at = NOW(), tervalidasi_mitra_by = ?,
                         catatan_tim_mitra = ?,
                         reviewed_at = COALESCE(reviewed_at, NOW()), reviewed_by = COALESCE(reviewed_by, ?)
-                  WHERE id = ? AND status_review <> 'disetujui'",
+                  WHERE id = ? AND status = 'terkirim'",
                 [1 => $uid, 2 => $catatan, 3 => $uid, 4 => (int) $po['id']]
             );
         } catch (\Exception $e) {
@@ -248,7 +258,7 @@ class PoValidasiMitraController extends Controller {
         // catatan sistem di thread PO (kalau tabel po_chat ada) -- biar pembuat PO (tim_kerja) kebagian notifikasi
         if (class_exists('PoReviewController')) {
             try {
-                \PoReviewController::catatPesanSistem($this->db, (int) $po['id'], $uid, 'katim', 'PO divalidasi Tim Mitra (pembayaran OK) dan didisposisikan ke Humas.');
+                \PoReviewController::catatPesanSistem($this->db, (int) $po['id'], $uid, 'katim', 'PO divalidasi Tim Mitra (pembayaran OK).');
             } catch (\Exception $e) {}
         }
 
@@ -259,10 +269,36 @@ class PoValidasiMitraController extends Controller {
      * HELPER
      * ============================================================ */
 
+    /**
+     * [FIX] Kolom po_kegiatan.status di beberapa server masih ENUM('draft','kirim')
+     * (skema lama) padahal kode di sini pakai nilai 'terkirim'/'disetujui_mitra'.
+     * Lebar-in jadi VARCHAR biar nilai baru 'disetujui_mitra' gak ditolak / ke-coerce
+     * jadi string kosong oleh MySQL. Pola sama kayak ensureSchemaNomorPo() di
+     * PoKegiatanController, jadi gak perlu migrasi manual di server produksi.
+     */
+    protected function ensureSchemaStatusMitra(): void {
+        static $done = false;
+        if ($done) return;
+        try {
+            $cols = $this->db->exec("SHOW COLUMNS FROM po_kegiatan LIKE 'status'");
+            if (!empty($cols)) {
+                $type = strtolower((string) $cols[0]['Type']);
+                $perluWiden = strpos($type, 'enum') !== false && strpos($type, 'disetujui_mitra') === false;
+                if ($perluWiden) {
+                    $this->db->exec("ALTER TABLE po_kegiatan MODIFY COLUMN status VARCHAR(30) NOT NULL DEFAULT 'draft'");
+                }
+            }
+        } catch (\Exception $e) {
+            // biarin -- kalau gagal alter (misal gak ada izin DDL), query tetap
+            // dicoba jalan apa adanya, cuma gak self-healing.
+        }
+        $done = true;
+    }
+
     protected function ambilPo($poId) {
         if ($poId <= 0) { return null; }
         $rows = $this->safeExec(
-            "SELECT p.id, p.nomor_po, p.status, p.status_review, p.catatan_tim_mitra, p.order_id
+            "SELECT p.id, p.nomor_po, p.status, p.catatan_tim_mitra, p.order_id
              FROM po_kegiatan p WHERE p.id = ? LIMIT 1",
             [1 => $poId]
         );
@@ -280,6 +316,7 @@ class PoValidasiMitraController extends Controller {
     /** Wajib login + role Tim Mitra/Superadmin + PO & order valid. Return [$po, $order] atau langsung jawab JSON error. */
     protected function akses($poId) {
         $this->izinkan(true);
+        $this->ensureSchemaStatusMitra();
         $po = $this->ambilPo($poId);
         if (!$po) { $this->keluarkanJson(['ok' => false, 'pesan' => 'PO tidak ditemukan.'], 404); }
         $order = $this->ambilOrder($po['order_id']);

@@ -80,6 +80,7 @@
     <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
     <input type="hidden" name="order_id" value="{{ @po ? @po.order_id : @order.id }}">
     <input type="hidden" name="aksi" id="inputAksi" value="draft">
+    <input type="hidden" name="dari" value="{{ @dari }}">
     <div id="jadwalHiddenInputs"></div>
 
     <!-- ======================================================== -->
@@ -460,6 +461,11 @@ function rupiah(n) { return 'Rp ' + (Math.round(n) || 0).toLocaleString('id-ID')
 /* Data dari server (null saat create, objek PO saat edit) */
 var poData = {{ @po_json | raw }};
 var daftarPegawai = {{ json_encode(@daftar_pegawai ?: []) }};
+/* [BARU] Data Master Tim Pelaksana (per divisi) -- dipakai buat ngisi dropdown Nama
+   di bagian Tim Pelaksana, plus auto-isi Tugas/Tanggung Jawab begitu nama dipilih. */
+var daftarMasterPelaksana = {{ @daftar_master_pelaksana_json | raw }};
+var petaTugasPelaksana = {};
+(daftarMasterPelaksana || []).forEach(function (p) { petaTugasPelaksana[String(p.nama)] = p.tugas_tanggung_jawab; });
 var estimasiBiayaAwal = {{ @order.estimasi_biaya ?: 0 }};
 var divisiOrder = {{ json_encode(@order.jenis_layanan_opti ?: '') }};
 // [BARU] RAB berjenjang (Kegiatan -> Lokasi/Kelompok -> Item) dipakai buat lingkungan DAN
@@ -728,8 +734,20 @@ function hitungKebutuhanLive() {
 
 
 /* ============================================================ */
-/* 4. TIM PELAKSANA (dropdown pegawai, searchable via Tom Select) */
+/* 4. TIM PELAKSANA (dropdown dari Data Master Tim Pelaksana per   */
+/*    divisi, searchable via Tom Select; auto-isi Tugas/Tanggung  */
+/*    Jawab begitu nama dipilih)                                  */
 /* ============================================================ */
+/* [BARU] Sumber nama buat dropdown: utamakan Data Master Tim Pelaksana
+   divisi ini (nyambung ke petaTugasPelaksana buat auto-isi tugas); kalau
+   master-nya masih kosong (belum ada yang didaftarin di divisi ini),
+   jatuh ke daftar pegawai lama biar tetep bisa milih nama. */
+function sumberNamaTimPelaksana() {
+    return (daftarMasterPelaksana && daftarMasterPelaksana.length)
+        ? daftarMasterPelaksana.map(function (p) { return p.nama; })
+        : daftarPegawai.map(function (p) { return p.nama_user; });
+}
+
 function buildSelectPegawai(selectedNama) {
     var select = document.createElement('select');
     select.name = 'tp_nama[]';
@@ -739,11 +757,18 @@ function buildSelectPegawai(selectedNama) {
     optEmpty.value = ''; optEmpty.textContent = '-- Pilih Nama --';
     select.appendChild(optEmpty);
 
-    daftarPegawai.forEach(function (p) {
+    var daftarNama = sumberNamaTimPelaksana();
+    // Data PO lama/edit yang namanya udah gak ada di daftar master (misal belum sempat
+    // didaftarin, atau dulu diisi manual) tetep dimunculin biar datanya gak ilang.
+    if (selectedNama && daftarNama.indexOf(selectedNama) === -1) {
+        daftarNama = [selectedNama].concat(daftarNama);
+    }
+
+    daftarNama.forEach(function (nama) {
         var opt = document.createElement('option');
-        opt.value = p.nama_user;
-        opt.textContent = p.nama_user;
-        if (selectedNama && p.nama_user === selectedNama) opt.selected = true;
+        opt.value = nama;
+        opt.textContent = nama;
+        if (selectedNama && nama === selectedNama) opt.selected = true;
         select.appendChild(opt);
     });
     return select;
@@ -760,7 +785,10 @@ function tambahBarisTim(data) {
     var tdTugas = document.createElement('td');
     var inTugas = document.createElement('input');
     inTugas.type = 'text'; inTugas.name = 'tp_tugas[]'; inTugas.className = 'form-control form-control-sm';
-    inTugas.placeholder = 'isi tugas / tanggung jawab'; inTugas.value = data.tugas || '';
+    inTugas.placeholder = 'isi tugas / tanggung jawab';
+    // [BARU] Kalau belum ada tugas tersimpan (bukan lagi edit PO lama), auto-isi dari
+    // Data Master Tim Pelaksana berdasarkan nama yang lagi kepilih.
+    inTugas.value = data.tugas || petaTugasPelaksana[data.nama] || '';
     tdTugas.appendChild(inTugas);
 
     var tdUraian = document.createElement('td');
@@ -782,11 +810,18 @@ function tambahBarisTim(data) {
     tr.appendChild(tdNama); tr.appendChild(tdTugas); tr.appendChild(tdUraian); tr.appendChild(tdHapus);
     document.getElementById('bodyTim').appendChild(tr);
 
-    new TomSelect(select, {
+    var tomSelectTim = new TomSelect(select, {
         create: false,
         sortField: { field: 'text', direction: 'asc' },
         placeholder: 'Ketik untuk mencari nama...',
         dropdownParent: 'body'
+    });
+    // [BARU] Begitu nama dipilih dari Data Master, Tugas/Tanggung Jawab otomatis keisi --
+    // cuma kalau field-nya masih kosong, biar gak nimpa yang udah diisi/diubah manual.
+    tomSelectTim.on('change', function (value) {
+        if (value && petaTugasPelaksana.hasOwnProperty(value) && !inTugas.value.trim()) {
+            inTugas.value = petaTugasPelaksana[value];
+        }
     });
 }
 

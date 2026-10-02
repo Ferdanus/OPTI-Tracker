@@ -6,6 +6,7 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
+    'Attribute' => $vendorDir . '/symfony/polyfill-php80/Resources/stubs/Attribute.php',
     'Audit' => $vendorDir . '/bcosca/fatfree-core/audit.php',
     'Auth' => $vendorDir . '/bcosca/fatfree-core/auth.php',
     'Base' => $vendorDir . '/bcosca/fatfree-core/base.php',
@@ -33,15 +34,19 @@ return array(
     'Magic' => $vendorDir . '/bcosca/fatfree-core/magic.php',
     'Markdown' => $vendorDir . '/bcosca/fatfree-core/markdown.php',
     'Matrix' => $vendorDir . '/bcosca/fatfree-core/matrix.php',
+    'PhpToken' => $vendorDir . '/symfony/polyfill-php80/Resources/stubs/PhpToken.php',
     'Prefab' => $vendorDir . '/bcosca/fatfree-core/base.php',
     'Preview' => $vendorDir . '/bcosca/fatfree-core/base.php',
     'Registry' => $vendorDir . '/bcosca/fatfree-core/base.php',
     'SMTP' => $vendorDir . '/bcosca/fatfree-core/smtp.php',
     'Session' => $vendorDir . '/bcosca/fatfree-core/session.php',
     'SessionAdapter' => $vendorDir . '/bcosca/fatfree-core/sessionadapter.php',
+    'Stringable' => $vendorDir . '/symfony/polyfill-php80/Resources/stubs/Stringable.php',
     'Template' => $vendorDir . '/bcosca/fatfree-core/template.php',
     'Test' => $vendorDir . '/bcosca/fatfree-core/test.php',
     'UTF' => $vendorDir . '/bcosca/fatfree-core/utf.php',
+    'UnhandledMatchError' => $vendorDir . '/symfony/polyfill-php80/Resources/stubs/UnhandledMatchError.php',
+    'ValueError' => $vendorDir . '/symfony/polyfill-php80/Resources/stubs/ValueError.php',
     'View' => $vendorDir . '/bcosca/fatfree-core/base.php',
     'Web' => $vendorDir . '/bcosca/fatfree-core/web.php',
     'Web\\Geo' => $vendorDir . '/bcosca/fatfree-core/web/geo.php',

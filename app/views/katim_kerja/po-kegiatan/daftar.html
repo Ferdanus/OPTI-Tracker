@@ -147,7 +147,7 @@
                         <span class="dpo-lock-note" id="dpoLockNote" hidden><i class="bi bi-lock-fill"></i>PO dikunci. Minta Ketua Tim membuka kembali.</span>
                         <a class="btn btn-white" id="dpoBtnEdit" href="#" hidden><i class="bi bi-pencil"></i>Edit PO</a>
                         <button type="button" class="btn btn-white" id="dpoBtnReopen" hidden><i class="bi bi-unlock"></i>Buka kembali</button>
-                        <button type="button" class="btn btn-primary" id="dpoBtnApprove" hidden><i class="bi bi-check2-circle"></i>Setujui dan disposisi ke Humas</button>
+                        <button type="button" class="btn btn-primary" id="dpoBtnApprove" hidden><i class="bi bi-check2-circle"></i>Setujui</button>
                     </div>
                 </div>
             </footer>
@@ -239,7 +239,7 @@
         /* ---------- Halaman daftar ---------- */
         function renderShell() {
             var head = MODE === 'katim'
-                ? ['Daftar PO', 'PO yang sudah dikirim pelaksana. Buka untuk review, beri catatan lewat chat, lalu setujui dan disposisikan ke Humas. PO berstatus draft tidak muncul di sini.']
+                ? ['Daftar PO', 'PO yang sudah dikirim pelaksana. Buka untuk review, beri catatan lewat chat, lalu setujui dan setujui PO jika tidak ada revisi.PO yang di validasi mitra akan muncul di halaman ini.']
                 : ['Diskusi PO', 'PO yang sudah Anda kirim. Lihat status review, balas catatan Ketua Tim, dan edit PO yang belum dikunci.'];
             $('dpoContent').innerHTML = '<div class="dpo-head"><h1>' + head[0] + '</h1><p>' + head[1] + '</p></div>' +
                 '<div class="card">' + (MODE === 'katim' ? '<div class="dpo-tabs" id="dpoTabs"></div>' : '') +
@@ -275,7 +275,7 @@
             if (MODE === 'pembuat') {
                 edit = p.status_review === 'disetujui'
                     ? '<button type="button" class="btn btn-white btn-sm" disabled title="PO dikunci. Minta Ketua Tim membuka kembali."><i class="bi bi-lock-fill"></i></button>'
-                    : '<a class="btn btn-white btn-sm" href="' + URL_PO(p.id) + '/edit" title="Edit PO"><i class="bi bi-pencil"></i></a>';
+                    : '<a class="btn btn-white btn-sm" href="' + URL_PO(p.id) + '/edit?dari=daftar" title="Edit PO"><i class="bi bi-pencil"></i></a>';
             }
             return '<div class="dpo-acts">' + edit +
                 '<button type="button" class="btn btn-white btn-sm position-relative" data-dpo-chat="' + p.id + '" aria-label="Chat untuk ' + esc(p.nomor) + '"><i class="bi bi-chat-dots"></i>' + (p.unread ? '<span class="dpo-dot">' + p.unread + '</span>' : '') + '</button>' +
@@ -333,7 +333,7 @@
             $('dpoBtnReopen').hidden = !(MODE === 'katim' && disetujui);
             $('dpoBtnEdit').hidden = !(MODE === 'pembuat' && !disetujui);
             $('dpoLockNote').hidden = !(MODE === 'pembuat' && disetujui);
-            if (MODE === 'pembuat') { $('dpoBtnEdit').setAttribute('href', URL_PO(p.id) + '/edit'); }
+            if (MODE === 'pembuat') { $('dpoBtnEdit').setAttribute('href', URL_PO(p.id) + '/edit?dari=daftar'); }
             $('dpoBtnApprove').disabled = false;
             $('dpoBtnReopen').disabled = false;
         }
@@ -459,7 +459,7 @@
             var p = curPo();
             if (!p || MODE !== 'katim' || p.status_review === 'disetujui') { return; }
             dialog({
-                tipe: 'ok', judul: 'Setujui dan disposisi ke Humas?',
+                tipe: 'ok', judul: 'Setujui PO?',
                 pesan: 'Setelah disetujui, PO dikunci dan tidak bisa diedit pembuat sampai Anda membukanya kembali.',
                 info: [p.nomor, p.mitra], ya: 'Ya, setujui'
             }).then(function (ya) {
@@ -469,7 +469,7 @@
                     p.status_review = 'disetujui';
                     renderAll();
                     if (chatOpen) { muatChat(true); }
-                    return dialog({ tipe: 'ok', judul: 'PO disetujui', pesan: 'PO ' + p.nomor + ' sudah didisposisikan ke Humas dan dikunci.', ya: 'Tutup', batal: null });
+                    return dialog({ tipe: 'ok', judul: 'PO disetujui', pesan: 'PO ' + p.nomor + ' sudah di setujui dan dikunci.', ya: 'Tutup', batal: null });
                 });
             }).catch(function (e) {
                 renderDock();
@@ -482,7 +482,7 @@
             if (!p || MODE !== 'katim' || p.status_review !== 'disetujui') { return; }
             dialog({
                 tipe: 'warn', ikon: 'bi-unlock', judul: 'Buka kembali PO ini?',
-                pesan: 'Disposisi ke Humas dibatalkan dan pembuat bisa mengedit PO. Anda perlu menyetujui ulang setelah diperbaiki.',
+                pesan: 'Setujui PO dibatalkan dan pembuat bisa mengedit PO. Anda perlu menyetujui ulang setelah diperbaiki.',
                 info: [p.nomor, p.mitra], ya: 'Ya, buka kembali'
             }).then(function (ya) {
                 if (!ya) { return; }
