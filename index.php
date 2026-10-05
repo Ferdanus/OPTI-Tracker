@@ -56,6 +56,9 @@ try {
     // Simpan object database ke hive F3 agar bisa diakses global
     $f3->set('DB', $db);
 
+    // Skema bersama po_kegiatan (kolom layanan, data_po, nomor PO) -- self-healing, 1 query ringan bila sudah siap
+    try { \PoSchema::pastikan($db); } catch (\Throwable $ePoSchema) { error_log('[PoSchema] ' . $ePoSchema->getMessage()); }
+
     // Setup koneksi kedua (opsional, jika tidak ada fallback ke DB utama sil2020)
     try {
         if ($f3->exists('db_sekretariat_dns') && $f3->get('db_sekretariat_dns')) {
@@ -363,6 +366,23 @@ $f3->route('POST /po-kegiatan/@id/chat/baca', 'PoReviewController->chatBaca');
 $f3->route('POST /po-kegiatan/@id/dibuka', 'PoReviewController->tandaiDibuka');
 $f3->route('POST /po-kegiatan/@id/setujui', 'PoReviewController->setujui');
 $f3->route('POST /po-kegiatan/@id/buka-kembali', 'PoReviewController->bukaKembali');
+
+// ===== Petunjuk Operasional (PO) -- modul TERPISAH dari PO OPTI =====
+// Controller: app/controllers/petunjuk_operasional/ (namespace petunjuk_operasional)
+// View      : app/views/petunjuk_operasional/<jenis_po>/
+$f3->route('GET /petunjuk-operasional', 'petunjuk_operasional\PoIndexController->index');
+$f3->route('GET /petunjuk-operasional/pengujian/create', 'petunjuk_operasional\PoPengujianController->create');
+$f3->route('GET /petunjuk-operasional/kalibrasi/create', 'petunjuk_operasional\PoKalibrasiController->create');
+$f3->route('GET /petunjuk-operasional/sertifikasi/create', 'petunjuk_operasional\PoSertifikasiController->create');
+$f3->route('GET /petunjuk-operasional/sertifikasi/order', 'petunjuk_operasional\PoSertifikasiController->daftarOrder');
+$f3->route('POST /petunjuk-operasional/sertifikasi/simpan', 'petunjuk_operasional\PoSertifikasiController->simpan');
+$f3->route('GET /petunjuk-operasional/sertifikasi/@id/edit', 'petunjuk_operasional\PoSertifikasiController->edit');
+$f3->route('GET /petunjuk-operasional/sertifikasi/@id/lihat', 'petunjuk_operasional\PoSertifikasiController->lihat');
+$f3->route('POST /petunjuk-operasional/sertifikasi/@id/update', 'petunjuk_operasional\PoSertifikasiController->update');
+$f3->route('GET /petunjuk-operasional/pendampingan/create', 'petunjuk_operasional\PoPendampinganController->create');
+$f3->route('GET /petunjuk-operasional/konsultasi/create', 'petunjuk_operasional\PoKonsultasiController->create');
+$f3->route('GET /petunjuk-operasional/inspeksi/create', 'petunjuk_operasional\PoInspeksiController->create');
+$f3->route('GET /petunjuk-operasional/uji-profisiensi/create', 'petunjuk_operasional\PoUjiProfisiensiController->create');
 
 // ==========================================
 // SURAT PENAWARAN MITRA

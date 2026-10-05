@@ -3,102 +3,169 @@
         <h2 class="h4 fw-bold mb-1 text-dark"><i class="bi bi-clipboard2-data text-primary me-1"></i> Petunjuk Operasional (PO)</h2>
         <p class="text-muted small mb-0">Daftar Petunjuk Operasional yang sudah dibuat.</p>
     </div>
-    <a href="{{ @BASE }}/po-kegiatan/pilih" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Tambah PO</a>
+    <check if="{{ @bisa_tambah_po }}">
+        <a href="{{ @BASE }}/po-kegiatan/pilih" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Tambah PO</a>
+    </check>
 </div>
 
-<div class="row g-3 mb-4">
-    <div class="col-md-4">
-        <div class="metric-card">
-            <div><div class="text-muted small fw-semibold mb-1">Total PO</div><div class="h4 fw-bold mb-0 text-dark">{{ @total_po ?: 0 }}</div></div>
-            <div class="metric-icon-box" style="background: rgba(136,19,55,.08); color: var(--color-primary);"><i class="bi bi-clipboard2-data"></i></div>
-        </div>
+<div class="card border-0 shadow-sm po-card">
+    <!-- Tab status PO -->
+    <div class="po-tabs" id="poTabs">
+        <a class="po-tab {{ @tab_aktif == 'masuk' ? 'on' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=masuk&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}">PO Masuk <span class="po-cnt">{{ @tab_counts.masuk ?: 0 }}</span></a>
+        <a class="po-tab {{ @tab_aktif == 'draft' ? 'on' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=draft&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}">Draft <span class="po-cnt">{{ @tab_counts.draft ?: 0 }}</span></a>
+        <a class="po-tab {{ @tab_aktif == 'terkirim' ? 'on' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=terkirim&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}">Terkirim <span class="po-cnt">{{ @tab_counts.terkirim ?: 0 }}</span></a>
+        <a class="po-tab {{ @tab_aktif == 'disetujui_mitra' ? 'on' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=disetujui_mitra&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}">Disetujui Mitra <span class="po-cnt">{{ @tab_counts.disetujui_mitra ?: 0 }}</span></a>
+        <a class="po-tab {{ @tab_aktif == 'disetujui' ? 'on' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=disetujui&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}">Disetujui Keuangan (Final) <span class="po-cnt">{{ @tab_counts.disetujui ?: 0 }}</span></a>
     </div>
-    <div class="col-md-4">
-        <div class="metric-card">
-            <div><div class="text-muted small fw-semibold mb-1">Draft</div><div class="h4 fw-bold mb-0 text-dark">{{ @total_draft ?: 0 }}</div></div>
-            <div class="metric-icon-box" style="background:#f1f5f9; color:#475569;"><i class="bi bi-pencil-square"></i></div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="metric-card">
-            <div><div class="text-muted small fw-semibold mb-1">Terkirim</div><div class="h4 fw-bold mb-0 text-dark">{{ @total_terkirim ?: 0 }}</div></div>
-            <div class="metric-icon-box" style="background:#ecfdf5; color:#065f46;"><i class="bi bi-check2-circle"></i></div>
-        </div>
-    </div>
-</div>
 
-<div class="card border-0 shadow-sm">
-    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-        <h6 class="m-0 fw-bold text-dark"><i class="bi bi-table text-primary me-2"></i>Daftar PO</h6>
-        <span class="text-muted small">Total: {{ @total_po ?: 0 }} PO</span>
-    </div>
-    <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-            <thead>
-                <tr>
-                    <th>No</th>
-                    <th>No. Order</th>
-                    <th>Mitra</th>
-                    <th>Divisi</th>
-                    <th>Judul Kegiatan</th>
-                    <th class="text-center">Status PO</th>
-                    <th class="text-center" style="width:120px;">Aksi</th>
-                </tr>
-            </thead>
-            <tbody>
-                <check if="{{ @daftar_po && count(@daftar_po) > 0 }}">
-                    <repeat group="{{ @daftar_po }}" value="{{ @p }}">
+    <div class="card-body">
+        <!-- Filter realtime: berubah langsung tanpa tombol "Terapkan" -->
+        <form method="get" action="{{ @BASE }}/po-kegiatan" id="formFilterPo" class="mb-3" autocomplete="off">
+            <input type="hidden" name="tab" id="poTabInput" value="{{ @tab_aktif }}">
+            <input type="hidden" name="semua" value="0">
+            <div class="row g-2 align-items-end">
+                <div class="col-12 col-md-4">
+                    <label class="form-label small fw-semibold text-muted mb-1">Cari</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                        <input type="search" name="q" id="poSearch" class="form-control" placeholder="No. order, No. PO, mitra, atau judul kegiatan" value="{{ @q }}">
+                    </div>
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label small fw-semibold text-muted mb-1">Divisi</label>
+                    <check if="{{ @bisa_pilih_divisi }}">
+                        <select name="divisi" class="form-select form-select-sm">
+                            <option value="">Semua Divisi</option>
+                            <option value="lingkungan" {{ @divisi == 'lingkungan' ? 'selected' : '' }}>Lingkungan</option>
+                            <option value="selulosa" {{ @divisi == 'selulosa' ? 'selected' : '' }}>Selulosa</option>
+                        </select>
+                    </check>
+                    <check if="{{ !@bisa_pilih_divisi }}">
+                        <input type="text" class="form-control form-control-sm bg-light" value="{{ @nama_divisi_tampilan }}" disabled>
+                        <input type="hidden" name="divisi" value="{{ @divisi }}">
+                    </check>
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label small fw-semibold text-muted mb-1">Bulan</label>
+                    <select name="bulan" class="form-select form-select-sm">
+                            <option value="1" {{ @bulan_filter == 1 ? 'selected' : '' }}>Januari</option>
+                            <option value="2" {{ @bulan_filter == 2 ? 'selected' : '' }}>Februari</option>
+                            <option value="3" {{ @bulan_filter == 3 ? 'selected' : '' }}>Maret</option>
+                            <option value="4" {{ @bulan_filter == 4 ? 'selected' : '' }}>April</option>
+                            <option value="5" {{ @bulan_filter == 5 ? 'selected' : '' }}>Mei</option>
+                            <option value="6" {{ @bulan_filter == 6 ? 'selected' : '' }}>Juni</option>
+                            <option value="7" {{ @bulan_filter == 7 ? 'selected' : '' }}>Juli</option>
+                            <option value="8" {{ @bulan_filter == 8 ? 'selected' : '' }}>Agustus</option>
+                            <option value="9" {{ @bulan_filter == 9 ? 'selected' : '' }}>September</option>
+                            <option value="10" {{ @bulan_filter == 10 ? 'selected' : '' }}>Oktober</option>
+                            <option value="11" {{ @bulan_filter == 11 ? 'selected' : '' }}>November</option>
+                            <option value="12" {{ @bulan_filter == 12 ? 'selected' : '' }}>Desember</option>
+                    </select>
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label small fw-semibold text-muted mb-1">Tahun</label>
+                    <select name="tahun" class="form-select form-select-sm">
+                        <repeat group="{{ @daftar_tahun }}" value="{{ @y }}">
+                            <option value="{{ @y }}" {{ @tahun_filter == @y ? 'selected' : '' }}>{{ @y }}</option>
+                        </repeat>
+                    </select>
+                </div>
+                <div class="col-6 col-md-2">
+                    <div class="form-check form-switch mb-1">
+                        <input class="form-check-input" type="checkbox" role="switch" value="1" id="chkSemuaPo" name="semua" {{ @tampilkan_semua ? 'checked' : '' }}>
+                        <label class="form-check-label small" for="chkSemuaPo">Tampilkan Semua Data</label>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <div id="poTable">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="small text-muted"><i class="bi bi-table me-1"></i>{{ @total_baris ?: 0 }} data</span>
+            </div>
+            <div class="table-responsive po-table-wrap">
+                <table class="table table-hover align-middle mb-0 po-table">
+                    <thead>
                         <tr>
-                            <td class="fw-semibold text-dark">{{ @p.nomor_po }}</td>
-                            <td>{{ @p.nomor_order }}</td>
-                            <td>{{ @p.nama_mitra }}</td>
-                            <td>
-                                <check if="{{ @o.jenis_layanan_opti == 'selulosa' }}"><span class="badge badge-pill-danger">Selulosa</span></check>
-                                <check if="{{ @o.jenis_layanan_opti == 'lingkungan' }}"><span class="badge badge-pill-info">Lingkungan</span></check>
-                                <check if="{{ @o.jenis_layanan_opti == 'belum_ditentukan' }}"><span class="badge badge-pill-secondary">Belum Ditentukan</span></check>
-
-                                <check if="{{ @p.jenis_layanan_opti == 'selulosa' }}"><span class="badge badge-pill-primary">Selulosa</span></check>
-                                <check if="{{ @p.jenis_layanan_opti == 'lingkungan' }}"><span class="badge badge-pill-info">Lingkungan</span></check>
-                            </td>
-                            <td class="text-muted small">{{ @p.judul_kegiatan }}</td>
-                            <td class="text-center">
-                                <check if="{{ !@p.po_id }}"><span class="badge badge-pill-secondary">Menunggu PO</span></check>
-                                <check if="{{ @p.po_id && @p.po_status == 'draft' }}"><span class="badge badge-pill-secondary">Draft</span></check>
-                                <check if="{{ @p.po_id && @p.po_status == 'terkirim' }}"><span class="badge badge-pill-success">Terkirim</span></check>
-                                <check if="{{ @p.po_id && @p.po_status == 'disetujui_mitra' }}"><span class="badge badge-pill-success">Disetujui Mitra</span></check>
-                                <check if="{{ @p.po_id && @p.po_status == 'disetujui' }}"><span class="badge badge-pill-success">Disetujui</span></check>
-                            </td>
-                            <td class="text-center">
-                                <div class="d-inline-flex align-items-center gap-1">
-                                    <check if="{{ !@p.po_id }}">
-                                        <a href="{{ @BASE }}/po-kegiatan/buat?order_id={{ @p.order_id }}" class="btn btn-sm btn-primary" title="Buat PO">
-                                            <i class="bi bi-file-earmark-plus"></i>
-                                        </a>
-                                    </check>
-                                    <check if="{{ @p.po_id }}">
-                                        <button type="button" class="btn btn-sm btn-outline-success" onclick="bukaPreviewPo({{ @p.po_id }})" title="Preview PO">
-                                            <i class="bi bi-eye"></i>
-                                        </button>
-                                    </check>
-                                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalFile_{{ @p.order_id }}" title="Lihat Berkas Terkait">
-                                        <i class="bi bi-folder2-open"></i>
-                                    </button>
-                                </div>
-                            </td>
+                            <th class="text-center" style="width:56px;">No</th>
+                            <th>No. PO</th>
+                            <th>No. Order</th>
+                            <th>Mitra</th>
+                            <th>Divisi</th>
+                            <th>Judul Kegiatan</th>
+                            <th class="text-center">Status PO</th>
+                            <th class="text-center" style="width:120px;">Aksi</th>
                         </tr>
-                    </repeat>
-                </check>
-                <check if="{{ !@daftar_po || count(@daftar_po) == 0 }}">
-                    <tr><td colspan="7" class="text-center text-muted py-5"><i class="bi bi-inbox fs-2 d-block mb-2"></i>Belum ada PO yang dibuat. Klik "Tambah PO" untuk mulai.</td></tr>
-                </check>
-            </tbody>
-        </table>
+                    </thead>
+                    <tbody>
+                        <check if="{{ @daftar_po && count(@daftar_po) > 0 }}">
+                            <repeat group="{{ @daftar_po }}" value="{{ @p }}">
+                                <tr>
+                                    <td class="text-center text-muted fw-semibold">{{ @p.no_urut }}</td>
+                                    <td class="fw-semibold text-dark">{{ @p.nomor_po ?: '-' }}</td>
+                                    <td>{{ @p.nomor_order }}</td>
+                                    <td>{{ @p.nama_mitra }}</td>
+                                    <td>
+                                        <check if="{{ @p.jenis_layanan_opti == 'selulosa' }}"><span class="badge badge-pill-danger">Selulosa</span></check>
+                                        <check if="{{ @p.jenis_layanan_opti == 'lingkungan' }}"><span class="badge badge-pill-info">Lingkungan</span></check>
+                                        <check if="{{ @p.jenis_layanan_opti == 'belum_ditentukan' }}"><span class="badge badge-pill-secondary">Belum Ditentukan</span></check>
+                                    </td>
+                                    <td class="text-muted small">{{ @p.judul_kegiatan }}</td>
+                                    <td class="text-center">
+                                        <check if="{{ !@p.po_id }}"><span class="badge badge-pill-secondary">Menunggu PO</span></check>
+                                        <check if="{{ @p.po_id && @p.po_status == 'draft' }}"><span class="badge badge-pill-secondary">Draft</span></check>
+                                        <check if="{{ @p.po_id && @p.po_status == 'terkirim' }}"><span class="badge badge-pill-success">Terkirim</span></check>
+                                        <check if="{{ @p.po_id && @p.po_status == 'disetujui_mitra' }}"><span class="badge badge-pill-success">Disetujui Mitra</span></check>
+                                        <check if="{{ @p.po_id && @p.po_status == 'disetujui' }}"><span class="badge badge-pill-success">Disetujui</span></check>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="d-inline-flex align-items-center gap-1">
+                                            <check if="{{ @bisa_tambah_po && !@p.po_id }}">
+                                                <a href="{{ @BASE }}/po-kegiatan/buat?order_id={{ @p.order_id }}" class="btn btn-sm btn-primary" title="Buat PO">
+                                                    <i class="bi bi-file-earmark-plus"></i>
+                                                </a>
+                                            </check>
+                                            <check if="{{ @p.po_id }}">
+                                                <button type="button" class="btn btn-sm btn-outline-success" onclick="bukaPreviewPo({{ @p.po_id }})" title="Preview PO">
+                                                    <i class="bi bi-eye"></i>
+                                                </button>
+                                            </check>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalFile_{{ @p.order_id }}" title="Lihat Berkas Terkait">
+                                                <i class="bi bi-folder2-open"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </repeat>
+                        </check>
+                        <check if="{{ !@daftar_po || count(@daftar_po) == 0 }}">
+                            <tr><td colspan="8" class="text-center text-muted py-5"><i class="bi bi-inbox fs-2 d-block mb-2"></i>Tidak ada data PO untuk tab &amp; filter ini.</td></tr>
+                        </check>
+                    </tbody>
+                </table>
+            </div>
+            <check if="{{ @total_halaman > 1 }}">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 pt-3">
+                    <span class="small text-muted">Halaman {{ @halaman_saat_ini }} dari {{ @total_halaman }} ({{ @total_baris }} data)</span>
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item {{ @halaman_saat_ini <= 1 ? 'disabled' : '' }}">
+                            <a class="page-link" href="{{ @BASE }}/po-kegiatan?tab={{ @tab_aktif }}&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;semua={{ @tampilkan_semua ? 1 : 0 }}&amp;q={{ @q_url }}&amp;page={{ @halaman_saat_ini - 1 }}">&laquo; Sebelumnya</a>
+                        </li>
+                        <li class="page-item disabled"><span class="page-link">{{ @halaman_saat_ini }} / {{ @total_halaman }}</span></li>
+                        <li class="page-item {{ @halaman_saat_ini >= @total_halaman ? 'disabled' : '' }}">
+                            <a class="page-link" href="{{ @BASE }}/po-kegiatan?tab={{ @tab_aktif }}&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;semua={{ @tampilkan_semua ? 1 : 0 }}&amp;q={{ @q_url }}&amp;page={{ @halaman_saat_ini + 1 }}">Berikutnya &raquo;</a>
+                        </li>
+                    </ul>
+                </div>
+            </check>
+        </div>
     </div>
 </div>
 
 <!-- ============================================================ -->
 <!-- MODAL LIHAT BERKAS TERKAIT (per Order) -->
 <!-- ============================================================ -->
+<div id="poModals">
 <check if="{{ @daftar_po && count(@daftar_po) > 0 }}">
     <repeat group="{{ @daftar_po }}" value="{{ @p }}">
         <div class="modal fade" id="modalFile_{{ @p.order_id }}" tabindex="-1" aria-hidden="true">
@@ -228,6 +295,7 @@
         </div>
     </repeat>
 </check>
+</div>
 
 <!-- ============================================================ -->
 <!-- MODAL PREVIEW PO -->
@@ -375,6 +443,75 @@ function downloadPoPDF() {
 }
 </script>
 
+<script>
+// ==== Filter & tab realtime (tanpa tombol "Terapkan") ====
+(function () {
+    var form = document.getElementById('formFilterPo');
+    if (!form) return;
+    var timer = null, reqId = 0;
+    var REGIONS = ['poTabs', 'poTable', 'poModals'];
+
+    function urlDariForm() {
+        var p = new URLSearchParams(new FormData(form));
+        return form.getAttribute('action') + '?' + p.toString();
+    }
+
+    function setLoading(on) {
+        var t = document.getElementById('poTable');
+        if (t) { t.style.opacity = on ? '.45' : ''; t.style.pointerEvents = on ? 'none' : ''; }
+    }
+
+    function sinkronForm(doc) {
+        var f2 = doc.getElementById('formFilterPo');
+        if (!f2) return;
+        ['tab', 'bulan', 'tahun', 'divisi'].forEach(function (nm) {
+            var a = form.elements[nm], b = f2.elements[nm];
+            if (a && b && !a.disabled) { a.value = b.value; }
+        });
+        var chk = document.getElementById('chkSemuaPo'), chk2 = doc.getElementById('chkSemuaPo');
+        if (chk && chk2) { chk.checked = chk2.checked; }
+    }
+
+    function muat(url) {
+        var mine = ++reqId;
+        setLoading(true);
+        fetch(url, { credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function (res) { if (!res.ok) throw new Error('HTTP ' + res.status); return res.text(); })
+            .then(function (html) {
+                if (mine !== reqId) return;
+                var doc = new DOMParser().parseFromString(html, 'text/html');
+                REGIONS.forEach(function (id) {
+                    var baru = doc.getElementById(id), lama = document.getElementById(id);
+                    if (baru && lama) { lama.innerHTML = baru.innerHTML; }
+                });
+                sinkronForm(doc);
+                try { history.replaceState(null, '', url); } catch (e) {}
+                setLoading(false);
+            })
+            .catch(function () { window.location.href = url; });
+    }
+
+    form.addEventListener('change', function (e) {
+        if (e.target.id === 'poSearch') return;
+        muat(urlDariForm());
+    });
+    document.getElementById('poSearch').addEventListener('input', function () {
+        clearTimeout(timer);
+        timer = setTimeout(function () { muat(urlDariForm()); }, 350);
+    });
+    form.addEventListener('submit', function (e) { e.preventDefault(); clearTimeout(timer); muat(urlDariForm()); });
+
+    document.addEventListener('click', function (e) {
+        var a = e.target.closest('#poTabs a.po-tab, #poTable .pagination a.page-link');
+        if (!a) return;
+        var li = a.closest('li.page-item');
+        e.preventDefault();
+        if (li && li.classList.contains('disabled')) return;
+        muat(a.getAttribute('href'));
+    });
+})();
+</script>
+
 <style>
     @media print {
         body * { visibility: hidden; }
@@ -421,4 +558,21 @@ function downloadPoPDF() {
     .pdf-inline-embed canvas { display: block; max-width: 100%; height: auto; margin: 0 auto 8px; }
     .pdf-inline-embed canvas:last-child { margin-bottom: 0; }
     .pdf-inline-embed img { max-width: 100%; height: auto; border-radius: 8px; display: block; margin: 0 auto; }
+
+    /* ==== Tab pill, filter & tabel Daftar PO ==== */
+    .po-card { overflow: hidden; }
+    .po-tabs { display: flex; gap: 4px; padding: 8px; border-bottom: 1px solid var(--color-border, #e2e8f0); overflow-x: auto; }
+    .po-tab { flex: 1 0 auto; border: 0; background: transparent; padding: .65rem .9rem; border-radius: var(--radius-md, 10px); font-family: var(--font-display, inherit); font-weight: 700; font-size: .85rem; color: var(--color-text-muted, #64748b); display: flex; align-items: center; justify-content: center; gap: 7px; white-space: nowrap; text-decoration: none; cursor: pointer; }
+    .po-tab:hover { background: #f8fafc; color: var(--color-primary, #334155); }
+    .po-tab.on { background: var(--color-primary-light, #f1f5f9); color: var(--color-primary, #334155); }
+    .po-cnt { background: #e2e8f0; color: var(--color-text-muted, #64748b); border-radius: 12px; padding: 1px 8px; font-size: .72rem; }
+    .po-tab.on .po-cnt { background: var(--color-primary, #334155); color: #fff; }
+    .po-table-wrap { border: 1px solid #e8edf3; border-radius: 10px; }
+    .po-table thead th { background: #f8fafc; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: #64748b; border-bottom: 1px solid #e8edf3; white-space: nowrap; }
+    /* garis samar antar-baris & antar-kolom di isi tabel */
+    .po-table thead th { border-right: 1px solid #f0f3f7; }
+    .po-table tbody td { border-bottom: 1px solid #eef1f5; border-right: 1px solid #f3f5f9; }
+    .po-table thead th:last-child, .po-table tbody td:last-child { border-right: 0; }
+    .po-table tbody tr:nth-child(even) td { background: #f8fafc; }
+    .po-table tbody tr:hover td { background: #eef2f7; }
 </style>

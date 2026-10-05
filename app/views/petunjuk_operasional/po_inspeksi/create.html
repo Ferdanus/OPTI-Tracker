@@ -1,0 +1,1149 @@
+<!--
+    app/views/petunjuk_operasional/po_inspeksi/create.html
+    Buat Petunjuk Operasional (PO) INSPEKSI -- TAHAP 1: tampilan saja (belum tersimpan ke DB).
+    Form + editor teks. Preview dokumen tampil di modal lewat tombol "Preview Data"; halaman dokumen dipecah otomatis.
+    Bagian Rencana Kegiatan memuat "Tim Inspektur" yang diambil otomatis dari tabel Tim Pelaksana (Ketua / Anggota Tim Inspeksi).
+    Semua class custom berawalan "pp-".
+-->
+<style>
+    .pp-root { color: #0f172a; }
+    .pp-head { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; justify-content: space-between; margin-bottom: 14px; }
+    .pp-head h1 { font-size: 1.35rem; font-weight: 800; margin: 0 0 2px; }
+    .pp-head p { margin: 0; color: #64748b; font-size: .85rem; }
+    .pp-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .pp-actions .form-select { width: auto; }
+
+    .pp-grid { max-width: 1100px; }
+    .pp-fab { position: fixed; right: 24px; bottom: 24px; z-index: 1030; box-shadow: 0 6px 18px rgba(15,23,42,.3); border-radius: 999px; padding: 9px 18px; }
+
+    /* ---------- Form ---------- */
+    .pp-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 12px; overflow: hidden; }
+    .pp-card > h3 { margin: 0; padding: 11px 16px; font-size: .9rem; font-weight: 700; background: #f8fafc; border-bottom: 1px solid #e8edf3; display: flex; align-items: center; gap: 9px; }
+    .pp-num { width: 22px; height: 22px; border-radius: 50%; background: var(--color-primary, #334155); color: #fff; font-size: .72rem; display: inline-grid; place-items: center; flex-shrink: 0; }
+    .pp-body { padding: 14px 16px; }
+    .pp-body .form-label { font-size: .78rem; margin-bottom: 3px; }
+    .pp-hint { font-size: .74rem; color: #94a3b8; margin-top: 4px; }
+    .pp-auto { font-size: .72rem; color: #64748b; background: #f1f5f9; border-radius: 6px; padding: 1px 7px; margin-left: 6px; }
+    .pp-tbl { width: 100%; font-size: .8rem; }
+    .pp-tbl th { font-size: .68rem; text-transform: uppercase; letter-spacing: .03em; color: #64748b; font-weight: 700; padding: 6px 4px; white-space: nowrap; }
+    .pp-tbl td { padding: 3px 3px; vertical-align: top; }
+    .pp-tbl .form-control, .pp-tbl .form-select { font-size: .8rem; padding: .25rem .4rem; }
+    .pp-tbl textarea.form-control { min-height: 44px; resize: vertical; }
+    .pp-no { width: 26px; text-align: center; color: #94a3b8; padding-top: 8px !important; }
+    .pp-ico { border: 1px solid #e2e8f0; background: #fff; border-radius: 6px; width: 26px; height: 26px; line-height: 1; padding: 0; color: #64748b; font-size: .8rem; }
+    .pp-ico:hover { color: #be123c; border-color: #fecdd3; background: #fff1f2; }
+    .pp-ico.mv:hover { color: var(--color-primary, #334155); border-color: #cbd5e1; background: #f1f5f9; }
+    .pp-sum { background: #f8fafc; border: 1px solid #e8edf3; border-radius: 10px; padding: 10px 12px; font-size: .8rem; }
+    .pp-sum div { display: flex; justify-content: space-between; gap: 10px; padding: 1px 0; }
+    .pp-sum .tot { border-top: 1px dashed #cbd5e1; margin-top: 4px; padding-top: 5px; font-weight: 700; }
+    .pp-warn { font-size: .76rem; color: #b45309; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 6px 10px; margin-top: 8px; }
+    .pp-induk { border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; margin-bottom: 10px; background: #f8fafc; }
+    .pp-induk-h { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .pp-letter { width: 26px; height: 26px; border-radius: 50%; background: var(--color-primary, #334155); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: .8rem; flex: none; }
+    .pp-ind-opt { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; font-size: .8rem; }
+    .pp-jad { border-collapse: collapse; }
+    .pp-jad td, .pp-jad th { border: 1px solid #e2e8f0; text-align: center; }
+    .pp-jad input[type=checkbox] { width: 16px; height: 16px; }
+    .pp-togl { font-size: .8rem; display: block; margin-bottom: 8px; }
+    .pp-renc tr.hari > td, .pp-renc tr.txt > td { background: #eff6ff; }
+    .pp-insp-prev { background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 8px 12px; font-size: .8rem; margin-top: 6px; }
+
+    /* ---------- Editor teks (ala Word) ---------- */
+    .pp-rte { border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; background: #fff; }
+    .pp-rte:focus-within { border-color: var(--color-primary, #334155); box-shadow: 0 0 0 3px rgba(51,65,85,.12); }
+    .pp-rte-bar { display: flex; flex-wrap: wrap; gap: 2px; padding: 5px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+    .pp-rte-bar button { border: 0; background: transparent; min-width: 30px; height: 28px; border-radius: 6px; color: #334155; font-size: .85rem; padding: 0 6px; cursor: pointer; }
+    .pp-rte-bar button:hover { background: #e2e8f0; }
+    .pp-rte-bar .sep { width: 1px; background: #e2e8f0; margin: 3px 4px; }
+    .pp-rte-body { min-height: 96px; max-height: 280px; overflow-y: auto; padding: 10px 12px; font-family: 'Times New Roman', Times, serif; font-size: 11pt; line-height: 1.45; outline: none; }
+    .pp-rte-body ol:not([type]) { list-style-type: lower-alpha; }
+    .pp-rte-body ol, .pp-rte-body ul { padding-left: 1.6em; margin: 0 0 4px; }
+    .pp-rte-body p { margin: 0 0 4px; }
+    .pp-rte.sm .pp-rte-bar { padding: 3px; }
+    .pp-rte.sm .pp-rte-bar button { min-width: 24px; height: 24px; font-size: .78rem; padding: 0 4px; }
+    .pp-rte.sm .pp-rte-body { min-height: 62px; max-height: 170px; padding: 6px 8px; font-size: 10.5pt; line-height: 1.35; }
+
+    /* ---------- Preview (modal) ---------- */
+    .pp-modal { display: none; position: fixed; inset: 0; z-index: 2050; background: rgba(15,23,42,.65); padding: 18px; justify-content: center; }
+    .pp-modal.open { display: flex; }
+    .pp-modal-dialog { position: relative; width: 100%; max-width: 860px; height: 100%; display: flex; flex-direction: column; gap: 10px; }
+    .pp-modal-bar { flex: none; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; background: #fff; border-radius: 12px; padding: 7px 10px; box-shadow: 0 2px 8px rgba(15,23,42,.25); }
+    .pp-modal-bar .lbl { font-size: .82rem; font-weight: 700; margin-right: 6px; }
+    .pp-modal-bar .pg { border: 1px solid #e2e8f0; background: #fff; border-radius: 999px; padding: 3px 13px; font-size: .78rem; color: #475569; cursor: pointer; }
+    .pp-modal-bar .pg:hover { background: #f1f5f9; }
+    .pp-modal-x { margin-left: auto; width: 32px; height: 32px; border-radius: 50%; border: 0; background: #f1f5f9; color: #0f172a; font-size: 1.35rem; line-height: 1; cursor: pointer; }
+    .pp-modal-x:hover { background: #e2e8f0; }
+    .pp-pv-box { flex: 1 1 auto; min-height: 0; background: #cbd5e1; border-radius: 12px; padding: 8px; overflow: auto; }
+    .pp-scale { position: relative; }
+    .pp-pages { width: 794px; transform-origin: top left; }
+
+    /* ---------- Dokumen (A4 = 794 x 1123 px) ---------- */
+    .pp-page { width: 794px; min-height: 1123px; background: #fff; margin: 0 0 14px; padding: 92px 70px 90px; box-sizing: border-box; font-family: 'Times New Roman', Times, serif; font-size: 12pt; color: #000; line-height: 1.35; box-shadow: 0 2px 10px rgba(15,23,42,.25); }
+    .pp-measure { position: absolute; left: -10000px; top: 0; visibility: hidden; min-height: 0; margin: 0; box-shadow: none; pointer-events: none; }
+    .pp-page table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    .pp-page td, .pp-page th { border: 1px solid #000; padding: 4px 7px; vertical-align: middle; word-wrap: break-word; overflow-wrap: anywhere; }
+    .pp-page th { font-weight: 700; text-align: center; }
+    .pp-page .blk { margin: 0 0 12px; }
+    .pp-doc-title { text-align: center; font-weight: 700; text-decoration: underline; font-size: 12.5pt; margin-bottom: 0 !important; }
+    .pp-doc-nomor { text-align: center; font-weight: 700; text-decoration: underline; font-size: 12.5pt; margin-bottom: 22px !important; }
+    .pp-doc-row { display: flex; font-weight: 700; margin-bottom: 16px !important; }
+    .pp-doc-row .k { width: 72px; flex: none; }
+    .pp-sec { font-weight: 700; margin: 0 0 4px; }
+    .pp-rich { margin-left: 44px; text-align: justify; margin-bottom: 14px !important; }
+    .pp-rich ol:not([type]) { list-style-type: lower-alpha; }
+    .pp-rich ol, .pp-rich ul { margin: 0 0 3px; padding-left: 26px; }
+    .pp-rich p { margin: 0 0 3px; }
+    .pp-dash { display: flex; gap: 10px; text-align: left; }
+    .pp-dash > span:first-child { flex: none; }
+    .pp-tim { font-size: 11pt; line-height: 1.35; }
+    .pp-tim td { padding: 5px 7px; vertical-align: middle; text-align: left; }
+    .pp-tim th { font-size: 11pt; padding: 8px 5px; }
+    .pp-c { text-align: center !important; }
+    .pp-r { text-align: right !important; }
+    .pp-l { text-align: left !important; }
+    .pp-b { font-weight: 700; }
+    .pp-rp { white-space: nowrap; }
+    .pp-ph { color: #94a3b8; }
+    .pp-gantt { font-size: 10.5pt; }
+    .pp-gantt th, .pp-gantt td { text-align: center; }
+    .pp-gantt td.pp-l { text-align: left; }
+    .pp-gray { background: #bfbfbf; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    /* Rencana kegiatan */
+    .pp-insp { margin-bottom: 8px; }
+    .pp-insp .row { display: flex; }
+    .pp-insp .row > span:first-child { width: 330px; flex: none; }
+    .pp-ri { font-size: 11pt; line-height: 1.3; }
+    .pp-ri th { font-weight: 400; padding: 3px 6px; }
+    .pp-ri td { vertical-align: top; text-align: left; padding: 4px 8px; }
+    .pp-ri td.wk { text-align: center; white-space: nowrap; }
+    .pp-ri td.ctr { text-align: center; }
+    .pp-dl ul, .pp-dl ol { list-style: none; margin: 0; padding: 0; }
+    .pp-dl li { position: relative; padding-left: 14px; }
+    .pp-dl li::before { content: "-"; position: absolute; left: 0; }
+    .pp-dl p, .pp-dl div { margin: 0; }
+    /* RAB */
+    .pp-rab td { text-align: left; padding: 2px 7px; }
+    .pp-rab td.pp-c { text-align: center; }
+    .pp-rab td.pp-r { text-align: right; }
+    .pp-rab.pp-wide td { padding: 6px 8px; }
+
+    /* ---------- Cetak: hanya dokumen ---------- */
+    @media print {
+        @page { size: A4; margin: 0; }
+        body > *:not(.pp-modal) { display: none !important; }
+        body { overflow: visible !important; height: auto !important; background: #fff !important; }
+        .pp-modal { display: block !important; position: static !important; padding: 0 !important; background: none !important; }
+        .pp-modal-dialog { max-width: none !important; height: auto !important; display: block !important; }
+        .pp-modal-bar, .pp-fab { display: none !important; }
+        .pp-pv-box { height: auto !important; flex: none !important; overflow: visible !important; padding: 0 !important; background: none !important; }
+        #pvPages { transform: none !important; }
+        .pp-scale { height: auto !important; margin: 0 !important; }
+        .pp-page { margin: 0; box-shadow: none; page-break-after: always; }
+        .pp-page:last-child { page-break-after: auto; }
+    }
+</style>
+
+<div class="pp-root">
+    <div class="pp-head">
+        <div>
+            <h1><i class="bi bi-search text-primary me-1"></i> Buat PO Inspeksi</h1>
+            <p>Isi form di bawah, lalu klik <b>Preview Data</b> untuk melihat dokumen PO. <span class="text-warning-emphasis">Tahap tampilan: data belum tersimpan ke database.</span></p>
+        </div>
+        <div class="pp-actions">
+            <select id="ppSample" class="form-select form-select-sm" title="Isi form dengan data contoh (fiktif) untuk mengecek hasilnya">
+                <option value="">Muat data contoh...</option>
+                <option value="i1">Contoh 1 - Inspeksi dengan rincian RAB</option>
+                <option value="i2">Contoh 2 - Inspeksi sederhana</option>
+            </select>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="ppReset"><i class="bi bi-arrow-counterclockwise me-1"></i>Kosongkan</button>
+            <button type="button" class="btn btn-sm btn-primary" id="ppPreview"><i class="bi bi-eye me-1"></i>Preview Data</button>
+            <button type="button" class="btn btn-sm btn-outline-primary" id="ppPrint"><i class="bi bi-printer me-1"></i>Cetak / PDF</button>
+            <button type="button" class="btn btn-sm btn-outline-success" disabled title="Penyimpanan dibuat di tahap berikutnya"><i class="bi bi-save me-1"></i>Simpan</button>
+        </div>
+    </div>
+
+    <div class="pp-grid">
+        <!-- ===================== FORM ===================== -->
+        <div id="ppForm">
+            <section class="pp-card">
+                <h3><span class="pp-num"><i class="bi bi-info"></i></span>Informasi Dokumen</h3>
+                <div class="pp-body">
+                    <div class="row g-2">
+                        <div class="col-sm-3">
+                            <label class="form-label">No. urut PO</label>
+                            <input type="text" class="form-control form-control-sm" data-bind="urut" inputmode="numeric" placeholder="501">
+                        </div>
+                        <div class="col-sm-5">
+                            <label class="form-label">Kode nomor PO</label>
+                            <input type="text" class="form-control form-control-sm" data-bind="kode" placeholder="PO/BBSPJIS/INSP">
+                            <div class="pp-hint">Tampil sebagai: no. urut / kode / bulan romawi / tahun</div>
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label">Bulan &amp; tahun PO</label>
+                            <input type="month" class="form-control form-control-sm" data-bind="tanggal">
+                        </div>
+                        <div class="col-sm-7">
+                            <label class="form-label">Nama perusahaan / mitra</label>
+                            <input type="text" class="form-control form-control-sm" data-bind="perusahaan" placeholder="PT Contoh Inspeksi">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Alamat perusahaan</label>
+                            <textarea class="form-control form-control-sm" rows="2" data-bind="alamat" placeholder="Jl. Contoh No. 1, ..."></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Judul</label>
+                            <input type="text" class="form-control form-control-sm" data-bind="judul" placeholder="INSPEKSI PRODUK PT CONTOH INSPEKSI">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Jenis</label>
+                            <input type="text" class="form-control form-control-sm" data-bind="jenis" list="dlJenis" placeholder="Inspeksi">
+                            <datalist id="dlJenis"><option value="Inspeksi"><option value="Inspeksi Produk"><option value="Inspeksi Lapangan"></datalist>
+                        </div>
+                        <div class="col-sm-7">
+                            <label class="form-label">No. surat penawaran</label>
+                            <input type="text" class="form-control form-control-sm" data-bind="noPenawaran" placeholder="B/0001/BBSPJIS/MS/X/2026">
+                        </div>
+                        <div class="col-sm-5">
+                            <label class="form-label">Tanggal surat penawaran</label>
+                            <input type="date" class="form-control form-control-sm" data-bind="tglPenawaran">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="pp-card">
+                <h3><span class="pp-num">1</span>Dasar</h3>
+                <div class="pp-body">
+                    <div class="pp-rte" data-rte="dasar"></div>
+                    <div class="pp-hint">Kode otomatis dari kolom di atas: <b>[perusahaan]</b>, <b>[alamat]</b>, <b>[no_penawaran]</b>, <b>[tgl_penawaran]</b>, <b>[bulan_tahun]</b>.</div>
+                </div>
+            </section>
+
+            <section class="pp-card">
+                <h3><span class="pp-num">2</span>Tujuan Kegiatan</h3>
+                <div class="pp-body">
+                    <div class="pp-rte" data-rte="tujuan"></div>
+                    <div class="pp-hint">Diisi bebas oleh tim kerja. Kode yang sama bisa dipakai.</div>
+                </div>
+            </section>
+
+            <section class="pp-card">
+                <h3><span class="pp-num">3</span>Ruang Lingkup</h3>
+                <div class="pp-body">
+                    <div class="pp-rte" data-rte="ruang"></div>
+                </div>
+            </section>
+
+            <section class="pp-card">
+                <h3><span class="pp-num">4</span>Tim Pelaksana</h3>
+                <div class="pp-body">
+                    <div class="table-responsive">
+                        <table class="pp-tbl">
+                            <thead><tr><th></th><th>Nama</th><th>Tugas / tanggung jawab</th><th>Uraian tugas</th><th></th></tr></thead>
+                            <tbody id="ppTim"></tbody>
+                        </table>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-primary mt-2" data-act="add" data-list="tim"><i class="bi bi-plus-lg me-1"></i>Tambah anggota</button>
+                    <datalist id="dlTugas"></datalist>
+                    <datalist id="dlNama"></datalist>
+                    <div class="pp-hint">Uraian tugas: awali baris dengan <b>- </b> (strip + spasi) untuk membuat poin; satu baris = satu poin. Memilih tugas baku akan mengisi uraian otomatis. Anggota bertugas <b>Ketua Tim Inspeksi</b> / <b>Anggota Tim Inspeksi</b> otomatis masuk ke daftar <i>Tim Inspektur</i> di Rencana Kegiatan.</div>
+                </div>
+            </section>
+
+            <section class="pp-card">
+                <h3><span class="pp-num">5</span>Rencana Kegiatan</h3>
+                <div class="pp-body">
+                    <label class="pp-togl"><input type="checkbox" class="me-1" data-bind="showInspektur">Tampilkan daftar <b>Tim Inspektur</b> di atas tabel (diambil otomatis dari Tim Pelaksana)</label>
+                    <div class="pp-insp-prev" id="ppInspPrev"></div>
+
+                    <label class="form-label mt-3">Tabel waktu, kegiatan dan PIC</label>
+                    <div class="pp-hint mb-2" style="margin-top:0">Susun urut dari atas: baris <b>Hari / tanggal</b> (judul per hari, tengah), baris <b>Kegiatan</b> (waktu + kegiatan + PIC; kosongkan kegiatan untuk jam istirahat), dan baris <b>Teks penuh</b> (mis. "Perjalanan ke Bandung"). Isi kegiatan dan PIC memakai editor: tombol poin otomatis tampil sebagai tanda strip (-).</div>
+                    <div class="table-responsive"><table class="pp-tbl pp-renc" id="ppRencana"></table></div>
+                    <div class="d-flex flex-wrap gap-2 mt-2">
+                        <button type="button" class="btn btn-sm btn-outline-primary" data-act="add-rrow" data-tipe="hari"><i class="bi bi-calendar-event me-1"></i>Tambah hari</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" data-act="add-rrow" data-tipe="kegiatan"><i class="bi bi-plus-lg me-1"></i>Tambah kegiatan</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-act="add-rrow" data-tipe="teks"><i class="bi bi-card-text me-1"></i>Tambah teks penuh</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="pp-card">
+                <h3><span class="pp-num">6</span>Rencana Anggaran Biaya</h3>
+                <div class="pp-body">
+                    <div class="pp-hint mb-2" style="margin-top:0">
+                        <b>Penerimaan</b>: baris tebal <i>Nilai Kontrak</i> yang bisa dijumlah otomatis dari komponen di bawahnya (mis. Inspeksi Produk, Petugas Inspeksi, Transportasi), atau diketik langsung bila tanpa komponen.
+                        <b>Rencana pengeluaran</b>: tambah kategori satu per satu; tiap kategori bisa <b>Harga langsung</b> (nilai diketik atau dihitung dari rincian), <b>Persen</b>, atau <b>Sisa</b> (kontrak dikurangi kategori lain, mis. Biaya penunjang).
+                        Rincian tampil sebagai blok bertajuk (mis. <i>Belanja Perjalanan</i>) di dalam bagian pengeluaran.
+                    </div>
+
+                    <label class="form-label">Penerimaan</label>
+                    <div class="row g-2 mb-2">
+                        <div class="col-sm-5">
+                            <input type="text" class="form-control form-control-sm" data-bind="rab.kontrakLabel" placeholder="Nilai Kontrak">
+                            <div class="pp-hint">Label baris tebal</div>
+                        </div>
+                        <div class="col-sm-4" id="kontrakManualWrap">
+                            <input type="text" class="form-control form-control-sm" style="text-align:right" data-bind="rab.kontrak" data-type="money" inputmode="numeric" placeholder="Nilai kontrak (Rp)">
+                            <div class="pp-hint">Dipakai bila tidak ada komponen</div>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="pp-tbl"><thead><tr><th></th><th>Komponen (opsional)</th><th>Nilai (Rp)</th><th></th></tr></thead><tbody id="ppKomp"></tbody></table>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-act="add" data-list="rab.komponen"><i class="bi bi-plus-lg me-1"></i>Tambah komponen</button>
+
+                    <label class="form-label mt-3">Rencana pengeluaran</label>
+                    <div id="ppInduk"></div>
+                    <button type="button" class="btn btn-sm btn-outline-primary mt-2" data-act="add" data-list="rab.induk"><i class="bi bi-plus-lg me-1"></i>Tambah kategori</button>
+                    <datalist id="dlSatuan"><option value="org"><option value="orang"><option value="hari"><option value="mobil"><option value="unit"><option value="paket"></datalist>
+                    <div class="row g-2 mt-2">
+                        <div class="col-sm-4">
+                            <label class="form-label">Label baris total</label>
+                            <input type="text" class="form-control form-control-sm" data-bind="rab.lblTotal" placeholder="Total">
+                        </div>
+                    </div>
+
+                    <div class="pp-sum mt-3" id="ppSum"></div>
+                    <div id="ppRabWarn"></div>
+                </div>
+            </section>
+
+            <section class="pp-card">
+                <h3><span class="pp-num">7</span>Jadwal</h3>
+                <div class="pp-body">
+                    <div class="row g-2 mb-2">
+                        <div class="col-sm-5">
+                            <label class="form-label">Bentuk jadwal</label>
+                            <select class="form-select form-select-sm" data-bind="jadwal.mode">
+                                <option value="gantt">Tabel jadwal (bulan &amp; minggu)</option>
+                                <option value="teks">Kalimat saja (mis. "dilaksanakan pada tanggal ...")</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="jadTeks">
+                        <div class="pp-rte" data-rte="jadwalTeks"></div>
+                        <div class="pp-hint">Kode <b>[bulan_tahun]</b> terisi otomatis dari bulan &amp; tahun PO.</div>
+                    </div>
+                    <div id="jadGantt">
+                        <label class="form-label">Bulan &amp; minggu</label>
+                        <div id="ppBulanList" class="d-flex flex-wrap gap-2 mb-2"></div>
+                        <button type="button" class="btn btn-sm btn-outline-secondary mb-2" data-act="add-bulan"><i class="bi bi-calendar-plus me-1"></i>Tambah bulan</button>
+                        <div class="pp-hint mb-2" style="margin-top:0">Nama bulan bebas (mis. "April 2026"). <b>Mgg</b> = nomor minggu pertama pada bulan itu (3 tampil sebagai III), <b>jml</b> = jumlah kolom minggu.</div>
+                        <div class="table-responsive"><table class="pp-tbl pp-jad" id="ppJad"></table></div>
+                        <button type="button" class="btn btn-sm btn-outline-primary mt-2" data-act="add" data-list="jadwal.rows"><i class="bi bi-plus-lg me-1"></i>Tambah kegiatan</button>
+                        <div class="pp-hint">Centang kolom (minggu) tempat kegiatan berlangsung; di dokumen kolomnya diarsir abu-abu.</div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+
+<button type="button" class="btn btn-primary pp-fab" id="ppPreviewFab"><i class="bi bi-eye me-1"></i>Preview Data</button>
+
+<!-- ===================== PREVIEW (modal) ===================== -->
+<div class="pp-modal" id="ppModal" aria-hidden="true">
+    <div class="pp-modal-dialog">
+        <div class="pp-modal-bar">
+            <span class="lbl">Preview dokumen</span>
+            <span id="ppPgBtns"></span>
+            <button type="button" class="pp-modal-x" id="ppModalX" aria-label="Tutup">&times;</button>
+        </div>
+        <div class="pp-pv-box" id="pvBox">
+            <div class="pp-scale" id="pvScale"><div class="pp-pages" id="pvPages"></div></div>
+        </div>
+    </div>
+</div>
+<div class="pp-page pp-measure" id="ppMeasure" aria-hidden="true"></div>
+
+<script>
+(function () {
+    'use strict';
+
+    var $ = function (id) { return document.getElementById(id); };
+    var BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+    var ROMAWI = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
+    var HARI = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+
+    // tugas baku tim pelaksana. "insp" = peran di daftar Tim Inspektur (Rencana Kegiatan)
+    var ROLES = [
+        { tugas: 'Penanggung jawab', uraian: 'Bertanggung jawab atas pelaksanaan kegiatan secara menyeluruh' },
+        { tugas: 'Ketua Tim Inspeksi', insp: 'Ketua', uraian: '- Menyiapkan / mengkoordinir tim inspeksi\n- Melakukan inspeksi di lokasi\n- Menyusun laporan hasil inspeksi' },
+        { tugas: 'Anggota Tim Inspeksi', insp: 'Anggota', uraian: '- Melakukan inspeksi di lokasi\n- Menyusun laporan hasil inspeksi' },
+        { tugas: 'Staf Administrasi', uraian: 'Membantu kegiatan administrasi' },
+        { tugas: 'Petugas Pengambil Contoh (PPC)', uraian: '- Mengambil sampel dan mengantar sampel sesuai prosedur' }
+    ];
+    var DEFAULT_TIM = [0, 1, 2, 3];
+
+    var DEF_DASAR = '<ol><li>Surat penawaran BBSPJIS Nomor [no_penawaran], Tanggal [tgl_penawaran]</li><li>Pembayaran biaya oleh [perusahaan]</li><li>SNI ... - ...</li></ol>';
+    var DEF_TUJUAN = '<p>Melakukan inspeksi ... pada [perusahaan]</p>';
+    var DEF_RUANG = '<p>Ruang lingkup kegiatan inspeksi meliputi ...</p>';
+    var DEF_JADWAL = '<p>Kegiatan dilaksanakan pada [bulan_tahun]</p>';
+
+    function todayMonth() {
+        var d = new Date();
+        return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2);
+    }
+    function newRinci() { return { nama: '', qty: '', satuan: '', hari: '', tarif: 0, jumlah: 0 }; }
+    function newInd() { return { nama: '', tipe: 'harga', nilai: 0, persen: '', rinci: 0, tampil: 'blok', judulBlok: '', subJudul: '', rincian: [newRinci()] }; }
+    function newRenc(tipe) { return { tipe: tipe || 'kegiatan', tgl: '', teks: '', waktu: '', kegiatan: '', pic: '' }; }
+    function T(nama, idx, o) { o = o || {}; return { nama: nama, tugas: o.tugas || ROLES[idx].tugas, uraian: o.uraian || ROLES[idx].uraian }; }
+
+    function blank() {
+        return {
+            urut: '', kode: 'PO/BBSPJIS/INSP', tanggal: todayMonth(), perusahaan: '', alamat: '', judul: '', jenis: 'Inspeksi',
+            noPenawaran: '', tglPenawaran: '',
+            dasar: DEF_DASAR, tujuan: DEF_TUJUAN, ruang: DEF_RUANG,
+            tim: DEFAULT_TIM.map(function (i) { return { nama: '', tugas: ROLES[i].tugas, uraian: ROLES[i].uraian }; }),
+            showInspektur: 1,
+            rencana: { rows: [newRenc('hari'), newRenc('kegiatan')] },
+            rab: {
+                kontrakLabel: 'Nilai Kontrak', kontrak: 0, komponen: [], lblTotal: 'Total',
+                induk: [
+                    { nama: 'Biaya penunjang kepada klien', tipe: 'sisa', nilai: 0, persen: '', rinci: 0, tampil: 'blok', judulBlok: '', subJudul: '', rincian: [newRinci()] },
+                    { nama: 'Biaya Layanan Kepada Klien', tipe: 'harga', nilai: 0, persen: '', rinci: 1, tampil: 'blok', judulBlok: 'Belanja Perjalanan', subJudul: '', rincian: [newRinci()] }
+                ]
+            },
+            jadwal: { mode: 'gantt', bulan: [{ nama: '', mulai: 1, n: 4 }], rows: [{ nama: '', on: [0, 0, 0, 0] }] },
+            jadwalTeks: DEF_JADWAL
+        };
+    }
+
+    /* ---------------- DATA CONTOH (fiktif) ---------------- */
+    function ul(a) { return '<ul>' + a.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul>'; }
+    function K(waktu, judul, items, pic) { return { tipe: 'kegiatan', tgl: '', teks: '', waktu: waktu, kegiatan: (judul ? '<p>' + judul + '</p>' : '') + (items.length ? ul(items) : ''), pic: pic ? ul(pic) : '' }; }
+    function H(tgl) { return { tipe: 'hari', tgl: tgl, teks: hariTgl(tgl), waktu: '', kegiatan: '', pic: '' }; }
+    function X(teks) { return { tipe: 'teks', tgl: '', teks: teks, waktu: '', kegiatan: '', pic: '' }; }
+
+    var SAMPLES = {
+        'i1': function () {
+            var s = blank();
+            s.tanggal = '2026-10';
+            s.perusahaan = 'PT Contoh Inspeksi';
+            s.alamat = 'Jl. Contoh No. 1, Kec. Contoh, Kota Contoh, 40000';
+            s.judul = 'INSPEKSI PRODUK PT CONTOH INSPEKSI';
+            s.jenis = 'Inspeksi Produk';
+            s.noPenawaran = 'B/0001/BBSPJIS/MS/X/2026'; s.tglPenawaran = '2026-10-05';
+            s.dasar = '<ol><li>Surat penawaran BBSPJIS Nomor [no_penawaran], Tanggal [tgl_penawaran]</li><li>Pembayaran biaya inspeksi oleh [perusahaan]</li><li>Standar acuan inspeksi (contoh)</li></ol>';
+            s.tujuan = '<p>Melakukan inspeksi produk pada [perusahaan] untuk memastikan kesesuaian dengan standar acuan.</p>';
+            s.ruang = '<p>Ruang lingkup kegiatan inspeksi meliputi pemeriksaan area produksi, bahan baku, catatan produksi dan catatan mutu di lokasi [perusahaan].</p>';
+            s.tim = [T('Pegawai A', 0), T('Pegawai B', 1), T('Pegawai C', 2), T('Pegawai D', 2), T('Pegawai K', 3)];
+            var pic = ['Tim inspeksi PT Contoh Inspeksi', 'Wakil perusahaan'];
+            s.rencana = { rows: [
+                H('2026-11-02'), X('Perjalanan ke Kota A'),
+                H('2026-11-03'),
+                K('08.00 – 08.30', 'Pembukaan:', ['Perkenalan tim inspeksi', 'Penjelasan tujuan dan prosedur inspeksi'], pic),
+                K('08.30 – 12.00', 'Inspeksi lapangan:', ['Pemeriksaan area produksi', 'Pemeriksaan bahan baku', 'Pengambilan dokumentasi'], pic),
+                K('12.00 – 13.00', '', [], null),
+                K('13.00 – 15.00', 'Pemeriksaan dokumen:', ['Verifikasi catatan produksi', 'Verifikasi catatan mutu'], pic),
+                K('15.00 – 16.00', 'Penutupan:', ['Rapat penutup', 'Penandatanganan berita acara'], pic)
+            ] };
+            s.rab = {
+                kontrakLabel: 'Nilai Kontrak', kontrak: 0, lblTotal: 'Total',
+                komponen: [{ nama: 'Inspeksi Produk', nilai: 3000000 }, { nama: 'Petugas Inspeksi', nilai: 1000000 }, { nama: 'Transportasi', nilai: 1000000 }],
+                induk: [
+                    { nama: 'Biaya penunjang kepada klien', tipe: 'sisa', nilai: 0, persen: '', rinci: 0, tampil: 'blok', judulBlok: '', subJudul: '', rincian: [newRinci()] },
+                    { nama: 'Biaya Layanan Kepada Klien', tipe: 'harga', nilai: 0, persen: '', rinci: 1, tampil: 'blok', judulBlok: 'Belanja Perjalanan', subJudul: 'Perjalanan petugas ke PT Contoh Inspeksi', rincian: [
+                        { nama: 'Lumpsum petugas:', qty: 2, satuan: 'orang', hari: 1, tarif: 250000, jumlah: 0 },
+                        { nama: 'Lumpsum driver:', qty: 1, satuan: 'orang', hari: 1, tarif: 100000, jumlah: 0 },
+                        { nama: 'Tol + BBM', qty: '', satuan: '', hari: '', tarif: 0, jumlah: 900000 }
+                    ] }
+                ]
+            };
+            s.jadwal = { mode: 'gantt', bulan: [{ nama: 'Oktober 2026', mulai: 3, n: 2 }, { nama: 'November 2026', mulai: 1, n: 2 }], rows: [
+                { nama: 'Persiapan inspeksi', on: [1, 1, 0, 0] },
+                { nama: 'Pelaksanaan inspeksi', on: [0, 0, 1, 0] },
+                { nama: 'Penyusunan laporan', on: [0, 0, 0, 1] }
+            ] };
+            return s;
+        },
+        'i2': function () {
+            var s = blank();
+            s.tanggal = '2026-11';
+            s.perusahaan = 'CV Contoh Sederhana';
+            s.alamat = 'Jl. Contoh No. 2, Kec. Contoh, Kota Contoh, 40000';
+            s.judul = 'INSPEKSI LAPANGAN CV CONTOH SEDERHANA';
+            s.jenis = 'Inspeksi Lapangan';
+            s.noPenawaran = 'B/0002/BBSPJIS/MS/XI/2026'; s.tglPenawaran = '2026-11-02';
+            s.dasar = '<ol><li>Surat penawaran BBSPJIS Nomor [no_penawaran], Tanggal [tgl_penawaran]</li><li>Pembayaran biaya oleh [perusahaan]</li></ol>';
+            s.tujuan = '<p>Melakukan inspeksi lapangan pada [perusahaan].</p>';
+            s.ruang = '<p>Ruang lingkup meliputi inspeksi lapangan dan penyusunan laporan hasil inspeksi.</p>';
+            s.tim = [T('Pegawai A', 0), T('Pegawai B', 1), T('Pegawai C', 2)];
+            s.rencana = { rows: [
+                H('2026-12-08'),
+                K('09.00 – 12.00', 'Inspeksi:', ['Pemeriksaan lapangan'], ['Tim inspeksi', 'Wakil perusahaan'])
+            ] };
+            s.rab = {
+                kontrakLabel: 'Nilai Kontrak', kontrak: 4000000, komponen: [], lblTotal: 'Total',
+                induk: [
+                    { nama: 'Biaya penunjang kepada klien', tipe: 'sisa', nilai: 0, persen: '', rinci: 0, tampil: 'blok', judulBlok: '', subJudul: '', rincian: [newRinci()] },
+                    { nama: 'Biaya Layanan Kepada Klien', tipe: 'harga', nilai: 0, persen: '', rinci: 1, tampil: 'blok', judulBlok: 'Belanja Perjalanan', subJudul: 'Perjalanan petugas ke CV Contoh Sederhana', rincian: [
+                        { nama: 'Lumpsum petugas:', qty: 2, satuan: 'orang', hari: 1, tarif: 250000, jumlah: 0 },
+                        { nama: 'Tol + BBM', qty: '', satuan: '', hari: '', tarif: 0, jumlah: 600000 }
+                    ] }
+                ]
+            };
+            s.jadwal = { mode: 'teks', bulan: [{ nama: '', mulai: 1, n: 4 }], rows: [{ nama: '', on: [0, 0, 0, 0] }] };
+            s.jadwalTeks = '<p>Kegiatan inspeksi dilaksanakan pada tanggal &nbsp; &nbsp; [bulan_tahun]</p>';
+            return s;
+        }
+    };
+
+    var S = blank();
+
+    /* ---------------- util ---------------- */
+    function huruf(i, kecil) {
+        var base = kecil ? 97 : 65, out = '';
+        do { out = String.fromCharCode(base + (i % 26)) + out; i = Math.floor(i / 26) - 1; } while (i >= 0);
+        return out;
+    }
+    function esc(v) { return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+    function num(v) { var n = parseFloat(v); return isNaN(n) ? 0 : n; }
+    function rupiah(n) { n = Math.round(n || 0); return (n < 0 ? '-' : '') + Math.abs(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
+    function getPath(o, p) { return p.split('.').reduce(function (a, k) { return a == null ? a : a[k]; }, o); }
+    function setPath(o, p, v) { var ks = p.split('.'), l = ks.pop(); var t = ks.reduce(function (a, k) { return a[k]; }, o); t[l] = v; }
+    function tglID(iso) {
+        var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || ''); if (!m) { return '...'; }
+        return parseInt(m[3], 10) + ' ' + BULAN[parseInt(m[2], 10) - 1] + ' ' + m[1];
+    }
+    function hariTgl(iso) {
+        var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || ''); if (!m) { return ''; }
+        var d = new Date(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10));
+        return HARI[d.getDay()] + ', ' + tglID(iso);
+    }
+    function bulanTahun() {
+        var m = /^(\d{4})-(\d{2})/.exec(S.tanggal || '');
+        return m ? { r: ROMAWI[parseInt(m[2], 10) - 1], b: BULAN[parseInt(m[2], 10) - 1], y: m[1] } : { r: '...', b: '', y: '....' };
+    }
+    function lines(v) { return String(v || '').split(/\r?\n/).filter(function (l) { return l.trim() !== ''; }); }
+    function sum(a) { return a.reduce(function (x, y) { return x + y; }, 0); }
+
+    var ALLOWED = { b: 1, strong: 1, i: 1, em: 1, u: 1, ol: 1, ul: 1, li: 1, p: 1, div: 1 };
+    function cleanNode(n) {
+        var out = '';
+        Array.prototype.forEach.call(n.childNodes, function (c) {
+            if (c.nodeType === 3) { out += esc(c.nodeValue); return; }
+            if (c.nodeType !== 1) { return; }
+            var t = c.nodeName.toLowerCase();
+            if (t === 'br') { out += '<br>'; return; }
+            var inner = cleanNode(c);
+            if (!ALLOWED[t]) { out += inner; return; }
+            var at = '';
+            if (t === 'ol' || t === 'ul') { var ty = c.getAttribute('type'); if (ty && /^[1aAiI]$/.test(ty)) { at += ' type="' + ty + '"'; } }
+            var al = c.style && c.style.textAlign;
+            if (al && /^(left|right|center|justify)$/.test(al)) { at += ' style="text-align:' + al + '"'; }
+            out += '<' + t + at + '>' + inner + '</' + t + '>';
+        });
+        return out;
+    }
+    function cleanHtml(html) { var tpl = document.createElement('template'); tpl.innerHTML = html || ''; return cleanNode(tpl.content); }
+    function tok(h) {
+        var bt = bulanTahun();
+        return h.replace(/\[perusahaan\]/g, esc(S.perusahaan || '...'))
+            .replace(/\[alamat\]/g, esc(S.alamat || '...'))
+            .replace(/\[no_penawaran\]/g, esc(S.noPenawaran || '...'))
+            .replace(/\[tgl_penawaran\]/g, esc(S.tglPenawaran ? tglID(S.tglPenawaran) : '...'))
+            .replace(/\[bulan_tahun\]/g, esc(bt.b ? bt.b + ' ' + bt.y : '...'));
+    }
+
+    /* ---------------- tim inspektur (dari tabel Tim Pelaksana) ---------------- */
+    function inspektur() {
+        var out = [];
+        S.tim.forEach(function (t) {
+            if (!String(t.nama || '').trim()) { return; }
+            var r = ROLES.filter(function (x) { return x.insp && x.tugas.toLowerCase() === String(t.tugas || '').trim().toLowerCase(); })[0];
+            if (r) { out.push({ nama: t.nama, peran: r.insp }); }
+        });
+        out.sort(function (a, b) { return (a.peran === 'Ketua' ? 0 : 1) - (b.peran === 'Ketua' ? 0 : 1); });
+        return out;
+    }
+
+    /* ---------------- hitungan RAB ---------------- */
+    function rinciAmt(r) {
+        if (num(r.tarif) > 0) { return Math.round((num(r.qty) || 1) * (num(r.hari) || 1) * num(r.tarif)); }
+        return Math.round(num(r.jumlah));
+    }
+    // "Lumpsum petugas: 2 orang, 1 hr @250.000": bagian yang kosong dilewati
+    function labelRinci(x) {
+        var nm = String(x.nama || ''), out = esc(nm);
+        var q = x.qty, sat = String(x.satuan || '').trim(), hari = num(x.hari);
+        if (!(q === '' || q == null)) {
+            out += (/:\s*$/.test(nm) ? ' ' : ': ') + esc(String(q)) + (sat ? ' ' + esc(sat) : '');
+            if (hari) { out += ', ' + hari + ' hr'; }
+            if (num(x.tarif) > 0) { out += ' @ Rp ' + rupiah(num(x.tarif)); }
+        }
+        return out;
+    }
+    function calc() {
+        var r = S.rab, c = { warn: [] };
+        c.kontrak = r.komponen.length ? sum(r.komponen.map(function (x) { return Math.round(num(x.nilai)); })) : Math.round(num(r.kontrak));
+        c.ind = r.induk.map(function (d) {
+            var o = { amt: 0, rin: [] };
+            if (d.tipe === 'harga') {
+                if (d.rinci) { o.rin = (d.rincian || []).map(rinciAmt); o.amt = sum(o.rin); }
+                else { o.amt = Math.round(num(d.nilai)); }
+            }
+            return o;
+        });
+        c.langsung = sum(c.ind.map(function (o, i) { return r.induk[i].tipe === 'harga' ? o.amt : 0; }));
+        c.base = c.kontrak - c.langsung;
+        var tetap = c.langsung; c.sisaN = 0;
+        r.induk.forEach(function (d, i) {
+            if (d.tipe === 'persen') { c.ind[i].amt = Math.round(c.base * num(d.persen) / 100); tetap += c.ind[i].amt; }
+        });
+        r.induk.forEach(function (d, i) {
+            if (d.tipe === 'sisa') { c.sisaN++; c.ind[i].amt = c.kontrak - tetap; if (c.ind[i].amt < 0) { c.warn.push('Kategori Sisa "' + (d.nama || huruf(i)) + '" bernilai minus: kategori lain melebihi nilai kontrak.'); } }
+        });
+        c.total = sum(c.ind.map(function (o) { return o.amt; }));
+        if (c.sisaN > 1) { c.warn.push('Ada ' + c.sisaN + ' kategori bertipe Sisa; biasanya cukup satu.'); }
+        if (c.kontrak > 0 && c.total !== c.kontrak) { c.warn.push('Total pengeluaran (Rp ' + rupiah(c.total) + ') berbeda dari nilai kontrak (Rp ' + rupiah(c.kontrak) + '), selisih Rp ' + rupiah(c.kontrak - c.total) + '.'); }
+        return c;
+    }
+
+    /* ---------------- builder dokumen ---------------- */
+    function ph(v, fb) { return v ? esc(v) : '<span class="pp-ph">' + fb + '</span>'; }
+    function richBlock(html) {
+        var h = tok(cleanHtml(html));
+        return '<div class="pp-rich blk">' + (h || '<span class="pp-ph">-</span>') + '</div>';
+    }
+    function cellRich(html) { return tok(cleanHtml(html)); }
+    function sec(no, teks) { return '<div class="pp-sec keep blk">' + no + '.&nbsp;&nbsp; ' + teks + '</div>'; }
+
+    function uraianHtml(txt) {
+        var ls = lines(txt);
+        if (ls.length <= 1 && !/^\s*-\s/.test(ls[0] || '')) { return esc(ls[0] || ''); }
+        return ls.map(function (l) {
+            var m = /^\s*-\s*(.*)$/.exec(l);
+            return m ? '<div class="pp-dash"><span>-</span><span>' + esc(m[1]) + '</span></div>' : '<div>' + esc(l) + '</div>';
+        }).join('');
+    }
+    function timHtml() {
+        var rows = S.tim.map(function (t, i) {
+            return '<tr><td class="pp-c">' + (i + 1) + '</td><td>' + esc(t.nama) + '</td><td class="pp-c">' + esc(t.tugas) + '</td><td>' + uraianHtml(t.uraian) + '</td></tr>';
+        }).join('') || '<tr><td colspan="4" class="pp-c pp-ph">Belum ada anggota</td></tr>';
+        return '<table data-split="1" class="pp-tim blk"><colgroup><col style="width:44px"><col style="width:26%"><col style="width:24%"><col></colgroup>' +
+            '<thead><tr><th>No</th><th>Nama</th><th>Tugas/Tanggung Jawab</th><th>Uraian Tugas</th></tr></thead><tbody>' + rows + '</tbody></table>';
+    }
+
+    function inspekturHtml() {
+        if (!S.showInspektur) { return ''; }
+        var ls = inspektur();
+        var body = ls.length
+            ? ls.map(function (x) { return '<div class="row"><span>- ' + esc(x.nama) + '</span><span>: ' + x.peran + '</span></div>'; }).join('')
+            : '<div class="pp-ph">(isi nama Ketua / Anggota Tim Inspeksi di tabel Tim Pelaksana)</div>';
+        return '<div class="pp-insp blk"><div>Tim Inspektur:</div>' + body + '</div>';
+    }
+    function rencanaHtml() {
+        var rs = S.rencana.rows;
+        var rows = rs.map(function (r) {
+            if (r.tipe === 'hari') { return '<tr class="keep"><td colspan="3" class="ctr">' + ph(r.teks || hariTgl(r.tgl), 'Hari, tanggal') + '</td></tr>'; }
+            if (r.tipe === 'teks') { return '<tr><td colspan="3" class="ctr">' + esc(r.teks) + '</td></tr>'; }
+            return '<tr><td class="wk">' + esc(r.waktu) + '</td><td class="pp-dl">' + cellRich(r.kegiatan) + '</td><td class="pp-dl">' + cellRich(r.pic) + '</td></tr>';
+        }).join('') || '<tr><td colspan="3" class="ctr pp-ph">Belum ada baris</td></tr>';
+        return '<table data-split="1" class="pp-ri blk"><colgroup><col style="width:122px"><col><col style="width:200px"></colgroup>' +
+            '<thead><tr><th>Waktu</th><th>Kegiatan</th><th>PIC</th></tr></thead><tbody>' + rows + '</tbody></table>';
+    }
+
+    function rabHtml(c) {
+        var r = S.rab, groups = [];
+        var val = function (v) { return v ? rupiah(v) : '-'; };
+        var plain = function (l, ind, bl) { return '<td' + (bl ? ' class="pp-b"' : '') + (ind ? ' style="padding-left:' + ind + 'px"' : '') + '>' + l + '</td><td></td><td></td>'; };
+        var amt = function (l, v, bl, ind) {
+            return '<td' + (bl ? ' class="pp-b"' : '') + (ind ? ' style="padding-left:' + ind + 'px"' : '') + '>' + l + '</td>' +
+                '<td class="pp-rp' + (bl ? ' pp-b' : '') + '">Rp</td><td class="pp-r pp-rp' + (bl ? ' pp-b' : '') + '">' + val(v) + '</td>';
+        };
+        var g1 = [plain('Penerimaan'), amt(esc(r.kontrakLabel || 'Nilai Kontrak'), c.kontrak, true)];
+        r.komponen.forEach(function (x) { g1.push(amt(esc(x.nama), Math.round(num(x.nilai)), false)); });
+        groups.push(g1);
+        var g2 = [plain('Rencana Pengeluaran')], blocks = [];
+        r.induk.forEach(function (d, i) {
+            var o = c.ind[i];
+            g2.push(amt('- ' + esc(d.nama) + (d.tipe === 'persen' ? ' (' + num(d.persen) + '%)' : ''), o.amt, true));
+            if (d.tipe === 'harga' && d.rinci) {
+                var rows = (d.rincian || []).map(function (x, m) { return amt(labelRinci(x), o.rin[m], false, 14); });
+                if (d.tampil === 'bawah') { g2 = g2.concat(rows); }
+                else { blocks.push({ d: d, rows: rows }); }
+            }
+        });
+        blocks.forEach(function (b) {
+            g2.push(plain(esc(b.d.judulBlok || b.d.nama), 14, true));
+            if (b.d.subJudul) { g2.push(plain(esc(b.d.subJudul), 14)); }
+            g2 = g2.concat(b.rows);
+        });
+        g2.push(amt(esc(r.lblTotal || 'Total'), c.total, true, 30));
+        groups.push(g2);
+        var out = '';
+        groups.forEach(function (g, gi) {
+            g.forEach(function (tr, k) {
+                out += '<tr>' + (k === 0 ? '<td rowspan="' + g.length + '" class="pp-c" style="vertical-align:top">' + huruf(gi, true) + '</td>' : '') + tr + '</tr>';
+            });
+        });
+        return '<table class="pp-rab pp-wide blk"><colgroup><col style="width:36px"><col><col style="width:46px"><col style="width:128px"></colgroup><tbody>' + out + '</tbody></table>';
+    }
+
+    function jadCols() {
+        var out = [];
+        S.jadwal.bulan.forEach(function (b, bi) {
+            for (var w = 0; w < num(b.n); w++) {
+                var k = Math.max(1, num(b.mulai)) - 1 + w;
+                out.push({ bi: bi, label: ROMAWI[k] || String(k + 1) });
+            }
+        });
+        return out;
+    }
+    function jadwalHtml() {
+        var jd = S.jadwal;
+        if (jd.mode !== 'gantt') { return richBlock(S.jadwalTeks); }
+        var cols = jadCols(), n = Math.max(cols.length, 1), cw = Math.max(34, Math.min(64, Math.floor(380 / n)));
+        var h1 = '<tr><th rowspan="3" style="width:44px">No.</th><th rowspan="3">Kegiatan</th>' + jd.bulan.map(function (b) { return '<th colspan="' + Math.max(num(b.n), 1) + '">' + esc(b.nama) + '</th>'; }).join('') + '</tr>';
+        var h2 = '<tr><th colspan="' + n + '">Minggu ke-</th></tr>';
+        var h3 = '<tr>' + cols.map(function (c) { return '<th>' + c.label + '</th>'; }).join('') + '</tr>';
+        var rows = jd.rows.map(function (r, i) {
+            return '<tr style="height:28px"><td class="pp-c">' + (i + 1) + '.</td><td class="pp-l">' + esc(r.nama) + '</td>' +
+                cols.map(function (c, j) { return '<td' + (r.on[j] ? ' class="pp-gray"' : '') + '></td>'; }).join('') + '</tr>';
+        }).join('') || '<tr><td colspan="' + (n + 2) + '" class="pp-c pp-ph">Belum ada kegiatan</td></tr>';
+        return '<table class="pp-gantt blk"><colgroup><col style="width:44px"><col>' + cols.map(function () { return '<col style="width:' + cw + 'px">'; }).join('') + '</colgroup><thead>' + h1 + h2 + h3 + '</thead><tbody>' + rows + '</tbody></table>';
+    }
+
+    function docHtml(c) {
+        var bt = bulanTahun();
+        var nomorPo = (S.urut ? esc(S.urut) : '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ') + '/' + esc(S.kode || 'PO/BBSPJIS/INSP') + '/' + bt.r + '/' + bt.y;
+        return '<div class="pp-doc-title blk">PETUNJUK OPERASIONAL (PO)</div>' +
+            '<div class="pp-doc-nomor blk">Nomor : ' + nomorPo + '</div>' +
+            '<div class="pp-doc-row blk"><span class="k">Judul</span><span>: ' + ph(S.judul, 'Judul kegiatan') + '</span></div>' +
+            '<div class="pp-doc-row blk"><span class="k">Jenis</span><span>: ' + ph(S.jenis, 'Jenis kegiatan') + '</span></div>' +
+            sec(1, 'DASAR') + richBlock(S.dasar) +
+            sec(2, 'TUJUAN KEGIATAN') + richBlock(S.tujuan) +
+            sec(3, 'RUANG LINGKUP') + richBlock(S.ruang) +
+            sec(4, 'TIM PELAKSANA') + timHtml() +
+            sec(5, 'RENCANA KEGIATAN') + inspekturHtml() + rencanaHtml() +
+            sec(6, 'RENCANA ANGGARAN BIAYA') + rabHtml(c) +
+            sec(7, 'JADWAL') + jadwalHtml();
+    }
+
+    /* ---------------- pagination otomatis ---------------- */
+    // Isi dokumen diukur dulu di #ppMeasure, lalu dibagi per halaman A4. Tabel bertanda data-split dipecah per baris
+    // (judul kolom diulang di halaman lanjutan). Unit bertanda "keep" selalu ikut halaman yang sama dengan unit sesudahnya.
+    function paginate(host) {
+        var CAP = 1123 - 92 - 90 - 8;
+        var units = [];
+        Array.prototype.forEach.call(host.children, function (el) {
+            var st = getComputedStyle(el), mt = parseFloat(st.marginTop) || 0, mb = parseFloat(st.marginBottom) || 0;
+            if (el.tagName === 'TABLE' && el.hasAttribute('data-split')) {
+                var trs = el.querySelectorAll('tr');
+                Array.prototype.forEach.call(trs, function (tr, k) {
+                    var isHead = tr.parentNode.tagName === 'THEAD';
+                    units.push({ el: tr, table: el, head: isHead, keep: isHead || tr.classList.contains('keep'), h: tr.getBoundingClientRect().height + (k === 0 ? mt : 0) + (k === trs.length - 1 ? mb : 0) });
+                });
+            } else {
+                units.push({ el: el, keep: el.classList.contains('keep'), h: el.getBoundingClientRect().height + mt + mb });
+            }
+        });
+        var pages = [], cur = null, used = 0;
+        var start = function () { cur = { nodes: [], tabs: [] }; pages.push(cur); used = 0; };
+        start();
+        units.forEach(function (u, i) {
+            var need = u.h, j = i;
+            while (units[j].keep && units[j + 1]) { j++; need += units[j].h; }
+            if (used > 0 && used + need > CAP) { start(); }
+            if (u.table) {
+                var rec = cur.tabs.filter(function (t) { return t.src === u.table; })[0];
+                if (!rec) {
+                    var cl = u.table.cloneNode(false), cg = u.table.querySelector('colgroup');
+                    if (cg) { cl.appendChild(cg.cloneNode(true)); }
+                    rec = { src: u.table, el: cl }; cur.tabs.push(rec); cur.nodes.push(cl);
+                    var th0 = u.table.querySelector('thead');
+                    if (th0 && !u.head) { rec.thead = document.createElement('thead'); rec.thead.appendChild(th0.querySelector('tr').cloneNode(true)); cl.appendChild(rec.thead); }
+                }
+                var nm = u.head ? 'thead' : 'tbody';
+                if (!rec[nm]) { rec[nm] = document.createElement(nm); rec.el.appendChild(rec[nm]); }
+                rec[nm].appendChild(u.el.cloneNode(true));
+            } else { cur.nodes.push(u.el.cloneNode(true)); }
+            used += u.h;
+        });
+        return pages.map(function (p) { return p.nodes; });
+    }
+
+    /* ---------------- render ---------------- */
+    var pending = false, lastPages = 0;
+    function schedule() { if (pending) { return; } pending = true; requestAnimationFrame(function () { pending = false; render(); }); }
+
+    function render() {
+        var c = calc(), host = $('ppMeasure');
+        host.innerHTML = docHtml(c);
+        var pages = paginate(host), out = $('pvPages');
+        out.innerHTML = '';
+        pages.forEach(function (nodes, i) {
+            var p = document.createElement('div'); p.className = 'pp-page'; p.id = 'pv' + (i + 1);
+            nodes.forEach(function (n) { p.appendChild(n); });
+            out.appendChild(p);
+        });
+        host.innerHTML = '';
+        if (pages.length !== lastPages) {
+            lastPages = pages.length;
+            var b = ''; for (var i = 1; i <= pages.length; i++) { b += '<button type="button" class="pg" data-pv="' + i + '">Hal. ' + i + '</button> '; }
+            $('ppPgBtns').innerHTML = b;
+        }
+        fit();
+        updateAuto();
+        updateInfo(c);
+    }
+
+    function fit() {
+        var box = $('pvBox'), pages = $('pvPages'), wrap = $('pvScale');
+        var avail = box.clientWidth - 16;
+        if (avail <= 0) { return; }
+        var sc = Math.min(1, avail / 794);
+        pages.style.transform = 'scale(' + sc + ')';
+        wrap.style.height = Math.ceil(pages.offsetHeight * sc) + 'px';
+        wrap.style.marginLeft = Math.max(0, Math.floor((avail - 794 * sc) / 2)) + 'px';
+    }
+
+    function updateAuto() {
+        $('jadTeks').hidden = S.jadwal.mode === 'gantt';
+        $('jadGantt').hidden = S.jadwal.mode !== 'gantt';
+        $('kontrakManualWrap').hidden = S.rab.komponen.length > 0;
+    }
+
+    function updateInfo(c) {
+        var rpx = function (id, v) { var el = $(id); if (el) { el.textContent = rupiah(v); } };
+        S.rab.induk.forEach(function (d, i) {
+            rpx('indJml' + i, c.ind[i].amt);
+            c.ind[i].rin.forEach(function (v, m) { rpx('rinJml' + i + '_' + m, v); });
+        });
+        var sm = function (l, v, cls) { return '<div class="' + (cls || '') + '"><span>' + l + '</span><span>Rp ' + rupiah(v) + '</span></div>'; };
+        $('ppSum').innerHTML = sm(esc(S.rab.kontrakLabel || 'Nilai Kontrak'), c.kontrak) +
+            S.rab.induk.map(function (d, i) { return sm('- ' + esc(d.nama) + (d.tipe === 'persen' ? ' ' + num(d.persen) + '%' : '') + (d.tipe === 'sisa' ? ' (sisa)' : ''), c.ind[i].amt); }).join('') +
+            sm(esc(S.rab.lblTotal || 'Total'), c.total, 'tot');
+        $('ppRabWarn').innerHTML = c.warn.map(function (x) { return '<div class="pp-warn"><i class="bi bi-exclamation-triangle me-1"></i>' + esc(x) + '</div>'; }).join('');
+        $('dlNama').innerHTML = S.tim.filter(function (t) { return t.nama; }).map(function (t) { return '<option value="' + esc(t.nama) + '">'; }).join('');
+        var ins = inspektur();
+        $('ppInspPrev').innerHTML = ins.length
+            ? '<b>Terambil dari Tim Pelaksana:</b><br>' + ins.map(function (x) { return '- ' + esc(x.nama) + ' : ' + x.peran; }).join('<br>')
+            : '<span class="text-muted">Belum ada. Isi nama pada anggota bertugas <b>Ketua Tim Inspeksi</b> / <b>Anggota Tim Inspeksi</b> di bagian Tim Pelaksana.</span>';
+    }
+
+    /* ---------------- editor teks (ala Word) ---------------- */
+    function rteBar(sm) {
+        var tools = sm
+            ? [['bold', '<b>B</b>', 'Tebal'], ['italic', '<i>I</i>', 'Miring'], ['underline', '<u>U</u>', 'Garis bawah'], '|',
+               ['insertUnorderedList', '&bull;', 'Daftar poin (tampil sebagai strip)'], '|', ['removeFormat', '<i class="bi bi-eraser"></i>', 'Hapus format']]
+            : [['bold', '<b>B</b>', 'Tebal'], ['italic', '<i>I</i>', 'Miring'], ['underline', '<u>U</u>', 'Garis bawah'], '|',
+               ['insertOrderedList', 'a.', 'Daftar bertingkat a, b, c'], ['num', '1.', 'Daftar angka 1, 2, 3'], ['insertUnorderedList', '&bull;', 'Daftar poin'], '|',
+               ['justifyLeft', '<i class="bi bi-text-left"></i>', 'Rata kiri'], ['justifyCenter', '<i class="bi bi-text-center"></i>', 'Tengah'],
+               ['justifyRight', '<i class="bi bi-text-right"></i>', 'Rata kanan'], ['justifyFull', '<i class="bi bi-justify"></i>', 'Rata kiri-kanan'], '|',
+               ['undo', '<i class="bi bi-arrow-counterclockwise"></i>', 'Urungkan'], ['redo', '<i class="bi bi-arrow-clockwise"></i>', 'Ulangi'],
+               ['removeFormat', '<i class="bi bi-eraser"></i>', 'Hapus format']];
+        return '<div class="pp-rte-bar">' + tools.map(function (t) {
+            return t === '|' ? '<span class="sep"></span>' : '<button type="button" data-cmd="' + t[0] + '" title="' + t[2] + '">' + t[1] + '</button>';
+        }).join('') + '</div>';
+    }
+    function mountRte(w) {
+        w.innerHTML = rteBar(w.classList.contains('sm')) + '<div class="pp-rte-body" contenteditable="true" spellcheck="true"></div>';
+        var v = getPath(S, w.dataset.rte);
+        w.querySelector('.pp-rte-body').innerHTML = v == null ? '' : v;
+    }
+    function mountRtes(scope) { Array.prototype.forEach.call(scope.querySelectorAll('[data-rte]'), mountRte); }
+
+    /* ---------------- form: tabel dinamis ---------------- */
+    var inp = function (list, i, k, v, extra) {
+        return '<input class="form-control form-control-sm" data-list="' + list + '" data-i="' + i + '" data-k="' + k + '" value="' + esc(v) + '" ' + (extra || '') + '>';
+    };
+    var ctl = function (list, i) {
+        return '<button type="button" class="pp-ico mv" data-act="mv" data-list="' + list + '" data-i="' + i + '" data-dir="-1" title="Naik">&uarr;</button> ' +
+            '<button type="button" class="pp-ico mv" data-act="mv" data-list="' + list + '" data-i="' + i + '" data-dir="1" title="Turun">&darr;</button> ' +
+            '<button type="button" class="pp-ico" data-act="del" data-list="' + list + '" data-i="' + i + '" title="Hapus">&times;</button>';
+    };
+    var MONEY = 'data-type="money" inputmode="numeric" style="text-align:right;width:120px" placeholder="0"';
+
+    function buildTim() {
+        $('ppTim').innerHTML = S.tim.map(function (t, i) {
+            return '<tr><td class="pp-no">' + (i + 1) + '</td><td style="min-width:130px">' + inp('tim', i, 'nama', t.nama, 'list="dlNama" placeholder="Nama petugas"') + '</td>' +
+                '<td style="min-width:130px">' + inp('tim', i, 'tugas', t.tugas, 'list="dlTugas"') + '</td>' +
+                '<td style="min-width:200px"><textarea class="form-control form-control-sm" rows="3" data-list="tim" data-i="' + i + '" data-k="uraian">' + esc(t.uraian) + '</textarea></td>' +
+                '<td style="white-space:nowrap">' + ctl('tim', i) + '</td></tr>';
+        }).join('');
+        $('dlTugas').innerHTML = ROLES.map(function (r) { return '<option value="' + esc(r.tugas) + '">'; }).join('');
+    }
+
+    function buildRencana() {
+        var L = 'rencana.rows';
+        var head = '<thead><tr><th></th><th>Baris</th><th>Waktu</th><th>Kegiatan</th><th>PIC</th><th></th></tr></thead>';
+        var body = '<tbody>' + S.rencana.rows.map(function (r, i) {
+            var sel = '<select class="form-select form-select-sm" style="width:auto" data-list="' + L + '" data-i="' + i + '" data-k="tipe">' +
+                '<option value="hari"' + (r.tipe === 'hari' ? ' selected' : '') + '>Hari / tanggal</option>' +
+                '<option value="kegiatan"' + (r.tipe === 'kegiatan' ? ' selected' : '') + '>Kegiatan</option>' +
+                '<option value="teks"' + (r.tipe === 'teks' ? ' selected' : '') + '>Teks penuh</option></select>';
+            var cls = r.tipe === 'hari' ? 'hari' : (r.tipe === 'teks' ? 'txt' : '');
+            var mid;
+            if (r.tipe === 'hari') {
+                mid = '<td colspan="3"><div class="d-flex flex-wrap gap-2"><input type="date" class="form-control form-control-sm" style="width:150px" data-list="' + L + '" data-i="' + i + '" data-k="tgl" value="' + esc(r.tgl) + '" title="Pilih tanggal, teks hari terisi otomatis">' +
+                    inp(L, i, 'teks', r.teks, 'style="flex:1 1 220px;width:auto" placeholder="Selasa, 3 November 2026"') + '</div></td>';
+            } else if (r.tipe === 'teks') {
+                mid = '<td colspan="3">' + inp(L, i, 'teks', r.teks, 'placeholder="mis. Perjalanan ke Bandung"') + '</td>';
+            } else {
+                mid = '<td>' + inp(L, i, 'waktu', r.waktu, 'placeholder="08.00 – 08.30" style="width:120px"') + '</td>' +
+                    '<td style="min-width:260px"><div class="pp-rte sm" data-rte="rencana.rows.' + i + '.kegiatan"></div></td>' +
+                    '<td style="min-width:200px"><div class="pp-rte sm" data-rte="rencana.rows.' + i + '.pic"></div></td>';
+            }
+            return '<tr class="' + cls + '"><td class="pp-no">' + (i + 1) + '</td><td>' + sel + '</td>' + mid + '<td style="white-space:nowrap">' + ctl(L, i) + '</td></tr>';
+        }).join('') + '</tbody>';
+        $('ppRencana').innerHTML = head + body;
+        mountRtes($('ppRencana'));
+    }
+
+    function buildKomp() {
+        $('ppKomp').innerHTML = S.rab.komponen.map(function (t, i) {
+            return '<tr><td class="pp-no">' + (i + 1) + '</td><td style="min-width:150px">' + inp('rab.komponen', i, 'nama', t.nama, 'placeholder="mis. Inspeksi Produk"') + '</td>' +
+                '<td>' + inp('rab.komponen', i, 'nilai', t.nilai ? rupiah(t.nilai) : '', MONEY) + '</td>' +
+                '<td style="white-space:nowrap">' + ctl('rab.komponen', i) + '</td></tr>';
+        }).join('');
+    }
+
+    function buildInduk() {
+        $('ppInduk').innerHTML = S.rab.induk.map(function (d, i) {
+            var val = '';
+            if (d.tipe === 'harga' && !d.rinci) { val = inp('rab.induk', i, 'nilai', d.nilai ? rupiah(d.nilai) : '', MONEY); }
+            else if (d.tipe === 'persen') { val = '<div class="input-group input-group-sm" style="width:120px">' + inp('rab.induk', i, 'persen', d.persen, 'type="number" step="0.01" min="0" style="text-align:right" placeholder="mis. 40"') + '<span class="input-group-text">%</span></div>'; }
+            else if (d.tipe === 'sisa') { val = '<span class="pp-auto">otomatis: sisa nilai kontrak</span>'; }
+            var opt = function (v, t) { return '<option value="' + v + '"' + (d.tipe === v ? ' selected' : '') + '>' + t + '</option>'; };
+            var head = '<div class="pp-induk-h"><span class="pp-letter">-</span>' +
+                '<input class="form-control form-control-sm" style="flex:1 1 170px;min-width:140px;width:auto" data-list="rab.induk" data-i="' + i + '" data-k="nama" value="' + esc(d.nama) + '" placeholder="Nama kategori, mis. Biaya Layanan Kepada Klien">' +
+                '<select class="form-select form-select-sm" style="width:auto" data-list="rab.induk" data-i="' + i + '" data-k="tipe">' +
+                opt('harga', 'Harga langsung') + opt('persen', 'Persen dari (kontrak - harga langsung)') + opt('sisa', 'Sisa (kontrak - kategori lain)') + '</select>' +
+                val + '<span class="small fw-semibold text-nowrap">Rp <span id="indJml' + i + '">0</span></span>' +
+                '<span style="white-space:nowrap">' + ctl('rab.induk', i) + '</span></div>';
+            var rin = '';
+            if (d.tipe === 'harga') {
+                rin = '<label class="small text-muted mt-2 d-block"><input type="checkbox" class="me-1" data-list="rab.induk" data-i="' + i + '" data-k="rinci"' + (d.rinci ? ' checked' : '') + '>Pakai rincian (jumlah kategori dihitung dari baris rincian)</label>';
+                if (d.rinci) {
+                    var lr = 'rab.induk.' + i + '.rincian';
+                    rin += '<div class="pp-ind-opt"><span>Tampilkan rincian:</span>' +
+                        '<select class="form-select form-select-sm" style="width:auto" data-list="rab.induk" data-i="' + i + '" data-k="tampil">' +
+                        '<option value="bawah"' + (d.tampil === 'bawah' ? ' selected' : '') + '>Langsung di bawah kategori ini</option>' +
+                        '<option value="blok"' + (d.tampil !== 'bawah' ? ' selected' : '') + '>Sebagai blok bertajuk (di akhir bagian pengeluaran)</option></select></div>' +
+                        (d.tampil !== 'bawah'
+                            ? '<div class="pp-ind-opt">' +
+                              '<input class="form-control form-control-sm" style="flex:1 1 200px;width:auto" data-list="rab.induk" data-i="' + i + '" data-k="judulBlok" value="' + esc(d.judulBlok) + '" placeholder="Judul blok, mis. Belanja Perjalanan">' +
+                              '<input class="form-control form-control-sm" style="flex:1 1 260px;width:auto" data-list="rab.induk" data-i="' + i + '" data-k="subJudul" value="' + esc(d.subJudul) + '" placeholder="Sub judul, mis. Perjalanan petugas ke PT. ..."></div>'
+                            : '') +
+                        '<div class="table-responsive mt-2"><table class="pp-tbl"><thead><tr><th>Uraian</th><th>Jml</th><th>Satuan</th><th title="Opsional">Hari</th><th>Tarif satuan (Rp)</th><th title="Dipakai bila Tarif kosong">Jumlah manual (Rp)</th><th>Jumlah (Rp)</th><th></th></tr></thead><tbody>' +
+                        (d.rincian || []).map(function (b, m) {
+                            return '<tr><td style="min-width:150px">' + inp(lr, m, 'nama', b.nama, 'placeholder="mis. Lumpsum petugas:"') + '</td>' +
+                                '<td>' + inp(lr, m, 'qty', b.qty, 'type="number" min="0" step="any" style="width:56px"') + '</td>' +
+                                '<td>' + inp(lr, m, 'satuan', b.satuan || '', 'list="dlSatuan" placeholder="orang" style="width:80px"') + '</td>' +
+                                '<td>' + inp(lr, m, 'hari', b.hari, 'type="number" min="0" step="any" style="width:56px"') + '</td>' +
+                                '<td>' + inp(lr, m, 'tarif', b.tarif ? rupiah(b.tarif) : '', 'data-type="money" inputmode="numeric" style="width:96px;text-align:right"') + '</td>' +
+                                '<td>' + inp(lr, m, 'jumlah', b.jumlah ? rupiah(b.jumlah) : '', 'data-type="money" inputmode="numeric" style="width:100px;text-align:right"') + '</td>' +
+                                '<td class="pp-r" style="white-space:nowrap;padding-top:8px" id="rinJml' + i + '_' + m + '">0</td>' +
+                                '<td style="white-space:nowrap">' + ctl(lr, m) + '</td></tr>';
+                        }).join('') + '</tbody></table></div>' +
+                        '<div class="pp-hint">Teks di dokumen disusun otomatis: <b>Uraian</b> + Jml + Satuan, Hari hr @ Rp Tarif (yang kosong dilewati; ketik titik dua di akhir Uraian untuk gaya "Lumpsum petugas:"). Bila <b>Tarif</b> diisi, jumlah = Jml &times; Hari &times; Tarif; bila kosong, dipakai <b>Jumlah manual</b> (mis. Tol + BBM). Jumlah 0 tampil sebagai "-".</div>' +
+                        '<button type="button" class="btn btn-sm btn-outline-secondary mt-1" data-act="add" data-list="' + lr + '"><i class="bi bi-plus-lg me-1"></i>Tambah rincian</button>';
+                }
+            }
+            return '<div class="pp-induk">' + head + rin + '</div>';
+        }).join('') || '<div class="pp-hint">Belum ada kategori. Klik <b>Tambah kategori</b> untuk mulai.</div>';
+    }
+
+    function padOn() { var n = jadCols().length; S.jadwal.rows.forEach(function (r) { while (r.on.length < n) { r.on.push(0); } }); }
+    function buildJad() { buildBulanList(); buildJadTable(); }
+    function buildBulanList() {
+        $('ppBulanList').innerHTML = S.jadwal.bulan.map(function (b, i) {
+            return '<div class="input-group input-group-sm" style="width:auto">' +
+                inp('jadwal.bulan', i, 'nama', b.nama, 'placeholder="April 2026" style="width:130px"') +
+                '<span class="input-group-text">Mgg</span>' +
+                '<input class="form-control form-control-sm" type="number" min="1" max="12" style="width:54px" data-list="jadwal.bulan" data-i="' + i + '" data-k="mulai" value="' + esc(b.mulai) + '" title="Nomor minggu pertama (3 = III)">' +
+                '<span class="input-group-text">jml</span>' +
+                '<input class="form-control form-control-sm" type="number" min="1" max="8" style="width:54px" data-list="jadwal.bulan" data-i="' + i + '" data-k="n" value="' + esc(b.n) + '" title="Jumlah kolom minggu">' +
+                '<button type="button" class="btn btn-outline-secondary" data-act="del-bulan" data-i="' + i + '" title="Hapus bulan">&times;</button></div>';
+        }).join('');
+    }
+    function buildJadTable() {
+        padOn();
+        var jd = S.jadwal, cols = jadCols();
+        var h1 = '<thead><tr><th></th><th></th>' + jd.bulan.map(function (b, i) { return '<th colspan="' + Math.max(num(b.n), 1) + '" data-bm="' + i + '">' + esc(b.nama) + '</th>'; }).join('') + '<th></th></tr>' +
+            '<tr><th></th><th>Kegiatan</th>' + cols.map(function (c) { return '<th>' + c.label + '</th>'; }).join('') + '<th></th></tr></thead>';
+        var body = '<tbody>' + jd.rows.map(function (r, i) {
+            return '<tr><td class="pp-no">' + (i + 1) + '</td><td style="min-width:170px;text-align:left">' + inp('jadwal.rows', i, 'nama', r.nama, 'placeholder="mis. Pelaksanaan inspeksi"') + '</td>' +
+                cols.map(function (c, j) { return '<td><input type="checkbox" data-list="jadwal.rows" data-i="' + i + '" data-k="on" data-sub="' + j + '"' + (r.on[j] ? ' checked' : '') + '></td>'; }).join('') +
+                '<td style="white-space:nowrap">' + ctl('jadwal.rows', i) + '</td></tr>';
+        }).join('') + '</tbody>';
+        $('ppJad').innerHTML = h1 + body;
+    }
+    function resizeMonth(i, nn) {
+        padOn();
+        var b = S.jadwal.bulan[i], old = num(b.n), off = 0, z = [];
+        S.jadwal.bulan.forEach(function (x, k) { if (k < i) { off += num(x.n); } });
+        if (nn > old) { for (var q = 0; q < nn - old; q++) { z.push(0); } }
+        S.jadwal.rows.forEach(function (r) {
+            if (nn > old) { Array.prototype.splice.apply(r.on, [off + old, 0].concat(z)); }
+            else if (nn < old) { r.on.splice(off + nn, old - nn); }
+        });
+        b.n = nn;
+    }
+
+    function builderFor(list) {
+        if (list === 'tim') { return buildTim; }
+        if (list === 'rencana.rows') { return buildRencana; }
+        if (list === 'rab.komponen') { return buildKomp; }
+        if (list.indexOf('rab.') === 0) { return buildInduk; }
+        return buildJad;
+    }
+    function newRow(list) {
+        if (list === 'tim') { return { nama: '', tugas: ROLES[3].tugas, uraian: ROLES[3].uraian }; }
+        if (list === 'rab.komponen') { return { nama: '', nilai: 0 }; }
+        if (list === 'rab.induk') { var d = newInd(); d.tipe = 'harga'; return d; }
+        if (/\.rincian$/.test(list)) { return newRinci(); }
+        if (list === 'jadwal.rows') { return { nama: '', on: jadCols().map(function () { return 0; }) }; }
+        return {};
+    }
+
+    /* ---------------- sinkron form <-> state ---------------- */
+    function fmtBind(el, v) {
+        if (el.type === 'checkbox') { el.checked = !!v; }
+        else if (el.dataset.type === 'money') { el.value = v ? rupiah(num(v)) : ''; }
+        else { el.value = v == null ? '' : v; }
+    }
+    function populate() {
+        Array.prototype.forEach.call(document.querySelectorAll('#ppForm [data-bind]'), function (el) { fmtBind(el, getPath(S, el.dataset.bind)); });
+        Array.prototype.forEach.call(document.querySelectorAll('#ppForm [data-rte]'), mountRte);
+        buildTim(); buildRencana(); buildKomp(); buildInduk(); buildJad();
+        render();
+    }
+
+    var root = $('ppForm');
+
+    root.addEventListener('mousedown', function (e) { if (e.target.closest('.pp-rte-bar button')) { e.preventDefault(); } });
+    root.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-cmd]');
+        if (b) {
+            var wrap = b.closest('[data-rte]'), body = wrap.querySelector('.pp-rte-body'); body.focus();
+            var cmd = b.dataset.cmd;
+            if (cmd === 'num') {
+                var sel = window.getSelection(), n = sel.anchorNode;
+                while (n && n.nodeName !== 'OL') { n = n.parentNode; }
+                if (n && body.contains(n)) { n.setAttribute('type', '1'); }
+                else { document.execCommand('insertOrderedList'); sel = window.getSelection(); n = sel.anchorNode; while (n && n.nodeName !== 'OL') { n = n.parentNode; } if (n) { n.setAttribute('type', '1'); } }
+            } else if (cmd === 'insertOrderedList') {
+                document.execCommand('insertOrderedList');
+                var s2 = window.getSelection(), o = s2.anchorNode; while (o && o.nodeName !== 'OL') { o = o.parentNode; } if (o) { o.removeAttribute('type'); }
+            } else { document.execCommand(cmd, false, null); }
+            setPath(S, wrap.dataset.rte, body.innerHTML); schedule(); return;
+        }
+        var a = e.target.closest('[data-act]');
+        if (!a) { return; }
+        var act = a.dataset.act, list = a.dataset.list, i = +a.dataset.i;
+        if (act === 'add') { getPath(S, list).push(newRow(list)); builderFor(list)(); }
+        else if (act === 'del') { getPath(S, list).splice(i, 1); builderFor(list)(); }
+        else if (act === 'mv') {
+            var arr = getPath(S, list), j = i + (+a.dataset.dir);
+            if (j >= 0 && j < arr.length) { var t = arr[i]; arr[i] = arr[j]; arr[j] = t; builderFor(list)(); }
+        }
+        else if (act === 'add-rrow') { S.rencana.rows.push(newRenc(a.dataset.tipe)); buildRencana(); }
+        else if (act === 'add-bulan') { S.jadwal.bulan.push({ nama: '', mulai: 1, n: 0 }); resizeMonth(S.jadwal.bulan.length - 1, 4); buildJad(); }
+        else if (act === 'del-bulan') {
+            if (S.jadwal.bulan.length > 1) { resizeMonth(i, 0); S.jadwal.bulan.splice(i, 1); buildJad(); }
+        }
+        schedule();
+    });
+
+    function onInput(e) {
+        var t = e.target;
+        if (t.classList.contains('pp-rte-body')) { setPath(S, t.closest('[data-rte]').dataset.rte, t.innerHTML); schedule(); return; }
+        if (t.dataset.bind) {
+            var path = t.dataset.bind, v;
+            if (t.type === 'checkbox') { v = t.checked ? 1 : 0; }
+            else if (t.dataset.type === 'money') { v = parseInt(String(t.value).replace(/\D/g, ''), 10) || 0; }
+            else { v = t.value; }
+            setPath(S, path, v);
+            schedule(); return;
+        }
+        if (t.dataset.list) {
+            if (t.dataset.list === 'jadwal.bulan' && (t.dataset.k === 'n' || t.dataset.k === 'mulai')) { return; }
+            if (t.dataset.list === 'jadwal.bulan') { var th = document.querySelector('#ppJad th[data-bm="' + t.dataset.i + '"]'); if (th) { th.textContent = t.value; } }
+            var arr = getPath(S, t.dataset.list), row = arr[+t.dataset.i], k = t.dataset.k, val;
+            if (t.type === 'checkbox') { val = t.checked ? 1 : 0; }
+            else if (t.dataset.type === 'money') { val = parseInt(String(t.value).replace(/\D/g, ''), 10) || 0; }
+            else if (t.type === 'number') { val = t.value === '' ? '' : parseFloat(t.value); }
+            else { val = t.value; }
+            if (t.dataset.sub !== undefined) { row[k][+t.dataset.sub] = val; }
+            else { row[k] = val; }
+            schedule();
+        }
+    }
+    root.addEventListener('input', onInput);
+    root.addEventListener('change', function (e) {
+        var t = e.target, L = t.dataset.list, K = t.dataset.k;
+        if (L === 'tim' && K === 'tugas') {
+            // pilih/ketik tugas baku -> uraian ikut terisi (kalau uraian masih kosong / masih uraian baku)
+            var row = S.tim[+t.dataset.i];
+            var cocok = ROLES.filter(function (r) { return r.tugas.toLowerCase() === String(t.value).trim().toLowerCase(); })[0];
+            var isBaku = !row.uraian || ROLES.some(function (r) { return r.uraian === row.uraian; });
+            if (cocok && isBaku) { row.tugas = cocok.tugas; row.uraian = cocok.uraian; buildTim(); }
+            schedule();
+        }
+        if (L === 'rencana.rows' && K === 'tipe') { onInput(e); buildRencana(); schedule(); }
+        if (L === 'rencana.rows' && K === 'tgl') {
+            onInput(e);
+            if (t.value) { S.rencana.rows[+t.dataset.i].teks = hariTgl(t.value); buildRencana(); }
+            schedule();
+        }
+        if (L === 'rab.induk' && (K === 'tipe' || K === 'rinci' || K === 'tampil')) { onInput(e); buildInduk(); schedule(); }
+        if (L === 'rab.komponen') { schedule(); }
+        if (L === 'jadwal.bulan') {
+            if (K === 'n') { resizeMonth(+t.dataset.i, Math.max(1, Math.min(8, parseInt(t.value, 10) || 1))); buildJadTable(); }
+            if (K === 'mulai') { S.jadwal.bulan[+t.dataset.i].mulai = Math.max(1, Math.min(12, parseInt(t.value, 10) || 1)); buildJadTable(); }
+            schedule();
+        }
+        if (t.dataset.type === 'money') { t.value = t.value ? rupiah(parseInt(String(t.value).replace(/\D/g, ''), 10) || 0) : ''; }
+    });
+    root.addEventListener('focusin', function (e) {
+        if (e.target.dataset && e.target.dataset.type === 'money') { try { e.target.select(); } catch (x) {} }
+    });
+
+    // tempel dari Word / web: jadikan teks polos supaya tampilan dokumen tetap rapi
+    root.addEventListener('paste', function (e) {
+        if (!e.target.closest || !e.target.closest('.pp-rte-body')) { return; }
+        e.preventDefault();
+        var txt = (e.clipboardData || window.clipboardData).getData('text/plain');
+        document.execCommand('insertText', false, txt);
+    });
+
+    /* ---------------- header & tombol ---------------- */
+    function scrollPv(pg) {
+        var el = $('pv' + pg), box = $('pvBox'); if (!el) { return; }
+        var top = el.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop - 8;
+        box.scrollTo({ top: top, behavior: 'smooth' });
+    }
+    // preview di modal (tombol Hal. untuk lompat halaman, X untuk tutup; Esc / klik latar juga menutup)
+    var modal = $('ppModal');
+    document.body.appendChild(modal);
+    document.body.appendChild($('ppMeasure'));
+    function bukaPreview() { render(); modal.classList.add('open'); modal.setAttribute('aria-hidden', 'false'); document.body.style.overflow = 'hidden'; fit(); $('pvBox').scrollTop = 0; }
+    function tutupPreview() { modal.classList.remove('open'); modal.setAttribute('aria-hidden', 'true'); document.body.style.overflow = ''; }
+    $('ppPreview').addEventListener('click', bukaPreview);
+    $('ppPreviewFab').addEventListener('click', bukaPreview);
+    $('ppModalX').addEventListener('click', tutupPreview);
+    document.querySelector('.pp-modal-bar').addEventListener('click', function (e) {
+        var b = e.target.closest('[data-pv]'); if (b) { scrollPv(b.dataset.pv); }
+    });
+    modal.addEventListener('click', function (e) { if (e.target === modal) { tutupPreview(); } });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && modal.classList.contains('open')) { tutupPreview(); } });
+    $('ppPrint').addEventListener('click', function () { render(); window.print(); });
+    $('ppReset').addEventListener('click', function () {
+        if (confirm('Kosongkan semua isian form?')) { S = blank(); populate(); }
+    });
+    $('ppSample').addEventListener('change', function () {
+        var k = this.value; this.value = '';
+        if (!k || !SAMPLES[k]) { return; }
+        if (confirm('Isi form dengan data PO contoh? Isian yang sekarang akan diganti.')) {
+            S = SAMPLES[k]();
+            populate();
+        }
+    });
+    window.addEventListener('resize', fit);
+
+    populate();
+})();
+</script>

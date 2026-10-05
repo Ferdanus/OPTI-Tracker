@@ -419,7 +419,7 @@ class OrderController extends Controller {
         $poKegiatan = null;
         try {
             $poKegiatanModel = new PoKegiatan($this->db);
-            $poKegiatanModel->load(['order_id = ?', $id]);
+            $poKegiatanModel->load(['order_id = ?' . \PoSchema::bukanSertifikasi(''), $id]);
             if (!$poKegiatanModel->dry()) {
                 $poKegiatan = $poKegiatanModel->cast();
             }
@@ -3381,6 +3381,12 @@ class OrderController extends Controller {
             $msg .= ").";
 
             $this->setFlashSuccess($msg);
+
+            // [BARU] Sampel diterima bisa jadi syarat TERAKHIR dari tiga syarat "siap
+            // ditunjuk pelaksana" (disposisi + lunas + sampel) -- cek & notif di sini juga.
+            if (class_exists('KetuaTimController')) {
+                \KetuaTimController::notifikasiJikaSiapPenunjukan($this->db, $id, $currentUserId > 0 ? $currentUserId : null);
+            }
         } catch (\Exception $e) {
             $this->setFlashError('Gagal mencatat penerimaan sampel: ' . $e->getMessage());
         }

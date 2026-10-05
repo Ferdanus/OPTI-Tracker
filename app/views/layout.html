@@ -1259,6 +1259,9 @@
                     <li>
                         <a class="sidebar-link {{ @active_menu == 'validasi-mitra' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan/validasi-mitra" title="Surat Penawaran">
                             <i class="bi bi-file-earmark-text"></i> <span>Validasi PO</span>
+                            <check if="{{ @jumlah_notif_validasi_po > 0 }}">
+                                <span class="badge rounded-pill bg-danger ms-auto">{{ @jumlah_notif_validasi_po }}</span>
+                            </check>
                         </a>
                     </li>
                 </check>
@@ -1281,6 +1284,9 @@
                     <li>
                         <a class="sidebar-link {{ @active_menu == 'ketua-tim-po' ? 'active' : '' }}" href="{{ @BASE }}/ketua-tim/siap-po" title="Daftar Order Lunas">
                             <i class="bi bi-check2-circle"></i> <span>Penunjukan Pelaksana</span>
+                            <check if="{{ @jumlah_notif_penunjukan_pelaksana > 0 }}">
+                                <span class="badge rounded-pill bg-danger ms-auto">{{ @jumlah_notif_penunjukan_pelaksana }}</span>
+                            </check>
                         </a>
                     </li>
                 </check>
@@ -1301,7 +1307,26 @@
                     </li>
                     </check>
                     <!-- Petunjuk Operasional (PO) Kegiatan -->
-                    <check if="{{ @is_superadmin || (@is_tim_kerja && @divisi_tim_kerja == 'lingkungan') }}">
+                    <!-- Superadmin: satu menu "Daftar PO" (semua divisi, divisi dipilih lewat filter di halamannya) -->
+                    <check if="{{ @is_superadmin }}">
+                        <li>
+                            <a class="sidebar-link {{ @active_menu == 'po_kegiatan' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan" title="Daftar Petunjuk Operasional">
+                                <i class="bi bi-clipboard-check"></i> <span>Daftar PO</span>
+                                <check if="{{ (@jumlah_notif_po_lingkungan + @jumlah_notif_po_selulosa) > 0 }}">
+                                    <span class="badge rounded-pill bg-danger ms-auto">{{ @jumlah_notif_po_lingkungan + @jumlah_notif_po_selulosa }}</span>
+                                </check>
+                            </a>
+                        </li>
+                    </check>
+                    <!-- Daftar PO layanan selain OPTI (Sertifikasi dst.) -- sementara khusus Superadmin; role layanan menyusul -->
+                    <check if="{{ @is_superadmin }}">
+                        <li>
+                            <a class="sidebar-link {{ @active_menu == 'po_layanan' ? 'active' : '' }}" href="{{ @BASE }}/petunjuk-operasional" title="Daftar PO Layanan (Sertifikasi dll.)">
+                                <i class="bi bi-clipboard2-data"></i> <span>Daftar PO Layanan</span>
+                            </a>
+                        </li>
+                    </check>
+                    <check if="{{ (@is_ketua_tim && @user_layanan == 'lingkungan') || (@is_tim_kerja && @divisi_tim_kerja == 'lingkungan') }}">
                         <li>
                             <a class="sidebar-link {{ @active_menu == 'po_lingkungan' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?divisi=lingkungan" title="Petunjuk Operasional Lingkungan">
                                 <i class="bi bi-clipboard-check"></i> <span>Daftar PO Lingkungan</span>
@@ -1310,8 +1335,8 @@
                                 </check>
                             </a>
                         </li>
-                        </check>
-                        <check if="{{ @is_superadmin || (@is_tim_kerja && @divisi_tim_kerja == 'selulosa') }}">
+                    </check>
+                    <check if="{{ (@is_ketua_tim && @user_layanan == 'selulosa') || (@is_tim_kerja && @divisi_tim_kerja == 'selulosa') }}">
                         <li>
                             <a class="sidebar-link {{ @active_menu == 'po_selulosa' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?divisi=selulosa" title="Petunjuk Operasional Selulosa">
                                 <i class="bi bi-clipboard-check"></i> <span>Daftar PO Selulosa</span>
@@ -1320,12 +1345,12 @@
                                 </check>
                             </a>
                         </li>
-                        </check>
+                    </check>
                     <check if="{{ @is_superadmin || @is_tim_kerja || @is_keuangan }}">
                     <li>
                         <a class="sidebar-link {{ @active_menu == 'daftar_po' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan/daftar" title="Daftar Review PO">
                             <i class="bi bi-clipboard-check"></i> <span>Daftar Review PO</span>
-                            <check if="{{ @jumlah_notif_po_selulosa > 0 }}">
+                            <check if="{{ @jumlah_notif_daftar_po > 0 }}">
                                 <span class="badge rounded-pill bg-danger ms-auto">{{ @jumlah_notif_daftar_po }}</span>
                             </check>
                         </a>

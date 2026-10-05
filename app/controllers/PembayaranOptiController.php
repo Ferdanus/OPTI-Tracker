@@ -350,6 +350,13 @@ if ($statusBaru === 'lunas' && !empty($post['disposisi_langsung'])) {
     $pesanSukses = 'Pembayaran termin tercatat.';
 }
 
+// [BARU] Kalau disposisi & sampel udah kesetel duluan dari tempat lain, dan baru
+// sekarang order-nya lunas -- ini titik terakhir yang melengkapi tiga syarat, jadi
+// cek & kirim notifikasi "siap ditunjuk pelaksana" di sini juga.
+if ($statusBaru === 'lunas' && class_exists('KetuaTimController')) {
+    \KetuaTimController::notifikasiJikaSiapPenunjukan($this->db, $orderId, $this->getUserId());
+}
+
 $this->setFlashSuccess($pesanSukses);
 
             $f3->reroute('/pembayaran');
@@ -585,6 +592,13 @@ $this->setFlashSuccess($pesanSukses);
                 'created_by_name' => $_SESSION['nama_lengkap'] ?? 'Bagian Keuangan',
             ]);
         } catch (\Exception $eNotif) {}
+
+        // [BARU] Sekalian cek apakah order ini udah lengkap TIGA syaratnya (disposisi +
+        // lunas + sampel diterima) -- kalau iya, Ketua Tim dapet notifikasi terpisah
+        // "siap ditunjuk pelaksana" juga.
+        if (class_exists('KetuaTimController')) {
+            \KetuaTimController::notifikasiJikaSiapPenunjukan($this->db, $orderId, $userId);
+        }
     }
     /** POST /pembayaran/@id/disposisi-katim */
     public function disposisiKatim($f3, $params) {

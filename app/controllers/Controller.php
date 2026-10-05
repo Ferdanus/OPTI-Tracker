@@ -250,7 +250,7 @@ try {
                   FROM order_layanan o
                   WHERE o.ketua_pelaksana_id IS NOT NULL
                     AND o.jenis_layanan_opti IN ('lingkungan', 'selulosa')
-                    AND NOT EXISTS (SELECT 1 FROM po_kegiatan p WHERE p.order_id = o.id)
+                    AND NOT EXISTS (SELECT 1 FROM po_kegiatan p WHERE p.order_id = o.id" . \PoSchema::bukanSertifikasi('p') . ")
                     AND o.status NOT IN ('batal', 'ditolak', 'selesai')";
         $paramsPo = array();
 
@@ -296,6 +296,75 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
             }
         }
         $this->f3->set('jumlah_notif_keuangan', $notifKeuanganCount);
+
+        // [BARU] Badge "Penunjukan Pelaksana" (Ka Tim OPTI & Superadmin) -- order yang udah
+        // didisposisi + lunas + sampel diterima, tapi Ketua Pelaksana belum ditunjuk.
+        $notifPenunjukanPelaksana = 0;
+        if ($role === 'ketua_tim' || $role === 'superadmin') {
+            try {
+                $whereDivPenunjukan = ($role === 'ketua_tim' && in_array($layanan, array('selulosa', 'lingkungan'))) ? "o.jenis_layanan_opti = '{$layanan}' AND" : "";
+                $sqlPenunjukan = "SELECT COUNT(*) as c FROM order_layanan o
+                                  WHERE {$whereDivPenunjukan} o.disposisi_katim_at IS NOT NULL
+                                    AND o.status_keuangan = 'lunas'
+                                    AND o.tanggal_terima_sampel IS NOT NULL
+                                    AND o.ketua_pelaksana_id IS NULL";
+                $resPenunjukan = $this->db->exec($sqlPenunjukan);
+                $notifPenunjukanPelaksana = (int)($resPenunjukan[0]['c'] ?? 0);
+            } catch (\Exception $ePenunjukan) {
+                $notifPenunjukanPelaksana = 0;
+            }
+        }
+        $this->f3->set('jumlah_notif_penunjukan_pelaksana', $notifPenunjukanPelaksana);
+
+        // [BARU] Badge "Validasi PO" (Tim Mitra & Superadmin) -- PO berstatus 'terkirim'
+        // yang belum divalidasi Tim Mitra.
+        $notifValidasiPo = 0;
+        if ($isTimMitra || $role === 'superadmin') {
+            try {
+                $resValidasi = $this->db->exec("SELECT COUNT(*) as c FROM po_kegiatan WHERE status = 'terkirim'" . \PoSchema::bukanSertifikasi(''));
+                $notifValidasiPo = (int)($resValidasi[0]['c'] ?? 0);
+            } catch (\Exception $eValidasi) {
+                $notifValidasiPo = 0;
+            }
+        }
+        $this->f3->set('jumlah_notif_validasi_po', $notifValidasiPo);
+
+        // [FIX] Badge "Daftar Review PO" -- sebelumnya nunjuk ke variabel yang gak pernah
+        // diisi (selalu kosong). Hitungannya beda tergantung sisi: Keuangan/Superadmin liat
+        // PO tervalidasi Tim Mitra yang belum final disetujui; Tim Kerja liat PO revisi
+        // miliknya sendiri yang perlu ditindaklanjuti.
+        $notifDaftarPo = 0;
+        try {
+            if ($isKeuangan || $role === 'superadmin') {
+                $resDaftarPo = $this->db->exec(
+                    "SELECT COUNT(*) as c FROM po_kegiatan p
+                     WHERE p.tervalidasi_mitra_at IS NOT NULL AND p.tervalidasi_mitra_by IS NOT NULL
+                       AND (p.status_review IS NULL OR p.status_review <> 'disetujui')"
+                );
+                $notifDaftarPo = (int)($resDaftarPo[0]['c'] ?? 0);
+            } elseif ($role === 'tim_kerja') {
+                $resDaftarPo = $this->db->exec(
+                    "SELECT COUNT(*) as c FROM po_kegiatan p
+                     JOIN order_layanan o ON o.id = p.order_id
+                     WHERE o.ketua_pelaksana_id = ? AND p.status_review = 'revisi'",
+                    array(1 => (int)$userId)
+                );
+                $notifDaftarPo = (int)($resDaftarPo[0]['c'] ?? 0);
+            }
+        } catch (\Exception $eDaftarPo) {
+            $notifDaftarPo = 0;
+        }
+        $this->f3->set('jumlah_notif_daftar_po', $notifDaftarPo);
+
+        // Notifikasi "order sertifikasi sudah lunas tapi belum dibuatkan PO" (Superadmin) -- disinkronkan paling sering tiap 60 detik
+        try {
+            if ($role === 'superadmin' && (time() - (int)($_SESSION['po_notif_sinkron_at'] ?? 0)) > 60) {
+                $_SESSION['po_notif_sinkron_at'] = time();
+                (new \petunjuk_operasional\PoIndexController())->sinkronNotifOrderBelumPo();
+            }
+        } catch (\Throwable $ePoNotif) {
+            error_log('[Notif PO] ' . $ePoNotif->getMessage());
+        }
 
         // Notifikasi Terintegrasi (Notification Service) untuk Bell Dropdown & Floating Bubble
         try {

@@ -168,4 +168,54 @@ unset($o);
 
         $f3->reroute('/ketua-tim/siap-po');
     }
+
+    /**
+     * [BARU] Kirim notifikasi lonceng ke Ketua Tim + Superadmin pas sebuah order resmi
+     * "siap ditunjuk pelaksana" -- butuh TIGA syarat yang bisa kesetel di urutan/tempat
+     * manapun (disposisi_katim_at, status_keuangan='lunas', tanggal_terima_sampel), jadi
+     * dipanggil dari beberapa titik: PembayaranOptiController::lakukanDisposisiKatim() &
+     * simpan(), dan OrderController::simpanTerimaSampel(). Aman dipanggil berkali-kali --
+     * query ini sendiri yang ngecek apa syaratnya udah lengkap, dan ada pengecekan biar
+     * gak ngirim notifikasi dobel buat order yang sama.
+     */
+    public static function notifikasiJikaSiapPenunjukan($db, $orderId, $userId = null) {
+        try {
+            $rows = $db->exec(
+                "SELECT o.nomor_order, o.jenis_layanan_opti, c.nmcustomer AS nama_perusahaan, c.pt_cv
+                 FROM order_layanan o
+                 JOIN tb_customer c ON c.id_customer = o.id_customer
+                 WHERE o.id = ?
+                   AND o.disposisi_katim_at IS NOT NULL
+                   AND o.status_keuangan = 'lunas'
+                   AND o.tanggal_terima_sampel IS NOT NULL
+                   AND o.ketua_pelaksana_id IS NULL",
+                [1 => (int) $orderId]
+            );
+            if (empty($rows)) { return; } // belum (atau udah gak lagi) memenuhi syarat
+            $o = $rows[0];
+
+            // Jangan kirim dobel buat order yang sama.
+            $sudah = $db->exec(
+                "SELECT id FROM opti_notifikasi WHERE order_id = ? AND judul = ? LIMIT 1",
+                [1 => (int) $orderId, 2 => 'Order Siap Ditunjuk Pelaksana']
+            );
+            if (!empty($sudah)) { return; }
+
+            $namaPerusahaan = trim((string) (($o['pt_cv'] ?? '') . ' ' . $o['nama_perusahaan']));
+            \NotificationService::send($db, [
+                'order_id'        => $orderId,
+                'target_role'     => 'ketua_tim',
+                'target_layanan'  => $o['jenis_layanan_opti'] ?? 'semua',
+                'judul'           => 'Order Siap Ditunjuk Pelaksana',
+                'pesan'           => "Order #{$o['nomor_order']} ({$namaPerusahaan}) sudah lunas & sampel diterima -- siap ditunjuk Ketua Pelaksana.",
+                'tipe'            => 'success',
+                'icon'            => 'bi-person-check-fill',
+                'link_url'        => '/ketua-tim/siap-po',
+                'created_by'      => $userId,
+                'created_by_name' => $_SESSION['nama_lengkap'] ?? 'Sistem OPTI',
+            ]);
+        } catch (\Exception $e) {
+            // notifikasi bersifat pelengkap -- jangan gagalkan alur utama pembayaran/sampel
+        }
+    }
 }

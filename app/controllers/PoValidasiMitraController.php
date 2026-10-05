@@ -58,7 +58,7 @@ class PoValidasiMitraController extends Controller {
                  JOIN order_layanan o ON o.id = p.order_id
                  JOIN tb_customer c ON c.id_customer = o.id_customer
                  LEFT JOIN tb_surat_penawaran sp ON sp.order_id = o.id AND sp.status_respon_klien = 'deal'
-                 WHERE p.status = 'terkirim'
+                 WHERE p.status = 'terkirim'" . \PoSchema::bukanSertifikasi('p') . "
                  ORDER BY p.created_at DESC"
             );
         } catch (\Exception $e) {
@@ -262,6 +262,24 @@ class PoValidasiMitraController extends Controller {
             } catch (\Exception $e) {}
         }
 
+        // [BARU] Notifikasi lonceng ke Keuangan + Superadmin -- PO ini sekarang nongol
+        // di halaman "Daftar Review PO" mereka, menunggu persetujuan final.
+        try {
+            \NotificationService::send($this->db, [
+                'order_id'        => $order['id'],
+                'po_id'           => $po['id'],
+                'target_role'     => 'keuangan',
+                'target_layanan'  => 'semua',
+                'judul'           => 'PO Siap Direview Keuangan',
+                'pesan'           => "PO #{$po['nomor_po']} untuk Order #{$order['nomor_order']} ({$order['judul_kegiatan']}) sudah divalidasi Tim Mitra, siap direview Keuangan.",
+                'tipe'            => 'info',
+                'icon'            => 'bi-clipboard-check',
+                'link_url'        => '/po-kegiatan/daftar',
+                'created_by'      => $uid,
+                'created_by_name' => $_SESSION['nama_lengkap'] ?? 'Tim Mitra',
+            ]);
+        } catch (\Exception $eNotif) {}
+
         $this->keluarkanJson(['ok' => true]);
     }
 
@@ -299,7 +317,7 @@ class PoValidasiMitraController extends Controller {
         if ($poId <= 0) { return null; }
         $rows = $this->safeExec(
             "SELECT p.id, p.nomor_po, p.status, p.catatan_tim_mitra, p.order_id
-             FROM po_kegiatan p WHERE p.id = ? LIMIT 1",
+             FROM po_kegiatan p WHERE p.id = ?" . \PoSchema::bukanSertifikasi('p') . " LIMIT 1",
             [1 => $poId]
         );
         return !empty($rows) ? $rows[0] : null;
