@@ -65,6 +65,23 @@ class PoReviewController extends Controller {
                     ADD COLUMN disetujui_by INT(11) NULL AFTER disetujui_at,
                     ADD COLUMN disposisi_humas_at DATETIME NULL AFTER disetujui_by");
             }
+
+            // Pastikan kolom-kolom validasi Tim Mitra di po_kegiatan
+            $colsMitra = $this->db->exec("SHOW COLUMNS FROM po_kegiatan LIKE 'tervalidasi_mitra_at'");
+            if (empty($colsMitra)) {
+                $this->db->exec("ALTER TABLE po_kegiatan 
+                    ADD COLUMN catatan_tim_mitra TEXT NULL,
+                    ADD COLUMN tervalidasi_mitra_at DATETIME NULL,
+                    ADD COLUMN tervalidasi_mitra_by INT(11) NULL");
+            }
+
+            // Pastikan kolom validasi Keuangan di po_kegiatan
+            $colsKeu = $this->db->exec("SHOW COLUMNS FROM po_kegiatan LIKE 'validasi_keuangan_at'");
+            if (empty($colsKeu)) {
+                $this->db->exec("ALTER TABLE po_kegiatan 
+                    ADD COLUMN validasi_keuangan_at DATETIME NULL,
+                    ADD COLUMN validasi_keuangan_by INT(11) NULL");
+            }
             
             // Pastikan tabel po_chat tersedia
             $this->db->exec("CREATE TABLE IF NOT EXISTS `po_chat` (

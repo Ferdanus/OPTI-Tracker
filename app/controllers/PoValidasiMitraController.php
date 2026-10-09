@@ -306,6 +306,13 @@ class PoValidasiMitraController extends Controller {
                     $this->db->exec("ALTER TABLE po_kegiatan MODIFY COLUMN status VARCHAR(30) NOT NULL DEFAULT 'draft'");
                 }
             }
+            $colsMitra = $this->db->exec("SHOW COLUMNS FROM po_kegiatan LIKE 'tervalidasi_mitra_at'");
+            if (empty($colsMitra)) {
+                $this->db->exec("ALTER TABLE po_kegiatan 
+                    ADD COLUMN catatan_tim_mitra TEXT NULL,
+                    ADD COLUMN tervalidasi_mitra_at DATETIME NULL,
+                    ADD COLUMN tervalidasi_mitra_by INT(11) NULL");
+            }
         } catch (\Exception $e) {
             // biarin -- kalau gagal alter (misal gak ada izin DDL), query tetap
             // dicoba jalan apa adanya, cuma gak self-healing.
