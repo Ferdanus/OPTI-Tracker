@@ -85,12 +85,12 @@ class PenggunaController extends Controller {
                 'desc' => 'Verifikasi pembayaran'
             ),
             'humas' => array(
-                'label' => 'Humas',
+                'label' => 'Sub Tim Humas',
                 'badge_class' => 'role-badge role-badge-humas',
                 'badge_style' => '',
                 'icon' => 'bi-megaphone-fill',
                 'category' => 'manajemen',
-                'desc' => 'Layanan informasi publik, humas & publikasi balai'
+                'desc' => 'Layanan informasi publik, sub tim humas & publikasi balai'
             ),
             'ppk' => array(
                 'label' => 'PPK',
