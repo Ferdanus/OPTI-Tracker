@@ -1266,6 +1266,15 @@
                     </li>
                 </check>
 
+                <!-- Daftar PO Humas (verifikasi PO + Map Kendali) -- sementara khusus Superadmin; role Humas menyusul -->
+                <check if="{{ @is_superadmin }}">
+                    <li>
+                        <a class="sidebar-link {{ @active_menu == 'po_humas' ? 'active' : '' }}" href="{{ @BASE }}/po-humas" title="Daftar PO Humas">
+                            <i class="bi bi-journal-check"></i> <span>Daftar PO Humas</span>
+                        </a>
+                    </li>
+                </check>
+
                 <!-- Rekapitulasi Pembayaran & Keuangan (Khusus Tim Keuangan & Superadmin) -->
 
                 <check if="{{ @is_superadmin || @is_keuangan }}">
@@ -1318,6 +1327,17 @@
                             </a>
                         </li>
                     </check>
+                    <check if="{{ @SESSION.role == 'ketua_tim' || @SESSION.role == 'tim_kerja' || @SESSION.role == 'superadmin' }}">
+                        <a class="sidebar-link {{ @active_menu == 'po_revisi_ppk' ? 'active' : '' }}" href="{{ @BASE }}/po-revisi-ppk">
+                            <i class="bi bi-clipboard2-check"></i> <span>Revisi PPK BLU</span>
+                            <span id="notifRevisiPpk" class="badge rounded-pill bg-danger ms-auto" style="{{ @jumlah_notif_revisi_ppk > 0 ? '' : 'display:none' }}">{{ @jumlah_notif_revisi_ppk }}</span>
+                        </a>
+                    </check>
+                    <check if="{{ @SESSION.role == 'pejabat' || @SESSION.role == 'superadmin' }}">
+                        <a class="sidebar-link {{ @active_menu == 'po_ppk' ? 'active' : '' }}" href="{{ @BASE }}/po-ppk">
+                            <i class="bi bi-patch-check"></i> <span>Validasi PPK BLU</span>
+                        </a>
+                    </check>
                     <!-- Daftar PO layanan selain OPTI (Sertifikasi dst.) -- sementara khusus Superadmin; role layanan menyusul -->
                     <check if="{{ @is_superadmin }}">
                         <li>
@@ -1346,7 +1366,7 @@
                             </a>
                         </li>
                     </check>
-                    <check if="{{ @is_superadmin || @is_tim_kerja || @is_keuangan }}">
+                    <check if="{{ @is_superadmin || @is_ketua_tim || @is_tim_kerja }}">
                     <li>
                         <a class="sidebar-link {{ @active_menu == 'daftar_po' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan/daftar" title="Daftar Review PO">
                             <i class="bi bi-clipboard-check"></i> <span>Daftar Review PO</span>

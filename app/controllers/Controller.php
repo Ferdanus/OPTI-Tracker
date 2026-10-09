@@ -317,11 +317,11 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
         $this->f3->set('jumlah_notif_penunjukan_pelaksana', $notifPenunjukanPelaksana);
 
         // [BARU] Badge "Validasi PO" (Tim Mitra & Superadmin) -- PO berstatus 'terkirim'
-        // yang belum divalidasi Tim Mitra.
+        // yang SUDAH diverifikasi Humas dan belum divalidasi Tim Mitra.
         $notifValidasiPo = 0;
         if ($isTimMitra || $role === 'superadmin') {
             try {
-                $resValidasi = $this->db->exec("SELECT COUNT(*) as c FROM po_kegiatan WHERE status = 'terkirim'" . \PoSchema::bukanSertifikasi(''));
+                $resValidasi = $this->db->exec("SELECT COUNT(*) as c FROM po_kegiatan WHERE status = 'terkirim' AND verifikasi_humas_at IS NOT NULL" . \PoSchema::bukanSertifikasi(''));
                 $notifValidasiPo = (int)($resValidasi[0]['c'] ?? 0);
             } catch (\Exception $eValidasi) {
                 $notifValidasiPo = 0;
@@ -376,6 +376,10 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
         }
         $this->f3->set('list_notifikasi_user', $userNotifList);
         $this->f3->set('unread_notif_count', $unreadNotifCount);
+
+        $this->f3->set('jumlah_notif_revisi_ppk', \PoRevisiPpkController::hitungAksi(
+            $this->db, (string) $this->getUserRole(), (int) $this->getUserId(), (string) $this->f3->get('SESSION.jenis_layanan_opti')
+        ));
 
         // Daftar Pengguna Aktif untuk Fitur Pop-Up "Ganti User"
         $switchUsers = array();

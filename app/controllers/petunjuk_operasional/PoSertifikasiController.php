@@ -240,6 +240,7 @@ class PoSertifikasiController extends \Controller {
         $f3->set('po_json', 'null');
         $f3->set('mode_lihat', 'false');
         $f3->set('tanggal_default', date('Y-m-d'));
+        $f3->set('tahun_po_wajib', \PoSchema::tahunWajib(''));
         $f3->set('csrf_po', (string) ($f3->get('csrf_token') ?? ''));
 
         $this->render(
@@ -307,6 +308,7 @@ class PoSertifikasiController extends \Controller {
         $f3->set('po_json', $this->jsonHive($poInfo));
         $f3->set('mode_lihat', $lihat ? 'true' : 'false');
         $f3->set('tanggal_default', date('Y-m-d'));
+        $f3->set('tahun_po_wajib', \PoSchema::tahunWajib((string) ($po['nomor_po'] ?? '')));
         $f3->set('csrf_po', (string) ($f3->get('csrf_token') ?? ''));
 
         $this->render(
@@ -482,7 +484,7 @@ class PoSertifikasiController extends \Controller {
      * Form mengirim seluruh isian sebagai satu JSON di field 'isi_form' (hanya untuk perjalanan data);
      * di sini dipecah ke kolom-kolom po_kegiatan lewat PoSchema::kolomDariForm(). Tidak ada kolom JSON gabungan.
      */
-    protected function bacaInput($f3, $orderRaw = null) {
+    protected function bacaInput($f3, $orderRaw = null, $tahunWajib = null) {
         $post = $f3->get('POST');
 
         $this->errKirim = [];
@@ -499,6 +501,12 @@ class PoSertifikasiController extends \Controller {
         $dt = \DateTime::createFromFormat('Y-m-d', $tgl);
         if (!$dt || $dt->format('Y-m-d') !== $tgl) {
             return ['Tanggal Surat PO belum diisi / formatnya tidak valid.', null];
+        }
+        // Nomor urut PO reset tiap tahun -> PO baru harus bertanggal di tahun berjalan; PO yang sudah bernomor
+        // harus tetap di tahun nomornya.
+        $tahunWajib = $tahunWajib !== null ? (int) $tahunWajib : (int) date('Y');
+        if ((int) $dt->format('Y') !== $tahunWajib) {
+            return ['Tahun Tanggal Surat PO (' . $dt->format('Y') . ') harus sama dengan tahun ' . $tahunWajib . '.', null];
         }
         $judul = trim((string) ($post['judul_kegiatan'] ?? ''));
         if ($judul === '') {
@@ -661,7 +669,7 @@ class PoSertifikasiController extends \Controller {
             error_log('[PO Sertifikasi] gagal baca order saat update: ' . $e->getMessage());
         }
 
-        list($err, $in) = $this->bacaInput($f3, $orderRaw);
+        list($err, $in) = $this->bacaInput($f3, $orderRaw, \PoSchema::tahunWajib((string) ($po['nomor_po'] ?? '')));
         if ($err !== null) {
             return $this->tolakInput($err);
         }

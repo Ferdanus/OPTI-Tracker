@@ -1,212 +1,548 @@
 <!--
     app/views/katim_kerja/po-kegiatan/daftar.html
-    Daftar PO Ketua Tim (mode katim) / Diskusi PO Ketua Pelaksana (mode pembuat).
-    Fragment: dirender di dalam layout lewat $this->render(). Data dari PoReviewController::index().
-    Memakai komponen layout: .card, .btn, .btn-primary, .btn-white, .table, .form-control, .status-pill-*.
-    Semua class custom berawalan "dpo-".
+    Daftar PO: review bertahap Ketua Tim <-> Ketua Pelaksana. Fragment (dirender di dalam layout lewat $this->render()).
+    Data dari PoReviewController::index(): daftar_po_json, mode ('katim' | 'pembuat'), error_message.
+    Semua class berawalan "rvw-" supaya tidak bentrok dengan Bootstrap / CSS layout.
+    Dokumen PO diambil dari GET /po-kegiatan/@id/preview (fragment yang sudah ada), lalu tiap bagian diberi slot catatan.
 -->
 <style>
-    .dpo-root {
-        --dpo-primary: var(--color-primary, #334155);
-        --dpo-primary-light: var(--color-primary-light, #f1f5f9);
-        --dpo-border: var(--color-border, #e2e8f0);
-        --dpo-muted: var(--color-text-muted, #64748b);
-        --dpo-text: var(--color-text-main, #0f172a);
-        --dpo-display: var(--font-display, inherit);
-        --dpo-radius: var(--radius-md, 10px);
-        --dpo-danger: #e11d48;
-        color: var(--dpo-text);
+    .rvw-root {
+        --rvw-primary: var(--color-primary, #334155);
+        --rvw-primary-hover: var(--color-primary-dark, #1e293b);
+        --rvw-primary-light: var(--color-primary-light, #f1f5f9);
+        --rvw-border: var(--color-border, #e2e8f0);
+        --rvw-muted: var(--color-text-muted, #64748b);
+        --rvw-text: var(--color-text-main, #0f172a);
+        --rvw-display: var(--font-display, inherit);
+        --rvw-accent: #d97706;
+        color: var(--rvw-text);
     }
-    .dpo-root [hidden] { display: none !important; }
-    .dpo-root :focus-visible { outline-width: 2px; outline-style: solid; outline-offset: 2px; }
-    .dpo-root .btn { white-space: nowrap; }
-    .dpo-root .btn.btn-sm { padding: .4rem .8rem; font-size: .8rem; }
+    .rvw-root *, .rvw-root *::before, .rvw-root *::after { box-sizing: border-box; }
+    .rvw-root [hidden] { display: none !important; }
+    .rvw-root button { font-family: inherit; cursor: pointer; }
+    .rvw-root :focus-visible { outline: 2px solid var(--rvw-accent); outline-offset: 2px; }
     
-    .dpo-head h1 { font-size: 1.35rem; font-weight: 800; margin: 0 0 4px; }
-    .dpo-head p { margin: 0 0 18px; color: var(--dpo-muted); font-size: .85rem; max-width: 640px; }
+    .rvw-head h1 { font-family: var(--rvw-display); font-size: 1.35rem; font-weight: 800; margin: 0 0 4px; }
+    .rvw-head p { margin: 0 0 18px; color: var(--rvw-muted); font-size: .85rem; max-width: 680px; }
+    .rvw-alert { background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; font-size: .85rem; }
     
-    .dpo-tabs { display: flex; gap: 4px; padding: 8px; border-bottom: 1px solid var(--dpo-border); }
-    .dpo-tab { flex: 1; border: 0; background: transparent; padding: .65rem .5rem; border-radius: var(--dpo-radius); font-family: var(--dpo-display); font-weight: 700; font-size: .85rem; color: var(--dpo-muted); display: flex; align-items: center; justify-content: center; gap: 7px; cursor: pointer; }
-    .dpo-tab.on { background: var(--dpo-primary-light); color: var(--dpo-primary); }
-    .dpo-cnt { background: #e2e8f0; color: var(--dpo-muted); border-radius: 12px; padding: 1px 8px; font-size: .72rem; }
-    .dpo-tab.on .dpo-cnt { background: var(--dpo-primary); color: #fff; }
+    .rvw-tabs { display: flex; gap: 4px; background: #fff; border-radius: 14px 14px 0 0; padding: 8px; border: 1px solid var(--rvw-border); border-bottom: 0; overflow-x: auto; }
+    .rvw-tab { flex: 1; border: 0; background: transparent; padding: 11px 10px; border-radius: 10px; font-weight: 700; font-size: .85rem; color: var(--rvw-muted); display: flex; align-items: center; justify-content: center; gap: 7px; font-family: var(--rvw-display); white-space: nowrap; }
+    .rvw-tab.on { background: var(--rvw-primary-light); color: var(--rvw-primary); }
+    .rvw-cnt { background: #e2e8f0; color: var(--rvw-muted); border-radius: 12px; padding: 1px 8px; font-size: .72rem; }
+    .rvw-cnt.hot { background: #fef3c7; color: #b45309; }
+    .rvw-tab.on .rvw-cnt { background: var(--rvw-primary); color: #fff; }
+    .rvw-panel { background: #fff; border: 1px solid var(--rvw-border); border-radius: 0 0 14px 14px; padding: 18px; }
+    .rvw-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .rvw-filters input[type=search] { flex: 1 1 260px; width: 100%; max-width: 380px; border: 1px solid var(--rvw-border); border-radius: 9px; padding: 9px 12px; font: inherit; font-size: .85rem; margin: 0; }
+    .rvw-fsel { border: 1px solid var(--rvw-border); border-radius: 9px; padding: 9px 12px; font: inherit; font-size: .85rem; background: #fff; color: var(--rvw-text); max-width: 100%; margin: 0; }
+    .rvw-fnote { font-size: .75rem; color: var(--rvw-muted); margin: -4px 0 12px; }
     
-    .dpo-no { font-family: 'Courier New', monospace; font-weight: 700; font-size: .8rem; }
-    .dpo-sub { font-size: .75rem; color: var(--dpo-muted); }
-    .dpo-mitra { font-weight: 600; }
-    .dpo-judul { font-size: .8rem; color: var(--dpo-muted); max-width: 300px; }
-    .dpo-who { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
-    .dpo-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--dpo-primary-light); color: var(--dpo-primary); font-weight: 700; font-size: .68rem; display: inline-grid; place-items: center; flex-shrink: 0; }
-    .dpo-pills { display: flex; flex-wrap: wrap; gap: 5px; }
-    .dpo-acts { display: flex; gap: 6px; justify-content: flex-end; }
-    .dpo-dot { position: absolute; top: -7px; right: -7px; background: var(--dpo-danger); color: #fff; font-size: .65rem; font-weight: 700; min-width: 18px; height: 18px; border-radius: 999px; display: grid; place-items: center; padding: 0 5px; border: 2px solid #fff; }
-    .dpo-empty { text-align: center; padding: 44px 16px; color: #94a3b8; font-size: .85rem; }
-    .dpo-empty i { display: block; font-size: 28px; margin-bottom: 6px; }
+    table.rvw-desk { width: 100%; border-collapse: collapse; border: 0; }
+    .rvw-desk th { text-align: left; font-size: .75rem; color: var(--rvw-muted); font-weight: 600; padding: 0 10px 10px; border-bottom: 1px solid var(--rvw-border); }
+    .rvw-desk td { padding: 13px 10px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; font-size: .85rem; }
+    .rvw-desk tr:last-child td { border-bottom: 0; }
+    .rvw-desk tbody tr:hover { background: #fcfcfd; }
+    .rvw-no { font-family: 'Courier New', monospace; font-weight: 400; font-size: .8rem; }
+    .rvw-sub { font-size: .75rem; color: var(--rvw-muted); }
+    .rvw-readline { display: flex; align-items: center; gap: 5px; font-size: .75rem; color: #94a3b8; margin-top: 2px; }
+    .rvw-readline.is-read { color: var(--rvw-muted); }
+    .rvw-ticks { flex-shrink: 0; fill: none; stroke: #94a3b8; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .rvw-ticks.read { stroke: #2f9be6; }
+    .rvw-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    .rvw-mitra { font-weight: 400; }
+    .rvw-judul { font-size: .8rem; color: var(--rvw-muted); max-width: 320px; }
+    .rvw-who { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+    /* ---- gaya Gmail: belum dibaca = SELURUH baris tebal + titik biru; sudah dibaca = biasa + latar tipis ---- */
+    .rvw-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #2563eb; vertical-align: middle; flex-shrink: 0; }
+    .rvw-dot.sm { width: 7px; height: 7px; }
+    .rvw-pcard .rvw-dot { position: absolute; left: 11px; top: 17px; }
+    .rvw-desk td.dotc, .rvw-desk th.dotc { width: 22px; padding-right: 0; }
+    .rvw-desk tbody tr[data-open], .rvw-pcard[data-open] { cursor: pointer; }
+    .rvw-desk tr.row-unread .rvw-no, .rvw-desk tr.row-unread .rvw-sub, .rvw-desk tr.row-unread .rvw-mitra, .rvw-desk tr.row-unread .rvw-judul, .rvw-desk tr.row-unread .rvw-who, .rvw-desk tr.row-unread .rvw-readline,
+    .rvw-pcard.row-unread .rvw-no, .rvw-pcard.row-unread .rvw-sub, .rvw-pcard.row-unread .rvw-mitra, .rvw-pcard.row-unread .rvw-judul, .rvw-pcard.row-unread .rvw-readline { font-weight: 700; color: var(--rvw-text); }
+    .rvw-desk tr.row-unread .rvw-judul, .rvw-pcard.row-unread .rvw-judul { color: #334155; }
+    .rvw-desk tr.row-unread .rvw-readline, .rvw-pcard.row-unread .rvw-readline { color: #475569; }
+    .rvw-desk tr.row-read, .rvw-pcard.row-read { background: #f6f8fc; }
+    .rvw-desk tr.row-read:hover { background: #edf1f8 !important; }
+    .rvw-tab .rvw-dot { margin-right: 1px; }
+    a.rvw-has-unread > span:not(.badge) { font-weight: 800; }
+    .rvw-av { width: 26px; height: 26px; border-radius: 50%; background: var(--rvw-primary-light); color: var(--rvw-primary); font-weight: 700; font-size: .65rem; display: grid; place-items: center; flex-shrink: 0; }
+    .rvw-av.dark { background: var(--rvw-accent); color: #fff; }
+    .rvw-mini { margin-top: 6px; width: 150px; }
+    .rvw-mini .b { height: 5px; background: #e2e8f0; border-radius: 5px; overflow: hidden; }
+    .rvw-mini .b i { display: block; height: 100%; background: #059669; }
+    .rvw-mini .t { font-size: .7rem; color: var(--rvw-muted); margin-top: 3px; }
+    .rvw-chat { display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; font-size: .7rem; font-weight: 700; color: #1d4ed8; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 1px 8px; }
+    .rvw-empty { text-align: center; padding: 44px 16px; color: #94a3b8; font-size: .85rem; }
+    .rvw-empty i { display: block; font-size: 28px; margin-bottom: 6px; }
     
-    .dpo-mob { display: none; }
-    .dpo-pcard { border: 1px solid var(--dpo-border); border-radius: var(--dpo-radius); padding: 13px; margin-bottom: 10px; }
-    .dpo-pcard .dpo-foot { margin-top: 12px; padding-top: 12px; border-top: 1px solid #f1f5f9; }
-    .dpo-pcard .dpo-acts .btn-primary { flex: 1; }
+    .rvw-pill { font-size: .72rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; border: 1px solid transparent; }
+    .rvw-pill.blue { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+    .rvw-pill.amber { background: #fffbeb; color: #b45309; border-color: #fde68a; }
+    .rvw-pill.indigo { background: #eef2ff; color: #4338ca; border-color: #c7d2fe; }
+    .rvw-pill.emerald { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
     
-    /* ---------- Panel review ---------- */
-    .dpo-scrim { position: fixed; inset: 0; background: rgba(15,23,42,.5); opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 1050; }
-    .dpo-scrim.open { opacity: 1; pointer-events: auto; }
-    .dpo-sheet { position: fixed; top: 0; right: 0; bottom: 0; width: min(860px, 100vw); background: #f1f5f9; z-index: 1055; display: flex; flex-direction: column; transform: translateX(100%); visibility: hidden; transition: transform .24s ease, visibility 0s .24s; }
-    .dpo-sheet.open { transform: none; visibility: visible; transition: transform .24s ease, visibility 0s; }
-    .dpo-sheet-head { background: #fff; border-bottom: 1px solid var(--dpo-border); padding: 14px 18px; display: flex; gap: 12px; align-items: flex-start; }
-    .dpo-sheet-head .dpo-grow { flex: 1; min-width: 0; }
-    .dpo-sheet-head h2 { font-size: 1.05rem; font-weight: 800; margin: 2px 0 8px; }
-    .dpo-close { border: 1px solid var(--dpo-border); background: #fff; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; color: var(--dpo-muted); font-size: 15px; flex-shrink: 0; cursor: pointer; }
-    .dpo-close:hover { color: var(--dpo-primary); border-color: var(--dpo-primary); }
-    .dpo-sheet-body { flex: 1; overflow: auto; padding: 18px; }
-    .dpo-paper { background: #fff; border: 1px solid var(--dpo-border); border-radius: 6px; max-width: 210mm; margin: 0 auto; overflow-x: auto; }
+    .rvw-btn { border: 1.5px solid var(--rvw-border); background: #fff; color: #334155; border-radius: 9px; padding: 8px 15px; font-size: .82rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; }
+    .rvw-btn:hover:not(:disabled) { border-color: var(--rvw-primary); color: var(--rvw-primary); }
+    .rvw-btn.pri { background: var(--rvw-primary); border-color: var(--rvw-primary); color: #fff; }
+    .rvw-btn.pri:hover:not(:disabled) { background: var(--rvw-primary-hover); color: #fff; }
+    .rvw-btn.sm { padding: 5px 11px; font-size: .75rem; }
+    .rvw-btn.link { border-color: transparent; background: transparent; color: var(--rvw-primary); padding: 4px 6px; font-size: .75rem; }
+    .rvw-btn.link.red { color: #dc2626; }
+    .rvw-btn:disabled { opacity: .45; cursor: not-allowed; }
     
-    .dpo-dock { background: #fff; border-top: 1px solid var(--dpo-border); }
-    .dpo-dock-right { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
-    .dpo-lock-note { font-size: .75rem; color: var(--dpo-muted); display: inline-flex; align-items: center; gap: 6px; }
-    .dpo-dock-bar { display: flex; gap: 10px; align-items: center; justify-content: space-between; padding: 12px 18px; padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
-    .dpo-chat { display: flex; flex-direction: column; height: min(340px, 46vh); border-bottom: 1px solid var(--dpo-border); }
-    .dpo-chat-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 18px; border-bottom: 1px solid var(--dpo-border); font-family: var(--dpo-display); font-weight: 700; font-size: .82rem; }
-    .dpo-link { border: 0; background: none; color: var(--dpo-primary); font-weight: 600; font-size: .75rem; padding: 0; white-space: nowrap; cursor: pointer; }
-    .dpo-chat-log { flex: 1; overflow: auto; padding: 12px 18px; background: #f8fafc; display: flex; flex-direction: column; gap: 10px; }
-    .dpo-msg { max-width: 78%; padding: 9px 12px; border-radius: 14px; font-size: .85rem; overflow-wrap: anywhere; }
-    .dpo-msg.me { align-self: flex-end; background: var(--dpo-primary); color: #fff; border-bottom-right-radius: 4px; }
-    .dpo-msg.other { align-self: flex-start; background: #fff; border: 1px solid var(--dpo-border); border-bottom-left-radius: 4px; }
-    .dpo-msg.sys { align-self: center; max-width: 90%; background: #e2e8f0; color: #475569; border-radius: 10px; font-size: .75rem; text-align: center; padding: 6px 12px; }
-    .dpo-msg.sys .tm { text-align: center; margin-top: 1px; }
-    .dpo-msg .nm { font-size: .68rem; font-weight: 700; margin-bottom: 2px; opacity: .8; }
-    .dpo-msg .tm { font-size: .65rem; opacity: .65; margin-top: 3px; text-align: right; }
-    .dpo-chat-empty { margin: auto; text-align: center; color: #94a3b8; font-size: .8rem; max-width: 260px; }
-    .dpo-chat-input { display: flex; gap: 8px; padding: 10px 18px; background: #fff; border-top: 1px solid var(--dpo-border); align-items: flex-end; }
-    .dpo-chat-input textarea { flex: 1; resize: none; max-height: 90px; }
+    .rvw-cards { display: none; }
+    .rvw-pcard { border: 1px solid var(--rvw-border); border-radius: 12px; padding: 13px 13px 13px 28px; margin-bottom: 10px; position: relative; }
+    .rvw-pcard .top { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
+    .rvw-pcard .foot { margin-top: 12px; padding-top: 12px; border-top: 1px solid #f1f5f9; display: flex; gap: 8px; align-items: center; justify-content: space-between; }
     
-    /* ---------- Popup konfirmasi / alert ---------- */
-    .dpo-dlg { position: fixed; inset: 0; z-index: 1090; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(15,23,42,.55); opacity: 0; transition: opacity .15s; }
-    .dpo-dlg.show { opacity: 1; }
-    .dpo-dlg-box { background: #fff; border-radius: 16px; width: 100%; max-width: 400px; padding: 28px 24px 22px; text-align: center; box-shadow: 0 24px 60px rgba(15,23,42,.3); transform: translateY(8px) scale(.98); transition: transform .15s; }
-    .dpo-dlg.show .dpo-dlg-box { transform: none; }
-    .dpo-dlg-icon { width: 60px; height: 60px; border-radius: 50%; display: grid; place-items: center; margin: 0 auto 14px; font-size: 28px; }
-    .dpo-dlg-icon.ok { background: #ecfdf5; color: #059669; }
-    .dpo-dlg-icon.warn { background: #fffbeb; color: #d97706; }
-    .dpo-dlg-icon.err { background: #fff1f2; color: #e11d48; }
-    .dpo-dlg-icon.info { background: #eff6ff; color: #2563eb; }
-    .dpo-dlg-box h5 { font-family: var(--dpo-display); font-size: 1.05rem; font-weight: 800; margin: 0 0 6px; }
-    .dpo-dlg-box p { color: var(--dpo-muted); font-size: .85rem; margin: 0 0 14px; overflow-wrap: anywhere; }
-    .dpo-dlg-info { background: #f8fafc; border: 1px solid var(--dpo-border); border-radius: 10px; padding: 8px 12px; margin: 0 0 16px; font-size: .78rem; text-align: left; }
-    .dpo-dlg-info b { display: block; font-family: 'Courier New', monospace; font-size: .78rem; }
-    .dpo-dlg-btns { display: flex; gap: 10px; }
-    .dpo-dlg-btns .btn { flex: 1; justify-content: center; }
+    /* ---------- Panel samping ---------- */
+    .rvw-scrim { position: fixed; inset: 0; background: rgba(15,23,42,.45); opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 1050; }
+    .rvw-scrim.open { opacity: 1; pointer-events: auto; }
+    .rvw-sheet { position: fixed; top: 0; right: 0; bottom: 0; width: min(1300px, 100vw); background: #f1f5f9; z-index: 1055; display: flex; flex-direction: column; transform: translateX(100%); visibility: hidden; transition: transform .24s ease, visibility 0s .24s; box-shadow: -12px 0 40px rgba(15,23,42,.18); }
+    .rvw-sheet.open { transform: none; visibility: visible; transition: transform .24s ease, visibility 0s; }
+    .rvw-shh { background: #fff; border-bottom: 1px solid var(--rvw-border); padding: 14px 18px; display: flex; gap: 12px; align-items: flex-start; }
+    .rvw-shh .grow { flex: 1; min-width: 0; }
+    .rvw-shh .t1 { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .rvw-shh h2 { font-family: 'Courier New', monospace; font-size: 1rem; font-weight: 800; margin: 0; }
+    .rvw-shh .sub2 { font-size: .85rem; font-weight: 600; margin-top: 3px; }
+    .rvw-shh .meta { font-size: .75rem; color: var(--rvw-muted); margin-top: 3px; }
+    .rvw-ibtn { border: 1px solid var(--rvw-border); background: #fff; width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; color: var(--rvw-muted); font-size: 16px; flex-shrink: 0; }
+    .rvw-ibtn:hover { color: var(--rvw-primary); border-color: var(--rvw-primary); }
     
-    .dpo-toast { position: fixed; left: 50%; top: 16px; transform: translate(-50%, -14px); background: #1e293b; color: #fff; padding: 11px 14px; border-radius: 12px; font-size: .82rem; display: flex; gap: 12px; align-items: center; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 1080; max-width: calc(100vw - 24px); }
-    .dpo-toast.show { opacity: 1; transform: translate(-50%, 0); }
-    .dpo-toast.err { background: #b91c1c; }
+    .rvw-stepper { background: #fff; padding: 12px 18px 14px; border-bottom: 1px solid var(--rvw-border); }
+    .rvw-steps { display: flex; align-items: center; }
+    .rvw-step { display: flex; align-items: center; gap: 7px; font-size: .75rem; font-weight: 600; color: #94a3b8; white-space: nowrap; }
+    .rvw-step .n { width: 22px; height: 22px; border-radius: 50%; background: #e2e8f0; color: #64748b; display: grid; place-items: center; font-size: .7rem; font-weight: 700; flex-shrink: 0; }
+    .rvw-step.done { color: var(--rvw-primary); }
+    .rvw-step.done .n { background: #059669; color: #fff; }
+    .rvw-step.cur { color: var(--rvw-text); }
+    .rvw-step.cur .n { background: var(--rvw-primary); color: #fff; box-shadow: 0 0 0 4px rgba(51,65,85,.15); }
+    .rvw-sline { flex: 1; height: 2px; background: #e2e8f0; margin: 0 8px; min-width: 14px; }
+    .rvw-sline.done { background: #059669; }
+    .rvw-nextnote { margin-top: 9px; font-size: .72rem; color: var(--rvw-muted); }
     
-    @media (max-width: 575.98px) {
-        .dpo-dock-bar { flex-wrap: wrap; }
-        .dpo-dock-bar > .btn, .dpo-dock-right { flex: 1 1 100%; }
-        .dpo-dock-right .btn { flex: 1; }
-        .dpo-dock-right .dpo-lock-note { flex: 1 1 100%; }
+    .rvw-shtabs { display: flex; gap: 4px; background: #fff; padding: 6px 12px 0; border-bottom: 1px solid var(--rvw-border); }
+    .rvw-shtab { border: 0; background: transparent; padding: 9px 12px; font-weight: 700; font-size: .82rem; color: var(--rvw-muted); border-bottom: 2px solid transparent; display: flex; align-items: center; gap: 7px; font-family: var(--rvw-display); }
+    .rvw-shtab.on { color: var(--rvw-primary); border-bottom-color: var(--rvw-primary); }
+    .rvw-shbody { flex: 1; overflow: auto; padding: 16px 18px; display: flex; flex-direction: column; }
+    .rvw-loading { text-align: center; padding: 34px 16px; color: #94a3b8; font-size: .85rem; }
+    .rvw-loading.err { color: #b91c1c; }
+    
+    .rvw-bn { display: flex; gap: 10px; border-radius: 10px; padding: 10px 13px; font-size: .8rem; margin-bottom: 14px; align-items: flex-start; }
+    .rvw-bn i { margin-top: 1px; }
+    .rvw-bn.info { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+    .rvw-bn.warn { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+    .rvw-bn.ok { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+    
+    .rvw-paper { background: #fff; border: 1px solid var(--rvw-border); border-radius: 6px; max-width: 210mm; width: 100%; margin: 0 auto; overflow-x: auto; }
+    .rvw-paper .po-doc-sheet { box-shadow: none !important; margin: 0 !important; }
+    .rvw-sec { position: relative; }
+    .rvw-sec-h { display: flex; align-items: baseline; gap: 8px; }
+    .rvw-sec-h .po-section-title { flex: 1; margin: 18px 0 8px; }
+    .rvw-tools { display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-body, system-ui, sans-serif); flex-shrink: 0; }
+    .rvw-nchip { font-size: .68rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; background: #fef3c7; color: #92400e; }
+    .rvw-nchip.ok { background: #ecfdf5; color: #047857; }
+    .rvw-notes { font-family: var(--font-body, system-ui, sans-serif); font-size: 13px; text-align: left; }
+    .rvw-umum { background: #fff; border: 1px solid var(--rvw-border); border-radius: 6px; max-width: 210mm; width: 100%; margin: 12px auto 0; padding: 4px 16px 14px; }
+    .rvw-umum .rvw-sec-h h3 { flex: 1; margin: 12px 0 4px; font-family: var(--rvw-display); font-size: .9rem; font-weight: 800; }
+    .rvw-umum .hint { font-size: .78rem; color: var(--rvw-muted); }
+    
+    .rvw-note { margin-top: 9px; border: 1px solid var(--rvw-border); border-left-width: 4px; border-radius: 9px; padding: 9px 11px; background: #fff; }
+    .rvw-note.st-draf { border-style: dashed; border-left-style: solid; border-left-color: #94a3b8; background: #f8fafc; }
+    .rvw-note.st-terbuka { border-left-color: #f59e0b; background: #fffdf5; }
+    .rvw-note.st-selesai { border-left-color: #10b981; background: #f7fdfa; }
+    .rvw-note-top { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; font-size: .75rem; }
+    .rvw-note-top b { font-weight: 700; }
+    .rvw-note-top .time { color: #94a3b8; }
+    .rvw-tag { margin-left: auto; font-size: .66rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+    .rvw-tag.draf { background: #e2e8f0; color: #475569; }
+    .rvw-tag.terbuka { background: #fef3c7; color: #92400e; }
+    .rvw-tag.selesai { background: #d1fae5; color: #065f46; }
+    .rvw-note-text { font-size: .82rem; margin-top: 4px; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .rvw-note-acts { margin-top: 5px; display: flex; gap: 4px; }
+    .rvw-orphan { font-size: .7rem; color: var(--rvw-muted); margin-top: 8px; }
+    
+    .rvw-cmp { margin-top: 9px; border: 1.5px solid var(--rvw-primary); border-radius: 9px; padding: 9px; background: #fff; font-family: var(--font-body, system-ui, sans-serif); }
+    .rvw-cmp textarea { width: 100%; border: 1px solid var(--rvw-border); border-radius: 8px; padding: 8px 10px; font: inherit; font-size: .82rem; resize: vertical; min-height: 64px; }
+    .rvw-cmp textarea.err { border-color: #dc2626; }
+    .rvw-cmp .err-msg { color: #dc2626; font-size: .72rem; margin-top: 4px; }
+    .rvw-cmp .row2 { display: flex; gap: 6px; justify-content: flex-end; margin-top: 7px; }
+    
+    #rvwChatPane { flex: 1; display: flex; flex-direction: column; min-height: 260px; }
+    .rvw-chatlog { flex: 1; overflow: auto; padding: 4px 2px 10px; }
+    .rvw-msg { display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 10px; }
+    .rvw-msg.me { align-items: flex-end; }
+    .rvw-bub { background: #fff; border: 1px solid var(--rvw-border); border-radius: 12px 12px 12px 3px; padding: 8px 12px; max-width: 80%; font-size: .82rem; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .rvw-msg.me .rvw-bub { background: var(--rvw-primary); color: #fff; border-color: var(--rvw-primary); border-radius: 12px 12px 3px 12px; }
+    .rvw-mt { font-size: .7rem; color: #94a3b8; margin-top: 3px; }
+    .rvw-sys { text-align: center; font-size: .72rem; color: var(--rvw-muted); background: #e2e8f0; border-radius: 20px; padding: 4px 12px; margin: 6px auto 10px; width: fit-content; max-width: 92%; }
+    .rvw-sys span { opacity: .7; margin-left: 4px; }
+    .rvw-chatin { display: flex; gap: 8px; align-items: flex-end; border-top: 1px solid var(--rvw-border); padding-top: 10px; }
+    .rvw-chatin textarea { flex: 1; border: 1px solid var(--rvw-border); border-radius: 10px; padding: 8px 11px; font: inherit; font-size: .82rem; resize: none; height: 40px; max-height: 110px; }
+    
+    .rvw-dock { background: #fff; border-top: 1px solid var(--rvw-border); padding: 12px 18px; padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+    .rvw-dock .hintline { font-size: .8rem; color: var(--rvw-muted); flex: 1 1 200px; }
+    .rvw-dock .acts { display: flex; gap: 8px; flex-wrap: wrap; }
+    
+    .rvw-dlg { position: fixed; inset: 0; z-index: 1090; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(15,23,42,.55); opacity: 0; transition: opacity .15s; }
+    .rvw-dlg.show { opacity: 1; }
+    .rvw-dlg-box { background: #fff; border-radius: 16px; width: 100%; max-width: 400px; padding: 26px 24px 20px; text-align: center; box-shadow: 0 24px 60px rgba(15,23,42,.3); transform: translateY(8px) scale(.98); transition: transform .15s; }
+    .rvw-dlg.show .rvw-dlg-box { transform: none; }
+    .rvw-dlg-icon { width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center; margin: 0 auto 14px; font-size: 27px; background: #fffbeb; color: #d97706; }
+    .rvw-dlg-icon.ok { background: #ecfdf5; color: #059669; }
+    .rvw-dlg-box h5 { font-family: var(--rvw-display); font-size: 1.05rem; font-weight: 800; margin: 0 0 6px; }
+    .rvw-dlg-box p { color: var(--rvw-muted); font-size: .85rem; margin: 0 0 18px; }
+    .rvw-dlg-btns { display: flex; gap: 10px; }
+    .rvw-dlg-btns .rvw-btn { flex: 1; padding: 10px; }
+    
+    .rvw-toast { position: fixed; left: 50%; top: 76px; transform: translate(-50%, -16px); background: #1e293b; color: #fff; padding: 11px 16px; border-radius: 12px; font-size: .82rem; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 1100; max-width: calc(100vw - 24px); }
+    .rvw-toast.show { opacity: 1; transform: translate(-50%, 0); }
+    .rvw-toast.err { background: #b91c1c; }
+    
+
+    .rvw-pbadge { font-size: .72rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid transparent; line-height: 1.3; white-space: nowrap; }
+    .rvw-pbadge .d { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
+    .rvw-pbadge.pre { background: #f1f5f9; color: #475569; border-color: #e2e8f0; }
+    .rvw-pbadge.mitra { background: #f5f3ff; color: #6d28d9; border-color: #ddd6fe; }
+    .rvw-pbadge.humas { background: #f0fdfa; color: #0f766e; border-color: #99f6e4; }
+    .rvw-pbadge.ppk { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+    .rvw-pbadge.dua { background: #fff7ed; color: #c2410c; border-color: #fed7aa; }
+    .rvw-pbadge.ok { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
+    .rvw-posm { display: none; margin: 8px 0 2px; font-size: .75rem; color: var(--rvw-muted); }
+    .rvw-al-now { background: #f8fafc; border: 1px solid var(--rvw-border); border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; }
+    .rvw-al-now .k { font-size: .72rem; color: var(--rvw-muted); font-weight: 600; }
+    .rvw-al-now .v { font-size: 1.05rem; font-weight: 700; margin-top: 2px; }
+    .rvw-al-now .s { font-size: .8rem; color: var(--rvw-muted); margin-top: 1px; }
+    .rvw-al-par { border: 1px solid var(--rvw-border); border-radius: 10px; padding: 10px 12px; margin-bottom: 14px; display: grid; gap: 8px; background: #fff; }
+    .rvw-al-par .lb { font-size: .72rem; color: var(--rvw-muted); font-weight: 600; }
+    .rvw-al-trk { display: flex; gap: 10px; align-items: flex-start; font-size: .82rem; }
+    .rvw-al-trk b { display: block; }
+    .rvw-al-trk span { color: var(--rvw-muted); font-size: .75rem; }
+    .rvw-al-trk i { font-size: 1rem; margin-top: 1px; }
+    .rvw-al-trk.ok i { color: #059669; } .rvw-al-trk.wait i { color: #2563eb; } .rvw-al-trk.none i { color: #94a3b8; }
+    .rvw-tl { list-style: none; margin: 0; padding: 0; }
+    .rvw-tl li { display: flex; gap: 12px; padding: 0 0 16px; position: relative; }
+    .rvw-tl li:not(:last-child)::before { content: ''; position: absolute; left: 13px; top: 28px; bottom: 0; width: 2px; background: var(--rvw-border); }
+    .rvw-tl .ic { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; flex: none; font-size: .8rem; background: #f1f5f9; color: #64748b; border: 1px solid var(--rvw-border); }
+    .rvw-tl li.done .ic { background: #ecfdf5; color: #059669; border-color: #a7f3d0; }
+    .rvw-tl li.now .ic { background: #eff6ff; color: #2563eb; border-color: #93c5fd; box-shadow: 0 0 0 4px #dbeafe; }
+    .rvw-tl li.todo { opacity: .6; }
+    .rvw-tl li.fin .ic { background: #059669; color: #fff; border-color: #059669; }
+    .rvw-tl .a { font-size: .85rem; font-weight: 600; }
+    .rvw-tl .b { font-size: .75rem; color: var(--rvw-muted); margin-top: 1px; }
+    .rvw-tl .cat { margin-top: 6px; padding: 7px 10px; background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 3px solid #059669; border-radius: 6px; font-size: .78rem; line-height: 1.45; color: #14532d; white-space: pre-wrap; word-break: break-word; }
+    .rvw-tl .cat b { display: block; font-size: .68rem; text-transform: uppercase; letter-spacing: .03em; color: #059669; margin-bottom: 1px; }
+    .rvw-catmitra { display: flex; gap: 10px; align-items: flex-start; background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 3px solid #059669; border-radius: 10px; padding: 10px 13px; margin-bottom: 14px; }
+    .rvw-catmitra > i { color: #059669; font-size: 1.05rem; margin-top: 1px; }
+    .rvw-catmitra .k { font-size: .72rem; font-weight: 700; color: #059669; }
+    .rvw-catmitra .t { font-size: .85rem; color: #14532d; margin-top: 1px; white-space: pre-wrap; word-break: break-word; }
+    @media (max-width: 767.98px) {
+        .rvw-posm { display: block; }
+        table.rvw-desk { display: none; }
+        .rvw-cards { display: block; }
+        .rvw-tab { font-size: .8rem; padding: 10px 12px; flex: 0 0 auto; }
+        .rvw-step .lb { display: none; }
+        .rvw-step.cur .lb { display: inline; }
+        .rvw-shbody { padding: 12px; }
+        .rvw-dock .acts { width: 100%; }
+        .rvw-dock .acts .rvw-btn { flex: 1; }
+        .rvw-bub { max-width: 92%; }
     }
-    @media (max-width: 767.98px) { .dpo-desk { display: none; } .dpo-mob { display: block; } .dpo-tab { font-size: .78rem; padding: .6rem .3rem; } }
-    @media (prefers-reduced-motion: reduce) { .dpo-root * { transition: none !important; animation: none !important; } }
+    @media (prefers-reduced-motion: reduce) { .rvw-root * { transition: none !important; } }
     </style>
     
-    <div class="dpo-root" id="dpoRoot">
-    
-        <check if="{{ @error_message }}">
-            <div class="alert alert-danger" role="alert">{{ @error_message }}</div>
-        </check>
-    
-        <div id="dpoContent"></div>
-    
-        <div class="dpo-scrim" id="dpoScrim"></div>
-        <section class="dpo-sheet" id="dpoSheet" role="dialog" aria-modal="true" aria-labelledby="dpoSheetTitle">
-            <header class="dpo-sheet-head">
-                <div class="dpo-grow">
-                    <div class="dpo-no" id="dpoSheetNo"></div>
-                    <h2 id="dpoSheetTitle"></h2>
-                    <div class="dpo-pills" id="dpoSheetMeta"></div>
-                </div>
-                <button type="button" class="dpo-close" id="dpoSheetClose" aria-label="Tutup"><i class="bi bi-x-lg"></i></button>
-            </header>
-            <div class="dpo-sheet-body"><article class="dpo-paper" id="dpoPaper"></article></div>
-            <footer class="dpo-dock">
-                <div class="dpo-chat" id="dpoChat" hidden>
-                    <div class="dpo-chat-head"><span id="dpoChatTitle">Diskusi PO</span><button type="button" class="dpo-link" id="dpoChatMin">Sembunyikan</button></div>
-                    <div class="dpo-chat-log" id="dpoChatLog" aria-live="polite"></div>
-                    <div class="dpo-chat-input">
-                        <textarea id="dpoChatText" class="form-control" rows="1" maxlength="2000" placeholder="Tulis pesan. Enter untuk kirim, Shift+Enter untuk baris baru."></textarea>
-                        <button type="button" class="btn btn-primary" id="dpoChatSend" aria-label="Kirim pesan"><i class="bi bi-send-fill"></i></button>
-                    </div>
-                </div>
-                <div class="dpo-dock-bar">
-                    <button type="button" class="btn btn-white position-relative" id="dpoBtnChat" aria-expanded="false">
-                        <i class="bi bi-chat-dots"></i><span id="dpoBtnChatLabel">Chat</span><span class="dpo-dot" id="dpoBtnChatDot" hidden></span>
-                    </button>
-                    <div class="dpo-dock-right">
-                        <span class="dpo-lock-note" id="dpoLockNote" hidden><i class="bi bi-lock-fill"></i>PO dikunci. Minta Ketua Tim membuka kembali.</span>
-                        <a class="btn btn-white" id="dpoBtnEdit" href="#" hidden><i class="bi bi-pencil"></i>Edit PO</a>
-                        <button type="button" class="btn btn-white" id="dpoBtnReopen" hidden><i class="bi bi-unlock"></i>Buka kembali</button>
-                        <button type="button" class="btn btn-primary" id="dpoBtnApprove" hidden><i class="bi bi-check2-circle"></i>Setujui</button>
-                    </div>
-                </div>
-            </footer>
-        </section>
-    
-        <div class="dpo-dlg" id="dpoDlg" hidden>
-            <div class="dpo-dlg-box" role="alertdialog" aria-modal="true" aria-labelledby="dpoDlgTitle" aria-describedby="dpoDlgMsg">
-                <div class="dpo-dlg-icon" id="dpoDlgIcon"></div>
-                <h5 id="dpoDlgTitle"></h5>
-                <p id="dpoDlgMsg"></p>
-                <div class="dpo-dlg-info" id="dpoDlgInfo" hidden></div>
-                <div class="dpo-dlg-btns">
-                    <button type="button" class="btn btn-white" id="dpoDlgCancel">Batal</button>
-                    <button type="button" class="btn btn-primary" id="dpoDlgOk">Ya</button>
-                </div>
-            </div>
+    <div class="rvw-root" id="rvwRoot">
+        <div class="rvw-head">
+            <h1>Daftar PO</h1>
+            <p id="rvwSub"></p>
         </div>
     
-        <div class="dpo-toast" id="dpoToast" role="status"></div>
+        <check if="{{ @error_message }}">
+            <div class="rvw-alert" role="alert">{{ @error_message }}</div>
+        </check>
+    
+        <div class="rvw-tabs" id="rvwTabs"></div>
+        <div class="rvw-panel">
+            <div class="rvw-filters">
+                <input type="search" id="rvwSearch" placeholder="Cari nomor PO, mitra, atau judul" aria-label="Cari PO">
+                <select class="rvw-fsel" id="rvwFBaca" aria-label="Filter status baca">
+                    <option value="">Semua pesan</option>
+                    <option value="belum">Belum dibaca</option>
+                    <option value="sudah">Sudah dibaca</option>
+                </select>
+                <select class="rvw-fsel" id="rvwFRevisi" aria-label="Filter status revisi" hidden></select>
+                <select class="rvw-fsel" id="rvwFAlur" aria-label="Filter alur PO" hidden>
+                    <option value="">Semua alur PO</option>
+                    <option value="humas">Menunggu verifikasi Humas</option>
+                    <option value="mitra">Menunggu validasi Tim Mitra</option>
+                    <option value="ppk">Menunggu validasi PPK BLU</option>
+                    <option value="ok">Selesai divalidasi PPK BLU</option>
+                </select>
+                <select class="rvw-fsel" id="rvwFBulan" aria-label="Filter bulan"></select>
+                <select class="rvw-fsel" id="rvwFTahun" aria-label="Filter tahun"></select>
+                <button type="button" class="rvw-btn link" id="rvwFReset" hidden><i class="bi bi-x-circle"></i>Atur ulang</button>
+            </div>
+            <div class="rvw-fnote" id="rvwFNote" hidden></div>
+            <div id="rvwList"></div>
+        </div>
+    
+        <div class="rvw-scrim" id="rvwScrim"></div>
+        <aside class="rvw-sheet" id="rvwSheet" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="rvwShNo">
+            <div class="rvw-shh">
+                <div class="grow">
+                    <div class="t1"><h2 id="rvwShNo">-</h2><span id="rvwShPill" class="rvw-pill"></span></div>
+                    <div class="sub2" id="rvwShSub">-</div>
+                    <div class="meta" id="rvwShMeta">-</div>
+                </div>
+                <button type="button" class="rvw-ibtn" id="rvwShClose" aria-label="Tutup"><i class="bi bi-x-lg"></i></button>
+            </div>
+            <div class="rvw-stepper" id="rvwStepper"></div>
+            <div class="rvw-shtabs" id="rvwShTabs"></div>
+            <div class="rvw-shbody" id="rvwShBody">
+                <div id="rvwDokPane">
+                    <div id="rvwBanner"></div>
+                    <div class="rvw-paper"><div id="rvwDocHost"><div class="rvw-loading">Memuat dokumen PO...</div></div></div>
+                    <section class="rvw-umum" id="rvwUmum" data-sec="umum"></section>
+                </div>
+                <div id="rvwChatPane" hidden></div>
+                <div id="rvwAlurPane" hidden></div>
+            </div>
+            <div class="rvw-dock" id="rvwDock"></div>
+        </aside>
+    
+        <div class="rvw-dlg" id="rvwDlg" hidden>
+            <div class="rvw-dlg-box" role="alertdialog" aria-modal="true" aria-labelledby="rvwDlgTitle" aria-describedby="rvwDlgMsg">
+                <div class="rvw-dlg-icon" id="rvwDlgIcon"></div>
+                <h5 id="rvwDlgTitle"></h5>
+                <p id="rvwDlgMsg"></p>
+                <div class="rvw-dlg-btns"><button type="button" class="rvw-btn" id="rvwDlgNo">Batal</button><button type="button" class="rvw-btn pri" id="rvwDlgYes">Ya</button></div>
+            </div>
+        </div>
+        <div class="rvw-toast" id="rvwToast" role="status"></div>
     </div>
     
     <script>
     (function () {
         var BASE = '{{ @BASE }}';
         var CSRF = '{{ @csrf_token }}';
-        var MODE = '{{ @mode }}';                      // 'katim' | 'pembuat'
-        var pos = {{ @daftar_po_json | raw }};
-        var BULAN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
+        var ROLE = '{{ @mode }}';
+        var DATA = {{ @daftar_po_json | raw }};
+        var BULAN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
+        var STATUS = {
+            menunggu_review: { label: 'Menunggu review', cls: 'blue', ic: 'bi-hourglass-split' },
+            perlu_revisi: { label: 'Perlu revisi', cls: 'amber', ic: 'bi-pencil-square' },
+            direvisi: { label: 'Sudah direvisi', cls: 'indigo', ic: 'bi-arrow-repeat' },
+            disetujui: { label: 'Disetujui', cls: 'emerald', ic: 'bi-check-circle' }
+        };
+    
+        var BULAN_PANJANG = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        var SEKARANG = new Date(), BULAN_INI = SEKARANG.getMonth() + 1, TAHUN_INI = SEKARANG.getFullYear();
+        var fBaca = '', fRevisi = '', fAlur = '', fBulan = '', fTahun = '';
+        var tab = '', q = '', current = null, detail = null, shTab = 'dok', composer = null;
+        var openTicket = 0, secs = {}, chatTimer = null, chatPesan = [], chatSudahMuat = false, alurPesan = [], alurMuat = false;
     
         function $(id) { return document.getElementById(id); }
         function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-        function tgl(iso) { if (!iso) { return '-'; } var d = new Date(iso + 'T00:00:00'); return d.getDate() + ' ' + BULAN[d.getMonth()] + ' ' + d.getFullYear(); }
-        function pad(n) { return (n < 10 ? '0' : '') + n; }
-        function waktu(s) {
-            if (!s) { return ''; }
-            var d = new Date(String(s).replace(' ', 'T'));
-            if (isNaN(d.getTime())) { return s; }
-            var jam = pad(d.getHours()) + '.' + pad(d.getMinutes());
-            var hari = new Date(); hari.setHours(0, 0, 0, 0);
-            var sel = Math.round((hari - new Date(d.getFullYear(), d.getMonth(), d.getDate())) / 86400000);
-            if (sel === 0) { return 'Hari ini, ' + jam; }
-            if (sel === 1) { return 'Kemarin, ' + jam; }
-            return d.getDate() + ' ' + BULAN[d.getMonth()] + ' ' + d.getFullYear() + ', ' + jam;
+        function fmt(t) { var m = /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}))?/.exec(t || ''); if (!m) { return '-'; } return (+m[3]) + ' ' + BULAN[+m[2] - 1] + (m[4] ? ' ' + m[4] + ':' + m[5] : ''); }
+        function initials(n) { return String(n).split(' ').map(function (x) { return x.charAt(0); }).slice(0, 2).join('').toUpperCase(); }
+        function first(n) { return String(n).split(' ')[0]; }
+        function lawanLabel() { return ROLE === 'katim' ? 'Ketua Pelaksana' : 'Ketua Tim'; }
+    
+        /* ---------- Jejak kirim dan baca ---------- */
+        function jejak(p) {
+            if (p.status === 'menunggu_review') { return { kirim: 'Dikirim ' + fmt(p.dikirim_at), at: p.dikirim_at, bacaAt: p.dibaca_at, penerima: 'katim' }; }
+            if (p.status === 'direvisi') { return { kirim: 'Revisi dikirim ' + fmt(p.revisi_at), at: p.revisi_at, bacaAt: p.revisi_dibaca_at, penerima: 'katim' }; }
+            if (p.status === 'perlu_revisi') { return { kirim: 'Revisi diminta ' + fmt(p.minta_at), at: p.minta_at, bacaAt: p.minta_dibaca_at, penerima: 'pembuat' }; }
+            return { kirim: 'Dikirim ' + fmt(p.dikirim_at), at: p.dikirim_at, bacaAt: null, penerima: null };
         }
-        function initials(n) { return String(n || '?').split(' ').map(function (x) { return x.charAt(0); }).slice(0, 2).join('').toUpperCase(); }
-        function firstName(n) { return String(n || '').split(' ')[0]; }
-        function pill(warna, ikon, teks) { return '<span class="status-pill status-pill-' + warna + '"><i class="bi ' + ikon + '"></i>' + teks + '</span>'; }
+        function isUnread(p) { var j = jejak(p); return j.penerima === ROLE && !j.bacaAt; }
+        function sortKey(p) { return jejak(p).at || p.dikirim_at || ''; }
+        // kelas baris: belum dibaca (tebal + titik), sudah dibaca (biasa + latar tipis), atau polos (saya pengirimnya)
+        function rowClass(p) { var j = jejak(p); if (j.penerima !== ROLE) { return ''; } return j.bacaAt ? 'row-read' : 'row-unread'; }
+        function dotHtml(p) { return isUnread(p) ? '<span class="rvw-dot" title="Belum dibaca" aria-hidden="true"></span>' : ''; }
+        function unreadCount() { return DATA.filter(isUnread).length; }
+        function ticksSvg(biru) { return '<svg class="rvw-ticks' + (biru ? ' read' : '') + '" viewBox="0 0 18 12" width="17" height="11" aria-hidden="true"><path d="M1 6.5L4.5 10L11 2.5"/><path d="M6 6.5L9.5 10L16 2.5"/></svg>'; }
+        function noCell(p) {
+            var j = jejak(p), un = isUnread(p), l3 = '', baca = !!j.bacaAt;
+            if (j.penerima) {
+                var siapa = j.penerima === ROLE ? '' : (j.penerima === 'katim' ? ' Ketua Tim' : ' Ketua Pelaksana');
+                l3 = baca ? ticksSvg(true) + '<span>Dibaca' + siapa + ' ' + fmt(j.bacaAt) + '</span>' : ticksSvg(false) + '<span>Belum dibaca' + siapa + '</span>';
+            }
+            return '<div class="rvw-no">' + (un ? '<span class="rvw-sr">Belum dibaca: </span>' : '') + esc(p.nomor) + '</div>' +
+                '<div class="rvw-sub">' + j.kirim + '</div>' +
+                (l3 ? '<div class="rvw-readline' + (baca ? ' is-read' : '') + '">' + l3 + '</div>' : '');
+        }
     
-        function URL_PO(id) { return BASE + '/po-kegiatan/' + id; }
+        /* ---------- Status PO saat ini (turunan dari kolom yang ada, tidak disimpan) ---------- */
+        function posisi(p) {
+            if (p.status === 'menunggu_review') { return { di: 'Ketua Tim', teks: 'Menunggu review Ketua Tim', cls: 'pre' }; }
+            if (p.status === 'perlu_revisi') { return { di: 'Ketua Pelaksana', teks: 'Menunggu revisi Ketua Pelaksana', cls: 'pre' }; }
+            if (p.status === 'direvisi') { return { di: 'Ketua Tim', teks: 'Menunggu review ulang Ketua Tim', cls: 'pre' }; }
+            // disetujui: berurutan Humas -> Tim Mitra -> PPK BLU, posisi = tahap pertama yang belum selesai
+            if (!p.humas_ver_at) { return { di: 'Humas', teks: 'Menunggu verifikasi Humas', cls: 'humas' }; }
+            if (!p.mitra_valid_at) { return { di: 'Tim Mitra', teks: 'Menunggu validasi Tim Mitra', cls: 'mitra' }; }
+            // [BARU] revisi atas permintaan PPK BLU (status_review tetap 'disetujui')
+            if (p.ppk_status === 'minta') { return { di: 'Ketua Tim', teks: 'Revisi PPK BLU: menunggu keputusan Ketua Tim', cls: 'dua' }; }
+            if (p.ppk_status === 'katim_kerja') { return { di: 'Ketua Tim', teks: 'Revisi PPK BLU: dikerjakan Ketua Tim', cls: 'dua' }; }
+            if (p.ppk_status === 'ketupel_kerja') { return { di: 'Ketua Pelaksana', teks: 'Revisi PPK BLU: dikerjakan Ketua Pelaksana', cls: 'dua' }; }
+            if (p.ppk_status === 'katim_review') { return { di: 'Ketua Tim', teks: 'Revisi PPK BLU: menunggu review Ketua Tim', cls: 'dua' }; }
+            if (!p.ppk_valid_at) { return { di: 'PPK BLU', teks: p.ronde_ppk > 0 ? 'Menunggu validasi ulang PPK BLU' : 'Menunggu validasi PPK BLU', cls: 'ppk' }; }
+            return { di: 'PPK BLU', teks: 'Selesai divalidasi PPK BLU', cls: 'ok' };
+        }
+        function posBadge(p) { var o = posisi(p); return '<span class="rvw-pbadge ' + o.cls + '"><span class="d"></span>' + esc(o.teks) + '</span>'; }
+
+        /* ---------- Tab ---------- */
+        function tabDef() {
+            if (ROLE === 'katim') {
+                return [
+                    { k: 'baru', l: 'Baru dikirim', aksi: true, f: function (p) { return p.status === 'menunggu_review'; } },
+                    { k: 'revisi', l: 'Review revisi', aksi: true, rev: [['direvisi', 'Sudah direvisi'], ['perlu_revisi', 'Sedang revisi']], hot: function (p) { return p.status === 'direvisi'; }, f: function (p) { return p.status === 'direvisi' || p.status === 'perlu_revisi'; } },
+                    { k: 'selesai', l: 'Disetujui', f: function (p) { return p.status === 'disetujui'; } }
+                ];
+            }
+            return [
+                { k: 'aksi', l: 'Perlu direvisi', aksi: true, f: function (p) { return p.status === 'perlu_revisi'; } },
+                { k: 'tunggu', l: 'Dalam review', rev: [['menunggu_review', 'Menunggu review'], ['direvisi', 'Sudah direvisi']], f: function (p) { return p.status === 'menunggu_review' || p.status === 'direvisi'; } },
+                { k: 'selesai', l: 'Disetujui', f: function (p) { return p.status === 'disetujui'; } }
+            ];
+        }
+        /* ---------- Filter: baca, bulan, tahun, revisi (tab 2), alur PO (tab Disetujui) ---------- */
+        function defTab(k) { return k === 'selesai' ? { bulan: String(BULAN_INI), tahun: String(TAHUN_INI) } : { bulan: '', tahun: '' }; }
+        function resetFilterTab() { var d = defTab(tab); fBulan = d.bulan; fTahun = d.tahun; fRevisi = ''; fAlur = ''; }
+        function bulanTahun(t) { var m = /^(\d{4})-(\d{2})/.exec(t || ''); return m ? { y: +m[1], m: +m[2] } : null; }
+        // tanggal acuan bulan/tahun: tab Disetujui = tanggal disetujui; tab lain = kiriman terakhir
+        function tglAcuan(p, k) { return k === 'selesai' ? (p.disetujui_at || p.dikirim_at) : sortKey(p); }
+        function cocokPeriode(p, k, bulan, tahun) {
+            if (!bulan && !tahun) { return true; }
+            // bulan berjalan: PO disetujui yang alurnya belum selesai tetap tampil walau disetujui bulan lalu (jangan sampai tertinggal)
+            if (k === 'selesai' && bulan === String(BULAN_INI) && tahun === String(TAHUN_INI) && posisi(p).cls !== 'ok') { return true; }
+            var bt = bulanTahun(tglAcuan(p, k));
+            if (!bt) { return false; }
+            if (bulan && String(bt.m) !== bulan) { return false; }
+            if (tahun && String(bt.y) !== tahun) { return false; }
+            return true;
+        }
+        function filterAktif() { var d = defTab(tab); return !!(q || fBaca || fRevisi || fAlur || fBulan !== d.bulan || fTahun !== d.tahun); }
+        function isiOpsiWaktu() {
+            var th = {}; th[TAHUN_INI] = true;
+            DATA.forEach(function (p) { ['selesai', 'x'].forEach(function (k) { var bt = bulanTahun(tglAcuan(p, k)); if (bt) { th[bt.y] = true; } }); });
+            var daftar = Object.keys(th).map(Number).sort(function (a, b) { return b - a; });
+            $('rvwFBulan').innerHTML = '<option value="">Semua bulan</option>' + BULAN_PANJANG.map(function (n, i) { return '<option value="' + (i + 1) + '">' + n + '</option>'; }).join('');
+            $('rvwFTahun').innerHTML = '<option value="">Semua tahun</option>' + daftar.map(function (y) { return '<option value="' + y + '">' + y + '</option>'; }).join('');
+        }
+        function syncFilterUI(def) {
+            $('rvwFBaca').value = fBaca;
+            var sr = $('rvwFRevisi');
+            if (def.rev) {
+                sr.innerHTML = '<option value="">Semua status revisi</option>' + def.rev.map(function (o) { return '<option value="' + o[0] + '">' + o[1] + '</option>'; }).join('');
+                sr.value = fRevisi; sr.hidden = false;
+            } else { sr.hidden = true; }
+            $('rvwFAlur').hidden = def.k !== 'selesai'; $('rvwFAlur').value = fAlur;
+            $('rvwFBulan').value = fBulan; $('rvwFTahun').value = fTahun;
+            $('rvwFReset').hidden = !filterAktif();
+            var d = defTab(def.k), note = $('rvwFNote');
+            if (def.k === 'selesai' && fBulan === d.bulan && fTahun === d.tahun) {
+                note.textContent = 'Menampilkan PO yang disetujui bulan ini, ditambah PO yang alurnya belum selesai. Pilih bulan atau tahun lain, atau "Semua bulan", untuk melihat PO sebelumnya.';
+                note.hidden = false;
+            } else { note.hidden = true; }
+        }
+        function syncBadge() {
+            var n = unreadCount(), el = $('notifDaftarPo'), a = document.querySelector('a[href$="/po-kegiatan/daftar"]');
+            if (!el) {
+                if (!a) { return; }
+                el = document.createElement('span'); el.id = 'notifDaftarPo'; el.className = 'badge rounded-pill bg-danger ms-auto'; a.appendChild(el);
+            }
+            el.textContent = n; el.style.display = n > 0 ? '' : 'none';
+            if (!a) { a = el.closest('a'); }
+            if (a) { a.classList.toggle('rvw-has-unread', n > 0); }
+        }
     
-        /* ---------- API ---------- */
+        /* ---------- Daftar ---------- */
+        function statusPill(p) { var s = STATUS[p.status] || STATUS.menunggu_review; return '<span class="rvw-pill ' + s.cls + '"><i class="bi ' + s.ic + '"></i>' + s.label + '</span>'; }
+        function extraStatus(p) {
+            var h = '';
+            if (p.status === 'perlu_revisi') {
+                var pct = p.rn_total ? Math.round(p.rn_selesai / p.rn_total * 100) : 0;
+                h += '<div class="rvw-mini"><div class="b"><i style="width:' + pct + '%"></i></div><div class="t">' + p.rn_selesai + ' dari ' + p.rn_total + ' catatan diperbaiki</div></div>';
+            } else if (p.status === 'direvisi') { h += '<div class="rvw-sub" style="margin-top:4px;">Revisi ke-' + p.ronde + '</div>'; }
+            else if (p.status === 'disetujui' && p.ronde > 0) { h += '<div class="rvw-sub" style="margin-top:4px;">Melalui ' + p.ronde + ' putaran revisi</div>'; }
+            if (p.status === 'disetujui' && p.ronde_ppk > 0) { h += '<div class="rvw-sub" style="margin-top:4px;">Putaran PPK BLU ke-' + p.ronde_ppk + '</div>'; }
+            if (p.unread > 0) { h += '<div><span class="rvw-chat" title="Pesan diskusi belum dibaca"><i class="bi bi-chat-dots"></i>' + p.unread + ' pesan</span></div>'; }
+            return h;
+        }
+        function emptyMsg() {
+            if (filterAktif()) { return 'Tidak ada PO yang cocok dengan pencarian atau filter.'; }
+            if (tab === 'baru') { return 'Belum ada PO baru yang dikirim.'; }
+            if (tab === 'aksi') { return 'Tidak ada PO yang perlu Anda revisi saat ini.'; }
+            if (tab === 'revisi') { return 'Belum ada PO yang sedang direvisi atau menunggu review ulang.'; }
+            if (tab === 'tunggu') { return ROLE === 'katim' ? 'Tidak ada PO yang sedang menunggu revisi.' : 'Tidak ada PO yang sedang direview.'; }
+            return 'Belum ada PO yang disetujui bulan ini. Pilih bulan lain untuk melihat PO sebelumnya.';
+        }
+        function renderHead() {
+            $('rvwSub').textContent = ROLE === 'katim'
+                ? 'PO yang dikirim Ketua Pelaksana. Baris tebal bertitik biru belum Anda baca. Klik baris untuk membuka, beri catatan revisi per bagian, lalu setujui kalau sudah sesuai.'
+                : 'PO buatan Anda. Baris tebal bertitik biru adalah permintaan revisi yang belum Anda baca. Perbaiki sesuai catatan Ketua Tim, lalu kirim ulang.';
+        }
+        function renderTabs() {
+            $('rvwTabs').innerHTML = tabDef().map(function (t) {
+                var isi = DATA.filter(t.f);
+                // tab Disetujui hanya menghitung yang tampil secara bawaan (bulan ini + alur belum selesai)
+                if (t.k === 'selesai') { var db = defTab('selesai'); isi = isi.filter(function (p) { return cocokPeriode(p, 'selesai', db.bulan, db.tahun); }); }
+                var n = isi.length, u = isi.filter(isUnread).length;
+                return '<button type="button" class="rvw-tab' + (tab === t.k ? ' on' : '') + '" data-tab="' + t.k + '">' + (u ? '<span class="rvw-dot sm" title="' + u + ' belum dibaca"></span>' : '') + t.l + ' <span class="rvw-cnt' + ((t.hot ? isi.filter(t.hot).length : (t.aksi ? n : 0)) > 0 ? ' hot' : '') + '">' + n + '</span></button>';
+            }).join('');
+        }
+        function renderList() {
+            var def = tabDef().filter(function (t) { return t.k === tab; })[0];
+            syncFilterUI(def);
+            var rows = DATA.filter(def.f).filter(function (p) { return !q || (p.nomor + ' ' + p.mitra + ' ' + p.judul).toLowerCase().indexOf(q) !== -1; })
+                .filter(function (p) { return !fBaca || (fBaca === 'belum' ? isUnread(p) : !isUnread(p)); })
+                .filter(function (p) { return !fRevisi || !def.rev || p.status === fRevisi; })
+                .filter(function (p) { return !fAlur || def.k !== 'selesai' || posisi(p).cls === fAlur; })
+                .filter(function (p) { return cocokPeriode(p, def.k, fBulan, fTahun); })
+                .sort(function (a, b) {
+                    // tab Review revisi: yang sudah direvisi (siap direview) naik ke atas, yang masih diproses pelaksana (ada bar progres) di bawah
+                    var ga = a.status === 'perlu_revisi' ? 1 : 0, gb = b.status === 'perlu_revisi' ? 1 : 0;
+                    if (def.k === 'revisi' && ga !== gb) { return ga - gb; }
+                    var ua = isUnread(a) ? 0 : 1, ub = isUnread(b) ? 0 : 1;
+                    if (ua !== ub) { return ua - ub; }
+                    return sortKey(a) < sortKey(b) ? 1 : -1;
+                });
+            if (!rows.length) { $('rvwList').innerHTML = '<div class="rvw-empty"><i class="bi bi-inbox"></i>' + emptyMsg() + '</div>'; return; }
+            var orang = function (p) { var n = ROLE === 'katim' ? p.pembuat : p.katim; return '<div class="rvw-who"><span class="rvw-av">' + esc(initials(n)) + '</span>' + esc(n) + '</div>'; };
+            var tbl = '<table class="rvw-desk"><thead><tr><th class="dotc"></th><th style="width:235px;">Nomor PO</th><th>Mitra dan kegiatan</th><th>' + lawanLabel() + '</th><th>Status</th><th>Status PO saat ini</th><th>Aksi</th></tr></thead><tbody>' +
+                rows.map(function (p) {
+                    return '<tr class="' + rowClass(p) + '" data-open="' + p.id + '"><td class="dotc">' + dotHtml(p) + '</td><td>' + noCell(p) + '</td>' +
+                        '<td><div class="rvw-mitra">' + esc(p.mitra) + '</div><div class="rvw-judul">' + esc(p.judul) + '</div></td>' +
+                        '<td>' + orang(p) + '</td><td>' + statusPill(p) + extraStatus(p) + '</td><td>' + posBadge(p) + '</td>' +
+                        '<td style="text-align:right;"><button type="button" class="rvw-btn pri sm" data-open="' + p.id + '">Buka</button></td></tr>';
+                }).join('') + '</tbody></table>';
+            var cards = '<div class="rvw-cards">' + rows.map(function (p) {
+                return '<div class="rvw-pcard ' + rowClass(p) + '" data-open="' + p.id + '">' + dotHtml(p) + '<div class="top"><div>' + noCell(p) + '<div class="rvw-mitra" style="margin-top:4px;">' + esc(p.mitra) + '</div></div>' + statusPill(p) + '</div>' +
+                    '<div class="rvw-judul" style="max-width:none;margin:4px 0 6px;">' + esc(p.judul) + '</div>' + extraStatus(p) +
+                    '<div class="rvw-posm">Status PO saat ini: ' + posBadge(p) + '</div><div class="foot"><div class="rvw-sub">' + lawanLabel() + ': ' + esc(ROLE === 'katim' ? p.pembuat : p.katim) + '</div><button type="button" class="rvw-btn pri sm" data-open="' + p.id + '">Buka</button></div></div>';
+            }).join('') + '</div>';
+            $('rvwList').innerHTML = tbl + cards;
+        }
+        function renderAll() { renderHead(); isiOpsiWaktu(); renderTabs(); renderList(); syncBadge(); }
+        function rowOf(id) { return DATA.filter(function (p) { return p.id === id; })[0]; }
+        function updateRow(po) {
+            var ada = false;
+            DATA = DATA.map(function (p) { if (p.id === po.id) { ada = true; return po; } return p; });
+            if (!ada) { DATA.push(po); }
+            isiOpsiWaktu(); renderTabs(); renderList(); syncBadge();
+        }
+    
+        /* ---------- HTTP ---------- */
         function api(url, opts) {
             opts = opts || {};
             opts.credentials = 'same-origin';
-            opts.headers = Object.assign({ 'X-Requested-With': 'XMLHttpRequest' }, opts.headers || {});
             return fetch(url, opts).then(function (r) {
                 return r.text().then(function (t) {
                     var j;
-                    try { j = JSON.parse(t); } catch (e) { throw new Error('Server membalas ' + r.status + ' (bukan JSON). Bisa sesi berakhir, route belum terpasang, atau error PHP. Buka F12 > Network untuk melihat isinya.'); }
+                    try { j = JSON.parse(t); } catch (e) { throw new Error('Server membalas ' + r.status + ' (bukan JSON).'); }
                     if (!r.ok || !j.ok) { throw new Error(j.pesan || 'Terjadi kesalahan.'); }
                     return j;
                 });
@@ -218,379 +554,459 @@
             Object.keys(data || {}).forEach(function (k) { body.append(k, data[k]); });
             return api(url, { method: 'POST', body: body });
         }
+        function URL_PO(id) { return BASE + '/po-kegiatan/' + id; }
     
-        /* ---------- State ---------- */
-        var tab = 'perlu';
-        var q = '';
-        var current = null;
-        var chatOpen = false;
-        var chatMsgs = [];
-        var pollTimer = null;
-    
-        function curPo() { return pos.filter(function (p) { return p.id === current; })[0]; }
-    
-        /* ---------- Sinkron angka di sidebar (badge diberi id="notifDaftarPo") ---------- */
-        function syncBadge() {
-            var n = pos.filter(function (p) { return MODE === 'katim' ? (p.status_review !== 'disetujui' || p.unread > 0) : p.unread > 0; }).length;
-            var el = $('notifDaftarPo');
-            if (el) { el.textContent = n; el.style.display = n > 0 ? '' : 'none'; }
-        }
-    
-        /* ---------- Halaman daftar ---------- */
-        function renderShell() {
-            var head = MODE === 'katim'
-                ? ['Daftar PO', 'PO yang sudah dikirim pelaksana. Buka untuk review, beri catatan lewat chat, lalu setujui dan setujui PO jika tidak ada revisi.PO yang di validasi mitra akan muncul di halaman ini.']
-                : ['Diskusi PO', 'PO yang sudah Anda kirim. Lihat status review, balas catatan Ketua Tim, dan edit PO yang belum dikunci.'];
-            $('dpoContent').innerHTML = '<div class="dpo-head"><h1>' + head[0] + '</h1><p>' + head[1] + '</p></div>' +
-                '<div class="card">' + (MODE === 'katim' ? '<div class="dpo-tabs" id="dpoTabs"></div>' : '') +
-                '<div class="card-body"><input id="dpoSearch" type="search" class="form-control form-control-sm mb-3" style="max-width:380px;" placeholder="Cari nomor PO, mitra, atau pembuat" aria-label="Cari PO"><div id="dpoList"></div></div></div>';
-            $('dpoSearch').addEventListener('input', function () { q = this.value.trim().toLowerCase(); renderList(); });
-        }
-    
-        function renderTabs() {
-            if (MODE !== 'katim') { return; }
-            var n1 = pos.filter(function (p) { return p.status_review !== 'disetujui'; }).length;
-            var n2 = pos.length - n1;
-            $('dpoTabs').innerHTML =
-                '<button type="button" class="dpo-tab' + (tab === 'perlu' ? ' on' : '') + '" data-dpo-tab="perlu">Perlu direview <span class="dpo-cnt">' + n1 + '</span></button>' +
-                '<button type="button" class="dpo-tab' + (tab === 'sudah' ? ' on' : '') + '" data-dpo-tab="sudah">Disetujui <span class="dpo-cnt">' + n2 + '</span></button>';
-        }
-    
-        function pillsFor(p) {
-            var h;
-            if (p.status_review === 'disetujui') {
-                h = pill('emerald', 'bi-check-circle', 'Disetujui');
-            } else if (p.status_review === 'revisi') {
-                h = pill('rose', 'bi-arrow-repeat', 'Revisi');
-            } else {
-                h = pill('amber', 'bi-hourglass-split', MODE === 'katim' ? 'Perlu direview' : 'Menunggu review');
-            }
-            if (MODE === 'pembuat' && p.dibuka && p.status_review === 'menunggu_review') { h += pill('slate', 'bi-eye', 'Sudah dibuka Ketua Tim'); }
-            if (p.unread) { h += pill('blue', 'bi-chat-dots-fill', p.unread + ' pesan baru'); }
-            return '<div class="dpo-pills">' + h + '</div>';
-        }
-    
-        function actsFor(p) {
-            var edit = '';
-            if (MODE === 'pembuat') {
-                edit = p.status_review === 'disetujui'
-                    ? '<button type="button" class="btn btn-white btn-sm" disabled title="PO dikunci. Minta Ketua Tim membuka kembali."><i class="bi bi-lock-fill"></i></button>'
-                    : '<a class="btn btn-white btn-sm" href="' + URL_PO(p.id) + '/edit?dari=daftar" title="Edit PO"><i class="bi bi-pencil"></i></a>';
-            }
-            return '<div class="dpo-acts">' + edit +
-                '<button type="button" class="btn btn-white btn-sm position-relative" data-dpo-chat="' + p.id + '" aria-label="Chat untuk ' + esc(p.nomor) + '"><i class="bi bi-chat-dots"></i>' + (p.unread ? '<span class="dpo-dot">' + p.unread + '</span>' : '') + '</button>' +
-                '<button type="button" class="btn btn-primary btn-sm" data-dpo-open="' + p.id + '"><i class="bi bi-eye"></i>' + (MODE === 'katim' ? 'Review PO' : 'Buka PO') + '</button></div>';
-        }
-    
-        function renderList() {
-            var rows = pos.filter(function (p) {
-                if (MODE === 'katim') {
-                    if (tab === 'perlu' && p.status_review === 'disetujui') { return false; }
-                    if (tab === 'sudah' && p.status_review !== 'disetujui') { return false; }
-                }
-                if (q) {
-                    var hay = (p.nomor + ' ' + p.mitra + ' ' + p.judul + ' ' + p.pembuat).toLowerCase();
-                    if (hay.indexOf(q) === -1) { return false; }
-                }
-                return true;
-            });
-    
-            if (!rows.length) {
-                var pesan = q ? 'Tidak ada PO yang cocok dengan pencarian.' : (MODE === 'katim' && tab === 'perlu' ? 'Semua PO sudah disetujui.' : 'Belum ada PO di daftar ini.');
-                $('dpoList').innerHTML = '<div class="dpo-empty"><i class="bi bi-inbox"></i>' + pesan + '</div>';
-                return;
-            }
-    
-            var kolomPembuat = MODE === 'katim' ? '<th>Pembuat</th>' : '';
-            var table = '<div class="table-responsive dpo-desk"><table class="table table-hover align-middle mb-0"><thead><tr><th style="width:150px;">Nomor PO</th><th>Mitra dan kegiatan</th>' + kolomPembuat + '<th>Status</th><th></th></tr></thead><tbody>' +
-                rows.map(function (p) {
-                    return '<tr><td><div class="dpo-no">' + esc(p.nomor) + '</div><div class="dpo-sub">Dikirim ' + tgl(p.dikirim) + '</div></td>' +
-                        '<td><div class="dpo-mitra">' + esc(p.mitra) + '</div><div class="dpo-judul">' + esc(p.judul) + '</div></td>' +
-                        (MODE === 'katim' ? '<td><div class="dpo-who"><span class="dpo-avatar">' + esc(initials(p.pembuat)) + '</span>' + esc(p.pembuat) + '</div></td>' : '') +
-                        '<td>' + pillsFor(p) + '</td><td>' + actsFor(p) + '</td></tr>';
-                }).join('') + '</tbody></table></div>';
-    
-            var cards = '<div class="dpo-mob">' + rows.map(function (p) {
-                return '<div class="dpo-pcard"><div class="dpo-no">' + esc(p.nomor) + '</div><div class="dpo-mitra">' + esc(p.mitra) + '</div>' +
-                    '<div class="dpo-judul" style="max-width:none;margin:2px 0 8px;">' + esc(p.judul) + '</div>' +
-                    (MODE === 'katim' ? '<div class="dpo-who dpo-sub" style="margin-bottom:8px;"><span class="dpo-avatar">' + esc(initials(p.pembuat)) + '</span>' + esc(p.pembuat) + ', dikirim ' + tgl(p.dikirim) + '</div>' : '<div class="dpo-sub" style="margin-bottom:8px;">Dikirim ' + tgl(p.dikirim) + '</div>') +
-                    pillsFor(p) + '<div class="dpo-foot">' + actsFor(p) + '</div></div>';
-            }).join('') + '</div>';
-    
-            $('dpoList').innerHTML = table + cards;
-        }
-    
-        /* ---------- Panel review ---------- */
-        function renderDock() {
-            var p = curPo();
-            if (!p) { return; }
-            var disetujui = p.status_review === 'disetujui';
-            $('dpoBtnChatLabel').textContent = 'Chat dengan ' + (MODE === 'katim' ? firstName(p.pembuat) : 'Ketua Tim');
-            $('dpoBtnChatDot').hidden = p.unread === 0 || chatOpen;
-            $('dpoBtnChatDot').textContent = p.unread;
-    
-            $('dpoBtnApprove').hidden = !(MODE === 'katim' && !disetujui);
-            $('dpoBtnReopen').hidden = !(MODE === 'katim' && disetujui);
-            $('dpoBtnEdit').hidden = !(MODE === 'pembuat' && !disetujui);
-            $('dpoLockNote').hidden = !(MODE === 'pembuat' && disetujui);
-            if (MODE === 'pembuat') { $('dpoBtnEdit').setAttribute('href', URL_PO(p.id) + '/edit?dari=daftar'); }
-            $('dpoBtnApprove').disabled = false;
-            $('dpoBtnReopen').disabled = false;
-        }
-    
-        function renderChat() {
-            var p = curPo();
-            if (!p) { return; }
-            var lawan = MODE === 'katim' ? p.pembuat : 'Ketua Tim';
-            $('dpoChatTitle').textContent = 'Diskusi ' + p.nomor + ' dengan ' + lawan;
-            if (!chatMsgs.length) {
-                $('dpoChatLog').innerHTML = '<div class="dpo-chat-empty">Belum ada pesan. Tulis catatan untuk ' + esc(lawan) + ' tentang PO ini.</div>';
-                return;
-            }
-            $('dpoChatLog').innerHTML = chatMsgs.map(function (m) {
-                if (m.sistem) { return '<div class="dpo-msg sys">' + esc(m.pesan) + '<div class="tm">' + esc(waktu(m.waktu)) + '</div></div>'; }
-                return '<div class="dpo-msg ' + (m.saya ? 'me' : 'other') + '"><div class="nm">' + (m.saya ? 'Anda' : esc(m.nama)) + '</div>' + esc(m.pesan).replace(/\n/g, '<br>') + '<div class="tm">' + esc(waktu(m.waktu)) + '</div></div>';
-            }).join('');
-            $('dpoChatLog').scrollTop = $('dpoChatLog').scrollHeight;
-        }
-    
-        function tandaiDibaca(p) {
-            if (!p || p.unread === 0) { return; }
-            post(URL_PO(p.id) + '/chat/baca').then(function () {
-                p.unread = 0;
-                renderAll();
-            }).catch(function () { /* diam: akan dicoba lagi saat chat dibuka berikutnya */ });
-        }
-    
-        function muatChat(silent) {
-            var p = curPo();
-            if (!p) { return; }
-            var idPo = p.id;
-            api(URL_PO(idPo) + '/chat').then(function (j) {
-                if (current !== idPo) { return; }
-                var berubah = j.pesan.length !== chatMsgs.length;
-                var adaDariLawan = j.pesan.some(function (m) { return !m.saya; });
-                chatMsgs = j.pesan;
-                if (berubah || !silent) { renderChat(); }
-                if (adaDariLawan && (berubah || !silent)) { p.unread = p.unread || 0; tandaiDibaca(pakaiUnread(p, berubah)); }
-            }).catch(function (e) { if (!silent) { toast(e.message, true); } });
-        }
-        // Saat pesan baru masuk ketika chat terbuka, tandai dibaca ke server walau angka lokal masih 0.
-        function pakaiUnread(p, berubah) { if (berubah && p.unread === 0) { p.unread = 1; } return p; }
-    
-        function mulaiPoll() { hentikanPoll(); pollTimer = setInterval(function () { if (chatOpen && !document.hidden) { muatChat(true); } }, 8000); }
-        function hentikanPoll() { if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } }
-    
-        function setChat(open) {
-            chatOpen = open;
-            $('dpoChat').hidden = !open;
-            $('dpoBtnChat').setAttribute('aria-expanded', open ? 'true' : 'false');
-            if (open) {
-                chatMsgs = [];
-                renderChat();
-                muatChat(false);
-                mulaiPoll();
-                setTimeout(function () { $('dpoChatText').focus(); }, 60);
-            } else {
-                hentikanPoll();
-            }
-            renderDock();
-        }
-    
-        function muatDokumen(p) {
-            $('dpoPaper').innerHTML = '<div class="dpo-empty"><i class="bi bi-hourglass-split"></i>Memuat dokumen PO...</div>';
-            fetch(URL_PO(p.id) + '/preview', { credentials: 'same-origin' })
-                .then(function (r) { if (!r.ok) { throw new Error('gagal'); } return r.text(); })
-                .then(function (html) { if (current === p.id) { $('dpoPaper').innerHTML = html; } })
-                .catch(function () { if (current === p.id) { $('dpoPaper').innerHTML = '<div class="dpo-empty"><i class="bi bi-exclamation-triangle"></i>Dokumen PO gagal dimuat. Tutup panel lalu buka lagi.</div>'; } });
-        }
-    
-        function openSheet(id, withChat) {
-            current = id;
-            var p = curPo();
-            $('dpoSheetNo').textContent = p.nomor;
-            $('dpoSheetTitle').textContent = p.mitra + ': ' + p.judul;
-            $('dpoSheetMeta').innerHTML = pill('blue', 'bi-send-check', 'Terkirim ' + tgl(p.dikirim)) + pill('slate', 'bi-person', 'Pembuat: ' + esc(p.pembuat));
-            muatDokumen(p);
-            catatDibuka(p);
-            $('dpoSheet').classList.add('open');
-            $('dpoScrim').classList.add('open');
-            $('dpoSheet').querySelector('.dpo-sheet-body').scrollTop = 0;
-            chatOpen = false;
-            $('dpoChat').hidden = true;
-            chatMsgs = [];
-            renderDock();
-            if (withChat) { setChat(true); } else { setTimeout(function () { $('dpoSheetClose').focus(); }, 60); }
-        }
-    
-        // Ketua Tim membuka panel: reviewed_at terisi sekali di server (penanda "sudah dilihat").
-        function catatDibuka(p) {
-            if (MODE !== 'katim' || p.dibuka) { return; }
-            post(URL_PO(p.id) + '/dibuka').then(function () { p.dibuka = true; }).catch(function () { /* tidak kritis, dicoba lagi saat dibuka berikutnya */ });
-        }
-    
-        function closeSheet() {
-            hentikanPoll();
-            $('dpoSheet').classList.remove('open');
-            $('dpoScrim').classList.remove('open');
-            current = null;
-            chatOpen = false;
-            chatMsgs = [];
-        }
-    
-        var mengirim = false;
-        function sendMsg() {
-            var p = curPo();
-            var txt = $('dpoChatText').value.trim();
-            if (!p || !txt || mengirim) { return; }
-            mengirim = true;
-            $('dpoChatSend').disabled = true;
-            post(URL_PO(p.id) + '/chat', { pesan: txt }).then(function (j) {
-                if (current === p.id) { chatMsgs.push(j.pesan); renderChat(); }
-                $('dpoChatText').value = '';
-                toast(MODE === 'katim' ? 'Pesan terkirim. ' + p.pembuat + ' menerima notifikasi.' : 'Pesan terkirim ke Ketua Tim.');
-            }).catch(function (e) { toast(e.message, true); }).then(function () {
-                mengirim = false;
-                $('dpoChatSend').disabled = false;
-            });
-        }
-    
-        function setujui() {
-            var p = curPo();
-            if (!p || MODE !== 'katim' || p.status_review === 'disetujui') { return; }
-            dialog({
-                tipe: 'ok', judul: 'Setujui PO?',
-                pesan: 'Setelah disetujui, PO dikunci dan tidak bisa diedit pembuat sampai Anda membukanya kembali.',
-                info: [p.nomor, p.mitra], ya: 'Ya, setujui'
-            }).then(function (ya) {
-                if (!ya) { return; }
-                $('dpoBtnApprove').disabled = true;
-                return post(URL_PO(p.id) + '/setujui').then(function () {
-                    p.status_review = 'disetujui';
-                    renderAll();
-                    if (chatOpen) { muatChat(true); }
-                    return dialog({ tipe: 'ok', judul: 'PO disetujui', pesan: 'PO ' + p.nomor + ' sudah di setujui dan dikunci.', ya: 'Tutup', batal: null });
-                });
-            }).catch(function (e) {
-                renderDock();
-                return dialog({ tipe: 'err', judul: 'Gagal menyetujui PO', pesan: e.message, ya: 'Tutup', batal: null });
-            });
-        }
-    
-        function bukaKembali() {
-            var p = curPo();
-            if (!p || MODE !== 'katim' || p.status_review !== 'disetujui') { return; }
-            dialog({
-                tipe: 'warn', ikon: 'bi-unlock', judul: 'Buka kembali PO ini?',
-                pesan: 'Setujui PO dibatalkan dan pembuat bisa mengedit PO. Anda perlu menyetujui ulang setelah diperbaiki.',
-                info: [p.nomor, p.mitra], ya: 'Ya, buka kembali'
-            }).then(function (ya) {
-                if (!ya) { return; }
-                $('dpoBtnReopen').disabled = true;
-                return post(URL_PO(p.id) + '/buka-kembali').then(function () {
-                    p.status_review = 'revisi';
-                    renderAll();
-                    if (chatOpen) { muatChat(true); }
-                    return dialog({ tipe: 'info', judul: 'PO dibuka kembali', pesan: 'Pembuat sekarang bisa mengedit PO ' + p.nomor + '.', ya: 'Tutup', batal: null });
-                });
-            }).catch(function (e) {
-                renderDock();
-                return dialog({ tipe: 'err', judul: 'Gagal membuka kembali PO', pesan: e.message, ya: 'Tutup', batal: null });
-            });
-        }
-    
-        /* ---------- Popup konfirmasi / alert ----------
-           dialog({tipe:'ok|warn|err|info', judul, pesan, info, ya, batal})  ->  Promise<boolean>
-           batal:null = mode alert (satu tombol). Menutup lewat tombol, klik di luar kotak, atau Escape = false. */
-        var dlgResolve = null, dlgFokus = null, dlgTimer = null;
-        var IKON_DLG = { ok: 'bi-check2-circle', warn: 'bi-exclamation-triangle', err: 'bi-x-circle', info: 'bi-info-circle' };
-    
+        /* ---------- Dialog dan toast ---------- */
+        var dlgResolve = null, dlgTimer = null, dlgFokus = null;
         function dialog(o) {
             return new Promise(function (resolve) {
-                if (dlgResolve) { dlgResolve(false); }
+                if (dlgResolve) { dlgResolve('batal'); }
                 clearTimeout(dlgTimer);
-                dlgResolve = resolve;
-                dlgFokus = document.activeElement;
-                var tipe = o.tipe || 'info';
-                $('dpoDlgIcon').className = 'dpo-dlg-icon ' + tipe;
-                $('dpoDlgIcon').innerHTML = '<i class="bi ' + (o.ikon || IKON_DLG[tipe]) + '"></i>';
-                $('dpoDlgTitle').textContent = o.judul || '';
-                $('dpoDlgMsg').textContent = o.pesan || '';
-                $('dpoDlgInfo').hidden = !o.info;
-                $('dpoDlgInfo').innerHTML = o.info ? '<b>' + esc(o.info[0]) + '</b>' + esc(o.info[1] || '') : '';
-                $('dpoDlgCancel').hidden = o.batal === null;
-                $('dpoDlgCancel').textContent = o.batal || 'Batal';
-                $('dpoDlgOk').textContent = o.ya || 'OK';
-                $('dpoDlg').hidden = false;
-                requestAnimationFrame(function () { $('dpoDlg').classList.add('show'); });
-                setTimeout(function () { $('dpoDlgOk').focus(); }, 30);
+                dlgResolve = resolve; dlgFokus = document.activeElement;
+                $('rvwDlgIcon').className = 'rvw-dlg-icon' + (o.warna === 'ok' ? ' ok' : '');
+                $('rvwDlgIcon').innerHTML = '<i class="bi ' + (o.ikon || 'bi-question-circle') + '"></i>';
+                $('rvwDlgTitle').textContent = o.judul; $('rvwDlgMsg').textContent = o.pesan;
+                $('rvwDlgYes').textContent = o.ya; $('rvwDlgNo').textContent = o.tidak || 'Batal';
+                $('rvwDlg').hidden = false;
+                requestAnimationFrame(function () { $('rvwDlg').classList.add('show'); });
+                setTimeout(function () { $('rvwDlgYes').focus(); }, 30);
             });
         }
-    
-        function tutupDialog(hasil) {
+        function closeDlg(h) {
             if (!dlgResolve) { return; }
-            var r = dlgResolve;
-            dlgResolve = null;
-            $('dpoDlg').classList.remove('show');
-            dlgTimer = setTimeout(function () { $('dpoDlg').hidden = true; }, 160);
+            var r = dlgResolve; dlgResolve = null;
+            $('rvwDlg').classList.remove('show');
+            dlgTimer = setTimeout(function () { $('rvwDlg').hidden = true; }, 160);
             if (dlgFokus && dlgFokus.focus) { try { dlgFokus.focus(); } catch (e) {} }
-            r(hasil);
+            r(h);
         }
-    
-        /* ---------- Toast ---------- */
         var toastTimer;
         function toast(text, galat) {
-            var t = $('dpoToast');
-            t.textContent = text;
-            t.classList.toggle('err', !!galat);
-            t.classList.add('show');
+            var t = $('rvwToast');
+            t.textContent = text; t.classList.toggle('err', !!galat); t.classList.add('show');
             clearTimeout(toastTimer);
-            toastTimer = setTimeout(function () { t.classList.remove('show'); }, 4500);
+            toastTimer = setTimeout(function () { t.classList.remove('show'); }, galat ? 6000 : 3500);
         }
     
-        /* ---------- Render gabungan ---------- */
-        function renderAll() {
-            renderTabs();
-            renderList();
-            syncBadge();
-            if (current) { renderDock(); }
+        /* ---------- Catatan: data ---------- */
+        function notes() { return detail ? detail.catatan : []; }
+        function cnt(st) { return notes().filter(function (n) { return n.state === st; }).length; }
+        function curPo() { return detail ? detail.po : rowOf(current); }
+        function canAddNote(p) { return ROLE === 'katim' && (p.status === 'menunggu_review' || p.status === 'direvisi'); }
+        function roundNotes(p) { return notes().filter(function (n) { return n.state !== 'draf' && n.ronde === p.ronde; }); }
+    
+        /* ---------- Panel: kepala, stepper, tab, banner, dock ---------- */
+        function renderChrome() {
+            var p = curPo(); if (!p) { return; }
+            var s = STATUS[p.status] || STATUS.menunggu_review, j = jejak(p);
+            $('rvwShNo').textContent = p.nomor;
+            $('rvwShPill').className = 'rvw-pill ' + s.cls; $('rvwShPill').innerHTML = '<i class="bi ' + s.ic + '"></i>' + s.label;
+            $('rvwShSub').textContent = p.mitra + ' - ' + p.judul;
+            var baca = '';
+            if (j.penerima && j.bacaAt) { baca = ' &middot; ' + (p.status === 'menunggu_review' ? 'Dibaca Ketua Tim ' : (p.status === 'direvisi' ? 'Revisi dibaca Ketua Tim ' : 'Permintaan revisi dibaca Ketua Pelaksana ')) + fmt(j.bacaAt); }
+            $('rvwShMeta').innerHTML = 'Ketua Pelaksana <b>' + esc(p.pembuat) + '</b> &middot; Ketua Tim <b>' + esc(p.katim) + '</b> &middot; Dikirim ' + fmt(p.dikirim_at) + baca;
+            renderStepper(p); renderShTabs(p); renderBanner(p); renderDock(p);
+            if (shTab === 'alur') { renderAlur(); }
+        }
+        function renderStepper(p) {
+            var steps = ['Dikirim', 'Review Ketua Tim', 'Revisi Pelaksana', 'Disetujui'];
+            var c = p.status === 'disetujui' ? 5 : (p.status === 'perlu_revisi' ? 3 : 2);
+            var h = '<div class="rvw-steps">';
+            steps.forEach(function (s, i) {
+                var n = i + 1, cls = n < c ? 'done' : (n === c ? 'cur' : '');
+                h += '<div class="rvw-step ' + cls + '"><span class="n">' + (n < c ? '<i class="bi bi-check-lg"></i>' : n) + '</span><span class="lb">' + s + '</span></div>';
+                if (i < steps.length - 1) { h += '<div class="rvw-sline' + (n < c - 1 || (n < c && c === 5) ? ' done' : '') + '"></div>'; }
+            });
+            h += '</div><div class="rvw-nextnote">' + (p.status === 'disetujui' ? 'Sudah diteruskan ke Humas.' : 'Setelah disetujui Ketua Tim, PO diteruskan ke Humas, lalu Tim Mitra, lalu PPK BLU.') + (p.ronde ? ' Putaran revisi: ' + p.ronde + '.' : '') + '</div>';
+            $('rvwStepper').innerHTML = h;
+        }
+        function renderShTabs(p) {
+            var nn = notes().length, unread = p.unread || 0, nc = chatSudahMuat ? chatPesan.filter(function (m) { return !m.sistem; }).length : 0;
+            $('rvwShTabs').innerHTML =
+                '<button type="button" class="rvw-shtab' + (shTab === 'dok' ? ' on' : '') + '" data-shtab="dok">Dokumen dan catatan' + (nn ? ' <span class="rvw-cnt">' + nn + '</span>' : '') + '</button>' +
+                '<button type="button" class="rvw-shtab' + (shTab === 'chat' ? ' on' : '') + '" data-shtab="chat">Diskusi' + (unread ? ' <span class="rvw-cnt hot">' + unread + '</span>' : (nc ? ' <span class="rvw-cnt">' + nc + '</span>' : '')) + '</button>' +
+                '<button type="button" class="rvw-shtab' + (shTab === 'alur' ? ' on' : '') + '" data-shtab="alur">Alur</button>';
+        }
+        function renderBanner(p) {
+            var op = cnt('terbuka'), pm = first(p.pembuat), km = first(p.katim), h;
+            if (ROLE === 'katim') {
+                if (p.status === 'menunggu_review') { h = ['info', 'bi-info-circle', 'Beri catatan pada bagian yang perlu diperbaiki. Catatan berstatus <b>draf</b> sampai Anda menekan <b>Minta revisi</b>. Kalau sudah sesuai, langsung <b>Setujui</b>.']; }
+                else if (p.status === 'direvisi') { h = ['info', 'bi-info-circle', '<b>' + esc(pm) + ' sudah mengirim revisi.</b> Cek ulang bagian yang dicatat. Kalau sudah sesuai, setujui. Kalau belum, buka kembali catatannya atau tambah catatan baru.']; }
+                else if (p.status === 'perlu_revisi') { h = ['warn', 'bi-hourglass-split', 'Menunggu <b>' + esc(pm) + '</b> memperbaiki ' + op + ' catatan. Anda akan melihat revisinya di tab Review revisi.']; }
+                else if (p.ppk_status) { h = ['warn', 'bi-clipboard2-check', 'PO ini sedang <b>direvisi atas permintaan PPK BLU</b> (putaran ' + p.ronde_ppk + '). Kelola di halaman <a href="' + BASE + '/po-revisi-ppk">Revisi PPK BLU</a>.']; }
+                else { h = ['ok', 'bi-check-circle', 'PO ini sudah disetujui pada ' + fmt(p.disetujui_at) + '. PO terkunci dan diteruskan ke Tim Mitra dan Humas.']; }
+            } else if (p.status === 'perlu_revisi') { h = ['warn', 'bi-pencil-square', '<b>' + esc(km) + ' meminta revisi.</b> Perbaiki PO lewat tombol Edit PO, tandai tiap catatan yang sudah selesai, lalu kirim revisi.']; }
+            else if (p.status === 'disetujui' && p.ppk_status === 'ketupel_kerja') { h = ['warn', 'bi-clipboard2-check', '<b>Revisi PPK BLU didisposisikan kepada Anda.</b> Kerjakan di halaman <a href="' + BASE + '/po-revisi-ppk">Revisi PPK BLU</a>.']; }
+            else if (p.status === 'disetujui' && p.ppk_status) { h = ['info', 'bi-clipboard2-check', 'PO ini sedang direvisi atas permintaan PPK BLU. Posisinya terlihat di kolom Status PO saat ini.']; }
+            else if (p.status === 'disetujui') { h = ['ok', 'bi-check-circle', 'Disetujui ' + esc(p.katim) + ' pada ' + fmt(p.disetujui_at) + '. PO terkunci dan tidak bisa diedit.']; }
+            else { h = ['info', 'bi-hourglass-split', 'Menunggu review <b>' + esc(p.katim) + '</b>' + (p.status === 'direvisi' ? ' atas revisi yang sudah Anda kirim' : '') + '.']; }
+            $('rvwBanner').innerHTML = '<div class="rvw-bn ' + h[0] + '"><i class="bi ' + h[1] + '"></i><div>' + h[2] + '</div></div>' +
+                (p.catatan_mitra ? '<div class="rvw-catmitra"><i class="bi bi-chat-left-text"></i><div><div class="k">Catatan Tim Mitra</div><div class="t">' + esc(p.catatan_mitra) + '</div></div></div>' : '');
+        }
+        function renderDock(p) {
+            var op = cnt('terbuka'), dr = cnt('draf'), tot = op + dr, hint = '', btns = '';
+            if (ROLE === 'katim') {
+                if (p.status === 'menunggu_review' || p.status === 'direvisi') {
+                    hint = tot ? ((dr ? dr + ' catatan draf belum dikirim' : '') + (dr && op ? ' dan ' : '') + (op ? op + ' catatan dibuka kembali' : '') + '.') : (p.status === 'direvisi' ? 'Semua catatan sudah diperbaiki.' : 'Belum ada catatan.');
+                    btns = '<button type="button" class="rvw-btn" data-act="minta"' + (tot ? '' : ' disabled') + '><i class="bi bi-send"></i>Minta revisi' + (tot ? ' (' + tot + ')' : '') + '</button>' +
+                           '<button type="button" class="rvw-btn pri" data-act="setujui"' + (tot ? ' disabled' : '') + '><i class="bi bi-check2-circle"></i>Setujui</button>';
+                } else if (p.status === 'perlu_revisi') { hint = 'Menunggu ' + first(p.pembuat) + ' memperbaiki ' + op + ' catatan.'; }
+                else if (p.ppk_status) { hint = 'Sedang direvisi atas permintaan PPK BLU.'; btns = '<a class="rvw-btn pri" href="' + BASE + '/po-revisi-ppk"><i class="bi bi-clipboard2-check"></i>Buka Revisi PPK BLU</a>'; }
+                else if (p.mitra_valid_at || p.ppk_valid_at) { hint = 'Disetujui pada ' + fmt(p.disetujui_at) + '. PO sudah divalidasi Tim Mitra, jadi tidak bisa dibuka kembali.'; }
+                else { hint = 'Disetujui pada ' + fmt(p.disetujui_at) + '.'; btns = '<button type="button" class="rvw-btn" data-act="bukakembali"><i class="bi bi-unlock"></i>Buka kembali</button>'; }
+            } else if (p.status === 'perlu_revisi') {
+                hint = op ? 'Masih ' + op + ' catatan yang belum ditandai diperbaiki.' : 'Semua catatan sudah ditandai. Siap dikirim ulang.';
+                btns = '<button type="button" class="rvw-btn" data-act="edit"><i class="bi bi-pencil"></i>Edit PO</button>' +
+                       '<button type="button" class="rvw-btn pri" data-act="kirimrevisi"' + (op ? ' disabled' : '') + '><i class="bi bi-send"></i>Kirim revisi</button>';
+            } else if (p.status === 'disetujui' && p.ppk_status === 'ketupel_kerja') { hint = 'Revisi PPK BLU didisposisikan kepada Anda.'; btns = '<a class="rvw-btn pri" href="' + BASE + '/po-revisi-ppk"><i class="bi bi-clipboard2-check"></i>Buka Revisi PPK BLU</a>'; }
+            else if (p.status === 'disetujui') { hint = p.ppk_status ? 'PO sedang direvisi atas permintaan PPK BLU.' : 'PO terkunci. Tidak ada tindakan yang diperlukan.'; }
+            else { hint = 'Menunggu review ' + first(p.katim) + '.'; }
+            $('rvwDock').innerHTML = '<div class="hintline">' + esc(hint) + '</div><div class="acts">' + btns + '</div>';
+        }
+    
+        /* ---------- Dokumen PO + slot catatan per bagian ---------- */
+        function kunciBagian(judul) {
+            var t = String(judul).replace(/^\s*\d+\s*[.)]\s*/, '').replace(/\s+/g, ' ').trim().toUpperCase();
+            if (t.indexOf('DASAR') === 0) { return 'dasar'; }
+            if (t.indexOf('TUJUAN') === 0) { return 'tujuan'; }
+            if (t.indexOf('RUANG LINGKUP') === 0) { return 'lingkup'; }
+            if (t.indexOf('ALAT') === 0) { return 'alat'; }
+            if (t.indexOf('METODA') === 0 || t.indexOf('METODE') === 0) { return 'metoda'; }
+            if (t.indexOf('ALAMAT') === 0) { return 'alamat'; }
+            if (t.indexOf('TIM') === 0) { return 'tim'; }
+            if (t.indexOf('RENCANA ANGGARAN') === 0 || t.indexOf('RAB') === 0) { return 'rab'; }
+            if (t.indexOf('JADWAL') === 0) { return 'jadwal'; }
+            var s = t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 30);
+            return 'lain-' + (s || 'x');
+        }
+        function bangunDokumen(html) {
+            var host = $('rvwDocHost');
+            host.innerHTML = html;
+            secs = {};
+            var sheet = host.querySelector('#poDocSheet') || host.querySelector('.po-doc-sheet');
+            if (!sheet) { return; }
+            var cur = null;
+            Array.prototype.slice.call(sheet.children).forEach(function (el) {
+                if (el.classList.contains('po-section-title')) {
+                    var key = kunciBagian(el.textContent), dasar = key, n = 2;
+                    while (secs[key]) { key = dasar + '-' + (n++); }
+                    var sec = document.createElement('section'); sec.className = 'rvw-sec'; sec.setAttribute('data-sec', key);
+                    var head = document.createElement('div'); head.className = 'rvw-sec-h';
+                    var tools = document.createElement('span'); tools.className = 'rvw-tools';
+                    var body = document.createElement('div'); body.className = 'rvw-sec-body';
+                    var nt = document.createElement('div'); nt.className = 'rvw-notes';
+                    sheet.insertBefore(sec, el);
+                    head.appendChild(el); head.appendChild(tools);
+                    sec.appendChild(head); sec.appendChild(body); sec.appendChild(nt);
+                    cur = { key: key, body: body, tools: tools, notes: nt };
+                    secs[key] = cur;
+                } else if (el.classList.contains('po-signature-row')) { cur = null; }
+                else if (cur) { cur.body.appendChild(el); }
+            });
+        }
+        function noteHtml(n) {
+            var p = curPo();
+            var tagTxt = n.state === 'draf' ? 'Draf, belum dikirim' : (n.state === 'terbuka' ? 'Perlu diperbaiki' : 'Sudah diperbaiki');
+            var acts = '', skrg = n.ronde === p.ronde;
+            if (ROLE === 'katim' && n.state === 'draf') { acts = '<button type="button" class="rvw-btn link red" data-note="' + n.id + '" data-nact="hapus">Hapus draf</button>'; }
+            if (ROLE === 'katim' && p.status === 'direvisi' && skrg && n.state === 'selesai') { acts = '<button type="button" class="rvw-btn link" data-note="' + n.id + '" data-nact="buka">Buka kembali</button>'; }
+            if (ROLE === 'katim' && p.status === 'direvisi' && skrg && n.state === 'terbuka') { acts = '<button type="button" class="rvw-btn link" data-note="' + n.id + '" data-nact="batalbuka">Batal buka kembali</button>'; }
+            if (ROLE === 'pembuat' && p.status === 'perlu_revisi' && skrg && n.state === 'terbuka') { acts = '<button type="button" class="rvw-btn sm" data-note="' + n.id + '" data-nact="selesai"><i class="bi bi-check2"></i>Tandai sudah diperbaiki</button>'; }
+            if (ROLE === 'pembuat' && p.status === 'perlu_revisi' && skrg && n.state === 'selesai') { acts = '<button type="button" class="rvw-btn link" data-note="' + n.id + '" data-nact="batalselesai">Batalkan tanda</button>'; }
+            return '<div class="rvw-note st-' + n.state + '"><div class="rvw-note-top"><span class="rvw-av dark">' + esc(initials(n.oleh)) + '</span><b>' + esc(n.oleh) + '</b><span class="time">' + fmt(n.waktu) + '</span><span class="rvw-tag ' + n.state + '">' + tagTxt + '</span></div>' +
+                '<div class="rvw-note-text">' + esc(n.teks) + '</div>' + (acts ? '<div class="rvw-note-acts">' + acts + '</div>' : '') + '</div>';
+        }
+        function composerHtml() {
+            return '<div class="rvw-cmp"><textarea id="rvwCmpText" maxlength="500" placeholder="Tulis catatan revisi untuk bagian ini" aria-label="Catatan revisi"></textarea><div class="err-msg" id="rvwCmpErr" hidden>Catatan tidak boleh kosong.</div>' +
+                '<div class="row2"><button type="button" class="rvw-btn sm" data-cmp="batal">Batal</button><button type="button" class="rvw-btn pri sm" data-cmp="simpan">Simpan sebagai draf</button></div></div>';
+        }
+        function toolsHtml(key, list, add) {
+            var open = list.filter(function (n) { return n.state !== 'selesai'; }).length;
+            return (list.length ? '<span class="rvw-nchip' + (open ? '' : ' ok') + '">' + list.length + ' catatan</span>' : '') +
+                (add ? '<button type="button" class="rvw-btn link" data-addnote="' + key + '"><i class="bi bi-plus-lg"></i>Catatan</button>' : '');
+        }
+        function renderNotes() {
+            var p = curPo(); if (!p || !detail) { return; }
+            var add = canAddNote(p), semua = notes();
+            Object.keys(secs).forEach(function (k) {
+                var s = secs[k], list = semua.filter(function (n) { return n.bagian === k; });
+                s.tools.innerHTML = toolsHtml(k, list, add);
+                s.notes.innerHTML = list.map(noteHtml).join('') + (composer === k && add ? composerHtml() : '');
+            });
+            // Catatan umum + catatan yatim (bagian yang tidak ada lagi di dokumen)
+            var umum = semua.filter(function (n) { return n.bagian === 'umum' || !secs[n.bagian]; });
+            var host = $('rvwUmum');
+            if (!umum.length && !add) { host.innerHTML = ''; host.hidden = true; }
+            else {
+                host.hidden = false;
+                host.innerHTML = '<div class="rvw-sec-h"><h3>Catatan umum</h3><span class="rvw-tools">' + toolsHtml('umum', umum, add) + '</span></div>' +
+                    (!umum.length ? '<div class="hint">Tulis catatan yang berlaku untuk keseluruhan PO.</div>' : '') +
+                    '<div class="rvw-notes">' + umum.map(function (n) { return (n.bagian !== 'umum' ? '<div class="rvw-orphan">Bagian: ' + esc(n.bagian) + '</div>' : '') + noteHtml(n); }).join('') + (composer === 'umum' && add ? composerHtml() : '') + '</div>';
+            }
+        }
+    
+        /* ---------- Buka dan tutup panel ---------- */
+        function terapkanDetail(j) {
+            detail = j; updateRow(j.po); renderChrome(); renderNotes();
+        }
+        function openSheet(id) {
+            var tiket = ++openTicket;
+            current = id; detail = null; shTab = 'dok'; composer = null; secs = {}; chatPesan = []; chatSudahMuat = false; alurPesan = []; alurMuat = false;
+            var p = rowOf(id); if (!p) { return; }
+            $('rvwDocHost').innerHTML = '<div class="rvw-loading">Memuat dokumen PO...</div>';
+            $('rvwUmum').innerHTML = ''; $('rvwUmum').hidden = true; $('rvwBanner').innerHTML = '';
+            $('rvwDokPane').hidden = false; $('rvwChatPane').hidden = true; $('rvwAlurPane').hidden = true;
+            renderChrome();
+            $('rvwScrim').classList.add('open'); $('rvwSheet').classList.add('open'); $('rvwSheet').setAttribute('aria-hidden', 'false');
+            setTimeout(function () { $('rvwShClose').focus(); }, 60);
+    
+            post(URL_PO(id) + '/baca', {}).then(function (j) {
+                if (tiket !== openTicket) { return; }
+                terapkanDetail(j);
+            }).catch(function (e) {
+                if (tiket !== openTicket) { return; }
+                $('rvwBanner').innerHTML = '<div class="rvw-bn warn"><i class="bi bi-exclamation-triangle"></i><div>' + esc(e.message) + '</div></div>';
+            });
+            fetch(URL_PO(id) + '/preview', { credentials: 'same-origin' }).then(function (r) {
+                if (!r.ok) { throw new Error('Dokumen PO gagal dimuat.'); }
+                return r.text();
+            }).then(function (html) {
+                if (tiket !== openTicket) { return; }
+                bangunDokumen(html); renderNotes();
+            }).catch(function (e) {
+                if (tiket !== openTicket) { return; }
+                $('rvwDocHost').innerHTML = '<div class="rvw-loading err">' + esc(e.message) + '</div>';
+            });
+        }
+        function closeSheet() {
+            openTicket++; current = null; detail = null; composer = null; secs = {};
+            stopChatTimer();
+            $('rvwScrim').classList.remove('open'); $('rvwSheet').classList.remove('open'); $('rvwSheet').setAttribute('aria-hidden', 'true');
+        }
+        function muatUlangDetail() {
+            if (!current) { return; }
+            var id = current;
+            api(URL_PO(id) + '/review').then(function (j) { if (current === id) { terapkanDetail(j); } }).catch(function () {});
+        }
+    
+        /* ---------- Aksi ---------- */
+        function gagal(e) { toast(e.message, true); muatUlangDetail(); }
+        function doAct(act) {
+            var p = curPo(); if (!p || !detail) { return; }
+            var pm = first(p.pembuat), km = first(p.katim), id = p.id;
+            if (act === 'edit') { window.location.href = URL_PO(id) + '/edit'; return; }
+            if (act === 'minta') {
+                var n = cnt('draf') + cnt('terbuka'); if (!n) { return; }
+                dialog({ judul: 'Kirim permintaan revisi?', pesan: n + ' catatan akan dikirim ke ' + pm + '. PO berstatus Perlu revisi sampai dikirim ulang.', ya: 'Kirim', ikon: 'bi-send', warna: 'warn' }).then(function (h) {
+                    if (h !== 'ya') { return; }
+                    post(URL_PO(id) + '/minta-revisi', {}).then(function (j) { terapkanDetail(j); toast('Permintaan revisi dikirim ke ' + pm + '.'); }).catch(gagal);
+                });
+            } else if (act === 'setujui') {
+                dialog({ judul: 'Setujui PO ini?', pesan: 'PO akan terkunci dan diteruskan ke Humas untuk diverifikasi.', ya: 'Ya, setujui', ikon: 'bi-check2-circle', warna: 'ok' }).then(function (h) {
+                    if (h !== 'ya') { return; }
+                    post(URL_PO(id) + '/setujui', {}).then(function (j) { terapkanDetail(j); toast('PO disetujui.'); }).catch(gagal);
+                });
+            } else if (act === 'bukakembali') {
+                dialog({ judul: 'Buka kembali PO ini?', pesan: 'Persetujuan dan validasi Tim Mitra dibatalkan, PO kembali ke tahap review Anda.', ya: 'Ya, buka kembali', ikon: 'bi-unlock', warna: 'warn' }).then(function (h) {
+                    if (h !== 'ya') { return; }
+                    post(URL_PO(id) + '/buka-kembali', {}).then(function (j) { terapkanDetail(j); toast('PO dibuka kembali.'); }).catch(gagal);
+                });
+            } else if (act === 'kirimrevisi') {
+                var k = roundNotes(p).length;
+                dialog({ judul: 'Kirim revisi ke Ketua Tim?', pesan: k + ' catatan sudah ditandai diperbaiki. ' + km + ' akan mengecek ulang.', ya: 'Kirim revisi', ikon: 'bi-send', warna: 'ok' }).then(function (h) {
+                    if (h !== 'ya') { return; }
+                    post(URL_PO(id) + '/kirim-revisi', {}).then(function (j) { terapkanDetail(j); toast('Revisi dikirim ke ' + km + '.'); }).catch(gagal);
+                });
+            }
+        }
+        function doNote(nid, aksi) {
+            if (!current) { return; }
+            post(URL_PO(current) + '/catatan/' + nid, { aksi: aksi }).then(terapkanDetail).catch(gagal);
+        }
+        function saveNote() {
+            var t = $('rvwCmpText'); if (!t || !composer || !current) { return; }
+            var v = t.value.trim();
+            if (!v) { t.classList.add('err'); $('rvwCmpErr').hidden = false; t.focus(); return; }
+            var bagian = composer;
+            post(URL_PO(current) + '/catatan', { bagian: bagian, teks: v }).then(function (j) { composer = null; terapkanDetail(j); }).catch(gagal);
+        }
+    
+        /* ---------- Diskusi ---------- */
+        /* ---------- Tab Alur ---------- */
+        function alurItems(p) {
+            var a = [];
+            function it(t, teks, oleh, ic, cat) { if (t) { a.push({ t: String(t), teks: teks, oleh: oleh, ic: ic, cat: cat || '' }); } }
+            alurPesan.forEach(function (m) {
+                var tk = m.pesan || '';
+                if (/dikirim untuk direview|mengirim PO untuk direview/.test(tk)) { return; }   // diganti item dari dikirim_at di bawah
+                if (/divalidasi Tim Mitra/.test(tk)) { return; }                                // diganti item dari tervalidasi_mitra_at di bawah
+                var pm = /\((PPK BLU|Ketua Tim|Ketua Pelaksana)\)/.exec(tk);   // pesan tahap PPK BLU memuat "(peran)"
+                var oleh = pm ? pm[1] : (/menyetujui|meminta|membuka kembali/.test(tk) ? 'Ketua Tim' : 'Ketua Pelaksana');
+                var ic = /memvalidasi/.test(tk) ? 'bi-patch-check' : (/mendisposisikan/.test(tk) ? 'bi-person-up' : (/menyetujui/.test(tk) ? 'bi-check2-circle' : (/meminta|disimpan|mengerjakan/.test(tk) ? 'bi-pencil-square' : (/membuka kembali/.test(tk) ? 'bi-unlock' : 'bi-send'))));
+                it(m.waktu, tk, oleh, ic);
+            });
+            // PO yang langsung dikirim saat dibuat: dibuat dan dikirim jatuh di menit yang sama -> satu langkah
+            if (p.dibuat_at && p.dikirim_at && String(p.dibuat_at).slice(0, 16) === String(p.dikirim_at).slice(0, 16)) {
+                it(p.dibuat_at, 'PO dibuat dan dikirim ke Ketua Tim', 'Ketua Pelaksana', 'bi-send');
+            } else {
+                it(p.dibuat_at, 'PO dibuat (draf)', 'Ketua Pelaksana', 'bi-file-earmark-plus');
+                it(p.dikirim_at, 'PO dikirim ke Ketua Tim', 'Ketua Pelaksana', 'bi-send');
+            }
+            it(p.dibaca_at, 'PO dibaca', 'Ketua Tim', 'bi-eye');
+            it(p.minta_dibaca_at, 'Permintaan revisi dibaca', 'Ketua Pelaksana', 'bi-eye');
+            it(p.revisi_dibaca_at, 'Revisi dibaca', 'Ketua Tim', 'bi-eye');
+            if (p.status === 'disetujui') {
+                it(p.humas_baca_at, 'PO dibuka', 'Humas', 'bi-eye');
+                it(p.humas_ver_at, 'Diverifikasi', 'Humas', 'bi-patch-check');
+                it(p.mitra_valid_at, 'Divalidasi', 'Tim Mitra', 'bi-patch-check', p.catatan_mitra);
+                it(p.ppk_valid_at, 'Divalidasi', 'PPK BLU', 'bi-patch-check');
+            }
+            a.sort(function (x, y) { return x.t < y.t ? -1 : (x.t > y.t ? 1 : 0); });
+            return a;
+        }
+        function alurHtml(p) {
+            var ps = posisi(p), items = alurItems(p), h = '';
+            h += '<div class="rvw-al-now"><div class="k">PO ini sedang berada di</div><div class="v">' + esc(ps.di) + '</div><div class="s">' + esc(ps.teks) + '</div></div>';
+            var tahap = [['Humas', 'Verifikasi', p.humas_ver_at], ['Tim Mitra', 'Validasi', p.mitra_valid_at], ['PPK BLU', 'Validasi', p.ppk_valid_at]];
+            h += '<ol class="rvw-tl">' + items.map(function (x) {
+                return '<li class="done"><span class="ic"><i class="bi ' + x.ic + '"></i></span><div class="tx"><div class="a">' + esc(x.teks) + '</div><div class="b">' + esc(x.oleh) + ' &middot; ' + fmt(x.t) + '</div>' + (x.cat ? '<div class="cat"><b>Catatan Tim Mitra</b>' + esc(x.cat) + '</div>' : '') + '</div></li>';
+            }).join('');
+            var nxt = [];
+            if (p.status === 'menunggu_review' || p.status === 'direvisi') { nxt.push(['Review dan keputusan', 'Ketua Tim']); }
+            if (p.status === 'perlu_revisi') { nxt.push(['Perbaikan dan kirim revisi', 'Ketua Pelaksana']); nxt.push(['Review ulang', 'Ketua Tim']); }
+            if (p.status === 'disetujui' && p.ppk_status) {
+                var lanjut = { minta: [['Keputusan: kerjakan sendiri atau disposisi', 'Ketua Tim'], ['Kirim revisi', 'Ketua Tim atau Ketua Pelaksana']],
+                    katim_kerja: [['Edit dan kirim revisi ke PPK BLU', 'Ketua Tim']],
+                    ketupel_kerja: [['Edit dan kirim revisi', 'Ketua Pelaksana'], ['Review dan kirim ke PPK BLU', 'Ketua Tim']],
+                    katim_review: [['Review dan kirim ke PPK BLU', 'Ketua Tim']] }[p.ppk_status] || [];
+                lanjut.forEach(function (x) { nxt.push(x); });
+                nxt.push(['Validasi ulang', 'PPK BLU']);
+            } else { tahap.forEach(function (x) { if (p.status !== 'disetujui' || !x[2]) { nxt.push([x[1], x[0]]); } }); }
+            h += nxt.map(function (x, i) { return '<li class="' + (i === 0 ? 'now' : 'todo') + '"><span class="ic"><i class="bi ' + (i === 0 ? 'bi-record-circle' : 'bi-circle') + '"></i></span><div class="tx"><div class="a">' + esc(x[0]) + '</div><div class="b">' + esc(x[1]) + (i === 0 ? ' &middot; sedang di sini' : ' &middot; menunggu') + '</div></div></li>'; }).join('');
+            if (p.status === 'disetujui' && p.ppk_valid_at) { h += '<li class="done fin"><span class="ic"><i class="bi bi-flag-fill"></i></span><div class="tx"><div class="a">Selesai divalidasi PPK BLU</div><div class="b">Tahap berikutnya menyusul</div></div></li>'; }
+            return h + '</ol>';
+        }
+        function renderAlur() {
+            var p = curPo(), box = $('rvwAlurPane'); if (!p || !box) { return; }
+            box.innerHTML = alurHtml(p) + (alurMuat ? '' : '<div class="rvw-loading">Memuat riwayat...</div>');
+        }
+        function bukaAlur() {
+            var id = current;
+            $('rvwAlurPane').hidden = false;
+            renderAlur();
+            api(URL_PO(id) + '/chat').then(function (j) {
+                if (current !== id) { return; }
+                alurPesan = (j.pesan || []).filter(function (m) { return m.sistem; });
+                alurMuat = true;
+                if (shTab === 'alur') { renderAlur(); }
+            }).catch(function () { alurMuat = true; if (shTab === 'alur') { renderAlur(); } });
+        }
+
+        function stopChatTimer() { if (chatTimer) { clearInterval(chatTimer); chatTimer = null; } }
+        function renderChat(scrollBawah) {
+            var lg = $('rvwChatLog'); if (!lg) { return; }
+            var dekat = lg.scrollHeight - lg.scrollTop - lg.clientHeight < 60;
+            lg.innerHTML = chatPesan.map(function (m) {
+                if (m.sistem) { return '<div class="rvw-sys">' + esc(m.pesan) + '<span>' + fmt(m.waktu) + '</span></div>'; }
+                return '<div class="rvw-msg' + (m.saya ? ' me' : '') + '"><div class="rvw-bub">' + esc(m.pesan) + '</div><div class="rvw-mt">' + esc(m.nama) + ' &middot; ' + fmt(m.waktu) + '</div></div>';
+            }).join('') || '<div class="rvw-empty">Belum ada pesan.</div>';
+            if (scrollBawah || dekat) { lg.scrollTop = lg.scrollHeight; }
+        }
+        function muatChat(awal) {
+            if (!current) { return; }
+            var id = current;
+            api(URL_PO(id) + '/chat').then(function (j) {
+                if (current !== id || shTab !== 'chat') { return; }
+                var baru = j.pesan.length !== chatPesan.length;
+                chatPesan = j.pesan; chatSudahMuat = true;
+                if (baru || awal) { renderChat(awal); }
+                var p = curPo();
+                if (p && p.unread > 0) {
+                    post(URL_PO(id) + '/chat/baca', {}).then(function () { if (p) { p.unread = 0; updateRow(p); renderShTabs(p); } }).catch(function () {});
+                } else if (p) { renderShTabs(p); }
+            }).catch(function (e) { if (awal) { toast(e.message, true); } });
+        }
+        function bukaChat() {
+            $('rvwDokPane').hidden = true; $('rvwChatPane').hidden = false;
+            $('rvwChatPane').innerHTML = '<div class="rvw-chatlog" id="rvwChatLog"><div class="rvw-loading">Memuat pesan...</div></div>' +
+                '<div class="rvw-chatin"><textarea id="rvwChatText" maxlength="2000" placeholder="Tulis pesan untuk ' + esc(first(ROLE === 'katim' ? curPo().pembuat : curPo().katim)) + '" aria-label="Pesan"></textarea><button type="button" class="rvw-btn pri" id="rvwChatSend">Kirim</button></div>';
+            muatChat(true);
+            stopChatTimer();
+            chatTimer = setInterval(function () { if (!document.hidden) { muatChat(false); } }, 8000);
+        }
+        function tutupChat() { stopChatTimer(); $('rvwChatPane').hidden = true; $('rvwDokPane').hidden = false; }
+        function sendMsg() {
+            var t = $('rvwChatText'); if (!t || !current) { return; }
+            var v = t.value.trim(); if (!v) { return; }
+            t.disabled = true;
+            post(URL_PO(current) + '/chat', { pesan: v }).then(function (j) {
+                t.value = ''; t.disabled = false;
+                chatPesan.push(j.pesan); renderChat(true); renderShTabs(curPo()); t.focus();
+            }).catch(function (e) { t.disabled = false; toast(e.message, true); });
+        }
+    
+        /* ---------- Penyegaran daftar ---------- */
+        function segarkan() {
+            if (document.hidden || dlgResolve) { return; }
+            api(BASE + '/po-kegiatan/daftar/data').then(function (j) {
+                DATA = j.daftar;
+                if (current && detail) { var r = rowOf(current); if (r) { detail.po = r; } }
+                renderTabs(); renderList(); syncBadge();
+                if (current && detail) { renderChrome(); }
+            }).catch(function () {});
         }
     
         /* ---------- Event ---------- */
-        $('dpoRoot').addEventListener('click', function (e) {
-            var el;
-            if ((el = e.target.closest('[data-dpo-tab]'))) { tab = el.getAttribute('data-dpo-tab'); renderTabs(); renderList(); return; }
-            if ((el = e.target.closest('[data-dpo-open]'))) { openSheet(parseInt(el.getAttribute('data-dpo-open'), 10), false); return; }
-            if ((el = e.target.closest('[data-dpo-chat]'))) { openSheet(parseInt(el.getAttribute('data-dpo-chat'), 10), true); return; }
-        });
-        $('dpoBtnChat').addEventListener('click', function () { setChat(!chatOpen); });
-        $('dpoChatMin').addEventListener('click', function () { setChat(false); });
-        $('dpoChatSend').addEventListener('click', sendMsg);
-        $('dpoChatText').addEventListener('keydown', function (e) {
-            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
-        });
-        $('dpoBtnApprove').addEventListener('click', setujui);
-        $('dpoBtnReopen').addEventListener('click', bukaKembali);
-        $('dpoSheetClose').addEventListener('click', closeSheet);
-        $('dpoScrim').addEventListener('click', closeSheet);
-        $('dpoDlgOk').addEventListener('click', function () { tutupDialog(true); });
-        $('dpoDlgCancel').addEventListener('click', function () { tutupDialog(false); });
-        $('dpoDlg').addEventListener('click', function (e) { if (e.target === $('dpoDlg')) { tutupDialog(false); } });
-        document.addEventListener('keydown', function (e) {
-            if (dlgResolve) {
-                if (e.key === 'Escape') { e.preventDefault(); tutupDialog(false); return; }
-                if (e.key === 'Tab') {
-                    var tombol = [$('dpoDlgCancel'), $('dpoDlgOk')].filter(function (b) { return !b.hidden; });
-                    var i = tombol.indexOf(document.activeElement);
-                    e.preventDefault();
-                    tombol[(i + (e.shiftKey ? tombol.length - 1 : 1)) % tombol.length].focus();
-                }
+        document.addEventListener('click', function (e) {
+            var root = $('rvwRoot'); if (!root || !root.contains(e.target)) { return; }
+            var t = e.target, el;
+            if ((el = t.closest('[data-tab]'))) { tab = el.getAttribute('data-tab'); resetFilterTab(); renderTabs(); renderList(); return; }
+            if ((el = t.closest('[data-open]'))) { openSheet(parseInt(el.getAttribute('data-open'), 10)); return; }
+            if ((el = t.closest('[data-shtab]'))) {
+                var k = el.getAttribute('data-shtab'); if (k === shTab) { return; }
+                shTab = k; composer = null;
+                stopChatTimer(); $('rvwChatPane').hidden = true; $('rvwDokPane').hidden = true; $('rvwAlurPane').hidden = true;
+                if (k === 'chat') { bukaChat(); } else if (k === 'alur') { bukaAlur(); } else { tutupChat(); }
+                if (curPo()) { renderShTabs(curPo()); }
                 return;
             }
-            if (e.key === 'Escape' && $('dpoSheet').classList.contains('open')) { closeSheet(); }
+            if ((el = t.closest('[data-addnote]'))) {
+                composer = el.getAttribute('data-addnote'); renderNotes();
+                setTimeout(function () { var c = $('rvwCmpText'); if (c) { c.focus(); c.scrollIntoView({ block: 'nearest' }); } }, 0); return;
+            }
+            if ((el = t.closest('[data-cmp]'))) { if (el.getAttribute('data-cmp') === 'simpan') { saveNote(); } else { composer = null; renderNotes(); } return; }
+            if ((el = t.closest('[data-note]'))) { doNote(parseInt(el.getAttribute('data-note'), 10), el.getAttribute('data-nact')); return; }
+            if ((el = t.closest('[data-act]'))) { if (!el.disabled) { doAct(el.getAttribute('data-act')); } return; }
+            if (t.closest('#rvwChatSend')) { sendMsg(); return; }
         });
+        document.addEventListener('input', function (e) {
+            if (e.target.id === 'rvwCmpText' && e.target.classList.contains('err') && e.target.value.trim()) { e.target.classList.remove('err'); $('rvwCmpErr').hidden = true; }
+        });
+        document.addEventListener('keydown', function (e) {
+            if (!$('rvwRoot')) { return; }
+            if (e.key === 'Escape') {
+                if (dlgResolve) { e.preventDefault(); closeDlg('batal'); return; }
+                if (current) { closeSheet(); }
+            }
+            if (e.key === 'Enter' && !e.shiftKey && e.target.id === 'rvwChatText') { e.preventDefault(); sendMsg(); }
+        });
+        $('rvwSearch').addEventListener('input', function () { q = this.value.trim().toLowerCase(); renderList(); });
+        $('rvwFBaca').addEventListener('change', function () { fBaca = this.value; renderList(); });
+        $('rvwFRevisi').addEventListener('change', function () { fRevisi = this.value; renderList(); });
+        $('rvwFAlur').addEventListener('change', function () { fAlur = this.value; renderList(); });
+        $('rvwFBulan').addEventListener('change', function () { fBulan = this.value; renderList(); });
+        $('rvwFTahun').addEventListener('change', function () { fTahun = this.value; renderList(); });
+        $('rvwFReset').addEventListener('click', function () { q = ''; fBaca = ''; $('rvwSearch').value = ''; resetFilterTab(); renderList(); });
+        $('rvwShClose').addEventListener('click', closeSheet);
+        $('rvwScrim').addEventListener('click', closeSheet);
+        $('rvwDlgYes').addEventListener('click', function () { closeDlg('ya'); });
+        $('rvwDlgNo').addEventListener('click', function () { closeDlg('batal'); });
+        $('rvwDlg').addEventListener('click', function (e) { if (e.target === $('rvwDlg')) { closeDlg('batal'); } });
+        document.addEventListener('visibilitychange', function () { if (!document.hidden) { segarkan(); } });
+        setInterval(segarkan, 60000);
     
-        renderShell();
+        tab = tabDef()[0].k;
+        resetFilterTab();
         renderAll();
     })();
     </script>

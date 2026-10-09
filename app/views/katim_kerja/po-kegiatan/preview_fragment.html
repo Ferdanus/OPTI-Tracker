@@ -82,10 +82,26 @@
         <div class="po-doc-judul">Judul: {{ @po.judul_kegiatan }}</div>
 
         <div class="po-section-title">1. DASAR</div>
-        <div style="font-size:13px; white-space:pre-line;">{{ @po.dasar ?: '-' }}</div>
+        <check if="{{ @po.dasar_lines && count(@po.dasar_lines) > 0 }}">
+            <div style="font-size:13px; margin-bottom:8px;">
+                <repeat group="{{ @po.dasar_lines }}" value="{{ @dl }}">
+                    <check if="{{ @dl.marker }}"><div style="display:flex; gap:6px; margin-bottom:3px;"><span style="flex:0 0 24px;">{{ @dl.marker }}</span><span style="flex:1; text-align:justify; white-space:pre-line;">{{ @dl.teks }}</span></div></check>
+                    <check if="{{ !@dl.marker }}"><div style="margin-bottom:3px; text-align:justify; white-space:pre-line;">{{ @dl.teks }}</div></check>
+                </repeat>
+            </div>
+        </check>
+        <check if="{{ !@po.dasar_lines || count(@po.dasar_lines) == 0 }}"><div style="font-size:13px;">-</div></check>
 
         <div class="po-section-title">2. TUJUAN</div>
-        <div style="font-size:13px; white-space:pre-line;">{{ @po.tujuan ?: '-' }}</div>
+        <check if="{{ @po.tujuan_lines && count(@po.tujuan_lines) > 0 }}">
+            <div style="font-size:13px; margin-bottom:8px;">
+                <repeat group="{{ @po.tujuan_lines }}" value="{{ @dl }}">
+                    <check if="{{ @dl.marker }}"><div style="display:flex; gap:6px; margin-bottom:3px;"><span style="flex:0 0 24px;">{{ @dl.marker }}</span><span style="flex:1; text-align:justify; white-space:pre-line;">{{ @dl.teks }}</span></div></check>
+                    <check if="{{ !@dl.marker }}"><div style="margin-bottom:3px; text-align:justify; white-space:pre-line;">{{ @dl.teks }}</div></check>
+                </repeat>
+            </div>
+        </check>
+        <check if="{{ !@po.tujuan_lines || count(@po.tujuan_lines) == 0 }}"><div style="font-size:13px;">-</div></check>
 
         <div class="po-section-title">3. RUANG LINGKUP</div>
 
@@ -94,8 +110,8 @@
                 <repeat group="{{ @po.ruang_lingkup_deskripsi_lines }}" value="{{ @dl }}">
                     <check if="{{ @dl.marker }}">
                         <div style="display:flex; gap:6px; margin-bottom:3px;">
-                            <span style="flex:0 0 24px; font-weight:600;">{{ @dl.marker }}</span>
-                            <span style="flex:1; text-align:justify;">{{ @dl.teks }}</span>
+                            <span style="flex:0 0 24px;">{{ @dl.marker }}</span>
+                            <span style="flex:1; text-align:justify; white-space:pre-line;">{{ @dl.teks }}</span>
                         </div>
                     </check>
                     <check if="{{ !@dl.marker }}">
@@ -129,8 +145,8 @@
             <repeat group="{{ @po.alat_bahan_lines }}" value="{{ @dl }}">
                 <check if="{{ @dl.marker }}">
                     <div style="display:flex; gap:6px; margin-bottom:3px;">
-                        <span style="flex:0 0 24px; font-weight:600;">{{ @dl.marker }}</span>
-                        <span style="flex:1;">{{ @dl.teks }}</span>
+                        <span style="flex:0 0 24px;">{{ @dl.marker }}</span>
+                        <span style="flex:1; text-align:justify; white-space:pre-line;">{{ @dl.teks }}</span>
                     </div>
                 </check>
                 <check if="{{ !@dl.marker }}">
@@ -152,8 +168,8 @@
             <repeat group="{{ @po.alat_bahan_lines }}" value="{{ @dl }}">
                 <check if="{{ @dl.marker }}">
                     <div style="display:flex; gap:6px; margin-bottom:3px;">
-                        <span style="flex:0 0 24px; font-weight:600;">{{ @dl.marker }}</span>
-                        <span style="flex:1;">{{ @dl.teks }}</span>
+                        <span style="flex:0 0 24px;">{{ @dl.marker }}</span>
+                        <span style="flex:1; text-align:justify; white-space:pre-line;">{{ @dl.teks }}</span>
                     </div>
                 </check>
                 <check if="{{ !@dl.marker }}">
@@ -180,7 +196,7 @@
         <div style="font-size:13px;">
             <repeat group="{{ @po.metoda_lines }}" value="{{ @dl }}">
                 <check if="{{ @dl.marker }}">
-                    <div style="display:flex; gap:6px; margin-bottom:3px;"><span style="flex:0 0 24px; font-weight:600;">{{ @dl.marker }}</span><span style="flex:1;">{{ @dl.teks }}</span></div>
+                    <div style="display:flex; gap:6px; margin-bottom:3px;"><span style="flex:0 0 24px;">{{ @dl.marker }}</span><span style="flex:1; text-align:justify; white-space:pre-line;">{{ @dl.teks }}</span></div>
                 </check>
                 <check if="{{ !@dl.marker }}"><div style="margin-bottom:3px;">{{ @dl.teks }}</div></check>
             </repeat>
@@ -217,8 +233,8 @@
             <repeat group="{{ @po.metoda_lines }}" value="{{ @dl }}">
                 <check if="{{ @dl.marker }}">
                     <div style="display:flex; gap:6px; margin-bottom:3px;">
-                        <span style="flex:0 0 24px; font-weight:600;">{{ @dl.marker }}</span>
-                        <span style="flex:1;">{{ @dl.teks }}</span>
+                        <span style="flex:0 0 24px;">{{ @dl.marker }}</span>
+                        <span style="flex:1; text-align:justify; white-space:pre-line;">{{ @dl.teks }}</span>
                     </div>
                 </check>
                 <check if="{{ !@dl.marker }}">
@@ -595,7 +611,7 @@
         <check if="{{ @po.jadwal_keterangan_lines && count(@po.jadwal_keterangan_lines) > 0 }}">
             <div style="font-size:11px; color:#555; font-style:italic; margin-top:6px;">
                 <repeat group="{{ @po.jadwal_keterangan_lines }}" value="{{ @dl }}">
-                    <check if="{{ @dl.marker }}"><div style="display:flex; gap:5px;"><span style="flex:0 0 20px;">{{ @dl.marker }}</span><span style="flex:1;">{{ @dl.teks }}</span></div></check>
+                    <check if="{{ @dl.marker }}"><div style="display:flex; gap:5px;"><span style="flex:0 0 20px;">{{ @dl.marker }}</span><span style="flex:1; text-align:justify; white-space:pre-line;">{{ @dl.teks }}</span></div></check>
                     <check if="{{ !@dl.marker }}"><div>{{ @dl.teks }}</div></check>
                 </repeat>
             </div>

@@ -380,6 +380,7 @@
 window.PO_ORDER = {{ @order_json | raw }};
 window.PO_SAVED = {{ @po_json | raw }};
 window.PO_CSRF = '{{ @csrf_po }}';
+window.PO_TAHUN = {{ @tahun_po_wajib }}; // Tanggal Surat PO harus di tahun ini (nomor urut PO reset tiap tahun)
 window.PO_VIEW = {{ @mode_lihat }}; // true = hanya preview dokumen (ikon mata di daftar PO)
 window.PO_URLS = {
     simpan: '{{ @BASE }}/petunjuk-operasional/sertifikasi/simpan',
@@ -1425,11 +1426,50 @@ window.PO_URLS = {
         Swal.fire({ icon: 'warning', iconColor: '#d97706', title: judul, html: html, background: '#ffffff', confirmButtonText: 'Oke, saya lengkapi',
             buttonsStyling: false, customClass: SW_CLASS }).then(function () { fokusKe(first); });
     }
+    // ---- Tanggal Surat PO harus di tahun yang sama dengan tahun berjalan (PO lama: tahun di nomornya) ----
+    // Nomor urut PO kembali ke 1 tiap ganti tahun, jadi tanggal beda tahun ditolak. Tanggal yang sesuai tidak memunculkan alert.
+    var TAHUN_PO = parseInt(window.PO_TAHUN, 10) || new Date().getFullYear();
+    var tglValid = '';
+    function tahunDariTgl(v) { var m = /^(\d{4})-/.exec(String(v || '')); return m ? parseInt(m[1], 10) : 0; }
+    function tahunPoSesuai(v) { return tahunDariTgl(v) === TAHUN_PO; }
+    function pesanTahunPo(v) {
+        var th = tahunDariTgl(v);
+        return 'Tahun Tanggal Surat PO' + (th ? ' (' + th + ')' : '') + ' harus sama dengan tahun ' + TAHUN_PO + '. Nomor urut PO dimulai lagi dari 1 setiap tahun.';
+    }
+    function pulihkanTanggalPo() {
+        var el = $('ppTanggal');
+        el.value = tglValid; S.tanggal = tglValid; schedule();
+    }
+    function inisialTanggalPo() {
+        var el = $('ppTanggal');
+        el.min = TAHUN_PO + '-01-01'; el.max = TAHUN_PO + '-12-31';
+        var td = todayDate();
+        tglValid = tahunPoSesuai(S.tanggal) ? S.tanggal : (tahunPoSesuai(td) ? td : TAHUN_PO + '-01-01');
+        if (!tahunPoSesuai(S.tanggal) && !PO_SAVED) { el.value = tglValid; S.tanggal = tglValid; }
+    }
+    function cekTanggalPo(sedangMengetik) {
+        var v = $('ppTanggal').value;
+        if (!v) { return true; }
+        if (tahunPoSesuai(v)) { tglValid = v; return true; }
+        // saat tahun masih diketik (mis. "0002") jangan langsung diprotes; diperiksa lagi saat fokus pindah
+        if (sedangMengetik && tahunDariTgl(v) < 1000) { return false; }
+        pulihkanTanggalPo();
+        popup('warning', 'Tahun Tidak Sesuai', pesanTahunPo(v), $('ppTanggal'));
+        return false;
+    }
+    $('ppTanggal').addEventListener('change', function () { cekTanggalPo(true); });
+    $('ppTanggal').addEventListener('blur', function () { cekTanggalPo(false); });
+
     // aksi: 'draft' (Simpan sebagai Draft) | 'kirim' (Kirim)
     function simpan(aksi) {
         if (saving) { return; }
         if (!PO_ORDER) {
             popup('warning', 'PO belum bisa disimpan', 'PO harus dibuat dari order. Pilih order dulu lewat Petunjuk Operasional \u2192 Sertifikasi.'); return;
+        }
+        if (S.tanggal && !tahunPoSesuai(S.tanggal)) {
+            var tglSalah = S.tanggal;
+            pulihkanTanggalPo();
+            popup('warning', 'Tahun Tidak Sesuai', pesanTahunPo(tglSalah), $('ppTanggal')); return;
         }
         // Draft hanya mensyaratkan tanggal & judul; Kirim memeriksa semua isian (daftar lengkap di bawah)
         if (aksi !== 'kirim') {
@@ -1449,6 +1489,7 @@ window.PO_URLS = {
 
     buildRte();
     populate();
+    inisialTanggalPo();
     tampilNomor();
     if (window.PO_VIEW && PO_SAVED) {
         // mode lihat: form disembunyikan, langsung tampil preview dokumen

@@ -206,16 +206,53 @@ $f3->route('POST /ketua-tim/@id/pilih-pelaksana', 'KetuaTimController->simpanPel
 
 
 
-$f3->route('GET /po-kegiatan/validasi-mitra',     'PoValidasiMitraController->index');
-$f3->route('GET /po-kegiatan/@id/validasi-detail',   'PoValidasiMitraController->detailJson');
-$f3->route('POST /po-kegiatan/@id/catatan',          'PoValidasiMitraController->simpanCatatan');
-$f3->route('POST /po-kegiatan/@id/validasi',         'PoValidasiMitraController->validasi');
+$f3->route('GET /po-kegiatan/validasi-mitra', 'PoValidasiMitraController->index');
+$f3->route('GET /po-kegiatan/@id/validasi-detail', 'PoValidasiMitraController->detailJson');
+$f3->route('POST /po-kegiatan/@id/catatan', 'PoValidasiMitraController->simpanCatatan');
+$f3->route('POST /po-kegiatan/@id/baca-mitra', 'PoValidasiMitraController->baca');
+$f3->route('POST /po-kegiatan/@id/validasi', 'PoValidasiMitraController->validasi');
 
-$f3->route('GET /order/@id/berkas',       'BerkasController->index');
+// Daftar PO untuk Humas (verifikasi PO + Map Kendali) -- sementara Superadmin, role Humas menyusul
+$f3->route('GET /po-humas', 'PoHumasController->index');
+$f3->route('POST /po-humas/@id/verifikasi', 'PoHumasController->verifikasi');
+$f3->route('GET /po-humas/@id/berkas', 'PoHumasController->berkas');
+
+$f3->route('GET /order/@id/berkas', 'BerkasController->index');
 $f3->route('GET /penawaran/@id/lampiran', 'BerkasController->lampiranPenawaran');
-$f3->route('GET /proposal/@id/file',      'BerkasController->fileProposal');
+$f3->route('GET /proposal/@id/file', 'BerkasController->fileProposal');
 $f3->route('GET /penawaran/surat-kesanggupan/@id', 'BerkasController->suratKesanggupan');
 
+// Tempel di index.php, SEBELUM $f3->run() (dan sebelum route '/po-kegiatan/@id/...' yang sudah ada tidak masalah, path-nya berbeda).
+
+// ---- Ketua Tim (dan Superadmin) + Ketua Pelaksana: halaman "Revisi PPK BLU" ----
+$f3->route('GET /po-revisi-ppk',                        'PoRevisiPpkController->indexRevisi');
+$f3->route('GET /po-revisi-ppk/data',                   'PoRevisiPpkController->dataRevisi');      // penyegaran daftar otomatis
+$f3->route('GET /po-revisi-ppk/@id/detail',             'PoRevisiPpkController->detailRevisi');
+
+// Ketua Tim
+$f3->route('POST /po-revisi-ppk/@id/kerjakan',          'PoRevisiPpkController->kerjakan');        // kerjakan sendiri
+$f3->route('POST /po-revisi-ppk/@id/disposisi',         'PoRevisiPpkController->disposisi');       // disposisi ke Ketua Pelaksana
+$f3->route('POST /po-revisi-ppk/@id/kirim-ppk',         'PoRevisiPpkController->kirimPpk');        // selesai dikerjakan sendiri -> PPK BLU
+$f3->route('POST /po-revisi-ppk/@id/setujui-kirim',     'PoRevisiPpkController->setujuKirim');     // setujui hasil Ketua Pelaksana -> PPK BLU
+$f3->route('POST /po-revisi-ppk/@id/minta-lagi',        'PoRevisiPpkController->mintaLagi');       // minta perbaikan lagi (alasan wajib)
+
+// Ketua Pelaksana
+$f3->route('POST /po-revisi-ppk/@id/kirim-katim',       'PoRevisiPpkController->kirimKatim');
+
+// Katim atau Ketua Pelaksana yang sedang mengerjakan: centang catatan selesai / batal
+$f3->route('POST /po-revisi-ppk/@id/catatan/@nid',      'PoRevisiPpkController->catatanAksi');
+
+// ---- PPK BLU: halaman "Validasi PPK BLU" ----
+$f3->route('GET /po-ppk',                               'PoRevisiPpkController->indexPpk');
+$f3->route('GET /po-ppk/data',                          'PoRevisiPpkController->dataPpk');
+$f3->route('GET /po-ppk/@id/detail',                    'PoRevisiPpkController->detailPpk');
+$f3->route('POST /po-ppk/@id/catatan',                  'PoRevisiPpkController->catatanTambah');   // tambah catatan (draf)
+$f3->route('POST /po-ppk/@id/catatan/@nid',             'PoRevisiPpkController->catatanHapus');    // hapus draf (aksi=hapus)
+$f3->route('POST /po-ppk/@id/minta-revisi',             'PoRevisiPpkController->mintaRevisi');
+$f3->route('POST /po-ppk/@id/validasi',                 'PoRevisiPpkController->validasi');
+
+// ---- Panel catatan di form Edit PO (Ketua Tim, Ketua Pelaksana, Superadmin; izin dicek di dalam) ----
+$f3->route('GET /po-kegiatan/@id/catatan-form',         'PoRevisiPpkController->catatanForm');
 // ==========================================
 // ROUTE MODUL PEMBAYARAN MULTI-TERMIN & INVOICE
 // ==========================================
@@ -359,13 +396,22 @@ $f3->route('GET /po-kegiatan/@id/preview', 'PoKegiatanController->previewFragmen
 $f3->route('GET /po-kegiatan/jadwal-kolom', 'PoKegiatanController->jadwalKolom');
 $f3->route('GET /po-kegiatan/@id/cetak', 'PoKegiatanController->cetak');
 $f3->route('GET /po-kegiatan/daftar', 'PoReviewController->index');
+$f3->route('GET /po-kegiatan/daftar/data', 'PoReviewController->data');          // penyegaran daftar otomatis
 $f3->route('GET /po-kegiatan/notif', 'PoReviewController->notifJson');
+$f3->route('GET /po-kegiatan/@id/review', 'PoReviewController->detail');        // rincian + catatan
+$f3->route('POST /po-kegiatan/@id/baca', 'PoReviewController->baca');          // tandai kiriman terbaca (dipanggil saat PO dibuka)
+$f3->route('POST /po-kegiatan/@id/dibuka', 'PoReviewController->baca');          // alias route lama
+$f3->route('POST /po-kegiatan/@id/catatan', 'PoReviewController->catatanTambah'); // Ketua Tim: tambah catatan (draf)
+$f3->route('POST /po-kegiatan/@id/catatan/@nid', 'PoReviewController->catatanAksi');   // hapus / selesai / batalselesai / buka / batalbuka
+$f3->route('POST /po-kegiatan/@id/minta-revisi', 'PoReviewController->mintaRevisi');
+$f3->route('POST /po-kegiatan/@id/kirim-revisi', 'PoReviewController->kirimRevisi');
+$f3->route('POST /po-kegiatan/@id/setujui', 'PoReviewController->setujui');
+$f3->route('POST /po-kegiatan/@id/buka-kembali', 'PoReviewController->bukaKembali');
 $f3->route('GET /po-kegiatan/@id/chat', 'PoReviewController->chatList');
 $f3->route('POST /po-kegiatan/@id/chat', 'PoReviewController->chatKirim');
 $f3->route('POST /po-kegiatan/@id/chat/baca', 'PoReviewController->chatBaca');
-$f3->route('POST /po-kegiatan/@id/dibuka', 'PoReviewController->tandaiDibuka');
-$f3->route('POST /po-kegiatan/@id/setujui', 'PoReviewController->setujui');
-$f3->route('POST /po-kegiatan/@id/buka-kembali', 'PoReviewController->bukaKembali');
+
+$f3->route('POST /po-humas/@id/baca', 'PoHumasController->baca');
 
 // ===== Petunjuk Operasional (PO) -- modul TERPISAH dari PO OPTI =====
 // Controller: app/controllers/petunjuk_operasional/ (namespace petunjuk_operasional)

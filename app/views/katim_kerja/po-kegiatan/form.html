@@ -76,6 +76,43 @@
     </div>
 </div>
 
+<check if="{{ @revisi_konteks }}">
+    <style>
+        .rv-bar { position: sticky; top: 8px; z-index: 30; background: #fffbeb; border: 1px solid #fcd34d; border-radius: 12px; padding: 10px 14px; margin-bottom: 16px; box-shadow: 0 4px 14px rgba(15,23,42,.08); }
+        .rv-bar-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .rv-bar-top b { font-size: .86rem; color: #92400e; }
+        .rv-bar-hit { font-size: .8rem; color: #78350f; }
+        .rv-bar-tog { margin-left: auto; border: 0; background: transparent; color: #92400e; font-size: .8rem; font-weight: 600; cursor: pointer; padding: 2px 4px; }
+        .rv-prog { height: 5px; background: #fde68a; border-radius: 99px; overflow: hidden; margin-top: 8px; }
+        .rv-prog i { display: block; height: 100%; width: 0; background: #059669; transition: width .25s; }
+        .rv-list { margin: 10px 0 0; padding: 0; list-style: none; display: none; max-height: 40vh; overflow: auto; }
+        .rv-list.open { display: block; }
+        .rv-item { display: flex; gap: 8px; align-items: flex-start; padding: 6px 0; border-top: 1px solid #fde68a; font-size: .84rem; }
+        .rv-item label { margin: 0; cursor: pointer; flex: 1; }
+        .rv-item .rv-bag { display: inline-block; font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: #92400e; background: #fef3c7; border-radius: 6px; padding: 1px 6px; margin-right: 6px; }
+        .rv-item.done label span.t { text-decoration: line-through; color: #64748b; }
+        .rv-item a { font-size: .75rem; white-space: nowrap; }
+        .rv-inline { margin: 0 16px 12px; border-left: 3px solid #f59e0b; background: #fffbeb; border-radius: 8px; padding: 8px 12px; font-size: .84rem; }
+        .rv-inline.done { border-left-color: #059669; background: #ecfdf5; }
+        .rv-inline .rv-row { display: flex; gap: 8px; align-items: flex-start; }
+        .rv-inline .rv-row + .rv-row { margin-top: 6px; }
+        .rv-inline label { margin: 0; cursor: pointer; }
+        .rv-inline .done-t { text-decoration: line-through; color: #64748b; }
+        .rv-err { color: #b91c1c; font-size: .78rem; margin-top: 4px; }
+    </style>
+    <div class="rv-bar" id="rvBar" role="region" aria-label="Catatan revisi" hidden>
+        <div class="rv-bar-top">
+            <i class="bi bi-clipboard2-check text-warning"></i>
+            <b id="rvJudul">Catatan revisi</b>
+            <span class="rv-bar-hit" id="rvHit"></span>
+            <button type="button" class="rv-bar-tog" id="rvTog" aria-expanded="false">Lihat semua</button>
+        </div>
+        <div class="rv-prog"><i id="rvProg"></i></div>
+        <ul class="rv-list" id="rvList"></ul>
+        <div class="rv-err" id="rvErr" hidden></div>
+    </div>
+    </check>
+
 <form id="formPo" action="{{ @po ? @BASE . '/po-kegiatan/' . @po.id . '/update' : @BASE . '/po-kegiatan/simpan' }}" method="POST">
     <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
     <input type="hidden" name="order_id" value="{{ @po ? @po.order_id : @order.id }}">
@@ -102,7 +139,7 @@
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Tanggal Surat PO <span class="text-danger">*</span></label>
-                    <input type="date" name="tanggal_po" class="form-control" value="{{ @po && @po.tanggal_po ? date('Y-m-d', strtotime(@po.tanggal_po)) : date('Y-m-d') }}" required data-wajib="1">
+                    <input type="date" name="tanggal_po" id="inputTanggalPo" class="form-control" min="{{ @tahun_po_wajib }}-01-01" max="{{ @tahun_po_wajib }}-12-31" data-tahun-wajib="{{ @tahun_po_wajib }}" value="{{ @po && @po.tanggal_po ? date('Y-m-d', strtotime(@po.tanggal_po)) : date('Y-m-d') }}" required data-wajib="1">
                 </div>
                 <div class="col-md-6">
                     <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-1">
@@ -133,7 +170,21 @@
         
                     <label class="form-label small fw-bold mb-1">Nama Perusahaan</label>
                     <div class="form-control form-control-sm bg-light mb-2" style="cursor:not-allowed;">{{ @order.nama_mitra }}</div>
-        
+                    <check if="{{ @surat_dasar }}">
+                        <true>
+                            <label class="form-label small fw-bold mb-1">Nomor Surat Persetujuan Biaya</label>
+                            <div class="form-control form-control-sm bg-light fw-semibold mb-1" style="cursor:not-allowed;">{{ @surat_dasar.nomor }}</div>
+                            <div class="form-text mb-2">Otomatis dari Surat Penawaran order ini.</div>
+                    
+                            <input type="hidden" id="dasarNomorLengkap" value="{{ @surat_dasar.nomor }}">
+                            <input type="hidden" id="dasarNomorUrut" name="dasar_nomor_urut" value="{{ @surat_dasar.nomor_urut }}">
+                            <input type="hidden" id="dasarBulanRomawi" name="dasar_bulan_romawi" value="{{ @surat_dasar.bulan_romawi }}">
+                            <input type="hidden" id="dasarTahun" name="dasar_tahun" value="{{ @surat_dasar.tahun }}">
+                        </true>
+                        <false>
+                            <div class="alert alert-warning small py-2 mb-2">
+                                Order ini belum punya Surat Penawaran, jadi nomor dan tanggal surat diisi manual dulu.
+                            </div>
                     <label class="form-label small fw-bold mb-1">Nomor Surat Persetujuan Biaya</label>
                     <div class="d-flex align-items-center gap-1 flex-wrap mb-2">
                         <span class="fw-semibold small">B /</span>
@@ -160,12 +211,20 @@
                             </repeat>
                         </select>
                     </div>
+                </false>
+            </check>
         
                     <div class="row g-2 mb-2">
-                        <div class="col-md-5">
-                            <label class="form-label small fw-bold mb-1">Tanggal Surat</label>
-                            <input type="date" id="dasarTanggal" name="dasar_tanggal" class="form-control form-control-sm" data-wajib="1">
-                        </div>
+                        <label class="form-label small fw-bold mb-1">Tanggal Surat</label>
+                        <check if="{{ @surat_dasar }}">
+                            <true>
+                                <div class="form-control form-control-sm bg-light" style="cursor:not-allowed;">{{ date('d-m-Y', strtotime(@surat_dasar.tanggal)) }}</div>
+                                <input type="hidden" id="dasarTanggal" name="dasar_tanggal" value="{{ @surat_dasar.tanggal }}">
+                            </true>
+                            <false>
+                                <input type="date" id="dasarTanggal" name="dasar_tanggal" class="form-control form-control-sm" data-wajib="1">
+                            </false>
+                        </check>
                         <div class="col-md-7">
                             <label class="form-label small fw-bold mb-1">Tentang</label>
                             <input type="text" id="dasarTentang" name="dasar_tentang" class="form-control form-control-sm" placeholder="Contoh: Pembuatan Bleached Kraft Pulp dari Lima Jenis Serpih Kayu dan Karakteristiknya" data-wajib="1">
@@ -367,8 +426,30 @@
         </div>
         <div class="card-body p-3 p-md-4">
             <div class="row g-3 mb-2">
-                <div class="col-md-6"><label class="form-label small fw-bold">Tanggal Mulai</label><input type="date" id="jadwalMulai" class="form-control form-control-sm" data-wajib="1"></div>
-                <div class="col-md-6"><label class="form-label small fw-bold">Tanggal Selesai</label><input type="date" id="jadwalSelesai" class="form-control form-control-sm" data-wajib="1"></div>
+                <div class="col-md-6">
+                    <label class="form-label small fw-bold">Tanggal Mulai</label>
+                    <check if="{{ @jadwal_auto }}">
+                        <true>
+                            <input type="date" id="jadwalMulai" class="form-control form-control-sm bg-light" value="{{ @jadwal_auto.mulai }}" readonly style="cursor:not-allowed; pointer-events:none;" tabindex="-1">
+                            <div class="form-text">Tanggal fisik sampel masuk.</div>
+                        </true>
+                        <false>
+                            <input type="date" id="jadwalMulai" class="form-control form-control-sm" data-wajib="1">
+                        </false>
+                    </check>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small fw-bold">Tanggal Selesai</label>
+                    <check if="{{ @jadwal_auto }}">
+                        <true>
+                            <input type="date" id="jadwalSelesai" class="form-control form-control-sm bg-light" value="{{ @jadwal_auto.selesai }}" readonly style="cursor:not-allowed; pointer-events:none;" tabindex="-1">
+                            <div class="form-text">Target selesai (deadline SPM).</div>
+                        </true>
+                        <false>
+                            <input type="date" id="jadwalSelesai" class="form-control form-control-sm" data-wajib="1">
+                        </false>
+                    </check>
+                </div>
             </div>
             <div id="jadwalModeInfo" class="small text-muted mb-3"></div>
     
@@ -406,6 +487,8 @@ function safeJsonParse(val, fallback) {
 
 var namaPerusahaanDasar = decodeHtmlEntities({{ json_encode(\Customer::formatNamaPerusahaan(@order.pt_cv ?: '', @order.nama_mitra ?: '')) }});
 var infoPembayaran = {{ @info_pembayaran_json | raw }};
+var suratDasar = {{ @surat_dasar_json | raw }};  // null kalau order belum punya surat penawaran
+var jadwalAuto = {{ @jadwal_auto_json | raw }};  // null kalau tanggal sampel atau deadline SPM belum ada
 var BULAN_INDO = ['', 'Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
 
 function formatTanggalIndoDasar(dateStr) {
@@ -422,7 +505,10 @@ function komposeDasar() {
     var tanggal = document.getElementById('dasarTanggal').value;
     var tentang = document.getElementById('dasarTentang').value.trim() || '...';
 
-    var nomorLengkap = 'B/' + urut + '/BBSPJIS/MS/' + romawi + '/' + tahun;
+    var elLengkap = document.getElementById('dasarNomorLengkap');
+var nomorLengkap = (elLengkap && elLengkap.value)
+    ? elLengkap.value
+    : ('B/' + urut + '/BBSPJIS/MS/' + romawi + '/' + tahun);
     var tanggalLabel = formatTanggalIndoDasar(tanggal);
 
     var poinA = 'Persetujuan biaya kerjasama BBSPJIS dengan ' + perusahaan + ' nomor ' + nomorLengkap + ' tanggal ' + tanggalLabel + ' tentang ' + tentang + '.';
@@ -1862,16 +1948,28 @@ var groups = [{ nama_tahap: '', kegiatan: [] }];
 function muatKolomJadwal() {
     var mulai = document.getElementById('jadwalMulai').value;
     var selesai = document.getElementById('jadwalSelesai').value;
-    if (!mulai || !selesai) return;
+    if (!mulai || !selesai) {
+        jadwalKolomCache = []; jadwalBulanHeader = [];
+        document.getElementById('jadwalModeInfo').textContent = '';
+        renderJadwal();
+        return;
+    }
 
-    fetch('{{ @BASE }}/po-kegiatan/jadwal-kolom?mulai=' + mulai + '&selesai=' + selesai)
-        .then(function (res) { return res.json(); })
+    fetch('{{ @BASE }}/po-kegiatan/jadwal-kolom?mulai=' + encodeURIComponent(mulai) + '&selesai=' + encodeURIComponent(selesai))
+        .then(function (res) {
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            return res.json();
+        })
         .then(function (data) {
-            jadwalKolomCache = data.kolom;
-            jadwalBulanHeader = data.bulan_header;
+            jadwalKolomCache = data.kolom || [];
+            jadwalBulanHeader = data.bulan_header || [];
             document.getElementById('jadwalModeInfo').textContent = data.mode === 'harian'
                 ? 'Durasi \u2264 1 bulan \u2192 per tanggal. Kolom bertanda "L" = Sabtu/Minggu/hari libur (tetap bisa dicentang kalau memang kerja).'
-                : 'Durasi > 1 bulan \u2192 per bulan, dipecah minggu ke-1/2/3/4.';
+                : (data.mode === 'bulanan' ? 'Durasi > 1 bulan \u2192 per bulan, dipecah minggu ke-1/2/3/4.' : '');
+            renderJadwal();
+        })
+        .catch(function () {
+            document.getElementById('jadwalModeInfo').textContent = 'Kolom tanggal gagal dimuat. Coba muat ulang halaman.';
             renderJadwal();
         });
 }
@@ -2064,7 +2162,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
 if (poData) {
     var dasarStruktur = safeJsonParse(poData.dasar_struktur, null);
-    if (dasarStruktur) {
+    if (suratDasar) {
+    // nomor dan tanggal surat dikunci dari surat penawaran, cuma "Tentang" yang dibaca dari data PO
+    if (dasarStruktur) { document.getElementById('dasarTentang').value = dasarStruktur.tentang || ''; }
+    komposeDasar();
+} else if(dasarStruktur) {
         document.getElementById('dasarNomorUrut').value = dasarStruktur.nomor_urut || '';
         document.getElementById('dasarBulanRomawi').value = dasarStruktur.bulan_romawi || 'I';
         document.getElementById('dasarTahun').value = dasarStruktur.tahun || '';
@@ -2167,13 +2269,12 @@ if (document.getElementById('bodyKebutuhanTambahan')) {
         (katList.length ? katList : [{}]).forEach(function (k) { tambahKategori(k); });
 
         // 6. Jadwal
-        document.getElementById('jadwalMulai').value = poData.jadwal_mulai || '';
-document.getElementById('jadwalSelesai').value = poData.jadwal_selesai || '';
+        document.getElementById('jadwalMulai').value   = jadwalAuto ? jadwalAuto.mulai   : (poData.jadwal_mulai || '');
+document.getElementById('jadwalSelesai').value = jadwalAuto ? jadwalAuto.selesai : (poData.jadwal_selesai || '');
 var jadwalData = safeJsonParse(poData.jadwal, {});
 groups = (jadwalData.groups && jadwalData.groups.length) ? jadwalData.groups : [{ nama_tahap: '', kegiatan: [] }];
 document.getElementById('jadwalKeterangan').value = jadwalData.keterangan || '';
 autoGrowTextarea(document.getElementById('jadwalKeterangan'));
-if (poData.jadwal_mulai && poData.jadwal_selesai) muatKolomJadwal();
         // Safety net: pastiin dropdown "Rincian Kebutuhan" di item RAB kepilih bener sesuai
         // data tersimpan, sekarang bagian Kebutuhan Tambahan & RAB udah kebentuk semua.
         refreshKebutuhanKategoriOptions();
@@ -2185,20 +2286,59 @@ renderRuangLingkupPreview();
         tambahBarisTim();
         tambahItemPenerimaan({ nama: 'Nilai Kontrak', nominal: estimasiBiayaAwal });
         tambahKategori();
-        ['Persiapan awal', 'Pelaksanaan', 'Evaluasi hasil', 'Penerbitan Sertifikat/Laporan'].forEach(function (nm) {
-            groups.push({ nama_tahap: nm, kegiatan: [] });
-        });
+        // Jadwal mulai tanpa tahap bawaan: "Tambah Tahap" menambah SATU tahap per klik
     }
 
     hitungRabLive();
 
+    // ---- Jadwal: kolom tanggal/minggu dimuat dari rentang tanggal order (mode buat baru MAUPUN edit) ----
+    if (document.getElementById('jadwalMulai').value && document.getElementById('jadwalSelesai').value) {
+        muatKolomJadwal();   // render ulang otomatis setelah kolom terambil
+    } else {
+        renderJadwal();
+    }
+
+    // ---- Tahun Tanggal Surat PO harus sesuai tahun berjalan (nomor urut PO reset tiap tahun) ----
+    var inputTglPo = document.getElementById('inputTanggalPo');
+    var tahunWajibPo = inputTglPo ? parseInt(inputTglPo.getAttribute('data-tahun-wajib'), 10) : 0;
+    var tglPoValid = inputTglPo ? inputTglPo.value : '';
+    function tahunDariTanggal(v) { var m = /^(\d{4})-/.exec(v || ''); return m ? parseInt(m[1], 10) : 0; }
+    function peringatanTahunPo(tahunInput) {
+        var teks = 'Tanggal Surat PO harus berada di tahun ' + tahunWajibPo + (tahunInput ? ' (kamu memilih tahun ' + tahunInput + ')' : '') + '. Nomor PO berurut per tahun, jadi tahunnya harus sesuai.';
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({ icon: 'warning', title: 'Tahun Tidak Sesuai', text: teks, confirmButtonText: 'Oke, Saya Perbaiki', confirmButtonColor: '#881337' });
+        } else {
+            alert(teks);
+        }
+    }
+    // true = tahun sudah sesuai; false = ditolak (alert ditampilkan)
+    function cekTahunPo() {
+        if (!inputTglPo || !tahunWajibPo) { return true; }
+        var t = tahunDariTanggal(inputTglPo.value);
+        if (t === tahunWajibPo) { return true; }
+        peringatanTahunPo(t);
+        inputTglPo.focus();
+        return false;
+    }
+    if (inputTglPo) {
+        inputTglPo.addEventListener('change', function () {
+            var t = tahunDariTanggal(inputTglPo.value);
+            if (!inputTglPo.value || t === tahunWajibPo) { tglPoValid = inputTglPo.value; return; }
+            peringatanTahunPo(t);
+            inputTglPo.value = tglPoValid;   // kembalikan ke tanggal terakhir yang sah
+        });
+    }
+
     document.getElementById('btnDraft').addEventListener('click', function () {
     document.getElementById('inputAksi').value = 'draft';
+    if (!cekTahunPo()) { return; }
     document.getElementById('formPo').requestSubmit();
 });
     document.getElementById('btnKirim').addEventListener('click', function () {
         // e.preventDefault(); 
     document.getElementById('inputAksi').value = 'kirim';
+
+    if (!cekTahunPo()) { return; }
 
     // Cek validasi DULU sebelum apa-apa -- overlay loading cuma boleh nyala kalau ini lolos
     var invalidFields = validasiFieldWajib();
@@ -2225,6 +2365,15 @@ renderRuangLingkupPreview();
 
 // ---- sebelum submit: tuang jadwalState (murni JS) jadi hidden input ----
 document.getElementById('formPo').addEventListener('submit', function (e) {
+    // Pengaman terakhir (mis. submit lewat Enter): tahun Tanggal Surat PO harus sesuai.
+    var tglPo = document.getElementById('inputTanggalPo');
+    if (tglPo && tglPo.getAttribute('data-tahun-wajib') && tahunDariTanggalPo(tglPo.value) !== parseInt(tglPo.getAttribute('data-tahun-wajib'), 10)) {
+        e.preventDefault();
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({ icon: 'warning', title: 'Tahun Tidak Sesuai', text: 'Tanggal Surat PO harus berada di tahun ' + tglPo.getAttribute('data-tahun-wajib') + '.', confirmButtonText: 'Oke, Saya Perbaiki', confirmButtonColor: '#881337' });
+        }
+        return;
+    }
     // [BARU] RAB lingkungan (Kegiatan -> Lokasi/Kelompok -> Item Biaya): tuang isi form
     // jadi JSON di hidden input kat_kegiatan_json[idx] punya masing-masing kategori.
     document.querySelectorAll('#bodyKategori > .rab-kat-nested').forEach(function (katBox) {
@@ -2269,6 +2418,7 @@ document.getElementById('formPo').addEventListener('submit', function (e) {
     selesaiInp.type = 'hidden'; selesaiInp.name = 'jadwal_selesai'; selesaiInp.value = document.getElementById('jadwalSelesai').value;
     container.appendChild(selesaiInp);
 });
+function tahunDariTanggalPo(v) { var m = /^(\d{4})-/.exec(v || ''); return m ? parseInt(m[1], 10) : 0; }
 function validasiFieldWajib() {
     var invalidFields = [];
 
@@ -2300,3 +2450,105 @@ function validasiFieldWajib() {
 }
 });
 </script>
+<check if="{{ @revisi_konteks }}">
+    <script>
+    (function () {
+        var BASE = '{{ @BASE }}';
+        var KONTEKS = '{{ @revisi_konteks }}';          // ppk | review
+        var PO_ID = {{ @po ? @po.id : 0 }};
+        var CSRF = '{{ @csrf_token }}';
+        if (!PO_ID) { return; }
+    
+        // Pada revisi, PO yang sudah dikirim tetap terkirim. Tombol draf disembunyikan, tombol kirim jadi "Simpan perubahan".
+        var bd = document.getElementById('btnDraft'), bk = document.getElementById('btnKirim');
+        if (bd) { bd.style.display = 'none'; }
+        if (bk) { bk.innerHTML = '<i class="bi bi-save me-1"></i> Simpan perubahan'; }
+    
+        var bar = document.getElementById('rvBar'), list = document.getElementById('rvList'), data = [];
+        var URL_AKSI = KONTEKS === 'ppk' ? BASE + '/po-revisi-ppk/' + PO_ID + '/catatan/' : BASE + '/po-kegiatan/' + PO_ID + '/catatan/';
+        var LABEL = { dasar: 'Dasar', tujuan: 'Tujuan', lingkup: 'Ruang Lingkup', alat: 'Alat dan Bahan', metoda: 'Metoda', alamat: 'Alamat', tim: 'Tim Pelaksana', rab: 'RAB', jadwal: 'Jadwal' };
+        var kartu = {};
+    
+        function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+        function kunci(judul) {
+            var t = String(judul).replace(/^\s*\d+\s*[.)]\s*/, '').replace(/\s+/g, ' ').trim().toUpperCase();
+            if (t.indexOf('DASAR') === 0) { return 'dasar'; }
+            if (t.indexOf('TUJUAN') === 0) { return 'tujuan'; }
+            if (t.indexOf('RUANG LINGKUP') === 0) { return 'lingkup'; }
+            if (t.indexOf('ALAT') === 0) { return 'alat'; }
+            if (t.indexOf('METODA') === 0 || t.indexOf('METODE') === 0) { return 'metoda'; }
+            if (t.indexOf('ALAMAT') === 0) { return 'alamat'; }
+            if (t.indexOf('TIM') === 0) { return 'tim'; }
+            if (t.indexOf('RENCANA ANGGARAN') === 0 || t.indexOf('RAB') === 0) { return 'rab'; }
+            if (t.indexOf('JADWAL') === 0) { return 'jadwal'; }
+            return '';
+        }
+        // Petakan bagian -> kartu di form lewat judul <h6> di card-header
+        Array.prototype.forEach.call(document.querySelectorAll('#formPo .card-header h6'), function (h) {
+            var k = kunci(h.textContent), card = h.closest('.card');
+            if (k && card && !kartu[k]) { kartu[k] = card; }
+        });
+    
+        function tampil() {
+            var total = data.length, selesai = data.filter(function (c) { return c.state === 'selesai'; }).length;
+            bar.hidden = total === 0;
+            document.getElementById('rvJudul').textContent = KONTEKS === 'ppk' ? 'Catatan revisi PPK BLU' : 'Catatan revisi Ketua Tim';
+            document.getElementById('rvHit').textContent = selesai + ' dari ' + total + ' catatan sudah diperbaiki';
+            document.getElementById('rvProg').style.width = (total ? Math.round(selesai * 100 / total) : 0) + '%';
+    
+            list.innerHTML = data.map(function (c) {
+                var done = c.state === 'selesai', ada = !!kartu[c.bagian];
+                return '<li class="rv-item' + (done ? ' done' : '') + '"><input type="checkbox" id="rvc' + c.id + '" data-rv="' + c.id + '"' + (done ? ' checked' : '') + '>' +
+                    '<label for="rvc' + c.id + '"><span class="rv-bag">' + esc(LABEL[c.bagian] || c.bagian) + '</span><span class="t">' + esc(c.teks) + '</span></label>' +
+                    (ada ? '<a href="#" data-rvgo="' + esc(c.bagian) + '">Ke bagian</a>' : '') + '</li>';
+            }).join('');
+    
+            // kotak di bawah judul kartu
+            Array.prototype.forEach.call(document.querySelectorAll('.rv-inline'), function (n) { n.parentNode.removeChild(n); });
+            Object.keys(kartu).forEach(function (k) {
+                var cs = data.filter(function (c) { return c.bagian === k; });
+                if (!cs.length) { return; }
+                var semuaSelesai = cs.every(function (c) { return c.state === 'selesai'; });
+                var box = document.createElement('div'); box.className = 'rv-inline' + (semuaSelesai ? ' done' : '');
+                box.innerHTML = cs.map(function (c) {
+                    var done = c.state === 'selesai';
+                    return '<div class="rv-row"><input type="checkbox" id="rvi' + c.id + '" data-rv="' + c.id + '"' + (done ? ' checked' : '') + '><label for="rvi' + c.id + '"><b>' + (KONTEKS === 'ppk' ? 'PPK BLU' : 'Ketua Tim') + ':</b> <span class="' + (done ? 'done-t' : '') + '">' + esc(c.teks) + '</span></label></div>';
+                }).join('');
+                var head = kartu[k].querySelector('.card-header');
+                head.parentNode.insertBefore(box, head.nextSibling);
+                box.style.marginTop = '12px';
+            });
+        }
+    
+        function galat(m) { var e = document.getElementById('rvErr'); e.textContent = m; e.hidden = !m; }
+    
+        function ubah(id, cek) {
+            var c = data.filter(function (x) { return x.id === id; })[0]; if (!c) { return; }
+            var lama = c.state; c.state = cek ? 'selesai' : 'terbuka'; tampil(); galat('');
+            var body = new URLSearchParams(); body.append('csrf_token', CSRF); body.append('aksi', cek ? 'selesai' : 'batalselesai');
+            fetch(URL_AKSI + id, { method: 'POST', body: body, credentials: 'same-origin' }).then(function (r) {
+                return r.text().then(function (t) { var j; try { j = JSON.parse(t); } catch (e) { throw new Error('Server membalas ' + r.status + '.'); } if (!r.ok || !j.ok) { throw new Error(j.pesan || 'Gagal menyimpan tanda.'); } });
+            }).catch(function (e) { c.state = lama; tampil(); galat(e.message); });
+        }
+    
+        document.addEventListener('change', function (e) {
+            var el = e.target.closest ? e.target.closest('[data-rv]') : null;
+            if (el) { ubah(parseInt(el.getAttribute('data-rv'), 10), el.checked); }
+        });
+        document.addEventListener('click', function (e) {
+            var go = e.target.closest ? e.target.closest('[data-rvgo]') : null;
+            if (go) { e.preventDefault(); var k = kartu[go.getAttribute('data-rvgo')]; if (k) { k.scrollIntoView({ behavior: 'smooth', block: 'center' }); } return; }
+            if (e.target.closest && e.target.closest('#rvTog')) {
+                var open = !list.classList.contains('open'); list.classList.toggle('open', open);
+                var b = document.getElementById('rvTog'); b.textContent = open ? 'Sembunyikan' : 'Lihat semua'; b.setAttribute('aria-expanded', open ? 'true' : 'false');
+            }
+        });
+    
+        fetch(BASE + '/po-kegiatan/' + PO_ID + '/catatan-form', { credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (j) {
+            if (!j || !j.ok) { galat((j && j.pesan) || 'Catatan revisi gagal dimuat.'); bar.hidden = false; return; }
+            data = (j.catatan || []).map(function (c) { return { id: c.id, bagian: c.bagian, teks: c.teks, state: c.state }; });
+            tampil();
+        }).catch(function () { galat('Catatan revisi gagal dimuat. Muat ulang halaman.'); bar.hidden = false; });
+    })();
+    </script>
+    </check>
