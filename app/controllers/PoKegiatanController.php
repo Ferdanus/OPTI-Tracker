@@ -35,6 +35,25 @@ protected function urlDaftarPoDariOrder($orderId) {
     $d = strtolower((string) ($r[0]['jenis_layanan_opti'] ?? ''));
     return '/po-kegiatan' . (in_array($d, ['lingkungan', 'selulosa'], true) ? '?divisi=' . $d : '');
 }
+/**
+ * [BARU] Divisi yang "dikunci" buat role non-superadmin -- tim_kerja &
+ * ketua_tim gak boleh ganti-ganti divisi sendiri lewat filter, otomatis
+ * kepake sesuai divisi mereka masing-masing. Superadmin gak kena ini
+ * (bebas pilih lewat ?divisi=). Return '' kalau superadmin, atau kalau
+ * divisi user gak kedetect (misal Ketua Tim OPTI umum yang gak terikat
+ * satu divisi tertentu).
+ */
+protected function divisiPenggunaSaatIni() {
+    $role = $this->getUserRole();
+    if ($role === 'tim_kerja') {
+        return $this->getDivisiTimKerja();
+    }
+    if ($role === 'ketua_tim') {
+        $lay = strtolower((string) $this->getUserLayanan());
+        return in_array($lay, ['lingkungan', 'selulosa'], true) ? $lay : '';
+    }
+    return '';
+}
 protected function getInfoPembayaranOtomatis($orderId, $statusKeuangan) {
     if ($statusKeuangan !== 'lunas') {
         return '-';
@@ -307,6 +326,20 @@ protected function hitungNomorSection($divisi) {
     return ['alat_bahan' => null, 'metoda' => null, 'tim' => 4, 'rab' => 5, 'jadwal' => 6];
 }
 
+/**
+ * Ambil daftar Tim Pelaksana aktif dari Data Master (per divisi: lingkungan/selulosa)
+ * buat ngisi dropdown "Nama" di bagian Tim Pelaksana form PO -- begitu nama dipilih,
+ * Tugas/Tanggung Jawab otomatis keisi dari data master ini (lihat form.html).
+ * Return [] kalau divisi-nya gak dikenali atau controller master-nya gak ada.
+ */
+protected function ambilMasterPelaksanaUntukPo($divisi) {
+    $d = strtolower(trim((string) $divisi));
+    if (!in_array($d, ['lingkungan', 'selulosa'], true) || !class_exists('MasterTimPelaksanaController')) {
+        return [];
+    }
+    return \MasterTimPelaksanaController::ambilAktif($this->db, $d);
+}
+
 protected function getHariLiburSet() {
     $rows = $this->safeQuery('SELECT tanggal_libur FROM tb_tanggal_libur');
     return array_map(function ($r) { return date('Y-m-d', strtotime($r['tanggal_libur'])); }, $rows);
@@ -318,7 +351,29 @@ protected function bind(PoKegiatan $po, $f3, $isUpdate, $isLivePreview = false) 
         $po->order_id = (int) ($post['order_id'] ?? 0);
     }
 
-    $po->nomor_po       = trim((string) ($post['nomor_po'] ?? ''));
+    $this->ensureSchemaNomorPo();
+
+    // [BARU] Tanggal Surat PO -- tanggal resmi dokumen PO ini, diisi dari form
+    // "Informasi PO". Dipakai juga buat nentuin bulan-romawi & tahun di Nomor PO.
+    $tanggalPoPost = trim((string) ($post['tanggal_po'] ?? ''));
+    $po->tanggal_po = $tanggalPoPost !== '' ? $tanggalPoPost : date('Y-m-d');
+
+    // [BARU] Nomor PO SEKARANG otomatis (gak lagi input manual) -- digenerate
+    // dari tabel master po_nomor_urut pas PO ini PERTAMA KALI disimpan (baik
+    // "Simpan Draft" maupun "Kirim"). Tabel po_nomor_urut nyimpen SATU BARIS per
+    // nomor yang pernah diterbitkan (bukan cuma counter), kolom detail_nomor-nya
+    // itu yang jadi "361/PO/BBSPJIS/VII/2026"-nya -- po_kegiatan cuma nyimpen
+    // id_nomor_urut (nunjuk ke baris itu), nomor_po dipertahanin juga sebagai
+    // salinan buat kompatibel sama bagian lain yang masih baca po.nomor_po
+    // (cetak PO, notifikasi, dll). Kalau PO ini udah punya nomor (lagi diedit),
+    // dipertahanin apa adanya -- gak di-generate ulang & gak bisa diubah manual,
+    // biar gak bentrok sama nomor PO lain yang udah terlanjur jalan.
+    if (empty($po->nomor_po)) {
+        $nomorBaru      = $this->generateNomorPoBaru($po->tanggal_po);
+        $po->id_nomor_urut = $nomorBaru['id'];
+        $po->nomor_po      = $nomorBaru['detail_nomor'];
+    }
+
     $po->judul_kegiatan = trim((string) ($post['judul_kegiatan'] ?? ''));
 
     // [BARU] Judul Kegiatan diedit dari form PO -> sinkronkan juga ke
@@ -502,26 +557,142 @@ protected function bind(PoKegiatan $po, $f3, $isUpdate, $isLivePreview = false) 
         'keterangan' => trim((string) ($post['jadwal_keterangan'] ?? '')),
     ], JSON_UNESCAPED_UNICODE);
 
-    $po->status = ($post['aksi'] ?? '') === 'kirim' ? 'terkirim' : 'draft';
+    // [FIX] PO yang udah lewat tahap validasi Tim Mitra (status 'disetujui_mitra')
+    // atau udah final disetujui Keuangan (status 'disetujui') -- statusnya JANGAN
+    // direset balik ke 'terkirim'/'draft' cuma gara-gara pembuat edit & kirim ulang
+    // pas lagi revisi. Status cuma boleh maju lewat PoValidasiMitraController::validasi()
+    // / PoReviewController::setujui(), dan cuma boleh mundur lewat PoReviewController::
+    // bukaKembali(). Edit biasa (revisi) gak boleh ngubah tahapnya.
+    $statusSaatIni = $isUpdate ? (string) ($po->status ?? '') : '';
+    if (!in_array($statusSaatIni, ['disetujui_mitra', 'disetujui'], true)) {
+        $po->status = ($post['aksi'] ?? '') === 'kirim' ? 'terkirim' : 'draft';
+    }
 }
 
-    /** GET /po-kegiatan -- cuma nampilin PO yang SUDAH dibuat */
-    /** GET /po-kegiatan -- PO yang sudah dibuat + order yang udah ditunjuk tapi PO-nya belum dibuat */
+    /**
+     * GET /po-kegiatan -- Daftar PO dengan 4 tab (PO Masuk / Terkirim /
+     * Disetujui Mitra / Disetujui Keuangan Final), filter bulan+tahun,
+     * divisi dikunci buat non-superadmin, dan paginasi 10 baris/halaman.
+     *
+     * [BARU] Rework total sesuai permintaan: tab, filter periode, kunci
+     * divisi per-role, toggle "tampilkan semua", dan paginasi.
+     */
 public function index($f3) {
     $this->requireAuth();
-    $divisi = $this->divisiDariRequest($f3);
-    $params = $divisi ? [1 => $divisi] : [];
+    $role = $this->getUserRole();
+    $isSuperadmin = $role === 'superadmin';
+
+    // --- Tab aktif ---
+    $tabsValid = ['masuk', 'draft', 'terkirim', 'disetujui_mitra', 'disetujui'];
+    $tab = strtolower(trim((string) $f3->get('GET.tab')));
+    if (!in_array($tab, $tabsValid, true)) { $tab = 'masuk'; }
+
+    // --- Divisi: superadmin bebas pilih lewat ?divisi=, role lain (tim_kerja
+    // / ketua_tim) dikunci ke divisi mereka sendiri -- parameter GET divisi
+    // dari non-superadmin SENGAJA diabaikan biar gak bisa ngintip data
+    // divisi lain cuma dengan ganti URL manual. ---
+    $divisiTerkunci = $this->divisiPenggunaSaatIni();
+    $divisi = $isSuperadmin ? $this->divisiDariRequest($f3) : $divisiTerkunci;
+    $namaDivisiTampilan = $divisi === 'lingkungan' ? 'Lingkungan' : ($divisi === 'selulosa' ? 'Selulosa' : 'Semua Divisi');
+
+    // --- Filter bulan/tahun & toggle "Tampilkan Semua Data" ---
+    // Default kalau togglenya belum pernah disentuh user (parameter
+    // "semua" belum ada di URL): tab "PO Masuk" -> tampilkan semua (gak
+    // ada histori bulanan yang jelas buat order yang belum/baru mau
+    // dibikinin PO); tab lain (Terkirim/Disetujui Mitra/Disetujui
+    // Keuangan) -> default kefilter bulan berjalan. Begitu user pencet
+    // togglenya sendiri, pilihan itu yang dipakai & ikut kebawa pas
+    // pindah tab/halaman (lewat link yang nyertain parameter semua=).
+    $semuaGet = $f3->get('GET.semua');
+    $tampilkanSemua = ($semuaGet === null || $semuaGet === '')
+        ? in_array($tab, ['masuk', 'draft'], true)
+        : ($semuaGet === '1');
+
+    $bulanGet = (int) $f3->get('GET.bulan');
+    $tahunGet = (int) $f3->get('GET.tahun');
+    $bulan = ($bulanGet >= 1 && $bulanGet <= 12) ? $bulanGet : (int) date('n');
+    $tahun = ($tahunGet >= 2000 && $tahunGet <= 2100) ? $tahunGet : (int) date('Y');
+
+    $terapkanFilterBulan = !$tampilkanSemua;
+
+    // Kolom tanggal acuan filter bulan, beda-beda per tab sesuai histori
+    // status yang beneran tercatat di po_kegiatan/order_layanan.
+    $kolomTanggalPerTab = [
+        'masuk'           => 'o.ketua_pelaksana_at',
+        'draft'           => 'COALESCE(p.updated_at, p.created_at)',
+        'terkirim'        => 'p.updated_at',
+        'disetujui_mitra' => 'p.tervalidasi_mitra_at',
+        'disetujui'       => 'p.validasi_keuangan_at',
+    ];
+    $kolomTanggal = $kolomTanggalPerTab[$tab];
+
+    $kondisiTabPerTab = [
+        'masuk'           => "p.id IS NULL",
+        'draft'           => "p.status = 'draft'",
+        'terkirim'        => "p.status = 'terkirim'",
+        'disetujui_mitra' => "p.status = 'disetujui_mitra'",
+        'disetujui'       => "p.status = 'disetujui'",
+    ];
+
+    $where = "o.ketua_pelaksana_id IS NOT NULL AND " . $kondisiTabPerTab[$tab];
+    $params = [];
+    $idx = 1;
+    if ($divisi) {
+        $where .= " AND o.jenis_layanan_opti = ?";
+        $params[$idx++] = $divisi;
+    }
+    // Pencarian bebas (realtime dari kolom Cari)
+    $q = trim((string) $f3->get('GET.q'));
+    if (function_exists('mb_substr')) { $q = mb_substr($q, 0, 100); } else { $q = substr($q, 0, 100); }
+    if ($q !== '') {
+        $like = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $q) . '%';
+        $where .= " AND (o.nomor_order LIKE ? OR p.nomor_po LIKE ? OR c.nmcustomer LIKE ? OR o.judul_kegiatan LIKE ?)";
+        for ($k = 0; $k < 4; $k++) { $params[$idx++] = $like; }
+    }
+    if ($terapkanFilterBulan) {
+        $where .= " AND {$kolomTanggal} IS NOT NULL AND MONTH({$kolomTanggal}) = ? AND YEAR({$kolomTanggal}) = ?";
+        $params[$idx++] = $bulan;
+        $params[$idx++] = $tahun;
+    }
+
+    // --- Total baris buat paginasi (10 data/halaman) ---
+    $resCount = $this->safeQuery(
+        "SELECT COUNT(*) AS c
+         FROM order_layanan o
+         JOIN tb_customer c ON o.id_customer = c.id_customer
+         LEFT JOIN po_kegiatan p ON p.order_id = o.id" . \PoSchema::bukanSertifikasi('p') . "
+         WHERE {$where}",
+        $params
+    );
+    $totalBaris = (int) ($resCount[0]['c'] ?? 0);
+
+    $perHalaman = 10;
+    $totalHalaman = max(1, (int) ceil($totalBaris / $perHalaman));
+    $halamanSaatIni = max(1, (int) $f3->get('GET.page'));
+    if ($halamanSaatIni > $totalHalaman) { $halamanSaatIni = $totalHalaman; }
+    $offset = ($halamanSaatIni - 1) * $perHalaman;
 
     $sql = "SELECT p.id AS po_id, p.nomor_po, p.status AS po_status, p.created_at AS po_created_at, p.updated_at AS po_updated_at,
                    p.reviewed_at, p.status_review, p.disetujui_at,
                    o.id AS order_id, o.nomor_order, o.judul_kegiatan, o.jenis_layanan_opti, o.status_tinjauan,
-                   o.ketua_pelaksana_id, o.ketua_pelaksana_at,
+                   o.ketua_pelaksana_id, o.ketua_pelaksana_at, o.id_surat_masuk, o.status_keuangan,
                    c.nmcustomer AS nama_mitra, c.pt_cv,
-                   u.nama_user AS nama_pembuat
+                   u.nama_user AS nama_pembuat,
+                   sp.id AS sp_id, sp.surat_kesanggupan_bayar,
+                   (SELECT id FROM opti_proposal_riset pr WHERE pr.order_id = o.id ORDER BY pr.id DESC LIMIT 1) AS proposal_id,
+                   COALESCE((SELECT MAX(pb.is_kesanggupan_bayar) FROM opti_pembayaran pb WHERE pb.order_id = o.id), 0) AS punya_kesanggupan_bayar,
+                   (SELECT MAX(COALESCE(pb.created_at, pb.tanggal_bayar)) FROM opti_pembayaran pb WHERE pb.order_id = o.id AND pb.is_kesanggupan_bayar = 1) AS tanggal_surat_kesanggupan,
+                   (SELECT MAX(pb.tanggal_bayar) FROM opti_pembayaran pb WHERE pb.order_id = o.id AND pb.status_verifikasi = 'terverifikasi' AND (pb.is_kesanggupan_bayar = 0 OR pb.is_kesanggupan_bayar IS NULL)) AS tanggal_bayar_terakhir
             FROM order_layanan o
             JOIN tb_customer c ON o.id_customer = c.id_customer
             LEFT JOIN po_kegiatan p ON p.order_id = o.id
             LEFT JOIN tb_arsipuser u ON u.id_user = o.ketua_pelaksana_id
+            LEFT JOIN tb_surat_penawaran sp ON sp.id = (
+                SELECT id FROM tb_surat_penawaran 
+                WHERE order_id = o.id 
+                ORDER BY (status_respon_klien = 'deal') DESC, (surat_kesanggupan_bayar IS NOT NULL AND surat_kesanggupan_bayar != '') DESC, id DESC 
+                LIMIT 1
+            )
             WHERE o.ketua_pelaksana_id IS NOT NULL"
             . ($divisi ? " AND o.jenis_layanan_opti = ?" : "") . "
             ORDER BY COALESCE(p.created_at, o.ketua_pelaksana_at) DESC";
@@ -541,7 +712,46 @@ public function index($f3) {
         return empty($r['po_id']) || ($r['po_status'] === 'draft') || (($r['status_review'] ?? '') === 'revisi') || (($r['status_review'] ?? '') === 'menunggu_review' && empty($r['reviewed_at']));
     }));
 
+    $orderIdUnik = array_values(array_unique(array_map(function ($r) {
+        return (int) $r['order_id'];
+    }, $daftarPo)));
+
+    $pembayaranByOrder = [];
+    if (!empty($orderIdUnik)) {
+        $placeholder = implode(',', array_fill(0, count($orderIdUnik), '?'));
+        $rowsBayar = $this->safeQuery(
+            "SELECT id, order_id, termin_ke, tanggal_bayar, jumlah, keterangan, bukti_bayar
+             FROM opti_pembayaran
+             WHERE order_id IN ($placeholder) AND (is_kesanggupan_bayar = 0 OR is_kesanggupan_bayar IS NULL)
+             ORDER BY termin_ke ASC",
+            $orderIdUnik
+        );
+        foreach ($rowsBayar as $rb) {
+            $pembayaranByOrder[(int) $rb['order_id']][] = $rb;
+        }
+    }
+    foreach ($daftarPo as $i => &$p) {
+        $p['no_urut'] = $i + 1;
+        $p['daftar_pembayaran'] = $pembayaranByOrder[(int) $p['order_id']] ?? [];
+        $sudahLunas = ($p['status_keuangan'] ?? '') === 'lunas' && !empty($p['tanggal_bayar_terakhir']);
+        $p['sudah_lunas'] = $sudahLunas;
+        $p['label_tanggal_pembayaran'] = null;
+        $p['tanggal_pembayaran_ditampilkan'] = null;
+
+        if ($sudahLunas) {
+            $p['label_tanggal_pembayaran'] = 'Tanggal Bayar';
+            $p['tanggal_pembayaran_ditampilkan'] = $p['tanggal_bayar_terakhir'];
+        } elseif (!empty($p['punya_kesanggupan_bayar']) && !empty($p['tanggal_surat_kesanggupan'])) {
+            $p['label_tanggal_pembayaran'] = 'Tanggal Surat Kesanggupan';
+            $p['tanggal_pembayaran_ditampilkan'] = $p['tanggal_surat_kesanggupan'];
+        }
+    }
+    unset($p);
+
     $f3->set('daftar_po', $daftarPo);
+    $f3->set('tab_aktif', $tab);
+    $f3->set('q', $q);
+    $f3->set('q_url', rawurlencode($q));
     $f3->set('divisi', $divisi);
     $f3->set('total_po', count($daftarPo));
     $f3->set('total_menunggu', $totalMenunggu);
@@ -550,8 +760,10 @@ public function index($f3) {
     $f3->set('total_terkirim', $totalTerkirim);
     $f3->set('total_disetujui', $totalDisetujui);
     $f3->set('total_perlu_tindakan', $totalPerluTindakan);
+    $f3->set('bisa_pilih_divisi', $isSuperadmin);
+    $f3->set('bisa_tambah_po', $role !== 'ketua_tim');
 
-    $this->render('katim_kerja/po-kegiatan/index.html', 'Petunjuk Operasional (PO)', $divisi ? 'po_' . $divisi : 'po_kegiatan');
+    $this->render('katim_kerja/po-kegiatan/index.html', 'Petunjuk Operasional (PO)', ($divisi && !$isSuperadmin) ? 'po_' . $divisi : 'po_kegiatan');
 }
 
     /**
@@ -582,7 +794,7 @@ $sqlOrder = "SELECT o.id, o.nomor_order, o.judul_kegiatan, o.tanggal_masuk, o.je
              JOIN tb_customer c ON o.id_customer = c.id_customer
 
              WHERE o.ketua_pelaksana_id IS NOT NULL
-               AND NOT EXISTS (SELECT 1 FROM po_kegiatan p WHERE p.order_id = o.id)
+               AND NOT EXISTS (SELECT 1 FROM po_kegiatan p WHERE p.order_id = o.id" . \PoSchema::bukanSertifikasi('p') . ")
                AND o.status NOT IN ('batal', 'ditolak', 'selesai')";
 $paramsOrder = [];
 $i = 1;
@@ -634,7 +846,7 @@ $this->render('katim_kerja/po-kegiatan/pilih_jenis.html', 'Buat Petunjuk Operasi
 
         // Kalau sudah pernah dibuatkan PO, arahkan ke edit alih-alih bikin baru
         $existing = new PoKegiatan($this->db);
-        $existing->load(['order_id = ?', $orderId]);
+        $existing->load(['order_id = ?' . \PoSchema::bukanSertifikasi(''), $orderId]);
         if (!$existing->dry()) {
             $f3->reroute('/po-kegiatan/' . $existing->id . '/edit');
             return;
@@ -653,6 +865,10 @@ $f3->set('info_pembayaran_json', json_encode($infoPembayaran, JSON_UNESCAPED_UNI
         $f3->set('surat_masuk_terkait', $this->getSuratMasukTerkait($orderData));
         $f3->set('nomor_po_saran', $this->generateNomorPo());
         $f3->set('daftar_pegawai', $this->safeQuery('SELECT id_user, nama_user FROM tb_arsipuser ORDER BY nama_user ASC'));
+        $f3->set('daftar_master_pelaksana_json', json_encode(
+            $this->ambilMasterPelaksanaUntukPo($orderData['jenis_layanan_opti'] ?? ''),
+            JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP
+        ));
 
         $nomor = $this->hitungNomorSection($orderData['jenis_layanan_opti'] ?? '');
         $f3->set('nomor_alat_bahan', $nomor['alat_bahan']);
@@ -688,6 +904,19 @@ $f3->set('info_pembayaran_json', json_encode($infoPembayaran, JSON_UNESCAPED_UNI
         $orderData = $this->getOrderDenganMitra((int) $po->order_id);
         $poData = $po->cast();
 
+        // [BARU] Nomor PO yang ditampilin di view ngambil langsung dari
+        // po_nomor_urut.detail_nomor (sumber aslinya), bukan dari po_kegiatan.nomor_po
+        // -- biar selalu sinkron sama tabel master, walaupun nomor_po cuma salinan.
+        if (!empty($poData['id_nomor_urut'])) {
+            $rowNomor = $this->safeQuery(
+                'SELECT detail_nomor FROM po_nomor_urut WHERE id = ?',
+                [1 => (int) $poData['id_nomor_urut']]
+            );
+            if (!empty($rowNomor[0]['detail_nomor'])) {
+                $poData['nomor_po'] = $rowNomor[0]['detail_nomor'];
+            }
+        }
+
         $tahunSekarang = (int) date('Y');
     $daftarTahun = [];
     for ($i = 0; $i < 5; $i++) { $daftarTahun[] = $tahunSekarang - $i; }
@@ -701,6 +930,10 @@ $f3->set('info_pembayaran_json', json_encode($infoPembayaran, JSON_UNESCAPED_UNI
         $f3->set('po_json', json_encode($poData, JSON_UNESCAPED_UNICODE));
         $f3->set('surat_masuk_terkait', $orderData ? $this->getSuratMasukTerkait($orderData) : null);
         $f3->set('daftar_pegawai', $this->safeQuery('SELECT id_user, nama_user FROM tb_arsipuser ORDER BY nama_user ASC'));
+        $f3->set('daftar_master_pelaksana_json', json_encode(
+            $this->ambilMasterPelaksanaUntukPo($orderData['jenis_layanan_opti'] ?? ''),
+            JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP
+        ));
 
         $nomor = $this->hitungNomorSection($orderData['jenis_layanan_opti'] ?? '');
         $f3->set('nomor_alat_bahan', $nomor['alat_bahan']);
@@ -718,6 +951,13 @@ $f3->set('info_pembayaran_json', json_encode($infoPembayaran, JSON_UNESCAPED_UNI
             \StageAudit::recordDibaca($this->db, $poOrderId, 7, $userId, $userNama, 'Laboratorium / Tim Pelaksana');
         }
 
+        // [FIX] Dibawa dari query string (?dari=daftar) pas link edit-nya datang dari
+        // halaman "Daftar Review PO"/"Diskusi PO" -- disimpan di hidden field form biar
+        // kebawa lagi pas submit, jadi update() tau harus reroute balik ke mana.
+        $dariValid = ['daftar'];
+        $dari = (string) $f3->get('GET.dari');
+        $f3->set('dari', in_array($dari, $dariValid, true) ? $dari : '');
+
         $this->render('katim_kerja/po-kegiatan/form.html', 'Edit Petunjuk Operasional', 'po_kegiatan');
     }
 
@@ -732,6 +972,16 @@ $f3->set('info_pembayaran_json', json_encode($infoPembayaran, JSON_UNESCAPED_UNI
             $po->save();
 
             $aksiKirim = ($f3->get('POST.aksi') === 'kirim');
+
+            // Kolom layanan diisi otomatis dari divisi order: 'opti-lingkungan' / 'opti-selulosa'.
+            if (class_exists('PoSchema')) {
+                \PoSchema::tandaiLayananOpti($this->db, (int) $po->id, (int) $po->order_id);
+            }
+
+            if ($po->status === 'terkirim') {
+                $this->notifikasiPoTerkirim($po);
+            }
+
             $this->setFlashSuccess($aksiKirim
                 ? 'PO berhasil dibuat dan dikirim.'
                 : 'PO berhasil disimpan sebagai draft.');
@@ -760,6 +1010,19 @@ $f3->set('info_pembayaran_json', json_encode($infoPembayaran, JSON_UNESCAPED_UNI
                 } catch (\Exception $eNotif) {}
             }
         } catch (\Exception $e) {
+            // [DEBUG-SEMENTARA] Nyatet detail lengkap pas gagal simpan PO -- POST
+            // data + pesan error + trace -- ke file log biar gampang dilacak akar
+            // masalahnya. Aman dihapus abis kelar debug (lihat storage/debug_po.log).
+            try {
+                $dir = $f3->get('ROOT') . '/storage';
+                if (!is_dir($dir)) { @mkdir($dir, 0755, true); }
+                $isi = "===== " . date('Y-m-d H:i:s') . " =====\n"
+                     . "PESAN: " . $e->getMessage() . "\n"
+                     . "POST : " . json_encode($f3->get('POST'), JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n"
+                     . "TRACE: " . $e->getTraceAsString() . "\n\n";
+                @file_put_contents($dir . '/debug_po.log', $isi, FILE_APPEND);
+            } catch (\Exception $e2) {}
+
             $this->setFlashError('Gagal menyimpan PO: ' . $e->getMessage());
         }
 
@@ -779,12 +1042,25 @@ $f3->set('info_pembayaran_json', json_encode($infoPembayaran, JSON_UNESCAPED_UNI
             return;
         }
 
+        $statusSebelum = (string) ($po->status ?? '');
+
         try {
             $this->bind($po, $f3, true);
             $po->updated_at = date('Y-m-d H:i:s');
             $po->save();
 
             $aksiKirim = ($f3->get('POST.aksi') === 'kirim');
+
+            if ($statusSebelum !== 'terkirim' && $po->status === 'terkirim') {
+                $this->notifikasiPoTerkirim($po);
+            }
+
+            if (class_exists('PoReviewController')) {
+                try {
+                    \PoReviewController::tandaiRevisiBilaPerlu($this->db, (int) $po->id, (int) $this->getUserId());
+                } catch (\Exception $eRevisi) {}
+            }
+
             $this->setFlashSuccess($aksiKirim
                 ? 'PO berhasil diperbarui dan dikirim.'
                 : 'PO berhasil diperbarui sebagai draft.');
@@ -814,6 +1090,14 @@ $f3->set('info_pembayaran_json', json_encode($infoPembayaran, JSON_UNESCAPED_UNI
             }
         } catch (\Exception $e) {
             $this->setFlashError('Gagal memperbarui PO: ' . $e->getMessage());
+        }
+
+        // [FIX] Kalau edit ini datang dari halaman "Daftar Review PO"/"Diskusi PO"
+        // (hidden field 'dari' = 'daftar'), reroute balik ke situ -- bukan ke daftar PO
+        // per-divisi yang biasa.
+        if ((string) $f3->get('POST.dari') === 'daftar') {
+            $f3->reroute('/po-kegiatan/daftar');
+            return;
         }
 
         $f3->reroute($this->urlDaftarPoDariOrder((int) $f3->get('POST.order_id')));
@@ -1645,11 +1929,185 @@ protected function siapkanDataPo($po, $orderData) {
         return rand(100, 999) . '/PO/BBSPJIS/' . date('m') . '/' . date('Y');
     }
 
+    /**
+     * [BARU] Pastiin kolom po_kegiatan.tanggal_po & id_nomor_urut, plus tabel
+     * master po_nomor_urut, udah ada di DB -- dibuat/di-migrasi otomatis kalau
+     * belum ada/masih skema lama (pola self-healing yang sama kaya
+     * ensureSchema() di PembayaranOptiController), jadi gak perlu migrasi
+     * manual di server produksi.
+     */
+    protected function ensureSchemaNomorPo(): void {
+        static $done = false;
+        if ($done) return;
+        try {
+            $colsTgl = $this->db->exec("SHOW COLUMNS FROM po_kegiatan LIKE 'tanggal_po'");
+            if (empty($colsTgl)) {
+                $this->db->exec("ALTER TABLE po_kegiatan ADD COLUMN tanggal_po DATE NULL AFTER nomor_po");
+            }
+            $colsIdNomor = $this->db->exec("SHOW COLUMNS FROM po_kegiatan LIKE 'id_nomor_urut'");
+            if (empty($colsIdNomor)) {
+                $this->db->exec("ALTER TABLE po_kegiatan ADD COLUMN id_nomor_urut INT UNSIGNED NULL AFTER nomor_po");
+            }
+
+            // [FIX] dasar_struktur ternyata BUKAN kolom asli di po_kegiatan (cuma
+            // properti yang di-set langsung di bind() tanpa pernah dibikinin
+            // kolomnya). Akibatnya F3 Mapper nganggep ini "adhoc field" & nyimpen
+            // nilainya (JSON) sebagai ekspresi SQL MENTAH (gak di-escape/bind),
+            // yang bikin query SELECT reload setelah INSERT jadi rusak & error
+            // "...}) AS" pas bikin PO baru. Fix-nya: bikinin kolom asli biar F3
+            // nganggep ini kolom biasa (ke-bind aman kaya kolom lain).
+            $colsDasarStruktur = $this->db->exec("SHOW COLUMNS FROM po_kegiatan LIKE 'dasar_struktur'");
+            if (empty($colsDasarStruktur)) {
+                $this->db->exec("ALTER TABLE po_kegiatan ADD COLUMN dasar_struktur TEXT NULL AFTER dasar");
+            }
+
+            $tabelAda = $this->db->exec("SHOW TABLES LIKE 'po_nomor_urut'");
+            if (!empty($tabelAda)) {
+                $colsDetail = $this->db->exec("SHOW COLUMNS FROM po_nomor_urut LIKE 'detail_nomor'");
+                if (empty($colsDetail)) {
+                    // [MIGRASI] Skema lama po_nomor_urut cuma 1 baris counter per
+                    // bulan+tahun (tanpa detail_nomor) -- strukturnya beda total
+                    // sama skema baru (1 baris per nomor yang DITERBITKAN). Fitur
+                    // ini baru aja dipasang & belum sempet kepake buat PO beneran,
+                    // jadi aman di-drop & dibikin ulang pakai skema baru.
+                    $this->db->exec("DROP TABLE po_nomor_urut");
+                }
+            }
+
+            $this->db->exec(
+                "CREATE TABLE IF NOT EXISTS po_nomor_urut (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    nomor_urut INT UNSIGNED NOT NULL,
+                    bulan TINYINT UNSIGNED NOT NULL,
+                    tahun SMALLINT UNSIGNED NOT NULL,
+                    detail_nomor VARCHAR(60) NOT NULL,
+                    updated_at DATETIME NULL,
+                    UNIQUE KEY uniq_bulan_tahun_urut (bulan, tahun, nomor_urut),
+                    UNIQUE KEY uniq_detail_nomor (detail_nomor)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+            );
+            $done = true;
+        } catch (\Exception $e) {}
+    }
+
+    /** [BARU] 1-12 -> angka romawi (I..XII), buat format Nomor PO. */
+    protected function angkaRomawi($bulan) {
+        $peta = [1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V', 6 => 'VI',
+                 7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII'];
+        return $peta[(int) $bulan] ?? 'I';
+    }
+
+    /**
+     * [BARU] Cari nomor urut tertinggi yang KEBACA dari nomor_po lama yang
+     * masih free-text di po_kegiatan (sebelum tabel master po_nomor_urut ini
+     * ada) buat bulan+tahun tertentu -- dipakai cuma sebagai FALLBACK waktu
+     * bulan itu belum punya satupun baris di po_nomor_urut, biar nomor baru
+     * yang digenerate gak bentrok sama PO lain yang nomornya udah kepakai
+     * duluan (misalnya diisi manual sebelum fitur auto-generate ini ada).
+     */
+    protected function cariUrutanTertinggiBulanIni($bulan, $tahun) {
+        $romawi = $this->angkaRomawi($bulan);
+        $rows = $this->safeQuery(
+            "SELECT nomor_po FROM po_kegiatan WHERE nomor_po LIKE ?",
+            [1 => '%/' . $romawi . '/' . $tahun]
+        );
+        $max = 0;
+        foreach ($rows as $r) {
+            if (preg_match('/^\s*(\d+)\s*\//', (string) ($r['nomor_po'] ?? ''), $m)) {
+                $max = max($max, (int) $m[1]);
+            }
+        }
+        return $max;
+    }
+
+    /**
+     * [BARU] Generate Nomor PO beneran (bukan sekadar saran kaya generateNomorPo()
+     * di atas) -- tabel master po_nomor_urut nyimpen SATU BARIS per nomor yang
+     * PERNAH DITERBITKAN (bukan cuma counter), kolom detail_nomor-nya langsung
+     * nyimpen hasil gabungannya ("361/PO/BBSPJIS/VII/2026"). Nomor urut baru =
+     * MAX(nomor_urut) yang udah tercatat buat bulan+tahun itu + 1 (fallback ke
+     * cariUrutanTertinggiBulanIni() kalau bulan itu belum ada baris sama sekali
+     * di tabel master -- biar gak bentrok sama PO lama yang nomornya manual).
+     * detail_nomor dijagain UNIK lewat UNIQUE KEY di tabelnya -- kalau somehow
+     * ada 2 proses barengan dapet nomor urut yang sama, INSERT-nya bakal gagal
+     * & otomatis dicoba ulang dari angka berikutnya (lihat retry di bawah).
+     * Dipanggil SEKALI doang per PO, pas pertama kali disimpan (lihat bind()).
+     *
+     * @return array{id:int, detail_nomor:string}
+     */
+    protected function generateNomorPoBaru($tanggalPo) {
+        $this->ensureSchemaNomorPo();
+
+        $ts    = strtotime((string) $tanggalPo) ?: time();
+        $bulan = (int) date('n', $ts);
+        $tahun = (int) date('Y', $ts);
+
+        for ($percobaan = 0; $percobaan < 5; $percobaan++) {
+            $row = $this->safeQuery(
+                'SELECT COALESCE(MAX(nomor_urut), 0) AS maxu FROM po_nomor_urut WHERE bulan = ? AND tahun = ?',
+                [1 => $bulan, 2 => $tahun]
+            );
+            $maxTercatat = (int) ($row[0]['maxu'] ?? 0);
+            $maxLegacy   = $maxTercatat > 0 ? 0 : $this->cariUrutanTertinggiBulanIni($bulan, $tahun);
+            $urutanBaru  = max($maxTercatat, $maxLegacy) + 1;
+            $detailNomor = $urutanBaru . '/PO/BBSPJIS/' . $this->angkaRomawi($bulan) . '/' . $tahun;
+
+            try {
+                $this->db->exec(
+                    'INSERT INTO po_nomor_urut (nomor_urut, bulan, tahun, detail_nomor, updated_at) VALUES (?, ?, ?, ?, NOW())',
+                    [1 => $urutanBaru, 2 => $bulan, 3 => $tahun, 4 => $detailNomor]
+                );
+                $idBaru = (int) ($this->db->exec('SELECT LAST_INSERT_ID() AS id')[0]['id'] ?? 0);
+                return ['id' => $idBaru, 'detail_nomor' => $detailNomor];
+            } catch (\Exception $e) {
+                // Bentrok UNIQUE KEY -- ada proses lain yang keduluan ambil nomor urut
+                // yang sama persis di antara SELECT MAX() & INSERT di atas. Coba lagi
+                // dari angka berikutnya (maksimal 5x) biar gak ada nomor yang sama.
+                continue;
+            }
+        }
+
+        throw new \Exception('Gagal membuat Nomor PO baru, silakan coba simpan ulang.');
+    }
+
     protected function safeQuery($sql, $params = []) {
         try {
             return $this->db->exec($sql, $params);
         } catch (\Exception $e) {
             return [];
+        }
+    }
+
+    /**
+     * [BARU] Notifikasi lonceng ke Tim Mitra + Superadmin pas sebuah PO baru masuk
+     * status 'terkirim' -- PO ini sekarang nongol di halaman Validasi PO mereka.
+     * Dipanggil dari store() (PO baru langsung kirim) dan update() (draft -> terkirim).
+     */
+    protected function notifikasiPoTerkirim($po) {
+        try {
+            $rows = $this->db->exec(
+                "SELECT o.nomor_order, o.judul_kegiatan FROM order_layanan o WHERE o.id = ?",
+                [1 => (int) $po->order_id]
+            );
+            $order = !empty($rows) ? $rows[0] : null;
+            $judul = $order ? (string) $order['judul_kegiatan'] : '';
+            $nomorOrder = $order ? (string) $order['nomor_order'] : '-';
+
+            \NotificationService::send($this->db, [
+                'order_id'        => $po->order_id,
+                'po_id'           => $po->id,
+                'target_role'     => 'ketua_tim_mitra',
+                'target_layanan'  => 'semua',
+                'judul'           => 'PO Baru Menunggu Validasi',
+                'pesan'           => "PO #{$po->nomor_po} untuk Order #{$nomorOrder} ({$judul}) sudah dikirim, menunggu validasi Tim Mitra.",
+                'tipe'            => 'primary',
+                'icon'            => 'bi-clipboard-check',
+                'link_url'        => '/po-kegiatan/validasi-mitra',
+                'created_by'      => $this->getUserId(),
+                'created_by_name' => $_SESSION['nama_lengkap'] ?? 'Tim Pelaksana',
+            ]);
+        } catch (\Exception $e) {
+            // notifikasi bersifat pelengkap -- jangan gagalkan penyimpanan PO
         }
     }
 }

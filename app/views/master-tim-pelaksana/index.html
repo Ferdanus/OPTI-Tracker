@@ -1,0 +1,299 @@
+<style>
+.mtp-toast { position: fixed; bottom: 20px; right: 20px; z-index: 2000; background: #0f172a; color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 13px; box-shadow: 0 10px 25px rgba(0,0,0,.18); opacity: 0; transform: translateY(8px); transition: all .2s; pointer-events: none; }
+.mtp-toast.show { opacity: 1; transform: translateY(0); }
+.mtp-toast.err { background: #be123c; }
+.mtp-empty { text-align: center; color: #94a3b8; padding: 48px 16px; }
+.mtp-empty i { font-size: 28px; display: block; margin-bottom: 8px; }
+</style>
+
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div>
+        <h2 class="h4 fw-bold mb-1 text-dark"><i class="bi bi-people text-primary me-1"></i> Tim Pelaksana {{ @divisi_label }}</h2>
+        <p class="text-muted small mb-0">Data master nama &amp; Tugas/Tanggung Jawab baku untuk divisi {{ @divisi_label }}. Dipakai buat ngisi otomatis bagian "Tim Pelaksana" pas bikin PO.</p>
+    </div>
+    <button type="button" class="btn btn-primary" id="btnTambah"><i class="bi bi-plus-lg"></i> Tambah Orang</button>
+</div>
+
+<check if="{{ @error_message }}">
+    <div class="alert alert-danger">{{ @error_message }}</div>
+</check>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-3">
+        <div class="input-group">
+            <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+            <input type="text" id="inputCari" class="form-control border-start-0" placeholder="Cari nama...">
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h6 class="m-0 fw-bold text-dark"><i class="bi bi-table text-primary me-2"></i>Daftar Tim Pelaksana</h6>
+        <span class="text-muted small" id="totalCount">Total: 0 orang</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th style="width:40px;">No</th>
+                    <th style="width:220px;">Nama</th>
+                    <th>Tugas / Tanggung Jawab</th>
+                    <th class="text-center" style="width:110px;">Status</th>
+                    <th class="text-center" style="width:150px;">Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="bodyList"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Tambah / Edit -->
+<div class="modal fade" id="modalForm" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title fw-bold" id="modalFormTitle">Tambah Orang</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Nama</label>
+                    <select id="inputNama" class="form-select">
+                        <option value="">-- Pilih Nama --</option>
+                    </select>
+                    <div class="form-text">Daftar nama diambil dari data pegawai Sekretariat (tb_arsipuser).</div>
+                </div>
+                <div class="mb-1">
+                    <label class="form-label small fw-semibold">Tugas / Tanggung Jawab</label>
+                    <input type="text" id="inputTugas" class="form-control" placeholder="Misal: Penanggung Jawab Lapangan" maxlength="255">
+                </div>
+                <div class="form-text">Ini yang bakal otomatis keisi di form PO pas nama ini dipilih.</div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-primary btn-sm" id="btnSimpan"><i class="bi bi-check2 me-1"></i>Simpan</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mtp-toast" id="mtpToast"></div>
+
+<script>
+(function () {
+    var BASE = '{{ @BASE }}';
+    var DIVISI = '{{ @divisi }}';
+    var CSRF = '{{ @csrf_token }}';
+    var DATA = {{ @daftar_json | raw }};
+    /* [BARU] Daftar pegawai dari DB Sekretariat (sil2020, tb_arsipuser) -- sumber opsi
+       dropdown Nama. Data Tim Pelaksana hasil pilihannya sendiri tetep kesimpen di
+       DB silopti2026 (tabel master_tim_pelaksana_<divisi>), gak di DB sil2020. */
+    var PEGAWAI_SEKRETARIAT = {{ @daftar_pegawai_json | raw }};
+    var editId = null;
+    var toastTimer = null;
+    var tsNama = null;
+
+    function $(id) { return document.getElementById(id); }
+    function esc(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    }
+    function toast(text, galat) {
+        var t = $('mtpToast');
+        t.textContent = text;
+        t.classList.toggle('err', !!galat);
+        t.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () { t.classList.remove('show'); }, galat ? 6000 : 3500);
+    }
+    function api(url, opts) {
+        opts = opts || {};
+        opts.credentials = 'same-origin';
+        return fetch(url, opts).then(function (r) {
+            return r.text().then(function (t) {
+                var j;
+                try { j = JSON.parse(t); } catch (e) { throw new Error('Server membalas ' + r.status + ' (bukan JSON).'); }
+                if (!r.ok || !j.ok) { throw new Error(j.pesan || 'Terjadi kesalahan.'); }
+                return j;
+            });
+        });
+    }
+    function post(url, data) {
+        var body = new URLSearchParams();
+        body.append('csrf_token', CSRF);
+        Object.keys(data || {}).forEach(function (k) { body.append(k, data[k]); });
+        return api(url, { method: 'POST', body: body });
+    }
+    function urlDivisi(path) { return BASE + '/master-tim-pelaksana/' + DIVISI + path; }
+
+    function render() {
+        var q = ($('inputCari').value || '').toLowerCase().trim();
+        var rows = DATA.filter(function (p) { return !q || p.nama.toLowerCase().indexOf(q) !== -1; });
+        $('totalCount').textContent = 'Total: ' + DATA.length + ' orang';
+
+        if (!rows.length) {
+            $('bodyList').innerHTML = '<tr><td colspan="5"><div class="mtp-empty"><i class="bi bi-inbox"></i>' +
+                (q ? 'Gak ada nama yang cocok dengan pencarian.' : 'Belum ada data. Klik "Tambah Orang" buat mulai.') + '</div></td></tr>';
+            return;
+        }
+
+        $('bodyList').innerHTML = rows.map(function (p, idx) {
+            var aktif = p.status === 'aktif';
+            var statusBadge = aktif
+                ? '<span class="badge badge-pill-success"><i class="bi bi-eye"></i> Aktif</span>'
+                : '<span class="badge badge-pill-secondary"><i class="bi bi-eye-slash"></i> Nonaktif</span>';
+            return '<tr>' +
+                '<td class="text-muted">' + (idx + 1) + '</td>' +
+                '<td class="fw-semibold text-dark">' + esc(p.nama) + '</td>' +
+                '<td class="text-muted small">' + esc(p.tugas_tanggung_jawab) + '</td>' +
+                '<td class="text-center">' + statusBadge + '</td>' +
+                '<td class="text-center">' +
+                    '<div class="d-flex justify-content-center gap-1">' +
+                        '<button type="button" class="btn btn-sm btn-outline-primary" data-edit="' + p.id + '" title="Edit"><i class="bi bi-pencil"></i></button>' +
+                        '<button type="button" class="btn btn-sm btn-outline-secondary" data-toggle="' + p.id + '" title="' + (aktif ? 'Nonaktifkan' : 'Aktifkan lagi') + '"><i class="bi ' + (aktif ? 'bi-eye-slash' : 'bi-eye') + '"></i></button>' +
+                        '<button type="button" class="btn btn-sm btn-outline-danger" data-hapus="' + p.id + '" title="Hapus"><i class="bi bi-trash"></i></button>' +
+                    '</div>' +
+                '</td>' +
+            '</tr>';
+        }).join('');
+    }
+
+    /* [BARU] Dropdown Nama (TomSelect) diinisialisasi sekali di awal, diisi dari
+       PEGAWAI_SEKRETARIAT (DB sil2020). setPilihanNama() nyisipin opsi tambahan kalau
+       nama yang lagi di-edit kebetulan udah gak ada di daftar sekretariat (misal pegawai
+       nonaktif belakangan), biar data lama gak keilangan/ke-blank. */
+    function initSelectNama() {
+        var sel = $('inputNama');
+        PEGAWAI_SEKRETARIAT.forEach(function (p) {
+            var opt = document.createElement('option');
+            opt.value = p.nama_user;
+            opt.textContent = p.nama_user;
+            sel.appendChild(opt);
+        });
+        tsNama = new TomSelect(sel, {
+            create: false,
+            sortField: { field: 'text', direction: 'asc' },
+            placeholder: 'Ketik untuk mencari nama...'
+            // [FIX] Sengaja TANPA dropdownParent:'body' -- dropdown-nya biar tetep
+            // jadi anak elemen di dalam modal, jadi z-index-nya ngikut modal (di
+            // ATAS backdrop). Kalau dipindah ke <body>, dropdown-nya kebawa keluar
+            // dari modal terus ke-TUTUP sama backdrop modal (keliatan gak ada
+            // walaupun sebenernya ke-render, cuma di belakang layar gelapnya).
+        });
+    }
+    function setPilihanNama(nama) {
+        if (nama && !tsNama.options[nama]) {
+            tsNama.addOption({ value: nama, text: nama });
+        }
+        tsNama.setValue(nama || '', true);
+    }
+
+    function bukaModalTambah() {
+        editId = null;
+        $('modalFormTitle').textContent = 'Tambah Orang';
+        setPilihanNama('');
+        $('inputTugas').value = '';
+        bootstrap.Modal.getOrCreateInstance($('modalForm')).show();
+    }
+    function bukaModalEdit(id) {
+        var p = DATA.find(function (x) { return x.id == id; });
+        if (!p) { return; }
+        editId = id;
+        $('modalFormTitle').textContent = 'Edit Orang';
+        setPilihanNama(p.nama);
+        $('inputTugas').value = p.tugas_tanggung_jawab;
+        bootstrap.Modal.getOrCreateInstance($('modalForm')).show();
+    }
+
+    function simpan() {
+        var nama = (tsNama.getValue() || '').trim();
+        var tugas = $('inputTugas').value.trim();
+        if (!nama || !tugas) { toast('Nama dan Tugas/Tanggung Jawab wajib diisi.', true); return; }
+
+        var btn = $('btnSimpan');
+        btn.disabled = true;
+        var payload = { nama: nama, tugas_tanggung_jawab: tugas };
+        var url = editId ? urlDivisi('/' + editId + '/update') : urlDivisi('/simpan');
+
+        post(url, payload).then(function () {
+            if (editId) {
+                var p = DATA.find(function (x) { return x.id == editId; });
+                if (p) { p.nama = nama; p.tugas_tanggung_jawab = tugas; }
+            } else {
+                DATA.unshift({ id: 'baru-' + Date.now(), nama: nama, tugas_tanggung_jawab: tugas, status: 'aktif' });
+            }
+            render();
+            bootstrap.Modal.getOrCreateInstance($('modalForm')).hide();
+            toast(editId ? 'Data berhasil diperbarui.' : 'Orang baru berhasil ditambahkan.');
+            if (!editId) { setTimeout(function () { window.location.reload(); }, 600); } // biar dapet id asli dari server
+        }).catch(function (e) {
+            toast(e.message, true);
+        }).finally(function () {
+            btn.disabled = false;
+        });
+    }
+
+    function toggleStatus(id) {
+        post(urlDivisi('/' + id + '/toggle-status'), {}).then(function () {
+            var p = DATA.find(function (x) { return x.id == id; });
+            if (p) { p.status = p.status === 'aktif' ? 'nonaktif' : 'aktif'; }
+            render();
+            toast('Status berhasil diubah.');
+        }).catch(function (e) { toast(e.message, true); });
+    }
+
+    function hapus(id) {
+        Swal.fire({
+            title: 'Hapus orang ini?',
+            text: 'Data yang udah dihapus gak bisa dikembalikan lagi.',
+            icon: 'question',
+            iconColor: '#0f172a',
+            background: '#ffffff',
+            showCancelButton: true,
+            confirmButtonText: '<i class="bi bi-trash me-1"></i> Ya, Hapus',
+            cancelButtonText: 'Batal',
+            reverseButtons: true,
+            buttonsStyling: false,
+            customClass: {
+                popup: 'bg-white rounded-3 shadow border p-4',
+                title: 'fw-bold text-dark fs-6 mb-1',
+                htmlContainer: 'text-muted small mb-3',
+                confirmButton: 'btn btn-danger btn-sm px-3 py-1.5 fw-semibold',
+                cancelButton: 'btn btn-outline-secondary btn-sm px-3 py-1.5 me-2'
+            }
+        }).then(function (result) {
+            if (!result.isConfirmed) { return; }
+            post(urlDivisi('/' + id + '/hapus'), {}).then(function () {
+                DATA = DATA.filter(function (x) { return x.id != id; });
+                render();
+                toast('Data berhasil dihapus.');
+            }).catch(function (e) { toast(e.message, true); });
+        });
+    }
+
+    /* [FIX] Ditunda sampe DOMContentLoaded -- biar library TomSelect (dimuat dari
+       layout.html, posisinya di bawah konten halaman ini dalam urutan render) udah
+       kepastian kebaca duluan sebelum initSelectNama() manggil "new TomSelect(...)".
+       Pola yang sama kayak form.html PO (yang juga nunggu DOMContentLoaded). Tanpa
+       ini, initSelectNama() bakal error "TomSelect is not defined" dan bikin tsNama
+       tetep null -- efeknya tombol "Tambah Orang"/"Edit" jadi kayak gak merespon
+       (errornya kejadian pas diklik, sebelum modal sempet kebuka). */
+    document.addEventListener('DOMContentLoaded', function () {
+        $('btnTambah').addEventListener('click', bukaModalTambah);
+        $('btnSimpan').addEventListener('click', simpan);
+        $('inputCari').addEventListener('input', render);
+        document.getElementById('bodyList').addEventListener('click', function (e) {
+            var t = e.target.closest('button');
+            if (!t) { return; }
+            if (t.dataset.edit) { bukaModalEdit(t.dataset.edit); }
+            else if (t.dataset.toggle) { toggleStatus(t.dataset.toggle); }
+            else if (t.dataset.hapus) { hapus(t.dataset.hapus); }
+        });
+
+        initSelectNama();
+        render();
+    });
+})();
+</script>

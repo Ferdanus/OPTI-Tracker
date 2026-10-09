@@ -27,8 +27,9 @@ class KetuaTimController extends Controller {
     }
 
     $sql = "SELECT o.id, o.nomor_order, o.judul_kegiatan, o.estimasi_biaya,
-                   o.jenis_layanan_opti, o.disposisi_katim_at,
-                   o.ketua_pelaksana_id, o.ketua_pelaksana_at,
+               o.jenis_layanan_opti, o.disposisi_katim_at,
+               o.status_keuangan, o.tanggal_terima_sampel,
+               o.ketua_pelaksana_id, o.ketua_pelaksana_at, o.pic_proposal_id,
                    c.nmcustomer AS nama_perusahaan, c.pt_cv,
                    sp.id AS sp_id, sp.nominal_penawaran, sp.surat_kesanggupan_bayar,
                    COALESCE((SELECT SUM(p.jumlah) FROM opti_pembayaran p WHERE p.order_id = o.id AND p.status_verifikasi = 'terverifikasi'), 0) AS total_terbayar,
@@ -44,7 +45,9 @@ class KetuaTimController extends Controller {
                 ORDER BY (status_respon_klien = 'deal') DESC, (surat_kesanggupan_bayar IS NOT NULL AND surat_kesanggupan_bayar != '') DESC, id DESC 
                 LIMIT 1
             )
-            WHERE o.disposisi_katim_at IS NOT NULL";
+            WHERE o.disposisi_katim_at IS NOT NULL
+              AND o.status_keuangan = 'lunas'
+              AND o.tanggal_terima_sampel IS NOT NULL";
 
     $params = [];
     if ($filterDivisi) {
@@ -63,9 +66,9 @@ class KetuaTimController extends Controller {
     $daftarSudah = [];
 
     foreach ($rows as $o) {
-        // [FIX] gak cek "beneran lunas" lagi -- disposisi_katim_at aja udah cukup
-        // jadi syarat, soalnya order Kesanggupan Bayar (total_terbayar=0) juga
-        // valid buat masuk sini, sesuai desain di modul Pembayaran.
+        // [FIX] sekarang wajib dua syarat: status_keuangan = 'lunas' DAN tanggal_terima_sampel
+// sudah terisi. Order Kesanggupan Bayar yang belum ada tanggal terima sampelnya
+// TIDAK boleh masuk sini walau status_keuangan-nya sudah lunas.
         $o['nama_perusahaan'] = \Customer::formatNamaPerusahaan($o['pt_cv'] ?? '', $o['nama_perusahaan'] ?? '');
         $o['biaya_acuan'] = !empty($o['nominal_penawaran']) ? (float) $o['nominal_penawaran'] : (float) $o['estimasi_biaya'];
 
@@ -81,10 +84,54 @@ class KetuaTimController extends Controller {
     }
 
     try {
-        $daftarPelaksana = $this->dbSekretariat->exec("SELECT id_user, nama_user FROM tb_arsipuser WHERE si_opti LIKE '%tim_kerja%' ORDER BY nama_user ASC");
+        // [SEMENTARA] cuma tim_kerja_selulosa dulu. Lingkungan gak lewat alur "pilih pelaksana" ini,
+// nanti pakai mekanisme disposisi langsung yang beda -- nyusul kalau udah dibahas.
+$daftarPelaksana = $this->dbSekretariat->exec("SELECT id_user, nama_user FROM tb_arsipuser WHERE si_opti = 'tim_kerja_selulosa' ORDER BY nama_user ASC");
+        // $daftarPelaksana = $this->dbSekretariat->exec("SELECT id_user, nama_user FROM tb_arsipuser WHERE si_opti LIKE '%tim_kerja%' ORDER BY nama_user ASC");
     } catch (\Exception $e) {
         $daftarPelaksana = [];
     }
+
+    // [BARU] Nama Ketua Pelaksana yang udah ditunjuk -- dicari by ID (bukan cuma
+    // dari $daftarPelaksana di atas) soalnya orangnya bisa aja udah gak lagi
+    // ke-filter 'tim_kerja' pas dicek sekarang, padahal dulu pernah ditunjuk.
+    // [BARU] Nama Ketua Pelaksana (tab Sudah) DAN nama PIC Proposal buat order Lingkungan
+// (tab Belum) -- digabung jadi satu query biar gak query dua kali ke tb_arsipuser.
+$idNamaUnik = [];
+foreach ($daftarSudah as $o) {
+    if (!empty($o['ketua_pelaksana_id'])) { $idNamaUnik[(int) $o['ketua_pelaksana_id']] = true; }
+}
+foreach ($daftarBelum as $o) {
+    if (($o['jenis_layanan_opti'] ?? '') === 'lingkungan' && !empty($o['pic_proposal_id'])) {
+        $idNamaUnik[(int) $o['pic_proposal_id']] = true;
+    }
+}
+
+$mapNamaPelaksana = [];
+if (!empty($idNamaUnik)) {
+    $placeholder = implode(',', array_fill(0, count($idNamaUnik), '?'));
+    try {
+        $rowsNama = $this->dbSekretariat->exec(
+            "SELECT id_user, nama_user FROM tb_arsipuser WHERE id_user IN ($placeholder)",
+            array_values(array_keys($idNamaUnik))
+        );
+        foreach ($rowsNama as $rn) {
+            $mapNamaPelaksana[(int) $rn['id_user']] = $rn['nama_user'];
+        }
+    } catch (\Exception $e) {
+        // biarin kosong, tampilkan '-' di view
+    }
+}
+foreach ($daftarSudah as &$o) {
+    $o['nama_pelaksana'] = $mapNamaPelaksana[(int) $o['ketua_pelaksana_id']] ?? '-';
+}
+unset($o);
+foreach ($daftarBelum as &$o) {
+    if (($o['jenis_layanan_opti'] ?? '') === 'lingkungan') {
+        $o['nama_pic_proposal'] = !empty($o['pic_proposal_id']) ? ($mapNamaPelaksana[(int) $o['pic_proposal_id']] ?? '-') : null;
+    }
+}
+unset($o);
 
     $tahunSekarang = (int) date('Y');
     $daftarTahun = [];
@@ -148,5 +195,55 @@ class KetuaTimController extends Controller {
         }
 
         $f3->reroute('/ketua-tim/siap-po');
+    }
+
+    /**
+     * [BARU] Kirim notifikasi lonceng ke Ketua Tim + Superadmin pas sebuah order resmi
+     * "siap ditunjuk pelaksana" -- butuh TIGA syarat yang bisa kesetel di urutan/tempat
+     * manapun (disposisi_katim_at, status_keuangan='lunas', tanggal_terima_sampel), jadi
+     * dipanggil dari beberapa titik: PembayaranOptiController::lakukanDisposisiKatim() &
+     * simpan(), dan OrderController::simpanTerimaSampel(). Aman dipanggil berkali-kali --
+     * query ini sendiri yang ngecek apa syaratnya udah lengkap, dan ada pengecekan biar
+     * gak ngirim notifikasi dobel buat order yang sama.
+     */
+    public static function notifikasiJikaSiapPenunjukan($db, $orderId, $userId = null) {
+        try {
+            $rows = $db->exec(
+                "SELECT o.nomor_order, o.jenis_layanan_opti, c.nmcustomer AS nama_perusahaan, c.pt_cv
+                 FROM order_layanan o
+                 JOIN tb_customer c ON c.id_customer = o.id_customer
+                 WHERE o.id = ?
+                   AND o.disposisi_katim_at IS NOT NULL
+                   AND o.status_keuangan = 'lunas'
+                   AND o.tanggal_terima_sampel IS NOT NULL
+                   AND o.ketua_pelaksana_id IS NULL",
+                [1 => (int) $orderId]
+            );
+            if (empty($rows)) { return; } // belum (atau udah gak lagi) memenuhi syarat
+            $o = $rows[0];
+
+            // Jangan kirim dobel buat order yang sama.
+            $sudah = $db->exec(
+                "SELECT id FROM opti_notifikasi WHERE order_id = ? AND judul = ? LIMIT 1",
+                [1 => (int) $orderId, 2 => 'Order Siap Ditunjuk Pelaksana']
+            );
+            if (!empty($sudah)) { return; }
+
+            $namaPerusahaan = trim((string) (($o['pt_cv'] ?? '') . ' ' . $o['nama_perusahaan']));
+            \NotificationService::send($db, [
+                'order_id'        => $orderId,
+                'target_role'     => 'ketua_tim',
+                'target_layanan'  => $o['jenis_layanan_opti'] ?? 'semua',
+                'judul'           => 'Order Siap Ditunjuk Pelaksana',
+                'pesan'           => "Order #{$o['nomor_order']} ({$namaPerusahaan}) sudah lunas & sampel diterima -- siap ditunjuk Ketua Pelaksana.",
+                'tipe'            => 'success',
+                'icon'            => 'bi-person-check-fill',
+                'link_url'        => '/ketua-tim/siap-po',
+                'created_by'      => $userId,
+                'created_by_name' => $_SESSION['nama_lengkap'] ?? 'Sistem OPTI',
+            ]);
+        } catch (\Exception $e) {
+            // notifikasi bersifat pelengkap -- jangan gagalkan alur utama pembayaran/sampel
+        }
     }
 }

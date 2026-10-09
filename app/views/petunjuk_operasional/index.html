@@ -1,0 +1,257 @@
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div>
+        <h2 class="h4 fw-bold mb-1 text-dark"><i class="bi bi-clipboard2-data text-primary me-1"></i> Daftar Petunjuk Operasional (PO) Layanan</h2>
+        <p class="text-muted small mb-0">PO untuk layanan di luar OPTI (Sertifikasi dan seterusnya). Daftar PO OPTI ada di menu Daftar PO.</p>
+    </div>
+    <a href="{{ @BASE }}/po-kegiatan/pilih" class="btn btn-primary" id="btnTambahPo"><i class="bi bi-plus-lg"></i> Tambah PO</a>
+</div>
+
+<check if="{{ @peringatan_index }}">
+    <div class="alert alert-secondary border-0 small py-2 mb-3"><i class="bi bi-info-circle me-1"></i>{{ @peringatan_index }}</div>
+</check>
+
+<div class="card border-0 shadow-sm po-card">
+    <!-- Tab status PO -->
+    <div class="po-tabs" id="poTabs">
+        <a class="po-tab {{ @tab_aktif == 'draft' ? 'on' : '' }}" href="{{ @BASE }}/petunjuk-operasional?tab=draft&amp;layanan={{ @layanan }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}">Draft <span class="po-cnt">{{ @tab_counts.draft ?: 0 }}</span></a>
+        <a class="po-tab {{ @tab_aktif == 'terkirim' ? 'on' : '' }}" href="{{ @BASE }}/petunjuk-operasional?tab=terkirim&amp;layanan={{ @layanan }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}">Terkirim <span class="po-cnt">{{ @tab_counts.terkirim ?: 0 }}</span></a>
+    </div>
+
+    <div class="card-body">
+        <!-- Filter realtime: berubah langsung tanpa tombol "Terapkan" -->
+        <form method="get" action="{{ @BASE }}/petunjuk-operasional" id="formFilterPo" class="mb-3" autocomplete="off">
+            <input type="hidden" name="tab" id="poTabInput" value="{{ @tab_aktif }}">
+            <input type="hidden" name="semua" value="0">
+            <div class="row g-2 align-items-end">
+                <div class="col-12 col-md-4">
+                    <label class="form-label small fw-semibold text-muted mb-1">Cari</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                        <input type="search" name="q" id="poSearch" class="form-control" placeholder="No. PO, no. order, mitra, atau judul kegiatan" value="{{ @q }}">
+                    </div>
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label small fw-semibold text-muted mb-1">Layanan</label>
+                    <check if="{{ @bisa_pilih_layanan }}">
+                        <select name="layanan" id="poLayanan" class="form-select form-select-sm">
+                            <option value="">Semua Layanan</option>
+                            <repeat group="{{ @layanan_list }}" value="{{ @l }}">
+                                <option value="{{ @l.slug }}" {{ @layanan == @l.slug ? 'selected' : '' }}>{{ @l.label }}</option>
+                            </repeat>
+                        </select>
+                    </check>
+                    <check if="{{ !@bisa_pilih_layanan }}">
+                        <input type="text" class="form-control form-control-sm bg-light" value="{{ @nama_layanan_tampilan }}" disabled>
+                        <input type="hidden" name="layanan" id="poLayanan" value="{{ @layanan }}">
+                    </check>
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label small fw-semibold text-muted mb-1">Bulan</label>
+                    <select name="bulan" class="form-select form-select-sm">
+                            <option value="1" {{ @bulan_filter == 1 ? 'selected' : '' }}>Januari</option>
+                            <option value="2" {{ @bulan_filter == 2 ? 'selected' : '' }}>Februari</option>
+                            <option value="3" {{ @bulan_filter == 3 ? 'selected' : '' }}>Maret</option>
+                            <option value="4" {{ @bulan_filter == 4 ? 'selected' : '' }}>April</option>
+                            <option value="5" {{ @bulan_filter == 5 ? 'selected' : '' }}>Mei</option>
+                            <option value="6" {{ @bulan_filter == 6 ? 'selected' : '' }}>Juni</option>
+                            <option value="7" {{ @bulan_filter == 7 ? 'selected' : '' }}>Juli</option>
+                            <option value="8" {{ @bulan_filter == 8 ? 'selected' : '' }}>Agustus</option>
+                            <option value="9" {{ @bulan_filter == 9 ? 'selected' : '' }}>September</option>
+                            <option value="10" {{ @bulan_filter == 10 ? 'selected' : '' }}>Oktober</option>
+                            <option value="11" {{ @bulan_filter == 11 ? 'selected' : '' }}>November</option>
+                            <option value="12" {{ @bulan_filter == 12 ? 'selected' : '' }}>Desember</option>
+                    </select>
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label small fw-semibold text-muted mb-1">Tahun</label>
+                    <select name="tahun" class="form-select form-select-sm">
+                        <repeat group="{{ @daftar_tahun }}" value="{{ @y }}">
+                            <option value="{{ @y }}" {{ @tahun_filter == @y ? 'selected' : '' }}>{{ @y }}</option>
+                        </repeat>
+                    </select>
+                </div>
+                <div class="col-6 col-md-2">
+                    <div class="form-check form-switch mb-1">
+                        <input class="form-check-input" type="checkbox" role="switch" value="1" id="chkSemuaPo" name="semua" {{ @tampilkan_semua ? 'checked' : '' }}>
+                        <label class="form-check-label small" for="chkSemuaPo">Tampilkan Semua Data</label>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <div id="poTable">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="small text-muted"><i class="bi bi-table me-1"></i>{{ @total_baris ?: 0 }} data</span>
+            </div>
+            <div class="table-responsive po-table-wrap">
+                <table class="table table-hover align-middle mb-0 po-table">
+                    <thead>
+                        <tr>
+                            <th class="text-center" style="width:56px;">No</th>
+                            <th>No. PO</th>
+                            <th>Tanggal PO</th>
+                            <th>No. Order</th>
+                            <th>Mitra</th>
+                            <th>Layanan</th>
+                            <th>Judul Kegiatan</th>
+                            <th class="text-center">Status PO</th>
+                            <th class="text-center" style="width:110px;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <check if="{{ @daftar_po && count(@daftar_po) > 0 }}">
+                            <repeat group="{{ @daftar_po }}" value="{{ @p }}">
+                                <tr>
+                                    <td class="text-center text-muted fw-semibold">{{ @p.no_urut }}</td>
+                                    <td class="fw-semibold text-dark">{{ @p.nomor_po ?: '-' }}</td>
+                                    <td class="text-nowrap">{{ @p.tanggal_po }}</td>
+                                    <td>{{ @p.nomor_order ?: '-' }}</td>
+                                    <td>{{ @p.mitra ?: '-' }}</td>
+                                    <td><span class="badge badge-pill-primary">{{ @p.layanan_label }}</span></td>
+                                    <td class="text-muted small">{{ @p.judul }}</td>
+                                    <td class="text-center">
+                                        <check if="{{ @p.status == 'draft' }}"><span class="badge badge-pill-secondary">Draft</span></check>
+                                        <check if="{{ @p.status == 'terkirim' }}"><span class="badge badge-pill-success">Terkirim</span></check>
+                                    </td>
+                                    <td class="text-center">
+                                        <check if="{{ @p.url_lihat }}">
+                                            <a href="{{ @p.url_lihat }}" class="btn btn-sm btn-outline-secondary" title="Lihat preview PO"><i class="bi bi-eye"></i></a>
+                                        </check>
+                                        <check if="{{ !@p.url_lihat }}">
+                                            <span class="text-muted small">Segera</span>
+                                        </check>
+                                    </td>
+                                </tr>
+                            </repeat>
+                        </check>
+                        <check if="{{ !@daftar_po || count(@daftar_po) == 0 }}">
+                            <tr><td colspan="9" class="text-center text-muted py-5"><i class="bi bi-inbox fs-2 d-block mb-2"></i>Tidak ada data PO untuk tab &amp; filter ini.</td></tr>
+                        </check>
+                    </tbody>
+                </table>
+            </div>
+            <check if="{{ @total_halaman > 1 }}">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 pt-3">
+                    <span class="small text-muted">Halaman {{ @halaman_saat_ini }} dari {{ @total_halaman }} ({{ @total_baris }} data)</span>
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item {{ @halaman_saat_ini <= 1 ? 'disabled' : '' }}">
+                            <a class="page-link" href="{{ @BASE }}/petunjuk-operasional?tab={{ @tab_aktif }}&amp;layanan={{ @layanan }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;semua={{ @tampilkan_semua ? 1 : 0 }}&amp;q={{ @q_url }}&amp;page={{ @halaman_saat_ini - 1 }}">&laquo; Sebelumnya</a>
+                        </li>
+                        <li class="page-item disabled"><span class="page-link">{{ @halaman_saat_ini }} / {{ @total_halaman }}</span></li>
+                        <li class="page-item {{ @halaman_saat_ini >= @total_halaman ? 'disabled' : '' }}">
+                            <a class="page-link" href="{{ @BASE }}/petunjuk-operasional?tab={{ @tab_aktif }}&amp;layanan={{ @layanan }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;semua={{ @tampilkan_semua ? 1 : 0 }}&amp;q={{ @q_url }}&amp;page={{ @halaman_saat_ini + 1 }}">Berikutnya &raquo;</a>
+                        </li>
+                    </ul>
+                </div>
+            </check>
+        </div>
+    </div>
+</div>
+
+<!-- Modal pilih order sertifikasi (dipakai juga di /po-kegiatan/pilih) -->
+<include href="petunjuk_operasional/_modal_order_sertifikasi.html" />
+
+<script>
+// ==== Tombol Tambah PO & notifikasi: layanan Sertifikasi langsung membuka modal pilih order ====
+document.addEventListener('DOMContentLoaded', function () {
+    var tambah = document.getElementById('btnTambahPo');
+    function layananAktif() { var el = document.getElementById('poLayanan'); return el ? el.value : ''; }
+    if (tambah) {
+        tambah.addEventListener('click', function (e) {
+            if (layananAktif() === 'sertifikasi' && typeof window.bukaModalSertifikasi === 'function') {
+                e.preventDefault();
+                window.bukaModalSertifikasi();
+            }
+        });
+    }
+    // dari notifikasi "order sertifikasi belum dibuatkan PO" (bubble / lonceng): langsung buka modal pilih order
+    try {
+        var u = new URL(window.location.href);
+        if (u.searchParams.get('buat') === '1' && typeof window.bukaModalSertifikasi === 'function') {
+            u.searchParams.delete('buat');
+            window.history.replaceState(null, '', u.pathname + (u.search || '') + u.hash);
+            window.bukaModalSertifikasi();
+        }
+    } catch (e) {}
+});
+
+// ==== Filter & tab realtime (tanpa tombol "Terapkan") ====
+(function () {
+    var form = document.getElementById('formFilterPo');
+    if (!form) return;
+    var timer = null, reqId = 0;
+    var REGIONS = ['poTabs', 'poTable'];
+
+    function urlDariForm() {
+        var p = new URLSearchParams(new FormData(form));
+        return form.getAttribute('action') + '?' + p.toString();
+    }
+    function setLoading(on) {
+        var t = document.getElementById('poTable');
+        if (t) { t.style.opacity = on ? '.45' : ''; t.style.pointerEvents = on ? 'none' : ''; }
+    }
+    function sinkronForm(doc) {
+        var f2 = doc.getElementById('formFilterPo');
+        if (!f2) return;
+        ['tab', 'bulan', 'tahun', 'layanan'].forEach(function (nm) {
+            var a = form.elements[nm], b = f2.elements[nm];
+            if (a && b && !a.disabled) { a.value = b.value; }
+        });
+        var chk = document.getElementById('chkSemuaPo'), chk2 = doc.getElementById('chkSemuaPo');
+        if (chk && chk2) { chk.checked = chk2.checked; }
+    }
+    function muat(url) {
+        var mine = ++reqId;
+        setLoading(true);
+        fetch(url, { credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function (res) { if (!res.ok) throw new Error('HTTP ' + res.status); return res.text(); })
+            .then(function (html) {
+                if (mine !== reqId) return;
+                var doc = new DOMParser().parseFromString(html, 'text/html');
+                REGIONS.forEach(function (id) {
+                    var baru = doc.getElementById(id), lama = document.getElementById(id);
+                    if (baru && lama) { lama.innerHTML = baru.innerHTML; }
+                });
+                sinkronForm(doc);
+                try { history.replaceState(null, '', url); } catch (e) {}
+                setLoading(false);
+            })
+            .catch(function () { window.location.href = url; });
+    }
+    form.addEventListener('change', function (e) {
+        if (e.target.id === 'poSearch') return;
+        muat(urlDariForm());
+    });
+    document.getElementById('poSearch').addEventListener('input', function () {
+        clearTimeout(timer);
+        timer = setTimeout(function () { muat(urlDariForm()); }, 350);
+    });
+    form.addEventListener('submit', function (e) { e.preventDefault(); clearTimeout(timer); muat(urlDariForm()); });
+    document.addEventListener('click', function (e) {
+        var a = e.target.closest('#poTabs a.po-tab, #poTable .pagination a.page-link');
+        if (!a) return;
+        var li = a.closest('li.page-item');
+        e.preventDefault();
+        if (li && li.classList.contains('disabled')) return;
+        muat(a.getAttribute('href'));
+    });
+})();
+</script>
+
+<style>
+    /* ==== Tab pill, filter & tabel Daftar PO (sama dengan Daftar PO OPTI) ==== */
+    .po-card { overflow: hidden; }
+    .po-tabs { display: flex; gap: 4px; padding: 8px; border-bottom: 1px solid var(--color-border, #e2e8f0); overflow-x: auto; }
+    .po-tab { flex: 1 0 auto; border: 0; background: transparent; padding: .65rem .9rem; border-radius: var(--radius-md, 10px); font-family: var(--font-display, inherit); font-weight: 700; font-size: .85rem; color: var(--color-text-muted, #64748b); display: flex; align-items: center; justify-content: center; gap: 7px; white-space: nowrap; text-decoration: none; cursor: pointer; }
+    .po-tab:hover { background: #f8fafc; color: var(--color-primary, #334155); }
+    .po-tab.on { background: var(--color-primary-light, #f1f5f9); color: var(--color-primary, #334155); }
+    .po-cnt { background: #e2e8f0; color: var(--color-text-muted, #64748b); border-radius: 12px; padding: 1px 8px; font-size: .72rem; }
+    .po-tab.on .po-cnt { background: var(--color-primary, #334155); color: #fff; }
+    .po-table-wrap { border: 1px solid #e8edf3; border-radius: 10px; }
+    .po-table thead th { background: #f8fafc; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: #64748b; border-bottom: 1px solid #e8edf3; white-space: nowrap; }
+    .po-table thead th { border-right: 1px solid #f0f3f7; }
+    .po-table tbody td { border-bottom: 1px solid #eef1f5; border-right: 1px solid #f3f5f9; }
+    .po-table thead th:last-child, .po-table tbody td:last-child { border-right: 0; }
+    .po-table tbody tr:nth-child(even) td { background: #f8fafc; }
+    .po-table tbody tr:hover td { background: #eef2f7; }
+</style>

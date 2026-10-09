@@ -56,6 +56,9 @@ try {
     // Simpan object database ke hive F3 agar bisa diakses global
     $f3->set('DB', $db);
 
+    // Skema bersama po_kegiatan (kolom layanan, data_po, nomor PO) -- self-healing, 1 query ringan bila sudah siap
+    try { \PoSchema::pastikan($db); } catch (\Throwable $ePoSchema) { error_log('[PoSchema] ' . $ePoSchema->getMessage()); }
+
     // Setup koneksi kedua (opsional, jika tidak ada fallback ke DB utama sil2020)
     try {
         if ($f3->exists('db_sekretariat_dns') && $f3->get('db_sekretariat_dns')) {
@@ -201,6 +204,18 @@ $f3->route('POST /pembayaran/@id/disposisi-katim', 'PembayaranOptiController->di
 $f3->route('GET /ketua-tim/siap-po', 'KetuaTimController->index');
 $f3->route('POST /ketua-tim/@id/pilih-pelaksana', 'KetuaTimController->simpanPelaksana');
 
+
+
+$f3->route('GET /po-kegiatan/validasi-mitra',     'PoValidasiMitraController->index');
+$f3->route('GET /po-kegiatan/@id/validasi-detail',   'PoValidasiMitraController->detailJson');
+$f3->route('POST /po-kegiatan/@id/catatan',          'PoValidasiMitraController->simpanCatatan');
+$f3->route('POST /po-kegiatan/@id/validasi',         'PoValidasiMitraController->validasi');
+
+$f3->route('GET /order/@id/berkas',       'BerkasController->index');
+$f3->route('GET /penawaran/@id/lampiran', 'BerkasController->lampiranPenawaran');
+$f3->route('GET /proposal/@id/file',      'BerkasController->fileProposal');
+$f3->route('GET /penawaran/surat-kesanggupan/@id', 'BerkasController->suratKesanggupan');
+
 // ==========================================
 // ROUTE MODUL PEMBAYARAN MULTI-TERMIN & INVOICE
 // ==========================================
@@ -278,6 +293,15 @@ $f3->route('POST /config/toggle-edit-lock', 'ConfigController->toggleEditLock');
 $f3->route('POST /config/set-ketua-tim', 'ConfigController->setKetuaTim');
 
 // ==========================================
+// ROUTE MASTER DATA TIM PELAKSANA (per divisi)
+// ==========================================
+$f3->route('GET /master-tim-pelaksana/@divisi', 'MasterTimPelaksanaController->index');
+$f3->route('POST /master-tim-pelaksana/@divisi/simpan', 'MasterTimPelaksanaController->simpan');
+$f3->route('POST /master-tim-pelaksana/@divisi/@id/update', 'MasterTimPelaksanaController->update');
+$f3->route('POST /master-tim-pelaksana/@divisi/@id/toggle-status', 'MasterTimPelaksanaController->toggleStatus');
+$f3->route('POST /master-tim-pelaksana/@divisi/@id/hapus', 'MasterTimPelaksanaController->hapus');
+
+// ==========================================
 // ROUTE ADMIN_ORDER
 // ==========================================
 $f3->route('GET /admin-order', 'DashboardController->adminOrder');
@@ -345,6 +369,23 @@ $f3->route('POST /po-kegiatan/@id/dibuka', 'PoReviewController->tandaiDibuka');
 $f3->route('POST /po-kegiatan/@id/setujui', 'PoReviewController->setujui');
 $f3->route('POST /po-kegiatan/@id/buka-kembali', 'PoReviewController->bukaKembali');
 
+// ===== Petunjuk Operasional (PO) -- modul TERPISAH dari PO OPTI =====
+// Controller: app/controllers/petunjuk_operasional/ (namespace petunjuk_operasional)
+// View      : app/views/petunjuk_operasional/<jenis_po>/
+$f3->route('GET /petunjuk-operasional', 'petunjuk_operasional\PoIndexController->index');
+$f3->route('GET /petunjuk-operasional/pengujian/create', 'petunjuk_operasional\PoPengujianController->create');
+$f3->route('GET /petunjuk-operasional/kalibrasi/create', 'petunjuk_operasional\PoKalibrasiController->create');
+$f3->route('GET /petunjuk-operasional/sertifikasi/create', 'petunjuk_operasional\PoSertifikasiController->create');
+$f3->route('GET /petunjuk-operasional/sertifikasi/order', 'petunjuk_operasional\PoSertifikasiController->daftarOrder');
+$f3->route('POST /petunjuk-operasional/sertifikasi/simpan', 'petunjuk_operasional\PoSertifikasiController->simpan');
+$f3->route('GET /petunjuk-operasional/sertifikasi/@id/edit', 'petunjuk_operasional\PoSertifikasiController->edit');
+$f3->route('GET /petunjuk-operasional/sertifikasi/@id/lihat', 'petunjuk_operasional\PoSertifikasiController->lihat');
+$f3->route('POST /petunjuk-operasional/sertifikasi/@id/update', 'petunjuk_operasional\PoSertifikasiController->update');
+$f3->route('GET /petunjuk-operasional/pendampingan/create', 'petunjuk_operasional\PoPendampinganController->create');
+$f3->route('GET /petunjuk-operasional/konsultasi/create', 'petunjuk_operasional\PoKonsultasiController->create');
+$f3->route('GET /petunjuk-operasional/inspeksi/create', 'petunjuk_operasional\PoInspeksiController->create');
+$f3->route('GET /petunjuk-operasional/uji-profisiensi/create', 'petunjuk_operasional\PoUjiProfisiensiController->create');
+
 // ==========================================
 // SURAT PENAWARAN MITRA
 // ==========================================
@@ -401,6 +442,19 @@ $f3->route('GET /notifikasi', 'NotificationController->index');
 $f3->route('GET /notifikasi/unread', 'NotificationController->getUnread');
 $f3->route('POST /notifikasi/mark-read/@id', 'NotificationController->markRead');
 $f3->route('POST /notifikasi/mark-all-read', 'NotificationController->markAllRead');
+
+// ==========================================
+// ROUTE WEB PUSH NOTIFICATION (desktop) -- revisi PO Keuangan ke Ketua Pelaksana
+// [PENTING] Path Service Worker SENGAJA tanpa ekstensi ".js" (bukan "/sw.js") --
+// PHP built-in dev server (php -S) nganggep path berakhiran ".js" sebagai file
+// statis dan langsung 404 duluan TANPA pernah masuk ke index.php/router F3 kalau
+// file fisiknya gak ada. Browser gak masalah daftar Service Worker dari path tanpa
+// ekstensi, asal Content-Type response-nya "application/javascript" (sudah diatur
+// di PushController::serviceWorker()).
+// ==========================================
+$f3->route('GET /service-worker', 'PushController->serviceWorker');
+$f3->route('POST /push/subscribe', 'PushController->subscribe');
+$f3->route('POST /push/unsubscribe', 'PushController->unsubscribe');
 
 // ==========================================
 // kontrak

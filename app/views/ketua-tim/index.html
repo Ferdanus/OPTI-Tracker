@@ -1,5 +1,5 @@
 <div class="container-fluid px-0">
-    <!-- Header & Breadcrumb -->
+    <!-- Header -->
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
         <div>
             <h4 class="fw-bold text-dark m-0 d-flex align-items-center gap-2 font-display">
@@ -97,7 +97,7 @@
                         <th style="min-width: 170px;">No. Order</th>
                         <th style="min-width: 200px;">Customer / Mitra</th>
                         <th style="min-width: 260px;">Perihal &amp; Layanan</th>
-                        <th style="min-width: 130px;">Tanggal Lunas</th>
+                        <th style="min-width: 130px;" id="thExtra">Tanggal Lunas</th>
                         <th style="min-width: 170px;" class="text-center text-nowrap">Aksi</th>
                     </tr>
                 </thead>
@@ -116,35 +116,35 @@
                             <i class="bi bi-person-plus-fill fs-5"></i>
                         </div>
                         <div>
-                            <h5 class="modal-title fw-bold text-dark mb-0">Pilih Ketua Pelaksana</h5>
+                            <h5 class="modal-title fw-bold text-dark mb-0" id="mppLabel">Pilih Ketua Pelaksana</h5>
                             <div class="text-muted small" id="mppNomor">-</div>
                         </div>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
     
-                <div class="modal-body p-4">
-                    <div class="card bg-light border-0 mb-4 rounded-3">
-                        <div class="card-body p-3 small" id="mppInfo"></div>
-                    </div>
-    
-                    <form action="" method="POST" id="formPilihPelaksana">
-                        <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
+                <form action="" method="POST" id="formPilihPelaksana">
+                    <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
+                    <div class="modal-body p-4">
+                        <div class="card bg-light border-0 mb-4 rounded-3">
+                            <div class="card-body p-3 small" id="mppInfo"></div>
+                        </div>
+        
                         <div class="mb-3">
-                            <label class="form-label fw-bold small text-dark">Ketua Pelaksana <span class="text-danger">*</span></label>
+                            <label class="form-label fw-bold small text-dark" id="mppSelectLabel">Ketua Pelaksana <span class="text-danger">*</span></label>
                             <select name="ketua_pelaksana_id" id="selectPelaksana" class="form-select searchable-select" required>
                                 <option value="">Cari nama pegawai...</option>
                             </select>
-                            <div class="form-text small">Pilih staf tim kerja yang akan bertanggung jawab menyusun Petunjuk Operasional (PO).</div>
+                            <div class="form-text small" id="mppHintLingkungan" style="display:none;"></div>
                         </div>
-                        <div class="d-flex justify-content-end gap-2 pt-3 border-top">
-                            <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Batal</button>
-                            <button type="submit" class="btn btn-primary btn-sm px-4 d-inline-flex align-items-center gap-1 shadow-sm">
-                                <i class="bi bi-check-lg"></i> Tunjuk Ketua Pelaksana
-                            </button>
-                        </div>
-                    </form>
-                </div>
+                    </div>
+                    <div class="modal-footer border-top py-3 px-4 bg-light d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary btn-sm px-4 d-inline-flex align-items-center gap-1 shadow-sm" id="mppBtnSubmit">
+                            <i class="bi bi-check-lg"></i> Tunjuk Ketua Pelaksana
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -162,6 +162,7 @@ var tahunSekarang = {{ @tahun_sekarang }};
 var tab = 'belum';
 var bSel = document.getElementById('fBulan');
 var tSel = document.getElementById('fTahun');
+var thExtra = document.getElementById('thExtra');
 
 function tgl(s) {
     if (!s) return '-';
@@ -177,11 +178,12 @@ function divisiBadge(d) {
     return '<span class="badge bg-success-subtle text-success border border-success-subtle text-uppercase" style="font-size: 0.65rem;">Lingkungan</span>';
 }
 
-document.querySelectorAll('.ktp-tab-btn').forEach(function (btn) {
+document.querySelectorAll('.filter-tab-pill').forEach(function (btn) {
     btn.addEventListener('click', function () {
-        document.querySelectorAll('.ktp-tab-btn').forEach(function (b) { b.classList.remove('active'); });
+        document.querySelectorAll('.filter-tab-pill').forEach(function (b) { b.classList.remove('active'); });
         btn.classList.add('active');
         tab = btn.dataset.tab;
+        if (thExtra) thExtra.textContent = tab === 'sudah' ? 'Ketua Pelaksana' : 'Tanggal Lunas';
         document.getElementById('fSearch').value = '';
         document.querySelectorAll('.ktp-fp').forEach(function (el) { el.style.display = tab === 'sudah' ? 'inline-block' : 'none'; });
         if (tab === 'sudah') { bSel.value = String(bulanSekarang); tSel.value = String(tahunSekarang); }
@@ -198,14 +200,18 @@ document.querySelectorAll('.ktp-tab-btn').forEach(function (btn) {
 });
 
 function aksiBelum(o) {
+    var divisi = o.jenis_layanan_opti;
+    var ikon = divisi === 'lingkungan' ? 'bi-send-check' : 'bi-person-plus-fill';
+    var judulTombol = divisi === 'lingkungan' ? 'Disposisikan' : 'Pilih Pelaksana';
     return '<div class="d-inline-flex align-items-center gap-1">' +
         '<button type="button" class="btn btn-primary btn-sm py-1 px-2.5 d-inline-flex align-items-center gap-1 shadow-xs fw-semibold btn-buka-modal-pelaksana"' +
-        ' data-order-id="' + o.id + '" data-nomor="' + o.nomor_order + '"' +
+        ' data-order-id="' + o.id + '" data-nomor="' + o.nomor_order + '" data-divisi="' + divisi + '"' +
         ' data-mitra="' + (o.nama_perusahaan || '').replace(/"/g, '&quot;') + '"' +
         ' data-judul="' + (o.judul_kegiatan || '').replace(/"/g, '&quot;') + '"' +
         ' data-nilai="' + (o.biaya_acuan || 0) + '" data-tanggal="' + (o.tanggal_lunas || o.disposisi_katim_at || '') + '"' +
-        ' title="Tunjuk Ketua Pelaksana">' +
-        '<i class="bi bi-person-plus-fill"></i> <span>Pilih Pelaksana</span></button>' +
+        ' data-pic-id="' + (o.pic_proposal_id || '') + '" data-pic-nama="' + (o.nama_pic_proposal || '').replace(/"/g, '&quot;') + '"' +
+        ' title="' + judulTombol + '">' +
+        '<i class="bi ' + ikon + '"></i> <span>' + judulTombol + '</span></button>' +
         '<a href="' + BASE + '/order/' + o.id + '" class="btn btn-light border btn-sm py-1 px-2 text-primary" title="Buka Detail Order">' +
         '<i class="bi bi-folder2-open"></i></a>' +
         '</div>';
@@ -227,6 +233,15 @@ function statusPoBadge(o) {
         return '<span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1"><i class="bi bi-check-circle-fill me-1"></i>PO Diterbitkan</span>';
     }
     return '<span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1"><i class="bi bi-pencil-square me-1"></i>PO Dalam Draft</span>';
+}
+
+function kolomExtra(o) {
+    if (tab === 'sudah') {
+        return '<div class="fw-semibold text-dark">' + (o.nama_pelaksana || '-') + '</div>' +
+            '<div class="text-muted" style="font-size:11px;">Ditunjuk ' + tgl(o.ketua_pelaksana_at) + '</div>';
+    }
+    var tglLunas = o.tanggal_lunas || o.disposisi_katim_at;
+    return '<span class="text-dark">' + tgl(tglLunas) + '</span>';
 }
 
 function render() {
@@ -277,7 +292,6 @@ function render() {
 
     tbody.innerHTML = hasil.map(function (o, idx) {
         var aksi = tab === 'belum' ? aksiBelum(o) : aksiSudah(o);
-        var tglLunas = o.tanggal_lunas || o.disposisi_katim_at;
         var kesanggupanBadge = (o.punya_kesanggupan_bayar == 1 || o.surat_kesanggupan_bayar) ? 
             '<div class="mt-1"><span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle" style="font-size: 0.65rem;"><i class="bi bi-file-earmark-check me-1"></i>Kesanggupan Bayar</span></div>' : '';
 
@@ -296,27 +310,59 @@ function render() {
                     (o.judul_kegiatan || '-') +
                 '</div>' +
             '</td>' +
-            '<td class="text-nowrap small text-muted">' + tgl(tglLunas) + '</td>' +
+            '<td class="text-nowrap small">' + kolomExtra(o) + '</td>' +
             '<td class="text-center text-nowrap">' + aksi + '</td>' +
         '</tr>';
     }).join('');
 }
 
 var DATA_PELAKSANA = {{ @daftar_pelaksana_json | raw }};
+var tomPelaksana = null;
 
 document.addEventListener('click', function (e) {
     var btn = e.target.closest('.btn-buka-modal-pelaksana');
     if (!btn) return;
 
     var orderId = btn.getAttribute('data-order-id');
+    var divisi = btn.getAttribute('data-divisi');
+    var picId = btn.getAttribute('data-pic-id');
+    var picNama = btn.getAttribute('data-pic-nama');
+
     document.getElementById('mppNomor').textContent = btn.getAttribute('data-nomor');
     document.getElementById('mppInfo').innerHTML =
         '<div class="d-flex justify-content-between py-1 border-bottom"><span class="text-muted">Mitra Industri:</span><strong class="text-dark">' + btn.getAttribute('data-mitra') + '</strong></div>' +
         '<div class="d-flex justify-content-between py-1 border-bottom"><span class="text-muted">Perihal Kegiatan:</span><strong class="text-dark text-truncate text-end" style="max-width: 320px;">' + btn.getAttribute('data-judul') + '</strong></div>' +
         '<div class="d-flex justify-content-between py-1 border-bottom"><span class="text-muted">Nilai Kontrak:</span><strong class="text-dark">Rp ' + Math.round(btn.getAttribute('data-nilai') || 0).toLocaleString('id-ID') + '</strong></div>' +
-        '<div class="d-flex justify-content-between py-1"><span class="text-muted">Tanggal Lunas:</span><strong class="text-dark">' + tgl(btn.getAttribute('data-tanggal')) + '</strong></div>';
+        '<div class="d-flex justify-content-between py-1"><span class="text-muted">Tanggal Lunas:</span><strong class="text-dark">' + tgl(btn.getAttribute('data-tanggal')) + '</strong></div>' +
+        (divisi === 'lingkungan' ? '<div class="d-flex justify-content-between py-1 border-top"><span class="text-muted">PIC Proposal:</span><strong class="text-dark">' + (picNama || '-') + '</strong></div>' : '');
 
     document.getElementById('formPilihPelaksana').action = BASE + '/ketua-tim/' + orderId + '/pilih-pelaksana';
+
+    if (divisi === 'lingkungan') {
+        document.getElementById('mppLabel').textContent = 'Disposisikan ke PIC Proposal';
+        document.getElementById('mppSelectLabel').textContent = 'Pelaksana (otomatis dari PIC Proposal)';
+        document.getElementById('mppHintLingkungan').style.display = 'block';
+        document.getElementById('mppBtnSubmit').innerHTML = '<i class="bi bi-send-check me-1"></i>Disposisikan';
+
+        if (tomPelaksana) {
+            tomPelaksana.clear();
+            if (picId) {
+                if (!tomPelaksana.options[picId]) { tomPelaksana.addOption({ value: picId, text: picNama || ('User #' + picId) }); }
+                tomPelaksana.setValue(picId);
+            }
+            tomPelaksana.lock();
+        }
+    } else {
+        document.getElementById('mppLabel').textContent = 'Pilih Ketua Pelaksana';
+        document.getElementById('mppSelectLabel').innerHTML = 'Ketua Pelaksana <span class="text-danger">*</span>';
+        document.getElementById('mppHintLingkungan').style.display = 'none';
+        document.getElementById('mppBtnSubmit').innerHTML = '<i class="bi bi-check-lg me-1"></i>Tunjuk Ketua Pelaksana';
+
+        if (tomPelaksana) {
+            tomPelaksana.unlock();
+            tomPelaksana.clear();
+        }
+    }
 
     bootstrap.Modal.getOrCreateInstance(document.getElementById('modalPilihPelaksana')).show();
 });
@@ -331,12 +377,15 @@ document.addEventListener('DOMContentLoaded', function () {
             selectEl.appendChild(opt);
         });
 
-        new TomSelect(selectEl, {
-            create: false,
-            sortField: { field: "text", direction: "asc" },
-            placeholder: 'Ketik untuk mencari nama pegawai...',
-            maxOptions: 200,
-        });
+        if (!selectEl.tomselect) {
+            new TomSelect(selectEl, {
+                create: false,
+                sortField: { field: "text", direction: "asc" },
+                placeholder: 'Ketik untuk mencari nama pegawai...',
+                maxOptions: 200,
+            });
+        }
+        tomPelaksana = selectEl.tomselect;
     }
 });
 

@@ -1,0 +1,1020 @@
+<!--
+    app/views/petunjuk_operasional/po_konsultasi/create.html
+    Buat Petunjuk Operasional (PO) KONSULTASI -- TAHAP 1: tampilan saja (belum tersimpan ke DB).
+    Form + editor teks. Preview dokumen tampil di modal lewat tombol "Preview Data"; halaman dokumen dipecah otomatis.
+    RAB berbentuk tabel ala Excel (kegiatan, rincian 3 pasang jumlah-satuan, satuan biaya, biaya, total biaya).
+    Semua class custom berawalan "pp-".
+-->
+<style>
+    .pp-root { color: #0f172a; }
+    .pp-head { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; justify-content: space-between; margin-bottom: 14px; }
+    .pp-head h1 { font-size: 1.35rem; font-weight: 800; margin: 0 0 2px; }
+    .pp-head p { margin: 0; color: #64748b; font-size: .85rem; }
+    .pp-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .pp-actions .form-select { width: auto; }
+
+    .pp-grid { max-width: 1100px; }
+    .pp-fab { position: fixed; right: 24px; bottom: 24px; z-index: 1030; box-shadow: 0 6px 18px rgba(15,23,42,.3); border-radius: 999px; padding: 9px 18px; }
+
+    /* ---------- Form ---------- */
+    .pp-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 12px; overflow: hidden; }
+    .pp-card > h3 { margin: 0; padding: 11px 16px; font-size: .9rem; font-weight: 700; background: #f8fafc; border-bottom: 1px solid #e8edf3; display: flex; align-items: center; gap: 9px; }
+    .pp-num { width: 22px; height: 22px; border-radius: 50%; background: var(--color-primary, #334155); color: #fff; font-size: .72rem; display: inline-grid; place-items: center; flex-shrink: 0; }
+    .pp-body { padding: 14px 16px; }
+    .pp-body .form-label { font-size: .78rem; margin-bottom: 3px; }
+    .pp-hint { font-size: .74rem; color: #94a3b8; margin-top: 4px; }
+    .pp-auto { font-size: .72rem; color: #64748b; background: #f1f5f9; border-radius: 6px; padding: 1px 7px; margin-left: 6px; }
+    .pp-tbl { width: 100%; font-size: .8rem; }
+    .pp-tbl th { font-size: .68rem; text-transform: uppercase; letter-spacing: .03em; color: #64748b; font-weight: 700; padding: 6px 4px; white-space: nowrap; }
+    .pp-tbl td { padding: 3px 3px; vertical-align: top; }
+    .pp-tbl .form-control, .pp-tbl .form-select { font-size: .8rem; padding: .25rem .4rem; }
+    .pp-tbl textarea.form-control { min-height: 44px; resize: vertical; }
+    .pp-no { width: 26px; text-align: center; color: #94a3b8; padding-top: 8px !important; }
+    .pp-ico { border: 1px solid #e2e8f0; background: #fff; border-radius: 6px; width: 26px; height: 26px; line-height: 1; padding: 0; color: #64748b; font-size: .8rem; }
+    .pp-ico:hover { color: #be123c; border-color: #fecdd3; background: #fff1f2; }
+    .pp-ico.mv:hover, .pp-ico.dp:hover { color: var(--color-primary, #334155); border-color: #cbd5e1; background: #f1f5f9; }
+    .pp-sum { background: #f8fafc; border: 1px solid #e8edf3; border-radius: 10px; padding: 10px 12px; font-size: .8rem; }
+    .pp-sum div { display: flex; justify-content: space-between; gap: 10px; padding: 1px 0; }
+    .pp-sum .tot { border-top: 1px dashed #cbd5e1; margin-top: 4px; padding-top: 5px; font-weight: 700; }
+    .pp-warn { font-size: .76rem; color: #b45309; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 6px 10px; margin-top: 8px; }
+    .pp-induk { border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; margin-bottom: 10px; background: #f8fafc; }
+    .pp-induk-h { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .pp-sub { border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; margin-top: 8px; background: #fff; }
+    .pp-letter { width: 26px; height: 26px; border-radius: 50%; background: var(--color-primary, #334155); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: .8rem; flex: none; }
+    .pp-ind-opt { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 8px; font-size: .78rem; }
+    .pp-ind-opt .form-control { font-size: .8rem; padding: .25rem .4rem; }
+    .pp-jad { border-collapse: collapse; }
+    .pp-jad td, .pp-jad th { border: 1px solid #e2e8f0; text-align: center; }
+    .pp-jad input[type=checkbox] { width: 16px; height: 16px; }
+
+    /* ---------- Editor teks (ala Word) ---------- */
+    .pp-rte { border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; background: #fff; }
+    .pp-rte:focus-within { border-color: var(--color-primary, #334155); box-shadow: 0 0 0 3px rgba(51,65,85,.12); }
+    .pp-rte-bar { display: flex; flex-wrap: wrap; gap: 2px; padding: 5px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+    .pp-rte-bar button { border: 0; background: transparent; min-width: 30px; height: 28px; border-radius: 6px; color: #334155; font-size: .85rem; padding: 0 6px; cursor: pointer; }
+    .pp-rte-bar button:hover { background: #e2e8f0; }
+    .pp-rte-bar .sep { width: 1px; background: #e2e8f0; margin: 3px 4px; }
+    .pp-rte-body { min-height: 96px; max-height: 280px; overflow-y: auto; padding: 10px 12px; font-family: 'Times New Roman', Times, serif; font-size: 11pt; line-height: 1.45; outline: none; }
+    .pp-rte-body ol:not([type]) { list-style-type: lower-alpha; }
+    .pp-rte-body ol, .pp-rte-body ul { padding-left: 1.6em; margin: 0 0 4px; }
+    .pp-rte-body p { margin: 0 0 4px; }
+
+    /* ---------- Preview (modal) ---------- */
+    .pp-modal { display: none; position: fixed; inset: 0; z-index: 2050; background: rgba(15,23,42,.65); padding: 18px; justify-content: center; }
+    .pp-modal.open { display: flex; }
+    .pp-modal-dialog { position: relative; width: 100%; max-width: 860px; height: 100%; display: flex; flex-direction: column; gap: 10px; }
+    .pp-modal-bar { flex: none; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; background: #fff; border-radius: 12px; padding: 7px 10px; box-shadow: 0 2px 8px rgba(15,23,42,.25); }
+    .pp-modal-bar .lbl { font-size: .82rem; font-weight: 700; margin-right: 6px; }
+    .pp-modal-bar .pg { border: 1px solid #e2e8f0; background: #fff; border-radius: 999px; padding: 3px 13px; font-size: .78rem; color: #475569; cursor: pointer; }
+    .pp-modal-bar .pg:hover { background: #f1f5f9; }
+    .pp-modal-x { margin-left: auto; width: 32px; height: 32px; border-radius: 50%; border: 0; background: #f1f5f9; color: #0f172a; font-size: 1.35rem; line-height: 1; cursor: pointer; }
+    .pp-modal-x:hover { background: #e2e8f0; }
+    .pp-pv-box { flex: 1 1 auto; min-height: 0; background: #cbd5e1; border-radius: 12px; padding: 8px; overflow: auto; }
+    .pp-scale { position: relative; }
+    .pp-pages { width: 794px; transform-origin: top left; }
+
+    /* ---------- Dokumen (A4 = 794 x 1123 px) ---------- */
+    .pp-page { width: 794px; min-height: 1123px; background: #fff; margin: 0 0 14px; padding: 92px 70px 90px; box-sizing: border-box; font-family: 'Times New Roman', Times, serif; font-size: 12pt; color: #000; line-height: 1.35; box-shadow: 0 2px 10px rgba(15,23,42,.25); }
+    .pp-measure { position: absolute; left: -10000px; top: 0; visibility: hidden; min-height: 0; margin: 0; box-shadow: none; pointer-events: none; }
+    .pp-page table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    .pp-page td, .pp-page th { border: 1px solid #000; padding: 4px 7px; vertical-align: middle; word-wrap: break-word; overflow-wrap: anywhere; }
+    .pp-page th { font-weight: 700; text-align: center; }
+    .pp-page .blk { margin: 0 0 12px; }
+    .pp-doc-title { text-align: center; font-weight: 700; text-decoration: underline; font-size: 12.5pt; margin-bottom: 0 !important; }
+    .pp-doc-nomor { text-align: center; font-weight: 700; text-decoration: underline; font-size: 12.5pt; margin-bottom: 22px !important; }
+    .pp-doc-row { display: flex; font-weight: 700; margin-bottom: 16px !important; }
+    .pp-doc-row .k { width: 72px; flex: none; }
+    .pp-sec { font-weight: 700; margin: 0 0 4px; }
+    .pp-subh { font-weight: 700; margin-left: 44px; margin-bottom: 2px !important; }
+    .pp-rich { margin-left: 44px; text-align: justify; margin-bottom: 14px !important; }
+    .pp-rich ol:not([type]) { list-style-type: lower-alpha; }
+    .pp-rich ol, .pp-rich ul { margin: 0 0 3px; padding-left: 26px; }
+    .pp-rich p { margin: 0 0 3px; }
+    .pp-dash { display: flex; gap: 10px; text-align: left; }
+    .pp-dash > span:first-child { flex: none; }
+    .pp-tim { font-size: 11pt; line-height: 1.35; }
+    .pp-tim td { padding: 5px 7px; vertical-align: middle; text-align: left; }
+    .pp-tim th { font-size: 11pt; padding: 8px 5px; }
+    .pp-c { text-align: center !important; }
+    .pp-r { text-align: right !important; }
+    .pp-l { text-align: left !important; }
+    .pp-b { font-weight: 700; }
+    .pp-ph { color: #94a3b8; }
+    .pp-gantt { font-size: 10.5pt; }
+    .pp-gantt th, .pp-gantt td { text-align: center; }
+    .pp-gantt td.pp-l { text-align: left; }
+    .pp-gray { background: #bfbfbf; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    /* RAB ala Excel */
+    .pp-xl { font-family: Calibri, Carlito, 'Segoe UI', Arial, sans-serif; font-size: 9.5pt; line-height: 1.25; }
+    .pp-xl td { border: 1px solid #c4c4c4; padding: 3px 5px; text-align: left; }
+    .pp-xl th { border: 1.5px solid #000; padding: 5px 4px; }
+    .pp-xl tr.tot td { border-top: 1.5px solid #000; border-bottom: 1.5px solid #000; font-weight: 700; }
+    .pp-xl td.ctr { text-align: center; }
+    .pp-ac { display: flex; justify-content: space-between; gap: 6px; white-space: nowrap; }
+    .pp-xl .bt { border-top: 1.5px solid #000; }
+
+    /* ---------- Cetak: hanya dokumen ---------- */
+    @media print {
+        @page { size: A4; margin: 0; }
+        body > *:not(.pp-modal) { display: none !important; }
+        body { overflow: visible !important; height: auto !important; background: #fff !important; }
+        .pp-modal { display: block !important; position: static !important; padding: 0 !important; background: none !important; }
+        .pp-modal-dialog { max-width: none !important; height: auto !important; display: block !important; }
+        .pp-modal-bar, .pp-fab { display: none !important; }
+        .pp-pv-box { height: auto !important; flex: none !important; overflow: visible !important; padding: 0 !important; background: none !important; }
+        #pvPages { transform: none !important; }
+        .pp-scale { height: auto !important; margin: 0 !important; }
+        .pp-page { margin: 0; box-shadow: none; page-break-after: always; }
+        .pp-page:last-child { page-break-after: auto; }
+    }
+</style>
+
+<div class="pp-root">
+    <div class="pp-head">
+        <div>
+            <h1><i class="bi bi-chat-dots text-primary me-1"></i> Buat PO Konsultasi</h1>
+            <p>Isi form di bawah, lalu klik <b>Preview Data</b> untuk melihat dokumen PO. <span class="text-warning-emphasis">Tahap tampilan: data belum tersimpan ke database.</span></p>
+        </div>
+        <div class="pp-actions">
+            <select id="ppSample" class="form-select form-select-sm" title="Isi form dengan data contoh (fiktif) untuk mengecek hasilnya">
+                <option value="">Muat data contoh...</option>
+                <option value="k1">Contoh 1 - Konsultasi dengan RAB rinci</option>
+                <option value="k2">Contoh 2 - Konsultasi sederhana</option>
+            </select>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="ppReset"><i class="bi bi-arrow-counterclockwise me-1"></i>Kosongkan</button>
+            <button type="button" class="btn btn-sm btn-primary" id="ppPreview"><i class="bi bi-eye me-1"></i>Preview Data</button>
+            <button type="button" class="btn btn-sm btn-outline-primary" id="ppPrint"><i class="bi bi-printer me-1"></i>Cetak / PDF</button>
+            <button type="button" class="btn btn-sm btn-outline-success" disabled title="Penyimpanan dibuat di tahap berikutnya"><i class="bi bi-save me-1"></i>Simpan</button>
+        </div>
+    </div>
+
+    <div class="pp-grid">
+        <!-- ===================== FORM ===================== -->
+        <div id="ppForm">
+            <section class="pp-card">
+                <h3><span class="pp-num"><i class="bi bi-info"></i></span>Informasi Dokumen</h3>
+                <div class="pp-body">
+                    <div class="row g-2">
+                        <div class="col-sm-3">
+                            <label class="form-label">No. urut PO</label>
+                            <input type="text" class="form-control form-control-sm" data-bind="urut" inputmode="numeric" placeholder="401">
+                        </div>
+                        <div class="col-sm-5">
+                            <label class="form-label">Kode nomor PO</label>
+                            <input type="text" class="form-control form-control-sm" data-bind="kode" placeholder="PO/BBSPJIS/KONS">
+                            <div class="pp-hint">Tampil sebagai: no. urut / kode / bulan romawi / tahun</div>
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label">Bulan &amp; tahun PO</label>
+                            <input type="month" class="form-control form-control-sm" data-bind="tanggal">
+                        </div>
+                        <div class="col-sm-7">
+                            <label class="form-label">Nama perusahaan / mitra</label>
+                            <input type="text" class="form-control form-control-sm" data-bind="perusahaan" placeholder="PT Contoh Konsultasi">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Alamat perusahaan</label>
+                            <textarea class="form-control form-control-sm" rows="2" data-bind="alamat" placeholder="Jl. Contoh No. 1, ..."></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Judul</label>
+                            <input type="text" class="form-control form-control-sm" data-bind="judul" placeholder="KONSULTASI PENERAPAN STANDAR PT CONTOH KONSULTASI">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Jenis</label>
+                            <input type="text" class="form-control form-control-sm" data-bind="jenis" list="dlJenis" placeholder="Konsultasi">
+                            <datalist id="dlJenis"><option value="Konsultasi"><option value="Konsultasi Penerapan Standar"><option value="Konsultasi Teknis"></datalist>
+                        </div>
+                        <div class="col-sm-7">
+                            <label class="form-label">No. surat penawaran</label>
+                            <input type="text" class="form-control form-control-sm" data-bind="noPenawaran" placeholder="B/0001/BBSPJIS/MS/X/2026">
+                        </div>
+                        <div class="col-sm-5">
+                            <label class="form-label">Tanggal surat penawaran</label>
+                            <input type="date" class="form-control form-control-sm" data-bind="tglPenawaran">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="pp-card">
+                <h3><span class="pp-num">1</span>Dasar</h3>
+                <div class="pp-body">
+                    <div class="pp-rte" data-rte="dasar"></div>
+                    <div class="pp-hint">Kode otomatis dari kolom di atas: <b>[perusahaan]</b>, <b>[alamat]</b>, <b>[no_penawaran]</b>, <b>[tgl_penawaran]</b>, <b>[bulan_tahun]</b>.</div>
+                </div>
+            </section>
+
+            <section class="pp-card">
+                <h3><span class="pp-num">2</span>Tujuan</h3>
+                <div class="pp-body">
+                    <div class="pp-rte" data-rte="tujuan"></div>
+                    <div class="pp-hint">Diisi bebas oleh tim kerja. Kode yang sama bisa dipakai.</div>
+                </div>
+            </section>
+
+            <section class="pp-card">
+                <h3><span class="pp-num">3</span>Ruang Lingkup</h3>
+                <div class="pp-body">
+                    <div class="pp-rte" data-rte="ruang"></div>
+                </div>
+            </section>
+
+            <section class="pp-card">
+                <h3><span class="pp-num">4</span>Bahan dan Metoda</h3>
+                <div class="pp-body">
+                    <div class="row g-2">
+                        <div class="col-sm-6">
+                            <label class="form-label">Sub judul pertama</label>
+                            <input type="text" class="form-control form-control-sm" data-bind="lblAlat" placeholder="Alat dan Bahan">
+                        </div>
+                    </div>
+                    <div class="pp-rte mt-2" data-rte="alat"></div>
+                    <div class="row g-2 mt-3">
+                        <div class="col-sm-6">
+                            <label class="form-label">Sub judul kedua</label>
+                            <input type="text" class="form-control form-control-sm" data-bind="lblMetoda" placeholder="Metoda">
+                        </div>
+                    </div>
+                    <div class="pp-rte mt-2" data-rte="metoda"></div>
+                    <div class="pp-hint">Di dokumen: judul <b>BAHAN DAN METODA</b>, lalu sub judul tebal dan isinya di bawahnya.</div>
+                </div>
+            </section>
+
+            <section class="pp-card">
+                <h3><span class="pp-num">5</span>Kebutuhan SDM</h3>
+                <div class="pp-body">
+                    <div class="table-responsive">
+                        <table class="pp-tbl">
+                            <thead><tr><th></th><th>Nama</th><th>Tugas / tanggung jawab</th><th>Uraian tugas</th><th></th></tr></thead>
+                            <tbody id="ppTim"></tbody>
+                        </table>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-primary mt-2" data-act="add" data-list="tim"><i class="bi bi-plus-lg me-1"></i>Tambah anggota</button>
+                    <datalist id="dlTugas"></datalist>
+                    <datalist id="dlNama"></datalist>
+                    <div class="pp-hint">Uraian tugas: awali baris dengan <b>- </b> (strip + spasi) untuk membuat poin; satu baris = satu poin. Memilih tugas baku akan mengisi uraian otomatis.</div>
+                </div>
+            </section>
+
+            <section class="pp-card">
+                <h3><span class="pp-num">6</span>Jadwal Kegiatan</h3>
+                <div class="pp-body">
+                    <div class="row g-2 mb-2">
+                        <div class="col-sm-5">
+                            <label class="form-label">Bentuk jadwal</label>
+                            <select class="form-select form-select-sm" data-bind="jadwal.mode">
+                                <option value="gantt">Tabel jadwal (bulan &amp; minggu)</option>
+                                <option value="teks">Kalimat saja (mis. "dilaksanakan pada tanggal ...")</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="jadTeks">
+                        <div class="pp-rte" data-rte="jadwalTeks"></div>
+                        <div class="pp-hint">Kode <b>[bulan_tahun]</b> terisi otomatis dari bulan &amp; tahun PO.</div>
+                    </div>
+                    <div id="jadGantt">
+                        <label class="form-label">Bulan &amp; minggu</label>
+                        <div id="ppBulanList" class="d-flex flex-wrap gap-2 mb-2"></div>
+                        <button type="button" class="btn btn-sm btn-outline-secondary mb-2" data-act="add-bulan"><i class="bi bi-calendar-plus me-1"></i>Tambah bulan</button>
+                        <div class="pp-hint mb-2" style="margin-top:0">Nama bulan bebas (mis. "April 2026"). <b>Mgg</b> = nomor minggu pertama pada bulan itu (3 tampil sebagai III), <b>jml</b> = jumlah kolom minggu.</div>
+                        <div class="table-responsive"><table class="pp-tbl pp-jad" id="ppJad"></table></div>
+                        <button type="button" class="btn btn-sm btn-outline-primary mt-2" data-act="add" data-list="jadwal.rows"><i class="bi bi-plus-lg me-1"></i>Tambah kegiatan</button>
+                        <div class="pp-hint">Centang kolom (minggu) tempat kegiatan berlangsung; di dokumen kolomnya diarsir abu-abu.</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="pp-card">
+                <h3><span class="pp-num">7</span>Rencana Anggaran Biaya</h3>
+                <div class="pp-body">
+                    <div class="pp-hint mb-2" style="margin-top:0">
+                        Di dokumen: ringkasan <b>Nilai Kontrak</b> (biaya operasional = jumlah dari rincian, biaya penunjang = sisanya; persentase otomatis), lalu tabel rincian.
+                        Tiap <b>kelompok biaya</b> (mis. Perjalanan Dinas) bisa berisi beberapa <b>kegiatan</b>, dan tiap kegiatan berisi baris rincian (Lumpsum, Transport, ...).
+                        Biaya baris = Jml &times; Jml &times; Jml &times; Satuan biaya (kolom Jml yang kosong dilewati). Kelompok yang berdiri sendiri (mis. pengadaan dokumen) cukup isi <b>Hitungan baris ini</b>.
+                    </div>
+                    <div class="row g-2 mb-2">
+                        <div class="col-sm-4">
+                            <label class="form-label">Label nilai kontrak</label>
+                            <input type="text" class="form-control form-control-sm" data-bind="rab.kontrakLabel" placeholder="Nilai Kontrak:">
+                        </div>
+                        <div class="col-sm-3">
+                            <label class="form-label">Nilai kontrak (Rp)</label>
+                            <input type="text" class="form-control form-control-sm" style="text-align:right" data-bind="rab.kontrak" data-type="money" inputmode="numeric" placeholder="0">
+                        </div>
+                        <div class="col-sm-5"></div>
+                        <div class="col-sm-4">
+                            <label class="form-label">Label biaya operasional</label>
+                            <input type="text" class="form-control form-control-sm" data-bind="rab.lblOps" placeholder="Biaya operasional">
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label">Label biaya penunjang (sisa)</label>
+                            <input type="text" class="form-control form-control-sm" data-bind="rab.lblPenunjang" placeholder="Biaya Penunjang Pelayanan Klien">
+                        </div>
+                        <div class="col-sm-4"></div>
+                        <div class="col-sm-4">
+                            <label class="form-label">Judul bagian rincian</label>
+                            <input type="text" class="form-control form-control-sm" data-bind="rab.judulBlok" placeholder="Biaya Operasional">
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label">Label baris total</label>
+                            <input type="text" class="form-control form-control-sm" data-bind="rab.totalLabel" placeholder="T O T A L">
+                        </div>
+                    </div>
+
+                    <label class="form-label mt-2">Kelompok biaya</label>
+                    <div id="ppGrup"></div>
+                    <button type="button" class="btn btn-sm btn-outline-primary mt-1" data-act="add" data-list="rab.grup"><i class="bi bi-plus-lg me-1"></i>Tambah kelompok biaya</button>
+                    <datalist id="dlSatuan"><option value="kali"><option value="orang"><option value="hari"><option value="eks"><option value="paket"><option value="bulan"><option value="unit"><option value="lot"></datalist>
+
+                    <div class="pp-sum mt-3" id="ppSum"></div>
+                    <div id="ppRabWarn"></div>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+
+<button type="button" class="btn btn-primary pp-fab" id="ppPreviewFab"><i class="bi bi-eye me-1"></i>Preview Data</button>
+
+<!-- ===================== PREVIEW (modal) ===================== -->
+<div class="pp-modal" id="ppModal" aria-hidden="true">
+    <div class="pp-modal-dialog">
+        <div class="pp-modal-bar">
+            <span class="lbl">Preview dokumen</span>
+            <span id="ppPgBtns"></span>
+            <button type="button" class="pp-modal-x" id="ppModalX" aria-label="Tutup">&times;</button>
+        </div>
+        <div class="pp-pv-box" id="pvBox">
+            <div class="pp-scale" id="pvScale"><div class="pp-pages" id="pvPages"></div></div>
+        </div>
+    </div>
+</div>
+<div class="pp-page pp-measure" id="ppMeasure" aria-hidden="true"></div>
+
+<script>
+(function () {
+    'use strict';
+
+    var $ = function (id) { return document.getElementById(id); };
+    var BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+    var ROMAWI = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
+
+    // tugas baku kebutuhan SDM (4 pertama = default form kosong)
+    var URAIAN_KETUA = '- Menyiapkan / mengkoordinir tim konsultasi\n- Menyiapkan perangkat kebutuhan konsultasi\n- Menyusun laporan hasil konsultasi';
+    var ROLES = [
+        { tugas: 'Penanggung jawab', uraian: 'Bertanggung jawab atas pelaksanaan kegiatan secara menyeluruh' },
+        { tugas: 'Ketua Tim Konsultasi', uraian: URAIAN_KETUA },
+        { tugas: 'Konsultan / Tenaga Ahli', uraian: '- Memberikan konsultasi teknis kepada klien\n- Melakukan verifikasi data dan perhitungan\n- Menyusun laporan hasil konsultasi' },
+        { tugas: 'Staf Administrasi', uraian: 'Membantu kegiatan administrasi' },
+        { tugas: 'Anggota Tim', uraian: '- Membantu pelaksanaan kegiatan konsultasi\n- Menyusun laporan kegiatan' }
+    ];
+    var DEFAULT_TIM = [0, 1, 2, 3];
+
+    var DEF_DASAR = '<ol><li>Surat penawaran BBSPJIS Nomor [no_penawaran], Tanggal [tgl_penawaran]</li><li>Pembayaran biaya oleh [perusahaan]</li><li>SNI / ISO ... - ...</li></ol>';
+    var DEF_TUJUAN = '<p>Membantu [perusahaan] untuk ...</p>';
+    var DEF_RUANG = '<p>Ruang lingkup kegiatan konsultasi meliputi ...</p>';
+    var DEF_ALAT = '<ol type="1"><li>...</li></ol>';
+    var DEF_METODA = '<ol type="1"><li>...</li></ol>';
+    var DEF_JADWAL = '<p>Kegiatan dilaksanakan pada [bulan_tahun]</p>';
+
+    function todayMonth() {
+        var d = new Date();
+        return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2);
+    }
+    function newBar() { return { nama: '', q1: '', u1: '', q2: '', u2: '', q3: '', u3: '', tarif: 0 }; }
+    function newSub() { return { judul: '', rows: [newBar()] }; }
+    function newGrup() { var g = newBar(); g.note = ''; g.subs = [newSub()]; return g; }
+    function T(nama, idx, o) { o = o || {}; return { nama: nama, tugas: o.tugas || ROLES[idx].tugas, uraian: o.uraian || ROLES[idx].uraian }; }
+    function B(nama, q1, u1, q2, u2, q3, u3, tarif) { return { nama: nama, q1: q1, u1: u1, q2: q2, u2: u2, q3: q3, u3: u3, tarif: tarif }; }
+
+    function blank() {
+        return {
+            urut: '', kode: 'PO/BBSPJIS/KONS', tanggal: todayMonth(), perusahaan: '', alamat: '', judul: '', jenis: 'Konsultasi',
+            noPenawaran: '', tglPenawaran: '',
+            dasar: DEF_DASAR, tujuan: DEF_TUJUAN, ruang: DEF_RUANG,
+            lblAlat: 'Alat dan Bahan', alat: DEF_ALAT, lblMetoda: 'Metoda', metoda: DEF_METODA,
+            tim: DEFAULT_TIM.map(function (i) { return { nama: '', tugas: ROLES[i].tugas, uraian: ROLES[i].uraian }; }),
+            jadwal: { mode: 'gantt', bulan: [{ nama: '', mulai: 1, n: 4 }], rows: [{ nama: '', on: [0, 0, 0, 0] }] },
+            jadwalTeks: DEF_JADWAL,
+            rab: { kontrakLabel: 'Nilai Kontrak:', kontrak: 0, lblOps: 'Biaya operasional', lblPenunjang: 'Biaya Penunjang Pelayanan Klien', judulBlok: 'Biaya Operasional', totalLabel: 'T O T A L', grup: [newGrup()] }
+        };
+    }
+
+    /* ---------------- DATA CONTOH (fiktif) ---------------- */
+    var SAMPLES = {
+        'k1': function () {
+            var s = blank();
+            s.tanggal = '2026-10';
+            s.perusahaan = 'PT Contoh Konsultasi';
+            s.alamat = 'Jl. Contoh No. 1, Kec. Contoh, Kota Contoh, 40000';
+            s.judul = 'KONSULTASI PENERAPAN STANDAR PT CONTOH KONSULTASI';
+            s.jenis = 'Konsultasi Penerapan Standar';
+            s.noPenawaran = 'B/0001/BBSPJIS/MS/X/2026'; s.tglPenawaran = '2026-10-05';
+            s.dasar = '<ol><li>Surat penawaran BBSPJIS Nomor [no_penawaran], Tanggal [tgl_penawaran]</li><li>Pembayaran biaya konsultasi oleh [perusahaan]</li><li>Dokumen standar acuan (contoh)</li></ol>';
+            s.tujuan = '<p>Membantu [perusahaan] dalam menerapkan standar acuan pada proses kerja melalui kegiatan konsultasi teknis.</p>';
+            s.ruang = '<p>Ruang lingkup kegiatan konsultasi meliputi kunjungan awal, pengumpulan dan verifikasi data, review hasil, serta penyusunan laporan konsultasi.</p>';
+            s.lblAlat = 'Alat dan Bahan'; s.lblMetoda = 'Metoda';
+            s.alat = '<ol type="1"><li>Komputer / laptop dan perangkat lunak pengolah data</li><li>Dokumen standar acuan</li><li>Formulir pengumpulan data</li></ol>';
+            s.metoda = '<ol type="1"><li>Kunjungan lapangan dan wawancara</li><li>Verifikasi data dan perhitungan</li><li>Diskusi dan review hasil bersama klien</li></ol>';
+            s.tim = [T('Pegawai A', 0), T('Pegawai B', 1), T('Pegawai C', 2), T('Pegawai D', 2), T('Pegawai K', 3)];
+            s.jadwal = { mode: 'gantt', bulan: [{ nama: 'Oktober 2026', mulai: 3, n: 2 }, { nama: 'November 2026', mulai: 1, n: 3 }], rows: [
+                { nama: 'Kunjungan awal dan identifikasi kebutuhan', on: [1, 0, 0, 0, 0] },
+                { nama: 'Pengumpulan dan verifikasi data', on: [0, 1, 1, 0, 0] },
+                { nama: 'Review dan konfirmasi hasil', on: [0, 0, 0, 1, 0] },
+                { nama: 'Penyusunan laporan', on: [0, 0, 0, 0, 1] }
+            ] };
+            s.rab = {
+                kontrakLabel: 'Nilai Kontrak:', kontrak: 12000000, lblOps: 'Biaya operasional', lblPenunjang: 'Biaya Penunjang Pelayanan Klien', judulBlok: 'Biaya Operasional', totalLabel: 'T O T A L',
+                grup: [
+                    { nama: 'Perjalanan Dinas:', note: '', q1: '', u1: '', q2: '', u2: '', q3: '', u3: '', tarif: 0, subs: [
+                        { judul: '1. Kota A (kunjungan awal dan identifikasi kebutuhan)', rows: [B('Lumpsum', 1, 'kali', 2, 'orang', 1, 'hari', 150000), B('Transport', 1, 'kali', 2, 'orang', '', '', 80000)] },
+                        { judul: '2. Kota A (pengumpulan dan verifikasi data)', rows: [B('Lumpsum', 1, 'kali', 2, 'orang', 1, 'hari', 0), B('Transport', 1, 'kali', 2, 'orang', '', '', 80000)] },
+                        { judul: '3. Kota A (review dan konfirmasi hasil)', rows: [B('Lumpsum', 1, 'kali', 2, 'orang', 1, 'hari', 0), B('Transport', 1, 'kali', 2, 'orang', '', '', 80000)] },
+                        { judul: '4. Kota B (koordinasi dengan instansi terkait)', rows: [B('Lumpsum', 1, 'kali', 2, 'orang', 1, 'hari', 150000), B('Transport', 1, 'kali', 2, 'orang', '', '', 100000)] }
+                    ] },
+                    { nama: 'Pengadaan dokumen standar acuan (ENG)', note: 'Judul dokumen standar contoh\nPart 1: Contoh pedoman penerapan', q1: '', u1: '', q2: '', u2: '', q3: 1, u3: 'eks', tarif: 3000000, subs: [] }
+                ]
+            };
+            return s;
+        },
+        'k2': function () {
+            var s = blank();
+            s.tanggal = '2026-11';
+            s.perusahaan = 'CV Contoh Sederhana';
+            s.alamat = 'Jl. Contoh No. 2, Kec. Contoh, Kota Contoh, 40000';
+            s.judul = 'KONSULTASI TEKNIS CV CONTOH SEDERHANA';
+            s.jenis = 'Konsultasi Teknis';
+            s.noPenawaran = 'B/0002/BBSPJIS/MS/XI/2026'; s.tglPenawaran = '2026-11-02';
+            s.dasar = '<ol><li>Surat penawaran BBSPJIS Nomor [no_penawaran], Tanggal [tgl_penawaran]</li><li>Pembayaran biaya oleh [perusahaan]</li></ol>';
+            s.tujuan = '<p>Membantu [perusahaan] menyelesaikan permasalahan teknis pada proses produksi.</p>';
+            s.ruang = '<p>Ruang lingkup meliputi konsultasi teknis di lokasi [perusahaan] dan penyusunan laporan hasil konsultasi.</p>';
+            s.alat = '<ol type="1"><li>Alat ukur dan perlengkapan lapangan</li></ol>';
+            s.metoda = '<ol type="1"><li>Kunjungan lapangan dan diskusi teknis</li></ol>';
+            s.tim = [T('Pegawai A', 0), T('Pegawai B', 1), T('Pegawai C', 2)];
+            s.jadwal = { mode: 'teks', bulan: [{ nama: '', mulai: 1, n: 4 }], rows: [{ nama: '', on: [0, 0, 0, 0] }] };
+            s.jadwalTeks = '<p>Kegiatan konsultasi dilaksanakan pada tanggal &nbsp; &nbsp; [bulan_tahun]</p>';
+            s.rab = {
+                kontrakLabel: 'Nilai Kontrak:', kontrak: 6000000, lblOps: 'Biaya operasional', lblPenunjang: 'Biaya Penunjang Pelayanan Klien', judulBlok: 'Biaya Operasional', totalLabel: 'T O T A L',
+                grup: [{ nama: 'Perjalanan Dinas:', note: '', q1: '', u1: '', q2: '', u2: '', q3: '', u3: '', tarif: 0, subs: [
+                    { judul: '1. Kota A (konsultasi teknis)', rows: [B('Lumpsum', 1, 'kali', 2, 'orang', 2, 'hari', 150000), B('Transport', 1, 'kali', 2, 'orang', '', '', 90000)] }
+                ] }]
+            };
+            return s;
+        }
+    };
+
+    var S = blank();
+
+    /* ---------------- util ---------------- */
+    function esc(v) { return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+    function num(v) { var n = parseFloat(v); return isNaN(n) ? 0 : n; }
+    function rupiah(n) { n = Math.round(n || 0); return (n < 0 ? '-' : '') + Math.abs(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
+    function koma(x, d) { var f = Math.pow(10, d); return String(Math.round(x * f) / f).replace('.', ','); }
+    function getPath(o, p) { return p.split('.').reduce(function (a, k) { return a == null ? a : a[k]; }, o); }
+    function setPath(o, p, v) { var ks = p.split('.'), l = ks.pop(); var t = ks.reduce(function (a, k) { return a[k]; }, o); t[l] = v; }
+    function tglID(iso) {
+        var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || ''); if (!m) { return '...'; }
+        return parseInt(m[3], 10) + ' ' + BULAN[parseInt(m[2], 10) - 1] + ' ' + m[1];
+    }
+    function bulanTahun() {
+        var m = /^(\d{4})-(\d{2})/.exec(S.tanggal || '');
+        return m ? { r: ROMAWI[parseInt(m[2], 10) - 1], b: BULAN[parseInt(m[2], 10) - 1], y: m[1] } : { r: '...', b: '', y: '....' };
+    }
+    function lines(v) { return String(v || '').split(/\r?\n/).filter(function (l) { return l.trim() !== ''; }); }
+    function sum(a) { return a.reduce(function (x, y) { return x + y; }, 0); }
+
+    var ALLOWED = { b: 1, strong: 1, i: 1, em: 1, u: 1, ol: 1, ul: 1, li: 1, p: 1, div: 1 };
+    function cleanNode(n) {
+        var out = '';
+        Array.prototype.forEach.call(n.childNodes, function (c) {
+            if (c.nodeType === 3) { out += esc(c.nodeValue); return; }
+            if (c.nodeType !== 1) { return; }
+            var t = c.nodeName.toLowerCase();
+            if (t === 'br') { out += '<br>'; return; }
+            var inner = cleanNode(c);
+            if (!ALLOWED[t]) { out += inner; return; }
+            var at = '';
+            if (t === 'ol' || t === 'ul') { var ty = c.getAttribute('type'); if (ty && /^[1aAiI]$/.test(ty)) { at += ' type="' + ty + '"'; } }
+            var al = c.style && c.style.textAlign;
+            if (al && /^(left|right|center|justify)$/.test(al)) { at += ' style="text-align:' + al + '"'; }
+            out += '<' + t + at + '>' + inner + '</' + t + '>';
+        });
+        return out;
+    }
+    function cleanHtml(html) { var tpl = document.createElement('template'); tpl.innerHTML = html || ''; return cleanNode(tpl.content); }
+    function tok(h) {
+        var bt = bulanTahun();
+        return h.replace(/\[perusahaan\]/g, esc(S.perusahaan || '...'))
+            .replace(/\[alamat\]/g, esc(S.alamat || '...'))
+            .replace(/\[no_penawaran\]/g, esc(S.noPenawaran || '...'))
+            .replace(/\[tgl_penawaran\]/g, esc(S.tglPenawaran ? tglID(S.tglPenawaran) : '...'))
+            .replace(/\[bulan_tahun\]/g, esc(bt.b ? bt.b + ' ' + bt.y : '...'));
+    }
+
+    /* ---------------- hitungan RAB ---------------- */
+    // biaya baris = Jml1 x Jml2 x Jml3 x Satuan biaya (Jml yang kosong dilewati)
+    function barAmt(b) {
+        if (!(num(b.tarif) > 0)) { return 0; }
+        var p = 1;
+        ['q1', 'q2', 'q3'].forEach(function (k) { if (num(b[k])) { p *= num(b[k]); } });
+        return Math.round(p * num(b.tarif));
+    }
+    function hasOwn(g) { return !!(num(g.tarif) > 0 || num(g.q1) || num(g.q2) || num(g.q3)); }
+    function calc() {
+        var r = S.rab, c = { warn: [] };
+        c.kontrak = Math.round(num(r.kontrak));
+        c.grup = r.grup.map(function (g) {
+            var own = barAmt(g);
+            var subs = (g.subs || []).map(function (s) { return (s.rows || []).map(barAmt); });
+            var tot = own + sum(subs.map(sum));
+            return { own: own, subs: subs, tot: tot };
+        });
+        c.ops = sum(c.grup.map(function (x) { return x.tot; }));
+        c.pun = c.kontrak - c.ops;
+        c.pOps = c.kontrak > 0 ? c.ops / c.kontrak * 100 : 0;
+        c.pPun = c.kontrak > 0 ? c.pun / c.kontrak * 100 : 0;
+        if (c.kontrak > 0 && c.pun < 0) { c.warn.push('Biaya operasional (Rp ' + rupiah(c.ops) + ') melebihi nilai kontrak (Rp ' + rupiah(c.kontrak) + '), biaya penunjang jadi minus.'); }
+        return c;
+    }
+
+    /* ---------------- builder dokumen ---------------- */
+    function ph(v, fb) { return v ? esc(v) : '<span class="pp-ph">' + fb + '</span>'; }
+    function richBlock(html) {
+        var h = tok(cleanHtml(html));
+        return '<div class="pp-rich blk">' + (h || '<span class="pp-ph">-</span>') + '</div>';
+    }
+    function sec(no, teks) { return '<div class="pp-sec keep blk">' + no + '.&nbsp;&nbsp; ' + teks + '</div>'; }
+
+    function uraianHtml(txt) {
+        var ls = lines(txt);
+        if (ls.length <= 1 && !/^\s*-\s/.test(ls[0] || '')) { return esc(ls[0] || ''); }
+        return ls.map(function (l) {
+            var m = /^\s*-\s*(.*)$/.exec(l);
+            return m ? '<div class="pp-dash"><span>-</span><span>' + esc(m[1]) + '</span></div>' : '<div>' + esc(l) + '</div>';
+        }).join('');
+    }
+    function timHtml() {
+        var rows = S.tim.map(function (t, i) {
+            return '<tr><td class="pp-c">' + (i + 1) + '</td><td>' + esc(t.nama) + '</td><td class="pp-c">' + esc(t.tugas) + '</td><td>' + uraianHtml(t.uraian) + '</td></tr>';
+        }).join('') || '<tr><td colspan="4" class="pp-c pp-ph">Belum ada anggota</td></tr>';
+        return '<table data-split="1" class="pp-tim blk"><colgroup><col style="width:44px"><col style="width:26%"><col style="width:24%"><col></colgroup>' +
+            '<thead><tr><th>No</th><th>Nama</th><th>Tugas/Tanggung Jawab</th><th>Uraian Tugas</th></tr></thead><tbody>' + rows + '</tbody></table>';
+    }
+
+    var XL_COLS = '<colgroup><col style="width:30px"><col style="width:150px"><col style="width:30px"><col style="width:38px"><col style="width:30px"><col style="width:46px"><col style="width:30px"><col style="width:38px"><col style="width:86px"><col style="width:86px"><col style="width:90px"></colgroup>';
+    function acc(v, always) { return '<div class="pp-ac"><span>Rp</span><span>' + (v ? rupiah(v) : '-') + '</span></div>'; }
+    function qv(v) { return (v === '' || v == null) ? '' : esc(String(v)); }
+
+    function rabHtml(c) {
+        var r = S.rab;
+        // ringkasan nilai kontrak
+        var sm = '<table class="pp-xl blk">' + XL_COLS + '<tbody>' +
+            '<tr><td colspan="10" class="pp-b">' + esc(r.kontrakLabel || 'Nilai Kontrak:') + '</td><td class="pp-b">' + acc(c.kontrak) + '</td></tr>' +
+            '<tr><td colspan="8" style="padding-left:14px">1. ' + esc(r.lblOps || 'Biaya operasional') + '</td><td class="ctr">' + (c.kontrak > 0 ? koma(c.pOps, 1) + '%' : '') + '</td><td>' + acc(c.ops) + '</td><td></td></tr>' +
+            '<tr><td colspan="8" style="padding-left:14px">2. ' + esc(r.lblPenunjang || 'Biaya Penunjang Pelayanan Klien') + '</td><td class="ctr">' + (c.kontrak > 0 ? koma(c.pPun, 1) + '%' : '') + '</td><td>' + acc(c.pun) + '</td><td></td></tr>' +
+            '</tbody></table>';
+
+        // tabel rincian
+        var rows = [];
+        var push = function (html, keep) { rows.push({ h: html, keep: keep }); };
+        if (r.judulBlok) { push('<td colspan="11" class="pp-c pp-b">' + esc(r.judulBlok) + '</td>', true); }
+        r.grup.forEach(function (g, gi) {
+            var cg = c.grup[gi], own = hasOwn(g), subsN = (g.subs || []).length, noteLs = lines(g.note);
+            var no = '<td class="pp-b ctr">' + (gi + 1) + '.</td>';
+            if (own) {
+                var p = (qv(g.q1) || qv(g.u1)) ? 0 : ((qv(g.q2) || qv(g.u2)) ? 1 : ((qv(g.q3) || qv(g.u3)) ? 2 : 3));
+                var cells = '';
+                for (var k = p; k < 3; k++) { cells += '<td class="ctr">' + qv(g['q' + (k + 1)]) + '</td><td class="ctr">' + esc(g['u' + (k + 1)] || '') + '</td>'; }
+                push(no + '<td colspan="' + (1 + 2 * p) + '">' + esc(g.nama) + '</td>' + cells + '<td>' + acc(num(g.tarif)) + '</td><td>' + acc(cg.own) + '</td><td class="pp-b">' + acc(cg.tot) + '</td>', !!(noteLs.length || subsN));
+            } else {
+                push(no + '<td colspan="9" class="pp-b">' + esc(g.nama) + '</td><td class="pp-b">' + acc(cg.tot) + '</td>', true);
+            }
+            if (noteLs.length) { push('<td></td><td colspan="9">' + noteLs.map(esc).join('<br>') + '</td><td></td>', false); }
+            (g.subs || []).forEach(function (s, si) {
+                if (s.judul) { push('<td></td><td colspan="9">' + esc(s.judul) + '</td><td></td>', true); }
+                (s.rows || []).forEach(function (b, ri) {
+                    push('<td></td><td style="padding-left:16px">' + esc(b.nama) + '</td>' +
+                        '<td class="ctr">' + qv(b.q1) + '</td><td class="ctr">' + esc(b.u1 || '') + '</td>' +
+                        '<td class="ctr">' + qv(b.q2) + '</td><td class="ctr">' + esc(b.u2 || '') + '</td>' +
+                        '<td class="ctr">' + qv(b.q3) + '</td><td class="ctr">' + esc(b.u3 || '') + '</td>' +
+                        '<td>' + acc(num(b.tarif)) + '</td><td>' + acc(cg.subs[si][ri]) + '</td><td></td>', false);
+                });
+            });
+        });
+        if (!r.grup.length) { push('<td colspan="11" class="pp-c pp-ph">Belum ada rincian</td>', false); }
+        if (r.grup.length) {
+            if (rows.length) { rows[rows.length - 1].keep = true; }
+            push('<td></td><td colspan="8" class="ctr">' + esc(r.totalLabel || 'T O T A L') + '</td><td>' + acc(c.ops) + '</td><td>' + acc(c.ops) + '</td>', false);
+            rows[rows.length - 1].cls = 'tot';
+        }
+        var body = rows.map(function (x) { return '<tr' + ((x.keep || x.cls) ? ' class="' + ((x.keep ? 'keep ' : '') + (x.cls || '')).trim() + '"' : '') + '>' + x.h + '</tr>'; }).join('');
+        var det = '<table data-split="1" class="pp-xl blk">' + XL_COLS +
+            '<thead><tr><th>No</th><th>Kegiatan</th><th colspan="6">Rincian</th><th>Satuan Biaya</th><th>Biaya</th><th>Total Biaya</th></tr></thead><tbody>' + body + '</tbody></table>';
+        return sm + det;
+    }
+
+    function jadCols() {
+        var out = [];
+        S.jadwal.bulan.forEach(function (b, bi) {
+            for (var w = 0; w < num(b.n); w++) {
+                var k = Math.max(1, num(b.mulai)) - 1 + w;
+                out.push({ bi: bi, label: ROMAWI[k] || String(k + 1) });
+            }
+        });
+        return out;
+    }
+    function jadwalHtml() {
+        var jd = S.jadwal;
+        if (jd.mode !== 'gantt') { return richBlock(S.jadwalTeks); }
+        var cols = jadCols(), n = Math.max(cols.length, 1), cw = Math.max(34, Math.min(64, Math.floor(380 / n)));
+        var h1 = '<tr><th rowspan="3" style="width:44px">No.</th><th rowspan="3">Kegiatan</th>' + jd.bulan.map(function (b) { return '<th colspan="' + Math.max(num(b.n), 1) + '">' + esc(b.nama) + '</th>'; }).join('') + '</tr>';
+        var h2 = '<tr><th colspan="' + n + '">Minggu ke-</th></tr>';
+        var h3 = '<tr>' + cols.map(function (c) { return '<th>' + c.label + '</th>'; }).join('') + '</tr>';
+        var rows = jd.rows.map(function (r, i) {
+            return '<tr style="height:28px"><td class="pp-c">' + (i + 1) + '.</td><td class="pp-l">' + esc(r.nama) + '</td>' +
+                cols.map(function (c, j) { return '<td' + (r.on[j] ? ' class="pp-gray"' : '') + '></td>'; }).join('') + '</tr>';
+        }).join('') || '<tr><td colspan="' + (n + 2) + '" class="pp-c pp-ph">Belum ada kegiatan</td></tr>';
+        return '<table class="pp-gantt blk"><colgroup><col style="width:44px"><col>' + cols.map(function () { return '<col style="width:' + cw + 'px">'; }).join('') + '</colgroup><thead>' + h1 + h2 + h3 + '</thead><tbody>' + rows + '</tbody></table>';
+    }
+
+    function subHead(t) { return '<div class="pp-subh keep blk">' + esc(t) + '</div>'; }
+    function docHtml(c) {
+        var bt = bulanTahun();
+        var nomorPo = (S.urut ? esc(S.urut) : '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ') + '/' + esc(S.kode || 'PO/BBSPJIS/KONS') + '/' + bt.r + '/' + bt.y;
+        return '<div class="pp-doc-title blk">PETUNJUK OPERASIONAL (PO)</div>' +
+            '<div class="pp-doc-nomor blk">Nomor : ' + nomorPo + '</div>' +
+            '<div class="pp-doc-row blk"><span class="k">Judul</span><span>: ' + ph(S.judul, 'Judul kegiatan') + '</span></div>' +
+            '<div class="pp-doc-row blk"><span class="k">Jenis</span><span>: ' + ph(S.jenis, 'Jenis kegiatan') + '</span></div>' +
+            sec(1, 'DASAR') + richBlock(S.dasar) +
+            sec(2, 'TUJUAN') + richBlock(S.tujuan) +
+            sec(3, 'RUANG LINGKUP') + richBlock(S.ruang) +
+            sec(4, 'BAHAN DAN METODA') + subHead(S.lblAlat || 'Alat dan Bahan') + richBlock(S.alat) + subHead(S.lblMetoda || 'Metoda') + richBlock(S.metoda) +
+            sec(5, 'KEBUTUHAN SDM') + timHtml() +
+            sec(6, 'JADWAL KEGIATAN') + jadwalHtml() +
+            sec(7, 'RENCANA ANGGARAN BIAYA') + rabHtml(c);
+    }
+
+    /* ---------------- pagination otomatis ---------------- */
+    // Isi dokumen diukur dulu di #ppMeasure, lalu dibagi per halaman A4. Tabel bertanda data-split dipecah per baris
+    // (judul kolom diulang di halaman lanjutan). Unit bertanda "keep" selalu ikut halaman yang sama dengan unit sesudahnya.
+    function paginate(host) {
+        var CAP = 1123 - 92 - 90 - 8;
+        var units = [];
+        Array.prototype.forEach.call(host.children, function (el) {
+            var st = getComputedStyle(el), mt = parseFloat(st.marginTop) || 0, mb = parseFloat(st.marginBottom) || 0;
+            if (el.tagName === 'TABLE' && el.hasAttribute('data-split')) {
+                var trs = el.querySelectorAll('tr');
+                Array.prototype.forEach.call(trs, function (tr, k) {
+                    var isHead = tr.parentNode.tagName === 'THEAD';
+                    units.push({ el: tr, table: el, head: isHead, keep: isHead || tr.classList.contains('keep'), h: tr.getBoundingClientRect().height + (k === 0 ? mt : 0) + (k === trs.length - 1 ? mb : 0) });
+                });
+            } else {
+                units.push({ el: el, keep: el.classList.contains('keep'), h: el.getBoundingClientRect().height + mt + mb });
+            }
+        });
+        var pages = [], cur = null, used = 0;
+        var start = function () { cur = { nodes: [], tabs: [] }; pages.push(cur); used = 0; };
+        start();
+        units.forEach(function (u, i) {
+            var need = u.h, j = i;
+            while (units[j].keep && units[j + 1]) { j++; need += units[j].h; }
+            if (used > 0 && used + need > CAP) { start(); }
+            if (u.table) {
+                var rec = cur.tabs.filter(function (t) { return t.src === u.table; })[0];
+                if (!rec) {
+                    var cl = u.table.cloneNode(false), cg = u.table.querySelector('colgroup');
+                    if (cg) { cl.appendChild(cg.cloneNode(true)); }
+                    rec = { src: u.table, el: cl }; cur.tabs.push(rec); cur.nodes.push(cl);
+                    var th0 = u.table.querySelector('thead');
+                    if (th0 && !u.head) { rec.thead = document.createElement('thead'); rec.thead.appendChild(th0.querySelector('tr').cloneNode(true)); cl.appendChild(rec.thead); }
+                }
+                var nm = u.head ? 'thead' : 'tbody';
+                if (!rec[nm]) { rec[nm] = document.createElement(nm); rec.el.appendChild(rec[nm]); }
+                rec[nm].appendChild(u.el.cloneNode(true));
+            } else { cur.nodes.push(u.el.cloneNode(true)); }
+            used += u.h;
+        });
+        return pages.map(function (p) { return p.nodes; });
+    }
+
+    /* ---------------- render ---------------- */
+    var pending = false, lastPages = 0;
+    function schedule() { if (pending) { return; } pending = true; requestAnimationFrame(function () { pending = false; render(); }); }
+
+    function render() {
+        var c = calc(), host = $('ppMeasure');
+        host.innerHTML = docHtml(c);
+        var pages = paginate(host), out = $('pvPages');
+        out.innerHTML = '';
+        pages.forEach(function (nodes, i) {
+            var p = document.createElement('div'); p.className = 'pp-page'; p.id = 'pv' + (i + 1);
+            nodes.forEach(function (n) { p.appendChild(n); });
+            out.appendChild(p);
+        });
+        host.innerHTML = '';
+        if (pages.length !== lastPages) {
+            lastPages = pages.length;
+            var b = ''; for (var i = 1; i <= pages.length; i++) { b += '<button type="button" class="pg" data-pv="' + i + '">Hal. ' + i + '</button> '; }
+            $('ppPgBtns').innerHTML = b;
+        }
+        fit();
+        updateAuto();
+        updateInfo(c);
+    }
+
+    function fit() {
+        var box = $('pvBox'), pages = $('pvPages'), wrap = $('pvScale');
+        var avail = box.clientWidth - 16;
+        if (avail <= 0) { return; }
+        var sc = Math.min(1, avail / 794);
+        pages.style.transform = 'scale(' + sc + ')';
+        wrap.style.height = Math.ceil(pages.offsetHeight * sc) + 'px';
+        wrap.style.marginLeft = Math.max(0, Math.floor((avail - 794 * sc) / 2)) + 'px';
+    }
+
+    function updateAuto() {
+        $('jadTeks').hidden = S.jadwal.mode === 'gantt';
+        $('jadGantt').hidden = S.jadwal.mode !== 'gantt';
+    }
+
+    function updateInfo(c) {
+        var rpx = function (id, v) { var el = $(id); if (el) { el.textContent = rupiah(v); } };
+        c.grup.forEach(function (g, gi) {
+            rpx('grpAmt' + gi, g.tot); rpx('ownJml' + gi, g.own);
+            g.subs.forEach(function (s, si) { s.forEach(function (v, ri) { rpx('barJml' + gi + '_' + si + '_' + ri, v); }); });
+        });
+        var sm = function (l, v, cls) { return '<div class="' + (cls || '') + '"><span>' + l + '</span><span>Rp ' + rupiah(v) + '</span></div>'; };
+        var pc = function (p) { return c.kontrak > 0 ? ' (' + koma(p, 1) + '%)' : ''; };
+        $('ppSum').innerHTML = sm(esc(S.rab.kontrakLabel || 'Nilai Kontrak:'), c.kontrak) +
+            sm('1. ' + esc(S.rab.lblOps || 'Biaya operasional') + pc(c.pOps), c.ops) +
+            sm('2. ' + esc(S.rab.lblPenunjang || 'Biaya Penunjang Pelayanan Klien') + pc(c.pPun), c.pun, 'tot');
+        $('ppRabWarn').innerHTML = c.warn.map(function (x) { return '<div class="pp-warn"><i class="bi bi-exclamation-triangle me-1"></i>' + esc(x) + '</div>'; }).join('');
+        $('dlNama').innerHTML = S.tim.filter(function (t) { return t.nama; }).map(function (t) { return '<option value="' + esc(t.nama) + '">'; }).join('');
+    }
+
+    /* ---------------- editor teks (ala Word) ---------------- */
+    function rteBar() {
+        var tools = [['bold', '<b>B</b>', 'Tebal'], ['italic', '<i>I</i>', 'Miring'], ['underline', '<u>U</u>', 'Garis bawah'], '|',
+            ['insertOrderedList', 'a.', 'Daftar bertingkat a, b, c'], ['num', '1.', 'Daftar angka 1, 2, 3'], ['insertUnorderedList', '&bull;', 'Daftar poin'], '|',
+            ['justifyLeft', '<i class="bi bi-text-left"></i>', 'Rata kiri'], ['justifyCenter', '<i class="bi bi-text-center"></i>', 'Tengah'],
+            ['justifyRight', '<i class="bi bi-text-right"></i>', 'Rata kanan'], ['justifyFull', '<i class="bi bi-justify"></i>', 'Rata kiri-kanan'], '|',
+            ['undo', '<i class="bi bi-arrow-counterclockwise"></i>', 'Urungkan'], ['redo', '<i class="bi bi-arrow-clockwise"></i>', 'Ulangi'],
+            ['removeFormat', '<i class="bi bi-eraser"></i>', 'Hapus format']];
+        return '<div class="pp-rte-bar">' + tools.map(function (t) {
+            return t === '|' ? '<span class="sep"></span>' : '<button type="button" data-cmd="' + t[0] + '" title="' + t[2] + '">' + t[1] + '</button>';
+        }).join('') + '</div>';
+    }
+    function mountRte(w) {
+        w.innerHTML = rteBar() + '<div class="pp-rte-body" contenteditable="true" spellcheck="true"></div>';
+        var v = getPath(S, w.dataset.rte);
+        w.querySelector('.pp-rte-body').innerHTML = v == null ? '' : v;
+    }
+
+    /* ---------------- form: tabel dinamis ---------------- */
+    var inp = function (list, i, k, v, extra) {
+        return '<input class="form-control form-control-sm" data-list="' + list + '" data-i="' + i + '" data-k="' + k + '" value="' + esc(v) + '" ' + (extra || '') + '>';
+    };
+    var ctl = function (list, i, dup) {
+        return (dup ? '<button type="button" class="pp-ico dp" data-act="dup" data-list="' + list + '" data-i="' + i + '" title="Gandakan"><i class="bi bi-files"></i></button> ' : '') +
+            '<button type="button" class="pp-ico mv" data-act="mv" data-list="' + list + '" data-i="' + i + '" data-dir="-1" title="Naik">&uarr;</button> ' +
+            '<button type="button" class="pp-ico mv" data-act="mv" data-list="' + list + '" data-i="' + i + '" data-dir="1" title="Turun">&darr;</button> ' +
+            '<button type="button" class="pp-ico" data-act="del" data-list="' + list + '" data-i="' + i + '" title="Hapus">&times;</button>';
+    };
+    var qIn = function (list, i, k, v) { return inp(list, i, k, v, 'type="number" min="0" step="any" style="width:54px" title="Jumlah"'); };
+    var uIn = function (list, i, k, v) { return inp(list, i, k, v, 'list="dlSatuan" style="width:70px" placeholder="satuan"'); };
+    var tIn = function (list, i, v, w) { return inp(list, i, 'tarif', v ? rupiah(v) : '', 'data-type="money" inputmode="numeric" style="width:' + (w || 100) + 'px;text-align:right" placeholder="0" title="Satuan biaya (Rp)"'); };
+
+    function buildTim() {
+        $('ppTim').innerHTML = S.tim.map(function (t, i) {
+            return '<tr><td class="pp-no">' + (i + 1) + '</td><td style="min-width:130px">' + inp('tim', i, 'nama', t.nama, 'list="dlNama" placeholder="Nama petugas"') + '</td>' +
+                '<td style="min-width:130px">' + inp('tim', i, 'tugas', t.tugas, 'list="dlTugas"') + '</td>' +
+                '<td style="min-width:200px"><textarea class="form-control form-control-sm" rows="3" data-list="tim" data-i="' + i + '" data-k="uraian">' + esc(t.uraian) + '</textarea></td>' +
+                '<td style="white-space:nowrap">' + ctl('tim', i) + '</td></tr>';
+        }).join('');
+        $('dlTugas').innerHTML = ROLES.map(function (r) { return '<option value="' + esc(r.tugas) + '">'; }).join('');
+    }
+
+    function buildGrup() {
+        $('ppGrup').innerHTML = S.rab.grup.map(function (g, gi) {
+            var L = 'rab.grup';
+            var head = '<div class="pp-induk-h"><span class="pp-letter">' + (gi + 1) + '</span>' +
+                inp(L, gi, 'nama', g.nama, 'style="flex:1 1 220px;min-width:160px;width:auto" placeholder="mis. Perjalanan Dinas:"') +
+                '<span class="small fw-semibold text-nowrap">Total Rp <span id="grpAmt' + gi + '">0</span></span>' +
+                '<span style="white-space:nowrap">' + ctl(L, gi, 1) + '</span></div>';
+            var own = '<div class="pp-ind-opt"><span>Hitungan baris ini <span class="text-muted">(opsional, mis. pengadaan dokumen)</span>:</span>' +
+                qIn(L, gi, 'q1', g.q1) + uIn(L, gi, 'u1', g.u1) + qIn(L, gi, 'q2', g.q2) + uIn(L, gi, 'u2', g.u2) + qIn(L, gi, 'q3', g.q3) + uIn(L, gi, 'u3', g.u3) +
+                '<span>&times; Rp</span>' + tIn(L, gi, g.tarif, 110) + '<span>= Rp <b id="ownJml' + gi + '">0</b></span></div>';
+            var note = '<textarea class="form-control form-control-sm mt-2" rows="2" data-list="' + L + '" data-i="' + gi + '" data-k="note" placeholder="Lanjutan uraian di bawah baris ini (opsional, satu baris = satu baris di dokumen)">' + esc(g.note) + '</textarea>';
+            var subs = (g.subs || []).map(function (s, si) {
+                var LS = 'rab.grup.' + gi + '.subs', LR = LS + '.' + si + '.rows';
+                var rows = (s.rows || []).map(function (b, ri) {
+                    return '<tr><td style="min-width:110px">' + inp(LR, ri, 'nama', b.nama, 'placeholder="mis. Lumpsum"') + '</td>' +
+                        '<td>' + qIn(LR, ri, 'q1', b.q1) + '</td><td>' + uIn(LR, ri, 'u1', b.u1) + '</td>' +
+                        '<td>' + qIn(LR, ri, 'q2', b.q2) + '</td><td>' + uIn(LR, ri, 'u2', b.u2) + '</td>' +
+                        '<td>' + qIn(LR, ri, 'q3', b.q3) + '</td><td>' + uIn(LR, ri, 'u3', b.u3) + '</td>' +
+                        '<td>' + tIn(LR, ri, b.tarif) + '</td>' +
+                        '<td class="pp-r" style="white-space:nowrap;padding-top:8px" id="barJml' + gi + '_' + si + '_' + ri + '">0</td>' +
+                        '<td style="white-space:nowrap">' + ctl(LR, ri, 1) + '</td></tr>';
+                }).join('');
+                return '<div class="pp-sub"><div class="d-flex flex-wrap gap-2 align-items-center">' +
+                    inp(LS, si, 'judul', s.judul, 'style="flex:1 1 260px;width:auto" placeholder="mis. 1. Kota A (kunjungan awal)"') +
+                    '<span style="white-space:nowrap">' + ctl(LS, si, 1) + '</span></div>' +
+                    '<div class="table-responsive mt-2"><table class="pp-tbl"><thead><tr><th>Uraian</th><th>Jml</th><th>Satuan</th><th>Jml</th><th>Satuan</th><th>Jml</th><th>Satuan</th><th>Satuan biaya (Rp)</th><th>Biaya (Rp)</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+                    '<button type="button" class="btn btn-sm btn-outline-secondary" data-act="add" data-list="' + LR + '"><i class="bi bi-plus-lg me-1"></i>Tambah rincian</button></div>';
+            }).join('');
+            return '<div class="pp-induk">' + head + own + note + subs +
+                '<button type="button" class="btn btn-sm btn-outline-primary mt-2" data-act="add" data-list="rab.grup.' + gi + '.subs"><i class="bi bi-plus-lg me-1"></i>Tambah kegiatan</button></div>';
+        }).join('') || '<div class="pp-hint">Belum ada kelompok biaya. Klik <b>Tambah kelompok biaya</b>.</div>';
+    }
+
+    function padOn() { var n = jadCols().length; S.jadwal.rows.forEach(function (r) { while (r.on.length < n) { r.on.push(0); } }); }
+    function buildJad() { buildBulanList(); buildJadTable(); }
+    function buildBulanList() {
+        $('ppBulanList').innerHTML = S.jadwal.bulan.map(function (b, i) {
+            return '<div class="input-group input-group-sm" style="width:auto">' +
+                inp('jadwal.bulan', i, 'nama', b.nama, 'placeholder="April 2026" style="width:130px"') +
+                '<span class="input-group-text">Mgg</span>' +
+                '<input class="form-control form-control-sm" type="number" min="1" max="12" style="width:54px" data-list="jadwal.bulan" data-i="' + i + '" data-k="mulai" value="' + esc(b.mulai) + '" title="Nomor minggu pertama (3 = III)">' +
+                '<span class="input-group-text">jml</span>' +
+                '<input class="form-control form-control-sm" type="number" min="1" max="8" style="width:54px" data-list="jadwal.bulan" data-i="' + i + '" data-k="n" value="' + esc(b.n) + '" title="Jumlah kolom minggu">' +
+                '<button type="button" class="btn btn-outline-secondary" data-act="del-bulan" data-i="' + i + '" title="Hapus bulan">&times;</button></div>';
+        }).join('');
+    }
+    function buildJadTable() {
+        padOn();
+        var jd = S.jadwal, cols = jadCols();
+        var h1 = '<thead><tr><th></th><th></th>' + jd.bulan.map(function (b, i) { return '<th colspan="' + Math.max(num(b.n), 1) + '" data-bm="' + i + '">' + esc(b.nama) + '</th>'; }).join('') + '<th></th></tr>' +
+            '<tr><th></th><th>Kegiatan</th>' + cols.map(function (c) { return '<th>' + c.label + '</th>'; }).join('') + '<th></th></tr></thead>';
+        var body = '<tbody>' + jd.rows.map(function (r, i) {
+            return '<tr><td class="pp-no">' + (i + 1) + '</td><td style="min-width:170px;text-align:left">' + inp('jadwal.rows', i, 'nama', r.nama, 'placeholder="mis. Kunjungan awal"') + '</td>' +
+                cols.map(function (c, j) { return '<td><input type="checkbox" data-list="jadwal.rows" data-i="' + i + '" data-k="on" data-sub="' + j + '"' + (r.on[j] ? ' checked' : '') + '></td>'; }).join('') +
+                '<td style="white-space:nowrap">' + ctl('jadwal.rows', i) + '</td></tr>';
+        }).join('') + '</tbody>';
+        $('ppJad').innerHTML = h1 + body;
+    }
+    function resizeMonth(i, nn) {
+        padOn();
+        var b = S.jadwal.bulan[i], old = num(b.n), off = 0, z = [];
+        S.jadwal.bulan.forEach(function (x, k) { if (k < i) { off += num(x.n); } });
+        if (nn > old) { for (var q = 0; q < nn - old; q++) { z.push(0); } }
+        S.jadwal.rows.forEach(function (r) {
+            if (nn > old) { Array.prototype.splice.apply(r.on, [off + old, 0].concat(z)); }
+            else if (nn < old) { r.on.splice(off + nn, old - nn); }
+        });
+        b.n = nn;
+    }
+
+    function builderFor(list) {
+        if (list === 'tim') { return buildTim; }
+        if (list.indexOf('rab.') === 0) { return buildGrup; }
+        return buildJad;
+    }
+    function newRow(list) {
+        if (list === 'tim') { return { nama: '', tugas: ROLES[3].tugas, uraian: ROLES[3].uraian }; }
+        if (list === 'rab.grup') { return newGrup(); }
+        if (/\.subs$/.test(list)) { return newSub(); }
+        if (/\.rows$/.test(list) && list.indexOf('rab.') === 0) { return newBar(); }
+        if (list === 'jadwal.rows') { return { nama: '', on: jadCols().map(function () { return 0; }) }; }
+        return {};
+    }
+
+    /* ---------------- sinkron form <-> state ---------------- */
+    function fmtBind(el, v) {
+        if (el.type === 'checkbox') { el.checked = !!v; }
+        else if (el.dataset.type === 'money') { el.value = v ? rupiah(num(v)) : ''; }
+        else { el.value = v == null ? '' : v; }
+    }
+    function populate() {
+        Array.prototype.forEach.call(document.querySelectorAll('#ppForm [data-bind]'), function (el) { fmtBind(el, getPath(S, el.dataset.bind)); });
+        Array.prototype.forEach.call(document.querySelectorAll('#ppForm [data-rte]'), mountRte);
+        buildTim(); buildGrup(); buildJad();
+        render();
+    }
+
+    var root = $('ppForm');
+
+    root.addEventListener('mousedown', function (e) { if (e.target.closest('.pp-rte-bar button')) { e.preventDefault(); } });
+    root.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-cmd]');
+        if (b) {
+            var wrap = b.closest('[data-rte]'), body = wrap.querySelector('.pp-rte-body'); body.focus();
+            var cmd = b.dataset.cmd;
+            if (cmd === 'num') {
+                var sel = window.getSelection(), n = sel.anchorNode;
+                while (n && n.nodeName !== 'OL') { n = n.parentNode; }
+                if (n && body.contains(n)) { n.setAttribute('type', '1'); }
+                else { document.execCommand('insertOrderedList'); sel = window.getSelection(); n = sel.anchorNode; while (n && n.nodeName !== 'OL') { n = n.parentNode; } if (n) { n.setAttribute('type', '1'); } }
+            } else if (cmd === 'insertOrderedList') {
+                document.execCommand('insertOrderedList');
+                var s2 = window.getSelection(), o = s2.anchorNode; while (o && o.nodeName !== 'OL') { o = o.parentNode; } if (o) { o.removeAttribute('type'); }
+            } else { document.execCommand(cmd, false, null); }
+            setPath(S, wrap.dataset.rte, body.innerHTML); schedule(); return;
+        }
+        var a = e.target.closest('[data-act]');
+        if (!a) { return; }
+        var act = a.dataset.act, list = a.dataset.list, i = +a.dataset.i;
+        if (act === 'add') { getPath(S, list).push(newRow(list)); builderFor(list)(); }
+        else if (act === 'del') { getPath(S, list).splice(i, 1); builderFor(list)(); }
+        else if (act === 'dup') { var ar = getPath(S, list); ar.splice(i + 1, 0, JSON.parse(JSON.stringify(ar[i]))); builderFor(list)(); }
+        else if (act === 'mv') {
+            var arr = getPath(S, list), j = i + (+a.dataset.dir);
+            if (j >= 0 && j < arr.length) { var t = arr[i]; arr[i] = arr[j]; arr[j] = t; builderFor(list)(); }
+        }
+        else if (act === 'add-bulan') { S.jadwal.bulan.push({ nama: '', mulai: 1, n: 0 }); resizeMonth(S.jadwal.bulan.length - 1, 4); buildJad(); }
+        else if (act === 'del-bulan') {
+            if (S.jadwal.bulan.length > 1) { resizeMonth(i, 0); S.jadwal.bulan.splice(i, 1); buildJad(); }
+        }
+        schedule();
+    });
+
+    function onInput(e) {
+        var t = e.target;
+        if (t.classList.contains('pp-rte-body')) { setPath(S, t.closest('[data-rte]').dataset.rte, t.innerHTML); schedule(); return; }
+        if (t.dataset.bind) {
+            var path = t.dataset.bind, v;
+            if (t.type === 'checkbox') { v = t.checked ? 1 : 0; }
+            else if (t.dataset.type === 'money') { v = parseInt(String(t.value).replace(/\D/g, ''), 10) || 0; }
+            else { v = t.value; }
+            setPath(S, path, v);
+            schedule(); return;
+        }
+        if (t.dataset.list) {
+            if (t.dataset.list === 'jadwal.bulan' && (t.dataset.k === 'n' || t.dataset.k === 'mulai')) { return; }
+            if (t.dataset.list === 'jadwal.bulan') { var th = document.querySelector('#ppJad th[data-bm="' + t.dataset.i + '"]'); if (th) { th.textContent = t.value; } }
+            var arr = getPath(S, t.dataset.list), row = arr[+t.dataset.i], k = t.dataset.k, val;
+            if (t.type === 'checkbox') { val = t.checked ? 1 : 0; }
+            else if (t.dataset.type === 'money') { val = parseInt(String(t.value).replace(/\D/g, ''), 10) || 0; }
+            else if (t.type === 'number') { val = t.value === '' ? '' : parseFloat(t.value); }
+            else { val = t.value; }
+            if (t.dataset.sub !== undefined) { row[k][+t.dataset.sub] = val; }
+            else { row[k] = val; }
+            schedule();
+        }
+    }
+    root.addEventListener('input', onInput);
+    root.addEventListener('change', function (e) {
+        var t = e.target, L = t.dataset.list, K = t.dataset.k;
+        if (L === 'tim' && K === 'tugas') {
+            // pilih/ketik tugas baku -> uraian ikut terisi (kalau uraian masih kosong / masih uraian baku)
+            var row = S.tim[+t.dataset.i];
+            var cocok = ROLES.filter(function (r) { return r.tugas.toLowerCase() === String(t.value).trim().toLowerCase(); })[0];
+            var isBaku = !row.uraian || ROLES.some(function (r) { return r.uraian === row.uraian; });
+            if (cocok && isBaku) { row.tugas = cocok.tugas; row.uraian = cocok.uraian; buildTim(); schedule(); }
+        }
+        if (L === 'jadwal.bulan') {
+            if (K === 'n') { resizeMonth(+t.dataset.i, Math.max(1, Math.min(8, parseInt(t.value, 10) || 1))); buildJadTable(); }
+            if (K === 'mulai') { S.jadwal.bulan[+t.dataset.i].mulai = Math.max(1, Math.min(12, parseInt(t.value, 10) || 1)); buildJadTable(); }
+            schedule();
+        }
+        if (t.dataset.type === 'money') { t.value = t.value ? rupiah(parseInt(String(t.value).replace(/\D/g, ''), 10) || 0) : ''; }
+    });
+    root.addEventListener('focusin', function (e) {
+        if (e.target.dataset && e.target.dataset.type === 'money') { try { e.target.select(); } catch (x) {} }
+    });
+
+    // tempel dari Word / web: jadikan teks polos supaya tampilan dokumen tetap rapi
+    root.addEventListener('paste', function (e) {
+        if (!e.target.closest || !e.target.closest('.pp-rte-body')) { return; }
+        e.preventDefault();
+        var txt = (e.clipboardData || window.clipboardData).getData('text/plain');
+        document.execCommand('insertText', false, txt);
+    });
+
+    /* ---------------- header & tombol ---------------- */
+    function scrollPv(pg) {
+        var el = $('pv' + pg), box = $('pvBox'); if (!el) { return; }
+        var top = el.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop - 8;
+        box.scrollTo({ top: top, behavior: 'smooth' });
+    }
+    // preview di modal (tombol Hal. untuk lompat halaman, X untuk tutup; Esc / klik latar juga menutup)
+    var modal = $('ppModal');
+    document.body.appendChild(modal);
+    document.body.appendChild($('ppMeasure'));
+    function bukaPreview() { render(); modal.classList.add('open'); modal.setAttribute('aria-hidden', 'false'); document.body.style.overflow = 'hidden'; fit(); $('pvBox').scrollTop = 0; }
+    function tutupPreview() { modal.classList.remove('open'); modal.setAttribute('aria-hidden', 'true'); document.body.style.overflow = ''; }
+    $('ppPreview').addEventListener('click', bukaPreview);
+    $('ppPreviewFab').addEventListener('click', bukaPreview);
+    $('ppModalX').addEventListener('click', tutupPreview);
+    document.querySelector('.pp-modal-bar').addEventListener('click', function (e) {
+        var b = e.target.closest('[data-pv]'); if (b) { scrollPv(b.dataset.pv); }
+    });
+    modal.addEventListener('click', function (e) { if (e.target === modal) { tutupPreview(); } });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && modal.classList.contains('open')) { tutupPreview(); } });
+    $('ppPrint').addEventListener('click', function () { render(); window.print(); });
+    $('ppReset').addEventListener('click', function () {
+        if (confirm('Kosongkan semua isian form?')) { S = blank(); populate(); }
+    });
+    $('ppSample').addEventListener('change', function () {
+        var k = this.value; this.value = '';
+        if (!k || !SAMPLES[k]) { return; }
+        if (confirm('Isi form dengan data PO contoh? Isian yang sekarang akan diganti.')) {
+            S = SAMPLES[k]();
+            populate();
+        }
+    });
+    window.addEventListener('resize', fit);
+
+    populate();
+})();
+</script>

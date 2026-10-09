@@ -45,6 +45,15 @@ class UniversalPreviewController extends Controller
                 return;
             }
 
+            // 2b. [BARU] Pola Lampiran Surat Penawaran (berkas PDF resmi yang sudah
+            // tersimpan di uploads/penawaran/, kolom tb_surat_penawaran.file_lampiran):
+            // /surat-penawaran/@id/lampiran
+            if (preg_match('#surat-penawaran/(\d+)/lampiran#i', $path, $m)) {
+                $spId = (int)$m[1];
+                $this->handleLampiranPenawaran($spId);
+                return;
+            }
+
             // 3. Pola Surat Penawaran: /order/@id/penawaran/cetak ATAU /surat-penawaran/@id/cetak
             if (preg_match('#order/(\d+)/penawaran/cetak#i', $path, $m) || preg_match('#surat-penawaran/(\d+)/(?:cetak|preview)#i', $path, $m)) {
                 $targetId = (int)$m[1];
@@ -129,6 +138,29 @@ class UniversalPreviewController extends Controller
         }
 
         $this->sendFileAsBase64($filePath, 'Surat_Kesanggupan_Bayar_' . $spId);
+    }
+
+    /**
+     * [BARU] Berkas Surat Penawaran yang beneran tersimpan di server (PDF resmi
+     * hasil "Kirim"/"Simpan" terakhir, path-nya ada di tb_surat_penawaran.file_lampiran)
+     * -- beda sama handleSuratPenawaran() di bawah yang nge-generate ulang PDF-nya
+     * on-the-fly dari data terkini, bukan ngambil berkas yang beneran tersimpan.
+     */
+    protected function handleLampiranPenawaran($spId)
+    {
+        $rows = $this->db->exec('SELECT id, nomor_surat, file_lampiran FROM tb_surat_penawaran WHERE id = ?', [1 => $spId]);
+        if (empty($rows) || empty($rows[0]['file_lampiran'])) {
+            $this->jsonResponse(['success' => false, 'message' => 'Berkas Surat Penawaran belum diunggah/disimpan untuk penawaran ini.']);
+            return;
+        }
+
+        $filePath = $this->resolveFilePath($rows[0]['file_lampiran'], ['uploads/penawaran', 'storage/penawaran']);
+        if (!$filePath || !is_file($filePath)) {
+            $this->jsonResponse(['success' => false, 'message' => 'Berkas fisik Surat Penawaran tidak ditemukan di server.']);
+            return;
+        }
+
+        $this->sendFileAsBase64($filePath, 'Surat_Penawaran_' . ($rows[0]['nomor_surat'] ?: $spId));
     }
 
     protected function handleSuratPenawaran($orderOrSpId, $spIdExplicit = 0)
