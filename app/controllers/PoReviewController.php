@@ -171,7 +171,7 @@ class PoReviewController extends Controller {
         $f3->set('error_message', $errorMessage);
 
         $judul = ($mode === 'katim') ? 'Daftar PO' : 'Diskusi PO';
-        $this->render('katim_kerja/po-kegiatan/daftar.html', $judul, 'po_daftar');
+        $this->render('katim_kerja/po-kegiatan/daftar.html', $judul, 'daftar_po');
     }
 
     /* ============================================================

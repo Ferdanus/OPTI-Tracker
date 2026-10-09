@@ -1426,7 +1426,7 @@
 
                 <check if="{{ @is_superadmin || @is_tim_mitra }}">
                     <li>
-                        <a class="sidebar-link {{ @active_menu == 'validasi-mitra' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan/validasi-mitra" title="Validasi PO">
+                        <a class="sidebar-link {{ @active_menu == 'validasi-mitra' || @active_menu == 'po_validasi_mitra' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan/validasi-mitra" title="Validasi PO">
                             <i class="bi bi-file-earmark-text"></i> <span>Validasi PO</span>
                             <check if="{{ @jumlah_notif_validasi_po > 0 }}">
                                 <span class="badge ms-auto sidebar-notif-badge">{{ @jumlah_notif_validasi_po }}</span>
@@ -1517,7 +1517,7 @@
                     </check>
                     <check if="{{ @is_superadmin || @is_tim_kerja || @is_keuangan }}">
                     <li>
-                        <a class="sidebar-link {{ @active_menu == 'daftar_po' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan/daftar" title="Daftar PO & Review">
+                        <a class="sidebar-link {{ @active_menu == 'daftar_po' || @active_menu == 'po_daftar' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan/daftar" title="Daftar PO & Review">
                             <i class="bi bi-clipboard-check"></i> <span>Daftar PO</span>
                             <check if="{{ @jumlah_notif_daftar_po > 0 || @jumlah_notif_po_selulosa > 0 }}">
                                 <span class="badge ms-auto sidebar-notif-badge" id="notifDaftarPo">{{ @jumlah_notif_daftar_po ?: @jumlah_notif_po_selulosa }}</span>
