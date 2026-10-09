@@ -134,8 +134,8 @@
                                         <div class="fw-semibold text-dark mb-1" title="{{ @rp.judul_kegiatan }}">
                                             {{ @rp.judul_kegiatan }}
                                         </div>
-                                        <div class="small text-muted d-flex align-items-center gap-1">
-                                            <i class="bi bi-building text-secondary"></i>
+                                        <div class="small text-muted d-flex align-items-start gap-1.5 mt-0.5">
+                                            <i class="bi bi-building text-secondary flex-shrink-0 mt-0.5" style="font-size: 0.82rem;"></i>
                                             <check if="{{ @mask_client_name }}">
                                                 <true>
                                                     {~ 
@@ -145,10 +145,10 @@
                                                         }, $words);
                                                         $namaTampil = implode(' ', $masked);
                                                     ~}
-                                                    <span>{{ $namaTampil }}</span>
+                                                    <span style="line-height: 1.35;">{{ $namaTampil }}</span>
                                                 </true>
                                                 <false>
-                                                    <span class="text-secondary fw-medium">{{ @rp.nama_perusahaan }}</span>
+                                                    <span class="text-secondary fw-medium" style="line-height: 1.35;">{{ @rp.nama_perusahaan }}</span>
                                                 </false>
                                             </check>
                                         </div>
@@ -301,8 +301,8 @@
                                         <div class="fw-semibold text-dark small mb-1">
                                             {{ @bayar.judul_kegiatan }}
                                         </div>
-                                        <div class="small text-muted d-flex align-items-center gap-1">
-                                            <i class="bi bi-building text-secondary"></i>
+                                        <div class="small text-muted d-flex align-items-start gap-1.5 mt-0.5">
+                                            <i class="bi bi-building text-secondary flex-shrink-0 mt-0.5" style="font-size: 0.82rem;"></i>
                                             <check if="{{ @mask_client_name }}">
                                                 <true>
                                                     {~ 
@@ -312,10 +312,10 @@
                                                         }, $words);
                                                         $namaTampil = implode(' ', $masked);
                                                     ~}
-                                                    <span>{{ $namaTampil }}</span>
+                                                    <span style="line-height: 1.35;">{{ $namaTampil }}</span>
                                                 </true>
                                                 <false>
-                                                    <span class="text-secondary fw-medium">{{ @bayar.nama_perusahaan }}</span>
+                                                    <span class="text-secondary fw-medium" style="line-height: 1.35;">{{ @bayar.nama_perusahaan }}</span>
                                                 </false>
                                             </check>
                                         </div>
@@ -570,8 +570,8 @@
                                         <div class="fw-semibold text-dark mb-1" title="{{ @rp.judul_kegiatan }}">
                                             {{ @rp.judul_kegiatan }}
                                         </div>
-                                        <div class="small text-muted d-flex align-items-center gap-1">
-                                            <i class="bi bi-building text-secondary"></i>
+                                        <div class="small text-muted d-flex align-items-start gap-1.5 mt-0.5">
+                                            <i class="bi bi-building text-secondary flex-shrink-0 mt-0.5" style="font-size: 0.82rem;"></i>
                                             <check if="{{ @mask_client_name }}">
                                                 <true>
                                                     {~
@@ -581,10 +581,10 @@
                                                         }, $words);
                                                         $namaTampil = implode(' ', $masked);
                                                     ~}
-                                                    <span>{{ $namaTampil }}</span>
+                                                    <span style="line-height: 1.35;">{{ $namaTampil }}</span>
                                                 </true>
                                                 <false>
-                                                    <span class="text-secondary fw-medium">{{ @rp.nama_perusahaan }}</span>
+                                                    <span class="text-secondary fw-medium" style="line-height: 1.35;">{{ @rp.nama_perusahaan }}</span>
                                                 </false>
                                             </check>
                                         </div>
@@ -741,8 +741,8 @@
                                         <div class="fw-semibold text-dark small mb-1">
                                             {{ @bayar.judul_kegiatan }}
                                         </div>
-                                        <div class="small text-muted d-flex align-items-center gap-1">
-                                            <i class="bi bi-building text-secondary"></i>
+                                        <div class="small text-muted d-flex align-items-start gap-1.5 mt-0.5">
+                                            <i class="bi bi-building text-secondary flex-shrink-0 mt-0.5" style="font-size: 0.82rem;"></i>
                                             <check if="{{ @mask_client_name }}">
                                                 <true>
                                                     {~
@@ -752,10 +752,10 @@
                                                         }, $words);
                                                         $namaTampil = implode(' ', $masked);
                                                     ~}
-                                                    <span>{{ $namaTampil }}</span>
+                                                    <span style="line-height: 1.35;">{{ $namaTampil }}</span>
                                                 </true>
                                                 <false>
-                                                    <span class="text-secondary fw-medium">{{ @bayar.nama_perusahaan }}</span>
+                                                    <span class="text-secondary fw-medium" style="line-height: 1.35;">{{ @bayar.nama_perusahaan }}</span>
                                                 </false>
                                             </check>
                                         </div>

@@ -22,6 +22,68 @@
     .dpo-root .btn { white-space: nowrap; }
     .dpo-root .btn.btn-sm { padding: .4rem .8rem; font-size: .8rem; }
     
+    .filter-tab-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.45rem 0.85rem;
+        border-radius: 9999px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #475569;
+        background-color: #ffffff;
+        border: 1px solid #e2e8f0;
+        text-decoration: none;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        white-space: nowrap;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        cursor: pointer;
+        line-height: 1.2;
+        user-select: none;
+        outline: none;
+    }
+    .filter-tab-pill:hover {
+        color: #0f172a;
+        background-color: #f8fafc;
+        border-color: #cbd5e1;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .filter-tab-pill .count-chip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 20px;
+        height: 20px;
+        padding: 0 6px;
+        border-radius: 9999px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        background-color: #f1f5f9;
+        color: #475569;
+        border: 1px solid #e2e8f0;
+        transition: all 0.2s;
+    }
+    .filter-tab-pill .count-chip.chip-danger {
+        background-color: #fee2e2;
+        color: #b91c1c;
+        border-color: #fecaca;
+    }
+    .filter-tab-pill.active {
+        color: #ffffff !important;
+        background-color: var(--color-primary, #334155) !important;
+        border-color: var(--color-primary, #334155) !important;
+        box-shadow: 0 2px 6px rgba(51, 65, 85, 0.25) !important;
+    }
+    .filter-tab-pill.active .count-chip {
+        background-color: rgba(255, 255, 255, 0.25) !important;
+        border-color: transparent !important;
+        color: #ffffff !important;
+    }
+    .filter-tab-pill.active i {
+        color: #ffffff !important;
+    }
+
     .dpo-head h1 { font-size: 1.35rem; font-weight: 800; margin: 0 0 4px; }
     .dpo-head p { margin: 0 0 18px; color: var(--dpo-muted); font-size: .85rem; max-width: 640px; }
     
@@ -221,102 +283,212 @@
     
         /* ---------- State ---------- */
         var tab = 'perlu';
+        var divisiFilter = '';
         var q = '';
         var current = null;
         var chatOpen = false;
         var chatMsgs = [];
         var pollTimer = null;
-    
+
         function curPo() { return pos.filter(function (p) { return p.id === current; })[0]; }
-    
+
         /* ---------- Sinkron angka di sidebar (badge diberi id="notifDaftarPo") ---------- */
         function syncBadge() {
             var n = pos.filter(function (p) { return MODE === 'katim' ? (p.status_review !== 'disetujui' || p.unread > 0) : p.unread > 0; }).length;
             var el = $('notifDaftarPo');
             if (el) { el.textContent = n; el.style.display = n > 0 ? '' : 'none'; }
         }
-    
+
         /* ---------- Halaman daftar ---------- */
         function renderShell() {
             var head = MODE === 'katim'
-                ? ['Daftar PO', 'PO yang sudah dikirim pelaksana. Buka untuk review, beri catatan lewat chat, lalu setujui dan disposisikan ke Humas. PO berstatus draft tidak muncul di sini.']
-                : ['Diskusi PO', 'PO yang sudah Anda kirim. Lihat status review, balas catatan Ketua Tim, dan edit PO yang belum dikunci.'];
-            $('dpoContent').innerHTML = '<div class="dpo-head"><h1>' + head[0] + '</h1><p>' + head[1] + '</p></div>' +
-                '<div class="card">' + (MODE === 'katim' ? '<div class="dpo-tabs" id="dpoTabs"></div>' : '') +
-                '<div class="card-body"><input id="dpoSearch" type="search" class="form-control form-control-sm mb-3" style="max-width:380px;" placeholder="Cari nomor PO, mitra, atau pembuat" aria-label="Cari PO"><div id="dpoList"></div></div></div>';
+                ? ['Daftar PO & Review', 'Verifikasi Petunjuk Operasional yang dikirim pelaksana teknis, beri catatan via diskusi, dan setujui untuk disposisi ke Humas.']
+                : ['Diskusi & Status PO', 'Pantau status peninjauan Petunjuk Operasional, tanggapi catatan Ketua Tim, dan perbaiki dokumen PO yang membutuhkan revisi.'];
+            
+            var nPerlu = pos.filter(function(p) { return MODE === 'katim' ? (p.status_review !== 'disetujui' || p.unread > 0) : (p.status_review === 'revisi' || p.unread > 0); }).length;
+            var nBerjalan = pos.filter(function(p) { return p.status_review !== 'disetujui'; }).length;
+            var nDisetujui = pos.filter(function(p) { return p.status_review === 'disetujui'; }).length;
+            var nTotal = pos.length;
+
+            var metricsHtml = '<div class="row g-3 mb-4">' +
+                '<div class="col-6 col-lg-3"><div class="metric-card cursor-pointer" onclick="window.dpoSetTab(\'semua\')"><div><div class="text-muted small fw-semibold mb-1">Total PO</div><div class="h4 fw-bold mb-0 text-dark">' + nTotal + '</div></div><div class="metric-icon-box" style="background:#f1f5f9; color:var(--dpo-primary);"><i class="bi bi-clipboard2-data"></i></div></div></div>' +
+                '<div class="col-6 col-lg-3"><div class="metric-card cursor-pointer" onclick="window.dpoSetTab(\'perlu\')"><div><div class="text-muted small fw-semibold mb-1" style="color:#d97706 !important;">Perlu Tindakan</div><div class="h4 fw-bold mb-0" style="color:#d97706;">' + nPerlu + '</div></div><div class="metric-icon-box" style="background:#fef3c7; color:#d97706;"><i class="bi bi-exclamation-circle-fill"></i></div></div></div>' +
+                '<div class="col-6 col-lg-3"><div class="metric-card cursor-pointer" onclick="window.dpoSetTab(\'berjalan\')"><div><div class="text-muted small fw-semibold mb-1" style="color:#2563eb !important;">Sedang Berjalan</div><div class="h4 fw-bold mb-0" style="color:#2563eb;">' + nBerjalan + '</div></div><div class="metric-icon-box" style="background:#eff6ff; color:#2563eb;"><i class="bi bi-hourglass-split"></i></div></div></div>' +
+                '<div class="col-6 col-lg-3"><div class="metric-card cursor-pointer" onclick="window.dpoSetTab(\'disetujui\')"><div><div class="text-muted small fw-semibold mb-1" style="color:#059669 !important;">Disetujui</div><div class="h4 fw-bold mb-0" style="color:#059669;">' + nDisetujui + '</div></div><div class="metric-icon-box" style="background:#ecfdf5; color:#059669;"><i class="bi bi-check-circle-fill"></i></div></div></div>' +
+                '</div>';
+
+            $('dpoContent').innerHTML = '<div class="dpo-head d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3"><div><h1 class="h4 fw-bold mb-1 text-dark d-flex align-items-center gap-2"><i class="bi bi-clipboard-check text-primary"></i> ' + head[0] + '</h1><p class="text-muted small mb-0">' + head[1] + '</p></div>' +
+                (MODE === 'pembuat' ? '<a href="' + BASE + '/po-kegiatan/pilih" class="btn btn-primary shadow-sm"><i class="bi bi-plus-lg me-1"></i> Buat PO Baru</a>' : '') +
+                '</div>' +
+                metricsHtml +
+                '<!-- BARIS FILTER PENCARIAN & DIVISI SIMETRIS -->' +
+                '<div class="card border-0 shadow-sm mb-3">' +
+                '<div class="card-body p-3">' +
+                '<div class="row g-2 align-items-center">' +
+                '<div class="col-12 col-sm flex-grow-1">' +
+                '<div class="input-group input-group-sm">' +
+                '<span class="input-group-text bg-light border-end-0 text-muted ps-2.5"><i class="bi bi-search"></i></span>' +
+                '<input id="dpoSearch" type="search" class="form-control border-start-0 ps-0" placeholder="Cari nomor PO, mitra industri, pembuat..." aria-label="Cari PO">' +
+                '</div>' +
+                '</div>' +
+                '<div class="col-12 col-sm-auto d-flex justify-content-sm-end">' +
+                '<div class="divisi-pill-group" role="group" aria-label="Filter Divisi" id="dpoDivisiPillGroup">' +
+                '<div class="divisi-pill-glider" id="dpoDivisiGlider"></div>' +
+                '<button type="button" class="divisi-pill-btn ' + (divisiFilter === '' ? 'active' : '') + '" data-divisi="" onclick="window.dpoSetDivisi(this, \'\')" title="Semua Divisi">Semua</button>' +
+                '<button type="button" class="divisi-pill-btn ' + (divisiFilter === 'selulosa' ? 'active' : '') + '" data-divisi="selulosa" onclick="window.dpoSetDivisi(this, \'selulosa\')" title="Divisi Selulosa">Selulosa</button>' +
+                '<button type="button" class="divisi-pill-btn ' + (divisiFilter === 'lingkungan' ? 'active' : '') + '" data-divisi="lingkungan" onclick="window.dpoSetDivisi(this, \'lingkungan\')" title="Divisi Lingkungan">Lingkungan</button>' +
+                '</div>' +
+                '</div>' +
+                '</div>' +
+                '</div>' +
+                '</div>' +
+                '<!-- TABEL UTAMA DENGAN TAB FILTER STATUS SIMETRIS -->' +
+                '<div class="card border-0 shadow-sm overflow-hidden mb-4">' +
+                '<div class="filter-tabs-wrapper d-flex justify-content-between align-items-center flex-wrap gap-3">' +
+                '<div class="d-flex align-items-center gap-2 flex-wrap" id="dpoTabs"></div>' +
+                '<span class="text-muted small fw-medium">Total: <strong class="text-dark" id="dpoTotalCountHeader">' + pos.length + '</strong> dokumen</span>' +
+                '</div>' +
+                '<div class="p-0"><div id="dpoList"></div></div></div>';
+
             $('dpoSearch').addEventListener('input', function () { q = this.value.trim().toLowerCase(); renderList(); });
+            setTimeout(function() { window.dpoUpdateGlider(null, false); }, 50);
         }
-    
+
+        window.dpoSetTab = function(t) { tab = t; renderTabs(); renderList(); };
+
+        window.dpoUpdateGlider = function(targetBtn, animate) {
+            var glider = $('dpoDivisiGlider');
+            var group = $('dpoDivisiPillGroup');
+            if (!glider || !group) return;
+
+            var activeBtn = targetBtn || group.querySelector('.divisi-pill-btn.active');
+            if (!activeBtn) return;
+
+            if (!animate) {
+                glider.style.transition = 'none';
+            } else {
+                glider.style.transition = 'transform 0.22s cubic-bezier(0.4, 0, 0.2, 1), width 0.22s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease';
+            }
+
+            var groupRect = group.getBoundingClientRect();
+            var btnRect = activeBtn.getBoundingClientRect();
+            var offsetLeft = btnRect.left - groupRect.left - 3; // padding 3px
+
+            glider.style.width = btnRect.width + 'px';
+            glider.style.transform = 'translateX(' + offsetLeft + 'px)';
+
+            var d = activeBtn.getAttribute('data-divisi') || '';
+            if (d === 'selulosa') {
+                glider.style.backgroundColor = '#b91c1c';
+            } else if (d === 'lingkungan') {
+                glider.style.backgroundColor = '#047857';
+            } else {
+                glider.style.backgroundColor = 'var(--color-primary, #334155)';
+            }
+        };
+
+        window.dpoSetDivisi = function(btnEl, d) {
+            divisiFilter = d;
+            var group = $('dpoDivisiPillGroup');
+            if (group) {
+                group.querySelectorAll('.divisi-pill-btn').forEach(function(b) { b.classList.remove('active'); });
+            }
+            if (btnEl) {
+                btnEl.classList.add('active');
+                window.dpoUpdateGlider(btnEl, true);
+            }
+            renderList();
+        };
+
         function renderTabs() {
-            if (MODE !== 'katim') { return; }
-            var n1 = pos.filter(function (p) { return p.status_review !== 'disetujui'; }).length;
-            var n2 = pos.length - n1;
+            var nSemua = pos.length;
+            var nPerlu = pos.filter(function (p) { 
+                return MODE === 'katim' ? (p.status_review !== 'disetujui' || p.unread > 0) : (p.status_review === 'revisi' || p.unread > 0); 
+            }).length;
+            var nBerjalan = pos.filter(function (p) { return p.status_review !== 'disetujui'; }).length;
+            var nDisetujui = pos.filter(function (p) { return p.status_review === 'disetujui'; }).length;
+
             $('dpoTabs').innerHTML =
-                '<button type="button" class="dpo-tab' + (tab === 'perlu' ? ' on' : '') + '" data-dpo-tab="perlu">Perlu direview <span class="dpo-cnt">' + n1 + '</span></button>' +
-                '<button type="button" class="dpo-tab' + (tab === 'sudah' ? ' on' : '') + '" data-dpo-tab="sudah">Disetujui <span class="dpo-cnt">' + n2 + '</span></button>';
+                '<button type="button" class="filter-tab-pill' + (tab === 'perlu' ? ' active' : '') + '" data-dpo-tab="perlu"><i class="bi bi-inbox-fill text-warning"></i><span>Perlu Tindakan</span><span class="count-chip chip-danger">' + nPerlu + '</span></button>' +
+                '<button type="button" class="filter-tab-pill' + (tab === 'berjalan' ? ' active' : '') + '" data-dpo-tab="berjalan"><i class="bi bi-arrow-repeat text-primary"></i><span>Sedang Berjalan</span><span class="count-chip">' + nBerjalan + '</span></button>' +
+                '<button type="button" class="filter-tab-pill' + (tab === 'disetujui' ? ' active' : '') + '" data-dpo-tab="disetujui"><i class="bi bi-check-circle-fill text-success"></i><span>Disetujui</span><span class="count-chip">' + nDisetujui + '</span></button>' +
+                '<button type="button" class="filter-tab-pill' + (tab === 'semua' ? ' active' : '') + '" data-dpo-tab="semua"><i class="bi bi-grid-fill"></i><span>Semua Data</span><span class="count-chip">' + nSemua + '</span></button>';
         }
-    
+
         function pillsFor(p) {
             var h;
             if (p.status_review === 'disetujui') {
-                h = pill('emerald', 'bi-check-circle', 'Disetujui');
+                h = pill('emerald', 'bi-check-circle-fill', 'Disetujui');
             } else if (p.status_review === 'revisi') {
-                h = pill('rose', 'bi-arrow-repeat', 'Revisi');
+                h = pill('rose', 'bi-arrow-repeat', 'Perlu Revisi');
             } else {
                 h = pill('amber', 'bi-hourglass-split', MODE === 'katim' ? 'Perlu direview' : 'Menunggu review');
             }
-            if (MODE === 'pembuat' && p.dibuka && p.status_review === 'menunggu_review') { h += pill('slate', 'bi-eye', 'Sudah dibuka Ketua Tim'); }
-            if (p.unread) { h += pill('blue', 'bi-chat-dots-fill', p.unread + ' pesan baru'); }
+            if (MODE === 'pembuat' && p.dibuka && p.status_review === 'menunggu_review') { h += pill('slate', 'bi-eye', 'Dilihat Ketua Tim'); }
+            if (p.unread) { h += '<span class="status-pill status-pill-rose"><i class="bi bi-chat-dots-fill"></i>' + p.unread + ' pesan baru</span>'; }
             return '<div class="dpo-pills">' + h + '</div>';
         }
-    
+
         function actsFor(p) {
             var edit = '';
             if (MODE === 'pembuat') {
                 edit = p.status_review === 'disetujui'
-                    ? '<button type="button" class="btn btn-white btn-sm" disabled title="PO dikunci. Minta Ketua Tim membuka kembali."><i class="bi bi-lock-fill"></i></button>'
-                    : '<a class="btn btn-white btn-sm" href="' + URL_PO(p.id) + '/edit" title="Edit PO"><i class="bi bi-pencil"></i></a>';
+                    ? '<button type="button" class="btn btn-outline-secondary btn-sm" disabled title="PO dikunci. Minta Ketua Tim membuka kembali."><i class="bi bi-lock-fill"></i></button>'
+                    : '<a class="btn btn-outline-secondary btn-sm" href="' + URL_PO(p.id) + '/edit" title="Edit PO"><i class="bi bi-pencil"></i></a>';
             }
             return '<div class="dpo-acts">' + edit +
-                '<button type="button" class="btn btn-white btn-sm position-relative" data-dpo-chat="' + p.id + '" aria-label="Chat untuk ' + esc(p.nomor) + '"><i class="bi bi-chat-dots"></i>' + (p.unread ? '<span class="dpo-dot">' + p.unread + '</span>' : '') + '</button>' +
-                '<button type="button" class="btn btn-primary btn-sm" data-dpo-open="' + p.id + '"><i class="bi bi-eye"></i>' + (MODE === 'katim' ? 'Review PO' : 'Buka PO') + '</button></div>';
+                '<button type="button" class="btn btn-outline-secondary btn-sm position-relative" data-dpo-chat="' + p.id + '" aria-label="Chat untuk ' + esc(p.nomor) + '" title="Buka Diskusi/Catatan"><i class="bi bi-chat-dots"></i>' + (p.unread ? '<span class="dpo-dot">' + p.unread + '</span>' : '') + '</button>' +
+                '<button type="button" class="btn btn-primary btn-sm" data-dpo-open="' + p.id + '"><i class="bi bi-eye"></i> ' + (MODE === 'katim' ? 'Review PO' : 'Buka PO') + '</button></div>';
         }
-    
+
         function renderList() {
             var rows = pos.filter(function (p) {
-                if (MODE === 'katim') {
-                    if (tab === 'perlu' && p.status_review === 'disetujui') { return false; }
-                    if (tab === 'sudah' && p.status_review !== 'disetujui') { return false; }
+                if (tab === 'perlu') {
+                    if (MODE === 'katim' && p.status_review === 'disetujui' && p.unread === 0) return false;
+                    if (MODE === 'pembuat' && p.status_review !== 'revisi' && p.unread === 0) return false;
+                } else if (tab === 'berjalan') {
+                    if (p.status_review === 'disetujui') return false;
+                } else if (tab === 'disetujui') {
+                    if (p.status_review !== 'disetujui') return false;
                 }
+
+                if (divisiFilter) {
+                    if ((p.divisi || '').toLowerCase() !== divisiFilter) return false;
+                }
+
                 if (q) {
-                    var hay = (p.nomor + ' ' + p.mitra + ' ' + p.judul + ' ' + p.pembuat).toLowerCase();
+                    var hay = (p.nomor + ' ' + p.order + ' ' + p.mitra + ' ' + p.judul + ' ' + p.pembuat).toLowerCase();
                     if (hay.indexOf(q) === -1) { return false; }
                 }
                 return true;
             });
-    
+
             if (!rows.length) {
-                var pesan = q ? 'Tidak ada PO yang cocok dengan pencarian.' : (MODE === 'katim' && tab === 'perlu' ? 'Semua PO sudah disetujui.' : 'Belum ada PO di daftar ini.');
-                $('dpoList').innerHTML = '<div class="dpo-empty"><i class="bi bi-inbox"></i>' + pesan + '</div>';
+                var pesan = q ? 'Tidak ada PO yang cocok dengan kata kunci pencarian.' : (tab === 'perlu' ? 'Semua PO sudah ditindaklanjuti.' : 'Belum ada data PO di daftar ini.');
+                $('dpoList').innerHTML = '<div class="dpo-empty py-5"><div class="d-inline-flex align-items-center justify-content-center bg-light rounded-circle p-3 mb-2" style="width:56px;height:56px;"><i class="bi bi-inbox fs-3 text-muted"></i></div><div class="fw-semibold text-dark mt-2">' + pesan + '</div></div>';
                 return;
             }
-    
+
             var kolomPembuat = MODE === 'katim' ? '<th>Pembuat</th>' : '';
-            var table = '<div class="table-responsive dpo-desk"><table class="table table-hover align-middle mb-0"><thead><tr><th style="width:150px;">Nomor PO</th><th>Mitra dan kegiatan</th>' + kolomPembuat + '<th>Status</th><th></th></tr></thead><tbody>' +
+            var table = '<div class="table-responsive dpo-desk"><table class="table table-hover align-middle mb-0"><thead class="table-light"><tr><th style="width:160px;">Nomor PO</th><th>Mitra & Kegiatan</th>' + kolomPembuat + '<th style="width:110px;">Divisi</th><th>Status Peninjauan</th><th style="width:150px;" class="text-end pe-3">Aksi</th></tr></thead><tbody>' +
                 rows.map(function (p) {
-                    return '<tr><td><div class="dpo-no">' + esc(p.nomor) + '</div><div class="dpo-sub">Dikirim ' + tgl(p.dikirim) + '</div></td>' +
-                        '<td><div class="dpo-mitra">' + esc(p.mitra) + '</div><div class="dpo-judul">' + esc(p.judul) + '</div></td>' +
+                    var badgeDivisi = p.divisi === 'selulosa' ? '<span class="badge-selulosa">Selulosa</span>' : (p.divisi === 'lingkungan' ? '<span class="badge-lingkungan">Lingkungan</span>' : '<span class="badge bg-light text-secondary border">Umum</span>');
+                    var isUnreadRow = p.unread > 0;
+                    return '<tr style="' + (isUnreadRow ? 'background: rgba(225,29,72,0.03);' : '') + '"><td><div class="dpo-no' + (isUnreadRow ? ' fw-bold text-primary' : '') + '">' + esc(p.nomor) + '</div><div class="dpo-sub"><i class="bi bi-calendar3 me-1"></i>' + tgl(p.dikirim) + '</div></td>' +
+                        '<td><div class="dpo-mitra' + (isUnreadRow ? ' fw-bold text-dark' : '') + '">' + esc(p.mitra) + '</div><div class="dpo-judul text-truncate-2" title="' + esc(p.judul) + '">' + esc(p.judul) + '</div></td>' +
                         (MODE === 'katim' ? '<td><div class="dpo-who"><span class="dpo-avatar">' + esc(initials(p.pembuat)) + '</span>' + esc(p.pembuat) + '</div></td>' : '') +
-                        '<td>' + pillsFor(p) + '</td><td>' + actsFor(p) + '</td></tr>';
+                        '<td>' + badgeDivisi + '</td>' +
+                        '<td>' + pillsFor(p) + '</td><td class="text-end pe-3">' + actsFor(p) + '</td></tr>';
                 }).join('') + '</tbody></table></div>';
-    
-            var cards = '<div class="dpo-mob">' + rows.map(function (p) {
-                return '<div class="dpo-pcard"><div class="dpo-no">' + esc(p.nomor) + '</div><div class="dpo-mitra">' + esc(p.mitra) + '</div>' +
+
+            var cards = '<div class="dpo-mob p-3">' + rows.map(function (p) {
+                var badgeDivisi = p.divisi === 'selulosa' ? '<span class="badge-selulosa">Selulosa</span>' : (p.divisi === 'lingkungan' ? '<span class="badge-lingkungan">Lingkungan</span>' : '<span class="badge bg-light text-secondary border">Umum</span>');
+                return '<div class="dpo-pcard bg-white shadow-sm mb-3"><div class="d-flex justify-content-between align-items-center mb-1"><div class="dpo-no text-primary">' + esc(p.nomor) + '</div>' + badgeDivisi + '</div><div class="dpo-mitra">' + esc(p.mitra) + '</div>' +
                     '<div class="dpo-judul" style="max-width:none;margin:2px 0 8px;">' + esc(p.judul) + '</div>' +
                     (MODE === 'katim' ? '<div class="dpo-who dpo-sub" style="margin-bottom:8px;"><span class="dpo-avatar">' + esc(initials(p.pembuat)) + '</span>' + esc(p.pembuat) + ', dikirim ' + tgl(p.dikirim) + '</div>' : '<div class="dpo-sub" style="margin-bottom:8px;">Dikirim ' + tgl(p.dikirim) + '</div>') +
                     pillsFor(p) + '<div class="dpo-foot">' + actsFor(p) + '</div></div>';
             }).join('') + '</div>';
-    
+
             $('dpoList').innerHTML = table + cards;
         }
     
@@ -590,6 +762,7 @@
             if (e.key === 'Escape' && $('dpoSheet').classList.contains('open')) { closeSheet(); }
         });
     
+        window.addEventListener('resize', function() { window.dpoUpdateGlider(null, false); });
         renderShell();
         renderAll();
     })();

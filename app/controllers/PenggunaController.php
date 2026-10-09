@@ -83,6 +83,22 @@ class PenggunaController extends Controller {
                 'icon' => 'bi-wallet2',
                 'category' => 'manajemen',
                 'desc' => 'Verifikasi pembayaran'
+            ),
+            'humas' => array(
+                'label' => 'Humas',
+                'badge_class' => 'role-badge role-badge-humas',
+                'badge_style' => '',
+                'icon' => 'bi-megaphone-fill',
+                'category' => 'manajemen',
+                'desc' => 'Layanan informasi publik, humas & publikasi balai'
+            ),
+            'ppk' => array(
+                'label' => 'PPK',
+                'badge_class' => 'role-badge role-badge-ppk',
+                'badge_style' => '',
+                'icon' => 'bi-person-badge-fill',
+                'category' => 'pejabat',
+                'desc' => 'Pejabat Pembuat Komitmen verifikasi & legalitas kegiatan'
             )
         );
     }
@@ -526,6 +542,12 @@ class PenggunaController extends Controller {
             $layanan = 'semua';
         } elseif ($siOpti === 'keuangan') {
             $roleOpti = 'keuangan';
+            $layanan = 'semua';
+        } elseif ($siOpti === 'humas') {
+            $roleOpti = 'humas';
+            $layanan = 'semua';
+        } elseif ($siOpti === 'ppk') {
+            $roleOpti = 'ppk';
             $layanan = 'semua';
         }
 

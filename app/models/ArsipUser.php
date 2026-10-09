@@ -77,6 +77,12 @@ class ArsipUser extends \DB\SQL\Mapper {
         } elseif ($rawRole === 'keuangan') {
             $roleOpti = 'keuangan';
             $jenisLayananOpti = 'semua';
+        } elseif ($rawRole === 'humas') {
+            $roleOpti = 'humas';
+            $jenisLayananOpti = 'semua';
+        } elseif ($rawRole === 'ppk') {
+            $roleOpti = 'ppk';
+            $jenisLayananOpti = 'semua';
         } elseif ($rawRole === 'user' || $rawRole === 'pegawai') {
             $roleOpti = 'user';
             $jenisLayananOpti = 'semua';

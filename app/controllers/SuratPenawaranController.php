@@ -81,20 +81,57 @@ class SuratPenawaranController extends Controller
     {
         $currentYear   = date('Y');
         $filterTahun   = $f3->exists('GET.tahun') ? trim((string)$f3->get('GET.tahun')) : $currentYear;
+        $filterBulan   = $f3->exists('GET.bulan') ? trim((string)$f3->get('GET.bulan')) : 'all';
         $daftarTahun   = range((int)$currentYear, (int)$currentYear - 4);
+        $daftarBulan   = [
+            '01' => 'Januari',
+            '02' => 'Februari',
+            '03' => 'Maret',
+            '04' => 'April',
+            '05' => 'Mei',
+            '06' => 'Juni',
+            '07' => 'Juli',
+            '08' => 'Agustus',
+            '09' => 'September',
+            '10' => 'Oktober',
+            '11' => 'November',
+            '12' => 'Desember'
+        ];
 
         $search        = trim((string) $f3->get('GET.q'));
         $filterLayanan = (string) $f3->get('GET.jenis_layanan');
-        $filterStatus  = (string) $f3->get('GET.status');
-        $tampilkanSemua = (int)($f3->get('GET.all') ?? 0);
+        $activeTab     = $f3->exists('GET.tab') ? trim((string)$f3->get('GET.tab')) : 'aktif';
+        if (!in_array($activeTab, ['aktif', 'nego', 'deal', 'batal', 'semua'])) {
+            $activeTab = 'aktif';
+        }
 
         $sql = "SELECT sp.*, COALESCE(c.nmcustomer, sp.perusahaan, '-') AS nmcustomer,
+                       c.pt_cv,
+                       o.nomor_permintaan,
                        o.nomor_order,
+                       o.id AS order_id_real,
+                       o.judul_kegiatan,
+                       o.status AS order_status,
+                       COALESCE(NULLIF(u.nama_user, ''), NULLIF(u_klaim.nama_user, ''), NULLIF(sp.pejabat_nama, ''), 'Tim Mitra') AS pembuat_nama,
                        sk.id_surat_keluar,
-                       sk.nama_berkas_surat_keluar
+                       sk.nama_berkas_surat_keluar,
+                       (
+                           SELECT sp_sub.nomor_surat 
+                           FROM tb_surat_penawaran sp_sub 
+                           WHERE sp_sub.order_id = sp.order_id AND sp_sub.id != sp.id AND sp_sub.status_respon_klien != 'batal'
+                           ORDER BY sp_sub.id DESC LIMIT 1
+                       ) AS nomor_surat_pengganti,
+                       (
+                           SELECT sp_sub.id 
+                           FROM tb_surat_penawaran sp_sub 
+                           WHERE sp_sub.order_id = sp.order_id AND sp_sub.id != sp.id AND sp_sub.status_respon_klien != 'batal'
+                           ORDER BY sp_sub.id DESC LIMIT 1
+                       ) AS id_surat_pengganti
                 FROM tb_surat_penawaran sp
                 LEFT JOIN tb_customer c ON c.id_customer = sp.customer_id
                 LEFT JOIN order_layanan o ON o.id = sp.order_id
+                LEFT JOIN tb_arsipuser u ON sp.dibuat_oleh = u.id_user
+                LEFT JOIN tb_arsipuser u_klaim ON o.diklaim_oleh = u_klaim.id_user
                 LEFT JOIN tb_surat_keluar sk ON (sk.no_surat = sp.nomor_surat AND sk.surat_penawaran = 'Y' AND sk.dipilih_sis_opti = 'Y')
                 WHERE 1=1";
         $params = [];
@@ -105,45 +142,31 @@ class SuratPenawaranController extends Controller
             $params[]  = (int)$filterTahun;
         }
 
-        // Secara default, hanya tampilkan Surat Penawaran aktif/terbaru per order untuk mencegah duplikasi di tabel
-        if (!$tampilkanSemua) {
-            $sql .= " AND (sp.id IN (
-                SELECT COALESCE(MAX(o2.surat_penawaran_id), MAX(sp2.id))
-                FROM tb_surat_penawaran sp2
-                LEFT JOIN order_layanan o2 ON o2.id = sp2.order_id
-                GROUP BY COALESCE(sp2.order_id, sp2.id)
-            ) OR sp.order_id IS NULL)";
+        // Filter Bulan
+        if (!empty($filterBulan) && $filterBulan !== 'all') {
+            $sql      .= ' AND MONTH(COALESCE(sp.tanggal_surat, sp.created_at)) = ?';
+            $params[]  = (int)$filterBulan;
         }
 
         if ($search !== '') {
-            $sql      .= ' AND (sp.nomor_surat LIKE ? OR sp.perihal LIKE ? OR c.nmcustomer LIKE ? OR sp.perusahaan LIKE ? OR o.nomor_order LIKE ?)';
+            $sql      .= ' AND (sp.nomor_surat LIKE ? OR sp.perihal LIKE ? OR c.nmcustomer LIKE ? OR sp.perusahaan LIKE ? OR o.nomor_order LIKE ? OR o.nomor_permintaan LIKE ?)';
+            $params[]  = '%' . $search . '%';
             $params[]  = '%' . $search . '%';
             $params[]  = '%' . $search . '%';
             $params[]  = '%' . $search . '%';
             $params[]  = '%' . $search . '%';
             $params[]  = '%' . $search . '%';
         }
-        if ($filterLayanan !== '') {
+        if ($filterLayanan !== '' && $filterLayanan !== 'all') {
             $sql      .= ' AND sp.jenis_layanan = ?';
             $params[]  = $filterLayanan;
         }
-        if ($filterStatus !== '') {
-            if ($filterStatus === 'deal') {
-                $sql .= " AND (sp.status_respon_klien = 'deal' OR sp.status = 'disetujui')";
-            } elseif ($filterStatus === 'nego' || $filterStatus === 'terkirim') {
-                $sql .= " AND (sp.status = 'terkirim' OR sp.status_respon_klien = 'terkirim' OR sp.status_respon_klien = 'nego' OR sp.status_respon_klien = 'menunggu')";
-            } elseif ($filterStatus === 'draft') {
-                $sql .= " AND (sp.status = 'draft' OR sp.status_respon_klien = 'draft' OR sp.status IS NULL OR sp.status = '' OR sp.status = 'nonaktif')";
-            } elseif ($filterStatus === 'batal' || $filterStatus === 'tolak') {
-                $sql .= " AND (sp.status_respon_klien IN ('batal', 'tolak'))";
-            }
-        }
         $sql .= ' ORDER BY sp.tanggal_surat DESC, sp.id DESC';
 
-        $daftar = $this->db->exec($sql, $params);
+        $allRows = $this->db->exec($sql, $params);
 
         // Normalisasi nama perusahaan agar tidak terjadi duplikasi "PT PT" dan teks bertumpuk
-        foreach ($daftar as &$item) {
+        foreach ($allRows as &$item) {
             $rawCust = trim($item['nmcustomer'] ?? '');
             $rawPer = trim($item['perusahaan'] ?? '');
 
@@ -166,14 +189,60 @@ class SuratPenawaranController extends Controller
         }
         unset($item);
 
-        $totalSurat    = count($daftar);
-        $totalDeal     = count(array_filter($daftar, function ($r) { return ($r['status_respon_klien'] === 'deal' || $r['status'] === 'disetujui'); }));
-        $totalNego     = count(array_filter($daftar, function ($r) { return ($r['status_respon_klien'] === 'nego'); }));
-        $totalTerkirim = count(array_filter($daftar, function ($r) { return ($r['status'] === 'terkirim' || $r['status_respon_klien'] === 'terkirim' || $r['status_respon_klien'] === 'menunggu'); }));
-        $totalDraft    = max(0, $totalSurat - $totalDeal - $totalNego - $totalTerkirim);
+        // Cari ID penawaran aktif / terbaru untuk setiap order
+        $latestIdsPerOrder = [];
+        foreach ($allRows as $r) {
+            $ordKey = !empty($r['order_id']) ? (int)$r['order_id'] : 0;
+            if ($ordKey > 0) {
+                if ($r['status_respon_klien'] !== 'batal' && $r['status_respon_klien'] !== 'tolak' && $r['status'] !== 'batal' && $r['status'] !== 'nonaktif') {
+                    if (!isset($latestIdsPerOrder[$ordKey]) || $r['id'] > $latestIdsPerOrder[$ordKey]) {
+                        $latestIdsPerOrder[$ordKey] = (int)$r['id'];
+                    }
+                }
+            }
+        }
+
+        $daftarAktif = [];
+        $daftarNego = [];
+        $daftarDeal = [];
+        $daftarBatal = [];
+        $daftarSemua = [];
+
+        foreach ($allRows as $r) {
+            $isBatal = ($r['status_respon_klien'] === 'batal' || $r['status_respon_klien'] === 'tolak' || $r['status'] === 'batal' || $r['status'] === 'nonaktif');
+            $ordKey = !empty($r['order_id']) ? (int)$r['order_id'] : 0;
+            $isOldReplaced = ($ordKey > 0 && isset($latestIdsPerOrder[$ordKey]) && (int)$r['id'] !== $latestIdsPerOrder[$ordKey]);
+            $r['is_old_replaced'] = $isOldReplaced;
+
+            if ($isBatal || $isOldReplaced) {
+                $r['status_badge_type'] = 'batal';
+                $daftarBatal[] = $r;
+            } elseif ($r['status_respon_klien'] === 'deal' || $r['status'] === 'disetujui') {
+                $r['status_badge_type'] = 'deal';
+                $daftarDeal[] = $r;
+            } else {
+                // Penawaran aktif (Draft, Terkirim / Menunggu Respon, atau Dalam Negosiasi)
+                if ($r['status_respon_klien'] === 'nego') {
+                    $r['status_badge_type'] = 'nego';
+                    $daftarNego[] = $r;
+                } else {
+                    $r['status_badge_type'] = $r['status_respon_klien'] ?: ($r['status'] ?: 'draft');
+                }
+                $daftarAktif[] = $r;
+            }
+            $daftarSemua[] = $r;
+        }
+
+        $totalSurat    = count($daftarSemua);
+        $totalAktif    = count($daftarAktif);
+        $totalDeal     = count($daftarDeal);
+        $totalNego     = count($daftarNego);
+        $totalBatal    = count($daftarBatal);
+        $totalTerkirim = count(array_filter($daftarAktif, function ($r) { return ($r['status'] === 'terkirim' || $r['status_respon_klien'] === 'terkirim' || $r['status_respon_klien'] === 'menunggu'); }));
+        $totalDraft    = count(array_filter($daftarAktif, function ($r) { return ($r['status'] === 'draft' || $r['status_respon_klien'] === 'draft' || empty($r['status_respon_klien'])); }));
 
         // Ambil daftar order yang siap diterbitkan penawarannya (untuk modal pemilihan order)
-        $sqlSiap = "SELECT o.id, o.nomor_order, COALESCE(c.nmcustomer, '-') AS nama_perusahaan, o.jenis_layanan_opti, o.estimasi_biaya, 
+        $sqlSiap = "SELECT o.id, o.nomor_permintaan, o.nomor_order, COALESCE(c.nmcustomer, '-') AS nama_perusahaan, o.jenis_layanan_opti, o.estimasi_biaya, 
                            o.status_proposal_biaya, o.status_penawaran, o.created_at, c.nmcustomer, c.pt_cv
                     FROM order_layanan o
                     LEFT JOIN tb_customer c ON c.id_customer = o.id_customer
@@ -193,11 +262,20 @@ class SuratPenawaranController extends Controller
         }
         unset($ord);
 
-        $f3->set('daftar_penawaran', $daftar);
+        $f3->set('daftar_penawaran', $daftarAktif);
+        $f3->set('daftar_aktif', $daftarAktif);
+        $f3->set('daftar_nego', $daftarNego);
+        $f3->set('daftar_deal', $daftarDeal);
+        $f3->set('daftar_batal', $daftarBatal);
+        $f3->set('daftar_semua', $daftarSemua);
+        $f3->set('active_tab', $activeTab);
+
         $f3->set('daftar_order_siap', $daftarOrderSiap);
         $f3->set('total_surat', $totalSurat);
+        $f3->set('total_aktif', $totalAktif);
         $f3->set('total_deal', $totalDeal);
         $f3->set('total_nego', $totalNego);
+        $f3->set('total_batal', $totalBatal);
         $f3->set('total_terkirim', $totalTerkirim);
         $f3->set('total_draft', $totalDraft);
         $f3->set('search', $search);
@@ -205,6 +283,8 @@ class SuratPenawaranController extends Controller
         $f3->set('filter_status', $filterStatus);
         $f3->set('filter_tahun', $filterTahun);
         $f3->set('daftar_tahun', $daftarTahun);
+        $f3->set('filter_bulan', $filterBulan);
+        $f3->set('daftar_bulan', $daftarBulan);
         $f3->set('tampilkan_semua', $tampilkanSemua);
 
         $this->render('tim_mitra/surat Pelayanan/index.html', 'Surat Penawaran', 'surat-penawaran');
@@ -652,7 +732,7 @@ $daftarPegawai = $arsipUser->find(
             $f3->set('default_pejabat_nama', 'Joko Pratomo');
             $f3->set('default_jabatan_pejabat', 'Kepala Bagian Tata Usaha');
             $f3->set('default_hal', '');
-            $f3->set('default_lampiran_teks', '');
+            $f3->set('default_lampiran_teks', '1 (satu) lembar');
         } else {
             $f3->set('default_pejabat_nama', 'Dodiet Prasetyo');
             $f3->set('default_jabatan_pejabat', 'Kepala');
@@ -1041,6 +1121,12 @@ $daftarPegawai = $arsipUser->find(
         $sp = $spModel->getByOrderId($orderId);
         if (!$sp) {
             $this->setFlashError("Surat penawaran untuk order ini belum diterbitkan.");
+            $f3->reroute("/order/{$orderId}");
+            return;
+        }
+
+        if (empty($sp['surat_kesanggupan_bayar'])) {
+            $this->setFlashError("Gagal mendisposisikan ke Tim Keuangan: Bukti Lembar Persetujuan Penawaran / Kesanggupan Klien wajib diunggah terlebih dahulu.");
             $f3->reroute("/order/{$orderId}");
             return;
         }
@@ -1627,23 +1713,22 @@ $daftarPegawai = $arsipUser->find(
         $pdf->Ln(4);
 
         // Tabel Isian Konfirmasi Klien (Bordered Table)
-        $picName = !empty($sp['nama']) ? trim($sp['nama']) : (!empty($order['pic']) ? trim($order['pic']) : '');
         $tblW1 = 55;
         $tblW2 = 115;
         $rowH = 5.6;
 
         $pdf->SetFont('Arial', '', 8.5);
-        $pdf->Cell($tblW1, $rowH, ' Tempat Tanggal', 1, 0, 'L');
+        $pdf->Cell($tblW1, $rowH, ' Tempat, Tanggal', 1, 0, 'L');
         $pdf->Cell($tblW2, $rowH, '', 1, 1, 'L');
 
-        $pdf->Cell($tblW1, $rowH, ' Menyetujui', 1, 0, 'L');
+        $pdf->Cell($tblW1, $rowH, ' Menyetujui,', 1, 0, 'L');
         $pdf->Cell($tblW2, $rowH, '', 1, 1, 'L');
 
         $pdf->Cell($tblW1, $rowH, ' Nama Perusahaan/Instansi', 1, 0, 'L');
-        $pdf->Cell($tblW2, $rowH, ' ' . $perusahaan, 1, 1, 'L');
+        $pdf->Cell($tblW2, $rowH, '', 1, 1, 'L');
 
         $pdf->Cell($tblW1, $rowH, ' Nama Pemohon', 1, 0, 'L');
-        $pdf->Cell($tblW2, $rowH, ' ' . $picName, 1, 1, 'L');
+        $pdf->Cell($tblW2, $rowH, '', 1, 1, 'L');
 
         $pdf->Cell($tblW1, $rowH, ' Jabatan', 1, 0, 'L');
         $pdf->Cell($tblW2, $rowH, '', 1, 1, 'L');
@@ -1723,7 +1808,7 @@ $daftarPegawai = $arsipUser->find(
         $yMeta = $pdf->GetY();
         $pdf->SetFont('Arial', '', 9);
         $pdf->Cell(18, 4.5, 'Nomor', 0, 0); $pdf->Cell(4, 4.5, ':', 0, 0); $pdf->Cell(70, 4.5, $noSurat, 0, 1);
-        $lampTeks = !empty($sp['lampiran_teks']) ? $sp['lampiran_teks'] : '-';
+        $lampTeks = !empty($sp['lampiran_teks']) && $sp['lampiran_teks'] !== '-' ? $sp['lampiran_teks'] : '1 (satu) lembar';
         $pdf->Cell(18, 4.5, 'Lampiran', 0, 0); $pdf->Cell(4, 4.5, ':', 0, 0); $pdf->Cell(70, 4.5, $lampTeks, 0, 1);
         $halLing = !empty($sp['perihal']) ? $sp['perihal'] : (!empty($sp['hal']) ? $sp['hal'] : '-');
         $pdf->Cell(18, 4.5, 'Hal', 0, 0); $pdf->Cell(4, 4.5, ':', 0, 0); $pdf->Cell(70, 4.5, substr($halLing, 0, 45), 0, 1);
@@ -1806,6 +1891,88 @@ $daftarPegawai = $arsipUser->find(
         $pdf->SetFont('Arial', '', 9);
         $pdf->Cell(70, 4.2, rtrim($signerRoleLing, ',') . ',', 0, 1, 'C');
         $pdf->Ln(18);
+        $pdf->SetX(120);
+        $pdf->SetFont('Arial', '', 9);
+        $pdf->Cell(70, 4.2, $signerNameLing, 0, 1, 'C');
+
+        // ==========================================
+        // HALAMAN 2: LAMPIRAN I (LEMBAR PERSETUJUAN)
+        // ==========================================
+        $pdf->AddPage();
+
+        // Header Lampiran Kanan Atas
+        $pdf->SetY(18);
+        $pdf->SetX(120);
+        $pdf->SetFont('Arial', '', 8.5);
+        $pdf->Cell(70, 4, 'Lampiran I Surat', 0, 1, 'L');
+        $pdf->SetX(120);
+        $pdf->Cell(15, 4, 'Nomor', 0, 0); $pdf->Cell(3, 4, ':', 0, 0); $pdf->Cell(52, 4, $noSurat, 0, 1);
+        $pdf->SetX(120);
+        $pdf->Cell(15, 4, 'Tanggal', 0, 0); $pdf->Cell(3, 4, ':', 0, 0); $pdf->Cell(52, 4, $tglFormatted, 0, 1);
+        $pdf->Ln(5);
+
+        // Judul Lampiran
+        $pdf->SetFont('Arial', 'B', 10.5);
+        $pdf->Cell(0, 5, 'Lembar Persetujuan Surat Penawaran', 0, 1, 'C');
+        $pdf->Ln(4);
+
+        // Isi Pernyataan
+        $pdf->SetFont('Arial', '', 9);
+        $pdf->MultiCell(0, 4.3, 'Dengan ini menyatakan bahwa telah membaca memahami dan menyetujui Surat Penawaran BBSPJIS.', 0, 'J');
+        $pdf->Ln(1);
+        $pdf->Cell(0, 4.3, 'Selanjutnya kami menyatakan:', 0, 1);
+        $pernyataan = [
+            'Menyetujui ruang lingkup pekerjaan biaya layanan serta syarat dan ketentuan yang tercantum dalam surat penawaran.',
+            'Bersedia memenuhi kewajiban pembayaran sesuai ketentuan yang berlaku setelah diterbitkan tagihan (invoice) oleh BBSPJIS.',
+            'Persetujuan ini menjadi dasar bagi BBSPJIS untuk memproses permohonan layanan sesuai dengan ketentuan yang berlaku.',
+            'Apabila terdapat perubahan ruang lingkup pekerjaan setelah persetujuan ini diberikan maka akan dilakukan penyesuaian melalui kesepakatan kedua belah pihak.'
+        ];
+        foreach ($pernyataan as $idx => $pText) {
+            $pdf->Cell(5, 4.1, ($idx + 1) . '.', 0, 0);
+            $pdf->MultiCell(165, 4.1, $pText, 0, 'J');
+        }
+        $pdf->Ln(1);
+        $pdf->MultiCell(0, 4.3, 'Demikian Lembar Persetujuan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya.', 0, 'J');
+        $pdf->Ln(4);
+
+        $tblW1 = 55;
+        $tblW2 = 115;
+        $rowH = 5.6;
+
+        $pdf->SetFont('Arial', '', 8.5);
+        $pdf->Cell($tblW1, $rowH, ' Tempat, Tanggal', 1, 0, 'L');
+        $pdf->Cell($tblW2, $rowH, '', 1, 1, 'L');
+
+        $pdf->Cell($tblW1, $rowH, ' Menyetujui,', 1, 0, 'L');
+        $pdf->Cell($tblW2, $rowH, '', 1, 1, 'L');
+
+        $pdf->Cell($tblW1, $rowH, ' Nama Perusahaan/Instansi', 1, 0, 'L');
+        $pdf->Cell($tblW2, $rowH, '', 1, 1, 'L');
+
+        $pdf->Cell($tblW1, $rowH, ' Nama Pemohon', 1, 0, 'L');
+        $pdf->Cell($tblW2, $rowH, '', 1, 1, 'L');
+
+        $pdf->Cell($tblW1, $rowH, ' Jabatan', 1, 0, 'L');
+        $pdf->Cell($tblW2, $rowH, '', 1, 1, 'L');
+
+        $pdf->Cell($tblW1, $rowH, ' Nomor Telepon (WhatsApp)', 1, 0, 'L');
+        $pdf->Cell($tblW2, $rowH, '', 1, 1, 'L');
+
+        $pdf->Cell($tblW1, 26, ' Tanda Tangan dan Cap', 1, 0, 'L');
+        $pdf->Cell($tblW2, 26, '', 1, 1, 'L');
+        $pdf->Ln(3);
+
+        // Catatan Bawah
+        $pdf->SetFont('Arial', '', 8);
+        $pdf->Cell(0, 3.8, 'Catatan:', 0, 1);
+        $pdf->MultiCell(170, 3.8, 'Mohon mengembalikan lembar persetujuan ini kepada BBSPJIS melalui email atau media komunikasi yang telah ditentukan sebagai dasar proses penerbitan invoice dan pelaksanaan layanan.', 0, 'J');
+        $pdf->Ln(3);
+
+        // Tanda Tangan BBSPJIS Halaman 2
+        $pdf->SetX(120);
+        $pdf->SetFont('Arial', '', 9);
+        $pdf->Cell(70, 4.2, rtrim($signerRoleLing, ',') . ',', 0, 1, 'C');
+        $pdf->Ln(16);
         $pdf->SetX(120);
         $pdf->SetFont('Arial', '', 9);
         $pdf->Cell(70, 4.2, $signerNameLing, 0, 1, 'C');
@@ -1913,31 +2080,34 @@ $daftarPegawai = $arsipUser->find(
         }
     
         $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-        $allowedExt = ['pdf', 'doc', 'docx'];
+        $allowedExt = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'];
         if (!in_array($ext, $allowedExt, true)) {
-            $gagal('Surat Kesanggupan Bayar harus berformat PDF atau Word (.doc/.docx).');
+            $gagal('Dokumen Lembar Persetujuan / Kesanggupan harus berformat PDF, JPG, PNG, atau Word (.doc/.docx).');
             return;
         }
     
-        $maxSize = 5 * 1024 * 1024;
+        $maxSize = 10 * 1024 * 1024;
         if ($file['size'] > $maxSize) {
-            $gagal('Ukuran file maksimal 5MB.');
+            $gagal('Ukuran file maksimal 10MB.');
             return;
         }
     
         $mimeAsli = mime_content_type($file['tmp_name']);
         $mimeDiizinkan = [
             'application/pdf',
+            'image/jpeg',
+            'image/png',
+            'image/webp',
             'application/msword',
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             'application/zip',
         ];
         if (!in_array($mimeAsli, $mimeDiizinkan, true)) {
-            $gagal('Isi file tidak valid atau tidak sesuai format yang diizinkan (PDF/Word).');
+            $gagal('Isi file tidak valid atau tidak sesuai format yang diizinkan (PDF/Gambar/Word).');
             return;
         }
     
-        $dir = $f3->get('ROOT') . '/storage/kesanggupan_bayar';
+        $dir = dirname(__DIR__, 2) . '/storage/kesanggupan_bayar';
         if (!is_dir($dir)) {
             mkdir($dir, 0755, true);
         }
@@ -1994,7 +2164,7 @@ public function previewKesanggupanBayar($f3, $params)
     // [KEAMANAN] basename() buang semua path (../ dkk) dari nama file yang tersimpan di DB,
     // jadi walau DB ke-tamper, gak bisa dipakai buat baca file di luar folder ini.
     $namaFile = basename($row[0]['surat_kesanggupan_bayar']);
-    $path = $f3->get('ROOT') . '/storage/kesanggupan_bayar/' . $namaFile;
+    $path = dirname(__DIR__, 2) . '/storage/kesanggupan_bayar/' . $namaFile;
 
     if (!is_file($path)) {
         $f3->error(404, 'File tidak ditemukan di server.');
@@ -2004,6 +2174,9 @@ public function previewKesanggupanBayar($f3, $params)
     $ext = strtolower(pathinfo($namaFile, PATHINFO_EXTENSION));
     $mimeMap = [
         'pdf'  => 'application/pdf',
+        'jpg'  => 'image/jpeg',
+        'jpeg' => 'image/jpeg',
+        'png'  => 'image/png',
         'doc'  => 'application/msword',
         'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     ];

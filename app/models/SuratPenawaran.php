@@ -28,7 +28,8 @@ class SuratPenawaran extends \DB\SQL\Mapper
                 'jabatan_pejabat'    => 'VARCHAR(100) NULL DEFAULT "Kepala"',
                 'pejabat_nama'       => 'VARCHAR(150) NULL DEFAULT "Dodiet Prasetyo"',
                 'hal'                => 'VARCHAR(150) NULL DEFAULT "Biaya OPTI"',
-                'lampiran_teks'      => 'VARCHAR(100) NULL DEFAULT "1 (satu) lembar"'
+                'lampiran_teks'      => 'VARCHAR(100) NULL DEFAULT "1 (satu) lembar"',
+                'dibuat_oleh'        => 'INT NULL'
             ];
             foreach ($cols as $col => $def) {
                 try {
@@ -296,7 +297,7 @@ class SuratPenawaran extends \DB\SQL\Mapper
                 $this->db->exec(
                     "UPDATE tb_surat_penawaran 
                      SET status_respon_klien = 'batal', updated_at = NOW() 
-                     WHERE order_id = ? AND id != ? AND status_respon_klien IN ('nego', 'draft', 'terkirim')",
+                     WHERE order_id = ? AND id != ?",
                     array(1 => $orderId, 2 => $targetId)
                 );
             }
@@ -339,7 +340,7 @@ class SuratPenawaran extends \DB\SQL\Mapper
             $this->db->exec(
                 "UPDATE tb_surat_penawaran 
                  SET status_respon_klien = 'batal', updated_at = NOW() 
-                 WHERE order_id = ? AND id != ? AND status_respon_klien IN ('nego', 'draft', 'terkirim')",
+                 WHERE order_id = ? AND id != ?",
                 array(1 => $orderId, 2 => $penawaranId)
             );
         }

@@ -160,6 +160,152 @@
         }
         .status-pill-slate i { color: #64748b !important; }
 
+        /* ============ FILTER TAB PILL & COUNT CHIP (GLOBAL DESIGN SYSTEM) ============ */
+        .filter-tabs-wrapper {
+            background: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 12px 18px;
+        }
+        .filter-tab-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.45rem 0.85rem;
+            border-radius: 9999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #475569;
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            text-decoration: none;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            white-space: nowrap;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+            cursor: pointer;
+            line-height: 1.2;
+            user-select: none;
+        }
+        .filter-tab-pill:hover {
+            color: #0f172a;
+            background-color: #f8fafc;
+            border-color: #cbd5e1;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .filter-tab-pill .count-chip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 20px;
+            height: 20px;
+            padding: 0 6px;
+            border-radius: 9999px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            background-color: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s;
+        }
+        .filter-tab-pill .count-chip.chip-danger {
+            background-color: #fee2e2;
+            color: #b91c1c;
+            border-color: #fecaca;
+        }
+        .filter-tab-pill .count-chip.chip-success {
+            background-color: #ecfdf5;
+            color: #047857;
+            border-color: #a7f3d0;
+        }
+        .filter-tab-pill.active {
+            color: #ffffff !important;
+            background-color: var(--color-primary, #334155) !important;
+            border-color: var(--color-primary, #334155) !important;
+            box-shadow: 0 2px 6px rgba(51, 65, 85, 0.25) !important;
+        }
+        .filter-tab-pill.active .count-chip {
+            background-color: rgba(255, 255, 255, 0.25) !important;
+            border-color: transparent !important;
+            color: #ffffff !important;
+        }
+        .filter-tab-pill.active i {
+            color: #ffffff !important;
+        }
+        .filter-tab-pill.tab-selesai.active {
+            background-color: #059669 !important;
+            border-color: #059669 !important;
+            box-shadow: 0 2px 6px rgba(5, 150, 105, 0.25) !important;
+            color: #ffffff !important;
+        }
+        .filter-tab-pill.tab-selesai.active .count-chip {
+            background-color: rgba(255, 255, 255, 0.25) !important;
+            border-color: transparent !important;
+            color: #ffffff !important;
+        }
+        .filter-tab-pill.tab-ditolak.active {
+            background-color: #dc2626 !important;
+            border-color: #dc2626 !important;
+            box-shadow: 0 2px 6px rgba(220, 38, 38, 0.25) !important;
+            color: #ffffff !important;
+        }
+        .filter-tab-pill.tab-ditolak.active .count-chip {
+            background-color: rgba(255, 255, 255, 0.25) !important;
+            border-color: transparent !important;
+            color: #ffffff !important;
+        }
+
+        /* 3 Pill Button Divisi with Glider */
+        .divisi-pill-group {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            background-color: #f1f5f9;
+            padding: 3px;
+            border-radius: 9999px;
+            border: 1px solid #e2e8f0;
+            user-select: none;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+        }
+        .divisi-pill-glider {
+            position: absolute;
+            top: 3px;
+            bottom: 3px;
+            left: 0;
+            width: 0;
+            border-radius: 9999px;
+            background-color: var(--color-primary, #334155);
+            transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1), width 0.22s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
+            pointer-events: none;
+            z-index: 1;
+        }
+        .divisi-pill-btn {
+            position: relative;
+            z-index: 2;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.35rem 0.95rem;
+            border-radius: 9999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #64748b;
+            background: transparent !important;
+            border: none;
+            text-decoration: none;
+            transition: color 0.2s ease;
+            white-space: nowrap;
+            cursor: pointer;
+            line-height: 1.25;
+        }
+        .divisi-pill-btn:hover:not(.active) {
+            color: #0f172a;
+        }
+        .divisi-pill-btn.active {
+            color: #ffffff !important;
+            font-weight: 700;
+        }
+
         .form-check-input:checked {
             background-color: var(--color-primary) !important;
             border-color: var(--color-primary) !important;
@@ -920,6 +1066,8 @@
         .role-badge-tk-lingkungan { background: #f0fdfa; color: #0f766e !important; border: 1px solid #99f6e4; }
         .role-badge-mitra { background: #fffbeb; color: #b45309 !important; border: 1px solid #fde68a; }
         .role-badge-keuangan { background: #eff6ff; color: #1d4ed8 !important; border: 1px solid #bfdbfe; }
+        .role-badge-humas { background: #e0f2fe; color: #0369a1 !important; border: 1px solid #bae6fd; }
+        .role-badge-ppk { background: #f1f5f9; color: #334155 !important; border: 1px solid #cbd5e1; }
         .role-badge-default { background: #f8fafc; color: #475569 !important; border: 1px solid #e2e8f0; }
         /* Modern Division Badges - Harmonized with Corporate Slate & Minimalist Theme */
         .badge-pill-selulosa, .badge-selulosa {
@@ -1296,8 +1444,8 @@
                     <li>
                         <a class="sidebar-link {{ @active_menu == 'daftar_po' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan/daftar" title="Petunjuk Operasional Selulosa">
                             <i class="bi bi-clipboard-check"></i> <span>Daftar PO</span>
-                            <check if="{{ @jumlah_notif_po_selulosa > 0 }}">
-                                <span class="badge rounded-pill bg-danger ms-auto">{{ @jumlah_notif_daftar_po }}</span>
+                            <check if="{{ @jumlah_notif_daftar_po > 0 || @jumlah_notif_po_selulosa > 0 }}">
+                                <span class="badge rounded-pill ms-auto sidebar-notif-badge" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff;">{{ @jumlah_notif_daftar_po ?: @jumlah_notif_po_selulosa }}</span>
                             </check>
                         </a>
                     </li>
@@ -1308,7 +1456,7 @@
                         <a class="sidebar-link {{ @active_menu == 'po_lingkungan' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?divisi=lingkungan" title="Petunjuk Operasional Lingkungan">
                             <i class="bi bi-clipboard-check"></i> <span>PO Lingkungan</span>
                             <check if="{{ @jumlah_notif_po_lingkungan > 0 }}">
-                                <span class="badge rounded-pill bg-danger ms-auto">{{ @jumlah_notif_po_lingkungan }}</span>
+                                <span class="badge rounded-pill ms-auto sidebar-notif-badge" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff;">{{ @jumlah_notif_po_lingkungan }}</span>
                             </check>
                         </a>
                     </li>
@@ -1318,7 +1466,7 @@
                         <a class="sidebar-link {{ @active_menu == 'po_selulosa' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?divisi=selulosa" title="Petunjuk Operasional Selulosa">
                             <i class="bi bi-clipboard-check"></i> <span>PO Selulosa</span>
                             <check if="{{ @jumlah_notif_po_selulosa > 0 }}">
-                                <span class="badge rounded-pill bg-danger ms-auto">{{ @jumlah_notif_po_selulosa }}</span>
+                                <span class="badge rounded-pill ms-auto sidebar-notif-badge" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff;">{{ @jumlah_notif_po_selulosa }}</span>
                             </check>
                         </a>
                     </li>
@@ -1334,7 +1482,7 @@
                         <a class="sidebar-link {{ @active_menu == 'kontrak' ? 'active' : '' }}" href="{{ @BASE }}/kontrak" title="Tugas Proposal Teknis">
                             <i class="bi bi-journal-code"></i> <span>Kontrak</span>
                             <check if="{{ @jumlah_notif_kontrak > 0 }}">
-                                <span class="badge rounded-pill ms-auto sidebar-notif-badge" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff;">{{ @jumlah_notif_proposal }}</span>
+                                <span class="badge rounded-pill ms-auto sidebar-notif-badge" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff;">{{ @jumlah_notif_kontrak }}</span>
                             </check>
                         </a>
                     </li>
@@ -2373,14 +2521,14 @@
     <div class="modal fade" id="modalUniversalPdfPreview" tabindex="-1" aria-labelledby="modalUniversalPdfPreviewLabel" aria-hidden="true" style="z-index: 1065;">
         <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" style="max-width: 94vw; height: 94vh; margin: 3vh auto;">
             <div class="modal-content border-0 shadow-lg d-flex flex-column h-100" style="border-radius: 16px; overflow: hidden; background: #ffffff;">
-                <div class="modal-header py-2 px-3.5 bg-white border-bottom d-flex justify-content-between align-items-center flex-shrink-0">
-                    <div class="d-flex align-items-center gap-2.5 overflow-hidden">
-                        <div class="rounded-circle bg-danger-subtle text-danger p-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px;">
-                            <i class="bi bi-file-earmark-pdf-fill fs-5" id="universalPdfIcon"></i>
+                <div class="modal-header py-2.5 px-3 px-md-4 bg-white border-bottom d-flex justify-content-between align-items-center flex-shrink-0" style="min-height: 62px;">
+                    <div class="d-flex align-items-center gap-3 overflow-hidden me-2" style="min-width: 0;">
+                        <div class="rounded-circle bg-danger-subtle text-danger d-flex align-items-center justify-content-center flex-shrink-0" style="width: 38px; height: 38px; min-width: 38px;">
+                            <i class="bi bi-file-earmark-pdf-fill fs-5" id="universalPdfIcon" style="line-height: 1;"></i>
                         </div>
-                        <div class="text-truncate">
-                            <h6 class="modal-title fw-bold text-dark font-display mb-0 text-truncate" id="universalPdfTitle" style="font-size: 0.95rem;">Pratinjau Dokumen</h6>
-                            <small class="text-secondary font-monospace text-truncate d-block" id="universalPdfSubtitle" style="font-size: 0.75rem;">Dokumen Resmi BBSPJIS</small>
+                        <div class="text-truncate" style="min-width: 0;">
+                            <h6 class="modal-title fw-bold text-dark font-display mb-0 text-truncate" id="universalPdfTitle" style="font-size: 0.95rem; line-height: 1.3;">Pratinjau Dokumen</h6>
+                            <small class="text-secondary font-monospace text-truncate d-block" id="universalPdfSubtitle" style="font-size: 0.75rem; line-height: 1.3; margin-top: 2px;">Dokumen Resmi BBSPJIS</small>
                         </div>
                     </div>
                     
@@ -2823,6 +2971,16 @@
             background: #eff6ff;
             color: #1d4ed8 !important;
             border: 1px solid #bfdbfe;
+        }
+        .role-badge-humas {
+            background: #e0f2fe;
+            color: #0369a1 !important;
+            border: 1px solid #bae6fd;
+        }
+        .role-badge-ppk {
+            background: #f1f5f9;
+            color: #334155 !important;
+            border: 1px solid #cbd5e1;
         }
         .role-badge-default {
             background: #f8fafc;

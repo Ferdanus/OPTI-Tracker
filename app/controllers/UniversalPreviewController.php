@@ -235,12 +235,6 @@ class UniversalPreviewController extends Controller
 
     protected function handleSuratMasuk($suratId)
     {
-        // [FIX] Sebelumnya query manual ke tabel "surat_masuk" di database utama -- salah dua-duanya:
-        // (1) tabelnya ada di database SEKRETARIAT (sil2020), bukan database utama, dan (2) nama
-        // tabel/kolomnya sendiri udah beda (tb_arsipsurat, id_arsip, nama_berkas, dst), bukan lagi
-        // surat_masuk/id/file_path yang lama. Dipake ulang SuratMasukRepository::getSuratById() yang
-        // udah nangani kompatibilitas tabel/kolom itu (termasuk join data pengirim dari tb_customer),
-        // biar gak dobel logic & otomatis ikut kalau nanti skema sekretariatnya berubah lagi.
         $repo = new \SuratMasukRepository($this->db, $this->dbSekretariat);
         $surat = $repo->getSuratById($suratId);
         if (empty($surat)) {
@@ -248,50 +242,142 @@ class UniversalPreviewController extends Controller
             return;
         }
 
-        // [FIX] Berkas surat masuk yang bener itu di uploads/surat_masuk (root project), BUKAN
-        // public/uploads/surat_masuk -- sempat salah nambahin public/ sebagai kandidat duluan,
-        // jadinya kepilih berkas yang salah/nyasar dari folder public. Balikin ke uploads/surat_masuk
-        // sebagai yang dicoba duluan.
         $filePath = $this->resolveFilePath($surat['file_path'] ?? '', ['uploads/surat_masuk', 'storage/surat_masuk']);
 
-        if (!empty($filePath) && is_file($filePath)) {
+        if (!empty($filePath) && is_file($filePath) && filesize($filePath) > 1000) {
             $this->sendFileAsBase64($filePath, 'Surat_Masuk_' . $suratId);
             return;
         }
 
-        // Jika tidak ada file fisik asli, buatkan lembar PDF surat masuk resmi dari data database
-        require_once $this->f3->get('ROOT') . '/app/helpers/fpdf/fpdf.php';
+        // Generate clean structured official letter
+        require_once dirname(__DIR__, 2) . '/app/helpers/fpdf/fpdf.php';
         $pdf = new \FPDF('P', 'mm', 'A4');
         $pdf->SetMargins(20, 15, 20);
         $pdf->AddPage();
         
-        $pdf->SetFont('Arial', 'B', 14);
-        $pdf->Cell(0, 7, strtoupper(\Customer::formatNamaPerusahaan($surat['pt_cv'] ?? '', $surat['pengirim'] ?? 'PENGIRIM')), 0, 1, 'C');
+        // 1. KOP SURAT
+        $pdf->SetFont('Arial', 'B', 13);
+        $pdf->SetTextColor(0, 0, 0);
+        $namaPerusahaan = strtoupper(\Customer::formatNamaPerusahaan($surat['pt_cv'] ?? '', $surat['pengirim'] ?? 'PENGIRIM'));
+        $pdf->Cell(0, 6, $namaPerusahaan, 0, 1, 'C');
+        $pdf->SetFont('Arial', 'B', 8.5);
+        $pdf->SetTextColor(50, 50, 50);
+        $pdf->Cell(0, 4.5, 'PRODUSEN & JASA INDUSTRI TEKNOLOGI', 0, 1, 'C');
+        $pdf->SetFont('Arial', '', 8);
+        $pdf->SetTextColor(70, 70, 70);
+        $pdf->Cell(0, 4, ($surat['alamat_pengirim'] ?: 'Kawasan Industri Terpadu, Indonesia') . ' | Telp: ' . ($surat['no_telp_pengirim'] ?: '-'), 0, 1, 'C');
+        $pdf->Ln(2);
+        $pdf->SetDrawColor(0, 0, 0);
+        $pdf->SetLineWidth(0.8);
+        $pdf->Line(20, $pdf->GetY(), 190, $pdf->GetY());
+        $pdf->SetLineWidth(0.2);
+        $pdf->Line(20, $pdf->GetY() + 0.8, 190, $pdf->GetY() + 0.8);
+        $pdf->Ln(5);
+
+        // 2. METADATA
+        $pdf->SetFont('Arial', '', 9.5);
+        $pdf->SetTextColor(0, 0, 0);
+        $pdf->Cell(20, 5, 'Nomor', 0, 0);
+        $pdf->Cell(4, 5, ':', 0, 0);
+        $pdf->SetFont('Arial', 'B', 9.5);
+        $pdf->Cell(80, 5, $surat['nomor_surat'] ?? '-', 0, 0);
+        $pdf->SetFont('Arial', '', 9.5);
+        $tglSurat = !empty($surat['tanggal_surat']) ? date('d F Y', strtotime($surat['tanggal_surat'])) : date('d F Y');
+        $pdf->Cell(0, 5, 'Bandung, ' . $tglSurat, 0, 1, 'R');
+
+        $pdf->Cell(20, 5, 'Lampiran', 0, 0);
+        $pdf->Cell(4, 5, ':', 0, 0);
+        $pdf->Cell(0, 5, '1 (satu) berkas spesifikasi teknis', 0, 1);
+
+        $pdf->Cell(20, 5, 'Hal', 0, 0);
+        $pdf->Cell(4, 5, ':', 0, 0);
+        $pdf->SetFont('Arial', 'B', 9.5);
+        $pdf->MultiCell(0, 5, $surat['perihal'] ?? 'Permohonan Layanan Pengujian dan Kerjasama', 0, 'L');
+        $pdf->Ln(4);
+
+        // 3. TUJUAN
+        $pdf->SetFont('Arial', '', 9.5);
+        $pdf->Cell(0, 4.5, 'Kepada Yth.', 0, 1);
+        $pdf->SetFont('Arial', 'B', 9.5);
+        $pdf->Cell(0, 4.5, 'Kepala Balai Besar Standardisasi dan Pelayanan Jasa Industri Selulosa (BBSPJIS)', 0, 1);
+        $pdf->SetFont('Arial', '', 9.5);
+        $pdf->Cell(0, 4.5, 'Kementerian Perindustrian Republik Indonesia', 0, 1);
+        $pdf->Cell(0, 4.5, 'Jl. Raya Dayeuhkolot No. 132, Bandung, Jawa Barat 40258', 0, 1);
+        $pdf->Ln(4);
+
+        // 4. PEMBUKA
+        $pdf->Cell(0, 5, 'Dengan hormat,', 0, 1);
+        $pdf->MultiCell(0, 5, "Sehubungan dengan rencana pengujian mutu dan optimalisasi proses industri, bersama ini kami mengajukan permohonan kerjasama pelaksanaan Layanan Optimalisasi Teknologi Industri (OPTI) dengan rincian sebagai berikut:", 0, 'J');
+        $pdf->Ln(3);
+
+        // 5. DATA BERSTRUKTUR
+        $pdf->SetFont('Arial', 'B', 9.5);
+        $pdf->Cell(0, 5, '1. Data Pemohon / Instansi:', 0, 1);
         $pdf->SetFont('Arial', '', 9);
-        $pdf->Cell(0, 5, ($surat['alamat_pengirim'] ?: 'Kawasan Industri Terpadu, Indonesia') . ' | Telp: ' . ($surat['no_telp_pengirim'] ?: '-'), 0, 1, 'C');
-        $pdf->Line(20, 30, 190, 30);
+        $pdf->Cell(8, 4.8, '', 0, 0);
+        $pdf->Cell(38, 4.8, 'a. Nama Perusahaan', 0, 0);
+        $pdf->Cell(4, 4.8, ':', 0, 0);
+        $pdf->SetFont('Arial', 'B', 9);
+        $pdf->Cell(0, 4.8, $namaPerusahaan, 0, 1);
+        $pdf->SetFont('Arial', '', 9);
+        $pdf->Cell(8, 4.8, '', 0, 0);
+        $pdf->Cell(38, 4.8, 'b. Alamat', 0, 0);
+        $pdf->Cell(4, 4.8, ':', 0, 0);
+        $pdf->MultiCell(0, 4.8, $surat['alamat_pengirim'] ?: 'Kawasan Industri Terpadu, Indonesia', 0, 'L');
+        $pdf->Cell(8, 4.8, '', 0, 0);
+        $pdf->Cell(38, 4.8, 'c. Narahubung / PIC', 0, 0);
+        $pdf->Cell(4, 4.8, ':', 0, 0);
+        $pdf->Cell(0, 4.8, $surat['pic_pengirim'] ?: 'Penanggung Jawab Teknis', 0, 1);
+        $pdf->Cell(8, 4.8, '', 0, 0);
+        $pdf->Cell(38, 4.8, 'd. Telepon & Email', 0, 0);
+        $pdf->Cell(4, 4.8, ':', 0, 0);
+        $pdf->Cell(0, 4.8, ($surat['no_telp_pengirim'] ?: '-') . ' / ' . ($surat['email_pengirim'] ?: '-'), 0, 1);
+        $pdf->Ln(2);
+
+        $pdf->SetFont('Arial', 'B', 9.5);
+        $pdf->Cell(0, 5, '2. Rincian Kebutuhan Layanan OPTI:', 0, 1);
+        $pdf->SetFont('Arial', '', 9);
+        $pdf->Cell(8, 4.8, '', 0, 0);
+        $pdf->Cell(38, 4.8, 'a. Perihal Kegiatan', 0, 0);
+        $pdf->Cell(4, 4.8, ':', 0, 0);
+        $pdf->SetFont('Arial', 'B', 9);
+        $pdf->MultiCell(0, 4.8, $surat['perihal'] ?? '-', 0, 'L');
+        $pdf->SetFont('Arial', '', 9);
+        $pdf->Cell(8, 4.8, '', 0, 0);
+        $pdf->Cell(38, 4.8, 'b. Layanan', 0, 0);
+        $pdf->Cell(4, 4.8, ':', 0, 0);
+        $namaLayananLabel = !empty($surat['nama_layanan_label']) ? $surat['nama_layanan_label'] : 'Layanan Optimalisasi Teknologi Industri (OPTI)';
+        $pdf->Cell(0, 4.8, $namaLayananLabel, 0, 1);
+        $pdf->Cell(8, 4.8, '', 0, 0);
+        $pdf->Cell(38, 4.8, 'c. Ruang Lingkup', 0, 0);
+        $pdf->Cell(4, 4.8, ':', 0, 0);
+        $pdf->MultiCell(0, 4.8, 'Kajian Teknis, Karakterisasi Laboratorium & Penerbitan Sertifikat / Laporan Hasil Pengujian Resmi Balai', 0, 'L');
+        $pdf->Ln(3);
+
+        // 6. PENUTUP
+        $pdf->SetFont('Arial', '', 9.5);
+        $pdf->MultiCell(0, 4.8, "Demikian surat permohonan ini kami sampaikan. Kami berharap dapat segera menerima Tinjauan Kelayakan Permintaan serta Surat Penawaran Biaya resmi dari BBSPJIS. Atas perhatian dan kerjasama Bapak/Ibu, kami ucapkan terima kasih.", 0, 'J');
+        $pdf->Ln(5);
+
+        // 7. TTD
+        $pdf->SetX(110);
+        $pdf->Cell(80, 4.5, 'Hormat kami,', 0, 1, 'C');
+        $pdf->SetX(110);
+        $pdf->SetFont('Arial', 'B', 9.5);
+        $pdf->Cell(80, 4.5, $namaPerusahaan, 0, 1, 'C');
+        $pdf->Ln(2);
+        $pdf->SetX(125);
+        $pdf->SetFont('Arial', '', 7.5);
+        $pdf->SetTextColor(90, 90, 90);
+        $pdf->Cell(50, 4, '[ TTD & STEMPEL RESMI ]', 1, 1, 'C');
+        $pdf->SetTextColor(0, 0, 0);
         $pdf->Ln(8);
-
-        $pdf->SetFont('Arial', '', 10);
-        $pdf->Cell(30, 6, 'Nomor Surat', 0, 0);
-        $pdf->Cell(5, 6, ':', 0, 0);
-        $pdf->SetFont('Arial', 'B', 10);
-        $pdf->Cell(0, 6, $surat['nomor_surat'] ?? '-', 0, 1);
-
-        $pdf->SetFont('Arial', '', 10);
-        $pdf->Cell(30, 6, 'Tanggal', 0, 0);
-        $pdf->Cell(5, 6, ':', 0, 0);
-        $pdf->Cell(0, 6, !empty($surat['tanggal_surat']) ? date('d F Y', strtotime($surat['tanggal_surat'])) : date('d F Y'), 0, 1);
-
-        $pdf->Cell(30, 6, 'Perihal', 0, 0);
-        $pdf->Cell(5, 6, ':', 0, 0);
-        $pdf->SetFont('Arial', 'B', 10);
-        $pdf->MultiCell(0, 6, $surat['perihal'] ?? 'Permohonan Layanan Pengujian dan Kerjasama');
-
-        $pdf->Ln(6);
-        $pdf->SetFont('Arial', '', 10);
-        $isiSurat = $surat['isi_ringkas'] ?: 'Dengan hormat, bersama surat ini kami mengajukan permohonan pengujian sampel sesuai spesifikasi terlampir kepada Balai Besar Standardisasi dan Pelayanan Jasa Industri Selulosa (BBSPJIS).';
-        $pdf->MultiCell(0, 6, $isiSurat);
+        $pdf->SetX(110);
+        $pdf->SetFont('Arial', 'BU', 9.5);
+        $pdf->Cell(80, 4.5, $surat['pic_pengirim'] ?: 'Pimpinan Perusahaan', 0, 1, 'C');
+        $pdf->SetX(110);
+        $pdf->SetFont('Arial', '', 8.5);
+        $pdf->Cell(80, 4, 'Direktur', 0, 1, 'C');
 
         $pdfContent = $pdf->Output('S');
         $base64 = base64_encode($pdfContent);
@@ -360,7 +446,8 @@ class UniversalPreviewController extends Controller
     {
         if (empty($rawPath)) return null;
 
-        $root = rtrim(str_replace('\\', '/', $this->f3->get('ROOT') ?: dirname(__DIR__, 2)), '/');
+        $appRoot = str_replace('\\', '/', dirname(__DIR__, 2));
+        $root = rtrim(str_replace('\\', '/', $this->f3->get('ROOT') ?: $appRoot), '/');
         $clean = ltrim(urldecode(str_replace('\\', '/', $rawPath)), '/');
 
         // Bersihkan prefix URL folder seperti /Mini OPTI Tracker/ atau /Mini%20OPTI%20Tracker/
@@ -369,16 +456,17 @@ class UniversalPreviewController extends Controller
         $basename = basename($clean);
 
         $candidates = [
+            $appRoot . '/' . $clean,
+            $appRoot . '/' . ltrim($rawPath, '/'),
             $root . '/' . $clean,
             $root . '/' . ltrim($rawPath, '/'),
-            dirname(__DIR__, 2) . '/' . $clean,
             $rawPath,
         ];
 
         foreach ($fallbackDirs as $dir) {
             $cleanDir = trim($dir, '/');
+            $candidates[] = $appRoot . '/' . $cleanDir . '/' . $basename;
             $candidates[] = $root . '/' . $cleanDir . '/' . $basename;
-            $candidates[] = dirname(__DIR__, 2) . '/' . $cleanDir . '/' . $basename;
         }
 
         foreach ($candidates as $c) {

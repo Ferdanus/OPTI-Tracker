@@ -56,16 +56,245 @@ protected function getInfoPembayaranOtomatis($orderId, $statusKeuangan) {
 
 protected function parsePerPointLines($text) {
     $lines = [];
-    foreach (explode("\n", (string) $text) as $line) {
-        $line = trim($line);
-        if ($line === '') continue;
-        if (preg_match('/^(\d+\.|[a-zA-Z]\.|[-•])\s*(.*)$/', $line, $m)) {
-            $lines[] = ['marker' => $m[1], 'teks' => $m[2]];
-        } else {
-            $lines[] = ['marker' => '', 'teks' => $line];
+    $text = (string) $text;
+    if (trim($text) === '') return $lines;
+
+    // 1. Ekstrak dan amankan blok <table>...</table> agar tidak terpecah atau rusak
+    $tables = [];
+    $text = preg_replace_callback('/<table\b[^>]*>.*?<\/table>/is', function ($match) use (&$tables) {
+        $key = '___PO_TABLE_' . count($tables) . '___';
+        $tables[$key] = $match[0];
+        return "\n" . $key . "\n";
+    }, $text);
+
+    // 2. Parse HTML jika ada struktur tag
+    if (preg_match('/<(ol|ul|li|p|div|br)/i', $text)) {
+        $dom = new \DOMDocument();
+        libxml_use_internal_errors(true);
+        $dom->loadHTML('<?xml encoding="UTF-8"><div>' . $text . '</div>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        libxml_clear_errors();
+
+        $container = $dom->getElementsByTagName('div')->item(0);
+        if ($container) {
+            $this->parseDomChildNodes($container, $lines, 0, $tables);
+        }
+    } else {
+        // Fallback parsing teks biasa / markdown
+        $rawLines = explode("\n", str_replace(["\r\n", "\r"], "\n", $text));
+        foreach ($rawLines as $line) {
+            $trimmed = trim($line);
+            if ($trimmed === '' || $trimmed === '&nbsp;') continue;
+
+            if (preg_match('/___PO_TABLE_\d+___/', $trimmed, $tm)) {
+                if (isset($tables[$tm[0]])) {
+                    $lines[] = ['marker' => '', 'teks' => $tables[$tm[0]], 'is_sub' => false];
+                    continue;
+                }
+            }
+
+            if (preg_match('/^(\s*)(\d+\.|[a-zA-Z][\.\)]|[-•])\s*(.*)$/', $line, $m)) {
+                $isSub = (strlen($m[1]) >= 2 || preg_match('/^[a-zA-Z][\.\)]$/', $m[2]));
+                $lines[] = ['marker' => $m[2], 'teks' => $m[3], 'is_sub' => $isSub];
+            } else {
+                $lines[] = ['marker' => '', 'teks' => $trimmed, 'is_sub' => false];
+            }
         }
     }
+
     return $lines;
+}
+
+protected function parseDomChildNodes(\DOMNode $parent, array &$lines, int $level, array &$tables) {
+    foreach ($parent->childNodes as $node) {
+        if ($node->nodeType === XML_TEXT_NODE) {
+            $t = trim($node->textContent);
+            if ($t === '' || $t === '&nbsp;') continue;
+
+            if (preg_match('/___PO_TABLE_\d+___/', $t, $tm) && isset($tables[$tm[0]])) {
+                $lines[] = ['marker' => '', 'teks' => $tables[$tm[0]], 'is_sub' => ($level > 0)];
+                continue;
+            }
+
+            if (preg_match('/^(\s*)(\d+\.|[a-zA-Z][\.\)]|[-•])\s*(.*)$/', $t, $m)) {
+                $isSub = ($level > 0 || strlen($m[1]) >= 2 || preg_match('/^[a-zA-Z][\.\)]$/', $m[2]));
+                $lines[] = ['marker' => $m[2], 'teks' => $m[3], 'is_sub' => $isSub];
+            } else {
+                $lines[] = ['marker' => '', 'teks' => $t, 'is_sub' => ($level > 0)];
+            }
+            continue;
+        }
+
+        if ($node->nodeType !== XML_ELEMENT_NODE) continue;
+
+        $nodeName = strtolower($node->nodeName);
+
+        if ($nodeName === 'table') {
+            $tableHtml = $node->ownerDocument->saveHTML($node);
+            $lines[] = ['marker' => '', 'teks' => $tableHtml, 'is_sub' => ($level > 0)];
+            continue;
+        }
+
+        if ($nodeName === 'ol') {
+            $this->parseOlNode($node, $lines, $level, $tables);
+            continue;
+        }
+
+        if ($nodeName === 'ul') {
+            $this->parseUlNode($node, $lines, $level, $tables);
+            continue;
+        }
+
+        // Cek apakah node block (p, div, dll) memiliki child list di dalamnya
+        $hasListChild = false;
+        foreach ($node->childNodes as $c) {
+            if ($c->nodeType === XML_ELEMENT_NODE && in_array(strtolower($c->nodeName), ['ol', 'ul', 'table'], true)) {
+                $hasListChild = true;
+                break;
+            }
+        }
+
+        if ($hasListChild) {
+            $this->parseDomChildNodes($node, $lines, $level, $tables);
+            continue;
+        }
+
+        // Simpan perataan teks jika ada
+        $styleAttr = ($node instanceof \DOMElement) ? ($node->getAttribute('style') ?? '') : '';
+        $align = '';
+        if (preg_match('/text-align\s*:\s*(left|center|right|justify)/i', $styleAttr, $am)) {
+            $align = strtolower($am[1]);
+        }
+
+        $innerHtml = '';
+        foreach ($node->childNodes as $c) {
+            $innerHtml .= $node->ownerDocument->saveHTML($c);
+        }
+        $innerHtml = trim($innerHtml);
+        if ($innerHtml === '' || $innerHtml === '<br>' || $innerHtml === '&nbsp;') continue;
+
+        if (preg_match('/___PO_TABLE_\d+___/', $innerHtml, $tm) && isset($tables[$tm[0]])) {
+            $lines[] = ['marker' => '', 'teks' => $tables[$tm[0]], 'is_sub' => ($level > 0)];
+            continue;
+        }
+
+        $plainText = strip_tags($innerHtml);
+        if (preg_match('/^(\s*)(\d+\.|[a-zA-Z][\.\)]|[-•])\s*(.*)$/s', $plainText, $m)) {
+            $marker = $m[2];
+            $teksWithoutMarker = preg_replace('/^\s*(\d+\.|[a-zA-Z][\.\)]|[-•])\s*/', '', $innerHtml);
+            $isSub = ($level > 0 || strlen($m[1]) >= 2 || preg_match('/^[a-zA-Z][\.\)]$/', $marker));
+
+            if ($align && $align !== 'left') {
+                $teksWithoutMarker = '<div style="text-align:' . $align . ';">' . $teksWithoutMarker . '</div>';
+            }
+            $lines[] = [
+                'marker' => $marker,
+                'teks'   => $teksWithoutMarker,
+                'is_sub' => $isSub,
+            ];
+        } else {
+            if ($align && $align !== 'left') {
+                $innerHtml = '<div style="text-align:' . $align . ';">' . $innerHtml . '</div>';
+            }
+            $lines[] = [
+                'marker' => '',
+                'teks'   => $innerHtml,
+                'is_sub' => ($level > 0),
+            ];
+        }
+    }
+}
+
+protected function parseOlNode(\DOMNode $olNode, array &$lines, int $level, array &$tables) {
+    $alpha = range('a', 'z');
+    $typeAttr = ($olNode instanceof \DOMElement) ? strtolower($olNode->getAttribute('type') ?? '') : '';
+    $classAttr = ($olNode instanceof \DOMElement) ? strtolower($olNode->getAttribute('class') ?? '') : '';
+    $styleAttr = ($olNode instanceof \DOMElement) ? strtolower($olNode->getAttribute('style') ?? '') : '';
+
+    $isAlpha = false;
+    if ($typeAttr === 'a' || strpos($classAttr, 'list-alpha') !== false || strpos($styleAttr, 'lower-alpha') !== false || $level > 0) {
+        if ($typeAttr !== '1') {
+            $isAlpha = true;
+        }
+    }
+
+    $liIdx = 0;
+    foreach ($olNode->childNodes as $child) {
+        if ($child->nodeType === XML_ELEMENT_NODE && strtolower($child->nodeName) === 'li') {
+            $liIdx++;
+            $marker = $isAlpha ? (($alpha[$liIdx - 1] ?? $liIdx) . '.') : ($liIdx . '.');
+
+            $liInnerHtml = '';
+            $subLists = [];
+            foreach ($child->childNodes as $liChild) {
+                if ($liChild->nodeType === XML_ELEMENT_NODE && in_array(strtolower($liChild->nodeName), ['ol', 'ul'], true)) {
+                    $subLists[] = $liChild;
+                } else {
+                    $liInnerHtml .= $child->ownerDocument->saveHTML($liChild);
+                }
+            }
+
+            $liInnerHtml = trim($liInnerHtml);
+            if (preg_match('/^(\d+\.|[a-zA-Z][\.\)]|[-•])\s*(.*)$/s', strip_tags($liInnerHtml), $mManual)) {
+                $marker = $mManual[1];
+                $liInnerHtml = preg_replace('/^\s*(\d+\.|[a-zA-Z][\.\)]|[-•])\s*/', '', $liInnerHtml);
+            }
+
+            if ($liInnerHtml !== '' && $liInnerHtml !== '<br>' && $liInnerHtml !== '&nbsp;') {
+                if (preg_match('/___PO_TABLE_\d+___/', $liInnerHtml, $tm) && isset($tables[$tm[0]])) {
+                    $liInnerHtml = str_replace($tm[0], $tables[$tm[0]], $liInnerHtml);
+                }
+                $lines[] = [
+                    'marker' => $marker,
+                    'teks'   => $liInnerHtml,
+                    'is_sub' => ($level > 0 || $isAlpha),
+                ];
+            }
+
+            foreach ($subLists as $subList) {
+                if (strtolower($subList->nodeName) === 'ol') {
+                    $this->parseOlNode($subList, $lines, $level + 1, $tables);
+                } else {
+                    $this->parseUlNode($subList, $lines, $level + 1, $tables);
+                }
+            }
+        }
+    }
+}
+
+protected function parseUlNode(\DOMNode $ulNode, array &$lines, int $level, array &$tables) {
+    foreach ($ulNode->childNodes as $child) {
+        if ($child->nodeType === XML_ELEMENT_NODE && strtolower($child->nodeName) === 'li') {
+            $liInnerHtml = '';
+            $subLists = [];
+            foreach ($child->childNodes as $liChild) {
+                if ($liChild->nodeType === XML_ELEMENT_NODE && in_array(strtolower($liChild->nodeName), ['ol', 'ul'], true)) {
+                    $subLists[] = $liChild;
+                } else {
+                    $liInnerHtml .= $child->ownerDocument->saveHTML($liChild);
+                }
+            }
+
+            $liInnerHtml = trim($liInnerHtml);
+            if ($liInnerHtml !== '' && $liInnerHtml !== '<br>' && $liInnerHtml !== '&nbsp;') {
+                if (preg_match('/___PO_TABLE_\d+___/', $liInnerHtml, $tm) && isset($tables[$tm[0]])) {
+                    $liInnerHtml = str_replace($tm[0], $tables[$tm[0]], $liInnerHtml);
+                }
+                $lines[] = [
+                    'marker' => '-',
+                    'teks'   => $liInnerHtml,
+                    'is_sub' => ($level > 0),
+                ];
+            }
+
+            foreach ($subLists as $subList) {
+                if (strtolower($subList->nodeName) === 'ol') {
+                    $this->parseOlNode($subList, $lines, $level + 1, $tables);
+                } else {
+                    $this->parseUlNode($subList, $lines, $level + 1, $tables);
+                }
+            }
+        }
+    }
 }
 
 protected function hitungNomorSection($divisi) {
@@ -82,7 +311,7 @@ protected function getHariLiburSet() {
     $rows = $this->safeQuery('SELECT tanggal_libur FROM tb_tanggal_libur');
     return array_map(function ($r) { return date('Y-m-d', strtotime($r['tanggal_libur'])); }, $rows);
 }
-protected function bind(PoKegiatan $po, $f3, $isUpdate) {
+protected function bind(PoKegiatan $po, $f3, $isUpdate, $isLivePreview = false) {
     $post = $f3->get('POST');
 
     if (!$isUpdate) {
@@ -94,7 +323,7 @@ protected function bind(PoKegiatan $po, $f3, $isUpdate) {
 
     // [BARU] Judul Kegiatan diedit dari form PO -> sinkronkan juga ke
     // order_layanan.judul_kegiatan biar PO dan Order gak beda-beda lagi.
-    if ((int) $po->order_id > 0 && $po->judul_kegiatan !== '') {
+    if (!$isLivePreview && (int) $po->order_id > 0 && $po->judul_kegiatan !== '') {
         $this->db->exec(
             'UPDATE order_layanan SET judul_kegiatan = ? WHERE id = ?',
             [1 => $po->judul_kegiatan, 2 => (int) $po->order_id]
@@ -239,30 +468,39 @@ protected function bind(PoKegiatan $po, $f3, $isUpdate) {
     ], JSON_UNESCAPED_UNICODE);
 
     $po->jadwal_mulai   = $post['jadwal_mulai'] ?: null;
-$po->jadwal_selesai = $post['jadwal_selesai'] ?: null;
+    $po->jadwal_selesai = $post['jadwal_selesai'] ?: null;
 
-$tahapNamaList    = $post['tahap_nama'] ?? [];
-$kegiatanNamaAll  = $post['jadwal_kegiatan_nama'] ?? [];
-$kegiatanTandaAll = $post['jadwal_kegiatan_tanda'] ?? [];
+    $groups = [];
+    if (!empty($post['jadwal_groups'])) {
+        $decodedGroups = is_array($post['jadwal_groups']) ? $post['jadwal_groups'] : json_decode((string) $post['jadwal_groups'], true);
+        if (is_array($decodedGroups)) {
+            $groups = $decodedGroups;
+        }
+    }
 
-$groups = [];
-foreach ($tahapNamaList as $gIdx => $namaTahap) {
-$kegiatanList = [];
-$namaList = $kegiatanNamaAll[$gIdx] ?? [];
-foreach ($namaList as $kIdx => $namaKeg) {
-    if (trim($namaKeg) === '') continue;
-    $kegiatanList[] = [
-        'nama'  => trim($namaKeg),
-        'tanda' => array_map('strval', $kegiatanTandaAll[$gIdx][$kIdx] ?? []),
-    ];
-}
-$groups[] = ['nama_tahap' => trim($namaTahap), 'kegiatan' => $kegiatanList];
-}
+    if (empty($groups)) {
+        $tahapNamaList    = $post['tahap_nama'] ?? [];
+        $kegiatanNamaAll  = $post['jadwal_kegiatan_nama'] ?? [];
+        $kegiatanTandaAll = $post['jadwal_kegiatan_tanda'] ?? [];
 
-$po->jadwal = json_encode([
-'groups'     => $groups,
-'keterangan' => trim((string) ($post['jadwal_keterangan'] ?? '')),
-], JSON_UNESCAPED_UNICODE);
+        foreach ($tahapNamaList as $gIdx => $namaTahap) {
+            $kegiatanList = [];
+            $namaList = $kegiatanNamaAll[$gIdx] ?? [];
+            foreach ($namaList as $kIdx => $namaKeg) {
+                if (trim($namaKeg) === '') continue;
+                $kegiatanList[] = [
+                    'nama'  => trim($namaKeg),
+                    'tanda' => array_map('strval', $kegiatanTandaAll[$gIdx][$kIdx] ?? []),
+                ];
+            }
+            $groups[] = ['nama_tahap' => trim($namaTahap), 'kegiatan' => $kegiatanList];
+        }
+    }
+
+    $po->jadwal = json_encode([
+        'groups'     => $groups,
+        'keterangan' => trim((string) ($post['jadwal_keterangan'] ?? '')),
+    ], JSON_UNESCAPED_UNICODE);
 
     $po->status = ($post['aksi'] ?? '') === 'kirim' ? 'terkirim' : 'draft';
 }
@@ -274,33 +512,44 @@ public function index($f3) {
     $divisi = $this->divisiDariRequest($f3);
     $params = $divisi ? [1 => $divisi] : [];
 
-    // [FIX] kondisi divisi sebelumnya dihitung ($where) tapi kelupaan gak
-    // ditempelin ke $sql, jadi klik "PO Lingkungan"/"PO Selulosa" di sidebar
-    // sama sekali gak nyaring data -- sekarang beneran ditempelin ke WHERE-nya.
-    $sql = "SELECT p.id AS po_id, p.nomor_po, p.status AS po_status, p.created_at AS po_created_at,
+    $sql = "SELECT p.id AS po_id, p.nomor_po, p.status AS po_status, p.created_at AS po_created_at, p.updated_at AS po_updated_at,
+                   p.reviewed_at, p.status_review, p.disetujui_at,
                    o.id AS order_id, o.nomor_order, o.judul_kegiatan, o.jenis_layanan_opti, o.status_tinjauan,
                    o.ketua_pelaksana_id, o.ketua_pelaksana_at,
-                   c.nmcustomer AS nama_mitra, c.pt_cv
+                   c.nmcustomer AS nama_mitra, c.pt_cv,
+                   u.nama_user AS nama_pembuat
             FROM order_layanan o
             JOIN tb_customer c ON o.id_customer = c.id_customer
             LEFT JOIN po_kegiatan p ON p.order_id = o.id
+            LEFT JOIN tb_arsipuser u ON u.id_user = o.ketua_pelaksana_id
             WHERE o.ketua_pelaksana_id IS NOT NULL"
             . ($divisi ? " AND o.jenis_layanan_opti = ?" : "") . "
             ORDER BY COALESCE(p.created_at, o.ketua_pelaksana_at) DESC";
 
-$daftarPo = $this->safeQuery($sql, $params);
-
+    $daftarPo = $this->safeQuery($sql, $params);
 
     $totalMenunggu = count(array_filter($daftarPo, function ($r) { return empty($r['po_id']); }));
-    $totalDraft    = count(array_filter($daftarPo, function ($r) { return $r['po_status'] === 'draft'; }));
-    $totalTerkirim = count(array_filter($daftarPo, function ($r) { return $r['po_status'] === 'terkirim'; }));
+    $totalDraft    = count(array_filter($daftarPo, function ($r) { return !empty($r['po_id']) && $r['po_status'] === 'draft'; }));
+    $totalBerjalan = count(array_filter($daftarPo, function ($r) { 
+        return !empty($r['po_id']) && ($r['po_status'] === 'draft' || in_array($r['status_review'] ?? '', ['menunggu_review', 'revisi'])); 
+    }));
+    $totalTerkirim = count(array_filter($daftarPo, function ($r) { return !empty($r['po_id']) && $r['po_status'] === 'terkirim'; }));
+    $totalDisetujui = count(array_filter($daftarPo, function ($r) { 
+        return !empty($r['po_id']) && (($r['status_review'] ?? '') === 'disetujui' || $r['po_status'] === 'selesai'); 
+    }));
+    $totalPerluTindakan = count(array_filter($daftarPo, function ($r) {
+        return empty($r['po_id']) || ($r['po_status'] === 'draft') || (($r['status_review'] ?? '') === 'revisi') || (($r['status_review'] ?? '') === 'menunggu_review' && empty($r['reviewed_at']));
+    }));
 
     $f3->set('daftar_po', $daftarPo);
     $f3->set('divisi', $divisi);
     $f3->set('total_po', count($daftarPo));
     $f3->set('total_menunggu', $totalMenunggu);
     $f3->set('total_draft', $totalDraft);
+    $f3->set('total_berjalan', $totalBerjalan);
     $f3->set('total_terkirim', $totalTerkirim);
+    $f3->set('total_disetujui', $totalDisetujui);
+    $f3->set('total_perlu_tindakan', $totalPerluTindakan);
 
     $this->render('katim_kerja/po-kegiatan/index.html', 'Petunjuk Operasional (PO)', $divisi ? 'po_' . $divisi : 'po_kegiatan');
 }
@@ -482,9 +731,34 @@ $f3->set('info_pembayaran_json', json_encode($infoPembayaran, JSON_UNESCAPED_UNI
             $po->created_at = date('Y-m-d H:i:s');
             $po->save();
 
-            $this->setFlashSuccess($f3->get('POST.aksi') === 'kirim'
+            $aksiKirim = ($f3->get('POST.aksi') === 'kirim');
+            $this->setFlashSuccess($aksiKirim
                 ? 'PO berhasil dibuat dan dikirim.'
                 : 'PO berhasil disimpan sebagai draft.');
+
+            if ($aksiKirim) {
+                try {
+                    $orderId = (int)$f3->get('POST.order_id');
+                    $orderModel = new \OrderLayanan($this->db);
+                    $order = $orderModel->getDetail($orderId);
+                    $userName = $_SESSION['nama_lengkap'] ?? 'Ketua Pelaksana';
+                    if ($order) {
+                        \NotificationService::send($this->db, [
+                            'order_id'        => $orderId,
+                            'po_id'           => (int)$po->id,
+                            'target_role'     => 'ketua_tim',
+                            'target_layanan'  => $order['jenis_layanan_opti'] ?? 'semua',
+                            'judul'           => 'PO Kegiatan Menunggu Pemeriksaan',
+                            'pesan'           => "Dokumen PO Kegiatan {$po->nomor_po} untuk Order #{$order['nomor_order']} ({$order['nama_perusahaan']}) telah dikirimkan oleh {$userName} dan siap diperiksa.",
+                            'tipe'            => 'primary',
+                            'icon'            => 'bi-file-earmark-check-fill',
+                            'link_url'        => "/po-review",
+                            'created_by'      => (int)$this->getUserId(),
+                            'created_by_name' => $userName
+                        ]);
+                    }
+                } catch (\Exception $eNotif) {}
+            }
         } catch (\Exception $e) {
             $this->setFlashError('Gagal menyimpan PO: ' . $e->getMessage());
         }
@@ -510,9 +784,34 @@ $f3->set('info_pembayaran_json', json_encode($infoPembayaran, JSON_UNESCAPED_UNI
             $po->updated_at = date('Y-m-d H:i:s');
             $po->save();
 
-            $this->setFlashSuccess($f3->get('POST.aksi') === 'kirim'
+            $aksiKirim = ($f3->get('POST.aksi') === 'kirim');
+            $this->setFlashSuccess($aksiKirim
                 ? 'PO berhasil diperbarui dan dikirim.'
                 : 'PO berhasil diperbarui sebagai draft.');
+
+            if ($aksiKirim) {
+                try {
+                    $orderId = (int)$f3->get('POST.order_id');
+                    $orderModel = new \OrderLayanan($this->db);
+                    $order = $orderModel->getDetail($orderId);
+                    $userName = $_SESSION['nama_lengkap'] ?? 'Ketua Pelaksana';
+                    if ($order) {
+                        \NotificationService::send($this->db, [
+                            'order_id'        => $orderId,
+                            'po_id'           => (int)$po->id,
+                            'target_role'     => 'ketua_tim',
+                            'target_layanan'  => $order['jenis_layanan_opti'] ?? 'semua',
+                            'judul'           => 'PO Kegiatan Menunggu Pemeriksaan',
+                            'pesan'           => "Dokumen PO Kegiatan {$po->nomor_po} untuk Order #{$order['nomor_order']} ({$order['nama_perusahaan']}) telah diperbarui oleh {$userName} dan siap diperiksa.",
+                            'tipe'            => 'primary',
+                            'icon'            => 'bi-file-earmark-check-fill',
+                            'link_url'        => "/po-review",
+                            'created_by'      => (int)$this->getUserId(),
+                            'created_by_name' => $userName
+                        ]);
+                    }
+                } catch (\Exception $eNotif) {}
+            }
         } catch (\Exception $e) {
             $this->setFlashError('Gagal memperbarui PO: ' . $e->getMessage());
         }
@@ -568,17 +867,83 @@ $f3->set('info_pembayaran_json', json_encode($infoPembayaran, JSON_UNESCAPED_UNI
     
         $options = new \Dompdf\Options();
         $options->set('isRemoteEnabled', false);
-$options->set('defaultFont', 'Times-Roman');
+        $options->set('defaultFont', 'Times-Roman');
         $dompdf = new \Dompdf\Dompdf($options);
-    $dompdf->loadHtml($html);
-    $dompdf->setPaper('A4', 'portrait');
-    $dompdf->render();
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
 
-    $namaFile = 'PO-' . preg_replace('/[^A-Za-z0-9_-]/', '_', $poData['nomor_po'] ?? $po->id) . '.pdf';
+        $namaFile = 'PO-' . preg_replace('/[^A-Za-z0-9_-]/', '_', $poData['nomor_po'] ?? $po->id) . '.pdf';
 
-    $dompdf->stream($namaFile, ['Attachment' => false]);
-    exit;
-}
+        $dompdf->stream($namaFile, ['Attachment' => false]);
+        exit;
+    }
+
+    /** POST /po-kegiatan/preview-live -- render live preview fragment dari data form saat ini (tanpa save DB) */
+    public function previewLive($f3) {
+        $this->requireAuth();
+
+        try {
+            $po = new PoKegiatan($this->db);
+            $orderId = (int) ($f3->get('POST.order_id') ?? 0);
+            $poId = (int) ($f3->get('POST.po_id') ?? 0);
+            if ($poId > 0) {
+                $po->load(['id = ?', $poId]);
+            }
+            
+            $this->bind($po, $f3, $poId > 0, true);
+            
+            $orderData = $this->getOrderDenganMitra($orderId);
+            $poData = $this->siapkanDataPo($po, $orderData);
+
+            $f3->set('order', $orderData ?: null);
+            $f3->set('po', $poData);
+
+            echo \Template::instance()->render('katim_kerja/po-kegiatan/preview_fragment.html');
+        } catch (\Throwable $e) {
+            header('HTTP/1.1 500 Internal Server Error');
+            echo '<div class="text-white text-center py-4"><p class="text-danger fw-bold mb-1">Gagal Menyiapkan Pratinjau</p><small class="text-white-50">' . htmlspecialchars($e->getMessage()) . '</small></div>';
+        }
+    }
+
+    /** POST /po-kegiatan/cetak-live -- render live PDF stream dari data form saat ini */
+    public function cetakLive($f3) {
+        $this->requireAuth();
+
+        try {
+            $po = new PoKegiatan($this->db);
+            $orderId = (int) ($f3->get('POST.order_id') ?? 0);
+            $poId = (int) ($f3->get('POST.po_id') ?? 0);
+            if ($poId > 0) {
+                $po->load(['id = ?', $poId]);
+            }
+            
+            $this->bind($po, $f3, $poId > 0, true);
+            
+            $orderData = $this->getOrderDenganMitra($orderId);
+            $poData = $this->siapkanDataPo($po, $orderData);
+
+            $f3->set('order', $orderData ?: null);
+            $f3->set('po', $poData);
+            $html = \Template::instance()->render('katim_kerja/po-kegiatan/cetak_pdf.html');
+
+            $options = new \Dompdf\Options();
+            $options->set('isRemoteEnabled', false);
+            $options->set('defaultFont', 'Times-Roman');
+
+            $dompdf = new \Dompdf\Dompdf($options);
+            $dompdf->loadHtml($html);
+            $dompdf->setPaper('A4', 'portrait');
+            $dompdf->render();
+
+            $namaFile = 'Preview-PO-' . preg_replace('/[^A-Za-z0-9_-]/', '_', $poData['nomor_po'] ?: 'Draft') . '.pdf';
+            $dompdf->stream($namaFile, ['Attachment' => false]);
+            exit;
+        } catch (\Throwable $e) {
+            echo 'Gagal mencetak PDF: ' . htmlspecialchars($e->getMessage());
+            exit;
+        }
+    }
 
 protected function siapkanDataPo($po, $orderData) {
     $poData = $po->cast();
@@ -623,6 +988,7 @@ protected function siapkanDataPo($po, $orderData) {
     $kolomInfo = $this->generateJadwalKolom($poData['jadwal_mulai'] ?? null, $poData['jadwal_selesai'] ?? null);
     $poData['jadwal_kolom']        = $kolomInfo['kolom'];
     $poData['jadwal_bulan_header'] = $this->groupBulanHeader($kolomInfo['kolom']);
+    $poData['jadwal_chunks']       = $this->chunkJadwalKolom($kolomInfo['kolom']);
 
     $jadwalDecoded = json_decode($poData['jadwal'] ?? '{}', true) ?: [];
     $poData['jadwal_groups']           = $jadwalDecoded['groups'] ?? [];
@@ -659,16 +1025,84 @@ protected function siapkanDataPo($po, $orderData) {
     return $poData;
 }
 
-    /** GET /po-kegiatan/jadwal-kolom?mulai=YYYY-MM-DD&selesai=YYYY-MM-DD */
+    /** GET /po-kegiatan/jadwal-kolom?mulai=YYYY-MM-DD&selesai=YYYY-MM-DD&mode=mingguan */
     public function jadwalKolom($f3) {
         $mulai = (string) ($f3->get('GET.mulai') ?? '');
         $selesai = (string) ($f3->get('GET.selesai') ?? '');
+        $modeReq = (string) ($f3->get('GET.mode') ?? '');
 
-        $hasil = $this->generateJadwalKolom($mulai, $selesai);
+        $hasil = $this->generateJadwalKolom($mulai, $selesai, $modeReq);
         $hasil['bulan_header'] = $this->groupBulanHeader($hasil['kolom']);
+        $hasil['chunks']       = $this->chunkJadwalKolom($hasil['kolom']);
 
         header('Content-Type: application/json');
         echo json_encode($hasil);
+    }
+
+    /**
+     * Membagi kolom jadwal menjadi beberapa chunk (maksimal 16 kolom per chunk)
+     * agar tabel tidak memanjang ke samping (mentok kanan) pada durasi berbulan-bulan/bertahun-tahun.
+     * Pembagian dihitung utuh per bulan sehingga minggu dalam satu bulan tidak terpisah.
+     */
+    protected function chunkJadwalKolom($kolom, $maxColsPerChunk = 16) {
+        if (empty($kolom)) return [];
+
+        if (count($kolom) <= $maxColsPerChunk) {
+            $bh = $this->groupBulanHeader($kolom);
+            $firstMonth = $bh[0]['label'] ?? '';
+            $lastMonth  = $bh[count($bh) - 1]['label'] ?? '';
+            $label = ($firstMonth === $lastMonth) ? $firstMonth : $firstMonth . ' – ' . $lastMonth;
+            return [[
+                'label'        => $label,
+                'kolom'        => $kolom,
+                'bulan_header' => $bh,
+            ]];
+        }
+
+        // Kelompokkan kolom per bulan
+        $monthGroups = [];
+        foreach ($kolom as $k) {
+            $m = $k['bulan_label'];
+            if (!isset($monthGroups[$m])) {
+                $monthGroups[$m] = [];
+            }
+            $monthGroups[$m][] = $k;
+        }
+
+        $chunks = [];
+        $currentChunkCols = [];
+
+        foreach ($monthGroups as $mCols) {
+            if (!empty($currentChunkCols) && (count($currentChunkCols) + count($mCols)) > $maxColsPerChunk) {
+                $bh = $this->groupBulanHeader($currentChunkCols);
+                $firstMonth = $bh[0]['label'] ?? '';
+                $lastMonth  = $bh[count($bh) - 1]['label'] ?? '';
+                $label = ($firstMonth === $lastMonth) ? $firstMonth : $firstMonth . ' – ' . $lastMonth;
+                $chunks[] = [
+                    'label'        => $label,
+                    'kolom'        => $currentChunkCols,
+                    'bulan_header' => $bh,
+                ];
+                $currentChunkCols = [];
+            }
+            foreach ($mCols as $c) {
+                $currentChunkCols[] = $c;
+            }
+        }
+
+        if (!empty($currentChunkCols)) {
+            $bh = $this->groupBulanHeader($currentChunkCols);
+            $firstMonth = $bh[0]['label'] ?? '';
+            $lastMonth  = $bh[count($bh) - 1]['label'] ?? '';
+            $label = ($firstMonth === $lastMonth) ? $firstMonth : $firstMonth . ' – ' . $lastMonth;
+            $chunks[] = [
+                'label'        => $label,
+                'kolom'        => $currentChunkCols,
+                'bulan_header' => $bh,
+            ];
+        }
+
+        return $chunks;
     }
 
     /**
@@ -718,7 +1152,7 @@ protected function siapkanDataPo($po, $orderData) {
         ];
     }
 
-    protected function generateJadwalKolom($mulaiStr, $selesaiStr) {
+    protected function generateJadwalKolom($mulaiStr, $selesaiStr, $modeReq = '') {
         if (empty($mulaiStr) || empty($selesaiStr)) return ['mode' => null, 'kolom' => []];
     
         $mulai = new \DateTime($mulaiStr);
@@ -731,7 +1165,35 @@ protected function siapkanDataPo($po, $orderData) {
     
         $kolom = [];
     
-        if ($selisihHari <= 31) {
+        // Jika mode explicitly requested as 'mingguan' atau 'bulanan', atau durasi > 31 hari
+        if (($modeReq === 'mingguan' || $modeReq === 'bulanan') || (empty($modeReq) && $selisihHari > 31)) {
+            $mode = 'bulanan';
+            $startYear  = (int) $mulai->format('Y');
+            $startMonth = (int) $mulai->format('n');
+            $endYear    = (int) $selesai->format('Y');
+            $endMonth   = (int) $selesai->format('n');
+
+            $currYear  = $startYear;
+            $currMonth = $startMonth;
+
+            while ($currYear < $endYear || ($currYear === $endYear && $currMonth <= $endMonth)) {
+                $bLabel = $bulanNama[$currMonth] . ' ' . $currYear;
+                for ($w = 1; $w <= 4; $w++) {
+                    $key = $currYear . '-' . str_pad($currMonth, 2, '0', STR_PAD_LEFT) . '-w' . $w;
+                    $kolom[] = [
+                        'key'         => $key,
+                        'label'       => (string) $w,
+                        'bulan_label' => $bLabel,
+                        'libur'       => false,
+                    ];
+                }
+                $currMonth++;
+                if ($currMonth > 12) {
+                    $currMonth = 1;
+                    $currYear++;
+                }
+            }
+        } else {
             $mode = 'harian';
             $cursor = clone $mulai;
             while ($cursor <= $selesai) {
@@ -744,22 +1206,6 @@ protected function siapkanDataPo($po, $orderData) {
                     'bulan_label' => $bulanNama[(int) $cursor->format('n')] . ' ' . $cursor->format('Y'),
                     'libur'       => $isLibur,
                 ];
-                $cursor->modify('+1 day');
-            }
-        } else {
-            $mode = 'bulanan';
-            $cursor = clone $mulai;
-            while ($cursor <= $selesai) {
-                $tahun = (int) $cursor->format('Y');
-                $bulan = (int) $cursor->format('n');
-                $mingguKe = (int) floor(((int) $cursor->format('j') - 1) / 7) + 1;
-                $key = $tahun . '-' . str_pad($bulan, 2, '0', STR_PAD_LEFT) . '-w' . $mingguKe;
-    
-                $sudahAda = false;
-                foreach ($kolom as $k) { if ($k['key'] === $key) { $sudahAda = true; break; } }
-                if (!$sudahAda) {
-                    $kolom[] = ['key' => $key, 'label' => (string) $mingguKe, 'bulan_label' => $bulanNama[$bulan] . ' ' . $tahun, 'libur' => false];
-                }
                 $cursor->modify('+1 day');
             }
         }

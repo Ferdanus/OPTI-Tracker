@@ -70,25 +70,26 @@ class NotificationService
             $roleMatch[] = "target_role IN ('ketua_tim_mitra', 'tim_mitra_industri', 'admin_order', 'tim_mitra', 'all')";
         } elseif ($role === 'tim_mitra_industri' || $role === 'admin_order' || $role === 'tim_mitra') {
             // Staf tim mitra does NOT get ketua_tim_mitra notifications
-            $roleMatch[] = "target_role IN ('tim_mitra_industri', 'admin_order', 'tim_mitra', 'all')";
+            $roleMatch[] = "target_role IN ('tim_mitra_industri', 'admin_order', 'tim_mitra')";
         } elseif ($role === 'ketua_tim_keuangan') {
             $roleMatch[] = "target_role IN ('ketua_tim_keuangan', 'keuangan', 'all')";
         } elseif ($role === 'keuangan') {
             // Staf keuangan does NOT get ketua_tim_keuangan notifications
-            $roleMatch[] = "target_role IN ('keuangan', 'all')";
+            $roleMatch[] = "target_role IN ('keuangan')";
         } elseif ($role === 'ketua_tim') {
             $roleMatch[] = "target_role IN ('ketua_tim', 'all')";
         } elseif ($role === 'tim_kerja') {
-            $roleMatch[] = "target_role IN ('tim_kerja', 'all')";
+            // Anggota tim kerja HANYA menerima notifikasi yang secara spesifik ditugaskan ke dirinya sebagai PIC (target_user_id = userId)
+            $roleMatch[] = "1=0";
         } else {
-            $roleMatch[] = "(target_role = ? OR target_role = 'all')";
+            $roleMatch[] = "target_role = ?";
             $params[] = $role;
         }
 
         $roleSql = implode(' OR ', $roleMatch);
 
-        // Filter layanan for ketua_tim & tim_kerja when matching role-based
-        if (in_array($role, ['ketua_tim', 'tim_kerja']) && in_array($layanan, ['selulosa', 'lingkungan'])) {
+        // Filter layanan for ketua_tim when matching role-based
+        if (in_array($role, ['ketua_tim']) && in_array($layanan, ['selulosa', 'lingkungan'])) {
             $roleSql = "({$roleSql}) AND (target_layanan = 'semua' OR target_layanan = ? OR target_layanan = 'belum_ditentukan' OR target_layanan IS NULL OR target_layanan = '')";
             $params[] = $layanan;
         }

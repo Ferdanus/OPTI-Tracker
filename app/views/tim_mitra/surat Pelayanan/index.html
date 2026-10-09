@@ -1,5 +1,5 @@
 <style>
-    .kb-badge-none {
+.kb-badge-none {
     display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #94a3b8;
     border: 1px dashed #cbd5e1; border-radius: 20px; padding: 3px 8px; white-space: nowrap;
 }
@@ -8,49 +8,167 @@
     background: #fef3c7; border-radius: 20px; padding: 3px 8px; white-space: nowrap; text-decoration: none;
 }
 .kb-badge-ada:hover { background: #fde68a; color: #78350f; }
+
+.filter-tabs-wrapper {
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 12px 18px;
+}
+.filter-tab-pill.nav-link,
+.filter-tab-pill {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.45rem !important;
+    padding: 0.45rem 0.85rem !important;
+    border-radius: 9999px !important;
+    font-size: 0.8rem !important;
+    font-weight: 600 !important;
+    color: #475569 !important;
+    background-color: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    text-decoration: none !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    white-space: nowrap !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03) !important;
+    cursor: pointer !important;
+    line-height: 1.2 !important;
+}
+.filter-tab-pill.nav-link:hover,
+.filter-tab-pill:hover {
+    color: #0f172a !important;
+    background-color: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important;
+}
+.filter-tab-pill .count-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 9999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    background-color: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s;
+}
+.filter-tab-pill .count-chip.chip-warning {
+    background-color: #fef3c7;
+    color: #b45309;
+    border-color: #fde68a;
+}
+.filter-tab-pill .count-chip.chip-success {
+    background-color: #dcfce7;
+    color: #15803d;
+    border-color: #bbf7d0;
+}
+.filter-tab-pill .count-chip.chip-danger {
+    background-color: #fee2e2;
+    color: #b91c1c;
+    border-color: #fecaca;
+}
+.filter-tab-pill.nav-link.active,
+.filter-tab-pill.active {
+    color: #ffffff !important;
+    background-color: var(--color-primary, #881337) !important;
+    border-color: var(--color-primary, #881337) !important;
+    box-shadow: 0 2px 6px rgba(136, 19, 55, 0.25) !important;
+}
+.filter-tab-pill.nav-link.active .count-chip,
+.filter-tab-pill.active .count-chip {
+    background-color: rgba(255, 255, 255, 0.25) !important;
+    border-color: transparent !important;
+    color: #ffffff !important;
+}
+.filter-tab-pill.nav-link.active i,
+.filter-tab-pill.active i {
+    color: #ffffff !important;
+}
+.filter-tab-pill.tab-batal.active {
+    background-color: #dc2626 !important;
+    border-color: #dc2626 !important;
+    box-shadow: 0 2px 6px rgba(220, 38, 38, 0.25) !important;
+    color: #ffffff !important;
+}
+.filter-tab-pill.tab-batal.active .count-chip {
+    background-color: rgba(255, 255, 255, 0.25) !important;
+    border-color: transparent !important;
+    color: #ffffff !important;
+}
 </style>
+
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
     <div>
-        <h2 class="h4 fw-bold mb-1 text-dark"><i class="bi bi-file-earmark-text text-primary me-2"></i>Surat Penawaran Resmi</h2>
-        <p class="text-muted small mb-0">Daftar Surat Penawaran Resmi Layanan OPTI BBSPJIS.</p>
+        <h2 class="h4 fw-bold mb-0 text-dark d-flex align-items-center gap-2"><i class="bi bi-file-earmark-text text-primary"></i> Surat Penawaran Resmi</h2>
     </div>
     <button type="button" class="btn btn-primary btn-sm px-3 py-2 shadow-sm d-inline-flex align-items-center gap-2 fw-semibold" data-bs-toggle="modal" data-bs-target="#modalPilihOrder">
         <i class="bi bi-plus-lg"></i> Tambah Surat Penawaran
     </button>
 </div>
 
-<!-- Ringkasan Status Alur Pelayanan -->
+<!-- 5 KARTU METRIK KPI RINGKASAN -->
 <div class="row g-3 mb-4">
-    <div class="col-md-4">
+    <div class="col-6 col-md-4 col-lg">
         <div class="metric-card">
             <div>
-                <div class="text-muted small fw-semibold mb-1">Total Penawaran</div>
-                <div class="h4 fw-bold mb-0 text-dark">{{ @total_surat ?: 0 }}</div>
+                <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">Total Surat</span>
+                <h3 class="fw-bold text-dark mb-0 mt-1">{{ @total_surat ?: 0 }}</h3>
+                <span class="small text-muted" style="font-size: 0.75rem;">Semua riwayat</span>
             </div>
             <div class="metric-icon-box" style="background: rgba(136,19,55,.08); color: var(--color-primary);">
                 <i class="bi bi-file-earmark-text"></i>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-6 col-md-4 col-lg">
         <div class="metric-card">
             <div>
-                <div class="text-muted small fw-semibold mb-1">Dalam Negosiasi</div>
-                <div class="h4 fw-bold mb-0 text-warning">{{ @total_nego ?: 0 }}</div>
+                <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">Penawaran Aktif</span>
+                <h3 class="fw-bold text-dark mb-0 mt-1">{{ @total_aktif ?: 0 }}</h3>
+                <span class="small text-muted" style="font-size: 0.75rem;">Draft & negosiasi</span>
             </div>
-            <div class="metric-icon-box" style="background: #fffbeb; color: #b45309;">
-                <i class="bi bi-chat-dots"></i>
+            <div class="metric-icon-box" style="background: #eff6ff; color: #1d4ed8;">
+                <i class="bi bi-file-earmark-check-fill"></i>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-6 col-md-4 col-lg">
         <div class="metric-card">
             <div>
-                <div class="text-muted small fw-semibold mb-1">Disepakati &bull; DEAL</div>
-                <div class="h4 fw-bold mb-0 text-success">{{ @total_deal ?: 0 }}</div>
+                <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">Negosiasi</span>
+                <h3 class="fw-bold text-warning mb-0 mt-1">{{ @total_nego ?: 0 }}</h3>
+                <span class="small text-muted" style="font-size: 0.75rem;">Proses kesepakatan</span>
+            </div>
+            <div class="metric-icon-box" style="background: #fffbeb; color: #b45309;">
+                <i class="bi bi-chat-dots-fill"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg">
+        <div class="metric-card">
+            <div>
+                <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">Disepakati (DEAL)</span>
+                <h3 class="fw-bold text-success mb-0 mt-1">{{ @total_deal ?: 0 }}</h3>
+                <span class="small text-muted" style="font-size: 0.75rem;">Siap pembayaran</span>
             </div>
             <div class="metric-icon-box" style="background: #ecfdf5; color: #065f46;">
                 <i class="bi bi-check-circle-fill"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4 col-lg">
+        <div class="metric-card">
+            <div>
+                <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">Arsip Batal</span>
+                <h3 class="fw-bold text-danger mb-0 mt-1">{{ @total_batal ?: 0 }}</h3>
+                <span class="small text-muted" style="font-size: 0.75rem;">Gagal / Direvisi</span>
+            </div>
+            <div class="metric-icon-box" style="background: #fef2f2; color: #dc2626;">
+                <i class="bi bi-x-octagon-fill"></i>
             </div>
         </div>
     </div>
@@ -60,10 +178,20 @@
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-body p-3">
         <form action="{{ @BASE }}/surat-penawaran" method="GET" class="row g-2 align-items-center">
-            <check if="{{ @tampilkan_semua }}">
-                <input type="hidden" name="all" value="1">
-            </check>
-            <div class="col-md-2 col-lg-2">
+            <!-- Filter Bulan -->
+            <div class="col-6 col-md-3 col-lg-2">
+                <div class="input-group">
+                    <span class="input-group-text bg-light text-muted"><i class="bi bi-calendar3"></i></span>
+                    <select name="bulan" class="form-select fw-semibold" onchange="this.form.submit()" title="Filter Berdasarkan Bulan">
+                        <option value="all" {{ @filter_bulan == 'all' || empty(@filter_bulan) ? 'selected' : '' }}>Semua Bulan</option>
+                        <repeat group="{{ @daftar_bulan }}" key="{{ @bln_kode }}" value="{{ @bln_nama }}">
+                            <option value="{{ @bln_kode }}" {{ @filter_bulan == @bln_kode ? 'selected' : '' }}>{{ @bln_nama }}</option>
+                        </repeat>
+                    </select>
+                </div>
+            </div>
+            <!-- Filter Tahun -->
+            <div class="col-6 col-md-3 col-lg-2">
                 <div class="input-group">
                     <span class="input-group-text bg-light text-muted"><i class="bi bi-calendar-event"></i></span>
                     <select name="tahun" class="form-select fw-semibold" onchange="this.form.submit()" title="Filter Berdasarkan Tahun">
@@ -74,26 +202,27 @@
                     </select>
                 </div>
             </div>
-            <div class="col-md-5 col-lg-5">
+            <!-- Input Pencarian -->
+            <div class="col-12 col-md-6 col-lg-4">
                 <div class="input-group">
                     <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
                     <input type="text" name="q" class="form-control border-start-0" placeholder="Cari nomor surat / perihal / nama instansi customer..." value="{{ @search }}">
                 </div>
             </div>
-            <div class="col-md-3 col-lg-3">
-                <select name="status" class="form-select">
-                    <option value="">Semua Status</option>
-                    <option value="draft" {{ @filter_status == 'draft' ? 'selected' : '' }}>Draft</option>
-                    <option value="nego" {{ @filter_status == 'nego' ? 'selected' : '' }}>Negosiasi</option>
-                    <option value="deal" {{ @filter_status == 'deal' ? 'selected' : '' }}>DEAL (Disepakati)</option>
-                    <option value="batal" {{ @filter_status == 'batal' ? 'selected' : '' }}>Ditolak / Batal</option>
+            <!-- Filter Layanan -->
+            <div class="col-6 col-md-3 col-lg-2">
+                <select name="jenis_layanan" class="form-select" onchange="this.form.submit()">
+                    <option value="">Semua Layanan</option>
+                    <option value="opti_selulosa" {{ @filter_layanan == 'opti_selulosa' ? 'selected' : '' }}>OPTI Selulosa</option>
+                    <option value="opti_lingkungan" {{ @filter_layanan == 'opti_lingkungan' ? 'selected' : '' }}>OPTI Lingkungan</option>
                 </select>
             </div>
-            <div class="col-md-2 col-lg-2 d-flex gap-2">
+            <!-- Tombol Filter & Reset -->
+            <div class="col-6 col-md-3 col-lg-2 d-flex gap-2">
                 <button type="submit" class="btn btn-primary flex-grow-1 d-inline-flex align-items-center justify-content-center gap-1">
                     <i class="bi bi-funnel"></i> Filter
                 </button>
-                <check if="{{ @search || @filter_status || (@filter_tahun && @filter_tahun != date('Y')) }}">
+                <check if="{{ @search || @filter_layanan || (@filter_tahun && @filter_tahun != date('Y')) || (@filter_bulan && @filter_bulan != 'all') }}">
                     <a href="{{ @BASE }}/surat-penawaran" class="btn btn-outline-secondary d-inline-flex align-items-center justify-content-center px-2.5" title="Reset filter">
                         <i class="bi bi-arrow-counterclockwise"></i>
                     </a>
@@ -103,201 +232,568 @@
     </div>
 </div>
 
-<!-- Tabel Data -->
-<div class="card border-0 shadow-sm">
-    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-        <div class="d-flex align-items-center gap-2">
-            <h6 class="m-0 fw-bold text-dark"><i class="bi bi-table text-primary me-2"></i>Daftar Surat Penawaran Resmi</h6>
-            <check if="{{ @tampilkan_semua }}">
-                <span class="badge bg-secondary-subtle text-secondary border ms-1" style="font-size: 0.72rem;">Semua Riwayat Revisi</span>
-            </check>
-        </div>
-        <div class="d-flex align-items-center gap-3">
-            <check if="{{ !@tampilkan_semua }}">
-                <a href="{{ @BASE }}/surat-penawaran?all=1{{ @filter_tahun ? '&tahun='.@filter_tahun : '' }}{{ @search ? '&q='.@search : '' }}{{ @filter_status ? '&status='.@filter_status : '' }}" class="text-decoration-none small text-muted" title="Tampilkan seluruh versi riwayat revisi">
-                    <i class="bi bi-clock-history me-1"></i>Lihat Semua Riwayat
-                </a>
-            </check>
-            <check if="{{ @tampilkan_semua }}">
-                <a href="{{ @BASE }}/surat-penawaran?all=0{{ @filter_tahun ? '&tahun='.@filter_tahun : '' }}{{ @search ? '&q='.@search : '' }}{{ @filter_status ? '&status='.@filter_status : '' }}" class="text-decoration-none small text-primary fw-semibold" title="Hanya tampilkan dokumen penawaran aktif">
-                    <i class="bi bi-check2-circle me-1"></i>Hanya Dokumen Aktif
-                </a>
-            </check>
-            <span class="text-muted small">Total: <strong>{{ @total_surat ?: 0 }}</strong> dokumen</span>
-        </div>
+<!-- TABEL UTAMA DENGAN FILTER PILLS NAVIGATION -->
+<div class="card border-0 shadow-sm overflow-hidden mb-4">
+    <div class="filter-tabs-wrapper">
+        <ul class="nav d-flex align-items-center gap-2 flex-wrap mb-0 p-0 border-0" id="penawaranTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link filter-tab-pill {{ @active_tab == 'aktif' ? 'active' : '' }}" id="tab-aktif" data-bs-toggle="tab" data-bs-target="#content-aktif" type="button" role="tab" aria-controls="content-aktif" aria-selected="{{ @active_tab == 'aktif' ? 'true' : 'false' }}">
+                    <i class="bi bi-file-earmark-check-fill text-primary"></i>
+                    <span>Penawaran Aktif</span>
+                    <span class="count-chip">{{ count(@daftar_aktif) }}</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link filter-tab-pill {{ @active_tab == 'nego' ? 'active' : '' }}" id="tab-nego" data-bs-toggle="tab" data-bs-target="#content-nego" type="button" role="tab" aria-controls="content-nego" aria-selected="{{ @active_tab == 'nego' ? 'true' : 'false' }}">
+                    <i class="bi bi-chat-dots-fill text-warning"></i>
+                    <span>Dalam Negosiasi</span>
+                    <span class="count-chip chip-warning">{{ count(@daftar_nego) }}</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link filter-tab-pill {{ @active_tab == 'deal' ? 'active' : '' }}" id="tab-deal" data-bs-toggle="tab" data-bs-target="#content-deal" type="button" role="tab" aria-controls="content-deal" aria-selected="{{ @active_tab == 'deal' ? 'true' : 'false' }}">
+                    <i class="bi bi-check-circle-fill text-success"></i>
+                    <span>Disepakati (DEAL)</span>
+                    <span class="count-chip chip-success">{{ count(@daftar_deal) }}</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link filter-tab-pill tab-batal {{ @active_tab == 'batal' ? 'active' : '' }}" id="tab-batal" data-bs-toggle="tab" data-bs-target="#content-batal" type="button" role="tab" aria-controls="content-batal" aria-selected="{{ @active_tab == 'batal' ? 'true' : 'false' }}">
+                    <i class="bi bi-x-octagon-fill text-danger"></i>
+                    <span>Arsip Batal & Ditolak</span>
+                    <span class="count-chip chip-danger">{{ count(@daftar_batal) }}</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link filter-tab-pill {{ @active_tab == 'semua' ? 'active' : '' }}" id="tab-semua" data-bs-toggle="tab" data-bs-target="#content-semua" type="button" role="tab" aria-controls="content-semua" aria-selected="{{ @active_tab == 'semua' ? 'true' : 'false' }}">
+                    <i class="bi bi-clock-history"></i>
+                    <span>Semua Riwayat</span>
+                    <span class="count-chip">{{ count(@daftar_semua) }}</span>
+                </button>
+            </li>
+        </ul>
     </div>
-    <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-            <thead class="table-light">
-                <tr>
-                    <th style="width: 36px;">No.</th>
-                    <th>No. Surat</th>
-                    <th>Customer / Mitra</th>
-                    <th>Tanggal</th>
-                    <th>Perihal &amp; Layanan</th>
-                    <th class="text-center">Status Alur</th>
-                    <th class="text-center text-nowrap" style="width: 150px; min-width: 150px;">Aksi</th>
-                </tr>
-            </thead>
-            <tbody>
-                <check if="{{ @daftar_penawaran && count(@daftar_penawaran) > 0 }}">
-                    <repeat group="{{ @daftar_penawaran }}" value="{{ @sp }}" key="{{ @i }}">
-                        <tr>
-                            <td class="text-muted small">{{ @i + 1 }}</td>
-                            <td>
-                                <div class="fw-bold font-monospace text-dark">{{ @sp.nomor_surat }}</div>
-                            </td>
-                            <td>
-                                <strong class="text-dark">{{ @sp.display_perusahaan ?: @sp.nmcustomer }}</strong>
-                                <check if="{{ !empty(@sp.sub_info) }}">
-                                    <small class="text-muted d-block" style="font-size: 0.75rem;">
-                                        <check if="{{ strpos(@sp.sub_info, 'PIC:') === 0 }}">
-                                            <i class="bi bi-person me-1"></i>
-                                        </check>
-                                        {{ @sp.sub_info }}
-                                    </small>
-                                </check>
-                            </td>
-                            <td class="text-nowrap small text-muted">
-                                {{ date('d M Y', strtotime(@sp.tanggal_surat)) }}
-                            </td>
-                            <td>
-                                <div class="text-dark small fw-medium text-truncate" style="max-width: 220px;" title="{{ @sp.perihal }}">
-                                    {{ @sp.perihal }}
-                                </div>
-                                <check if="{{ @sp.jenis_layanan && !in_array(@sp.jenis_layanan, ['belum_ditentukan', 'opti_belum_ditentukan']) }}">
-                                    <span class="badge {{ strpos(@sp.jenis_layanan, 'selulosa') !== false ? 'bg-danger-subtle text-danger border border-danger-subtle' : 'bg-success-subtle text-success border border-success-subtle' }} text-uppercase mt-1" style="font-size: 0.65rem;">
-                                        {{ str_replace('_', ' ', @sp.jenis_layanan) }}
-                                    </span>
-                                </check>
-                                <br>
-                                <check if="{{ !empty(@sp.surat_kesanggupan_bayar) }}">
-                                    <button type="button" class="kb-badge-ada mt-1 btn-preview-pdf border-0"
-                                        data-preview-pdf="{{ @BASE }}/surat-penawaran/{{ @sp.id }}/surat-kesanggupan/preview"
-                                        data-title="Surat Kesanggupan Bayar" data-subtitle="{{ @sp.nomor_surat }}" title="Lihat Surat Kesanggupan Bayar">
-                                        <i class="bi bi-file-earmark-pdf-fill"></i> PDF Kesanggupan
-                                    </button>
-                                </check>
-                                <check if="{{ empty(@sp.surat_kesanggupan_bayar) }}">
-                                    <span class="kb-badge-none mt-1" title="Belum ada Surat Kesanggupan Bayar">
-                                        <i class="bi bi-dash-circle"></i> Belum ada Kesanggupan
-                                    </span>
-                                </check>
-                            </td>
-                            <td class="text-center">
-                                <check if="{{ @sp.status_respon_klien == 'deal' || @sp.status == 'disetujui' }}">
-                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
-                                        <i class="bi bi-check-circle-fill me-1"></i> DEAL / Sepakat
-                                    </span>
-                                </check>
-                                <check if="{{ @sp.status_respon_klien == 'nego' }}">
-                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1">
-                                        <i class="bi bi-chat-dots me-1"></i> Negosiasi
-                                    </span>
-                                </check>
-                                <check if="{{ (@sp.status == 'terkirim' || @sp.status_respon_klien == 'terkirim' || @sp.status_respon_klien == 'menunggu') && @sp.status_respon_klien != 'deal' && @sp.status_respon_klien != 'nego' && @sp.status != 'disetujui' }}">
-                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">
-                                        <i class="bi bi-send-check me-1"></i> Terkirim
-                                    </span>
-                                </check>
-                                <check if="{{ @sp.status_respon_klien == 'tolak' || @sp.status_respon_klien == 'batal' }}">
-                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">
-                                        <i class="bi bi-x-circle-fill me-1"></i> Ditolak
-                                    </span>
-                                </check>
-                                <check if="{{ (@sp.status == 'draft' || @sp.status_respon_klien == 'draft' || !@sp.status || @sp.status == 'nonaktif') && @sp.status_respon_klien != 'deal' && @sp.status_respon_klien != 'nego' && @sp.status != 'terkirim' && @sp.status_respon_klien != 'terkirim' && @sp.status_respon_klien != 'tolak' && @sp.status_respon_klien != 'batal' && @sp.status != 'disetujui' }}">
-                                    <span class="badge bg-light text-secondary border px-2 py-1">
-                                        <i class="bi bi-pencil-square me-1"></i> Draft
-                                    </span>
-                                </check>
-                            </td>
-                            <td class="text-center text-nowrap">
-                                <div class="d-inline-flex align-items-center gap-1">
-                                    <check if="{{ @sp.order_id }}">
-                                        <button type="button" class="btn btn-outline-danger btn-sm py-1 px-2 btn-preview-pdf" data-preview-pdf="{{ @BASE }}/order/{{ @sp.order_id }}/penawaran/cetak?id={{ @sp.id }}&t={{ time() }}" data-title="Surat Penawaran" data-subtitle="{{ @sp.nomor_surat }}" title="Pratinjau Surat Penawaran PDF">
-                                            <i class="bi bi-file-earmark-pdf"></i>
-                                        </button>
-                                        <a href="{{ @BASE }}/order/{{ @sp.order_id }}" class="btn btn-light border btn-sm py-1 px-2 text-primary" title="Buka Detail Order">
-                                            <i class="bi bi-folder2-open"></i>
-                                        </a>
-                                    </check>
-                                    <button type="button" class="btn btn-outline-primary btn-sm py-1 px-2" data-bs-toggle="modal" data-bs-target="#modalUploadSKB{{ @sp.id }}"
-                                            title="{{ !empty(@sp.surat_kesanggupan_bayar) ? 'Ganti' : 'Upload' }} Surat Kesanggupan Bayar">
-                                        <i class="bi bi-cloud-arrow-up"></i>
-                                    </button>
-                                    <div class="dropdown d-inline-block">
-                                        <button class="btn btn-light border btn-sm py-1 px-2" data-bs-toggle="dropdown" title="Lainnya">
-                                            <i class="bi bi-three-dots-vertical"></i>
-                                        </button>
-                                        <ul class="dropdown-menu dropdown-menu-end">
-                                            <check if="{{ @sp.order_id }}">
-                                                <li><a class="dropdown-item" href="{{ @BASE }}/order/{{ @sp.order_id }}/penawaran/buat"><i class="bi bi-pencil me-2"></i>Edit / Revisi</a></li>
-                                            </check>
-                                            <check if="{{ !@sp.order_id }}">
-                                                <li><a class="dropdown-item" href="{{ @BASE }}/surat-penawaran/{{ @sp.id }}/edit"><i class="bi bi-pencil me-2"></i>Edit</a></li>
-                                            </check>
-                                            <li><a class="dropdown-item text-danger" href="#" data-bs-toggle="modal" data-bs-target="#modalHapusSP{{ @sp.id }}"><i class="bi bi-trash3 me-2"></i>Hapus</a></li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </td>
 
-            <!-- Modal Upload Surat Kesanggupan Bayar -->
-            <div class="modal fade" id="modalUploadSKB{{ @sp.id }}" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content border-0 shadow">
-                        <form action="{{ @BASE }}/surat-penawaran/{{ @sp.id }}/surat-kesanggupan/upload" method="POST" enctype="multipart/form-data">
-                            <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
-                            <div class="modal-header">
-                                <h6 class="modal-title fw-bold"><i class="bi bi-file-earmark-lock2 text-primary me-2"></i>Upload Surat Kesanggupan Bayar</h6>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="small text-muted mb-3">Untuk: <strong class="text-dark">{{ @sp.nomor_surat }}</strong></div>
-                                <label class="form-label fw-semibold small">Berkas Surat Kesanggupan <span class="text-danger">*</span></label>
-                                <input type="file" name="surat_kesanggupan_bayar" class="form-control" accept=".pdf,.doc,.docx" required>
-                                <div class="form-text">Format PDF atau Word (.doc/.docx). Maksimal 5MB.</div>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
-                                <button type="submit" class="btn btn-primary"><i class="bi bi-upload me-1"></i> Upload &amp; Simpan</button>
-                            </div>
-                        </form>
-                    </div>
+    <div class="card-body p-0">
+        <div class="tab-content" id="penawaranTabsContent">
+            
+            <!-- TAB 1: PENAWARAN AKTIF -->
+            <div class="tab-pane fade {{ @active_tab == 'aktif' ? 'show active' : '' }}" id="content-aktif" role="tabpanel" aria-labelledby="tab-aktif">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 36px;">No.</th>
+                                <th>No. Surat</th>
+                                <th>Customer / Mitra</th>
+                                <th>Tanggal</th>
+                                <th>Perihal &amp; Layanan</th>
+                                <th class="text-center">Status Alur</th>
+                                <th class="text-center text-nowrap" style="width: 150px; min-width: 150px;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <check if="{{ @daftar_aktif && count(@daftar_aktif) > 0 }}">
+                                <true>
+                                    <repeat group="{{ @daftar_aktif }}" value="{{ @sp }}" key="{{ @i }}">
+                                        <tr>
+                                            <td class="text-muted small">{{ @i + 1 }}</td>
+                                            <td>
+                                                <div class="fw-bold font-monospace text-dark">{{ @sp.nomor_surat }}</div>
+                                                <check if="{{ !empty(@sp.pembuat_nama) && @sp.pembuat_nama != '-' }}">
+                                                    <small class="text-muted d-block mt-1" style="font-size: 0.75rem;">
+                                                        PIC Mitra: <strong class="text-dark">{{ @sp.pembuat_nama }}</strong>
+                                                    </small>
+                                                </check>
+                                            </td>
+                                            <td>
+                                                <strong class="text-dark">{{ @sp.display_perusahaan ?: @sp.nmcustomer }}</strong>
+                                                <check if="{{ !empty(@sp.nomor_permintaan) }}">
+                                                    <span class="badge bg-secondary-subtle text-secondary font-monospace d-block mt-1" style="width: fit-content;" title="Nomor Permintaan">#{{ @sp.nomor_permintaan }}</span>
+                                                </check>
+                                                <check if="{{ !empty(@sp.sub_info) }}">
+                                                    <small class="text-muted d-block" style="font-size: 0.75rem;">
+                                                        <check if="{{ strpos(@sp.sub_info, 'PIC:') === 0 }}"><i class="bi bi-person me-1"></i></check>
+                                                        {{ @sp.sub_info }}
+                                                    </small>
+                                                </check>
+                                            </td>
+                                            <td class="text-nowrap small text-muted">
+                                                {{ date('d M Y', strtotime(@sp.tanggal_surat)) }}
+                                            </td>
+                                            <td>
+                                                <div class="text-dark small fw-medium text-truncate" style="max-width: 220px;" title="{{ @sp.perihal }}">
+                                                    {{ @sp.perihal }}
+                                                </div>
+                                                <check if="{{ @sp.jenis_layanan && !in_array(@sp.jenis_layanan, ['belum_ditentukan', 'opti_belum_ditentukan']) }}">
+                                                    <span class="badge {{ strpos(@sp.jenis_layanan, 'selulosa') !== false ? 'bg-danger-subtle text-danger border border-danger-subtle' : 'bg-success-subtle text-success border border-success-subtle' }} text-uppercase mt-1" style="font-size: 0.65rem;">
+                                                        {{ str_replace('_', ' ', @sp.jenis_layanan) }}
+                                                    </span>
+                                                </check>
+                                                <br>
+                                                <check if="{{ !empty(@sp.surat_kesanggupan_bayar) }}">
+                                                    <button type="button" class="kb-badge-ada mt-1 btn-preview-pdf border-0"
+                                                        data-preview-pdf="{{ @BASE }}/surat-penawaran/{{ @sp.id }}/surat-kesanggupan/preview"
+                                                        data-title="Surat Kesanggupan Bayar" data-subtitle="{{ @sp.nomor_surat }}" title="Lihat Surat Kesanggupan Bayar">
+                                                        <i class="bi bi-file-earmark-pdf-fill"></i> PDF Kesanggupan
+                                                    </button>
+                                                </check>
+                                                <check if="{{ empty(@sp.surat_kesanggupan_bayar) }}">
+                                                    <span class="kb-badge-none mt-1" title="Belum ada Surat Kesanggupan Bayar">
+                                                        <i class="bi bi-dash-circle"></i> Belum ada Kesanggupan
+                                                    </span>
+                                                </check>
+                                            </td>
+                                            <td class="text-center">
+                                                <check if="{{ @sp.status_respon_klien == 'deal' || @sp.status == 'disetujui' }}">
+                                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                                                        <i class="bi bi-check-circle-fill me-1"></i> DEAL / Sepakat
+                                                    </span>
+                                                </check>
+                                                <check if="{{ @sp.status_respon_klien == 'nego' }}">
+                                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1">
+                                                        <i class="bi bi-chat-dots me-1"></i> Negosiasi
+                                                    </span>
+                                                </check>
+                                                <check if="{{ (@sp.status == 'terkirim' || @sp.status_respon_klien == 'terkirim' || @sp.status_respon_klien == 'menunggu') && @sp.status_respon_klien != 'deal' && @sp.status_respon_klien != 'nego' && @sp.status != 'disetujui' }}">
+                                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">
+                                                        <i class="bi bi-send-check me-1"></i> Terkirim
+                                                    </span>
+                                                </check>
+                                                <check if="{{ (@sp.status == 'draft' || @sp.status_respon_klien == 'draft' || !@sp.status || @sp.status == 'nonaktif') && @sp.status_respon_klien != 'deal' && @sp.status_respon_klien != 'nego' && @sp.status != 'terkirim' && @sp.status_respon_klien != 'terkirim' && @sp.status != 'disetujui' }}">
+                                                    <span class="badge bg-light text-secondary border px-2 py-1">
+                                                        <i class="bi bi-pencil-square me-1"></i> Draft
+                                                    </span>
+                                                </check>
+                                            </td>
+                                            <td class="text-center text-nowrap">
+                                                <div class="d-inline-flex align-items-center gap-1">
+                                                    <check if="{{ @sp.order_id }}">
+                                                        <button type="button" class="btn btn-outline-danger btn-sm py-1 px-2 btn-preview-pdf" data-preview-pdf="{{ @BASE }}/order/{{ @sp.order_id }}/penawaran/cetak?id={{ @sp.id }}&t={{ time() }}" data-title="Surat Penawaran" data-subtitle="{{ @sp.nomor_surat }}" title="Pratinjau Surat Penawaran PDF">
+                                                            <i class="bi bi-file-earmark-pdf"></i>
+                                                        </button>
+                                                        <a href="{{ @BASE }}/order/{{ @sp.order_id }}" class="btn btn-light border btn-sm py-1 px-2 text-primary" title="Buka Detail Order">
+                                                            <i class="bi bi-folder2-open"></i>
+                                                        </a>
+                                                    </check>
+                                                    <button type="button" class="btn btn-outline-primary btn-sm py-1 px-2" data-bs-toggle="modal" data-bs-target="#modalUploadSKB{{ @sp.id }}"
+                                                            title="{{ !empty(@sp.surat_kesanggupan_bayar) ? 'Ganti' : 'Upload' }} Surat Kesanggupan Bayar">
+                                                        <i class="bi bi-cloud-arrow-up"></i>
+                                                    </button>
+                                                    <div class="dropdown d-inline-block">
+                                                        <button class="btn btn-light border btn-sm py-1 px-2" data-bs-toggle="dropdown" title="Lainnya">
+                                                            <i class="bi bi-three-dots-vertical"></i>
+                                                        </button>
+                                                        <ul class="dropdown-menu dropdown-menu-end">
+                                                            <check if="{{ @sp.order_id }}">
+                                                                <li><a class="dropdown-item" href="{{ @BASE }}/order/{{ @sp.order_id }}/penawaran/buat"><i class="bi bi-pencil me-2"></i>Edit / Revisi</a></li>
+                                                            </check>
+                                                            <check if="{{ !@sp.order_id }}">
+                                                                <li><a class="dropdown-item" href="{{ @BASE }}/surat-penawaran/{{ @sp.id }}/edit"><i class="bi bi-pencil me-2"></i>Edit</a></li>
+                                                            </check>
+                                                            <li><a class="dropdown-item text-danger" href="#" data-bs-toggle="modal" data-bs-target="#modalHapusSP{{ @sp.id }}"><i class="bi bi-trash3 me-2"></i>Hapus</a></li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </repeat>
+                                </true>
+                                <false>
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted py-5">
+                                            <i class="bi bi-inbox fs-2 d-block mb-2 text-muted opacity-50"></i>
+                                            Tidak ada data surat penawaran aktif.
+                                        </td>
+                                    </tr>
+                                </false>
+                            </check>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
-            <!-- Modal Konfirmasi Hapus Surat Penawaran -->
-            <div class="modal fade" id="modalHapusSP{{ @sp.id }}" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered modal-sm">
-                    <div class="modal-content bg-white border-0 shadow rounded-3">
-                        <form action="{{ @BASE }}/surat-penawaran/{{ @sp.id }}/hapus" method="POST">
-                            <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
-                            <div class="modal-body p-3 text-center">
-                                <p class="small text-dark mb-0">Hapus surat penawaran <strong>{{ @sp.nomor_surat }}</strong>?</p>
-                            </div>
-                            <div class="modal-footer border-0 p-2 d-flex justify-content-center gap-2">
-                                <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Batal</button>
-                                <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
-                            </div>
-                        </form>
-                    </div>
+            <!-- TAB 2: DALAM NEGOSIASI -->
+            <div class="tab-pane fade {{ @active_tab == 'nego' ? 'show active' : '' }}" id="content-nego" role="tabpanel" aria-labelledby="tab-nego">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 36px;">No.</th>
+                                <th>No. Surat</th>
+                                <th>Customer / Mitra</th>
+                                <th>Tanggal</th>
+                                <th>Catatan Negosiasi Klien</th>
+                                <th class="text-end">Nominal Penawaran</th>
+                                <th class="text-center text-nowrap" style="width: 150px; min-width: 150px;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <check if="{{ @daftar_nego && count(@daftar_nego) > 0 }}">
+                                <true>
+                                    <repeat group="{{ @daftar_nego }}" value="{{ @sp }}" key="{{ @i }}">
+                                        <tr>
+                                            <td class="text-muted small">{{ @i + 1 }}</td>
+                                            <td>
+                                                <div class="fw-bold font-monospace text-dark">{{ @sp.nomor_surat }}</div>
+                                                <small class="text-muted d-block mt-1">PIC: {{ @sp.pembuat_nama }}</small>
+                                            </td>
+                                            <td>
+                                                <strong class="text-dark">{{ @sp.display_perusahaan ?: @sp.nmcustomer }}</strong>
+                                                <check if="{{ !empty(@sp.nomor_permintaan) }}">
+                                                    <span class="badge bg-secondary-subtle text-secondary font-monospace d-block mt-1" style="width: fit-content;" title="Nomor Permintaan">#{{ @sp.nomor_permintaan }}</span>
+                                                </check>
+                                            </td>
+                                            <td class="text-nowrap small text-muted">{{ date('d M Y', strtotime(@sp.tanggal_surat)) }}</td>
+                                            <td>
+                                                <div class="small p-2 rounded bg-warning-subtle text-dark border border-warning-subtle">
+                                                    <i class="bi bi-chat-dots-fill text-warning me-1"></i>
+                                                    {{ @sp.catatan_nego ?: 'Menunggu kesepakatan harga / klarifikasi teknis.' }}
+                                                </div>
+                                            </td>
+                                            <td class="text-end fw-bold font-monospace text-dark">
+                                                Rp {{ number_format(@sp.nominal_penawaran ?: 0, 0, ',', '.') }}
+                                            </td>
+                                            <td class="text-center text-nowrap">
+                                                <div class="d-inline-flex align-items-center gap-1">
+                                                    <check if="{{ @sp.order_id }}">
+                                                        <button type="button" class="btn btn-outline-danger btn-sm py-1 px-2 btn-preview-pdf" data-preview-pdf="{{ @BASE }}/order/{{ @sp.order_id }}/penawaran/cetak?id={{ @sp.id }}&t={{ time() }}" data-title="Surat Penawaran" data-subtitle="{{ @sp.nomor_surat }}">
+                                                            <i class="bi bi-file-earmark-pdf"></i>
+                                                        </button>
+                                                        <a href="{{ @BASE }}/order/{{ @sp.order_id }}/penawaran/buat" class="btn btn-warning btn-sm py-1 px-2 text-dark fw-semibold" title="Buka Form Revisi Penawaran">
+                                                            <i class="bi bi-pencil-square me-1"></i> Revisi
+                                                        </a>
+                                                    </check>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </repeat>
+                                </true>
+                                <false>
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted py-5">
+                                            <i class="bi bi-chat-square-text fs-2 d-block mb-2 opacity-50"></i>
+                                            Tidak ada surat penawaran yang sedang dalam tahap negosiasi.
+                                        </td>
+                                    </tr>
+                                </false>
+                            </check>
+                        </tbody>
+                    </table>
                 </div>
             </div>
-        </repeat>
-                </check>
-                <check if="{{ !@daftar_penawaran || count(@daftar_penawaran) == 0 }}">
-                    <tr>
-                        <td colspan="7" class="text-center text-muted py-5">
-                            <i class="bi bi-inbox fs-2 d-block mb-2 text-muted opacity-50"></i>
-                            Belum ada data surat penawaran resmi.
-                        </td>
-                    </tr>
-                </check>
-            </tbody>
-        </table>
+
+            <!-- TAB 3: DISEPAKATI (DEAL) -->
+            <div class="tab-pane fade {{ @active_tab == 'deal' ? 'show active' : '' }}" id="content-deal" role="tabpanel" aria-labelledby="tab-deal">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 36px;">No.</th>
+                                <th>No. Surat</th>
+                                <th>Customer / Mitra</th>
+                                <th>Tanggal</th>
+                                <th>Kesanggupan Bayar</th>
+                                <th class="text-end">Nominal Deal</th>
+                                <th class="text-center text-nowrap" style="width: 150px; min-width: 150px;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <check if="{{ @daftar_deal && count(@daftar_deal) > 0 }}">
+                                <true>
+                                    <repeat group="{{ @daftar_deal }}" value="{{ @sp }}" key="{{ @i }}">
+                                        <tr>
+                                            <td class="text-muted small">{{ @i + 1 }}</td>
+                                            <td>
+                                                <div class="fw-bold font-monospace text-dark">{{ @sp.nomor_surat }}</div>
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle mt-1" style="font-size: 0.7rem;">
+                                                    <i class="bi bi-check2-circle me-1"></i> DEAL
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <strong class="text-dark">{{ @sp.display_perusahaan ?: @sp.nmcustomer }}</strong>
+                                                <check if="{{ !empty(@sp.nomor_permintaan) }}">
+                                                    <span class="badge bg-secondary-subtle text-secondary font-monospace d-block mt-1" style="width: fit-content;" title="Nomor Permintaan">#{{ @sp.nomor_permintaan }}</span>
+                                                </check>
+                                            </td>
+                                            <td class="text-nowrap small text-muted">{{ date('d M Y', strtotime(@sp.tanggal_surat)) }}</td>
+                                            <td>
+                                                <check if="{{ !empty(@sp.surat_kesanggupan_bayar) }}">
+                                                    <button type="button" class="kb-badge-ada btn-preview-pdf border-0"
+                                                        data-preview-pdf="{{ @BASE }}/surat-penawaran/{{ @sp.id }}/surat-kesanggupan/preview"
+                                                        data-title="Surat Kesanggupan Bayar" data-subtitle="{{ @sp.nomor_surat }}">
+                                                        <i class="bi bi-file-earmark-pdf-fill"></i> PDF Kesanggupan
+                                                    </button>
+                                                </check>
+                                                <check if="{{ empty(@sp.surat_kesanggupan_bayar) }}">
+                                                    <span class="kb-badge-none"><i class="bi bi-dash-circle"></i> Belum ada</span>
+                                                </check>
+                                            </td>
+                                            <td class="text-end fw-bold font-monospace text-success">
+                                                Rp {{ number_format(@sp.nominal_penawaran ?: 0, 0, ',', '.') }}
+                                            </td>
+                                            <td class="text-center text-nowrap">
+                                                <div class="d-inline-flex align-items-center gap-1">
+                                                    <check if="{{ @sp.order_id }}">
+                                                        <button type="button" class="btn btn-outline-danger btn-sm py-1 px-2 btn-preview-pdf" data-preview-pdf="{{ @BASE }}/order/{{ @sp.order_id }}/penawaran/cetak?id={{ @sp.id }}&t={{ time() }}" data-title="Surat Penawaran" data-subtitle="{{ @sp.nomor_surat }}">
+                                                            <i class="bi bi-file-earmark-pdf"></i>
+                                                        </button>
+                                                        <a href="{{ @BASE }}/order/{{ @sp.order_id }}" class="btn btn-light border btn-sm py-1 px-2 text-primary" title="Buka Detail Order">
+                                                            <i class="bi bi-folder2-open"></i>
+                                                        </a>
+                                                    </check>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </repeat>
+                                </true>
+                                <false>
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted py-5">
+                                            <i class="bi bi-check2-circle fs-2 d-block mb-2 opacity-50"></i>
+                                            Belum ada surat penawaran yang berstatus DEAL.
+                                        </td>
+                                    </tr>
+                                </false>
+                            </check>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB 4: ARSIP SURAT BATAL & DITOLAK / GAGAL NEGO (FITUR BARU) -->
+            <div class="tab-pane fade {{ @active_tab == 'batal' ? 'show active' : '' }}" id="content-batal" role="tabpanel" aria-labelledby="tab-batal">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 36px;">No.</th>
+                                <th style="width: 200px;">No. Surat Batal</th>
+                                <th>Instansi &amp; No. Order</th>
+                                <th style="width: 150px;">Tanggal Terbit</th>
+                                <th class="text-end" style="width: 180px;">Nominal Penawaran Lama</th>
+                                <th style="width: 220px;">Status &amp; Dokumen Pengganti</th>
+                                <th class="text-center text-nowrap" style="width: 190px;">Aksi Berkas</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <check if="{{ @daftar_batal && count(@daftar_batal) > 0 }}">
+                                <true>
+                                    <repeat group="{{ @daftar_batal }}" value="{{ @sp }}" key="{{ @i }}">
+                                        <tr class="table-light">
+                                            <td class="text-muted small text-center">{{ @i + 1 }}</td>
+                                            <td>
+                                                <div class="fw-bold font-monospace text-danger">{{ @sp.nomor_surat }}</div>
+                                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle mt-1" style="font-size: 0.68rem;">
+                                                    <i class="bi bi-x-circle me-1"></i> Batal / Revisi
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <strong class="text-dark d-block">{{ @sp.display_perusahaan ?: @sp.nmcustomer }}</strong>
+                                                <check if="{{ !empty(@sp.nomor_permintaan) }}">
+                                                    <a href="{{ @BASE }}/order/{{ @sp.order_id }}" class="badge bg-light text-primary border text-decoration-none font-monospace mt-1" title="Nomor Permintaan">
+                                                        <i class="bi bi-folder2-open me-1"></i>#{{ @sp.nomor_permintaan }}
+                                                    </a>
+                                                </check>
+                                            </td>
+                                            <td class="small text-muted text-nowrap">
+                                                <i class="bi bi-calendar3 me-1"></i>{{ date('d M Y', strtotime(@sp.tanggal_surat)) }}
+                                            </td>
+                                            <td class="text-end font-monospace">
+                                                <span class="text-decoration-line-through text-muted d-block small">Rp {{ number_format(@sp.nominal_penawaran ?: 0, 0, ',', '.') }}</span>
+                                                <span class="badge bg-secondary-subtle text-secondary" style="font-size: 0.68rem;">Nominal Lama</span>
+                                            </td>
+                                            <td>
+                                                <check if="{{ !empty(@sp.nomor_surat_pengganti) }}">
+                                                    <div class="small">
+                                                        <span class="text-muted d-block" style="font-size: 0.7rem;"><i class="bi bi-arrow-repeat text-primary me-1"></i>Digantikan Revisi:</span>
+                                                        <span class="fw-bold font-monospace text-dark d-block mt-0.5">{{ @sp.nomor_surat_pengganti }}</span>
+                                                    </div>
+                                                </check>
+                                                <check if="{{ empty(@sp.nomor_surat_pengganti) }}">
+                                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle" style="font-size: 0.7rem;">
+                                                        <i class="bi bi-dash-circle me-1"></i> Order Dibatalkan
+                                                    </span>
+                                                </check>
+                                            </td>
+                                            <td class="text-center text-nowrap">
+                                                <div class="d-inline-flex align-items-center gap-1">
+                                                    <!-- Tombol Lihat Catatan / Alasan -->
+                                                    <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-2 btn-lihat-catatan-batal shadow-xs"
+                                                            data-nomor-surat="{{ @sp.nomor_surat }}"
+                                                            data-instansi="{{ @sp.display_perusahaan ?: @sp.nmcustomer }}"
+                                                            data-catatan="{{ @sp.catatan_nego ?: 'Penawaran harga tidak disepakati / telah diterbitkan surat revisi baru.' }}"
+                                                            data-pengganti="{{ @sp.nomor_surat_pengganti ?: '' }}"
+                                                            title="Lihat Catatan &amp; Alasan Batal">
+                                                        <i class="bi bi-chat-left-text"></i> <span class="small">Catatan</span>
+                                                    </button>
+                                                    <!-- Pratinjau PDF Asli Surat Batal -->
+                                                    <button type="button" class="btn btn-outline-danger btn-sm py-1 px-2.5 btn-preview-pdf shadow-xs"
+                                                            data-preview-pdf="{{ @BASE }}/order/{{ @sp.order_id ?: @sp.id }}/penawaran/cetak?id={{ @sp.id }}&t={{ time() }}"
+                                                            data-title="Arsip Surat Penawaran (Batal)"
+                                                            data-subtitle="{{ @sp.nomor_surat }}"
+                                                            title="Pratinjau Berkas PDF Surat Batal Ini">
+                                                        <i class="bi bi-file-earmark-pdf"></i> <span class="small">PDF</span>
+                                                    </button>
+                                                    <check if="{{ @sp.order_id }}">
+                                                        <a href="{{ @BASE }}/order/{{ @sp.order_id }}" class="btn btn-light border btn-sm py-1 px-2 text-primary shadow-xs" title="Buka Detail Order">
+                                                            <i class="bi bi-folder2-open"></i>
+                                                        </a>
+                                                    </check>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </repeat>
+                                </true>
+                                <false>
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted py-5">
+                                            <i class="bi bi-archive fs-2 d-block mb-2 text-muted opacity-50"></i>
+                                            Tidak ada arsip surat penawaran yang batal atau gagal negosiasi pada periode ini.
+                                        </td>
+                                    </tr>
+                                </false>
+                            </check>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB 5: SEMUA RIWAYAT -->
+            <div class="tab-pane fade {{ @active_tab == 'semua' ? 'show active' : '' }}" id="content-semua" role="tabpanel" aria-labelledby="tab-semua">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 36px;">No.</th>
+                                <th>No. Surat</th>
+                                <th>Customer / Mitra</th>
+                                <th>Tanggal</th>
+                                <th>Perihal &amp; Layanan</th>
+                                <th class="text-center">Status</th>
+                                <th class="text-center text-nowrap" style="width: 150px; min-width: 150px;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <check if="{{ @daftar_semua && count(@daftar_semua) > 0 }}">
+                                <true>
+                                    <repeat group="{{ @daftar_semua }}" value="{{ @sp }}" key="{{ @i }}">
+                                        <tr>
+                                            <td class="text-muted small">{{ @i + 1 }}</td>
+                                            <td>
+                                                <div class="fw-bold font-monospace text-dark">{{ @sp.nomor_surat }}</div>
+                                                <check if="{{ !empty(@sp.pembuat_nama) && @sp.pembuat_nama != '-' }}">
+                                                    <small class="text-muted d-block mt-1" style="font-size: 0.75rem;">PIC: {{ @sp.pembuat_nama }}</small>
+                                                </check>
+                                            </td>
+                                            <td>
+                                                <strong class="text-dark">{{ @sp.display_perusahaan ?: @sp.nmcustomer }}</strong>
+                                                <check if="{{ !empty(@sp.nomor_permintaan) }}">
+                                                    <span class="badge bg-secondary-subtle text-secondary font-monospace d-block mt-1" style="width: fit-content;" title="Nomor Permintaan">#{{ @sp.nomor_permintaan }}</span>
+                                                </check>
+                                            </td>
+                                            <td class="text-nowrap small text-muted">{{ date('d M Y', strtotime(@sp.tanggal_surat)) }}</td>
+                                            <td>
+                                                <div class="text-dark small fw-medium text-truncate" style="max-width: 220px;" title="{{ @sp.perihal }}">
+                                                    {{ @sp.perihal }}
+                                                </div>
+                                                <check if="{{ @sp.jenis_layanan && !in_array(@sp.jenis_layanan, ['belum_ditentukan', 'opti_belum_ditentukan']) }}">
+                                                    <span class="badge {{ strpos(@sp.jenis_layanan, 'selulosa') !== false ? 'bg-danger-subtle text-danger border border-danger-subtle' : 'bg-success-subtle text-success border border-success-subtle' }} text-uppercase mt-1" style="font-size: 0.65rem;">
+                                                        {{ str_replace('_', ' ', @sp.jenis_layanan) }}
+                                                    </span>
+                                                </check>
+                                            </td>
+                                            <td class="text-center">
+                                                <check if="{{ @sp.status_badge_type == 'batal' || @sp.is_old_replaced || @sp.status_respon_klien == 'batal' || @sp.status_respon_klien == 'tolak' || @sp.status == 'batal' || @sp.status == 'nonaktif' }}">
+                                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">Batal / Revisi</span>
+                                                </check>
+                                                <check if="{{ !@sp.is_old_replaced && @sp.status_badge_type != 'batal' && @sp.status_respon_klien != 'batal' && @sp.status_respon_klien != 'tolak' && @sp.status != 'batal' && @sp.status != 'nonaktif' }}">
+                                                    <check if="{{ @sp.status_respon_klien == 'deal' || @sp.status == 'disetujui' }}">
+                                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">DEAL</span>
+                                                    </check>
+                                                    <check if="{{ @sp.status_respon_klien == 'nego' }}">
+                                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1">Negosiasi</span>
+                                                    </check>
+                                                    <check if="{{ @sp.status_respon_klien != 'deal' && @sp.status_respon_klien != 'nego' && @sp.status != 'disetujui' }}">
+                                                        <span class="badge bg-light text-secondary border px-2 py-1">{{ @sp.status_respon_klien ?: (@sp.status ?: 'Draft') }}</span>
+                                                    </check>
+                                                </check>
+                                            </td>
+                                            <td class="text-center text-nowrap">
+                                                <div class="d-inline-flex align-items-center gap-1">
+                                                    <button type="button" class="btn btn-outline-danger btn-sm py-1 px-2 btn-preview-pdf" data-preview-pdf="{{ @BASE }}/order/{{ @sp.order_id ?: @sp.id }}/penawaran/cetak?id={{ @sp.id }}&t={{ time() }}" data-title="Surat Penawaran" data-subtitle="{{ @sp.nomor_surat }}">
+                                                        <i class="bi bi-file-earmark-pdf"></i>
+                                                    </button>
+                                                    <check if="{{ @sp.order_id }}">
+                                                        <a href="{{ @BASE }}/order/{{ @sp.order_id }}" class="btn btn-light border btn-sm py-1 px-2 text-primary" title="Buka Detail Order">
+                                                            <i class="bi bi-folder2-open"></i>
+                                                        </a>
+                                                    </check>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </repeat>
+                                </true>
+                                <false>
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted py-5">Belum ada data riwayat surat penawaran.</td>
+                                    </tr>
+                                </false>
+                            </check>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
     </div>
 </div>
+
+<!-- KUMPULAN MODAL (UPLOAD SKB & HAPUS SP) -->
+<repeat group="{{ @daftar_semua }}" value="{{ @sp }}">
+    <!-- Modal Upload Surat Kesanggupan Bayar -->
+    <div class="modal fade" id="modalUploadSKB{{ @sp.id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <form action="{{ @BASE }}/surat-penawaran/{{ @sp.id }}/surat-kesanggupan/upload" method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
+                    <div class="modal-header">
+                        <h6 class="modal-title fw-bold"><i class="bi bi-file-earmark-lock2 text-primary me-2"></i>Upload Surat Kesanggupan Bayar</h6>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="small text-muted mb-3">Untuk: <strong class="text-dark">{{ @sp.nomor_surat }}</strong></div>
+                        <label class="form-label fw-semibold small">Berkas Surat Kesanggupan <span class="text-danger">*</span></label>
+                        <input type="file" name="surat_kesanggupan_bayar" class="form-control" accept=".pdf,.doc,.docx" required>
+                        <div class="form-text">Format PDF atau Word (.doc/.docx). Maksimal 5MB.</div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-upload me-1"></i> Upload &amp; Simpan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Konfirmasi Hapus Surat Penawaran -->
+    <div class="modal fade" id="modalHapusSP{{ @sp.id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content bg-white border-0 shadow rounded-3">
+                <form action="{{ @BASE }}/surat-penawaran/{{ @sp.id }}/hapus" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
+                    <div class="modal-body p-3 text-center">
+                        <p class="small text-dark mb-0">Hapus surat penawaran <strong>{{ @sp.nomor_surat }}</strong>?</p>
+                    </div>
+                    <div class="modal-footer border-0 p-2 d-flex justify-content-center gap-2">
+                        <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</repeat>
 
 <!-- Modal Pilih Order Layanan untuk Penerbitan Surat Penawaran -->
 <div class="modal fade" id="modalPilihOrder" tabindex="-1" aria-labelledby="modalPilihOrderLabel" aria-hidden="true">
@@ -325,7 +821,7 @@
                         <table class="table table-hover align-middle mb-0 small">
                             <thead class="table-light">
                                 <tr>
-                                    <th>No. Order</th>
+                                    <th>No. Permintaan</th>
                                     <th>Perusahaan / Mitra</th>
                                     <th>Layanan</th>
                                     <th class="text-end">Estimasi Biaya</th>
@@ -336,7 +832,7 @@
                                 <repeat group="{{ @daftar_order_siap }}" value="{{ @ord }}">
                                     <tr>
                                         <td>
-                                            <strong class="font-monospace text-primary">#{{ @ord.nomor_order }}</strong>
+                                            <strong class="font-monospace text-primary">#{{ @ord.nomor_permintaan ?: ('REQ-' . @ord.id) }}</strong>
                                         </td>
                                         <td>
                                             <span class="fw-semibold text-dark">{{ @ord.nama_perusahaan ?: (@ord.nmcustomer ?: '-') }}</span>
@@ -429,40 +925,43 @@ document.addEventListener('DOMContentLoaded', function() {
             menu.style.zIndex = '';
         });
     });
-});
 
-function confirmDisposisiKeuanganList(id, nomorSurat) {
-    var form = document.getElementById('formDispList' + id);
-    if (!form) return;
+    // Handler Popup Catatan / Alasan Surat Batal
+    document.querySelectorAll('.btn-lihat-catatan-batal').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var nomorSurat = btn.getAttribute('data-nomor-surat') || '-';
+            var instansi = btn.getAttribute('data-instansi') || '-';
+            var catatan = btn.getAttribute('data-catatan') || 'Tidak ada catatan khusus.';
+            var pengganti = btn.getAttribute('data-pengganti') || '';
 
-    if (typeof Swal !== 'undefined') {
-        Swal.fire({
-            title: 'Disposisi ke Tim Keuangan?',
-            text: 'Penawaran ' + nomorSurat + ' (DEAL) akan diteruskan ke antrean Tim Keuangan untuk pencatatan pembayaran.',
-            icon: 'question',
-            iconColor: '#0f172a',
-            background: '#ffffff',
-            showCancelButton: true,
-            confirmButtonText: '<i class="bi bi-send-check-fill me-1"></i> Ya, Disposisikan',
-            cancelButtonText: 'Batal',
-            reverseButtons: true,
-            customClass: {
-                popup: 'bg-white rounded-3 shadow border p-4',
-                title: 'fw-bold text-dark fs-6 mb-1',
-                htmlContainer: 'text-muted small mb-3',
-                confirmButton: 'btn btn-dark btn-sm px-3 py-1.5 fw-semibold',
-                cancelButton: 'btn btn-outline-secondary btn-sm px-3 py-1.5 me-2'
-            },
-            buttonsStyling: false
-        }).then(function(result) {
-            if (result.isConfirmed) {
-                form.submit();
+            var penggantiRow = pengganti
+                ? '<div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top"><strong>Surat Pengganti:</strong> <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace">' + pengganti + '</span></div>'
+                : '<div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top"><strong>Status:</strong> <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Order Dibatalkan</span></div>';
+
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: '<span style="font-size:1.1rem; font-weight:700; color:#0f172a;"><i class="bi bi-chat-left-quote-fill text-danger me-2"></i>Catatan & Alasan Surat Batal</span>',
+                    html: '<div style="text-align:left; font-size:0.875rem; color:#334155;">' +
+                        '<div style="background:#f8fafc; padding:12px 14px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:12px;">' +
+                            '<div class="d-flex justify-content-between mb-1.5"><strong>No. Surat Batal:</strong> <span style="color:#b91c1c; font-family:monospace; font-weight:700;">' + nomorSurat + '</span></div>' +
+                            '<div class="d-flex justify-content-between mb-1.5"><strong>Mitra / Instansi:</strong> <span class="fw-semibold text-dark">' + instansi + '</span></div>' +
+                            penggantiRow +
+                        '</div>' +
+                        '<div style="margin-bottom:6px; font-weight:600; color:#475569;">Isi Catatan / Alasan:</div>' +
+                        '<div style="background:#f1f5f9; border:1px solid #cbd5e1; border-left:4px solid #dc2626; padding:12px 14px; border-radius:6px; color:#334155; line-height:1.5;">' +
+                            catatan +
+                        '</div>' +
+                    '</div>',
+                    confirmButtonText: 'Tutup',
+                    confirmButtonColor: '#334155',
+                    customClass: {
+                        popup: 'rounded-3 shadow'
+                    }
+                });
+            } else {
+                alert('Catatan Surat ' + nomorSurat + ' (' + instansi + '):\n\n' + catatan);
             }
         });
-    } else {
-        if (confirm('Disposisikan penawaran DEAL ini ke Tim Keuangan?')) {
-            form.submit();
-        }
-    }
-}
+    });
+});
 </script>

@@ -31,7 +31,27 @@ class OrderLayanan extends \DB\SQL\Mapper {
     );
 
     public function __construct(\DB\SQL $db) {
+        self::ensureColumns($db);
         parent::__construct($db, 'order_layanan');
+    }
+
+    /**
+     * Pastikan kolom nomor_permintaan tersedia di tabel order_layanan
+     */
+    public static function ensureColumns(\DB\SQL $db): void {
+        static $checked = false;
+        if ($checked) return;
+        try {
+            $cols = [
+                'nomor_permintaan' => 'VARCHAR(50) NULL AFTER id'
+            ];
+            foreach ($cols as $col => $def) {
+                try {
+                    $db->exec("ALTER TABLE order_layanan ADD COLUMN {$col} {$def}");
+                } catch (\Exception $e) {}
+            }
+            $checked = true;
+        } catch (\Exception $e) {}
     }
 
     /**
@@ -48,12 +68,55 @@ class OrderLayanan extends \DB\SQL\Mapper {
             $durasiHariKerja = 30;
         }
 
-        $rows = $this->db->exec("SELECT tanggal, keterangan FROM tb_hari_libur");
         $holidays = [];
-        if (!empty($rows)) {
-            foreach ($rows as $r) {
-                $holidays[$r['tanggal']] = $r['keterangan'];
+        try {
+            // Ambil seluruh tanggal libur resmi dari tb_tanggal_libur di sil2020
+            $rowsTgl = $this->db->exec("SELECT tanggal_libur FROM tb_tanggal_libur");
+            if (!empty($rowsTgl)) {
+                foreach ($rowsTgl as $r) {
+                    if (!empty($r['tanggal_libur'])) {
+                        $tgl = date('Y-m-d', strtotime($r['tanggal_libur']));
+                        $holidays[$tgl] = 'Hari Libur Resmi / Cuti Bersama';
+                    }
+                }
             }
+        } catch (\Exception $e) {
+            try {
+                $rowsTgl = $this->db->exec("SELECT tanggal_libur FROM sil2020.tb_tanggal_libur");
+                if (!empty($rowsTgl)) {
+                    foreach ($rowsTgl as $r) {
+                        if (!empty($r['tanggal_libur'])) {
+                            $tgl = date('Y-m-d', strtotime($r['tanggal_libur']));
+                            $holidays[$tgl] = 'Hari Libur Resmi / Cuti Bersama';
+                        }
+                    }
+                }
+            } catch (\Exception $e2) {}
+        }
+
+        // Lengkapi dengan deskripsi nama hari libur jika tersedia di tb_hari_libur
+        try {
+            $rowsHari = $this->db->exec("SELECT tanggal, keterangan FROM tb_hari_libur");
+            if (!empty($rowsHari)) {
+                foreach ($rowsHari as $r) {
+                    if (!empty($r['tanggal'])) {
+                        $tgl = date('Y-m-d', strtotime($r['tanggal']));
+                        $holidays[$tgl] = !empty($r['keterangan']) ? $r['keterangan'] : ($holidays[$tgl] ?? 'Hari Libur Nasional');
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            try {
+                $rowsHari = $this->db->exec("SELECT tanggal, keterangan FROM sil2020.tb_hari_libur");
+                if (!empty($rowsHari)) {
+                    foreach ($rowsHari as $r) {
+                        if (!empty($r['tanggal'])) {
+                            $tgl = date('Y-m-d', strtotime($r['tanggal']));
+                            $holidays[$tgl] = !empty($r['keterangan']) ? $r['keterangan'] : ($holidays[$tgl] ?? 'Hari Libur Nasional');
+                        }
+                    }
+                }
+            } catch (\Exception $e2) {}
         }
 
         // Perhitungan H+1 hari kerja (Pak Hendy: Hari pertama pengerjaan adalah hari kerja berikutnya)
@@ -83,8 +146,12 @@ class OrderLayanan extends \DB\SQL\Mapper {
         }
 
         return [
+            'tanggal_mulai'       => $tanggalSampel,
             'tanggal_sampel'      => $tanggalSampel,
             'durasi_hari_kerja'   => $durasiHariKerja,
+            'durasi_nilai'        => $durasiHariKerja,
+            'durasi_satuan'       => 'Hari Kerja',
+            'label_durasi'        => "{$durasiHariKerja} Hari Kerja",
             'tanggal_deadline_spm'=> date('Y-m-d', $curr),
             'libur_dilewati'      => $liburDilewati,
             'akhir_pekan_hari'    => $akhirPekanDilewati
@@ -92,31 +159,91 @@ class OrderLayanan extends \DB\SQL\Mapper {
     }
 
     /**
-     * Catat penerimaan fisik sampel laboratorium dan hitung otomatis deadline SPM
+     * Hitung deadline SPM fleksibel (Hari Kerja, Hari Kalender, Minggu, Bulan)
      */
-    public function simpanPenerimaanSampel(int $orderId, string $tanggalSampel, int $durasiHariKerja = 30): array {
+    public function hitungDeadlineFleksibel(string $tanggalMulai, int $durasiNilai = 30, string $durasiSatuan = 'Hari Kerja'): array {
+        $time = strtotime($tanggalMulai);
+        if (!$time) {
+            $time = time();
+            $tanggalMulai = date('Y-m-d', $time);
+        }
+
+        if ($durasiNilai <= 0) {
+            $durasiNilai = 1;
+        }
+
+        $satuanClean = strtolower(trim($durasiSatuan));
+        $liburDilewati = [];
+        $akhirPekanDilewati = 0;
+        $deadlineStr = '';
+
+        if (strpos($satuanClean, 'kerja') !== false) {
+            // Hari Kerja: H+1 exclude weekend & holidays
+            $res = $this->hitungDeadlineHariKerja($tanggalMulai, $durasiNilai);
+            $deadlineStr = $res['tanggal_deadline_spm'];
+            $liburDilewati = $res['libur_dilewati'];
+            $akhirPekanDilewati = $res['akhir_pekan_hari'];
+        } elseif (strpos($satuanClean, 'bulan') !== false) {
+            $deadlineStr = date('Y-m-d', strtotime("+{$durasiNilai} months", $time));
+        } elseif (strpos($satuanClean, 'minggu') !== false) {
+            $deadlineStr = date('Y-m-d', strtotime("+{$durasiNilai} weeks", $time));
+        } else {
+            // Hari Kalender / Hari Biasa
+            $deadlineStr = date('Y-m-d', strtotime("+{$durasiNilai} days", $time));
+        }
+
+        return [
+            'tanggal_mulai'       => $tanggalMulai,
+            'tanggal_sampel'      => $tanggalMulai,
+            'durasi_nilai'        => $durasiNilai,
+            'durasi_satuan'       => $durasiSatuan,
+            'durasi_hari_kerja'   => (strpos($satuanClean, 'kerja') !== false) ? $durasiNilai : null,
+            'label_durasi'        => "{$durasiNilai} {$durasiSatuan}",
+            'tanggal_deadline_spm'=> $deadlineStr,
+            'libur_dilewati'      => $liburDilewati,
+            'akhir_pekan_hari'    => $akhirPekanDilewati
+        ];
+    }
+
+    /**
+     * Catat titik awal pengerjaan / aktivasi SPM dengan pilihan trigger (Sampel Diterima, Kick-Off, TTD PKS)
+     */
+    public function simpanAktivasiSpm(int $orderId, string $tanggalMulai, int $durasiNilai = 30, string $durasiSatuan = 'Hari Kerja', string $triggerTipe = 'sampel_diterima', ?string $catatan = null): array {
         $this->load(['id = ?', $orderId]);
         if ($this->dry()) {
             throw new \Exception("Order #{$orderId} tidak ditemukan.");
         }
 
-        $kalkulasi = $this->hitungDeadlineHariKerja($tanggalSampel, $durasiHariKerja);
+        $kalkulasi = $this->hitungDeadlineFleksibel($tanggalMulai, $durasiNilai, $durasiSatuan);
         $deadline = $kalkulasi['tanggal_deadline_spm'];
 
-        $this->tanggal_terima_sampel = $tanggalSampel;
+        $this->tanggal_terima_sampel = $tanggalMulai; // backward compatibility
+        $this->tanggal_spm_mulai     = $tanggalMulai;
+        $this->spm_trigger_tipe      = $triggerTipe;
         $this->tanggal_deadline_spm  = $deadline;
-        $this->durasi_hari_kerja     = $durasiHariKerja;
+        $this->durasi_hari_kerja     = (strpos(strtolower($durasiSatuan), 'kerja') !== false) ? $durasiNilai : null;
+        $this->spm_durasi_nilai      = $durasiNilai;
+        $this->spm_durasi_satuan     = $durasiSatuan;
+        $this->spm_layanan           = "{$durasiNilai} {$durasiSatuan}";
+        $this->catatan_trigger_spm   = !empty($catatan) ? trim($catatan) : null;
         $this->save();
 
         // Jika PO sudah ada, sinkronkan juga target_mulai dan target_selesai di tabel po
         if (!empty($this->po_id)) {
             $this->db->exec(
                 "UPDATE po SET target_mulai = ?, target_selesai = ? WHERE id = ?",
-                [1 => $tanggalSampel, 2 => $deadline, 3 => $this->po_id]
+                [1 => $tanggalMulai, 2 => $deadline, 3 => $this->po_id]
             );
         }
 
         return $kalkulasi;
+    }
+
+    /**
+     * Catat penerimaan fisik sampel laboratorium dan hitung otomatis deadline SPM (Legacy wrapper)
+     */
+    public function simpanPenerimaanSampel(int $orderId, string $tanggalSampel, int $durasiHariKerja = 30): array {
+        return $this->simpanAktivasiSpm($orderId, $tanggalSampel, $durasiHariKerja, 'Hari Kerja', 'sampel_diterima');
     }
 
     /**
@@ -141,7 +268,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
     /**
      * Ambil seluruh order layanan lengkap dengan nama customer, nomor PO, dan ringkasan pembayaran
      */
-    public function allWithRelasi(string $filterJenis = '', string $filterStatus = '', string $search = '', string $filterTahun = '', string $filterTab = 'aktif'): array {
+    public function allWithRelasi(string $filterJenis = '', string $filterStatus = '', string $search = '', string $filterTahun = '', string $filterTab = 'aktif', string $filterBulan = ''): array {
         $sql = "SELECT o.*, 
                        c.nmcustomer AS nama_perusahaan, c.pt_cv, 
                        COALESCE(NULLIF(c.contactperson_opti, ''), NULLIF(c.contactperson, ''), c.nama_pribadi, '-') AS pic,
@@ -156,7 +283,9 @@ class OrderLayanan extends \DB\SQL\Mapper {
                        COALESCE(u_tolak.nama_user, u_tinjau.nama_user, '-') AS nama_penolak,
                        COALESCE(NULLIF(o.alasan_tolak, ''), NULLIF(tk.alasan_penolakan, ''), '-') AS alasan_tolak,
                        COALESCE(o.tanggal_tolak, tk.tanggal_tinjauan) AS tanggal_tolak,
-                       COALESCE((SELECT SUM(jumlah) FROM opti_pembayaran WHERE order_id = o.id), 0) AS total_terbayar
+                       COALESCE((SELECT SUM(jumlah) FROM opti_pembayaran WHERE order_id = o.id), 0) AS total_terbayar,
+                       u_pic.nama_user AS pic_proposal_nama,
+                       u_pelaksana.nama_user AS ketua_pelaksana_nama
                 FROM order_layanan o
                 JOIN tb_customer c ON o.id_customer = c.id_customer
                 LEFT JOIN po p ON o.id = p.order_id
@@ -166,12 +295,14 @@ class OrderLayanan extends \DB\SQL\Mapper {
                 LEFT JOIN tb_arsipuser u_tolak ON o.ditolak_oleh = u_tolak.id_user
                 LEFT JOIN opti_tinjauan_kelayakan tk ON o.id = tk.order_id AND tk.keputusan = 'tidak_dapat_dilaksanakan'
                 LEFT JOIN tb_arsipuser u_tinjau ON tk.ditinjau_oleh = u_tinjau.id_user
+                LEFT JOIN tb_arsipuser u_pic ON o.pic_proposal_id = u_pic.id_user
+                LEFT JOIN tb_arsipuser u_pelaksana ON o.ketua_pelaksana_id = u_pelaksana.id_user
                 WHERE 1=1";
         
         $params = array();
         $idx = 1;
 
-        // Filter tab: masuk (tahap sebelum deal), berlangsung (sudah terjadi deal), ditolak, atau aktif
+        // Filter tab: masuk (tahap sebelum deal), berlangsung (sudah terjadi deal & proses pengerjaan), selesai (tuntas BAST / laporan selesai), ditolak, atau aktif
         if ($filterTab === 'masuk') {
             $sql .= " AND o.status != 'ditolak' AND (o.status_tinjauan != 'tidak_layak' OR o.status_tinjauan IS NULL)
                       AND (sp.status_respon_klien NOT IN ('ditolak', 'batal') OR sp.status_respon_klien IS NULL)
@@ -179,11 +310,28 @@ class OrderLayanan extends \DB\SQL\Mapper {
                       AND (o.status_penawaran IS NULL OR o.status_penawaran != 'deal')
                       AND p.id IS NULL
                       AND b.id IS NULL
-                      AND o.status NOT IN ('penawaran_deal', 'disetujui', 'po_dibuat', 'proses', 'selesai', 'lapor_selesai')";
+                      AND o.status NOT IN ('penawaran_deal', 'disetujui', 'po_dibuat', 'proses', 'selesai', 'lapor_selesai')
+                      AND (o.status_pelaksanaan IS NULL OR o.status_pelaksanaan != 'laporan_selesai')";
         } elseif ($filterTab === 'berlangsung') {
             $sql .= " AND o.status != 'ditolak' AND (o.status_tinjauan != 'tidak_layak' OR o.status_tinjauan IS NULL)
                       AND (sp.status_respon_klien NOT IN ('ditolak', 'batal') OR sp.status_respon_klien IS NULL)
-                      AND ((sp.status_respon_klien = 'deal') OR (o.status_penawaran = 'deal') OR (p.id IS NOT NULL) OR (b.id IS NOT NULL) OR (o.status IN ('penawaran_deal', 'disetujui', 'po_dibuat', 'proses', 'selesai', 'lapor_selesai')))";
+                      AND (
+                          (sp.status_respon_klien = 'deal') 
+                          OR (o.status_penawaran = 'deal') 
+                          OR (p.id IS NOT NULL) 
+                          OR (o.status IN ('penawaran_deal', 'disetujui', 'po_dibuat', 'proses', 'lapor_selesai'))
+                          OR (b.id IS NOT NULL AND b.status_bast NOT IN ('disetujui', 'selesai', 'terbit'))
+                      )
+                      AND (o.status != 'selesai' AND (o.status_pelaksanaan IS NULL OR o.status_pelaksanaan != 'laporan_selesai'))
+                      AND (b.id IS NULL OR b.status_bast NOT IN ('disetujui', 'selesai', 'terbit'))";
+        } elseif ($filterTab === 'selesai') {
+            $sql .= " AND o.status != 'ditolak' AND (o.status_tinjauan != 'tidak_layak' OR o.status_tinjauan IS NULL)
+                      AND (sp.status_respon_klien NOT IN ('ditolak', 'batal') OR sp.status_respon_klien IS NULL)
+                      AND (
+                          o.status = 'selesai' 
+                          OR o.status_pelaksanaan = 'laporan_selesai' 
+                          OR (b.id IS NOT NULL AND b.status_bast IN ('disetujui', 'selesai', 'terbit'))
+                      )";
         } elseif ($filterTab === 'ditolak') {
             $sql .= " AND (o.status = 'ditolak' OR o.status_tinjauan = 'tidak_layak' OR sp.status_respon_klien IN ('ditolak', 'batal'))";
         } elseif ($filterTab === 'aktif') {
@@ -194,6 +342,11 @@ class OrderLayanan extends \DB\SQL\Mapper {
         if (!empty($filterTahun) && $filterTahun !== 'all') {
             $sql .= " AND YEAR(COALESCE(o.tanggal_masuk, o.tanggal_klaim, o.created_at)) = ?";
             $params[$idx++] = (int)$filterTahun;
+        }
+
+        if (!empty($filterBulan) && $filterBulan !== 'all') {
+            $sql .= " AND MONTH(COALESCE(o.tanggal_masuk, o.tanggal_klaim, o.created_at)) = ?";
+            $params[$idx++] = (int)$filterBulan;
         }
 
         if (!empty($filterJenis)) {
@@ -211,8 +364,9 @@ class OrderLayanan extends \DB\SQL\Mapper {
         }
 
         if (!empty($search)) {
-            $sql .= " AND (o.nomor_order LIKE ? OR o.judul_kegiatan LIKE ? OR c.nmcustomer LIKE ? OR o.jenis_sampel LIKE ?)";
+            $sql .= " AND (o.nomor_permintaan LIKE ? OR o.nomor_order LIKE ? OR o.judul_kegiatan LIKE ? OR c.nmcustomer LIKE ? OR o.jenis_sampel LIKE ?)";
             $wildcard = "%{$search}%";
+            $params[$idx++] = $wildcard;
             $params[$idx++] = $wildcard;
             $params[$idx++] = $wildcard;
             $params[$idx++] = $wildcard;
@@ -233,6 +387,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
             $r['stage_label'] = $st['label'];
             $r['stage_class'] = $st['class'];
             $r['stage_icon']  = $st['icon'];
+            $r['stage_user']  = $st['user'] ?? '';
 
             // Resolusi nama & badge tahap saat order ditolak
             if (($r['status_tinjauan'] ?? '') === 'tidak_layak') {
@@ -262,12 +417,18 @@ class OrderLayanan extends \DB\SQL\Mapper {
      * Helper penentu status alur tunggal, simpel, dan konsisten
      */
     public static function resolveStageStatus(array $o): array {
+        $isSelulosa = (($o['jenis_layanan_opti'] ?? '') === 'selulosa');
+        $isLingkungan = (($o['jenis_layanan_opti'] ?? '') === 'lingkungan');
+        $timKerjaLabel = $isLingkungan ? 'Tim Kerja Lingkungan' : ($isSelulosa ? 'Tim Kerja Selulosa' : 'Tim Kerja');
+        $katimLabel = $isLingkungan ? 'Ketua Tim Lingkungan' : ($isSelulosa ? 'Ketua Tim Selulosa' : 'Ketua Tim OPTI');
+
         // 1. Ditolak (Tahap 1-8 jika dinyatakan ditolak/tidak layak/batal)
         if (($o['status'] ?? '') === 'ditolak' || ($o['status_tinjauan'] ?? '') === 'tidak_layak' || in_array($o['status_respon_klien'] ?? '', ['ditolak', 'batal'])) {
             return [
                 'label' => 'Ditolak',
                 'class' => 'status-pill status-pill-rose',
-                'icon'  => 'bi-x-circle-fill'
+                'icon'  => 'bi-x-circle-fill',
+                'user'  => 'Tim Mitra & Pelanggan'
             ];
         }
 
@@ -279,7 +440,8 @@ class OrderLayanan extends \DB\SQL\Mapper {
             return [
                 'label' => 'Selesai (BAST)',
                 'class' => 'status-pill status-pill-emerald',
-                'icon'  => 'bi-check2-all'
+                'icon'  => 'bi-check2-all',
+                'user'  => 'Tim Mitra & Pelanggan'
             ];
         }
 
@@ -288,7 +450,8 @@ class OrderLayanan extends \DB\SQL\Mapper {
             return [
                 'label' => 'Pengujian Lab',
                 'class' => 'status-pill status-pill-indigo',
-                'icon'  => 'bi-flask-fill'
+                'icon'  => 'bi-flask-fill',
+                'user'  => $timKerjaLabel
             ];
         }
 
@@ -302,13 +465,15 @@ class OrderLayanan extends \DB\SQL\Mapper {
                 return [
                     'label' => 'Menunggu Sampel',
                     'class' => 'status-pill status-pill-amber',
-                    'icon'  => 'bi-box-seam-fill'
+                    'icon'  => 'bi-box-seam-fill',
+                    'user'  => 'Tim Mitra & Pelanggan'
                 ];
             } else {
                 return [
                     'label' => 'Penerbitan PO',
                     'class' => 'status-pill status-pill-blue',
-                    'icon'  => 'bi-patch-check-fill'
+                    'icon'  => 'bi-patch-check-fill',
+                    'user'  => $katimLabel
                 ];
             }
         }
@@ -318,7 +483,8 @@ class OrderLayanan extends \DB\SQL\Mapper {
             return [
                 'label' => 'Menunggu Bayar',
                 'class' => 'status-pill status-pill-amber',
-                'icon'  => 'bi-credit-card-2-front-fill'
+                'icon'  => 'bi-credit-card-2-front-fill',
+                'user'  => 'Tim Keuangan'
             ];
         }
 
@@ -328,13 +494,12 @@ class OrderLayanan extends \DB\SQL\Mapper {
             return [
                 'label' => 'Penawaran Terbit',
                 'class' => 'status-pill status-pill-sky',
-                'icon'  => 'bi-file-earmark-text-fill'
+                'icon'  => 'bi-file-earmark-text-fill',
+                'user'  => 'Tim Mitra Industri'
             ];
         }
 
         // Step 4 & 3: Cek jenis layanan dan kaji kelayakan
-        $isSelulosa = (($o['jenis_layanan_opti'] ?? '') === 'selulosa');
-        $isLingkungan = (($o['jenis_layanan_opti'] ?? '') === 'lingkungan');
         $isLayak = (($o['status_tinjauan'] ?? '') === 'layak');
 
         // Jika Kaji Kelayakan Layak -> Masuk Step 4
@@ -345,20 +510,23 @@ class OrderLayanan extends \DB\SQL\Mapper {
                     return [
                         'label' => 'Siap Penawaran',
                         'class' => 'status-pill status-pill-sky',
-                        'icon'  => 'bi-check-circle-fill'
+                        'icon'  => 'bi-check-circle-fill',
+                        'user'  => 'Tim Mitra Industri'
                     ];
                 }
                 if (($o['status_proposal_biaya'] ?? '') === 'draft_disimpan') {
                     return [
                         'label' => 'Draft Disimpan',
                         'class' => 'status-pill status-pill-amber',
-                        'icon'  => 'bi-bookmark-check-fill'
+                        'icon'  => 'bi-bookmark-check-fill',
+                        'user'  => 'Tim Kerja Lingkungan'
                     ];
                 }
                 return [
                     'label' => 'Tarif & Parameter',
                     'class' => 'status-pill status-pill-blue',
-                    'icon'  => 'bi-calculator-fill'
+                    'icon'  => 'bi-calculator-fill',
+                    'user'  => 'Tim Kerja Lingkungan'
                 ];
             } elseif ($isSelulosa) {
                 $proposalComplete = !empty($o['file_proposal']) && (float)($o['estimasi_total_biaya'] ?? 0) > 0;
@@ -367,33 +535,38 @@ class OrderLayanan extends \DB\SQL\Mapper {
                     return [
                         'label' => 'Proposal Disetujui',
                         'class' => 'status-pill status-pill-emerald',
-                        'icon'  => 'bi-check-circle-fill'
+                        'icon'  => 'bi-check-circle-fill',
+                        'user'  => 'Tim Mitra Industri'
                     ];
                 }
                 if (($o['status_proposal'] ?? '') === 'draft_disimpan' || ($o['status_proposal_biaya'] ?? '') === 'draft_disimpan') {
                     return [
                         'label' => 'Draft Disimpan',
                         'class' => 'status-pill status-pill-amber',
-                        'icon'  => 'bi-bookmark-check-fill'
+                        'icon'  => 'bi-bookmark-check-fill',
+                        'user'  => 'Tim Kerja Selulosa'
                     ];
                 }
                 if (($o['status_proposal_biaya'] ?? '') === 'menunggu_approval' || ($o['status_proposal'] ?? '') === 'diajukan' || $proposalComplete) {
                     return [
                         'label' => 'Review Proposal',
                         'class' => 'status-pill status-pill-sky',
-                        'icon'  => 'bi-hourglass-split'
+                        'icon'  => 'bi-hourglass-split',
+                        'user'  => 'Ketua Tim Selulosa'
                     ];
                 }
                 return [
                     'label' => 'Proposal Teknis',
                     'class' => 'status-pill status-pill-blue',
-                    'icon'  => 'bi-file-earmark-arrow-up-fill'
+                    'icon'  => 'bi-file-earmark-arrow-up-fill',
+                    'user'  => 'Tim Kerja Selulosa'
                 ];
             } else {
                 return [
                     'label' => 'Disposisi Masuk',
                     'class' => 'status-pill status-pill-slate',
-                    'icon'  => 'bi-inbox-fill'
+                    'icon'  => 'bi-inbox-fill',
+                    'user'  => $katimLabel
                 ];
             }
         }
@@ -404,7 +577,8 @@ class OrderLayanan extends \DB\SQL\Mapper {
                 return [
                     'label' => 'Kaji Kelayakan',
                     'class' => 'status-pill status-pill-amber',
-                    'icon'  => 'bi-clipboard-check-fill'
+                    'icon'  => 'bi-clipboard-check-fill',
+                    'user'  => $katimLabel
                 ];
             }
         }
@@ -414,7 +588,8 @@ class OrderLayanan extends \DB\SQL\Mapper {
             return [
                 'label' => 'Draft Disimpan',
                 'class' => 'status-pill status-pill-amber',
-                'icon'  => 'bi-bookmark-check-fill'
+                'icon'  => 'bi-bookmark-check-fill',
+                'user'  => 'Tim Mitra Industri'
             ];
         }
 
@@ -422,7 +597,8 @@ class OrderLayanan extends \DB\SQL\Mapper {
             return [
                 'label' => 'Disposisi Masuk',
                 'class' => 'status-pill status-pill-slate',
-                'icon'  => 'bi-inbox-fill'
+                'icon'  => 'bi-inbox-fill',
+                'user'  => 'Tim Mitra Industri'
             ];
         }
 
@@ -430,7 +606,8 @@ class OrderLayanan extends \DB\SQL\Mapper {
         return [
             'label' => 'Order Baru',
             'class' => 'status-pill status-pill-sky',
-            'icon'  => 'bi-file-earmark'
+            'icon'  => 'bi-file-earmark',
+            'user'  => 'Tim Mitra Industri'
         ];
     }
 
@@ -452,6 +629,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
                     b.id AS bast_id, b.status_bast,
                     COALESCE((SELECT SUM(jumlah) FROM opti_pembayaran WHERE order_id = o.id), 0) AS total_terbayar,
                     u_pic.nama_user AS pic_proposal_nama,
+                    u_pelaksana.nama_user AS ketua_pelaksana_nama,
                     u_klaim.nama_user AS nama_pengklaim,
                     a.nomor_surat AS nomor_surat_masuk,
                     a.tanggal_surat AS tanggal_surat_masuk,
@@ -466,6 +644,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
              LEFT JOIN po p ON o.id = p.order_id
              LEFT JOIN tb_surat_penawaran sp ON sp.id = (SELECT id FROM tb_surat_penawaran WHERE order_id = o.id ORDER BY (status_respon_klien = 'deal') DESC, id DESC LIMIT 1)
              LEFT JOIN tb_arsipuser u_pic ON o.pic_proposal_id = u_pic.id_user
+             LEFT JOIN tb_arsipuser u_pelaksana ON o.ketua_pelaksana_id = u_pelaksana.id_user
              LEFT JOIN tb_arsipuser u_klaim ON o.diklaim_oleh = u_klaim.id_user
              LEFT JOIN opti_proposal_riset pr ON o.id = pr.order_id
              LEFT JOIN opti_bast b ON b.id = (SELECT id FROM opti_bast WHERE order_id = o.id ORDER BY id DESC LIMIT 1)
@@ -482,6 +661,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
         $detail['stage_label'] = $st['label'];
         $detail['stage_class'] = $st['class'];
         $detail['stage_icon']  = $st['icon'];
+        $detail['stage_user']  = $st['user'] ?? '';
 
         return $detail;
     }
@@ -537,10 +717,46 @@ class OrderLayanan extends \DB\SQL\Mapper {
     }
 
     /**
-     * Generate nomor order unik aman: ORD-YYYYMM-XXX
+     * Generate nomor permintaan unik format: REQ-YYYYMM-XXX
      */
-    public function generateNomorOrder(): string {
-        $prefix = 'ORD-' . date('Ym');
+    public function generateNomorPermintaan(string $tanggal = ''): string {
+        $time = !empty($tanggal) ? strtotime($tanggal) : time();
+        if (!$time) $time = time();
+        $prefix = 'REQ-' . date('Ym', $time);
+        
+        $rows = $this->db->exec(
+            "SELECT nomor_permintaan FROM order_layanan WHERE nomor_permintaan LIKE ?",
+            array(1 => $prefix . '-%')
+        );
+
+        $maxSeq = 0;
+        foreach ($rows as $r) {
+            $parts = explode('-', $r['nomor_permintaan']);
+            $num = (int)($parts[2] ?? 0);
+            if ($num > $maxSeq) {
+                $maxSeq = $num;
+            }
+        }
+
+        $nextSeq = $maxSeq + 1;
+        $nomorReq = $prefix . '-' . sprintf('%03d', $nextSeq);
+
+        while (($this->db->exec("SELECT COUNT(*) as c FROM order_layanan WHERE nomor_permintaan = ?", array(1 => $nomorReq))[0]['c'] ?? 0) > 0) {
+            $nextSeq++;
+            $nomorReq = $prefix . '-' . sprintf('%03d', $nextSeq);
+        }
+
+        return $nomorReq;
+    }
+
+    /**
+     * Generate nomor order unik aman: ORD-YYYYMM-XXX
+     * HANYA diterbitkan ketika customer telah melakukan pembayaran / konfirmasi kesanggupan bayar
+     */
+    public function generateNomorOrder(string $tanggal = ''): string {
+        $time = !empty($tanggal) ? strtotime($tanggal) : time();
+        if (!$time) $time = time();
+        $prefix = 'ORD-' . date('Ym', $time);
         $rows = $this->db->exec(
             "SELECT nomor_order FROM order_layanan WHERE nomor_order LIKE ?",
             array(1 => $prefix . '-%')
@@ -567,11 +783,25 @@ class OrderLayanan extends \DB\SQL\Mapper {
     }
 
     /**
+     * Terbitkan nomor order resmi jika order sudah melakukan pembayaran
+     */
+    public function terbitkanNomorOrder(int $orderId): ?string {
+        $this->load(['id = ?', $orderId]);
+        if ($this->dry()) return null;
+        if (empty($this->nomor_order)) {
+            $this->nomor_order = $this->generateNomorOrder();
+            $this->save();
+        }
+        return $this->nomor_order;
+    }
+
+    /**
      * Simpan order layanan baru
      */
     public function simpanBaru(array $data): int {
         $this->reset();
         $this->id_customer          = (int)$data['id_customer'];
+        $this->nomor_permintaan     = !empty($data['nomor_permintaan']) ? trim($data['nomor_permintaan']) : $this->generateNomorPermintaan($data['tanggal_masuk'] ?? '');
         $this->nomor_order          = !empty($data['nomor_order']) ? trim($data['nomor_order']) : null;
         $this->tanggal_masuk        = $data['tanggal_masuk'];
         $this->judul_kegiatan       = trim($data['judul_kegiatan']);
@@ -787,9 +1017,9 @@ class OrderLayanan extends \DB\SQL\Mapper {
             if ($keputusan === 'dapat_dilaksanakan') {
                 $this->status_tinjauan = 'layak';
                 $this->status = 'baru';
-                // [PEROMBAKAN] Terbitkan Nomor Order Resmi HANYA saat kaji kelayakan disetujui & dapat dilaksanakan
-                if (empty($this->nomor_order)) {
-                    $this->nomor_order = $this->generateNomorOrder();
+                // Nomor Permintaan dipastikan terisi, nomor order HANYA dibuat setelah pembayaran
+                if (empty($this->nomor_permintaan)) {
+                    $this->nomor_permintaan = $this->generateNomorPermintaan($this->tanggal_masuk ?? '');
                 }
             } else {
                 $this->status_tinjauan = 'tidak_layak';
@@ -943,7 +1173,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
     /**
      * Simpan Kalkulasi Pengujian Multi-Metode (Divisi Lingkungan)
      */
-    public function simpanKalkulasiLingkungan(int $orderId, array $items, float $diskon, ?string $tglSampel, int $userId, ?string $spmLayanan = null): array {
+    public function simpanKalkulasiLingkungan(int $orderId, array $items, float $diskon, ?string $tglSampel, int $userId, ?string $spmLayanan = null, ?int $spmDurasiNilai = null, ?string $spmDurasiSatuan = null, ?string $spmTriggerTipe = null): array {
         $this->load(array('id = ?', $orderId));
         if ($this->dry()) {
             throw new \Exception("Order Layanan #{$orderId} tidak ditemukan.");
@@ -1005,9 +1235,22 @@ class OrderLayanan extends \DB\SQL\Mapper {
         $this->diskon_penawaran = $diskon;
         if (!empty($tglSampel)) {
             $this->tanggal_terima_sampel = $tglSampel;
+            $this->tanggal_spm_mulai     = $tglSampel;
         }
         if (!empty($spmLayanan)) {
             $this->spm_layanan = $spmLayanan;
+        }
+        if ($spmDurasiNilai !== null && $spmDurasiNilai > 0) {
+            $this->spm_durasi_nilai = $spmDurasiNilai;
+            if (empty($spmLayanan)) {
+                $this->spm_layanan = "{$spmDurasiNilai} " . ($spmDurasiSatuan ?: 'Hari Kerja');
+            }
+        }
+        if (!empty($spmDurasiSatuan)) {
+            $this->spm_durasi_satuan = $spmDurasiSatuan;
+        }
+        if (!empty($spmTriggerTipe)) {
+            $this->spm_trigger_tipe = $spmTriggerTipe;
         }
         $this->status_proposal_biaya = 'siap_penawaran';
         $this->save();

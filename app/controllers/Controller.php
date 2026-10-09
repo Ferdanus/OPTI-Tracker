@@ -82,6 +82,25 @@ class Controller {
             'klien:view',
             'alert:manage'
         ),
+        'humas' => array(
+            'surat_masuk:view',
+            'order:view',
+            'penawaran:view',
+            'po:view',
+            'kontrak:view',
+            'klien:view',
+            'alert:manage'
+        ),
+        'ppk' => array(
+            'surat_masuk:view',
+            'order:view',
+            'penawaran:view',
+            'pembayaran:view',
+            'po:view', 'po:evaluasi',
+            'kontrak:view',
+            'klien:view',
+            'alert:manage'
+        ),
         'user' => array(
             'surat_masuk:view',
             'order:view',
@@ -149,11 +168,13 @@ class Controller {
         $isKeuangan = ($role === 'keuangan' || $role === 'ketua_tim_keuangan');
         $this->f3->set('is_keuangan', $isKeuangan);
         $this->f3->set('is_ketua_tim_keuangan', $role === 'ketua_tim_keuangan');
+        $this->f3->set('is_humas', $role === 'humas');
+        $this->f3->set('is_ppk', $role === 'ppk');
         $this->f3->set('is_tim_kerja', $role === 'tim_kerja');
         $this->f3->set('is_admin_kontrak', $role === 'admin_kontrak');
         $this->f3->set('is_sekretaris', $role === 'sekretaris');
         $this->f3->set('is_user_readonly', $role === 'user' || $role === 'pegawai');
-        $this->f3->set('is_pejabat', false);
+        $this->f3->set('is_pejabat', $role === 'ppk');
 
         $this->f3->set('can_manage_order', $this->hasPermission('order:create') || $this->hasPermission('order:edit'));
         $this->f3->set('can_manage_surat_masuk', $this->hasPermission('surat_masuk:klaim') || $this->hasPermission('surat_masuk:registrasi'));
@@ -273,13 +294,18 @@ try {
 $this->f3->set('jumlah_notif_po_lingkungan', $notifPo['lingkungan']);
 $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
 
-        // Hitung notifikasi antrean Pembayaran untuk Ka Tim OPTI & Superadmin
+        // Hitung notifikasi antrean Pembayaran untuk Tim Keuangan, Ka Tim OPTI & Superadmin
         $notifKeuanganCount = 0;
-        if ($role === 'ketua_tim' || $role === 'superadmin') {
+        if ($role === 'keuangan' || $role === 'ketua_tim_keuangan' || $role === 'ketua_tim' || $role === 'superadmin') {
             try {
                 $whereDivPay = ($role === 'ketua_tim' && in_array($layanan, array('selulosa', 'lingkungan'))) ? "o.jenis_layanan_opti = '{$layanan}' AND" : "";
-                $sqlKeuangan = "SELECT COUNT(*) as c FROM order_layanan o
-                                LEFT JOIN tb_surat_penawaran sp ON sp.order_id = o.id
+                $sqlKeuangan = "SELECT COUNT(DISTINCT o.id) as c FROM order_layanan o
+                                LEFT JOIN tb_surat_penawaran sp ON sp.id = (
+                                    SELECT id FROM tb_surat_penawaran 
+                                    WHERE order_id = o.id 
+                                    ORDER BY (status_respon_klien = 'deal') DESC, (surat_kesanggupan_bayar IS NOT NULL AND surat_kesanggupan_bayar != '') DESC, id DESC 
+                                    LIMIT 1
+                                )
                                 WHERE {$whereDivPay} (o.status_keuangan = 'menunggu_pembayaran' 
                                        OR o.status_penawaran = 'deal' 
                                        OR o.status_rancop = 'deal'
@@ -287,7 +313,8 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
                                        OR o.status IN ('penawaran_deal', 'menunggu_pembayaran'))
                                   AND o.id NOT IN (SELECT DISTINCT order_id FROM opti_pembayaran)
                                   AND (o.status_keuangan IS NULL OR o.status_keuangan != 'lunas')
-                                  AND (o.status IS NULL OR o.status NOT IN ('batal', 'ditolak'))";
+                                  AND (o.status IS NULL OR o.status NOT IN ('batal', 'ditolak'))
+                                  AND (o.status_rancop IS NULL OR o.status_rancop != 'batal')";
                 $resKeuangan = $this->db->exec($sqlKeuangan);
                 $notifKeuanganCount = (int)($resKeuangan[0]['c'] ?? 0);
             } catch (\Exception $eKeuangan) {
@@ -512,10 +539,10 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
     public function requireAuth(): void {
         if (!$this->isLoggedIn()) {
             $_SESSION['user_id']            = 9006;
-            $_SESSION['login']              = 'superadmin';
-            $_SESSION['username']           = 'superadmin';
-            $_SESSION['nama_lengkap']       = 'Super Admin OPTI';
-            $_SESSION['nama_user']          = 'Super Admin OPTI';
+            $_SESSION['login']              = 'fajriasa';
+            $_SESSION['username']           = 'fajriasa';
+            $_SESSION['nama_lengkap']       = 'Fajriasa Erdanus';
+            $_SESSION['nama_user']          = 'Fajriasa Erdanus';
             $_SESSION['role']               = 'superadmin';
             $_SESSION['jenis_layanan_opti'] = 'semua';
             $_SESSION['bidang']             = 'all';
@@ -574,10 +601,10 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
         // Auto-login default session (Superadmin) jika belum ada session
         if (empty($_SESSION['user_id'])) {
             $_SESSION['user_id']            = 9006;
-            $_SESSION['login']              = 'superadmin';
-            $_SESSION['username']           = 'superadmin';
-            $_SESSION['nama_lengkap']       = 'Super Admin OPTI';
-            $_SESSION['nama_user']          = 'Super Admin OPTI';
+            $_SESSION['login']              = 'fajriasa';
+            $_SESSION['username']           = 'fajriasa';
+            $_SESSION['nama_lengkap']       = 'Fajriasa Erdanus';
+            $_SESSION['nama_user']          = 'Fajriasa Erdanus';
             $_SESSION['role']               = 'superadmin';
             $_SESSION['jenis_layanan_opti'] = 'semua';
             $_SESSION['bidang']             = 'all';
@@ -587,10 +614,10 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
 
         // Perbarui Hive F3 dengan session aktif
         $f3->set('SESSION.user_id', $_SESSION['user_id']);
-        $f3->set('SESSION.login', $_SESSION['login'] ?? 'superadmin');
-        $f3->set('SESSION.username', $_SESSION['username'] ?? 'superadmin');
-        $f3->set('SESSION.nama_lengkap', $_SESSION['nama_lengkap'] ?? 'Super Admin OPTI');
-        $f3->set('SESSION.nama_user', $_SESSION['nama_user'] ?? 'Super Admin OPTI');
+        $f3->set('SESSION.login', $_SESSION['login'] ?? 'fajriasa');
+        $f3->set('SESSION.username', $_SESSION['username'] ?? 'fajriasa');
+        $f3->set('SESSION.nama_lengkap', $_SESSION['nama_lengkap'] ?? 'Fajriasa Erdanus');
+        $f3->set('SESSION.nama_user', $_SESSION['nama_user'] ?? 'Fajriasa Erdanus');
         $f3->set('SESSION.role', $_SESSION['role'] ?? 'superadmin');
         $f3->set('SESSION.jenis_layanan_opti', $_SESSION['jenis_layanan_opti'] ?? 'semua');
         $f3->set('SESSION.bidang', $_SESSION['bidang'] ?? 'all');

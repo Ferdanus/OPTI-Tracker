@@ -299,16 +299,9 @@
     <!-- PAGE HEADER -->
     <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb mb-1 small">
-                    <li class="breadcrumb-item"><a href="{{ @BASE }}/order" class="text-decoration-none">Order Layanan</a></li>
-                    <li class="breadcrumb-item"><a href="{{ @BASE }}/order/{{ @order.id }}" class="text-decoration-none">#{{ @order.nomor_order }}</a></li>
-                    <li class="breadcrumb-item active" aria-current="page">Tarif &amp; Parameter</li>
-                </ol>
-            </nav>
             <h5 class="fw-bold text-dark m-0 font-display d-flex align-items-center gap-2">
                 <i class="bi bi-calculator-fill text-primary"></i>
-                Tarif &amp; Parameter Pengujian
+                Tarif &amp; Rincian Layanan Jasa
                 <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-0.5 small fw-normal">
                     OPTI Lingkungan
                 </span>
@@ -361,18 +354,18 @@
     <form action="{{ @BASE }}/order/{{ @order.id }}/biaya-lingkungan" method="POST" id="formKalkulasiLingkungan">
         <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
 
-        <!-- CARD: TABEL RINCIAN PARAMETER UJI -->
+        <!-- CARD: TABEL RINCIAN LAYANAN JASA -->
         <div class="card border-0 shadow-sm mb-4">
             
             <!-- Card Header: Title & Counter -->
             <div class="card-header bg-white py-2.5 px-3 border-bottom d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center gap-2">
-                    <i class="bi bi-flask text-primary"></i>
-                    <span class="fw-bold text-dark small">Daftar Parameter Uji</span>
+                    <i class="bi bi-list-check text-primary"></i>
+                    <span class="fw-bold text-dark small">Daftar Layanan Jasa &amp; Parameter</span>
                 </div>
                 <div>
                     <span class="badge bg-light text-dark border px-2.5 py-1 font-monospace fw-semibold" id="badgeParamCount">
-                        0 Parameter
+                        0 Layanan / Jasa
                     </span>
                 </div>
             </div>
@@ -384,8 +377,8 @@
                         <!-- Quick Catalog Selector -->
                         <div class="d-flex align-items-center gap-2 flex-grow-1" style="max-width: 680px;">
                             <div class="flex-grow-1">
-                                <select id="quickSelectMetode" class="form-select form-select-sm" onchange="onCatalogSelectChange(this.value)" placeholder="Ketik untuk mencari parameter uji (Biodegradasi, Toksikologi, Jamur, BOD, COD, dll)...">
-                                    <option value="">Cari atau Pilih dari Katalog Pengujian Resmi</option>
+                                <select id="quickSelectMetode" class="form-select form-select-sm" onchange="onCatalogSelectChange(this.value)" placeholder="Ketik untuk mencari layanan jasa (Pengujian, Sertifikasi ISO, Konsultansi, Biodegradasi, BOD, COD, dll)...">
+                                    <option value="">Cari atau Pilih dari Katalog Layanan Jasa Resmi</option>
                                     <repeat group="{{ @daftar_metode }}" value="{{ @m }}">
                                         <option value="{{ @m.id }}" 
                                             data-tarif="{{ (float)@m.harga }}" 
@@ -396,7 +389,7 @@
                                             data-nilai="{{ (int)@m.durasi_nilai ?: 1 }}"
                                             data-satuan="{{ @m.durasi_satuan ?: 'Bulan' }}"
                                             data-eksternal="{{ !empty(@m.butuh_eksternal) ? '1' : '0' }}">
-                                            [{{ @m.nama_kategori ?: 'Layanan' }}] {{ @m.nama_metode }} &bull; Rp {{ number_format(@m.harga, 0, ',', '.') }}{{ @m.jumlah_sampel > 1 ? ' (' . @m.jumlah_sampel . ' sampel)' : '' }} ({{ @m.durasi_nilai }} {{ @m.durasi_satuan }})
+                                            [{{ @m.nama_kategori ?: 'Layanan' }}] {{ @m.nama_metode }} &bull; Rp {{ number_format(@m.harga, 0, ',', '.') }}{{ @m.jumlah_sampel > 1 ? ' (' . @m.jumlah_sampel . ' titik/sampel)' : '' }} ({{ @m.durasi_nilai }} {{ @m.durasi_satuan }})
                                         </option>
                                     </repeat>
                                 </select>
@@ -418,8 +411,22 @@
 
             <!-- Table Matrix: Kolom Sederhana & Luas (Tanpa dropdown Sub Layanan yang memakan tempat) -->
             <div class="table-responsive">
-                <!-- Autocomplete Datalist Acuan Standar / Baku Mutu -->
+                <!-- Autocomplete Datalist Acuan Standar / Regulasi / Baku Mutu -->
                 <datalist id="listStandarAcuan">
+                    <!-- Sertifikasi & Standar Internasional ISO -->
+                    <option value="ISO 14064-1:2018">ISO 14064-1:2018 (Kuantifikasi & Pelaporan Emisi GRK Organisasi)</option>
+                    <option value="ISO 14064-2:2019">ISO 14064-2:2019 (Kuantifikasi & Pelaporan Reduksi Emisi GRK Proyek)</option>
+                    <option value="ISO 14067:2018">ISO 14067:2018 (Jejak Karbon Produk / Carbon Footprint)</option>
+                    <option value="ISO 14001:2015">ISO 14001:2015 (Sistem Manajemen Lingkungan)</option>
+                    <option value="ISO 50001:2018">ISO 50001:2018 (Sistem Manajemen Energi)</option>
+                    
+                    <!-- Regulasi & Peraturan Pemerintah Indonesia -->
+                    <option value="PP No. 22/2021">PP No. 22 Tahun 2021 (Baku Mutu Air, Udara &amp; Pengelolaan Limbah B3)</option>
+                    <option value="Permen LHK No. 68/2016">Permen LHK No. 68/2016 (Baku Mutu Air Limbah Domestik)</option>
+                    <option value="Permen LHK No. 11/2021">Permen LHK No. 11/2021 (Baku Mutu Emisi Genset / Boiler Industri)</option>
+                    <option value="Permenaker No. 5/2018">Permenaker No. 5/2018 (K3 Lingkungan Kerja)</option>
+                    <option value="Permenkes No. 2/2023">Permenkes No. 2/2023 (Kesehatan Lingkungan / Standar Baku Air Minum)</option>
+
                     <!-- SNI Populer Lingkungan Hidup -->
                     <option value="SNI 6989.72:2009">SNI 6989.72:2009 (BOD5 - Winkler / Elektrometri)</option>
                     <option value="SNI 6989.2:2009">SNI 6989.2:2009 (COD - Refluks Tertutup)</option>
@@ -431,13 +438,6 @@
                     <option value="SNI 19-7119.6-2005">SNI 19-7119.6-2005 (Udara Ambien - Penentuan Lokasi)</option>
                     <option value="SNI 7231:2009">SNI 7231:2009 (Kebisingan Lingkungan Kerja)</option>
                     <option value="SNI 16-7062-2004">SNI 16-7062-2004 (Pengukuran Intensitas Penerangan)</option>
-                    
-                    <!-- Regulasi & Peraturan Pemerintah -->
-                    <option value="PP No. 22/2021">PP No. 22 Tahun 2021 (Baku Mutu Air & Udara Nasional)</option>
-                    <option value="Permen LHK No. 68/2016">Permen LHK No. 68/2016 (Baku Mutu Air Limbah Domestik)</option>
-                    <option value="Permen LHK No. 11/2021">Permen LHK No. 11/2021 (Baku Mutu Emisi Genset / Boiler)</option>
-                    <option value="Permenaker No. 5/2018">Permenaker No. 5/2018 (K3 Lingkungan Kerja)</option>
-                    <option value="Permenkes No. 2/2023">Permenkes No. 2/2023 (Kesehatan Lingkungan / Air Minum)</option>
 
                     <!-- Standar Internasional & Metode Uji -->
                     <option value="ASTM D5988-18">ASTM D5988-18 (Uji Biodegradasi Plastik di Tanah)</option>
@@ -445,21 +445,21 @@
                     <option value="ISO 14855-2">ISO 14855-2 (Biodegradasi Plastik Kompos - Gravimetri Lab)</option>
                     <option value="ISO 14855-1">ISO 14855-1 (Biodegradasi Plastik Kompos - Sensor Gas CO2)</option>
                     <option value="OECD 423">OECD 423 (Uji Toksisitas Akut Oral)</option>
-                    <option value="APHA 23rd Edition">APHA 23rd Edition (Standard Methods Water & Wastewater)</option>
-                    <option value="In-House / IK Lab">In-House / IK Lab (Instruksi Kerja Internal Lab)</option>
+                    <option value="APHA 23rd Edition">APHA 23rd Edition (Standard Methods Water &amp; Wastewater)</option>
+                    <option value="In-House / Acuan Lapangan">In-House / Acuan Teknis Lapangan / Perjadin</option>
                 </datalist>
 
-                <table class="table table-kalkulasi align-middle mb-0" id="tableUjiLingkungan" style="min-width: 1060px;">
+                <table class="table table-kalkulasi align-middle mb-0" id="tableUjiLingkungan" style="min-width: 1040px;">
                     <thead>
                         <tr>
-                            <th style="width: 38px;" class="text-center">No</th>
-                            <th style="min-width: 320px;">Nama Parameter Uji</th>
-                            <th style="width: 180px; min-width: 160px;">Baku Mutu / Standar</th>
-                            <th style="width: 145px; min-width: 135px;" class="text-center">Estimasi Kerja</th>
+                            <th style="width: 45px;" class="text-center">No</th>
+                            <th style="min-width: 280px;">Nama Jasa / Layanan</th>
+                            <th style="width: 230px; min-width: 200px;">Standar / Regulasi Acuan</th>
+                            <th style="width: 140px; min-width: 130px;" class="text-center">Estimasi Kerja</th>
                             <th style="width: 155px; min-width: 140px;" class="text-end">Tarif Satuan (Rp)</th>
-                            <th style="width: 115px; min-width: 105px;" class="text-center">Titik / Sampel</th>
+                            <th style="width: 120px; min-width: 110px;" class="text-center">Titik / Sampel</th>
                             <th style="width: 145px; min-width: 135px;" class="text-end">Subtotal (Rp)</th>
-                            <th style="width: 40px;" class="text-center"></th>
+                            <th style="width: 44px;" class="text-center"></th>
                         </tr>
                     </thead>
                     <tbody id="tbodyUji">
@@ -468,17 +468,18 @@
                 </table>
             </div>
 
-            <!-- Empty State Box -->
-            <div id="emptyStateTable" class="p-5 text-center" style="display: none;">
-                <i class="bi bi-clipboard-x fs-3 text-secondary opacity-50 d-block mb-1"></i>
-                <div class="fw-semibold text-dark small mb-1">Daftar Parameter Masih Kosong</div>
-                <p class="small text-muted mb-0">Silakan cari dan pilih parameter pengujian dari katalog di atas.</p>
+            <!-- Empty State Box (Rapi & Bersih Tanpa Ikon) -->
+            <div id="emptyStateTable" class="py-5 px-3 text-center" style="display: none;">
+                <div class="fw-bold text-dark small mb-1">Daftar Layanan Jasa Masih Kosong</div>
+                <p class="small text-muted mb-0" style="max-width: 520px; margin: 0 auto; line-height: 1.5;">
+                    Silakan cari dan pilih dari katalog layanan resmi di atas atau klik tombol <strong>"+ Baris Manual"</strong> untuk menambahkan layanan/akomodasi custom.
+                </p>
             </div>
 
             <!-- Table Footer: Bersih & Tanpa Tombol Dobel -->
             <div class="card-footer bg-white py-2 px-3 border-top">
                 <small class="text-muted" style="font-size: 0.75rem;">
-                    <i class="bi bi-info-circle text-primary me-1"></i> Subtotal otomatis dikalikan dengan jumlah titik / sampel pengujian.
+                    <i class="bi bi-info-circle text-primary me-1"></i> Subtotal otomatis dikalikan dengan jumlah titik / sampel / volume layanan.
                 </small>
             </div>
         </div>
@@ -491,34 +492,69 @@
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-header bg-white py-2.5 px-3 border-bottom">
                         <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2 small">
-                            <i class="bi bi-tag text-primary"></i> Diskon &amp; Sampel
+                            <i class="bi bi-tag-fill text-primary"></i> Potongan Diskon &amp; Durasi SPM
                         </h6>
                     </div>
                     <div class="card-body p-3">
                         
-                        <!-- Potongan Diskon Penawaran -->
+                        <!-- Potongan Diskon Penawaran (Nominal Rupiah Langsung) -->
                         <div class="mb-3">
-                            <label class="form-label small fw-bold text-dark mb-1" for="diskon_penawaran">
-                                Diskon Penawaran (Rp):
+                            <label class="form-label small fw-bold text-dark mb-1" for="diskon_penawaran_display">
+                                Potongan Diskon Penawaran:
                             </label>
                             <div class="input-group input-group-sm">
-                                <span class="input-group-text bg-light text-secondary font-monospace">Rp</span>
-                                <input type="number" name="diskon_penawaran" id="diskon_penawaran" class="form-control form-control-sm text-end fw-bold font-monospace" value="{{ @order.diskon_penawaran ?: 0 }}" min="0" step="50000" oninput="recalculateTotals()" {{ !@can_edit ? 'disabled' : '' }}>
+                                <span class="input-group-text bg-light text-secondary font-monospace fw-semibold">Rp</span>
+                                <input type="text" id="diskon_penawaran_display" class="form-control form-control-sm text-end fw-bold font-monospace" placeholder="0" oninput="onDiskonDisplayInput(this)" autocomplete="off" {{ !@can_edit ? 'disabled' : '' }}>
+                                <input type="hidden" name="diskon_penawaran" id="diskon_penawaran" value="{{ @order.diskon_penawaran ?: 0 }}">
+                            </div>
+                            <div class="form-text text-muted" style="font-size: 0.72rem;">
+                                Masukkan nominal potongan harga langsung (misal: 1.000.000).
                             </div>
                         </div>
 
-                        <!-- Estimasi Durasi Pengujian (SPM Layanan) -->
-                        <div>
-                            <label class="form-label small fw-bold text-dark mb-1" for="displaySpmLayanan">
-                                <i class="bi bi-clock-history text-secondary me-1"></i>Estimasi Durasi SPM:
+                        <!-- Titik Awal Perhitungan SPM (Start Trigger) -->
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-dark mb-1" for="spm_trigger_tipe">
+                                <i class="bi bi-flag-fill text-primary me-1"></i>Titik Awal Pengerjaan (Start Trigger):
                             </label>
-                            <div class="input-group input-group-sm">
-                                <span class="input-group-text bg-light text-secondary">
-                                    <i class="bi bi-calendar-check"></i>
-                                </span>
-                                <input type="text" id="displaySpmLayanan" class="form-control form-control-sm bg-light fw-bold text-primary font-monospace" value="{{ preg_match('/(\d+)\s*bulan/i', @order.spm_layanan, $m_spm) ? ($m_spm[1] * 30).' Hari Kerja' : (@order.spm_layanan ?: '-') }}" readonly tabindex="-1" style="cursor: default;">
+                            <select name="spm_trigger_tipe" id="spm_trigger_tipe" class="form-select form-select-sm" {{ !@can_edit ? 'disabled' : '' }}>
+                                <option value="sampel_diterima" {{ (@order.spm_trigger_tipe == 'sampel_diterima' || empty(@order.spm_trigger_tipe)) ? 'selected' : '' }}>
+                                    Pengujian Lab (Sejak Sampel Diterima)
+                                </option>
+                                <option value="kick_off" {{ @order.spm_trigger_tipe == 'kick_off' ? 'selected' : '' }}>
+                                    Sertifikasi &amp; Konsultansi (Sejak Rapat Kick-Off)
+                                </option>
+                                <option value="tanda_tangan_pks" {{ @order.spm_trigger_tipe == 'tanda_tangan_pks' ? 'selected' : '' }}>
+                                    Kerjasama &amp; Litbang (Sejak TTD Kontrak/PKS)
+                                </option>
+                            </select>
+                            <div class="form-text text-muted" style="font-size: 0.72rem;">
+                                Perhitungan waktu resmi SPM dihitung sejak trigger ini tercapai.
                             </div>
-                            <input type="hidden" name="spm_layanan" id="spm_layanan" value="{{ preg_match('/(\d+)\s*bulan/i', @order.spm_layanan, $m_spm) ? ($m_spm[1] * 30).' Hari Kerja' : (@order.spm_layanan ?: '') }}">
+                        </div>
+
+                        <!-- Estimasi Durasi Layanan (SPM Layanan Fleksibel) -->
+                        <div>
+                            <label class="form-label small fw-bold text-dark mb-1">
+                                <i class="bi bi-clock-history text-secondary me-1"></i>Durasi Standar Pelayanan (SPM):
+                            </label>
+                            <div class="row g-1">
+                                <div class="col-5">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text bg-light text-secondary"><i class="bi bi-stopwatch"></i></span>
+                                        <input type="number" name="spm_durasi_nilai" id="spm_durasi_nilai" class="form-control form-control-sm text-center fw-bold font-monospace" min="1" value="{{ @order.spm_durasi_nilai ?: (preg_match('/(\d+)/', @order.spm_layanan, $m_num) ? $m_num[1] : 30) }}" oninput="onCustomSpmChange()" {{ !@can_edit ? 'disabled' : '' }}>
+                                    </div>
+                                </div>
+                                <div class="col-7">
+                                    <select name="spm_durasi_satuan" id="spm_durasi_satuan" class="form-select form-select-sm fw-semibold" onchange="onCustomSpmChange()" {{ !@can_edit ? 'disabled' : '' }}>
+                                        <option value="Hari Kerja" {{ (@order.spm_durasi_satuan == 'Hari Kerja' || (!@order.spm_durasi_satuan && strpos(@order.spm_layanan, 'Kerja') !== false)) ? 'selected' : '' }}>Hari Kerja</option>
+                                        <option value="Hari Kalender" {{ (@order.spm_durasi_satuan == 'Hari Kalender' || (!@order.spm_durasi_satuan && strpos(@order.spm_layanan, 'Kalender') !== false)) ? 'selected' : '' }}>Hari Kalender</option>
+                                        <option value="Minggu" {{ (@order.spm_durasi_satuan == 'Minggu' || (!@order.spm_durasi_satuan && strpos(@order.spm_layanan, 'Minggu') !== false)) ? 'selected' : '' }}>Minggu</option>
+                                        <option value="Bulan" {{ (@order.spm_durasi_satuan == 'Bulan' || (!@order.spm_durasi_satuan && strpos(@order.spm_layanan, 'Bulan') !== false)) ? 'selected' : '' }}>Bulan</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <input type="hidden" name="spm_layanan" id="spm_layanan" value="{{ @order.spm_layanan ?: '30 Hari Kerja' }}">
                         </div>
                     </div>
                 </div>
@@ -529,7 +565,7 @@
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-header bg-white py-2.5 px-3 border-bottom d-flex justify-content-between align-items-center">
                         <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2 small">
-                            <i class="bi bi-receipt text-primary"></i> Rekapitulasi Biaya
+                            <i class="bi bi-receipt text-primary"></i> Rekapitulasi Biaya Layanan
                         </h6>
                         <span class="badge bg-light text-secondary border">
                             Tarif Resmi PNBP
@@ -541,13 +577,13 @@
                         <div class="row g-2 mb-3">
                             <div class="col-6">
                                 <div class="p-2 bg-light rounded border text-center">
-                                    <div class="text-uppercase text-muted fw-bold" style="font-size: 0.68rem;">Parameter</div>
+                                    <div class="text-uppercase text-muted fw-bold" style="font-size: 0.68rem;">Total Layanan</div>
                                     <h5 class="fw-bold text-dark mb-0 font-display" id="lblJmlParameter">0</h5>
                                 </div>
                             </div>
                             <div class="col-6">
                                 <div class="p-2 bg-light rounded border text-center">
-                                    <div class="text-uppercase text-muted fw-bold" style="font-size: 0.68rem;">Titik / Sampel</div>
+                                    <div class="text-uppercase text-muted fw-bold" style="font-size: 0.68rem;">Titik / Volume</div>
                                     <h5 class="fw-bold text-primary mb-0 font-display" id="lblTotalSampel">0</h5>
                                 </div>
                             </div>
@@ -561,7 +597,7 @@
                             </div>
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <span class="text-danger small">Potongan Diskon:</span>
-                                <strong class="text-danger font-monospace" id="lblTotalDiskon">- Rp 0</strong>
+                                <strong class="text-danger font-monospace" id="lblTotalDiskon">Rp 0</strong>
                             </div>
                             
                             <hr class="my-2 border-secondary-subtle">
@@ -701,10 +737,10 @@ function addRowUji(data) {
             <input type="hidden" name="items[${idx}][lab_eksternal_id]" value="${data.lab_eksternal_id || ''}">
         </td>
         <td class="align-middle">
-            <textarea name="items[${idx}][nama_pengujian]" id="nama_${idx}" class="form-control form-control-sm fw-semibold text-dark input-nama-uji" rows="1" placeholder="Nama parameter (misal: BOD5, COD, pH)" required ${disabledAttr} oninput="autoResizeTextarea(this)"></textarea>
+            <textarea name="items[${idx}][nama_pengujian]" id="nama_${idx}" class="form-control form-control-sm fw-semibold text-dark input-nama-uji" rows="1" placeholder="Nama layanan / jasa (misal: Sertifikasi ISO 14064, BOD5, Konsultansi, Pengujian Lapangan)" required ${disabledAttr} oninput="autoResizeTextarea(this)"></textarea>
         </td>
         <td class="align-middle">
-            <input type="text" list="listStandarAcuan" name="items[${idx}][standar_rujukan]" id="standar_${idx}" class="form-control form-control-sm input-standar-acuan" placeholder="Pilih / ketik acuan..." value="${data.standar_rujukan}" autocomplete="off" ${disabledAttr} title="Baku mutu atau standar acuan pengujian (SNI/ASTM/ISO/Peraturan)">
+            <input type="text" list="listStandarAcuan" name="items[${idx}][standar_rujukan]" id="standar_${idx}" class="form-control form-control-sm input-standar-acuan" placeholder="Pilih / ketik acuan (ISO/PP/SNI)..." value="${data.standar_rujukan}" autocomplete="off" ${disabledAttr} title="Baku mutu, standar rujukan, sertifikasi, atau regulasi (SNI/ASTM/ISO/PP/Permen)">
         </td>
         <td class="align-middle text-center">
             <div class="durasi-control mx-auto">
@@ -779,12 +815,12 @@ function addFromQuickCatalog() {
         if (typeof Swal !== 'undefined') {
             Swal.fire({
                 icon: 'info',
-                title: 'Pilih Parameter Uji',
-                text: 'Silakan cari dan pilih salah satu parameter pengujian dari katalog terlebih dahulu.',
+                title: 'Pilih Layanan Jasa',
+                text: 'Silakan cari dan pilih salah satu layanan jasa dari katalog terlebih dahulu.',
                 confirmButtonColor: '#334155'
             });
         } else {
-            alert('Silakan cari dan pilih salah satu parameter pengujian terlebih dahulu.');
+            alert('Silakan cari dan pilih salah satu layanan jasa terlebih dahulu.');
         }
         return;
     }
@@ -849,7 +885,6 @@ function stepQuantity(idx, delta) {
         recalculateTotals();
     }
 }
-
 
 function removeRowUji(idx) {
     var tr = document.getElementById('row_' + idx);
@@ -920,28 +955,35 @@ function updateSpmFromMaster() {
     });
 
     var spmInput = document.getElementById('spm_layanan');
-    var displaySpm = document.getElementById('displaySpmLayanan');
+    var valEl = document.getElementById('spm_durasi_nilai');
+    var unitEl = document.getElementById('spm_durasi_satuan');
 
     if (hasValid && maxEquivalentDays > 0) {
-        var labelHari = maxEquivalentDays + ' Hari Kerja';
-        if (spmInput) spmInput.value = labelHari;
-        if (displaySpm) {
-            if (displaySpm.tagName === 'INPUT') {
-                displaySpm.value = labelHari;
-            } else {
-                displaySpm.textContent = labelHari;
-            }
+        if (valEl && (!valEl.value || forceRecalc)) {
+            valEl.value = recommendedVal;
         }
+        if (unitEl && forceRecalc) {
+            unitEl.value = recommendedUnit;
+        }
+        onCustomSpmChange();
     } else {
-        if (spmInput) spmInput.value = '';
-        if (displaySpm) {
-            if (displaySpm.tagName === 'INPUT') {
-                displaySpm.value = '-';
-            } else {
-                displaySpm.textContent = '-';
-            }
+        if (!spmInput || !spmInput.value) {
+            if (valEl) valEl.value = '30';
+            if (unitEl) unitEl.value = 'Hari Kerja';
+            onCustomSpmChange();
         }
     }
+}
+
+function onCustomSpmChange() {
+    var valEl = document.getElementById('spm_durasi_nilai');
+    var unitEl = document.getElementById('spm_durasi_satuan');
+    var spmHidden = document.getElementById('spm_layanan');
+    if (!valEl || !unitEl || !spmHidden) return;
+
+    var val = parseInt(valEl.value, 10) || 1;
+    var unit = unitEl.value || 'Hari Kerja';
+    spmHidden.value = val + ' ' + unit;
 }
 
 function onCatalogSelectChange(val) {
@@ -960,18 +1002,11 @@ function onCatalogSelectChange(val) {
             }
         }
         if (m) {
-            var days = (m.durasi_satuan === 'Bulan') ? (m.durasi_nilai * 30) : ((m.durasi_satuan === 'Minggu') ? (m.durasi_nilai * 7) : m.durasi_nilai);
-            var label = days + ' Hari Kerja';
-            var spmInput = document.getElementById('spm_layanan');
-            var displaySpm = document.getElementById('displaySpmLayanan');
-            if (spmInput) spmInput.value = label;
-            if (displaySpm) {
-                if (displaySpm.tagName === 'INPUT') {
-                    displaySpm.value = label;
-                } else {
-                    displaySpm.textContent = label;
-                }
-            }
+            var valEl = document.getElementById('spm_durasi_nilai');
+            var unitEl = document.getElementById('spm_durasi_satuan');
+            if (valEl) valEl.value = m.durasi_nilai || 1;
+            if (unitEl) unitEl.value = m.durasi_satuan || 'Hari Kerja';
+            onCustomSpmChange();
         }
     }
 }
@@ -998,7 +1033,7 @@ function reindexRows() {
 
     var badge = document.getElementById('badgeParamCount');
     if (badge) {
-        badge.textContent = rows.length + ' Parameter';
+        badge.textContent = rows.length + ' Layanan / Jasa';
     }
 }
 
@@ -1012,6 +1047,15 @@ function checkEmptyState() {
     }
 }
 
+function onDiskonDisplayInput(el) {
+    var raw = el.value.replace(/[^0-9]/g, '');
+    var val = parseInt(raw, 10) || 0;
+    var hidden = document.getElementById('diskon_penawaran');
+    if (hidden) hidden.value = val;
+    el.value = val > 0 ? val.toLocaleString('id-ID') : '';
+    recalculateTotals();
+}
+
 function calculateTotalBruto() {
     var rows = document.querySelectorAll('#tbodyUji tr');
     var total = 0;
@@ -1020,7 +1064,7 @@ function calculateTotalBruto() {
         var sampelEl = tr.querySelector('.input-sampel');
         var tarif = parseFloat(tarifEl ? tarifEl.value : 0) || 0;
         var sampel = parseInt(sampelEl ? sampelEl.value : 1) || 1;
-        total += (tarif * sampel);
+        total += Math.round(tarif * sampel);
     });
     return total;
 }
@@ -1039,7 +1083,7 @@ function recalculateTotals() {
         var tarif = parseFloat(tarifEl ? tarifEl.value : 0) || 0;
         var sampel = parseInt(sampelEl ? sampelEl.value : 1) || 1;
 
-        var subTotal = tarif * sampel;
+        var subTotal = Math.round(tarif * sampel);
         totalBruto += subTotal;
         totalSampel += sampel;
 
@@ -1049,7 +1093,7 @@ function recalculateTotals() {
     });
 
     var diskonEl = document.getElementById('diskon_penawaran');
-    var diskon = parseFloat(diskonEl ? diskonEl.value : 0) || 0;
+    var diskon = parseInt(diskonEl ? diskonEl.value : 0, 10) || 0;
     var totalNetto = Math.max(0, totalBruto - diskon);
 
     var lblJml = document.getElementById('lblJmlParameter');
@@ -1062,7 +1106,7 @@ function recalculateTotals() {
     if (lblJml) lblJml.textContent = countParam;
     if (lblSampel) lblSampel.textContent = totalSampel;
     if (lblBruto) lblBruto.textContent = 'Rp ' + totalBruto.toLocaleString('id-ID');
-    if (lblDiskon) lblDiskon.textContent = '- Rp ' + diskon.toLocaleString('id-ID');
+    if (lblDiskon) lblDiskon.textContent = (diskon > 0 ? '- Rp ' : 'Rp ') + diskon.toLocaleString('id-ID');
     if (lblNetto) lblNetto.textContent = 'Rp ' + totalNetto.toLocaleString('id-ID');
     if (lblTerbilang) lblTerbilang.textContent = terbilang(totalNetto);
 }
@@ -1081,12 +1125,20 @@ function terbilang(n) {
         if (x < 1000000) return sebut(Math.floor(x / 1000)) + ' Ribu' + (x % 1000 ? ' ' + sebut(x % 1000) : '');
         if (x < 1000000000) return sebut(Math.floor(x / 1000000)) + ' Juta' + (x % 1000000 ? ' ' + sebut(x % 1000000) : '');
         if (x < 1000000000000) return sebut(Math.floor(x / 1000000000)) + ' Miliar' + (x % 1000000000 ? ' ' + sebut(x % 1000000000) : '');
-        return sebut(Math.floor(x / 1000000000000)) + ' Triliun' + (x % 1000000000000 ? ' ' + sebut(x % 1000000000000) : '');
+        return sebut(Math.floor(x / 1000000000000)) + ' Triliun' + (x % 1000000000000 ? ' ' + sebut(x % 1000000000) : '');
     }
     return sebut(n).trim() + ' Rupiah';
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Inisialisasi formatted diskon display
+    var diskonHidden = document.getElementById('diskon_penawaran');
+    var diskonDisplay = document.getElementById('diskon_penawaran_display');
+    if (diskonHidden && diskonDisplay) {
+        var val = parseInt(diskonHidden.value, 10) || 0;
+        diskonDisplay.value = val > 0 ? val.toLocaleString('id-ID') : '';
+    }
+
     // Inisialisasi Tom Select jika tersedia
     if (typeof TomSelect !== 'undefined') {
         var quickEl = document.getElementById('quickSelectMetode');
@@ -1094,7 +1146,7 @@ document.addEventListener('DOMContentLoaded', function() {
             tomSelectInstance = new TomSelect(quickEl, {
                 create: false,
                 maxItems: 1,
-                placeholder: 'Ketik untuk mencari parameter uji (BOD, COD, pH, Air Limbah, dll)...',
+                placeholder: 'Ketik untuk mencari layanan jasa (Pengujian, Sertifikasi ISO, Konsultansi, BOD, COD, dll)...',
                 sortField: { field: 'text', direction: 'asc' },
                 onChange: function(val) {
                     onCatalogSelectChange(val);

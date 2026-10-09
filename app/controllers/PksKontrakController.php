@@ -552,13 +552,13 @@ class PksKontrakController extends Controller {
      * ============================================================ */
 
     protected function dirLogo() {
-        return rtrim((string) $this->f3->get('ROOT'), '/\\') . '/storage/pks_logo';
+        return dirname(__DIR__, 2) . '/storage/pks_logo';
     }
 
     protected function pathTemplate($divisi = '') {
         $d = strtolower(trim((string) $divisi));
         $berkas = isset(self::TEMPLATE[$d]) ? self::TEMPLATE[$d] : self::TEMPLATE_DEFAULT;
-        return rtrim((string) $this->f3->get('ROOT'), '/\\') . '/storage/templates/' . $berkas;
+        return dirname(__DIR__, 2) . '/storage/templates/' . $berkas;
     }
 
     /** Divisi order milik sebuah PO (untuk memilih template). */

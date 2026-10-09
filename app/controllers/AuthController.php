@@ -42,9 +42,11 @@ class AuthController extends Controller {
                     WHEN u.si_opti = 'ketua_tim_lingkungan' OR (m.role_opti = 'ketua_tim' AND m.jenis_layanan_opti = 'lingkungan') THEN 5
                     WHEN u.si_opti IN ('ketua_tim_keuangan', 'katim_keuangan') OR m.role_opti = 'ketua_tim_keuangan' THEN 6
                     WHEN u.si_opti = 'keuangan' THEN 7
-                    WHEN u.si_opti LIKE 'tim_kerja%' OR m.role_opti = 'tim_kerja' THEN 8
-                    WHEN u.si_opti = 'admin_kontrak' OR m.role_opti = 'admin_kontrak' THEN 9
-                    ELSE 10
+                    WHEN u.si_opti = 'ppk' OR m.role_opti = 'ppk' THEN 8
+                    WHEN u.si_opti = 'humas' OR m.role_opti = 'humas' THEN 9
+                    WHEN u.si_opti LIKE 'tim_kerja%' OR m.role_opti = 'tim_kerja' THEN 10
+                    WHEN u.si_opti = 'admin_kontrak' OR m.role_opti = 'admin_kontrak' THEN 11
+                    ELSE 12
                 END ASC,
                 u.id_user ASC
         ");
@@ -107,6 +109,12 @@ class AuthController extends Controller {
             $jenisLayananOpti = 'semua';
         } elseif ($rawRole === 'keuangan') {
             $roleOpti = 'keuangan';
+            $jenisLayananOpti = 'semua';
+        } elseif ($rawRole === 'humas') {
+            $roleOpti = 'humas';
+            $jenisLayananOpti = 'semua';
+        } elseif ($rawRole === 'ppk') {
+            $roleOpti = 'ppk';
             $jenisLayananOpti = 'semua';
         } elseif ($rawRole === 'user' || $rawRole === 'pegawai') {
             $roleOpti = 'user';
@@ -274,6 +282,12 @@ class AuthController extends Controller {
                 } elseif ($rawRole === 'keuangan') {
                     $roleOpti = 'keuangan';
                     $jenisLayananOpti = 'semua';
+                } elseif ($rawRole === 'humas') {
+                    $roleOpti = 'humas';
+                    $jenisLayananOpti = 'semua';
+                } elseif ($rawRole === 'ppk') {
+                    $roleOpti = 'ppk';
+                    $jenisLayananOpti = 'semua';
                 } elseif (!empty($rawRole)) {
                     $roleOpti = $rawRole;
                     $jenisLayananOpti = $profil['jenis_layanan_opti'] ?? 'semua';
@@ -351,6 +365,12 @@ class AuthController extends Controller {
                     $jenisLayananOpti = 'semua';
                 } elseif ($rawRole === 'keuangan') {
                     $roleOpti = 'keuangan';
+                    $jenisLayananOpti = 'semua';
+                } elseif ($rawRole === 'humas') {
+                    $roleOpti = 'humas';
+                    $jenisLayananOpti = 'semua';
+                } elseif ($rawRole === 'ppk') {
+                    $roleOpti = 'ppk';
                     $jenisLayananOpti = 'semua';
                 } elseif (!empty($rawRole)) {
                     $roleOpti = $rawRole;
@@ -452,15 +472,15 @@ class AuthController extends Controller {
      */
     public function logout($f3) {
         $_SESSION['user_id']            = 9006;
-        $_SESSION['login']              = 'superadmin';
-        $_SESSION['username']           = 'superadmin';
-        $_SESSION['nama_lengkap']       = 'Super Admin OPTI';
-        $_SESSION['nama_user']          = 'Super Admin OPTI';
+        $_SESSION['login']              = 'fajriasa';
+        $_SESSION['username']           = 'fajriasa';
+        $_SESSION['nama_lengkap']       = 'Fajriasa Erdanus';
+        $_SESSION['nama_user']          = 'Fajriasa Erdanus';
         $_SESSION['role']               = 'superadmin';
         $_SESSION['jenis_layanan_opti'] = 'semua';
         $_SESSION['bidang']             = 'all';
         $_SESSION['last_activity']      = time();
-        $this->setFlashSuccess('Sesi akun telah direset ke Super Admin.');
+        $this->setFlashSuccess('Sesi akun telah direset ke Super Admin (Fajriasa Erdanus).');
         $f3->reroute('/dashboard');
     }
 

@@ -126,7 +126,7 @@
 
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
     <div>
-        <div class="d-flex align-items-center gap-2 mb-1">
+        <div class="d-flex align-items-center gap-2">
             <h2 class="h4 fw-bold mb-0 text-dark font-display">Pusat Tugas Proposal Teknis</h2>
             <check if="{{ @is_tim_kerja }}">
                 <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 rounded-pill fw-semibold" style="font-size: 0.72rem;">
@@ -134,7 +134,6 @@
                 </span>
             </check>
         </div>
-        <p class="text-muted small mb-0">Daftar penugasan proposal teknis dan rancangan anggaran biaya (RAB) layanan OPTI.</p>
     </div>
     <div class="d-flex gap-2">
         <check if="{{ !@is_tim_kerja }}">
@@ -208,222 +207,337 @@
 </div>
 
 <!-- ======================================================== -->
-<!-- TOOLBAR FILTER STATUS & PENCARIAN -->
+<!-- TOOLBAR FILTER BULAN, TAHUN & PENCARIAN -->
 <!-- ======================================================== -->
-<div class="card border-0 shadow-sm rounded-3 mb-4">
+<div class="card mb-4 border-0 shadow-sm">
     <div class="card-body p-3">
-        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-stretch align-items-lg-center gap-3">
-            <!-- Filter Tabs Container dengan spacing lega (gap-2) -->
-            <div class="d-flex align-items-center gap-2 flex-wrap">
-                <!-- Semua -->
-                <a href="{{ @BASE }}/proposal?status=semua{{ @filter_q ? '&q='.@filter_q : '' }}" 
-                   class="filter-tab-pill {{ @filter_status == 'semua' ? 'active-all' : '' }}">
-                    <i class="bi bi-grid-fill"></i>
-                    <span>Semua</span>
-                    <span class="count-chip">{{ @total_proposal }}</span>
-                </a>
-
-                <!-- Draft Disimpan -->
-                <a href="{{ @BASE }}/proposal?status=draft{{ @filter_q ? '&q='.@filter_q : '' }}" 
-                   class="filter-tab-pill {{ @filter_status == 'draft' || @filter_status == 'draft_disimpan' ? 'active-draft' : '' }}">
-                    <i class="bi bi-bookmark-check"></i>
-                    <span>Draft Disimpan</span>
-                    <span class="count-chip">{{ @stat_draft }}</span>
-                </a>
-
-                <!-- Menunggu Review -->
-                <a href="{{ @BASE }}/proposal?status=diajukan{{ @filter_q ? '&q='.@filter_q : '' }}" 
-                   class="filter-tab-pill {{ @filter_status == 'diajukan' ? 'active-review' : '' }}">
-                    <i class="bi bi-clock-history"></i>
-                    <span>Menunggu Review</span>
-                    <span class="count-chip">{{ @stat_diajukan }}</span>
-                </a>
-
-                <!-- Disetujui -->
-                <a href="{{ @BASE }}/proposal?status=disetujui{{ @filter_q ? '&q='.@filter_q : '' }}" 
-                   class="filter-tab-pill {{ @filter_status == 'disetujui' ? 'active-approved' : '' }}">
-                    <i class="bi bi-check2-circle"></i>
-                    <span>Disetujui</span>
-                    <span class="count-chip">{{ @stat_disetujui }}</span>
-                </a>
-
-                <!-- Perlu Revisi -->
-                <a href="{{ @BASE }}/proposal?status=ditolak{{ @filter_q ? '&q='.@filter_q : '' }}" 
-                   class="filter-tab-pill {{ @filter_status == 'ditolak' ? 'active-revisi' : '' }}">
-                    <i class="bi bi-exclamation-triangle-fill"></i>
-                    <span>Perlu Revisi</span>
-                    <span class="count-chip">{{ @stat_ditolak }}</span>
-                </a>
+        <form id="filterProposalForm" method="GET" action="{{ @BASE }}/proposal" class="row g-2 align-items-center">
+            <input type="hidden" name="status" value="{{ @filter_status }}">
+            
+            <!-- Filter Bulan -->
+            <div class="col-6 col-sm-auto col-md-3 col-lg-2">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light text-muted"><i class="bi bi-calendar3"></i></span>
+                    <select name="bulan" class="form-select form-select-sm fw-semibold" onchange="this.form.submit()" title="Filter Berdasarkan Bulan">
+                        <option value="all" {{ @filter_bulan == 'all' || empty(@filter_bulan) ? 'selected' : '' }}>Semua Bulan</option>
+                        <repeat group="{{ @daftar_bulan }}" key="{{ @bln_kode }}" value="{{ @bln_nama }}">
+                            <option value="{{ @bln_kode }}" {{ @filter_bulan == @bln_kode ? 'selected' : '' }}>{{ @bln_nama }}</option>
+                        </repeat>
+                    </select>
+                </div>
             </div>
 
-            <!-- Search Box Form -->
-            <form action="{{ @BASE }}/proposal" method="GET" class="d-flex align-items-center gap-2" style="min-width: 250px;">
-                <input type="hidden" name="status" value="{{ @filter_status }}">
-                <div class="input-group input-group-sm w-100">
-                    <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-search"></i></span>
-                    <input type="text" name="q" class="form-control border-start-0 ps-0" placeholder="Cari nomor order, klien..." value="{{ @filter_q }}">
-                    <check if="{{ @filter_q }}">
-                        <a href="{{ @BASE }}/proposal?status={{ @filter_status }}" class="btn btn-sm btn-light border border-start-0 text-muted" title="Hapus Filter">
-                            <i class="bi bi-x-lg"></i>
-                        </a>
-                    </check>
+            <!-- Filter Tahun -->
+            <div class="col-6 col-sm-auto col-md-3 col-lg-2">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light text-muted"><i class="bi bi-calendar-event"></i></span>
+                    <select name="tahun" class="form-select form-select-sm fw-semibold" onchange="this.form.submit()" title="Filter Berdasarkan Tahun">
+                        <repeat group="{{ @daftar_tahun }}" value="{{ @thn }}">
+                            <option value="{{ @thn }}" {{ @filter_tahun == @thn ? 'selected' : '' }}>Tahun {{ @thn }}</option>
+                        </repeat>
+                        <option value="all" {{ @filter_tahun == 'all' ? 'selected' : '' }}>Semua Tahun</option>
+                    </select>
                 </div>
-            </form>
+            </div>
+
+            <!-- Input Pencarian (Auto Live Search kata per kata) -->
+            <div class="col-12 col-sm flex-grow-1">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                    <input type="text" id="proposalSearchInput" class="form-control border-start-0" name="q" placeholder="Cari nomor order, instansi pelanggan, judul kegiatan/proposal, PIC..." value="{{ @filter_q }}" autocomplete="off">
+                    <button class="btn btn-outline-secondary border-start-0 text-muted {{ @filter_q ? '' : 'd-none' }}" type="button" id="btnClearSearch" title="Hapus pencarian">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ======================================================== -->
+<!-- TABEL DATA TUGAS PROPOSAL DENGAN FILTER TABS SEJAJAR -->
+<!-- ======================================================== -->
+<div class="card border-0 shadow-sm rounded-3 mb-4 overflow-hidden">
+    <div class="filter-tabs-wrapper d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <!-- 5 Status Filter Tabs -->
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <!-- Semua -->
+            <a href="{{ @BASE }}/proposal?status=semua{{ @filter_bulan ? '&bulan='.@filter_bulan : '' }}{{ @filter_tahun ? '&tahun='.@filter_tahun : '' }}{{ @filter_q ? '&q='.@filter_q : '' }}" 
+               class="filter-tab-pill {{ @filter_status == 'semua' ? 'active-all' : '' }}">
+                <i class="bi bi-grid-fill"></i>
+                <span>Semua</span>
+                <span class="count-chip">{{ @total_proposal }}</span>
+            </a>
+
+            <!-- Draft Disimpan -->
+            <a href="{{ @BASE }}/proposal?status=draft{{ @filter_bulan ? '&bulan='.@filter_bulan : '' }}{{ @filter_tahun ? '&tahun='.@filter_tahun : '' }}{{ @filter_q ? '&q='.@filter_q : '' }}" 
+               class="filter-tab-pill {{ @filter_status == 'draft' || @filter_status == 'draft_disimpan' ? 'active-draft' : '' }}">
+                <i class="bi bi-bookmark-check"></i>
+                <span>Draft Disimpan</span>
+                <span class="count-chip">{{ @stat_draft }}</span>
+            </a>
+
+            <!-- Menunggu Review -->
+            <a href="{{ @BASE }}/proposal?status=diajukan{{ @filter_bulan ? '&bulan='.@filter_bulan : '' }}{{ @filter_tahun ? '&tahun='.@filter_tahun : '' }}{{ @filter_q ? '&q='.@filter_q : '' }}" 
+               class="filter-tab-pill {{ @filter_status == 'diajukan' ? 'active-review' : '' }}">
+                <i class="bi bi-clock-history"></i>
+                <span>Menunggu Review</span>
+                <span class="count-chip">{{ @stat_diajukan }}</span>
+            </a>
+
+            <!-- Disetujui -->
+            <a href="{{ @BASE }}/proposal?status=disetujui{{ @filter_bulan ? '&bulan='.@filter_bulan : '' }}{{ @filter_tahun ? '&tahun='.@filter_tahun : '' }}{{ @filter_q ? '&q='.@filter_q : '' }}" 
+               class="filter-tab-pill {{ @filter_status == 'disetujui' ? 'active-approved' : '' }}">
+                <i class="bi bi-check2-circle"></i>
+                <span>Disetujui</span>
+                <span class="count-chip">{{ @stat_disetujui }}</span>
+            </a>
+
+            <!-- Perlu Revisi -->
+            <a href="{{ @BASE }}/proposal?status=ditolak{{ @filter_bulan ? '&bulan='.@filter_bulan : '' }}{{ @filter_tahun ? '&tahun='.@filter_tahun : '' }}{{ @filter_q ? '&q='.@filter_q : '' }}" 
+               class="filter-tab-pill {{ @filter_status == 'ditolak' ? 'active-revisi' : '' }}">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span>Perlu Revisi</span>
+                <span class="count-chip">{{ @stat_ditolak }}</span>
+            </a>
+        </div>
+
+        <span class="text-muted small fw-medium">
+            Total: <strong class="text-dark" id="proposalTotalCount">{{ !empty(@list_proposal) ? count(@list_proposal) : 0 }}</strong> proposal ditampilkan
+        </span>
+    </div>
+
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table align-middle table-hover mb-0">
+                <thead class="bg-light text-secondary" style="font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                    <tr>
+                        <th class="py-3 px-4" style="width: 150px;">No. Permintaan</th>
+                        <th class="py-3 px-3">Instansi Pelanggan</th>
+                        <th class="py-3 px-3">Judul Kegiatan / Proposal</th>
+                        <check if="{{ !@is_tim_kerja }}">
+                            <th class="py-3 px-3">PIC Peneliti</th>
+                        </check>
+                        <th class="py-3 px-3 text-nowrap" style="min-width: 140px; white-space: nowrap;">Estimasi Biaya</th>
+                        <th class="py-3 px-3 text-center">Berkas</th>
+                        <th class="py-3 px-3 text-center">Status Proposal</th>
+                        <th class="py-3 px-3 text-center" style="width: 130px; white-space: nowrap;">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <check if="{{ count(@list_proposal) > 0 }}">
+                        <true>
+                            <repeat group="{{ @list_proposal }}" value="{{ @row }}">
+                                <tr>
+                                    <!-- No. Permintaan / Order -->
+                                    <td class="py-3 px-4">
+                                        <check if="{{ @row.jenis_layanan_opti == 'lingkungan' }}">
+                                            <true>
+                                                <a href="{{ @BASE }}/order/{{ @row.id }}/biaya-lingkungan" class="fw-bold font-monospace text-primary text-decoration-none d-block">
+                                                    {{ @row.nomor_permintaan ?: @row.nomor_order ?: ('REQ-' . @row.id) }}
+                                                </a>
+                                            </true>
+                                            <false>
+                                                <a href="{{ @BASE }}/order/{{ @row.id }}/proposal" class="fw-bold font-monospace text-primary text-decoration-none d-block">
+                                                    {{ @row.nomor_permintaan ?: @row.nomor_order ?: ('REQ-' . @row.id) }}
+                                                </a>
+                                            </false>
+                                        </check>
+                                        <check if="{{ !empty(@row.nomor_order) }}">
+                                            <div class="text-muted font-monospace" style="font-size: 0.68rem;">Order: {{ @row.nomor_order }}</div>
+                                        </check>
+                                        <small class="text-muted" style="font-size: 0.72rem;">{{ date('d M Y', strtotime(@row.tanggal_masuk)) }}</small>
+                                    </td>
+
+                                    <!-- Pelanggan & Divisi -->
+                                    <td class="py-3 px-3">
+                                        <div class="fw-bold text-dark" style="font-size: 0.85rem;">{{ @row.nama_perusahaan }}</div>
+                                        <span class="badge {{ @row.jenis_layanan_opti == 'selulosa' ? 'bg-danger-subtle text-danger border border-danger-subtle' : 'bg-success-subtle text-success border border-success-subtle' }} px-2 py-0.5 rounded-pill" style="font-size: 0.68rem;">
+                                            OPTI {{ ucfirst(@row.jenis_layanan_opti) }}
+                                        </span>
+                                    </td>
+
+                                    <!-- Judul Kegiatan / Proposal -->
+                                    <td class="py-3 px-3">
+                                        <div class="text-dark fw-medium" style="font-size: 0.84rem; max-width: 280px;">
+                                            {{ @row.judul_proposal ?: @row.judul_kegiatan }}
+                                        </div>
+                                        <small class="text-muted fst-italic" style="font-size: 0.72rem;">Durasi: {{ @row.durasi_kegiatan ?: '30 Hari Kerja' }}</small>
+                                    </td>
+
+                                    <!-- PIC (jika Ka Tim / Admin) -->
+                                    <check if="{{ !@is_tim_kerja }}">
+                                        <td class="py-3 px-3">
+                                            <span class="text-dark small fw-semibold">{{ @row.pic_nama ?: 'Belum Ditunjuk' }}</span>
+                                        </td>
+                                    </check>
+
+                                    <!-- Estimasi Biaya (RAB / Tarif Uji) -->
+                                    <td class="py-3 px-3 font-monospace fw-bold text-dark text-nowrap" style="font-size: 0.84rem; white-space: nowrap;">
+                                        Rp {{ number_format(@row.estimasi_total_biaya ?: (@row.estimasi_biaya ?: 0), 0, ',', '.') }}
+                                    </td>
+
+                                    <!-- Berkas Upload -->
+                                    <td class="py-3 px-3 text-center">
+                                        <check if="{{ @row.file_proposal }}">
+                                            <true>
+                                                <button type="button" class="btn btn-sm btn-outline-danger p-1 px-2 rounded-pill shadow-xs btn-preview-pdf" data-preview-pdf="{{ @BASE }}/{{ @row.file_proposal }}" data-title="Proposal Teknis" data-subtitle="Permintaan: {{ @row.nomor_permintaan ?: @row.nomor_order ?: ('REQ-' . @row.id) }}" title="Pratinjau Berkas Proposal">
+                                                     <i class="bi bi-file-earmark-pdf-fill"></i>
+                                                </button>
+                                            </true>
+                                            <false>
+                                                <span class="text-muted small fst-italic">-</span>
+                                            </false>
+                                        </check>
+                                    </td>
+
+                                    <!-- Status Proposal -->
+                                    <td class="py-3 px-3 text-center">
+                                        <check if="{{ @row.status_proposal == 'disetujui_ketua' || @row.status_proposal == 'disetujui_pimpinan' || @row.status_proposal == 'disetujui' || @row.status_proposal_biaya == 'siap_penawaran' }}">
+                                            <span class="badge badge-pill-success">
+                                                <i class="bi bi-check-circle-fill me-1"></i> Disetujui Ka. Tim
+                                            </span>
+                                        </check>
+                                        <check if="{{ @row.status_proposal == 'diajukan' || @row.status_proposal_biaya == 'menunggu_approval' }}">
+                                            <span class="badge badge-pill-info">
+                                                <i class="bi bi-clock-history me-1"></i> Menunggu Review
+                                            </span>
+                                        </check>
+                                        <check if="{{ @row.status_proposal == 'ditolak' || @row.status_proposal_biaya == 'perlu_revisi' }}">
+                                            <span class="badge badge-pill-danger">
+                                                <i class="bi bi-exclamation-diamond-fill me-1"></i> Perlu Revisi
+                                            </span>
+                                        </check>
+                                        <check if="{{ @row.status_proposal == 'draft_disimpan' || @row.status_proposal_biaya == 'draft_disimpan' }}">
+                                            <span class="badge badge-pill-warning">
+                                                <i class="bi bi-bookmark-check-fill me-1"></i> Draft Disimpan
+                                            </span>
+                                        </check>
+                                        <check if="{{ (!@row.status_proposal || @row.status_proposal == 'draft') && @row.status_proposal_biaya != 'siap_penawaran' && @row.status_proposal_biaya != 'menunggu_approval' && @row.status_proposal_biaya != 'draft_disimpan' }}">
+                                            <span class="badge badge-pill-secondary">
+                                                <i class="bi bi-pencil-square me-1"></i> Draf PIC
+                                            </span>
+                                        </check>
+                                    </td>
+
+                                    <!-- Aksi -->
+                                    <td class="py-3 px-3 text-center text-nowrap" style="white-space: nowrap;">
+                                        <check if="{{ @row.jenis_layanan_opti == 'lingkungan' }}">
+                                            <true>
+                                                <a href="{{ @BASE }}/order/{{ @row.id }}/biaya-lingkungan" class="btn btn-primary btn-sm px-3 py-1 rounded-pill fw-semibold text-white shadow-xs d-inline-flex align-items-center gap-1.5" style="font-size: 0.76rem;">
+                                                    <i class="bi {{ @is_tim_kerja ? 'bi-calculator-fill' : 'bi-sliders' }}"></i>
+                                                    {{ @is_tim_kerja ? 'Tarif & Parameter' : 'Kelola' }}
+                                                </a>
+                                            </true>
+                                            <false>
+                                                <a href="{{ @BASE }}/order/{{ @row.id }}/proposal" class="btn btn-primary btn-sm px-3 py-1 rounded-pill fw-semibold text-white shadow-xs d-inline-flex align-items-center gap-1.5" style="font-size: 0.76rem;">
+                                                    <i class="bi {{ @is_tim_kerja ? 'bi-pencil-fill' : 'bi-journal-check' }}"></i>
+                                                    {{ @is_tim_kerja ? 'Kerjakan' : 'Kelola' }}
+                                                </a>
+                                            </false>
+                                        </check>
+                                    </td>
+                                </tr>
+                            </repeat>
+                        </true>
+                        <false>
+                            <tr>
+                                <td colspan="{{ @is_tim_kerja ? '7' : '8' }}" class="text-center py-5 text-muted">
+                                    <div class="py-4">
+                                        <i class="bi bi-folder2-open fs-1 text-secondary opacity-50 mb-2 d-block"></i>
+                                        <h6 class="fw-bold text-dark mb-1 font-display">Belum Ada Tugas Proposal</h6>
+                                        <p class="small text-secondary mb-0">
+                                            <check if="{{ @is_tim_kerja }}">
+                                                <true>Anda belum memiliki tugas penyusunan proposal aktif yang didelegasikan oleh Ketua Tim OPTI.</true>
+                                                <false>Tidak ada order yang sedang dalam tahap penyusunan proposal teknis.</false>
+                                            </check>
+                                        </p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </false>
+                    </check>
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
 
-<!-- ======================================================== -->
-<!-- TABEL DATA TUGAS PROPOSAL -->
-<!-- ======================================================== -->
-<div class="card border-0 shadow-sm rounded-3">
-    <div class="table-responsive">
-        <table class="table align-middle table-hover mb-0">
-            <thead class="bg-light text-secondary" style="font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.5px;">
-                <tr>
-                    <th class="py-3 px-4" style="width: 140px;">No. Order</th>
-                    <th class="py-3 px-3">Instansi Pelanggan</th>
-                    <th class="py-3 px-3">Judul Kegiatan / Proposal</th>
-                    <check if="{{ !@is_tim_kerja }}">
-                        <th class="py-3 px-3">PIC Peneliti</th>
-                    </check>
-                    <th class="py-3 px-3 text-nowrap" style="min-width: 140px; white-space: nowrap;">Estimasi Biaya</th>
-                    <th class="py-3 px-3 text-center">Berkas</th>
-                    <th class="py-3 px-3 text-center">Status Proposal</th>
-                    <th class="py-3 px-3 text-center" style="width: 130px; white-space: nowrap;">Aksi</th>
-                </tr>
-            </thead>
-            <tbody>
-                <check if="{{ count(@list_proposal) > 0 }}">
-                    <true>
-                        <repeat group="{{ @list_proposal }}" value="{{ @row }}">
-                            <tr>
-                                <!-- No. Order -->
-                                <td class="py-3 px-4">
-                                    <check if="{{ @row.jenis_layanan_opti == 'lingkungan' }}">
-                                        <true>
-                                            <a href="{{ @BASE }}/order/{{ @row.id }}/biaya-lingkungan" class="fw-bold font-monospace text-primary text-decoration-none d-block">
-                                                {{ @row.nomor_order }}
-                                            </a>
-                                        </true>
-                                        <false>
-                                            <a href="{{ @BASE }}/order/{{ @row.id }}/proposal" class="fw-bold font-monospace text-primary text-decoration-none d-block">
-                                                {{ @row.nomor_order }}
-                                            </a>
-                                        </false>
-                                    </check>
-                                    <small class="text-muted" style="font-size: 0.72rem;">{{ date('d M Y', strtotime(@row.tanggal_masuk)) }}</small>
-                                </td>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var searchInput = document.getElementById('proposalSearchInput');
+    var btnClear = document.getElementById('btnClearSearch');
+    var totalCountEl = document.getElementById('proposalTotalCount');
+    var table = document.querySelector('.table-responsive table');
+    var tbody = table ? table.querySelector('tbody') : null;
+    var rows = tbody ? Array.from(tbody.querySelectorAll('tr:not(.no-search-result-row)')) : [];
 
-                                <!-- Pelanggan & Divisi -->
-                                <td class="py-3 px-3">
-                                    <div class="fw-bold text-dark" style="font-size: 0.85rem;">{{ @row.nama_perusahaan }}</div>
-                                    <span class="badge {{ @row.jenis_layanan_opti == 'selulosa' ? 'bg-danger-subtle text-danger border border-danger-subtle' : 'bg-success-subtle text-success border border-success-subtle' }} px-2 py-0.5 rounded-pill" style="font-size: 0.68rem;">
-                                        OPTI {{ ucfirst(@row.jenis_layanan_opti) }}
-                                    </span>
-                                </td>
+    function doLiveSearch() {
+        if (!searchInput) return;
+        var query = searchInput.value.trim().toLowerCase();
 
-                                <!-- Judul Kegiatan / Proposal -->
-                                <td class="py-3 px-3">
-                                    <div class="text-dark fw-medium" style="font-size: 0.84rem; max-width: 280px;">
-                                        {{ @row.judul_proposal ?: @row.judul_kegiatan }}
-                                    </div>
-                                    <small class="text-muted fst-italic" style="font-size: 0.72rem;">Durasi: {{ @row.durasi_kegiatan ?: '30 Hari Kerja' }}</small>
-                                </td>
+        if (btnClear) {
+            if (query.length > 0) {
+                btnClear.classList.remove('d-none');
+            } else {
+                btnClear.classList.add('d-none');
+            }
+        }
 
-                                <!-- PIC (jika Ka Tim / Admin) -->
-                                <check if="{{ !@is_tim_kerja }}">
-                                    <td class="py-3 px-3">
-                                        <span class="text-dark small fw-semibold">{{ @row.pic_nama ?: 'Belum Ditunjuk' }}</span>
-                                    </td>
-                                </check>
+        var words = query.split(/\s+/).filter(Boolean);
+        var visibleCount = 0;
 
-                                <!-- Estimasi Biaya (RAB / Tarif Uji) -->
-                                <td class="py-3 px-3 font-monospace fw-bold text-dark text-nowrap" style="font-size: 0.84rem; white-space: nowrap;">
-                                    Rp {{ number_format(@row.estimasi_total_biaya ?: (@row.estimasi_biaya ?: 0), 0, ',', '.') }}
-                                </td>
+        rows.forEach(function(row) {
+            if (row.classList.contains('no-search-result-row')) return;
+            var text = row.textContent.toLowerCase();
+            var match = words.every(function(w) {
+                return text.indexOf(w) !== -1;
+            });
 
-                                <!-- Berkas Upload -->
-                                <td class="py-3 px-3 text-center">
-                                    <check if="{{ @row.file_proposal }}">
-                                        <true>
-                                            <button type="button" class="btn btn-sm btn-outline-danger p-1 px-2 rounded-pill shadow-xs btn-preview-pdf" data-preview-pdf="{{ @BASE }}/{{ @row.file_proposal }}" data-title="Proposal Teknis" data-subtitle="Order: {{ @row.nomor_order }}" title="Pratinjau Berkas Proposal">
-                                                 <i class="bi bi-file-earmark-pdf-fill"></i>
-                                            </button>
-                                        </true>
-                                        <false>
-                                            <span class="text-muted small fst-italic">-</span>
-                                        </false>
-                                    </check>
-                                </td>
+            if (match) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
 
-                                <!-- Status Proposal -->
-                                <td class="py-3 px-3 text-center">
-                                    <check if="{{ @row.status_proposal == 'disetujui_ketua' || @row.status_proposal == 'disetujui_pimpinan' || @row.status_proposal == 'disetujui' || @row.status_proposal_biaya == 'siap_penawaran' }}">
-                                        <span class="badge badge-pill-success">
-                                            <i class="bi bi-check-circle-fill me-1"></i> Disetujui Ka. Tim
-                                        </span>
-                                    </check>
-                                    <check if="{{ @row.status_proposal == 'diajukan' || @row.status_proposal_biaya == 'menunggu_approval' }}">
-                                        <span class="badge badge-pill-info">
-                                            <i class="bi bi-clock-history me-1"></i> Menunggu Review
-                                        </span>
-                                    </check>
-                                    <check if="{{ @row.status_proposal == 'ditolak' || @row.status_proposal_biaya == 'perlu_revisi' }}">
-                                        <span class="badge badge-pill-danger">
-                                            <i class="bi bi-exclamation-diamond-fill me-1"></i> Perlu Revisi
-                                        </span>
-                                    </check>
-                                    <check if="{{ @row.status_proposal == 'draft_disimpan' || @row.status_proposal_biaya == 'draft_disimpan' }}">
-                                        <span class="badge badge-pill-warning">
-                                            <i class="bi bi-bookmark-check-fill me-1"></i> Draft Disimpan
-                                        </span>
-                                    </check>
-                                    <check if="{{ (!@row.status_proposal || @row.status_proposal == 'draft') && @row.status_proposal_biaya != 'siap_penawaran' && @row.status_proposal_biaya != 'menunggu_approval' && @row.status_proposal_biaya != 'draft_disimpan' }}">
-                                        <span class="badge badge-pill-secondary">
-                                            <i class="bi bi-pencil-square me-1"></i> Draf PIC
-                                        </span>
-                                    </check>
-                                </td>
+        if (totalCountEl && rows.length > 0) {
+            totalCountEl.textContent = visibleCount;
+        }
 
-                                <!-- Aksi -->
-                                <td class="py-3 px-3 text-center text-nowrap" style="white-space: nowrap;">
-                                    <check if="{{ @row.jenis_layanan_opti == 'lingkungan' }}">
-                                        <true>
-                                            <a href="{{ @BASE }}/order/{{ @row.id }}/biaya-lingkungan" class="btn btn-primary btn-sm px-3 py-1 rounded-pill fw-semibold text-white shadow-xs d-inline-flex align-items-center gap-1.5" style="font-size: 0.76rem;">
-                                                <i class="bi {{ @is_tim_kerja ? 'bi-calculator-fill' : 'bi-sliders' }}"></i>
-                                                {{ @is_tim_kerja ? 'Tarif & Parameter' : 'Kelola' }}
-                                            </a>
-                                        </true>
-                                        <false>
-                                            <a href="{{ @BASE }}/order/{{ @row.id }}/proposal" class="btn btn-primary btn-sm px-3 py-1 rounded-pill fw-semibold text-white shadow-xs d-inline-flex align-items-center gap-1.5" style="font-size: 0.76rem;">
-                                                <i class="bi {{ @is_tim_kerja ? 'bi-pencil-fill' : 'bi-journal-check' }}"></i>
-                                                {{ @is_tim_kerja ? 'Kerjakan' : 'Kelola' }}
-                                            </a>
-                                        </false>
-                                    </check>
-                                </td>
-                            </tr>
-                        </repeat>
-                    </true>
-                    <false>
-                        <tr>
-                            <td colspan="{{ @is_tim_kerja ? '7' : '8' }}" class="text-center py-5 text-muted">
-                                <div class="py-4">
-                                    <i class="bi bi-folder2-open fs-1 text-secondary opacity-50 mb-2 d-block"></i>
-                                    <h6 class="fw-bold text-dark mb-1 font-display">Belum Ada Tugas Proposal</h6>
-                                    <p class="small text-secondary mb-0">
-                                        <check if="{{ @is_tim_kerja }}">
-                                            <true>Anda belum memiliki tugas penyusunan proposal aktif yang didelegasikan oleh Ketua Tim OPTI.</true>
-                                            <false>Tidak ada order yang sedang dalam tahap penyusunan proposal teknis.</false>
-                                        </check>
-                                    </p>
-                                </div>
-                            </td>
-                        </tr>
-                    </false>
-                </check>
-            </tbody>
-        </table>
-    </div>
-</div>
+        // Tampilkan pesan kosong jika tidak ada hasil pencarian
+        if (tbody && rows.length > 0) {
+            var noResultRow = tbody.querySelector('.no-search-result-row');
+            if (visibleCount === 0) {
+                var colCount = (table.querySelectorAll('thead th').length) || 8;
+                if (!noResultRow) {
+                    noResultRow = document.createElement('tr');
+                    noResultRow.className = 'no-search-result-row text-center';
+                    noResultRow.innerHTML = '<td colspan="' + colCount + '" class="text-muted py-5">' +
+                        '<i class="bi bi-search display-6 d-block mb-2 text-secondary opacity-50"></i>' +
+                        '<div class="fw-semibold text-dark">Data Tidak Ditemukan</div>' +
+                        '<div class="small text-muted">Tidak ada data proposal yang cocok dengan kata kunci "' + query + '"</div>' +
+                        '</td>';
+                    tbody.appendChild(noResultRow);
+                } else {
+                    noResultRow.style.display = '';
+                }
+            } else if (noResultRow) {
+                noResultRow.style.display = 'none';
+            }
+        }
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener('input', doLiveSearch);
+        if (btnClear) {
+            btnClear.addEventListener('click', function() {
+                searchInput.value = '';
+                doLiveSearch();
+                searchInput.focus();
+            });
+        }
+    }
+});
+</script>

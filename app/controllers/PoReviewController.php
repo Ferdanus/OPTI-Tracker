@@ -23,6 +23,46 @@ class PoReviewController extends Controller {
     const DIVISI_VALID = ['selulosa', 'lingkungan'];
     const PANJANG_MAKS = 2000;
 
+    public function beforeRoute($f3) {
+        parent::beforeRoute($f3);
+        $this->ensureSchema();
+    }
+
+    protected function ensureSchema(): void {
+        static $done = false;
+        if ($done) return;
+        try {
+            // Pastikan kolom-kolom review di po_kegiatan
+            $cols = $this->db->exec("SHOW COLUMNS FROM po_kegiatan LIKE 'reviewed_at'");
+            if (empty($cols)) {
+                $this->db->exec("ALTER TABLE po_kegiatan 
+                    ADD COLUMN reviewed_at DATETIME NULL AFTER updated_at,
+                    ADD COLUMN reviewed_by INT(11) NULL AFTER reviewed_at,
+                    ADD COLUMN status_review VARCHAR(50) NOT NULL DEFAULT 'menunggu_review' AFTER reviewed_by,
+                    ADD COLUMN disetujui_at DATETIME NULL AFTER status_review,
+                    ADD COLUMN disetujui_by INT(11) NULL AFTER disetujui_at,
+                    ADD COLUMN disposisi_humas_at DATETIME NULL AFTER disetujui_by");
+            }
+            
+            // Pastikan tabel po_chat tersedia
+            $this->db->exec("CREATE TABLE IF NOT EXISTS `po_chat` (
+                `id` int(11) NOT NULL AUTO_INCREMENT,
+                `po_id` int(11) NOT NULL,
+                `pengirim_id` int(11) NOT NULL,
+                `sisi` enum('katim','pembuat') NOT NULL,
+                `pesan` text NOT NULL,
+                `sistem` tinyint(1) NOT NULL DEFAULT 0,
+                `dibaca_at` datetime DEFAULT NULL,
+                `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (`id`),
+                KEY `idx_po_chat_po` (`po_id`),
+                KEY `idx_po_chat_unread` (`po_id`,`sisi`,`dibaca_at`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            
+            $done = true;
+        } catch (\Exception $e) {}
+    }
+
     /* ============================================================
      * HALAMAN
      * ============================================================ */
@@ -223,6 +263,28 @@ class PoReviewController extends Controller {
         }
 
         self::catatPesanSistem($this->db, $po['id'], $uid, 'katim', 'PO disetujui Ketua Tim dan didisposisikan ke Humas. PO dikunci.');
+
+        // Kirim notifikasi sistem ke PIC Pembuat PO
+        $creatorId = (int)($po['created_by'] ?? 0);
+        if ($creatorId > 0) {
+            try {
+                \NotificationService::send($this->db, [
+                    'order_id'        => (int)$po['order_id'],
+                    'po_id'           => (int)$po['id'],
+                    'target_role'     => 'tim_kerja',
+                    'target_user_id'  => $creatorId,
+                    'target_layanan'  => $po['jenis_layanan_opti'] ?? 'semua',
+                    'judul'           => 'PO Kegiatan Telah Disetujui',
+                    'pesan'           => "Dokumen PO Kegiatan No. {$po['nomor_po']} telah disetujui oleh Ketua Tim OPTI ({$_SESSION['nama_lengkap']}).",
+                    'tipe'            => 'success',
+                    'icon'            => 'bi-check-circle-fill',
+                    'link_url'        => "/po-kegiatan/daftar",
+                    'created_by'      => $uid,
+                    'created_by_name' => $_SESSION['nama_lengkap'] ?? 'Ketua Tim OPTI'
+                ]);
+            } catch (\Exception $eNotif) {}
+        }
+
         $this->keluarkanJson(['ok' => true, 'status_review' => 'disetujui']);
     }
 
@@ -251,6 +313,28 @@ class PoReviewController extends Controller {
         }
 
         self::catatPesanSistem($this->db, $po['id'], $uid, 'katim', 'PO dibuka kembali oleh Ketua Tim untuk diperbaiki. Disposisi ke Humas dibatalkan.');
+
+        // Kirim notifikasi sistem ke PIC Pembuat PO
+        $creatorId = (int)($po['created_by'] ?? 0);
+        if ($creatorId > 0) {
+            try {
+                \NotificationService::send($this->db, [
+                    'order_id'        => (int)$po['order_id'],
+                    'po_id'           => (int)$po['id'],
+                    'target_role'     => 'tim_kerja',
+                    'target_user_id'  => $creatorId,
+                    'target_layanan'  => $po['jenis_layanan_opti'] ?? 'semua',
+                    'judul'           => 'PO Kegiatan Perlu Perbaikan',
+                    'pesan'           => "Dokumen PO Kegiatan No. {$po['nomor_po']} dibuka kembali oleh Ketua Tim OPTI ({$_SESSION['nama_lengkap']}) untuk perbaikan/revisi.",
+                    'tipe'            => 'warning',
+                    'icon'            => 'bi-exclamation-triangle-fill',
+                    'link_url'        => "/po-kegiatan/daftar",
+                    'created_by'      => $uid,
+                    'created_by_name' => $_SESSION['nama_lengkap'] ?? 'Ketua Tim OPTI'
+                ]);
+            } catch (\Exception $eNotif) {}
+        }
+
         $this->keluarkanJson(['ok' => true, 'status_review' => 'revisi']);
     }
 
