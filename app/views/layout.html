@@ -1955,7 +1955,23 @@
                 e.preventDefault();
                 e.stopPropagation();
             }
-            var userRoleName = "{{ @SESSION.role == 'superadmin' ? 'Super Admin' : (@SESSION.role == 'humas' ? 'Sub Tim Humas' : (@SESSION.role == 'ppk' ? 'PPK' : (@SESSION.role == 'ketua_tim_mitra' ? 'Ketua Tim Mitra' : (@SESSION.role == 'tim_mitra_industri' || @SESSION.role == 'admin_order' || @SESSION.role == 'tim_mitra' ? 'Tim Mitra' : (@SESSION.role == 'ketua_tim' ? 'Ketua Tim OPTI' : (@SESSION.role == 'keuangan' ? 'Bagian Keuangan' : (@SESSION.role == 'tim_kerja' ? 'Tim Kerja / Peneliti' : (@SESSION.role == 'admin_kontrak' ? 'Admin Kontrak / PKS' : (@SESSION.role == 'sekretaris' ? 'Sekretariat' : (@SESSION.role == 'user' ? 'Pegawai Balai (Read-Only)' : 'Pengguna'))))))))) }}";
+            var roleMap = {
+                'superadmin': 'Super Admin',
+                'humas': 'Sub Tim Humas',
+                'ppk': 'PPK',
+                'ketua_tim_mitra': 'Ketua Tim Mitra',
+                'tim_mitra_industri': 'Tim Mitra',
+                'admin_order': 'Tim Mitra',
+                'tim_mitra': 'Tim Mitra',
+                'ketua_tim': 'Ketua Tim OPTI',
+                'keuangan': 'Bagian Keuangan',
+                'tim_kerja': 'Tim Kerja / Peneliti',
+                'admin_kontrak': 'Admin Kontrak / PKS',
+                'sekretaris': 'Sekretariat',
+                'user': 'Pegawai Balai (Read-Only)'
+            };
+            var curRole = '{{ @SESSION.role ?? "" }}';
+            var userRoleName = roleMap[curRole] || 'Pengguna';
 
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
