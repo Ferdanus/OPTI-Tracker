@@ -584,6 +584,26 @@
             font-size: 0.65rem;
         }
 
+        /* ============ SIDEBAR NOTIF BADGE (GLOBAL) ============ */
+        .sidebar-notif-badge {
+            min-width: 20px;
+            height: 20px;
+            padding: 0 6px !important;
+            font-size: 0.7rem !important;
+            font-weight: 700 !important;
+            line-height: 20px !important;
+            background-color: #e11d48 !important;
+            color: #ffffff !important;
+            border-radius: 9999px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            text-align: center !important;
+            box-shadow: 0 2px 5px rgba(225, 29, 72, 0.35);
+            flex-shrink: 0;
+            box-sizing: border-box;
+        }
+
         /* ============ SIDEBAR FOOTER (LOGOUT) ============ */
         .sidebar-footer {
             margin-top: auto;
@@ -664,20 +684,21 @@
 
             body.sidebar-collapsed .sidebar .sidebar-notif-badge {
                 position: absolute;
-                top: 4px;
+                top: 5px;
                 right: 6px;
                 margin-left: 0 !important;
                 background-color: #e11d48 !important;
                 color: #ffffff !important;
-                font-size: 0.625rem !important;
-                font-weight: 700;
-                min-width: 17px;
-                height: 17px;
+                font-size: 0.65rem !important;
+                font-weight: 700 !important;
+                min-width: 18px;
+                height: 18px;
+                line-height: 18px !important;
                 padding: 0 4px !important;
                 display: inline-flex !important;
-                align-items: center;
-                justify-content: center;
-                border-radius: 999px;
+                align-items: center !important;
+                justify-content: center !important;
+                border-radius: 9999px !important;
                 border: 2px solid #0f172a;
                 box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
                 opacity: 1 !important;
@@ -1367,7 +1388,7 @@
                         <a class="sidebar-link {{ @active_menu == 'surat_masuk' ? 'active' : '' }}" href="{{ @BASE }}/surat-masuk" title="Surat Masuk">
                             <i class="bi bi-envelope-paper"></i> <span>Surat Masuk</span>
                             <check if="{{ @jumlah_notif_surat > 0 }}">
-                                <span class="badge rounded-pill ms-auto sidebar-notif-badge" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff;">{{ @jumlah_notif_surat }}</span>
+                                <span class="badge ms-auto sidebar-notif-badge">{{ @jumlah_notif_surat }}</span>
                             </check>
                         </a>
                     </li>
@@ -1379,7 +1400,7 @@
                         <a class="sidebar-link {{ @active_menu == 'disposisi_masuk' ? 'active' : '' }}" href="{{ @BASE }}/disposisi-masuk" title="Permintaan Masuk">
                             <i class="bi bi-bell"></i> <span>Permintaan Masuk</span>
                             <check if="{{ @jumlah_notif_katim > 0 }}">
-                                <span class="badge rounded-pill ms-auto sidebar-notif-badge" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff;">{{ @jumlah_notif_katim }}</span>
+                                <span class="badge ms-auto sidebar-notif-badge">{{ @jumlah_notif_katim }}</span>
                             </check>
                         </a>
                     </li>
@@ -1405,10 +1426,10 @@
 
                 <check if="{{ @is_superadmin || @is_tim_mitra }}">
                     <li>
-                        <a class="sidebar-link {{ @active_menu == 'validasi-mitra' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan/validasi-mitra" title="Surat Penawaran">
+                        <a class="sidebar-link {{ @active_menu == 'validasi-mitra' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan/validasi-mitra" title="Validasi PO">
                             <i class="bi bi-file-earmark-text"></i> <span>Validasi PO</span>
                             <check if="{{ @jumlah_notif_validasi_po > 0 }}">
-                                <span class="badge rounded-pill bg-danger ms-auto">{{ @jumlah_notif_validasi_po }}</span>
+                                <span class="badge ms-auto sidebar-notif-badge">{{ @jumlah_notif_validasi_po }}</span>
                             </check>
                         </a>
                     </li>
@@ -1421,7 +1442,7 @@
                         <a class="sidebar-link {{ @active_menu == 'pembayaran' ? 'active' : '' }}" href="{{ @BASE }}/pembayaran" title="Pembayaran & Keuangan">
                             <i class="bi bi-cash-stack"></i> <span>Pembayaran</span>
                             <check if="{{ @jumlah_notif_keuangan > 0 }}">
-                                <span class="badge rounded-pill ms-auto sidebar-notif-badge" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff;">{{ @jumlah_notif_keuangan }}</span>
+                                <span class="badge ms-auto sidebar-notif-badge">{{ @jumlah_notif_keuangan }}</span>
                             </check>
                         </a>
                     </li>
@@ -1433,7 +1454,7 @@
                         <a class="sidebar-link {{ @active_menu == 'ketua-tim-po' ? 'active' : '' }}" href="{{ @BASE }}/ketua-tim/siap-po" title="Daftar Order Lunas">
                             <i class="bi bi-check2-circle"></i> <span>Penunjukan Pelaksana</span>
                             <check if="{{ @jumlah_notif_penunjukan_pelaksana > 0 }}">
-                                <span class="badge rounded-pill bg-danger ms-auto">{{ @jumlah_notif_penunjukan_pelaksana }}</span>
+                                <span class="badge ms-auto sidebar-notif-badge">{{ @jumlah_notif_penunjukan_pelaksana }}</span>
                             </check>
                         </a>
                     </li>
@@ -1449,7 +1470,7 @@
                         <a class="sidebar-link {{ @active_menu == 'proposal' ? 'active' : '' }}" href="{{ @BASE }}/proposal" title="Tugas Proposal Teknis">
                             <i class="bi bi-journal-code"></i> <span>Tugas Proposal</span>
                             <check if="{{ @jumlah_notif_proposal > 0 }}">
-                                <span class="badge rounded-pill ms-auto sidebar-notif-badge" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff;">{{ @jumlah_notif_proposal }}</span>
+                                <span class="badge ms-auto sidebar-notif-badge">{{ @jumlah_notif_proposal }}</span>
                             </check>
                         </a>
                     </li>
@@ -1461,7 +1482,7 @@
                             <a class="sidebar-link {{ @active_menu == 'po_kegiatan' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan" title="Daftar Petunjuk Operasional">
                                 <i class="bi bi-clipboard-check"></i> <span>Daftar PO</span>
                                 <check if="{{ (@jumlah_notif_po_lingkungan + @jumlah_notif_po_selulosa) > 0 }}">
-                                    <span class="badge rounded-pill bg-danger ms-auto">{{ @jumlah_notif_po_lingkungan + @jumlah_notif_po_selulosa }}</span>
+                                    <span class="badge ms-auto sidebar-notif-badge">{{ @jumlah_notif_po_lingkungan + @jumlah_notif_po_selulosa }}</span>
                                 </check>
                             </a>
                         </li>
@@ -1479,7 +1500,7 @@
                             <a class="sidebar-link {{ @active_menu == 'po_lingkungan' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?divisi=lingkungan" title="Petunjuk Operasional Lingkungan">
                                 <i class="bi bi-clipboard-check"></i> <span>Daftar PO Lingkungan</span>
                                 <check if="{{ @jumlah_notif_po_lingkungan > 0 }}">
-                                    <span class="badge rounded-pill bg-danger ms-auto">{{ @jumlah_notif_po_lingkungan }}</span>
+                                    <span class="badge ms-auto sidebar-notif-badge">{{ @jumlah_notif_po_lingkungan }}</span>
                                 </check>
                             </a>
                         </li>
@@ -1489,7 +1510,7 @@
                             <a class="sidebar-link {{ @active_menu == 'po_selulosa' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?divisi=selulosa" title="Petunjuk Operasional Selulosa">
                                 <i class="bi bi-clipboard-check"></i> <span>Daftar PO Selulosa</span>
                                 <check if="{{ @jumlah_notif_po_selulosa > 0 }}">
-                                    <span class="badge rounded-pill bg-danger ms-auto">{{ @jumlah_notif_po_selulosa }}</span>
+                                    <span class="badge ms-auto sidebar-notif-badge">{{ @jumlah_notif_po_selulosa }}</span>
                                 </check>
                             </a>
                         </li>
@@ -1499,7 +1520,7 @@
                         <a class="sidebar-link {{ @active_menu == 'daftar_po' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan/daftar" title="Daftar PO & Review">
                             <i class="bi bi-clipboard-check"></i> <span>Daftar PO</span>
                             <check if="{{ @jumlah_notif_daftar_po > 0 || @jumlah_notif_po_selulosa > 0 }}">
-                                <span class="badge rounded-pill ms-auto sidebar-notif-badge" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff;">{{ @jumlah_notif_daftar_po ?: @jumlah_notif_po_selulosa }}</span>
+                                <span class="badge ms-auto sidebar-notif-badge" id="notifDaftarPo">{{ @jumlah_notif_daftar_po ?: @jumlah_notif_po_selulosa }}</span>
                             </check>
                         </a>
                     </li>
@@ -1531,7 +1552,7 @@
                         <a class="sidebar-link {{ @active_menu == 'kontrak' ? 'active' : '' }}" href="{{ @BASE }}/kontrak" title="Tugas Proposal Teknis">
                             <i class="bi bi-journal-code"></i> <span>Kontrak</span>
                             <check if="{{ @jumlah_notif_kontrak > 0 }}">
-                                <span class="badge rounded-pill ms-auto sidebar-notif-badge" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff;">{{ @jumlah_notif_kontrak }}</span>
+                                <span class="badge ms-auto sidebar-notif-badge">{{ @jumlah_notif_kontrak }}</span>
                             </check>
                         </a>
                     </li>
