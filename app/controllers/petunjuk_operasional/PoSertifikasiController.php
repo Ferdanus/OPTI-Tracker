@@ -42,6 +42,34 @@ class PoSertifikasiController extends \Controller {
         return preg_match('/^[A-Za-z0-9_]+$/', $n) ? $n : self::DB_SERTIFIKASI_DEFAULT;
     }
 
+    /** Pastikan database SISERTIFIKASI dan tb_arsip_sertifikasi tersedia di server MySQL */
+    public function ensureDatabaseSertifikasi(): void {
+        static $checked = false;
+        if ($checked) return;
+        try {
+            $dbName = $this->namaDbSertifikasi();
+            $this->db->exec("CREATE DATABASE IF NOT EXISTS `{$dbName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+            $this->db->exec("CREATE TABLE IF NOT EXISTS `{$dbName}`.`tb_arsip_sertifikasi` (
+                `id_arsip_sertifikasi` INT(11) NOT NULL AUTO_INCREMENT,
+                `no_id_order` VARCHAR(50) DEFAULT NULL,
+                `nomor_order` VARCHAR(100) DEFAULT NULL,
+                `tanggal_order` DATE DEFAULT NULL,
+                `status_order` VARCHAR(50) DEFAULT 'Diproses',
+                `status_penerimaan_order` VARCHAR(50) DEFAULT 'Order',
+                `id_customer` INT(11) DEFAULT NULL,
+                `no_pks` VARCHAR(100) DEFAULT NULL,
+                `keterangan` TEXT DEFAULT NULL,
+                `total_nilai_kontrak` DECIMAL(15,2) NOT NULL DEFAULT '0.00',
+                `total_bayar_kontrak` DECIMAL(15,2) NOT NULL DEFAULT '0.00',
+                `tanggal_update` DATETIME DEFAULT NULL,
+                PRIMARY KEY (`id_arsip_sertifikasi`),
+                KEY `idx_customer` (`id_customer`),
+                KEY `idx_status_order` (`status_penerimaan_order`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            $checked = true;
+        } catch (\Throwable $e) {}
+    }
+
     /**
      * Ambil order sertifikasi yang memenuhi syarat. $id > 0 -> cek satu order saja
      * (dipakai untuk validasi di create()/simpan()). $kecualiSudahPo=true -> sembunyikan order yang sudah punya PO (daftar di modal). $hanyaLayak=false -> tanpa syarat
@@ -49,6 +77,7 @@ class PoSertifikasiController extends \Controller {
      * oleh OptiDatabase; tabel sertifikasi dibaca lintas-database (server MySQL yang sama).
      */
     protected function queryOrderLayak($id = 0, $hanyaLayak = true, $kecualiSudahPo = false) {
+        $this->ensureDatabaseSertifikasi();
         $dbName = $this->namaDbSertifikasi();
         $sql = "SELECT a.id_arsip_sertifikasi, a.no_id_order, a.nomor_order, a.tanggal_order, a.status_order,
                        a.no_pks, a.keterangan, a.total_nilai_kontrak, a.total_bayar_kontrak,
