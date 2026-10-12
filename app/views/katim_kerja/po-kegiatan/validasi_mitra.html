@@ -163,9 +163,68 @@
             </div>
         </div>
 
-        <!-- TABEL UTAMA DENGAN FILTER TABS WRAPPER -->
+        <!-- BARIS FILTER PENCARIAN & LAYANAN MANDIRI (KONSISTEN DENGAN DAFTAR ORDER & SURAT) -->
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body p-3">
+                <div class="row g-2 align-items-center">
+                    <!-- Input Pencarian -->
+                    <div class="col-12 col-md flex-grow-1">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-light border-end-0 text-muted ps-2.5"><i class="bi bi-search"></i></span>
+                            <input type="search" class="form-control border-start-0 ps-0" id="dpoSearch" placeholder="Cari nomor PO, order, atau mitra..." autocomplete="off">
+                            <button class="btn btn-outline-secondary border-start-0 text-muted d-none" type="button" id="btnClearSearch" title="Hapus pencarian">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Filter Layanan -->
+                    <div class="col-12 col-sm-auto col-md-4 col-lg-3">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-light text-muted"><i class="bi bi-grid"></i></span>
+                            <select class="form-select form-select-sm fw-semibold" id="dpoDivisi" title="Filter Berdasarkan Layanan">
+                                <option value="">Semua Layanan</option>
+                                <option value="pengujian">Pengujian</option>
+                                <option value="kalibrasi">Kalibrasi</option>
+                                <option value="sertifikasi">Sertifikasi</option>
+                                <option value="pendampingan">Pendampingan Teknis</option>
+                                <option value="inspeksi">Inspeksi</option>
+                                <option value="profisiensi">Uji Profisiensi</option>
+                                <option value="lingkungan">Lingkungan</option>
+                                <option value="selulosa">Selulosa</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Filter Bulan (Khusus Tab Disetujui) -->
+                    <div class="col-6 col-sm-auto col-md-3 col-lg-2" id="wrapBulan" style="display: none;">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-light text-muted"><i class="bi bi-calendar3"></i></span>
+                            <select class="form-select form-select-sm fw-semibold" id="dpoBulan" title="Filter Berdasarkan Bulan"></select>
+                        </div>
+                    </div>
+
+                    <!-- Filter Tahun (Khusus Tab Disetujui) -->
+                    <div class="col-6 col-sm-auto col-md-3 col-lg-2" id="wrapTahun" style="display: none;">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-light text-muted"><i class="bi bi-calendar-event"></i></span>
+                            <select class="form-select form-select-sm fw-semibold" id="dpoTahun" title="Filter Berdasarkan Tahun"></select>
+                        </div>
+                    </div>
+
+                    <!-- Tombol Reset Filter -->
+                    <div class="col-auto">
+                        <button type="button" class="btn btn-outline-secondary btn-sm px-2.5 d-inline-flex align-items-center justify-content-center" id="dpoResetFilter" title="Reset filter & pencarian">
+                            <i class="bi bi-arrow-counterclockwise"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TABEL UTAMA DENGAN FILTER TABS SIMETRIS -->
         <div class="card border-0 shadow-sm overflow-hidden mb-4">
-            <div class="filter-tabs-wrapper">
+            <div class="filter-tabs-wrapper d-flex justify-content-between align-items-center flex-wrap gap-3">
                 <ul class="nav d-flex align-items-center gap-2 flex-wrap mb-0 p-0 border-0" id="dpoTabs" role="tablist">
                     <li class="nav-item" role="presentation">
                         <button class="nav-link filter-tab-pill active" id="tab-perlu" data-tab="perlu" type="button">
@@ -182,37 +241,7 @@
                         </button>
                     </li>
                 </ul>
-            </div>
-
-            <!-- FILTER PENCARIAN & DROPDOWN -->
-            <div class="card-body p-3 p-md-4 border-bottom bg-light">
-                <div class="row g-2 align-items-center">
-                    <div class="col-12 col-md-5 col-lg-4">
-                        <div class="input-group input-group-sm">
-                            <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
-                            <input type="search" class="form-control border-start-0" id="dpoSearch" placeholder="Cari nomor PO, order, atau mitra...">
-                        </div>
-                    </div>
-                    <div class="col-6 col-md-4 col-lg-3">
-                        <select class="form-select form-select-sm" id="dpoDivisi">
-                            <option value="">Semua Layanan</option>
-                            <option value="pengujian">Pengujian</option>
-                            <option value="kalibrasi">Kalibrasi</option>
-                            <option value="sertifikasi">Sertifikasi</option>
-                            <option value="pendampingan">Pendampingan Teknis</option>
-                            <option value="inspeksi">Inspeksi</option>
-                            <option value="profisiensi">Uji Profisiensi</option>
-                            <option value="lingkungan">Lingkungan</option>
-                            <option value="selulosa">Selulosa</option>
-                        </select>
-                    </div>
-                    <div class="col-6 col-md-2 col-lg-2">
-                        <select class="form-select form-select-sm" id="dpoBulan" hidden></select>
-                    </div>
-                    <div class="col-6 col-md-2 col-lg-2">
-                        <select class="form-select form-select-sm" id="dpoTahun" hidden></select>
-                    </div>
-                </div>
+                <span class="text-muted small fw-medium">Total: <strong class="text-dark" id="dpoTotalCountHeader">0</strong> dokumen</span>
             </div>
 
             <div id="dpoList"></div>
@@ -416,13 +445,14 @@
             if ($('countDisetujui')) $('countDisetujui').textContent = nDisetujui;
             if ($('metricTotal')) $('metricTotal').textContent = nTotal;
             if ($('metricPerlu')) $('metricPerlu').textContent = nPerlu;
-            if ($('metricDisetujui')) $('metricDisetujui').textContent = nDisetujui;
-
             // Filter bulan/tahun cuma relevan buat tab "Sudah Disetujui" -- di tab
             // "Perlu Divalidasi" semua PO yang nyangkut emang harus kelihatan,
             // gak peduli kapan dikirimnya.
-            $('dpoBulan').hidden = tab !== 'disetujui';
-            $('dpoTahun').hidden = tab !== 'disetujui';
+            if ($('wrapBulan')) $('wrapBulan').style.display = tab === 'disetujui' ? '' : 'none';
+            if ($('wrapTahun')) $('wrapTahun').style.display = tab === 'disetujui' ? '' : 'none';
+            if ($('dpoTotalCountHeader')) {
+                $('dpoTotalCountHeader').textContent = (tab === 'perlu' ? nPerlu : nDisetujui);
+            }
 
             if (tab === 'perlu') {
                 renderPerlu(DATA_PERLU.filter(cocokTeks).filter(cocokDivisi));
@@ -628,10 +658,44 @@
             var previewBtn = e.target.closest('[data-preview-po]');
             if (previewBtn) { bukaPreviewPoFile(previewBtn.getAttribute('data-preview-po')); }
         });
-        $('dpoSearch').addEventListener('input', function () { q = this.value.trim().toLowerCase(); dvmPage = 1; render(); });
+        var btnClear = $('btnClearSearch');
+        if (btnClear) {
+            btnClear.addEventListener('click', function () {
+                $('dpoSearch').value = '';
+                q = '';
+                btnClear.classList.add('d-none');
+                dvmPage = 1;
+                render();
+            });
+        }
+        $('dpoSearch').addEventListener('input', function () {
+            q = this.value.trim().toLowerCase();
+            if ($('btnClearSearch')) {
+                $('btnClearSearch').classList.toggle('d-none', !this.value.trim());
+            }
+            dvmPage = 1;
+            render();
+        });
         $('dpoDivisi').addEventListener('change', function () { divisi = this.value; dvmPage = 1; render(); });
         $('dpoBulan').addEventListener('change', function () { bulan = this.value; dvmPage = 1; render(); });
         $('dpoTahun').addEventListener('change', function () { tahun = this.value; dvmPage = 1; render(); });
+
+        var btnReset = $('dpoResetFilter');
+        if (btnReset) {
+            btnReset.addEventListener('click', function () {
+                $('dpoSearch').value = '';
+                q = '';
+                if ($('btnClearSearch')) $('btnClearSearch').classList.add('d-none');
+                $('dpoDivisi').value = '';
+                divisi = '';
+                $('dpoBulan').value = String(BULAN_INI);
+                bulan = String(BULAN_INI);
+                $('dpoTahun').value = String(TAHUN_INI);
+                tahun = String(TAHUN_INI);
+                dvmPage = 1;
+                render();
+            });
+        }
 
         $('dvSimpanCatatan').addEventListener('click', function () {
             if (!current) { return; }
