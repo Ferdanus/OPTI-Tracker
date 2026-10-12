@@ -39,7 +39,12 @@ class KetuaTimController extends Controller {
                    (SELECT status FROM po_kegiatan WHERE order_id = o.id LIMIT 1) AS po_status
             FROM order_layanan o
             JOIN tb_customer c ON o.id_customer = c.id_customer
-            LEFT JOIN tb_surat_penawaran sp ON sp.order_id = o.id AND sp.status_respon_klien = 'deal'
+            LEFT JOIN tb_surat_penawaran sp ON sp.id = (
+                SELECT id FROM tb_surat_penawaran 
+                WHERE order_id = o.id 
+                ORDER BY (status_respon_klien = 'deal') DESC, (surat_kesanggupan_bayar IS NOT NULL AND surat_kesanggupan_bayar != '') DESC, id DESC 
+                LIMIT 1
+            )
             WHERE o.disposisi_katim_at IS NOT NULL
               AND o.status_keuangan = 'lunas'
               AND o.tanggal_terima_sampel IS NOT NULL";
@@ -161,6 +166,29 @@ unset($o);
                 "UPDATE order_layanan SET ketua_pelaksana_id = ?, ketua_pelaksana_at = NOW() WHERE id = ?",
                 [1 => $pelaksanaId, 2 => $orderId]
             );
+
+            // Kirim notifikasi langsung ke Ketua Pelaksana yang ditunjuk
+            try {
+                $orderModel = new \OrderLayanan($this->db);
+                $order = $orderModel->getDetail($orderId);
+                $userNama = $_SESSION['nama_lengkap'] ?? 'Ketua Tim OPTI';
+                if ($order) {
+                    \NotificationService::send($this->db, [
+                        'order_id'        => $orderId,
+                        'target_role'     => 'tim_kerja',
+                        'target_user_id'  => $pelaksanaId,
+                        'target_layanan'  => $order['jenis_layanan_opti'] ?? 'semua',
+                        'judul'           => 'Penugasan Ketua Pelaksana PO Kegiatan',
+                        'pesan'           => "Anda telah ditunjuk oleh Ketua Tim OPTI ({$userNama}) sebagai Ketua Pelaksana untuk menyusun Dokumen Petunjuk Operasional (PO) Order #{$order['nomor_order']} ({$order['nama_perusahaan']}).",
+                        'tipe'            => 'primary',
+                        'icon'            => 'bi-person-check-fill',
+                        'link_url'        => "/po-kegiatan/buat?order_id={$orderId}",
+                        'created_by'      => (int)$this->getUserId(),
+                        'created_by_name' => $userNama
+                    ]);
+                }
+            } catch (\Exception $eNotif) {}
+
             $this->setFlashSuccess('Ketua Pelaksana berhasil ditunjuk.');
         } catch (\Exception $e) {
             $this->setFlashError('Gagal menyimpan: ' . $e->getMessage());

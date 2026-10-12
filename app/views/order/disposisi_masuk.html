@@ -60,18 +60,9 @@
                                                         <i class="bi bi-hourglass-split me-1"></i>Belum Ditentukan
                                                     </span>
                                                 </check>
-                                                <check if="{{ !empty(@item.nomor_order) }}">
-                                                    <true>
-                                                        <span class="text-secondary font-monospace small ms-1" style="font-size: 0.78rem;">
-                                                            #{{ @item.nomor_order }}
-                                                        </span>
-                                                    </true>
-                                                    <false>
-                                                        <span class="badge bg-secondary-subtle text-muted border font-monospace ms-1" style="font-size: 0.68rem;">
-                                                            Belum Ada No. Order
-                                                        </span>
-                                                    </false>
-                                                </check>
+                                                <span class="text-secondary font-monospace small ms-1" style="font-size: 0.78rem;">
+                                                    #{{ @item.nomor_permintaan ?: @item.nomor_order ?: ('REQ-' . @item.id) }}
+                                                </span>
                                             </div>
                                             <span class="text-muted small" style="font-size: 0.75rem;">
                                                 {{ date('d M Y', strtotime(@item.tanggal_masuk)) }}
@@ -179,7 +170,7 @@
                                                     </span>
                                                 </check>
                                                 <span class="text-secondary font-monospace small ms-1" style="font-size: 0.78rem;">
-                                                    #{{ @p.nomor_order }}
+                                                    #{{ @p.nomor_permintaan ?: @p.nomor_order ?: ('REQ-' . @p.id) }}
                                                 </span>
                                                 <check if="{{ @p.jenis_layanan_opti == 'lingkungan' }}">
                                                     <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle" style="font-size: 0.68rem;">
@@ -237,7 +228,7 @@
                                             <true>
                                                 <check if="{{ @p.file_proposal }}">
                                                     <true>
-                                                        <button type="button" class="btn btn-outline-danger btn-sm py-1 px-2.5 fw-medium btn-preview-pdf" data-preview-pdf="{{ @BASE }}/{{ @p.file_proposal }}" data-title="Proposal Teknis" data-subtitle="Order: {{ @p.nomor_order }}" style="font-size: 0.78rem;">
+                                                        <button type="button" class="btn btn-outline-danger btn-sm py-1 px-2.5 fw-medium btn-preview-pdf" data-preview-pdf="{{ @BASE }}/{{ @p.file_proposal }}" data-title="Proposal Teknis" data-subtitle="Permintaan: {{ @p.nomor_permintaan ?: @p.nomor_order ?: ('REQ-' . @p.id) }}" style="font-size: 0.78rem;">
                                                             <i class="bi bi-file-earmark-pdf me-1"></i> Berkas
                                                         </button>
                                                     </true>
@@ -254,7 +245,7 @@
                                             <false>
                                                 <check if="{{ @p.file_proposal }}">
                                                     <true>
-                                                        <button type="button" class="btn btn-outline-danger btn-sm py-1 px-2.5 fw-medium btn-preview-pdf" data-preview-pdf="{{ @BASE }}/{{ @p.file_proposal }}" data-title="Proposal Teknis" data-subtitle="Order: {{ @p.nomor_order }}" style="font-size: 0.78rem;">
+                                                        <button type="button" class="btn btn-outline-danger btn-sm py-1 px-2.5 fw-medium btn-preview-pdf" data-preview-pdf="{{ @BASE }}/{{ @p.file_proposal }}" data-title="Proposal Teknis" data-subtitle="Permintaan: {{ @p.nomor_permintaan ?: @p.nomor_order ?: ('REQ-' . @p.id) }}" style="font-size: 0.78rem;">
                                                             <i class="bi bi-file-earmark-pdf me-1"></i> File Proposal
                                                         </button>
                                                     </true>
@@ -312,7 +303,7 @@
                     <repeat group="{{ @sedang_berjalan }}" value="{{ @row }}">
                         <tr>
                             <td class="ps-3 ps-md-4">
-                                <span class="badge bg-light text-dark border font-monospace">{{ @row.nomor_order }}</span>
+                                <span class="badge bg-light text-dark border font-monospace">{{ @row.nomor_order ?: @row.nomor_permintaan ?: ('REQ-' . @row.id) }}</span>
                                 <check if="{{ @row.jenis_layanan_opti == 'selulosa' }}">
                                     <span class="badge bg-danger-subtle text-danger text-uppercase d-block mt-1" style="font-size: 0.65rem;">Selulosa</span>
                                 </check>

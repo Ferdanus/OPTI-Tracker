@@ -36,6 +36,54 @@ class PenggunaController extends Controller {
                 'category' => 'manajemen',
                 'desc' => 'Disposisi & penugasan teknis layanan Lingkungan'
             ),
+            'ketua_tim_pengujian' => array(
+                'label' => 'Ketua Tim Pengujian',
+                'badge_class' => 'role-badge role-badge-katim-pengujian',
+                'badge_style' => '',
+                'icon' => 'bi-award-fill',
+                'category' => 'manajemen',
+                'desc' => 'Disposisi & penugasan teknis layanan Pengujian'
+            ),
+            'ketua_tim_kalibrasi' => array(
+                'label' => 'Ketua Tim Kalibrasi',
+                'badge_class' => 'role-badge role-badge-katim-kalibrasi',
+                'badge_style' => '',
+                'icon' => 'bi-award-fill',
+                'category' => 'manajemen',
+                'desc' => 'Disposisi & penugasan teknis layanan Kalibrasi'
+            ),
+            'ketua_tim_sertifikasi' => array(
+                'label' => 'Ketua Tim Sertifikasi',
+                'badge_class' => 'role-badge role-badge-katim-sertifikasi',
+                'badge_style' => '',
+                'icon' => 'bi-award-fill',
+                'category' => 'manajemen',
+                'desc' => 'Disposisi & penugasan teknis layanan Sertifikasi'
+            ),
+            'ketua_tim_pendampingan' => array(
+                'label' => 'Ketua Tim Pendampingan Teknis',
+                'badge_class' => 'role-badge role-badge-katim-pendampingan',
+                'badge_style' => '',
+                'icon' => 'bi-award-fill',
+                'category' => 'manajemen',
+                'desc' => 'Disposisi & penugasan layanan Pendampingan Teknis'
+            ),
+            'ketua_tim_inspeksi' => array(
+                'label' => 'Ketua Tim Inspeksi',
+                'badge_class' => 'role-badge role-badge-katim-inspeksi',
+                'badge_style' => '',
+                'icon' => 'bi-award-fill',
+                'category' => 'manajemen',
+                'desc' => 'Disposisi & penugasan teknis layanan Inspeksi'
+            ),
+            'ketua_tim_profisiensi' => array(
+                'label' => 'Ketua Tim Uji Profisiensi',
+                'badge_class' => 'role-badge role-badge-katim-profisiensi',
+                'badge_style' => '',
+                'icon' => 'bi-award-fill',
+                'category' => 'manajemen',
+                'desc' => 'Disposisi & penugasan teknis layanan Uji Profisiensi'
+            ),
             'ketua_tim_mitra' => array(
                 'label' => 'Ketua Tim Mitra',
                 'badge_class' => 'role-badge role-badge-katim-mitra',
@@ -83,6 +131,22 @@ class PenggunaController extends Controller {
                 'icon' => 'bi-wallet2',
                 'category' => 'manajemen',
                 'desc' => 'Verifikasi pembayaran'
+            ),
+            'humas' => array(
+                'label' => 'Sub Tim Humas',
+                'badge_class' => 'role-badge role-badge-humas',
+                'badge_style' => '',
+                'icon' => 'bi-megaphone-fill',
+                'category' => 'manajemen',
+                'desc' => 'Layanan informasi publik, sub tim humas & publikasi balai'
+            ),
+            'ppk' => array(
+                'label' => 'PPK',
+                'badge_class' => 'role-badge role-badge-ppk',
+                'badge_style' => '',
+                'icon' => 'bi-person-badge-fill',
+                'category' => 'pejabat',
+                'desc' => 'Pejabat Pembuat Komitmen verifikasi & legalitas kegiatan'
             )
         );
     }
@@ -92,11 +156,17 @@ class PenggunaController extends Controller {
      */
     public static function getKetuaRoles(): array {
         return array(
-            'superadmin'           => 'Super Administrator',
-            'ketua_tim_selulosa'   => 'Ketua Tim Selulosa',
-            'ketua_tim_lingkungan' => 'Ketua Tim Lingkungan',
-            'ketua_tim_mitra'      => 'Ketua Tim Mitra',
-            'ketua_tim_keuangan'   => 'Ketua Tim Keuangan'
+            'superadmin'             => 'Super Administrator',
+            'ketua_tim_selulosa'     => 'Ketua Tim Selulosa',
+            'ketua_tim_lingkungan'   => 'Ketua Tim Lingkungan',
+            'ketua_tim_pengujian'    => 'Ketua Tim Pengujian',
+            'ketua_tim_kalibrasi'    => 'Ketua Tim Kalibrasi',
+            'ketua_tim_sertifikasi'  => 'Ketua Tim Sertifikasi',
+            'ketua_tim_pendampingan' => 'Ketua Tim Pendampingan Teknis',
+            'ketua_tim_inspeksi'     => 'Ketua Tim Inspeksi',
+            'ketua_tim_profisiensi'  => 'Ketua Tim Uji Profisiensi',
+            'ketua_tim_mitra'        => 'Ketua Tim Mitra',
+            'ketua_tim_keuangan'     => 'Ketua Tim Keuangan'
         );
     }
 
@@ -109,6 +179,12 @@ class PenggunaController extends Controller {
             'tim_mitra'                 => 'tim_mitra_industri',
             'katim_selulosa'            => 'ketua_tim_selulosa',
             'katim_lingkungan'          => 'ketua_tim_lingkungan',
+            'katim_pengujian'           => 'ketua_tim_pengujian',
+            'katim_kalibrasi'           => 'ketua_tim_kalibrasi',
+            'katim_sertifikasi'         => 'ketua_tim_sertifikasi',
+            'katim_pendampingan'        => 'ketua_tim_pendampingan',
+            'katim_inspeksi'            => 'ketua_tim_inspeksi',
+            'katim_profisiensi'         => 'ketua_tim_profisiensi',
             'katim_mitra'               => 'ketua_tim_mitra',
             'ketua_tim_mitra_industri'  => 'ketua_tim_mitra',
             'katim_keuangan'            => 'ketua_tim_keuangan',
@@ -526,6 +602,12 @@ class PenggunaController extends Controller {
             $layanan = 'semua';
         } elseif ($siOpti === 'keuangan') {
             $roleOpti = 'keuangan';
+            $layanan = 'semua';
+        } elseif ($siOpti === 'humas') {
+            $roleOpti = 'humas';
+            $layanan = 'semua';
+        } elseif ($siOpti === 'ppk') {
+            $roleOpti = 'ppk';
             $layanan = 'semua';
         }
 

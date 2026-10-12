@@ -442,7 +442,6 @@ class PoRevisiPpkController extends Controller {
         $po = $this->aksesPpk((int) $params['id']);
         $uid = (int) $this->getUserId();
         $this->wajibState($po, ['ppk_cek'], 'PO hanya bisa diverifikasi saat berada di PPK BLU.');
-
         $n = $this->hitungCatatan((int) $po['id'], 'ppk');
         if ($n['draf'] > 0) {
             $this->keluarkanJson(['ok' => false, 'pesan' => 'Ada ' . $n['draf'] . ' catatan draf yang belum dikirim. Kirim lewat Minta revisi atau hapus dulu.'], 422);

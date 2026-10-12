@@ -10,10 +10,11 @@ use Dompdf\Options;
  *   dibikinin PO kalau status_tinjauan = 'layak' dan belum pernah punya PO.
  * - index() cuma nampilin PO yang SUDAH dibuat (bukan lagi daftar order
  *   yang "perlu dibuatkan PO").
- * - Alur "Tambah PO" sekarang: /po-kegiatan/pilih (pilih jenis PO -> pilih
- *   order -> form PO langsung muncul di halaman yang sama, submit ke
- *   /po-kegiatan/simpan). Route /po-kegiatan/buat masih ada buat kompatibel
- *   ke belakang tapi UI utama sudah gak ngarah ke situ lagi.
+ * - Alur "Buat PO" untuk OPTI: tombol "Buat PO" di baris order langsung ke
+ *   /po-kegiatan/buat?order_id=... (form PO), tombol "Tambah PO" di atas ke
+ *   /po-kegiatan/pilih?jenis=opti (langsung pilih order, tanpa pilih jenis).
+ *   Halaman /po-kegiatan/pilih tanpa ?jenis=opti tetap menampilkan pilihan
+ *   semua jenis PO.
  */
 class PoKegiatanController extends Controller {
 
@@ -166,49 +167,59 @@ protected function jadwalOtomatisDariOrder($orderData) {
     return ['mulai' => $mulai, 'selesai' => $selesai];
 }
 
-protected function bind(PoKegiatan $po, $f3, $isUpdate) {
+
+protected function bind(PoKegiatan $po, $f3, $isUpdate, $isLivePreview = false) {
+
     $post = $f3->get('POST');
 
     if (!$isUpdate) {
         $po->order_id = (int) ($post['order_id'] ?? 0);
     }
 
-    $this->ensureSchemaNomorPo();
+    if (!$isLivePreview) {
+        $this->ensureSchemaNomorPo();
 
-    // [BARU] Tanggal Surat PO -- tanggal resmi dokumen PO ini, diisi dari form
-    // "Informasi PO". Dipakai juga buat nentuin bulan-romawi & tahun di Nomor PO.
-    $tanggalPoPost = trim((string) ($post['tanggal_po'] ?? ''));
-    $po->tanggal_po = $tanggalPoPost !== '' ? $tanggalPoPost : date('Y-m-d');
+        // [BARU] Tanggal Surat PO -- tanggal resmi dokumen PO ini, diisi dari form
+        // "Informasi PO". Dipakai juga buat nentuin bulan-romawi & tahun di Nomor PO.
+        $tanggalPoPost = trim((string) ($post['tanggal_po'] ?? ''));
+        $po->tanggal_po = $tanggalPoPost !== '' ? $tanggalPoPost : date('Y-m-d');
 
-    // [BARU] Tahun Tanggal Surat PO harus sesuai tahun berjalan (PO yang sudah punya nomor: sesuai
-    // tahun di nomornya). Nomor urut PO dihitung per tahun, jadi tahun yang meleset bikin urutan kacau.
-    $tahunWajib = $this->tahunPoWajib((string) ($po->nomor_po ?? ''));
-    $tahunInput = (int) date('Y', strtotime($po->tanggal_po) ?: time());
-    if ($tahunInput !== $tahunWajib) {
-        throw new \Exception("Tahun Tanggal Surat PO ({$tahunInput}) harus sama dengan tahun {$tahunWajib}.");
-    }
+        // [BARU] Tahun Tanggal Surat PO harus sesuai tahun berjalan (PO yang sudah punya nomor: sesuai
+        // tahun di nomornya). Nomor urut PO dihitung per tahun, jadi tahun yang meleset bikin urutan kacau.
+        $tahunWajib = $this->tahunPoWajib((string) ($po->nomor_po ?? ''));
+        $tahunInput = (int) date('Y', strtotime($po->tanggal_po) ?: time());
+        if ($tahunInput !== $tahunWajib) {
+            throw new \Exception("Tahun Tanggal Surat PO ({$tahunInput}) harus sama dengan tahun {$tahunWajib}.");
+        }
 
-    // [BARU] Nomor PO SEKARANG otomatis (gak lagi input manual) -- digenerate
-    // dari tabel master po_nomor_urut pas PO ini PERTAMA KALI disimpan (baik
-    // "Simpan Draft" maupun "Kirim"). Tabel po_nomor_urut nyimpen SATU BARIS per
-    // nomor yang pernah diterbitkan (bukan cuma counter), kolom detail_nomor-nya
-    // itu yang jadi "361/PO/BBSPJIS/VII/2026"-nya -- po_kegiatan cuma nyimpen
-    // id_nomor_urut (nunjuk ke baris itu), nomor_po dipertahanin juga sebagai
-    // salinan buat kompatibel sama bagian lain yang masih baca po.nomor_po
-    // (cetak PO, notifikasi, dll). Kalau PO ini udah punya nomor (lagi diedit),
-    // dipertahanin apa adanya -- gak di-generate ulang & gak bisa diubah manual,
-    // biar gak bentrok sama nomor PO lain yang udah terlanjur jalan.
-    if (empty($po->nomor_po)) {
-        $nomorBaru      = $this->generateNomorPoBaru($po->tanggal_po);
-        $po->id_nomor_urut = $nomorBaru['id'];
-        $po->nomor_po      = $nomorBaru['detail_nomor'];
+        // [BARU] Nomor PO SEKARANG otomatis (gak lagi input manual) -- digenerate
+        // dari tabel master po_nomor_urut pas PO ini PERTAMA KALI disimpan (baik
+        // "Simpan Draft" maupun "Kirim"). Tabel po_nomor_urut nyimpen SATU BARIS per
+        // nomor yang pernah diterbitkan (bukan cuma counter), kolom detail_nomor-nya
+        // itu yang jadi "361/PO/BBSPJIS/VII/2026"-nya -- po_kegiatan cuma nyimpen
+        // id_nomor_urut (nunjuk ke baris itu), nomor_po dipertahanin juga sebagai
+        // salinan buat kompatibel sama bagian lain yang masih baca po.nomor_po
+        // (cetak PO, notifikasi, dll). Kalau PO ini udah punya nomor (lagi diedit),
+        // dipertahanin apa adanya -- gak di-generate ulang & gak bisa diubah manual,
+        // biar gak bentrok sama nomor PO lain yang udah terlanjur jalan.
+        if (empty($po->nomor_po)) {
+            $nomorBaru      = $this->generateNomorPoBaru($po->tanggal_po);
+            $po->id_nomor_urut = $nomorBaru['id'];
+            $po->nomor_po      = $nomorBaru['detail_nomor'];
+        }
+    } else {
+        $tanggalPoPost = trim((string) ($post['tanggal_po'] ?? ''));
+        $po->tanggal_po = $tanggalPoPost !== '' ? $tanggalPoPost : date('Y-m-d');
+        if (empty($po->nomor_po)) {
+            $po->nomor_po = 'DRAFT/PREVIEW/' . date('Y');
+        }
     }
 
     $po->judul_kegiatan = trim((string) ($post['judul_kegiatan'] ?? ''));
 
     // [BARU] Judul Kegiatan diedit dari form PO -> sinkronkan juga ke
     // order_layanan.judul_kegiatan biar PO dan Order gak beda-beda lagi.
-    if ((int) $po->order_id > 0 && $po->judul_kegiatan !== '') {
+    if (!$isLivePreview && (int) $po->order_id > 0 && $po->judul_kegiatan !== '') {
         $this->db->exec(
             'UPDATE order_layanan SET judul_kegiatan = ? WHERE id = ?',
             [1 => $po->judul_kegiatan, 2 => (int) $po->order_id]
@@ -716,13 +727,13 @@ $this->render('katim_kerja/po-kegiatan/pilih_jenis.html', 'Buat Petunjuk Operasi
 
         if (!$orderData) {
             $this->setFlashError('Order tidak ditemukan.');
-            $f3->reroute('/po-kegiatan/pilih');
+            $f3->reroute('/po-kegiatan/pilih?jenis=opti');
             return;
         }
 
         if (($orderData['status_tinjauan'] ?? '') !== 'layak') {
             $this->setFlashError('Order ini belum dinyatakan layak (Tinjauan Kelayakan Teknis belum selesai).');
-            $f3->reroute('/po-kegiatan/pilih');
+            $f3->reroute('/po-kegiatan/pilih?jenis=opti');
             return;
         }
 
@@ -1089,6 +1100,72 @@ $options->set('defaultFont', 'Times-Roman');
     exit;
 }
 
+    /** POST /po-kegiatan/preview-live -- render live preview fragment dari data form saat ini (tanpa save DB) */
+    public function previewLive($f3) {
+        $this->requireAuth();
+
+        try {
+            $po = new PoKegiatan($this->db);
+            $orderId = (int) ($f3->get('POST.order_id') ?? 0);
+            $poId = (int) ($f3->get('POST.po_id') ?? 0);
+            if ($poId > 0) {
+                $po->load(['id = ?', $poId]);
+            }
+            
+            $this->bind($po, $f3, $poId > 0, true);
+            
+            $orderData = $this->getOrderDenganMitra($orderId);
+            $poData = $this->siapkanDataPo($po, $orderData);
+
+            $f3->set('order', $orderData ?: null);
+            $f3->set('po', $poData);
+
+            echo \Template::instance()->render('katim_kerja/po-kegiatan/preview_fragment.html');
+        } catch (\Throwable $e) {
+            header('HTTP/1.1 500 Internal Server Error');
+            echo '<div class="text-white text-center py-4"><p class="text-danger fw-bold mb-1">Gagal Menyiapkan Pratinjau</p><small class="text-white-50">' . htmlspecialchars($e->getMessage()) . '</small></div>';
+        }
+    }
+
+    /** POST /po-kegiatan/cetak-live -- render live PDF stream dari data form saat ini */
+    public function cetakLive($f3) {
+        $this->requireAuth();
+
+        try {
+            $po = new PoKegiatan($this->db);
+            $orderId = (int) ($f3->get('POST.order_id') ?? 0);
+            $poId = (int) ($f3->get('POST.po_id') ?? 0);
+            if ($poId > 0) {
+                $po->load(['id = ?', $poId]);
+            }
+            
+            $this->bind($po, $f3, $poId > 0, true);
+            
+            $orderData = $this->getOrderDenganMitra($orderId);
+            $poData = $this->siapkanDataPo($po, $orderData);
+
+            $f3->set('order', $orderData ?: null);
+            $f3->set('po', $poData);
+            $html = \Template::instance()->render('katim_kerja/po-kegiatan/cetak_pdf.html');
+
+            $options = new \Dompdf\Options();
+            $options->set('isRemoteEnabled', false);
+            $options->set('defaultFont', 'Times-Roman');
+
+            $dompdf = new \Dompdf\Dompdf($options);
+            $dompdf->loadHtml($html);
+            $dompdf->setPaper('A4', 'portrait');
+            $dompdf->render();
+
+            $namaFile = 'Preview-PO-' . preg_replace('/[^A-Za-z0-9_-]/', '_', $poData['nomor_po'] ?: 'Draft') . '.pdf';
+            $dompdf->stream($namaFile, ['Attachment' => false]);
+            exit;
+        } catch (\Throwable $e) {
+            echo 'Gagal mencetak PDF: ' . htmlspecialchars($e->getMessage());
+            exit;
+        }
+    }
+
 protected function siapkanDataPo($po, $orderData) {
     $poData = $po->cast();
 
@@ -1134,6 +1211,7 @@ protected function siapkanDataPo($po, $orderData) {
     $kolomInfo = $this->generateJadwalKolom($poData['jadwal_mulai'] ?? null, $poData['jadwal_selesai'] ?? null);
     $poData['jadwal_kolom']        = $kolomInfo['kolom'];
     $poData['jadwal_bulan_header'] = $this->groupBulanHeader($kolomInfo['kolom']);
+    $poData['jadwal_chunks']       = $this->chunkJadwalKolom($kolomInfo['kolom']);
 
     $jadwalDecoded = json_decode($poData['jadwal'] ?? '{}', true) ?: [];
     $poData['jadwal_groups']           = $jadwalDecoded['groups'] ?? [];
@@ -1170,16 +1248,84 @@ protected function siapkanDataPo($po, $orderData) {
     return $poData;
 }
 
-    /** GET /po-kegiatan/jadwal-kolom?mulai=YYYY-MM-DD&selesai=YYYY-MM-DD */
+    /** GET /po-kegiatan/jadwal-kolom?mulai=YYYY-MM-DD&selesai=YYYY-MM-DD&mode=mingguan */
     public function jadwalKolom($f3) {
         $mulai = (string) ($f3->get('GET.mulai') ?? '');
         $selesai = (string) ($f3->get('GET.selesai') ?? '');
+        $modeReq = (string) ($f3->get('GET.mode') ?? '');
 
-        $hasil = $this->generateJadwalKolom($mulai, $selesai);
+        $hasil = $this->generateJadwalKolom($mulai, $selesai, $modeReq);
         $hasil['bulan_header'] = $this->groupBulanHeader($hasil['kolom']);
+        $hasil['chunks']       = $this->chunkJadwalKolom($hasil['kolom']);
 
         header('Content-Type: application/json');
         echo json_encode($hasil);
+    }
+
+    /**
+     * Membagi kolom jadwal menjadi beberapa chunk (maksimal 16 kolom per chunk)
+     * agar tabel tidak memanjang ke samping (mentok kanan) pada durasi berbulan-bulan/bertahun-tahun.
+     * Pembagian dihitung utuh per bulan sehingga minggu dalam satu bulan tidak terpisah.
+     */
+    protected function chunkJadwalKolom($kolom, $maxColsPerChunk = 16) {
+        if (empty($kolom)) return [];
+
+        if (count($kolom) <= $maxColsPerChunk) {
+            $bh = $this->groupBulanHeader($kolom);
+            $firstMonth = $bh[0]['label'] ?? '';
+            $lastMonth  = $bh[count($bh) - 1]['label'] ?? '';
+            $label = ($firstMonth === $lastMonth) ? $firstMonth : $firstMonth . ' – ' . $lastMonth;
+            return [[
+                'label'        => $label,
+                'kolom'        => $kolom,
+                'bulan_header' => $bh,
+            ]];
+        }
+
+        // Kelompokkan kolom per bulan
+        $monthGroups = [];
+        foreach ($kolom as $k) {
+            $m = $k['bulan_label'];
+            if (!isset($monthGroups[$m])) {
+                $monthGroups[$m] = [];
+            }
+            $monthGroups[$m][] = $k;
+        }
+
+        $chunks = [];
+        $currentChunkCols = [];
+
+        foreach ($monthGroups as $mCols) {
+            if (!empty($currentChunkCols) && (count($currentChunkCols) + count($mCols)) > $maxColsPerChunk) {
+                $bh = $this->groupBulanHeader($currentChunkCols);
+                $firstMonth = $bh[0]['label'] ?? '';
+                $lastMonth  = $bh[count($bh) - 1]['label'] ?? '';
+                $label = ($firstMonth === $lastMonth) ? $firstMonth : $firstMonth . ' – ' . $lastMonth;
+                $chunks[] = [
+                    'label'        => $label,
+                    'kolom'        => $currentChunkCols,
+                    'bulan_header' => $bh,
+                ];
+                $currentChunkCols = [];
+            }
+            foreach ($mCols as $c) {
+                $currentChunkCols[] = $c;
+            }
+        }
+
+        if (!empty($currentChunkCols)) {
+            $bh = $this->groupBulanHeader($currentChunkCols);
+            $firstMonth = $bh[0]['label'] ?? '';
+            $lastMonth  = $bh[count($bh) - 1]['label'] ?? '';
+            $label = ($firstMonth === $lastMonth) ? $firstMonth : $firstMonth . ' – ' . $lastMonth;
+            $chunks[] = [
+                'label'        => $label,
+                'kolom'        => $currentChunkCols,
+                'bulan_header' => $bh,
+            ];
+        }
+
+        return $chunks;
     }
 
     /**
@@ -1229,7 +1375,7 @@ protected function siapkanDataPo($po, $orderData) {
         ];
     }
 
-    protected function generateJadwalKolom($mulaiStr, $selesaiStr) {
+    protected function generateJadwalKolom($mulaiStr, $selesaiStr, $modeReq = '') {
         if (empty($mulaiStr) || empty($selesaiStr)) return ['mode' => null, 'kolom' => []];
     
         $mulai = new \DateTime($mulaiStr);
@@ -1242,7 +1388,35 @@ protected function siapkanDataPo($po, $orderData) {
     
         $kolom = [];
     
-        if ($selisihHari <= 31) {
+        // Jika mode explicitly requested as 'mingguan' atau 'bulanan', atau durasi > 31 hari
+        if (($modeReq === 'mingguan' || $modeReq === 'bulanan') || (empty($modeReq) && $selisihHari > 31)) {
+            $mode = 'bulanan';
+            $startYear  = (int) $mulai->format('Y');
+            $startMonth = (int) $mulai->format('n');
+            $endYear    = (int) $selesai->format('Y');
+            $endMonth   = (int) $selesai->format('n');
+
+            $currYear  = $startYear;
+            $currMonth = $startMonth;
+
+            while ($currYear < $endYear || ($currYear === $endYear && $currMonth <= $endMonth)) {
+                $bLabel = $bulanNama[$currMonth] . ' ' . $currYear;
+                for ($w = 1; $w <= 4; $w++) {
+                    $key = $currYear . '-' . str_pad($currMonth, 2, '0', STR_PAD_LEFT) . '-w' . $w;
+                    $kolom[] = [
+                        'key'         => $key,
+                        'label'       => (string) $w,
+                        'bulan_label' => $bLabel,
+                        'libur'       => false,
+                    ];
+                }
+                $currMonth++;
+                if ($currMonth > 12) {
+                    $currMonth = 1;
+                    $currYear++;
+                }
+            }
+        } else {
             $mode = 'harian';
             $cursor = clone $mulai;
             while ($cursor <= $selesai) {
@@ -1255,22 +1429,6 @@ protected function siapkanDataPo($po, $orderData) {
                     'bulan_label' => $bulanNama[(int) $cursor->format('n')] . ' ' . $cursor->format('Y'),
                     'libur'       => $isLibur,
                 ];
-                $cursor->modify('+1 day');
-            }
-        } else {
-            $mode = 'bulanan';
-            $cursor = clone $mulai;
-            while ($cursor <= $selesai) {
-                $tahun = (int) $cursor->format('Y');
-                $bulan = (int) $cursor->format('n');
-                $mingguKe = (int) floor(((int) $cursor->format('j') - 1) / 7) + 1;
-                $key = $tahun . '-' . str_pad($bulan, 2, '0', STR_PAD_LEFT) . '-w' . $mingguKe;
-    
-                $sudahAda = false;
-                foreach ($kolom as $k) { if ($k['key'] === $key) { $sudahAda = true; break; } }
-                if (!$sudahAda) {
-                    $kolom[] = ['key' => $key, 'label' => (string) $mingguKe, 'bulan_label' => $bulanNama[$bulan] . ' ' . $tahun, 'libur' => false];
-                }
                 $cursor->modify('+1 day');
             }
         }

@@ -1,233 +1,412 @@
-<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
-    <div>
-        <h2 class="h4 fw-bold mb-1 text-dark"><i class="bi bi-wallet2 text-primary me-2"></i>Rekapitulasi Keuangan & Pembayaran</h2>
-        <p class="text-muted small mb-0">Pencatatan pembayaran multi-termin layanan jasa OPTI.</p>
-    </div>
-</div>
-
-<div class="tab-nav-custom">
-    <button class="tab-btn-custom active" data-tab="baru"><i class="bi bi-inbox"></i> Baru Masuk <span class="tab-count-custom" id="countBaru">0</span></button>
-    <button class="tab-btn-custom" data-tab="berjalan"><i class="bi bi-arrow-repeat"></i> Sedang Berjalan <span class="tab-count-custom" id="countBerjalan">0</span></button>
-    <button class="tab-btn-custom" data-tab="lunas"><i class="bi bi-check-circle"></i> Lunas <span class="tab-count-custom" id="countLunas">0</span></button>
-    <button class="tab-btn-custom" data-tab="histori"><i class="bi bi-clock-history"></i> Histori <span class="tab-count-custom" id="countHistori">0</span></button>
-</div>
-
-<div class="card border-0 shadow-sm" style="border-radius:0 0 14px 14px; margin-top:0;">
-    <div class="card-body p-3 p-md-4">
-
-        <div class="row g-2 mb-3">
-            <div class="col-md-4">
-                <div class="input-group input-group-sm">
-                    <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
-                    <input type="text" class="form-control border-start-0" id="filterSearch" placeholder="Cari nomor order / nama mitra...">
-                </div>
-            </div>
-            <div class="col-md-2">
-                <select class="form-select form-select-sm" id="filterDivisi">
-                    <option value="">Semua Divisi</option>
-                    <option value="selulosa">Selulosa</option>
-                    <option value="lingkungan">Lingkungan</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <select class="form-select form-select-sm" id="filterBulan">
-                    <option value="">Semua Bulan</option>
-                    <option value="1">Januari</option><option value="2">Februari</option><option value="3">Maret</option>
-                    <option value="4">April</option><option value="5">Mei</option><option value="6">Juni</option>
-                    <option value="7">Juli</option><option value="8">Agustus</option><option value="9">September</option>
-                    <option value="10">Oktober</option><option value="11">November</option><option value="12">Desember</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <select class="form-select form-select-sm" id="filterTahun">
-                    <option value="">Semua Tahun</option>
-                    <repeat group="{{ @daftar_tahun }}" value="{{ @thn }}">
-                        <option value="{{ @thn }}">{{ @thn }}</option>
-                    </repeat>
-                </select>
-            </div>
-        </div>
-
-        <div class="period-note-custom d-none" id="periodNote">
-            <i class="bi bi-calendar-check me-1"></i>
-            Hanya menampilkan data bulan <strong id="periodNoteText"></strong>. Ganti filter Bulan/Tahun buat lihat periode lain.
-        </div>
-
-        <!-- TAB 1: BARU MASUK -->
-        <div class="tab-panel-custom active" id="panel-baru">
-            <div class="table-responsive d-none d-md-block">
-                <table class="table table-hover align-middle mb-0">
-                    <thead><tr><th style="width:40px;">No.</th><th>No. Order</th><th>Mitra & Kegiatan</th><th>Divisi</th><th class="text-end">Nilai Acuan</th><th>Tanggal Masuk</th><th class="text-center">Aksi</th></tr></thead>
-                    <tbody id="bodyBaru"></tbody>
-                </table>
-            </div>
-            <div class="d-block d-md-none" id="cardsBaru"></div>
-        </div>
-
-        <!-- TAB 2: SEDANG BERJALAN -->
-        <div class="tab-panel-custom" id="panel-berjalan">
-            <div class="table-responsive d-none d-md-block">
-                <table class="table table-hover align-middle mb-0">
-                    <thead><tr><th style="width:40px;">No.</th><th>No. Order</th><th>Mitra & Kegiatan</th><th>Divisi</th><th class="text-end">Nilai Acuan</th><th style="width:190px;">Terbayar</th><th class="text-end">Sisa</th><th class="text-center">Aksi</th></tr></thead>
-                    <tbody id="bodyBerjalan"></tbody>
-                </table>
-            </div>
-            <div class="d-block d-md-none" id="cardsBerjalan"></div>
-        </div>
-
-        <!-- TAB 3: LUNAS -->
-        <div class="tab-panel-custom" id="panel-lunas">
-            <div class="table-responsive d-none d-md-block">
-                <table class="table table-hover align-middle mb-0">
-                    <thead><tr><th style="width:40px;">No.</th><th>No. Order</th><th>Mitra & Kegiatan</th><th>Divisi</th><th class="text-end">Nilai Acuan</th><th>Tanggal Lunas</th><th class="text-center">Termin</th><th class="text-center">Aksi</th></tr></thead>
-                    <tbody id="bodyLunas"></tbody>
-                </table>
-            </div>
-            <div class="d-block d-md-none" id="cardsLunas"></div>
-        </div>
-
-        <!-- TAB 4: HISTORI -->
-        <div class="tab-panel-custom" id="panel-histori">
-            <div class="table-responsive d-none d-md-block">
-                <table class="table table-hover align-middle mb-0">
-                    <thead><tr><th style="width:40px;">No.</th><th>Tanggal Bayar</th><th>No. Order</th><th>Mitra</th><th class="text-center">Termin</th><th class="text-end">Nominal</th><th>Keterangan</th><th class="text-center" style="width:80px;">Bukti</th><th class="text-center" style="width:50px;"></th></tr></thead>
-                    <tbody id="bodyHistori"></tbody>
-                </table>
-            </div>
-            <div class="d-block d-md-none" id="cardsHistori"></div>
-        </div>
-
-    </div>
-    <!-- ===== MODAL 1: DETAIL PEMBAYARAN LUNAS ===== -->
-    <div class="modal fade" id="modalDetailLunas" tabindex="-1" aria-labelledby="detailLunasJudul" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
-            <div class="modal-content rpd-modal">
-                <div class="modal-header rpd-head">
-                    <div class="rpd-icon"><i class="bi bi-receipt-cutoff"></i></div>
-                    <div class="rpd-headtext">
-                        <h6 class="modal-title" id="detailLunasJudul">Detail Pembayaran</h6>
-                        <div class="rpd-sub" id="detailLunasSub">-</div>
-                    </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
-                </div>
-                <div class="modal-body rpd-body">
-                    <div class="rpd-stats" id="detailLunasInfo"></div>
-                    <div class="rpd-section-title">Riwayat Termin</div>
-                    <ol class="rpd-list" id="detailLunasList"></ol>
-                </div>
-                <div class="modal-footer rpd-foot">
-                    <!-- <div class="rpd-total">
-                        <span class="l">Total termin</span>
-                        <span class="v" id="detailLunasTotal">Rp 0</span>
-                    </div> -->
-                    <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">Tutup</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-</div>
-
 <style>
-    .tab-nav-custom { display: flex; flex-wrap: wrap; gap: 4px; background: #fff; border-radius: 14px 14px 0 0; padding: 8px; box-shadow: 0 1px 2px rgba(0,0,0,.05); }
-    .tab-btn-custom {
-        flex: 1 1 0;
-        border: none; background: transparent; padding: 12px 10px; border-radius: 10px;
-        font-weight: 700; font-size: 13.5px; color: #64748b; cursor: pointer; text-align: center;
-        display: flex; align-items: center; justify-content: center; gap: 6px;
-        white-space: nowrap;
-    }
-    .tab-count-custom { background: #f1f5f9; color: #64748b; border-radius: 12px; padding: 1px 8px; font-size: 11.5px; }
-    .tab-btn-custom.active { background: var(--color-bg); color: var(--color-primary); }
-    .tab-btn-custom.active .tab-count-custom { background: var(--color-primary); color: #fff; }
-    .tab-panel-custom { display: none; }
-    .tab-panel-custom.active { display: block; }
-    .period-note-custom { font-size: 12.5px; color: #92400e; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; }
+.filter-tabs-wrapper {
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 12px 18px;
+}
+.filter-tab-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.45rem 0.85rem;
+    border-radius: 9999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #475569;
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    text-decoration: none;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    cursor: pointer;
+    line-height: 1.2;
+}
+.filter-tab-pill:hover {
+    color: #0f172a;
+    background-color: #f8fafc;
+    border-color: #cbd5e1;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.filter-tab-pill .count-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 9999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    background-color: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s;
+}
+.filter-tab-pill .count-chip.chip-danger {
+    background-color: #fee2e2;
+    color: #b91c1c;
+    border-color: #fecaca;
+}
+.filter-tab-pill .count-chip.chip-success {
+    background-color: #ecfdf5;
+    color: #047857;
+    border-color: #a7f3d0;
+}
+.filter-tab-pill.active {
+    color: #ffffff !important;
+    background-color: var(--color-primary, #334155) !important;
+    border-color: var(--color-primary, #334155) !important;
+    box-shadow: 0 2px 6px rgba(51, 65, 85, 0.25) !important;
+}
+.filter-tab-pill.active .count-chip {
+    background-color: rgba(255, 255, 255, 0.25) !important;
+    border-color: transparent !important;
+    color: #ffffff !important;
+}
+.filter-tab-pill.active i {
+    color: #ffffff !important;
+}
+.filter-tab-pill.tab-selesai.active {
+    background-color: #059669 !important;
+    border-color: #059669 !important;
+    box-shadow: 0 2px 6px rgba(5, 150, 105, 0.25) !important;
+    color: #ffffff !important;
+}
+.filter-tab-pill.tab-selesai.active .count-chip {
+    background-color: rgba(255, 255, 255, 0.25) !important;
+    border-color: transparent !important;
+    color: #ffffff !important;
+}
 
-    .order-card { border: 1px solid var(--color-border); border-radius: 12px; padding: 12px; margin-bottom: 10px; }
-    .order-card .nomor { font-weight: 700; font-size: 13px; color: #1e293b; }
-    .order-card .mitra { font-size: 12px; color: #64748b; margin-bottom: 6px; }
-    .order-card .row-info { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 3px; }
+/* 3 Pill Button Divisi with Smooth Sliding Glider Animation */
+.divisi-pill-group {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    background-color: #f1f5f9;
+    padding: 3px;
+    border-radius: 9999px;
+    border: 1px solid #e2e8f0;
+    user-select: none;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+.divisi-pill-glider {
+    position: absolute;
+    top: 3px;
+    bottom: 3px;
+    left: 0;
+    width: 0;
+    border-radius: 9999px;
+    background-color: var(--color-primary, #334155);
+    transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1), width 0.22s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
+    pointer-events: none;
+    z-index: 1;
+}
+.divisi-pill-btn {
+    position: relative;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.35rem 0.95rem;
+    border-radius: 9999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #64748b;
+    background: transparent !important;
+    border: none;
+    text-decoration: none;
+    transition: color 0.2s ease;
+    white-space: nowrap;
+    cursor: pointer;
+    line-height: 1.25;
+}
+.divisi-pill-btn:hover:not(.active) {
+    color: #0f172a;
+}
+.divisi-pill-btn.active {
+    color: #ffffff !important;
+    font-weight: 700;
+}
 
-    @media (max-width: 767px) {
-        .tab-btn-custom {
-            flex: 0 0 calc(50% - 2px);
-            padding: 10px 6px;
-            font-size: 12.5px;
-            flex-direction: column;
-            gap: 2px;
-            white-space: normal;
-        }
-        .tab-btn-custom i { font-size: 15px; }
+.tab-panel-custom { display: none; }
+.tab-panel-custom.active { display: block; }
 
-        .row.g-2.mb-3 { margin: 0; }
-        .row.g-2.mb-3 > .col-md-4,
-        .row.g-2.mb-3 > .col-md-3:last-of-type { flex: 0 0 100%; max-width: 100%; margin-bottom: 8px; }
-        .row.g-2.mb-3 > .col-md-2,
-        .row.g-2.mb-3 > .col-md-3:first-of-type { flex: 0 0 calc(50% - 4px); max-width: calc(50% - 4px); }
-    }
-    .kb-badge-none {
+.kb-badge-none {
     display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #94a3b8;
-    border: 1px dashed #cbd5e1; border-radius: 20px; padding: 3px 8px; white-space: nowrap;
+    border: 1px dashed #cbd5e1; border-radius: 20px; padding: 2px 8px; white-space: nowrap;
 }
 .kb-badge-ada {
     display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: #92400e;
-    background: #fef3c7; border-radius: 20px; padding: 3px 8px; white-space: nowrap; text-decoration: none;
+    background: #fef3c7; border-radius: 20px; padding: 2px 8px; white-space: nowrap; text-decoration: none;
 }
 .kb-badge-ada:hover { background: #fde68a; color: #78350f; }
-.termin-item { border: 1px solid var(--color-border); border-radius: 10px; padding: 12px; margin-bottom: 8px; }
-.termin-item .row-info { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+.order-card { 
+    background: #ffffff;
+    border: 1px solid #e2e8f0; 
+    border-radius: 12px; 
+    padding: 14px; 
+    margin-bottom: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+}
+.order-card .nomor { font-weight: 700; font-size: 13px; color: #1e293b; }
+.order-card .mitra { font-size: 12px; color: #64748b; margin-bottom: 6px; }
+.order-card .row-info { display: flex; justify-content: space-between; align-items: center; font-size: 12px; margin-bottom: 4px; }
+
+/* Modal detail styling */
 .rpd-modal { border: 0; border-radius: var(--radius-lg, 14px); overflow: hidden; box-shadow: var(--shadow-lg, 0 10px 25px rgba(0,0,0,.18)); }
 .rpd-head { display: flex; align-items: center; gap: 14px; padding: 18px 22px; border-bottom: 1px solid var(--color-border, #e2e8f0); background: linear-gradient(180deg, #fff, #f8fafc); }
 .rpd-icon { width: 46px; height: 46px; border-radius: 13px; background: var(--color-primary-light, #f1f5f9); color: var(--color-primary, #334155); display: grid; place-items: center; font-size: 22px; flex-shrink: 0; }
 .rpd-headtext { flex: 1; min-width: 0; }
 .rpd-head .modal-title { font-family: var(--font-display, inherit); font-weight: 800; font-size: 1.05rem; margin: 0; color: var(--color-text-main, #0f172a); }
 .rpd-sub { font-size: .8rem; color: var(--color-text-muted, #64748b); margin-top: 2px; overflow-wrap: anywhere; }
-.rpd-sub .no { font-family: 'Courier New', monospace; font-weight: 700; color: var(--color-text-main, #0f172a); }
-.rpd-head .btn-close { margin: 0; flex-shrink: 0; }
-
 .rpd-body { padding: 18px 22px 20px; background: #f8fafc; }
 .rpd-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 18px; }
 .rpd-stat { background: #fff; border: 1px solid var(--color-border, #e2e8f0); border-radius: var(--radius-md, 10px); padding: 11px 14px; min-width: 0; }
 .rpd-stat .l { font-size: .7rem; font-weight: 600; color: var(--color-text-muted, #64748b); margin-bottom: 3px; }
-.rpd-stat .v { font-family: var(--font-display, inherit); font-weight: 800; font-size: 1rem; color: var(--color-text-main, #0f172a); overflow-wrap: anywhere; }
-.rpd-stat .v.ok { color: #047857; }
-
+.rpd-stat .v { font-family: var(--font-display, inherit); font-weight: 800; font-size: 0.95rem; color: var(--color-text-main, #0f172a); overflow-wrap: anywhere; }
 .rpd-section-title { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--color-text-muted, #64748b); margin-bottom: 10px; }
-
-.rpd-list { list-style: none; margin: 0; padding: 0; }
-.rpd-item { position: relative; padding-left: 30px; padding-bottom: 12px; }
-.rpd-item:last-child { padding-bottom: 0; }
-.rpd-item::before { content: ''; position: absolute; left: 9px; top: 22px; bottom: -2px; width: 2px; background: #e2e8f0; }
-.rpd-item:last-child::before { display: none; }
-.rpd-dot { position: absolute; left: 0; top: 14px; width: 20px; height: 20px; border-radius: 50%; background: #fff; border: 2px solid #059669; color: #059669; display: grid; place-items: center; font-size: 11px; line-height: 1; }
-.rpd-card { background: #fff; border: 1px solid var(--color-border, #e2e8f0); border-radius: var(--radius-md, 10px); padding: 13px 15px; }
-.rpd-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-.rpd-termin { font-family: var(--font-display, inherit); font-weight: 700; font-size: .85rem; color: var(--color-text-main, #0f172a); }
-.rpd-tgl { font-size: .75rem; color: var(--color-text-muted, #64748b); margin-top: 1px; }
-.rpd-nominal { font-family: var(--font-display, inherit); font-weight: 800; font-size: 1.05rem; color: #047857; white-space: nowrap; }
-.rpd-ket { font-size: .8rem; color: var(--color-text-muted, #64748b); margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--color-border, #e2e8f0); overflow-wrap: anywhere; }
-.rpd-bar { display: flex; align-items: center; justify-content: flex-end; margin-top: 10px; }
-.rpd-nobukti { font-size: .75rem; color: #94a3b8; }
-.rpd-empty { text-align: center; padding: 30px 16px; color: #94a3b8; font-size: .85rem; background: #fff; border: 1px dashed var(--color-border, #e2e8f0); border-radius: var(--radius-md, 10px); }
-.rpd-empty i { display: block; font-size: 26px; margin-bottom: 6px; }
-
-.rpd-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 22px; border-top: 1px solid var(--color-border, #e2e8f0); background: #fff; }
-.rpd-total .l { font-size: .7rem; font-weight: 600; color: var(--color-text-muted, #64748b); display: block; }
-.rpd-total .v { font-family: var(--font-display, inherit); font-weight: 800; font-size: 1.2rem; color: #047857; line-height: 1.2; }
-
-@media (max-width: 575.98px) {
-    .rpd-head { padding: 14px 16px; }
-    .rpd-body { padding: 14px 14px 16px; }
-    .rpd-foot { padding: 12px 16px; }
-    .rpd-stats { grid-template-columns: 1fr 1fr; }
-    .rpd-stats .rpd-stat:first-child { grid-column: 1 / -1; }
-    .rpd-top { flex-direction: column; gap: 4px; }
-}
+.termin-item { border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; margin-bottom: 8px; background: #fff; }
+.termin-item .row-info { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.rpd-foot { display: flex; align-items: center; justify-content: flex-end; gap: 12px; padding: 14px 22px; border-top: 1px solid var(--color-border, #e2e8f0); background: #fff; }
 </style>
 
+<div class="container-fluid px-0">
+    <!-- Header & Breadcrumb -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+        <div>
+            <h4 class="fw-bold text-dark m-0 d-flex align-items-center gap-2 font-display">
+                <i class="bi bi-wallet2 text-primary"></i> Rekapitulasi Keuangan &amp; Pembayaran
+            </h4>
+        </div>
+    </div>
+
+    <!-- FILTER & PENCARIAN PEMBAYARAN -->
+    <div class="card mb-4 border-0 shadow-sm">
+        <div class="card-body p-3">
+            <div class="row g-2 align-items-center">
+                <!-- Filter Bulan -->
+                <div class="col-6 col-sm-auto col-md-3 col-lg-2">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-light text-muted"><i class="bi bi-calendar3"></i></span>
+                        <select id="filterBulan" class="form-select form-select-sm fw-semibold" title="Filter Berdasarkan Bulan">
+                            <option value="">Semua Bulan</option>
+                            <option value="1">Januari</option>
+                            <option value="2">Februari</option>
+                            <option value="3">Maret</option>
+                            <option value="4">April</option>
+                            <option value="5">Mei</option>
+                            <option value="6">Juni</option>
+                            <option value="7">Juli</option>
+                            <option value="8">Agustus</option>
+                            <option value="9">September</option>
+                            <option value="10">Oktober</option>
+                            <option value="11">November</option>
+                            <option value="12">Desember</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Filter Tahun -->
+                <div class="col-6 col-sm-auto col-md-3 col-lg-2">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-light text-muted"><i class="bi bi-calendar-event"></i></span>
+                        <select id="filterTahun" class="form-select form-select-sm fw-semibold" title="Filter Berdasarkan Tahun">
+                            <option value="">Semua Tahun</option>
+                            <repeat group="{{ @daftar_tahun }}" value="{{ @thn }}">
+                                <option value="{{ @thn }}">Tahun {{ @thn }}</option>
+                            </repeat>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Input Pencarian (Auto Live Search) -->
+                <div class="col-12 col-sm flex-grow-1">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                        <input type="text" id="filterSearch" class="form-control border-start-0" placeholder="Cari nomor order, permintaan, mitra industri, kegiatan..." autocomplete="off">
+                        <button class="btn btn-outline-secondary border-start-0 text-muted d-none" type="button" id="btnClearSearch" title="Hapus pencarian">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 3 Pill Button Divisi (Semua, Selulosa, Lingkungan) -->
+                <div class="col-12 col-sm-auto d-flex justify-content-sm-end">
+                    <input type="hidden" id="filterDivisi" value="">
+                    <div class="divisi-pill-group" role="group" aria-label="Filter Divisi" id="divisiPillGroup">
+                        <div class="divisi-pill-glider" id="divisiGlider"></div>
+                        <button type="button" class="divisi-pill-btn active" data-divisi="" onclick="selectDivisi(this, '')" title="Semua Divisi">
+                            Semua
+                        </button>
+                        <button type="button" class="divisi-pill-btn" data-divisi="selulosa" onclick="selectDivisi(this, 'selulosa')" title="Divisi OPTI Selulosa">
+                            Selulosa
+                        </button>
+                        <button type="button" class="divisi-pill-btn" data-divisi="lingkungan" onclick="selectDivisi(this, 'lingkungan')" title="Divisi OPTI Lingkungan">
+                            Lingkungan
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TABEL UTAMA DENGAN FILTER PILLS NAVIGASI -->
+    <div class="card border-0 shadow-sm overflow-hidden mb-4">
+        <div class="filter-tabs-wrapper d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <button type="button" class="filter-tab-pill active" data-tab="baru">
+                    <i class="bi bi-inbox-fill text-primary"></i>
+                    <span>Baru Masuk</span>
+                    <span class="count-chip" id="countBaru">0</span>
+                </button>
+                <button type="button" class="filter-tab-pill" data-tab="berjalan">
+                    <i class="bi bi-gear-wide-connected text-primary"></i>
+                    <span>Sedang Berjalan</span>
+                    <span class="count-chip" id="countBerjalan">0</span>
+                </button>
+                <button type="button" class="filter-tab-pill tab-selesai" data-tab="lunas">
+                    <i class="bi bi-check2-all text-success"></i>
+                    <span>Lunas</span>
+                    <span class="count-chip chip-success" id="countLunas">0</span>
+                </button>
+                <button type="button" class="filter-tab-pill" data-tab="histori">
+                    <i class="bi bi-clock-history text-primary"></i>
+                    <span>Histori Transaksi</span>
+                    <span class="count-chip" id="countHistori">0</span>
+                </button>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <div class="period-note-badge d-none small px-2 py-1 bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill" id="periodNote">
+                    <i class="bi bi-calendar-check me-1"></i>Periode: <strong id="periodNoteText"></strong>
+                </div>
+                <span class="text-muted small fw-medium">
+                    Total: <strong class="text-dark" id="totalCountText">0</strong> data ditampilkan
+                </span>
+            </div>
+        </div>
+
+        <div class="card-body p-0">
+            <!-- TAB 1: BARU MASUK -->
+            <div class="tab-panel-custom active" id="panel-baru">
+                <div class="table-responsive d-none d-md-block">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="text-center" style="width: 45px;">No</th>
+                                <th style="width: 170px;">No. Permintaan</th>
+                                <th>Judul Permohonan &amp; Klien</th>
+                                <th class="text-center" style="width: 150px;">Divisi OPTI</th>
+                                <th class="text-end" style="width: 160px;">Nilai Acuan</th>
+                                <th style="width: 140px;">Tanggal Masuk</th>
+                                <th class="text-center" style="width: 160px;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bodyBaru"></tbody>
+                    </table>
+                </div>
+                <div class="d-block d-md-none p-3" id="cardsBaru"></div>
+            </div>
+
+            <!-- TAB 2: SEDANG BERJALAN -->
+            <div class="tab-panel-custom" id="panel-berjalan">
+                <div class="table-responsive d-none d-md-block">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="text-center" style="width: 45px;">No</th>
+                                <th style="width: 170px;">No. Order / Identitas</th>
+                                <th>Judul Permohonan &amp; Klien</th>
+                                <th class="text-center" style="width: 150px;">Divisi OPTI</th>
+                                <th class="text-end" style="width: 150px;">Nilai Acuan</th>
+                                <th style="width: 190px;">Total Terbayar</th>
+                                <th class="text-end" style="width: 150px;">Sisa Tagihan</th>
+                                <th class="text-center" style="width: 140px;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bodyBerjalan"></tbody>
+                    </table>
+                </div>
+                <div class="d-block d-md-none p-3" id="cardsBerjalan"></div>
+            </div>
+
+            <!-- TAB 3: LUNAS -->
+            <div class="tab-panel-custom" id="panel-lunas">
+                <div class="table-responsive d-none d-md-block">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="text-center" style="width: 45px;">No</th>
+                                <th style="width: 170px;">No. Order</th>
+                                <th>Judul Permohonan &amp; Klien</th>
+                                <th class="text-center" style="width: 150px;">Divisi OPTI</th>
+                                <th class="text-end" style="width: 150px;">Nilai Acuan</th>
+                                <th style="width: 140px;">Tanggal Lunas</th>
+                                <th class="text-center" style="width: 110px;">Termin</th>
+                                <th class="text-center" style="width: 130px;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bodyLunas"></tbody>
+                    </table>
+                </div>
+                <div class="d-block d-md-none p-3" id="cardsLunas"></div>
+            </div>
+
+            <!-- TAB 4: HISTORI TRANSAKSI -->
+            <div class="tab-panel-custom" id="panel-histori">
+                <div class="table-responsive d-none d-md-block">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="text-center" style="width: 45px;">No</th>
+                                <th style="width: 130px;">Tanggal Bayar</th>
+                                <th style="width: 160px;">No. Order</th>
+                                <th>Mitra &amp; Keterangan</th>
+                                <th class="text-center" style="width: 100px;">Termin</th>
+                                <th class="text-end" style="width: 160px;">Nominal</th>
+                                <th class="text-center" style="width: 90px;">Bukti</th>
+                                <th class="text-center" style="width: 80px;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bodyHistori"></tbody>
+                    </table>
+                </div>
+                <div class="d-block d-md-none p-3" id="cardsHistori"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MODAL DETAIL PEMBAYARAN LUNAS ===== -->
+<div class="modal fade" id="modalDetailLunas" tabindex="-1" aria-labelledby="detailLunasJudul" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+        <div class="modal-content rpd-modal">
+            <div class="modal-header rpd-head">
+                <div class="rpd-icon"><i class="bi bi-receipt-cutoff"></i></div>
+                <div class="rpd-headtext">
+                    <h6 class="modal-title" id="detailLunasJudul">Detail Pembayaran Lunas</h6>
+                    <div class="rpd-sub" id="detailLunasSub">-</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body rpd-body">
+                <div class="rpd-stats" id="detailLunasInfo"></div>
+                <div class="rpd-section-title">Riwayat Termin Terbayar</div>
+                <div class="rpd-list" id="detailLunasList"></div>
+            </div>
+            <div class="modal-footer rpd-foot">
+                <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
-    document.addEventListener('show.bs.modal', function (e) {
+document.addEventListener('show.bs.modal', function (e) {
     var jumlahModalTerbuka = document.querySelectorAll('.modal.show').length;
     var zIndex = 1055 + (10 * jumlahModalTerbuka);
     e.target.style.zIndex = zIndex;
@@ -240,39 +419,46 @@
         }
     }, 0);
 });
+
 function bukaBuktiPembayaran(itemId) {
     var url = BASE + '/pembayaran/bukti/' + itemId;
     if (typeof openPdfPreviewModal === 'function') {
         openPdfPreviewModal(url, 'Bukti Pembayaran', 'Termin Pembayaran');
     }
 }
+
 function bukaDetailLunas(orderId) {
     var order = DATA_LUNAS.find(function (o) { return String(o.id) === String(orderId); });
     if (!order) return;
 
-    document.getElementById('detailLunasSub').textContent = order.nomor_order;
+    var noOrderTampil = order.nomor_order || order.nomor_permintaan || ('REQ-' + order.id);
+    document.getElementById('detailLunasSub').innerHTML = '<span class="font-monospace fw-bold text-dark">' + noOrderTampil + '</span>';
+    
     document.getElementById('detailLunasInfo').innerHTML =
-        '<div class="order-locked-row"><span class="order-locked-label">Mitra</span><span class="order-locked-value">' + order.nama_perusahaan + '</span></div>' +
-        '<div class="order-locked-row"><span class="order-locked-label">Nilai Acuan</span><span class="order-locked-value">' + rupiah(order.biaya_acuan) + '</span></div>' +
-        '<div class="order-locked-row"><span class="order-locked-label">Tanggal Lunas</span><span class="order-locked-value text-success">' + tglIndo(order.tanggal_lunas) + '</span></div>';
+        '<div class="rpd-stat"><div class="l">Mitra / Perusahaan</div><div class="v text-truncate" title="' + order.nama_perusahaan + '">' + order.nama_perusahaan + '</div></div>' +
+        '<div class="rpd-stat"><div class="l">Nilai Total Acuan</div><div class="v text-primary">' + rupiah(order.biaya_acuan) + '</div></div>' +
+        '<div class="rpd-stat"><div class="l">Tanggal Pelunasan</div><div class="v text-success">' + tglIndo(order.tanggal_lunas) + '</div></div>';
 
     var terminList = DATA_HISTORI.filter(function (h) { return String(h.order_id) === String(orderId); });
     terminList.sort(function (a, b) { return new Date(a.tanggal_bayar) - new Date(b.tanggal_bayar); });
 
     var listEl = document.getElementById('detailLunasList');
     listEl.innerHTML = terminList.length === 0
-        ? '<div class="text-muted small text-center py-3">Belum ada riwayat termin.</div>'
+        ? '<div class="text-muted small text-center py-4 bg-white rounded border border-dashed">Belum ada riwayat termin.</div>'
         : terminList.map(function (h) {
             var btnBukti = h.bukti_bayar
-                ? '<button type="button" class="btn btn-sm btn-outline-primary" onclick="bukaBuktiPembayaran(' + h.id + ')"><i class="bi bi-eye me-1"></i>Lihat Bukti</button>'
-                : '<span class="text-muted small">Tanpa bukti</span>';
-            return '<div class="termin-item">' +
+                ? '<button type="button" class="btn btn-sm btn-outline-primary py-1 px-2 btn-preview-pdf" data-preview-pdf="' + BASE + '/pembayaran/bukti/' + h.id + '" data-title="Bukti Pembayaran" data-subtitle="Termin Ke-' + h.termin_ke + '"><i class="bi bi-file-earmark-text me-1"></i>Bukti Bayar</button>'
+                : '<span class="text-muted small">Tanpa lampiran bukti</span>';
+            return '<div class="termin-item shadow-sm">' +
                 '<div class="row-info">' +
-                    '<span class="badge badge-pill-primary">Termin ke-' + h.termin_ke + '</span>' +
-                    '<span class="fw-bold text-success">' + rupiah(h.jumlah) + '</span>' +
+                    '<div class="d-flex align-items-center gap-2">' +
+                        '<span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 fw-bold">Termin ke-' + h.termin_ke + '</span>' +
+                        '<span class="small text-muted"><i class="bi bi-calendar3 me-1"></i>' + tglIndo(h.tanggal_bayar) + '</span>' +
+                    '</div>' +
+                    '<span class="fw-bold text-success fs-6">' + rupiah(h.jumlah) + '</span>' +
                 '</div>' +
-                '<div class="row-info mt-1">' +
-                    '<span class="small text-muted">' + tglIndo(h.tanggal_bayar) + (h.keterangan ? ' &mdash; ' + h.keterangan : '') + '</span>' +
+                '<div class="row-info mt-2 pt-2 border-top">' +
+                    '<span class="small text-muted text-break">' + (h.keterangan ? h.keterangan : 'Pembayaran termin order') + '</span>' +
                     btnBukti +
                 '</div>' +
             '</div>';
@@ -280,6 +466,7 @@ function bukaDetailLunas(orderId) {
 
     bootstrap.Modal.getOrCreateInstance(document.getElementById('modalDetailLunas')).show();
 }
+
 var BASE = '{{ @BASE }}';
 var CSRF = '{{ @csrf_token }}';
 var BULAN_INDO = ['', 'Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
@@ -296,18 +483,20 @@ function rupiah(n) { return 'Rp ' + (Math.round(n) || 0).toLocaleString('id-ID')
 function tglIndo(str) {
     if (!str) return '-';
     var d = new Date(str.replace(' ', 'T'));
+    if (isNaN(d.getTime())) return str;
     return d.getDate() + ' ' + BULAN_INDO[d.getMonth() + 1] + ' ' + d.getFullYear();
 }
 function divisiBadge(d) {
-    if (d === 'selulosa') return '<span class="badge badge-pill-primary">Selulosa</span>';
-    if (d === 'lingkungan') return '<span class="badge badge-pill-info">Lingkungan</span>';
-    return '-';
+    if (d === 'selulosa') return '<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">OPTI Selulosa</span>';
+    if (d === 'lingkungan') return '<span class="badge bg-success-subtle text-success-emphasis border border-success-subtle px-2 py-1">OPTI Lingkungan</span>';
+    return '<span class="badge bg-secondary-subtle text-secondary border px-2 py-1">-</span>';
 }
 function skbBadge(o) {
     if (o.surat_kesanggupan_bayar) {
-        return '<div class="mt-1"><button type="button" class="kb-badge-ada btn-preview-pdf border-0" data-preview-pdf="' + BASE + '/surat-penawaran/' + o.sp_id + '/surat-kesanggupan/preview" data-title="Surat Kesanggupan Bayar" data-subtitle="Order: ' + o.nomor_order + '" onclick="event.stopPropagation();"><i class="bi bi-file-earmark-check-fill"></i> Kesanggupan Bayar</button></div>';
+        var noRef = o.nomor_order || o.nomor_permintaan || ('REQ-' + o.id);
+        return '<div class="mt-1"><button type="button" class="kb-badge-ada btn-preview-pdf border-0" data-preview-pdf="' + BASE + '/surat-penawaran/' + o.sp_id + '/surat-kesanggupan/preview" data-title="Surat Kesanggupan Bayar" data-subtitle="Ref: ' + noRef + '" onclick="event.stopPropagation();"><i class="bi bi-file-earmark-check-fill"></i> Kesanggupan Bayar</button></div>';
     }
-    return '<div class="mt-1"><span class="kb-badge-none"><i class="bi bi-dash-circle"></i> Belum ada Kesanggupan</span></div>';
+    return '';
 }
 
 var currentTab = 'baru';
@@ -318,6 +507,47 @@ var filterState = {
     histori:  { q: '', divisi: '', bulan: '', tahun: '' }
 };
 
+function updateDivisiGlider(targetBtn, animate) {
+    var glider = document.getElementById('divisiGlider');
+    var group = document.getElementById('divisiPillGroup');
+    if (!glider || !group) return;
+
+    var activeBtn = targetBtn || group.querySelector('.divisi-pill-btn.active');
+    if (!activeBtn) return;
+
+    if (!animate) {
+        glider.style.transition = 'none';
+    } else {
+        glider.style.transition = 'transform 0.22s cubic-bezier(0.4, 0, 0.2, 1), width 0.22s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease';
+    }
+
+    var left = activeBtn.offsetLeft;
+    var width = activeBtn.offsetWidth;
+
+    glider.style.transform = 'translateX(' + left + 'px)';
+    glider.style.width = width + 'px';
+
+    var divisi = activeBtn.getAttribute('data-divisi') || '';
+    if (divisi === 'selulosa') {
+        glider.style.backgroundColor = '#b91c1c';
+    } else if (divisi === 'lingkungan') {
+        glider.style.backgroundColor = '#047857';
+    } else {
+        glider.style.backgroundColor = 'var(--color-primary, #334155)';
+    }
+}
+
+function selectDivisi(btn, val) {
+    var group = document.getElementById('divisiPillGroup');
+    if (group) {
+        group.querySelectorAll('.divisi-pill-btn').forEach(function (b) { b.classList.remove('active'); });
+    }
+    btn.classList.add('active');
+    document.getElementById('filterDivisi').value = val;
+    updateDivisiGlider(btn, true);
+    terapkanFilter();
+}
+
 function simpanFilterAktifKeState() {
     filterState[currentTab] = {
         q: document.getElementById('filterSearch').value,
@@ -326,29 +556,47 @@ function simpanFilterAktifKeState() {
         tahun: document.getElementById('filterTahun').value
     };
 }
+
 function muatFilterDariState(tab) {
     var s = filterState[tab];
-    document.getElementById('filterSearch').value = s.q;
-    document.getElementById('filterDivisi').value = s.divisi;
-    document.getElementById('filterBulan').value = s.bulan;
-    document.getElementById('filterTahun').value = s.tahun;
+    document.getElementById('filterSearch').value = s.q || '';
+    document.getElementById('filterDivisi').value = s.divisi || '';
+    document.getElementById('filterBulan').value = s.bulan || '';
+    document.getElementById('filterTahun').value = s.tahun || '';
+
+    var group = document.getElementById('divisiPillGroup');
+    if (group) {
+        var matchBtn = group.querySelector('.divisi-pill-btn[data-divisi="' + (s.divisi || '') + '"]');
+        if (matchBtn) {
+            group.querySelectorAll('.divisi-pill-btn').forEach(function (b) { b.classList.remove('active'); });
+            matchBtn.classList.add('active');
+            updateDivisiGlider(matchBtn, false);
+        }
+    }
+
+    var btnClear = document.getElementById('btnClearSearch');
+    if (btnClear) {
+        btnClear.classList.toggle('d-none', !(s.q && s.q.length > 0));
+    }
 }
+
 function normalisasiFilter(s) {
     return { q: (s.q || '').trim().toLowerCase(), divisi: s.divisi || '', bulan: s.bulan || '', tahun: s.tahun || '' };
 }
+
 function cocokDasar(item, f, mitraKey, divisiKey) {
     if (f.divisi && item[divisiKey] !== f.divisi) return false;
     if (f.q) {
-        var hay = ((item.nomor_order || '') + ' ' + (item[mitraKey] || '')).toLowerCase();
+        var hay = ((item.nomor_order || '') + ' ' + (item.nomor_permintaan || '') + ' ' + (item[mitraKey] || '') + ' ' + (item.judul_kegiatan || '') + ' ' + (item.keterangan || '')).toLowerCase();
         if (hay.indexOf(f.q) === -1) return false;
     }
     return true;
 }
 
-document.querySelectorAll('.tab-btn-custom').forEach(function (btn) {
+document.querySelectorAll('.filter-tab-pill').forEach(function (btn) {
     btn.addEventListener('click', function () {
         simpanFilterAktifKeState();
-        document.querySelectorAll('.tab-btn-custom').forEach(function (b) { b.classList.remove('active'); });
+        document.querySelectorAll('.filter-tab-pill').forEach(function (b) { b.classList.remove('active'); });
         document.querySelectorAll('.tab-panel-custom').forEach(function (p) { p.classList.remove('active'); });
         btn.classList.add('active');
         currentTab = btn.dataset.tab;
@@ -358,8 +606,30 @@ document.querySelectorAll('.tab-btn-custom').forEach(function (btn) {
     });
 });
 
+function renderEmptyState(iconClass, titleText, descText) {
+    return '<tr><td colspan="10" class="text-center py-5 text-muted">' +
+        '<i class="bi ' + iconClass + ' fs-1 d-block mb-3 text-secondary" style="opacity: 0.4;"></i>' +
+        '<div class="fw-semibold fs-6 text-dark">' + titleText + '</div>' +
+        '<div class="small mt-1 text-muted">' + descText + '</div>' +
+        '</td></tr>';
+}
+
+function renderEmptyCard(iconClass, titleText, descText) {
+    return '<div class="text-center py-5 text-muted bg-white rounded-3 border">' +
+        '<i class="bi ' + iconClass + ' fs-1 d-block mb-3 text-secondary" style="opacity: 0.4;"></i>' +
+        '<div class="fw-semibold fs-6 text-dark">' + titleText + '</div>' +
+        '<div class="small mt-1 text-muted">' + descText + '</div>' +
+        '</div>';
+}
+
 function terapkanFilter() {
     simpanFilterAktifKeState();
+
+    var qVal = document.getElementById('filterSearch').value;
+    var btnClear = document.getElementById('btnClearSearch');
+    if (btnClear) {
+        btnClear.classList.toggle('d-none', !qVal || qVal.length === 0);
+    }
 
     var fBaru = normalisasiFilter(filterState.baru);
     var fBerjalan = normalisasiFilter(filterState.berjalan);
@@ -367,12 +637,18 @@ function terapkanFilter() {
     var fHistori = normalisasiFilter(filterState.histori);
 
     var baru = DATA_BARU.filter(function (o) {
-    if (!cocokDasar(o, fBaru, 'nama_perusahaan', 'jenis_layanan_opti')) return false;
-    if (fBaru.bulan && String(o.bulan_masuk) !== String(fBaru.bulan)) return false;
-    if (fBaru.tahun && String(o.tahun_masuk) !== String(fBaru.tahun)) return false;
-    return true;
-});
-    var berjalan = DATA_BERJALAN.filter(function (o) { return cocokDasar(o, fBerjalan, 'nama_perusahaan', 'jenis_layanan_opti'); });
+        if (!cocokDasar(o, fBaru, 'nama_perusahaan', 'jenis_layanan_opti')) return false;
+        if (fBaru.bulan && String(o.bulan_masuk) !== String(fBaru.bulan)) return false;
+        if (fBaru.tahun && String(o.tahun_masuk) !== String(fBaru.tahun)) return false;
+        return true;
+    });
+
+    var berjalan = DATA_BERJALAN.filter(function (o) { 
+        if (!cocokDasar(o, fBerjalan, 'nama_perusahaan', 'jenis_layanan_opti')) return false;
+        if (fBerjalan.bulan && String(o.bulan_masuk) !== String(fBerjalan.bulan)) return false;
+        if (fBerjalan.tahun && String(o.tahun_masuk) !== String(fBerjalan.tahun)) return false;
+        return true;
+    });
 
     var lunas = DATA_LUNAS.filter(function (o) {
         if (!cocokDasar(o, fLunas, 'nama_perusahaan', 'jenis_layanan_opti')) return false;
@@ -398,143 +674,301 @@ function terapkanFilter() {
     document.getElementById('countLunas').textContent = lunas.length;
     document.getElementById('countHistori').textContent = histori.length;
 
+    var counts = { baru: baru.length, berjalan: berjalan.length, lunas: lunas.length, histori: histori.length };
+    document.getElementById('totalCountText').textContent = counts[currentTab] || 0;
+
     var noteEl = document.getElementById('periodNote');
     var isPeriodTab = (currentTab === 'lunas' || currentTab === 'histori');
-    noteEl.classList.toggle('d-none', !isPeriodTab);
-    if (isPeriodTab) {
-        var fAktif = normalisasiFilter(filterState[currentTab]);
-        document.getElementById('periodNoteText').textContent = (fAktif.bulan ? BULAN_INDO[fAktif.bulan] : 'Semua Bulan') + ' ' + (fAktif.tahun || 'Semua Tahun');
+    var fAktif = normalisasiFilter(filterState[currentTab]);
+    var hasPeriodFilter = (fAktif.bulan || fAktif.tahun);
+
+    if (isPeriodTab && hasPeriodFilter) {
+        noteEl.classList.remove('d-none');
+        document.getElementById('periodNoteText').textContent = (fAktif.bulan ? BULAN_INDO[fAktif.bulan] : 'Semua Bulan') + ' ' + (fAktif.tahun ? 'Tahun ' + fAktif.tahun : 'Semua Tahun');
+    } else {
+        noteEl.classList.add('d-none');
     }
 }
 
-/* ===== TABEL (desktop) ===== */
+/* ===== TAB 1: BARU MASUK ===== */
 function renderBaru(list) {
     var body = document.getElementById('bodyBaru');
     body.innerHTML = list.length === 0
-        ? '<tr><td colspan="7" class="text-center text-muted py-5"><i class="bi bi-inbox fs-2 d-block mb-2"></i>Tidak ada order baru.</td></tr>'
+        ? renderEmptyState('bi-inbox', 'Tidak Ada Order Baru', 'Tidak ada data permohonan baru yang menunggu pembayaran pada kriteria ini.')
         : list.map(function (o, idx) {
-            return '<tr><td class="text-muted small">' + (idx + 1) + '</td><td class="fw-semibold">' + o.nomor_order + skbBadge(o) + '</td><td>' + o.judul_kegiatan + '<div class="text-muted small">' + o.nama_perusahaan + '</div></td><td>' + divisiBadge(o.jenis_layanan_opti) + '</td>' +
-                '<td class="text-end">' + rupiah(o.biaya_acuan) + (o.nominal_penawaran ? '' : '<div class="text-muted" style="font-size:.68rem;">*estimasi</div>') + '</td>' +
-                '<td class="small text-muted">' + tglIndo(o.tanggal_masuk) + '</td>' +
-                '<td class="text-center"><a href="' + BASE + '/pembayaran/tambah?order_id=' + o.id + '" class="btn btn-sm btn-success"><i class="bi bi-plus-circle"></i> Catat Pembayaran</a></td></tr>';
+            var noId = o.nomor_permintaan ? o.nomor_permintaan : (o.nomor_order ? o.nomor_order : ('REQ-' + o.id));
+            return '<tr>' +
+                '<td class="text-center text-muted small">' + (idx + 1) + '</td>' +
+                '<td>' +
+                    '<div class="fw-bold text-secondary font-monospace small">' + noId + '</div>' +
+                    skbBadge(o) +
+                '</td>' +
+                '<td>' +
+                    '<div class="fw-semibold text-dark mb-1" title="' + (o.judul_kegiatan || '') + '">' + (o.judul_kegiatan || '-') + '</div>' +
+                    '<div class="small text-muted d-flex align-items-start gap-1.5 mt-0.5">' +
+                        '<i class="bi bi-building text-secondary flex-shrink-0 mt-0.5" style="font-size: 0.82rem;"></i>' +
+                        '<span class="text-secondary fw-medium" style="line-height: 1.35;">' + (o.nama_perusahaan || '-') + '</span>' +
+                    '</div>' +
+                '</td>' +
+                '<td class="text-center">' + divisiBadge(o.jenis_layanan_opti) + '</td>' +
+                '<td class="text-end">' +
+                    '<div class="fw-bold text-dark small">' + rupiah(o.biaya_acuan) + '</div>' +
+                    (o.nominal_penawaran ? '' : '<div class="text-muted" style="font-size:.68rem;">*estimasi biaya</div>') +
+                '</td>' +
+                '<td>' +
+                    '<div class="text-muted small">' +
+                        '<i class="bi bi-calendar3 me-1"></i>' + tglIndo(o.tanggal_masuk) +
+                    '</div>' +
+                '</td>' +
+                '<td class="text-center">' +
+                    '<a href="' + BASE + '/pembayaran/tambah?order_id=' + o.id + '" class="btn btn-sm btn-primary py-1 px-2 d-inline-flex align-items-center gap-1 shadow-sm">' +
+                        '<i class="bi bi-plus-circle"></i> <span>Catat Bayar</span>' +
+                    '</a>' +
+                '</td>' +
+            '</tr>';
         }).join('');
 
     var cards = document.getElementById('cardsBaru');
     cards.innerHTML = list.length === 0
-        ? '<div class="text-center text-muted py-5"><i class="bi bi-inbox fs-2 d-block mb-2"></i>Tidak ada order baru.</div>'
+        ? renderEmptyCard('bi-inbox', 'Tidak Ada Order Baru', 'Tidak ada data permohonan baru yang menunggu pembayaran.')
         : list.map(function (o) {
-            return '<div class="order-card"><div class="nomor">' + o.nomor_order + '</div><div class="mitra">' + o.nama_perusahaan + '</div>' +
-                '<div class="row-info">' + divisiBadge(o.jenis_layanan_opti) + '<span class="fw-semibold">' + rupiah(o.biaya_acuan) + '</span></div>' +
-                '<div class="row-info text-muted"><span>' + tglIndo(o.tanggal_masuk) + '</span></div>' +
-                '<a href="' + BASE + '/pembayaran/tambah?order_id=' + o.id + '" class="btn btn-sm btn-success w-100 mt-2"><i class="bi bi-plus-circle"></i> Catat Pembayaran</a></div>';
+            var noId = o.nomor_permintaan ? o.nomor_permintaan : (o.nomor_order ? o.nomor_order : ('REQ-' + o.id));
+            return '<div class="order-card">' +
+                '<div class="d-flex justify-content-between align-items-start mb-2">' +
+                    '<div class="nomor font-monospace text-secondary">' + noId + '</div>' +
+                    divisiBadge(o.jenis_layanan_opti) +
+                '</div>' +
+                '<div class="fw-semibold text-dark mb-1">' + (o.judul_kegiatan || '-') + '</div>' +
+                '<div class="mitra d-flex align-items-center gap-1"><i class="bi bi-building"></i> ' + (o.nama_perusahaan || '-') + '</div>' +
+                skbBadge(o) +
+                '<div class="row-info mt-2 pt-2 border-top">' +
+                    '<span class="text-muted"><i class="bi bi-calendar3 me-1"></i>' + tglIndo(o.tanggal_masuk) + '</span>' +
+                    '<span class="fw-bold text-dark">' + rupiah(o.biaya_acuan) + '</span>' +
+                '</div>' +
+                '<a href="' + BASE + '/pembayaran/tambah?order_id=' + o.id + '" class="btn btn-sm btn-primary w-100 mt-2 d-flex align-items-center justify-content-center gap-1">' +
+                    '<i class="bi bi-plus-circle"></i> Catat Pembayaran' +
+                '</a>' +
+            '</div>';
         }).join('');
 }
 
+/* ===== TAB 2: SEDANG BERJALAN ===== */
 function renderBerjalan(list) {
     var body = document.getElementById('bodyBerjalan');
     body.innerHTML = list.length === 0
-        ? '<tr><td colspan="8" class="text-center text-muted py-5"><i class="bi bi-arrow-repeat fs-2 d-block mb-2"></i>Tidak ada pembayaran berjalan.</td></tr>'
+        ? renderEmptyState('bi-gear-wide-connected', 'Tidak Ada Pembayaran Berjalan', 'Semua order telah lunas atau belum memulai proses pembayaran.')
         : list.map(function (o, idx) {
-            var kbBadge = o.punya_kesanggupan_bayar
-                ? '<div><span class="kb-badge-ada mt-1"><i class="bi bi-file-earmark-check-fill"></i> Kesanggupan Bayar</span></div>'
-                : '';
+            var noId = o.nomor_order ? o.nomor_order : (o.nomor_permintaan ? o.nomor_permintaan : ('REQ-' + o.id));
+            var isOrderNo = !emptyOrReq(noId);
+            var colorClass = isOrderNo ? 'text-primary' : 'text-secondary';
 
-            return '<tr><td class="text-muted small">' + (idx + 1) + '</td><td class="fw-semibold">' + o.nomor_order + skbBadge(o) + '</td><td>' + o.judul_kegiatan + '<div class="text-muted small">' + o.nama_perusahaan + '</div></td><td>' + divisiBadge(o.jenis_layanan_opti) + '</td>' +
-                '<td class="text-end">' + rupiah(o.biaya_acuan) + '</td>' +
-                '<td><div class="d-flex justify-content-between small mb-1"><span class="text-success fw-semibold">' + rupiah(o.total_terbayar) + '</span><span class="text-muted">' + o.persen_bayar + '%</span></div><div class="progress" style="height:5px;"><div class="progress-bar bg-warning" style="width:' + o.persen_bayar + '%;"></div></div><div class="text-muted mt-1" style="font-size:.7rem;">' + o.jumlah_termin + 'x bayar</div></td>' +
-                '<td class="text-end fw-bold text-danger">' + rupiah(o.sisa_tagihan) + '</td>' +
-                '<td class="text-center"><a href="' + BASE + '/pembayaran/tambah?order_id=' + o.id + '" class="btn btn-sm btn-success"><i class="bi bi-plus-circle"></i></a></td></tr>';
+            return '<tr>' +
+                '<td class="text-center text-muted small">' + (idx + 1) + '</td>' +
+                '<td>' +
+                    '<div class="fw-bold ' + colorClass + ' font-monospace small">' + noId + '</div>' +
+                    skbBadge(o) +
+                '</td>' +
+                '<td>' +
+                    '<div class="fw-semibold text-dark mb-1" title="' + (o.judul_kegiatan || '') + '">' + (o.judul_kegiatan || '-') + '</div>' +
+                    '<div class="small text-muted d-flex align-items-start gap-1.5 mt-0.5">' +
+                        '<i class="bi bi-building text-secondary flex-shrink-0 mt-0.5" style="font-size: 0.82rem;"></i>' +
+                        '<span class="text-secondary fw-medium" style="line-height: 1.35;">' + (o.nama_perusahaan || '-') + '</span>' +
+                    '</div>' +
+                '</td>' +
+                '<td class="text-center">' + divisiBadge(o.jenis_layanan_opti) + '</td>' +
+                '<td class="text-end fw-semibold text-dark small">' + rupiah(o.biaya_acuan) + '</td>' +
+                '<td>' +
+                    '<div class="d-flex justify-content-between small mb-1">' +
+                        '<span class="text-success fw-bold">' + rupiah(o.total_terbayar) + '</span>' +
+                        '<span class="text-muted fw-semibold">' + o.persen_bayar + '%</span>' +
+                    '</div>' +
+                    '<div class="progress" style="height:6px; border-radius:4px;">' +
+                        '<div class="progress-bar bg-warning" style="width:' + o.persen_bayar + '%;"></div>' +
+                    '</div>' +
+                    '<div class="text-muted mt-1" style="font-size:.72rem;">' + o.jumlah_termin + 'x termin terbayar</div>' +
+                '</td>' +
+                '<td class="text-end fw-bold text-danger small">' + rupiah(o.sisa_tagihan) + '</td>' +
+                '<td class="text-center">' +
+                    '<a href="' + BASE + '/pembayaran/tambah?order_id=' + o.id + '" class="btn btn-sm btn-primary py-1 px-2 d-inline-flex align-items-center gap-1 shadow-sm" title="Tambah Termin Pembayaran">' +
+                        '<i class="bi bi-plus-circle"></i> <span>Termin</span>' +
+                    '</a>' +
+                '</td>' +
+            '</tr>';
         }).join('');
 
     var cards = document.getElementById('cardsBerjalan');
     cards.innerHTML = list.length === 0
-        ? '<div class="text-center text-muted py-5"><i class="bi bi-arrow-repeat fs-2 d-block mb-2"></i>Tidak ada pembayaran berjalan.</div>'
+        ? renderEmptyCard('bi-gear-wide-connected', 'Tidak Ada Pembayaran Berjalan', 'Semua order telah lunas atau belum memulai proses pembayaran.')
         : list.map(function (o) {
-            return '<div class="order-card"><div class="nomor">' + o.nomor_order + '</div><div class="mitra">' + o.nama_perusahaan + '</div>' +
-                '<div class="row-info">' + divisiBadge(o.jenis_layanan_opti) + '<span class="fw-semibold">' + rupiah(o.biaya_acuan) + '</span></div>' +
-                '<div class="progress mt-1 mb-1" style="height:5px;"><div class="progress-bar bg-warning" style="width:' + o.persen_bayar + '%;"></div></div>' +
-                '<div class="row-info"><span class="text-success">' + rupiah(o.total_terbayar) + ' (' + o.persen_bayar + '%)</span><span class="text-danger fw-bold">Sisa ' + rupiah(o.sisa_tagihan) + '</span></div>' +
-                '<a href="' + BASE + '/pembayaran/tambah?order_id=' + o.id + '" class="btn btn-sm btn-success w-100 mt-2"><i class="bi bi-plus-circle"></i> Tambah Termin</a></div>';
+            var noId = o.nomor_order ? o.nomor_order : (o.nomor_permintaan ? o.nomor_permintaan : ('REQ-' + o.id));
+            return '<div class="order-card">' +
+                '<div class="d-flex justify-content-between align-items-start mb-2">' +
+                    '<div class="nomor font-monospace text-primary">' + noId + '</div>' +
+                    divisiBadge(o.jenis_layanan_opti) +
+                '</div>' +
+                '<div class="fw-semibold text-dark mb-1">' + (o.judul_kegiatan || '-') + '</div>' +
+                '<div class="mitra d-flex align-items-center gap-1"><i class="bi bi-building"></i> ' + (o.nama_perusahaan || '-') + '</div>' +
+                skbBadge(o) +
+                '<div class="progress mt-2 mb-1" style="height:6px; border-radius:4px;">' +
+                    '<div class="progress-bar bg-warning" style="width:' + o.persen_bayar + '%;"></div>' +
+                '</div>' +
+                '<div class="row-info">' +
+                    '<span class="text-success fw-semibold">Terbayar: ' + rupiah(o.total_terbayar) + ' (' + o.persen_bayar + '%)</span>' +
+                    '<span class="text-danger fw-bold">Sisa: ' + rupiah(o.sisa_tagihan) + '</span>' +
+                '</div>' +
+                '<a href="' + BASE + '/pembayaran/tambah?order_id=' + o.id + '" class="btn btn-sm btn-primary w-100 mt-2 d-flex align-items-center justify-content-center gap-1">' +
+                    '<i class="bi bi-plus-circle"></i> Tambah Termin' +
+                '</a>' +
+            '</div>';
         }).join('');
 }
 
-        function renderLunas(list) {
+function emptyOrReq(str) {
+    if (!str) return true;
+    return str.indexOf('REQ-') === 0;
+}
+
+/* ===== TAB 3: LUNAS ===== */
+function renderLunas(list) {
     var body = document.getElementById('bodyLunas');
     body.innerHTML = list.length === 0
-        ? '<tr><td colspan="8" class="text-center text-muted py-5"><i class="bi bi-inbox fs-2 d-block mb-2"></i>Tidak ada order lunas di periode ini.</td></tr>'
+        ? renderEmptyState('bi-check2-all', 'Tidak Ada Order Lunas', 'Belum ada order yang berstatus lunas pada kriteria filter saat ini.')
         : list.map(function (o, idx) {
-                return '<tr><td class="text-muted small">' + (idx + 1) + '</td><td class="fw-semibold">' + o.nomor_order + skbBadge(o) + '</td><td>' + o.judul_kegiatan + '<div class="text-muted small">' + o.nama_perusahaan + '</div></td><td>' + divisiBadge(o.jenis_layanan_opti) + '</td>' +
-                '<td class="text-end">' + rupiah(o.biaya_acuan) + '</td>' +
-                '<td class="small">' + tglIndo(o.tanggal_lunas) + '</td>' +
-                '<td class="text-center"><span class="badge badge-pill-success">' + o.jumlah_termin + 'x bayar</span></td>' +
-                '<td class="text-center"><button type="button" class="btn btn-sm btn-outline-secondary" onclick="bukaDetailLunas(' + o.id + ')"><i class="bi bi-eye me-1"></i>Detail</button></td></tr>';
+            var noId = o.nomor_order ? o.nomor_order : (o.nomor_permintaan ? o.nomor_permintaan : ('ORD-' + o.id));
+            return '<tr>' +
+                '<td class="text-center text-muted small">' + (idx + 1) + '</td>' +
+                '<td>' +
+                    '<div class="fw-bold text-primary font-monospace small">' + noId + '</div>' +
+                    skbBadge(o) +
+                '</td>' +
+                '<td>' +
+                    '<div class="fw-semibold text-dark mb-1" title="' + (o.judul_kegiatan || '') + '">' + (o.judul_kegiatan || '-') + '</div>' +
+                    '<div class="small text-muted d-flex align-items-start gap-1.5 mt-0.5">' +
+                        '<i class="bi bi-building text-secondary flex-shrink-0 mt-0.5" style="font-size: 0.82rem;"></i>' +
+                        '<span class="text-secondary fw-medium" style="line-height: 1.35;">' + (o.nama_perusahaan || '-') + '</span>' +
+                    '</div>' +
+                '</td>' +
+                '<td class="text-center">' + divisiBadge(o.jenis_layanan_opti) + '</td>' +
+                '<td class="text-end fw-semibold text-dark small">' + rupiah(o.biaya_acuan) + '</td>' +
+                '<td>' +
+                    '<div class="text-success small fw-medium">' +
+                        '<i class="bi bi-calendar-check me-1"></i>' + tglIndo(o.tanggal_lunas) +
+                    '</div>' +
+                '</td>' +
+                '<td class="text-center">' +
+                    '<span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">' + o.jumlah_termin + 'x termin</span>' +
+                '</td>' +
+                '<td class="text-center">' +
+                    '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 d-inline-flex align-items-center gap-1 shadow-sm" onclick="bukaDetailLunas(' + o.id + ')">' +
+                        '<i class="bi bi-receipt"></i> <span>Detail</span>' +
+                    '</button>' +
+                '</td>' +
+            '</tr>';
         }).join('');
 
     var cards = document.getElementById('cardsLunas');
     cards.innerHTML = list.length === 0
-        ? '<div class="text-center text-muted py-5"><i class="bi bi-inbox fs-2 d-block mb-2"></i>Tidak ada order lunas di periode ini.</div>'
+        ? renderEmptyCard('bi-check2-all', 'Tidak Ada Order Lunas', 'Belum ada order yang berstatus lunas pada kriteria filter saat ini.')
         : list.map(function (o) {
-            return '<div class="order-card"><div class="nomor">' + o.nomor_order + '</div><div class="mitra">' + o.nama_perusahaan + '</div>' +
-                '<div class="row-info">' + divisiBadge(o.jenis_layanan_opti) + '<span class="fw-semibold">' + rupiah(o.biaya_acuan) + '</span></div>' +
-                '<div class="row-info text-muted"><span>Lunas ' + tglIndo(o.tanggal_lunas) + '</span><span>' + o.jumlah_termin + 'x bayar</span></div></div>';
+            var noId = o.nomor_order ? o.nomor_order : (o.nomor_permintaan ? o.nomor_permintaan : ('ORD-' + o.id));
+            return '<div class="order-card">' +
+                '<div class="d-flex justify-content-between align-items-start mb-2">' +
+                    '<div class="nomor font-monospace text-primary">' + noId + '</div>' +
+                    divisiBadge(o.jenis_layanan_opti) +
+                '</div>' +
+                '<div class="fw-semibold text-dark mb-1">' + (o.judul_kegiatan || '-') + '</div>' +
+                '<div class="mitra d-flex align-items-center gap-1"><i class="bi bi-building"></i> ' + (o.nama_perusahaan || '-') + '</div>' +
+                skbBadge(o) +
+                '<div class="row-info mt-2 pt-2 border-top">' +
+                    '<span class="text-success small"><i class="bi bi-calendar-check me-1"></i>Lunas ' + tglIndo(o.tanggal_lunas) + '</span>' +
+                    '<span class="badge bg-success-subtle text-success border border-success-subtle">' + o.jumlah_termin + 'x termin</span>' +
+                '</div>' +
+                '<button type="button" class="btn btn-sm btn-outline-secondary w-100 mt-2 d-flex align-items-center justify-content-center gap-1" onclick="bukaDetailLunas(' + o.id + ')">' +
+                    '<i class="bi bi-receipt"></i> Lihat Rincian Termin' +
+                '</button>' +
+            '</div>';
         }).join('');
 }
 
+/* ===== TAB 4: HISTORI ===== */
 function renderHistori(list) {
     var body = document.getElementById('bodyHistori');
     body.innerHTML = list.length === 0
-        ? '<tr><td colspan="9" class="text-center text-muted py-5"><i class="bi bi-wallet2 fs-2 d-block mb-2"></i>Tidak ada transaksi di periode ini.</td></tr>'
+        ? renderEmptyState('bi-clock-history', 'Tidak Ada Histori Transaksi', 'Belum ada catatan mutasi transaksi pembayaran pada periode ini.')
         : list.map(function (h, idx) {
-            var buktiCol = h.bukti_bayar ? '<button type="button" class="btn btn-sm btn-outline-secondary py-0 btn-preview-pdf" data-preview-pdf="' + BASE + '/pembayaran/bukti/' + h.id + '" data-title="Bukti Pembayaran" data-subtitle="Order: ' + h.nomor_order + ' &bull; Termin Ke-' + h.termin_ke + '" title="Pratinjau Bukti Pembayaran"><i class="bi bi-eye"></i></button>' : '<span class="text-muted small">-</span>';
-            return '<tr><td class="text-muted small">' + (idx + 1) + '</td><td class="small">' + tglIndo(h.tanggal_bayar) + '</td><td class="fw-semibold small">' + h.nomor_order + '</td><td class="small text-muted">' + h.nama_perusahaan + '</td>' +
-                '<td class="text-center"><span class="badge badge-pill-primary">Ke-' + h.termin_ke + '</span></td>' +
-                '<td class="text-end fw-semibold text-success">' + rupiah(h.jumlah) + '</td>' +
-                '<td class="small text-muted">' + (h.keterangan || '-') + '</td>' +
+            var buktiCol = h.bukti_bayar 
+                ? '<button type="button" class="btn btn-sm btn-outline-primary py-1 px-2 btn-preview-pdf d-inline-flex align-items-center gap-1" data-preview-pdf="' + BASE + '/pembayaran/bukti/' + h.id + '" data-title="Bukti Pembayaran" data-subtitle="Order: ' + h.nomor_order + ' &bull; Termin Ke-' + h.termin_ke + '" title="Lihat Bukti Pembayaran"><i class="bi bi-file-earmark-text"></i> <span>Bukti</span></button>' 
+                : '<span class="text-muted small">-</span>';
+            
+            return '<tr>' +
+                '<td class="text-center text-muted small">' + (idx + 1) + '</td>' +
+                '<td>' +
+                    '<div class="small text-dark fw-medium">' +
+                        '<i class="bi bi-calendar3 me-1 text-muted"></i>' + tglIndo(h.tanggal_bayar) +
+                    '</div>' +
+                '</td>' +
+                '<td>' +
+                    '<div class="fw-bold text-primary font-monospace small">' + (h.nomor_order || '-') + '</div>' +
+                    '<div class="text-muted" style="font-size: 0.725rem;">' + divisiBadge(h.jenis_layanan_opti) + '</div>' +
+                '</td>' +
+                '<td>' +
+                    '<div class="fw-semibold text-dark small mb-0.5">' + (h.nama_perusahaan || '-') + '</div>' +
+                    '<div class="small text-muted">' + (h.keterangan ? h.keterangan : '<span class="fst-italic text-muted">-</span>') + '</div>' +
+                '</td>' +
+                '<td class="text-center">' +
+                    '<span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">Ke-' + h.termin_ke + '</span>' +
+                '</td>' +
+                '<td class="text-end fw-bold text-success small">' + rupiah(h.jumlah) + '</td>' +
                 '<td class="text-center">' + buktiCol + '</td>' +
-                '<td class="text-center"><form action="' + BASE + '/pembayaran/' + h.id + '/hapus" method="POST" onsubmit="return confirm(\'Hapus transaksi ini?\');"><input type="hidden" name="csrf_token" value="' + CSRF + '"><button type="submit" class="btn btn-sm btn-outline-danger py-0"><i class="bi bi-trash"></i></button></form></td></tr>';
+                '<td class="text-center">' +
+                    '<form action="' + BASE + '/pembayaran/' + h.id + '/hapus" method="POST" onsubmit="return confirm(\'Hapus transaksi pembayaran termin ini?\');" class="d-inline">' +
+                        '<input type="hidden" name="csrf_token" value="' + CSRF + '">' +
+                        '<button type="submit" class="btn btn-sm btn-outline-danger py-1 px-2" title="Hapus Transaksi"><i class="bi bi-trash3"></i></button>' +
+                    '</form>' +
+                '</td>' +
+            '</tr>';
         }).join('');
 
     var cards = document.getElementById('cardsHistori');
     cards.innerHTML = list.length === 0
-        ? '<div class="text-center text-muted py-5"><i class="bi bi-wallet2 fs-2 d-block mb-2"></i>Tidak ada transaksi di periode ini.</div>'
+        ? renderEmptyCard('bi-clock-history', 'Tidak Ada Histori Transaksi', 'Belum ada catatan mutasi transaksi pembayaran pada periode ini.')
         : list.map(function (h) {
-            return '<div class="order-card"><div class="row-info"><span class="fw-semibold">' + h.nomor_order + '</span><span class="text-success fw-bold">' + rupiah(h.jumlah) + '</span></div>' +
-                '<div class="row-info text-muted"><span>' + tglIndo(h.tanggal_bayar) + '</span><span>Termin ke-' + h.termin_ke + '</span></div>' +
-                '<div class="mitra">' + h.nama_perusahaan + '</div></div>';
+            return '<div class="order-card">' +
+                '<div class="d-flex justify-content-between align-items-start mb-2">' +
+                    '<div class="nomor font-monospace text-primary">' + (h.nomor_order || '-') + '</div>' +
+                    '<span class="badge bg-primary-subtle text-primary border border-primary-subtle">Termin Ke-' + h.termin_ke + '</span>' +
+                '</div>' +
+                '<div class="fw-semibold text-dark mb-1">' + (h.nama_perusahaan || '-') + '</div>' +
+                '<div class="row-info">' +
+                    '<span class="text-muted small"><i class="bi bi-calendar3 me-1"></i>' + tglIndo(h.tanggal_bayar) + '</span>' +
+                    '<span class="text-success fw-bold fs-6">' + rupiah(h.jumlah) + '</span>' +
+                '</div>' +
+                (h.keterangan ? '<div class="small text-muted mt-1 pt-1 border-top">' + h.keterangan + '</div>' : '') +
+            '</div>';
         }).join('');
 }
 
 document.getElementById('filterSearch').addEventListener('input', terapkanFilter);
-document.getElementById('filterDivisi').addEventListener('change', terapkanFilter);
 document.getElementById('filterBulan').addEventListener('change', terapkanFilter);
 document.getElementById('filterTahun').addEventListener('change', terapkanFilter);
 
-muatFilterDariState(currentTab);
-terapkanFilter();
+var btnClearSearch = document.getElementById('btnClearSearch');
+if (btnClearSearch) {
+    btnClearSearch.addEventListener('click', function () {
+        document.getElementById('filterSearch').value = '';
+        terapkanFilter();
+    });
+}
 
-document.addEventListener('click', function (e) {
-    var btn = e.target.closest('.btn-disposisi-katim');
-    if (!btn) return;
+window.addEventListener('resize', function () {
+    updateDivisiGlider(null, false);
+});
 
-    if (!confirm('Kirim notifikasi ke Ketua Tim bahwa order ini sudah Deal?')) return;
-
-    var orderId = btn.getAttribute('data-order-id');
-    btn.disabled = true;
-
-    fetch(BASE + '/pembayaran/' + orderId + '/disposisi-katim', { method: 'POST' })
-        .then(function (res) { return res.json(); })
-        .then(function (data) {
-            if (data.success) {
-                location.reload(); // paling simpel & aman: refresh data biar semua tab ikut sinkron
-            } else {
-                alert(data.message || 'Gagal mengirim disposisi.');
-                btn.disabled = false;
-            }
-        })
-        .catch(function () {
-            alert('Gagal mengirim disposisi.');
-            btn.disabled = false;
-        });
-    
+document.addEventListener('DOMContentLoaded', function () {
+    muatFilterDariState(currentTab);
+    terapkanFilter();
+    setTimeout(function () {
+        updateDivisiGlider(null, false);
+    }, 50);
 });
 </script>

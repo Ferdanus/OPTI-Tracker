@@ -59,23 +59,26 @@ class ArsipUser extends \DB\SQL\Mapper {
         } elseif (strpos($rawRole, 'tim_kerja_lingkungan') !== false || $rawRole === 'pic_lingkungan') {
             $roleOpti = 'tim_kerja';
             $jenisLayananOpti = 'lingkungan';
-        } elseif (strpos($rawRole, 'ketua_tim_selulosa') !== false || $rawRole === 'katim_selulosa') {
-            $roleOpti = 'ketua_tim';
-            $jenisLayananOpti = 'selulosa';
-        } elseif (strpos($rawRole, 'ketua_tim_lingkungan') !== false || $rawRole === 'katim_lingkungan') {
-            $roleOpti = 'ketua_tim';
-            $jenisLayananOpti = 'lingkungan';
         } elseif (strpos($rawRole, 'ketua_tim_mitra') !== false || $rawRole === 'katim_mitra') {
             $roleOpti = 'ketua_tim_mitra';
             $jenisLayananOpti = 'semua';
         } elseif (strpos($rawRole, 'ketua_tim_keuangan') !== false || $rawRole === 'katim_keuangan') {
             $roleOpti = 'ketua_tim_keuangan';
             $jenisLayananOpti = 'semua';
+        } elseif (preg_match('/^(?:ketua_tim|katim)_([a-zA-Z0-9_]+)$/', $rawRole, $mKatim)) {
+            $roleOpti = 'ketua_tim';
+            $jenisLayananOpti = strtolower($mKatim[1]);
         } elseif ($rawRole === 'tim_mitra_industri' || $rawRole === 'admin_order' || $rawRole === 'tim_mitra') {
             $roleOpti = 'tim_mitra_industri';
             $jenisLayananOpti = 'semua';
         } elseif ($rawRole === 'keuangan') {
             $roleOpti = 'keuangan';
+            $jenisLayananOpti = 'semua';
+        } elseif ($rawRole === 'humas') {
+            $roleOpti = 'humas';
+            $jenisLayananOpti = 'semua';
+        } elseif ($rawRole === 'ppk') {
+            $roleOpti = 'ppk';
             $jenisLayananOpti = 'semua';
         } elseif ($rawRole === 'user' || $rawRole === 'pegawai') {
             $roleOpti = 'user';

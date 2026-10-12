@@ -2,18 +2,10 @@
     <!-- Header -->
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
         <div>
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb mb-1 small">
-                    <li class="breadcrumb-item"><a href="{{ @BASE }}/order" class="text-decoration-none">Order Layanan</a></li>
-                    <li class="breadcrumb-item"><a href="{{ @BASE }}/order/{{ @order.id }}" class="text-decoration-none">#{{ @order.nomor_order }}</a></li>
-                    <li class="breadcrumb-item active" aria-current="page">Terbitkan Invoice Tagihan</li>
-                </ol>
-            </nav>
             <h4 class="fw-bold text-dark m-0 d-flex align-items-center gap-2">
                 <i class="bi bi-receipt-cutoff text-primary"></i>
                 Penerbitan Invoice Tagihan Resmi (Bagian Keuangan)
             </h4>
-            <p class="text-muted small m-0 mt-1">Terbitkan tagihan resmi kepada pelanggan untuk pembayaran 100% atau bertahap (Termin/DP).</p>
         </div>
         <div class="d-flex gap-2">
             <a href="{{ @BASE }}/order/{{ @order.id }}" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1">

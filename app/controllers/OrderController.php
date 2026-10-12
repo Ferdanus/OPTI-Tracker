@@ -32,7 +32,12 @@ class OrderController extends Controller {
                                      sp.permintaan_melalui, sp.penjelasan
                               FROM order_layanan o
                               JOIN tb_customer c ON o.id_customer = c.id_customer
-                              LEFT JOIN tb_surat_penawaran sp ON o.id = sp.order_id
+                              LEFT JOIN tb_surat_penawaran sp ON sp.id = (
+                                  SELECT id FROM tb_surat_penawaran 
+                                  WHERE order_id = o.id 
+                                  ORDER BY (status_respon_klien = 'deal') DESC, id DESC 
+                                  LIMIT 1
+                              )
                               WHERE {$sqlWhere} 
                                 AND o.status IN ('baru', 'permintaan_masuk') 
                                 AND o.id NOT IN (SELECT order_id FROM opti_tinjauan_kelayakan)
@@ -90,11 +95,28 @@ class OrderController extends Controller {
 
         $currentYear  = date('Y');
         $filterTahun  = $f3->exists('GET.tahun') ? trim($f3->get('GET.tahun')) : $currentYear;
+        $filterBulan  = $f3->exists('GET.bulan') ? trim($f3->get('GET.bulan')) : 'all';
         $daftarTahun  = range((int)$currentYear, (int)$currentYear - 4);
+        $daftarBulan  = [
+            '01' => 'Januari',
+            '02' => 'Februari',
+            '03' => 'Maret',
+            '04' => 'April',
+            '05' => 'Mei',
+            '06' => 'Juni',
+            '07' => 'Juli',
+            '08' => 'Agustus',
+            '09' => 'September',
+            '10' => 'Oktober',
+            '11' => 'November',
+            '12' => 'Desember'
+        ];
 
         $tabGet       = $f3->get('GET.tab');
         if ($tabGet === 'ditolak') {
             $filterTab = 'ditolak';
+        } elseif ($tabGet === 'selesai') {
+            $filterTab = 'selesai';
         } elseif ($tabGet === 'berlangsung') {
             $filterTab = 'berlangsung';
         } else {
@@ -117,12 +139,13 @@ class OrderController extends Controller {
         $orderModel = new OrderLayanan($this->db);
         
         // Data order sesuai tab yang dipilih
-        $daftarOrder = $orderModel->allWithRelasi($filterJenis, $filterStatus, $search, $filterTahun, $filterTab);
+        $daftarOrder = $orderModel->allWithRelasi($filterJenis, $filterStatus, $search, $filterTahun, $filterTab, $filterBulan);
         
-        // Counter untuk badge 3 tab navigasi
-        $countMasuk       = count($orderModel->allWithRelasi($filterJenis, '', '', $filterTahun, 'masuk'));
-        $countBerlangsung = count($orderModel->allWithRelasi($filterJenis, '', '', $filterTahun, 'berlangsung'));
-        $countDitolak     = count($orderModel->allWithRelasi($filterJenis, '', '', $filterTahun, 'ditolak'));
+        // Counter untuk badge 4 tab navigasi
+        $countMasuk       = count($orderModel->allWithRelasi($filterJenis, '', '', $filterTahun, 'masuk', $filterBulan));
+        $countBerlangsung = count($orderModel->allWithRelasi($filterJenis, '', '', $filterTahun, 'berlangsung', $filterBulan));
+        $countSelesai     = count($orderModel->allWithRelasi($filterJenis, '', '', $filterTahun, 'selesai', $filterBulan));
+        $countDitolak     = count($orderModel->allWithRelasi($filterJenis, '', '', $filterTahun, 'ditolak', $filterBulan));
 
         $fieldConfigModel = new OptiFieldConfig($this->db);
         $maskEnabled = $fieldConfigModel->isMaskClientNameEnabled();
@@ -131,10 +154,13 @@ class OrderController extends Controller {
         $f3->set('filter_tab', $filterTab);
         $f3->set('count_masuk', $countMasuk);
         $f3->set('count_berlangsung', $countBerlangsung);
+        $f3->set('count_selesai', $countSelesai);
         $f3->set('count_ditolak', $countDitolak);
-        $f3->set('count_aktif', $countMasuk + $countBerlangsung);
+        $f3->set('count_aktif', $countMasuk + $countBerlangsung + $countSelesai);
         $f3->set('filter_tahun', $filterTahun);
+        $f3->set('filter_bulan', $filterBulan);
         $f3->set('daftar_tahun', $daftarTahun);
+        $f3->set('daftar_bulan', $daftarBulan);
         $f3->set('filter_jenis_layanan', $filterJenis);
         $f3->set('filter_jenis', $filterJenis);
         $f3->set('filter_status', $filterStatus);
@@ -495,9 +521,11 @@ class OrderController extends Controller {
         $f3->set('daftar_pic', $daftarPic);
 
         $kalkulasiSpm = null;
-        if (!empty($order['tanggal_terima_sampel'])) {
-            $durasiKerja = !empty($order['durasi_hari_kerja']) ? (int)$order['durasi_hari_kerja'] : 30;
-            $kalkulasiSpm = $orderModel->hitungDeadlineHariKerja($order['tanggal_terima_sampel'], $durasiKerja);
+        $tglMulaiSpm = !empty($order['tanggal_spm_mulai']) ? $order['tanggal_spm_mulai'] : (!empty($order['tanggal_terima_sampel']) ? $order['tanggal_terima_sampel'] : null);
+        if (!empty($tglMulaiSpm)) {
+            $durasiNilai = !empty($order['spm_durasi_nilai']) ? (int)$order['spm_durasi_nilai'] : (!empty($order['durasi_hari_kerja']) ? (int)$order['durasi_hari_kerja'] : 30);
+            $durasiSatuan = !empty($order['spm_durasi_satuan']) ? $order['spm_durasi_satuan'] : 'Hari Kerja';
+            $kalkulasiSpm = $orderModel->hitungDeadlineFleksibel($tglMulaiSpm, $durasiNilai, $durasiSatuan);
         }
         $f3->set('kalkulasi_spm', $kalkulasiSpm);
 
@@ -742,9 +770,9 @@ class OrderController extends Controller {
                 $langkahBerikutnya['tombol_icon'] = 'bi-file-earmark-plus-fill';
                 $langkahBerikutnya['tombol_class'] = 'btn-primary';
                 $langkahBerikutnya['target_card'] = '#cardPenawaran';
-            } else {
+            } elseif (($penawaran['status_respon_klien'] ?? '') !== 'deal') {
                 $langkahBerikutnya['judul'] = 'Menunggu Konfirmasi Persetujuan Pelanggan (DEAL)';
-                $langkahBerikutnya['deskripsi'] = 'Surat Penawaran resmi (' . ($penawaran['nomor_penawaran'] ?? 'Draft') . ') telah diterbitkan. Lakukan komunikasi dengan pelanggan dan catat respon persetujuan (DEAL) pada form di bawah.';
+                $langkahBerikutnya['deskripsi'] = 'Surat Penawaran resmi (' . ($penawaran['nomor_surat'] ?? 'Draft') . ') telah diterbitkan. Lakukan komunikasi dengan pelanggan dan catat respon persetujuan (DEAL).';
                 $langkahBerikutnya['penanggung_jawab'] = 'Pelanggan & Tim Kemitraan';
                 $langkahBerikutnya['role_icon'] = 'bi-telephone-forward-fill';
                 $langkahBerikutnya['tipe_badge'] = 'warning';
@@ -753,6 +781,28 @@ class OrderController extends Controller {
                 $langkahBerikutnya['tombol_icon'] = 'bi-check2-circle';
                 $langkahBerikutnya['tombol_class'] = 'btn-primary';
                 $langkahBerikutnya['target_card'] = '#cardPenawaran';
+            } elseif (empty($penawaran['surat_kesanggupan_bayar'])) {
+                $langkahBerikutnya['judul'] = 'Unggah Lembar Persetujuan Penawaran Klien';
+                $langkahBerikutnya['deskripsi'] = 'Penawaran telah disepakati (DEAL). Unggah pindaian (scan) Lembar Persetujuan / Kesanggupan bertandatangan & cap basah klien sebagai prasyarat sebelum diteruskan ke Keuangan.';
+                $langkahBerikutnya['penanggung_jawab'] = 'Tim Kemitraan & Pemasaran';
+                $langkahBerikutnya['role_icon'] = 'bi-file-earmark-arrow-up-fill';
+                $langkahBerikutnya['tipe_badge'] = 'warning';
+                $langkahBerikutnya['tombol_teks'] = 'Upload Lembar Persetujuan';
+                $langkahBerikutnya['tombol_url'] = '#cardKesanggupanBayar';
+                $langkahBerikutnya['tombol_icon'] = 'bi-cloud-arrow-up-fill';
+                $langkahBerikutnya['tombol_class'] = 'btn-warning text-dark fw-bold';
+                $langkahBerikutnya['target_card'] = '#cardKesanggupanBayar';
+            } else {
+                $langkahBerikutnya['judul'] = 'Disposisikan Order ke Tim Keuangan';
+                $langkahBerikutnya['deskripsi'] = 'Lembar Persetujuan telah lengkap. Teruskan order ke Tim Keuangan untuk membuka tahap pembayaran dan penerbitan kuitansi/invoice.';
+                $langkahBerikutnya['penanggung_jawab'] = 'Tim Kemitraan & Pemasaran';
+                $langkahBerikutnya['role_icon'] = 'bi-send-check-fill';
+                $langkahBerikutnya['tipe_badge'] = 'primary';
+                $langkahBerikutnya['tombol_teks'] = 'Disposisi ke Keuangan';
+                $langkahBerikutnya['tombol_url'] = '#cardDisposisiKeuangan';
+                $langkahBerikutnya['tombol_icon'] = 'bi-send-check-fill';
+                $langkahBerikutnya['tombol_class'] = 'btn-dark fw-bold';
+                $langkahBerikutnya['target_card'] = '#cardDisposisiKeuangan';
             }
         } elseif ($currentStep === 6) {
             $langkahBerikutnya['judul'] = 'Konfirmasi Penerimaan Pembayaran';
@@ -766,21 +816,39 @@ class OrderController extends Controller {
             $langkahBerikutnya['tombol_class'] = 'btn-success';
             $langkahBerikutnya['target_card'] = '#cardPembayaran';
         } elseif ($currentStep === 7) {
-            if (empty($order['tanggal_terima_sampel'])) {
-                $langkahBerikutnya['judul'] = 'Catat Tanggal Penerimaan Fisik Sampel di Laboratorium';
-                $langkahBerikutnya['deskripsi'] = 'Pembayaran pelanggan telah dikonfirmasi. Ketika sampel fisik uji tiba di laboratorium, catat tanggal penerimaan untuk mengaktifkan perhitungan batas hari kerja resmi (SPM).';
-                $langkahBerikutnya['penanggung_jawab'] = 'Laboratorium & Petugas Penerima Sampel';
-                $langkahBerikutnya['role_icon'] = 'bi-box-seam-fill';
+            $tglMulaiAktif = !empty($order['tanggal_spm_mulai']) ? $order['tanggal_spm_mulai'] : (!empty($order['tanggal_terima_sampel']) ? $order['tanggal_terima_sampel'] : null);
+            $triggerTipe = $order['spm_trigger_tipe'] ?? 'sampel_diterima';
+
+            if (empty($tglMulaiAktif)) {
+                if ($triggerTipe === 'kick_off') {
+                    $langkahBerikutnya['judul'] = 'Catat Tanggal Rapat Kick-Off Bersama Klien';
+                    $langkahBerikutnya['deskripsi'] = 'Pembayaran pelanggan telah dikonfirmasi. Untuk layanan sertifikasi/konsultansi, catat tanggal pelaksanaan rapat kick-off untuk mengaktifkan perhitungan SPM pengerjaan.';
+                    $langkahBerikutnya['penanggung_jawab'] = 'Ketua Tim / Tim Konsultan';
+                    $langkahBerikutnya['role_icon'] = 'bi-people-fill';
+                    $langkahBerikutnya['tombol_teks'] = 'Catat Rapat Kick-Off';
+                } elseif ($triggerTipe === 'tanda_tangan_pks') {
+                    $langkahBerikutnya['judul'] = 'Catat Tanggal Penandatanganan Kontrak / PKS';
+                    $langkahBerikutnya['deskripsi'] = 'Pembayaran pelanggan telah dikonfirmasi. Untuk layanan kerjasama/litbang, catat tanggal penandatanganan PKS/kontrak untuk mengaktifkan durasi SPM.';
+                    $langkahBerikutnya['penanggung_jawab'] = 'Tim Mitra / Ketua Tim';
+                    $langkahBerikutnya['role_icon'] = 'bi-pen-fill';
+                    $langkahBerikutnya['tombol_teks'] = 'Catat Tanggal PKS';
+                } else {
+                    $langkahBerikutnya['judul'] = 'Catat Titik Awal Pengerjaan (Penerimaan Sampel / Kick-Off / PKS)';
+                    $langkahBerikutnya['deskripsi'] = 'Pembayaran pelanggan telah dikonfirmasi. Catat titik awal pengerjaan (penerimaan sampel di lab, rapat kick-off, atau tanda tangan PKS) untuk mengaktifkan perhitungan batas waktu resmi (SPM).';
+                    $langkahBerikutnya['penanggung_jawab'] = 'Laboratorium & Tim Teknis';
+                    $langkahBerikutnya['role_icon'] = 'bi-box-seam-fill';
+                    $langkahBerikutnya['tombol_teks'] = 'Aktifkan Titik Awal SPM';
+                }
                 $langkahBerikutnya['tipe_badge'] = 'warning';
-                $langkahBerikutnya['tombol_teks'] = 'Catat Tanggal Sampel';
                 $langkahBerikutnya['tombol_url'] = '#cardSampelSpm';
                 $langkahBerikutnya['tombol_icon'] = 'bi-calendar-check-fill';
                 $langkahBerikutnya['tombol_class'] = 'btn-warning text-dark';
                 $langkahBerikutnya['target_card'] = '#cardSampelSpm';
             } elseif (empty($order['po_id'])) {
                 $deadlineStr = !empty($order['tanggal_deadline_spm']) ? date('d M Y', strtotime($order['tanggal_deadline_spm'])) : '-';
-                $langkahBerikutnya['judul'] = 'Terbitkan Petunjuk Operasional (PO) Pengujian Lab';
-                $langkahBerikutnya['deskripsi'] = "Sampel fisik telah diterima dan SPM aktif sampai {$deadlineStr}. Terbitkan lembar PO agar personil analis lab segera menjalankan pengujian sesuai parameter.";
+                $durasiStr = !empty($order['spm_durasi_nilai']) ? ($order['spm_durasi_nilai'] . ' ' . ($order['spm_durasi_satuan'] ?: 'Hari Kerja')) : ($order['spm_layanan'] ?: '-');
+                $langkahBerikutnya['judul'] = 'Terbitkan Petunjuk Operasional (PO) Kegiatan';
+                $langkahBerikutnya['deskripsi'] = "Titik awal pengerjaan telah aktif (SPM: {$durasiStr}, Target Selesai: {$deadlineStr}). Terbitkan lembar Petunjuk Operasional (PO) agar personil pelaksana segera memulai pengerjaan.";
                 $langkahBerikutnya['penanggung_jawab'] = 'Ketua Tim OPTI';
                 $langkahBerikutnya['role_icon'] = 'bi-patch-check-fill';
                 $langkahBerikutnya['tipe_badge'] = 'primary';
@@ -791,10 +859,10 @@ class OrderController extends Controller {
                 $langkahBerikutnya['tombol_class'] = 'btn-primary';
                 $langkahBerikutnya['target_card'] = '#cardPoBast';
             } else {
-                $langkahBerikutnya['judul'] = 'Laboratorium Sedang Melakukan Pengujian Sampel';
-                $langkahBerikutnya['deskripsi'] = 'Petunjuk Operasional (' . ($order['nomor_po'] ?? '-') . ') aktif. Analis laboratorium sedang melakukan pengujian parameter sesuai standar acuan kerja.';
-                $langkahBerikutnya['penanggung_jawab'] = 'Laboratorium Penguji';
-                $langkahBerikutnya['role_icon'] = 'bi-flask-fill';
+                $langkahBerikutnya['judul'] = 'Pekerjaan Sedang Berjalan Sesuai Jadwal SPM';
+                $langkahBerikutnya['deskripsi'] = 'Petunjuk Operasional (' . ($order['nomor_po'] ?? '-') . ') aktif. Tim pelaksana sedang menjalankan kegiatan teknis sesuai standar mutu dan target waktu SPM.';
+                $langkahBerikutnya['penanggung_jawab'] = 'Tim Pelaksana Teknis';
+                $langkahBerikutnya['role_icon'] = 'bi-gear-wide-connected';
                 $langkahBerikutnya['tipe_badge'] = 'primary';
                 $langkahBerikutnya['tombol_teks'] = 'Buka Monitoring PO';
                 $langkahBerikutnya['tombol_url'] = $f3->get('BASE') . "/po/" . $order['po_id'];
@@ -1562,6 +1630,9 @@ class OrderController extends Controller {
         $diskon = (float)($post['diskon_penawaran'] ?? 0.0);
         $tglSampel = !empty($post['tanggal_terima_sampel']) ? $post['tanggal_terima_sampel'] : null;
         $spmLayanan = !empty($post['spm_layanan']) ? trim($post['spm_layanan']) : null;
+        $spmDurasiNilai = isset($post['spm_durasi_nilai']) && $post['spm_durasi_nilai'] !== '' ? (int)$post['spm_durasi_nilai'] : null;
+        $spmDurasiSatuan = !empty($post['spm_durasi_satuan']) ? trim($post['spm_durasi_satuan']) : null;
+        $spmTriggerTipe = !empty($post['spm_trigger_tipe']) ? trim($post['spm_trigger_tipe']) : null;
 
         // Parse list item dari form
         $items = [];
@@ -1587,7 +1658,7 @@ class OrderController extends Controller {
 
         try {
             $orderModel = new OrderLayanan($this->db);
-            $hasil = $orderModel->simpanKalkulasiLingkungan($id, $items, $diskon, $tglSampel, $userId, $spmLayanan);
+            $hasil = $orderModel->simpanKalkulasiLingkungan($id, $items, $diskon, $tglSampel, $userId, $spmLayanan, $spmDurasiNilai, $spmDurasiSatuan, $spmTriggerTipe);
             $order = $orderModel->getDetail($id);
 
             $actionBtn = $post['action_btn'] ?? 'siap_penawaran';
@@ -1732,21 +1803,25 @@ class OrderController extends Controller {
             $hasil = $orderModel->approve($id, $nomorPo, $biaya);
             $order = $orderModel->getDetail($id);
 
-            // Kirim notifikasi ke Tim Kerja & Ka Tim
+            // Kirim notifikasi ke Tim Kerja (PIC) & Ka Tim
             try {
-                \NotificationService::send($this->db, [
-                    'order_id'       => $id,
-                    'po_id'          => $hasil['po_id'] ?? null,
-                    'target_role'    => 'tim_kerja',
-                    'target_layanan' => $order['jenis_layanan_opti'] ?? 'semua',
-                    'judul'          => 'PO Resmi Aktif - Pengujian Lab Dimulai',
-                    'pesan'          => "Dokumen PO #{$hasil['nomor_po']} untuk Order #{$order['nomor_order']} ({$order['nama_perusahaan']}) resmi aktif! Pelaksanaan riset/pengujian dapat dimulai.",
-                    'tipe'           => 'success',
-                    'icon'           => 'bi-gear-wide-connected',
-                    'link_url'       => (!empty($hasil['po_id']) ? "/po/{$hasil['po_id']}" : "/po"),
-                    'created_by'     => $this->getUserId() ?? 1,
-                    'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Pimpinan Balai'
-                ]);
+                $targetPicId = !empty($order['pic_proposal_id']) ? (int)$order['pic_proposal_id'] : (!empty($order['ketua_pelaksana_id']) ? (int)$order['ketua_pelaksana_id'] : null);
+                if (!empty($targetPicId)) {
+                    \NotificationService::send($this->db, [
+                        'order_id'       => $id,
+                        'po_id'          => $hasil['po_id'] ?? null,
+                        'target_role'    => 'tim_kerja',
+                        'target_user_id' => $targetPicId,
+                        'target_layanan' => $order['jenis_layanan_opti'] ?? 'semua',
+                        'judul'          => 'PO Resmi Aktif - Pengujian Lab Dimulai',
+                        'pesan'          => "Dokumen PO #{$hasil['nomor_po']} untuk Order #{$order['nomor_order']} ({$order['nama_perusahaan']}) resmi aktif! Pelaksanaan riset/pengujian dapat dimulai.",
+                        'tipe'           => 'success',
+                        'icon'           => 'bi-gear-wide-connected',
+                        'link_url'       => (!empty($hasil['po_id']) ? "/po/{$hasil['po_id']}" : "/po"),
+                        'created_by'     => $this->getUserId() ?? 1,
+                        'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Pimpinan Balai'
+                    ]);
+                }
 
                 \NotificationService::send($this->db, [
                     'order_id'       => $id,
@@ -2306,11 +2381,29 @@ class OrderController extends Controller {
             return;
         }
 
-        // Parameter filter status
+        // Parameter filter status, pencarian, bulan, dan tahun
         $filterStatus = $f3->get('GET.status') ?: 'semua';
         $filterSearch = trim($f3->get('GET.q') ?? '');
+        $currentYear  = date('Y');
+        $filterTahun  = $f3->exists('GET.tahun') ? trim($f3->get('GET.tahun')) : $currentYear;
+        $filterBulan  = $f3->exists('GET.bulan') ? trim($f3->get('GET.bulan')) : 'all';
+        $daftarTahun  = range((int)$currentYear, (int)$currentYear - 4);
+        $daftarBulan  = [
+            '01' => 'Januari',
+            '02' => 'Februari',
+            '03' => 'Maret',
+            '04' => 'April',
+            '05' => 'Mei',
+            '06' => 'Juni',
+            '07' => 'Juli',
+            '08' => 'Agustus',
+            '09' => 'September',
+            '10' => 'Oktober',
+            '11' => 'November',
+            '12' => 'Desember'
+        ];
 
-        $sql = "SELECT o.id, o.nomor_order, c.nmcustomer AS nama_perusahaan, o.judul_kegiatan, 
+        $sql = "SELECT o.id, o.nomor_permintaan, o.nomor_order, c.nmcustomer AS nama_perusahaan, o.judul_kegiatan, 
                        o.jenis_layanan_opti, o.spm_layanan, o.tanggal_masuk, o.status,
                        o.pic_proposal_id, o.status_proposal_biaya,
                        COALESCE(NULLIF(o.estimasi_biaya, 0), (SELECT SUM(total_biaya_item) FROM opti_kalkulasi_uji_lingkungan WHERE order_id = o.id), p.estimasi_total_biaya, 0) AS estimasi_total_biaya,
@@ -2347,10 +2440,23 @@ class OrderController extends Controller {
             $sql .= " AND o.pic_proposal_id IS NOT NULL ";
         }
 
+        // Filter Tahun
+        if (!empty($filterTahun) && $filterTahun !== 'all') {
+            $sql .= " AND YEAR(COALESCE(o.tanggal_masuk, o.tanggal_klaim, o.created_at)) = ? ";
+            $params[] = (int)$filterTahun;
+        }
+
+        // Filter Bulan
+        if (!empty($filterBulan) && $filterBulan !== 'all') {
+            $sql .= " AND MONTH(COALESCE(o.tanggal_masuk, o.tanggal_klaim, o.created_at)) = ? ";
+            $params[] = (int)$filterBulan;
+        }
+
         // Filter pencarian teks
         if (!empty($filterSearch)) {
-            $sql .= " AND (o.nomor_order LIKE ? OR c.nmcustomer LIKE ? OR o.judul_kegiatan LIKE ? OR p.judul_proposal LIKE ?) ";
+            $sql .= " AND (o.nomor_permintaan LIKE ? OR o.nomor_order LIKE ? OR c.nmcustomer LIKE ? OR o.judul_kegiatan LIKE ? OR p.judul_proposal LIKE ?) ";
             $term = "%{$filterSearch}%";
+            $params[] = $term;
             $params[] = $term;
             $params[] = $term;
             $params[] = $term;
@@ -2447,6 +2553,10 @@ class OrderController extends Controller {
         $f3->set('stat_ditolak', $statDitolak);
         $f3->set('filter_status', $filterStatus);
         $f3->set('filter_q', $filterSearch);
+        $f3->set('filter_tahun', $filterTahun);
+        $f3->set('filter_bulan', $filterBulan);
+        $f3->set('daftar_tahun', $daftarTahun);
+        $f3->set('daftar_bulan', $daftarBulan);
         $f3->set('is_tim_kerja', $isTimKerja);
 
         $this->render('order/proposal_index.html', 'Pusat Tugas Proposal Teknis', 'proposal');
@@ -3338,8 +3448,8 @@ class OrderController extends Controller {
     }
 
     /**
-     * Ketua Tim / Admin mencatat tanggal penerimaan fisik sampel laboratorium
-     * dan mengaktifkan kalkulator deadline SPM (H+1 hari kerja mengecualikan akhir pekan & libur nasional)
+     * Ketua Tim / Admin mencatat titik awal pengerjaan (Penerimaan Sampel, Kick-Off, TTD Kontrak/PKS)
+     * dan mengaktifkan kalkulator deadline SPM
      * Route: POST /order/@id/terima-sampel
      */
     public function simpanTerimaSampel($f3, $params) {
@@ -3347,11 +3457,24 @@ class OrderController extends Controller {
         $id = (int)($params['id'] ?? 0);
         $post = $f3->get('POST');
 
-        $tanggalSampel = $post['tanggal_terima_sampel'] ?? date('Y-m-d');
-        $durasiHariKerja = (int)($post['durasi_hari_kerja'] ?? 30);
-        if ($durasiHariKerja <= 0) {
-            $durasiHariKerja = 30;
+        $triggerTipe = trim($post['spm_trigger_tipe'] ?? 'sampel_diterima');
+        if (!in_array($triggerTipe, ['sampel_diterima', 'kick_off', 'tanda_tangan_pks'])) {
+            $triggerTipe = 'sampel_diterima';
         }
+
+        $tanggalMulai = !empty($post['tanggal_spm_mulai']) ? $post['tanggal_spm_mulai'] : (!empty($post['tanggal_terima_sampel']) ? $post['tanggal_terima_sampel'] : date('Y-m-d'));
+        
+        $durasiNilai = (int)($post['spm_durasi_nilai'] ?? ($post['durasi_hari_kerja'] ?? 30));
+        if ($durasiNilai <= 0) {
+            $durasiNilai = 30;
+        }
+
+        $durasiSatuan = trim($post['spm_durasi_satuan'] ?? 'Hari Kerja');
+        if (!in_array($durasiSatuan, ['Hari Kerja', 'Hari Kalender', 'Minggu', 'Bulan'])) {
+            $durasiSatuan = 'Hari Kerja';
+        }
+
+        $catatanTrigger = trim($post['catatan_trigger_spm'] ?? '');
 
         try {
             $orderModel = new OrderLayanan($this->db);
@@ -3360,22 +3483,28 @@ class OrderController extends Controller {
                 throw new \Exception("Order Layanan #{$id} tidak ditemukan.");
             }
 
-            $kalkulasi = $orderModel->simpanPenerimaanSampel($id, $tanggalSampel, $durasiHariKerja);
+            $kalkulasi = $orderModel->simpanAktivasiSpm($id, $tanggalMulai, $durasiNilai, $durasiSatuan, $triggerTipe, $catatanTrigger);
             $deadlineFormatted = date('d M Y', strtotime($kalkulasi['tanggal_deadline_spm']));
-            $jmlLibur = count($kalkulasi['libur_dilewati']);
+            $jmlLibur = count($kalkulasi['libur_dilewati'] ?? []);
+
+            $labelTrigger = [
+                'sampel_diterima' => 'Penerimaan Fisik Sampel',
+                'kick_off' => 'Rapat Kick-Off',
+                'tanda_tangan_pks' => 'Penandatanganan Kontrak / PKS'
+            ][$triggerTipe] ?? 'Aktivasi Titik Awal SPM';
 
             // Jejak Audit Activity Log
             $namaPetugas = $_SESSION['nama_lengkap'] ?? 'Ketua Tim Teknis';
-            $this->logActivity($id, 'sampel', 'terima_sampel', "Terima fisik sampel (Deadline SPM: {$kalkulasi['tanggal_deadline_spm']}, {$durasiHariKerja} hari kerja)");
+            $this->logActivity($id, 'sampel', 'terima_sampel', "Aktivasi SPM via {$labelTrigger} (Target Selesai: {$kalkulasi['tanggal_deadline_spm']}, Durasi: {$durasiNilai} {$durasiSatuan})");
 
-            // Audit Tahap 7: Penerimaan Fisik Sampel dicatat (FIRST TIME ONLY)
+            // Audit Tahap 7: Titik awal pengerjaan dicatat (FIRST TIME ONLY)
             $currentUserId = (int)$this->getUserId();
             if ($currentUserId > 0) {
                 StageAudit::recordDibaca($this->db, $id, 7, $currentUserId, $namaPetugas, 'Ketua Tim OPTI');
             }
 
-            $msg = "Penerimaan sampel berhasil dicatat! Batas pengerjaan (SPM) otomatis dihitung mulai H+1 kerja: <strong>{$deadlineFormatted}</strong> ({$durasiHariKerja} hari kerja";
-            if ($jmlLibur > 0) {
+            $msg = "Aktivasi SPM via <strong>{$labelTrigger}</strong> berhasil dicatat! Batas waktu penyelesaian resmi: <strong>{$deadlineFormatted}</strong> ({$durasiNilai} {$durasiSatuan}";
+            if ($jmlLibur > 0 && strpos(strtolower($durasiSatuan), 'kerja') !== false) {
                 $msg .= ", melewati {$jmlLibur} hari libur nasional";
             }
             $msg .= ").";
@@ -3388,10 +3517,10 @@ class OrderController extends Controller {
                 \KetuaTimController::notifikasiJikaSiapPenunjukan($this->db, $id, $currentUserId > 0 ? $currentUserId : null);
             }
         } catch (\Exception $e) {
-            $this->setFlashError('Gagal mencatat penerimaan sampel: ' . $e->getMessage());
+            $this->setFlashError('Gagal mencatat aktivasi SPM: ' . $e->getMessage());
         }
 
-        $f3->reroute("/order/{$id}");
+        $f3->reroute("/order/{$id}#cardSampelSpm");
     }
 
     /**

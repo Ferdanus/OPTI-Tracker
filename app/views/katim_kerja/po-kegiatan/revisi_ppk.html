@@ -1,10 +1,11 @@
 <!--
     app/views/katim_kerja/po-kegiatan/revisi_ppk.html
-    Halaman "Revisi PPK BLU" untuk Ketua Tim dan Ketua Pelaksana (/po-revisi-ppk), dipakai lewat variabel `mode`:
-      katim   -> Ketua Tim       tab: Revisi masuk | Pengerjaan & hasil revisi | Menunggu PPK BLU
-      pembuat -> Ketua Pelaksana tab: Revisi masuk | Pengerjaan & hasil revisi | Menunggu PPK BLU
-    Halaman PPK BLU (/po-ppk) memakai file TERPISAH: validasi_ppk.html. Mengubah file ini tidak mengubah halaman PPK BLU.
+    Revisi PPK BLU (halaman terpisah). Dipakai 3 peran lewat variabel `mode`:
+      katim   -> Ketua Tim      (/po-revisi-ppk)  tab: Perlu keputusan | Sedang dikerjakan | Review hasil revisi | Menunggu PPK BLU
+      pembuat -> Ketua Pelaksana (/po-revisi-ppk) tab: Perlu direvisi | Dalam review
+      ppk     -> PPK BLU        (/po-ppk)         tab: Perlu divalidasi | Revisi masuk | Menunggu revisi | Sudah divalidasi
     Data dari PoRevisiPpkController: daftar_po_json, mode, prefix_api, error_message.
+    Dokumen PO diambil dari GET /po-kegiatan/@id/preview lalu tiap bagian diberi slot catatan.
 -->
 <style>
     .rvw-root {
@@ -416,6 +417,7 @@
         function tabDef() {
             if (ROLE === 'ppk') {
                 return [
+
                     { k: 'cek', l: 'Baru dikirim', hot: 1, f: function (p) { return p.state === 'ppk_cek' && !p.ronde; } },
                     // Review revisi = revisi masuk + menunggu revisi digabung. Angka di tab hanya menghitung revisi yang sudah
                     // dikirim balik ke PPK BLU (cnt). PO yang masih diproses tetap ada di daftar, dipisah lewat filter status.
@@ -443,6 +445,7 @@
                 { k: 'proses', l: 'Pengerjaan &amp; hasil revisi', hot: 1, cnt: function (p) { return p.state === 'ketupel_kerja' && !baruDiterima(p); },
                   f: function (p) { return (p.state === 'ketupel_kerja' && !baruDiterima(p)) || p.state === 'katim_review'; } },
                 { k: 'ppk', l: 'Menunggu PPK BLU', f: s('ppk_cek') }
+
             ];
         }
         function perluAksi(p) {
@@ -496,6 +499,7 @@
         }
         function divisiPill(d) { return d ? '<span class="rvw-divpill">' + esc(DIVISI_LABEL[d] || d) + '</span>' : ''; }
         // Tanggal acuan bulan/tahun per tab: diverifikasi Tim Mitra (cek), kiriman revisi (masuk/tunggu), diverifikasi PPK BLU (selesai)
+
         function tglAcuan(p, t) {
             if (t === 'cek') { return p.mitra_valid_at || p.dikirim_at || ''; }
             if (t === 'selesai') { return p.ppk_valid_at || ''; }
@@ -506,6 +510,7 @@
         function cocokDivisi(p) { return !divisi || p.divisi === divisi; }
         function cocokBaca(p) { return !FILTER_ON || !baca || !tabBacaAda(tab) || (p.penerima === PENERIMA_SAYA && (baca === 'belum' ? !p.dibaca_at : !!p.dibaca_at)); }   // status baca hanya untuk PO yang sedang menunggu peran ini
         function cocokStatus(p) { return !statusF || !tabStatusAda(tab) || cocokNilai(p, statusF); }
+
         function cariLintasBulan() { return FILTER_ON && !!q && !periodeDiubah && tab === 'selesai'; }
         function cocokPeriode(p) {
             if (!FILTER_ON || cariLintasBulan()) { return true; }

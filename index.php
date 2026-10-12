@@ -222,7 +222,6 @@ $f3->route('GET /order/@id/berkas', 'BerkasController->index');
 $f3->route('GET /penawaran/@id/lampiran', 'BerkasController->lampiranPenawaran');
 $f3->route('GET /proposal/@id/file', 'BerkasController->fileProposal');
 $f3->route('GET /penawaran/surat-kesanggupan/@id', 'BerkasController->suratKesanggupan');
-
 // Tempel di index.php, SEBELUM $f3->run() (dan sebelum route '/po-kegiatan/@id/...' yang sudah ada tidak masalah, path-nya berbeda).
 
 // ---- Ketua Tim (dan Superadmin) + Ketua Pelaksana: halaman "Revisi PPK BLU" ----
@@ -394,8 +393,10 @@ $f3->route('POST /po-kegiatan/simpan', 'PoKegiatanController->store');
 $f3->route('GET /po-kegiatan/@id/edit', 'PoKegiatanController->edit');
 $f3->route('POST /po-kegiatan/@id/update', 'PoKegiatanController->update');
 $f3->route('GET /po-kegiatan/@id/preview', 'PoKegiatanController->previewFragment');
+$f3->route('POST /po-kegiatan/preview-live', 'PoKegiatanController->previewLive');
 $f3->route('GET /po-kegiatan/jadwal-kolom', 'PoKegiatanController->jadwalKolom');
 $f3->route('GET /po-kegiatan/@id/cetak', 'PoKegiatanController->cetak');
+$f3->route('POST /po-kegiatan/cetak-live', 'PoKegiatanController->cetakLive');
 $f3->route('GET /po-kegiatan/daftar', 'PoReviewController->index');
 $f3->route('GET /po-kegiatan/daftar/data', 'PoReviewController->data');          // penyegaran daftar otomatis
 $f3->route('GET /po-kegiatan/notif', 'PoReviewController->notifJson');

@@ -30,16 +30,31 @@ class SuratMasukController extends Controller {
 
         $currentYear = date('Y');
         $filterTahun = $this->f3->exists('GET.tahun') ? trim($this->f3->get('GET.tahun')) : $currentYear;
+        $filterBulan = $this->f3->exists('GET.bulan') ? trim($this->f3->get('GET.bulan')) : 'all';
         $daftarTahun = range((int)$currentYear, (int)$currentYear - 3);
+        $daftarBulan = [
+            '01' => 'Januari',
+            '02' => 'Februari',
+            '03' => 'Maret',
+            '04' => 'April',
+            '05' => 'Mei',
+            '06' => 'Juni',
+            '07' => 'Juli',
+            '08' => 'Agustus',
+            '09' => 'September',
+            '10' => 'Oktober',
+            '11' => 'November',
+            '12' => 'Desember'
+        ];
 
         if (!$this->repo->isConnected()) {
             $errorMessage = "Database sekretariat belum terhubung atau sedang offline. Silakan periksa konfigurasi di config.ini.";
         } else {
             try {
-                $daftarSurat   = $this->repo->getDaftarSuratOpti($filterTahun);
-                $daftarKlaim   = $this->repo->getDaftarPermintaanMasuk($this->getUserRole() === 'superadmin' ? null : $userId, $filterTahun);
-                $daftarRiwayat = $this->repo->getDaftarRiwayatSurat($filterTahun);
-                $daftarDitolak = $this->repo->getDaftarSuratDitolak($filterTahun);
+                $daftarSurat   = $this->repo->getDaftarSuratOpti($filterTahun, $filterBulan);
+                $daftarKlaim   = $this->repo->getDaftarPermintaanMasuk($this->getUserRole() === 'superadmin' ? null : $userId, $filterTahun, $filterBulan);
+                $daftarRiwayat = $this->repo->getDaftarRiwayatSurat($filterTahun, $filterBulan);
+                $daftarDitolak = $this->repo->getDaftarSuratDitolak($filterTahun, $filterBulan);
                 
 
                 // Apply search filter if query is present
@@ -87,7 +102,9 @@ class SuratMasukController extends Controller {
         $this->f3->set('total_klaim_selesai', count($daftarRiwayat));
         $this->f3->set('total_ditolak', count($daftarDitolak));
         $this->f3->set('filter_tahun', $filterTahun);
+        $this->f3->set('filter_bulan', $filterBulan);
         $this->f3->set('daftar_tahun', $daftarTahun);
+        $this->f3->set('daftar_bulan', $daftarBulan);
         $this->f3->set('search_q', $searchQ);
         $this->f3->set('error_message', $errorMessage);
 
@@ -131,7 +148,7 @@ class SuratMasukController extends Controller {
                     \NotificationService::send($this->db, [
                         'order_id'       => $orderId,
                         'target_role'    => 'ketua_tim',
-                        'target_layanan' => 'semua',
+                        'target_layanan' => !empty($order['jenis_layanan_opti']) ? $order['jenis_layanan_opti'] : 'semua',
                         'judul'          => 'Permintaan Masuk Baru: Evaluasi Kelayakan Teknis',
                         'pesan'          => "Permohonan layanan dari {$order['nama_perusahaan']} ({$order['judul_kegiatan']}) telah masuk. Mohon kaji kelayakan teknis ISO 17025 dan tentukan PIC.",
                         'tipe'           => 'primary',
@@ -298,30 +315,30 @@ class SuratMasukController extends Controller {
             return;
         }
 
-        $relatifPath = ltrim($surat['file_path'], "/\\");
-$root = $this->f3->get('ROOT');
+        $relatifPath = ltrim($surat['file_path'] ?? '', "/\\");
+        $root = dirname(__DIR__, 2);
 
-$kandidatPath = [
-    $root . '/' . $relatifPath,
-    $root . '/public/' . $relatifPath,
-    rtrim($root, '/\\') . '/../' . $relatifPath,
-];
+        $kandidatPath = [
+            $root . '/' . $relatifPath,
+            $root . '/public/' . $relatifPath,
+            rtrim($root, '/\\') . '/../' . $relatifPath,
+        ];
 
-$filePath = null;
-foreach ($kandidatPath as $kandidat) {
-    if (file_exists($kandidat)) {
-        $filePath = $kandidat;
-        break;
-    }
-}
+        $filePath = null;
+        foreach ($kandidatPath as $kandidat) {
+            if (!empty($relatifPath) && file_exists($kandidat)) {
+                $filePath = $kandidat;
+                break;
+            }
+        }
 
-if (!$filePath) {
-    $filePath = $root . '/' . $relatifPath; // fallback lokasi default buat di-generate FPDF di bawah
-}
+        if (!$filePath) {
+            $filePath = $root . '/' . $relatifPath; // fallback lokasi default buat di-generate FPDF di bawah
+        }
 
-if (!file_exists($filePath)) {
+        if (!file_exists($filePath) || empty($relatifPath)) {
             // Generate clean structured official letter
-            require_once $this->f3->get('ROOT') . '/app/helpers/fpdf/fpdf.php';
+            require_once dirname(__DIR__, 2) . '/app/helpers/fpdf/fpdf.php';
             $pdf = new \FPDF('P', 'mm', 'A4');
             $pdf->SetMargins(20, 15, 20);
             $pdf->AddPage();
@@ -493,10 +510,12 @@ if (!file_exists($filePath)) {
             exit;
         }
 
-        $filePath = $this->f3->get('ROOT') . '/' . ltrim($surat['file_path'] ?? '', "/\\");
+        $relatifPath = ltrim($surat['file_path'] ?? '', "/\\");
+        $appRoot = dirname(__DIR__, 2);
+        $filePath = $appRoot . '/' . $relatifPath;
         if (empty($surat['file_path']) || !file_exists($filePath)) {
             // Generate clean structured official letter
-            require_once $this->f3->get('ROOT') . '/app/helpers/fpdf/fpdf.php';
+            require_once dirname(__DIR__, 2) . '/app/helpers/fpdf/fpdf.php';
             $pdf = new \FPDF('P', 'mm', 'A4');
             $pdf->SetMargins(20, 15, 20);
             $pdf->AddPage();
@@ -622,7 +641,7 @@ if (!file_exists($filePath)) {
             $pdf->SetFont('Arial', '', 8.5);
             $pdf->Cell(80, 4, 'Direktur', 0, 1, 'C');
 
-            $uploadDir = $this->f3->get('ROOT') . '/public/uploads/surat_masuk';
+            $uploadDir = dirname(__DIR__, 2) . '/public/uploads/surat_masuk';
             if (!is_dir($uploadDir)) @mkdir($uploadDir, 0777, true);
             $tempPath = $uploadDir . '/Surat_Masuk_' . $suratId . '.pdf';
             $pdf->Output('F', $tempPath);
@@ -746,7 +765,7 @@ if (!file_exists($filePath)) {
         $filePath = '';
         $files = $this->f3->get('FILES.file_dokumen');
         if (!empty($files['name']) && $files['error'] === UPLOAD_ERR_OK) {
-            $uploadDir = $this->f3->get('ROOT') . '/uploads/surat_masuk/';
+            $uploadDir = dirname(__DIR__, 2) . '/uploads/surat_masuk/';
             if (!is_dir($uploadDir)) @mkdir($uploadDir, 0777, true);
             $ext = strtolower(pathinfo($files['name'], PATHINFO_EXTENSION));
             $newFileName = 'surat_' . time() . '_' . rand(100, 999) . '.' . $ext;

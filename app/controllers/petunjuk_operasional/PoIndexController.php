@@ -108,6 +108,7 @@ class PoIndexController extends PoSertifikasiController {
             $params[] = $tahun;
         }
 
+        $this->ensureDatabaseSertifikasi();
         $dbName = $this->namaDbSertifikasi();
         $from = "FROM po_kegiatan p
                  LEFT JOIN `{$dbName}`.`tb_arsip_sertifikasi` a ON p.layanan = '" . \PoSchema::SERTIFIKASI . "' AND a.id_arsip_sertifikasi = p.order_id

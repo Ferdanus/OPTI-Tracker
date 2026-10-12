@@ -751,6 +751,7 @@ function statusPill(p) { return '<span class="hm-pill emerald"><i class="bi bi-p
     }
     function renderStepper(p) {
         var steps = ['Disetujui Ketua Tim', 'Verifikasi Humas', 'Verifikasi Tim Mitra', 'Verifikasi PPK BLU'];
+
         var c = posisi(p).langkah;
         var h = '<div class="hm-steps">';
         steps.forEach(function (s, i) {
@@ -759,6 +760,7 @@ function statusPill(p) { return '<span class="hm-pill emerald"><i class="bi bi-p
             if (i < steps.length - 1) { h += '<div class="hm-sline' + (n < c ? ' done' : '') + '"></div>'; }
         });
         var cat = !p.diverifikasi ? 'Setelah Anda verifikasi, PO diteruskan ke Tim Mitra, lalu PPK BLU.' : (c === 5 ? 'Semua verifikasi selesai.' : 'Sudah Anda verifikasi. PO sekarang di ' + posisi(p).di + '.');
+
         $('hmStepper').innerHTML = h + '</div><div class="hm-nextnote">' + cat + '</div>';
     }
     function renderShTabs() {

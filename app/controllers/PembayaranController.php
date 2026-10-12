@@ -456,7 +456,7 @@ class PembayaranController extends Controller {
             throw new \Exception('Isi file bukti bayar tidak sesuai format PDF/JPG/PNG yang diizinkan.');
         }
  
-        $destDir = $this->f3->get('ROOT') . '/storage/pembayaran/';
+        $destDir = dirname(__DIR__, 2) . '/storage/pembayaran/';
         if (!is_dir($destDir)) mkdir($destDir, 0755, true);
  
         $safeName = bin2hex(random_bytes(16)) . '.' . $ext;
@@ -656,7 +656,7 @@ class PembayaranController extends Controller {
         if (empty($row) || empty($row[0]['bukti_bayar'])) { $f3->error(404); return; }
  
         $fileName = $row[0]['bukti_bayar'];
-        $path = $this->f3->get('ROOT') . '/storage/pembayaran/' . $fileName;
+        $path = dirname(__DIR__, 2) . '/storage/pembayaran/' . $fileName;
         if (!is_file($path)) { $f3->error(404); return; }
  
         $ext = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));

@@ -1,8 +1,7 @@
 <div class="d-flex align-items-center gap-3 mb-4">
     <a href="{{ @BASE }}/pembayaran" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i> Kembali</a>
     <div>
-        <h2 class="h4 fw-bold mb-1 text-dark">Catat Pembayaran</h2>
-        <p class="text-muted small mb-0">Input penerimaan pembayaran termin / pelunasan dari mitra industri.</p>
+        <h2 class="h4 fw-bold mb-0 text-dark">Catat Pembayaran</h2>
     </div>
 </div>
 
@@ -21,7 +20,7 @@
         <div class="order-locked-card">
             <div class="d-flex justify-content-between align-items-start mb-2">
                 <div>
-                    <div class="fw-bold text-dark">{{ @order.nomor_order }}</div>
+                    <div class="fw-bold text-dark font-monospace">{{ @order.nomor_order ?: @order.nomor_permintaan ?: ('REQ-' . @order.id) }}</div>
                     <div class="small text-muted">{{ @order.judul_kegiatan }}</div>
                 </div>
                 <check if="{{ @order.jenis_layanan_opti == 'selulosa' }}"><span class="badge-pill-primary">Selulosa</span></check>
@@ -45,7 +44,7 @@
                         <i class="bi bi-file-earmark-check-fill text-success me-1"></i>
                         Order ini punya <strong>Surat Kesanggupan Bayar</strong> terlampir.
                     </div>
-                    <button type="button" class="btn btn-sm btn-outline-primary btn-preview-pdf" data-preview-pdf="{{ @BASE }}/surat-penawaran/{{ @order.sp_id }}/surat-kesanggupan/preview" data-title="Surat Kesanggupan Bayar" data-subtitle="Order: {{ @order.nomor_order }}">
+                    <button type="button" class="btn btn-sm btn-outline-primary btn-preview-pdf" data-preview-pdf="{{ @BASE }}/surat-penawaran/{{ @order.sp_id }}/surat-kesanggupan/preview" data-title="Surat Kesanggupan Bayar" data-subtitle="Permintaan: {{ @order.nomor_permintaan ?: @order.nomor_order ?: ('REQ-' . @order.id) }}">
                         <i class="bi bi-eye me-1"></i> Lihat Dokumen
                     </button>
                 </div>

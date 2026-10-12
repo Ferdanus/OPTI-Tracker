@@ -6,12 +6,39 @@ class SuratPenawaranMitraController extends Controller {
     public function index($f3) {
         $this->requireAuth();
 
+        $currentYear  = date('Y');
+        $filterTahun  = $f3->exists('GET.tahun') ? trim((string)$f3->get('GET.tahun')) : $currentYear;
+        $filterBulan  = $f3->exists('GET.bulan') ? trim((string)$f3->get('GET.bulan')) : 'all';
+        $daftarTahun  = range((int)$currentYear, (int)$currentYear - 4);
+        $daftarBulan  = [
+            '01' => 'Januari',
+            '02' => 'Februari',
+            '03' => 'Maret',
+            '04' => 'April',
+            '05' => 'Mei',
+            '06' => 'Juni',
+            '07' => 'Juli',
+            '08' => 'Agustus',
+            '09' => 'September',
+            '10' => 'Oktober',
+            '11' => 'November',
+            '12' => 'Desember'
+        ];
+
         $search       = trim((string) ($f3->get('GET.q') ?? ''));
         $filterStatus = (string) ($f3->get('GET.status') ?? '');
 
         $sql    = 'SELECT * FROM surat_penawaran_mitra WHERE 1=1';
         $params = [];
 
+        if (!empty($filterTahun) && $filterTahun !== 'all') {
+            $sql      .= ' AND YEAR(COALESCE(tanggal_surat, created_at)) = ?';
+            $params[]  = (int)$filterTahun;
+        }
+        if (!empty($filterBulan) && $filterBulan !== 'all') {
+            $sql      .= ' AND MONTH(COALESCE(tanggal_surat, created_at)) = ?';
+            $params[]  = (int)$filterBulan;
+        }
         if ($search !== '') {
             $sql      .= ' AND (nomor_surat LIKE ? OR nama_mitra LIKE ? OR perusahaan LIKE ?)';
             $params[]  = '%' . $search . '%';
@@ -32,6 +59,10 @@ class SuratPenawaranMitraController extends Controller {
         $f3->set('total_final', count(array_filter($daftar, function ($r) { return $r['status'] === 'final'; })));
         $f3->set('search', $search);
         $f3->set('filter_status', $filterStatus);
+        $f3->set('filter_tahun', $filterTahun);
+        $f3->set('daftar_tahun', $daftarTahun);
+        $f3->set('filter_bulan', $filterBulan);
+        $f3->set('daftar_bulan', $daftarBulan);
 
         $this->render('tim_mitra/surat penawaran/index.html', 'Surat Penawaran Mitra', 'surat-penawaran-mitra');
     }

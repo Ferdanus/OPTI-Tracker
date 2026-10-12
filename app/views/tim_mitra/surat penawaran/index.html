@@ -1,7 +1,6 @@
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
     <div>
-        <h2 class="h4 fw-bold mb-1 text-dark"><i class="bi bi-file-earmark-text text-primary me-1"></i> Surat Penawaran Mitra</h2>
-        <p class="text-muted small mb-0">Daftar surat penawaran yang diterbitkan untuk customer.</p>
+        <h2 class="h4 fw-bold mb-0 text-dark"><i class="bi bi-file-earmark-text text-primary me-1"></i> Surat Penawaran Mitra</h2>
     </div>
     <a href="{{ @BASE }}/surat-penawaran-mitra/tambah" class="btn btn-primary">
         <i class="bi bi-plus-lg"></i> Tambah Surat
@@ -32,21 +31,55 @@
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-body p-3">
         <form action="{{ @BASE }}/surat-penawaran-mitra" method="GET" class="row g-2 align-items-center">
-            <div class="col-md-8">
+            <!-- Filter Bulan -->
+            <div class="col-6 col-md-3 col-lg-2">
+                <div class="input-group">
+                    <span class="input-group-text bg-light text-muted"><i class="bi bi-calendar3"></i></span>
+                    <select name="bulan" class="form-select fw-semibold" onchange="this.form.submit()" title="Filter Berdasarkan Bulan">
+                        <option value="all" {{ @filter_bulan == 'all' || empty(@filter_bulan) ? 'selected' : '' }}>Semua Bulan</option>
+                        <repeat group="{{ @daftar_bulan }}" key="{{ @bln_kode }}" value="{{ @bln_nama }}">
+                            <option value="{{ @bln_kode }}" {{ @filter_bulan == @bln_kode ? 'selected' : '' }}>{{ @bln_nama }}</option>
+                        </repeat>
+                    </select>
+                </div>
+            </div>
+            <!-- Filter Tahun -->
+            <div class="col-6 col-md-3 col-lg-2">
+                <div class="input-group">
+                    <span class="input-group-text bg-light text-muted"><i class="bi bi-calendar-event"></i></span>
+                    <select name="tahun" class="form-select fw-semibold" onchange="this.form.submit()" title="Filter Berdasarkan Tahun">
+                        <repeat group="{{ @daftar_tahun }}" value="{{ @thn }}">
+                            <option value="{{ @thn }}" {{ @filter_tahun == @thn ? 'selected' : '' }}>Tahun {{ @thn }}</option>
+                        </repeat>
+                        <option value="all" {{ @filter_tahun == 'all' ? 'selected' : '' }}>Semua Tahun</option>
+                    </select>
+                </div>
+            </div>
+            <!-- Input Pencarian -->
+            <div class="col-12 col-md-6 col-lg-4">
                 <div class="input-group">
                     <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
                     <input type="text" name="q" class="form-control border-start-0" placeholder="Cari nomor surat / nama mitra / perusahaan..." value="{{ @search }}">
                 </div>
             </div>
-            <div class="col-md-3">
-                <select name="status" class="form-select">
+            <!-- Filter Status -->
+            <div class="col-6 col-md-3 col-lg-2">
+                <select name="status" class="form-select" onchange="this.form.submit()">
                     <option value="">Semua Status</option>
                     <option value="draft" {{ @filter_status == 'draft' ? 'selected' : '' }}>Draft</option>
                     <option value="final" {{ @filter_status == 'final' ? 'selected' : '' }}>Final</option>
                 </select>
             </div>
-            <div class="col-md-1">
-                <button type="submit" class="btn btn-outline-primary w-100"><i class="bi bi-funnel"></i></button>
+            <!-- Tombol Filter & Reset -->
+            <div class="col-6 col-md-3 col-lg-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary flex-grow-1 d-inline-flex align-items-center justify-content-center gap-1">
+                    <i class="bi bi-funnel"></i> Filter
+                </button>
+                <check if="{{ @search || @filter_status || (@filter_tahun && @filter_tahun != date('Y')) || (@filter_bulan && @filter_bulan != 'all') }}">
+                    <a href="{{ @BASE }}/surat-penawaran-mitra" class="btn btn-outline-secondary d-inline-flex align-items-center justify-content-center px-2.5" title="Reset filter">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                    </a>
+                </check>
             </div>
         </form>
     </div>

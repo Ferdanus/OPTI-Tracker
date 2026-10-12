@@ -1,8 +1,7 @@
 <div class="d-flex align-items-center gap-3 mb-4">
     <a href="{{ @BASE }}/po-kegiatan" class="btn-back"><i class="bi bi-arrow-left"></i> Kembali</a>
     <div>
-        <h2 class="h4 fw-bold mb-1 text-dark">Buat Petunjuk Operasional</h2>
-        <p class="text-muted small mb-0">Pilih jenis PO, lalu pilih order.</p>
+        <h2 class="h4 fw-bold mb-0 text-dark">Buat Petunjuk Operasional</h2>
     </div>
 </div>
 
@@ -83,6 +82,15 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     });
+
+    // Dari menu OPTI (?jenis=opti): lewati pilihan jenis PO, langsung pilih order.
+    if (new URLSearchParams(window.location.search).get('jenis') === 'opti') {
+        var kartuJenis = document.getElementById('gridJenisPo').closest('.card');
+        if (kartuJenis) { kartuJenis.classList.add('d-none'); }
+        var lblOrder = cardPilihOrder.querySelector('label');
+        if (lblOrder) { lblOrder.textContent = 'Pilih Order'; }
+        cardPilihOrder.classList.remove('d-none');
+    }
 
     selectOrderPo.addEventListener('change', function () {
         if (!selectOrderPo.value) return;

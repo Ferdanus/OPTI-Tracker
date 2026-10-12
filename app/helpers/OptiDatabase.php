@@ -13,6 +13,7 @@ class OptiDatabase extends \DB\SQL {
         'tb_arsipuser',
         'tb_arsipsurat',
         'tb_hari_libur',
+        'tb_tanggal_libur',
         'tb_surat_keluar'
     ];
 

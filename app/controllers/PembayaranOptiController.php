@@ -53,17 +53,30 @@ class PembayaranOptiController extends Controller {
         $divisiKatim = $_SESSION['jenis_layanan_opti'] ?? '';
 
         // ---- Tab 1: Baru Masuk (Order yang sudah Deal / Siap Bayar tapi belum ada transaksi pembayaran) ----
-        $sqlBaru = "SELECT o.id, o.nomor_order, o.judul_kegiatan, o.estimasi_biaya, o.tanggal_masuk, o.created_at,
-        o.jenis_layanan_opti, o.status_keuangan, o.status_penawaran, o.status_rancop,
-        c.nmcustomer AS nama_perusahaan, c.pt_cv,
-        sp.id AS sp_id, sp.surat_kesanggupan_bayar, sp.nominal_penawaran
- FROM order_layanan o
- JOIN tb_customer c ON o.id_customer = c.id_customer
- LEFT JOIN tb_surat_penawaran sp ON sp.order_id = o.id
- WHERE o.status_penawaran = 'deal'
-   AND o.status_keuangan = 'menunggu_pembayaran'
-   AND o.id NOT IN (SELECT DISTINCT order_id FROM opti_pembayaran)
- ORDER BY o.id DESC";
+        $sqlBaru = "SELECT o.id, o.nomor_permintaan, o.nomor_order, o.judul_kegiatan, o.estimasi_biaya, o.tanggal_masuk, o.created_at,
+                           o.jenis_layanan_opti, o.status_keuangan, o.status_penawaran, o.status_rancop,
+                           c.nmcustomer AS nama_perusahaan, c.pt_cv,
+                           sp.id AS sp_id, sp.surat_kesanggupan_bayar, sp.nominal_penawaran
+                    FROM order_layanan o
+                    JOIN tb_customer c ON o.id_customer = c.id_customer
+                    LEFT JOIN tb_surat_penawaran sp ON sp.id = (
+                        SELECT id FROM tb_surat_penawaran 
+                        WHERE order_id = o.id 
+                        ORDER BY (status_respon_klien = 'deal') DESC, (surat_kesanggupan_bayar IS NOT NULL AND surat_kesanggupan_bayar != '') DESC, id DESC 
+                        LIMIT 1
+                    )
+                    WHERE (
+                        o.status_penawaran = 'deal'
+                        OR o.status_rancop = 'deal'
+                        OR o.status_keuangan = 'menunggu_pembayaran'
+                        OR (sp.id IS NOT NULL AND (sp.status_respon_klien = 'deal' OR (sp.surat_kesanggupan_bayar IS NOT NULL AND sp.surat_kesanggupan_bayar != '')))
+                        OR o.status IN ('penawaran_deal', 'menunggu_pembayaran')
+                    )
+                    AND o.id NOT IN (SELECT DISTINCT order_id FROM opti_pembayaran)
+                    AND (o.status_keuangan IS NULL OR o.status_keuangan != 'lunas')
+                    AND (o.status IS NULL OR o.status NOT IN ('batal', 'ditolak'))
+                    AND (o.status_rancop IS NULL OR o.status_rancop != 'batal')
+                    ORDER BY o.id DESC";
         $daftarBaru = $this->safeQuery($sqlBaru);
         foreach ($daftarBaru as &$o) {
             $o['nama_perusahaan'] = \Customer::formatNamaPerusahaan($o['pt_cv'] ?? '', $o['nama_perusahaan'] ?? '');
@@ -75,7 +88,7 @@ class PembayaranOptiController extends Controller {
         unset($o);
 
         // ---- Tab 2 & 3: Sedang Berjalan & Lunas ----
-        $sqlPunyaPembayaran = "SELECT o.id, o.nomor_order, o.judul_kegiatan, o.estimasi_biaya, o.created_at, o.tanggal_masuk,
+        $sqlPunyaPembayaran = "SELECT o.id, o.nomor_permintaan, o.nomor_order, o.judul_kegiatan, o.estimasi_biaya, o.created_at, o.tanggal_masuk,
                                       o.jenis_layanan_opti, o.disposisi_katim_at, o.status_keuangan,
                                       c.nmcustomer AS nama_perusahaan, c.pt_cv,
                                       sp.id AS sp_id, sp.surat_kesanggupan_bayar, sp.nominal_penawaran,
@@ -85,7 +98,12 @@ class PembayaranOptiController extends Controller {
                                       (SELECT MAX(p.tanggal_bayar) FROM opti_pembayaran p WHERE p.order_id = o.id AND p.status_verifikasi = 'terverifikasi') AS tanggal_bayar_terakhir
                                FROM order_layanan o
                                JOIN tb_customer c ON o.id_customer = c.id_customer
-                               LEFT JOIN tb_surat_penawaran sp ON sp.order_id = o.id
+                               LEFT JOIN tb_surat_penawaran sp ON sp.id = (
+                                   SELECT id FROM tb_surat_penawaran 
+                                   WHERE order_id = o.id 
+                                   ORDER BY (status_respon_klien = 'deal') DESC, (surat_kesanggupan_bayar IS NOT NULL AND surat_kesanggupan_bayar != '') DESC, id DESC 
+                                   LIMIT 1
+                               )
                                WHERE o.id IN (SELECT DISTINCT order_id FROM opti_pembayaran)
                                   OR o.status_keuangan IN ('lunas', 'sebagian', 'terbayar_sebagian')
                                ORDER BY o.id DESC";
@@ -179,7 +197,7 @@ class PembayaranOptiController extends Controller {
         }
 
         $rows = $this->safeQuery(
-            "SELECT o.id, o.nomor_order, o.judul_kegiatan, o.estimasi_biaya, o.jenis_layanan_opti, o.disposisi_katim_at,
+            "SELECT o.id, o.nomor_permintaan, o.nomor_order, o.judul_kegiatan, o.estimasi_biaya, o.jenis_layanan_opti, o.disposisi_katim_at,
                     c.nmcustomer AS nama_perusahaan, c.pt_cv,
                     sp.id AS sp_id, sp.nominal_penawaran, sp.surat_kesanggupan_bayar,
                     COALESCE((SELECT SUM(jumlah) FROM opti_pembayaran WHERE order_id = o.id AND status_verifikasi = 'terverifikasi'), 0) AS terbayar,
@@ -187,7 +205,12 @@ class PembayaranOptiController extends Controller {
                     COALESCE((SELECT COUNT(id) FROM opti_pembayaran WHERE order_id = o.id), 0) AS jumlah_baris_total
              FROM order_layanan o
              JOIN tb_customer c ON o.id_customer = c.id_customer
-             LEFT JOIN tb_surat_penawaran sp ON sp.order_id = o.id
+             LEFT JOIN tb_surat_penawaran sp ON sp.id = (
+                 SELECT id FROM tb_surat_penawaran 
+                 WHERE order_id = o.id 
+                 ORDER BY (status_respon_klien = 'deal') DESC, (surat_kesanggupan_bayar IS NOT NULL AND surat_kesanggupan_bayar != '') DESC, id DESC 
+                 LIMIT 1
+             )
              WHERE o.id = ?
              LIMIT 1",
             [$orderId]
@@ -265,6 +288,9 @@ if ($isKesanggupan) {
         $pembayaran->save();
 
         $this->logActivity($orderId, 'pembayaran', 'verifikasi_pembayaran', "Unggah surat kesanggupan bayar (Berjalan)");
+
+        $orderModel = new OrderLayanan($this->db);
+        $orderModel->terbitkanNomorOrder($orderId);
 
 if (!empty($post['disposisi_langsung'])) {
     $this->lakukanDisposisiKatim($orderId, $this->getUserId());
@@ -395,16 +421,17 @@ $this->setFlashSuccess($pesanSukses);
         if (empty($row) || empty($row[0]['bukti_bayar'])) { $f3->error(404); return; }
 
         $rawPath = $row[0]['bukti_bayar'];
-        $root = rtrim($this->f3->get('ROOT') ?: '', '/\\');
+        $appRoot = str_replace('\\', '/', dirname(__DIR__, 2));
+        $root = rtrim(str_replace('\\', '/', $this->f3->get('ROOT') ?: $appRoot), '/\\');
 
         $candidates = [
+            $appRoot . '/' . ltrim($rawPath, '/\\'),
+            $appRoot . '/storage/pembayaran/' . basename($rawPath),
+            $appRoot . '/uploads/bukti_bayar/' . basename($rawPath),
             $root . '/' . ltrim($rawPath, '/\\'),
             $root . '/storage/pembayaran/' . basename($rawPath),
             $root . '/uploads/bukti_bayar/' . basename($rawPath),
             $rawPath,
-            dirname(__DIR__, 2) . '/' . ltrim($rawPath, '/\\'),
-            dirname(__DIR__, 2) . '/storage/pembayaran/' . basename($rawPath),
-            dirname(__DIR__, 2) . '/uploads/bukti_bayar/' . basename($rawPath),
         ];
 
         $path = null;
@@ -454,7 +481,12 @@ $this->setFlashSuccess($pesanSukses);
         $acuanRows = $this->safeQuery(
             "SELECT o.estimasi_biaya, sp.nominal_penawaran
              FROM order_layanan o
-             LEFT JOIN tb_surat_penawaran sp ON sp.order_id = o.id AND sp.status_respon_klien = 'deal'
+             LEFT JOIN tb_surat_penawaran sp ON sp.id = (
+                 SELECT id FROM tb_surat_penawaran 
+                 WHERE order_id = o.id 
+                 ORDER BY (status_respon_klien = 'deal') DESC, id DESC 
+                 LIMIT 1
+             )
              WHERE o.id = ? LIMIT 1",
             [$orderId]
         );
@@ -472,6 +504,9 @@ $this->setFlashSuccess($pesanSukses);
         $order->load(['id = ?', $orderId]);
         if (!$order->dry()) {
             $order->status_keuangan = $statusBaru;
+            if (empty($order->nomor_order)) {
+                $order->nomor_order = $order->generateNomorOrder();
+            }
             $order->save();
         }
 
@@ -489,7 +524,12 @@ $this->setFlashSuccess($pesanSukses);
             "SELECT o.estimasi_biaya, sp.nominal_penawaran,
                     COALESCE((SELECT SUM(jumlah) FROM opti_pembayaran WHERE order_id = o.id AND status_verifikasi = 'terverifikasi'), 0) AS total_terbayar
              FROM order_layanan o
-             LEFT JOIN tb_surat_penawaran sp ON sp.order_id = o.id AND sp.status_respon_klien = 'deal'
+             LEFT JOIN tb_surat_penawaran sp ON sp.id = (
+                 SELECT id FROM tb_surat_penawaran 
+                 WHERE order_id = o.id 
+                 ORDER BY (status_respon_klien = 'deal') DESC, id DESC 
+                 LIMIT 1
+             )
              WHERE o.id = ? LIMIT 1",
             [$orderId]
         );
@@ -529,7 +569,7 @@ $this->setFlashSuccess($pesanSukses);
             throw new \Exception('Isi file bukti bayar tidak sesuai format PDF/JPG/PNG yang diizinkan.');
         }
 
-        $destDir = $this->f3->get('ROOT') . '/storage/pembayaran/';
+        $destDir = dirname(__DIR__, 2) . '/storage/pembayaran/';
         if (!is_dir($destDir)) mkdir($destDir, 0755, true);
 
         $safeName = bin2hex(random_bytes(16)) . '.' . $ext;

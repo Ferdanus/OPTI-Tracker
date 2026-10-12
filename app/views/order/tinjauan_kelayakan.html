@@ -17,17 +17,17 @@
                 <div class="card-body p-3 p-md-4">
                     <div class="small text-secondary" style="font-size: 0.84rem; line-height: 1.6;">
                         <div class="d-flex mb-2">
-                            <span class="text-muted" style="width: 125px; flex-shrink: 0;">No. Order</span>
+                            <span class="text-muted" style="width: 125px; flex-shrink: 0;">No. Permintaan</span>
                             <span class="text-muted me-2">:</span>
-                            <check if="{{ !empty(@order.nomor_order) }}">
-                                <true>
-                                    <strong class="text-dark font-monospace">{{ @order.nomor_order }}</strong>
-                                </true>
-                                <false>
-                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle font-monospace" style="font-size: 0.72rem;">Diterbitkan saat ACC Kelayakan</span>
-                                </false>
-                            </check>
+                            <strong class="text-dark font-monospace">{{ @order.nomor_permintaan ?: ('REQ-' . @order.id) }}</strong>
                         </div>
+                        <check if="{{ !empty(@order.nomor_order) }}">
+                            <div class="d-flex mb-2">
+                                <span class="text-muted" style="width: 125px; flex-shrink: 0;">No. Order</span>
+                                <span class="text-muted me-2">:</span>
+                                <strong class="text-primary font-monospace">{{ @order.nomor_order }}</strong>
+                            </div>
+                        </check>
                         <div class="d-flex mb-2">
                             <span class="text-muted" style="width: 125px; flex-shrink: 0;">Bidang Layanan</span>
                             <span class="text-muted me-2">:</span>

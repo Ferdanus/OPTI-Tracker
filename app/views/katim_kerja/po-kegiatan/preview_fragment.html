@@ -1,13 +1,14 @@
 <style>
     .po-doc-scope { font-family: 'Times New Roman', Times, serif; color: #000; }
     .po-doc-sheet {
+        position: relative;
         background: #fff;
         width: 210mm;
         min-height: 297mm;
-        padding: 20mm 20mm 20mm 30mm; /* atas kanan bawah kiri -- kiri dilebihin buat "penjilidan" */
+        padding: 20mm 20mm 20mm 20mm; /* Simetris kiri dan kanan */
         margin: 0 auto;
         box-sizing: border-box;
-        box-shadow: 0 2px 10px rgba(0,0,0,.15);
+        box-shadow: 0 4px 20px rgba(0,0,0,.25);
     }
     .po-doc-title { text-align: center; font-weight: bold; font-size: 14pt; margin-bottom: 4px; letter-spacing: .3px; }
     .po-doc-nomor { text-align: center; font-size: 12pt; margin-bottom: 18px; }
@@ -23,9 +24,17 @@
     }
     .po-doc-sheet table th, .po-doc-sheet table td {
         border: 1px solid #000; padding: 5px 8px; vertical-align: middle;
-        
     }
     .po-doc-sheet table th { background: #f1f5f9; font-weight: bold; text-align: center; }
+    .po-doc-sheet table.po-inline-table, .po-doc-sheet .point-row table {
+        table-layout: fixed;
+        width: 100%;
+        margin: 6px 0 10px 0;
+        font-size: 10pt;
+        white-space: normal !important;
+        word-break: break-word;
+    }
+    .po-doc-sheet ol[type="a"], .po-doc-sheet ol.list-alpha { list-style-type: lower-alpha !important; }
 
     /* [BARU] tabel RAB berjenjang (lingkungan) -- banyak kolom sempit (Kali/Jumlah/Hari),
        padding & font dikecilin dikit biar gak kepenuhan / kepotong di kertas A4. */
@@ -35,24 +44,31 @@
        ngubah lebar kolom/tabelnya -- fontnya dikecilin dikit biar tetep muat satu baris. */
     .rab-table .rab-uang { white-space: nowrap; font-size: 8.5pt; }
 
-    .po-badge-status { font-size: 11px; font-weight: bold; padding: 3px 10px; border-radius: 12px; }
-    .po-status-draft { background: #f1f5f9; color: #475569; }
-    .po-status-terkirim { background: #ecfdf5; color: #065f46; }
+    .po-doc-sheet .po-badge-status {
+        position: absolute;
+        top: 14mm;
+        right: 16mm;
+        font-size: 10.5px;
+        font-weight: bold;
+        padding: 3px 9px;
+        border-radius: 6px;
+        letter-spacing: 0.5px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    .po-status-draft { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+    .po-status-terkirim { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
     .po-jadwal-cell { width: 26px; height: 20px; }
     .po-jadwal-cell.on { background: var(--color-primary, #334155); }
  
 
-    /* [BARU] khusus tabel Jadwal -- kolom bisa banyak (sampai 31 tanggal), font & padding
-       dikecilin biar semua kolom tetep muat dalam lebar kertas, gak nabrak keluar. */
-    .po-jadwal-table { font-size: 8pt !important; }
-    .po-jadwal-table th, .po-jadwal-table td { padding: 3px 2px !important; }
+    /* Khusus tabel Jadwal -- proporsional, border tegas, rapih untuk 1 s/d 12 bulan */
+    .po-jadwal-table { font-size: 7.5pt !important; border-collapse: collapse !important; width: 100% !important; border: 1.5px solid #1e293b !important; margin-bottom: 6px !important; }
+    .po-jadwal-table th, .po-jadwal-table td { border: 1px solid #334155 !important; padding: 3px 2px !important; text-align: center !important; vertical-align: middle !important; }
+    .po-jadwal-table th { background: #f1f5f9 !important; font-weight: 700 !important; color: #0f172a !important; line-height: 1.2; }
     .po-jadwal-table th:first-child, .po-jadwal-table td:first-child {
-        width: 26mm; text-align: left !important; font-size: 8.5pt !important;
+        width: 32% !important; min-width: 140px !important; text-align: left !important; font-size: 8pt !important; padding-left: 6px !important; padding-right: 4px !important; word-break: break-word !important;
     }
-    .po-jadwal-table th { line-height: 1.25; padding: 4px 2px !important; }
-/* .jadwal-libur-mark { display: block; font-size: 6.5pt; font-weight: normal; color: #6b7280; margin-top: 1px; } */
     .po-jadwal-cell { height: 14px; }
-    /* .po-jadwal-cell.on { background: var(--color-primary, #881337); } */
 
    
     .po-signature-row {
@@ -71,12 +87,10 @@
 </style>
 
 <div class="po-doc-scope">
-    <div class="text-end mb-2">
+    <div class="po-doc-sheet" id="poDocSheet">
         <check if="{{ @po.status == 'draft' }}"><span class="po-badge-status po-status-draft">DRAFT</span></check>
         <check if="{{ @po.status == 'terkirim' }}"><span class="po-badge-status po-status-terkirim">TERKIRIM</span></check>
-    </div>
 
-    <div class="po-doc-sheet" id="poDocSheet">
         <div class="po-doc-title">PETUNJUK OPERASIONAL (PO)</div>
         <div class="po-doc-nomor">Nomor: {{ @po.nomor_po }}</div>
         <div class="po-doc-judul">Judul: {{ @po.judul_kegiatan }}</div>
@@ -103,6 +117,7 @@
         </check>
         <check if="{{ !@po.tujuan_lines || count(@po.tujuan_lines) == 0 }}"><div style="font-size:13px;">-</div></check>
 
+
         <div class="po-section-title">3. RUANG LINGKUP</div>
 
         <check if="{{ @po.ruang_lingkup_deskripsi_lines && count(@po.ruang_lingkup_deskripsi_lines) > 0 }}">
@@ -115,7 +130,7 @@
                         </div>
                     </check>
                     <check if="{{ !@dl.marker }}">
-                        <div style="margin-bottom:3px; text-align:justify;">{{ @dl.teks }}</div>
+                        <div style="margin-bottom:3px; text-align:justify; {{ @dl.is_sub ? 'margin-left:24px;' : '' }}">{{ @dl.teks | raw }}</div>
                     </check>
                 </repeat>
             </div>
@@ -137,26 +152,6 @@
         </tbody>
     </table>
 </check>
-
-<!-- <check if="{{ @po.nomor_alat_bahan }}">
-    <div class="po-section-title">{{ @po.nomor_alat_bahan }}. ALAT & BAHAN</div>
-    <check if="{{ @po.alat_bahan_lines && count(@po.alat_bahan_lines) > 0 }}">
-        <div style="font-size:13px; margin-bottom:8px;">
-            <repeat group="{{ @po.alat_bahan_lines }}" value="{{ @dl }}">
-                <check if="{{ @dl.marker }}">
-                    <div style="display:flex; gap:6px; margin-bottom:3px;">
-                        <span style="flex:0 0 24px;">{{ @dl.marker }}</span>
-                        <span style="flex:1; text-align:justify; white-space:pre-line;">{{ @dl.teks }}</span>
-                    </div>
-                </check>
-                <check if="{{ !@dl.marker }}">
-                    <div style="margin-bottom:3px;">{{ @dl.teks }}</div>
-                </check>
-            </repeat>
-        </div>
-    </check>
-</check> -->
-
 <check if="{{ @po.nomor_alat_bahan }}">
     <div class="po-section-title">{{ @po.nomor_alat_bahan }}. ALAT {{ @po.sub_nomor_alat ? 'DAN BAHAN' : '& BAHAN' }}</div>
 
@@ -173,7 +168,7 @@
                     </div>
                 </check>
                 <check if="{{ !@dl.marker }}">
-                    <div style="margin-bottom:3px;">{{ @dl.teks }}</div>
+                    <div style="margin-bottom:3px; text-align:justify; {{ @dl.is_sub ? 'margin-left:24px;' : '' }}">{{ @dl.teks | raw }}</div>
                 </check>
             </repeat>
         </div>
@@ -196,9 +191,9 @@
         <div style="font-size:13px;">
             <repeat group="{{ @po.metoda_lines }}" value="{{ @dl }}">
                 <check if="{{ @dl.marker }}">
-                    <div style="display:flex; gap:6px; margin-bottom:3px;"><span style="flex:0 0 24px;">{{ @dl.marker }}</span><span style="flex:1; text-align:justify; white-space:pre-line;">{{ @dl.teks }}</span></div>
+                    <div style="display:flex; gap:6px; margin-bottom:3px; {{ @dl.is_sub ? 'margin-left:24px;' : '' }}"><span style="flex:0 0 24px; font-weight:600;">{{ @dl.marker }}</span><span style="flex:1; text-align:justify;">{{ @dl.teks | raw }}</span></div>
                 </check>
-                <check if="{{ !@dl.marker }}"><div style="margin-bottom:3px;">{{ @dl.teks }}</div></check>
+                <check if="{{ !@dl.marker }}"><div style="margin-bottom:3px; text-align:justify; {{ @dl.is_sub ? 'margin-left:24px;' : '' }}">{{ @dl.teks | raw }}</div></check>
             </repeat>
         </div>
     </check>
@@ -232,13 +227,13 @@
         <div style="font-size:13px; margin-bottom:8px;">
             <repeat group="{{ @po.metoda_lines }}" value="{{ @dl }}">
                 <check if="{{ @dl.marker }}">
-                    <div style="display:flex; gap:6px; margin-bottom:3px;">
-                        <span style="flex:0 0 24px;">{{ @dl.marker }}</span>
-                        <span style="flex:1; text-align:justify; white-space:pre-line;">{{ @dl.teks }}</span>
+                    <div style="display:flex; gap:6px; margin-bottom:3px; {{ @dl.is_sub ? 'margin-left:24px;' : '' }}">
+                        <span style="flex:0 0 24px; font-weight:600;">{{ @dl.marker }}</span>
+                        <span style="flex:1; text-align:justify;">{{ @dl.teks | raw }}</span>
                     </div>
                 </check>
                 <check if="{{ !@dl.marker }}">
-                    <div style="margin-bottom:3px;">{{ @dl.teks }}</div>
+                    <div style="margin-bottom:3px; text-align:justify; {{ @dl.is_sub ? 'margin-left:24px;' : '' }}">{{ @dl.teks | raw }}</div>
                 </check>
             </repeat>
         </div>
@@ -574,37 +569,44 @@
                     <div style="font-weight:700; font-size:12px; margin:8px 0 4px;">{{ @group.nama_tahap }}</div>
                 </check>
                 <check if="{{ @group.kegiatan && count(@group.kegiatan) > 0 }}">
-                    <table class="po-jadwal-table">
-                        <thead>
-                            <tr>
-                                <th></th>
-                                <repeat group="{{ @po.jadwal_bulan_header }}" value="{{ @bh }}">
-                                    <th colspan="{{ @bh.span }}" class="text-center">{{ @bh.label }}</th>
-                                </repeat>
-                            </tr>
-                            <tr>
-                                <th>Kegiatan</th>
-                                <repeat group="{{ @po.jadwal_kolom }}" value="{{ @k }}">
-                                    <th class="text-center" style="{{ @k.libur ? 'background:#d1d5db;' : '' }}">{{ @k.label }}</th>
-                                </repeat>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <repeat group="{{ @group.kegiatan }}" value="{{ @keg }}">
+                    <repeat group="{{ @po.jadwal_chunks ?: [[ 'label' => '', 'kolom' => @po.jadwal_kolom, 'bulan_header' => @po.jadwal_bulan_header ]] }}" value="{{ @chunk }}" key="{{ @cIdx }}">
+                        <check if="{{ @po.jadwal_chunks && count(@po.jadwal_chunks) > 1 }}">
+                            <div style="font-weight:600; font-size:10px; color:#475569; margin:6px 0 2px; text-transform:uppercase; letter-spacing:0.3px;">
+                                Bagian {{ @cIdx + 1 }}: {{ @chunk.label }}
+                            </div>
+                        </check>
+                        <table class="po-jadwal-table" style="margin-bottom:8px;">
+                            <thead>
                                 <tr>
-                                    <td>{{ @keg.nama }}</td>
-                                    <repeat group="{{ @po.jadwal_kolom }}" value="{{ @k }}">
-                                        <check if="{{ @k.libur }}">
-                                            <td class="text-center" style="background:{{ in_array(@k.key, @keg.tanda ?: []) ? '#374151' : '#e5e7eb' }}; font-size:7pt; color:{{ in_array(@k.key, @keg.tanda ?: []) ? '#fff' : '#6b7280' }}; font-weight:{{ in_array(@k.key, @keg.tanda ?: []) ? 'bold' : 'normal' }};">L</td>
-                                        </check>
-                                        <check if="{{ !@k.libur }}">
-                                            <td class="text-center" style="background:{{ in_array(@k.key, @keg.tanda ?: []) ? '#6b7280' : '#fff' }};"></td>
-                                        </check>
+                                    <th></th>
+                                    <repeat group="{{ @chunk.bulan_header }}" value="{{ @bh }}">
+                                        <th colspan="{{ @bh.span }}" class="text-center">{{ @bh.label }}</th>
                                     </repeat>
                                 </tr>
-                            </repeat>
-                        </tbody>
-                    </table>
+                                <tr>
+                                    <th>Kegiatan</th>
+                                    <repeat group="{{ @chunk.kolom }}" value="{{ @k }}">
+                                        <th class="text-center" style="{{ @k.libur ? 'background:#d1d5db;' : '' }}">{{ @k.label }}</th>
+                                    </repeat>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <repeat group="{{ @group.kegiatan }}" value="{{ @keg }}">
+                                    <tr>
+                                        <td>{{ @keg.nama }}</td>
+                                        <repeat group="{{ @chunk.kolom }}" value="{{ @k }}">
+                                            <check if="{{ @k.libur }}">
+                                                <td class="text-center" style="background:{{ in_array(@k.key, @keg.tanda ?: []) ? '#334155' : '#e5e7eb' }}; font-size:7pt; color:{{ in_array(@k.key, @keg.tanda ?: []) ? '#fff' : '#6b7280' }}; font-weight:{{ in_array(@k.key, @keg.tanda ?: []) ? 'bold' : 'normal' }};">L</td>
+                                            </check>
+                                            <check if="{{ !@k.libur }}">
+                                                <td class="text-center" style="background:{{ in_array(@k.key, @keg.tanda ?: []) ? '#334155' : '#ffffff' }};"></td>
+                                            </check>
+                                        </repeat>
+                                    </tr>
+                                </repeat>
+                            </tbody>
+                        </table>
+                    </repeat>
                 </check>
             </repeat>
         </check>

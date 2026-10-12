@@ -75,7 +75,11 @@ class SuratMasukRepository {
      * Ambil daftar surat masuk OPTI yang belum diklaim
      * Urutan: tanggal_surat ASC, id ASC (FIFO)
      */
-    public function getDaftarSuratOpti(?string $filterTahun = null): array {
+    /**
+     * Ambil daftar surat masuk OPTI yang belum diklaim
+     * Urutan: tanggal_surat ASC, id ASC (FIFO)
+     */
+    public function getDaftarSuratOpti(?string $filterTahun = null, ?string $filterBulan = null): array {
         if (!$this->isConnected()) {
             return array();
         }
@@ -103,9 +107,14 @@ class SuratMasukRepository {
                       AND a.status_klaim = 'N'";
     
             $params = array();
+            $idx = 1;
             if (!empty($filterTahun) && $filterTahun !== 'all') {
                 $sql .= " AND YEAR(a.tanggal_surat) = ?";
-                $params[1] = (int)$filterTahun;
+                $params[$idx++] = (int)$filterTahun;
+            }
+            if (!empty($filterBulan) && $filterBulan !== 'all') {
+                $sql .= " AND MONTH(a.tanggal_surat) = ?";
+                $params[$idx++] = (int)$filterBulan;
             }
             $sql .= " ORDER BY a.tanggal_surat ASC, a.id_arsip ASC";
     
@@ -124,9 +133,14 @@ class SuratMasukRepository {
                   AND (`status_tolak` = 0 OR `status_tolak` IS NULL)";
         
         $params = array();
+        $idx = 1;
         if (!empty($filterTahun) && $filterTahun !== 'all') {
             $sql .= " AND YEAR(`tanggal_surat`) = ?";
-            $params[1] = (int)$filterTahun;
+            $params[$idx++] = (int)$filterTahun;
+        }
+        if (!empty($filterBulan) && $filterBulan !== 'all') {
+            $sql .= " AND MONTH(`tanggal_surat`) = ?";
+            $params[$idx++] = (int)$filterBulan;
         }
     
         $sql .= " ORDER BY `tanggal_surat` ASC, `id` ASC";
@@ -137,7 +151,7 @@ class SuratMasukRepository {
     /**
      * Hitung jumlah surat masuk OPTI yang belum diklaim secara cepat (COUNT query)
      */
-    public function countSuratOptiBelumKlaim(?string $filterTahun = null): int {
+    public function countSuratOptiBelumKlaim(?string $filterTahun = null, ?string $filterBulan = null): int {
         if (!$this->isConnected()) {
             return 0;
         }
@@ -151,9 +165,14 @@ class SuratMasukRepository {
                       AND a.status_klaim = 'N'";
 
             $params = array();
+            $idx = 1;
             if (!empty($filterTahun) && $filterTahun !== 'all') {
                 $sql .= " AND YEAR(a.tanggal_surat) = ?";
-                $params[1] = (int)$filterTahun;
+                $params[$idx++] = (int)$filterTahun;
+            }
+            if (!empty($filterBulan) && $filterBulan !== 'all') {
+                $sql .= " AND MONTH(a.tanggal_surat) = ?";
+                $params[$idx++] = (int)$filterBulan;
             }
 
             $res = $this->dbSekretariat->exec($sql, $params);
@@ -167,9 +186,14 @@ class SuratMasukRepository {
                   AND (`status_tolak` = 0 OR `status_tolak` IS NULL)";
         
         $params = array();
+        $idx = 1;
         if (!empty($filterTahun) && $filterTahun !== 'all') {
             $sql .= " AND YEAR(`tanggal_surat`) = ?";
-            $params[1] = (int)$filterTahun;
+            $params[$idx++] = (int)$filterTahun;
+        }
+        if (!empty($filterBulan) && $filterBulan !== 'all') {
+            $sql .= " AND MONTH(`tanggal_surat`) = ?";
+            $params[$idx++] = (int)$filterBulan;
         }
 
         $res = $this->dbSekretariat->exec($sql, $params);
@@ -179,7 +203,7 @@ class SuratMasukRepository {
     /**
      * Ambil daftar permintaan masuk (yang sudah diklaim oleh tim mitra tapi belum diproses lebih lanjut)
      */
-    public function getDaftarPermintaanMasuk(?int $userId = null, ?string $filterTahun = null): array {
+    public function getDaftarPermintaanMasuk(?int $userId = null, ?string $filterTahun = null, ?string $filterBulan = null): array {
         $sql = "SELECT o.*, 
                        c.nmcustomer, 
                        c.pt_cv, 
@@ -204,6 +228,10 @@ class SuratMasukRepository {
             $sql .= " AND YEAR(COALESCE(o.tanggal_klaim, o.tanggal_masuk, o.created_at)) = ?";
             $params[$idx++] = (int)$filterTahun;
         }
+        if (!empty($filterBulan) && $filterBulan !== 'all') {
+            $sql .= " AND MONTH(COALESCE(o.tanggal_klaim, o.tanggal_masuk, o.created_at)) = ?";
+            $params[$idx++] = (int)$filterBulan;
+        }
 
         $sql .= " ORDER BY o.tanggal_klaim DESC, o.id DESC";
 
@@ -218,7 +246,7 @@ class SuratMasukRepository {
     /**
      * Ambil daftar riwayat surat yang sudah selesai diklaim dan telah maju ke tahapan lanjutan
      */
-    public function getDaftarRiwayatSurat(?string $filterTahun = null): array {
+    public function getDaftarRiwayatSurat(?string $filterTahun = null, ?string $filterBulan = null): array {
         $sql = "SELECT o.*, 
                        c.nmcustomer, 
                        c.pt_cv, 
@@ -236,9 +264,14 @@ class SuratMasukRepository {
                 WHERE o.id_surat_masuk IS NOT NULL AND o.status != 'permintaan_masuk' AND o.status != 'ditolak'";
 
         $params = array();
+        $idx = 1;
         if (!empty($filterTahun) && $filterTahun !== 'all') {
             $sql .= " AND YEAR(COALESCE(o.tanggal_klaim, o.tanggal_masuk, o.created_at)) = ?";
-            $params[1] = (int)$filterTahun;
+            $params[$idx++] = (int)$filterTahun;
+        }
+        if (!empty($filterBulan) && $filterBulan !== 'all') {
+            $sql .= " AND MONTH(COALESCE(o.tanggal_klaim, o.tanggal_masuk, o.created_at)) = ?";
+            $params[$idx++] = (int)$filterBulan;
         }
 
         $sql .= " ORDER BY o.tanggal_klaim DESC, o.id DESC";
@@ -303,18 +336,20 @@ class SuratMasukRepository {
                     throw new \Exception("Perusahaan {$customer['nmcustomer']} belum terdaftar untuk Layanan Optimalisasi Teknologi Industri (OPTI).");
                 }
     
+                $orderModel = new \OrderLayanan($this->dbMain);
+                $nomorPermintaan = $orderModel->generateNomorPermintaan($surat['tanggal_surat'] ?: date('Y-m-d'));
                 $nomorOrder = null;
     
                 $jenisLayanan = (!empty($pilihanLayanan) && in_array($pilihanLayanan, ['selulosa', 'lingkungan'])) ? $pilihanLayanan : 'belum_ditentukan';
     
                 $this->dbMain->exec(
                     "INSERT INTO `order_layanan` (
-                        `id_customer`, `id_surat_masuk`, `nomor_order`, `tanggal_masuk`, 
+                        `id_customer`, `id_surat_masuk`, `nomor_permintaan`, `nomor_order`, `tanggal_masuk`, 
                         `judul_kegiatan`, `deskripsi`, `spm_layanan`, `jenis_layanan_opti`, 
                         `lokasi_pelaksanaan`, `jumlah_pekerjaan`, `estimasi_biaya`, 
                         `status`, `diklaim_oleh`, `tanggal_klaim`, `created_at`
                     ) VALUES (
-                        ?, ?, ?, ?,
+                        ?, ?, ?, ?, ?,
                         ?, ?, ?, ?,
                         'internal', '1 paket kegiatan', 0.00,
                         'permintaan_masuk', ?, ?, ?
@@ -322,15 +357,16 @@ class SuratMasukRepository {
                     array(
                         1  => $idCustomer,
                         2  => $suratId,
-                        3  => $nomorOrder,
-                        4  => $surat['tanggal_surat'] ?: date('Y-m-d'),
-                        5  => $surat['perihal'] ?: 'Permohonan Layanan OPTI',
-                        6  => '',
-                        7  => 'Lainnya',
-                        8  => $jenisLayanan,
-                        9  => $userId,
-                        10 => $waktuSekarang,
-                        11 => $waktuSekarang
+                        3  => $nomorPermintaan,
+                        4  => $nomorOrder,
+                        5  => $surat['tanggal_surat'] ?: date('Y-m-d'),
+                        6  => $surat['perihal'] ?: 'Permohonan Layanan OPTI',
+                        7  => '',
+                        8  => 'Lainnya',
+                        9  => $jenisLayanan,
+                        10 => $userId,
+                        11 => $waktuSekarang,
+                        12 => $waktuSekarang
                     )
                 );
                 $orderId = (int)($this->dbMain->exec("SELECT LAST_INSERT_ID() as id")[0]['id'] ?? 0);
@@ -479,18 +515,20 @@ class SuratMasukRepository {
                 $idCustomer = (int)($this->dbMain->exec("SELECT LAST_INSERT_ID() as id")[0]['id'] ?? 0);
             }
     
+            $orderModel = new \OrderLayanan($this->dbMain);
+            $nomorPermintaan = $orderModel->generateNomorPermintaan($surat['tanggal_surat'] ?: date('Y-m-d'));
             $nomorOrder = null;
             $jenisLayanan = 'belum_ditentukan';
             $perihal = $surat['perihal'] ?? '';
     
             $this->dbMain->exec(
                 "INSERT INTO `order_layanan` (
-                    `id_customer`, `id_surat_masuk`, `nomor_order`, `tanggal_masuk`, 
+                    `id_customer`, `id_surat_masuk`, `nomor_permintaan`, `nomor_order`, `tanggal_masuk`, 
                     `judul_kegiatan`, `deskripsi`, `spm_layanan`, `jenis_layanan_opti`, 
                     `lokasi_pelaksanaan`, `jumlah_pekerjaan`, `estimasi_biaya`, 
                     `status`, `diklaim_oleh`, `tanggal_klaim`, `created_at`
                 ) VALUES (
-                    ?, ?, ?, ?,
+                    ?, ?, ?, ?, ?,
                     ?, ?, ?, ?,
                     'internal', '1 paket kegiatan', 0.00,
                     'permintaan_masuk', ?, ?, ?
@@ -498,15 +536,16 @@ class SuratMasukRepository {
                 array(
                     1  => $idCustomer,
                     2  => $suratId,
-                    3  => $nomorOrder,
-                    4  => $surat['tanggal_surat'] ?: date('Y-m-d'),
-                    5  => $perihal ?: 'Permohonan Layanan OPTI',
-                    6  => '',
-                    7  => 'Lainnya',
-                    8  => $jenisLayanan,
-                    9  => $userId,
-                    10 => $waktuSekarang,
-                    11 => $waktuSekarang
+                    3  => $nomorPermintaan,
+                    4  => $nomorOrder,
+                    5  => $surat['tanggal_surat'] ?: date('Y-m-d'),
+                    6  => $perihal ?: 'Permohonan Layanan OPTI',
+                    7  => '',
+                    8  => 'Lainnya',
+                    9  => $jenisLayanan,
+                    10 => $userId,
+                    11 => $waktuSekarang,
+                    12 => $waktuSekarang
                 )
             );
             $orderId = (int)($this->dbMain->exec("SELECT LAST_INSERT_ID() as id")[0]['id'] ?? 0);
@@ -638,7 +677,7 @@ class SuratMasukRepository {
     /**
      * Ambil daftar surat masuk yang ditolak beserta alasan penolakannya
      */
-    public function getDaftarSuratDitolak(?string $filterTahun = null): array {
+    public function getDaftarSuratDitolak(?string $filterTahun = null, ?string $filterBulan = null): array {
         if (!$this->isConnected()) {
             return array();
         }
@@ -658,9 +697,14 @@ class SuratMasukRepository {
                     WHERE a.status_disposisi_surat = 'ditolak'";
 
             $params = [];
+            $idx = 1;
             if (!empty($filterTahun) && $filterTahun !== 'all') {
                 $sql .= " AND YEAR(COALESCE(a.tanggal_update, a.tanggal_surat)) = ?";
-                $params[1] = (int)$filterTahun;
+                $params[$idx++] = (int)$filterTahun;
+            }
+            if (!empty($filterBulan) && $filterBulan !== 'all') {
+                $sql .= " AND MONTH(COALESCE(a.tanggal_update, a.tanggal_surat)) = ?";
+                $params[$idx++] = (int)$filterBulan;
             }
             $sql .= " ORDER BY a.tanggal_update DESC, a.id_arsip DESC";
             return $this->dbSekretariat->exec($sql, $params);
@@ -675,9 +719,14 @@ class SuratMasukRepository {
                 WHERE s.status_tolak = 1";
         
         $params = array();
+        $idx = 1;
         if (!empty($filterTahun) && $filterTahun !== 'all') {
             $sql .= " AND YEAR(COALESCE(s.tanggal_tolak, s.tanggal_surat)) = ?";
-            $params[1] = (int)$filterTahun;
+            $params[$idx++] = (int)$filterTahun;
+        }
+        if (!empty($filterBulan) && $filterBulan !== 'all') {
+            $sql .= " AND MONTH(COALESCE(s.tanggal_tolak, s.tanggal_surat)) = ?";
+            $params[$idx++] = (int)$filterBulan;
         }
 
         $sql .= " ORDER BY s.tanggal_tolak DESC, s.id DESC";

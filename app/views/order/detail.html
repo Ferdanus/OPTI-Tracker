@@ -807,12 +807,6 @@
     <div class="order-hero-card">
         <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3">
             <div>
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb mb-1 small">
-                        <li class="breadcrumb-item"><a href="{{ @BASE }}/order" class="text-decoration-none text-muted"><i class="bi bi-folder2-open me-1"></i>Order Layanan</a></li>
-                        <li class="breadcrumb-item active fw-bold text-dark" aria-current="page">#{{ @order.nomor_order }}</li>
-                    </ol>
-                </nav>
                 <div class="d-flex align-items-center gap-2 flex-wrap mb-2">
                     <h4 class="fw-bold text-dark m-0 font-display me-2 fs-4">{{ @order.judul_kegiatan }}</h4>
                     <check if="{{ @order.jenis_layanan_opti == 'selulosa' }}">
@@ -857,16 +851,20 @@
                     </check>
                 </div>
                 <div class="d-flex align-items-center gap-3 text-secondary small flex-wrap">
-                    <span class="text-nowrap" data-bs-toggle="tooltip" title="Nomor registrasi unik layanan dalam sistem OPTI Tracker">No. Order: 
-                        <check if="{{ !empty(@order.nomor_order) }}">
-                            <true>
-                                <strong class="text-dark font-monospace">{{ @order.nomor_order }}</strong>
-                            </true>
-                            <false>
-                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle font-monospace" style="font-size: 0.72rem;">Diterbitkan saat ACC Kelayakan</span>
-                            </false>
-                        </check>
-                    </span>
+                    <check if="{{ !empty(@order.nomor_order) }}">
+                        <span class="text-nowrap" data-bs-toggle="tooltip" title="Nomor order resmi setelah pembayaran">No. Order: 
+                            <strong class="text-primary font-monospace">{{ @order.nomor_order }}</strong>
+                        </span>
+                        <span class="text-muted">&bull;</span>
+                        <span class="text-nowrap" data-bs-toggle="tooltip" title="Nomor registrasi permohonan awal">No. Permintaan: 
+                            <span class="text-dark font-monospace">{{ @order.nomor_permintaan ?: ('REQ-' . @order.id) }}</span>
+                        </span>
+                    </check>
+                    <check if="{{ empty(@order.nomor_order) }}">
+                        <span class="text-nowrap" data-bs-toggle="tooltip" title="Nomor registrasi unik permohonan dalam sistem OPTI Tracker">No. Permintaan: 
+                            <strong class="text-dark font-monospace">{{ @order.nomor_permintaan ?: ('REQ-' . @order.id) }}</strong>
+                        </span>
+                    </check>
                     <span class="text-muted">&bull;</span>
                     <span class="text-nowrap">Tgl Masuk: <span class="text-dark">{{ date('d M Y', strtotime(@order.tanggal_masuk)) }}</span></span>
                     <span class="text-muted">&bull;</span>
@@ -969,13 +967,14 @@
                     </a>
 
                     <!-- Step 7: Petunjuk Operasional -->
-                    <a href="#cardSampelSpm" class="step-checkpoint" data-bs-toggle="tooltip" title="Tahap 7: Penerimaan sampel fisik di lab dan penerbitan instruksi kerja pengujian (PO)">
+                    <!-- Step 7: Petunjuk Operasional & SPM -->
+                    <a href="#cardSampelSpm" class="step-checkpoint" data-bs-toggle="tooltip" title="Tahap 7: Aktivasi titik awal pengerjaan (Sampel/Kick-Off/PKS) dan penerbitan Petunjuk Operasional (PO)">
                         <div class="step-circle {{ @stepper[7].state }}">
                             <check if="{{ @stepper[7].state == 'done' }}"><i class="bi bi-check-lg"></i></check>
-                            <check if="{{ @stepper[7].state == 'current' }}"><i class="bi bi-file-earmark-spreadsheet"></i></check>
-                            <check if="{{ @stepper[7].state == 'waiting' }}"><i class="bi bi-file-earmark-spreadsheet"></i></check>
+                            <check if="{{ @stepper[7].state == 'current' }}"><i class="bi bi-stopwatch"></i></check>
+                            <check if="{{ @stepper[7].state == 'waiting' }}"><i class="bi bi-stopwatch"></i></check>
                         </div>
-                        <span class="step-text {{ @stepper[7].state }}">Penerimaan Sampel &amp; PO</span>
+                        <span class="step-text {{ @stepper[7].state }}">Aktivasi SPM &amp; PO</span>
                         <check if="{{ @stepper[7].state == 'done' }}"><span class="text-success" style="font-size: 0.65rem;"><i class="bi bi-check-circle-fill"></i> Selesai</span></check>
                         <check if="{{ @stepper[7].state == 'current' }}"><span class="badge bg-primary text-white rounded-pill px-1.5 py-0.5 fw-bold" style="font-size: 0.62rem;">Aktif</span></check>
                         <check if="{{ @stepper[7].state == 'waiting' }}"><span class="text-muted" style="font-size: 0.65rem;">Menunggu</span></check>
@@ -1226,11 +1225,11 @@
                 <button class="stage-nav-btn {{ @current_step == 7 ? 'active' : '' }}" id="tab-stage-7" data-bs-toggle="pill" data-bs-target="#pane-stage-7" type="button" role="tab" aria-controls="pane-stage-7" aria-selected="{{ @current_step == 7 ? 'true' : 'false' }}">
                     <div class="stage-nav-title-row">
                         <span class="stage-nav-badge">7</span>
-                        <span class="stage-nav-text">Sampel &amp; PO</span>
+                        <span class="stage-nav-text">Aktivasi SPM</span>
                     </div>
                     <div class="stage-nav-status-row">
-                        <check if="{{ !empty(@order.tanggal_terima_sampel) }}">
-                            <true><span class="badge bg-info-subtle text-info-emphasis stage-status-badge">Diterima</span></true>
+                        <check if="{{ !empty(@order.tanggal_spm_mulai) || !empty(@order.tanggal_terima_sampel) }}">
+                            <true><span class="badge bg-info-subtle text-info-emphasis stage-status-badge">SPM Aktif</span></true>
                             <false>
                                 <check if="{{ @stepper[7].state == 'done' }}">
                                     <true><span class="badge bg-success-subtle text-success stage-status-badge">Selesai</span></true>
@@ -1873,7 +1872,7 @@
                                         </span>
                                         <check if="{{ @order.jenis_layanan_opti == 'lingkungan' && !empty(@kalkulasi_lingkungan) && count(@kalkulasi_lingkungan) > 0 }}">
                                             <span class="badge bg-primary-subtle text-primary border border-primary-subtle fw-medium px-2.5 py-1 text-nowrap d-inline-flex align-items-center">
-                                                <i class="bi bi-check2-circle me-1.5"></i>{{ count(@kalkulasi_lingkungan) }} Parameter Terpilih
+                                                <i class="bi bi-check2-circle me-1.5"></i>{{ count(@kalkulasi_lingkungan) }} Layanan Jasa Terpilih
                                             </span>
                                         </check>
                                     </div>
@@ -1882,12 +1881,12 @@
                                     <check if="{{ @order.jenis_layanan_opti == 'lingkungan' }}">
                                         <check if="{{ !@is_tim_mitra }}">
                                             <a href="{{ @BASE }}/order/{{ @order.id }}/biaya-lingkungan" class="btn btn-primary btn-sm px-3.5 py-2 fw-semibold d-inline-flex align-items-center gap-1.5 text-nowrap shadow-xs" onclick="triggerStageRead(4)">
-                                                <i class="bi {{ !empty(@kalkulasi_lingkungan) ? 'bi-pencil-square' : 'bi-plus-circle' }}"></i> {{ !empty(@kalkulasi_lingkungan) ? 'Kelola Tarif &amp; Parameter' : 'Susun Parameter &amp; Tarif' }}
+                                                <i class="bi {{ !empty(@kalkulasi_lingkungan) ? 'bi-pencil-square' : 'bi-plus-circle' }}"></i> {{ !empty(@kalkulasi_lingkungan) ? 'Kelola Tarif &amp; Layanan Jasa' : 'Susun Tarif &amp; Layanan Jasa' }}
                                             </a>
                                         </check>
                                         <check if="{{ @is_tim_mitra && !empty(@kalkulasi_lingkungan) && count(@kalkulasi_lingkungan) > 0 }}">
                                             <a href="{{ @BASE }}/order/{{ @order.id }}/biaya-lingkungan" class="btn btn-outline-secondary btn-sm px-3.5 py-2 fw-semibold d-inline-flex align-items-center gap-1.5 text-nowrap shadow-xs" onclick="triggerStageRead(4)">
-                                                <i class="bi bi-eye"></i> Lihat Rincian Parameter
+                                                <i class="bi bi-eye"></i> Lihat Rincian Layanan Jasa
                                             </a>
                                         </check>
                                         <check if="{{ !@penawaran && !empty(@kalkulasi_lingkungan) && count(@kalkulasi_lingkungan) > 0 }}">
@@ -1917,17 +1916,17 @@
                             </div>
                         </div>
 
-                        <!-- TABEL RINCIAN PARAMETER UJI (KHUSUS LINGKUNGAN) -->
+                        <!-- TABEL RINCIAN LAYANAN JASA (KHUSUS LINGKUNGAN) -->
                         <check if="{{ @order.jenis_layanan_opti == 'lingkungan' }}">
                             <check if="{{ !empty(@kalkulasi_lingkungan) && count(@kalkulasi_lingkungan) > 0 }}">
                                 <div class="card border rounded-3 mb-3 overflow-hidden shadow-xs">
                                     <div class="card-header bg-white py-2.5 px-3 d-flex justify-content-between align-items-center border-bottom">
                                         <div class="d-flex align-items-center gap-2">
-                                            <i class="bi bi-list-check text-primary"></i>
-                                            <span class="small fw-bold text-dark">Daftar Parameter Uji Terpilih</span>
+                                            <i class="bi bi-briefcase-fill text-primary"></i>
+                                            <span class="small fw-bold text-dark">Daftar Layanan Jasa Terpilih</span>
                                         </div>
                                         <div class="d-flex align-items-center gap-2">
-                                            <span class="badge bg-light text-dark border font-monospace">{{ count(@kalkulasi_lingkungan) }} Parameter</span>
+                                            <span class="badge bg-light text-dark border font-monospace">{{ count(@kalkulasi_lingkungan) }} Layanan Jasa</span>
                                             <check if="{{ !@is_tim_mitra }}">
                                                 <a href="{{ @BASE }}/order/{{ @order.id }}/biaya-lingkungan" class="btn btn-sm btn-outline-secondary py-0 px-2 small" style="font-size: 0.75rem;" onclick="triggerStageRead(4)">
                                                     <i class="bi bi-pencil me-1"></i> Ubah
@@ -1940,10 +1939,10 @@
                                             <thead class="table-light">
                                                 <tr>
                                                     <th class="text-center" style="width: 35px;">No</th>
-                                                    <th>Nama Parameter Uji</th>
-                                                    <th>Baku Mutu / Standar</th>
+                                                    <th>Nama Jasa / Layanan Jasa</th>
+                                                    <th>Baku Mutu / Standar / Rujukan / Regulasi</th>
                                                     <th class="text-end" style="width: 140px;">Tarif Satuan</th>
-                                                    <th class="text-center" style="width: 90px;">Titik/Sampel</th>
+                                                    <th class="text-center" style="width: 105px;">Jumlah/Titik</th>
                                                     <th class="text-end" style="width: 145px;">Subtotal</th>
                                                 </tr>
                                             </thead>
@@ -1986,14 +1985,14 @@
                             </check>
                             <check if="{{ empty(@kalkulasi_lingkungan) || count(@kalkulasi_lingkungan) == 0 }}">
                                 <div class="card border border-dashed rounded-3 p-4 text-center bg-light mb-3">
-                                    <i class="bi bi-clipboard2-pulse fs-2 text-secondary opacity-50 d-block mb-1"></i>
-                                    <div class="fw-bold text-dark small">Daftar Parameter Uji Belum Disusun</div>
+                                    <i class="bi bi-briefcase fs-2 text-secondary opacity-50 d-block mb-1"></i>
+                                    <div class="fw-bold text-dark small">Daftar Layanan Jasa Belum Disusun</div>
                                     <p class="text-muted small mb-0" style="max-width: 440px; margin: 0 auto; font-size: 0.78rem;">
                                         <check if="{{ !@is_tim_mitra }}">
-                                            Pilih metode &amp; parameter uji dari katalog tarif resmi PP 54/2021 melalui tombol <strong>Susun Parameter &amp; Tarif</strong> di atas untuk menghitung total biaya pengujian.
+                                            Pilih metode &amp; layanan dari katalog resmi atau tambah manual melalui tombol <strong>Susun Tarif &amp; Layanan Jasa</strong> di atas untuk menghitung total biaya penawaran.
                                         </check>
                                         <check if="{{ @is_tim_mitra }}">
-                                            Menunggu PIC Peneliti menyusun rincian parameter uji dan tarif biaya layanan.
+                                            Menunggu PIC Peneliti menyusun rincian layanan jasa dan tarif biaya penawaran.
                                         </check>
                                     </p>
                                 </div>
@@ -2455,40 +2454,152 @@
                                 </div>
                             </check>
 
-                            <!-- Tombol Aksi Disposisi ke Tim Keuangan (Di Bawah Riwayat Penawaran) -->
+                            <!-- BAGIAN KHUSUS JIKA STATUS PENAWARAN DEAL: BUKTI PERSETUJUAN & DISPOSISI KEUANGAN -->
                             <check if="{{ (@has_penawaran_deal || (@penawaran && @penawaran.status_respon_klien == 'deal')) }}">
-                                <check if="{{ !@is_disposisi_keuangan }}">
-                                    <div class="mt-3 pt-3 border-top d-flex justify-content-between align-items-center flex-wrap gap-2 bg-light p-3 rounded-3 border">
-                                        <div class="d-flex align-items-center gap-2 text-muted small">
-                                            <i class="bi bi-info-circle-fill text-primary fs-5"></i>
+                                
+                                <!-- 1. Kartu Bukti Lembar Persetujuan Penawaran & Kesanggupan Klien -->
+                                <div class="card border rounded-3 mt-3 shadow-xs overflow-hidden {{ !empty(@penawaran.surat_kesanggupan_bayar) ? 'border-success-subtle' : 'border-warning-subtle' }}" id="cardKesanggupanBayar">
+                                    <div class="p-3 bg-white d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                        <div class="d-flex align-items-center gap-2.5">
+                                            <div class="d-flex align-items-center justify-content-center flex-shrink-0 {{ !empty(@penawaran.surat_kesanggupan_bayar) ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning-emphasis' }}" style="width: 32px; height: 32px; min-width: 32px; min-height: 32px; max-width: 32px; max-height: 32px; border-radius: 50% !important; aspect-ratio: 1 / 1; line-height: 1; padding: 0;">
+                                                <i class="bi {{ !empty(@penawaran.surat_kesanggupan_bayar) ? 'bi-file-earmark-check-fill' : 'bi-file-earmark-arrow-up-fill' }} fs-6" style="line-height: 1;"></i>
+                                            </div>
                                             <div>
-                                                <span class="fw-bold text-dark d-block">Penawaran Telah Disetujui (DEAL)</span>
-                                                <span>Lanjutkan order dengan mendisposisikan ke Tim Keuangan agar tahap pembayaran terbuka.</span>
+                                                <div class="fw-bold text-dark small d-flex align-items-center gap-2">
+                                                    <span>1. Bukti Lembar Persetujuan Penawaran &amp; Kesanggupan Klien</span>
+                                                    <check if="{{ !empty(@penawaran.surat_kesanggupan_bayar) }}">
+                                                        <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 0.68rem;">
+                                                            <i class="bi bi-check2-circle me-0.5"></i> Terlampir &amp; Sah
+                                                        </span>
+                                                    </check>
+                                                    <check if="{{ empty(@penawaran.surat_kesanggupan_bayar) }}">
+                                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle" style="font-size: 0.68rem;">
+                                                            <i class="bi bi-exclamation-triangle-fill me-0.5"></i> Wajib Diunggah (Prasyarat Disposisi)
+                                                        </span>
+                                                    </check>
+                                                </div>
+                                                <div class="text-muted" style="font-size: 0.75rem;">
+                                                    Dokumen pindaian (<em>scan</em>) Lembar Persetujuan bertandatangan &amp; cap basah klien sebagai bukti sah audit sebelum order dapat didisposisikan ke Tim Keuangan.
+                                                </div>
                                             </div>
                                         </div>
-                                        <form action="{{ @BASE }}/order/{{ @order.id }}/penawaran/disposisi-keuangan" method="POST" class="d-inline" id="formDisposisiKeuanganDetail" onsubmit="triggerStageRead(5)">
-                                            <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
-                                            <input type="hidden" name="redirect" value="order">
-                                            <button type="button" class="btn btn-dark btn-sm fw-semibold px-3 py-2 d-inline-flex align-items-center gap-1.5 shadow-sm" onclick="triggerStageRead(5); confirmDisposisiKeuanganDetail('{{ @order.nomor_order }}', '{{ @penawaran ? @penawaran.nomor_surat : @order.nomor_order }}')">
-                                                <i class="bi bi-send-check-fill"></i> Disposisi ke Keuangan
-                                            </button>
-                                        </form>
+                                        <div id="kbStatusWrap" class="d-flex align-items-center gap-1.5">
+                                            <check if="{{ !empty(@penawaran.surat_kesanggupan_bayar) }}">
+                                                <button type="button"
+                                                   class="btn btn-sm btn-white border border-primary-subtle text-primary d-inline-flex align-items-center gap-1.5 btn-preview-pdf fw-semibold shadow-xs" id="kbLihatBtn" data-preview-pdf="{{ @BASE }}/surat-penawaran/{{ @penawaran.id }}/surat-kesanggupan/preview" data-title="Lembar Persetujuan Penawaran / Kesanggupan Klien" data-subtitle="Order: {{ @order.nomor_order }}">
+                                                    <i class="bi bi-file-earmark-check-fill text-success"></i> Lihat Dokumen
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-white border text-secondary d-inline-flex align-items-center gap-1 shadow-xs" id="kbGantiBtn" title="Ganti berkas lembar persetujuan">
+                                                    <i class="bi bi-arrow-repeat"></i> Ganti Berkas
+                                                </button>
+                                            </check>
+                                        </div>
                                     </div>
+
+                                    <!-- Form Upload Berkas -->
+                                    <div class="p-4 pt-3 pb-4 {{ !empty(@penawaran.surat_kesanggupan_bayar) ? 'd-none' : '' }} bg-light-subtle border-top" id="kbFormWrap">
+                                        <!-- Kotak Dropzone Terpusat & Kompak -->
+                                        <div class="mx-auto my-1" style="max-width: 680px;">
+                                            <div class="p-3.5 bg-white rounded-3 border border-2 border-dashed text-center position-relative transition-all shadow-2xs" id="kbDropZone" style="cursor: pointer; border-color: #cbd5e1 !important;">
+                                                <input type="file" id="kbFileInput" class="position-absolute top-0 start-0 w-100 h-100 opacity-0" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="cursor: pointer;">
+                                                <div id="kbDropPrompt" class="py-2">
+                                                    <div class="bg-primary-subtle text-primary d-inline-flex align-items-center justify-content-center mb-1.5 flex-shrink-0" style="width: 40px; height: 40px; min-width: 40px; min-height: 40px; max-width: 40px; max-height: 40px; border-radius: 50% !important; aspect-ratio: 1 / 1; line-height: 1; padding: 0;">
+                                                        <i class="bi bi-cloud-arrow-up-fill fs-5" style="line-height: 1;"></i>
+                                                    </div>
+                                                    <span class="fw-bold text-dark d-block small">Pilih Berkas Scan Lembar Persetujuan / Kesanggupan Klien</span>
+                                                    <span class="text-muted d-block mt-0.5" style="font-size: 0.75rem;">Klik di sini atau seret file &bull; PDF, JPG, PNG, atau DOCX (Maks. 10MB)</span>
+                                                    <span class="btn btn-xs btn-white border px-3 py-1.5 text-primary fw-semibold shadow-xs mt-2 d-inline-flex align-items-center gap-1.5" style="font-size: 0.72rem; pointer-events: none;">
+                                                        <i class="bi bi-folder2-open"></i> Telusuri File...
+                                                    </span>
+                                                </div>
+                                                <div id="kbSelectedWrap" class="py-2 d-none">
+                                                    <div class="d-inline-flex align-items-center gap-2 px-3.5 py-2 bg-primary-subtle border border-primary-subtle rounded-pill shadow-xs">
+                                                        <i class="bi bi-file-earmark-check-fill text-primary fs-6" style="line-height: 1;"></i>
+                                                        <span class="fw-semibold text-dark small font-monospace" id="kbSelectedName">nama_file.pdf</span>
+                                                        <span class="text-muted small" id="kbSelectedSize">(1.2 MB)</span>
+                                                        <button type="button" class="btn btn-link text-danger p-0 ms-1" id="kbClearFile" title="Hapus pilihan" style="text-decoration: none;"><i class="bi bi-x-circle-fill"></i></button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Baris Tombol Aksi di Ujung Kanan Card -->
+                                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mt-4 pt-2 mb-1">
+                                            <div class="small text-danger d-none" id="kbErrorMsg"></div>
+                                            <div class="d-flex gap-2 ms-auto">
+                                                <check if="{{ !empty(@penawaran.surat_kesanggupan_bayar) }}">
+                                                    <button type="button" class="btn btn-sm btn-white border shadow-xs px-3.5 py-2" id="kbBatalBtn">Tutup</button>
+                                                </check>
+                                                <button type="button" class="btn btn-sm btn-dark d-inline-flex align-items-center gap-2 fw-semibold shadow-sm px-4 py-2" id="kbSimpanBtn" disabled>
+                                                    <span class="spinner-border spinner-border-sm d-none" id="kbSpinner" role="status"></span>
+                                                    <span id="kbSimpanLabel"><i class="bi bi-cloud-arrow-up-fill me-1"></i> Simpan &amp; Unggah Berkas</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 2. Bagian Disposisi ke Tim Keuangan (Tergantung Lembar Persetujuan) -->
+                                <check if="{{ !@is_disposisi_keuangan }}">
+                                    <!-- Jika Lembar Persetujuan BELUM diunggah: TERKUNCI -->
+                                    <check if="{{ empty(@penawaran.surat_kesanggupan_bayar) }}">
+                                        <div class="mt-3 p-3 bg-light rounded-3 border d-flex justify-content-between align-items-center flex-wrap gap-2 opacity-75" id="cardDisposisiKeuangan">
+                                            <div class="d-flex align-items-center gap-2.5 text-muted small">
+                                                <div class="d-flex align-items-center justify-content-center flex-shrink-0 bg-secondary-subtle text-secondary" style="width: 32px; height: 32px; min-width: 32px; min-height: 32px; max-width: 32px; max-height: 32px; border-radius: 50% !important; aspect-ratio: 1 / 1; line-height: 1; padding: 0;">
+                                                    <i class="bi bi-lock-fill fs-6" style="line-height: 1;"></i>
+                                                </div>
+                                                <div>
+                                                    <span class="fw-bold text-dark d-block">2. Disposisi ke Tim Keuangan <span class="badge bg-secondary-subtle text-secondary border ms-1"><i class="bi bi-lock-fill me-0.5"></i> Terkunci</span></span>
+                                                    <span>Wajib mengunggah berkas <strong>Lembar Persetujuan Klien</strong> pada kartu di atas terlebih dahulu sebelum tombol disposisi terbuka.</span>
+                                                </div>
+                                            </div>
+                                            <button type="button" class="btn btn-secondary btn-sm fw-semibold px-3 py-2 d-inline-flex align-items-center gap-1.5 opacity-50 cursor-not-allowed" disabled title="Wajib unggah Lembar Persetujuan terlebih dahulu">
+                                                <i class="bi bi-lock-fill"></i> Disposisi ke Keuangan
+                                            </button>
+                                        </div>
+                                    </check>
+
+                                    <!-- Jika Lembar Persetujuan SUDAH diunggah: TERBUKA & SIAP DISPOSISI -->
+                                    <check if="{{ !empty(@penawaran.surat_kesanggupan_bayar) }}">
+                                        <div class="mt-3 p-3 bg-primary-subtle border border-primary-subtle rounded-3 d-flex justify-content-between align-items-center flex-wrap gap-2 shadow-xs" id="cardDisposisiKeuangan">
+                                            <div class="d-flex align-items-center gap-2.5 small">
+                                                <div class="d-flex align-items-center justify-content-center flex-shrink-0 bg-primary text-white shadow-xs" style="width: 32px; height: 32px; min-width: 32px; min-height: 32px; max-width: 32px; max-height: 32px; border-radius: 50% !important; aspect-ratio: 1 / 1; line-height: 1; padding: 0;">
+                                                    <i class="bi bi-send-check-fill fs-6" style="line-height: 1;"></i>
+                                                </div>
+                                                <div>
+                                                    <span class="fw-bold text-dark d-block">2. Disposisi ke Tim Keuangan <span class="badge bg-success-subtle text-success border border-success-subtle ms-1"><i class="bi bi-unlock-fill me-0.5"></i> Siap Dilanjutkan</span></span>
+                                                    <span class="text-secondary">Dokumen Lembar Persetujuan telah lengkap. Teruskan order ke Tim Keuangan untuk membuka tahap pembayaran.</span>
+                                                </div>
+                                            </div>
+                                            <form action="{{ @BASE }}/order/{{ @order.id }}/penawaran/disposisi-keuangan" method="POST" class="d-inline" id="formDisposisiKeuanganDetail" onsubmit="triggerStageRead(5)">
+                                                <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
+                                                <input type="hidden" name="redirect" value="order">
+                                                <button type="button" class="btn btn-dark btn-sm fw-semibold px-3 py-2 d-inline-flex align-items-center gap-1.5 shadow-sm" onclick="triggerStageRead(5); confirmDisposisiKeuanganDetail('{{ @order.nomor_order }}', '{{ @penawaran ? @penawaran.nomor_surat : @order.nomor_order }}')">
+                                                    <i class="bi bi-send-check-fill"></i> Disposisi ke Keuangan
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </check>
                                 </check>
+
+                                <!-- Jika SUDAH DIDISPOSISIKAN KE KEUANGAN -->
                                 <check if="{{ @is_disposisi_keuangan }}">
-                                    <div class="mt-3 pt-3 border-top d-flex justify-content-between align-items-center flex-wrap gap-2 bg-success-subtle p-3 rounded-3 border border-success-subtle">
-                                        <div class="d-flex align-items-center gap-2 text-success small">
-                                            <i class="bi bi-check-circle-fill fs-5"></i>
+                                    <div class="mt-3 p-3 bg-success-subtle rounded-3 border border-success-subtle d-flex justify-content-between align-items-center flex-wrap gap-2" id="cardDisposisiKeuangan">
+                                        <div class="d-flex align-items-center gap-2.5 text-success small">
+                                            <div class="d-flex align-items-center justify-content-center flex-shrink-0 bg-success text-white shadow-xs" style="width: 32px; height: 32px; min-width: 32px; min-height: 32px; max-width: 32px; max-height: 32px; border-radius: 50% !important; aspect-ratio: 1 / 1; line-height: 1; padding: 0;">
+                                                <i class="bi bi-check-lg fs-6 text-white" style="line-height: 1;"></i>
+                                            </div>
                                             <div>
-                                                <span class="fw-bold text-dark d-block">Telah Didisposisikan ke Tim Keuangan</span>
+                                                <span class="fw-bold text-dark d-block">2. Telah Didisposisikan ke Tim Keuangan</span>
                                                 <span class="text-secondary">Tagihan dan order telah diteruskan ke Tim Keuangan. Tahap pembayaran telah terbuka.</span>
                                             </div>
                                         </div>
-                                        <span class="badge bg-success text-white px-2.5 py-1.5 fw-semibold">
+                                        <span class="badge bg-success text-white px-2.5 py-1.5 fw-semibold shadow-xs">
                                             <i class="bi bi-check2-all me-1"></i> Disposisi Terkirim
                                         </span>
                                     </div>
                                 </check>
+
                             </check>
                         </check>
 
@@ -2540,52 +2651,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- Kartu Surat Kesanggupan Bayar -- muncul cuma pas status Deal -->
-        <check if="{{ @penawaran.status_respon_klien == 'deal' }}">
-            <div class="card border rounded-3 mt-3 shadow-xs" id="cardKesanggupanBayar">
-                <div class="p-3 bg-white d-flex align-items-center justify-content-between flex-wrap gap-2">
-                    <div class="d-flex align-items-center gap-2">
-                        <i class="bi bi-file-earmark-lock2 text-primary fs-5"></i>
-                        <div>
-                            <div class="fw-bold text-dark small">Surat Kesanggupan Bayar</div>
-                            <div class="text-muted" style="font-size: 0.75rem;">Untuk pelanggan yang berkomitmen membayar di kemudian hari</div>
-                        </div>
-                    </div>
-                    <div id="kbStatusWrap">
-                        <check if="{{ !empty(@penawaran.surat_kesanggupan_bayar) }}">
-                            <button type="button"
-                               class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1 btn-preview-pdf" id="kbLihatBtn" data-preview-pdf="{{ @BASE }}/surat-penawaran/{{ @penawaran.id }}/surat-kesanggupan/preview" data-title="Surat Kesanggupan Bayar" data-subtitle="Order: {{ @order.nomor_order }}">
-                                <i class="bi bi-file-earmark-check-fill text-success"></i> Lihat Berkas
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary ms-1" id="kbGantiBtn">
-                                <i class="bi bi-arrow-repeat"></i> Ganti
-                            </button>
-                        </check>
-                        <check if="{{ empty(@penawaran.surat_kesanggupan_bayar) }}">
-                            <button type="button" class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1" id="kbUploadBtn">
-                                <i class="bi bi-cloud-arrow-up"></i> Upload Berkas
-                            </button>
-                        </check>
-                    </div>
-                </div>
-
-                <div class="px-3 pb-3 d-none" id="kbFormWrap">
-                    <div class="border-top pt-3">
-                        <input type="file" class="form-control form-control-sm" id="kbFileInput" accept=".pdf,.doc,.docx">
-                        <div class="form-text">Format PDF atau Word (.doc/.docx). Maksimal 5MB.</div>
-                        <div class="d-flex gap-2 mt-2">
-                            <button type="button" class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1" id="kbSimpanBtn">
-                                <span class="spinner-border spinner-border-sm d-none" id="kbSpinner" role="status"></span>
-                                <span id="kbSimpanLabel"><i class="bi bi-upload me-1"></i>Simpan</span>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" id="kbBatalBtn">Batal</button>
-                        </div>
-                        <div class="small text-danger mt-2 d-none" id="kbErrorMsg"></div>
-                    </div>
-                </div>
-            </div>
-        </check>
 
 <!-- Modal Konfirmasi Hapus Surat Penawaran -->
 
@@ -2970,7 +3035,7 @@
         </div>
 
         <!-- ======================================================== -->
-        <!-- PANE TAHAP 7: PENERIMAAN FISIK SAMPEL & DEADLINE SPM     -->
+        <!-- PANE TAHAP 7: AKTIVASI TITIK AWAL PENGERJAAN & SPM (MILESTONES) -->
         <!-- ======================================================== -->
         <div class="tab-pane fade {{ @current_step == 7 ? 'show active' : '' }}" id="pane-stage-7" role="tabpanel" aria-labelledby="tab-stage-7">
             <div class="system-section-card" id="cardSampelSpm">
@@ -2978,93 +3043,165 @@
                     <div>
                         <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2 font-display">
                             <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-0.5 small fw-bold">7</span>
-                            <i class="bi bi-box-seam text-primary fs-5"></i> Penerimaan Sampel Fisik Lab &amp; Jadwal SPM <span class="badge bg-light text-secondary border font-monospace" style="font-size: 0.75rem;" data-bs-toggle="tooltip" title="Standar Pelayanan Minimal: Batas hari kerja resmi penyelesaian uji laboratorium">SPM</span>
+                            <i class="bi bi-stopwatch text-primary fs-5"></i> Aktivasi Titik Awal Pengerjaan &amp; Jadwal SPM <span class="badge bg-light text-secondary border font-monospace" style="font-size: 0.75rem;" data-bs-toggle="tooltip" title="Standar Pelayanan Minimal: Batas waktu resmi penyelesaian kegiatan / pengujian">SPM</span>
                         </h6>
                         <div class="d-flex align-items-center flex-wrap gap-2 text-muted small mt-1" style="font-size: 0.72rem; line-height: 1.4; column-gap: 16px; row-gap: 4px;">
                             <check if="{{ @audit_stages[7].waktu_kirim }}">
-                                <span class="me-3">Diterima: <span class="text-dark fw-medium">{{ date('d M Y', strtotime(@audit_stages[7].waktu_kirim)) }}</span> <span class="text-secondary text-nowrap">({{ @audit_stages[7].pengirim_nama ?: @audit_stages[7].pengirim_role }})</span></span>
+                                <span class="me-3">Tercatat: <span class="text-dark fw-medium">{{ date('d M Y', strtotime(@audit_stages[7].waktu_kirim)) }}</span> <span class="text-secondary text-nowrap">({{ @audit_stages[7].pengirim_nama ?: @audit_stages[7].pengirim_role }})</span></span>
                             </check>
                             <span id="audit-dibaca-stage-7" class="audit-dibaca-stage-7 {{ !@audit_stages[7].waktu_dibaca ? 'd-none' : '' }}">Dibaca: <span class="text-dark fw-medium audit-dibaca-time">{{ @audit_stages[7].waktu_dibaca ? date('d M Y, H:i', strtotime(@audit_stages[7].waktu_dibaca)) : '' }}</span> <span class="text-secondary text-nowrap audit-dibaca-name">({{ @audit_stages[7].dibaca_nama ?: @audit_stages[7].dibaca_role }})</span></span>
                         </div>
                     </div>
-                    <check if="{{ @order.tanggal_terima_sampel }}">
-                        <span class="badge bg-success-subtle text-success border border-success-subtle">
-                            <i class="bi bi-calendar-check me-1"></i> Sampel Diterima (SPM Aktif)
-                        </span>
-                    </check>
-                    <check if="{{ !@order.tanggal_terima_sampel }}">
-                        <check if="{{ (@order.status_keuangan == 'lunas' || !empty(@riwayat_bayar)) && @penawaran && @penawaran.status_respon_klien == 'deal' }}">
-                            <span class="badge bg-warning text-dark">Menunggu Sampel Fisik</span>
-                        </check>
-                        <check if="{{ !((@order.status_keuangan == 'lunas' || !empty(@riwayat_bayar)) && @penawaran && @penawaran.status_respon_klien == 'deal') }}">
-                            <span class="badge bg-light text-secondary border"><i class="bi bi-lock-fill me-1"></i> Terkunci</span>
-                        </check>
+                    <check if="{{ !empty(@order.tanggal_spm_mulai) || !empty(@order.tanggal_terima_sampel) }}">
+                        <true>
+                            <check if="{{ @order.spm_trigger_tipe == 'kick_off' }}">
+                                <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                    <i class="bi bi-people-fill me-1"></i> Rapat Kick-Off (SPM Aktif)
+                                </span>
+                            </check>
+                            <check if="{{ @order.spm_trigger_tipe == 'tanda_tangan_pks' }}">
+                                <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                    <i class="bi bi-pen-fill me-1"></i> Kontrak/PKS Ditandatangani (SPM Aktif)
+                                </span>
+                            </check>
+                            <check if="{{ empty(@order.spm_trigger_tipe) || @order.spm_trigger_tipe == 'sampel_diterima' }}">
+                                <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                    <i class="bi bi-box-seam me-1"></i> Sampel Diterima (SPM Aktif)
+                                </span>
+                            </check>
+                        </true>
+                        <false>
+                            <check if="{{ (@order.status_keuangan == 'lunas' || !empty(@riwayat_bayar)) && @penawaran && @penawaran.status_respon_klien == 'deal' }}">
+                                <span class="badge bg-warning text-dark"><i class="bi bi-clock-history me-1"></i> Menunggu Titik Awal SPM</span>
+                            </check>
+                            <check if="{{ !((@order.status_keuangan == 'lunas' || !empty(@riwayat_bayar)) && @penawaran && @penawaran.status_respon_klien == 'deal') }}">
+                                <span class="badge bg-light text-secondary border"><i class="bi bi-lock-fill me-1"></i> Terkunci</span>
+                            </check>
+                        </false>
                     </check>
                 </div>
 
                 <div class="p-4">
                     <!-- Terbuka jika penawaran DEAL dan bukti pembayaran sudah ada -->
                     <check if="{{ (@order.status_keuangan == 'lunas' || !empty(@riwayat_bayar)) && @penawaran && @penawaran.status_respon_klien == 'deal' }}">
-                        <!-- JIKA SAMPEL SUDAH DICATAT -->
-                        <check if="{{ @order.tanggal_terima_sampel }}">
+                        <!-- JIKA TITIK AWAL SPM SUDAH DICATAT -->
+                        <check if="{{ !empty(@order.tanggal_spm_mulai) || !empty(@order.tanggal_terima_sampel) }}">
                             <div class="p-3 bg-light rounded border mb-3">
                                 <div class="row g-3 align-items-center">
-                                    <div class="col-md-7">
+                                    <div class="col-md-8">
                                         <div class="d-flex align-items-center gap-3 flex-wrap mb-2">
                                             <div>
-                                                <small class="text-muted d-block">Tgl Fisik Sampel Masuk:</small>
-                                                <strong class="text-dark">{{ date('d M Y', strtotime(@order.tanggal_terima_sampel)) }}</strong>
+                                                <small class="text-muted d-block">
+                                                    <check if="{{ @order.spm_trigger_tipe == 'kick_off' }}">
+                                                        <i class="bi bi-people text-primary me-1"></i>Tgl Rapat Kick-Off:
+                                                    </check>
+                                                    <check if="{{ @order.spm_trigger_tipe == 'tanda_tangan_pks' }}">
+                                                        <i class="bi bi-pen text-primary me-1"></i>Tgl Penandatanganan PKS:
+                                                    </check>
+                                                    <check if="{{ empty(@order.spm_trigger_tipe) || @order.spm_trigger_tipe == 'sampel_diterima' }}">
+                                                        <i class="bi bi-box-seam text-primary me-1"></i>Tgl Sampel Diterima di Lab:
+                                                    </check>
+                                                </small>
+                                                <strong class="text-dark font-display fs-6">
+                                                    {{ date('d M Y', strtotime(@order.tanggal_spm_mulai ?: @order.tanggal_terima_sampel)) }}
+                                                </strong>
                                             </div>
                                             <div class="border-start ps-3">
-                                                <small class="text-muted d-block">Durasi Standar SPM:</small>
-                                                <strong class="text-primary">{{ @order.durasi_hari_kerja ?: 30 }} Hari Kerja</strong>
+                                                <small class="text-muted d-block">Durasi SPM:</small>
+                                                <strong class="text-primary font-display fs-6">
+                                                    {{ @order.spm_durasi_nilai ?: (@order.durasi_hari_kerja ?: 30) }} {{ @order.spm_durasi_satuan ?: 'Hari Kerja' }}
+                                                </strong>
                                             </div>
                                             <div class="border-start ps-3">
-                                                <small class="text-muted d-block">Target Selesai (Deadline):</small>
-                                                <strong class="text-danger fs-6">{{ date('d M Y', strtotime(@order.tanggal_deadline_spm ?: @order.tanggal_terima_sampel)) }}</strong>
+                                                <small class="text-muted d-block">Target Selesai (Batas SPM):</small>
+                                                <strong class="text-danger font-display fs-6">
+                                                    {{ date('d M Y', strtotime(@order.tanggal_deadline_spm ?: (@order.tanggal_spm_mulai ?: @order.tanggal_terima_sampel))) }}
+                                                </strong>
                                             </div>
                                         </div>
+
+                                        <check if="{{ !empty(@order.catatan_trigger_spm) }}">
+                                            <div class="mb-2 small text-dark bg-white p-2 rounded border-start border-primary border-3 shadow-2xs">
+                                                <strong>Catatan Titik Awal:</strong> {{ @order.catatan_trigger_spm }}
+                                            </div>
+                                        </check>
+
                                         <small class="text-muted d-block">
-                                            <i class="bi bi-info-circle me-1"></i> Dihitung mulai H+1 kerja setelah sampel diterima (tidak termasuk Sabtu, Minggu, &amp; hari libur nasional).
-                                            <check if="{{ !empty(@kalkulasi_spm.libur_dilewati) }}">
-                                                <span class="badge bg-danger-subtle text-danger ms-1">{{ count(@kalkulasi_spm.libur_dilewati) }} hari libur nasional dilewati</span>
+                                            <check if="{{ strpos(strtolower(@order.spm_durasi_satuan ?: 'kerja'), 'kerja') !== false }}">
+                                                <i class="bi bi-info-circle me-1"></i> Dihitung mulai H+1 kerja setelah titik awal tercapai (tidak termasuk Sabtu, Minggu, &amp; hari libur nasional).
+                                                <check if="{{ !empty(@kalkulasi_spm.libur_dilewati) }}">
+                                                    <span class="badge bg-danger-subtle text-danger ms-1">{{ count(@kalkulasi_spm.libur_dilewati) }} hari libur nasional dilewati</span>
+                                                </check>
+                                            </check>
+                                            <check if="{{ strpos(strtolower(@order.spm_durasi_satuan ?: ''), 'kerja') === false }}">
+                                                <i class="bi bi-info-circle me-1"></i> Perhitungan durasi resmi berbasis waktu kalender kegiatan ({{ @order.spm_durasi_satuan }}).
                                             </check>
                                         </small>
                                     </div>
-                                    <div class="col-md-5 text-md-end">
+                                    <div class="col-md-4 text-md-end">
                                         <check if="{{ !@order.po_id }}">
                                             <button type="button" class="btn btn-warning btn-sm fw-bold text-dark shadow-sm" data-bs-toggle="modal" data-bs-target="#modalApprove" onclick="triggerStageRead(7)">
                                                 <i class="bi bi-patch-check-fill me-1"></i> Terbitkan PO Sekarang
                                             </button>
                                         </check>
-                                        <button type="button" class="btn btn-outline-secondary btn-sm ms-1" data-bs-toggle="collapse" data-bs-target="#collapseEditSampel" title="Ubah tanggal sampel">
-                                             <i class="bi bi-pencil"></i>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm ms-1" data-bs-toggle="collapse" data-bs-target="#collapseEditSampel" title="Koreksi / Ubah Titik Awal SPM">
+                                             <i class="bi bi-pencil me-1"></i> Ubah
                                         </button>
                                     </div>
                                 </div>
                             </div>
                         </check>
 
-                        <!-- FORM INPUT TANGGAL SAMPEL (TERBUKA JIKA BELUM ADA, COLLAPSE JIKA SUDAH ADA) -->
-                        <div class="collapse {{ !@order.tanggal_terima_sampel ? 'show' : '' }}" id="collapseEditSampel">
-                            <form action="{{ @BASE }}/order/{{ @order.id }}/terima-sampel" method="POST" class="p-3 border rounded bg-white mb-2" onsubmit="triggerStageRead(7)">
-                                <div class="row g-2 align-items-end">
-                                    <div class="col-sm-5">
-                                        <label class="form-label small fw-bold text-dark mb-1">Tanggal Terima Fisik Sampel di Lab:</label>
-                                        <input type="date" name="tanggal_terima_sampel" class="form-control form-control-sm" value="{{ @order.tanggal_terima_sampel ?: date('Y-m-d') }}" required>
+                        <!-- FORM INPUT TITIK AWAL SPM (TERBUKA JIKA BELUM ADA, COLLAPSE JIKA SUDAH ADA) -->
+                        <div class="collapse {{ empty(@order.tanggal_spm_mulai) && empty(@order.tanggal_terima_sampel) ? 'show' : '' }}" id="collapseEditSampel">
+                            <form action="{{ @BASE }}/order/{{ @order.id }}/terima-sampel" method="POST" class="p-3 border rounded bg-white mb-2 shadow-xs" onsubmit="triggerStageRead(7)">
+                                <div class="fw-bold text-dark small mb-2 d-flex align-items-center gap-2">
+                                    <i class="bi bi-flag-fill text-primary"></i> Form Aktivasi Titik Awal Pengerjaan (SPM Milestones)
+                                </div>
+                                <div class="row g-2">
+                                    <div class="col-md-4">
+                                        <label class="form-label small fw-bold text-dark mb-1">Opsi Titik Awal (Start Trigger):</label>
+                                        <select name="spm_trigger_tipe" id="detail_spm_trigger_tipe" class="form-select form-select-sm" onchange="updateTriggerLabel(this.value)">
+                                            <option value="sampel_diterima" {{ (@order.spm_trigger_tipe == 'sampel_diterima' || empty(@order.spm_trigger_tipe)) ? 'selected' : '' }}>
+                                                Penerimaan Sampel Fisik (Pengujian Lab)
+                                            </option>
+                                            <option value="kick_off" {{ @order.spm_trigger_tipe == 'kick_off' ? 'selected' : '' }}>
+                                                Rapat Kick-Off (Sertifikasi / Konsultansi)
+                                            </option>
+                                            <option value="tanda_tangan_pks" {{ @order.spm_trigger_tipe == 'tanda_tangan_pks' ? 'selected' : '' }}>
+                                                Tanda Tangan Kontrak / PKS (Kerjasama Litbang)
+                                            </option>
+                                        </select>
                                     </div>
-                                    <div class="col-sm-4">
-                                        <label class="form-label small fw-bold text-dark mb-1">Durasi SPM (Hari Kerja):</label>
-                                        <input type="number" name="durasi_hari_kerja" class="form-control form-control-sm" value="{{ @order.durasi_hari_kerja ?: 30 }}" min="1" required>
+                                    <div class="col-md-3">
+                                        <label class="form-label small fw-bold text-dark mb-1" id="lblTanggalMulai">Tanggal Titik Awal:</label>
+                                        <input type="date" name="tanggal_spm_mulai" class="form-control form-control-sm" value="{{ @order.tanggal_spm_mulai ?: (@order.tanggal_terima_sampel ?: date('Y-m-d')) }}" required>
                                     </div>
-                                    <div class="col-sm-3">
+                                    <div class="col-md-2">
+                                        <label class="form-label small fw-bold text-dark mb-1">Durasi:</label>
+                                        <input type="number" name="spm_durasi_nilai" class="form-control form-control-sm text-center fw-bold font-monospace" value="{{ @order.spm_durasi_nilai ?: (@order.durasi_hari_kerja ?: (preg_match('/(\d+)/', @order.spm_layanan, $m_num) ? $m_num[1] : 30)) }}" min="1" required>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label small fw-bold text-dark mb-1">Satuan Waktu:</label>
+                                        <select name="spm_durasi_satuan" class="form-select form-select-sm fw-semibold">
+                                            <option value="Hari Kerja" {{ (@order.spm_durasi_satuan == 'Hari Kerja' || (!@order.spm_durasi_satuan && strpos(@order.spm_layanan, 'Kerja') !== false)) ? 'selected' : '' }}>Hari Kerja</option>
+                                            <option value="Hari Kalender" {{ (@order.spm_durasi_satuan == 'Hari Kalender' || (!@order.spm_durasi_satuan && strpos(@order.spm_layanan, 'Kalender') !== false)) ? 'selected' : '' }}>Hari Kalender</option>
+                                            <option value="Minggu" {{ (@order.spm_durasi_satuan == 'Minggu' || (!@order.spm_durasi_satuan && strpos(@order.spm_layanan, 'Minggu') !== false)) ? 'selected' : '' }}>Minggu</option>
+                                            <option value="Bulan" {{ (@order.spm_durasi_satuan == 'Bulan' || (!@order.spm_durasi_satuan && strpos(@order.spm_layanan, 'Bulan') !== false)) ? 'selected' : '' }}>Bulan</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-9">
+                                        <label class="form-label small text-secondary mb-1">Catatan / Bukti Titik Awal (Opsional):</label>
+                                        <input type="text" name="catatan_trigger_spm" class="form-control form-control-sm" placeholder="Contoh: Sampel 2 botol diterima lengkap / Kick-Off via Zoom / PKS No. 01/PKS/2026" value="{{ @order.catatan_trigger_spm }}">
+                                    </div>
+                                    <div class="col-md-3 d-flex align-items-end">
                                         <button type="submit" class="btn btn-primary btn-sm w-100 fw-semibold">
-                                            <i class="bi bi-calculator me-1"></i> Simpan &amp; Hitung SPM
+                                            <i class="bi bi-check-circle-fill me-1"></i> Simpan &amp; Aktifkan SPM
                                         </button>
                                     </div>
                                 </div>
                                 <small class="text-muted d-block mt-2">
-                                    <i class="bi bi-info-circle me-1"></i> Sesuai arahan Ketua Tim, perhitungan hari kerja otomatis mengecek kalender hari libur nasional resmi.
+                                    <i class="bi bi-info-circle me-1"></i> Untuk satuan <strong>Hari Kerja</strong>, sistem otomatis mengecualikan akhir pekan (Sabtu-Minggu) dan seluruh hari libur nasional resmi.
                                 </small>
                             </form>
                         </div>
@@ -3074,13 +3211,13 @@
                     <check if="{{ !@penawaran || @penawaran.status_respon_klien != 'deal' }}">
                         <div class="p-3 text-center text-muted bg-light rounded-3 small">
                             <i class="bi bi-lock-fill text-secondary opacity-50 me-1"></i>
-                            Penerimaan sampel fisik dan jadwal waktu uji (SPM) akan aktif setelah Surat Penawaran berstatus <strong>DEAL</strong> dan pembayaran dikonfirmasi.
+                            Titik awal pengerjaan dan batas waktu pengerjaan (SPM) akan aktif setelah Surat Penawaran berstatus <strong>DEAL</strong> dan pembayaran dikonfirmasi.
                         </div>
                     </check>
                     <check if="{{ @penawaran && @penawaran.status_respon_klien == 'deal' && @order.status_keuangan != 'lunas' && empty(@riwayat_bayar) }}">
                         <div class="p-3 text-center text-muted bg-light rounded-3 small">
                             <i class="bi bi-lock-fill text-secondary opacity-50 me-1"></i>
-                            Penerimaan fisik sampel dan pengerjaan laboratorium akan aktif setelah <strong>Tim Keuangan mengonfirmasi bukti pembayaran</strong> pelanggan di atas.
+                            Titik awal pengerjaan dan pengerjaan kegiatan akan aktif setelah <strong>Tim Keuangan mengonfirmasi bukti pembayaran</strong> pelanggan di atas.
                         </div>
                     </check>
                 </div>
@@ -4304,6 +4441,18 @@ function triggerStageRead(stageNum) {
     .catch(function(err) {});
 }
 
+function updateTriggerLabel(val) {
+    var lbl = document.getElementById('lblTanggalMulai');
+    if (!lbl) return;
+    if (val === 'kick_off') {
+        lbl.textContent = 'Tanggal Rapat Kick-Off:';
+    } else if (val === 'tanda_tangan_pks') {
+        lbl.textContent = 'Tanggal Penandatanganan PKS:';
+    } else {
+        lbl.textContent = 'Tanggal Terima Fisik Sampel:';
+    }
+}
+
 function switchStage(stageNum, smoothScroll) {
     if (!stageNum) return;
     var tabBtn = document.getElementById('tab-stage-' + stageNum);
@@ -4343,6 +4492,8 @@ document.addEventListener('DOMContentLoaded', function() {
         '#cardKajiKelayakan': 3,
         '#cardParameterBiaya': 4,
         '#cardPenawaran': 5,
+        '#cardKesanggupanBayar': 5,
+        '#cardDisposisiKeuangan': 5,
         '#cardPembayaran': 6,
         '#cardProposalTeknis': 6,
         '#cardSampelSpm': 7,
@@ -4350,19 +4501,92 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     var wrapForm = document.getElementById('kbFormWrap');
-    var wrapStatus = document.getElementById('kbStatusWrap');
     var fileInput = document.getElementById('kbFileInput');
     var errorMsg = document.getElementById('kbErrorMsg');
     var spinner = document.getElementById('kbSpinner');
+    var dropPrompt = document.getElementById('kbDropPrompt');
+    var selectedWrap = document.getElementById('kbSelectedWrap');
+    var selectedName = document.getElementById('kbSelectedName');
+    var selectedSize = document.getElementById('kbSelectedSize');
+    var clearFileBtn = document.getElementById('kbClearFile');
+    var btnSimpan = document.getElementById('kbSimpanBtn');
 
     if (wrapForm) {
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            var k = 1024;
+            var sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            var i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+
+        function resetFileInput() {
+            if (fileInput) fileInput.value = '';
+            if (selectedWrap) selectedWrap.classList.add('d-none');
+            if (dropPrompt) dropPrompt.classList.remove('d-none');
+            if (btnSimpan) btnSimpan.disabled = true;
+            if (errorMsg) errorMsg.classList.add('d-none');
+        }
+
+        function handleFileSelect() {
+            if (fileInput && fileInput.files && fileInput.files.length > 0) {
+                var f = fileInput.files[0];
+                if (selectedName) selectedName.textContent = f.name;
+                if (selectedSize) selectedSize.textContent = '(' + formatBytes(f.size) + ')';
+                if (selectedWrap) selectedWrap.classList.remove('d-none');
+                if (dropPrompt) dropPrompt.classList.add('d-none');
+                if (btnSimpan) btnSimpan.disabled = false;
+                if (errorMsg) errorMsg.classList.add('d-none');
+            } else {
+                resetFileInput();
+            }
+        }
+
+        if (fileInput) {
+            fileInput.addEventListener('change', handleFileSelect);
+        }
+
+        var dropZone = document.getElementById('kbDropZone');
+        if (dropZone && fileInput) {
+            ['dragenter', 'dragover'].forEach(function(eventName) {
+                dropZone.addEventListener(eventName, function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropZone.style.borderColor = 'var(--bs-primary, #0d6efd)';
+                    dropZone.style.backgroundColor = 'rgba(13, 110, 253, 0.05)';
+                }, false);
+            });
+            ['dragleave', 'drop'].forEach(function(eventName) {
+                dropZone.addEventListener(eventName, function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropZone.style.borderColor = '#cbd5e1';
+                    dropZone.style.backgroundColor = '#ffffff';
+                }, false);
+            });
+            dropZone.addEventListener('drop', function(e) {
+                if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                    fileInput.files = e.dataTransfer.files;
+                    handleFileSelect();
+                }
+            }, false);
+        }
+
+        if (clearFileBtn) {
+            clearFileBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                resetFileInput();
+            });
+        }
+
         function bukaForm() {
             wrapForm.classList.remove('d-none');
-            if (errorMsg) errorMsg.classList.add('d-none');
-            if (fileInput) fileInput.value = '';
+            resetFileInput();
         }
         function tutupForm() { 
             wrapForm.classList.add('d-none'); 
+            resetFileInput();
         }
 
         document.addEventListener('click', function (e) {
@@ -4370,7 +4594,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (e.target.closest('#kbBatalBtn')) tutupForm();
         });
 
-        var btnSimpan = document.getElementById('kbSimpanBtn');
         if (btnSimpan) {
             btnSimpan.addEventListener('click', function () {
                 if (!fileInput || !fileInput.files.length) {
@@ -4404,14 +4627,19 @@ document.addEventListener('DOMContentLoaded', function() {
                             return;
                         }
 
-                        if (wrapStatus) {
-                            wrapStatus.innerHTML =
-                                '<button type="button" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1 btn-preview-pdf" id="kbLihatBtn" data-preview-pdf="' + data.preview_url + '" data-title="Surat Kesanggupan Bayar">' +
-                                    '<i class="bi bi-file-earmark-check-fill text-success"></i> Lihat Berkas</button>' +
-                                '<button type="button" class="btn btn-sm btn-outline-secondary ms-1" id="kbGantiBtn"><i class="bi bi-arrow-repeat"></i> Ganti</button>';
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil Diunggah',
+                                text: data.message || 'Lembar Persetujuan Penawaran / Kesanggupan Klien berhasil diunggah.',
+                                timer: 1500,
+                                showConfirmButton: false
+                            }).then(function() {
+                                window.location.reload();
+                            });
+                        } else {
+                            window.location.reload();
                         }
-
-                        tutupForm();
                     })
                     .catch(function () {
                         btnSimpan.disabled = false;

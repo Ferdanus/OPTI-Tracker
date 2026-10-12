@@ -15,6 +15,10 @@
     table.isi th, table.isi td { border: 1px solid #000; padding: 5px 8px; vertical-align: middle; font-size: 11pt; }
     table.isi th { background: #f1f5f9; font-weight: bold; text-align: center; }
 
+    table.po-inline-table, .point-row table { width: 100%; border-collapse: collapse; margin: 6px 0 10px 0; font-size: 10pt; white-space: normal !important; table-layout: fixed; word-break: break-word; }
+    table.po-inline-table th, table.po-inline-table td, .point-row table th, .point-row table td { border: 1px solid #000; padding: 4px 6px; vertical-align: middle; }
+    table.po-inline-table th, .point-row table th { background: #f1f5f9; font-weight: bold; text-align: center; }
+
     /* [BARU] tabel RAB berjenjang (lingkungan) -- banyak kolom sempit (Kali/Jumlah/Hari),
        padding & font dikecilin dikit biar gak kepenuhan / kepotong di kertas A4. */
     table.rab-table th, table.rab-table td { padding: 4px 5px; font-size: 10pt; }
@@ -22,17 +26,16 @@
        antar baris (gak ada "Rp" turun baris misahin dari angkanya), tanpa ngubah lebar
        kolom/tabelnya -- fontnya dikecilin dikit biar tetep muat satu baris. */
     table.rab-table .rab-uang { white-space: nowrap; font-size: 8.5pt; }
-
     .point-row { margin-bottom: 3px; padding-left: 22px; text-indent: -22px; text-align: justify; white-space: pre-line; }
     .point-row.plain { padding-left: 0; text-indent: 0; }
     .point-marker { display: inline-block; width: 22px; text-indent: 0; }
 
-    .jadwal-table { table-layout: fixed; font-size: 7.5pt; }
-    .jadwal-table th, .jadwal-table td { border: 1px solid #000; padding: 3px 2px; text-align: center; }
+    .jadwal-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 7pt; margin-bottom: 6px; }
+    .jadwal-table th, .jadwal-table td { border: 1px solid #000; padding: 2.5px 1.5px; text-align: center; vertical-align: middle; }
     .jadwal-table th { background: #f1f5f9; font-weight: bold; }
-    .jadwal-table th.kegiatan-col, .jadwal-table td.kegiatan-col { width: 26mm; text-align: left; font-size: 8pt; padding-left: 6px; }
-    .jadwal-tahap-title { font-weight: bold; font-size: 10pt; margin: 8px 0 4px; }
-    .jadwal-keterangan { font-size: 9pt; color: #555; font-style: italic; margin-top: 6px; }
+    .jadwal-table th.kegiatan-col, .jadwal-table td.kegiatan-col { width: 32%; text-align: left; font-size: 7.5pt; padding-left: 6px; padding-right: 4px; word-break: break-word; }
+    .jadwal-tahap-title { font-weight: bold; font-size: 9.5pt; margin: 8px 0 4px; }
+    .jadwal-keterangan { font-size: 8.5pt; color: #555; font-style: italic; margin-top: 6px; }
 
     .signature-table { margin-top: 30px; font-size: 11pt; }
     .signature-table td { border: none; text-align: center; width: 50%; padding: 0 20mm; }
@@ -67,10 +70,10 @@
 <check if="{{ @po.ruang_lingkup_deskripsi_lines && count(@po.ruang_lingkup_deskripsi_lines) > 0 }}">
     <repeat group="{{ @po.ruang_lingkup_deskripsi_lines }}" value="{{ @dl }}">
         <check if="{{ @dl.marker }}">
-            <div class="point-row"><span class="point-marker">{{ @dl.marker }}</span>{{ @dl.teks }}</div>
+            <div class="point-row" style="{{ @dl.is_sub ? 'margin-left:20px;' : '' }}"><span class="point-marker">{{ @dl.marker }}</span>{{ @dl.teks | raw }}</div>
         </check>
         <check if="{{ !@dl.marker }}">
-            <div class="point-row plain">{{ @dl.teks }}</div>
+            <div class="point-row" style="{{ @dl.is_sub ? 'margin-left:20px;' : '' }}">{{ @dl.teks | raw }}</div>
         </check>
     </repeat>
 </check>
@@ -334,45 +337,52 @@
     <repeat group="{{ @po.jadwal_groups }}" value="{{ @group }}">
         <check if="{{ @group.nama_tahap }}"><div class="jadwal-tahap-title">{{ @group.nama_tahap }}</div></check>
         <check if="{{ @group.kegiatan && count(@group.kegiatan) > 0 }}">
-            <table class="jadwal-table">
-                <thead>
-                    <tr>
-                        <th class="kegiatan-col"></th>
-                        <repeat group="{{ @po.jadwal_bulan_header }}" value="{{ @bh }}">
-                            <th colspan="{{ @bh.span }}">{{ @bh.label }}</th>
-                        </repeat>
-                    </tr>
-                    <tr>
-                        <th class="kegiatan-col">Kegiatan</th>
-                        <repeat group="{{ @po.jadwal_kolom }}" value="{{ @k }}">
-                            <th style="{{ @k.libur ? 'background:#d1d5db;' : '' }}">{{ @k.label }}</th>
-                        </repeat>
-                    </tr>
-                </thead>
-                <tbody>
-                    <repeat group="{{ @group.kegiatan }}" value="{{ @keg }}">
+            <repeat group="{{ @po.jadwal_chunks ?: [[ 'label' => '', 'kolom' => @po.jadwal_kolom, 'bulan_header' => @po.jadwal_bulan_header ]] }}" value="{{ @chunk }}" key="{{ @cIdx }}">
+                <check if="{{ @po.jadwal_chunks && count(@po.jadwal_chunks) > 1 }}">
+                    <div style="font-weight:bold; font-size:8pt; color:#334155; margin:6px 0 2px; text-transform:uppercase;">
+                        Bagian {{ @cIdx + 1 }}: {{ @chunk.label }}
+                    </div>
+                </check>
+                <table class="jadwal-table" style="margin-bottom:8px;">
+                    <thead>
                         <tr>
-                            <td class="kegiatan-col">{{ @keg.nama }}</td>
-                            <repeat group="{{ @po.jadwal_kolom }}" value="{{ @k }}">
-                                <check if="{{ @k.libur }}">
-                                    <td style="background:{{ in_array(@k.key, @keg.tanda ?: []) ? '#374151' : '#e5e7eb' }}; color:{{ in_array(@k.key, @keg.tanda ?: []) ? '#fff' : '#6b7280' }};">L</td>
-                                </check>
-                                <check if="{{ !@k.libur }}">
-                                    <td style="background:{{ in_array(@k.key, @keg.tanda ?: []) ? '#6b7280' : '#fff' }};"></td>
-                                </check>
+                            <th class="kegiatan-col"></th>
+                            <repeat group="{{ @chunk.bulan_header }}" value="{{ @bh }}">
+                                <th colspan="{{ @bh.span }}">{{ @bh.label }}</th>
                             </repeat>
                         </tr>
-                    </repeat>
-                </tbody>
-            </table>
+                        <tr>
+                            <th class="kegiatan-col">Kegiatan</th>
+                            <repeat group="{{ @chunk.kolom }}" value="{{ @k }}">
+                                <th style="{{ @k.libur ? 'background:#d1d5db;' : '' }}">{{ @k.label }}</th>
+                            </repeat>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <repeat group="{{ @group.kegiatan }}" value="{{ @keg }}">
+                            <tr>
+                                <td class="kegiatan-col">{{ @keg.nama }}</td>
+                                <repeat group="{{ @chunk.kolom }}" value="{{ @k }}">
+                                    <check if="{{ @k.libur }}">
+                                        <td style="background:{{ in_array(@k.key, @keg.tanda ?: []) ? '#334155' : '#e5e7eb' }}; color:{{ in_array(@k.key, @keg.tanda ?: []) ? '#fff' : '#6b7280' }};">L</td>
+                                    </check>
+                                    <check if="{{ !@k.libur }}">
+                                        <td style="background:{{ in_array(@k.key, @keg.tanda ?: []) ? '#334155' : '#fff' }};"></td>
+                                    </check>
+                                </repeat>
+                            </tr>
+                        </repeat>
+                    </tbody>
+                </table>
+            </repeat>
         </check>
     </repeat>
 </check>
 <check if="{{ @po.jadwal_keterangan_lines && count(@po.jadwal_keterangan_lines) > 0 }}">
     <div class="jadwal-keterangan">
         <repeat group="{{ @po.jadwal_keterangan_lines }}" value="{{ @dl }}">
-            <check if="{{ @dl.marker }}"><div><span class="point-marker" style="width:18px;">{{ @dl.marker }}</span>{{ @dl.teks }}</div></check>
-            <check if="{{ !@dl.marker }}"><div>{{ @dl.teks }}</div></check>
+            <check if="{{ @dl.marker }}"><div style="{{ @dl.is_sub ? 'margin-left:18px;' : '' }}"><span class="point-marker" style="width:18px;">{{ @dl.marker }}</span>{{ @dl.teks | raw }}</div></check>
+            <check if="{{ !@dl.marker }}"><div style="{{ @dl.is_sub ? 'margin-left:18px;' : '' }}">{{ @dl.teks | raw }}</div></check>
         </repeat>
     </div>
 </check>
