@@ -46,7 +46,7 @@ class PoValidasiMitraController extends Controller {
         $daftar = [];
         try {
             $rows = $this->db->exec(
-                "SELECT p.id, p.nomor_po, p.created_at, p.updated_at,
+                "SELECT p.id, p.nomor_po, p.created_at, p.updated_at, p.layanan AS po_layanan,
                         o.id AS order_id, o.nomor_order, o.judul_kegiatan, o.jenis_layanan_opti, o.estimasi_biaya,
                         c.nmcustomer, c.pt_cv,
                         sp.nominal_penawaran, sp.surat_kesanggupan_bayar,
@@ -71,6 +71,7 @@ class PoValidasiMitraController extends Controller {
             $terbayar = (float) $r['total_terbayar'];
             $lunas = $nilai > 0 && $terbayar >= $nilai;
             $punyaKesanggupan = !empty($r['surat_kesanggupan_bayar']);
+            $divisiVal = !empty($r['po_layanan']) ? $r['po_layanan'] : (string) $r['jenis_layanan_opti'];
 
             $daftar[] = [
                 'id'                 => (int) $r['id'],
@@ -78,7 +79,7 @@ class PoValidasiMitraController extends Controller {
                 'order'              => (string) $r['nomor_order'],
                 'mitra'              => $this->formatMitra($r['nmcustomer'], $r['pt_cv']),
                 'judul'              => (string) $r['judul_kegiatan'],
-                'divisi'             => (string) $r['jenis_layanan_opti'],
+                'divisi'             => (string) $divisiVal,
                 'nilai'              => $nilai,
                 'terbayar'           => $terbayar,
                 'lunas'              => $lunas,
@@ -96,7 +97,7 @@ class PoValidasiMitraController extends Controller {
         $daftarDisetujui = [];
         try {
             $rowsDisetujui = $this->db->exec(
-                "SELECT p.id, p.nomor_po, p.catatan_tim_mitra, p.tervalidasi_mitra_at,
+                "SELECT p.id, p.nomor_po, p.catatan_tim_mitra, p.tervalidasi_mitra_at, p.layanan AS po_layanan,
                         o.nomor_order, o.judul_kegiatan, o.jenis_layanan_opti, o.estimasi_biaya,
                         c.nmcustomer, c.pt_cv,
                         sp.nominal_penawaran
@@ -114,13 +115,14 @@ class PoValidasiMitraController extends Controller {
             $nilai = !empty($r['nominal_penawaran']) ? (float) $r['nominal_penawaran'] : (float) $r['estimasi_biaya'];
             $tglValidasi = (string) ($r['tervalidasi_mitra_at'] ?? '');
             $ts = $tglValidasi !== '' ? strtotime($tglValidasi) : false;
+            $divisiVal = !empty($r['po_layanan']) ? $r['po_layanan'] : (string) $r['jenis_layanan_opti'];
             $daftarDisetujui[] = [
                 'id'      => (int) $r['id'],
                 'nomor'   => (string) $r['nomor_po'],
                 'order'   => (string) $r['nomor_order'],
                 'mitra'   => $this->formatMitra($r['nmcustomer'], $r['pt_cv']),
                 'judul'   => (string) $r['judul_kegiatan'],
-                'divisi'  => (string) $r['jenis_layanan_opti'],
+                'divisi'  => (string) $divisiVal,
                 'nilai'   => $nilai,
                 'catatan' => (string) ($r['catatan_tim_mitra'] ?? ''),
                 'tanggal' => $tglValidasi !== '' ? substr($tglValidasi, 0, 10) : null,

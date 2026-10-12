@@ -193,9 +193,15 @@
                             <input type="search" class="form-control border-start-0" id="dpoSearch" placeholder="Cari nomor PO, order, atau mitra...">
                         </div>
                     </div>
-                    <div class="col-6 col-md-3 col-lg-2">
+                    <div class="col-6 col-md-4 col-lg-3">
                         <select class="form-select form-select-sm" id="dpoDivisi">
-                            <option value="">Semua Divisi</option>
+                            <option value="">Semua Layanan</option>
+                            <option value="pengujian">Pengujian</option>
+                            <option value="kalibrasi">Kalibrasi</option>
+                            <option value="sertifikasi">Sertifikasi</option>
+                            <option value="pendampingan">Pendampingan Teknis</option>
+                            <option value="inspeksi">Inspeksi</option>
+                            <option value="profisiensi">Uji Profisiensi</option>
                             <option value="lingkungan">Lingkungan</option>
                             <option value="selulosa">Selulosa</option>
                         </select>
@@ -270,7 +276,22 @@
         var TAHUN_INI = {{ @tahun_ini }};
         var BULAN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
         var BULAN_PANJANG = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
-        var DIVISI_LABEL = { lingkungan: 'Lingkungan', selulosa: 'Selulosa' };
+        var DIVISI_LABEL = {
+            lingkungan: 'Lingkungan',
+            selulosa: 'Selulosa',
+            pengujian: 'Pengujian',
+            kalibrasi: 'Kalibrasi',
+            sertifikasi: 'Sertifikasi',
+            pendampingan: 'Pendampingan Teknis',
+            inspeksi: 'Inspeksi',
+            profisiensi: 'Uji Profisiensi',
+            'pendampingan_teknis': 'Pendampingan Teknis',
+            'uji_profisiensi': 'Uji Profisiensi',
+            'opti-selulosa': 'Selulosa',
+            'opti-lingkungan': 'Lingkungan',
+            'opti_selulosa': 'Selulosa',
+            'opti_lingkungan': 'Lingkungan'
+        };
 
         var tab = 'perlu';
         var q = '';
@@ -296,8 +317,15 @@
 
         function divisiPill(d) {
             if (!d) return '';
-            var isSelulosa = d === 'selulosa';
-            return '<span class="badge ' + (isSelulosa ? 'badge-selulosa' : 'badge-lingkungan') + '">' + esc(DIVISI_LABEL[d] || d) + '</span>';
+            var key = String(d).toLowerCase().trim();
+            var label = DIVISI_LABEL[key] || d;
+            if (key === 'selulosa' || key === 'opti-selulosa' || key === 'opti_selulosa') {
+                return '<span class="badge badge-selulosa">' + esc(label) + '</span>';
+            }
+            if (key === 'lingkungan' || key === 'opti-lingkungan' || key === 'opti_lingkungan') {
+                return '<span class="badge badge-lingkungan">' + esc(label) + '</span>';
+            }
+            return '<span class="badge bg-light text-secondary border px-2 py-1">' + esc(label) + '</span>';
         }
 
         window.dvmSetTab = function(t) {
@@ -338,7 +366,12 @@
             return (p.nomor + ' ' + p.order + ' ' + p.mitra).toLowerCase().indexOf(q) !== -1;
         }
         function cocokDivisi(p) {
-            return !divisi || p.divisi === divisi;
+            if (!divisi) { return true; }
+            var d = String(p.divisi || '').toLowerCase().replace(/[-_]/g, ' ').trim();
+            var f = String(divisi).toLowerCase().replace(/[-_]/g, ' ').trim();
+            if (d === f) return true;
+            if (d.indexOf(f) !== -1 || f.indexOf(d) !== -1) return true;
+            return false;
         }
 
         var dvmPage = 1;
