@@ -247,6 +247,36 @@
             return !divisi || p.divisi === divisi;
         }
 
+        var dvmPage = 1;
+        var dvmPerPage = 10;
+
+        window.dvmGoPage = function(p) {
+            dvmPage = p;
+            render();
+            var el = $('dpoList');
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        };
+
+        function bikinPaginationHtml(totalRows, curPage, perPage) {
+            var totalPages = Math.ceil(totalRows / perPage);
+            if (totalPages <= 1) return '';
+            var startIdx = (curPage - 1) * perPage;
+            var endIdx = Math.min(startIdx + perPage, totalRows);
+            var displayStart = startIdx + 1;
+            var displayEnd = endIdx;
+
+            var html = '<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 p-3 border-top bg-white">' +
+                '<span class="small text-muted fw-medium">Menampilkan <strong>' + displayStart + '&ndash;' + displayEnd + '</strong> dari <strong>' + totalRows + '</strong> data</span>' +
+                '<ul class="pagination pagination-sm mb-0">' +
+                '<li class="page-item ' + (curPage <= 1 ? 'disabled' : '') + '"><a class="page-link" href="#" onclick="window.dvmGoPage(' + (curPage - 1) + '); return false;">&laquo; Sebelumnya</a></li>';
+            for (var i = 1; i <= totalPages; i++) {
+                html += '<li class="page-item ' + (i === curPage ? 'active' : '') + '"><a class="page-link" href="#" onclick="window.dvmGoPage(' + i + '); return false;">' + i + '</a></li>';
+            }
+            html += '<li class="page-item ' + (curPage >= totalPages ? 'disabled' : '') + '"><a class="page-link" href="#" onclick="window.dvmGoPage(' + (curPage + 1) + '); return false;">Berikutnya &raquo;</a></li>' +
+                '</ul></div>';
+            return html;
+        }
+
         function render() {
             $('countPerlu').textContent = DATA_PERLU.length;
             $('countDisetujui').textContent = DATA_DISETUJUI.length;
@@ -276,9 +306,18 @@
                 return;
             }
 
-            var tabel = '<div class="dpo-desk"><table class="dpo-table"><thead><tr><th class="dpo-col-urut">No</th><th class="dpo-col-no">No PO</th><th class="dpo-col-mitra">Mitra</th><th>Kegiatan</th><th class="dpo-col-mid">Status bayar</th><th class="dpo-col-aksi">Aksi</th></tr></thead><tbody>' +
-                rows.map(function (p, idx) {
-                    return '<tr><td class="dpo-col-urut">' + (idx + 1) + '</td>' +
+            var totalRows = rows.length;
+            var totalPages = Math.ceil(totalRows / dvmPerPage);
+            if (dvmPage > totalPages) dvmPage = totalPages || 1;
+            if (dvmPage < 1) dvmPage = 1;
+
+            var startIdx = (dvmPage - 1) * dvmPerPage;
+            var endIdx = startIdx + dvmPerPage;
+            var pagedRows = rows.slice(startIdx, endIdx);
+
+            var tabel = '<div class="dpo-desk"><table class="dpo-table" data-no-paginate="true"><thead><tr><th class="dpo-col-urut">No</th><th class="dpo-col-no">No PO</th><th class="dpo-col-mitra">Mitra</th><th>Kegiatan</th><th class="dpo-col-mid">Status bayar</th><th class="dpo-col-aksi">Aksi</th></tr></thead><tbody>' +
+                pagedRows.map(function (p, idx) {
+                    return '<tr><td class="dpo-col-urut">' + (startIdx + idx + 1) + '</td>' +
                         '<td class="dpo-col-no"><div class="dpo-no">' + esc(p.nomor) + '</div><div class="dpo-sub">' + esc(p.order) + ' &middot; Dikirim ' + tglSingkat(p.dikirim) + '</div></td>' +
                         '<td class="dpo-col-mitra"><div class="dpo-mitra">' + esc(p.mitra) + '</div></td>' +
                         '<td><div class="dpo-judul">' + esc(p.judul) + '</div></td>' +
@@ -286,13 +325,15 @@
                         '<td class="dpo-col-aksi"><button type="button" class="btn btn-primary btn-sm" data-buka="' + p.id + '"><i class="bi bi-search me-1"></i>Review</button></td></tr>';
                 }).join('') + '</tbody></table></div>';
 
-            var kartu = '<div class="dpo-mob">' + rows.map(function (p) {
+            var kartu = '<div class="dpo-mob">' + pagedRows.map(function (p) {
                 return '<div class="dpo-pcard"><div class="dpo-no">' + esc(p.nomor) + '</div><div class="dpo-mitra">' + esc(p.mitra) + '</div>' +
                     '<div class="dpo-judul" style="max-width:none;margin:2px 0 6px;">' + esc(p.judul) + '</div>' + pillsFor(p) +
                     '<div class="foot"><button type="button" class="btn btn-primary btn-sm" data-buka="' + p.id + '"><i class="bi bi-search me-1"></i>Review</button></div></div>';
             }).join('') + '</div>';
 
-            $('dpoList').innerHTML = tabel + kartu;
+            var paginationHtml = bikinPaginationHtml(totalRows, dvmPage, dvmPerPage);
+
+            $('dpoList').innerHTML = tabel + kartu + paginationHtml;
         }
 
         function renderDisetujui(rows) {
@@ -302,9 +343,18 @@
                 return;
             }
 
-            var tabel = '<div class="dpo-desk"><table class="dpo-table"><thead><tr><th class="dpo-col-urut">No</th><th class="dpo-col-no">No PO</th><th class="dpo-col-mitra">Mitra</th><th>Kegiatan</th><th class="dpo-col-mid">Divisi</th><th class="dpo-col-mid">Disetujui</th><th class="dpo-col-aksi">Aksi</th></tr></thead><tbody>' +
-                rows.map(function (p, idx) {
-                    return '<tr><td class="dpo-col-urut">' + (idx + 1) + '</td>' +
+            var totalRows = rows.length;
+            var totalPages = Math.ceil(totalRows / dvmPerPage);
+            if (dvmPage > totalPages) dvmPage = totalPages || 1;
+            if (dvmPage < 1) dvmPage = 1;
+
+            var startIdx = (dvmPage - 1) * dvmPerPage;
+            var endIdx = startIdx + dvmPerPage;
+            var pagedRows = rows.slice(startIdx, endIdx);
+
+            var tabel = '<div class="dpo-desk"><table class="dpo-table" data-no-paginate="true"><thead><tr><th class="dpo-col-urut">No</th><th class="dpo-col-no">No PO</th><th class="dpo-col-mitra">Mitra</th><th>Kegiatan</th><th class="dpo-col-mid">Divisi</th><th class="dpo-col-mid">Disetujui</th><th class="dpo-col-aksi">Aksi</th></tr></thead><tbody>' +
+                pagedRows.map(function (p, idx) {
+                    return '<tr><td class="dpo-col-urut">' + (startIdx + idx + 1) + '</td>' +
                         '<td class="dpo-col-no"><div class="dpo-no">' + esc(p.nomor) + '</div><div class="dpo-sub">' + esc(p.order) + '</div></td>' +
                         '<td class="dpo-col-mitra"><div class="dpo-mitra">' + esc(p.mitra) + '</div></td>' +
                         '<td><div class="dpo-judul">' + esc(p.judul) + '</div></td>' +
@@ -313,14 +363,16 @@
                         '<td class="dpo-col-aksi"><button type="button" class="btn btn-white btn-sm" data-buka="' + p.id + '"><i class="bi bi-eye me-1"></i>Lihat</button></td></tr>';
                 }).join('') + '</tbody></table></div>';
 
-            var kartu = '<div class="dpo-mob">' + rows.map(function (p) {
+            var kartu = '<div class="dpo-mob">' + pagedRows.map(function (p) {
                 return '<div class="dpo-pcard"><div class="dpo-no">' + esc(p.nomor) + '</div><div class="dpo-mitra">' + esc(p.mitra) + '</div>' +
                     '<div class="dpo-judul" style="max-width:none;margin:2px 0 6px;">' + esc(p.judul) + '</div>' + divisiPill(p.divisi) +
                     '<div class="dpo-tanggal" style="margin-top:6px;">Disetujui <b>' + tglSingkat(p.tanggal) + '</b></div>' +
                     '<div class="foot"><button type="button" class="btn btn-white btn-sm" data-buka="' + p.id + '"><i class="bi bi-eye me-1"></i>Lihat Detail</button></div></div>';
             }).join('') + '</div>';
 
-            $('dpoList').innerHTML = tabel + kartu;
+            var paginationHtml = bikinPaginationHtml(totalRows, dvmPage, dvmPerPage);
+
+            $('dpoList').innerHTML = tabel + kartu + paginationHtml;
         }
     
         function api(url, opts) {
@@ -430,16 +482,17 @@
             if (tabBtn) {
                 tab = tabBtn.getAttribute('data-tab');
                 document.querySelectorAll('#dpoTabs .dpo-tab').forEach(function (b) { b.classList.toggle('active', b === tabBtn); });
+                dvmPage = 1;
                 render();
                 return;
             }
             var previewBtn = e.target.closest('[data-preview-po]');
             if (previewBtn) { bukaPreviewPoFile(previewBtn.getAttribute('data-preview-po')); }
         });
-        $('dpoSearch').addEventListener('input', function () { q = this.value.trim().toLowerCase(); render(); });
-        $('dpoDivisi').addEventListener('change', function () { divisi = this.value; render(); });
-        $('dpoBulan').addEventListener('change', function () { bulan = this.value; render(); });
-        $('dpoTahun').addEventListener('change', function () { tahun = this.value; render(); });
+        $('dpoSearch').addEventListener('input', function () { q = this.value.trim().toLowerCase(); dvmPage = 1; render(); });
+        $('dpoDivisi').addEventListener('change', function () { divisi = this.value; dvmPage = 1; render(); });
+        $('dpoBulan').addEventListener('change', function () { bulan = this.value; dvmPage = 1; render(); });
+        $('dpoTahun').addEventListener('change', function () { tahun = this.value; dvmPage = 1; render(); });
 
         $('dvSimpanCatatan').addEventListener('click', function () {
             if (!current) { return; }

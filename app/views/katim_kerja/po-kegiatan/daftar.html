@@ -440,6 +440,16 @@
                 '<button type="button" class="btn btn-primary btn-sm" data-dpo-open="' + p.id + '"><i class="bi bi-eye"></i> ' + (MODE === 'katim' ? 'Review PO' : 'Buka PO') + '</button></div>';
         }
 
+        var dpoPage = 1;
+        var dpoPerPage = 10;
+
+        window.dpoGoPage = function(p) {
+            dpoPage = p;
+            renderList();
+            var el = $('dpoList');
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        };
+
         function renderList() {
             var rows = pos.filter(function (p) {
                 if (tab === 'perlu') {
@@ -468,9 +478,18 @@
                 return;
             }
 
+            var totalRows = rows.length;
+            var totalPages = Math.ceil(totalRows / dpoPerPage);
+            if (dpoPage > totalPages) dpoPage = totalPages || 1;
+            if (dpoPage < 1) dpoPage = 1;
+
+            var startIdx = (dpoPage - 1) * dpoPerPage;
+            var endIdx = startIdx + dpoPerPage;
+            var pagedRows = rows.slice(startIdx, endIdx);
+
             var kolomPembuat = MODE === 'katim' ? '<th>Pembuat</th>' : '';
-            var table = '<div class="table-responsive dpo-desk"><table class="table table-hover align-middle mb-0"><thead class="table-light"><tr><th style="width:160px;">Nomor PO</th><th>Mitra & Kegiatan</th>' + kolomPembuat + '<th style="width:110px;">Divisi</th><th>Status Peninjauan</th><th style="width:150px;" class="text-end pe-3">Aksi</th></tr></thead><tbody>' +
-                rows.map(function (p) {
+            var table = '<div class="table-responsive dpo-desk"><table class="table table-hover align-middle mb-0" data-no-paginate="true"><thead class="table-light"><tr><th style="width:160px;">Nomor PO</th><th>Mitra & Kegiatan</th>' + kolomPembuat + '<th style="width:110px;">Divisi</th><th>Status Peninjauan</th><th style="width:150px;" class="text-end pe-3">Aksi</th></tr></thead><tbody>' +
+                pagedRows.map(function (p) {
                     var badgeDivisi = p.divisi === 'selulosa' ? '<span class="badge-selulosa">Selulosa</span>' : (p.divisi === 'lingkungan' ? '<span class="badge-lingkungan">Lingkungan</span>' : '<span class="badge bg-light text-secondary border">Umum</span>');
                     var isUnreadRow = p.unread > 0;
                     return '<tr style="' + (isUnreadRow ? 'background: rgba(225,29,72,0.03);' : '') + '"><td><div class="dpo-no' + (isUnreadRow ? ' fw-bold text-primary' : '') + '">' + esc(p.nomor) + '</div><div class="dpo-sub"><i class="bi bi-calendar3 me-1"></i>' + tgl(p.dikirim) + '</div></td>' +
@@ -480,7 +499,7 @@
                         '<td>' + pillsFor(p) + '</td><td class="text-end pe-3">' + actsFor(p) + '</td></tr>';
                 }).join('') + '</tbody></table></div>';
 
-            var cards = '<div class="dpo-mob p-3">' + rows.map(function (p) {
+            var cards = '<div class="dpo-mob p-3">' + pagedRows.map(function (p) {
                 var badgeDivisi = p.divisi === 'selulosa' ? '<span class="badge-selulosa">Selulosa</span>' : (p.divisi === 'lingkungan' ? '<span class="badge-lingkungan">Lingkungan</span>' : '<span class="badge bg-light text-secondary border">Umum</span>');
                 return '<div class="dpo-pcard bg-white shadow-sm mb-3"><div class="d-flex justify-content-between align-items-center mb-1"><div class="dpo-no text-primary">' + esc(p.nomor) + '</div>' + badgeDivisi + '</div><div class="dpo-mitra">' + esc(p.mitra) + '</div>' +
                     '<div class="dpo-judul" style="max-width:none;margin:2px 0 8px;">' + esc(p.judul) + '</div>' +
@@ -488,7 +507,21 @@
                     pillsFor(p) + '<div class="dpo-foot">' + actsFor(p) + '</div></div>';
             }).join('') + '</div>';
 
-            $('dpoList').innerHTML = table + cards;
+            var paginationHtml = '';
+            if (totalPages > 1) {
+                var displayStart = startIdx + 1;
+                var displayEnd = Math.min(endIdx, totalRows);
+                paginationHtml = '<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 p-3 border-top bg-white">' +
+                    '<span class="small text-muted fw-medium">Menampilkan <strong>' + displayStart + '&ndash;' + displayEnd + '</strong> dari <strong>' + totalRows + '</strong> data</span>' +
+                    '<ul class="pagination pagination-sm mb-0">' +
+                    '<li class="page-item ' + (dpoPage <= 1 ? 'disabled' : '') + '"><a class="page-link" href="#" onclick="window.dpoGoPage(' + (dpoPage - 1) + '); return false;">&laquo; Sebelumnya</a></li>';
+                for (var i = 1; i <= totalPages; i++) {
+                    paginationHtml += '<li class="page-item ' + (i === dpoPage ? 'active' : '') + '"><a class="page-link" href="#" onclick="window.dpoGoPage(' + i + '); return false;">' + i + '</a></li>';
+                }
+                paginationHtml += '<li class="page-item ' + (dpoPage >= totalPages ? 'disabled' : '') + '"><a class="page-link" href="#" onclick="window.dpoGoPage(' + (dpoPage + 1) + '); return false;">Berikutnya &raquo;</a></li></ul></div>';
+            }
+
+            $('dpoList').innerHTML = table + cards + paginationHtml;
         }
     
         /* ---------- Panel review ---------- */
