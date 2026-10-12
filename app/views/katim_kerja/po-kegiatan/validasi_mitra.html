@@ -212,12 +212,7 @@
                         </div>
                     </div>
 
-                    <!-- Tombol Reset Filter -->
-                    <div class="col-auto">
-                        <button type="button" class="btn btn-outline-secondary btn-sm px-2.5 d-inline-flex align-items-center justify-content-center" id="dpoResetFilter" title="Reset filter & pencarian">
-                            <i class="bi bi-arrow-counterclockwise"></i>
-                        </button>
-                    </div>
+
                 </div>
             </div>
         </div>
@@ -680,22 +675,7 @@
         $('dpoBulan').addEventListener('change', function () { bulan = this.value; dvmPage = 1; render(); });
         $('dpoTahun').addEventListener('change', function () { tahun = this.value; dvmPage = 1; render(); });
 
-        var btnReset = $('dpoResetFilter');
-        if (btnReset) {
-            btnReset.addEventListener('click', function () {
-                $('dpoSearch').value = '';
-                q = '';
-                if ($('btnClearSearch')) $('btnClearSearch').classList.add('d-none');
-                $('dpoDivisi').value = '';
-                divisi = '';
-                $('dpoBulan').value = String(BULAN_INI);
-                bulan = String(BULAN_INI);
-                $('dpoTahun').value = String(TAHUN_INI);
-                tahun = String(TAHUN_INI);
-                dvmPage = 1;
-                render();
-            });
-        }
+
 
         $('dvSimpanCatatan').addEventListener('click', function () {
             if (!current) { return; }
