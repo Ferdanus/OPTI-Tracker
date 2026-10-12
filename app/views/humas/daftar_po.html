@@ -97,8 +97,16 @@
     /* ---------- Panel samping ---------- */
     .hm-scrim { position: fixed; inset: 0; background: rgba(15,23,42,.45); opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 1050; }
     .hm-scrim.open { opacity: 1; pointer-events: auto; }
-    .hm-sheet { position: fixed; top: 0; right: 0; bottom: 0; width: min(1300px, 100vw); background: #f1f5f9; z-index: 1055; display: flex; flex-direction: column; transform: translateX(100%); visibility: hidden; transition: transform .24s ease, visibility 0s .24s; box-shadow: -12px 0 40px rgba(15,23,42,.18); }
-    .hm-sheet.open { transform: none; visibility: visible; transition: transform .24s ease, visibility 0s; }
+    .hm-sheet { position: fixed; top: 0; right: 0; bottom: 0; width: min(1300px, 100vw); background: #f1f5f9; z-index: 1055; display: flex; flex-direction: column; transform: translateX(100%); visibility: hidden; transition: transform .24s ease, width .24s ease, visibility 0s .24s; box-shadow: -12px 0 40px rgba(15,23,42,.18); }
+    .hm-sheet.open { transform: none; visibility: visible; transition: transform .24s ease, width .24s ease, visibility 0s; }
+    .hm-sheet.wide { width: 100vw; }                       /* dilebarkan: menutup sidebar */
+    .hm-shtools { display: flex; gap: 8px; flex-shrink: 0; }
+    /* info judul + alur (stepper) bisa disembunyikan dengan transisi geser, supaya dokumen PO lebih lega */
+    .hm-shh .sub2, .hm-shh .meta { max-height: 120px; overflow: hidden; transition: max-height .25s ease, opacity .2s ease, margin .25s ease; }
+    .hm-stepper { max-height: 220px; overflow: hidden; transition: max-height .25s ease, padding .25s ease, opacity .2s ease, border-width .25s ease; }
+    .hm-sheet.cmp .hm-shh .sub2, .hm-sheet.cmp .hm-shh .meta { max-height: 0; opacity: 0; margin-top: 0; }
+    .hm-sheet.cmp .hm-stepper { max-height: 0; padding-top: 0; padding-bottom: 0; opacity: 0; border-bottom-width: 0; }
+    @media (max-width: 1300px) { #hmShWide { display: none; } }   /* di layar sempit panel sudah selebar layar */
     .hm-shh { background: #fff; border-bottom: 1px solid var(--hm-border); padding: 14px 18px; display: flex; gap: 12px; align-items: flex-start; }
     .hm-shh .grow { flex: 1; min-width: 0; }
     .hm-shh .t1 { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -255,7 +263,7 @@
 <div class="hm-root" id="hmRoot">
     <div class="hm-head">
         <h1>Daftar PO Humas</h1>
-        <p>PO yang sudah disetujui Ketua Tim masuk ke sini. Baris tebal bertitik biru belum Anda baca. Klik baris untuk membuka PO, Map Kendali, berkas, dan alurnya, lalu verifikasi sebagai bahan acuan pembuatan Kontrak. Tab PO Selesai berisi PO yang sudah divalidasi PPK BLU.</p>
+        <p>PO yang sudah disetujui Ketua Tim masuk ke sini. Baris tebal bertitik biru belum Anda baca. Klik baris untuk membuka PO, Map Kendali, berkas, dan alurnya, lalu verifikasi sebagai bahan acuan pembuatan Kontrak. Tab PO Selesai berisi PO yang sudah diverifikasi PPK BLU.</p>
     </div>
 
     <check if="{{ @error_message }}">
@@ -284,7 +292,6 @@
                 <option value="">Semua status</option>
                 <option value="mitra">Menunggu Tim Mitra</option>
                 <option value="ppk">Menunggu PPK BLU</option>
-                <option value="ok">Selesai</option>
             </select>
             <select class="hm-select" id="hmBulan" aria-label="Bulan"></select>
             <select class="hm-select" id="hmTahun" aria-label="Tahun"></select>
@@ -302,7 +309,11 @@
                 <div class="sub2" id="hmShSub">-</div>
                 <div class="meta" id="hmShMeta">-</div>
             </div>
-            <button type="button" class="hm-ibtn" id="hmShClose" aria-label="Tutup"><i class="bi bi-x-lg"></i></button>
+            <div class="hm-shtools">
+                <button type="button" class="hm-ibtn" id="hmShInfo" aria-label="Sembunyikan info dan alur" aria-pressed="false" title="Sembunyikan info dan alur"><i class="bi bi-chevron-up"></i></button>
+                <button type="button" class="hm-ibtn" id="hmShWide" aria-label="Lebarkan panel" aria-pressed="false" title="Lebarkan panel (sembunyikan sidebar)"><i class="bi bi-arrows-angle-expand"></i></button>
+                <button type="button" class="hm-ibtn" id="hmShClose" aria-label="Tutup"><i class="bi bi-x-lg"></i></button>
+            </div>
         </div>
         <div class="hm-stepper" id="hmStepper"></div>
         <div class="hm-shtabs" id="hmShTabs"></div>
@@ -382,19 +393,19 @@
     /* ---------- Status PO saat ini (turunan, tidak disimpan): Humas -> Tim Mitra -> PPK BLU ---------- */
     function posisi(p) {
         if (!p.diverifikasi) { return { di: 'Humas', teks: 'Menunggu verifikasi Humas', cls: 'humas', langkah: 2 }; }
-        if (!p.mitra_valid_at) { return { di: 'Tim Mitra', teks: 'Menunggu validasi Tim Mitra', cls: 'mitra', langkah: 3 }; }
-        if (!p.ppk_valid_at) { return { di: 'PPK BLU', teks: 'Menunggu validasi PPK BLU', cls: 'ppk', langkah: 4 }; }
-        return { di: 'PPK BLU', teks: 'Selesai divalidasi PPK BLU', cls: 'ok', langkah: 5 };
+        if (!p.mitra_valid_at) { return { di: 'Tim Mitra', teks: 'Menunggu verifikasi Tim Mitra', cls: 'mitra', langkah: 3 }; }
+        if (!p.ppk_valid_at) { return { di: 'PPK BLU', teks: 'Menunggu verifikasi PPK BLU', cls: 'ppk', langkah: 4 }; }
+        return { di: 'PPK BLU', teks: 'Diverifikasi PPK BLU', cls: 'ok', langkah: 5 };
     }
     function posBadge(p) { var o = posisi(p); return '<span class="hm-pbadge ' + o.cls + '"><span class="d"></span>' + esc(o.teks) + '</span>'; }
 
     /* ---------- Filter ---------- */
     function dataTab(t) {
         if (t === 'baru') { return DATA_BARU; }
-        if (t === 'selesai') { return DATA_SELESAI; }
-        return DATA_BARU.concat(DATA_SELESAI).filter(function (p) { return !!p.ppk_valid_at; });   // PO Selesai = sudah divalidasi PPK BLU
+        if (t === 'selesai') { return DATA_SELESAI.filter(function (p) { return !p.ppk_valid_at; }); }
+        return DATA_BARU.concat(DATA_SELESAI).filter(function (p) { return !!p.ppk_valid_at; });   // PO Selesai = sudah diverifikasi PPK BLU
     }
-    // Tanggal acuan bulan/tahun per tab: masuk Humas (baru), diverifikasi Humas (sudah diverifikasi), divalidasi PPK BLU (PO selesai)
+    // Tanggal acuan bulan/tahun per tab: masuk Humas (baru), diverifikasi Humas (sudah diverifikasi), diverifikasi PPK BLU (PO selesai)
     function tglAcuan(p, t) { return (t === 'baru' ? p.dikirim : (t === 'selesai' ? p.tgl_verifikasi : p.ppk_valid_at)) || ''; }
     function bulanTahun(s) { var m = /^(\d{4})-(\d{2})/.exec(s || ''); return m ? { b: String(+m[2]), t: m[1] } : null; }
     function isiOpsiFilter() {
@@ -481,7 +492,7 @@ function statusPill(p) { return '<span class="hm-pill emerald"><i class="bi bi-p
         var n = unreadCount();
         $('countBaru').textContent = DATA_BARU.length;
         $('countBaru').classList.toggle('hot', DATA_BARU.length > 0);
-        $('countSelesai').textContent = DATA_SELESAI.length;
+        $('countSelesai').textContent = dataTab('selesai').length;
         $('countPoSelesai').textContent = dataTab('po_selesai').length;
         $('dotBaru').hidden = n === 0;
         $('dotBaru').title = n + ' belum dibaca';
@@ -505,7 +516,7 @@ function statusPill(p) { return '<span class="hm-pill emerald"><i class="bi bi-p
         var selesai = t !== 'baru';   // tab selain "Daftar PO Baru": tombol "Buka", bukan "Review"
         if (!rows.length) {
             var pesan = filterAktif() ? 'Tidak ada PO yang cocok dengan pencarian/filter.'
-                : (t === 'selesai' ? 'Belum ada PO yang diverifikasi bulan ini.' : (t === 'po_selesai' ? 'Belum ada PO yang selesai divalidasi PPK BLU bulan ini.' : 'Belum ada PO baru yang perlu diverifikasi.'));
+                : (t === 'selesai' ? 'Belum ada PO yang diverifikasi bulan ini.' : (t === 'po_selesai' ? 'Belum ada PO yang selesai diverifikasi PPK BLU bulan ini.' : 'Belum ada PO baru yang perlu diverifikasi.'));
             $('hmList').innerHTML = '<div class="hm-empty"><i class="bi bi-inbox"></i>' + pesan + '</div>';
             return;
         }
@@ -739,7 +750,7 @@ function statusPill(p) { return '<span class="hm-pill emerald"><i class="bi bi-p
         renderStepper(p); renderShTabs(); renderDock(p); renderBody();
     }
     function renderStepper(p) {
-        var steps = ['Disetujui Ketua Tim', 'Verifikasi Humas', 'Validasi Tim Mitra', 'Validasi PPK BLU'];
+        var steps = ['Disetujui Ketua Tim', 'Verifikasi Humas', 'Verifikasi Tim Mitra', 'Verifikasi PPK BLU'];
         var c = posisi(p).langkah;
         var h = '<div class="hm-steps">';
         steps.forEach(function (s, i) {
@@ -747,7 +758,7 @@ function statusPill(p) { return '<span class="hm-pill emerald"><i class="bi bi-p
             h += '<div class="hm-step ' + cls + '"><span class="n">' + (n < c ? '<i class="bi bi-check-lg"></i>' : n) + '</span><span class="lb">' + s + '</span></div>';
             if (i < steps.length - 1) { h += '<div class="hm-sline' + (n < c ? ' done' : '') + '"></div>'; }
         });
-        var cat = !p.diverifikasi ? 'Setelah Anda verifikasi, PO diteruskan ke Tim Mitra, lalu PPK BLU.' : (c === 5 ? 'Semua validasi selesai.' : 'Sudah Anda verifikasi. PO sekarang di ' + posisi(p).di + '.');
+        var cat = !p.diverifikasi ? 'Setelah Anda verifikasi, PO diteruskan ke Tim Mitra, lalu PPK BLU.' : (c === 5 ? 'Semua verifikasi selesai.' : 'Sudah Anda verifikasi. PO sekarang di ' + posisi(p).di + '.');
         $('hmStepper').innerHTML = h + '</div><div class="hm-nextnote">' + cat + '</div>';
     }
     function renderShTabs() {
@@ -818,7 +829,7 @@ function statusPill(p) { return '<span class="hm-pill emerald"><i class="bi bi-p
         ((berkas && berkas.riwayat) || []).forEach(function (m) {
             var tk = m.pesan || '';
             if (/dikirim untuk direview|mengirim PO untuk direview/.test(tk)) { return; }   // diganti item dari dikirim_at di bawah
-            if (/divalidasi Tim Mitra/.test(tk)) { return; }                                // diganti item dari tervalidasi_mitra_at di bawah
+            if (/di(?:validasi|verifikasi) Tim Mitra/.test(tk)) { return; }                                // diganti item dari tervalidasi_mitra_at di bawah
             if (/menyetujui|disetujui/.test(tk)) { adaSetuju = true; }
             it(m.waktu, tk, /menyetujui|meminta|membuka kembali/.test(tk) ? 'Ketua Tim' : 'Ketua Pelaksana', /menyetujui/.test(tk) ? 'bi-check2-circle' : (/meminta/.test(tk) ? 'bi-pencil-square' : (/membuka kembali/.test(tk) ? 'bi-unlock' : 'bi-send')));
         });
@@ -832,8 +843,8 @@ function statusPill(p) { return '<span class="hm-pill emerald"><i class="bi bi-p
         if (!adaSetuju) { it(p.disetujui_at || p.dikirim, 'Disetujui Ketua Tim. PO terkunci dan diteruskan ke Humas untuk diverifikasi.', 'Ketua Tim', 'bi-check2-circle'); }
         it(p.dibaca_at, 'PO dibuka', 'Humas', 'bi-eye');
         it(p.diverifikasi ? p.tgl_verifikasi : '', 'Diverifikasi', 'Humas', 'bi-patch-check');
-        it(p.mitra_valid_at, 'Divalidasi', 'Tim Mitra', 'bi-patch-check', p.catatan_mitra);
-        it(p.ppk_valid_at, 'Divalidasi', 'PPK BLU', 'bi-patch-check');
+        it(p.mitra_valid_at, 'Diverifikasi', 'Tim Mitra', 'bi-patch-check', p.catatan_mitra);
+        it(p.ppk_valid_at, 'Diverifikasi', 'PPK BLU', 'bi-patch-check');
         a.sort(function (x, y) { return x.t < y.t ? -1 : (x.t > y.t ? 1 : 0); });
         return a;
     }
@@ -845,10 +856,10 @@ function statusPill(p) { return '<span class="hm-pill emerald"><i class="bi bi-p
         }).join('');
         var nxt = [];
         if (!p.diverifikasi) { nxt.push(['Verifikasi', 'Humas']); }
-        if (!p.mitra_valid_at) { nxt.push(['Validasi', 'Tim Mitra']); }
-        if (!p.ppk_valid_at) { nxt.push(['Validasi', 'PPK BLU']); }
+        if (!p.mitra_valid_at) { nxt.push(['Verifikasi', 'Tim Mitra']); }
+        if (!p.ppk_valid_at) { nxt.push(['Verifikasi', 'PPK BLU']); }
         h += nxt.map(function (x, i) { return '<li class="' + (i === 0 ? 'now' : 'todo') + '"><span class="ic"><i class="bi ' + (i === 0 ? 'bi-record-circle' : 'bi-circle') + '"></i></span><div class="tx"><div class="a">' + esc(x[0]) + '</div><div class="b">' + esc(x[1]) + (i === 0 ? ' &middot; sedang di sini' : ' &middot; menunggu') + '</div></div></li>'; }).join('');
-        if (p.ppk_valid_at) { h += '<li class="done fin"><span class="ic"><i class="bi bi-flag-fill"></i></span><div class="tx"><div class="a">Selesai divalidasi PPK BLU</div><div class="b">Tahap berikutnya menyusul</div></div></li>'; }
+        if (p.ppk_valid_at) { h += '<li class="done fin"><span class="ic"><i class="bi bi-flag-fill"></i></span><div class="tx"><div class="a">Diverifikasi PPK BLU</div><div class="b">Tahap berikutnya menyusul</div></div></li>'; }
         h += '</ol>';
         if (!berkas && !berkasGalat) { h += '<div class="hm-loading">Memuat riwayat...</div>'; }
         return h;
@@ -934,6 +945,24 @@ function statusPill(p) { return '<span class="hm-pill emerald"><i class="bi bi-p
         }
     });
     $('hmShClose').addEventListener('click', closeSheet);
+    /* ---------- Tampilan panel: sembunyikan info/alur dan lebarkan panel (pilihan diingat di browser, berlaku di semua halaman panel) ---------- */
+    var shCmp = false, shWide = false;
+    try { shCmp = localStorage.getItem('siloptiShCmp') === '1'; shWide = localStorage.getItem('siloptiShWide') === '1'; } catch (e) {}
+    function simpanTampilanSheet() { try { localStorage.setItem('siloptiShCmp', shCmp ? '1' : '0'); localStorage.setItem('siloptiShWide', shWide ? '1' : '0'); } catch (e) {} }
+    function terapkanTampilanSheet() {
+        $('hmSheet').classList.toggle('cmp', shCmp);
+        $('hmSheet').classList.toggle('wide', shWide);
+        var bi = $('hmShInfo'), bw = $('hmShWide');
+        bi.innerHTML = '<i class="bi ' + (shCmp ? 'bi-chevron-down' : 'bi-chevron-up') + '"></i>';
+        bi.title = shCmp ? 'Tampilkan info dan alur' : 'Sembunyikan info dan alur';
+        bi.setAttribute('aria-label', bi.title); bi.setAttribute('aria-pressed', shCmp ? 'true' : 'false');
+        bw.innerHTML = '<i class="bi ' + (shWide ? 'bi-arrows-angle-contract' : 'bi-arrows-angle-expand') + '"></i>';
+        bw.title = shWide ? 'Kecilkan panel (tampilkan sidebar)' : 'Lebarkan panel (sembunyikan sidebar)';
+        bw.setAttribute('aria-label', bw.title); bw.setAttribute('aria-pressed', shWide ? 'true' : 'false');
+    }
+    $('hmShInfo').addEventListener('click', function () { shCmp = !shCmp; simpanTampilanSheet(); terapkanTampilanSheet(); });
+    $('hmShWide').addEventListener('click', function () { shWide = !shWide; simpanTampilanSheet(); terapkanTampilanSheet(); });
+    terapkanTampilanSheet();
     $('hmScrim').addEventListener('click', closeSheet);
     $('hmFvTutup').addEventListener('click', tutupFv);
     $('hmFv').addEventListener('click', function (e) { if (e.target === this) { tutupFv(); } });

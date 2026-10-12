@@ -29,7 +29,7 @@
  *   GET  /po-kegiatan/validasi-mitra           index: 2 tab (perlu divalidasi / sudah disetujui)
  *   GET  /po-kegiatan/@id/validasi-detail      JSON: info pembayaran order + dokumen + catatan
  *   POST /po-kegiatan/@id/baca-mitra           catat waktu PO pertama kali dibuka Tim Mitra
- *   POST /po-kegiatan/@id/catatan              simpan catatan saja (tanpa validasi)
+ *   POST /po-kegiatan/@id/catatan-mitra        simpan catatan saja (tanpa validasi)
  *   POST /po-kegiatan/@id/validasi             validasi -> status jadi disetujui_mitra
  *
  * Akses: Tim Mitra (tim_mitra_industri / admin_order / tim_mitra / ketua_tim_mitra) + Superadmin.
@@ -75,7 +75,7 @@ class PoValidasiMitraController extends Controller {
         $f3->set('bulan_ini', (int) date('n'));
         $f3->set('tahun_ini', (int) date('Y'));
         $f3->set('error_message', $errorMessage);
-        $this->render('katim_kerja/po-kegiatan/validasi_mitra.html', 'Validasi Mitra', 'po_validasi_mitra');
+        $this->render('katim_kerja/po-kegiatan/validasi_mitra.html', 'Verifikasi Mitra', 'po_validasi_mitra');
     }
 
     /**
@@ -265,7 +265,7 @@ class PoValidasiMitraController extends Controller {
         ]);
     }
 
-    /** POST /po-kegiatan/@id/catatan -- simpan catatan tanpa validasi */
+    /** POST /po-kegiatan/@id/catatan-mitra -- simpan catatan tanpa validasi */
     public function simpanCatatan($f3, $params) {
         list($po, $order) = $this->akses((int) $params['id']);
         $this->wajibVerifikasiHumas($po);
@@ -285,10 +285,10 @@ class PoValidasiMitraController extends Controller {
         $uid = (int) $this->getUserId();
 
         if ($po['status'] === 'disetujui_mitra' || $po['status'] === 'disetujui') {
-            $this->keluarkanJson(['ok' => false, 'pesan' => 'PO ini sudah divalidasi sebelumnya.'], 422);
+            $this->keluarkanJson(['ok' => false, 'pesan' => 'PO ini sudah diverifikasi sebelumnya.'], 422);
         }
         if ($po['status'] !== 'terkirim') {
-            $this->keluarkanJson(['ok' => false, 'pesan' => 'PO ini belum dikirim, jadi belum bisa divalidasi.'], 422);
+            $this->keluarkanJson(['ok' => false, 'pesan' => 'PO ini belum dikirim, jadi belum bisa diverifikasi.'], 422);
         }
         $this->wajibVerifikasiHumas($po);
 
@@ -308,7 +308,7 @@ class PoValidasiMitraController extends Controller {
         $kesanggupanAda = !empty($sp['surat_kesanggupan_bayar']);
 
         if (!$lunas && !$kesanggupanAda) {
-            $this->keluarkanJson(['ok' => false, 'pesan' => 'Belum bisa divalidasi: order ini belum lunas dan tidak ada surat kesanggupan bayar.'], 422);
+            $this->keluarkanJson(['ok' => false, 'pesan' => 'Belum bisa diverifikasi: order ini belum lunas dan tidak ada surat kesanggupan bayar.'], 422);
         }
 
         $catatan = trim((string) $f3->get('POST.catatan'));
@@ -326,13 +326,13 @@ class PoValidasiMitraController extends Controller {
                 [1 => $uid, 2 => $catatan, 3 => $uid, 4 => (int) $po['id']]
             );
         } catch (\Exception $e) {
-            $this->keluarkanJson(['ok' => false, 'pesan' => 'Gagal menyimpan validasi: ' . $e->getMessage()], 500);
+            $this->keluarkanJson(['ok' => false, 'pesan' => 'Gagal menyimpan verifikasi: ' . $e->getMessage()], 500);
         }
 
         // catatan sistem di thread PO (kalau tabel po_chat ada) -- biar pembuat PO (tim_kerja) kebagian notifikasi
         if (class_exists('PoReviewController')) {
             try {
-                \PoReviewController::catatPesanSistem($this->db, (int) $po['id'], $uid, 'katim', 'PO divalidasi Tim Mitra (pembayaran OK).');
+                \PoReviewController::catatPesanSistem($this->db, (int) $po['id'], $uid, 'katim', 'PO diverifikasi Tim Mitra (pembayaran OK).');
             } catch (\Exception $e) {}
         }
 
@@ -345,7 +345,7 @@ class PoValidasiMitraController extends Controller {
                 'target_role'     => 'keuangan',
                 'target_layanan'  => 'semua',
                 'judul'           => 'PO Siap Direview Keuangan',
-                'pesan'           => "PO #{$po['nomor_po']} untuk Order #{$order['nomor_order']} ({$order['judul_kegiatan']}) sudah divalidasi Tim Mitra, siap direview Keuangan.",
+                'pesan'           => "PO #{$po['nomor_po']} untuk Order #{$order['nomor_order']} ({$order['judul_kegiatan']}) sudah diverifikasi Tim Mitra, siap direview Keuangan.",
                 'tipe'            => 'info',
                 'icon'            => 'bi-clipboard-check',
                 'link_url'        => '/po-kegiatan/daftar',

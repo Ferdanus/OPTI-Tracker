@@ -163,9 +163,9 @@ class PoHumasController extends Controller {
                 'po_id'           => (int) $po['id'],
                 'target_role'     => 'ketua_tim_mitra',
                 'target_layanan'  => 'semua',
-                'judul'           => 'PO Menunggu Validasi',
+                'judul'           => 'PO Menunggu Verifikasi',
                 'pesan'           => 'PO #' . $po['nomor_po'] . ' untuk Order #' . (isset($o['nomor_order']) ? $o['nomor_order'] : '-')
-                                   . ' (' . (isset($o['judul_kegiatan']) ? $o['judul_kegiatan'] : '') . ') sudah diverifikasi Humas, menunggu validasi Tim Mitra.',
+                                   . ' (' . (isset($o['judul_kegiatan']) ? $o['judul_kegiatan'] : '') . ') sudah diverifikasi Humas, menunggu verifikasi Tim Mitra.',
                 'tipe'            => 'primary',
                 'icon'            => 'bi-clipboard-check',
                 'link_url'        => '/po-kegiatan/validasi-mitra',

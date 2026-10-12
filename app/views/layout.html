@@ -1335,7 +1335,7 @@
                     </check>
                     <check if="{{ @SESSION.role == 'pejabat' || @SESSION.role == 'superadmin' }}">
                         <a class="sidebar-link {{ @active_menu == 'po_ppk' ? 'active' : '' }}" href="{{ @BASE }}/po-ppk">
-                            <i class="bi bi-patch-check"></i> <span>Validasi PPK BLU</span>
+                            <i class="bi bi-patch-check"></i> <span>Daftar Review PO</span>
                         </a>
                     </check>
                     <!-- Daftar PO layanan selain OPTI (Sertifikasi dst.) -- sementara khusus Superadmin; role layanan menyusul -->
@@ -1356,7 +1356,7 @@
                             </a>
                         </li>
                     </check>
-                    <check if="{{ (@is_ketua_tim && @user_layanan == 'selulosa') || (@is_tim_kerja && @divisi_tim_kerja == 'selulosa') }}">
+                        <check if="{{ (@is_tim_kerja && @divisi_tim_kerja == 'selulosa') }}">
                         <li>
                             <a class="sidebar-link {{ @active_menu == 'po_selulosa' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?divisi=selulosa" title="Petunjuk Operasional Selulosa">
                                 <i class="bi bi-clipboard-check"></i> <span>Daftar PO Selulosa</span>

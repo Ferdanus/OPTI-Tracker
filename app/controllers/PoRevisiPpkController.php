@@ -20,7 +20,7 @@
  * Status disimpan di po_kegiatan.ppk_status (NULL = di meja PPK BLU). status_review tetap 'disetujui'.
  *   state turunan: ppk_cek | ppk_minta | katim_kerja | ketupel_kerja | katim_review | selesai
  *
- * Halaman dan API (satu view: katim_kerja/po-kegiatan/revisi_ppk.html, mode 'katim' | 'pembuat' | 'ppk'):
+ * Halaman dan API (dua view: revisi_ppk.html untuk 'katim' | 'pembuat', validasi_ppk.html untuk 'ppk'):
  *   Ketua Tim / Ketua Pelaksana  GET /po-revisi-ppk ...      PPK BLU  GET /po-ppk ...   (lihat routes_po_revisi_ppk.php)
  *
  * Hook yang dipanggil controller lain (static):
@@ -66,7 +66,7 @@ class PoRevisiPpkController extends Controller {
             $f3->error(403, 'Halaman ini hanya untuk PPK BLU.');
             return;
         }
-        $this->tampilkan($f3, 'ppk', 'Validasi PPK BLU', 'po_ppk');
+        $this->tampilkan($f3, 'ppk', 'Daftar Review PO', 'po_ppk');
     }
 
     protected function tampilkan($f3, $mode, $judul, $menu) {
@@ -81,7 +81,8 @@ class PoRevisiPpkController extends Controller {
         $f3->set('mode', $mode);
         $f3->set('prefix_api', $mode === 'ppk' ? '/po-ppk' : '/po-revisi-ppk');
         $f3->set('error_message', $errorMessage);
-        $this->render('katim_kerja/po-kegiatan/revisi_ppk.html', $judul, $menu);
+        // Dua halaman, dua file view: PPK BLU memakai validasi_ppk.html, Ketua Tim dan Ketua Pelaksana memakai revisi_ppk.html
+        $this->render($mode === 'ppk' ? 'katim_kerja/po-kegiatan/validasi_ppk.html' : 'katim_kerja/po-kegiatan/revisi_ppk.html', $judul, $menu);
     }
 
     /** GET /po-revisi-ppk/data */
@@ -161,7 +162,7 @@ class PoRevisiPpkController extends Controller {
 
         $this->gantiStatus($po, ['katim_kerja'], null);
         $this->pesan($po, $uid, 'katim', 'Ketua Tim', 'mengirim revisi ke PPK BLU.');
-        $this->kabariKe(self::idPpk($this->db), 'Revisi PO masuk', 'PO ' . $po['nomor_po'] . ' sudah direvisi dan menunggu validasi ulang.', '/po-ppk');
+        $this->kabariKe(self::idPpk($this->db), 'Revisi PO masuk', 'PO ' . $po['nomor_po'] . ' sudah direvisi dan menunggu verifikasi ulang.', '/po-ppk');
         $this->keluarkanJson($this->paketDetail((int) $po['id'], $sisi));
     }
 
@@ -174,7 +175,7 @@ class PoRevisiPpkController extends Controller {
 
         $this->gantiStatus($po, ['katim_review'], null);
         $this->pesan($po, $uid, 'katim', 'Ketua Tim', 'menyetujui revisi dan mengirim ke PPK BLU.');
-        $this->kabariKe(self::idPpk($this->db), 'Revisi PO masuk', 'PO ' . $po['nomor_po'] . ' sudah direvisi dan menunggu validasi ulang.', '/po-ppk');
+        $this->kabariKe(self::idPpk($this->db), 'Revisi PO masuk', 'PO ' . $po['nomor_po'] . ' sudah direvisi dan menunggu verifikasi ulang.', '/po-ppk');
         $this->kabariKe([(int) $po['ketua_pelaksana_id']], 'Revisi disetujui', 'PO ' . $po['nomor_po'] . ': revisi disetujui Ketua Tim dan dikirim ke PPK BLU.', '/po-kegiatan/daftar');
         $this->keluarkanJson($this->paketDetail((int) $po['id'], $sisi));
     }
@@ -440,7 +441,7 @@ class PoRevisiPpkController extends Controller {
     public function validasi($f3, $params) {
         $po = $this->aksesPpk((int) $params['id']);
         $uid = (int) $this->getUserId();
-        $this->wajibState($po, ['ppk_cek'], 'PO hanya bisa divalidasi saat berada di PPK BLU.');
+        $this->wajibState($po, ['ppk_cek'], 'PO hanya bisa diverifikasi saat berada di PPK BLU.');
 
         $n = $this->hitungCatatan((int) $po['id'], 'ppk');
         if ($n['draf'] > 0) {
@@ -459,16 +460,16 @@ class PoRevisiPpkController extends Controller {
                 $prm
             );
         } catch (\Exception $e) {
-            $this->keluarkanJson(['ok' => false, 'pesan' => 'Gagal menyimpan validasi.'], 500);
+            $this->keluarkanJson(['ok' => false, 'pesan' => 'Gagal menyimpan verifikasi.'], 500);
         }
         if ((int) $diubah === 0) {
             $this->keluarkanJson(['ok' => false, 'pesan' => 'Status PO sudah berubah. Muat ulang halaman.'], 409);
         }
 
-        $this->pesan($po, $uid, 'katim', 'PPK BLU', 'memvalidasi PO.');
+        $this->pesan($po, $uid, 'katim', 'PPK BLU', 'memverifikasi PO.');
         $tujuan = self::idKatim($this->db, $po['jenis_layanan_opti']);
         $tujuan[] = (int) $po['ketua_pelaksana_id'];
-        $this->kabariKe($tujuan, 'PO divalidasi PPK BLU', 'PO ' . $po['nomor_po'] . ' sudah divalidasi PPK BLU.', '/po-kegiatan/daftar');
+        $this->kabariKe($tujuan, 'PO diverifikasi PPK BLU', 'PO ' . $po['nomor_po'] . ' sudah diverifikasi PPK BLU.', '/po-kegiatan/daftar');
         $this->keluarkanJson($this->paketDetail((int) $po['id'], 'ppk'));
     }
 
@@ -502,7 +503,7 @@ class PoRevisiPpkController extends Controller {
             }
         }
         if (!$r) { return [false, 'PO tidak ditemukan.', '']; }
-        if (!in_array($r['status'], ['terkirim', 'disetujui_mitra', 'disetujui'], true)) { return [true, '', '']; }   // draf biasa; PO yang sudah divalidasi Tim Mitra statusnya 'disetujui_mitra'
+        if (!in_array($r['status'], ['terkirim', 'disetujui_mitra', 'disetujui'], true)) { return [true, '', '']; }   // draf biasa; PO yang sudah diverifikasi Tim Mitra statusnya 'disetujui_mitra'
 
         $pembuat = ((int) $userId > 0 && (int) $userId === (int) $r['ketua_pelaksana_id']);
         $sr = (string) $r['status_review'];
@@ -774,7 +775,7 @@ class PoRevisiPpkController extends Controller {
             );
             if ((int) $diubah > 0) {
                 $peran = ['ppk' => 'PPK BLU', 'katim' => 'Ketua Tim', 'pembuat' => 'Ketua Pelaksana'][$sisi];
-                $apa = ['ppk_cek' => ((int) $po['ronde_ppk'] > 0 ? 'revisi dari Ketua Tim' : 'PO untuk divalidasi'), 'ppk_minta' => 'permintaan revisi PPK BLU',
+                $apa = ['ppk_cek' => ((int) $po['ronde_ppk'] > 0 ? 'revisi dari Ketua Tim' : 'PO untuk diverifikasi'), 'ppk_minta' => 'permintaan revisi PPK BLU',
                         'ketupel_kerja' => 'disposisi revisi dari Ketua Tim', 'katim_review' => 'hasil revisi dari Ketua Pelaksana'][$state];
                 $this->pesan($po, (int) $this->getUserId(), $sisi === 'pembuat' ? 'pembuat' : 'katim', $peran, 'membaca ' . $apa . '.');
             }

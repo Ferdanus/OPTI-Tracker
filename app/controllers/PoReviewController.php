@@ -399,7 +399,7 @@ class PoReviewController extends Controller {
         }
 
         $nama = $this->namaPengguna($uid, 'Ketua Tim');
-        self::catatPesanSistem($this->db, $po['id'], $uid, 'katim', $nama . ' membuka kembali PO untuk direview. Persetujuan dan validasi dibatalkan.');
+        self::catatPesanSistem($this->db, $po['id'], $uid, 'katim', $nama . ' membuka kembali PO untuk direview. Persetujuan dan verifikasi dibatalkan.');
         self::kabari($this->db, [(int) $po['ketua_pelaksana_id']], 'PO dibuka kembali', 'PO ' . $po['nomor_po'] . ' dibuka kembali oleh Ketua Tim.');
         $this->keluarkanJson($this->paketDetail((int) $po['id'], $sisi));
     }

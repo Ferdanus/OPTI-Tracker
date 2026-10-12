@@ -208,7 +208,8 @@ $f3->route('POST /ketua-tim/@id/pilih-pelaksana', 'KetuaTimController->simpanPel
 
 $f3->route('GET /po-kegiatan/validasi-mitra', 'PoValidasiMitraController->index');
 $f3->route('GET /po-kegiatan/@id/validasi-detail', 'PoValidasiMitraController->detailJson');
-$f3->route('POST /po-kegiatan/@id/catatan', 'PoValidasiMitraController->simpanCatatan');
+// path khusus Mitra: 'POST /po-kegiatan/@id/catatan' sudah dipakai PoReviewController (catatan Ketua Tim), route yang sama akan saling menimpa
+$f3->route('POST /po-kegiatan/@id/catatan-mitra', 'PoValidasiMitraController->simpanCatatan');
 $f3->route('POST /po-kegiatan/@id/baca-mitra', 'PoValidasiMitraController->baca');
 $f3->route('POST /po-kegiatan/@id/validasi', 'PoValidasiMitraController->validasi');
 
