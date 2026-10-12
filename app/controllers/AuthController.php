@@ -38,9 +38,8 @@ class AuthController extends Controller {
                     WHEN u.si_opti = 'superadmin' OR m.role_opti = 'superadmin' OR u.bidang = 'all' THEN 1
                     WHEN u.si_opti IN ('ketua_tim_mitra', 'katim_mitra', 'ketua_tim_mitra_industri') OR m.role_opti = 'ketua_tim_mitra' THEN 2
                     WHEN u.si_opti = 'admin_order' OR u.si_opti = 'tim_mitra_industri' OR m.role_opti = 'admin_order' THEN 3
-                    WHEN u.si_opti = 'ketua_tim_selulosa' OR (m.role_opti = 'ketua_tim' AND m.jenis_layanan_opti = 'selulosa') THEN 4
-                    WHEN u.si_opti = 'ketua_tim_lingkungan' OR (m.role_opti = 'ketua_tim' AND m.jenis_layanan_opti = 'lingkungan') THEN 5
-                    WHEN u.si_opti IN ('ketua_tim_keuangan', 'katim_keuangan') OR m.role_opti = 'ketua_tim_keuangan' THEN 6
+                    WHEN u.si_opti LIKE 'ketua_tim_%' OR u.si_opti LIKE 'katim_%' OR m.role_opti = 'ketua_tim' THEN 4
+                    WHEN u.si_opti IN ('ketua_tim_keuangan', 'katim_keuangan') OR m.role_opti = 'ketua_tim_keuangan' THEN 5
                     WHEN u.si_opti = 'keuangan' THEN 7
                     WHEN u.si_opti = 'ppk' OR m.role_opti = 'ppk' THEN 8
                     WHEN u.si_opti = 'humas' OR m.role_opti = 'humas' THEN 9
@@ -92,18 +91,15 @@ class AuthController extends Controller {
         } elseif (strpos($rawRole, 'tim_kerja_lingkungan') !== false || $rawRole === 'pic_lingkungan') {
             $roleOpti = 'tim_kerja';
             $jenisLayananOpti = 'lingkungan';
-        } elseif (strpos($rawRole, 'ketua_tim_selulosa') !== false || $rawRole === 'katim_selulosa') {
-            $roleOpti = 'ketua_tim';
-            $jenisLayananOpti = 'selulosa';
-        } elseif (strpos($rawRole, 'ketua_tim_lingkungan') !== false || $rawRole === 'katim_lingkungan') {
-            $roleOpti = 'ketua_tim';
-            $jenisLayananOpti = 'lingkungan';
         } elseif (strpos($rawRole, 'ketua_tim_mitra') !== false || $rawRole === 'katim_mitra') {
             $roleOpti = 'ketua_tim_mitra';
             $jenisLayananOpti = 'semua';
         } elseif (strpos($rawRole, 'ketua_tim_keuangan') !== false || $rawRole === 'katim_keuangan') {
             $roleOpti = 'ketua_tim_keuangan';
             $jenisLayananOpti = 'semua';
+        } elseif (preg_match('/^(?:ketua_tim|katim)_([a-zA-Z0-9_]+)$/', $rawRole, $mKatim)) {
+            $roleOpti = 'ketua_tim';
+            $jenisLayananOpti = strtolower($mKatim[1]);
         } elseif ($rawRole === 'tim_mitra_industri' || $rawRole === 'admin_order' || $rawRole === 'tim_mitra') {
             $roleOpti = 'tim_mitra_industri';
             $jenisLayananOpti = 'semua';

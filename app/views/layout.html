@@ -1690,7 +1690,7 @@
                                     <check if="{{ @SESSION.role == 'superadmin' }}">Super Admin</check>
                                     <check if="{{ @SESSION.role == 'ketua_tim_mitra' }}">Ketua Tim Mitra</check>
                                     <check if="{{ @SESSION.role == 'tim_mitra_industri' || @SESSION.role == 'admin_order' || @SESSION.role == 'tim_mitra' }}">Tim Mitra</check>
-                                    <check if="{{ @SESSION.role == 'ketua_tim' }}">Ketua Tim {{ @SESSION.jenis_layanan_opti == 'selulosa' ? 'Selulosa' : (@SESSION.jenis_layanan_opti == 'lingkungan' ? 'Lingkungan' : 'OPTI') }}</check>
+                                    <check if="{{ @SESSION.role == 'ketua_tim' }}">Ketua Tim {{ @SESSION.jenis_layanan_opti == 'selulosa' ? 'Selulosa' : (@SESSION.jenis_layanan_opti == 'lingkungan' ? 'Lingkungan' : (@SESSION.jenis_layanan_opti == 'pengujian' ? 'Pengujian' : (@SESSION.jenis_layanan_opti == 'kalibrasi' ? 'Kalibrasi' : (@SESSION.jenis_layanan_opti == 'sertifikasi' ? 'Sertifikasi' : (@SESSION.jenis_layanan_opti == 'pendampingan' ? 'Pendampingan Teknis' : (@SESSION.jenis_layanan_opti == 'inspeksi' ? 'Inspeksi' : (@SESSION.jenis_layanan_opti == 'profisiensi' ? 'Uji Profisiensi' : ucwords(str_replace('_', ' ', @SESSION.jenis_layanan_opti))))))))) }}</check>
                                     <check if="{{ @SESSION.role == 'ketua_tim_keuangan' }}">Ketua Tim Keuangan</check>
                                     <check if="{{ @SESSION.role == 'keuangan' }}">Staf Keuangan</check>
                                     <check if="{{ @SESSION.role == 'tim_kerja' }}">Tim Analis / Peneliti</check>
