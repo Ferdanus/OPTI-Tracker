@@ -220,14 +220,13 @@ class SuratPenawaranController extends Controller
             } elseif ($r['status_respon_klien'] === 'deal' || $r['status'] === 'disetujui') {
                 $r['status_badge_type'] = 'deal';
                 $daftarDeal[] = $r;
+            } elseif ($r['status_respon_klien'] === 'nego') {
+                // Khusus surat yang sedang dalam tahap tawar-menawar/negosiasi
+                $r['status_badge_type'] = 'nego';
+                $daftarNego[] = $r;
             } else {
-                // Penawaran aktif (Draft, Terkirim / Menunggu Respon, atau Dalam Negosiasi)
-                if ($r['status_respon_klien'] === 'nego') {
-                    $r['status_badge_type'] = 'nego';
-                    $daftarNego[] = $r;
-                } else {
-                    $r['status_badge_type'] = $r['status_respon_klien'] ?: ($r['status'] ?: 'draft');
-                }
+                // Penawaran aktif berjalan (Draft atau Terkirim / Menunggu Respon)
+                $r['status_badge_type'] = $r['status_respon_klien'] ?: ($r['status'] ?: 'draft');
                 $daftarAktif[] = $r;
             }
             $daftarSemua[] = $r;
