@@ -38,38 +38,51 @@ class UniversalPreviewController extends Controller
                 return;
             }
 
-            // 2. Pola Surat Kesanggupan Bayar: /surat-penawaran/@id/surat-kesanggupan/preview
-            if (preg_match('#surat-penawaran/(\d+)/surat-kesanggupan/preview#i', $path, $m) || preg_match('#surat-kesanggupan/(\d+)#i', $path, $m)) {
-                $spId = (int)$m[1];
+            // 2. Pola Surat Kesanggupan Bayar: /surat-penawaran/@id/surat-kesanggupan/preview ATAU /penawaran/surat-kesanggupan/@id
+            if (preg_match('#(?:surat-penawaran|penawaran)/(?:(\d+)/surat-kesanggupan|surat-kesanggupan/(\d+))#i', $path, $m) || preg_match('#surat-kesanggupan/(\d+)#i', $path, $m)) {
+                $spId = (int)(!empty($m[1]) ? $m[1] : (!empty($m[2]) ? $m[2] : $m[0]));
                 $this->handleSuratKesanggupan($spId);
                 return;
             }
 
-            // 2b. [BARU] Pola Lampiran Surat Penawaran (berkas PDF resmi yang sudah
-            // tersimpan di uploads/penawaran/, kolom tb_surat_penawaran.file_lampiran):
-            // /surat-penawaran/@id/lampiran
-            if (preg_match('#surat-penawaran/(\d+)/lampiran#i', $path, $m)) {
+            // 2b. [BARU] Pola Lampiran Surat Penawaran:
+            // /surat-penawaran/@id/lampiran ATAU /penawaran/@id/lampiran
+            if (preg_match('#(?:surat-penawaran|penawaran)/(\d+)/lampiran#i', $path, $m)) {
                 $spId = (int)$m[1];
                 $this->handleLampiranPenawaran($spId);
                 return;
             }
 
-            // 3. Pola Surat Penawaran: /order/@id/penawaran/cetak ATAU /surat-penawaran/@id/cetak
-            if (preg_match('#order/(\d+)/penawaran/cetak#i', $path, $m) || preg_match('#surat-penawaran/(\d+)/(?:cetak|preview)#i', $path, $m)) {
+            // 3. Pola Surat Penawaran: /order/@id/penawaran/cetak ATAU /surat-penawaran/@id/(?:cetak|preview|pdf) ATAU /penawaran/@id/(?:cetak|preview|pdf)
+            if (preg_match('#order/(\d+)/penawaran/cetak#i', $path, $m) || preg_match('#(?:surat-penawaran|penawaran)/(\d+)/(?:cetak|preview|pdf)#i', $path, $m)) {
                 $targetId = (int)$m[1];
                 $spId = (int)($query['id'] ?? 0);
                 $this->handleSuratPenawaran($targetId, $spId);
                 return;
             }
 
-            // 4. Pola Proposal Teknis: /order/@id/proposal
+            // 4a. Pola Berkas Proposal File (upload): /proposal/@id/file
+            if (preg_match('#(?:opti-)?proposal/(\d+)/file#i', $path, $m)) {
+                $proposalId = (int)$m[1];
+                $this->handleProposalFile($proposalId);
+                return;
+            }
+
+            // 4b. Pola Proposal Teknis: /order/@id/proposal
             if (preg_match('#order/(\d+)/proposal(?:/raw-data)?#i', $path, $m)) {
                 $orderId = (int)$m[1];
                 $this->handleProposal($orderId);
                 return;
             }
 
-            // 5. Pola Surat Masuk: /surat-masuk/(\d+)
+            // 5a. Pola Surat Masuk PDF by Order: /order/@id/surat-masuk-pdf
+            if (preg_match('#order/(\d+)/surat-masuk-pdf#i', $path, $m)) {
+                $orderId = (int)$m[1];
+                $this->handleSuratMasukByOrder($orderId);
+                return;
+            }
+
+            // 5b. Pola Surat Masuk: /surat-masuk/(\d+)(?:/pdf)?
             if (preg_match('#surat-masuk/(\d+)#i', $path, $m)) {
                 $suratId = (int)$m[1];
                 $this->handleSuratMasuk($suratId);
@@ -123,44 +136,97 @@ class UniversalPreviewController extends Controller
 
     protected function handleSuratKesanggupan($spId)
     {
-        $rows = $this->db->exec('SELECT id, nomor_surat, surat_kesanggupan_bayar FROM tb_surat_penawaran WHERE id = ?', [1 => $spId]);
+        $rows = $this->db->exec(
+            'SELECT id, order_id, nomor_surat, surat_kesanggupan_bayar 
+             FROM tb_surat_penawaran 
+             WHERE (id = ? OR order_id = ?) AND surat_kesanggupan_bayar IS NOT NULL AND surat_kesanggupan_bayar <> \'\' 
+             ORDER BY id DESC LIMIT 1',
+            [1 => $spId, 2 => $spId]
+        );
         if (empty($rows) || empty($rows[0]['surat_kesanggupan_bayar'])) {
-            $this->jsonResponse(['success' => false, 'message' => 'Surat Kesanggupan Bayar belum diunggah untuk penawaran ini.']);
+            $this->jsonResponse(['success' => false, 'message' => 'Surat Kesanggupan Bayar belum diunggah untuk order/penawaran ini.']);
             return;
         }
 
         $rawPath = $rows[0]['surat_kesanggupan_bayar'];
-        $filePath = $this->resolveFilePath($rawPath, ['storage/kesanggupan_bayar', 'uploads/kesanggupan_bayar']);
+        $filePath = $this->resolveFilePath($rawPath, ['storage/kesanggupan_bayar', 'uploads/kesanggupan_bayar', 'uploads/penawaran', 'public/uploads/kesanggupan_bayar']);
 
         if (!$filePath || !is_file($filePath)) {
-            $this->jsonResponse(['success' => false, 'message' => 'Berkas fisik Surat Kesanggupan Bayar tidak ditemukan di server.']);
+            $this->jsonResponse(['success' => false, 'message' => 'Berkas fisik Surat Kesanggupan Bayar tidak ditemukan di server: ' . basename($rawPath)]);
             return;
         }
 
-        $this->sendFileAsBase64($filePath, 'Surat_Kesanggupan_Bayar_' . $spId);
+        $this->sendFileAsBase64($filePath, 'Surat_Kesanggupan_Bayar_' . ($rows[0]['order_id'] ?? $spId));
     }
 
     /**
-     * [BARU] Berkas Surat Penawaran yang beneran tersimpan di server (PDF resmi
-     * hasil "Kirim"/"Simpan" terakhir, path-nya ada di tb_surat_penawaran.file_lampiran)
-     * -- beda sama handleSuratPenawaran() di bawah yang nge-generate ulang PDF-nya
-     * on-the-fly dari data terkini, bukan ngambil berkas yang beneran tersimpan.
+     * Berkas Surat Penawaran yang tersimpan di server (PDF resmi).
+     * Jika berkas fisik belum ada tapi data penawaran ada, fallback otomatis render PDF on-the-fly.
      */
     protected function handleLampiranPenawaran($spId)
     {
-        $rows = $this->db->exec('SELECT id, nomor_surat, file_lampiran FROM tb_surat_penawaran WHERE id = ?', [1 => $spId]);
+        $rows = $this->db->exec(
+            'SELECT id, order_id, nomor_surat, file_lampiran 
+             FROM tb_surat_penawaran 
+             WHERE (id = ? OR order_id = ?) AND file_lampiran IS NOT NULL AND file_lampiran <> \'\' 
+             ORDER BY (status_respon_klien = \'deal\') DESC, id DESC LIMIT 1',
+            [1 => $spId, 2 => $spId]
+        );
+
         if (empty($rows) || empty($rows[0]['file_lampiran'])) {
-            $this->jsonResponse(['success' => false, 'message' => 'Berkas Surat Penawaran belum diunggah/disimpan untuk penawaran ini.']);
+            // Fallback jika belum upload fisik, generate via template sistem
+            $this->handleSuratPenawaran($spId);
             return;
         }
 
-        $filePath = $this->resolveFilePath($rows[0]['file_lampiran'], ['uploads/penawaran', 'storage/penawaran']);
+        $filePath = $this->resolveFilePath($rows[0]['file_lampiran'], ['uploads/penawaran', 'storage/penawaran', 'public/uploads/penawaran']);
         if (!$filePath || !is_file($filePath)) {
-            $this->jsonResponse(['success' => false, 'message' => 'Berkas fisik Surat Penawaran tidak ditemukan di server.']);
+            // Fallback generate via template sistem jika berkas hilang
+            $this->handleSuratPenawaran($rows[0]['id']);
             return;
         }
 
         $this->sendFileAsBase64($filePath, 'Surat_Penawaran_' . ($rows[0]['nomor_surat'] ?: $spId));
+    }
+
+    /**
+     * Berkas Proposal Riset Teknis yang diunggah
+     */
+    protected function handleProposalFile($propId)
+    {
+        $rows = $this->db->exec(
+            'SELECT id, order_id, judul_proposal, file_proposal 
+             FROM opti_proposal_riset 
+             WHERE (id = ? OR order_id = ?) AND file_proposal IS NOT NULL AND file_proposal <> \'\' 
+             ORDER BY id DESC LIMIT 1',
+            [1 => $propId, 2 => $propId]
+        );
+
+        if (empty($rows) || empty($rows[0]['file_proposal'])) {
+            $this->jsonResponse(['success' => false, 'message' => 'Berkas proposal riset teknis tidak ditemukan.']);
+            return;
+        }
+
+        $filePath = $this->resolveFilePath($rows[0]['file_proposal'], ['public/uploads/proposals', 'uploads/proposals', 'uploads/proposal', 'storage/proposal']);
+        if (!$filePath || !is_file($filePath)) {
+            $this->jsonResponse(['success' => false, 'message' => 'Berkas fisik proposal tidak ditemukan di server: ' . basename($rows[0]['file_proposal'])]);
+            return;
+        }
+
+        $this->sendFileAsBase64($filePath, 'Proposal_Riset_' . ($rows[0]['order_id'] ?? $propId));
+    }
+
+    /**
+     * Menampilkan Surat Masuk PDF berdasarkan ID Order
+     */
+    protected function handleSuratMasukByOrder($orderId)
+    {
+        $order = $this->db->exec('SELECT id, id_surat_masuk FROM order_layanan WHERE id = ? LIMIT 1', [1 => $orderId]);
+        if (empty($order) || empty($order[0]['id_surat_masuk'])) {
+            $this->jsonResponse(['success' => false, 'message' => 'Surat masuk permohonan tidak terhubung dengan order ini.']);
+            return;
+        }
+        $this->handleSuratMasuk((int)$order[0]['id_surat_masuk']);
     }
 
     protected function handleSuratPenawaran($orderOrSpId, $spIdExplicit = 0)
@@ -489,8 +555,10 @@ class UniversalPreviewController extends Controller
 
         $candidates = [
             $appRoot . '/' . $clean,
+            $appRoot . '/public/' . $clean,
             $appRoot . '/' . ltrim($rawPath, '/'),
             $root . '/' . $clean,
+            $root . '/public/' . $clean,
             $root . '/' . ltrim($rawPath, '/'),
             $rawPath,
         ];
@@ -498,7 +566,9 @@ class UniversalPreviewController extends Controller
         foreach ($fallbackDirs as $dir) {
             $cleanDir = trim($dir, '/');
             $candidates[] = $appRoot . '/' . $cleanDir . '/' . $basename;
+            $candidates[] = $appRoot . '/public/' . $cleanDir . '/' . $basename;
             $candidates[] = $root . '/' . $cleanDir . '/' . $basename;
+            $candidates[] = $root . '/public/' . $cleanDir . '/' . $basename;
         }
 
         foreach ($candidates as $c) {

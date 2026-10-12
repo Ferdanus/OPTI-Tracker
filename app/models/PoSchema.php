@@ -21,7 +21,8 @@
  *          ATAU id_arsip_sertifikasi (database SISERTIFIKASI) -- dua ruang angka yang bisa bentrok.
  *   2. Generator Nomor PO (nomorBaru) -- algoritma & format SAMA PERSIS dengan
  *      PoKegiatanController::generateNomorPoBaru(): "N/PO/BBSPJIS/ROMAWI/TAHUN", disimpan di
- *      po_nomor_urut (satu baris per nomor yang diterbitkan, urutan reset tiap bulan+tahun).
+ *      po_nomor_urut (satu baris per nomor yang diterbitkan, urutan berlanjut sepanjang TAHUN
+ *      dan kembali ke 1 tiap ganti tahun -- bukan per bulan).
  *   3. Filter SQL pembeda PO OPTI vs PO Sertifikasi (bukanSertifikasi) supaya query-query OPTI
  *      yang menggabungkan po_kegiatan.order_id = order_layanan.id tidak "nyasar" membaca PO Sertifikasi.
  *
@@ -326,14 +327,18 @@ class PoSchema
         return isset($peta[(int) $bulan]) ? $peta[(int) $bulan] : 'I';
     }
 
-    /** Fallback: nomor urut tertinggi dari nomor_po lama (free-text) bulan+tahun itu. */
-    protected static function urutanLegacy($db, $bulan, $tahun)
+    /**
+     * Nomor urut tertinggi yang KEBACA dari nomor_po di po_kegiatan untuk satu TAHUN (format
+     * "<urut>/PO/BBSPJIS/<romawi>/<tahun>"), termasuk nomor lama yang diisi manual sebelum tabel master
+     * po_nomor_urut ada. Dipakai bareng MAX() tabel master supaya nomor baru tidak bentrok.
+     */
+    protected static function urutanLegacy($db, $tahun)
     {
         $max = 0;
         try {
             $rows = $db->exec(
                 "SELECT nomor_po FROM po_kegiatan WHERE nomor_po LIKE ?",
-                array(1 => '%/' . self::angkaRomawi($bulan) . '/' . $tahun)
+                array(1 => '%/' . (int) $tahun)
             );
             foreach ($rows as $r) {
                 if (preg_match('/^\s*(\d+)\s*\//', (string) $r['nomor_po'], $m)) {
@@ -346,9 +351,25 @@ class PoSchema
     }
 
     /**
-     * Terbitkan Nomor PO baru: "N/PO/BBSPJIS/ROMAWI/TAHUN" (N = MAX(nomor_urut) bulan+tahun itu + 1).
-     * Satu baris po_nomor_urut per nomor; UNIQUE KEY menjaga tidak ada nomor ganda -> kalau bentrok
-     * (dua proses bersamaan) otomatis dicoba lagi dari angka berikutnya, maksimal 5x.
+     * Tahun yang diwajibkan untuk Tanggal Surat PO: PO baru = tahun berjalan; PO yang sudah punya nomor
+     * (lagi diedit) = tahun di nomornya (mis. "12/PO/BBSPJIS/X/2026" -> 2026), supaya draft lama tetap
+     * bisa diedit di tahun berikutnya tanpa menabrak nomornya sendiri.
+     */
+    public static function tahunWajib($nomorPo = '')
+    {
+        if (preg_match('/\/(\d{4})\s*$/', (string) $nomorPo, $m)) {
+            return (int) $m[1];
+        }
+        return (int) date('Y');
+    }
+
+    /**
+     * Terbitkan Nomor PO baru: "N/PO/BBSPJIS/ROMAWI/TAHUN". Nomor urut BERLANJUT sepanjang TAHUN (tidak
+     * reset tiap bulan) dan kembali ke 1 begitu ganti tahun: N = MAX(nomor_urut) tahun itu (dari tabel
+     * master DAN dari nomor_po lama) + 1, bulan & tahun dari Tanggal Surat PO. Sama persis dengan
+     * PoKegiatanController::generateNomorPoBaru() -- dua-duanya memakai satu urutan per tahun.
+     * Proses ambil-nomor dikunci per tahun (GET_LOCK); UNIQUE KEY po_nomor_urut tetap jadi pengaman
+     * terakhir -- kalau bentrok otomatis dicoba lagi dari angka berikutnya, maksimal 5x.
      *
      * @return array{id:int, detail_nomor:string, nomor_urut:int}
      */
@@ -364,29 +385,46 @@ class PoSchema
         $bulan = (int) date('n', $ts);
         $tahun = (int) date('Y', $ts);
 
-        for ($percobaan = 0; $percobaan < 5; $percobaan++) {
-            $row = $db->exec(
-                'SELECT COALESCE(MAX(nomor_urut), 0) AS maxu FROM po_nomor_urut WHERE bulan = ? AND tahun = ?',
-                array(1 => $bulan, 2 => $tahun)
-            );
-            $maxTercatat = (int) (isset($row[0]['maxu']) ? $row[0]['maxu'] : 0);
-            $maxLegacy   = $maxTercatat > 0 ? 0 : self::urutanLegacy($db, $bulan, $tahun);
-            $urutanBaru  = max($maxTercatat, $maxLegacy) + 1;
-            $detailNomor = $urutanBaru . '/PO/BBSPJIS/' . self::angkaRomawi($bulan) . '/' . $tahun;
+        $namaKunci  = 'po_nomor_urut_' . $tahun;
+        $kunciDapat = false;
+        try {
+            $r = $db->exec('SELECT GET_LOCK(?, 5) AS k', array(1 => $namaKunci));
+            $kunciDapat = !empty($r) && (int) (isset($r[0]['k']) ? $r[0]['k'] : 0) === 1;
+        } catch (\Throwable $e) {
+        }
 
-            try {
-                $db->exec(
-                    'INSERT INTO po_nomor_urut (nomor_urut, bulan, tahun, detail_nomor, updated_at) VALUES (?, ?, ?, ?, NOW())',
-                    array(1 => $urutanBaru, 2 => $bulan, 3 => $tahun, 4 => $detailNomor)
+        try {
+            for ($percobaan = 0; $percobaan < 5; $percobaan++) {
+                $row = $db->exec(
+                    'SELECT COALESCE(MAX(nomor_urut), 0) AS maxu FROM po_nomor_urut WHERE tahun = ?',
+                    array(1 => $tahun)
                 );
-                $idRow = $db->exec('SELECT LAST_INSERT_ID() AS id');
-                return array(
-                    'id'           => (int) (isset($idRow[0]['id']) ? $idRow[0]['id'] : 0),
-                    'detail_nomor' => $detailNomor,
-                    'nomor_urut'   => $urutanBaru,
-                );
-            } catch (\Throwable $e) {
-                continue; // bentrok UNIQUE -> coba nomor berikutnya
+                $maxTercatat = (int) (isset($row[0]['maxu']) ? $row[0]['maxu'] : 0);
+                $maxLegacy   = self::urutanLegacy($db, $tahun);
+                $urutanBaru  = max($maxTercatat, $maxLegacy) + 1 + $percobaan;
+                $detailNomor = $urutanBaru . '/PO/BBSPJIS/' . self::angkaRomawi($bulan) . '/' . $tahun;
+
+                try {
+                    $db->exec(
+                        'INSERT INTO po_nomor_urut (nomor_urut, bulan, tahun, detail_nomor, updated_at) VALUES (?, ?, ?, ?, NOW())',
+                        array(1 => $urutanBaru, 2 => $bulan, 3 => $tahun, 4 => $detailNomor)
+                    );
+                    $idRow = $db->exec('SELECT LAST_INSERT_ID() AS id');
+                    return array(
+                        'id'           => (int) (isset($idRow[0]['id']) ? $idRow[0]['id'] : 0),
+                        'detail_nomor' => $detailNomor,
+                        'nomor_urut'   => $urutanBaru,
+                    );
+                } catch (\Throwable $e) {
+                    continue; // bentrok UNIQUE -> coba nomor berikutnya
+                }
+            }
+        } finally {
+            if ($kunciDapat) {
+                try {
+                    $db->exec('SELECT RELEASE_LOCK(?)', array(1 => $namaKunci));
+                } catch (\Throwable $e) {
+                }
             }
         }
         throw new \Exception('Gagal membuat Nomor PO baru, silakan coba simpan ulang.');

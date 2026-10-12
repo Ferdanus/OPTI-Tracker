@@ -1,0 +1,1026 @@
+<!--
+    app/views/katim_kerja/po-kegiatan/revisi_ppk.html
+    Revisi PPK BLU (halaman terpisah). Dipakai 3 peran lewat variabel `mode`:
+      katim   -> Ketua Tim      (/po-revisi-ppk)  tab: Perlu keputusan | Sedang dikerjakan | Review hasil revisi | Menunggu PPK BLU
+      pembuat -> Ketua Pelaksana (/po-revisi-ppk) tab: Perlu direvisi | Dalam review
+      ppk     -> PPK BLU        (/po-ppk)         tab: Perlu divalidasi | Revisi masuk | Menunggu revisi | Sudah divalidasi
+    Data dari PoRevisiPpkController: daftar_po_json, mode, prefix_api, error_message.
+    Dokumen PO diambil dari GET /po-kegiatan/@id/preview lalu tiap bagian diberi slot catatan.
+-->
+<style>
+    .rvw-root {
+        --rvw-primary: var(--color-primary, #334155);
+        --rvw-primary-hover: var(--color-primary-dark, #1e293b);
+        --rvw-primary-light: var(--color-primary-light, #f1f5f9);
+        --rvw-border: var(--color-border, #e2e8f0);
+        --rvw-muted: var(--color-text-muted, #64748b);
+        --rvw-text: var(--color-text-main, #0f172a);
+        --rvw-display: var(--font-display, inherit);
+        --rvw-accent: #d97706;
+        color: var(--rvw-text);
+    }
+    .rvw-root *, .rvw-root *::before, .rvw-root *::after { box-sizing: border-box; }
+    .rvw-root [hidden] { display: none !important; }
+    .rvw-root button { font-family: inherit; cursor: pointer; }
+    .rvw-root :focus-visible { outline: 2px solid var(--rvw-accent); outline-offset: 2px; }
+    
+    .rvw-head h1 { font-family: var(--rvw-display); font-size: 1.35rem; font-weight: 800; margin: 0 0 4px; }
+    .rvw-head p { margin: 0 0 18px; color: var(--rvw-muted); font-size: .85rem; max-width: 680px; }
+    .rvw-alert { background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; font-size: .85rem; }
+    
+    .rvw-tabs { display: flex; gap: 4px; background: #fff; border-radius: 14px 14px 0 0; padding: 8px; border: 1px solid var(--rvw-border); border-bottom: 0; overflow-x: auto; }
+    .rvw-tab { flex: 1; border: 0; background: transparent; padding: 11px 10px; border-radius: 10px; font-weight: 700; font-size: .85rem; color: var(--rvw-muted); display: flex; align-items: center; justify-content: center; gap: 7px; font-family: var(--rvw-display); white-space: nowrap; }
+    .rvw-tab.on { background: var(--rvw-primary-light); color: var(--rvw-primary); }
+    .rvw-cnt { background: #e2e8f0; color: var(--rvw-muted); border-radius: 12px; padding: 1px 8px; font-size: .72rem; }
+    .rvw-cnt.hot { background: #fef3c7; color: #b45309; }
+    .rvw-tab.on .rvw-cnt { background: var(--rvw-primary); color: #fff; }
+    .rvw-panel { background: #fff; border: 1px solid var(--rvw-border); border-radius: 0 0 14px 14px; padding: 18px; }
+    .rvw-filters { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+    .rvw-filters input { flex: 1 1 260px; width: 100%; max-width: 380px; border: 1px solid var(--rvw-border); border-radius: 9px; padding: 9px 12px; font: inherit; font-size: .85rem; margin: 0; }
+    .rvw-select { border: 1px solid var(--rvw-border); border-radius: 9px; padding: 9px 11px; font: inherit; font-size: .85rem; background: #fff; color: var(--rvw-text); }
+    .rvw-filters [hidden] { display: none !important; }
+    .rvw-count { font-size: .78rem; color: var(--rvw-muted); margin: -4px 0 14px; }
+    .rvw-count b { color: var(--rvw-text); }
+    .rvw-divpill { font-size: .72rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; background: #f1f5f9; color: #475569; border: 1px solid var(--rvw-border); white-space: nowrap; display: inline-block; }
+    
+    table.rvw-desk { width: 100%; border-collapse: collapse; border: 0; }
+    .rvw-desk th { text-align: left; font-size: .75rem; color: var(--rvw-muted); font-weight: 600; padding: 0 10px 10px; border-bottom: 1px solid var(--rvw-border); }
+    .rvw-desk td { padding: 13px 10px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; font-size: .85rem; }
+    .rvw-desk tr:last-child td { border-bottom: 0; }
+    .rvw-desk tbody tr:hover { background: #fcfcfd; }
+    .rvw-no { font-family: 'Courier New', monospace; font-weight: 400; font-size: .8rem; }
+    .rvw-sub { font-size: .75rem; color: var(--rvw-muted); }
+    .rvw-readline { display: flex; align-items: center; gap: 5px; font-size: .75rem; color: #94a3b8; margin-top: 2px; }
+    .rvw-readline.is-read { color: var(--rvw-muted); }
+    .rvw-ticks { flex-shrink: 0; fill: none; stroke: #94a3b8; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .rvw-ticks.read { stroke: #2f9be6; }
+    .rvw-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    .rvw-mitra { font-weight: 400; }
+    .rvw-judul { font-size: .8rem; color: var(--rvw-muted); max-width: 320px; }
+    .rvw-who { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+    /* ---- gaya Gmail: belum dibaca = SELURUH baris tebal + titik biru; sudah dibaca = biasa + latar tipis ---- */
+    .rvw-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #2563eb; vertical-align: middle; flex-shrink: 0; }
+    .rvw-dot.sm { width: 7px; height: 7px; }
+    .rvw-pcard .rvw-dot { position: absolute; left: 11px; top: 17px; }
+    .rvw-desk td.dotc, .rvw-desk th.dotc { width: 22px; padding-right: 0; }
+    .rvw-desk tbody tr[data-open], .rvw-pcard[data-open] { cursor: pointer; }
+    .rvw-desk tr.row-unread .rvw-no, .rvw-desk tr.row-unread .rvw-sub, .rvw-desk tr.row-unread .rvw-mitra, .rvw-desk tr.row-unread .rvw-judul, .rvw-desk tr.row-unread .rvw-who, .rvw-desk tr.row-unread .rvw-readline,
+    .rvw-pcard.row-unread .rvw-no, .rvw-pcard.row-unread .rvw-sub, .rvw-pcard.row-unread .rvw-mitra, .rvw-pcard.row-unread .rvw-judul, .rvw-pcard.row-unread .rvw-readline { font-weight: 700; color: var(--rvw-text); }
+    .rvw-desk tr.row-unread .rvw-judul, .rvw-pcard.row-unread .rvw-judul { color: #334155; }
+    .rvw-desk tr.row-unread .rvw-readline, .rvw-pcard.row-unread .rvw-readline { color: #475569; }
+    .rvw-desk tr.row-read, .rvw-pcard.row-read { background: #f6f8fc; }
+    .rvw-desk tr.row-read:hover { background: #edf1f8 !important; }
+    .rvw-tab .rvw-dot { margin-right: 1px; }
+    a.rvw-has-unread > span:not(.badge) { font-weight: 800; }
+    .rvw-av { width: 26px; height: 26px; border-radius: 50%; background: var(--rvw-primary-light); color: var(--rvw-primary); font-weight: 700; font-size: .65rem; display: grid; place-items: center; flex-shrink: 0; }
+    .rvw-av.dark { background: var(--rvw-accent); color: #fff; }
+    .rvw-mini { margin-top: 6px; width: 150px; }
+    .rvw-mini .b { height: 5px; background: #e2e8f0; border-radius: 5px; overflow: hidden; }
+    .rvw-mini .b i { display: block; height: 100%; background: #059669; }
+    .rvw-mini .t { font-size: .7rem; color: var(--rvw-muted); margin-top: 3px; }
+    .rvw-chat { display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; font-size: .7rem; font-weight: 700; color: #1d4ed8; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 1px 8px; }
+    .rvw-empty { text-align: center; padding: 44px 16px; color: #94a3b8; font-size: .85rem; }
+    .rvw-empty i { display: block; font-size: 28px; margin-bottom: 6px; }
+    
+    .rvw-pill { font-size: .72rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; border: 1px solid transparent; }
+    .rvw-pill.blue { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+    .rvw-pill.amber { background: #fffbeb; color: #b45309; border-color: #fde68a; }
+    .rvw-pill.indigo { background: #eef2ff; color: #4338ca; border-color: #c7d2fe; }
+    .rvw-pill.emerald { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
+    
+    .rvw-btn { border: 1.5px solid var(--rvw-border); background: #fff; color: #334155; border-radius: 9px; padding: 8px 15px; font-size: .82rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; }
+    .rvw-btn:hover:not(:disabled) { border-color: var(--rvw-primary); color: var(--rvw-primary); }
+    .rvw-btn.pri { background: var(--rvw-primary); border-color: var(--rvw-primary); color: #fff; }
+    .rvw-btn.pri:hover:not(:disabled) { background: var(--rvw-primary-hover); color: #fff; }
+    .rvw-btn.sm { padding: 5px 11px; font-size: .75rem; }
+    .rvw-btn.link { border-color: transparent; background: transparent; color: var(--rvw-primary); padding: 4px 6px; font-size: .75rem; }
+    .rvw-btn.link.red { color: #dc2626; }
+    .rvw-btn:disabled { opacity: .45; cursor: not-allowed; }
+    
+    .rvw-cards { display: none; }
+    .rvw-pcard { border: 1px solid var(--rvw-border); border-radius: 12px; padding: 13px 13px 13px 28px; margin-bottom: 10px; position: relative; }
+    .rvw-pcard .top { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
+    .rvw-pcard .foot { margin-top: 12px; padding-top: 12px; border-top: 1px solid #f1f5f9; display: flex; gap: 8px; align-items: center; justify-content: space-between; }
+    
+    /* ---------- Panel samping ---------- */
+    .rvw-scrim { position: fixed; inset: 0; background: rgba(15,23,42,.45); opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 1050; }
+    .rvw-scrim.open { opacity: 1; pointer-events: auto; }
+    .rvw-sheet { position: fixed; top: 0; right: 0; bottom: 0; width: min(900px, 100vw); background: #f1f5f9; z-index: 1055; display: flex; flex-direction: column; transform: translateX(100%); visibility: hidden; transition: transform .24s ease, visibility 0s .24s; box-shadow: -12px 0 40px rgba(15,23,42,.18); }
+    .rvw-sheet.open { transform: none; visibility: visible; transition: transform .24s ease, visibility 0s; }
+    .rvw-shh { background: #fff; border-bottom: 1px solid var(--rvw-border); padding: 14px 18px; display: flex; gap: 12px; align-items: flex-start; }
+    .rvw-shh .grow { flex: 1; min-width: 0; }
+    .rvw-shh .t1 { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .rvw-shh h2 { font-family: 'Courier New', monospace; font-size: 1rem; font-weight: 800; margin: 0; }
+    .rvw-shh .sub2 { font-size: .85rem; font-weight: 600; margin-top: 3px; }
+    .rvw-shh .meta { font-size: .75rem; color: var(--rvw-muted); margin-top: 3px; }
+    .rvw-ibtn { border: 1px solid var(--rvw-border); background: #fff; width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; color: var(--rvw-muted); font-size: 16px; flex-shrink: 0; }
+    .rvw-ibtn:hover { color: var(--rvw-primary); border-color: var(--rvw-primary); }
+    
+    .rvw-stepper { background: #fff; padding: 12px 18px 14px; border-bottom: 1px solid var(--rvw-border); }
+    .rvw-steps { display: flex; align-items: center; }
+    .rvw-step { display: flex; align-items: center; gap: 7px; font-size: .75rem; font-weight: 600; color: #94a3b8; white-space: nowrap; }
+    .rvw-step .n { width: 22px; height: 22px; border-radius: 50%; background: #e2e8f0; color: #64748b; display: grid; place-items: center; font-size: .7rem; font-weight: 700; flex-shrink: 0; }
+    .rvw-step.done { color: var(--rvw-primary); }
+    .rvw-step.done .n { background: #059669; color: #fff; }
+    .rvw-step.cur { color: var(--rvw-text); }
+    .rvw-step.cur .n { background: var(--rvw-primary); color: #fff; box-shadow: 0 0 0 4px rgba(51,65,85,.15); }
+    .rvw-sline { flex: 1; height: 2px; background: #e2e8f0; margin: 0 8px; min-width: 14px; }
+    .rvw-sline.done { background: #059669; }
+    .rvw-nextnote { margin-top: 9px; font-size: .72rem; color: var(--rvw-muted); }
+    
+    .rvw-shtabs { display: flex; gap: 4px; background: #fff; padding: 6px 12px 0; border-bottom: 1px solid var(--rvw-border); }
+    .rvw-shtab { border: 0; background: transparent; padding: 9px 12px; font-weight: 700; font-size: .82rem; color: var(--rvw-muted); border-bottom: 2px solid transparent; display: flex; align-items: center; gap: 7px; font-family: var(--rvw-display); }
+    .rvw-shtab.on { color: var(--rvw-primary); border-bottom-color: var(--rvw-primary); }
+    .rvw-shbody { flex: 1; overflow: auto; padding: 16px 18px; display: flex; flex-direction: column; }
+    .rvw-loading { text-align: center; padding: 34px 16px; color: #94a3b8; font-size: .85rem; }
+    .rvw-loading.err { color: #b91c1c; }
+    
+    .rvw-bn { display: flex; gap: 10px; border-radius: 10px; padding: 10px 13px; font-size: .8rem; margin-bottom: 14px; align-items: flex-start; }
+    .rvw-bn i { margin-top: 1px; }
+    .rvw-bn.info { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+    .rvw-bn.warn { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+    .rvw-bn.ok { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+    
+    .rvw-paper { background: #fff; border: 1px solid var(--rvw-border); border-radius: 6px; max-width: 210mm; width: 100%; margin: 0 auto; overflow-x: auto; }
+    .rvw-paper .po-doc-sheet { box-shadow: none !important; margin: 0 !important; }
+    .rvw-sec { position: relative; }
+    .rvw-sec-h { display: flex; align-items: baseline; gap: 8px; }
+    .rvw-sec-h .po-section-title { flex: 1; margin: 18px 0 8px; }
+    .rvw-tools { display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-body, system-ui, sans-serif); flex-shrink: 0; }
+    .rvw-nchip { font-size: .68rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; background: #fef3c7; color: #92400e; }
+    .rvw-nchip.ok { background: #ecfdf5; color: #047857; }
+    .rvw-notes { font-family: var(--font-body, system-ui, sans-serif); font-size: 13px; text-align: left; }
+    .rvw-umum { background: #fff; border: 1px solid var(--rvw-border); border-radius: 6px; max-width: 210mm; width: 100%; margin: 12px auto 0; padding: 4px 16px 14px; }
+    .rvw-umum .rvw-sec-h h3 { flex: 1; margin: 12px 0 4px; font-family: var(--rvw-display); font-size: .9rem; font-weight: 800; }
+    .rvw-umum .hint { font-size: .78rem; color: var(--rvw-muted); }
+    
+    .rvw-note { margin-top: 9px; border: 1px solid var(--rvw-border); border-left-width: 4px; border-radius: 9px; padding: 9px 11px; background: #fff; }
+    .rvw-note.st-draf { border-style: dashed; border-left-style: solid; border-left-color: #94a3b8; background: #f8fafc; }
+    .rvw-note.st-terbuka { border-left-color: #f59e0b; background: #fffdf5; }
+    .rvw-note.st-selesai { border-left-color: #10b981; background: #f7fdfa; }
+    .rvw-note-top { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; font-size: .75rem; }
+    .rvw-note-top b { font-weight: 700; }
+    .rvw-note-top .time { color: #94a3b8; }
+    .rvw-tag { margin-left: auto; font-size: .66rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+    .rvw-tag.draf { background: #e2e8f0; color: #475569; }
+    .rvw-tag.terbuka { background: #fef3c7; color: #92400e; }
+    .rvw-tag.selesai { background: #d1fae5; color: #065f46; }
+    .rvw-note-text { font-size: .82rem; margin-top: 4px; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .rvw-note-acts { margin-top: 5px; display: flex; gap: 4px; }
+    .rvw-orphan { font-size: .7rem; color: var(--rvw-muted); margin-top: 8px; }
+    
+    .rvw-cmp { margin-top: 9px; border: 1.5px solid var(--rvw-primary); border-radius: 9px; padding: 9px; background: #fff; font-family: var(--font-body, system-ui, sans-serif); }
+    .rvw-cmp textarea { width: 100%; border: 1px solid var(--rvw-border); border-radius: 8px; padding: 8px 10px; font: inherit; font-size: .82rem; resize: vertical; min-height: 64px; }
+    .rvw-cmp textarea.err { border-color: #dc2626; }
+    .rvw-cmp .err-msg { color: #dc2626; font-size: .72rem; margin-top: 4px; }
+    .rvw-cmp .row2 { display: flex; gap: 6px; justify-content: flex-end; margin-top: 7px; }
+    
+    #rvwChatPane { flex: 1; display: flex; flex-direction: column; min-height: 260px; }
+    .rvw-chatlog { flex: 1; overflow: auto; padding: 4px 2px 10px; }
+    .rvw-msg { display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 10px; }
+    .rvw-msg.me { align-items: flex-end; }
+    .rvw-bub { background: #fff; border: 1px solid var(--rvw-border); border-radius: 12px 12px 12px 3px; padding: 8px 12px; max-width: 80%; font-size: .82rem; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .rvw-msg.me .rvw-bub { background: var(--rvw-primary); color: #fff; border-color: var(--rvw-primary); border-radius: 12px 12px 3px 12px; }
+    .rvw-mt { font-size: .7rem; color: #94a3b8; margin-top: 3px; }
+    .rvw-sys { text-align: center; font-size: .72rem; color: var(--rvw-muted); background: #e2e8f0; border-radius: 20px; padding: 4px 12px; margin: 6px auto 10px; width: fit-content; max-width: 92%; }
+    .rvw-sys span { opacity: .7; margin-left: 4px; }
+    .rvw-chatin { display: flex; gap: 8px; align-items: flex-end; border-top: 1px solid var(--rvw-border); padding-top: 10px; }
+    .rvw-chatin textarea { flex: 1; border: 1px solid var(--rvw-border); border-radius: 10px; padding: 8px 11px; font: inherit; font-size: .82rem; resize: none; height: 40px; max-height: 110px; }
+    
+    .rvw-dock { background: #fff; border-top: 1px solid var(--rvw-border); padding: 12px 18px; padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+    .rvw-dock .hintline { font-size: .8rem; color: var(--rvw-muted); flex: 1 1 200px; }
+    .rvw-dock .acts { display: flex; gap: 8px; flex-wrap: wrap; }
+    
+    .rvw-dlg { position: fixed; inset: 0; z-index: 1090; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(15,23,42,.55); opacity: 0; transition: opacity .15s; }
+    .rvw-dlg.show { opacity: 1; }
+    .rvw-dlg-box { background: #fff; border-radius: 16px; width: 100%; max-width: 400px; padding: 26px 24px 20px; text-align: center; box-shadow: 0 24px 60px rgba(15,23,42,.3); transform: translateY(8px) scale(.98); transition: transform .15s; }
+    .rvw-dlg.show .rvw-dlg-box { transform: none; }
+    .rvw-dlg-icon { width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center; margin: 0 auto 14px; font-size: 27px; background: #fffbeb; color: #d97706; }
+    .rvw-dlg-icon.ok { background: #ecfdf5; color: #059669; }
+    .rvw-dlg-box h5 { font-family: var(--rvw-display); font-size: 1.05rem; font-weight: 800; margin: 0 0 6px; }
+    .rvw-dlg-box p { color: var(--rvw-muted); font-size: .85rem; margin: 0 0 18px; }
+    .rvw-dlg-btns { display: flex; gap: 10px; }
+    .rvw-dlg-btns .rvw-btn { flex: 1; padding: 10px; }
+    
+    .rvw-toast { position: fixed; left: 50%; top: 76px; transform: translate(-50%, -16px); background: #1e293b; color: #fff; padding: 11px 16px; border-radius: 12px; font-size: .82rem; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 1100; max-width: calc(100vw - 24px); }
+    .rvw-toast.show { opacity: 1; transform: translate(-50%, 0); }
+    .rvw-toast.err { background: #b91c1c; }
+    
+
+    .rvw-pbadge { font-size: .72rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid transparent; line-height: 1.3; white-space: nowrap; }
+    .rvw-pbadge .d { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
+    .rvw-pbadge.pre { background: #f1f5f9; color: #475569; border-color: #e2e8f0; }
+    .rvw-pbadge.mitra { background: #f5f3ff; color: #6d28d9; border-color: #ddd6fe; }
+    .rvw-pbadge.humas { background: #f0fdfa; color: #0f766e; border-color: #99f6e4; }
+    .rvw-pbadge.ppk { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+    .rvw-pbadge.dua { background: #fff7ed; color: #c2410c; border-color: #fed7aa; }
+    .rvw-pbadge.ok { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
+    .rvw-posm { display: none; margin: 8px 0 2px; font-size: .75rem; color: var(--rvw-muted); }
+    .rvw-al-now { background: #f8fafc; border: 1px solid var(--rvw-border); border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; }
+    .rvw-al-now .k { font-size: .72rem; color: var(--rvw-muted); font-weight: 600; }
+    .rvw-al-now .v { font-size: 1.05rem; font-weight: 700; margin-top: 2px; }
+    .rvw-al-now .s { font-size: .8rem; color: var(--rvw-muted); margin-top: 1px; }
+    .rvw-al-par { border: 1px solid var(--rvw-border); border-radius: 10px; padding: 10px 12px; margin-bottom: 14px; display: grid; gap: 8px; background: #fff; }
+    .rvw-al-par .lb { font-size: .72rem; color: var(--rvw-muted); font-weight: 600; }
+    .rvw-al-trk { display: flex; gap: 10px; align-items: flex-start; font-size: .82rem; }
+    .rvw-al-trk b { display: block; }
+    .rvw-al-trk span { color: var(--rvw-muted); font-size: .75rem; }
+    .rvw-al-trk i { font-size: 1rem; margin-top: 1px; }
+    .rvw-al-trk.ok i { color: #059669; } .rvw-al-trk.wait i { color: #2563eb; } .rvw-al-trk.none i { color: #94a3b8; }
+    .rvw-tl { list-style: none; margin: 0; padding: 0; }
+    .rvw-tl li { display: flex; gap: 12px; padding: 0 0 16px; position: relative; }
+    .rvw-tl li:not(:last-child)::before { content: ''; position: absolute; left: 13px; top: 28px; bottom: 0; width: 2px; background: var(--rvw-border); }
+    .rvw-tl .ic { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; flex: none; font-size: .8rem; background: #f1f5f9; color: #64748b; border: 1px solid var(--rvw-border); }
+    .rvw-tl li.done .ic { background: #ecfdf5; color: #059669; border-color: #a7f3d0; }
+    .rvw-tl li.now .ic { background: #eff6ff; color: #2563eb; border-color: #93c5fd; box-shadow: 0 0 0 4px #dbeafe; }
+    .rvw-tl li.todo { opacity: .6; }
+    .rvw-tl li.fin .ic { background: #059669; color: #fff; border-color: #059669; }
+    .rvw-tl .a { font-size: .85rem; font-weight: 600; }
+    .rvw-tl .b { font-size: .75rem; color: var(--rvw-muted); margin-top: 1px; }
+    @media (max-width: 767.98px) {
+        .rvw-posm { display: block; }
+        table.rvw-desk { display: none; }
+        .rvw-cards { display: block; }
+        .rvw-tab { font-size: .8rem; padding: 10px 12px; flex: 0 0 auto; }
+        .rvw-step .lb { display: none; }
+        .rvw-step.cur .lb { display: inline; }
+        .rvw-shbody { padding: 12px; }
+        .rvw-dock .acts { width: 100%; }
+        .rvw-dock .acts .rvw-btn { flex: 1; }
+        .rvw-bub { max-width: 92%; }
+    }
+    @media (prefers-reduced-motion: reduce) { .rvw-root * { transition: none !important; } }
+    
+
+    /* ---------- tambahan khusus halaman Revisi PPK BLU ---------- */
+    .rvw-pbadge.rev { background: #fff7ed; color: #c2410c; border-color: #fed7aa; }
+    .rvw-tabs .rvw-tab.rev.on { background: #fff7ed; color: #c2410c; }
+    .rvw-rib { display: flex; align-items: center; gap: 7px; background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; border-radius: 10px; padding: 7px 12px; font-size: .72rem; font-weight: 800; letter-spacing: .04em; margin-bottom: 12px; }
+    .rvw-bn.ppk { background: #fff7ed; color: #9a3412; border: 1px solid #fed7aa; }
+    .rvw-bn a { color: inherit; font-weight: 700; }
+    .rvw-chg { background: #fefce8; border: 1px solid #fde68a; border-radius: 10px; padding: 10px 13px; font-size: .8rem; margin-bottom: 14px; }
+    .rvw-chg b { display: block; margin-bottom: 4px; }
+    .rvw-chg .w { color: #92400e; font-size: .72rem; }
+    .rvw-chip-ubah { font-size: .66rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; background: #fef3c7; color: #92400e; display: inline-flex; gap: 4px; align-items: center; }
+    .rvw-asal { display: inline-block; font-size: .66rem; font-weight: 700; padding: 1px 8px; border-radius: 20px; background: #ffedd5; color: #c2410c; }
+    .rvw-note .rvw-cek { display: flex; gap: 9px; align-items: flex-start; }
+    .rvw-note .rvw-cek input { margin-top: 3px; width: 16px; height: 16px; flex-shrink: 0; cursor: pointer; }
+    .rvw-note .rvw-cek label { cursor: pointer; flex: 1; }
+    .rvw-dlgtx { width: 100%; border: 1.5px solid var(--rvw-border); border-radius: 8px; padding: 8px 10px; font: inherit; font-size: .85rem; margin: 0 0 14px; resize: vertical; }
+    .rvw-dlgtx.err { border-color: #dc2626; }
+    .rvw-btn.green { background: #059669; border-color: #059669; color: #fff; }
+    .rvw-btn.green:hover:not(:disabled) { background: #047857; border-color: #047857; color: #fff; }
+    .rvw-btn.warnb { background: #d97706; border-color: #d97706; color: #fff; }
+    .rvw-btn.warnb:hover:not(:disabled) { background: #b45309; border-color: #b45309; color: #fff; }
+    a.rvw-btn { text-decoration: none; }
+</style>
+    <div class="rvw-root" id="rvwRoot">
+        <div class="rvw-head">
+            <h1 id="rvwTitle">Revisi PPK BLU</h1>
+            <p id="rvwSub"></p>
+        </div>
+
+        <check if="{{ @error_message }}">
+            <div class="rvw-alert" role="alert">{{ @error_message }}</div>
+        </check>
+
+        <div class="rvw-tabs" id="rvwTabs"></div>
+        <div class="rvw-panel">
+            <div class="rvw-filters">
+                <input type="search" id="rvwSearch" placeholder="Cari nomor PO, order, mitra, atau judul" aria-label="Cari PO">
+                <select class="rvw-select" id="rvwDivisi" aria-label="Divisi" hidden>
+                    <option value="">Semua Divisi</option>
+                    <option value="lingkungan">Lingkungan</option>
+                    <option value="selulosa">Selulosa</option>
+                </select>
+                <select class="rvw-select" id="rvwBaca" aria-label="Status baca" hidden>
+                    <option value="">Semua pesan</option>
+                    <option value="belum">Belum dibaca</option>
+                    <option value="sudah">Sudah dibaca</option>
+                </select>
+                <select class="rvw-select" id="rvwStatus" aria-label="Status PO" hidden>
+                    <option value="">Semua status</option>
+                    <option value="ppk_minta">Menunggu keputusan Ketua Tim</option>
+                    <option value="katim_kerja">Dikerjakan Ketua Tim</option>
+                    <option value="ketupel_kerja">Dikerjakan Ketua Pelaksana</option>
+                    <option value="katim_review">Menunggu review Ketua Tim</option>
+                </select>
+                <select class="rvw-select" id="rvwBulan" aria-label="Bulan" hidden></select>
+                <select class="rvw-select" id="rvwTahun" aria-label="Tahun" hidden></select>
+                <button type="button" class="rvw-btn sm" id="rvwReset" hidden><i class="bi bi-arrow-counterclockwise"></i>Reset filter</button>
+            </div>
+            <div class="rvw-count" id="rvwCount" role="status" aria-live="polite" hidden></div>
+            <div id="rvwList"></div>
+        </div>
+
+        <div class="rvw-scrim" id="rvwScrim"></div>
+        <aside class="rvw-sheet" id="rvwSheet" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="rvwShNo">
+            <div class="rvw-shh">
+                <div class="grow">
+                    <div class="t1"><h2 id="rvwShNo">-</h2><span id="rvwShPill"></span></div>
+                    <div class="sub2" id="rvwShSub">-</div>
+                    <div class="meta" id="rvwShMeta">-</div>
+                </div>
+                <button type="button" class="rvw-ibtn" id="rvwShClose" aria-label="Tutup"><i class="bi bi-x-lg"></i></button>
+            </div>
+            <div class="rvw-stepper" id="rvwStepper"></div>
+            <div class="rvw-shtabs" id="rvwShTabs"></div>
+            <div class="rvw-shbody" id="rvwShBody">
+                <div id="rvwDokPane">
+                    <div id="rvwBanner"></div>
+                    <div id="rvwExtra"></div>
+                    <div class="rvw-paper"><div id="rvwDocHost"><div class="rvw-loading">Memuat dokumen PO...</div></div></div>
+                    <section class="rvw-umum" id="rvwUmum" data-sec="umum"></section>
+                </div>
+                <div id="rvwAlurPane" hidden></div>
+            </div>
+            <div class="rvw-dock" id="rvwDock"></div>
+        </aside>
+
+        <div class="rvw-dlg" id="rvwDlg" hidden>
+            <div class="rvw-dlg-box" role="alertdialog" aria-modal="true" aria-labelledby="rvwDlgTitle" aria-describedby="rvwDlgMsg">
+                <div class="rvw-dlg-icon" id="rvwDlgIcon"></div>
+                <h5 id="rvwDlgTitle"></h5>
+                <p id="rvwDlgMsg"></p>
+                <textarea id="rvwDlgTx" class="rvw-dlgtx" rows="3" maxlength="300" placeholder="Tulis alasan singkat" hidden></textarea>
+                <div class="rvw-dlg-btns"><button type="button" class="rvw-btn" id="rvwDlgNo">Batal</button><button type="button" class="rvw-btn pri" id="rvwDlgYes">Ya</button></div>
+            </div>
+        </div>
+        <div class="rvw-toast" id="rvwToast" role="status"></div>
+    </div>
+
+<script>
+    (function () {
+        var BASE = '{{ @BASE }}';
+        var CSRF = '{{ @csrf_token }}';
+        var ROLE = '{{ @mode }}';              // katim | pembuat | ppk
+        var PREFIX = BASE + '{{ @prefix_api }}';   // /po-revisi-ppk (Ketua Tim, Ketua Pelaksana) atau /po-ppk (PPK BLU)
+        var DATA = {{ @daftar_po_json | raw }};
+        var BULAN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
+
+        var tab = '', q = '', current = null, detail = null, shTab = 'dok', composer = null, openTicket = 0, secs = {};
+
+        function $(id) { return document.getElementById(id); }
+        function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+        function fmt(t) { var m = /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}))?/.exec(t || ''); if (!m) { return '-'; } return (+m[3]) + ' ' + BULAN[+m[2] - 1] + (m[4] ? ' ' + m[4] + ':' + m[5] : ''); }
+        function initials(n) { return String(n).split(' ').map(function (x) { return x.charAt(0); }).slice(0, 2).join('').toUpperCase(); }
+        function first(n) { return String(n).split(' ')[0]; }
+        function PO_URL(id) { return BASE + '/po-kegiatan/' + id; }
+
+        /* ---------- Status PO saat ini (turunan dari state) ---------- */
+        function posisi(p) {
+            switch (p.state) {
+                case 'ppk_cek': return { di: 'PPK BLU', teks: p.ronde > 0 ? 'Menunggu validasi ulang PPK BLU' : 'Menunggu validasi PPK BLU', cls: 'ppk' };
+                case 'ppk_minta': return { di: 'Ketua Tim', teks: 'Revisi PPK BLU: menunggu keputusan Ketua Tim', cls: 'rev' };
+                case 'katim_kerja': return { di: 'Ketua Tim', teks: 'Revisi PPK BLU: dikerjakan Ketua Tim', cls: 'rev' };
+                case 'ketupel_kerja': return { di: 'Ketua Pelaksana', teks: 'Revisi PPK BLU: dikerjakan Ketua Pelaksana', cls: 'rev' };
+                case 'katim_review': return { di: 'Ketua Tim', teks: 'Revisi PPK BLU: menunggu review Ketua Tim', cls: 'rev' };
+            }
+            return { di: 'PPK BLU', teks: 'Selesai divalidasi PPK BLU', cls: 'ok' };
+        }
+        function badge(p) { var o = posisi(p); return '<span class="rvw-pbadge ' + o.cls + '"><span class="d"></span>' + esc(o.teks) + '</span>'; }
+
+        /* ---------- Jejak kirim dan baca ---------- */
+        function jejak(p) {
+            switch (p.state) {
+                case 'ppk_cek': return { kirim: p.ronde > 0 ? 'Revisi dikirim ' + fmt(p.status_at) : 'Divalidasi Tim Mitra ' + fmt(p.mitra_valid_at), penerima: 'ppk' };
+                case 'ppk_minta': return { kirim: 'Revisi diminta ' + fmt(p.minta_at || p.status_at), penerima: 'katim' };
+                case 'ketupel_kerja': return { kirim: 'Didisposisikan ' + fmt(p.status_at), penerima: 'pembuat' };
+                case 'katim_review': return { kirim: 'Revisi dikirim ' + fmt(p.status_at), penerima: 'katim' };
+            }
+            return { kirim: '', penerima: null };
+        }
+        function isUnread(p) { return p.penerima === ROLE && !p.dibaca_at; }
+        function rowClass(p) { if (p.penerima !== ROLE) { return ''; } return p.dibaca_at ? 'row-read' : 'row-unread'; }
+        function dotHtml(p) { return isUnread(p) ? '<span class="rvw-dot" title="Belum dibaca" aria-hidden="true"></span>' : ''; }
+        function ticksSvg(biru) { return '<svg class="rvw-ticks' + (biru ? ' read' : '') + '" viewBox="0 0 18 12" width="17" height="11" aria-hidden="true"><path d="M1 6.5L4.5 10L11 2.5"/><path d="M6 6.5L9.5 10L16 2.5"/></svg>'; }
+        function readLine(p) {
+            if (!p.penerima) { return ''; }
+            var siapa = p.penerima === ROLE ? '' : (p.penerima === 'ppk' ? ' PPK BLU' : (p.penerima === 'katim' ? ' Ketua Tim' : ' Ketua Pelaksana'));
+            var baca = !!p.dibaca_at;
+            return '<div class="rvw-readline' + (baca ? ' is-read' : '') + '">' + (baca ? ticksSvg(true) + '<span>Dibaca' + siapa + ' ' + fmt(p.dibaca_at) + '</span>' : ticksSvg(false) + '<span>Belum dibaca' + siapa + '</span>') + '</div>';
+        }
+
+        /* ---------- Tab per peran ---------- */
+        function s() { var a = Array.prototype.slice.call(arguments); return function (p) { return a.indexOf(p.state) !== -1; }; }
+        function baruDiterima(p) { return !(p.jml_ubah_baru > 0) && !(p.rn_selesai > 0); }
+        function tabDef() {
+            if (ROLE === 'ppk') {
+                return [
+                    { k: 'cek', l: 'Perlu divalidasi', hot: 1, f: function (p) { return p.state === 'ppk_cek' && !p.ronde; } },
+                    { k: 'masuk', l: 'Revisi masuk', hot: 1, f: function (p) { return p.state === 'ppk_cek' && p.ronde > 0; } },
+                    { k: 'tunggu', l: 'Menunggu revisi', f: s('ppk_minta', 'katim_kerja', 'ketupel_kerja', 'katim_review') },
+                    { k: 'selesai', l: 'Sudah divalidasi', f: s('selesai') }
+                ];
+            }
+            if (ROLE === 'katim') {
+                return [
+                    { k: 'putus', l: 'Perlu keputusan', hot: 1, f: s('ppk_minta') },
+                    { k: 'kerja', l: 'Sedang dikerjakan', hot: 1, hotF: s('katim_kerja'), f: s('katim_kerja', 'ketupel_kerja') },
+                    { k: 'review', l: 'Review hasil revisi', hot: 1, f: s('katim_review') },
+                    { k: 'ppk', l: 'Menunggu PPK BLU', f: s('ppk_cek') }
+                ];
+            }
+            // Revisi baru = disposisi/permintaan perbaikan yang belum disentuh sama sekali (belum ada perubahan PO sejak diterima,
+            // belum ada catatan yang ditandai diperbaiki). Begitu mulai dikerjakan, PO pindah ke "Perlu direvisi".
+            return [
+                { k: 'baru', l: 'Revisi baru', hot: 1, f: function (p) { return p.state === 'ketupel_kerja' && baruDiterima(p); } },
+                { k: 'aksi', l: 'Perlu direvisi', hot: 1, f: function (p) { return p.state === 'ketupel_kerja' && !baruDiterima(p); } },
+                { k: 'proses', l: 'Dalam review', f: s('katim_review') }
+            ];
+        }
+        function perluAksi(p) {
+            if (ROLE === 'ppk') { return p.state === 'ppk_cek'; }
+            if (ROLE === 'katim') { return ['ppk_minta', 'katim_kerja', 'katim_review'].indexOf(p.state) !== -1; }
+            return p.state === 'ketupel_kerja';
+        }
+        function syncBadge() {
+            var n = DATA.filter(perluAksi).length, a = document.querySelector('a[href$="' + (ROLE === 'ppk' ? '/po-ppk' : '/po-revisi-ppk') + '"]');
+            var el = $('notifRevisiPpk');
+            if (!el) {
+                if (!a) { return; }
+                el = document.createElement('span'); el.id = 'notifRevisiPpk'; el.className = 'badge rounded-pill bg-danger ms-auto'; a.appendChild(el);
+            }
+            el.textContent = n; el.style.display = n > 0 ? '' : 'none';
+        }
+
+        /* ---------- Filter (khusus halaman PPK BLU) ---------- */
+        var BULAN_PANJANG = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        var DIVISI_LABEL = { lingkungan: 'Lingkungan', selulosa: 'Selulosa' };
+        var NOW = new Date(), BULAN_INI = NOW.getMonth() + 1, TAHUN_INI = NOW.getFullYear();
+        var divisi = '', baca = '', statusF = '', bulan = '', tahun = '', periodeDiubah = false, kunciTahun = '';
+        var FILTER_ON = ROLE === 'ppk';
+        // Bawaan periode per tab: yang masih berjalan (perlu validasi, revisi masuk, menunggu revisi) = semua periode supaya tidak ada yang
+        // tersembunyi; "Sudah divalidasi" = bulan berjalan. Pencarian menembus batas bulan bawaan.
+        function defPeriode(t) { return t === 'selesai' ? { bulan: String(BULAN_INI), tahun: String(TAHUN_INI) } : { bulan: '', tahun: '' }; }
+        function tabBacaAda(t) { return t === 'cek' || t === 'masuk'; }       // tab tempat PPK BLU adalah penerima kiriman
+        function tabStatusAda(t) { return t === 'tunggu'; }
+        function divisiPill(d) { return d ? '<span class="rvw-divpill">' + esc(DIVISI_LABEL[d] || d) + '</span>' : ''; }
+        // Tanggal acuan bulan/tahun per tab: divalidasi Tim Mitra (cek), kiriman revisi (masuk/tunggu), divalidasi PPK BLU (selesai)
+        function tglAcuan(p, t) {
+            if (t === 'cek') { return p.mitra_valid_at || p.dikirim_at || ''; }
+            if (t === 'selesai') { return p.ppk_valid_at || ''; }
+            return p.status_at || p.minta_at || p.dikirim_at || '';
+        }
+        function bulanTahun(x) { var m = /^(\d{4})-(\d{2})/.exec(x || ''); return m ? { b: String(+m[2]), t: m[1] } : null; }
+        function cocokTeks(p) { return !q || (p.nomor + ' ' + p.order + ' ' + p.mitra + ' ' + p.judul).toLowerCase().indexOf(q) !== -1; }
+        function cocokDivisi(p) { return !FILTER_ON || !divisi || p.divisi === divisi; }
+        function cocokBaca(p) { return !FILTER_ON || !baca || !tabBacaAda(tab) || (baca === 'belum' ? !p.dibaca_at : !!p.dibaca_at); }
+        function cocokStatus(p) { return !FILTER_ON || !statusF || !tabStatusAda(tab) || p.state === statusF; }
+        function cariLintasBulan() { return FILTER_ON && !!q && !periodeDiubah && tab === 'selesai'; }
+        function cocokPeriode(p) {
+            if (!FILTER_ON || cariLintasBulan()) { return true; }
+            if (!bulan && !tahun) { return true; }
+            var bt = bulanTahun(tglAcuan(p, tab));
+            if (!bt) { return false; }
+            if (bulan && bt.b !== bulan) { return false; }
+            if (tahun && bt.t !== tahun) { return false; }
+            return true;
+        }
+        function filterAktif() {
+            var d = defPeriode(tab);
+            return FILTER_ON && !!(q || divisi || baca || statusF || bulan !== d.bulan || tahun !== d.tahun);
+        }
+        function tabDefAktif() { return tabDef().filter(function (t) { return t.k === tab; })[0]; }
+        function isiOpsiFilter() {
+            if (!FILTER_ON) { return; }
+            var selBulan = $('rvwBulan');
+            if (!selBulan.options.length) {
+                selBulan.innerHTML = '<option value="">Semua Bulan</option>' + BULAN_PANJANG.map(function (nama, i) { return '<option value="' + (i + 1) + '">' + nama + '</option>'; }).join('');
+            }
+            selBulan.value = bulan;
+            var tahunSet = {}; tahunSet[TAHUN_INI] = true;
+            tabDef().forEach(function (t) {
+                DATA.filter(t.f).forEach(function (p) { var bt = bulanTahun(tglAcuan(p, t.k)); if (bt) { tahunSet[bt.t] = true; } });
+            });
+            if (tahun) { tahunSet[tahun] = true; }
+            var daftarTahun = Object.keys(tahunSet).map(Number).sort(function (a, b) { return b - a; });
+            var kunci = daftarTahun.join(',');
+            if (kunci !== kunciTahun) {      // jangan bangun ulang tiap penyegaran otomatis, supaya pilihan yang sedang terbuka tidak tertutup
+                kunciTahun = kunci;
+                $('rvwTahun').innerHTML = '<option value="">Semua Tahun</option>' + daftarTahun.map(function (th) { return '<option value="' + th + '">' + th + '</option>'; }).join('');
+            }
+            $('rvwTahun').value = tahun;
+            $('rvwBaca').value = baca;
+            $('rvwStatus').value = statusF;
+            $('rvwDivisi').value = divisi;
+        }
+        function ubahTab(k) {
+            tab = k;
+            var d = defPeriode(tab); baca = ''; statusF = ''; periodeDiubah = false; bulan = d.bulan; tahun = d.tahun;   // tiap tab mulai dari filter bawaannya
+            isiOpsiFilter();
+        }
+        function resetFilter() {
+            var d = defPeriode(tab);
+            q = ''; divisi = ''; baca = ''; statusF = ''; periodeDiubah = false; bulan = d.bulan; tahun = d.tahun;
+            $('rvwSearch').value = '';
+            isiOpsiFilter();
+        }
+        function labelPeriode() {
+            if (cariLintasBulan()) { return 'semua bulan (pencarian)'; }
+            if (bulan && tahun) { return BULAN_PANJANG[+bulan - 1] + ' ' + tahun; }
+            if (bulan) { return BULAN_PANJANG[+bulan - 1] + ', semua tahun'; }
+            if (tahun) { return 'tahun ' + tahun; }
+            return 'semua periode';
+        }
+        function renderCount(n, total) {
+            var box = $('rvwCount');
+            if (!FILTER_ON) { box.hidden = true; return; }
+            var h = 'Menampilkan <b>' + n + '</b>' + (n !== total ? ' dari <b>' + total + '</b>' : '') + ' PO &middot; Periode: ' + labelPeriode();
+            if (q) { h += ' &middot; Pencarian: &ldquo;' + esc($('rvwSearch').value.trim()) + '&rdquo;'; }
+            box.innerHTML = h; box.hidden = false;
+        }
+        function sinkronKontrol() {
+            if (!FILTER_ON) { return; }
+            $('rvwDivisi').hidden = false; $('rvwBulan').hidden = false; $('rvwTahun').hidden = false;
+            $('rvwBaca').hidden = !tabBacaAda(tab);
+            $('rvwStatus').hidden = !tabStatusAda(tab);
+            $('rvwReset').hidden = !filterAktif();
+        }
+
+        /* ---------- Daftar ---------- */
+        function renderHead() {
+            var j = {
+                ppk: ['Validasi PPK BLU', 'PO yang sudah diverifikasi Humas dan divalidasi Tim Mitra. Cek PO dan RAB, beri catatan per bagian lalu minta revisi, atau validasi kalau sudah sesuai.'],
+                katim: ['Revisi PPK BLU', 'Revisi yang diminta PPK BLU setelah Tim Mitra validasi. Putuskan siapa yang mengerjakan, review hasilnya, lalu kirim ke PPK BLU. PO yang belum pernah direvisi tidak muncul di sini, lihat di Daftar PO.'],
+                pembuat: ['Revisi PPK BLU', 'Revisi dari PPK BLU yang didisposisikan Ketua Tim kepada Anda. Posisi PO setelah Anda kirim bisa dilihat di tab Disetujui pada Daftar PO.']
+            }[ROLE];
+            $('rvwTitle').textContent = j[0]; $('rvwSub').textContent = j[1];
+        }
+        function renderTabs() {
+            $('rvwTabs').innerHTML = tabDef().map(function (t) {
+                var isi = DATA.filter(t.f), n = isi.length, a = t.hot ? isi.filter(t.hotF || perluAksi).length : 0;
+                return '<button type="button" class="rvw-tab' + (tab === t.k ? ' on' : '') + '" data-tab="' + t.k + '">' + t.l + ' <span class="rvw-cnt' + (a ? ' hot' : '') + '">' + n + '</span></button>';
+            }).join('');
+        }
+        function emptyMsg() {
+            if (filterAktif()) { return 'Tidak ada PO yang cocok dengan filter atau pencarian.'; }
+            if (q) { return 'Tidak ada PO yang cocok dengan pencarian.'; }
+            return 'Tidak ada PO di tab ini.';
+        }
+        function progres(p) {
+            if (['katim_kerja', 'ketupel_kerja'].indexOf(p.state) === -1) { return ''; }
+            var pct = p.rn_total ? Math.round(p.rn_selesai / p.rn_total * 100) : 0;
+            return '<div class="rvw-mini"><div class="b"><i style="width:' + pct + '%"></i></div><div class="t">' + p.rn_selesai + ' dari ' + p.rn_total + ' catatan diperbaiki</div></div>';
+        }
+        function renderList() {
+            var def = tabDefAktif();
+            sinkronKontrol();
+            var dasar = DATA.filter(def.f).filter(cocokTeks).filter(cocokDivisi).filter(cocokBaca).filter(cocokPeriode);
+            if (FILTER_ON && tabStatusAda(tab)) {      // jumlah per status ditampilkan di pilihan filter, supaya PPK BLU bisa memantau sekilas
+                var hit = { ppk_minta: 0, katim_kerja: 0, ketupel_kerja: 0, katim_review: 0 };
+                dasar.forEach(function (p) { if (hit[p.state] !== undefined) { hit[p.state]++; } });
+                var nama = { '': 'Semua status (' + dasar.length + ')', ppk_minta: 'Menunggu keputusan Ketua Tim (' + hit.ppk_minta + ')', katim_kerja: 'Dikerjakan Ketua Tim (' + hit.katim_kerja + ')',
+                             ketupel_kerja: 'Dikerjakan Ketua Pelaksana (' + hit.ketupel_kerja + ')', katim_review: 'Menunggu review Ketua Tim (' + hit.katim_review + ')' };
+                Array.prototype.forEach.call($('rvwStatus').options, function (o) { o.textContent = nama[o.value]; });
+            }
+            var rows = dasar.filter(cocokStatus);
+            renderCount(rows.length, DATA.filter(def.f).length);
+            rows = rows.sort(function (a, b) { var ua = perluAksi(a) ? 0 : 1, ub = perluAksi(b) ? 0 : 1; if (ua !== ub) { return ua - ub; } return String(b.status_at || b.disetujui_at || '') < String(a.status_at || a.disetujui_at || '') ? -1 : 1; });
+            if (!rows.length) { $('rvwList').innerHTML = '<div class="rvw-empty"><i class="bi bi-inbox"></i>' + emptyMsg() + '</div>'; return; }
+            var orang = function (p) { var n = ROLE === 'katim' ? p.pembuat : p.katim; return '<div class="rvw-who"><span class="rvw-av">' + esc(initials(n)) + '</span>' + esc(n) + '</div>'; };
+            var kolomDivisi = FILTER_ON ? '<th>Divisi</th>' : '';
+            var kolomOrang = ROLE === 'ppk' ? '' : '<th>' + (ROLE === 'katim' ? 'Ketua Pelaksana' : 'Ketua Tim') + '</th>';
+            var sub = function (p) { var j = jejak(p); return (j.kirim || (p.ronde > 0 ? 'Putaran PPK BLU ke-' + p.ronde : 'Disetujui Ketua Tim ' + fmt(p.disetujui_at))) + (j.kirim && p.ronde > 0 ? ' &middot; putaran ke-' + p.ronde : ''); };
+            var ubah = function (p) { return p.jml_ubah > 0 && p.state !== 'ppk_minta' ? '<div><span class="rvw-chip-ubah"><i class="bi bi-pencil-fill"></i>' + p.jml_ubah + ' perubahan</span></div>' : ''; };
+            var tbl = '<table class="rvw-desk"><thead><tr><th style="width:235px;">Nomor PO</th><th>Mitra dan kegiatan</th>' + kolomDivisi + kolomOrang + '<th>Status PO saat ini</th><th style="text-align:right;">Aksi</th></tr></thead><tbody>' +
+                rows.map(function (p) {
+                    return '<tr class="' + rowClass(p) + '" data-open="' + p.id + '"><td><div class="rvw-no">' + (isUnread(p) ? '<span class="rvw-sr">Belum dibaca: </span>' : '') + esc(p.nomor) + '</div><div class="rvw-sub">' + sub(p) + '</div>' + readLine(p) + '</td>' +
+                        '<td><div class="rvw-mitra">' + esc(p.mitra) + '</div><div class="rvw-judul">' + esc(p.judul) + '</div></td>' +
+                        (FILTER_ON ? '<td>' + divisiPill(p.divisi) + '</td>' : '') + (ROLE === 'ppk' ? '' : '<td>' + orang(p) + '</td>') + '<td>' + badge(p) + progres(p) + ubah(p) + '</td>' +
+                        '<td style="text-align:right;"><button type="button" class="rvw-btn pri sm" data-open="' + p.id + '">' + (perluAksi(p) ? 'Buka' : 'Lihat') + '</button></td></tr>';
+                }).join('') + '</tbody></table>';
+            var cards = '<div class="rvw-cards">' + rows.map(function (p) {
+                return '<div class="rvw-pcard ' + rowClass(p) + '" data-open="' + p.id + '"><div class="top"><div><div class="rvw-no">' + dotHtml(p) + esc(p.nomor) + '</div><div class="rvw-sub">' + sub(p) + '</div>' + readLine(p) + '<div class="rvw-mitra" style="margin-top:4px;">' + esc(p.mitra) + '</div></div>' + (FILTER_ON ? divisiPill(p.divisi) : '') + '</div>' +
+                    '<div class="rvw-judul" style="max-width:none;margin:4px 0 8px;">' + esc(p.judul) + '</div>' + badge(p) + progres(p) + ubah(p) +
+                    '<div class="foot"><div class="rvw-sub">' + (ROLE === 'ppk' ? '' : (ROLE === 'katim' ? 'Ketua Pelaksana: ' + esc(p.pembuat) : 'Ketua Tim: ' + esc(p.katim))) + '</div><button type="button" class="rvw-btn pri sm" data-open="' + p.id + '">' + (perluAksi(p) ? 'Buka' : 'Lihat') + '</button></div></div>';
+            }).join('') + '</div>';
+            $('rvwList').innerHTML = tbl + cards;
+        }
+        function renderAll() { if (!tabDef().some(function (t) { return t.k === tab; })) { tab = tabDef()[0].k; } renderHead(); renderTabs(); renderList(); syncBadge(); }
+        function rowOf(id) { return DATA.filter(function (p) { return p.id === id; })[0]; }
+        function updateRow(po) {
+            var ada = false;
+            DATA = DATA.map(function (p) { if (p.id === po.id) { ada = true; return po; } return p; });
+            if (!ada) { DATA.push(po); }
+            isiOpsiFilter(); renderAll();
+        }
+
+        /* ---------- HTTP ---------- */
+        function api(url, opts) {
+            opts = opts || {};
+            opts.credentials = 'same-origin';
+            return fetch(url, opts).then(function (r) {
+                return r.text().then(function (t) {
+                    var j;
+                    try { j = JSON.parse(t); } catch (e) { throw new Error('Server membalas ' + r.status + ' (bukan JSON).'); }
+                    if (!r.ok || !j.ok) { throw new Error(j.pesan || 'Terjadi kesalahan.'); }
+                    return j;
+                });
+            });
+        }
+        function post(url, data) {
+            var body = new URLSearchParams();
+            body.append('csrf_token', CSRF);
+            Object.keys(data || {}).forEach(function (k) { body.append(k, data[k]); });
+            return api(url, { method: 'POST', body: body });
+        }
+        function URL_API(id, bagian) { return PREFIX + '/' + id + '/' + bagian; }
+
+        /* ---------- Dialog dan toast ---------- */
+        var dlgResolve = null, dlgTimer = null, dlgFokus = null, dlgAlasan = false;
+        function dialog(o) {
+            return new Promise(function (resolve) {
+                if (dlgResolve) { dlgResolve({ h: 'batal' }); }
+                clearTimeout(dlgTimer);
+                dlgResolve = resolve; dlgFokus = document.activeElement; dlgAlasan = !!o.alasan;
+                $('rvwDlgIcon').className = 'rvw-dlg-icon' + (o.warna === 'ok' ? ' ok' : '');
+                $('rvwDlgIcon').innerHTML = '<i class="bi ' + (o.ikon || 'bi-question-circle') + '"></i>';
+                $('rvwDlgTitle').textContent = o.judul; $('rvwDlgMsg').textContent = o.pesan;
+                $('rvwDlgYes').textContent = o.ya; $('rvwDlgNo').textContent = o.tidak || 'Batal';
+                var tx = $('rvwDlgTx'); tx.hidden = !o.alasan; tx.value = ''; tx.classList.remove('err');
+                $('rvwDlg').hidden = false;
+                requestAnimationFrame(function () { $('rvwDlg').classList.add('show'); });
+                setTimeout(function () { (o.alasan ? tx : $('rvwDlgYes')).focus(); }, 30);
+            });
+        }
+        function closeDlg(h) {
+            if (!dlgResolve) { return; }
+            var tx = $('rvwDlgTx'), alasan = tx.value.trim();
+            if (h === 'ya' && dlgAlasan && !alasan) { tx.classList.add('err'); tx.focus(); return; }
+            var r = dlgResolve; dlgResolve = null;
+            $('rvwDlg').classList.remove('show');
+            dlgTimer = setTimeout(function () { $('rvwDlg').hidden = true; }, 160);
+            if (dlgFokus && dlgFokus.focus) { try { dlgFokus.focus(); } catch (e) {} }
+            r({ h: h, alasan: alasan });
+        }
+        var toastTimer;
+        function toast(text, galat) {
+            var t = $('rvwToast');
+            t.textContent = text; t.classList.toggle('err', !!galat); t.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(function () { t.classList.remove('show'); }, galat ? 6000 : 3500);
+        }
+
+        /* ---------- Catatan: data ---------- */
+        function curPo() { return detail ? detail.po : rowOf(current); }
+        function aktif(p) { return (detail ? detail.catatan : []).filter(function (n) { return n.state === 'draf' || n.ronde === p.ronde; }); }
+        function cnt(st) { var p = curPo(); return aktif(p).filter(function (n) { return n.state === st; }).length; }
+        function bolehCatat(p) { return ROLE === 'ppk' && p.state === 'ppk_cek'; }
+        function bolehTandai(p) { return (ROLE === 'katim' && p.state === 'katim_kerja') || (ROLE === 'pembuat' && p.state === 'ketupel_kerja'); }
+        function bolehEdit(p) { return bolehTandai(p); }
+
+        /* ---------- Panel: kepala, stepper, banner, dock ---------- */
+        function renderChrome() {
+            var p = curPo(); if (!p) { return; }
+            $('rvwShNo').textContent = p.nomor;
+            $('rvwShPill').innerHTML = badge(p);
+            $('rvwShSub').textContent = p.mitra + ' - ' + p.judul;
+            $('rvwShMeta').innerHTML = 'Ketua Pelaksana <b>' + esc(p.pembuat) + '</b> &middot; Ketua Tim <b>' + esc(p.katim) + '</b> &middot; Disetujui Ketua Tim ' + fmt(p.disetujui_at);
+            renderStepper(p); renderShTabs(); renderBanner(p); renderExtra(p); renderDock(p);
+            if (shTab === 'alur') { renderAlur(); }
+        }
+        function renderStepper(p) {
+            var steps = ['Divalidasi Tim Mitra', 'Review PPK BLU', 'Revisi', 'Disetujui PPK BLU'];
+            var c = p.state === 'selesai' ? 5 : (p.state === 'ppk_cek' ? 2 : 3);
+            var h = '<div class="rvw-steps">';
+            steps.forEach(function (st, i) {
+                var n = i + 1, cls = (c === 5 || n < c) ? 'done' : (n === c ? 'cur' : '');
+                h += '<div class="rvw-step ' + cls + '"><span class="n">' + (cls === 'done' ? '<i class="bi bi-check-lg"></i>' : n) + '</span><span class="lb">' + st + '</span></div>';
+                if (i < 3) { h += '<div class="rvw-sline' + (cls === 'done' ? ' done' : '') + '"></div>'; }
+            });
+            var note = p.state === 'selesai' ? 'PO sudah divalidasi PPK BLU. Tahap berikutnya menyusul.' : 'Revisi PPK BLU bisa berulang sampai PPK BLU memvalidasi. Humas dan Tim Mitra tidak terlibat di tahap ini.';
+            $('rvwStepper').innerHTML = h + '</div><div class="rvw-nextnote">' + note + (p.ronde ? ' Putaran PPK BLU: ' + p.ronde + '.' : '') + '</div>';
+        }
+        function renderShTabs() {
+            var p = curPo(), nn = p && detail ? aktif(p).length : 0;
+            $('rvwShTabs').innerHTML =
+                '<button type="button" class="rvw-shtab' + (shTab === 'dok' ? ' on' : '') + '" data-shtab="dok">Dokumen dan catatan' + (nn ? ' <span class="rvw-cnt">' + nn + '</span>' : '') + '</button>' +
+                '<button type="button" class="rvw-shtab' + (shTab === 'alur' ? ' on' : '') + '" data-shtab="alur">Alur</button>';
+        }
+        function renderBanner(p) {
+            var R = ROLE, pm = first(p.pembuat), km = first(p.katim), h;
+            var m = {
+                ppk_cek: ['info', 'bi-info-circle', R === 'ppk' ? 'Beri catatan pada bagian yang perlu diperbaiki lalu <b>Minta revisi</b>. Kalau PO dan RAB sudah sesuai, tekan <b>Validasi</b>.' : 'PO sedang dicek PPK BLU.'],
+                ppk_minta: ['ppk', 'bi-clipboard2-check', R === 'katim' ? '<b>PPK BLU meminta revisi.</b> Pilih: kerjakan sendiri atau disposisikan ke ' + esc(pm) + '.' : (R === 'ppk' ? 'Revisi diminta. Menunggu keputusan Ketua Tim.' : 'PPK BLU meminta revisi. Menunggu keputusan Ketua Tim.')],
+                katim_kerja: ['ppk', 'bi-pencil', R === 'katim' ? '<b>Revisi PPK BLU Anda kerjakan sendiri.</b> Edit PO lewat tombol Edit PO, centang tiap catatan yang selesai, lalu kirim ke PPK BLU. Anda masih bisa mendisposisikannya ke ' + esc(pm) + '.' : 'Revisi PPK BLU sedang dikerjakan Ketua Tim.'],
+                ketupel_kerja: ['ppk', 'bi-pencil', R === 'pembuat' ? '<b>' + esc(km) + ' mendisposisikan revisi PPK BLU kepada Anda.</b> Edit PO lewat tombol Edit PO, centang tiap catatan yang selesai, lalu kirim ke Ketua Tim.' : 'Revisi PPK BLU sedang dikerjakan ' + esc(pm) + '.'],
+                katim_review: ['ppk', 'bi-info-circle', R === 'katim' ? '<b>' + esc(pm) + ' sudah mengirim revisi PPK BLU.</b> Cek hasilnya, lalu setujui dan kirim ke PPK BLU, atau minta perbaikan lagi.' : 'Menunggu review Ketua Tim atas revisi PPK BLU.'],
+                selesai: ['ok', 'bi-check-circle', 'PO sudah divalidasi PPK BLU pada ' + fmt(p.ppk_valid_at) + '. PO terkunci.']
+            };
+            h = m[p.state];
+            $('rvwBanner').innerHTML = '<div class="rvw-rib"><i class="bi bi-clipboard2-check"></i>' + (p.ronde > 0 ? 'REVISI PPK BLU &middot; PUTARAN ' + p.ronde : 'VALIDASI PPK BLU') + '</div><div class="rvw-bn ' + h[0] + '"><i class="bi ' + h[1] + '"></i><div>' + h[2] + '</div></div>';
+        }
+        function renderExtra(p) {
+            var h = '';
+            if (p.alasan && p.state === 'ketupel_kerja' && ROLE !== 'ppk') {
+                h += '<div class="rvw-bn warn"><i class="bi bi-chat-left-text"></i><div><b>Alasan Ketua Tim meminta perbaikan lagi</b><br>' + esc(p.alasan) + '</div></div>';
+            }
+            var ch = detail ? detail.perubahan : [];
+            if (ch.length) {
+                h += '<div class="rvw-chg"><b><i class="bi bi-arrow-left-right"></i> Perubahan sejak revisi diminta</b>' + ch.map(function (x) { return '<div>' + esc(x.ringkasan) + ' <span class="w">(' + esc(x.oleh) + ', ' + fmt(x.waktu) + ')</span></div>'; }).join('') + '</div>';
+            }
+            $('rvwExtra').innerHTML = h;
+        }
+        function renderDock(p) {
+            var op = cnt('terbuka'), dr = cnt('draf'), hint = '', btns = '';
+            var B = function (cls, act, ic, txt, dis) { return '<button type="button" class="rvw-btn ' + cls + '" data-act="' + act + '"' + (dis ? ' disabled' : '') + '><i class="bi ' + ic + '"></i>' + txt + '</button>'; };
+            var sisa = op ? op + ' catatan belum ditandai diperbaiki.' : 'Semua catatan sudah ditandai diperbaiki.';
+            if (ROLE === 'ppk') {
+                if (p.state === 'ppk_cek') {
+                    hint = dr ? dr + ' catatan draf siap dikirim.' : 'Belum ada catatan. Kalau sudah sesuai, validasi PO.';
+                    btns = B('warnb', 'mintaRevisi', 'bi-pencil-square', 'Minta revisi' + (dr ? ' (' + dr + ')' : ''), !dr) + B('green', 'validasi', 'bi-patch-check', 'Validasi', dr > 0);
+                } else { hint = posisi(p).teks + '.'; }
+            } else if (ROLE === 'katim') {
+                if (p.state === 'ppk_minta') { hint = 'Pilih siapa yang mengerjakan revisi PPK BLU.'; btns = B('', 'disposisi', 'bi-person-up', 'Disposisi ke ' + esc(first(p.pembuat))) + B('pri', 'kerjakan', 'bi-pencil', 'Kerjakan sendiri'); }
+                else if (p.state === 'katim_kerja') { hint = sisa; btns = B('', 'disposisi', 'bi-person-up', 'Disposisikan ke ' + esc(first(p.pembuat))) + B('', 'edit', 'bi-pencil-square', 'Edit PO') + B('green', 'kirimPpk', 'bi-send', 'Kirim ke PPK BLU', op > 0); }
+                else if (p.state === 'katim_review') { hint = 'Cek revisi dari ' + esc(first(p.pembuat)) + '.'; btns = B('', 'mintaLagi', 'bi-arrow-counterclockwise', 'Minta perbaikan lagi') + B('green', 'setujuKirim', 'bi-send-check', 'Setujui dan kirim ke PPK BLU'); }
+                else { hint = posisi(p).teks + '.'; }
+            } else {
+                if (p.state === 'ketupel_kerja') { hint = sisa; btns = B('', 'edit', 'bi-pencil-square', 'Edit PO') + B('green', 'kirimKatim', 'bi-send', 'Kirim revisi ke ' + esc(first(p.katim)), op > 0); }
+                else { hint = posisi(p).teks + '.'; }
+            }
+            $('rvwDock').innerHTML = '<div class="hintline">' + hint + '</div><div class="acts">' + btns + '</div>';
+        }
+
+        /* ---------- Dokumen PO + slot catatan per bagian ---------- */
+        function kunciBagian(judul) {
+            var t = String(judul).replace(/^\s*\d+\s*[.)]\s*/, '').replace(/\s+/g, ' ').trim().toUpperCase();
+            if (t.indexOf('DASAR') === 0) { return 'dasar'; }
+            if (t.indexOf('TUJUAN') === 0) { return 'tujuan'; }
+            if (t.indexOf('RUANG LINGKUP') === 0) { return 'lingkup'; }
+            if (t.indexOf('ALAT') === 0) { return 'alat'; }
+            if (t.indexOf('METODA') === 0 || t.indexOf('METODE') === 0) { return 'metoda'; }
+            if (t.indexOf('ALAMAT') === 0) { return 'alamat'; }
+            if (t.indexOf('TIM') === 0) { return 'tim'; }
+            if (t.indexOf('RENCANA ANGGARAN') === 0 || t.indexOf('RAB') === 0) { return 'rab'; }
+            if (t.indexOf('JADWAL') === 0) { return 'jadwal'; }
+            var sl = t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 30);
+            return 'lain-' + (sl || 'x');
+        }
+        function bangunDokumen(html) {
+            var host = $('rvwDocHost');
+            host.innerHTML = html;
+            secs = {};
+            var sheet = host.querySelector('#poDocSheet') || host.querySelector('.po-doc-sheet');
+            if (!sheet) { return; }
+            var cur = null;
+            Array.prototype.slice.call(sheet.children).forEach(function (el) {
+                if (el.classList.contains('po-section-title')) {
+                    var key = kunciBagian(el.textContent), dasar = key, n = 2;
+                    while (secs[key]) { key = dasar + '-' + (n++); }
+                    var sec = document.createElement('section'); sec.className = 'rvw-sec'; sec.setAttribute('data-sec', key);
+                    var head = document.createElement('div'); head.className = 'rvw-sec-h';
+                    var tools = document.createElement('span'); tools.className = 'rvw-tools';
+                    var body = document.createElement('div'); body.className = 'rvw-sec-body';
+                    var nt = document.createElement('div'); nt.className = 'rvw-notes';
+                    sheet.insertBefore(sec, el);
+                    head.appendChild(el); head.appendChild(tools);
+                    sec.appendChild(head); sec.appendChild(body); sec.appendChild(nt);
+                    cur = { key: key, body: body, tools: tools, notes: nt };
+                    secs[key] = cur;
+                } else if (el.classList.contains('po-signature-row')) { cur = null; }
+                else if (cur) { cur.body.appendChild(el); }
+            });
+        }
+        function noteHtml(n) {
+            var p = curPo();
+            var tagTxt = n.state === 'draf' ? 'Draf, belum dikirim' : (n.state === 'terbuka' ? 'Perlu diperbaiki' : 'Sudah diperbaiki');
+            var asal = '<span class="rvw-asal">Catatan PPK BLU</span> ';
+            var top = '<div class="rvw-note-top"><span class="rvw-av dark">' + esc(initials(n.oleh)) + '</span><b>' + esc(n.oleh) + '</b><span class="time">' + fmt(n.waktu) + '</span><span class="rvw-tag ' + n.state + '">' + tagTxt + '</span></div>';
+            if (bolehTandai(p) && n.ronde === p.ronde) {
+                return '<div class="rvw-note st-' + n.state + '">' + top + '<div class="rvw-cek"><input type="checkbox" id="cn' + n.id + '" data-tandai="' + n.id + '"' + (n.state === 'selesai' ? ' checked' : '') + '><label for="cn' + n.id + '">' + asal + '<span class="rvw-note-text" style="display:inline;margin:0;">' + esc(n.teks) + '</span></label></div></div>';
+            }
+            var acts = (ROLE === 'ppk' && n.state === 'draf') ? '<div class="rvw-note-acts"><button type="button" class="rvw-btn link red" data-note="' + n.id + '" data-nact="hapus">Hapus draf</button></div>' : '';
+            return '<div class="rvw-note st-' + n.state + '">' + top + '<div class="rvw-note-text">' + asal + esc(n.teks) + '</div>' + acts + '</div>';
+        }
+        function composerHtml() {
+            return '<div class="rvw-cmp"><textarea id="rvwCmpText" maxlength="500" placeholder="Tulis catatan revisi untuk bagian ini" aria-label="Catatan revisi"></textarea><div class="err-msg" id="rvwCmpErr" hidden>Catatan tidak boleh kosong.</div>' +
+                '<div class="row2"><button type="button" class="rvw-btn sm" data-cmp="batal">Batal</button><button type="button" class="rvw-btn pri sm" data-cmp="simpan">Simpan sebagai draf</button></div></div>';
+        }
+        function toolsHtml(key, list, add, diubah) {
+            var open = list.filter(function (n) { return n.state !== 'selesai'; }).length;
+            return (diubah ? '<span class="rvw-chip-ubah"><i class="bi bi-pencil-fill"></i>Diubah</span>' : '') +
+                (list.length ? '<span class="rvw-nchip' + (open ? '' : ' ok') + '">' + list.length + ' catatan</span>' : '') +
+                (add ? '<button type="button" class="rvw-btn link" data-addnote="' + key + '"><i class="bi bi-plus-lg"></i>Catatan</button>' : '');
+        }
+        function renderNotes() {
+            var p = curPo(); if (!p || !detail) { return; }
+            var add = bolehCatat(p), semua = aktif(p);
+            var diubah = {};
+            detail.perubahan.forEach(function (x) { diubah[x.bagian] = true; });
+            Object.keys(secs).forEach(function (k) {
+                var sc = secs[k], list = semua.filter(function (n) { return n.bagian === k; });
+                sc.tools.innerHTML = toolsHtml(k, list, add, diubah[k]);
+                sc.notes.innerHTML = list.map(noteHtml).join('') + (composer === k && add ? composerHtml() : '');
+            });
+            var umum = semua.filter(function (n) { return n.bagian === 'umum' || !secs[n.bagian]; });
+            var host = $('rvwUmum');
+            if (!umum.length && !add) { host.innerHTML = ''; host.hidden = true; }
+            else {
+                host.hidden = false;
+                host.innerHTML = '<div class="rvw-sec-h"><h3>Catatan umum</h3><span class="rvw-tools">' + toolsHtml('umum', umum, add, false) + '</span></div>' +
+                    (!umum.length ? '<div class="hint">Tulis catatan yang berlaku untuk keseluruhan PO.</div>' : '') +
+                    '<div class="rvw-notes">' + umum.map(function (n) { return (n.bagian !== 'umum' ? '<div class="rvw-orphan">Bagian: ' + esc(n.bagian) + '</div>' : '') + noteHtml(n); }).join('') + (composer === 'umum' && add ? composerHtml() : '') + '</div>';
+            }
+        }
+
+        /* ---------- Buka dan tutup panel ---------- */
+        function terapkanDetail(j) { detail = j; updateRow(j.po); renderChrome(); renderNotes(); }
+        function openSheet(id) {
+            var tiket = ++openTicket;
+            current = id; detail = null; shTab = 'dok'; composer = null; secs = {};
+            var p = rowOf(id); if (!p) { return; }
+            $('rvwDocHost').innerHTML = '<div class="rvw-loading">Memuat dokumen PO...</div>';
+            $('rvwUmum').innerHTML = ''; $('rvwUmum').hidden = true; $('rvwBanner').innerHTML = ''; $('rvwExtra').innerHTML = '';
+            $('rvwDokPane').hidden = false; $('rvwAlurPane').hidden = true;
+            renderChrome();
+            $('rvwScrim').classList.add('open'); $('rvwSheet').classList.add('open'); $('rvwSheet').setAttribute('aria-hidden', 'false');
+            setTimeout(function () { $('rvwShClose').focus(); }, 60);
+
+            api(URL_API(id, 'detail')).then(function (j) {
+                if (tiket !== openTicket) { return; }
+                terapkanDetail(j);
+            }).catch(function (e) {
+                if (tiket !== openTicket) { return; }
+                $('rvwBanner').innerHTML = '<div class="rvw-bn warn"><i class="bi bi-exclamation-triangle"></i><div>' + esc(e.message) + '</div></div>';
+            });
+            fetch(PO_URL(id) + '/preview', { credentials: 'same-origin' }).then(function (r) {
+                if (!r.ok) { throw new Error('Dokumen PO gagal dimuat.'); }
+                return r.text();
+            }).then(function (html) {
+                if (tiket !== openTicket) { return; }
+                bangunDokumen(html); renderNotes();
+            }).catch(function (e) {
+                if (tiket !== openTicket) { return; }
+                $('rvwDocHost').innerHTML = '<div class="rvw-loading err">' + esc(e.message) + '</div>';
+            });
+        }
+        function closeSheet() {
+            openTicket++; current = null; detail = null; composer = null; secs = {};
+            $('rvwScrim').classList.remove('open'); $('rvwSheet').classList.remove('open'); $('rvwSheet').setAttribute('aria-hidden', 'true');
+        }
+        function muatUlangDetail() {
+            if (!current) { return; }
+            var id = current;
+            api(URL_API(id, 'detail')).then(function (j) { if (current === id) { terapkanDetail(j); } }).catch(function () {});
+        }
+
+        /* ---------- Aksi ---------- */
+        function gagal(e) { toast(e.message, true); muatUlangDetail(); }
+        function kirim(bagian, data, sukses) {
+            var id = current;
+            post(URL_API(id, bagian), data || {}).then(function (j) { terapkanDetail(j); toast(sukses); }).catch(gagal);
+        }
+        function doAct(act) {
+            var p = curPo(); if (!p || !detail) { return; }
+            var pm = first(p.pembuat), km = first(p.katim), id = p.id;
+            if (act === 'edit') { window.location.href = PO_URL(id) + '/edit?dari=ppk'; return; }
+            var D = function (o) { return dialog(o).then(function (r) { return r.h === 'ya' ? r : null; }); };
+            if (act === 'mintaRevisi') {
+                var n = cnt('draf');
+                D({ judul: 'Kirim permintaan revisi?', pesan: n + ' catatan akan dikirim ke Ketua Tim untuk diputuskan siapa yang mengerjakan.', ya: 'Kirim', ikon: 'bi-send', warna: 'warn' }).then(function (r) { if (r) { kirim('minta-revisi', {}, 'Permintaan revisi dikirim ke Ketua Tim.'); } });
+            } else if (act === 'validasi') {
+                D({ judul: 'Validasi PO ini?', pesan: 'PO dinyatakan sesuai dan terkunci. Tidak ada revisi lagi.', ya: 'Ya, validasi', ikon: 'bi-patch-check', warna: 'ok' }).then(function (r) { if (r) { kirim('validasi', {}, 'PO divalidasi PPK BLU.'); } });
+            } else if (act === 'kerjakan') {
+                D({ judul: 'Kerjakan revisi sendiri?', pesan: 'Anda mengedit PO sesuai catatan PPK BLU, lalu mengirimnya langsung ke PPK BLU. Anda masih bisa mendisposisikannya ke ' + pm + ' sebelum dikirim.', ya: 'Ya, kerjakan', ikon: 'bi-pencil', warna: 'warn' }).then(function (r) { if (r) { kirim('kerjakan', {}, 'Anda mengerjakan revisi ini.'); } });
+            } else if (act === 'disposisi') {
+                D({ judul: 'Disposisikan ke ' + pm + '?', pesan: pm + ' akan mengedit PO sesuai catatan PPK BLU, lalu mengirimnya kembali ke Anda untuk direview.', ya: 'Ya, disposisikan', ikon: 'bi-person-up', warna: 'warn' }).then(function (r) { if (r) { kirim('disposisi', {}, 'Revisi didisposisikan ke ' + pm + '.'); } });
+            } else if (act === 'kirimPpk') {
+                D({ judul: 'Kirim revisi ke PPK BLU?', pesan: 'PPK BLU akan mengecek ulang PO ini.', ya: 'Kirim', ikon: 'bi-send', warna: 'ok' }).then(function (r) { if (r) { kirim('kirim-ppk', {}, 'Revisi dikirim ke PPK BLU.'); } });
+            } else if (act === 'kirimKatim') {
+                D({ judul: 'Kirim revisi ke ' + km + '?', pesan: km + ' akan mereview hasil revisi sebelum dikirim ke PPK BLU.', ya: 'Kirim', ikon: 'bi-send', warna: 'ok' }).then(function (r) { if (r) { kirim('kirim-katim', {}, 'Revisi dikirim ke ' + km + '.'); } });
+            } else if (act === 'setujuKirim') {
+                D({ judul: 'Setujui dan kirim ke PPK BLU?', pesan: 'Revisi dinyatakan sesuai dan diteruskan ke PPK BLU.', ya: 'Ya, kirim', ikon: 'bi-send-check', warna: 'ok' }).then(function (r) { if (r) { kirim('setujui-kirim', {}, 'Revisi dikirim ke PPK BLU.'); } });
+            } else if (act === 'mintaLagi') {
+                D({ judul: 'Minta perbaikan lagi?', pesan: 'PO dikembalikan ke ' + pm + '. Tulis alasan singkat supaya jelas apa yang masih kurang.', ya: 'Kembalikan', ikon: 'bi-arrow-counterclockwise', warna: 'warn', alasan: true }).then(function (r) { if (r) { kirim('minta-lagi', { alasan: r.alasan }, 'Dikembalikan ke ' + pm + '.'); } });
+            }
+        }
+        function saveNote() {
+            var t = $('rvwCmpText'); if (!t || !composer || !current) { return; }
+            var v = t.value.trim();
+            if (!v) { t.classList.add('err'); $('rvwCmpErr').hidden = false; t.focus(); return; }
+            var bagian = composer;
+            post(URL_API(current, 'catatan'), { bagian: bagian, teks: v }).then(function (j) { composer = null; terapkanDetail(j); }).catch(gagal);
+        }
+        function aksiCatatan(nid, aksi) {
+            if (!current) { return; }
+            post(URL_API(current, 'catatan/' + nid), { aksi: aksi }).then(terapkanDetail).catch(gagal);
+        }
+
+        /* ---------- Tab Alur ---------- */
+        function alurItems(p) {
+            var a = [], adaSetuju = false;
+            function it(t, teks, oleh, ic) { if (t) { a.push({ t: String(t), teks: teks, oleh: oleh, ic: ic }); } }
+            ((detail && detail.riwayat) || []).forEach(function (m) {
+                var tk = m.pesan || '';
+                if (/dikirim untuk direview|mengirim PO untuk direview/.test(tk)) { return; }
+                if (/menyetujui PO/.test(tk)) { adaSetuju = true; }
+                var pm = /\((PPK BLU|Ketua Tim|Ketua Pelaksana)\)/.exec(tk);
+                var oleh = pm ? pm[1] : (/menyetujui|meminta|membuka kembali/.test(tk) ? 'Ketua Tim' : (/Tim Mitra/.test(tk) ? 'Tim Mitra' : 'Ketua Pelaksana'));
+                var ic = /membaca/.test(tk) ? 'bi-eye' : /memvalidasi|divalidasi/.test(tk) ? 'bi-patch-check' : (/mendisposisikan/.test(tk) ? 'bi-person-up' : (/menyetujui/.test(tk) ? 'bi-check2-circle' : (/meminta|disimpan|mengerjakan/.test(tk) ? 'bi-pencil-square' : (/membuka kembali/.test(tk) ? 'bi-unlock' : 'bi-send'))));
+                it(m.waktu, tk, oleh, ic);
+            });
+            if (p.dibuat_at && p.dikirim_at && String(p.dibuat_at).slice(0, 16) === String(p.dikirim_at).slice(0, 16)) {
+                it(p.dibuat_at, 'PO dibuat dan dikirim ke Ketua Tim', 'Ketua Pelaksana', 'bi-send');
+            } else {
+                it(p.dibuat_at, 'PO dibuat (draf)', 'Ketua Pelaksana', 'bi-file-earmark-plus');
+                it(p.dikirim_at, 'PO dikirim ke Ketua Tim', 'Ketua Pelaksana', 'bi-send');
+            }
+            if (!adaSetuju) { it(p.disetujui_at, 'Disetujui Ketua Tim. PO diteruskan ke Humas.', 'Ketua Tim', 'bi-check2-circle'); }
+            it(p.humas_ver_at, 'Diverifikasi', 'Humas', 'bi-patch-check');
+            it(p.mitra_valid_at, 'Divalidasi', 'Tim Mitra', 'bi-patch-check');
+            if (!a.some(function (x) { return x.oleh === 'PPK BLU' && /validasi|memvalidasi/.test(x.teks); })) { it(p.ppk_valid_at, 'Divalidasi', 'PPK BLU', 'bi-patch-check'); }
+            a.sort(function (x, y) { return x.t < y.t ? -1 : (x.t > y.t ? 1 : 0); });
+            return a;
+        }
+        function alurHtml(p) {
+            var ps = posisi(p), items = alurItems(p), h = '';
+            h += '<div class="rvw-al-now"><div class="k">PO ini sedang berada di</div><div class="v">' + esc(ps.di) + '</div><div class="s">' + esc(ps.teks) + '</div></div><ol class="rvw-tl">';
+            h += items.map(function (x) { return '<li class="done"><span class="ic"><i class="bi ' + x.ic + '"></i></span><div class="tx"><div class="a">' + esc(x.teks) + '</div><div class="b">' + esc(x.oleh) + ' &middot; ' + fmt(x.t) + '</div></div></li>'; }).join('');
+            var nxt = {
+                ppk_cek: [['Validasi atau minta revisi', 'PPK BLU']],
+                ppk_minta: [['Keputusan: kerjakan sendiri atau disposisi', 'Ketua Tim'], ['Kirim revisi', 'Ketua Tim atau Ketua Pelaksana'], ['Validasi ulang', 'PPK BLU']],
+                katim_kerja: [['Edit dan kirim revisi ke PPK BLU', 'Ketua Tim'], ['Validasi ulang', 'PPK BLU']],
+                ketupel_kerja: [['Edit dan kirim revisi', 'Ketua Pelaksana'], ['Review dan kirim ke PPK BLU', 'Ketua Tim'], ['Validasi ulang', 'PPK BLU']],
+                katim_review: [['Review dan kirim ke PPK BLU', 'Ketua Tim'], ['Validasi ulang', 'PPK BLU']],
+                selesai: []
+            }[p.state];
+            h += nxt.map(function (x, i) { return '<li class="' + (i === 0 ? 'now' : 'todo') + '"><span class="ic"><i class="bi ' + (i === 0 ? 'bi-record-circle' : 'bi-circle') + '"></i></span><div class="tx"><div class="a">' + esc(x[0]) + '</div><div class="b">' + esc(x[1]) + (i === 0 ? ' &middot; sedang di sini' : ' &middot; menunggu') + '</div></div></li>'; }).join('');
+            if (p.state === 'selesai') { h += '<li class="done fin"><span class="ic"><i class="bi bi-flag-fill"></i></span><div class="tx"><div class="a">Selesai divalidasi PPK BLU</div><div class="b">Tahap berikutnya menyusul</div></div></li>'; }
+            return h + '</ol>';
+        }
+        function renderAlur() { var p = curPo(), box = $('rvwAlurPane'); if (!p || !box) { return; } box.innerHTML = alurHtml(p) + (detail ? '' : '<div class="rvw-loading">Memuat riwayat...</div>'); }
+
+        /* ---------- Penyegaran daftar ---------- */
+        function segarkan() {
+            if (document.hidden || dlgResolve) { return; }
+            api(PREFIX + '/data').then(function (j) {
+                DATA = j.daftar;
+                if (current && detail) { var r = rowOf(current); if (r) { detail.po = r; } }
+                isiOpsiFilter(); renderAll();
+                if (current && detail) { renderChrome(); }
+            }).catch(function () {});
+        }
+
+        /* ---------- Event ---------- */
+        document.addEventListener('click', function (e) {
+            var root = $('rvwRoot'); if (!root || !root.contains(e.target)) { return; }
+            var t = e.target, el;
+            if ((el = t.closest('[data-tab]'))) { ubahTab(el.getAttribute('data-tab')); renderTabs(); renderList(); return; }
+            if ((el = t.closest('[data-open]'))) { openSheet(parseInt(el.getAttribute('data-open'), 10)); return; }
+            if ((el = t.closest('[data-shtab]'))) {
+                var k = el.getAttribute('data-shtab'); if (k === shTab) { return; }
+                shTab = k; composer = null;
+                $('rvwDokPane').hidden = k !== 'dok'; $('rvwAlurPane').hidden = k !== 'alur';
+                if (k === 'alur') { renderAlur(); }
+                renderShTabs();
+                return;
+            }
+            if ((el = t.closest('[data-addnote]'))) {
+                composer = el.getAttribute('data-addnote'); renderNotes();
+                setTimeout(function () { var c = $('rvwCmpText'); if (c) { c.focus(); c.scrollIntoView({ block: 'nearest' }); } }, 0); return;
+            }
+            if ((el = t.closest('[data-cmp]'))) { if (el.getAttribute('data-cmp') === 'simpan') { saveNote(); } else { composer = null; renderNotes(); } return; }
+            if ((el = t.closest('[data-note]'))) { aksiCatatan(parseInt(el.getAttribute('data-note'), 10), el.getAttribute('data-nact')); return; }
+            if ((el = t.closest('[data-act]'))) { if (!el.disabled) { doAct(el.getAttribute('data-act')); } return; }
+        });
+        document.addEventListener('change', function (e) {
+            var el = e.target.closest && e.target.closest('[data-tandai]'); if (!el) { return; }
+            aksiCatatan(parseInt(el.getAttribute('data-tandai'), 10), el.checked ? 'selesai' : 'batalselesai');
+        });
+        document.addEventListener('input', function (e) {
+            if (e.target.id === 'rvwCmpText' && e.target.classList.contains('err') && e.target.value.trim()) { e.target.classList.remove('err'); $('rvwCmpErr').hidden = true; }
+            if (e.target.id === 'rvwDlgTx' && e.target.value.trim()) { e.target.classList.remove('err'); }
+        });
+        document.addEventListener('keydown', function (e) {
+            if (!$('rvwRoot')) { return; }
+            if (e.key === 'Escape') {
+                if (dlgResolve) { e.preventDefault(); closeDlg('batal'); return; }
+                if (current) { closeSheet(); }
+            }
+        });
+        $('rvwSearch').addEventListener('input', function () { q = this.value.trim().toLowerCase(); renderList(); });
+        $('rvwDivisi').addEventListener('change', function () { divisi = this.value; renderList(); });
+        $('rvwBaca').addEventListener('change', function () { baca = this.value; renderList(); });
+        $('rvwStatus').addEventListener('change', function () { statusF = this.value; renderList(); });
+        $('rvwBulan').addEventListener('change', function () { bulan = this.value; periodeDiubah = true; renderList(); });
+        $('rvwTahun').addEventListener('change', function () { tahun = this.value; periodeDiubah = true; renderList(); });
+        $('rvwReset').addEventListener('click', function () { resetFilter(); renderList(); });
+        $('rvwShClose').addEventListener('click', closeSheet);
+        $('rvwScrim').addEventListener('click', closeSheet);
+        $('rvwDlgYes').addEventListener('click', function () { closeDlg('ya'); });
+        $('rvwDlgNo').addEventListener('click', function () { closeDlg('batal'); });
+        $('rvwDlg').addEventListener('click', function (e) { if (e.target === $('rvwDlg')) { closeDlg('batal'); } });
+        document.addEventListener('visibilitychange', function () { if (!document.hidden) { segarkan(); } });
+        setInterval(segarkan, 60000);
+
+        tab = tabDef()[0].k;
+        tabDef().some(function (t) { if (DATA.some(t.f)) { tab = t.k; return true; } return false; });
+        (function () { var d = defPeriode(tab); bulan = d.bulan; tahun = d.tahun; })();
+        isiOpsiFilter();
+        renderAll();
+        (function () { var m = /[?&]buka=(\d+)/.exec(window.location.search); if (m && rowOf(parseInt(m[1], 10))) { openSheet(parseInt(m[1], 10)); } })();
+    })();
+
+</script>
