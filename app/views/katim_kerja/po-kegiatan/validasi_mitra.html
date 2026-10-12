@@ -250,29 +250,32 @@
         var dvmPage = 1;
         var dvmPerPage = 10;
 
-        window.dvmGoPage = function(p) {
+        window.dvmGoPage = function(p, shouldScroll) {
             dvmPage = p;
             render();
-            var el = $('dpoList');
-            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            if (shouldScroll) {
+                var el = $('dpoList');
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
         };
 
-        function bikinPaginationHtml(totalRows, curPage, perPage) {
+        function bikinPaginationHtml(totalRows, curPage, perPage, isTop) {
             var totalPages = Math.ceil(totalRows / perPage);
             if (totalPages <= 1) return '';
             var startIdx = (curPage - 1) * perPage;
             var endIdx = Math.min(startIdx + perPage, totalRows);
             var displayStart = startIdx + 1;
             var displayEnd = endIdx;
+            var borderClass = isTop ? 'border-bottom' : 'border-top';
 
-            var html = '<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 p-3 border-top bg-white">' +
+            var html = '<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 p-3 bg-white ' + borderClass + '">' +
                 '<span class="small text-muted fw-medium">Menampilkan <strong>' + displayStart + '&ndash;' + displayEnd + '</strong> dari <strong>' + totalRows + '</strong> data</span>' +
                 '<ul class="pagination pagination-sm mb-0">' +
-                '<li class="page-item ' + (curPage <= 1 ? 'disabled' : '') + '"><a class="page-link" href="#" onclick="window.dvmGoPage(' + (curPage - 1) + '); return false;">&laquo; Sebelumnya</a></li>';
+                '<li class="page-item ' + (curPage <= 1 ? 'disabled' : '') + '"><a class="page-link" href="#" onclick="window.dvmGoPage(' + (curPage - 1) + ', ' + (isTop ? 'false' : 'true') + '); return false;">&laquo; Sebelumnya</a></li>';
             for (var i = 1; i <= totalPages; i++) {
-                html += '<li class="page-item ' + (i === curPage ? 'active' : '') + '"><a class="page-link" href="#" onclick="window.dvmGoPage(' + i + '); return false;">' + i + '</a></li>';
+                html += '<li class="page-item ' + (i === curPage ? 'active' : '') + '"><a class="page-link" href="#" onclick="window.dvmGoPage(' + i + ', ' + (isTop ? 'false' : 'true') + '); return false;">' + i + '</a></li>';
             }
-            html += '<li class="page-item ' + (curPage >= totalPages ? 'disabled' : '') + '"><a class="page-link" href="#" onclick="window.dvmGoPage(' + (curPage + 1) + '); return false;">Berikutnya &raquo;</a></li>' +
+            html += '<li class="page-item ' + (curPage >= totalPages ? 'disabled' : '') + '"><a class="page-link" href="#" onclick="window.dvmGoPage(' + (curPage + 1) + ', ' + (isTop ? 'false' : 'true') + '); return false;">Berikutnya &raquo;</a></li>' +
                 '</ul></div>';
             return html;
         }
@@ -331,9 +334,10 @@
                     '<div class="foot"><button type="button" class="btn btn-primary btn-sm" data-buka="' + p.id + '"><i class="bi bi-search me-1"></i>Review</button></div></div>';
             }).join('') + '</div>';
 
-            var paginationHtml = bikinPaginationHtml(totalRows, dvmPage, dvmPerPage);
+            var paginationTop = bikinPaginationHtml(totalRows, dvmPage, dvmPerPage, true);
+            var paginationBottom = bikinPaginationHtml(totalRows, dvmPage, dvmPerPage, false);
 
-            $('dpoList').innerHTML = tabel + kartu + paginationHtml;
+            $('dpoList').innerHTML = paginationTop + tabel + kartu + paginationBottom;
         }
 
         function renderDisetujui(rows) {
@@ -370,9 +374,10 @@
                     '<div class="foot"><button type="button" class="btn btn-white btn-sm" data-buka="' + p.id + '"><i class="bi bi-eye me-1"></i>Lihat Detail</button></div></div>';
             }).join('') + '</div>';
 
-            var paginationHtml = bikinPaginationHtml(totalRows, dvmPage, dvmPerPage);
+            var paginationTop = bikinPaginationHtml(totalRows, dvmPage, dvmPerPage, true);
+            var paginationBottom = bikinPaginationHtml(totalRows, dvmPage, dvmPerPage, false);
 
-            $('dpoList').innerHTML = tabel + kartu + paginationHtml;
+            $('dpoList').innerHTML = paginationTop + tabel + kartu + paginationBottom;
         }
     
         function api(url, opts) {

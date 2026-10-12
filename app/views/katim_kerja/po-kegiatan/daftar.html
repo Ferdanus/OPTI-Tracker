@@ -443,11 +443,13 @@
         var dpoPage = 1;
         var dpoPerPage = 10;
 
-        window.dpoGoPage = function(p) {
+        window.dpoGoPage = function(p, shouldScroll) {
             dpoPage = p;
             renderList();
-            var el = $('dpoList');
-            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            if (shouldScroll) {
+                var el = $('dpoList');
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
         };
 
         function renderList() {
@@ -507,21 +509,26 @@
                     pillsFor(p) + '<div class="dpo-foot">' + actsFor(p) + '</div></div>';
             }).join('') + '</div>';
 
-            var paginationHtml = '';
-            if (totalPages > 1) {
+            function bikinPaginationHtml(isTop) {
+                if (totalPages <= 1) return '';
                 var displayStart = startIdx + 1;
                 var displayEnd = Math.min(endIdx, totalRows);
-                paginationHtml = '<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 p-3 border-top bg-white">' +
+                var borderClass = isTop ? 'border-bottom' : 'border-top';
+                var html = '<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 p-3 bg-white ' + borderClass + '">' +
                     '<span class="small text-muted fw-medium">Menampilkan <strong>' + displayStart + '&ndash;' + displayEnd + '</strong> dari <strong>' + totalRows + '</strong> data</span>' +
                     '<ul class="pagination pagination-sm mb-0">' +
-                    '<li class="page-item ' + (dpoPage <= 1 ? 'disabled' : '') + '"><a class="page-link" href="#" onclick="window.dpoGoPage(' + (dpoPage - 1) + '); return false;">&laquo; Sebelumnya</a></li>';
+                    '<li class="page-item ' + (dpoPage <= 1 ? 'disabled' : '') + '"><a class="page-link" href="#" onclick="window.dpoGoPage(' + (dpoPage - 1) + ', ' + (isTop ? 'false' : 'true') + '); return false;">&laquo; Sebelumnya</a></li>';
                 for (var i = 1; i <= totalPages; i++) {
-                    paginationHtml += '<li class="page-item ' + (i === dpoPage ? 'active' : '') + '"><a class="page-link" href="#" onclick="window.dpoGoPage(' + i + '); return false;">' + i + '</a></li>';
+                    html += '<li class="page-item ' + (i === dpoPage ? 'active' : '') + '"><a class="page-link" href="#" onclick="window.dpoGoPage(' + i + ', ' + (isTop ? 'false' : 'true') + '); return false;">' + i + '</a></li>';
                 }
-                paginationHtml += '<li class="page-item ' + (dpoPage >= totalPages ? 'disabled' : '') + '"><a class="page-link" href="#" onclick="window.dpoGoPage(' + (dpoPage + 1) + '); return false;">Berikutnya &raquo;</a></li></ul></div>';
+                html += '<li class="page-item ' + (dpoPage >= totalPages ? 'disabled' : '') + '"><a class="page-link" href="#" onclick="window.dpoGoPage(' + (dpoPage + 1) + ', ' + (isTop ? 'false' : 'true') + '); return false;">Berikutnya &raquo;</a></li></ul></div>';
+                return html;
             }
 
-            $('dpoList').innerHTML = table + cards + paginationHtml;
+            var paginationTop = bikinPaginationHtml(true);
+            var paginationBottom = bikinPaginationHtml(false);
+
+            $('dpoList').innerHTML = paginationTop + table + cards + paginationBottom;
         }
     
         /* ---------- Panel review ---------- */
