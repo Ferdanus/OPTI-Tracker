@@ -103,10 +103,15 @@ class NotificationService
     /**
      * Ambil daftar notifikasi untuk user yang sedang login
      */
-    public static function getUserNotifications(\DB\SQL $db, int $userId, string $role, string $layanan = 'semua', int $limit = 15, string $search = ''): array
+    public static function getUserNotifications(\DB\SQL $db, int $userId, string $role, string $layanan = 'semua', int $limit = 15, string $search = '', bool $unreadOnly = false): array
     {
         list($whereClause, $params) = self::buildTargetCondition($userId, $role, $layanan);
         
+        $unreadSql = '';
+        if ($unreadOnly) {
+            $unreadSql = " AND is_read = 0";
+        }
+
         $searchSql = '';
         if (!empty(trim($search))) {
             $searchSql = " AND (judul LIKE ? OR pesan LIKE ? OR created_by_name LIKE ?)";
@@ -116,7 +121,7 @@ class NotificationService
             $params[] = $keyword;
         }
 
-        $sql = "SELECT * FROM `opti_notifikasi` WHERE {$whereClause}{$searchSql} ORDER BY created_at DESC, id DESC LIMIT " . (int)$limit;
+        $sql = "SELECT * FROM `opti_notifikasi` WHERE {$whereClause}{$unreadSql}{$searchSql} ORDER BY created_at DESC, id DESC LIMIT " . (int)$limit;
 
         $rows = $db->exec($sql, $params);
         foreach ($rows as &$r) {

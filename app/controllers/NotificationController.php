@@ -13,7 +13,7 @@ class NotificationController extends Controller
         $layanan = $this->getUserLayanan();
 
         $unreadCount = NotificationService::getUnreadCount($this->db, $userId, $role, $layanan);
-        $items = NotificationService::getUserNotifications($this->db, $userId, $role, $layanan, 10);
+        $items = NotificationService::getUserNotifications($this->db, $userId, $role, $layanan, 15, '', true);
 
         header('Content-Type: application/json');
         echo json_encode([

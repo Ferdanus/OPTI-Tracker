@@ -393,9 +393,9 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
             error_log('[Notif PO] ' . $ePoNotif->getMessage());
         }
 
-        // Notifikasi Terintegrasi (Notification Service) untuk Bell Dropdown & Floating Bubble
+        // Notifikasi Terintegrasi (Notification Service) untuk Bell Dropdown & Floating Bubble (hanya menampilkan pesan yang belum dibaca)
         try {
-            $userNotifList = \NotificationService::getUserNotifications($this->db, (int)$userId, $role, $layanan, 8);
+            $userNotifList = \NotificationService::getUserNotifications($this->db, (int)$userId, $role, $layanan, 15, '', true);
             $unreadNotifCount = \NotificationService::getUnreadCount($this->db, (int)$userId, $role, $layanan);
         } catch (\Exception $eNotifSys) {
             $userNotifList = [];

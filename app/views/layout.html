@@ -1636,7 +1636,7 @@
                                     </check>
                                 </div>
                                 <check if="{{ @unread_notif_count > 0 }}">
-                                    <button class="btn btn-link btn-sm text-decoration-none p-0 text-primary fw-semibold" style="font-size: 0.72rem;" onclick="window.markAllNotifRead()">
+                                    <button class="btn btn-link btn-sm text-decoration-none p-0 text-primary fw-semibold" id="notifMarkAllReadBtn" style="font-size: 0.72rem;" onclick="window.markAllNotifRead()">
                                         <i class="bi bi-check2-all me-0.5"></i> Tandai Dibaca
                                     </button>
                                 </check>
@@ -1644,7 +1644,7 @@
                             <div class="list-group list-group-flush" style="max-height: 360px; overflow-y: auto;" id="notifListContainer">
                                 <check if="{{ @list_notifikasi_user && count(@list_notifikasi_user) > 0 }}">
                                     <repeat group="{{ @list_notifikasi_user }}" value="{{ @n }}">
-                                        <a href="{{ @BASE }}{{ @n.link_url }}" onclick="window.markNotifRead({{ @n.id }}, '{{ @BASE }}{{ @n.link_url }}')" class="list-group-item list-group-item-action px-3 py-3 {{ @n.is_read ? 'bg-white' : 'bg-light bg-opacity-40' }} border-bottom d-flex align-items-start text-decoration-none transition-all" style="gap: 14px;">
+                                        <a href="{{ @BASE }}{{ @n.link_url }}" id="topbarNotifItem_{{ @n.id }}" onclick="window.markNotifRead({{ @n.id }}, '{{ @BASE }}{{ @n.link_url }}')" class="list-group-item list-group-item-action px-3 py-3 bg-light bg-opacity-40 border-bottom d-flex align-items-start text-decoration-none transition-all" style="gap: 14px;">
                                             <div class="rounded-circle p-2 d-flex align-items-center justify-content-center flex-shrink-0 {{ @n.tipe == 'success' ? 'bg-success-subtle text-success' : (@n.tipe == 'warning' ? 'bg-warning-subtle text-warning' : (@n.tipe == 'primary' ? 'bg-primary-subtle text-primary' : 'bg-info-subtle text-info')) }}" style="width: 36px; height: 36px; margin-top: 2px;">
                                                 <i class="bi {{ @n.icon ?: 'bi-bell-fill' }}" style="font-size: 0.95rem;"></i>
                                             </div>
@@ -2194,6 +2194,37 @@
         // NOTIFICATION & FLOATING BUBBLE ENGINE
         // ==========================================
         window.markNotifRead = function(notifId, redirectUrl) {
+            // Hapus item dari dropdown langsung untuk feedback instan
+            var itemEl = document.getElementById('topbarNotifItem_' + notifId);
+            if (itemEl) itemEl.remove();
+
+            var badge = document.getElementById('notifBadgeCount');
+            if (badge) {
+                var cur = parseInt(badge.textContent, 10) || 1;
+                cur = Math.max(0, cur - 1);
+                if (cur > 0) {
+                    badge.textContent = cur > 99 ? '99+' : cur;
+                } else {
+                    badge.remove();
+                }
+            }
+            var headerBadge = document.getElementById('notifHeaderBadge');
+            if (headerBadge) {
+                var curH = parseInt(headerBadge.textContent, 10) || 1;
+                curH = Math.max(0, curH - 1);
+                if (curH > 0) {
+                    headerBadge.textContent = curH + ' Baru';
+                } else {
+                    headerBadge.remove();
+                }
+            }
+            var container = document.getElementById('notifListContainer');
+            if (container && container.querySelectorAll('.list-group-item').length === 0) {
+                container.innerHTML = '<div class="text-center py-4 text-muted"><i class="bi bi-bell-slash fs-3 d-block mb-1 opacity-40"></i><small class="text-muted">Tidak ada pemberitahuan baru</small></div>';
+                var btnMarkAll = document.getElementById('notifMarkAllReadBtn');
+                if (btnMarkAll) btnMarkAll.remove();
+            }
+
             fetch('{{ @BASE }}/notifikasi/mark-read/' + notifId, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' }
@@ -2217,15 +2248,36 @@
                 if (badge) badge.remove();
                 var headerBadge = document.getElementById('notifHeaderBadge');
                 if (headerBadge) headerBadge.remove();
+                var btnMarkAll = document.getElementById('notifMarkAllReadBtn');
+                if (btnMarkAll) btnMarkAll.remove();
                 var subtext = document.getElementById('notifUnreadSubtext');
                 if (subtext) subtext.textContent = 'Semua pesan sudah dibaca';
                 var bubble = document.getElementById('activeFloatingBubble');
                 if (bubble) bubble.remove();
-                document.querySelectorAll('#notifListContainer .badge.bg-danger').forEach(function(el) { el.remove(); });
-                document.querySelectorAll('#notifListContainer .list-group-item').forEach(function(el) {
-                    el.classList.remove('bg-light', 'bg-opacity-50');
-                    el.classList.add('bg-white');
+
+                // Dropdown topbar hanya menampilkan yang belum dibaca: kosongkan daftar dan beri pesan status
+                var container = document.getElementById('notifListContainer');
+                if (container) {
+                    container.innerHTML = '<div class="text-center py-4 text-muted"><i class="bi bi-bell-slash fs-3 d-block mb-1 opacity-40"></i><small class="text-muted">Tidak ada pemberitahuan baru</small></div>';
+                }
+
+                // Jika sedang berada di halaman riwayat /notifikasi:
+                document.querySelectorAll('.notif-row-item').forEach(function(el) {
+                    el.setAttribute('data-is-read', '1');
+                    el.classList.remove('is-unread');
+                    el.classList.add('bg-white', 'is-read');
                 });
+                var unreadTab = document.getElementById('unreadTabCount');
+                var readTab = document.getElementById('readTabCount');
+                var allTab = document.getElementById('allTabCount');
+                if (unreadTab && readTab && allTab) {
+                    var total = parseInt(allTab.textContent, 10) || 0;
+                    unreadTab.textContent = '0';
+                    readTab.textContent = total;
+                }
+                if (typeof applyFilterAndSearch === 'function') {
+                    applyFilterAndSearch();
+                }
             });
         };
 
@@ -2255,6 +2307,9 @@
                     if (data && data.success) {
                         var btn = document.getElementById('notifBellBtn');
                         var existingBadge = document.getElementById('notifBadgeCount');
+                        var headerBadge = document.getElementById('notifHeaderBadge');
+                        var btnMarkAll = document.getElementById('notifMarkAllReadBtn');
+
                         if (data.count > 0) {
                             if (existingBadge) {
                                 existingBadge.textContent = data.count > 99 ? '99+' : data.count;
@@ -2265,8 +2320,18 @@
                                 span.textContent = data.count > 99 ? '99+' : data.count;
                                 btn.appendChild(span);
                             }
-                        } else if (existingBadge) {
-                            existingBadge.remove();
+                            if (headerBadge) {
+                                headerBadge.textContent = data.count + ' Baru';
+                                headerBadge.style.display = '';
+                            }
+                        } else {
+                            if (existingBadge) existingBadge.remove();
+                            if (headerBadge) headerBadge.remove();
+                            if (btnMarkAll) btnMarkAll.remove();
+                            var container = document.getElementById('notifListContainer');
+                            if (container && (!data.items || data.items.length === 0)) {
+                                container.innerHTML = '<div class="text-center py-4 text-muted"><i class="bi bi-bell-slash fs-3 d-block mb-1 opacity-40"></i><small class="text-muted">Tidak ada pemberitahuan baru</small></div>';
+                            }
                         }
                     }
                 }).catch(function() {});
