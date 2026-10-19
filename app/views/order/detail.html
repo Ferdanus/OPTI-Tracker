@@ -892,6 +892,10 @@
                         data-unlocked-reason="{{ @order.unlocked_reason ?: '' }}"
                         data-unlocked-by="{{ @order.unlocked_by_name ?: '' }}"
                         data-unlocked-at="{{ @order.unlocked_at ? date('d/m/Y H:i', strtotime(@order.unlocked_at)) : '' }}"
+                        data-unlocked-until="{{ @order.unlocked_until ? date('Y-m-d H:i:s', strtotime(@order.unlocked_until)) : '' }}"
+                        data-unlocked-until-label="{{ @order.unlocked_until_formatted ?: '' }}"
+                        data-unlocked-countdown="{{ @order.unlocked_countdown_label ?: '' }}"
+                        data-unlocked-days="{{ @order.unlocked_days ?: 3 }}"
                         title="{{ @order.is_unlocked_edit ? 'Izin Edit TERBUKA (Klik untuk mengunci kembali)' : 'Izin Edit TERKUNCI (Klik untuk membuka izin edit per-order)' }}">
                         <i class="bi {{ @order.is_unlocked_edit ? 'bi-unlock-fill' : 'bi-lock-fill' }}"></i>
                         <span>{{ @order.is_unlocked_edit ? 'Kunci Edit Order' : 'Buka Izin Edit (Unlock)' }}</span>
@@ -1034,7 +1038,13 @@
             <div class="flex-grow-1">
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-1">
                     <strong class="text-dark"><i class="bi bi-shield-check text-success me-1"></i>Izin Perubahan Data Terbuka</strong>
-                    <span class="badge bg-warning text-dark border border-warning-subtle px-2 py-1"><i class="bi bi-unlock-fill me-1"></i>Unlocked by Super Admin</span>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-dark text-warning border border-warning-subtle px-2.5 py-1 font-monospace d-inline-flex align-items-center gap-1.5 shadow-xs" id="badgeUnlockCountdownDetail" data-until="{{ @order.unlocked_until }}" title="Waktu otomatis terkunci: {{ @order.unlocked_until_formatted }}">
+                            <i class="bi bi-stopwatch text-warning"></i>
+                            <span id="textUnlockCountdownDetail">{{ @order.unlocked_countdown_label ?: 'Aktif' }}</span>
+                        </span>
+                        <span class="badge bg-warning text-dark border border-warning-subtle px-2 py-1"><i class="bi bi-unlock-fill me-1"></i>Unlocked by Super Admin</span>
+                    </div>
                 </div>
                 <p class="mb-1 text-dark small" style="line-height: 1.45;">
                     Super Admin telah membuka akses perbaikan data khusus untuk order ini. User/role yang berwenang dapat melakukan revisi atau perbaikan pada formulir yang bersangkutan.
@@ -1043,6 +1053,10 @@
                     <span><i class="bi bi-person-circle me-1"></i> Dibuka oleh: <strong>{{ @order.unlocked_by_name ?: 'Super Admin' }}</strong></span>
                     <span>&bull;</span>
                     <span><i class="bi bi-clock-history me-1"></i> Waktu: {{ @order.unlocked_at ? date('d/m/Y H:i', strtotime(@order.unlocked_at)) : '-' }}</span>
+                    <check if="{{ !empty(@order.unlocked_until) }}">
+                        <span>&bull;</span>
+                        <span><i class="bi bi-hourglass-split text-danger me-1"></i> Batas Waktu: <strong>{{ @order.unlocked_until_formatted }}</strong> ({{ @order.unlocked_days ?: 3 }} hari / {{ (@order.unlocked_days ?: 3) * 24 }} jam)</span>
+                    </check>
                     <check if="{{ !empty(@order.unlocked_reason) }}">
                         <span>&bull;</span>
                         <span><i class="bi bi-chat-left-quote me-1"></i> Alasan: <em>"{{ @order.unlocked_reason }}"</em></span>
@@ -5277,6 +5291,9 @@ document.querySelectorAll('.btn-detail-toggle-unlock').forEach(function(btn) {
         var unlockedReason = this.getAttribute('data-unlocked-reason') || '';
         var unlockedBy = this.getAttribute('data-unlocked-by') || 'Super Admin';
         var unlockedAt = this.getAttribute('data-unlocked-at') || '';
+        var unlockedUntilLabel = this.getAttribute('data-unlocked-until-label') || '';
+        var unlockedCountdown = this.getAttribute('data-unlocked-countdown') || '';
+        var unlockedDays = this.getAttribute('data-unlocked-days') || '3';
 
         if (isUnlocked) {
             Swal.fire({
@@ -5284,9 +5301,10 @@ document.querySelectorAll('.btn-detail-toggle-unlock').forEach(function(btn) {
                 html: '<div class="text-start">' +
                       '<p class="mb-2">Anda akan <strong>mengunci kembali</strong> izin perbaikan data untuk <strong>' + nomorOrder + '</strong>.</p>' +
                       '<div class="p-2.5 rounded-2 bg-light border mb-3 small">' +
-                      '<div><i class="bi bi-person-check text-primary me-1"></i> Dibuka sebelumnya oleh: <strong>' + unlockedBy + '</strong></div>' +
-                      (unlockedAt ? '<div><i class="bi bi-clock text-secondary me-1"></i> Pada: ' + unlockedAt + '</div>' : '') +
-                      (unlockedReason ? '<div><i class="bi bi-info-circle text-muted me-1"></i> Alasan: <em>"' + unlockedReason + '"</em></div>' : '') +
+                      '<div><i class="bi bi-person-check text-primary me-1"></i> Dibuka oleh: <strong>' + unlockedBy + '</strong></div>' +
+                      (unlockedAt ? '<div><i class="bi bi-clock text-secondary me-1"></i> Dibuka pada: ' + unlockedAt + '</div>' : '') +
+                      (unlockedUntilLabel ? '<div><i class="bi bi-hourglass-split text-danger me-1"></i> Batas Waktu: <strong>' + unlockedUntilLabel + '</strong> ' + (unlockedCountdown ? '<span class="badge bg-danger ms-1 font-monospace">' + unlockedCountdown + '</span>' : '') + '</div>' : '') +
+                      (unlockedReason ? '<div class="mt-1 text-muted"><i class="bi bi-info-circle me-1"></i> Alasan: <em>"' + unlockedReason + '"</em></div>' : '') +
                       '</div>' +
                       '<label class="form-label small fw-semibold text-dark">Catatan Penguncian (Opsional):</label>' +
                       '<input type="text" id="swalDetailUnlockReason" class="form-control form-control-sm" placeholder="Contoh: Perbaikan data selesai / diverifikasi">' +
@@ -5302,7 +5320,7 @@ document.querySelectorAll('.btn-detail-toggle-unlock').forEach(function(btn) {
                 }
             }).then(function(result) {
                 if (result.isConfirmed) {
-                    kirimDetailToggleUnlock(orderId, result.value || 'Akses edit ditutup kembali oleh Super Admin');
+                    kirimDetailToggleUnlock(orderId, result.value || 'Akses edit ditutup kembali oleh Super Admin', 3);
                 }
             });
         } else {
@@ -5310,7 +5328,21 @@ document.querySelectorAll('.btn-detail-toggle-unlock').forEach(function(btn) {
                 title: 'Buka Izin Edit (Unlock)?',
                 html: '<div class="text-start">' +
                       '<p class="mb-2 text-dark">Buka gembok izin edit data khusus untuk <strong>' + nomorOrder + '</strong>?</p>' +
-
+                      '<div class="mb-3">' +
+                      '<label class="form-label small fw-semibold text-dark mb-1 d-flex align-items-center justify-content-between">' +
+                      '<span>Durasi Izin Buka Edit (Auto-Kunci):</span>' +
+                      '<span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace" id="labelJamDurasiDetail">72 Jam</span>' +
+                      '</label>' +
+                      '<select id="swalDetailUnlockDays" class="form-select form-select-sm" onchange="var h = this.value * 24; document.getElementById(\'labelJamDurasiDetail\').textContent = h + \' Jam\';">' +
+                      '<option value="1">1 Hari (24 Jam)</option>' +
+                      '<option value="2">2 Hari (48 Jam)</option>' +
+                      '<option value="3" selected>3 Hari (72 Jam) - Rekomendasi</option>' +
+                      '<option value="5">5 Hari (120 Jam)</option>' +
+                      '<option value="7">7 Hari (168 Jam / 1 Minggu)</option>' +
+                      '<option value="14">14 Hari (336 Jam / 2 Minggu)</option>' +
+                      '</select>' +
+                      '<div class="text-muted" style="font-size:0.75rem; margin-top:3px;"><i class="bi bi-stopwatch text-warning me-1"></i>Countdown otomatis berjalan. Setelah waktu habis, sistem otomatis mengunci kembali akses edit.</div>' +
+                      '</div>' +
                       '<label class="form-label small fw-semibold text-dark">Alasan Pembukaan Gembok <span class="text-danger">*</span>:</label>' +
                       '<textarea id="swalDetailUnlockReason" class="form-control form-control-sm" rows="2" placeholder="Contoh: Permintaan revisi draf dari PIC / pelanggan"></textarea>' +
                       '</div>',
@@ -5322,22 +5354,23 @@ document.querySelectorAll('.btn-detail-toggle-unlock').forEach(function(btn) {
                 cancelButtonText: 'Batal',
                 preConfirm: function() {
                     var val = document.getElementById('swalDetailUnlockReason').value.trim();
+                    var days = document.getElementById('swalDetailUnlockDays').value || 3;
                     if (!val) {
                         Swal.showValidationMessage('Alasan pembukaan gembok wajib diisi demi jejak audit.');
                         return false;
                     }
-                    return val;
+                    return { reason: val, days: days };
                 }
             }).then(function(result) {
                 if (result.isConfirmed) {
-                    kirimDetailToggleUnlock(orderId, result.value);
+                    kirimDetailToggleUnlock(orderId, result.value.reason, result.value.days);
                 }
             });
         }
     });
 });
 
-function kirimDetailToggleUnlock(orderId, reason) {
+function kirimDetailToggleUnlock(orderId, reason, durationDays) {
     Swal.fire({
         title: 'Memproses...',
         text: 'Menyimpan status gembok order dan merekam log audit...',
@@ -5349,6 +5382,7 @@ function kirimDetailToggleUnlock(orderId, reason) {
 
     var formData = new FormData();
     formData.append('reason', reason);
+    formData.append('duration_days', durationDays || 3);
     var csrfMeta = document.querySelector('input[name="csrf_token"]');
     if (csrfMeta) {
         formData.append('csrf_token', csrfMeta.value);
@@ -5391,4 +5425,37 @@ function kirimDetailToggleUnlock(orderId, reason) {
         });
     });
 }
+
+// ========================================================
+// LIVE COUNTDOWN TIMER GEMBOK EDIT (DETAIL ORDER)
+// ========================================================
+(function() {
+    var countdownBadge = document.getElementById('badgeUnlockCountdownDetail');
+    if (!countdownBadge) return;
+    var untilStr = countdownBadge.getAttribute('data-until');
+    if (!untilStr) return;
+
+    var untilTime = new Date(untilStr.replace(/-/g, '/')).getTime();
+    var updateCountdown = function() {
+        var now = new Date().getTime();
+        var diff = untilTime - now;
+        var textEl = document.getElementById('textUnlockCountdownDetail');
+        if (!textEl) return;
+
+        if (diff <= 0) {
+            textEl.innerHTML = '<i class="bi bi-lock-fill me-1"></i>Waktu Habis (Terkunci)';
+            countdownBadge.className = 'badge bg-danger text-white px-2.5 py-1 font-monospace shadow-xs';
+            setTimeout(function() {
+                window.location.reload();
+            }, 3000);
+        } else {
+            var totalHours = Math.floor(diff / (1000 * 60 * 60));
+            var minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            var seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            textEl.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>' + totalHours + 'j ' + minutes + 'm ' + (seconds < 10 ? '0' : '') + seconds + 'd';
+        }
+    };
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+})();
 </script>

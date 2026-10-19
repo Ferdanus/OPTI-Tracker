@@ -4066,9 +4066,11 @@ class OrderController extends Controller {
 
         $userId = (int)$this->getUserId();
         $reason = trim($f3->get('POST.reason') ?? '');
+        $durationDays = (int)($f3->get('POST.duration_days') ?? 3);
+        if ($durationDays < 1) $durationDays = 3;
 
         try {
-            $result = $orderModel->toggleUnlockEdit($id, $userId, $reason);
+            $result = $orderModel->toggleUnlockEdit($id, $userId, $reason, $durationDays);
             $actionLabel = $result['action_label']; // 'dibuka' atau 'dikunci'
             $isUnlocked = ($result['is_unlocked_edit'] === 1);
 
@@ -4077,7 +4079,7 @@ class OrderController extends Controller {
                 'order',
                 $id,
                 $isUnlocked ? 'unlock_edit' : 'lock_edit',
-                "Super Admin {$actionLabel} gembok izin edit data untuk Order #" . ($orderData['nomor_order'] ?: $id) . ". Alasan: " . ($result['unlocked_reason'] ?: '-')
+                "Super Admin {$actionLabel} gembok izin edit data untuk Order #" . ($orderData['nomor_order'] ?: $id) . ($isUnlocked ? " selama {$durationDays} hari (" . ($durationDays * 24) . " jam)" : "") . ". Alasan: " . ($result['unlocked_reason'] ?: '-')
             );
 
             // Audit activity log
@@ -4090,7 +4092,7 @@ class OrderController extends Controller {
                         1 => 'order',
                         2 => $id,
                         3 => $isUnlocked ? 'unlock_edit' : 'lock_edit',
-                        4 => "Super Admin {$actionLabel} gembok izin edit per-order. " . ($result['unlocked_reason'] ? "Alasan: {$result['unlocked_reason']}" : ''),
+                        4 => "Super Admin {$actionLabel} gembok izin edit per-order" . ($isUnlocked ? " [Durasi: {$durationDays} hari / " . ($durationDays * 24) . " jam]" : "") . ". " . ($result['unlocked_reason'] ? "Alasan: {$result['unlocked_reason']}" : ''),
                         5 => $userId,
                         6 => $userNama
                     ]
@@ -4098,8 +4100,10 @@ class OrderController extends Controller {
             } catch (\Exception $eAudit) {}
 
             $nomorDisplay = $orderData['nomor_order'] ?: ($orderData['nomor_permintaan'] ?: "#{$id}");
+            $totalJam = ($result['unlocked_days'] ?? 3) * 24;
+            $tglSampai = !empty($result['unlocked_until']) ? date('d/m/Y H:i', strtotime($result['unlocked_until'])) : '-';
             $msg = $isUnlocked 
-                ? "Gembok izin edit data Order {$nomorDisplay} berhasil dibuka. Role yang berwenang sekarang dapat melakukan perbaikan data."
+                ? "Gembok izin edit data Order {$nomorDisplay} dibuka selama {$result['unlocked_days']} hari ({$totalJam} jam) hingga {$tglSampai}. Sistem akan otomatis mengunci kembali jika waktu habis."
                 : "Gembok izin edit data Order {$nomorDisplay} berhasil dikunci kembali demi integritas audit data.";
 
             if ($f3->get('AJAX')) {
@@ -4109,6 +4113,8 @@ class OrderController extends Controller {
                     'message' => $msg,
                     'is_unlocked_edit' => $isUnlocked,
                     'unlocked_reason' => $result['unlocked_reason'],
+                    'unlocked_until' => $result['unlocked_until'],
+                    'unlocked_days' => $result['unlocked_days'],
                     'order_id' => $id,
                     'nomor_order' => $nomorDisplay
                 ]);

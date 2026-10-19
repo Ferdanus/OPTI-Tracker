@@ -31,6 +31,9 @@ class OrderLayanan extends \DB\SQL\Mapper {
     );
 
     public function __construct(\DB\SQL $db) {
+        if (date_default_timezone_get() !== 'Asia/Jakarta') {
+            date_default_timezone_set('Asia/Jakarta');
+        }
         self::ensureColumns($db);
         parent::__construct($db, 'order_layanan');
     }
@@ -44,9 +47,11 @@ class OrderLayanan extends \DB\SQL\Mapper {
         try {
             $cols = [
                 'nomor_permintaan' => 'VARCHAR(50) NULL AFTER id',
-                'is_unlocked_edit' => 'TINYINT(1) NOT NULL DEFAULT 0',
+'is_unlocked_edit' => 'TINYINT(1) NOT NULL DEFAULT 0',
                 'unlocked_by' => 'INT(11) NULL',
                 'unlocked_at' => 'DATETIME NULL',
+                'unlocked_until' => 'DATETIME NULL',
+                'unlocked_days' => 'INT(11) NULL DEFAULT 3',
                 'unlocked_reason' => 'VARCHAR(255) NULL'
             ];
             foreach ($cols as $col => $def) {
@@ -593,6 +598,35 @@ class OrderLayanan extends \DB\SQL\Mapper {
             $r['keterangan_icon']    = $st['keterangan_icon'] ?? 'bi-info-circle text-secondary';
             $r['aksi_badge']         = $st['aksi_badge'] ?? 'bg-secondary-subtle text-secondary border';
 
+            // Evaluasi status unlock per-order dan countdown auto-lock
+            $r['is_unlocked_edit'] = ((int)($r['is_unlocked_edit'] ?? 0) === 1);
+            $r['unlocked_remaining_seconds'] = 0;
+            $r['unlocked_countdown_label'] = '';
+            $r['unlocked_until_formatted'] = '';
+            $r['unlocked_is_expired'] = false;
+
+            if ($r['is_unlocked_edit'] && !empty($r['unlocked_until'])) {
+                $now = time();
+                $until = strtotime($r['unlocked_until']);
+                if ($until <= $now) {
+                    $r['is_unlocked_edit'] = false;
+                    $r['unlocked_is_expired'] = true;
+                    try {
+                        $this->db->exec(
+                            "UPDATE order_layanan SET is_unlocked_edit = 0, unlocked_reason = CONCAT(COALESCE(unlocked_reason, ''), ' [Otomatis terkunci karena batas waktu habis]') WHERE id = ?",
+                            [1 => (int)$r['id']]
+                        );
+                    } catch (\Exception $eEx) {}
+                } else {
+                    $sisaDetik = $until - $now;
+                    $r['unlocked_remaining_seconds'] = $sisaDetik;
+                    $sisaJam = floor($sisaDetik / 3600);
+                    $sisaMenit = floor(($sisaDetik % 3600) / 60);
+                    $r['unlocked_countdown_label'] = "{$sisaJam}j {$sisaMenit}m";
+                    $r['unlocked_until_formatted'] = date('d/m/Y H:i', $until);
+                }
+            }
+
             // Status Pembayaran Rinci
             $biayaOrder = (float)($r['estimasi_biaya'] ?: ($r['biaya_po'] ?: 0));
             $terbayar   = (float)($r['total_terbayar'] ?? 0);
@@ -1003,6 +1037,35 @@ class OrderLayanan extends \DB\SQL\Mapper {
         $detail = $res[0];
         $detail['nmcustomer_murni'] = Customer::cleanNamaPerusahaan($detail['nmcustomer'] ?? ($detail['nama_perusahaan'] ?? ''), $detail['pt_cv'] ?? '');
         $detail['nama_perusahaan'] = Customer::formatNamaPerusahaan($detail['pt_cv'] ?? '', $detail['nama_perusahaan'] ?? '');
+        // Evaluasi status unlock per-order dan countdown auto-lock
+        $detail['is_unlocked_edit'] = ((int)($detail['is_unlocked_edit'] ?? 0) === 1);
+        $detail['unlocked_remaining_seconds'] = 0;
+        $detail['unlocked_countdown_label'] = '';
+        $detail['unlocked_until_formatted'] = '';
+        $detail['unlocked_is_expired'] = false;
+
+        if ($detail['is_unlocked_edit'] && !empty($detail['unlocked_until'])) {
+            $now = time();
+            $until = strtotime($detail['unlocked_until']);
+            if ($until <= $now) {
+                $detail['is_unlocked_edit'] = false;
+                $detail['unlocked_is_expired'] = true;
+                try {
+                    $this->db->exec(
+                        "UPDATE order_layanan SET is_unlocked_edit = 0, unlocked_reason = CONCAT(COALESCE(unlocked_reason, ''), ' [Otomatis terkunci karena batas waktu habis]') WHERE id = ?",
+                        [1 => $id]
+                    );
+                } catch (\Exception $eEx) {}
+            } else {
+                $sisaDetik = $until - $now;
+                $detail['unlocked_remaining_seconds'] = $sisaDetik;
+                $sisaJam = floor($sisaDetik / 3600);
+                $sisaMenit = floor(($sisaDetik % 3600) / 60);
+                $detail['unlocked_countdown_label'] = "{$sisaJam}j {$sisaMenit}m";
+                $detail['unlocked_until_formatted'] = date('d/m/Y H:i', $until);
+            }
+        }
+
         $st = self::resolveStageStatus($detail);
         $detail['stage_label'] = $st['label'];
         $detail['stage_class'] = $st['class'];
@@ -1689,20 +1752,35 @@ class OrderLayanan extends \DB\SQL\Mapper {
 
     /**
      * Cek apakah order layanan sedang dalam status unlock per-order oleh Super Admin
+     * Otomatis mengunci kembali jika durasi waktu habis (Auto-Lock Expired)
      */
     public function isOrderUnlocked(int $orderId): bool {
         if ($orderId <= 0) return false;
-        $row = $this->db->exec("SELECT is_unlocked_edit FROM order_layanan WHERE id = ?", [1 => $orderId]);
+        $row = $this->db->exec("SELECT is_unlocked_edit, unlocked_until, unlocked_reason, nomor_order FROM order_layanan WHERE id = ?", [1 => $orderId]);
         if (!empty($row)) {
-            return ((int)$row[0]['is_unlocked_edit'] === 1);
+            $isUnlocked = ((int)$row[0]['is_unlocked_edit'] === 1);
+            if ($isUnlocked && !empty($row[0]['unlocked_until'])) {
+                $tz = new \DateTimeZone('Asia/Jakarta');
+                $now = (new \DateTime('now', $tz))->getTimestamp();
+                $until = (new \DateTime($row[0]['unlocked_until'], $tz))->getTimestamp();
+                if ($until <= $now) {
+                    // Durasi izin edit telah kedaluwarsa -> otomatis kunci kembali
+                    $this->db->exec(
+                        "UPDATE order_layanan SET is_unlocked_edit = 0, unlocked_reason = CONCAT(COALESCE(unlocked_reason, ''), ' [Otomatis terkunci karena batas waktu habis]') WHERE id = ?",
+                        [1 => $orderId]
+                    );
+                    return false;
+                }
+            }
+            return $isUnlocked;
         }
         return false;
     }
 
     /**
-     * Buka / Kunci izin perubahan data (Unlock Per-Order) khusus Super Admin
+     * Buka / Kunci izin perubahan data (Unlock Per-Order) khusus Super Admin dengan auto-kunci countdown
      */
-    public function toggleUnlockEdit(int $orderId, int $userId, ?string $reason = null): array {
+    public function toggleUnlockEdit(int $orderId, int $userId, ?string $reason = null, int $durationDays = 3): array {
         $this->load(['id = ?', $orderId]);
         if ($this->dry()) {
             throw new \Exception("Order #{$orderId} tidak ditemukan.");
@@ -1710,16 +1788,26 @@ class OrderLayanan extends \DB\SQL\Mapper {
 
         $currentStatus = (int)($this->is_unlocked_edit ?? 0);
         $newStatus = ($currentStatus === 1) ? 0 : 1;
+        $tz = new \DateTimeZone('Asia/Jakarta');
 
         $this->is_unlocked_edit = $newStatus;
         if ($newStatus === 1) {
+            $durationDays = max(1, $durationDays > 0 ? $durationDays : 3);
+            $dtNow = new \DateTime('now', $tz);
             $this->unlocked_by = $userId;
-            $this->unlocked_at = date('Y-m-d H:i:s');
+            $this->unlocked_at = $dtNow->format('Y-m-d H:i:s');
+            $this->unlocked_days = $durationDays;
+
+            $dtUntil = clone $dtNow;
+            $dtUntil->modify("+{$durationDays} days");
+            $this->unlocked_until = $dtUntil->format('Y-m-d H:i:s');
             $this->unlocked_reason = !empty($reason) ? trim($reason) : 'Izin perubahan data diberikan oleh Super Admin';
         } else {
             // Ketika dikunci kembali
             $this->unlocked_by = null;
             $this->unlocked_at = null;
+            $this->unlocked_until = null;
+            $this->unlocked_days = null;
             $this->unlocked_reason = !empty($reason) ? trim($reason) : 'Akses edit ditutup kembali oleh Super Admin';
         }
         $this->save();
@@ -1728,6 +1816,8 @@ class OrderLayanan extends \DB\SQL\Mapper {
             'id' => $orderId,
             'is_unlocked_edit' => $newStatus,
             'unlocked_reason' => $this->unlocked_reason,
+            'unlocked_until' => $this->unlocked_until,
+            'unlocked_days' => $this->unlocked_days,
             'action_label' => ($newStatus === 1) ? 'dibuka' : 'dikunci'
         ];
     }
