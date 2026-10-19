@@ -142,9 +142,38 @@
 .notif-row-item.is-read {
     border-left: 3.5px solid transparent;
 }
+.notif-pagination-container .pagination .page-link {
+    color: #475569;
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    font-size: 0.8rem;
+    padding: 0.35rem 0.75rem;
+    font-weight: 500;
+    border-radius: 8px;
+    margin: 0 2px;
+    transition: all 0.15s ease-in-out;
+}
+.notif-pagination-container .pagination .page-link:hover {
+    color: #0284c7;
+    background-color: #f1f5f9;
+    border-color: #cbd5e1;
+}
+.notif-pagination-container .pagination .page-item.active .page-link {
+    background-color: #0284c7;
+    border-color: #0284c7;
+    color: #ffffff;
+    box-shadow: 0 2px 4px rgba(2, 132, 199, 0.3);
+}
+.notif-pagination-container .pagination .page-item.disabled .page-link {
+    color: #94a3b8;
+    background-color: #f8fafc;
+    border-color: #e2e8f0;
+    cursor: not-allowed;
+    pointer-events: none;
+}
 </style>
 
-<div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4" id="notifMainCard">
     <div class="notif-card-header d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
         <!-- Title & Count -->
         <div class="d-flex align-items-center gap-3">
@@ -242,10 +271,26 @@
             </false>
         </check>
     </div>
+
+    <!-- Pagination Footer -->
+    <check if="{{ @totalSemua > 0 }}">
+        <div class="card-footer bg-white border-top px-3.5 py-3 d-flex flex-column flex-sm-row align-items-center justify-content-between gap-2.5 notif-pagination-container" id="notifPaginationWrapper">
+            <div class="small text-muted" id="notifPaginationInfo">
+                Menampilkan <strong>1 - 10</strong> dari <strong>{{ @totalSemua }}</strong> pemberitahuan
+            </div>
+            <nav aria-label="Navigasi halaman pemberitahuan">
+                <ul class="pagination pagination-sm mb-0 align-items-center" id="notifPaginationUl">
+                    <!-- Dinamis dibuat oleh JavaScript -->
+                </ul>
+            </nav>
+        </div>
+    </check>
 </div>
 
 <script>
     var currentTabType = 'all';
+    var currentPage = 1;
+    var pageSize = 10;
 
     function updateNotifGlider(targetBtn, animate) {
         var group = document.getElementById('notifTabGroup');
@@ -279,6 +324,7 @@
         if (btnClear) {
             btnClear.style.display = query && query.trim().length > 0 ? 'block' : 'none';
         }
+        currentPage = 1;
         applyFilterAndSearch();
     }
 
@@ -293,6 +339,7 @@
 
     function filterNotif(type, btn) {
         currentTabType = type;
+        currentPage = 1;
         // Toggle Button Active State
         document.querySelectorAll('.notif-tab-group .notif-tab-btn').forEach(function(b) {
             b.classList.remove('active');
@@ -305,11 +352,86 @@
         applyFilterAndSearch();
     }
 
+    function goToPage(pageNum) {
+        currentPage = pageNum;
+        applyFilterAndSearch();
+
+        // Scroll halus ke atas card daftar pesan
+        var card = document.getElementById('notifMainCard');
+        if (card) {
+            card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }
+
+    function renderPagination(totalItems, totalPages) {
+        var wrapper = document.getElementById('notifPaginationWrapper');
+        var info = document.getElementById('notifPaginationInfo');
+        var ul = document.getElementById('notifPaginationUl');
+
+        if (!wrapper) return;
+
+        if (totalItems === 0) {
+            wrapper.style.setProperty('display', 'none', 'important');
+            return;
+        }
+
+        wrapper.style.removeProperty('display');
+
+        var start = (currentPage - 1) * pageSize + 1;
+        var end = Math.min(currentPage * pageSize, totalItems);
+        if (info) {
+            info.innerHTML = 'Menampilkan <strong>' + start + ' - ' + end + '</strong> dari <strong>' + totalItems + '</strong> pemberitahuan';
+        }
+
+        if (!ul) return;
+
+        if (totalPages <= 1) {
+            ul.innerHTML = '';
+            return;
+        }
+
+        var html = '';
+
+        // Tombol Sebelumnya
+        var prevDisabled = (currentPage <= 1) ? 'disabled' : '';
+        html += '<li class="page-item ' + prevDisabled + '">';
+        html += '<a class="page-link shadow-none" href="javascript:void(0)" onclick="goToPage(' + (currentPage - 1) + ')" title="Halaman Sebelumnya">&laquo;</a>';
+        html += '</li>';
+
+        // Nomor Halaman
+        var pages = [];
+        for (var p = 1; p <= totalPages; p++) {
+            if (p === 1 || p === totalPages || (p >= currentPage - 2 && p <= currentPage + 2)) {
+                pages.push(p);
+            } else if (pages[pages.length - 1] !== '...') {
+                pages.push('...');
+            }
+        }
+
+        pages.forEach(function(p) {
+            if (p === '...') {
+                html += '<li class="page-item disabled"><span class="page-link border-0 text-muted shadow-none">&hellip;</span></li>';
+            } else if (p === currentPage) {
+                html += '<li class="page-item active" aria-current="page"><span class="page-link shadow-none fw-bold">' + p + '</span></li>';
+            } else {
+                html += '<li class="page-item"><a class="page-link shadow-none" href="javascript:void(0)" onclick="goToPage(' + p + ')">' + p + '</a></li>';
+            }
+        });
+
+        // Tombol Berikutnya
+        var nextDisabled = (currentPage >= totalPages) ? 'disabled' : '';
+        html += '<li class="page-item ' + nextDisabled + '">';
+        html += '<a class="page-link shadow-none" href="javascript:void(0)" onclick="goToPage(' + (currentPage + 1) + ')" title="Halaman Berikutnya">&raquo;</a>';
+        html += '</li>';
+
+        ul.innerHTML = html;
+    }
+
     function applyFilterAndSearch() {
         var searchInput = document.getElementById('notifSearchInput');
         var query = searchInput ? searchInput.value.toLowerCase().trim() : '';
         var rows = document.querySelectorAll('.notif-row-item');
-        var visibleCount = 0;
+        var matchingRows = [];
 
         rows.forEach(function(r) {
             var isRead = r.getAttribute('data-is-read') === '1';
@@ -332,12 +454,26 @@
             }
 
             if (matchesTab && matchesSearch) {
-                r.style.setProperty('display', 'flex', 'important');
-                visibleCount++;
-            } else {
-                r.style.setProperty('display', 'none', 'important');
+                matchingRows.push(r);
             }
         });
+
+        var visibleCount = matchingRows.length;
+        var totalPages = Math.ceil(visibleCount / pageSize) || 1;
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        var startIndex = (currentPage - 1) * pageSize;
+        var endIndex = startIndex + pageSize;
+
+        // Tampilkan hanya baris pada halaman aktif (maks 10 baris)
+        rows.forEach(function(r) {
+            r.style.setProperty('display', 'none', 'important');
+        });
+
+        for (var i = startIndex; i < endIndex && i < visibleCount; i++) {
+            matchingRows[i].style.setProperty('display', 'flex', 'important');
+        }
 
         // Handle Empty State
         var emptyBox = document.getElementById('notifEmptyFilter');
@@ -372,6 +508,9 @@
                 emptyBox.style.display = 'none';
             }
         }
+
+        // Render Pagination Controls
+        renderPagination(visibleCount, totalPages);
     }
 
     function escapeHtml(str) {
@@ -391,6 +530,8 @@
         var searchInput = document.getElementById('notifSearchInput');
         if (searchInput && searchInput.value.trim().length > 0) {
             handleNotifSearch(searchInput.value);
+        } else {
+            applyFilterAndSearch();
         }
     });
 </script>
