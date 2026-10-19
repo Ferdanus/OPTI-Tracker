@@ -817,7 +817,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
                 ];
             } elseif ($isSelulosa) {
                 $proposalComplete = !empty($o['file_proposal']) && (float)($o['estimasi_total_biaya'] ?? 0) > 0;
-                $proposalApproved = $proposalComplete && (in_array($o['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui']) || in_array($o['status_proposal'] ?? '', ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan']));
+                $proposalApproved = in_array($o['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui']) || in_array($o['status_proposal'] ?? '', ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan']);
                 if ($proposalApproved) {
                     return [
                         'label' => 'Proposal Disetujui',

@@ -1610,7 +1610,8 @@ class OrderController extends Controller {
             $order = $orderModel->getDetail($id);
 
             $actionBtn = $post['action_btn'] ?? 'siap_penawaran';
-            $isDraft = in_array($actionBtn, ['save_draft', 'draft']);
+            $isAlreadyApproved = in_array($order['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui']);
+            $isDraft = in_array($actionBtn, ['save_draft', 'draft']) && !$isAlreadyApproved;
 
             if ($isDraft) {
                 $this->db->exec("UPDATE order_layanan SET status_proposal_biaya = 'draft_disimpan' WHERE id = ?", array(1 => $id));
@@ -1668,27 +1669,29 @@ class OrderController extends Controller {
                 }
             } catch (\Exception $eNotif) {}
 
-            if ($actionBtn === 'kirim_katim') {
+            if ($actionBtn === 'kirim_katim' && !$isAlreadyApproved) {
                 $this->db->exec("UPDATE order_layanan SET status_proposal_biaya = 'menunggu_approval' WHERE id = ?", array(1 => $id));
                 $this->logActivity($id, 'kalkulasi_lingkungan', 'ajukan_kalkulasi', 'Ajukan tarif lab lingkungan ke Ka. Tim (Rp ' . number_format($hasil['total_netto'], 0, ',', '.') . ')');
                 $this->setFlashSuccess("Kalkulasi biaya berhasil disimpan &amp; <strong>diajukan ke Ketua Tim OPTI</strong> untuk diperiksa.");
-            } elseif ($actionBtn === 'siap_penawaran' || $this->isKetuaTim() || $this->isSuperadmin()) {
+            } elseif ($actionBtn === 'siap_penawaran' || $isAlreadyApproved || in_array($actionBtn, ['update_biaya', 'save_draft']) || $this->isKetuaTim() || $this->isSuperadmin()) {
                 $this->db->exec("UPDATE order_layanan SET status_proposal_biaya = 'siap_penawaran' WHERE id = ?", array(1 => $id));
                 
                 // Audit Persetujuan jika langsung siap penawaran / dilakukan Ka Tim
-                StageAudit::recordDisetujui(
-                    $this->db,
-                    $id,
-                    4,
-                    $userId,
-                    $currentUserNama,
-                    'Ketua Tim OPTI'
-                );
+                if (!$isAlreadyApproved) {
+                    StageAudit::recordDisetujui(
+                        $this->db,
+                        $id,
+                        4,
+                        $userId,
+                        $currentUserNama,
+                        'Ketua Tim OPTI'
+                    );
+                }
 
-                $this->logActivity($id, 'kalkulasi_lingkungan', 'simpan_kalkulasi', 'Tarif lab lingkungan Rp ' . number_format($hasil['total_netto'], 0, ',', '.') . ' (Siap Penawaran)');
+                $this->logActivity($id, 'kalkulasi_lingkungan', 'simpan_kalkulasi', 'Tarif lab lingkungan Rp ' . number_format($hasil['total_netto'], 0, ',', '.') . ($isAlreadyApproved ? ' (Perubahan Disimpan)' : ' (Siap Penawaran)'));
 
                 $this->setFlashSuccess(
-                    "Kalkulasi parameter dan tarif pengujian berhasil disimpan &amp; disetujui! Status: <strong>Siap Penawaran</strong> (Total Netto: Rp " . number_format($hasil['total_netto'], 0, ',', '.') . "). Tim Mitra kini dapat menerbitkan Surat Penawaran Resmi."
+                    "Kalkulasi parameter dan tarif pengujian berhasil disimpan! Status: <strong>Siap Penawaran</strong> (Total Netto: Rp " . number_format($hasil['total_netto'], 0, ',', '.') . "). Tim Mitra kini dapat menerbitkan Surat Penawaran Resmi."
                 );
             } else {
                 $this->db->exec("UPDATE order_layanan SET status_proposal_biaya = 'draft_disimpan' WHERE id = ?", array(1 => $id));
@@ -2588,8 +2591,8 @@ class OrderController extends Controller {
 
         $hasProposalFile = !empty($proposal) && !empty($proposal['file_proposal']);
         $proposalDisetujui = (
-            ($hasProposalFile && in_array($proposal['status_proposal'] ?? '', ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan'])) ||
-            ($hasProposalFile && in_array($order['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui']))
+            in_array($proposal['status_proposal'] ?? '', ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan']) ||
+            in_array($order['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui'])
         );
 
         // Data hanya dianggap "submitted" jika proposal sudah diajukan/disetujui dan BUKAN dalam kondisi revisi
@@ -2669,6 +2672,7 @@ class OrderController extends Controller {
         $f3->set('is_revisi', $isRevisi);
         $f3->set('is_ketua_selulosa', $isKetuaSelulosa);
         $f3->set('lock_message', $lockMessage);
+        $f3->set('is_proposal_approved', $proposalDisetujui);
         $proposalHasFileAndCost = !empty($proposal) && !empty($proposal['file_proposal']) && (float)($proposal['estimasi_total_biaya'] ?? 0) > 0;
         $f3->set('proposal_has_file_cost', $proposalHasFileAndCost);
 
@@ -2737,10 +2741,15 @@ class OrderController extends Controller {
         // 1. Cek apakah proposal sudah disetujui Ka. Tim / diajukan dan edit dikunci
         $hasProposalFile = !empty($existing) && !empty($existing['file_proposal']);
         $proposalDisetujui = (
-            ($hasProposalFile && in_array($existing['status_proposal'] ?? '', ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan'])) ||
-            ($hasProposalFile && in_array($order['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui']))
+            in_array($existing['status_proposal'] ?? '', ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan']) ||
+            in_array($order['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui'])
         );
         $actionType = $f3->get('POST.action_type') ?? 'draft'; // 'draft', 'simpan_katim', 'simpan_dan_approve', atau 'ajukan'
+
+        // Jika proposal sudah disetujui Ka. Tim, opsi simpan draf tidak diizinkan lagi
+        if ($proposalDisetujui && $actionType === 'draft') {
+            $actionType = 'simpan_katim';
+        }
 
         $isSubmitted = $hasProposalFile && !$isRevisi && in_array($existing['status_proposal'] ?? '', ['diajukan', 'disetujui', 'disetujui_ketua', 'disetujui_pimpinan']);
 
@@ -2867,7 +2876,7 @@ class OrderController extends Controller {
         } elseif ($actionType === 'ajukan') {
             $statusProposal = 'diajukan';
         } elseif ($proposalDisetujui || $actionType === 'simpan_katim') {
-            $statusProposal = !empty($existing['status_proposal']) && $existing['status_proposal'] !== 'draft_disimpan' ? $existing['status_proposal'] : 'disetujui_ketua';
+            $statusProposal = !empty($existing['status_proposal']) && !in_array($existing['status_proposal'], ['draft', 'draft_disimpan']) ? $existing['status_proposal'] : 'disetujui_ketua';
         } else {
             $statusProposal = 'draft_disimpan';
         }
@@ -2935,7 +2944,13 @@ class OrderController extends Controller {
             }
 
             // Sinkronkan status, durasi, dan estimasi biaya ke tabel order_layanan
-            $statusProposalBiaya = ($actionType === 'simpan_dan_approve') ? 'siap_penawaran' : (($actionType === 'ajukan') ? 'menunggu_approval' : 'draft_disimpan');
+            if ($actionType === 'simpan_dan_approve' || $proposalDisetujui || $actionType === 'simpan_katim' || in_array($statusProposal, ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan'])) {
+                $statusProposalBiaya = 'siap_penawaran';
+            } elseif ($actionType === 'ajukan' || $statusProposal === 'diajukan') {
+                $statusProposalBiaya = 'menunggu_approval';
+            } else {
+                $statusProposalBiaya = 'draft_disimpan';
+            }
             $this->db->exec(
                 "UPDATE order_layanan SET estimasi_biaya = ?, status_proposal_biaya = ?, spm_layanan = ?, durasi_hari_kerja = ?, spm_durasi_nilai = ?, spm_durasi_satuan = 'Hari Kerja' WHERE id = ?",
                 [1 => $estimasiBiaya, 2 => $statusProposalBiaya, 3 => $durasiKegiatan, 4 => $durasiHari, 5 => $durasiHari, 6 => $id]
@@ -2958,7 +2973,11 @@ class OrderController extends Controller {
                 );
             } else {
                 $actorLabel = $isKetuaSelulosa ? "Ketua Tim OPTI Selulosa" : "PIC Peneliti";
-                $this->logActivity($id, 'proposal', 'simpan_draft', "{$actorLabel} menyimpan draf/revisi proposal teknis");
+                if ($proposalDisetujui || $actionType === 'simpan_katim') {
+                    $this->logActivity($id, 'proposal', 'simpan_proposal', "{$actorLabel} memperbarui data proposal teknis (Status: Disetujui)");
+                } else {
+                    $this->logActivity($id, 'proposal', 'simpan_draft', "{$actorLabel} menyimpan draf/revisi proposal teknis");
+                }
             }
 
             // Notifikasi
@@ -2999,8 +3018,12 @@ class OrderController extends Controller {
 
                 $this->setFlashSuccess("Dokumen proposal teknis berhasil disimpan dan <strong>diajukan ke Ketua Tim OPTI</strong> oleh <strong>{$userNama}</strong> pada " . date('d M Y H:i') . " WIB.");
             } else {
-                $successMsg = $isKetuaSelulosa ? "Perubahan draf/revisi proposal teknis berhasil disimpan oleh Ketua Tim OPTI Selulosa." : "Draf dokumen proposal teknis berhasil disimpan (Status: <strong>Draft Disimpan</strong>).";
-                $this->setFlashSuccess($successMsg);
+                if ($proposalDisetujui || $actionType === 'simpan_katim') {
+                    $this->setFlashSuccess("Perubahan dokumen proposal teknis berhasil disimpan. Status tetap: <strong>Disetujui Ka. Tim (Siap Penawaran)</strong>.");
+                } else {
+                    $successMsg = $isKetuaSelulosa ? "Perubahan draf/revisi proposal teknis berhasil disimpan oleh Ketua Tim OPTI Selulosa." : "Draf dokumen proposal teknis berhasil disimpan (Status: <strong>Draft Disimpan</strong>).";
+                    $this->setFlashSuccess($successMsg);
+                }
             }
         } catch (\Exception $e) {
             $this->setFlashError("Gagal menyimpan dokumen proposal: " . $e->getMessage());

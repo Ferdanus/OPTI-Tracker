@@ -1163,17 +1163,17 @@
                         <check if="{{ @stepper[4].state == 'waiting' }}">
                             <true><span class="badge bg-light text-muted stage-status-badge">Menunggu</span></true>
                             <false>
-                                <check if="{{ in_array(@proposal.status_proposal, ['draft', 'draft_disimpan']) || in_array(@order.status_proposal_biaya, ['draft', 'draft_disimpan']) }}">
-                                    <true><span class="badge bg-warning text-dark stage-status-badge">Draft</span></true>
+                                <check if="{{ in_array(@proposal.status_proposal, ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan']) || in_array(@order.status_proposal_biaya, ['siap_penawaran', 'disetujui']) || @stepper[4].state == 'done' }}">
+                                    <true><span class="badge bg-success-subtle text-success stage-status-badge">Selesai</span></true>
                                     <false>
-                                        <check if="{{ @proposal.status_proposal == 'diajukan' || @order.status_proposal_biaya == 'menunggu_approval' }}">
-                                            <true><span class="badge bg-info-subtle text-info-emphasis stage-status-badge">Diajukan</span></true>
+                                        <check if="{{ in_array(@proposal.status_proposal, ['ditolak', 'revisi']) || @order.status_proposal_biaya == 'perlu_revisi' }}">
+                                            <true><span class="badge bg-danger-subtle text-danger stage-status-badge">Revisi</span></true>
                                             <false>
-                                                <check if="{{ in_array(@proposal.status_proposal, ['ditolak', 'revisi']) }}">
-                                                    <true><span class="badge bg-danger-subtle text-danger stage-status-badge">Revisi</span></true>
+                                                <check if="{{ @proposal.status_proposal == 'diajukan' || @order.status_proposal_biaya == 'menunggu_approval' }}">
+                                                    <true><span class="badge bg-info-subtle text-info-emphasis stage-status-badge">Diajukan</span></true>
                                                     <false>
-                                                        <check if="{{ @stepper[4].state == 'done' }}">
-                                                            <true><span class="badge bg-success-subtle text-success stage-status-badge">Selesai</span></true>
+                                                        <check if="{{ in_array(@proposal.status_proposal, ['draft', 'draft_disimpan']) || in_array(@order.status_proposal_biaya, ['draft', 'draft_disimpan']) }}">
+                                                            <true><span class="badge bg-warning text-dark stage-status-badge">Draft</span></true>
                                                             <false>
                                                                 <span class="badge bg-primary text-white stage-status-badge">Aktif</span>
                                                             </false>

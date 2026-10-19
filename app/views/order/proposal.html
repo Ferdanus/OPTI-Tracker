@@ -548,32 +548,39 @@
 
                                 <!-- Baris Tombol Aksi Sejajar -->
                                 <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <check if="{{ !@is_proposal_approved && !in_array(@order.status_proposal_biaya, ['siap_penawaran', 'disetujui']) && !in_array(@proposal.status_proposal, ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan']) }}">
-                                            <button type="submit" name="action_type" value="draft" class="btn btn-outline-primary px-4 py-2 fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5">
-                                                <i class="bi bi-bookmark"></i>
-                                                <span>Simpan Draf</span>
-                                            </button>
-                                        </check>
-                                        <check if="{{ @is_proposal_approved || in_array(@order.status_proposal_biaya, ['siap_penawaran', 'disetujui']) || in_array(@proposal.status_proposal, ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan']) }}">
-                                            <button type="submit" name="action_type" value="simpan_katim" class="btn btn-primary px-4 py-2 fw-semibold text-white shadow-sm d-inline-flex align-items-center gap-1.5">
-                                                <i class="bi bi-save2-fill"></i>
-                                                <span>Simpan Perubahan Proposal</span>
-                                            </button>
-                                        </check>
-                                    </div>
+                                    <check if="{{ @is_proposal_approved || in_array(@order.status_proposal_biaya, ['siap_penawaran', 'disetujui']) || in_array(@proposal.status_proposal, ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan']) }}">
+                                        <true>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <button type="submit" name="action_type" value="simpan_katim" class="btn btn-primary px-4 py-2 fw-semibold text-white shadow-sm d-inline-flex align-items-center gap-1.5">
+                                                    <i class="bi bi-save2-fill"></i>
+                                                    <span>Simpan Perubahan Proposal</span>
+                                                </button>
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1.5 rounded-pill small">
+                                                    <i class="bi bi-check-circle-fill me-1"></i>Proposal Telah Disetujui Ka. Tim
+                                                </span>
+                                            </div>
+                                        </true>
+                                        <false>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <button type="submit" name="action_type" value="draft" class="btn btn-outline-primary px-4 py-2 fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5">
+                                                    <i class="bi bi-bookmark"></i>
+                                                    <span>Simpan Draf</span>
+                                                </button>
+                                            </div>
 
-                                    <check if="{{ !@is_ketua_selulosa || !@is_revisi }}">
-                                        <button type="button" id="btnKirimProposal" class="btn btn-primary px-4 py-2 fw-semibold text-white shadow-sm d-inline-flex align-items-center gap-1.5" onclick="confirmKirimProposalAction()" {{ empty(@proposal.file_proposal) || ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) ? 'disabled' : '' }} title="{{ empty(@proposal.file_proposal) || ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) ? 'Lengkapi estimasi biaya dan unggah berkas proposal Word untuk mengaktifkan tombol kirim' : 'Kirim proposal ke Ketua Tim OPTI' }}">
-                                            <i class="bi bi-send-fill"></i>
-                                            <span>Kirim ke Ka. Tim</span>
-                                        </button>
-                                    </check>
-                                    <check if="{{ @is_ketua_selulosa && @is_revisi }}">
-                                        <button type="submit" name="action_type" value="simpan_dan_approve" class="btn btn-success px-4 py-2 fw-semibold text-white shadow-sm d-inline-flex align-items-center gap-1.5" {{ empty(@proposal.file_proposal) || ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) ? 'disabled' : '' }} title="Simpan perubahan revisi proposal sekaligus menyetujui (ACC)">
-                                            <i class="bi bi-check2-circle"></i>
-                                            <span>Simpan &amp; Setujui (ACC)</span>
-                                        </button>
+                                            <check if="{{ !@is_ketua_selulosa || !@is_revisi }}">
+                                                <button type="button" id="btnKirimProposal" class="btn btn-primary px-4 py-2 fw-semibold text-white shadow-sm d-inline-flex align-items-center gap-1.5" onclick="confirmKirimProposalAction()" {{ empty(@proposal.file_proposal) || ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) ? 'disabled' : '' }} title="{{ empty(@proposal.file_proposal) || ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) ? 'Lengkapi estimasi biaya dan unggah berkas proposal Word untuk mengaktifkan tombol kirim' : 'Kirim proposal ke Ketua Tim OPTI' }}">
+                                                    <i class="bi bi-send-fill"></i>
+                                                    <span>Kirim ke Ka. Tim</span>
+                                                </button>
+                                            </check>
+                                            <check if="{{ @is_ketua_selulosa && @is_revisi }}">
+                                                <button type="submit" name="action_type" value="simpan_dan_approve" class="btn btn-success px-4 py-2 fw-semibold text-white shadow-sm d-inline-flex align-items-center gap-1.5" {{ empty(@proposal.file_proposal) || ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) ? 'disabled' : '' }} title="Simpan perubahan revisi proposal sekaligus menyetujui (ACC)">
+                                                    <i class="bi bi-check2-circle"></i>
+                                                    <span>Simpan &amp; Setujui (ACC)</span>
+                                                </button>
+                                            </check>
+                                        </false>
                                     </check>
                                 </div>
                             </div>

@@ -394,29 +394,43 @@
                                     <!-- Status Proposal -->
                                     <td class="py-3 px-3 text-center">
                                         <check if="{{ @row.status_proposal == 'disetujui_ketua' || @row.status_proposal == 'disetujui_pimpinan' || @row.status_proposal == 'disetujui' || @row.status_proposal_biaya == 'siap_penawaran' }}">
-                                            <span class="badge badge-pill-success">
-                                                <i class="bi bi-check-circle-fill me-1"></i> Disetujui Ka. Tim
-                                            </span>
-                                        </check>
-                                        <check if="{{ @row.status_proposal == 'diajukan' || @row.status_proposal_biaya == 'menunggu_approval' }}">
-                                            <span class="badge badge-pill-info">
-                                                <i class="bi bi-clock-history me-1"></i> Menunggu Review
-                                            </span>
-                                        </check>
-                                        <check if="{{ @row.status_proposal == 'ditolak' || @row.status_proposal_biaya == 'perlu_revisi' }}">
-                                            <span class="badge badge-pill-danger">
-                                                <i class="bi bi-exclamation-diamond-fill me-1"></i> Perlu Revisi
-                                            </span>
-                                        </check>
-                                        <check if="{{ @row.status_proposal == 'draft_disimpan' || @row.status_proposal_biaya == 'draft_disimpan' }}">
-                                            <span class="badge badge-pill-warning">
-                                                <i class="bi bi-bookmark-check-fill me-1"></i> Draft Disimpan
-                                            </span>
-                                        </check>
-                                        <check if="{{ (!@row.status_proposal || @row.status_proposal == 'draft') && @row.status_proposal_biaya != 'siap_penawaran' && @row.status_proposal_biaya != 'menunggu_approval' && @row.status_proposal_biaya != 'draft_disimpan' }}">
-                                            <span class="badge badge-pill-secondary">
-                                                <i class="bi bi-pencil-square me-1"></i> Draf PIC
-                                            </span>
+                                            <true>
+                                                <span class="badge badge-pill-success">
+                                                    <i class="bi bi-check-circle-fill me-1"></i> Disetujui Ka. Tim
+                                                </span>
+                                            </true>
+                                            <false>
+                                                <check if="{{ @row.status_proposal == 'ditolak' || @row.status_proposal_biaya == 'perlu_revisi' }}">
+                                                    <true>
+                                                        <span class="badge badge-pill-danger">
+                                                            <i class="bi bi-exclamation-diamond-fill me-1"></i> Perlu Revisi
+                                                        </span>
+                                                    </true>
+                                                    <false>
+                                                        <check if="{{ @row.status_proposal == 'diajukan' || @row.status_proposal_biaya == 'menunggu_approval' }}">
+                                                            <true>
+                                                                <span class="badge badge-pill-info">
+                                                                    <i class="bi bi-clock-history me-1"></i> Menunggu Review
+                                                                </span>
+                                                            </true>
+                                                            <false>
+                                                                <check if="{{ @row.status_proposal == 'draft_disimpan' || @row.status_proposal_biaya == 'draft_disimpan' }}">
+                                                                    <true>
+                                                                        <span class="badge badge-pill-warning">
+                                                                            <i class="bi bi-bookmark-check-fill me-1"></i> Draft Disimpan
+                                                                        </span>
+                                                                    </true>
+                                                                    <false>
+                                                                        <span class="badge badge-pill-secondary">
+                                                                            <i class="bi bi-pencil-square me-1"></i> Draf PIC
+                                                                        </span>
+                                                                    </false>
+                                                                </check>
+                                                            </false>
+                                                        </check>
+                                                    </false>
+                                                </check>
+                                            </false>
                                         </check>
                                     </td>
 
