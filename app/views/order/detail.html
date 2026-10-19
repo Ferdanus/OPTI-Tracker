@@ -5330,18 +5330,14 @@ document.querySelectorAll('.btn-detail-toggle-unlock').forEach(function(btn) {
                       '<p class="mb-2 text-dark">Buka gembok izin edit data khusus untuk <strong>' + nomorOrder + '</strong>?</p>' +
                       '<div class="mb-3">' +
                       '<label class="form-label small fw-semibold text-dark mb-1 d-flex align-items-center justify-content-between">' +
-                      '<span>Durasi Izin Buka Edit (Auto-Kunci):</span>' +
+                      '<span>Berapa Hari Izin Buka Edit (Auto-Kunci):</span>' +
                       '<span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace" id="labelJamDurasiDetail">72 Jam</span>' +
                       '</label>' +
-                      '<select id="swalDetailUnlockDays" class="form-select form-select-sm" onchange="var h = this.value * 24; document.getElementById(\'labelJamDurasiDetail\').textContent = h + \' Jam\';">' +
-                      '<option value="1">1 Hari (24 Jam)</option>' +
-                      '<option value="2">2 Hari (48 Jam)</option>' +
-                      '<option value="3" selected>3 Hari (72 Jam) - Rekomendasi</option>' +
-                      '<option value="5">5 Hari (120 Jam)</option>' +
-                      '<option value="7">7 Hari (168 Jam / 1 Minggu)</option>' +
-                      '<option value="14">14 Hari (336 Jam / 2 Minggu)</option>' +
-                      '</select>' +
-                      '<div class="text-muted" style="font-size:0.75rem; margin-top:3px;"><i class="bi bi-stopwatch text-warning me-1"></i>Countdown otomatis berjalan. Setelah waktu habis, sistem otomatis mengunci kembali akses edit.</div>' +
+                      '<div class="input-group input-group-sm">' +
+                      '<input type="number" id="swalDetailUnlockDays" class="form-control" min="1" max="365" value="3" placeholder="Contoh: 3" oninput="var d = parseInt(this.value) || 0; document.getElementById(\'labelJamDurasiDetail\').textContent = (d > 0 ? (d * 24) : 0) + \' Jam\';">' +
+                      '<span class="input-group-text bg-light text-muted fw-semibold">Hari</span>' +
+                      '</div>' +
+                      '<div class="text-muted" style="font-size:0.75rem; margin-top:4px;"><i class="bi bi-info-circle text-primary me-1"></i>Masukkan angka hari (bebas). Hitungan countdown jam akan otomatis disesuaikan.</div>' +
                       '</div>' +
                       '<label class="form-label small fw-semibold text-dark">Alasan Pembukaan Gembok <span class="text-danger">*</span>:</label>' +
                       '<textarea id="swalDetailUnlockReason" class="form-control form-control-sm" rows="2" placeholder="Contoh: Permintaan revisi draf dari PIC / pelanggan"></textarea>' +
@@ -5354,7 +5350,11 @@ document.querySelectorAll('.btn-detail-toggle-unlock').forEach(function(btn) {
                 cancelButtonText: 'Batal',
                 preConfirm: function() {
                     var val = document.getElementById('swalDetailUnlockReason').value.trim();
-                    var days = document.getElementById('swalDetailUnlockDays').value || 3;
+                    var days = parseInt(document.getElementById('swalDetailUnlockDays').value) || 0;
+                    if (days <= 0) {
+                        Swal.showValidationMessage('Jumlah hari harus berupa angka minimal 1 hari.');
+                        return false;
+                    }
                     if (!val) {
                         Swal.showValidationMessage('Alasan pembukaan gembok wajib diisi demi jejak audit.');
                         return false;
