@@ -215,6 +215,34 @@
 .notif-page-animating {
     animation: notifPageTransition 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* ============ JUMP TO PAGE WIDGET ============ */
+.notif-jump-container {
+    user-select: none;
+}
+.notif-jump-container .notif-jump-input {
+    border-color: #cbd5e1;
+    border-radius: 8px 0 0 8px !important;
+    background-color: #ffffff;
+    color: #1e293b;
+    font-weight: 600;
+}
+.notif-jump-container .notif-jump-input:focus {
+    border-color: #334155;
+    box-shadow: 0 0 0 2px rgba(51, 65, 85, 0.15);
+}
+.notif-jump-container .btn-jump-go {
+    border-color: #cbd5e1;
+    border-radius: 0 8px 8px 0 !important;
+    background-color: #f8fafc;
+    color: #334155;
+    transition: all 0.15s ease;
+}
+.notif-jump-container .btn-jump-go:hover {
+    background-color: #1e293b;
+    border-color: #1e293b;
+    color: #ffffff;
+}
 </style>
 
 <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4" id="notifMainCard">
@@ -270,10 +298,27 @@
                 <i class="bi bi-layers-half text-secondary opacity-75"></i>
                 <span>Menampilkan <strong>1 - 10</strong> dari <strong>{{ @totalSemua }}</strong> pemberitahuan</span>
             </div>
-            <nav aria-label="Navigasi halaman atas">
+            <nav aria-label="Navigasi halaman atas" class="d-flex align-items-center flex-wrap gap-2">
                 <ul class="pagination pagination-sm mb-0 align-items-center" id="notifPaginationUlTop">
                     <!-- Dinamis via JavaScript -->
                 </ul>
+                <div class="d-flex align-items-center gap-1.5 ms-sm-2 ps-sm-2 border-start notif-jump-container" id="notifJumpContainerTop">
+                    <span class="small text-muted" style="font-size: 0.78rem;">Ke Hal:</span>
+                    <div class="input-group input-group-sm" style="width: 105px;">
+                        <input type="number" min="1" max="1" value="1" 
+                               class="form-control form-control-sm text-center notif-jump-input shadow-none" 
+                               style="font-size: 0.78rem; height: 32px; padding: 2px 6px;"
+                               placeholder="1"
+                               onkeydown="if(event.key === 'Enter'){ window.handleJumpToPage(this); }">
+                        <button class="btn btn-jump-go btn-sm px-2 shadow-none d-flex align-items-center justify-content-center" 
+                                type="button" 
+                                style="height: 32px; font-size: 0.75rem;" 
+                                onclick="window.handleJumpToPage(this)" 
+                                title="Lompat ke halaman">
+                            <i class="bi bi-arrow-right-short fs-6"></i>
+                        </button>
+                    </div>
+                </div>
             </nav>
         </div>
     </check>
@@ -338,10 +383,27 @@
                 <i class="bi bi-layers-half text-secondary opacity-75"></i>
                 <span>Menampilkan <strong>1 - 10</strong> dari <strong>{{ @totalSemua }}</strong> pemberitahuan</span>
             </div>
-            <nav aria-label="Navigasi halaman bawah">
+            <nav aria-label="Navigasi halaman bawah" class="d-flex align-items-center flex-wrap gap-2">
                 <ul class="pagination pagination-sm mb-0 align-items-center" id="notifPaginationUlBottom">
                     <!-- Dinamis dibuat oleh JavaScript -->
                 </ul>
+                <div class="d-flex align-items-center gap-1.5 ms-sm-2 ps-sm-2 border-start notif-jump-container" id="notifJumpContainerBottom">
+                    <span class="small text-muted" style="font-size: 0.78rem;">Ke Hal:</span>
+                    <div class="input-group input-group-sm" style="width: 105px;">
+                        <input type="number" min="1" max="1" value="1" 
+                               class="form-control form-control-sm text-center notif-jump-input shadow-none" 
+                               style="font-size: 0.78rem; height: 32px; padding: 2px 6px;"
+                               placeholder="1"
+                               onkeydown="if(event.key === 'Enter'){ window.handleJumpToPage(this); }">
+                        <button class="btn btn-jump-go btn-sm px-2 shadow-none d-flex align-items-center justify-content-center" 
+                                type="button" 
+                                style="height: 32px; font-size: 0.75rem;" 
+                                onclick="window.handleJumpToPage(this)" 
+                                title="Lompat ke halaman">
+                            <i class="bi bi-arrow-right-short fs-6"></i>
+                        </button>
+                    </div>
+                </div>
             </nav>
         </div>
     </check>
@@ -426,17 +488,38 @@
         }
     }
 
+    window.handleJumpToPage = function(el) {
+        var container = el.closest('.notif-jump-container');
+        if (!container) return;
+        var input = container.querySelector('.notif-jump-input');
+        if (!input) return;
+
+        var targetPage = parseInt(input.value, 10);
+        var maxPage = parseInt(input.getAttribute('max'), 10) || 1;
+
+        if (isNaN(targetPage) || targetPage < 1) {
+            targetPage = 1;
+        } else if (targetPage > maxPage) {
+            targetPage = maxPage;
+        }
+
+        input.value = targetPage;
+        goToPage(targetPage, el);
+    };
+
     function renderPagination(totalItems, totalPages) {
         var targets = [
             {
                 wrapper: document.getElementById('notifPaginationWrapperTop'),
                 info: document.getElementById('notifPaginationInfoTop'),
-                ul: document.getElementById('notifPaginationUlTop')
+                ul: document.getElementById('notifPaginationUlTop'),
+                jump: document.getElementById('notifJumpContainerTop')
             },
             {
                 wrapper: document.getElementById('notifPaginationWrapperBottom'),
                 info: document.getElementById('notifPaginationInfoBottom'),
-                ul: document.getElementById('notifPaginationUlBottom')
+                ul: document.getElementById('notifPaginationUlBottom'),
+                jump: document.getElementById('notifJumpContainerBottom')
             }
         ];
 
@@ -454,6 +537,21 @@
             var end = Math.min(currentPage * pageSize, totalItems);
             if (t.info) {
                 t.info.innerHTML = '<i class="bi bi-layers-half text-secondary opacity-75 me-1"></i>Menampilkan <strong>' + start + ' - ' + end + '</strong> dari <strong>' + totalItems + '</strong> pemberitahuan';
+            }
+
+            // Sinkronkan widget "Lompat ke Halaman"
+            if (t.jump) {
+                if (totalPages <= 1) {
+                    t.jump.style.setProperty('display', 'none', 'important');
+                } else {
+                    t.jump.style.removeProperty('display');
+                    var jumpInput = t.jump.querySelector('.notif-jump-input');
+                    if (jumpInput) {
+                        jumpInput.value = currentPage;
+                        jumpInput.setAttribute('max', totalPages);
+                        jumpInput.placeholder = '1-' + totalPages;
+                    }
+                }
             }
 
             if (!t.ul) return;
