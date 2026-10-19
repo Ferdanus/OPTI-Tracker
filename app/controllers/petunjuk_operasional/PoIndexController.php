@@ -43,12 +43,20 @@ class PoIndexController extends PoSertifikasiController {
      * dan izinAkses() meloloskannya -- filter di halaman otomatis terkunci & tidak bisa diubah.
      */
     protected function layananTerkunci() {
+        // Tim Kerja Pengujian otomatis terkunci ke layanan 'pengujian' (filter layanan tidak bisa diubah)
+        if ($this->getUserRole() === 'tim_kerja_pengujian') {
+            return 'pengujian';
+        }
+        // Tim Kerja & Ketua Tim Sertifikasi otomatis terkunci ke layanan 'sertifikasi'
+        if ($this->isRoleSertifikasi()) {
+            return 'sertifikasi';
+        }
         return null;
     }
 
-    /** Sementara hanya Superadmin. */
+    /** Superadmin (semua layanan), Tim Kerja Pengujian (Pengujian), Tim Kerja & Ketua Tim Sertifikasi (Sertifikasi). */
     protected function izinAkses() {
-        return $this->isSuperadmin();
+        return $this->isSuperadmin() || $this->getUserRole() === 'tim_kerja_pengujian' || $this->isRoleSertifikasi();
     }
 
     protected function intBetween($v, $min, $max, $default) {
@@ -64,6 +72,18 @@ class PoIndexController extends PoSertifikasiController {
             return;
         }
         $this->kendalaSkema();
+        // kolom id_arsip_surat (order PO Pengujian) dipakai query daftar di bawah -- pastikan sudah ada
+        try { \PoPengujian::pastikan($this->db); } catch (\Throwable $e) { error_log('[PO Index] ' . $e->getMessage()); }
+        // kolom tanggal_dikirim (waktu PO dikirim, otomatis); dipakai tampilan "Dikirim pada" & filter bulan PO terkirim
+        $adaTglKirim = false;
+        try { $adaTglKirim = \PoSchema::pastikanTanggalDikirim($this->db); } catch (\Throwable $e) { error_log('[PO Index] ' . $e->getMessage()); }
+
+        // kolom daftar_order (PO Pengujian dengan banyak order); dipakai hanya bila ada
+        $adaDaftarOrder = false;
+        try {
+            $kol = $this->db->exec("SHOW COLUMNS FROM po_kegiatan LIKE 'daftar_order'");
+            $adaDaftarOrder = !empty($kol);
+        } catch (\Throwable $e) { error_log('[PO Index] ' . $e->getMessage()); }
 
         $semuaLayanan = $this->daftarLayanan();
         $terkunci = $this->layananTerkunci();
@@ -87,7 +107,10 @@ class PoIndexController extends PoSertifikasiController {
         $q = function_exists('mb_substr') ? mb_substr($q, 0, 100) : substr($q, 0, 100);
 
         // ---- WHERE dasar: PO non-OPTI ----
-        $kolomTanggal = 'COALESCE(p.tanggal_po, DATE(p.created_at))';
+        // PO yang belum dikirim belum bernomor: tanggalnya = tanggal pembuatan; PO bernomor: tanggal PO (= tanggal kirim)
+        $kolomTanggal = $adaTglKirim
+            ? "CASE WHEN p.nomor_po IS NULL OR p.nomor_po = '' THEN DATE(p.created_at) ELSE COALESCE(DATE(p.tanggal_dikirim), p.tanggal_po, DATE(p.created_at)) END"
+            : "CASE WHEN p.nomor_po IS NULL OR p.nomor_po = '' THEN DATE(p.created_at) ELSE COALESCE(p.tanggal_po, DATE(p.created_at)) END";
         $dasar = "p.layanan IS NOT NULL AND p.layanan NOT LIKE 'opti-%'";
         $dasarParams = [];
         if ($layanan !== '') {
@@ -99,8 +122,8 @@ class PoIndexController extends PoSertifikasiController {
         $params = array_merge($dasarParams, [$tab]);
         if ($q !== '') {
             $like = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $q) . '%';
-            $where .= " AND (p.nomor_po LIKE ? OR p.judul_kegiatan LIKE ? OR a.nomor_order LIKE ? OR a.no_id_order LIKE ? OR c.nmcustomer LIKE ?)";
-            for ($k = 0; $k < 5; $k++) { $params[] = $like; }
+            $where .= " AND (p.nomor_po LIKE ? OR p.judul_kegiatan LIKE ? OR a.nomor_order LIKE ? OR a.no_id_order LIKE ? OR c.nmcustomer LIKE ? OR p.nama_perusahaan LIKE ? OR s.nomor_surat LIKE ?" . ($adaDaftarOrder ? " OR p.daftar_order LIKE ?" : '') . ")";
+            for ($k = 0; $k < ($adaDaftarOrder ? 8 : 7); $k++) { $params[] = $like; }
         }
         if (!$tampilkanSemua) {
             $where .= " AND {$kolomTanggal} IS NOT NULL AND MONTH({$kolomTanggal}) = ? AND YEAR({$kolomTanggal}) = ?";
@@ -112,11 +135,13 @@ class PoIndexController extends PoSertifikasiController {
         $dbName = $this->namaDbSertifikasi();
         $from = "FROM po_kegiatan p
                  LEFT JOIN `{$dbName}`.`tb_arsip_sertifikasi` a ON p.layanan = '" . \PoSchema::SERTIFIKASI . "' AND a.id_arsip_sertifikasi = p.order_id
-                 LEFT JOIN tb_customer c ON c.id_customer = a.id_customer";
+                 LEFT JOIN tb_arsipsurat s ON p.layanan = '" . \PoPengujian::LAYANAN . "' AND s.id_arsip = p.id_arsip_surat
+                 LEFT JOIN tb_customer c ON c.id_customer = COALESCE(a.id_customer, s.id_customer)";
         // Cadangan bila database SISERTIFIKASI tidak terbaca: daftar tetap tampil, tanpa No. Order & Mitra
         $fromTanpaOrder = "FROM po_kegiatan p
                  LEFT JOIN (SELECT NULL AS id_customer, NULL AS nomor_order, NULL AS no_id_order) a ON 1 = 0
-                 LEFT JOIN tb_customer c ON c.id_customer = a.id_customer";
+                 LEFT JOIN tb_arsipsurat s ON p.layanan = '" . \PoPengujian::LAYANAN . "' AND s.id_arsip = p.id_arsip_surat
+                 LEFT JOIN tb_customer c ON c.id_customer = COALESCE(a.id_customer, s.id_customer)";
 
         $perHalaman = 10;
         $total = 0;
@@ -131,8 +156,8 @@ class PoIndexController extends PoSertifikasiController {
                 if ($halaman > $totalHalaman) { $halaman = $totalHalaman; }
                 $offset = ($halaman - 1) * $perHalaman;
                 $rows = $this->db->exec(
-                    "SELECT p.id, p.layanan, p.nomor_po, p.tanggal_po, p.judul_kegiatan, p.status, p.order_id, p.created_at, p.updated_at,
-                            a.nomor_order, a.no_id_order, c.nmcustomer, c.pt_cv
+                    "SELECT p.id, p.layanan, p.nomor_po, p.tanggal_po, " . ($adaTglKirim ? 'p.tanggal_dikirim, ' : '') . "p.judul_kegiatan, p.status, p.order_id, p.created_at, p.updated_at, p.nama_perusahaan, p.jenis," . ($adaDaftarOrder ? ' p.daftar_order,' : '') . "
+                            a.nomor_order, a.no_id_order, s.nomor_surat, c.nmcustomer, c.pt_cv
                      {$fromSql}
                      WHERE {$where}
                      ORDER BY COALESCE(p.updated_at, p.created_at) DESC, p.id DESC
@@ -156,43 +181,85 @@ class PoIndexController extends PoSertifikasiController {
             $slug = (string) $r['layanan'];
             $order = trim((string) ($r['nomor_order'] ?? ''));
             if ($order === '') { $order = trim((string) ($r['no_id_order'] ?? '')); }
-            $tgl = (string) ($r['tanggal_po'] ?? '');
+            if ($order === '') { $order = trim((string) ($r['nomor_surat'] ?? '')); } // Pengujian: nomor surat permintaan (order dari tb_arsipsurat)
+            // PO Pengujian untuk banyak order: kolom No. Order = jumlah order, Mitra = teks yang diisi di form PO
+            $banyakOrder = 0;
+            if (!empty($r['daftar_order'])) {
+                $dOrder = json_decode((string) $r['daftar_order'], true);
+                if (is_array($dOrder) && !empty($dOrder['items']) && is_array($dOrder['items']) && count($dOrder['items']) > 1) { $banyakOrder = count($dOrder['items']); }
+            }
+            if ($banyakOrder > 1) { $order = $banyakOrder . ' order'; }
+            $sudahBernomor = trim((string) ($r['nomor_po'] ?? '')) !== '';
+            $sah = function ($v) { $v = (string) $v; return ($v !== '' && strpos($v, '0000') !== 0 && strtotime($v)) ? strtotime($v) : null; };
+            $tKirim = $sudahBernomor ? $sah($r['tanggal_dikirim'] ?? '') : null;
+            $labelTgl = '-'; $dibuatBeda = '';
+            if ($tKirim) {
+                // PO yang tanggal dikirimnya tercatat otomatis: tanggal_po = tanggal PO dibuat (diisi user di form).
+                // Tampil "Dikirim pada ..."; bila bulan/tahun tanggal PO berbeda, tampil juga "Dibuat ..."
+                $labelTgl = 'Dikirim pada ' . date('d/m/Y', $tKirim);
+                $tPo = $sah($r['tanggal_po'] ?? '');
+                if ($tPo && date('Y-m', $tPo) !== date('Y-m', $tKirim)) { $dibuatBeda = 'Dibuat ' . date('d/m/Y', $tPo); }
+            } elseif ($sudahBernomor) {
+                // PO terkirim versi lama / layanan lain: tanggal_po = tanggal kirim; bila draft-nya dibuat di bulan berbeda, tampil tanggal dibuatnya
+                $tPo = $sah($r['tanggal_po'] ?? '');
+                if ($tPo) {
+                    $labelTgl = 'Dikirim pada ' . date('d/m/Y', $tPo);
+                    $tCreated = $sah($r['created_at'] ?? '');
+                    if ($tCreated && date('Y-m', $tCreated) !== date('Y-m', $tPo)) { $dibuatBeda = 'Dibuat ' . date('d/m/Y', $tCreated); }
+                }
+            } else {
+                // draft: PO Sertifikasi memakai Tanggal PO yang diisi user; lainnya tanggal pembuatan
+                $tD = ($slug === \PoSchema::SERTIFIKASI) ? $sah($r['tanggal_po'] ?? '') : null;
+                $tD = $tD ?: $sah($r['created_at'] ?? '');
+                if ($tD) { $labelTgl = 'Dibuat ' . date('d/m/Y', $tD); }
+            }
             $daftar[] = [
                 'no_urut'       => ++$no,
                 'po_id'         => (int) $r['id'],
                 'nomor_po'      => (string) ($r['nomor_po'] ?? ''),
-                'tanggal_po'    => ($tgl !== '' && strpos($tgl, '0000') !== 0 && strtotime($tgl)) ? date('d/m/Y', strtotime($tgl)) : '-',
+                'tanggal_po'    => $labelTgl,
+                'dibuat_beda'   => $dibuatBeda,
                 'judul'         => (string) ($r['judul_kegiatan'] ?? ''),
                 'status'        => (string) $r['status'],
                 'layanan'       => $slug,
+                'jenis'         => trim((string) ($r['jenis'] ?? '')),
                 'layanan_label' => $semuaLayanan[$slug] ?? ucfirst(str_replace('_', ' ', $slug)),
                 'nomor_order'   => $order,
-                'mitra'         => ($r['nmcustomer'] ?? '') !== '' || ($r['pt_cv'] ?? '') !== ''
-                                    ? \Customer::formatNamaPerusahaan($r['pt_cv'] ?? '', $r['nmcustomer'] ?? '') : '',
-                // baru layanan sertifikasi yang punya form simpan/edit; layanan lain menyusul
-                'url_edit'      => $slug === \PoSchema::SERTIFIKASI ? $f3->get('BASE') . '/petunjuk-operasional/sertifikasi/' . (int) $r['id'] . '/edit' : '',
-                'url_lihat'     => $slug === \PoSchema::SERTIFIKASI ? $f3->get('BASE') . '/petunjuk-operasional/sertifikasi/' . (int) $r['id'] . '/lihat' : '',
+                // mitra dari order (tb_customer); PO tanpa order (Pengujian lama): nama perusahaan yang diisi di form PO
+                'mitra'         => ($banyakOrder > 1 && trim((string) ($r['nama_perusahaan'] ?? '')) !== '') ? trim((string) $r['nama_perusahaan'])
+                                    : (($r['nmcustomer'] ?? '') !== '' || ($r['pt_cv'] ?? '') !== ''
+                                    ? \Customer::formatNamaPerusahaan($r['pt_cv'] ?? '', $r['nmcustomer'] ?? '') : trim((string) ($r['nama_perusahaan'] ?? ''))),
+                // baru layanan sertifikasi & pengujian yang punya form simpan/edit; layanan lain menyusul
+                'url_edit'      => (!$this->isKetuaSertifikasi() && in_array($slug, [\PoSchema::SERTIFIKASI, \PoPengujian::LAYANAN], true)) ? $f3->get('BASE') . '/petunjuk-operasional/' . $slug . '/' . (int) $r['id'] . '/edit' : '',
+                'url_lihat'     => in_array($slug, [\PoSchema::SERTIFIKASI, \PoPengujian::LAYANAN], true) ? $f3->get('BASE') . '/petunjuk-operasional/' . $slug . '/' . (int) $r['id'] . '/lihat' : '',
             ];
         }
 
         // ---- jumlah per tab (tidak ikut filter bulan/pencarian, tetap ikut filter layanan) ----
         $tabCounts = ['draft' => 0, 'terkirim' => 0];
+        $totalPo = 0; $totalDisetujui = 0; // untuk 4 kartu ringkasan di atas daftar
         try {
             $rc = $this->db->exec(
-                "SELECT SUM(CASE WHEN p.status = 'draft' THEN 1 ELSE 0 END) AS draft,
-                        SUM(CASE WHEN p.status = 'terkirim' THEN 1 ELSE 0 END) AS terkirim
+                "SELECT COUNT(*) AS total,
+                        SUM(CASE WHEN p.status = 'draft' THEN 1 ELSE 0 END) AS draft,
+                        SUM(CASE WHEN p.status = 'terkirim' THEN 1 ELSE 0 END) AS terkirim,
+                        SUM(CASE WHEN p.status IN ('disetujui', 'disetujui_mitra') THEN 1 ELSE 0 END) AS disetujui
                  FROM po_kegiatan p WHERE {$dasar}",
                 $this->indeks($dasarParams)
             );
             $tabCounts['draft'] = (int) ($rc[0]['draft'] ?? 0);
             $tabCounts['terkirim'] = (int) ($rc[0]['terkirim'] ?? 0);
+            $totalPo = (int) ($rc[0]['total'] ?? 0);
+            $totalDisetujui = (int) ($rc[0]['disetujui'] ?? 0);
         } catch (\Throwable $e) {
             error_log('[PO Index] gagal menghitung tab: ' . $e->getMessage());
         }
 
         // ---- notif: order sertifikasi yang belum dibuatkan PO -> masuk ke Pusat Pemberitahuan (lonceng + bubble) ----
         // dijalankan sebelum render() supaya langsung muncul di bubble/lonceng halaman ini juga
-        $this->sinkronNotifOrderBelumPo();
+        if (!$this->terlarangRoleLayananLain()) {
+            $this->sinkronNotifOrderBelumPo(); // notifikasi order Sertifikasi bukan urusan role layanan lain
+        }
 
         $daftarLayananView = [];
         foreach ($semuaLayanan as $slug => $label) {
@@ -204,9 +271,14 @@ class PoIndexController extends PoSertifikasiController {
         $f3->set('daftar_po', $daftar);
         $f3->set('tab_aktif', $tab);
         $f3->set('tab_counts', $tabCounts);
+        $f3->set('total_po', $totalPo);
+        $f3->set('total_perlu_tindakan', $tabCounts['draft']);
+        $f3->set('total_berjalan', $tabCounts['terkirim']);
+        $f3->set('total_disetujui', $totalDisetujui);
         $f3->set('layanan', $layanan);
         $f3->set('layanan_list', $daftarLayananView);
         $f3->set('bisa_pilih_layanan', $terkunci === null);
+        $f3->set('bisa_buat_po', !$this->isKetuaSertifikasi()); // Ketua Tim Sertifikasi meninjau saja: tidak membuat/mengedit PO
         $f3->set('nama_layanan_tampilan', $layanan === '' ? 'Semua Layanan' : $semuaLayanan[$layanan]);
         $f3->set('bulan_filter', $bulan);
         $f3->set('tahun_filter', $tahun);

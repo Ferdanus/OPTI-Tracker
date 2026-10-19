@@ -1,0 +1,346 @@
+<!--
+    app/views/petunjuk_operasional/_penandatangan.html
+    Komponen "Pilih Penandatangan" bersama untuk SEMUA halaman Buat PO (OPTI, Pengujian, Sertifikasi, Kalibrasi, dst).
+    Cara pilihnya sama dengan Surat Penawaran: kotak cari (nama / jabatan), klik, nama + NIP + jabatan masuk otomatis.
+    Daftar pejabat dimuat dari GET /petunjuk-operasional/penandatangan (master penandatangan, sama dengan Surat Penawaran).
+
+    Pemakaian di halaman:
+      (sisipkan file ini dengan tag include F3, href = petunjuk_operasional/_penandatangan.html)
+      var ttd = PoTtd.baru(dataTersimpan);                    // {kota, ppk, ketua, mengetahui}
+      PoTtd.mount(document.getElementById('ttdHost'), ttd, { kota: true, onChange: function () { ...segarkan preview... } });
+      PoTtd.blok(ttd, 'April 2026', { ketuaBawaan: 'Ketua Tim Kerja' })   // HTML blok tanda tangan untuk dokumen
+    Input tersembunyi ber-name ttd_kota, ttd_<slot>_{id,nama,nip,jabatan,baris} ikut terkirim bila halamannya memakai <form>.
+-->
+<style>
+    .ptd-slot { margin-bottom: 18px; }
+    .ptd-slot:last-child { margin-bottom: 0; }
+    .ptd-cap { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
+    .ptd-no { width: 22px; height: 22px; border-radius: 50%; background: #0f172a; color: #fff; font-size: .72rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; flex: none; }
+    .ptd-cap b { font-size: .86rem; color: #1e293b; }
+    .ptd-cap small { color: #64748b; font-size: .74rem; }
+    .ptd-kota { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; margin-bottom: 18px; }
+    .ptd-kota label { display: block; font-size: .8rem; font-weight: 600; margin: 0 0 4px; color: #1e293b; }
+    .ptd-kota .req { color: #dc3545; }
+    .ptd-ctl { width: 100%; text-align: left; border: 1px solid #cbd5e1; border-radius: 8px; padding: 5px 12px; min-height: 38px; display: flex; align-items: center; gap: 8px; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.03); cursor: pointer; font: inherit; color: #0f172a; transition: border-color .2s, box-shadow .2s; }
+    .ptd-ctl:hover { border-color: #94a3b8; }
+    .ptd-ctl:focus-visible, .ptd-ctl.is-open { outline: none; border-color: #0284c7; box-shadow: 0 0 0 3px rgba(2,132,199,.15); }
+    .ptd-ctl.is-bad { border-color: #dc3545; }
+    .ptd-ctl .ptd-ph { color: #94a3b8; font-size: .84rem; }
+    .ptd-ctl .ptd-chev { margin-left: auto; color: #94a3b8; flex: none; transition: transform .15s; }
+    .ptd-ctl.is-open .ptd-chev { transform: rotate(180deg); }
+    .ptd-itm { display: flex; align-items: center; gap: 8px; font-size: .84rem; line-height: 1.35; padding: 2px 0; min-width: 0; flex-wrap: wrap; }
+    .ptd-itm .ptd-jb { background: #cfe2ff; color: #0a58ca; border: 1px solid #9ec5fe; font-weight: 600; font-size: .74rem; padding: 4px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px; }
+    .ptd-itm .ptd-nm { font-weight: 700; }
+    .ptd-det { margin-top: 8px; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 10px; font-size: .78rem; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 8px 10px; }
+    .ptd-det span { color: #64748b; }
+    .ptd-det b { font-weight: 600; word-break: break-word; }
+    .ptd-det.is-empty { display: block; color: #94a3b8; font-style: italic; }
+    .ptd-hint { font-size: .72rem; color: #64748b; margin-top: 6px; }
+
+    /* daftar pilihan (dipasang di <body> supaya tidak terpotong kartu) */
+    .ptd-dd { position: fixed; z-index: 2000; background: #fff; border: 1px solid #cbd5e1; border-radius: 12px; box-shadow: 0 16px 36px -4px rgba(15,23,42,.22), 0 6px 16px -2px rgba(15,23,42,.08); padding: 8px; font-family: inherit; }
+    .ptd-dd .ptd-sw { padding: 4px 4px 10px; border-bottom: 1px solid #e2e8f0; margin-bottom: 8px; }
+    .ptd-dd .ptd-sin { width: 100%; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 7px 12px 7px 34px; font: inherit; font-size: .84rem; background: #f8fafc url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E") no-repeat 11px center / 14px 14px; box-sizing: border-box; }
+    .ptd-dd .ptd-sin:focus { outline: none; border-color: #0284c7; background-color: #fff; box-shadow: 0 0 0 3px rgba(2,132,199,.15); }
+    .ptd-dd .ptd-lst { overflow-y: auto; padding: 2px; }
+    .ptd-dd .ptd-sep { font-size: .68rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: #64748b; padding: 2px 4px 6px; }
+    .ptd-opt { padding: 10px 14px; margin: 0 0 8px; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; min-height: 52px; cursor: pointer; transition: border-color .15s, background .15s; }
+    .ptd-opt.is-act, .ptd-opt:hover { background: #f8fafc; border-color: #94a3b8; box-shadow: 0 3px 8px rgba(15,23,42,.06); }
+    .ptd-opt.is-sel { background: #f0fdf4; border-color: #86efac; border-left: 4px solid #16a34a; }
+    .ptd-opt .ptd-t1 { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+    .ptd-opt .ptd-jab { font-weight: 700; color: #0d6efd; font-size: .83rem; line-height: 1.35; display: flex; gap: 8px; }
+    .ptd-opt .ptd-kat { font-size: .68rem; font-weight: 600; padding: 3px 8px; border-radius: 6px; white-space: nowrap; flex: none; border: 1px solid; }
+    .ptd-kat-sec { background: #e2e3e5; color: #41464b; border-color: #c4c8cb; }
+    .ptd-kat-inf { background: #cff4fc; color: #055160; border-color: #9eeaf9; }
+    .ptd-kat-war { background: #fff3cd; color: #664d03; border-color: #ffe69c; }
+    .ptd-kat-pri { background: #cfe2ff; color: #084298; border-color: #9ec5fe; }
+    .ptd-opt .ptd-t2 { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: .88rem; padding-top: 6px; border-top: 1px solid #f1f5f9; color: #0f172a; }
+    .ptd-opt .ptd-t2 small { margin-left: auto; font-weight: 500; color: #64748b; font-size: .72rem; font-family: ui-monospace, Consolas, monospace; }
+    .ptd-info { padding: 16px; text-align: center; color: #64748b; font-size: .84rem; }
+    .ptd-info button { margin-top: 8px; border: 1px solid #cbd5e1; background: #fff; border-radius: 6px; padding: 3px 12px; font-size: .8rem; cursor: pointer; }
+</style>
+<script>
+(function (w) {
+    'use strict';
+    if (w.PoTtd) { return; }
+
+    var URL_DAFTAR = '{{ @BASE }}/petunjuk-operasional/penandatangan';
+    var SLOT = [
+        { key: 'ppk',        no: 1, judul: 'Menyetujui',         ket: 'Pejabat Pembuat Komitmen', saran: function (d) { return /komitmen/i.test(d.jabatan); }, bawaan: function (d) { return /komitmen/i.test(d.jabatan); } },
+        { key: 'ketua',      no: 2, judul: 'Pelaksana Kegiatan', ket: 'Ketua Tim',                saran: function (d) { return d.kategori === 'Ketua Tim Kerja'; }, bawaan: function (d) { return /ketua tim layanan/i.test(d.jabatan); } },
+        { key: 'mengetahui', no: 3, judul: 'Mengetahui',         ket: 'Kepala Balai / pejabat yang mengetahui', saran: function (d) { return d.kategori === 'Pimpinan Balai & Manajemen' || /tata usaha/i.test(d.jabatan); }, bawaan: function (d) { return /^kepala$/i.test(d.jabatan) && !d.an; } }
+    ];
+    var NAMA_BALAI = 'Balai Besar Standardisasi dan Pelayanan Jasa Industri Selulosa';
+
+    /* buang "a.n." dari jabatan (sama dengan PoTtd::tanpaAnTeks / tanpaAn di PHP) */
+    function tanpaAnTeks(t) {
+        t = String(t || '').trim();
+        if (/^a\.?\s?n\.?\s+Kepala[,\s]+(?=\S)/i.test(t)) { return t.replace(/^a\.?\s?n\.?\s+Kepala[,\s]+/i, '').trim(); }
+        return t.replace(/^a\.?\s?n\.?\s+/i, '').trim();
+    }
+    function tanpaAn(b) {
+        return b.filter(function (x) { return !(b.length > 1 && /^a\.?\s?n\.?\s+Kepala[,\s]*$/i.test(String(x).trim())); })
+            .map(tanpaAnTeks).filter(function (x) { return x !== ''; });
+    }
+
+    function esc(s) { return String(s === null || s === undefined ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+
+    /* ---------- data ---------- */
+    function slotKosong() { return { id: 0, nama: '', nip: '', jabatan: '', baris: [] }; }
+    function slotBaku(x) {
+        var s = slotKosong();
+        if (!x || typeof x !== 'object') { return s; }
+        s.id = parseInt(x.id, 10) || 0;
+        s.nama = String(x.nama || '').trim();
+        s.nip = String(x.nip || '').trim();
+        s.jabatan = tanpaAnTeks(x.jabatan);
+        s.baris = tanpaAn((x.baris && x.baris.length) ? [].slice.call(x.baris).map(String) : (s.jabatan ? [s.jabatan] : []));
+        return s;
+    }
+    function baru(x) {
+        x = (x && typeof x === 'object') ? x : {};
+        return { kota: String(x.kota || '').trim() || 'Bandung', ppk: slotBaku(x.ppk), ketua: slotBaku(x.ketua), mengetahui: slotBaku(x.mengetahui) };
+    }
+
+    var master = null, memuat = null, gagal = false;
+    function muat(paksa) {
+        if (master && !paksa) { return Promise.resolve(master); }
+        if (memuat && !paksa) { return memuat; }
+        gagal = false;
+        memuat = fetch(URL_DAFTAR, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+            .then(function (r) { if (!r.ok) { throw new Error('http ' + r.status); } return r.json(); })
+            .then(function (j) { if (!j || !j.ok || !j.data) { throw new Error('data'); } master = j.data; memuat = null; return master; })
+            .catch(function (e) { gagal = true; memuat = null; throw e; });
+        return memuat;
+    }
+
+    /* ---------- ikon ---------- */
+    var I_JAB = '<svg width="13" height="13" fill="currentColor" viewBox="0 0 16 16"><path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2z"/></svg>';
+    var I_USR = '<svg width="15" height="15" fill="#64748b" viewBox="0 0 16 16"><path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/><path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1z"/></svg>';
+    var I_CHV = '<svg class="ptd-chev" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/></svg>';
+
+    /* ---------- satu daftar terbuka pada satu waktu ---------- */
+    var terbuka = null;
+    function tutupSemua() { if (terbuka) { terbuka.tutup(); } }
+    document.addEventListener('pointerdown', function (e) {
+        if (terbuka && !terbuka.berisi(e.target)) { terbuka.tutup(); }
+    }, true);
+    w.addEventListener('resize', function () { if (terbuka) { terbuka.atur(); } });
+    document.addEventListener('scroll', function (e) {
+        if (terbuka && !(terbuka.dd && terbuka.dd.contains(e.target))) { terbuka.atur(); }
+    }, true);
+
+    /* ---------- komponen pilih satu pejabat ---------- */
+    function pembuat(ctl, slotDef, state, simpan) {
+        var dd = null, sin = null, lst = null, aktif = -1, tampil = [];
+        var api = {
+            dd: null,
+            berisi: function (el) { return ctl.contains(el) || (dd && dd.contains(el)); },
+            atur: function () {
+                if (!dd) { return; }
+                var r = ctl.getBoundingClientRect(), vh = w.innerHeight, bawah = vh - r.bottom - 14, atas = r.top - 14;
+                var buka_bawah = bawah >= 280 || bawah >= atas;
+                var ruang = Math.max(180, Math.min(buka_bawah ? bawah : atas, 470));
+                dd.style.left = Math.max(8, r.left) + 'px';
+                dd.style.width = r.width + 'px';
+                lst.style.maxHeight = Math.max(110, ruang - 74) + 'px';
+                if (buka_bawah) { dd.style.top = (r.bottom + 6) + 'px'; dd.style.bottom = 'auto'; }
+                else { dd.style.bottom = (vh - r.top + 6) + 'px'; dd.style.top = 'auto'; }
+            },
+            tutup: function () {
+                ctl.classList.remove('is-open');
+                if (dd && dd.parentNode) { dd.parentNode.removeChild(dd); }
+                dd = null; api.dd = null; if (terbuka === api) { terbuka = null; }
+            }
+        };
+
+        function sama(d, s) { return (d.id && s.id && d.id === s.id) || (d.nama === s.nama && d.jabatan === s.jabatan); }
+
+        function gambar() {
+            var q = sin.value.trim().toLowerCase();
+            if (!master) {
+                lst.innerHTML = gagal
+                    ? '<div class="ptd-info">Daftar penandatangan tidak bisa dimuat.<br><button type="button" data-ulang="1">Coba lagi</button></div>'
+                    : '<div class="ptd-info">Memuat daftar penandatangan...</div>';
+                return;
+            }
+            var cocok = master.filter(function (d) { return !q || (d.nama + ' ' + d.jabatan + ' ' + d.kategori).toLowerCase().indexOf(q) !== -1; });
+            var saran = cocok.filter(slotDef.saran), lain = cocok.filter(function (d) { return !slotDef.saran(d); });
+            tampil = saran.concat(lain);
+            if (!tampil.length) { lst.innerHTML = '<div class="ptd-info">Pejabat atau jabatan tidak ditemukan</div>'; return; }
+            var h = '';
+            tampil.forEach(function (d, i) {
+                if (i === 0 && saran.length) { h += '<div class="ptd-sep">Disarankan untuk kolom ini</div>'; }
+                if (i === saran.length && lain.length && saran.length) { h += '<div class="ptd-sep">Pejabat lain</div>'; }
+                h += '<div class="ptd-opt' + (sama(d, state[slotDef.key]) ? ' is-sel' : '') + (i === aktif ? ' is-act' : '') + '" data-i="' + i + '">' +
+                    '<div class="ptd-t1"><div class="ptd-jab">' + I_JAB + '<span>' + esc(d.jabatan) + '</span></div><span class="ptd-kat ptd-kat-' + esc(d.k || 'sec') + '">' + esc(d.kategori) + '</span></div>' +
+                    '<div class="ptd-t2">' + I_USR + '<span>' + esc(d.nama) + '</span>' + (d.nip ? '<small>NIP ' + esc(d.nip) + '</small>' : '') + '</div></div>';
+            });
+            lst.innerHTML = h;
+            var a = lst.querySelector('.is-act'); if (a && a.scrollIntoView) { a.scrollIntoView({ block: 'nearest' }); }
+        }
+
+        function pilih(d) {
+            simpan(slotBaku({ id: d.id, nama: d.nama, nip: d.nip, jabatan: d.jabatan, baris: d.baris }));
+            api.tutup();
+            ctl.focus();
+        }
+
+        api.buka = function () {
+            tutupSemua();
+            dd = document.createElement('div');
+            dd.className = 'ptd-dd';
+            dd.innerHTML = '<div class="ptd-sw"><input type="text" class="ptd-sin" placeholder="Ketik nama atau jabatan pejabat..." autocomplete="off"></div><div class="ptd-lst"></div>';
+            document.body.appendChild(dd);
+            api.dd = dd; sin = dd.querySelector('.ptd-sin'); lst = dd.querySelector('.ptd-lst'); aktif = -1;
+            ctl.classList.add('is-open'); terbuka = api;
+            gambar(); api.atur();
+            setTimeout(function () { if (sin) { sin.focus(); } }, 0);
+            if (!master) {
+                muat().then(function () { if (dd) { gambar(); api.atur(); } }, function () { if (dd) { gambar(); } });
+            }
+            sin.addEventListener('input', function () { aktif = -1; gambar(); });
+            sin.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') { api.tutup(); ctl.focus(); }
+                else if (e.key === 'ArrowDown') { aktif = Math.min(tampil.length - 1, aktif + 1); gambar(); e.preventDefault(); }
+                else if (e.key === 'ArrowUp') { aktif = Math.max(0, aktif - 1); gambar(); e.preventDefault(); }
+                else if (e.key === 'Enter') { var d = tampil[aktif < 0 ? 0 : aktif]; if (d) { pilih(d); } e.preventDefault(); }
+            });
+            lst.addEventListener('click', function (e) {
+                if (e.target.closest('[data-ulang]')) { muat(true).then(function () { if (dd) { gambar(); api.atur(); } }, function () { if (dd) { gambar(); } }); gambar(); return; }
+                var o = e.target.closest('.ptd-opt');
+                if (o && tampil[+o.getAttribute('data-i')]) { pilih(tampil[+o.getAttribute('data-i')]); }
+            });
+        };
+        ctl.addEventListener('click', function () { if (ctl.classList.contains('is-open')) { api.tutup(); } else { api.buka(); } });
+        return api;
+    }
+
+    /* ---------- pasang ke halaman ---------- */
+    function mount(host, state, opt) {
+        opt = opt || {};
+        if (!host) { return null; }
+        var h = '';
+        if (opt.kota) {
+            h += '<div class="ptd-kota"><div><label>Kota <span class="req">*</span></label><input type="text" class="form-control form-control-sm" name="ttd_kota" id="ptdKota" maxlength="80" value="' + esc(state.kota) + '"></div>' +
+                '<div><label>Bulan &amp; tahun</label><input type="text" class="form-control form-control-sm bg-light" id="ptdBulan" readonly tabindex="-1" value="' + esc(opt.bulanTahun ? opt.bulanTahun() : '') + '"></div></div>';
+        }
+        SLOT.forEach(function (sd) {
+            h += '<div class="ptd-slot" data-slot="' + sd.key + '"><div class="ptd-cap"><span class="ptd-no">' + sd.no + '</span><b>' + esc(sd.judul) + '</b><small>' + esc(opt['ket_' + sd.key] || sd.ket) + '</small></div>' +
+                '<button type="button" class="ptd-ctl" aria-haspopup="listbox" data-ctl="' + sd.key + '"></button>' +
+                '<div class="ptd-det" data-det="' + sd.key + '"></div>' +
+                ['id', 'nama', 'nip', 'jabatan', 'baris'].map(function (f) { return '<input type="hidden" name="ttd_' + sd.key + '_' + f + '" data-h="' + sd.key + '_' + f + '">'; }).join('') +
+                '</div>';
+        });
+        h += '<div class="ptd-hint">Terisi otomatis: Pejabat Pembuat Komitmen, Ketua Tim Layanan, dan Kepala (klik untuk mengganti). Daftar diambil dari master penandatangan (sama dengan Surat Penawaran). Yang tersimpan di PO adalah nama, NIP, dan jabatan saat dipilih, jadi PO yang sudah terkirim tidak ikut berubah kalau pejabat di master berganti.</div>';
+        host.innerHTML = h;
+
+        function tulis(sd) {
+            var s = state[sd.key], ctl = host.querySelector('[data-ctl="' + sd.key + '"]'), det = host.querySelector('[data-det="' + sd.key + '"]');
+            ctl.innerHTML = (s.nama
+                ? '<span class="ptd-itm"><span class="ptd-jb">' + I_JAB + esc(s.jabatan) + '</span><span class="ptd-nm">' + esc(s.nama) + '</span></span>'
+                : '<span class="ptd-ph">Pilih pejabat penandatangan...</span>') + I_CHV;
+            det.className = 'ptd-det' + (s.nama ? '' : ' is-empty');
+            det.innerHTML = s.nama
+                ? '<span>Nama</span><b>' + esc(s.nama) + '</b><span>NIP</span><b>' + esc(s.nip || '-') + '</b><span>Tertulis</span><b>' + esc((s.baris && s.baris.length ? s.baris : [s.jabatan]).join(' / ')) + '</b>'
+                : 'Belum dipilih';
+            var set = function (f, v) { var i = host.querySelector('[data-h="' + sd.key + '_' + f + '"]'); if (i) { i.value = v; } };
+            set('id', s.id || 0); set('nama', s.nama); set('nip', s.nip); set('jabatan', s.jabatan); set('baris', JSON.stringify(s.baris || []));
+            ctl.classList.remove('is-bad');
+        }
+        SLOT.forEach(function (sd) {
+            tulis(sd);
+            pembuat(host.querySelector('[data-ctl="' + sd.key + '"]'), sd, state, function (s) {
+                state[sd.key] = s; tulis(sd);
+                var i = host.querySelector('[data-h="' + sd.key + '_nama"]');
+                if (i) { i.dispatchEvent(new Event('input', { bubbles: true })); i.dispatchEvent(new Event('change', { bubbles: true })); }
+                host.dispatchEvent(new CustomEvent('ptd:change', { bubbles: true, detail: { slot: sd.key } }));
+                if (opt.onChange) { opt.onChange(sd.key, state); }
+            });
+        });
+        // Isian bawaan: PO yang BELUM punya satu pun penandatangan langsung diisi PPK, Ketua Tim Layanan, dan Kepala
+        // (masih bisa diganti lewat pilihan). Dilewati bila opt.auto === false (mis. PO terkirim yang hanya dilihat).
+        function isiBawaan() {
+            if (opt.auto === false || !master) { return; }
+            if (SLOT.some(function (sd) { return state[sd.key].nama; })) { return; }
+            var ada = false;
+            SLOT.forEach(function (sd) {
+                var d = master.filter(sd.bawaan)[0];
+                if (!d) { return; }
+                state[sd.key] = slotBaku({ id: d.id, nama: d.nama, nip: d.nip, jabatan: d.jabatan, baris: d.baris });
+                tulis(sd); ada = true;
+            });
+            if (!ada) { return; }
+            var i = host.querySelector('[data-h="ppk_nama"]');
+            if (i) { i.dispatchEvent(new Event('input', { bubbles: true })); i.dispatchEvent(new Event('change', { bubbles: true })); }
+            host.dispatchEvent(new CustomEvent('ptd:change', { bubbles: true, detail: { slot: 'auto' } }));
+            if (opt.onChange) { opt.onChange('auto', state); }
+        }
+        muat().then(isiBawaan, function () {});
+        var ik = host.querySelector('#ptdKota');
+        if (ik) {
+            ik.addEventListener('input', function () { state.kota = ik.value; if (opt.onChange) { opt.onChange('kota', state); } });
+        }
+        return {
+            segarkan: function () {
+                SLOT.forEach(tulis);
+                var k = host.querySelector('#ptdKota'); if (k) { k.value = state.kota; }
+                var b = host.querySelector('#ptdBulan'); if (b && opt.bulanTahun) { b.value = opt.bulanTahun(); }
+            },
+            bulan: function () { var b = host.querySelector('#ptdBulan'); if (b && opt.bulanTahun) { b.value = opt.bulanTahun(); } },
+            tandaiKurang: function () {
+                var pertama = null;
+                SLOT.forEach(function (sd) {
+                    var ctl = host.querySelector('[data-ctl="' + sd.key + '"]');
+                    if (!state[sd.key].nama) { ctl.classList.add('is-bad'); if (!pertama) { pertama = ctl; } }
+                });
+                return pertama;
+            }
+        };
+    }
+
+    /* ---------- blok tanda tangan di dokumen (sama dengan PoTtd::htmlBlok di PHP) ---------- */
+    function barisHtml(s, bawaan) {
+        var b = (s && s.baris && s.baris.length) ? s.baris : [bawaan];
+        return b.map(function (x) { return '<div>' + esc(x) + '</div>'; }).join('');
+    }
+    function namaHtml(s) {
+        if (!s || !s.nama) { return '<div style="height:16px">( ............................. )</div>'; }
+        return '<div style="text-decoration:underline">' + esc(s.nama) + '</div>' + (s.nip ? '<div>NIP. ' + esc(s.nip) + '</div>' : '');
+    }
+    function blok(t, bulanTahun, o) {
+        o = o || {};
+        t = t || baru();
+        var gap = o.gap || 66, ketuaBawaan = o.ketuaBawaan || 'Ketua Tim Kerja';
+        var kota = (t.kota || '').trim() ? esc(t.kota) : '.....', tgl = (bulanTahun || '').trim() ? esc(bulanTahun) : '.....';
+        var td = 'border:0;padding:0;vertical-align:top;text-align:center;font-weight:700;';
+        return '<div class="ptd-blok" style="margin-top:18px;font-weight:700;page-break-inside:avoid">' +
+            '<div style="text-align:right;margin-bottom:14px;font-weight:400">' + kota + ',&nbsp;&nbsp; ' + tgl + '</div>' +
+            '<table style="width:100%;border-collapse:collapse;table-layout:fixed;border:0"><tr>' +
+            '<td style="' + td + 'width:45%"><div>Menyetujui,</div>' + barisHtml(t.ppk, 'Pejabat Pembuat Komitmen') + '</td>' +
+            '<td style="border:0;padding:0;width:10%">&nbsp;</td>' +
+            '<td style="' + td + 'width:45%"><div>Pelaksana Kegiatan,</div>' + barisHtml(t.ketua, ketuaBawaan) + '</td>' +
+            '</tr><tr>' +
+            '<td style="' + td + 'height:' + gap + 'px">&nbsp;</td><td style="border:0;padding:0">&nbsp;</td><td style="' + td + 'height:' + gap + 'px">&nbsp;</td>' +
+            '</tr><tr>' +
+            '<td style="' + td + '">' + namaHtml(t.ppk) + '</td><td style="border:0;padding:0">&nbsp;</td><td style="' + td + '">' + namaHtml(t.ketua) + '</td>' +
+            '</tr></table>' +
+            '<table style="width:100%;border-collapse:collapse;table-layout:fixed;border:0;margin-top:24px"><tr><td style="border:0;padding:0;width:15%">&nbsp;</td>' +
+            '<td style="' + td + 'width:70%"><div>Mengetahui</div>' + barisHtml(t.mengetahui, 'Kepala ' + NAMA_BALAI + ',') + '<div style="height:' + (gap + 12) + 'px">&nbsp;</div>' + namaHtml(t.mengetahui) + '</td>' +
+            '<td style="border:0;padding:0;width:15%">&nbsp;</td></tr></table></div>';
+    }
+
+    /** Pesan kekurangan (untuk tombol Kirim). */
+    function kekurangan(t) {
+        var m = [];
+        if (!(t.kota || '').trim()) { m.push('Penandatanganan: kota belum diisi'); }
+        if (!t.ppk.nama) { m.push('Penandatanganan: pejabat yang menyetujui (Pejabat Pembuat Komitmen) belum dipilih'); }
+        if (!t.ketua.nama) { m.push('Penandatanganan: pelaksana kegiatan (Ketua Tim) belum dipilih'); }
+        if (!t.mengetahui.nama) { m.push('Penandatanganan: pejabat yang mengetahui belum dipilih'); }
+        return m;
+    }
+
+    w.PoTtd = { baru: baru, mount: mount, blok: blok, kekurangan: kekurangan, muat: muat };
+    muat().catch(function () {});   // muat daftar di latar belakang supaya langsung siap saat dibuka
+})(window);
+</script>

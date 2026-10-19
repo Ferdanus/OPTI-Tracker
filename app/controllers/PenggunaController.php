@@ -84,8 +84,56 @@ class PenggunaController extends Controller {
                 'category' => 'manajemen',
                 'desc' => 'Disposisi & penugasan teknis layanan Uji Profisiensi'
             ),
-            'ketua_tim_mitra' => array(
-                'label' => 'Ketua Tim Mitra',
+            'tim_kerja_pengujian' => array(
+                'label' => 'Tim Kerja Pengujian',
+                'badge_class' => 'role-badge role-badge-tk-pengujian',
+                'badge_style' => '',
+                'icon' => 'bi-clipboard-data-fill',
+                'category' => 'manajemen',
+                'desc' => 'Disposisi & penugasan teknis layanan Pengujian'
+            ),
+            'tim_kerja_kalibrasi' => array(
+                'label' => 'Tim Kerja Kalibrasi',
+                'badge_class' => 'role-badge role-badge-katim-kalibrasi',
+                'badge_style' => '',
+                'icon' => 'bi-award-fill',
+                'category' => 'manajemen',
+                'desc' => 'Disposisi & penugasan teknis layanan Kalibrasi'
+            ),
+            'tim_kerja_sertifikasi' => array(
+                'label' => 'Tim Kerja Sertifikasi',
+                'badge_class' => 'role-badge role-badge-tk-sertifikasi',
+                'badge_style' => '',
+                'icon' => 'bi-patch-check-fill',
+                'category' => 'manajemen',
+                'desc' => 'Disposisi & penugasan teknis layanan Sertifikasi'
+            ),
+            'tim_kerja_pendampingan' => array(
+                'label' => 'Tim Kerja Pendampingan Teknis',
+                'badge_class' => 'role-badge role-badge-katim-pendampingan',
+                'badge_style' => '',
+                'icon' => 'bi-award-fill',
+                'category' => 'manajemen',
+                'desc' => 'Disposisi & penugasan layanan Pendampingan Teknis'
+            ),
+            'tim_kerja_inspeksi' => array(
+                'label' => 'Tim Kerja Inspeksi',
+                'badge_class' => 'role-badge role-badge-katim-inspeksi',
+                'badge_style' => '',
+                'icon' => 'bi-award-fill',
+                'category' => 'manajemen',
+                'desc' => 'Disposisi & penugasan teknis layanan Inspeksi'
+            ),
+            'tim_kerja_profisiensi' => array(
+                'label' => 'Tim Kerja Uji Profisiensi',
+                'badge_class' => 'role-badge role-badge-katim-profisiensi',
+                'badge_style' => '',
+                'icon' => 'bi-award-fill',
+                'category' => 'manajemen',
+                'desc' => 'Disposisi & penugasan teknis layanan Uji Profisiensi'
+            ),
+            'tim_kerja_mitra' => array(
+                'label' => 'Tim Kerja Mitra',
                 'badge_class' => 'role-badge role-badge-katim-mitra',
                 'badge_style' => '',
                 'icon' => 'bi-award-fill',
@@ -189,7 +237,13 @@ class PenggunaController extends Controller {
             'ketua_tim_mitra_industri'  => 'ketua_tim_mitra',
             'katim_keuangan'            => 'ketua_tim_keuangan',
             'tk_selulosa'               => 'tim_kerja_selulosa',
-            'tk_lingkungan'             => 'tim_kerja_lingkungan'
+            'tk_lingkungan'             => 'tim_kerja_lingkungan',
+            'tk_pengujian'              => 'tim_kerja_pengujian',
+            'tk_kalibrasi'              => 'tim_kerja_kalibrasi',
+            'tk_sertifikasi'            => 'tim_kerja_sertifikasi',
+            'tk_pendampingan'           => 'tim_kerja_pendampingan',
+            'tk_inspeksi'               => 'tim_kerja_inspeksi',
+            'tk_profisiensi'            => 'tim_kerja_profisiensi',
         );
         return $roleAliases[$roleKey] ?? $roleKey;
     }
@@ -285,8 +339,8 @@ class PenggunaController extends Controller {
             SELECT 
                 SUM(CASE WHEN si_opti IN ('tim_mitra_industri', 'admin_order', 'tim_mitra', 'ketua_tim_mitra', 'katim_mitra', 'ketua_tim_mitra_industri') THEN 1 ELSE 0 END) AS cnt_mitra,
                 SUM(CASE WHEN si_opti IN ('keuangan', 'ketua_tim_keuangan', 'katim_keuangan') THEN 1 ELSE 0 END) AS cnt_keuangan,
-                SUM(CASE WHEN si_opti IN ('ketua_tim_selulosa', 'ketua_tim_lingkungan', 'ketua_tim_mitra', 'ketua_tim_keuangan', 'katim_selulosa', 'katim_lingkungan', 'katim_mitra', 'katim_keuangan', 'ketua_tim_mitra_industri') THEN 1 ELSE 0 END) AS cnt_katim,
-                SUM(CASE WHEN si_opti IN ('tim_kerja_selulosa', 'tim_kerja_lingkungan', 'tk_selulosa', 'tk_lingkungan') THEN 1 ELSE 0 END) AS cnt_pelaksana,
+                SUM(CASE WHEN si_opti IN ('ketua_tim_selulosa', 'ketua_tim_lingkungan', 'ketua_tim_mitra', 'ketua_tim_keuangan', 'katim_selulosa', 'katim_lingkungan', 'katim_mitra', 'katim_keuangan', 'ketua_tim_mitra_industri',  'ketua_tim_pengujian', 'ketua_tim_kalibrasi', 'ketua_tim_sertifikasi', 'ketua_tim_pendampingan', 'ketua_tim_inspeksi', 'ketua_tim_profisiensi', 'katim_pengujian', 'katim_kalibrasi', 'katim_sertifikasi', 'katim_pendampingan', 'katim_inspeksi', 'katim_profisiensi') THEN 1 ELSE 0 END) AS cnt_katim,
+                SUM(CASE WHEN si_opti IN ('tim_kerja_selulosa', 'tim_kerja_lingkungan', 'tk_selulosa', 'tk_lingkungan', 'tim_kerja_pengujian', 'tim_kerja_kalibrasi', 'tim_kerja_sertifikasi', 'tim_kerja_pendampingan', 'tim_kerja_inspeksi', 'tim_kerja_profisiensi', 'tk_pengujian', 'tk_kalibrasi', 'tk_sertifikasi', 'tk_pendampingan', 'tk_inspeksi', 'tk_profisiensi', 'tim_kerja_mitra') THEN 1 ELSE 0 END) AS cnt_pelaksana,
                 SUM(CASE WHEN si_opti IS NULL OR si_opti = '' OR si_opti = 'user' THEN 1 ELSE 0 END) AS cnt_non_role
             FROM tb_arsipuser
         ");
@@ -301,7 +355,7 @@ class PenggunaController extends Controller {
         $currentKetuaList = $this->db->exec("
             SELECT id_user, nama_user, si_opti 
             FROM tb_arsipuser 
-            WHERE si_opti IN ('superadmin', 'ketua_tim_selulosa', 'ketua_tim_lingkungan', 'ketua_tim_mitra', 'ketua_tim_keuangan', 'katim_selulosa', 'katim_lingkungan', 'katim_mitra', 'katim_keuangan', 'ketua_tim_mitra_industri')
+            WHERE si_opti IN ('superadmin', 'ketua_tim_selulosa', 'ketua_tim_lingkungan', 'ketua_tim_mitra', 'ketua_tim_keuangan', 'katim_selulosa', 'katim_lingkungan', 'katim_mitra', 'katim_keuangan', 'ketua_tim_mitra_industri', 'ketua_tim_pengujian', 'ketua_tim_kalibrasi', 'ketua_tim_sertifikasi', 'ketua_tim_pendampingan', 'ketua_tim_inspeksi', 'ketua_tim_profisiensi', 'katim_pengujian', 'katim_kalibrasi', 'katim_sertifikasi', 'katim_pendampingan', 'katim_inspeksi', 'katim_profisiensi')
         ");
         $occupiedKetua = array();
         foreach ($currentKetuaList as $k) {

@@ -5,6 +5,8 @@
     Tampilan disamakan dengan halaman Ketua Tim lain (Order Siap Ditindaklanjuti): judul berikon + subjudul, satu kartu berisi tab pill,
     filter, dan tabel berheader kapital. Semua class berawalan "rvw-" supaya tidak bentrok dengan Bootstrap / CSS layout.
     Dokumen PO diambil dari GET /po-kegiatan/@id/preview (fragment yang sudah ada), lalu tiap bagian diberi slot catatan.
+    Ketua Tim: revisi atas permintaan PPK BLU (ppk_status minta / katim_kerja / ketupel_kerja / katim_review) ikut tampil di daftar ini,
+    dibedakan lewat badge [jenis | tahap]. Membukanya mengarah ke panel revisi PPK BLU yang sudah ada: /po-revisi-ppk?buka=ID&dari=daftar
 -->
 <style>
     .rvw-root {
@@ -77,6 +79,7 @@
     .rvw-dot.sm { width: 7px; height: 7px; }
     .rvw-pcard .rvw-dot { position: absolute; left: 11px; top: 17px; }
     .rvw-desk tbody tr[data-open], .rvw-pcard[data-open] { cursor: pointer; }
+    .rvw-busy { opacity: .6; pointer-events: none; }
     .rvw-desk tr.row-unread .rvw-no, .rvw-desk tr.row-unread .rvw-sub, .rvw-desk tr.row-unread .rvw-mitra, .rvw-desk tr.row-unread .rvw-judul, .rvw-desk tr.row-unread .rvw-who, .rvw-desk tr.row-unread .rvw-readline,
     .rvw-pcard.row-unread .rvw-no, .rvw-pcard.row-unread .rvw-sub, .rvw-pcard.row-unread .rvw-mitra, .rvw-pcard.row-unread .rvw-judul, .rvw-pcard.row-unread .rvw-readline { font-weight: 700; color: var(--rvw-text); }
     .rvw-desk tr.row-unread .rvw-judul, .rvw-pcard.row-unread .rvw-judul { color: #334155; }
@@ -91,7 +94,6 @@
     .rvw-mini .b { height: 5px; background: #e2e8f0; border-radius: 5px; overflow: hidden; }
     .rvw-mini .b i { display: block; height: 100%; background: #059669; }
     .rvw-mini .t { font-size: .7rem; color: var(--rvw-muted); margin-top: 3px; }
-    .rvw-chat { display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; font-size: .7rem; font-weight: 700; color: #1d4ed8; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 1px 8px; }
     .rvw-empty { text-align: center; padding: 44px 16px; color: #94a3b8; font-size: .85rem; }
     .rvw-empty i { display: block; font-size: 28px; margin-bottom: 6px; }
     
@@ -118,9 +120,11 @@
     /* ---------- Panel samping ---------- */
     .rvw-scrim { position: fixed; inset: 0; background: rgba(15,23,42,.45); opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 1050; }
     .rvw-scrim.open { opacity: 1; pointer-events: auto; }
-    .rvw-sheet { position: fixed; top: 0; right: 0; bottom: 0; width: min(1300px, 100vw); background: #f1f5f9; z-index: 1055; display: flex; flex-direction: column; transform: translateX(100%); visibility: hidden; transition: transform .24s ease, width .24s ease, visibility 0s .24s; box-shadow: -12px 0 40px rgba(15,23,42,.18); }
+    .rvw-sheet { position: fixed; top: 0; right: 0; bottom: 0; width: calc(100vw - var(--sidebar-expanded-width, 264px)); background: #f1f5f9; z-index: 1055; display: flex; flex-direction: column; transform: translateX(100%); visibility: hidden; transition: transform .24s ease, width .24s ease, visibility 0s .24s; box-shadow: -12px 0 40px rgba(15,23,42,.18); }
     .rvw-sheet.open { transform: none; visibility: visible; transition: transform .24s ease, width .24s ease, visibility 0s; }
-    .rvw-sheet.wide { width: 100vw; }                       /* dilebarkan: menutup sidebar */
+    body.sidebar-collapsed .rvw-sheet { width: calc(100vw - var(--sidebar-mini-width, 74px)); }   /* bawaan: panel mentok sampai tepi sidebar (sidebar tetap terlihat) */
+    @media (max-width: 991.98px) { .rvw-sheet, body.sidebar-collapsed .rvw-sheet { width: 100vw; } }
+    .rvw-sheet.wide, body.sidebar-collapsed .rvw-sheet.wide { width: 100vw; }              /* dilebarkan: menutup sidebar */
     .rvw-shtools { display: flex; gap: 8px; flex-shrink: 0; }
     /* info judul + alur (stepper) bisa disembunyikan dengan transisi geser, supaya dokumen PO lebih lega */
     .rvw-shh .sub2, .rvw-shh .meta { max-height: 120px; overflow: hidden; transition: max-height .25s ease, opacity .2s ease, margin .25s ease; }
@@ -196,17 +200,33 @@
     .rvw-cmp .err-msg { color: #dc2626; font-size: .72rem; margin-top: 4px; }
     .rvw-cmp .row2 { display: flex; gap: 6px; justify-content: flex-end; margin-top: 7px; }
     
-    #rvwChatPane { flex: 1; display: flex; flex-direction: column; min-height: 260px; }
-    .rvw-chatlog { flex: 1; overflow: auto; padding: 4px 2px 10px; }
-    .rvw-msg { display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 10px; }
-    .rvw-msg.me { align-items: flex-end; }
-    .rvw-bub { background: #fff; border: 1px solid var(--rvw-border); border-radius: 12px 12px 12px 3px; padding: 8px 12px; max-width: 80%; font-size: .82rem; white-space: pre-wrap; overflow-wrap: anywhere; }
-    .rvw-msg.me .rvw-bub { background: var(--rvw-primary); color: #fff; border-color: var(--rvw-primary); border-radius: 12px 12px 3px 12px; }
-    .rvw-mt { font-size: .7rem; color: #94a3b8; margin-top: 3px; }
-    .rvw-sys { text-align: center; font-size: .72rem; color: var(--rvw-muted); background: #e2e8f0; border-radius: 20px; padding: 4px 12px; margin: 6px auto 10px; width: fit-content; max-width: 92%; }
-    .rvw-sys span { opacity: .7; margin-left: 4px; }
-    .rvw-chatin { display: flex; gap: 8px; align-items: flex-end; border-top: 1px solid var(--rvw-border); padding-top: 10px; }
-    .rvw-chatin textarea { flex: 1; border: 1px solid var(--rvw-border); border-radius: 10px; padding: 8px 11px; font: inherit; font-size: .82rem; resize: none; height: 40px; max-height: 110px; }
+    /* tab Dokumen: ringkasan pembayaran + kartu berkas */
+    .rvw-sumgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 2px; }
+    .rvw-sum { background: #fff; border: 1px solid var(--rvw-border); border-radius: 10px; padding: 10px 13px; }
+    .rvw-sum .l { font-size: .68rem; font-weight: 600; color: var(--rvw-muted); margin-bottom: 2px; }
+    .rvw-sum .v { font-weight: 800; font-size: .95rem; }
+    .rvw-sum .v.ok { color: #047857; } .rvw-sum .v.warn { color: #b45309; }
+    .rvw-cat { background: #fff; border: 1px solid var(--rvw-border); border-radius: 10px; padding: 12px 14px; margin-top: 12px; }
+    .rvw-cat-top { display: flex; align-items: center; gap: 10px; }
+    .rvw-cat-ic { width: 32px; height: 32px; border-radius: 9px; background: var(--rvw-primary-light); color: var(--rvw-primary); display: grid; place-items: center; font-size: 15px; flex-shrink: 0; }
+    .rvw-cat-label { font-weight: 700; font-size: .82rem; flex: 1; }
+    .rvw-cat-kosong { font-size: .74rem; color: #94a3b8; }
+    .rvw-cat-acts { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+    a.rvw-btn { text-decoration: none; }
+    .rvw-termin-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 7px 0 0 42px; }
+    .rvw-termin-row + .rvw-termin-row { border-top: 1px dashed var(--rvw-border); margin-top: 7px; }
+    .rvw-termin-info { font-size: .76rem; color: var(--rvw-muted); }
+    .rvw-pill.rose { background: #fff1f2; color: #be123c; border-color: #fecdd3; }
+    .rvw-fv { position: fixed; inset: 0; z-index: 1095; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(15,23,42,.6); }
+    .rvw-fv[hidden] { display: none; }
+    .rvw-fv-box { background: #fff; border-radius: 16px; width: 100%; max-width: 860px; height: min(86vh, 820px); display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 24px 60px rgba(15,23,42,.35); }
+    .rvw-fv-top { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--rvw-border); }
+    .rvw-fv-top b { flex: 1; min-width: 0; font-family: var(--rvw-display); font-size: .95rem; font-weight: 800; }
+    .rvw-fv-x { border: 1px solid var(--rvw-border); background: #fff; width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; color: var(--rvw-muted); font-size: 16px; flex-shrink: 0; }
+    .rvw-fv-x:hover { color: var(--rvw-primary); border-color: var(--rvw-primary); }
+    .rvw-fv-body { flex: 1; background: #e2e8f0; position: relative; }
+    .rvw-fv-body iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #fff; }
+    @media (max-width: 767.98px) { .rvw-sumgrid { grid-template-columns: 1fr; } }
     
     .rvw-dock { background: #fff; border-top: 1px solid var(--rvw-border); padding: 12px 18px; padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
     .rvw-dock .hintline { font-size: .8rem; color: var(--rvw-muted); flex: 1 1 200px; }
@@ -241,6 +261,14 @@
     .rvw-pbadge.ppk { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
     .rvw-pbadge.dua { background: #fff7ed; color: #c2410c; border-color: #fed7aa; }
     .rvw-pbadge.ok { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
+    /* Badge satu pill: jenis (tebal) | tahap. Warna ikut jenis; abu-abu kalau sedang dikerjakan Ketua Pelaksana */
+    .rvw-jb { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; max-width: 100%; border-radius: 20px; padding: 4px 11px; font-size: .74rem; font-weight: 600; line-height: 1.3; background: var(--js); color: var(--jt); border: 1px solid var(--jb); }
+    .rvw-jb b { font-weight: 800; }
+    .rvw-jb em { font-style: normal; opacity: .45; }
+    .rvw-jb.baru { --js: #eff6ff; --jt: #1d4ed8; --jb: #bfdbfe; }
+    .rvw-jb.rev { --js: #eef2ff; --jt: #4338ca; --jb: #c7d2fe; }
+    .rvw-jb.ppk { --js: #fff7ed; --jt: #9a3412; --jb: #fed7aa; }
+    .rvw-jb.wait { --js: #f8fafc; --jt: #64748b; --jb: #e2e8f0; }
     .rvw-posm { display: none; margin: 8px 0 2px; font-size: .75rem; color: var(--rvw-muted); }
     .rvw-al-now { background: #f8fafc; border: 1px solid var(--rvw-border); border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; }
     .rvw-al-now .k { font-size: .72rem; color: var(--rvw-muted); font-weight: 600; }
@@ -341,6 +369,9 @@
                     <div class="col-6 col-sm-auto" id="rvwFRevisiW" hidden>
                         <select class="form-select form-select-sm" id="rvwFRevisi" aria-label="Filter status revisi"></select>
                     </div>
+                    <div class="col-6 col-sm-auto" id="rvwFJenisW" hidden>
+                        <select class="form-select form-select-sm" id="rvwFJenis" aria-label="Filter jenis"></select>
+                    </div>
                     <div class="col-6 col-sm-auto" id="rvwFAlurW" hidden>
                         <select class="form-select form-select-sm" id="rvwFAlur" aria-label="Filter alur PO">
                             <option value="">Semua alur PO</option>
@@ -389,7 +420,7 @@
                     <div class="rvw-paper"><div id="rvwDocHost"><div class="rvw-loading">Memuat dokumen PO...</div></div></div>
                     <section class="rvw-umum" id="rvwUmum" data-sec="umum"></section>
                 </div>
-                <div id="rvwChatPane" hidden></div>
+                <div id="rvwBerkasPane" hidden></div>
                 <div id="rvwAlurPane" hidden></div>
             </div>
             <div class="rvw-dock" id="rvwDock"></div>
@@ -401,6 +432,16 @@
                 <h5 id="rvwDlgTitle"></h5>
                 <p id="rvwDlgMsg"></p>
                 <div class="rvw-dlg-btns"><button type="button" class="rvw-btn" id="rvwDlgNo">Batal</button><button type="button" class="rvw-btn pri" id="rvwDlgYes">Ya</button></div>
+            </div>
+        </div>
+        <div class="rvw-fv" id="rvwFv" hidden>
+            <div class="rvw-fv-box" role="dialog" aria-modal="true" aria-labelledby="rvwFvJudul">
+                <div class="rvw-fv-top">
+                    <b id="rvwFvJudul">File</b>
+                    <a class="rvw-btn sm" id="rvwFvTab" href="#" target="_blank" rel="noopener" title="Buka di tab baru"><i class="bi bi-box-arrow-up-right"></i></a>
+                    <button type="button" class="rvw-fv-x" id="rvwFvTutup" aria-label="Tutup"><i class="bi bi-x-lg"></i></button>
+                </div>
+                <div class="rvw-fv-body"><iframe id="rvwFvFrame" title="Pratinjau file"></iframe></div>
             </div>
         </div>
         <div class="rvw-toast" id="rvwToast" role="status"></div>
@@ -420,22 +461,71 @@
             disetujui: { label: 'Disetujui', cls: 'emerald', ic: 'bi-check-circle' }
         };
         if (ROLE === 'katim') { STATUS.perlu_revisi.label = 'Sedang dikerjakan'; }   // bagi Ketua Tim, PO ini sedang dikerjakan Ketua Pelaksana
+
+        /* ---------- Jenis dokumen + tahap: PO Baru, Revisi Ketua Tim, Revisi PPK BLU ---------- */
+        // Revisi atas permintaan PPK BLU: status_review tetap 'disetujui', posisinya dibaca dari ppk_status
+        var PPK_REV = ['minta', 'katim_kerja', 'ketupel_kerja', 'katim_review'];
+        var JENIS = { baru: { l: 'PO Baru', ic: 'bi-file-earmark-plus' }, rev: { l: 'Revisi Ketua Tim', ic: 'bi-arrow-repeat' }, ppk: { l: 'Revisi PPK BLU', ic: 'bi-clipboard2-check' } };
+        function isPpkRev(p) { return p.status === 'disetujui' && PPK_REV.indexOf(p.ppk_status) !== -1; }
+        // revisi PPK BLU tampil di daftar Ketua Tim maupun Ketua Pelaksana
+        function ppkRow(p) { return isPpkRev(p); }
+        function jenisPo(p) {
+            if (isPpkRev(p)) { return 'ppk'; }
+            if (p.status === 'menunggu_review') { return 'baru'; }
+            if (p.status === 'direvisi' || p.status === 'perlu_revisi') { return 'rev'; }
+            return '';
+        }
+        // tahap = langkah yang sedang berjalan; me = bola ada di Ketua Tim (perlu tindakan)
+        function tahapPo(p) {
+            if (ROLE === 'pembuat') {      // sudut pandang Ketua Pelaksana: me = bola ada di Anda (perlu direvisi)
+                if (isPpkRev(p)) {
+                    if (p.ppk_status === 'ketupel_kerja') { return { t: 'Perlu direvisi', full: 'Revisi PPK BLU didisposisikan kepada Anda: perbaiki sesuai catatan, lalu kirim ke Ketua Tim', me: true }; }
+                    if (p.ppk_status === 'katim_review') { return { t: 'Review Katim', full: 'Revisi PPK BLU sudah Anda kirim, menunggu review Ketua Tim', me: false }; }
+                    return { t: 'Ditangani Katim', full: 'Revisi PPK BLU sedang ditangani Ketua Tim', me: false };
+                }
+                if (p.status === 'perlu_revisi') { return { t: 'Perlu direvisi', full: 'Revisi Ketua Tim: perbaiki sesuai catatan, lalu kirim ulang', me: true }; }
+                return { t: 'Review Katim', full: p.status === 'direvisi' ? 'Revisi sudah Anda kirim, menunggu review ulang Ketua Tim' : 'PO sudah Anda kirim, menunggu review Ketua Tim', me: false };
+            }
+            if (isPpkRev(p)) {
+                if (p.ppk_status === 'minta') { return { t: 'Disposisi Katim', full: 'Revisi PPK BLU masuk: tentukan dikerjakan sendiri atau didisposisikan', me: true }; }
+                if (p.ppk_status === 'katim_kerja') { return { t: 'Dikerjakan Katim', full: 'Revisi PPK BLU sedang Anda kerjakan', me: true }; }
+                if (p.ppk_status === 'ketupel_kerja') { return { t: 'Dikerjakan Ketupel', full: 'Revisi PPK BLU sedang dikerjakan Ketua Pelaksana', me: false }; }
+                return { t: 'Review Katim', full: 'Revisi PPK BLU sudah dikirim Ketua Pelaksana, menunggu review Anda', me: true };
+            }
+            if (p.status === 'perlu_revisi') { return { t: 'Dikerjakan Ketupel', full: 'Revisi Ketua Tim sedang dikerjakan Ketua Pelaksana', me: false }; }
+            return { t: 'Review Katim', full: p.status === 'direvisi' ? 'Revisi sudah dikirim, menunggu review ulang Anda' : 'PO baru menunggu review Anda', me: true };
+        }
+        function jenisBadge(p) {
+            var k = jenisPo(p), t = tahapPo(p);
+            return '<span class="rvw-jb ' + k + (t.me ? '' : ' wait') + '" title="' + esc(JENIS[k].l + ': ' + t.full) + '"><b>' + JENIS[k].l + '</b><em>|</em>' + t.t + '</span>';
+        }
+        // Tab Review revisi (Ketua Tim) dikelompokkan: siap = perlu tindakan Ketua Tim, kerja = sedang di Ketua Pelaksana
+        function grupRev(p) { return (p.status === 'perlu_revisi' || p.ppk_status === 'ketupel_kerja' && isPpkRev(p)) ? 'kerja' : 'siap'; }
+        function revKey(p) { return ROLE === 'katim' ? grupRev(p) : (isPpkRev(p) ? 'ppk' : p.status); }
     
         var BULAN_PANJANG = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
         var SEKARANG = new Date(), BULAN_INI = SEKARANG.getMonth() + 1, TAHUN_INI = SEKARANG.getFullYear();
-        var fBaca = '', fRevisi = '', fAlur = '', fBulan = '', fTahun = '';
+        var fBaca = '', fRevisi = '', fAlur = '', fBulan = '', fTahun = '', fJenis = '';
         var tab = '', q = '', current = null, detail = null, shTab = 'dok', composer = null;
-        var openTicket = 0, secs = {}, chatTimer = null, chatPesan = [], chatSudahMuat = false, alurPesan = [], alurMuat = false;
+        var openTicket = 0, secs = {}, berkas = null, berkasGalat = '', alurPesan = [], alurMuat = false;
     
         function $(id) { return document.getElementById(id); }
         function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-        function fmt(t) { var m = /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}))?/.exec(t || ''); if (!m) { return '-'; } return (+m[3]) + ' ' + BULAN[+m[2] - 1] + (m[4] ? ' ' + m[4] + ':' + m[5] : ''); }
+        function fmt(t) { var m = /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}))?/.exec(t || ''); if (!m) { return '-'; } return (+m[3]) + ' ' + BULAN[+m[2] - 1] + ' ' + m[1] + (m[4] ? ' ' + m[4] + ':' + m[5] : ''); }
+        function tglSingkat(s) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s || ''); return m ? (+m[3]) + ' ' + BULAN[+m[2] - 1] + ' ' + m[1] : '-'; }
+        function rp(n) { return 'Rp ' + Math.round(parseFloat(n) || 0).toLocaleString('id-ID'); }
         function initials(n) { return String(n).split(' ').map(function (x) { return x.charAt(0); }).slice(0, 2).join('').toUpperCase(); }
         function first(n) { return String(n).split(' ')[0]; }
         function lawanLabel() { return ROLE === 'katim' ? 'Ketua Pelaksana' : 'Ketua Tim'; }
     
         /* ---------- Jejak kirim dan baca ---------- */
         function jejak(p) {
+            if (ppkRow(p)) {
+                if (p.ppk_status === 'minta') { return { kirim: 'Revisi diminta ' + fmt(p.ppk_status_at), at: p.ppk_status_at, bacaAt: p.ppk_dibaca_at, penerima: 'katim' }; }
+                if (p.ppk_status === 'katim_kerja') { return { kirim: (ROLE === 'katim' ? 'Anda kerjakan sejak ' : 'Dikerjakan Ketua Tim sejak ') + fmt(p.ppk_status_at), at: p.ppk_status_at, bacaAt: null, penerima: null }; }
+                if (p.ppk_status === 'ketupel_kerja') { return { kirim: 'Didisposisikan ' + fmt(p.ppk_status_at), at: p.ppk_status_at, bacaAt: p.ppk_dibaca_at, penerima: 'pembuat' }; }
+                return { kirim: 'Revisi dikirim ' + fmt(p.ppk_status_at), at: p.ppk_status_at, bacaAt: p.ppk_dibaca_at, penerima: 'katim' };
+            }
             if (p.status === 'menunggu_review') { return { kirim: 'Dikirim ' + fmt(p.dikirim_at), at: p.dikirim_at, bacaAt: p.dibaca_at, penerima: 'katim' }; }
             if (p.status === 'direvisi') { return { kirim: 'Revisi dikirim ' + fmt(p.revisi_at), at: p.revisi_at, bacaAt: p.revisi_dibaca_at, penerima: 'katim' }; }
             if (p.status === 'perlu_revisi') { return { kirim: 'Revisi diminta ' + fmt(p.minta_at), at: p.minta_at, bacaAt: p.minta_dibaca_at, penerima: 'pembuat' }; }
@@ -464,7 +554,7 @@
             if (tab === 'po_selesai') { l3 = ''; }
             var ord = p.order ? '<div class="rvw-meta"><i class="bi bi-inbox"></i><span>Order ' + esc(p.order) + '</span></div>' : '';
             return '<div class="rvw-no">' + (un ? '<span class="rvw-sr">Belum dibaca: </span>' : '') + esc(p.nomor) + '</div>' + ord +
-                (p.status === 'disetujui' ? verLines(p) : '<div class="rvw-sub">' + j.kirim + '</div>') +
+                (p.status === 'disetujui' && !ppkRow(p) ? verLines(p) : '<div class="rvw-sub">' + j.kirim + '</div>') +
                 (l3 ? '<div class="rvw-readline' + (baca ? ' is-read' : '') + '">' + l3 + '</div>' : '');
         }
     
@@ -498,23 +588,27 @@
         function tabDef() {
             if (ROLE === 'katim') {
                 return [
-                    { k: 'baru', l: 'Baru dikirim', ic: 'bi-send-check', aksi: true, f: function (p) { return p.status === 'menunggu_review'; } },
-                    { k: 'revisi', l: 'Review revisi', ic: 'bi-arrow-repeat', aksi: true, revDef: 'direvisi', rev: [['direvisi', 'Sudah direvisi'], ['perlu_revisi', 'Sedang dikerjakan'], ['semua', 'Semua status']], hot: function (p) { return p.status === 'direvisi'; }, f: function (p) { return p.status === 'direvisi' || p.status === 'perlu_revisi'; } },
-                    { k: 'selesai', l: 'Disetujui', ic: 'bi-check2-circle', f: function (p) { return p.status === 'disetujui' && posisi(p).cls !== 'ok'; } },
+                    // Baru masuk = PO baru dari Ketua Pelaksana + revisi PPK BLU yang baru masuk (perlu diputuskan)
+                    { k: 'baru', l: 'Baru masuk', ic: 'bi-send-check', aksi: true, jenis: [['baru', 'PO Baru'], ['ppk', 'Revisi PPK BLU']], f: function (p) { return p.status === 'menunggu_review' || (isPpkRev(p) && p.ppk_status === 'minta'); } },
+                    // Review revisi = revisi Ketua Tim + revisi PPK BLU yang sedang berjalan; bawaan hanya yang menunggu tindakan Ketua Tim
+                    { k: 'revisi', l: 'Review revisi', ic: 'bi-arrow-repeat', aksi: true, revDef: 'siap', rev: [['siap', 'Perlu Anda tindak'], ['kerja', 'Dikerjakan Ketupel'], ['semua', 'Semua status']], jenis: [['rev', 'Revisi Ketua Tim'], ['ppk', 'Revisi PPK BLU']], hot: function (p) { return grupRev(p) === 'siap'; }, f: function (p) { return p.status === 'direvisi' || p.status === 'perlu_revisi' || (isPpkRev(p) && p.ppk_status !== 'minta'); } },
+                    { k: 'selesai', l: 'Disetujui', ic: 'bi-check2-circle', f: function (p) { return p.status === 'disetujui' && !isPpkRev(p) && posisi(p).cls !== 'ok'; } },
                     { k: 'po_selesai', l: 'PO Selesai', ic: 'bi-patch-check-fill', f: function (p) { return p.status === 'disetujui' && posisi(p).cls === 'ok'; } }
                 ];
             }
             return [
-                { k: 'aksi', l: 'Perlu direvisi', ic: 'bi-pencil-square', aksi: true, f: function (p) { return p.status === 'perlu_revisi'; } },
-                { k: 'tunggu', l: 'Dalam review', ic: 'bi-hourglass-split', rev: [['menunggu_review', 'Menunggu review'], ['direvisi', 'Sudah direvisi']], f: function (p) { return p.status === 'menunggu_review' || p.status === 'direvisi'; } },
-                { k: 'selesai', l: 'Disetujui', ic: 'bi-check2-circle', f: function (p) { return p.status === 'disetujui' && posisi(p).cls !== 'ok'; } },
+                // Perlu direvisi = revisi dari Ketua Tim + revisi PPK BLU yang didisposisikan kepada Ketua Pelaksana
+                { k: 'aksi', l: 'Perlu direvisi', ic: 'bi-pencil-square', aksi: true, jenis: [['rev', 'Revisi Ketua Tim'], ['ppk', 'Revisi PPK BLU']], f: function (p) { return p.status === 'perlu_revisi' || (isPpkRev(p) && p.ppk_status === 'ketupel_kerja'); } },
+                // Dalam review = PO yang menunggu Ketua Tim, termasuk revisi PPK BLU yang sedang ditangani/direview Ketua Tim
+                { k: 'tunggu', l: 'Dalam review', ic: 'bi-hourglass-split', rev: [['menunggu_review', 'Menunggu review'], ['direvisi', 'Sudah direvisi'], ['ppk', 'Revisi PPK BLU']], f: function (p) { return p.status === 'menunggu_review' || p.status === 'direvisi' || (isPpkRev(p) && p.ppk_status !== 'ketupel_kerja'); } },
+                { k: 'selesai', l: 'Disetujui', ic: 'bi-check2-circle', f: function (p) { return p.status === 'disetujui' && !isPpkRev(p) && posisi(p).cls !== 'ok'; } },
                 { k: 'po_selesai', l: 'PO Selesai', ic: 'bi-patch-check-fill', f: function (p) { return p.status === 'disetujui' && posisi(p).cls === 'ok'; } }
             ];
         }
         /* ---------- Filter: baca, bulan, tahun, revisi (tab 2), alur PO (tab Disetujui) ---------- */
         function defTab(k) { return (k === 'selesai' || k === 'po_selesai') ? { bulan: String(BULAN_INI), tahun: String(TAHUN_INI) } : { bulan: '', tahun: '' }; }
         function revDefault(k) { var d = tabDef().filter(function (x) { return x.k === k; })[0]; return (d && d.revDef) || ''; }   // filter status revisi bawaan per tab
-        function resetFilterTab() { var d = defTab(tab); fBulan = d.bulan; fTahun = d.tahun; fRevisi = revDefault(tab); fAlur = ''; }
+        function resetFilterTab() { var d = defTab(tab); fBulan = d.bulan; fTahun = d.tahun; fRevisi = revDefault(tab); fAlur = ''; fJenis = ''; }
         function bulanTahun(t) { var m = /^(\d{4})-(\d{2})/.exec(t || ''); return m ? { y: +m[1], m: +m[2] } : null; }
         // tanggal acuan bulan/tahun: tab Disetujui = tanggal disetujui; tab lain = kiriman terakhir
         function tglAcuan(p, k) { return k === 'po_selesai' ? (p.ppk_valid_at || p.disetujui_at || p.dikirim_at) : (k === 'selesai' ? (p.disetujui_at || p.dikirim_at) : sortKey(p)); }
@@ -528,7 +622,7 @@
             if (tahun && String(bt.y) !== tahun) { return false; }
             return true;
         }
-        function filterAktif() { var d = defTab(tab); return !!(q || fBaca || fRevisi !== revDefault(tab) || fAlur || fBulan !== d.bulan || fTahun !== d.tahun); }
+        function filterAktif() { var d = defTab(tab); return !!(q || fBaca || fJenis || fRevisi !== revDefault(tab) || fAlur || fBulan !== d.bulan || fTahun !== d.tahun); }
         function isiOpsiWaktu() {
             var th = {}; th[TAHUN_INI] = true;
             DATA.forEach(function (p) { ['selesai', 'po_selesai', 'x'].forEach(function (k) { var bt = bulanTahun(tglAcuan(p, k)); if (bt) { th[bt.y] = true; } }); });
@@ -541,9 +635,15 @@
             var sr = $('rvwFRevisi');
             if (def.rev) {
                 var dasarRev = DATA.filter(def.f);
-                sr.innerHTML = (def.revDef ? '' : '<option value="">Semua status (' + dasarRev.length + ')</option>') + def.rev.map(function (o) { return '<option value="' + o[0] + '">' + o[1] + ' (' + (o[0] === 'semua' ? dasarRev.length : dasarRev.filter(function (p) { return p.status === o[0]; }).length) + ')</option>'; }).join('');
+                sr.innerHTML = (def.revDef ? '' : '<option value="">Semua status (' + dasarRev.length + ')</option>') + def.rev.map(function (o) { return '<option value="' + o[0] + '">' + o[1] + ' (' + (o[0] === 'semua' ? dasarRev.length : dasarRev.filter(function (p) { return revKey(p) === o[0]; }).length) + ')</option>'; }).join('');
                 sr.value = fRevisi; $('rvwFRevisiW').hidden = false;
             } else { $('rvwFRevisiW').hidden = true; }
+            var sj = $('rvwFJenis');
+            if (def.jenis) {
+                var dj = DATA.filter(def.f);
+                sj.innerHTML = '<option value="">Semua jenis (' + dj.length + ')</option>' + def.jenis.map(function (o) { return '<option value="' + o[0] + '">' + o[1] + ' (' + dj.filter(function (p) { return jenisPo(p) === o[0]; }).length + ')</option>'; }).join('');
+                sj.value = fJenis; $('rvwFJenisW').hidden = false;
+            } else { $('rvwFJenisW').hidden = true; }
             $('rvwFAlurW').hidden = def.k !== 'selesai'; $('rvwFAlur').value = fAlur;
             $('rvwClear').hidden = !$('rvwSearch').value;
             $('rvwFBulan').value = fBulan; $('rvwFTahun').value = fTahun;
@@ -556,7 +656,9 @@
                 note.textContent = 'Menampilkan PO yang disetujui bulan ini, ditambah PO yang alurnya belum selesai. Pilih bulan atau tahun lain, atau "Semua bulan", untuk melihat PO sebelumnya.';
                 note.hidden = false;
             } else if (def.revDef && fRevisi === def.revDef) {
-                note.textContent = 'Menampilkan PO yang sudah direvisi dan siap Anda review. Pilih "Sedang dikerjakan" di filter status untuk melihat PO yang masih dikerjakan Ketua Pelaksana.';
+                note.textContent = ROLE === 'katim'
+                    ? 'Menampilkan revisi yang menunggu tindakan Anda (revisi Ketua Tim atau revisi PPK BLU). Pilih "Dikerjakan Ketupel" di filter status untuk melihat yang masih dikerjakan Ketua Pelaksana.'
+                    : 'Menampilkan PO yang sudah direvisi dan siap Anda review. Pilih "Sedang dikerjakan" di filter status untuk melihat PO yang masih dikerjakan Ketua Pelaksana.';
                 note.hidden = false;
             } else { note.hidden = true; }
         }
@@ -572,37 +674,42 @@
         }
     
         /* ---------- Daftar ---------- */
+        function statusCell(p) { return jenisPo(p) ? jenisBadge(p) : statusPill(p); }
         function statusPill(p) { var s = STATUS[p.status] || STATUS.menunggu_review; return '<span class="rvw-pill ' + s.cls + '"><i class="bi ' + s.ic + '"></i>' + s.label + '</span>'; }
         function extraStatus(p) {
             var h = '';
-            if (p.status === 'perlu_revisi') {
+            if (ppkRow(p)) {
+                if (p.ppk_status === 'katim_kerja' || p.ppk_status === 'ketupel_kerja') {
+                    var pk = p.rn_total ? Math.round(p.rn_selesai / p.rn_total * 100) : 0;
+                    h += '<div class="rvw-mini"><div class="b"><i style="width:' + pk + '%"></i></div><div class="t">' + p.rn_selesai + ' dari ' + p.rn_total + ' catatan PPK BLU diperbaiki</div></div>';
+                } else if (p.ronde_ppk > 0) { h += '<div class="rvw-sub" style="margin-top:4px;">Putaran PPK BLU ke-' + p.ronde_ppk + '</div>'; }
+            } else if (p.status === 'perlu_revisi') {
                 var pct = p.rn_total ? Math.round(p.rn_selesai / p.rn_total * 100) : 0;
                 h += '<div class="rvw-mini"><div class="b"><i style="width:' + pct + '%"></i></div><div class="t">' + p.rn_selesai + ' dari ' + p.rn_total + ' catatan diperbaiki</div></div>';
             } else if (p.status === 'direvisi') { h += '<div class="rvw-sub" style="margin-top:4px;">Revisi ke-' + p.ronde + '</div>'; }
             // PO disetujui: cukup badge "Disetujui", tanpa keterangan putaran revisi / putaran PPK BLU
-            if (p.unread > 0) { h += '<div><span class="rvw-chat" title="Pesan diskusi belum dibaca"><i class="bi bi-chat-dots"></i>' + p.unread + ' pesan</span></div>'; }
             return h;
         }
         function emptyMsg() {
             if (filterAktif()) { return 'Tidak ada PO yang cocok dengan pencarian atau filter.'; }
-            if (tab === 'baru') { return 'Belum ada PO baru yang dikirim.'; }
+            if (tab === 'baru') { return ROLE === 'katim' ? 'Belum ada PO baru atau revisi PPK BLU yang masuk.' : 'Belum ada PO baru yang dikirim.'; }
             if (tab === 'aksi') { return 'Tidak ada PO yang perlu Anda revisi saat ini.'; }
-            if (tab === 'revisi') { return fRevisi === 'perlu_revisi' ? 'Tidak ada PO yang sedang dikerjakan Ketua Pelaksana.' : 'Belum ada PO yang sudah direvisi dan menunggu review Anda. PO yang masih dikerjakan bisa dilihat lewat filter status.'; }
+            if (tab === 'revisi') { return (fRevisi === 'perlu_revisi' || fRevisi === 'kerja') ? 'Tidak ada revisi yang sedang dikerjakan Ketua Pelaksana.' : 'Belum ada revisi yang menunggu tindakan Anda. Revisi yang masih dikerjakan bisa dilihat lewat filter status.'; }
             if (tab === 'po_selesai') { return 'Belum ada PO yang selesai diverifikasi PPK BLU bulan ini. Pilih bulan lain untuk melihat PO sebelumnya.'; }
             if (tab === 'tunggu') { return ROLE === 'katim' ? 'Tidak ada PO yang sedang menunggu revisi.' : 'Tidak ada PO yang sedang direview.'; }
             return 'Belum ada PO yang disetujui bulan ini. Pilih bulan lain untuk melihat PO sebelumnya.';
         }
         function renderHead() {
             $('rvwSub').textContent = ROLE === 'katim'
-                ? 'PO yang dikirim Ketua Pelaksana. Baris tebal bertitik biru belum Anda baca. Klik baris untuk membuka, beri catatan revisi per bagian, lalu setujui kalau sudah sesuai.'
-                : 'PO buatan Anda. Baris tebal bertitik biru adalah permintaan revisi yang belum Anda baca. Perbaiki sesuai catatan Ketua Tim, lalu kirim ulang.';
+                ? 'PO baru, revisi Ketua Tim, dan revisi permintaan PPK BLU dalam satu daftar; bedakan lewat badge jenis di kolom Status. Baris tebal bertitik biru belum Anda baca. Klik baris untuk membuka dan menindaklanjuti.'
+                : 'PO buatan Anda, termasuk revisi atas permintaan PPK BLU; bedakan lewat badge jenis di kolom Status. Baris tebal bertitik biru adalah permintaan revisi yang belum Anda baca. Perbaiki sesuai catatan, lalu kirim ulang.';
         }
         function renderTabs() {
             $('rvwTabs').innerHTML = tabDef().map(function (t) {
                 var isi = DATA.filter(t.f);
                 // tab Disetujui hanya menghitung yang tampil secara bawaan (bulan ini + alur belum selesai)
                 if (t.k === 'selesai' || t.k === 'po_selesai') { var db = defTab(t.k); isi = isi.filter(function (p) { return cocokPeriode(p, t.k, db.bulan, db.tahun); }); }
-                if (t.revDef) { isi = isi.filter(function (p) { return p.status === t.revDef; }); }   // Review revisi: hitung yang sudah direvisi saja (bawaan)
+                if (t.revDef) { isi = isi.filter(function (p) { return revKey(p) === t.revDef; }); }   // Review revisi: hitung yang sudah direvisi saja (bawaan)
                 var n = isi.length, u = isi.filter(isUnread).length;
                 return '<button type="button" class="rvw-tab' + (tab === t.k ? ' on' : '') + '" data-tab="' + t.k + '">' + (u ? '<span class="rvw-dot sm" title="' + u + ' belum dibaca"></span>' : '') + '<i class="bi ' + t.ic + '"></i><span>' + t.l + '</span> <span class="rvw-cnt' + ((t.hot ? isi.filter(t.hot).length : (t.aksi ? n : 0)) > 0 ? ' hot' : '') + '">' + n + '</span></button>';
             }).join('');
@@ -620,6 +727,7 @@
             if (q) { h += '<span><i class="bi bi-search"></i>Pencarian: &ldquo;' + esc($('rvwSearch').value.trim()) + '&rdquo;</span>'; }
             if (fBaca) { h += '<span><i class="bi bi-envelope-open"></i>' + (fBaca === 'belum' ? 'Hanya yang belum dibaca' : 'Hanya yang sudah dibaca') + '</span>'; }
             if (fRevisi && fRevisi !== 'semua' && def.rev) { var nm = def.rev.filter(function (o) { return o[0] === fRevisi; })[0]; if (nm) { h += '<span><i class="bi bi-funnel"></i>Status revisi: <b>' + esc(nm[1]) + '</b></span>'; } }
+            if (fJenis && def.jenis) { var nj = def.jenis.filter(function (o) { return o[0] === fJenis; })[0]; if (nj) { h += '<span><i class="bi bi-funnel"></i>Jenis: <b>' + esc(nj[1]) + '</b></span>'; } }
             if (fAlur && def.k === 'selesai') { h += '<span><i class="bi bi-funnel"></i>Alur: <b>' + esc($('rvwFAlur').options[$('rvwFAlur').selectedIndex].text) + '</b></span>'; }
             var u = dasar.filter(isUnread).length;
             h += '<span class="u"><i class="bi bi-circle-fill" style="font-size:.5rem"></i>' + (u ? '<b>' + u + '</b> PO belum dibaca' : 'Semua PO sudah dibaca') + '</span>';
@@ -630,12 +738,13 @@
             syncFilterUI(def);
             var rows = DATA.filter(def.f).filter(function (p) { return !q || (p.nomor + ' ' + p.mitra + ' ' + p.judul).toLowerCase().indexOf(q) !== -1; })
                 .filter(function (p) { return !fBaca || (fBaca === 'belum' ? isUnread(p) : !isUnread(p)); })
-                .filter(function (p) { return !fRevisi || fRevisi === 'semua' || !def.rev || p.status === fRevisi; })
+                .filter(function (p) { return !fRevisi || fRevisi === 'semua' || !def.rev || revKey(p) === fRevisi; })
+                .filter(function (p) { return !fJenis || !def.jenis || jenisPo(p) === fJenis; })
                 .filter(function (p) { return !fAlur || def.k !== 'selesai' || posisi(p).cls === fAlur; })
                 .filter(function (p) { return cocokPeriode(p, def.k, fBulan, fTahun); })
                 .sort(function (a, b) {
                     // tab Review revisi: yang sudah direvisi (siap direview) di atas, yang masih dikerjakan pelaksana di bawah
-                    var ga = a.status === 'perlu_revisi' ? 1 : 0, gb = b.status === 'perlu_revisi' ? 1 : 0;
+                    var ga = grupRev(a) === 'kerja' ? 1 : 0, gb = grupRev(b) === 'kerja' ? 1 : 0;
                     if (def.k === 'revisi' && ga !== gb) { return ga - gb; }
                     var ua = isUnread(a) ? 0 : 1, ub = isUnread(b) ? 0 : 1;
                     if (ua !== ub) { return ua - ub; }
@@ -645,15 +754,15 @@
             if (!rows.length) { $('rvwList').innerHTML = '<div class="rvw-empty"><i class="bi bi-inbox"></i>' + emptyMsg() + '</div>'; return; }
             var orang = function (p) { var n = ROLE === 'katim' ? p.pembuat : p.katim; return '<div class="rvw-who"><span class="rvw-av">' + esc(initials(n)) + '</span>' + esc(n) + '</div>'; };
             var tanpaPos = (tab !== 'selesai');   // kolom Status PO saat ini hanya di tab Disetujui
-            var tbl = '<table class="rvw-desk"><thead><tr><th class="dotc"></th><th style="width:40px;">No</th><th style="width:235px;">Nomor PO</th><th style="min-width:240px;">Mitra &amp; Kegiatan</th><th style="width:170px;">' + lawanLabel() + '</th><th style="width:190px;">Status</th>' + (tanpaPos ? '' : '<th style="width:230px;">Status PO saat ini</th>') + '<th class="r" style="width:95px;">Aksi</th></tr></thead><tbody>' +
+            var tbl = '<table class="rvw-desk"><thead><tr><th class="dotc"></th><th style="width:40px;">No</th><th style="width:235px;">Nomor PO</th><th style="min-width:240px;">Mitra &amp; Kegiatan</th><th style="width:170px;">' + lawanLabel() + '</th><th style="width:320px;">Status</th>' + (tanpaPos ? '' : '<th style="width:230px;">Status PO saat ini</th>') + '<th class="r" style="width:95px;">Aksi</th></tr></thead><tbody>' +
                 rows.map(function (p, i) {
                     return '<tr class="' + rowClass(p) + '" data-open="' + p.id + '"><td class="dotc">' + dotHtml(p) + '</td><td class="rvw-num">' + (i + 1) + '</td><td>' + noCell(p) + '</td>' +
                         '<td><div class="rvw-judul">' + esc(p.judul) + '</div><div class="rvw-mitra"><i class="bi bi-building"></i><span>' + esc(p.mitra) + '</span></div></td>' +
-                        '<td>' + orang(p) + '</td><td>' + statusPill(p) + extraStatus(p) + '</td>' + (tanpaPos ? '' : '<td>' + posBadge(p) + miniAlur(p) + '</td>') +
+                        '<td>' + orang(p) + '</td><td>' + statusCell(p) + extraStatus(p) + '</td>' + (tanpaPos ? '' : '<td>' + posBadge(p) + miniAlur(p) + '</td>') +
                         '<td class="r"><button type="button" class="rvw-btn pri sm" data-open="' + p.id + '"><i class="bi bi-eye"></i>Buka</button></td></tr>';
                 }).join('') + '</tbody></table>';
             var cards = '<div class="rvw-cards">' + rows.map(function (p) {
-                return '<div class="rvw-pcard ' + rowClass(p) + '" data-open="' + p.id + '">' + dotHtml(p) + '<div class="top"><div>' + noCell(p) + '</div>' + statusPill(p) + '</div>' +
+                return '<div class="rvw-pcard ' + rowClass(p) + '" data-open="' + p.id + '">' + dotHtml(p) + '<div class="top"><div>' + noCell(p) + '</div>' + (jenisPo(p) ? '' : statusPill(p)) + '</div>' + (jenisPo(p) ? '<div style="margin-top:8px;">' + jenisBadge(p) + '</div>' : '') +
                     '<div class="rvw-judul" style="max-width:none;margin-top:8px;">' + esc(p.judul) + '</div><div class="rvw-mitra"><i class="bi bi-building"></i><span>' + esc(p.mitra) + '</span></div>' + extraStatus(p) +
                     (tanpaPos ? '' : '<div class="rvw-posm">' + posBadge(p) + miniAlur(p) + '</div>') + '<div class="foot"><div class="rvw-sub">' + lawanLabel() + ': ' + esc(ROLE === 'katim' ? p.pembuat : p.katim) + '</div><button type="button" class="rvw-btn pri sm" data-open="' + p.id + '">Buka</button></div></div>';
             }).join('') + '</div>';
@@ -754,16 +863,16 @@
             $('rvwStepper').innerHTML = h;
         }
         function renderShTabs(p) {
-            var nn = notes().length, unread = p.unread || 0, nc = chatSudahMuat ? chatPesan.filter(function (m) { return !m.sistem; }).length : 0;
+            var nn = notes().length;
             $('rvwShTabs').innerHTML =
                 '<button type="button" class="rvw-shtab' + (shTab === 'dok' ? ' on' : '') + '" data-shtab="dok">Dokumen dan catatan' + (nn ? ' <span class="rvw-cnt">' + nn + '</span>' : '') + '</button>' +
-                '<button type="button" class="rvw-shtab' + (shTab === 'chat' ? ' on' : '') + '" data-shtab="chat">Diskusi' + (unread ? ' <span class="rvw-cnt hot">' + unread + '</span>' : (nc ? ' <span class="rvw-cnt">' + nc + '</span>' : '')) + '</button>' +
+                '<button type="button" class="rvw-shtab' + (shTab === 'berkas' ? ' on' : '') + '" data-shtab="berkas">Dokumen</button>' +
                 '<button type="button" class="rvw-shtab' + (shTab === 'alur' ? ' on' : '') + '" data-shtab="alur">Alur</button>';
         }
         function renderBanner(p) {
             var op = cnt('terbuka'), pm = first(p.pembuat), km = first(p.katim), h;
             if (ROLE === 'katim') {
-                if (p.status === 'menunggu_review') { h = ['info', 'bi-info-circle', 'Beri catatan pada bagian yang perlu diperbaiki. Catatan berstatus <b>draf</b> sampai Anda menekan <b>Minta revisi</b>. Kalau sudah sesuai, langsung <b>Setujui</b>.']; }
+                if (p.status === 'menunggu_review') { h = ['info', 'bi-info-circle', 'Beri catatan pada bagian yang perlu diperbaiki. Catatan berstatus <b>draf</b> sampai Anda menekan <b>Minta revisi</b>. Kalau lebih cepat diubah sendiri, pakai <b>Edit PO</b>. Kalau sudah sesuai, langsung <b>Setujui</b>.']; }
                 else if (p.status === 'direvisi') { h = ['info', 'bi-info-circle', '<b>' + esc(pm) + ' sudah mengirim revisi.</b> Cek ulang bagian yang dicatat. Kalau sudah sesuai, setujui. Kalau belum, buka kembali catatannya atau tambah catatan baru.']; }
                 else if (p.status === 'perlu_revisi') { h = ['warn', 'bi-hourglass-split', 'Menunggu <b>' + esc(pm) + '</b> memperbaiki ' + op + ' catatan. Anda akan melihat revisinya di tab Review revisi.']; }
                 else if (p.ppk_status) { h = ['warn', 'bi-clipboard2-check', 'PO ini sedang <b>direvisi atas permintaan PPK BLU</b> (putaran ' + p.ronde_ppk + '). Kelola di halaman <a href="' + BASE + '/po-revisi-ppk">Revisi PPK BLU</a>.']; }
@@ -781,7 +890,8 @@
             if (ROLE === 'katim') {
                 if (p.status === 'menunggu_review' || p.status === 'direvisi') {
                     hint = tot ? ((dr ? dr + ' catatan draf belum dikirim' : '') + (dr && op ? ' dan ' : '') + (op ? op + ' catatan dibuka kembali' : '') + '.') : (p.status === 'direvisi' ? 'Semua catatan sudah diperbaiki.' : 'Belum ada catatan.');
-                    btns = '<button type="button" class="rvw-btn" data-act="minta"' + (tot ? '' : ' disabled') + '><i class="bi bi-send"></i>Minta revisi' + (tot ? ' (' + tot + ')' : '') + '</button>' +
+                    btns = '<button type="button" class="rvw-btn" data-act="edit"><i class="bi bi-pencil"></i>Edit PO</button>' +
+                           '<button type="button" class="rvw-btn" data-act="minta"' + (tot ? '' : ' disabled') + '><i class="bi bi-send"></i>Minta revisi' + (tot ? ' (' + tot + ')' : '') + '</button>' +
                            '<button type="button" class="rvw-btn pri" data-act="setujui"' + (tot ? ' disabled' : '') + '><i class="bi bi-check2-circle"></i>Setujui</button>';
                 } else if (p.status === 'perlu_revisi') { hint = 'Menunggu ' + first(p.pembuat) + ' memperbaiki ' + op + ' catatan.'; }
                 else if (p.ppk_status) { hint = 'Sedang direvisi atas permintaan PPK BLU.'; btns = '<a class="rvw-btn pri" href="' + BASE + '/po-revisi-ppk"><i class="bi bi-clipboard2-check"></i>Buka Revisi PPK BLU</a>'; }
@@ -833,7 +943,7 @@
                     sec.appendChild(head); sec.appendChild(body); sec.appendChild(nt);
                     cur = { key: key, body: body, tools: tools, notes: nt };
                     secs[key] = cur;
-                } else if (el.classList.contains('po-signature-row')) { cur = null; }
+                } else if (el.classList.contains('po-signature-row') || el.classList.contains('ptd-blok')) { cur = null; }
                 else if (cur) { cur.body.appendChild(el); }
             });
         }
@@ -882,13 +992,37 @@
         function terapkanDetail(j) {
             detail = j; updateRow(j.po); renderChrome(); renderNotes();
         }
+        var navPpk = false;
+        // kembali dari halaman revisi PPK BLU lewat tombol Back (halaman dipulihkan dari cache): bersihkan tanda "Membuka..."
+        window.addEventListener('pageshow', function (e) {
+            if (!e.persisted || !navPpk) { return; }
+            navPpk = false; document.body.style.cursor = '';
+            Array.prototype.forEach.call(document.querySelectorAll('[data-asli]'), function (el) { el.innerHTML = el.getAttribute('data-asli'); el.removeAttribute('data-asli'); el.disabled = false; });
+            Array.prototype.forEach.call(document.querySelectorAll('.rvw-busy'), function (el) { el.classList.remove('rvw-busy'); });
+        });
         function openSheet(id) {
+            // revisi PPK BLU (Ketua Tim) dikerjakan di panel revisi PPK BLU yang sudah ada; setelah ditutup kembali ke daftar ini
+            var pp = rowOf(id);
+            if (pp && isPpkRev(pp)) {
+                // Langsung pindah ke halaman revisi PPK BLU (panelnya tampil terbuka di sana). Tombol yang diklik diberi tanda "Membuka..."
+                // supaya ada umpan balik selama halaman dimuat, tanpa membuka panel kosong di sini dulu (itu yang tadinya terasa loading dua kali).
+                if (navPpk) { return; }
+                navPpk = true;
+                document.body.style.cursor = 'progress';
+                var els = document.querySelectorAll('[data-open="' + id + '"]');
+                Array.prototype.forEach.call(els, function (el) {
+                    if (el.tagName === 'BUTTON') { el.setAttribute('data-asli', el.innerHTML); el.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span>Membuka...'; el.disabled = true; }
+                    else { el.classList.add('rvw-busy'); }
+                });
+                window.location.href = BASE + '/po-revisi-ppk?buka=' + id + '&dari=daftar';
+                return;
+            }
             var tiket = ++openTicket;
-            current = id; detail = null; shTab = 'dok'; composer = null; secs = {}; chatPesan = []; chatSudahMuat = false; alurPesan = []; alurMuat = false;
+            current = id; detail = null; shTab = 'dok'; composer = null; secs = {}; berkas = null; berkasGalat = ''; alurPesan = []; alurMuat = false;
             var p = rowOf(id); if (!p) { return; }
             $('rvwDocHost').innerHTML = '<div class="rvw-loading">Memuat dokumen PO...</div>';
             $('rvwUmum').innerHTML = ''; $('rvwUmum').hidden = true; $('rvwBanner').innerHTML = '';
-            $('rvwDokPane').hidden = false; $('rvwChatPane').hidden = true; $('rvwAlurPane').hidden = true;
+            $('rvwDokPane').hidden = false; $('rvwBerkasPane').hidden = true; $('rvwAlurPane').hidden = true;
             renderChrome();
             $('rvwScrim').classList.add('open'); $('rvwSheet').classList.add('open'); $('rvwSheet').setAttribute('aria-hidden', 'false');
             setTimeout(function () { $('rvwShClose').focus(); }, 60);
@@ -913,7 +1047,7 @@
         }
         function closeSheet() {
             openTicket++; current = null; detail = null; composer = null; secs = {};
-            stopChatTimer();
+            tutupFv();
             $('rvwScrim').classList.remove('open'); $('rvwSheet').classList.remove('open'); $('rvwSheet').setAttribute('aria-hidden', 'true');
         }
         function muatUlangDetail() {
@@ -927,7 +1061,7 @@
         function doAct(act) {
             var p = curPo(); if (!p || !detail) { return; }
             var pm = first(p.pembuat), km = first(p.katim), id = p.id;
-            if (act === 'edit') { window.location.href = URL_PO(id) + '/edit'; return; }
+            if (act === 'edit') { window.location.href = URL_PO(id) + '/edit?dari=daftar'; return; }
             if (act === 'minta') {
                 var n = cnt('draf') + cnt('terbuka'); if (!n) { return; }
                 dialog({ judul: 'Kirim permintaan revisi?', pesan: n + ' catatan akan dikirim ke ' + pm + '. PO berstatus Sedang dikerjakan sampai dikirim ulang.', ya: 'Kirim', ikon: 'bi-send', warna: 'warn' }).then(function (h) {
@@ -964,7 +1098,133 @@
             post(URL_PO(current) + '/catatan', { bagian: bagian, teks: v }).then(function (j) { composer = null; terapkanDetail(j); }).catch(gagal);
         }
     
-        /* ---------- Diskusi ---------- */
+        /* ---------- Tab Dokumen (surat kesanggupan bayar dan bukti pembayaran, sama seperti tab Berkas di Humas) ---------- */
+        function berkasHtml() {
+            if (berkasGalat) { return '<div class="rvw-loading err"><i class="bi bi-exclamation-triangle d-block mb-1" style="font-size:22px;"></i>' + esc(berkasGalat) + '</div>'; }
+            if (!berkas) { return '<div class="rvw-loading"><i class="bi bi-hourglass-split d-block mb-1" style="font-size:22px;"></i>Memuat dokumen...</div>'; }
+            var j = berkas, sisa = Math.max(0, (parseFloat(j.nilai) || 0) - (parseFloat(j.total_terbayar) || 0));
+            var nFile = j.termin.filter(function (t) { return t.url; }).length;
+            var h = '<div class="rvw-sumgrid">' +
+                '<div class="rvw-sum"><div class="l">Nilai kontrak</div><div class="v">' + rp(j.nilai) + '</div></div>' +
+                '<div class="rvw-sum"><div class="l">Total terbayar</div><div class="v ' + (j.lunas ? 'ok' : 'warn') + '">' + rp(j.total_terbayar) + '</div></div>' +
+                '<div class="rvw-sum"><div class="l">Sisa pembayaran</div><div class="v">' + rp(sisa) + '</div></div></div>';
+            h += '<div class="rvw-cat"><div class="rvw-cat-top"><div class="rvw-cat-ic"><i class="bi bi-file-earmark-pdf"></i></div><div class="rvw-cat-label">File PO</div>' +
+                '<button type="button" class="rvw-btn sm" data-shtab="dok"><i class="bi bi-eye"></i>Lihat file PO</button></div></div>';
+            h += '<div class="rvw-cat"><div class="rvw-cat-top"><div class="rvw-cat-ic"><i class="bi bi-file-earmark-text"></i></div><div class="rvw-cat-label">Surat Kesanggupan Bayar</div>' +
+                (j.kesanggupan && j.kesanggupan.ada ? '<div class="rvw-cat-acts"><button type="button" class="rvw-btn sm" data-fv="' + esc(j.kesanggupan.url) + '" data-judul="Surat Kesanggupan Bayar"><i class="bi bi-eye"></i>Lihat file</button>' +
+                    '<a class="rvw-btn sm" href="' + esc(j.kesanggupan.url) + '?unduh=1" download><i class="bi bi-download"></i>Unduh</a></div>' : '<span class="rvw-cat-kosong">Tidak ada</span>') + '</div></div>';
+            h += '<div class="rvw-cat"><div class="rvw-cat-top"><div class="rvw-cat-ic"><i class="bi bi-receipt"></i></div><div class="rvw-cat-label">Bukti Pembayaran</div>' +
+                (!j.termin.length ? '<span class="rvw-cat-kosong">Belum ada</span>' : (nFile ? '<button type="button" class="rvw-btn sm" data-unduh-bukti><i class="bi bi-download"></i>' + (nFile > 1 ? 'Unduh gabungan (' + nFile + ' termin)' : 'Unduh') + '</button>' : '')) + '</div>' +
+                j.termin.map(function (t) {
+                    var st = t.status_verifikasi === 'terverifikasi' ? '<span class="rvw-pill emerald">Terverifikasi</span>' : (t.status_verifikasi === 'ditolak' ? '<span class="rvw-pill rose">Ditolak</span>' : '<span class="rvw-pill amber">Menunggu</span>');
+                    return '<div class="rvw-termin-row"><span class="rvw-termin-info">Termin ke-' + esc(t.termin_ke) + ' &middot; ' + rp(t.jumlah) + ' &middot; ' + tglSingkat(t.tanggal_bayar) + ' ' + st + '</span>' +
+                        (t.url ? '<button type="button" class="rvw-btn sm" data-fv="' + esc(t.url) + '" data-judul="Bukti Pembayaran Termin ke-' + esc(t.termin_ke) + '"><i class="bi bi-eye"></i>Lihat file</button>' : '<span class="rvw-cat-kosong">Tanpa file</span>') + '</div>';
+                }).join('') + '</div>';
+            return h;
+        }
+        function renderBerkas() { var box = $('rvwBerkasPane'); if (box && shTab === 'berkas') { box.innerHTML = berkasHtml(); } }
+        function bukaBerkas() {
+            var id = current;
+            $('rvwBerkasPane').hidden = false;
+            renderBerkas();
+            api(URL_PO(id) + '/berkas').then(function (j) {
+                if (current !== id) { return; }
+                berkas = j; berkasGalat = ''; renderBerkas();
+            }).catch(function (e) {
+                if (current !== id) { return; }
+                if (!berkas) { berkasGalat = e.message; } renderBerkas();
+            });
+        }
+        function statusTermin(s) { return s === 'terverifikasi' ? 'Terverifikasi' : (s === 'ditolak' ? 'Ditolak' : 'Menunggu verifikasi'); }
+        function namaBerkas(awal) { var p = curPo(); return awal + '-' + String(p ? p.nomor : 'PO').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }
+        function simpanBlob(blob, nama) {
+            var a = document.createElement('a'), u = URL.createObjectURL(blob);
+            a.href = u; a.download = nama; document.body.appendChild(a); a.click();
+            setTimeout(function () { document.body.removeChild(a); URL.revokeObjectURL(u); }, 1500);
+        }
+        function muatPdfLib() {
+            if (window.PDFLib) { return Promise.resolve(window.PDFLib); }
+            return new Promise(function (ok, no) {
+                var s = document.createElement('script');
+                s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js';
+                s.onload = function () { window.PDFLib ? ok(window.PDFLib) : no(new Error('Pustaka PDF gagal dimuat.')); };
+                s.onerror = function () { no(new Error('Pustaka PDF gagal dimuat. Cek koneksi internet.')); };
+                document.head.appendChild(s);
+            });
+        }
+        /* Satukan bukti semua termin jadi satu PDF; tiap halaman diberi pita judul "Bukti Pembayaran Termin ke-N" di bagian atas (isi halaman tidak ditimpa). */
+        function gabungBukti(L, daftar) {
+            var BAND = 42;
+            return L.PDFDocument.create().then(function (out) {
+                return Promise.all([out.embedFont(L.StandardFonts.HelveticaBold), out.embedFont(L.StandardFonts.Helvetica)]).then(function (fs) {
+                    var tebal = fs[0], biasa = fs[1];
+                    function pita(pg, w, h, judul, info) {
+                        pg.drawRectangle({ x: 0, y: h, width: w, height: BAND, color: L.rgb(0.945, 0.961, 0.976) });
+                        pg.drawLine({ start: { x: 0, y: h }, end: { x: w, y: h }, thickness: 0.8, color: L.rgb(0.8, 0.84, 0.88) });
+                        pg.drawText(judul, { x: 18, y: h + 26, size: 12, font: tebal, color: L.rgb(0.06, 0.09, 0.16) });
+                        pg.drawText(info, { x: 18, y: h + 10, size: 9.5, font: biasa, color: L.rgb(0.39, 0.45, 0.55) });
+                    }
+                    var rantai = Promise.resolve();
+                    daftar.forEach(function (d) {
+                        rantai = rantai.then(function () {
+                            var judul = 'Bukti Pembayaran Termin ke-' + d.t.termin_ke;
+                            var info = rp(d.t.jumlah) + '  |  ' + tglSingkat(d.t.tanggal_bayar) + '  |  ' + statusTermin(d.t.status_verifikasi);
+                            if (d.tipe.indexOf('pdf') !== -1) {
+                                return L.PDFDocument.load(d.buf, { ignoreEncryption: true }).then(function (src) {
+                                    return out.embedPdf(src, src.getPageIndices());
+                                }).then(function (eps) {
+                                    eps.forEach(function (ep, i) {
+                                        var pg = out.addPage([ep.width, ep.height + BAND]);
+                                        pg.drawPage(ep, { x: 0, y: 0 });
+                                        pita(pg, ep.width, ep.height, judul, info + (eps.length > 1 ? '  |  hal. ' + (i + 1) + '/' + eps.length : ''));
+                                    });
+                                });
+                            }
+                            // bukti berupa gambar: skala ke lebar A4
+                            var emb = d.tipe.indexOf('png') !== -1 ? out.embedPng(d.buf) : out.embedJpg(d.buf);
+                            return emb.then(function (im) {
+                                var w = 595, h = Math.round(im.height * (w / im.width)), pg = out.addPage([w, h + BAND]);
+                                pg.drawImage(im, { x: 0, y: 0, width: w, height: h });
+                                pita(pg, w, h, judul, info);
+                            });
+                        });
+                    });
+                    return rantai.then(function () { return out.save(); });
+                });
+            });
+        }
+        function unduhBukti(btn) {
+            if (!berkas || btn.disabled) { return; }
+            var items = berkas.termin.filter(function (t) { return t.url; });
+            if (!items.length) { return; }
+            if (items.length === 1) {   // satu termin: unduh file aslinya
+                var a = document.createElement('a'); a.href = items[0].url + '?unduh=1'; a.download = ''; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                return;
+            }
+            var asli = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<i class="bi bi-hourglass-split"></i>Menyiapkan...';
+            var pulih = function () { btn.disabled = false; btn.innerHTML = asli; };
+            muatPdfLib().then(function (L) {
+                return Promise.all(items.map(function (t) {
+                    return fetch(t.url, { credentials: 'same-origin' }).then(function (r) {
+                        if (!r.ok) { throw new Error('Bukti termin ke-' + t.termin_ke + ' gagal diambil.'); }
+                        var tipe = (r.headers.get('Content-Type') || '').toLowerCase();
+                        return r.arrayBuffer().then(function (buf) { return { t: t, buf: buf, tipe: tipe }; });
+                    });
+                })).then(function (daftar) { return gabungBukti(L, daftar); });
+            }).then(function (bytes) {
+                simpanBlob(new Blob([bytes], { type: 'application/pdf' }), namaBerkas('Bukti-Pembayaran') + '.pdf');
+                pulih();
+            }).catch(function (e) { pulih(); toast(e.message || 'Gagal menyiapkan PDF.', true); });
+        }
+        function bukaFv(url, judul) {
+            $('rvwFvJudul').textContent = judul;
+            $('rvwFvTab').href = url;
+            // sembunyikan toolbar/nama file bawaan penampil PDF browser
+            $('rvwFvFrame').src = url + (url.indexOf('#') === -1 ? '#toolbar=0&navpanes=0' : '');
+            $('rvwFv').hidden = false;
+        }
+        function tutupFv() { $('rvwFv').hidden = true; $('rvwFvFrame').src = 'about:blank'; }
+
         /* ---------- Tab Alur ---------- */
         function alurItems(p) {
             var a = [];
@@ -1035,49 +1295,6 @@
             }).catch(function () { alurMuat = true; if (shTab === 'alur') { renderAlur(); } });
         }
 
-        function stopChatTimer() { if (chatTimer) { clearInterval(chatTimer); chatTimer = null; } }
-        function renderChat(scrollBawah) {
-            var lg = $('rvwChatLog'); if (!lg) { return; }
-            var dekat = lg.scrollHeight - lg.scrollTop - lg.clientHeight < 60;
-            lg.innerHTML = chatPesan.map(function (m) {
-                if (m.sistem) { return '<div class="rvw-sys">' + esc(m.pesan) + '<span>' + fmt(m.waktu) + '</span></div>'; }
-                return '<div class="rvw-msg' + (m.saya ? ' me' : '') + '"><div class="rvw-bub">' + esc(m.pesan) + '</div><div class="rvw-mt">' + esc(m.nama) + ' &middot; ' + fmt(m.waktu) + '</div></div>';
-            }).join('') || '<div class="rvw-empty">Belum ada pesan.</div>';
-            if (scrollBawah || dekat) { lg.scrollTop = lg.scrollHeight; }
-        }
-        function muatChat(awal) {
-            if (!current) { return; }
-            var id = current;
-            api(URL_PO(id) + '/chat').then(function (j) {
-                if (current !== id || shTab !== 'chat') { return; }
-                var baru = j.pesan.length !== chatPesan.length;
-                chatPesan = j.pesan; chatSudahMuat = true;
-                if (baru || awal) { renderChat(awal); }
-                var p = curPo();
-                if (p && p.unread > 0) {
-                    post(URL_PO(id) + '/chat/baca', {}).then(function () { if (p) { p.unread = 0; updateRow(p); renderShTabs(p); } }).catch(function () {});
-                } else if (p) { renderShTabs(p); }
-            }).catch(function (e) { if (awal) { toast(e.message, true); } });
-        }
-        function bukaChat() {
-            $('rvwDokPane').hidden = true; $('rvwChatPane').hidden = false;
-            $('rvwChatPane').innerHTML = '<div class="rvw-chatlog" id="rvwChatLog"><div class="rvw-loading">Memuat pesan...</div></div>' +
-                '<div class="rvw-chatin"><textarea id="rvwChatText" maxlength="2000" placeholder="Tulis pesan untuk ' + esc(first(ROLE === 'katim' ? curPo().pembuat : curPo().katim)) + '" aria-label="Pesan"></textarea><button type="button" class="rvw-btn pri" id="rvwChatSend">Kirim</button></div>';
-            muatChat(true);
-            stopChatTimer();
-            chatTimer = setInterval(function () { if (!document.hidden) { muatChat(false); } }, 8000);
-        }
-        function tutupChat() { stopChatTimer(); $('rvwChatPane').hidden = true; $('rvwDokPane').hidden = false; }
-        function sendMsg() {
-            var t = $('rvwChatText'); if (!t || !current) { return; }
-            var v = t.value.trim(); if (!v) { return; }
-            t.disabled = true;
-            post(URL_PO(current) + '/chat', { pesan: v }).then(function (j) {
-                t.value = ''; t.disabled = false;
-                chatPesan.push(j.pesan); renderChat(true); renderShTabs(curPo()); t.focus();
-            }).catch(function (e) { t.disabled = false; toast(e.message, true); });
-        }
-    
         /* ---------- Penyegaran daftar ---------- */
         function segarkan() {
             if (document.hidden || dlgResolve) { return; }
@@ -1095,11 +1312,13 @@
             var t = e.target, el;
             if ((el = t.closest('[data-tab]'))) { tab = el.getAttribute('data-tab'); resetFilterTab(); renderTabs(); renderList(); return; }
             if ((el = t.closest('[data-open]'))) { openSheet(parseInt(el.getAttribute('data-open'), 10)); return; }
+            if ((el = t.closest('[data-unduh-bukti]'))) { unduhBukti(el); return; }
+            if ((el = t.closest('[data-fv]'))) { bukaFv(el.getAttribute('data-fv'), el.getAttribute('data-judul')); return; }
             if ((el = t.closest('[data-shtab]'))) {
                 var k = el.getAttribute('data-shtab'); if (k === shTab) { return; }
                 shTab = k; composer = null;
-                stopChatTimer(); $('rvwChatPane').hidden = true; $('rvwDokPane').hidden = true; $('rvwAlurPane').hidden = true;
-                if (k === 'chat') { bukaChat(); } else if (k === 'alur') { bukaAlur(); } else { tutupChat(); }
+                $('rvwBerkasPane').hidden = true; $('rvwDokPane').hidden = true; $('rvwAlurPane').hidden = true;
+                if (k === 'berkas') { bukaBerkas(); } else if (k === 'alur') { bukaAlur(); } else { $('rvwDokPane').hidden = false; }
                 if (curPo()) { renderShTabs(curPo()); }
                 return;
             }
@@ -1110,7 +1329,6 @@
             if ((el = t.closest('[data-cmp]'))) { if (el.getAttribute('data-cmp') === 'simpan') { saveNote(); } else { composer = null; renderNotes(); } return; }
             if ((el = t.closest('[data-note]'))) { doNote(parseInt(el.getAttribute('data-note'), 10), el.getAttribute('data-nact')); return; }
             if ((el = t.closest('[data-act]'))) { if (!el.disabled) { doAct(el.getAttribute('data-act')); } return; }
-            if (t.closest('#rvwChatSend')) { sendMsg(); return; }
         });
         document.addEventListener('input', function (e) {
             if (e.target.id === 'rvwCmpText' && e.target.classList.contains('err') && e.target.value.trim()) { e.target.classList.remove('err'); $('rvwCmpErr').hidden = true; }
@@ -1118,24 +1336,27 @@
         document.addEventListener('keydown', function (e) {
             if (!$('rvwRoot')) { return; }
             if (e.key === 'Escape') {
+                if (!$('rvwFv').hidden) { e.preventDefault(); tutupFv(); return; }
                 if (dlgResolve) { e.preventDefault(); closeDlg('batal'); return; }
                 if (current) { closeSheet(); }
             }
-            if (e.key === 'Enter' && !e.shiftKey && e.target.id === 'rvwChatText') { e.preventDefault(); sendMsg(); }
         });
         $('rvwSearch').addEventListener('input', function () { q = this.value.trim().toLowerCase(); renderList(); });
         $('rvwClear').addEventListener('click', function () { $('rvwSearch').value = ''; q = ''; renderList(); $('rvwSearch').focus(); });
         $('rvwFBaca').addEventListener('change', function () { fBaca = this.value; renderList(); });
         $('rvwFRevisi').addEventListener('change', function () { fRevisi = this.value; renderList(); });
+        $('rvwFJenis').addEventListener('change', function () { fJenis = this.value; renderList(); });
         $('rvwFAlur').addEventListener('change', function () { fAlur = this.value; renderList(); });
         $('rvwFBulan').addEventListener('change', function () { fBulan = this.value; renderList(); });
         $('rvwFTahun').addEventListener('change', function () { fTahun = this.value; renderList(); });
         $('rvwFReset').addEventListener('click', function () { q = ''; fBaca = ''; $('rvwSearch').value = ''; resetFilterTab(); renderList(); });
         $('rvwShClose').addEventListener('click', closeSheet);
+        $('rvwFvTutup').addEventListener('click', tutupFv);
+        $('rvwFv').addEventListener('click', function (e) { if (e.target === this) { tutupFv(); } });
         /* ---------- Tampilan panel: sembunyikan info/alur dan lebarkan panel (pilihan diingat di browser, berlaku di semua halaman panel) ---------- */
         var shCmp = false, shWide = false;
-        try { shCmp = localStorage.getItem('siloptiShCmp') === '1'; shWide = localStorage.getItem('siloptiShWide') === '1'; } catch (e) {}
-        function simpanTampilanSheet() { try { localStorage.setItem('siloptiShCmp', shCmp ? '1' : '0'); localStorage.setItem('siloptiShWide', shWide ? '1' : '0'); } catch (e) {} }
+        try { shCmp = localStorage.getItem('siloptiShCmp') === '1'; shWide = localStorage.getItem('siloptiShWide2') === '1'; } catch (e) {}
+        function simpanTampilanSheet() { try { localStorage.setItem('siloptiShCmp', shCmp ? '1' : '0'); localStorage.setItem('siloptiShWide2', shWide ? '1' : '0'); } catch (e) {} }
         function terapkanTampilanSheet() {
             $('rvwSheet').classList.toggle('cmp', shCmp);
             $('rvwSheet').classList.toggle('wide', shWide);
@@ -1151,6 +1372,7 @@
         $('rvwShWide').addEventListener('click', function () { shWide = !shWide; simpanTampilanSheet(); terapkanTampilanSheet(); });
         terapkanTampilanSheet();
         $('rvwScrim').addEventListener('click', closeSheet);
+        window.addEventListener('pageshow', function (e) { if (e.persisted && $('rvwSheet').classList.contains('open') && !current) { closeSheet(); } });   // kembali dari panel revisi PPK BLU lewat tombol Back
         $('rvwDlgYes').addEventListener('click', function () { closeDlg('ya'); });
         $('rvwDlgNo').addEventListener('click', function () { closeDlg('batal'); });
         $('rvwDlg').addEventListener('click', function (e) { if (e.target === $('rvwDlg')) { closeDlg('batal'); } });
@@ -1162,4 +1384,4 @@
         renderAll();
     })();
     </script>
-    
+    

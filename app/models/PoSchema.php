@@ -59,6 +59,8 @@ class PoSchema
         'tanggal_penawaran'  => 'DATE NULL',
         'alamat_bagian'      => 'TEXT NULL',
         'alamat_tampil'      => 'TINYINT(1) NULL',
+        // penandatangan dokumen (ppk / ketua tim / mengetahui) -- dipakai semua jenis PO; lihat PoTtd
+        'ttd_json'           => 'LONGTEXT NULL',
     );
     protected static $dbRef = null;
 
@@ -99,6 +101,7 @@ class PoSchema
         }
         self::$sudahJalan = true;
         self::$dbRef = $db;
+        self::nomorPoBolehKosong($db);
 
         try {
             $ada = self::namaKolom($db);
@@ -127,6 +130,29 @@ class PoSchema
             self::$siap = false;
         }
         return self::$siap;
+    }
+
+    protected static $nomorBolehKosongSiap = false;
+
+    /**
+     * Nomor PO baru dibuat saat PO DIKIRIM, jadi draft belum punya nomor: kolom po_kegiatan.nomor_po harus
+     * boleh NULL. Kalau masih NOT NULL, diubah sekali (aman dipanggil berulang; harus dipanggil SEBELUM transaksi dibuka).
+     */
+    public static function nomorPoBolehKosong($db)
+    {
+        if (self::$nomorBolehKosongSiap) {
+            return;
+        }
+        self::$nomorBolehKosongSiap = true;
+        try {
+            $r = $db->exec("SHOW COLUMNS FROM po_kegiatan LIKE 'nomor_po'");
+            if (!empty($r) && strtoupper((string) $r[0]['Null']) === 'NO'
+                && preg_match('/^[a-z]+(\(\d+\))?$/i', (string) $r[0]['Type'])) {
+                $db->exec('ALTER TABLE po_kegiatan MODIFY `nomor_po` ' . $r[0]['Type'] . ' NULL DEFAULT NULL');
+            }
+        } catch (\Throwable $e) {
+            error_log('[PoSchema] nomor_po tidak bisa dibuat boleh kosong: ' . $e->getMessage());
+        }
     }
 
     /** Daftar nama kolom po_kegiatan. */
@@ -320,6 +346,44 @@ class PoSchema
     /* Nomor PO -- sama persis dengan PoKegiatanController                */
     /* ------------------------------------------------------------------ */
 
+    protected static $tglKirimSiap = null;
+
+    /**
+     * Kolom po_kegiatan.tanggal_dikirim (DATETIME): waktu PO dikirim (WIB), tercatat otomatis saat PO pertama kali dikirim.
+     * Tanggal PO (tanggal_po) = tanggal PO dibuat yang diisi user; keduanya bisa berbeda bulan.
+     * @return bool true bila kolomnya ada
+     */
+    public static function pastikanTanggalDikirim($db)
+    {
+        if (self::$tglKirimSiap !== null) {
+            return self::$tglKirimSiap;
+        }
+        try {
+            if (empty($db->exec("SHOW COLUMNS FROM po_kegiatan LIKE 'tanggal_dikirim'"))) {
+                $db->exec("ALTER TABLE po_kegiatan ADD COLUMN tanggal_dikirim DATETIME NULL AFTER tanggal_po");
+            }
+            self::$tglKirimSiap = !empty($db->exec("SHOW COLUMNS FROM po_kegiatan LIKE 'tanggal_dikirim'"));
+        } catch (\Throwable $e) {
+            error_log('[PoSchema] tanggal_dikirim: ' . $e->getMessage());
+            self::$tglKirimSiap = false;
+        }
+        return self::$tglKirimSiap;
+    }
+
+    /** Waktu sekarang (Y-m-d H:i:s) menurut WIB. */
+    public static function sekarangWib()
+    {
+        $d = new \DateTime('now', new \DateTimeZone('Asia/Jakarta'));
+        return $d->format('Y-m-d H:i:s');
+    }
+
+    /** Tanggal hari ini (Y-m-d) menurut WIB -- patokan bulan/tahun Nomor PO & tanggal surat saat PO dikirim. */
+    public static function hariIniWib()
+    {
+        $d = new \DateTime('now', new \DateTimeZone('Asia/Jakarta'));
+        return $d->format('Y-m-d');
+    }
+
     public static function angkaRomawi($bulan)
     {
         $peta = array(1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V', 6 => 'VI',
@@ -337,7 +401,7 @@ class PoSchema
         $max = 0;
         try {
             $rows = $db->exec(
-                "SELECT nomor_po FROM po_kegiatan WHERE nomor_po LIKE ?",
+                "SELECT nomor_po FROM po_kegiatan WHERE nomor_po LIKE ? AND nomor_po NOT LIKE '%/SVPK/%'", // deret nomor PO Pengujian (.../SVPK/...) terpisah
                 array(1 => '%/' . (int) $tahun)
             );
             foreach ($rows as $r) {
@@ -673,8 +737,11 @@ class PoSchema
                 'penerimaan'  => array('items' => $terima),
                 'pengeluaran' => array('kategori' => $kategori),
             )),
+            'ttd_json'          => self::jsonKolom(\PoTtd::bersihkan(isset($d['ttd']) ? $d['ttd'] : array())),
             'jadwal'            => self::jsonKolom(array(
                 'mode'  => isset($jd['mode']) ? (string) $jd['mode'] : 'teks',
+                'mulai'   => (isset($jd['mulai']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) $jd['mulai'])) ? (string) $jd['mulai'] : '',
+                'selesai' => (isset($jd['selesai']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) $jd['selesai'])) ? (string) $jd['selesai'] : '',
                 'teks'  => (string) $g('jadwalTeks'),
                 'bulan' => (isset($jd['bulan']) && is_array($jd['bulan'])) ? $jd['bulan'] : array(),
                 'rows'  => (isset($jd['rows']) && is_array($jd['rows'])) ? $jd['rows'] : array(),
@@ -752,10 +819,16 @@ class PoSchema
         if (is_array($jd)) {
             $S['jadwal'] = array(
                 'mode'  => isset($jd['mode']) ? (string) $jd['mode'] : 'teks',
+                'mulai'   => isset($jd['mulai']) ? (string) $jd['mulai'] : '',
+                'selesai' => isset($jd['selesai']) ? (string) $jd['selesai'] : '',
                 'bulan' => isset($jd['bulan']) && is_array($jd['bulan']) ? $jd['bulan'] : array(),
                 'rows'  => isset($jd['rows']) && is_array($jd['rows']) ? $jd['rows'] : array(),
             );
             $S['jadwalTeks'] = (string) (isset($jd['teks']) ? $jd['teks'] : '');
+        }
+        $ttd = isset($r['ttd_json']) ? json_decode((string) $r['ttd_json'], true) : null;
+        if (is_array($ttd)) {
+            $S['ttd'] = \PoTtd::bersihkan($ttd);
         }
         return $S;
     }

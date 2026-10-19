@@ -119,6 +119,11 @@ protected function ambilMasterPelaksanaUntukPo($divisi) {
     return \MasterTimPelaksanaController::ambilAktif($this->db, $d);
 }
 
+/** Nama jabatan aktif dari Master Jabatan Pelaksana (pilihan kolom jabatan di Tim Pelaksana form PO). */
+protected function ambilJabatanPelaksanaUntukPo() {
+    return class_exists('MasterTimPelaksanaController') ? \MasterTimPelaksanaController::ambilJabatanAktif($this->db) : [];
+}
+
 protected function getHariLiburSet() {
     $rows = $this->safeQuery('SELECT tanggal_libur FROM tb_tanggal_libur');
     return array_map(function ($r) { return date('Y-m-d', strtotime($r['tanggal_libur'])); }, $rows);
@@ -168,6 +173,16 @@ protected function jadwalOtomatisDariOrder($orderData) {
 }
 
 
+/** id baris po_nomor_urut yang baru diterbitkan oleh bind() -- dilepas lagi kalau penyimpanan PO gagal (nomor tidak boleh bolong). */
+protected $nomorBaruId = 0;
+
+protected function lepasNomorBaru() {
+    if ($this->nomorBaruId > 0) {
+        try { $this->db->exec('DELETE FROM po_nomor_urut WHERE id = ?', [1 => $this->nomorBaruId]); } catch (\Throwable $e) {}
+        $this->nomorBaruId = 0;
+    }
+}
+
 protected function bind(PoKegiatan $po, $f3, $isUpdate, $isLivePreview = false) {
 
     $post = $f3->get('POST');
@@ -176,42 +191,44 @@ protected function bind(PoKegiatan $po, $f3, $isUpdate, $isLivePreview = false) 
         $po->order_id = (int) ($post['order_id'] ?? 0);
     }
 
+    // [BARU] Penandatangan (Menyetujui / Pelaksana Kegiatan / Mengetahui) dipilih dari master penandatangan, sama
+    // dengan Surat Penawaran. Yang disimpan salinan nama, NIP, dan jabatannya (PoTtd), supaya PO yang sudah terkirim
+    // tidak ikut berubah kalau pejabat di master berganti. PO tidak boleh dikirim sebelum ketiganya dipilih.
+    $ttd = \PoTtd::dariPost(is_array($post) ? $post : [], \PoTtd::KOTA_BAWAAN);
+    if (!$isLivePreview && ($post['aksi'] ?? '') === 'kirim') {
+        $kurangTtd = \PoTtd::kekurangan($ttd);
+        if ($kurangTtd) {
+            throw new \Exception(implode('; ', $kurangTtd));
+        }
+    }
+    $po->ttd_json = json_encode($ttd, JSON_UNESCAPED_UNICODE);
+
     if (!$isLivePreview) {
         $this->ensureSchemaNomorPo();
 
-        // [BARU] Tanggal Surat PO -- tanggal resmi dokumen PO ini, diisi dari form
-        // "Informasi PO". Dipakai juga buat nentuin bulan-romawi & tahun di Nomor PO.
-        $tanggalPoPost = trim((string) ($post['tanggal_po'] ?? ''));
-        $po->tanggal_po = $tanggalPoPost !== '' ? $tanggalPoPost : date('Y-m-d');
-
-        // [BARU] Tahun Tanggal Surat PO harus sesuai tahun berjalan (PO yang sudah punya nomor: sesuai
-        // tahun di nomornya). Nomor urut PO dihitung per tahun, jadi tahun yang meleset bikin urutan kacau.
-        $tahunWajib = $this->tahunPoWajib((string) ($po->nomor_po ?? ''));
-        $tahunInput = (int) date('Y', strtotime($po->tanggal_po) ?: time());
-        if ($tahunInput !== $tahunWajib) {
-            throw new \Exception("Tahun Tanggal Surat PO ({$tahunInput}) harus sama dengan tahun {$tahunWajib}.");
-        }
-
-        // [BARU] Nomor PO SEKARANG otomatis (gak lagi input manual) -- digenerate
-        // dari tabel master po_nomor_urut pas PO ini PERTAMA KALI disimpan (baik
-        // "Simpan Draft" maupun "Kirim"). Tabel po_nomor_urut nyimpen SATU BARIS per
-        // nomor yang pernah diterbitkan (bukan cuma counter), kolom detail_nomor-nya
-        // itu yang jadi "361/PO/BBSPJIS/VII/2026"-nya -- po_kegiatan cuma nyimpen
-        // id_nomor_urut (nunjuk ke baris itu), nomor_po dipertahanin juga sebagai
-        // salinan buat kompatibel sama bagian lain yang masih baca po.nomor_po
-        // (cetak PO, notifikasi, dll). Kalau PO ini udah punya nomor (lagi diedit),
-        // dipertahanin apa adanya -- gak di-generate ulang & gak bisa diubah manual,
-        // biar gak bentrok sama nomor PO lain yang udah terlanjur jalan.
+        // [BARU] Nomor PO TIDAK lagi dibuat saat draft pertama disimpan, tapi baru saat PO DIKIRIM
+        // (aksi = kirim). Bulan-romawi & tahun di nomor, juga Tanggal PO yang tercetak di dokumen,
+        // mengikuti TANGGAL KIRIM (WIB). Tanggal pembuatan = created_at (draft pertama disimpan).
+        // Nomor diambil dari tabel master po_nomor_urut (satu deret per tahun, bareng Sertifikasi &
+        // Pengujian); po_kegiatan menyimpan id_nomor_urut + salinan nomor_po. PO yang sudah punya nomor
+        // (dikirim sebelumnya, atau draft lama) TIDAK diubah lagi: nomor & tanggalnya dipertahankan,
+        // termasuk saat direvisi dan dikirim ulang.
+        $hari = \PoSchema::hariIniWib();
         if (empty($po->nomor_po)) {
-            $nomorBaru      = $this->generateNomorPoBaru($po->tanggal_po);
-            $po->id_nomor_urut = $nomorBaru['id'];
-            $po->nomor_po      = $nomorBaru['detail_nomor'];
+            if (($post['aksi'] ?? '') === 'kirim') {
+                $nomorBaru         = $this->generateNomorPoBaru($hari);
+                $po->id_nomor_urut = $nomorBaru['id'];
+                $po->nomor_po      = $nomorBaru['detail_nomor'];
+                $this->nomorBaruId = (int) $nomorBaru['id'];
+            }
+            $po->tanggal_po = $hari;   // draft: sementara (tanggal resmi = tanggal kirim)
+        } elseif (empty($po->tanggal_po) || strpos((string) $po->tanggal_po, '0000') === 0) {
+            $po->tanggal_po = $hari;
         }
     } else {
-        $tanggalPoPost = trim((string) ($post['tanggal_po'] ?? ''));
-        $po->tanggal_po = $tanggalPoPost !== '' ? $tanggalPoPost : date('Y-m-d');
-        if (empty($po->nomor_po)) {
-            $po->nomor_po = 'DRAFT/PREVIEW/' . date('Y');
+        // pratinjau live: tanpa menyimpan & tanpa memakai nomor. PO yang sudah bernomor memakai nomor/tanggalnya.
+        if (empty($po->nomor_po) || empty($po->tanggal_po) || strpos((string) $po->tanggal_po, '0000') === 0) {
+            $po->tanggal_po = \PoSchema::hariIniWib();
         }
     }
 
@@ -396,6 +413,26 @@ foreach ($namaList as $kIdx => $namaKeg) {
 $groups[] = ['nama_tahap' => trim($namaTahap), 'kegiatan' => $kegiatanList];
 }
 
+// Pratinjau live / cetak live mengirim jadwal sebagai satu string JSON (jadwal_groups), bukan sebagai field tahap_nama[] dst.
+// Tanpa pembacaan ini tabel jadwal di pratinjau kosong (cuma judul "JADWAL" yang muncul).
+if (empty($groups) && isset($post['jadwal_groups']) && is_string($post['jadwal_groups']) && $post['jadwal_groups'] !== '') {
+    $jg = json_decode($post['jadwal_groups'], true);
+    if (is_array($jg)) {
+        foreach ($jg as $g) {
+            if (!is_array($g)) continue;
+            $kegiatanList = [];
+            foreach (($g['kegiatan'] ?? []) as $keg) {
+                if (!is_array($keg) || trim((string) ($keg['nama'] ?? '')) === '') continue;
+                $kegiatanList[] = [
+                    'nama'  => trim((string) $keg['nama']),
+                    'tanda' => array_map('strval', is_array($keg['tanda'] ?? null) ? $keg['tanda'] : []),
+                ];
+            }
+            $groups[] = ['nama_tahap' => trim((string) ($g['nama_tahap'] ?? '')), 'kegiatan' => $kegiatanList];
+        }
+    }
+}
+
 $po->jadwal = json_encode([
 'groups'     => $groups,
 'keterangan' => trim((string) ($post['jadwal_keterangan'] ?? '')),
@@ -481,6 +518,12 @@ public function index($f3) {
         'disetujui'       => "p.status = 'disetujui'",
     ];
 
+    // Judul kegiatan di daftar ini: PO Selulosa mengambil judul proposal (opti_proposal_riset.judul_proposal, proposal terbaru order itu);
+    // kalau proposalnya belum ada / judulnya kosong, dipakai judul order. PO Lingkungan tetap memakai judul order.
+    $sqlJudul = "CASE WHEN o.jenis_layanan_opti = 'selulosa'
+                      THEN COALESCE(NULLIF(TRIM((SELECT pr_j.judul_proposal FROM opti_proposal_riset pr_j WHERE pr_j.order_id = o.id ORDER BY pr_j.id DESC LIMIT 1)), ''), o.judul_kegiatan)
+                      ELSE o.judul_kegiatan END";
+
     $where = "o.ketua_pelaksana_id IS NOT NULL AND " . $kondisiTabPerTab[$tab];
     $params = [];
     $idx = 1;
@@ -493,7 +536,7 @@ public function index($f3) {
     if (function_exists('mb_substr')) { $q = mb_substr($q, 0, 100); } else { $q = substr($q, 0, 100); }
     if ($q !== '') {
         $like = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $q) . '%';
-        $where .= " AND (o.nomor_order LIKE ? OR p.nomor_po LIKE ? OR c.nmcustomer LIKE ? OR o.judul_kegiatan LIKE ?)";
+        $where .= " AND (o.nomor_order LIKE ? OR p.nomor_po LIKE ? OR c.nmcustomer LIKE ? OR {$sqlJudul} LIKE ?)";
         for ($k = 0; $k < 4; $k++) { $params[$idx++] = $like; }
     }
     if ($terapkanFilterBulan) {
@@ -520,8 +563,9 @@ public function index($f3) {
     $offset = ($halamanSaatIni - 1) * $perHalaman;
 
     $sql = "SELECT p.id AS po_id, p.nomor_po, p.status AS po_status, p.created_at AS po_created_at,
-                   o.id AS order_id, o.nomor_order, o.judul_kegiatan, o.jenis_layanan_opti, o.status_tinjauan,
+                   o.id AS order_id, o.nomor_order, {$sqlJudul} AS judul_kegiatan, o.jenis_layanan_opti, o.status_tinjauan,
                    o.ketua_pelaksana_id, o.ketua_pelaksana_at, o.id_surat_masuk, o.status_keuangan,
+                   p.status_review, u_pic.nama_user AS nama_pembuat,
                    c.nmcustomer AS nama_mitra, c.pt_cv,
                    sp.id AS sp_id, sp.surat_kesanggupan_bayar, sp.nominal_penawaran, o.estimasi_biaya,
                    (SELECT id FROM opti_proposal_riset pr WHERE pr.order_id = o.id ORDER BY pr.id DESC LIMIT 1) AS proposal_id,
@@ -532,6 +576,7 @@ public function index($f3) {
             JOIN tb_customer c ON o.id_customer = c.id_customer
             LEFT JOIN po_kegiatan p ON p.order_id = o.id" . \PoSchema::bukanSertifikasi('p') . "
             LEFT JOIN tb_surat_penawaran sp ON sp.order_id = o.id AND sp.status_respon_klien = 'deal'
+            LEFT JOIN tb_arsipuser u_pic ON u_pic.id_user = o.ketua_pelaksana_id
             WHERE {$where}
             ORDER BY COALESCE({$kolomTanggal}, p.created_at, o.ketua_pelaksana_at) DESC
             LIMIT {$perHalaman} OFFSET {$offset}";
@@ -654,7 +699,12 @@ $daftarPo = $this->safeQuery($sql, $params);
     $f3->set('total_halaman', $totalHalaman);
     $f3->set('total_baris', $totalBaris);
     $f3->set('total_po', (int) ($tabStat['total'] ?? 0));
+    // Angka 4 kartu ringkasan di atas daftar (ikut filter divisi, gak kena filter bulan)
+    $f3->set('total_perlu_tindakan', $tabCounts['masuk'] + $tabCounts['draft']);
+    $f3->set('total_berjalan',       $tabCounts['terkirim'] + $tabCounts['disetujui_mitra']);
+    $f3->set('total_disetujui',      $tabCounts['disetujui']);
     $f3->set('bisa_tambah_po', $role !== 'ketua_tim');
+    $f3->set('tombol_tambah_atas', !in_array($divisi, ['selulosa', 'lingkungan'], true));
 
     $this->render('katim_kerja/po-kegiatan/index.html', 'Petunjuk Operasional (PO)', ($divisi && !$isSuperadmin) ? 'po_' . $divisi : 'po_kegiatan');
 }
@@ -678,6 +728,12 @@ $daftarPo = $this->safeQuery($sql, $params);
             ['slug' => 'inspeksi',            'label' => 'Inspeksi',                                    'icon' => 'bi-search'],
             ['slug' => 'uji_profesiensi',     'label' => 'Uji Profesiensi',                             'icon' => 'bi-award'],
         ];
+
+        // Role layanan (mis. tim_kerja_pengujian) hanya boleh memakai jenis PO layanannya; kartu lain ditampilkan redup & tidak bisa diklik
+        $jenisTerkunci = $this->getUserRole() === 'tim_kerja_pengujian' ? 'pengujian' : ($this->isRoleSertifikasi() ? 'sertifikasi' : null);
+        foreach ($jenisPoList as $k => $j) {
+            $jenisPoList[$k]['terkunci'] = ($jenisTerkunci !== null && $j['slug'] !== $jenisTerkunci) ? 1 : 0;
+        }
 
         $divisi = $this->divisiDariRequest($f3);
 
@@ -710,6 +766,16 @@ $f3->set('nomor_po_saran', $this->generateNomorPo());
 $f3->set('jenis_po_list', $jenisPoList);
 $f3->set('daftar_order', $daftarOrder);
 $f3->set('divisi', $divisi);
+
+// Tombol "Kembali": kalau halaman ini dibuka dari daftar Petunjuk Operasional (?asal=petunjuk), balik ke sana
+// (lengkap dengan filter layanannya), bukan ke daftar PO OPTI.
+$kembaliUrl = '/po-kegiatan';
+if ((string) $f3->get('GET.asal') === 'petunjuk') {
+    $kembaliUrl = '/petunjuk-operasional';
+    $layAsal = preg_replace('/[^a-z_]/', '', strtolower((string) $f3->get('GET.layanan')));
+    if ($layAsal !== '') { $kembaliUrl .= '?layanan=' . $layAsal; }
+}
+$f3->set('kembali_url', $kembaliUrl);
 
 $this->render('katim_kerja/po-kegiatan/pilih_jenis.html', 'Buat Petunjuk Operasional', $divisi ? 'po_' . $divisi : 'po_kegiatan');
     }
@@ -762,12 +828,23 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
         $f3->set('order', $orderData);
         $f3->set('po', null);
         $f3->set('po_json', 'null');
-        $f3->set('surat_masuk_terkait', $this->getSuratMasukTerkait($orderData));
+        // PO Selulosa memakai proposal (bukan surat masuk) sebagai acuan judul; "Lihat Surat Masuk" hanya untuk PO Lingkungan
+        $f3->set('surat_masuk_terkait', (($orderData['jenis_layanan_opti'] ?? '') === 'selulosa') ? null : $this->getSuratMasukTerkait($orderData));
+        $proposalTerkait = $this->getProposalTerkait($orderData);
+        $f3->set('proposal_terkait', $proposalTerkait);
+        $f3->set('judul_form_awal', $this->judulAwalForm('', $orderData, $proposalTerkait));
+        $this->setPenandaJudul($proposalTerkait, $f3->get('surat_masuk_terkait'));
+        // PO Selulosa: Penjelasan Ruang Lingkup terisi dari proposal (PO Lingkungan: kosong, tidak ada penanda)
+        $f3->set('ruang_lingkup_proposal', is_array($proposalTerkait) ? (string) $proposalTerkait['ruang_lingkup'] : '');
         $f3->set('nomor_po_saran', $this->generateNomorPo());
         $f3->set('tahun_po_wajib', $this->tahunPoWajib(''));
         $f3->set('daftar_pegawai', $this->safeQuery('SELECT id_user, nama_user FROM tb_arsipuser ORDER BY nama_user ASC'));
         $f3->set('daftar_master_pelaksana_json', json_encode(
             $this->ambilMasterPelaksanaUntukPo($orderData['jenis_layanan_opti'] ?? ''),
+            JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP
+        ));
+        $f3->set('daftar_jabatan_pelaksana_json', json_encode(
+            $this->ambilJabatanPelaksanaUntukPo(),
             JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP
         ));
 
@@ -810,7 +887,7 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
             );
             if (!$bolehEdit) {
                 $this->setFlashError($pesanEdit);
-                $f3->reroute((string) $f3->get('GET.dari') === 'ppk' ? '/po-revisi-ppk' : '/po-kegiatan/daftar');
+                $f3->reroute('/po-kegiatan/daftar');   // revisi PPK BLU kini dikelola dari Daftar Review PO
                 return;
             }
         }
@@ -851,10 +928,19 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
         $f3->set('po', $poData);
         $f3->set('po_json', json_encode($poData, JSON_UNESCAPED_UNICODE));
         $f3->set('tahun_po_wajib', $this->tahunPoWajib((string) ($poData['nomor_po'] ?? '')));
-        $f3->set('surat_masuk_terkait', $orderData ? $this->getSuratMasukTerkait($orderData) : null);
+        $f3->set('surat_masuk_terkait', ($orderData && ($orderData['jenis_layanan_opti'] ?? '') !== 'selulosa') ? $this->getSuratMasukTerkait($orderData) : null);
+        $proposalTerkait = $orderData ? $this->getProposalTerkait($orderData) : null;
+        $f3->set('proposal_terkait', $proposalTerkait);
+        $f3->set('judul_form_awal', $this->judulAwalForm((string) ($poData['judul_kegiatan'] ?? ''), $orderData ?: [], $proposalTerkait));
+        $this->setPenandaJudul($proposalTerkait, $f3->get('surat_masuk_terkait'));
+        $f3->set('ruang_lingkup_proposal', is_array($proposalTerkait) ? (string) $proposalTerkait['ruang_lingkup'] : '');
         $f3->set('daftar_pegawai', $this->safeQuery('SELECT id_user, nama_user FROM tb_arsipuser ORDER BY nama_user ASC'));
         $f3->set('daftar_master_pelaksana_json', json_encode(
             $this->ambilMasterPelaksanaUntukPo($orderData['jenis_layanan_opti'] ?? ''),
+            JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP
+        ));
+        $f3->set('daftar_jabatan_pelaksana_json', json_encode(
+            $this->ambilJabatanPelaksanaUntukPo(),
             JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP
         ));
 
@@ -890,9 +976,15 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
 
         try {
             $po = new PoKegiatan($this->db);
+            $this->nomorBaruId = 0;
             $this->bind($po, $f3, false);
             $po->created_at = date('Y-m-d H:i:s');
-            $po->save();
+            try {
+                $po->save();
+            } catch (\Throwable $eSimpan) {
+                $this->lepasNomorBaru();   // gagal simpan -> nomor dikembalikan, urutan tidak bolong
+                throw $eSimpan;
+            }
 
             // [BARU] Kolom layanan diisi otomatis dari divisi order: 'opti-lingkungan' / 'opti-selulosa'.
             \PoSchema::tandaiLayananOpti($this->db, (int) $po->id, (int) $po->order_id);
@@ -906,6 +998,7 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
                 ? 'PO berhasil dibuat dan dikirim.'
                 : 'PO berhasil disimpan sebagai draft.');
         } catch (\Exception $e) {
+            $this->lepasNomorBaru();
             // [DEBUG-SEMENTARA] Nyatet detail lengkap pas gagal simpan PO -- POST
             // data + pesan error + trace -- ke file log biar gampang dilacak akar
             // masalahnya. Aman dihapus abis kelar debug (lihat storage/debug_po.log).
@@ -953,7 +1046,7 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
             }
             if (!$boleh) {
                 $this->setFlashError($pesan);
-                $f3->reroute((string) $f3->get('POST.dari') === 'ppk' ? '/po-revisi-ppk' : '/po-kegiatan/daftar');
+                $f3->reroute('/po-kegiatan/daftar');
                 return;
             }
             $sudahTerkirim = ($statusSebelum === 'terkirim');
@@ -965,10 +1058,16 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
             }
     
             try {
+                $this->nomorBaruId = 0;
                 $this->bind($po, $f3, true);
                 if ($sudahTerkirim) { $po->status = 'terkirim'; }   // "Simpan draft" saat revisi tidak boleh melempar PO jadi draft
                 $po->updated_at = date('Y-m-d H:i:s');
-                $po->save();
+                try {
+                    $po->save();
+                } catch (\Throwable $eSimpan) {
+                    $this->lepasNomorBaru();   // gagal simpan -> nomor dikembalikan
+                    throw $eSimpan;
+                }
 
                 // [BARU] Catat bagian PO yang berubah selama revisi PPK BLU
                 if ($konteksRevisi === 'ppk' && !empty($potretSebelum)) {
@@ -993,7 +1092,11 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
                     }
                 }
     
-                if ($konteksRevisi !== '') {
+                if ($konteksRevisi === 'katim') {
+                    // [BARU] Ketua Tim mengedit sendiri saat review: status review tetap, pembuat diberi tahu lewat tab Alur + notifikasi
+                    $this->catatEditKatim($po);
+                    $this->setFlashSuccess('Perubahan PO disimpan. PO tetap menunggu review Anda.');
+                } elseif ($konteksRevisi !== '') {
                     $this->setFlashSuccess('Perubahan PO disimpan. Tandai catatan yang sudah diperbaiki, lalu kirim revisi.');
                 } else {
                 $this->setFlashSuccess($f3->get('POST.aksi') === 'kirim'
@@ -1001,6 +1104,7 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
                     : 'PO berhasil diperbarui sebagai draft.');
                 }
             } catch (\Exception $e) {
+                $this->lepasNomorBaru();
                 $this->setFlashError('Gagal memperbarui PO: ' . $e->getMessage());
             }
     
@@ -1011,14 +1115,34 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
                 $f3->reroute('/po-kegiatan/daftar');
                 return;
             }
-            // [BARU] Edit dari halaman Revisi PPK BLU -> balik ke sana
+            // [BARU] Edit dari revisi PPK BLU -> balik ke panel revisinya; menutup panel kembali ke Daftar Review PO
             if ((string) $f3->get('POST.dari') === 'ppk') {
-                $f3->reroute('/po-revisi-ppk?buka=' . (int) $po->id);
+                $f3->reroute('/po-revisi-ppk?buka=' . (int) $po->id . '&dari=daftar');
                 return;
             }
     
             $f3->reroute($this->urlDaftarPoDariOrder((int) $f3->get('POST.order_id')));
         }
+
+    /** Jejak di tab Alur + notifikasi ke Ketua Pelaksana pembuat saat Ketua Tim mengedit PO yang sedang direview. */
+    protected function catatEditKatim($po) {
+        try {
+            $uid = (int) $this->getUserId();
+            $nama = 'Ketua Tim';
+            try {   // tb_arsipuser ada di database Sekretariat
+                $r = $this->dbSekretariat->exec('SELECT nama_user FROM tb_arsipuser WHERE id_user = ? LIMIT 1', [1 => $uid]);
+                if (!empty($r[0]['nama_user'])) { $nama = trim((string) $r[0]['nama_user']); }
+            } catch (\Throwable $eNama) { /* nama generik */ }
+            $o = $this->safeQuery('SELECT ketua_pelaksana_id FROM order_layanan WHERE id = ? LIMIT 1', [1 => (int) $po->order_id]);
+            $pembuatId = !empty($o[0]['ketua_pelaksana_id']) ? (int) $o[0]['ketua_pelaksana_id'] : 0;
+            \PoReviewController::catatPesanSistem($this->db, (int) $po->id, $uid, 'katim', $nama . ' (Ketua Tim) mengedit isi PO ini saat review.');
+            if ($pembuatId > 0) {
+                \PoReviewController::kabari($this->db, [$pembuatId], 'PO diedit Ketua Tim', 'PO ' . $po->nomor_po . ' diperbarui langsung oleh Ketua Tim saat review.');
+            }
+        } catch (\Throwable $e) {
+            // jejak bersifat pelengkap, jangan gagalkan penyimpanan
+        }
+    }
 
     protected function formatRupiahBerkas($n) {
         return 'Rp ' . number_format((float) $n, 0, ',', '.');
@@ -1169,6 +1293,15 @@ $options->set('defaultFont', 'Times-Roman');
 protected function siapkanDataPo($po, $orderData) {
     $poData = $po->cast();
 
+    // [BARU] PO yang belum dikirim belum punya nomor: dokumen pratinjau/PDF memakai nomor sementara
+    // dan tanggal hari ini (WIB). Nomor & tanggal resmi baru ada saat PO dikirim.
+    $poData['belum_bernomor'] = empty($poData['nomor_po']);
+    if ($poData['belum_bernomor']) {
+        $hariIni = \PoSchema::hariIniWib();
+        $poData['tanggal_po'] = $hariIni;
+        $poData['nomor_po'] = 'DRAFT/PO/BBSPJIS/' . \PoSchema::angkaRomawi((int) substr($hariIni, 5, 2)) . '/' . substr($hariIni, 0, 4);
+    }
+
     $rlDecoded = json_decode($poData['ruang_lingkup'] ?? '{}', true) ?: [];
     if (isset($rlDecoded[0])) { $rlDecoded = ['deskripsi' => '', 'items' => $rlDecoded]; }
     $poData['ruang_lingkup_deskripsi'] = $rlDecoded['deskripsi'] ?? '';
@@ -1197,6 +1330,12 @@ protected function siapkanDataPo($po, $orderData) {
 
     $poData['tim_pelaksana'] = json_decode($poData['tim_pelaksana'] ?? '[]', true) ?: [];
 
+    // [BARU] Blok tanda tangan dokumen (3 penandatangan dari master). PO lama yang belum punya data -> kolom kosong
+    // ( ..... ) sampai penandatangannya dipilih di form.
+    $ttdTersimpan = json_decode((string) ($poData['ttd_json'] ?? ''), true);
+    $poData['ttd'] = \PoTtd::bersihkan(is_array($ttdTersimpan) ? $ttdTersimpan : [], \PoTtd::KOTA_BAWAAN);
+    $poData['ttd_blok'] = \PoTtd::htmlBlok($poData['ttd'], \PoTtd::bulanTahun((string) ($poData['tanggal_po'] ?? '')), ['ketuaBawaan' => 'Ketua Tim Kerja']);
+
     // [BARU] Peta nama-kategori -> hasil hitung "Rincian Kebutuhan Lain" (bagian 2. Alat dan
     // Bahan), dipakai item RAB tipe "kebutuhan" (selulosa) yang nyambung ke sini biar biayanya
     // gak usah diketik ulang manual -- cukup pilih kategorinya di form.
@@ -1219,9 +1358,6 @@ protected function siapkanDataPo($po, $orderData) {
     $divisi = $orderData['jenis_layanan_opti'] ?? '';
     $nomor = 3;
 
-    $poData['nomor_alamat'] = null;
-    if (!empty($poData['alamat'])) { $nomor++; $poData['nomor_alamat'] = $nomor; }
-
     $poData['nomor_alat_bahan'] = null;
     $poData['nomor_metoda'] = null;
     if ($divisi === 'lingkungan') {
@@ -1230,6 +1366,10 @@ protected function siapkanDataPo($po, $orderData) {
     } elseif ($divisi === 'selulosa') {
         $nomor++; $poData['nomor_alat_bahan'] = $nomor;
     }
+
+    // Alamat tampil SETELAH Alat dan Bahan / Metoda di dokumen (pratinjau dan PDF), jadi nomornya dihitung setelahnya
+    $poData['nomor_alamat'] = null;
+    if (!empty($poData['alamat'])) { $nomor++; $poData['nomor_alamat'] = $nomor; }
 
     $nomor++; $poData['nomor_tim']    = $nomor;
     $nomor++; $poData['nomor_rab']    = $nomor;
@@ -1364,6 +1504,53 @@ protected function siapkanDataPo($po, $orderData) {
 
         $repo = new \SuratMasukRepository($this->db, $this->dbSekretariat);
         return $repo->getSuratById($idSurat);
+    }
+
+    /**
+     * PO Selulosa: proposal (opti_proposal_riset, yang terbaru) milik order ini -- judulnya jadi acuan judul PO dan filenya
+     * dibuka lewat tombol "Lihat Proposal" (menggantikan "Lihat Surat Masuk"). PO Lingkungan: null (tetap pakai surat masuk).
+     */
+    protected function getProposalTerkait($orderData) {
+        if (($orderData['jenis_layanan_opti'] ?? '') !== 'selulosa') { return null; }
+        $orderId = (int) ($orderData['id'] ?? 0);
+        if ($orderId <= 0) { return null; }
+        $r = $this->safeQuery(
+            "SELECT id, judul_proposal, file_proposal FROM opti_proposal_riset WHERE order_id = ? ORDER BY id DESC LIMIT 1",
+            [1 => $orderId]
+        );
+        if (empty($r)) { return null; }
+        $pr = $r[0];
+        $base = (string) $this->f3->get('BASE');
+        $adaFile = !empty($pr['file_proposal']);
+        // ruang lingkup dibaca terpisah: kalau kolomnya belum ada di database, cuma ruang lingkupnya yang kosong (judul dan file tetap jalan)
+        $rl = $this->safeQuery("SELECT ruang_lingkup FROM opti_proposal_riset WHERE id = ? LIMIT 1", [1 => (int) $pr['id']]);
+        $ruangLingkup = !empty($rl) ? trim((string) ($rl[0]['ruang_lingkup'] ?? '')) : '';
+        return [
+            'id'       => (int) $pr['id'],
+            'judul'    => trim((string) $pr['judul_proposal']),
+            'ruang_lingkup' => $ruangLingkup,
+            'ada_file' => $adaFile,
+            // sama dengan tab Berkas: file proposal kalau sudah diunggah, kalau belum halaman proposal order itu
+            'url'      => $adaFile ? ($base . '/proposal/' . (int) $pr['id'] . '/file') : ($base . '/order/' . $orderId . '/proposal'),
+        ];
+    }
+
+    /** Pembanding untuk penanda "Sesuai / Sudah Diubah dari ..." di samping Judul Kegiatan: judul proposal (Selulosa) atau perihal surat masuk. */
+    protected function setPenandaJudul($proposalTerkait, $suratMasukTerkait) {
+        if (is_array($proposalTerkait)) {
+            $this->f3->set('judul_asli_form', (string) $proposalTerkait['judul']);
+            $this->f3->set('sumber_judul_form', 'Proposal');
+        } else {
+            $this->f3->set('judul_asli_form', is_array($suratMasukTerkait) ? (string) ($suratMasukTerkait['perihal'] ?? '') : '');
+            $this->f3->set('sumber_judul_form', 'Surat Masuk');
+        }
+    }
+
+    /** Isi awal kolom Judul Kegiatan di form PO: judul PO yang tersimpan; kalau belum ada, judul proposal (Selulosa); kalau tidak ada juga, judul order. */
+    protected function judulAwalForm($judulPo, $orderData, $proposalTerkait) {
+        if (trim((string) $judulPo) !== '') { return (string) $judulPo; }
+        if (is_array($proposalTerkait) && $proposalTerkait['judul'] !== '') { return $proposalTerkait['judul']; }
+        return (string) ($orderData['judul_kegiatan'] ?? '');
     }
 
     /** [PERLU DIVERIFIKASI ULANG tiap tahun sesuai SKB 3 Menteri] */
@@ -1895,6 +2082,9 @@ protected function siapkanDataPo($po, $orderData) {
             // yang bikin query SELECT reload setelah INSERT jadi rusak & error
             // "...}) AS" pas bikin PO baru. Fix-nya: bikinin kolom asli biar F3
             // nganggep ini kolom biasa (ke-bind aman kaya kolom lain).
+            // [BARU] nomor_po harus boleh NULL: nomor baru dibuat saat PO dikirim, draft belum bernomor.
+            \PoSchema::nomorPoBolehKosong($this->db);
+
             $colsDasarStruktur = $this->db->exec("SHOW COLUMNS FROM po_kegiatan LIKE 'dasar_struktur'");
             if (empty($colsDasarStruktur)) {
                 $this->db->exec("ALTER TABLE po_kegiatan ADD COLUMN dasar_struktur TEXT NULL AFTER dasar");
@@ -1953,7 +2143,7 @@ protected function siapkanDataPo($po, $orderData) {
      */
     protected function cariUrutanTertinggiTahunIni($tahun) {
         $rows = $this->safeQuery(
-            "SELECT nomor_po FROM po_kegiatan WHERE nomor_po LIKE ?",
+            "SELECT nomor_po FROM po_kegiatan WHERE nomor_po LIKE ? AND nomor_po NOT LIKE '%/SVPK/%'", // deret nomor PO Pengujian (.../SVPK/...) terpisah
             [1 => '%/' . (int) $tahun]
         );
         $max = 0;

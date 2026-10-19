@@ -1,5 +1,5 @@
 <div class="d-flex align-items-center gap-3 mb-4">
-    <a href="{{ @BASE }}/po-kegiatan" class="btn-back"><i class="bi bi-arrow-left"></i> Kembali</a>
+    <a href="{{ @BASE }}{{ @kembali_url ?: '/po-kegiatan' }}" class="btn-back"><i class="bi bi-arrow-left"></i> Kembali</a>
     <div>
         <h2 class="h4 fw-bold mb-0 text-dark">Buat Petunjuk Operasional</h2>
     </div>
@@ -11,7 +11,7 @@
         <div class="row g-2" id="gridJenisPo">
             <repeat group="{{ @jenis_po_list }}" value="{{ @j }}">
                 <div class="col-md-3 col-sm-6">
-                    <div class="jenis-po-card" data-slug="{{ @j.slug }}">
+                    <div class="jenis-po-card {{ @j.terkunci ? 'jenis-po-off' : '' }}" data-slug="{{ @j.slug }}">
                         <i class="bi {{ @j.icon }} fs-3 mb-2"></i>
                         <div class="small fw-semibold">{{ @j.label }}</div>
                     </div>
@@ -47,6 +47,8 @@
 
 <!-- Modal pilih order Sertifikasi: lihat petunjuk_operasional/_modal_order_sertifikasi.html -->
 <include href="petunjuk_operasional/_modal_order_sertifikasi.html" />
+<!-- Modal pilih order Pengujian: lihat petunjuk_operasional/_modal_order_pengujian.html -->
+<include href="petunjuk_operasional/_modal_order_pengujian.html" />
 
 <style>
     .jenis-po-card {
@@ -54,6 +56,7 @@
         text-align: center; cursor: pointer; transition: all .15s ease; color: var(--color-text-muted, #64748b);
     }
     .jenis-po-card:hover { border-color: var(--color-primary, #881337); background: rgba(136,19,55,.03); }
+    .jenis-po-card.jenis-po-off, .jenis-po-card.jenis-po-off:hover { opacity: .38; filter: grayscale(1); cursor: not-allowed; border-color: var(--color-border, #e2e8f0); background: #f8fafc; }
     .jenis-po-card.active { border-color: var(--color-primary, #881337); background: rgba(136,19,55,.06); color: var(--color-primary, #881337); font-weight: 700; }
 </style>
 
@@ -65,13 +68,19 @@ document.addEventListener('DOMContentLoaded', function () {
     var selectOrderPo = document.getElementById('selectOrderPo');
 
     cards.forEach(function (card) {
+        if (card.classList.contains('jenis-po-off')) { card.setAttribute('aria-disabled', 'true'); card.title = 'Tidak tersedia untuk role Anda'; }
         card.addEventListener('click', function () {
+            if (card.classList.contains('jenis-po-off')) { return; } // jenis PO di luar layanan role ini
             cards.forEach(function (c) { c.classList.remove('active'); });
             card.classList.add('active');
 
             if (card.dataset.slug === 'opti') {
                 cardPilihOrder.classList.remove('d-none');
                 boxJenisLain.classList.add('d-none');
+            } else if (card.dataset.slug === 'pengujian') {
+                cardPilihOrder.classList.add('d-none');
+                boxJenisLain.classList.add('d-none');
+                bukaModalPengujian();
             } else if (card.dataset.slug === 'sertifikasi') {
                 cardPilihOrder.classList.add('d-none');
                 boxJenisLain.classList.add('d-none');
@@ -97,4 +106,4 @@ document.addEventListener('DOMContentLoaded', function () {
         window.location.href = '{{ @BASE }}/po-kegiatan/buat?order_id=' + selectOrderPo.value;
     });
 });
-</script>
+</script>

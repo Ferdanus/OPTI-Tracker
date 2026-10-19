@@ -1,0 +1,384 @@
+<!--
+    app/views/petunjuk_operasional/_tema_po.html
+    Tema tampilan bersama untuk semua halaman "Buat PO" di Petunjuk Operasional.
+    Isinya cuma gaya (CSS) + dua fungsi bantu editor. TIDAK mengubah isi / logika form.
+    Gayanya disamakan dengan halaman Buat PO Kegiatan (po-kegiatan/form.html).
+-->
+<style>
+    /* ===== Tema "Buat PO" (disamakan dengan po-kegiatan/form.html) ===== */
+    .pp-root { --po-border: #e2e8f0; --po-focus: #3b82f6; --po-blue: #1d4ed8; color: #0f172a; }
+
+    /* ---- Header halaman ---- */
+    .pp-root .pp-head { align-items: center; margin-bottom: 1.5rem; }
+    .pp-root .pp-head h1 { font-size: 1.15rem; font-weight: 700; margin: 0; }
+    .pp-root .pp-head p { margin-top: 2px; }
+    .pp-root .pp-head .pp-back { display: inline-flex; align-items: center; gap: .375rem; border-radius: 999px; padding: .375rem 1rem; font-size: .8125rem; background: #fff; box-shadow: 0 1px 2px rgba(15,23,42,.05); }
+    .pp-root .pp-head .pp-tag { font-size: .65rem; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; border-radius: 999px; padding: .3rem .65rem; background: rgba(13,202,240,.1); color: #0aa2c0; border: 1px solid rgba(13,202,240,.25); }
+    .pp-root .pp-actions .btn { border-radius: 999px; font-weight: 600; padding-left: .9rem; padding-right: .9rem; }
+    .pp-root .pp-actions .form-select { border-radius: 999px; }
+
+    /* ---- Kartu seksi ---- */
+    .pp-root .pp-grid { max-width: none; }
+    .pp-root .pp-card { background: #fff; border: 1px solid var(--po-border); border-radius: 14px; margin-bottom: 1.5rem; overflow: hidden; box-shadow: 0 1px 3px 0 rgba(15,23,42,.04), 0 1px 2px -1px rgba(15,23,42,.04); transition: box-shadow .2s ease-in-out, border-color .2s ease-in-out; }
+    .pp-root .pp-card:hover { box-shadow: 0 4px 12px -2px rgba(15,23,42,.06), 0 2px 6px -1px rgba(15,23,42,.04); border-color: #cbd5e1; }
+    .pp-root .pp-card > h3 { margin: 0; padding: 1rem 1.25rem; font-size: .95rem; font-weight: 700; color: #0f172a; background: #fff; border-bottom: 1px solid var(--po-border); display: flex; align-items: center; gap: .65rem; }
+    .pp-root .pp-num { width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); color: var(--po-blue); border: 1px solid #bfdbfe; font-size: .825rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 1px 2px rgba(29,78,216,.08); }
+    .pp-root .pp-body { padding: 1.25rem; }
+    @media (min-width: 768px) {
+        .pp-root .pp-card > h3 { padding: 1.15rem 1.5rem; }
+        .pp-root .pp-body { padding: 1.5rem; }
+    }
+
+    /* ---- Label & kolom isian ---- */
+    .pp-root .pp-body .form-label { font-size: .785rem; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: #475569; margin-bottom: .45rem; }
+    .pp-root .pp-body .row.g-2 { --bs-gutter-x: 1rem; --bs-gutter-y: 1rem; }
+    .pp-root .form-control-sm, .pp-root .form-select-sm { min-height: 38px; padding: .5rem .8rem; font-size: .875rem; color: #1e293b; border: 1px solid #cbd5e1; border-radius: 8px; transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out; }
+    .pp-root .form-control-sm:focus, .pp-root .form-select-sm:focus { border-color: var(--po-focus); box-shadow: 0 0 0 3.5px rgba(59,130,246,.12); outline: 0; }
+    .pp-root .form-control-sm[readonly] { background-color: #f8fafc; border-color: #e2e8f0; }
+    .pp-root .pp-hint { font-size: .78rem; color: #64748b; }
+    .pp-root .pp-auto { background: #eff6ff; color: var(--po-blue); border: 1px solid #bfdbfe; text-transform: none; letter-spacing: 0; font-weight: 600; }
+
+    /* ---- Tabel isian ---- */
+    .pp-root .pp-body .table-responsive { border: 1px solid var(--po-border); border-radius: 10px; background: #fff; }
+    .pp-root .pp-tbl { margin-bottom: 0; }
+    .pp-root .pp-tbl thead th { background: #f8fafc; font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; color: #64748b; border-bottom: 1px solid var(--po-border); padding: .65rem .5rem; vertical-align: middle; }
+    .pp-root .pp-tbl tbody td { padding: .45rem .4rem; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    .pp-root .pp-tbl tbody tr:last-child td { border-bottom: 0; }
+    .pp-root .pp-tbl .form-control-sm, .pp-root .pp-tbl .form-select-sm { min-height: 32px; padding: .3rem .5rem; font-size: .82rem; border-radius: 6px; }
+    .pp-root .pp-no { padding-top: .45rem !important; }
+    .pp-root .pp-ico { border-radius: 6px; }
+    .pp-root .pp-jad th, .pp-root .pp-jad td { border-color: #e2e8f0; }
+
+    /* ---- Kotak ringkasan / kategori RAB ---- */
+    .pp-root .pp-induk { background: #fff; border: 1px solid var(--po-border); border-left: 4px solid #2563eb; border-radius: 12px; padding: 1rem; box-shadow: 0 1px 3px rgba(15,23,42,.04); }
+    .pp-root .pp-letter { background: #eff6ff; color: var(--po-blue); border: 1px solid #bfdbfe; border-radius: 8px; }
+    .pp-root .pp-sum { background: #f8fafc; border: 1px solid var(--po-border); border-radius: 10px; padding: .85rem 1rem; }
+    .pp-root .pp-warn { border-radius: 10px; }
+
+    /* ---- Editor teks (disamakan dengan editor Buat PO Kegiatan) ---- */
+    .pp-root .pp-rte { background: #fff; border: 1px solid var(--po-border); border-radius: 10px; overflow: hidden; transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out; }
+    .pp-root .pp-rte:focus-within { border-color: var(--po-focus); box-shadow: 0 0 0 3px rgba(59,130,246,.12); }
+    .pp-root .pp-rte-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: .35rem .5rem; user-select: none; }
+    .pp-root .pp-rte-bar button { display: inline-flex; align-items: center; justify-content: center; min-width: 28px; height: 26px; padding: 0 .35rem; font-size: .775rem; font-weight: 600; line-height: 1; color: #475569; background: transparent; border: 1px solid transparent; border-radius: 6px; cursor: pointer; transition: all .15s ease; }
+    .pp-root .pp-rte-bar button:hover { background: #e2e8f0; color: #0f172a; border-color: #cbd5e1; }
+    .pp-root .pp-rte-bar button:active { background: #cbd5e1; transform: translateY(1px); }
+    .pp-root .pp-rte-bar .sep { display: inline-block; width: 1px; height: 16px; background: #cbd5e1; margin: 0 4px; align-self: center; }
+    .pp-root .pp-rte-body { min-height: 100px; max-height: 320px; padding: .85rem 1rem; font-family: inherit; font-size: .875rem; line-height: 1.65; color: #1e293b; word-break: break-word; }
+    .pp-root .pp-rte-body ol:not([type]) { list-style-type: lower-alpha; }
+    .pp-root .pp-rte-body ol, .pp-root .pp-rte-body ul { margin: .35rem 0 .5rem; padding-left: 1.5rem; }
+    .pp-root .pp-rte-body:empty::before { content: attr(data-placeholder); color: #94a3b8; pointer-events: none; }
+
+    /* editor mini (pengganti kotak teks di form / tabel): bilah alat kecil, selalu tampil (tidak menggeser tata letak saat diklik) */
+    .pp-root .pp-rte-mini, .pp-root .pp-rte.sm { border-radius: 6px; border-color: #cbd5e1; }
+    .pp-root .pp-rte-mini .pp-rte-bar, .pp-root .pp-rte.sm .pp-rte-bar { padding: .2rem .3rem; }
+    .pp-root .pp-rte-mini .pp-rte-bar button, .pp-root .pp-rte.sm .pp-rte-bar button { min-width: 24px; height: 22px; font-size: .72rem; }
+    .pp-root .pp-rte-mini .pp-rte-body, .pp-root .pp-rte.sm .pp-rte-body { min-height: 34px; max-height: 170px; padding: .3rem .5rem; font-size: .82rem; line-height: 1.5; }
+    .pp-root .pp-rte.sm .pp-rte-body.pp-alamat, .pp-root .pp-rte.sm[data-rte="alamat"] .pp-rte-body { min-height: 38px; font-size: .875rem; padding: .45rem .8rem; }
+    .pp-root .pp-rte-body ul { list-style: disc; }
+    .pp-root #ppBottomBar .btn { border-radius: 999px; font-weight: 600; padding: .5rem 1.5rem; }
+    .po-live-card #ppModalPrint { display: none; }
+    .po-live-card #ppModalEdit { border-radius: 999px; font-size: .75rem; font-weight: 600; padding: 3px 12px; border: 1px solid #dee2e6; background: #fff; color: #475569; }
+
+    /* ---- Mode tampilan: Split View / Form Saja / Preview Saja (seperti Buat PO Kegiatan) ---- */
+    .pp-root .po-view-switcher { display: inline-flex; padding: 4px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 999px; box-shadow: 0 1px 2px rgba(15,23,42,.05); }
+    .pp-root .po-view-switcher .po-mode-btn { border: 0; background: transparent; color: #64748b; font-size: .8rem; font-weight: 600; padding: .25rem .9rem; border-radius: 999px; cursor: pointer; transition: all .15s ease; white-space: nowrap; }
+    .pp-root .po-view-switcher .po-mode-btn.active { background: #fff; color: var(--po-blue); box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+    .pp-root .pp-actions #ppPreview { display: none; }
+    .pp-fab { display: none !important; }
+    .po-live-card { background: #fff; border: 1px solid var(--po-border, #e2e8f0); border-radius: 14px; box-shadow: 0 4px 20px -4px rgba(15,23,42,.08); overflow: hidden; display: flex; flex-direction: column; height: 80vh; min-height: 550px; }
+    @media (min-width: 1200px) { .po-live-card { position: sticky; top: 75px; z-index: 5; height: calc(100vh - 100px); } }
+    .po-live-card .pp-modal-bar { border-radius: 0; box-shadow: none; border-bottom: 1px solid #e2e8f0; padding: .65rem 1rem; }
+    .po-live-card .pp-modal-x { display: none; }
+    .po-live-card .pp-pv-box { border-radius: 0; background: #525659; padding: 24px 16px; }
+    .po-live-card .pp-page { box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+    .po-live-card .pp-modal-bar { flex-wrap: wrap; row-gap: .4rem; }
+    .po-live-card .pp-modal-bar .pp-live-tools { margin-left: auto; display: flex; align-items: center; gap: .375rem; flex-wrap: wrap; }
+    .po-live-card .pp-modal-bar .pg { padding: 2px 10px; font-size: .74rem; }
+    .po-live-badge { display: inline-flex; align-items: center; gap: .375rem; padding: .25rem .6rem; border-radius: 999px; background: rgba(25,135,84,.1); color: #198754; border: 1px solid rgba(25,135,84,.25); font-size: .76rem; font-weight: 600; margin-right: .25rem; }
+    .po-live-badge .pp-live-dot.syncing { background: #f59e0b; animation: ppPulseSync 1s infinite; }
+    @keyframes ppPulseSync { 0% { box-shadow: 0 0 0 0 rgba(245,158,11,.7); } 70% { box-shadow: 0 0 0 6px rgba(245,158,11,0); } 100% { box-shadow: 0 0 0 0 rgba(245,158,11,0); } }
+    .pp-zoom { display: inline-flex; align-items: center; border: 1px solid #dee2e6; background: #fff; border-radius: 999px; padding: 2px; }
+    .pp-zoom button, .pp-tool { border: 0; background: transparent; color: #6c757d; font-size: .75rem; line-height: 1.2; padding: 3px 8px; border-radius: 999px; cursor: pointer; }
+    .pp-zoom button:hover, .pp-tool:hover { background: #f1f5f9; color: #0f172a; }
+    .pp-zoom .pp-zoom-label { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight: 700; color: #0f172a; min-width: 70px; }
+    .pp-zoom .pp-zoom-fit { color: var(--po-blue); font-weight: 600; }
+    .pp-tool { border: 1px solid #dee2e6; background: #fff; box-shadow: 0 1px 2px rgba(15,23,42,.05); font-weight: 600; padding: 3px 10px; }
+    .pp-tool.pdf { color: #dc3545; border-color: #dc3545; }
+    .pp-tool.pdf:hover { background: #dc3545; color: #fff; }
+    .pp-tool.round { width: 28px; height: 28px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+    .pp-tool.spin i { animation: ppSpin .6s linear; }
+    @keyframes ppSpin { to { transform: rotate(360deg); } }
+    /* tombol bawah form (Batal / Kembali, Simpan) */
+    .po-sticky-bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .6rem 1rem; margin-top: 1.25rem; }
+    .po-sticky-bar > div { display: flex; align-items: center; gap: .5rem; flex-wrap: nowrap; }
+    .po-sticky-bar .btn { white-space: nowrap; border-radius: 999px; font-weight: 600; padding: .5rem 1.5rem; }
+    @media (min-width: 1200px) { .po-sticky-bar .d-xl-none { display: none !important; } }
+    @media (max-width: 575.98px) { .po-sticky-bar > div { flex-wrap: wrap; width: 100%; } .po-sticky-bar > div .btn { flex: 1 1 auto; justify-content: center; } }
+    .pp-root .pp-actions .pp-simpan-pindah { display: none; }
+    /* tabel jadwal: sel yang dicentang berwarna gelap seperti jadwal di Buat PO Kegiatan */
+    .pp-root .pp-jad th { background: #f1f5f9; color: #0f172a; font-weight: 700; vertical-align: middle; }
+    .pp-root .pp-jad td { height: 34px; transition: background-color .12s ease; }
+    .pp-root .pp-jad td:has(input[type=checkbox]:checked) { background-color: #334155; }
+    .pp-root .pp-jad td:has(input[type=checkbox]) { cursor: pointer; }
+    .pp-root .pp-jad td:has(input[type=checkbox]):hover { background-color: #e2e8f0; }
+    .pp-root .pp-jad td:has(input[type=checkbox]:checked):hover { background-color: #1e293b; }
+    .pp-live-dot { width: 8px; height: 8px; border-radius: 50%; background: #16a34a; box-shadow: 0 0 0 0 rgba(22,163,74,.5); animation: ppPulse 2s infinite; display: inline-block; }
+    @keyframes ppPulse { 70% { box-shadow: 0 0 0 7px rgba(22,163,74,0); } 100% { box-shadow: 0 0 0 0 rgba(22,163,74,0); } }
+
+    /* ===== gaya PO OPTI untuk Tim / RAB / Estimasi / Jadwal ===== */
+    .pp-root .pp-card > h3.pp-h3x { justify-content: space-between; flex-wrap: wrap; row-gap: .6rem; }
+    .pp-root .pp-ht { display: flex; align-items: center; gap: .65rem; min-width: 0; }
+    .pp-root .pp-tt { display: block; font-size: .95rem; font-weight: 700; color: #0f172a; line-height: 1.25; }
+    .pp-root .pp-sub { display: block; font-size: .78rem; font-weight: 400; color: #64748b; line-height: 1.3; }
+    .pp-root .pp-hbtns { display: flex; flex-wrap: wrap; gap: .5rem; }
+    .pp-root .pp-hbtns .btn { font-size: .8rem; font-weight: 500; }
+    .pp-root .po-label { font-size: .785rem; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: #475569; margin-bottom: .45rem; display: block; }
+    .pp-root .po-label.text-primary { color: #1d4ed8 !important; }
+    .pp-root .po-table-wrap { border: 1px solid #e2e8f0; border-radius: 10px; overflow-x: auto; background: #fff; }
+    .pp-root .po-table thead th { background: #f8fafc; font-size: .76rem; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; color: #64748b; border-bottom: 1px solid #e2e8f0; padding: .65rem .75rem; vertical-align: middle; }
+    .pp-root .po-table tbody td { padding: .55rem .75rem; vertical-align: middle; border-bottom: 1px solid #f1f5f9; }
+    .pp-root .po-table tbody tr:last-child td { border-bottom: 0; }
+    .pp-root .po-table tfoot td { background: #f8fafc; border-top: 1px solid #e2e8f0; padding: .55rem .75rem; font-weight: 700; color: #0f172a; }
+    .pp-root .po-kpi-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem 1.25rem; display: flex; align-items: center; gap: 1rem; box-shadow: 0 1px 2px rgba(0,0,0,.03); height: 100%; }
+    .pp-root .po-kpi-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0; }
+    .pp-root .rab-kat-box { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem; margin-bottom: 1.25rem; box-shadow: 0 1px 3px rgba(15,23,42,.04); }
+    .pp-root .rab-item-wrap { overflow-x: auto; scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; margin-bottom: .5rem; }
+    .pp-root .rab-item-table { font-size: 13px; margin-bottom: 0 !important; }
+    .pp-root .rab-item-table th { font-weight: 600; text-align: center; vertical-align: middle; white-space: nowrap; background: #f8fafc; color: #475569; font-size: .75rem; text-transform: uppercase; letter-spacing: .3px; padding: 6px 4px; border-bottom: 1px solid #e2e8f0; }
+    .pp-root .rab-item-table td { padding: 4px; vertical-align: middle; border-color: #f1f5f9; }
+    .pp-root .rab-item-table .form-control { min-width: 40px; border-radius: 6px; font-size: .82rem; height: 30px; padding: 2px 6px; }
+    .pp-root .rab-item-table input[type=number] { -moz-appearance: textfield; text-align: center; }
+    .pp-root .rab-item-table input[type=number]::-webkit-outer-spin-button, .pp-root .rab-item-table input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .pp-root .rab-item-total { min-height: 30px; display: flex; align-items: center; justify-content: flex-end; font-size: .84rem; font-weight: 600; color: #0f172a; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; padding: 0 6px; white-space: nowrap; }
+    .pp-root .btn-xs { padding: .2rem .6rem; font-size: .75rem; line-height: 1.3; border-radius: 20px; }
+    .pp-root .pp-kat-total { display: flex; justify-content: space-between; align-items: center; margin-top: .75rem; padding-top: .6rem; border-top: 1px solid #f1f5f9; font-size: .85rem; color: #64748b; }
+    .pp-root .pp-kat-total b { color: #0f172a; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .pp-root .pp-ctl { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+    .pp-root .pp-mvb { border: 0; background: transparent; width: 26px; height: 28px; border-radius: 6px; color: #94a3b8; padding: 0; line-height: 1; }
+    .pp-root .pp-mvb:hover { background: #f1f5f9; color: #334155; }
+    .pp-root .pp-del { width: 30px; height: 30px; border-radius: 6px; padding: 0; line-height: 1; border: 1px solid #dc3545; color: #dc3545; background: #fff; font-size: .85rem; }
+    .pp-root .pp-del:hover { background: #dc3545; color: #fff; }
+    .pp-root input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+    .pp-root input[type=number]::-webkit-outer-spin-button, .pp-root input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .pp-root .pp-sum { margin-top: 1.25rem; }
+    .pp-root .jadwal-table-responsive { border: 1.5px solid #cbd5e1; border-radius: 9px; overflow-x: auto; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.04); }
+    .pp-root .jadwal-modern-table { width: 100%; margin-bottom: 0; border-collapse: collapse; font-size: .8rem; }
+    .pp-root .jadwal-modern-table th { border: 1px solid #cbd5e1; text-align: center; vertical-align: middle; padding: 5px 4px; line-height: 1.25; background: #f1f5f9; color: #0f172a; font-weight: 700; }
+    .pp-root .jadwal-modern-table th.col-kegiatan-header { background: #f8fafc; color: #334155; text-align: left; padding-left: 10px; min-width: 240px; }
+    .pp-root .jadwal-modern-table th.week-header { background: #fff; color: #475569; font-weight: 600; min-width: 84px; }
+    .pp-root .jadwal-modern-table td { border: 1px solid #e2e8f0; padding: 3px 2px; vertical-align: middle; text-align: center; }
+    .pp-root .jadwal-modern-table td.col-kegiatan-cell { text-align: left; padding: 4px 8px; background: #fff; }
+    .pp-root .jadwal-modern-table td.cell-check { cursor: pointer; user-select: none; width: 84px; min-width: 70px; height: 34px; }
+    .pp-root .jadwal-modern-table td.cell-action { width: 44px; padding: 2px 4px; }
+    .pp-root .jadwal-modern-table .form-control-sm { height: 28px; padding: 2px 6px; font-size: .78rem; text-align: center; border-radius: 6px; }
+    .pp-root .jadwal-modern-table td.col-kegiatan-cell .form-control-sm { text-align: left; }
+    .pp-root .jadwal-modern-table input[type=checkbox] { accent-color: #0f172a; cursor: pointer; }
+    .pp-root .jadwal-modern-table td.cell-check:has(input:checked) input[type=checkbox] { accent-color: #fff; }
+
+    .pp-root .jadwal-modern-table td.cell-libur-disabled { background: #fff1f2 !important; cursor: not-allowed !important; user-select: none; }
+    .pp-root .jadwal-modern-table td.cell-libur-disabled span { color: #dc3545; font-weight: 700; font-size: 9.5px; opacity: .65; }
+    .pp-root .jadwal-modern-table th.week-header.libur { background: #fef2f2; color: #dc3545; }
+    .pp-root .jadwal-modern-table th.month-header { background: #f1f5f9; }
+    .pp-root .jadwal-modern-table td.cell-check { width: 32px; min-width: 30px; }
+    .pp-root .jadwal-modern-table th.week-header { min-width: 30px; width: 32px; }
+    .pp-root .jadwal-chunk-header { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 7px; padding: 6px 12px; margin: 10px 0 6px; font-size: .8rem; font-weight: 600; color: #334155; }
+    .pp-root .btn-white { background: #fff; }
+    .pp-root .pp-jtool { background: #fff; border: 1px solid #dee2e6; color: #212529; font-weight: 600; box-shadow: 0 1px 2px rgba(15,23,42,.05); }
+    .pp-root .pp-jtool:hover { background: #f8fafc; }
+</style>
+<script>
+/* Fungsi bantu editor mini + tampilan teks kaya (dipakai bersama oleh semua halaman Buat PO) */
+(function () {
+    function e(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+    var OK = { B: 1, I: 1, U: 1, STRONG: 1, EM: 1, OL: 1, UL: 1, LI: 1, BR: 1, P: 1, DIV: 1 };
+    function bersih(html) {
+        var d = document.createElement('div'); d.innerHTML = html;
+        (function walk(n) {
+            Array.prototype.slice.call(n.childNodes).forEach(function (c) {
+                if (c.nodeType === 1) {
+                    walk(c);
+                    if (!OK[c.nodeName]) { while (c.firstChild) { n.insertBefore(c.firstChild, c); } n.removeChild(c); return; }
+                    var st = c.getAttribute('style'), tp = c.nodeName === 'OL' ? c.getAttribute('type') : null;
+                    while (c.attributes.length) { c.removeAttribute(c.attributes[0].name); }
+                    if (tp) { c.setAttribute('type', tp); }
+                    if (st && /^\s*text-align:\s*(left|center|right|justify)\s*;?\s*$/i.test(st)) { c.setAttribute('style', st); }
+                } else if (c.nodeType !== 3) { n.removeChild(c); }
+            });
+        })(d);
+        return d.innerHTML;
+    }
+    /* isi lama (teks polos, ada baris baru) atau isi baru (HTML dari editor) -> HTML aman */
+    function adaTag(s) { return /<\/?(p|div|br|b|i|u|strong|em|ol|ul|li)(\s|\/|>)/i.test(s); }
+    window.ppRich = function (s) {
+        s = String(s == null ? '' : s);
+        if (!adaTag(s)) { return e(s).replace(/\r?\n/g, '<br>'); }
+        return bersih(s);
+    };
+    /* sama seperti ppRich, tapi tanpa pembungkus blok: dipakai kalau isinya disisipkan di tengah kalimat */
+    window.ppInline = function (s) {
+        return window.ppRich(s).replace(/<\/(div|p)>\s*<(div|p)>/gi, '<br>').replace(/<\/?(div|p)>/gi, '');
+    };
+    /* teks polos dari isi editor (untuk cek kosong / logika berbasis baris) */
+    window.ppPlain = function (s) {
+        s = String(s == null ? '' : s);
+        if (!adaTag(s)) { return s; }
+        var t = bersih(s).replace(/<(br|\/div|\/p|\/li)[^>]*>/gi, '\n').replace(/<[^>]+>/g, '');
+        var ta = document.createElement('textarea'); ta.innerHTML = t; return ta.value;
+    };
+    /* isi lama (teks polos; baris berawalan "- " jadi daftar poin) -> HTML untuk dimasukkan ke editor */
+    window.ppToHtml = function (s) {
+        s = String(s == null ? '' : s);
+        if (adaTag(s)) { return bersih(s); }
+        var ls = s.split(/\r?\n/).filter(function (l) { return l.trim() !== ''; });
+        if (ls.length <= 1 && !/^\s*-\s/.test(ls[0] || '')) { return e(ls[0] || ''); }
+        var out = '', open = false;
+        ls.forEach(function (l) {
+            var m = /^\s*-\s*(.*)$/.exec(l);
+            if (m) { if (!open) { out += '<ul>'; open = true; } out += '<li>' + e(m[1]) + '</li>'; }
+            else { if (open) { out += '</ul>'; open = false; } out += '<div>' + e(l) + '</div>'; }
+        });
+        return out + (open ? '</ul>' : '');
+    };
+    /* isi editor -> nilai tersimpan; editor yang dikosongkan (sisa <br>/<div>) dianggap kosong sungguhan */
+    window.ppEditorVal = function (el) {
+        if ((el.textContent || '').trim() === '' && !el.querySelector('li,img')) { return ''; }
+        var h = el.innerHTML;
+        /* teks tanpa tag dibungkus <div> supaya bisa dibedakan dari isi lama yang teks polos (mis. "&amp;" tidak digandakan) */
+        return /<[a-z]/i.test(h) ? h : '<div>' + h + '</div>';
+    };
+    var TOOLS = [['bold', '<b>B</b>', 'Tebal'], ['italic', '<i>I</i>', 'Miring'], ['underline', '<u>U</u>', 'Garis bawah'], '|',
+        ['insertOrderedList', 'a.', 'Daftar bertingkat a, b, c'], ['num', '1.', 'Daftar angka 1, 2, 3'], ['insertUnorderedList', '&bull;', 'Daftar poin'], '|',
+        ['removeFormat', '<i class="bi bi-eraser"></i>', 'Hapus format']];
+    /* editor mini: attrs = atribut data-list/data-i/data-k yang menempel di badan editor */
+    window.ppMiniRte = function (attrs, isi) {
+        var bar = TOOLS.map(function (t) {
+            return t === '|' ? '<span class="sep"></span>' : '<button type="button" data-cmd="' + t[0] + '" title="' + t[2] + '">' + t[1] + '</button>';
+        }).join('');
+        return '<div class="pp-rte pp-rte-mini"><div class="pp-rte-bar">' + bar + '</div><div class="pp-rte-body" contenteditable="true" spellcheck="true" ' + attrs + '>' + window.ppToHtml(isi) + '</div></div>';
+    };
+})();
+/* Tata letak berdampingan (Split View) + pratinjau langsung. Dijalankan setelah skrip halaman selesai. */
+var PP_Z = { mode: 'fit', scale: 1 };
+window.ppFitHook = function (box, pages, wrap) {
+    if (!window.ppSplitSiap) { return false; }
+    var avail = box.clientWidth - 32;
+    if (avail <= 0) { return true; }
+    var sc = PP_Z.mode === 'fit' ? Math.max(0.35, Math.min(1.25, avail / 794)) : PP_Z.scale;
+    if (PP_Z.mode === 'fit') { PP_Z.scale = sc; }
+    pages.style.transform = 'scale(' + sc + ')';
+    wrap.style.height = Math.ceil(pages.offsetHeight * sc) + 'px';
+    wrap.style.marginLeft = Math.max(0, Math.floor((avail - 794 * sc) / 2)) + 'px';
+    var lb = document.getElementById('ppZoomLabel');
+    if (lb) { lb.textContent = (PP_Z.mode === 'fit' ? 'Fit (' : '') + Math.round(sc * 100) + (PP_Z.mode === 'fit' ? '%)' : '%'); }
+    return true;
+};
+document.addEventListener('DOMContentLoaded', function () {
+    var root = document.querySelector('.pp-root'), grid = root && root.querySelector('.pp-grid'),
+        modal = document.getElementById('ppModal'), dlg = modal && modal.querySelector('.pp-modal-dialog'),
+        bar = dlg && dlg.querySelector('.pp-modal-bar'), box = document.getElementById('pvBox'),
+        actions = root && root.querySelector('.pp-actions');
+    if (!root || !grid || !dlg || !bar || !box || !actions) { return; }
+
+    var LIVE_TXT = window.PP_LIVE_TEXT || 'Live Sync';
+    var wrap = document.createElement('div'); wrap.className = 'row g-4 po-split-layout'; wrap.id = 'poSplitWrapper';
+    var colF = document.createElement('div'), colP = document.createElement('div'), card = document.createElement('div');
+    colF.id = 'poFormCol'; colP.id = 'poPreviewCol'; card.className = 'po-live-card';
+    grid.parentNode.insertBefore(wrap, grid);
+    colF.appendChild(grid); wrap.appendChild(colF); wrap.appendChild(colP); colP.appendChild(card);
+
+    /* bilah atas pratinjau: Live Sync + loncat halaman + zoom + segarkan + PDF + cetak */
+    var lbl = bar.querySelector('.lbl');
+    var badge = document.createElement('span'); badge.className = 'po-live-badge'; badge.id = 'ppLiveBadge';
+    badge.innerHTML = '<span class="pp-live-dot" id="ppLiveDot"></span><span id="ppLiveText">' + LIVE_TXT + '</span>';
+    if (lbl) { lbl.parentNode.replaceChild(badge, lbl); } else { bar.insertBefore(badge, bar.firstChild); }
+    var tools = document.createElement('div'); tools.className = 'pp-live-tools';
+    tools.innerHTML = '<div class="pp-zoom"><button type="button" data-z="-" title="Perkecil"><i class="bi bi-zoom-out"></i></button>' +
+        '<button type="button" class="pp-zoom-label" id="ppZoomLabel" data-z="0" title="Klik untuk reset zoom (100%)">100%</button>' +
+        '<button type="button" data-z="+" title="Perbesar"><i class="bi bi-zoom-in"></i></button>' +
+        '<button type="button" class="pp-zoom-fit" data-z="fit" title="Pas lebar layar"><i class="bi bi-arrows-angle-expand"></i> Fit</button></div>' +
+        '<button type="button" class="pp-tool round" id="ppRefresh" title="Segarkan pratinjau"><i class="bi bi-arrow-clockwise"></i></button>' +
+        '<button type="button" class="pp-tool pdf" id="ppToolPdf" title="Simpan sebagai PDF (lewat jendela cetak)"><i class="bi bi-file-earmark-pdf-fill"></i> PDF</button>' +
+        '<button type="button" class="pp-tool round" id="ppToolPrint" title="Cetak dokumen"><i class="bi bi-printer"></i></button>';
+    bar.appendChild(tools);
+    card.appendChild(bar); card.appendChild(box);
+    window.ppSplitSiap = true;
+    /* mode lihat (Sertifikasi) membuka jendela preview lama sebelum tata letak ini siap: tutup lagi */
+    modal.classList.remove('open'); modal.setAttribute('aria-hidden', 'true'); document.body.style.overflow = '';
+
+    function refit() { window.dispatchEvent(new Event('resize')); }
+    tools.addEventListener('click', function (e) {
+        var z = e.target.closest('[data-z]');
+        if (z) {
+            var k = z.dataset.z;
+            if (k === 'fit') { PP_Z.mode = 'fit'; }
+            else { PP_Z.mode = 'manual'; PP_Z.scale = k === '0' ? 1 : Math.max(0.35, Math.min(2, PP_Z.scale + (k === '+' ? 0.1 : -0.1))); }
+            refit(); return;
+        }
+        if (e.target.closest('#ppRefresh')) {
+            var rf = document.getElementById('ppRefresh'); rf.classList.remove('spin'); void rf.offsetWidth; rf.classList.add('spin');
+            if (window.ppRender) { window.ppRender(); } refit(); return;
+        }
+        if (e.target.closest('#ppToolPdf, #ppToolPrint')) { var pb = document.getElementById('ppPrint'); if (pb) { pb.click(); } else { window.print(); } }
+    });
+
+    /* indikator Live Sync */
+    var dot = document.getElementById('ppLiveDot'), txt = document.getElementById('ppLiveText'), tm = null;
+    root.addEventListener('input', function () {
+        dot.classList.add('syncing'); txt.textContent = 'Menyinkronkan...';
+        clearTimeout(tm); tm = setTimeout(function () { dot.classList.remove('syncing'); txt.textContent = LIVE_TXT; }, 450);
+    });
+
+    /* pengalih mode */
+    var sw = document.createElement('div'); sw.className = 'po-view-switcher'; sw.setAttribute('role', 'group');
+    sw.innerHTML = '<button type="button" class="po-mode-btn" data-mode="split" title="Form dan pratinjau berdampingan"><i class="bi bi-layout-split me-1"></i><span class="d-none d-sm-inline">Split View</span></button>' +
+        '<button type="button" class="po-mode-btn" data-mode="form" title="Fokus ke form"><i class="bi bi-pencil-square me-1"></i><span class="d-none d-sm-inline">Form Saja</span></button>' +
+        '<button type="button" class="po-mode-btn" data-mode="preview" title="Fokus ke pratinjau dokumen"><i class="bi bi-file-earmark-pdf me-1"></i><span class="d-none d-sm-inline">Preview Saja</span></button>';
+    actions.insertBefore(sw, actions.firstChild);
+
+    function setMode(mode) {
+        if (mode !== 'form' && mode !== 'preview') { mode = 'split'; }
+        colF.className = mode === 'form' ? 'col-12' : (mode === 'preview' ? 'd-none' : 'col-12 col-xl-7');
+        colP.className = mode === 'form' ? 'd-none' : (mode === 'preview' ? 'col-12' : 'col-12 col-xl-5');
+        Array.prototype.forEach.call(sw.querySelectorAll('.po-mode-btn'), function (b) { b.classList.toggle('active', b.dataset.mode === mode); });
+        try { localStorage.setItem('po_view_mode', mode); } catch (x) {}
+        setTimeout(refit, 120);
+    }
+    window.ppSetMode = setMode;
+    sw.addEventListener('click', function (e) { var b = e.target.closest('.po-mode-btn'); if (b) { setMode(b.dataset.mode); } });
+    document.addEventListener('click', function (e) {
+        if (e.target.closest && e.target.closest('#ppPreviewFab, #ppPreview')) { e.stopImmediatePropagation(); e.preventDefault(); setMode('preview'); }
+    }, true);
+
+    /* bar tombol bawah form: Batal / Kembali, Lihat Preview (layar sempit), Simpan */
+    var back = root.querySelector('.pp-back'), base = back ? back.getAttribute('href') : '#';
+    var bot = document.getElementById('ppBottomBar');
+    if (bot) {
+        bot.classList.add('po-sticky-bar'); bot.classList.remove('mb-5');
+        var pv = document.createElement('button'); pv.type = 'button'; pv.className = 'btn btn-outline-primary btn-sm shadow-xs d-xl-none';
+        pv.innerHTML = '<i class="bi bi-file-earmark-pdf me-1"></i><span>Lihat Preview</span>'; pv.addEventListener('click', function () { setMode('preview'); });
+        bot.insertBefore(pv, bot.firstChild);
+    } else {
+    bot = document.createElement('div'); bot.className = 'po-sticky-bar';
+    bot.innerHTML = '<div><a href="' + base + '" class="btn btn-outline-secondary shadow-xs"><i class="bi bi-arrow-left me-1"></i> Batal / Kembali</a>' +
+        '<button type="button" class="btn btn-outline-primary btn-sm shadow-xs d-xl-none" id="ppBarPrev"><i class="bi bi-file-earmark-pdf me-1"></i><span>Lihat Preview</span></button></div><div id="ppBarRight"></div>';
+    colF.appendChild(bot);
+    bot.querySelector('#ppBarPrev').addEventListener('click', function () { setMode('preview'); });
+    var simpan = actions.querySelector('.btn-outline-success');
+    if (simpan) { simpan.classList.add('shadow-xs'); bot.querySelector('#ppBarRight').appendChild(simpan); }
+    }
+
+    var saved = 'split';
+    try { saved = localStorage.getItem('po_view_mode') || (window.innerWidth < 1200 ? 'form' : 'split'); } catch (x) {}
+    if (document.body.classList.contains('pp-view-only')) { saved = 'preview'; }
+    setMode(saved);
+
+    /* cetak (tombol Cetak / Ctrl+P): sementara kembalikan pratinjau ke wadah cetak lama supaya hanya dokumen yang tercetak */
+    window.addEventListener('beforeprint', function () {
+        dlg.appendChild(box); modal.classList.add('open'); document.body.appendChild(modal);
+    });
+    window.addEventListener('afterprint', function () {
+        modal.classList.remove('open'); card.appendChild(box); refit();
+    });
+    refit();
+});
+</script>

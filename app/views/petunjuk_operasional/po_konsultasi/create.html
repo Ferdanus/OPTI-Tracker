@@ -129,11 +129,18 @@
     }
 </style>
 
+<include href="petunjuk_operasional/_tema_po.html" />
+<include href="petunjuk_operasional/_penandatangan.html" />
+
 <div class="pp-root">
     <div class="pp-head">
-        <div>
-            <h1><i class="bi bi-chat-dots text-primary me-1"></i> Buat PO Konsultasi</h1>
-            <p>Isi form di bawah, lalu klik <b>Preview Data</b> untuk melihat dokumen PO. <span class="text-warning-emphasis">Tahap tampilan: data belum tersimpan ke database.</span></p>
+        <div class="d-flex align-items-center gap-3">
+            <a href="{{ @BASE }}/petunjuk-operasional" class="btn btn-sm btn-outline-secondary pp-back"><i class="bi bi-arrow-left"></i> <span>Kembali</span></a>
+            <div>
+            <div class="d-flex align-items-center gap-2"><h1>Buat PO Konsultasi</h1>
+            <span class="pp-tag">Konsultasi</span></div>
+            <p>Isi form di bawah; pratinjau dokumen PO tampil langsung di sebelah kanan. <span class="text-warning-emphasis">Tahap tampilan: data belum tersimpan ke database.</span></p>
+            </div>
         </div>
         <div class="pp-actions">
             <select id="ppSample" class="form-select form-select-sm" title="Isi form dengan data contoh (fiktif) untuk mengecek hasilnya">
@@ -174,7 +181,7 @@
                         </div>
                         <div class="col-12">
                             <label class="form-label">Alamat perusahaan</label>
-                            <textarea class="form-control form-control-sm" rows="2" data-bind="alamat" placeholder="Jl. Contoh No. 1, ..."></textarea>
+                            <div class="pp-rte sm" data-rte="alamat" data-ph="Jl. Contoh No. 1, ..."></div>
                         </div>
                         <div class="col-12">
                             <label class="form-label">Judul</label>
@@ -253,7 +260,7 @@
                     <button type="button" class="btn btn-sm btn-outline-primary mt-2" data-act="add" data-list="tim"><i class="bi bi-plus-lg me-1"></i>Tambah anggota</button>
                     <datalist id="dlTugas"></datalist>
                     <datalist id="dlNama"></datalist>
-                    <div class="pp-hint">Uraian tugas: awali baris dengan <b>- </b> (strip + spasi) untuk membuat poin; satu baris = satu poin. Memilih tugas baku akan mengisi uraian otomatis.</div>
+                    <div class="pp-hint">Uraian tugas: klik tombol daftar (<b>&bull;</b>) pada editor untuk membuat poin. Memilih tugas baku akan mengisi uraian otomatis.</div>
                 </div>
             </section>
 
@@ -331,6 +338,11 @@
                     <div id="ppRabWarn"></div>
                 </div>
             </section>
+
+            <section class="pp-card" id="ppTtdCard">
+                <h3><span class="pp-num"><i class="bi bi-pen"></i></span>Penandatanganan</h3>
+                <div class="pp-body"><div id="ppTtd"></div></div>
+            </section>
         </div>
     </div>
 </div>
@@ -388,7 +400,7 @@
     function T(nama, idx, o) { o = o || {}; return { nama: nama, tugas: o.tugas || ROLES[idx].tugas, uraian: o.uraian || ROLES[idx].uraian }; }
     function B(nama, q1, u1, q2, u2, q3, u3, tarif) { return { nama: nama, q1: q1, u1: u1, q2: q2, u2: u2, q3: q3, u3: u3, tarif: tarif }; }
 
-    function blank() {
+    function blank0() {
         return {
             urut: '', kode: 'PO/BBSPJIS/KONS', tanggal: todayMonth(), perusahaan: '', alamat: '', judul: '', jenis: 'Konsultasi',
             noPenawaran: '', tglPenawaran: '',
@@ -464,6 +476,7 @@
         }
     };
 
+    function blank() { var s0 = blank0(); s0.ttd = PoTtd.baru(); return s0; }
     var S = blank();
 
     /* ---------------- util ---------------- */
@@ -506,7 +519,7 @@
     function tok(h) {
         var bt = bulanTahun();
         return h.replace(/\[perusahaan\]/g, esc(S.perusahaan || '...'))
-            .replace(/\[alamat\]/g, esc(S.alamat || '...'))
+            .replace(/\[alamat\]/g, (ppPlain(S.alamat).trim() ? ppInline(S.alamat) : '...'))
             .replace(/\[no_penawaran\]/g, esc(S.noPenawaran || '...'))
             .replace(/\[tgl_penawaran\]/g, esc(S.tglPenawaran ? tglID(S.tglPenawaran) : '...'))
             .replace(/\[bulan_tahun\]/g, esc(bt.b ? bt.b + ' ' + bt.y : '...'));
@@ -547,6 +560,7 @@
     function sec(no, teks) { return '<div class="pp-sec keep blk">' + no + '.&nbsp;&nbsp; ' + teks + '</div>'; }
 
     function uraianHtml(txt) {
+        if (/<\/?(b|i|u|strong|em|ol|ul|li|p|div|br)(\s|\/|>)/i.test(String(txt || ''))) { return tok(cleanHtml(txt)); }
         var ls = lines(txt);
         if (ls.length <= 1 && !/^\s*-\s/.test(ls[0] || '')) { return esc(ls[0] || ''); }
         return ls.map(function (l) {
@@ -580,7 +594,7 @@
         var push = function (html, keep) { rows.push({ h: html, keep: keep }); };
         if (r.judulBlok) { push('<td colspan="11" class="pp-c pp-b">' + esc(r.judulBlok) + '</td>', true); }
         r.grup.forEach(function (g, gi) {
-            var cg = c.grup[gi], own = hasOwn(g), subsN = (g.subs || []).length, noteLs = lines(g.note);
+            var cg = c.grup[gi], own = hasOwn(g), subsN = (g.subs || []).length, noteLs = lines(ppPlain(g.note));
             var no = '<td class="pp-b ctr">' + (gi + 1) + '.</td>';
             if (own) {
                 var p = (qv(g.q1) || qv(g.u1)) ? 0 : ((qv(g.q2) || qv(g.u2)) ? 1 : ((qv(g.q3) || qv(g.u3)) ? 2 : 3));
@@ -590,7 +604,7 @@
             } else {
                 push(no + '<td colspan="9" class="pp-b">' + esc(g.nama) + '</td><td class="pp-b">' + acc(cg.tot) + '</td>', true);
             }
-            if (noteLs.length) { push('<td></td><td colspan="9">' + noteLs.map(esc).join('<br>') + '</td><td></td>', false); }
+            if (noteLs.length) { push('<td></td><td colspan="9">' + ppInline(g.note) + '</td><td></td>', false); }
             (g.subs || []).forEach(function (s, si) {
                 if (s.judul) { push('<td></td><td colspan="9">' + esc(s.judul) + '</td><td></td>', true); }
                 (s.rows || []).forEach(function (b, ri) {
@@ -639,7 +653,13 @@
     }
 
     function subHead(t) { return '<div class="pp-subh keep blk">' + esc(t) + '</div>'; }
+    // teks bulan & tahun di atas tanda tangan (ikut bulan Tanggal PO)
+    function ttdBulanTahun() { var bt = bulanTahun(); return bt.b ? bt.b + ' ' + bt.y : ''; }
     function docHtml(c) {
+        if (typeof ttdUi !== 'undefined' && ttdUi) { ttdUi.bulan(); }
+        return docHtml0(c) + PoTtd.blok(S.ttd, ttdBulanTahun(), { ketuaBawaan: 'Ketua Tim Konsultasi' });
+    }
+    function docHtml0(c) {
         var bt = bulanTahun();
         var nomorPo = (S.urut ? esc(S.urut) : '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ') + '/' + esc(S.kode || 'PO/BBSPJIS/KONS') + '/' + bt.r + '/' + bt.y;
         return '<div class="pp-doc-title blk">PETUNJUK OPERASIONAL (PO)</div>' +
@@ -725,6 +745,7 @@
 
     function fit() {
         var box = $('pvBox'), pages = $('pvPages'), wrap = $('pvScale');
+        if (window.ppFitHook && window.ppFitHook(box, pages, wrap)) { return; }
         var avail = box.clientWidth - 16;
         if (avail <= 0) { return; }
         var sc = Math.min(1, avail / 794);
@@ -768,7 +789,8 @@
     function mountRte(w) {
         w.innerHTML = rteBar() + '<div class="pp-rte-body" contenteditable="true" spellcheck="true"></div>';
         var v = getPath(S, w.dataset.rte);
-        w.querySelector('.pp-rte-body').innerHTML = v == null ? '' : v;
+        w.querySelector('.pp-rte-body').innerHTML = ppToHtml(v);
+        if (w.dataset.ph) { w.querySelector('.pp-rte-body').setAttribute('data-placeholder', w.dataset.ph); }
     }
 
     /* ---------------- form: tabel dinamis ---------------- */
@@ -789,9 +811,10 @@
         $('ppTim').innerHTML = S.tim.map(function (t, i) {
             return '<tr><td class="pp-no">' + (i + 1) + '</td><td style="min-width:130px">' + inp('tim', i, 'nama', t.nama, 'list="dlNama" placeholder="Nama petugas"') + '</td>' +
                 '<td style="min-width:130px">' + inp('tim', i, 'tugas', t.tugas, 'list="dlTugas"') + '</td>' +
-                '<td style="min-width:200px"><textarea class="form-control form-control-sm" rows="3" data-list="tim" data-i="' + i + '" data-k="uraian">' + esc(t.uraian) + '</textarea></td>' +
+                '<td style="min-width:220px"><div class="pp-rte sm" data-rte="tim.' + i + '.uraian"></div></td>' +
                 '<td style="white-space:nowrap">' + ctl('tim', i) + '</td></tr>';
         }).join('');
+        Array.prototype.forEach.call($('ppTim').querySelectorAll('[data-rte]'), mountRte);
         $('dlTugas').innerHTML = ROLES.map(function (r) { return '<option value="' + esc(r.tugas) + '">'; }).join('');
     }
 
@@ -805,7 +828,7 @@
             var own = '<div class="pp-ind-opt"><span>Hitungan baris ini <span class="text-muted">(opsional, mis. pengadaan dokumen)</span>:</span>' +
                 qIn(L, gi, 'q1', g.q1) + uIn(L, gi, 'u1', g.u1) + qIn(L, gi, 'q2', g.q2) + uIn(L, gi, 'u2', g.u2) + qIn(L, gi, 'q3', g.q3) + uIn(L, gi, 'u3', g.u3) +
                 '<span>&times; Rp</span>' + tIn(L, gi, g.tarif, 110) + '<span>= Rp <b id="ownJml' + gi + '">0</b></span></div>';
-            var note = '<textarea class="form-control form-control-sm mt-2" rows="2" data-list="' + L + '" data-i="' + gi + '" data-k="note" placeholder="Lanjutan uraian di bawah baris ini (opsional, satu baris = satu baris di dokumen)">' + esc(g.note) + '</textarea>';
+            var note = '<div class="pp-rte sm mt-2" data-rte="rab.grup.' + gi + '.note" data-ph="Lanjutan uraian di bawah baris ini (opsional)"></div>';
             var subs = (g.subs || []).map(function (s, si) {
                 var LS = 'rab.grup.' + gi + '.subs', LR = LS + '.' + si + '.rows';
                 var rows = (s.rows || []).map(function (b, ri) {
@@ -826,6 +849,7 @@
             return '<div class="pp-induk">' + head + own + note + subs +
                 '<button type="button" class="btn btn-sm btn-outline-primary mt-2" data-act="add" data-list="rab.grup.' + gi + '.subs"><i class="bi bi-plus-lg me-1"></i>Tambah kegiatan</button></div>';
         }).join('') || '<div class="pp-hint">Belum ada kelompok biaya. Klik <b>Tambah kelompok biaya</b>.</div>';
+        Array.prototype.forEach.call($('ppGrup').querySelectorAll('[data-rte]'), mountRte);
     }
 
     function padOn() { var n = jadCols().length; S.jadwal.rows.forEach(function (r) { while (r.on.length < n) { r.on.push(0); } }); }
@@ -885,7 +909,13 @@
         else if (el.dataset.type === 'money') { el.value = v ? rupiah(num(v)) : ''; }
         else { el.value = v == null ? '' : v; }
     }
-    function populate() {
+    var ttdUi = null;
+    function pasangTtd() {
+        S.ttd = PoTtd.baru(S.ttd);
+        ttdUi = PoTtd.mount($('ppTtd'), S.ttd, { kota: true, bulanTahun: ttdBulanTahun, ket_ketua: 'Ketua Tim Konsultasi', onChange: function () { schedule(); } });
+    }
+    function populate() { populate0(); pasangTtd(); }
+    function populate0() {
         Array.prototype.forEach.call(document.querySelectorAll('#ppForm [data-bind]'), function (el) { fmtBind(el, getPath(S, el.dataset.bind)); });
         Array.prototype.forEach.call(document.querySelectorAll('#ppForm [data-rte]'), mountRte);
         buildTim(); buildGrup(); buildJad();
@@ -909,7 +939,7 @@
                 document.execCommand('insertOrderedList');
                 var s2 = window.getSelection(), o = s2.anchorNode; while (o && o.nodeName !== 'OL') { o = o.parentNode; } if (o) { o.removeAttribute('type'); }
             } else { document.execCommand(cmd, false, null); }
-            setPath(S, wrap.dataset.rte, body.innerHTML); schedule(); return;
+            setPath(S, wrap.dataset.rte, ppEditorVal(body)); schedule(); return;
         }
         var a = e.target.closest('[data-act]');
         if (!a) { return; }
@@ -930,7 +960,7 @@
 
     function onInput(e) {
         var t = e.target;
-        if (t.classList.contains('pp-rte-body')) { setPath(S, t.closest('[data-rte]').dataset.rte, t.innerHTML); schedule(); return; }
+        if (t.classList.contains('pp-rte-body')) { setPath(S, t.closest('[data-rte]').dataset.rte, ppEditorVal(t)); schedule(); return; }
         if (t.dataset.bind) {
             var path = t.dataset.bind, v;
             if (t.type === 'checkbox') { v = t.checked ? 1 : 0; }
@@ -991,7 +1021,7 @@
     var modal = $('ppModal');
     document.body.appendChild(modal);
     document.body.appendChild($('ppMeasure'));
-    function bukaPreview() { render(); modal.classList.add('open'); modal.setAttribute('aria-hidden', 'false'); document.body.style.overflow = 'hidden'; fit(); $('pvBox').scrollTop = 0; }
+    function bukaPreview() { if (window.ppSplitSiap) { render(); fit(); return; } render(); modal.classList.add('open'); modal.setAttribute('aria-hidden', 'false'); document.body.style.overflow = 'hidden'; fit(); $('pvBox').scrollTop = 0; }
     function tutupPreview() { modal.classList.remove('open'); modal.setAttribute('aria-hidden', 'true'); document.body.style.overflow = ''; }
     $('ppPreview').addEventListener('click', bukaPreview);
     $('ppPreviewFab').addEventListener('click', bukaPreview);
@@ -1016,5 +1046,6 @@
     window.addEventListener('resize', fit);
 
     populate();
+window.ppRender = render;
 })();
 </script>

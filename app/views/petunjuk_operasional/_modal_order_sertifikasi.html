@@ -12,7 +12,8 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
             </div>
             <div class="modal-body">
-                <input type="search" id="cariOrderSert" class="form-control mb-3" placeholder="Cari nomor order / nama mitra..." autocomplete="off">
+                <input type="search" id="cariOrderSert" class="form-control mb-2" placeholder="Cari nomor order / nama mitra..." autocomplete="off">
+                <div class="small text-muted mb-2" id="catatanOrderSert">Data yang ditampilkan merupakan data order terbaru. Apabila order yang dicari tidak terdapat pada daftar, silakan gunakan kolom pencarian di atas.</div>
                 <div id="stateOrderSert" class="text-center text-muted small py-4"></div>
                 <div class="list-group" id="listOrderSert"></div>
             </div>
@@ -21,6 +22,7 @@
 </div>
 
 <style>
+    #stateOrderSert:empty { display: none; }
     .order-sert-item { display: flex; justify-content: space-between; align-items: center; gap: 12px; text-align: left; }
     .order-sert-item .no { font-weight: 700; }
     .order-sert-item .mitra { font-size: .85rem; color: #475569; }

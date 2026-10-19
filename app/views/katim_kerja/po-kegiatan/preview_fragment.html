@@ -111,7 +111,7 @@
             <div style="font-size:13px; margin-bottom:8px;">
                 <repeat group="{{ @po.tujuan_lines }}" value="{{ @dl }}">
                     <check if="{{ @dl.marker }}"><div style="display:flex; gap:6px; margin-bottom:3px;"><span style="flex:0 0 24px;">{{ @dl.marker }}</span><span style="flex:1; text-align:justify; white-space:pre-line;">{{ @dl.teks }}</span></div></check>
-                    <check if="{{ !@dl.marker }}"><div style="margin-bottom:3px; text-align:justify; white-space:pre-line;">{{ @dl.teks }}</div></check>
+                    <check if="{{ !@dl.marker }}"><div style="margin-bottom:3px; text-align:justify;">{{ @dl.teks | raw }}</div></check>
                 </repeat>
             </div>
         </check>
@@ -277,16 +277,19 @@
              dikumpulin jadi satu mini-tabel Hari|Jam|OJ|%|Uang Makan. Beda dari format lingkungan
              di bawah -- makanya dipisah blok sendiri, gak nyampur pengaruhnya ke lingkungan. -->
         <check if="{{ @po.rab_hitung.is_rab_baru && @order.jenis_layanan_opti == 'selulosa' }}">
+            <!-- kolom sama persis dengan tabel b. Rencana Pengeluaran di bawahnya (6/40/22/16/16) biar garis kolomnya sejajar -->
             <table class="rab-table" style="margin-bottom:6px;">
                 <colgroup>
-                    <col style="width:52%;"><col style="width:16%;"><col style="width:32%;">
+                    <col style="width:6%;"><col style="width:40%;"><col style="width:22%;">
+                    <col style="width:16%;"><col style="width:16%;">
                 </colgroup>
                 <tbody>
                     <tr style="background:#f1f5f9;">
-                        <td colspan="3"><strong>a. Penerimaan</strong></td>
+                        <td colspan="5"><strong>a. Penerimaan</strong></td>
                     </tr>
                     <tr>
-                        <td style="padding-left:14px;">Nilai kontrak</td>
+                        <td colspan="2" style="padding-left:14px;">Nilai kontrak</td>
+                        <td></td>
                         <td></td>
                         <td class="text-end rab-uang"><strong>Rp&nbsp;{{ number_format(@po.rab_hitung.total_penerimaan, 0, ',', '.') }}</strong></td>
                     </tr>
@@ -295,8 +298,8 @@
 
             <table class="rab-table">
                 <colgroup>
-                    <col style="width:6%;"><col style="width:44%;"><col style="width:22%;">
-                    <col style="width:16%;"><col style="width:12%;">
+                    <col style="width:6%;"><col style="width:40%;"><col style="width:22%;">
+                    <col style="width:16%;"><col style="width:16%;">
                 </colgroup>
                 <thead>
                     <tr style="background:#f1f5f9;">
@@ -619,19 +622,6 @@
             </div>
         </check>
 
-        <div class="po-signature-row">
-            <div>
-                <div>Menyetujui</div>
-                <div class="ttd-jabatan">Pejabat Pembuat Komitmen</div>
-                <div style="height:50px;"></div>
-                <div>( ............................. )</div>
-            </div>
-            <div>
-                <div>Pelaksana Kegiatan</div>
-                <div class="ttd-jabatan">Ketua Tim Kerja</div>
-                <div style="height:50px;"></div>
-                <div>( .............................. )</div>
-            </div>
-        </div>
+        {{ @po.ttd_blok | raw }}
     </div>
 </div>

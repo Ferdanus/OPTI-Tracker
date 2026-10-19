@@ -127,11 +127,18 @@
     }
 </style>
 
+<include href="petunjuk_operasional/_tema_po.html" />
+<include href="petunjuk_operasional/_penandatangan.html" />
+
 <div class="pp-root">
     <div class="pp-head">
-        <div>
-            <h1><i class="bi bi-clipboard2-pulse text-primary me-1"></i> Buat PO Kalibrasi</h1>
-            <p>Isi form di bawah, lalu klik <b>Preview Data</b> untuk melihat dokumen PO. <span class="text-warning-emphasis">Tahap tampilan: data belum tersimpan ke database.</span></p>
+        <div class="d-flex align-items-center gap-3">
+            <a href="{{ @BASE }}/petunjuk-operasional" class="btn btn-sm btn-outline-secondary pp-back"><i class="bi bi-arrow-left"></i> <span>Kembali</span></a>
+            <div>
+            <div class="d-flex align-items-center gap-2"><h1>Buat PO Kalibrasi</h1>
+            <span class="pp-tag">Kalibrasi</span></div>
+            <p>Isi form di bawah; pratinjau dokumen PO tampil langsung di sebelah kanan. <span class="text-warning-emphasis">Tahap tampilan: data belum tersimpan ke database.</span></p>
+            </div>
         </div>
         <div class="pp-actions">
             <select id="ppSample" class="form-select form-select-sm" title="Isi form dengan data dari PO contoh untuk mengecek hasilnya">
@@ -167,7 +174,7 @@
                         </div>
                         <div class="col-12">
                             <label class="form-label">Alamat perusahaan</label>
-                            <textarea class="form-control form-control-sm" rows="2" data-bind="alamat" placeholder="Jl. Contoh No. 1, ..."></textarea>
+                            <div class="pp-rte sm" data-rte="alamat" data-ph="Jl. Contoh No. 1, ..."></div>
                         </div>
                         <div class="col-12">
                             <label class="form-label">Judul <span class="pp-auto" id="ppJudulAuto">otomatis</span><button type="button" class="pp-link" id="ppJudulReset" hidden>kembalikan otomatis</button></label>
@@ -268,20 +275,9 @@
                 </div>
             </section>
 
-            <section class="pp-card">
+            <section class="pp-card" id="ppTtdCard">
                 <h3><span class="pp-num"><i class="bi bi-pen"></i></span>Penandatanganan</h3>
-                <div class="pp-body">
-                    <div class="row g-2">
-                        <div class="col-sm-4"><label class="form-label">Kota</label><input type="text" class="form-control form-control-sm" data-bind="ttd.kota"></div>
-                        <div class="col-sm-8"></div>
-                        <div class="col-sm-7"><label class="form-label">Pejabat Pembuat Komitmen</label><input type="text" class="form-control form-control-sm" data-bind="ttd.ppk.nama"></div>
-                        <div class="col-sm-5"><label class="form-label">NIP</label><input type="text" class="form-control form-control-sm" data-bind="ttd.ppk.nip"></div>
-                        <div class="col-sm-7"><label class="form-label">Ketua Tim Kalibrasi (Pelaksana Kegiatan)</label><input type="text" class="form-control form-control-sm" data-bind="ttd.ketua.nama"></div>
-                        <div class="col-sm-5"><label class="form-label">NIP</label><input type="text" class="form-control form-control-sm" data-bind="ttd.ketua.nip"></div>
-                        <div class="col-sm-7"><label class="form-label">Mengetahui: Kepala Balai Besar Standardisasi dan Pelayanan Jasa Industri Selulosa</label><input type="text" class="form-control form-control-sm" data-bind="ttd.kepala.nama"></div>
-                        <div class="col-sm-5"><label class="form-label">NIP</label><input type="text" class="form-control form-control-sm" data-bind="ttd.kepala.nip"></div>
-                    </div>
-                </div>
+                <div class="pp-body"><div id="ppTtd"></div></div>
             </section>
         </div>
     </div>
@@ -338,7 +334,7 @@
     function newKel() { return { nama: '', tipe: 'harga', persen: '', subs: [newSub()] }; }
     function T(nama, i) { return { nama: nama, tugas: ROLES[i].tugas, uraian: ROLES[i].uraian }; }
 
-    function blank() {
+    function blank0() {
         return {
             urut: '', tanggal: todayMonth(), perusahaan: '', alamat: '', judul: '', judulManual: false,
             noPenawaran: '', tglPenawaran: '',
@@ -354,12 +350,6 @@
                     { nama: 'Evaluasi hasil', on: [0, 0, 1, 0] },
                     { nama: 'Penerbitan Sertifikat/laporan', on: [0, 0, 0, 1] }
                 ]
-            },
-            ttd: {
-                kota: 'Bandung',
-                ppk: { nama: '', nip: '' },
-                ketua: { nama: '', nip: '' },
-                kepala: { nama: '', nip: '' }
             }
         };
     }
@@ -389,12 +379,13 @@
                     { nama: 'Biaya Non Operasional', tampilTotal: 1, persen: 60, baris: [], bp: [{ nama: 'operasional balai', persen: '' }] }
                 ] }
             ];
-            s.ttd.ketua = { nama: 'Pegawai B', nip: '' };
-            s.ttd.kepala = { nama: 'Pegawai A', nip: '' };
+            s.ttd.ketua = PoTtd.baru({ ketua: { nama: 'Pegawai B', nip: '', jabatan: 'Ketua Tim Kalibrasi' } }).ketua;
+            s.ttd.mengetahui = PoTtd.baru({ mengetahui: { nama: 'Pegawai A', nip: '' } }).mengetahui;
             return s;
         }
     };
 
+    function blank() { var s0 = blank0(); s0.ttd = PoTtd.baru(); return s0; }
     var S = blank();
 
     /* ---------------- util ---------------- */
@@ -439,7 +430,7 @@
     function cleanHtml(html) { var tpl = document.createElement('template'); tpl.innerHTML = html || ''; return cleanNode(tpl.content); }
     function tok(h) {
         return h.replace(/\[perusahaan\]/g, esc(S.perusahaan || '...'))
-            .replace(/\[alamat\]/g, esc(S.alamat || '...'))
+            .replace(/\[alamat\]/g, (ppPlain(S.alamat).trim() ? ppInline(S.alamat) : '...'))
             .replace(/\[no_penawaran\]/g, esc(S.noPenawaran || '...'))
             .replace(/\[tgl_penawaran\]/g, esc(S.tglPenawaran ? tglID(S.tglPenawaran) : '...'));
     }
@@ -535,7 +526,7 @@
 
     function timHtml() {
         var rows = S.tim.map(function (t, i) {
-            return '<tr><td class="pp-c">' + (i + 1) + '</td><td>' + esc(t.nama) + '</td><td class="pp-c">' + esc(t.tugas) + '</td><td style="text-align:justify">' + esc(t.uraian) + '</td></tr>';
+            return '<tr><td class="pp-c">' + (i + 1) + '</td><td>' + esc(t.nama) + '</td><td class="pp-c">' + esc(t.tugas) + '</td><td style="text-align:justify">' + ppRich(t.uraian) + '</td></tr>';
         }).join('') || '<tr><td colspan="4" class="pp-c pp-ph">Belum ada anggota</td></tr>';
         return '<table data-split="1" class="pp-tim blk"><colgroup><col style="width:44px"><col style="width:27%"><col style="width:22%"><col></colgroup>' +
             '<thead><tr><th>No</th><th>Nama</th><th>Tugas/Tanggung Jawab</th><th>Uraian Tugas</th></tr></thead><tbody>' + rows + '</tbody></table>';
@@ -582,17 +573,16 @@
             '<tr><th rowspan="3" style="background:#fff">No.</th><th rowspan="3" style="background:#fff">Kegiatan</th><th colspan="' + n + '" style="background:#fff">' + esc(bulan) + '</th></tr>' +
             '<tr><th colspan="' + n + '" style="background:#fff">' + esc(tahun) + '</th></tr>' +
             '<tr>' + jd.kolom.map(function (k) { return '<th style="background:#fff">' + esc(k) + '</th>'; }).join('') + '</tr></thead><tbody>' + rows + '</tbody></table>';
-        var t = S.ttd, tgl = esc(t.kota || '') + ',&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ' + esc(bt.b) + ' ' + esc(bt.y === '....' ? '' : bt.y);
-        var nip = function (v) { return '<div>' + (v ? 'NIP. ' + esc(v) : '') + '</div>'; };
-        return '<div class="blk grp">' + sec(6, 'JADWAL') + tbl +
-            '<div class="pp-ttd" style="margin-top:6px"><div class="blk2"></div><div class="blk2">' + tgl + '</div></div>' +
-            '<div class="pp-ttd" style="margin-top:20px"><div class="blk2"><div>Menyetujui</div><div>Pejabat Pembuat Komitmen</div><div class="gap"></div><div class="nm">' + ph(t.ppk.nama, 'Nama PPK') + '</div>' + nip(t.ppk.nip) + '</div>' +
-            '<div class="blk2"><div>Pelaksana Kegiatan</div><div>Ketua Tim Kalibrasi</div><div class="gap"></div><div class="nm">' + ph(t.ketua.nama, 'Nama Ketua Tim') + '</div>' + nip(t.ketua.nip) + '</div></div>' +
-            '<div class="pp-ttd" style="justify-content:center;margin-top:34px"><div style="width:70%"><div>Mengetahui</div><div>Kepala</div><div>Balai Besar Standardisasi</div><div>dan Pelayanan Jasa Industri Selulosa</div><div class="gap" style="height:96px"></div>' +
-            '<div class="nm">' + ph(t.kepala.nama, 'Nama Kepala Balai') + '</div>' + nip(t.kepala.nip) + '</div></div></div>';
+        return '<div class="blk grp">' + sec(6, 'JADWAL') + tbl + '</div>';
     }
 
+    // teks bulan & tahun di atas tanda tangan (ikut bulan Tanggal PO)
+    function ttdBulanTahun() { var bt = bulanTahun(); return bt.b ? bt.b + ' ' + bt.y : ''; }
     function docHtml(c) {
+        if (typeof ttdUi !== 'undefined' && ttdUi) { ttdUi.bulan(); }
+        return docHtml0(c) + PoTtd.blok(S.ttd, ttdBulanTahun(), { ketuaBawaan: 'Ketua Tim Kalibrasi' });
+    }
+    function docHtml0(c) {
         var bt = bulanTahun(), j = judulPakai();
         var nomor = (S.urut ? esc(S.urut) : '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ') + '/PO/BBSPJIS/' + bt.r + '/' + bt.y;
         return '<div class="pp-doc-title blk">PETUNJUK OPERASIONAL (PO)</div>' +
@@ -675,6 +665,7 @@
 
     function fit() {
         var box = $('pvBox'), pages = $('pvPages'), wrap = $('pvScale');
+        if (window.ppFitHook && window.ppFitHook(box, pages, wrap)) { return; }
         var avail = box.clientWidth - 16;
         if (avail <= 0) { return; }
         var sc = Math.min(1, avail / 794);
@@ -727,7 +718,7 @@
         $('ppTim').innerHTML = S.tim.map(function (t, i) {
             return '<tr><td class="pp-no">' + (i + 1) + '</td><td style="min-width:130px">' + inp('tim', i, 'nama', t.nama, 'list="dlNama" placeholder="Nama petugas"') + '</td>' +
                 '<td style="min-width:130px">' + inp('tim', i, 'tugas', t.tugas, 'list="dlTugas"') + '</td>' +
-                '<td style="min-width:150px"><textarea class="form-control form-control-sm" rows="2" data-list="tim" data-i="' + i + '" data-k="uraian">' + esc(t.uraian) + '</textarea></td>' +
+                '<td style="min-width:220px">' + ppMiniRte('data-list="tim" data-i="' + i + '" data-k="uraian"', t.uraian) + '</td>' +
                 '<td style="white-space:nowrap">' + ctl('tim', i) + '</td></tr>';
         }).join('');
         $('dlTugas').innerHTML = ROLES.map(function (r) { return '<option value="' + esc(r.tugas) + '">'; }).join('');
@@ -832,13 +823,19 @@
         else if (el.dataset.type === 'money') { el.value = v ? rupiah(num(v)) : ''; }
         else { el.value = v == null ? '' : v; }
     }
-    function populate() {
+    var ttdUi = null;
+    function pasangTtd() {
+        S.ttd = PoTtd.baru(S.ttd);
+        ttdUi = PoTtd.mount($('ppTtd'), S.ttd, { kota: true, bulanTahun: ttdBulanTahun, ket_ketua: 'Ketua Tim Kalibrasi', onChange: function () { schedule(); } });
+    }
+    function populate() { populate0(); pasangTtd(); }
+    function populate0() {
         Array.prototype.forEach.call(document.querySelectorAll('#ppForm [data-bind]'), function (el) {
             var v = getPath(S, el.dataset.bind);
             if (el.dataset.bind === 'judul' && !S.judulManual) { return; }
             fmtBind(el, v);
         });
-        Array.prototype.forEach.call(document.querySelectorAll('[data-rte]'), function (w) { w.querySelector('.pp-rte-body').innerHTML = S[w.dataset.rte]; });
+        Array.prototype.forEach.call(document.querySelectorAll('[data-rte]'), function (w) { w.querySelector('.pp-rte-body').innerHTML = ppToHtml(S[w.dataset.rte]); if (w.dataset.ph) { w.querySelector('.pp-rte-body').setAttribute('data-placeholder', w.dataset.ph); } });
         buildTim(); buildAlat(); buildRab(); buildJad();
         render();
     }
@@ -877,7 +874,7 @@
                 document.execCommand('insertOrderedList');
                 var s2 = window.getSelection(), o = s2.anchorNode; while (o && o.nodeName !== 'OL') { o = o.parentNode; } if (o) { o.removeAttribute('type'); }
             } else { document.execCommand(cmd, false, null); }
-            S[b.closest('[data-rte]').dataset.rte] = body.innerHTML; schedule(); return;
+            var wr = b.closest('[data-rte]'); if (wr) { S[wr.dataset.rte] = ppEditorVal(body); schedule(); } else { onInput({ target: body }); } return;
         }
         var a = e.target.closest('[data-act]');
         if (!a) { return; }
@@ -897,7 +894,7 @@
 
     function onInput(e) {
         var t = e.target;
-        if (t.classList.contains('pp-rte-body')) { S[t.closest('[data-rte]').dataset.rte] = t.innerHTML; schedule(); return; }
+        if (t.classList.contains('pp-rte-body') && t.closest('[data-rte]')) { S[t.closest('[data-rte]').dataset.rte] = ppEditorVal(t); schedule(); return; }
         if (t.dataset.bind) {
             var path = t.dataset.bind, v;
             if (t.type === 'checkbox') { v = t.checked; }
@@ -912,6 +909,7 @@
             if (t.type === 'checkbox') { val = t.checked ? 1 : 0; }
             else if (t.dataset.type === 'money') { val = parseInt(String(t.value).replace(/\D/g, ''), 10) || 0; }
             else if (t.type === 'number') { val = t.value === '' ? '' : parseFloat(t.value); }
+            else if (t.classList.contains('pp-rte-body')) { val = ppEditorVal(t); }
             else { val = t.value; }
             if (t.dataset.list === 'jadwal.kolom') { arr[+t.dataset.i] = val; }
             else if (t.dataset.sub !== undefined) { row[k][+t.dataset.sub] = val; }
@@ -956,7 +954,7 @@
     var modal = $('ppModal');
     document.body.appendChild(modal);
     document.body.appendChild($('ppMeasure'));
-    function bukaPreview() { render(); modal.classList.add('open'); modal.setAttribute('aria-hidden', 'false'); document.body.style.overflow = 'hidden'; fit(); $('pvBox').scrollTop = 0; }
+    function bukaPreview() { if (window.ppSplitSiap) { render(); fit(); return; } render(); modal.classList.add('open'); modal.setAttribute('aria-hidden', 'false'); document.body.style.overflow = 'hidden'; fit(); $('pvBox').scrollTop = 0; }
     function tutupPreview() { modal.classList.remove('open'); modal.setAttribute('aria-hidden', 'true'); document.body.style.overflow = ''; }
     $('ppPreview').addEventListener('click', bukaPreview);
     $('ppPreviewFab').addEventListener('click', bukaPreview);
@@ -982,5 +980,6 @@
 
     buildRte();
     populate();
+window.ppRender = render;
 })();
 </script>

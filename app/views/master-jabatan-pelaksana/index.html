@@ -1,0 +1,300 @@
+<!-- app/views/master_jabatan_pelaksana/index.html -- fragment, dirender lewat MasterJabatanPelaksanaController::index(). Daftar = tabel biasa dengan repeat (bukan DataTables), paginasi di sisi klien. -->
+<style>
+/* Tampilan disamakan dengan halaman Surat Penawaran. Pakai variabel tema aplikasi; nilai setelah koma = cadangan. */
+.mtp{--pri:var(--color-primary,#2b3a4f);--pri-dark:var(--color-primary-dark,#1e293b);--pri-light:var(--color-primary-light,#f1f5f9);--bd:var(--color-border,#e2e8f0);--mut:var(--color-text-muted,#64748b);--ink:var(--color-text-main,#0f172a);color:var(--ink);font-size:.9rem}
+.mtp *,.mtp *::before,.mtp *::after{box-sizing:border-box}
+.mtp [hidden]{display:none!important}
+.mtp button{font-family:inherit;cursor:pointer}
+.mtp-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:22px}
+.mtp-title{display:flex;align-items:center;gap:12px;font-family:var(--font-display,inherit);font-size:1.7rem;font-weight:800;margin:0;letter-spacing:-.02em}
+.mtp-title i{font-size:1.45rem;color:var(--mut)}
+.mtp-sub{color:var(--mut);font-size:.85rem;margin:4px 0 0}
+.mtp-btn{border:1.5px solid var(--bd);background:#fff;color:#334155;border-radius:10px;padding:9px 16px;font-size:.85rem;font-weight:700;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;text-decoration:none}
+.mtp-btn:hover:not(:disabled){border-color:var(--pri);color:var(--pri)}
+.mtp-btn.pri{background:var(--pri);border-color:var(--pri);color:#fff}
+.mtp-btn.pri:hover:not(:disabled){background:var(--pri-dark);border-color:var(--pri-dark);color:#fff}
+.mtp-btn.dng{color:#b91c1c;border-color:#fecaca}
+.mtp-btn.dng:hover:not(:disabled){background:#fef2f2;border-color:#b91c1c;color:#b91c1c}
+.mtp-btn:disabled{opacity:.5;cursor:not-allowed}
+.mtp-filter{background:#fff;border:1px solid var(--bd);border-radius:16px;padding:16px;display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+.mtp-field{display:flex;align-items:stretch;border:1.5px solid var(--bd);border-radius:10px;background:#fff;overflow:hidden;min-width:0}
+.mtp-field:focus-within{border-color:var(--pri)}
+.mtp-field .ico{padding:0 13px;color:var(--mut);display:flex;align-items:center;border-right:1px solid var(--bd);background:#f8fafc}
+.mtp-field select,.mtp-field input{border:0;outline:0;padding:10px 12px;font:inherit;font-size:.9rem;background:transparent;color:var(--ink);min-width:0;width:100%}
+.mtp-field.grow{flex:1 1 260px}.mtp-field.sel{flex:0 1 230px}
+.mtp-card{background:#fff;border:1px solid var(--bd);border-radius:16px;overflow:hidden;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+.mtp-tabs{display:flex;gap:10px;flex-wrap:wrap;padding:16px}
+.mtp-tab{border:1px solid var(--bd);background:#fff;color:#334155;border-radius:999px;padding:8px 16px;font-size:.85rem;font-weight:700;display:inline-flex;align-items:center;gap:8px}
+.mtp-tab .c{background:#f1f5f9;border-radius:999px;font-size:.72rem;min-width:22px;padding:1px 7px;text-align:center}
+.mtp-tab .dt{width:9px;height:9px;border-radius:50%}
+.mtp-tab.on{background:var(--pri);border-color:var(--pri);color:#fff;box-shadow:0 4px 10px rgba(30,41,59,.25)}
+.mtp-tab.on .c{background:rgba(255,255,255,.22);color:#fff}
+.mtp-scroll{overflow-x:auto}
+table.mtp-tbl{width:100%;border-collapse:collapse}
+.mtp-tbl thead th{background:#f8fafc;color:#475569;font-size:.72rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:14px 16px;border-top:1px solid var(--bd);border-bottom:1px solid var(--bd);text-align:left;white-space:nowrap}
+.mtp-tbl td{padding:16px;border-bottom:1px solid #f1f5f9;vertical-align:middle;font-size:.9rem}
+.mtp-tbl tbody tr:last-child td{border-bottom:0}
+.mtp-tbl tbody tr:hover{background:#fcfcfd}
+.mtp-tbl tr.nonaktif td:not(.keep){opacity:.5}
+.mtp-tbl .r{text-align:right}
+.mtp-no{color:var(--mut);font-weight:600}
+.mtp-name{font-weight:700}
+.mtp-lay{display:inline-block;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em;padding:3px 10px;border-radius:6px;background:#fdf2f2;color:#b42318;border:1px solid #f3c2c2}
+.mtp-jab{display:inline-flex;align-items:center;gap:6px;background:var(--pri-light);color:var(--pri);border:1px solid var(--bd);border-radius:999px;font-size:.78rem;font-weight:700;padding:4px 12px}
+.mtp-jab.off{background:#f1f5f9;color:var(--mut)}
+.mtp-muted{color:var(--mut);font-size:.82rem}
+.mtp-ibtn{width:36px;height:36px;border:1.5px solid var(--bd);background:#fff;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;color:#334155;margin-left:4px}
+.mtp-ibtn:hover:not(:disabled){border-color:var(--pri);color:var(--pri)}
+.mtp-ibtn.dng{color:#dc2626;border-color:#fecaca}.mtp-ibtn.dng:hover:not(:disabled){background:#fef2f2;border-color:#dc2626;color:#dc2626}
+.mtp-ibtn:disabled{opacity:.4;cursor:not-allowed}
+.mtp input[type=checkbox].mtp-ck{width:17px;height:17px;accent-color:var(--pri);cursor:pointer}
+.mtp-sw{position:relative;display:inline-block;width:40px;height:22px}
+.mtp-sw input{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0;cursor:pointer;z-index:1}
+.mtp-sw i{position:absolute;inset:0;background:#cbd5e1;border-radius:999px;transition:.15s}
+.mtp-sw i::after{content:"";position:absolute;left:3px;top:3px;width:16px;height:16px;background:#fff;border-radius:50%;transition:.15s;box-shadow:0 1px 2px rgba(0,0,0,.25)}
+.mtp-sw input:checked+i{background:#16a34a}
+.mtp-sw input:checked+i::after{transform:translateX(18px)}
+.mtp-ro .mtp-w{display:none!important}
+.mtp.mtp-ro .mtp-sw{pointer-events:none;opacity:.7}
+.mtp-selbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 16px;background:#f8fafc;border-top:1px solid var(--bd);font-size:.85rem}
+.mtp-pg{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;padding:14px 16px;border-top:1px solid var(--bd);font-size:.82rem;color:var(--mut)}
+.mtp-pgs{display:flex;gap:4px;flex-wrap:wrap}
+.mtp-pg button{border:1px solid var(--bd);background:#fff;color:var(--ink);border-radius:8px;min-width:34px;padding:5px 10px;font-size:.8rem}
+.mtp-pg button:hover:not(:disabled){border-color:var(--pri);color:var(--pri)}
+.mtp-pg button.on{background:var(--pri);border-color:var(--pri);color:#fff}
+.mtp-pg button:disabled{opacity:.45;cursor:not-allowed}
+.mtp-pg select{border:1px solid var(--bd);border-radius:8px;padding:3px 6px;font:inherit;background:#fff;color:var(--ink)}
+.mtp-empty{text-align:center;color:var(--mut);padding:40px 16px}
+.mtp-lock{display:inline-flex;align-items:center;gap:6px;background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;border-radius:999px;font-size:.78rem;font-weight:700;padding:4px 12px}
+.mtp-pad{padding:22px}
+.mtp-label{display:block;font-size:.8rem;font-weight:700;margin-bottom:6px}
+.mtp-sel,.mtp-in{border:1.5px solid var(--bd);border-radius:10px;padding:10px 12px;font:inherit;font-size:.9rem;width:100%;background:#fff;color:var(--ink);outline:0}
+.mtp-sel:focus,.mtp-in:focus{border-color:var(--pri)}
+.mtp-sel:disabled{background:#f1f5f9}
+.mtp-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;padding-top:18px;border-top:1px solid var(--bd)}
+.mtp-back{display:flex;align-items:center;gap:14px;margin-bottom:20px;flex-wrap:wrap}
+.mtp-overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;z-index:2000;padding:16px}
+.mtp-modal{background:#fff;border-radius:16px;max-width:440px;width:100%;padding:24px;box-shadow:0 20px 50px rgba(15,23,42,.3)}
+.mtp-modal h3{font-size:1.1rem;font-weight:800;margin:0 0 14px}
+.mtp-modal p{color:var(--mut);margin:0 0 6px}
+.mtp-toast{position:fixed;right:16px;bottom:16px;background:#0f172a;color:#fff;border-radius:10px;padding:10px 16px;opacity:0;transform:translateY(8px);transition:.2s;z-index:3000;max-width:360px;pointer-events:none}
+.mtp-toast.show{opacity:1;transform:none}.mtp-toast.err{background:#b91c1c}
+@media(max-width:520px){.mtp-title{font-size:1.35rem}}
+</style>
+<div class="mtp" id="mtpRoot">
+
+<!-- ===== DAFTAR ===== -->
+<div id="viewList">
+  <div class="mtp-head">
+    <div>
+      <h2 class="mtp-title"><i class="bi bi-award"></i> Master Jabatan Pelaksana PO</h2>
+      <p class="mtp-sub">Daftar jabatan yang bisa dipilih di bagian Tim Pelaksana pada form PO. Hanya jabatan aktif yang muncul di pilihan.</p>
+    </div>
+    <button type="button" class="mtp-btn pri" id="btnTambah"><i class="bi bi-plus-lg"></i> Tambah Jabatan</button>
+  </div>
+
+  <div class="mtp-filter">
+    <div class="mtp-field grow"><span class="ico"><i class="bi bi-search"></i></span><input id="fCari" placeholder="Cari nama jabatan" autocomplete="off"></div>
+  </div>
+
+  <div class="mtp-card">
+    <div class="mtp-tabs" id="tabs">
+      <button type="button" class="mtp-tab on" data-st="semua"><i class="bi bi-award"></i>Semua<span class="c" id="cSemua">{{ @mtp_n_semua }}</span></button>
+      <button type="button" class="mtp-tab" data-st="aktif"><span class="dt" style="background:#16a34a"></span>Aktif<span class="c" id="cAktif">{{ @mtp_n_aktif }}</span></button>
+      <button type="button" class="mtp-tab" data-st="nonaktif"><span class="dt" style="background:#dc2626"></span>Nonaktif<span class="c" id="cNon">{{ @mtp_n_non }}</span></button>
+    </div>
+    <div class="mtp-scroll"><table class="mtp-tbl">
+      <thead><tr><th style="width:60px">No.</th><th>Nama Jabatan</th><th>Status</th><th class="r">Aksi</th></tr></thead>
+      <tbody id="tbJab">
+        <repeat group="{{ @mtp_jab_rows }}" value="{{ @j }}">
+        <tr class="{{ @j.aktif ? '' : 'nonaktif' }}" data-id="{{ @j.id }}" data-cari="{{ @j.cari }}" data-aktif="{{ @j.aktif }}">
+          <td class="mtp-no">{{ @j.no }}</td>
+          <td><span class="mtp-jab{{ @j.aktif ? '' : ' off' }}"><i class="bi bi-award"></i>{{ @j.nama }}</span></td>
+          <td class="keep"><label class="mtp-sw"><input type="checkbox" data-jakt="{{ @j.id }}"{{ @j.aktif ? ' checked' : '' }}><i></i></label></td>
+          <td class="r keep"><button type="button" class="mtp-ibtn" data-jedit="{{ @j.id }}" title="Ubah nama"><i class="bi bi-pencil-square"></i></button><button type="button" class="mtp-ibtn dng" data-jhapus="{{ @j.id }}" title="Hapus"><i class="bi bi-trash"></i></button></td>
+        </tr>
+        </repeat>
+        <check if="{{ @mtp_n_semua == 0 }}"><tr><td colspan="4"><div class="mtp-empty">Belum ada jabatan. Klik Tambah Jabatan untuk membuat yang pertama.</div></td></tr></check>
+        <tr id="trKosong" hidden><td colspan="4"><div class="mtp-empty">Belum ada jabatan yang cocok.</div></td></tr>
+      </tbody></table></div>
+    <div class="mtp-pg" id="pgJab"></div>
+  </div>
+</div>
+
+<!-- ===== TAMBAH JABATAN (halaman terpisah, bisa banyak sekaligus) ===== -->
+<div id="viewCreate" hidden>
+  <div class="mtp-back">
+    <button type="button" class="mtp-btn" id="cBack"><i class="bi bi-arrow-left"></i> Kembali</button>
+    <div><h2 class="mtp-title" style="font-size:1.4rem">Tambah Jabatan Pelaksana</h2><p class="mtp-sub">Bisa menambah lebih dari satu jabatan sekaligus. Jabatan baru otomatis aktif.</p></div>
+  </div>
+  <div class="mtp-card mtp-pad">
+    <div class="mtp-scroll"><table class="mtp-tbl">
+      <thead><tr><th style="width:60px">No.</th><th>Nama Jabatan</th><th style="width:60px"></th></tr></thead>
+      <tbody id="cRows"></tbody></table></div>
+    <button type="button" class="mtp-btn" id="cAddRow" style="margin-top:12px"><i class="bi bi-plus-lg"></i> Tambah baris</button>
+    <div class="mtp-actions">
+      <button type="button" class="mtp-btn" id="cBatal">Batal</button>
+      <button type="button" class="mtp-btn pri" id="cSimpan"><i class="bi bi-check-lg"></i> <span id="cSimpanTxt">Simpan</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== UBAH JABATAN (halaman terpisah, bisa banyak sekaligus) ===== -->
+<div id="viewEdit" hidden>
+  <div class="mtp-back">
+    <button type="button" class="mtp-btn" id="eBack"><i class="bi bi-arrow-left"></i> Kembali</button>
+    <div><h2 class="mtp-title" style="font-size:1.4rem" id="eJudul">Ubah jabatan</h2><p class="mtp-sub">Yang bisa diubah hanya nama. Perubahan nama ikut memperbarui PO yang belum selesai; PO yang sudah selesai tetap seperti saat disimpan. Status diatur lewat switch di tabel.</p></div>
+  </div>
+  <div class="mtp-card mtp-pad">
+    <div class="mtp-scroll"><table class="mtp-tbl">
+      <thead><tr><th style="width:60px">No.</th><th>Nama Jabatan</th><th style="width:60px"></th></tr></thead>
+      <tbody id="eRows"></tbody></table></div>
+    <div class="mtp-actions">
+      <button type="button" class="mtp-btn" id="eBatal">Batal</button>
+      <button type="button" class="mtp-btn pri" id="eSimpan"><i class="bi bi-check-lg"></i> <span id="eSimpanTxt">Simpan perubahan</span></button>
+    </div>
+  </div>
+</div>
+
+<div class="mtp-overlay" id="dlg" hidden><div class="mtp-modal">
+  <h3 id="dlgT">Konfirmasi</h3><p id="dlgP"></p>
+  <div class="mtp-actions" style="margin-top:18px;padding-top:0;border:0"><button type="button" class="mtp-btn" id="dlgNo">Batal</button><button type="button" class="mtp-btn pri" id="dlgYes">Ya, lanjut</button></div>
+</div></div>
+<div class="mtp-toast" id="toast"></div>
+</div>
+
+<script>
+/* Daftar di atas dirender server (tabel biasa + repeat). Data JSON ini cuma bahan untuk form Tambah/Ubah. */
+var JAB={{ @mtp_jab_json | raw }};
+var CSRF='{{ @csrf_token }}',BASE='{{ @BASE }}',PREFIX='/master-jabatan-pelaksana';
+var ST='semua';
+var $=function(i){return document.getElementById(i)};
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
+var tt;function toast(t,err){var e=$('toast');e.textContent=t;e.className='mtp-toast show'+(err?' err':'');clearTimeout(tt);tt=setTimeout(function(){e.className='mtp-toast'},3000)}
+function post(path,data){var b=new URLSearchParams();b.append('csrf_token',CSRF);Object.keys(data||{}).forEach(function(k){b.append(k,data[k])});
+  return fetch(BASE+PREFIX+path,{method:'POST',body:b,credentials:'same-origin',headers:{'X-Requested-With':'XMLHttpRequest'}})
+   .then(function(r){return r.json().catch(function(){return {ok:false,pesan:'Respons server tidak valid.'}})})
+   .then(function(j){if(!j.ok){throw new Error(j.pesan||'Terjadi kesalahan.')}return j})}
+/* setelah tambah/ubah/hapus: muat ulang halaman supaya tabel dirender ulang oleh server */
+function muatUlang(pesan){try{sessionStorage.setItem('mtp_toast',pesan||'')}catch(e){}location.reload()}
+var dlgRes=null;
+function konfirmasi(judul,teks,yaTeks){return new Promise(function(res){dlgRes=res;$('dlgT').textContent=judul;$('dlgP').textContent=teks;$('dlgYes').textContent=yaTeks||'Ya, lanjut';$('dlg').hidden=false;$('dlgYes').focus()})}
+function tutupDlg(v){$('dlg').hidden=true;if(dlgRes){var r=dlgRes;dlgRes=null;r(v)}}
+$('dlgYes').addEventListener('click',function(){tutupDlg(true)});$('dlgNo').addEventListener('click',function(){tutupDlg(false)});
+$('dlg').addEventListener('click',function(e){if(e.target===$('dlg'))tutupDlg(false)});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!$('dlg').hidden)tutupDlg(false)});
+
+var jabBy=function(id){return JAB.filter(function(j){return j.id==id})[0]};
+var barisSemua=function(){return Array.prototype.slice.call(document.querySelectorAll('#tbJab tr[data-id]'))};
+
+/* paginasi ala DataTables (10 / 25 / 50 per halaman) atas baris yang sudah dirender server */
+var PG={page:1,size:10};
+function pager(total,el){
+  var pages=Math.max(1,Math.ceil(total/PG.size));
+  if(PG.page>pages){PG.page=pages}
+  var from=total?(PG.page-1)*PG.size+1:0,to=Math.min(total,PG.page*PG.size);
+  var nums=[];for(var i=1;i<=pages;i++){if(i==1||i==pages||Math.abs(i-PG.page)<=1){nums.push(i)}else if(nums[nums.length-1]!=='...'){nums.push('...')}}
+  var btns='<button type="button" data-pg="'+(PG.page-1)+'"'+(PG.page<=1?' disabled':'')+'>&laquo;</button>'+nums.map(function(n){return n==='...'?'<button type="button" disabled>&hellip;</button>':'<button type="button" data-pg="'+n+'" class="'+(n==PG.page?'on':'')+'">'+n+'</button>'}).join('')+'<button type="button" data-pg="'+(PG.page+1)+'"'+(PG.page>=pages?' disabled':'')+'>&raquo;</button>';
+  el.innerHTML='<div>Menampilkan '+from+' sampai '+to+' dari '+total+' data &nbsp;&middot;&nbsp; Tampil <select data-size="1">'+[10,25,50].map(function(n){return '<option'+(n==PG.size?' selected':'')+'>'+n+'</option>'}).join('')+'</select> per halaman</div><div class="mtp-pgs">'+btns+'</div>';
+}
+function setPager(el){
+  el.addEventListener('click',function(e){var b=e.target.closest('[data-pg]');if(!b||b.disabled)return;PG.page=+b.dataset.pg;saring()});
+  el.addEventListener('change',function(e){var z=e.target.closest('[data-size]');if(!z)return;PG.size=+z.value;PG.page=1;saring()});
+}
+
+/* ===== saring (search + tab) langsung di baris yang sudah dirender ===== */
+function saring(ulang){
+  if(ulang===true){PG.page=1}
+  var q=$('fCari').value.trim().toLowerCase(),rows=barisSemua();
+  var cocok=[];
+  rows.forEach(function(tr){
+    var ok=(!q||tr.dataset.cari.indexOf(q)>-1)&&(ST==='semua'||(ST==='aktif'?tr.dataset.aktif==='1':tr.dataset.aktif==='0'));
+    tr.hidden=true;
+    if(ok){cocok.push(tr)}
+  });
+  var total=cocok.length,pages=Math.max(1,Math.ceil(total/PG.size));
+  if(PG.page>pages){PG.page=pages}
+  var awal=(PG.page-1)*PG.size;
+  cocok.forEach(function(tr,i){
+    if(i>=awal&&i<awal+PG.size){tr.hidden=false;tr.querySelector('.mtp-no').textContent=i+1}
+  });
+  $('trKosong').hidden=total>0||rows.length===0;
+  pager(total,$('pgJab'));
+  Array.prototype.forEach.call(document.querySelectorAll('#tabs [data-st]'),function(b){b.classList.toggle('on',b.dataset.st===ST)});
+}
+function hitungTab(){
+  var rows=barisSemua(),a=rows.filter(function(tr){return tr.dataset.aktif==='1'}).length;
+  $('cSemua').textContent=rows.length;$('cAktif').textContent=a;$('cNon').textContent=rows.length-a;
+}
+
+$('fCari').addEventListener('input',function(){saring(true)});
+$('tabs').addEventListener('click',function(e){var b=e.target.closest('[data-st]');if(!b)return;ST=b.dataset.st;saring(true)});
+
+/* ===== aktif/nonaktif, ubah, hapus ===== */
+$('tbJab').addEventListener('change',function(e){
+  var a=e.target.closest('[data-jakt]');
+  if(a){
+    var tr=a.closest('tr'),mau=a.checked;
+    post('/'+a.dataset.jakt+'/aktif',{aktif:mau?1:0}).then(function(r){
+      tr.dataset.aktif=mau?'1':'0';tr.classList.toggle('nonaktif',!mau);
+      var chip=tr.querySelector('.mtp-jab');if(chip)chip.classList.toggle('off',!mau);
+      var j=jabBy(a.dataset.jakt);if(j)j.aktif=mau?1:0;
+      hitungTab();saring();if(r.pesan)toast(r.pesan);
+    }).catch(function(err){a.checked=!mau;toast(err.message,1)});
+    return;
+  }
+});
+function hapusIds(ids){
+  konfirmasi('Hapus jabatan?',ids.length===1?'Jabatan "'+jabBy(ids[0]).nama+'" akan dihapus dari daftar pilihan. Isi PO yang sudah ada tidak berubah.':ids.length+' jabatan akan dihapus dari daftar pilihan. Isi PO yang sudah ada tidak berubah.','Ya, hapus').then(function(ok){if(ok)post('/hapus',{ids:JSON.stringify(ids)}).then(function(r){muatUlang(r.pesan)}).catch(function(e){toast(e.message,1)})})}
+$('tbJab').addEventListener('click',function(e){
+  var ed=e.target.closest('[data-jedit]');if(ed){bukaEdit([+ed.dataset.jedit]);return}
+  var h=e.target.closest('[data-jhapus]');if(h)hapusIds([+h.dataset.jhapus])});
+
+function tampilView(v){['viewList','viewCreate','viewEdit'].forEach(function(x){$(x).hidden=x!==v});window.scrollTo(0,0)}
+
+/* ===== halaman ubah (banyak sekaligus) ===== */
+var EF=[];
+function renderEdit(){
+  $('eRows').innerHTML=EF.map(function(r,i){
+    return '<tr><td class="mtp-no">'+(i+1)+'</td><td><input class="mtp-in" maxlength="80" data-en="'+i+'" value="'+esc(r.nama)+'"></td>'+
+    '<td class="r"><button type="button" class="mtp-ibtn dng" data-erm="'+i+'"'+(EF.length==1?' disabled':'')+' title="Keluarkan dari daftar ubah"><i class="bi bi-x-lg"></i></button></td></tr>'}).join('');
+  $('eJudul').textContent='Ubah '+EF.length+' jabatan';
+  $('eSimpanTxt').textContent=EF.length>1?'Simpan '+EF.length+' perubahan':'Simpan perubahan';
+}
+function bukaEdit(ids){if(!ids.length)return;EF=ids.map(function(id){var j=jabBy(id);return {id:j.id,nama:j.nama}});renderEdit();tampilView('viewEdit')}
+$('eBack').addEventListener('click',function(){tampilView('viewList')});$('eBatal').addEventListener('click',function(){tampilView('viewList')});
+$('eRows').addEventListener('input',function(e){var n=e.target.closest('[data-en]');if(n)EF[+n.dataset.en].nama=n.value});
+$('eRows').addEventListener('click',function(e){var x=e.target.closest('[data-erm]');if(!x||x.disabled)return;EF.splice(+x.dataset.erm,1);renderEdit()});
+$('eSimpan').addEventListener('click',function(){
+  var kosong=EF.some(function(r){return !r.nama.trim()});if(kosong){toast('Nama jabatan tidak boleh kosong.',1);return}
+  post('/ubah',{items:JSON.stringify(EF.map(function(r){return {id:r.id,nama:r.nama.trim()}}))}).then(function(r){muatUlang(r.pesan)}).catch(function(e){toast(e.message,1)})});
+
+/* ===== halaman tambah (multi-baris) ===== */
+var FORM=[];
+function renderForm(){
+  $('cRows').innerHTML=FORM.map(function(r,i){
+    return '<tr><td class="mtp-no">'+(i+1)+'</td><td><input class="mtp-in" maxlength="80" data-cn="'+i+'" placeholder="Contoh: Penanggung Jawab" value="'+esc(r.nama)+'"></td>'+
+    '<td class="r"><button type="button" class="mtp-ibtn dng" data-crm="'+i+'"'+(FORM.length==1?' disabled':'')+' title="Hapus baris"><i class="bi bi-x-lg"></i></button></td></tr>'}).join('');
+  var n=FORM.filter(function(r){return r.nama.trim()}).length;
+  $('cSimpanTxt').textContent=n>1?'Simpan '+n+' jabatan':'Simpan';
+}
+function bukaCreate(){FORM=[{nama:''}];renderForm();tampilView('viewCreate');var f=document.querySelector('#cRows input');if(f)f.focus()}
+$('btnTambah').addEventListener('click',bukaCreate);
+$('cBack').addEventListener('click',function(){tampilView('viewList')});$('cBatal').addEventListener('click',function(){tampilView('viewList')});
+$('cAddRow').addEventListener('click',function(){FORM.push({nama:''});renderForm();var f=document.querySelectorAll('#cRows input');if(f.length)f[f.length-1].focus()});
+$('cRows').addEventListener('input',function(e){var n=e.target.closest('[data-cn]');if(n){FORM[+n.dataset.cn].nama=n.value;var k=FORM.filter(function(r){return r.nama.trim()}).length;$('cSimpanTxt').textContent=k>1?'Simpan '+k+' jabatan':'Simpan'}});
+$('cRows').addEventListener('keydown',function(e){if(e.key==='Enter'&&e.target.closest('[data-cn]')){e.preventDefault();$('cAddRow').click()}});
+$('cRows').addEventListener('click',function(e){var x=e.target.closest('[data-crm]');if(!x||x.disabled)return;FORM.splice(+x.dataset.crm,1);renderForm()});
+$('cSimpan').addEventListener('click',function(){
+  var isi=FORM.filter(function(r){return r.nama.trim()});
+  if(!isi.length){toast('Isi minimal satu jabatan.',1);return}
+  var ada=JAB.map(function(x){return x.nama.toLowerCase()}),dobel=null,pakaiN={};
+  isi.forEach(function(r){var k=r.nama.trim().toLowerCase();if(ada.indexOf(k)>-1||pakaiN[k])dobel=r.nama.trim();pakaiN[k]=1});
+  if(dobel){toast('Nama jabatan sudah ada / dobel: "'+dobel+'".',1);return}
+  post('/tambah',{items:JSON.stringify(isi.map(function(r){return {nama:r.nama.trim()}}))}).then(function(r){muatUlang(r.pesan)}).catch(function(e){toast(e.message,1)})});
+
+/* pesan dari aksi sebelum halaman dimuat ulang */
+try{var pesanTunda=sessionStorage.getItem('mtp_toast');if(pesanTunda){sessionStorage.removeItem('mtp_toast');toast(pesanTunda)}}catch(e){}
+setPager($('pgJab'));
+saring();
+</script>

@@ -131,11 +131,18 @@
     }
 </style>
 
+<include href="petunjuk_operasional/_tema_po.html" />
+<include href="petunjuk_operasional/_penandatangan.html" />
+
 <div class="pp-root">
     <div class="pp-head">
-        <div>
-            <h1><i class="bi bi-clipboard-data text-primary me-1"></i> Buat PO Uji Profisiensi</h1>
-            <p>Isi form di bawah, lalu klik <b>Preview Data</b> untuk melihat dokumen PO. <span class="text-warning-emphasis">Tahap tampilan: data belum tersimpan ke database.</span></p>
+        <div class="d-flex align-items-center gap-3">
+            <a href="{{ @BASE }}/petunjuk-operasional" class="btn btn-sm btn-outline-secondary pp-back"><i class="bi bi-arrow-left"></i> <span>Kembali</span></a>
+            <div>
+            <div class="d-flex align-items-center gap-2"><h1>Buat PO Uji Profisiensi</h1>
+            <span class="pp-tag">Uji Profisiensi</span></div>
+            <p>Isi form di bawah; pratinjau dokumen PO tampil langsung di sebelah kanan. <span class="text-warning-emphasis">Tahap tampilan: data belum tersimpan ke database.</span></p>
+            </div>
         </div>
         <div class="pp-actions">
             <select id="ppSample" class="form-select form-select-sm" title="Isi form dengan data contoh (fiktif) untuk mengecek hasilnya">
@@ -176,7 +183,7 @@
                         </div>
                         <div class="col-12">
                             <label class="form-label">Alamat perusahaan</label>
-                            <textarea class="form-control form-control-sm" rows="2" data-bind="alamat" placeholder="Jl. Contoh No. 1, ..."></textarea>
+                            <div class="pp-rte sm" data-rte="alamat" data-ph="Jl. Contoh No. 1, ..."></div>
                         </div>
                         <div class="col-12">
                             <label class="form-label">Judul</label>
@@ -234,7 +241,7 @@
                     <button type="button" class="btn btn-sm btn-outline-primary mt-2" data-act="add" data-list="tim"><i class="bi bi-plus-lg me-1"></i>Tambah anggota</button>
                     <datalist id="dlTugas"></datalist>
                     <datalist id="dlNama"></datalist>
-                    <div class="pp-hint">Uraian tugas: awali baris dengan <b>- </b> (strip + spasi) untuk membuat poin; satu baris = satu poin. Memilih tugas baku akan mengisi uraian otomatis.</div>
+                    <div class="pp-hint">Uraian tugas: klik tombol daftar (<b>&bull;</b>) pada editor untuk membuat poin. Memilih tugas baku akan mengisi uraian otomatis.</div>
                 </div>
             </section>
 
@@ -316,6 +323,11 @@
                     </div>
                 </div>
             </section>
+
+            <section class="pp-card" id="ppTtdCard">
+                <h3><span class="pp-num"><i class="bi bi-pen"></i></span>Penandatanganan</h3>
+                <div class="pp-body"><div id="ppTtd"></div></div>
+            </section>
         </div>
     </div>
 </div>
@@ -370,7 +382,7 @@
     function newItem(tipe) { return { nama: '', tipe: tipe || 'harga', nilai: 0, blok: [newBlok()] }; }
     function T(nama, idx, o) { o = o || {}; return { nama: nama, tugas: o.tugas || ROLES[idx].tugas, uraian: o.uraian || ROLES[idx].uraian }; }
 
-    function blank() {
+    function blank0() {
         var nop = newItem('sisa'); nop.nama = 'Operasional balai';
         return {
             urut: '', kode: 'PO/BBSPJIS/UP', tanggal: todayMonth(), perusahaan: '', alamat: '', judul: '', jenis: 'Uji Profisiensi',
@@ -457,6 +469,7 @@
         }
     };
 
+    function blank() { var s0 = blank0(); s0.ttd = PoTtd.baru(); return s0; }
     var S = blank();
 
     /* ---------------- util ---------------- */
@@ -508,7 +521,7 @@
     function tok(h) {
         var bt = bulanTahun();
         return h.replace(/\[perusahaan\]/g, esc(S.perusahaan || '...'))
-            .replace(/\[alamat\]/g, esc(S.alamat || '...'))
+            .replace(/\[alamat\]/g, (ppPlain(S.alamat).trim() ? ppInline(S.alamat) : '...'))
             .replace(/\[no_penawaran\]/g, esc(S.noPenawaran || '...'))
             .replace(/\[tgl_penawaran\]/g, esc(S.tglPenawaran ? tglID(S.tglPenawaran) : '...'))
             .replace(/\[bulan_tahun\]/g, esc(bt.b ? bt.b + ' ' + bt.y : '...'));
@@ -575,6 +588,7 @@
     function sec(no, teks) { return '<div class="pp-sec keep blk">' + no + '.&nbsp;&nbsp; ' + teks + '</div>'; }
 
     function uraianHtml(txt) {
+        if (/<\/?(b|i|u|strong|em|ol|ul|li|p|div|br)(\s|\/|>)/i.test(String(txt || ''))) { return tok(cleanHtml(txt)); }
         var ls = lines(txt);
         if (ls.length <= 1 && !/^\s*-\s/.test(ls[0] || '')) { return esc(ls[0] || ''); }
         return ls.map(function (l) {
@@ -651,7 +665,13 @@
     }
 
 
+    // teks bulan & tahun di atas tanda tangan (ikut bulan Tanggal PO)
+    function ttdBulanTahun() { var bt = bulanTahun(); return bt.b ? bt.b + ' ' + bt.y : ''; }
     function docHtml(c) {
+        if (typeof ttdUi !== 'undefined' && ttdUi) { ttdUi.bulan(); }
+        return docHtml0(c) + PoTtd.blok(S.ttd, ttdBulanTahun(), { ketuaBawaan: 'Ketua Tim Pengujian dan Uji Profisiensi' });
+    }
+    function docHtml0(c) {
         var bt = bulanTahun();
         var nomorPo = (S.urut ? esc(S.urut) : '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ') + '/' + esc(S.kode || 'PO/BBSPJIS/UP') + '/' + bt.r + '/' + bt.y;
         return '<div class="pp-doc-title blk">PETUNJUK OPERASIONAL (PO)</div>' +
@@ -736,6 +756,7 @@
 
     function fit() {
         var box = $('pvBox'), pages = $('pvPages'), wrap = $('pvScale');
+        if (window.ppFitHook && window.ppFitHook(box, pages, wrap)) { return; }
         var avail = box.clientWidth - 16;
         if (avail <= 0) { return; }
         var sc = Math.min(1, avail / 794);
@@ -794,7 +815,8 @@
     function mountRte(w) {
         w.innerHTML = rteBar(w.classList.contains('sm')) + '<div class="pp-rte-body" contenteditable="true" spellcheck="true"></div>';
         var v = getPath(S, w.dataset.rte);
-        w.querySelector('.pp-rte-body').innerHTML = v == null ? '' : v;
+        w.querySelector('.pp-rte-body').innerHTML = ppToHtml(v);
+        if (w.dataset.ph) { w.querySelector('.pp-rte-body').setAttribute('data-placeholder', w.dataset.ph); }
     }
     function mountRtes(scope) { Array.prototype.forEach.call(scope.querySelectorAll('[data-rte]'), mountRte); }
 
@@ -813,9 +835,10 @@
         $('ppTim').innerHTML = S.tim.map(function (t, i) {
             return '<tr><td class="pp-no">' + (i + 1) + '</td><td style="min-width:130px">' + inp('tim', i, 'nama', t.nama, 'list="dlNama" placeholder="Nama petugas"') + '</td>' +
                 '<td style="min-width:130px">' + inp('tim', i, 'tugas', t.tugas, 'list="dlTugas"') + '</td>' +
-                '<td style="min-width:200px"><textarea class="form-control form-control-sm" rows="3" data-list="tim" data-i="' + i + '" data-k="uraian">' + esc(t.uraian) + '</textarea></td>' +
+                '<td style="min-width:220px"><div class="pp-rte sm" data-rte="tim.' + i + '.uraian"></div></td>' +
                 '<td style="white-space:nowrap">' + ctl('tim', i) + '</td></tr>';
         }).join('');
+        Array.prototype.forEach.call($('ppTim').querySelectorAll('[data-rte]'), mountRte);
         $('dlTugas').innerHTML = ROLES.map(function (r) { return '<option value="' + esc(r.tugas) + '">'; }).join('');
     }
 
@@ -936,7 +959,13 @@
         else if (el.dataset.type === 'money') { el.value = v ? rupiah(num(v)) : ''; }
         else { el.value = v == null ? '' : v; }
     }
-    function populate() {
+    var ttdUi = null;
+    function pasangTtd() {
+        S.ttd = PoTtd.baru(S.ttd);
+        ttdUi = PoTtd.mount($('ppTtd'), S.ttd, { kota: true, bulanTahun: ttdBulanTahun, ket_ketua: 'Ketua Tim Pengujian dan Uji Profisiensi', onChange: function () { schedule(); } });
+    }
+    function populate() { populate0(); pasangTtd(); }
+    function populate0() {
         Array.prototype.forEach.call(document.querySelectorAll('#ppForm [data-bind]'), function (el) { fmtBind(el, getPath(S, el.dataset.bind)); });
         Array.prototype.forEach.call(document.querySelectorAll('#ppForm [data-rte]'), mountRte);
         buildTim(); buildPeserta(); buildPeng(); buildJad();
@@ -960,7 +989,7 @@
                 document.execCommand('insertOrderedList');
                 var s2 = window.getSelection(), o = s2.anchorNode; while (o && o.nodeName !== 'OL') { o = o.parentNode; } if (o) { o.removeAttribute('type'); }
             } else { document.execCommand(cmd, false, null); }
-            setPath(S, wrap.dataset.rte, body.innerHTML); schedule(); return;
+            setPath(S, wrap.dataset.rte, ppEditorVal(body)); schedule(); return;
         }
         var a = e.target.closest('[data-act]');
         if (!a) { return; }
@@ -980,7 +1009,7 @@
 
     function onInput(e) {
         var t = e.target;
-        if (t.classList.contains('pp-rte-body')) { setPath(S, t.closest('[data-rte]').dataset.rte, t.innerHTML); schedule(); return; }
+        if (t.classList.contains('pp-rte-body')) { setPath(S, t.closest('[data-rte]').dataset.rte, ppEditorVal(t)); schedule(); return; }
         if (t.dataset.bind) {
             var path = t.dataset.bind, v;
             if (t.type === 'checkbox') { v = t.checked ? 1 : 0; }
@@ -1049,7 +1078,7 @@
     var modal = $('ppModal');
     document.body.appendChild(modal);
     document.body.appendChild($('ppMeasure'));
-    function bukaPreview() { render(); modal.classList.add('open'); modal.setAttribute('aria-hidden', 'false'); document.body.style.overflow = 'hidden'; fit(); $('pvBox').scrollTop = 0; }
+    function bukaPreview() { if (window.ppSplitSiap) { render(); fit(); return; } render(); modal.classList.add('open'); modal.setAttribute('aria-hidden', 'false'); document.body.style.overflow = 'hidden'; fit(); $('pvBox').scrollTop = 0; }
     function tutupPreview() { modal.classList.remove('open'); modal.setAttribute('aria-hidden', 'true'); document.body.style.overflow = ''; }
     $('ppPreview').addEventListener('click', bukaPreview);
     $('ppPreviewFab').addEventListener('click', bukaPreview);
@@ -1074,5 +1103,6 @@
     window.addEventListener('resize', fit);
 
     populate();
+window.ppRender = render;
 })();
 </script>

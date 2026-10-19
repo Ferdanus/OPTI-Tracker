@@ -1,250 +1,78 @@
 <?php
 /**
- * MasterTimPelaksanaController
+ * MasterTimPelaksanaController -- Data Master "Tim Pelaksana PO" + "Jabatan Pelaksana PO".
  *
- * Data Master "Tim Pelaksana" -- daftar nama + Tugas/Tanggung Jawab baku, DIPISAH
- * PER DIVISI (Lingkungan / Selulosa) lewat TABEL DB YANG TERPISAH JUGA:
- *   - master_tim_pelaksana_lingkungan
- *   - master_tim_pelaksana_selulosa
- * (bukan satu tabel dengan kolom pembeda divisi -- sesuai yang diminta).
+ * - Jabatan Pelaksana PO dikelola di MasterJabatanPelaksanaController (file terpisah, khusus Superadmin).
+ * - Tim Pelaksana PO (po_tim_pelaksana): pegawai + layanan + status aktif (TANPA jabatan; jabatan dipilih
+ *   langsung di form PO dari Master Jabatan Pelaksana PO). Aksi di tabel hanya hapus (tidak ada ubah).
+ *     Superadmin   : semua layanan.
+ *     Ketua Tim    : otomatis terkunci ke layanannya sendiri, boleh tambah/ubah/hapus.
+ *     Tim Kerja    : terkunci ke layanannya, HANYA LIHAT (ubah konstanta TIM_KERJA_KELOLA kalau mau boleh kelola).
+ * - Dipakai form PO lewat MasterTimPelaksanaController::ambilAktif($db, $divisi)
+ *   (sudah dipanggil PoKegiatanController::ambilMasterPelaksanaUntukPo).
  *
- * Dipakai di form PO Kegiatan (lihat PoKegiatanController::create()/edit() yang
- * manggil MasterTimPelaksanaController::ambilAktif($db, $divisi) buat ngisi
- * dropdown "Nama" di bagian Tim Pelaksana -- begitu nama dipilih, kolom
- * Tugas/Tanggung Jawab otomatis keisi dari data master ini).
- *
- * Akses kelola (tambah/edit/nonaktifkan/hapus): Superadmin (bebas divisi mana aja)
- * atau Ketua Tim (CUMA buat divisinya sendiri -- dicek dari role + layanan sesi).
- * Gak ada role baru yang ditambahin -- tetap pakai role & layanan yang udah ada.
+ *   GET  /master-tim-pelaksana                      halaman Tim Pelaksana
+ *   POST /master-tim-pelaksana/tambah               layanan, items=[{peg}]      (bisa banyak sekaligus)
+ *   POST /master-tim-pelaksana/ubah                 (dinonaktifkan: anggota tidak punya data yang bisa diubah)
+ *   POST /master-tim-pelaksana/hapus                ids=[..]
+ *   POST /master-tim-pelaksana/@id/aktif            aktif=0|1
  *
  * Kompatibel PHP 7.2.
  */
 class MasterTimPelaksanaController extends Controller {
 
-    const DIVISI_VALID = ['lingkungan', 'selulosa'];
+    /** true = Tim Kerja boleh tambah/ubah/hapus di layanannya sendiri. */
+    const TIM_KERJA_KELOLA = false;
+
+    /** kunci layanan => label */
+    protected static $LAYANAN = [
+        'selulosa'     => 'OPTI Selulosa',
+        'lingkungan'   => 'OPTI Lingkungan',
+        'pengujian'    => 'Pengujian',
+        'kalibrasi'    => 'Kalibrasi',
+        'sertifikasi'  => 'Sertifikasi',
+        'pendampingan' => 'Pendampingan Teknis',
+        'inspeksi'     => 'Inspeksi',
+        'profisiensi'  => 'Uji Profisiensi',
+    ];
 
     /* ============================================================
-     * HELPER STATIS (dipanggil dari controller lain, mis. PoKegiatanController)
+     * AKSES
      * ============================================================ */
 
-    /** Nama tabel fisik buat divisi tertentu. Melempar exception kalau divisi gak valid (whitelist -- aman dari SQL injection via nama tabel). */
-    public static function tabelUntukDivisi($divisi) {
-        $d = strtolower(trim((string) $divisi));
-        if (!in_array($d, self::DIVISI_VALID, true)) {
-            throw new \InvalidArgumentException('Divisi tidak valid: ' . $d);
-        }
-        return 'master_tim_pelaksana_' . $d;
-    }
-
-    /** Bikin tabelnya kalau belum ada (self-healing, gak perlu migration manual). */
-    public static function ensureTabel($db, $divisi) {
-        $tabel = self::tabelUntukDivisi($divisi);
-        try {
-            $db->exec(
-                "CREATE TABLE IF NOT EXISTS `$tabel` (
-                    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                    nama VARCHAR(150) NOT NULL,
-                    tugas_tanggung_jawab VARCHAR(255) NOT NULL,
-                    status ENUM('aktif','nonaktif') NOT NULL DEFAULT 'aktif',
-                    dibuat_oleh INT UNSIGNED NULL,
-                    created_at DATETIME NULL,
-                    updated_at DATETIME NULL
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
-            );
-        } catch (\Exception $e) {
-            // biarin -- kalau gagal (mis. gak ada izin DDL), query SELECT/INSERT di
-            // bawah tetap dicoba jalan apa adanya, cuma gak self-healing.
-        }
-        return $tabel;
-    }
-
-    /**
-     * Ambil daftar yang statusnya 'aktif' buat divisi tertentu -- dipakai PoKegiatanController
-     * buat ngisi dropdown Tim Pelaksana di form PO. Return [] kalau divisi gak valid / gagal baca.
-     */
-    public static function ambilAktif($db, $divisi) {
-        try {
-            $tabel = self::ensureTabel($db, $divisi);
-            return $db->exec("SELECT id, nama, tugas_tanggung_jawab FROM `$tabel` WHERE status = 'aktif' ORDER BY nama ASC");
-        } catch (\Exception $e) {
-            return [];
-        }
-    }
-
-    /* ============================================================
-     * HALAMAN
-     * ============================================================ */
-
-    /** GET /master-tim-pelaksana/@divisi */
-    public function index($f3, $params) {
-        $this->requireAuth();
-        $divisi = strtolower(trim((string) ($params['divisi'] ?? '')));
-        if (!in_array($divisi, self::DIVISI_VALID, true)) {
-            $f3->error(404, 'Divisi tidak dikenali.');
-            return;
-        }
-        $this->izinkan($divisi);
-
-        $tabel = self::ensureTabel($this->db, $divisi);
-
-        $search = trim((string) $f3->get('GET.q'));
-        $sql = "SELECT * FROM `$tabel` WHERE 1=1";
-        $sqlParams = [];
-        if ($search !== '') {
-            $sql .= " AND nama LIKE ?";
-            $sqlParams[] = '%' . $search . '%';
-        }
-        $sql .= " ORDER BY nama ASC";
-
-        $errorMessage = null;
-        try {
-            $rows = $this->db->exec($sql, $sqlParams);
-        } catch (\Exception $e) {
-            $rows = [];
-            $errorMessage = 'Gagal memuat daftar: ' . $e->getMessage();
-        }
-
-        // [BARU] Daftar nama buat dropdown "Nama" di modal Tambah/Edit -- diambil dari
-        // DB Sekretariat (sil2020, tabel tb_arsipuser), BUKAN dari DB silopti2026 ini.
-        // Data Tim Pelaksana sendiri (hasil pilihan + tugas/tanggung jawab) tetep
-        // kesimpen di DB silopti2026 (tabel master_tim_pelaksana_<divisi>).
-        $daftarPegawaiSekretariat = [];
-        try {
-            $daftarPegawaiSekretariat = $this->dbSekretariat->exec(
-                "SELECT id_user, nama_user FROM tb_arsipuser
-                 WHERE (status = 1 OR status = '1' OR status = 'aktif')
-                 ORDER BY nama_user ASC"
-            );
-        } catch (\Exception $e) {
-            $daftarPegawaiSekretariat = [];
-        }
-
-        $f3->set('divisi', $divisi);
-        $f3->set('divisi_label', ucfirst($divisi));
-        $f3->set('daftar_json', json_encode($rows, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP));
-        $f3->set('daftar_pegawai_json', json_encode($daftarPegawaiSekretariat, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP));
-        $f3->set('search', $search);
-        $f3->set('error_message', $errorMessage);
-
-        $this->render('master-tim-pelaksana/index.html', 'Tim Pelaksana ' . ucfirst($divisi), 'master_tim_pelaksana_' . $divisi);
-    }
-
-    /* ============================================================
-     * API
-     * ============================================================ */
-
-    /** POST /master-tim-pelaksana/@divisi/simpan */
-    public function simpan($f3, $params) {
-        $divisi = $this->divisiDariParam($params);
-        $this->izinkanJson($divisi);
-        $tabel = self::ensureTabel($this->db, $divisi);
-
-        [$nama, $tugas] = $this->validasiInput($f3);
-
-        try {
-            $this->db->exec(
-                "INSERT INTO `$tabel` (nama, tugas_tanggung_jawab, status, dibuat_oleh, created_at, updated_at)
-                 VALUES (?, ?, 'aktif', ?, NOW(), NOW())",
-                [1 => $nama, 2 => $tugas, 3 => (int) $this->getUserId()]
-            );
-        } catch (\Exception $e) {
-            $this->keluarkanJson(['ok' => false, 'pesan' => 'Gagal menyimpan: ' . $e->getMessage()], 500);
-        }
-        $this->keluarkanJson(['ok' => true]);
-    }
-
-    /** POST /master-tim-pelaksana/@divisi/@id/update */
-    public function update($f3, $params) {
-        $divisi = $this->divisiDariParam($params);
-        $this->izinkanJson($divisi);
-        $tabel = self::ensureTabel($this->db, $divisi);
-        $id = (int) ($params['id'] ?? 0);
-
-        [$nama, $tugas] = $this->validasiInput($f3);
-
-        try {
-            $this->db->exec(
-                "UPDATE `$tabel` SET nama = ?, tugas_tanggung_jawab = ?, updated_at = NOW() WHERE id = ?",
-                [1 => $nama, 2 => $tugas, 3 => $id]
-            );
-        } catch (\Exception $e) {
-            $this->keluarkanJson(['ok' => false, 'pesan' => 'Gagal memperbarui: ' . $e->getMessage()], 500);
-        }
-        $this->keluarkanJson(['ok' => true]);
-    }
-
-    /** POST /master-tim-pelaksana/@divisi/@id/toggle-status */
-    public function toggleStatus($f3, $params) {
-        $divisi = $this->divisiDariParam($params);
-        $this->izinkanJson($divisi);
-        $tabel = self::ensureTabel($this->db, $divisi);
-        $id = (int) ($params['id'] ?? 0);
-
-        try {
-            $this->db->exec(
-                "UPDATE `$tabel` SET status = IF(status = 'aktif', 'nonaktif', 'aktif'), updated_at = NOW() WHERE id = ?",
-                [1 => $id]
-            );
-        } catch (\Exception $e) {
-            $this->keluarkanJson(['ok' => false, 'pesan' => 'Gagal mengubah status.'], 500);
-        }
-        $this->keluarkanJson(['ok' => true]);
-    }
-
-    /** POST /master-tim-pelaksana/@divisi/@id/hapus */
-    public function hapus($f3, $params) {
-        $divisi = $this->divisiDariParam($params);
-        $this->izinkanJson($divisi);
-        $tabel = self::ensureTabel($this->db, $divisi);
-        $id = (int) ($params['id'] ?? 0);
-
-        try {
-            $this->db->exec("DELETE FROM `$tabel` WHERE id = ?", [1 => $id]);
-        } catch (\Exception $e) {
-            $this->keluarkanJson(['ok' => false, 'pesan' => 'Gagal menghapus.'], 500);
-        }
-        $this->keluarkanJson(['ok' => true]);
-    }
-
-    /* ============================================================
-     * HELPER
-     * ============================================================ */
-
-    protected function divisiDariParam($params) {
-        $divisi = strtolower(trim((string) ($params['divisi'] ?? '')));
-        if (!in_array($divisi, self::DIVISI_VALID, true)) {
-            $this->keluarkanJson(['ok' => false, 'pesan' => 'Divisi tidak valid.'], 422);
-        }
-        return $divisi;
-    }
-
-    protected function validasiInput($f3) {
-        $nama = trim((string) $f3->get('POST.nama'));
-        $tugas = trim((string) $f3->get('POST.tugas_tanggung_jawab'));
-        if ($nama === '' || $tugas === '') {
-            $this->keluarkanJson(['ok' => false, 'pesan' => 'Nama dan Tugas/Tanggung Jawab wajib diisi.'], 422);
-        }
-        return [$nama, $tugas];
-    }
-
-    /** Wajib login + (Superadmin ATAU Ketua Tim divisi ini). Halaman biasa (reroute). */
-    protected function izinkan($divisi) {
-        if ($this->isSuperadmin()) { return; }
+    /** Layanan yang terkunci untuk user ini ('' = bebas / superadmin, null = tidak punya akses). */
+    protected function layananTerkunci() {
+        if ($this->isSuperadmin()) { return ''; }
         $role = $this->getUserRole();
-        $layanan = $this->getUserLayanan();
-        if ($role === 'ketua_tim' && $layanan === $divisi) { return; }
-        $this->f3->error(403, 'Halaman ini hanya untuk Superadmin dan Ketua Tim divisi ' . ucfirst($divisi) . '.');
+        if ($role === 'ketua_tim') {
+            $l = strtolower(trim((string) $this->getUserLayanan()));
+        } elseif ($role === 'tim_kerja') {
+            $l = strtolower(trim((string) $this->getDivisiTimKerja()));
+        } else {
+            return null;
+        }
+        return isset(self::$LAYANAN[$l]) ? $l : null;
+    }
+
+    protected function bisaKelola() {
+        if ($this->isSuperadmin()) { return true; }
+        $role = $this->getUserRole();
+        if ($role === 'ketua_tim') { return $this->layananTerkunci() !== null; }
+        if ($role === 'tim_kerja') { return self::TIM_KERJA_KELOLA && $this->layananTerkunci() !== null; }
+        return false;
+    }
+
+    protected function izinkan($json = false, $tulis = false, $khususSuperadmin = false) {
+        $this->requireAuth();
+        $lock = $this->layananTerkunci();
+        $ok = ($lock !== null);
+        if ($ok && $tulis) { $ok = $this->bisaKelola(); }
+        if ($ok && $khususSuperadmin) { $ok = $this->isSuperadmin(); }
+        if ($ok) { return; }
+        if ($json) { $this->keluarkanJson(['ok' => false, 'pesan' => 'Anda tidak punya akses untuk aksi ini.'], 403); }
+        $this->setFlashError('Anda tidak punya akses ke halaman Master Tim Pelaksana PO.');
+        $this->f3->reroute('/dashboard');
         exit;
-    }
-
-    /** Sama kayak izinkan() tapi jawabnya JSON (buat endpoint AJAX). */
-    protected function izinkanJson($divisi) {
-        $this->requireAuth();
-        if ($this->isSuperadmin()) { return; }
-        $role = $this->getUserRole();
-        $layanan = $this->getUserLayanan();
-        if ($role === 'ketua_tim' && $layanan === $divisi) { return; }
-        $this->keluarkanJson(['ok' => false, 'pesan' => 'Anda tidak punya akses ke divisi ini.'], 403);
     }
 
     protected function keluarkanJson($data, $status = 200) {
@@ -253,4 +81,274 @@ class MasterTimPelaksanaController extends Controller {
         echo json_encode($data, JSON_UNESCAPED_UNICODE);
         exit;
     }
-}
+
+    /* ============================================================
+     * SKEMA (dibuat otomatis kalau belum ada)
+     * ============================================================ */
+
+    protected function pastikanSkema() {
+        try {
+            $this->db->exec("CREATE TABLE IF NOT EXISTS po_jabatan_pelaksana (
+                id INT UNSIGNED NOT NULL AUTO_INCREMENT, nama VARCHAR(80) NOT NULL, aktif TINYINT(1) NOT NULL DEFAULT 1,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (id), UNIQUE KEY uq_jabatan_nama (nama)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+            $this->db->exec("CREATE TABLE IF NOT EXISTS po_tim_pelaksana (
+                id INT UNSIGNED NOT NULL AUTO_INCREMENT, id_user INT NOT NULL, layanan VARCHAR(30) NOT NULL,
+                id_jabatan INT UNSIGNED NOT NULL DEFAULT 0, aktif TINYINT(1) NOT NULL DEFAULT 1, created_by INT NULL,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (id),
+                UNIQUE KEY uq_user_layanan (id_user, layanan), KEY idx_layanan (layanan, aktif)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+            // tabel lama: id_jabatan dulu wajib diisi; sekarang anggota tidak punya jabatan -> beri default 0
+            $kol = $this->db->exec("SHOW COLUMNS FROM po_tim_pelaksana LIKE 'id_jabatan'");
+            if (!empty($kol[0]) && !isset($kol[0]['Default'])) {
+                $this->db->exec("ALTER TABLE po_tim_pelaksana MODIFY id_jabatan INT UNSIGNED NOT NULL DEFAULT 0");
+            }
+            $n = $this->db->exec("SELECT COUNT(*) AS n FROM po_jabatan_pelaksana");
+            if ((int) ($n[0]['n'] ?? 0) === 0) {
+                $this->db->exec("INSERT IGNORE INTO po_jabatan_pelaksana (nama) VALUES ('Penanggung Jawab'), ('Ketua Pelaksana'), ('Anggota')");
+            }
+            return true;
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+
+    /* ============================================================
+     * DATA
+     * ============================================================ */
+
+    protected function dataTim() {
+        $lock = $this->layananTerkunci();
+        $sql = "SELECT id, id_user, layanan, id_jabatan, aktif FROM po_tim_pelaksana";
+        $par = [];
+        if ($lock) { $sql .= " WHERE layanan = ?"; $par[1] = $lock; }
+        $sql .= " ORDER BY id ASC";
+        $out = [];
+        foreach ($this->db->exec($sql, $par) as $r) {
+            $out[] = ['id' => (int) $r['id'], 'peg' => (int) $r['id_user'], 'lay' => $r['layanan'],
+                      'jab' => (int) $r['id_jabatan'], 'aktif' => (int) $r['aktif']];
+        }
+        return $out;
+    }
+
+    protected function dataJabatan() {
+        $out = [];
+        foreach ($this->db->exec("SELECT id, nama, aktif FROM po_jabatan_pelaksana ORDER BY id ASC") as $r) {
+            $out[] = ['id' => (int) $r['id'], 'nama' => $r['nama'], 'aktif' => (int) $r['aktif']];
+        }
+        return $out;
+    }
+
+    protected function dataPegawai() {
+        $out = [];
+        foreach ($this->db->exec("SELECT id_user, nama_user FROM tb_arsipuser ORDER BY nama_user ASC") as $r) {
+            $out[] = ['id' => (int) $r['id_user'], 'n' => (string) $r['nama_user']];
+        }
+        return $out;
+    }
+
+    protected function dataLayanan() {
+        $lock = $this->layananTerkunci();
+        $out = [];
+        foreach (self::$LAYANAN as $k => $v) {
+            if ($lock === '' || $lock === $k) { $out[] = [$k, $v]; }
+        }
+        return $out;
+    }
+
+    protected function keluarkanState($pesan) {
+        $this->keluarkanJson(['ok' => true, 'pesan' => $pesan, 'tim' => $this->dataTim(), 'jab' => $this->dataJabatan()]);
+    }
+
+    /** Huruf kecil untuk pencarian di sisi klien (data-cari). */
+    protected function kecil($t) {
+        return function_exists('mb_strtolower') ? mb_strtolower((string) $t, 'UTF-8') : strtolower((string) $t);
+    }
+
+    /** Baris tabel Tim Pelaksana yang siap di-<repeat> di view (nama sudah di-join). */
+    protected function barisTim() {
+        $peg = [];
+        foreach ($this->dataPegawai() as $p) { $peg[$p['id']] = $p['n']; }
+        $out = [];
+        $no = 0;
+        foreach ($this->dataTim() as $t) {
+            $no++;
+            $nama = isset($peg[$t['peg']]) ? $peg[$t['peg']] : '(pegawai dihapus)';
+            $out[] = [
+                'id'        => $t['id'],
+                'no'        => $no,
+                'peg'       => $t['peg'],
+                'pegawai'   => $nama,
+                'cari'      => $this->kecil($nama),
+                'lay'       => $t['lay'],
+                'layanan'   => isset(self::$LAYANAN[$t['lay']]) ? self::$LAYANAN[$t['lay']] : $t['lay'],
+                'aktif'     => (int) $t['aktif'],
+            ];
+        }
+        return $out;
+    }
+
+    protected function json($v) {
+        return json_encode($v, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+    }
+
+    /**
+     * Dipakai form PO: anggota tim pelaksana AKTIF di satu layanan.
+     * Format tiap baris: nama saja (jabatan & tugas dikosongkan; jabatan dipilih sendiri di form PO).
+     */
+    public static function ambilAktif($db, $divisi) {
+        $d = strtolower(trim((string) $divisi));
+        if (!isset(self::$LAYANAN[$d])) { return []; }
+        try {
+            $rows = $db->exec(
+                "SELECT u.nama_user AS nama
+                   FROM po_tim_pelaksana t
+                   JOIN tb_arsipuser u ON u.id_user = t.id_user
+                  WHERE t.layanan = ? AND t.aktif = 1
+                  ORDER BY u.nama_user ASC", [1 => $d]);
+        } catch (\Exception $e) {
+            return [];
+        }
+        $out = [];
+        foreach ($rows as $r) {
+            $out[] = ['nama' => (string) $r['nama'], 'jabatan' => '', 'tugas_tanggung_jawab' => ''];
+        }
+        return $out;
+    }
+
+    /** Dipakai form PO: nama jabatan AKTIF (urut sesuai Master Jabatan) buat pilihan kolom jabatan/tugas. */
+    public static function ambilJabatanAktif($db) {
+        try {
+            $rows = $db->exec("SELECT nama FROM po_jabatan_pelaksana WHERE aktif = 1 ORDER BY id ASC");
+        } catch (\Exception $e) {
+            return [];
+        }
+        $out = [];
+        foreach ($rows as $r) { $out[] = (string) $r['nama']; }
+        return $out;
+    }
+
+    /* ============================================================
+     * HALAMAN
+     * ============================================================ */
+
+    /** GET /master-tim-pelaksana */
+    public function index($f3) {
+        $this->izinkan();
+        $ok = $this->pastikanSkema();
+        $lock = $this->layananTerkunci();
+        $kelola = $this->bisaKelola();
+        $cfg = ['su' => $this->isSuperadmin(), 'kelola' => $kelola, 'lock' => (string) $lock, 'hal' => 'tim'];
+
+        $rows = $ok ? $this->barisTim() : [];
+        $aktif = 0;
+        foreach ($rows as $r) { if ($r['aktif']) { $aktif++; } }
+
+        $layOpts = [];
+        foreach ($this->dataLayanan() as $l) { $layOpts[] = ['k' => $l[0], 'v' => $l[1]]; }
+
+        if ($this->isSuperadmin()) {
+            $sub = 'Daftar nama pegawai yang bisa dipilih di bagian Tim Pelaksana pada form PO. Jabatan dipilih langsung di form PO (daftar jabatannya dikelola di menu Jabatan Pelaksana PO).';
+        } else {
+            $nama = isset(self::$LAYANAN[$lock]) ? self::$LAYANAN[$lock] : '';
+            $sub = 'Daftar tim pelaksana layanan ' . $nama . '.' . ($kelola ? ' Tambahkan pegawai yang masuk tim ini.' : ' Anda hanya bisa melihat daftar ini.');
+        }
+
+        // tabel di view dirender dengan <repeat> dari variabel *_rows; *_json hanya bahan form Tambah/Ubah
+        $f3->set('mtp_tim_rows',     $rows);
+        $f3->set('mtp_n_semua',      count($rows));
+        $f3->set('mtp_n_aktif',      $aktif);
+        $f3->set('mtp_n_non',        count($rows) - $aktif);
+        $f3->set('mtp_lay_opts',     $layOpts);
+        $f3->set('mtp_lock',         (string) $lock);
+        $f3->set('mtp_kelola',       $kelola);
+        $f3->set('mtp_subjudul',     $sub);
+        $f3->set('mtp_pegawai_json', $this->json($ok ? $this->dataPegawai() : []));
+        $f3->set('mtp_layanan_json', $this->json($this->dataLayanan()));
+        $f3->set('mtp_tim_json',     $this->json($ok ? $this->dataTim() : []));
+        $f3->set('mtp_cfg_json',     $this->json($cfg));
+        $f3->set('error_message',    $ok ? null : 'Tabel master belum bisa dibuat otomatis (izin CREATE TABLE kurang). Jalankan migration_master_tim_pelaksana.sql.');
+        $this->render('master-tim-pelaksana/index.html', 'Master Tim Pelaksana PO', 'master_tim_pelaksana');
+    }
+
+    /* ============================================================
+     * TIM PELAKSANA
+     * ============================================================ */
+
+    /** POST /master-tim-pelaksana/tambah */
+    public function tambah($f3) {
+        $this->izinkan(true, true);
+        $this->pastikanSkema();
+        $lock = $this->layananTerkunci();
+        $lay = $lock ?: strtolower(trim((string) $f3->get('POST.layanan')));
+        if (!isset(self::$LAYANAN[$lay])) { $this->keluarkanJson(['ok' => false, 'pesan' => 'Layanan tidak valid.'], 422); }
+
+        $items = json_decode((string) $f3->get('POST.items'), true);
+        if (!is_array($items) || !count($items)) { $this->keluarkanJson(['ok' => false, 'pesan' => 'Isi minimal satu anggota.'], 422); }
+
+        $sudahPeg = [];
+        foreach ($items as $it) {
+            $peg = (int) (isset($it['peg']) ? $it['peg'] : 0);
+            if ($peg <= 0) { $this->keluarkanJson(['ok' => false, 'pesan' => 'Ada baris yang belum lengkap.'], 422); }
+            if (isset($sudahPeg[$peg])) { $this->keluarkanJson(['ok' => false, 'pesan' => 'Ada pegawai yang dipilih dua kali.'], 422); }
+            $sudahPeg[$peg] = 0;
+        }
+
+        $ids = array_keys($sudahPeg);
+        $in = implode(',', array_fill(0, count($ids), '?'));
+        $par = []; foreach ($ids as $i => $v) { $par[$i + 1] = $v; }
+        $ada = $this->db->exec("SELECT id_user FROM tb_arsipuser WHERE id_user IN ($in)", $par);
+        if (count($ada) !== count($ids)) { $this->keluarkanJson(['ok' => false, 'pesan' => 'Ada pegawai yang tidak ditemukan.'], 422); }
+        $dobel = $this->db->exec("SELECT id_user FROM po_tim_pelaksana WHERE layanan = ? AND id_user IN ($in)", array_merge([1 => $lay], array_combine(range(2, count($ids) + 1), $ids)));
+        if (count($dobel)) { $this->keluarkanJson(['ok' => false, 'pesan' => 'Ada pegawai yang sudah terdaftar di layanan ini.'], 422); }
+
+        $uid = (int) $this->getUserId();
+        try {
+            $this->db->begin();
+            foreach ($sudahPeg as $peg => $jab) {
+                $this->db->exec("INSERT INTO po_tim_pelaksana (id_user, layanan, id_jabatan, aktif, created_by) VALUES (?, ?, 0, 1, ?)",
+                    [1 => $peg, 2 => $lay, 3 => $uid]);
+            }
+            $this->db->commit();
+        } catch (\Exception $e) {
+            try { $this->db->rollback(); } catch (\Exception $e2) {}
+            $this->keluarkanJson(['ok' => false, 'pesan' => 'Gagal menyimpan: ' . $e->getMessage()], 500);
+        }
+        $this->keluarkanState(count($sudahPeg) . ' anggota ditambahkan ke ' . self::$LAYANAN[$lay] . '.');
+    }
+
+    /** POST /master-tim-pelaksana/ubah -- tidak dipakai lagi (anggota tim hanya pegawai + layanan, tidak ada yang diubah). */
+    public function ubah($f3) {
+        $this->izinkan(true, true);
+        $this->keluarkanJson(['ok' => false, 'pesan' => 'Anggota tim tidak bisa diubah. Hapus lalu tambahkan lagi bila perlu.'], 405);
+    }
+
+    /** POST /master-tim-pelaksana/hapus */
+    public function hapus($f3) {
+        $this->izinkan(true, true);
+        $ids = json_decode((string) $f3->get('POST.ids'), true);
+        if (!is_array($ids) || !count($ids)) { $this->keluarkanJson(['ok' => false, 'pesan' => 'Tidak ada data yang dipilih.'], 422); }
+        $milik = [];
+        foreach ($this->dataTim() as $t) { $milik[$t['id']] = 1; }
+        $n = 0;
+        foreach ($ids as $id) {
+            $id = (int) $id;
+            if (!isset($milik[$id])) { continue; }
+            $this->db->exec("DELETE FROM po_tim_pelaksana WHERE id = ?", [1 => $id]);
+            $n++;
+        }
+        $this->keluarkanState($n . ' anggota dihapus.');
+    }
+
+    /** POST /master-tim-pelaksana/@id/aktif */
+    public function aktif($f3, $params) {
+        $this->izinkan(true, true);
+        $id = (int) $params['id'];
+        $milik = [];
+        foreach ($this->dataTim() as $t) { $milik[$t['id']] = 1; }
+        if (!isset($milik[$id])) { $this->keluarkanJson(['ok' => false, 'pesan' => 'Anggota tidak ditemukan.'], 404); }
+        $a = ((int) $f3->get('POST.aktif')) ? 1 : 0;
+        $this->db->exec("UPDATE po_tim_pelaksana SET aktif = ? WHERE id = ?", [1 => $a, 2 => $id]);
+        $this->keluarkanState($a ? 'Anggota diaktifkan.' : 'Anggota dinonaktifkan.');
+    }
+}

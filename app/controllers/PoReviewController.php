@@ -61,7 +61,7 @@ class PoReviewController extends Controller {
         $f3->set('mode', $mode);
         $f3->set('error_message', $errorMessage);
 
-        $this->render('katim_kerja/po-kegiatan/daftar.html', 'Daftar PO', 'po_daftar');
+        $this->render('katim_kerja/po-kegiatan/daftar.html', 'Daftar PO', 'daftar_po');
     }
 
     /** GET /po-kegiatan/daftar/data -- daftar yang sama dalam bentuk JSON (penyegaran otomatis di halaman) */
@@ -483,6 +483,94 @@ class PoReviewController extends Controller {
         $this->keluarkanJson(['ok' => true]);
     }
 
+    /* ============================================================
+     * API: BERKAS (tab Dokumen: surat kesanggupan bayar dan bukti pembayaran)
+     * ============================================================ */
+
+    /**
+     * GET /po-kegiatan/@id/berkas -- ringkasan pembayaran + tautan berkas order dari PO ini.
+     * Isinya sama dengan tab Berkas di halaman Humas (PoHumasController::berkas), tapi hak aksesnya mengikuti halaman review ini.
+     */
+    public function berkas($f3, $params) {
+        list($po, $sisi) = $this->akses((int) $params['id']);
+        $orderId = (int) $po['order_id'];
+
+        /* sql:berkas_order */
+        $o = $this->safeExec("SELECT nomor_order, judul_kegiatan, estimasi_biaya FROM order_layanan WHERE id = ? LIMIT 1", [1 => $orderId]);
+        $o = !empty($o) ? $o[0] : [];
+        /* sql:berkas_penawaran */
+        $sp = $this->safeExec(
+            "SELECT surat_kesanggupan_bayar, nominal_penawaran FROM tb_surat_penawaran
+             WHERE order_id = ? AND status_respon_klien = 'deal' ORDER BY id DESC LIMIT 1",
+            [1 => $orderId]
+        );
+        $sp = !empty($sp) ? $sp[0] : [];
+        /* sql:berkas_pembayaran */
+        $bayarRows = $this->safeExec(
+            "SELECT id, termin_ke, jumlah, tanggal_bayar, status_verifikasi, bukti_bayar
+             FROM opti_pembayaran WHERE order_id = ? AND (is_kesanggupan_bayar = 0 OR is_kesanggupan_bayar IS NULL) ORDER BY termin_ke ASC",
+            [1 => $orderId]
+        );
+
+        $nilai = !empty($sp['nominal_penawaran']) ? (float) $sp['nominal_penawaran'] : (float) (isset($o['estimasi_biaya']) ? $o['estimasi_biaya'] : 0);
+        $totalTerbayar = 0;
+        $termin = [];
+        foreach ($bayarRows as $b) {
+            if ($b['status_verifikasi'] === 'terverifikasi') { $totalTerbayar += (float) $b['jumlah']; }
+            $termin[] = [
+                'termin_ke'         => (int) $b['termin_ke'],
+                'jumlah'            => (float) $b['jumlah'],
+                'tanggal_bayar'     => $b['tanggal_bayar'],
+                'status_verifikasi' => $b['status_verifikasi'],
+                // lewat endpoint halaman ini (hak akses mengikuti review PO), BUKAN /pembayaran/bukti yang khusus Keuangan dan Superadmin
+                'url'               => !empty($b['bukti_bayar']) ? ($f3->get('BASE') . '/po-kegiatan/' . (int) $po['id'] . '/berkas/bukti/' . (int) $b['id']) : null,
+            ];
+        }
+        $kesanggupanAda = !empty($sp['surat_kesanggupan_bayar']);
+
+        $this->keluarkanJson([
+            'ok'    => true,
+            'po'    => ['id' => (int) $po['id'], 'nomor' => (string) $po['nomor_po']],
+            'order' => [
+                'nomor' => (string) (isset($o['nomor_order']) ? $o['nomor_order'] : ''),
+                'judul' => (string) (isset($o['judul_kegiatan']) ? $o['judul_kegiatan'] : ''),
+            ],
+            'nilai'          => $nilai,
+            'total_terbayar' => $totalTerbayar,
+            'lunas'          => $nilai > 0 && $totalTerbayar >= $nilai,
+            'kesanggupan'    => [
+                'ada' => $kesanggupanAda,
+                'url' => $kesanggupanAda ? ($f3->get('BASE') . '/po-kegiatan/' . (int) $po['id'] . '/berkas/kesanggupan') : null,
+            ],
+            'termin' => $termin,
+        ]);
+    }
+
+    /** GET /po-kegiatan/@id/berkas/kesanggupan[?unduh=1] -- file Surat Kesanggupan Bayar order dari PO ini */
+    public function berkasKesanggupan($f3, $params) {
+        list($po, $sisi) = $this->akses((int) $params['id']);
+        /* sql:berkas_file_kesanggupan */
+        $r = $this->safeExec(
+            "SELECT surat_kesanggupan_bayar FROM tb_surat_penawaran
+             WHERE order_id = ? AND surat_kesanggupan_bayar IS NOT NULL AND surat_kesanggupan_bayar <> ''
+             ORDER BY (status_respon_klien = 'deal') DESC, id DESC LIMIT 1",
+            [1 => (int) $po['order_id']]
+        );
+        $this->kirimBerkas(!empty($r) ? $r[0]['surat_kesanggupan_bayar'] : null, 'Surat-Kesanggupan-Bayar-' . $po['nomor_po']);
+    }
+
+    /** GET /po-kegiatan/@id/berkas/bukti/@pid[?unduh=1] -- file bukti pembayaran satu termin (harus milik order PO ini) */
+    public function berkasBukti($f3, $params) {
+        list($po, $sisi) = $this->akses((int) $params['id']);
+        /* sql:berkas_file_bukti */
+        $r = $this->safeExec(
+            "SELECT bukti_bayar, termin_ke FROM opti_pembayaran
+             WHERE id = ? AND order_id = ? AND (is_kesanggupan_bayar = 0 OR is_kesanggupan_bayar IS NULL) LIMIT 1",
+            [1 => (int) $params['pid'], 2 => (int) $po['order_id']]
+        );
+        $this->kirimBerkas(!empty($r) ? $r[0]['bukti_bayar'] : null, 'Bukti-Pembayaran-Termin-' . (!empty($r) ? (int) $r[0]['termin_ke'] : 0) . '-' . $po['nomor_po']);
+    }
+
     /**
      * GET /po-kegiatan/notif -- ringkasan pesan belum dibaca (satu baris per PO), untuk dropdown lonceng.
      * Pesan otomatis sistem tidak ikut dihitung (perubahan status sudah terlihat di daftar).
@@ -628,6 +716,45 @@ class PoReviewController extends Controller {
             } else {
                 return 0;
             }
+            $n = isset($r[0]['c']) ? (int) $r[0]['c'] : 0;
+        } catch (\Exception $e) {
+            return 0;
+        }
+        return $n + self::hitungPpkBelumDibaca($db, $role, $divisi, $userId);
+    }
+
+    /**
+     * Tambahan angka badge untuk Ketua Tim / Superadmin: revisi PPK BLU yang belum dibuka (permintaan revisi baru, atau hasil revisi
+     * yang dikirim Ketua Pelaksana). Revisi PPK BLU ikut tampil di Daftar PO Ketua Tim, jadi ikut dihitung di sini.
+     * Dihitung terpisah supaya angka lama tetap benar walau kolom revisi PPK BLU belum ada (hasil 0).
+     */
+    public static function hitungPpkBelumDibaca($db, $role, $divisi, $userId = 0) {
+        if ($role === 'tim_kerja') {
+            // Ketua Pelaksana: revisi PPK BLU yang didisposisikan kepadanya dan belum dibuka
+            try {
+                $r = $db->exec(
+                    "SELECT COUNT(*) AS c FROM po_kegiatan p JOIN order_layanan o ON o.id = p.order_id
+                      WHERE p.status IN ('terkirim', 'disetujui_mitra', 'disetujui') AND p.status_review = 'disetujui'
+                        AND p.ppk_status = 'ketupel_kerja' AND p.ppk_dibaca_at IS NULL AND p.validasi_keuangan_at IS NULL
+                        AND o.ketua_pelaksana_id = ?",
+                    [1 => (int) $userId]
+                );
+                return isset($r[0]['c']) ? (int) $r[0]['c'] : 0;
+            } catch (\Exception $e) {
+                return 0;
+            }
+        }
+        if ($role !== 'ketua_tim' && $role !== 'superadmin') { return 0; }
+        try {
+            $sql = "SELECT COUNT(*) AS c FROM po_kegiatan p JOIN order_layanan o ON o.id = p.order_id
+                     WHERE p.status IN ('terkirim', 'disetujui_mitra', 'disetujui') AND p.status_review = 'disetujui'
+                       AND p.ppk_status IN ('minta', 'katim_review') AND p.ppk_dibaca_at IS NULL AND p.validasi_keuangan_at IS NULL";
+            $prm = [];
+            if ($role === 'ketua_tim' && in_array($divisi, self::DIVISI_VALID, true)) {
+                $sql .= " AND o.jenis_layanan_opti = ?";
+                $prm[1] = $divisi;
+            }
+            $r = $db->exec($sql, $prm);
             return isset($r[0]['c']) ? (int) $r[0]['c'] : 0;
         } catch (\Exception $e) {
             return 0;
@@ -810,6 +937,11 @@ class PoReviewController extends Controller {
     protected function daftarItems($mode, $uid, $poId) {
         $sisiLawan = ($mode === 'katim') ? 'pembuat' : 'katim';
 
+        // Catatan yang dihitung di kolom progres: PO biasa = catatan review putaran ini; revisi PPK BLU (ppk_status terisi) = catatan PPK BLU putaran ini
+        $rnKondisi = ($this->kolomAda('ppk_status') && $this->kolomAda('ronde_ppk'))
+            ? "((p.ppk_status IS NULL AND x.tahap = 'review' AND x.ronde = p.ronde_revisi) OR (p.ppk_status IS NOT NULL AND x.tahap = 'ppk' AND x.ronde = p.ronde_ppk))"
+            : "(x.tahap = 'review' AND x.ronde = p.ronde_revisi)";
+
         /* sql:daftar */
         $sql = "SELECT p.id, p.nomor_po, p.status_review, p.ronde_revisi,
                        COALESCE(p.dikirim_at, p.updated_at, p.created_at) AS dikirim_at,
@@ -821,9 +953,9 @@ class PoReviewController extends Controller {
                        (SELECT COUNT(*) FROM po_chat pc
                          WHERE pc.po_id = p.id AND pc.sisi = ? AND pc.sistem = 0 AND pc.dibaca_at IS NULL) AS chat_unread,
                        (SELECT COUNT(*) FROM po_revisi_catatan x
-                         WHERE x.po_id = p.id AND x.tahap = 'review' AND x.ronde = p.ronde_revisi AND x.state <> 'draf') AS rn_total,
+                         WHERE x.po_id = p.id AND " . $rnKondisi . " AND x.state <> 'draf') AS rn_total,
                        (SELECT COUNT(*) FROM po_revisi_catatan x
-                         WHERE x.po_id = p.id AND x.tahap = 'review' AND x.ronde = p.ronde_revisi AND x.state = 'selesai') AS rn_selesai
+                         WHERE x.po_id = p.id AND " . $rnKondisi . " AND x.state = 'selesai') AS rn_selesai
                 FROM po_kegiatan p
                 JOIN order_layanan o ON o.id = p.order_id
                 JOIN tb_customer c ON c.id_customer = o.id_customer
@@ -881,6 +1013,9 @@ class PoReviewController extends Controller {
                 // [BARU] revisi PPK BLU (hanya dipakai untuk teks "Status PO saat ini")
                 'ppk_status'       => !empty($r['ppk_status']) ? (string) $r['ppk_status'] : '',
                 'ronde_ppk'        => isset($r['ronde_ppk']) ? (int) $r['ronde_ppk'] : 0,
+                // kapan revisi PPK BLU berpindah ke tahap sekarang, dan kapan penerimanya membuka (dipakai badge dan penanda belum dibaca Ketua Tim)
+                'ppk_status_at'    => isset($r['ppk_status_at']) ? $r['ppk_status_at'] : null,
+                'ppk_dibaca_at'    => isset($r['ppk_dibaca_at']) ? $r['ppk_dibaca_at'] : null,
                 'rn_total'         => (int) $r['rn_total'],
                 'rn_selesai'       => (int) $r['rn_selesai'],
                 'unread'           => (int) $r['chat_unread'],
@@ -905,7 +1040,9 @@ class PoReviewController extends Controller {
              . $ex('validasi_keuangan_at') . ' AS ppk_valid_at, '
              . $ex('catatan_tim_mitra') . ' AS catatan_tim_mitra, '
              . $ex('ppk_status') . ' AS ppk_status, '
-             . $ex('ronde_ppk') . ' AS ronde_ppk,';
+             . $ex('ronde_ppk') . ' AS ronde_ppk, '
+             . $ex('ppk_status_at') . ' AS ppk_status_at, '
+             . $ex('ppk_dibaca_at') . ' AS ppk_dibaca_at,';
     }
 
     /** Rincian satu PO + catatan, dalam satu paket JSON. Draf catatan hanya untuk sisi Ketua Tim. */
@@ -1029,10 +1166,63 @@ class PoReviewController extends Controller {
         return ($badan !== '') ? $badan . ' ' . $bersih : $bersih;
     }
 
+    /** Query yang gagal (tabel/kolom belum ada) dianggap tidak ada datanya, bukan error 500. */
+    protected function safeExec($sql, $params = []) {
+        try { return $this->db->exec($sql, $params); } catch (\Exception $e) { return []; }
+    }
+
+    /**
+     * Kirim berkas hasil unggahan ke browser. $relPath = isi kolom di database (path relatif / nama file).
+     * Tampil di tempat (inline) secara bawaan; ?unduh=1 memaksa unduh dengan nama $namaUnduh.
+     * Daftar lokasi yang dicoba sama dengan BerkasController dan PembayaranOptiController.
+     */
+    protected function kirimBerkas($relPath, $namaUnduh) {
+        $relPath = ltrim((string) $relPath, "/\\");
+        if ($relPath === '') { $this->f3->error(404, 'Berkas tidak tersedia.'); return; }
+        $appRoot = str_replace('\\', '/', dirname(__DIR__, 2));
+        $docRoot = rtrim(str_replace('\\', '/', (string) $this->f3->get('ROOT')), '/\\');
+        $nama = basename($relPath);
+
+        $kandidat = [
+            $appRoot . '/' . $relPath,
+            $appRoot . '/public/' . $relPath,
+            $appRoot . '/storage/' . $relPath,
+            $appRoot . '/storage/kesanggupan_bayar/' . $nama,
+            $appRoot . '/storage/pembayaran/' . $nama,
+            $appRoot . '/uploads/' . $nama,
+            $appRoot . '/uploads/penawaran/' . $nama,
+            $appRoot . '/uploads/bukti_bayar/' . $nama,
+            $docRoot . '/' . $relPath,
+            $docRoot . '/storage/pembayaran/' . $nama,
+            $docRoot . '/uploads/bukti_bayar/' . $nama,
+            $relPath,
+        ];
+        $path = null;
+        foreach ($kandidat as $k) {
+            if ($k !== '' && is_file($k)) { $path = $k; break; }
+        }
+        if (!$path) { $this->f3->error(404, 'Berkas tidak ditemukan di server.'); return; }
+
+        $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+        $mime = ['pdf' => 'application/pdf', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png', 'gif' => 'image/gif', 'webp' => 'image/webp'];
+        if (!isset($mime[$ext])) { $this->f3->error(404, 'Jenis berkas tidak didukung.'); return; }
+
+        $unduh = (string) $this->f3->get('GET.unduh') === '1';
+        $bersih = trim((string) preg_replace('/[^A-Za-z0-9._-]+/', '-', $namaUnduh), '-') . '.' . $ext;
+        while (ob_get_level() > 0) { ob_end_clean(); }
+        header('Content-Type: ' . $mime[$ext]);
+        header('Content-Disposition: ' . ($unduh ? 'attachment' : 'inline') . '; filename="' . $bersih . '"');
+        header('Content-Length: ' . filesize($path));
+        header('Cache-Control: private, max-age=300');
+        header('X-Content-Type-Options: nosniff');
+        readfile($path);
+        exit;
+    }
+
     protected function keluarkanJson($data, $status = 200) {
         http_response_code($status);
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode($data, JSON_UNESCAPED_UNICODE);
         exit;
     }
-}
+}

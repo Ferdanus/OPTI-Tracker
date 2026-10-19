@@ -1,0 +1,184 @@
+<!-- Modal pilih order Pengujian (data dari tb_arsipsurat di sil2020 = arsip surat permintaan).
+     Satu PO boleh memuat BANYAK order: order dicentang, lalu tombol bawah membuat / memperbarui PO.
+     Dipakai di: /petunjuk-operasional (daftar PO layanan) dan di form PO Pengujian (tombol "Tambah / ubah order").
+     Hanya order yang BELUM dibuatkan PO Pengujian yang tampil (order milik PO yang sedang diedit tetap tampil).
+     Pencarian dijalankan di server (nomor surat / perihal / nama mitra).
+     Membuka modal: window.bukaModalPengujian()                              -> dari Daftar PO, tombol membuka form PO baru
+                    window.bukaModalPengujian({terpilih:[order,...], poId:N, onPilih:function(daftarOrder){...}})  -> dari form -->
+<div class="modal fade" id="modalOrderPeng" tabindex="-1" aria-labelledby="modalOrderPengLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title fw-bold mb-0" id="modalOrderPengLabel">Pilih Order Pengujian</h5>
+                    <div class="small text-muted">Centang satu atau beberapa order untuk dimasukkan ke satu PO.</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    <input type="search" id="cariOrderPeng" class="form-control flex-grow-1" style="flex-basis: 260px;" placeholder="Cari nomor surat / perihal / nama mitra..." autocomplete="off">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="btnSemuaOrderPeng">Pilih semua hasil</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="btnKosongOrderPeng">Kosongkan</button>
+                </div>
+                <div id="stateOrderPeng" class="text-center text-muted small py-4"></div>
+                <div class="list-group" id="listOrderPeng"></div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <div class="fw-bold" id="jmlOrderPeng">0 order dipilih</div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-primary" id="btnOkOrderPeng" disabled><i class="bi bi-check-lg me-1"></i><span id="txtOkOrderPeng">Buat PO</span></button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .order-peng-item { display: flex; align-items: flex-start; gap: 12px; text-align: left; cursor: pointer; margin: 0; }
+    .order-peng-item input[type=checkbox] { width: 18px; height: 18px; margin-top: 3px; flex: none; }
+    .order-peng-item .isi { flex: 1; min-width: 0; }
+    .order-peng-item .no { font-weight: 700; }
+    .order-peng-item .perihal { font-size: .8rem; color: #64748b; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .order-peng-item .meta { text-align: right; font-size: .8rem; color: #64748b; white-space: nowrap; }
+    .order-peng-item.dipilih { background: #eff6ff; }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var modalEl = document.getElementById('modalOrderPeng');
+    document.body.appendChild(modalEl);
+    var listEl = document.getElementById('listOrderPeng');
+    var stateEl = document.getElementById('stateOrderPeng');
+    var cariEl = document.getElementById('cariOrderPeng');
+    var jmlEl = document.getElementById('jmlOrderPeng');
+    var okEl = document.getElementById('btnOkOrderPeng');
+    var okTxt = document.getElementById('txtOkOrderPeng');
+    var URL_ORDER_PENG = '{{ @BASE }}/petunjuk-operasional/pengujian/order';
+    var URL_BUAT_PENG = '{{ @BASE }}/petunjuk-operasional/pengujian/create?order=';
+    var timer = null, reqId = 0;
+    var pilih = [];          // order terpilih (objek lengkap), urutan = urutan dipilih
+    var tampil = [];         // order yang sedang tampil di daftar (hasil pencarian terakhir)
+    var opsi = { poId: 0, onPilih: null, awal: 0 };
+
+    function elPeng(tag, cls, txt) { var e = document.createElement(tag); if (cls) { e.className = cls; } if (txt != null) { e.textContent = txt; } return e; }
+    function idxPilih(id) { for (var i = 0; i < pilih.length; i++) { if (pilih[i].id === id) { return i; } } return -1; }
+
+    function hitung() {
+        jmlEl.textContent = pilih.length + ' order dipilih';
+        okEl.disabled = pilih.length === 0;
+        if (opsi.onPilih) {
+            okTxt.textContent = opsi.awal > 0 ? 'Terapkan ' + pilih.length + ' order' : 'Pakai ' + pilih.length + ' order';
+        } else {
+            okTxt.textContent = pilih.length > 1 ? 'Buat 1 PO dari ' + pilih.length + ' order' : 'Buat PO';
+        }
+    }
+
+    function tampilOrderPeng(rows, terpotong) {
+        tampil = rows;
+        listEl.innerHTML = '';
+        rows.forEach(function (r) {
+            var a = elPeng('label', 'list-group-item list-group-item-action order-peng-item' + (idxPilih(r.id) > -1 ? ' dipilih' : ''));
+            var cb = document.createElement('input');
+            cb.type = 'checkbox'; cb.dataset.id = r.id; cb.checked = idxPilih(r.id) > -1;
+            a.appendChild(cb);
+            var kiri = elPeng('div', 'isi');
+            kiri.appendChild(elPeng('div', 'no', r.mitra || '(mitra tidak ditemukan)'));
+            var sub = [r.nomor_surat, r.perihal].filter(Boolean).join(' · ');
+            if (sub) { kiri.appendChild(elPeng('div', 'perihal', sub)); }
+            var kanan = elPeng('div', 'meta', r.tanggal_surat ? 'Surat ' + r.tanggal_surat : '-');
+            a.appendChild(kiri); a.appendChild(kanan);
+            listEl.appendChild(a);
+        });
+        stateEl.className = 'text-center text-muted small py-4';
+        var q = (cariEl.value || '').trim();
+        if (rows.length === 0) {
+            stateEl.textContent = q ? 'Tidak ada order yang cocok dengan pencarian.' : 'Tidak ada order Pengujian yang perlu dibuatkan PO (semua order sudah punya PO).';
+        } else if (terpotong) {
+            stateEl.textContent = 'Menampilkan ' + rows.length + ' order terbaru. Ketik di kolom cari untuk menemukan order lain.';
+        } else {
+            stateEl.textContent = '';
+        }
+        hitung();
+    }
+
+    function muatOrderPeng() {
+        var mine = ++reqId;
+        stateEl.className = 'text-center text-muted small py-4';
+        stateEl.textContent = 'Memuat daftar order...';
+        var q = (cariEl.value || '').trim();
+        var qs = [];
+        if (q) { qs.push('q=' + encodeURIComponent(q)); }
+        if (opsi.poId) { qs.push('po=' + encodeURIComponent(opsi.poId)); }
+        fetch(URL_ORDER_PENG + (qs.length ? '?' + qs.join('&') : ''), { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+            .then(function (res) { return res.json().then(function (j) { return { status: res.status, body: j }; }); })
+            .then(function (r) {
+                if (mine !== reqId) { return; } // ada pencarian yang lebih baru
+                if (!r.body || !r.body.ok) { throw new Error((r.body && r.body.message) || 'Gagal memuat data.'); }
+                tampilOrderPeng(r.body.data || [], !!r.body.terpotong);
+            })
+            .catch(function (err) {
+                if (mine !== reqId) { return; }
+                listEl.innerHTML = '';
+                stateEl.className = 'text-center text-danger small py-4';
+                stateEl.textContent = (err && err.message) ? err.message : 'Gagal memuat data order.';
+            });
+    }
+
+    window.bukaModalPengujian = function (o) {
+        o = o || {};
+        opsi = { poId: o.poId || 0, onPilih: (typeof o.onPilih === 'function') ? o.onPilih : null, awal: (o.terpilih || []).length };
+        pilih = (o.terpilih || []).map(function (x) { return x; });
+        cariEl.value = '';
+        listEl.innerHTML = '';
+        hitung();
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        muatOrderPeng();
+    };
+
+    cariEl.addEventListener('input', function () {
+        clearTimeout(timer);
+        timer = setTimeout(muatOrderPeng, 300);
+    });
+    listEl.addEventListener('change', function (e) {
+        var cb = e.target.closest('input[type=checkbox]');
+        if (!cb) { return; }
+        var id = parseInt(cb.dataset.id, 10), i = idxPilih(id);
+        if (cb.checked && i < 0) {
+            var o = tampil.filter(function (x) { return x.id === id; })[0];
+            if (o) { pilih.push(o); }
+        } else if (!cb.checked && i > -1) {
+            pilih.splice(i, 1);
+        }
+        cb.closest('.order-peng-item').classList.toggle('dipilih', cb.checked);
+        hitung();
+    });
+    document.getElementById('btnSemuaOrderPeng').addEventListener('click', function () {
+        tampil.forEach(function (o) { if (idxPilih(o.id) < 0) { pilih.push(o); } });
+        tampilOrderPeng(tampil, false);
+        if ((cariEl.value || '').trim() === '' && tampil.length >= 100) { stateEl.textContent = 'Menampilkan ' + tampil.length + ' order terbaru. Ketik di kolom cari untuk menemukan order lain.'; }
+    });
+    document.getElementById('btnKosongOrderPeng').addEventListener('click', function () {
+        var ids = tampil.map(function (o) { return o.id; });
+        pilih = pilih.filter(function (o) { return ids.indexOf(o.id) < 0; });
+        tampilOrderPeng(tampil, false);
+    });
+    okEl.addEventListener('click', function () {
+        if (!pilih.length) { return; }
+        var inst = bootstrap.Modal.getInstance(modalEl);
+        if (opsi.onPilih) {
+            var hasil = pilih.slice();
+            if (inst) { inst.hide(); }
+            opsi.onPilih(hasil);
+            return;
+        }
+        // tutup modal dulu, baru loader halaman menyala (supaya tidak ada bayangan modal di belakang loader)
+        var ids = pilih.map(function (o) { return o.id; }).join(',');
+        if (inst) { inst.hide(); }
+        if (typeof window.startLoading === 'function') { window.startLoading('Membuka form PO...'); }
+        window.location.href = URL_BUAT_PENG + encodeURIComponent(ids);
+    });
+    modalEl.addEventListener('hidden.bs.modal', function () { cariEl.value = ''; clearTimeout(timer); });
+});
+</script>

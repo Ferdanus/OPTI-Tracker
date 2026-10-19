@@ -918,6 +918,10 @@
         .role-badge-katim-keuangan { background: #ede9fe; color: #5b21b6 !important; border: 1px solid #ddd6fe; }
         .role-badge-tk-selulosa { background: #ecfeff; color: #0e7490 !important; border: 1px solid #a5f3fc; }
         .role-badge-tk-lingkungan { background: #f0fdfa; color: #0f766e !important; border: 1px solid #99f6e4; }
+        .role-badge-katim-sertifikasi { background: #eef2ff; color: #3730a3 !important; border: 1px solid #c7d2fe; }
+        .role-badge-tk-sertifikasi { background: #f0f9ff; color: #0369a1 !important; border: 1px solid #bae6fd; }
+        .role-badge-katim-pengujian { background: #fdf4ff; color: #86198f !important; border: 1px solid #f5d0fe; }
+        .role-badge-tk-pengujian { background: #f7fee7; color: #3f6212 !important; border: 1px solid #d9f99d; }
         .role-badge-mitra { background: #fffbeb; color: #b45309 !important; border: 1px solid #fde68a; }
         .role-badge-keuangan { background: #eff6ff; color: #1d4ed8 !important; border: 1px solid #bfdbfe; }
         .role-badge-default { background: #f8fafc; color: #475569 !important; border: 1px solid #e2e8f0; }
@@ -1301,7 +1305,7 @@
                 </check>
 
                 <!-- 2. PELAKSANAAN TEKNIS -->
-                <check if="{{ @is_superadmin || @is_ketua_tim || @is_tim_kerja || @is_keuangan }}">
+                <check if="{{ @is_superadmin || @is_ketua_tim || @is_tim_kerja || @is_keuangan || @is_tim_pengujian || @is_role_sertifikasi }}">
                     <li class="sidebar-section-label">Pelaksanaan Teknis</li>
                     
                     <!-- Tugas Proposal Teknis (Tim Kerja / PIC Peneliti, Ketua Tim, Superadmin) -->
@@ -1317,26 +1321,15 @@
                     </check>
                     <!-- Petunjuk Operasional (PO) Kegiatan -->
                     <!-- Superadmin: satu menu "Daftar PO" (semua divisi, divisi dipilih lewat filter di halamannya) -->
-                    <check if="{{ @is_superadmin }}">
+                    <check if="{{ @is_superadmin || (@is_tim_kerja && @divisi_tim_kerja == 'pengujian')}}">
                         <li>
                             <a class="sidebar-link {{ @active_menu == 'po_kegiatan' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan" title="Daftar Petunjuk Operasional">
                                 <i class="bi bi-clipboard-check"></i> <span>Daftar PO</span>
                                 <check if="{{ (@jumlah_notif_po_lingkungan + @jumlah_notif_po_selulosa) > 0 }}">
-                                    <span class="badge rounded-pill bg-danger ms-auto">{{ @jumlah_notif_po_lingkungan + @jumlah_notif_po_selulosa }}</span>
+                                    <span class="badge rounded-pill ms-auto sidebar-notif-badge" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff;">{{ @jumlah_notif_po_lingkungan + @jumlah_notif_po_selulosa }}</span>
                                 </check>
                             </a>
                         </li>
-                    </check>
-                    <check if="{{ @SESSION.role == 'ketua_tim' || @SESSION.role == 'tim_kerja' || @SESSION.role == 'superadmin' }}">
-                        <a class="sidebar-link {{ @active_menu == 'po_revisi_ppk' ? 'active' : '' }}" href="{{ @BASE }}/po-revisi-ppk">
-                            <i class="bi bi-clipboard2-check"></i> <span>Revisi PPK BLU</span>
-                            <span id="notifRevisiPpk" class="badge rounded-pill bg-danger ms-auto" style="{{ @jumlah_notif_revisi_ppk > 0 ? '' : 'display:none' }}">{{ @jumlah_notif_revisi_ppk }}</span>
-                        </a>
-                    </check>
-                    <check if="{{ @SESSION.role == 'pejabat' || @SESSION.role == 'superadmin' }}">
-                        <a class="sidebar-link {{ @active_menu == 'po_ppk' ? 'active' : '' }}" href="{{ @BASE }}/po-ppk">
-                            <i class="bi bi-patch-check"></i> <span>Daftar Review PO</span>
-                        </a>
                     </check>
                     <!-- Daftar PO layanan selain OPTI (Sertifikasi dst.) -- sementara khusus Superadmin; role layanan menyusul -->
                     <check if="{{ @is_superadmin }}">
@@ -1346,12 +1339,38 @@
                             </a>
                         </li>
                     </check>
+                    <!-- Tim Kerja Pengujian (role layanan): Daftar PO terkunci ke layanan Pengujian + Review PO Pengujian -->
+                    <check if="{{ @is_tim_pengujian }}">
+                        <li>
+                            <a class="sidebar-link {{ @active_menu == 'po_layanan' ? 'active' : '' }}" href="{{ @BASE }}/petunjuk-operasional" title="Daftar PO Pengujian">
+                                <i class="bi bi-clipboard-check"></i> <span>Daftar PO</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="sidebar-link {{ @active_menu == 'review_po_pengujian' ? 'active' : '' }}" href="{{ @BASE }}/petunjuk-operasional/pengujian/review" title="Review PO Pengujian">
+                                <i class="bi bi-clipboard2-check"></i> <span>Review PO</span>
+                            </a>
+                        </li>
+                    </check>
+                    <!-- Tim Kerja & Ketua Tim Sertifikasi (role layanan): Daftar PO terkunci ke layanan Sertifikasi + Review PO Sertifikasi -->
+                    <check if="{{ @is_role_sertifikasi }}">
+                        <li>
+                            <a class="sidebar-link {{ @active_menu == 'po_layanan' ? 'active' : '' }}" href="{{ @BASE }}/petunjuk-operasional" title="Daftar PO Sertifikasi">
+                                <i class="bi bi-clipboard-check"></i> <span>Daftar PO</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="sidebar-link {{ @active_menu == 'review_po_sertifikasi' ? 'active' : '' }}" href="{{ @BASE }}/petunjuk-operasional/sertifikasi/review" title="Review PO Sertifikasi">
+                                <i class="bi bi-clipboard2-check"></i> <span>Review PO</span>
+                            </a>
+                        </li>
+                    </check>
                     <check if="{{ (@is_ketua_tim && @user_layanan == 'lingkungan') || (@is_tim_kerja && @divisi_tim_kerja == 'lingkungan') }}">
                         <li>
                             <a class="sidebar-link {{ @active_menu == 'po_lingkungan' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?divisi=lingkungan" title="Petunjuk Operasional Lingkungan">
                                 <i class="bi bi-clipboard-check"></i> <span>Daftar PO Lingkungan</span>
                                 <check if="{{ @jumlah_notif_po_lingkungan > 0 }}">
-                                    <span class="badge rounded-pill bg-danger ms-auto">{{ @jumlah_notif_po_lingkungan }}</span>
+                                    <span class="badge rounded-pill ms-auto sidebar-notif-badge" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff;">{{ @jumlah_notif_po_lingkungan }}</span>
                                 </check>
                             </a>
                         </li>
@@ -1361,7 +1380,7 @@
                             <a class="sidebar-link {{ @active_menu == 'po_selulosa' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?divisi=selulosa" title="Petunjuk Operasional Selulosa">
                                 <i class="bi bi-clipboard-check"></i> <span>Daftar PO Selulosa</span>
                                 <check if="{{ @jumlah_notif_po_selulosa > 0 }}">
-                                    <span class="badge rounded-pill bg-danger ms-auto">{{ @jumlah_notif_po_selulosa }}</span>
+                                    <span class="badge rounded-pill bg-danger ms-auto" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff;">{{ @jumlah_notif_po_selulosa }}</span>
                                 </check>
                             </a>
                         </li>
@@ -1370,28 +1389,35 @@
                     <li>
                         <a class="sidebar-link {{ @active_menu == 'daftar_po' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan/daftar" title="Daftar Review PO">
                             <i class="bi bi-clipboard-check"></i> <span>Daftar Review PO</span>
-                            <check if="{{ @jumlah_notif_daftar_po > 0 }}">
-                                <span class="badge rounded-pill bg-danger ms-auto">{{ @jumlah_notif_daftar_po }}</span>
-                            </check>
+                            <span id="notifDaftarPo" class="badge rounded-pill ms-auto sidebar-notif-badge" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff; {{ @jumlah_notif_daftar_po > 0 ? '' : 'display:none' }}">{{ @jumlah_notif_daftar_po }}</span>
                         </a>
                     </li>
                 </check>
-                    <!-- Master Data Tim Pelaksana (per divisi) -->
-                    <check if="{{ @is_superadmin || @is_ketua_lingkungan }}">
+                    <!-- Master Tim Pelaksana PO + Jabatan Pelaksana PO untuk Ketua Tim Layanan (Superadmin sudah punya di bagian Master Data) -->
+                    <check if="{{ (@is_ketua_tim || @is_ketua_sertifikasi) && !@is_superadmin }}">
                     <li>
-                        <a class="sidebar-link {{ @active_menu == 'master_tim_pelaksana_lingkungan' ? 'active' : '' }}" href="{{ @BASE }}/master-tim-pelaksana/lingkungan" title="Tim Pelaksana Lingkungan">
-                            <i class="bi bi-people"></i> <span>Tim Pelaksana Lingkungan</span>
+                        <a class="sidebar-link {{ @active_menu == 'master_tim_pelaksana' ? 'active' : '' }}" href="{{ @BASE }}/master-tim-pelaksana" title="Master Tim Pelaksana PO">
+                            <i class="bi bi-people-fill"></i> <span>Tim Pelaksana PO</span>
                         </a>
                     </li>
-                    </check>
-                    <check if="{{ @is_superadmin || @is_ketua_selulosa }}">
                     <li>
-                        <a class="sidebar-link {{ @active_menu == 'master_tim_pelaksana_selulosa' ? 'active' : '' }}" href="{{ @BASE }}/master-tim-pelaksana/selulosa" title="Tim Pelaksana Selulosa">
-                            <i class="bi bi-people"></i> <span>Tim Pelaksana Selulosa</span>
+                        <a class="sidebar-link {{ @active_menu == 'master_jabatan_pelaksana' ? 'active' : '' }}" href="{{ @BASE }}/master-jabatan-pelaksana" title="Master Jabatan Pelaksana PO">
+                            <i class="bi bi-award"></i> <span>Jabatan Pelaksana PO</span>
                         </a>
                     </li>
                     </check>
 
+                </check>
+
+                <!-- PPK BLU: Daftar Review PO (verifikasi PO setelah Humas dan Tim Mitra) -->
+                <check if="{{ @is_ppk || @is_superadmin }}">
+                    <li class="sidebar-section-label">Verifikasi PO</li>
+                    <li>
+                        <a class="sidebar-link {{ @active_menu == 'po_ppk' ? 'active' : '' }}" href="{{ @BASE }}/po-ppk" title="Daftar Review PO">
+                            <i class="bi bi-patch-check"></i> <span>Daftar Review PO</span>
+                            <span id="notifRevisiPpk" class="badge rounded-pill ms-auto sidebar-notif-badge" style="{{ @jumlah_notif_revisi_ppk > 0 ? '' : 'display:none' }}">{{ @jumlah_notif_revisi_ppk }}</span>
+                        </a>
+                    </li>
                 </check>
 
                 <!-- 2. PELAKSANAAN TEKNIS -->
@@ -1419,6 +1445,12 @@
                             <i class="bi bi-person-badge"></i> <span>Data Pengguna</span>
                         </a>
                     </li>
+                    <check if="{{ @is_superadmin || @is_ketua_tim || @is_tim_kerja }}">
+                        <li><a class="sidebar-link {{ @active_menu == 'master_tim_pelaksana' ? 'active' : '' }}" href="{{ @BASE }}/master-tim-pelaksana" title="Master Tim Pelaksana PO"><i class="bi bi-people-fill"></i> <span>Tim Pelaksana PO</span></a></li>
+                    </check>
+                    <check if="{{ @is_superadmin }}">
+                        <li><a class="sidebar-link {{ @active_menu == 'master_jabatan_pelaksana' ? 'active' : '' }}" href="{{ @BASE }}/master-jabatan-pelaksana" title="Master Jabatan Pelaksana PO"><i class="bi bi-award"></i> <span>Jabatan Pelaksana PO</span></a></li>
+                    </check>
                     <!-- Menu Data Klien dan PIC Peneliti disembunyikan dari sidebar -->
                 </check>
 
@@ -1541,10 +1573,12 @@
                                     <check if="{{ @SESSION.role == 'superadmin' }}">Super Admin</check>
                                     <check if="{{ @SESSION.role == 'ketua_tim_mitra' }}">Ketua Tim Mitra</check>
                                     <check if="{{ @SESSION.role == 'tim_mitra_industri' || @SESSION.role == 'admin_order' || @SESSION.role == 'tim_mitra' }}">Tim Mitra</check>
-                                    <check if="{{ @SESSION.role == 'ketua_tim' }}">Ketua Tim {{ @SESSION.jenis_layanan_opti == 'selulosa' ? 'Selulosa' : (@SESSION.jenis_layanan_opti == 'lingkungan' ? 'Lingkungan' : 'OPTI') }}</check>
+                                    <check if="{{ @SESSION.role == 'ketua_tim' }}">Ketua Tim {{ @SESSION.jenis_layanan_opti == 'selulosa' ? 'Selulosa' : (@SESSION.jenis_layanan_opti == 'lingkungan' ? 'Lingkungan' : (@SESSION.jenis_layanan_opti == 'sertifikasi' ? 'Sertifikasi' : (@SESSION.jenis_layanan_opti == 'pengujian' ? 'Pengujian' : (@SESSION.jenis_layanan_opti == 'kalibrasi' ? 'Kalibrasi' : (@SESSION.jenis_layanan_opti == 'inspeksi' ? 'Inspeksi' : (@SESSION.jenis_layanan_opti == 'pendampingan' ? 'Pendampingan Teknis' : (@SESSION.jenis_layanan_opti == 'profisiensi' ? 'Uji Profisiensi' : 'OPTI'))))))) }}</check>
                                     <check if="{{ @SESSION.role == 'ketua_tim_keuangan' }}">Ketua Tim Keuangan</check>
                                     <check if="{{ @SESSION.role == 'keuangan' }}">Staf Keuangan</check>
                                     <check if="{{ @SESSION.role == 'tim_kerja' }}">Tim Analis / Peneliti</check>
+                                    <check if="{{ @SESSION.role == 'tim_kerja_pengujian' }}">Tim Kerja Pengujian</check>
+                                    <check if="{{ @is_tim_sertifikasi }}">Tim Kerja Sertifikasi</check>
                                     <check if="{{ @SESSION.role == 'admin_kontrak' }}">Admin PKS</check>
                                     <check if="{{ @SESSION.role == 'user' }}">Pegawai Balai (Read-Only)</check>
                                 </div>
@@ -1806,7 +1840,7 @@
                 e.preventDefault();
                 e.stopPropagation();
             }
-            var userRoleName = "{{ @SESSION.role == 'superadmin' ? 'Super Admin' : (@SESSION.role == 'ketua_tim_mitra' ? 'Ketua Tim Mitra' : (@SESSION.role == 'tim_mitra_industri' || @SESSION.role == 'admin_order' || @SESSION.role == 'tim_mitra' ? 'Tim Mitra' : (@SESSION.role == 'ketua_tim' ? 'Ketua Tim OPTI' : (@SESSION.role == 'keuangan' ? 'Bagian Keuangan' : (@SESSION.role == 'tim_kerja' ? 'Tim Kerja / Peneliti' : (@SESSION.role == 'admin_kontrak' ? 'Admin Kontrak / PKS' : (@SESSION.role == 'sekretaris' ? 'Sekretariat' : (@SESSION.role == 'user' ? 'Pegawai Balai (Read-Only)' : 'Pengguna')))))))) }}";
+            var userRoleName = "{{ @SESSION.role == 'superadmin' ? 'Super Admin' : (@SESSION.role == 'ketua_tim_mitra' ? 'Ketua Tim Mitra' : (@SESSION.role == 'tim_mitra_industri' || @SESSION.role == 'admin_order' || @SESSION.role == 'tim_mitra' ? 'Tim Mitra' : (@SESSION.role == 'ketua_tim' ? (@SESSION.jenis_layanan_opti == 'sertifikasi' ? 'Ketua Tim Sertifikasi' : (@SESSION.jenis_layanan_opti == 'pengujian' ? 'Ketua Tim Pengujian' : (@SESSION.jenis_layanan_opti == 'kalibrasi' ? 'Ketua Tim Kalibrasi' : (@SESSION.jenis_layanan_opti == 'inspeksi' ? 'Ketua Tim Inspeksi' : (@SESSION.jenis_layanan_opti == 'pendampingan' ? 'Ketua Tim Pendampingan Teknis' : (@SESSION.jenis_layanan_opti == 'profisiensi' ? 'Ketua Tim Uji Profisiensi' : 'Ketua Tim OPTI')))))) : (@SESSION.role == 'keuangan' ? 'Bagian Keuangan' : (@SESSION.role == 'tim_kerja' ? 'Tim Kerja / Peneliti' : (@SESSION.role == 'tim_kerja_pengujian' ? 'Tim Kerja Pengujian' : (@SESSION.role == 'tim_kerja_sertifikasi' || @SESSION.role == 'tk_sertifikasi' ? 'Tim Kerja Sertifikasi' : (@SESSION.role == 'admin_kontrak' ? 'Admin Kontrak / PKS' : (@SESSION.role == 'sekretaris' ? 'Sekretariat' : (@SESSION.role == 'user' ? 'Pegawai Balai (Read-Only)' : 'Pengguna')))))))))) }}";
 
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
@@ -2957,6 +2991,26 @@
             background: #f0fdfa;
             color: #0f766e !important;
             border: 1px solid #99f6e4;
+        }
+        .role-badge-katim-sertifikasi {
+            background: #eef2ff;
+            color: #3730a3 !important;
+            border: 1px solid #c7d2fe;
+        }
+        .role-badge-tk-sertifikasi {
+            background: #f0f9ff;
+            color: #0369a1 !important;
+            border: 1px solid #bae6fd;
+        }
+        .role-badge-katim-pengujian {
+            background: #fdf4ff;
+            color: #86198f !important;
+            border: 1px solid #f5d0fe;
+        }
+        .role-badge-tk-pengujian {
+            background: #f7fee7;
+            color: #3f6212 !important;
+            border: 1px solid #d9f99d;
         }
         .role-badge-mitra {
             background: #fffbeb;

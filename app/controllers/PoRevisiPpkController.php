@@ -56,7 +56,8 @@ class PoRevisiPpkController extends Controller {
             $f3->error(403, 'Halaman ini hanya untuk Ketua Tim dan Ketua Pelaksana.');
             return;
         }
-        $this->tampilkan($f3, $mode, 'Revisi PPK BLU', 'po_revisi_ppk');
+        // Revisi PPK BLU dibuka dari Daftar Review PO (menu Revisi PPK BLU sudah dihapus), jadi menu yang aktif tetap Daftar Review PO
+        $this->tampilkan($f3, $mode, 'Daftar Review PO', 'daftar_po');
     }
 
     /** GET /po-ppk -- PPK BLU (dan Superadmin) */
@@ -72,17 +73,59 @@ class PoRevisiPpkController extends Controller {
     protected function tampilkan($f3, $mode, $judul, $menu) {
         $errorMessage = null;
         $daftar = [];
+        // Dibuka dari Daftar Review PO (?buka=ID&dari=daftar): daftar penuh tidak terlihat (panel menutup kembali ke Daftar Review PO),
+        // jadi cukup muat PO itu saja, dan rincian + dokumen PO-nya ditanam langsung di halaman supaya panel langsung tampil tanpa "Memuat...".
+        $buka = (int) $f3->get('GET.buka');
+        $langsung = ($mode !== 'ppk' && $buka > 0 && (string) $f3->get('GET.dari') === 'daftar');
         try {
-            $daftar = $this->daftarItems($mode, (int) $this->getUserId(), 0);
+            $daftar = $this->daftarItems($mode, (int) $this->getUserId(), $langsung ? $buka : 0);
         } catch (\Exception $e) {
             $errorMessage = 'Gagal memuat daftar PO: ' . $e->getMessage() . ' (sudah menjalankan migration_po_revisi_ppk.sql?)';
         }
+        $boot = null;
+        if ($langsung && $errorMessage === null && !empty($daftar)) {
+            $boot = $this->bahanBuka($buka);
+        }
+        $f3->set('boot_json', json_encode($boot, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_INVALID_UTF8_SUBSTITUTE) ?: 'null');
         $f3->set('daftar_po_json', json_encode($daftar, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP));
         $f3->set('mode', $mode);
         $f3->set('prefix_api', $mode === 'ppk' ? '/po-ppk' : '/po-revisi-ppk');
         $f3->set('error_message', $errorMessage);
         // Dua halaman, dua file view: PPK BLU memakai validasi_ppk.html, Ketua Tim dan Ketua Pelaksana memakai revisi_ppk.html
         $this->render($mode === 'ppk' ? 'katim_kerja/po-kegiatan/validasi_ppk.html' : 'katim_kerja/po-kegiatan/revisi_ppk.html', $judul, $menu);
+    }
+
+    /**
+     * Bahan panel yang ditanam di halaman: rincian + catatan (sama dengan GET .../@id/detail) dan dokumen PO (sama dengan GET /po-kegiatan/@id/preview).
+     * Null kalau dokumen PO gagal dibuat; halaman lalu mengambilnya lewat AJAX seperti biasa. Hanya dipanggil setelah PO terbukti ada di daftar pengguna.
+     */
+    protected function bahanBuka($id) {
+        list($po, $sisi) = $this->aksesRevisi($id);
+        if (!$this->isSuperadmin()) { $this->tandaiDibaca($po, $sisi); }
+        $detail = $this->paketDetail((int) $po['id'], $sisi);
+        $html = $this->htmlPratinjau((int) $po['id']);
+        if ($html === null) { return null; }
+        return ['id' => (int) $po['id'], 'detail' => $detail, 'preview' => $html];
+    }
+
+    /** Dokumen PO dalam bentuk HTML, dari aksi yang sama dengan modal pratinjau PO. */
+    protected function htmlPratinjau($id) {
+        $awal = ob_get_level();
+        try {
+            $ctl = new \PoKegiatanController();
+            ob_start();
+            $ctl->previewFragment($this->f3, ['id' => $id]);
+            $html = ob_get_clean();
+        } catch (\Throwable $e) {
+            while (ob_get_level() > $awal) { ob_end_clean(); }
+            return null;
+        }
+        // previewFragment mengisi variabel 'po' dan 'order' di hive; bersihkan supaya tidak tercampur dengan view halaman ini
+        $this->f3->clear('po');
+        $this->f3->clear('order');
+        $kode = http_response_code();
+        if ($kode && $kode !== 200) { http_response_code(200); return null; }
+        return (string) $html;
     }
 
     /** GET /po-revisi-ppk/data */
@@ -148,7 +191,7 @@ class PoRevisiPpkController extends Controller {
 
         $this->gantiStatus($po, ['minta', 'katim_kerja'], 'ketupel_kerja');
         $this->pesan($po, $uid, 'katim', 'Ketua Tim', 'mendisposisikan revisi PPK BLU ke Ketua Pelaksana.');
-        $this->kabariKe([(int) $po['ketua_pelaksana_id']], 'Revisi PPK BLU untuk Anda', 'PO ' . $po['nomor_po'] . ' didisposisikan Ketua Tim untuk direvisi sesuai catatan PPK BLU.', '/po-revisi-ppk');
+        $this->kabariKe([(int) $po['ketua_pelaksana_id']], 'Revisi PPK BLU untuk Anda', 'PO ' . $po['nomor_po'] . ' didisposisikan Ketua Tim untuk direvisi sesuai catatan PPK BLU.', '/po-kegiatan/daftar');
         $this->keluarkanJson($this->paketDetail((int) $po['id'], $sisi));
     }
 
@@ -219,7 +262,7 @@ class PoRevisiPpkController extends Controller {
         }
 
         $this->pesan($po, $uid, 'katim', 'Ketua Tim', 'meminta perbaikan lagi: ' . $alasan);
-        $this->kabariKe([(int) $po['ketua_pelaksana_id']], 'Perbaikan lagi diminta', 'PO ' . $po['nomor_po'] . ': ' . mb_substr($alasan, 0, 90, 'UTF-8'), '/po-revisi-ppk');
+        $this->kabariKe([(int) $po['ketua_pelaksana_id']], 'Perbaikan lagi diminta', 'PO ' . $po['nomor_po'] . ': ' . mb_substr($alasan, 0, 90, 'UTF-8'), '/po-kegiatan/daftar');
         $this->keluarkanJson($this->paketDetail((int) $po['id'], $sisi));
     }
 
@@ -249,7 +292,7 @@ class PoRevisiPpkController extends Controller {
         }
 
         $this->pesan($po, $uid, 'pembuat', 'Ketua Pelaksana', 'mengirim revisi PPK BLU ke Ketua Tim.');
-        $this->kabariKe(self::idKatim($this->db, $po['jenis_layanan_opti']), 'Hasil revisi PPK BLU masuk', 'PO ' . $po['nomor_po'] . ' sudah direvisi Ketua Pelaksana, menunggu review Anda.', '/po-revisi-ppk');
+        $this->kabariKe(self::idKatim($this->db, $po['jenis_layanan_opti']), 'Hasil revisi PPK BLU masuk', 'PO ' . $po['nomor_po'] . ' sudah direvisi Ketua Pelaksana, menunggu review Anda.', '/po-kegiatan/daftar');
         $this->keluarkanJson($this->paketDetail((int) $po['id'], $sisi));
     }
 
@@ -313,7 +356,7 @@ class PoRevisiPpkController extends Controller {
         $uid = (int) $this->getUserId();
         list($boleh, $pesan, $konteks) = self::izinEdit($this->db, $poId, (string) $this->getUserRole(), $this->isSuperadmin(), $uid);
         if (!$boleh) { $this->keluarkanJson(['ok' => false, 'pesan' => $pesan], 403); }
-        if ($konteks === '') { $this->keluarkanJson(['ok' => true, 'konteks' => '', 'catatan' => []]); }
+        if ($konteks === '' || $konteks === 'katim') { $this->keluarkanJson(['ok' => true, 'konteks' => $konteks, 'catatan' => []]); }
 
         try {
             if ($konteks === 'ppk') {
@@ -433,7 +476,7 @@ class PoRevisiPpkController extends Controller {
         }
 
         $this->pesan($po, $uid, 'katim', 'PPK BLU', 'meminta revisi (' . $n['draf'] . ' catatan). Menunggu keputusan Ketua Tim.');
-        $this->kabariKe(self::idKatim($this->db, $po['jenis_layanan_opti']), 'PPK BLU meminta revisi', 'PO ' . $po['nomor_po'] . ': ' . $n['draf'] . ' catatan dari PPK BLU. Tentukan siapa yang mengerjakan.', '/po-revisi-ppk');
+        $this->kabariKe(self::idKatim($this->db, $po['jenis_layanan_opti']), 'PPK BLU meminta revisi', 'PO ' . $po['nomor_po'] . ': ' . $n['draf'] . ' catatan dari PPK BLU. Tentukan siapa yang mengerjakan.', '/po-kegiatan/daftar');
         $this->keluarkanJson($this->paketDetail((int) $po['id'], 'ppk'));
     }
 
@@ -478,13 +521,13 @@ class PoRevisiPpkController extends Controller {
 
     /**
      * Siapa boleh mengedit PO sekarang? Dipakai di PoKegiatanController::edit() dan update().
-     * @return array [bool boleh, string pesan, string konteks]  konteks: '' (draf) | 'review' | 'ppk'
+     * @return array [bool boleh, string pesan, string konteks]  konteks: '' (draf) | 'review' | 'ppk' | 'katim' (Ketua Tim mengedit sendiri saat review)
      */
     public static function izinEdit($db, $poId, $role, $superadmin, $userId) {
         $r = null;
         try {
             $rows = $db->exec(
-                "SELECT p.status, p.status_review, p.ppk_status, o.ketua_pelaksana_id
+                "SELECT p.status, p.status_review, p.ppk_status, o.ketua_pelaksana_id, o.jenis_layanan_opti
                    FROM po_kegiatan p JOIN order_layanan o ON o.id = p.order_id WHERE p.id = ?",
                 [1 => (int) $poId]
             );
@@ -492,7 +535,7 @@ class PoRevisiPpkController extends Controller {
         } catch (\Exception $e) {
             try {   // kolom ppk_status belum ada (migration belum jalan)
                 $rows = $db->exec(
-                    "SELECT p.status, p.status_review, NULL AS ppk_status, o.ketua_pelaksana_id
+                    "SELECT p.status, p.status_review, NULL AS ppk_status, o.ketua_pelaksana_id, o.jenis_layanan_opti
                        FROM po_kegiatan p JOIN order_layanan o ON o.id = p.order_id WHERE p.id = ?",
                     [1 => (int) $poId]
                 );
@@ -521,6 +564,15 @@ class PoRevisiPpkController extends Controller {
                 return [false, 'Revisi PPK BLU sedang dikerjakan Ketua Pelaksana pembuat PO.', ''];
             }
             return [false, 'PO sudah disetujui dan dikunci. Perubahan hanya bisa lewat revisi dari PPK BLU, atau minta Ketua Tim membuka kembali.', ''];
+        }
+        if ($sr === 'menunggu_review' || $sr === 'direvisi') {
+            // [BARU] Ketua Tim boleh mengedit sendiri PO yang sedang direview (status review tidak berubah)
+            if ($superadmin) { return [true, '', 'katim']; }
+            if ($role === 'ketua_tim') {
+                $div = isset($_SESSION['jenis_layanan_opti']) ? (string) $_SESSION['jenis_layanan_opti'] : '';
+                if (!in_array($div, ['selulosa', 'lingkungan'], true) || $div === (string) $r['jenis_layanan_opti']) { return [true, '', 'katim']; }
+                return [false, 'PO ini bukan dari divisi Anda.', ''];
+            }
         }
         return [false, 'PO sedang direview Ketua Tim. PO baru bisa diedit setelah Ketua Tim meminta revisi.', ''];
     }
@@ -893,7 +945,7 @@ class PoRevisiPpkController extends Controller {
 
         $sql = "SELECT p.id, p.nomor_po, p.ppk_status, p.ronde_ppk, p.ppk_dibaca_at, p.ppk_minta_at, p.ppk_status_at, p.ppk_alasan, p.validasi_keuangan_at,
                        p.created_at AS dibuat_at, COALESCE(p.dikirim_at, p.updated_at, p.created_at) AS dikirim_at, p.disetujui_at,
-                       " . $ex('verifikasi_humas_at') . " AS humas_ver_at,
+                       " . $ex('verifikasi_humas_at') . " AS humas_ver_at, " . $ex('catatan_tim_mitra') . " AS catatan_tim_mitra,
                        " . ($mitraKol !== '' ? 'p.' . $mitraKol : 'NULL') . " AS mitra_valid_at,
                        COALESCE(NULLIF(p.judul_kegiatan, ''), o.judul_kegiatan) AS judul,
                        o.nomor_order, o.jenis_layanan_opti, o.ketua_pelaksana_id,
@@ -958,6 +1010,8 @@ class PoRevisiPpkController extends Controller {
                 'disetujui_at' => $r['disetujui_at'],
                 'humas_ver_at' => $r['humas_ver_at'],
                 'mitra_valid_at' => $r['mitra_valid_at'],
+                // catatan biasa Tim Mitra saat validasi (bukan revisi); tampil di bawah dokumen PO. Baru terlihat setelah Tim Mitra memvalidasi
+                'catatan_mitra' => (!empty($r['mitra_valid_at']) && isset($r['catatan_tim_mitra'])) ? trim((string) $r['catatan_tim_mitra']) : '',
                 'ppk_valid_at' => $r['validasi_keuangan_at'],
                 'rn_total'    => (int) $r['rn_total'],
                 'rn_selesai'  => (int) $r['rn_selesai'],
@@ -1093,4 +1147,4 @@ class PoRevisiPpkController extends Controller {
         echo json_encode($data, JSON_UNESCAPED_UNICODE);
         exit;
     }
-}
+}

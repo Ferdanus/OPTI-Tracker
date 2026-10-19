@@ -640,6 +640,25 @@ input[type=number] {
 }
 
 /* Live Preview Split Layout & Container */
+/* Informasi Utama PO: susunan kolom mengikuti lebar kartu (bukan lebar layar), jadi rapi di Split View maupun Form Saja */
+.po-info-wrap { container-type: inline-size; container-name: poinfo; }
+.po-info-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.po-info-grid > .po-info-judul { grid-column: 1 / -1; }
+.po-info-grid > div { min-width: 0; }
+@container poinfo (min-width: 960px) {
+    .po-info-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2fr); }
+    .po-info-grid > .po-info-judul { grid-column: auto; }
+}
+
+/* Bar tombol bawah form: satu baris (Kembali kiri, Simpan Draft + Kirim kanan), turun baris hanya kalau benar-benar sempit */
+.po-sticky-bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .6rem 1rem; margin-top: 1.25rem; }
+.po-sticky-bar > div { display: flex; align-items: center; gap: .5rem; flex-wrap: nowrap; }
+.po-sticky-bar .btn { white-space: nowrap; }
+@media (max-width: 575.98px) {
+    .po-sticky-bar > div { flex-wrap: wrap; width: 100%; }
+    .po-sticky-bar > div .btn { flex: 1 1 auto; justify-content: center; }
+}
+
 .po-split-layout {
     position: relative;
     transition: all 0.25s ease;
@@ -748,7 +767,7 @@ input[type=number] {
             </p>
         </div>
     </div>
-    <div class="d-flex align-items-center gap-2">
+    <div class="d-flex align-items-center gap-2"> 
         <!-- Mode Switcher -->
         <div class="btn-group p-1 bg-light border rounded-pill shadow-xs po-view-switcher" role="group" aria-label="Mode Tampilan">
             <button type="button" class="btn btn-sm rounded-pill px-3 py-1 fw-semibold po-mode-btn active" id="btnModeSplit" onclick="switchPoViewMode('split')" title="Tampilan berdampingan form dan live preview PDF">
@@ -825,8 +844,9 @@ input[type=number] {
             </div>
         </div>
         <div class="po-card-body">
-            <div class="row g-3">
-                <div class="col-md-3">
+            <div class="po-info-wrap">
+            <div class="po-info-grid">
+                <div class="po-info-nomor">
                     <div class="d-flex align-items-center mb-2" style="min-height: 32px;">
                         <label class="po-label mb-0">Nomor PO</label>
                     </div>
@@ -834,24 +854,46 @@ input[type=number] {
                         <div class="form-control po-control bg-light fw-semibold text-dark font-monospace" style="cursor:not-allowed;">{{ @po.nomor_po }}</div>
                     </check>
                     <check if="{{ !@po || !@po.nomor_po }}">
-                        <div class="form-control po-control bg-light text-muted fst-italic" style="cursor:not-allowed;">Otomatis saat disimpan</div>
+                        <div class="form-control po-control bg-light text-muted fst-italic" style="cursor:not-allowed;">Diberikan saat PO dikirim</div>
                     </check>
-                    <div class="form-text">Digenerate otomatis &amp; terkunci, gak bisa diubah manual.</div>
+                    <div class="form-text">Dibuat otomatis &amp; terkunci saat PO dikirim, tidak bisa diubah manual.</div>
                 </div>
-                <div class="col-md-3">
+                <div class="po-info-tgl">
                     <div class="d-flex align-items-center mb-2" style="min-height: 32px;">
-                        <label class="po-label mb-0">Tanggal Surat PO <span class="text-danger">*</span></label>
+                        <label class="po-label mb-0">Tanggal PO</label>
                     </div>
-                    <input type="date" name="tanggal_po" id="inputTanggalPo" class="form-control po-control" min="{{ @tahun_po_wajib }}-01-01" max="{{ @tahun_po_wajib }}-12-31" data-tahun-wajib="{{ @tahun_po_wajib }}" value="{{ @po && @po.tanggal_po ? date('Y-m-d', strtotime(@po.tanggal_po)) : date('Y-m-d') }}" required data-wajib="1">
+                    <check if="{{ @po && @po.nomor_po && @po.tanggal_po }}">
+                        <div class="form-control po-control bg-light fw-semibold text-dark" style="cursor:not-allowed;">{{ date('d/m/Y', strtotime(@po.tanggal_po)) }}</div>
+                    </check>
+                    <check if="{{ !@po || !@po.nomor_po || !@po.tanggal_po }}">
+                        <div class="form-control po-control bg-light text-muted fst-italic" style="cursor:not-allowed;">Mengikuti tanggal PO dikirim</div>
+                    </check>
+                    <check if="{{ @po && @po.created_at }}">
+                        <div class="form-text">Dibuat {{ date('d/m/Y', strtotime(@po.created_at)) }}</div>
+                    </check>
                 </div>
-                <div class="col-md-6">
+                <div class="po-info-judul">
                     <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2" style="min-height: 32px;">
                         <label class="po-label mb-0">Judul Kegiatan <span class="text-danger">*</span></label>
-                        <check if="{{ @surat_masuk_terkait }}">
+                        <check if="{{ @proposal_terkait }}">
                             <div class="d-flex align-items-center gap-2">
                                 <span id="badgeJudulSuratMasuk" class="badge rounded-pill d-none" style="font-size: 0.75rem; padding: 0.35rem 0.75rem;"></span>
                                 <button type="button"
-                                    class="btn btn-outline-primary btn-sm px-2.5 py-1 rounded-pill shadow-xs d-inline-flex align-items-center gap-1.5 btn-preview-pdf"
+                                    class="btn btn-outline-primary btn-sm text-nowrap px-2.5 py-1 rounded-pill shadow-xs d-inline-flex align-items-center gap-1.5 btn-preview-pdf"
+                                    style="font-size: 0.75rem; font-weight: 600;"
+                                    data-preview-pdf="{{ @proposal_terkait.url }}"
+                                    data-title="Berkas Proposal"
+                                    data-subtitle="{{ @order.nomor_order }}"
+                                    title="Buka Proposal">
+                                    <i class="bi bi-file-earmark-pdf text-danger"></i> <span>Lihat Proposal</span>
+                                </button>
+                            </div>
+                        </check>
+                        <check if="{{ !@proposal_terkait && @surat_masuk_terkait }}">
+                            <div class="d-flex align-items-center gap-2">
+                                <span id="badgeJudulSuratMasuk" class="badge rounded-pill d-none" style="font-size: 0.75rem; padding: 0.35rem 0.75rem;"></span>
+                                <button type="button"
+                                    class="btn btn-outline-primary btn-sm text-nowrap px-2.5 py-1 rounded-pill shadow-xs d-inline-flex align-items-center gap-1.5 btn-preview-pdf"
                                     style="font-size: 0.75rem; font-weight: 600;"
                                     data-preview-pdf="{{ @BASE }}/surat-masuk/{{ @order.id_surat_masuk }}/pdf"
                                     data-title="Berkas Surat Masuk"
@@ -862,8 +904,9 @@ input[type=number] {
                             </div>
                         </check>
                     </div>
-                    <input type="text" name="judul_kegiatan" id="inputJudulKegiatan" class="form-control po-control" value="{{ @po ? @po.judul_kegiatan : @order.judul_kegiatan }}" data-judul-asli-surat="{{ @surat_masuk_terkait.perihal }}" required data-wajib="1" placeholder="Masukkan judul kegiatan operasional">
+                    <input type="text" name="judul_kegiatan" id="inputJudulKegiatan" class="form-control po-control" value="{{ @judul_form_awal }}" data-judul-asli-surat="{{ @judul_asli_form }}" data-sumber-judul="{{ @sumber_judul_form }}" required data-wajib="1" placeholder="Masukkan judul kegiatan operasional">
                 </div>
+            </div>
             </div>
         </div>
     </div>
@@ -1064,7 +1107,12 @@ input[type=number] {
         </div>
         <div class="po-card-body">
             <div class="mb-3">
-                <label class="po-label">Penjelasan Ruang Lingkup <span class="text-muted fw-normal text-none">(opsional)</span></label>
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+                    <label class="po-label mb-0">Penjelasan Ruang Lingkup <span class="text-muted fw-normal text-none">(opsional)</span></label>
+                    <check if="{{ @ruang_lingkup_proposal }}">
+                        <span id="badgeRuangLingkupProposal" class="badge rounded-pill d-none" data-rl-proposal="{{ @ruang_lingkup_proposal }}" style="font-size: 0.75rem; padding: 0.35rem 0.75rem;"></span>
+                    </check>
+                </div>
                 <div class="po-editor-wrap">
                     <div class="po-editor-toolbar d-flex align-items-center justify-content-between flex-wrap">
                         <div class="d-flex align-items-center flex-wrap gap-1">
@@ -1612,6 +1660,25 @@ input[type=number] {
         </div>
     </div>
 
+    <!-- ======================================================== -->
+    <!-- 7. PENANDATANGANAN -->
+    <!-- ======================================================== -->
+    <include href="petunjuk_operasional/_penandatangan.html" />
+    <div class="po-card" id="poCardTtd">
+        <div class="po-card-header">
+            <div class="d-flex align-items-center">
+                <span class="po-step-badge">7</span>
+                <div>
+                    <h6 class="m-0 fw-bold text-dark">Penandatanganan</h6>
+                    <span class="text-muted small">Pilih pejabat dari master penandatangan (sama dengan Surat Penawaran)</span>
+                </div>
+            </div>
+        </div>
+        <div class="po-card-body">
+            <div id="ttdHost"></div>
+        </div>
+    </div>
+
     <!-- Sticky Bottom Action Bar -->
     <div class="po-sticky-bar">
         <div class="d-flex align-items-center gap-2">
@@ -1811,10 +1878,9 @@ function rupiah(n) { return 'Rp ' + (Math.round(n) || 0).toLocaleString('id-ID')
 var poData = {{ @po_json | raw }};
 var daftarPegawai = {{ json_encode(@daftar_pegawai ?: []) }};
 /* [BARU] Data Master Tim Pelaksana (per divisi) -- dipakai buat ngisi dropdown Nama
-   di bagian Tim Pelaksana, plus auto-isi Tugas/Tanggung Jawab begitu nama dipilih. */
+   di bagian Tim Pelaksana. Jabatan/tugas dipilih sendiri dari Master Jabatan Pelaksana. */
 var daftarMasterPelaksana = {{ @daftar_master_pelaksana_json | raw }};
-var petaTugasPelaksana = {};
-(daftarMasterPelaksana || []).forEach(function (p) { petaTugasPelaksana[String(p.nama)] = p.tugas_tanggung_jawab; });
+var daftarJabatanPelaksana = {{ @daftar_jabatan_pelaksana_json | raw }};
 var estimasiBiayaAwal = {{ @order.estimasi_biaya ?: 0 }};
 var divisiOrder = {{ json_encode(@order.jenis_layanan_opti ?: '') }};
 // [BARU] RAB berjenjang (Kegiatan -> Lokasi/Kelompok -> Item) dipakai buat lingkungan DAN
@@ -3637,13 +3703,12 @@ function hitungKebutuhanLive() {
 
 
 /* ============================================================ */
-/* 4. TIM PELAKSANA (dropdown dari Data Master Tim Pelaksana per   */
-/*    divisi, searchable via Tom Select; auto-isi Tugas/Tanggung  */
-/*    Jawab begitu nama dipilih)                                  */
+/* 4. TIM PELAKSANA (dropdown nama dari Data Master Tim Pelaksana  */
+/*    per divisi; jabatan = select dari Master Jabatan Pelaksana;  */
+/*    keduanya searchable via Tom Select, sama seperti Pengujian)  */
 /* ============================================================ */
 /* [BARU] Sumber nama buat dropdown: utamakan Data Master Tim Pelaksana
-   divisi ini (nyambung ke petaTugasPelaksana buat auto-isi tugas); kalau
-   master-nya masih kosong (belum ada yang didaftarin di divisi ini),
+   divisi ini; kalau master-nya masih kosong (belum ada yang didaftarin di divisi ini),
    jatuh ke daftar pegawai lama biar tetep bisa milih nama. */
 function sumberNamaTimPelaksana() {
     return (daftarMasterPelaksana && daftarMasterPelaksana.length)
@@ -3651,30 +3716,69 @@ function sumberNamaTimPelaksana() {
         : daftarPegawai.map(function (p) { return p.nama_user; });
 }
 
-function buildSelectPegawai(selectedNama) {
-    var select = document.createElement('select');
-    select.name = 'tp_nama[]';
-    select.className = 'form-select form-select-sm';
-
-    var optEmpty = document.createElement('option');
-    optEmpty.value = ''; optEmpty.textContent = '-- Pilih Nama --';
-    select.appendChild(optEmpty);
-
-    var daftarNama = sumberNamaTimPelaksana();
-    // Data PO lama/edit yang namanya udah gak ada di daftar master (misal belum sempat
-    // didaftarin, atau dulu diisi manual) tetep dimunculin biar datanya gak ilang.
-    if (selectedNama && daftarNama.indexOf(selectedNama) === -1) {
-        daftarNama = [selectedNama].concat(daftarNama);
+/* Nama = select dari Data Master Tim Pelaksana (nama yang sudah dipilih di baris lain tidak muncul lagi);
+   Peran / Jabatan = select dari Data Master Jabatan Pelaksana PO. Sama seperti form PO Pengujian. */
+var sedangSegarkanNama = false;
+function segarkanPilihanNama() {
+    if (sedangSegarkanNama) { return; }
+    sedangSegarkanNama = true;
+    try {
+        var sumber = sumberNamaTimPelaksana();
+        var semua = Array.prototype.slice.call(document.querySelectorAll('#bodyTim [name="tp_nama[]"]'));
+        semua.forEach(function (sel) {
+            var cur = sel.value || '';
+            var dipakaiLain = {};
+            semua.forEach(function (o) { if (o !== sel && o.value) { dipakaiLain[o.value] = 1; } });
+            var daftar = sumber.filter(function (n) { return !dipakaiLain[n] || n === cur; });
+            if (cur && daftar.indexOf(cur) === -1) { daftar.unshift(cur); }   // nama lama di luar master tetap tampil
+            var sig = JSON.stringify(daftar);
+            if (sel._sigNama === sig) { return; }
+            sel._sigNama = sig;
+            if (sel.tomselect) { sel.tomselect.destroy(); }
+            sel.innerHTML = '';
+            var kosong = document.createElement('option');
+            kosong.value = ''; kosong.textContent = '-- Pilih Nama --';
+            sel.appendChild(kosong);
+            daftar.forEach(function (n) {
+                var o = document.createElement('option');
+                o.value = n; o.textContent = n;
+                sel.appendChild(o);
+            });
+            sel.value = cur;
+            pasangTomSelect(sel, 'Ketik untuk mencari nama...');
+        });
+    } finally {
+        sedangSegarkanNama = false;
     }
+}
 
-    daftarNama.forEach(function (nama) {
-        var opt = document.createElement('option');
-        opt.value = nama;
-        opt.textContent = nama;
-        if (selectedNama && nama === selectedNama) opt.selected = true;
-        select.appendChild(opt);
+function perbaruiDaftarNama() {
+    // ditunda sedikit: pilihan baris lain dibangun ulang setelah dropdown yang baru dipakai selesai menutup
+    setTimeout(segarkanPilihanNama, 0);
+}
+
+// Select dengan pilihan dari master. Nilai pada PO lama yang tidak ada di master tetap ditampilkan (data tidak hilang).
+function buatSelectPilihan(nama, sumber, terpilih, teksKosong) {
+    var select = document.createElement('select');
+    select.name = nama;
+    select.className = 'form-select form-select-sm';
+    var kosong = document.createElement('option');
+    kosong.value = ''; kosong.textContent = teksKosong;
+    select.appendChild(kosong);
+    var daftar = (sumber || []).slice();
+    if (terpilih && daftar.indexOf(terpilih) === -1) { daftar.unshift(terpilih); }
+    daftar.forEach(function (n) {
+        var o = document.createElement('option');
+        o.value = n; o.textContent = n;
+        if (terpilih && n === terpilih) { o.selected = true; }
+        select.appendChild(o);
     });
     return select;
+}
+
+function pasangTomSelect(select, placeholder) {
+    if (typeof TomSelect !== 'function') { select.className = 'form-select form-select-sm'; return; }
+    new TomSelect(select, { create: false, sortField: { field: '$order' }, placeholder: placeholder, dropdownParent: 'body' });
 }
 
 function tambahBarisTim(data) {
@@ -3682,16 +3786,11 @@ function tambahBarisTim(data) {
     var tr = document.createElement('tr');
 
     var tdNama = document.createElement('td');
-    var select = buildSelectPegawai(data.nama);
-    tdNama.appendChild(select);
+    var inNama = buatSelectPilihan('tp_nama[]', sumberNamaTimPelaksana(), data.nama || '', '-- Pilih Nama --');
+    tdNama.appendChild(inNama);
 
     var tdTugas = document.createElement('td');
-    var inTugas = document.createElement('input');
-    inTugas.type = 'text'; inTugas.name = 'tp_tugas[]'; inTugas.className = 'form-control form-control-sm';
-    inTugas.placeholder = 'isi tugas / tanggung jawab';
-    // [BARU] Kalau belum ada tugas tersimpan (bukan lagi edit PO lama), auto-isi dari
-    // Data Master Tim Pelaksana berdasarkan nama yang lagi kepilih.
-    inTugas.value = data.tugas || petaTugasPelaksana[data.nama] || '';
+    var inTugas = buatSelectPilihan('tp_tugas[]', daftarJabatanPelaksana, data.tugas || '', '-- Pilih Peran --');
     tdTugas.appendChild(inTugas);
 
     var tdUraian = document.createElement('td');
@@ -3700,32 +3799,25 @@ function tambahBarisTim(data) {
     inUraian.placeholder = 'Jelaskan tugas/tanggung jawab yang akan dilakukan'; inUraian.value = data.uraian_tugas || '';
     tdUraian.appendChild(inUraian);
 
+    inNama.addEventListener('change', perbaruiDaftarNama);
+
     var tdHapus = document.createElement('td');
     var btnHapus = document.createElement('button');
     btnHapus.type = 'button'; btnHapus.className = 'btn btn-sm btn-outline-danger';
     btnHapus.innerHTML = '<i class="bi bi-trash"></i>';
     btnHapus.addEventListener('click', function () {
-        if (select.tomselect) select.tomselect.destroy();
-        tr.remove();
+        if (inNama.tomselect) { inNama.tomselect.destroy(); }
+        if (inTugas.tomselect) { inTugas.tomselect.destroy(); }
+        tr.remove(); perbaruiDaftarNama();
+        if (typeof window.triggerLivePreviewRefresh === 'function') window.triggerLivePreviewRefresh();
     });
     tdHapus.appendChild(btnHapus);
 
     tr.appendChild(tdNama); tr.appendChild(tdTugas); tr.appendChild(tdUraian); tr.appendChild(tdHapus);
     document.getElementById('bodyTim').appendChild(tr);
-
-    var tomSelectTim = new TomSelect(select, {
-        create: false,
-        sortField: { field: 'text', direction: 'asc' },
-        placeholder: 'Ketik untuk mencari nama...',
-        dropdownParent: 'body'
-    });
-    // [BARU] Begitu nama dipilih dari Data Master, Tugas/Tanggung Jawab otomatis keisi --
-    // cuma kalau field-nya masih kosong, biar gak nimpa yang udah diisi/diubah manual.
-    tomSelectTim.on('change', function (value) {
-        if (value && petaTugasPelaksana.hasOwnProperty(value) && !inTugas.value.trim()) {
-            inTugas.value = petaTugasPelaksana[value];
-        }
-    });
+    pasangTomSelect(inNama, 'Ketik untuk mencari nama...');
+    pasangTomSelect(inTugas, 'Pilih peran...');
+    perbaruiDaftarNama();
 }
 
 /* ============================================================ */
@@ -5323,6 +5415,7 @@ document.addEventListener('DOMContentLoaded', function () {
         var badge = document.getElementById('badgeJudulSuratMasuk');
         if (!inp || !badge) return;
         var judulAsli = (inp.getAttribute('data-judul-asli-surat') || '').trim();
+        var sumber = inp.getAttribute('data-sumber-judul') || 'Surat Masuk';
         if (!judulAsli) return;
 
         function normalisasiJudul(s) {
@@ -5332,14 +5425,45 @@ document.addEventListener('DOMContentLoaded', function () {
             badge.classList.remove('d-none');
             if (normalisasiJudul(inp.value) === normalisasiJudul(judulAsli)) {
                 badge.className = 'badge rounded-pill bg-success-subtle text-success border border-success-subtle d-inline-flex align-items-center gap-1';
-                badge.innerHTML = '<i class="bi bi-check-circle"></i> Sesuai Surat Masuk';
+                badge.innerHTML = '<i class="bi bi-check-circle"></i> Sesuai ' + sumber;
             } else {
                 badge.className = 'badge rounded-pill bg-warning-subtle text-warning-emphasis border border-warning-subtle d-inline-flex align-items-center gap-1';
-                badge.innerHTML = '<i class="bi bi-pencil-square"></i> Sudah Diubah dari Surat Masuk';
+                badge.innerHTML = '<i class="bi bi-pencil-square"></i> Sudah Diubah dari ' + sumber;
             }
         }
         cekJudulSuratMasuk();
         inp.addEventListener('input', cekJudulSuratMasuk);
+    })();
+
+    // [BARU] Penanda Penjelasan Ruang Lingkup: masih sama dengan proposal atau sudah diubah (hanya badge, tanpa tombol)
+    (function () {
+        var badge = document.getElementById('badgeRuangLingkupProposal');
+        var ta = document.getElementById('ruangLingkupDeskripsi');
+        if (!badge || !ta) return;
+        var asli = badge.getAttribute('data-rl-proposal') || '';
+        if (!asli.trim()) return;
+
+        function teksDari(val) {
+            var tmp = document.createElement('div');
+            tmp.innerHTML = markdownOrTextToHtml(val || '');
+            return (tmp.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+        }
+        var teksAsli = teksDari(asli);
+        function cekRuangLingkupProposal() {
+            badge.classList.remove('d-none');
+            if (teksDari(ta.value) === teksAsli) {
+                badge.className = 'badge rounded-pill bg-success-subtle text-success border border-success-subtle d-inline-flex align-items-center gap-1';
+                badge.innerHTML = '<i class="bi bi-check-circle"></i> Sesuai Proposal';
+            } else {
+                badge.className = 'badge rounded-pill bg-warning-subtle text-warning-emphasis border border-warning-subtle d-inline-flex align-items-center gap-1';
+                badge.innerHTML = '<i class="bi bi-pencil-square"></i> Sudah Diubah dari Proposal';
+            }
+            badge.style.fontSize = '0.75rem';
+            badge.style.padding = '0.35rem 0.75rem';
+        }
+        window.isiRuangLingkupDariProposal = function () { return asli; };
+        cekRuangLingkupProposal();
+        ta.addEventListener('input', cekRuangLingkupProposal);
     })();
 
     ['dasarNomorUrut', 'dasarBulanRomawi', 'dasarTahun', 'dasarTanggal', 'dasarTentang'].forEach(function (id) {
@@ -5576,6 +5700,12 @@ document.addEventListener('DOMContentLoaded', function () {
         // Baru: satu baris kosong tiap bagian
         if (document.getElementById('bodyRuangLingkup')) tambahBarisRuangLingkup();
         if (document.getElementById('bodyBahanKimia')) tambahBarisBahanKimia();
+        // PO Selulosa baru: Penjelasan Ruang Lingkup langsung terisi dari proposal
+        if (typeof window.isiRuangLingkupDariProposal === 'function') {
+            var taRLBaru = document.getElementById('ruangLingkupDeskripsi');
+            var wrapRLBaru = taRLBaru ? taRLBaru.closest('.po-editor-wrap') : null;
+            if (wrapRLBaru && wrapRLBaru.setEditorValue) { wrapRLBaru.setEditorValue(window.isiRuangLingkupDariProposal()); }
+        }
         renderRuangLingkupPreview();
         tambahBarisTim();
         tambahItemPenerimaan({ nama: 'Nilai Kontrak', nominal: estimasiBiayaAwal });
@@ -5592,6 +5722,31 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     hitungRabLive();
+
+    // ---- Penandatanganan: pilih 3 pejabat dari master (komponen bersama PoTtd) ----
+    var ttdState = PoTtd.baru(poData ? safeJsonParse(poData.ttd_json, null) : null);
+    var ttdUi = PoTtd.mount(document.getElementById('ttdHost'), ttdState, {
+        kota: true,
+        bulanTahun: function () {
+            var tgl = (poData && poData.tanggal_po && poData.nomor_po) ? String(poData.tanggal_po).slice(0, 10) : formatYmd(new Date());
+            var m = /^(\d{4})-(\d{2})-\d{2}$/.exec(tgl);
+            var bln = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+            return m ? (bln[parseInt(m[2], 10)] || '') + ' ' + m[1] : '';
+        },
+        ket_ketua: 'Ketua Tim Kerja'
+    });
+    function validasiTtd() {
+        var host = document.getElementById('ttdHost');
+        var kurang = PoTtd.kekurangan(ttdState);
+        var nx = host.nextElementSibling;
+        var msg = (nx && nx.classList && nx.classList.contains('wajib-error-msg')) ? nx : null;
+        if (!kurang.length) { if (msg) msg.classList.remove('show'); return []; }
+        if (!msg) { msg = document.createElement('div'); msg.className = 'wajib-error-msg'; host.insertAdjacentElement('afterend', msg); }
+        msg.textContent = kurang.join('; ') + '.';
+        msg.classList.add('show');
+        ttdUi.tandaiKurang();
+        return [host];
+    }
 
     // ---- Tahun Tanggal Surat PO harus sesuai tahun berjalan (nomor urut PO reset tiap tahun) ----
     var inputTglPo = document.getElementById('inputTanggalPo');
@@ -5643,7 +5798,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!cekTahunPo()) { return; }
 
             // Cek validasi DULU sebelum apa-apa -- overlay loading cuma boleh nyala kalau ini lolos
-            var invalidFields = validasiFieldWajib();
+            var invalidFields = validasiFieldWajib().concat(validasiTtd());
             if (invalidFields.length > 0) {
                 invalidFields[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
                 invalidFields[0].focus();
@@ -6120,6 +6275,15 @@ setTimeout(function () {
         if (bk) { bk.innerHTML = '<i class="bi bi-save me-1"></i> Simpan perubahan'; }
     
         var bar = document.getElementById('rvBar'), list = document.getElementById('rvList'), data = [];
+        // Ketua Tim mengedit sendiri saat review: tidak ada catatan untuk ditandai, cukup pita info
+        if (KONTEKS === 'katim') {
+            document.getElementById('rvJudul').textContent = 'Anda mengedit PO ini sebagai Ketua Tim';
+            document.getElementById('rvHit').textContent = 'Status review tidak berubah. Setelah disimpan, Anda kembali ke Daftar Review PO untuk menyetujui atau meminta revisi.';
+            document.getElementById('rvTog').style.display = 'none';
+            document.querySelector('.rv-prog').style.display = 'none';
+            bar.hidden = false;
+            return;
+        }
         var URL_AKSI = KONTEKS === 'ppk' ? BASE + '/po-revisi-ppk/' + PO_ID + '/catatan/' : BASE + '/po-kegiatan/' + PO_ID + '/catatan/';
         var LABEL = { dasar: 'Dasar', tujuan: 'Tujuan', lingkup: 'Ruang Lingkup', alat: 'Alat dan Bahan', metoda: 'Metoda', alamat: 'Alamat', tim: 'Tim Pelaksana', rab: 'RAB', jadwal: 'Jadwal' };
         var kartu = {};

@@ -16,7 +16,7 @@ namespace petunjuk_operasional;
  *        - order_id = id_arsip_sertifikasi
  *        - layanan  = 'sertifikasi' (otomatis; PO OPTI diisi 'opti-lingkungan'/'opti-selulosa')
  *        - nomor_po / id_nomor_urut = dari tabel po_nomor_urut, algoritma & format SAMA dengan PO OPTI
- *          ("N/PO/BBSPJIS/ROMAWI/TAHUN"), diterbitkan SEKALI saat PO pertama kali disimpan
+ *          ("N/PO/BBSPJIS/ROMAWI/TAHUN"), diterbitkan SEKALI saat PO DIKIRIM (bulan/tahun = tanggal kirim WIB; draft belum bernomor)
  *        - isi form dipecah ke kolom-kolom po_kegiatan seperti PO OPTI (dasar, tujuan, ruang_lingkup, alamat,
  *          tim_pelaksana, rab, jadwal) + kolom khusus sertifikasi (jenis, nama_perusahaan, no_penawaran,
  *          tanggal_penawaran, alamat_bagian, alamat_tampil); isian kosong disimpan NULL (lihat PoSchema::kolomDariForm)
@@ -150,6 +150,110 @@ class PoSertifikasiController extends \Controller {
         return $dasar . ' telah lunas' . ($tgl !== '' ? ' pada tanggal ' . $tgl : '');
     }
 
+    /** Kolom sebuah tabel (nama huruf kecil => field/type/key); [] bila tabel tidak ada. */
+    protected function kolomTabel($dbName, $tabel) {
+        static $cache = [];
+        $k = $dbName . '.' . $tabel;
+        if (!isset($cache[$k])) {
+            $out = [];
+            try {
+                foreach ((array) $this->db->exec("SHOW COLUMNS FROM `{$dbName}`.`{$tabel}`") as $c) {
+                    $out[strtolower((string) $c['Field'])] = ['field' => (string) $c['Field'], 'type' => strtolower((string) $c['Type']), 'key' => (string) $c['Key']];
+                }
+            } catch (\Throwable $e) {
+                $out = [];
+            }
+            $cache[$k] = $out;
+        }
+        return $cache[$k];
+    }
+
+    /**
+     * Teks (nama) dari tabel master untuk satu id. Kolom id = kunci utama master (atau kolom bernama sama dengan
+     * kolom FK di order, atau 'id'); kolom teks dipilih otomatis (nama/jenis/kegiatan/... lalu kolom teks pertama).
+     * Gagal/tidak ketemu -> '' (tampilan jatuh ke id).
+     */
+    protected function labelMaster($dbName, $tabel, $kolomFk, $id) {
+        $kol = $this->kolomTabel($dbName, $tabel);
+        if (!$kol || $id === '' || $id === null) {
+            return '';
+        }
+        $pk = '';
+        foreach ($kol as $c) {
+            if ($c['key'] === 'PRI') { $pk = $c['field']; break; }
+        }
+        if ($pk === '') {
+            $pk = isset($kol[strtolower($kolomFk)]) ? $kol[strtolower($kolomFk)]['field'] : (isset($kol['id']) ? $kol['id']['field'] : '');
+        }
+        if ($pk === '') {
+            return '';
+        }
+        $teks = [];
+        foreach ($kol as $c) {
+            $nm = strtolower($c['field']);
+            if ($c['field'] === $pk || $nm === 'id' || strpos($nm, 'id_') === 0) { continue; }
+            if (preg_match('/^(var)?char|text/', $c['type']) && !preg_match('/(created|updated|dibuat|diubah|status|aktif|password)/i', $c['field'])) {
+                $teks[] = $c['field'];
+            }
+        }
+        if (!$teks) {
+            return '';
+        }
+        $pilih = $teks[0];
+        foreach ($teks as $t) {
+            if (preg_match('/^(nama|nm|jenis|kegiatan|ws|label|uraian|judul)/i', $t)) { $pilih = $t; break; }
+        }
+        try {
+            $r = $this->db->exec("SELECT `{$pilih}` AS teks FROM `{$dbName}`.`{$tabel}` WHERE `{$pk}` = ? LIMIT 1", [1 => $id]);
+            return trim((string) ($r[0]['teks'] ?? ''));
+        } catch (\Throwable $e) {
+            error_log('[PO Sertifikasi] gagal baca ' . $tabel . ': ' . $e->getMessage());
+            return '';
+        }
+    }
+
+    /**
+     * Informasi tambahan order untuk kartu "Informasi Order": tanggal pendaftaran + jenis sertifikasi,
+     * kegiatan, jenis WS (nama dari tabel master). Kolom yang belum ada di tb_arsip_sertifikasi dilewati
+     * supaya halaman tidak error. Hasil digabung ke array order dari petakanOrder().
+     */
+    protected function lengkapiInfoOrder(array $order) {
+        $order += ['tanggal_pendaftaran' => '', 'jenis_sertifikasi' => '', 'kegiatan' => '', 'jenis_ws' => ''];
+        if (empty($order['id'])) {
+            return $order;
+        }
+        try {
+            $this->ensureDatabaseSertifikasi();
+            $dbName = $this->namaDbSertifikasi();
+            $kol = $this->kolomTabel($dbName, 'tb_arsip_sertifikasi');
+            $ambil = [];
+            foreach (['tanggal_pendaftaran', 'id_jenis_sertifikasi', 'id_kegiatan', 'id_jenis_ws'] as $c) {
+                if (isset($kol[$c])) { $ambil[] = '`' . $kol[$c]['field'] . '`'; }
+            }
+            if (!$ambil) {
+                return $order;
+            }
+            $r = $this->db->exec("SELECT " . implode(', ', $ambil) . " FROM `{$dbName}`.`tb_arsip_sertifikasi` WHERE id_arsip_sertifikasi = ? LIMIT 1", [1 => (int) $order['id']]);
+            $r = array_change_key_case($r[0] ?? [], CASE_LOWER);
+            $tgl = self::tanggalValid($r['tanggal_pendaftaran'] ?? '');
+            $order['tanggal_pendaftaran'] = $tgl !== '' ? date('d/m/Y', strtotime($tgl)) : '';
+            $map = [
+                'jenis_sertifikasi' => ['id_jenis_sertifikasi', 'mst_jenis_sertifikasi'],
+                'kegiatan'          => ['id_kegiatan', 'mst_kegiatan_sertifikasi'],
+                'jenis_ws'          => ['id_jenis_ws', 'mst_jenis_ws_sertifikasi'],
+            ];
+            foreach ($map as $key => $m) {
+                $id = $r[$m[0]] ?? null;
+                if ($id === null || $id === '' || (string) $id === '0') { continue; }
+                $nama = $this->labelMaster($dbName, $m[1], $m[0], $id);
+                $order[$key] = $nama !== '' ? $nama : ('#' . $id);
+            }
+        } catch (\Throwable $e) {
+            error_log('[PO Sertifikasi] gagal baca info order: ' . $e->getMessage());
+        }
+        return $order;
+    }
+
     protected function petakanOrder(array $r) {
         $nomor = trim((string) ($r['nomor_order'] ?? ''));
         if ($nomor === '') {
@@ -163,6 +267,7 @@ class PoSertifikasiController extends \Controller {
         return [
             'id'            => (int) $r['id_arsip_sertifikasi'],
             'nomor_order'   => $nomor,
+            'no_id_order'   => trim((string) ($r['no_id_order'] ?? '')),
             'no_pks'        => trim((string) ($r['no_pks'] ?? '')),
             'mitra'         => \Customer::formatNamaPerusahaan($r['pt_cv'] ?? '', $r['nmcustomer'] ?? ''),
             'alamat'        => trim((string) ($r['alamatcustomer'] ?? '')),
@@ -181,6 +286,9 @@ class PoSertifikasiController extends \Controller {
      */
     public function daftarOrder($f3) {
         $this->requireAuth();
+        if ($this->terlarangRoleLayananLain() || $this->terlarangMenulis()) {
+            return $this->json(['ok' => false, 'message' => 'PO Sertifikasi tidak tersedia untuk role Anda.'], 403);
+        }
         header('Content-Type: application/json; charset=utf-8');
         try {
             $this->kendalaSkema(); // pastikan kolom layanan ada supaya filter 'sudah punya PO' aktif
@@ -197,6 +305,46 @@ class PoSertifikasiController extends \Controller {
         }
     }
 
+    /** Hari libur nasional (tabel yang sama dengan jadwal PO OPTI dan PO Pengujian). */
+    protected function daftarLibur() {
+        try {
+            $rows = $this->db->exec('SELECT tanggal_libur FROM tb_tanggal_libur');
+        } catch (\Throwable $e) {
+            return [];
+        }
+        $out = [];
+        foreach ($rows as $r) {
+            $t = strtotime((string) ($r['tanggal_libur'] ?? ''));
+            if ($t) { $out[] = date('Y-m-d', $t); }
+        }
+        return $out;
+    }
+
+    /**
+     * GET /petunjuk-operasional/sertifikasi/jadwal-kolom?mulai=YYYY-MM-DD&selesai=YYYY-MM-DD (JSON)
+     * Kolom jadwal otomatis, sama dengan PO Pengujian dan PO OPTI: <= 31 hari harian (Sabtu/Minggu dan libur nasional
+     * terkunci), selebihnya mingguan (4 minggu per bulan). Dipakai juga saat PO dilihat (ikon mata), jadi tidak
+     * dibatasi untuk Ketua Tim.
+     */
+    public function jadwalKolom($f3) {
+        $this->requireAuth();
+        if ($this->terlarangRoleLayananLain()) {
+            return $this->json(['mode' => null, 'kolom' => [], 'bulan_header' => []], 403);
+        }
+        $hasil = \PoPengujianDokumen::kolomJadwal((string) ($f3->get('GET.mulai') ?? ''), (string) ($f3->get('GET.selesai') ?? ''), $this->daftarLibur());
+        return $this->json($hasil);
+    }
+
+    /** Role layanan lain (tim_kerja_pengujian) tidak boleh memakai PO Sertifikasi. */
+    protected function terlarangRoleLayananLain() {
+        return $this->getUserRole() === 'tim_kerja_pengujian';
+    }
+
+    /** Ketua Tim Sertifikasi hanya meninjau PO (lihat/review); membuat & mengedit PO tugas Tim Kerja. */
+    protected function terlarangMenulis() {
+        return $this->isKetuaSertifikasi();
+    }
+
     protected function json($data, $status = 200) {
         http_response_code($status);
         header('Content-Type: application/json; charset=utf-8');
@@ -210,6 +358,7 @@ class PoSertifikasiController extends \Controller {
     /** Pastikan skema po_kegiatan siap; return pesan kendala ('' = aman). */
     protected function kendalaSkema() {
         \PoSchema::pastikan($this->db);
+        \PoSchema::pastikanTanggalDikirim($this->db);
         return \PoSchema::kendalaSertifikasi();
     }
 
@@ -234,6 +383,11 @@ class PoSertifikasiController extends \Controller {
      */
     public function create($f3) {
         $this->requireAuth();
+        if ($this->terlarangRoleLayananLain() || $this->terlarangMenulis()) {
+            $this->setFlashError('PO Sertifikasi tidak tersedia untuk role Anda.');
+            $f3->reroute('/petunjuk-operasional');
+            return;
+        }
 
         $orderId = (int) ($f3->get('GET.order') ?? 0);
         $order = null;
@@ -246,10 +400,10 @@ class PoSertifikasiController extends \Controller {
             }
             if (empty($rows[0])) {
                 $this->setFlashError('Order sertifikasi tidak ditemukan atau belum memenuhi syarat (harus berstatus Order dan kontrak sudah terbayar penuh).');
-                $f3->reroute('/po-kegiatan/pilih');
+                $f3->reroute('/petunjuk-operasional?layanan=sertifikasi');
                 return;
             }
-            $order = $this->petakanOrder($rows[0]);
+            $order = $this->lengkapiInfoOrder($this->petakanOrder($rows[0]));
 
             $this->kendalaSkema();
             if (\PoSchema::siap()) {
@@ -269,7 +423,6 @@ class PoSertifikasiController extends \Controller {
         $f3->set('po_json', 'null');
         $f3->set('mode_lihat', 'false');
         $f3->set('tanggal_default', date('Y-m-d'));
-        $f3->set('tahun_po_wajib', \PoSchema::tahunWajib(''));
         $f3->set('csrf_po', (string) ($f3->get('csrf_token') ?? ''));
 
         $this->render(
@@ -291,6 +444,16 @@ class PoSertifikasiController extends \Controller {
 
     protected function tampilkan($f3, $params, $lihat) {
         $this->requireAuth();
+        if ($this->terlarangRoleLayananLain()) {
+            $this->setFlashError('PO Sertifikasi tidak tersedia untuk role Anda.');
+            $f3->reroute('/petunjuk-operasional');
+            return;
+        }
+        if (!$lihat && $this->terlarangMenulis()) {
+            // Ketua Tim hanya melihat dokumen, tidak mengedit
+            $f3->reroute('/petunjuk-operasional/sertifikasi/' . (int) $params['id'] . '/lihat');
+            return;
+        }
 
         $this->kendalaSkema();
         $po = null;
@@ -303,7 +466,7 @@ class PoSertifikasiController extends \Controller {
         }
         if (!$po) {
             $this->setFlashError('PO Sertifikasi tidak ditemukan.');
-            $f3->reroute('/po-kegiatan/pilih');
+            $f3->reroute('/petunjuk-operasional?layanan=sertifikasi');
             return;
         }
 
@@ -311,7 +474,7 @@ class PoSertifikasiController extends \Controller {
         try {
             $rows = $this->queryOrderLayak((int) $po['order_id'], false);
             if (!empty($rows[0])) {
-                $order = $this->petakanOrder($rows[0]);
+                $order = $this->lengkapiInfoOrder($this->petakanOrder($rows[0]));
             }
         } catch (\Throwable $e) {
             error_log('[PO Sertifikasi] gagal baca order PO: ' . $e->getMessage());
@@ -319,7 +482,8 @@ class PoSertifikasiController extends \Controller {
         if ($order === null) {
             // order di SISERTIFIKASI sudah tidak terbaca -> tetap bisa dibuka dari data yang tersimpan
             $order = ['id' => (int) $po['order_id'], 'nomor_order' => '', 'no_pks' => '', 'mitra' => '', 'alamat' => (string) ($po['alamat'] ?? ''),
-                      'tanggal_order' => '', 'status_order' => '', 'nilai_kontrak' => 0, 'keterangan' => '', 'lunas' => null, 'tanggal_bayar' => ''];
+                      'no_id_order' => '', 'tanggal_order' => '', 'status_order' => '', 'nilai_kontrak' => 0, 'keterangan' => '', 'lunas' => null, 'tanggal_bayar' => '',
+                      'tanggal_pendaftaran' => '', 'jenis_sertifikasi' => '', 'kegiatan' => '', 'jenis_ws' => ''];
         }
 
         $data = \PoSchema::formDariBaris($po); // isi form dari kolom-kolom po_kegiatan
@@ -328,6 +492,8 @@ class PoSertifikasiController extends \Controller {
             'id'         => (int) $po['id'],
             'nomor'      => (string) ($po['nomor_po'] ?? ''),
             'tanggal_po' => ($tgl !== '' && strpos($tgl, '0000') !== 0 && strtotime($tgl)) ? date('Y-m-d', strtotime($tgl)) : '',
+            'dikirim'    => $this->tglDikirimTeks($po),
+            'dibuat'     => !empty($po['created_at']) && strtotime((string) $po['created_at']) ? date('d/m/Y', strtotime((string) $po['created_at'])) : '',
             'judul'      => (string) ($po['judul_kegiatan'] ?? ''),
             'status'     => (string) ($po['status'] ?? ''),
             'data'       => $data,
@@ -337,7 +503,6 @@ class PoSertifikasiController extends \Controller {
         $f3->set('po_json', $this->jsonHive($poInfo));
         $f3->set('mode_lihat', $lihat ? 'true' : 'false');
         $f3->set('tanggal_default', date('Y-m-d'));
-        $f3->set('tahun_po_wajib', \PoSchema::tahunWajib((string) ($po['nomor_po'] ?? '')));
         $f3->set('csrf_po', (string) ($f3->get('csrf_token') ?? ''));
 
         $this->render(
@@ -382,7 +547,7 @@ class PoSertifikasiController extends \Controller {
         $m = [];
         $isi = function ($v) { return self::adaIsi($v); };
 
-        if (!$isi($post['tanggal_po'] ?? '')) { $m[] = 'Tanggal Surat PO belum diisi'; }
+        if (!$isi($post['tanggal_po'] ?? '')) { $m[] = 'Tanggal PO belum diisi'; }
         if (!$isi($post['judul_kegiatan'] ?? '')) { $m[] = 'Judul Kegiatan belum diisi'; }
         if (!$isi($post['jenis'] ?? '')) { $m[] = 'Jenis belum diisi'; }
 
@@ -446,7 +611,58 @@ class PoSertifikasiController extends \Controller {
             if ($bad) { $m[] = 'RAB: keterangan penerimaan belum diisi (baris ' . implode(', ', $bad) . ')'; }
             if ($tot <= 0) { $m[] = 'RAB: nilai penerimaan belum diisi'; }
         }
+        $tot_terima_rab = 0.0;
+        foreach ($terima as $t) { $tot_terima_rab += self::angka(is_array($t) ? ($t['nilai'] ?? 0) : 0); }
         if (!$induk) { $m[] = 'RAB: rencana pengeluaran belum ada kategori'; }
+        // jumlah rincian satu kategori (sama dengan hitungan di form)
+        // semua baris rincian satu kategori: kelompok utama (rincian) + kelompok berjudul lain (grup[].rincian)
+        $semuaRincian = function ($x) {
+            $rr = (isset($x['rincian']) && is_array($x['rincian'])) ? array_values($x['rincian']) : [];
+            if (isset($x['grup']) && is_array($x['grup'])) {
+                foreach ($x['grup'] as $g) {
+                    if (is_array($g) && isset($g['rincian']) && is_array($g['rincian'])) { $rr = array_merge($rr, array_values($g['rincian'])); }
+                }
+            }
+            return $rr;
+        };
+        $jmlRincian = function ($x) use ($semuaRincian) {
+            $rr = $semuaRincian($x);
+            $jml = 0.0;
+            foreach ($rr as $b) {
+                $b = is_array($b) ? $b : [];
+                $tarif = self::angka($b['tarif'] ?? 0);
+                if ($tarif > 0) {
+                    $q = self::angka($b['qty'] ?? 0); $hr = self::angka($b['hari'] ?? 0);
+                    $jml += round(($q ?: 1) * ($hr ?: 1) * $tarif);
+                } else { $jml += round(self::angka($b['jumlah'] ?? 0)); }
+            }
+            return $jml;
+        };
+        // nilai tiap kategori: Nominal (atau total rincian), lalu Persentase dari sisa setelah Nominal, lalu Sisa Penerimaan
+        $nilaiInduk = []; $totalNominal = 0.0;
+        foreach ($induk as $i => $x) {
+            $x = is_array($x) ? $x : [];
+            $nilaiInduk[$i] = 0.0;
+            if ((string) ($x['tipe'] ?? 'harga') === 'harga') {
+                $nilaiInduk[$i] = !empty($x['rinci']) ? $jmlRincian($x) : round(self::angka($x['nilai'] ?? 0));
+                $totalNominal += $nilaiInduk[$i];
+            }
+        }
+        $tetapInduk = $totalNominal;
+        foreach ($induk as $i => $x) {
+            $x = is_array($x) ? $x : [];
+            if ((string) ($x['tipe'] ?? 'harga') === 'persen') {
+                $nilaiInduk[$i] = round(($tot_terima_rab - $totalNominal) * self::angka($x['persen'] ?? 0) / 100);
+                $tetapInduk += $nilaiInduk[$i];
+            }
+        }
+        foreach ($induk as $i => $x) {
+            $x = is_array($x) ? $x : [];
+            if ((string) ($x['tipe'] ?? 'harga') === 'sisa') { $nilaiInduk[$i] = $tot_terima_rab - $tetapInduk; }
+        }
+        if ($tot_terima_rab > 0 && $tetapInduk > $tot_terima_rab + 0.5) {
+            $m[] = 'RAB: total kategori Nominal dan Persentase melebihi penerimaan sebesar Rp ' . number_format($tetapInduk - $tot_terima_rab, 0, ',', '.');
+        }
         foreach ($induk as $i => $x) {
             $x = is_array($x) ? $x : [];
             $h = self::hurufUrut($i);
@@ -455,7 +671,7 @@ class PoSertifikasiController extends \Controller {
             $tipe = (string) ($x['tipe'] ?? 'harga');
             if ($tipe === 'harga') {
                 if (!empty($x['rinci'])) {
-                    $rr = (isset($x['rincian']) && is_array($x['rincian'])) ? array_values($x['rincian']) : [];
+                    $rr = $semuaRincian($x);
                     if (!$rr) { $m[] = 'RAB: rincian ' . $nm . ' belum ada baris'; continue; }
                     $jml = 0.0; $tanpaNama = 0;
                     foreach ($rr as $b) {
@@ -475,10 +691,42 @@ class PoSertifikasiController extends \Controller {
             } elseif ($tipe === 'persen' && self::angka($x['persen'] ?? 0) <= 0) {
                 $m[] = 'RAB: persen ' . $nm . ' belum diisi';
             }
+            // rincian pada Persentase / Sisa Penerimaan: harus ada isinya dan jumlahnya sama dengan nilai kategori
+            if ($tipe !== 'harga' && !empty($x['rinci'])) {
+                $rr = $semuaRincian($x);
+                if (!$rr) { $m[] = 'RAB: rincian ' . $nm . ' belum ada baris'; continue; }
+                $tanpaNama = 0;
+                foreach ($rr as $b) { if (!$isi(is_array($b) ? ($b['nama'] ?? '') : '')) { $tanpaNama++; } }
+                if ($tanpaNama) { $m[] = 'RAB: uraian rincian ' . $nm . ' belum diisi'; }
+                else {
+                    $selisih = round($nilaiInduk[$i]) - round($jmlRincian($x));
+                    if ($selisih != 0) { $m[] = 'RAB: jumlah rincian ' . $nm . ' ' . ($selisih > 0 ? 'kurang' : 'lebih') . ' Rp ' . number_format(abs($selisih), 0, ',', '.') . ' dari nilai kategori'; }
+                }
+            }
         }
 
         $jd = (isset($d['jadwal']) && is_array($d['jadwal'])) ? $d['jadwal'] : [];
-        if ((string) ($jd['mode'] ?? 'teks') === 'gantt') {
+        $modeJd = (string) ($jd['mode'] ?? 'teks');
+        if ($modeJd === 'tanggal') {
+            $tglOk = function ($v) { $v = (string) $v; return preg_match('/^\d{4}-\d{2}-\d{2}$/', $v) && strtotime($v) !== false; };
+            $mulai = (string) ($jd['mulai'] ?? ''); $selesai = (string) ($jd['selesai'] ?? '');
+            if (!$tglOk($mulai)) { $m[] = 'Jadwal: tanggal mulai belum diisi'; }
+            if (!$tglOk($selesai)) { $m[] = 'Jadwal: tanggal selesai belum diisi'; }
+            elseif ($tglOk($mulai) && strtotime($selesai) < strtotime($mulai)) { $m[] = 'Jadwal: tanggal selesai lebih awal dari tanggal mulai'; }
+            $rows = (isset($jd['rows']) && is_array($jd['rows'])) ? $jd['rows'] : [];
+            if (!$rows) { $m[] = 'Jadwal belum punya kegiatan'; }
+            else {
+                $tanpaNama = false; $tanpaCentang = false;
+                foreach ($rows as $r) {
+                    $r = is_array($r) ? $r : [];
+                    if (!$isi($r['nama'] ?? '')) { $tanpaNama = true; }
+                    $tanda = (isset($r['tanda']) && is_array($r['tanda'])) ? $r['tanda'] : [];
+                    if (!array_filter($tanda)) { $tanpaCentang = true; }
+                }
+                if ($tanpaNama) { $m[] = 'Jadwal: nama kegiatan belum diisi'; }
+                if ($tanpaCentang) { $m[] = 'Jadwal: ada kegiatan yang belum dicentang jadwalnya'; }
+            }
+        } elseif ($modeJd === 'gantt') {
             $bulan = (isset($jd['bulan']) && is_array($jd['bulan'])) ? $jd['bulan'] : [];
             $rows = (isset($jd['rows']) && is_array($jd['rows'])) ? $jd['rows'] : [];
             if (!$bulan) { $m[] = 'Jadwal belum punya bulan'; }
@@ -498,7 +746,19 @@ class PoSertifikasiController extends \Controller {
         } elseif (self::teksRte($d['jadwalTeks'] ?? '') === '') {
             $m[] = 'Jadwal belum diisi';
         }
+
+        foreach (\PoTtd::kekurangan(\PoTtd::bersihkan(isset($d['ttd']) ? $d['ttd'] : [])) as $pesan) {
+            $m[] = $pesan;
+        }
         return $m;
+    }
+
+    /** Tanggal PO dikirim (d/m/Y): kolom tanggal_dikirim; PO terkirim versi lama (belum ada kolom/isinya) memakai tanggal PO-nya. */
+    protected function tglDikirimTeks($po) {
+        if (trim((string) ($po['nomor_po'] ?? '')) === '') { return ''; }
+        $t = (string) ($po['tanggal_dikirim'] ?? '');
+        if ($t === '' || strpos($t, '0000') === 0 || !strtotime($t)) { $t = (string) ($po['tanggal_po'] ?? ''); }
+        return ($t !== '' && strpos($t, '0000') !== 0 && strtotime($t)) ? date('d/m/Y', strtotime($t)) : '';
     }
 
     /** Balasan 422 untuk input yang ditolak; sertakan daftar kekurangan bila dari validasi Kirim. */
@@ -513,7 +773,7 @@ class PoSertifikasiController extends \Controller {
      * Form mengirim seluruh isian sebagai satu JSON di field 'isi_form' (hanya untuk perjalanan data);
      * di sini dipecah ke kolom-kolom po_kegiatan lewat PoSchema::kolomDariForm(). Tidak ada kolom JSON gabungan.
      */
-    protected function bacaInput($f3, $orderRaw = null, $tahunWajib = null) {
+    protected function bacaInput($f3, $orderRaw = null, $tglTetap = null) {
         $post = $f3->get('POST');
 
         $this->errKirim = [];
@@ -526,16 +786,18 @@ class PoSertifikasiController extends \Controller {
             }
         }
 
-        $tgl = trim((string) ($post['tanggal_po'] ?? ''));
-        $dt = \DateTime::createFromFormat('Y-m-d', $tgl);
-        if (!$dt || $dt->format('Y-m-d') !== $tgl) {
-            return ['Tanggal Surat PO belum diisi / formatnya tidak valid.', null];
-        }
-        // Nomor urut PO reset tiap tahun -> PO baru harus bertanggal di tahun berjalan; PO yang sudah bernomor
-        // harus tetap di tahun nomornya.
-        $tahunWajib = $tahunWajib !== null ? (int) $tahunWajib : (int) date('Y');
-        if ((int) $dt->format('Y') !== $tahunWajib) {
-            return ['Tahun Tanggal Surat PO (' . $dt->format('Y') . ') harus sama dengan tahun ' . $tahunWajib . '.', null];
+        // [BARU] Tanggal PO tidak diisi dari form: PO yang sudah bernomor memakai tanggalnya sendiri (tidak berubah);
+        // selain itu = hari ini (WIB), yang menjadi tanggal kirim bila PO ini dikirim sekarang.
+        // Tanggal PO (= tanggal PO dibuat) diisi user di form; kosong (draft) -> hari ini. Tidak boleh tanggal ke depan.
+        // Tanggal PO dikirim TIDAK dari form: dicatat otomatis (tanggal_dikirim) saat PO dikirim, dan jadi patokan bulan/tahun Nomor PO.
+        $hariIni = \PoSchema::hariIniWib();
+        $tglIn = trim((string) ($post['tanggal_po'] ?? ''));
+        if ($tglIn === '') { $tgl = $hariIni; }
+        else {
+            $dtIn = \DateTime::createFromFormat('Y-m-d', $tglIn);
+            if (!$dtIn || $dtIn->format('Y-m-d') !== $tglIn) { return ['Tanggal PO tidak valid.', null]; }
+            if ($tglIn > $hariIni) { return ['Tanggal PO tidak boleh lebih dari hari ini.', null]; }
+            $tgl = $tglIn;
         }
         $judul = trim((string) ($post['judul_kegiatan'] ?? ''));
         if ($judul === '') {
@@ -587,6 +849,9 @@ class PoSertifikasiController extends \Controller {
      */
     public function simpan($f3) {
         $this->requireAuth();
+        if ($this->terlarangRoleLayananLain() || $this->terlarangMenulis()) {
+            return $this->json(['ok' => false, 'message' => 'PO Sertifikasi tidak tersedia untuk role Anda.'], 403);
+        }
 
         $kendala = $this->kendalaSkema();
         if ($kendala !== '') {
@@ -622,7 +887,10 @@ class PoSertifikasiController extends \Controller {
             \PoSchema::pastikanTabelNomor($this->db); // DDL harus di luar transaksi
             $this->db->begin();
             try {
-                $nomor = \PoSchema::nomorBaru($this->db, $in['tanggal_po'], false);
+                // [BARU] nomor baru diterbitkan hanya saat PO DIKIRIM (bulan/tahun = tanggal kirim, WIB); draft belum bernomor
+                $nomor = ($status === 'terkirim')
+                    ? \PoSchema::nomorBaru($this->db, \PoSchema::hariIniWib(), false)
+                    : ['id' => null, 'detail_nomor' => null];
                 $now = date('Y-m-d H:i:s');
                 $poId = \PoSchema::sisipPo($this->db, array_merge($in['kolom'], [
                     'order_id'       => $orderId,
@@ -630,6 +898,7 @@ class PoSertifikasiController extends \Controller {
                     'nomor_po'       => $nomor['detail_nomor'],
                     'id_nomor_urut'  => $nomor['id'],
                     'tanggal_po'     => $in['tanggal_po'],
+                    'tanggal_dikirim' => ($status === 'terkirim') ? \PoSchema::sekarangWib() : null,
                     'judul_kegiatan' => $in['judul'],
                     'alamat'         => $in['alamat'],
                     'status'         => $status,
@@ -657,7 +926,11 @@ class PoSertifikasiController extends \Controller {
             'ok'             => true,
             'message'        => $pesan,
             'id'             => $poId,
-            'nomor'          => $nomor['detail_nomor'],
+            'nomor'          => (string) $nomor['detail_nomor'],
+            'nomor_baru'     => $nomor['detail_nomor'] !== null,
+            'tanggal_po'     => $in['tanggal_po'],
+            'dikirim'        => $nomor['detail_nomor'] !== null ? date('d/m/Y') : '',
+            'dibuat'         => date('d/m/Y'),
             'status'         => $status,
             'redirect'       => $this->urlEdit($poId),
             'redirect_index' => $this->urlIndex($kirim ? 'terkirim' : 'draft'),
@@ -670,6 +943,9 @@ class PoSertifikasiController extends \Controller {
      */
     public function update($f3, $params) {
         $this->requireAuth();
+        if ($this->terlarangRoleLayananLain() || $this->terlarangMenulis()) {
+            return $this->json(['ok' => false, 'message' => 'PO Sertifikasi tidak tersedia untuk role Anda.'], 403);
+        }
 
         $kendala = $this->kendalaSkema();
         if ($kendala !== '') {
@@ -698,23 +974,46 @@ class PoSertifikasiController extends \Controller {
             error_log('[PO Sertifikasi] gagal baca order saat update: ' . $e->getMessage());
         }
 
-        list($err, $in) = $this->bacaInput($f3, $orderRaw, \PoSchema::tahunWajib((string) ($po['nomor_po'] ?? '')));
+        // PO yang sudah bernomor: nomornya TETAP; Tanggal PO (tanggal dibuat) boleh dikoreksi, tanggal dikirimnya tidak berubah
+        $sudahNomor = trim((string) ($po['nomor_po'] ?? '')) !== '';
+        list($err, $in) = $this->bacaInput($f3, $orderRaw);
         if ($err !== null) {
             return $this->tolakInput($err);
         }
 
+        $nomorBaru = null;
         try {
-            \PoSchema::ubahPo($this->db, (int) $po['id'], array_merge($in['kolom'], [
+            $ubah = array_merge($in['kolom'], [
                 'tanggal_po'     => $in['tanggal_po'],
                 'judul_kegiatan' => $in['judul'],
                 'alamat'         => $in['alamat'],
                 'status'         => $status,
                 'updated_at'     => date('Y-m-d H:i:s'),
-            ]));
+            ]);
+            if (!$sudahNomor && $status === 'terkirim') {
+                // [BARU] draft dikirim untuk pertama kali -> nomor diterbitkan sekarang (bulan/tahun = hari kirim, WIB);
+                // nomor + update PO satu transaksi supaya gagal simpan tidak membuang nomor
+                \PoSchema::pastikanTabelNomor($this->db); // DDL harus di luar transaksi
+                $this->db->begin();
+                try {
+                    $nomorBaru = \PoSchema::nomorBaru($this->db, \PoSchema::hariIniWib(), false);
+                    $ubah['tanggal_dikirim'] = \PoSchema::sekarangWib();
+                    $ubah['nomor_po']      = $nomorBaru['detail_nomor'];
+                    $ubah['id_nomor_urut'] = $nomorBaru['id'];
+                    \PoSchema::ubahPo($this->db, (int) $po['id'], $ubah);
+                    $this->db->commit();
+                } catch (\Throwable $e) {
+                    try { $this->db->rollback(); } catch (\Throwable $eRb) {}
+                    throw $e;
+                }
+            } else {
+                \PoSchema::ubahPo($this->db, (int) $po['id'], $ubah);
+            }
         } catch (\Throwable $e) {
             error_log('[PO Sertifikasi] gagal memperbarui PO: ' . $e->getMessage());
             return $this->json(['ok' => false, 'message' => 'Gagal memperbarui PO: ' . $e->getMessage()], 500);
         }
+        $nomorAkhir = $nomorBaru ? $nomorBaru['detail_nomor'] : (string) ($po['nomor_po'] ?? '');
 
         $kirim = ($status === 'terkirim');
         $pesan = $kirim ? 'PO berhasil diperbarui dan dikirim.' : 'PO berhasil diperbarui sebagai draft.';
@@ -722,9 +1021,31 @@ class PoSertifikasiController extends \Controller {
             'ok'             => true,
             'message'        => $pesan,
             'id'             => (int) $po['id'],
-            'nomor'          => (string) ($po['nomor_po'] ?? ''),
+            'nomor'          => $nomorAkhir,
+            'nomor_baru'     => $nomorBaru !== null,
+            'tanggal_po'     => $in['tanggal_po'],
+            'dikirim'        => $nomorBaru !== null ? date('d/m/Y') : $this->tglDikirimTeks($po),
             'status'         => $status,
             'redirect_index' => $this->urlIndex($kirim ? 'terkirim' : 'draft'),
         ]);
+    }
+
+    /**
+     * GET /petunjuk-operasional/sertifikasi/review
+     * Review PO Sertifikasi. Sementara halaman penanda (alur review menyusul), sama seperti Review PO Pengujian.
+     * Akses: Superadmin, Tim Kerja Sertifikasi, dan Ketua Tim Sertifikasi.
+     */
+    public function review($f3) {
+        $this->requireAuth();
+        if (!($this->isSuperadmin() || $this->isRoleSertifikasi())) {
+            $f3->error(403, 'Halaman ini hanya untuk Tim Kerja dan Ketua Tim Sertifikasi.');
+            return;
+        }
+
+        $this->render(
+            'petunjuk_operasional/po_sertifikasi/review.html',
+            'Review PO Sertifikasi',
+            'review_po_sertifikasi'
+        );
     }
 }

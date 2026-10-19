@@ -162,7 +162,8 @@ class Controller {
         $this->f3->set('is_admin_order', $isTimMitra);
         $this->f3->set('is_ketua_tim_mitra', $role === 'ketua_tim_mitra');
         $this->f3->set('is_ketua_mitra', $role === 'ketua_tim_mitra');
-        $this->f3->set('is_ketua_tim', $role === 'ketua_tim');
+        // Ketua Tim Sertifikasi (role 'ketua_tim' + layanan 'sertifikasi') memakai menu layanan Sertifikasi, bukan menu Ketua Tim OPTI
+        $this->f3->set('is_ketua_tim', $role === 'ketua_tim' && !$this->isKetuaSertifikasi());
         $this->f3->set('is_ketua_selulosa', $role === 'ketua_tim' && $layanan === 'selulosa');
         $this->f3->set('is_ketua_lingkungan', $role === 'ketua_tim' && $layanan === 'lingkungan');
         $isKeuangan = ($role === 'keuangan' || $role === 'ketua_tim_keuangan');
@@ -171,6 +172,12 @@ class Controller {
         $this->f3->set('is_humas', $role === 'humas');
         $this->f3->set('is_ppk', $role === 'ppk');
         $this->f3->set('is_tim_kerja', $role === 'tim_kerja');
+        // Role layanan (bukan analis OPTI): Tim Kerja Pengujian -> menu Dashboard, Daftar PO & Review PO khusus Pengujian
+        $this->f3->set('is_tim_pengujian', $role === 'tim_kerja_pengujian');
+        // Role layanan Sertifikasi (Tim Kerja & Ketua Tim Sertifikasi) -> menu Daftar PO (terkunci Sertifikasi) & Review PO
+        $this->f3->set('is_tim_sertifikasi', $this->isTimSertifikasi());
+        $this->f3->set('is_ketua_sertifikasi', $this->isKetuaSertifikasi());
+        $this->f3->set('is_role_sertifikasi', $this->isRoleSertifikasi());
         $this->f3->set('divisi_tim_kerja', $this->getDivisiTimKerja());
         $this->f3->set('is_admin_kontrak', $role === 'admin_kontrak');
         $this->f3->set('is_sekretaris', $role === 'sekretaris');
@@ -270,7 +277,7 @@ try {
         $sqlPo = "SELECT o.jenis_layanan_opti AS divisi, COUNT(*) AS c
                   FROM order_layanan o
                   WHERE o.ketua_pelaksana_id IS NOT NULL
-                    AND o.jenis_layanan_opti IN ('lingkungan', 'selulosa')
+                    AND o.jenis_layanan_opti IN ('lingkungan', 'selulosa', 'pengujian')
                     AND NOT EXISTS (SELECT 1 FROM po_kegiatan p WHERE p.order_id = o.id" . \PoSchema::bukanSertifikasi('p') . ")
                     AND o.status NOT IN ('batal', 'ditolak', 'selesai')";
         $paramsPo = array();
@@ -362,19 +369,14 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
         // miliknya sendiri yang perlu ditindaklanjuti.
         $notifDaftarPo = 0;
         try {
-            if ($isKeuangan || $role === 'superadmin') {
+            if ($role === 'ketua_tim' || $role === 'tim_kerja' || $role === 'superadmin') {
+                // Sama dengan jumlah titik biru (belum dibaca) di halaman Daftar Review PO: PO baru, revisi PO, dan revisi PPK BLU
+                $notifDaftarPo = (int) \PoReviewController::hitungBelumDibaca($this->db, $role, $userId, $layanan);
+            } elseif ($isKeuangan) {
                 $resDaftarPo = $this->db->exec(
                     "SELECT COUNT(*) as c FROM po_kegiatan p
                      WHERE p.tervalidasi_mitra_at IS NOT NULL AND p.tervalidasi_mitra_by IS NOT NULL
                        AND (p.status_review IS NULL OR p.status_review <> 'disetujui')"
-                );
-                $notifDaftarPo = (int)($resDaftarPo[0]['c'] ?? 0);
-            } elseif ($role === 'tim_kerja') {
-                $resDaftarPo = $this->db->exec(
-                    "SELECT COUNT(*) as c FROM po_kegiatan p
-                     JOIN order_layanan o ON o.id = p.order_id
-                     WHERE o.ketua_pelaksana_id = ? AND p.status_review = 'revisi'",
-                    array(1 => (int)$userId)
                 );
                 $notifDaftarPo = (int)($resDaftarPo[0]['c'] ?? 0);
             }
@@ -555,6 +557,21 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
      */
     public function isKetuaTim(): bool {
         return $this->getUserRole() === 'ketua_tim';
+    }
+
+    /** Tim Kerja Sertifikasi (si_opti: tim_kerja_sertifikasi / tk_sertifikasi). */
+    public function isTimSertifikasi(): bool {
+        return in_array($this->getUserRole(), array('tim_kerja_sertifikasi', 'tk_sertifikasi'), true);
+    }
+
+    /** Ketua Tim Sertifikasi (si_opti: ketua_tim_sertifikasi / katim_sertifikasi -> sesi role 'ketua_tim', layanan 'sertifikasi'). */
+    public function isKetuaSertifikasi(): bool {
+        return $this->getUserRole() === 'ketua_tim' && strtolower($this->getUserLayanan()) === 'sertifikasi';
+    }
+
+    /** Salah satu role layanan Sertifikasi (Tim Kerja atau Ketua Tim). */
+    public function isRoleSertifikasi(): bool {
+        return $this->isTimSertifikasi() || $this->isKetuaSertifikasi();
     }
 
     /**

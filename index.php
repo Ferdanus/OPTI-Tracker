@@ -332,11 +332,18 @@ $f3->route('POST /config/set-ketua-tim', 'ConfigController->setKetuaTim');
 // ==========================================
 // ROUTE MASTER DATA TIM PELAKSANA (per divisi)
 // ==========================================
-$f3->route('GET /master-tim-pelaksana/@divisi', 'MasterTimPelaksanaController->index');
-$f3->route('POST /master-tim-pelaksana/@divisi/simpan', 'MasterTimPelaksanaController->simpan');
-$f3->route('POST /master-tim-pelaksana/@divisi/@id/update', 'MasterTimPelaksanaController->update');
-$f3->route('POST /master-tim-pelaksana/@divisi/@id/toggle-status', 'MasterTimPelaksanaController->toggleStatus');
-$f3->route('POST /master-tim-pelaksana/@divisi/@id/hapus', 'MasterTimPelaksanaController->hapus');
+$f3->route('GET /master-tim-pelaksana',                       'MasterTimPelaksanaController->index');
+$f3->route('POST /master-tim-pelaksana/tambah',               'MasterTimPelaksanaController->tambah');
+$f3->route('POST /master-tim-pelaksana/ubah',                 'MasterTimPelaksanaController->ubah');
+$f3->route('POST /master-tim-pelaksana/hapus',                'MasterTimPelaksanaController->hapus');
+$f3->route('POST /master-tim-pelaksana/@id/aktif',            'MasterTimPelaksanaController->aktif');
+ 
+// --- Jabatan Pelaksana PO (MasterJabatanPelaksanaController.php, khusus Superadmin) ---
+$f3->route('GET /master-jabatan-pelaksana',                   'MasterJabatanPelaksanaController->index');
+$f3->route('POST /master-jabatan-pelaksana/tambah',           'MasterJabatanPelaksanaController->tambah');
+$f3->route('POST /master-jabatan-pelaksana/ubah',             'MasterJabatanPelaksanaController->ubah');
+$f3->route('POST /master-jabatan-pelaksana/hapus',            'MasterJabatanPelaksanaController->hapus');
+$f3->route('POST /master-jabatan-pelaksana/@id/aktif',        'MasterJabatanPelaksanaController->aktif');
 
 // ==========================================
 // ROUTE ADMIN_ORDER
@@ -409,6 +416,9 @@ $f3->route('POST /po-kegiatan/@id/minta-revisi', 'PoReviewController->mintaRevis
 $f3->route('POST /po-kegiatan/@id/kirim-revisi', 'PoReviewController->kirimRevisi');
 $f3->route('POST /po-kegiatan/@id/setujui', 'PoReviewController->setujui');
 $f3->route('POST /po-kegiatan/@id/buka-kembali', 'PoReviewController->bukaKembali');
+$f3->route('GET /po-kegiatan/@id/berkas', 'PoReviewController->berkas');         // tab Dokumen: surat kesanggupan bayar + bukti pembayaran
+$f3->route('GET /po-kegiatan/@id/berkas/kesanggupan', 'PoReviewController->berkasKesanggupan');
+$f3->route('GET /po-kegiatan/@id/berkas/bukti/@pid', 'PoReviewController->berkasBukti');
 $f3->route('GET /po-kegiatan/@id/chat', 'PoReviewController->chatList');
 $f3->route('POST /po-kegiatan/@id/chat', 'PoReviewController->chatKirim');
 $f3->route('POST /po-kegiatan/@id/chat/baca', 'PoReviewController->chatBaca');
@@ -419,10 +429,24 @@ $f3->route('POST /po-humas/@id/baca', 'PoHumasController->baca');
 // Controller: app/controllers/petunjuk_operasional/ (namespace petunjuk_operasional)
 // View      : app/views/petunjuk_operasional/<jenis_po>/
 $f3->route('GET /petunjuk-operasional', 'petunjuk_operasional\PoIndexController->index');
+$f3->route('GET /petunjuk-operasional/penandatangan', 'petunjuk_operasional\PoPenandatanganController->daftar');   // daftar pejabat penandatangan (semua jenis PO)
 $f3->route('GET /petunjuk-operasional/pengujian/create', 'petunjuk_operasional\PoPengujianController->create');
+$f3->route('GET /petunjuk-operasional/pengujian/order', 'petunjuk_operasional\PoPengujianController->daftarOrder');
+$f3->route('GET /petunjuk-operasional/pengujian/review', 'petunjuk_operasional\PoPengujianController->review');
+$f3->route('POST /petunjuk-operasional/pengujian/simpan', 'petunjuk_operasional\PoPengujianController->simpan');
+$f3->route('POST /petunjuk-operasional/pengujian/preview-live', 'petunjuk_operasional\PoPengujianController->previewLive');
+$f3->route('POST /petunjuk-operasional/pengujian/cetak-live', 'petunjuk_operasional\PoPengujianController->cetakLive');
+$f3->route('GET /petunjuk-operasional/pengujian/jadwal-kolom', 'petunjuk_operasional\PoPengujianController->jadwalKolom');
+$f3->route('GET /petunjuk-operasional/pengujian/@id/edit', 'petunjuk_operasional\PoPengujianController->edit');
+$f3->route('GET /petunjuk-operasional/pengujian/@id/lihat', 'petunjuk_operasional\PoPengujianController->lihat');
+$f3->route('GET /petunjuk-operasional/pengujian/@id/preview', 'petunjuk_operasional\PoPengujianController->previewTersimpan');   // fragmen dokumen untuk modal pratinjau Daftar PO
+$f3->route('GET /petunjuk-operasional/pengujian/@id/cetak', 'petunjuk_operasional\PoPengujianController->cetakTersimpan');        // PDF PO tersimpan
+$f3->route('POST /petunjuk-operasional/pengujian/@id/update', 'petunjuk_operasional\PoPengujianController->update');
 $f3->route('GET /petunjuk-operasional/kalibrasi/create', 'petunjuk_operasional\PoKalibrasiController->create');
 $f3->route('GET /petunjuk-operasional/sertifikasi/create', 'petunjuk_operasional\PoSertifikasiController->create');
 $f3->route('GET /petunjuk-operasional/sertifikasi/order', 'petunjuk_operasional\PoSertifikasiController->daftarOrder');
+$f3->route('GET /petunjuk-operasional/sertifikasi/jadwal-kolom', 'petunjuk_operasional\PoSertifikasiController->jadwalKolom');
+$f3->route('GET /petunjuk-operasional/sertifikasi/review', 'petunjuk_operasional\PoSertifikasiController->review');
 $f3->route('POST /petunjuk-operasional/sertifikasi/simpan', 'petunjuk_operasional\PoSertifikasiController->simpan');
 $f3->route('GET /petunjuk-operasional/sertifikasi/@id/edit', 'petunjuk_operasional\PoSertifikasiController->edit');
 $f3->route('GET /petunjuk-operasional/sertifikasi/@id/lihat', 'petunjuk_operasional\PoSertifikasiController->lihat');

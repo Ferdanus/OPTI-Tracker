@@ -1,299 +1,405 @@
+<!-- app/views/master_tim_pelaksana/index.html -- fragment, dirender lewat MasterTimPelaksanaController::index(). Daftar = tabel biasa dengan repeat (bukan DataTables), paginasi di sisi klien. -->
 <style>
-.mtp-toast { position: fixed; bottom: 20px; right: 20px; z-index: 2000; background: #0f172a; color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 13px; box-shadow: 0 10px 25px rgba(0,0,0,.18); opacity: 0; transform: translateY(8px); transition: all .2s; pointer-events: none; }
-.mtp-toast.show { opacity: 1; transform: translateY(0); }
-.mtp-toast.err { background: #be123c; }
-.mtp-empty { text-align: center; color: #94a3b8; padding: 48px 16px; }
-.mtp-empty i { font-size: 28px; display: block; margin-bottom: 8px; }
+/* Tampilan disamakan dengan halaman Surat Penawaran. Pakai variabel tema aplikasi; nilai setelah koma = cadangan. */
+.mtp{--pri:var(--color-primary,#2b3a4f);--pri-dark:var(--color-primary-dark,#1e293b);--pri-light:var(--color-primary-light,#f1f5f9);--bd:var(--color-border,#e2e8f0);--mut:var(--color-text-muted,#64748b);--ink:var(--color-text-main,#0f172a);color:var(--ink);font-size:.9rem}
+.mtp *,.mtp *::before,.mtp *::after{box-sizing:border-box}
+.mtp [hidden]{display:none!important}
+.mtp button{font-family:inherit;cursor:pointer}
+.mtp-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:22px}
+.mtp-title{display:flex;align-items:center;gap:12px;font-family:var(--font-display,inherit);font-size:1.7rem;font-weight:800;margin:0;letter-spacing:-.02em}
+.mtp-title i{font-size:1.45rem;color:var(--mut)}
+.mtp-sub{color:var(--mut);font-size:.85rem;margin:4px 0 0}
+.mtp-btn{border:1.5px solid var(--bd);background:#fff;color:#334155;border-radius:10px;padding:9px 16px;font-size:.85rem;font-weight:700;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;text-decoration:none}
+.mtp-btn:hover:not(:disabled){border-color:var(--pri);color:var(--pri)}
+.mtp-btn.pri{background:var(--pri);border-color:var(--pri);color:#fff}
+.mtp-btn.pri:hover:not(:disabled){background:var(--pri-dark);border-color:var(--pri-dark);color:#fff}
+.mtp-btn.dng{color:#b91c1c;border-color:#fecaca}
+.mtp-btn.dng:hover:not(:disabled){background:#fef2f2;border-color:#b91c1c;color:#b91c1c}
+.mtp-btn:disabled{opacity:.5;cursor:not-allowed}
+.mtp-filter{background:#fff;border:1px solid var(--bd);border-radius:16px;padding:16px;display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+.mtp-field{display:flex;align-items:stretch;border:1.5px solid var(--bd);border-radius:10px;background:#fff;overflow:hidden;min-width:0}
+.mtp-field:focus-within{border-color:var(--pri)}
+.mtp-field .ico{padding:0 13px;color:var(--mut);display:flex;align-items:center;border-right:1px solid var(--bd);background:#f8fafc}
+.mtp-field select,.mtp-field input{border:0;outline:0;padding:10px 12px;font:inherit;font-size:.9rem;background:transparent;color:var(--ink);min-width:0;width:100%}
+.mtp-field.grow{flex:1 1 260px}.mtp-field.sel{flex:0 1 230px}
+.mtp-card{background:#fff;border:1px solid var(--bd);border-radius:16px;overflow:hidden;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+.mtp-tabs{display:flex;gap:10px;flex-wrap:wrap;padding:16px}
+.mtp-tab{border:1px solid var(--bd);background:#fff;color:#334155;border-radius:999px;padding:8px 16px;font-size:.85rem;font-weight:700;display:inline-flex;align-items:center;gap:8px}
+.mtp-tab .c{background:#f1f5f9;border-radius:999px;font-size:.72rem;min-width:22px;padding:1px 7px;text-align:center}
+.mtp-tab .dt{width:9px;height:9px;border-radius:50%}
+.mtp-tab.on{background:var(--pri);border-color:var(--pri);color:#fff;box-shadow:0 4px 10px rgba(30,41,59,.25)}
+.mtp-tab.on .c{background:rgba(255,255,255,.22);color:#fff}
+.mtp-scroll{overflow-x:auto}
+table.mtp-tbl{width:100%;border-collapse:collapse}
+.mtp-tbl thead th{background:#f8fafc;color:#475569;font-size:.72rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:14px 16px;border-top:1px solid var(--bd);border-bottom:1px solid var(--bd);text-align:left;white-space:nowrap}
+.mtp-tbl td{padding:16px;border-bottom:1px solid #f1f5f9;vertical-align:middle;font-size:.9rem}
+.mtp-tbl tbody tr:last-child td{border-bottom:0}
+.mtp-tbl tbody tr:hover{background:#fcfcfd}
+.mtp-tbl tr.nonaktif td:not(.keep){opacity:.5}
+.mtp-tbl .r{text-align:right}
+.mtp-no{color:var(--mut);font-weight:600}
+.mtp-name{font-weight:700}
+.mtp-lay{display:inline-block;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em;padding:3px 10px;border-radius:6px;background:#fdf2f2;color:#b42318;border:1px solid #f3c2c2}
+.mtp-muted{color:var(--mut);font-size:.82rem}
+.mtp-ibtn{width:36px;height:36px;border:1.5px solid var(--bd);background:#fff;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;color:#334155;margin-left:4px}
+.mtp-ibtn:hover:not(:disabled){border-color:var(--pri);color:var(--pri)}
+.mtp-ibtn.dng{color:#dc2626;border-color:#fecaca}.mtp-ibtn.dng:hover:not(:disabled){background:#fef2f2;border-color:#dc2626;color:#dc2626}
+.mtp-ibtn:disabled{opacity:.4;cursor:not-allowed}
+.mtp input[type=checkbox].mtp-ck{width:17px;height:17px;accent-color:var(--pri);cursor:pointer}
+.mtp-sw{position:relative;display:inline-block;width:40px;height:22px}
+.mtp-sw input{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0;cursor:pointer;z-index:1}
+.mtp-sw i{position:absolute;inset:0;background:#cbd5e1;border-radius:999px;transition:.15s}
+.mtp-sw i::after{content:"";position:absolute;left:3px;top:3px;width:16px;height:16px;background:#fff;border-radius:50%;transition:.15s;box-shadow:0 1px 2px rgba(0,0,0,.25)}
+.mtp-sw input:checked+i{background:#16a34a}
+.mtp-sw input:checked+i::after{transform:translateX(18px)}
+.mtp-ro .mtp-w{display:none!important}
+.mtp.mtp-ro .mtp-sw{pointer-events:none;opacity:.7}
+.mtp-selbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 16px;background:#f8fafc;border-top:1px solid var(--bd);font-size:.85rem}
+.mtp-pg{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;padding:14px 16px;border-top:1px solid var(--bd);font-size:.82rem;color:var(--mut)}
+.mtp-pgs{display:flex;gap:4px;flex-wrap:wrap}
+.mtp-pg button{border:1px solid var(--bd);background:#fff;color:var(--ink);border-radius:8px;min-width:34px;padding:5px 10px;font-size:.8rem}
+.mtp-pg button:hover:not(:disabled){border-color:var(--pri);color:var(--pri)}
+.mtp-pg button.on{background:var(--pri);border-color:var(--pri);color:#fff}
+.mtp-pg button:disabled{opacity:.45;cursor:not-allowed}
+.mtp-pg select{border:1px solid var(--bd);border-radius:8px;padding:3px 6px;font:inherit;background:#fff;color:var(--ink)}
+.mtp-empty{text-align:center;color:var(--mut);padding:40px 16px}
+.mtp-lock{display:inline-flex;align-items:center;gap:6px;background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;border-radius:999px;font-size:.78rem;font-weight:700;padding:4px 12px}
+.mtp-pad{padding:22px}
+.mtp-label{display:block;font-size:.8rem;font-weight:700;margin-bottom:6px}
+.mtp-sel,.mtp-in{border:1.5px solid var(--bd);border-radius:10px;padding:10px 12px;font:inherit;font-size:.9rem;width:100%;background:#fff;color:var(--ink);outline:0}
+.mtp-sel:focus,.mtp-in:focus{border-color:var(--pri)}
+.mtp-sel:disabled{background:#f1f5f9}
+.mtp-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;padding-top:18px;border-top:1px solid var(--bd)}
+.mtp-back{display:flex;align-items:center;gap:14px;margin-bottom:20px;flex-wrap:wrap}
+.mtp-overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;z-index:2000;padding:16px}
+.mtp-modal{background:#fff;border-radius:16px;max-width:440px;width:100%;padding:24px;box-shadow:0 20px 50px rgba(15,23,42,.3)}
+.mtp-modal h3{font-size:1.1rem;font-weight:800;margin:0 0 14px}
+.mtp-modal p{color:var(--mut);margin:0 0 6px}
+.mtp-pickbtn{display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;cursor:pointer}
+.mtp-pickbtn .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mtp-pickbtn .ph{color:var(--mut)}
+.mtp-pickbtn i{color:var(--mut);font-size:.8rem;flex:none}
+.mtp-dd{position:fixed;z-index:2500;background:#fff;border:1.5px solid var(--pri);border-radius:12px;box-shadow:0 12px 32px rgba(15,23,42,.22);padding:8px;display:flex;flex-direction:column;gap:8px}
+.mtp-ddl,.mtp-pml{overflow-y:auto;overscroll-behavior:contain}
+.mtp-ddl{max-height:250px}
+.mtp-opt{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:.88rem}
+.mtp-opt:hover,.mtp-opt.act{background:var(--pri-light)}
+.mtp-opt.on{font-weight:800;color:var(--pri)}
+.mtp-opt.off{color:#94a3b8;cursor:not-allowed;background:transparent}
+.mtp-opt small{color:#94a3b8;font-size:.72rem;white-space:nowrap}
+.mtp-modal.lg{max-width:520px;display:flex;flex-direction:column;max-height:calc(100vh - 32px)}
+.mtp-pml{max-height:340px;min-height:120px;border:1px solid var(--bd);border-radius:10px;padding:4px}
+.mtp-pml label.mtp-opt{margin:0}
+.mtp-pmbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:10px;font-size:.82rem;color:var(--mut)}
+.mtp-pmbar .mtp-btn{padding:6px 12px;font-size:.78rem}
+.mtp-addbar{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.mtp-toast{position:fixed;right:16px;bottom:16px;background:#0f172a;color:#fff;border-radius:10px;padding:10px 16px;opacity:0;transform:translateY(8px);transition:.2s;z-index:3000;max-width:360px;pointer-events:none}
+.mtp-toast.show{opacity:1;transform:none}.mtp-toast.err{background:#b91c1c}
+@media(max-width:520px){.mtp-title{font-size:1.35rem}}
 </style>
+<div class="mtp{{ @mtp_kelola ? '' : ' mtp-ro' }}" id="mtpRoot">
 
-<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+<!-- ===== DAFTAR ===== -->
+<div id="viewList">
+  <div class="mtp-head">
     <div>
-        <h2 class="h4 fw-bold mb-1 text-dark"><i class="bi bi-people text-primary me-1"></i> Tim Pelaksana {{ @divisi_label }}</h2>
-        <p class="text-muted small mb-0">Data master nama &amp; Tugas/Tanggung Jawab baku untuk divisi {{ @divisi_label }}. Dipakai buat ngisi otomatis bagian "Tim Pelaksana" pas bikin PO.</p>
+      <h2 class="mtp-title"><i class="bi bi-people"></i> Master Tim Pelaksana PO</h2>
+      <p class="mtp-sub">{{ @mtp_subjudul }}</p>
     </div>
-    <button type="button" class="btn btn-primary" id="btnTambah"><i class="bi bi-plus-lg"></i> Tambah Orang</button>
+    <button type="button" class="mtp-btn pri mtp-w" id="btnTambah"><i class="bi bi-plus-lg"></i> Tambah Anggota</button>
+  </div>
+
+  <div class="mtp-filter">
+    <check if="{{ !@mtp_lock }}">
+    <div class="mtp-field sel" id="fLayWrap"><span class="ico"><i class="bi bi-diagram-3"></i></span>
+      <select id="fLay">
+        <option value="">Semua layanan</option>
+        <repeat group="{{ @mtp_lay_opts }}" value="{{ @o }}"><option value="{{ @o.k }}">{{ @o.v }}</option></repeat>
+      </select>
+    </div>
+    </check>
+    <div class="mtp-field grow"><span class="ico"><i class="bi bi-search"></i></span><input id="fCari" placeholder="Cari nama pegawai" autocomplete="off"></div>
+    <button type="button" class="mtp-btn pri" id="btnReset"><i class="bi bi-arrow-counterclockwise"></i> Reset</button>
+  </div>
+
+  <div class="mtp-card">
+    <div class="mtp-tabs" id="tabs">
+      <button type="button" class="mtp-tab on" data-st="semua"><i class="bi bi-people"></i>Semua<span class="c" id="cSemua">{{ @mtp_n_semua }}</span></button>
+      <button type="button" class="mtp-tab" data-st="aktif"><span class="dt" style="background:#16a34a"></span>Aktif<span class="c" id="cAktif">{{ @mtp_n_aktif }}</span></button>
+      <button type="button" class="mtp-tab" data-st="nonaktif"><span class="dt" style="background:#dc2626"></span>Nonaktif<span class="c" id="cNon">{{ @mtp_n_non }}</span></button>
+    </div>
+    <div class="mtp-scroll"><table class="mtp-tbl">
+      <thead><tr><th style="width:60px">No.</th><th>Nama Pegawai</th><th>Layanan</th><th>Status</th><th class="r mtp-w">Aksi</th></tr></thead>
+      <tbody id="tbTim">
+        <repeat group="{{ @mtp_tim_rows }}" value="{{ @t }}">
+        <tr class="{{ @t.aktif ? '' : 'nonaktif' }}" data-id="{{ @t.id }}" data-cari="{{ @t.cari }}" data-lay="{{ @t.lay }}" data-aktif="{{ @t.aktif }}">
+          <td class="mtp-no">{{ @t.no }}</td>
+          <td class="mtp-name">{{ @t.pegawai }}</td>
+          <td><span class="mtp-lay">{{ @t.layanan }}</span></td>
+          <td class="keep"><label class="mtp-sw"><input type="checkbox" data-akt="{{ @t.id }}"{{ @t.aktif ? ' checked' : '' }}><i></i></label></td>
+          <td class="r keep mtp-w"><button type="button" class="mtp-ibtn dng" data-hapus="{{ @t.id }}" title="Hapus"><i class="bi bi-trash"></i></button></td>
+        </tr>
+        </repeat>
+        <check if="{{ @mtp_n_semua == 0 }}"><tr><td colspan="5"><div class="mtp-empty">Belum ada anggota tim pelaksana.</div></td></tr></check>
+        <tr id="trKosong" hidden><td colspan="5"><div class="mtp-empty">Belum ada anggota yang cocok.</div></td></tr>
+      </tbody></table></div>
+    <div class="mtp-pg" id="pgTim"></div>
+  </div>
 </div>
 
-<check if="{{ @error_message }}">
-    <div class="alert alert-danger">{{ @error_message }}</div>
-</check>
-
-<div class="card border-0 shadow-sm mb-4">
-    <div class="card-body p-3">
-        <div class="input-group">
-            <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
-            <input type="text" id="inputCari" class="form-control border-start-0" placeholder="Cari nama...">
-        </div>
+<!-- ===== TAMBAH ANGGOTA (halaman terpisah, bisa banyak sekaligus) ===== -->
+<div id="viewCreate" hidden>
+  <div class="mtp-back">
+    <button type="button" class="mtp-btn" id="cBack"><i class="bi bi-arrow-left"></i> Kembali</button>
+    <div><h2 class="mtp-title" style="font-size:1.4rem">Tambah Anggota Tim Pelaksana</h2><p class="mtp-sub">Bisa menambah lebih dari satu orang sekaligus: lewat baris (pilih sambil cari nama) atau lewat tombol Pilih dari daftar pegawai.</p></div>
+  </div>
+  <div class="mtp-card mtp-pad" style="margin-bottom:16px">
+    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">
+      <div style="flex:0 1 320px;width:100%"><label class="mtp-label">Layanan</label><select id="cLay" class="mtp-sel"></select></div>
+      <div id="cLock"></div>
     </div>
+  </div>
+  <div class="mtp-card mtp-pad">
+    <div class="mtp-scroll"><table class="mtp-tbl">
+      <thead><tr><th style="width:60px">No.</th><th>Pegawai</th><th style="width:60px"></th></tr></thead>
+      <tbody id="cRows"></tbody></table></div>
+    <div class="mtp-addbar">
+      <button type="button" class="mtp-btn" id="cAddRow"><i class="bi bi-plus-lg"></i> Tambah baris</button>
+      <button type="button" class="mtp-btn" id="cPilihDaftar"><i class="bi bi-person-check"></i> Pilih dari daftar pegawai</button>
+    </div>
+    <div class="mtp-actions">
+      <button type="button" class="mtp-btn" id="cBatal">Batal</button>
+      <button type="button" class="mtp-btn pri" id="cSimpan"><i class="bi bi-check-lg"></i> <span id="cSimpanTxt">Simpan</span></button>
+    </div>
+  </div>
 </div>
 
-<div class="card border-0 shadow-sm">
-    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-        <h6 class="m-0 fw-bold text-dark"><i class="bi bi-table text-primary me-2"></i>Daftar Tim Pelaksana</h6>
-        <span class="text-muted small" id="totalCount">Total: 0 orang</span>
-    </div>
-    <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-            <thead>
-                <tr>
-                    <th style="width:40px;">No</th>
-                    <th style="width:220px;">Nama</th>
-                    <th>Tugas / Tanggung Jawab</th>
-                    <th class="text-center" style="width:110px;">Status</th>
-                    <th class="text-center" style="width:150px;">Aksi</th>
-                </tr>
-            </thead>
-            <tbody id="bodyList"></tbody>
-        </table>
-    </div>
+<div class="mtp-dd" id="dd" hidden>
+  <div class="mtp-field"><span class="ico"><i class="bi bi-search"></i></span><input id="ddQ" placeholder="Cari nama pegawai" autocomplete="off"></div>
+  <div class="mtp-ddl" id="ddL"></div>
 </div>
 
-<!-- Modal Tambah / Edit -->
-<div class="modal fade" id="modalForm" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h6 class="modal-title fw-bold" id="modalFormTitle">Tambah Orang</h6>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label small fw-semibold">Nama</label>
-                    <select id="inputNama" class="form-select">
-                        <option value="">-- Pilih Nama --</option>
-                    </select>
-                    <div class="form-text">Daftar nama diambil dari data pegawai Sekretariat (tb_arsipuser).</div>
-                </div>
-                <div class="mb-1">
-                    <label class="form-label small fw-semibold">Tugas / Tanggung Jawab</label>
-                    <input type="text" id="inputTugas" class="form-control" placeholder="Misal: Penanggung Jawab Lapangan" maxlength="255">
-                </div>
-                <div class="form-text">Ini yang bakal otomatis keisi di form PO pas nama ini dipilih.</div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
-                <button type="button" class="btn btn-primary btn-sm" id="btnSimpan"><i class="bi bi-check2 me-1"></i>Simpan</button>
-            </div>
-        </div>
-    </div>
-</div>
+<div class="mtp-overlay" id="pm" hidden><div class="mtp-modal lg">
+  <h3>Pilih pegawai</h3>
+  <p id="pmInfo">Centang pegawai yang masuk tim, lalu klik Tambahkan.</p>
+  <div class="mtp-field" style="margin-bottom:10px"><span class="ico"><i class="bi bi-search"></i></span><input id="pmQ" placeholder="Cari nama pegawai" autocomplete="off"></div>
+  <div class="mtp-pml" id="pmL"></div>
+  <div class="mtp-pmbar"><b id="pmN"></b><span><button type="button" class="mtp-btn" id="pmAll">Pilih semua hasil</button> <button type="button" class="mtp-btn" id="pmNone">Kosongkan</button></span></div>
+  <div class="mtp-actions" style="margin-top:14px;padding-top:14px"><button type="button" class="mtp-btn" id="pmBatal">Batal</button><button type="button" class="mtp-btn pri" id="pmOk"><i class="bi bi-check-lg"></i> Tambahkan</button></div>
+</div></div>
 
-<div class="mtp-toast" id="mtpToast"></div>
+<div class="mtp-overlay" id="dlg" hidden><div class="mtp-modal">
+  <h3 id="dlgT">Konfirmasi</h3><p id="dlgP"></p>
+  <div class="mtp-actions" style="margin-top:18px;padding-top:0;border:0"><button type="button" class="mtp-btn" id="dlgNo">Batal</button><button type="button" class="mtp-btn pri" id="dlgYes">Ya, lanjut</button></div>
+</div></div>
+<div class="mtp-toast" id="toast"></div>
+</div>
 
 <script>
-(function () {
-    var BASE = '{{ @BASE }}';
-    var DIVISI = '{{ @divisi }}';
-    var CSRF = '{{ @csrf_token }}';
-    var DATA = {{ @daftar_json | raw }};
-    /* [BARU] Daftar pegawai dari DB Sekretariat (sil2020, tb_arsipuser) -- sumber opsi
-       dropdown Nama. Data Tim Pelaksana hasil pilihannya sendiri tetep kesimpen di
-       DB silopti2026 (tabel master_tim_pelaksana_<divisi>), gak di DB sil2020. */
-    var PEGAWAI_SEKRETARIAT = {{ @daftar_pegawai_json | raw }};
-    var editId = null;
-    var toastTimer = null;
-    var tsNama = null;
+/* Daftar di atas dirender server (tabel biasa + repeat). Data JSON ini cuma bahan untuk form Tambah. */
+var PEGAWAI={{ @mtp_pegawai_json | raw }};
+var LAYANAN={{ @mtp_layanan_json | raw }};
+var TIM={{ @mtp_tim_json | raw }};
+var CFG={{ @mtp_cfg_json | raw }};
+var LOCK=CFG.lock;
+var CSRF='{{ @csrf_token }}',BASE='{{ @BASE }}',PREFIX='/master-tim-pelaksana';
+var ST='semua';
+var $=function(i){return document.getElementById(i)};
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
+var tt;function toast(t,err){var e=$('toast');e.textContent=t;e.className='mtp-toast show'+(err?' err':'');clearTimeout(tt);tt=setTimeout(function(){e.className='mtp-toast'},3000)}
+function post(path,data){var b=new URLSearchParams();b.append('csrf_token',CSRF);Object.keys(data||{}).forEach(function(k){b.append(k,data[k])});
+  return fetch(BASE+PREFIX+path,{method:'POST',body:b,credentials:'same-origin',headers:{'X-Requested-With':'XMLHttpRequest'}})
+   .then(function(r){return r.json().catch(function(){return {ok:false,pesan:'Respons server tidak valid.'}})})
+   .then(function(j){if(!j.ok){throw new Error(j.pesan||'Terjadi kesalahan.')}return j})}
+/* setelah tambah/hapus: muat ulang halaman supaya tabel dirender ulang oleh server */
+function muatUlang(pesan){try{sessionStorage.setItem('mtp_toast',pesan||'')}catch(e){}location.reload()}
+var dlgRes=null;
+function konfirmasi(judul,teks,yaTeks){return new Promise(function(res){dlgRes=res;$('dlgT').textContent=judul;$('dlgP').textContent=teks;$('dlgYes').textContent=yaTeks||'Ya, lanjut';$('dlg').hidden=false;$('dlgYes').focus()})}
+function tutupDlg(v){$('dlg').hidden=true;if(dlgRes){var r=dlgRes;dlgRes=null;r(v)}}
+$('dlgYes').addEventListener('click',function(){tutupDlg(true)});$('dlgNo').addEventListener('click',function(){tutupDlg(false)});
+$('dlg').addEventListener('click',function(e){if(e.target===$('dlg'))tutupDlg(false)});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!$('dlg').hidden)tutupDlg(false)});
 
-    function $(id) { return document.getElementById(id); }
-    function esc(s) {
-        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
-            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-        });
-    }
-    function toast(text, galat) {
-        var t = $('mtpToast');
-        t.textContent = text;
-        t.classList.toggle('err', !!galat);
-        t.classList.add('show');
-        clearTimeout(toastTimer);
-        toastTimer = setTimeout(function () { t.classList.remove('show'); }, galat ? 6000 : 3500);
-    }
-    function api(url, opts) {
-        opts = opts || {};
-        opts.credentials = 'same-origin';
-        return fetch(url, opts).then(function (r) {
-            return r.text().then(function (t) {
-                var j;
-                try { j = JSON.parse(t); } catch (e) { throw new Error('Server membalas ' + r.status + ' (bukan JSON).'); }
-                if (!r.ok || !j.ok) { throw new Error(j.pesan || 'Terjadi kesalahan.'); }
-                return j;
-            });
-        });
-    }
-    function post(url, data) {
-        var body = new URLSearchParams();
-        body.append('csrf_token', CSRF);
-        Object.keys(data || {}).forEach(function (k) { body.append(k, data[k]); });
-        return api(url, { method: 'POST', body: body });
-    }
-    function urlDivisi(path) { return BASE + '/master-tim-pelaksana/' + DIVISI + path; }
+var pegBy=function(id){return PEGAWAI.filter(function(p){return p.id==id})[0]||{n:'(pegawai dihapus)'}};
+var layNama=function(k){var l=LAYANAN.filter(function(x){return x[0]==k})[0];return l?l[1]:k};
+var timBy=function(id){return TIM.filter(function(x){return x.id==id})[0]};
+function layOpts(pilih,semua){return (semua?'<option value="">Semua layanan</option>':'')+LAYANAN.map(function(l){return '<option value="'+l[0]+'"'+(l[0]==pilih?' selected':'')+'>'+esc(l[1])+'</option>'}).join('')}
 
-    function render() {
-        var q = ($('inputCari').value || '').toLowerCase().trim();
-        var rows = DATA.filter(function (p) { return !q || p.nama.toLowerCase().indexOf(q) !== -1; });
-        $('totalCount').textContent = 'Total: ' + DATA.length + ' orang';
+/* paginasi ala DataTables (10 / 25 / 50 per halaman) atas baris yang sudah dirender server */
+var PG={page:1,size:10};
+function pager(total,el){
+  var pages=Math.max(1,Math.ceil(total/PG.size));
+  if(PG.page>pages){PG.page=pages}
+  var from=total?(PG.page-1)*PG.size+1:0,to=Math.min(total,PG.page*PG.size);
+  var nums=[];for(var i=1;i<=pages;i++){if(i==1||i==pages||Math.abs(i-PG.page)<=1){nums.push(i)}else if(nums[nums.length-1]!=='...'){nums.push('...')}}
+  var btns='<button type="button" data-pg="'+(PG.page-1)+'"'+(PG.page<=1?' disabled':'')+'>&laquo;</button>'+nums.map(function(n){return n==='...'?'<button type="button" disabled>&hellip;</button>':'<button type="button" data-pg="'+n+'" class="'+(n==PG.page?'on':'')+'">'+n+'</button>'}).join('')+'<button type="button" data-pg="'+(PG.page+1)+'"'+(PG.page>=pages?' disabled':'')+'>&raquo;</button>';
+  el.innerHTML='<div>Menampilkan '+from+' sampai '+to+' dari '+total+' data &nbsp;&middot;&nbsp; Tampil <select data-size="1">'+[10,25,50].map(function(n){return '<option'+(n==PG.size?' selected':'')+'>'+n+'</option>'}).join('')+'</select> per halaman</div><div class="mtp-pgs">'+btns+'</div>';
+}
+function setPager(el){
+  el.addEventListener('click',function(e){var b=e.target.closest('[data-pg]');if(!b||b.disabled)return;PG.page=+b.dataset.pg;saring()});
+  el.addEventListener('change',function(e){var z=e.target.closest('[data-size]');if(!z)return;PG.size=+z.value;PG.page=1;saring()});
+}
 
-        if (!rows.length) {
-            $('bodyList').innerHTML = '<tr><td colspan="5"><div class="mtp-empty"><i class="bi bi-inbox"></i>' +
-                (q ? 'Gak ada nama yang cocok dengan pencarian.' : 'Belum ada data. Klik "Tambah Orang" buat mulai.') + '</div></td></tr>';
-            return;
-        }
+/* ===== saring (search + layanan + tab) langsung di baris yang sudah dirender ===== */
+var barisSemua=function(){return Array.prototype.slice.call(document.querySelectorAll('#tbTim tr[data-id]'))};
+function saring(ulang){
+  if(ulang===true){PG.page=1}
+  var q=$('fCari').value.trim().toLowerCase(),fl=$('fLay')?$('fLay').value:'',rows=barisSemua();
+  var cocok=[],nSemua=0,nAktif=0;
+  rows.forEach(function(tr){
+    /* angka di tab (Semua/Aktif/Nonaktif) mengikuti filter layanan + pencarian, tapi tidak mengikuti tab yang dipilih */
+    var cocokFilter=(!q||tr.dataset.cari.indexOf(q)>-1)&&(!fl||tr.dataset.lay===fl);
+    if(cocokFilter){nSemua++;if(tr.dataset.aktif==='1')nAktif++}
+    var ok=cocokFilter&&(ST==='semua'||(ST==='aktif'?tr.dataset.aktif==='1':tr.dataset.aktif==='0'));
+    tr.hidden=true;
+    if(ok){cocok.push(tr)}
+  });
+  var total=cocok.length,pages=Math.max(1,Math.ceil(total/PG.size));
+  if(PG.page>pages){PG.page=pages}
+  var awal=(PG.page-1)*PG.size;
+  cocok.forEach(function(tr,i){
+    if(i>=awal&&i<awal+PG.size){tr.hidden=false;tr.querySelector('.mtp-no').textContent=i+1}
+  });
+  $('cSemua').textContent=nSemua;$('cAktif').textContent=nAktif;$('cNon').textContent=nSemua-nAktif;
+  $('trKosong').hidden=total>0||rows.length===0;
+  pager(total,$('pgTim'));
+  Array.prototype.forEach.call(document.querySelectorAll('#tabs [data-st]'),function(b){b.classList.toggle('on',b.dataset.st===ST)});
+}
 
-        $('bodyList').innerHTML = rows.map(function (p, idx) {
-            var aktif = p.status === 'aktif';
-            var statusBadge = aktif
-                ? '<span class="badge badge-pill-success"><i class="bi bi-eye"></i> Aktif</span>'
-                : '<span class="badge badge-pill-secondary"><i class="bi bi-eye-slash"></i> Nonaktif</span>';
-            return '<tr>' +
-                '<td class="text-muted">' + (idx + 1) + '</td>' +
-                '<td class="fw-semibold text-dark">' + esc(p.nama) + '</td>' +
-                '<td class="text-muted small">' + esc(p.tugas_tanggung_jawab) + '</td>' +
-                '<td class="text-center">' + statusBadge + '</td>' +
-                '<td class="text-center">' +
-                    '<div class="d-flex justify-content-center gap-1">' +
-                        '<button type="button" class="btn btn-sm btn-outline-primary" data-edit="' + p.id + '" title="Edit"><i class="bi bi-pencil"></i></button>' +
-                        '<button type="button" class="btn btn-sm btn-outline-secondary" data-toggle="' + p.id + '" title="' + (aktif ? 'Nonaktifkan' : 'Aktifkan lagi') + '"><i class="bi ' + (aktif ? 'bi-eye-slash' : 'bi-eye') + '"></i></button>' +
-                        '<button type="button" class="btn btn-sm btn-outline-danger" data-hapus="' + p.id + '" title="Hapus"><i class="bi bi-trash"></i></button>' +
-                    '</div>' +
-                '</td>' +
-            '</tr>';
-        }).join('');
-    }
+/* ===== events daftar ===== */
+['fCari','fLay'].forEach(function(i){var el=$(i);if(el)el.addEventListener('input',function(){saring(true)})});
+$('btnReset').addEventListener('click',function(){$('fCari').value='';if($('fLay'))$('fLay').value='';ST='semua';saring(true)});
+$('tabs').addEventListener('click',function(e){var b=e.target.closest('[data-st]');if(!b)return;ST=b.dataset.st;saring(true)});
+$('tbTim').addEventListener('change',function(e){
+  var a=e.target.closest('[data-akt]');
+  if(a){
+    var tr=a.closest('tr'),mau=a.checked;
+    post('/'+a.dataset.akt+'/aktif',{aktif:mau?1:0}).then(function(j){
+      tr.dataset.aktif=mau?'1':'0';tr.classList.toggle('nonaktif',!mau);
+      var t=timBy(a.dataset.akt);if(t)t.aktif=mau?1:0;
+      saring();if(j.pesan)toast(j.pesan);
+    }).catch(function(err){a.checked=!mau;toast(err.message,1)});
+    return;
+  }
+});
+function hapusIds(ids,teks){konfirmasi('Hapus anggota?',teks,'Ya, hapus').then(function(ok){if(ok)post('/hapus',{ids:JSON.stringify(ids)}).then(function(j){muatUlang(j.pesan)}).catch(function(e){toast(e.message,1)})})}
+$('tbTim').addEventListener('click',function(e){
+  var h=e.target.closest('[data-hapus]');if(!h)return;
+  var t=timBy(h.dataset.hapus);
+  hapusIds([t.id],pegBy(t.peg).n+' akan dihapus dari tim pelaksana '+layNama(t.lay)+'.')});
 
-    /* [BARU] Dropdown Nama (TomSelect) diinisialisasi sekali di awal, diisi dari
-       PEGAWAI_SEKRETARIAT (DB sil2020). setPilihanNama() nyisipin opsi tambahan kalau
-       nama yang lagi di-edit kebetulan udah gak ada di daftar sekretariat (misal pegawai
-       nonaktif belakangan), biar data lama gak keilangan/ke-blank. */
-    function initSelectNama() {
-        var sel = $('inputNama');
-        PEGAWAI_SEKRETARIAT.forEach(function (p) {
-            var opt = document.createElement('option');
-            opt.value = p.nama_user;
-            opt.textContent = p.nama_user;
-            sel.appendChild(opt);
-        });
-        tsNama = new TomSelect(sel, {
-            create: false,
-            sortField: { field: 'text', direction: 'asc' },
-            placeholder: 'Ketik untuk mencari nama...'
-            // [FIX] Sengaja TANPA dropdownParent:'body' -- dropdown-nya biar tetep
-            // jadi anak elemen di dalam modal, jadi z-index-nya ngikut modal (di
-            // ATAS backdrop). Kalau dipindah ke <body>, dropdown-nya kebawa keluar
-            // dari modal terus ke-TUTUP sama backdrop modal (keliatan gak ada
-            // walaupun sebenernya ke-render, cuma di belakang layar gelapnya).
-        });
-    }
-    function setPilihanNama(nama) {
-        if (nama && !tsNama.options[nama]) {
-            tsNama.addOption({ value: nama, text: nama });
-        }
-        tsNama.setValue(nama || '', true);
-    }
+function tampilView(v){['viewList','viewCreate'].forEach(function(x){$(x).hidden=x!==v});window.scrollTo(0,0)}
 
-    function bukaModalTambah() {
-        editId = null;
-        $('modalFormTitle').textContent = 'Tambah Orang';
-        setPilihanNama('');
-        $('inputTugas').value = '';
-        bootstrap.Modal.getOrCreateInstance($('modalForm')).show();
-    }
-    function bukaModalEdit(id) {
-        var p = DATA.find(function (x) { return x.id == id; });
-        if (!p) { return; }
-        editId = id;
-        $('modalFormTitle').textContent = 'Edit Orang';
-        setPilihanNama(p.nama);
-        $('inputTugas').value = p.tugas_tanggung_jawab;
-        bootstrap.Modal.getOrCreateInstance($('modalForm')).show();
-    }
+/* ===== halaman tambah (multi-baris) ===== */
+var FORM=[];
+function layTujuan(){return LOCK||$('cLay').value}
+function pegSudah(lay){return TIM.filter(function(t){return t.lay==lay}).map(function(t){return t.peg})}
+function pegDipakaiDiForm(kecuali){return FORM.filter(function(x,k){return k!==kecuali&&x.peg}).map(function(x){return +x.peg})}
+function renderForm(){
+  ddTutup();
+  $('cRows').innerHTML=FORM.map(function(r,i){
+    var nama=r.peg?pegBy(r.peg).n:'';
+    return '<tr><td class="mtp-no">'+(i+1)+'</td><td><button type="button" class="mtp-sel mtp-pickbtn" data-cp="'+i+'"><span class="t'+(nama?'':' ph')+'">'+(nama?esc(nama):'-- pilih pegawai --')+'</span><i class="bi bi-chevron-down"></i></button></td>'+
+      '<td class="r"><button type="button" class="mtp-ibtn dng" data-crm="'+i+'"'+(FORM.length==1?' disabled':'')+' title="Hapus baris"><i class="bi bi-x-lg"></i></button></td></tr>'}).join('');
+  var n=FORM.filter(function(r){return r.peg}).length;
+  $('cSimpanTxt').textContent=n>1?'Simpan '+n+' anggota':'Simpan';
+}
 
-    function simpan() {
-        var nama = (tsNama.getValue() || '').trim();
-        var tugas = $('inputTugas').value.trim();
-        if (!nama || !tugas) { toast('Nama dan Tugas/Tanggung Jawab wajib diisi.', true); return; }
+/* ----- dropdown pegawai yang bisa dicari (cara 1: per baris) ----- */
+var DD={i:-1,act:0};
+function ddTutup(){DD.i=-1;var d=$('dd');if(d)d.hidden=true}
+function ddIsi(){
+  var q=$('ddQ').value.trim().toLowerCase(),dipakai=pegSudah(layTujuan()),lain=pegDipakaiDiForm(DD.i),cur=FORM[DD.i]?+FORM[DD.i].peg:0,h='',n=0;
+  PEGAWAI.forEach(function(p){
+    if(q&&p.n.toLowerCase().indexOf(q)<0)return;
+    var off=dipakai.indexOf(p.id)>-1||lain.indexOf(p.id)>-1;
+    var ket=dipakai.indexOf(p.id)>-1?'sudah di layanan ini':(lain.indexOf(p.id)>-1?'sudah dipilih di baris lain':'');
+    h+='<div class="mtp-opt'+(off?' off':'')+(p.id===cur?' on':'')+'" data-pid="'+p.id+'"'+(off?' data-off="1"':'')+'><span>'+esc(p.n)+'</span>'+(ket?'<small>'+ket+'</small>':'')+'</div>';n++;
+  });
+  $('ddL').innerHTML=h||'<div class="mtp-empty" style="padding:18px">Pegawai tidak ditemukan.</div>';
+  DD.act=0;ddAktif(0);
+}
+function ddOpsi(){return Array.prototype.slice.call($('ddL').querySelectorAll('.mtp-opt:not(.off)'))}
+function ddAktif(d){var o=ddOpsi();if(!o.length)return;DD.act=Math.max(0,Math.min(o.length-1,DD.act+d));o.forEach(function(x,k){x.classList.toggle('act',k===DD.act)});o[DD.act].scrollIntoView({block:'nearest'})}
+function ddPilih(pid){if(DD.i<0)return;FORM[DD.i].peg=+pid;renderForm()}
+function ddBuka(i,btn){
+  var d=$('dd'),r=btn.getBoundingClientRect();
+  DD.i=i;$('ddQ').value='';ddIsi();
+  d.hidden=false;d.style.width=Math.max(r.width,260)+'px';d.style.left=Math.min(r.left,window.innerWidth-d.offsetWidth-8)+'px';
+  var tinggi=d.offsetHeight,bawah=window.innerHeight-r.bottom;
+  d.style.top=(bawah<tinggi+12&&r.top>bawah?Math.max(8,r.top-tinggi-4):r.bottom+4)+'px';
+  $('ddQ').focus();
+}
+$('ddL').addEventListener('click',function(e){var o=e.target.closest('.mtp-opt');if(!o||o.dataset.off)return;ddPilih(o.dataset.pid)});
+$('ddQ').addEventListener('input',ddIsi);
+$('ddQ').addEventListener('keydown',function(e){
+  if(e.key==='ArrowDown'){e.preventDefault();ddAktif(1)}
+  else if(e.key==='ArrowUp'){e.preventDefault();ddAktif(-1)}
+  else if(e.key==='Enter'){e.preventDefault();var o=ddOpsi()[DD.act];if(o)ddPilih(o.dataset.pid)}
+});
+document.addEventListener('mousedown',function(e){if(DD.i>=0&&!e.target.closest('#dd')&&!e.target.closest('[data-cp]'))ddTutup()});
+window.addEventListener('scroll',ddTutup);window.addEventListener('resize',ddTutup);
 
-        var btn = $('btnSimpan');
-        btn.disabled = true;
-        var payload = { nama: nama, tugas_tanggung_jawab: tugas };
-        var url = editId ? urlDivisi('/' + editId + '/update') : urlDivisi('/simpan');
+/* ----- modal pilih banyak pegawai (cara 2) ----- */
+var PM=[];
+function pmRender(){
+  var q=$('pmQ').value.trim().toLowerCase(),dipakai=pegSudah(layTujuan()),h='';
+  PEGAWAI.forEach(function(p){
+    if(q&&p.n.toLowerCase().indexOf(q)<0)return;
+    var off=dipakai.indexOf(p.id)>-1;
+    h+='<label class="mtp-opt'+(off?' off':'')+'"><span><input type="checkbox" class="mtp-ck" data-pm="'+p.id+'"'+(PM.indexOf(p.id)>-1?' checked':'')+(off?' disabled':'')+'> &nbsp;'+esc(p.n)+'</span>'+(off?'<small>sudah di layanan ini</small>':'')+'</label>';
+  });
+  $('pmL').innerHTML=h||'<div class="mtp-empty" style="padding:24px">Pegawai tidak ditemukan.</div>';
+  pmHitung();
+}
+function pmHitung(){$('pmN').textContent=PM.length+' pegawai dipilih';$('pmOk').disabled=!PM.length}
+function pmBuka(){
+  if(!layTujuan()){toast('Pilih layanan dulu.',1);return}
+  PM=FORM.filter(function(r){return r.peg}).map(function(r){return +r.peg});
+  $('pmQ').value='';pmRender();$('pm').hidden=false;$('pmQ').focus();
+}
+function pmTutup(){$('pm').hidden=true}
+function pmIdsTampil(){return Array.prototype.slice.call($('pmL').querySelectorAll('[data-pm]:not(:disabled)')).map(function(c){return +c.dataset.pm})}
+$('cPilihDaftar').addEventListener('click',pmBuka);
+$('pmQ').addEventListener('input',pmRender);
+$('pmL').addEventListener('change',function(e){var c=e.target.closest('[data-pm]');if(!c)return;var id=+c.dataset.pm,k=PM.indexOf(id);
+  if(c.checked&&k<0){PM.push(id)}else if(!c.checked&&k>-1){PM.splice(k,1)}pmHitung()});
+$('pmAll').addEventListener('click',function(){pmIdsTampil().forEach(function(id){if(PM.indexOf(id)<0)PM.push(id)});pmRender()});
+$('pmNone').addEventListener('click',function(){var t=pmIdsTampil();PM=PM.filter(function(id){return t.indexOf(id)<0});pmRender()});
+$('pmBatal').addEventListener('click',pmTutup);
+$('pm').addEventListener('mousedown',function(e){if(e.target===$('pm'))pmTutup()});
+$('pmOk').addEventListener('click',function(){
+  /* baris yang sudah ada tetap di tempatnya (kalau dicentang), yang baru ditambah di bawah, baris kosong dibuang */
+  var tetap=FORM.filter(function(r){return r.peg&&PM.indexOf(+r.peg)>-1}).map(function(r){return +r.peg});
+  var baru=PM.filter(function(id){return tetap.indexOf(id)<0});
+  FORM=tetap.concat(baru).map(function(id){return {peg:id}});
+  if(!FORM.length)FORM=[{peg:''}];
+  pmTutup();renderForm();
+});
+document.addEventListener('keydown',function(e){if(e.key!=='Escape')return;if(!$('pm').hidden){pmTutup()}else if(DD.i>=0){ddTutup()}});
+function bukaCreate(){
+  FORM=[{peg:''}];
+  $('cLay').innerHTML=layOpts(LOCK||'',false);$('cLay').disabled=!!LOCK;
+  $('cLock').innerHTML=LOCK?'<span class="mtp-lock"><i class="bi bi-lock-fill"></i> Terkunci ke layanan '+esc(layNama(LOCK))+'</span>':'<span class="mtp-muted">Pilih layanan tujuan. Semua baris di bawah masuk ke layanan ini.</span>';
+  renderForm();tampilView('viewCreate');
+}
+$('btnTambah').addEventListener('click',bukaCreate);
+$('cBack').addEventListener('click',function(){tampilView('viewList')});$('cBatal').addEventListener('click',function(){tampilView('viewList')});
+$('cLay').addEventListener('change',function(){FORM.forEach(function(r){r.peg=''});renderForm()});
+$('cAddRow').addEventListener('click',function(){FORM.push({peg:''});renderForm()});
+$('cRows').addEventListener('click',function(e){
+  var p=e.target.closest('[data-cp]');
+  if(p){if(DD.i===+p.dataset.cp){ddTutup()}else{ddBuka(+p.dataset.cp,p)}return}
+  var x=e.target.closest('[data-crm]');if(!x||x.disabled)return;FORM.splice(+x.dataset.crm,1);renderForm()});
+$('cSimpan').addEventListener('click',function(){
+  var isi=FORM.filter(function(r){return r.peg});
+  if(!isi.length){toast('Isi minimal satu anggota.',1);return}
+  var lay=layTujuan();if(!lay){toast('Pilih layanan dulu.',1);return}
+  post('/tambah',{layanan:lay,items:JSON.stringify(isi.map(function(r){return {peg:+r.peg}}))})
+   .then(function(j){muatUlang(j.pesan)}).catch(function(e){toast(e.message,1)})});
 
-        post(url, payload).then(function () {
-            if (editId) {
-                var p = DATA.find(function (x) { return x.id == editId; });
-                if (p) { p.nama = nama; p.tugas_tanggung_jawab = tugas; }
-            } else {
-                DATA.unshift({ id: 'baru-' + Date.now(), nama: nama, tugas_tanggung_jawab: tugas, status: 'aktif' });
-            }
-            render();
-            bootstrap.Modal.getOrCreateInstance($('modalForm')).hide();
-            toast(editId ? 'Data berhasil diperbarui.' : 'Orang baru berhasil ditambahkan.');
-            if (!editId) { setTimeout(function () { window.location.reload(); }, 600); } // biar dapet id asli dari server
-        }).catch(function (e) {
-            toast(e.message, true);
-        }).finally(function () {
-            btn.disabled = false;
-        });
-    }
-
-    function toggleStatus(id) {
-        post(urlDivisi('/' + id + '/toggle-status'), {}).then(function () {
-            var p = DATA.find(function (x) { return x.id == id; });
-            if (p) { p.status = p.status === 'aktif' ? 'nonaktif' : 'aktif'; }
-            render();
-            toast('Status berhasil diubah.');
-        }).catch(function (e) { toast(e.message, true); });
-    }
-
-    function hapus(id) {
-        Swal.fire({
-            title: 'Hapus orang ini?',
-            text: 'Data yang udah dihapus gak bisa dikembalikan lagi.',
-            icon: 'question',
-            iconColor: '#0f172a',
-            background: '#ffffff',
-            showCancelButton: true,
-            confirmButtonText: '<i class="bi bi-trash me-1"></i> Ya, Hapus',
-            cancelButtonText: 'Batal',
-            reverseButtons: true,
-            buttonsStyling: false,
-            customClass: {
-                popup: 'bg-white rounded-3 shadow border p-4',
-                title: 'fw-bold text-dark fs-6 mb-1',
-                htmlContainer: 'text-muted small mb-3',
-                confirmButton: 'btn btn-danger btn-sm px-3 py-1.5 fw-semibold',
-                cancelButton: 'btn btn-outline-secondary btn-sm px-3 py-1.5 me-2'
-            }
-        }).then(function (result) {
-            if (!result.isConfirmed) { return; }
-            post(urlDivisi('/' + id + '/hapus'), {}).then(function () {
-                DATA = DATA.filter(function (x) { return x.id != id; });
-                render();
-                toast('Data berhasil dihapus.');
-            }).catch(function (e) { toast(e.message, true); });
-        });
-    }
-
-    /* [FIX] Ditunda sampe DOMContentLoaded -- biar library TomSelect (dimuat dari
-       layout.html, posisinya di bawah konten halaman ini dalam urutan render) udah
-       kepastian kebaca duluan sebelum initSelectNama() manggil "new TomSelect(...)".
-       Pola yang sama kayak form.html PO (yang juga nunggu DOMContentLoaded). Tanpa
-       ini, initSelectNama() bakal error "TomSelect is not defined" dan bikin tsNama
-       tetep null -- efeknya tombol "Tambah Orang"/"Edit" jadi kayak gak merespon
-       (errornya kejadian pas diklik, sebelum modal sempet kebuka). */
-    document.addEventListener('DOMContentLoaded', function () {
-        $('btnTambah').addEventListener('click', bukaModalTambah);
-        $('btnSimpan').addEventListener('click', simpan);
-        $('inputCari').addEventListener('input', render);
-        document.getElementById('bodyList').addEventListener('click', function (e) {
-            var t = e.target.closest('button');
-            if (!t) { return; }
-            if (t.dataset.edit) { bukaModalEdit(t.dataset.edit); }
-            else if (t.dataset.toggle) { toggleStatus(t.dataset.toggle); }
-            else if (t.dataset.hapus) { hapus(t.dataset.hapus); }
-        });
-
-        initSelectNama();
-        render();
-    });
-})();
+/* ===== mulai ===== */
+try{var pesanTunda=sessionStorage.getItem('mtp_toast');if(pesanTunda){sessionStorage.removeItem('mtp_toast');toast(pesanTunda)}}catch(e){}
+setPager($('pgTim'));
+saring();
 </script>

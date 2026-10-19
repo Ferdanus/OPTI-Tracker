@@ -61,7 +61,7 @@
 <check if="{{ @po.tujuan_lines && count(@po.tujuan_lines) > 0 }}">
     <repeat group="{{ @po.tujuan_lines }}" value="{{ @dl }}">
         <check if="{{ @dl.marker }}"><div class="point-row"><span class="point-marker">{{ @dl.marker }}</span>{{ @dl.teks }}</div></check>
-        <check if="{{ !@dl.marker }}"><div class="point-row plain">{{ @dl.teks }}</div></check>
+        <check if="{{ !@dl.marker }}"><div class="point-row plain">{{ @dl.teks | raw }}</div></check>
     </repeat>
 </check>
 <check if="{{ !@po.tujuan_lines || count(@po.tujuan_lines) == 0 }}"><div>-</div></check>
@@ -387,20 +387,7 @@
     </div>
 </check>
 
-<table class="signature-table">
-    <tr>
-        <td>
-            Menyetujui<br>Pejabat Pembuat Komitmen
-            <div class="signature-space"></div>
-            ( ............................. )
-        </td>
-        <td>
-            Pelaksana Kegiatan<br>Ketua Tim Kerja
-            <div class="signature-space"></div>
-            ( ............................. )
-        </td>
-    </tr>
-</table>
+{{ @po.ttd_blok | raw }}
 
 </body>
 </html>

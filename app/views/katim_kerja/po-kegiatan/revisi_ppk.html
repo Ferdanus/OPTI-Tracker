@@ -103,11 +103,15 @@
     .rvw-pcard .foot { margin-top: 12px; padding-top: 12px; border-top: 1px solid #f1f5f9; display: flex; gap: 8px; align-items: center; justify-content: space-between; }
     
     /* ---------- Panel samping ---------- */
+    .rvw-dari-daftar > :not(.rvw-sheet):not(.rvw-scrim):not(.rvw-dlg):not(.rvw-toast) { visibility: hidden; }   /* dibuka dari Daftar Review PO: hanya panel yang terlihat */
     .rvw-scrim { position: fixed; inset: 0; background: rgba(15,23,42,.45); opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 1050; }
     .rvw-scrim.open { opacity: 1; pointer-events: auto; }
-    .rvw-sheet { position: fixed; top: 0; right: 0; bottom: 0; width: min(900px, 100vw); background: #f1f5f9; z-index: 1055; display: flex; flex-direction: column; transform: translateX(100%); visibility: hidden; transition: transform .24s ease, width .24s ease, visibility 0s .24s; box-shadow: -12px 0 40px rgba(15,23,42,.18); }
+    .rvw-sheet { position: fixed; top: 0; right: 0; bottom: 0; width: calc(100vw - var(--sidebar-expanded-width, 264px)); background: #f1f5f9; z-index: 1055; display: flex; flex-direction: column; transform: translateX(100%); visibility: hidden; transition: transform .24s ease, width .24s ease, visibility 0s .24s; box-shadow: -12px 0 40px rgba(15,23,42,.18); }
     .rvw-sheet.open { transform: none; visibility: visible; transition: transform .24s ease, width .24s ease, visibility 0s; }
-    .rvw-sheet.wide { width: 100vw; }                       /* dilebarkan: menutup sidebar */
+    .rvw-instan .rvw-sheet, .rvw-instan .rvw-scrim { transition: none !important; }   /* dibuka dari Daftar Review PO: panel sudah terbuka sejak halaman tampil (sudah digeser di halaman daftar) */
+    body.sidebar-collapsed .rvw-sheet { width: calc(100vw - var(--sidebar-mini-width, 74px)); }   /* bawaan: panel mentok sampai tepi sidebar (sidebar tetap terlihat) */
+    @media (max-width: 991.98px) { .rvw-sheet, body.sidebar-collapsed .rvw-sheet { width: 100vw; } }
+    .rvw-sheet.wide, body.sidebar-collapsed .rvw-sheet.wide { width: 100vw; }              /* dilebarkan: menutup sidebar */
     .rvw-shtools { display: flex; gap: 8px; flex-shrink: 0; }
     /* info judul + alur (stepper) bisa disembunyikan dengan transisi geser, supaya dokumen PO lebih lega */
     .rvw-shh .sub2, .rvw-shh .meta { max-height: 120px; overflow: hidden; transition: max-height .25s ease, opacity .2s ease, margin .25s ease; }
@@ -151,6 +155,12 @@
     
     .rvw-paper { background: #fff; border: 1px solid var(--rvw-border); border-radius: 6px; max-width: 210mm; width: 100%; margin: 0 auto; overflow-x: auto; }
     .rvw-paper .po-doc-sheet { box-shadow: none !important; margin: 0 !important; }
+    .rvw-catmitra { display: flex; gap: 10px; align-items: flex-start; background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 3px solid #059669; border-radius: 10px; padding: 10px 13px; margin-bottom: 14px; }
+    .rvw-catmitra > i { color: #059669; font-size: 1.05rem; margin-top: 1px; }
+    .rvw-catmitra .k { font-size: .72rem; font-weight: 700; color: #059669; }
+    .rvw-catmitra .t { font-size: .85rem; color: #14532d; margin-top: 1px; white-space: pre-wrap; word-break: break-word; }
+    /* catatan biasa dari Tim Mitra: ditampilkan di bawah dokumen PO, bukan bagian dari catatan revisi */
+    .rvw-catmitra.bawah { max-width: 210mm; margin: 12px auto 0; }
     .rvw-sec { position: relative; }
     .rvw-sec-h { display: flex; align-items: baseline; gap: 8px; }
     .rvw-sec-h .po-section-title { flex: 1; margin: 18px 0 8px; }
@@ -340,6 +350,7 @@
                     <div id="rvwBanner"></div>
                     <div id="rvwExtra"></div>
                     <div class="rvw-paper"><div id="rvwDocHost"><div class="rvw-loading">Memuat dokumen PO...</div></div></div>
+                    <div id="rvwCatMitra"></div>
                     <section class="rvw-umum" id="rvwUmum" data-sec="umum"></section>
                 </div>
                 <div id="rvwAlurPane" hidden></div>
@@ -366,13 +377,14 @@
         var ROLE = '{{ @mode }}';              // katim | pembuat | ppk
         var PREFIX = BASE + '{{ @prefix_api }}';   // /po-revisi-ppk (Ketua Tim, Ketua Pelaksana) atau /po-ppk (PPK BLU)
         var DATA = {{ @daftar_po_json | raw }};
+        var BOOT = {{ @boot_json | raw }};   // rincian + dokumen PO yang sudah ditanam server (hanya saat dibuka dari Daftar Review PO)
         var BULAN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
 
         var tab = '', q = '', current = null, detail = null, shTab = 'dok', composer = null, openTicket = 0, secs = {};
 
         function $(id) { return document.getElementById(id); }
         function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-        function fmt(t) { var m = /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}))?/.exec(t || ''); if (!m) { return '-'; } return (+m[3]) + ' ' + BULAN[+m[2] - 1] + (m[4] ? ' ' + m[4] + ':' + m[5] : ''); }
+        function fmt(t) { var m = /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}))?/.exec(t || ''); if (!m) { return '-'; } return (+m[3]) + ' ' + BULAN[+m[2] - 1] + ' ' + m[1] + (m[4] ? ' ' + m[4] + ':' + m[5] : ''); }
         function initials(n) { return String(n).split(' ').map(function (x) { return x.charAt(0); }).slice(0, 2).join('').toUpperCase(); }
         function first(n) { return String(n).split(' ')[0]; }
         function PO_URL(id) { return BASE + '/po-kegiatan/' + id; }
@@ -719,13 +731,17 @@
         function bolehEdit(p) { return bolehTandai(p); }
 
         /* ---------- Panel: kepala, stepper, banner, dock ---------- */
+        // Catatan Tim Mitra saat memvalidasi PO: catatan biasa (bukan revisi), tampil di bawah dokumen PO
+        function renderCatMitra(p) {
+            $('rvwCatMitra').innerHTML = p && p.catatan_mitra ? '<div class="rvw-catmitra bawah"><i class="bi bi-chat-left-text"></i><div><div class="k">Catatan Tim Mitra</div><div class="t">' + esc(p.catatan_mitra) + '</div></div></div>' : '';
+        }
         function renderChrome() {
             var p = curPo(); if (!p) { return; }
             $('rvwShNo').textContent = p.nomor;
             $('rvwShPill').innerHTML = badge(p);
             $('rvwShSub').textContent = p.mitra + ' - ' + p.judul;
             $('rvwShMeta').innerHTML = 'Ketua Pelaksana <b>' + esc(p.pembuat) + '</b> &middot; Ketua Tim <b>' + esc(p.katim) + '</b> &middot; Disetujui Ketua Tim ' + fmt(p.disetujui_at);
-            renderStepper(p); renderShTabs(); renderBanner(p); renderExtra(p); renderDock(p);
+            renderStepper(p); renderShTabs(); renderBanner(p); renderExtra(p); renderDock(p); renderCatMitra(p);
             if (shTab === 'alur') { renderAlur(); }
         }
         function renderStepper(p) {
@@ -827,7 +843,7 @@
                     sec.appendChild(head); sec.appendChild(body); sec.appendChild(nt);
                     cur = { key: key, body: body, tools: tools, notes: nt };
                     secs[key] = cur;
-                } else if (el.classList.contains('po-signature-row')) { cur = null; }
+                } else if (el.classList.contains('po-signature-row') || el.classList.contains('ptd-blok')) { cur = null; }
                 else if (cur) { cur.body.appendChild(el); }
             });
         }
@@ -879,12 +895,15 @@
             var tiket = ++openTicket;
             current = id; detail = null; shTab = 'dok'; composer = null; secs = {};
             var p = rowOf(id); if (!p) { return; }
-            $('rvwDocHost').innerHTML = '<div class="rvw-loading">Memuat dokumen PO...</div>';
+            var bt = (BOOT && BOOT.id === id) ? BOOT : null; BOOT = null;
+            $('rvwDocHost').innerHTML = bt ? '' : '<div class="rvw-loading">Memuat dokumen PO...</div>';
             $('rvwUmum').innerHTML = ''; $('rvwUmum').hidden = true; $('rvwBanner').innerHTML = ''; $('rvwExtra').innerHTML = '';
             $('rvwDokPane').hidden = false; $('rvwAlurPane').hidden = true;
             renderChrome();
             $('rvwScrim').classList.add('open'); $('rvwSheet').classList.add('open'); $('rvwSheet').setAttribute('aria-hidden', 'false');
             setTimeout(function () { $('rvwShClose').focus(); }, 60);
+
+            if (bt) { terapkanDetail(bt.detail); bangunDokumen(bt.preview); renderNotes(); return; }   // sudah ditanam server: langsung tampil
 
             api(URL_API(id, 'detail')).then(function (j) {
                 if (tiket !== openTicket) { return; }
@@ -904,7 +923,10 @@
                 $('rvwDocHost').innerHTML = '<div class="rvw-loading err">' + esc(e.message) + '</div>';
             });
         }
+        // dibuka dari Daftar Review PO (?dari=daftar): menutup panel berarti kembali ke daftar itu
+        var DARI_DAFTAR = /[?&]dari=daftar(&|$)/.test(window.location.search);
         function closeSheet() {
+            if (DARI_DAFTAR) { window.location.href = BASE + '/po-kegiatan/daftar'; return; }
             openTicket++; current = null; detail = null; composer = null; secs = {};
             $('rvwScrim').classList.remove('open'); $('rvwSheet').classList.remove('open'); $('rvwSheet').setAttribute('aria-hidden', 'true');
         }
@@ -1058,8 +1080,8 @@
         $('rvwShClose').addEventListener('click', closeSheet);
         /* ---------- Tampilan panel: sembunyikan info/alur dan lebarkan panel (pilihan diingat di browser, berlaku di semua halaman panel) ---------- */
         var shCmp = false, shWide = false;
-        try { shCmp = localStorage.getItem('siloptiShCmp') === '1'; shWide = localStorage.getItem('siloptiShWide') === '1'; } catch (e) {}
-        function simpanTampilanSheet() { try { localStorage.setItem('siloptiShCmp', shCmp ? '1' : '0'); localStorage.setItem('siloptiShWide', shWide ? '1' : '0'); } catch (e) {} }
+        try { shCmp = localStorage.getItem('siloptiShCmp') === '1'; shWide = localStorage.getItem('siloptiShWide2') === '1'; } catch (e) {}
+        function simpanTampilanSheet() { try { localStorage.setItem('siloptiShCmp', shCmp ? '1' : '0'); localStorage.setItem('siloptiShWide2', shWide ? '1' : '0'); } catch (e) {} }
         function terapkanTampilanSheet() {
             $('rvwSheet').classList.toggle('cmp', shCmp);
             $('rvwSheet').classList.toggle('wide', shWide);
@@ -1086,7 +1108,13 @@
         (function () { var d = defPeriode(tab); bulan = d.bulan; tahun = d.tahun; statusF = defStatus(tab); })();
         isiOpsiFilter();
         renderAll();
-        (function () { var m = /[?&]buka=(\d+)/.exec(window.location.search); if (m && rowOf(parseInt(m[1], 10))) { openSheet(parseInt(m[1], 10)); } })();
+        (function () {
+            var m = /[?&]buka=(\d+)/.exec(window.location.search);
+            if (DARI_DAFTAR) { $('rvwRoot').classList.add('rvw-dari-daftar', 'rvw-instan'); }
+            if (m && rowOf(parseInt(m[1], 10))) { openSheet(parseInt(m[1], 10)); }
+            else if (m && DARI_DAFTAR) { window.location.href = BASE + '/po-kegiatan/daftar'; }   // PO sudah bukan revisi PPK BLU (mis. sudah dikirim ke PPK BLU): kembali ke daftar
+            if (DARI_DAFTAR) { requestAnimationFrame(function () { requestAnimationFrame(function () { $('rvwRoot').classList.remove('rvw-instan'); }); }); }
+        })();
     })();
 
 </script>
