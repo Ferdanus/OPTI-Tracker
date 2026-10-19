@@ -5297,24 +5297,31 @@ document.querySelectorAll('.btn-detail-toggle-unlock').forEach(function(btn) {
 
         if (isUnlocked) {
             Swal.fire({
-                title: 'Kunci Akses Edit?',
-                html: '<div class="text-start">' +
-                      '<p class="mb-2">Anda akan <strong>mengunci kembali</strong> izin perbaikan data untuk <strong>' + nomorOrder + '</strong>.</p>' +
-                      '<div class="p-2.5 rounded-2 bg-light border mb-3 small">' +
-                      '<div><i class="bi bi-person-check text-primary me-1"></i> Dibuka oleh: <strong>' + unlockedBy + '</strong></div>' +
-                      (unlockedAt ? '<div><i class="bi bi-clock text-secondary me-1"></i> Dibuka pada: ' + unlockedAt + '</div>' : '') +
-                      (unlockedUntilLabel ? '<div><i class="bi bi-hourglass-split text-danger me-1"></i> Batas Waktu: <strong>' + unlockedUntilLabel + '</strong> ' + (unlockedCountdown ? '<span class="badge bg-danger ms-1 font-monospace">' + unlockedCountdown + '</span>' : '') + '</div>' : '') +
-                      (unlockedReason ? '<div class="mt-1 text-muted"><i class="bi bi-info-circle me-1"></i> Alasan: <em>"' + unlockedReason + '"</em></div>' : '') +
+                html: '<div class="text-center pt-2 pb-1">' +
+                      '<div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-light border mb-3 shadow-xs" style="width: 54px; height: 54px;">' +
+                      '<i class="bi bi-lock-fill fs-3 text-secondary"></i>' +
                       '</div>' +
-                      '<label class="form-label small fw-semibold text-dark">Catatan Penguncian (Opsional):</label>' +
-                      '<input type="text" id="swalDetailUnlockReason" class="form-control form-control-sm" placeholder="Contoh: Perbaikan data selesai / diverifikasi">' +
+                      '<h5 class="fw-bold text-dark mb-1">Kunci Akses Edit?</h5>' +
+                      '<div class="mb-3"><span class="badge bg-light text-secondary border font-monospace px-2.5 py-1" style="font-size:0.8rem;">' + nomorOrder + '</span></div>' +
+                      '</div>' +
+                      '<div class="text-start">' +
+                      '<div class="p-2.5 rounded-3 bg-light border mb-3 small" style="line-height:1.45;">' +
+                      '<div><span class="text-muted">Dibuka oleh:</span> <strong class="text-dark">' + unlockedBy + '</strong></div>' +
+                      (unlockedUntilLabel ? '<div class="mt-1"><span class="text-muted">Batas Waktu:</span> <span class="fw-semibold text-danger">' + unlockedUntilLabel + '</span> ' + (unlockedCountdown ? '<span class="badge bg-danger text-white px-1.5 py-0.5 ms-1 font-monospace" style="font-size:0.7rem;">' + unlockedCountdown + '</span>' : '') + '</div>' : '') +
+                      (unlockedReason ? '<div class="mt-1 text-muted fst-italic" style="font-size:0.78rem;">"' + unlockedReason + '"</div>' : '') +
+                      '</div>' +
+                      '<label class="form-label small fw-semibold text-secondary mb-1">Catatan Penguncian (Opsional):</label>' +
+                      '<input type="text" id="swalDetailUnlockReason" class="form-control form-control-sm rounded-2" placeholder="Contoh: Perbaikan data selesai">' +
                       '</div>',
-                icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#212529',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: '<i class="bi bi-lock-fill me-1"></i> Ya, Kunci Sekarang',
+                confirmButtonText: '<i class="bi bi-lock-fill me-1"></i> Kunci Sekarang',
                 cancelButtonText: 'Batal',
+                customClass: {
+                    popup: 'rounded-4 shadow-lg border-0 p-3',
+                    confirmButton: 'btn btn-dark btn-sm px-3.5 py-2 fw-semibold rounded-2 shadow-xs',
+                    cancelButton: 'btn btn-light btn-sm border px-3.5 py-2 fw-semibold rounded-2 text-secondary shadow-none ms-2'
+                },
+                buttonsStyling: false,
                 preConfirm: function() {
                     return document.getElementById('swalDetailUnlockReason').value;
                 }
@@ -5325,29 +5332,39 @@ document.querySelectorAll('.btn-detail-toggle-unlock').forEach(function(btn) {
             });
         } else {
             Swal.fire({
-                title: 'Buka Izin Edit (Unlock)?',
-                html: '<div class="text-start">' +
-                      '<p class="mb-2 text-dark">Buka gembok izin edit data khusus untuk <strong>' + nomorOrder + '</strong>?</p>' +
+                html: '<div class="text-center pt-2 pb-1">' +
+                      '<div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-warning-subtle text-warning-emphasis border border-warning-subtle mb-3 shadow-xs" style="width: 54px; height: 54px;">' +
+                      '<i class="bi bi-unlock-fill fs-3 text-warning"></i>' +
+                      '</div>' +
+                      '<h5 class="fw-bold text-dark mb-1">Buka Izin Edit</h5>' +
+                      '<div class="mb-3"><span class="badge bg-light text-dark border font-monospace px-2.5 py-1" style="font-size:0.8rem;"><i class="bi bi-file-earmark-text text-primary me-1"></i>' + nomorOrder + '</span></div>' +
+                      '</div>' +
+                      '<div class="text-start">' +
                       '<div class="mb-3">' +
-                      '<label class="form-label small fw-semibold text-dark mb-1 d-flex align-items-center justify-content-between">' +
-                      '<span>Berapa Hari Izin Buka Edit (Auto-Kunci):</span>' +
-                      '<span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace" id="labelJamDurasiDetail">72 Jam</span>' +
+                      '<label class="form-label small fw-semibold text-secondary mb-1.5 d-flex align-items-center justify-content-between">' +
+                      '<span>Durasi Buka Akses:</span>' +
+                      '<span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace px-2 py-0.5" id="labelJamDurasiDetail">72 Jam</span>' +
                       '</label>' +
                       '<div class="input-group input-group-sm">' +
-                      '<input type="number" id="swalDetailUnlockDays" class="form-control" min="1" max="365" value="3" placeholder="Contoh: 3" oninput="var d = parseInt(this.value) || 0; document.getElementById(\'labelJamDurasiDetail\').textContent = (d > 0 ? (d * 24) : 0) + \' Jam\';">' +
-                      '<span class="input-group-text bg-light text-muted fw-semibold">Hari</span>' +
+                      '<input type="number" id="swalDetailUnlockDays" class="form-control rounded-start-2" min="1" max="365" value="3" placeholder="Contoh: 3" oninput="var d = parseInt(this.value) || 0; document.getElementById(\'labelJamDurasiDetail\').textContent = (d > 0 ? (d * 24) : 0) + \' Jam\';">' +
+                      '<span class="input-group-text bg-light text-secondary rounded-end-2 small fw-medium">Hari</span>' +
                       '</div>' +
-                      '<div class="text-muted" style="font-size:0.75rem; margin-top:4px;"><i class="bi bi-info-circle text-primary me-1"></i>Masukkan angka hari (bebas). Hitungan countdown jam akan otomatis disesuaikan.</div>' +
+                      '<div class="text-muted mt-1" style="font-size:0.75rem;"><i class="bi bi-clock-history me-1 text-primary"></i>Countdown berjalan otomatis sesuai durasi hari yang diisi.</div>' +
                       '</div>' +
-                      '<label class="form-label small fw-semibold text-dark">Alasan Pembukaan Gembok <span class="text-danger">*</span>:</label>' +
-                      '<textarea id="swalDetailUnlockReason" class="form-control form-control-sm" rows="2" placeholder="Contoh: Permintaan revisi draf dari PIC / pelanggan"></textarea>' +
+                      '<div class="mb-2">' +
+                      '<label class="form-label small fw-semibold text-secondary mb-1.5">Alasan Pembukaan <span class="text-danger">*</span></label>' +
+                      '<textarea id="swalDetailUnlockReason" class="form-control form-control-sm rounded-2" rows="2" placeholder="Contoh: Permintaan revisi draf dari PIC / pelanggan"></textarea>' +
+                      '</div>' +
                       '</div>',
-                icon: 'question',
                 showCancelButton: true,
-                confirmButtonColor: '#ffc107',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: '<span class="text-dark fw-bold"><i class="bi bi-unlock-fill me-1"></i> Buka Gembok</span>',
+                confirmButtonText: '<i class="bi bi-unlock-fill me-1"></i> Buka Gembok',
                 cancelButtonText: 'Batal',
+                customClass: {
+                    popup: 'rounded-4 shadow-lg border-0 p-3',
+                    confirmButton: 'btn btn-primary btn-sm px-3.5 py-2 fw-semibold rounded-2 shadow-xs',
+                    cancelButton: 'btn btn-light btn-sm border px-3.5 py-2 fw-semibold rounded-2 text-secondary shadow-none ms-2'
+                },
+                buttonsStyling: false,
                 preConfirm: function() {
                     var val = document.getElementById('swalDetailUnlockReason').value.trim();
                     var days = parseInt(document.getElementById('swalDetailUnlockDays').value) || 0;
@@ -5356,7 +5373,7 @@ document.querySelectorAll('.btn-detail-toggle-unlock').forEach(function(btn) {
                         return false;
                     }
                     if (!val) {
-                        Swal.showValidationMessage('Alasan pembukaan gembok wajib diisi demi jejak audit.');
+                        Swal.showValidationMessage('Alasan pembukaan gembok wajib diisi.');
                         return false;
                     }
                     return { reason: val, days: days };
