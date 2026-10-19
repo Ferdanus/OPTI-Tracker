@@ -884,6 +884,19 @@
 
             <!-- Tombol Aksi di Header Atas: Riwayat Aktivitas & Kembali ke Daftar -->
             <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                <check if="{{ @is_superadmin }}">
+                    <button type="button" class="btn btn-sm px-3 py-1.5 fw-semibold border shadow-xs d-flex align-items-center gap-1.5 btn-detail-toggle-unlock {{ @order.is_unlocked_edit ? 'btn-warning text-dark border-warning' : 'btn-outline-secondary bg-white' }}"
+                        data-order-id="{{ @order.id }}"
+                        data-nomor-order="{{ @order.nomor_order ?: (@order.nomor_permintaan ?: ('REQ-' . @order.id)) }}"
+                        data-is-unlocked="{{ @order.is_unlocked_edit ? '1' : '0' }}"
+                        data-unlocked-reason="{{ @order.unlocked_reason ?: '' }}"
+                        data-unlocked-by="{{ @order.unlocked_by_name ?: '' }}"
+                        data-unlocked-at="{{ @order.unlocked_at ? date('d/m/Y H:i', strtotime(@order.unlocked_at)) : '' }}"
+                        title="{{ @order.is_unlocked_edit ? 'Izin Edit TERBUKA (Klik untuk mengunci kembali)' : 'Izin Edit TERKUNCI (Klik untuk membuka izin edit per-order)' }}">
+                        <i class="bi {{ @order.is_unlocked_edit ? 'bi-unlock-fill' : 'bi-lock-fill' }}"></i>
+                        <span>{{ @order.is_unlocked_edit ? 'Kunci Edit Order' : 'Buka Izin Edit (Unlock)' }}</span>
+                    </button>
+                </check>
                 <button type="button" class="btn btn-white btn-sm px-3 py-1.5 fw-semibold border shadow-xs d-flex align-items-center gap-2 text-dark bg-white" data-bs-toggle="modal" data-bs-target="#modalActivityTracker" title="Buka Riwayat Aktivitas & Jejak Audit">
                     <i class="bi bi-clock-history text-primary"></i>
                     <span>Riwayat Aktivitas</span>
@@ -1013,6 +1026,31 @@
             </div>
         </div>
     </div>
+
+    <!-- Banner Status Unlock Per-Order (Super Admin) -->
+    <check if="{{ @order.is_unlocked_edit }}">
+        <div class="alert alert-warning border border-warning-subtle shadow-xs mb-3 d-flex align-items-start gap-3 py-2.5 px-3 rounded-3" role="alert">
+            <i class="bi bi-unlock-fill fs-3 text-warning mt-0.5 flex-shrink-0"></i>
+            <div class="flex-grow-1">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-1">
+                    <strong class="text-dark"><i class="bi bi-shield-check text-success me-1"></i>Izin Perubahan Data Terbuka (Unlock Per-Order Aktif)</strong>
+                    <span class="badge bg-warning text-dark border border-warning-subtle px-2 py-1"><i class="bi bi-unlock-fill me-1"></i>Unlocked by Super Admin</span>
+                </div>
+                <p class="mb-1 text-dark small" style="line-height: 1.45;">
+                    Super Admin telah membuka akses perbaikan data khusus untuk order ini sesuai kebijakan audit BPK/Itjen. User/role yang berwenang (PIC proposal, Ketua Tim, atau Tim Mitra) dapat melakukan revisi atau perbaikan pada formulir yang bersangkutan.
+                </p>
+                <div class="text-secondary small d-flex flex-wrap align-items-center gap-2" style="font-size: 0.75rem;">
+                    <span><i class="bi bi-person-circle me-1"></i> Dibuka oleh: <strong>{{ @order.unlocked_by_name ?: 'Super Admin' }}</strong></span>
+                    <span>&bull;</span>
+                    <span><i class="bi bi-clock-history me-1"></i> Waktu: {{ @order.unlocked_at ? date('d/m/Y H:i', strtotime(@order.unlocked_at)) : '-' }}</span>
+                    <check if="{{ !empty(@order.unlocked_reason) }}">
+                        <span>&bull;</span>
+                        <span><i class="bi bi-chat-left-quote me-1"></i> Alasan: <em>"{{ @order.unlocked_reason }}"</em></span>
+                    </check>
+                </div>
+            </div>
+        </div>
+    </check>
 
     <!-- Action Guide / Alert Panduan Langkah Berikutnya -->
     <check if="{{ !empty(@langkah_berikutnya) }}">
@@ -5224,5 +5262,136 @@ function validateProposalWordFile(input) {
         }
         return false;
     }
+}
+
+// ========================================================
+// KONTROL SUPER ADMIN: UNLOCK PER-ORDER (DETAIL ORDER)
+// ========================================================
+document.querySelectorAll('.btn-detail-toggle-unlock').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+        e.preventDefault();
+
+        var orderId = this.getAttribute('data-order-id');
+        var nomorOrder = this.getAttribute('data-nomor-order') || ('Order #' + orderId);
+        var isUnlocked = this.getAttribute('data-is-unlocked') === '1';
+        var unlockedReason = this.getAttribute('data-unlocked-reason') || '';
+        var unlockedBy = this.getAttribute('data-unlocked-by') || 'Super Admin';
+        var unlockedAt = this.getAttribute('data-unlocked-at') || '';
+
+        if (isUnlocked) {
+            Swal.fire({
+                title: 'Kunci Akses Edit?',
+                html: '<div class="text-start">' +
+                      '<p class="mb-2">Anda akan <strong>mengunci kembali</strong> izin perbaikan data untuk <strong>' + nomorOrder + '</strong>.</p>' +
+                      '<div class="p-2.5 rounded-2 bg-light border mb-3 small">' +
+                      '<div><i class="bi bi-person-check text-primary me-1"></i> Dibuka sebelumnya oleh: <strong>' + unlockedBy + '</strong></div>' +
+                      (unlockedAt ? '<div><i class="bi bi-clock text-secondary me-1"></i> Pada: ' + unlockedAt + '</div>' : '') +
+                      (unlockedReason ? '<div><i class="bi bi-info-circle text-muted me-1"></i> Alasan: <em>"' + unlockedReason + '"</em></div>' : '') +
+                      '</div>' +
+                      '<label class="form-label small fw-semibold text-dark">Catatan Penguncian (Opsional):</label>' +
+                      '<input type="text" id="swalDetailUnlockReason" class="form-control form-control-sm" placeholder="Contoh: Perbaikan data selesai / diverifikasi">' +
+                      '</div>',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#212529',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="bi bi-lock-fill me-1"></i> Ya, Kunci Sekarang',
+                cancelButtonText: 'Batal',
+                preConfirm: function() {
+                    return document.getElementById('swalDetailUnlockReason').value;
+                }
+            }).then(function(result) {
+                if (result.isConfirmed) {
+                    kirimDetailToggleUnlock(orderId, result.value || 'Akses edit ditutup kembali oleh Super Admin');
+                }
+            });
+        } else {
+            Swal.fire({
+                title: 'Buka Izin Edit (Unlock)?',
+                html: '<div class="text-start">' +
+                      '<p class="mb-2 text-dark">Buka gembok izin edit data khusus untuk <strong>' + nomorOrder + '</strong>?</p>' +
+                      '<div class="alert alert-warning py-2 px-3 small mb-3 border-warning">' +
+                      '<i class="bi bi-exclamation-triangle-fill me-1"></i> ' +
+                      'Sesuai standar audit BPK/Itjen, perbaikan data formulir/proposal hanya boleh dilakukan setelah Super Admin membuka gembok pada order ini.' +
+                      '</div>' +
+                      '<label class="form-label small fw-semibold text-dark">Alasan Pembukaan Gembok <span class="text-danger">*</span>:</label>' +
+                      '<textarea id="swalDetailUnlockReason" class="form-control form-control-sm" rows="2" placeholder="Contoh: Permintaan revisi draf dari PIC / pelanggan"></textarea>' +
+                      '</div>',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#ffc107',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<span class="text-dark fw-bold"><i class="bi bi-unlock-fill me-1"></i> Buka Gembok</span>',
+                cancelButtonText: 'Batal',
+                preConfirm: function() {
+                    var val = document.getElementById('swalDetailUnlockReason').value.trim();
+                    if (!val) {
+                        Swal.showValidationMessage('Alasan pembukaan gembok wajib diisi demi jejak audit.');
+                        return false;
+                    }
+                    return val;
+                }
+            }).then(function(result) {
+                if (result.isConfirmed) {
+                    kirimDetailToggleUnlock(orderId, result.value);
+                }
+            });
+        }
+    });
+});
+
+function kirimDetailToggleUnlock(orderId, reason) {
+    Swal.fire({
+        title: 'Memproses...',
+        text: 'Menyimpan status gembok order dan merekam log audit...',
+        allowOutsideClick: false,
+        didOpen: function() {
+            Swal.showLoading();
+        }
+    });
+
+    var formData = new FormData();
+    formData.append('reason', reason);
+    var csrfMeta = document.querySelector('input[name="csrf_token"]');
+    if (csrfMeta) {
+        formData.append('csrf_token', csrfMeta.value);
+    }
+
+    fetch('{{ @BASE }}/order/' + orderId + '/toggle-unlock', {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: formData
+    })
+    .then(function(res) {
+        return res.json();
+    })
+    .then(function(data) {
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil!',
+                text: data.message,
+                timer: 2000,
+                showConfirmButton: false
+            }).then(function() {
+                window.location.reload();
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal',
+                text: data.message || 'Terjadi kesalahan sistem.'
+            });
+        }
+    })
+    .catch(function(err) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error Koneksi',
+            text: err.message
+        });
+    });
 }
 </script>

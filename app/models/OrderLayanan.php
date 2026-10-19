@@ -43,7 +43,11 @@ class OrderLayanan extends \DB\SQL\Mapper {
         if ($checked) return;
         try {
             $cols = [
-                'nomor_permintaan' => 'VARCHAR(50) NULL AFTER id'
+                'nomor_permintaan' => 'VARCHAR(50) NULL AFTER id',
+                'is_unlocked_edit' => 'TINYINT(1) NOT NULL DEFAULT 0',
+                'unlocked_by' => 'INT(11) NULL',
+                'unlocked_at' => 'DATETIME NULL',
+                'unlocked_reason' => 'VARCHAR(255) NULL'
             ];
             foreach ($cols as $col => $def) {
                 try {
@@ -478,7 +482,8 @@ class OrderLayanan extends \DB\SQL\Mapper {
                        COALESCE((SELECT SUM(jumlah) FROM opti_pembayaran WHERE order_id = o.id), 0) AS total_terbayar,
                        (SELECT MAX(tanggal_bayar) FROM opti_pembayaran WHERE order_id = o.id) AS tanggal_bayar_terakhir,
                        u_pic.nama_user AS pic_proposal_nama,
-                       u_pelaksana.nama_user AS ketua_pelaksana_nama
+                       u_pelaksana.nama_user AS ketua_pelaksana_nama,
+                       u_unlock.nama_user AS unlocked_by_name
                 FROM order_layanan o
                 JOIN tb_customer c ON o.id_customer = c.id_customer
                 LEFT JOIN po p ON o.id = p.order_id
@@ -490,6 +495,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
                 LEFT JOIN tb_arsipuser u_tinjau ON tk.ditinjau_oleh = u_tinjau.id_user
                 LEFT JOIN tb_arsipuser u_pic ON o.pic_proposal_id = u_pic.id_user
                 LEFT JOIN tb_arsipuser u_pelaksana ON o.ketua_pelaksana_id = u_pelaksana.id_user
+                LEFT JOIN tb_arsipuser u_unlock ON o.unlocked_by = u_unlock.id_user
                 WHERE 1=1";
         
         $params = array();
@@ -969,6 +975,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
                     u_pic.nama_user AS pic_proposal_nama,
                     u_pelaksana.nama_user AS ketua_pelaksana_nama,
                     u_klaim.nama_user AS nama_pengklaim,
+                    u_unlock.nama_user AS unlocked_by_name,
                     a.nomor_surat AS nomor_surat_masuk,
                     a.tanggal_surat AS tanggal_surat_masuk,
                     a.perihal AS perihal_surat_masuk,
@@ -984,6 +991,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
              LEFT JOIN tb_arsipuser u_pic ON o.pic_proposal_id = u_pic.id_user
              LEFT JOIN tb_arsipuser u_pelaksana ON o.ketua_pelaksana_id = u_pelaksana.id_user
              LEFT JOIN tb_arsipuser u_klaim ON o.diklaim_oleh = u_klaim.id_user
+              LEFT JOIN tb_arsipuser u_unlock ON o.unlocked_by = u_unlock.id_user
              LEFT JOIN opti_proposal_riset pr ON o.id = pr.order_id
              LEFT JOIN opti_bast b ON b.id = (SELECT id FROM opti_bast WHERE order_id = o.id ORDER BY id DESC LIMIT 1)
              WHERE o.id = ?",
@@ -1678,5 +1686,49 @@ class OrderLayanan extends \DB\SQL\Mapper {
         $this->erase();
         return true;
     }
-}
 
+    /**
+     * Cek apakah order layanan sedang dalam status unlock per-order oleh Super Admin
+     */
+    public function isOrderUnlocked(int $orderId): bool {
+        if ($orderId <= 0) return false;
+        $row = $this->db->exec("SELECT is_unlocked_edit FROM order_layanan WHERE id = ?", [1 => $orderId]);
+        if (!empty($row)) {
+            return ((int)$row[0]['is_unlocked_edit'] === 1);
+        }
+        return false;
+    }
+
+    /**
+     * Buka / Kunci izin perubahan data (Unlock Per-Order) khusus Super Admin
+     */
+    public function toggleUnlockEdit(int $orderId, int $userId, ?string $reason = null): array {
+        $this->load(['id = ?', $orderId]);
+        if ($this->dry()) {
+            throw new \Exception("Order #{$orderId} tidak ditemukan.");
+        }
+
+        $currentStatus = (int)($this->is_unlocked_edit ?? 0);
+        $newStatus = ($currentStatus === 1) ? 0 : 1;
+
+        $this->is_unlocked_edit = $newStatus;
+        if ($newStatus === 1) {
+            $this->unlocked_by = $userId;
+            $this->unlocked_at = date('Y-m-d H:i:s');
+            $this->unlocked_reason = !empty($reason) ? trim($reason) : 'Izin perubahan data diberikan oleh Super Admin';
+        } else {
+            // Ketika dikunci kembali
+            $this->unlocked_by = null;
+            $this->unlocked_at = null;
+            $this->unlocked_reason = !empty($reason) ? trim($reason) : 'Akses edit ditutup kembali oleh Super Admin';
+        }
+        $this->save();
+
+        return [
+            'id' => $orderId,
+            'is_unlocked_edit' => $newStatus,
+            'unlocked_reason' => $this->unlocked_reason,
+            'action_label' => ($newStatus === 1) ? 'dibuka' : 'dikunci'
+        ];
+    }
+}

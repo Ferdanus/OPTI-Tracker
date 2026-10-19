@@ -114,44 +114,35 @@
         <div class="card border border-2 shadow-sm rounded-3 h-100 bg-white" style="border-color: #e2e8f0 !important;">
             <div class="card-body p-4 d-flex flex-column justify-content-between">
                 <div>
-                    <div class="d-flex align-items-start gap-3 mb-3">
-                        <div class="d-flex align-items-center justify-content-center flex-shrink-0 rounded-3 bg-white border" style="width: 44px; height: 44px; border-color: #cbd5e1 !important;">
-                            <i class="bi bi-lock text-dark fs-5"></i>
+                    <div class="d-flex align-items-start gap-3 mb-2">
+                        <div class="d-flex align-items-center justify-content-center flex-shrink-0 rounded-3 bg-warning-subtle text-warning-emphasis border border-warning-subtle" style="width: 44px; height: 44px;">
+                            <i class="bi bi-shield-lock-fill fs-5"></i>
                         </div>
                         <div class="flex-grow-1">
-                            <h6 class="fw-bold text-dark mb-1 fs-6">Izin Perubahan Data (Edit Lock)</h6>
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <h6 class="fw-bold text-dark mb-0 fs-6">Kontrol Izin Perubahan Data (Unlock Per-Order)</h6>
+                                <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 0.68rem;">Audit BPK/Itjen</span>
+                            </div>
                             <p class="text-muted small mb-0" style="line-height: 1.45;">
-                                Atur izin pengeditan berkas: Pilih apakah data yang sudah dikirim atau didisposisi masih boleh diubah oleh staf, atau dikunci total agar hanya bisa diubah oleh <strong>Superadmin</strong>.
+                                Sesuai arahan mentor dan standar audit BPK/Itjen, izin edit formulir yang telah didisposisi kini menggunakan sistem <strong>Unlock Per-Order</strong>. Super Admin membuka/menutup gembok akses pada order tertentu melalui tombol ikon gembok di <strong>Daftar Order</strong>. Perbaikan data tetap dilakukan oleh role yang berwenang (PIC proposal, Ketua Tim, atau Tim Mitra).
                             </p>
                         </div>
                     </div>
                 </div>
 
-                <div class="d-flex align-items-center justify-content-between p-3 rounded-3 bg-white border mt-3" style="border-color: #e2e8f0 !important; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-                    <div>
-                        <div class="small text-muted mb-0">Status Data:</div>
-                        <div class="fw-bold text-dark fs-6">
-                            <check if="{{ @allow_edit_submitted }}">
-                                <true><span class="text-dark"><i class="bi bi-unlock-fill text-dark me-1"></i>Bebas Edit</span></true>
-                                <false><span class="text-secondary"><i class="bi bi-lock-fill me-1"></i>Data Terkunci</span></false>
-                            </check>
+                <div class="p-3 rounded-3 bg-light border mt-3" style="border-color: #e2e8f0 !important;">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                        <div>
+                            <div class="small text-muted mb-0">Mode Keamanan Aktif:</div>
+                            <div class="fw-bold text-dark small d-flex align-items-center gap-1.5 mt-0.5">
+                                <i class="bi bi-check-circle-fill text-success"></i>
+                                <span>Granular Unlock Per-Order Terpasang</span>
+                            </div>
                         </div>
+                        <a href="{{ @BASE }}/order" class="btn btn-warning text-dark btn-sm px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-sm">
+                            <i class="bi bi-unlock-fill"></i> Kelola Gembok Order
+                        </a>
                     </div>
-                    <form action="{{ @BASE }}/config/toggle-edit-lock" method="POST" class="m-0">
-                        <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
-                        <check if="{{ @allow_edit_submitted }}">
-                            <true>
-                                <button type="button" class="btn btn-dark btn-sm px-3 py-2 fw-semibold d-flex align-items-center gap-2 shadow-sm" onclick="confirmToggleEditLock(this, false)">
-                                    <i class="bi bi-toggle-on fs-5"></i> Bebas Edit
-                                </button>
-                            </true>
-                            <false>
-                                <button type="button" class="btn btn-outline-dark btn-sm px-3 py-2 fw-semibold d-flex align-items-center gap-2 bg-white" onclick="confirmToggleEditLock(this, true)">
-                                    <i class="bi bi-toggle-off fs-5 text-muted"></i> Data Terkunci
-                                </button>
-                            </false>
-                        </check>
-                    </form>
                 </div>
             </div>
         </div>

@@ -199,6 +199,7 @@ $f3->route('POST /order/@id/proposal/save-editor-content', 'OrderController->sav
 $f3->route('POST /order/@id/respon-klien', 'OrderController->responKlien');
 $f3->route('POST /order/@id/terima-sampel', 'OrderController->simpanTerimaSampel');
 $f3->route('POST /order/@id/konfirmasi-pembayaran', 'OrderController->konfirmasiPembayaran');
+$f3->route('POST /order/@id/toggle-unlock', 'OrderController->toggleUnlockOrder');
 $f3->route('POST /pembayaran/@id/disposisi-katim', 'PembayaranOptiController->disposisiKatim');
 
 

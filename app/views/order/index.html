@@ -375,6 +375,13 @@
                                                 <div class="text-muted" style="font-size: 0.75rem;">
                                                     <i class="bi bi-calendar3 me-1"></i>{{ @ord.tanggal_masuk ? date('d/m/Y', strtotime(@ord.tanggal_masuk)) : '-' }}
                                                 </div>
+                                                <check if="{{ @ord.is_unlocked_edit }}">
+                                                    <div class="mt-1">
+                                                        <span class="badge bg-warning text-dark border border-warning-subtle d-inline-flex align-items-center gap-1" style="font-size: 0.68rem;" title="Order ini dibuka izin editnya oleh Super Admin ({{ @ord.unlocked_by_name ?: 'Superadmin' }}). Alasan: {{ @ord.unlocked_reason ?: '-' }}">
+                                                            <i class="bi bi-unlock-fill"></i> Unlocked
+                                                        </span>
+                                                    </div>
+                                                </check>
                                             </td>
                                             <td>
                                                 <div class="fw-semibold text-dark mb-1" title="{{ @ord.judul_kegiatan }}">
@@ -433,6 +440,19 @@
                                                             title="Lihat Semua Lampiran & Media Order (Surat, SPH, Bukti Bayar, dll)">
                                                         <i class="bi bi-paperclip fs-6"></i>
                                                     </button>
+                                                    <check if="{{ @is_superadmin }}">
+                                                        <button type="button"
+                                                            class="btn btn-sm px-2 py-1 d-inline-flex align-items-center justify-content-center btn-toggle-unlock-order {{ @ord.is_unlocked_edit ? 'btn-warning text-dark border-warning' : 'btn-outline-secondary' }}"
+                                                            data-order-id="{{ @ord.id }}"
+                                                            data-nomor-order="{{ @ord.nomor_order ?: (@ord.nomor_permintaan ?: ('REQ-' . @ord.id)) }}"
+                                                            data-is-unlocked="{{ @ord.is_unlocked_edit ? '1' : '0' }}"
+                                                            data-unlocked-reason="{{ @ord.unlocked_reason ?: '' }}"
+                                                            data-unlocked-by="{{ @ord.unlocked_by_name ?: '' }}"
+                                                            data-unlocked-at="{{ @ord.unlocked_at ? date('d/m/Y H:i', strtotime(@ord.unlocked_at)) : '' }}"
+                                                            title="{{ @ord.is_unlocked_edit ? 'Izin Edit TERBUKA (Klik untuk mengunci kembali)' : 'Izin Edit TERKUNCI (Klik untuk membuka izin edit per-order)' }}">
+                                                            <i class="bi {{ @ord.is_unlocked_edit ? 'bi-unlock-fill' : 'bi-lock-fill' }}"></i>
+                                                        </button>
+                                                    </check>
                                                     <a href="{{ @BASE }}/order/{{ @ord.id }}" class="btn btn-sm btn-outline-secondary px-2.5 py-1 d-inline-flex align-items-center gap-1.5 fw-semibold" title="Lihat Riwayat Order">
                                                         <i class="bi bi-eye"></i> <span>Detail</span>
                                                     </a>
@@ -475,6 +495,13 @@
                                                 <div class="text-muted" style="font-size: 0.75rem;">
                                                     <i class="bi bi-calendar3 me-1"></i>{{ @ord.tanggal_masuk ? date('d/m/Y', strtotime(@ord.tanggal_masuk)) : '-' }}
                                                 </div>
+                                                <check if="{{ @ord.is_unlocked_edit }}">
+                                                    <div class="mt-1">
+                                                        <span class="badge bg-warning text-dark border border-warning-subtle d-inline-flex align-items-center gap-1" style="font-size: 0.68rem;" title="Order ini dibuka izin editnya oleh Super Admin ({{ @ord.unlocked_by_name ?: 'Superadmin' }}). Alasan: {{ @ord.unlocked_reason ?: '-' }}">
+                                                            <i class="bi bi-unlock-fill"></i> Unlocked
+                                                        </span>
+                                                    </div>
+                                                </check>
                                                 <div class="mt-1" style="font-size: 0.72rem;">
                                                     <check if="{{ @ord.durasi_ditentukan }}">
                                                         <true>
@@ -591,6 +618,20 @@
                                                         title="Lihat Semua Lampiran &amp; Media Order (Surat, SPH, Bukti Bayar, dll)">
                                                         <i class="bi bi-paperclip fs-6"></i>
                                                     </button>
+
+                                                    <check if="{{ @is_superadmin }}">
+                                                        <button type="button"
+                                                            class="btn btn-sm py-1 px-2 d-inline-flex align-items-center justify-content-center btn-toggle-unlock-order {{ @ord.is_unlocked_edit ? 'btn-warning text-dark border-warning' : 'btn-outline-secondary' }}"
+                                                            data-order-id="{{ @ord.id }}"
+                                                            data-nomor-order="{{ @ord.nomor_order ?: (@ord.nomor_permintaan ?: ('REQ-' . @ord.id)) }}"
+                                                            data-is-unlocked="{{ @ord.is_unlocked_edit ? '1' : '0' }}"
+                                                            data-unlocked-reason="{{ @ord.unlocked_reason ?: '' }}"
+                                                            data-unlocked-by="{{ @ord.unlocked_by_name ?: '' }}"
+                                                            data-unlocked-at="{{ @ord.unlocked_at ? date('d/m/Y H:i', strtotime(@ord.unlocked_at)) : '' }}"
+                                                            title="{{ @ord.is_unlocked_edit ? 'Izin Edit TERBUKA (Klik untuk mengunci kembali)' : 'Izin Edit TERKUNCI (Klik untuk membuka izin edit per-order)' }}">
+                                                            <i class="bi {{ @ord.is_unlocked_edit ? 'bi-unlock-fill' : 'bi-lock-fill' }}"></i>
+                                                        </button>
+                                                    </check>
                                                 </div>
                                             </td>
                                         </tr>
@@ -1204,5 +1245,138 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
         });
     });
+    // ========================================================
+    // KONTROL SUPER ADMIN: UNLOCK PER-ORDER (GEMBOK EDIT)
+    // ========================================================
+    document.querySelectorAll('.btn-toggle-unlock-order').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            var orderId = this.getAttribute('data-order-id');
+            var nomorOrder = this.getAttribute('data-nomor-order') || ('Order #' + orderId);
+            var isUnlocked = this.getAttribute('data-is-unlocked') === '1';
+            var unlockedReason = this.getAttribute('data-unlocked-reason') || '';
+            var unlockedBy = this.getAttribute('data-unlocked-by') || 'Super Admin';
+            var unlockedAt = this.getAttribute('data-unlocked-at') || '';
+
+            if (isUnlocked) {
+                // Konfirmasi KUNCI KEMBALI
+                Swal.fire({
+                    title: 'Kunci Akses Edit?',
+                    html: '<div class="text-start">' +
+                          '<p class="mb-2">Anda akan <strong>mengunci kembali</strong> izin perbaikan data untuk <strong>' + nomorOrder + '</strong>.</p>' +
+                          '<div class="p-2.5 rounded-2 bg-light border mb-3 small">' +
+                          '<div><i class="bi bi-person-check text-primary me-1"></i> Dibuka sebelumnya oleh: <strong>' + unlockedBy + '</strong></div>' +
+                          (unlockedAt ? '<div><i class="bi bi-clock text-secondary me-1"></i> Pada: ' + unlockedAt + '</div>' : '') +
+                          (unlockedReason ? '<div><i class="bi bi-info-circle text-muted me-1"></i> Alasan: <em>"' + unlockedReason + '"</em></div>' : '') +
+                          '</div>' +
+                          '<label class="form-label small fw-semibold text-dark">Catatan Penguncian (Opsional):</label>' +
+                          '<input type="text" id="swalUnlockReason" class="form-control form-control-sm" placeholder="Contoh: Perbaikan data selesai / diverifikasi">' +
+                          '</div>',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#212529',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: '<i class="bi bi-lock-fill me-1"></i> Ya, Kunci Sekarang',
+                    cancelButtonText: 'Batal',
+                    preConfirm: function() {
+                        return document.getElementById('swalUnlockReason').value;
+                    }
+                }).then(function(result) {
+                    if (result.isConfirmed) {
+                        kirimToggleUnlock(orderId, result.value || 'Akses edit ditutup kembali oleh Super Admin');
+                    }
+                });
+            } else {
+                // Konfirmasi BUKA GEMBOK
+                Swal.fire({
+                    title: 'Buka Izin Edit (Unlock)?',
+                    html: '<div class="text-start">' +
+                          '<p class="mb-2 text-dark">Buka gembok izin edit data khusus untuk <strong>' + nomorOrder + '</strong>?</p>' +
+                          '<div class="alert alert-warning py-2 px-3 small mb-3 border-warning">' +
+                          '<i class="bi bi-exclamation-triangle-fill me-1"></i> ' +
+                          'Sesuai standar audit BPK/Itjen, perbaikan data formulir/proposal hanya boleh dilakukan setelah Super Admin membuka gembok pada order ini.' +
+                          '</div>' +
+                          '<label class="form-label small fw-semibold text-dark">Alasan Pembukaan Gembok <span class="text-danger">*</span>:</label>' +
+                          '<textarea id="swalUnlockReason" class="form-control form-control-sm" rows="2" placeholder="Contoh: Permintaan revisi draf dari PIC / pelanggan"></textarea>' +
+                          '</div>',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#ffc107',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: '<span class="text-dark fw-bold"><i class="bi bi-unlock-fill me-1"></i> Buka Gembok</span>',
+                    cancelButtonText: 'Batal',
+                    preConfirm: function() {
+                        var val = document.getElementById('swalUnlockReason').value.trim();
+                        if (!val) {
+                            Swal.showValidationMessage('Alasan pembukaan gembok wajib diisi demi jejak audit.');
+                            return false;
+                        }
+                        return val;
+                    }
+                }).then(function(result) {
+                    if (result.isConfirmed) {
+                        kirimToggleUnlock(orderId, result.value);
+                    }
+                });
+            }
+        });
+    });
+
+    function kirimToggleUnlock(orderId, reason) {
+        Swal.fire({
+            title: 'Memproses...',
+            text: 'Menyimpan status gembok order dan merekam log audit...',
+            allowOutsideClick: false,
+            didOpen: function() {
+                Swal.showLoading();
+            }
+        });
+
+        var formData = new FormData();
+        formData.append('reason', reason);
+        var csrfMeta = document.querySelector('input[name="csrf_token"]');
+        if (csrfMeta) {
+            formData.append('csrf_token', csrfMeta.value);
+        }
+
+        fetch('{{ @BASE }}/order/' + orderId + '/toggle-unlock', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        })
+        .then(function(res) {
+            return res.json();
+        })
+        .then(function(data) {
+            if (data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil!',
+                    text: data.message,
+                    timer: 2000,
+                    showConfirmButton: false
+                }).then(function() {
+                    window.location.reload();
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal',
+                    text: data.message || 'Terjadi kesalahan sistem.'
+                });
+            }
+        })
+        .catch(function(err) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error Koneksi',
+                text: err.message
+            });
+        });
+    }
 });
 </script>

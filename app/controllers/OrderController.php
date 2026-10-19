@@ -4028,4 +4028,108 @@ class OrderController extends Controller {
             'order'
         );
     }
+
+    /**
+     * Kontrol Super Admin: Buka / Kunci Izin Perubahan Data (Unlock Per-Order)
+     * POST /order/@id/toggle-unlock
+     */
+    public function toggleUnlockOrder($f3, $params)
+    {
+        $this->requireAuth();
+        
+        // Hanya Super Admin yang berwenang membuka / mengunci gembok edit per-order
+        if (!$this->isSuperadmin()) {
+            if ($f3->get('AJAX')) {
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode(['success' => false, 'message' => 'Hanya Super Admin yang berwenang mengatur izin perubahan data per-order.']);
+                exit;
+            }
+            $this->setFlashError('Hanya Super Admin yang berwenang mengatur izin perubahan data per-order.');
+            $f3->reroute('/order');
+            return;
+        }
+
+        $id = (int)($params['id'] ?? 0);
+        $orderModel = new OrderLayanan($this->db);
+        $orderData = $orderModel->getDetail($id);
+
+        if (!$orderData) {
+            if ($f3->get('AJAX')) {
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode(['success' => false, 'message' => "Order #{$id} tidak ditemukan."]);
+                exit;
+            }
+            $this->setFlashError("Order #{$id} tidak ditemukan.");
+            $f3->reroute('/order');
+            return;
+        }
+
+        $userId = (int)$this->getUserId();
+        $reason = trim($f3->get('POST.reason') ?? '');
+
+        try {
+            $result = $orderModel->toggleUnlockEdit($id, $userId, $reason);
+            $actionLabel = $result['action_label']; // 'dibuka' atau 'dikunci'
+            $isUnlocked = ($result['is_unlocked_edit'] === 1);
+
+            // Catat ke log aktivitas audit
+            $this->logActivity(
+                'order',
+                $id,
+                $isUnlocked ? 'unlock_edit' : 'lock_edit',
+                "Super Admin {$actionLabel} gembok izin edit data untuk Order #" . ($orderData['nomor_order'] ?: $id) . ". Alasan: " . ($result['unlocked_reason'] ?: '-')
+            );
+
+            // Audit activity log
+            try {
+                $userNama = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'Super Admin');
+                $dbLog = $this->db;
+                $dbLog->exec(
+                    "INSERT INTO opti_activity_log (entity_type, entity_id, action, note, user_id, user_name, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())",
+                    [
+                        1 => 'order',
+                        2 => $id,
+                        3 => $isUnlocked ? 'unlock_edit' : 'lock_edit',
+                        4 => "Super Admin {$actionLabel} gembok izin edit per-order. " . ($result['unlocked_reason'] ? "Alasan: {$result['unlocked_reason']}" : ''),
+                        5 => $userId,
+                        6 => $userNama
+                    ]
+                );
+            } catch (\Exception $eAudit) {}
+
+            $nomorDisplay = $orderData['nomor_order'] ?: ($orderData['nomor_permintaan'] ?: "#{$id}");
+            $msg = $isUnlocked 
+                ? "Gembok izin edit data Order {$nomorDisplay} berhasil dibuka. Role yang berwenang sekarang dapat melakukan perbaikan data."
+                : "Gembok izin edit data Order {$nomorDisplay} berhasil dikunci kembali demi integritas audit data.";
+
+            if ($f3->get('AJAX')) {
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode([
+                    'success' => true,
+                    'message' => $msg,
+                    'is_unlocked_edit' => $isUnlocked,
+                    'unlocked_reason' => $result['unlocked_reason'],
+                    'order_id' => $id,
+                    'nomor_order' => $nomorDisplay
+                ]);
+                exit;
+            }
+
+            $this->setFlashSuccess($msg);
+            $ref = $f3->get('SERVER.HTTP_REFERER');
+            if (!empty($ref) && strpos($ref, '/order') !== false) {
+                $f3->reroute($ref);
+            } else {
+                $f3->reroute('/order/' . $id);
+            }
+        } catch (\Exception $e) {
+            if ($f3->get('AJAX')) {
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode(['success' => false, 'message' => 'Gagal mengubah status gembok order: ' . $e->getMessage()]);
+                exit;
+            }
+            $this->setFlashError('Gagal mengubah status gembok order: ' . $e->getMessage());
+            $f3->reroute('/order/' . $id);
+        }
+    }
 }
