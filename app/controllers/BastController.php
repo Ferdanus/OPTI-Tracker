@@ -38,15 +38,15 @@ class BastController extends Controller {
         $f3->set('bast', $bast);
         $f3->set('nomor_bast_otomatis', $nomorBastOtomatis);
 
-        // Audit Tahap 8: BAST dibuka/dikelola Tim Mitra (First Time Only)
+        // Audit Tahap 9: BAST dibuka/dikelola Tim Mitra (First Time Only)
         $sessionUser = $f3->get('SESSION.user') ?? [];
         $userId = (int)($sessionUser['id'] ?? ($this->getUserId() ?? 0));
         $userNama = $sessionUser['nama'] ?? ($sessionUser['nama_lengkap'] ?? 'Tim Mitra');
         if ($userId > 0 && $orderId > 0) {
-            \StageAudit::recordDibaca($this->db, $orderId, 8, $userId, $userNama, 'Tim Mitra');
+            \StageAudit::recordDibaca($this->db, $orderId, 9, $userId, $userNama, 'Tim Mitra');
             try {
                 $hasLogged = $this->db->exec(
-                    "SELECT id FROM opti_activity_log WHERE order_id = ? AND user_id = ? AND (aksi = 'melihat_tahap_8' OR aksi = 'melihat_tahap_bast') LIMIT 1",
+                    "SELECT id FROM opti_activity_log WHERE order_id = ? AND user_id = ? AND (aksi = 'melihat_tahap_9' OR aksi = 'melihat_tahap_bast') LIMIT 1",
                     [1 => $orderId, 2 => $userId]
                 );
                 if (empty($hasLogged)) {
@@ -82,15 +82,18 @@ class BastController extends Controller {
 
             // Upload Dokumen BAST
             if (!empty($_FILES['file_bast']['name']) && $_FILES['file_bast']['error'] === UPLOAD_ERR_OK) {
-                $uploadDir = 'uploads/bast/';
-                if (!is_dir($uploadDir)) {
-                    @mkdir($uploadDir, 0777, true);
-                }
                 $ext = strtolower(pathinfo($_FILES['file_bast']['name'], PATHINFO_EXTENSION));
-                $namaFile = 'bast_ord_' . $orderId . '_' . time() . '.' . $ext;
-                $targetFile = $uploadDir . $namaFile;
-                if (move_uploaded_file($_FILES['file_bast']['tmp_name'], $targetFile)) {
-                    $fileDokumen = $targetFile;
+                $allowed = ['pdf', 'doc', 'docx', 'png', 'jpg', 'jpeg'];
+                if (in_array($ext, $allowed, true) && (int)$_FILES['file_bast']['size'] <= 10 * 1024 * 1024) {
+                    $uploadDir = 'uploads/bast/';
+                    if (!is_dir($uploadDir)) {
+                        @mkdir($uploadDir, 0777, true);
+                    }
+                    $namaFile = 'bast_ord_' . $orderId . '_' . time() . '.' . $ext;
+                    $targetFile = $uploadDir . $namaFile;
+                    if (move_uploaded_file($_FILES['file_bast']['tmp_name'], $targetFile)) {
+                        $fileDokumen = $targetFile;
+                    }
                 }
             }
 

@@ -15,8 +15,9 @@ class StageAudit {
             4 => 'Proposal Teknis / Parameter Tarif',
             5 => 'Surat Penawaran Biaya Resmi',
             6 => 'Konfirmasi Pembayaran & Verifikasi Keuangan',
-            7 => 'Penerimaan Fisik Sampel & SPM (PO)',
-            8 => 'Berita Acara Serah Terima (BAST)'
+            7 => 'Aktivasi Titik Awal & Jadwal SPM',
+            8 => 'Petunjuk Operasional (PO)',
+            9 => 'Berita Acara Serah Terima (BAST)'
         ];
     }
 
@@ -241,7 +242,7 @@ class StageAudit {
      */
     public static function getAuditByOrder(\DB\SQL $db, int $orderId, array $order = [], array $extra = []): array {
         $result = [];
-        for ($i = 1; $i <= 8; $i++) {
+        for ($i = 1; $i <= 9; $i++) {
             $result[$i] = [
                 'tahap'          => $i,
                 'nama_tahap'     => self::getStageNames()[$i] ?? ('Tahap ' . $i),
@@ -369,26 +370,37 @@ class StageAudit {
                     $result[6]['pengirim_role'] = 'Keuangan';
                 }
 
-                // Tahap 7: Penerimaan Sampel & PO
-                if (empty($result[7]['waktu_kirim']) && !empty($order['tanggal_terima_sampel'])) {
-                    $tglKirim7 = $order['tanggal_terima_sampel'];
-                    $pengirim7 = 'Petugas Penerima Sampel';
+                // Tahap 7: Aktivasi SPM (Titik Awal Pengerjaan)
+                if (empty($result[7]['waktu_kirim']) && (!empty($order['tanggal_spm_mulai']) || !empty($order['tanggal_terima_sampel']))) {
+                    $tglKirim7 = $order['tanggal_spm_mulai'] ?: $order['tanggal_terima_sampel'];
+                    $pengirim7 = 'Laboratorium & Tim Teknis';
 
-                    self::recordKirim($db, $orderId, 7, self::getStageNames()[7], null, $pengirim7, 'Laboratorium', $tglKirim7, 'Fisik Sampel Diterima');
+                    self::recordKirim($db, $orderId, 7, self::getStageNames()[7], null, $pengirim7, 'Laboratorium', $tglKirim7, 'Aktivasi Titik Awal SPM');
                     $result[7]['waktu_kirim']   = $tglKirim7;
                     $result[7]['pengirim_nama'] = $pengirim7;
                     $result[7]['pengirim_role'] = 'Laboratorium';
                 }
 
-                // Tahap 8: BAST
-                if (empty($result[8]['waktu_kirim']) && !empty($extra['bast'])) {
-                    $tglKirim8 = !empty($extra['bast']['created_at']) ? $extra['bast']['created_at'] : (!empty($extra['bast']['tanggal_bast']) ? ($extra['bast']['tanggal_bast'] . ' ' . date('H:i:s')) : date('Y-m-d H:i:s'));
-                    $pengirim8 = !empty($extra['bast']['closed_by_nama']) ? $extra['bast']['closed_by_nama'] : 'Tim Mitra';
+                // Tahap 8: Petunjuk Operasional (PO)
+                if (empty($result[8]['waktu_kirim']) && !empty($order['po_id'])) {
+                    $tglKirim8 = !empty($order['tanggal_po']) ? $order['tanggal_po'] : (!empty($order['updated_at']) ? $order['updated_at'] : date('Y-m-d H:i:s'));
+                    $pengirim8 = 'Ketua Tim OPTI';
 
-                    self::recordKirim($db, $orderId, 8, self::getStageNames()[8], null, $pengirim8, 'Tim Mitra', $tglKirim8, 'BAST Diterbitkan & Selesai');
+                    self::recordKirim($db, $orderId, 8, self::getStageNames()[8], null, $pengirim8, 'Ketua Tim', $tglKirim8, 'PO Resmi Diterbitkan');
                     $result[8]['waktu_kirim']   = $tglKirim8;
                     $result[8]['pengirim_nama'] = $pengirim8;
-                    $result[8]['pengirim_role'] = 'Tim Mitra';
+                    $result[8]['pengirim_role'] = 'Ketua Tim';
+                }
+
+                // Tahap 9: BAST
+                if (empty($result[9]['waktu_kirim']) && !empty($extra['bast'])) {
+                    $tglKirim9 = !empty($extra['bast']['created_at']) ? $extra['bast']['created_at'] : (!empty($extra['bast']['tanggal_bast']) ? ($extra['bast']['tanggal_bast'] . ' ' . date('H:i:s')) : date('Y-m-d H:i:s'));
+                    $pengirim9 = !empty($extra['bast']['closed_by_nama']) ? $extra['bast']['closed_by_nama'] : 'Tim Mitra';
+
+                    self::recordKirim($db, $orderId, 9, self::getStageNames()[9], null, $pengirim9, 'Tim Mitra', $tglKirim9, 'BAST Diterbitkan & Selesai');
+                    $result[9]['waktu_kirim']   = $tglKirim9;
+                    $result[9]['pengirim_nama'] = $pengirim9;
+                    $result[9]['pengirim_role'] = 'Tim Mitra';
                 }
             }
         } catch (\Exception $e) {}

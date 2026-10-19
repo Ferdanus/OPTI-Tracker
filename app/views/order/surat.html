@@ -555,6 +555,13 @@ body {
                 Surat
             </label>
     
+            <label>
+                <span class="box">
+                    {{ @order.permintaan_melalui == 'whatsapp' ? '✓' : '' }}
+                </span>
+                WhatsApp
+            </label>
+    
         </div>
     
     
@@ -570,20 +577,16 @@ body {
     
             <label>
                 <span class="box">
-                    {{ @order.permintaan_melalui == 'datang_langsung' ? '✓' : '' }}
+                    {{ @order.permintaan_melalui == 'website' ? '✓' : '' }}
                 </span>
-                Datang langsung
+                Website
             </label>
     
             <label>
                 <span class="box">
-                    {{ @order.permintaan_melalui == 'pegawai_bbspjis' ? '✓' : '' }}
+                    {{ @order.permintaan_melalui == 'datang_langsung' ? '✓' : '' }}
                 </span>
-                Pegawai BBSPJIS (sebutkan):
-    
-                <span>
-                    {{ @order.nama_pegawai ?: '' }}
-                </span>
+                Datang langsung
             </label>
     
         </div>

@@ -29,7 +29,8 @@ class SuratPenawaran extends \DB\SQL\Mapper
                 'pejabat_nama'       => 'VARCHAR(150) NULL DEFAULT "Dodiet Prasetyo"',
                 'hal'                => 'VARCHAR(150) NULL DEFAULT "Biaya OPTI"',
                 'lampiran_teks'      => 'VARCHAR(100) NULL DEFAULT "1 (satu) lembar"',
-                'dibuat_oleh'        => 'INT NULL'
+                'dibuat_oleh'        => 'INT NULL',
+                'file_lampiran_user' => 'VARCHAR(255) NULL'
             ];
             foreach ($cols as $col => $def) {
                 try {
@@ -145,7 +146,7 @@ class SuratPenawaran extends \DB\SQL\Mapper
              LEFT JOIN tb_customer c ON sp.customer_id = c.id_customer
              LEFT JOIN tb_arsipuser u ON sp.dibuat_oleh = u.id_user
              WHERE sp.order_id = ?
-             ORDER BY sp.id DESC LIMIT 1",
+             ORDER BY (sp.status_respon_klien = 'deal') DESC, sp.id DESC LIMIT 1",
             array(1 => $orderId)
         );
         return !empty($res) ? $res[0] : null;
@@ -210,6 +211,7 @@ class SuratPenawaran extends \DB\SQL\Mapper
         $permintaanMelalui = !empty($data['permintaan_melalui']) ? trim($data['permintaan_melalui']) : 'email';
         $penjelasan   = !empty($data['penjelasan']) ? trim($data['penjelasan']) : ($order['deskripsi'] ?? '');
         $fileLampiran = !empty($data['file_lampiran']) ? trim($data['file_lampiran']) : '';
+        $fileLampiranUser = !empty($data['file_lampiran_user']) ? trim($data['file_lampiran_user']) : '';
         $statusRespon = in_array($data['status_respon_klien'] ?? '', ['draft', 'terkirim', 'nego', 'deal', 'batal']) ? $data['status_respon_klien'] : 'draft';
         $catatanNego  = trim($data['catatan_nego'] ?? '');
 
@@ -243,16 +245,41 @@ class SuratPenawaran extends \DB\SQL\Mapper
         $penawaranIdInput = (int)($data['penawaran_id'] ?? 0);
         $existing = $this->getByOrderId($orderId);
 
+        if (empty($fileLampiranUser) && !empty($existing['file_lampiran_user'])) {
+            $fileLampiranUser = $existing['file_lampiran_user'];
+        }
+
         // KASUS UPDATE (Bukan revisi baru):
         // 1. Status respon klien adalah DEAL atau BATAL (mengubah status penawaran yang ada), ATAU
         // 2. Tidak ada penanda is_revisi_baru dan penawaran sudah ada
         $isUpdateExisting = $existing && ($statusRespon === 'deal' || $statusRespon === 'batal' || !$isRevisiBaru);
+
+        // PROTEKSI PERMANEN: Jika order sudah DEAL dan berlanjut ke pembayaran/pelaksanaan (Tahap 6/7/8)
+        $orderHasDeal = (($order['status_penawaran'] ?? '') === 'deal') || (!empty($existing) && ($existing['status_respon_klien'] ?? '') === 'deal');
+        if ($orderHasDeal) {
+            $isLunas = ($order['status_keuangan'] ?? '') === 'lunas';
+            $hasBayar = !empty($this->db->exec("SELECT id FROM opti_pembayaran WHERE order_id = ? LIMIT 1", [1 => $orderId]));
+            $hasPo = !empty($this->db->exec("SELECT id FROM po_kegiatan WHERE order_id = ? LIMIT 1", [1 => $orderId]));
+            $isPelaksanaan = in_array($order['status_pelaksanaan'] ?? '', ['sedang_berjalan', 'evaluasi_laporan', 'revisi_laporan', 'laporan_selesai']);
+            if ($isLunas || $hasBayar || $hasPo || $isPelaksanaan || (($order['status_penawaran'] ?? '') === 'deal')) {
+                // Seluruh penyimpanan dari formulir ini mengupdate dokumen DEAL yang ada, tanpa membatalkan DEAL
+                $isUpdateExisting = true;
+                $isRevisiBaru = false;
+                $statusRespon = 'deal';
+            }
+        }
 
         if ($isUpdateExisting) {
             $targetId = $penawaranIdInput > 0 ? $penawaranIdInput : (int)$existing['id'];
             if (empty($fileLampiran) && !empty($existing['file_lampiran'])) {
                 $fileLampiran = $existing['file_lampiran'];
             }
+            // PROTEKSI STATE GUARD:
+            // Jika dokumen yang di-update sebelumnya sudah DEAL, cegah penurunan menjadi 'draft'
+            if (($existing['status_respon_klien'] ?? '') === 'deal' && $statusRespon === 'draft') {
+                $statusRespon = 'deal';
+            }
+
             // Jika DEAL atau BATAL, pertahankan nomor surat asli jika tidak diubah secara eksplisit
             $nomorSuratFinal = ($statusRespon === 'deal' || $statusRespon === 'batal') ? ($existing['nomor_surat'] ?: $nomorSurat) : $nomorSurat;
 
@@ -260,7 +287,7 @@ class SuratPenawaran extends \DB\SQL\Mapper
                 "UPDATE tb_surat_penawaran SET 
                     nomor_surat = ?, perihal = ?, tanggal_surat = ?, jenis_layanan = ?, 
                     nama = ?, perusahaan = ?, alamat = ?, nominal_penawaran = ?, 
-                    permintaan_melalui = ?, penjelasan = ?, file_lampiran = ?, 
+                    permintaan_melalui = ?, penjelasan = ?, file_lampiran = ?, file_lampiran_user = ?,
                     ruang_lingkup = ?, jadwal_pelaksanaan = ?, catatan_sampel = ?, 
                     jabatan_pejabat = ?, pejabat_nama = ?, hal = ?, lampiran_teks = ?,
                     status_respon_klien = ?, catatan_nego = ?, updated_at = NOW()
@@ -277,16 +304,17 @@ class SuratPenawaran extends \DB\SQL\Mapper
                     9 => $permintaanMelalui,
                     10 => $penjelasan,
                     11 => $fileLampiran,
-                    12 => $ruangLingkup,
-                    13 => $jadwalPelaksanaan,
-                    14 => $catatanSampel,
-                    15 => $jabatanPejabat,
-                    16 => $pejabatNama,
-                    17 => $hal,
-                    18 => $lampiranTeks,
-                    19 => $statusRespon,
-                    20 => $catatanNego,
-                    21 => $targetId
+                    12 => $fileLampiranUser ?: null,
+                    13 => $ruangLingkup,
+                    14 => $jadwalPelaksanaan,
+                    15 => $catatanSampel,
+                    16 => $jabatanPejabat,
+                    17 => $pejabatNama,
+                    18 => $hal,
+                    19 => $lampiranTeks,
+                    20 => $statusRespon,
+                    21 => $catatanNego,
+                    22 => $targetId
                 )
             );
             $penawaranId = $targetId;
@@ -305,8 +333,8 @@ class SuratPenawaran extends \DB\SQL\Mapper
             // KASUS INSERT: Terbitkan Dokumen Penawaran Baru (Revisi Negosiasi)
             $this->db->exec(
                 "INSERT INTO tb_surat_penawaran 
-                (customer_id, order_id, nomor_surat, perihal, nominal_penawaran, tanggal_surat, jenis_layanan, nama, perusahaan, alamat, permintaan_melalui, penjelasan, file_lampiran, ruang_lingkup, jadwal_pelaksanaan, catatan_sampel, jabatan_pejabat, pejabat_nama, hal, lampiran_teks, status, status_respon_klien, catatan_nego, dibuat_oleh, created_at) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'aktif', ?, ?, ?, NOW())",
+                (customer_id, order_id, nomor_surat, perihal, nominal_penawaran, tanggal_surat, jenis_layanan, nama, perusahaan, alamat, permintaan_melalui, penjelasan, file_lampiran, file_lampiran_user, ruang_lingkup, jadwal_pelaksanaan, catatan_sampel, jabatan_pejabat, pejabat_nama, hal, lampiran_teks, status, status_respon_klien, catatan_nego, dibuat_oleh, created_at) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'aktif', ?, ?, ?, NOW())",
                 array(
                     1 => $order['id_customer'],
                     2 => $orderId,
@@ -321,34 +349,40 @@ class SuratPenawaran extends \DB\SQL\Mapper
                     11 => $permintaanMelalui,
                     12 => $penjelasan,
                     13 => $fileLampiran,
-                    14 => $ruangLingkup,
-                    15 => $jadwalPelaksanaan,
-                    16 => $catatanSampel,
-                    17 => $jabatanPejabat,
-                    18 => $pejabatNama,
-                    19 => $hal,
-                    20 => $lampiranTeks,
-                    21 => $statusRespon,
-                    22 => $catatanNego,
-                    23 => $userId
+                    14 => $fileLampiranUser ?: null,
+                    15 => $ruangLingkup,
+                    16 => $jadwalPelaksanaan,
+                    17 => $catatanSampel,
+                    18 => $jabatanPejabat,
+                    19 => $pejabatNama,
+                    20 => $hal,
+                    21 => $lampiranTeks,
+                    22 => $statusRespon,
+                    23 => $catatanNego,
+                    24 => $userId
                 )
             );
             $penawaranId = (int)$this->db->exec("SELECT LAST_INSERT_ID() AS id")[0]['id'];
 
-            // PENTING: Otomatis ubah status penawaran lama menjadi 'batal'
-            // sehingga status NEGO hanya ada 1 (yaitu revisi terbaru yang aktif)
+            // Otomatis ubah status penawaran lama menjadi 'batal' (Kecuali yang sudah DEAL)
             $this->db->exec(
                 "UPDATE tb_surat_penawaran 
                  SET status_respon_klien = 'batal', updated_at = NOW() 
-                 WHERE order_id = ? AND id != ?",
+                 WHERE order_id = ? AND id != ? AND status_respon_klien != 'deal'",
                 array(1 => $orderId, 2 => $penawaranId)
             );
         }
 
         // Sinkronisasi status, ID surat penawaran, nominal biaya, durasi (SPM), dan status proposal ke order_layanan
+        // PROTEKSI: Jangan perbarui status_penawaran di order_layanan menjadi 'draft' jika sebelumnya sudah DEAL
+        $statusPenawaranOrder = $statusRespon;
+        if ($statusRespon === 'draft' && in_array($order['status_penawaran'] ?? '', ['deal'])) {
+            $statusPenawaranOrder = 'deal';
+        }
+
         $spmLayanan = trim($data['spm_layanan'] ?? '');
         $updateOrderSql = "UPDATE order_layanan SET status_penawaran = ?, surat_penawaran_id = ?, estimasi_biaya = ?, status_proposal_biaya = IF(status_proposal_biaya = 'disetujui', 'disetujui', 'siap_penawaran')";
-        $orderParams = [1 => $statusRespon, 2 => $penawaranId, 3 => $nominal];
+        $orderParams = [1 => $statusPenawaranOrder, 2 => $penawaranId, 3 => $nominal];
         if (!empty($spmLayanan)) {
             $updateOrderSql .= ", spm_layanan = ?";
             $orderParams[4] = $spmLayanan;

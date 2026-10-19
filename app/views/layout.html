@@ -25,6 +25,13 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <!-- PDF.js CDN untuk render dokumen di Canvas (Bebas Intersepsi IDM) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <!-- Mammoth.js untuk render & preview dokumen Word (.docx) di Browser -->
+    <script src="{{ @BASE }}/public/js/mammoth.browser.min.js"></script>
+    <script>
+        if (typeof mammoth === 'undefined') {
+            document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js"><\/script>');
+        }
+    </script>
 
     <style>
         :root {
@@ -95,15 +102,13 @@
             display: inline-flex;
             align-items: center;
             gap: 0.38rem;
-            padding: 0.28rem 0.72rem;
-            border-radius: 9999px;
+            padding: 0.25rem 0.55rem;
+            border-radius: 50rem;
             font-size: 0.75rem;
             font-weight: 600;
-            line-height: 1.25;
+            line-height: 1;
             white-space: nowrap;
-            letter-spacing: 0.01em;
             border: 1px solid transparent;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
             transition: all 0.15s ease-in-out;
         }
         .status-pill i {
@@ -1309,7 +1314,7 @@
             .btn,
             .btn-group,
             .modal-backdrop,
-            .modal {
+            .modal:not(.show) {
                 display: none !important;
             }
             .content-wrapper {
@@ -1394,23 +1399,14 @@
                     </li>
                 </check>
 
-                <!-- Permintaan Masuk (Ketua Tim, Superadmin) -->
-                <check if="{{ @is_superadmin || @is_ketua_tim }}">
-                    <li>
-                        <a class="sidebar-link {{ @active_menu == 'disposisi_masuk' ? 'active' : '' }}" href="{{ @BASE }}/disposisi-masuk" title="Permintaan Masuk">
-                            <i class="bi bi-bell"></i> <span>Permintaan Masuk</span>
-                            <check if="{{ @jumlah_notif_katim > 0 }}">
-                                <span class="badge ms-auto sidebar-notif-badge">{{ @jumlah_notif_katim }}</span>
-                            </check>
-                        </a>
-                    </li>
-                </check>
-
-                <!-- Daftar Order (Semua Role Teknis, Pelayanan, Keuangan & Pegawai Umum) -->
+                <!-- Daftar Order (Satu Pintu: Semua Role Teknis, Pelayanan, Keuangan & Pegawai Umum) -->
                 <check if="{{ @is_superadmin || @is_admin_order || @is_ketua_tim || @is_tim_kerja || @is_admin_kontrak || @is_keuangan || @is_user_readonly }}">
                     <li>
-                        <a class="sidebar-link {{ @active_menu == 'order' ? 'active' : '' }}" href="{{ @BASE }}/order" title="Daftar Semua Order">
+                        <a class="sidebar-link {{ @active_menu == 'order' || @active_menu == 'disposisi_masuk' ? 'active' : '' }}" href="{{ @BASE }}/order" title="Daftar Order Layanan">
                             <i class="bi bi-inbox"></i> <span>Daftar Order</span>
+                            <check if="{{ @jumlah_notif_katim > 0 }}">
+                                <span class="badge ms-auto sidebar-notif-badge" style="background-color: #dc2626; color: #fff;">{{ @jumlah_notif_katim }}</span>
+                            </check>
                         </a>
                     </li>
                 </check>
@@ -2620,6 +2616,16 @@
                     
                     <!-- Zoom Controls & Actions Toolbar -->
                     <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                        <!-- Sakelar Kop BBSPJIS vs Tanpa Kop (Khusus Surat Penawaran) -->
+                        <div class="btn-group btn-group-sm shadow-2xs d-none" id="universalKopSwitch" role="group" aria-label="Pilihan Kop Surat">
+                            <button type="button" class="btn btn-primary px-2.5 py-1 fw-semibold d-inline-flex align-items-center gap-1" id="btnUniversalKopWith" onclick="switchUniversalKop(true)" title="Cetak dengan Kop Surat Resmi BBSPJIS">
+                                <i class="bi bi-file-earmark-check"></i> <span>Dengan Kop</span>
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary px-2.5 py-1 fw-semibold d-inline-flex align-items-center gap-1" id="btnUniversalKopWithout" onclick="switchUniversalKop(false)" title="Cetak Tanpa Kop (Kosongan untuk Kertas Stasioner Resmi)">
+                                <i class="bi bi-file-earmark"></i> <span>Tanpa Kop</span>
+                            </button>
+                        </div>
+
                         <div class="btn-group btn-group-sm shadow-2xs" id="universalZoomControls" style="visibility: hidden;">
                             <button type="button" class="btn btn-outline-secondary px-2 py-1" onclick="zoomUniversalPdf(-0.2)" title="Perkecil (-)">
                                 <i class="bi bi-zoom-out"></i>
@@ -2632,9 +2638,31 @@
 
                         <span class="badge bg-secondary-subtle text-secondary font-monospace d-none d-md-inline-block px-2.5 py-1.5 border border-secondary-subtle" id="universalPagesBadge">- Halaman</span>
 
-                        <a href="#" id="universalPdfBtnDownload" class="btn btn-outline-primary btn-sm px-2.5 py-1 fw-semibold d-inline-flex align-items-center gap-1 shadow-2xs" download title="Unduh File">
-                            <i class="bi bi-download"></i> <span class="d-none d-sm-inline">Unduh</span>
-                        </a>
+                        <button type="button" id="universalPdfBtnPrint" class="btn btn-primary btn-sm px-2.5 py-1 fw-semibold d-inline-flex align-items-center gap-1 shadow-2xs" onclick="printCurrentUniversalDoc()" title="Cetak Dokumen Resmi">
+                            <i class="bi bi-printer-fill"></i> <span class="d-none d-sm-inline">Cetak</span>
+                        </button>
+                        <div class="btn-group btn-group-sm shadow-2xs" id="wrapUniversalDownload">
+                            <button type="button" class="btn btn-outline-primary px-2.5 py-1 fw-semibold d-inline-flex align-items-center gap-1" id="universalPdfBtnDownload" onclick="downloadCurrentUniversalDoc()" title="Unduh Dokumen">
+                                <i class="bi bi-download"></i> <span class="d-none d-sm-inline" id="universalPdfBtnDownloadText">Unduh</span>
+                            </button>
+                            <button type="button" class="btn btn-outline-primary dropdown-toggle dropdown-toggle-split px-1.5 py-1" data-bs-toggle="dropdown" aria-expanded="false" id="universalDownloadSplitToggle" title="Pilihan Format Dokumen">
+                                <span class="visually-hidden">Pilihan Format</span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow border-0" id="menuUniversalDownload" style="font-size: 0.8rem; min-width: 220px;">
+                                <li class="dropdown-header text-uppercase px-3 py-1 text-muted fw-bold" style="font-size: 0.68rem; letter-spacing: 0.5px;">Format Dokumen</li>
+                                <li>
+                                    <a class="dropdown-item py-1.5" href="javascript:void(0)" onclick="downloadCurrentUniversalDoc()" id="universalOptDownloadPdf">
+                                        <i class="bi bi-file-earmark-pdf-fill text-danger me-1.5"></i> <strong id="universalOptDownloadPdfText">Unduh PDF</strong>
+                                    </a>
+                                </li>
+                                <li id="universalOptWordLi" class="d-none">
+                                    <a class="dropdown-item py-1.5" href="javascript:void(0)" onclick="downloadCurrentUniversalWord()" id="universalOptDownloadWord">
+                                        <i class="bi bi-file-earmark-word-fill me-1.5" style="color: #185abd !important;"></i> <strong>Unduh Word (.docx)</strong>
+                                        <small class="d-block text-muted ps-3">Format Microsoft Word</small>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
                         <button type="button" class="btn-close shadow-none ms-1" data-bs-dismiss="modal" aria-label="Tutup"></button>
                     </div>
                 </div>
@@ -2679,6 +2707,62 @@
         let currentUniversalRawBase64 = null;
         let currentUniversalFilename = null;
         let currentUniversalMime = null;
+        let currentUniversalDocUrl = null;
+        let currentUniversalWordUrl = null;
+        let currentUniversalTitle = null;
+        let currentUniversalSubtitle = null;
+        let currentUniversalUseKop = true;
+
+        function downloadCurrentUniversalWord() {
+            if (currentUniversalWordUrl) {
+                window.location.href = currentUniversalWordUrl;
+                return;
+            }
+            if (currentUniversalDocUrl) {
+                var m = currentUniversalDocUrl.match(/order\/(\d+)\/penawaran/i) || currentUniversalDocUrl.match(/surat-penawaran\/(\d+)/i);
+                if (m) {
+                    var spIdMatch = currentUniversalDocUrl.match(/[?&]id=(\d+)/i);
+                    var spParam = spIdMatch ? ('?id=' + spIdMatch[1]) : '';
+                    window.location.href = '{{ @BASE }}/order/' + m[1] + '/penawaran/word' + spParam;
+                    return;
+                }
+            }
+            alert('Tautan berkas Word tidak tersedia untuk dokumen ini.');
+        }
+
+        function updateKopSwitchUI(isPenawaran, useKop) {
+            const kopSwitch = document.getElementById('universalKopSwitch');
+            const btnWith = document.getElementById('btnUniversalKopWith');
+            const btnWithout = document.getElementById('btnUniversalKopWithout');
+            if (!kopSwitch) return;
+
+            if (isPenawaran) {
+                kopSwitch.classList.remove('d-none');
+                if (useKop) {
+                    if (btnWith) btnWith.className = 'btn btn-primary px-2.5 py-1 fw-semibold d-inline-flex align-items-center gap-1';
+                    if (btnWithout) btnWithout.className = 'btn btn-outline-secondary px-2.5 py-1 fw-semibold d-inline-flex align-items-center gap-1';
+                } else {
+                    if (btnWith) btnWith.className = 'btn btn-outline-secondary px-2.5 py-1 fw-semibold d-inline-flex align-items-center gap-1';
+                    if (btnWithout) btnWithout.className = 'btn btn-primary px-2.5 py-1 fw-semibold d-inline-flex align-items-center gap-1';
+                }
+            } else {
+                kopSwitch.classList.add('d-none');
+            }
+        }
+
+        function switchUniversalKop(useKop) {
+            if (!currentUniversalDocUrl) return;
+            currentUniversalUseKop = !!useKop;
+            updateKopSwitchUI(true, currentUniversalUseKop);
+
+            let targetUrl = currentUniversalDocUrl;
+            if (targetUrl.indexOf('kop=') !== -1) {
+                targetUrl = targetUrl.replace(/kop=[^&]+/, 'kop=' + (currentUniversalUseKop ? '1' : '0'));
+            } else {
+                targetUrl += (targetUrl.indexOf('?') !== -1 ? '&' : '?') + 'kop=' + (currentUniversalUseKop ? '1' : '0');
+            }
+            openPdfPreviewModal(targetUrl, currentUniversalTitle, currentUniversalSubtitle, true);
+        }
 
         function base64ToUint8ArrayUniversal(base64) {
             const binary_string = window.atob(base64);
@@ -2711,6 +2795,34 @@
             });
         }
 
+        async function ensurePdfLibLoaded() {
+            if (window.PDFLib && window.PDFLib.PDFDocument) {
+                return window.PDFLib;
+            }
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js';
+                script.onload = () => {
+                    if (window.PDFLib) {
+                        resolve(window.PDFLib);
+                    } else {
+                        reject(new Error('Gagal menginisialisasi pustaka pdf-lib.'));
+                    }
+                };
+                script.onerror = () => reject(new Error('Gagal memuat pustaka pdf-lib dari CDN.'));
+                document.head.appendChild(script);
+            });
+        }
+
+        function uint8ArrayToBase64Universal(bytes) {
+            let binary = '';
+            const chunkSize = 0x8000;
+            for (let i = 0; i < bytes.length; i += chunkSize) {
+                binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+            }
+            return window.btoa(binary);
+        }
+
         function updateUniversalZoomBadge() {
             const el = document.getElementById('universalZoomBadge');
             if (el) el.textContent = Math.round((currentUniversalScale / 1.35) * 100) + '%';
@@ -2741,6 +2853,49 @@
                 setTimeout(function() { URL.revokeObjectURL(blobUrl); }, 1500);
             } catch (err) {
                 console.error('Gagal mengunduh file:', err);
+            }
+        }
+
+        function printCurrentUniversalDoc() {
+            if (!currentUniversalRawBase64) return;
+            try {
+                const bytes = base64ToUint8ArrayUniversal(currentUniversalRawBase64);
+                const blob = new Blob([bytes], { type: currentUniversalMime || 'application/pdf' });
+                const blobUrl = URL.createObjectURL(blob);
+
+                const printFrame = document.createElement('iframe');
+                printFrame.style.position = 'fixed';
+                printFrame.style.right = '0';
+                printFrame.style.bottom = '0';
+                printFrame.style.width = '0';
+                printFrame.style.height = '0';
+                printFrame.style.border = '0';
+                printFrame.src = blobUrl;
+                document.body.appendChild(printFrame);
+
+                printFrame.onload = function() {
+                    setTimeout(function() {
+                        try {
+                            printFrame.contentWindow.focus();
+                            printFrame.contentWindow.print();
+                        } catch (e) {
+                            console.warn('Iframe print fallback to window:', e);
+                            const win = window.open(blobUrl, '_blank');
+                            if (win) {
+                                win.focus();
+                                win.print();
+                            }
+                        }
+                        setTimeout(function() {
+                            if (document.body.contains(printFrame)) {
+                                document.body.removeChild(printFrame);
+                            }
+                            URL.revokeObjectURL(blobUrl);
+                        }, 60000);
+                    }, 350);
+                };
+            } catch (err) {
+                console.error('Gagal mencetak dokumen:', err);
             }
         }
 
@@ -2806,13 +2961,22 @@
             }
         }
 
-        async function openPdfPreviewModal(url, title, subtitle) {
+        async function openPdfPreviewModal(url, title, subtitle, isKopSwitch = false) {
             if (!url) return;
             const modalEl = document.getElementById('modalUniversalPdfPreview');
             if (!modalEl) return;
 
             const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
             modal.show();
+
+            const isPenawaran = (url.indexOf('/penawaran/') !== -1 || (title && title.indexOf('Penawaran') !== -1));
+            if (!isKopSwitch) {
+                currentUniversalDocUrl = url;
+                currentUniversalTitle = title;
+                currentUniversalSubtitle = subtitle;
+                currentUniversalUseKop = (url.indexOf('kop=0') === -1 && url.indexOf('kop=tanpa_kop') === -1);
+            }
+            updateKopSwitchUI(isPenawaran, currentUniversalUseKop);
 
             const titleEl = document.getElementById('universalPdfTitle');
             const subEl = document.getElementById('universalPdfSubtitle');
@@ -2835,7 +2999,17 @@
             currentUniversalRawBase64 = null;
             currentUniversalFilename = null;
             currentUniversalMime = null;
+            currentUniversalWordUrl = null;
             updateUniversalZoomBadge();
+
+            const optWordLi = document.getElementById('universalOptWordLi');
+            if (optWordLi) {
+                if (isPenawaran) {
+                    optWordLi.classList.remove('d-none');
+                } else {
+                    optWordLi.classList.add('d-none');
+                }
+            }
 
             if (btnDl) {
                 btnDl.onclick = function(e) {
@@ -2881,6 +3055,12 @@
                 currentUniversalRawBase64 = json.base64;
                 currentUniversalFilename = json.filename || 'dokumen.pdf';
                 currentUniversalMime = json.mime || (json.is_pdf ? 'application/pdf' : 'image/jpeg');
+                if (json.word_url) {
+                    currentUniversalWordUrl = baseUri + json.word_url;
+                }
+                if (optWordLi && (isPenawaran || currentUniversalWordUrl)) {
+                    optWordLi.classList.remove('d-none');
+                }
 
                 if (json.filename && subEl && !subtitle) {
                     subEl.textContent = json.filename;
@@ -2890,12 +3070,60 @@
                     if (iconEl) iconEl.className = 'bi bi-file-earmark-pdf-fill fs-5 text-danger';
                     if (spinnerMsg) spinnerMsg.textContent = 'Merender lembar dokumen PDF...';
 
+                    let bytes = base64ToUint8ArrayUniversal(json.base64);
+
+                    // Jika ada lampiran PDF 1.5+ terkompresi yang perlu digabungkan mulai Halaman 3+
+                    if (json.attachment_base64 && json.attachment_ext === 'pdf') {
+                        try {
+                            if (spinnerMsg) spinnerMsg.textContent = 'Menyatukan lampiran ke dokumen Surat Penawaran...';
+                            const PDFLib = await ensurePdfLibLoaded();
+                            const mainPdfDoc = await PDFLib.PDFDocument.load(bytes);
+                            const attachBytes = base64ToUint8ArrayUniversal(json.attachment_base64);
+                            const attachPdfDoc = await PDFLib.PDFDocument.load(attachBytes, { ignoreEncryption: true });
+                            const copiedPages = await mainPdfDoc.copyPages(attachPdfDoc, attachPdfDoc.getPageIndices());
+                            copiedPages.forEach((p) => mainPdfDoc.addPage(p));
+                            const mergedBytes = await mainPdfDoc.save();
+                            bytes = new Uint8Array(mergedBytes);
+                            currentUniversalRawBase64 = uint8ArrayToBase64Universal(bytes);
+                        } catch (mergeErr) {
+                            console.warn('Gagal menyatukan lampiran PDF di sisi klien:', mergeErr);
+                        }
+                    }
+
                     const pdfjs = await ensurePdfJsLoaded();
-                    const bytes = base64ToUint8ArrayUniversal(json.base64);
                     const pdf = await pdfjs.getDocument({ data: bytes }).promise;
                     currentUniversalDoc = pdf;
                     if (zoomControls) zoomControls.style.visibility = 'visible';
                     renderUniversalPdfPages(pdf);
+                } else if (json.is_image && json.base64) {
+                    if (iconEl) iconEl.className = 'bi bi-file-earmark-image-fill fs-5 text-primary';
+                    if (spinner) spinner.style.display = 'none';
+                    if (imgViewer && imgTag) {
+                        imgTag.src = 'data:' + (json.mime || 'image/jpeg') + ';base64,' + json.base64;
+                        imgViewer.classList.remove('d-none');
+                        imgViewer.classList.add('d-flex');
+                    }
+                } else if ((json.ext === 'doc' || json.ext === 'docx') && json.base64) {
+                    if (iconEl) iconEl.className = 'bi bi-file-earmark-word-fill fs-5 text-primary';
+                    if (spinner) spinner.style.display = 'none';
+                    if (pagesContainer) {
+                        pagesContainer.style.display = 'block';
+                        pagesContainer.innerHTML = `
+                            <div class="card border border-primary-subtle shadow-sm rounded-3 p-4 my-5 text-center mx-auto" style="max-width: 500px; background: #ffffff;">
+                                <div class="d-inline-flex align-items-center justify-content-center bg-primary-subtle rounded-circle mx-auto mb-3" style="width: 80px; height: 80px;">
+                                    <i class="bi bi-file-earmark-word-fill" style="font-size: 2.5rem; color: #185abd;"></i>
+                                </div>
+                                <h6 class="fw-bold text-dark mb-1 text-break">` + (json.filename || 'Dokumen Word') + `</h6>
+                                <p class="text-muted small mb-4">Format Dokumen Microsoft Word (.` + (json.ext || 'docx') + `) &bull; ` + (json.size ? (Math.round(json.size / 1024) + ' KB') : '') + `</p>
+                                <div class="p-3 bg-light rounded-2 text-start small mb-4 text-muted" style="font-size: 0.8rem; line-height: 1.5;">
+                                    <i class="bi bi-info-circle-fill text-primary me-1"></i> Berkas Word (.` + (json.ext || 'docx') + `) ini dapat diunduh langsung untuk diedit atau dibuka di Microsoft Word / aplikasi office lainnya.
+                                </div>
+                                <button type="button" class="btn btn-primary px-4 py-2 fw-semibold d-inline-flex align-items-center gap-2 mx-auto" onclick="downloadCurrentUniversalDoc()">
+                                    <i class="bi bi-download"></i> Unduh Dokumen Word
+                                </button>
+                            </div>
+                        `;
+                    }
                 } else if (json.base64) {
                     if (iconEl) iconEl.className = 'bi bi-file-earmark-image-fill fs-5 text-primary';
                     if (spinner) spinner.style.display = 'none';
@@ -2956,6 +3184,17 @@
                     openPdfPreviewModal(url, title, subtitle);
                 }
             }, true); // useCapture = true agar menangkap klik di tahap awal sebelum navigasi browser
+
+            // Cegah dialog print browser default jika modal universal preview PDF sedang terbuka
+            window.addEventListener('keydown', function(e) {
+                if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 'P')) {
+                    var modalEl = document.getElementById('modalUniversalPdfPreview');
+                    if (modalEl && modalEl.classList.contains('show')) {
+                        e.preventDefault();
+                        printCurrentUniversalDoc();
+                    }
+                }
+            });
         });
     </script>
 

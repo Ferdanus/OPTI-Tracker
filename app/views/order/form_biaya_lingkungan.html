@@ -627,9 +627,16 @@
                             </a>
                             <div class="d-flex align-items-center gap-2 flex-wrap">
                                 <check if="{{ @can_edit }}">
-                                    <button type="submit" name="action_btn" value="save_draft" class="btn btn-outline-primary btn-sm px-3 d-inline-flex align-items-center gap-1 shadow-xs">
-                                        <i class="bi bi-bookmark"></i> Simpan Draf
-                                    </button>
+                                    <check if="{{ !in_array(@order.status_proposal_biaya, ['siap_penawaran', 'disetujui']) && empty(@penawaran) }}">
+                                        <button type="submit" name="action_btn" value="save_draft" class="btn btn-outline-primary btn-sm px-3 d-inline-flex align-items-center gap-1 shadow-xs">
+                                            <i class="bi bi-bookmark"></i> Simpan Draf
+                                        </button>
+                                    </check>
+                                    <check if="{{ in_array(@order.status_proposal_biaya, ['siap_penawaran', 'disetujui']) || !empty(@penawaran) }}">
+                                        <button type="submit" name="action_btn" value="save_draft" class="btn btn-primary btn-sm px-3 d-inline-flex align-items-center gap-1 fw-semibold shadow-xs">
+                                            <i class="bi bi-save2-fill"></i> Simpan Perubahan Biaya
+                                        </button>
+                                    </check>
                                     <check if="{{ @is_ketua_tim || @is_superadmin }}">
                                         <button type="button" class="btn btn-primary btn-sm px-4 d-inline-flex align-items-center gap-1 fw-bold shadow-xs" onclick="confirmSubmitLingkungan('siap_penawaran')">
                                             <i class="bi bi-send-fill"></i> Tetapkan Siap Penawaran

@@ -2,6 +2,7 @@
     "require": {
         "bcosca/fatfree-core": "^3.9",
         "dompdf/dompdf": "^3.1",
-        "minishlink/web-push": "^6.0"
+        "minishlink/web-push": "^6.0",
+        "setasign/fpdi": "^2.6"
     }
 }

@@ -868,11 +868,11 @@
                     <span class="text-muted">&bull;</span>
                     <span class="text-nowrap">Tgl Masuk: <span class="text-dark">{{ date('d M Y', strtotime(@order.tanggal_masuk)) }}</span></span>
                     <span class="text-muted">&bull;</span>
-                    <span class="text-nowrap" data-bs-toggle="tooltip" title="Standar Pelayanan Minimal (SPM) - Estimasi durasi hari kerja pengujian laboratorium">
+                    <span class="text-nowrap" data-bs-toggle="tooltip" title="{{ @order.durasi_tooltip ?: 'Standar Pelayanan Minimal (SPM) - Estimasi durasi hari kerja pengujian laboratorium' }}">
                         Waktu Pengerjaan: 
-                        <check if="{{ (@proposal && in_array(@proposal.status_proposal, ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan'])) || in_array(@order.status_proposal_biaya, ['siap_penawaran', 'disetujui']) || @order.spm_layanan }}">
+                        <check if="{{ @order.durasi_ditentukan }}">
                             <true>
-                                <span class="badge bg-primary-subtle text-primary fw-bold px-2 py-0.5 rounded-pill font-monospace"><i class="bi bi-clock-fill me-1"></i>{{ @order.spm_layanan ?: (@proposal.durasi_kegiatan ?: (@order.proposal_durasi ?: '30 Hari Kerja')) }}</span>
+                                <span class="badge {{ @order.durasi_badge_class ?: 'bg-primary-subtle text-primary' }} fw-bold px-2 py-0.5 rounded-pill font-monospace"><i class="bi bi-clock-fill me-1"></i>{{ @order.durasi_tampil }}</span>
                             </true>
                             <false>
                                 <span class="badge bg-secondary-subtle text-secondary px-2 py-0.5 rounded-pill"><i class="bi bi-hourglass-split me-1"></i>Belum ditentukan</span>
@@ -882,8 +882,13 @@
                 </div>
             </div>
 
-            <!-- Hanya 1 Tombol Kembali Saja di Pojok Kanan -->
-            <div class="flex-shrink-0">
+            <!-- Tombol Aksi di Header Atas: Riwayat Aktivitas & Kembali ke Daftar -->
+            <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                <button type="button" class="btn btn-white btn-sm px-3 py-1.5 fw-semibold border shadow-xs d-flex align-items-center gap-2 text-dark bg-white" data-bs-toggle="modal" data-bs-target="#modalActivityTracker" title="Buka Riwayat Aktivitas & Jejak Audit">
+                    <i class="bi bi-clock-history text-primary"></i>
+                    <span>Riwayat Aktivitas</span>
+                    <span class="badge bg-primary text-white rounded-pill px-2 py-0.5" id="headerBadgeActivityCount" style="font-size: 0.72rem;">{{ @total_activity ?: 0 }}</span>
+                </button>
                 <a href="{{ @BASE }}/order" class="btn btn-light btn-sm text-secondary px-3 py-1.5 fw-medium border shadow-xs">
                     <i class="bi bi-arrow-left me-1"></i> Kembali ke Daftar
                 </a>
@@ -966,31 +971,43 @@
                         <check if="{{ @stepper[6].state == 'waiting' }}"><span class="text-muted" style="font-size: 0.65rem;">Menunggu</span></check>
                     </a>
 
-                    <!-- Step 7: Petunjuk Operasional -->
-                    <!-- Step 7: Petunjuk Operasional & SPM -->
-                    <a href="#cardSampelSpm" class="step-checkpoint" data-bs-toggle="tooltip" title="Tahap 7: Aktivasi titik awal pengerjaan (Sampel/Kick-Off/PKS) dan penerbitan Petunjuk Operasional (PO)">
+                    <!-- Step 7: Aktivasi SPM -->
+                    <a href="#cardSampelSpm" class="step-checkpoint" data-bs-toggle="tooltip" title="Tahap 7: Aktivasi titik awal pengerjaan (Sampel/Kick-Off/PKS) &amp; SPM">
                         <div class="step-circle {{ @stepper[7].state }}">
                             <check if="{{ @stepper[7].state == 'done' }}"><i class="bi bi-check-lg"></i></check>
                             <check if="{{ @stepper[7].state == 'current' }}"><i class="bi bi-stopwatch"></i></check>
                             <check if="{{ @stepper[7].state == 'waiting' }}"><i class="bi bi-stopwatch"></i></check>
                         </div>
-                        <span class="step-text {{ @stepper[7].state }}">Aktivasi SPM &amp; PO</span>
+                        <span class="step-text {{ @stepper[7].state }}">Aktivasi SPM</span>
                         <check if="{{ @stepper[7].state == 'done' }}"><span class="text-success" style="font-size: 0.65rem;"><i class="bi bi-check-circle-fill"></i> Selesai</span></check>
                         <check if="{{ @stepper[7].state == 'current' }}"><span class="badge bg-primary text-white rounded-pill px-1.5 py-0.5 fw-bold" style="font-size: 0.62rem;">Aktif</span></check>
                         <check if="{{ @stepper[7].state == 'waiting' }}"><span class="text-muted" style="font-size: 0.65rem;">Menunggu</span></check>
                     </a>
 
-                    <!-- Step 8: BAST -->
-                    <a href="#cardPoBast" class="step-checkpoint" data-bs-toggle="tooltip" title="Tahap 8: Berita Acara Serah Terima (BAST)">
+                    <!-- Step 8: Petunjuk Operasional (PO) -->
+                    <a href="#cardPo" class="step-checkpoint" data-bs-toggle="tooltip" title="Tahap 8: Penerbitan dan pelaksanaan Petunjuk Operasional (PO)">
                         <div class="step-circle {{ @stepper[8].state }}">
                             <check if="{{ @stepper[8].state == 'done' }}"><i class="bi bi-check-lg"></i></check>
-                            <check if="{{ @stepper[8].state == 'current' }}"><i class="bi bi-patch-check-fill"></i></check>
-                            <check if="{{ @stepper[8].state == 'waiting' }}"><i class="bi bi-patch-check"></i></check>
+                            <check if="{{ @stepper[8].state == 'current' }}"><i class="bi bi-file-earmark-check"></i></check>
+                            <check if="{{ @stepper[8].state == 'waiting' }}"><i class="bi bi-file-earmark-check"></i></check>
                         </div>
-                        <span class="step-text {{ @stepper[8].state }}">BAST</span>
+                        <span class="step-text {{ @stepper[8].state }}">PO Kegiatan</span>
                         <check if="{{ @stepper[8].state == 'done' }}"><span class="text-success" style="font-size: 0.65rem;"><i class="bi bi-check-circle-fill"></i> Selesai</span></check>
                         <check if="{{ @stepper[8].state == 'current' }}"><span class="badge bg-primary text-white rounded-pill px-1.5 py-0.5 fw-bold" style="font-size: 0.62rem;">Aktif</span></check>
                         <check if="{{ @stepper[8].state == 'waiting' }}"><span class="text-muted" style="font-size: 0.65rem;">Menunggu</span></check>
+                    </a>
+
+                    <!-- Step 9: BAST -->
+                    <a href="#cardBast" class="step-checkpoint" data-bs-toggle="tooltip" title="Tahap 9: Berita Acara Serah Terima (BAST)">
+                        <div class="step-circle {{ @stepper[9].state }}">
+                            <check if="{{ @stepper[9].state == 'done' }}"><i class="bi bi-check-lg"></i></check>
+                            <check if="{{ @stepper[9].state == 'current' }}"><i class="bi bi-patch-check-fill"></i></check>
+                            <check if="{{ @stepper[9].state == 'waiting' }}"><i class="bi bi-patch-check"></i></check>
+                        </div>
+                        <span class="step-text {{ @stepper[9].state }}">BAST</span>
+                        <check if="{{ @stepper[9].state == 'done' }}"><span class="text-success" style="font-size: 0.65rem;"><i class="bi bi-check-circle-fill"></i> Selesai</span></check>
+                        <check if="{{ @stepper[9].state == 'current' }}"><span class="badge bg-primary text-white rounded-pill px-1.5 py-0.5 fw-bold" style="font-size: 0.62rem;">Aktif</span></check>
+                        <check if="{{ @stepper[9].state == 'waiting' }}"><span class="text-muted" style="font-size: 0.65rem;">Menunggu</span></check>
                     </a>
                 </div>
             </div>
@@ -1143,15 +1160,27 @@
                         <span class="stage-nav-text">{{ @order.jenis_layanan_opti == 'lingkungan' ? 'Tarif/Param' : 'Proposal' }}</span>
                     </div>
                     <div class="stage-nav-status-row">
-                        <check if="{{ @order.jenis_layanan_opti == 'selulosa' && !empty(@proposal) && @proposal.status_proposal == 'draft' }}">
-                            <true><span class="badge bg-warning text-dark stage-status-badge">Draft</span></true>
+                        <check if="{{ @stepper[4].state == 'waiting' }}">
+                            <true><span class="badge bg-light text-muted stage-status-badge">Menunggu</span></true>
                             <false>
-                                <check if="{{ @stepper[4].state == 'done' }}">
-                                    <true><span class="badge bg-success-subtle text-success stage-status-badge">Selesai</span></true>
+                                <check if="{{ in_array(@proposal.status_proposal, ['draft', 'draft_disimpan']) || in_array(@order.status_proposal_biaya, ['draft', 'draft_disimpan']) }}">
+                                    <true><span class="badge bg-warning text-dark stage-status-badge">Draft</span></true>
                                     <false>
-                                        <check if="{{ @stepper[4].state == 'current' }}">
-                                            <true><span class="badge bg-primary text-white stage-status-badge">Aktif</span></true>
-                                            <false><span class="badge bg-light text-muted stage-status-badge">Menunggu</span></false>
+                                        <check if="{{ @proposal.status_proposal == 'diajukan' || @order.status_proposal_biaya == 'menunggu_approval' }}">
+                                            <true><span class="badge bg-info-subtle text-info-emphasis stage-status-badge">Diajukan</span></true>
+                                            <false>
+                                                <check if="{{ in_array(@proposal.status_proposal, ['ditolak', 'revisi']) }}">
+                                                    <true><span class="badge bg-danger-subtle text-danger stage-status-badge">Revisi</span></true>
+                                                    <false>
+                                                        <check if="{{ @stepper[4].state == 'done' }}">
+                                                            <true><span class="badge bg-success-subtle text-success stage-status-badge">Selesai</span></true>
+                                                            <false>
+                                                                <span class="badge bg-primary text-white stage-status-badge">Aktif</span>
+                                                            </false>
+                                                        </check>
+                                                    </false>
+                                                </check>
+                                            </false>
                                         </check>
                                     </false>
                                 </check>
@@ -1168,21 +1197,23 @@
                         <span class="stage-nav-text">Penawaran</span>
                     </div>
                     <div class="stage-nav-status-row">
-                        <check if="{{ !empty(@penawaran) && @penawaran.status_respon_klien == 'deal' }}">
-                            <true><span class="badge bg-success text-white stage-status-badge">DEAL</span></true>
+                        <check if="{{ @stepper[5].state == 'waiting' }}">
+                            <true><span class="badge bg-light text-muted stage-status-badge">Menunggu</span></true>
                             <false>
-                                <check if="{{ !empty(@penawaran) && @penawaran.status_respon_klien == 'revisi' }}">
-                                    <true><span class="badge bg-warning text-dark stage-status-badge">Revisi</span></true>
+                                <check if="{{ !empty(@penawaran) && @penawaran.status_respon_klien == 'deal' }}">
+                                    <true><span class="badge bg-success text-white stage-status-badge">DEAL</span></true>
                                     <false>
-                                        <check if="{{ !empty(@penawaran) && @penawaran.status_respon_klien == 'draft' }}">
-                                            <true><span class="badge bg-warning text-dark stage-status-badge">Draft</span></true>
+                                        <check if="{{ !empty(@penawaran) && @penawaran.status_respon_klien == 'revisi' }}">
+                                            <true><span class="badge bg-warning text-dark stage-status-badge">Revisi</span></true>
                                             <false>
-                                                <check if="{{ @stepper[5].state == 'done' }}">
-                                                    <true><span class="badge bg-success-subtle text-success stage-status-badge">Selesai</span></true>
+                                                <check if="{{ !empty(@penawaran) && @penawaran.status_respon_klien == 'draft' }}">
+                                                    <true><span class="badge bg-warning text-dark stage-status-badge">Draft</span></true>
                                                     <false>
-                                                        <check if="{{ @stepper[5].state == 'current' }}">
-                                                            <true><span class="badge bg-primary text-white stage-status-badge">Aktif</span></true>
-                                                            <false><span class="badge bg-light text-muted stage-status-badge">Menunggu</span></false>
+                                                        <check if="{{ @stepper[5].state == 'done' }}">
+                                                            <true><span class="badge bg-success-subtle text-success stage-status-badge">Selesai</span></true>
+                                                            <false>
+                                                                <span class="badge bg-primary text-white stage-status-badge">Aktif</span>
+                                                            </false>
                                                         </check>
                                                     </false>
                                                 </check>
@@ -1203,15 +1234,22 @@
                         <span class="stage-nav-text">Pembayaran</span>
                     </div>
                     <div class="stage-nav-status-row">
-                        <check if="{{ (@order.status_keuangan == 'lunas') || !empty(@riwayat_bayar) }}">
-                            <true><span class="badge bg-success text-white stage-status-badge">Lunas</span></true>
+                        <check if="{{ @stepper[6].state == 'waiting' }}">
+                            <true><span class="badge bg-light text-muted stage-status-badge">Menunggu</span></true>
                             <false>
-                                <check if="{{ @stepper[6].state == 'done' }}">
-                                    <true><span class="badge bg-success-subtle text-success stage-status-badge">Selesai</span></true>
+                                <check if="{{ (@order.status_keuangan == 'lunas') || !empty(@riwayat_bayar) }}">
+                                    <true><span class="badge bg-success text-white stage-status-badge">Lunas</span></true>
                                     <false>
-                                        <check if="{{ @stepper[6].state == 'current' }}">
-                                            <true><span class="badge bg-primary text-white stage-status-badge">Aktif</span></true>
-                                            <false><span class="badge bg-light text-muted stage-status-badge">Menunggu</span></false>
+                                        <check if="{{ @order.status_keuangan == 'terbayar_sebagian' }}">
+                                            <true><span class="badge bg-info text-white stage-status-badge">Sebagian</span></true>
+                                            <false>
+                                                <check if="{{ @stepper[6].state == 'done' }}">
+                                                    <true><span class="badge bg-success-subtle text-success stage-status-badge">Selesai</span></true>
+                                                    <false>
+                                                        <span class="badge bg-primary text-white stage-status-badge">Aktif</span>
+                                                    </false>
+                                                </check>
+                                            </false>
                                         </check>
                                     </false>
                                 </check>
@@ -1228,15 +1266,17 @@
                         <span class="stage-nav-text">Aktivasi SPM</span>
                     </div>
                     <div class="stage-nav-status-row">
-                        <check if="{{ !empty(@order.tanggal_spm_mulai) || !empty(@order.tanggal_terima_sampel) }}">
-                            <true><span class="badge bg-info-subtle text-info-emphasis stage-status-badge">SPM Aktif</span></true>
+                        <check if="{{ @stepper[7].state == 'waiting' }}">
+                            <true><span class="badge bg-light text-muted stage-status-badge">Menunggu</span></true>
                             <false>
-                                <check if="{{ @stepper[7].state == 'done' }}">
-                                    <true><span class="badge bg-success-subtle text-success stage-status-badge">Selesai</span></true>
+                                <check if="{{ !empty(@order.tanggal_spm_mulai) || !empty(@order.tanggal_terima_sampel) }}">
+                                    <true><span class="badge bg-success-subtle text-success stage-status-badge">SPM Aktif</span></true>
                                     <false>
-                                        <check if="{{ @stepper[7].state == 'current' }}">
-                                            <true><span class="badge bg-primary text-white stage-status-badge">Aktif</span></true>
-                                            <false><span class="badge bg-light text-muted stage-status-badge">Menunggu</span></false>
+                                        <check if="{{ @stepper[7].state == 'done' }}">
+                                            <true><span class="badge bg-success-subtle text-success stage-status-badge">Selesai</span></true>
+                                            <false>
+                                                <span class="badge bg-primary text-white stage-status-badge">Aktif</span>
+                                            </false>
                                         </check>
                                     </false>
                                 </check>
@@ -1250,22 +1290,51 @@
                 <button class="stage-nav-btn {{ @current_step == 8 ? 'active' : '' }}" id="tab-stage-8" data-bs-toggle="pill" data-bs-target="#pane-stage-8" type="button" role="tab" aria-controls="pane-stage-8" aria-selected="{{ @current_step == 8 ? 'true' : 'false' }}">
                     <div class="stage-nav-title-row">
                         <span class="stage-nav-badge">8</span>
+                        <span class="stage-nav-text">PO Kegiatan</span>
+                    </div>
+                    <div class="stage-nav-status-row">
+                        <check if="{{ @stepper[8].state == 'waiting' }}">
+                            <true><span class="badge bg-light text-muted stage-status-badge">Menunggu</span></true>
+                            <false>
+                                <check if="{{ @stepper[8].state == 'done' }}">
+                                    <true><span class="badge bg-success-subtle text-success stage-status-badge">Selesai</span></true>
+                                    <false>
+                                        <check if="{{ !empty(@order.nomor_po) }}">
+                                            <true><span class="badge bg-info-subtle text-info-emphasis stage-status-badge">PO Aktif</span></true>
+                                            <false>
+                                                <check if="{{ !empty(@order.tanggal_spm_mulai) || !empty(@order.tanggal_terima_sampel) }}">
+                                                    <true><span class="badge bg-warning-subtle text-warning-emphasis stage-status-badge">Siap Terbit</span></true>
+                                                    <false>
+                                                        <span class="badge bg-primary text-white stage-status-badge">Aktif</span>
+                                                    </false>
+                                                </check>
+                                            </false>
+                                        </check>
+                                    </false>
+                                </check>
+                            </false>
+                        </check>
+                    </div>
+                </button>
+            </li>
+            <!-- Tahap 9 -->
+            <li class="stage-nav-item" role="presentation">
+                <button class="stage-nav-btn {{ @current_step == 9 ? 'active' : '' }}" id="tab-stage-9" data-bs-toggle="pill" data-bs-target="#pane-stage-9" type="button" role="tab" aria-controls="pane-stage-9" aria-selected="{{ @current_step == 9 ? 'true' : 'false' }}">
+                    <div class="stage-nav-title-row">
+                        <span class="stage-nav-badge">9</span>
                         <span class="stage-nav-text">BAST</span>
                     </div>
                     <div class="stage-nav-status-row">
-                        <check if="{{ !empty(@bast) && in_array(@bast.status_bast, ['disetujui', 'selesai', 'terbit']) }}">
-                            <true><span class="badge bg-success text-white stage-status-badge">Selesai</span></true>
+                        <check if="{{ @stepper[9].state == 'waiting' }}">
+                            <true><span class="badge bg-light text-muted stage-status-badge">Menunggu</span></true>
                             <false>
-                                <check if="{{ !empty(@order.nomor_po) }}">
-                                    <true><span class="badge bg-info-subtle text-info-emphasis stage-status-badge">PO Terbit</span></true>
+                                <check if="{{ !empty(@bast) && in_array(@bast.status_bast, ['disetujui', 'selesai', 'terbit']) }}">
+                                    <true><span class="badge bg-success text-white stage-status-badge">Selesai</span></true>
                                     <false>
-                                        <check if="{{ @stepper[8].state == 'done' }}">
+                                        <check if="{{ @stepper[9].state == 'done' }}">
                                             <true><span class="badge bg-success-subtle text-success stage-status-badge">Selesai</span></true>
                                             <false>
-                                                <check if="{{ @stepper[8].state == 'current' }}">
-                                                    <true><span class="badge bg-primary text-white stage-status-badge">Aktif</span></true>
-                                                    <false><span class="badge bg-light text-muted stage-status-badge">Menunggu</span></false>
-                                                </check>
+                                                <span class="badge bg-primary text-white stage-status-badge">Aktif</span>
                                             </false>
                                         </check>
                                     </false>
@@ -1713,9 +1782,35 @@
                                 </div>
                             </div>
 
-                            <check if="{{ @tinjauan.sdm_catatan }}">
-                                <div class="p-2 px-3 bg-light rounded border small mb-3 text-secondary">
-                                    <strong class="text-dark"><i class="bi bi-chat-left-text text-primary me-1"></i> Catatan Teknis:</strong> {{ @tinjauan.sdm_catatan }}
+                            <check if="{{ @tinjauan.sdm_catatan || @tinjauan.peralatan_catatan || @tinjauan.bahan_catatan || @tinjauan.metode_catatan }}">
+                                <div class="p-2.5 px-3 bg-light rounded border small mb-3 text-secondary">
+                                    <div class="fw-bold text-dark mb-1.5"><i class="bi bi-chat-left-text text-primary me-1"></i> Catatan Kesiapan Parameter (Pertimbangan Durasi / Biaya):</div>
+                                    <div class="row g-2">
+                                        <check if="{{ @tinjauan.sdm_catatan }}">
+                                            <div class="col-sm-6">
+                                                <span class="text-muted small">SDM / Analis:</span>
+                                                <div class="text-dark fw-medium">{{ @tinjauan.sdm_catatan }}</div>
+                                            </div>
+                                        </check>
+                                        <check if="{{ @tinjauan.peralatan_catatan }}">
+                                            <div class="col-sm-6">
+                                                <span class="text-muted small">Peralatan:</span>
+                                                <div class="text-dark fw-medium">{{ @tinjauan.peralatan_catatan }}</div>
+                                            </div>
+                                        </check>
+                                        <check if="{{ @tinjauan.bahan_catatan }}">
+                                            <div class="col-sm-6">
+                                                <span class="text-muted small">Bahan Kimia / Reagen:</span>
+                                                <div class="text-dark fw-medium">{{ @tinjauan.bahan_catatan }}</div>
+                                            </div>
+                                        </check>
+                                        <check if="{{ @tinjauan.metode_catatan }}">
+                                            <div class="col-sm-6">
+                                                <span class="text-muted small">Metode Uji:</span>
+                                                <div class="text-dark fw-medium">{{ @tinjauan.metode_catatan }}</div>
+                                            </div>
+                                        </check>
+                                    </div>
                                 </div>
                             </check>
 
@@ -2040,12 +2135,27 @@
                                 
                                 <check if="{{ !@is_tim_mitra && (@user_id == @order.pic_proposal_id || @is_tim_kerja || @is_ketua_tim || @is_pejabat || @is_superadmin) }}">
                                     <div id="uploadFileBox" class="d-none pt-2.5 mt-2.5 border-top">
-                                        <form action="{{ @BASE }}/order/{{ @order.id }}/proposal/upload" method="POST" enctype="multipart/form-data" class="d-flex gap-2 align-items-center" onsubmit="var b=this.querySelector('button[type=submit]'); if(b){b.disabled=true; b.innerHTML='<span class=\'spinner-border spinner-border-sm me-1\'></span> Menyimpan...';}">
+                                        <form action="{{ @BASE }}/order/{{ @order.id }}/proposal/upload" method="POST" enctype="multipart/form-data" class="d-flex flex-column gap-2" onsubmit="var b=this.querySelector('button[type=submit]'); if(b){b.disabled=true; b.innerHTML='<span class=\'spinner-border spinner-border-sm me-1\'></span> Menyimpan...';}">
                                             <input type="hidden" name="redirect" value="detail">
-                                            <input type="file" name="file_proposal" class="form-control form-control-sm" accept=".pdf,.doc,.docx,.xls,.xlsx" required>
-                                            <button type="submit" class="btn btn-primary btn-sm text-nowrap fw-semibold">
-                                                <i class="bi bi-upload me-1"></i> Simpan File
-                                            </button>
+                                            <check if="{{ @order.jenis_layanan_opti == 'selulosa' }}">
+                                                <div class="d-flex align-items-center gap-1.5 text-danger small fw-semibold">
+                                                    <i class="bi bi-file-earmark-word-fill"></i> Wajib format Word (.doc, .docx) &mdash; PDF Dilarang
+                                                </div>
+                                                <div class="d-flex gap-2 align-items-center">
+                                                    <input type="file" name="file_proposal" class="form-control form-control-sm" accept=".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" required onchange="validateProposalWordFile(this)">
+                                                    <button type="submit" class="btn btn-primary btn-sm text-nowrap fw-semibold">
+                                                        <i class="bi bi-upload me-1"></i> Simpan File
+                                                    </button>
+                                                </div>
+                                            </check>
+                                            <check if="{{ @order.jenis_layanan_opti != 'selulosa' }}">
+                                                <div class="d-flex gap-2 align-items-center">
+                                                    <input type="file" name="file_proposal" class="form-control form-control-sm" accept=".pdf,.doc,.docx,.xls,.xlsx" required>
+                                                    <button type="submit" class="btn btn-primary btn-sm text-nowrap fw-semibold">
+                                                        <i class="bi bi-upload me-1"></i> Simpan File
+                                                    </button>
+                                                </div>
+                                            </check>
                                         </form>
                                     </div>
                                 </check>
@@ -2334,9 +2444,59 @@
                                 <!-- Action Footer: Tombol terstruktur rapi & sejajar -->
                                 <div class="px-3 py-2 bg-light border-top d-flex justify-content-between align-items-center flex-wrap gap-2">
                                     <div class="d-flex align-items-center gap-2 flex-wrap">
-                                        <button type="button" class="btn btn-sm btn-white border fw-semibold text-secondary shadow-xs d-inline-flex align-items-center gap-1.5 btn-preview-pdf" data-preview-pdf="{{ @BASE }}/order/{{ @order.id }}/penawaran/cetak?id={{ @penawaran.id }}&t={{ time() }}" data-title="Surat Penawaran Resmi" data-subtitle="{{ @penawaran.nomor_surat }}" title="Pratinjau Surat Penawaran Resmi format PDF">
-                                            <i class="bi bi-file-earmark-pdf text-danger"></i> Cetak PDF
-                                        </button>
+                                        <check if="{{ @is_admin_order || @is_superadmin }}">
+                                            <input type="file" id="inputLampiranPenawaranDetail{{ @penawaran.id }}" class="d-none" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onchange="uploadLampiranPenawaranDetail(this, {{ @order.id }}, {{ @penawaran.id }})">
+                                            <button type="button" id="btnUploadLampiranDetail{{ @penawaran.id }}" class="btn btn-sm btn-white border fw-semibold text-secondary shadow-xs d-inline-flex align-items-center gap-1.5" onclick="document.getElementById('inputLampiranPenawaranDetail{{ @penawaran.id }}').click()" title="{{ !empty(@penawaran.file_lampiran_user) ? ('Lampiran menyatu di Hal. 3+: ' . basename(@penawaran.file_lampiran_user)) : 'Opsional: Unggah lampiran untuk digabungkan ke Halaman 3+ Surat Penawaran (PDF/Word/JPG/PNG)' }}">
+                                                <i class="bi bi-paperclip text-primary" id="iconUploadLampiranDetail{{ @penawaran.id }}"></i>
+                                                <span id="labelUploadLampiranDetail{{ @penawaran.id }}">{{ !empty(@penawaran.file_lampiran_user) ? 'Ganti Lampiran (Hal. 3+)' : 'Upload Lampiran' }}</span>
+                                            </button>
+                                        </check>
+                                        <div class="btn-group btn-group-sm shadow-xs">
+                                            <button type="button" id="btnDownloadPenawaranDetail{{ @penawaran.id }}" class="btn btn-sm btn-white border fw-semibold text-secondary d-inline-flex align-items-center gap-1.5 btn-preview-pdf" data-preview-pdf="{{ @BASE }}/order/{{ @order.id }}/penawaran/cetak?id={{ @penawaran.id }}&kop=1&t={{ time() }}" data-title="Surat Penawaran Resmi" data-subtitle="{{ @penawaran.nomor_surat }}" title="Pratinjau / Unduh Surat Penawaran Resmi format PDF (Dengan Kop BBSPJIS)">
+                                                <i class="bi bi-download text-primary"></i> Unduh
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-white border text-secondary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false" title="Pilihan Format &amp; Cetak">
+                                                <span class="visually-hidden">Pilihan Format</span>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="font-size: 0.8rem; min-width: 240px;">
+                                                <li class="dropdown-header text-uppercase px-3 py-1 text-muted fw-bold" style="font-size: 0.68rem; letter-spacing: 0.5px;">Format PDF</li>
+                                                <li>
+                                                    <a class="dropdown-item py-2 btn-preview-pdf" href="javascript:void(0)" data-preview-pdf="{{ @BASE }}/order/{{ @order.id }}/penawaran/cetak?id={{ @penawaran.id }}&kop=1&t={{ time() }}" data-title="Surat Penawaran Resmi" data-subtitle="{{ @penawaran.nomor_surat }} &bull; Dengan Kop">
+                                                        <div class="d-flex align-items-center gap-2">
+                                                            <i class="bi bi-file-earmark-pdf-fill text-danger fs-6"></i>
+                                                            <div>
+                                                                <span class="fw-bold d-block text-dark">PDF Dengan Kop BBSPJIS</span>
+                                                                <small class="text-muted d-block" style="font-size: 0.72rem;">Lengkap logo &amp; kop dinas (Digital/Email)</small>
+                                                            </div>
+                                                        </div>
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item py-2 btn-preview-pdf" href="javascript:void(0)" data-preview-pdf="{{ @BASE }}/order/{{ @order.id }}/penawaran/cetak?id={{ @penawaran.id }}&kop=0&t={{ time() }}" data-title="Surat Penawaran Resmi (Tanpa Kop)" data-subtitle="{{ @penawaran.nomor_surat }} &bull; Kertas Stasioner">
+                                                        <div class="d-flex align-items-center gap-2">
+                                                            <i class="bi bi-file-earmark-fill text-secondary fs-6"></i>
+                                                            <div>
+                                                                <span class="fw-bold d-block text-dark">PDF Tanpa Kop (Kosongan)</span>
+                                                                <small class="text-muted d-block" style="font-size: 0.72rem;">Untuk cetak fisik di kertas berkop resmi</small>
+                                                            </div>
+                                                        </div>
+                                                    </a>
+                                                </li>
+                                                <li><hr class="dropdown-divider my-1"></li>
+                                                <li class="dropdown-header text-uppercase px-3 py-1 text-muted fw-bold" style="font-size: 0.68rem; letter-spacing: 0.5px;">Format Word</li>
+                                                <li>
+                                                    <a class="dropdown-item py-2" href="{{ @BASE }}/order/{{ @order.id }}/penawaran/word?id={{ @penawaran.id }}" download>
+                                                        <div class="d-flex align-items-center gap-2">
+                                                            <i class="bi bi-file-earmark-word-fill fs-6" style="color: #185abd !important;"></i>
+                                                            <div>
+                                                                <span class="fw-bold d-block text-dark">Unduh Word (.docx)</span>
+                                                                <small class="text-muted d-block" style="font-size: 0.72rem;">Format dokumen Microsoft Word editable</small>
+                                                            </div>
+                                                        </div>
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
                                         <check if="{{ @is_admin_order || @is_superadmin }}">
                                             <button type="button" class="btn btn-sm btn-white border text-danger shadow-xs d-inline-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#modalHapusPenawaran{{ @penawaran.id }}" title="Hapus Dokumen Penawaran Ini">
                                                 <i class="bi bi-trash3"></i> Hapus
@@ -2345,7 +2505,7 @@
                                     </div>
                                     <div class="d-flex align-items-center gap-2 flex-wrap">
                                         <check if="{{ @is_admin_order || @is_superadmin }}">
-                                            <a href="{{ @BASE }}/order/{{ @order.id }}/penawaran/buat" class="btn btn-sm btn-primary fw-semibold px-3 d-inline-flex align-items-center gap-1.5 shadow-xs" onclick="triggerStageRead(5)" title="Buka Halaman Surat Penawaran Order">
+                                            <a href="{{ @BASE }}/order/{{ @order.id }}/penawaran/buat?mode=edit&sp_id={{ @penawaran.id }}" class="btn btn-sm btn-primary fw-semibold px-3 d-inline-flex align-items-center gap-1.5 shadow-xs" onclick="triggerStageRead(5)" title="Buka Halaman Surat Penawaran Order">
                                                 <i class="bi bi-box-arrow-up-right"></i> Buka Surat Penawaran
                                             </a>
                                         </check>
@@ -3109,13 +3269,19 @@
                                             <div class="border-start ps-3">
                                                 <small class="text-muted d-block">Durasi SPM:</small>
                                                 <strong class="text-primary font-display fs-6">
-                                                    {{ @order.spm_durasi_nilai ?: (@order.durasi_hari_kerja ?: 30) }} {{ @order.spm_durasi_satuan ?: 'Hari Kerja' }}
+                                                    {{ @order.durasi_awal_label ?: ((@order.spm_durasi_nilai ?: (@order.durasi_hari_kerja ?: 30)) . ' ' . (@order.spm_durasi_satuan ?: 'Hari Kerja')) }}
+                                                </strong>
+                                            </div>
+                                            <div class="border-start ps-3">
+                                                <small class="text-muted d-block">Sisa Waktu:</small>
+                                                <strong class="{{ (@order.sisa_hari_kerja !== null && @order.sisa_hari_kerja <= 5) ? 'text-danger' : 'text-success' }} font-display fs-6">
+                                                    {{ @order.durasi_tampil }}
                                                 </strong>
                                             </div>
                                             <div class="border-start ps-3">
                                                 <small class="text-muted d-block">Target Selesai (Batas SPM):</small>
                                                 <strong class="text-danger font-display fs-6">
-                                                    {{ date('d M Y', strtotime(@order.tanggal_deadline_spm ?: (@order.tanggal_spm_mulai ?: @order.tanggal_terima_sampel))) }}
+                                                    {{ date('d M Y', strtotime(@order.tanggal_deadline_efektif ?: (@order.tanggal_deadline_spm ?: (@order.tanggal_spm_mulai ?: @order.tanggal_terima_sampel)))) }}
                                                 </strong>
                                             </div>
                                         </div>
@@ -3140,12 +3306,17 @@
                                     </div>
                                     <div class="col-md-4 text-md-end">
                                         <check if="{{ !@order.po_id }}">
-                                            <button type="button" class="btn btn-warning btn-sm fw-bold text-dark shadow-sm" data-bs-toggle="modal" data-bs-target="#modalApprove" onclick="triggerStageRead(7)">
-                                                <i class="bi bi-patch-check-fill me-1"></i> Terbitkan PO Sekarang
+                                            <button type="button" class="btn btn-primary btn-sm fw-semibold shadow-sm" onclick="switchStage(8, true)">
+                                                Lanjut ke Tahap 8: Terbitkan PO <i class="bi bi-arrow-right ms-1"></i>
+                                            </button>
+                                        </check>
+                                        <check if="{{ @order.po_id }}">
+                                            <button type="button" class="btn btn-dark btn-sm fw-semibold shadow-sm" onclick="switchStage(8, true)">
+                                                Lihat PO Kegiatan <i class="bi bi-arrow-right ms-1"></i>
                                             </button>
                                         </check>
                                         <button type="button" class="btn btn-outline-secondary btn-sm ms-1" data-bs-toggle="collapse" data-bs-target="#collapseEditSampel" title="Koreksi / Ubah Titik Awal SPM">
-                                             <i class="bi bi-pencil me-1"></i> Ubah
+                                             <i class="bi bi-pencil me-1"></i> Ubah Titik Awal
                                         </button>
                                     </div>
                                 </div>
@@ -3225,15 +3396,15 @@
         </div>
 
         <!-- ======================================================== -->
-        <!-- PANE TAHAP 8: BERITA ACARA SERAH TERIMA (BAST) & PO      -->
+        <!-- PANE TAHAP 8: PETUNJUK OPERASIONAL (PO) KEGIATAN          -->
         <!-- ======================================================== -->
         <div class="tab-pane fade {{ @current_step == 8 ? 'show active' : '' }}" id="pane-stage-8" role="tabpanel" aria-labelledby="tab-stage-8">
-            <div class="system-section-card" id="cardPoBast">
+            <div class="system-section-card" id="cardPo">
                 <div class="system-section-header">
                     <div>
                         <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2 font-display">
                             <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-0.5 small fw-bold">8</span>
-                            <i class="bi bi-patch-check-fill text-primary fs-5"></i> BAST
+                            <i class="bi bi-file-earmark-check text-primary fs-5"></i> Petunjuk Operasional (PO) Kegiatan
                         </h6>
                         <div class="d-flex align-items-center flex-wrap gap-2 text-muted small mt-1" style="font-size: 0.72rem; line-height: 1.4; column-gap: 16px; row-gap: 4px;">
                             <check if="{{ @audit_stages[8].waktu_kirim }}">
@@ -3246,18 +3417,19 @@
                         <span class="badge bg-primary-subtle text-primary border border-primary-subtle">PO Aktif: {{ @order.nomor_po }}</span>
                     </check>
                     <check if="{{ !@order.po_id }}">
-                        <check if="{{ @order.tanggal_terima_sampel }}">
-                            <span class="badge bg-warning text-dark">Siap Terbit PO</span>
+                        <check if="{{ !empty(@order.tanggal_spm_mulai) || !empty(@order.tanggal_terima_sampel) }}">
+                            <span class="badge bg-warning text-dark"><i class="bi bi-patch-check me-1"></i> Siap Terbit PO</span>
                         </check>
-                        <check if="{{ !@order.tanggal_terima_sampel }}">
+                        <check if="{{ empty(@order.tanggal_spm_mulai) && empty(@order.tanggal_terima_sampel) }}">
                             <span class="badge bg-light text-secondary border">
-                                <i class="bi bi-lock-fill me-1"></i> Terkunci (Menunggu Sampel)
+                                <i class="bi bi-lock-fill me-1"></i> Terkunci (Menunggu SPM)
                             </span>
                         </check>
                     </check>
                 </div>
 
                 <div class="p-4">
+                    <!-- KONDISI 1: PO SUDAH TERBIT -->
                     <check if="{{ @order.po_id }}">
                         <div class="p-3 bg-light rounded border mb-0">
                             <div class="row g-3 align-items-center">
@@ -3272,304 +3444,383 @@
                                         Status Pelaksanaan: <span class="badge bg-primary-subtle text-primary">{{ @order.status_pelaksanaan == 'laporan_selesai' ? 'Pekerjaan Selesai (Laporan Selesai)' : 'Dalam Pengerjaan Lab' }}</span>
                                     </div>
                                 </div>
-                                <div class="col-md-5 text-md-end">
+                                <div class="col-md-5 text-md-end d-flex justify-content-md-end gap-2 flex-wrap">
                                     <a href="{{ @BASE }}/po/{{ @order.po_id }}" class="btn btn-dark btn-sm px-3 fw-semibold shadow-sm" onclick="triggerStageRead(8)">
-                                        <i class="bi bi-speedometer2 me-1"></i> Buka Dashboard Monitoring PO
+                                        <i class="bi bi-speedometer2 me-1"></i> Dashboard Monitoring PO
                                     </a>
+                                    <check if="{{ @order.status_pelaksanaan == 'laporan_selesai' || !empty(@bast) }}">
+                                        <button type="button" class="btn btn-primary btn-sm fw-semibold shadow-sm" onclick="switchStage(9, true)">
+                                            Lanjut ke Tahap 9 (BAST) <i class="bi bi-arrow-right ms-1"></i>
+                                        </button>
+                                    </check>
                                 </div>
                             </div>
                         </div>
+                    </check>
 
-                        <!-- Opsi Penerbitan BAST jika belum diterbitkan -->
-                        <check if="{{ empty(@bast) }}">
-                            <div class="mt-3 p-3 bg-white rounded-3 border shadow-xs d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <!-- KONDISI 2: PO BELUM TERBIT -->
+                    <check if="{{ !@order.po_id }}">
+                        <check if="{{ !empty(@order.tanggal_spm_mulai) || !empty(@order.tanggal_terima_sampel) }}">
+                            <div class="alert alert-warning p-3 border-0 shadow-sm mb-0">
+                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                    <div>
+                                        <div class="fw-bold text-dark"><i class="bi bi-check-circle-fill text-success me-1"></i> Titik Awal Pengerjaan Telah Aktif</div>
+                                        <div class="small text-secondary">
+                                            Batas waktu pengerjaan resmi (SPM): <strong>{{ date('d M Y', strtotime(@order.tanggal_deadline_spm ?: (@order.tanggal_spm_mulai ?: @order.tanggal_terima_sampel))) }}</strong>
+                                        </div>
+                                    </div>
+                                    <check if="{{ @is_ketua_tim || @is_superadmin }}">
+                                        <button type="button" class="btn btn-warning btn-sm fw-bold text-dark shadow-sm" data-bs-toggle="modal" data-bs-target="#modalApprove" onclick="triggerStageRead(8)">
+                                            <i class="bi bi-patch-check-fill me-1"></i> Terbitkan PO Sekarang
+                                        </button>
+                                    </check>
+                                    <check if="{{ !@is_ketua_tim && !@is_superadmin }}">
+                                        <span class="badge bg-warning-subtle text-dark border border-warning px-2.5 py-1.5 fw-semibold">
+                                            <i class="bi bi-hourglass-split me-1"></i> Menunggu Persetujuan Ketua Tim OPTI
+                                        </span>
+                                    </check>
+                                </div>
+                            </div>
+                        </check>
+                        <check if="{{ empty(@order.tanggal_spm_mulai) && empty(@order.tanggal_terima_sampel) }}">
+                            <div class="p-3 text-center text-muted bg-light rounded-3 small">
+                                <i class="bi bi-lock-fill text-secondary opacity-50 me-1"></i>
+                                Petunjuk Operasional (PO) laboratorium akan diterbitkan setelah titik awal pengerjaan / SPM diaktifkan pada <strong>Tahap 7</strong> di atas.
+                            </div>
+                        </check>
+                    </check>
+                </div>
+            </div>
+        </div>
+        <!-- End of Pane Stage 8 -->
+
+        <!-- ======================================================== -->
+        <!-- PANE TAHAP 9: BERITA ACARA SERAH TERIMA (BAST) & LHU     -->
+        <!-- ======================================================== -->
+        <div class="tab-pane fade {{ @current_step == 9 ? 'show active' : '' }}" id="pane-stage-9" role="tabpanel" aria-labelledby="tab-stage-9">
+            <div class="system-section-card" id="cardBast">
+                <div class="system-section-header">
+                    <div>
+                        <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2 font-display">
+                            <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-0.5 small fw-bold">9</span>
+                            <i class="bi bi-patch-check-fill text-primary fs-5"></i> Berita Acara Serah Terima (BAST)
+                        </h6>
+                        <div class="d-flex align-items-center flex-wrap gap-2 text-muted small mt-1" style="font-size: 0.72rem; line-height: 1.4; column-gap: 16px; row-gap: 4px;">
+                            <check if="{{ @audit_stages[9].waktu_kirim }}">
+                                <span class="me-3">Terbit: <span class="text-dark fw-medium">{{ date('d M Y, H:i', strtotime(@audit_stages[9].waktu_kirim)) }}</span> <span class="text-secondary text-nowrap">({{ @audit_stages[9].pengirim_nama ?: @audit_stages[9].pengirim_role }})</span></span>
+                            </check>
+                            <span id="audit-dibaca-stage-9" class="audit-dibaca-stage-9 {{ !@audit_stages[9].waktu_dibaca ? 'd-none' : '' }}">Dibaca: <span class="text-dark fw-medium audit-dibaca-time">{{ @audit_stages[9].waktu_dibaca ? date('d M Y, H:i', strtotime(@audit_stages[9].waktu_dibaca)) : '' }}</span> <span class="text-secondary text-nowrap audit-dibaca-name">({{ @audit_stages[9].dibaca_nama ?: @audit_stages[9].dibaca_role }})</span></span>
+                        </div>
+                    </div>
+                    <check if="{{ !empty(@bast) }}">
+                        <span class="badge bg-success text-white"><i class="bi bi-check2-circle me-1"></i> BAST Diterbitkan</span>
+                    </check>
+                    <check if="{{ empty(@bast) }}">
+                        <check if="{{ @order.po_id }}">
+                            <span class="badge bg-info-subtle text-info border border-info-subtle">Siap Penerbitan BAST</span>
+                        </check>
+                        <check if="{{ !@order.po_id }}">
+                            <span class="badge bg-light text-secondary border"><i class="bi bi-lock-fill me-1"></i> Terkunci (Menunggu PO)</span>
+                        </check>
+                    </check>
+                </div>
+
+                <div class="p-4">
+                    <!-- Opsi Penerbitan BAST jika belum diterbitkan -->
+                    <check if="{{ empty(@bast) }}">
+                        <check if="{{ @order.po_id }}">
+                            <div class="p-3 bg-white rounded-3 border shadow-xs d-flex justify-content-between align-items-center flex-wrap gap-2">
                                 <div>
                                     <div class="fw-bold text-dark small mb-0.5">
-                                        <i class="bi bi-patch-check text-primary me-1"></i> Berita Acara Serah Terima (BAST) &amp; LHU
+                                        <i class="bi bi-patch-check text-primary me-1"></i> Penerbitan Berita Acara Serah Terima (BAST) &amp; LHU
                                     </div>
                                     <span class="text-muted small">
                                         Penerbitan dokumen serah terima hasil pengujian kepada pelanggan untuk penutupan resmi siklus layanan.
                                     </span>
                                 </div>
-                                <a href="{{ @BASE }}/order/{{ @order.id }}/bast/buat" class="btn btn-outline-primary btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5" onclick="triggerStageRead(8)">
+                                <a href="{{ @BASE }}/order/{{ @order.id }}/bast/buat" class="btn btn-outline-primary btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5" onclick="triggerStageRead(9)">
                                     <i class="bi bi-file-earmark-plus"></i> Terbitkan Dokumen BAST
                                 </a>
                             </div>
                         </check>
-
-                        <!-- Informasi BAST jika sudah diterbitkan -->
-                        <check if="{{ !empty(@bast) }}">
-                            <div class="mt-3 p-3 bg-white rounded-3 border border-primary-subtle shadow-xs">
-                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                                    <div>
-                                        <div class="d-flex align-items-center gap-2 mb-1">
-                                            <span class="badge bg-success text-white fw-bold px-2 py-0.5">
-                                                <i class="bi bi-patch-check-fill me-1"></i> BAST Diterbitkan
-                                            </span>
-                                            <strong class="text-dark font-monospace">{{ @bast.nomor_bast }}</strong>
-                                        </div>
-                                        <div class="small text-secondary">
-                                            Tanggal: <strong>{{ date('d M Y', strtotime(@bast.tanggal_bast)) }}</strong> &bull; Pihak Pertama: <strong>{{ @bast.pihak_pertama_nama }}</strong>
-                                        </div>
-                                    </div>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <check if="{{ @bast.file_dokumen_bast }}">
-                                            <button type="button" class="btn btn-outline-primary btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1 btn-preview-pdf" data-preview-pdf="{{ @BASE }}/{{ @bast.file_dokumen_bast }}" data-title="Dokumen BAST" data-subtitle="Nomor: {{ @bast.nomor_bast }}">
-                                                <i class="bi bi-file-earmark-pdf-fill me-1"></i> Unduh Berkas BAST
-                                            </button>
-                                        </check>
-                                    </div>
-                                </div>
-                            </div>
-                        </check>
-                    </check>
-                    <check if="{{ !@order.po_id }}">
-                        <check if="{{ @order.tanggal_terima_sampel }}">
-                            <div class="alert alert-warning p-3 border-0 shadow-sm mb-0">
-                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                                    <div>
-                                        <div class="fw-bold text-dark"><i class="bi bi-check-circle-fill text-success me-1"></i> Sampel Telah Siap di Laboratorium</div>
-                                        <div class="small text-secondary">
-                                            Batas waktu pengerjaan resmi: <strong>{{ date('d M Y', strtotime(@order.tanggal_deadline_spm)) }}</strong>
-                                        </div>
-                                    </div>
-                                    <button type="button" class="btn btn-warning btn-sm fw-bold text-dark shadow-sm" data-bs-toggle="modal" data-bs-target="#modalApprove" onclick="triggerStageRead(7)">
-                                        <i class="bi bi-patch-check-fill me-1"></i> Terbitkan PO Sekarang
-                                    </button>
-                                </div>
-                            </div>
-                        </check>
-                        <check if="{{ !@order.tanggal_terima_sampel }}">
+                        <check if="{{ !@order.po_id }}">
                             <div class="p-3 text-center text-muted bg-light rounded-3 small">
                                 <i class="bi bi-lock-fill text-secondary opacity-50 me-1"></i>
-                                Petunjuk Operasional (PO) laboratorium akan diterbitkan setelah tanggal penerimaan fisik sampel dicatat pada <strong>Tahap 7</strong> di atas.
+                                Berita Acara Serah Terima (BAST) dapat diterbitkan setelah Petunjuk Operasional (PO) diterbitkan dan pekerjaan pengujian laboratorium diselesaikan pada <strong>Tahap 8</strong>.
                             </div>
                         </check>
                     </check>
+
+                    <!-- Informasi BAST jika sudah diterbitkan -->
+                    <check if="{{ !empty(@bast) }}">
+                        <div class="p-3 bg-white rounded-3 border border-primary-subtle shadow-xs">
+                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                <div>
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <span class="badge bg-success text-white fw-bold px-2 py-0.5">
+                                            <i class="bi bi-patch-check-fill me-1"></i> BAST Diterbitkan
+                                        </span>
+                                        <strong class="text-dark font-monospace">{{ @bast.nomor_bast }}</strong>
+                                    </div>
+                                    <div class="small text-secondary">
+                                        Tanggal: <strong>{{ date('d M Y', strtotime(@bast.tanggal_bast)) }}</strong> &bull; Pihak Pertama: <strong>{{ @bast.pihak_pertama_nama }}</strong>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <check if="{{ @bast.file_dokumen_bast }}">
+                                        <button type="button" class="btn btn-outline-primary btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1 btn-preview-pdf" data-preview-pdf="{{ @BASE }}/{{ @bast.file_dokumen_bast }}" data-title="Dokumen BAST" data-subtitle="Nomor: {{ @bast.nomor_bast }}">
+                                            <i class="bi bi-file-earmark-pdf-fill me-1"></i> Unduh Berkas BAST
+                                        </button>
+                                    </check>
+                                </div>
+                            </div>
+                        </div>
+                    </check>
+                </div>
             </div>
         </div>
-        <!-- End of Pane Stage 8 -->
+        <!-- End of Pane Stage 9 -->
 
     </div>
     <!-- End of #stageTabContent -->
 
-    <!-- ======================================================== -->
-    <!-- RIWAYAT AKTIVITAS & JEJAK AUDIT (ACTIVITY TRACKER)       -->
-    <!-- ======================================================== -->
-    <div class="activity-tracker-card" id="cardActivityTracker">
-        <div class="activity-tracker-header">
-            <div class="activity-header-top-row">
-                <div class="activity-header-title-box">
-                    <div class="activity-header-icon">
-                        <i class="bi bi-clock-history"></i>
-                    </div>
-                    <div class="d-flex align-items-center gap-2">
-                        <h6 class="fw-bold text-dark m-0 font-display fs-6 text-nowrap">
-                            Riwayat Aktivitas &amp; Jejak Audit
-                        </h6>
-                        <span class="badge bg-dark text-white rounded-pill px-2.5 py-0.5 font-monospace flex-shrink-0" style="font-size: 0.72rem;" id="badgeActivityCount">
-                            {{ @total_activity ?: 0 }} Aktivitas
-                        </span>
-                    </div>
-                </div>
-
-                <!-- Filter Buttons (Sejajar sempurna secara horizontal dengan Icon & Judul) -->
-                <div class="activity-filter-group">
-                    <button type="button" class="activity-filter-btn active" data-filter="all" onclick="filterActivityLogs('all', this)">
-                        <i class="bi bi-list-stars"></i> Semua ({{ @total_activity ?: 0 }})
-                    </button>
-                    <button type="button" class="activity-filter-btn" data-filter="alur" onclick="filterActivityLogs('alur', this)">
-                        <i class="bi bi-diagram-3"></i> Alur &amp; Status
-                    </button>
-                    <button type="button" class="activity-filter-btn" data-filter="dokumen" onclick="filterActivityLogs('dokumen', this)">
-                        <i class="bi bi-file-earmark-text"></i> Dokumen
-                    </button>
-                    <button type="button" class="activity-filter-btn" data-filter="akses" onclick="filterActivityLogs('akses', this)">
-                        <i class="bi bi-eye"></i> Log Akses
-                    </button>
-                </div>
-            </div>
-            <p class="activity-header-subtext">
-                Rekaman kronologis mutasi status, disposisi, formulir, persetujuan, pembayaran, dan log akses order.
-            </p>
-        </div>
-
-        <div class="activity-timeline" id="activityTimelineList">
-            <check if="{{ @activity_logs && count(@activity_logs) > 0 }}">
-                <repeat group="{{ @activity_logs }}" value="{{ @act }}">
-                    <set is_view_log="{{ @act.aksi == 'melihat_detail' || @act.aksi == 'melihat_proposal' || @act.aksi == 'baca_tahap' || strpos(@act.aksi, 'melihat') !== false }}" />
-                    <set is_deal_act="{{ in_array(@act.aksi, ['deal_penawaran', 'disetujui_klien', 'penawaran_deal']) || strpos(@act.deskripsi, 'DEAL') !== false || strpos(@act.deskripsi, 'deal') !== false }}" />
-                    <set is_nego_act="{{ in_array(@act.aksi, ['nego_penawaran', 'negosiasi_penawaran']) || strpos(@act.deskripsi, 'Negosiasi') !== false || strpos(@act.deskripsi, 'NEGOSIASI') !== false || strpos(@act.deskripsi, 'nego') !== false }}" />
-                    <set is_draft_act="{{ in_array(@act.aksi, ['simpan_draft_penawaran', 'simpan_draft']) || strpos(@act.deskripsi, 'Draf') !== false || strpos(@act.deskripsi, 'draft') !== false }}" />
-                    <set is_dokumen_log="{{ strpos(@act.aksi, 'proposal') !== false || strpos(@act.aksi, 'penawaran') !== false || strpos(@act.aksi, 'bast') !== false || strpos(@act.aksi, 'po') !== false || strpos(@act.aksi, 'upload') !== false || strpos(@act.aksi, 'laporan') !== false }}" />
-                    <set log_cat="{{ @is_view_log ? 'akses' : (@is_dokumen_log ? 'dokumen' : 'alur') }}" />
-                    <set is_warn_act="{{ in_array(@act.aksi, ['batal_klaim', 'tolak_surat', 'revisi_proposal', 'minta_revisi', 'tolak_order', 'tolak_form_pelayanan', 'tolak_tinjauan', 'hapus_order', 'hapus_pembayaran', 'batal_penawaran']) || strpos(@act.deskripsi, 'BATAL') !== false || strpos(@act.deskripsi, 'batal') !== false }}" />
-                    <set is_success_act="{{ @is_deal_act || in_array(@act.aksi, ['approve_proposal', 'setujui_proposal', 'simpan_tinjauan', 'verifikasi_pembayaran', 'terbitkan_bast', 'tutup_order', 'terbitkan_po', 'simpan_form_pelayanan']) }}" />
-                    <set is_claim_act="{{ in_array(@act.aksi, ['klaim_surat', 'penugasan_pic', 'disposisi_layanan', 'disposisi_katim']) }}" />
-
-                    <div class="activity-item activity-cat-{{ @log_cat }}" data-cat="{{ @log_cat }}">
-                        <!-- Icon Node -->
-                        <div class="activity-node {{ @is_view_log ? 'node-view' : (@is_deal_act ? 'node-success' : (@is_nego_act ? 'node-warn' : (@is_warn_act ? 'node-warn' : (@is_claim_act ? 'node-claim' : (@is_success_act ? 'node-success' : 'node-primary'))))) }}">
-                            <check if="{{ @is_view_log }}">
-                                <i class="bi bi-eye-fill"></i>
-                            </check>
-                            <check if="{{ @is_deal_act }}">
-                                <i class="bi bi-check-circle-fill"></i>
-                            </check>
-                            <check if="{{ !@is_deal_act && @is_nego_act }}">
-                                <i class="bi bi-arrow-repeat"></i>
-                            </check>
-                            <check if="{{ !@is_deal_act && !@is_nego_act && @act.aksi == 'simpan_draft_penawaran' }}">
-                                <i class="bi bi-bookmark-fill"></i>
-                            </check>
-                            <check if="{{ !@is_deal_act && !@is_nego_act && (@act.aksi == 'buat_penawaran' || @act.aksi == 'kirim_penawaran') }}">
-                                <i class="bi bi-send-fill"></i>
-                            </check>
-                            <check if="{{ @act.aksi == 'klaim_surat' }}">
-                                <i class="bi bi-inbox-fill"></i>
-                            </check>
-                            <check if="{{ @act.aksi == 'penugasan_pic' }}">
-                                <i class="bi bi-person-badge-fill"></i>
-                            </check>
-                            <check if="{{ @act.aksi == 'disposisi_layanan' || @act.aksi == 'disposisi_katim' }}">
-                                <i class="bi bi-arrow-right-circle-fill"></i>
-                            </check>
-                            <check if="{{ !@is_deal_act && @is_warn_act }}">
-                                <i class="bi bi-exclamation-triangle-fill"></i>
-                            </check>
-                            <check if="{{ @act.aksi == 'simpan_tinjauan' || @act.aksi == 'tinjauan_kelayakan' }}">
-                                <i class="bi bi-clipboard-check-fill"></i>
-                            </check>
-                            <check if="{{ @act.aksi == 'simpan_form_pelayanan' || @act.aksi == 'simpan_draft' }}">
-                                <i class="bi bi-ui-checks"></i>
-                            </check>
-                            <check if="{{ @act.aksi == 'simpan_proposal' || @act.aksi == 'ajukan_approval' || @act.aksi == 'ajukan_ke_ketua' || @act.aksi == 'ajukan_kalkulasi' }}">
-                                <i class="bi bi-file-earmark-text-fill"></i>
-                            </check>
-                            <check if="{{ @act.aksi == 'approve_proposal' || @act.aksi == 'setujui_proposal' }}">
-                                <i class="bi bi-patch-check-fill"></i>
-                            </check>
-                            <check if="{{ @act.aksi == 'respon_penawaran' && !@is_deal_act && !@is_nego_act }}">
-                                <i class="bi bi-hand-thumbs-up-fill"></i>
-                            </check>
-                            <check if="{{ @act.aksi == 'verifikasi_pembayaran' }}">
-                                <i class="bi bi-cash-stack"></i>
-                            </check>
-                            <check if="{{ @act.aksi == 'terima_sampel' }}">
-                                <i class="bi bi-box-seam-fill"></i>
-                            </check>
-                            <check if="{{ @act.aksi == 'terbitkan_po' || @act.aksi == 'verifikasi_sop' }}">
-                                <i class="bi bi-journal-check"></i>
-                            </check>
-                            <check if="{{ @act.aksi == 'terbitkan_bast' || @act.aksi == 'tutup_order' }}">
-                                <i class="bi bi-award-fill"></i>
-                            </check>
-                            <check if="{{ @act.aksi == 'upload_file' || @act.aksi == 'upload_kesanggupan_bayar' || @act.aksi == 'upload_laporan' }}">
-                                <i class="bi bi-cloud-arrow-up-fill"></i>
-                            </check>
-                            <check if="{{ @act.aksi == 'update_customer' || @act.aksi == 'update_order' || @act.aksi == 'tambah_order' }}">
-                                <i class="bi bi-pencil-square"></i>
-                            </check>
-                            <check if="{{ !@is_view_log && !@is_deal_act && !@is_nego_act && !in_array(@act.aksi, ['klaim_surat', 'penugasan_pic', 'disposisi_layanan', 'disposisi_katim', 'batal_klaim', 'tolak_surat', 'revisi_proposal', 'minta_revisi', 'tolak_order', 'tolak_form_pelayanan', 'tolak_tinjauan', 'hapus_order', 'hapus_pembayaran', 'simpan_tinjauan', 'tinjauan_kelayakan', 'simpan_form_pelayanan', 'simpan_draft', 'simpan_proposal', 'ajukan_approval', 'ajukan_ke_ketua', 'ajukan_kalkulasi', 'approve_proposal', 'setujui_proposal', 'buat_penawaran', 'kirim_penawaran', 'simpan_draft_penawaran', 'respon_penawaran', 'verifikasi_pembayaran', 'terima_sampel', 'terbitkan_po', 'verifikasi_sop', 'terbitkan_bast', 'tutup_order', 'upload_file', 'upload_kesanggupan_bayar', 'upload_laporan', 'update_customer', 'update_order', 'tambah_order']) }}">
-                                <i class="bi bi-activity"></i>
-                            </check>
-                        </div>
-
-                        <!-- Card Body -->
-                        <div class="activity-card">
-                            <!-- Top Row: Badges + Description -->
-                            <div class="d-flex align-items-center gap-2 flex-wrap mb-2">
-                                <check if="{{ @is_view_log }}">
-                                    <span class="badge rounded-pill bg-light text-secondary border px-2 py-0.5" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.3px;">
-                                        <i class="bi bi-eye me-1"></i>DIBACA
-                                    </span>
-                                </check>
-                                <check if="{{ !@is_view_log }}">
-                                    <check if="{{ @is_deal_act }}">
-                                        <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-2 py-0.5" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.3px;">
-                                            <i class="bi bi-check-circle-fill me-1"></i>DEAL
-                                        </span>
-                                    </check>
-                                    <check if="{{ !@is_deal_act && @is_nego_act }}">
-                                        <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-0.5" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.3px;">
-                                            <i class="bi bi-arrow-repeat me-1"></i>NEGOSIASI
-                                        </span>
-                                    </check>
-                                    <check if="{{ !@is_deal_act && !@is_nego_act && @is_draft_act }}">
-                                        <span class="badge rounded-pill bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-0.5" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.3px;">
-                                            <i class="bi bi-bookmark-fill me-1"></i>DRAFT
-                                        </span>
-                                    </check>
-                                    <check if="{{ !@is_deal_act && !@is_nego_act && !@is_draft_act && @is_warn_act }}">
-                                        <span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle px-2 py-0.5" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.3px;">
-                                            <i class="bi bi-exclamation-triangle-fill me-1"></i>BATAL / DITOLAK
-                                        </span>
-                                    </check>
-                                    <check if="{{ !@is_deal_act && !@is_nego_act && !@is_draft_act && !@is_warn_act && @is_success_act }}">
-                                        <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-2 py-0.5" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.3px;">
-                                            <i class="bi bi-check2-circle me-1"></i>SELESAI / ACC
-                                        </span>
-                                    </check>
-                                    <check if="{{ !@is_deal_act && !@is_nego_act && !@is_draft_act && !@is_warn_act && !@is_success_act }}">
-                                        <span class="badge rounded-pill bg-primary-subtle text-primary border border-primary-subtle px-2 py-0.5" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.3px;">
-                                            <i class="bi bi-arrow-right-circle me-1"></i>DIPROSES
-                                        </span>
-                                    </check>
-                                </check>
-                                <span class="badge border rounded-pill px-2.5 py-0.5 text-uppercase" style="font-size: 0.66rem; font-weight: 700; letter-spacing: 0.4px; background-color: {{ @is_view_log ? '#f1f5f9' : (@is_deal_act ? '#f0fdf4' : (@is_nego_act ? '#fffbeb' : '#e0f2fe')) }}; color: {{ @is_view_log ? '#475569' : (@is_deal_act ? '#16a34a' : (@is_nego_act ? '#b45309' : '#0369a1')) }}; border-color: {{ @is_view_log ? '#cbd5e1' : (@is_deal_act ? '#bbf7d0' : (@is_nego_act ? '#fde68a' : '#bae6fd')) }} !important;">
-                                    {{ str_replace('_', ' ', @act.modul) }}
-                                </span>
-                                <span class="fw-bold text-dark font-display" style="font-size: 0.9rem; line-height: 1.4;">
-                                    {{ @act.deskripsi }}
-                                </span>
-                            </div>
-
-                            <!-- Bottom Row (Footer): Left: User & Role | Right: Timestamp & IP -->
-                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2 border-top border-light">
-                                <div class="d-flex align-items-center gap-2 flex-wrap">
-                                    <div class="d-flex align-items-center" style="gap: 8px;">
-                                        <div class="rounded-circle d-flex align-items-center justify-content-center bg-light text-secondary border flex-shrink-0" style="width: 24px; height: 24px; font-size: 0.72rem;">
-                                            <i class="bi bi-person-fill"></i>
-                                        </div>
-                                        <span class="fw-bold text-dark" style="font-size: 0.82rem;">
-                                            {{ @act.user_nama ?: 'Sistem Otomatis' }}
-                                        </span>
-                                    </div>
-                                    <span class="badge rounded-pill px-2.5 py-0.5" style="font-size: 0.68rem; font-weight: 600; background-color: #f8fafc; color: #475569; border: 1px solid #e2e8f0;">
-                                        {{ ucwords(str_replace('_', ' ', @act.user_role ?: 'User')) }}
-                                    </span>
-                                </div>
-
-                                <div class="d-flex align-items-center gap-2 text-secondary small font-monospace" style="font-size: 0.74rem;">
-                                    <div class="d-flex align-items-center gap-1" title="{{ date('d F Y, H:i:s', strtotime(@act.created_at)) }} WIB">
-                                        <i class="bi bi-clock text-slate-400"></i>
-                                        <span class="text-dark fw-medium">{{ date('d M Y, H:i', strtotime(@act.created_at)) }} WIB</span>
-                                        <span class="badge bg-light text-muted border rounded-pill px-1.5 py-0.5 ms-1" style="font-size: 0.68rem; font-weight: 600;">{{ @act.time_ago }}</span>
-                                    </div>
-                                    <check if="{{ @act.ip_address && @act.ip_address != '127.0.0.1' && @act.ip_address != '::1' }}">
-                                        <span class="text-muted opacity-50">&bull;</span>
-                                        <span class="text-muted" style="font-size: 0.68rem;"><i class="bi bi-geo-alt me-0.5"></i>{{ @act.ip_address }}</span>
-                                    </check>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </repeat>
-            </check>
-            <check if="{{ !@activity_logs || count(@activity_logs) == 0 }}">
-                <div class="text-center py-5 text-muted">
-                    <i class="bi bi-clock-history fs-1 opacity-25 d-block mb-2"></i>
-                    <p class="mb-0 fw-medium">Belum ada rekaman aktivitas untuk order ini.</p>
-                    <small class="text-secondary opacity-75">Aktivitas akan tercatat otomatis seiring berjalannya alur pelayanan.</small>
-                </div>
-            </check>
-        </div>
-    </div>
 </div>
 
 <!-- ======================================================== -->
 <!-- MODAL DIALOG                                             -->
 <!-- ======================================================== -->
+
+<!-- Modal Riwayat Aktivitas & Jejak Audit (Activity Tracker Pop-up) -->
+<div class="modal fade" id="modalActivityTracker" tabindex="-1" aria-labelledby="modalActivityTrackerLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 14px; overflow: hidden;">
+            <div class="modal-header border-bottom py-3 px-4 bg-white">
+                <div class="w-100">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="activity-header-icon" style="width: 36px; height: 36px; border-radius: 9px; background: #f8fafc; color: #1e293b; display: flex; align-items: center; justify-content: center; font-size: 1.05rem; border: 1px solid #cbd5e1;">
+                                <i class="bi bi-clock-history"></i>
+                            </div>
+                            <div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <h5 class="modal-title fw-bold text-dark m-0 font-display fs-6" id="modalActivityTrackerLabel">
+                                        Riwayat Aktivitas &amp; Jejak Audit
+                                    </h5>
+                                    <span class="badge bg-dark text-white rounded-pill px-2.5 py-0.5 font-monospace flex-shrink-0" style="font-size: 0.72rem;" id="badgeActivityCount">
+                                        {{ @total_activity ?: 0 }} Aktivitas
+                                    </span>
+                                </div>
+                                <small class="text-secondary" style="font-size: 0.75rem;">
+                                    Rekaman kronologis mutasi status, disposisi, formulir, persetujuan, pembayaran, dan log akses order.
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Filter Buttons & Close -->
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <div class="activity-filter-group m-0">
+                                <button type="button" class="activity-filter-btn active" data-filter="all" onclick="filterActivityLogs('all', this)">
+                                    <i class="bi bi-list-stars"></i> Semua ({{ @total_activity ?: 0 }})
+                                </button>
+                                <button type="button" class="activity-filter-btn" data-filter="alur" onclick="filterActivityLogs('alur', this)">
+                                    <i class="bi bi-diagram-3"></i> Alur &amp; Status
+                                </button>
+                                <button type="button" class="activity-filter-btn" data-filter="dokumen" onclick="filterActivityLogs('dokumen', this)">
+                                    <i class="bi bi-file-earmark-text"></i> Dokumen
+                                </button>
+                                <button type="button" class="activity-filter-btn" data-filter="akses" onclick="filterActivityLogs('akses', this)">
+                                    <i class="bi bi-eye"></i> Log Akses
+                                </button>
+                            </div>
+                            <button type="button" class="btn-close ms-2" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-body p-0" style="background: #fbfcfe;">
+                <div class="activity-timeline" id="activityTimelineList">
+                    <check if="{{ @activity_logs && count(@activity_logs) > 0 }}">
+                        <repeat group="{{ @activity_logs }}" value="{{ @act }}">
+                            <set is_view_log="{{ @act.aksi == 'melihat_detail' || @act.aksi == 'melihat_proposal' || @act.aksi == 'baca_tahap' || strpos(@act.aksi, 'melihat') !== false }}" />
+                            <set is_deal_act="{{ in_array(@act.aksi, ['deal_penawaran', 'disetujui_klien', 'penawaran_deal']) || strpos(@act.deskripsi, 'DEAL') !== false || strpos(@act.deskripsi, 'deal') !== false }}" />
+                            <set is_nego_act="{{ in_array(@act.aksi, ['nego_penawaran', 'negosiasi_penawaran']) || strpos(@act.deskripsi, 'Negosiasi') !== false || strpos(@act.deskripsi, 'NEGOSIASI') !== false || strpos(@act.deskripsi, 'nego') !== false }}" />
+                            <set is_draft_act="{{ in_array(@act.aksi, ['simpan_draft_penawaran', 'simpan_draft']) || strpos(@act.deskripsi, 'Draf') !== false || strpos(@act.deskripsi, 'draft') !== false }}" />
+                            <set is_dokumen_log="{{ strpos(@act.aksi, 'proposal') !== false || strpos(@act.aksi, 'penawaran') !== false || strpos(@act.aksi, 'bast') !== false || strpos(@act.aksi, 'po') !== false || strpos(@act.aksi, 'upload') !== false || strpos(@act.aksi, 'laporan') !== false }}" />
+                            <set log_cat="{{ @is_view_log ? 'akses' : (@is_dokumen_log ? 'dokumen' : 'alur') }}" />
+                            <set is_warn_act="{{ in_array(@act.aksi, ['batal_klaim', 'tolak_surat', 'revisi_proposal', 'minta_revisi', 'tolak_order', 'tolak_form_pelayanan', 'tolak_tinjauan', 'hapus_order', 'hapus_pembayaran', 'batal_penawaran']) || strpos(@act.deskripsi, 'BATAL') !== false || strpos(@act.deskripsi, 'batal') !== false }}" />
+                            <set is_success_act="{{ @is_deal_act || in_array(@act.aksi, ['approve_proposal', 'setujui_proposal', 'simpan_tinjauan', 'verifikasi_pembayaran', 'terbitkan_bast', 'tutup_order', 'terbitkan_po', 'simpan_form_pelayanan']) }}" />
+                            <set is_claim_act="{{ in_array(@act.aksi, ['klaim_surat', 'penugasan_pic', 'disposisi_layanan', 'disposisi_katim']) }}" />
+
+                            <div class="activity-item activity-cat-{{ @log_cat }}" data-cat="{{ @log_cat }}">
+                                <!-- Icon Node -->
+                                <div class="activity-node {{ @is_view_log ? 'node-view' : (@is_deal_act ? 'node-success' : (@is_nego_act ? 'node-warn' : (@is_warn_act ? 'node-warn' : (@is_claim_act ? 'node-claim' : (@is_success_act ? 'node-success' : 'node-primary'))))) }}">
+                                    <check if="{{ @is_view_log }}">
+                                        <i class="bi bi-eye-fill"></i>
+                                    </check>
+                                    <check if="{{ @is_deal_act }}">
+                                        <i class="bi bi-check-circle-fill"></i>
+                                    </check>
+                                    <check if="{{ !@is_deal_act && @is_nego_act }}">
+                                        <i class="bi bi-arrow-repeat"></i>
+                                    </check>
+                                    <check if="{{ !@is_deal_act && !@is_nego_act && @act.aksi == 'simpan_draft_penawaran' }}">
+                                        <i class="bi bi-bookmark-fill"></i>
+                                    </check>
+                                    <check if="{{ !@is_deal_act && !@is_nego_act && (@act.aksi == 'buat_penawaran' || @act.aksi == 'kirim_penawaran') }}">
+                                        <i class="bi bi-send-fill"></i>
+                                    </check>
+                                    <check if="{{ @act.aksi == 'klaim_surat' }}">
+                                        <i class="bi bi-inbox-fill"></i>
+                                    </check>
+                                    <check if="{{ @act.aksi == 'penugasan_pic' }}">
+                                        <i class="bi bi-person-badge-fill"></i>
+                                    </check>
+                                    <check if="{{ @act.aksi == 'disposisi_layanan' || @act.aksi == 'disposisi_katim' }}">
+                                        <i class="bi bi-arrow-right-circle-fill"></i>
+                                    </check>
+                                    <check if="{{ !@is_deal_act && @is_warn_act }}">
+                                        <i class="bi bi-exclamation-triangle-fill"></i>
+                                    </check>
+                                    <check if="{{ @act.aksi == 'simpan_tinjauan' || @act.aksi == 'tinjauan_kelayakan' }}">
+                                        <i class="bi bi-clipboard-check-fill"></i>
+                                    </check>
+                                    <check if="{{ @act.aksi == 'simpan_form_pelayanan' || @act.aksi == 'simpan_draft' }}">
+                                        <i class="bi bi-ui-checks"></i>
+                                    </check>
+                                    <check if="{{ @act.aksi == 'simpan_proposal' || @act.aksi == 'ajukan_approval' || @act.aksi == 'ajukan_ke_ketua' || @act.aksi == 'ajukan_kalkulasi' }}">
+                                        <i class="bi bi-file-earmark-text-fill"></i>
+                                    </check>
+                                    <check if="{{ @act.aksi == 'approve_proposal' || @act.aksi == 'setujui_proposal' }}">
+                                        <i class="bi bi-patch-check-fill"></i>
+                                    </check>
+                                    <check if="{{ @act.aksi == 'respon_penawaran' && !@is_deal_act && !@is_nego_act }}">
+                                        <i class="bi bi-hand-thumbs-up-fill"></i>
+                                    </check>
+                                    <check if="{{ @act.aksi == 'verifikasi_pembayaran' }}">
+                                        <i class="bi bi-cash-stack"></i>
+                                    </check>
+                                    <check if="{{ @act.aksi == 'terima_sampel' }}">
+                                        <i class="bi bi-box-seam-fill"></i>
+                                    </check>
+                                    <check if="{{ @act.aksi == 'terbitkan_po' || @act.aksi == 'verifikasi_sop' }}">
+                                        <i class="bi bi-journal-check"></i>
+                                    </check>
+                                    <check if="{{ @act.aksi == 'terbitkan_bast' || @act.aksi == 'tutup_order' }}">
+                                        <i class="bi bi-award-fill"></i>
+                                    </check>
+                                    <check if="{{ @act.aksi == 'upload_file' || @act.aksi == 'upload_kesanggupan_bayar' || @act.aksi == 'upload_laporan' }}">
+                                        <i class="bi bi-cloud-arrow-up-fill"></i>
+                                    </check>
+                                    <check if="{{ @act.aksi == 'update_customer' || @act.aksi == 'update_order' || @act.aksi == 'tambah_order' }}">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </check>
+                                    <check if="{{ !@is_view_log && !@is_deal_act && !@is_nego_act && !in_array(@act.aksi, ['klaim_surat', 'penugasan_pic', 'disposisi_layanan', 'disposisi_katim', 'batal_klaim', 'tolak_surat', 'revisi_proposal', 'minta_revisi', 'tolak_order', 'tolak_form_pelayanan', 'tolak_tinjauan', 'hapus_order', 'hapus_pembayaran', 'simpan_tinjauan', 'tinjauan_kelayakan', 'simpan_form_pelayanan', 'simpan_draft', 'simpan_proposal', 'ajukan_approval', 'ajukan_ke_ketua', 'ajukan_kalkulasi', 'approve_proposal', 'setujui_proposal', 'buat_penawaran', 'kirim_penawaran', 'simpan_draft_penawaran', 'respon_penawaran', 'verifikasi_pembayaran', 'terima_sampel', 'terbitkan_po', 'verifikasi_sop', 'terbitkan_bast', 'tutup_order', 'upload_file', 'upload_kesanggupan_bayar', 'upload_laporan', 'update_customer', 'update_order', 'tambah_order']) }}">
+                                        <i class="bi bi-activity"></i>
+                                    </check>
+                                </div>
+
+                                <!-- Card Body -->
+                                <div class="activity-card">
+                                    <!-- Top Row: Badges + Description -->
+                                    <div class="d-flex align-items-center gap-2 flex-wrap mb-2">
+                                        <check if="{{ @is_view_log }}">
+                                            <span class="badge rounded-pill bg-light text-secondary border px-2 py-0.5" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.3px;">
+                                                <i class="bi bi-eye me-1"></i>DIBACA
+                                            </span>
+                                        </check>
+                                        <check if="{{ !@is_view_log }}">
+                                            <check if="{{ @is_deal_act }}">
+                                                <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-2 py-0.5" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.3px;">
+                                                    <i class="bi bi-check-circle-fill me-1"></i>DEAL
+                                                </span>
+                                            </check>
+                                            <check if="{{ !@is_deal_act && @is_nego_act }}">
+                                                <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-0.5" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.3px;">
+                                                    <i class="bi bi-arrow-repeat me-1"></i>NEGOSIASI
+                                                </span>
+                                            </check>
+                                            <check if="{{ !@is_deal_act && !@is_nego_act && @is_draft_act }}">
+                                                <span class="badge rounded-pill bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-0.5" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.3px;">
+                                                    <i class="bi bi-bookmark-fill me-1"></i>DRAFT
+                                                </span>
+                                            </check>
+                                            <check if="{{ !@is_deal_act && !@is_nego_act && !@is_draft_act && @is_warn_act }}">
+                                                <span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle px-2 py-0.5" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.3px;">
+                                                    <i class="bi bi-exclamation-triangle-fill me-1"></i>BATAL / DITOLAK
+                                                </span>
+                                            </check>
+                                            <check if="{{ !@is_deal_act && !@is_nego_act && !@is_draft_act && !@is_warn_act && @is_success_act }}">
+                                                <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-2 py-0.5" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.3px;">
+                                                    <i class="bi bi-check2-circle me-1"></i>SELESAI / ACC
+                                                </span>
+                                            </check>
+                                            <check if="{{ !@is_deal_act && !@is_nego_act && !@is_draft_act && !@is_warn_act && !@is_success_act }}">
+                                                <span class="badge rounded-pill bg-primary-subtle text-primary border border-primary-subtle px-2 py-0.5" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.3px;">
+                                                    <i class="bi bi-arrow-right-circle me-1"></i>DIPROSES
+                                                </span>
+                                            </check>
+                                        </check>
+                                        <span class="badge border rounded-pill px-2.5 py-0.5 text-uppercase" style="font-size: 0.66rem; font-weight: 700; letter-spacing: 0.4px; background-color: {{ @is_view_log ? '#f1f5f9' : (@is_deal_act ? '#f0fdf4' : (@is_nego_act ? '#fffbeb' : '#e0f2fe')) }}; color: {{ @is_view_log ? '#475569' : (@is_deal_act ? '#16a34a' : (@is_nego_act ? '#b45309' : '#0369a1')) }}; border-color: {{ @is_view_log ? '#cbd5e1' : (@is_deal_act ? '#bbf7d0' : (@is_nego_act ? '#fde68a' : '#bae6fd')) }} !important;">
+                                            {{ str_replace('_', ' ', @act.modul) }}
+                                        </span>
+                                        <span class="fw-bold text-dark font-display" style="font-size: 0.9rem; line-height: 1.4;">
+                                            {{ @act.deskripsi }}
+                                        </span>
+                                    </div>
+
+                                    <!-- Bottom Row (Footer): Left: User & Role | Right: Timestamp & IP -->
+                                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2 border-top border-light">
+                                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                                            <div class="d-flex align-items-center" style="gap: 8px;">
+                                                <div class="rounded-circle d-flex align-items-center justify-content-center bg-light text-secondary border flex-shrink-0" style="width: 24px; height: 24px; font-size: 0.72rem;">
+                                                    <i class="bi bi-person-fill"></i>
+                                                </div>
+                                                <span class="fw-bold text-dark" style="font-size: 0.82rem;">
+                                                    {{ @act.user_nama ?: 'Sistem Otomatis' }}
+                                                </span>
+                                            </div>
+                                            <span class="badge rounded-pill px-2.5 py-0.5" style="font-size: 0.68rem; font-weight: 600; background-color: #f8fafc; color: #475569; border: 1px solid #e2e8f0;">
+                                                {{ ucwords(str_replace('_', ' ', @act.user_role ?: 'User')) }}
+                                            </span>
+                                        </div>
+
+                                        <div class="d-flex align-items-center gap-2 text-secondary small font-monospace" style="font-size: 0.74rem;">
+                                            <div class="d-flex align-items-center gap-1" title="{{ date('d F Y, H:i:s', strtotime(@act.created_at)) }} WIB">
+                                                <i class="bi bi-clock text-slate-400"></i>
+                                                <span class="text-dark fw-medium">{{ date('d M Y, H:i', strtotime(@act.created_at)) }} WIB</span>
+                                                <span class="badge bg-light text-muted border rounded-pill px-1.5 py-0.5 ms-1" style="font-size: 0.68rem; font-weight: 600;">{{ @act.time_ago }}</span>
+                                            </div>
+                                            <check if="{{ @act.ip_address && @act.ip_address != '127.0.0.1' && @act.ip_address != '::1' }}">
+                                                <span class="text-muted opacity-50">&bull;</span>
+                                                <span class="text-muted" style="font-size: 0.68rem;"><i class="bi bi-geo-alt me-0.5"></i>{{ @act.ip_address }}</span>
+                                            </check>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </repeat>
+                    </check>
+                    <check if="{{ !@activity_logs || count(@activity_logs) == 0 }}">
+                        <div class="text-center py-5 text-muted">
+                            <i class="bi bi-clock-history fs-1 opacity-25 d-block mb-2"></i>
+                            <p class="mb-0 fw-medium">Belum ada rekaman aktivitas untuk order ini.</p>
+                            <small class="text-secondary opacity-75">Aktivitas akan tercatat otomatis seiring berjalannya alur pelayanan.</small>
+                        </div>
+                    </check>
+                </div>
+            </div>
+
+            <div class="modal-footer bg-white border-top py-2.5 px-4 d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2 text-muted small">
+                    <i class="bi bi-shield-check text-success"></i>
+                    <span>Rekaman audit tersimpan otomatis &amp; terenkripsi oleh sistem (immutable).</span>
+                </div>
+                <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 
 
@@ -4015,17 +4266,21 @@
             <!-- Modal Header -->
             <div class="modal-header border-bottom py-2.5 px-4 bg-white d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center gap-2">
-                    <div class="rounded-circle bg-danger-subtle text-danger p-1.5 d-flex align-items-center justify-content-center" style="width: 34px; height: 34px;">
-                        <i class="bi bi-file-earmark-pdf-fill fs-5"></i>
+                    <div id="proposalDocIconBox" class="rounded-circle bg-primary-subtle text-primary p-1.5 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                        <i id="proposalDocIcon" class="bi bi-file-earmark-word-fill fs-5"></i>
                     </div>
                     <div>
-                        <h6 class="modal-title fw-bold text-dark font-display mb-0" id="modalPreviewDokumenProposalLabel" style="font-size: 0.95rem;">Pratinjau Dokumen Proposal Teknis</h6>
+                        <div class="d-flex align-items-center gap-2">
+                            <h6 class="modal-title fw-bold text-dark font-display mb-0" id="modalPreviewDokumenProposalLabel" style="font-size: 0.95rem;">Pratinjau Dokumen Proposal Teknis</h6>
+                            <span id="proposalDocTypeBadge" class="badge bg-primary text-white px-2 py-0.5 font-monospace" style="font-size: 0.68rem;">WORD (.DOCX)</span>
+                        </div>
                         <small class="text-secondary font-monospace" id="modalPdfFilenameHeader" style="font-size: 0.75rem;">Order #{{ @order.nomor_order }} &bull; {{ @order.nama_perusahaan }}</small>
                     </div>
                 </div>
 
                 <!-- Toolbar Controls -->
                 <div class="d-flex align-items-center gap-2">
+                    <!-- PDF Zoom Controls -->
                     <div id="proposalZoomControls" class="d-flex align-items-center gap-1.5 bg-light p-1 rounded-3 border">
                         <span class="badge bg-dark text-white px-2 py-1 font-monospace" id="proposalTotalPagesBadge" style="font-size: 0.72rem;">-- Halaman</span>
                         <div class="vr mx-1 my-1"></div>
@@ -4041,11 +4296,9 @@
                         </button>
                     </div>
 
-                    <check if="{{ @proposal && @proposal.file_proposal }}">
-                        <a href="{{ @BASE }}/{{ @proposal.file_proposal }}" target="_blank" class="btn btn-sm btn-outline-secondary px-3 py-1.5 fw-semibold" id="btnDownloadProposalModal" download>
-                            <i class="bi bi-download me-1"></i> Unduh File
-                        </a>
-                    </check>
+                    <a href="{{ @proposal && @proposal.file_proposal ? @BASE . '/' . @proposal.file_proposal : '#' }}" target="_blank" class="btn btn-sm btn-outline-primary px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5" id="btnDownloadProposalModal" download>
+                        <i class="bi bi-download"></i> <span id="btnDownloadProposalModalLabel">Unduh File Asli (.docx)</span>
+                    </a>
                     <button type="button" class="btn-close shadow-none ms-2" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
             </div>
@@ -4055,34 +4308,34 @@
                 <!-- Loading Spinner -->
                 <div id="canvasProposalSpinner" class="py-5 my-5 text-center">
                     <div class="spinner-border text-light" role="status" style="width: 2.75rem; height: 2.75rem;"></div>
-                    <p class="small text-white-50 mt-2 fw-medium">Memuat dan merender seluruh halaman dokumen...</p>
+                    <p class="small text-white-50 mt-2 fw-medium" id="canvasProposalSpinnerText">Memuat dan merender seluruh halaman dokumen...</p>
                 </div>
 
-                <!-- Non-PDF Notice (Word/Excel) -->
+                <!-- Continuous Multi-Page Container (High-Fidelity Canvas) -->
+                <div id="proposalPagesContainer" class="d-flex flex-column align-items-center gap-4 py-2" style="display: none;">
+                </div>
+
+                <!-- Non-PDF & Non-Word Notice Fallback -->
                 <div id="nonPdfNoticeBox" class="d-none py-5 my-3 text-center">
                     <div class="card border-0 shadow-sm mx-auto p-4 rounded-4" style="max-width: 500px; background: white;">
                         <div class="rounded-circle bg-primary-subtle text-primary p-3 d-inline-flex align-items-center justify-content-center mx-auto mb-3" style="width: 60px; height: 60px;">
-                            <i class="bi bi-file-earmark-word-fill fs-2"></i>
+                            <i class="bi bi-file-earmark-arrow-down fs-2"></i>
                         </div>
                         <h6 class="fw-bold text-dark font-display mb-1" id="nonPdfDocTitle">Berkas Dokumen Terunggah</h6>
                         <p class="small text-muted mb-3" id="nonPdfDocSubtitle">Berkas proposal telah tersimpan dengan aman di server.</p>
                         <div class="d-flex justify-content-center gap-2">
-                            <a href="{{ @BASE }}/{{ @proposal.file_proposal }}" target="_blank" class="btn btn-primary btn-sm px-3" download>
+                            <a href="{{ @proposal && @proposal.file_proposal ? @BASE . '/' . @proposal.file_proposal : '#' }}" target="_blank" class="btn btn-primary btn-sm px-3" download>
                                 <i class="bi bi-download me-1"></i> Unduh File
                             </a>
                         </div>
                     </div>
                 </div>
-
-                <!-- Continuous Multi-Page Container -->
-                <div id="proposalPagesContainer" class="d-flex flex-column align-items-center gap-4 py-2" style="display: none;">
-                </div>
             </div>
 
             <!-- Modal Footer -->
             <div class="modal-footer border-top py-2 px-4 bg-white d-flex justify-content-between align-items-center">
-                <div class="text-muted small">
-                    <i class="bi bi-mouse me-1"></i> Gulir ke bawah untuk membaca seluruh halaman
+                <div class="text-muted small" id="proposalModalFooterHint">
+                    <i class="bi bi-info-circle me-1 text-primary"></i> <span id="proposalModalFooterText">Pratinjau dokumen proposal teknis beresolusi tinggi (format Word asli). Untuk mengedit atau merevisi dokumen, silakan unduh berkas melalui tombol di kanan atas.</span>
                 </div>
                 <button type="button" class="btn btn-secondary btn-sm px-4 fw-semibold" data-bs-dismiss="modal">Tutup Pratinjau</button>
             </div>
@@ -4219,8 +4472,15 @@ function renderAllProposalPages(pdf) {
     }
 }
 
+let hasUnsavedWordChanges = false;
+let currentProposalOrderId = null;
+
 function openProposalCanvasModal(orderId) {
+    currentProposalOrderId = orderId;
+    currentOrderId = orderId;
     currentPdfDoc = null;
+    hasUnsavedWordChanges = false;
+
     const modalEl = document.getElementById('modalPreviewDokumenProposal');
     if (!modalEl) return;
 
@@ -4231,18 +4491,33 @@ function openProposalCanvasModal(orderId) {
 }
 
 function loadProposalData(orderId) {
-    const spinner = document.getElementById('canvasProposalSpinner');
-    const container = document.getElementById('proposalPagesContainer');
-    const nonPdfNotice = document.getElementById('nonPdfNoticeBox');
-    const zoomControls = document.getElementById('proposalZoomControls');
+    currentProposalOrderId = orderId;
+    currentOrderId = orderId;
+    currentPdfDoc = null;
 
-    if (spinner) spinner.style.display = 'block';
-    if (container) {
-        container.innerHTML = '';
-        container.style.display = 'none';
+    const spinner = document.getElementById('canvasProposalSpinner');
+    const spinnerText = document.getElementById('canvasProposalSpinnerText');
+    const pdfContainer = document.getElementById('proposalPagesContainer');
+    const zoomControls = document.getElementById('proposalZoomControls');
+    const nonPdfNotice = document.getElementById('nonPdfNoticeBox');
+    const docIconBox = document.getElementById('proposalDocIconBox');
+    const docIcon = document.getElementById('proposalDocIcon');
+    const docTypeBadge = document.getElementById('proposalDocTypeBadge');
+    const modalTitle = document.getElementById('modalPreviewDokumenProposalLabel');
+    const footerText = document.getElementById('proposalModalFooterText');
+    const dlBtn = document.getElementById('btnDownloadProposalModal');
+    const dlBtnLabel = document.getElementById('btnDownloadProposalModalLabel');
+
+    if (spinner) {
+        spinner.style.display = 'block';
+        if (spinnerText) spinnerText.textContent = 'Memuat dan merender dokumen proposal...';
     }
-    if (nonPdfNotice) nonPdfNotice.classList.add('d-none');
+    if (pdfContainer) {
+        pdfContainer.innerHTML = '';
+        pdfContainer.style.display = 'none';
+    }
     if (zoomControls) zoomControls.style.visibility = 'hidden';
+    if (nonPdfNotice) nonPdfNotice.classList.add('d-none');
 
     currentPdfScale = 1.35;
     updateProposalZoomBadge();
@@ -4252,7 +4527,7 @@ function loadProposalData(orderId) {
 
     fetch(apiUrl)
         .then(function(res) {
-            if (!res.ok) throw new Error('Gagal memuat data proposal');
+            if (!res.ok) throw new Error('Gagal memuat data proposal dari server');
             return res.json();
         })
         .then(function(json) {
@@ -4262,30 +4537,64 @@ function loadProposalData(orderId) {
             if (headerEl && json.filename) {
                 headerEl.textContent = json.filename + ' • Order #' + '{{ @order.nomor_order }}';
             }
+            if (dlBtn && json.file_url) {
+                dlBtn.href = json.file_url;
+            }
 
-            if (json.is_pdf && json.base64) {
+            // KASUS DOKUMEN PROPOSAL (PDF atau Word yang telah dikonversi 1:1 oleh COM engine ke PDF)
+            if (json.base64) {
+                if (json.is_word) {
+                    if (docIconBox) {
+                        docIconBox.className = 'rounded-circle bg-primary-subtle text-primary p-1.5 d-flex align-items-center justify-content-center';
+                        docIconBox.style.width = '36px';
+                        docIconBox.style.height = '36px';
+                    }
+                    if (docIcon) docIcon.className = 'bi bi-file-earmark-word-fill fs-5';
+                    if (docTypeBadge) {
+                        docTypeBadge.className = 'badge bg-primary text-white px-2 py-0.5 font-monospace';
+                        docTypeBadge.textContent = 'WORD (.DOCX)';
+                    }
+                    if (modalTitle) modalTitle.textContent = 'Pratinjau Dokumen Proposal Teknis';
+                    if (dlBtnLabel) dlBtnLabel.textContent = 'Unduh File Asli (.docx)';
+                    if (footerText) {
+                        footerText.textContent = 'Pratinjau dokumen proposal teknis beresolusi tinggi (format Word asli). Untuk mengedit atau merevisi dokumen, silakan unduh berkas melalui tombol di kanan atas.';
+                    }
+                } else {
+                    if (docIconBox) {
+                        docIconBox.className = 'rounded-circle bg-danger-subtle text-danger p-1.5 d-flex align-items-center justify-content-center';
+                        docIconBox.style.width = '36px';
+                        docIconBox.style.height = '36px';
+                    }
+                    if (docIcon) docIcon.className = 'bi bi-file-earmark-pdf-fill fs-5';
+                    if (docTypeBadge) {
+                        docTypeBadge.className = 'badge bg-danger text-white px-2 py-0.5 font-monospace';
+                        docTypeBadge.textContent = 'PDF';
+                    }
+                    if (modalTitle) modalTitle.textContent = 'Pratinjau Dokumen Proposal Teknis';
+                    if (dlBtnLabel) dlBtnLabel.textContent = 'Unduh (.pdf)';
+                    if (footerText) footerText.textContent = 'Gulir ke bawah untuk membaca seluruh halaman';
+                }
+
                 const uint8Array = base64ToUint8Array(json.base64);
-                return pdfjsLib.getDocument({ data: uint8Array }).promise;
+                return pdfjsLib.getDocument({ data: uint8Array }).promise.then(function(pdf) {
+                    if (!pdf) return;
+                    currentPdfDoc = pdf;
+                    if (zoomControls) zoomControls.style.visibility = 'visible';
+                    renderAllProposalPages(pdf);
+                });
             } else {
                 if (spinner) spinner.style.display = 'none';
                 if (nonPdfNotice) {
                     nonPdfNotice.classList.remove('d-none');
                     document.getElementById('nonPdfDocTitle').textContent = 'Berkas: ' + json.filename;
-                    document.getElementById('nonPdfDocSubtitle').textContent = 'Format berkas (' + json.ext.toUpperCase() + ') tersimpan dengan aman di server.';
+                    document.getElementById('nonPdfDocSubtitle').textContent = 'Format berkas (' + (json.ext ? json.ext.toUpperCase() : 'UNKNOWN') + ') tersimpan dengan aman di server.';
                 }
-                return null;
             }
         })
-        .then(function(pdf) {
-            if (!pdf) return;
-            currentPdfDoc = pdf;
-            if (zoomControls) zoomControls.style.visibility = 'visible';
-            renderAllProposalPages(pdf);
-        })
         .catch(function(err) {
-            console.error('Error loading PDF canvas:', err);
+            console.error('Error loading proposal data:', err);
             if (spinner) {
-                spinner.innerHTML = '<div class="text-white p-4 text-center"><i class="bi bi-file-earmark-x fs-2 d-block mb-2 text-warning"></i><strong>Belum Ada Dokumen Proposal</strong><br><small class="text-white-50">' + (err.message || 'Silakan unggah dokumen proposal terlebih dahulu.') + '</small></div>';
+                spinner.innerHTML = '<div class="text-white p-4 text-center"><i class="bi bi-file-earmark-x fs-2 d-block mb-2 text-warning"></i><strong>Gagal Menampilkan Dokumen Proposal</strong><br><small class="text-white-50">' + (err.message || 'Silakan unggah dokumen proposal terlebih dahulu.') + '</small></div>';
             }
         });
 }
@@ -4408,7 +4717,7 @@ function selectDivisiOpti(tipe) {
 
 var readRecordedStages = {};
 function triggerStageRead(stageNum) {
-    if (!stageNum || stageNum < 1 || stageNum > 8) return;
+    if (!stageNum || stageNum < 1 || stageNum > 9) return;
     if (readRecordedStages[stageNum]) return;
     readRecordedStages[stageNum] = true;
 
@@ -4474,7 +4783,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Catat pembacaan tahap aktif saat halaman pertama dimuat
     var initStep = {{ (int)(@current_step ?: 1) }};
-    if (initStep >= 1 && initStep <= 8) {
+    if (initStep >= 1 && initStep <= 9) {
         triggerStageRead(initStep);
     }
 
@@ -4497,7 +4806,9 @@ document.addEventListener('DOMContentLoaded', function() {
         '#cardPembayaran': 6,
         '#cardProposalTeknis': 6,
         '#cardSampelSpm': 7,
-        '#cardPoBast': 8
+        '#cardPo': 8,
+        '#cardPoBast': 8,
+        '#cardBast': 9
     };
 
     var wrapForm = document.getElementById('kbFormWrap');
@@ -4807,6 +5118,111 @@ function filterActivityLogs(cat, btn) {
     var badge = document.getElementById('badgeActivityCount');
     if (badge) {
         badge.textContent = visibleCount + ' Aktivitas';
+    }
+}
+
+function uploadLampiranPenawaranDetail(input, orderId, spId) {
+    if (!input || !input.files || !input.files[0]) return;
+    var file = input.files[0];
+    var btn = document.getElementById('btnUploadLampiranDetail' + spId);
+    var label = document.getElementById('labelUploadLampiranDetail' + spId);
+    var icon = document.getElementById('iconUploadLampiranDetail' + spId);
+    var btnDlPdf = document.getElementById('btnDownloadPenawaranDetail' + spId);
+
+    if (file.size > 10 * 1024 * 1024) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({ icon: 'warning', title: 'Ukuran Terlalu Besar', text: 'Ukuran file lampiran maksimal 10 MB.' });
+        } else {
+            alert('Ukuran file lampiran maksimal 10 MB.');
+        }
+        input.value = '';
+        return;
+    }
+
+    var origLabel = label ? label.textContent : 'Upload Lampiran';
+    if (btn) btn.disabled = true;
+    if (label) label.textContent = 'Menggabungkan...';
+    if (icon) icon.className = 'bi bi-arrow-repeat text-primary';
+
+    var formData = new FormData();
+    formData.append('file_lampiran_user', file);
+    if (spId) formData.append('sp_id', spId);
+
+    fetch('{{ @BASE }}/order/' + orderId + '/penawaran/upload-lampiran', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+        body: formData
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+        if (btn) btn.disabled = false;
+        if (icon) icon.className = 'bi bi-paperclip text-primary';
+        if (data && data.success) {
+            if (label) label.textContent = 'Ganti Lampiran (Hal. 3+)';
+            if (btn) btn.title = 'Lampiran menyatu di Hal. 3+: ' + (data.file_name || file.name);
+            if (btnDlPdf) {
+                btnDlPdf.setAttribute('data-preview-pdf', '{{ @BASE }}/order/' + orderId + '/penawaran/cetak?id=' + spId + '&t=' + Date.now());
+            }
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: 'Lampiran digabung ke Hal. 3+ PDF',
+                    text: data.file_name || file.name,
+                    showConfirmButton: false,
+                    timer: 2800
+                });
+            }
+        } else {
+            if (label) label.textContent = origLabel;
+            var errMsg = (data && data.message) ? data.message : 'Gagal mengunggah lampiran.';
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({ icon: 'error', title: 'Gagal Mengunggah', text: errMsg });
+            } else {
+                alert(errMsg);
+            }
+        }
+    })
+    .catch(function() {
+        if (btn) btn.disabled = false;
+        if (icon) icon.className = 'bi bi-paperclip text-primary';
+        if (label) label.textContent = origLabel;
+    });
+}
+
+function validateProposalWordFile(input) {
+    if (!input || !input.files || !input.files[0]) return;
+    var file = input.files[0];
+    var fileName = file.name || '';
+    var ext = fileName.split('.').pop().toLowerCase();
+    if (ext === 'pdf') {
+        input.value = '';
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'error',
+                title: 'Format PDF Dilarang!',
+                text: 'Dokumen proposal OPTI Selulosa WAJIB diunggah dalam format Word (.doc / .docx) dan tidak diperkenankan menggunakan format PDF.',
+                confirmButtonColor: '#dc3545'
+            });
+        } else {
+            alert('Format PDF Dilarang: Dokumen proposal OPTI Selulosa WAJIB diunggah dalam format Word (.doc / .docx).');
+        }
+        return false;
+    }
+    if (ext !== 'doc' && ext !== 'docx') {
+        input.value = '';
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Format File Tidak Sesuai',
+                text: 'Hanya file Microsoft Word (.doc, .docx) yang diperbolehkan untuk proposal OPTI Selulosa.',
+                confirmButtonColor: '#0d6efd'
+            });
+        } else {
+            alert('Hanya file Microsoft Word (.doc, .docx) yang diperbolehkan.');
+        }
+        return false;
     }
 }
 </script>

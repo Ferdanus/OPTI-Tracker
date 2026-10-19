@@ -775,28 +775,183 @@
         border-left: 4px solid #16a34a !important;
     }
 
+    /* Selection Sederhana Format Cetak Menyesuaikan Tema */
+    .kop-select-option {
+        display: flex !important;
+        align-items: center !important;
+        gap: 12px !important;
+        padding: 10px 14px !important;
+        border-radius: 8px !important;
+        border: 1.5px solid #e2e8f0 !important;
+        background-color: #ffffff !important;
+        cursor: pointer;
+        transition: all 0.15s ease-in-out;
+        user-select: none;
+        margin-bottom: 0 !important;
+    }
+    .kop-select-option:hover {
+        background-color: #f8fafc !important;
+        border-color: #cbd5e1 !important;
+    }
+    .kop-select-option.active {
+        background-color: #f1f5f9 !important;
+        border-color: #64748b !important;
+    }
+    .kop-select-option.active .kop-select-label {
+        color: #0f172a !important;
+        font-weight: 600 !important;
+    }
+    .kop-select-option input[type="radio"].kop-radio-input {
+        float: none !important;
+        position: static !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 17px !important;
+        height: 17px !important;
+        min-width: 17px !important;
+        flex-shrink: 0 !important;
+        cursor: pointer;
+        box-shadow: none !important;
+    }
+    .kop-select-option input[type="radio"].kop-radio-input:checked {
+        background-color: var(--color-primary, #334155) !important;
+        border-color: var(--color-primary, #334155) !important;
+    }
+    .kop-select-label {
+        font-size: 0.9rem !important;
+        font-weight: 500;
+        color: #334155;
+        line-height: 1.35;
+        margin-bottom: 0 !important;
+    }
+
     /* PRINT STYLESHEET */
     @media print {
+        @page {
+            size: A4 portrait;
+            /* Margin 0 menyembunyikan header/footer default browser (URL & Tanggal) */
+            margin: 0 !important;
+        }
+        html, body {
+            background: #ffffff !important;
+            color: #000000 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            height: auto !important;
+            overflow: visible !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
         body * {
             visibility: hidden;
         }
-        #docSheet, #docSheet * {
-            visibility: visible;
+        /* Sembunyikan elemen UI luar, sidebar, toolbar, dsb */
+        .sidebar, .topbar, .footer-gov, .sidebar-backdrop, .top-progress-bar,
+        .page-loader-overlay, .no-print, .preview-top-toolbar,
+        #selulosaTabNav, #lingkunganTabNav, .modal, .modal-backdrop,
+        .btn, .btn-group, .preview-btn, .dropdown {
+            display: none !important;
         }
-        #docSheet {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            margin: 0;
-            padding: 15mm;
-            box-shadow: none;
-            border: none;
+        /* Sembunyikan kolom kiri form */
+        .form-preview-grid > div:first-child {
+            display: none !important;
+        }
+        .form-preview-grid {
+            display: block !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        /* Tampilkan kontainer lembar dokumen */
+        .preview-sticky-wrapper,
+        .preview-frame,
+        .preview-doc-scroll,
+        .doc-sheet,
+        .doc-sheet * {
+            visibility: visible !important;
+        }
+        .preview-sticky-wrapper,
+        .preview-frame {
+            position: static !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            height: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+        .preview-doc-scroll {
+            position: static !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            height: auto !important;
+            max-height: none !important;
+            overflow: visible !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: transparent !important;
+            display: block !important;
+        }
+        .doc-sheet {
+            display: block !important;
+            width: 210mm !important;
+            max-width: 210mm !important;
+            box-sizing: border-box !important;
+            margin: 0 auto !important;
+            padding: 16mm 20mm 15mm 20mm !important;
+            background: #ffffff !important;
+            border: none !important;
+            box-shadow: none !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            font-size: 10pt !important;
+            line-height: 1.4 !important;
+        }
+        /* Opsi Mode Tanpa Kop (Kertas Stasioner Resmi BBSPJIS) */
+        body.sp-print-tanpa-kop .sp-kop-header {
+            display: none !important;
+        }
+        body.sp-print-tanpa-kop .sp-kop-spacer {
+            display: block !important;
+            height: 38mm !important;
+        }
+        /* Pastikan lembar halaman kedua tetap dicetak walaupun di layar aktif tab halaman pertama */
+        .doc-sheet.d-none {
+            display: block !important;
+            visibility: visible !important;
+        }
+        /* Pengaturan pemisah halaman resmi A4 */
+        #selPage1, #lingPage1 {
+            page-break-after: always !important;
+            break-after: page !important;
+            margin-bottom: 0 !important;
+        }
+        #selPage2, #lingPage2 {
+            page-break-before: always !important;
+            break-before: page !important;
+            margin-top: 0 !important;
+        }
+        body.has-sp-lampiran #selPage2, body.has-sp-lampiran #lingPage2 {
+            page-break-after: always !important;
+            break-after: page !important;
+        }
+        #selPage3, #lingPage3 {
+            page-break-before: always !important;
+            break-before: page !important;
+            margin-top: 0 !important;
+        }
+        /* Sembunyikan lembar lampiran jika belum ada file terunggah */
+        body:not(.has-sp-lampiran) #selPage3, body:not(.has-sp-lampiran) #lingPage3 {
+            display: none !important;
+            visibility: hidden !important;
         }
     }
 </style>
 
-<form id="formPenawaranOrder" action="{{ @BASE }}/order/{{ @order.id }}/penawaran/simpan" method="POST">
+<form id="formPenawaranOrder" action="{{ @BASE }}/order/{{ @order.id }}/penawaran/simpan" method="POST" enctype="multipart/form-data">
     <div class="form-preview-grid">
 
         <!-- ======================================================== -->
@@ -936,6 +1091,267 @@
                 </div>
             </div>
 
+            <!-- KAJI KELAYAKAN TEKNIS (4 PILAR) - REMINDER & CATATAN UNTUK TIM MITRA -->
+            <div class="form-section-card" style="{{ @has_kendala_kelayakan ? 'border-color: #fca5a5; box-shadow: 0 2px 8px rgba(239, 68, 68, 0.08);' : (@has_catatan_kelayakan ? 'border-color: #fdba74; box-shadow: 0 2px 8px rgba(234, 88, 12, 0.08);' : '') }}">
+                <div class="form-section-header" style="{{ @has_kendala_kelayakan ? 'background: #fff5f5; border-bottom-color: #fecaca;' : (@has_catatan_kelayakan ? 'background: #fff7ed; border-bottom-color: #fed7aa;' : '') }}">
+                    <span class="section-badge-num" style="{{ @has_kendala_kelayakan ? 'background: #dc2626; color: #fff;' : (@has_catatan_kelayakan ? 'background: #ea580c; color: #fff;' : 'background: #0284c7; color: #fff;') }}">
+                        <i class="bi bi-shield-check"></i>
+                    </span>
+                    <div class="flex-grow-1">
+                        <div class="section-header-text d-flex align-items-center gap-2">
+                            <span>Catatan &amp; Kesiapan Kaji Kelayakan Teknis (4 Pilar)</span>
+                        </div>
+                        <div class="section-header-sub">Hasil evaluasi kesiapan laboratorium untuk acuan dan reminder Tim Mitra</div>
+                    </div>
+                    <div>
+                        <check if="{{ @has_kendala_kelayakan }}">
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1" style="font-size: 0.72rem;">
+                                <i class="bi bi-exclamation-triangle-fill me-1"></i> Ada Kendala
+                            </span>
+                        </check>
+                        <check if="{{ !@has_kendala_kelayakan && @has_catatan_kelayakan }}">
+                            <span class="badge px-2.5 py-1" style="font-size: 0.72rem; background-color: #fff7ed; color: #c2410c; border: 1px solid #fdba74; font-weight: 600;">
+                                <i class="bi bi-exclamation-circle-fill me-1"></i> Siap dengan Kondisi
+                            </span>
+                        </check>
+                        <check if="{{ !@has_kendala_kelayakan && !@has_catatan_kelayakan && @tinjauan }}">
+                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1" style="font-size: 0.72rem;">
+                                <i class="bi bi-check2-circle me-1"></i> 4 Pilar Siap
+                            </span>
+                        </check>
+                        <check if="{{ !@tinjauan }}">
+                            <span class="badge bg-light text-secondary border px-2 py-1" style="font-size: 0.72rem;">
+                                Belum Dievaluasi
+                            </span>
+                        </check>
+                    </div>
+                </div>
+                <div class="form-section-body">
+                    <check if="{{ @tinjauan }}">
+                        <!-- Banner Alert Pengingat jika ada catatan atau kendala -->
+                        <check if="{{ @has_kendala_kelayakan || @has_catatan_kelayakan }}">
+                            <div class="alert {{ @has_kendala_kelayakan ? 'alert-danger border-danger-subtle' : 'alert-warning border-warning-subtle' }} py-2 px-3 mb-3 rounded-3 d-flex align-items-start gap-2 small" style="font-size: 0.78rem; {{ !@has_kendala_kelayakan ? 'background-color: #fff7ed; border-color: #fed7aa !important; color: #9a3412;' : '' }}">
+                                <i class="bi {{ @has_kendala_kelayakan ? 'bi-exclamation-octagon-fill text-danger' : 'bi-info-circle-fill' }} fs-5 flex-shrink-0" style="{{ !@has_kendala_kelayakan ? 'color: #ea580c;' : '' }}"></i>
+                                <div class="text-dark">
+                                    <div class="fw-bold mb-1">Pengingat untuk Tim Mitra:</div>
+                                    <div class="text-secondary" style="line-height: 1.45;">
+                                        Terdapat catatan khusus atau kondisi teknis pada evaluasi 4 pilar di bawah. Harap diperhatikan sebagai pertimbangan penentuan estimasi waktu pelaksanaan (durasi hari), harga, atau komunikasi kesepakatan dengan customer.
+                                    </div>
+                                </div>
+                            </div>
+                        </check>
+
+                        <!-- Grid 4 Pilar Kesiapan Teknis -->
+                        <div class="row g-3">
+                            <!-- 1. SDM Analis -->
+                            <div class="col-md-6">
+                                <div class="p-3 rounded-3 border h-100" style="background: {{ !empty(trim(@tinjauan.sdm_catatan ?? '')) ? '#fffaf5' : '#ffffff' }}; border-color: {{ !empty(trim(@tinjauan.sdm_catatan ?? '')) ? '#fed7aa' : '#e2e8f0' }} !important;">
+                                    <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                                        <div class="d-flex align-items-center gap-2 min-w-0">
+                                            <div class="rounded-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px; background: {{ !@tinjauan.sdm_tersedia ? '#fef2f2' : (!empty(trim(@tinjauan.sdm_catatan ?? '')) ? '#ffedd5' : '#f0fdf4') }}; color: {{ !@tinjauan.sdm_tersedia ? '#dc2626' : (!empty(trim(@tinjauan.sdm_catatan ?? '')) ? '#ea580c' : '#16a34a') }};">
+                                                <i class="bi bi-people-fill" style="font-size: 0.9rem;"></i>
+                                            </div>
+                                            <span class="fw-bold text-dark" style="font-size: 0.82rem;">Personil &amp; SDM Analis</span>
+                                        </div>
+                                        <check if="{{ @tinjauan.sdm_tersedia && !empty(trim(@tinjauan.sdm_catatan ?? '')) }}">
+                                            <span class="badge px-2 py-1 flex-shrink-0" style="font-size: 0.68rem; background-color: #fff7ed; color: #c2410c; border: 1px solid #fdba74; font-weight: 600;">
+                                                <i class="bi bi-exclamation-circle-fill me-1"></i>Siap dengan Kondisi
+                                            </span>
+                                        </check>
+                                        <check if="{{ @tinjauan.sdm_tersedia && empty(trim(@tinjauan.sdm_catatan ?? '')) }}">
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 flex-shrink-0" style="font-size: 0.68rem;">
+                                                <i class="bi bi-check2 me-1"></i>Siap
+                                            </span>
+                                        </check>
+                                        <check if="{{ !@tinjauan.sdm_tersedia }}">
+                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 flex-shrink-0" style="font-size: 0.68rem;">
+                                                <i class="bi bi-x-circle me-1"></i>Terkendala
+                                            </span>
+                                        </check>
+                                    </div>
+                                    <check if="{{ !empty(trim(@tinjauan.sdm_catatan ?? '')) }}">
+                                        <div class="p-2 mt-2 rounded-2" style="background: #fff7ed; border: 1px dashed #fdba74;">
+                                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                                <span class="fw-bold" style="font-size: 0.7rem; color: #c2410c;"><i class="bi bi-sticky-fill me-1" style="color: #ea580c;"></i>Catatan Kondisi:</span>
+                                                <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-primary fw-semibold btn-sisip-catatan" style="font-size: 0.68rem;" data-prefix="Personil SDM" data-catatan="{{ htmlspecialchars(@tinjauan.sdm_catatan ?? '', ENT_QUOTES, 'UTF-8') }}" title="Sisipkan catatan ini ke draf rincian penawaran">
+                                                    <i class="bi bi-clipboard-plus me-1"></i>Sisipkan
+                                                </button>
+                                            </div>
+                                            <div class="text-dark small" style="font-size: 0.77rem; line-height: 1.4;">{{ @tinjauan.sdm_catatan }}</div>
+                                        </div>
+                                    </check>
+                                    <check if="{{ empty(trim(@tinjauan.sdm_catatan ?? '')) }}">
+                                        <div class="text-muted small mt-1" style="font-size: 0.74rem;"><i class="bi bi-dash text-secondary me-1"></i>Tidak ada catatan khusus.</div>
+                                    </check>
+                                </div>
+                            </div>
+
+                            <!-- 2. Peralatan & Instrumen -->
+                            <div class="col-md-6">
+                                <div class="p-3 rounded-3 border h-100" style="background: {{ !empty(trim(@tinjauan.peralatan_catatan ?? '')) ? '#fffaf5' : '#ffffff' }}; border-color: {{ !empty(trim(@tinjauan.peralatan_catatan ?? '')) ? '#fed7aa' : '#e2e8f0' }} !important;">
+                                    <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                                        <div class="d-flex align-items-center gap-2 min-w-0">
+                                            <div class="rounded-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px; background: {{ !@tinjauan.peralatan_tersedia ? '#fef2f2' : (!empty(trim(@tinjauan.peralatan_catatan ?? '')) ? '#ffedd5' : '#f0fdf4') }}; color: {{ !@tinjauan.peralatan_tersedia ? '#dc2626' : (!empty(trim(@tinjauan.peralatan_catatan ?? '')) ? '#ea580c' : '#16a34a') }};">
+                                                <i class="bi bi-tools" style="font-size: 0.9rem;"></i>
+                                            </div>
+                                            <span class="fw-bold text-dark" style="font-size: 0.82rem;">Peralatan &amp; Instrumen</span>
+                                        </div>
+                                        <check if="{{ @tinjauan.peralatan_tersedia && !empty(trim(@tinjauan.peralatan_catatan ?? '')) }}">
+                                            <span class="badge px-2 py-1 flex-shrink-0" style="font-size: 0.68rem; background-color: #fff7ed; color: #c2410c; border: 1px solid #fdba74; font-weight: 600;">
+                                                <i class="bi bi-exclamation-circle-fill me-1"></i>Siap dengan Kondisi
+                                            </span>
+                                        </check>
+                                        <check if="{{ @tinjauan.peralatan_tersedia && empty(trim(@tinjauan.peralatan_catatan ?? '')) }}">
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 flex-shrink-0" style="font-size: 0.68rem;">
+                                                <i class="bi bi-check2 me-1"></i>Siap
+                                            </span>
+                                        </check>
+                                        <check if="{{ !@tinjauan.peralatan_tersedia }}">
+                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 flex-shrink-0" style="font-size: 0.68rem;">
+                                                <i class="bi bi-x-circle me-1"></i>Terkendala
+                                            </span>
+                                        </check>
+                                    </div>
+                                    <check if="{{ !empty(trim(@tinjauan.peralatan_catatan ?? '')) }}">
+                                        <div class="p-2 mt-2 rounded-2" style="background: #fff7ed; border: 1px dashed #fdba74;">
+                                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                                <span class="fw-bold" style="font-size: 0.7rem; color: #c2410c;"><i class="bi bi-sticky-fill me-1" style="color: #ea580c;"></i>Catatan Kondisi:</span>
+                                                <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-primary fw-semibold btn-sisip-catatan" style="font-size: 0.68rem;" data-prefix="Peralatan/Alat" data-catatan="{{ htmlspecialchars(@tinjauan.peralatan_catatan ?? '', ENT_QUOTES, 'UTF-8') }}" title="Sisipkan catatan ini ke draf rincian penawaran">
+                                                    <i class="bi bi-clipboard-plus me-1"></i>Sisipkan
+                                                </button>
+                                            </div>
+                                            <div class="text-dark small" style="font-size: 0.77rem; line-height: 1.4;">{{ @tinjauan.peralatan_catatan }}</div>
+                                        </div>
+                                    </check>
+                                    <check if="{{ empty(trim(@tinjauan.peralatan_catatan ?? '')) }}">
+                                        <div class="text-muted small mt-1" style="font-size: 0.74rem;"><i class="bi bi-dash text-secondary me-1"></i>Tidak ada catatan khusus.</div>
+                                    </check>
+                                </div>
+                            </div>
+
+                            <!-- 3. Bahan Kimia & Reagen -->
+                            <div class="col-md-6">
+                                <div class="p-3 rounded-3 border h-100" style="background: {{ !empty(trim(@tinjauan.bahan_catatan ?? '')) ? '#fffaf5' : '#ffffff' }}; border-color: {{ !empty(trim(@tinjauan.bahan_catatan ?? '')) ? '#fed7aa' : '#e2e8f0' }} !important;">
+                                    <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                                        <div class="d-flex align-items-center gap-2 min-w-0">
+                                            <div class="rounded-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px; background: {{ !@tinjauan.bahan_tersedia ? '#fef2f2' : (!empty(trim(@tinjauan.bahan_catatan ?? '')) ? '#ffedd5' : '#f0fdf4') }}; color: {{ !@tinjauan.bahan_tersedia ? '#dc2626' : (!empty(trim(@tinjauan.bahan_catatan ?? '')) ? '#ea580c' : '#16a34a') }};">
+                                                <i class="bi bi-droplet-half" style="font-size: 0.9rem;"></i>
+                                            </div>
+                                            <span class="fw-bold text-dark" style="font-size: 0.82rem;">Bahan Kimia &amp; Reagen</span>
+                                        </div>
+                                        <check if="{{ @tinjauan.bahan_tersedia && !empty(trim(@tinjauan.bahan_catatan ?? '')) }}">
+                                            <span class="badge px-2 py-1 flex-shrink-0" style="font-size: 0.68rem; background-color: #fff7ed; color: #c2410c; border: 1px solid #fdba74; font-weight: 600;">
+                                                <i class="bi bi-exclamation-circle-fill me-1"></i>Siap dengan Kondisi
+                                            </span>
+                                        </check>
+                                        <check if="{{ @tinjauan.bahan_tersedia && empty(trim(@tinjauan.bahan_catatan ?? '')) }}">
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 flex-shrink-0" style="font-size: 0.68rem;">
+                                                <i class="bi bi-check2 me-1"></i>Siap
+                                            </span>
+                                        </check>
+                                        <check if="{{ !@tinjauan.bahan_tersedia }}">
+                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 flex-shrink-0" style="font-size: 0.68rem;">
+                                                <i class="bi bi-x-circle me-1"></i>Terkendala
+                                            </span>
+                                        </check>
+                                    </div>
+                                    <check if="{{ !empty(trim(@tinjauan.bahan_catatan ?? '')) }}">
+                                        <div class="p-2 mt-2 rounded-2" style="background: #fff7ed; border: 1px dashed #fdba74;">
+                                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                                <span class="fw-bold" style="font-size: 0.7rem; color: #c2410c;"><i class="bi bi-sticky-fill me-1" style="color: #ea580c;"></i>Catatan Kondisi:</span>
+                                                <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-primary fw-semibold btn-sisip-catatan" style="font-size: 0.68rem;" data-prefix="Bahan/Reagen" data-catatan="{{ htmlspecialchars(@tinjauan.bahan_catatan ?? '', ENT_QUOTES, 'UTF-8') }}" title="Sisipkan catatan ini ke draf rincian penawaran">
+                                                    <i class="bi bi-clipboard-plus me-1"></i>Sisipkan
+                                                </button>
+                                            </div>
+                                            <div class="text-dark small" style="font-size: 0.77rem; line-height: 1.4;">{{ @tinjauan.bahan_catatan }}</div>
+                                        </div>
+                                    </check>
+                                    <check if="{{ empty(trim(@tinjauan.bahan_catatan ?? '')) }}">
+                                        <div class="text-muted small mt-1" style="font-size: 0.74rem;"><i class="bi bi-dash text-secondary me-1"></i>Tidak ada catatan khusus.</div>
+                                    </check>
+                                </div>
+                            </div>
+
+                            <!-- 4. Kesiapan Metode Uji -->
+                            <div class="col-md-6">
+                                <div class="p-3 rounded-3 border h-100" style="background: {{ !empty(trim(@tinjauan.metode_catatan ?? '')) ? '#fffaf5' : '#ffffff' }}; border-color: {{ !empty(trim(@tinjauan.metode_catatan ?? '')) ? '#fed7aa' : '#e2e8f0' }} !important;">
+                                    <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                                        <div class="d-flex align-items-center gap-2 min-w-0">
+                                            <div class="rounded-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px; background: {{ !@tinjauan.metode_tersedia ? '#fef2f2' : (!empty(trim(@tinjauan.metode_catatan ?? '')) ? '#ffedd5' : '#f0fdf4') }}; color: {{ !@tinjauan.metode_tersedia ? '#dc2626' : (!empty(trim(@tinjauan.metode_catatan ?? '')) ? '#ea580c' : '#16a34a') }};">
+                                                <i class="bi bi-journal-check" style="font-size: 0.9rem;"></i>
+                                            </div>
+                                            <span class="fw-bold text-dark" style="font-size: 0.82rem;">Kesiapan Metode Uji</span>
+                                        </div>
+                                        <check if="{{ @tinjauan.metode_tersedia && !empty(trim(@tinjauan.metode_catatan ?? '')) }}">
+                                            <span class="badge px-2 py-1 flex-shrink-0" style="font-size: 0.68rem; background-color: #fff7ed; color: #c2410c; border: 1px solid #fdba74; font-weight: 600;">
+                                                <i class="bi bi-exclamation-circle-fill me-1"></i>Siap dengan Kondisi
+                                            </span>
+                                        </check>
+                                        <check if="{{ @tinjauan.metode_tersedia && empty(trim(@tinjauan.metode_catatan ?? '')) }}">
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 flex-shrink-0" style="font-size: 0.68rem;">
+                                                <i class="bi bi-check2 me-1"></i>Siap
+                                            </span>
+                                        </check>
+                                        <check if="{{ !@tinjauan.metode_tersedia }}">
+                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 flex-shrink-0" style="font-size: 0.68rem;">
+                                                <i class="bi bi-x-circle me-1"></i>Terkendala
+                                            </span>
+                                        </check>
+                                    </div>
+                                    <check if="{{ !empty(trim(@tinjauan.metode_catatan ?? '')) }}">
+                                        <div class="p-2 mt-2 rounded-2" style="background: #fff7ed; border: 1px dashed #fdba74;">
+                                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                                <span class="fw-bold" style="font-size: 0.7rem; color: #c2410c;"><i class="bi bi-sticky-fill me-1" style="color: #ea580c;"></i>Catatan Kondisi:</span>
+                                                <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-primary fw-semibold btn-sisip-catatan" style="font-size: 0.68rem;" data-prefix="Metode Uji" data-catatan="{{ htmlspecialchars(@tinjauan.metode_catatan ?? '', ENT_QUOTES, 'UTF-8') }}" title="Sisipkan catatan ini ke draf rincian penawaran">
+                                                    <i class="bi bi-clipboard-plus me-1"></i>Sisipkan
+                                                </button>
+                                            </div>
+                                            <div class="text-dark small" style="font-size: 0.77rem; line-height: 1.4;">{{ @tinjauan.metode_catatan }}</div>
+                                        </div>
+                                    </check>
+                                    <check if="{{ empty(trim(@tinjauan.metode_catatan ?? '')) }}">
+                                        <div class="text-muted small mt-1" style="font-size: 0.74rem;"><i class="bi bi-dash text-secondary me-1"></i>Tidak ada catatan khusus.</div>
+                                    </check>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Footer Meta Tinjauan -->
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pt-3 mt-3 border-top" style="font-size: 0.74rem;">
+                            <div class="text-muted">
+                                <i class="bi bi-person-check text-primary me-1"></i>
+                                Peninjau: <strong class="text-dark">{{ @tinjauan.peninjau_nama ?: 'Tim Teknis BBSPJIS' }}</strong>
+                                <check if="{{ !empty(@tinjauan.tanggal_tinjauan) }}">
+                                    &bull; Tanggal: <span class="text-dark">{{ date('d M Y, H:i', strtotime(@tinjauan.tanggal_tinjauan)) }} WIB</span>
+                                </check>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <a href="{{ @BASE }}/order/{{ @order.id }}/form-pelayanan" class="btn btn-outline-secondary btn-sm py-1 px-2" style="font-size: 0.72rem;">
+                                    <i class="bi bi-file-text me-1"></i> Form Pelayanan
+                                </a>
+                                <a href="{{ @BASE }}/order/{{ @order.id }}/tinjauan" class="btn btn-outline-secondary btn-sm py-1 px-2" style="font-size: 0.72rem;">
+                                    <i class="bi bi-shield-check me-1"></i> Kaji Kelayakan Teknis
+                                </a>
+                            </div>
+                        </div>
+                    </check>
+
+                    <check if="{{ !@tinjauan }}">
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 text-muted small" style="font-size: 0.76rem;">
+                            <div>
+                                <i class="bi bi-info-circle text-primary me-1"></i>
+                                Belum ada rekaman evaluasi 4 pilar kelayakan teknis untuk order ini. Catatan kendala dapat diisi melalui <strong>Form Pelayanan</strong> atau <strong>Kaji Kelayakan Teknis</strong>.
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <a href="{{ @BASE }}/order/{{ @order.id }}/form-pelayanan" class="btn btn-outline-secondary btn-sm py-1 px-2" style="font-size: 0.72rem;">
+                                    <i class="bi bi-pencil-square me-1"></i> Form Pelayanan
+                                </a>
+                            </div>
+                        </div>
+                    </check>
+                </div>
+            </div>
+
             <!-- 2. Nomor Surat & Data Klien -->
             <div class="form-section-card">
                 <div class="form-section-header">
@@ -1041,9 +1457,10 @@
                                     <select name="permintaan_melalui" id="select_permintaan_melalui" class="form-select form-select-sm" {{ !@can_edit ? 'disabled' : '' }}>
                                         <option value="email" {{ (@sp_existing && @sp_existing.permintaan_melalui == 'email') || !@sp_existing ? 'selected' : '' }}>E-mail Resmi</option>
                                         <option value="surat" {{ @sp_existing && @sp_existing.permintaan_melalui == 'surat' ? 'selected' : '' }}>Surat Fisik / Ekspedisi</option>
-                                        <option value="telepon" {{ @sp_existing && @sp_existing.permintaan_melalui == 'telepon' ? 'selected' : '' }}>Telepon / WhatsApp</option>
+                                        <option value="telepon" {{ @sp_existing && @sp_existing.permintaan_melalui == 'telepon' ? 'selected' : '' }}>Telepon</option>
+                                        <option value="whatsapp" {{ @sp_existing && @sp_existing.permintaan_melalui == 'whatsapp' ? 'selected' : '' }}>WhatsApp</option>
+                                        <option value="website" {{ @sp_existing && @sp_existing.permintaan_melalui == 'website' ? 'selected' : '' }}>Website</option>
                                         <option value="datang_langsung" {{ @sp_existing && @sp_existing.permintaan_melalui == 'datang_langsung' ? 'selected' : '' }}>Datang Langsung</option>
-                                        <option value="pegawai_bbspjis" {{ @sp_existing && @sp_existing.permintaan_melalui == 'pegawai_bbspjis' ? 'selected' : '' }}>Petugas Kemitraan</option>
                                     </select>
                                 </div>
                             </div>
@@ -1075,9 +1492,10 @@
                                     <select name="permintaan_melalui" id="select_permintaan_melalui" class="form-select form-select-sm" {{ !@can_edit ? 'disabled' : '' }}>
                                         <option value="email" {{ (@sp_existing && @sp_existing.permintaan_melalui == 'email') || !@sp_existing ? 'selected' : '' }}>E-mail Resmi</option>
                                         <option value="surat" {{ @sp_existing && @sp_existing.permintaan_melalui == 'surat' ? 'selected' : '' }}>Surat Fisik / Ekspedisi</option>
-                                        <option value="telepon" {{ @sp_existing && @sp_existing.permintaan_melalui == 'telepon' ? 'selected' : '' }}>Telepon / WhatsApp</option>
+                                        <option value="telepon" {{ @sp_existing && @sp_existing.permintaan_melalui == 'telepon' ? 'selected' : '' }}>Telepon</option>
+                                        <option value="whatsapp" {{ @sp_existing && @sp_existing.permintaan_melalui == 'whatsapp' ? 'selected' : '' }}>WhatsApp</option>
+                                        <option value="website" {{ @sp_existing && @sp_existing.permintaan_melalui == 'website' ? 'selected' : '' }}>Website</option>
                                         <option value="datang_langsung" {{ @sp_existing && @sp_existing.permintaan_melalui == 'datang_langsung' ? 'selected' : '' }}>Datang Langsung</option>
-                                        <option value="pegawai_bbspjis" {{ @sp_existing && @sp_existing.permintaan_melalui == 'pegawai_bbspjis' ? 'selected' : '' }}>Petugas Kemitraan</option>
                                     </select>
                                 </div>
                             </div>
@@ -1207,15 +1625,32 @@
                     </div>
                 </div>
                 <div class="form-section-body">
+                    <check if="{{ @is_locked_deal }}">
+                        <div class="alert alert-info border-0 rounded-3 p-2.5 mb-3 d-flex align-items-center gap-2 small">
+                            <i class="bi bi-info-circle-fill fs-5 text-primary flex-shrink-0"></i>
+                            <div>
+                                <strong class="text-dark d-block">Status Penawaran: Disetujui (DEAL) &bull; Terkunci</strong>
+                                <span class="text-secondary">Order ini telah masuk ke tahap pembayaran / pelaksanaan operasional. Pengeditan formulir ini hanya memperbarui isi redaksi atau berkas lampiran resmi tanpa mengubah status DEAL maupun alur tahapan.</span>
+                            </div>
+                        </div>
+                    </check>
                     <div class="row g-3">
                         <div class="col-md-5">
                             <label class="form-label small fw-semibold text-dark mb-1">Status Respon Klien</label>
-                            <select name="status_respon_klien" id="select_status_respon_klien" class="form-select form-select-sm fw-semibold" {{ !@can_edit ? 'disabled' : '' }}>
-                                <option value="draft" class="d-none" style="display:none;">Draft (Internal)</option>
-                                <option value="nego" {{ (!@sp_existing || in_array(@sp_existing.status_respon_klien, ['nego', 'terkirim', 'draft', ''])) ? 'selected' : '' }}>Negosiasi</option>
-                                <option value="deal" {{ (@sp_existing && @sp_existing.status_respon_klien == 'deal') ? 'selected' : '' }}>Disetujui (DEAL)</option>
-                                <option value="batal" {{ (@sp_existing && @sp_existing.status_respon_klien == 'batal') ? 'selected' : '' }}>Ditolak / Batal</option>
-                            </select>
+                            <check if="{{ @is_locked_deal }}">
+                                <input type="hidden" name="status_respon_klien" value="deal">
+                                <select id="select_status_respon_klien" class="form-select form-select-sm fw-semibold bg-light" disabled>
+                                    <option value="deal" selected>Disetujui (DEAL) &bull; Terkunci Permanen</option>
+                                </select>
+                            </check>
+                            <check if="{{ !@is_locked_deal }}">
+                                <select name="status_respon_klien" id="select_status_respon_klien" class="form-select form-select-sm fw-semibold" {{ !@can_edit ? 'disabled' : '' }}>
+                                    <option value="draft" class="d-none" style="display:none;">Draft (Internal)</option>
+                                    <option value="nego" {{ (!@sp_existing || in_array(@sp_existing.status_respon_klien, ['nego', 'terkirim', 'draft', ''])) ? 'selected' : '' }}>Negosiasi</option>
+                                    <option value="deal" {{ (@sp_existing && @sp_existing.status_respon_klien == 'deal') ? 'selected' : '' }}>Disetujui (DEAL)</option>
+                                    <option value="batal" {{ (@sp_existing && @sp_existing.status_respon_klien == 'batal') ? 'selected' : '' }}>Ditolak / Batal</option>
+                                </select>
+                            </check>
                         </div>
                         <div class="col-md-7">
                             <label class="form-label small fw-semibold text-dark mb-1">Catatan Negosiasi / Penyesuaian Harga</label>
@@ -1223,9 +1658,9 @@
                         </div>
                     </div>
 
-                    <!-- Default Terbitkan sebagai Revisi Baru jika ada penawaran sebelumnya -->
+                    <!-- Terbitkan sebagai Revisi Baru jika @is_revisi_baru bernilai true -->
                     <check if="{{ @sp_existing }}">
-                        <input type="hidden" name="is_revisi_baru" id="check_revisi_baru" value="1">
+                        <input type="hidden" name="is_revisi_baru" id="check_revisi_baru" value="{{ @is_revisi_baru ? '1' : '0' }}">
                         <input type="hidden" name="penawaran_id" value="{{ @sp_existing.id }}">
                     </check>
                 </div>
@@ -1238,13 +1673,21 @@
                 </a>
                 <check if="{{ @can_edit }}">
                     <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <input type="hidden" name="action_status" id="inputActionStatus" value="nego">
-                        <button type="submit" name="action_status" value="draft" class="btn-draft-theme" onclick="document.getElementById('select_status_respon_klien').value='draft'; document.getElementById('inputActionStatus').value='draft';">
-                            <i class="bi bi-bookmark"></i> Simpan Draf
-                        </button>
-                        <button type="button" id="btnTerbitkanPenawaran" class="btn-submit-theme" onclick="confirmKirimPenawaran();">
-                            <i class="bi bi-send-fill"></i> Simpan &amp; Terbitkan
-                        </button>
+                        <check if="{{ @is_locked_deal || (@sp_existing && @sp_existing.status_respon_klien == 'deal') }}">
+                            <input type="hidden" name="action_status" id="inputActionStatus" value="deal">
+                            <button type="submit" name="action_status" value="deal" class="btn btn-primary fw-semibold px-4 py-2 d-inline-flex align-items-center gap-1.5 shadow-xs">
+                                <i class="bi bi-save2-fill"></i> Simpan Perubahan Dokumen
+                            </button>
+                        </check>
+                        <check if="{{ !@is_locked_deal && (!@sp_existing || @sp_existing.status_respon_klien != 'deal') }}">
+                            <input type="hidden" name="action_status" id="inputActionStatus" value="nego">
+                            <button type="submit" name="action_status" value="draft" class="btn-draft-theme" onclick="document.getElementById('select_status_respon_klien').value='draft'; document.getElementById('inputActionStatus').value='draft';">
+                                <i class="bi bi-bookmark"></i> Simpan Draf
+                            </button>
+                            <button type="button" id="btnTerbitkanPenawaran" class="btn-submit-theme" onclick="confirmKirimPenawaran();">
+                                <i class="bi bi-send-fill"></i> Simpan &amp; Terbitkan
+                            </button>
+                        </check>
                     </div>
                 </check>
                 <check if="{{ !@can_edit }}">
@@ -1274,32 +1717,65 @@
                         </span>
                     </div>
                     <div class="preview-btn-group">
-                        <button type="button" class="preview-btn preview-btn-primary btn-preview-pdf" data-preview-pdf="{{ @BASE }}/order/{{ @order.id }}/penawaran/cetak{{ @sp_existing && @sp_existing.id ? ('?id=' . @sp_existing.id) : '' }}" data-title="Surat Penawaran Resmi" data-subtitle="{{ @order.nama_perusahaan }}">
+                        <button type="button" id="btnPreviewSpPdfMain" class="preview-btn preview-btn-primary btn-preview-pdf" data-preview-pdf="{{ @BASE }}/order/{{ @order.id }}/penawaran/cetak{{ @sp_existing && @sp_existing.id ? ('?id=' . @sp_existing.id) : '' }}" data-title="Surat Penawaran Resmi" data-subtitle="{{ @order.nama_perusahaan }}">
                             <i class="bi bi-file-earmark-pdf-fill"></i> Pratinjau PDF
                         </button>
-                        <check if="{{ @sp_existing && @sp_existing.id }}">
-                            <button type="button" class="preview-btn preview-btn-secondary btn-preview-pdf" data-preview-pdf="{{ @BASE }}/order/{{ @order.id }}/penawaran/cetak?id={{ @sp_existing.id }}&t={{ time() }}" data-title="Surat Penawaran Resmi" data-subtitle="{{ @sp_existing.nomor_surat }}">
-                                <i class="bi bi-file-earmark-arrow-down text-danger"></i> Unduh PDF
+
+                        <!-- Fitur Upload Lampiran Opsional (Sebelah Kiri Unduh PDF - Menyatu di Halaman 3+) -->
+                        <input type="file" name="file_lampiran_user" id="inputFileLampiranUser" class="d-none" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onchange="handleLampiranUserChange(this)">
+                        <button type="button" id="btnTriggerUploadLampiranUser" class="preview-btn preview-btn-secondary" onclick="document.getElementById('inputFileLampiranUser').click()" title="{{ !empty(@lampiran_user_existing) ? ('Lampiran menyatu di Hal. 3+: ' . basename(@lampiran_user_existing)) : 'Opsional: Unggah lampiran untuk digabungkan ke Halaman 3+ Surat Penawaran (PDF/Word/JPG/PNG)' }}">
+                            <i class="bi bi-paperclip text-primary" id="iconUploadLampiranUser"></i>
+                            <span id="labelUploadLampiranUser">{{ !empty(@lampiran_user_existing) ? 'Ganti Lampiran (Hal. 3+)' : 'Upload Lampiran' }}</span>
+                        </button>
+
+                        <div class="dropdown d-inline-block">
+                            <button type="button" class="preview-btn preview-btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" title="Pilihan Unduh Dokumen (PDF / Word)">
+                                <i class="bi bi-download text-primary"></i> Unduh
                             </button>
-                        </check>
-                        <button type="button" class="preview-btn preview-btn-secondary" onclick="window.print()" title="Cetak Pratinjau Lembar Dokumen">
+                            <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="font-size: 0.8rem; min-width: 230px;">
+                                <li class="dropdown-header text-uppercase px-3 py-1 text-muted fw-bold" style="font-size: 0.68rem; letter-spacing: 0.5px;">Format PDF</li>
+                                <li>
+                                    <a class="dropdown-item py-1.5" href="javascript:void(0)" onclick="unduhSpPdf(true)" id="btnDownloadSpPdfMain">
+                                        <i class="bi bi-file-earmark-pdf-fill text-danger me-1.5"></i> <strong>PDF Dengan Kop BBSPJIS</strong>
+                                        <small class="d-block text-muted ps-3">Untuk dokumen digital / e-mail</small>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item py-1.5" href="javascript:void(0)" onclick="unduhSpPdf(false)" id="btnDownloadSpPdfTanpaKop">
+                                        <i class="bi bi-file-earmark-fill text-secondary me-1.5"></i> <strong>PDF Tanpa Kop (Kosongan)</strong>
+                                        <small class="d-block text-muted ps-3">Untuk cetak di kertas stasioner</small>
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider my-1"></li>
+                                <li class="dropdown-header text-uppercase px-3 py-1 text-muted fw-bold" style="font-size: 0.68rem; letter-spacing: 0.5px;">Format Word</li>
+                                <li>
+                                    <a class="dropdown-item py-1.5" href="javascript:void(0)" onclick="unduhSpWord()" id="btnDownloadSpWordMain">
+                                        <i class="bi bi-file-earmark-word-fill me-1.5" style="color: #185abd !important;"></i> <strong>Unduh Word (.docx)</strong>
+                                        <small class="d-block text-muted ps-3">Format dokumen Microsoft Word editable</small>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                        <button type="button" class="preview-btn preview-btn-secondary" onclick="bukaModalCetakKop()" title="Pilihan Cetak Dokumen (Dengan Kop / Tanpa Kop)">
                             <i class="bi bi-printer" style="color: #475569;"></i> Cetak
                         </button>
                     </div>
                 </div>
 
                 <check if="{{ @order.jenis_layanan_opti == 'selulosa' }}">
-                    <!-- Navigasi Halaman untuk Dokumen Selulosa (2 Halaman) -->
+                    <!-- Navigasi Halaman untuk Dokumen Selulosa -->
                     <div class="d-flex border-bottom bg-light px-2 pt-2 gap-1" id="selulosaTabNav" style="font-size: 0.72rem;">
                         <button type="button" class="btn btn-sm btn-white border border-bottom-0 active fw-bold py-1 px-2.5 tab-btn" id="btnSelPage1" onclick="switchSelPage(1)">Hal 1: Cover Surat Penawaran</button>
                         <button type="button" class="btn btn-sm btn-light border-0 py-1 px-2.5 tab-btn text-muted" id="btnSelPage2" onclick="switchSelPage(2)">Hal 2: Lembar Persetujuan</button>
+                        <button type="button" class="btn btn-sm btn-light border-0 py-1 px-2.5 tab-btn text-muted {{ empty(@lampiran_user_existing) ? 'd-none' : '' }}" id="btnSelPage3" onclick="switchSelPage(3)">Hal 3: Berkas Lampiran</button>
                     </div>
                 </check>
                 <check if="{{ @order.jenis_layanan_opti == 'lingkungan' }}">
-                    <!-- Navigasi Halaman untuk Dokumen Lingkungan (2 Halaman) -->
+                    <!-- Navigasi Halaman untuk Dokumen Lingkungan -->
                     <div class="d-flex border-bottom bg-light px-2 pt-2 gap-1" id="lingkunganTabNav" style="font-size: 0.72rem;">
                         <button type="button" class="btn btn-sm btn-white border border-bottom-0 active fw-bold py-1 px-2.5 tab-btn" id="btnLingPage1" onclick="switchLingPage(1)">Hal 1: Cover Surat Penawaran</button>
                         <button type="button" class="btn btn-sm btn-light border-0 py-1 px-2.5 tab-btn text-muted" id="btnLingPage2" onclick="switchLingPage(2)">Hal 2: Lembar Persetujuan</button>
+                        <button type="button" class="btn btn-sm btn-light border-0 py-1 px-2.5 tab-btn text-muted {{ empty(@lampiran_user_existing) ? 'd-none' : '' }}" id="btnLingPage3" onclick="switchLingPage(3)">Hal 3: Berkas Lampiran</button>
                     </div>
                 </check>
 
@@ -1314,16 +1790,17 @@
                         <!-- ======================================================= -->
                         <div class="doc-sheet sel-page" id="selPage1">
                             <!-- Kop BBSPJIS Selulosa -->
-                            <div style="border-bottom: 3px double #000; padding-bottom: 6px; margin-bottom: 12px; display: flex; align-items: center; gap: 16px;">
+                            <div class="sp-kop-header" id="selKopHeader" style="border-bottom: 3px double #000; padding-bottom: 6px; margin-bottom: 12px; display: flex; align-items: center; gap: 16px;">
                                 <img src="{{ @BASE }}/app/helpers/fpdf/kemenperin_logo.png?v={{ time() }}" style="width: 140px; height: auto;" alt="Logo Kemenperin">
                                 <div style="flex-grow: 1; text-align: center; line-height: 1.25;">
-                                    <div style="font-size: 11px; font-weight: bold; letter-spacing: 0.2px;">BADAN STANDARDISASI DAN KEBIJAKAN JASA INDUSTRI</div>
-                                    <div style="font-size: 12px; font-weight: bold;">BALAI BESAR STANDARDISASI DAN PELAYANAN</div>
-                                    <div style="font-size: 12px; font-weight: bold;">JASA INDUSTRI SELULOSA</div>
+                                    <div style="font-size: 12px; font-weight: bold; letter-spacing: 0.2px;">BADAN STANDARDISASI DAN KEBIJAKAN JASA INDUSTRI</div>
+                                    <div style="font-size: 14px; font-weight: bold;">BALAI BESAR STANDARISASI DAN</div>
+                                    <div style="font-size: 14px; font-weight: bold;">PELAYANAN JASA INDUSTRI SELULOSA</div>
                                     <div style="font-size: 8px; margin-top: 2px;">Jl. Raya Dayeuhkolot No. 132 Bandung 40258</div>
                                     <div style="font-size: 7.5px;">Telp. (022) 5202980 (Hunting) &amp; 5202871 Fax. (022) 5202871 E-mail : bbs@kemenperin.go.id</div>
                                 </div>
                             </div>
+                            <div class="sp-kop-spacer" id="selKopSpacer" style="display: none; height: 38mm;"></div>
 
                             <!-- Metadata Kiri & Tanggal Kanan -->
                             <div style="display: flex; justify-content: space-between; font-size: 9.5px; margin-bottom: 12px;">
@@ -1354,7 +1831,7 @@
                             </div>
 
                             <!-- Paragraf Pembuka -->
-                            <div style="font-size: 9.5px; line-height: 1.45; text-align: justify; margin-bottom: 8px;">
+                            <div style="font-size: 9.5px; line-height: 1.45; text-align: left; text-indent: 28px; margin-bottom: 8px;">
                                 Menanggapi permintaan Saudara <span id="d_sel_media_pembuka">melalui e-mail</span> perihal "<span id="d_sel_judul_pembuka" class="fw-bold">{{ @order.judul_kegiatan }}</span>", dengan ini kami informasikan rincian kegiatan dan penawaran biaya layanan sebagai berikut:
                             </div>
 
@@ -1364,28 +1841,28 @@
                             </div>
 
                             <!-- Ketentuan Standar 1-5 -->
-                            <div style="font-size: 9.5px; line-height: 1.4; margin-bottom: 6px;">
+                            <div style="font-size: 9.5px; line-height: 1.45; text-indent: 28px; margin-bottom: 4px;">
                                 Disamping itu perlu kami sampaikan pula ketentuan sebagai berikut :
                             </div>
-                            <div style="font-size: 8.8px; line-height: 1.4; margin-bottom: 10px; padding-left: 4px;">
-                                <div class="d-flex gap-2 mb-1"><span style="width: 16px;">1.</span><div>Persetujuan terhadap biaya pengujian mohon disampaikan secara tertulis melalui faks atau e-mail.</div></div>
-                                <div class="d-flex gap-2 mb-1"><span style="width: 16px;">2.</span><div>Pengujian dilaksanakan setelah pembayaran biaya pekerjaan dilakukan dan setelah sampel diterima di laboratorium.</div></div>
-                                <div class="d-flex gap-2 mb-1"><span style="width: 16px;">3.</span><div>Pembayaran biaya pengujian dilakukan dengan transfer melalui Virtual Account Bank.</div></div>
-                                <div class="d-flex gap-2 mb-1"><span style="width: 16px;">4.</span><div>Untuk informasi lebih lanjut, dapat menghubungi Bagian Pemasaran pada nomor: 0813 8686 6808 / 0856 590 88 926.</div></div>
-                                <div class="d-flex gap-2 mb-1"><span style="width: 16px;">5.</span><div>Dilarang memberi gratifikasi dalam bentuk apa pun atas layanan jasa yang kami berikan. Jika terdapat pemberian dan penerimaan gratifikasi, mohon dapat dilaporkan : <span class="text-primary">http://bbs.kemenperin.go.id/kontak-kami/pengaduan-gratifikasi</span>.</div></div>
+                            <div style="font-size: 9.5px; line-height: 1.45; margin-bottom: 10px;">
+                                <div style="text-align: left; margin-bottom: 2px;">1. Persetujuan terhadap biaya pengujian mohon disampaikan secara tertulis melalui email.</div>
+                                <div style="text-align: left; margin-bottom: 2px;">2. Pengujian dilaksanakan setelah pembayaran biaya dilakukan dan sampel kami terima.</div>
+                                <div style="text-align: left; margin-bottom: 2px;">3. Pembayaran biaya pengujian dilakukan dengan transfer melalui <em>virtual account bank</em>.</div>
+                                <div style="text-align: left; margin-bottom: 2px;">4. Untuk informasi lebih lanjut dapat menghubungi Bagian Layanan nomor: 0813 8686 6808/ 0856 5908 8926.</div>
+                                <div style="text-align: left; margin-bottom: 2px; word-break: break-all;">5. Dilarang memberi gratifikasi dalam bentuk apapun atas layanan jasa yang kami berikan, jika terdapat pemberian dan penerimaan gratifikasi mohon dapat dilaporkan ke : <span class="text-primary">http://bbs.kemenperin.go.id/kontak-kami/pengaduan-gratifikasi</span>.</div>
                             </div>
 
                             <!-- Paragraf Penutup -->
-                            <div style="font-size: 9.5px; line-height: 1.45; text-align: justify; margin-bottom: 14px;">
-                                Kami menunggu konfirmasi lebih lanjut. Atas perhatian dan kerjasama yang baik, kami sampaikan terima kasih.
+                            <div style="font-size: 9.5px; line-height: 1.45; text-align: left; text-indent: 28px; margin-bottom: 14px;">
+                                Kami menunggu konfirmasi lebih lanjut. Atas perhatian dan kerja sama yang baik, kami sampaikan terima kasih.
                             </div>
 
                             <!-- Pejabat Penandatangan BBSPJIS Kanan Bawah -->
-                            <div style="display: flex; justify-content: flex-end; font-size: 9.5px; margin-top: 10px;">
-                                <div style="text-align: center; width: 45%;">
-                                    <div id="d_sel_jabatan_pejabat">{{ @sp_existing.jabatan_pejabat ?: (@default_jabatan_pejabat ?: 'Kepala') }}</div>
-                                    <div style="height: 48px;"></div>
-                                    <div class="fw-bold" id="d_sel_pejabat">{{ @sp_existing.pejabat_nama ?: (@sp_existing.pembuat_nama ?: (@default_pejabat_nama ?: 'Dodiet Prasetyo')) }}</div>
+                            <div style="display: flex; justify-content: flex-end; font-size: 9.5px; margin-top: 14px; margin-bottom: 18px;">
+                                <div style="text-align: center; width: 40%;">
+                                    <div style="margin-top: 12px; margin-bottom: 6px;" id="d_sel_jabatan_pejabat">{{ @sp_existing.jabatan_pejabat ?: (@default_jabatan_pejabat ?: 'Kepala') }},</div>
+                                    <div style="height: 68px;"></div>
+                                    <div style="margin-top: 6px; margin-bottom: 12px;" class="fw-bold" id="d_sel_pejabat">{{ @sp_existing.pejabat_nama ?: (@sp_existing.pembuat_nama ?: (@default_pejabat_nama ?: 'Dodiet Prasetyo')) }}</div>
                                 </div>
                             </div>
                         </div>
@@ -1405,7 +1882,7 @@
                                 LEMBAR PERSETUJUAN SURAT PENAWARAN
                             </div>
 
-                            <div style="font-size: 9.5px; line-height: 1.45; text-align: justify; margin-bottom: 8px;">
+                            <div style="font-size: 9.5px; line-height: 1.45; text-align: left; margin-bottom: 8px;">
                                 Dengan ini menyatakan bahwa telah membaca, memahami, dan menyetujui Surat Penawaran Balai Besar Standardisasi dan Pelayanan Jasa Industri Selulosa (BBSPJIS) Nomor <strong id="d_sel_p2_nomor_isi">{{ @is_revisi_baru ? @nomor_surat_otomatis : (@sp_existing.nomor_surat ?: @nomor_surat_otomatis) }}</strong> tanggal <strong id="d_sel_p2_tanggal_isi">-</strong>.
                             </div>
                             <div style="font-size: 9.5px; line-height: 1.45; margin-bottom: 8px;">
@@ -1458,12 +1935,27 @@
                             </div>
 
                             <!-- Pejabat Penandatangan BBSPJIS Kanan Bawah Lampiran -->
-                            <div style="display: flex; justify-content: flex-end; font-size: 9.5px; margin-top: 10px;">
-                                <div style="text-align: center; width: 45%;">
-                                    <div id="d_sel_p2_jabatan_pejabat">{{ @sp_existing.jabatan_pejabat ?: (@default_jabatan_pejabat ?: 'Kepala') }}</div>
-                                    <div style="height: 48px;"></div>
-                                    <div class="fw-bold" id="d_sel_p2_pejabat">{{ @sp_existing.pejabat_nama ?: (@sp_existing.pembuat_nama ?: (@default_pejabat_nama ?: 'Dodiet Prasetyo')) }}</div>
+                            <div style="display: flex; justify-content: flex-end; font-size: 9.5px; margin-top: 14px; margin-bottom: 18px;">
+                                <div style="text-align: center; width: 40%;">
+                                    <div style="margin-top: 12px; margin-bottom: 6px;" id="d_sel_p2_jabatan_pejabat">{{ @sp_existing.jabatan_pejabat ?: (@default_jabatan_pejabat ?: 'Kepala') }},</div>
+                                    <div style="height: 68px;"></div>
+                                    <div style="margin-top: 6px; margin-bottom: 12px;" class="fw-bold" id="d_sel_p2_pejabat">{{ @sp_existing.pejabat_nama ?: (@sp_existing.pembuat_nama ?: (@default_pejabat_nama ?: 'Dodiet Prasetyo')) }}</div>
                                 </div>
+                            </div>
+                        </div>
+
+                        <!-- HALAMAN 3+: BERKAS LAMPIRAN TAMBAHAN USER SELULOSA -->
+                        <div class="doc-sheet sel-page d-none" id="selPage3">
+                            <div style="text-align: right; font-size: 9px; line-height: 1.35; margin-bottom: 12px;">
+                                <div>Lampiran Tambahan Surat</div>
+                                <div>Nomor : <span id="d_sel_p3_nomor">{{ @is_revisi_baru ? @nomor_surat_otomatis : (@sp_existing.nomor_surat ?: @nomor_surat_otomatis) }}</span></div>
+                                <div>Tanggal : <span id="d_sel_p3_tanggal">-</span></div>
+                            </div>
+                            <div class="text-center fw-bold mb-3" style="font-size: 11px;">
+                                LAMPIRAN DOKUMEN PENDUKUNG / TEKNIS
+                            </div>
+                            <div id="selPage3Content">
+                                <!-- Rendered dynamically by renderLampiranPreviewOnSheet() -->
                             </div>
                         </div>
                     </check>
@@ -1475,16 +1967,17 @@
                         
                         <!-- HALAMAN 1: SURAT PENGANTAR PENAWARAN RESMI -->
                         <div class="doc-sheet ling-page" id="lingPage1">
-                            <div style="border-bottom: 3px double #000; padding-bottom: 6px; margin-bottom: 12px; display: flex; align-items: center; gap: 16px;">
+                            <div class="sp-kop-header" id="lingKopHeader" style="border-bottom: 3px double #000; padding-bottom: 6px; margin-bottom: 12px; display: flex; align-items: center; gap: 16px;">
                                 <img src="{{ @BASE }}/app/helpers/fpdf/kemenperin_logo.png?v={{ time() }}" style="width: 140px; height: auto;" alt="Logo Kemenperin">
                                 <div style="flex-grow: 1; text-align: center; line-height: 1.25;">
-                                    <div style="font-size: 11px; font-weight: bold; letter-spacing: 0.2px;">BADAN STANDARDISASI DAN KEBIJAKAN JASA INDUSTRI</div>
-                                    <div style="font-size: 12px; font-weight: bold;">BALAI BESAR STANDARDISASI DAN PELAYANAN</div>
-                                    <div style="font-size: 12px; font-weight: bold;">JASA INDUSTRI SELULOSA</div>
+                                    <div style="font-size: 12px; font-weight: bold; letter-spacing: 0.2px;">BADAN STANDARDISASI DAN KEBIJAKAN JASA INDUSTRI</div>
+                                    <div style="font-size: 14px; font-weight: bold;">BALAI BESAR STANDARISASI DAN</div>
+                                    <div style="font-size: 14px; font-weight: bold;">PELAYANAN JASA INDUSTRI SELULOSA</div>
                                     <div style="font-size: 8px; margin-top: 2px;">Jl. Raya Dayeuhkolot No. 132 Bandung 40258</div>
                                     <div style="font-size: 7.5px;">Telp. (022) 5202980 (Hunting) &amp; 5202871 Fax. (022) 5202871 E-mail : bbpk@bbpk.go.id</div>
                                 </div>
                             </div>
+                            <div class="sp-kop-spacer" id="lingKopSpacer" style="display: none; height: 38mm;"></div>
 
                             <div style="display: flex; justify-content: space-between; font-size: 9.5px; margin-bottom: 12px;">
                                 <table style="font-size: 9.5px; line-height: 1.4;">
@@ -1500,7 +1993,7 @@
                                 <div id="d_alamat_l" style="white-space: pre-line;">{{ @sp_existing.alamat ?: (@order.alamat ?: 'di Tempat') }}</div>
                             </div>
 
-                            <div style="font-size: 9.5px; line-height: 1.45; text-align: justify; margin-bottom: 8px;">
+                            <div style="font-size: 9.5px; line-height: 1.45; text-align: left; text-indent: 28px; margin-bottom: 8px;">
                                 Menanggapi permintaan Saudara <span id="d_media_pembuka_l">melalui e-mail</span> perihal "<span id="d_judul_pembuka_l" class="fw-bold">{{ @order.judul_kegiatan }}</span>", dengan ini kami informasikan sebagai berikut:
                             </div>
 
@@ -1513,36 +2006,36 @@
                             <div id="d_ling_ketentuan_tetap" style="font-size: 9.5px; line-height: 1.45; margin-bottom: 10px; padding-left: 2px;">
                                 <div class="d-flex gap-2 mb-1 mt-1">
                                     <span id="d_ling_ketentuan_num" style="width: 18px; flex-shrink: 0; font-weight: bold;">1.</span>
-                                    <div style="text-align: justify;">Biaya dan rincian pekerjaan terlampir, dengan ketentuan sebagai berikut:</div>
+                                    <div style="text-align: left;">Biaya dan rincian pekerjaan terlampir, dengan ketentuan sebagai berikut:</div>
                                 </div>
                                 <div class="d-flex gap-2 mb-0.5 ms-4">
                                     <span style="width: 20px; flex-shrink: 0; font-weight: 500;">a.</span>
-                                    <div style="text-align: justify;">Biaya pekerjaan ditagihkan dan dibayar melalui Virtual Account Mandiri.</div>
+                                    <div style="text-align: left;">Biaya pekerjaan ditagihkan dan dibayar melalui Virtual Account Mandiri.</div>
                                 </div>
                                 <div class="d-flex gap-2 mb-0.5 ms-4">
                                     <span style="width: 20px; flex-shrink: 0; font-weight: 500;">b.</span>
-                                    <div style="text-align: justify;">Persetujuan terhadap biaya pekerjaan tersebut mohon disampaikan secara tertulis melalui fax atau e-mail.</div>
+                                    <div style="text-align: left;">Persetujuan terhadap biaya pekerjaan tersebut mohon disampaikan secara tertulis melalui fax atau e-mail.</div>
                                 </div>
                                 <div class="d-flex gap-2 mb-0.5 ms-4">
                                     <span style="width: 20px; flex-shrink: 0; font-weight: 500;">c.</span>
-                                    <div style="text-align: justify;">Jadwal pelaksanaan pekerjaan akan disampaikan setelah pembayaran biaya pekerjaan dilakukan.</div>
+                                    <div style="text-align: left;">Jadwal pelaksanaan pekerjaan akan disampaikan setelah pembayaran biaya pekerjaan dilakukan.</div>
                                 </div>
                                 <div class="d-flex gap-2 mb-0.5 ms-4">
                                     <span style="width: 20px; flex-shrink: 0; font-weight: 500;">d.</span>
-                                    <div style="text-align: justify;">Dilarang memberi gratifikasi dalam bentuk apapun atas layanan jasa yang kami berikan, jika terdapat pemberian dan penerimaan gratifikasi mohon dapat dilaporkan ke : <span class="text-primary">http://bbs.kemenperin.go.id/kontak-kami/pengaduan-gratifikasi</span>.</div>
+                                    <div style="text-align: left;">Dilarang memberi gratifikasi dalam bentuk apapun atas layanan jasa yang kami berikan, jika terdapat pemberian dan penerimaan gratifikasi mohon dapat dilaporkan ke : <span class="text-primary">http://bbs.kemenperin.go.id/kontak-kami/pengaduan-gratifikasi</span>.</div>
                                 </div>
                             </div>
 
-                            <div style="font-size: 9.5px; line-height: 1.45; text-align: justify; margin-bottom: 16px;">
+                            <div style="font-size: 9.5px; line-height: 1.45; text-align: left; text-indent: 28px; margin-bottom: 16px;">
                                 Kami menunggu konfirmasi lebih lanjut. Atas perhatian dan kerja sama yang baik, kami sampaikan terima kasih.
                             </div>
 
                             <!-- Tanda Tangan Pejabat BBSPJIS Cover Lingkungan -->
-                            <div style="display: flex; justify-content: flex-end; font-size: 9.5px;">
-                                <div style="text-align: center; width: 45%;">
-                                    <div id="d_jabatan_pejabat_l">{{ @sp_existing.jabatan_pejabat ?: (@default_jabatan_pejabat ?: 'Kepala Bagian Tata Usaha') }}</div>
-                                    <div style="height: 48px;"></div>
-                                    <div class="fw-bold" id="d_pembuat_l">{{ @sp_existing.pejabat_nama ?: (@sp_existing.pembuat_nama ?: (@default_pejabat_nama ?: 'Joko Pratomo')) }}</div>
+                            <div style="display: flex; justify-content: flex-end; font-size: 9.5px; margin-top: 14px; margin-bottom: 18px;">
+                                <div style="text-align: center; width: 40%;">
+                                    <div style="margin-top: 12px; margin-bottom: 6px;" id="d_jabatan_pejabat_l">{{ @sp_existing.jabatan_pejabat ?: (@default_jabatan_pejabat ?: 'Kepala Bagian Tata Usaha') }},</div>
+                                    <div style="height: 68px;"></div>
+                                    <div style="margin-top: 6px; margin-bottom: 12px;" class="fw-bold" id="d_pembuat_l">{{ @sp_existing.pejabat_nama ?: (@sp_existing.pembuat_nama ?: (@default_pejabat_nama ?: 'Joko Pratomo')) }}</div>
                                 </div>
                             </div>
                         </div>
@@ -1560,7 +2053,7 @@
                                 LEMBAR PERSETUJUAN SURAT PENAWARAN
                             </div>
 
-                            <div style="font-size: 9.5px; line-height: 1.45; text-align: justify; margin-bottom: 8px;">
+                            <div style="font-size: 9.5px; line-height: 1.45; text-align: left; margin-bottom: 8px;">
                                 Dengan ini menyatakan bahwa telah membaca, memahami, dan menyetujui Surat Penawaran Balai Besar Standardisasi dan Pelayanan Jasa Industri Selulosa (BBSPJIS) Nomor <strong id="d_ling_p2_nomor_isi">{{ @is_revisi_baru ? @nomor_surat_otomatis : (@sp_existing.nomor_surat ?: @nomor_surat_otomatis) }}</strong> tanggal <strong id="d_ling_p2_tanggal_isi">-</strong>.
                             </div>
                             <div style="font-size: 9.5px; line-height: 1.45; margin-bottom: 8px;">
@@ -1613,12 +2106,27 @@
                             </div>
 
                             <!-- Pejabat Penandatangan BBSPJIS Kanan Bawah Lampiran Lingkungan -->
-                            <div style="display: flex; justify-content: flex-end; font-size: 9.5px; margin-top: 10px;">
-                                <div style="text-align: center; width: 45%;">
-                                    <div id="d_ling_p2_jabatan_pejabat">{{ @sp_existing.jabatan_pejabat ?: (@default_jabatan_pejabat ?: 'Kepala Bagian Tata Usaha') }}</div>
-                                    <div style="height: 48px;"></div>
-                                    <div class="fw-bold" id="d_ling_p2_pejabat">{{ @sp_existing.pejabat_nama ?: (@sp_existing.pembuat_nama ?: (@default_pejabat_nama ?: 'Joko Pratomo')) }}</div>
+                            <div style="display: flex; justify-content: flex-end; font-size: 9.5px; margin-top: 14px; margin-bottom: 18px;">
+                                <div style="text-align: center; width: 40%;">
+                                    <div style="margin-top: 12px; margin-bottom: 6px;" id="d_ling_p2_jabatan_pejabat">{{ @sp_existing.jabatan_pejabat ?: (@default_jabatan_pejabat ?: 'Kepala Bagian Tata Usaha') }},</div>
+                                    <div style="height: 68px;"></div>
+                                    <div style="margin-top: 6px; margin-bottom: 12px;" class="fw-bold" id="d_ling_p2_pejabat">{{ @sp_existing.pejabat_nama ?: (@sp_existing.pembuat_nama ?: (@default_pejabat_nama ?: 'Joko Pratomo')) }}</div>
                                 </div>
+                            </div>
+                        </div>
+
+                        <!-- HALAMAN 3+: BERKAS LAMPIRAN TAMBAHAN USER LINGKUNGAN -->
+                        <div class="doc-sheet ling-page d-none" id="lingPage3">
+                            <div style="text-align: right; font-size: 9px; line-height: 1.35; margin-bottom: 12px;">
+                                <div>Lampiran Tambahan Surat</div>
+                                <div>Nomor : <span id="d_ling_p3_nomor">{{ @is_revisi_baru ? @nomor_surat_otomatis : (@sp_existing.nomor_surat ?: @nomor_surat_otomatis) }}</span></div>
+                                <div>Tanggal : <span id="d_ling_p3_tanggal">-</span></div>
+                            </div>
+                            <div class="text-center fw-bold mb-3" style="font-size: 11px;">
+                                LAMPIRAN DOKUMEN PENDUKUNG / TEKNIS
+                            </div>
+                            <div id="lingPage3Content">
+                                <!-- Rendered dynamically by renderLampiranPreviewOnSheet() -->
                             </div>
                         </div>
                     </check>
@@ -1627,8 +2135,42 @@
             </div>
         </div>
 
-    </div>
 </form>
+
+<!-- ========================================================= -->
+<!-- MODAL POPUP PILIHAN CETAK SURAT PENAWARAN (DENGAN / TANPA KOP) -->
+<!-- ========================================================= -->
+<div class="modal fade" id="modalPilihanCetakKop" tabindex="-1" aria-labelledby="modalPilihanCetakKopLabel" aria-hidden="true" style="z-index: 1065;">
+    <div class="modal-dialog modal-dialog-centered modal-sm" style="max-width: 390px;">
+        <div class="modal-content border-0 shadow rounded-3 overflow-hidden">
+            <div class="modal-header px-3.5 py-3 border-bottom bg-white d-flex align-items-center justify-content-between">
+                <h6 class="modal-title fw-bold text-dark mb-0" id="modalPilihanCetakKopLabel" style="font-size: 0.95rem;">Pilihan Format Cetak</h6>
+                <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body p-3.5 bg-white">
+                <div class="d-flex flex-column gap-2.5">
+                    <!-- Opsi 1: Dengan Kop -->
+                    <label class="kop-select-option" id="itemKopWith" for="optKopSurat1" ondblclick="konfirmasiCetakSp()">
+                        <input class="form-check-input kop-radio-input" type="radio" name="pilihan_kop_cetak" id="optKopSurat1" value="1" checked onchange="updateKopSelectionUI()">
+                        <span class="kop-select-label">Dengan KOP surat BBSPJIS</span>
+                    </label>
+
+                    <!-- Opsi 2: Tanpa Kop -->
+                    <label class="kop-select-option" id="itemKopWithout" for="optKopSurat2" ondblclick="konfirmasiCetakSp()">
+                        <input class="form-check-input kop-radio-input" type="radio" name="pilihan_kop_cetak" id="optKopSurat2" value="0" onchange="updateKopSelectionUI()">
+                        <span class="kop-select-label">Tanpa kop surat (kosongan)</span>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer px-3.5 py-2.5 border-top bg-light d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-light btn-sm border px-3 py-1.5 fw-medium text-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-primary btn-sm fw-semibold px-3.5 py-1.5 d-inline-flex align-items-center gap-1.5" onclick="konfirmasiCetakSp()">
+                    <i class="bi bi-printer"></i> Cetak
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- ========================================================= -->
 <!-- MODAL PRATINJAU DOKUMEN PROPOSAL (PURE CRISP PDF VIEWER)  -->
@@ -1828,7 +2370,7 @@ function updateDurasiHari(el) {
 }
 
 function switchLingPage(page) {
-    for (var i = 1; i <= 2; i++) {
+    for (var i = 1; i <= 3; i++) {
         var pageEl = document.getElementById('lingPage' + i);
         var btnEl = document.getElementById('btnLingPage' + i);
         if (pageEl) {
@@ -1848,10 +2390,19 @@ function switchLingPage(page) {
             }
         }
     }
+    if (page === 3) {
+        var contentEl = document.getElementById('lingPage3Content');
+        if (contentEl && !contentEl.innerHTML.trim()) {
+            var existingPath = '{{ !empty(@lampiran_user_existing) ? @lampiran_user_existing : "" }}';
+            if (existingPath) {
+                renderLampiranPreviewOnSheet(existingPath);
+            }
+        }
+    }
 }
 
 function switchSelPage(page) {
-    for (var i = 1; i <= 2; i++) {
+    for (var i = 1; i <= 3; i++) {
         var pageEl = document.getElementById('selPage' + i);
         var btnEl = document.getElementById('btnSelPage' + i);
         if (pageEl) {
@@ -1871,7 +2422,64 @@ function switchSelPage(page) {
             }
         }
     }
+    if (page === 3) {
+        var contentEl = document.getElementById('selPage3Content');
+        if (contentEl && !contentEl.innerHTML.trim()) {
+            var existingPath = '{{ !empty(@lampiran_user_existing) ? @lampiran_user_existing : "" }}';
+            if (existingPath) {
+                renderLampiranPreviewOnSheet(existingPath);
+            }
+        }
+    }
 }
+
+function sisipkanKeRuangLingkup(teks) {
+    var ta = document.getElementById('input_ruang_lingkup');
+    if (!ta) return;
+    var curVal = ta.value.trim();
+    if (curVal.length > 0) {
+        ta.value = curVal + "\n- " + teks;
+    } else {
+        ta.value = "- " + teks;
+    }
+    ta.dispatchEvent(new Event('input', { bubbles: true }));
+    if (typeof updateSpPreview === 'function') {
+        updateSpPreview();
+    }
+    if (typeof Swal !== 'undefined') {
+        const Toast = Swal.mixin({
+            toast: true,
+            timer: 2000,
+            position: 'top-end',
+            showConfirmButton: false,
+            timerProgressBar: true
+        });
+        Toast.fire({
+            icon: 'success',
+            title: 'Catatan disisipkan ke Rincian Penawaran'
+        });
+    }
+}
+
+// Delegated listener for sisipkan catatan
+document.addEventListener('click', function(e) {
+    var btn = e.target.closest('.btn-sisip-catatan');
+    if (btn) {
+        e.preventDefault();
+        var prefix = btn.getAttribute('data-prefix') || '';
+        var catatan = btn.getAttribute('data-catatan') || '';
+        if (!catatan) {
+            var container = btn.closest('.rounded-2');
+            if (container) {
+                var textEl = container.querySelector('.text-dark');
+                if (textEl) catatan = textEl.textContent.trim();
+            }
+        }
+        if (catatan) {
+            sisipkanKeRuangLingkup(prefix ? (prefix + ': ' + catatan) : catatan);
+        }
+    }
+});
 
 function insertNumberingPattern(type) {
     var ta = document.getElementById('input_ruang_lingkup');
@@ -2174,7 +2782,7 @@ function syncLivePreview() {
 
     // 1. Nomor Surat
     var valNomor = (elNomor && elNomor.value.trim()) ? elNomor.value.trim() : '-';
-    ['d_nomor', 'd_nomor_l', 'd_nomor_l2', 'd_sel_nomor', 'd_sel_p2_nomor', 'd_sel_p2_nomor_isi', 'd_ling_p2_nomor', 'd_ling_p2_nomor_isi'].forEach(function(id) {
+    ['d_nomor', 'd_nomor_l', 'd_nomor_l2', 'd_sel_nomor', 'd_sel_p2_nomor', 'd_sel_p2_nomor_isi', 'd_ling_p2_nomor', 'd_ling_p2_nomor_isi', 'd_sel_p3_nomor', 'd_ling_p3_nomor'].forEach(function(id) {
         var el = document.getElementById(id);
         if (el) el.textContent = valNomor;
     });
@@ -2187,7 +2795,7 @@ function syncLivePreview() {
         var el = document.getElementById(id);
         if (el) el.textContent = 'Bandung, ' + formattedTgl;
     });
-    ['d_tanggal_l2', 'd_sel_p2_tanggal', 'd_sel_p2_tanggal_isi', 'd_ling_p2_tanggal', 'd_ling_p2_tanggal_isi'].forEach(function(id) {
+    ['d_tanggal_l2', 'd_sel_p2_tanggal', 'd_sel_p2_tanggal_isi', 'd_ling_p2_tanggal', 'd_ling_p2_tanggal_isi', 'd_sel_p3_tanggal', 'd_ling_p3_tanggal'].forEach(function(id) {
         var el = document.getElementById(id);
         if (el) el.textContent = (id === 'd_tanggal_l2') ? formattedBulanTahun : formattedTgl;
     });
@@ -2322,16 +2930,16 @@ function syncLivePreview() {
             if (mPoint) {
                 html += '<div class="d-flex gap-2 mb-1 mt-1.5">' +
                     '<span style="width: 18px; flex-shrink: 0; font-weight: bold;">' + mPoint[1] + '.</span>' +
-                    '<div style="text-align: justify;">' + escapeHtml(mPoint[2]) + '</div>' +
+                    '<div style="text-align: left;">' + escapeHtml(mPoint[2]) + '</div>' +
                 '</div>';
             } else if (mSub) {
                 var bullet = mSub[1];
                 html += '<div class="d-flex gap-2 mb-0.5 ms-4">' +
                     '<span style="width: 20px; flex-shrink: 0; font-weight: 500;">' + bullet + '</span>' +
-                    '<div style="text-align: justify;">' + escapeHtml(mSub[2]) + '</div>' +
+                    '<div style="text-align: left;">' + escapeHtml(mSub[2]) + '</div>' +
                 '</div>';
             } else {
-                html += '<div class="mb-1" style="text-align: justify;">' + escapeHtml(trimmed) + '</div>';
+                html += '<div class="mb-1" style="text-align: left;">' + escapeHtml(trimmed) + '</div>';
             }
         });
         dSelPoinContainer.innerHTML = html;
@@ -2365,16 +2973,16 @@ function syncLivePreview() {
                     }
                     htmlLing += '<div class="d-flex gap-2 mb-1 mt-1.5">' +
                         '<span style="width: 18px; flex-shrink: 0; font-weight: bold;">' + mPoint[1] + '.</span>' +
-                        '<div style="text-align: justify;">' + escapeHtml(mPoint[2]) + '</div>' +
+                        '<div style="text-align: left;">' + escapeHtml(mPoint[2]) + '</div>' +
                     '</div>';
                 } else if (mSub) {
                     var bullet = mSub[1];
                     htmlLing += '<div class="d-flex gap-2 mb-0.5 ms-4">' +
                         '<span style="width: 20px; flex-shrink: 0; font-weight: 500;">' + bullet + '</span>' +
-                        '<div style="text-align: justify;">' + escapeHtml(mSub[2]) + '</div>' +
+                        '<div style="text-align: left;">' + escapeHtml(mSub[2]) + '</div>' +
                     '</div>';
                 } else {
-                    htmlLing += '<div class="mb-1" style="text-align: justify;">' + escapeHtml(trimmed) + '</div>';
+                    htmlLing += '<div class="mb-1" style="text-align: left;">' + escapeHtml(trimmed) + '</div>';
                 }
             });
             dLingPoinContainer.innerHTML = htmlLing;
@@ -2478,6 +3086,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Jalankan sinkronisasi awal saat halaman dimuat
     syncLivePreview();
+    <check if="{{ !empty(@lampiran_user_existing) }}">
+    renderLampiranPreviewOnSheet('{{ @lampiran_user_existing }}');
+    </check>
+
+    // Pastikan pratinjau selalu membuka Halaman 1 (Cover Surat) saat pertama dimuat
+    if ('{{ @order.jenis_layanan_opti }}' === 'lingkungan') {
+        switchLingPage(1);
+    } else {
+        switchSelPage(1);
+    }
 });
 
 // ========================================================
@@ -2811,4 +3429,522 @@ function initPenandatanganTomSelect() {
         ts.setValue(initialSelected, true);
     }
 }
-</script>
+
+function handleLampiranUserChange(input) {
+    if (!input || !input.files || !input.files[0]) return;
+    var file = input.files[0];
+    var btn = document.getElementById('btnTriggerUploadLampiranUser');
+    var label = document.getElementById('labelUploadLampiranUser');
+    var icon = document.getElementById('iconUploadLampiranUser');
+
+    if (file.size > 10 * 1024 * 1024) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({ icon: 'warning', title: 'Ukuran Terlalu Besar', text: 'Ukuran file lampiran maksimal 10 MB.' });
+        } else {
+            alert('Ukuran file lampiran maksimal 10 MB.');
+        }
+        input.value = '';
+        return;
+    }
+
+    var origLabel = label ? label.textContent : 'Upload Lampiran';
+    if (btn) btn.disabled = true;
+    if (label) label.textContent = 'Menggabungkan...';
+    if (icon) icon.className = 'bi bi-arrow-repeat text-primary';
+
+    var formData = new FormData();
+    formData.append('file_lampiran_user', file);
+    <check if="{{ @sp_existing && @sp_existing.id }}">
+    formData.append('sp_id', '{{ @sp_existing.id }}');
+    </check>
+
+    fetch('{{ @BASE }}/order/{{ @order.id }}/penawaran/upload-lampiran', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+        body: formData
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+        if (btn) btn.disabled = false;
+        if (icon) icon.className = 'bi bi-paperclip text-primary';
+        if (data && data.success) {
+            if (label) label.textContent = 'Ganti Lampiran (Hal. 3+)';
+            if (btn) btn.title = 'Lampiran menyatu di Hal. 3+: ' + (data.file_name || file.name);
+
+            // Render langsung berkas lampiran ke lembar Hal 3 Live Preview
+            renderLampiranPreviewOnSheet(data.file_path, data.file_name || file.name);
+
+            // Buka tab Halaman 3 secara otomatis agar pengguna dapat melihatnya langsung di preview
+            if ('{{ @order.jenis_layanan_opti }}' === 'lingkungan') {
+                switchLingPage(3);
+            } else {
+                switchSelPage(3);
+            }
+
+            var spPdfUrlBase = '{{ @BASE }}/order/{{ @order.id }}/penawaran/cetak{{ @sp_existing && @sp_existing.id ? ("?id=" . @sp_existing.id . "&t=") : "?t=" }}' + Date.now();
+            var btnPrevMain = document.getElementById('btnPreviewSpPdfMain');
+            if (btnPrevMain) btnPrevMain.setAttribute('data-preview-pdf', spPdfUrlBase + '&kop=1');
+
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: 'Lampiran digabung ke Hal. 3+',
+                    text: data.file_name || file.name,
+                    showConfirmButton: false,
+                    timer: 2800
+                });
+            }
+        } else {
+            if (label) label.textContent = origLabel;
+            var errMsg = (data && data.message) ? data.message : 'Gagal mengunggah lampiran.';
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({ icon: 'error', title: 'Gagal Mengunggah', text: errMsg });
+            } else {
+                alert(errMsg);
+            }
+        }
+    })
+    .catch(function() {
+        if (btn) btn.disabled = false;
+        if (icon) icon.className = 'bi bi-paperclip text-primary';
+        if (label) label.textContent = 'Upload Lampiran';
+    });
+}
+
+function renderLampiranPreviewOnSheet(filePath, fileName) {
+    if (!filePath) return;
+    var ext = filePath.split('.').pop().toLowerCase();
+    var isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].indexOf(ext) !== -1;
+    var isPdf = (ext === 'pdf');
+    var isWord = (ext === 'doc' || ext === 'docx');
+    var fileUrl = (filePath.indexOf('http') === 0 || filePath.indexOf('/') === 0) ? filePath : ('{{ @BASE }}/' + filePath.replace(/^\/+/, ''));
+    var cleanFileName = fileName || filePath.split('/').pop().split('?')[0];
+
+    document.body.classList.add('has-sp-lampiran');
+
+    var containers = [
+        { pageId: 'selPage3', contentId: 'selPage3Content', tabId: 'btnSelPage3' },
+        { pageId: 'lingPage3', contentId: 'lingPage3Content', tabId: 'btnLingPage3' }
+    ];
+
+    var cardHtml = '';
+    if (isPdf) {
+        cardHtml = `
+            <div class="card border border-primary-subtle shadow-xs rounded-3 p-4 my-3 text-center mx-auto" style="max-width: 520px; background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);">
+                <div class="d-inline-flex align-items-center justify-content-center bg-white shadow-xs rounded-circle mx-auto mb-3" style="width: 72px; height: 72px; border: 2px solid #e2e8f0;">
+                    <i class="bi bi-file-earmark-pdf-fill text-danger" style="font-size: 2.2rem;"></i>
+                </div>
+                <h6 class="fw-bold text-dark mb-3 text-break" style="font-size: 0.95rem;">` + cleanFileName + `</h6>
+                <div class="p-3 bg-white border rounded-2 text-start small mb-3 mx-auto" style="max-width: 460px; font-size: 0.78rem; line-height: 1.5; color: #475569;">
+                    <div class="d-flex align-items-start gap-2">
+                        <i class="bi bi-info-circle-fill text-primary mt-0.5"></i>
+                        <div>
+                            <strong>Penggabungan Otomatis:</strong> Seluruh halaman berkas PDF ini akan otomatis disambungkan mulai <strong>Halaman 3 dan seterusnya</strong> saat Anda mencetak atau mengunduh Surat Penawaran resmi BBSPJIS.
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
+                    <button type="button" class="btn btn-primary btn-sm px-3 py-1.5 shadow-sm d-inline-flex align-items-center gap-1.5 fw-semibold" onclick="document.getElementById('btnPreviewSpPdfMain').click()">
+                        <i class="bi bi-eye-fill"></i> Lihat di PDF Lengkap
+                    </button>
+                    <a href="` + fileUrl + `" target="_blank" class="btn btn-outline-secondary btn-sm px-3 py-1.5 bg-white d-inline-flex align-items-center gap-1.5" title="Buka berkas asli di tab baru">
+                        <i class="bi bi-box-arrow-up-right"></i> Buka File Asli
+                    </a>
+                    <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-1.5 bg-white d-inline-flex align-items-center gap-1.5" onclick="document.getElementById('inputFileLampiranUser').click()">
+                        <i class="bi bi-arrow-repeat text-primary"></i> Ganti File
+                    </button>
+                    <button type="button" class="btn btn-outline-danger btn-sm px-2.5 py-1.5 bg-white d-inline-flex align-items-center gap-1" onclick="hapusLampiranUser()" title="Hapus Berkas Lampiran">
+                        <i class="bi bi-trash3"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    } else if (isWord) {
+        cardHtml = `
+            <div class="card border border-primary-subtle shadow-xs rounded-3 p-4 my-3 text-center mx-auto" style="max-width: 520px; background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);">
+                <div class="d-inline-flex align-items-center justify-content-center bg-white shadow-xs rounded-circle mx-auto mb-3" style="width: 72px; height: 72px; border: 2px solid #e2e8f0;">
+                    <i class="bi bi-file-earmark-word-fill" style="font-size: 2.2rem; color: #185abd;"></i>
+                </div>
+                <h6 class="fw-bold text-dark mb-3 text-break" style="font-size: 0.95rem;">` + cleanFileName + `</h6>
+                <div class="p-3 bg-white border rounded-2 text-start small mb-3 mx-auto" style="max-width: 460px; font-size: 0.78rem; line-height: 1.5; color: #475569;">
+                    <div class="d-flex align-items-start gap-2">
+                        <i class="bi bi-info-circle-fill text-primary mt-0.5"></i>
+                        <div>
+                            <strong>Dokumen Microsoft Word Terlampir:</strong> Berkas Word (.` + ext + `) ini tersimpan sebagai dokumen lampiran pendukung resmi dan siap diunduh oleh Tim Mitra maupun Klien.
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
+                    <a href="` + fileUrl + `" target="_blank" download class="btn btn-primary btn-sm px-3 py-1.5 shadow-sm d-inline-flex align-items-center gap-1.5 fw-semibold" title="Unduh Berkas Word">
+                        <i class="bi bi-download"></i> Unduh Berkas Word
+                    </a>
+                    <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-1.5 bg-white d-inline-flex align-items-center gap-1.5" onclick="document.getElementById('inputFileLampiranUser').click()">
+                        <i class="bi bi-arrow-repeat text-primary"></i> Ganti File
+                    </button>
+                    <button type="button" class="btn btn-outline-danger btn-sm px-2.5 py-1.5 bg-white d-inline-flex align-items-center gap-1" onclick="hapusLampiranUser()" title="Hapus Berkas Lampiran">
+                        <i class="bi bi-trash3"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    } else if (isImage) {
+        cardHtml = `
+            <div class="text-center py-2">
+                <div class="mb-3 p-2 bg-white border rounded shadow-xs d-inline-block" style="max-width: 100%;">
+                    <img src="` + fileUrl + `?t=` + Date.now() + `" class="img-fluid rounded" style="max-height: 140mm; max-width: 100%; object-fit: contain;" alt="Lampiran">
+                </div>
+                <div class="card border border-primary-subtle shadow-xs rounded-3 p-3 my-2 text-center mx-auto" style="max-width: 500px; background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);">
+                    <h6 class="fw-bold text-dark small mb-3 text-break">` + cleanFileName + `</h6>
+                    <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
+                        <button type="button" class="btn btn-primary btn-sm px-3 py-1.5 shadow-sm d-inline-flex align-items-center gap-1.5 fw-semibold" onclick="document.getElementById('btnPreviewSpPdfMain').click()">
+                            <i class="bi bi-eye-fill"></i> Lihat di PDF Lengkap
+                        </button>
+                        <a href="` + fileUrl + `" target="_blank" class="btn btn-outline-secondary btn-sm px-3 py-1.5 bg-white d-inline-flex align-items-center gap-1.5" title="Buka gambar asli di tab baru">
+                            <i class="bi bi-box-arrow-up-right"></i> Buka Gambar Asli
+                        </a>
+                        <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-1.5 bg-white d-inline-flex align-items-center gap-1.5" onclick="document.getElementById('inputFileLampiranUser').click()">
+                            <i class="bi bi-arrow-repeat text-primary"></i> Ganti Gambar
+                        </button>
+                        <button type="button" class="btn btn-outline-danger btn-sm px-2.5 py-1.5 bg-white d-inline-flex align-items-center gap-1" onclick="hapusLampiranUser()" title="Hapus Lampiran">
+                            <i class="bi bi-trash3"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    } else {
+        cardHtml = `
+            <div class="card border border-primary-subtle shadow-xs rounded-3 p-4 my-3 text-center mx-auto" style="max-width: 520px; background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);">
+                <div class="d-inline-flex align-items-center justify-content-center bg-white shadow-xs rounded-circle mx-auto mb-3" style="width: 72px; height: 72px; border: 2px solid #e2e8f0;">
+                    <i class="bi bi-file-earmark-text-fill text-primary" style="font-size: 2.2rem;"></i>
+                </div>
+                <h6 class="fw-bold text-dark mb-3 text-break" style="font-size: 0.95rem;">` + cleanFileName + `</h6>
+                <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
+                    <button type="button" class="btn btn-primary btn-sm px-3 py-1.5 shadow-sm d-inline-flex align-items-center gap-1.5 fw-semibold" onclick="document.getElementById('btnPreviewSpPdfMain').click()">
+                        <i class="bi bi-eye-fill"></i> Lihat di PDF Lengkap
+                    </button>
+                    <a href="` + fileUrl + `" target="_blank" class="btn btn-outline-secondary btn-sm px-3 py-1.5 bg-white d-inline-flex align-items-center gap-1.5">
+                        <i class="bi bi-download"></i> Unduh Berkas
+                    </a>
+                    <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-1.5 bg-white d-inline-flex align-items-center gap-1.5" onclick="document.getElementById('inputFileLampiranUser').click()">
+                        <i class="bi bi-arrow-repeat text-primary"></i> Ganti Berkas
+                    </button>
+                    <button type="button" class="btn btn-outline-danger btn-sm px-2.5 py-1.5 bg-white d-inline-flex align-items-center gap-1" onclick="hapusLampiranUser()" title="Hapus Berkas">
+                        <i class="bi bi-trash3"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    containers.forEach(function(item) {
+        var pageEl = document.getElementById(item.pageId);
+        var contentEl = document.getElementById(item.contentId);
+        var tabBtn = document.getElementById(item.tabId);
+
+        if (tabBtn) tabBtn.classList.remove('d-none');
+        if (pageEl) pageEl.classList.add('has-content');
+        if (contentEl) contentEl.innerHTML = cardHtml;
+    });
+}
+
+function hapusLampiranUser() {
+    var spIdParam = '{{ @sp_existing && @sp_existing.id ? @sp_existing.id : 0 }}';
+    var orderId = '{{ @order.id }}';
+
+    var executeHapus = function() {
+        var formData = new FormData();
+        if (spIdParam && spIdParam !== '0') {
+            formData.append('sp_id', spIdParam);
+        }
+
+        fetch('{{ @BASE }}/order/' + orderId + '/penawaran/hapus-lampiran', {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+            body: formData
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            if (data && data.success) {
+                // Sembunyikan tab dan sheet lampiran
+                var selBtn = document.getElementById('btnSelPage3');
+                var lingBtn = document.getElementById('btnLingPage3');
+                var selPage = document.getElementById('selPage3');
+                var lingPage = document.getElementById('lingPage3');
+                if (selBtn) selBtn.classList.add('d-none');
+                if (lingBtn) lingBtn.classList.add('d-none');
+                if (selPage) selPage.classList.add('d-none');
+                if (lingPage) lingPage.classList.add('d-none');
+
+                var selContent = document.getElementById('selPage3Content');
+                var lingContent = document.getElementById('lingPage3Content');
+                if (selContent) selContent.innerHTML = '';
+                if (lingContent) lingContent.innerHTML = '';
+
+                // Kembalikan view ke Halaman 1
+                if ('{{ @order.jenis_layanan_opti }}' === 'lingkungan') {
+                    switchLingPage(1);
+                } else {
+                    switchSelPage(1);
+                }
+
+                // Reset label tombol upload lampiran
+                var label = document.getElementById('labelUploadLampiranUser');
+                var btn = document.getElementById('btnTriggerUploadLampiranUser');
+                var icon = document.getElementById('iconUploadLampiranUser');
+                if (label) label.textContent = 'Upload Lampiran';
+                if (btn) btn.title = 'Opsional: Unggah lampiran untuk digabungkan ke Halaman 3+ Surat Penawaran (PDF/JPG/PNG)';
+                if (icon) icon.className = 'bi bi-paperclip text-primary';
+
+                // Reset input file
+                var inp = document.getElementById('inputFileLampiranUser');
+                if (inp) inp.value = '';
+
+                // Refresh URL preview PDF modal
+                var spPdfUrlBase = '{{ @BASE }}/order/' + orderId + '/penawaran/cetak{{ @sp_existing && @sp_existing.id ? ("?id=" . @sp_existing.id . "&t=") : "?t=" }}' + Date.now();
+                var btnPrevMain = document.getElementById('btnPreviewSpPdfMain');
+                if (btnPrevMain) btnPrevMain.setAttribute('data-preview-pdf', spPdfUrlBase + '&kop=1');
+
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: 'Lampiran berhasil dihapus',
+                        showConfirmButton: false,
+                        timer: 2000
+                    });
+                }
+            } else {
+                alert((data && data.message) ? data.message : 'Gagal menghapus lampiran.');
+            }
+        })
+        .catch(function(err) {
+            console.error('Error removing lampiran:', err);
+            alert('Terjadi kesalahan saat menghapus lampiran.');
+        });
+    };
+
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: 'Hapus Lampiran?',
+            text: 'Dokumen lampiran akan dilepas dari surat penawaran ini.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Ya, Hapus',
+            cancelButtonText: 'Batal'
+        }).then(function(result) {
+            if (result.isConfirmed) {
+                executeHapus();
+            }
+        });
+    } else {
+        if (confirm('Apakah Anda yakin ingin menghapus lampiran ini?')) {
+            executeHapus();
+        }
+    }
+}
+
+async function unduhSpPdf(withKop) {
+    var spIdParam = '{{ @sp_existing && @sp_existing.id ? ("?id=" . @sp_existing.id) : "" }}';
+    var sep = spIdParam ? '&' : '?';
+    var pdfUrl = '{{ @BASE }}/order/{{ @order.id }}/penawaran/cetak' + spIdParam + sep + 'kop=' + (withKop ? '1' : '0') + '&t=' + Date.now();
+
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: 'Menyiapkan Unduhan PDF...',
+            text: 'Menggabungkan dokumen penawaran dan lampiran...',
+            allowOutsideClick: false,
+            didOpen: function() { Swal.showLoading(); }
+        });
+    }
+
+    try {
+        var apiUrl = '{{ @BASE }}/api/doc-preview?url=' + encodeURIComponent(pdfUrl) + '&t=' + Date.now();
+        var res = await fetch(apiUrl, { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        var json = await res.json();
+        if (!json.success || !json.base64) throw new Error(json.message || 'Gagal memproses dokumen');
+
+        var bytes = base64ToUint8ArrayUniversal(json.base64);
+
+        if (json.attachment_base64 && json.attachment_ext === 'pdf') {
+            try {
+                var PDFLib = await ensurePdfLibLoaded();
+                var mainPdfDoc = await PDFLib.PDFDocument.load(bytes);
+                var attachBytes = base64ToUint8ArrayUniversal(json.attachment_base64);
+                var attachPdfDoc = await PDFLib.PDFDocument.load(attachBytes, { ignoreEncryption: true });
+                var copiedPages = await mainPdfDoc.copyPages(attachPdfDoc, attachPdfDoc.getPageIndices());
+                copiedPages.forEach(function(p) { mainPdfDoc.addPage(p); });
+                var mergedBytes = await mainPdfDoc.save();
+                bytes = new Uint8Array(mergedBytes);
+            } catch (mergeErr) {
+                console.warn('Merge PDF lampiran error:', mergeErr);
+            }
+        }
+
+        var blob = new Blob([bytes], { type: 'application/pdf' });
+        var blobUrl = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = json.filename || ('Surat_Penawaran_' + (withKop ? '' : 'Tanpa_Kop_') + '{{ @order.id }}.pdf');
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(function() { URL.revokeObjectURL(blobUrl); }, 1000);
+
+        if (typeof Swal !== 'undefined') {
+            Swal.close();
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: 'PDF Berhasil Diunduh',
+                showConfirmButton: false,
+                timer: 2000
+            });
+        }
+    } catch (e) {
+        console.error('Download error:', e);
+        if (typeof Swal !== 'undefined') {
+            Swal.close();
+        }
+        window.location.href = pdfUrl + '&download=1';
+    }
+}
+
+function unduhSpWord() {
+    var orderId = '{{ @order.id }}';
+    var formAction = '{{ @BASE }}/order/' + orderId + '/penawaran/word';
+
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: 'Menyiapkan Unduhan Word...',
+            text: 'Mengekspor berkas surat penawaran ke format Microsoft Word (.docx)...',
+            allowOutsideClick: false,
+            didOpen: function() { Swal.showLoading(); }
+        });
+    }
+
+    var form = document.createElement('form');
+    form.method = 'POST';
+    form.action = formAction;
+    form.style.display = 'none';
+
+    var fieldNames = [
+        'nomor_surat', 'tanggal_surat', 'perusahaan', 'nama', 'alamat',
+        'hal', 'lampiran_teks', 'nominal_penawaran', 'durasi_hari',
+        'ruang_lingkup', 'jabatan_pejabat', 'pejabat_nama', 'spm_layanan'
+    ];
+    fieldNames.forEach(function(fieldName) {
+        var input = document.querySelector('[name="' + fieldName + '"]');
+        if (input) {
+            var hidden = document.createElement('input');
+            hidden.type = 'hidden';
+            hidden.name = fieldName;
+            hidden.value = input.value;
+            form.appendChild(hidden);
+        }
+    });
+
+    var spIdParam = '{{ @sp_existing && @sp_existing.id ? @sp_existing.id : 0 }}';
+    if (spIdParam && spIdParam !== '0') {
+        var hiddenId = document.createElement('input');
+        hiddenId.type = 'hidden';
+        hiddenId.name = 'id';
+        hiddenId.value = spIdParam;
+        form.appendChild(hiddenId);
+    }
+
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+
+    setTimeout(function() {
+        if (typeof Swal !== 'undefined') {
+            Swal.close();
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: 'Dokumen Word Berhasil Diunduh',
+                showConfirmButton: false,
+                timer: 2000
+            });
+        }
+    }, 1200);
+}
+
+function updateKopSelectionUI() {
+    var r1 = document.getElementById('optKopSurat1');
+    var r2 = document.getElementById('optKopSurat2');
+    var i1 = document.getElementById('itemKopWith');
+    var i2 = document.getElementById('itemKopWithout');
+    if (r1 && i1) {
+        if (r1.checked) i1.classList.add('active');
+        else i1.classList.remove('active');
+    }
+    if (r2 && i2) {
+        if (r2.checked) i2.classList.add('active');
+        else i2.classList.remove('active');
+    }
+}
+
+function konfirmasiCetakSp() {
+    var r1 = document.getElementById('optKopSurat1');
+    var withKop = r1 ? r1.checked : true;
+    eksekusiCetakSp(withKop);
+}
+
+function bukaModalCetakKop() {
+    if (typeof syncLivePreview === 'function') {
+        syncLivePreview();
+    }
+    updateKopSelectionUI();
+    var modalEl = document.getElementById('modalPilihanCetakKop');
+    if (modalEl) {
+        var modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+        modal.show();
+    } else {
+        eksekusiCetakSp(true);
+    }
+}
+
+function eksekusiCetakSp(withKop) {
+    var modalEl = document.getElementById('modalPilihanCetakKop');
+    if (modalEl) {
+        var modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+    }
+
+    if (withKop) {
+        document.body.classList.remove('sp-print-tanpa-kop');
+    } else {
+        document.body.classList.add('sp-print-tanpa-kop');
+    }
+
+    var sheetSel3 = document.getElementById('selPage3Content');
+    var sheetLing3 = document.getElementById('lingPage3Content');
+    var hasLampiranContent = (sheetSel3 && sheetSel3.innerHTML.trim() !== '') || (sheetLing3 && sheetLing3.innerHTML.trim() !== '') || ('{{ !empty(@lampiran_user_existing) ? "1" : "0" }}' === '1');
+    if (hasLampiranContent) {
+        document.body.classList.add('has-sp-lampiran');
+    }
+
+    // Beri jeda kecil agar DOM selesai merender style sebelum dialog print browser dibuka
+    setTimeout(function() {
+        window.print();
+        // Kembalikan ke mode normal setelah dialog print selesai
+        setTimeout(function() {
+            document.body.classList.remove('sp-print-tanpa-kop');
+        }, 1200);
+    }, 300);
+}
+
+function cetakSuratPenawaran() {
+    bukaModalCetakKop();
+}
+</script>
