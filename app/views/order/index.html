@@ -377,10 +377,15 @@
                                                 </div>
                                                 <check if="{{ @ord.is_unlocked_edit }}">
                                                     <div class="mt-1">
-                                                        <span class="badge bg-warning text-dark border border-warning-subtle d-inline-flex align-items-center gap-1" style="font-size: 0.68rem;" title="Order ini dibuka izin editnya oleh Super Admin ({{ @ord.unlocked_by_name ?: 'Superadmin' }}). Batas waktu: {{ @ord.unlocked_until_formatted ?: '-' }}. Alasan: {{ @ord.unlocked_reason ?: '-' }}">
-                                                            <i class="bi bi-unlock-fill"></i> Unlocked
+                                                        <span class="badge bg-warning text-dark border border-warning-subtle d-inline-flex align-items-center gap-1" style="font-size: 0.68rem;" title="Izin edit dibuka oleh Super Admin ({{ @ord.unlocked_by_name ?: 'Superadmin' }}). Batas waktu: {{ @ord.unlocked_until_formatted ?: '-' }}. Alasan: {{ @ord.unlocked_reason ?: '-' }}">
+                                                            <i class="bi bi-unlock-fill"></i>
                                                             <check if="{{ !empty(@ord.unlocked_countdown_label) }}">
-                                                                <span class="badge bg-dark text-warning px-1 py-0 ms-0.5 rounded-pill font-monospace" style="font-size: 0.65rem;"><i class="bi bi-stopwatch me-0.5"></i>{{ @ord.unlocked_countdown_label }}</span>
+                                                                <true>
+                                                                    <span class="badge bg-dark text-warning px-1 py-0 ms-0.5 rounded-pill font-monospace" style="font-size: 0.65rem;"><i class="bi bi-stopwatch me-0.5"></i>{{ @ord.unlocked_countdown_label }}</span>
+                                                                </true>
+                                                                <false>
+                                                                    <span class="badge bg-dark text-warning px-1 py-0 ms-0.5 rounded-pill font-monospace" style="font-size: 0.65rem;"><i class="bi bi-stopwatch me-0.5"></i>Aktif</span>
+                                                                </false>
                                                             </check>
                                                         </span>
                                                     </div>
@@ -504,10 +509,15 @@
                                                 </div>
                                                 <check if="{{ @ord.is_unlocked_edit }}">
                                                     <div class="mt-1">
-                                                        <span class="badge bg-warning text-dark border border-warning-subtle d-inline-flex align-items-center gap-1" style="font-size: 0.68rem;" title="Order ini dibuka izin editnya oleh Super Admin ({{ @ord.unlocked_by_name ?: 'Superadmin' }}). Batas waktu: {{ @ord.unlocked_until_formatted ?: '-' }}. Alasan: {{ @ord.unlocked_reason ?: '-' }}">
-                                                            <i class="bi bi-unlock-fill"></i> Unlocked
+                                                        <span class="badge bg-warning text-dark border border-warning-subtle d-inline-flex align-items-center gap-1" style="font-size: 0.68rem;" title="Izin edit dibuka oleh Super Admin ({{ @ord.unlocked_by_name ?: 'Superadmin' }}). Batas waktu: {{ @ord.unlocked_until_formatted ?: '-' }}. Alasan: {{ @ord.unlocked_reason ?: '-' }}">
+                                                            <i class="bi bi-unlock-fill"></i>
                                                             <check if="{{ !empty(@ord.unlocked_countdown_label) }}">
-                                                                <span class="badge bg-dark text-warning px-1 py-0 ms-0.5 rounded-pill font-monospace" style="font-size: 0.65rem;"><i class="bi bi-stopwatch me-0.5"></i>{{ @ord.unlocked_countdown_label }}</span>
+                                                                <true>
+                                                                    <span class="badge bg-dark text-warning px-1 py-0 ms-0.5 rounded-pill font-monospace" style="font-size: 0.65rem;"><i class="bi bi-stopwatch me-0.5"></i>{{ @ord.unlocked_countdown_label }}</span>
+                                                                </true>
+                                                                <false>
+                                                                    <span class="badge bg-dark text-warning px-1 py-0 ms-0.5 rounded-pill font-monospace" style="font-size: 0.65rem;"><i class="bi bi-stopwatch me-0.5"></i>Aktif</span>
+                                                                </false>
                                                             </check>
                                                         </span>
                                                     </div>
