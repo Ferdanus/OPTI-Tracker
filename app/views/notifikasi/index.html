@@ -201,19 +201,20 @@
     opacity: 0.65;
 }
 
-/* ============ ANIMASI KETIKA PINDAH HALAMAN ============ */
+/* ============ ANIMASI KETIKA PINDAH HALAMAN (HALUS & TANPA LONCATAN TINGGI) ============ */
+#fullNotifList {
+    min-height: 420px;
+}
 @keyframes notifPageTransition {
     0% {
-        opacity: 0;
-        transform: translateY(10px);
+        opacity: 0.25;
     }
     100% {
         opacity: 1;
-        transform: translateY(0);
     }
 }
 .notif-page-animating {
-    animation: notifPageTransition 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: notifPageTransition 0.16s ease-out forwards;
 }
 
 /* ============ JUMP TO PAGE WIDGET ============ */
@@ -569,13 +570,22 @@
             html += '<a class="page-link shadow-none" href="javascript:void(0)" onclick="goToPage(' + (currentPage - 1) + ', this)" title="Halaman Sebelumnya">&laquo;</a>';
             html += '</li>';
 
-            // Nomor Halaman
+            // Nomor Halaman (Kompak & Konsisten: 1,2,3...9 atau 1...4,5,6...9 atau 1...7,8,9)
             var pages = [];
-            for (var p = 1; p <= totalPages; p++) {
-                if (p === 1 || p === totalPages || (p >= currentPage - 2 && p <= currentPage + 2)) {
+            if (totalPages <= 5) {
+                for (var p = 1; p <= totalPages; p++) {
                     pages.push(p);
-                } else if (pages[pages.length - 1] !== '...') {
-                    pages.push('...');
+                }
+            } else {
+                if (currentPage <= 3) {
+                    // Posisi awal: 1, 2, 3, ..., 9
+                    pages = [1, 2, 3, '...', totalPages];
+                } else if (currentPage >= totalPages - 2) {
+                    // Posisi akhir: 1, ..., 7, 8, 9
+                    pages = [1, '...', totalPages - 2, totalPages - 1, totalPages];
+                } else {
+                    // Posisi tengah: 1, ..., 4, 5, 6, ..., 9
+                    pages = [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
                 }
             }
 
