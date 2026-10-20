@@ -321,13 +321,13 @@ p {
     <table class="MsoNormalTable" border="0" cellspacing="0" cellpadding="0" width="100%" style="width: 100.0%; border-collapse: collapse; mso-table-layout-alt: fixed; table-layout: fixed; margin-top: 12pt; margin-bottom: 18pt;">
         <tr>
             <td width="60%" style="width: 60.0%; width: 9.6cm; border: none; padding: 0;">&nbsp;</td>
-            <td width="40%" style="width: 40.0%; width: 6.4cm; border: none; padding: 0; text-align: center; vertical-align: top;">
-                <p class="MsoNormal" style="text-align: center; margin-top: 12.0pt; margin-bottom: 6.0pt; mso-para-margin-top: 12.0pt; mso-para-margin-bottom: 6.0pt; line-height: 1.15;"><?= htmlspecialchars($jabatanPejabat) ?>,</p>
-                <p class="MsoNormal" style="text-align: center; margin: 0; line-height: 1.15;">&nbsp;</p>
-                <p class="MsoNormal" style="text-align: center; margin: 0; line-height: 1.15;">&nbsp;</p>
-                <p class="MsoNormal" style="text-align: center; margin: 0; line-height: 1.15;">&nbsp;</p>
-                <p class="MsoNormal" style="text-align: center; margin: 0; line-height: 1.15;">&nbsp;</p>
-                <p class="MsoNormal" style="text-align: center; margin-top: 6.0pt; margin-bottom: 12.0pt; mso-para-margin-top: 6.0pt; mso-para-margin-bottom: 12.0pt; line-height: 1.15;"><?= htmlspecialchars($pejabatNama) ?></p>
+            <td width="40%" style="width: 40.0%; width: 6.4cm; border: none; padding: 0; text-align: left; vertical-align: top;">
+                <p class="MsoNormal" style="text-align: left; margin-top: 12.0pt; margin-bottom: 6.0pt; mso-para-margin-top: 12.0pt; mso-para-margin-bottom: 6.0pt; line-height: 1.15;"><?= htmlspecialchars($jabatanPejabat) ?>,</p>
+                <p class="MsoNormal" style="text-align: left; margin: 0; line-height: 1.15;">&nbsp;</p>
+                <p class="MsoNormal" style="text-align: left; margin: 0; line-height: 1.15;">&nbsp;</p>
+                <p class="MsoNormal" style="text-align: left; margin: 0; line-height: 1.15;">&nbsp;</p>
+                <p class="MsoNormal" style="text-align: left; margin: 0; line-height: 1.15;">&nbsp;</p>
+                <p class="MsoNormal" style="text-align: left; margin-top: 6.0pt; margin-bottom: 12.0pt; mso-para-margin-top: 6.0pt; mso-para-margin-bottom: 12.0pt; line-height: 1.15;"><?= htmlspecialchars($pejabatNama) ?></p>
             </td>
         </tr>
     </table>
@@ -470,13 +470,13 @@ p {
     <table class="MsoNormalTable" border="0" cellspacing="0" cellpadding="0" width="100%" style="width: 100.0%; border-collapse: collapse; mso-table-layout-alt: fixed; table-layout: fixed; margin-top: 12pt; margin-bottom: 18pt;">
         <tr>
             <td width="60%" style="width: 60.0%; width: 9.6cm; border: none; padding: 0;">&nbsp;</td>
-            <td width="40%" style="width: 40.0%; width: 6.4cm; border: none; padding: 0; text-align: center; vertical-align: top;">
-                <p class="MsoNormal" style="text-align: center; margin-top: 12.0pt; margin-bottom: 6.0pt; mso-para-margin-top: 12.0pt; mso-para-margin-bottom: 6.0pt; line-height: 1.15;"><?= htmlspecialchars($jabatanPejabat) ?>,</p>
-                <p class="MsoNormal" style="text-align: center; margin: 0; line-height: 1.15;">&nbsp;</p>
-                <p class="MsoNormal" style="text-align: center; margin: 0; line-height: 1.15;">&nbsp;</p>
-                <p class="MsoNormal" style="text-align: center; margin: 0; line-height: 1.15;">&nbsp;</p>
-                <p class="MsoNormal" style="text-align: center; margin: 0; line-height: 1.15;">&nbsp;</p>
-                <p class="MsoNormal" style="text-align: center; margin-top: 6.0pt; margin-bottom: 12.0pt; mso-para-margin-top: 6.0pt; mso-para-margin-bottom: 12.0pt; line-height: 1.15;"><?= htmlspecialchars($pejabatNama) ?></p>
+            <td width="40%" style="width: 40.0%; width: 6.4cm; border: none; padding: 0; text-align: left; vertical-align: top;">
+                <p class="MsoNormal" style="text-align: left; margin-top: 12.0pt; margin-bottom: 6.0pt; mso-para-margin-top: 12.0pt; mso-para-margin-bottom: 6.0pt; line-height: 1.15;"><?= htmlspecialchars($jabatanPejabat) ?>,</p>
+                <p class="MsoNormal" style="text-align: left; margin: 0; line-height: 1.15;">&nbsp;</p>
+                <p class="MsoNormal" style="text-align: left; margin: 0; line-height: 1.15;">&nbsp;</p>
+                <p class="MsoNormal" style="text-align: left; margin: 0; line-height: 1.15;">&nbsp;</p>
+                <p class="MsoNormal" style="text-align: left; margin: 0; line-height: 1.15;">&nbsp;</p>
+                <p class="MsoNormal" style="text-align: left; margin-top: 6.0pt; margin-bottom: 12.0pt; mso-para-margin-top: 6.0pt; mso-para-margin-bottom: 12.0pt; line-height: 1.15;"><?= htmlspecialchars($pejabatNama) ?></p>
             </td>
         </tr>
     </table>
