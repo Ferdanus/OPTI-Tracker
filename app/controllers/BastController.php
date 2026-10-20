@@ -122,6 +122,35 @@ class BastController extends Controller {
                 $this->setFlashSuccess("Dokumen BAST resmi berhasil diterbitkan untuk Order #{$order['nomor_order']}.");
             }
 
+            // Kirim notifikasi BAST ke Tim Mitra & Ka Tim OPTI
+            try {
+                \NotificationService::send($this->db, [
+                    'order_id'        => $orderId,
+                    'target_role'     => 'tim_mitra',
+                    'target_layanan'  => 'semua',
+                    'judul'           => 'BAST Resmi Diterbitkan',
+                    'pesan'           => "Dokumen BAST No. {$data['nomor_bast']} untuk Order #{$order['nomor_order']} ({$order['nama_perusahaan']}) telah diterbitkan.",
+                    'tipe'            => 'success',
+                    'icon'            => 'bi-file-earmark-check-fill',
+                    'link_url'        => "/order/{$orderId}",
+                    'created_by'      => (int)$this->getUserId(),
+                    'created_by_name' => $_SESSION['nama_lengkap'] ?? 'Tim Pelaksana'
+                ]);
+
+                \NotificationService::send($this->db, [
+                    'order_id'        => $orderId,
+                    'target_role'     => 'ketua_tim',
+                    'target_layanan'  => $order['jenis_layanan_opti'] ?? 'semua',
+                    'judul'           => 'BAST Resmi Diterbitkan',
+                    'pesan'           => "Dokumen BAST No. {$data['nomor_bast']} untuk Order #{$order['nomor_order']} ({$order['nama_perusahaan']}) telah diterbitkan.",
+                    'tipe'            => 'success',
+                    'icon'            => 'bi-file-earmark-check-fill',
+                    'link_url'        => "/order/{$orderId}",
+                    'created_by'      => (int)$this->getUserId(),
+                    'created_by_name' => $_SESSION['nama_lengkap'] ?? 'Tim Pelaksana'
+                ]);
+            } catch (\Exception $eNotif) {}
+
             $f3->reroute("/order/{$orderId}");
         } catch (\Exception $e) {
             $this->setFlashError('Gagal menyimpan BAST: ' . $e->getMessage());
@@ -144,11 +173,11 @@ class BastController extends Controller {
         try {
             $bastModel = new OptiBast($this->db);
             $bast = $bastModel->getByOrderId($orderId);
+            $orderModel = new OrderLayanan($this->db);
+            $order = $orderModel->getDetail($orderId);
 
             if (!$bast) {
                 // Buat BAST otomatis jika belum ada sebelum closing
-                $orderModel = new OrderLayanan($this->db);
-                $order = $orderModel->getDetail($orderId);
                 $bastId = $bastModel->simpanBaru(array(
                     'order_id'              => $orderId,
                     'po_id'                 => !empty($order['po_id']) ? (int)$order['po_id'] : null,
@@ -169,6 +198,38 @@ class BastController extends Controller {
             $bastModel->tutupOrder($bastId, $orderId, $catatan, $userId);
 
             $this->logActivity($orderId, 'bast', 'tutup_order', "Selesaikan order (Closing Order)" . (!empty($catatan) ? " - {$catatan}" : ""));
+
+            // Kirim notifikasi Closing ke Tim Mitra & Ka Tim OPTI
+            try {
+                $nomorOrderStr = $order['nomor_order'] ?? $orderId;
+                $perusahaanStr = $order['nama_perusahaan'] ?? 'Klien';
+                \NotificationService::send($this->db, [
+                    'order_id'        => $orderId,
+                    'target_role'     => 'tim_mitra',
+                    'target_layanan'  => 'semua',
+                    'judul'           => 'Order Selesai & Ditutup (Closing)',
+                    'pesan'           => "Order #{$nomorOrderStr} ({$perusahaanStr}) berhasil ditutup dan diarsipkan secara resmi. Seluruh siklus layanan tuntas.",
+                    'tipe'            => 'success',
+                    'icon'            => 'bi-check-all',
+                    'link_url'        => "/order/{$orderId}",
+                    'created_by'      => $userId,
+                    'created_by_name' => $_SESSION['nama_lengkap'] ?? 'Tim Mitra'
+                ]);
+
+                \NotificationService::send($this->db, [
+                    'order_id'        => $orderId,
+                    'target_role'     => 'ketua_tim',
+                    'target_layanan'  => $order['jenis_layanan_opti'] ?? 'semua',
+                    'judul'           => 'Order Selesai & Ditutup (Closing)',
+                    'pesan'           => "Order #{$nomorOrderStr} ({$perusahaanStr}) telah ditutup dan diarsipkan secara resmi.",
+                    'tipe'            => 'success',
+                    'icon'            => 'bi-check-all',
+                    'link_url'        => "/order/{$orderId}",
+                    'created_by'      => $userId,
+                    'created_by_name' => $_SESSION['nama_lengkap'] ?? 'Tim Mitra'
+                ]);
+            } catch (\Exception $eNotif) {}
+
             $this->setFlashSuccess("Order Layanan #{$orderId} berhasil DITUTUP & DIARSIPKAN (Selesai). Seluruh siklus layanan tuntas!");
             $f3->reroute("/order/{$orderId}");
         } catch (\Exception $e) {

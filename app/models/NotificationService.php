@@ -66,23 +66,19 @@ class NotificationService
 
         // 2. Role-based matching (only when target_user_id IS NULL or 0)
         $roleMatch = [];
-        if ($role === 'ketua_tim_mitra') {
-            $roleMatch[] = "target_role IN ('ketua_tim_mitra', 'tim_mitra_industri', 'admin_order', 'tim_mitra', 'all')";
-        } elseif ($role === 'tim_mitra_industri' || $role === 'admin_order' || $role === 'tim_mitra') {
-            // Staf tim mitra does NOT get ketua_tim_mitra notifications
-            $roleMatch[] = "target_role IN ('tim_mitra_industri', 'admin_order', 'tim_mitra')";
-        } elseif ($role === 'ketua_tim_keuangan') {
+        if (in_array($role, ['ketua_tim_mitra', 'tim_mitra_industri', 'admin_order', 'tim_mitra', 'mitra'])) {
+            // Seluruh personil Tim Mitra (Ketua maupun staf) menerima notifikasi alur kerja Tim Mitra & broadcast
+            $roleMatch[] = "target_role IN ('ketua_tim_mitra', 'tim_mitra_industri', 'admin_order', 'tim_mitra', 'mitra', 'all')";
+        } elseif (in_array($role, ['ketua_tim_keuangan', 'keuangan'])) {
+            // Seluruh personil Tim Keuangan menerima notifikasi alur kerja Keuangan & broadcast
             $roleMatch[] = "target_role IN ('ketua_tim_keuangan', 'keuangan', 'all')";
-        } elseif ($role === 'keuangan') {
-            // Staf keuangan does NOT get ketua_tim_keuangan notifications
-            $roleMatch[] = "target_role IN ('keuangan')";
         } elseif ($role === 'ketua_tim') {
             $roleMatch[] = "target_role IN ('ketua_tim', 'all')";
         } elseif ($role === 'tim_kerja') {
-            // Anggota tim kerja HANYA menerima notifikasi yang secara spesifik ditugaskan ke dirinya sebagai PIC (target_user_id = userId)
-            $roleMatch[] = "1=0";
+            // Personil tim kerja menerima notifikasi peran tim_kerja atau broadcast umum (selain target_user_id spesifik)
+            $roleMatch[] = "target_role IN ('tim_kerja', 'all')";
         } else {
-            $roleMatch[] = "target_role = ?";
+            $roleMatch[] = "(target_role = ? OR target_role = 'all')";
             $params[] = $role;
         }
 

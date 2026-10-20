@@ -1191,10 +1191,41 @@ $daftarPegawai = $arsipUser->find(
                         'created_by'     => $this->getUserId() ?? 1,
                         'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Tim Mitra'
                     ]);
+
+                    // Notif ke Tim Mitra
+                    \NotificationService::send($this->db, [
+                        'order_id'       => $orderId,
+                        'target_role'    => 'tim_mitra',
+                        'target_layanan' => 'semua',
+                        'judul'          => 'Penawaran Order DEAL Disetujui',
+                        'pesan'          => "Klien ({$order['nama_perusahaan']}) telah sepakat dengan penawaran Order #{$order['nomor_order']} (Rp " . number_format($nominal, 0, ',', '.') . "). Segera lengkapi berkas & lakukan disposisi ke Tim Keuangan.",
+                        'tipe'           => 'success',
+                        'icon'           => 'bi-check-circle-fill',
+                        'link_url'       => "/order/{$orderId}",
+                        'created_by'     => $this->getUserId() ?? 1,
+                        'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Tim Mitra'
+                    ]);
                 } catch (\Exception $eNotif) {}
 
                 $this->setFlashSuccess("Penawaran telah disetujui klien (<strong>DEAL</strong>). Notifikasi telah diteruskan ke <strong>Tim Keuangan</strong> untuk tahap pembayaran.");
             } else {
+                try {
+                    $judulStatus = ($statusRespon === 'nego') ? 'Negosiasi Penawaran Klien' : 'Penawaran Ditolak / Batal';
+                    $tipeNotif = ($statusRespon === 'nego') ? 'warning' : 'danger';
+                    $iconNotif = ($statusRespon === 'nego') ? 'bi-chat-dots-fill' : 'bi-x-circle-fill';
+                    \NotificationService::send($this->db, [
+                        'order_id'       => $orderId,
+                        'target_role'    => 'tim_mitra',
+                        'target_layanan' => 'semua',
+                        'judul'          => $judulStatus,
+                        'pesan'          => "Respon klien ({$order['nama_perusahaan']}) untuk Order #{$order['nomor_order']}: " . strtoupper($statusRespon) . ".",
+                        'tipe'           => $tipeNotif,
+                        'icon'           => $iconNotif,
+                        'link_url'       => "/order/{$orderId}",
+                        'created_by'     => $this->getUserId() ?? 1,
+                        'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Tim Mitra'
+                    ]);
+                } catch (\Exception $eNotif) {}
                 $this->setFlashSuccess("Status respon penawaran berhasil diperbarui menjadi: <strong>" . strtoupper($statusRespon) . "</strong>.");
             }
         } catch (\Exception $e) {
@@ -1244,6 +1275,19 @@ $daftarPegawai = $arsipUser->find(
                                 'tipe'            => 'success',
                                 'icon'            => 'bi-wallet2',
                                 'link_url'        => "/pembayaran/tambah?order_id={$orderId}",
+                                'created_by'      => $this->getUserId() ?? 1,
+                                'created_by_name' => $_SESSION['nama_lengkap'] ?? 'Tim Mitra'
+                            ]);
+
+                            \NotificationService::send($this->db, [
+                                'order_id'        => $orderId,
+                                'target_role'     => 'tim_mitra',
+                                'target_layanan'  => 'semua',
+                                'judul'           => 'Penawaran Order DEAL Disetujui',
+                                'pesan'           => "Penawaran {$order['nama_perusahaan']} telah disepakati (DEAL senilai Rp " . number_format($nominalBaru, 0, ',', '.') . "). Segera lengkapi berkas & lakukan disposisi ke Tim Keuangan.",
+                                'tipe'            => 'success',
+                                'icon'            => 'bi-check-circle-fill',
+                                'link_url'        => "/order/{$orderId}",
                                 'created_by'      => $this->getUserId() ?? 1,
                                 'created_by_name' => $_SESSION['nama_lengkap'] ?? 'Tim Mitra'
                             ]);
@@ -1341,6 +1385,20 @@ $daftarPegawai = $arsipUser->find(
                 'judul'           => 'Penawaran Order DEAL - Didisposisikan ke Keuangan',
                 'pesan'           => "Penawaran {$order['nama_perusahaan']} telah disepakati (DEAL) dan didisposisikan ke Tim Keuangan.",
                 'tipe'            => 'info',
+                'icon'            => 'bi-send-check-fill',
+                'link_url'        => "/order/{$orderId}",
+                'created_by'      => $userId,
+                'created_by_name' => $userNama
+            ]);
+
+            // 3. Kirim Notifikasi ke Tim Mitra
+            \NotificationService::send($this->db, [
+                'order_id'        => $orderId,
+                'target_role'     => 'tim_mitra',
+                'target_layanan'  => 'semua',
+                'judul'           => 'Disposisi ke Tim Keuangan Berhasil',
+                'pesan'           => "Penawaran {$order['nama_perusahaan']} (No: {$sp['nomor_surat']}) berhasil didisposisikan ke Tim Keuangan untuk proses pembayaran.",
+                'tipe'            => 'success',
                 'icon'            => 'bi-send-check-fill',
                 'link_url'        => "/order/{$orderId}",
                 'created_by'      => $userId,
