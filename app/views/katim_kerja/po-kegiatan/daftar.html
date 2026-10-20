@@ -226,6 +226,8 @@
     .rvw-fv-x:hover { color: var(--rvw-primary); border-color: var(--rvw-primary); }
     .rvw-fv-body { flex: 1; background: #e2e8f0; position: relative; }
     .rvw-fv-body iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #fff; }
+    .rvw-fv-doc { position: absolute; inset: 0; overflow: auto; background: #e2e8f0; }
+    .rvw-fv-doc .docx-wrapper { background: transparent !important; padding: 16px !important; }
     @media (max-width: 767.98px) { .rvw-sumgrid { grid-template-columns: 1fr; } }
     
     .rvw-dock { background: #fff; border-top: 1px solid var(--rvw-border); padding: 12px 18px; padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
@@ -441,7 +443,7 @@
                     <a class="rvw-btn sm" id="rvwFvTab" href="#" target="_blank" rel="noopener" title="Buka di tab baru"><i class="bi bi-box-arrow-up-right"></i></a>
                     <button type="button" class="rvw-fv-x" id="rvwFvTutup" aria-label="Tutup"><i class="bi bi-x-lg"></i></button>
                 </div>
-                <div class="rvw-fv-body"><iframe id="rvwFvFrame" title="Pratinjau file"></iframe></div>
+                <div class="rvw-fv-body"><iframe id="rvwFvFrame" title="Pratinjau file"></iframe><div class="rvw-fv-doc" id="rvwFvDoc" style="display:none;"></div></div>
             </div>
         </div>
         <div class="rvw-toast" id="rvwToast" role="status"></div>
@@ -1216,14 +1218,25 @@
                 pulih();
             }).catch(function (e) { pulih(); toast(e.message || 'Gagal menyiapkan PDF.', true); });
         }
+        var fvSeq = 0;
         function bukaFv(url, judul) {
             $('rvwFvJudul').textContent = judul;
             $('rvwFvTab').href = url;
-            // sembunyikan toolbar/nama file bawaan penampil PDF browser
-            $('rvwFvFrame').src = url + (url.indexOf('#') === -1 ? '#toolbar=0&navpanes=0' : '');
             $('rvwFv').hidden = false;
+            var n = ++fvSeq;
+            var aktif = function () { return n === fvSeq && !$('rvwFv').hidden; };
+            if (window.optiTampilkanBerkas) {
+                // PDF/gambar lewat iframe (toolbar bawaan disembunyikan), Word dirender di dalam modal
+                window.optiTampilkanBerkas(url, $('rvwFvFrame'), $('rvwFvDoc'), aktif);
+            } else {
+                $('rvwFvFrame').src = url + (url.indexOf('#') === -1 ? '#toolbar=0&navpanes=0' : '');
+            }
         }
-        function tutupFv() { $('rvwFv').hidden = true; $('rvwFvFrame').src = 'about:blank'; }
+        function tutupFv() {
+            fvSeq++;
+            $('rvwFv').hidden = true; $('rvwFvFrame').src = 'about:blank'; $('rvwFvFrame').style.display = '';
+            $('rvwFvDoc').innerHTML = ''; $('rvwFvDoc').style.display = 'none';
+        }
 
         /* ---------- Tab Alur ---------- */
         function alurItems(p) {

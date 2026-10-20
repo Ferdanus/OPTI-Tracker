@@ -1204,7 +1204,8 @@ class PoReviewController extends Controller {
         if (!$path) { $this->f3->error(404, 'Berkas tidak ditemukan di server.'); return; }
 
         $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
-        $mime = ['pdf' => 'application/pdf', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png', 'gif' => 'image/gif', 'webp' => 'image/webp'];
+        $mime = ['pdf' => 'application/pdf', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png', 'gif' => 'image/gif', 'webp' => 'image/webp',
+                 'doc' => 'application/msword', 'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
         if (!isset($mime[$ext])) { $this->f3->error(404, 'Jenis berkas tidak didukung.'); return; }
 
         $unduh = (string) $this->f3->get('GET.unduh') === '1';

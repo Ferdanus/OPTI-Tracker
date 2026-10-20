@@ -1213,7 +1213,7 @@
                 </li>
 
                 <!-- 1. ALUR PELAYANAN / KEMITRAAN -->
-                <check if="{{ @is_superadmin || @is_admin_order || @is_ketua_tim || @is_tim_kerja || @is_admin_kontrak || @is_sekretaris || @is_keuangan || @is_user_readonly }}">
+                <check if="{{ @is_superadmin || @is_admin_order || @is_ketua_tim || @is_tim_kerja || @is_admin_kontrak || @is_sekretaris || @is_keuangan || @is_user_readonly || @is_humas }}">
                     <li class="sidebar-section-label">Alur Pelayanan</li>
                 </check>
                 
@@ -1270,8 +1270,8 @@
                     </li>
                 </check>
 
-                <!-- Daftar PO Humas (verifikasi PO + Map Kendali) -- sementara khusus Superadmin; role Humas menyusul -->
-                <check if="{{ @is_superadmin }}">
+                <!-- Daftar PO Humas (verifikasi PO + Map Kendali) -- Superadmin dan Sub Tim Humas -->
+                <check if="{{ @is_superadmin || @is_humas }}">
                     <li>
                         <a class="sidebar-link {{ @active_menu == 'po_humas' ? 'active' : '' }}" href="{{ @BASE }}/po-humas" title="Daftar PO Humas">
                             <i class="bi bi-journal-check"></i> <span>Daftar PO Humas</span>
@@ -1415,7 +1415,7 @@
                     <li>
                         <a class="sidebar-link {{ @active_menu == 'po_ppk' ? 'active' : '' }}" href="{{ @BASE }}/po-ppk" title="Daftar Review PO">
                             <i class="bi bi-patch-check"></i> <span>Daftar Review PO</span>
-                            <span id="notifRevisiPpk" class="badge rounded-pill ms-auto sidebar-notif-badge" style="{{ @jumlah_notif_revisi_ppk > 0 ? '' : 'display:none' }}">{{ @jumlah_notif_revisi_ppk }}</span>
+                            <span id="notifRevisiPpk" class="badge rounded-pill ms-auto sidebar-notif-badge" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff; {{ @jumlah_notif_revisi_ppk > 0 ? '' : 'display:none' }}">{{ @jumlah_notif_revisi_ppk }}</span>
                         </a>
                     </li>
                 </check>
@@ -2580,6 +2580,105 @@
             });
         }
 
+        /* [BARU] Pratinjau berkas Word (.docx) di dalam modal -- pustaka docx-preview dimuat sekali, saat pertama dibutuhkan */
+        window.optiMuatDocx = function () {
+            if (window.docx && window.docx.renderAsync) { return Promise.resolve(window.docx); }
+            if (window._optiDocxP) { return window._optiDocxP; }
+            function muat(src) {
+                return new Promise(function (res, rej) {
+                    var s = document.createElement('script');
+                    s.src = src; s.onload = res; s.onerror = function () { rej(new Error('Gagal memuat ' + src)); };
+                    document.head.appendChild(s);
+                });
+            }
+            function urut(daftar) {   // coba satu per satu sampai ada yang berhasil
+                return daftar.reduce(function (p, src) { return p.catch(function () { return muat(src); }); }, Promise.reject(new Error('mulai')));
+            }
+            var p = (window.JSZip ? Promise.resolve() : urut([
+                    'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
+                    'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js']))
+                .then(function () {
+                    return urut([
+                        'https://cdnjs.cloudflare.com/ajax/libs/docx-preview/0.3.3/docx-preview.min.js',
+                        'https://cdn.jsdelivr.net/npm/docx-preview@0.3.3/dist/docx-preview.min.js']);
+                })
+                .then(function () {
+                    if (!window.docx || !window.docx.renderAsync) { throw new Error('Pustaka pratinjau Word tidak siap.'); }
+                    return window.docx;
+                });
+            window._optiDocxP = p.catch(function (e) { window._optiDocxP = null; throw e; });
+            return window._optiDocxP;
+        };
+        window.optiRenderDocx = function (buf, el) {
+            return window.optiMuatDocx().then(function (d) {
+                el.innerHTML = '';
+                return d.renderAsync(buf, el, null, { className: 'docx', inWrapper: true, ignoreWidth: false, ignoreHeight: false, breakPages: true, renderHeaders: true, renderFooters: true });
+            });
+        };
+        // kertas Word (A4) lebih lebar dari modal sempit -> kecilkan agar pas, tanpa geser samping
+        window.optiSesuaikanDocx = function (el) {
+            try {
+                var wrap = el.querySelector('.docx-wrapper'), sec = el.querySelector('section.docx');
+                if (!wrap || !sec) { return; }
+                wrap.style.zoom = '';
+                var sedia = el.clientWidth - 32, lebar = sec.offsetWidth;
+                if (lebar > sedia && sedia > 200) { wrap.style.zoom = String(sedia / lebar); }
+            } catch (e) { /* tampilan tetap bisa digulir */ }
+        };
+        /* Penampil berkas di modal Dokumen (Katim, Pembuat, Humas, Tim Mitra): PDF dan gambar lewat iframe seperti biasa,
+           Word (.docx) dirender di dalam modal, .doc lama diberi pesan + tautan unduh. */
+        window.optiTampilkanBerkas = function (url, frame, docEl, masihAktif) {
+            masihAktif = masihAktif || function () { return true; };
+            var urlFrame = url + (url.indexOf('#') === -1 ? '#toolbar=0&navpanes=0' : '');
+            function tampilFrame() {
+                if (!masihAktif()) { return; }
+                docEl.style.display = 'none'; docEl.innerHTML = '';
+                frame.style.display = ''; frame.src = urlFrame;
+            }
+            function pesan(teks, tautan) {
+                docEl.innerHTML = '';
+                var d = document.createElement('div');
+                d.style.cssText = 'padding:32px 20px;text-align:center;color:#475569;font-size:.9rem;';
+                d.appendChild(document.createTextNode(teks));
+                if (tautan) {
+                    var a = document.createElement('a');
+                    a.href = url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Unduh dokumen';
+                    a.style.cssText = 'display:block;margin-top:10px;font-weight:700;';
+                    d.appendChild(a);
+                }
+                docEl.appendChild(d);
+            }
+            docEl.style.display = 'none'; docEl.innerHTML = '';
+            frame.style.display = ''; frame.src = 'about:blank';
+            var modeWord = false;
+            fetch(url, { credentials: 'same-origin' }).then(function (r) {
+                if (!masihAktif()) { try { r.body.cancel(); } catch (e) {} return; }
+                var cd = r.headers.get('Content-Disposition') || '';
+                var m = /filename\*?=(?:UTF-8'')?"?([^";]+)/i.exec(cd);
+                var ext = m ? (m[1].split('.').pop() || '').toLowerCase() : '';
+                var mime = (r.headers.get('Content-Type') || '').toLowerCase();
+                var baru = ext === 'docx' || mime.indexOf('wordprocessingml') !== -1;
+                var lama = ext === 'doc' || mime.indexOf('application/msword') !== -1;
+                if (!r.ok || (!baru && !lama)) { try { r.body.cancel(); } catch (e) {} tampilFrame(); return; }
+                modeWord = true;
+                frame.style.display = 'none'; frame.src = 'about:blank';
+                docEl.style.display = 'block';
+                if (lama) {
+                    try { r.body.cancel(); } catch (e) {}
+                    pesan('Berkas Word format lama (.doc) belum bisa dipratinjau di browser.', true);
+                    return;
+                }
+                pesan('Memuat dokumen Word...');
+                return r.arrayBuffer().then(function (buf) {
+                    if (!masihAktif()) { return; }
+                    return window.optiRenderDocx(buf, docEl).then(function () { if (masihAktif()) { window.optiSesuaikanDocx(docEl); } });
+                });
+            }).catch(function () {
+                if (!masihAktif()) { return; }
+                if (modeWord) { pesan('Dokumen Word tidak bisa ditampilkan di browser.', true); } else { tampilFrame(); }
+            });
+        };
+
         function updateUniversalZoomBadge() {
             const el = document.getElementById('universalZoomBadge');
             if (el) el.textContent = Math.round((currentUniversalScale / 1.35) * 100) + '%';
@@ -2765,6 +2864,17 @@
                     currentUniversalDoc = pdf;
                     if (zoomControls) zoomControls.style.visibility = 'visible';
                     renderUniversalPdfPages(pdf);
+                } else if (json.base64 && String(json.ext || '').toLowerCase() === 'docx') {
+                    // [BARU] Word (.docx) dirender langsung di modal
+                    if (iconEl) iconEl.className = 'bi bi-file-earmark-word-fill fs-5 text-primary';
+                    if (spinnerMsg) spinnerMsg.textContent = 'Merender dokumen Word...';
+                    const bytesDoc = base64ToUint8ArrayUniversal(json.base64);
+                    if (pagesContainer) { pagesContainer.style.display = 'flex'; }
+                    await window.optiRenderDocx(bytesDoc.buffer, pagesContainer);
+                    window.optiSesuaikanDocx(pagesContainer);
+                    if (spinner) spinner.style.display = 'none';
+                } else if (json.base64 && ['doc', 'xls', 'xlsx'].indexOf(String(json.ext || '').toLowerCase()) !== -1) {
+                    throw new Error('Pratinjau berkas .' + String(json.ext).toLowerCase() + ' belum tersedia di browser. Silakan unduh lewat tombol Unduh di kanan atas.');
                 } else if (json.base64) {
                     if (iconEl) iconEl.className = 'bi bi-file-earmark-image-fill fs-5 text-primary';
                     if (spinner) spinner.style.display = 'none';

@@ -382,7 +382,28 @@ class PoRevisiPpkController extends Controller {
         foreach ($rows as $r) {
             $catatan[] = ['id' => (int) $r['id'], 'bagian' => (string) $r['bagian'], 'teks' => (string) $r['teks'], 'state' => (string) $r['state']];
         }
-        $this->keluarkanJson(['ok' => true, 'konteks' => $konteks, 'catatan' => $catatan]);
+        $this->keluarkanJson(['ok' => true, 'konteks' => $konteks, 'catatan' => $catatan, 'kirim' => $this->aksiKirimForm($poId, $konteks)]);
+    }
+
+    /**
+     * Tombol "kirim" di form Edit PO (muncul saat semua catatan sudah ditandai diperbaiki). null kalau pengguna ini tidak berhak mengirim.
+     * review (Ketua Pelaksana) -> kirim revisi ke Ketua Tim; ppk + katim_kerja (Ketua Tim) -> PPK BLU; ppk + ketupel_kerja (Ketua Pelaksana) -> Ketua Tim.
+     */
+    protected function aksiKirimForm($poId, $konteks) {
+        try { $po = $this->ambilPo((int) $poId); } catch (\Exception $e) { $po = null; }
+        if (!$po) { return null; }
+        $uid = (int) $this->getUserId();
+        $pembuat = ($uid > 0 && $uid === (int) $po['ketua_pelaksana_id']);
+        $id = (int) $po['id'];
+        if ($konteks === 'review') {
+            return $pembuat ? ['url' => '/po-kegiatan/' . $id . '/kirim-revisi', 'label' => 'Kirim revisi ke Ketua Tim'] : null;
+        }
+        if ($konteks === 'ppk') {
+            $ps = (string) $po['ppk_status'];
+            if ($ps === 'katim_kerja' && $this->modeRevisi() === 'katim') { return ['url' => '/po-revisi-ppk/' . $id . '/kirim-ppk', 'label' => 'Kirim ke PPK BLU']; }
+            if ($ps === 'ketupel_kerja' && $pembuat) { return ['url' => '/po-revisi-ppk/' . $id . '/kirim-katim', 'label' => 'Kirim revisi ke Ketua Tim']; }
+        }
+        return null;
     }
 
     /* ============================================================
@@ -494,6 +515,9 @@ class PoRevisiPpkController extends Controller {
         $prm = [];
         $i = 1;
         if ($this->kolomAda('validasi_keuangan_by')) { $set .= ', validasi_keuangan_by = ?'; $prm[$i++] = $uid; }
+        // Catatan PPK BLU (opsional) saat verifikasi, ditampilkan di bawah Catatan Tim Mitra. Kolom dibuat otomatis kalau belum ada.
+        $catatan = mb_substr(trim((string) $f3->get('POST.catatan')), 0, 300);
+        if ($catatan !== '' && $this->siapkanKolomCatatanPpk()) { $set .= ', catatan_ppk = ?'; $prm[$i++] = $catatan; }
         $prm[$i++] = (int) $po['id'];
         try {
             $diubah = $this->db->exec(
@@ -513,6 +537,19 @@ class PoRevisiPpkController extends Controller {
         $tujuan[] = (int) $po['ketua_pelaksana_id'];
         $this->kabariKe($tujuan, 'PO diverifikasi PPK BLU', 'PO ' . $po['nomor_po'] . ' sudah diverifikasi PPK BLU.', '/po-kegiatan/daftar');
         $this->keluarkanJson($this->paketDetail((int) $po['id'], 'ppk'));
+    }
+
+    /** Pastikan kolom po_kegiatan.catatan_ppk ada (dibuat otomatis sekali). false kalau tidak bisa dibuat. */
+    protected function siapkanKolomCatatanPpk() {
+        if ($this->kolomAda('catatan_ppk')) { return true; }
+        try {
+            $this->db->exec('ALTER TABLE po_kegiatan ADD COLUMN `catatan_ppk` TEXT NULL');
+        } catch (\Exception $e) {
+            error_log('[PO PPK] gagal membuat kolom catatan_ppk: ' . $e->getMessage());
+            return false;
+        }
+        self::$kolomCache['catatan_ppk'] = true;
+        return true;
     }
 
     /* ============================================================
@@ -945,7 +982,7 @@ class PoRevisiPpkController extends Controller {
 
         $sql = "SELECT p.id, p.nomor_po, p.ppk_status, p.ronde_ppk, p.ppk_dibaca_at, p.ppk_minta_at, p.ppk_status_at, p.ppk_alasan, p.validasi_keuangan_at,
                        p.created_at AS dibuat_at, COALESCE(p.dikirim_at, p.updated_at, p.created_at) AS dikirim_at, p.disetujui_at,
-                       " . $ex('verifikasi_humas_at') . " AS humas_ver_at, " . $ex('catatan_tim_mitra') . " AS catatan_tim_mitra,
+                       " . $ex('verifikasi_humas_at') . " AS humas_ver_at, " . $ex('catatan_tim_mitra') . " AS catatan_tim_mitra, " . $ex('catatan_ppk') . " AS catatan_ppk,
                        " . ($mitraKol !== '' ? 'p.' . $mitraKol : 'NULL') . " AS mitra_valid_at,
                        COALESCE(NULLIF(p.judul_kegiatan, ''), o.judul_kegiatan) AS judul,
                        o.nomor_order, o.jenis_layanan_opti, o.ketua_pelaksana_id,
@@ -1012,6 +1049,8 @@ class PoRevisiPpkController extends Controller {
                 'mitra_valid_at' => $r['mitra_valid_at'],
                 // catatan biasa Tim Mitra saat validasi (bukan revisi); tampil di bawah dokumen PO. Baru terlihat setelah Tim Mitra memvalidasi
                 'catatan_mitra' => (!empty($r['mitra_valid_at']) && isset($r['catatan_tim_mitra'])) ? trim((string) $r['catatan_tim_mitra']) : '',
+                // catatan PPK BLU saat verifikasi (opsional); tampil di bawah catatan Tim Mitra setelah PO diverifikasi
+                'catatan_ppk' => (!empty($r['validasi_keuangan_at']) && isset($r['catatan_ppk'])) ? trim((string) $r['catatan_ppk']) : '',
                 'ppk_valid_at' => $r['validasi_keuangan_at'],
                 'rn_total'    => (int) $r['rn_total'],
                 'rn_selesai'  => (int) $r['rn_selesai'],

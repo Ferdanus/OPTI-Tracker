@@ -158,6 +158,9 @@
     .rvw-catmitra { display: flex; gap: 10px; align-items: flex-start; background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 3px solid #059669; border-radius: 10px; padding: 10px 13px; margin-bottom: 14px; }
     .rvw-catmitra > i { color: #059669; font-size: 1.05rem; margin-top: 1px; }
     .rvw-catmitra .k { font-size: .72rem; font-weight: 700; color: #059669; }
+    .rvw-catmitra.ppk { background: #eff6ff; border-color: #bfdbfe; border-left-color: #2563eb; }
+    .rvw-catmitra.ppk > i, .rvw-catmitra.ppk .k { color: #2563eb; }
+    .rvw-catmitra.ppk .t { color: #1e3a8a; }
     .rvw-catmitra .t { font-size: .85rem; color: #14532d; margin-top: 1px; white-space: pre-wrap; word-break: break-word; }
     /* catatan biasa dari Tim Mitra: ditampilkan di bawah dokumen PO, bukan bagian dari catatan revisi */
     .rvw-catmitra.bawah { max-width: 210mm; margin: 12px auto 0; }
@@ -470,7 +473,7 @@
             var el = $('notifRevisiPpk');
             if (!el) {
                 if (!a) { return; }
-                el = document.createElement('span'); el.id = 'notifRevisiPpk'; el.className = 'badge rounded-pill bg-danger ms-auto'; a.appendChild(el);
+                el = document.createElement('span'); el.id = 'notifRevisiPpk'; el.className = 'badge rounded-pill ms-auto sidebar-notif-badge'; el.style.cssText = 'font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff;'; a.appendChild(el);
             }
             el.textContent = n; el.style.display = n > 0 ? '' : 'none';
         }
@@ -698,10 +701,10 @@
                 $('rvwDlgIcon').innerHTML = '<i class="bi ' + (o.ikon || 'bi-question-circle') + '"></i>';
                 $('rvwDlgTitle').textContent = o.judul; $('rvwDlgMsg').textContent = o.pesan;
                 $('rvwDlgYes').textContent = o.ya; $('rvwDlgNo').textContent = o.tidak || 'Batal';
-                var tx = $('rvwDlgTx'); tx.hidden = !o.alasan; tx.value = ''; tx.classList.remove('err');
+                var tx = $('rvwDlgTx'); tx.hidden = !(o.alasan || o.catatan); tx.placeholder = o.catatan ? 'Catatan untuk PO ini (opsional)' : 'Tulis alasan singkat'; tx.value = ''; tx.classList.remove('err');
                 $('rvwDlg').hidden = false;
                 requestAnimationFrame(function () { $('rvwDlg').classList.add('show'); });
-                setTimeout(function () { (o.alasan ? tx : $('rvwDlgYes')).focus(); }, 30);
+                setTimeout(function () { ((o.alasan || o.catatan) ? tx : $('rvwDlgYes')).focus(); }, 30);
             });
         }
         function closeDlg(h) {
@@ -733,7 +736,10 @@
         /* ---------- Panel: kepala, stepper, banner, dock ---------- */
         // Catatan Tim Mitra saat memvalidasi PO: catatan biasa (bukan revisi), tampil di bawah dokumen PO
         function renderCatMitra(p) {
-            $('rvwCatMitra').innerHTML = p && p.catatan_mitra ? '<div class="rvw-catmitra bawah"><i class="bi bi-chat-left-text"></i><div><div class="k">Catatan Tim Mitra</div><div class="t">' + esc(p.catatan_mitra) + '</div></div></div>' : '';
+            var h = '';
+            if (p && p.catatan_mitra) { h += '<div class="rvw-catmitra bawah"><i class="bi bi-chat-left-text"></i><div><div class="k">Catatan Tim Mitra</div><div class="t">' + esc(p.catatan_mitra) + '</div></div></div>'; }
+            if (p && p.catatan_ppk) { h += '<div class="rvw-catmitra bawah ppk"><i class="bi bi-patch-check"></i><div><div class="k">Catatan PPK BLU</div><div class="t">' + esc(p.catatan_ppk) + '</div></div></div>'; }
+            $('rvwCatMitra').innerHTML = h;
         }
         function renderChrome() {
             var p = curPo(); if (!p) { return; }
@@ -951,7 +957,7 @@
                 var n = cnt('draf');
                 D({ judul: 'Kirim permintaan revisi?', pesan: n + ' catatan akan dikirim ke Ketua Tim untuk diputuskan siapa yang mengerjakan.', ya: 'Kirim', ikon: 'bi-send', warna: 'warn' }).then(function (r) { if (r) { kirim('minta-revisi', {}, 'Permintaan revisi dikirim ke Ketua Tim.'); } });
             } else if (act === 'validasi') {
-                D({ judul: 'Verifikasi PO ini?', pesan: 'PO dinyatakan sesuai dan terkunci. Tidak ada revisi lagi.', ya: 'Ya, verifikasi', ikon: 'bi-patch-check', warna: 'ok' }).then(function (r) { if (r) { kirim('validasi', {}, 'PO diverifikasi PPK BLU.'); } });
+                D({ judul: 'Verifikasi PO ini?', pesan: 'PO dinyatakan sesuai dan terkunci. Tidak ada revisi lagi. Catatan di bawah boleh dikosongkan.', ya: 'Ya, verifikasi', ikon: 'bi-patch-check', warna: 'ok', catatan: true }).then(function (r) { if (r) { kirim('validasi', { catatan: r.alasan }, 'PO diverifikasi PPK BLU.'); } });
             } else if (act === 'kerjakan') {
                 D({ judul: 'Kerjakan revisi sendiri?', pesan: 'Anda mengedit PO sesuai catatan PPK BLU, lalu mengirimnya langsung ke PPK BLU. Anda masih bisa mendisposisikannya ke ' + pm + ' sebelum dikirim.', ya: 'Ya, kerjakan', ikon: 'bi-pencil', warna: 'warn' }).then(function (r) { if (r) { kirim('kerjakan', {}, 'Anda mengerjakan revisi ini.'); } });
             } else if (act === 'disposisi') {

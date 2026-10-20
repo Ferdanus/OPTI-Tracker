@@ -251,6 +251,8 @@
     .hm-fv-top b { flex: 1; min-width: 0; font-family: var(--hm-display); font-size: .95rem; font-weight: 800; }
     .hm-fv-body { flex: 1; background: #e2e8f0; position: relative; }
     .hm-fv-body iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #fff; }
+    .hm-fv-doc { position: absolute; inset: 0; overflow: auto; background: #e2e8f0; }
+    .hm-fv-doc .docx-wrapper { background: transparent !important; padding: 16px !important; }
 
     .hm-bn.ok { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
     @media (max-width: 767.98px) {
@@ -392,7 +394,7 @@
                 <a class="hm-btn sm" id="hmFvTab" href="#" target="_blank" rel="noopener" title="Buka di tab baru"><i class="bi bi-box-arrow-up-right"></i></a>
                 <button type="button" class="hm-ibtn" id="hmFvTutup" aria-label="Tutup" style="width:32px;height:32px;"><i class="bi bi-x-lg"></i></button>
             </div>
-            <div class="hm-fv-body"><iframe id="hmFvFrame" title="Pratinjau file"></iframe></div>
+            <div class="hm-fv-body"><iframe id="hmFvFrame" title="Pratinjau file"></iframe><div class="hm-fv-doc" id="hmFvDoc" style="display:none;"></div></div>
         </div>
     </div>
 
@@ -908,14 +910,25 @@
             }).join('') + '</div>';
         return h;
     }
+    var fvSeq = 0;
     function bukaFv(url, judul) {
         $('hmFvJudul').textContent = judul;
         $('hmFvTab').href = url;
-        // sembunyikan toolbar/nama file bawaan penampil PDF browser
-        $('hmFvFrame').src = url + (url.indexOf('#') === -1 ? '#toolbar=0&navpanes=0' : '');
         $('hmFv').hidden = false;
+        var n = ++fvSeq;
+        var aktif = function () { return n === fvSeq && !$('hmFv').hidden; };
+        if (window.optiTampilkanBerkas) {
+            // PDF/gambar lewat iframe (toolbar bawaan disembunyikan), Word dirender di dalam modal
+            window.optiTampilkanBerkas(url, $('hmFvFrame'), $('hmFvDoc'), aktif);
+        } else {
+            $('hmFvFrame').src = url + (url.indexOf('#') === -1 ? '#toolbar=0&navpanes=0' : '');
+        }
     }
-    function tutupFv() { $('hmFv').hidden = true; $('hmFvFrame').src = 'about:blank'; }
+    function tutupFv() {
+        fvSeq++;
+        $('hmFv').hidden = true; $('hmFvFrame').src = 'about:blank'; $('hmFvFrame').style.display = '';
+        $('hmFvDoc').innerHTML = ''; $('hmFvDoc').style.display = 'none';
+    }
 
     /* ---------- Tab Alur ---------- */
     function alurItems(p) {

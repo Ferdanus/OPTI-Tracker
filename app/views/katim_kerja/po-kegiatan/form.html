@@ -752,7 +752,7 @@ input[type=number] {
 <!-- Top Header Navigation -->
 <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
     <div class="d-flex align-items-center gap-3">
-        <a href="{{ @BASE }}/po-kegiatan?divisi={{ @order.jenis_layanan_opti }}" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1.5 px-3 py-1.5 rounded-pill shadow-xs">
+        <a href="{{ @revisi_konteks ? (@BASE . '/po-kegiatan/daftar') : (@BASE . '/po-kegiatan?divisi=' . @order.jenis_layanan_opti) }}" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1.5 px-3 py-1.5 rounded-pill shadow-xs">
             <i class="bi bi-arrow-left"></i> <span>Kembali</span>
         </a>
         <div>
@@ -806,6 +806,12 @@ input[type=number] {
         .rv-inline label { margin: 0; cursor: pointer; }
         .rv-inline .done-t { text-decoration: line-through; color: #64748b; }
         .rv-err { color: #b91c1c; font-size: .78rem; margin-top: 4px; }
+        .rv-kirim { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; padding-top: 10px; border-top: 1px solid #fde68a; }
+        .rv-kirim[hidden] { display: none; }
+        .rv-kirim .rv-kirim-hint { font-size: .8rem; color: #065f46; flex: 1; min-width: 180px; }
+        .rv-kirim button { border: 0; background: #059669; color: #fff; font-weight: 700; font-size: .85rem; border-radius: 99px; padding: 8px 18px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+        .rv-kirim button:hover { background: #047857; }
+        .rv-kirim button:disabled { opacity: .6; cursor: wait; }
     </style>
     <div class="rv-bar" id="rvBar" role="region" aria-label="Catatan revisi" hidden>
         <div class="rv-bar-top">
@@ -816,6 +822,10 @@ input[type=number] {
         </div>
         <div class="rv-prog"><i id="rvProg"></i></div>
         <ul class="rv-list" id="rvList"></ul>
+        <div class="rv-kirim" id="rvKirimBox" hidden>
+            <span class="rv-kirim-hint"><i class="bi bi-check2-circle"></i> Semua catatan sudah diperbaiki. Perubahan akan disimpan lalu langsung dikirim.</span>
+            <button type="button" id="rvKirimBtn"><i class="bi bi-send-fill"></i> <span id="rvKirimTx">Kirim</span></button>
+        </div>
         <div class="rv-err" id="rvErr" hidden></div>
     </div>
     </check>
@@ -1682,7 +1692,7 @@ input[type=number] {
     <!-- Sticky Bottom Action Bar -->
     <div class="po-sticky-bar">
         <div class="d-flex align-items-center gap-2">
-            <a href="{{ @BASE }}/po-kegiatan?divisi={{ @order.jenis_layanan_opti }}" class="btn btn-outline-secondary px-3.5 py-2 rounded-pill shadow-xs fw-semibold">
+            <a href="{{ @revisi_konteks ? (@BASE . '/po-kegiatan/daftar') : (@BASE . '/po-kegiatan?divisi=' . @order.jenis_layanan_opti) }}" class="btn btn-outline-secondary px-3.5 py-2 rounded-pill shadow-xs fw-semibold">
                 <i class="bi bi-arrow-left me-1"></i> Batal / Kembali
             </a>
             <button type="button" class="btn btn-outline-primary btn-sm px-3 py-1.5 rounded-pill shadow-xs fw-semibold d-inline-flex align-items-center gap-1.5 d-xl-none" onclick="switchPoViewMode('preview')">
@@ -5822,6 +5832,25 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // [BARU] Dipakai tombol "kirim" di pita catatan revisi (revisi_konteks): validasi yang sama seperti tombol Kirim, tanpa submit.
+    window.poValidasiSebelumKirim = function () {
+        var inpAksi = document.getElementById('inputAksi');
+        if (inpAksi) inpAksi.value = 'kirim';
+        if (!cekTahunPo()) { return false; }
+        var invalidFields = validasiFieldWajib().concat(validasiTtd());
+        if (invalidFields.length > 0) {
+            invalidFields[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+            invalidFields[0].focus();
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({ icon: 'warning', title: 'Ada Kolom Wajib yang Belum Diisi', text: 'Mohon lengkapi ' + invalidFields.length + ' kolom bertanda merah sebelum mengirim PO.', confirmButtonText: 'Oke, Saya Lengkapi', confirmButtonColor: '#881337' });
+            } else {
+                alert('Ada ' + invalidFields.length + ' kolom wajib yang belum diisi. Mohon lengkapi dulu.');
+            }
+            return false;
+        }
+        return true;
+    };
+
 // ---- sebelum submit: tuang jadwalState (murni JS) jadi hidden input ----
 document.getElementById('formPo').addEventListener('submit', function (e) {
     // Pengaman terakhir (mis. submit lewat Enter): tahun Tanggal Surat PO harus sesuai.
@@ -6287,6 +6316,8 @@ setTimeout(function () {
         var URL_AKSI = KONTEKS === 'ppk' ? BASE + '/po-revisi-ppk/' + PO_ID + '/catatan/' : BASE + '/po-kegiatan/' + PO_ID + '/catatan/';
         var LABEL = { dasar: 'Dasar', tujuan: 'Tujuan', lingkup: 'Ruang Lingkup', alat: 'Alat dan Bahan', metoda: 'Metoda', alamat: 'Alamat', tim: 'Tim Pelaksana', rab: 'RAB', jadwal: 'Jadwal' };
         var kartu = {};
+        var KIRIM = null;   // {url, label} dari catatan-form: tujuan pengiriman sesudah semua catatan diperbaiki
+        var DARI = '{{ @dari }}';
     
         function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
         function kunci(judul) {
@@ -6314,6 +6345,11 @@ setTimeout(function () {
             document.getElementById('rvJudul').textContent = KONTEKS === 'ppk' ? 'Catatan revisi PPK BLU' : 'Catatan revisi Ketua Tim';
             document.getElementById('rvHit').textContent = selesai + ' dari ' + total + ' catatan sudah diperbaiki';
             document.getElementById('rvProg').style.width = (total ? Math.round(selesai * 100 / total) : 0) + '%';
+            var kb = document.getElementById('rvKirimBox');
+            if (kb) {
+                kb.hidden = !(KIRIM && total > 0 && selesai === total);
+                if (KIRIM) { document.getElementById('rvKirimTx').textContent = KIRIM.label; }
+            }
     
             list.innerHTML = data.map(function (c) {
                 var done = c.state === 'selesai', ada = !!kartu[c.bagian];
@@ -6363,8 +6399,42 @@ setTimeout(function () {
             }
         });
     
+        // Tombol kirim: simpan form (fetch) lalu panggil endpoint kirim, kemudian kembali ke daftar/panel revisi
+        function bacaJson(r) {
+            return r.text().then(function (t) { var j; try { j = JSON.parse(t); } catch (e) { throw new Error('Server membalas ' + r.status + '.'); } if (!r.ok || !j.ok) { throw new Error(j.pesan || 'Permintaan gagal.'); } return j; });
+        }
+        function selesaiKirim() {
+            var ke = (DARI === 'ppk' || (DARI !== 'daftar' && KONTEKS === 'ppk')) ? '/po-revisi-ppk?buka=' + PO_ID + '&dari=daftar' : '/po-kegiatan/daftar';
+            window.location.href = BASE + ke;
+        }
+        function kirimSekarang() {
+            var btn = document.getElementById('rvKirimBtn'), form = document.getElementById('formPo');
+            if (!KIRIM || !form || btn.disabled) { return; }
+            galat('');
+            if (typeof window.poValidasiSebelumKirim === 'function' && !window.poValidasiSebelumKirim()) { return; }
+            var tutup = function () { btn.disabled = false; if (window.finishLoading) { window.finishLoading(); } };
+            var ev = new Event('submit', { cancelable: true, bubbles: true });
+            if (!form.dispatchEvent(ev)) { return; }      // ditolak pengaman form (mis. tahun surat), pesan sudah tampil
+            btn.disabled = true;
+            var fd = new FormData(form); fd.set('kirim_setelah', '1'); fd.set('aksi', 'kirim');
+            fetch(form.getAttribute('action'), { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(bacaJson)
+                .then(function () {
+                    var b = new URLSearchParams(); b.append('csrf_token', CSRF);
+                    return fetch(BASE + KIRIM.url, { method: 'POST', body: b, credentials: 'same-origin' }).then(bacaJson).catch(function (e) {
+                        throw new Error('Perubahan sudah tersimpan, tetapi pengiriman gagal: ' + e.message);
+                    });
+                })
+                .then(selesaiKirim)
+                .catch(function (e) { tutup(); galat(e.message); if (bar && bar.scrollIntoView) { bar.scrollIntoView({ behavior: 'smooth', block: 'start' }); } });
+        }
+        document.addEventListener('click', function (e) {
+            if (e.target.closest && e.target.closest('#rvKirimBtn')) { e.preventDefault(); kirimSekarang(); }
+        });
+
         fetch(BASE + '/po-kegiatan/' + PO_ID + '/catatan-form', { credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (j) {
             if (!j || !j.ok) { galat((j && j.pesan) || 'Catatan revisi gagal dimuat.'); bar.hidden = false; return; }
+            KIRIM = (j.kirim && j.kirim.url) ? j.kirim : null;
             data = (j.catatan || []).map(function (c) { return { id: c.id, bagian: c.bagian, teks: c.teks, state: c.state }; });
             tampil();
         }).catch(function () { galat('Catatan revisi gagal dimuat. Muat ulang halaman.'); bar.hidden = false; });

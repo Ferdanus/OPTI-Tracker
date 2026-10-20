@@ -29,8 +29,7 @@
  *   POST /po-humas/@id/verifikasi       verifikasi PO (+ catatan opsional)
  *   GET  /po-humas/@id/berkas           JSON panel samping: nilai kontrak, surat kesanggupan bayar, bukti pembayaran per termin, riwayat sistem (tab Alur)
  *
- * AKSES: sementara HANYA Superadmin. COMING SOON: role 'humas' -- begitu role-nya ditambahkan,
- * cukup tambahkan di izinAkses() dan menu sidebar (layout.html).
+ * AKSES: Superadmin dan role 'humas' (Sub Tim Humas) -- lihat izinAkses() dan menu sidebar (layout.html).
  * Kompatibel PHP 7.2.
  */
 class PoHumasController extends Controller {
@@ -38,16 +37,16 @@ class PoHumasController extends Controller {
     /** Status PO yang sudah dikirim ke Mitra (dan ke Humas). */
     const STATUS_TERKIRIM = "('terkirim','disetujui_mitra','disetujui')";
 
-    /** COMING SOON: tambahkan role 'humas' di sini setelah role-nya ada di sistem. */
+    /** Superadmin dan role 'humas' (Sub Tim Humas). */
     protected function izinAkses() {
-        return $this->isSuperadmin();
+        return $this->isSuperadmin() || $this->getUserRole() === 'humas';
     }
 
     protected function izinkan($json = false) {
         $this->requireAuth();
         if ($this->izinAkses()) { return; }
         if ($json) { $this->keluarkanJson(['ok' => false, 'pesan' => 'Anda tidak punya akses ke halaman ini.'], 403); }
-        $this->setFlashError('Halaman Daftar PO Humas sementara hanya bisa diakses Superadmin (role Humas akan segera hadir).');
+        $this->setFlashError('Halaman Daftar PO Humas hanya bisa diakses Sub Tim Humas dan Superadmin.');
         $this->f3->reroute('/dashboard');
         exit;
     }

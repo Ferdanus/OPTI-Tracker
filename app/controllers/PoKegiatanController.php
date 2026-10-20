@@ -1022,11 +1022,19 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
         /** POST /po-kegiatan/@id/update */
         public function update($f3, $params) {
             $this->requireAuth();
+
+            // [BARU] "Simpan dan kirim" dari form revisi: dikirim lewat fetch (X-Requested-With) + kirim_setelah=1.
+            // Balasannya JSON; pengiriman (kirim-revisi / kirim-ppk / kirim-katim) dipanggil browser sesudah simpan berhasil.
+            $ajaxKirim = ((string) $f3->get('POST.kirim_setelah') === '1')
+                && strtolower((string) (isset($_SERVER['HTTP_X_REQUESTED_WITH']) ? $_SERVER['HTTP_X_REQUESTED_WITH'] : '')) === 'xmlhttprequest';
+            $berhasilSimpan = false;
+            $galatSimpan = '';
     
             $po = new PoKegiatan($this->db);
             $po->load(['id = ?', (int) $params['id']]);
     
             if ($po->dry()) {
+                if ($ajaxKirim) { $this->jsonSimpan(false, 'PO tidak ditemukan.', 404); }
                 $this->setFlashError('PO tidak ditemukan.');
                 $f3->reroute('/po-kegiatan');
                 return;
@@ -1045,9 +1053,13 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
                 list($boleh, $pesan) = \PoReviewController::bolehEdit($this->db, (int) $po->id);
             }
             if (!$boleh) {
+                if ($ajaxKirim) { $this->jsonSimpan(false, $pesan, 403); }
                 $this->setFlashError($pesan);
                 $f3->reroute('/po-kegiatan/daftar');
                 return;
+            }
+            if ($ajaxKirim && !in_array($konteksRevisi, ['review', 'ppk'], true)) {
+                $this->jsonSimpan(false, 'PO ini tidak sedang dalam revisi, tidak ada yang bisa dikirim.', 422);
             }
             $sudahTerkirim = ($statusSebelum === 'terkirim');
 
@@ -1092,7 +1104,10 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
                     }
                 }
     
-                if ($konteksRevisi === 'katim') {
+                $berhasilSimpan = true;
+                if ($ajaxKirim) {
+                    // flash tidak dipasang: halaman tujuan sesudah kirim tidak perlu pesan "tandai catatan"
+                } elseif ($konteksRevisi === 'katim') {
                     // [BARU] Ketua Tim mengedit sendiri saat review: status review tetap, pembuat diberi tahu lewat tab Alur + notifikasi
                     $this->catatEditKatim($po);
                     $this->setFlashSuccess('Perubahan PO disimpan. PO tetap menunggu review Anda.');
@@ -1105,7 +1120,12 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
                 }
             } catch (\Exception $e) {
                 $this->lepasNomorBaru();
-                $this->setFlashError('Gagal memperbarui PO: ' . $e->getMessage());
+                $galatSimpan = 'Gagal memperbarui PO: ' . $e->getMessage();
+                if (!$ajaxKirim) { $this->setFlashError($galatSimpan); }
+            }
+
+            if ($ajaxKirim) {
+                $this->jsonSimpan($berhasilSimpan, $berhasilSimpan ? 'Perubahan PO disimpan.' : ($galatSimpan !== '' ? $galatSimpan : 'Gagal memperbarui PO.'), $berhasilSimpan ? 200 : 500);
             }
     
             // [FIX] Kalau edit ini datang dari halaman "Daftar Review PO"/"Diskusi PO"
@@ -1120,9 +1140,27 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
                 $f3->reroute('/po-revisi-ppk?buka=' . (int) $po->id . '&dari=daftar');
                 return;
             }
+            // [BARU] Edit PO yang sedang direview/direvisi tetapi dibuka dari halaman lain (mis. daftar PO per order):
+            // balik ke Daftar Review PO / panel revisi PPK BLU, bukan ke halaman daftar PO biasa tempat tombol Buat PO.
+            if ($konteksRevisi === 'ppk') {
+                $f3->reroute('/po-revisi-ppk?buka=' . (int) $po->id . '&dari=daftar');
+                return;
+            }
+            if ($konteksRevisi === 'review' || $konteksRevisi === 'katim') {
+                $f3->reroute('/po-kegiatan/daftar');
+                return;
+            }
     
             $f3->reroute($this->urlDaftarPoDariOrder((int) $f3->get('POST.order_id')));
         }
+
+    /** Balasan JSON untuk "Simpan dan kirim" (lihat update()). Mengakhiri request. */
+    protected function jsonSimpan($ok, $pesan, $status = 200) {
+        http_response_code((int) $status);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['ok' => (bool) $ok, 'pesan' => (string) $pesan], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
 
     /** Jejak di tab Alur + notifikasi ke Ketua Pelaksana pembuat saat Ketua Tim mengedit PO yang sedang direview. */
     protected function catatEditKatim($po) {
