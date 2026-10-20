@@ -808,6 +808,12 @@ $daftarPegawai = $arsipUser->find(
         $lampiranUserExisting = !empty($spExisting['file_lampiran_user'])
             ? str_replace('\\', '/', (string)$spExisting['file_lampiran_user'])
             : str_replace('\\', '/', (string)($_SESSION['pending_lampiran_sp_' . $orderId] ?? ''));
+        // Khusus OPTI Selulosa: lampiran hal. 3 langsung menyesuaikan dokumen yang diunggah PIC di Tahap 4
+        if (($order['jenis_layanan_opti'] ?? '') === 'selulosa' && !empty($proposal['file_proposal'])) {
+            if (empty($_SESSION['pending_lampiran_sp_' . $orderId])) {
+                $lampiranUserExisting = str_replace('\\', '/', (string)$proposal['file_proposal']);
+            }
+        }
         $f3->set('lampiran_user_existing', $lampiranUserExisting);
         $f3->set('all_sp', $allSp);
         $f3->set('is_revisi_baru', $isRevisiBaru);
@@ -1003,6 +1009,15 @@ $daftarPegawai = $arsipUser->find(
             } elseif (!empty($_SESSION['pending_lampiran_sp_' . $orderId])) {
                 $post['file_lampiran_user'] = $_SESSION['pending_lampiran_sp_' . $orderId];
                 unset($_SESSION['pending_lampiran_sp_' . $orderId]);
+            }
+
+            // Khusus OPTI Selulosa: jika belum ada upload berkas lampiran baru di sesi ini,
+            // sesuaikan langsung dengan dokumen proposal yang diunggah PIC pada Tahap 4
+            if (empty($post['file_lampiran_user']) && ($order['jenis_layanan_opti'] ?? '') === 'selulosa') {
+                $prop = $orderModel->getProposalRiset($orderId);
+                if (!empty($prop['file_proposal'])) {
+                    $post['file_lampiran_user'] = str_replace('\\', '/', (string)$prop['file_proposal']);
+                }
             }
 
             // Otomatis generate dan simpan berkas PDF resmi (termasuk lampiran hal 3+) ke folder uploads/penawaran
@@ -1503,6 +1518,13 @@ $daftarPegawai = $arsipUser->find(
             $sp['file_lampiran_user'] = $_SESSION['pending_lampiran_sp_' . $orderIdActual];
         }
 
+        if ($sp && ($order['jenis_layanan_opti'] ?? '') === 'selulosa' && empty($_SESSION['pending_lampiran_sp_' . $orderIdActual])) {
+            $propRows = $this->db->exec('SELECT file_proposal FROM opti_proposal_riset WHERE order_id = ? AND file_proposal IS NOT NULL AND file_proposal <> \'\' ORDER BY id DESC LIMIT 1', [1 => $orderIdActual]);
+            if (!empty($propRows[0]['file_proposal'])) {
+                $sp['file_lampiran_user'] = trim((string)$propRows[0]['file_proposal']);
+            }
+        }
+
         if (!$sp) {
             $this->setFlashError('Surat penawaran tidak ditemukan.');
             $f3->reroute('/surat-penawaran');
@@ -1678,17 +1700,31 @@ $daftarPegawai = $arsipUser->find(
         $lampiranDocExt = null;
 
         $relLampiran = $sp['file_lampiran_user'] ?? ($_SESSION['pending_lampiran_sp_' . $orderIdActual] ?? '');
+        if (empty($relLampiran) && ($order['jenis_layanan_opti'] ?? '') === 'selulosa' && $orderIdActual > 0) {
+            $propRows = $this->db->exec('SELECT file_proposal FROM opti_proposal_riset WHERE order_id = ? AND file_proposal IS NOT NULL AND file_proposal <> \'\' ORDER BY id DESC LIMIT 1', [1 => $orderIdActual]);
+            if (!empty($propRows[0]['file_proposal'])) {
+                $relLampiran = trim((string)$propRows[0]['file_proposal']);
+            }
+        }
         if (!empty($relLampiran)) {
             $rootDir = dirname(__DIR__, 2);
             $fullLampiran = $rootDir . '/' . ltrim($relLampiran, '/\\');
             if (is_file($fullLampiran)) {
                 $ext = strtolower(pathinfo($fullLampiran, PATHINFO_EXTENSION));
+
+                $pdfToRender = null;
                 if ($ext === 'pdf') {
+                    $pdfToRender = $fullLampiran;
+                } elseif (in_array($ext, ['doc', 'docx'], true)) {
+                    $pdfToRender = $this->ensureConvertedPdf($fullLampiran);
+                }
+
+                if (!empty($pdfToRender) && is_file($pdfToRender)) {
                     // Render tiap halaman PDF menjadi gambar beresolusi tinggi agar muncul nyata di Word (Hal 3+)
                     $pythonExe = 'C:\\Users\\jrinz\\AppData\\Local\\Programs\\Python\\Python311\\python.exe';
                     $scriptPath = __DIR__ . '/../helpers/render_pdf_pages.py';
                     if (is_file($pythonExe) && is_file($scriptPath)) {
-                        $cmd = escapeshellarg($pythonExe) . ' ' . escapeshellarg($scriptPath) . ' ' . escapeshellarg($fullLampiran);
+                        $cmd = escapeshellarg($pythonExe) . ' ' . escapeshellarg($scriptPath) . ' ' . escapeshellarg($pdfToRender);
                         $jsonOutput = @shell_exec($cmd);
                         if ($jsonOutput) {
                             $res = json_decode($jsonOutput, true);
@@ -1699,7 +1735,7 @@ $daftarPegawai = $arsipUser->find(
                     }
                     if (empty($lampiranPdfPages)) {
                         $lampiranDocName = basename($fullLampiran);
-                        $lampiranDocExt = 'PDF';
+                        $lampiranDocExt = strtoupper($ext);
                     }
                 } elseif (in_array($ext, ['jpg', 'jpeg', 'png'], true)) {
                     $lampiranImageBase64 = base64_encode(file_get_contents($fullLampiran));
@@ -1955,6 +1991,56 @@ $daftarPegawai = $arsipUser->find(
     }
 
     /**
+     * Memastikan berkas dokumen Word (doc/docx) terkonversi ke PDF beresolusi tinggi
+     * untuk disambungkan penuh ke Halaman 3+ Surat Penawaran atau dirender halamannya
+     */
+    private function ensureConvertedPdf(string $sourceFullPath): ?string
+    {
+        if (!is_file($sourceFullPath)) {
+            return null;
+        }
+        $ext = strtolower(pathinfo($sourceFullPath, PATHINFO_EXTENSION));
+        if ($ext === 'pdf') {
+            return $sourceFullPath;
+        }
+        if (!in_array($ext, ['doc', 'docx'], true)) {
+            return null;
+        }
+
+        $rootDir = dirname(__DIR__, 2);
+        $cacheDir = $rootDir . '/storage/cache';
+        if (!is_dir($cacheDir)) {
+            @mkdir($cacheDir, 0777, true);
+        }
+
+        $targetPdfName = 'word_attachment_' . md5($sourceFullPath . '_' . filemtime($sourceFullPath)) . '.pdf';
+        $cachedPdfPath = $cacheDir . '/' . $targetPdfName;
+
+        if (is_file($cachedPdfPath) && filesize($cachedPdfPath) > 0) {
+            return $cachedPdfPath;
+        }
+
+        $psScript = $rootDir . '/app/helpers/convert_docx_to_pdf.ps1';
+        if (is_file($psScript)) {
+            $winDocx = str_replace('/', '\\', $sourceFullPath);
+            $winPdf = str_replace('/', '\\', $cachedPdfPath);
+            $cmd = 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File ' . escapeshellarg($psScript) . ' -docxPath ' . escapeshellarg($winDocx) . ' -pdfPath ' . escapeshellarg($winPdf);
+            @exec($cmd, $out, $ret);
+            if ($ret === 0 && is_file($cachedPdfPath) && filesize($cachedPdfPath) > 0) {
+                return $cachedPdfPath;
+            }
+        }
+
+        // Cek juga jika ada file PDF berdampingan dengan nama sama
+        $siblingPdf = preg_replace('/\.(?:docx|doc)$/i', '.pdf', $sourceFullPath);
+        if (is_file($siblingPdf) && filesize($siblingPdf) > 0) {
+            return $siblingPdf;
+        }
+
+        return null;
+    }
+
+    /**
      * Menyambungkan berkas lampiran yang diunggah user ke PDF Surat Penawaran mulai Halaman 3 dan seterusnya
      */
     private function appendLampiranUserToPdf(SiloptiSuratPenawaranPdf $pdf, array $order, array $sp)
@@ -1978,6 +2064,14 @@ $daftarPegawai = $arsipUser->find(
                 if (!empty($rows[0]['file_lampiran_user'])) {
                     $relPath = trim((string)$rows[0]['file_lampiran_user']);
                 }
+            }
+        }
+
+        // Khusus OPTI Selulosa: lampiran Halaman 3+ langsung menyesuaikan dokumen yang diunggah PIC di Tahap 4
+        if (($relPath === '' || ($order['jenis_layanan_opti'] ?? '') === 'selulosa') && $orderId > 0) {
+            $propRows = $this->db->exec('SELECT file_proposal FROM opti_proposal_riset WHERE order_id = ? AND file_proposal IS NOT NULL AND file_proposal <> \'\' ORDER BY id DESC LIMIT 1', [1 => $orderId]);
+            if (!empty($propRows[0]['file_proposal']) && empty($_SESSION['pending_lampiran_sp_' . $orderId])) {
+                $relPath = trim((string)$propRows[0]['file_proposal']);
             }
         }
 
@@ -2032,6 +2126,28 @@ $daftarPegawai = $arsipUser->find(
         }
 
         if (in_array($ext, ['doc', 'docx'], true)) {
+            $convertedPdf = $this->ensureConvertedPdf($fullPath);
+            if (!empty($convertedPdf) && is_file($convertedPdf)) {
+                try {
+                    $pdf->isAttachmentPage = true;
+                    $pageCount = $pdf->setSourceFile($convertedPdf);
+                    for ($pageNo = 1; $pageNo <= $pageCount; $pageNo++) {
+                        $tplId = $pdf->importPage($pageNo);
+                        $size = $pdf->getTemplateSize($tplId);
+                        $orientation = !empty($size['orientation']) ? $size['orientation'] : (($size['width'] > $size['height']) ? 'L' : 'P');
+                        $pdf->AddPage($orientation, [$size['width'], $size['height']]);
+                        $pdf->useTemplate($tplId, 0, 0, $size['width'], $size['height']);
+                    }
+                    $pdf->isAttachmentPage = false;
+                    $pdf->lampiranMerged = true;
+                    return;
+                } catch (\Throwable $e) {
+                    $pdf->isAttachmentPage = false;
+                    $pdf->lampiranMerged = false;
+                }
+            }
+
+            // Fallback jika konversi Word ke PDF belum berhasil: tampilkan halaman informasi berkas lampiran
             $pdf->isAttachmentPage = false;
             $pdf->AddPage('P', 'A4');
             $pdf->SetFont('Arial', 'B', 12);

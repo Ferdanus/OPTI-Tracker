@@ -139,9 +139,16 @@ class SuratPenawaran extends \DB\SQL\Mapper
     public function getByOrderId(int $orderId): ?array
     {
         $res = $this->db->exec(
-            "SELECT sp.*, c.nmcustomer, c.pt_cv, c.alamatcustomer, c.notelpcustomer, c.emailcustomer,
+            "SELECT sp.*,
+                    COALESCE(
+                        IF(o.jenis_layanan_opti = 'selulosa' AND pr.file_proposal IS NOT NULL AND pr.file_proposal <> '', pr.file_proposal, NULLIF(sp.file_lampiran_user, '')),
+                        NULLIF(sp.file_lampiran_user, '')
+                    ) AS file_lampiran_user,
+                    c.nmcustomer, c.pt_cv, c.alamatcustomer, c.notelpcustomer, c.emailcustomer,
                     u.nama_user AS pembuat_nama
              FROM tb_surat_penawaran sp
+             LEFT JOIN order_layanan o ON sp.order_id = o.id
+             LEFT JOIN opti_proposal_riset pr ON sp.order_id = pr.order_id
              LEFT JOIN tb_customer c ON sp.customer_id = c.id_customer
              LEFT JOIN tb_arsipuser u ON sp.dibuat_oleh = u.id_user
              WHERE sp.order_id = ?
@@ -157,9 +164,16 @@ class SuratPenawaran extends \DB\SQL\Mapper
     public function getById(int $id): ?array
     {
         $res = $this->db->exec(
-            "SELECT sp.*, c.nmcustomer, c.pt_cv, c.alamatcustomer, c.notelpcustomer, c.emailcustomer,
+            "SELECT sp.*,
+                    COALESCE(
+                        IF(o.jenis_layanan_opti = 'selulosa' AND pr.file_proposal IS NOT NULL AND pr.file_proposal <> '', pr.file_proposal, NULLIF(sp.file_lampiran_user, '')),
+                        NULLIF(sp.file_lampiran_user, '')
+                    ) AS file_lampiran_user,
+                    c.nmcustomer, c.pt_cv, c.alamatcustomer, c.notelpcustomer, c.emailcustomer,
                     u.nama_user AS pembuat_nama
              FROM tb_surat_penawaran sp
+             LEFT JOIN order_layanan o ON sp.order_id = o.id
+             LEFT JOIN opti_proposal_riset pr ON sp.order_id = pr.order_id
              LEFT JOIN tb_customer c ON sp.customer_id = c.id_customer
              LEFT JOIN tb_arsipuser u ON sp.dibuat_oleh = u.id_user
              WHERE sp.id = ?
@@ -175,9 +189,16 @@ class SuratPenawaran extends \DB\SQL\Mapper
     public function getAllByOrderId(int $orderId): array
     {
         return $this->db->exec(
-            "SELECT sp.*, c.nmcustomer, c.pt_cv, c.alamatcustomer, c.notelpcustomer, c.emailcustomer,
+            "SELECT sp.*,
+                    COALESCE(
+                        IF(o.jenis_layanan_opti = 'selulosa' AND pr.file_proposal IS NOT NULL AND pr.file_proposal <> '', pr.file_proposal, NULLIF(sp.file_lampiran_user, '')),
+                        NULLIF(sp.file_lampiran_user, '')
+                    ) AS file_lampiran_user,
+                    c.nmcustomer, c.pt_cv, c.alamatcustomer, c.notelpcustomer, c.emailcustomer,
                     u.nama_user AS pembuat_nama
              FROM tb_surat_penawaran sp
+             LEFT JOIN order_layanan o ON sp.order_id = o.id
+             LEFT JOIN opti_proposal_riset pr ON sp.order_id = pr.order_id
              LEFT JOIN tb_customer c ON sp.customer_id = c.id_customer
              LEFT JOIN tb_arsipuser u ON sp.dibuat_oleh = u.id_user
              WHERE sp.order_id = ?
@@ -233,13 +254,13 @@ class SuratPenawaran extends \DB\SQL\Mapper
             }
         }
 
-        // Jika ada proposal selulosa, ambil file lampirannya jika belum ada upload baru
-        if (empty($fileLampiran) && $order['jenis_layanan_opti'] === 'selulosa') {
+        // Jika ada proposal selulosa, ambil file lampirannya (halaman 3+) dari proposal riset Tahap 4
+        if ($order['jenis_layanan_opti'] === 'selulosa') {
             if (!isset($prop)) {
                 $prop = $orderModel->getProposalRiset($orderId);
             }
-            if (!empty($prop['file_proposal'])) {
-                $fileLampiran = $prop['file_proposal'];
+            if (!empty($prop['file_proposal']) && empty($fileLampiranUser)) {
+                $fileLampiranUser = $prop['file_proposal'];
             }
         }
 
@@ -249,6 +270,14 @@ class SuratPenawaran extends \DB\SQL\Mapper
 
         if (empty($fileLampiranUser) && !empty($existing['file_lampiran_user'])) {
             $fileLampiranUser = $existing['file_lampiran_user'];
+        }
+        if (empty($fileLampiranUser) && ($order['jenis_layanan_opti'] ?? '') === 'selulosa') {
+            if (!isset($prop)) {
+                $prop = $orderModel->getProposalRiset($orderId);
+            }
+            if (!empty($prop['file_proposal'])) {
+                $fileLampiranUser = $prop['file_proposal'];
+            }
         }
 
         // KASUS UPDATE (Bukan revisi baru):

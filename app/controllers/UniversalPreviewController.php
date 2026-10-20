@@ -252,11 +252,19 @@ class UniversalPreviewController extends Controller
         }
 
         if (empty($relPath)) {
+            $orderIdActual = (int)($sp['order_id'] ?? $targetId);
+            $propRows = $this->db->exec('SELECT file_proposal FROM opti_proposal_riset WHERE order_id = ? AND file_proposal IS NOT NULL AND file_proposal <> \'\' ORDER BY id DESC LIMIT 1', [1 => $orderIdActual]);
+            if (!empty($propRows[0]['file_proposal'])) {
+                $relPath = trim((string)$propRows[0]['file_proposal']);
+            }
+        }
+
+        if (empty($relPath)) {
             $this->jsonResponse(['success' => false, 'message' => 'Berkas lampiran surat penawaran belum diunggah.']);
             return;
         }
 
-        $filePath = $this->resolveFilePath($relPath, ['uploads/penawaran/lampiran', 'uploads/penawaran', 'storage/penawaran']);
+        $filePath = $this->resolveFilePath($relPath, ['uploads/penawaran/lampiran', 'uploads/penawaran', 'storage/penawaran', 'public/uploads/proposals']);
         if (!$filePath || !is_file($filePath)) {
             $this->jsonResponse(['success' => false, 'message' => 'Berkas fisik lampiran tidak ditemukan di server: ' . basename($relPath)]);
             return;
@@ -323,6 +331,13 @@ class UniversalPreviewController extends Controller
 
         if ($sp && empty($sp['file_lampiran_user']) && !empty($_SESSION['pending_lampiran_sp_' . $orderIdActual])) {
             $sp['file_lampiran_user'] = $_SESSION['pending_lampiran_sp_' . $orderIdActual];
+        }
+
+        if ($sp && ($order['jenis_layanan_opti'] ?? '') === 'selulosa' && empty($_SESSION['pending_lampiran_sp_' . $orderIdActual])) {
+            $propRows = $this->db->exec('SELECT file_proposal FROM opti_proposal_riset WHERE order_id = ? AND file_proposal IS NOT NULL AND file_proposal <> \'\' ORDER BY id DESC LIMIT 1', [1 => $orderIdActual]);
+            if (!empty($propRows[0]['file_proposal'])) {
+                $sp['file_lampiran_user'] = trim((string)$propRows[0]['file_proposal']);
+            }
         }
 
         if (!$sp) {

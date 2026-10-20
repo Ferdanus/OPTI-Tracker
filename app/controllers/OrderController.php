@@ -3173,6 +3173,13 @@ class OrderController extends Controller {
                     array(1 => $id, 2 => $order['pic_proposal_id'] ?: $userId, 3 => $order['jenis_layanan_opti'], 4 => $dest, 5 => $initialStatus, 6 => $userId)
                 );
             }
+            if ($isSelulosa) {
+                // Sinkronkan langsung ke lampiran surat penawaran (Halaman 3+)
+                $this->db->exec(
+                    "UPDATE tb_surat_penawaran SET file_lampiran_user = ?, updated_at = NOW() WHERE order_id = ?",
+                    array(1 => $dest, 2 => $id)
+                );
+            }
             $this->logActivity($id, 'proposal', 'upload_file', "Unggah berkas proposal ({$filename})");
             $this->setFlashSuccess('Berkas dokumen proposal berhasil diunggah!');
         } else {
