@@ -2252,16 +2252,17 @@ $daftarPegawai = $arsipUser->find(
         $pdf->SetY($pdf->GetY() + 2.12);
         $pdf->ParagraphWithIndent('Kami menunggu konfirmasi lebih lanjut. Atas perhatian dan kerja sama yang baik, kami sampaikan terima kasih.', 12.7, $lineH, 160.0, 30.0);
 
-        // 8. BLOK TANDA TANGAN HALAMAN 1 (Kolom Kanan 6.4 cm di X: 126 mm, Rata Kiri Sejajar Awal Nama, 4 Enter Kosong)
+        // 8. BLOK TANDA TANGAN HALAMAN 1 (Kolom Kanan 6.4 cm di X: 126 mm, Rata Tengah, 4 Enter Kosong)
         $signerRole = !empty($sp['jabatan_pejabat']) ? trim($sp['jabatan_pejabat']) : 'Kepala';
         $signerName = !empty($sp['pejabat_nama']) ? trim($sp['pejabat_nama']) : (!empty($sp['pembuat_nama']) && $sp['pembuat_nama'] !== 'Tim Mitra BBSPJIS' ? trim($sp['pembuat_nama']) : 'Dodiet Prasetyo');
 
         $pdf->SetY($pdf->GetY() + 4.23); // Jarak atas 12 pt
-        $pdf->SetX(126.0);
+        $signerStartX = 126.0 + (64.0 - $pdf->GetStringWidth($signerName)) / 2;
+        $pdf->SetX($signerStartX);
         $pdf->Cell(64.0, $lineH, rtrim($signerRole, ',') . ',', 0, 1, 'L');
         $pdf->SetY($pdf->GetY() + 2.12 + 17.8); // Jarak bawah 6 pt + 4 baris kosong (≈ 50 pt / 4 enter)
         $pdf->SetX(126.0);
-        $pdf->Cell(64.0, $lineH, $signerName, 0, 1, 'L');
+        $pdf->Cell(64.0, $lineH, $signerName, 0, 1, 'C');
 
         // ==========================================
         // HALAMAN 2: LEMBAR PERSETUJUAN
@@ -2368,14 +2369,15 @@ $daftarPegawai = $arsipUser->find(
         $pdf->SetX(30.0);
         $pdf->MultiCell(160.0, 3.8, 'Catatan: Mohon mengembalikan lembar persetujuan ini kepada BBSPJIS melalui email atau media komunikasi yang telah ditentukan sebagai dasar proses penerbitan invoice dan pelaksanaan layanan.', 0, 'L');
 
-        // 9. Blok Tanda Tangan Kepala Halaman 2 (Sama Persis dengan Halaman 1 - Rata Kiri Sejajar Awal Nama)
+        // 9. Blok Tanda Tangan Kepala Halaman 2 (Sama Persis dengan Halaman 1)
         $pdf->SetFont('Arial', '', 11);
         $pdf->SetY($pdf->GetY() + 4.23); // Jarak atas 12 pt
-        $pdf->SetX(126.0);
+        $signerStartX = 126.0 + (64.0 - $pdf->GetStringWidth($signerName)) / 2;
+        $pdf->SetX($signerStartX);
         $pdf->Cell(64.0, $lineH, rtrim($signerRole, ',') . ',', 0, 1, 'L');
         $pdf->SetY($pdf->GetY() + 2.12 + 17.8); // Jarak bawah 6 pt + 4 baris kosong (≈ 50 pt / 4 enter)
         $pdf->SetX(126.0);
-        $pdf->Cell(64.0, $lineH, $signerName, 0, 1, 'L');
+        $pdf->Cell(64.0, $lineH, $signerName, 0, 1, 'C');
 
         return $pdf;
     }
@@ -2569,13 +2571,14 @@ $daftarPegawai = $arsipUser->find(
         $pdf->SetY($pdf->GetY() + 2.12);
         $pdf->ParagraphWithIndent('Kami menunggu konfirmasi lebih lanjut. Atas perhatian dan kerja sama yang baik, kami sampaikan terima kasih.', 12.7, $lineH, 160.0, 30.0);
 
-        // 7. Tanda Tangan Cover (Rata Kiri Sejajar Awal Nama)
+        // 7. Tanda Tangan Cover
         $pdf->SetY($pdf->GetY() + 4.23);
-        $pdf->SetX(126.0);
+        $signerStartXLing = 126.0 + (64.0 - $pdf->GetStringWidth($signerNameLing)) / 2;
+        $pdf->SetX($signerStartXLing);
         $pdf->Cell(64.0, $lineH, rtrim($signerRoleLing, ',') . ',', 0, 1, 'L');
         $pdf->SetY($pdf->GetY() + 2.12 + 17.8); // 4 enter kosong
         $pdf->SetX(126.0);
-        $pdf->Cell(64.0, $lineH, $signerNameLing, 0, 1, 'L');
+        $pdf->Cell(64.0, $lineH, $signerNameLing, 0, 1, 'C');
 
         // ==========================================
         // HALAMAN 2: LEMBAR PERSETUJUAN
@@ -2682,14 +2685,15 @@ $daftarPegawai = $arsipUser->find(
         $pdf->SetX(30.0);
         $pdf->MultiCell(160.0, 3.8, 'Catatan: Mohon mengembalikan lembar persetujuan ini kepada BBSPJIS melalui email atau media komunikasi yang telah ditentukan sebagai dasar proses penerbitan invoice dan pelaksanaan layanan.', 0, 'L');
 
-        // 9. Tanda Tangan Pejabat Lingkungan Halaman 2 (Rata Kiri Sejajar Awal Nama)
+        // 9. Tanda Tangan Pejabat Lingkungan Halaman 2
         $pdf->SetFont('Arial', '', 11);
         $pdf->SetY($pdf->GetY() + 4.23);
-        $pdf->SetX(126.0);
+        $signerStartXLing = 126.0 + (64.0 - $pdf->GetStringWidth($signerNameLing)) / 2;
+        $pdf->SetX($signerStartXLing);
         $pdf->Cell(64.0, $lineH, rtrim($signerRoleLing, ',') . ',', 0, 1, 'L');
         $pdf->SetY($pdf->GetY() + 2.12 + 17.8); // 4 enter kosong
         $pdf->SetX(126.0);
-        $pdf->Cell(64.0, $lineH, $signerNameLing, 0, 1, 'L');
+        $pdf->Cell(64.0, $lineH, $signerNameLing, 0, 1, 'C');
 
         return $pdf;
     }
