@@ -724,20 +724,20 @@ class OrderController extends Controller {
                 $langkahBerikutnya['tombol_icon'] = 'bi-check2-circle';
                 $langkahBerikutnya['tombol_class'] = 'btn-primary';
                 $langkahBerikutnya['target_card'] = '#cardPenawaran';
-            } elseif (empty($penawaran['surat_kesanggupan_bayar'])) {
-                $langkahBerikutnya['judul'] = 'Unggah Lembar Persetujuan Penawaran Klien';
-                $langkahBerikutnya['deskripsi'] = 'Penawaran telah disepakati (DEAL). Unggah pindaian (scan) Lembar Persetujuan / Kesanggupan bertandatangan & cap basah klien sebagai prasyarat sebelum diteruskan ke Keuangan.';
+            } elseif (empty($penawaran['file_penawaran_ttd']) || empty($penawaran['file_bukti_persetujuan'])) {
+                $langkahBerikutnya['judul'] = 'Unggah Dokumen Penawaran DEAL';
+                $langkahBerikutnya['deskripsi'] = 'Penawaran telah disepakati (DEAL). Lengkapi Surat Penawaran bertandatangan dan Bukti Persetujuan terlebih dahulu sebelum order dapat didisposisikan ke Tim Keuangan.';
                 $langkahBerikutnya['penanggung_jawab'] = 'Tim Kemitraan & Pemasaran';
                 $langkahBerikutnya['role_icon'] = 'bi-file-earmark-arrow-up-fill';
                 $langkahBerikutnya['tipe_badge'] = 'warning';
-                $langkahBerikutnya['tombol_teks'] = 'Upload Lembar Persetujuan';
-                $langkahBerikutnya['tombol_url'] = '#cardKesanggupanBayar';
+                $langkahBerikutnya['tombol_teks'] = 'Upload Dokumen Penawaran';
+                $langkahBerikutnya['tombol_url'] = '#cardDokumenDeal1';
                 $langkahBerikutnya['tombol_icon'] = 'bi-cloud-arrow-up-fill';
                 $langkahBerikutnya['tombol_class'] = 'btn-warning text-dark fw-bold';
-                $langkahBerikutnya['target_card'] = '#cardKesanggupanBayar';
+                $langkahBerikutnya['target_card'] = '#cardDokumenDeal1';
             } else {
                 $langkahBerikutnya['judul'] = 'Disposisikan Order ke Tim Keuangan';
-                $langkahBerikutnya['deskripsi'] = 'Lembar Persetujuan telah lengkap. Teruskan order ke Tim Keuangan untuk membuka tahap pembayaran dan penerbitan kuitansi/invoice.';
+                $langkahBerikutnya['deskripsi'] = 'Surat Penawaran bertandatangan dan Bukti Persetujuan telah lengkap. Teruskan order ke Tim Keuangan untuk membuka tahap pembayaran dan penerbitan kuitansi/invoice.';
                 $langkahBerikutnya['penanggung_jawab'] = 'Tim Kemitraan & Pemasaran';
                 $langkahBerikutnya['role_icon'] = 'bi-send-check-fill';
                 $langkahBerikutnya['tipe_badge'] = 'primary';

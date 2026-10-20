@@ -1302,8 +1302,8 @@ $daftarPegawai = $arsipUser->find(
             return;
         }
 
-        if (empty($sp['surat_kesanggupan_bayar'])) {
-            $this->setFlashError("Gagal mendisposisikan ke Tim Keuangan: Bukti Lembar Persetujuan Penawaran / Kesanggupan Klien wajib diunggah terlebih dahulu.");
+        if (empty($sp['file_penawaran_ttd']) || empty($sp['file_bukti_persetujuan'])) {
+            $this->setFlashError("Gagal mendisposisikan ke Tim Keuangan: Lengkapi Surat Penawaran bertandatangan dan Bukti Persetujuan terlebih dahulu.");
             $f3->reroute("/order/{$orderId}");
             return;
         }
@@ -2913,14 +2913,51 @@ $daftarPegawai = $arsipUser->find(
         }
         return trim(preg_replace('/\s+/', ' ', $temp));
     }
-    /** POST /surat-penawaran/@id/surat-kesanggupan/upload */
-    public function uploadKesanggupanBayar($f3, $params)
+    /**
+     * Upload berkas kelengkapan Surat Penawaran DEAL:
+     * 1. penawaran_ttd     -> file_penawaran_ttd (Wajib)
+     * 2. bukti_persetujuan -> file_bukti_persetujuan (Wajib)
+     * 3. surat_kesanggupan -> surat_kesanggupan_bayar (Opsional)
+     * Route: POST /surat-penawaran/@id/dokumen-deal/@jenis/upload
+     */
+    public function uploadDokumenDeal($f3, $params)
     {
         $id = (int)($params['id'] ?? 0);
-        $file = $f3->get('FILES.surat_kesanggupan_bayar');
+        $jenis = trim((string)($params['jenis'] ?? ($f3->get('POST.jenis_dokumen') ?? '')));
         $referer = $f3->get('HEADERS.Referer') ?: '/surat-penawaran';
-        $isAjax = $f3->get('POST.ajax') == '1'; // [BARU] dari Detail Order (fetch), bukan form biasa
-    
+        $isAjax = $f3->get('POST.ajax') == '1' || $f3->get('AJAX');
+
+        $colMap = [
+            'penawaran_ttd'     => 'file_penawaran_ttd',
+            'bukti_persetujuan' => 'file_bukti_persetujuan',
+            'surat_kesanggupan' => 'surat_kesanggupan_bayar',
+        ];
+        $prefixMap = [
+            'penawaran_ttd'     => 'sp_ttd_',
+            'bukti_persetujuan' => 'bukti_acc_',
+            'surat_kesanggupan' => 'skb_',
+        ];
+        $labelMap = [
+            'penawaran_ttd'     => 'Surat Penawaran yang Sudah Ditandatangani',
+            'bukti_persetujuan' => 'Bukti Persetujuan Surat Penawaran',
+            'surat_kesanggupan' => 'Surat Kesanggupan',
+        ];
+
+        if (!isset($colMap[$jenis])) {
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Jenis dokumen tidak valid.']);
+                exit;
+            }
+            $this->setFlashError('Jenis dokumen tidak valid.');
+            $f3->reroute($referer);
+            return;
+        }
+
+        $col = $colMap[$jenis];
+        $prefix = $prefixMap[$jenis];
+        $label = $labelMap[$jenis];
+
         $gagal = function ($pesan) use ($f3, $referer, $isAjax) {
             if ($isAjax) {
                 header('Content-Type: application/json');
@@ -2930,30 +2967,36 @@ $daftarPegawai = $arsipUser->find(
             $this->setFlashError($pesan);
             $f3->reroute($referer);
         };
-    
+
+        // Cari file dari berbagai kemungkinan nama input
+        $file = $f3->get('FILES.dokumen_file') ?: ($f3->get('FILES.file') ?: ($f3->get('FILES.' . $col) ?: ($f3->get('FILES.' . $jenis) ?: $f3->get('FILES.surat_kesanggupan_bayar'))));
+        if (empty($file) && !empty($_FILES)) {
+            $file = reset($_FILES);
+        }
+
         if (empty($file) || !isset($file['error']) || $file['error'] === UPLOAD_ERR_NO_FILE) {
-            $gagal('File Surat Kesanggupan Bayar wajib diunggah.');
+            $gagal("Berkas {$label} wajib dipilih.");
             return;
         }
-    
+
         if ($file['error'] !== UPLOAD_ERR_OK) {
             $gagal('Gagal mengunggah file (kode error: ' . $file['error'] . ').');
             return;
         }
-    
+
         $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
         $allowedExt = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'];
         if (!in_array($ext, $allowedExt, true)) {
-            $gagal('Dokumen Lembar Persetujuan / Kesanggupan harus berformat PDF, JPG, PNG, atau Word (.doc/.docx).');
+            $gagal("Dokumen {$label} harus berformat PDF, JPG, PNG, atau Word (.doc/.docx).");
             return;
         }
-    
+
         $maxSize = 10 * 1024 * 1024;
         if ($file['size'] > $maxSize) {
             $gagal('Ukuran file maksimal 10MB.');
             return;
         }
-    
+
         $mimeAsli = mime_content_type($file['tmp_name']);
         $mimeDiizinkan = [
             'application/pdf',
@@ -2968,88 +3011,133 @@ $daftarPegawai = $arsipUser->find(
             $gagal('Isi file tidak valid atau tidak sesuai format yang diizinkan (PDF/Gambar/Word).');
             return;
         }
-    
+
         $dir = dirname(__DIR__, 2) . '/storage/kesanggupan_bayar';
         if (!is_dir($dir)) {
-            mkdir($dir, 0755, true);
+            @mkdir($dir, 0755, true);
         }
-        $namaFile = 'skb_' . $id . '_' . time() . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
+        $namaFile = $prefix . $id . '_' . time() . '_' . bin2hex(random_bytes(6)) . '.' . $ext;
         $tujuan = $dir . '/' . $namaFile;
-    
+
         if (!move_uploaded_file($file['tmp_name'], $tujuan)) {
             $gagal('Gagal menyimpan file ke server.');
             return;
         }
-    
-        $spLama = $this->db->exec('SELECT surat_kesanggupan_bayar FROM tb_surat_penawaran WHERE id = ?', [1 => $id]);
-        if (!empty($spLama[0]['surat_kesanggupan_bayar'])) {
-            $pathLama = $dir . '/' . basename($spLama[0]['surat_kesanggupan_bayar']);
+
+        // Hapus file lama jika ada
+        $spLama = $this->db->exec("SELECT {$col} FROM tb_surat_penawaran WHERE id = ?", [1 => $id]);
+        if (!empty($spLama[0][$col])) {
+            $pathLama = $dir . '/' . basename($spLama[0][$col]);
             if (is_file($pathLama)) { @unlink($pathLama); }
         }
-    
+
         $this->db->exec(
-            'UPDATE tb_surat_penawaran SET surat_kesanggupan_bayar = ? WHERE id = ?',
+            "UPDATE tb_surat_penawaran SET {$col} = ? WHERE id = ?",
             [1 => $namaFile, 2 => $id]
         );
 
         $spRow = $this->db->exec('SELECT order_id FROM tb_surat_penawaran WHERE id = ?', [1 => $id]);
         $orderId = (int)($spRow[0]['order_id'] ?? 0);
         if ($orderId > 0) {
-            $this->logActivity($orderId, 'penawaran', 'upload_kesanggupan_bayar', 'Unggah surat kesanggupan bayar');
+            $this->logActivity($orderId, 'penawaran', 'upload_' . $jenis, "Unggah {$label}");
         }
 
-        // ===== Sukses =====
         if ($isAjax) {
             header('Content-Type: application/json');
             echo json_encode([
-                'success' => true,
-                'message' => 'Surat Kesanggupan Bayar berhasil diunggah.',
-                'preview_url' => $f3->get('BASE') . '/surat-penawaran/' . $id . '/surat-kesanggupan/preview',
+                'success'     => true,
+                'message'     => "{$label} berhasil diunggah.",
+                'preview_url' => $f3->get('BASE') . '/surat-penawaran/' . $id . '/dokumen-deal/' . $jenis . '/preview',
+                'file_name'   => $namaFile,
+                'jenis'       => $jenis
             ]);
             exit;
         }
 
-        $this->setFlashSuccess('Surat Kesanggupan Bayar berhasil diunggah.');
+        $this->setFlashSuccess("{$label} berhasil diunggah.");
         $f3->reroute($referer);
     }
-/** GET /surat-penawaran/@id/surat-kesanggupan/preview */
-public function previewKesanggupanBayar($f3, $params)
-{
-    $id = (int)($params['id'] ?? 0);
 
-    $row = $this->db->exec('SELECT surat_kesanggupan_bayar FROM tb_surat_penawaran WHERE id = ?', [1 => $id]);
-    if (empty($row) || empty($row[0]['surat_kesanggupan_bayar'])) {
-        $f3->error(404, 'Surat Kesanggupan Bayar tidak ditemukan.');
-        return;
+    /**
+     * Preview berkas dokumen penawaran DEAL
+     * Route: GET /surat-penawaran/@id/dokumen-deal/@jenis/preview
+     */
+    public function previewDokumenDeal($f3, $params)
+    {
+        $id = (int)($params['id'] ?? 0);
+        $jenis = trim((string)($params['jenis'] ?? ''));
+
+        $colMap = [
+            'penawaran_ttd'     => 'file_penawaran_ttd',
+            'bukti_persetujuan' => 'file_bukti_persetujuan',
+            'surat_kesanggupan' => 'surat_kesanggupan_bayar',
+        ];
+        $labelMap = [
+            'penawaran_ttd'     => 'Surat Penawaran Bertandatangan',
+            'bukti_persetujuan' => 'Bukti Persetujuan Surat Penawaran',
+            'surat_kesanggupan' => 'Surat Kesanggupan',
+        ];
+
+        if (!isset($colMap[$jenis])) {
+            $f3->error(404, 'Jenis dokumen tidak valid.');
+            return;
+        }
+
+        $col = $colMap[$jenis];
+        $label = $labelMap[$jenis];
+
+        $row = $this->db->exec("SELECT {$col} FROM tb_surat_penawaran WHERE id = ? OR order_id = ? ORDER BY id DESC LIMIT 1", [1 => $id, 2 => $id]);
+        if (empty($row) || empty($row[0][$col])) {
+            $f3->error(404, "{$label} tidak ditemukan.");
+            return;
+        }
+
+        $namaFile = basename($row[0][$col]);
+        $path = dirname(__DIR__, 2) . '/storage/kesanggupan_bayar/' . $namaFile;
+        if (!is_file($path)) {
+            $pathAlt = dirname(__DIR__, 2) . '/uploads/penawaran/' . $namaFile;
+            if (is_file($pathAlt)) {
+                $path = $pathAlt;
+            }
+        }
+
+        if (!is_file($path)) {
+            $f3->error(404, 'File tidak ditemukan di server.');
+            return;
+        }
+
+        $ext = strtolower(pathinfo($namaFile, PATHINFO_EXTENSION));
+        $mimeMap = [
+            'pdf'  => 'application/pdf',
+            'jpg'  => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'png'  => 'image/png',
+            'webp' => 'image/webp',
+            'doc'  => 'application/msword',
+            'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        ];
+
+        header('Content-Type: ' . ($mimeMap[$ext] ?? 'application/octet-stream'));
+        header('Content-Disposition: inline; filename="' . $namaFile . '"');
+        header('X-Content-Type-Options: nosniff');
+        header('Content-Length: ' . filesize($path));
+        readfile($path);
+        exit;
     }
 
-    // [KEAMANAN] basename() buang semua path (../ dkk) dari nama file yang tersimpan di DB,
-    // jadi walau DB ke-tamper, gak bisa dipakai buat baca file di luar folder ini.
-    $namaFile = basename($row[0]['surat_kesanggupan_bayar']);
-    $path = dirname(__DIR__, 2) . '/storage/kesanggupan_bayar/' . $namaFile;
-
-    if (!is_file($path)) {
-        $f3->error(404, 'File tidak ditemukan di server.');
-        return;
+    /** POST /surat-penawaran/@id/surat-kesanggupan/upload (Backward Compatibility) */
+    public function uploadKesanggupanBayar($f3, $params)
+    {
+        $params['jenis'] = 'surat_kesanggupan';
+        return $this->uploadDokumenDeal($f3, $params);
     }
 
-    $ext = strtolower(pathinfo($namaFile, PATHINFO_EXTENSION));
-    $mimeMap = [
-        'pdf'  => 'application/pdf',
-        'jpg'  => 'image/jpeg',
-        'jpeg' => 'image/jpeg',
-        'png'  => 'image/png',
-        'doc'  => 'application/msword',
-        'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    ];
-
-    header('Content-Type: ' . ($mimeMap[$ext] ?? 'application/octet-stream'));
-    header('Content-Disposition: inline; filename="' . $namaFile . '"');
-    header('X-Content-Type-Options: nosniff'); // browser gak boleh "nebak" tipe file sendiri
-    header('Content-Length: ' . filesize($path));
-    readfile($path);
-    exit;
-}
+    /** GET /surat-penawaran/@id/surat-kesanggupan/preview (Backward Compatibility) */
+    public function previewKesanggupanBayar($f3, $params)
+    {
+        $params['jenis'] = 'surat_kesanggupan';
+        return $this->previewDokumenDeal($f3, $params);
+    }
 
     /**
      * Upload lampiran tambahan (opsional) oleh user pada Surat Penawaran

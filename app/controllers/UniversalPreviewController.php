@@ -38,6 +38,14 @@ class UniversalPreviewController extends Controller
                 return;
             }
 
+            // 2a. Pola Dokumen Deal Surat Penawaran: /surat-penawaran/@id/dokumen-deal/@jenis/preview
+            if (preg_match('#(?:surat-penawaran|penawaran)/(\d+)/dokumen-deal/([a-zA-Z0-9_-]+)/preview#i', $path, $m)) {
+                $spId = (int)$m[1];
+                $jenis = $m[2];
+                $this->handleDokumenDeal($spId, $jenis);
+                return;
+            }
+
             // 2. Pola Surat Kesanggupan Bayar: /surat-penawaran/@id/surat-kesanggupan/preview ATAU /penawaran/surat-kesanggupan/@id
             if (preg_match('#(?:surat-penawaran|penawaran)/(?:(\d+)/surat-kesanggupan|surat-kesanggupan/(\d+))#i', $path, $m) || preg_match('#surat-kesanggupan/(\d+)#i', $path, $m)) {
                 $spId = (int)(!empty($m[1]) ? $m[1] : (!empty($m[2]) ? $m[2] : $m[0]));

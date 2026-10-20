@@ -2666,121 +2666,270 @@
                                 </div>
                             </check>
 
-                            <!-- BAGIAN KHUSUS JIKA STATUS PENAWARAN DEAL: BUKTI PERSETUJUAN & DISPOSISI KEUANGAN -->
+                            <!-- BAGIAN KHUSUS JIKA STATUS PENAWARAN DEAL: 3 DOKUMEN DEAL & DISPOSISI KEUANGAN -->
                             <check if="{{ (@has_penawaran_deal || (@penawaran && @penawaran.status_respon_klien == 'deal')) }}">
                                 
-                                <!-- 1. Kartu Bukti Lembar Persetujuan Penawaran & Kesanggupan Klien -->
-                                <div class="card border rounded-3 mt-3 shadow-xs overflow-hidden {{ !empty(@penawaran.surat_kesanggupan_bayar) ? 'border-success-subtle' : 'border-warning-subtle' }}" id="cardKesanggupanBayar">
+                                <!-- 1. Surat Penawaran yang Sudah Ditandatangani (Wajib) -->
+                                <div class="card border rounded-3 mt-3 shadow-xs overflow-hidden {{ !empty(@penawaran.file_penawaran_ttd) ? 'border-success-subtle' : 'border-warning-subtle' }}" id="cardDokumenDeal1">
                                     <div class="p-3 bg-white d-flex align-items-center justify-content-between flex-wrap gap-2">
                                         <div class="d-flex align-items-center gap-2.5">
-                                            <div class="d-flex align-items-center justify-content-center flex-shrink-0 {{ !empty(@penawaran.surat_kesanggupan_bayar) ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning-emphasis' }}" style="width: 32px; height: 32px; min-width: 32px; min-height: 32px; max-width: 32px; max-height: 32px; border-radius: 50% !important; aspect-ratio: 1 / 1; line-height: 1; padding: 0;">
-                                                <i class="bi {{ !empty(@penawaran.surat_kesanggupan_bayar) ? 'bi-file-earmark-check-fill' : 'bi-file-earmark-arrow-up-fill' }} fs-6" style="line-height: 1;"></i>
+                                            <div class="d-flex align-items-center justify-content-center flex-shrink-0 {{ !empty(@penawaran.file_penawaran_ttd) ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning-emphasis' }}" style="width: 32px; height: 32px; min-width: 32px; min-height: 32px; max-width: 32px; max-height: 32px; border-radius: 50% !important; aspect-ratio: 1 / 1; line-height: 1; padding: 0;">
+                                                <i class="bi {{ !empty(@penawaran.file_penawaran_ttd) ? 'bi-file-earmark-check-fill' : 'bi-file-earmark-arrow-up-fill' }} fs-6" style="line-height: 1;"></i>
                                             </div>
                                             <div>
                                                 <div class="fw-bold text-dark small d-flex align-items-center gap-2">
-                                                    <span>1. Bukti Lembar Persetujuan Penawaran &amp; Kesanggupan Klien</span>
-                                                    <check if="{{ !empty(@penawaran.surat_kesanggupan_bayar) }}">
+                                                    <span>1. Surat Penawaran yang Sudah Ditandatangani</span>
+                                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle" style="font-size: 0.68rem;">Wajib</span>
+                                                    <check if="{{ !empty(@penawaran.file_penawaran_ttd) }}">
                                                         <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 0.68rem;">
                                                             <i class="bi bi-check2-circle me-0.5"></i> Terlampir &amp; Sah
                                                         </span>
                                                     </check>
-                                                    <check if="{{ empty(@penawaran.surat_kesanggupan_bayar) }}">
-                                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle" style="font-size: 0.68rem;">
-                                                            <i class="bi bi-exclamation-triangle-fill me-0.5"></i> Wajib Diunggah (Prasyarat Disposisi)
-                                                        </span>
-                                                    </check>
                                                 </div>
                                                 <div class="text-muted" style="font-size: 0.75rem;">
-                                                    Dokumen pindaian (<em>scan</em>) Lembar Persetujuan bertandatangan &amp; cap basah klien sebagai bukti sah audit sebelum order dapat didisposisikan ke Tim Keuangan.
+                                                    Dokumen pindaian (<em>scan</em>) Surat Penawaran resmi yang telah ditandatangani oleh pimpinan / pejabat berwenang.
                                                 </div>
                                             </div>
                                         </div>
-                                        <div id="kbStatusWrap" class="d-flex align-items-center gap-1.5">
-                                            <check if="{{ !empty(@penawaran.surat_kesanggupan_bayar) }}">
+                                        <div class="d-flex align-items-center gap-1.5">
+                                            <check if="{{ !empty(@penawaran.file_penawaran_ttd) }}">
                                                 <button type="button"
-                                                   class="btn btn-sm btn-white border border-primary-subtle text-primary d-inline-flex align-items-center gap-1.5 btn-preview-pdf fw-semibold shadow-xs" id="kbLihatBtn" data-preview-pdf="{{ @BASE }}/surat-penawaran/{{ @penawaran.id }}/surat-kesanggupan/preview" data-title="Lembar Persetujuan Penawaran / Kesanggupan Klien" data-subtitle="Order: {{ @order.nomor_order }}">
+                                                   class="btn btn-sm btn-white border border-primary-subtle text-primary d-inline-flex align-items-center gap-1.5 btn-preview-pdf fw-semibold shadow-xs" data-preview-pdf="{{ @BASE }}/surat-penawaran/{{ @penawaran.id }}/dokumen-deal/penawaran_ttd/preview" data-title="Surat Penawaran yang Sudah Ditandatangani" data-subtitle="Order: {{ @order.nomor_order }}">
                                                     <i class="bi bi-file-earmark-check-fill text-success"></i> Lihat Dokumen
                                                 </button>
-                                                <button type="button" class="btn btn-sm btn-white border text-secondary d-inline-flex align-items-center gap-1 shadow-xs" id="kbGantiBtn" title="Ganti berkas lembar persetujuan">
+                                                <button type="button" class="btn btn-sm btn-white border text-secondary d-inline-flex align-items-center gap-1 shadow-xs btn-deal-ganti" data-jenis="penawaran_ttd" title="Ganti berkas">
                                                     <i class="bi bi-arrow-repeat"></i> Ganti Berkas
                                                 </button>
                                             </check>
                                         </div>
                                     </div>
 
-                                    <!-- Form Upload Berkas -->
-                                    <div class="p-4 pt-3 pb-4 {{ !empty(@penawaran.surat_kesanggupan_bayar) ? 'd-none' : '' }} bg-light-subtle border-top" id="kbFormWrap">
-                                        <!-- Kotak Dropzone Terpusat & Kompak -->
+                                    <!-- Form Upload Berkas 1 -->
+                                    <div class="p-4 pt-3 pb-4 {{ !empty(@penawaran.file_penawaran_ttd) ? 'd-none' : '' }} bg-light-subtle border-top" id="dealFormWrap_penawaran_ttd">
                                         <div class="mx-auto my-1" style="max-width: 680px;">
-                                            <div class="p-3.5 bg-white rounded-3 border border-2 border-dashed text-center position-relative transition-all shadow-2xs" id="kbDropZone" style="cursor: pointer; border-color: #cbd5e1 !important;">
-                                                <input type="file" id="kbFileInput" class="position-absolute top-0 start-0 w-100 h-100 opacity-0" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="cursor: pointer;">
-                                                <div id="kbDropPrompt" class="py-2">
+                                            <div class="p-3.5 bg-white rounded-3 border border-2 border-dashed text-center position-relative transition-all shadow-2xs deal-drop-zone" id="dealDropZone_penawaran_ttd" data-jenis="penawaran_ttd" style="cursor: pointer; border-color: #cbd5e1 !important;">
+                                                <input type="file" id="dealFileInput_penawaran_ttd" data-jenis="penawaran_ttd" class="position-absolute top-0 start-0 w-100 h-100 opacity-0" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="cursor: pointer;">
+                                                <div id="dealDropPrompt_penawaran_ttd" class="py-2">
                                                     <div class="bg-primary-subtle text-primary d-inline-flex align-items-center justify-content-center mb-1.5 flex-shrink-0" style="width: 40px; height: 40px; min-width: 40px; min-height: 40px; max-width: 40px; max-height: 40px; border-radius: 50% !important; aspect-ratio: 1 / 1; line-height: 1; padding: 0;">
                                                         <i class="bi bi-cloud-arrow-up-fill fs-5" style="line-height: 1;"></i>
                                                     </div>
-                                                    <span class="fw-bold text-dark d-block small">Pilih Berkas Scan Lembar Persetujuan / Kesanggupan Klien</span>
+                                                    <span class="fw-bold text-dark d-block small">Pilih Berkas Surat Penawaran Bertandatangan</span>
                                                     <span class="text-muted d-block mt-0.5" style="font-size: 0.75rem;">Klik di sini atau seret file &bull; PDF, JPG, PNG, atau DOCX (Maks. 10MB)</span>
                                                     <span class="btn btn-xs btn-white border px-3 py-1.5 text-primary fw-semibold shadow-xs mt-2 d-inline-flex align-items-center gap-1.5" style="font-size: 0.72rem; pointer-events: none;">
                                                         <i class="bi bi-folder2-open"></i> Telusuri File...
                                                     </span>
                                                 </div>
-                                                <div id="kbSelectedWrap" class="py-2 d-none">
+                                                <div id="dealSelectedWrap_penawaran_ttd" class="py-2 d-none">
                                                     <div class="d-inline-flex align-items-center gap-2 px-3.5 py-2 bg-primary-subtle border border-primary-subtle rounded-pill shadow-xs">
                                                         <i class="bi bi-file-earmark-check-fill text-primary fs-6" style="line-height: 1;"></i>
-                                                        <span class="fw-semibold text-dark small font-monospace" id="kbSelectedName">nama_file.pdf</span>
-                                                        <span class="text-muted small" id="kbSelectedSize">(1.2 MB)</span>
-                                                        <button type="button" class="btn btn-link text-danger p-0 ms-1" id="kbClearFile" title="Hapus pilihan" style="text-decoration: none;"><i class="bi bi-x-circle-fill"></i></button>
+                                                        <span class="fw-semibold text-dark small font-monospace" id="dealSelectedName_penawaran_ttd">nama_file.pdf</span>
+                                                        <span class="text-muted small" id="dealSelectedSize_penawaran_ttd">(1.2 MB)</span>
+                                                        <button type="button" class="btn btn-link text-danger p-0 ms-1 btn-deal-clear" data-jenis="penawaran_ttd" title="Hapus pilihan" style="text-decoration: none;"><i class="bi bi-x-circle-fill"></i></button>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <!-- Baris Tombol Aksi di Ujung Kanan Card -->
                                         <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mt-4 pt-2 mb-1">
-                                            <div class="small text-danger d-none" id="kbErrorMsg"></div>
+                                            <div class="small text-danger d-none" id="dealErrorMsg_penawaran_ttd"></div>
                                             <div class="d-flex gap-2 ms-auto">
-                                                <check if="{{ !empty(@penawaran.surat_kesanggupan_bayar) }}">
-                                                    <button type="button" class="btn btn-sm btn-white border shadow-xs px-3.5 py-2" id="kbBatalBtn">Tutup</button>
+                                                <check if="{{ !empty(@penawaran.file_penawaran_ttd) }}">
+                                                    <button type="button" class="btn btn-sm btn-white border shadow-xs px-3.5 py-2 btn-deal-batal" data-jenis="penawaran_ttd">Tutup</button>
                                                 </check>
-                                                <button type="button" class="btn btn-sm btn-dark d-inline-flex align-items-center gap-2 fw-semibold shadow-sm px-4 py-2" id="kbSimpanBtn" disabled>
-                                                    <span class="spinner-border spinner-border-sm d-none" id="kbSpinner" role="status"></span>
-                                                    <span id="kbSimpanLabel"><i class="bi bi-cloud-arrow-up-fill me-1"></i> Simpan &amp; Unggah Berkas</span>
+                                                <button type="button" class="btn btn-sm btn-dark d-inline-flex align-items-center gap-2 fw-semibold shadow-sm px-4 py-2 btn-deal-simpan" data-jenis="penawaran_ttd" id="dealSimpanBtn_penawaran_ttd" disabled>
+                                                    <span class="spinner-border spinner-border-sm d-none" id="dealSpinner_penawaran_ttd" role="status"></span>
+                                                    <span><i class="bi bi-cloud-arrow-up-fill me-1"></i> Simpan &amp; Unggah Berkas</span>
                                                 </button>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <!-- 2. Bagian Disposisi ke Tim Keuangan (Tergantung Lembar Persetujuan) -->
+                                <!-- 2. Bukti Persetujuan Surat Penawaran (Wajib) -->
+                                <div class="card border rounded-3 mt-3 shadow-xs overflow-hidden {{ !empty(@penawaran.file_bukti_persetujuan) ? 'border-success-subtle' : 'border-warning-subtle' }}" id="cardDokumenDeal2">
+                                    <div class="p-3 bg-white d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                        <div class="d-flex align-items-center gap-2.5">
+                                            <div class="d-flex align-items-center justify-content-center flex-shrink-0 {{ !empty(@penawaran.file_bukti_persetujuan) ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning-emphasis' }}" style="width: 32px; height: 32px; min-width: 32px; min-height: 32px; max-width: 32px; max-height: 32px; border-radius: 50% !important; aspect-ratio: 1 / 1; line-height: 1; padding: 0;">
+                                                <i class="bi {{ !empty(@penawaran.file_bukti_persetujuan) ? 'bi-file-earmark-check-fill' : 'bi-file-earmark-arrow-up-fill' }} fs-6" style="line-height: 1;"></i>
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold text-dark small d-flex align-items-center gap-2">
+                                                    <span>2. Bukti Persetujuan Surat Penawaran</span>
+                                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle" style="font-size: 0.68rem;">Wajib</span>
+                                                    <check if="{{ !empty(@penawaran.file_bukti_persetujuan) }}">
+                                                        <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 0.68rem;">
+                                                            <i class="bi bi-check2-circle me-0.5"></i> Terlampir &amp; Sah
+                                                        </span>
+                                                    </check>
+                                                </div>
+                                                <div class="text-muted" style="font-size: 0.75rem;">
+                                                    Bukti konfirmasi persetujuan dari pihak klien (lembar persetujuan/surat balasan, formulir konfirmasi, atau tangkapan layar email persetujuan resmi).
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-1.5">
+                                            <check if="{{ !empty(@penawaran.file_bukti_persetujuan) }}">
+                                                <button type="button"
+                                                   class="btn btn-sm btn-white border border-primary-subtle text-primary d-inline-flex align-items-center gap-1.5 btn-preview-pdf fw-semibold shadow-xs" data-preview-pdf="{{ @BASE }}/surat-penawaran/{{ @penawaran.id }}/dokumen-deal/bukti_persetujuan/preview" data-title="Bukti Persetujuan Surat Penawaran" data-subtitle="Order: {{ @order.nomor_order }}">
+                                                    <i class="bi bi-file-earmark-check-fill text-success"></i> Lihat Dokumen
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-white border text-secondary d-inline-flex align-items-center gap-1 shadow-xs btn-deal-ganti" data-jenis="bukti_persetujuan" title="Ganti berkas">
+                                                    <i class="bi bi-arrow-repeat"></i> Ganti Berkas
+                                                </button>
+                                            </check>
+                                        </div>
+                                    </div>
+
+                                    <!-- Form Upload Berkas 2 -->
+                                    <div class="p-4 pt-3 pb-4 {{ !empty(@penawaran.file_bukti_persetujuan) ? 'd-none' : '' }} bg-light-subtle border-top" id="dealFormWrap_bukti_persetujuan">
+                                        <div class="mx-auto my-1" style="max-width: 680px;">
+                                            <div class="p-3.5 bg-white rounded-3 border border-2 border-dashed text-center position-relative transition-all shadow-2xs deal-drop-zone" id="dealDropZone_bukti_persetujuan" data-jenis="bukti_persetujuan" style="cursor: pointer; border-color: #cbd5e1 !important;">
+                                                <input type="file" id="dealFileInput_bukti_persetujuan" data-jenis="bukti_persetujuan" class="position-absolute top-0 start-0 w-100 h-100 opacity-0" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="cursor: pointer;">
+                                                <div id="dealDropPrompt_bukti_persetujuan" class="py-2">
+                                                    <div class="bg-primary-subtle text-primary d-inline-flex align-items-center justify-content-center mb-1.5 flex-shrink-0" style="width: 40px; height: 40px; min-width: 40px; min-height: 40px; max-width: 40px; max-height: 40px; border-radius: 50% !important; aspect-ratio: 1 / 1; line-height: 1; padding: 0;">
+                                                        <i class="bi bi-cloud-arrow-up-fill fs-5" style="line-height: 1;"></i>
+                                                    </div>
+                                                    <span class="fw-bold text-dark d-block small">Pilih Berkas Bukti Persetujuan Surat Penawaran</span>
+                                                    <span class="text-muted d-block mt-0.5" style="font-size: 0.75rem;">Klik di sini atau seret file &bull; PDF, JPG, PNG, atau DOCX (Maks. 10MB)</span>
+                                                    <span class="btn btn-xs btn-white border px-3 py-1.5 text-primary fw-semibold shadow-xs mt-2 d-inline-flex align-items-center gap-1.5" style="font-size: 0.72rem; pointer-events: none;">
+                                                        <i class="bi bi-folder2-open"></i> Telusuri File...
+                                                    </span>
+                                                </div>
+                                                <div id="dealSelectedWrap_bukti_persetujuan" class="py-2 d-none">
+                                                    <div class="d-inline-flex align-items-center gap-2 px-3.5 py-2 bg-primary-subtle border border-primary-subtle rounded-pill shadow-xs">
+                                                        <i class="bi bi-file-earmark-check-fill text-primary fs-6" style="line-height: 1;"></i>
+                                                        <span class="fw-semibold text-dark small font-monospace" id="dealSelectedName_bukti_persetujuan">nama_file.pdf</span>
+                                                        <span class="text-muted small" id="dealSelectedSize_bukti_persetujuan">(1.2 MB)</span>
+                                                        <button type="button" class="btn btn-link text-danger p-0 ms-1 btn-deal-clear" data-jenis="bukti_persetujuan" title="Hapus pilihan" style="text-decoration: none;"><i class="bi bi-x-circle-fill"></i></button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mt-4 pt-2 mb-1">
+                                            <div class="small text-danger d-none" id="dealErrorMsg_bukti_persetujuan"></div>
+                                            <div class="d-flex gap-2 ms-auto">
+                                                <check if="{{ !empty(@penawaran.file_bukti_persetujuan) }}">
+                                                    <button type="button" class="btn btn-sm btn-white border shadow-xs px-3.5 py-2 btn-deal-batal" data-jenis="bukti_persetujuan">Tutup</button>
+                                                </check>
+                                                <button type="button" class="btn btn-sm btn-dark d-inline-flex align-items-center gap-2 fw-semibold shadow-sm px-4 py-2 btn-deal-simpan" data-jenis="bukti_persetujuan" id="dealSimpanBtn_bukti_persetujuan" disabled>
+                                                    <span class="spinner-border spinner-border-sm d-none" id="dealSpinner_bukti_persetujuan" role="status"></span>
+                                                    <span><i class="bi bi-cloud-arrow-up-fill me-1"></i> Simpan &amp; Unggah Berkas</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 3. Surat Kesanggupan (Opsional) -->
+                                <div class="card border rounded-3 mt-3 shadow-xs overflow-hidden {{ !empty(@penawaran.surat_kesanggupan_bayar) ? 'border-success-subtle' : 'border-secondary-subtle' }}" id="cardDokumenDeal3">
+                                    <div class="p-3 bg-white d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                        <div class="d-flex align-items-center gap-2.5">
+                                            <div class="d-flex align-items-center justify-content-center flex-shrink-0 {{ !empty(@penawaran.surat_kesanggupan_bayar) ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary' }}" style="width: 32px; height: 32px; min-width: 32px; min-height: 32px; max-width: 32px; max-height: 32px; border-radius: 50% !important; aspect-ratio: 1 / 1; line-height: 1; padding: 0;">
+                                                <i class="bi {{ !empty(@penawaran.surat_kesanggupan_bayar) ? 'bi-file-earmark-check-fill' : 'bi-file-earmark-arrow-up-fill' }} fs-6" style="line-height: 1;"></i>
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold text-dark small d-flex align-items-center gap-2">
+                                                    <span>3. Surat Kesanggupan</span>
+                                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle" style="font-size: 0.68rem;">Opsional</span>
+                                                    <check if="{{ !empty(@penawaran.surat_kesanggupan_bayar) }}">
+                                                        <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 0.68rem;">
+                                                            <i class="bi bi-check2-circle me-0.5"></i> Terlampir &amp; Sah
+                                                        </span>
+                                                    </check>
+                                                </div>
+                                                <div class="text-muted" style="font-size: 0.75rem;">
+                                                    Surat kesanggupan bayar atau komitmen pembiayaan dari pihak pemohon (opsional bila diperlukan sesuai ketentuan kerja sama).
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-1.5">
+                                            <check if="{{ !empty(@penawaran.surat_kesanggupan_bayar) }}">
+                                                <button type="button"
+                                                   class="btn btn-sm btn-white border border-primary-subtle text-primary d-inline-flex align-items-center gap-1.5 btn-preview-pdf fw-semibold shadow-xs" data-preview-pdf="{{ @BASE }}/surat-penawaran/{{ @penawaran.id }}/dokumen-deal/surat_kesanggupan/preview" data-title="Surat Kesanggupan" data-subtitle="Order: {{ @order.nomor_order }}">
+                                                    <i class="bi bi-file-earmark-check-fill text-success"></i> Lihat Dokumen
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-white border text-secondary d-inline-flex align-items-center gap-1 shadow-xs btn-deal-ganti" data-jenis="surat_kesanggupan" title="Ganti berkas">
+                                                    <i class="bi bi-arrow-repeat"></i> Ganti Berkas
+                                                </button>
+                                            </check>
+                                            <check if="{{ empty(@penawaran.surat_kesanggupan_bayar) }}">
+                                                <button type="button" class="btn btn-sm btn-white border text-secondary d-inline-flex align-items-center gap-1 shadow-xs btn-deal-buka" data-jenis="surat_kesanggupan" title="Unggah berkas kesanggupan">
+                                                    <i class="bi bi-upload"></i> Unggah Berkas
+                                                </button>
+                                            </check>
+                                        </div>
+                                    </div>
+
+                                    <!-- Form Upload Berkas 3 -->
+                                    <div class="p-4 pt-3 pb-4 d-none bg-light-subtle border-top" id="dealFormWrap_surat_kesanggupan">
+                                        <div class="mx-auto my-1" style="max-width: 680px;">
+                                            <div class="p-3.5 bg-white rounded-3 border border-2 border-dashed text-center position-relative transition-all shadow-2xs deal-drop-zone" id="dealDropZone_surat_kesanggupan" data-jenis="surat_kesanggupan" style="cursor: pointer; border-color: #cbd5e1 !important;">
+                                                <input type="file" id="dealFileInput_surat_kesanggupan" data-jenis="surat_kesanggupan" class="position-absolute top-0 start-0 w-100 h-100 opacity-0" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="cursor: pointer;">
+                                                <div id="dealDropPrompt_surat_kesanggupan" class="py-2">
+                                                    <div class="bg-primary-subtle text-primary d-inline-flex align-items-center justify-content-center mb-1.5 flex-shrink-0" style="width: 40px; height: 40px; min-width: 40px; min-height: 40px; max-width: 40px; max-height: 40px; border-radius: 50% !important; aspect-ratio: 1 / 1; line-height: 1; padding: 0;">
+                                                        <i class="bi bi-cloud-arrow-up-fill fs-5" style="line-height: 1;"></i>
+                                                    </div>
+                                                    <span class="fw-bold text-dark d-block small">Pilih Berkas Surat Kesanggupan (Opsional)</span>
+                                                    <span class="text-muted d-block mt-0.5" style="font-size: 0.75rem;">Klik di sini atau seret file &bull; PDF, JPG, PNG, atau DOCX (Maks. 10MB)</span>
+                                                    <span class="btn btn-xs btn-white border px-3 py-1.5 text-primary fw-semibold shadow-xs mt-2 d-inline-flex align-items-center gap-1.5" style="font-size: 0.72rem; pointer-events: none;">
+                                                        <i class="bi bi-folder2-open"></i> Telusuri File...
+                                                    </span>
+                                                </div>
+                                                <div id="dealSelectedWrap_surat_kesanggupan" class="py-2 d-none">
+                                                    <div class="d-inline-flex align-items-center gap-2 px-3.5 py-2 bg-primary-subtle border border-primary-subtle rounded-pill shadow-xs">
+                                                        <i class="bi bi-file-earmark-check-fill text-primary fs-6" style="line-height: 1;"></i>
+                                                        <span class="fw-semibold text-dark small font-monospace" id="dealSelectedName_surat_kesanggupan">nama_file.pdf</span>
+                                                        <span class="text-muted small" id="dealSelectedSize_surat_kesanggupan">(1.2 MB)</span>
+                                                        <button type="button" class="btn btn-link text-danger p-0 ms-1 btn-deal-clear" data-jenis="surat_kesanggupan" title="Hapus pilihan" style="text-decoration: none;"><i class="bi bi-x-circle-fill"></i></button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mt-4 pt-2 mb-1">
+                                            <div class="small text-danger d-none" id="dealErrorMsg_surat_kesanggupan"></div>
+                                            <div class="d-flex gap-2 ms-auto">
+                                                <button type="button" class="btn btn-sm btn-white border shadow-xs px-3.5 py-2 btn-deal-batal" data-jenis="surat_kesanggupan">Tutup</button>
+                                                <button type="button" class="btn btn-sm btn-dark d-inline-flex align-items-center gap-2 fw-semibold shadow-sm px-4 py-2 btn-deal-simpan" data-jenis="surat_kesanggupan" id="dealSimpanBtn_surat_kesanggupan" disabled>
+                                                    <span class="spinner-border spinner-border-sm d-none" id="dealSpinner_surat_kesanggupan" role="status"></span>
+                                                    <span><i class="bi bi-cloud-arrow-up-fill me-1"></i> Simpan &amp; Unggah Berkas</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 4. Bagian Disposisi ke Tim Keuangan (Wajib Kolom 1 dan 2) -->
                                 <check if="{{ !@is_disposisi_keuangan }}">
-                                    <!-- Jika Lembar Persetujuan BELUM diunggah: TERKUNCI -->
-                                    <check if="{{ empty(@penawaran.surat_kesanggupan_bayar) }}">
+                                    <!-- Jika Kolom 1 atau Kolom 2 BELUM diunggah: TERKUNCI -->
+                                    <check if="{{ empty(@penawaran.file_penawaran_ttd) || empty(@penawaran.file_bukti_persetujuan) }}">
                                         <div class="mt-3 p-3 bg-light rounded-3 border d-flex justify-content-between align-items-center flex-wrap gap-2 opacity-75" id="cardDisposisiKeuangan">
                                             <div class="d-flex align-items-center gap-2.5 text-muted small">
                                                 <div class="d-flex align-items-center justify-content-center flex-shrink-0 bg-secondary-subtle text-secondary" style="width: 32px; height: 32px; min-width: 32px; min-height: 32px; max-width: 32px; max-height: 32px; border-radius: 50% !important; aspect-ratio: 1 / 1; line-height: 1; padding: 0;">
                                                     <i class="bi bi-lock-fill fs-6" style="line-height: 1;"></i>
                                                 </div>
                                                 <div>
-                                                    <span class="fw-bold text-dark d-block">2. Disposisi ke Tim Keuangan <span class="badge bg-secondary-subtle text-secondary border ms-1"><i class="bi bi-lock-fill me-0.5"></i> Terkunci</span></span>
-                                                    <span>Wajib mengunggah berkas <strong>Lembar Persetujuan Klien</strong> pada kartu di atas terlebih dahulu sebelum tombol disposisi terbuka.</span>
+                                                    <span class="fw-bold text-dark d-block">4. Disposisi ke Tim Keuangan <span class="badge bg-secondary-subtle text-secondary border ms-1"><i class="bi bi-lock-fill me-0.5"></i> Terkunci</span></span>
+                                                    <span>Lengkapi Surat Penawaran bertandatangan dan Bukti Persetujuan terlebih dahulu.</span>
                                                 </div>
                                             </div>
-                                            <button type="button" class="btn btn-secondary btn-sm fw-semibold px-3 py-2 d-inline-flex align-items-center gap-1.5 opacity-50 cursor-not-allowed" disabled title="Wajib unggah Lembar Persetujuan terlebih dahulu">
+                                            <button type="button" class="btn btn-secondary btn-sm fw-semibold px-3 py-2 d-inline-flex align-items-center gap-1.5 opacity-50 cursor-not-allowed" disabled title="Lengkapi Surat Penawaran bertandatangan dan Bukti Persetujuan terlebih dahulu">
                                                 <i class="bi bi-lock-fill"></i> Disposisi ke Keuangan
                                             </button>
                                         </div>
                                     </check>
 
-                                    <!-- Jika Lembar Persetujuan SUDAH diunggah: TERBUKA & SIAP DISPOSISI -->
-                                    <check if="{{ !empty(@penawaran.surat_kesanggupan_bayar) }}">
+                                    <!-- Jika Kolom 1 dan Kolom 2 SUDAH diunggah: TERBUKA & SIAP DISPOSISI -->
+                                    <check if="{{ !empty(@penawaran.file_penawaran_ttd) && !empty(@penawaran.file_bukti_persetujuan) }}">
                                         <div class="mt-3 p-3 bg-primary-subtle border border-primary-subtle rounded-3 d-flex justify-content-between align-items-center flex-wrap gap-2 shadow-xs" id="cardDisposisiKeuangan">
                                             <div class="d-flex align-items-center gap-2.5 small">
                                                 <div class="d-flex align-items-center justify-content-center flex-shrink-0 bg-primary text-white shadow-xs" style="width: 32px; height: 32px; min-width: 32px; min-height: 32px; max-width: 32px; max-height: 32px; border-radius: 50% !important; aspect-ratio: 1 / 1; line-height: 1; padding: 0;">
                                                     <i class="bi bi-send-check-fill fs-6" style="line-height: 1;"></i>
                                                 </div>
                                                 <div>
-                                                    <span class="fw-bold text-dark d-block">2. Disposisi ke Tim Keuangan <span class="badge bg-success-subtle text-success border border-success-subtle ms-1"><i class="bi bi-unlock-fill me-0.5"></i> Siap Dilanjutkan</span></span>
-                                                    <span class="text-secondary">Dokumen Lembar Persetujuan telah lengkap. Teruskan order ke Tim Keuangan untuk membuka tahap pembayaran.</span>
+                                                    <span class="fw-bold text-dark d-block">4. Disposisi ke Tim Keuangan <span class="badge bg-success-subtle text-success border border-success-subtle ms-1"><i class="bi bi-unlock-fill me-0.5"></i> Siap Dilanjutkan</span></span>
+                                                    <span class="text-secondary">Dokumen wajib telah lengkap. Teruskan order ke Tim Keuangan untuk membuka tahap pembayaran.</span>
                                                 </div>
                                             </div>
                                             <form action="{{ @BASE }}/order/{{ @order.id }}/penawaran/disposisi-keuangan" method="POST" class="d-inline" id="formDisposisiKeuanganDetail" onsubmit="triggerStageRead(5)">
@@ -2802,7 +2951,7 @@
                                                 <i class="bi bi-check-lg fs-6 text-white" style="line-height: 1;"></i>
                                             </div>
                                             <div>
-                                                <span class="fw-bold text-dark d-block">2. Telah Didisposisikan ke Tim Keuangan</span>
+                                                <span class="fw-bold text-dark d-block">4. Telah Didisposisikan ke Tim Keuangan</span>
                                                 <span class="text-secondary">Tagihan dan order telah diteruskan ke Tim Keuangan. Tahap pembayaran telah terbuka.</span>
                                             </div>
                                         </div>
@@ -4853,6 +5002,9 @@ document.addEventListener('DOMContentLoaded', function() {
         '#cardKajiKelayakan': 3,
         '#cardParameterBiaya': 4,
         '#cardPenawaran': 5,
+        '#cardDokumenDeal1': 5,
+        '#cardDokumenDeal2': 5,
+        '#cardDokumenDeal3': 5,
         '#cardKesanggupanBayar': 5,
         '#cardDisposisiKeuangan': 5,
         '#cardPembayaran': 6,
@@ -4863,27 +5015,33 @@ document.addEventListener('DOMContentLoaded', function() {
         '#cardBast': 9
     };
 
-    var wrapForm = document.getElementById('kbFormWrap');
-    var fileInput = document.getElementById('kbFileInput');
-    var errorMsg = document.getElementById('kbErrorMsg');
-    var spinner = document.getElementById('kbSpinner');
-    var dropPrompt = document.getElementById('kbDropPrompt');
-    var selectedWrap = document.getElementById('kbSelectedWrap');
-    var selectedName = document.getElementById('kbSelectedName');
-    var selectedSize = document.getElementById('kbSelectedSize');
-    var clearFileBtn = document.getElementById('kbClearFile');
-    var btnSimpan = document.getElementById('kbSimpanBtn');
+    // Inisialisasi Upload 3 Dokumen Penawaran DEAL
+    var dealUploadTypes = ['penawaran_ttd', 'bukti_persetujuan', 'surat_kesanggupan'];
+    var penawaranDealId = '{{ @penawaran ? @penawaran.id : "" }}';
 
-    if (wrapForm) {
-        function formatBytes(bytes) {
-            if (bytes === 0) return '0 Bytes';
-            var k = 1024;
-            var sizes = ['Bytes', 'KB', 'MB', 'GB'];
-            var i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-        }
+    function formatBytes(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        var k = 1024;
+        var sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        var i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
 
-        function resetFileInput() {
+    dealUploadTypes.forEach(function(jenis) {
+        var formWrap = document.getElementById('dealFormWrap_' + jenis);
+        var fileInput = document.getElementById('dealFileInput_' + jenis);
+        var dropZone = document.getElementById('dealDropZone_' + jenis);
+        var dropPrompt = document.getElementById('dealDropPrompt_' + jenis);
+        var selectedWrap = document.getElementById('dealSelectedWrap_' + jenis);
+        var selectedName = document.getElementById('dealSelectedName_' + jenis);
+        var selectedSize = document.getElementById('dealSelectedSize_' + jenis);
+        var btnSimpan = document.getElementById('dealSimpanBtn_' + jenis);
+        var spinner = document.getElementById('dealSpinner_' + jenis);
+        var errorMsg = document.getElementById('dealErrorMsg_' + jenis);
+
+        if (!formWrap || !fileInput) return;
+
+        function resetInput() {
             if (fileInput) fileInput.value = '';
             if (selectedWrap) selectedWrap.classList.add('d-none');
             if (dropPrompt) dropPrompt.classList.remove('d-none');
@@ -4891,7 +5049,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (errorMsg) errorMsg.classList.add('d-none');
         }
 
-        function handleFileSelect() {
+        function handleSelect() {
             if (fileInput && fileInput.files && fileInput.files.length > 0) {
                 var f = fileInput.files[0];
                 if (selectedName) selectedName.textContent = f.name;
@@ -4901,26 +5059,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (btnSimpan) btnSimpan.disabled = false;
                 if (errorMsg) errorMsg.classList.add('d-none');
             } else {
-                resetFileInput();
+                resetInput();
             }
         }
 
-        if (fileInput) {
-            fileInput.addEventListener('change', handleFileSelect);
-        }
+        fileInput.addEventListener('change', handleSelect);
 
-        var dropZone = document.getElementById('kbDropZone');
-        if (dropZone && fileInput) {
-            ['dragenter', 'dragover'].forEach(function(eventName) {
-                dropZone.addEventListener(eventName, function(e) {
+        if (dropZone) {
+            ['dragenter', 'dragover'].forEach(function(evt) {
+                dropZone.addEventListener(evt, function(e) {
                     e.preventDefault();
                     e.stopPropagation();
                     dropZone.style.borderColor = 'var(--bs-primary, #0d6efd)';
                     dropZone.style.backgroundColor = 'rgba(13, 110, 253, 0.05)';
                 }, false);
             });
-            ['dragleave', 'drop'].forEach(function(eventName) {
-                dropZone.addEventListener(eventName, function(e) {
+            ['dragleave', 'drop'].forEach(function(evt) {
+                dropZone.addEventListener(evt, function(e) {
                     e.preventDefault();
                     e.stopPropagation();
                     dropZone.style.borderColor = '#cbd5e1';
@@ -4930,35 +5085,22 @@ document.addEventListener('DOMContentLoaded', function() {
             dropZone.addEventListener('drop', function(e) {
                 if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
                     fileInput.files = e.dataTransfer.files;
-                    handleFileSelect();
+                    handleSelect();
                 }
             }, false);
         }
 
-        if (clearFileBtn) {
-            clearFileBtn.addEventListener('click', function(e) {
+        var clearBtn = formWrap.querySelector('.btn-deal-clear[data-jenis="' + jenis + '"]');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                resetFileInput();
+                resetInput();
             });
         }
 
-        function bukaForm() {
-            wrapForm.classList.remove('d-none');
-            resetFileInput();
-        }
-        function tutupForm() { 
-            wrapForm.classList.add('d-none'); 
-            resetFileInput();
-        }
-
-        document.addEventListener('click', function (e) {
-            if (e.target.closest('#kbUploadBtn') || e.target.closest('#kbGantiBtn')) bukaForm();
-            if (e.target.closest('#kbBatalBtn')) tutupForm();
-        });
-
         if (btnSimpan) {
-            btnSimpan.addEventListener('click', function () {
+            btnSimpan.addEventListener('click', function() {
                 if (!fileInput || !fileInput.files.length) {
                     if (errorMsg) {
                         errorMsg.textContent = 'Pilih berkas terlebih dahulu.';
@@ -4967,8 +5109,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
 
+                var targetSpId = penawaranDealId || '{{ @order.surat_penawaran_id }}';
+                if (!targetSpId) {
+                    if (errorMsg) {
+                        errorMsg.textContent = 'ID surat penawaran tidak ditemukan.';
+                        errorMsg.classList.remove('d-none');
+                    }
+                    return;
+                }
+
                 var fd = new FormData();
-                fd.append('surat_kesanggupan_bayar', fileInput.files[0]);
+                fd.append('file', fileInput.files[0]);
+                fd.append('dokumen_file', fileInput.files[0]);
                 fd.append('csrf_token', '{{ @csrf_token }}');
                 fd.append('ajax', '1');
 
@@ -4976,45 +5128,80 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (spinner) spinner.classList.remove('d-none');
                 if (errorMsg) errorMsg.classList.add('d-none');
 
-                fetch('{{ @BASE }}/surat-penawaran/{{ @penawaran.id }}/surat-kesanggupan/upload', { method: 'POST', body: fd })
-                    .then(function (res) { return res.json(); })
-                    .then(function (data) {
-                        btnSimpan.disabled = false;
-                        if (spinner) spinner.classList.add('d-none');
+                fetch('{{ @BASE }}/surat-penawaran/' + targetSpId + '/dokumen-deal/' + jenis + '/upload', {
+                    method: 'POST',
+                    body: fd
+                })
+                .then(function(res) { return res.json(); })
+                .then(function(data) {
+                    btnSimpan.disabled = false;
+                    if (spinner) spinner.classList.add('d-none');
 
-                        if (!data.success) {
-                            if (errorMsg) {
-                                errorMsg.textContent = data.message || 'Gagal mengunggah berkas.';
-                                errorMsg.classList.remove('d-none');
-                            }
-                            return;
-                        }
-
-                        if (typeof Swal !== 'undefined') {
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Berhasil Diunggah',
-                                text: data.message || 'Lembar Persetujuan Penawaran / Kesanggupan Klien berhasil diunggah.',
-                                timer: 1500,
-                                showConfirmButton: false
-                            }).then(function() {
-                                window.location.reload();
-                            });
-                        } else {
-                            window.location.reload();
-                        }
-                    })
-                    .catch(function () {
-                        btnSimpan.disabled = false;
-                        if (spinner) spinner.classList.add('d-none');
+                    if (!data.success) {
                         if (errorMsg) {
-                            errorMsg.textContent = 'Gagal mengunggah berkas. Coba lagi.';
+                            errorMsg.textContent = data.message || 'Gagal mengunggah berkas.';
                             errorMsg.classList.remove('d-none');
                         }
-                    });
+                        return;
+                    }
+
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil Diunggah',
+                            text: data.message || 'Dokumen berhasil diunggah.',
+                            timer: 1500,
+                            showConfirmButton: false
+                        }).then(function() {
+                            window.location.reload();
+                        });
+                    } else {
+                        window.location.reload();
+                    }
+                })
+                .catch(function() {
+                    btnSimpan.disabled = false;
+                    if (spinner) spinner.classList.add('d-none');
+                    if (errorMsg) {
+                        errorMsg.textContent = 'Gagal mengunggah berkas. Coba lagi.';
+                        errorMsg.classList.remove('d-none');
+                    }
+                });
             });
         }
-    }
+    });
+
+    // Delegasi klik tombol Buka/Ganti/Batal untuk ketiga kartu berkas DEAL
+    document.addEventListener('click', function(e) {
+        var gantiBtn = e.target.closest('.btn-deal-ganti') || e.target.closest('.btn-deal-buka');
+        if (gantiBtn) {
+            var jenis = gantiBtn.getAttribute('data-jenis');
+            var wrap = document.getElementById('dealFormWrap_' + jenis);
+            if (wrap) {
+                wrap.classList.remove('d-none');
+                var inp = document.getElementById('dealFileInput_' + jenis);
+                if (inp) inp.value = '';
+                var selWrap = document.getElementById('dealSelectedWrap_' + jenis);
+                if (selWrap) selWrap.classList.add('d-none');
+                var prompt = document.getElementById('dealDropPrompt_' + jenis);
+                if (prompt) prompt.classList.remove('d-none');
+                var btnS = document.getElementById('dealSimpanBtn_' + jenis);
+                if (btnS) btnS.disabled = true;
+                var errM = document.getElementById('dealErrorMsg_' + jenis);
+                if (errM) errM.classList.add('d-none');
+            }
+        }
+        var batalBtn = e.target.closest('.btn-deal-batal');
+        if (batalBtn) {
+            var jenisBatal = batalBtn.getAttribute('data-jenis');
+            var wrapBatal = document.getElementById('dealFormWrap_' + jenisBatal);
+            if (wrapBatal) {
+                wrapBatal.classList.add('d-none');
+                var inpB = document.getElementById('dealFileInput_' + jenisBatal);
+                if (inpB) inpB.value = '';
+            }
+        }
+    });
 
     // Stepper checkpoint click synchronization
     document.querySelectorAll('.step-checkpoint').forEach(function(cp, idx) {

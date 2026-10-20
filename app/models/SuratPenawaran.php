@@ -29,8 +29,10 @@ class SuratPenawaran extends \DB\SQL\Mapper
                 'pejabat_nama'       => 'VARCHAR(150) NULL DEFAULT "Dodiet Prasetyo"',
                 'hal'                => 'VARCHAR(150) NULL DEFAULT "Biaya OPTI"',
                 'lampiran_teks'      => 'VARCHAR(100) NULL DEFAULT "1 (satu) lembar"',
-                'dibuat_oleh'        => 'INT NULL',
-                'file_lampiran_user' => 'VARCHAR(255) NULL'
+                'dibuat_oleh'            => 'INT NULL',
+                'file_lampiran_user'     => 'VARCHAR(255) NULL',
+                'file_penawaran_ttd'     => 'VARCHAR(255) NULL',
+                'file_bukti_persetujuan' => 'VARCHAR(255) NULL'
             ];
             foreach ($cols as $col => $def) {
                 try {
