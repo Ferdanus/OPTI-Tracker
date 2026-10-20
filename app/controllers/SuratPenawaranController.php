@@ -743,7 +743,13 @@ $daftarPegawai = $arsipUser->find(
         $mode = $f3->get('GET.mode') ?? '';
         // Hanya buat revisi baru jika ada permintaan eksplisit mode='baru' atau mode='revisi'
         $isRevisiBaru = !empty($spExisting) && ($mode === 'baru' || $mode === 'revisi');
+        if (!empty($spExisting['nomor_surat']) && preg_match('/^\d+\/BBSPJIS\/MS\//i', $spExisting['nomor_surat'])) {
+            $spExisting['nomor_surat'] = 'B/' . $spExisting['nomor_surat'];
+        }
         $nomorSuratOtomatis = $isRevisiBaru ? $spModel->generateNomorSurat() : (!empty($spExisting['nomor_surat']) ? $spExisting['nomor_surat'] : $spModel->generateNomorSurat());
+        if (preg_match('/^\d+\/BBSPJIS\/MS\//i', $nomorSuratOtomatis)) {
+            $nomorSuratOtomatis = 'B/' . $nomorSuratOtomatis;
+        }
         $revisiKe = count($allSp) + 1;
 
         $proposal = ($order['jenis_layanan_opti'] === 'selulosa') ? $orderModel->getProposalRiset($orderId) : null;
@@ -965,6 +971,10 @@ $daftarPegawai = $arsipUser->find(
             $post['spm_layanan'] = $durasiAngka . ' Hari Kerja';
         } elseif (empty($post['spm_layanan']) || $post['spm_layanan'] === 'Lainnya') {
             $post['spm_layanan'] = '30 Hari Kerja';
+        }
+
+        if (!empty($post['nomor_surat']) && preg_match('/^\d+\/BBSPJIS\/MS\//i', $post['nomor_surat'])) {
+            $post['nomor_surat'] = 'B/' . $post['nomor_surat'];
         }
 
         try {
@@ -1614,6 +1624,9 @@ $daftarPegawai = $arsipUser->find(
 
         // Live draft inputs dari form jika tersedia (POST atau GET)
         $noSurat       = trim((string)($f3->get('POST.nomor_surat') ?? $f3->get('GET.nomor_surat') ?? ($sp['nomor_surat'] ?: $spModel->generateNomorSurat())));
+        if (preg_match('/^\d+\/BBSPJIS\/MS\//i', $noSurat)) {
+            $noSurat = 'B/' . $noSurat;
+        }
         $tanggalSurat  = trim((string)($f3->get('POST.tanggal_surat') ?? $f3->get('GET.tanggal_surat') ?? ($sp['tanggal_surat'] ?: date('Y-m-d'))));
         $tglFormatted  = self::formatTanggalIndoSurat($tanggalSurat);
         $perusahaan    = trim((string)($f3->get('POST.perusahaan') ?? $f3->get('GET.perusahaan') ?? ($sp['perusahaan'] ?? ($order['nama_perusahaan'] ?? 'Mitra Balai'))));
@@ -1866,6 +1879,9 @@ $daftarPegawai = $arsipUser->find(
 
         // Ambil data live dari POST atau GET
         $nomorSurat   = trim((string)($f3->get('POST.nomor_surat') ?? $f3->get('GET.nomor_surat') ?? ($existingSp['nomor_surat'] ?? $spModel->generateNomorSurat())));
+        if (preg_match('/^\d+\/BBSPJIS\/MS\//i', $nomorSurat)) {
+            $nomorSurat = 'B/' . $nomorSurat;
+        }
         $tanggalSurat = trim((string)($f3->get('POST.tanggal_surat') ?? $f3->get('GET.tanggal_surat') ?? ($existingSp['tanggal_surat'] ?? date('Y-m-d'))));
         $perusahaan   = trim((string)($f3->get('POST.perusahaan') ?? $f3->get('GET.perusahaan') ?? ($existingSp['perusahaan'] ?? $order['nama_perusahaan'])));
         $pic          = trim((string)($f3->get('POST.nama') ?? $f3->get('GET.nama') ?? ($existingSp['nama'] ?? $order['pic'])));
@@ -2117,7 +2133,10 @@ $daftarPegawai = $arsipUser->find(
         }
 
         $tglFormatted = self::formatTanggalIndoSurat($sp['tanggal_surat'] ?? date('Y-m-d'));
-        $noSurat = $sp['nomor_surat'] ?: ('01/BBSPJIS/MS/' . SuratPenawaran::bulanKeRomawi((int)date('n')) . '/' . date('Y'));
+        $noSurat = $sp['nomor_surat'] ?: ('B/01/BBSPJIS/MS/' . SuratPenawaran::bulanKeRomawi((int)date('n')) . '/' . date('Y'));
+        if (preg_match('/^\d+\/BBSPJIS\/MS\//i', $noSurat)) {
+            $noSurat = 'B/' . $noSurat;
+        }
         $lampiranTeks = !empty($sp['lampiran_teks']) ? $sp['lampiran_teks'] : '1 (satu) lembar';
         $halSurat = !empty($sp['hal']) ? $sp['hal'] : (!empty($sp['perihal']) ? $sp['perihal'] : 'Biaya OPTI');
 
@@ -2438,7 +2457,10 @@ $daftarPegawai = $arsipUser->find(
         }
 
         $tglFormatted = self::formatTanggalIndoSurat($sp['tanggal_surat'] ?? date('Y-m-d'));
-        $noSurat = $sp['nomor_surat'] ?: ('01/BBSPJIS/MS/' . SuratPenawaran::bulanKeRomawi((int)date('n')) . '/' . date('Y'));
+        $noSurat = $sp['nomor_surat'] ?: ('B/01/BBSPJIS/MS/' . SuratPenawaran::bulanKeRomawi((int)date('n')) . '/' . date('Y'));
+        if (preg_match('/^\d+\/BBSPJIS\/MS\//i', $noSurat)) {
+            $noSurat = 'B/' . $noSurat;
+        }
         $perusahaan = !empty($sp['perusahaan']) ? trim($sp['perusahaan']) : (!empty($order['nama_perusahaan']) ? trim($order['nama_perusahaan']) : 'Pimpinan Perusahaan/Instansi');
         if (!empty($order['pt_cv']) && stripos($perusahaan, $order['pt_cv']) === false) {
             $perusahaan = $order['pt_cv'] . ' ' . $perusahaan;

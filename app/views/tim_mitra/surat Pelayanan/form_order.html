@@ -1371,7 +1371,7 @@
                                 <span class="input-group-text bg-light text-muted"><i class="bi bi-hash"></i></span>
                                 <input type="text" name="nomor_surat" id="input_nomor_surat" class="form-control form-control-sm font-monospace fw-bold" value="{{ @is_revisi_baru ? @nomor_surat_otomatis : (@sp_existing.nomor_surat ?: @nomor_surat_otomatis) }}" data-nomor-lama="{{ @sp_existing.nomor_surat ?? '' }}" data-nomor-baru="{{ @nomor_surat_otomatis }}" required {{ !@can_edit ? 'disabled' : '' }}>
                             </div>
-                            <small class="text-muted" style="font-size: 0.72rem;">Format otomatis: {urut}/BBSPJIS/MS/{bulan_romawi}/{tahun}.</small>
+                            <small class="text-muted" style="font-size: 0.72rem;">Format otomatis: B/{urut}/BBSPJIS/MS/{bulan_romawi}/{tahun}.</small>
                         </div>
                         <div class="col-md-5">
                             <label class="form-label small fw-semibold text-dark mb-1">

@@ -57,13 +57,12 @@ class SuratPenawaran extends \DB\SQL\Mapper
     }
 
     /**
-     * Generate nomor surat penawaran resmi format balai: {urut}/BBSPJIS/MS/{bulan_romawi}/{tahun}
+     * Generate nomor surat penawaran resmi format balai: B/{urut}/BBSPJIS/MS/{bulan_romawi}/{tahun}
      * Otomatis sinkron dan mengambil nomor urut berikutnya dari tabel surat keluar (tb_surat_keluar) & tb_surat_penawaran
      */
     public function generateNomorSurat(string $tanggal = ''): string
     {
-        $time = !empty($tanggal) ? strtotime($tanggal) : time();
-        if (!$time) $time = time();
+        $time = !empty($tanggal) && strtotime($tanggal) ? strtotime($tanggal) : time();
 
         $bulanAngka  = (int) date('n', $time);
         $tahun       = date('Y', $time);
@@ -121,7 +120,7 @@ class SuratPenawaran extends \DB\SQL\Mapper
 
         // Ambil nilai urutan tertinggi pada bulan dan tahun terkait
         foreach (array_unique($allNumbers) as $no) {
-            if (preg_match('/^(\d+)/', trim($no), $m)) {
+            if (preg_match('/^(?:B\/)?(\d+)/i', trim($no), $m)) {
                 $val = (int)$m[1];
                 if ($val > $maxUrut) {
                     $maxUrut = $val;
@@ -131,7 +130,7 @@ class SuratPenawaran extends \DB\SQL\Mapper
 
         $nextUrut = $maxUrut + 1;
         $nomorUrutPadded = str_pad((string)$nextUrut, 2, '0', STR_PAD_LEFT);
-        return "{$nomorUrutPadded}/BBSPJIS/MS/{$bulanRomawi}/{$tahun}";
+        return "B/{$nomorUrutPadded}/BBSPJIS/MS/{$bulanRomawi}/{$tahun}";
     }
 
     /**
@@ -201,6 +200,9 @@ class SuratPenawaran extends \DB\SQL\Mapper
 
         $tanggalSurat = !empty($data['tanggal_surat']) ? $data['tanggal_surat'] : date('Y-m-d');
         $nomorSurat   = !empty($data['nomor_surat']) ? trim($data['nomor_surat']) : $this->generateNomorSurat($tanggalSurat);
+        if (preg_match('/^\d+\/BBSPJIS\/MS\//i', $nomorSurat)) {
+            $nomorSurat = 'B/' . $nomorSurat;
+        }
         $isLingkungan = ($order['jenis_layanan_opti'] ?? '') === 'lingkungan';
         $perihal      = isset($data['perihal']) ? trim($data['perihal']) : ($isLingkungan ? '' : 'Penawaran Layanan Jasa OPTI - ' . $order['judul_kegiatan']);
         $nominal      = isset($data['nominal_penawaran']) ? (float)$data['nominal_penawaran'] : (float)$order['estimasi_biaya'];
@@ -282,6 +284,9 @@ class SuratPenawaran extends \DB\SQL\Mapper
 
             // Jika DEAL atau BATAL, pertahankan nomor surat asli jika tidak diubah secara eksplisit
             $nomorSuratFinal = ($statusRespon === 'deal' || $statusRespon === 'batal') ? ($existing['nomor_surat'] ?: $nomorSurat) : $nomorSurat;
+            if (preg_match('/^\d+\/BBSPJIS\/MS\//i', $nomorSuratFinal)) {
+                $nomorSuratFinal = 'B/' . $nomorSuratFinal;
+            }
 
             $this->db->exec(
                 "UPDATE tb_surat_penawaran SET 
