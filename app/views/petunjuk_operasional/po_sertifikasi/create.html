@@ -87,6 +87,10 @@
     .pp-modal-bar .pg:hover { background: #f1f5f9; }
     .pp-modal-x { margin-left: auto; width: 32px; height: 32px; border-radius: 50%; border: 0; background: #f1f5f9; color: #0f172a; font-size: 1.35rem; line-height: 1; cursor: pointer; }
     .pp-modal-x:hover { background: #e2e8f0; }
+    /* Dimuat di dalam modal Daftar PO (?embed=1): hanya kartu pratinjau dokumen yang tampil, memenuhi seluruh area modal */
+    html.pp-embed, html.pp-embed body { overflow: hidden !important; background: #e9ecef !important; }
+    html.pp-embed .po-live-card { position: fixed !important; top: 0; left: 0; right: 0; bottom: 0; z-index: 2050; height: auto !important; min-height: 0 !important; border: 0; border-radius: 0; box-shadow: none; }
+    html.pp-embed #ppLiveBadge { display: none; }
     .pp-pv-box { flex: 1 1 auto; min-height: 0; background: #cbd5e1; border-radius: 12px; padding: 8px; overflow: auto; }
     .pp-scale { position: relative; }
     .pp-pages { width: 794px; transform-origin: top left; }
@@ -158,6 +162,7 @@
 
 <include href="petunjuk_operasional/_tema_po.html" />
 <include href="petunjuk_operasional/_penandatangan.html" />
+<include href="petunjuk_operasional/_dialog_nomor_po.html" />
 
 <style>
     /* ===== Tampilan disamakan dengan PO Pengujian (hanya gaya, isi form & poin tidak berubah) ===== */
@@ -288,17 +293,18 @@
                             <div class="pp-hint">Dibuat otomatis &amp; terkunci saat PO dikirim, tidak bisa diubah manual.</div>
                         </div>
                         <div class="col-sm-6">
-                            <label class="form-label">Tanggal PO <span class="text-danger">*</span></label>
-                            <input type="date" class="form-control form-control-sm" id="ppTanggal" data-bind="tanggal" required>
-                            <div class="pp-hint" id="ppDibuat">Isi sesuai tanggal PO dibuat; tidak boleh lebih dari hari ini. Tanggal PO dikirim tercatat otomatis saat PO dikirim.</div>
+                            <label class="form-label">Tanggal PO</label>
+                            <div class="form-control form-control-sm bg-light fw-semibold" id="ppTanggal" style="cursor:not-allowed;"></div>
+                            <div class="pp-hint" id="ppDibuat"></div>
+                            <div class="pp-hint" id="ppDibuatInfo"></div>
                         </div>
                         <div class="col-12">
                             <label class="form-label">Judul Kegiatan <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control form-control-sm" data-bind="judul" id="ppJudul" maxlength="255" placeholder="SERTIFIKASI AWAL SPPT SNI PT CONTOH KEDUA" required>
+                            <input type="text" class="form-control form-control-sm" data-bind="judul" id="ppJudul" maxlength="255" placeholder="Isi judul kegiatan PO..." required>
                         </div>
                         <div class="col-12">
                             <label class="form-label">Jenis <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control form-control-sm" data-bind="jenis" list="dlJenis" maxlength="255" placeholder="Sertifikasi Awal SPPT SNI Produk Air Mineral">
+                            <input type="text" class="form-control form-control-sm" data-bind="jenis" list="dlJenis" maxlength="255" placeholder="Isi Jenis PO sertifikasi..">
                             <datalist id="dlJenis"><option value="Sertifikasi Awal LSPro"><option value="Surveilen LSPro"><option value="Penambahan Lingkup LSPro"><option value="Sampling Ulang LSPro"><option value="Perluasan Lingkup LSPro"><option value="Perpanjangan Sertifikat LSPro"></datalist>
                         </div>
                     </div>
@@ -594,6 +600,14 @@ window.PO_URLS = {
         var d = new Date();
         return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
     }
+    // Tanggal PO = hari ini menurut WIB (PO baru); dibuat server saat PO pertama kali disimpan lalu tetap
+    function ymdHariWib() {
+        try { return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' }); } catch (e) { return todayDate(); }
+    }
+    function tglDMY(iso) {
+        var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ''));
+        return m ? (m[3] + '/' + m[2] + '/' + m[1]) : '';
+    }
     function newRinci() { return { nama: '', qty: '', satuan: '', hari: '', tarif: 0, jumlah: 0 }; }
     function newInd() { return { nama: '', tipe: 'harga', nilai: 0, persen: '', rinci: 1, tampil: 'blok', huruf: 1, judulBlok: '', rincian: [newRinci()], grup: [] }; }
     // rincian satu kategori bisa terdiri dari beberapa kelompok berjudul: kelompok pertama = rincian + judulBlok, sisanya di grup[]
@@ -607,7 +621,7 @@ window.PO_URLS = {
 
     function blank() {
         return {
-            tanggal: todayDate(), perusahaan: '', alamat: '', judul: '', jenis: '',
+            tanggal: ymdHariWib(), perusahaan: '', alamat: '', judul: '', jenis: '',
             dasarPenawaran: { nomor: '', tanggal: '' },
             dasarPoin: JSON.parse(JSON.stringify(DEF_POIN)),
             tujuan: DEF_TUJUAN, ruang: DEF_RUANG,
@@ -663,8 +677,8 @@ window.PO_URLS = {
     }
     if (PO_SAVED) {
         if (PO_SAVED.data) { S = mergeSaved(blank(), PO_SAVED.data); }
-        // Tanggal PO = tanggal PO dibuat, diisi user; PO yang tersimpan tanpa tanggal memakai hari ini
-        S.tanggal = PO_SAVED.tanggal_po ? PO_SAVED.tanggal_po : todayDate();
+        // Tanggal PO = tanggal PO dibuat (dari server, tidak diisi user); PO yang tersimpan tanpa tanggal memakai hari ini (WIB)
+        S.tanggal = PO_SAVED.tanggal_po ? PO_SAVED.tanggal_po : ymdHariWib();
         S.ttd = PoTtd.baru(S.ttd);
         if (PO_SAVED.judul) { S.judul = PO_SAVED.judul; }
         // DRAFT yang disimpan sebelum isian dikosongkan masih membawa teks bawaan lama ([alamat], "Membantu [perusahaan] untuk melakukan ...",
@@ -1773,6 +1787,12 @@ window.PO_URLS = {
     }
     // preview di modal (tombol Hal. untuk lompat halaman, X untuk tutup; Esc / klik latar juga menutup)
     var modal = $('ppModal');
+    var EMBED = !!window.PO_VIEW && window.self !== window.top && /[?&]embed=1(&|$)/.test(window.location.search);
+    if (EMBED) {
+        document.documentElement.classList.add('pp-embed');
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { kabariInduk('tutup'); } });
+    }
+    function kabariInduk(pesan) { try { window.parent.postMessage({ poPreview: pesan }, window.location.origin); } catch (e) {} }
     document.body.appendChild(modal);
     document.body.appendChild($('ppMeasure'));
     function bukaPreview() { if (window.ppSplitSiap) { render(); fit(); return; } render(); modal.classList.add('open'); modal.setAttribute('aria-hidden', 'false'); document.body.style.overflow = 'hidden'; fit(); $('pvBox').scrollTop = 0; }
@@ -1783,6 +1803,7 @@ window.PO_URLS = {
         else { window.location.href = window.PO_URLS.daftar; }
     }
     function tutupPreview() {
+        if (EMBED) { kabariInduk('tutup'); return; }   // ditutup lewat modal induk (Daftar PO)
         modal.classList.remove('open'); modal.setAttribute('aria-hidden', 'true'); document.body.style.overflow = '';
         if (window.PO_VIEW) { kembaliKeDaftar(); }
     }
@@ -1831,10 +1852,12 @@ window.PO_URLS = {
         var box = $('ppNomorBox');
         if (PO_SAVED && PO_SAVED.nomor) { box.textContent = PO_SAVED.nomor; }
         else { box.innerHTML = '<span class="text-muted fst-italic fw-normal">Diberikan saat PO dikirim</span>'; }
-        $('ppTanggal').max = todayDate();
-        $('ppDibuat').textContent = (PO_SAVED && PO_SAVED.nomor && PO_SAVED.dikirim)
-            ? 'Dikirim pada ' + PO_SAVED.dikirim + ' (tercatat otomatis). Tanggal PO = tanggal PO dibuat.'
-            : 'Isi sesuai tanggal PO dibuat; tidak boleh lebih dari hari ini. Tanggal PO dikirim tercatat otomatis saat PO dikirim.';
+        var tglPo = (PO_SAVED && PO_SAVED.tanggal_po) ? PO_SAVED.tanggal_po : ymdHariWib();
+        $('ppTanggal').textContent = tglDMY(tglPo);
+        $('ppDibuat').textContent = (PO_SAVED && PO_SAVED.tanggal_po) ? 'Dibuat saat PO pertama kali disimpan.' : 'Tercatat otomatis saat PO pertama kali disimpan.';
+        $('ppDibuatInfo').textContent = (PO_SAVED && PO_SAVED.nomor && PO_SAVED.dikirim)
+            ? 'Dikirim pada ' + PO_SAVED.dikirim + ' (tercatat otomatis).'
+            : ((PO_SAVED && PO_SAVED.dibuat) ? 'Dibuat ' + PO_SAVED.dibuat : '');
         $('ppTitle').textContent = PO_SAVED ? 'Edit Petunjuk Operasional' : 'Buat Petunjuk Operasional';
         var st = $('ppStatus'), s = PO_SAVED && PO_SAVED.status;
         if (s === 'draft' || s === 'terkirim') {
@@ -1849,7 +1872,8 @@ window.PO_URLS = {
         $('btnKirim').innerHTML = on && aksi === 'kirim' ? '<span class="spinner-border spinner-border-sm me-1"></span> Mengirim...' : '<i class="bi bi-send me-1"></i> Kirim';
     }
     // kirim data ke server. Sukses -> popup berhasil -> pindah ke daftar PO
-    function kirimKeServer(aksi) {
+    // satu permintaan ke server -> objek JSON {ok, ...}; gagal jaringan dibalas {ok:false, message}
+    function postKeServer(aksi) {
         var fd = new FormData();
         fd.append('csrf_token', window.PO_CSRF || '');
         fd.append('aksi', aksi);
@@ -1861,11 +1885,16 @@ window.PO_URLS = {
         fd.append('isi_form', JSON.stringify(S)); // hanya pengantar; server memecahnya ke kolom-kolom po_kegiatan
         var url = PO_SAVED ? urlDari(window.PO_URLS.update, PO_SAVED.id) : window.PO_URLS.simpan;
 
-        saving = true; setBusy(true, aksi);
-        fetch(url, { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
+        return fetch(url, { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
             .then(function (r) {
                 return r.json().then(function (j) { return j; }, function () { return { ok: false, message: 'Respons server tidak valid (HTTP ' + r.status + ').' }; });
             })
+            .catch(function () { return { ok: false, message: 'Tidak bisa terhubung ke server. Periksa koneksi lalu coba lagi.' }; });
+    }
+    // simpan draft: sukses -> popup berhasil -> pindah ke daftar PO
+    function kirimKeServer(aksi) {
+        saving = true; setBusy(true, aksi);
+        postKeServer(aksi)
             .then(function (j) {
                 if (j && j.ok) {
                     var baru = !PO_SAVED;
@@ -1906,8 +1935,6 @@ window.PO_URLS = {
     function validasiKirim() {
         var m = [];
         function add(msg, sel) { m.push({ msg: msg, sel: sel }); }
-        if (kosong(S.tanggal)) { add('Tanggal PO belum diisi', '#ppTanggal'); }
-        else if (S.tanggal > todayDate()) { add('Tanggal PO tidak boleh lebih dari hari ini', '#ppTanggal'); }
         if (kosong(S.judul)) { add('Judul Kegiatan belum diisi', '#ppJudul'); }
         if (kosong(S.jenis)) { add('Jenis belum diisi', '[data-bind="jenis"]'); }
 
@@ -2055,7 +2082,22 @@ window.PO_URLS = {
         if (aksi === 'kirim') {
             var kurang = validasiKirim();
             if (kurang.length) { popupBelumLengkap(kurang); return; }
-            konfirmasiKirim(function () { kirimKeServer('kirim'); });
+            if (PO_SAVED && PO_SAVED.nomor) { konfirmasiKirim(function () { kirimKeServer('kirim'); }); return; }
+            // nomor baru diterbitkan saat Kirim: dialog "Generate Nomor PO" (lamanya loading hanya tampilan; server cukup satu permintaan cepat)
+            PoNomorDialog.mulai({
+                durasi: 4000,
+                kirim: function () { saving = true; setBusy(true, 'kirim'); return postKeServer('kirim'); },
+                sukses: function (j) {
+                    PO_SAVED = { id: j.id, nomor: j.nomor, tanggal_po: j.tanggal_po || S.tanggal || '', dikirim: j.dikirim || '', dibuat: j.dibuat || (PO_SAVED && PO_SAVED.dibuat) || '', judul: S.judul, status: j.status || 'terkirim', data: null };
+                    tampilNomor();
+                },
+                tujuan: function (j) { return j.redirect_index || window.PO_URLS.daftar; },
+                gagal: function (j) {
+                    saving = false; setBusy(false); tampilNomor();
+                    if (j && j.errors && j.errors.length) { popupBelumLengkap(j.errors.map(function (t) { return { msg: t }; })); return; }
+                    if (j && j.redirect) { window.location.href = j.redirect; }
+                }
+            });
         }
         else { kirimKeServer('draft'); }
     }
@@ -2076,8 +2118,10 @@ window.PO_URLS = {
             var be = $('ppModalEdit');
             be.href = urlDari(window.PO_URLS.edit, PO_SAVED.id);
             be.style.display = '';
+            if (EMBED) { be.target = '_top'; }
         }
         bukaPreview();
+        if (EMBED) { setTimeout(function () { kabariInduk('siap'); }, 300); }
     }
 window.ppRender = render;
 })();

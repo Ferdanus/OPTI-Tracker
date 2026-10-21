@@ -1,5 +1,5 @@
 <div class="d-flex align-items-center gap-3 mb-4">
-    <a href="{{ @BASE }}/pembayaran" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i> Kembali</a>
+    <a href="{{ @dari == 'order' ? (@BASE . '/order/' . @dari_id) : (@BASE . '/pembayaran') }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i> Kembali</a>
     <div>
         <h2 class="h4 fw-bold mb-0 text-dark">Catat Pembayaran</h2>
     </div>
@@ -36,6 +36,7 @@
         <form action="{{ @BASE }}/pembayaran/simpan" method="POST" enctype="multipart/form-data" id="formPembayaran">
             <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
             <input type="hidden" name="order_id" value="{{ @order.id }}">
+            <input type="hidden" name="dari" value="{{ @dari }}">
             <input type="hidden" name="is_kesanggupan_bayar" id="inputIsKesanggupan" value="0">
         
             <check if="{{ !empty(@order.surat_kesanggupan_bayar) }}">
@@ -67,18 +68,18 @@
                     <div class="col-md-6">
                         <label class="form-label fw-bold">Tahap Termin Ke- <span class="text-danger">*</span></label>
                         <select name="termin_ke" id="selectTermin" class="form-select">
-                            <option value="1" {{ @order.termin_berikutnya == 1 ? 'selected' : '' }}>Termin 1</option>
-                            <option value="2" {{ @order.termin_berikutnya == 2 ? 'selected' : '' }}>Termin 2</option>
-                            <option value="3" {{ @order.termin_berikutnya == 3 ? 'selected' : '' }}>Termin 3</option>
-                            <option value="4" {{ @order.termin_berikutnya == 4 ? 'selected' : '' }}>Termin 4</option>
-                            <option value="5" {{ @order.termin_berikutnya == 5 ? 'selected' : '' }}>Termin 5</option>
-                            <option value="6" {{ @order.termin_berikutnya == 6 ? 'selected' : '' }}>Termin 6</option>
+                            <option value="1" {{ (@old.termin_ke ?: @order.termin_berikutnya) == 1 ? 'selected' : '' }}>Termin 1</option>
+                            <option value="2" {{ (@old.termin_ke ?: @order.termin_berikutnya) == 2 ? 'selected' : '' }}>Termin 2</option>
+                            <option value="3" {{ (@old.termin_ke ?: @order.termin_berikutnya) == 3 ? 'selected' : '' }}>Termin 3</option>
+                            <option value="4" {{ (@old.termin_ke ?: @order.termin_berikutnya) == 4 ? 'selected' : '' }}>Termin 4</option>
+                            <option value="5" {{ (@old.termin_ke ?: @order.termin_berikutnya) == 5 ? 'selected' : '' }}>Termin 5</option>
+                            <option value="6" {{ (@old.termin_ke ?: @order.termin_berikutnya) == 6 ? 'selected' : '' }}>Termin 6</option>
                         </select>
                         <div class="form-text">Otomatis kesaran ({{ @order.termin_berikutnya }}), tetap bisa diganti manual.</div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-bold">Tanggal Bayar <span class="text-danger">*</span></label>
-                        <input type="date" name="tanggal_bayar" class="form-control" value="{{ date('Y-m-d') }}">
+                        <input type="date" name="tanggal_bayar" class="form-control" value="{{ @old.tanggal_bayar ?: date('Y-m-d') }}">
                     </div>
                 </div>
         
@@ -114,7 +115,7 @@
         
                 <div class="mb-4">
                     <label class="form-label fw-bold">Keterangan</label>
-                    <textarea name="keterangan" id="inputKeteranganNormal" class="form-control" rows="2" placeholder="Catatan tambahan..."></textarea>
+                    <textarea name="keterangan" id="inputKeteranganNormal" class="form-control" rows="2" placeholder="Catatan tambahan...">{{ @old.keterangan }}</textarea>
                 </div>
             </div>
         
@@ -128,7 +129,7 @@
             <input type="hidden" name="disposisi_langsung" id="inputDisposisiLangsung" value="0">
 
 <div class="d-flex flex-column flex-sm-row justify-content-end gap-2">
-    <a href="{{ @BASE }}/pembayaran" class="btn btn-outline-secondary px-4 order-3 order-sm-1">Batal</a>
+    <a href="{{ @dari == 'order' ? (@BASE . '/order/' . @dari_id) : (@BASE . '/pembayaran') }}" class="btn btn-outline-secondary px-4 order-3 order-sm-1">Batal</a>
     <button type="button" id="btnSimpanSaja" class="btn btn-outline-primary px-4 order-2 order-sm-2 d-none">Simpan</button>
     <button type="button" id="btnSimpanDisposisi" class="btn btn-primary px-4 order-1 order-sm-3 d-none"><i class="bi bi-send-check me-1"></i> Simpan &amp; Disposisi</button>
     <button type="button" id="btnSimpanPembayaran" class="btn btn-primary px-4 order-1 order-sm-3"><i class="bi bi-save me-1"></i> Simpan Pembayaran</button>
@@ -258,7 +259,7 @@ btnSimpanDisposisi.addEventListener('click', function () {
                     hint.innerHTML = '<span class="text-danger fw-semibold"><i class="bi bi-exclamation-triangle-fill me-1"></i>Melebihi sisa tagihan (' + rupiah(sisaTagihan) + ')</span>';
                     group.classList.add('border', 'border-danger');
                 } else if (angka === sisaTagihan) {
-                    hint.innerHTML = '<span class="text-success fw-semibold"><i class="bi bi-check-circle-fill me-1"></i>Pas! Pembayaran ini akan MELUNASI order ini.</span>';
+                    hint.innerHTML = '<span class="text-success fw-semibold"><i class="bi bi-check-circle-fill me-1"></i>PEMBAYARAN LUNAS</span>';
                     group.classList.remove('border', 'border-danger');
                 } else {
                     hint.innerHTML = '';
@@ -335,8 +336,7 @@ btnSimpanDisposisi.addEventListener('click', function () {
     var angka = parseInt(hidden.value, 10) || 0;
 
     if (angka <= 0) {
-                    alert('Jumlah nominal pembayaran wajib diisi.');
-                    display.focus();
+                    popupPeringatan('Nominal Belum Diisi', 'Jumlah nominal pembayaran wajib diisi.', function () { display.focus(); });
                     return;
                 }
     
@@ -356,10 +356,55 @@ btnSimpanDisposisi.addEventListener('click', function () {
                     return;
                 }
     
+                // Bukti pembayaran wajib ada: tahan di sini pakai popup (halaman nggak reload, nominal & isian lain tetap)
+                var fileBukti = document.getElementById('inputBukti');
+                if (!fileBukti || !fileBukti.files || !fileBukti.files[0]) {
+                    popupPeringatan('Bukti Pembayaran Belum Diunggah', 'Bukti pembayaran wajib diunggah.', function () { if (fileBukti) { fileBukti.focus(); } });
+                    return;
+                }
+
+                // File bukti kegedean: tahan di sini (halaman nggak reload, nominal & isian lain tetap)
+                if (!cekUkuranBukti()) { return; }
+
                 // Validasi lolos -- baru sekarang beneran kirim form-nya
                 form.submit();
             });
         }
+        // ===== Popup peringatan (satu gaya untuk semua notif validasi di form ini; gaya sama dengan dialog Disposisi) =====
+        function popupPeringatan(judul, teks, sesudah) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'warning',
+                    title: judul,
+                    html: '<div class="text-secondary small">' + teks + '</div>',
+                    confirmButtonText: 'Oke',
+                    confirmButtonColor: '#881337',
+                    customClass: {
+                        popup: 'rounded-4 shadow-lg p-2',
+                        confirmButton: 'btn btn-primary px-4 py-2 fw-semibold rounded-3 mx-1'
+                    },
+                    buttonsStyling: false
+                }).then(function () { if (sesudah) { sesudah(); } });
+            } else {
+                alert(teks);
+                if (sesudah) { sesudah(); }
+            }
+        }
+
+        // ===== Cek ukuran file bukti (maks 5MB) di browser, sebelum dikirim =====
+        var BATAS_BUKTI = 5 * 1024 * 1024;
+        function cekUkuranBukti() {
+            var el = document.getElementById('inputBukti');
+            if (!el || !el.files || !el.files[0] || el.files[0].size <= BATAS_BUKTI) { return true; }
+            var mb = (el.files[0].size / 1024 / 1024).toFixed(1).replace('.', ',');
+            el.value = '';   // kosongkan pilihan file saja; nominal dan isian lain dibiarkan
+            var pesan = 'Ukuran file ' + mb + ' MB, melebihi batas 5 MB. Pilih file yang lebih kecil.';
+            popupPeringatan('File Terlalu Besar', pesan);
+            return false;
+        }
+        var inputBuktiEl = document.getElementById('inputBukti');
+        if (inputBuktiEl) { inputBuktiEl.addEventListener('change', cekUkuranBukti); }
+
         var toggleKb = document.getElementById('kbSkipToggle');
 if (toggleKb) {
     toggleKb.addEventListener('change', function () {
@@ -418,6 +463,13 @@ function perbaruiTombolSimpan() {
     }
 }
 perbaruiTombolSimpan();
+
+        // Isi ulang nominal kalau form dibuka lagi sesudah simpan gagal (mis. file bukti kegedean)
+        var oldJumlah = {{ @old.jumlah ?: 0 }};
+        if (oldJumlah > 0 && display) {
+            display.value = String(oldJumlah);
+            display.dispatchEvent(new Event('input'));
+        }
     });
     </script>
     

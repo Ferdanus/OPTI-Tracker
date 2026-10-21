@@ -27,7 +27,7 @@
         <select id="selectOrderPo" class="form-select searchable-select" placeholder="Ketik nomor order / nama mitra...">
             <option value="">-- Pilih Order (status: layak) --</option>
             <repeat group="{{ @daftar_order }}" value="{{ @ord }}">
-                <option value="{{ @ord.id }}">{{ @ord.nomor_order }} &mdash; {{ @ord.nama_mitra }}</option>
+                <option value="{{ @ord.id }}">{{ @ord.nomor_order }} &mdash; {{ @ord.nama_mitra }}{{ @ord.jenis_layanan_opti ? ' (' . ucfirst(@ord.jenis_layanan_opti) . ')' : '' }}</option>
             </repeat>
         </select>
         <div class="form-text mt-2">Begitu order dipilih, kamu langsung diarahkan ke formulir PO.</div>
@@ -91,6 +91,13 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     });
+
+    // Dari Daftar PO dengan filter Pengujian / Sertifikasi (?jenis=pengujian|sertifikasi): langsung buka pilihan order layanan itu.
+    var jenisAwal = new URLSearchParams(window.location.search).get('jenis');
+    if (jenisAwal === 'pengujian' || jenisAwal === 'sertifikasi') {
+        var kartuAwal = document.querySelector('.jenis-po-card[data-slug="' + jenisAwal + '"]');
+        if (kartuAwal) { kartuAwal.click(); }
+    }
 
     // Dari menu OPTI (?jenis=opti): lewati pilihan jenis PO, langsung pilih order.
     if (new URLSearchParams(window.location.search).get('jenis') === 'opti') {

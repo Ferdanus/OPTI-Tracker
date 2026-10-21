@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pilihan gaya pagination</title>
+<style>
+  :root { --pri: #334155; --pri-soft: #f1f5f9; --line: #e2e8f0; --txt: #0f172a; --mut: #64748b; --acc: #2563eb; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 28px 20px 60px; background: #f8fafc; color: var(--txt); font: 14px/1.5 "Segoe UI", system-ui, -apple-system, sans-serif; }
+  h1 { font-size: 1.15rem; margin: 0 0 4px; }
+  p.sub { margin: 0 0 22px; color: var(--mut); font-size: .86rem; }
+  .opt { background: #fff; border: 1px solid var(--line); border-radius: 14px; margin-bottom: 18px; box-shadow: 0 1px 3px rgba(15,23,42,.05); overflow: hidden; }
+  .opt .head { padding: 16px 18px 4px; }
+  .opt h2 { font-size: .92rem; margin: 0 0 2px; display: flex; align-items: center; gap: 8px; }
+  .opt h2 .tag { background: var(--pri); color: #fff; border-radius: 99px; font-size: .7rem; padding: 1px 9px; }
+  .opt .ket { color: var(--mut); font-size: .8rem; margin: 0 0 10px; }
+  .fake-rows { padding: 0 18px; }
+  .fake-rows div { height: 10px; border-radius: 6px; background: var(--pri-soft); margin: 10px 0; }
+  .fake-rows div:nth-child(2) { width: 82%; } .fake-rows div:nth-child(3) { width: 91%; }
+  .foot { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; padding: 10px 18px; border-top: 1px solid var(--line); background: #fff; color: var(--mut); font-size: .82rem; }
+  .foot b { color: var(--txt); }
+  .pg { display: flex; align-items: center; gap: 4px; margin: 0; padding: 0; list-style: none; }
+  .pg button { font: inherit; cursor: pointer; border: 0; background: none; color: inherit; padding: 0; }
+  .pg svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; display: block; }
+  .pg .dis { opacity: .4; pointer-events: none; }
+  .pg .dots { color: var(--mut); padding: 0 4px; user-select: none; }
+  .satu { padding: 0 18px 12px; color: var(--mut); font-size: .76rem; }
+  .satu .foot { border-top: 1px dashed var(--line); padding: 8px 0 0; font-size: .8rem; }
+
+  /* A. Bulat */
+  .A .pg button.n, .A .pg button.nav { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-weight: 600; color: var(--pri); transition: background .15s; }
+  .A .pg button.n:hover, .A .pg button.nav:hover { background: var(--pri-soft); }
+  .A .pg button.n.on { background: var(--pri); color: #fff; box-shadow: 0 2px 6px rgba(51,65,85,.3); }
+  .A .pg button.nav { border: 1px solid var(--line); }
+
+  /* B. Menyatu */
+  .B .pg { gap: 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .B .pg button { height: 34px; min-width: 36px; padding: 0 12px; display: grid; place-items: center; font-weight: 600; color: var(--pri); border-right: 1px solid var(--line); background: #fff; }
+  .B .pg li:last-child button { border-right: 0; }
+  .B .pg button:hover { background: var(--pri-soft); }
+  .B .pg button.on { background: var(--pri); color: #fff; }
+  .B .pg .dots { height: 34px; display: grid; place-items: center; min-width: 30px; border-right: 1px solid var(--line); padding: 0; }
+  .B .pg button.nav { display: flex; align-items: center; gap: 6px; }
+
+  /* C. Minimal garis bawah */
+  .C .pg { gap: 2px; }
+  .C .pg button.n { height: 32px; min-width: 32px; padding: 0 6px; font-weight: 600; color: var(--mut); border-bottom: 2px solid transparent; border-radius: 0; }
+  .C .pg button.n:hover { color: var(--txt); }
+  .C .pg button.n.on { color: var(--pri); border-bottom-color: var(--pri); }
+  .C .pg button.nav { height: 32px; width: 32px; display: grid; place-items: center; color: var(--pri); border-radius: 8px; }
+  .C .pg button.nav:hover { background: var(--pri-soft); }
+
+  /* D. Kapsul + lompat halaman */
+  .D .kapsul { display: inline-flex; align-items: center; gap: 2px; background: var(--pri-soft); border-radius: 99px; padding: 3px; }
+  .D .pg { gap: 2px; }
+  .D .pg button.n { height: 30px; min-width: 30px; padding: 0 8px; border-radius: 99px; font-weight: 600; color: var(--mut); }
+  .D .pg button.n:hover { color: var(--txt); background: #e2e8f0; }
+  .D .pg button.n.on { background: #fff; color: var(--pri); box-shadow: 0 1px 3px rgba(15,23,42,.18); }
+  .D .pg button.nav { height: 30px; width: 30px; border-radius: 50%; display: grid; place-items: center; color: var(--pri); }
+  .D .pg button.nav:hover { background: #e2e8f0; }
+  .D .lompat { display: inline-flex; align-items: center; gap: 6px; margin-right: 12px; }
+  .D .lompat input { width: 52px; height: 30px; border: 1px solid var(--line); border-radius: 8px; text-align: center; font: inherit; color: var(--txt); outline: 0; }
+  .D .lompat input:focus { border-color: var(--pri); box-shadow: 0 0 0 3px rgba(51,65,85,.12); }
+
+  /* E. Tombol teks bergaya DataTables, mirip tab */
+  .E .pg { gap: 6px; }
+  .E .pg button { height: 34px; padding: 0 12px; border: 1px solid var(--line); border-radius: 8px; background: #fff; font-weight: 600; color: var(--pri); transition: all .15s; }
+  .E .pg button:hover { border-color: #cbd5e1; background: var(--pri-soft); }
+  .E .pg button.on { background: var(--pri); border-color: var(--pri); color: #fff; }
+  .E .pg button.nav { display: flex; align-items: center; gap: 6px; }
+  .E .pg .dots { padding: 0 2px; }
+</style>
+</head>
+<body>
+<h1>Pilihan gaya pagination untuk Daftar PO</h1>
+<p class="sub">Klik nomor halaman atau panah buat lihat hover dan aktifnya. Di bawah tiap gaya ada contoh kalau datanya cuma 1 halaman. Sebut huruf yang kamu suka.</p>
+
+<div id="root"></div>
+
+<script>
+var TOTAL = 7, PER = 5, TOTAL_DATA = 33;
+var gaya = [
+  { k: 'A', judul: 'Bulat', ket: 'Angka dalam lingkaran, halaman aktif gelap dengan bayangan tipis. Panah bulat dengan garis tipis. Ringan dan modern.' },
+  { k: 'B', judul: 'Menyatu', ket: 'Semua tombol nyambung dalam satu kotak, halaman aktif diisi gelap. Paling mirip tabel data klasik.' },
+  { k: 'C', judul: 'Minimal garis bawah', ket: 'Tanpa kotak, halaman aktif ditandai garis bawah. Paling hemat tempat dan bersih.' },
+  { k: 'D', judul: 'Kapsul + lompat halaman', ket: 'Angka dalam kapsul abu muda, halaman aktif putih timbul. Ada kotak kecil "Ke hal." untuk loncat langsung ke halaman tertentu.' },
+  { k: 'E', judul: 'Tombol teks', ket: 'Tiap tombol berkotak dengan label "Sebelumnya" dan "Berikutnya", senada dengan pill tab di atas tabel.' }
+];
+var cur = {};
+var CH = {
+  l: '<svg viewBox="0 0 16 16"><path d="M10 3L5 8l5 5"/></svg>',
+  r: '<svg viewBox="0 0 16 16"><path d="M6 3l5 5-5 5"/></svg>'
+};
+function daftar(n, t) {
+  var out = [], tampil = [], i, sebelum = 0;
+  for (i = 1; i <= t; i++) { if (i === 1 || i === t || Math.abs(i - n) <= 1) tampil.push(i); }
+  tampil.forEach(function (h) { if (sebelum && h - sebelum > 1) out.push(0); out.push(h); sebelum = h; });
+  return out;
+}
+function pager(k, n, t) {
+  var teksNav = (k === 'B' || k === 'E');
+  var h = '<ul class="pg">';
+  h += '<li><button class="nav' + (n <= 1 ? ' dis' : '') + '" data-p="' + (n - 1) + '" data-k="' + k + '" aria-label="Sebelumnya">' + CH.l + (teksNav ? '<span>Sebelumnya</span>' : '') + '</button></li>';
+  daftar(n, t).forEach(function (x) {
+    if (x === 0) { h += '<li class="dots">&hellip;</li>'; }
+    else { h += '<li><button class="n' + (x === n ? ' on' : '') + '" data-p="' + x + '" data-k="' + k + '">' + x + '</button></li>'; }
+  });
+  h += '<li><button class="nav' + (n >= t ? ' dis' : '') + '" data-p="' + (n + 1) + '" data-k="' + k + '" aria-label="Berikutnya">' + (teksNav ? '<span>Berikutnya</span>' : '') + CH.r + '</button></li>';
+  h += '</ul>';
+  if (k === 'D') {
+    h = '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px"><span class="lompat">Ke hal. <input type="text" inputmode="numeric" data-lompat="D" placeholder="' + n + '"></span><span class="kapsul">' + h + '</span></div>';
+  }
+  return h;
+}
+function info(n, t) {
+  var a = (n - 1) * PER + 1, b = Math.min(n * PER, TOTAL_DATA);
+  return 'Menampilkan <b>' + a + '</b>&ndash;<b>' + b + '</b> dari <b>' + TOTAL_DATA + '</b> total dokumen';
+}
+function gambar() {
+  var root = document.getElementById('root'), h = '';
+  gaya.forEach(function (g) {
+    var n = cur[g.k] || 1;
+    h += '<section class="opt ' + g.k + '"><div class="head"><h2><span class="tag">' + g.k + '</span> ' + g.judul + '</h2><p class="ket">' + g.ket + '</p></div>' +
+      '<div class="fake-rows"><div></div><div></div><div></div></div>' +
+      '<div class="foot" id="foot' + g.k + '"><span>' + info(n, TOTAL) + '</span>' + pager(g.k, n, TOTAL) + '</div>' +
+      '<div class="satu">Kalau datanya cuma 1 halaman:<div class="foot"><span>Menampilkan <b>1</b>&ndash;<b>3</b> dari <b>3</b> total dokumen</span>' + pager(g.k, 1, 1) + '</div></div></section>';
+  });
+  root.innerHTML = h;
+}
+document.addEventListener('click', function (e) {
+  var b = e.target.closest('button[data-p]');
+  if (!b || !b.closest('#foot' + b.getAttribute('data-k'))) return;
+  var p = parseInt(b.getAttribute('data-p'), 10);
+  if (p < 1 || p > TOTAL) return;
+  cur[b.getAttribute('data-k')] = p;
+  gambar();
+});
+document.addEventListener('keydown', function (e) {
+  if (e.key !== 'Enter' || !e.target.matches('input[data-lompat]')) return;
+  var p = parseInt(e.target.value, 10);
+  if (p >= 1 && p <= TOTAL) { cur.D = p; gambar(); }
+});
+gambar();
+</script>
+</body>
+</html>

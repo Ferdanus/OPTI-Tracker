@@ -1465,6 +1465,7 @@ input[type=number] {
 
     <include href="petunjuk_operasional/_penandatangan.html" />
     <include href="petunjuk_operasional/_modal_order_pengujian.html" />
+    <include href="petunjuk_operasional/_dialog_nomor_po.html" />
 
     <!-- ======================================================== -->
     <!-- 8. PENANDATANGANAN -->
@@ -5541,13 +5542,33 @@ document.addEventListener('DOMContentLoaded', function () {
                 return; // stop di sini -- form.submit() sama sekali gak kepanggil, overlay gak nyala
             }
 
+            // PO belum bernomor: dialog "Generate Nomor PO" (nomor diterbitkan server saat Kirim; lamanya loading hanya tampilan)
+            if (typeof PoNomorDialog !== 'undefined' && formPo && !(poData && poData.nomor)) {
+                if (!formPo.reportValidity()) { return; }   // sama seperti requestSubmit(): isian bertanda wajib bawaan browser diperiksa dulu
+                PoNomorDialog.mulai({
+                    durasi: 4000,
+                    kirim: kirimAjaxPo,
+                    tujuan: function (j) { return j.redirect; },
+                    gagal: function (j) {
+                        if (!(j && j.errors && j.errors.length) || typeof Swal === 'undefined') {
+                            if (j && j.redirect) { window.location.href = j.redirect; }   // mis. order sudah dipakai PO lain -> ke halaman yang tepat
+                            return;
+                        }
+                        var li = j.errors.map(function (t) { return '<li>' + escHtml(t) + '</li>'; }).join('');
+                        Swal.fire({ icon: 'warning', title: j.judul || 'Ada Isian yang Belum Lengkap',
+                            html: '<div class="text-start">' + escHtml(j.message || '') + '<ul class="mt-2 small">' + li + '</ul></div>',
+                            confirmButtonText: 'Oke, Saya Lengkapi', confirmButtonColor: '#881337' });
+                    }
+                });
+                return;
+            }
             // Lolos validasi -- baru sekarang boleh submit beneran (overlay global nyala normal dari sini)
             if (formPo) formPo.requestSubmit();
         });
     }
 
 // ---- sebelum submit: tuang jadwalState (murni JS) jadi hidden input ----
-formPo.addEventListener('submit', function (e) {
+function isiInputJadwal() {
     var container = el('jadwalHiddenInputs');
     container.innerHTML = '';
 
@@ -5562,7 +5583,19 @@ formPo.addEventListener('submit', function (e) {
     var selesaiInp = document.createElement('input');
     selesaiInp.type = 'hidden'; selesaiInp.name = 'jadwal_selesai'; selesaiInp.value = el('jadwalSelesai').value;
     container.appendChild(selesaiInp);
-});
+}
+formPo.addEventListener('submit', function (e) { isiInputJadwal(); });
+
+// Kirim dengan dialog "Generate Nomor PO": satu permintaan AJAX ke endpoint simpan/update yang sama (server membalas JSON bila diminta AJAX)
+function kirimAjaxPo() {
+    isiInputJadwal();
+    var fd = new FormData(formPo);
+    return fetch(formPo.action, { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
+        .then(function (r) {
+            return r.json().then(function (j) { return j; }, function () { return { ok: false, message: 'Respons server tidak valid (HTTP ' + r.status + ').' }; });
+        })
+        .catch(function () { return { ok: false, message: 'Tidak bisa terhubung ke server. Periksa koneksi lalu coba lagi.' }; });
+}
 
 function validasiFieldWajib() {
     var invalidFields = [];

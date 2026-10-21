@@ -381,6 +381,8 @@ class OrderController extends Controller {
             }
         } catch (\Exception $e) {}
         $f3->set('po_kegiatan', $poKegiatan);
+        // [BARU] Tahap 8 terpadu: Ketua Pelaksana PO + posisi PO di rantai review/verifikasi
+        $f3->set('po_alur', $this->alurPoTahap8($order, $poKegiatan));
 
         $bastModel = new OptiBast($this->db);
         $bast = $bastModel->getByOrderId($id);
@@ -513,10 +515,33 @@ class OrderController extends Controller {
         $isStep5Done = $isStep4Done && $hasPenawaranDeal && $isDisposisiKeuangan;
 
         // Step 6: Pembayaran
-        $isPembayaranLunas = $isStep5Done && (
-            ($order['status_keuangan'] ?? '') === 'lunas' ||
-            !empty($riwayatBayar)
-        );
+        // Status pembayaran yang sebenarnya: "ada baris pembayaran" BUKAN berarti lunas (bisa baru termin pertama / sebagian).
+        $bayarTotal = 0.0;
+        $punyaKesanggupan = false;
+        foreach ((array)$riwayatBayar as $rb) {
+            if (!empty($rb['is_kesanggupan_bayar'])) { $punyaKesanggupan = true; continue; }
+            if (($rb['status_verifikasi'] ?? 'terverifikasi') === 'terverifikasi') { $bayarTotal += (float)($rb['jumlah'] ?? 0); }
+        }
+        $bayarAcuan = !empty($penawaran['nominal_penawaran']) ? (float)$penawaran['nominal_penawaran'] : (float)($order['estimasi_biaya'] ?? 0);
+        $statusKeuOrder = $order['status_keuangan'] ?? '';
+        if ($statusKeuOrder === 'lunas' || ($bayarAcuan > 0 && $bayarTotal >= $bayarAcuan)) {
+            $bayarStatus = 'lunas';
+        } elseif ($bayarTotal > 0 || $statusKeuOrder === 'terbayar_sebagian') {
+            $bayarStatus = 'sebagian';
+        } elseif ($punyaKesanggupan) {
+            $bayarStatus = 'kesanggupan';
+        } else {
+            $bayarStatus = 'belum';
+        }
+        // Tahap 6 dianggap tuntas (membuka Tahap 7) hanya kalau lunas, atau dicatat via Surat Kesanggupan Bayar
+        $bayarTuntas = ($bayarStatus === 'lunas' || $punyaKesanggupan);
+        $f3->set('bayar_status', $bayarStatus);
+        $f3->set('bayar_tuntas', $bayarTuntas);
+        $f3->set('bayar_total', $bayarTotal);
+        $f3->set('bayar_acuan', $bayarAcuan);
+        $f3->set('bayar_sisa', max(0, $bayarAcuan - $bayarTotal));
+
+        $isPembayaranLunas = $isStep5Done && $bayarTuntas;
 
         // Khusus Lingkungan: Proposal teknis diunggah pasca pembayaran
         $proposalLingkunganUploaded = !empty($proposal) && !empty($proposal['file_proposal']);
@@ -530,7 +555,8 @@ class OrderController extends Controller {
 
         // Step 8: Petunjuk Operasional (PO)
         // Selesai jika PO sudah terbit dan pengerjaan lab selesai / ada BAST
-        $isPoDone = $isSpmDone && !empty($order['po_id']) && (
+        $poKegiatanAktif = (!empty($poKegiatan) && !empty($poKegiatan['validasi_keuangan_at']));
+        $isPoDone = $isSpmDone && (!empty($order['po_id']) || $poKegiatanAktif) && (
             in_array($order['status'] ?? '', ['selesai']) ||
             ($order['status_pelaksanaan'] ?? '') === 'laporan_selesai' ||
             !empty($bast)
@@ -786,28 +812,35 @@ class OrderController extends Controller {
             $langkahBerikutnya['tombol_class'] = 'btn-warning text-dark';
             $langkahBerikutnya['target_card'] = '#cardSampelSpm';
         } elseif ($currentStep === 8) {
-            if (empty($order['po_id'])) {
+            if (empty($order['po_id']) && !$poKegiatanAktif) {
+                $alur = $f3->get('po_alur');
                 $deadlineStr = !empty($order['tanggal_deadline_spm']) ? date('d M Y', strtotime($order['tanggal_deadline_spm'])) : '-';
                 $durasiStr = !empty($order['spm_durasi_nilai']) ? ($order['spm_durasi_nilai'] . ' ' . ($order['spm_durasi_satuan'] ?: 'Hari Kerja')) : ($order['spm_layanan'] ?: '-');
-                $langkahBerikutnya['judul'] = 'Terbitkan Petunjuk Operasional (PO) Kegiatan';
-                $langkahBerikutnya['deskripsi'] = "Titik awal pengerjaan telah aktif (SPM: {$durasiStr}, Target Selesai: {$deadlineStr}). Terbitkan lembar Petunjuk Operasional (PO) agar personil pelaksana segera memulai pengerjaan.";
-                $langkahBerikutnya['penanggung_jawab'] = 'Ketua Tim OPTI';
+                $langkahBerikutnya['judul'] = $alur['judul'];
+                $langkahBerikutnya['deskripsi'] = ($alur['state'] === 'belum_pic')
+                    ? "Titik awal pengerjaan telah aktif (SPM: {$durasiStr}, Target Selesai: {$deadlineStr}). " . $alur['deskripsi']
+                    : $alur['deskripsi'];
+                $langkahBerikutnya['penanggung_jawab'] = $alur['pj'];
                 $langkahBerikutnya['role_icon'] = 'bi-patch-check-fill';
                 $langkahBerikutnya['tipe_badge'] = 'primary';
-                $langkahBerikutnya['tombol_teks'] = 'Terbitkan Lembar PO';
-                $langkahBerikutnya['tombol_url'] = '#cardPo';
-                $langkahBerikutnya['tombol_modal'] = '#modalApprove';
+                $langkahBerikutnya['tombol_teks'] = $alur['aksi']['label'];
+                $langkahBerikutnya['tombol_url'] = $alur['aksi']['url'];
+                $langkahBerikutnya['tombol_modal'] = $alur['aksi']['modal'];
+                if ($alur['tampil_form']) {
+                    $langkahBerikutnya['tombol_teks'] = 'Susun PO Sekarang';
+                    $langkahBerikutnya['tombol_url'] = '#cardPo';
+                }
                 $langkahBerikutnya['tombol_icon'] = 'bi-patch-check-fill';
                 $langkahBerikutnya['tombol_class'] = 'btn-primary';
                 $langkahBerikutnya['target_card'] = '#cardPo';
             } else {
                 $langkahBerikutnya['judul'] = 'Pekerjaan Sedang Berjalan Sesuai Jadwal SPM';
-                $langkahBerikutnya['deskripsi'] = 'Petunjuk Operasional (' . ($order['nomor_po'] ?? '-') . ') aktif. Tim pelaksana sedang menjalankan kegiatan teknis sesuai standar mutu dan target waktu SPM.';
+                $langkahBerikutnya['deskripsi'] = 'Petunjuk Operasional (' . (!empty($order['nomor_po']) ? $order['nomor_po'] : (isset($poKegiatan['nomor_po']) ? $poKegiatan['nomor_po'] : '-')) . ') aktif. Tim pelaksana sedang menjalankan kegiatan teknis sesuai standar mutu dan target waktu SPM.';
                 $langkahBerikutnya['penanggung_jawab'] = 'Tim Pelaksana Teknis';
                 $langkahBerikutnya['role_icon'] = 'bi-gear-wide-connected';
                 $langkahBerikutnya['tipe_badge'] = 'primary';
-                $langkahBerikutnya['tombol_teks'] = 'Buka Monitoring PO';
-                $langkahBerikutnya['tombol_url'] = $f3->get('BASE') . "/po/" . $order['po_id'];
+                $langkahBerikutnya['tombol_teks'] = !empty($order['po_id']) ? 'Buka Monitoring PO' : 'Lihat PO Aktif';
+                $langkahBerikutnya['tombol_url'] = !empty($order['po_id']) ? ($f3->get('BASE') . "/po/" . $order['po_id']) : '#cardPo';
                 $langkahBerikutnya['tombol_icon'] = 'bi-speedometer2';
                 $langkahBerikutnya['tombol_class'] = 'btn-dark';
                 $langkahBerikutnya['target_card'] = '#cardPo';
@@ -1965,6 +1998,300 @@ class OrderController extends Controller {
             $this->setFlashError("Gagal mendisposisikan order: " . $e->getMessage());
             $f3->reroute("/order/{$id}");
         }
+    }
+
+    /**
+     * [BARU] Tahap 8 terpadu: posisi PO Kegiatan OPTI di rantai
+     * Disusun -> Review Ketua Tim -> Verifikasi Humas -> Verifikasi Tim Mitra -> Verifikasi PPK BLU -> PO Aktif.
+     * Hanya MEMBACA status po_kegiatan yang sudah ada (tidak mengubah alur review/verifikasi). Hasilnya dipakai view order/detail.html.
+     */
+    protected function alurPoTahap8($order, $po) {
+        $base   = (string) $this->f3->get('BASE');
+        $uid    = (int) $this->getUserId();
+        $orderId = (int) ($order['id'] ?? 0);
+        $ketupelId = (int) ($order['ketua_pelaksana_id'] ?? 0);
+        $po     = is_array($po) ? $po : null;
+        $poId   = $po ? (int) ($po['id'] ?? 0) : 0;
+        $isSuper = $this->isSuperadmin();
+        $isKatim = ($this->isKetuaTim() || $isSuper);
+        $isKetupel = ($ketupelId > 0 && $uid === $ketupelId);
+        $nomor  = $po ? (string) ($po['nomor_po'] ?? '') : '';
+
+        $fmt = function ($v) {
+            $t = $v ? strtotime((string) $v) : false;
+            return $t ? date('d M Y, H:i', $t) : '';
+        };
+        $kosong = function ($k) use ($po) { return !$po || empty($po[$k]); };
+
+        $sent = ($po && in_array((string) ($po['status'] ?? ''), array('terkirim', 'disetujui_mitra', 'disetujui'), true));
+        if ($ketupelId <= 0) {
+            $state = 'belum_pic';
+        } elseif (!$sent) {
+            $state = 'disusun';
+        } else {
+            $sr = (string) ($po['status_review'] ?? '');
+            if ($sr === 'disetujui') {
+                $ps = (string) ($po['ppk_status'] ?? '');
+                if (in_array($ps, array('minta', 'katim_kerja', 'ketupel_kerja', 'katim_review'), true)) {
+                    $state = 'ppk_' . $ps;
+                } elseif (!$kosong('validasi_keuangan_at')) {
+                    $state = 'aktif';
+                } elseif (!$kosong('tervalidasi_mitra_at')) {
+                    $state = 'verif_ppk';
+                } elseif (!$kosong('verifikasi_humas_at')) {
+                    $state = 'verif_mitra';
+                } else {
+                    $state = 'verif_humas';
+                }
+            } elseif (in_array($sr, array('perlu_revisi', 'direvisi'), true)) {
+                $state = $sr;
+            } else {
+                $state = 'menunggu_review';
+            }
+        }
+
+        // cur = langkah yang sedang berjalan (0..5), actor = siapa yang memegang bola, rev = sedang dalam putaran revisi
+        $def = array(
+            'belum_pic'          => array(0, 'katim', false),
+            'disusun'            => array(0, 'pic', false),
+            'menunggu_review'    => array(1, 'katim', false),
+            'perlu_revisi'       => array(1, 'pic', true),
+            'direvisi'           => array(1, 'katim', false),
+            'verif_humas'        => array(2, '', false),
+            'verif_mitra'        => array(3, '', false),
+            'verif_ppk'          => array(4, '', false),
+            'ppk_minta'          => array(4, 'katim', true),
+            'ppk_katim_kerja'    => array(4, 'katim', true),
+            'ppk_ketupel_kerja'  => array(4, 'pic', true),
+            'ppk_katim_review'   => array(4, 'katim', true),
+            'aktif'              => array(5, '', false),
+        );
+        list($cur, $actor, $rev) = $def[$state];
+
+        $sisi = ($actor === 'katim') ? $isKatim : (($actor === 'pic') ? ($isKetupel || $isSuper) : false);
+
+        $namaLangkah = array('Disusun', 'Review Ketua Tim', 'Verifikasi Humas', 'Verifikasi Tim Mitra', 'Verifikasi PPK BLU', 'PO Aktif');
+        $aktorLangkah = array('Ketua Pelaksana', 'Ketua Tim OPTI', 'Humas', 'Tim Mitra', 'PPK BLU', 'Pengerjaan lab dimulai');
+        $waktu = array(
+            $po ? $fmt(!empty($po['dikirim_at']) ? $po['dikirim_at'] : ($po['created_at'] ?? null)) : '',
+            $po ? $fmt($po['disetujui_at'] ?? null) : '',
+            $po ? $fmt($po['verifikasi_humas_at'] ?? null) : '',
+            $po ? $fmt($po['tervalidasi_mitra_at'] ?? null) : '',
+            $po ? $fmt($po['validasi_keuangan_at'] ?? null) : '',
+            $po ? $fmt($po['validasi_keuangan_at'] ?? null) : '',
+        );
+        $tagRev = array(
+            'perlu_revisi' => 'Perlu revisi', 'ppk_minta' => 'Menunggu keputusan', 'ppk_katim_kerja' => 'Dikerjakan Ketua Tim',
+            'ppk_ketupel_kerja' => 'Dikerjakan Ketua Pelaksana', 'ppk_katim_review' => 'Review hasil revisi',
+        );
+        $langkah = array();
+        foreach ($namaLangkah as $n => $nm) {
+            if ($state === 'aktif' || $n < $cur) { $cls = 'done'; }
+            elseif ($n === $cur) { $cls = $rev ? 'rev' : 'cur'; }
+            else { $cls = ''; }
+            $tg = '';
+            if ($cls === 'done') { $tg = $waktu[$n]; }
+            elseif ($cls === 'cur') { $tg = 'Sedang di sini'; }
+            elseif ($cls === 'rev') { $tg = isset($tagRev[$state]) ? $tagRev[$state] : 'Perlu revisi'; }
+            $langkah[] = array('no' => $n + 1, 'nama' => $nm, 'aktor' => $aktorLangkah[$n], 'cls' => $cls, 'dot' => ($cls === 'done' ? '&#10003;' : ($cls === 'rev' ? '!' : (string) ($n + 1))), 'tag' => $tg);
+        }
+
+        $ini = '';
+        foreach (array_slice(preg_split('/\s+/', trim((string) ($order['ketua_pelaksana_nama'] ?? '')), -1, PREG_SPLIT_NO_EMPTY), 0, 2) as $w) { $ini .= strtoupper(substr($w, 0, 1)); }
+        if ($ini === '') { $ini = 'KP'; }
+        $nkRaw = (string) ($order['ketua_pelaksana_nama'] ?? 'Ketua Pelaksana');
+        $nk = htmlspecialchars((string) ($order['ketua_pelaksana_nama'] ?? 'Ketua Pelaksana'), ENT_QUOTES, 'UTF-8');
+        $nomorH = htmlspecialchars($nomor, ENT_QUOTES, 'UTF-8');
+        $urlDaftar = $base . '/po-kegiatan/daftar';
+        $urlPpk = $base . '/po-revisi-ppk?buka=' . $poId . '&dari=daftar';
+
+        // judul / deskripsi / penanggung jawab (kartu "Langkah Selanjutnya") + pesan di panel tahap 8
+        $teks = array(
+            'belum_pic' => array('Terbitkan Petunjuk Operasional (PO) Kegiatan', 'Titik awal pengerjaan telah aktif. Tetapkan Ketua Pelaksana yang akan menyusun lembar Petunjuk Operasional (PO).', 'Ketua Tim OPTI'),
+            'disusun' => array('Susun dan Kirim Petunjuk Operasional (PO)', $nkRaw . ' menyusun PO pada tahap ini lalu mengirimnya ke Ketua Tim OPTI untuk direview.', 'Ketua Pelaksana'),
+            'menunggu_review' => array('Review Petunjuk Operasional (PO)', 'PO ' . $nomor . ' menunggu pemeriksaan Ketua Tim OPTI: setujui, atau minta revisi dengan catatan.', 'Ketua Tim OPTI'),
+            'perlu_revisi' => array('Perbaiki PO Sesuai Catatan Revisi', 'Ketua Tim OPTI meminta revisi. Perbaiki PO, tandai catatan yang sudah dikerjakan, lalu kirim revisi.', 'Ketua Pelaksana'),
+            'direvisi' => array('Review Ulang PO yang Direvisi', 'Ketua Pelaksana sudah mengirim revisi. Periksa kembali, lalu setujui atau minta revisi lagi.', 'Ketua Tim OPTI'),
+            'verif_humas' => array('Menunggu Verifikasi Humas', 'PO disetujui Ketua Tim dan sedang diverifikasi Humas.', 'Humas'),
+            'verif_mitra' => array('Menunggu Verifikasi Tim Mitra', 'PO sudah diverifikasi Humas dan sedang diverifikasi Tim Mitra.', 'Tim Mitra'),
+            'verif_ppk' => array('Menunggu Verifikasi PPK BLU', 'PO sudah diverifikasi Tim Mitra dan sedang diperiksa PPK BLU.', 'PPK BLU'),
+            'ppk_minta' => array('Putuskan Penanganan Revisi PPK BLU', 'PPK BLU meminta revisi. Kerjakan sendiri, atau disposisikan ke ' . $nkRaw . '.', 'Ketua Tim OPTI'),
+            'ppk_katim_kerja' => array('Revisi PPK BLU Dikerjakan Ketua Tim', 'Perbaiki PO sesuai catatan PPK BLU, centang catatan yang selesai, lalu kirim ke PPK BLU.', 'Ketua Tim OPTI'),
+            'ppk_ketupel_kerja' => array('Revisi PPK BLU Didisposisikan ke Ketua Pelaksana', 'Ketua Tim OPTI mendisposisikan revisi PPK BLU. Perbaiki PO, centang catatan, lalu kirim ke Ketua Tim untuk direview.', 'Ketua Pelaksana'),
+            'ppk_katim_review' => array('Review Hasil Revisi PPK BLU', $nkRaw . ' sudah mengirim hasil revisi. Setujui dan kirim ke PPK BLU, atau minta perbaikan lagi.', 'Ketua Tim OPTI'),
+            'aktif' => array('Pekerjaan Sedang Berjalan Sesuai Jadwal SPM', 'PO ' . $nomor . ' aktif. Tim pelaksana menjalankan kegiatan teknis sesuai target waktu SPM.', 'Tim Pelaksana Teknis'),
+        );
+        list($judul, $deskripsi, $pj) = $teks[$state];
+
+        // tombol aksi utama untuk pengguna yang sedang membuka halaman
+        $aksi = array('label' => '', 'url' => '', 'modal' => '');
+        if ($state === 'belum_pic' && $isKatim) {
+            $aksi = array('label' => 'Tunjuk Ketua Pelaksana PO', 'url' => '', 'modal' => '#modalTunjukKetupel');
+        } elseif ($actor === 'katim' && $isKatim) {
+            $m = array('menunggu_review' => array('Review PO', $urlDaftar), 'direvisi' => array('Review PO', $urlDaftar),
+                'ppk_minta' => array('Putuskan Revisi PPK BLU', $urlPpk), 'ppk_katim_kerja' => array('Kerjakan Revisi PPK BLU', $urlPpk),
+                'ppk_katim_review' => array('Review Hasil Revisi', $urlPpk));
+            if (isset($m[$state])) { $aksi = array('label' => $m[$state][0], 'url' => $m[$state][1], 'modal' => ''); }
+        } elseif ($actor === 'pic' && ($isKetupel || $isSuper)) {
+            $m = array('perlu_revisi' => array('Buka Revisi', $urlDaftar), 'ppk_ketupel_kerja' => array('Buka Revisi PPK BLU', $urlPpk));
+            if (isset($m[$state])) { $aksi = array('label' => $m[$state][0], 'url' => $m[$state][1], 'modal' => ''); }
+        }
+
+        // pesan di bawah garis progres
+        $info = array('tipe' => 'info', 'html' => '');
+        $giliran = (bool) ($sisi && $actor !== '');
+        $bidang = function ($t, $h) { return array('tipe' => $t, 'html' => $h); };
+        switch ($state) {
+            case 'menunggu_review':
+                $info = $isKatim ? $bidang('warning', '<b>Giliran Anda.</b> Buka Review PO: setujui, atau minta revisi dengan catatan.')
+                    : ($isKetupel ? $bidang('info', 'PO sudah terkirim dan tidak bisa diubah. Kalau Ketua Tim meminta revisi, tombol revisi muncul di sini.') : $bidang('info', 'Menunggu review Ketua Tim OPTI.'));
+                break;
+            case 'direvisi':
+                $info = $isKatim ? $bidang('warning', '<b>Giliran Anda.</b> Ketua Pelaksana sudah mengirim revisi. Review ulang PO ini.') : $bidang('info', 'Revisi sudah dikirim. Menunggu review ulang Ketua Tim OPTI.');
+                break;
+            case 'perlu_revisi':
+                $info = ($isKetupel || $isSuper) ? $bidang('warning', '<b>Giliran Anda.</b> Ketua Tim meminta revisi. Buka Revisi untuk melihat catatan, mengedit PO, dan mengirim revisi.') : $bidang('info', 'Menunggu <b>' . $nk . '</b> memperbaiki PO sesuai catatan Ketua Tim.');
+                break;
+            case 'ppk_minta':
+                $info = $isKatim ? $bidang('warning', '<b>Giliran Anda.</b> PPK BLU meminta revisi. Putuskan: kerjakan sendiri atau disposisikan ke ' . $nk . '.') : $bidang('info', 'PPK BLU meminta revisi. Menunggu keputusan Ketua Tim OPTI: kerjakan sendiri atau disposisi ke Ketua Pelaksana.');
+                break;
+            case 'ppk_katim_kerja':
+                $info = $isKatim ? $bidang('warning', '<b>Giliran Anda.</b> Revisi PPK BLU Anda kerjakan sendiri. Anda masih bisa mendisposisikannya ke ' . $nk . ' sebelum dikirim.') : $bidang('info', 'Revisi PPK BLU sedang dikerjakan Ketua Tim OPTI.');
+                break;
+            case 'ppk_ketupel_kerja':
+                $info = ($isKetupel || $isSuper) ? $bidang('warning', '<b>Giliran Anda.</b> Ketua Tim mendisposisikan revisi PPK BLU kepada Anda.') : $bidang('info', 'Revisi PPK BLU didisposisikan ke <b>' . $nk . '</b>.');
+                break;
+            case 'ppk_katim_review':
+                $info = $isKatim ? $bidang('warning', '<b>Giliran Anda.</b> Review hasil revisi dari ' . $nk . ', lalu kirim ke PPK BLU atau minta perbaikan lagi.') : $bidang('info', 'Hasil revisi PPK BLU menunggu review Ketua Tim OPTI.');
+                break;
+            case 'aktif':
+                $info = $bidang('success', 'Semua verifikasi selesai. PO aktif dan pengerjaan lab dapat dimulai.');
+                break;
+            case 'verif_humas': $info = $bidang('info', 'Saat ini di meja <b>Humas</b>. Tahap 8 hanya menampilkan posisinya.'); break;
+            case 'verif_mitra': $info = $bidang('info', 'Saat ini di meja <b>Tim Mitra</b>. Tahap 8 hanya menampilkan posisinya.'); break;
+            case 'verif_ppk':   $info = $bidang('info', 'Saat ini di meja <b>PPK BLU</b>. Tahap 8 hanya menampilkan posisinya.'); break;
+        }
+
+        // badge kepala kartu + label tab tahap 8: array(kelas bootstrap, teks panjang, teks pendek)
+        $lab = array(
+            'belum_pic' => array('bg-warning text-dark', 'Siap Terbit PO', 'Siap Terbit'),
+            'disusun' => array('bg-warning text-dark', 'PO Sedang Disusun', 'Disusun'),
+            'menunggu_review' => array('bg-primary', 'Menunggu Review', 'Review'),
+            'perlu_revisi' => array('bg-warning text-dark', 'Perlu Revisi', 'Revisi'),
+            'direvisi' => array('bg-primary', 'Menunggu Review Ulang', 'Review'),
+            'verif_humas' => array('bg-primary', 'Verifikasi Humas', 'Humas'),
+            'verif_mitra' => array('bg-primary', 'Verifikasi Tim Mitra', 'Tim Mitra'),
+            'verif_ppk' => array('bg-primary', 'Verifikasi PPK BLU', 'PPK BLU'),
+            'ppk_minta' => array('bg-warning text-dark', 'Revisi PPK BLU', 'Revisi PPK'),
+            'ppk_katim_kerja' => array('bg-warning text-dark', 'Revisi PPK BLU', 'Revisi PPK'),
+            'ppk_ketupel_kerja' => array('bg-warning text-dark', 'Revisi PPK BLU', 'Revisi PPK'),
+            'ppk_katim_review' => array('bg-primary', 'Review Hasil Revisi', 'Review'),
+            'aktif' => array('bg-success', 'PO Aktif', 'PO Aktif'),
+        );
+
+        $embedUrl = $poId > 0
+            ? $base . '/po-kegiatan/' . $poId . '/edit?embed=1&dari=order'
+            : $base . '/po-kegiatan/buat?order_id=' . $orderId . '&embed=1&dari=order';
+
+        return array(
+            'state' => $state, 'judul' => $judul, 'deskripsi' => $deskripsi, 'pj' => $pj,
+            'ketupel_id' => $ketupelId, 'ketupel_nama' => (string) ($order['ketua_pelaksana_nama'] ?? ''),
+            'ketupel_inisial' => $ini,
+            'ketupel_at' => $fmt($order['ketua_pelaksana_at'] ?? null),
+            'is_ketupel' => $isKetupel, 'is_katim' => $isKatim,
+            'boleh_ganti' => ($isKatim && in_array($state, array('belum_pic', 'disusun'), true)),
+            'po_id' => $poId, 'nomor_po' => $nomor, 'dikirim_at' => $waktu[0], 'terkirim' => $sent,
+            'langkah' => $langkah, 'giliran' => $giliran, 'aksi' => $aksi, 'info' => $info,
+            'tampil_form' => ($state === 'disusun' && ($isKetupel || $isSuper)),
+            'embed_url' => $embedUrl,
+            'badge_kelas' => $lab[$state][0], 'badge_teks' => $lab[$state][1], 'tab_teks' => $lab[$state][2],
+            'aktif' => ($state === 'aktif'),
+        );
+    }
+
+    /**
+     * [BARU] Menunjuk / mengganti Ketua Pelaksana PO dari Tahap 8 halaman detail order.
+     * Route: POST /order/@id/tunjuk-ketupel
+     * Menulis kolom yang sama dengan halaman /ketua-tim/siap-po (order_layanan.ketua_pelaksana_id + ketua_pelaksana_at).
+     * Ganti Ketua Pelaksana hanya boleh selama PO belum dikirim.
+     */
+    public function tunjukKetupel($f3, $params) {
+        $this->requireAuth();
+        $id = (int) (isset($params['id']) ? $params['id'] : 0);
+        $orderModel = new OrderLayanan($this->db);
+        $order = $orderModel->getDetail($id);
+
+        if (!$order) {
+            $this->setFlashError("Order Layanan #{$id} tidak ditemukan.");
+            $f3->reroute('/order');
+            return;
+        }
+        if (!$this->isKetuaTim() && !$this->isSuperadmin()) {
+            $this->setFlashError('Akses Ditolak: penunjukan Ketua Pelaksana PO merupakan wewenang Ketua Tim OPTI atau Superadmin.');
+            $f3->reroute("/order/{$id}");
+            return;
+        }
+
+        $picId = (int) $f3->get('POST.ketua_pelaksana_id');
+        if ($picId <= 0) {
+            $this->setFlashError('Silakan pilih Ketua Pelaksana PO terlebih dahulu.');
+            $f3->reroute("/order/{$id}");
+            return;
+        }
+
+        try {
+            $cek = $this->db->exec('SELECT id, status FROM po_kegiatan WHERE order_id = ?' . \PoSchema::bukanSertifikasi('') . ' LIMIT 1', array(1 => $id));
+        } catch (\Exception $e) {
+            $cek = array();
+        }
+        if (!empty($cek) && (string) $cek[0]['status'] !== 'draft') {
+            $this->setFlashError('PO sudah dikirim, Ketua Pelaksana tidak bisa diganti lagi.');
+            $f3->reroute("/order/{$id}");
+            return;
+        }
+
+        $picNama = 'Ketua Pelaksana';
+        try {
+            $u = $this->db->exec('SELECT id_user, nama_user FROM tb_arsipuser WHERE id_user = ?', array(1 => $picId));
+            if (!empty($u)) { $picNama = $u[0]['nama_user']; }
+        } catch (\Exception $e) {}
+
+        try {
+            $this->db->exec('UPDATE order_layanan SET ketua_pelaksana_id = ?, ketua_pelaksana_at = NOW() WHERE id = ?', array(1 => $picId, 2 => $id));
+            $userNama = isset($_SESSION['nama_lengkap']) ? $_SESSION['nama_lengkap'] : 'Ketua Tim OPTI';
+            $this->logActivity($id, 'po', 'tunjuk_ketupel', "Menunjuk {$picNama} sebagai Ketua Pelaksana PO Kegiatan");
+            try {
+                \NotificationService::send($this->db, array(
+                    'order_id'        => $id,
+                    'target_role'     => 'tim_kerja',
+                    'target_user_id'  => $picId,
+                    'target_layanan'  => isset($order['jenis_layanan_opti']) ? $order['jenis_layanan_opti'] : 'semua',
+                    'judul'           => 'Penugasan Ketua Pelaksana PO Kegiatan',
+                    'pesan'           => "Anda telah ditunjuk oleh Ketua Tim OPTI ({$userNama}) sebagai Ketua Pelaksana untuk menyusun Dokumen Petunjuk Operasional (PO) Order #{$order['nomor_order']} ({$order['nama_perusahaan']}).",
+                    'tipe'            => 'primary',
+                    'icon'            => 'bi-person-check-fill',
+                    'link_url'        => "/order/{$id}",
+                    'created_by'      => (int) $this->getUserId(),
+                    'created_by_name' => $userNama,
+                ));
+                \NotificationService::send($this->db, array(
+                    'order_id'        => $id,
+                    'target_role'     => 'tim_mitra',
+                    'target_layanan'  => 'semua',
+                    'judul'           => 'Ketua Pelaksana PO Ditunjuk',
+                    'pesan'           => "Ketua Tim OPTI ({$userNama}) telah menunjuk Ketua Pelaksana untuk Order #{$order['nomor_order']} ({$order['nama_perusahaan']}). Penyusunan PO sedang berjalan.",
+                    'tipe'            => 'info',
+                    'icon'            => 'bi-person-check-fill',
+                    'link_url'        => "/order/{$id}",
+                    'created_by'      => (int) $this->getUserId(),
+                    'created_by_name' => $userNama,
+                ));
+            } catch (\Exception $eNotif) {}
+            $this->setFlashSuccess('Ketua Pelaksana PO ditetapkan: <strong>' . htmlspecialchars((string) $picNama, ENT_QUOTES, 'UTF-8') . '</strong>. Form PO sekarang tersedia di Tahap 8 untuk yang bersangkutan.');
+        } catch (\Exception $e) {
+            $this->setFlashError('Gagal menetapkan Ketua Pelaksana: ' . $e->getMessage());
+        }
+        $f3->reroute("/order/{$id}");
     }
 
     /**
@@ -3607,26 +3934,14 @@ class OrderController extends Controller {
             }
 
             if ($keputusan === 'deal') {
-                $this->db->exec("UPDATE order_layanan SET status_penawaran = 'deal', status_keuangan = 'menunggu_pembayaran' WHERE id = ?", [1 => $id]);
+                $this->db->exec("UPDATE order_layanan SET status_penawaran = 'deal' WHERE id = ?", [1 => $id]);
                 $displayNominal = $nominalBaru > 0 ? $nominalBaru : ($sp['nominal_penawaran'] ?? 0);
 
                 $orderModel = new \OrderLayanan($this->db);
                 $order = $orderModel->getDetail($id);
 
                 try {
-                    // Notif ke Ketua Tim Keuangan
-                    \NotificationService::send($this->db, [
-                        'order_id'        => $id,
-                        'target_role'     => 'ketua_tim_keuangan',
-                        'target_layanan'  => 'semua',
-                        'judul'           => 'Disposisi Pembayaran: Order #' . ($order['nomor_order'] ?? $id),
-                        'pesan'           => "Penawaran " . ($order['nama_perusahaan'] ?? 'Klien') . " telah disepakati (DEAL senilai Rp " . number_format($displayNominal, 0, ',', '.') . "). Siap untuk proses pembayaran.",
-                        'tipe'            => 'success',
-                        'icon'            => 'bi-wallet2',
-                        'link_url'        => "/pembayaran/tambah?order_id={$id}",
-                        'created_by'      => $this->getUserId() ?? 1,
-                        'created_by_name' => $_SESSION['nama_lengkap'] ?? 'Tim Mitra'
-                    ]);
+                    // Tim Keuangan baru dinotif saat tombol Disposisi ke Keuangan diklik
 
                     // Notif ke Ka Tim OPTI
                     \NotificationService::send($this->db, [
@@ -3643,7 +3958,7 @@ class OrderController extends Controller {
                     ]);
                 } catch (\Exception $eNotif) {}
 
-                $this->setFlashSuccess("Pelanggan telah <strong>menyetujui penawaran (DEAL)</strong> senilai Rp " . number_format($displayNominal, 0, ',', '.') . "! Notifikasi telah dikirim ke <strong>Tim Keuangan</strong> untuk proses pembayaran.");
+                $this->setFlashSuccess("Pelanggan telah <strong>menyetujui penawaran (DEAL)</strong> senilai Rp " . number_format($displayNominal, 0, ',', '.') . "! Lengkapi berkas, lalu disposisikan ke <strong>Tim Keuangan</strong> agar order masuk ke antrean pembayaran.");
             } elseif ($keputusan === 'nego') {
                 $this->setFlashWarning("Hasil negosiasi harga &amp; waktu berhasil disimpan. Penawaran telah diperbarui.");
             } else {
@@ -3829,10 +4144,17 @@ class OrderController extends Controller {
             if (!empty($existing) && !empty($buktiBayarPath)) {
                 // Update pembayaran yang sudah ada jika upload ulang
                 $payId = (int)$existing[0]['id'];
+                // Perbarui bukti saja: keterangan lama dipertahankan kecuali diisi, dan status pembayaran TIDAK diubah
+                // (sebelumnya langsung dipaksa 'lunas' walau baru bayar sebagian).
+                $ketBaru = trim($post['keterangan'] ?? '');
                 $this->db->exec(
                     "UPDATE opti_pembayaran SET tanggal_bayar = ?, bukti_bayar = ?, keterangan = ?, verifikator_id = ? WHERE id = ?",
-                    array(1 => $tanggalBayar, 2 => $buktiBayarPath, 3 => $keterangan, 4 => $userId, 5 => $payId)
+                    array(1 => $tanggalBayar, 2 => $buktiBayarPath, 3 => ($ketBaru !== '' ? $ketBaru : ($existing[0]['keterangan'] ?? null)), 4 => $userId, 5 => $payId)
                 );
+                $this->logActivity($id, 'pembayaran', 'perbarui_bukti_bayar', "Perbarui berkas bukti pembayaran Termin #" . (int)($existing[0]['termin_ke'] ?? 1));
+                $this->setFlashSuccess("Berkas bukti pembayaran berhasil diperbarui.");
+                $f3->reroute("/order/{$id}");
+                return;
             } else {
                 // Tambah data pembayaran baru
                 $payModel->tambahPembayaran([

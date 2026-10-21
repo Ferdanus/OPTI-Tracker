@@ -314,11 +314,7 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
                                     ORDER BY (status_respon_klien = 'deal') DESC, (surat_kesanggupan_bayar IS NOT NULL AND surat_kesanggupan_bayar != '') DESC, id DESC 
                                     LIMIT 1
                                 )
-                                WHERE {$whereDivPay} (o.status_keuangan = 'menunggu_pembayaran' 
-                                       OR o.status_penawaran = 'deal' 
-                                       OR o.status_rancop = 'deal'
-                                       OR (sp.id IS NOT NULL AND (sp.status_respon_klien = 'deal' OR (sp.surat_kesanggupan_bayar IS NOT NULL AND sp.surat_kesanggupan_bayar != '')))
-                                       OR o.status IN ('penawaran_deal', 'menunggu_pembayaran'))
+                                WHERE {$whereDivPay} (o.status_keuangan = 'menunggu_pembayaran')
                                   AND o.id NOT IN (SELECT DISTINCT order_id FROM opti_pembayaran)
                                   AND (o.status_keuangan IS NULL OR o.status_keuangan != 'lunas')
                                   AND (o.status IS NULL OR o.status NOT IN ('batal', 'ditolak'))

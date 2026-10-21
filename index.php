@@ -187,6 +187,7 @@ $f3->route('POST /order/@id/biaya-lingkungan', 'OrderController->biayaLingkungan
 $f3->route('GET /order/@id/form-pelayanan', 'OrderController->formPelayanan');
 $f3->route('POST /order/@id/form-pelayanan', 'OrderController->formPelayananPost');
 $f3->route('POST /order/@id/tunjuk-pic', 'OrderController->tunjukPicProposal');
+$f3->route('POST /order/@id/tunjuk-ketupel', 'OrderController->tunjukKetupel');   // Tahap 8: tunjuk / ganti Ketua Pelaksana PO
 $f3->route('GET /proposal', 'OrderController->proposalIndex');
 $f3->route('GET /order/@id/proposal', 'OrderController->proposalForm');
 $f3->route('POST /order/@id/proposal/simpan', 'OrderController->proposalSimpan');

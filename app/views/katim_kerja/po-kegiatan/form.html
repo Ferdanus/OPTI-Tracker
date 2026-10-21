@@ -651,6 +651,7 @@ input[type=number] {
 }
 
 /* Bar tombol bawah form: satu baris (Kembali kiri, Simpan Draft + Kirim kanan), turun baris hanya kalau benar-benar sempit */
+html.silopti-embed .po-kembali { display: none !important; }   /* di Tahap 8 detail order (iframe) tidak ada halaman daftar untuk kembali */
 .po-sticky-bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .6rem 1rem; margin-top: 1.25rem; }
 .po-sticky-bar > div { display: flex; align-items: center; gap: .5rem; flex-wrap: nowrap; }
 .po-sticky-bar .btn { white-space: nowrap; }
@@ -752,7 +753,7 @@ input[type=number] {
 <!-- Top Header Navigation -->
 <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
     <div class="d-flex align-items-center gap-3">
-        <a href="{{ @revisi_konteks ? (@BASE . '/po-kegiatan/daftar') : (@BASE . '/po-kegiatan?divisi=' . @order.jenis_layanan_opti) }}" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1.5 px-3 py-1.5 rounded-pill shadow-xs">
+        <a href="{{ @revisi_konteks ? (@BASE . '/po-kegiatan/daftar') : (@BASE . '/po-kegiatan?divisi=' . @order.jenis_layanan_opti) }}" class="po-kembali btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1.5 px-3 py-1.5 rounded-pill shadow-xs">
             <i class="bi bi-arrow-left"></i> <span>Kembali</span>
         </a>
         <div>
@@ -1674,6 +1675,7 @@ input[type=number] {
     <!-- 7. PENANDATANGANAN -->
     <!-- ======================================================== -->
     <include href="petunjuk_operasional/_penandatangan.html" />
+    <include href="petunjuk_operasional/_dialog_nomor_po.html" />
     <div class="po-card" id="poCardTtd">
         <div class="po-card-header">
             <div class="d-flex align-items-center">
@@ -1692,7 +1694,7 @@ input[type=number] {
     <!-- Sticky Bottom Action Bar -->
     <div class="po-sticky-bar">
         <div class="d-flex align-items-center gap-2">
-            <a href="{{ @revisi_konteks ? (@BASE . '/po-kegiatan/daftar') : (@BASE . '/po-kegiatan?divisi=' . @order.jenis_layanan_opti) }}" class="btn btn-outline-secondary px-3.5 py-2 rounded-pill shadow-xs fw-semibold">
+            <a href="{{ @revisi_konteks ? (@BASE . '/po-kegiatan/daftar') : (@BASE . '/po-kegiatan?divisi=' . @order.jenis_layanan_opti) }}" class="po-kembali btn btn-outline-secondary px-3.5 py-2 rounded-pill shadow-xs fw-semibold">
                 <i class="bi bi-arrow-left me-1"></i> Batal / Kembali
             </a>
             <button type="button" class="btn btn-outline-primary btn-sm px-3 py-1.5 rounded-pill shadow-xs fw-semibold d-inline-flex align-items-center gap-1.5 d-xl-none" onclick="switchPoViewMode('preview')">
@@ -5789,6 +5791,9 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // Dibuka di iframe Tahap 8 detail order (?embed=1): sesudah PO terkirim, jendela induk yang pindah ke detail order
+    try { if (window.self !== window.top && /[?&]embed=1(&|$)/.test(window.location.search)) { window.__poEmbedTop = true; } } catch (e) {}
+
     var btnDraft = document.getElementById('btnDraft');
     if (btnDraft) {
         btnDraft.addEventListener('click', function () {
@@ -5826,8 +5831,18 @@ document.addEventListener('DOMContentLoaded', function () {
                 return; // stop di sini -- form.submit() sama sekali gak kepanggil, overlay gak nyala
             }
 
-            // Lolos validasi -- baru sekarang boleh submit beneran (overlay global nyala normal dari sini)
+            // PO belum bernomor: dialog "Generate Nomor PO" (nomor diterbitkan server saat Kirim; lamanya loading hanya tampilan)
             var formPo = document.getElementById('formPo');
+            if (typeof PoNomorDialog !== 'undefined' && formPo && !(poData && poData.nomor_po)) {
+                if (!formPo.reportValidity()) { return; }   // sama seperti requestSubmit(): isian bertanda wajib bawaan browser diperiksa dulu
+                PoNomorDialog.mulai({
+                    durasi: 4000,
+                    kirim: kirimAjaxPo,
+                    tujuan: function (j) { return j.redirect; }
+                });
+                return;
+            }
+            // Lolos validasi -- baru sekarang boleh submit beneran (overlay global nyala normal dari sini)
             if (formPo) formPo.requestSubmit();
         });
     }
@@ -5909,6 +5924,23 @@ document.getElementById('formPo').addEventListener('submit', function (e) {
     selesaiInp.type = 'hidden'; selesaiInp.name = 'jadwal_selesai'; selesaiInp.value = document.getElementById('jadwalSelesai').value;
     container.appendChild(selesaiInp);
 });
+// Didaftarkan SETELAH pendengar di atas (urutan terdaftar = urutan jalan): saat dialog "Generate Nomor PO" memicu submit sintetis,
+// event dibatalkan di sini supaya tidak ada pemuatan halaman biasa dan overlay global tidak menyala.
+document.getElementById('formPo').addEventListener('submit', function (e) { if (window.__poKirimAjax) { e.preventDefault(); } });
+
+// Kirim dengan dialog "Generate Nomor PO": satu permintaan AJAX ke endpoint simpan/update yang sama (server membalas JSON bila diminta AJAX)
+function kirimAjaxPo() {
+    var formPo = document.getElementById('formPo');
+    window.__poKirimAjax = true;
+    try { formPo.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true })); }   // menjalankan persiapan isian (RAB, jadwal) seperti submit biasa
+    finally { window.__poKirimAjax = false; }
+    var fd = new FormData(formPo);
+    return fetch(formPo.action, { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
+        .then(function (r) {
+            return r.json().then(function (j) { return j; }, function () { return { ok: false, message: 'Respons server tidak valid (HTTP ' + r.status + ').' }; });
+        })
+        .catch(function () { return { ok: false, message: 'Tidak bisa terhubung ke server. Periksa koneksi lalu coba lagi.' }; });
+}
 function validasiFieldWajib() {
     var invalidFields = [];
 

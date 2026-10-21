@@ -91,8 +91,12 @@ class PoSertifikasiController extends \Controller {
                   AND a.total_nilai_kontrak = a.total_bayar_kontrak
                   AND a.total_nilai_kontrak > 0";
         }
+        if ($kecualiSudahPo && $this->kolomKlaimAda($dbName)) {
+            // penanda: order yang sudah diklaim PO (status_klaim_po = 'Y', terisi otomatis saat PO disimpan) tidak ditawarkan lagi
+            $sql .= " AND COALESCE(a.status_klaim_po, 'N') <> 'Y'";
+        }
         if ($kecualiSudahPo && \PoSchema::siap()) {
-            // order yang sudah dibuatkan PO Sertifikasi (po_kegiatan.order_id = id_arsip_sertifikasi) tidak ditawarkan lagi
+            // pengaman: order yang sudah dibuatkan PO Sertifikasi (po_kegiatan.order_id = id_arsip_sertifikasi) tidak ditawarkan lagi
             $sql .= " AND NOT EXISTS (SELECT 1 FROM po_kegiatan pk WHERE pk.order_id = a.id_arsip_sertifikasi AND pk.layanan = '" . \PoSchema::SERTIFIKASI . "')";
         }
         $args = [];
@@ -119,6 +123,43 @@ class PoSertifikasiController extends \Controller {
             }
         }
         return $ada ? 'a.tanggal_update' : 'NULL';
+    }
+
+    /**
+     * Kolom penanda tb_arsip_sertifikasi.status_klaim_po ('N' = belum diklaim PO, 'Y' = sudah punya PO, termasuk draft).
+     * Dianggap ada hanya bila bertipe teks (ENUM / CHAR / VARCHAR), supaya nilai 'Y' / 'N' aman dibandingkan;
+     * kalau kolom belum ada, aplikasi jalan seperti sebelumnya (cukup cek po_kegiatan).
+     */
+    protected function kolomKlaimAda($dbName) {
+        static $ada = null;
+        if ($ada === null) {
+            try {
+                $r = $this->db->exec("SHOW COLUMNS FROM `{$dbName}`.`tb_arsip_sertifikasi` LIKE 'status_klaim_po'");
+                $ada = !empty($r) && preg_match('/^(enum|char|varchar)/i', (string) ($r[0]['Type'] ?? $r[0]['type'] ?? '')) === 1;
+            } catch (\Throwable $e) {
+                $ada = false;
+            }
+        }
+        return $ada;
+    }
+
+    /**
+     * Set penanda klaim order ('Y' saat PO disimpan, 'N' bila dilepas). Gagal menandai tidak membatalkan simpan PO:
+     * filter modal tetap aman karena po_kegiatan ikut dicek.
+     */
+    protected function tandaiKlaim($orderId, $nilai = 'Y') {
+        try {
+            $dbName = $this->namaDbSertifikasi();
+            if (!$this->kolomKlaimAda($dbName)) { return false; }
+            $this->db->exec(
+                "UPDATE `{$dbName}`.`tb_arsip_sertifikasi` SET status_klaim_po = ? WHERE id_arsip_sertifikasi = ?",
+                [1 => ($nilai === 'Y' ? 'Y' : 'N'), 2 => (int) $orderId]
+            );
+            return true;
+        } catch (\Throwable $e) {
+            error_log('[PO Sertifikasi] gagal mengisi status_klaim_po order #' . (int) $orderId . ': ' . $e->getMessage());
+            return false;
+        }
     }
 
     /** Tanggal valid (Y-m-d) dari nilai DATE/DATETIME, atau ''. */
@@ -173,17 +214,24 @@ class PoSertifikasiController extends \Controller {
      * kolom FK di order, atau 'id'); kolom teks dipilih otomatis (nama/jenis/kegiatan/... lalu kolom teks pertama).
      * Gagal/tidak ketemu -> '' (tampilan jatuh ke id).
      */
-    protected function labelMaster($dbName, $tabel, $kolomFk, $id) {
+    protected function labelMaster($dbName, $tabel, $kolomFk, $id, $kolomUtama = '', $kolomId = '') {
         $kol = $this->kolomTabel($dbName, $tabel);
         if (!$kol || $id === '' || $id === null) {
             return '';
         }
         $pk = '';
-        foreach ($kol as $c) {
-            if ($c['key'] === 'PRI') { $pk = $c['field']; break; }
+        if ($kolomId !== '' && isset($kol[strtolower($kolomId)])) { $pk = $kol[strtolower($kolomId)]['field']; }   // kolom id yang ditentukan (mis. id_jenis_ws)
+        if ($pk === '') {
+            foreach ($kol as $c) {
+                if ($c['key'] === 'PRI') { $pk = $c['field']; break; }
+            }
         }
         if ($pk === '') {
             $pk = isset($kol[strtolower($kolomFk)]) ? $kol[strtolower($kolomFk)]['field'] : (isset($kol['id']) ? $kol['id']['field'] : '');
+        }
+        if ($pk === '') {   // terakhir: kolom pertama tabel master (umumnya id)
+            $pertama = reset($kol);
+            $pk = $pertama ? $pertama['field'] : '';
         }
         if ($pk === '') {
             return '';
@@ -196,13 +244,15 @@ class PoSertifikasiController extends \Controller {
                 $teks[] = $c['field'];
             }
         }
-        if (!$teks) {
+        $adaKolomUtama = ($kolomUtama !== '' && isset($kol[strtolower($kolomUtama)]));   // kolom yang diminta boleh bertipe enum (mis. nama_ws = enum Wajib/Sukarela)
+        if (!$teks && !$adaKolomUtama) {
             return '';
         }
-        $pilih = $teks[0];
+        $pilih = $teks ? $teks[0] : '';
         foreach ($teks as $t) {
             if (preg_match('/^(nama|nm|jenis|kegiatan|ws|label|uraian|judul)/i', $t)) { $pilih = $t; break; }
         }
+        if ($adaKolomUtama) { $pilih = $kol[strtolower($kolomUtama)]['field']; }   // kolom yang diminta (mis. nama_ws) diutamakan
         try {
             $r = $this->db->exec("SELECT `{$pilih}` AS teks FROM `{$dbName}`.`{$tabel}` WHERE `{$pk}` = ? LIMIT 1", [1 => $id]);
             return trim((string) ($r[0]['teks'] ?? ''));
@@ -210,6 +260,38 @@ class PoSertifikasiController extends \Controller {
             error_log('[PO Sertifikasi] gagal baca ' . $tabel . ': ' . $e->getMessage());
             return '';
         }
+    }
+
+    /**
+     * Cari nama_ws bila tabel master tidak terbaca di database sertifikasi: cari di database MANA PUN di server yang sama
+     * (tabel mst_jenis_ws_sertifikasi lebih dulu, lalu tabel apa pun yang punya kolom nama_ws). $dbName diprioritaskan.
+     * $r = baris order (kunci huruf kecil). '' bila tidak ketemu.
+     */
+    protected function cariNamaWs($dbName, array $r) {
+        $id = null;
+        foreach ($r as $nmKol => $v) {
+            if (strpos($nmKol, 'id_') === 0 && preg_match('/(^|_)ws(_|$)/', $nmKol) && $v !== null && $v !== '' && (string) $v !== '0') {
+                $id = $v;
+                if ($nmKol === 'id_jenis_ws') { break; }
+            }
+        }
+        if ($id === null) { return ''; }
+        try {
+            $tab = $this->db->exec(
+                "SELECT TABLE_SCHEMA AS s, TABLE_NAME AS t FROM information_schema.COLUMNS
+                  WHERE COLUMN_NAME = 'nama_ws' AND TABLE_SCHEMA NOT IN ('mysql', 'information_schema', 'performance_schema', 'sys')
+                  ORDER BY (TABLE_SCHEMA = ?) DESC, (TABLE_NAME = 'mst_jenis_ws_sertifikasi') DESC, TABLE_SCHEMA, TABLE_NAME LIMIT 8",
+                [1 => $dbName]
+            );
+            foreach ((array) $tab as $row) {
+                if ((string) $row['t'] === 'tb_arsip_sertifikasi') { continue; }
+                $nama = $this->labelMaster((string) $row['s'], (string) $row['t'], 'id_jenis_ws', $id, 'nama_ws', 'id_jenis_ws');
+                if ($nama !== '') { return $nama; }
+            }
+        } catch (\Throwable $e) {
+            error_log('[PO Sertifikasi] gagal mencari nama_ws: ' . $e->getMessage());
+        }
+        return '';
     }
 
     /**
@@ -227,7 +309,11 @@ class PoSertifikasiController extends \Controller {
             $dbName = $this->namaDbSertifikasi();
             $kol = $this->kolomTabel($dbName, 'tb_arsip_sertifikasi');
             $ambil = [];
-            foreach (['tanggal_pendaftaran', 'id_jenis_sertifikasi', 'id_kegiatan', 'id_jenis_ws'] as $c) {
+            $kolomWs = [];
+            foreach ($kol as $nmKol => $infoKol) {   // kolom lain yang berhubungan dengan WS (id_ws, nama_ws, dst.)
+                if ($nmKol !== 'id_jenis_ws' && preg_match('/(^|_)ws(_|$)/', $nmKol)) { $kolomWs[] = $nmKol; }
+            }
+            foreach (array_merge(['tanggal_pendaftaran', 'id_jenis_sertifikasi', 'id_kegiatan', 'id_jenis_ws'], $kolomWs) as $c) {
                 if (isset($kol[$c])) { $ambil[] = '`' . $kol[$c]['field'] . '`'; }
             }
             if (!$ambil) {
@@ -245,9 +331,14 @@ class PoSertifikasiController extends \Controller {
             foreach ($map as $key => $m) {
                 $id = $r[$m[0]] ?? null;
                 if ($id === null || $id === '' || (string) $id === '0') { continue; }
-                $nama = $this->labelMaster($dbName, $m[1], $m[0], $id);
+                $nama = $this->labelMaster($dbName, $m[1], $m[0], $id, $key === 'jenis_ws' ? 'nama_ws' : '', $key === 'jenis_ws' ? 'id_jenis_ws' : '');
                 $order[$key] = $nama !== '' ? $nama : ('#' . $id);
             }
+            // Jenis WS: tampilkan nama_ws. Kolom nama_ws bisa langsung ada di tb_arsip_sertifikasi, atau di tabel master
+            // (nama tabel/kolom id dilacak otomatis kalau berbeda dari dugaan).
+            $namaWs = trim((string) ($r['nama_ws'] ?? ''));
+            if ($namaWs === '') { $namaWs = $this->cariNamaWs($dbName, $r); }
+            if ($namaWs !== '') { $order['jenis_ws'] = $namaWs; }
         } catch (\Throwable $e) {
             error_log('[PO Sertifikasi] gagal baca info order: ' . $e->getMessage());
         }
@@ -367,8 +458,14 @@ class PoSertifikasiController extends \Controller {
         return ((string) $f3->get('POST.aksi')) === 'kirim' ? 'terkirim' : 'draft';
     }
 
+    /**
+     * Tujuan setelah simpan draft / kirim. Superadmin: Daftar PO gabungan (/po-kegiatan), tempat semua PO layanan tampil.
+     * Role layanan (Tim Kerja / Ketua Tim Sertifikasi): tetap ke daftar layanannya, karena /po-kegiatan tidak memuat PO layanan untuk mereka.
+     */
     protected function urlIndex($tab = 'draft') {
-        return \Base::instance()->get('BASE') . '/petunjuk-operasional?layanan=sertifikasi&tab=' . $tab;
+        $base = \Base::instance()->get('BASE');
+        if ($this->isSuperadmin()) { return $base . '/po-kegiatan?tab=' . $tab; }
+        return $base . '/petunjuk-operasional?layanan=sertifikasi&tab=' . $tab;
     }
 
     protected function urlEdit($poId) {
@@ -469,6 +566,12 @@ class PoSertifikasiController extends \Controller {
             $f3->reroute('/petunjuk-operasional?layanan=sertifikasi');
             return;
         }
+        if (!$lihat && !in_array((string) ($po['status'] ?? ''), ['', 'draft'], true)) {
+            // PO yang sudah dikirim hanya bisa dilihat (edit lagi hanya lewat permintaan revisi)
+            $this->setFlashWarning('PO yang sudah terkirim tidak bisa diedit lagi.');
+            $f3->reroute('/petunjuk-operasional/sertifikasi/' . (int) $po['id'] . '/lihat');
+            return;
+        }
 
         $order = null;
         try {
@@ -547,7 +650,6 @@ class PoSertifikasiController extends \Controller {
         $m = [];
         $isi = function ($v) { return self::adaIsi($v); };
 
-        if (!$isi($post['tanggal_po'] ?? '')) { $m[] = 'Tanggal PO belum diisi'; }
         if (!$isi($post['judul_kegiatan'] ?? '')) { $m[] = 'Judul Kegiatan belum diisi'; }
         if (!$isi($post['jenis'] ?? '')) { $m[] = 'Jenis belum diisi'; }
 
@@ -786,19 +888,10 @@ class PoSertifikasiController extends \Controller {
             }
         }
 
-        // [BARU] Tanggal PO tidak diisi dari form: PO yang sudah bernomor memakai tanggalnya sendiri (tidak berubah);
-        // selain itu = hari ini (WIB), yang menjadi tanggal kirim bila PO ini dikirim sekarang.
-        // Tanggal PO (= tanggal PO dibuat) diisi user di form; kosong (draft) -> hari ini. Tidak boleh tanggal ke depan.
+        // Tanggal PO tidak diisi dari form (sama seperti PO Pengujian): dibuat sekali saat PO pertama kali disimpan (draft / kirim),
+        // yaitu hari ini (WIB), lalu TETAP walau PO diedit / dikirim belakangan ($tglTetap = tanggal PO yang sudah tercatat).
         // Tanggal PO dikirim TIDAK dari form: dicatat otomatis (tanggal_dikirim) saat PO dikirim, dan jadi patokan bulan/tahun Nomor PO.
-        $hariIni = \PoSchema::hariIniWib();
-        $tglIn = trim((string) ($post['tanggal_po'] ?? ''));
-        if ($tglIn === '') { $tgl = $hariIni; }
-        else {
-            $dtIn = \DateTime::createFromFormat('Y-m-d', $tglIn);
-            if (!$dtIn || $dtIn->format('Y-m-d') !== $tglIn) { return ['Tanggal PO tidak valid.', null]; }
-            if ($tglIn > $hariIni) { return ['Tanggal PO tidak boleh lebih dari hari ini.', null]; }
-            $tgl = $tglIn;
-        }
+        $tgl = ($tglTetap !== null && $tglTetap !== '') ? (string) $tglTetap : \PoSchema::hariIniWib();
         $judul = trim((string) ($post['judul_kegiatan'] ?? ''));
         if ($judul === '') {
             return ['Judul Kegiatan wajib diisi.', null];
@@ -909,6 +1002,7 @@ class PoSertifikasiController extends \Controller {
                 if ($poId <= 0) {
                     throw new \Exception('PO gagal dibuat.');
                 }
+                $this->tandaiKlaim($orderId, 'Y'); // order ini sekarang diklaim PO (draft pun dihitung)
                 $this->db->commit();
             } catch (\Throwable $e) {
                 try { $this->db->rollback(); } catch (\Throwable $eRb) {}
@@ -961,8 +1055,11 @@ class PoSertifikasiController extends \Controller {
             return $this->json(['ok' => false, 'message' => 'PO Sertifikasi tidak ditemukan.'], 404);
         }
         $statusLama = (string) ($po['status'] ?? 'draft');
-        if (!in_array($statusLama, ['', 'draft', 'terkirim'], true)) {
-            return $this->json(['ok' => false, 'message' => 'PO ini sudah berstatus "' . $statusLama . '" dan tidak bisa diubah lagi.'], 409);
+        if (!in_array($statusLama, ['', 'draft'], true)) {
+            // PO yang sudah dikirim terkunci; perubahan hanya lewat permintaan revisi (Review)
+            return $this->json(['ok' => false, 'message' => $statusLama === 'terkirim'
+                ? 'PO ini sudah terkirim dan tidak bisa diedit lagi. Perubahan hanya bisa lewat permintaan revisi.'
+                : 'PO ini sudah berstatus "' . $statusLama . '" dan tidak bisa diubah lagi.'], 409);
         }
         $status = $this->statusDariAksi($f3);
 
@@ -974,9 +1071,11 @@ class PoSertifikasiController extends \Controller {
             error_log('[PO Sertifikasi] gagal baca order saat update: ' . $e->getMessage());
         }
 
-        // PO yang sudah bernomor: nomornya TETAP; Tanggal PO (tanggal dibuat) boleh dikoreksi, tanggal dikirimnya tidak berubah
+        // PO yang sudah bernomor: nomornya TETAP; Tanggal PO (tanggal dibuat) juga TETAP (dibuat saat PO pertama kali disimpan), tanggal dikirimnya tidak berubah
         $sudahNomor = trim((string) ($po['nomor_po'] ?? '')) !== '';
-        list($err, $in) = $this->bacaInput($f3, $orderRaw);
+        $tglLama = (string) ($po['tanggal_po'] ?? '');
+        $tglTetap = ($tglLama !== '' && strpos($tglLama, '0000') !== 0 && strtotime($tglLama)) ? date('Y-m-d', strtotime($tglLama)) : null;
+        list($err, $in) = $this->bacaInput($f3, $orderRaw, $tglTetap);
         if ($err !== null) {
             return $this->tolakInput($err);
         }
@@ -1013,6 +1112,7 @@ class PoSertifikasiController extends \Controller {
             error_log('[PO Sertifikasi] gagal memperbarui PO: ' . $e->getMessage());
             return $this->json(['ok' => false, 'message' => 'Gagal memperbarui PO: ' . $e->getMessage()], 500);
         }
+        $this->tandaiKlaim((int) $po['order_id'], 'Y'); // PO lama (dibuat sebelum kolom penanda ada) ikut terisi saat disimpan ulang
         $nomorAkhir = $nomorBaru ? $nomorBaru['detail_nomor'] : (string) ($po['nomor_po'] ?? '');
 
         $kirim = ($status === 'terkirim');

@@ -736,7 +736,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
 
         // Cek Pembayaran Lunas & Penawaran DEAL
         $isDeal = (($o['status'] ?? '') === 'penawaran_deal' || ($o['status_respon_klien'] ?? '') === 'deal' || ($o['status_penawaran'] ?? '') === 'deal');
-        $isLunas = (($o['status_keuangan'] ?? '') === 'lunas' || (float)($o['total_terbayar'] ?? 0) > 0);
+        $isLunas = (($o['status_keuangan'] ?? '') === 'lunas');   // bayar sebagian (terbayar_sebagian) belum dianggap lunas
 
         // Jika sudah DEAL & LUNAS, namun PO belum dibuat -> Alur masuk ke Step 7 (Sampel & PO)
         if ($isDeal && $isLunas) {

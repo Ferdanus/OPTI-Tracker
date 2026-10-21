@@ -443,6 +443,19 @@
             font-size: 0.65rem;
         }
 
+        /* ============ SELECT FILTER GAYA "IKON DI DEPAN" (dipakai baris filter Daftar PO) ============ */
+        .sel-a { display: inline-flex; align-items: stretch; height: 38px; border: 1px solid #e2e8f0; border-radius: 10px; background: #fff; overflow: hidden; transition: border-color .15s, box-shadow .15s; vertical-align: middle; }
+        .sel-a:hover { border-color: #cbd5e1; }
+        .sel-a:focus-within { border-color: #334155; box-shadow: 0 0 0 3px rgba(51, 65, 85, .12); }
+        .sel-a-ic { width: 36px; display: grid; place-items: center; background: #f1f5f9; color: #334155; border-right: 1px solid #e2e8f0; font-size: .9rem; flex-shrink: 0; }
+        .sel-a-select { appearance: none; -webkit-appearance: none; border: 0; outline: 0; background-color: transparent; color: #0f172a; font: inherit; font-size: .85rem; font-weight: 600; padding: 0 34px 0 12px; cursor: pointer; min-width: 130px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='M3 6l5 5 5-5'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 11px center; }
+        .sel-a-select[name="divisi"], .sel-a-select[name="layanan"] { min-width: 170px; }
+        .sel-a-select[name="bulan"] { min-width: 140px; }
+        .sel-a-select[name="tahun"] { min-width: 120px; }
+        @media (max-width: 575.98px) { .sel-a { display: flex; width: 100%; } .sel-a-select { flex: 1; min-width: 0 !important; } }
+
         /* ============ SIDEBAR FOOTER (LOGOUT) ============ */
         .sidebar-footer {
             margin-top: auto;
@@ -1172,6 +1185,14 @@
             }
         }
     </style>
+    <!-- Mode embed: halaman dibuka di dalam iframe dengan ?embed=1 (mis. form PO di Tahap 8 detail order) -> tanpa sidebar, topbar, dan footer -->
+    <script>(function () { try { if (window.self !== window.top && /[?&]embed=1(&|$)/.test(window.location.search)) { document.documentElement.classList.add('silopti-embed'); } } catch (e) {} })();</script>
+    <style>
+        html.silopti-embed .sidebar, html.silopti-embed .sidebar-backdrop, html.silopti-embed .topbar,
+        html.silopti-embed .footer-gov, html.silopti-embed #pageLoader, html.silopti-embed #topProgressBar { display: none !important; }
+        html.silopti-embed .content-wrapper { margin-left: 0 !important; width: 100% !important; max-width: 100% !important; min-height: 0 !important; }
+        html.silopti-embed .main-container { padding: 12px 16px 24px !important; }
+    </style>
 </head>
 <body>
 
@@ -1234,7 +1255,6 @@
                     </li>
                 </check>
 
-<<
                 <!-- Permintaan Masuk (Ketua Tim, Superadmin) -->
                 <check if="{{ @is_superadmin || @is_ketua_tim }}">
                     <li>
@@ -1331,7 +1351,7 @@
                     </li>
                     </check>
                     <!-- Petunjuk Operasional (PO) Kegiatan -->
-                    <!-- Superadmin: satu menu "Daftar PO" (semua divisi, divisi dipilih lewat filter di halamannya) -->
+                    <!-- Superadmin: satu menu "Daftar PO" (semua divisi dan layanan, dipilih lewat filter Divisi di halamannya) -->
                     <check if="{{ @is_superadmin || (@is_tim_kerja && @divisi_tim_kerja == 'pengujian')}}">
                         <li>
                             <a class="sidebar-link {{ @active_menu == 'po_kegiatan' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan" title="Daftar Petunjuk Operasional">
@@ -1342,14 +1362,7 @@
                             </a>
                         </li>
                     </check>
-                    <!-- Daftar PO layanan selain OPTI (Sertifikasi dst.) -- sementara khusus Superadmin; role layanan menyusul -->
-                    <check if="{{ @is_superadmin }}">
-                        <li>
-                            <a class="sidebar-link {{ @active_menu == 'po_layanan' ? 'active' : '' }}" href="{{ @BASE }}/petunjuk-operasional" title="Daftar PO Layanan (Sertifikasi dll.)">
-                                <i class="bi bi-clipboard2-data"></i> <span>Daftar PO Layanan</span>
-                            </a>
-                        </li>
-                    </check>
+                    <!-- Superadmin: PO layanan lain (Sertifikasi, Pengujian, dst.) sudah digabung ke menu "Daftar PO" di atas (filter Divisi) -->
                     <!-- Tim Kerja Pengujian (role layanan): Daftar PO terkunci ke layanan Pengujian + Review PO Pengujian -->
                     <check if="{{ @is_tim_pengujian }}">
                         <li>
@@ -2870,7 +2883,6 @@
             }
             return window.btoa(binary);
         }
->>>>>>> main
 
         function updateUniversalZoomBadge() {
             const el = document.getElementById('universalZoomBadge');
@@ -3153,7 +3165,7 @@
                     await window.optiRenderDocx(bytesDoc.buffer, pagesContainer);
                     window.optiSesuaikanDocx(pagesContainer);
                     if (spinner) spinner.style.display = 'none';
-                } else if (json.base64 && ['doc', 'xls', 'xlsx'].indexOf(String(json.ext || '').toLowerCase()) !== -1) {
+                } else if (json.base64 && ['xls', 'xlsx'].indexOf(String(json.ext || '').toLowerCase()) !== -1) {
                     throw new Error('Pratinjau berkas .' + String(json.ext).toLowerCase() + ' belum tersedia di browser. Silakan unduh lewat tombol Unduh di kanan atas.');
                 } else if (json.is_image && json.base64) {
                     if (iconEl) iconEl.className = 'bi bi-file-earmark-image-fill fs-5 text-primary';

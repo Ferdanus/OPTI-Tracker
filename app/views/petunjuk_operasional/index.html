@@ -78,19 +78,19 @@
                 <input type="hidden" name="semua" value="0">
                 <div class="row g-2 align-items-center">
                     <div class="col-12 col-lg flex-grow-1">
-                        <div class="input-group input-group-sm">
+                        <div class="input-group">
                             <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-search"></i></span>
                             <input type="search" name="q" id="poSearch" class="form-control border-start-0 ps-0" placeholder="Cari no. PO, no. order, mitra, atau judul kegiatan" aria-label="Cari PO" value="{{ @q }}">
                         </div>
                     </div>
                     <check if="{{ @bisa_pilih_layanan }}">
                         <div class="col-12 col-sm-auto">
-                            <select name="layanan" id="poLayanan" class="form-select form-select-sm" aria-label="Layanan" style="min-width:170px;">
+                            <div class="sel-a"><span class="sel-a-ic"><i class="bi bi-grid"></i></span><select name="layanan" id="poLayanan" class="sel-a-select" aria-label="Layanan">
                                 <option value="">Semua Layanan</option>
                                 <repeat group="{{ @layanan_list }}" value="{{ @l }}">
                                     <option value="{{ @l.slug }}" {{ @layanan == @l.slug ? 'selected' : '' }}>{{ @l.label }}</option>
                                 </repeat>
-                            </select>
+                            </select></div>
                         </div>
                     </check>
                     <check if="{{ !@bisa_pilih_layanan }}">
@@ -100,7 +100,7 @@
                         </div>
                     </check>
                     <div class="col-6 col-sm-auto">
-                        <select name="bulan" class="form-select form-select-sm" aria-label="Bulan">
+                        <div class="sel-a"><span class="sel-a-ic"><i class="bi bi-calendar3"></i></span><select name="bulan" class="sel-a-select" aria-label="Bulan">
                             <option value="1" {{ @bulan_filter == 1 ? 'selected' : '' }}>Januari</option>
                             <option value="2" {{ @bulan_filter == 2 ? 'selected' : '' }}>Februari</option>
                             <option value="3" {{ @bulan_filter == 3 ? 'selected' : '' }}>Maret</option>
@@ -113,14 +113,14 @@
                             <option value="10" {{ @bulan_filter == 10 ? 'selected' : '' }}>Oktober</option>
                             <option value="11" {{ @bulan_filter == 11 ? 'selected' : '' }}>November</option>
                             <option value="12" {{ @bulan_filter == 12 ? 'selected' : '' }}>Desember</option>
-                        </select>
+                        </select></div>
                     </div>
                     <div class="col-6 col-sm-auto">
-                        <select name="tahun" class="form-select form-select-sm" aria-label="Tahun">
+                        <div class="sel-a"><span class="sel-a-ic"><i class="bi bi-clock-history"></i></span><select name="tahun" class="sel-a-select" aria-label="Tahun">
                             <repeat group="{{ @daftar_tahun }}" value="{{ @y }}">
                                 <option value="{{ @y }}" {{ @tahun_filter == @y ? 'selected' : '' }}>{{ @y }}</option>
                             </repeat>
-                        </select>
+                        </select></div>
                     </div>
                     <div class="col-12 col-sm-auto">
                         <div class="form-check form-switch mb-0">
@@ -195,7 +195,10 @@
                                             <check if="{{ @p.url_lihat && @p.layanan == 'pengujian' }}">
                                                 <button type="button" class="btn btn-sm btn-outline-primary py-1 px-2" title="Lihat Pratinjau PO" data-po-pengujian="{{ @p.po_id }}" data-status="{{ @p.status }}" data-edit="{{ @p.url_edit }}"><i class="bi bi-eye"></i></button>
                                             </check>
-                                            <check if="{{ @p.url_lihat && @p.layanan != 'pengujian' }}">
+                                            <check if="{{ @p.url_lihat && @p.layanan == 'sertifikasi' }}">
+                                                <button type="button" class="btn btn-sm btn-outline-primary py-1 px-2" title="Lihat Pratinjau PO" data-po-sertifikasi="{{ @p.po_id }}" data-lihat="{{ @p.url_lihat }}"><i class="bi bi-eye"></i></button>
+                                            </check>
+                                            <check if="{{ @p.url_lihat && @p.layanan != 'pengujian' && @p.layanan != 'sertifikasi' }}">
                                                 <a href="{{ @p.url_lihat }}" class="btn btn-sm btn-outline-primary py-1 px-2" title="Lihat Pratinjau PO"><i class="bi bi-eye"></i></a>
                                             </check>
                                             <check if="{{ @p.url_edit && @p.status == 'draft' }}">
@@ -292,6 +295,53 @@
             .then(function (html) { body.innerHTML = html; })
             .catch(function () { body.innerHTML = '<div class="text-center text-danger py-5">Gagal memuat data PO.</div>'; });
     });
+})();
+</script>
+
+<!-- Modal pratinjau PO Sertifikasi (ikon mata di Daftar PO): memuat halaman "lihat" di dalam modal, tanpa pindah halaman -->
+<div class="modal fade" id="modalPreviewPoSertifikasi" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="overflow:hidden;">
+            <div class="modal-header">
+                <h6 class="modal-title fw-bold"><i class="bi bi-clipboard2-data text-primary me-2"></i>Preview Petunjuk Operasional</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0" style="background:#e9ecef;position:relative;height:calc(100vh - 140px);min-height:420px;">
+                <div id="modalPoSertifikasiMuat" class="position-absolute top-50 start-50 translate-middle text-center">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="small text-muted mt-2 mb-0">Memuat PO...</p>
+                </div>
+                <iframe id="modalPoSertifikasiFrame" title="Preview PO Sertifikasi" style="width:100%;height:100%;border:0;visibility:hidden;"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+(function () {
+    var el = document.getElementById('modalPreviewPoSertifikasi');
+    var frame = document.getElementById('modalPoSertifikasiFrame');
+    var muat = document.getElementById('modalPoSertifikasiMuat');
+    if (!el || !frame) { return; }
+    var timer = null;
+    function tampil() { clearTimeout(timer); frame.style.visibility = 'visible'; muat.style.display = 'none'; }
+    document.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-po-sertifikasi]');
+        if (!b) { return; }
+        var u = b.getAttribute('data-lihat') || '';
+        if (!u) { return; }
+        frame.style.visibility = 'hidden';
+        muat.style.display = '';
+        clearTimeout(timer);
+        timer = setTimeout(tampil, 9000);   // cadangan bila halaman tidak memberi tanda siap
+        frame.src = u + (u.indexOf('?') > -1 ? '&' : '?') + 'embed=1';
+        bootstrap.Modal.getOrCreateInstance(el).show();
+    });
+    window.addEventListener('message', function (e) {
+        if (e.origin !== window.location.origin || !e.data || !e.data.poPreview) { return; }
+        if (e.data.poPreview === 'siap') { tampil(); }
+        if (e.data.poPreview === 'tutup') { bootstrap.Modal.getOrCreateInstance(el).hide(); }
+    });
+    el.addEventListener('hidden.bs.modal', function () { clearTimeout(timer); frame.src = 'about:blank'; });
 })();
 </script>
 

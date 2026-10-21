@@ -173,6 +173,44 @@ protected function jadwalOtomatisDariOrder($orderData) {
 }
 
 
+/**
+ * Mode balasan JSON untuk dialog "Generate Nomor PO" (permintaan AJAX ke simpan/update): setiap $f3->reroute()
+ * dibalas JSON {ok, message, nomor, redirect} alih-alih redirect. Pesan flash dikonsumsi supaya tidak muncul dua kali.
+ * ("Simpan dan kirim" revisi punya jalur JSON sendiri lewat kirim_setelah=1 -- tidak ikut mode ini.)
+ */
+protected $jsonMode = false;
+protected $berhasilAjax = false;
+protected $nomorAjax = '';
+
+protected function siapkanBalasanJson($f3) {
+    $xr = strtolower((string) ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? ''));
+    $ac = (string) ($_SERVER['HTTP_ACCEPT'] ?? '');
+    if ($xr !== 'xmlhttprequest' || stripos($ac, 'application/json') === false) { return; }
+    $this->jsonMode = true;
+    unset($_SESSION['flash_success'], $_SESSION['flash_error'], $_SESSION['flash_warning']);
+    $self = $this;
+    $f3->set('ONREROUTE', function ($url) use ($self, $f3) {
+        $err = (string) ($_SESSION['flash_error'] ?? '');
+        $ok = (string) ($_SESSION['flash_success'] ?? '');
+        unset($_SESSION['flash_success'], $_SESSION['flash_error'], $_SESSION['flash_warning']);
+        if (is_string($url) && $url !== '' && $url[0] === '/') { $url = $f3->get('BASE') . $url; }
+        $berhasil = $self->berhasilAjax;
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode([
+            'ok'       => $berhasil,
+            'message'  => $berhasil ? $ok : ($err !== '' ? $err : 'Sesi berakhir atau akses ditolak. Muat ulang halaman lalu coba lagi.'),
+            'nomor'    => $berhasil ? (string) $self->nomorAjax : '',
+            'redirect' => (string) $url,
+        ], JSON_UNESCAPED_UNICODE);
+        return true;
+    });
+}
+
+/** Tambah ?tab= (draft / terkirim) ke alamat Daftar PO supaya PO yang baru disimpan langsung terlihat. */
+protected function denganTab($url, $tab) {
+    return $url . (strpos($url, '?') !== false ? '&' : '?') . 'tab=' . $tab;
+}
+
 /** id baris po_nomor_urut yang baru diterbitkan oleh bind() -- dilepas lagi kalau penyimpanan PO gagal (nomor tidak boleh bolong). */
 protected $nomorBaruId = 0;
 
@@ -479,6 +517,20 @@ public function index($f3) {
     $divisi = $isSuperadmin ? $this->divisiDariRequest($f3) : $divisiTerkunci;
     $namaDivisiTampilan = $divisi === 'lingkungan' ? 'Lingkungan' : ($divisi === 'selulosa' ? 'Selulosa' : 'Semua Divisi');
 
+    // [BARU] Superadmin: Daftar PO gabungan. "Semua Divisi" memuat PO OPTI + PO layanan lain (Sertifikasi, Pengujian, dst.);
+    // memilih satu layanan non-OPTI hanya menampilkan PO layanan itu (PO OPTI disembunyikan).
+    $labelLayananLain = [
+        'sertifikasi' => 'Sertifikasi', 'pengujian' => 'Pengujian', 'kalibrasi' => 'Kalibrasi', 'pendampingan_teknis' => 'Pendampingan Teknis',
+        'konsultansi' => 'Konsultansi', 'inspeksi' => 'Inspeksi', 'uji_profesiensi' => 'Uji Profesiensi',
+    ];
+    $divRaw = strtolower(trim((string) $f3->get('GET.divisi')));
+    $layananFilter = ($isSuperadmin && isset($labelLayananLain[$divRaw])) ? $divRaw : '';
+    $gabung = $isSuperadmin && !$divisi;
+    if ($layananFilter !== '') {
+        $namaDivisiTampilan = $labelLayananLain[$layananFilter];
+        if (trim((string) $f3->get('GET.tab')) === '') { $tab = 'draft'; }   // "PO Masuk" hanya untuk order OPTI
+    }
+
     // --- Filter bulan/tahun & toggle "Tampilkan Semua Data" ---
     // Default kalau togglenya belum pernah disentuh user (parameter
     // "semua" belum ada di URL): tab "PO Masuk" -> tampilkan semua (gak
@@ -488,9 +540,12 @@ public function index($f3) {
     // togglenya sendiri, pilihan itu yang dipakai & ikut kebawa pas
     // pindah tab/halaman (lewat link yang nyertain parameter semua=).
     $semuaGet = $f3->get('GET.semua');
-    $tampilkanSemua = ($semuaGet === null || $semuaGet === '')
-        ? in_array($tab, ['masuk', 'draft'], true)
-        : ($semuaGet === '1');
+    $semuaEksplisit = !($semuaGet === null || $semuaGet === '');
+    // Perlu/tidaknya filter bulan per tab (dipakai juga untuk angka di tiap tab, supaya angka tab = isi tab kalau diklik)
+    $semuaUntukTab = function ($t) use ($semuaEksplisit, $semuaGet) {
+        return $semuaEksplisit ? ($semuaGet === '1') : in_array($t, ['masuk', 'draft'], true);
+    };
+    $tampilkanSemua = $semuaUntukTab($tab);
 
     $bulanGet = (int) $f3->get('GET.bulan');
     $tahunGet = (int) $f3->get('GET.tahun');
@@ -510,12 +565,15 @@ public function index($f3) {
     ];
     $kolomTanggal = $kolomTanggalPerTab[$tab];
 
+    // Status efektif PO: verifikasi PPK BLU hanya mengisi validasi_keuangan_at (kolom status tidak berubah),
+    // jadi PO yang sudah diverifikasi PPK BLU dihitung 'disetujui' (Final) walau status mentahnya masih terkirim / disetujui_mitra.
+    $stEf = "(CASE WHEN p.id IS NULL THEN NULL WHEN p.validasi_keuangan_at IS NOT NULL OR p.status = 'disetujui' THEN 'disetujui' ELSE p.status END)";
     $kondisiTabPerTab = [
         'masuk'           => "p.id IS NULL",
-        'draft'           => "p.status = 'draft'",
-        'terkirim'        => "p.status = 'terkirim'",
-        'disetujui_mitra' => "p.status = 'disetujui_mitra'",
-        'disetujui'       => "p.status = 'disetujui'",
+        'draft'           => "{$stEf} = 'draft'",
+        'terkirim'        => "{$stEf} = 'terkirim'",
+        'disetujui_mitra' => "{$stEf} = 'disetujui_mitra'",
+        'disetujui'       => "{$stEf} = 'disetujui'",
     ];
 
     // Judul kegiatan di daftar ini: PO Selulosa mengambil judul proposal (opti_proposal_riset.judul_proposal, proposal terbaru order itu);
@@ -524,7 +582,7 @@ public function index($f3) {
                       THEN COALESCE(NULLIF(TRIM((SELECT pr_j.judul_proposal FROM opti_proposal_riset pr_j WHERE pr_j.order_id = o.id ORDER BY pr_j.id DESC LIMIT 1)), ''), o.judul_kegiatan)
                       ELSE o.judul_kegiatan END";
 
-    $where = "o.ketua_pelaksana_id IS NOT NULL AND " . $kondisiTabPerTab[$tab];
+    $where = ($layananFilter !== '' ? "1 = 0 AND " : "") . "o.ketua_pelaksana_id IS NOT NULL AND " . $kondisiTabPerTab[$tab];
     $params = [];
     $idx = 1;
     if ($divisi) {
@@ -556,13 +614,23 @@ public function index($f3) {
     );
     $totalBaris = (int) ($resCount[0]['c'] ?? 0);
 
-    $perHalaman = 10;
+    // [BARU] Gabungan: ambil juga PO layanan lain. Dari tiap sumber diambil N baris teratas (N = halaman x 10), lalu digabung & diurutkan.
+    $perHalaman = 5;   // jumlah baris per halaman (dikunci 5; sisanya lewat pagination)
+    $lain = null;
+    if ($gabung) {
+        $halamanDiminta = max(1, (int) $f3->get('GET.page'));
+        $semuaPerTab = [];
+        foreach (['draft', 'terkirim', 'disetujui_mitra', 'disetujui'] as $kT0) { $semuaPerTab[$kT0] = $semuaUntukTab($kT0); }
+        $lain = (new \petunjuk_operasional\PoIndexController())->ambilGabungan($tab, $layananFilter, $q, $tampilkanSemua, $bulan, $tahun, min(500, $halamanDiminta * $perHalaman), $semuaPerTab);
+        $totalBaris += (int) $lain['total'];
+    }
+
     $totalHalaman = max(1, (int) ceil($totalBaris / $perHalaman));
     $halamanSaatIni = max(1, (int) $f3->get('GET.page'));
     if ($halamanSaatIni > $totalHalaman) { $halamanSaatIni = $totalHalaman; }
     $offset = ($halamanSaatIni - 1) * $perHalaman;
 
-    $sql = "SELECT p.id AS po_id, p.nomor_po, p.status AS po_status, p.created_at AS po_created_at,
+    $sql = "SELECT p.id AS po_id, p.nomor_po, {$stEf} AS po_status, p.created_at AS po_created_at,
                    o.id AS order_id, o.nomor_order, {$sqlJudul} AS judul_kegiatan, o.jenis_layanan_opti, o.status_tinjauan,
                    o.ketua_pelaksana_id, o.ketua_pelaksana_at, o.id_surat_masuk, o.status_keuangan,
                    p.status_review, u_pic.nama_user AS nama_pembuat,
@@ -571,7 +639,8 @@ public function index($f3) {
                    (SELECT id FROM opti_proposal_riset pr WHERE pr.order_id = o.id ORDER BY pr.id DESC LIMIT 1) AS proposal_id,
                    COALESCE((SELECT MAX(pb.is_kesanggupan_bayar) FROM opti_pembayaran pb WHERE pb.order_id = o.id), 0) AS punya_kesanggupan_bayar,
                    (SELECT MAX(COALESCE(pb.created_at, pb.tanggal_bayar)) FROM opti_pembayaran pb WHERE pb.order_id = o.id AND pb.is_kesanggupan_bayar = 1) AS tanggal_surat_kesanggupan,
-                   (SELECT MAX(pb.tanggal_bayar) FROM opti_pembayaran pb WHERE pb.order_id = o.id AND pb.status_verifikasi = 'terverifikasi' AND (pb.is_kesanggupan_bayar = 0 OR pb.is_kesanggupan_bayar IS NULL)) AS tanggal_bayar_terakhir
+                   (SELECT MAX(pb.tanggal_bayar) FROM opti_pembayaran pb WHERE pb.order_id = o.id AND pb.status_verifikasi = 'terverifikasi' AND (pb.is_kesanggupan_bayar = 0 OR pb.is_kesanggupan_bayar IS NULL)) AS tanggal_bayar_terakhir,
+                   CAST(COALESCE({$kolomTanggal}, p.created_at, o.ketua_pelaksana_at) AS DATETIME) AS sort_ts
             FROM order_layanan o
             JOIN tb_customer c ON o.id_customer = c.id_customer
             LEFT JOIN po_kegiatan p ON p.order_id = o.id" . \PoSchema::bukanSertifikasi('p') . "
@@ -579,7 +648,7 @@ public function index($f3) {
             LEFT JOIN tb_arsipuser u_pic ON u_pic.id_user = o.ketua_pelaksana_id
             WHERE {$where}
             ORDER BY COALESCE({$kolomTanggal}, p.created_at, o.ketua_pelaksana_at) DESC
-            LIMIT {$perHalaman} OFFSET {$offset}";
+            LIMIT " . ($gabung ? (int) min(500, $halamanSaatIni * $perHalaman) : (int) $perHalaman) . " OFFSET " . ($gabung ? 0 : (int) $offset);
 
 $daftarPo = $this->safeQuery($sql, $params);
 
@@ -658,28 +727,78 @@ $daftarPo = $this->safeQuery($sql, $params);
     }
     unset($p);
 
-    // --- Badge jumlah per tab: total keseluruhan per status (gak kena
-    // filter bulan), biar tab lain tetap keliatan ada berapa isinya walau
-    // lagi liat tab/bulan lain. Tetap dibatasi divisi. ---
-    $sqlTab = "SELECT
-                  SUM(CASE WHEN p.id IS NULL THEN 1 ELSE 0 END) AS masuk,
-                  SUM(CASE WHEN p.status = 'draft' THEN 1 ELSE 0 END) AS draft,
-                  SUM(CASE WHEN p.status = 'terkirim' THEN 1 ELSE 0 END) AS terkirim,
-                  SUM(CASE WHEN p.status = 'disetujui_mitra' THEN 1 ELSE 0 END) AS disetujui_mitra,
-                  SUM(CASE WHEN p.status = 'disetujui' THEN 1 ELSE 0 END) AS disetujui,
-                  COUNT(*) AS total
+    // [BARU] Gabungan: urutkan PO OPTI + PO layanan lain berdasarkan tanggal terbaru, lalu ambil baris untuk halaman ini
+    foreach ($daftarPo as &$pSumber) { $pSumber['sumber'] = 'opti'; }
+    unset($pSumber);
+    if ($gabung && $lain !== null) {
+        // baris PO layanan dilengkapi kunci yang dipakai tabel OPTI (template menghentikan halaman bila ada kunci yang hilang)
+        $kunciKosong = ['po_id' => 0, 'po_status' => '', 'po_created_at' => '', 'order_id' => 0, 'nama_mitra' => '', 'pt_cv' => '', 'nama_pembuat' => '', 'jenis_layanan_opti' => '',
+                        'judul_kegiatan' => '', 'status_review' => '', 'nilai_fmt' => '', 'terbayar_fmt' => '', 'kontrak_lunas' => false, 'kesanggupan_url' => '', 'daftar_pembayaran' => []];
+        foreach ($lain['rows'] as $iL => $rL) {
+            $lain['rows'][$iL] = array_merge($kunciKosong, $rL, ['sumber' => 'layanan', 'po_status' => (string) $rL['status'], 'judul_kegiatan' => (string) $rL['judul'], 'nama_mitra' => (string) $rL['mitra']]);
+        }
+        $gabungan = [];
+        foreach (array_merge($daftarPo, $lain['rows']) as $iG => $rG) { $rG['_i'] = $iG; $gabungan[] = $rG; }
+        usort($gabungan, function ($a, $b) {
+            $c = strcmp((string) (isset($b['sort_ts']) ? $b['sort_ts'] : ''), (string) (isset($a['sort_ts']) ? $a['sort_ts'] : ''));
+            return $c !== 0 ? $c : ($a['_i'] - $b['_i']);
+        });
+        $daftarPo = array_slice($gabungan, $offset, $perHalaman);
+        foreach ($daftarPo as $iG => &$rG) { $rG['no_urut'] = $offset + $iG + 1; }
+        unset($rG);
+    }
+
+    // --- Badge jumlah per tab: ikut filter yang sedang aktif (divisi, pencarian, bulan/tahun) ---
+    // Tiap tab dihitung dengan aturan yang sama seperti isi tabnya, jadi angkanya = jumlah baris kalau tab itu diklik.
+    $selTab = [];
+    foreach ($tabsValid as $kT) {
+        $cond = $kondisiTabPerTab[$kT];
+        if (!$semuaUntukTab($kT)) {
+            $kol = $kolomTanggalPerTab[$kT];
+            $cond .= " AND {$kol} IS NOT NULL AND MONTH({$kol}) = " . (int) $bulan . " AND YEAR({$kol}) = " . (int) $tahun;
+        }
+        $selTab[] = "SUM(CASE WHEN {$cond} THEN 1 ELSE 0 END) AS {$kT}";
+    }
+    $whereTab = ($layananFilter !== '' ? "1 = 0 AND " : "") . "o.ketua_pelaksana_id IS NOT NULL";
+    $paramsTab = [];
+    $iT = 1;
+    if ($divisi) { $whereTab .= " AND o.jenis_layanan_opti = ?"; $paramsTab[$iT++] = $divisi; }
+    if ($q !== '') {
+        $whereTab .= " AND (o.nomor_order LIKE ? OR p.nomor_po LIKE ? OR c.nmcustomer LIKE ? OR {$sqlJudul} LIKE ?)";
+        for ($k = 0; $k < 4; $k++) { $paramsTab[$iT++] = $like; }
+    }
+    $resTab = $this->safeQuery(
+        "SELECT " . implode(', ', $selTab) . "
+         FROM order_layanan o
+         JOIN tb_customer c ON o.id_customer = c.id_customer
+         LEFT JOIN po_kegiatan p ON p.order_id = o.id" . \PoSchema::bukanSertifikasi('p') . "
+         WHERE {$whereTab}",
+        $paramsTab
+    );
+    $tabStat = $resTab[0] ?? [];
+    $tabCounts = [];
+    foreach ($tabsValid as $kT) { $tabCounts[$kT] = (int) ($tabStat[$kT] ?? 0); }
+
+    // Kartu ringkasan di atas daftar: total keseluruhan per status (ikut filter divisi saja, tidak kena pencarian / bulan)
+    $selGlobal = [];
+    foreach ($tabsValid as $kT) { $selGlobal[] = "SUM(CASE WHEN {$kondisiTabPerTab[$kT]} THEN 1 ELSE 0 END) AS {$kT}"; }
+    $sqlTab = "SELECT " . implode(', ', $selGlobal) . ", COUNT(*) AS total
                 FROM order_layanan o
                 LEFT JOIN po_kegiatan p ON p.order_id = o.id" . \PoSchema::bukanSertifikasi('p') . "
-                WHERE o.ketua_pelaksana_id IS NOT NULL" . ($divisi ? " AND o.jenis_layanan_opti = ?" : "");
-    $resTab = $this->safeQuery($sqlTab, $divisi ? [1 => $divisi] : []);
-    $tabStat = $resTab[0] ?? [];
-    $tabCounts = [
-        'masuk'           => (int) ($tabStat['masuk'] ?? 0),
-        'draft'           => (int) ($tabStat['draft'] ?? 0),
-        'terkirim'        => (int) ($tabStat['terkirim'] ?? 0),
-        'disetujui_mitra' => (int) ($tabStat['disetujui_mitra'] ?? 0),
-        'disetujui'       => (int) ($tabStat['disetujui'] ?? 0),
-    ];
+                WHERE o.ketua_pelaksana_id IS NOT NULL" . ($divisi ? " AND o.jenis_layanan_opti = ?" : "") . ($layananFilter !== '' ? " AND 1 = 0" : "");
+    $resGlobal = $this->safeQuery($sqlTab, $divisi ? [1 => $divisi] : []);
+    $gStat = $resGlobal[0] ?? [];
+    $tabGlobal = [];
+    foreach ($tabsValid as $kT) { $tabGlobal[$kT] = (int) ($gStat[$kT] ?? 0); }
+
+    $totalPoSemua = (int) ($gStat['total'] ?? 0);
+    if ($lain !== null) {
+        foreach (['draft', 'terkirim', 'disetujui_mitra', 'disetujui'] as $kTab) {
+            $tabCounts[$kTab] += (int) $lain['counts'][$kTab];
+            $tabGlobal[$kTab] += (int) $lain['counts_semua'][$kTab];
+        }
+        $totalPoSemua += array_sum($lain['counts_semua']);
+    }
 
     $tahunSekarang = (int) date('Y');
 
@@ -688,21 +807,40 @@ $daftarPo = $this->safeQuery($sql, $params);
     $f3->set('q', $q);
     $f3->set('q_url', rawurlencode($q));
     $f3->set('tab_counts', $tabCounts);
-    $f3->set('divisi', $divisi);
+    $f3->set('divisi', $layananFilter !== '' ? $layananFilter : $divisi);
+    $f3->set('peringatan_index', $lain !== null ? $lain['peringatan'] : '');
     $f3->set('bisa_pilih_divisi', $isSuperadmin);
     $f3->set('nama_divisi_tampilan', $namaDivisiTampilan);
     $f3->set('bulan_filter', $bulan);
     $f3->set('tahun_filter', $tahun);
     $f3->set('daftar_tahun', range($tahunSekarang + 1, $tahunSekarang - 4));
     $f3->set('tampilkan_semua', $tampilkanSemua);
+    $f3->set('semua_param', $semuaEksplisit ? '&semua=' . ($semuaGet === '1' ? 1 : 0) : '');
+    $f3->set('bulan_default', (int) date('n'));
+    $f3->set('tahun_default', (int) date('Y'));
     $f3->set('halaman_saat_ini', $halamanSaatIni);
     $f3->set('total_halaman', $totalHalaman);
+    // Daftar nomor halaman ala DataTables: 1 ... (sekitar halaman aktif) ... terakhir. n = 0 berarti titik-titik.
+    $daftarHalaman = [];
+    $tampilHalaman = [];
+    for ($h = 1; $h <= $totalHalaman; $h++) {
+        if ($h === 1 || $h === $totalHalaman || abs($h - $halamanSaatIni) <= 1) { $tampilHalaman[] = $h; }
+    }
+    $sebelum = 0;
+    foreach ($tampilHalaman as $h) {
+        if ($sebelum && $h - $sebelum > 1) { $daftarHalaman[] = ['n' => 0, 'aktif' => false]; }
+        $daftarHalaman[] = ['n' => $h, 'aktif' => ($h === $halamanSaatIni)];
+        $sebelum = $h;
+    }
+    $f3->set('daftar_halaman', $daftarHalaman);
+    $f3->set('baris_awal', $totalBaris > 0 ? $offset + 1 : 0);
+    $f3->set('baris_akhir', $totalBaris > 0 ? $offset + count($daftarPo) : 0);
     $f3->set('total_baris', $totalBaris);
-    $f3->set('total_po', (int) ($tabStat['total'] ?? 0));
+    $f3->set('total_po', $totalPoSemua);
     // Angka 4 kartu ringkasan di atas daftar (ikut filter divisi, gak kena filter bulan)
-    $f3->set('total_perlu_tindakan', $tabCounts['masuk'] + $tabCounts['draft']);
-    $f3->set('total_berjalan',       $tabCounts['terkirim'] + $tabCounts['disetujui_mitra']);
-    $f3->set('total_disetujui',      $tabCounts['disetujui']);
+    $f3->set('total_perlu_tindakan', $tabGlobal['masuk'] + $tabGlobal['draft']);
+    $f3->set('total_berjalan',       $tabGlobal['terkirim'] + $tabGlobal['disetujui_mitra']);
+    $f3->set('total_disetujui',      $tabGlobal['disetujui']);
     $f3->set('bisa_tambah_po', $role !== 'ketua_tim');
     $f3->set('tombol_tambah_atas', !in_array($divisi, ['selulosa', 'lingkungan'], true));
 
@@ -807,9 +945,10 @@ $this->render('katim_kerja/po-kegiatan/pilih_jenis.html', 'Buat Petunjuk Operasi
         $existing = new PoKegiatan($this->db);
         $existing->load(['order_id = ?' . \PoSchema::bukanSertifikasi(''), $orderId]);
         if (!$existing->dry()) {
-            $f3->reroute('/po-kegiatan/' . $existing->id . '/edit');
+            $f3->reroute('/po-kegiatan/' . $existing->id . '/edit' . ((string) $f3->get('GET.dari') === 'order' ? '?embed=1&dari=order' : ''));
             return;
         }
+        $f3->set('dari', ((string) $f3->get('GET.dari') === 'order') ? 'order' : '');   // dari Tahap 8 detail order (form tertanam di iframe)
         $tahunSekarang = (int) date('Y');
     $daftarTahun = [];
     for ($i = 0; $i < 5; $i++) { $daftarTahun[] = $tahunSekarang - $i; }
@@ -963,16 +1102,30 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
         // [FIX] Dibawa dari query string (?dari=daftar) pas link edit-nya datang dari
         // halaman "Daftar Review PO"/"Diskusi PO" -- disimpan di hidden field form biar
         // kebawa lagi pas submit, jadi update() tau harus reroute balik ke mana.
-        $dariValid = ['daftar', 'ppk'];
+        $dariValid = ['daftar', 'ppk', 'order'];
         $dari = (string) $f3->get('GET.dari');
         $f3->set('dari', in_array($dari, $dariValid, true) ? $dari : '');
 
         $this->render('katim_kerja/po-kegiatan/form.html', 'Edit Petunjuk Operasional', 'po_kegiatan');
     }
 
+    /**
+     * Tujuan sesudah simpan / kirim saat form PO tertanam di Tahap 8 detail order (hidden field dari = order):
+     * PO terkirim -> detail order (halaman induk), draft -> tetap di form tertanam, belum tersimpan -> form baru tertanam.
+     */
+    protected function tujuanDariOrder($orderId, $poId, $status) {
+        if ($poId > 0 && (string) $status !== '' && (string) $status !== 'draft') { return '/order/' . (int) $orderId; }
+        if ($poId > 0) { return '/po-kegiatan/' . (int) $poId . '/edit?embed=1&dari=order'; }
+        return '/po-kegiatan/buat?order_id=' . (int) $orderId . '&embed=1&dari=order';
+    }
+
     /** POST /po-kegiatan/simpan */
     public function store($f3) {
+        $this->siapkanBalasanJson($f3);
         $this->requireAuth();
+        $tabTujuan = '';
+        $idBaru = 0;
+        $statusBaru = '';
 
         try {
             $po = new PoKegiatan($this->db);
@@ -997,6 +1150,11 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
             $this->setFlashSuccess($f3->get('POST.aksi') === 'kirim'
                 ? 'PO berhasil dibuat dan dikirim.'
                 : 'PO berhasil disimpan sebagai draft.');
+            $this->berhasilAjax = true;
+            $this->nomorAjax = (string) $po->nomor_po;
+            $tabTujuan = ((string) $po->status === 'terkirim') ? 'terkirim' : 'draft';
+            $idBaru = (int) $po->id;
+            $statusBaru = (string) $po->status;
         } catch (\Exception $e) {
             $this->lepasNomorBaru();
             // [DEBUG-SEMENTARA] Nyatet detail lengkap pas gagal simpan PO -- POST
@@ -1015,7 +1173,12 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
             $this->setFlashError('Gagal menyimpan PO: ' . $e->getMessage());
         }
 
-        $f3->reroute($this->urlDaftarPoDariOrder((int) $f3->get('POST.order_id')));
+        if ((string) $f3->get('POST.dari') === 'order') {
+            $f3->reroute($this->tujuanDariOrder((int) $f3->get('POST.order_id'), $idBaru, $statusBaru));
+            return;
+        }
+        $tujuan = $this->urlDaftarPoDariOrder((int) $f3->get('POST.order_id'));
+        $f3->reroute($tabTujuan !== '' ? $this->denganTab($tujuan, $tabTujuan) : $tujuan);
     }
 
     /** POST /po-kegiatan/@id/update */
@@ -1029,6 +1192,7 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
                 && strtolower((string) (isset($_SERVER['HTTP_X_REQUESTED_WITH']) ? $_SERVER['HTTP_X_REQUESTED_WITH'] : '')) === 'xmlhttprequest';
             $berhasilSimpan = false;
             $galatSimpan = '';
+            if (!$ajaxKirim) { $this->siapkanBalasanJson($f3); }
     
             $po = new PoKegiatan($this->db);
             $po->load(['id = ?', (int) $params['id']]);
@@ -1105,6 +1269,8 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
                 }
     
                 $berhasilSimpan = true;
+                $this->berhasilAjax = true;
+                $this->nomorAjax = (string) $po->nomor_po;
                 if ($ajaxKirim) {
                     // flash tidak dipasang: halaman tujuan sesudah kirim tidak perlu pesan "tandai catatan"
                 } elseif ($konteksRevisi === 'katim') {
@@ -1131,6 +1297,10 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
             // [FIX] Kalau edit ini datang dari halaman "Daftar Review PO"/"Diskusi PO"
             // (hidden field 'dari' = 'daftar'), reroute balik ke situ -- bukan ke daftar PO
             // per-divisi yang biasa.
+            if ((string) $f3->get('POST.dari') === 'order') {
+                $f3->reroute($this->tujuanDariOrder((int) $po->order_id, (int) $po->id, $berhasilSimpan ? (string) $po->status : 'draft'));
+                return;
+            }
             if ((string) $f3->get('POST.dari') === 'daftar') {
                 $f3->reroute('/po-kegiatan/daftar');
                 return;
@@ -1151,7 +1321,9 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
                 return;
             }
     
-            $f3->reroute($this->urlDaftarPoDariOrder((int) $f3->get('POST.order_id')));
+            $tujuanDaftar = $this->urlDaftarPoDariOrder((int) $f3->get('POST.order_id'));
+            if ($berhasilSimpan) { $tujuanDaftar = $this->denganTab($tujuanDaftar, ((string) $po->status === 'terkirim') ? 'terkirim' : 'draft'); }
+            $f3->reroute($tujuanDaftar);
         }
 
     /** Balasan JSON untuk "Simpan dan kirim" (lihat update()). Mengakhiri request. */

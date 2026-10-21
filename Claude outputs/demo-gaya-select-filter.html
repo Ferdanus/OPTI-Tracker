@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pilihan gaya select filter</title>
+<style>
+  :root { --pri: #334155; --pri-soft: #f1f5f9; --line: #e2e8f0; --txt: #0f172a; --mut: #64748b; --acc: #2563eb; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 28px 20px 60px; background: #f8fafc; color: var(--txt); font: 14px/1.5 "Segoe UI", system-ui, -apple-system, sans-serif; }
+  h1 { font-size: 1.15rem; margin: 0 0 4px; }
+  p.sub { margin: 0 0 22px; color: var(--mut); font-size: .86rem; }
+  .opt { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px 18px; margin-bottom: 18px; box-shadow: 0 1px 3px rgba(15,23,42,.05); }
+  .opt h2 { font-size: .92rem; margin: 0 0 2px; display: flex; align-items: center; gap: 8px; }
+  .opt h2 .tag { background: var(--pri); color: #fff; border-radius: 99px; font-size: .7rem; padding: 1px 9px; }
+  .opt .ket { color: var(--mut); font-size: .8rem; margin: 0 0 12px; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .search { flex: 1; min-width: 200px; display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: 10px; padding: 0 12px; height: 40px; background: #fff; color: var(--mut); }
+  .search input { border: 0; outline: 0; flex: 1; font: inherit; color: var(--txt); background: transparent; }
+  .sw { display: inline-flex; align-items: center; gap: 8px; color: var(--mut); font-size: .82rem; }
+  .sw i { width: 34px; height: 20px; border-radius: 99px; background: #cbd5e1; position: relative; display: inline-block; }
+  .sw i::after { content: ""; position: absolute; left: 2px; top: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.25); }
+
+  /* shared native-select reset */
+  select { font: inherit; color: var(--txt); appearance: none; -webkit-appearance: none; outline: 0; cursor: pointer; }
+  .chev { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='M3 6l5 5 5-5'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; }
+
+  /* A. Ikon di depan */
+  .a { display: inline-flex; align-items: stretch; height: 40px; border: 1px solid var(--line); border-radius: 10px; background: #fff; overflow: hidden; transition: border-color .15s, box-shadow .15s; }
+  .a:hover { border-color: #cbd5e1; }
+  .a:focus-within { border-color: var(--pri); box-shadow: 0 0 0 3px rgba(51,65,85,.12); }
+  .a .ic { width: 38px; display: grid; place-items: center; background: var(--pri-soft); color: var(--pri); border-right: 1px solid var(--line); }
+  .a select { border: 0; background-color: transparent; padding: 0 34px 0 12px; font-weight: 600; }
+  .a.divisi select { min-width: 170px; } .a.bulan select { min-width: 140px; } .a.tahun select { min-width: 120px; }
+
+  /* B. Pill */
+  .b select { height: 40px; border: 1px solid var(--line); border-radius: 99px; background-color: var(--pri-soft); padding: 0 38px 0 18px; font-weight: 600; transition: all .15s; }
+  .b select:hover { background-color: #e8eef5; }
+  .b select:focus { border-color: var(--pri); background-color: #fff; box-shadow: 0 0 0 3px rgba(51,65,85,.12); }
+  .b.divisi select { min-width: 170px; } .b.bulan select { min-width: 140px; } .b.tahun select { min-width: 120px; }
+
+  /* C. Label kecil di atas */
+  .c { position: relative; }
+  .c label { position: absolute; top: 5px; left: 13px; font-size: .62rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--mut); pointer-events: none; }
+  .c select { height: 46px; padding: 17px 36px 0 12px; border: 1px solid var(--line); border-radius: 10px; background-color: #fff; font-weight: 600; transition: all .15s; }
+  .c select:hover { border-color: #cbd5e1; }
+  .c select:focus { border-color: var(--acc); box-shadow: 0 0 0 3px rgba(37,99,235,.14); }
+  .c.divisi select { min-width: 170px; } .c.bulan select { min-width: 140px; } .c.tahun select { min-width: 120px; }
+
+  /* D. Gelap (slate) */
+  .d select { height: 40px; border: 0; border-radius: 10px; background-color: #1e293b; color: #f1f5f9; padding: 0 38px 0 16px; font-weight: 600; transition: all .15s;
+              background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23cbd5e1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='M3 6l5 5 5-5'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; }
+  .d select:hover { background-color: #263548; }
+  .d select:focus { box-shadow: 0 0 0 3px rgba(148,163,184,.35); }
+  .d.divisi select { min-width: 170px; } .d.bulan select { min-width: 140px; } .d.tahun select { min-width: 120px; }
+
+  /* E. Garis bawah minimal */
+  .e select { height: 40px; border: 0; border-bottom: 2px solid var(--line); border-radius: 0; background-color: transparent; padding: 0 30px 0 4px; font-weight: 600; transition: border-color .15s; background-position: right 4px center; }
+  .e select:hover { border-bottom-color: #94a3b8; }
+  .e select:focus { border-bottom-color: var(--pri); }
+  .e.divisi select { min-width: 160px; } .e.bulan select { min-width: 130px; } .e.tahun select { min-width: 110px; }
+</style>
+</head>
+<body>
+<h1>Pilihan gaya select untuk baris filter</h1>
+<p class="sub">Semua pilihan sudah dengan kotak Tahun yang lebih lebar. Klik tiap select untuk lihat hover dan fokusnya, lalu sebut huruf yang kamu suka.</p>
+
+<!-- A -->
+<section class="opt">
+  <h2><span class="tag">A</span> Ikon di depan</h2>
+  <p class="ket">Kotak putih dengan ikon di sisi kiri, mirip filter di halaman PPK BLU. Rapi dan paling mudah dibaca.</p>
+  <div class="row">
+    <div class="search"><span>&#128269;</span><input placeholder="Cari no. order, no. PO, mitra, atau judul"></div>
+    <div class="a divisi"><span class="ic">&#9638;</span><select class="chev"><option>Semua Divisi</option><option>Selulosa</option><option>Lingkungan</option><option>Sertifikasi</option><option>Pengujian</option></select></div>
+    <div class="a bulan"><span class="ic">&#128197;</span><select class="chev"><option>Januari</option><option>Februari</option><option>Maret</option><option>April</option><option>Mei</option><option>Juni</option><option>Juli</option><option>Agustus</option><option>September</option><option selected>Oktober</option><option>November</option><option>Desember</option></select></div>
+    <div class="a tahun"><span class="ic">&#128336;</span><select class="chev"><option>2027</option><option selected>2026</option><option>2025</option><option>2024</option></select></div>
+    <span class="sw"><i></i> Tampilkan semua data</span>
+  </div>
+</section>
+
+<!-- B -->
+<section class="opt">
+  <h2><span class="tag">B</span> Pill lembut</h2>
+  <p class="ket">Bentuk bulat penuh dengan latar abu muda, cocok dengan tab pill di bawahnya.</p>
+  <div class="row">
+    <div class="search"><span>&#128269;</span><input placeholder="Cari no. order, no. PO, mitra, atau judul"></div>
+    <div class="b divisi"><select class="chev"><option>Semua Divisi</option><option>Selulosa</option><option>Lingkungan</option><option>Sertifikasi</option><option>Pengujian</option></select></div>
+    <div class="b bulan"><select class="chev"><option>Januari</option><option>Februari</option><option>Maret</option><option>April</option><option>Mei</option><option>Juni</option><option>Juli</option><option>Agustus</option><option>September</option><option selected>Oktober</option><option>November</option><option>Desember</option></select></div>
+    <div class="b tahun"><select class="chev"><option>2027</option><option selected>2026</option><option>2025</option><option>2024</option></select></div>
+    <span class="sw"><i></i> Tampilkan semua data</span>
+  </div>
+</section>
+
+<!-- C -->
+<section class="opt">
+  <h2><span class="tag">C</span> Label kecil di atas</h2>
+  <p class="ket">Tiap select punya judul mungil (DIVISI, BULAN, TAHUN) di dalam kotak, jadi jelas fungsinya tanpa ikon. Sedikit lebih tinggi.</p>
+  <div class="row">
+    <div class="search" style="height:46px"><span>&#128269;</span><input placeholder="Cari no. order, no. PO, mitra, atau judul"></div>
+    <div class="c divisi"><label>Divisi</label><select class="chev"><option>Semua Divisi</option><option>Selulosa</option><option>Lingkungan</option><option>Sertifikasi</option><option>Pengujian</option></select></div>
+    <div class="c bulan"><label>Bulan</label><select class="chev"><option>Januari</option><option>Februari</option><option>Maret</option><option>April</option><option>Mei</option><option>Juni</option><option>Juli</option><option>Agustus</option><option>September</option><option selected>Oktober</option><option>November</option><option>Desember</option></select></div>
+    <div class="c tahun"><label>Tahun</label><select class="chev"><option>2027</option><option selected>2026</option><option>2025</option><option>2024</option></select></div>
+    <span class="sw"><i></i> Tampilkan semua data</span>
+  </div>
+</section>
+
+<!-- D -->
+<section class="opt">
+  <h2><span class="tag">D</span> Slate gelap</h2>
+  <p class="ket">Kotak gelap senada sidebar dan tab aktif. Paling menonjol, tapi kontras kalau halamannya terang.</p>
+  <div class="row">
+    <div class="search"><span>&#128269;</span><input placeholder="Cari no. order, no. PO, mitra, atau judul"></div>
+    <div class="d divisi"><select><option>Semua Divisi</option><option>Selulosa</option><option>Lingkungan</option><option>Sertifikasi</option><option>Pengujian</option></select></div>
+    <div class="d bulan"><select><option>Januari</option><option>Februari</option><option>Maret</option><option>April</option><option>Mei</option><option>Juni</option><option>Juli</option><option>Agustus</option><option>September</option><option selected>Oktober</option><option>November</option><option>Desember</option></select></div>
+    <div class="d tahun"><select><option>2027</option><option selected>2026</option><option>2025</option><option>2024</option></select></div>
+    <span class="sw"><i></i> Tampilkan semua data</span>
+  </div>
+</section>
+
+<!-- E -->
+<section class="opt">
+  <h2><span class="tag">E</span> Garis bawah minimal</h2>
+  <p class="ket">Tanpa kotak, hanya garis di bawah. Paling hemat tempat dan bersih.</p>
+  <div class="row">
+    <div class="search"><span>&#128269;</span><input placeholder="Cari no. order, no. PO, mitra, atau judul"></div>
+    <div class="e divisi"><select class="chev"><option>Semua Divisi</option><option>Selulosa</option><option>Lingkungan</option><option>Sertifikasi</option><option>Pengujian</option></select></div>
+    <div class="e bulan"><select class="chev"><option>Januari</option><option>Februari</option><option>Maret</option><option>April</option><option>Mei</option><option>Juni</option><option>Juli</option><option>Agustus</option><option>September</option><option selected>Oktober</option><option>November</option><option>Desember</option></select></div>
+    <div class="e tahun"><select class="chev"><option>2027</option><option selected>2026</option><option>2025</option><option>2024</option></select></div>
+    <span class="sw"><i></i> Tampilkan semua data</span>
+  </div>
+</section>
+</body>
+</html>

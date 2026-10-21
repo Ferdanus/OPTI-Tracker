@@ -10,7 +10,7 @@
                 <i class="bi bi-chat-left-dots me-1"></i> Ruang Review &amp; Diskusi
             </a>
             <check if="{{ @bisa_tambah_po && @tombol_tambah_atas }}">
-                <a href="{{ @BASE }}/po-kegiatan/pilih?jenis=opti" class="btn btn-primary shadow-sm">
+                <a href="{{ @BASE }}/po-kegiatan/pilih{{ !@bisa_pilih_divisi ? '?jenis=opti' : (@divisi == 'sertifikasi' || @divisi == 'pengujian' ? '?jenis=' . @divisi : (@divisi ? '?jenis=opti&divisi=' . @divisi : '')) }}" class="btn btn-primary shadow-sm">
                     <i class="bi bi-plus-lg me-1"></i> Tambah PO Baru
                 </a>
             </check>
@@ -76,23 +76,25 @@
     <!-- ======================================================== -->
     <div class="card border-0 shadow-sm mb-3">
         <div class="card-body p-3">
-            <form method="get" action="{{ @BASE }}/po-kegiatan" id="formFilterPo" autocomplete="off">
+            <form method="get" action="{{ @BASE }}/po-kegiatan" id="formFilterPo" autocomplete="off" data-bulan-default="{{ @bulan_default }}" data-tahun-default="{{ @tahun_default }}">
                 <input type="hidden" name="tab" id="poTabInput" value="{{ @tab_aktif }}">
                 <input type="hidden" name="semua" value="0">
                 <div class="row g-2 align-items-center">
                     <div class="col-12 col-lg flex-grow-1">
-                        <div class="input-group input-group-sm">
+                        <div class="input-group">
                             <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-search"></i></span>
                             <input type="search" name="q" id="poSearch" class="form-control border-start-0 ps-0" placeholder="Cari no. order, no. PO, mitra, atau judul kegiatan" aria-label="Cari PO" value="{{ @q }}">
                         </div>
                     </div>
                     <check if="{{ @bisa_pilih_divisi }}">
                         <div class="col-12 col-sm-auto d-flex justify-content-sm-end">
-                            <div class="dpx-pill-group" role="radiogroup" aria-label="Filter Divisi">
-                                <label class="dpx-pill"><input type="radio" name="divisi" value="" {{ !@divisi ? 'checked' : '' }}><span>Semua</span></label>
-                                <label class="dpx-pill"><input type="radio" name="divisi" value="selulosa" {{ @divisi == 'selulosa' ? 'checked' : '' }}><span>Selulosa</span></label>
-                                <label class="dpx-pill"><input type="radio" name="divisi" value="lingkungan" {{ @divisi == 'lingkungan' ? 'checked' : '' }}><span>Lingkungan</span></label>
-                            </div>
+                            <div class="sel-a"><span class="sel-a-ic"><i class="bi bi-grid"></i></span><select name="divisi" class="sel-a-select" aria-label="Filter Divisi">
+                                <option value="" {{ !@divisi ? 'selected' : '' }}>Semua Divisi</option>
+                                <option value="selulosa" {{ @divisi == 'selulosa' ? 'selected' : '' }}>Selulosa</option>
+                                <option value="lingkungan" {{ @divisi == 'lingkungan' ? 'selected' : '' }}>Lingkungan</option>
+                                <option value="sertifikasi" {{ @divisi == 'sertifikasi' ? 'selected' : '' }}>Sertifikasi</option>
+                                <option value="pengujian" {{ @divisi == 'pengujian' ? 'selected' : '' }}>Pengujian</option>
+                            </select></div>
                         </div>
                     </check>
                     <check if="{{ !@bisa_pilih_divisi }}">
@@ -102,7 +104,7 @@
                         </div>
                     </check>
                     <div class="col-6 col-sm-auto">
-                        <select name="bulan" class="form-select form-select-sm" aria-label="Bulan">
+                        <div class="sel-a"><span class="sel-a-ic"><i class="bi bi-calendar3"></i></span><select name="bulan" class="sel-a-select" aria-label="Bulan">
                     <option value="1" {{ @bulan_filter == 1 ? 'selected' : '' }}>Januari</option>
                     <option value="2" {{ @bulan_filter == 2 ? 'selected' : '' }}>Februari</option>
                     <option value="3" {{ @bulan_filter == 3 ? 'selected' : '' }}>Maret</option>
@@ -115,20 +117,23 @@
                     <option value="10" {{ @bulan_filter == 10 ? 'selected' : '' }}>Oktober</option>
                     <option value="11" {{ @bulan_filter == 11 ? 'selected' : '' }}>November</option>
                     <option value="12" {{ @bulan_filter == 12 ? 'selected' : '' }}>Desember</option>
-                </select>
+                </select></div>
                     </div>
                     <div class="col-6 col-sm-auto">
-                        <select name="tahun" class="form-select form-select-sm" aria-label="Tahun">
+                        <div class="sel-a"><span class="sel-a-ic"><i class="bi bi-clock-history"></i></span><select name="tahun" class="sel-a-select" aria-label="Tahun">
                     <repeat group="{{ @daftar_tahun }}" value="{{ @y }}">
                         <option value="{{ @y }}" {{ @tahun_filter == @y ? 'selected' : '' }}>{{ @y }}</option>
                     </repeat>
-                </select>
+                </select></div>
                     </div>
                     <div class="col-12 col-sm-auto">
                         <div class="form-check form-switch mb-0">
                             <input class="form-check-input" type="checkbox" role="switch" value="1" id="chkSemuaPo" name="semua" {{ @tampilkan_semua ? 'checked' : '' }}>
                             <label class="form-check-label small" for="chkSemuaPo">Tampilkan semua data</label>
                         </div>
+                    </div>
+                    <div class="col-auto">
+                        <button type="button" id="btnResetFilter" class="btn-reset-filter d-none" title="Reset filter" aria-label="Reset filter"><i class="bi bi-arrow-counterclockwise"></i></button>
                     </div>
                 </div>
             </form>
@@ -141,15 +146,18 @@
     <div class="card border-0 shadow-sm overflow-hidden mb-4">
         <div class="filter-tabs-wrapper">
             <div class="d-flex align-items-center gap-2 flex-wrap" id="poTabs">
-                <a class="po-tab filter-tab-pill {{ @tab_aktif == 'masuk' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=masuk&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}"><i class="bi bi-inbox"></i>PO Masuk <span class="count-chip chip-danger">{{ @tab_counts.masuk ?: 0 }}</span></a>
-                <a class="po-tab filter-tab-pill {{ @tab_aktif == 'draft' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=draft&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}"><i class="bi bi-pencil-square"></i>Draft <span class="count-chip">{{ @tab_counts.draft ?: 0 }}</span></a>
-                <a class="po-tab filter-tab-pill {{ @tab_aktif == 'terkirim' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=terkirim&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}"><i class="bi bi-send-check"></i>Terkirim <span class="count-chip">{{ @tab_counts.terkirim ?: 0 }}</span></a>
-                <a class="po-tab filter-tab-pill {{ @tab_aktif == 'disetujui_mitra' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=disetujui_mitra&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}"><i class="bi bi-patch-check"></i>Disetujui Mitra <span class="count-chip">{{ @tab_counts.disetujui_mitra ?: 0 }}</span></a>
-                <a class="po-tab filter-tab-pill {{ @tab_aktif == 'disetujui' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=disetujui&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}"><i class="bi bi-check2-circle"></i>Disetujui Keuangan (Final) <span class="count-chip">{{ @tab_counts.disetujui ?: 0 }}</span></a>
+                <a class="po-tab filter-tab-pill {{ @tab_aktif == 'masuk' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=masuk&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}"><i class="bi bi-inbox"></i>PO Masuk <span class="count-chip chip-danger">{{ @tab_counts.masuk ?: 0 }}</span></a>
+                <a class="po-tab filter-tab-pill {{ @tab_aktif == 'draft' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=draft&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}"><i class="bi bi-pencil-square"></i>Draft <span class="count-chip">{{ @tab_counts.draft ?: 0 }}</span></a>
+                <a class="po-tab filter-tab-pill {{ @tab_aktif == 'terkirim' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=terkirim&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}"><i class="bi bi-send-check"></i>Terkirim <span class="count-chip">{{ @tab_counts.terkirim ?: 0 }}</span></a>
+                <a class="po-tab filter-tab-pill {{ @tab_aktif == 'disetujui_mitra' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=disetujui_mitra&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}"><i class="bi bi-patch-check"></i>Disetujui Mitra <span class="count-chip">{{ @tab_counts.disetujui_mitra ?: 0 }}</span></a>
+                <a class="po-tab filter-tab-pill {{ @tab_aktif == 'disetujui' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=disetujui&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}"><i class="bi bi-check2-circle"></i>Disetujui PPK BLU (Final) <span class="count-chip">{{ @tab_counts.disetujui ?: 0 }}</span></a>
             </div>
         </div>
 
         <div id="poTable">
+            <check if="{{ @peringatan_index }}">
+                <div class="alert alert-warning small mb-0 rounded-0 border-0 border-bottom"><i class="bi bi-exclamation-triangle me-1"></i>{{ @peringatan_index }}</div>
+            </check>
             <check if="{{ @daftar_po && count(@daftar_po) > 0 }}">
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
@@ -167,6 +175,63 @@
                         </thead>
                         <tbody>
                             <repeat group="{{ @daftar_po }}" value="{{ @p }}">
+                                <check if="{{ @p.sumber == 'layanan' }}">
+                                <tr>
+                                    <td class="text-center text-muted small fw-semibold">{{ @p.no_urut }}</td>
+                                    <td>
+                                        <check if="{{ @p.url_lihat }}">
+                                            <a href="{{ @p.url_lihat }}" class="fw-bold text-primary text-decoration-none d-block text-truncate" style="max-width: 180px;" title="{{ @p.nomor_po }}">{{ @p.nomor_po ?: '(belum bernomor)' }}</a>
+                                        </check>
+                                        <check if="{{ !@p.url_lihat }}">
+                                            <span class="fw-bold text-dark d-block text-truncate" style="max-width: 180px;" title="{{ @p.nomor_po }}">{{ @p.nomor_po ?: '(belum bernomor)' }}</span>
+                                        </check>
+                                        <div class="text-muted small d-flex align-items-center gap-1" style="font-size: 0.73rem;"><i class="bi bi-calendar3"></i><span>{{ @p.tanggal_po }}</span></div>
+                                        <check if="{{ @p.dibuat_beda }}">
+                                            <div class="text-muted small d-flex align-items-center gap-1" style="font-size: 0.73rem;"><i class="bi bi-pencil-square"></i><span>{{ @p.dibuat_beda }}</span></div>
+                                        </check>
+                                    </td>
+                                    <td><span class="fw-semibold text-dark">{{ @p.nomor_order ?: '-' }}</span></td>
+                                    <td>
+                                        <div class="fw-semibold text-dark mb-0.5" style="font-size: 0.84rem;">{{ @p.nama_mitra ?: '-' }}</div>
+                                        <check if="{{ @p.jenis }}">
+                                            <div class="text-muted small d-flex align-items-center gap-1" style="font-size: 0.75rem;"><i class="bi bi-tag text-secondary"></i><span>Jenis: {{ @p.jenis }}</span></div>
+                                        </check>
+                                    </td>
+                                    <td><span class="badge badge-pill-primary rounded-pill">{{ @p.layanan_label }}</span></td>
+                                    <td>
+                                        <div class="text-dark small text-truncate-2" style="font-size: 0.82rem; line-height: 1.35; max-width: 280px;" title="{{ @p.judul_kegiatan }}">{{ @p.judul_kegiatan ?: '-' }}</div>
+                                    </td>
+                                    <td class="text-center">
+                                        <check if="{{ @p.po_status == 'draft' }}"><span class="status-pill status-pill-slate"><i class="bi bi-pencil-square"></i> Draft PO</span></check>
+                                        <check if="{{ @p.po_status == 'terkirim' }}"><span class="status-pill status-pill-blue"><i class="bi bi-send-check"></i> Terkirim</span></check>
+                                        <check if="{{ @p.po_status == 'disetujui_mitra' }}"><span class="status-pill status-pill-emerald"><i class="bi bi-patch-check"></i> Disetujui Mitra</span></check>
+                                        <check if="{{ @p.po_status == 'disetujui' }}"><span class="status-pill status-pill-emerald"><i class="bi bi-check-circle-fill"></i> Disetujui PPK BLU</span></check>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="d-inline-flex gap-1 align-items-center">
+                                            <check if="{{ @p.url_lihat && @p.layanan == 'pengujian' }}">
+                                                <button type="button" class="btn btn-sm btn-outline-primary py-1 px-2" title="Lihat Pratinjau PO" data-po-pengujian="{{ @p.po_id }}" data-status="{{ @p.po_status }}" data-edit="{{ @p.url_edit }}"><i class="bi bi-eye"></i></button>
+                                            </check>
+                                            <check if="{{ @p.url_lihat && @p.layanan == 'sertifikasi' }}">
+                                                <button type="button" class="btn btn-sm btn-outline-primary py-1 px-2" title="Lihat Pratinjau PO" data-po-sertifikasi="{{ @p.po_id }}" data-lihat="{{ @p.url_lihat }}"><i class="bi bi-eye"></i></button>
+                                            </check>
+                                            <check if="{{ @p.url_lihat && @p.layanan != 'pengujian' && @p.layanan != 'sertifikasi' }}">
+                                                <a href="{{ @p.url_lihat }}" class="btn btn-sm btn-outline-primary py-1 px-2" title="Lihat Pratinjau PO"><i class="bi bi-eye"></i></a>
+                                            </check>
+                                            <check if="{{ @p.url_edit && @p.po_status == 'draft' }}">
+                                                <a href="{{ @p.url_edit }}" class="btn btn-sm btn-outline-secondary py-1 px-2" title="Edit Dokumen PO"><i class="bi bi-pencil"></i></a>
+                                            </check>
+                                            <check if="{{ @p.layanan == 'pengujian' && @p.po_id }}">
+                                                <a href="{{ @BASE }}/petunjuk-operasional/pengujian/{{ @p.po_id }}/cetak" target="_blank" rel="noopener" class="btn btn-sm btn-outline-dark py-1 px-2" title="Cetak / Download PDF"><i class="bi bi-file-earmark-pdf"></i></a>
+                                            </check>
+                                            <check if="{{ !@p.url_lihat }}">
+                                                <span class="text-muted small">Segera</span>
+                                            </check>
+                                        </div>
+                                    </td>
+                                </tr>
+                                </check>
+                                <check if="{{ @p.sumber != 'layanan' }}">
                                 <tr>
                                     <td class="text-center text-muted small fw-semibold">{{ @p.no_urut }}</td>
                                     <td>
@@ -200,7 +265,7 @@
                                         <check if="{{ @p.po_id && @p.po_status == 'terkirim' && @p.status_review == 'revisi' }}"><span class="status-pill status-pill-rose"><i class="bi bi-arrow-repeat"></i> Perlu Revisi</span></check>
                                         <check if="{{ @p.po_id && @p.po_status == 'terkirim' && @p.status_review != 'revisi' }}"><span class="status-pill status-pill-blue"><i class="bi bi-send-check"></i> Terkirim</span></check>
                                         <check if="{{ @p.po_id && @p.po_status == 'disetujui_mitra' }}"><span class="status-pill status-pill-emerald"><i class="bi bi-patch-check"></i> Disetujui Mitra</span></check>
-                                        <check if="{{ @p.po_id && @p.po_status == 'disetujui' }}"><span class="status-pill status-pill-emerald"><i class="bi bi-check-circle-fill"></i> Disetujui</span></check>
+                                        <check if="{{ @p.po_id && @p.po_status == 'disetujui' }}"><span class="status-pill status-pill-emerald"><i class="bi bi-check-circle-fill"></i> Disetujui PPK BLU</span></check>
                                     </td>
                                     <td class="text-center">
                                         <div class="d-inline-flex gap-1 align-items-center">
@@ -220,6 +285,7 @@
                                         </div>
                                     </td>
                                 </tr>
+                                </check>
                             </repeat>
                         </tbody>
                     </table>
@@ -235,22 +301,39 @@
                 </div>
             </check>
 
-            <div class="card-footer bg-white py-2 px-3 border-top d-flex justify-content-between align-items-center flex-wrap gap-2 text-muted small">
-                <div>Menampilkan <span class="fw-bold text-dark">{{ is_array(@daftar_po) ? count(@daftar_po) : 0 }}</span> dari <span class="fw-bold text-dark">{{ @total_baris ?: 0 }}</span> total dokumen</div>
-                <check if="{{ @total_halaman > 1 }}">
-                    <div class="dpx-pager">
-                        <span class="text-muted small">Halaman <b>{{ @halaman_saat_ini }}</b> dari <b>{{ @total_halaman }}</b> ({{ @total_baris }} data)</span>
-                        <ul class="pagination pagination-sm mb-0">
-                            <li class="page-item {{ @halaman_saat_ini <= 1 ? 'disabled' : '' }}">
-                                <a class="page-link" href="{{ @BASE }}/po-kegiatan?tab={{ @tab_aktif }}&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;semua={{ @tampilkan_semua ? 1 : 0 }}&amp;q={{ @q_url }}&amp;page={{ @halaman_saat_ini - 1 }}">&laquo; Sebelumnya</a>
-                            </li>
-                            <li class="page-item disabled"><span class="page-link">{{ @halaman_saat_ini }} / {{ @total_halaman }}</span></li>
-                            <li class="page-item {{ @halaman_saat_ini >= @total_halaman ? 'disabled' : '' }}">
-                                <a class="page-link" href="{{ @BASE }}/po-kegiatan?tab={{ @tab_aktif }}&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;semua={{ @tampilkan_semua ? 1 : 0 }}&amp;q={{ @q_url }}&amp;page={{ @halaman_saat_ini + 1 }}">Berikutnya &raquo;</a>
-                            </li>
-                        </ul>
+            <div class="card-footer bg-white border-top px-3 py-3 d-flex flex-column flex-sm-row align-items-center justify-content-between gap-2 dpo-pager-container">
+                <div class="small text-muted d-flex align-items-center gap-1">
+                    <i class="bi bi-layers-half text-secondary opacity-75"></i>
+                    <span>Menampilkan <strong>{{ @baris_awal }} - {{ @baris_akhir }}</strong> dari <strong>{{ @total_baris ?: 0 }}</strong> dokumen</span>
+                </div>
+                <nav aria-label="Navigasi halaman" class="d-flex align-items-center flex-wrap justify-content-center gap-2">
+                    <ul class="pagination pagination-sm mb-0 align-items-center">
+                        <li class="page-item {{ @halaman_saat_ini <= 1 ? 'disabled' : '' }}">
+                            <a class="page-link shadow-none" href="{{ @BASE }}/po-kegiatan?tab={{ @tab_aktif }}&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}&amp;page={{ @halaman_saat_ini - 1 }}" title="Halaman Sebelumnya">&laquo;</a>
+                        </li>
+                        <repeat group="{{ @daftar_halaman }}" value="{{ @hl }}">
+                            <check if="{{ @hl.n == 0 }}">
+                                <true><li class="page-item disabled"><span class="page-link border-0 text-muted shadow-none bg-transparent">&hellip;</span></li></true>
+                                <false>
+                                    <check if="{{ @hl.aktif }}">
+                                        <true><li class="page-item active" aria-current="page"><span class="page-link shadow-none fw-bold">{{ @hl.n }}</span></li></true>
+                                        <false><li class="page-item"><a class="page-link shadow-none" href="{{ @BASE }}/po-kegiatan?tab={{ @tab_aktif }}&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}&amp;page={{ @hl.n }}">{{ @hl.n }}</a></li></false>
+                                    </check>
+                                </false>
+                            </check>
+                        </repeat>
+                        <li class="page-item {{ @halaman_saat_ini >= @total_halaman ? 'disabled' : '' }}">
+                            <a class="page-link shadow-none" href="{{ @BASE }}/po-kegiatan?tab={{ @tab_aktif }}&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}&amp;page={{ @halaman_saat_ini + 1 }}" title="Halaman Berikutnya">&raquo;</a>
+                        </li>
+                    </ul>
+                    <div class="d-flex align-items-center gap-1 ms-sm-2 ps-sm-2 border-start dpo-jump" data-total="{{ @total_halaman }}" data-url="{{ @BASE }}/po-kegiatan?tab={{ @tab_aktif }}&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}&amp;page=">
+                        <span class="small text-muted" style="font-size: 0.78rem;">Ke Hal:</span>
+                        <div class="input-group input-group-sm" style="width: 105px;">
+                            <input type="number" min="1" max="{{ @total_halaman }}" value="{{ @halaman_saat_ini }}" class="form-control form-control-sm text-center dpo-jump-input shadow-none" style="font-size: 0.78rem; height: 32px; padding: 2px 6px;" placeholder="{{ @halaman_saat_ini }}" aria-label="Nomor halaman">
+                            <button class="btn dpo-jump-go btn-sm px-2 shadow-none d-flex align-items-center justify-content-center" type="button" style="height: 32px; font-size: 0.75rem;" title="Lompat ke halaman"><i class="bi bi-arrow-right-short fs-6"></i></button>
+                        </div>
                     </div>
-                </check>
+                </nav>
             </div>
         </div>
     </div>
@@ -261,6 +344,7 @@
 <div id="poModals">
 <check if="{{ @daftar_po && count(@daftar_po) > 0 }}">
     <repeat group="{{ @daftar_po }}" value="{{ @p }}">
+        <check if="{{ @p.sumber != 'layanan' }}">
         <div class="modal fade" id="modalFile_{{ @p.order_id }}" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered modal-lg">
                 <div class="modal-content dpo-sheet">
@@ -323,10 +407,108 @@
                 </div>
             </div>
         </div>
+        </check>
     </repeat>
 </check>
 </div>
 </div><!-- /dpoRoot -->
+
+<check if="{{ @is_superadmin }}">
+<!-- Modal pratinjau PO Pengujian (ikon mata pada baris layanan Pengujian di Daftar PO gabungan Superadmin) -->
+<div class="modal fade" id="modalPreviewPoPengujian" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header">
+                <h6 class="modal-title fw-bold"><i class="bi bi-clipboard2-data text-primary me-2"></i>Preview Petunjuk Operasional</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0" style="background:#e9ecef;">
+                <div id="modalPoPengujianBody" class="p-3" style="overflow-x:auto;">
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="small text-muted mt-2 mb-0">Memuat PO...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-center gap-2">
+                <a href="#" id="btnEditPoPengujian" class="btn btn-outline-secondary"><i class="bi bi-pencil me-1"></i> Edit</a>
+                <a href="#" id="btnPdfPoPengujian" target="_blank" rel="noopener" class="btn btn-primary"><i class="bi bi-download me-1"></i> Download PDF</a>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+(function () {
+    var BASE_PO = '{{ @BASE }}';
+    document.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-po-pengujian]');
+        if (!b) { return; }
+        var id = b.getAttribute('data-po-pengujian');
+        var body = document.getElementById('modalPoPengujianBody');
+        body.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="small text-muted mt-2 mb-0">Memuat PO...</p></div>';
+        var edit = document.getElementById('btnEditPoPengujian');
+        var url = b.getAttribute('data-edit') || '';
+        edit.href = url || '#';
+        edit.style.display = (b.getAttribute('data-status') === 'draft' && url) ? '' : 'none';
+        document.getElementById('btnPdfPoPengujian').href = BASE_PO + '/petunjuk-operasional/pengujian/' + id + '/cetak';
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalPreviewPoPengujian')).show();
+        fetch(BASE_PO + '/petunjuk-operasional/pengujian/' + id + '/preview', { credentials: 'same-origin' })
+            .then(function (r) { if (!r.ok) { throw new Error('gagal'); } return r.text(); })
+            .then(function (html) { body.innerHTML = html; })
+            .catch(function () { body.innerHTML = '<div class="text-center text-danger py-5">Gagal memuat data PO.</div>'; });
+    });
+})();
+</script>
+</check>
+
+<check if="{{ @is_superadmin }}">
+<!-- Modal pratinjau PO Sertifikasi (ikon mata di Daftar PO): memuat halaman "lihat" di dalam modal, tanpa pindah halaman -->
+<div class="modal fade" id="modalPreviewPoSertifikasi" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="overflow:hidden;">
+            <div class="modal-header">
+                <h6 class="modal-title fw-bold"><i class="bi bi-clipboard2-data text-primary me-2"></i>Preview Petunjuk Operasional</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0" style="background:#e9ecef;position:relative;height:calc(100vh - 140px);min-height:420px;">
+                <div id="modalPoSertifikasiMuat" class="position-absolute top-50 start-50 translate-middle text-center">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="small text-muted mt-2 mb-0">Memuat PO...</p>
+                </div>
+                <iframe id="modalPoSertifikasiFrame" title="Preview PO Sertifikasi" style="width:100%;height:100%;border:0;visibility:hidden;"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+(function () {
+    var el = document.getElementById('modalPreviewPoSertifikasi');
+    var frame = document.getElementById('modalPoSertifikasiFrame');
+    var muat = document.getElementById('modalPoSertifikasiMuat');
+    if (!el || !frame) { return; }
+    var timer = null;
+    function tampil() { clearTimeout(timer); frame.style.visibility = 'visible'; muat.style.display = 'none'; }
+    document.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-po-sertifikasi]');
+        if (!b) { return; }
+        var u = b.getAttribute('data-lihat') || '';
+        if (!u) { return; }
+        frame.style.visibility = 'hidden';
+        muat.style.display = '';
+        clearTimeout(timer);
+        timer = setTimeout(tampil, 9000);   // cadangan bila halaman tidak memberi tanda siap
+        frame.src = u + (u.indexOf('?') > -1 ? '&' : '?') + 'embed=1';
+        bootstrap.Modal.getOrCreateInstance(el).show();
+    });
+    window.addEventListener('message', function (e) {
+        if (e.origin !== window.location.origin || !e.data || !e.data.poPreview) { return; }
+        if (e.data.poPreview === 'siap') { tampil(); }
+        if (e.data.poPreview === 'tutup') { bootstrap.Modal.getOrCreateInstance(el).hide(); }
+    });
+    el.addEventListener('hidden.bs.modal', function () { clearTimeout(timer); frame.src = 'about:blank'; });
+})();
+</script>
+</check>
 
 <!-- ============================================================ -->
 <!-- MODAL PREVIEW PO -->
@@ -496,62 +678,169 @@ function pilihKartuTab(tab) {
 }
 </script>
 <script>
-// ==== Filter & tab realtime (tanpa tombol "Terapkan") ====
+// ==== Filter & tab realtime (tanpa tombol "Terapkan", tanpa reload halaman) ====
 (function () {
     var form = document.getElementById('formFilterPo');
     if (!form) return;
     var timer = null, reqId = 0;
     var REGIONS = ['poMetrics', 'poTabs', 'poTable', 'poModals'];
+    var btnReset = document.getElementById('btnResetFilter');
 
     function urlDariForm() {
         var p = new URLSearchParams(new FormData(form));
         return form.getAttribute('action') + '?' + p.toString();
     }
 
+    // Indikator tipis di atas layar, baru muncul kalau respons lambat (>250 ms). Isi tabel tidak diredupkan / dikunci.
+    var bar = document.createElement('div');
+    bar.id = 'poBar';
+    document.body.appendChild(bar);
+    var barTimer = null;
     function setLoading(on) {
-        var t = document.getElementById('poTable');
-        if (t) { t.style.opacity = on ? '.45' : ''; t.style.pointerEvents = on ? 'none' : ''; }
+        clearTimeout(barTimer);
+        if (on) { barTimer = setTimeout(function () { bar.classList.add('on'); }, 250); }
+        else { bar.classList.remove('on'); }
     }
 
-    function sinkronForm(doc) {
+    // Filter dianggap aktif bila ada yang berbeda dari tampilan awal tab (pencarian, divisi, bulan/tahun, atau "semua data")
+    function filterAktif() {
+        var q = form.elements.q ? String(form.elements.q.value).trim() : '';
+        if (q !== '') return true;
+        var dv = form.elements.divisi;
+        if (dv && dv.tagName === 'SELECT' && dv.value !== '') return true;
+        var tab = form.elements.tab ? form.elements.tab.value : '';
+        var semuaBawaan = (tab === 'masuk' || tab === 'draft');
+        var chk = document.getElementById('chkSemuaPo');
+        var semua = chk ? chk.checked : false;
+        if (semua !== semuaBawaan) return true;
+        if (!semua) {
+            if (String(form.elements.bulan.value) !== String(form.getAttribute('data-bulan-default'))) return true;
+            if (String(form.elements.tahun.value) !== String(form.getAttribute('data-tahun-default'))) return true;
+        }
+        return false;
+    }
+
+    function perbaruiReset() {
+        if (btnReset) { btnReset.classList.toggle('d-none', !filterAktif()); }
+    }
+
+    function sinkronForm(doc, sinkronQ) {
         var f2 = doc.getElementById('formFilterPo');
         if (!f2) return;
         ['tab', 'bulan', 'tahun', 'divisi'].forEach(function (nm) {
             var a = form.elements[nm], b = f2.elements[nm];
             if (a && b && !a.disabled) { a.value = b.value; }
         });
+        if (sinkronQ && form.elements.q && f2.elements.q) { form.elements.q.value = f2.elements.q.value; }   // hanya saat reset, supaya ketikan user tidak tertimpa
         var chk = document.getElementById('chkSemuaPo'), chk2 = doc.getElementById('chkSemuaPo');
         if (chk && chk2) { chk.checked = chk2.checked; }
     }
 
-    function muat(url) {
-        var mine = ++reqId;
-        setLoading(true);
-        fetch(url, { credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+    // ---- Cache + prefetch: tab lain diambil diam-diam di latar belakang, jadi klik tab langsung tampil ----
+    var cache = {}, inflight = {}, prefTimer = null;
+    var UMUR_SEGAR = 20000, UMUR_MAKS = 300000;
+
+    function kunci(u) { try { return new URL(u, window.location.href).href; } catch (e) { return u; } }
+
+    function ambil(url) {
+        var k = kunci(url);
+        if (inflight[k]) return inflight[k];
+        var p = fetch(url, { credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
             .then(function (res) { if (!res.ok) throw new Error('HTTP ' + res.status); return res.text(); })
+            .then(function (html) { cache[k] = { html: html, t: Date.now() }; delete inflight[k]; return html; },
+                  function (err) { delete inflight[k]; throw err; });
+        inflight[k] = p;
+        return p;
+    }
+
+    function terapkan(html, url, opsi) {
+        var doc = new DOMParser().parseFromString(html, 'text/html');
+        REGIONS.forEach(function (id) {
+            var baru = doc.getElementById(id), lama = document.getElementById(id);
+            if (baru && lama) { lama.innerHTML = baru.innerHTML; }
+        });
+        sinkronForm(doc, !!(opsi && opsi.sinkronQ));
+        if (opsi && opsi.gulir) { var tb = document.getElementById('poTabs'); if (tb && tb.scrollIntoView) { tb.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } }
+        try { history.replaceState(null, '', url); } catch (e) {}
+        perbaruiReset();
+    }
+
+    function jadwalkanPrefetch() {
+        clearTimeout(prefTimer);
+        prefTimer = setTimeout(function () {
+            var wrap = document.getElementById('poTabs');
+            if (!wrap || document.hidden) return;
+            var hrefs = Array.prototype.map.call(wrap.querySelectorAll('a.po-tab:not(.active)'), function (a) { return a.getAttribute('href'); });
+            (function lanjut(i) {
+                if (i >= hrefs.length) return;
+                var k = kunci(hrefs[i]), c = cache[k];
+                if ((c && Date.now() - c.t < UMUR_SEGAR) || inflight[k]) { lanjut(i + 1); return; }
+                ambil(hrefs[i]).catch(function () {}).then(function () {
+                    prefTimer = setTimeout(function () { lanjut(i + 1); }, 150);
+                });
+            })(0);
+        }, 150);
+    }
+
+    function muat(url, opsi) {
+        var mine = ++reqId;
+        clearTimeout(prefTimer);
+        var k = kunci(url), c = cache[k];
+        if (c && Date.now() - c.t < UMUR_MAKS) {
+            // Ada salinan: tampil seketika. Kalau sudah agak lama, segarkan diam-diam di belakang.
+            terapkan(c.html, url, opsi);
+            setLoading(false);
+            if (Date.now() - c.t >= UMUR_SEGAR) {
+                ambil(url).then(function (html) {
+                    if (mine !== reqId || html === c.html) return;
+                    if (document.querySelector('.modal.show')) return;
+                    terapkan(html, url, opsi && { sinkronQ: false });
+                }).catch(function () {});
+            }
+            jadwalkanPrefetch();
+            return;
+        }
+        setLoading(true);
+        ambil(url)
             .then(function (html) {
                 if (mine !== reqId) return;
-                var doc = new DOMParser().parseFromString(html, 'text/html');
-                REGIONS.forEach(function (id) {
-                    var baru = doc.getElementById(id), lama = document.getElementById(id);
-                    if (baru && lama) { lama.innerHTML = baru.innerHTML; }
-                });
-                sinkronForm(doc);
-                try { history.replaceState(null, '', url); } catch (e) {}
+                terapkan(html, url, opsi);
                 setLoading(false);
+                jadwalkanPrefetch();
             })
-            .catch(function () { window.location.href = url; });
+            .catch(function () { if (mine === reqId) { window.location.href = url; } });
+    }
+
+    // Pindah tab: pill aktif berganti seketika, isi tabel menyusul tanpa reload
+    function aktifkanTabSegera(a) {
+        var wrap = document.getElementById('poTabs');
+        if (!wrap) return;
+        Array.prototype.forEach.call(wrap.querySelectorAll('a.po-tab'), function (x) { x.classList.toggle('active', x === a); });
+        try {
+            var t = new URL(a.getAttribute('href'), window.location.href).searchParams.get('tab');
+            if (t && form.elements.tab) { form.elements.tab.value = t; }
+        } catch (e) {}
     }
 
     form.addEventListener('change', function (e) {
         if (e.target.id === 'poSearch') return;
+        perbaruiReset();
         muat(urlDariForm());
     });
     document.getElementById('poSearch').addEventListener('input', function () {
+        perbaruiReset();
         clearTimeout(timer);
         timer = setTimeout(function () { muat(urlDariForm()); }, 350);
     });
     form.addEventListener('submit', function (e) { e.preventDefault(); clearTimeout(timer); muat(urlDariForm()); });
+
+    if (btnReset) {
+        btnReset.addEventListener('click', function () {
+            clearTimeout(timer);
+            var tab = form.elements.tab ? form.elements.tab.value : 'masuk';
+            muat(form.getAttribute('action') + '?tab=' + encodeURIComponent(tab), { sinkronQ: true });
+        });
+    }
 
     document.addEventListener('click', function (e) {
         var a = e.target.closest('#poTabs a.po-tab, #poTable .pagination a.page-link');
@@ -559,11 +848,62 @@ function pilihKartuTab(tab) {
         var li = a.closest('li.page-item');
         e.preventDefault();
         if (li && li.classList.contains('disabled')) return;
-        muat(a.getAttribute('href'));
+        clearTimeout(timer);
+        if (a.classList.contains('po-tab')) { aktifkanTabSegera(a); }
+        muat(a.getAttribute('href'), { gulir: a.classList.contains('page-link') });
     });
+
+    // "Ke Hal": loncat langsung ke nomor halaman tertentu
+    function lompatHalaman(box) {
+        if (!box) return;
+        var inp = box.querySelector('input');
+        var maks = parseInt(box.getAttribute('data-total'), 10) || 1;
+        var n = parseInt(inp.value, 10);
+        if (!n) { inp.focus(); return; }
+        n = Math.max(1, Math.min(maks, n));
+        inp.value = n;
+        muat(box.getAttribute('data-url') + n, { gulir: true });
+    }
+    document.addEventListener('click', function (e) {
+        var g = e.target.closest('#poTable .dpo-jump-go');
+        if (g) { lompatHalaman(g.closest('.dpo-jump')); }
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' && e.target.classList && e.target.classList.contains('dpo-jump-input')) {
+            e.preventDefault();
+            lompatHalaman(e.target.closest('.dpo-jump'));
+        }
+    });
+
+    // Simpan tampilan tab yang sedang terbuka, supaya kembali ke tab ini juga langsung tampil
+    var aktifAwal = document.querySelector('#poTabs a.po-tab.active');
+    if (aktifAwal) { cache[kunci(aktifAwal.getAttribute('href'))] = { html: '<!doctype html>' + document.documentElement.outerHTML, t: Date.now() }; }
+    perbaruiReset();
+    jadwalkanPrefetch();
 })();
 </script>
 
+<style>
+    #poBar { position: fixed; left: 0; top: 0; height: 3px; width: 0; background: #334155; z-index: 2000; opacity: 0; pointer-events: none; transition: opacity .15s; }
+    #poBar.on { opacity: 1; width: 85%; transition: width 8s cubic-bezier(.1,.6,.2,1), opacity .15s; }
+    .btn-reset-filter { width: 40px; height: 40px; border-radius: 10px; border: 1px solid #e2e8f0; background: #fff; color: #64748b; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all .15s; padding: 0; }
+    .btn-reset-filter:hover { color: #dc2626; border-color: #fecaca; background: #fef2f2; }
+    .btn-reset-filter:focus-visible { outline: 0; box-shadow: 0 0 0 3px rgba(220,38,38,.18); }
+    .btn-reset-filter i { font-size: 1.05rem; }
+
+    /* Pagination: disamakan dengan halaman Pemberitahuan (tema charcoal slate) */
+    .dpo-pager-container .pagination { display: inline-flex; align-items: center; gap: 4px; margin: 0; }
+    .dpo-pager-container .pagination .page-item { margin: 0; }
+    .dpo-pager-container .pagination .page-link { color: #334155; background-color: #ffffff; border: 1px solid #e2e8f0; font-size: 0.8rem; font-weight: 600; min-width: 34px; height: 34px; padding: 0 8px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03); }
+    .dpo-pager-container .pagination .page-link:hover { color: #0f172a; background-color: #f1f5f9; border-color: #cbd5e1; transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06); }
+    .dpo-pager-container .pagination .page-item.active .page-link { background: linear-gradient(135deg, #1e293b 0%, #334155 100%) !important; border-color: #1e293b !important; color: #ffffff !important; font-weight: 700; box-shadow: 0 3px 8px -1px rgba(15, 23, 42, 0.28); cursor: default; transform: none; }
+    .dpo-pager-container .pagination .page-item.disabled .page-link { color: #94a3b8; background-color: #f8fafc; border-color: #e2e8f0; box-shadow: none; cursor: not-allowed; pointer-events: none; opacity: 0.65; }
+    .dpo-jump { user-select: none; }
+    .dpo-jump .dpo-jump-input { border-color: #cbd5e1; border-radius: 8px 0 0 8px !important; background-color: #ffffff; color: #1e293b; font-weight: 600; }
+    .dpo-jump .dpo-jump-input:focus { border-color: #334155; box-shadow: 0 0 0 2px rgba(51, 65, 85, 0.15); }
+    .dpo-jump .dpo-jump-go { border-color: #cbd5e1; border-radius: 0 8px 8px 0 !important; background-color: #f8fafc; color: #334155; transition: all 0.15s ease; }
+    .dpo-jump .dpo-jump-go:hover { background-color: #1e293b; border-color: #1e293b; color: #ffffff; }
+</style>
 <style>
     @media print {
         body * { visibility: hidden; }

@@ -53,6 +53,8 @@ class PembayaranOptiController extends Controller {
         $divisiKatim = $_SESSION['jenis_layanan_opti'] ?? '';
 
         // ---- Tab 1: Baru Masuk (Order yang sudah Deal / Siap Bayar tapi belum ada transaksi pembayaran) ----
+        // Hanya order yang SUDAH didisposisikan ke Keuangan (tombol Disposisi ke Keuangan di Tahap 5).
+        // DEAL saja belum cukup: penanda disposisi = status_keuangan 'menunggu_pembayaran'.
         $sqlBaru = "SELECT o.id, o.nomor_permintaan, o.nomor_order, o.judul_kegiatan, o.estimasi_biaya, o.tanggal_masuk, o.created_at,
                            o.jenis_layanan_opti, o.status_keuangan, o.status_penawaran, o.status_rancop,
                            c.nmcustomer AS nama_perusahaan, c.pt_cv,
@@ -66,11 +68,7 @@ class PembayaranOptiController extends Controller {
                         LIMIT 1
                     )
                     WHERE (
-                        o.status_penawaran = 'deal'
-                        OR o.status_rancop = 'deal'
-                        OR o.status_keuangan = 'menunggu_pembayaran'
-                        OR (sp.id IS NOT NULL AND (sp.status_respon_klien = 'deal' OR (sp.surat_kesanggupan_bayar IS NOT NULL AND sp.surat_kesanggupan_bayar != '')))
-                        OR o.status IN ('penawaran_deal', 'menunggu_pembayaran')
+                        o.status_keuangan = 'menunggu_pembayaran'
                     )
                     AND o.id NOT IN (SELECT DISTINCT order_id FROM opti_pembayaran)
                     AND (o.status_keuangan IS NULL OR o.status_keuangan != 'lunas')
@@ -190,6 +188,19 @@ class PembayaranOptiController extends Controller {
         $this->ensureSchema();
         $orderId = (int)($f3->get('GET.order_id') ?? 0);
 
+        // Isian form yang tersimpan saat simpan() gagal (mis. file bukti kegedean) -- dipakai buat ngisi ulang form
+        $old = ['order_id' => 0, 'termin_ke' => '', 'tanggal_bayar' => '', 'jumlah' => 0, 'keterangan' => ''];
+        if (!empty($_SESSION['pembayaran_old']) && is_array($_SESSION['pembayaran_old'])) {
+            if ($orderId > 0 && (int)($_SESSION['pembayaran_old']['order_id'] ?? 0) === $orderId) {
+                $old = array_merge($old, $_SESSION['pembayaran_old']);
+            }
+            unset($_SESSION['pembayaran_old']);
+        }
+        $f3->set('old', $old);
+        // Datang dari halaman detail order (?dari=order): sesudah simpan / batal, balik ke detail order, bukan ke daftar Pembayaran
+        $f3->set('dari', ($f3->get('GET.dari') === 'order' && $orderId > 0) ? 'order' : '');
+        $f3->set('dari_id', $orderId > 0 ? $orderId : 0);
+
         if ($orderId <= 0) {
             $f3->set('order', null);
             $this->render('keuangan/pembayaran/form.html', 'Catat Pembayaran', 'pembayaran');
@@ -257,8 +268,25 @@ $order['sudah_ada_pembayaran'] = ((int)$order['jumlah_baris_total']) > 0;
 
         $post = $f3->get('POST');
 
+        // File lebih besar dari post_max_size server: PHP membuang seluruh isi POST (order_id ikut hilang).
+        // Balikkan user ke form order yang sama (diambil dari halaman asal) dengan pesan yang jelas, bukan "order tidak valid".
+        if (empty($post) && (int)($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
+            $refQuery = [];
+            parse_str((string)parse_url((string)($_SERVER['HTTP_REFERER'] ?? ''), PHP_URL_QUERY), $refQuery);
+            $refOrderId = (int)($refQuery['order_id'] ?? 0);
+            $refDari = (($refQuery['dari'] ?? '') === 'order') ? '&dari=order' : '';
+            $this->setFlashError('Ukuran bukti bayar maksimal 5MB. File yang dipilih terlalu besar, silakan pilih file yang lebih kecil.');
+            $f3->reroute($refOrderId > 0 ? '/pembayaran/tambah?order_id=' . $refOrderId . $refDari : '/pembayaran/tambah');
+            return;
+        }
+
 $orderId       = (int)($post['order_id'] ?? 0);
 $isKesanggupan = !empty($post['is_kesanggupan_bayar']); // [BARU] dari toggle Skip Pembayaran
+
+// Balik ke mana sesudah simpan: detail order kalau form dibuka dari sana, selain itu daftar Pembayaran
+$dariOrder = (($post['dari'] ?? '') === 'order' && $orderId > 0);
+$kembali   = $dariOrder ? ('/order/' . $orderId) : '/pembayaran';
+$qDari     = $dariOrder ? '&dari=order' : '';
 
 if ($orderId <= 0) {
     $this->setFlashError('Order layanan tidak valid.');
@@ -315,10 +343,10 @@ if (!empty($post['disposisi_langsung'])) {
 } else {
     $this->setFlashSuccess('Order dicatat sebagai Kesanggupan Bayar. Order masuk ke tab "Sedang Berjalan".');
 }
-$f3->reroute('/pembayaran');
+$f3->reroute($kembali);
     } catch (\Exception $e) {
         $this->setFlashError('Gagal mencatat: ' . $e->getMessage());
-        $f3->reroute('/pembayaran/tambah?order_id=' . $orderId);
+        $f3->reroute('/pembayaran/tambah?order_id=' . $orderId . $qDari);
     }
     return;
 }
@@ -331,9 +359,19 @@ $metode       = trim($post['metode_pembayaran'] ?? 'transfer_bank');
 $noTransaksi  = trim($post['nomor_transaksi_ntpn'] ?? '');
 $keterangan   = trim($post['keterangan'] ?? '');
 
+// Simpan isian dulu: kalau ada validasi di bawah yang gagal (nominal, file kegedean, dll),
+// form dibuka lagi dengan isian yang sama, nggak kosong lagi.
+$_SESSION['pembayaran_old'] = [
+    'order_id'      => $orderId,
+    'termin_ke'     => $terminKe,
+    'tanggal_bayar' => preg_match('/^\d{4}-\d{2}-\d{2}$/', (string)$tanggalBayar) ? $tanggalBayar : '',
+    'jumlah'        => (int)round($jumlah),
+    'keterangan'    => $keterangan,
+];
+
 if ($jumlah <= 0) {
     $this->setFlashError('Masukkan nominal pembayaran valid.');
-    $f3->reroute('/pembayaran/tambah?order_id=' . $orderId);
+    $f3->reroute('/pembayaran/tambah?order_id=' . $orderId . $qDari);
     return;
 }
 
@@ -351,7 +389,7 @@ if ($sisaSebelumBayar !== null && $jumlah > $sisaSebelumBayar) {
         . 'Rp ' . number_format($sisaSebelumBayar, 0, ',', '.') . ' (selisih Rp ' . number_format($selisih, 0, ',', '.') . '). '
         . 'Mohon periksa kembali nominal yang dimasukkan, kemungkinan terdapat kesalahan penulisan angka.'
     );
-    $f3->reroute('/pembayaran/tambah?order_id=' . $orderId);
+    $f3->reroute('/pembayaran/tambah?order_id=' . $orderId . $qDari);
     return;
 }
 
@@ -359,7 +397,7 @@ if ($sisaSebelumBayar !== null && $jumlah > $sisaSebelumBayar) {
             $buktiBayarFile = $this->validateAndStoreBuktiBayar($f3->get('FILES.bukti_bayar'));
         } catch (\Exception $e) {
             $this->setFlashError($e->getMessage());
-            $f3->reroute('/pembayaran/tambah?order_id=' . $orderId);
+            $f3->reroute('/pembayaran/tambah?order_id=' . $orderId . $qDari);
             return;
         }
 
@@ -378,6 +416,7 @@ if ($sisaSebelumBayar !== null && $jumlah > $sisaSebelumBayar) {
             $pembayaran->verifikator_id       = $this->getUserId() ?? null;
             $pembayaran->created_at           = date('Y-m-d H:i:s');
             $pembayaran->save();
+            unset($_SESSION['pembayaran_old']);   // tersimpan -- isian lama gak perlu dipakai lagi
 
             // [PENTING] ini yang nge-update order_layanan.status_keuangan otomatis
             $statusBaru = $this->recalcStatusKeuangan($orderId);
@@ -424,10 +463,10 @@ if ($statusBaru === 'lunas' && class_exists('KetuaTimController')) {
 
 $this->setFlashSuccess($pesanSukses);
 
-            $f3->reroute('/pembayaran');
+            $f3->reroute($kembali);
         } catch (\Exception $e) {
             $this->setFlashError('Gagal mencatat pembayaran: ' . $e->getMessage());
-            $f3->reroute('/pembayaran/tambah');
+            $f3->reroute('/pembayaran/tambah' . ($orderId > 0 ? '?order_id=' . $orderId . $qDari : ''));
         }
     }
 
@@ -586,11 +625,14 @@ $this->setFlashSuccess($pesanSukses);
         if (!$file || !isset($file['error']) || is_array($file['error']) || $file['error'] === UPLOAD_ERR_NO_FILE) {
             throw new \Exception('Bukti pembayaran wajib diunggah.');
         }
+        if ($file['error'] === UPLOAD_ERR_INI_SIZE || $file['error'] === UPLOAD_ERR_FORM_SIZE) {
+            throw new \Exception('Ukuran bukti bayar maksimal 5MB. File yang dipilih terlalu besar, silakan pilih file yang lebih kecil.');
+        }
         if ($file['error'] !== UPLOAD_ERR_OK) {
             throw new \Exception('Terjadi kesalahan saat mengunggah bukti bayar.');
         }
         if ($file['size'] <= 0 || $file['size'] > $this->maxSize) {
-            throw new \Exception('Ukuran bukti bayar maksimal 5MB.');
+            throw new \Exception('Ukuran bukti bayar maksimal 5MB. File yang dipilih terlalu besar, silakan pilih file yang lebih kecil.');
         }
 
         $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));

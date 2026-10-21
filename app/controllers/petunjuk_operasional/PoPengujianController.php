@@ -54,6 +54,42 @@ class PoPengujianController extends \Controller {
         return true;
     }
 
+    /** Mode balasan JSON: dipakai dialog "Generate Nomor PO" (permintaan AJAX ke simpan/update; redirect diubah jadi JSON). */
+    protected $jsonMode = false;
+    protected $berhasilAjax = false;
+    protected $nomorAjax = '';
+
+    protected function permintaanJson() {
+        $xr = strtolower((string) ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? ''));
+        $ac = (string) ($_SERVER['HTTP_ACCEPT'] ?? '');
+        return $xr === 'xmlhttprequest' && stripos($ac, 'application/json') !== false;
+    }
+
+    /**
+     * Untuk permintaan AJAX: setiap $f3->reroute() (sukses maupun gagal) dibalas JSON {ok, message, nomor, redirect}
+     * alih-alih redirect. Pesan flash dikonsumsi di sini supaya tidak muncul dua kali di halaman berikutnya.
+     */
+    protected function siapkanBalasanJson($f3) {
+        if (!$this->permintaanJson()) { return; }
+        $this->jsonMode = true;
+        unset($_SESSION['flash_success'], $_SESSION['flash_error'], $_SESSION['flash_warning']);
+        $self = $this;
+        $f3->set('ONREROUTE', function ($url) use ($self, $f3) {
+            $err = (string) ($_SESSION['flash_error'] ?? '');
+            $ok = (string) ($_SESSION['flash_success'] ?? '');
+            unset($_SESSION['flash_success'], $_SESSION['flash_error'], $_SESSION['flash_warning']);
+            if (is_string($url) && $url !== '' && $url[0] === '/') { $url = $f3->get('BASE') . $url; }
+            $berhasil = $self->berhasilAjax;
+            $self->json([
+                'ok'       => $berhasil,
+                'message'  => $berhasil ? $ok : ($err !== '' ? $err : 'Sesi berakhir atau akses ditolak. Muat ulang halaman lalu coba lagi.'),
+                'nomor'    => $berhasil ? (string) $self->nomorAjax : '',
+                'redirect' => (string) $url,
+            ]);
+            return true;
+        });
+    }
+
     protected function json($data, $status = 200) {
         http_response_code($status);
         header('Content-Type: application/json; charset=utf-8');
@@ -100,6 +136,14 @@ class PoPengujianController extends \Controller {
     protected function tanggalPoTersimpan($po) {
         $tgl = $po ? (string) ($po['tanggal_po'] ?? '') : '';
         return ($tgl !== '' && strpos($tgl, '0000') !== 0 && strtotime($tgl)) ? date('Y-m-d', strtotime($tgl)) : null;
+    }
+
+    /**
+     * Path (tanpa BASE) tujuan setelah simpan draft / kirim. Superadmin: Daftar PO gabungan (/po-kegiatan).
+     * Role Tim Kerja Pengujian: tetap ke daftar Pengujian, karena /po-kegiatan tidak memuat PO layanan untuk mereka.
+     */
+    protected function pathSetelahSimpan($tab = 'draft') {
+        return $this->isSuperadmin() ? '/po-kegiatan?tab=' . $tab : $this->pathIndex($tab);
     }
 
     /** Path (tanpa BASE) Daftar PO Pengujian pada tab tertentu, untuk $f3->reroute(). */
@@ -309,6 +353,13 @@ class PoPengujianController extends \Controller {
             return;
         }
 
+        if (!$lihat && !in_array((string) ($po['status'] ?? ''), ['', 'draft'], true)) {
+            // PO yang sudah dikirim hanya bisa dilihat (edit lagi hanya lewat permintaan revisi)
+            $this->setFlashWarning('PO yang sudah terkirim tidak bisa diedit lagi.');
+            $f3->reroute('/petunjuk-operasional/pengujian/' . (int) $po['id'] . '/lihat');
+            return;
+        }
+
         $poInfo = [
             'id'         => (int) $po['id'],
             'nomor'      => (string) ($po['nomor_po'] ?? ''),
@@ -473,6 +524,16 @@ class PoPengujianController extends \Controller {
      * $po = baris PO yang sedang diedit (null = PO baru).
      */
     protected function tampilUlang($f3, array $S, $po, $order, $err) {
+        if ($this->jsonMode) {
+            // permintaan AJAX (dialog Generate Nomor PO): balas JSON, bukan halaman form
+            $this->json([
+                'ok'      => false,
+                'judul'   => $this->errKirim ? 'Ada Isian yang Belum Lengkap' : 'PO Belum Bisa Disimpan',
+                'message' => is_array($err) ? implode(' ', $err) : (string) $err,
+                'errors'  => array_values($this->errKirim),
+            ]);
+            return;
+        }
         $poInfo = null;
         if ($po) {
             $poInfo = [
@@ -506,6 +567,7 @@ class PoPengujianController extends \Controller {
      * (gagal simpan -> nomor tidak terbuang).
      */
     public function simpan($f3) {
+        $this->siapkanBalasanJson($f3);
         if (!$this->wajibIzinHalaman($f3)) { return; }
         $kendala = $this->kendalaSkema();
         if ($kendala !== '') {
@@ -590,7 +652,9 @@ class PoPengujianController extends \Controller {
 
         $kirim = ($status === 'terkirim');
         $this->setFlashSuccess(($kirim ? 'PO berhasil dibuat dan dikirim.' : 'PO berhasil disimpan sebagai draft.') . ($nomor['detail_nomor'] !== null ? ' Nomor PO: ' . $nomor['detail_nomor'] : ''));
-        $f3->reroute($this->pathIndex($kirim ? 'terkirim' : 'draft'));
+        $this->berhasilAjax = true;
+        $this->nomorAjax = (string) $nomor['detail_nomor'];
+        $f3->reroute($this->pathSetelahSimpan($kirim ? 'terkirim' : 'draft'));
     }
 
     /**
@@ -598,6 +662,7 @@ class PoPengujianController extends \Controller {
      * Nomor PO TIDAK berubah saat diedit (sama seperti PO OPTI dan Sertifikasi).
      */
     public function update($f3, $params) {
+        $this->siapkanBalasanJson($f3);
         if (!$this->wajibIzinHalaman($f3)) { return; }
         $kendala = $this->kendalaSkema();
         if ($kendala !== '') {
@@ -617,8 +682,11 @@ class PoPengujianController extends \Controller {
             return;
         }
         $statusLama = (string) ($po['status'] ?? 'draft');
-        if (!in_array($statusLama, ['', 'draft', 'terkirim'], true)) {
-            $this->setFlashError('PO ini sudah berstatus "' . $statusLama . '" dan tidak bisa diubah lagi.');
+        if (!in_array($statusLama, ['', 'draft'], true)) {
+            // PO yang sudah dikirim terkunci; perubahan hanya lewat permintaan revisi (Review)
+            $this->setFlashError($statusLama === 'terkirim'
+                ? 'PO ini sudah terkirim dan tidak bisa diedit lagi. Perubahan hanya bisa lewat permintaan revisi.'
+                : 'PO ini sudah berstatus "' . $statusLama . '" dan tidak bisa diubah lagi.');
             $f3->reroute($this->pathIndex());
             return;
         }
@@ -707,7 +775,9 @@ class PoPengujianController extends \Controller {
 
         $kirim = ($status === 'terkirim');
         $this->setFlashSuccess(($kirim ? 'PO berhasil diperbarui dan dikirim.' : 'PO berhasil diperbarui sebagai draft.') . ($nomorBaruTerbit !== '' ? ' Nomor PO: ' . $nomorBaruTerbit : ''));
-        $f3->reroute($this->pathIndex($kirim ? 'terkirim' : 'draft'));
+        $this->berhasilAjax = true;
+        $this->nomorAjax = (string) $nomorBaruTerbit;
+        $f3->reroute($this->pathSetelahSimpan($kirim ? 'terkirim' : 'draft'));
     }
 
     /* ------------------------------------------------------------------ */
