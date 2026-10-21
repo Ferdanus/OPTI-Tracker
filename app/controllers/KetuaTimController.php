@@ -186,6 +186,20 @@ unset($o);
                         'created_by'      => (int)$this->getUserId(),
                         'created_by_name' => $userNama
                     ]);
+
+                    // Notifikasi ke Tim Mitra
+                    \NotificationService::send($this->db, [
+                        'order_id'        => $orderId,
+                        'target_role'     => 'tim_mitra',
+                        'target_layanan'  => 'semua',
+                        'judul'           => 'Ketua Pelaksana PO Ditunjuk',
+                        'pesan'           => "Ketua Tim OPTI ({$userNama}) telah menunjuk Ketua Pelaksana untuk Order #{$order['nomor_order']} ({$order['nama_perusahaan']}). Penyusunan PO sedang berjalan.",
+                        'tipe'            => 'info',
+                        'icon'            => 'bi-person-check-fill',
+                        'link_url'        => "/order/{$orderId}",
+                        'created_by'      => (int)$this->getUserId(),
+                        'created_by_name' => $userNama
+                    ]);
                 }
             } catch (\Exception $eNotif) {}
 
@@ -230,6 +244,7 @@ unset($o);
             if (!empty($sudah)) { return; }
 
             $namaPerusahaan = trim((string) (($o['pt_cv'] ?? '') . ' ' . $o['nama_perusahaan']));
+            // 1. Notif ke Ketua Tim OPTI
             \NotificationService::send($db, [
                 'order_id'        => $orderId,
                 'target_role'     => 'ketua_tim',
@@ -239,6 +254,20 @@ unset($o);
                 'tipe'            => 'success',
                 'icon'            => 'bi-person-check-fill',
                 'link_url'        => '/ketua-tim/siap-po',
+                'created_by'      => $userId,
+                'created_by_name' => $_SESSION['nama_lengkap'] ?? 'Sistem OPTI',
+            ]);
+
+            // 2. Notif ke Tim Mitra
+            \NotificationService::send($db, [
+                'order_id'        => $orderId,
+                'target_role'     => 'tim_mitra',
+                'target_layanan'  => 'semua',
+                'judul'           => 'Order Siap Ditunjuk Pelaksana',
+                'pesan'           => "Order #{$o['nomor_order']} ({$namaPerusahaan}) sudah lunas & sampel diterima -- siap ditunjuk Ketua Pelaksana oleh Ka. Tim OPTI.",
+                'tipe'            => 'info',
+                'icon'            => 'bi-person-check-fill',
+                'link_url'        => "/order/{$orderId}",
                 'created_by'      => $userId,
                 'created_by_name' => $_SESSION['nama_lengkap'] ?? 'Sistem OPTI',
             ]);

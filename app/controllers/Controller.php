@@ -395,9 +395,9 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
             error_log('[Notif PO] ' . $ePoNotif->getMessage());
         }
 
-        // Notifikasi Terintegrasi (Notification Service) untuk Bell Dropdown & Floating Bubble
+        // Notifikasi Terintegrasi (Notification Service) untuk Bell Dropdown & Floating Bubble (hanya menampilkan pesan yang belum dibaca)
         try {
-            $userNotifList = \NotificationService::getUserNotifications($this->db, (int)$userId, $role, $layanan, 8);
+            $userNotifList = \NotificationService::getUserNotifications($this->db, (int)$userId, $role, $layanan, 15, '', true);
             $unreadNotifCount = \NotificationService::getUnreadCount($this->db, (int)$userId, $role, $layanan);
         } catch (\Exception $eNotifSys) {
             $userNotifList = [];
@@ -610,17 +610,45 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
 
     /**
      * Cek apakah pengguna berwenang mengedit data yang sudah dikirim / didisposisi
-     * Jika konfigurasi 'allow_edit_submitted_data' OFF (false), hanya Superadmin yang boleh mengedit data yang sudah dikirim / didisposisi.
+     * Kebijakan Audit BPK/Itjen (Unlock Per-Order):
+     * Kunci edit diatur per-order (order_layanan.is_unlocked_edit = 1) oleh Super Admin.
+     * Super Admin bertugas membuka/menutup gembok akses pada order yang bersangkutan,
+     * sedangkan perbaikan data tetap dilakukan oleh user/role yang berwenang (PIC proposal, Ketua Tim, dll).
+     * Jika gembok order dibuka (unlocked), role yang berwenang boleh mengedit data.
+     * Jika gembok terkunci, pengeditan dibatasi demi integritas audit.
+     *
      * @param bool $isDataSubmitted True jika data sudah bukan draf / sudah dikirim / didisposisi
+     * @param int $orderId ID Order layanan (opsional, jika 0 akan mencoba mendeteksi dari context)
      * @return bool
      */
-    public function canEditSubmittedData(bool $isDataSubmitted = false): bool {
+    public function canEditSubmittedData(bool $isDataSubmitted = false, int $orderId = 0): bool {
         if ($this->isSuperadmin()) {
             return true;
         }
         if (!$isDataSubmitted) {
             return true; // Data masih draft / baru -> boleh diedit oleh pembuat / tim berwenang
         }
+
+        // Resolusi orderId dari parameter router jika tidak diberikan eksplisit
+        if ($orderId <= 0) {
+            $paramId = $this->f3->get('PARAMS.id');
+            if (!empty($paramId) && is_numeric($paramId)) {
+                $orderId = (int)$paramId;
+            } else {
+                $queryOrderId = $this->f3->get('GET.order_id');
+                if (!empty($queryOrderId) && is_numeric($queryOrderId)) {
+                    $orderId = (int)$queryOrderId;
+                }
+            }
+        }
+
+        // Cek status unlock per-order pada tabel order_layanan
+        if ($orderId > 0) {
+            $orderModel = new OrderLayanan($this->db);
+            return $orderModel->isOrderUnlocked($orderId);
+        }
+
+        // Fallback backward-compatibility jika orderId benar-benar tidak terdeteksi
         $fieldConfigModel = new OptiFieldConfig($this->db);
         return $fieldConfigModel->isAllowEditSubmittedData();
     }

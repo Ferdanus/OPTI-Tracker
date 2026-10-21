@@ -195,9 +195,11 @@ $f3->route('POST /order/@id/proposal/kirim-katim', 'OrderController->kirimPropos
 $f3->route('POST /order/@id/proposal/review-katim', 'OrderController->reviewProposalKatim');
 $f3->route('GET /order/@id/proposal/pdf', 'OrderController->previewProposalPdf');
 $f3->route('GET /order/@id/proposal/raw-data', 'OrderController->proposalRawData');
+$f3->route('POST /order/@id/proposal/save-editor-content', 'OrderController->saveProposalEditorContent');
 $f3->route('POST /order/@id/respon-klien', 'OrderController->responKlien');
 $f3->route('POST /order/@id/terima-sampel', 'OrderController->simpanTerimaSampel');
 $f3->route('POST /order/@id/konfirmasi-pembayaran', 'OrderController->konfirmasiPembayaran');
+$f3->route('POST /order/@id/toggle-unlock', 'OrderController->toggleUnlockOrder');
 $f3->route('POST /pembayaran/@id/disposisi-katim', 'PembayaranOptiController->disposisiKatim');
 
 
@@ -377,16 +379,27 @@ $f3->route('POST /surat-penawaran/@id/delete', 'SuratPenawaranController->delete
 $f3->route('GET /surat-penawaran/@id/delete', 'SuratPenawaranController->delete');
 $f3->route('GET /surat-penawaran/@id/pdf', 'SuratPenawaranController->cetakPdf');
 $f3->route('GET /surat-penawaran/@id/cetak', 'SuratPenawaranController->cetakPdf');
+$f3->route('GET|POST /surat-penawaran/@id/word', 'SuratPenawaranController->unduhWord');
 $f3->route('GET /surat-penawaran/@id/raw-data', 'SuratPenawaranController->penawaranRawData');
 $f3->route('GET /order/@id/penawaran/buat', 'SuratPenawaranController->buatDariOrder');
 $f3->route('POST /order/@id/penawaran/simpan', 'SuratPenawaranController->simpanDariOrder');
+$f3->route('GET /order/@id/penawaran/cetak', 'SuratPenawaranController->cetakPdf');
+$f3->route('GET|POST /order/@id/penawaran/word', 'SuratPenawaranController->unduhWord');
 $f3->route('GET|POST /order/@id/penawaran/preview-pdf', 'SuratPenawaranController->previewPdf');
 $f3->route('GET /order/@id/penawaran/raw-data', 'SuratPenawaranController->penawaranRawData');
 $f3->route('POST /order/@id/penawaran/status', 'SuratPenawaranController->updateStatusKlien');
 $f3->route('POST /order/@id/penawaran/disposisi-keuangan', 'SuratPenawaranController->disposisiKeuangan');
 $f3->route('POST /surat-penawaran/@id/disposisi-keuangan', 'SuratPenawaranController->disposisiKeuangan');
+$f3->route('POST /surat-penawaran/@id/dokumen-deal/@jenis/upload', 'SuratPenawaranController->uploadDokumenDeal');
+$f3->route('GET /surat-penawaran/@id/dokumen-deal/@jenis/preview', 'SuratPenawaranController->previewDokumenDeal');
 $f3->route('POST /surat-penawaran/@id/surat-kesanggupan/upload', 'SuratPenawaranController->uploadKesanggupanBayar');
 $f3->route('GET /surat-penawaran/@id/surat-kesanggupan/preview', 'SuratPenawaranController->previewKesanggupanBayar');
+$f3->route('POST /order/@id/penawaran/upload-lampiran', 'SuratPenawaranController->uploadLampiranUser');
+$f3->route('POST /surat-penawaran/@id/upload-lampiran', 'SuratPenawaranController->uploadLampiranUser');
+$f3->route('POST /order/@id/penawaran/hapus-lampiran', 'SuratPenawaranController->hapusLampiranUser');
+$f3->route('POST /surat-penawaran/@id/hapus-lampiran', 'SuratPenawaranController->hapusLampiranUser');
+$f3->route('GET /order/@id/penawaran/lampiran-user', 'SuratPenawaranController->previewLampiranUser');
+$f3->route('GET /surat-penawaran/@id/lampiran-user', 'SuratPenawaranController->previewLampiranUser');
 
 $f3->route('GET /surat/@id', 'OrderController->showSurat');
 $f3->route('GET /surat/@id/fragment', 'OrderController->showSuratFragment');

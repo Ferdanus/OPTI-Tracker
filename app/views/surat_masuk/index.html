@@ -588,8 +588,7 @@
                                             data-hp="{{ @cust.hp_bersih ?: '-' }}"
                                             data-telp-kantor="{{ @cust.telp_kantor_bersih ?: '-' }}"
                                             data-telp="{{ @cust.telp_bersih ?: '-' }}"
-                                            data-email="{{ @cust.email_bersih ?: '-' }}"
-                                            {{ @surat.id_customer == @cust.id_customer ? 'selected' : '' }}>
+                                            data-email="{{ @cust.email_bersih ?: '-' }}">
                                         {{ @cust.nama_perusahaan_bersih }}
                                     </option>
                                 </repeat>
@@ -606,23 +605,23 @@
                             <div class="row g-2 small">
                                 <div class="col-sm-6">
                                     <span class="text-muted d-block" style="font-size:0.72rem;">Instansi / Perusahaan:</span>
-                                    <strong class="text-dark" id="lblCustNama_{{ @surat.id }}">{{ @surat.nama_pengirim_bersih ?: @surat.pengirim }}</strong>
+                                    <strong class="text-dark" id="lblCustNama_{{ @surat.id }}">-</strong>
                                 </div>
                                 <div class="col-sm-6">
                                     <span class="text-muted d-block" style="font-size:0.72rem;">Kontak Person (PIC):</span>
-                                    <span class="text-dark fw-semibold" id="lblCustPic_{{ @surat.id }}">{{ @surat.pic_pengirim ?: '-' }}</span>
+                                    <span class="text-dark fw-semibold" id="lblCustPic_{{ @surat.id }}">-</span>
                                 </div>
                                 <div class="col-sm-6">
                                     <span class="text-muted d-block" style="font-size:0.72rem;">Telepon / No. HP (WA):</span>
-                                    <span class="text-dark" id="lblCustTelp_{{ @surat.id }}">{{ @surat.no_telp_pengirim ?: '-' }}</span>
+                                    <span class="text-dark" id="lblCustTelp_{{ @surat.id }}">-</span>
                                 </div>
                                 <div class="col-sm-6">
                                     <span class="text-muted d-block" style="font-size:0.72rem;">Email Resmi:</span>
-                                    <span class="text-dark" id="lblCustEmail_{{ @surat.id }}">{{ @surat.email_pengirim ?: '-' }}</span>
+                                    <span class="text-dark" id="lblCustEmail_{{ @surat.id }}">-</span>
                                 </div>
                                 <div class="col-12">
                                     <span class="text-muted d-block" style="font-size:0.72rem;">Alamat Perusahaan:</span>
-                                    <span class="text-secondary" id="lblCustAlamat_{{ @surat.id }}">{{ @surat.alamat_pengirim ?: '-' }}</span>
+                                    <span class="text-secondary" id="lblCustAlamat_{{ @surat.id }}">-</span>
                                 </div>
                             </div>
                         </div>
@@ -662,8 +661,8 @@
                         <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-2 fw-semibold" data-bs-dismiss="modal">
                             Batal
                         </button>
-                        <button type="submit" class="btn btn-primary btn-sm px-4 py-2 fw-bold shadow-sm" id="btnSubmitKlaim_{{ @surat.id }}" {{ empty(@surat.id_customer) ? 'disabled title="Pilih instansi pelanggan terlebih dahulu untuk memproses surat ini"' : '' }}>
-                            <i class="bi bi-{{ empty(@surat.id_customer) ? 'lock-fill' : 'check2-circle' }} me-1" id="btnSubmitKlaimIcon_{{ @surat.id }}"></i> 
+                        <button type="submit" class="btn btn-primary btn-sm px-4 py-2 fw-bold shadow-sm" id="btnSubmitKlaim_{{ @surat.id }}" disabled title="Pilih instansi pelanggan terlebih dahulu untuk memproses surat ini">
+                            <i class="bi bi-lock-fill me-1" id="btnSubmitKlaimIcon_{{ @surat.id }}"></i> 
                             <span id="btnSubmitKlaimText_{{ @surat.id }}">Terima & Buat Order</span>
                         </button>
                     </div>
@@ -969,7 +968,7 @@
             var elTelp = document.getElementById('lblCustTelp_' + id);
             var elEmail = document.getElementById('lblCustEmail_' + id);
             var elAlamat = document.getElementById('lblCustAlamat_' + id);
-            if (elNama) elNama.textContent = 'Belum dipilih';
+            if (elNama) elNama.textContent = '-';
             if (elKode) elKode.textContent = 'Kode: -';
             if (elPic) elPic.textContent = '-';
             if (elTelp) elTelp.textContent = '-';
@@ -1029,6 +1028,7 @@
 
         var ts = new TomSelect(select, {
             options: selectOptions,
+            items: [],
             valueField: 'value',
             labelField: 'text',
             searchField: ['nama', 'kode', 'pic', 'alamat', 'text'],
@@ -1036,7 +1036,7 @@
             maxItems: 1,
             placeholder: select.getAttribute('placeholder') || 'Ketik nama PT/CV, kode pelanggan, atau nama PIC...',
             maxOptions: 300,
-            allowEmptyOption: true,
+            allowEmptyOption: false,
             plugins: {
                 'dropdown_input': {},
                 'clear_button': {
@@ -1074,14 +1074,15 @@
             }
         });
 
-        // Set value awal jika ada
-        if (select.value) {
-            ts.setValue(select.value, true);
-        }
+        // Pastikan kondisi awal selalu kosong agar tim mitra harus memilih manual
+        ts.clear(true);
+        select.value = '';
+        syncCustomerCard(select);
     }
 
     // Pasang listener pada seluruh select-customer-modal
     document.querySelectorAll('.select-customer-modal').forEach(function(select) {
+        select.value = '';
         select.addEventListener('change', function() {
             syncCustomerCard(select);
         });
@@ -1094,9 +1095,6 @@
             var select = modal.querySelector('.select-customer-modal');
             if (select) {
                 initCustomerTomSelect(select);
-                if (select.tomselect) {
-                    select.tomselect.sync();
-                }
             }
         });
     });

@@ -13,7 +13,7 @@ class NotificationController extends Controller
         $layanan = $this->getUserLayanan();
 
         $unreadCount = NotificationService::getUnreadCount($this->db, $userId, $role, $layanan);
-        $items = NotificationService::getUserNotifications($this->db, $userId, $role, $layanan, 10);
+        $items = NotificationService::getUserNotifications($this->db, $userId, $role, $layanan, 15, '', true);
 
         header('Content-Type: application/json');
         echo json_encode([
@@ -69,7 +69,7 @@ class NotificationController extends Controller
         $layanan = $this->getUserLayanan();
 
         $q = trim($f3->get('GET.q') ?? '');
-        $allNotif = NotificationService::getUserNotifications($this->db, $userId, $role, $layanan, 100, $q);
+        $allNotif = NotificationService::getUserNotifications($this->db, $userId, $role, $layanan, 500, $q);
         $f3->set('daftar_notifikasi_semua', $allNotif);
         $f3->set('search_query', $q);
 

@@ -292,6 +292,23 @@ if ($isKesanggupan) {
         $orderModel = new OrderLayanan($this->db);
         $orderModel->terbitkanNomorOrder($orderId);
 
+        try {
+            $rowsO = $this->safeQuery("SELECT o.nomor_order, c.nmcustomer AS nama_perusahaan FROM order_layanan o JOIN tb_customer c ON o.id_customer = c.id_customer WHERE o.id = ?", [$orderId]);
+            $oInfo = !empty($rowsO) ? $rowsO[0] : ['nomor_order' => $orderId, 'nama_perusahaan' => 'Klien'];
+            \NotificationService::send($this->db, [
+                'order_id'        => $orderId,
+                'target_role'     => 'tim_mitra',
+                'target_layanan'  => 'semua',
+                'judul'           => 'Surat Kesanggupan Bayar Dicatat',
+                'pesan'           => "Order #{$oInfo['nomor_order']} ({$oInfo['nama_perusahaan']}) telah dicatat via Surat Kesanggupan Bayar oleh Bagian Keuangan. Order masuk ke tahap berjalan.",
+                'tipe'            => 'info',
+                'icon'            => 'bi-file-earmark-check-fill',
+                'link_url'        => "/order/{$orderId}",
+                'created_by'      => $this->getUserId() ?? null,
+                'created_by_name' => $_SESSION['nama_lengkap'] ?? 'Bagian Keuangan'
+            ]);
+        } catch (\Exception $eNotif) {}
+
 if (!empty($post['disposisi_langsung'])) {
     $this->lakukanDisposisiKatim($orderId, $this->getUserId());
     $this->setFlashSuccess('Order dicatat sebagai Kesanggupan Bayar & sudah didisposisikan ke Ketua Tim.');
@@ -366,6 +383,28 @@ if ($sisaSebelumBayar !== null && $jumlah > $sisaSebelumBayar) {
             $statusBaru = $this->recalcStatusKeuangan($orderId);
 
             $this->logActivity($orderId, 'pembayaran', 'verifikasi_pembayaran', "Verifikasi pembayaran Termin #{$terminKe} Rp " . number_format($jumlah, 0, ',', '.') . " (" . strtoupper(str_replace('_', ' ', $metode)) . ") - " . ucfirst($statusBaru));
+
+            // Kirim notifikasi ke Tim Mitra
+            try {
+                $rowsO = $this->safeQuery("SELECT o.nomor_order, c.nmcustomer AS nama_perusahaan FROM order_layanan o JOIN tb_customer c ON o.id_customer = c.id_customer WHERE o.id = ?", [$orderId]);
+                $oInfo = !empty($rowsO) ? $rowsO[0] : ['nomor_order' => $orderId, 'nama_perusahaan' => 'Klien'];
+                $judulPayNotif = ($statusBaru === 'lunas') ? 'Pembayaran Order LUNAS' : "Pembayaran Termin #{$terminKe} Tercatat";
+                $pesanPayNotif = ($statusBaru === 'lunas')
+                    ? "Pembayaran untuk Order #{$oInfo['nomor_order']} ({$oInfo['nama_perusahaan']}) sebesar Rp " . number_format($jumlah, 0, ',', '.') . " telah diverifikasi lunas oleh Bagian Keuangan."
+                    : "Pembayaran Termin #{$terminKe} untuk Order #{$oInfo['nomor_order']} ({$oInfo['nama_perusahaan']}) sebesar Rp " . number_format($jumlah, 0, ',', '.') . " telah dicatat oleh Bagian Keuangan.";
+                \NotificationService::send($this->db, [
+                    'order_id'        => $orderId,
+                    'target_role'     => 'tim_mitra',
+                    'target_layanan'  => 'semua',
+                    'judul'           => $judulPayNotif,
+                    'pesan'           => $pesanPayNotif,
+                    'tipe'            => 'success',
+                    'icon'            => 'bi-cash-coin',
+                    'link_url'        => "/order/{$orderId}",
+                    'created_by'      => $this->getUserId() ?? null,
+                    'created_by_name' => $_SESSION['nama_lengkap'] ?? 'Bagian Keuangan'
+                ]);
+            } catch (\Exception $eNotif) {}
 
 if ($statusBaru === 'lunas' && !empty($post['disposisi_langsung'])) {
     $this->lakukanDisposisiKatim($orderId, $this->getUserId());
@@ -628,6 +667,19 @@ $this->setFlashSuccess($pesanSukses);
                 'tipe'            => 'success',
                 'icon'            => 'bi-cash-coin',
                 'link_url'        => "/pembayaran",
+                'created_by'      => $userId,
+                'created_by_name' => $_SESSION['nama_lengkap'] ?? 'Bagian Keuangan',
+            ]);
+
+            \NotificationService::send($this->db, [
+                'order_id'        => $orderId,
+                'target_role'     => 'tim_mitra',
+                'target_layanan'  => 'semua',
+                'judul'           => 'Pembayaran Order Didisposisikan ke Ka. Tim',
+                'pesan'           => "Order #{$order['nomor_order']} ({$order['nama_perusahaan']}) telah didisposisikan dari Keuangan ke Ketua Tim OPTI.",
+                'tipe'            => 'success',
+                'icon'            => 'bi-send-check-fill',
+                'link_url'        => "/order/{$orderId}",
                 'created_by'      => $userId,
                 'created_by_name' => $_SESSION['nama_lengkap'] ?? 'Bagian Keuangan',
             ]);

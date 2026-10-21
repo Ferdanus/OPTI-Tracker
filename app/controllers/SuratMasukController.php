@@ -765,12 +765,15 @@ class SuratMasukController extends Controller {
         $filePath = '';
         $files = $this->f3->get('FILES.file_dokumen');
         if (!empty($files['name']) && $files['error'] === UPLOAD_ERR_OK) {
-            $uploadDir = dirname(__DIR__, 2) . '/uploads/surat_masuk/';
-            if (!is_dir($uploadDir)) @mkdir($uploadDir, 0777, true);
             $ext = strtolower(pathinfo($files['name'], PATHINFO_EXTENSION));
-            $newFileName = 'surat_' . time() . '_' . rand(100, 999) . '.' . $ext;
-            if (move_uploaded_file($files['tmp_name'], $uploadDir . $newFileName)) {
-                $filePath = 'uploads/surat_masuk/' . $newFileName;
+            $allowed = ['pdf', 'doc', 'docx', 'png', 'jpg', 'jpeg'];
+            if (in_array($ext, $allowed, true) && (int)($files['size'] ?? 0) <= 10 * 1024 * 1024) {
+                $uploadDir = dirname(__DIR__, 2) . '/uploads/surat_masuk/';
+                if (!is_dir($uploadDir)) @mkdir($uploadDir, 0777, true);
+                $newFileName = 'surat_' . time() . '_' . rand(100, 999) . '.' . $ext;
+                if (move_uploaded_file($files['tmp_name'], $uploadDir . $newFileName)) {
+                    $filePath = 'uploads/surat_masuk/' . $newFileName;
+                }
             }
         }
 

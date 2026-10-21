@@ -95,9 +95,9 @@
                         </div>
 
                         <div class="mb-4">
-                            <label class="form-label small fw-bold">Unggah Berkas Dokumen BAST (PDF Bertandatangan):</label>
-                            <input type="file" name="file_bast" class="form-control" accept=".pdf,.png,.jpg,.jpeg">
-                            <small class="text-muted d-block mt-1">Format diperbolehkan: PDF, JPG, PNG. Maksimal 10 MB.</small>
+                            <label class="form-label small fw-bold">Unggah Berkas Dokumen BAST (PDF/Word/Gambar):</label>
+                            <input type="file" name="file_bast" class="form-control" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg">
+                            <small class="text-muted d-block mt-1">Format diperbolehkan: PDF, Word (DOC/DOCX), JPG, PNG. Maksimal 10 MB.</small>
                             <check if="{{ @bast && @bast.file_dokumen_bast }}">
                                 <div class="mt-2 p-2 bg-light rounded small">
                                     <i class="bi bi-file-earmark-pdf text-danger me-1"></i> File BAST Terunggah: 

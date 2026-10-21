@@ -142,9 +142,110 @@
 .notif-row-item.is-read {
     border-left: 3.5px solid transparent;
 }
+/* ============ PAGINATION DENGAN TEMA SISTEM (CHARCOAL SLATE) ============ */
+.notif-pagination-container {
+    background-color: #ffffff;
+    transition: background-color 0.2s ease;
+}
+.notif-pagination-container.is-top-bar {
+    background-color: #f8fafc;
+}
+.notif-pagination-container .pagination {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0;
+}
+.notif-pagination-container .pagination .page-item {
+    margin: 0;
+}
+.notif-pagination-container .pagination .page-link {
+    color: #334155;
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    font-size: 0.8rem;
+    font-weight: 600;
+    min-width: 34px;
+    height: 34px;
+    padding: 0 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+.notif-pagination-container .pagination .page-link:hover {
+    color: #0f172a;
+    background-color: #f1f5f9;
+    border-color: #cbd5e1;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+.notif-pagination-container .pagination .page-item.active .page-link {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%) !important;
+    border-color: #1e293b !important;
+    color: #ffffff !important;
+    font-weight: 700;
+    box-shadow: 0 3px 8px -1px rgba(15, 23, 42, 0.28);
+    cursor: default;
+    transform: none;
+}
+.notif-pagination-container .pagination .page-item.disabled .page-link {
+    color: #94a3b8;
+    background-color: #f8fafc;
+    border-color: #e2e8f0;
+    box-shadow: none;
+    cursor: not-allowed;
+    pointer-events: none;
+    opacity: 0.65;
+}
+
+/* ============ ANIMASI KETIKA PINDAH HALAMAN ============ */
+@keyframes notifPageTransition {
+    0% {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+.notif-page-animating {
+    animation: notifPageTransition 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ============ JUMP TO PAGE WIDGET ============ */
+.notif-jump-container {
+    user-select: none;
+}
+.notif-jump-container .notif-jump-input {
+    border-color: #cbd5e1;
+    border-radius: 8px 0 0 8px !important;
+    background-color: #ffffff;
+    color: #1e293b;
+    font-weight: 600;
+}
+.notif-jump-container .notif-jump-input:focus {
+    border-color: #334155;
+    box-shadow: 0 0 0 2px rgba(51, 65, 85, 0.15);
+}
+.notif-jump-container .btn-jump-go {
+    border-color: #cbd5e1;
+    border-radius: 0 8px 8px 0 !important;
+    background-color: #f8fafc;
+    color: #334155;
+    transition: all 0.15s ease;
+}
+.notif-jump-container .btn-jump-go:hover {
+    background-color: #1e293b;
+    border-color: #1e293b;
+    color: #ffffff;
+}
 </style>
 
-<div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4" id="notifMainCard">
     <div class="notif-card-header d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
         <!-- Title & Count -->
         <div class="d-flex align-items-center gap-3">
@@ -184,11 +285,43 @@
                     Belum Dibaca <span class="badge bg-danger text-white rounded-pill px-2 py-0.5" style="font-size: 0.68rem;" id="unreadTabCount">{{ @totalUnread }}</span>
                 </button>
                 <button type="button" class="notif-tab-btn" id="btnFilterRead" onclick="filterNotif('read', this)">
-                    Riwayat <span class="badge bg-secondary-subtle text-muted rounded-pill px-2 py-0.5" style="font-size: 0.68rem;" id="readTabCount">{{ @totalRead }}</span>
+                    Sudah Dibaca <span class="badge bg-secondary-subtle text-muted rounded-pill px-2 py-0.5" style="font-size: 0.68rem;" id="readTabCount">{{ @totalRead }}</span>
                 </button>
             </div>
         </div>
     </div>
+
+    <!-- Top Dynamic Pagination Bar -->
+    <check if="{{ @totalSemua > 0 }}">
+        <div class="px-3.5 py-2.5 border-bottom d-flex flex-column flex-sm-row align-items-center justify-content-between gap-2.5 notif-pagination-container is-top-bar" id="notifPaginationWrapperTop">
+            <div class="small text-muted d-flex align-items-center gap-1.5" id="notifPaginationInfoTop">
+                <i class="bi bi-layers-half text-secondary opacity-75"></i>
+                <span>Menampilkan <strong>1 - 10</strong> dari <strong>{{ @totalSemua }}</strong> pemberitahuan</span>
+            </div>
+            <nav aria-label="Navigasi halaman atas" class="d-flex align-items-center flex-wrap gap-2">
+                <ul class="pagination pagination-sm mb-0 align-items-center" id="notifPaginationUlTop">
+                    <!-- Dinamis via JavaScript -->
+                </ul>
+                <div class="d-flex align-items-center gap-1.5 ms-sm-2 ps-sm-2 border-start notif-jump-container" id="notifJumpContainerTop">
+                    <span class="small text-muted" style="font-size: 0.78rem;">Ke Hal:</span>
+                    <div class="input-group input-group-sm" style="width: 105px;">
+                        <input type="number" min="1" max="1" value="1" 
+                               class="form-control form-control-sm text-center notif-jump-input shadow-none" 
+                               style="font-size: 0.78rem; height: 32px; padding: 2px 6px;"
+                               placeholder="1"
+                               onkeydown="if(event.key === 'Enter'){ window.handleJumpToPage(this); }">
+                        <button class="btn btn-jump-go btn-sm px-2 shadow-none d-flex align-items-center justify-content-center" 
+                                type="button" 
+                                style="height: 32px; font-size: 0.75rem;" 
+                                onclick="window.handleJumpToPage(this)" 
+                                title="Lompat ke halaman">
+                            <i class="bi bi-arrow-right-short fs-6"></i>
+                        </button>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </check>
 
     <div class="card-body p-0">
         <check if="{{ @totalSemua > 0 }}">
@@ -242,10 +375,44 @@
             </false>
         </check>
     </div>
+
+    <!-- Bottom Dynamic Pagination Footer -->
+    <check if="{{ @totalSemua > 0 }}">
+        <div class="card-footer bg-white border-top px-3.5 py-3 d-flex flex-column flex-sm-row align-items-center justify-content-between gap-2.5 notif-pagination-container" id="notifPaginationWrapperBottom">
+            <div class="small text-muted d-flex align-items-center gap-1.5" id="notifPaginationInfoBottom">
+                <i class="bi bi-layers-half text-secondary opacity-75"></i>
+                <span>Menampilkan <strong>1 - 10</strong> dari <strong>{{ @totalSemua }}</strong> pemberitahuan</span>
+            </div>
+            <nav aria-label="Navigasi halaman bawah" class="d-flex align-items-center flex-wrap gap-2">
+                <ul class="pagination pagination-sm mb-0 align-items-center" id="notifPaginationUlBottom">
+                    <!-- Dinamis dibuat oleh JavaScript -->
+                </ul>
+                <div class="d-flex align-items-center gap-1.5 ms-sm-2 ps-sm-2 border-start notif-jump-container" id="notifJumpContainerBottom">
+                    <span class="small text-muted" style="font-size: 0.78rem;">Ke Hal:</span>
+                    <div class="input-group input-group-sm" style="width: 105px;">
+                        <input type="number" min="1" max="1" value="1" 
+                               class="form-control form-control-sm text-center notif-jump-input shadow-none" 
+                               style="font-size: 0.78rem; height: 32px; padding: 2px 6px;"
+                               placeholder="1"
+                               onkeydown="if(event.key === 'Enter'){ window.handleJumpToPage(this); }">
+                        <button class="btn btn-jump-go btn-sm px-2 shadow-none d-flex align-items-center justify-content-center" 
+                                type="button" 
+                                style="height: 32px; font-size: 0.75rem;" 
+                                onclick="window.handleJumpToPage(this)" 
+                                title="Lompat ke halaman">
+                            <i class="bi bi-arrow-right-short fs-6"></i>
+                        </button>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </check>
 </div>
 
 <script>
     var currentTabType = 'all';
+    var currentPage = 1;
+    var pageSize = 10;
 
     function updateNotifGlider(targetBtn, animate) {
         var group = document.getElementById('notifTabGroup');
@@ -279,6 +446,7 @@
         if (btnClear) {
             btnClear.style.display = query && query.trim().length > 0 ? 'block' : 'none';
         }
+        currentPage = 1;
         applyFilterAndSearch();
     }
 
@@ -293,6 +461,7 @@
 
     function filterNotif(type, btn) {
         currentTabType = type;
+        currentPage = 1;
         // Toggle Button Active State
         document.querySelectorAll('.notif-tab-group .notif-tab-btn').forEach(function(b) {
             b.classList.remove('active');
@@ -305,11 +474,136 @@
         applyFilterAndSearch();
     }
 
+    function goToPage(pageNum, clickedEl) {
+        if (pageNum < 1) pageNum = 1;
+        currentPage = pageNum;
+        applyFilterAndSearch();
+
+        // Scroll halus ke atas card hanya jika diklik dari pagination bawah
+        if (clickedEl && clickedEl.closest('#notifPaginationWrapperBottom')) {
+            var card = document.getElementById('notifMainCard');
+            if (card) {
+                card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+    }
+
+    window.handleJumpToPage = function(el) {
+        var container = el.closest('.notif-jump-container');
+        if (!container) return;
+        var input = container.querySelector('.notif-jump-input');
+        if (!input) return;
+
+        var targetPage = parseInt(input.value, 10);
+        var maxPage = parseInt(input.getAttribute('max'), 10) || 1;
+
+        if (isNaN(targetPage) || targetPage < 1) {
+            targetPage = 1;
+        } else if (targetPage > maxPage) {
+            targetPage = maxPage;
+        }
+
+        input.value = targetPage;
+        goToPage(targetPage, el);
+    };
+
+    function renderPagination(totalItems, totalPages) {
+        var targets = [
+            {
+                wrapper: document.getElementById('notifPaginationWrapperTop'),
+                info: document.getElementById('notifPaginationInfoTop'),
+                ul: document.getElementById('notifPaginationUlTop'),
+                jump: document.getElementById('notifJumpContainerTop')
+            },
+            {
+                wrapper: document.getElementById('notifPaginationWrapperBottom'),
+                info: document.getElementById('notifPaginationInfoBottom'),
+                ul: document.getElementById('notifPaginationUlBottom'),
+                jump: document.getElementById('notifJumpContainerBottom')
+            }
+        ];
+
+        targets.forEach(function(t) {
+            if (!t.wrapper) return;
+
+            if (totalItems === 0) {
+                t.wrapper.style.setProperty('display', 'none', 'important');
+                return;
+            }
+
+            t.wrapper.style.removeProperty('display');
+
+            var start = (currentPage - 1) * pageSize + 1;
+            var end = Math.min(currentPage * pageSize, totalItems);
+            if (t.info) {
+                t.info.innerHTML = '<i class="bi bi-layers-half text-secondary opacity-75 me-1"></i>Menampilkan <strong>' + start + ' - ' + end + '</strong> dari <strong>' + totalItems + '</strong> pemberitahuan';
+            }
+
+            // Sinkronkan widget "Lompat ke Halaman"
+            if (t.jump) {
+                if (totalPages <= 1) {
+                    t.jump.style.setProperty('display', 'none', 'important');
+                } else {
+                    t.jump.style.removeProperty('display');
+                    var jumpInput = t.jump.querySelector('.notif-jump-input');
+                    if (jumpInput) {
+                        jumpInput.value = currentPage;
+                        jumpInput.setAttribute('max', totalPages);
+                        jumpInput.placeholder = '1-' + totalPages;
+                    }
+                }
+            }
+
+            if (!t.ul) return;
+
+            if (totalPages <= 1) {
+                t.ul.innerHTML = '';
+                return;
+            }
+
+            var html = '';
+
+            // Tombol Sebelumnya
+            var prevDisabled = (currentPage <= 1) ? 'disabled' : '';
+            html += '<li class="page-item ' + prevDisabled + '">';
+            html += '<a class="page-link shadow-none" href="javascript:void(0)" onclick="goToPage(' + (currentPage - 1) + ', this)" title="Halaman Sebelumnya">&laquo;</a>';
+            html += '</li>';
+
+            // Nomor Halaman
+            var pages = [];
+            for (var p = 1; p <= totalPages; p++) {
+                if (p === 1 || p === totalPages || (p >= currentPage - 2 && p <= currentPage + 2)) {
+                    pages.push(p);
+                } else if (pages[pages.length - 1] !== '...') {
+                    pages.push('...');
+                }
+            }
+
+            pages.forEach(function(p) {
+                if (p === '...') {
+                    html += '<li class="page-item disabled"><span class="page-link border-0 text-muted shadow-none bg-transparent">&hellip;</span></li>';
+                } else if (p === currentPage) {
+                    html += '<li class="page-item active" aria-current="page"><span class="page-link shadow-none fw-bold">' + p + '</span></li>';
+                } else {
+                    html += '<li class="page-item"><a class="page-link shadow-none" href="javascript:void(0)" onclick="goToPage(' + p + ', this)">' + p + '</a></li>';
+                }
+            });
+
+            // Tombol Berikutnya
+            var nextDisabled = (currentPage >= totalPages) ? 'disabled' : '';
+            html += '<li class="page-item ' + nextDisabled + '">';
+            html += '<a class="page-link shadow-none" href="javascript:void(0)" onclick="goToPage(' + (currentPage + 1) + ', this)" title="Halaman Berikutnya">&raquo;</a>';
+            html += '</li>';
+
+            t.ul.innerHTML = html;
+        });
+    }
+
     function applyFilterAndSearch() {
         var searchInput = document.getElementById('notifSearchInput');
         var query = searchInput ? searchInput.value.toLowerCase().trim() : '';
         var rows = document.querySelectorAll('.notif-row-item');
-        var visibleCount = 0;
+        var matchingRows = [];
 
         rows.forEach(function(r) {
             var isRead = r.getAttribute('data-is-read') === '1';
@@ -332,12 +626,34 @@
             }
 
             if (matchesTab && matchesSearch) {
-                r.style.setProperty('display', 'flex', 'important');
-                visibleCount++;
-            } else {
-                r.style.setProperty('display', 'none', 'important');
+                matchingRows.push(r);
             }
         });
+
+        var visibleCount = matchingRows.length;
+        var totalPages = Math.ceil(visibleCount / pageSize) || 1;
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        var startIndex = (currentPage - 1) * pageSize;
+        var endIndex = startIndex + pageSize;
+
+        // Tampilkan hanya baris pada halaman aktif (maks 10 baris)
+        rows.forEach(function(r) {
+            r.style.setProperty('display', 'none', 'important');
+        });
+
+        for (var i = startIndex; i < endIndex && i < visibleCount; i++) {
+            matchingRows[i].style.setProperty('display', 'flex', 'important');
+        }
+
+        // Animasi transisi halus saat halaman berganti
+        var list = document.getElementById('fullNotifList');
+        if (list) {
+            list.classList.remove('notif-page-animating');
+            void list.offsetWidth; // Force reflow
+            list.classList.add('notif-page-animating');
+        }
 
         // Handle Empty State
         var emptyBox = document.getElementById('notifEmptyFilter');
@@ -361,8 +677,8 @@
                         emptyTitle.textContent = 'Semua Pesan Sudah Dibaca';
                         emptyDesc.textContent = 'Tidak ada pemberitahuan baru yang belum dibaca saat ini.';
                     } else if (currentTabType === 'read') {
-                        emptyTitle.textContent = 'Belum Ada Riwayat Pesan';
-                        emptyDesc.textContent = 'Pesan yang sudah Anda baca akan muncul di tab riwayat ini.';
+                        emptyTitle.textContent = 'Belum Ada Pesan yang Dibaca';
+                        emptyDesc.textContent = 'Pesan yang sudah Anda baca akan muncul di tab ini.';
                     } else {
                         emptyTitle.textContent = 'Tidak Ada Pesan';
                         emptyDesc.textContent = 'Tidak ditemukan notifikasi.';
@@ -372,6 +688,9 @@
                 emptyBox.style.display = 'none';
             }
         }
+
+        // Render Pagination Controls
+        renderPagination(visibleCount, totalPages);
     }
 
     function escapeHtml(str) {
@@ -391,6 +710,8 @@
         var searchInput = document.getElementById('notifSearchInput');
         if (searchInput && searchInput.value.trim().length > 0) {
             handleNotifSearch(searchInput.value);
+        } else {
+            applyFilterAndSearch();
         }
     });
 </script>

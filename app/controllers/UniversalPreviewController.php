@@ -38,6 +38,14 @@ class UniversalPreviewController extends Controller
                 return;
             }
 
+            // 2a. Pola Dokumen Deal Surat Penawaran: /surat-penawaran/@id/dokumen-deal/@jenis/preview
+            if (preg_match('#(?:surat-penawaran|penawaran)/(\d+)/dokumen-deal/([a-zA-Z0-9_-]+)/preview#i', $path, $m)) {
+                $spId = (int)$m[1];
+                $jenis = $m[2];
+                $this->handleDokumenDeal($spId, $jenis);
+                return;
+            }
+
             // 2. Pola Surat Kesanggupan Bayar: /surat-penawaran/@id/surat-kesanggupan/preview ATAU /penawaran/surat-kesanggupan/@id
             if (preg_match('#(?:surat-penawaran|penawaran)/(?:(\d+)/surat-kesanggupan|surat-kesanggupan/(\d+))#i', $path, $m) || preg_match('#surat-kesanggupan/(\d+)#i', $path, $m)) {
                 $spId = (int)(!empty($m[1]) ? $m[1] : (!empty($m[2]) ? $m[2] : $m[0]));
@@ -45,7 +53,16 @@ class UniversalPreviewController extends Controller
                 return;
             }
 
-            // 2b. [BARU] Pola Lampiran Surat Penawaran:
+            // 2b. [BARU] Pola Lampiran User Surat Penawaran:
+            // /order/@id/penawaran/lampiran-user ATAU /surat-penawaran/@id/lampiran-user
+            if (preg_match('#(?:surat-penawaran|penawaran|order)/(\d+)/(?:penawaran/)?lampiran-user#i', $path, $m)) {
+                $targetId = (int)$m[1];
+                $spId = (int)($query['id'] ?? 0);
+                $this->handleLampiranUserPenawaran($targetId, $spId);
+                return;
+            }
+
+            // 2c. Pola Lampiran Surat Penawaran:
             // /surat-penawaran/@id/lampiran ATAU /penawaran/@id/lampiran
             if (preg_match('#(?:surat-penawaran|penawaran)/(\d+)/lampiran#i', $path, $m)) {
                 $spId = (int)$m[1];
@@ -57,7 +74,9 @@ class UniversalPreviewController extends Controller
             if (preg_match('#order/(\d+)/penawaran/cetak#i', $path, $m) || preg_match('#(?:surat-penawaran|penawaran)/(\d+)/(?:cetak|preview|pdf)#i', $path, $m)) {
                 $targetId = (int)$m[1];
                 $spId = (int)($query['id'] ?? 0);
-                $this->handleSuratPenawaran($targetId, $spId);
+                $kopParam = $query['kop'] ?? ($f3->get('GET.kop') ?? $f3->get('POST.kop'));
+                $useKop = !isset($kopParam) || ($kopParam !== '0' && $kopParam !== 'tanpa_kop' && $kopParam !== 0 && $kopParam !== false);
+                $this->handleSuratPenawaran($targetId, $spId, $useKop);
                 return;
             }
 
@@ -217,6 +236,52 @@ class UniversalPreviewController extends Controller
     }
 
     /**
+     * Berkas Lampiran Tambahan yang Diunggah User pada Surat Penawaran (file_lampiran_user)
+     */
+    protected function handleLampiranUserPenawaran($targetId, $spIdExplicit = 0)
+    {
+        $spModel = new SuratPenawaran($this->db);
+        $sp = null;
+        if ($spIdExplicit > 0) {
+            $sp = $spModel->getById($spIdExplicit);
+        }
+        if (!$sp) {
+            $sp = $spModel->getByOrderId($targetId);
+        }
+        if (!$sp) {
+            $sp = $spModel->getById($targetId);
+        }
+
+        $relPath = '';
+        if ($sp && !empty($sp['file_lampiran_user'])) {
+            $relPath = $sp['file_lampiran_user'];
+        } elseif (!empty($_SESSION['pending_lampiran_sp_' . $targetId])) {
+            $relPath = $_SESSION['pending_lampiran_sp_' . $targetId];
+        }
+
+        if (empty($relPath)) {
+            $orderIdActual = (int)($sp['order_id'] ?? $targetId);
+            $propRows = $this->db->exec('SELECT file_proposal FROM opti_proposal_riset WHERE order_id = ? AND file_proposal IS NOT NULL AND file_proposal <> \'\' ORDER BY id DESC LIMIT 1', [1 => $orderIdActual]);
+            if (!empty($propRows[0]['file_proposal'])) {
+                $relPath = trim((string)$propRows[0]['file_proposal']);
+            }
+        }
+
+        if (empty($relPath)) {
+            $this->jsonResponse(['success' => false, 'message' => 'Berkas lampiran surat penawaran belum diunggah.']);
+            return;
+        }
+
+        $filePath = $this->resolveFilePath($relPath, ['uploads/penawaran/lampiran', 'uploads/penawaran', 'storage/penawaran', 'public/uploads/proposals']);
+        if (!$filePath || !is_file($filePath)) {
+            $this->jsonResponse(['success' => false, 'message' => 'Berkas fisik lampiran tidak ditemukan di server: ' . basename($relPath)]);
+            return;
+        }
+
+        $this->sendFileAsBase64($filePath, 'Lampiran_Penawaran_' . ($sp['nomor_surat'] ?? $targetId));
+    }
+
+    /**
      * Menampilkan Surat Masuk PDF berdasarkan ID Order
      */
     protected function handleSuratMasukByOrder($orderId)
@@ -229,7 +294,7 @@ class UniversalPreviewController extends Controller
         $this->handleSuratMasuk((int)$order[0]['id_surat_masuk']);
     }
 
-    protected function handleSuratPenawaran($orderOrSpId, $spIdExplicit = 0)
+    protected function handleSuratPenawaran($orderOrSpId, $spIdExplicit = 0, $useKop = true)
     {
         $spController = new SuratPenawaranController();
         $f3 = \Base::instance();
@@ -251,6 +316,35 @@ class UniversalPreviewController extends Controller
             $sp = $spModel->getById($orderOrSpId);
             if ($sp && !empty($sp['order_id'])) {
                 $order = $orderModel->getDetail((int)$sp['order_id']);
+            }
+        }
+
+        $orderIdActual = (int)($order['id'] ?? ($sp['order_id'] ?? $orderOrSpId));
+        if (!$sp && $order) {
+            $sp = [
+                'id'                  => 0,
+                'order_id'            => (int)$order['id'],
+                'nomor_surat'         => $spModel->generateNomorSurat(($order['jenis_layanan_opti'] ?? 'selulosa') === 'selulosa' ? 'SL' : 'LK'),
+                'perusahaan'          => $order['nama_perusahaan'] ?? 'Mitra Balai',
+                'nama'                => $order['pic'] ?? '-',
+                'alamat'              => $order['alamat'] ?? '-',
+                'jenis_layanan'       => $order['jenis_layanan_opti'] ?? 'selulosa',
+                'perihal'             => $order['judul_kegiatan'] ?? 'Penawaran Layanan Jasa OPTI',
+                'nominal_penawaran'   => (float)($order['estimasi_biaya'] ?? 0),
+                'tanggal_surat'       => date('Y-m-d'),
+                'status_respon_klien' => 'draft',
+                'file_lampiran_user'  => $_SESSION['pending_lampiran_sp_' . $orderIdActual] ?? ''
+            ];
+        }
+
+        if ($sp && empty($sp['file_lampiran_user']) && !empty($_SESSION['pending_lampiran_sp_' . $orderIdActual])) {
+            $sp['file_lampiran_user'] = $_SESSION['pending_lampiran_sp_' . $orderIdActual];
+        }
+
+        if ($sp && ($order['jenis_layanan_opti'] ?? '') === 'selulosa' && empty($_SESSION['pending_lampiran_sp_' . $orderIdActual])) {
+            $propRows = $this->db->exec('SELECT file_proposal FROM opti_proposal_riset WHERE order_id = ? AND file_proposal IS NOT NULL AND file_proposal <> \'\' ORDER BY id DESC LIMIT 1', [1 => $orderIdActual]);
+            if (!empty($propRows[0]['file_proposal'])) {
+                $sp['file_lampiran_user'] = trim((string)$propRows[0]['file_proposal']);
             }
         }
 
@@ -276,20 +370,33 @@ class UniversalPreviewController extends Controller
             ];
         }
 
-        $pdf = $spController->generatePdfObject($order, $sp);
+        $pdf = $spController->generatePdfObject($order, $sp, $useKop);
         $pdfContent = $pdf->Output('S');
         $base64 = base64_encode($pdfContent);
-        $filename = 'Surat_Penawaran_' . preg_replace('/[^A-Za-z0-9_\-]/', '_', $sp['nomor_surat'] ?: 'BBSPJIS') . '.pdf';
+        $suffix = $useKop ? '' : '_Tanpa_Kop';
+        $filename = 'Surat_Penawaran_' . preg_replace('/[^A-Za-z0-9_\-]/', '_', $sp['nomor_surat'] ?: 'BBSPJIS') . $suffix . '.pdf';
 
-        $this->jsonResponse([
+        $respData = [
             'success'     => true,
             'is_pdf'      => true,
             'is_image'    => false,
+            'is_penawaran'=> true,
             'filename'    => $filename,
             'mime'        => 'application/pdf',
             'nomor_surat' => $sp['nomor_surat'] ?? '',
+            'order_id'    => $orderIdActual,
+            'sp_id'       => (int)($sp['id'] ?? 0),
+            'word_url'    => '/order/' . $orderIdActual . '/penawaran/word' . (!empty($sp['id']) ? ('?id=' . $sp['id']) : ''),
             'base64'      => $base64
-        ]);
+        ];
+
+        // Fallback jika file lampiran PDF menggunakan kompresi PDF 1.5+ yang perlu digabung di browser (pdf-lib)
+        if (!$pdf->lampiranMerged && !empty($pdf->lampiranPath) && is_file($pdf->lampiranPath)) {
+            $respData['attachment_base64'] = base64_encode(file_get_contents($pdf->lampiranPath));
+            $respData['attachment_ext'] = strtolower(pathinfo($pdf->lampiranPath, PATHINFO_EXTENSION));
+        }
+
+        $this->jsonResponse($respData);
     }
 
     protected function handleProposal($orderId)

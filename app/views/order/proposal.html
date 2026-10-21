@@ -80,80 +80,71 @@
     border-radius: 8px;
     padding: 0.65rem 0.85rem;
 }
-.deadline-countdown-card {
-    background: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 12px;
-    padding: 16px 18px;
+/* Styles for Real-time Word Editor Workspace */
+.word-paper-sheet {
+    background-color: #ffffff;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.22);
 }
-
-.deadline-date {
-    font-size: 0.8rem;
-    color: #6c757d;
+.word-paper-sheet:focus {
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.35), 0 8px 32px rgba(0,0,0,0.25) !important;
 }
-
-.countdown-label {
-    font-size: 0.7rem;
-    color: #6c757d;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+.word-paper-sheet p {
+    margin-top: 0;
+    margin-bottom: 0.65rem;
 }
-
-.countdown-time {
-    font-size: 1.4rem;
+.word-paper-sheet h1 {
+    font-size: 1.45rem;
     font-weight: 700;
-    font-family: monospace;
-    color: #0d6efd;
-    letter-spacing: 1px;
+    color: #0f172a;
+    margin-top: 1.1rem;
+    margin-bottom: 0.5rem;
 }
-
-#countdownStatus {
-    font-size: 0.75rem;
+.word-paper-sheet h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin-top: 0.9rem;
+    margin-bottom: 0.4rem;
 }
-.deadline-countdown-card {
-    border-radius: 14px;
-    padding: 18px 20px;
-    border: 1px solid #e2e8f0;
-    background: #fff;
-    transition: all .25s ease;
+.word-paper-sheet h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #334155;
+    margin-top: 0.75rem;
+    margin-bottom: 0.35rem;
 }
-.deadline-countdown-card.dcard-ok {
-    background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%);
-    border-color: rgba(37, 99, 235, .2);
+.word-paper-sheet table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 10pt;
 }
-.deadline-countdown-card.dcard-over {
-    background: linear-gradient(135deg, #ffffff 0%, #fef2f2 100%);
-    border-color: rgba(220, 38, 38, .25);
+.word-paper-sheet table, 
+.word-paper-sheet th, 
+.word-paper-sheet td {
+    border: 1px solid #cbd5e1;
 }
-.deadline-countdown-card.dcard-submitted {
-    background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
-    border-color: rgba(22, 163, 74, .25);
+.word-paper-sheet th {
+    background-color: #f8fafc;
+    font-weight: 600;
+    padding: 8px 10px;
+    text-align: left;
 }
-.deadline-countdown-card.dcard-neutral { background: #f8fafc; }
-
-.dcard-icon {
-    width: 46px; height: 46px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    background: rgba(37, 99, 235, .1); color: #2563eb;
-    font-size: 1.2rem; flex-shrink: 0;
+.word-paper-sheet td {
+    padding: 6px 10px;
 }
-.dcard-over .dcard-icon { background: rgba(220, 38, 38, .12); color: #dc2626; }
-.dcard-icon-submitted { background: rgba(22, 163, 74, .12); color: #16a34a; }
-
-.dcard-label { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: #64748b; margin-bottom: 2px; }
-.dcard-deadline { font-size: .84rem; color: #334155; }
-.dcard-countdown-label { font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: #94a3b8; }
-.dcard-countdown-time {
-    font-size: 1.55rem; font-weight: 800; letter-spacing: .5px;
-    font-family: 'SFMono-Regular', Consolas, monospace;
-    color: #2563eb;
+.word-paper-sheet img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 3px;
+    display: inline-block;
+    margin: 6px 0;
 }
-.dcard-over .dcard-countdown-time { color: #dc2626; }
-.dcard-status { font-size: .78rem; color: #64748b; padding-top: 10px; margin-top: 10px; border-top: 1px dashed #e2e8f0; }
-
-@keyframes dcardPulse { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
-.dcard-critical .dcard-countdown-time { animation: dcardPulse 1.2s infinite; }
+.word-paper-sheet ul, 
+.word-paper-sheet ol {
+    padding-left: 24px;
+    margin-bottom: 0.65rem;
+}
 </style>
 
 <!-- PDF.js Library for Zero-IDM-Interception in-browser rendering -->
@@ -196,18 +187,6 @@
                     </span>
                 </check>
             </div>
-            <check if="{{ @deadline_info }}">
-                <check if="{{ @deadline_info.is_telat }}">
-                    <span class="badge badge-pill-danger px-2.5 py-1">
-                        <i class="bi bi-alarm-fill me-1"></i> Telat {{ @deadline_info.hari_telat }} Hari Kerja
-                    </span>
-                </check>
-                <check if="{{ !@deadline_info.is_telat }}">
-                    <span class="badge badge-pill-secondary px-2.5 py-1">
-                        <i class="bi bi-calendar-check me-1"></i> Batas: {{ date('d M Y', strtotime(@deadline_info.tanggal_deadline)) }}
-                    </span>
-                </check>
-            </check>
             <p class="text-secondary small mb-0">
                 Permintaan <strong class="text-dark font-monospace">#{{ @order.nomor_permintaan ?: @order.nomor_order ?: ('REQ-' . @order.id) }}</strong> &bull; {{ @order.nama_perusahaan }} &bull; <span class="fst-italic text-dark">{{ @order.judul_kegiatan }}</span>
             </p>
@@ -224,12 +203,24 @@
     </div>
 
     <!-- Alert Catatan Revisi jika ada -->
-    <check if="{{ @proposal && @proposal.status_proposal == 'ditolak' && @proposal.catatan_revisi }}">
+    <check if="{{ @proposal && (@proposal.status_proposal == 'ditolak' || @is_revisi) && @proposal.catatan_revisi }}">
         <div class="alert alert-danger border-0 d-flex align-items-start gap-3 p-3 mb-4 rounded-3 shadow-xs">
             <i class="bi bi-exclamation-triangle-fill text-danger fs-5 flex-shrink-0 mt-0.5"></i>
-            <div>
-                <strong class="text-danger d-block mb-1 font-display">Catatan Revisi dari Ketua Tim OPTI:</strong>
+            <div class="w-100">
+                <div class="d-flex justify-content-between align-items-center mb-1 flex-wrap gap-2">
+                    <strong class="text-danger font-display">Catatan Revisi dari Ketua Tim OPTI:</strong>
+                    <check if="{{ @is_ketua_selulosa }}">
+                        <span class="badge bg-danger text-white rounded-pill px-2.5 py-1" style="font-size: 0.72rem;">
+                            <i class="bi bi-pencil-fill me-1"></i>Hak Akses Edit Revisi Aktif (Ka. Tim Selulosa)
+                        </span>
+                    </check>
+                </div>
                 <p class="mb-0 small text-danger-emphasis">{{ @proposal.catatan_revisi }}</p>
+                <check if="{{ @is_ketua_selulosa }}">
+                    <small class="text-secondary d-block mt-2 pt-2 border-top border-danger border-opacity-25" style="font-size: 0.78rem;">
+                        <i class="bi bi-info-circle-fill text-primary me-1"></i>Sebagai Ketua Tim OPTI Selulosa, Anda berwenang langsung memperbarui rincian proposal, mengganti berkas Word (.doc / .docx), dan menyimpan perubahan atau menyetujui proposal ini.
+                    </small>
+                </check>
             </div>
         </div>
     </check>
@@ -274,22 +265,6 @@
                                 <small class="d-block text-secondary">Spesialisasi {{ ucfirst(@order.jenis_layanan_opti) }}</small>
                             </div>
                         </div>
-                        <check if="{{ @deadline_info }}">
-                            <div class="d-flex mb-2">
-                                <span class="text-muted" style="width: 130px; flex-shrink: 0;">Batas Pengisian</span>
-                                <span class="text-muted me-2">:</span>
-                                <check if="{{ @deadline_info.is_telat }}">
-                                    <span class="text-danger fw-semibold">
-                                        {{ date('d M Y', strtotime(@deadline_info.tanggal_deadline)) }} &mdash; Telat {{ @deadline_info.hari_telat }} hari kerja
-                                    </span>
-                                </check>
-                                <check if="{{ !@deadline_info.is_telat }}">
-                                    <span class="text-dark">
-                                        {{ date('d M Y', strtotime(@deadline_info.tanggal_deadline)) }} <span class="text-muted">(maks. 5 hari kerja sejak PIC ditunjuk)</span>
-                                    </span>
-                                </check>
-                            </div>
-                        </check>
                         <div class="d-flex">
                             <span class="text-muted" style="width: 130px; flex-shrink: 0;">Perihal Kegiatan</span>
                             <span class="text-muted me-2">:</span>
@@ -389,9 +364,16 @@
             <div class="card border rounded-3 bg-white shadow-xs mb-4">
                 <div class="card-header bg-white py-3 px-3 px-md-4 border-bottom d-flex justify-content-between align-items-center">
                     <h6 class="m-0 fw-bold text-dark font-display">Formulir &amp; Dokumen Proposal Teknis</h6>
-                    <check if="{{ !@can_edit }}">
-                        <span class="badge bg-light text-secondary border">Mode Lihat Saja</span>
-                    </check>
+                    <div class="d-flex align-items-center gap-2">
+                        <check if="{{ @is_ketua_selulosa && @is_revisi }}">
+                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-2.5 py-1 small fw-semibold">
+                                <i class="bi bi-pencil-square me-1"></i>Mode Revisi (Ka. Tim Selulosa)
+                            </span>
+                        </check>
+                        <check if="{{ !@can_edit }}">
+                            <span class="badge bg-light text-secondary border">Mode Lihat Saja</span>
+                        </check>
+                    </div>
                 </div>
                 <div class="card-body p-4">
                     
@@ -453,18 +435,18 @@
 
                         <!-- 4. Area Upload & Pratinjau Berkas Dokumen Proposal -->
                         <div class="mb-4">
-                            <label class="form-label small fw-bold text-dark mb-2 d-flex justify-content-between align-items-center" style="font-size: 0.86rem;">
+                            <label class="form-label small fw-bold text-dark mb-2 d-flex justify-content-between align-items-center flex-wrap gap-1" style="font-size: 0.86rem;">
                                 <span>Dokumen Proposal Teknis <span class="text-danger">*</span></span>
-                                <small class="text-muted fw-normal">Format: PDF, DOCX, XLSX (Maks. 10MB)</small>
+                                <small class="text-danger fw-bold"><i class="bi bi-file-earmark-word-fill me-1"></i>Format Wajib: Word (.doc / .docx) &bull; Maks. 10MB (PDF Dilarang)</small>
                             </label>
 
-                            <!-- Card Berkas / Dokumen Proposal Aktif (Hanya muncul jika PIC sudah mengunggah file riil) -->
+                            <!-- Card Berkas / Dokumen Proposal Aktif (Hanya muncul jika sudah ada file tersimpan) -->
                             <check if="{{ !empty(@proposal.file_proposal) }}">
                                 <div class="preview-card mb-3" id="savedProposalCard">
                                     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                                         <div class="d-flex align-items-center gap-3">
-                                            <div class="rounded-3 bg-danger-subtle text-danger p-2.5 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">
-                                                <i class="bi bi-file-earmark-check-fill fs-4"></i>
+                                            <div class="rounded-3 bg-primary-subtle text-primary p-2.5 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">
+                                                <i class="bi bi-file-earmark-word-fill fs-4 text-primary"></i>
                                             </div>
                                             <div>
                                                 <strong class="text-dark d-block font-monospace" style="font-size: 0.88rem;">
@@ -472,7 +454,7 @@
                                                 </strong>
                                                 <div class="d-flex align-items-center gap-2 mt-0.5">
                                                     <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-0.5 rounded-pill" style="font-size: 0.70rem;">
-                                                        <i class="bi bi-check-circle-fill me-1"></i>Dokumen Tersimpan
+                                                        <i class="bi bi-check-circle-fill me-1"></i>Dokumen Word Tersimpan
                                                     </span>
                                                     <check if="{{ @proposal.durasi_kegiatan }}">
                                                         <span class="text-muted small" style="font-size: 0.76rem;">{{ @proposal.durasi_kegiatan }}</span>
@@ -481,18 +463,18 @@
                                             </div>
                                         </div>
                                         <div class="d-flex align-items-center gap-2">
-                                            <!-- Tombol Modal Pratinjau In-App Bebas IDM (Memuat file asli yang diunggah) -->
+                                            <!-- Tombol Modal Pratinjau In-App -->
                                             <button type="button" class="btn btn-outline-danger btn-sm px-3 py-1.5 fw-semibold shadow-xs" onclick="openProposalCanvasModal('{{ @order.id }}')">
                                                 <i class="bi bi-eye-fill me-1"></i> Pratinjau Dokumen
                                             </button>
                                             <!-- Tombol Download file fisik -->
                                             <a href="{{ @BASE }}/{{ @proposal.file_proposal }}" target="_blank" class="btn btn-outline-primary btn-sm px-3 py-1.5 fw-semibold shadow-xs" download>
-                                                <i class="bi bi-download me-1"></i> Unduh
+                                                <i class="bi bi-download me-1"></i> Unduh Berkas Word
                                             </a>
                                             <!-- Tombol Ganti Berkas jika can_edit -->
                                             <check if="{{ @can_edit }}">
-                                                <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-1.5 fw-semibold shadow-xs" onclick="document.getElementById('file_proposal').click()" title="Unggah / Ganti berkas proposal">
-                                                    <i class="bi bi-arrow-repeat me-1"></i> Ganti Berkas
+                                                <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-1.5 fw-semibold shadow-xs" onclick="document.getElementById('file_proposal').click()" title="Unggah / Ganti berkas proposal Word">
+                                                    <i class="bi bi-arrow-repeat me-1"></i> Ganti Berkas Word
                                                 </button>
                                             </check>
                                         </div>
@@ -503,21 +485,16 @@
                             <!-- Area Dropzone Besar & Interaktif -->
                             <check if="{{ @can_edit }}">
                                 <div class="proposal-dropzone" id="dropzoneContainer" onclick="document.getElementById('file_proposal').click()">
-                                    <div class="dropzone-icon">
-                                        <i class="bi bi-cloud-arrow-up-fill fs-2"></i>
+                                    <div class="dropzone-icon text-primary">
+                                        <i class="bi bi-file-earmark-word-fill fs-2"></i>
                                     </div>
                                     <h6 class="fw-bold text-dark font-display mb-1" style="font-size: 0.95rem;">
-                                        Pilih Berkas atau Tarik File ke Sini
+                                        Pilih Dokumen Word (.doc / .docx) atau Tarik File ke Sini
                                     </h6>
-                                    <p class="text-muted small mb-2">Klik untuk memilih dokumen proposal dari perangkat Anda</p>
-                                    <div class="d-inline-flex align-items-center gap-2">
-                                        <span class="badge bg-white text-secondary border px-2.5 py-1 rounded-pill" style="font-size: 0.72rem;">PDF</span>
-                                        <span class="badge bg-white text-secondary border px-2.5 py-1 rounded-pill" style="font-size: 0.72rem;">DOC / DOCX</span>
-                                        <span class="badge bg-white text-secondary border px-2.5 py-1 rounded-pill" style="font-size: 0.72rem;">XLS / XLSX</span>
-                                    </div>
+                                    <p class="text-muted small mb-0">Klik untuk memilih dokumen Word proposal dari perangkat Anda</p>
 
                                     <!-- Hidden Real File Input -->
-                                    <input type="file" name="file_proposal" id="file_proposal" class="d-none" accept=".pdf,.doc,.docx,.xls,.xlsx" onchange="handleFileSelect(event)">
+                                    <input type="file" name="file_proposal" id="file_proposal" class="d-none" accept=".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onchange="handleFileSelect(event)">
                                 </div>
 
                                 <!-- Live Selected File Preview Box (Muncul saat user memilih file baru) -->
@@ -548,66 +525,7 @@
                             </check>
                         </div>
 
-                        <!-- Countdown Deadline Proposal -->
-                       <!-- Sudah diunggah -> tampilkan keterangan waktu upload, countdown berhenti -->
-<check if="{{ @proposal && @proposal.diajukan_at }}">
-    <div class="deadline-countdown-card dcard-submitted mt-3">
-        <div class="d-flex align-items-center gap-3">
-            <div class="dcard-icon dcard-icon-submitted"><i class="bi bi-check-circle-fill"></i></div>
-            <div class="flex-grow-1">
-                <div class="dcard-label">Proposal Sudah Diunggah</div>
-                <div class="dcard-deadline">
-                    {{ ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'][date('w', strtotime(@proposal.diajukan_at))] }},
-                    {{ date('d F Y', strtotime(@proposal.diajukan_at)) }} pukul {{ date('H:i', strtotime(@proposal.diajukan_at)) }} WIB
-                </div>
-            </div>
-            <check if="{{ @deadline_info }}">
-                <check if="{{ @deadline_info.is_telat }}">
-                    <span class="badge badge-pill-danger px-2.5 py-2"><i class="bi bi-alarm-fill me-1"></i> Telat {{ @deadline_info.hari_telat }} Hari Kerja</span>
-                </check>
-                <check if="{{ !@deadline_info.is_telat }}">
-                    <span class="badge badge-pill-success px-2.5 py-2"><i class="bi bi-check2-circle me-1"></i> Tepat Waktu</span>
-                </check>
-            </check>
-        </div>
-    </div>
-</check>
-
-<!-- Belum diunggah -> countdown tetap jalan -->
-<check if="{{ !@proposal || !@proposal.diajukan_at }}">
-    <check if="{{ @deadline_info }}">
-        <div class="deadline-countdown-card mt-3 {{ @deadline_info.is_telat ? 'dcard-over' : 'dcard-ok' }}" id="deadlineCard">
-            <div class="d-flex align-items-center gap-3">
-                <div class="dcard-icon">
-                    <i class="bi bi-hourglass-split"></i>
-                </div>
-                <div class="flex-grow-1">
-                    <div class="dcard-label">Batas Pengumpulan Proposal</div>
-                    <div class="dcard-deadline">
-                        Deadline: <strong>{{ date('d F Y, H:i', strtotime(@deadline_info.tanggal_deadline)) }}</strong> WIB
-                    </div>
-                </div>
-                <div class="text-end">
-                    <div class="dcard-countdown-label">Waktu Tersisa</div>
-                    <div id="proposalCountdown" class="dcard-countdown-time">--:--:--</div>
-                </div>
-            </div>
-            <div id="countdownStatus" class="dcard-status mt-2">
-                <i class="bi bi-hourglass-split me-1"></i> Menghitung waktu...
-            </div>
-        </div>
-    </check>
-    <check if="{{ !@deadline_info }}">
-        <div class="deadline-countdown-card dcard-neutral mt-3">
-            <div class="d-flex align-items-center gap-3">
-                <div class="dcard-icon"><i class="bi bi-clock"></i></div>
-                <div class="text-muted small">Batas waktu proposal akan mulai dihitung otomatis setelah PIC ditugaskan lewat Kaji Ulang Kelayakan.</div>
-            </div>
-        </div>
-    </check>
-</check>
-
-                        <!-- 5. Tombol Aksi PIC -->
+                        <!-- 5. Tombol Aksi Proposal -->
                         <check if="{{ @can_edit }}">
                             <div class="pt-4 mt-4 border-top">
                                 <!-- Petunjuk Kunci Tombol Kirim -->
@@ -616,28 +534,54 @@
                                         <i class="bi bi-info-circle-fill text-primary flex-shrink-0"></i>
                                         <div id="hintKirimProposalText">
                                             <check if="{{ empty(@proposal.file_proposal) && ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) }}">
-                                                Isi estimasi total biaya (> Rp 0) dan unggah berkas proposal untuk mengaktifkan tombol kirim.
+                                                Isi estimasi total biaya (> Rp 0) dan unggah berkas proposal Word (.doc / .docx) untuk mengaktifkan tombol kirim / simpan.
                                             </check>
                                             <check if="{{ empty(@proposal.file_proposal) && ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) > 0) }}">
-                                                Unggah berkas dokumen proposal untuk mengaktifkan tombol kirim.
+                                                Unggah berkas dokumen proposal Word (.doc / .docx) untuk mengaktifkan tombol kirim / simpan.
                                             </check>
                                             <check if="{{ !empty(@proposal.file_proposal) && ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) }}">
-                                                Isi estimasi total biaya / RAB (> Rp 0) untuk mengaktifkan tombol kirim.
+                                                Isi estimasi total biaya / RAB (> Rp 0) untuk mengaktifkan tombol kirim / simpan.
                                             </check>
                                         </div>
                                     </div>
                                 </div>
 
                                 <!-- Baris Tombol Aksi Sejajar -->
-                                <div class="d-flex justify-content-between align-items-center gap-3">
-                                    <button type="submit" name="action_type" value="draft" class="btn btn-outline-primary px-4 py-2 fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5">
-                                        <i class="bi bi-bookmark"></i>
-                                        <span>Simpan Draf</span>
-                                    </button>
-                                    <button type="button" id="btnKirimProposal" class="btn btn-primary px-4 py-2 fw-semibold text-white shadow-sm d-inline-flex align-items-center gap-1.5" onclick="confirmKirimProposalAction()" {{ empty(@proposal.file_proposal) || ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) ? 'disabled' : '' }} title="{{ empty(@proposal.file_proposal) || ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) ? 'Lengkapi estimasi biaya dan unggah berkas proposal untuk mengaktifkan tombol kirim' : 'Kirim proposal ke Ketua Tim OPTI' }}">
-                                        <i class="bi bi-send-fill"></i>
-                                        <span>Kirim</span>
-                                    </button>
+                                <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap">
+                                    <check if="{{ @is_proposal_approved || in_array(@order.status_proposal_biaya, ['siap_penawaran', 'disetujui']) || in_array(@proposal.status_proposal, ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan']) }}">
+                                        <true>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <button type="submit" name="action_type" value="simpan_katim" class="btn btn-primary px-4 py-2 fw-semibold text-white shadow-sm d-inline-flex align-items-center gap-1.5">
+                                                    <i class="bi bi-save2-fill"></i>
+                                                    <span>Simpan Perubahan Proposal</span>
+                                                </button>
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1.5 rounded-pill small">
+                                                    <i class="bi bi-check-circle-fill me-1"></i>Proposal Telah Disetujui Ka. Tim
+                                                </span>
+                                            </div>
+                                        </true>
+                                        <false>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <button type="submit" name="action_type" value="draft" class="btn btn-outline-primary px-4 py-2 fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5">
+                                                    <i class="bi bi-bookmark"></i>
+                                                    <span>Simpan Draf</span>
+                                                </button>
+                                            </div>
+
+                                            <check if="{{ !@is_ketua_selulosa || !@is_revisi }}">
+                                                <button type="button" id="btnKirimProposal" class="btn btn-primary px-4 py-2 fw-semibold text-white shadow-sm d-inline-flex align-items-center gap-1.5" onclick="confirmKirimProposalAction()" {{ empty(@proposal.file_proposal) || ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) ? 'disabled' : '' }} title="{{ empty(@proposal.file_proposal) || ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) ? 'Lengkapi estimasi biaya dan unggah berkas proposal Word untuk mengaktifkan tombol kirim' : 'Kirim proposal ke Ketua Tim OPTI' }}">
+                                                    <i class="bi bi-send-fill"></i>
+                                                    <span>Kirim ke Ka. Tim</span>
+                                                </button>
+                                            </check>
+                                            <check if="{{ @is_ketua_selulosa && @is_revisi }}">
+                                                <button type="submit" name="action_type" value="simpan_dan_approve" class="btn btn-success px-4 py-2 fw-semibold text-white shadow-sm d-inline-flex align-items-center gap-1.5" {{ empty(@proposal.file_proposal) || ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) ? 'disabled' : '' }} title="Simpan perubahan revisi proposal sekaligus menyetujui (ACC)">
+                                                    <i class="bi bi-check2-circle"></i>
+                                                    <span>Simpan &amp; Setujui (ACC)</span>
+                                                </button>
+                                            </check>
+                                        </false>
+                                    </check>
                                 </div>
                             </div>
                         </check>
@@ -710,17 +654,21 @@
                 <!-- Modal Header -->
                 <div class="modal-header border-bottom py-2.5 px-4 bg-white d-flex justify-content-between align-items-center">
                     <div class="d-flex align-items-center gap-2">
-                        <div class="rounded-circle bg-danger-subtle text-danger p-1.5 d-flex align-items-center justify-content-center" style="width: 34px; height: 34px;">
-                            <i class="bi bi-file-earmark-pdf-fill fs-5"></i>
+                        <div id="proposalDocIconBox" class="rounded-circle bg-primary-subtle text-primary p-1.5 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                            <i id="proposalDocIcon" class="bi bi-file-earmark-word-fill fs-5"></i>
                         </div>
                         <div>
-                            <h6 class="modal-title fw-bold text-dark font-display mb-0" id="modalPreviewDokumenProposalLabel" style="font-size: 0.95rem;">Pratinjau Dokumen Proposal Teknis</h6>
+                            <div class="d-flex align-items-center gap-2">
+                                <h6 class="modal-title fw-bold text-dark font-display mb-0" id="modalPreviewDokumenProposalLabel" style="font-size: 0.95rem;">Pratinjau Dokumen Proposal Teknis</h6>
+                                <span id="proposalDocTypeBadge" class="badge bg-primary text-white px-2 py-0.5 font-monospace" style="font-size: 0.68rem;">WORD (.DOCX)</span>
+                            </div>
                             <small class="text-secondary font-monospace" id="modalPdfFilenameHeader" style="font-size: 0.75rem;">Permintaan #{{ @order.nomor_permintaan ?: @order.nomor_order ?: ('REQ-' . @order.id) }} &bull; {{ @order.nama_perusahaan }}</small>
                         </div>
                     </div>
 
                     <!-- Toolbar Controls -->
                     <div class="d-flex align-items-center gap-2">
+                        <!-- PDF Zoom Controls -->
                         <div id="proposalZoomControls" class="d-flex align-items-center gap-1.5 bg-light p-1 rounded-3 border">
                             <span class="badge bg-dark text-white px-2 py-1 font-monospace" id="proposalTotalPagesBadge" style="font-size: 0.72rem;">-- Halaman</span>
                             <div class="vr mx-1 my-1"></div>
@@ -736,11 +684,9 @@
                             </button>
                         </div>
 
-                        <check if="{{ @proposal && @proposal.file_proposal }}">
-                            <a href="{{ @BASE }}/{{ @proposal.file_proposal }}" target="_blank" class="btn btn-sm btn-outline-secondary px-3 py-1.5 fw-semibold" id="btnDownloadProposalModal" download>
-                                <i class="bi bi-download me-1"></i> Unduh File
-                            </a>
-                        </check>
+                        <a href="{{ @proposal && @proposal.file_proposal ? @BASE . '/' . @proposal.file_proposal : '#' }}" target="_blank" class="btn btn-sm btn-outline-primary px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5" id="btnDownloadProposalModal" download>
+                            <i class="bi bi-download"></i> <span id="btnDownloadProposalModalLabel">Unduh File Asli (.docx)</span>
+                        </a>
                         <button type="button" class="btn-close shadow-none ms-2" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                 </div>
@@ -750,34 +696,34 @@
                     <!-- Loading Spinner -->
                     <div id="canvasProposalSpinner" class="py-5 my-5 text-center">
                         <div class="spinner-border text-light" role="status" style="width: 2.75rem; height: 2.75rem;"></div>
-                        <p class="small text-white-50 mt-2 fw-medium">Memuat dan merender seluruh halaman dokumen...</p>
+                        <p class="small text-white-50 mt-2 fw-medium" id="canvasProposalSpinnerText">Memuat dan merender seluruh halaman dokumen...</p>
                     </div>
 
-                    <!-- Non-PDF Notice (Word/Excel) -->
+                    <!-- Continuous Multi-Page Container (High-Fidelity Canvas) -->
+                    <div id="proposalPagesContainer" class="d-flex flex-column align-items-center gap-4 py-2" style="display: none;">
+                    </div>
+
+                    <!-- Non-PDF & Non-Word Notice Fallback -->
                     <div id="nonPdfNoticeBox" class="d-none py-5 my-3 text-center">
                         <div class="card border-0 shadow-sm mx-auto p-4 rounded-4" style="max-width: 500px; background: white;">
                             <div class="rounded-circle bg-primary-subtle text-primary p-3 d-inline-flex align-items-center justify-content-center mx-auto mb-3" style="width: 60px; height: 60px;">
-                                <i class="bi bi-file-earmark-word-fill fs-2"></i>
+                                <i class="bi bi-file-earmark-arrow-down fs-2"></i>
                             </div>
                             <h6 class="fw-bold text-dark font-display mb-1" id="nonPdfDocTitle">Berkas Dokumen Terunggah</h6>
                             <p class="small text-muted mb-3" id="nonPdfDocSubtitle">Berkas proposal telah tersimpan dengan aman di server.</p>
                             <div class="d-flex justify-content-center gap-2">
-                                <a href="{{ @BASE }}/{{ @proposal.file_proposal }}" target="_blank" class="btn btn-primary btn-sm px-3" download>
+                                <a href="{{ @proposal && @proposal.file_proposal ? @BASE . '/' . @proposal.file_proposal : '#' }}" target="_blank" class="btn btn-primary btn-sm px-3" download>
                                     <i class="bi bi-download me-1"></i> Unduh File
                                 </a>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Continuous Multi-Page Container -->
-                    <div id="proposalPagesContainer" class="d-flex flex-column align-items-center gap-4 py-2" style="display: none;">
-                    </div>
                 </div>
 
                 <!-- Modal Footer -->
                 <div class="modal-footer border-top py-2 px-4 bg-white d-flex justify-content-between align-items-center">
-                    <div class="text-muted small">
-                        <i class="bi bi-mouse me-1"></i> Gulir ke bawah untuk membaca seluruh halaman
+                    <div class="text-muted small" id="proposalModalFooterHint">
+                        <i class="bi bi-info-circle me-1 text-primary"></i> <span id="proposalModalFooterText">Pratinjau dokumen proposal teknis beresolusi tinggi (format Word asli). Untuk mengedit atau melakukan revisi, silakan unduh berkas melalui tombol di kanan atas.</span>
                     </div>
                     <button type="button" class="btn btn-secondary btn-sm px-4 fw-semibold" data-bs-dismiss="modal">Tutup Pratinjau</button>
                 </div>
@@ -929,23 +875,45 @@ function handleFileSelect(event) {
     sizeEl.textContent = file.size > 1024 * 1024 ? `${sizeInMb} MB` : `${sizeInKb} KB`;
 
     const ext = file.name.split('.').pop().toLowerCase();
+
+    // Validasi Wajib Word untuk Proposal Selulosa & Tolak PDF
     if (ext === 'pdf') {
-        iconBox.className = 'rounded-3 bg-danger text-white p-2.5 d-flex align-items-center justify-content-center';
-        iconBox.innerHTML = '<i class="bi bi-filetype-pdf fs-4"></i>';
-        if (btnPreview) btnPreview.classList.remove('d-none');
-    } else if (ext === 'doc' || ext === 'docx') {
-        iconBox.className = 'rounded-3 bg-primary text-white p-2.5 d-flex align-items-center justify-content-center';
-        iconBox.innerHTML = '<i class="bi bi-filetype-docx fs-4"></i>';
-        if (btnPreview) btnPreview.classList.add('d-none');
-    } else if (ext === 'xls' || ext === 'xlsx') {
-        iconBox.className = 'rounded-3 bg-success text-white p-2.5 d-flex align-items-center justify-content-center';
-        iconBox.innerHTML = '<i class="bi bi-filetype-xlsx fs-4"></i>';
-        if (btnPreview) btnPreview.classList.add('d-none');
-    } else {
-        iconBox.className = 'rounded-3 bg-secondary text-white p-2.5 d-flex align-items-center justify-content-center';
-        iconBox.innerHTML = '<i class="bi bi-file-earmark-fill fs-4"></i>';
-        if (btnPreview) btnPreview.classList.add('d-none');
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'error',
+                title: 'Format PDF Tidak Diperkenankan',
+                text: 'Dokumen proposal OPTI Selulosa WAJIB diunggah dalam format Word (.doc / .docx) dan tidak diperbolehkan menggunakan format PDF.',
+                confirmButtonColor: '#dc3545',
+                confirmButtonText: 'Mengerti'
+            });
+        } else {
+            alert('Dokumen proposal OPTI Selulosa WAJIB diunggah dalam format Word (.doc / .docx) dan tidak diperbolehkan menggunakan format PDF.');
+        }
+        input.value = '';
+        cancelSelectedFile();
+        return;
     }
+
+    if (ext !== 'doc' && ext !== 'docx') {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Format File Tidak Didukung',
+                text: 'Dokumen proposal OPTI Selulosa WAJIB berformat Word (.doc atau .docx).',
+                confirmButtonColor: '#0d6efd',
+                confirmButtonText: 'Pilih File Word'
+            });
+        } else {
+            alert('Dokumen proposal OPTI Selulosa WAJIB berformat Word (.doc atau .docx).');
+        }
+        input.value = '';
+        cancelSelectedFile();
+        return;
+    }
+
+    iconBox.className = 'rounded-3 bg-primary text-white p-2.5 d-flex align-items-center justify-content-center';
+    iconBox.innerHTML = '<i class="bi bi-file-earmark-word-fill fs-4"></i>';
+    if (btnPreview) btnPreview.classList.add('d-none');
 
     previewBox.classList.remove('d-none');
     checkKirimButtonState();
@@ -1139,27 +1107,76 @@ function openLocalProposalModal() {
     bsModal.show();
 
     const spinner = document.getElementById('canvasProposalSpinner');
-    const container = document.getElementById('proposalPagesContainer');
+    const pdfContainer = document.getElementById('proposalPagesContainer');
+    const wordContainer = document.getElementById('proposalWordEditorContainer');
+    const wordSheet = document.getElementById('proposalWordEditorSheet');
+    const wordToolbar = document.getElementById('proposalWordToolbar');
+    const wordHeaderControls = document.getElementById('proposalWordHeaderControls');
     const nonPdfNotice = document.getElementById('nonPdfNoticeBox');
     const zoomControls = document.getElementById('proposalZoomControls');
     const headerEl = document.getElementById('modalPdfFilenameHeader');
+    const docIconBox = document.getElementById('proposalDocIconBox');
+    const docIcon = document.getElementById('proposalDocIcon');
+    const docTypeBadge = document.getElementById('proposalDocTypeBadge');
+    const modalTitle = document.getElementById('modalPreviewDokumenProposalLabel');
+    const footerText = document.getElementById('proposalModalFooterText');
 
     if (spinner) spinner.style.display = 'block';
-    if (container) {
-        container.innerHTML = '';
-        container.style.display = 'none';
+    if (pdfContainer) {
+        pdfContainer.innerHTML = '';
+        pdfContainer.style.display = 'none';
     }
+    if (wordContainer) wordContainer.classList.add('d-none');
+    if (wordToolbar) wordToolbar.classList.add('d-none');
+    if (wordHeaderControls) wordHeaderControls.classList.add('d-none');
     if (nonPdfNotice) nonPdfNotice.classList.add('d-none');
-    if (zoomControls) zoomControls.style.visibility = 'visible';
+    if (zoomControls) zoomControls.style.visibility = 'hidden';
 
     if (headerEl) {
         headerEl.textContent = selectedFileObj.name + ' • Berkas Lokal Terpilih';
     }
 
+    const ext = selectedFileObj.name.split('.').pop().toLowerCase();
+
+    // Jika berkas lokal adalah Word (.docx)
+    if (ext === 'docx' || ext === 'doc') {
+        if (docIconBox) docIconBox.className = 'rounded-circle bg-primary-subtle text-primary p-1.5 d-flex align-items-center justify-content-center';
+        if (docIcon) docIcon.className = 'bi bi-file-earmark-word-fill fs-5';
+        if (docTypeBadge) {
+            docTypeBadge.className = 'badge bg-primary text-white px-2 py-0.5 font-monospace';
+            docTypeBadge.textContent = 'WORD (DOCX)';
+        }
+        if (modalTitle) modalTitle.textContent = 'Pratinjau Berkas Proposal (Word)';
+        if (footerText) footerText.textContent = 'Pratinjau berkas proposal lokal terpilih sebelum disimpan/dikirim.';
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            mammoth.convertToHtml({ arrayBuffer: e.target.result })
+                .then(function(result) {
+                    if (spinner) spinner.style.display = 'none';
+                    if (wordContainer) wordContainer.classList.remove('d-none');
+                    if (wordToolbar) wordToolbar.classList.remove('d-none');
+                    if (wordSheet) {
+                        wordSheet.innerHTML = result.value || '<p>Dokumen kosong.</p>';
+                        wordSheet.contentEditable = 'true';
+                    }
+                })
+                .catch(function(err) {
+                    if (spinner) {
+                        spinner.innerHTML = '<div class="text-white p-4 text-center"><i class="bi bi-exclamation-triangle-fill fs-2 d-block mb-2 text-warning"></i><strong>Gagal Membaca File Word</strong><br><small class="text-white-50">' + (err.message || 'Format dokumen tidak didukung.') + '</small></div>';
+                    }
+                });
+        };
+        reader.readAsArrayBuffer(selectedFileObj);
+        return;
+    }
+
+    // Jika berkas lokal adalah PDF
     const reader = new FileReader();
     reader.onload = function(e) {
         const typedarray = new Uint8Array(e.target.result);
         pdfjsLib.getDocument({ data: typedarray }).promise.then(function(pdf) {
+            if (zoomControls) zoomControls.style.visibility = 'visible';
             currentPdfDoc = pdf;
             currentPdfScale = 1.35;
             updateProposalZoomBadge();
@@ -1175,9 +1192,13 @@ function openLocalProposalModal() {
 }
 
 // ========================================================
-// BASE64 JSON PDF.JS CANVAS VIEWER (PROPOSAL SERVER)
+// BASE64 JSON VIEWER & REAL-TIME WORD EDITOR (PROPOSAL SERVER)
 // ========================================================
+let hasUnsavedWordChanges = false;
+let currentProposalOrderId = null;
+
 function openProposalCanvasModal(orderId) {
+    currentProposalOrderId = orderId;
     currentOrderId = orderId;
     currentPdfDoc = null;
     const modalEl = document.getElementById('modalPreviewDokumenProposal');
@@ -1190,18 +1211,33 @@ function openProposalCanvasModal(orderId) {
 }
 
 function loadProposalData(orderId) {
-    const spinner = document.getElementById('canvasProposalSpinner');
-    const container = document.getElementById('proposalPagesContainer');
-    const nonPdfNotice = document.getElementById('nonPdfNoticeBox');
-    const zoomControls = document.getElementById('proposalZoomControls');
+    currentProposalOrderId = orderId;
+    currentOrderId = orderId;
+    currentPdfDoc = null;
 
-    if (spinner) spinner.style.display = 'block';
-    if (container) {
-        container.innerHTML = '';
-        container.style.display = 'none';
+    const spinner = document.getElementById('canvasProposalSpinner');
+    const spinnerText = document.getElementById('canvasProposalSpinnerText');
+    const pdfContainer = document.getElementById('proposalPagesContainer');
+    const zoomControls = document.getElementById('proposalZoomControls');
+    const nonPdfNotice = document.getElementById('nonPdfNoticeBox');
+    const docIconBox = document.getElementById('proposalDocIconBox');
+    const docIcon = document.getElementById('proposalDocIcon');
+    const docTypeBadge = document.getElementById('proposalDocTypeBadge');
+    const modalTitle = document.getElementById('modalPreviewDokumenProposalLabel');
+    const footerText = document.getElementById('proposalModalFooterText');
+    const dlBtn = document.getElementById('btnDownloadProposalModal');
+    const dlBtnLabel = document.getElementById('btnDownloadProposalModalLabel');
+
+    if (spinner) {
+        spinner.style.display = 'block';
+        if (spinnerText) spinnerText.textContent = 'Memuat dan merender dokumen proposal...';
     }
-    if (nonPdfNotice) nonPdfNotice.classList.add('d-none');
+    if (pdfContainer) {
+        pdfContainer.innerHTML = '';
+        pdfContainer.style.display = 'none';
+    }
     if (zoomControls) zoomControls.style.visibility = 'hidden';
+    if (nonPdfNotice) nonPdfNotice.classList.add('d-none');
 
     currentPdfScale = 1.35;
     updateProposalZoomBadge();
@@ -1211,7 +1247,7 @@ function loadProposalData(orderId) {
 
     fetch(apiUrl)
         .then(function(res) {
-            if (!res.ok) throw new Error('Gagal memuat data proposal');
+            if (!res.ok) throw new Error('Gagal memuat data proposal dari server');
             return res.json();
         })
         .then(function(json) {
@@ -1221,30 +1257,64 @@ function loadProposalData(orderId) {
             if (headerEl && json.filename) {
                 headerEl.textContent = json.filename + ' • Order #' + '{{ @order.nomor_order }}';
             }
+            if (dlBtn && json.file_url) {
+                dlBtn.href = json.file_url;
+            }
 
-            if (json.is_pdf && json.base64) {
+            // KASUS DOKUMEN PROPOSAL (PDF atau Word yang telah dikonversi 1:1 oleh COM engine ke PDF)
+            if (json.base64) {
+                if (json.is_word) {
+                    if (docIconBox) {
+                        docIconBox.className = 'rounded-circle bg-primary-subtle text-primary p-1.5 d-flex align-items-center justify-content-center';
+                        docIconBox.style.width = '36px';
+                        docIconBox.style.height = '36px';
+                    }
+                    if (docIcon) docIcon.className = 'bi bi-file-earmark-word-fill fs-5';
+                    if (docTypeBadge) {
+                        docTypeBadge.className = 'badge bg-primary text-white px-2 py-0.5 font-monospace';
+                        docTypeBadge.textContent = 'WORD (.DOCX)';
+                    }
+                    if (modalTitle) modalTitle.textContent = 'Pratinjau Dokumen Proposal Teknis';
+                    if (dlBtnLabel) dlBtnLabel.textContent = 'Unduh File Asli (.docx)';
+                    if (footerText) {
+                        footerText.textContent = 'Pratinjau dokumen proposal teknis beresolusi tinggi (format Word asli). Untuk mengedit atau merevisi berkas, silakan unduh berkas melalui tombol di kanan atas.';
+                    }
+                } else {
+                    if (docIconBox) {
+                        docIconBox.className = 'rounded-circle bg-danger-subtle text-danger p-1.5 d-flex align-items-center justify-content-center';
+                        docIconBox.style.width = '36px';
+                        docIconBox.style.height = '36px';
+                    }
+                    if (docIcon) docIcon.className = 'bi bi-file-earmark-pdf-fill fs-5';
+                    if (docTypeBadge) {
+                        docTypeBadge.className = 'badge bg-danger text-white px-2 py-0.5 font-monospace';
+                        docTypeBadge.textContent = 'PDF';
+                    }
+                    if (modalTitle) modalTitle.textContent = 'Pratinjau Dokumen Proposal Teknis';
+                    if (dlBtnLabel) dlBtnLabel.textContent = 'Unduh (.pdf)';
+                    if (footerText) footerText.textContent = 'Gulir ke bawah untuk membaca seluruh halaman';
+                }
+
                 const uint8Array = base64ToUint8Array(json.base64);
-                return pdfjsLib.getDocument({ data: uint8Array }).promise;
+                return pdfjsLib.getDocument({ data: uint8Array }).promise.then(function(pdf) {
+                    if (!pdf) return;
+                    currentPdfDoc = pdf;
+                    if (zoomControls) zoomControls.style.visibility = 'visible';
+                    renderAllProposalPages(pdf);
+                });
             } else {
                 if (spinner) spinner.style.display = 'none';
                 if (nonPdfNotice) {
                     nonPdfNotice.classList.remove('d-none');
                     document.getElementById('nonPdfDocTitle').textContent = 'Berkas: ' + json.filename;
-                    document.getElementById('nonPdfDocSubtitle').textContent = 'Format berkas (' + json.ext.toUpperCase() + ') tersimpan dengan aman di server.';
+                    document.getElementById('nonPdfDocSubtitle').textContent = 'Format berkas (' + (json.ext ? json.ext.toUpperCase() : 'UNKNOWN') + ') tersimpan dengan aman di server.';
                 }
-                return null;
             }
         })
-        .then(function(pdf) {
-            if (!pdf) return;
-            currentPdfDoc = pdf;
-            if (zoomControls) zoomControls.style.visibility = 'visible';
-            renderAllProposalPages(pdf);
-        })
         .catch(function(err) {
-            console.error('Error loading PDF canvas:', err);
+            console.error('Error loading proposal data:', err);
             if (spinner) {
-                spinner.innerHTML = '<div class="text-white p-4 text-center"><i class="bi bi-file-earmark-x fs-2 d-block mb-2 text-warning"></i><strong>Belum Ada Dokumen Proposal</strong><br><small class="text-white-50">' + (err.message || 'Silakan unggah dokumen proposal terlebih dahulu.') + '</small></div>';
+                spinner.innerHTML = '<div class="text-white p-4 text-center"><i class="bi bi-file-earmark-x fs-2 d-block mb-2 text-warning"></i><strong>Gagal Menampilkan Dokumen Proposal</strong><br><small class="text-white-50">' + (err.message || 'Silakan unggah dokumen proposal terlebih dahulu.') + '</small></div>';
             }
         });
 }
@@ -1476,48 +1546,3 @@ function confirmKirimProposalAction() {
     }
 }
 </script>
-<script>
-    var deadlineIso = "{{ @deadline_info.tanggal_deadline }}";
-    
-    function updateProposalCountdown() {
-        var countdown = document.getElementById('proposalCountdown');
-        var status = document.getElementById('countdownStatus');
-        var card = document.getElementById('deadlineCard');
-        if (!countdown || !deadlineIso) return;
-    
-        var deadline = new Date(deadlineIso).getTime();
-        var now = new Date().getTime();
-        var selisih = deadline - now;
-    
-        if (selisih <= 0) {
-            countdown.textContent = '00:00:00';
-            if (card) { card.classList.remove('dcard-ok'); card.classList.add('dcard-over'); }
-            status.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-1"></i> Batas waktu telah terlewati';
-            return;
-        }
-    
-        var totalDetik = Math.floor(selisih / 1000);
-        var hari = Math.floor(totalDetik / 86400);
-        var jam = Math.floor((totalDetik % 86400) / 3600);
-        var menit = Math.floor((totalDetik % 3600) / 60);
-        var detik = totalDetik % 60;
-        var f = function (n) { return String(n).padStart(2, '0'); };
-    
-        countdown.textContent = hari > 0
-            ? (hari + ' Hari ' + f(jam) + ':' + f(menit) + ':' + f(detik))
-            : (f(jam) + ':' + f(menit) + ':' + f(detik));
-    
-        if (hari < 1) {
-            if (card) card.classList.add('dcard-critical');
-            status.innerHTML = '<i class="bi bi-exclamation-circle me-1"></i> Kurang dari 24 jam, segera selesaikan!';
-        } else {
-            if (card) card.classList.remove('dcard-critical');
-            status.innerHTML = '<i class="bi bi-check-circle me-1"></i> Waktu masih tersedia';
-        }
-    }
-    
-    if (deadlineIso) {
-        updateProposalCountdown();
-        setInterval(updateProposalCountdown, 1000);
-    }
-    </script>

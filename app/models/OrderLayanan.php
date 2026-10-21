@@ -31,6 +31,9 @@ class OrderLayanan extends \DB\SQL\Mapper {
     );
 
     public function __construct(\DB\SQL $db) {
+        if (date_default_timezone_get() !== 'Asia/Jakarta') {
+            date_default_timezone_set('Asia/Jakarta');
+        }
         self::ensureColumns($db);
         parent::__construct($db, 'order_layanan');
     }
@@ -43,7 +46,13 @@ class OrderLayanan extends \DB\SQL\Mapper {
         if ($checked) return;
         try {
             $cols = [
-                'nomor_permintaan' => 'VARCHAR(50) NULL AFTER id'
+                'nomor_permintaan' => 'VARCHAR(50) NULL AFTER id',
+'is_unlocked_edit' => 'TINYINT(1) NOT NULL DEFAULT 0',
+                'unlocked_by' => 'INT(11) NULL',
+                'unlocked_at' => 'DATETIME NULL',
+                'unlocked_until' => 'DATETIME NULL',
+                'unlocked_days' => 'INT(11) NULL DEFAULT 3',
+                'unlocked_reason' => 'VARCHAR(255) NULL'
             ];
             foreach ($cols as $col => $def) {
                 try {
@@ -54,23 +63,18 @@ class OrderLayanan extends \DB\SQL\Mapper {
         } catch (\Exception $e) {}
     }
 
-    /**
-     * Hitung deadline hari kerja berbasis tb_hari_libur (H+1 exclude weekend & holidays)
-     */
-    public function hitungDeadlineHariKerja(string $tanggalSampel, int $durasiHariKerja = 30): array {
-        $time = strtotime($tanggalSampel);
-        if (!$time) {
-            $time = time();
-            $tanggalSampel = date('Y-m-d', $time);
-        }
+    private static $cachedHolidays = null;
 
-        if ($durasiHariKerja <= 0) {
-            $durasiHariKerja = 30;
+    /**
+     * Ambil daftar tanggal merah / hari libur resmi (di-cache per request)
+     */
+    public function getDaftarLibur(): array {
+        if (self::$cachedHolidays !== null) {
+            return self::$cachedHolidays;
         }
 
         $holidays = [];
         try {
-            // Ambil seluruh tanggal libur resmi dari tb_tanggal_libur di sil2020
             $rowsTgl = $this->db->exec("SELECT tanggal_libur FROM tb_tanggal_libur");
             if (!empty($rowsTgl)) {
                 foreach ($rowsTgl as $r) {
@@ -94,7 +98,6 @@ class OrderLayanan extends \DB\SQL\Mapper {
             } catch (\Exception $e2) {}
         }
 
-        // Lengkapi dengan deskripsi nama hari libur jika tersedia di tb_hari_libur
         try {
             $rowsHari = $this->db->exec("SELECT tanggal, keterangan FROM tb_hari_libur");
             if (!empty($rowsHari)) {
@@ -118,6 +121,202 @@ class OrderLayanan extends \DB\SQL\Mapper {
                 }
             } catch (\Exception $e2) {}
         }
+
+        self::$cachedHolidays = $holidays;
+        return self::$cachedHolidays;
+    }
+
+    /**
+     * Hitung sisa hari kerja menuju tanggal deadline (mengecualikan Sabtu, Minggu, dan tanggal merah)
+     */
+    public function hitungSisaHariKerja(string $tanggalDeadline, ?string $tanggalHariIni = null): int {
+        $todayStr = !empty($tanggalHariIni) ? date('Y-m-d', strtotime($tanggalHariIni)) : date('Y-m-d');
+        $deadlineStr = date('Y-m-d', strtotime($tanggalDeadline));
+
+        $tToday = strtotime($todayStr);
+        $tDeadline = strtotime($deadlineStr);
+
+        if (!$tDeadline || $tToday === $tDeadline) {
+            return 0;
+        }
+
+        $holidays = $this->getDaftarLibur();
+
+        if ($tToday < $tDeadline) {
+            $curr = strtotime('+1 day', $tToday);
+            $sisa = 0;
+            while ($curr <= $tDeadline) {
+                $dStr = date('Y-m-d', $curr);
+                $dow = (int)date('N', $curr);
+                if ($dow < 6 && !isset($holidays[$dStr])) {
+                    $sisa++;
+                }
+                $curr = strtotime('+1 day', $curr);
+            }
+            return $sisa;
+        } else {
+            $curr = strtotime('+1 day', $tDeadline);
+            $lewat = 0;
+            while ($curr <= $tToday) {
+                $dStr = date('Y-m-d', $curr);
+                $dow = (int)date('N', $curr);
+                if ($dow < 6 && !isset($holidays[$dStr])) {
+                    $lewat++;
+                }
+                $curr = strtotime('+1 day', $curr);
+            }
+            return -$lewat;
+        }
+    }
+
+    /**
+     * Resolusi durasi pengerjaan dan perhitungan mundur (countdown) sisa hari kerja terhadap deadline
+     */
+    public function resolveDurasiInfo(array $r): array {
+        $durasiDitentukan = (
+            in_array($r['status_proposal'] ?? '', ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan']) ||
+            in_array($r['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui']) ||
+            !empty($r['tanggal_deadline_spm']) ||
+            !empty($r['tanggal_spm_mulai']) ||
+            !empty($r['tanggal_terima_sampel'])
+        );
+
+        $durasiTotalNilai = 30;
+        $durasiSatuan = 'Hari Kerja';
+
+        if (!empty($r['spm_durasi_nilai']) && (!empty($r['tanggal_spm_mulai']) || !empty($r['tanggal_terima_sampel']))) {
+            $durasiTotalNilai = (int)$r['spm_durasi_nilai'];
+            $durasiSatuan = !empty($r['spm_durasi_satuan']) ? $r['spm_durasi_satuan'] : 'Hari Kerja';
+        } elseif (!empty($r['proposal_durasi']) && preg_match('/(\d+)/', $r['proposal_durasi'], $mProp)) {
+            $durasiTotalNilai = (int)$mProp[1];
+            if (stripos($r['proposal_durasi'], 'kalender') !== false) {
+                $durasiSatuan = 'Hari Kalender';
+            } elseif (stripos($r['proposal_durasi'], 'bulan') !== false) {
+                $durasiSatuan = 'Bulan';
+            } elseif (stripos($r['proposal_durasi'], 'minggu') !== false) {
+                $durasiSatuan = 'Minggu';
+            } else {
+                $durasiSatuan = 'Hari Kerja';
+            }
+        } elseif (!empty($r['spm_layanan']) && strtolower(trim($r['spm_layanan'])) !== 'lainnya' && preg_match('/(\d+)/', $r['spm_layanan'], $mSpm)) {
+            $durasiTotalNilai = (int)$mSpm[1];
+            $durasiSatuan = !empty($r['spm_durasi_satuan']) ? $r['spm_durasi_satuan'] : 'Hari Kerja';
+        } elseif (!empty($r['spm_durasi_nilai']) && (int)$r['spm_durasi_nilai'] > 0) {
+            $durasiTotalNilai = (int)$r['spm_durasi_nilai'];
+            $durasiSatuan = !empty($r['spm_durasi_satuan']) ? $r['spm_durasi_satuan'] : 'Hari Kerja';
+        } elseif (!empty($r['durasi_hari_kerja']) && (int)$r['durasi_hari_kerja'] > 0) {
+            $durasiTotalNilai = (int)$r['durasi_hari_kerja'];
+            $durasiSatuan = 'Hari Kerja';
+        }
+
+        $durasiAwalLabel = "{$durasiTotalNilai} {$durasiSatuan}";
+
+        $isOrderSelesai = (
+            (!empty($r['bast_id']) && in_array($r['status_bast'] ?? '', ['disetujui', 'selesai', 'terbit'])) ||
+            ($r['status'] ?? '') === 'selesai' ||
+            ($r['status_pelaksanaan'] ?? '') === 'laporan_selesai'
+        );
+
+        $deadlineEfektif = null;
+        if (!empty($r['tanggal_deadline_spm'])) {
+            $deadlineEfektif = date('Y-m-d', strtotime($r['tanggal_deadline_spm']));
+        } elseif (!empty($r['po_target_selesai']) || !empty($r['target_po'])) {
+            $deadlineEfektif = date('Y-m-d', strtotime($r['po_target_selesai'] ?? $r['target_po']));
+        } elseif ($durasiDitentukan) {
+            $candidates = [
+                $r['tanggal_spm_mulai'] ?? null,
+                $r['tanggal_terima_sampel'] ?? null,
+                $r['po_target_mulai'] ?? null,
+                $r['tanggal_bayar_terakhir'] ?? null,
+                (($r['status_respon_klien'] ?? '') === 'deal') ? ($r['penawaran_updated_at'] ?? ($r['penawaran_tanggal_surat'] ?? null)) : null,
+                $r['proposal_disetujui_at'] ?? null,
+            ];
+            $tglAcuan = null;
+            foreach ($candidates as $cand) {
+                if (!empty($cand)) {
+                    $tglAcuan = $cand;
+                    break;
+                }
+            }
+
+            if (!empty($tglAcuan)) {
+                $tglMulaiYmd = date('Y-m-d', strtotime($tglAcuan));
+                $calc = $this->hitungDeadlineFleksibel($tglMulaiYmd, $durasiTotalNilai, $durasiSatuan);
+                $deadlineEfektif = $calc['tanggal_deadline_spm'];
+            }
+        }
+
+        $sisaHari = null;
+        $durasiTampil = $durasiAwalLabel;
+        $badgeClass = 'bg-success-subtle text-success border border-success-subtle';
+        $tooltip = "Waktu pengerjaan disetujui: {$durasiAwalLabel}";
+
+        if ($isOrderSelesai) {
+            $durasiTampil = $durasiAwalLabel;
+            $badgeClass = 'bg-success-subtle text-success border border-success-subtle';
+            $tooltip = "Order telah selesai (Target durasi: {$durasiAwalLabel})";
+        } elseif ($durasiDitentukan && !empty($deadlineEfektif)) {
+            if (stripos($durasiSatuan, 'kerja') !== false) {
+                $sisaHari = $this->hitungSisaHariKerja($deadlineEfektif);
+                if ($sisaHari > $durasiTotalNilai) {
+                    $sisaHari = $durasiTotalNilai;
+                }
+                $satuanPendek = 'Hari Kerja';
+            } else {
+                $sisaHari = (int)ceil((strtotime($deadlineEfektif) - strtotime(date('Y-m-d'))) / 86400);
+                $satuanPendek = 'Hari Kalender';
+            }
+
+            $tglDeadlineFmt = date('d/m/Y', strtotime($deadlineEfektif));
+            if ($sisaHari > 0) {
+                $durasiTampil = "{$sisaHari} {$satuanPendek}";
+                if ($sisaHari <= 5) {
+                    $badgeClass = 'bg-warning-subtle text-warning-emphasis border border-warning-subtle';
+                } else {
+                    $badgeClass = 'bg-success-subtle text-success border border-success-subtle';
+                }
+                $tooltip = "Sisa {$sisaHari} dari {$durasiAwalLabel} • Target Selesai: {$tglDeadlineFmt}";
+            } elseif ($sisaHari === 0) {
+                $durasiTampil = "0 {$satuanPendek} (Hari Ini)";
+                $badgeClass = 'bg-danger-subtle text-danger border border-danger-subtle';
+                $tooltip = "Batas akhir pengerjaan hari ini ({$tglDeadlineFmt}) • Durasi awal: {$durasiAwalLabel}";
+            } else {
+                $lewat = abs($sisaHari);
+                $durasiTampil = "Lewat {$lewat} {$satuanPendek}";
+                $badgeClass = 'bg-danger-subtle text-danger border border-danger-subtle';
+                $tooltip = "Melewati batas waktu {$lewat} {$satuanPendek} (Target: {$tglDeadlineFmt})";
+            }
+        }
+
+        return [
+            'durasi_ditentukan'        => $durasiDitentukan,
+            'durasi_awal_label'        => $durasiAwalLabel,
+            'durasi_total_nilai'       => $durasiTotalNilai,
+            'durasi_satuan_efektif'    => $durasiSatuan,
+            'tanggal_deadline_efektif' => $deadlineEfektif,
+            'sisa_hari_kerja'          => $sisaHari,
+            'durasi_tampil'            => $durasiTampil,
+            'durasi_badge_class'       => $badgeClass,
+            'durasi_tooltip'           => $tooltip,
+            'is_order_selesai'         => $isOrderSelesai,
+        ];
+    }
+
+    /**
+     * Hitung deadline hari kerja berbasis tb_hari_libur (H+1 exclude weekend & holidays)
+     */
+    public function hitungDeadlineHariKerja(string $tanggalSampel, int $durasiHariKerja = 30): array {
+        $time = strtotime($tanggalSampel);
+        if (!$time) {
+            $time = time();
+            $tanggalSampel = date('Y-m-d', $time);
+        }
+
+        if ($durasiHariKerja <= 0) {
+            $durasiHariKerja = 30;
+        }
+
+        $holidays = $this->getDaftarLibur();
 
         // Perhitungan H+1 hari kerja (Pak Hendy: Hari pertama pengerjaan adalah hari kerja berikutnya)
         $curr = strtotime('+1 day', $time);
@@ -276,16 +475,20 @@ class OrderLayanan extends \DB\SQL\Mapper {
                        COALESCE(NULLIF(c.emailcustomer, ''), c.emailcustomer_sertifikasi, '-') AS email,
                        COALESCE(NULLIF(c.alamatcustomer_baru, ''), c.alamatcustomer, '-') AS alamat,
                        p.id AS po_id, p.nomor_po, p.status AS status_po, p.biaya AS biaya_po,
+                       p.target_mulai AS po_target_mulai, p.target_selesai AS po_target_selesai,
                        sp.id AS surat_penawaran_id, sp.status_respon_klien, sp.nomor_surat AS nomor_penawaran,
+                       sp.tanggal_surat AS penawaran_tanggal_surat, sp.updated_at AS penawaran_updated_at,
                        pr.durasi_kegiatan AS proposal_durasi, pr.status_proposal,
-                       pr.file_proposal, pr.estimasi_total_biaya,
+                       pr.file_proposal, pr.estimasi_total_biaya, pr.disetujui_ketua_at AS proposal_disetujui_at,
                        b.id AS bast_id, b.status_bast,
                        COALESCE(u_tolak.nama_user, u_tinjau.nama_user, '-') AS nama_penolak,
                        COALESCE(NULLIF(o.alasan_tolak, ''), NULLIF(tk.alasan_penolakan, ''), '-') AS alasan_tolak,
                        COALESCE(o.tanggal_tolak, tk.tanggal_tinjauan) AS tanggal_tolak,
                        COALESCE((SELECT SUM(jumlah) FROM opti_pembayaran WHERE order_id = o.id), 0) AS total_terbayar,
+                       (SELECT MAX(tanggal_bayar) FROM opti_pembayaran WHERE order_id = o.id) AS tanggal_bayar_terakhir,
                        u_pic.nama_user AS pic_proposal_nama,
-                       u_pelaksana.nama_user AS ketua_pelaksana_nama
+                       u_pelaksana.nama_user AS ketua_pelaksana_nama,
+                       u_unlock.nama_user AS unlocked_by_name
                 FROM order_layanan o
                 JOIN tb_customer c ON o.id_customer = c.id_customer
                 LEFT JOIN po p ON o.id = p.order_id
@@ -297,6 +500,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
                 LEFT JOIN tb_arsipuser u_tinjau ON tk.ditinjau_oleh = u_tinjau.id_user
                 LEFT JOIN tb_arsipuser u_pic ON o.pic_proposal_id = u_pic.id_user
                 LEFT JOIN tb_arsipuser u_pelaksana ON o.ketua_pelaksana_id = u_pelaksana.id_user
+                LEFT JOIN tb_arsipuser u_unlock ON o.unlocked_by = u_unlock.id_user
                 WHERE 1=1";
         
         $params = array();
@@ -384,10 +588,70 @@ class OrderLayanan extends \DB\SQL\Mapper {
             $r['nmcustomer_murni'] = Customer::cleanNamaPerusahaan($r['nmcustomer'] ?? ($r['nama_perusahaan'] ?? ''), $r['pt_cv'] ?? '');
             $r['nama_perusahaan'] = Customer::formatNamaPerusahaan($r['pt_cv'] ?? '', $r['nama_perusahaan'] ?? '');
             $st = self::resolveStageStatus($r);
-            $r['stage_label'] = $st['label'];
-            $r['stage_class'] = $st['class'];
-            $r['stage_icon']  = $st['icon'];
-            $r['stage_user']  = $st['user'] ?? '';
+            $r['stage_label']        = $st['label'];
+            $r['stage_class']        = $st['class'];
+            $r['stage_icon']         = $st['icon'];
+            $r['stage_user']         = $st['user'] ?? '';
+            $r['keterangan_aksi']    = $st['keterangan_aksi'] ?? $st['label'];
+            $r['keterangan_sub']     = $st['keterangan_sub'] ?? '';
+            $r['keterangan_detail']  = $st['keterangan_detail'] ?? '';
+            $r['keterangan_icon']    = $st['keterangan_icon'] ?? 'bi-info-circle text-secondary';
+            $r['aksi_badge']         = $st['aksi_badge'] ?? 'bg-secondary-subtle text-secondary border';
+
+            // Evaluasi status unlock per-order dan countdown auto-lock
+            $r['is_unlocked_edit'] = ((int)($r['is_unlocked_edit'] ?? 0) === 1);
+            $r['unlocked_remaining_seconds'] = 0;
+            $r['unlocked_countdown_label'] = '';
+            $r['unlocked_until_formatted'] = '';
+            $r['unlocked_is_expired'] = false;
+
+            if ($r['is_unlocked_edit'] && !empty($r['unlocked_until'])) {
+                $now = time();
+                $until = strtotime($r['unlocked_until']);
+                if ($until <= $now) {
+                    $r['is_unlocked_edit'] = false;
+                    $r['unlocked_is_expired'] = true;
+                    try {
+                        $this->db->exec(
+                            "UPDATE order_layanan SET is_unlocked_edit = 0, unlocked_reason = CONCAT(COALESCE(unlocked_reason, ''), ' [Otomatis terkunci karena batas waktu habis]') WHERE id = ?",
+                            [1 => (int)$r['id']]
+                        );
+                    } catch (\Exception $eEx) {}
+                } else {
+                    $sisaDetik = $until - $now;
+                    $r['unlocked_remaining_seconds'] = $sisaDetik;
+                    $sisaJam = floor($sisaDetik / 3600);
+                    $sisaMenit = floor(($sisaDetik % 3600) / 60);
+                    $r['unlocked_countdown_label'] = "{$sisaJam}j {$sisaMenit}m";
+                    $r['unlocked_until_formatted'] = date('d/m/Y H:i', $until);
+                }
+            }
+
+            // Status Pembayaran Rinci
+            $biayaOrder = (float)($r['estimasi_biaya'] ?: ($r['biaya_po'] ?: 0));
+            $terbayar   = (float)($r['total_terbayar'] ?? 0);
+            if ($biayaOrder > 0 && $terbayar >= $biayaOrder) {
+                $r['status_bayar_label'] = 'Lunas';
+                $r['status_bayar_class'] = 'bg-success-subtle text-success border border-success-subtle';
+                $r['status_bayar_icon']  = 'bi-check2-circle';
+            } elseif ($terbayar > 0) {
+                $r['status_bayar_label'] = 'Sebagian';
+                $r['status_bayar_class'] = 'bg-warning-subtle text-warning-emphasis border border-warning-subtle';
+                $r['status_bayar_icon']  = 'bi-hourglass-split';
+            } elseif ($biayaOrder > 0) {
+                $r['status_bayar_label'] = 'Belum Bayar';
+                $r['status_bayar_class'] = 'bg-secondary-subtle text-secondary border border-secondary-subtle';
+                $r['status_bayar_icon']  = 'bi-clock';
+            } else {
+                $r['status_bayar_label'] = 'Menunggu Biaya';
+                $r['status_bayar_class'] = 'bg-light text-muted border';
+                $r['status_bayar_icon']  = 'bi-dash-circle';
+            }
+
+            $durInfo = $this->resolveDurasiInfo($r);
+            foreach ($durInfo as $kDur => $vDur) {
+                $r[$kDur] = $vDur;
+            }
 
             // Resolusi nama & badge tahap saat order ditolak
             if (($r['status_tinjauan'] ?? '') === 'tidak_layak') {
@@ -419,16 +683,21 @@ class OrderLayanan extends \DB\SQL\Mapper {
     public static function resolveStageStatus(array $o): array {
         $isSelulosa = (($o['jenis_layanan_opti'] ?? '') === 'selulosa');
         $isLingkungan = (($o['jenis_layanan_opti'] ?? '') === 'lingkungan');
-        $timKerjaLabel = $isLingkungan ? 'Tim Kerja Lingkungan' : ($isSelulosa ? 'Tim Kerja Selulosa' : 'Tim Kerja');
-        $katimLabel = $isLingkungan ? 'Ketua Tim Lingkungan' : ($isSelulosa ? 'Ketua Tim Selulosa' : 'Ketua Tim OPTI');
+        $katimLabel = $isSelulosa ? 'Ketua Tim Selulosa' : ($isLingkungan ? 'Ketua Tim Lingkungan' : 'Ketua Tim OPTI');
+        $timKerjaLabel = $isSelulosa ? 'Tim Kerja Selulosa' : ($isLingkungan ? 'Tim Kerja Lingkungan' : 'Tim Kerja OPTI');
 
-        // 1. Ditolak (Tahap 1-8 jika dinyatakan ditolak/tidak layak/batal)
-        if (($o['status'] ?? '') === 'ditolak' || ($o['status_tinjauan'] ?? '') === 'tidak_layak' || in_array($o['status_respon_klien'] ?? '', ['ditolak', 'batal'])) {
+        // 1. Order Ditolak
+        if (($o['status'] ?? '') === 'ditolak' || ($o['status_tinjauan'] ?? '') === 'tidak_layak' || in_array($o['status_respon_klien'] ?? '', ['batal', 'ditolak'])) {
             return [
-                'label' => 'Ditolak',
+                'label' => 'Order Ditolak',
                 'class' => 'status-pill status-pill-rose',
                 'icon'  => 'bi-x-circle-fill',
-                'user'  => 'Tim Mitra & Pelanggan'
+                'user'  => 'Tim Mitra & Pelanggan',
+                'keterangan_aksi'   => 'Permohonan Ditolak',
+                'keterangan_sub'    => 'Tidak Dapat Dilanjutkan',
+                'keterangan_detail' => !empty($o['alasan_tolak']) && $o['alasan_tolak'] !== '-' ? $o['alasan_tolak'] : 'Permohonan order tidak memenuhi kriteria',
+                'keterangan_icon'   => 'bi-x-circle text-danger',
+                'aksi_badge' => 'bg-danger-subtle text-danger border border-danger-subtle'
             ];
         }
 
@@ -441,7 +710,12 @@ class OrderLayanan extends \DB\SQL\Mapper {
                 'label' => 'Selesai (BAST)',
                 'class' => 'status-pill status-pill-emerald',
                 'icon'  => 'bi-check2-all',
-                'user'  => 'Tim Mitra & Pelanggan'
+                'user'  => 'Tim Mitra & Pelanggan',
+                'keterangan_aksi'   => 'Pekerjaan Selesai',
+                'keterangan_sub'    => 'BAST & Laporan Resmi Terbit',
+                'keterangan_detail' => 'Seluruh tahapan order telah tuntas dilaksanakan',
+                'keterangan_icon'   => 'bi-check-circle-fill text-success',
+                'aksi_badge' => 'bg-success-subtle text-success border border-success-subtle'
             ];
         }
 
@@ -451,7 +725,12 @@ class OrderLayanan extends \DB\SQL\Mapper {
                 'label' => 'Pengujian Lab',
                 'class' => 'status-pill status-pill-indigo',
                 'icon'  => 'bi-flask-fill',
-                'user'  => $timKerjaLabel
+                'user'  => $timKerjaLabel,
+                'keterangan_aksi'   => 'Pengujian di Laboratorium',
+                'keterangan_sub'    => 'Pelaksana: ' . $timKerjaLabel,
+                'keterangan_detail' => 'Analisis & pengujian sampel sedang berjalan',
+                'keterangan_icon'   => 'bi-flask text-primary',
+                'aksi_badge' => 'bg-primary-subtle text-primary border border-primary-subtle'
             ];
         }
 
@@ -461,19 +740,42 @@ class OrderLayanan extends \DB\SQL\Mapper {
 
         // Jika sudah DEAL & LUNAS, namun PO belum dibuat -> Alur masuk ke Step 7 (Sampel & PO)
         if ($isDeal && $isLunas) {
-            if (empty($o['tanggal_terima_sampel'])) {
+            if (empty($o['tanggal_terima_sampel']) && empty($o['tanggal_spm_mulai'])) {
                 return [
                     'label' => 'Menunggu Sampel',
                     'class' => 'status-pill status-pill-amber',
                     'icon'  => 'bi-box-seam-fill',
-                    'user'  => 'Tim Mitra & Pelanggan'
+                    'user'  => 'Tim Mitra & Pelanggan',
+                    'keterangan_aksi'   => 'Menunggu Kiriman Sampel',
+                    'keterangan_sub'    => 'Dari: ' . (!empty($o['nama_perusahaan']) ? $o['nama_perusahaan'] : 'Pelanggan'),
+                    'keterangan_detail' => 'Sampel uji belum sampai di laboratorium',
+                    'keterangan_icon'   => 'bi-box-seam text-warning',
+                    'aksi_badge' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
+                ];
+            } elseif (empty($o['ketua_pelaksana_id'])) {
+                return [
+                    'label' => 'Penunjukan Pelaksana',
+                    'class' => 'status-pill status-pill-rose',
+                    'icon'  => 'bi-person-plus-fill',
+                    'user'  => $katimLabel,
+                    'keterangan_aksi'   => 'Penunjukan Ketua Pelaksana',
+                    'keterangan_sub'    => 'Ketua Tim: ' . $katimLabel,
+                    'keterangan_detail' => 'Ketua Tim belum menunjuk pelaksana teknis',
+                    'keterangan_icon'   => 'bi-person-exclamation text-danger',
+                    'aksi_badge' => 'bg-danger-subtle text-danger border border-danger-subtle'
                 ];
             } else {
+                $namaPelaksana = !empty($o['ketua_pelaksana_nama']) ? $o['ketua_pelaksana_nama'] : 'Ketua Pelaksana';
                 return [
                     'label' => 'Penerbitan PO',
                     'class' => 'status-pill status-pill-blue',
                     'icon'  => 'bi-patch-check-fill',
-                    'user'  => $katimLabel
+                    'user'  => $namaPelaksana,
+                    'keterangan_aksi'   => 'Pembuatan Dokumen PO',
+                    'keterangan_sub'    => 'Pelaksana: ' . $namaPelaksana,
+                    'keterangan_detail' => 'Menunggu penyusunan & penerbitan PO teknis',
+                    'keterangan_icon'   => 'bi-person-check text-primary',
+                    'aksi_badge' => 'bg-primary-subtle text-primary border border-primary-subtle'
                 ];
             }
         }
@@ -484,7 +786,12 @@ class OrderLayanan extends \DB\SQL\Mapper {
                 'label' => 'Menunggu Bayar',
                 'class' => 'status-pill status-pill-amber',
                 'icon'  => 'bi-credit-card-2-front-fill',
-                'user'  => 'Tim Keuangan'
+                'user'  => 'Tim Keuangan',
+                'keterangan_aksi'   => 'Menunggu Pembayaran',
+                'keterangan_sub'    => 'Klien: ' . (!empty($o['nama_perusahaan']) ? $o['nama_perusahaan'] : 'Mitra'),
+                'keterangan_detail' => 'Pelanggan belum membayar tagihan layanan',
+                'keterangan_icon'   => 'bi-credit-card text-warning',
+                'aksi_badge' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
             ];
         }
 
@@ -495,7 +802,12 @@ class OrderLayanan extends \DB\SQL\Mapper {
                 'label' => 'Penawaran Terbit',
                 'class' => 'status-pill status-pill-sky',
                 'icon'  => 'bi-file-earmark-text-fill',
-                'user'  => 'Tim Mitra Industri'
+                'user'  => 'Tim Mitra Industri',
+                'keterangan_aksi'   => 'Menunggu Respon Penawaran',
+                'keterangan_sub'    => 'Klien: ' . (!empty($o['nama_perusahaan']) ? $o['nama_perusahaan'] : 'Pelanggan'),
+                'keterangan_detail' => 'Surat penawaran harga sudah dikirim ke pelanggan',
+                'keterangan_icon'   => 'bi-send-check text-info',
+                'aksi_badge' => 'bg-info-subtle text-info-emphasis border border-info-subtle'
             ];
         }
 
@@ -511,7 +823,12 @@ class OrderLayanan extends \DB\SQL\Mapper {
                         'label' => 'Siap Penawaran',
                         'class' => 'status-pill status-pill-sky',
                         'icon'  => 'bi-check-circle-fill',
-                        'user'  => 'Tim Mitra Industri'
+                        'user'  => 'Tim Mitra Industri',
+                        'keterangan_aksi'   => 'Siap Dibuat Surat Penawaran',
+                        'keterangan_sub'    => 'Pelaksana: Tim Mitra Industri',
+                        'keterangan_detail' => 'Rincian biaya selesai, siap diterbitkan surat',
+                        'keterangan_icon'   => 'bi-file-earmark-check text-primary',
+                        'aksi_badge' => 'bg-primary-subtle text-primary border border-primary-subtle'
                     ];
                 }
                 if (($o['status_proposal_biaya'] ?? '') === 'draft_disimpan') {
@@ -519,32 +836,55 @@ class OrderLayanan extends \DB\SQL\Mapper {
                         'label' => 'Draft Disimpan',
                         'class' => 'status-pill status-pill-amber',
                         'icon'  => 'bi-bookmark-check-fill',
-                        'user'  => 'Tim Kerja Lingkungan'
+                        'user'  => 'Tim Kerja Lingkungan',
+                        'keterangan_aksi'   => 'Penyusunan Biaya Uji',
+                        'keterangan_sub'    => 'Pelaksana: Tim Kerja Lingkungan',
+                        'keterangan_detail' => 'Draf tarif disimpan, belum diajukan penawaran',
+                        'keterangan_icon'   => 'bi-pencil-square text-warning',
+                        'aksi_badge' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
                     ];
                 }
                 return [
                     'label' => 'Tarif & Parameter',
                     'class' => 'status-pill status-pill-blue',
                     'icon'  => 'bi-calculator-fill',
-                    'user'  => 'Tim Kerja Lingkungan'
+                    'user'  => 'Tim Kerja Lingkungan',
+                    'keterangan_aksi'   => 'Perhitungan Tarif Uji',
+                    'keterangan_sub'    => 'Pelaksana: Tim Kerja Lingkungan',
+                    'keterangan_detail' => 'Sedang menentukan parameter & tarif lab',
+                    'keterangan_icon'   => 'bi-calculator text-primary',
+                    'aksi_badge' => 'bg-primary-subtle text-primary border border-primary-subtle'
                 ];
             } elseif ($isSelulosa) {
                 $proposalComplete = !empty($o['file_proposal']) && (float)($o['estimasi_total_biaya'] ?? 0) > 0;
-                $proposalApproved = $proposalComplete && (in_array($o['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui']) || in_array($o['status_proposal'] ?? '', ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan']));
+                $proposalApproved = in_array($o['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui']) || in_array($o['status_proposal'] ?? '', ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan']);
                 if ($proposalApproved) {
                     return [
                         'label' => 'Proposal Disetujui',
                         'class' => 'status-pill status-pill-emerald',
                         'icon'  => 'bi-check-circle-fill',
-                        'user'  => 'Tim Mitra Industri'
+                        'user'  => 'Tim Mitra Industri',
+                        'keterangan_aksi'   => 'Siap Dibuat Surat Penawaran',
+                        'keterangan_sub'    => 'Proposal Disetujui Ketua Tim',
+                        'keterangan_detail' => 'Menunggu Tim Mitra menerbitkan surat penawaran',
+                        'keterangan_icon'   => 'bi-check-circle-fill text-success',
+                        'aksi_badge' => 'bg-primary-subtle text-primary border border-primary-subtle'
                     ];
                 }
+                $rawPicNama = !empty($o['pic_proposal_nama']) ? trim($o['pic_proposal_nama']) : '';
+                $rawPicNama = preg_replace('/^pic\s*:\s*/i', '', $rawPicNama);
+                $picPelaksana = !empty($rawPicNama) ? $rawPicNama : 'Tim Kerja Selulosa';
                 if (($o['status_proposal'] ?? '') === 'draft_disimpan' || ($o['status_proposal_biaya'] ?? '') === 'draft_disimpan') {
                     return [
                         'label' => 'Draft Disimpan',
                         'class' => 'status-pill status-pill-amber',
                         'icon'  => 'bi-bookmark-check-fill',
-                        'user'  => 'Tim Kerja Selulosa'
+                        'user'  => 'Tim Kerja Selulosa',
+                        'keterangan_aksi'   => 'Draf Proposal Belum Diajukan',
+                        'keterangan_sub'    => 'Pelaksana: ' . $picPelaksana,
+                        'keterangan_detail' => 'Masih tersimpan sebagai draf di sistem',
+                        'keterangan_icon'   => 'bi-pencil-square text-warning',
+                        'aksi_badge' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
                     ];
                 }
                 if (($o['status_proposal_biaya'] ?? '') === 'menunggu_approval' || ($o['status_proposal'] ?? '') === 'diajukan' || $proposalComplete) {
@@ -552,21 +892,36 @@ class OrderLayanan extends \DB\SQL\Mapper {
                         'label' => 'Review Proposal',
                         'class' => 'status-pill status-pill-sky',
                         'icon'  => 'bi-hourglass-split',
-                        'user'  => 'Ketua Tim Selulosa'
+                        'user'  => 'Ketua Tim Selulosa',
+                        'keterangan_aksi'   => 'Pemeriksaan Proposal',
+                        'keterangan_sub'    => 'Ketua Tim: Ketua Tim Selulosa',
+                        'keterangan_detail' => 'Proposal sudah diajukan, menunggu persetujuan Katim',
+                        'keterangan_icon'   => 'bi-hourglass-split text-info',
+                        'aksi_badge' => 'bg-info-subtle text-info-emphasis border border-info-subtle'
                     ];
                 }
                 return [
                     'label' => 'Proposal Teknis',
                     'class' => 'status-pill status-pill-blue',
                     'icon'  => 'bi-file-earmark-arrow-up-fill',
-                    'user'  => 'Tim Kerja Selulosa'
+                    'user'  => 'Tim Kerja Selulosa',
+                    'keterangan_aksi'   => 'Penyusunan Proposal Teknis',
+                    'keterangan_sub'    => 'Pelaksana: ' . $picPelaksana,
+                    'keterangan_detail' => 'Sedang menyusun proposal & estimasi biaya',
+                    'keterangan_icon'   => 'bi-pencil-square text-primary',
+                    'aksi_badge' => 'bg-primary-subtle text-primary border border-primary-subtle'
                 ];
             } else {
                 return [
                     'label' => 'Disposisi Masuk',
                     'class' => 'status-pill status-pill-slate',
                     'icon'  => 'bi-inbox-fill',
-                    'user'  => $katimLabel
+                    'user'  => $katimLabel,
+                    'keterangan_aksi'   => 'Permohonan Baru Masuk',
+                    'keterangan_sub'    => 'Perlu Disposisi Layanan',
+                    'keterangan_detail' => 'Perlu ditentukan jenis divisi & Ketua Tim',
+                    'keterangan_icon'   => 'bi-inbox text-secondary',
+                    'aksi_badge' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
                 ];
             }
         }
@@ -578,7 +933,12 @@ class OrderLayanan extends \DB\SQL\Mapper {
                     'label' => 'Kaji Kelayakan',
                     'class' => 'status-pill status-pill-amber',
                     'icon'  => 'bi-clipboard-check-fill',
-                    'user'  => $katimLabel
+                    'user'  => $katimLabel,
+                    'keterangan_aksi'   => 'Menunggu Kaji Kelayakan',
+                    'keterangan_sub'    => 'Ketua Tim: ' . $katimLabel,
+                    'keterangan_detail' => 'Perlu dicek kelayakan personel & peralatan lab',
+                    'keterangan_icon'   => 'bi-clipboard-check text-warning',
+                    'aksi_badge' => 'bg-danger-subtle text-danger border border-danger-subtle'
                 ];
             }
         }
@@ -589,7 +949,12 @@ class OrderLayanan extends \DB\SQL\Mapper {
                 'label' => 'Draft Disimpan',
                 'class' => 'status-pill status-pill-amber',
                 'icon'  => 'bi-bookmark-check-fill',
-                'user'  => 'Tim Mitra Industri'
+                'user'  => 'Tim Mitra Industri',
+                'keterangan_aksi'   => 'Draf Formulir Pelayanan',
+                'keterangan_sub'    => 'Pelaksana: Tim Mitra Industri',
+                'keterangan_detail' => 'Masih diisi oleh staf mitra, belum diajukan',
+                'keterangan_icon'   => 'bi-file-earmark-text text-warning',
+                'aksi_badge' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
             ];
         }
 
@@ -598,7 +963,12 @@ class OrderLayanan extends \DB\SQL\Mapper {
                 'label' => 'Disposisi Masuk',
                 'class' => 'status-pill status-pill-slate',
                 'icon'  => 'bi-inbox-fill',
-                'user'  => 'Tim Mitra Industri'
+                'user'  => 'Tim Mitra Industri',
+                'keterangan_aksi'   => 'Permohonan Baru Masuk',
+                'keterangan_sub'    => 'Perlu Disposisi Layanan',
+                'keterangan_detail' => 'Perlu ditentukan divisi & Ketua Tim',
+                'keterangan_icon'   => 'bi-inbox text-secondary',
+                'aksi_badge' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
             ];
         }
 
@@ -607,7 +977,12 @@ class OrderLayanan extends \DB\SQL\Mapper {
             'label' => 'Order Baru',
             'class' => 'status-pill status-pill-sky',
             'icon'  => 'bi-file-earmark',
-            'user'  => 'Tim Mitra Industri'
+            'user'  => 'Tim Mitra Industri',
+            'keterangan_aksi'   => 'Permohonan Baru Diterima',
+            'keterangan_sub'    => 'Registrasi Berkas Masuk',
+            'keterangan_detail' => 'Menunggu verifikasi permohonan jasa',
+            'keterangan_icon'   => 'bi-info-circle text-info',
+            'aksi_badge' => 'bg-info-subtle text-info-emphasis border border-info-subtle'
         ];
     }
 
@@ -622,15 +997,19 @@ class OrderLayanan extends \DB\SQL\Mapper {
                     COALESCE(NULLIF(c.nohpcontactperson_opti, ''), NULLIF(c.nohpcontactperson, ''), c.notelpcustomer, '-') AS telepon,
                     COALESCE(NULLIF(c.emailcustomer, ''), c.emailcustomer_sertifikasi, '-') AS email,
                     COALESCE(NULLIF(c.alamatcustomer_baru, ''), c.alamatcustomer, '-') AS alamat,
-                    p.id AS po_id, p.nomor_po, p.status AS status_po, p.biaya AS biaya_po, p.target_selesai AS target_po,
+                    p.id AS po_id, p.nomor_po, p.status AS status_po, p.biaya AS biaya_po,
+                    p.target_mulai AS po_target_mulai, p.target_selesai AS target_po, p.target_selesai AS po_target_selesai,
                     sp.id AS surat_penawaran_id, sp.status_respon_klien, sp.nomor_surat AS nomor_penawaran,
+                    sp.tanggal_surat AS penawaran_tanggal_surat, sp.updated_at AS penawaran_updated_at,
                     pr.durasi_kegiatan AS proposal_durasi, pr.status_proposal,
-                    pr.file_proposal, pr.estimasi_total_biaya,
+                    pr.file_proposal, pr.estimasi_total_biaya, pr.disetujui_ketua_at AS proposal_disetujui_at,
                     b.id AS bast_id, b.status_bast,
                     COALESCE((SELECT SUM(jumlah) FROM opti_pembayaran WHERE order_id = o.id), 0) AS total_terbayar,
+                    (SELECT MAX(tanggal_bayar) FROM opti_pembayaran WHERE order_id = o.id) AS tanggal_bayar_terakhir,
                     u_pic.nama_user AS pic_proposal_nama,
                     u_pelaksana.nama_user AS ketua_pelaksana_nama,
                     u_klaim.nama_user AS nama_pengklaim,
+                    u_unlock.nama_user AS unlocked_by_name,
                     a.nomor_surat AS nomor_surat_masuk,
                     a.tanggal_surat AS tanggal_surat_masuk,
                     a.perihal AS perihal_surat_masuk,
@@ -646,6 +1025,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
              LEFT JOIN tb_arsipuser u_pic ON o.pic_proposal_id = u_pic.id_user
              LEFT JOIN tb_arsipuser u_pelaksana ON o.ketua_pelaksana_id = u_pelaksana.id_user
              LEFT JOIN tb_arsipuser u_klaim ON o.diklaim_oleh = u_klaim.id_user
+              LEFT JOIN tb_arsipuser u_unlock ON o.unlocked_by = u_unlock.id_user
              LEFT JOIN opti_proposal_riset pr ON o.id = pr.order_id
              LEFT JOIN opti_bast b ON b.id = (SELECT id FROM opti_bast WHERE order_id = o.id ORDER BY id DESC LIMIT 1)
              WHERE o.id = ?",
@@ -657,11 +1037,45 @@ class OrderLayanan extends \DB\SQL\Mapper {
         $detail = $res[0];
         $detail['nmcustomer_murni'] = Customer::cleanNamaPerusahaan($detail['nmcustomer'] ?? ($detail['nama_perusahaan'] ?? ''), $detail['pt_cv'] ?? '');
         $detail['nama_perusahaan'] = Customer::formatNamaPerusahaan($detail['pt_cv'] ?? '', $detail['nama_perusahaan'] ?? '');
+        // Evaluasi status unlock per-order dan countdown auto-lock
+        $detail['is_unlocked_edit'] = ((int)($detail['is_unlocked_edit'] ?? 0) === 1);
+        $detail['unlocked_remaining_seconds'] = 0;
+        $detail['unlocked_countdown_label'] = '';
+        $detail['unlocked_until_formatted'] = '';
+        $detail['unlocked_is_expired'] = false;
+
+        if ($detail['is_unlocked_edit'] && !empty($detail['unlocked_until'])) {
+            $now = time();
+            $until = strtotime($detail['unlocked_until']);
+            if ($until <= $now) {
+                $detail['is_unlocked_edit'] = false;
+                $detail['unlocked_is_expired'] = true;
+                try {
+                    $this->db->exec(
+                        "UPDATE order_layanan SET is_unlocked_edit = 0, unlocked_reason = CONCAT(COALESCE(unlocked_reason, ''), ' [Otomatis terkunci karena batas waktu habis]') WHERE id = ?",
+                        [1 => $id]
+                    );
+                } catch (\Exception $eEx) {}
+            } else {
+                $sisaDetik = $until - $now;
+                $detail['unlocked_remaining_seconds'] = $sisaDetik;
+                $sisaJam = floor($sisaDetik / 3600);
+                $sisaMenit = floor(($sisaDetik % 3600) / 60);
+                $detail['unlocked_countdown_label'] = "{$sisaJam}j {$sisaMenit}m";
+                $detail['unlocked_until_formatted'] = date('d/m/Y H:i', $until);
+            }
+        }
+
         $st = self::resolveStageStatus($detail);
         $detail['stage_label'] = $st['label'];
         $detail['stage_class'] = $st['class'];
         $detail['stage_icon']  = $st['icon'];
         $detail['stage_user']  = $st['user'] ?? '';
+
+        $durInfo = $this->resolveDurasiInfo($detail);
+        foreach ($durInfo as $kDur => $vDur) {
+            $detail[$kDur] = $vDur;
+        }
 
         return $detail;
     }
@@ -1335,5 +1749,76 @@ class OrderLayanan extends \DB\SQL\Mapper {
         $this->erase();
         return true;
     }
-}
 
+    /**
+     * Cek apakah order layanan sedang dalam status unlock per-order oleh Super Admin
+     * Otomatis mengunci kembali jika durasi waktu habis (Auto-Lock Expired)
+     */
+    public function isOrderUnlocked(int $orderId): bool {
+        if ($orderId <= 0) return false;
+        $row = $this->db->exec("SELECT is_unlocked_edit, unlocked_until, unlocked_reason, nomor_order FROM order_layanan WHERE id = ?", [1 => $orderId]);
+        if (!empty($row)) {
+            $isUnlocked = ((int)$row[0]['is_unlocked_edit'] === 1);
+            if ($isUnlocked && !empty($row[0]['unlocked_until'])) {
+                $tz = new \DateTimeZone('Asia/Jakarta');
+                $now = (new \DateTime('now', $tz))->getTimestamp();
+                $until = (new \DateTime($row[0]['unlocked_until'], $tz))->getTimestamp();
+                if ($until <= $now) {
+                    // Durasi izin edit telah kedaluwarsa -> otomatis kunci kembali
+                    $this->db->exec(
+                        "UPDATE order_layanan SET is_unlocked_edit = 0, unlocked_reason = CONCAT(COALESCE(unlocked_reason, ''), ' [Otomatis terkunci karena batas waktu habis]') WHERE id = ?",
+                        [1 => $orderId]
+                    );
+                    return false;
+                }
+            }
+            return $isUnlocked;
+        }
+        return false;
+    }
+
+    /**
+     * Buka / Kunci izin perubahan data (Unlock Per-Order) khusus Super Admin dengan auto-kunci countdown
+     */
+    public function toggleUnlockEdit(int $orderId, int $userId, ?string $reason = null, int $durationDays = 3): array {
+        $this->load(['id = ?', $orderId]);
+        if ($this->dry()) {
+            throw new \Exception("Order #{$orderId} tidak ditemukan.");
+        }
+
+        $currentStatus = (int)($this->is_unlocked_edit ?? 0);
+        $newStatus = ($currentStatus === 1) ? 0 : 1;
+        $tz = new \DateTimeZone('Asia/Jakarta');
+
+        $this->is_unlocked_edit = $newStatus;
+        if ($newStatus === 1) {
+            $durationDays = max(1, $durationDays > 0 ? $durationDays : 3);
+            $dtNow = new \DateTime('now', $tz);
+            $this->unlocked_by = $userId;
+            $this->unlocked_at = $dtNow->format('Y-m-d H:i:s');
+            $this->unlocked_days = $durationDays;
+
+            $dtUntil = clone $dtNow;
+            $dtUntil->modify("+{$durationDays} days");
+            $this->unlocked_until = $dtUntil->format('Y-m-d H:i:s');
+            $this->unlocked_reason = !empty($reason) ? trim($reason) : 'Izin perubahan data diberikan oleh Super Admin';
+        } else {
+            // Ketika dikunci kembali
+            $this->unlocked_by = null;
+            $this->unlocked_at = null;
+            $this->unlocked_until = null;
+            $this->unlocked_days = null;
+            $this->unlocked_reason = !empty($reason) ? trim($reason) : 'Akses edit ditutup kembali oleh Super Admin';
+        }
+        $this->save();
+
+        return [
+            'id' => $orderId,
+            'is_unlocked_edit' => $newStatus,
+            'unlocked_reason' => $this->unlocked_reason,
+            'unlocked_until' => $this->unlocked_until,
+            'unlocked_days' => $this->unlocked_days,
+            'action_label' => ($newStatus === 1) ? 'dibuka' : 'dikunci'
+        ];
+    }
+}
