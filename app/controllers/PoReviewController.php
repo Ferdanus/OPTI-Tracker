@@ -785,9 +785,61 @@ class PoReviewController extends Controller {
                 "INSERT INTO po_chat (po_id, pengirim_id, sisi, pesan, sistem, created_at) VALUES (?, ?, ?, ?, 1, NOW())",
                 [1 => (int) $poId, 2 => (int) $pengirimId, 3 => $sisi, 4 => $teks]
             );
+            self::catatRiwayatOrder($db, $poId, $pengirimId, $teks);   // salin juga ke Riwayat Aktivitas detail order
         } catch (\Exception $e) {
             // catatan sistem bersifat pelengkap
         }
+    }
+
+    /**
+     * Salin kejadian alur PO ke Riwayat Aktivitas di detail order (opti_activity_log), supaya alur PO di Daftar Review PO
+     * nyambung dengan Riwayat Aktivitas. Dipanggil otomatis dari catatPesanSistem() dan langsung dari verifikasi Humas.
+     * Tidak pernah menggagalkan proses utama.
+     */
+    public static function catatRiwayatOrder($db, $poId, $userId, $teks, $aksi = '') {
+        try {
+            $teks = trim((string) $teks);
+            if ($teks === '' || preg_match('/\bmembaca\b/u', $teks)) { return; }   // "membaca ..." = penanda dibaca, bukan kejadian alur
+            $r = $db->exec("SELECT order_id, nomor_po FROM po_kegiatan WHERE id = ? LIMIT 1", [1 => (int) $poId]);
+            if (empty($r) || (int) $r[0]['order_id'] <= 0) { return; }
+            $orderId = (int) $r[0]['order_id'];
+            if ($aksi === '') { $aksi = self::aksiRiwayatDariTeks($teks); }
+            $nomor = trim((string) $r[0]['nomor_po']);
+            $desk = $teks . ($nomor !== '' ? ' (PO ' . $nomor . ')' : '');
+            if (function_exists('mb_substr')) { $desk = mb_substr($desk, 0, 480, 'UTF-8'); }
+            $uid = (int) $userId;
+            // jangan ganda kalau kejadian yang sama tercatat dua kali dalam beberapa detik
+            $ada = $db->exec(
+                "SELECT id FROM opti_activity_log WHERE order_id = ? AND aksi = ? AND deskripsi = ? AND user_id = ? AND created_at >= (NOW() - INTERVAL 10 SECOND) LIMIT 1",
+                [1 => $orderId, 2 => $aksi, 3 => $desk, 4 => $uid]
+            );
+            if (!empty($ada)) { return; }
+            $nama = isset($_SESSION['nama_lengkap']) ? $_SESSION['nama_lengkap'] : (isset($_SESSION['nama_user']) ? $_SESSION['nama_user'] : 'User');
+            $role = isset($_SESSION['role']) ? $_SESSION['role'] : 'user';
+            $ip = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '127.0.0.1';
+            $db->exec(
+                "INSERT INTO opti_activity_log (order_id, modul, aksi, deskripsi, user_id, user_nama, user_role, ip_address, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())",
+                [1 => $orderId, 2 => 'po_kegiatan', 3 => $aksi, 4 => $desk, 5 => $uid, 6 => (string) $nama, 7 => (string) $role, 8 => (string) $ip]
+            );
+        } catch (\Throwable $e) {
+            // riwayat bersifat pelengkap
+        }
+    }
+
+    /** Nama aksi Riwayat dari bunyi pesan sistem (dipakai ikon & warna di Riwayat Aktivitas detail order). */
+    protected static function aksiRiwayatDariTeks($teks) {
+        $t = mb_strtolower((string) $teks, 'UTF-8');
+        $peta = array(
+            'meminta revisi' => 'minta_revisi', 'meminta perbaikan' => 'minta_revisi',
+            'menyetujui po' => 'review_setuju', 'menyetujui revisi' => 'review_setuju',
+            'memverifikasi po' => 'verif_ppk', 'diverifikasi tim mitra' => 'verif_mitra',
+            'dikirim untuk direview' => 'kirim_petunjuk', 'mengirim revisi' => 'kirim_revisi',
+            'mendisposisikan' => 'alihkan_revisi', 'membuka kembali' => 'buka_kembali', 'mengerjakan revisi' => 'kerjakan_revisi',
+        );
+        foreach ($peta as $kata => $aksi) {
+            if (strpos($t, $kata) !== false) { return $aksi; }
+        }
+        return 'alur_lain';
     }
 
     /** id_user semua Ketua Tim aktif untuk satu divisi (opti_user_map). */

@@ -1,0 +1,870 @@
+<?php
+
+/**
+ * Base Controller
+ * Menyediakan render layout, manajemen sesi, proteksi CSRF, 
+ * dan Guard Role / Permission yang terpisah rapi dari mekanisme autentikasi.
+ * 
+ * Sesuai Matriks Hak Akses SOP Layanan OPTI BBSPJIS:
+ * - Admin/Petugas Order: Input & edit order baru, input pembayaran
+ * - Ketua Tim OPTI: Lihat order timnya, buat & edit PO, susun tim & jadwal, atur field tim
+ * - Approver (Kepala Balai/PPK/Ka.Bag TU): Verifikasi & validasi tiap tahap PO (approve)
+ *   TODO: Konfirmasi ke user asli apakah approver juga boleh reject dengan catatan revisi (bukan cuma ya/tidak).
+ * - Tim Kerja: Lihat order tugas, input laporan perkembangan & laporan akhir
+ * - Admin Kontrak: Input & edit kontrak PKS
+ * - Superadmin: Akses penuh
+ */
+class Controller {
+    protected $f3;
+    protected $db;
+
+    /**
+     * Matriks Hak Akses / Permission per Role (Logika Murni OPTI BBSPJIS Sesuai Arahan Mentor)
+     */
+    protected static $PERMISSION_MATRIX = array(
+        'ketua_tim_mitra' => array(
+            'surat_masuk:view', 'surat_masuk:klaim', 'surat_masuk:batal',
+            'order:view', 'order:create', 'order:edit', 'order:form_pelayanan', 'order:respon_klien',
+            'penawaran:view', 'penawaran:create', 'penawaran:edit', 'penawaran:cetak',
+            'kontrak:view', 'kontrak:create', 'kontrak:edit',
+            'klien:view', 'klien:create', 'klien:edit',
+            'alert:manage'
+        ),
+        'tim_mitra_industri' => array(
+            'surat_masuk:view', 'surat_masuk:klaim', 'surat_masuk:batal',
+            'order:view', 'order:create', 'order:edit', 'order:form_pelayanan', 'order:respon_klien',
+            'penawaran:view', 'penawaran:create', 'penawaran:edit', 'penawaran:cetak',
+            'kontrak:view', 'kontrak:create', 'kontrak:edit',
+            'klien:view', 'klien:create', 'klien:edit',
+            'alert:manage'
+        ),
+        'admin_order' => array(
+            'surat_masuk:view', 'surat_masuk:klaim', 'surat_masuk:batal',
+            'order:view', 'order:create', 'order:edit', 'order:form_pelayanan', 'order:respon_klien',
+            'penawaran:view', 'penawaran:create', 'penawaran:edit', 'penawaran:cetak',
+            'kontrak:view', 'kontrak:create', 'kontrak:edit',
+            'klien:view', 'klien:create', 'klien:edit',
+            'alert:manage'
+        ),
+        'tim_mitra' => array(
+            'surat_masuk:view', 'surat_masuk:klaim', 'surat_masuk:batal',
+            'order:view', 'order:create', 'order:edit', 'order:form_pelayanan', 'order:respon_klien',
+            'penawaran:view', 'penawaran:create', 'penawaran:edit', 'penawaran:cetak',
+            'kontrak:view', 'kontrak:create', 'kontrak:edit',
+            'klien:view', 'klien:create', 'klien:edit',
+            'alert:manage'
+        ),
+        'ketua_tim' => array(
+            'surat_masuk:view',
+            'order:view', 'order:tinjau', 'order:assign_pic', 'order:proposal_review',
+            'po:view', 'po:create', 'po:edit', 'po:rab', 'po:jadwal', 'po:evaluasi', 'po:sop',
+            'penawaran:view',
+            'klien:view',
+            'alert:manage'
+        ),
+        'ketua_tim_keuangan' => array(
+            'surat_masuk:view',
+            'order:view',
+            'penawaran:view',
+            'pembayaran:view', 'pembayaran:create', 'pembayaran:edit',
+            'po:view',
+            'kontrak:view',
+            'klien:view',
+            'alert:manage'
+        ),
+        'keuangan' => array(
+            'surat_masuk:view',
+            'order:view',
+            'penawaran:view',
+            'pembayaran:view', 'pembayaran:create', 'pembayaran:edit',
+            'po:view',
+            'kontrak:view',
+            'klien:view',
+            'alert:manage'
+        ),
+        'humas' => array(
+            'surat_masuk:view',
+            'order:view',
+            'penawaran:view',
+            'po:view',
+            'kontrak:view',
+            'klien:view',
+            'alert:manage'
+        ),
+        'ppk' => array(
+            'surat_masuk:view',
+            'order:view',
+            'penawaran:view',
+            'pembayaran:view',
+            'po:view', 'po:evaluasi',
+            'kontrak:view',
+            'klien:view',
+            'alert:manage'
+        ),
+        'user' => array(
+            'surat_masuk:view',
+            'order:view',
+            'penawaran:view',
+            'po:view',
+            'kontrak:view',
+            'klien:view'
+        ),
+        'tim_kerja' => array(
+            'surat_masuk:view',
+            'order:view', 'order:proposal', 'order:proposal_pic', 'order:proposal_upload', 'order:kalkulasi_biaya',
+            'po:view', 'po:progress', 'po:laporan', 'po:sop',
+            'alert:manage'
+        ),
+        'admin_kontrak' => array(
+            'surat_masuk:view',
+            'order:view',
+            'po:view', 'po:sop',
+            'kontrak:view', 'kontrak:create', 'kontrak:edit',
+            'klien:view',
+            'alert:manage'
+        ),
+        'sekretaris' => array(
+            'surat_masuk:view', 'surat_masuk:registrasi',
+            'alert:manage'
+        ),
+        'superadmin' => array(
+            '*' // Akses tanpa batas ke seluruh modul
+        )
+    );
+
+    public function __construct() {
+        $this->f3 = \Base::instance();
+        $this->db = $this->f3->get('DB');
+        $this->dbSekretariat = $this->f3->get('DB_SEKRETARIAT');
+    }
+
+    /**
+     * Helper render view dengan layout utama
+     */
+    public function render($viewFile, $pageTitle = 'SILOPTI', $activeMenu = '') {
+        $this->f3->set('content', $viewFile);
+        $this->f3->set('page_title', $pageTitle);
+        $this->f3->set('active_menu', $activeMenu);
+
+        $role = $this->getUserRole();
+        $layanan = $this->getUserLayanan();
+        $userId = $this->getUserId();
+
+        // Inject flag hak akses granular ke view untuk conditional UI rendering
+        $this->f3->set('user_id', $userId);
+        $this->f3->set('user_role', $role);
+        $this->f3->set('user_layanan', $layanan);
+
+        $this->f3->set('is_superadmin', $role === 'superadmin');
+        $isTimMitra = ($role === 'tim_mitra_industri' || $role === 'admin_order' || $role === 'tim_mitra' || $role === 'ketua_tim_mitra');
+        $this->f3->set('is_tim_mitra_industri', $isTimMitra);
+        $this->f3->set('is_tim_mitra', $isTimMitra);
+        $this->f3->set('is_admin_order', $isTimMitra);
+        $this->f3->set('is_ketua_tim_mitra', $role === 'ketua_tim_mitra');
+        $this->f3->set('is_ketua_mitra', $role === 'ketua_tim_mitra');
+        // Ketua Tim Sertifikasi (role 'ketua_tim' + layanan 'sertifikasi') memakai menu layanan Sertifikasi, bukan menu Ketua Tim OPTI
+        $this->f3->set('is_ketua_tim', $role === 'ketua_tim' && !$this->isKetuaSertifikasi());
+        $this->f3->set('is_ketua_selulosa', $role === 'ketua_tim' && $layanan === 'selulosa');
+        $this->f3->set('is_ketua_lingkungan', $role === 'ketua_tim' && $layanan === 'lingkungan');
+        $isKeuangan = ($role === 'keuangan' || $role === 'ketua_tim_keuangan');
+        $this->f3->set('is_keuangan', $isKeuangan);
+        $this->f3->set('is_ketua_tim_keuangan', $role === 'ketua_tim_keuangan');
+        $this->f3->set('is_humas', $role === 'humas');
+        $this->f3->set('is_ppk', $role === 'ppk');
+        $this->f3->set('is_tim_kerja', $role === 'tim_kerja');
+        // Role layanan (bukan analis OPTI): Tim Kerja Pengujian -> menu Dashboard, Daftar PO & Review PO khusus Pengujian
+        $this->f3->set('is_tim_pengujian', $role === 'tim_kerja_pengujian');
+        // Role layanan Sertifikasi (Tim Kerja & Ketua Tim Sertifikasi) -> menu Daftar PO (terkunci Sertifikasi) & Review PO
+        $this->f3->set('is_tim_sertifikasi', $this->isTimSertifikasi());
+        $this->f3->set('is_ketua_sertifikasi', $this->isKetuaSertifikasi());
+        $this->f3->set('is_role_sertifikasi', $this->isRoleSertifikasi());
+        $this->f3->set('divisi_tim_kerja', $this->getDivisiTimKerja());
+        $this->f3->set('is_admin_kontrak', $role === 'admin_kontrak');
+        $this->f3->set('is_sekretaris', $role === 'sekretaris');
+        $this->f3->set('is_user_readonly', $role === 'user' || $role === 'pegawai');
+        $this->f3->set('is_pejabat', $role === 'ppk');
+
+        $this->f3->set('can_manage_order', $this->hasPermission('order:create') || $this->hasPermission('order:edit'));
+        $this->f3->set('can_manage_surat_masuk', $this->hasPermission('surat_masuk:klaim') || $this->hasPermission('surat_masuk:registrasi'));
+        $this->f3->set('can_manage_penawaran', $this->hasPermission('penawaran:create') || $this->hasPermission('penawaran:edit'));
+        $this->f3->set('can_manage_pembayaran', $this->hasPermission('pembayaran:create') || $this->hasPermission('pembayaran:edit'));
+        $this->f3->set('can_manage_po', $this->hasPermission('po:create') || $this->hasPermission('po:edit'));
+        $this->f3->set('can_approve_po', $this->hasPermission('po:approve'));
+        $this->f3->set('can_manage_kontrak', $this->hasPermission('kontrak:create') || $this->hasPermission('kontrak:edit'));
+        $this->f3->set('can_manage_config', $role === 'superadmin');
+
+        // Load status izin edit data yang telah dikirim / disposisi
+        $fieldConfigModel = new OptiFieldConfig($this->db);
+        $allowEditSubmitted = $fieldConfigModel->isAllowEditSubmittedData();
+        $this->f3->set('allow_edit_submitted_data', $allowEditSubmitted);
+        $this->f3->set('allow_edit_submitted', $allowEditSubmitted);
+
+        // Hitung notifikasi tugas / disposisi masuk untuk Ketua Tim & Superadmin
+        $notifKatimCount = 0;
+        try {
+            if ($role === 'ketua_tim') {
+                $whereDiv = in_array($layanan, array('selulosa', 'lingkungan')) ? "o.jenis_layanan_opti = '{$layanan}' AND" : "";
+                $sqlNotif = "SELECT COUNT(*) as c FROM order_layanan o
+                             WHERE {$whereDiv} (
+                                 (o.status = 'baru' AND o.id NOT IN (SELECT order_id FROM opti_tinjauan_kelayakan))
+                                 OR (o.status_proposal_biaya = 'menunggu_approval')
+                             )";
+                $resNotif = $this->db->exec($sqlNotif);
+                $notifKatimCount = (int)($resNotif[0]['c'] ?? 0);
+            } elseif ($role === 'superadmin') {
+                $sqlNotif = "SELECT COUNT(*) as c FROM order_layanan o
+                             WHERE (
+                                 (o.status = 'baru' AND o.id NOT IN (SELECT order_id FROM opti_tinjauan_kelayakan))
+                                 OR (o.status_proposal_biaya = 'menunggu_approval')
+                             )";
+                $resNotif = $this->db->exec($sqlNotif);
+                $notifKatimCount = (int)($resNotif[0]['c'] ?? 0);
+            }
+        } catch (\Exception $eNotif) {
+            $notifKatimCount = 0;
+        }
+        $this->f3->set('jumlah_notif_katim', $notifKatimCount);
+
+        // Hitung notifikasi Surat Masuk untuk Tim Mitra, Sekretaris & Superadmin
+        $notifSuratCount = 0;
+        if ($isTimMitra || $role === 'sekretaris' || $role === 'superadmin') {
+            try {
+                $repoSurat = new \SuratMasukRepository($this->db, $this->dbSekretariat);
+                $notifSuratCount = $repoSurat->countSuratOptiBelumKlaim();
+            } catch (\Exception $eSurat) {
+                $notifSuratCount = 0;
+            }
+        }
+        $this->f3->set('jumlah_notif_surat', $notifSuratCount);
+
+        // Hitung notifikasi Tugas Proposal Teknis (Tim Kerja, Ketua Tim, Superadmin)
+        $notifProposalCount = 0;
+        try {
+            if ($role === 'tim_kerja') {
+                $sqlProposal = "SELECT COUNT(*) as c 
+                                FROM order_layanan o
+                                WHERE o.pic_proposal_id = ?
+                                  AND (o.status_tinjauan = 'layak' OR o.id IN (SELECT order_id FROM opti_tinjauan_kelayakan WHERE keputusan = 'dapat_dilaksanakan'))
+                                  AND o.status NOT IN ('batal', 'ditolak', 'selesai')";
+                $resProp = $this->db->exec($sqlProposal, array(1 => (int)$userId));
+                $notifProposalCount = (int)($resProp[0]['c'] ?? 0);
+            } elseif ($role === 'ketua_tim') {
+                $whereDivProp = in_array($layanan, array('selulosa', 'lingkungan')) ? "o.jenis_layanan_opti = '{$layanan}' AND" : "";
+                $sqlProposal = "SELECT COUNT(*) as c 
+                                FROM order_layanan o
+                                WHERE {$whereDivProp} (o.status_tinjauan = 'layak' OR o.id IN (SELECT order_id FROM opti_tinjauan_kelayakan WHERE keputusan = 'dapat_dilaksanakan'))
+                                  AND o.pic_proposal_id IS NOT NULL
+                                  AND o.status NOT IN ('batal', 'ditolak', 'selesai')";
+                $resProp = $this->db->exec($sqlProposal);
+                $notifProposalCount = (int)($resProp[0]['c'] ?? 0);
+            } elseif ($role === 'superadmin') {
+                $sqlProposal = "SELECT COUNT(*) as c 
+                                FROM order_layanan o
+                                WHERE (o.status_tinjauan = 'layak' OR o.id IN (SELECT order_id FROM opti_tinjauan_kelayakan WHERE keputusan = 'dapat_dilaksanakan'))
+                                  AND o.pic_proposal_id IS NOT NULL
+                                  AND o.status NOT IN ('batal', 'ditolak', 'selesai')";
+                $resProp = $this->db->exec($sqlProposal);
+                $notifProposalCount = (int)($resProp[0]['c'] ?? 0);
+            }
+        } catch (\Exception $eProp) {
+            $notifProposalCount = 0;
+        }
+        $this->f3->set('jumlah_notif_proposal', $notifProposalCount);
+
+        $notifPo = array('lingkungan' => 0, 'selulosa' => 0);
+try {
+    if (in_array($role, array('tim_kerja', 'ketua_tim', 'superadmin'))) {
+        $sqlPo = "SELECT o.jenis_layanan_opti AS divisi, COUNT(*) AS c
+                  FROM order_layanan o
+                  WHERE o.ketua_pelaksana_id IS NOT NULL
+                    AND o.jenis_layanan_opti IN ('lingkungan', 'selulosa', 'pengujian')
+                    AND NOT EXISTS (SELECT 1 FROM po_kegiatan p WHERE p.order_id = o.id" . \PoSchema::bukanSertifikasi('p') . ")
+                    AND o.status NOT IN ('batal', 'ditolak', 'selesai')";
+        $paramsPo = array();
+
+        if ($role === 'tim_kerja') {
+            $sqlPo .= " AND o.ketua_pelaksana_id = ?";
+            $paramsPo[1] = (int)$userId;
+        } elseif ($role === 'ketua_tim' && in_array($layanan, array('selulosa', 'lingkungan'))) {
+            $sqlPo .= " AND o.jenis_layanan_opti = ?";
+            $paramsPo[1] = $layanan;
+        }
+
+        $sqlPo .= " GROUP BY o.jenis_layanan_opti";
+
+        foreach ($this->db->exec($sqlPo, $paramsPo) as $r) {
+            $notifPo[strtolower($r['divisi'])] = (int)$r['c'];
+        }
+    }
+} catch (\Exception $ePo) {
+    $notifPo = array('lingkungan' => 0, 'selulosa' => 0);
+}
+$this->f3->set('jumlah_notif_po_lingkungan', $notifPo['lingkungan']);
+$this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
+
+        // Hitung notifikasi antrean Pembayaran untuk Tim Keuangan, Ka Tim OPTI & Superadmin
+        $notifKeuanganCount = 0;
+        if ($role === 'keuangan' || $role === 'ketua_tim_keuangan' || $role === 'ketua_tim' || $role === 'superadmin') {
+            try {
+                $whereDivPay = ($role === 'ketua_tim' && in_array($layanan, array('selulosa', 'lingkungan'))) ? "o.jenis_layanan_opti = '{$layanan}' AND" : "";
+                $sqlKeuangan = "SELECT COUNT(DISTINCT o.id) as c FROM order_layanan o
+                                LEFT JOIN tb_surat_penawaran sp ON sp.id = (
+                                    SELECT id FROM tb_surat_penawaran 
+                                    WHERE order_id = o.id 
+                                    ORDER BY (status_respon_klien = 'deal') DESC, (surat_kesanggupan_bayar IS NOT NULL AND surat_kesanggupan_bayar != '') DESC, id DESC 
+                                    LIMIT 1
+                                )
+                                WHERE {$whereDivPay} (o.status_keuangan = 'menunggu_pembayaran')
+                                  AND o.id NOT IN (SELECT DISTINCT order_id FROM opti_pembayaran)
+                                  AND (o.status_keuangan IS NULL OR o.status_keuangan != 'lunas')
+                                  AND (o.status IS NULL OR o.status NOT IN ('batal', 'ditolak'))
+                                  AND (o.status_rancop IS NULL OR o.status_rancop != 'batal')";
+                $resKeuangan = $this->db->exec($sqlKeuangan);
+                $notifKeuanganCount = (int)($resKeuangan[0]['c'] ?? 0);
+            } catch (\Exception $eKeuangan) {
+                $notifKeuanganCount = 0;
+            }
+        }
+        $this->f3->set('jumlah_notif_keuangan', $notifKeuanganCount);
+
+        // [BARU] Badge "Penunjukan Pelaksana" (Ka Tim OPTI & Superadmin) -- order yang udah
+        // didisposisi + lunas + sampel diterima, tapi Ketua Pelaksana belum ditunjuk.
+        $notifPenunjukanPelaksana = 0;
+        if ($role === 'ketua_tim' || $role === 'superadmin') {
+            try {
+                $whereDivPenunjukan = ($role === 'ketua_tim' && in_array($layanan, array('selulosa', 'lingkungan'))) ? "o.jenis_layanan_opti = '{$layanan}' AND" : "";
+                $sqlPenunjukan = "SELECT COUNT(*) as c FROM order_layanan o
+                                  WHERE {$whereDivPenunjukan} o.disposisi_katim_at IS NOT NULL
+                                    AND o.status_keuangan = 'lunas'
+                                    AND o.tanggal_terima_sampel IS NOT NULL
+                                    AND o.ketua_pelaksana_id IS NULL";
+                $resPenunjukan = $this->db->exec($sqlPenunjukan);
+                $notifPenunjukanPelaksana = (int)($resPenunjukan[0]['c'] ?? 0);
+            } catch (\Exception $ePenunjukan) {
+                $notifPenunjukanPelaksana = 0;
+            }
+        }
+        $this->f3->set('jumlah_notif_penunjukan_pelaksana', $notifPenunjukanPelaksana);
+
+        // [BARU] Badge "Validasi PO" (Tim Mitra & Superadmin) -- PO berstatus 'terkirim'
+        // yang SUDAH diverifikasi Humas dan belum divalidasi Tim Mitra.
+        $notifValidasiPo = 0;
+        if ($isTimMitra || $role === 'superadmin') {
+            try {
+                $resValidasi = $this->db->exec("SELECT COUNT(*) as c FROM po_kegiatan WHERE status = 'terkirim' AND verifikasi_humas_at IS NOT NULL" . \PoSchema::bukanSertifikasi(''));
+                $notifValidasiPo = (int)($resValidasi[0]['c'] ?? 0);
+            } catch (\Exception $eValidasi) {
+                $notifValidasiPo = 0;
+            }
+        }
+        $this->f3->set('jumlah_notif_validasi_po', $notifValidasiPo);
+
+        // [FIX] Badge "Daftar Review PO" -- sebelumnya nunjuk ke variabel yang gak pernah
+        // diisi (selalu kosong). Hitungannya beda tergantung sisi: Keuangan/Superadmin liat
+        // PO tervalidasi Tim Mitra yang belum final disetujui; Tim Kerja liat PO revisi
+        // miliknya sendiri yang perlu ditindaklanjuti.
+        $notifDaftarPo = 0;
+        try {
+            if ($role === 'ketua_tim' || $role === 'tim_kerja' || $role === 'superadmin') {
+                // Sama dengan jumlah titik biru (belum dibaca) di halaman Daftar Review PO: PO baru, revisi PO, dan revisi PPK BLU
+                $notifDaftarPo = (int) \PoReviewController::hitungBelumDibaca($this->db, $role, $userId, $layanan);
+            } elseif ($isKeuangan) {
+                $resDaftarPo = $this->db->exec(
+                    "SELECT COUNT(*) as c FROM po_kegiatan p
+                     WHERE p.tervalidasi_mitra_at IS NOT NULL AND p.tervalidasi_mitra_by IS NOT NULL
+                       AND (p.status_review IS NULL OR p.status_review <> 'disetujui')"
+                );
+                $notifDaftarPo = (int)($resDaftarPo[0]['c'] ?? 0);
+            }
+        } catch (\Exception $eDaftarPo) {
+            $notifDaftarPo = 0;
+        }
+        $this->f3->set('jumlah_notif_daftar_po', $notifDaftarPo);
+
+        // Notifikasi "order sertifikasi sudah lunas tapi belum dibuatkan PO" (Superadmin) -- disinkronkan paling sering tiap 60 detik
+        try {
+            if ($role === 'superadmin' && (time() - (int)($_SESSION['po_notif_sinkron_at'] ?? 0)) > 60) {
+                $_SESSION['po_notif_sinkron_at'] = time();
+                (new \petunjuk_operasional\PoIndexController())->sinkronNotifOrderBelumPo();
+            }
+        } catch (\Throwable $ePoNotif) {
+            error_log('[Notif PO] ' . $ePoNotif->getMessage());
+        }
+
+        // Notifikasi Terintegrasi (Notification Service) untuk Bell Dropdown & Floating Bubble (hanya menampilkan pesan yang belum dibaca)
+        try {
+            $userNotifList = \NotificationService::getUserNotifications($this->db, (int)$userId, $role, $layanan, 15, '', true);
+            $unreadNotifCount = \NotificationService::getUnreadCount($this->db, (int)$userId, $role, $layanan);
+        } catch (\Exception $eNotifSys) {
+            $userNotifList = [];
+            $unreadNotifCount = 0;
+        }
+        $this->f3->set('list_notifikasi_user', $userNotifList);
+        $this->f3->set('unread_notif_count', $unreadNotifCount);
+
+        $this->f3->set('jumlah_notif_revisi_ppk', \PoRevisiPpkController::hitungAksi(
+            $this->db, (string) $this->getUserRole(), (int) $this->getUserId(), (string) $this->f3->get('SESSION.jenis_layanan_opti')
+        ));
+
+        // Daftar Pengguna Aktif untuk Fitur Pop-Up "Ganti User"
+        $switchUsers = array();
+        try {
+            $switchUsersRaw = $this->db->exec(
+                "SELECT u.id_user AS id, 
+                        u.nama_user AS nama_lengkap, 
+                        COALESCE(NULLIF(u.si_opti, ''), m.role_opti) AS role_sistem, 
+                        u.login, 
+                        u.bidang, 
+                        u.nama_avatar
+                 FROM tb_arsipuser u
+                 LEFT JOIN opti_user_map m ON u.id_user = m.id_user
+                 WHERE (
+                     (u.si_opti IS NOT NULL AND u.si_opti != '' AND u.si_opti != 'user')
+                     OR (m.role_opti IS NOT NULL AND m.role_opti != '' AND m.role_opti != 'user' AND (m.is_active = 1 OR m.is_active = '1'))
+                 )
+                 AND (u.status = 1 OR u.status = '1' OR u.status = 'aktif')
+                 ORDER BY 
+                    CASE 
+                        WHEN COALESCE(NULLIF(u.si_opti, ''), m.role_opti) = 'superadmin' THEN 1
+                        WHEN COALESCE(NULLIF(u.si_opti, ''), m.role_opti) LIKE 'ketua_tim%' OR COALESCE(NULLIF(u.si_opti, ''), m.role_opti) LIKE 'katim%' THEN 2
+                        WHEN COALESCE(NULLIF(u.si_opti, ''), m.role_opti) = 'tim_mitra_industri' OR COALESCE(NULLIF(u.si_opti, ''), m.role_opti) = 'admin_order' OR COALESCE(NULLIF(u.si_opti, ''), m.role_opti) = 'tim_mitra' THEN 3
+                        WHEN COALESCE(NULLIF(u.si_opti, ''), m.role_opti) = 'keuangan' THEN 4
+                        WHEN COALESCE(NULLIF(u.si_opti, ''), m.role_opti) LIKE 'tim_kerja%' OR COALESCE(NULLIF(u.si_opti, ''), m.role_opti) LIKE 'tk_%' THEN 5
+                        ELSE 6
+                    END ASC,
+                    u.nama_user ASC"
+            );
+
+            if (!empty($switchUsersRaw)) {
+                foreach ($switchUsersRaw as $u) {
+                    $roleMeta = class_exists('\PenggunaController') 
+                        ? \PenggunaController::resolveRoleMeta((int)$u['id'], trim($u['role_sistem'] ?? '')) 
+                        : array('label' => ucwords(str_replace('_', ' ', $u['role_sistem'])), 'badge_class' => 'role-badge role-badge-default', 'icon' => 'bi-person');
+                    
+                    $u['role_label'] = $roleMeta['label'] ?? ucwords(str_replace('_', ' ', $u['role_sistem']));
+                    $u['role_badge_class'] = $roleMeta['badge_class'] ?? 'role-badge role-badge-default';
+                    $u['role_icon'] = $roleMeta['icon'] ?? 'bi-person';
+                    $u['role_category'] = $roleMeta['category'] ?? 'manajemen';
+                    
+                    $initials = '';
+                    $words = explode(' ', trim($u['nama_lengkap'] ?? 'User'));
+                    foreach ($words as $w) {
+                        if (!empty($w)) {
+                            $initials .= strtoupper($w[0]);
+                        }
+                    }
+                    $u['initials'] = substr($initials, 0, 2) ?: 'U';
+                    $u['is_current'] = ((int)$u['id'] === (int)$userId);
+                    $switchUsers[] = $u;
+                }
+            }
+        } catch (\Exception $eSwitch) {
+            $switchUsers = array();
+        }
+        $this->f3->set('switch_users_list', $switchUsers);
+
+        echo \Template::instance()->render('layout.html');
+    }
+
+    /**
+     * Ambil role user dari session
+     */
+    public function getUserRole(): string {
+        return $_SESSION['role'] ?? 'guest';
+    }
+
+    /**
+     * Ambil jenis layanan user dari session (selulosa / lingkungan / semua)
+     */
+    public function getUserLayanan(): string {
+        return $_SESSION['jenis_layanan_opti'] ?? 'semua';
+    }
+    public function getDivisiTimKerja(): string {
+        if ($this->isSuperadmin()) {
+            return '';
+        }
+        $uid = (int) $this->getUserId();
+        if (isset($_SESSION['divisi_tim_kerja']) && (int) ($_SESSION['divisi_tim_kerja_uid'] ?? 0) === $uid) {
+            return $_SESSION['divisi_tim_kerja'];
+        }
+        $divisi = '';
+        try {
+            $r = $this->dbSekretariat->exec(
+                "SELECT si_opti FROM tb_arsipuser WHERE id_user = ? LIMIT 1",
+                [1 => $uid]
+            );
+            if (!empty($r)) {
+                $siOpti = strtolower(trim((string) $r[0]['si_opti']));
+                if ($siOpti === 'tim_kerja_selulosa') {
+                    $divisi = 'selulosa';
+                } elseif ($siOpti === 'tim_kerja_lingkungan') {
+                    $divisi = 'lingkungan';
+                }
+            }
+        } catch (\Exception $e) {
+            $divisi = '';
+        }
+        $_SESSION['divisi_tim_kerja'] = $divisi;
+        $_SESSION['divisi_tim_kerja_uid'] = $uid; // <-- kunci cache-nya ke id user, biar gak nyangkut pas ganti user
+        return $divisi;
+    }
+
+    /**
+     * Cek apakah user memiliki permission tertentu
+     */
+    public function hasPermission(string $permission): bool {
+        $role = $this->getUserRole();
+        if ($role === 'superadmin') {
+            return true;
+        }
+
+        $allowed = self::$PERMISSION_MATRIX[$role] ?? array();
+        return in_array('*', $allowed) || in_array($permission, $allowed);
+    }
+
+    /**
+     * Cek apakah role aktif adalah superadmin
+     */
+    public function isSuperadmin(): bool {
+        return $this->getUserRole() === 'superadmin';
+    }
+
+    /**
+     * Cek apakah role aktif adalah Tim Mitra (tim_mitra_industri / admin_order / tim_mitra / ketua_tim_mitra)
+     */
+    public function isTimMitra(): bool {
+        $r = $this->getUserRole();
+        return $r === 'tim_mitra_industri' || $r === 'admin_order' || $r === 'tim_mitra' || $r === 'ketua_tim_mitra';
+    }
+
+    /**
+     * Cek apakah role aktif adalah Ketua Tim Mitra
+     */
+    public function isKetuaTimMitra(): bool {
+        return $this->getUserRole() === 'ketua_tim_mitra';
+    }
+
+    public function isAdminOrder(): bool {
+        return $this->isTimMitra();
+    }
+
+    /**
+     * Cek apakah role aktif adalah Ketua Tim
+     */
+    public function isKetuaTim(): bool {
+        return $this->getUserRole() === 'ketua_tim';
+    }
+
+    /** Tim Kerja Sertifikasi (si_opti: tim_kerja_sertifikasi / tk_sertifikasi). */
+    public function isTimSertifikasi(): bool {
+        return in_array($this->getUserRole(), array('tim_kerja_sertifikasi', 'tk_sertifikasi'), true);
+    }
+
+    /** Ketua Tim Sertifikasi (si_opti: ketua_tim_sertifikasi / katim_sertifikasi -> sesi role 'ketua_tim', layanan 'sertifikasi'). */
+    public function isKetuaSertifikasi(): bool {
+        return $this->getUserRole() === 'ketua_tim' && strtolower($this->getUserLayanan()) === 'sertifikasi';
+    }
+
+    /** Salah satu role layanan Sertifikasi (Tim Kerja atau Ketua Tim). */
+    public function isRoleSertifikasi(): bool {
+        return $this->isTimSertifikasi() || $this->isKetuaSertifikasi();
+    }
+
+    /**
+     * Cek apakah role aktif adalah Keuangan (Kasir / Pembayaran)
+     */
+    public function isKeuangan(): bool {
+        $r = $this->getUserRole();
+        return $r === 'keuangan' || $r === 'ketua_tim_keuangan';
+    }
+
+    /**
+     * Cek apakah role aktif adalah Ketua Tim Keuangan
+     */
+    public function isKetuaTimKeuangan(): bool {
+        return $this->getUserRole() === 'ketua_tim_keuangan';
+    }
+
+    /**
+     * Cek apakah role aktif adalah Pengguna Umum / Pegawai Balai (Read-Only)
+     */
+    public function isUserReadOnly(): bool {
+        $r = $this->getUserRole();
+        return $r === 'user' || $r === 'pegawai';
+    }
+
+    public function isPejabat(): bool {
+        return false;
+    }
+
+    /**
+     * Cek apakah role aktif adalah Tim Kerja (Analis / Peneliti)
+     */
+    public function isTimKerja(): bool {
+        return $this->getUserRole() === 'tim_kerja';
+    }
+
+    /**
+     * Cek apakah pengguna berwenang mengedit data yang sudah dikirim / didisposisi
+     * Kebijakan Audit BPK/Itjen (Unlock Per-Order):
+     * Kunci edit diatur per-order (order_layanan.is_unlocked_edit = 1) oleh Super Admin.
+     * Super Admin bertugas membuka/menutup gembok akses pada order yang bersangkutan,
+     * sedangkan perbaikan data tetap dilakukan oleh user/role yang berwenang (PIC proposal, Ketua Tim, dll).
+     * Jika gembok order dibuka (unlocked), role yang berwenang boleh mengedit data.
+     * Jika gembok terkunci, pengeditan dibatasi demi integritas audit.
+     *
+     * @param bool $isDataSubmitted True jika data sudah bukan draf / sudah dikirim / didisposisi
+     * @param int $orderId ID Order layanan (opsional, jika 0 akan mencoba mendeteksi dari context)
+     * @return bool
+     */
+    public function canEditSubmittedData(bool $isDataSubmitted = false, int $orderId = 0): bool {
+        if ($this->isSuperadmin()) {
+            return true;
+        }
+        if (!$isDataSubmitted) {
+            return true; // Data masih draft / baru -> boleh diedit oleh pembuat / tim berwenang
+        }
+
+        // Resolusi orderId dari parameter router jika tidak diberikan eksplisit
+        if ($orderId <= 0) {
+            $paramId = $this->f3->get('PARAMS.id');
+            if (!empty($paramId) && is_numeric($paramId)) {
+                $orderId = (int)$paramId;
+            } else {
+                $queryOrderId = $this->f3->get('GET.order_id');
+                if (!empty($queryOrderId) && is_numeric($queryOrderId)) {
+                    $orderId = (int)$queryOrderId;
+                }
+            }
+        }
+
+        // Cek status unlock per-order pada tabel order_layanan
+        if ($orderId > 0) {
+            $orderModel = new OrderLayanan($this->db);
+            return $orderModel->isOrderUnlocked($orderId);
+        }
+
+        // Fallback backward-compatibility jika orderId benar-benar tidak terdeteksi
+        $fieldConfigModel = new OptiFieldConfig($this->db);
+        return $fieldConfigModel->isAllowEditSubmittedData();
+    }
+
+    /**
+     * Guard wajib permission, redirect dengan flash error jika tidak memiliki izin
+     */
+    public function requirePermission(string $permission, string $redirectUrl = '/order'): void {
+        if (!$this->hasPermission($permission)) {
+            $this->setFlashError('Akses ditolak: Anda tidak memiliki izin untuk melakukan tindakan ini.');
+            $this->f3->reroute($redirectUrl);
+            exit;
+        }
+    }
+
+    /**
+     * Ambil user ID dari session
+     */
+    public function getUserId(): ?int {
+        return !empty($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : null;
+    }
+
+    /**
+     * Cek apakah user sedang login
+     */
+    public function isLoggedIn(): bool {
+        return !empty($_SESSION['user_id']);
+    }
+
+    /**
+     * Wajibkan autentikasi login
+     */
+    /**
+     * Wajibkan autentikasi login (Otomatis inisialisasi default jika belum ada sesi)
+     */
+    public function requireAuth(): void {
+        if (!$this->isLoggedIn()) {
+            $_SESSION['user_id']            = 9006;
+            $_SESSION['login']              = 'fajriasa';
+            $_SESSION['username']           = 'fajriasa';
+            $_SESSION['nama_lengkap']       = 'Fajriasa Erdanus';
+            $_SESSION['nama_user']          = 'Fajriasa Erdanus';
+            $_SESSION['role']               = 'superadmin';
+            $_SESSION['jenis_layanan_opti'] = 'semua';
+            $_SESSION['bidang']             = 'all';
+            $_SESSION['last_activity']      = time();
+            $_SESSION['mask_client_name']   = false;
+        }
+    }
+
+    /**
+     * Alias requireLogin untuk kompatibilitas
+     */
+    public function requireLogin(): void {
+        $this->requireAuth();
+    }
+
+    /**
+     * Set notifikasi flash sukses
+     */
+    public function setFlashSuccess($message) {
+        $_SESSION['flash_success'] = $message;
+    }
+
+    /**
+     * Set notifikasi flash error
+     */
+    public function setFlashError($message) {
+        $_SESSION['flash_error'] = $message;
+    }
+
+    /**
+     * Set notifikasi flash warning / peringatan
+     */
+    public function setFlashWarning($message) {
+        $_SESSION['flash_warning'] = $message;
+    }
+
+    /**
+     * Set notifikasi flash info
+     */
+    public function setFlashInfo($message) {
+        $_SESSION['flash_info'] = $message;
+    }
+
+    /**
+     * Interceptor global beforeroute
+     */
+    public function beforeroute($f3) {
+        $path = $f3->get('PATH');
+
+        // Pastikan CSRF token tersedia dalam sesi
+        if (empty($_SESSION['csrf_token'])) {
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(16));
+        }
+        $f3->set('csrf_token', $_SESSION['csrf_token']);
+
+        // Auto-login default session (Superadmin) jika belum ada session
+        if (empty($_SESSION['user_id'])) {
+            $_SESSION['user_id']            = 9006;
+            $_SESSION['login']              = 'fajriasa';
+            $_SESSION['username']           = 'fajriasa';
+            $_SESSION['nama_lengkap']       = 'Fajriasa Erdanus';
+            $_SESSION['nama_user']          = 'Fajriasa Erdanus';
+            $_SESSION['role']               = 'superadmin';
+            $_SESSION['jenis_layanan_opti'] = 'semua';
+            $_SESSION['bidang']             = 'all';
+            $_SESSION['last_activity']      = time();
+            $_SESSION['mask_client_name']   = false;
+        }
+
+        // Perbarui Hive F3 dengan session aktif
+        $f3->set('SESSION.user_id', $_SESSION['user_id']);
+        $f3->set('SESSION.login', $_SESSION['login'] ?? 'fajriasa');
+        $f3->set('SESSION.username', $_SESSION['username'] ?? 'fajriasa');
+        $f3->set('SESSION.nama_lengkap', $_SESSION['nama_lengkap'] ?? 'Fajriasa Erdanus');
+        $f3->set('SESSION.nama_user', $_SESSION['nama_user'] ?? 'Fajriasa Erdanus');
+        $f3->set('SESSION.role', $_SESSION['role'] ?? 'superadmin');
+        $f3->set('SESSION.jenis_layanan_opti', $_SESSION['jenis_layanan_opti'] ?? 'semua');
+        $f3->set('SESSION.bidang', $_SESSION['bidang'] ?? 'all');
+        $f3->set('SESSION.mask_client_name', $_SESSION['mask_client_name'] ?? false);
+
+        // Jika rute adalah login/otp, langsung arahkan ke /dashboard
+        if (in_array($path, ['/login', '/login/otp', '/login/otp/verify', '/login/otp/resend'])) {
+            $f3->reroute('/dashboard');
+            return;
+        }
+
+        $_SESSION['last_activity'] = time();
+
+        // Proteksi CSRF Global untuk Semua Request POST
+        if ($f3->get('VERB') === 'POST' && $path !== '/login') {
+            $postToken = $f3->get('POST.csrf_token');
+            if (!$postToken || !hash_equals($_SESSION['csrf_token'] ?? '', $postToken)) {
+                $_SESSION['csrf_token'] = bin2hex(random_bytes(16));
+            }
+        }
+    }
+
+    /**
+     * Catat Jejak Audit / Activity Log untuk Seluruh Modul OPTI
+     */
+    protected function logActivity($arg1 = 0, $arg2 = '', $arg3 = '', $arg4 = '') {
+        $userId = (int)$this->getUserId();
+        $userNama = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'User');
+        $userRole = $this->getUserRole() ?? 'user';
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+
+        $orderId = 0;
+        $modul = 'order';
+        $aksi = 'proses';
+        $deskripsi = '';
+
+        if (is_numeric($arg1) && (int)$arg1 > 0) {
+            // Pattern 1: ($orderId, $modul, $aksi, $deskripsi)
+            $orderId = (int)$arg1;
+            $modul = (string)$arg2;
+            $aksi = (string)$arg3;
+            $deskripsi = (string)$arg4;
+        } elseif (is_numeric($arg2) && (int)$arg2 > 0) {
+            // Pattern 2: ($modul, $orderId, $aksi, $deskripsi)
+            $orderId = (int)$arg2;
+            $modul = (string)$arg1;
+            $aksi = (string)$arg3;
+            $deskripsi = (string)$arg4;
+        } elseif (is_numeric($arg3) && (int)$arg3 > 0) {
+            // Pattern 3: ($aksi, $modul, $orderId, $deskripsi)
+            $orderId = (int)$arg3;
+            $aksi = (string)$arg1;
+            $modul = (string)$arg2;
+            $deskripsi = (string)$arg4;
+        } else {
+            $orderId = is_numeric($arg1) ? (int)$arg1 : (is_numeric($arg2) ? (int)$arg2 : 0);
+            $modul = (string)$arg2;
+            $aksi = (string)$arg3;
+            $deskripsi = (string)$arg4;
+        }
+
+        try {
+            $db = $this->db ?? \Base::instance()->get('DB');
+            if ($db) {
+                $db->exec(
+                    "INSERT INTO opti_activity_log (order_id, modul, aksi, deskripsi, user_id, user_nama, user_role, ip_address, created_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())",
+                    [
+                        1 => $orderId,
+                        2 => (string)$modul,
+                        3 => (string)$aksi,
+                        4 => (string)$deskripsi,
+                        5 => $userId,
+                        6 => $userNama,
+                        7 => $userRole,
+                        8 => $ip
+                    ]
+                );
+            }
+        } catch (\Exception $e) {}
+    }
+
+    /**
+     * Syarat penerbitan PO Kegiatan sebuah order: pembayaran LUNAS (atau dicatat via Surat Kesanggupan Bayar)
+     * DAN titik awal pengerjaan / SPM sudah aktif. Bayar sebagian cukup untuk mengaktifkan SPM,
+     * tapi PO baru terbuka setelah lunas.
+     * @return array ['ok' => bool, 'lunas' => bool, 'spm' => bool]
+     */
+    protected function syaratPoTerpenuhi($orderId) {
+        $orderId = (int) $orderId;
+        try {
+            $r = $this->db->exec(
+                "SELECT o.status_keuangan, o.tanggal_spm_mulai, o.tanggal_terima_sampel,
+                        (SELECT COUNT(*) FROM opti_pembayaran p WHERE p.order_id = o.id AND p.is_kesanggupan_bayar = 1) AS jumlah_kb
+                 FROM order_layanan o WHERE o.id = ? LIMIT 1",
+                [1 => $orderId]
+            );
+        } catch (\Exception $e) {
+            return ['ok' => true, 'lunas' => true, 'spm' => true];   // gagal baca: jangan sampai menutup alur
+        }
+        if (empty($r)) { return ['ok' => false, 'lunas' => false, 'spm' => false]; }
+        $lunas = (($r[0]['status_keuangan'] ?? '') === 'lunas') || ((int) ($r[0]['jumlah_kb'] ?? 0) > 0);
+        $spm   = !empty($r[0]['tanggal_spm_mulai']) || !empty($r[0]['tanggal_terima_sampel']);
+        return ['ok' => ($lunas && $spm), 'lunas' => $lunas, 'spm' => $spm];
+    }
+}

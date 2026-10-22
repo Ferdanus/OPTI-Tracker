@@ -167,6 +167,12 @@ unset($o);
                 [1 => $pelaksanaId, 2 => $orderId]
             );
 
+            // Catat ke Riwayat Aktivitas detail order (sama seperti penunjukan dari Tahap 8)
+            try {
+                $u = $this->db->exec('SELECT nama_user FROM tb_arsipuser WHERE id_user = ?', [1 => $pelaksanaId]);
+                $this->logActivity($orderId, 'po', 'tunjuk_ketupel', 'Menunjuk ' . (!empty($u) ? $u[0]['nama_user'] : 'Ketua Pelaksana') . ' sebagai Ketua Pelaksana PO Kegiatan');
+            } catch (\Throwable $eLog) {}
+
             // Kirim notifikasi langsung ke Ketua Pelaksana yang ditunjuk
             try {
                 $orderModel = new \OrderLayanan($this->db);

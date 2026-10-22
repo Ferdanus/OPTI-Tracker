@@ -5231,6 +5231,7 @@ function isiFormDariData(d) {
 /* ============================================================ */
 function tandaiBagian(target, kosong, pesan) {
     if (!target) return null;
+    if (window.POSENYAP) { return kosong ? target : null; }   // mode senyap: hanya menghitung
     var nx = target.nextElementSibling;
     var msg = (nx && nx.classList && nx.classList.contains('wajib-error-msg')) ? nx : null;
     if (kosong) {
@@ -5278,7 +5279,7 @@ function validasiTambahan() {
         Array.prototype.forEach.call(tr.querySelectorAll('select'), function (s) {
             var kosong = !s.value;
             if (kosong) { timKurang = true; }
-            if (s.parentElement) { s.parentElement.classList.toggle('sel-error', kosong); }
+            if (s.parentElement && !window.POSENYAP) { s.parentElement.classList.toggle('sel-error', kosong); }
         });
     });
     cek(el('tabelTim').parentElement, timKurang, 'Pilih nama dan peran pada setiap baris Tim Pelaksana.');
@@ -5301,7 +5302,7 @@ function validasiTambahan() {
 
     var kurangTtd = ttdState ? PoTtd.kekurangan(ttdState) : [];
     cek(el('ttdHost'), kurangTtd.length > 0, kurangTtd.join('; ') + '.');
-    if (kurangTtd.length && ttdUi) ttdUi.tandaiKurang();
+    if (kurangTtd.length && ttdUi && !window.POSENYAP) ttdUi.tandaiKurang();
     return bad;
 }
 
@@ -5518,7 +5519,51 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    var btnKirim = el('btnKirim');
+    // ---- Tombol Kirim nonaktif sampai semua kolom wajib terisi ----
+    (function () {
+        var btn = el('btnKirim');
+        if (!btn) { return; }
+        var hint = document.createElement('span');
+        hint.id = 'poKirimHint';
+        hint.className = 'small fw-semibold text-danger d-none';
+        hint.style.whiteSpace = 'nowrap';
+        hint.innerHTML = '<span id="poKirimHintTx"></span> <a href="#" id="poKirimHintLink" class="text-danger">Tunjukkan</a>';
+        btn.insertAdjacentElement('beforebegin', hint);
+        var tx = hint.querySelector('#poKirimHintTx'), lastN = -1, tm = null;
+        function hitung() {
+            window.POSENYAP = (window.POSENYAP || 0) + 1;       // senyap: tidak mengubah tampilan form sama sekali
+            try { return validasiFieldWajib().concat(validasiTambahan()).length; } catch (e) { return -1; } finally { window.POSENYAP--; }
+        }
+        function perbarui() {
+            var n = hitung();
+            if (n < 0) { return; }   // state form belum siap, coba lagi nanti
+            btn.disabled = n > 0;
+            btn.title = n > 0 ? 'Lengkapi dulu ' + n + ' kolom wajib sebelum mengirim' : '';
+            if (n !== lastN) {
+                lastN = n;
+                hint.classList.toggle('d-none', n === 0);
+                tx.textContent = n + ' kolom wajib belum terisi';
+            }
+        }
+        function jadwal() { clearTimeout(tm); tm = setTimeout(perbarui, 250); }
+        var f = document.getElementById('formPo') || document;
+        f.addEventListener('input', jadwal, true);
+        f.addEventListener('change', jadwal, true);
+        f.addEventListener('click', jadwal, true);
+        if (window.MutationObserver && f.nodeType === 1) { new MutationObserver(jadwal).observe(f, { childList: true, subtree: true }); }
+        setInterval(perbarui, 1200);
+        hint.querySelector('#poKirimHintLink').addEventListener('click', function (e) {
+            e.preventDefault();
+            var bad = urutkanDomOrder(validasiFieldWajib().concat(validasiTambahan()));
+            if (bad.length) {
+                bad[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                if (bad[0].focus) { try { bad[0].focus({ preventScroll: true }); } catch (x) {} }
+            }
+        });
+        perbarui();
+    })();
+    
+var btnKirim = el('btnKirim');
     if (btnKirim) {
         btnKirim.addEventListener('click', function () {
             var inpAksi = el('inputAksi');
@@ -5617,6 +5662,7 @@ function validasiFieldWajib() {
         if (!('value' in el)) return;
 
         var kosong = !val || !val.trim();
+        if (window.POSENYAP) { if (kosong) { invalidFields.push(wrap || el); } return; }   // mode senyap: hanya menghitung, tanpa menandai kolom
         var targetToHighlight = wrap || el;
         var parentForMsg = wrap ? wrap.parentElement : el.parentElement;
         var existingMsg = parentForMsg.querySelector('.wajib-error-msg');

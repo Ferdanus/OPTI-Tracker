@@ -843,4 +843,28 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
             }
         } catch (\Exception $e) {}
     }
+
+    /**
+     * Syarat penerbitan PO Kegiatan sebuah order: pembayaran LUNAS (atau dicatat via Surat Kesanggupan Bayar)
+     * DAN titik awal pengerjaan / SPM sudah aktif. Bayar sebagian cukup untuk mengaktifkan SPM,
+     * tapi PO baru terbuka setelah lunas.
+     * @return array ['ok' => bool, 'lunas' => bool, 'spm' => bool]
+     */
+    protected function syaratPoTerpenuhi($orderId) {
+        $orderId = (int) $orderId;
+        try {
+            $r = $this->db->exec(
+                "SELECT o.status_keuangan, o.tanggal_spm_mulai, o.tanggal_terima_sampel,
+                        (SELECT COUNT(*) FROM opti_pembayaran p WHERE p.order_id = o.id AND p.is_kesanggupan_bayar = 1) AS jumlah_kb
+                 FROM order_layanan o WHERE o.id = ? LIMIT 1",
+                [1 => $orderId]
+            );
+        } catch (\Exception $e) {
+            return ['ok' => true, 'lunas' => true, 'spm' => true];   // gagal baca: jangan sampai menutup alur
+        }
+        if (empty($r)) { return ['ok' => false, 'lunas' => false, 'spm' => false]; }
+        $lunas = (($r[0]['status_keuangan'] ?? '') === 'lunas') || ((int) ($r[0]['jumlah_kb'] ?? 0) > 0);
+        $spm   = !empty($r[0]['tanggal_spm_mulai']) || !empty($r[0]['tanggal_terima_sampel']);
+        return ['ok' => ($lunas && $spm), 'lunas' => $lunas, 'spm' => $spm];
+    }
 }

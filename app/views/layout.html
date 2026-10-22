@@ -1189,7 +1189,7 @@
     <script>(function () { try { if (window.self !== window.top && /[?&]embed=1(&|$)/.test(window.location.search)) { document.documentElement.classList.add('silopti-embed'); } } catch (e) {} })();</script>
     <style>
         html.silopti-embed .sidebar, html.silopti-embed .sidebar-backdrop, html.silopti-embed .topbar,
-        html.silopti-embed .footer-gov, html.silopti-embed #pageLoader, html.silopti-embed #topProgressBar { display: none !important; }
+        html.silopti-embed .footer-gov, html.silopti-embed #pageLoader, html.silopti-embed #topProgressBar, html.silopti-embed #floatingNotificationWidget { display: none !important; }
         html.silopti-embed .content-wrapper { margin-left: 0 !important; width: 100% !important; max-width: 100% !important; min-height: 0 !important; }
         html.silopti-embed .main-container { padding: 12px 16px 24px !important; }
     </style>
@@ -1323,17 +1323,7 @@
                     </li>
                 </check>
 
-                <!-- Daftar Order Lunas (Khusus Ka Tim OPTI & Superadmin) -->
-                <check if="{{ @is_superadmin || @is_ketua_tim }}">
-                    <li>
-                        <a class="sidebar-link {{ @active_menu == 'ketua-tim-po' ? 'active' : '' }}" href="{{ @BASE }}/ketua-tim/siap-po" title="Daftar Order Lunas">
-                            <i class="bi bi-check2-circle"></i> <span>Penunjukan Pelaksana</span>
-                            <check if="{{ @jumlah_notif_penunjukan_pelaksana > 0 }}">
-                                <span class="badge rounded-pill bg-danger ms-auto">{{ @jumlah_notif_penunjukan_pelaksana }}</span>
-                            </check>
-                        </a>
-                    </li>
-                </check>
+              
 
                 <!-- 2. PELAKSANAAN TEKNIS -->
                 <check if="{{ @is_superadmin || @is_ketua_tim || @is_tim_kerja || @is_keuangan || @is_tim_pengujian || @is_role_sertifikasi }}">

@@ -2102,6 +2102,36 @@ window.PO_URLS = {
         else { kirimKeServer('draft'); }
     }
     $('btnDraft').addEventListener('click', function () { simpan('draft'); });
+    // ---- Tombol Kirim nonaktif sampai semua isian wajib terisi ----
+    (function () {
+        var btn = $('btnKirim');
+        if (!btn) { return; }
+        var hint = document.createElement('span');
+        hint.id = 'poKirimHint';
+        hint.className = 'small fw-semibold text-danger d-none me-2';
+        hint.innerHTML = '<span id="poKirimHintTx"></span> <a href="#" id="poKirimHintLink" class="text-danger">Tunjukkan</a>';
+        btn.insertAdjacentElement('beforebegin', hint);
+        var tx = hint.querySelector('#poKirimHintTx'), lastN = -1, tm = null;
+        function perbarui() {
+            if (saving) { return; }
+            var n = 0;
+            try { n = validasiKirim().length; } catch (e) { return; }   // state belum siap
+            btn.disabled = n > 0;
+            btn.title = n > 0 ? 'Lengkapi dulu ' + n + ' isian wajib sebelum mengirim' : '';
+            if (n !== lastN) { lastN = n; hint.classList.toggle('d-none', n === 0); tx.textContent = n + ' isian wajib belum lengkap'; }
+        }
+        function jadwal() { clearTimeout(tm); tm = setTimeout(perbarui, 250); }
+        root.addEventListener('input', jadwal, true);
+        root.addEventListener('change', jadwal, true);
+        root.addEventListener('click', jadwal, true);
+        setInterval(perbarui, 1000);
+        hint.querySelector('#poKirimHintLink').addEventListener('click', function (e) {
+            e.preventDefault();
+            var m = validasiKirim();
+            if (m.length) { fokusKe(tandaiBelumLengkap(m)); }
+        });
+        perbarui();
+    })();
     $('btnKirim').addEventListener('click', function () { simpan('kirim'); });
     window.addEventListener('resize', fit);
 

@@ -517,11 +517,19 @@ class OrderController extends Controller {
         // Step 6: Pembayaran
         // Status pembayaran yang sebenarnya: "ada baris pembayaran" BUKAN berarti lunas (bisa baru termin pertama / sebagian).
         $bayarTotal = 0.0;
+        $bayarTermin = 0;      // termin terakhir yang sudah tercatat (ditampilkan sebagai "Termin N")
+        $bayarBaris = 0;
         $punyaKesanggupan = false;
         foreach ((array)$riwayatBayar as $rb) {
             if (!empty($rb['is_kesanggupan_bayar'])) { $punyaKesanggupan = true; continue; }
-            if (($rb['status_verifikasi'] ?? 'terverifikasi') === 'terverifikasi') { $bayarTotal += (float)($rb['jumlah'] ?? 0); }
+            if (($rb['status_verifikasi'] ?? 'terverifikasi') === 'terverifikasi') {
+                $bayarTotal += (float)($rb['jumlah'] ?? 0);
+                $bayarBaris++;
+                $bayarTermin = max($bayarTermin, (int)($rb['termin_ke'] ?? 0));
+            }
         }
+        if ($bayarTermin <= 0) { $bayarTermin = max(1, $bayarBaris); }
+        $f3->set('bayar_termin', $bayarTermin);
         $bayarAcuan = !empty($penawaran['nominal_penawaran']) ? (float)$penawaran['nominal_penawaran'] : (float)($order['estimasi_biaya'] ?? 0);
         $statusKeuOrder = $order['status_keuangan'] ?? '';
         if ($statusKeuOrder === 'lunas' || ($bayarAcuan > 0 && $bayarTotal >= $bayarAcuan)) {
@@ -541,22 +549,45 @@ class OrderController extends Controller {
         $f3->set('bayar_acuan', $bayarAcuan);
         $f3->set('bayar_sisa', max(0, $bayarAcuan - $bayarTotal));
 
-        $isPembayaranLunas = $isStep5Done && $bayarTuntas;
+        // Tahap 7 (SPM) sudah boleh diisi begitu ada pembayaran tercatat (termin 1 pun); Tahap 8 (PO) menunggu LUNAS + SPM aktif
+        $bayarMulai = ($bayarStatus !== 'belum');
+        $f3->set('bayar_mulai', $bayarMulai);
+        $isPembayaranMulai = $isStep5Done && $bayarMulai;
 
         // Khusus Lingkungan: Proposal teknis diunggah pasca pembayaran
         $proposalLingkunganUploaded = !empty($proposal) && !empty($proposal['file_proposal']);
         $f3->set('proposal_lingkungan_uploaded', $proposalLingkunganUploaded);
 
         // Step 7: Aktivasi SPM (selesai jika titik awal pengerjaan / SPM telah dicatat)
-        $isSpmDone = $isPembayaranLunas && (
+        $isSpmDone = $isPembayaranMulai && (
             !empty($order['tanggal_spm_mulai']) ||
             !empty($order['tanggal_terima_sampel'])
         );
 
+        // PO terbuka hanya kalau pembayaran lunas (atau Kesanggupan Bayar) DAN SPM aktif
+        $poTerbuka = ($isSpmDone && $bayarTuntas);
+        $f3->set('po_terbuka', $poTerbuka);
+        if (!$poTerbuka) {
+            $sisaTxt = 'Rp ' . number_format(max(0, $bayarAcuan - $bayarTotal), 0, ',', '.');
+            if (!$isSpmDone && !$bayarTuntas) {
+                $f3->set('po_kunci_badge', 'Terkunci (Menunggu SPM & Pelunasan)');
+                $f3->set('po_kunci_pesan', 'Penerbitan PO dibuka setelah SPM diaktifkan pada <strong>Tahap 7</strong> dan pembayaran <strong>lunas</strong> pada Tahap 6.');
+            } elseif (!$bayarTuntas) {
+                $f3->set('po_kunci_badge', 'Terkunci (Menunggu Pelunasan)');
+                $f3->set('po_kunci_pesan', 'SPM sudah aktif, tetapi penerbitan PO baru dibuka setelah pembayaran <strong>lunas</strong> (sisa tagihan ' . $sisaTxt . '). Catat termin berikutnya pada Tahap 6.');
+            } else {
+                $f3->set('po_kunci_badge', 'Terkunci (Menunggu SPM)');
+                $f3->set('po_kunci_pesan', 'Pembayaran sudah lunas. Penerbitan PO dibuka setelah titik awal pengerjaan / SPM diaktifkan pada <strong>Tahap 7</strong>.');
+            }
+        } else {
+            $f3->set('po_kunci_badge', '');
+            $f3->set('po_kunci_pesan', '');
+        }
+
         // Step 8: Petunjuk Operasional (PO)
         // Selesai jika PO sudah terbit dan pengerjaan lab selesai / ada BAST
         $poKegiatanAktif = (!empty($poKegiatan) && !empty($poKegiatan['validasi_keuangan_at']));
-        $isPoDone = $isSpmDone && (!empty($order['po_id']) || $poKegiatanAktif) && (
+        $isPoDone = $poTerbuka && (!empty($order['po_id']) || $poKegiatanAktif) && (
             in_array($order['status'] ?? '', ['selesai']) ||
             ($order['status_pelaksanaan'] ?? '') === 'laporan_selesai' ||
             !empty($bast)
@@ -578,10 +609,12 @@ class OrderController extends Controller {
             $currentStep = 4;
         } elseif (!$isStep5Done) {
             $currentStep = 5;
-        } elseif (!$isPembayaranLunas) {
+        } elseif (!$isPembayaranMulai) {
             $currentStep = 6;
         } elseif (!$isSpmDone) {
             $currentStep = 7;
+        } elseif (!$bayarTuntas) {
+            $currentStep = 6;   // SPM sudah aktif, tinggal menunggu pelunasan (PO terkunci)
         } elseif (!$isPoDone) {
             $currentStep = 8;
         } elseif (!$isBastDone) {
@@ -601,6 +634,7 @@ class OrderController extends Controller {
                 $stepper[$s] = ['state' => 'waiting'];
             }
         }
+        if ($isSpmDone && !$bayarTuntas) { $stepper[7] = ['state' => 'done']; }   // SPM sudah aktif walau Tahap 6 masih menunggu pelunasan
         $f3->set('stepper', $stepper);
         $f3->set('current_step', $currentStep);
         $f3->set('is_form_pelayanan_done', $isFormPelayananDone);
@@ -773,6 +807,17 @@ class OrderController extends Controller {
                 $langkahBerikutnya['tombol_class'] = 'btn-dark fw-bold';
                 $langkahBerikutnya['target_card'] = '#cardDisposisiKeuangan';
             }
+        } elseif ($currentStep === 6 && $isSpmDone && !$bayarTuntas) {
+            $langkahBerikutnya['judul'] = 'Menunggu Pelunasan Pembayaran';
+            $langkahBerikutnya['deskripsi'] = 'SPM sudah aktif dan pengerjaan dapat berjalan, tetapi Petunjuk Operasional (PO) baru bisa diterbitkan setelah pembayaran lunas. Sisa tagihan: Rp ' . number_format(max(0, $bayarAcuan - $bayarTotal), 0, ',', '.') . '. Tim Keuangan mencatat termin berikutnya.';
+            $langkahBerikutnya['penanggung_jawab'] = 'Pelanggan & Tim Keuangan';
+            $langkahBerikutnya['role_icon'] = 'bi-credit-card-2-front-fill';
+            $langkahBerikutnya['tipe_badge'] = 'warning';
+            $langkahBerikutnya['tombol_teks'] = 'Lihat Pembayaran';
+            $langkahBerikutnya['tombol_url'] = '#cardPembayaran';
+            $langkahBerikutnya['tombol_icon'] = 'bi-credit-card-2-front-fill';
+            $langkahBerikutnya['tombol_class'] = 'btn-success';
+            $langkahBerikutnya['target_card'] = '#cardPembayaran';
         } elseif ($currentStep === 6) {
             $langkahBerikutnya['judul'] = 'Konfirmasi Penerimaan Pembayaran';
             $langkahBerikutnya['deskripsi'] = 'Penawaran harga telah disetujui (DEAL) oleh pelanggan. Tim Keuangan perlu mencatat bukti transfer pembayaran agar pengujian laboratorium dapat dijadwalkan.';
@@ -2228,6 +2273,13 @@ class OrderController extends Controller {
         }
         if (!$this->isKetuaTim() && !$this->isSuperadmin()) {
             $this->setFlashError('Akses Ditolak: penunjukan Ketua Pelaksana PO merupakan wewenang Ketua Tim OPTI atau Superadmin.');
+            $f3->reroute("/order/{$id}");
+            return;
+        }
+
+        $syaratPo = $this->syaratPoTerpenuhi($id);
+        if (!$syaratPo['ok']) {
+            $this->setFlashError('Penerbitan PO belum dibuka: pastikan pembayaran sudah lunas dan SPM (Tahap 7) sudah aktif.');
             $f3->reroute("/order/{$id}");
             return;
         }

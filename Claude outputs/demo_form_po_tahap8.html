@@ -1,0 +1,107 @@
+<!doctype html><html lang="id"><head><meta charset="utf-8"><title>Demo Form PO Tahap 8</title><style>
+*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Arial,sans-serif;background:#f4f6fa;color:#0f172a}
+.topbar{position:sticky;top:0;z-index:1020;background:#fff;border-bottom:1px solid #e2e8f0;padding:20px 24px;font-weight:700;height:75px}
+.wrap{max-width:1600px;margin:0 auto;padding:16px 24px}
+.system-section-card{border:1px solid #e2e8f0;border-radius:12px;background:#fff;margin-bottom:1.5rem;overflow:hidden}
+.hd{padding:16px 24px;border-bottom:1px solid #f1f5f9;background:#fafafa;font-weight:700}.p-4{padding:1.5rem}
+.dummy{height:260px;display:grid;place-items:center;color:#94a3b8}
+.pa-fh { background:#eaf3ff; border-bottom:1px solid #cfe2ff; padding:8px 14px; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; font-size:.8rem; color:#12335c; }
+.btn-sm{padding:2px 10px;border:1px solid #cbd5e1;background:#fff;border-radius:6px;font-size:.78rem}
+.system-section-card:has(#paFrameWrap) { overflow:clip; }
+.pa-frame { margin:0 -1.5rem; background:#fff; border-top:1px solid #bcd3f5; border-bottom:1px solid #bcd3f5; }
+.pa-track { position:relative; } .pa-frame:not(.pa-full) { position:sticky; top:75px; z-index:40; }
+.pa-frame iframe { display:block; width:100%; height:calc(100vh - 75px - 46px); min-height:480px; border:0; background:#fff; }
+.pa-frame.pa-full { position:fixed; inset:0; margin:0; z-index:1060; border-radius:0; display:flex; flex-direction:column; margin:0 }
+.pa-frame.pa-full iframe { flex:1; height:auto; min-height:0; }
+</style></head><body><div class="topbar">Demo - Detail Order #ORD-202610-008</div>
+<div class="wrap"><div class="system-section-card"><div class="hd">Tahap sebelumnya</div><div class="dummy">(isi tahap lain)</div></div>
+<div class="system-section-card"><div class="hd">8 Petunjuk Operasional (PO) Kegiatan</div><div class="p-4"><div class="pa-track" id="paTrack"><div class="pa-frame" id="paFrameWrap"><div class="pa-fh"><span><b>Susun Petunjuk Operasional (PO)</b> &middot; form yang sama dengan halaman Buat PO</span><button type="button" class="btn-sm" id="paFull"><span>Layar penuh</span></button></div><iframe id="paFrame" srcdoc="&lt;!doctype html&gt;&lt;html class=&quot;silopti-embed&quot;&gt;&lt;head&gt;&lt;meta charset=&quot;utf-8&quot;&gt;&lt;style&gt;
+*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Arial,sans-serif;background:#f4f6fa;color:#0f172a}
+.main{padding:12px 16px 24px}.row{display:flex;gap:20px;align-items:stretch}
+#poFormCol{flex:1;min-width:0}#poPreviewCol{width:42%}
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:18px 20px;margin-bottom:16px}
+.card h3{margin:0 0 4px;font-size:1.05rem}.card p{margin:0 0 14px;color:#64748b;font-size:.85rem}
+label{display:block;font-size:.72rem;font-weight:700;letter-spacing:.04em;color:#475569;margin:10px 0 4px}
+input,textarea{width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;font:inherit;background:#f8fafc}
+.po-live-card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 4px 20px -4px rgba(15,23,42,.1);position:sticky;top:75px;overflow:hidden}
+.po-live-toolbar{padding:10px 14px;border-bottom:1px solid #e2e8f0;font-size:.85rem;font-weight:600}
+.po-live-viewport{background:#525659;height:calc(100vh - 155px);min-height:550px;padding:24px;overflow:auto}
+html.silopti-embed .po-live-card { top: 12px !important; }
+html.silopti-embed.pa-pin { overflow: hidden !important; }
+
+.paper{background:#fff;width:100%;height:100%;padding:28px;font:11px/1.5 Times New Roman,serif;text-align:left}
+.bar{display:flex;gap:8px;justify-content:flex-end}.btn{padding:9px 18px;border-radius:10px;border:0;font-weight:600;background:#2563eb;color:#fff}.btn.o{background:#fff;color:#334155;border:1px solid #cbd5e1}
+&lt;/style&gt;&lt;/head&gt;&lt;body&gt;&lt;div class=&quot;main&quot;&gt;&lt;div class=&quot;row&quot;&gt;&lt;div id=&quot;poFormCol&quot;&gt;&lt;div class=&quot;card&quot;&gt;&lt;h3&gt;Bagian 1&lt;/h3&gt;&lt;p&gt;Contoh isian form PO (demo).&lt;/p&gt;&lt;label&gt;JUDUL KEGIATAN&lt;/label&gt;&lt;input value=&quot;Permohonan Uji Emisi Cerobong&quot;&gt;&lt;label&gt;KETERANGAN&lt;/label&gt;&lt;textarea rows=&quot;5&quot;&gt;&lt;/textarea&gt;&lt;/div&gt;&lt;div class=&quot;card&quot;&gt;&lt;h3&gt;Bagian 2&lt;/h3&gt;&lt;p&gt;Contoh isian form PO (demo).&lt;/p&gt;&lt;label&gt;JUDUL KEGIATAN&lt;/label&gt;&lt;input value=&quot;Permohonan Uji Emisi Cerobong&quot;&gt;&lt;label&gt;KETERANGAN&lt;/label&gt;&lt;textarea rows=&quot;5&quot;&gt;&lt;/textarea&gt;&lt;/div&gt;&lt;div class=&quot;card&quot;&gt;&lt;h3&gt;Bagian 3&lt;/h3&gt;&lt;p&gt;Contoh isian form PO (demo).&lt;/p&gt;&lt;label&gt;JUDUL KEGIATAN&lt;/label&gt;&lt;input value=&quot;Permohonan Uji Emisi Cerobong&quot;&gt;&lt;label&gt;KETERANGAN&lt;/label&gt;&lt;textarea rows=&quot;5&quot;&gt;&lt;/textarea&gt;&lt;/div&gt;&lt;div class=&quot;card&quot;&gt;&lt;h3&gt;Bagian 4&lt;/h3&gt;&lt;p&gt;Contoh isian form PO (demo).&lt;/p&gt;&lt;label&gt;JUDUL KEGIATAN&lt;/label&gt;&lt;input value=&quot;Permohonan Uji Emisi Cerobong&quot;&gt;&lt;label&gt;KETERANGAN&lt;/label&gt;&lt;textarea rows=&quot;5&quot;&gt;&lt;/textarea&gt;&lt;/div&gt;&lt;div class=&quot;card&quot;&gt;&lt;h3&gt;Bagian 5&lt;/h3&gt;&lt;p&gt;Contoh isian form PO (demo).&lt;/p&gt;&lt;label&gt;JUDUL KEGIATAN&lt;/label&gt;&lt;input value=&quot;Permohonan Uji Emisi Cerobong&quot;&gt;&lt;label&gt;KETERANGAN&lt;/label&gt;&lt;textarea rows=&quot;5&quot;&gt;&lt;/textarea&gt;&lt;/div&gt;&lt;div class=&quot;card&quot;&gt;&lt;h3&gt;Bagian 6&lt;/h3&gt;&lt;p&gt;Contoh isian form PO (demo).&lt;/p&gt;&lt;label&gt;JUDUL KEGIATAN&lt;/label&gt;&lt;input value=&quot;Permohonan Uji Emisi Cerobong&quot;&gt;&lt;label&gt;KETERANGAN&lt;/label&gt;&lt;textarea rows=&quot;5&quot;&gt;&lt;/textarea&gt;&lt;/div&gt;&lt;div class=&quot;card&quot;&gt;&lt;h3&gt;Bagian 7&lt;/h3&gt;&lt;p&gt;Contoh isian form PO (demo).&lt;/p&gt;&lt;label&gt;JUDUL KEGIATAN&lt;/label&gt;&lt;input value=&quot;Permohonan Uji Emisi Cerobong&quot;&gt;&lt;label&gt;KETERANGAN&lt;/label&gt;&lt;textarea rows=&quot;5&quot;&gt;&lt;/textarea&gt;&lt;/div&gt;&lt;div class=&quot;card&quot;&gt;&lt;h3&gt;Bagian 8&lt;/h3&gt;&lt;p&gt;Contoh isian form PO (demo).&lt;/p&gt;&lt;label&gt;JUDUL KEGIATAN&lt;/label&gt;&lt;input value=&quot;Permohonan Uji Emisi Cerobong&quot;&gt;&lt;label&gt;KETERANGAN&lt;/label&gt;&lt;textarea rows=&quot;5&quot;&gt;&lt;/textarea&gt;&lt;/div&gt;&lt;div class=&quot;bar&quot;&gt;&lt;button class=&quot;btn o&quot;&gt;Simpan Draft&lt;/button&gt;&lt;button class=&quot;btn&quot;&gt;Kirim PO&lt;/button&gt;&lt;/div&gt;&lt;/div&gt;&lt;div id=&quot;poPreviewCol&quot;&gt;&lt;div class=&quot;po-live-card&quot;&gt;&lt;div class=&quot;po-live-toolbar&quot;&gt;Preview PO (ikut turun saat di-scroll)&lt;/div&gt;&lt;div class=&quot;po-live-viewport&quot;&gt;&lt;div class=&quot;paper&quot;&gt;&lt;b&gt;PETUNJUK OPERASIONAL&lt;/b&gt;&lt;br&gt;&lt;br&gt;1. Judul&lt;br&gt;2. Latar belakang&lt;br&gt;3. Tujuan&lt;br&gt;4. Ruang lingkup&lt;br&gt;5. Metode&lt;br&gt;6. Tim pelaksana&lt;br&gt;7. RAB&lt;br&gt;8. Jadwal&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/body&gt;&lt;/html&gt;"></iframe></div></div></div></div>
+<div class="system-section-card"><div class="dummy">(bawah)</div></div></div><script>(function () {
+    // Form PO di Tahap 8 -- sama seperti halaman Buat PO: seluruh halaman yang di-scroll, bingkai (bar biru + form) tetap menempel
+    // di layar, isi form ikut bergerak, dan panel preview ketahan (sticky) tanpa terpotong.
+    var track = document.getElementById('paTrack'), wrap = document.getElementById('paFrameWrap'), fr = document.getElementById('paFrame'), btn = document.getElementById('paFull');
+    if (!track || !wrap || !fr) { return; }
+    var C = 0, V = 0, terakhir = -1, antri = false, topbar = 75;
+    function dok() { try { return fr.contentDocument; } catch (e) { return null; } }
+    function penuh() { return wrap.classList.contains('pa-full'); }
+    function tinggiTopbar() { var t = document.querySelector('.topbar'); return t ? Math.round(t.getBoundingClientRect().height) : 75; }
+    // posisi isi form mengikuti seberapa jauh halaman sudah melewati awal bagian ini
+    function sinkron() {
+        var d = dok();
+        if (!d || !d.body || penuh() || track.offsetParent === null) { return; }
+        var p = Math.max(0, Math.min(Math.max(0, C - V), topbar - track.getBoundingClientRect().top));
+        var w = d.defaultView;
+        if (Math.abs(w.scrollY - p) > 0.5) { terakhir = p; w.scrollTo({ top: p, left: 0, behavior: 'instant' }); }
+    }
+    function ukur() {
+        var d = dok();
+        if (!d || !d.body || track.offsetParent === null) { return; }
+        if (penuh()) { return; }
+        d.documentElement.classList.add('pa-pin');
+        topbar = tinggiTopbar();
+        var bar = wrap.querySelector('.pa-fh');
+        var barH = bar ? bar.offsetHeight : 40;
+        V = Math.max(420, window.innerHeight - topbar - barH - 2);
+        wrap.style.top = topbar + 'px';
+        if (Math.abs(fr.offsetHeight - V) > 1) { fr.style.height = V + 'px'; }
+        C = Math.max(V, d.documentElement.scrollHeight);
+        var T = C + barH + 2;
+        if (Math.abs(track.offsetHeight - T) > 1) { track.style.height = T + 'px'; }
+        sinkron();
+    }
+    function jadwalkan() {
+        if (antri) { return; }
+        antri = true;
+        window.requestAnimationFrame(function () { antri = false; sinkron(); });
+    }
+    function atur(on) {
+        var d = dok();
+        wrap.classList.toggle('pa-full', on);
+        document.body.style.overflow = on ? 'hidden' : '';
+        if (btn) { btn.querySelector('span').textContent = on ? 'Tutup layar penuh' : 'Layar penuh'; }
+        if (on) {                         // layar penuh: scroll bawaan form
+            fr.style.height = '';
+            wrap.style.top = '';
+            if (d && d.documentElement) { d.documentElement.classList.remove('pa-pin'); }
+        } else { ukur(); }
+    }
+    if (btn) { btn.addEventListener('click', function () { atur(!penuh()); }); }
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && penuh()) { atur(false); } });
+    fr.addEventListener('load', function () {
+        ukur();
+        var d = dok();
+        if (!d || !d.body) { return; }
+        if (window.ResizeObserver) { new ResizeObserver(ukur).observe(d.body); }
+        // kalau form sendiri menggulir (mis. fokus ke kolom yang belum diisi), halaman ikut menyesuaikan
+        d.defaultView.addEventListener('scroll', function () {
+            if (penuh()) { return; }
+            var y = d.defaultView.scrollY;
+            if (Math.abs(y - terakhir) < 1.5) { return; }
+            terakhir = y;
+            var trAbs = track.getBoundingClientRect().top + window.pageYOffset;
+            window.scrollTo({ top: trAbs - topbar + y, left: 0, behavior: 'instant' });
+        });
+    });
+    var tab8 = document.getElementById('tab-stage-8');
+    if (tab8) { tab8.addEventListener('shown.bs.tab', function () { setTimeout(ukur, 100); }); }
+    window.addEventListener('scroll', jadwalkan, { passive: true });
+    window.addEventListener('resize', ukur);
+    setInterval(ukur, 800);
+})();
+</script></body></html>

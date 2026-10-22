@@ -145,6 +145,7 @@ class PoHumasController extends Controller {
         } catch (\Exception $e) {
             $this->keluarkanJson(['ok' => false, 'pesan' => 'Gagal menyimpan verifikasi: ' . $e->getMessage()], 500);
         }
+        \PoReviewController::catatRiwayatOrder($this->db, $id, $uid, 'Humas memverifikasi PO. Diteruskan ke Tim Mitra.', 'verif_humas');   // Riwayat Aktivitas detail order
         $this->kabariTimMitra($rows[0]);
         $this->keluarkanJson(['ok' => true, 'waktu' => date('Y-m-d H:i:s'), 'tanggal' => date('Y-m-d')]);
     }

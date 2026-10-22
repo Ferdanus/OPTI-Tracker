@@ -126,12 +126,9 @@
                 </div>
             </div>
 
-            <input type="hidden" name="disposisi_langsung" id="inputDisposisiLangsung" value="0">
 
 <div class="d-flex flex-column flex-sm-row justify-content-end gap-2">
     <a href="{{ @dari == 'order' ? (@BASE . '/order/' . @dari_id) : (@BASE . '/pembayaran') }}" class="btn btn-outline-secondary px-4 order-3 order-sm-1">Batal</a>
-    <button type="button" id="btnSimpanSaja" class="btn btn-outline-primary px-4 order-2 order-sm-2 d-none">Simpan</button>
-    <button type="button" id="btnSimpanDisposisi" class="btn btn-primary px-4 order-1 order-sm-3 d-none"><i class="bi bi-send-check me-1"></i> Simpan &amp; Disposisi</button>
     <button type="button" id="btnSimpanPembayaran" class="btn btn-primary px-4 order-1 order-sm-3"><i class="bi bi-save me-1"></i> Simpan Pembayaran</button>
 </div>
         </form>
@@ -195,48 +192,7 @@ function labelDivisi() {
         var detailText   = document.getElementById('overpayDetailText');
         var form         = document.getElementById('formPembayaran');
         var btnSimpan = document.getElementById('btnSimpanPembayaran');
-var btnSimpanSaja = document.getElementById('btnSimpanSaja');
-var btnSimpanDisposisi = document.getElementById('btnSimpanDisposisi');
-var inputDisposisi = document.getElementById('inputDisposisiLangsung');
 
-btnSimpanSaja.addEventListener('click', function () {
-    inputDisposisi.value = '0';
-    btnSimpan.click(); // pinjem logic validasi & submit yang udah ada di listener btnSimpan
-});
-
-btnSimpanDisposisi.addEventListener('click', function () {
-    var pesan = 'Pembayaran akan disimpan, dan order ini akan didisposisikan ke <strong>Ketua Tim ' + labelDivisi() + '</strong>.';
-
-    if (typeof Swal !== 'undefined') {
-        Swal.fire({
-            icon: 'question',
-            title: 'Disposisi ke Ketua Tim ' + labelDivisi() + '?',
-            html: '<div class="text-start small text-secondary">' + pesan + '</div>',
-            showCancelButton: true,
-            confirmButtonText: '<i class="bi bi-send-check me-1"></i> Ya, Simpan & Disposisi',
-            cancelButtonText: 'Batal',
-            confirmButtonColor: '#881337',
-            reverseButtons: true,
-            customClass: {
-                popup: 'rounded-4 shadow-lg p-2',
-                confirmButton: 'btn btn-primary px-3 py-2 fw-semibold rounded-3 mx-1',
-                cancelButton: 'btn btn-outline-secondary px-3 py-2 fw-semibold rounded-3 mx-1'
-            },
-            buttonsStyling: false
-        }).then(function (result) {
-            if (result.isConfirmed) {
-                inputDisposisi.value = '1';
-                btnSimpan.click();
-            }
-        });
-    } else {
-        if (confirm('Pembayaran akan disimpan dan didisposisikan ke Ketua Tim ' + labelDivisi() + '. Lanjutkan?')) {
-            inputDisposisi.value = '1';
-            btnSimpan.click();
-        }
-    }
-});
-    
         function rupiah(n) {
             return 'Rp ' + (Math.round(n) || 0).toLocaleString('id-ID');
         }
@@ -430,37 +386,9 @@ if (toggleKb) {
     });
 }
 function perbaruiTombolSimpan() {
+    // Satu tombol saja: Simpan Pembayaran (order lunas otomatis diteruskan ke Ketua Tim oleh server)
     var btnNormal = document.getElementById('btnSimpanPembayaran');
-    var btnSaja = document.getElementById('btnSimpanSaja');
-    var btnDisposisi = document.getElementById('btnSimpanDisposisi');
-
-    if (sudahDisposisi) {
-        btnNormal.classList.remove('d-none');
-        btnSaja.classList.add('d-none');
-        btnDisposisi.classList.add('d-none');
-        return;
-    }
-
-    var modeSkip = document.getElementById('inputIsKesanggupan').value === '1';
-    var angka = parseInt(hidden.value, 10) || 0;
-    var modeLunasPas = (!modeSkip && angka > 0 && angka === sisaTagihan);
-
-    if (modeSkip) {
-        // Kesanggupan Bayar: uang belum beneran masuk, tetap dikasih pilihan
-        btnNormal.classList.add('d-none');
-        btnSaja.classList.remove('d-none');
-        btnDisposisi.classList.remove('d-none');
-    } else if (modeLunasPas) {
-        // Bayar beneran & pas lunas: gak perlu milih, langsung 1 tombol "Simpan & Disposisi"
-        btnNormal.classList.add('d-none');
-        btnSaja.classList.add('d-none');
-        btnDisposisi.classList.remove('d-none');
-    } else {
-        // Belum lunas, pembayaran termin biasa
-        btnNormal.classList.remove('d-none');
-        btnSaja.classList.add('d-none');
-        btnDisposisi.classList.add('d-none');
-    }
+    if (btnNormal) { btnNormal.classList.remove('d-none'); }
 }
 perbaruiTombolSimpan();
 

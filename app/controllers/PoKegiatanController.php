@@ -948,6 +948,15 @@ $this->render('katim_kerja/po-kegiatan/pilih_jenis.html', 'Buat Petunjuk Operasi
             $f3->reroute('/po-kegiatan/' . $existing->id . '/edit' . ((string) $f3->get('GET.dari') === 'order' ? '?embed=1&dari=order' : ''));
             return;
         }
+        // PO baru baru boleh disusun kalau pembayaran sudah lunas dan SPM sudah aktif
+        $syaratPo = $this->syaratPoTerpenuhi($orderId);
+        if (!$syaratPo['ok']) {
+            $this->setFlashError(!$syaratPo['lunas'] && !$syaratPo['spm']
+                ? 'Penerbitan PO belum bisa dibuka: pembayaran belum lunas dan SPM belum diaktifkan.'
+                : (!$syaratPo['lunas'] ? 'Penerbitan PO belum bisa dibuka: pembayaran order ini belum lunas.' : 'Penerbitan PO belum bisa dibuka: SPM (Tahap 7) belum diaktifkan.'));
+            $f3->reroute('/order/' . $orderId);
+            return;
+        }
         $f3->set('dari', ((string) $f3->get('GET.dari') === 'order') ? 'order' : '');   // dari Tahap 8 detail order (form tertanam di iframe)
         $tahunSekarang = (int) date('Y');
     $daftarTahun = [];

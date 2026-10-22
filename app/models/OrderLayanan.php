@@ -780,6 +780,35 @@ class OrderLayanan extends \DB\SQL\Mapper {
             }
         }
 
+        // Sudah DEAL & baru bayar sebagian: SPM boleh diaktifkan lebih dulu, tapi PO menunggu pelunasan
+        $isSebagian = $isDeal && !$isLunas && (($o['status_keuangan'] ?? '') === 'terbayar_sebagian' || (float)($o['total_terbayar'] ?? 0) > 0);
+        if ($isSebagian) {
+            if (empty($o['tanggal_terima_sampel']) && empty($o['tanggal_spm_mulai'])) {
+                return [
+                    'label' => 'Menunggu Sampel',
+                    'class' => 'status-pill status-pill-amber',
+                    'icon'  => 'bi-box-seam-fill',
+                    'user'  => 'Tim Mitra & Pelanggan',
+                    'keterangan_aksi'   => 'Menunggu Kiriman Sampel',
+                    'keterangan_sub'    => 'Dari: ' . (!empty($o['nama_perusahaan']) ? $o['nama_perusahaan'] : 'Pelanggan'),
+                    'keterangan_detail' => 'Pembayaran baru sebagian; SPM sudah bisa diaktifkan',
+                    'keterangan_icon'   => 'bi-box-seam text-warning',
+                    'aksi_badge' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
+                ];
+            }
+            return [
+                'label' => 'Menunggu Pelunasan',
+                'class' => 'status-pill status-pill-amber',
+                'icon'  => 'bi-credit-card-2-front-fill',
+                'user'  => 'Tim Keuangan',
+                'keterangan_aksi'   => 'Menunggu Pelunasan',
+                'keterangan_sub'    => 'Klien: ' . (!empty($o['nama_perusahaan']) ? $o['nama_perusahaan'] : 'Mitra'),
+                'keterangan_detail' => 'SPM aktif; PO terbuka setelah pembayaran lunas',
+                'keterangan_icon'   => 'bi-credit-card text-warning',
+                'aksi_badge' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
+            ];
+        }
+
         // 4. Step 6: Menunggu Pembayaran (Sudah DEAL namun belum lunas)
         if ($isDeal) {
             return [

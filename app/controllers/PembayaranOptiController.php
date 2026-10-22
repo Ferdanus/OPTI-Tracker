@@ -337,12 +337,9 @@ if ($isKesanggupan) {
             ]);
         } catch (\Exception $eNotif) {}
 
-if (!empty($post['disposisi_langsung'])) {
-    $this->lakukanDisposisiKatim($orderId, $this->getUserId());
-    $this->setFlashSuccess('Order dicatat sebagai Kesanggupan Bayar & sudah didisposisikan ke Ketua Tim.');
-} else {
-    $this->setFlashSuccess('Order dicatat sebagai Kesanggupan Bayar. Order masuk ke tab "Sedang Berjalan".');
-}
+// Tanpa popup disposisi lagi: order otomatis diteruskan ke Ketua Tim (sekali saja)
+$this->disposisiKatimOtomatis($orderId);
+$this->setFlashSuccess('Order dicatat sebagai Kesanggupan Bayar & diteruskan ke Ketua Tim. Order masuk ke tab "Sedang Berjalan".');
 $f3->reroute($kembali);
     } catch (\Exception $e) {
         $this->setFlashError('Gagal mencatat: ' . $e->getMessage());
@@ -445,11 +442,10 @@ if ($sisaSebelumBayar !== null && $jumlah > $sisaSebelumBayar) {
                 ]);
             } catch (\Exception $eNotif) {}
 
-if ($statusBaru === 'lunas' && !empty($post['disposisi_langsung'])) {
-    $this->lakukanDisposisiKatim($orderId, $this->getUserId());
-    $pesanSukses = 'Pembayaran tercatat. Order dinyatakan LUNAS & sudah didisposisikan ke Ketua Tim.';
-} elseif ($statusBaru === 'lunas') {
-    $pesanSukses = 'Pembayaran tercatat. Order dinyatakan LUNAS.';
+if ($statusBaru === 'lunas') {
+    // Tanpa popup disposisi lagi: begitu lunas, order otomatis diteruskan ke Ketua Tim (sekali saja)
+    $this->disposisiKatimOtomatis($orderId);
+    $pesanSukses = 'Pembayaran tercatat. Order dinyatakan LUNAS & diteruskan ke Ketua Tim.';
 } else {
     $pesanSukses = 'Pembayaran termin tercatat.';
 }
@@ -678,6 +674,14 @@ $this->setFlashSuccess($pesanSukses);
             return $this->db->exec($sql, $params);
         } catch (\Exception $e) {
             return [];
+        }
+    }
+
+    /** Disposisi ke Ketua Tim otomatis, hanya kalau belum pernah didisposisikan sebelumnya. */
+    protected function disposisiKatimOtomatis(int $orderId): void {
+        $rowD = $this->safeQuery('SELECT disposisi_katim_at FROM order_layanan WHERE id = ? LIMIT 1', [$orderId]);
+        if (!empty($rowD) && empty($rowD[0]['disposisi_katim_at'])) {
+            $this->lakukanDisposisiKatim($orderId, $this->getUserId());
         }
     }
 
