@@ -1,19 +1,21 @@
 <div class="container-fluid py-3">
 
     <!-- Page Header -->
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4 pb-2 border-bottom">
-        <h4 class="fw-bold text-dark m-0 font-display">Permintaan Masuk &amp; Disposisi</h4>
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4 pb-2 border-bottom">
+        <div>
+            <h4 class="fw-bold text-dark m-0 font-display">Permintaan Masuk &amp; Disposisi</h4>
+        </div>
 
         <check if="{{ @is_superadmin }}">
-            <div class="d-inline-flex align-items-center p-1 rounded-pill border shadow-2xs" style="background-color: #f1f5f9;">
-                <a href="{{ @BASE }}/disposisi-masuk" class="text-decoration-none px-3 py-1 rounded-pill small fw-semibold transition-all {{ empty(@filter_divisi) ? 'bg-white text-dark shadow-xs' : 'text-secondary' }}">
-                    <i class="bi bi-grid-fill me-1 opacity-50"></i> Semua
+            <div class="d-inline-flex align-items-center p-1 rounded-pill border bg-white shadow-xs">
+                <a href="{{ @BASE }}/disposisi-masuk" class="text-decoration-none px-3 py-1 rounded-pill small fw-semibold transition-all {{ empty(@filter_divisi) ? 'bg-primary text-white shadow-xs' : 'text-secondary' }}">
+                    Semua
                 </a>
-                <a href="{{ @BASE }}/disposisi-masuk?divisi=selulosa" class="text-decoration-none px-3 py-1 rounded-pill small fw-semibold transition-all {{ @filter_divisi == 'selulosa' ? 'bg-white text-danger shadow-xs' : 'text-secondary' }}">
-                    <i class="bi bi-file-earmark-medical me-1"></i> Selulosa
+                <a href="{{ @BASE }}/disposisi-masuk?divisi=selulosa" class="text-decoration-none px-3 py-1 rounded-pill small fw-semibold transition-all {{ @filter_divisi == 'selulosa' ? 'bg-primary text-white shadow-xs' : 'text-secondary' }}">
+                    Selulosa
                 </a>
-                <a href="{{ @BASE }}/disposisi-masuk?divisi=lingkungan" class="text-decoration-none px-3 py-1 rounded-pill small fw-semibold transition-all {{ @filter_divisi == 'lingkungan' ? 'bg-white text-success shadow-xs' : 'text-secondary' }}">
-                    <i class="bi bi-water me-1"></i> Lingkungan
+                <a href="{{ @BASE }}/disposisi-masuk?divisi=lingkungan" class="text-decoration-none px-3 py-1 rounded-pill small fw-semibold transition-all {{ @filter_divisi == 'lingkungan' ? 'bg-primary text-white shadow-xs' : 'text-secondary' }}">
+                    Lingkungan
                 </a>
             </div>
         </check>
@@ -24,15 +26,17 @@
     <!-- ======================================================== -->
     <div class="card border rounded-3 mb-4 bg-white shadow-xs">
         <div class="card-header bg-white py-3 px-3 px-md-4 d-flex justify-content-between align-items-center border-bottom">
-            <h6 class="fw-bold text-dark m-0">1. Permintaan Masuk Baru</h6>
-            <span class="badge {{ count(@perlu_kaji_ulang) > 0 ? 'bg-warning text-dark' : 'bg-light text-secondary border' }} px-2.5 py-1 fw-semibold">
-                {{ count(@perlu_kaji_ulang) }} Permintaan
-            </span>
+            <div class="d-flex align-items-center gap-2">
+                <h6 class="fw-bold text-dark m-0">Permintaan Masuk Baru</h6>
+                <span class="badge {{ count(@perlu_kaji_ulang) > 0 ? 'bg-warning text-dark' : 'bg-light text-secondary border' }} px-2 py-0.5 rounded-pill small">
+                    {{ count(@perlu_kaji_ulang) }}
+                </span>
+            </div>
         </div>
 
-        <div class="card-body p-3 p-md-4 bg-light-subtle">
+        <div class="card-body p-3 p-md-4">
             <check if="{{ empty(@perlu_kaji_ulang) }}">
-                <div class="text-center py-4 bg-white rounded-3 border text-secondary small">
+                <div class="text-center py-4 text-muted small">
                     <i class="bi bi-check2-circle text-success fs-3 d-block mb-1"></i>
                     Tidak ada permintaan baru yang menunggu kaji ulang.
                 </div>
@@ -43,72 +47,62 @@
                     <div class="row g-3">
                         <repeat group="{{ @perlu_kaji_ulang }}" value="{{ @item }}">
                             <div class="col-lg-6">
-                                <div class="card h-100 border rounded-3 p-3 bg-white shadow-2xs d-flex flex-column justify-content-between">
-                                    
+                                <div class="card h-100 border rounded-3 p-3 bg-white shadow-xs d-flex flex-column justify-content-between">
                                     <div>
-                                        <!-- Header: Tag Divisi, Nomor Order, Tanggal -->
-                                        <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
+                                        <!-- Header: Divisi, Nomor Order, Tanggal -->
+                                        <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
                                             <div class="d-flex align-items-center gap-2">
                                                 <check if="{{ @item.jenis_layanan_opti == 'selulosa' }}">
-                                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle text-uppercase fw-semibold px-2 py-1" style="font-size: 0.68rem;">OPTI Selulosa</span>
+                                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-0.5 small fw-semibold">Selulosa</span>
                                                 </check>
                                                 <check if="{{ @item.jenis_layanan_opti == 'lingkungan' }}">
-                                                    <span class="badge bg-success-subtle text-success border border-success-subtle text-uppercase fw-semibold px-2 py-1" style="font-size: 0.68rem;">OPTI Lingkungan</span>
+                                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-0.5 small fw-semibold">Lingkungan</span>
                                                 </check>
                                                 <check if="{{ empty(@item.jenis_layanan_opti) || @item.jenis_layanan_opti == 'belum_ditentukan' }}">
-                                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle fw-semibold px-2 py-1" style="font-size: 0.68rem;">
-                                                        <i class="bi bi-hourglass-split me-1"></i>Belum Ditentukan
-                                                    </span>
+                                                    <span class="badge bg-secondary-subtle text-secondary border px-2 py-0.5 small fw-semibold">Belum Ditentukan</span>
                                                 </check>
-                                                <span class="text-secondary font-monospace small ms-1" style="font-size: 0.78rem;">
+                                                <span class="text-secondary font-monospace small">
                                                     #{{ @item.nomor_permintaan ?: @item.nomor_order ?: ('REQ-' . @item.id) }}
                                                 </span>
                                             </div>
-                                            <span class="text-muted small" style="font-size: 0.75rem;">
+                                            <span class="text-muted small">
                                                 {{ date('d M Y', strtotime(@item.tanggal_masuk)) }}
                                             </span>
                                         </div>
 
-                                        <!-- Judul Kegiatan -->
-                                        <h6 class="fw-bold text-dark mb-2.5 font-display" style="font-size: 0.95rem; line-height: 1.35;">
+                                        <!-- Judul Kegiatan & Perusahaan -->
+                                        <h6 class="fw-bold text-dark mb-1 font-display" style="font-size: 0.95rem; line-height: 1.4;">
                                             {{ @item.judul_kegiatan }}
                                         </h6>
+                                        <div class="fw-semibold text-primary mb-2 small">
+                                            {{ @item.nama_perusahaan }}
+                                        </div>
 
-                                        <!-- Data Informasi Multi-Baris Rapi -->
-                                        <div class="small text-secondary mb-3" style="font-size: 0.82rem; line-height: 1.5;">
-                                            <div class="d-flex mb-1">
-                                                <span class="text-muted" style="width: 120px; flex-shrink: 0;">Nama Perusahaan</span>
-                                                <span class="text-muted me-2">:</span>
-                                                <strong class="text-dark">{{ @item.nama_perusahaan }}</strong>
-                                            </div>
-                                            <div class="d-flex mb-1">
-                                                <span class="text-muted" style="width: 120px; flex-shrink: 0;">PIC</span>
-                                                <span class="text-muted me-2">:</span>
-                                                <span class="text-dark">{{ @item.pic }}</span>
-                                            </div>
-                                            <div class="d-flex mb-1">
-                                                <span class="text-muted" style="width: 120px; flex-shrink: 0;">No. HP</span>
-                                                <span class="text-muted me-2">:</span>
-                                                <span class="text-dark">{{ @item.telepon }}</span>
-                                            </div>
-                                            <div class="d-flex">
-                                                <span class="text-muted" style="width: 120px; flex-shrink: 0;">Kebutuhan</span>
-                                                <span class="text-muted me-2">:</span>
-                                                <span class="text-dark">{{ @item.deskripsi ?: (@item.penjelasan ?: 'Permohonan pelayanan jasa teknis.') }}</span>
+                                        <!-- Informasi Ringkas -->
+                                        <div class="small text-secondary mb-3">
+                                            <check if="{{ @item.pic }}">
+                                                <div class="mb-1 text-truncate">
+                                                    <i class="bi bi-person me-1 text-muted"></i>{{ @item.pic }}
+                                                    <check if="{{ @item.telepon }}">
+                                                        <span class="text-muted">({{ @item.telepon }})</span>
+                                                    </check>
+                                                </div>
+                                            </check>
+                                            <div class="text-muted text-truncate" title="{{ @item.deskripsi ?: @item.penjelasan }}">
+                                                <i class="bi bi-chat-left-text me-1"></i>{{ @item.deskripsi ?: (@item.penjelasan ?: 'Permohonan layanan jasa.') }}
                                             </div>
                                         </div>
                                     </div>
 
                                     <!-- Action Buttons -->
                                     <div class="d-flex justify-content-between align-items-center pt-2 border-top">
-                                        <a href="{{ @BASE }}/order/{{ @item.id }}" class="btn btn-light btn-sm text-secondary px-3 py-1 fw-medium">
+                                        <a href="{{ @BASE }}/order/{{ @item.id }}" class="btn btn-outline-secondary btn-sm px-3 py-1">
                                             Detail
                                         </a>
                                         <a href="{{ @BASE }}/order/{{ @item.id }}/tinjauan" class="btn btn-primary btn-sm px-3 py-1 fw-semibold">
-                                            <i class="bi bi-clipboard-check me-1"></i> Kaji Ulang &amp; Tunjuk PIC
+                                            Kaji Ulang &amp; Tunjuk PIC
                                         </a>
                                     </div>
-
                                 </div>
                             </div>
                         </repeat>
@@ -123,27 +117,19 @@
     <!-- ======================================================== -->
     <div class="card border rounded-3 mb-4 bg-white shadow-xs">
         <div class="card-header bg-white py-3 px-3 px-md-4 d-flex justify-content-between align-items-center border-bottom">
-            <h6 class="fw-bold text-dark m-0">
-                <check if="{{ @filter_divisi == 'lingkungan' }}">
-                    <true>2. Kalkulasi Tarif Pengujian Menunggu Approval</true>
-                    <false>
-                        <check if="{{ @filter_divisi == 'selulosa' }}">
-                            <true>2. Proposal Teknis Menunggu Approval</true>
-                            <false>2. Proposal &amp; Kalkulasi Tarif Menunggu Approval</false>
-                        </check>
-                    </false>
-                </check>
-            </h6>
-            <span class="badge {{ count(@perlu_approval) > 0 ? 'bg-primary text-white' : 'bg-light text-secondary border' }} px-2.5 py-1 fw-semibold">
-                {{ count(@perlu_approval) }} {{ @filter_divisi == 'lingkungan' ? 'Kalkulasi Uji' : (@filter_divisi == 'selulosa' ? 'Proposal' : 'Berkas / Kalkulasi') }}
-            </span>
+            <div class="d-flex align-items-center gap-2">
+                <h6 class="fw-bold text-dark m-0">Menunggu Approval Ketua Tim</h6>
+                <span class="badge {{ count(@perlu_approval) > 0 ? 'bg-primary text-white' : 'bg-light text-secondary border' }} px-2 py-0.5 rounded-pill small">
+                    {{ count(@perlu_approval) }}
+                </span>
+            </div>
         </div>
 
-        <div class="card-body p-3 p-md-4 bg-light-subtle">
+        <div class="card-body p-3 p-md-4">
             <check if="{{ empty(@perlu_approval) }}">
-                <div class="text-center py-4 bg-white rounded-3 border text-secondary small">
+                <div class="text-center py-4 text-muted small">
                     <i class="bi bi-inbox text-muted fs-3 opacity-50 d-block mb-1"></i>
-                    {{ @filter_divisi == 'lingkungan' ? 'Tidak ada kalkulasi tarif pengujian yang menunggu persetujuan.' : (@filter_divisi == 'selulosa' ? 'Tidak ada proposal teknis yang menunggu persetujuan.' : 'Tidak ada proposal atau kalkulasi tarif yang menunggu persetujuan.') }}
+                    Tidak ada proposal atau kalkulasi tarif yang menunggu persetujuan.
                 </div>
             </check>
 
@@ -152,114 +138,68 @@
                     <div class="row g-3">
                         <repeat group="{{ @perlu_approval }}" value="{{ @p }}">
                             <div class="col-lg-6">
-                                <div class="card h-100 border rounded-3 p-3 bg-white shadow-2xs d-flex flex-column justify-content-between">
-                                    
+                                <div class="card h-100 border rounded-3 p-3 bg-white shadow-xs d-flex flex-column justify-content-between">
                                     <div>
                                         <!-- Header -->
-                                        <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
+                                        <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
                                             <div class="d-flex align-items-center gap-2">
                                                 <check if="{{ @p.jenis_layanan_opti == 'selulosa' }}">
-                                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle text-uppercase fw-semibold px-2 py-1" style="font-size: 0.68rem;">OPTI Selulosa</span>
+                                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-0.5 small fw-semibold">Selulosa</span>
                                                 </check>
                                                 <check if="{{ @p.jenis_layanan_opti == 'lingkungan' }}">
-                                                    <span class="badge bg-success-subtle text-success border border-success-subtle text-uppercase fw-semibold px-2 py-1" style="font-size: 0.68rem;">OPTI Lingkungan</span>
+                                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-0.5 small fw-semibold">Lingkungan</span>
                                                 </check>
-                                                <check if="{{ empty(@p.jenis_layanan_opti) || @p.jenis_layanan_opti == 'belum_ditentukan' }}">
-                                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle fw-semibold px-2 py-1" style="font-size: 0.68rem;">
-                                                        <i class="bi bi-hourglass-split me-1"></i>Belum Ditentukan
-                                                    </span>
-                                                </check>
-                                                <span class="text-secondary font-monospace small ms-1" style="font-size: 0.78rem;">
+                                                <span class="text-secondary font-monospace small">
                                                     #{{ @p.nomor_permintaan ?: @p.nomor_order ?: ('REQ-' . @p.id) }}
                                                 </span>
-                                                <check if="{{ @p.jenis_layanan_opti == 'lingkungan' }}">
-                                                    <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle" style="font-size: 0.68rem;">
-                                                        <i class="bi bi-calculator me-1"></i>Kalkulasi Lab
-                                                    </span>
-                                                </check>
-                                                <check if="{{ @p.jenis_layanan_opti == 'selulosa' }}">
-                                                    <span class="badge bg-light text-secondary border" style="font-size: 0.68rem;">
-                                                        <i class="bi bi-file-earmark-text me-1"></i>Proposal Riset
-                                                    </span>
-                                                </check>
                                             </div>
-                                            <span class="badge bg-warning-subtle text-warning-emphasis" style="font-size: 0.7rem;">
+                                            <span class="badge bg-warning-subtle text-warning-emphasis small">
                                                 Menunggu Approval
                                             </span>
                                         </div>
 
-                                        <!-- Judul Kegiatan -->
-                                        <h6 class="fw-bold text-dark mb-2.5 font-display" style="font-size: 0.95rem; line-height: 1.35;">
+                                        <!-- Judul Kegiatan & Perusahaan -->
+                                        <h6 class="fw-bold text-dark mb-1 font-display" style="font-size: 0.95rem; line-height: 1.4;">
                                             {{ @p.judul_kegiatan }}
                                         </h6>
+                                        <div class="fw-semibold text-primary mb-2 small">
+                                            {{ @p.nama_perusahaan }}
+                                        </div>
 
-                                        <!-- Data Informasi Multi-Baris Rapi -->
-                                        <div class="small text-secondary mb-3" style="font-size: 0.82rem; line-height: 1.5;">
-                                            <div class="d-flex mb-1">
-                                                <span class="text-muted" style="width: 120px; flex-shrink: 0;">Nama Perusahaan</span>
-                                                <span class="text-muted me-2">:</span>
-                                                <strong class="text-dark">{{ @p.nama_perusahaan }}</strong>
+                                        <!-- Rincian Biaya & PIC -->
+                                        <div class="d-flex justify-content-between align-items-center small text-secondary mb-3 pt-1">
+                                            <div>
+                                                <span class="text-muted">PIC:</span> {{ @p.pic_nama ?: '-' }}
                                             </div>
-                                            <div class="d-flex mb-1">
-                                                <span class="text-muted" style="width: 120px; flex-shrink: 0;">
-                                                    {{ @p.jenis_layanan_opti == 'lingkungan' ? 'PIC Teknis Lab' : 'PIC Proposal' }}
-                                                </span>
-                                                <span class="text-muted me-2">:</span>
-                                                <span class="text-dark">{{ @p.pic_nama ?: '-' }}</span>
-                                            </div>
-                                            <div class="d-flex align-items-center">
-                                                <span class="text-muted" style="width: 120px; flex-shrink: 0;">
-                                                    {{ @p.jenis_layanan_opti == 'lingkungan' ? 'Total Tarif Uji' : 'Estimasi Biaya' }}
-                                                </span>
-                                                <span class="text-muted me-2">:</span>
-                                                <strong class="text-primary font-monospace">Rp {{ number_format(@p.estimasi_biaya ?: (@p.estimasi_total_biaya ?: 0), 0, ',', '.') }}</strong>
-                                                <check if="{{ @p.jenis_layanan_opti == 'lingkungan' && @p.total_parameter_lingkungan > 0 }}">
-                                                    <span class="badge bg-light text-secondary border ms-2" style="font-size: 0.72rem;">
-                                                        <i class="bi bi-check2-circle text-success me-1"></i>{{ @p.total_parameter_lingkungan }} Parameter
-                                                    </span>
-                                                </check>
+                                            <div>
+                                                <span class="text-muted me-1">Biaya:</span>
+                                                <strong class="text-dark font-monospace">Rp {{ number_format(@p.estimasi_biaya ?: (@p.estimasi_total_biaya ?: 0), 0, ',', '.') }}</strong>
                                             </div>
                                         </div>
                                     </div>
 
                                     <!-- Action Buttons -->
                                     <div class="d-flex justify-content-between align-items-center pt-2 border-top">
-                                        <check if="{{ @p.jenis_layanan_opti == 'lingkungan' }}">
-                                            <true>
-                                                <check if="{{ @p.file_proposal }}">
-                                                    <true>
-                                                        <button type="button" class="btn btn-outline-danger btn-sm py-1 px-2.5 fw-medium btn-preview-pdf" data-preview-pdf="{{ @BASE }}/{{ @p.file_proposal }}" data-title="Proposal Teknis" data-subtitle="Permintaan: {{ @p.nomor_permintaan ?: @p.nomor_order ?: ('REQ-' . @p.id) }}" style="font-size: 0.78rem;">
-                                                            <i class="bi bi-file-earmark-pdf me-1"></i> Berkas
+                                        <div>
+                                            <check if="{{ @p.jenis_layanan_opti == 'lingkungan' }}">
+                                                <true>
+                                                    <a href="{{ @BASE }}/order/{{ @p.id }}/biaya-lingkungan" class="btn btn-outline-secondary btn-sm px-2.5 py-1">
+                                                        Rincian Tarif
+                                                    </a>
+                                                </true>
+                                                <false>
+                                                    <check if="{{ @p.file_proposal }}">
+                                                        <button type="button" class="btn btn-outline-secondary btn-sm px-2.5 py-1 btn-preview-pdf" data-preview-pdf="{{ @BASE }}/{{ @p.file_proposal }}" data-title="Proposal Teknis" data-subtitle="Permintaan: {{ @p.nomor_permintaan ?: @p.nomor_order ?: ('REQ-' . @p.id) }}">
+                                                            Berkas
                                                         </button>
-                                                    </true>
-                                                    <false>
-                                                        <a href="{{ @BASE }}/order/{{ @p.id }}/biaya-lingkungan" class="btn btn-outline-secondary btn-sm py-1 px-2.5 fw-medium" style="font-size: 0.78rem;" title="Lihat rincian kalkulasi parameter dan tarif">
-                                                            <i class="bi bi-calculator me-1"></i> Rincian Tarif
-                                                        </a>
-                                                    </false>
-                                                </check>
-                                                <a href="{{ @BASE }}/order/{{ @p.id }}" class="btn btn-success btn-sm px-3 py-1 fw-semibold">
-                                                    <i class="bi bi-shield-check me-1"></i> Review &amp; Setujui Tarif
-                                                </a>
-                                            </true>
-                                            <false>
-                                                <check if="{{ @p.file_proposal }}">
-                                                    <true>
-                                                        <button type="button" class="btn btn-outline-danger btn-sm py-1 px-2.5 fw-medium btn-preview-pdf" data-preview-pdf="{{ @BASE }}/{{ @p.file_proposal }}" data-title="Proposal Teknis" data-subtitle="Permintaan: {{ @p.nomor_permintaan ?: @p.nomor_order ?: ('REQ-' . @p.id) }}" style="font-size: 0.78rem;">
-                                                            <i class="bi bi-file-earmark-pdf me-1"></i> File Proposal
-                                                        </button>
-                                                    </true>
-                                                    <false>
-                                                        <span class="text-muted small" style="font-size: 0.75rem;"><i class="bi bi-bookmark me-1"></i> Draft Tanpa File</span>
-                                                    </false>
-                                                </check>
-                                                <a href="{{ @BASE }}/order/{{ @p.id }}" class="btn btn-success btn-sm px-3 py-1 fw-semibold">
-                                                    <i class="bi bi-shield-check me-1"></i> Review &amp; Approval
-                                                </a>
-                                            </false>
-                                        </check>
+                                                    </check>
+                                                </false>
+                                            </check>
+                                        </div>
+                                        <a href="{{ @BASE }}/order/{{ @p.id }}" class="btn btn-primary btn-sm px-3 py-1 fw-semibold">
+                                            Review &amp; Setujui
+                                        </a>
                                     </div>
-
                                 </div>
                             </div>
                         </repeat>
@@ -274,22 +214,22 @@
     <!-- ======================================================== -->
     <div class="card border rounded-3 bg-white shadow-xs overflow-hidden">
         <div class="card-header bg-white py-3 px-3 px-md-4 d-flex justify-content-between align-items-center border-bottom">
-            <h6 class="fw-bold text-dark m-0">3. Permohonan Sedang Berjalan</h6>
-            <a href="{{ @BASE }}/order" class="btn btn-light btn-sm text-secondary px-3 py-1 fw-medium border">
+            <h6 class="fw-bold text-dark m-0">Permohonan Sedang Berjalan</h6>
+            <a href="{{ @BASE }}/order" class="btn btn-outline-secondary btn-sm px-3 py-1 fw-medium">
                 Semua Order <i class="bi bi-arrow-right ms-1"></i>
             </a>
         </div>
 
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0 small">
-                <thead class="table-light">
+                <thead class="table-light text-muted">
                     <tr>
                         <th class="ps-3 ps-md-4" style="width: 140px;">No. Order</th>
                         <th>Pelanggan</th>
                         <th>Kegiatan</th>
-                        <th>PIC Teknis / Pelaksana</th>
+                        <th>PIC</th>
                         <th>Status</th>
-                        <th class="text-end pe-3 pe-md-4" style="width: 100px;">Aksi</th>
+                        <th class="text-end pe-3 pe-md-4" style="width: 90px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -305,41 +245,41 @@
                             <td class="ps-3 ps-md-4">
                                 <span class="badge bg-light text-dark border font-monospace">{{ @row.nomor_order ?: @row.nomor_permintaan ?: ('REQ-' . @row.id) }}</span>
                                 <check if="{{ @row.jenis_layanan_opti == 'selulosa' }}">
-                                    <span class="badge bg-danger-subtle text-danger text-uppercase d-block mt-1" style="font-size: 0.65rem;">Selulosa</span>
+                                    <span class="badge bg-danger-subtle text-danger d-block mt-1" style="font-size: 0.65rem;">Selulosa</span>
                                 </check>
                                 <check if="{{ @row.jenis_layanan_opti == 'lingkungan' }}">
-                                    <span class="badge bg-success-subtle text-success text-uppercase d-block mt-1" style="font-size: 0.65rem;">Lingkungan</span>
+                                    <span class="badge bg-success-subtle text-success d-block mt-1" style="font-size: 0.65rem;">Lingkungan</span>
                                 </check>
                                 <check if="{{ empty(@row.jenis_layanan_opti) || @row.jenis_layanan_opti == 'belum_ditentukan' }}">
-                                    <span class="badge bg-warning-subtle text-warning-emphasis text-uppercase d-block mt-1" style="font-size: 0.65rem;">Belum Ditentukan</span>
+                                    <span class="badge bg-secondary-subtle text-secondary d-block mt-1" style="font-size: 0.65rem;">Belum Ditentukan</span>
                                 </check>
                             </td>
                             <td>
                                 <strong class="text-dark">{{ @row.nama_perusahaan }}</strong>
                             </td>
                             <td>
-                                <div class="text-dark fw-semibold text-truncate" style="max-width: 280px;" title="{{ @row.judul_kegiatan }}">
+                                <div class="text-dark fw-medium text-truncate" style="max-width: 280px;" title="{{ @row.judul_kegiatan }}">
                                     {{ @row.judul_kegiatan }}
                                 </div>
-                                <small class="text-muted">Masuk: {{ date('d M Y', strtotime(@row.tanggal_masuk)) }}</small>
+                                <span class="text-muted small">{{ date('d M Y', strtotime(@row.tanggal_masuk)) }}</span>
                             </td>
                             <td>
                                 <span class="text-dark">{{ @row.pic_nama ?: '-' }}</span>
                             </td>
                             <td>
                                 <check if="{{ @row.status_proposal_biaya == 'siap_penawaran' }}">
-                                    <span class="badge bg-success-subtle text-success border border-success-subtle fw-medium">
-                                        <i class="bi bi-check-circle-fill me-1"></i> {{ @row.jenis_layanan_opti == 'lingkungan' ? 'Tarif Disetujui' : 'Proposal Disetujui' }}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                        {{ @row.jenis_layanan_opti == 'lingkungan' ? 'Tarif Disetujui' : 'Proposal Disetujui' }}
                                     </span>
                                 </check>
                                 <check if="{{ @row.status_proposal_biaya == 'draft' || !@row.status_proposal_biaya }}">
-                                    <span class="badge bg-light text-secondary border fw-medium">
-                                        <i class="bi bi-pencil-square me-1"></i> {{ @row.jenis_layanan_opti == 'lingkungan' ? 'Penyusunan Tarif Lab' : 'Penyusunan Proposal' }}
+                                    <span class="badge bg-light text-secondary border">
+                                        {{ @row.jenis_layanan_opti == 'lingkungan' ? 'Penyusunan Tarif' : 'Penyusunan Proposal' }}
                                     </span>
                                 </check>
                             </td>
                             <td class="text-end pe-3 pe-md-4">
-                                <a href="{{ @BASE }}/order/{{ @row.id }}" class="btn btn-light btn-sm text-secondary px-2.5 py-1 border">
+                                <a href="{{ @BASE }}/order/{{ @row.id }}" class="btn btn-outline-secondary btn-sm px-2.5 py-1">
                                     Detail
                                 </a>
                             </td>
@@ -353,18 +293,11 @@
 </div>
 
 <style>
-/* Custom slim scrollbar */
 .custom-scroll-container::-webkit-scrollbar {
-    width: 5px;
-}
-.custom-scroll-container::-webkit-scrollbar-track {
-    background: transparent;
+    width: 4px;
 }
 .custom-scroll-container::-webkit-scrollbar-thumb {
     background: #cbd5e1;
     border-radius: 4px;
-}
-.custom-scroll-container::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
 }
 </style>

@@ -1,16 +1,13 @@
 <div class="container-fluid px-0">
-    <!-- Header & Breadcrumbs -->
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom flex-wrap gap-2">
         <div>
-            <h4 class="fw-bold text-dark m-0">
-                <i class="bi bi-file-earmark-check-fill text-success me-2"></i>{{ @bast ? 'Edit Dokumen BAST' : 'Penerbitan Berita Acara Serah Terima (BAST)' }}
-            </h4>
+            <h4 class="fw-bold text-dark m-0 font-display">{{ @bast ? 'Edit Dokumen BAST' : 'Penerbitan BAST' }}</h4>
+            <div class="text-muted small mt-1">Berita Acara Serah Terima hasil pekerjaan layanan jasa</div>
         </div>
-        <div>
-            <a href="{{ @BASE }}/order/{{ @order.id }}" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1">
-                <i class="bi bi-arrow-left"></i> Kembali ke Detail Order
-            </a>
-        </div>
+        <a href="{{ @BASE }}/order/{{ @order.id }}" class="btn btn-outline-secondary btn-sm px-3 py-1.5 d-inline-flex align-items-center gap-1">
+            <i class="bi bi-arrow-left"></i> Kembali ke Order
+        </a>
     </div>
 
     <form action="{{ @BASE }}/order/{{ @order.id }}/bast/simpan" method="POST" enctype="multipart/form-data">
@@ -19,58 +16,58 @@
         <div class="row g-4">
             <!-- Kolom Kiri: Nomor BAST & Data Para Pihak -->
             <div class="col-lg-6">
-                <div class="card border-0 shadow-sm mb-4">
+                <div class="card border rounded-3 bg-white shadow-xs mb-4">
                     <div class="card-header bg-white py-3 border-bottom">
-                        <h6 class="m-0 fw-bold text-dark"><i class="bi bi-card-checklist text-primary me-2"></i>Nomor & Identitas Para Pihak</h6>
+                        <h6 class="m-0 fw-bold text-dark">Nomor &amp; Identitas Para Pihak</h6>
                     </div>
                     <div class="card-body p-4">
                         <div class="row g-3 mb-3">
                             <div class="col-md-6">
-                                <label class="form-label small fw-bold">Nomor BAST Resmi <span class="text-danger">*</span></label>
-                                <input type="text" name="nomor_bast" class="form-control font-monospace" placeholder="Contoh: 01/BAST/BBSPJIS/VIII/2026" value="{{ @bast ? @bast.nomor_bast : @nomor_bast_otomatis }}" required>
+                                <label class="form-label small fw-semibold text-dark mb-1">Nomor BAST <span class="text-danger">*</span></label>
+                                <input type="text" name="nomor_bast" class="form-control form-control-sm font-monospace" placeholder="Contoh: 01/BAST/BBSPJIS/VIII/2026" value="{{ @bast ? @bast.nomor_bast : @nomor_bast_otomatis }}" required>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label small fw-bold">Tanggal Serah Terima <span class="text-danger">*</span></label>
-                                <input type="date" name="tanggal_bast" class="form-control" value="{{ @bast ? @bast.tanggal_bast : date('Y-m-d') }}" required>
+                                <label class="form-label small fw-semibold text-dark mb-1">Tanggal Serah Terima <span class="text-danger">*</span></label>
+                                <input type="date" name="tanggal_bast" class="form-control form-control-sm" value="{{ @bast ? @bast.tanggal_bast : date('Y-m-d') }}" required>
                             </div>
                         </div>
 
                         <!-- PIHAK PERTAMA (BBSPJIS) -->
-                        <div class="p-3 bg-light rounded border mb-3">
-                            <span class="small fw-bold text-primary d-block mb-2"><i class="bi bi-building me-1"></i> PIHAK PERTAMA (Yang Menyerahkan - BBSPJIS)</span>
+                        <div class="p-3 bg-light rounded-2 border mb-3">
+                            <span class="small fw-semibold text-dark d-block mb-2">Pihak Pertama (BBSPJIS)</span>
                             <div class="row g-2">
                                 <div class="col-md-6">
-                                    <label class="form-label small text-muted mb-1">Nama Pejabat Balai:</label>
+                                    <label class="form-label small text-muted mb-1" style="font-size:0.75rem;">Nama Pejabat:</label>
                                     <input type="text" name="pihak_pertama_nama" class="form-control form-control-sm" value="{{ @bast ? @bast.pihak_pertama_nama : 'Andri Taufick Rizaluddin' }}" required>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label small text-muted mb-1">Jabatan:</label>
+                                    <label class="form-label small text-muted mb-1" style="font-size:0.75rem;">Jabatan:</label>
                                     <input type="text" name="pihak_pertama_jabatan" class="form-control form-control-sm" value="{{ @bast ? @bast.pihak_pertama_jabatan : 'Kepala Balai Besar / Ketua Tim' }}" required>
                                 </div>
                             </div>
                         </div>
 
                         <!-- PIHAK KEDUA (MITRA / PELANGGAN) -->
-                        <div class="p-3 bg-light rounded border mb-3">
-                            <span class="small fw-bold text-success d-block mb-2"><i class="bi bi-person-check me-1"></i> PIHAK KEDUA (Yang Menerima - Klien / Mitra)</span>
+                        <div class="p-3 bg-light rounded-2 border mb-3">
+                            <span class="small fw-semibold text-dark d-block mb-2">Pihak Kedua (Mitra / Pelanggan)</span>
                             <div class="row g-2">
                                 <div class="col-md-6">
-                                    <label class="form-label small text-muted mb-1">Nama Penerima:</label>
+                                    <label class="form-label small text-muted mb-1" style="font-size:0.75rem;">Nama Penerima:</label>
                                     <input type="text" name="pihak_kedua_nama" class="form-control form-control-sm" value="{{ @bast ? @bast.pihak_kedua_nama : (@order.pic ?: @order.nama_perusahaan) }}" required>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label small text-muted mb-1">Jabatan:</label>
+                                    <label class="form-label small text-muted mb-1" style="font-size:0.75rem;">Jabatan:</label>
                                     <input type="text" name="pihak_kedua_jabatan" class="form-control form-control-sm" value="{{ @bast ? @bast.pihak_kedua_jabatan : 'Perwakilan / Direktur' }}" required>
                                 </div>
                             </div>
                         </div>
 
                         <div class="mb-0">
-                            <label class="form-label small fw-bold">Status Dokumen BAST:</label>
+                            <label class="form-label small fw-semibold text-dark mb-1">Status Dokumen</label>
                             <select name="status_bast" class="form-select form-select-sm">
-                                <option value="draft" {{ @bast && @bast.status_bast == 'draft' ? 'selected' : '' }}>Draft BAST (Menunggu Tanda Tangan)</option>
-                                <option value="proses_ttd" {{ @bast && @bast.status_bast == 'proses_ttd' ? 'selected' : '' }}>Proses Penandatanganan Para Pihak</option>
-                                <option value="selesai" {{ @bast && @bast.status_bast == 'selesai' ? 'selected' : '' }}>Selesai (Lengkap Ditandatangani)</option>
+                                <option value="draft" {{ @bast && @bast.status_bast == 'draft' ? 'selected' : '' }}>Draft (Menunggu Tanda Tangan)</option>
+                                <option value="proses_ttd" {{ @bast && @bast.status_bast == 'proses_ttd' ? 'selected' : '' }}>Proses Penandatanganan</option>
+                                <option value="selesai" {{ @bast && @bast.status_bast == 'selesai' ? 'selected' : '' }}>Selesai (Ditandatangani Lengkap)</option>
                             </select>
                         </div>
                     </div>
@@ -79,38 +76,39 @@
 
             <!-- Kolom Kanan: Rincian Serah Terima & Berkas BAST -->
             <div class="col-lg-6">
-                <div class="card border-0 shadow-sm mb-4">
+                <div class="card border rounded-3 bg-white shadow-xs mb-4">
                     <div class="card-header bg-white py-3 border-bottom">
-                        <h6 class="m-0 fw-bold text-dark"><i class="bi bi-box2 text-primary me-2"></i>Objek Serah Terima & Berkas Dokumen</h6>
+                        <h6 class="m-0 fw-bold text-dark">Objek Serah Terima &amp; Berkas</h6>
                     </div>
                     <div class="card-body p-4">
                         <div class="mb-3">
-                            <label class="form-label small fw-bold">Judul Kegiatan / Jasa Layanan <span class="text-danger">*</span></label>
-                            <input type="text" name="judul_pekerjaan" class="form-control" value="{{ @bast ? @bast.judul_pekerjaan : @order.judul_kegiatan }}" required>
+                            <label class="form-label small fw-semibold text-dark mb-1">Judul Kegiatan / Pekerjaan <span class="text-danger">*</span></label>
+                            <input type="text" name="judul_pekerjaan" class="form-control form-control-sm" value="{{ @bast ? @bast.judul_pekerjaan : @order.judul_kegiatan }}" required>
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label small fw-bold">Rincian Dokumen & Barang yang Diserahterimakan:</label>
-                            <textarea name="ringkasan_serah_terima" class="form-control" rows="4" placeholder="Contoh:&#10;1. Dokumen Laporan Akhir Hasil Pengujian No. {{ @po ? @po.nomor_laporan_hasil : '088/LHP/BBSPJIS/VIII/2026' }} (1 Berkas Asli)&#10;2. Sertifikat Hasil Analisis Laboratorium&#10;3. Sisa contoh uji / sampel penelitian">{{ @bast ? @bast.ringkasan_serah_terima : "1. Dokumen Laporan Akhir Hasil Pengujian No. " . (@po.nomor_laporan_hasil ?: '088/LHP/BBSPJIS/VIII/2026') . "\n2. Sertifikat Hasil Analisis Laboratorium\n3. Berkas kelengkapan administrasi" }}</textarea>
+                            <label class="form-label small fw-semibold text-dark mb-1">Rincian Dokumen &amp; Barang Serah Terima</label>
+                            <textarea name="ringkasan_serah_terima" class="form-control form-control-sm" rows="4" placeholder="Daftar laporan, dokumen, sampel, atau kelengkapan administrasi...">{{ @bast ? @bast.ringkasan_serah_terima : "1. Dokumen Laporan Akhir Hasil Pengujian No. " . (@po.nomor_laporan_hasil ?: '088/LHP/BBSPJIS/VIII/2026') . "\n2. Sertifikat Hasil Analisis Laboratorium\n3. Berkas kelengkapan administrasi" }}</textarea>
                         </div>
 
                         <div class="mb-4">
-                            <label class="form-label small fw-bold">Unggah Berkas Dokumen BAST (PDF/Word/Gambar):</label>
-                            <input type="file" name="file_bast" class="form-control" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg">
-                            <small class="text-muted d-block mt-1">Format diperbolehkan: PDF, Word (DOC/DOCX), JPG, PNG. Maksimal 10 MB.</small>
+                            <label class="form-label small fw-semibold text-dark mb-1">Unggah Berkas Dokumen BAST</label>
+                            <input type="file" name="file_bast" class="form-control form-control-sm" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg">
+                            <div class="text-muted mt-1" style="font-size: 0.72rem;">Format: PDF, DOC, DOCX, JPG, PNG (maks. 10MB)</div>
                             <check if="{{ @bast && @bast.file_dokumen_bast }}">
-                                <div class="mt-2 p-2 bg-light rounded small">
-                                    <i class="bi bi-file-earmark-pdf text-danger me-1"></i> File BAST Terunggah: 
-                                    <button type="button" class="btn btn-link p-0 fw-bold text-decoration-none btn-preview-pdf" data-preview-pdf="{{ @BASE }}/{{ @bast.file_dokumen_bast }}" data-title="Dokumen BAST Terunggah">
-                                        Lihat Dokumen BAST
+                                <div class="mt-2 p-2 bg-light rounded-2 small d-inline-flex align-items-center gap-1.5">
+                                    <i class="bi bi-file-earmark-pdf text-danger"></i>
+                                    <span class="text-muted">Berkas:</span>
+                                    <button type="button" class="btn btn-link p-0 fw-semibold text-decoration-none btn-preview-pdf" data-preview-pdf="{{ @BASE }}/{{ @bast.file_dokumen_bast }}" data-title="Dokumen BAST Terunggah">
+                                        Lihat Dokumen
                                     </button>
                                 </div>
                             </check>
                         </div>
 
-                        <div class="d-flex justify-content-end gap-2">
-                            <a href="{{ @BASE }}/order/{{ @order.id }}" class="btn btn-outline-secondary">Batal</a>
-                            <button type="submit" class="btn btn-success fw-bold px-4">
+                        <div class="d-flex justify-content-end gap-2 pt-2 border-top">
+                            <a href="{{ @BASE }}/order/{{ @order.id }}" class="btn btn-outline-secondary btn-sm px-3 py-1.5 fw-semibold">Batal</a>
+                            <button type="submit" class="btn btn-primary btn-sm px-4 py-1.5 fw-semibold shadow-xs">
                                 <i class="bi bi-save me-1"></i> Simpan Dokumen BAST
                             </button>
                         </div>

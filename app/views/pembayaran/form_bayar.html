@@ -1,50 +1,44 @@
 <div class="container-fluid px-0">
     <!-- Header -->
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom flex-wrap gap-2">
         <div>
-            <h4 class="fw-bold text-dark m-0 d-flex align-items-center gap-2">
-                <i class="bi bi-cash-coin text-success"></i>
-                Pencatatan Pembayaran Masuk (Multi-Termin)
-            </h4>
+            <h4 class="fw-bold text-dark m-0 font-display">Pencatatan Pembayaran Masuk</h4>
+            <div class="text-muted small mt-1">Input penerimaan setoran termin untuk order layanan</div>
         </div>
-        <div class="d-flex gap-2">
-            <a href="{{ @BASE }}/order/{{ @order.id }}" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1">
-                <i class="bi bi-arrow-left"></i> Kembali ke Detail Order
-            </a>
-        </div>
+        <a href="{{ @BASE }}/order/{{ @order.id }}" class="btn btn-outline-secondary btn-sm px-3 py-1.5 d-inline-flex align-items-center gap-1">
+            <i class="bi bi-arrow-left"></i> Kembali ke Order
+        </a>
     </div>
 
     <div class="row g-4">
         <!-- Kolom Kiri: Ringkasan Piutang -->
         <div class="col-lg-4">
-            <div class="card border-0 shadow-sm mb-4">
+            <div class="card border rounded-3 bg-white shadow-xs mb-4">
                 <div class="card-header bg-white py-3 border-bottom">
-                    <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2">
-                        <i class="bi bi-info-circle text-primary"></i> Ringkasan Piutang Order
-                    </h6>
+                    <h6 class="m-0 fw-bold text-dark">Ringkasan Tagihan</h6>
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
                         <span class="text-muted small d-block">Nomor Order:</span>
                         <strong class="text-primary font-monospace">{{ @order.nomor_order }}</strong>
-                        <span class="badge {{ @order.jenis_layanan_opti == 'selulosa' ? 'bg-danger' : 'bg-success' }} text-uppercase ms-1">
-                            OPTI {{ @order.jenis_layanan_opti }}
+                        <span class="badge {{ @order.jenis_layanan_opti == 'selulosa' ? 'bg-danger-subtle text-danger border border-danger-subtle' : 'bg-success-subtle text-success border border-success-subtle' }} ms-1" style="font-size: 0.7rem;">
+                            {{ ucfirst(@order.jenis_layanan_opti) }}
                         </span>
                     </div>
 
-                    <div class="p-3 bg-light rounded border mb-3 small">
+                    <div class="p-3 bg-light rounded-2 border mb-0 small">
                         <div class="d-flex justify-content-between mb-2">
                             <span class="text-muted">Total Nilai Tagihan:</span>
                             <strong class="text-dark">Rp {{ number_format(@rekap.total_biaya, 0, ',', '.') }}</strong>
                         </div>
                         <div class="d-flex justify-content-between mb-2">
-                            <span class="text-muted">Total Sudah Terbayar:</span>
+                            <span class="text-muted">Total Terbayar:</span>
                             <span class="text-success fw-semibold">Rp {{ number_format(@rekap.total_terbayar, 0, ',', '.') }}</span>
                         </div>
                         <hr class="my-2">
-                        <div class="d-flex justify-content-between">
-                            <span class="fw-bold text-dark">Sisa Piutang yang Harus Dibayar:</span>
-                            <h5 class="fw-bold text-danger m-0">Rp {{ number_format(@rekap.sisa_piutang, 0, ',', '.') }}</h5>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="fw-semibold text-dark">Sisa Tagihan:</span>
+                            <strong class="text-danger fs-6">Rp {{ number_format(@rekap.sisa_piutang, 0, ',', '.') }}</strong>
                         </div>
                     </div>
                 </div>
@@ -53,12 +47,10 @@
 
         <!-- Kolom Kanan: Formulir Pembayaran -->
         <div class="col-lg-8">
-            <div class="card border-0 shadow-sm mb-4">
+            <div class="card border rounded-3 bg-white shadow-xs mb-4">
                 <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
-                    <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2">
-                        <i class="bi bi-credit-card-2-front text-success"></i> Formulir Setoran Pembayaran Masuk
-                    </h6>
-                    <span class="badge bg-success-subtle text-success border">Termin Ke-{{ @next_termin }}</span>
+                    <h6 class="m-0 fw-bold text-dark">Formulir Pembayaran</h6>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle">Termin Ke-{{ @next_termin }}</span>
                 </div>
                 <div class="card-body p-4">
                     <form action="{{ @BASE }}/order/{{ @order.id }}/pembayaran/simpan" method="POST" enctype="multipart/form-data">
@@ -67,11 +59,11 @@
                         <!-- Baris 1: Termin & Invoice Rujukan -->
                         <div class="row g-3 mb-3">
                             <div class="col-md-4">
-                                <label class="form-label small fw-bold text-dark">Pembayaran Termin Ke-:</label>
+                                <label class="form-label small fw-semibold text-dark mb-1">Termin Ke- <span class="text-danger">*</span></label>
                                 <input type="number" name="termin_ke" class="form-control form-control-sm text-center fw-bold" value="{{ @next_termin }}" required min="1">
                             </div>
                             <div class="col-md-8">
-                                <label class="form-label small fw-bold text-dark">Rujukan Invoice (Jika ada):</label>
+                                <label class="form-label small fw-semibold text-dark mb-1">Rujukan Invoice (Opsional)</label>
                                 <select name="invoice_id" class="form-select form-select-sm">
                                     <option value="">Tanpa Rujukan / Pembayaran Langsung</option>
                                     <repeat group="{{ @invoices }}" value="{{ @inv }}">
@@ -86,15 +78,13 @@
                         <!-- Baris 2: Tanggal Bayar & Nominal Setor -->
                         <div class="row g-3 mb-3">
                             <div class="col-md-5">
-                                <label class="form-label small fw-bold text-dark">Tanggal Efektif Pembayaran:</label>
+                                <label class="form-label small fw-semibold text-dark mb-1">Tanggal Bayar <span class="text-danger">*</span></label>
                                 <input type="date" name="tanggal_bayar" class="form-control form-control-sm" value="{{ date('Y-m-d') }}" required>
                             </div>
                             <div class="col-md-7">
-                                <label class="form-label small fw-bold text-dark">
-                                    <i class="bi bi-cash-stack text-success me-1"></i> Jumlah Setoran Masuk (Rp): <span class="text-danger">*</span>
-                                </label>
+                                <label class="form-label small fw-semibold text-dark mb-1">Jumlah Pembayaran (Rp) <span class="text-danger">*</span></label>
                                 <div class="input-group input-group-sm">
-                                    <span class="input-group-text bg-light fw-bold">Rp</span>
+                                    <span class="input-group-text bg-light">Rp</span>
                                     <input type="number" name="jumlah" class="form-control form-control-sm text-end fw-bold" value="{{ @rekap.sisa_piutang > 0 ? @rekap.sisa_piutang : @rekap.total_biaya }}" required min="1" step="1000">
                                 </div>
                             </div>
@@ -103,7 +93,7 @@
                         <!-- Baris 3: Metode Pembayaran & NTPN -->
                         <div class="row g-3 mb-3">
                             <div class="col-md-6">
-                                <label class="form-label small fw-bold text-dark">Metode / Jalur Pembayaran:</label>
+                                <label class="form-label small fw-semibold text-dark mb-1">Metode Pembayaran</label>
                                 <select name="metode_pembayaran" class="form-select form-select-sm">
                                     <option value="transfer_bank">Transfer Rekening Balai BBSPJIS (Bank BNI/Mandiri)</option>
                                     <option value="virtual_account">Virtual Account Bank</option>
@@ -111,29 +101,29 @@
                                 </select>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label small fw-bold text-dark">Nomor Referensi Transaksi / Bukti Transfer:</label>
-                                <input type="text" name="nomor_transaksi_ntpn" class="form-control form-control-sm font-monospace" placeholder="Misal: TRX-20260901-001 / Ref Transfer Bank">
+                                <label class="form-label small fw-semibold text-dark mb-1">Nomor Referensi Transaksi</label>
+                                <input type="text" name="nomor_transaksi_ntpn" class="form-control form-control-sm font-monospace" placeholder="Nomor referensi / NTPN / bukti transfer">
                             </div>
                         </div>
 
                         <!-- Baris 4: Keterangan & Upload Bukti -->
                         <div class="row g-3 mb-4">
                             <div class="col-md-6">
-                                <label class="form-label small fw-bold text-dark">Keterangan / Berita Pembayaran:</label>
-                                <textarea name="keterangan" class="form-control form-control-sm" rows="2" placeholder="Catatan termin, keterangan potongan bank, dll...">Setoran Termin {{ @next_termin }} {{ @order.nama_perusahaan }}</textarea>
+                                <label class="form-label small fw-semibold text-dark mb-1">Keterangan</label>
+                                <textarea name="keterangan" class="form-control form-control-sm" rows="2" placeholder="Catatan termin atau keterangan transfer...">Setoran Termin {{ @next_termin }} {{ @order.nama_perusahaan }}</textarea>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label small fw-bold text-dark">Unggah Berkas Bukti Setor (PDF/JPG/PNG):</label>
+                                <label class="form-label small fw-semibold text-dark mb-1">Upload Bukti Pembayaran</label>
                                 <input type="file" name="bukti_bayar" class="form-control form-control-sm" accept=".pdf,.jpg,.jpeg,.png">
-                                <small class="text-muted">Maksimal 5MB.</small>
+                                <div class="text-muted mt-1" style="font-size: 0.72rem;">Format: PDF, JPG, PNG (maks. 5MB)</div>
                             </div>
                         </div>
 
                         <!-- Tombol Aksi -->
                         <div class="d-flex justify-content-end gap-2 pt-3 border-top">
-                            <a href="{{ @BASE }}/order/{{ @order.id }}" class="btn btn-outline-secondary">Batal</a>
-                            <button type="submit" class="btn btn-success d-flex align-items-center gap-2">
-                                <i class="bi bi-check2-circle"></i> Verifikasi & Catat Pembayaran
+                            <a href="{{ @BASE }}/order/{{ @order.id }}" class="btn btn-outline-secondary btn-sm px-3 py-1.5 fw-semibold">Batal</a>
+                            <button type="submit" class="btn btn-primary btn-sm px-4 py-1.5 fw-semibold shadow-xs">
+                                <i class="bi bi-save me-1"></i> Simpan Pembayaran
                             </button>
                         </div>
                     </form>

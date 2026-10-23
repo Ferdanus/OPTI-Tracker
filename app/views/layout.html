@@ -998,6 +998,48 @@
             color: var(--color-primary) !important;
         }
 
+        .btn-draft-theme {
+            background-color: #ffffff !important;
+            border: 1.5px solid #334155 !important;
+            color: #1e293b !important;
+            font-weight: 600 !important;
+            font-size: 0.85rem !important;
+            padding: 0.45rem 1.05rem !important;
+            border-radius: var(--radius-sm, 8px) !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 0.45rem !important;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+            box-shadow: 0 2px 4px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+            cursor: pointer !important;
+            text-decoration: none !important;
+        }
+
+        .btn-draft-theme:hover {
+            background-color: #f8fafc !important;
+            border-color: #0f172a !important;
+            color: #0f172a !important;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.14) !important;
+            transform: translateY(-1px) !important;
+        }
+
+        .btn-draft-theme:active {
+            transform: translateY(0) !important;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08) !important;
+            background-color: #f1f5f9 !important;
+        }
+
+        .btn-draft-theme .bi {
+            color: #334155 !important;
+            font-size: 0.95rem !important;
+            transition: color 0.15s ease !important;
+        }
+
+        .btn-draft-theme:hover .bi {
+            color: #0f172a !important;
+        }
+
         .btn-xs {
             padding: 0.2rem 0.5rem !important;
             font-size: 0.75rem !important;
@@ -1336,6 +1378,251 @@
                 border: 1px solid #ccc !important;
             }
         }
+
+        /* ========================================================= */
+        /* SWEETALERT2 BBSPJIS PREMIUM THEME (GLOBAL OVERRIDE)       */
+        /* ========================================================= */
+        div:where(.swal2-container).swal2-backdrop-show,
+        body.swal2-shown .swal2-container {
+            background-color: rgba(15, 23, 42, 0.45) !important;
+            backdrop-filter: blur(4px) !important;
+            -webkit-backdrop-filter: blur(4px) !important;
+        }
+
+        body .swal2-popup {
+            background: #ffffff !important;
+            border-radius: 16px !important;
+            padding: 1.85rem 1.65rem 1.65rem !important;
+            border: 1px solid #e2e8f0 !important;
+            box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.15), 0 8px 10px -6px rgba(15, 23, 42, 0.1) !important;
+            max-width: 440px !important;
+            width: 92% !important;
+            font-family: var(--font-body, system-ui, -apple-system, sans-serif) !important;
+        }
+
+        body .swal2-title {
+            font-family: var(--font-display, inherit) !important;
+            font-size: 1.25rem !important;
+            font-weight: 700 !important;
+            color: #0f172a !important;
+            margin: 0.35rem 0 0.5rem !important;
+            padding: 0 0.5rem !important;
+            line-height: 1.35 !important;
+        }
+
+        body .swal2-html-container {
+            font-size: 0.885rem !important;
+            color: #475569 !important;
+            line-height: 1.6 !important;
+            margin: 0.35rem 0.5rem 1.4rem !important;
+            font-weight: 400 !important;
+        }
+
+        /* Modern Circular Icon Badges */
+        body .swal2-icon {
+            width: 58px !important;
+            height: 58px !important;
+            margin: 0.25rem auto 1.1rem !important;
+            border-width: 2px !important;
+            border-style: solid !important;
+            border-radius: 50% !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+
+        /* Question Icon */
+        body .swal2-icon.swal2-question {
+            border-color: #93c5fd !important;
+            background-color: #eff6ff !important;
+            color: #2563eb !important;
+            box-shadow: 0 0 0 5px rgba(219, 234, 254, 0.5) !important;
+        }
+        body .swal2-icon.swal2-question .swal2-icon-content {
+            font-size: 1.85rem !important;
+            font-weight: 700 !important;
+            color: #2563eb !important;
+            font-family: inherit !important;
+            line-height: 1 !important;
+        }
+
+        /* Warning Icon */
+        body .swal2-icon.swal2-warning {
+            border-color: #fcd34d !important;
+            background-color: #fffbeb !important;
+            color: #d97706 !important;
+            box-shadow: 0 0 0 5px rgba(254, 243, 199, 0.6) !important;
+        }
+        body .swal2-icon.swal2-warning .swal2-icon-content {
+            font-size: 1.85rem !important;
+            font-weight: 700 !important;
+            color: #d97706 !important;
+            font-family: inherit !important;
+            line-height: 1 !important;
+        }
+
+        /* Success Icon */
+        body .swal2-icon.swal2-success {
+            border-color: #a7f3d0 !important;
+            background-color: #ecfdf5 !important;
+            color: #059669 !important;
+            box-shadow: 0 0 0 5px rgba(209, 250, 229, 0.6) !important;
+        }
+        body .swal2-icon.swal2-success [class^='swal2-success-line'] {
+            background-color: #059669 !important;
+            height: 3px !important;
+        }
+        body .swal2-icon.swal2-success .swal2-success-ring {
+            border: 2px solid rgba(16, 185, 129, 0.3) !important;
+        }
+        body .swal2-icon.swal2-success .swal2-success-fix,
+        body .swal2-icon.swal2-success .swal2-success-circular-line-left,
+        body .swal2-icon.swal2-success .swal2-success-circular-line-right {
+            background-color: transparent !important;
+        }
+
+        /* Error Icon */
+        body .swal2-icon.swal2-error {
+            border-color: #fecaca !important;
+            background-color: #fef2f2 !important;
+            color: #dc2626 !important;
+            box-shadow: 0 0 0 5px rgba(254, 226, 226, 0.6) !important;
+        }
+        body .swal2-icon.swal2-error [class^='swal2-x-mark-line'] {
+            background-color: #dc2626 !important;
+            height: 3px !important;
+        }
+
+        /* Info Icon */
+        body .swal2-icon.swal2-info {
+            border-color: #bae6fd !important;
+            background-color: #f0f9ff !important;
+            color: #0284c7 !important;
+            box-shadow: 0 0 0 5px rgba(224, 242, 254, 0.6) !important;
+        }
+        body .swal2-icon.swal2-info .swal2-icon-content {
+            font-size: 1.85rem !important;
+            font-weight: 700 !important;
+            color: #0284c7 !important;
+            font-family: inherit !important;
+            line-height: 1 !important;
+        }
+
+        /* Action Buttons */
+        body .swal2-actions {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 0.65rem !important;
+            width: 100% !important;
+            margin: 0.85rem 0 0 !important;
+        }
+
+        /* Disable SweetAlert2 default radial-gradient hover overlay that causes flickering */
+        body .swal2-styled,
+        body .swal2-styled:hover,
+        body .swal2-styled:focus,
+        body .swal2-styled:active {
+            background-image: none !important;
+        }
+
+        /* Primary Confirm Button (BBSPJIS Theme) */
+        body button.swal2-styled.swal2-confirm {
+            background-color: #1e293b !important;
+            background-image: none !important;
+            border: 1px solid #0f172a !important;
+            color: #ffffff !important;
+            font-weight: 600 !important;
+            font-size: 0.85rem !important;
+            padding: 0.55rem 1.35rem !important;
+            border-radius: 8px !important;
+            box-shadow: 0 2px 5px rgba(15, 23, 42, 0.25) !important;
+            transition: transform 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease !important;
+            cursor: pointer !important;
+            min-width: 110px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 6px !important;
+        }
+        body button.swal2-styled.swal2-confirm:hover {
+            background-color: #0f172a !important;
+            background-image: none !important;
+            border-color: #020617 !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.35) !important;
+            transform: translateY(-1px) !important;
+        }
+        body button.swal2-styled.swal2-confirm:active {
+            transform: translateY(0) !important;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.2) !important;
+            background-color: #0f172a !important;
+            background-image: none !important;
+        }
+
+        /* Cancel Button (White Theme) */
+        body button.swal2-styled.swal2-cancel {
+            background-color: #ffffff !important;
+            background-image: none !important;
+            border: 1.5px solid #cbd5e1 !important;
+            color: #334155 !important;
+            font-weight: 600 !important;
+            font-size: 0.85rem !important;
+            padding: 0.55rem 1.25rem !important;
+            border-radius: 8px !important;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+            transition: transform 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease !important;
+            cursor: pointer !important;
+            min-width: 90px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        body button.swal2-styled.swal2-cancel:hover {
+            background-color: #f8fafc !important;
+            background-image: none !important;
+            border-color: #94a3b8 !important;
+            color: #0f172a !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.06) !important;
+        }
+        body button.swal2-styled.swal2-cancel:active {
+            transform: translateY(0) !important;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+            background-color: #f1f5f9 !important;
+            background-image: none !important;
+        }
+
+        /* Danger Confirm Button Override */
+        body button.swal2-styled.swal2-confirm[style*="rgb(220, 53, 69)"],
+        body button.swal2-styled.swal2-confirm[style*="#dc3545"],
+        body button.swal2-styled.swal2-confirm[style*="#dc2626"],
+        body button.swal2-styled.swal2-confirm[style*="#d33"],
+        body button.swal2-styled.swal2-confirm[style*="#881337"],
+        body button.swal2-styled.swal2-confirm[style*="#be123c"],
+        body button.swal2-styled.swal2-confirm.btn-danger {
+            background-color: #dc2626 !important;
+            background-image: none !important;
+            border: 1px solid #b91c1c !important;
+            color: #ffffff !important;
+            box-shadow: 0 2px 5px rgba(220, 38, 38, 0.25) !important;
+        }
+        body button.swal2-styled.swal2-confirm[style*="rgb(220, 53, 69)"]:hover,
+        body button.swal2-styled.swal2-confirm[style*="#dc3545"]:hover,
+        body button.swal2-styled.swal2-confirm[style*="#dc2626"]:hover,
+        body button.swal2-styled.swal2-confirm[style*="#d33"]:hover,
+        body button.swal2-styled.swal2-confirm[style*="#881337"]:hover,
+        body button.swal2-styled.swal2-confirm[style*="#be123c"]:hover,
+        body button.swal2-styled.swal2-confirm.btn-danger:hover {
+            background-color: #b91c1c !important;
+            background-image: none !important;
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.35) !important;
+            transform: translateY(-1px) !important;
+        }
+
+        body .swal2-styled:focus {
+            box-shadow: 0 0 0 3px rgba(51, 65, 85, 0.25) !important;
+        }
     </style>
 </head>
 <body>
@@ -1404,8 +1691,8 @@
                     <li>
                         <a class="sidebar-link {{ @active_menu == 'order' || @active_menu == 'disposisi_masuk' ? 'active' : '' }}" href="{{ @BASE }}/order" title="Daftar Order Layanan">
                             <i class="bi bi-inbox"></i> <span>Daftar Order</span>
-                            <check if="{{ @jumlah_notif_katim > 0 }}">
-                                <span class="badge ms-auto sidebar-notif-badge" style="background-color: #dc2626; color: #fff;">{{ @jumlah_notif_katim }}</span>
+                            <check if="{{ @jumlah_notif_order > 0 }}">
+                                <span class="badge ms-auto sidebar-notif-badge">{{ @jumlah_notif_order }}</span>
                             </check>
                         </a>
                     </li>
@@ -1416,6 +1703,9 @@
                     <li>
                         <a class="sidebar-link {{ @active_menu == 'surat-penawaran' ? 'active' : '' }}" href="{{ @BASE }}/surat-penawaran" title="Surat Penawaran">
                             <i class="bi bi-file-earmark-text"></i> <span>Surat Penawaran</span>
+                            <check if="{{ @jumlah_notif_penawaran > 0 }}">
+                                <span class="badge ms-auto sidebar-notif-badge">{{ @jumlah_notif_penawaran }}</span>
+                            </check>
                         </a>
                     </li>
                 </check>

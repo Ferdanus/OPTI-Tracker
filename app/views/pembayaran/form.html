@@ -1,158 +1,88 @@
-<!-- <div class="d-flex align-items-center gap-3 mb-4">
-    <a href="{{ @BASE }}/pembayaran" class="btn-back">
-        <i class="bi bi-arrow-left"></i> Kembali
-    </a>
-    <div>
-        <h2 class="h4 fw-bold mb-0 text-dark">Pencatatan Transaksi Pembayaran</h2>
-    </div>
-</div>
-
-<div class="row justify-content-center">
-    <div class="col-lg-7">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white py-3">
-                <h6 class="m-0 fw-bold text-dark"><i class="bi bi-receipt text-primary me-2"></i>Formulir Bukti Bayar / Kas Masuk</h6>
-            </div>
-            <div class="card-body p-4">
-                <form action="{{ @BASE }}/pembayaran/simpan" method="POST">
-                    <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
-
-                    <div class="mb-3">
-                        <label class="form-label">Pilih Dokumen Order Layanan / PO <span class="text-danger">*</span></label>
-                        <select name="order_id" class="form-select" required>
-                            <option value="">Pilih Order Layanan Terdaftar</option>
-                            <repeat group="{{ @daftar_order }}" value="{{ @ord }}">
-                                <option value="{{ @ord.id }}" {{ @selected_order_id == @ord.id ? 'selected' : '' }}>
-                                    {{ @ord.nomor_order }} - {{ @ord.nama_perusahaan }} (Biaya: Rp {{ number_format(@ord.biaya, 0, ',', '.') }})
-                                </option>
-                            </repeat>
-                        </select>
-                    </div>
-
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Tahap Termin Ke- <span class="text-danger">*</span></label>
-                            <select name="termin_ke" class="form-select" required>
-                                <option value="1">Termin 1 (Uang Muka / DP)</option>
-                                <option value="2">Termin 2 (Tahap Pelaksanaan)</option>
-                                <option value="3">Termin 3 (Pelunasan Akhir)</option>
-                                <option value="4">Termin 4</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Tanggal Transaksi Bayar <span class="text-danger">*</span></label>
-                            <input type="date" name="tanggal_bayar" class="form-control" value="{{ date('Y-m-d') }}" required>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Jumlah Nominal Pembayaran (Rp) <span class="text-danger">*</span></label>
-                        <div class="input-group">
-                            <span class="input-group-text">Rp</span>
-                            <input type="number" name="jumlah" class="form-control" placeholder="0" required min="1000">
-                        </div>
-                    </div>
-
-                    <div class="mb-4">
-                        <label class="form-label">Keterangan / Nomor Bukti Setor</label>
-                        <textarea name="keterangan" class="form-control" rows="2" placeholder="Contoh: Transfer Bank BNI Virtual Account #98877123 / Kuitansi No. 123..."></textarea>
-                    </div>
-
-                    Tombol Aksi
-                    <div class="d-flex justify-content-end gap-2">
-                        <a href="{{ @BASE }}/pembayaran" class="btn btn-outline-secondary px-4">Batal</a>
-                        <button type="submit" class="btn btn-primary px-4">
-                            <i class="bi bi-save me-1"></i> Simpan Pembayaran
-                        </button>
-                    </div>
-
-                </form>
-            </div>
+<div class="container-fluid px-0">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom flex-wrap gap-2">
+        <div>
+            <h4 class="fw-bold text-dark m-0 font-display">Pencatatan Pembayaran</h4>
+            <div class="text-muted small mt-1">Input penerimaan pembayaran termin atau pelunasan layanan jasa</div>
         </div>
+        <a href="{{ @BASE }}/pembayaran" class="btn btn-outline-secondary btn-sm px-3 py-1.5 d-inline-flex align-items-center gap-1">
+            <i class="bi bi-arrow-left"></i> Kembali
+        </a>
     </div>
-</div> -->
-<div class="d-flex align-items-center gap-3 mb-4">
-    <a href="{{ @BASE }}/pembayaran" class="btn-back">
-        <i class="bi bi-arrow-left"></i> Kembali
-    </a>
-    <div>
-        <h2 class="h4 fw-bold mb-1 text-dark">Pencatatan Transaksi Pembayaran</h2>
-        <p class="text-muted small mb-0">Input penerimaan pembayaran termin / pelunasan dari mitra industri.</p>
-    </div>
-</div>
-<div class="row justify-content-center">
-    <div class="col-lg-7">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white py-3">
-                <h6 class="m-0 fw-bold text-dark"><i class="bi bi-receipt text-primary me-2"></i>Formulir Bukti Bayar / Kas Masuk</h6>
-            </div>
-            <div class="card-body p-4">
-                <form action="{{ @BASE }}/pembayaran/simpan" method="POST" enctype="multipart/form-data" id="formPembayaran">
-                    <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
-                    <input type="hidden" name="po_id" id="inputPoId" value="">
 
-                    <div class="mb-1">
-                        <label class="form-label">Pilih Dokumen Order Layanan / PO <span class="text-danger">*</span></label>
-                        <select name="order_id" id="selectOrder" class="form-select searchable-select" placeholder="Ketik nomor order / nama mitra..." required>
-                            <option value="">Pilih Order Layanan Terdaftar</option>
-                            <repeat group="{{ @daftar_order }}" value="{{ @ord }}">
-                                <option value="{{ @ord.id }}"
-                                        data-po-id="{{ @ord.po_id }}"
-                                        data-sisa="{{ @ord.sisa_tagihan }}"
-                                        data-termin-berikutnya="{{ @ord.termin_berikutnya }}"
-                                        {{ @selected_order_id == @ord.id ? 'selected' : '' }}>
-                                    {{ @ord.nomor_order }} &mdash; {{ @ord.nama_perusahaan }}
-                                    (Sisa: Rp {{ number_format(@ord.sisa_tagihan, 0, ',', '.') }}, Termin ke-{{ @ord.termin_berikutnya }})
-                                </option>
-                            </repeat>
-                        </select>
-                    </div>
-                    <div class="form-text mb-3" id="infoOrderTerpilih">Pilih order dulu buat lihat sisa tagihan &amp; saran termin.</div>
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card border rounded-3 bg-white shadow-xs">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h6 class="m-0 fw-bold text-dark">Formulir Bukti Bayar / Kas Masuk</h6>
+                </div>
+                <div class="card-body p-4">
+                    <form action="{{ @BASE }}/pembayaran/simpan" method="POST" enctype="multipart/form-data" id="formPembayaran">
+                        <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
+                        <input type="hidden" name="po_id" id="inputPoId" value="">
 
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Tahap Termin Ke- <span class="text-danger">*</span></label>
-                            <select name="termin_ke" id="selectTermin" class="form-select" required>
-                                <option value="1">Termin 1 (Uang Muka / DP)</option>
-                                <option value="2">Termin 2 (Tahap Pelaksanaan)</option>
-                                <option value="3">Termin 3 (Pelunasan Akhir)</option>
-                                <option value="4">Termin 4</option>
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold text-dark mb-1">Pilih Dokumen Order Layanan / PO <span class="text-danger">*</span></label>
+                            <select name="order_id" id="selectOrder" class="form-select form-select-sm searchable-select" placeholder="Ketik nomor order / nama mitra..." required>
+                                <option value="">-- Pilih Dokumen Order --</option>
+                                <repeat group="{{ @daftar_order }}" value="{{ @ord }}">
+                                    <option value="{{ @ord.id }}"
+                                            data-po-id="{{ @ord.po_id }}"
+                                            data-sisa="{{ @ord.sisa_tagihan }}"
+                                            data-termin-berikutnya="{{ @ord.termin_berikutnya }}"
+                                            {{ @selected_order_id == @ord.id ? 'selected' : '' }}>
+                                        {{ @ord.nomor_order }} &mdash; {{ @ord.nama_perusahaan }}
+                                        (Sisa: Rp {{ number_format(@ord.sisa_tagihan, 0, ',', '.') }})
+                                    </option>
+                                </repeat>
                             </select>
-                            <div class="form-text">Otomatis kesaran sesuai order yang dipilih, tapi tetap bisa diganti manual.</div>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Tanggal Transaksi Bayar <span class="text-danger">*</span></label>
-                            <input type="date" name="tanggal_bayar" class="form-control" value="{{ date('Y-m-d') }}" required>
+                        <div class="small text-muted mb-3" id="infoOrderTerpilih" style="font-size: 0.8rem;"></div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold text-dark mb-1">Tahap Termin Ke- <span class="text-danger">*</span></label>
+                                <select name="termin_ke" id="selectTermin" class="form-select form-select-sm" required>
+                                    <option value="1">Termin 1 (Uang Muka / DP)</option>
+                                    <option value="2">Termin 2 (Tahap Pelaksanaan)</option>
+                                    <option value="3">Termin 3 (Pelunasan Akhir)</option>
+                                    <option value="4">Termin 4</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold text-dark mb-1">Tanggal Bayar <span class="text-danger">*</span></label>
+                                <input type="date" name="tanggal_bayar" class="form-control form-control-sm" value="{{ date('Y-m-d') }}" required>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="mb-3">
-                        <label class="form-label">Jumlah Nominal Pembayaran (Rp) <span class="text-danger">*</span></label>
-                        <div class="input-group">
-                            <span class="input-group-text">Rp</span>
-                            <input type="number" name="jumlah" id="inputJumlah" class="form-control" placeholder="0" required min="1000">
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-dark mb-1">Jumlah Nominal (Rp) <span class="text-danger">*</span></label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text bg-light">Rp</span>
+                                <input type="number" name="jumlah" id="inputJumlah" class="form-control form-control-sm" placeholder="0" required min="1000">
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="mb-3">
-                        <label class="form-label">Upload Bukti Pembayaran</label>
-                        <input type="file" name="bukti_bayar" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
-                        <div class="form-text">PDF, JPG, atau PNG. Maksimal 5MB.</div>
-                    </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-dark mb-1">Upload Bukti Pembayaran</label>
+                            <input type="file" name="bukti_bayar" class="form-control form-control-sm" accept=".pdf,.jpg,.jpeg,.png">
+                            <div class="text-muted mt-1" style="font-size: 0.72rem;">Format: PDF, JPG, PNG (maks. 5MB)</div>
+                        </div>
 
-                    <div class="mb-4">
-                        <label class="form-label">Keterangan / Nomor Bukti Setor</label>
-                        <textarea name="keterangan" class="form-control" rows="2" placeholder="Contoh: Transfer Bank BNI Virtual Account #98877123 / Kuitansi No. 123..."></textarea>
-                    </div>
+                        <div class="mb-4">
+                            <label class="form-label small fw-semibold text-dark mb-1">Keterangan / Nomor Bukti Setor</label>
+                            <textarea name="keterangan" class="form-control form-control-sm" rows="2" placeholder="Nomor referensi bank, bukti setor, atau catatan transaksi..."></textarea>
+                        </div>
 
-                    <div class="d-flex justify-content-end gap-2">
-                        <a href="{{ @BASE }}/pembayaran" class="btn btn-outline-secondary px-4">Batal</a>
-                        <button type="submit" class="btn btn-primary px-4">
-                            <i class="bi bi-save me-1"></i> Simpan Pembayaran
-                        </button>
-                    </div>
+                        <div class="d-flex justify-content-end gap-2 pt-2 border-top">
+                            <a href="{{ @BASE }}/pembayaran" class="btn btn-outline-secondary btn-sm px-3 py-1.5 fw-semibold">Batal</a>
+                            <button type="submit" class="btn btn-primary btn-sm px-4 py-1.5 fw-semibold shadow-xs">
+                                <i class="bi bi-save me-1"></i> Simpan Pembayaran
+                            </button>
+                        </div>
 
-                </form>
+                    </form>
+                </div>
             </div>
         </div>
     </div>

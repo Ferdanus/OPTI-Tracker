@@ -759,7 +759,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
                     'icon'  => 'bi-person-plus-fill',
                     'user'  => $katimLabel,
                     'keterangan_aksi'   => 'Penunjukan Ketua Pelaksana',
-                    'keterangan_sub'    => 'Ketua Tim: ' . $katimLabel,
+                    'keterangan_sub'    => 'Pelaksana: ' . $katimLabel,
                     'keterangan_detail' => 'Ketua Tim belum menunjuk pelaksana teknis',
                     'keterangan_icon'   => 'bi-person-exclamation text-danger',
                     'aksi_badge' => 'bg-danger-subtle text-danger border border-danger-subtle'
@@ -894,7 +894,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
                         'icon'  => 'bi-hourglass-split',
                         'user'  => 'Ketua Tim Selulosa',
                         'keterangan_aksi'   => 'Pemeriksaan Proposal',
-                        'keterangan_sub'    => 'Ketua Tim: Ketua Tim Selulosa',
+                        'keterangan_sub'    => 'Pelaksana: Ketua Tim Selulosa',
                         'keterangan_detail' => 'Proposal sudah diajukan, menunggu persetujuan Katim',
                         'keterangan_icon'   => 'bi-hourglass-split text-info',
                         'aksi_badge' => 'bg-info-subtle text-info-emphasis border border-info-subtle'
@@ -928,14 +928,14 @@ class OrderLayanan extends \DB\SQL\Mapper {
 
         // Step 3: Menunggu Kaji Kelayakan (Setelah Form Pelayanan Jasa terisi)
         if (($o['status'] ?? '') !== 'permintaan_masuk' && !empty($o['jenis_layanan_opti']) && $o['jenis_layanan_opti'] !== 'belum_ditentukan') {
-            if (($o['status_tinjauan'] ?? '') === 'belum_ditinjau' || empty($o['status_tinjauan'])) {
+            if (empty($o['status_tinjauan']) || in_array($o['status_tinjauan'] ?? '', ['belum_ditinjau', 'menunggu', 'draft'])) {
                 return [
                     'label' => 'Kaji Kelayakan',
                     'class' => 'status-pill status-pill-amber',
                     'icon'  => 'bi-clipboard-check-fill',
                     'user'  => $katimLabel,
                     'keterangan_aksi'   => 'Menunggu Kaji Kelayakan',
-                    'keterangan_sub'    => 'Ketua Tim: ' . $katimLabel,
+                    'keterangan_sub'    => 'Pelaksana: ' . $katimLabel,
                     'keterangan_detail' => 'Perlu dicek kelayakan personel & peralatan lab',
                     'keterangan_icon'   => 'bi-clipboard-check text-warning',
                     'aksi_badge' => 'bg-danger-subtle text-danger border border-danger-subtle'

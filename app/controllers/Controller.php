@@ -192,31 +192,120 @@ class Controller {
         $this->f3->set('allow_edit_submitted_data', $allowEditSubmitted);
         $this->f3->set('allow_edit_submitted', $allowEditSubmitted);
 
-        // Hitung notifikasi tugas / disposisi masuk untuk Ketua Tim & Superadmin
-        $notifKatimCount = 0;
+        // Hitung notifikasi Daftar Order yang perlu dikerjakan oleh user:
+        // - Untuk Tim Mitra: Notifikasi jumlah Order Masuk yang perlu diproses/ditindaklanjuti.
+        // - Untuk Tim Kerja / PIC: Notifikasi jumlah Order yang Berjalan di mana user ditugaskan sebagai PIC (pic_proposal_id atau ketua_pelaksana_id).
+        // - Untuk Ketua Tim OPTI: Notifikasi order yang menunggu evaluasi kelayakan / persetujuan proposal biaya sesuai divisinya.
+        // - Untuk Superadmin: Total order masuk / tugas yang perlu ditindaklanjuti.
+        $notifOrderCount = 0;
         try {
-            if ($role === 'ketua_tim') {
+            if ($isTimMitra) {
+                // Notifikasi Tim Mitra: Order yang benar-benar membutuhkan aksi dari Tim Mitra
+                // 1. Permohonan baru masuk yang belum didisposisi ke Ketua Tim
+                // 2. Proposal / rincian biaya yang telah disetujui dan siap diterbitkan Surat Penawaran (SPH)
+                $sqlOrderMitra = "SELECT COUNT(DISTINCT o.id) as c FROM order_layanan o
+                                  LEFT JOIN opti_proposal_riset pr ON pr.id = (SELECT id FROM opti_proposal_riset WHERE order_id = o.id ORDER BY id DESC LIMIT 1)
+                                  LEFT JOIN tb_surat_penawaran sp ON sp.id = (SELECT id FROM tb_surat_penawaran WHERE order_id = o.id ORDER BY (status_respon_klien = 'deal') DESC, id DESC LIMIT 1)
+                                  WHERE o.status != 'ditolak' AND (o.status_tinjauan != 'tidak_layak' OR o.status_tinjauan IS NULL)
+                                    AND (
+                                        (o.status = 'permintaan_masuk' OR o.jenis_layanan_opti IS NULL OR o.jenis_layanan_opti = 'belum_ditentukan' OR (o.status IN ('draft', 'draft_disimpan') AND o.status_tinjauan IS NULL))
+                                        OR (
+                                            (o.status_proposal_biaya = 'siap_penawaran' OR pr.status_proposal IN ('disetujui', 'disetujui_ketua', 'disetujui_pimpinan'))
+                                            AND (o.status_penawaran IS NULL OR o.status_penawaran != 'deal')
+                                            AND (sp.id IS NULL OR sp.status_respon_klien = 'draft')
+                                        )
+                                    )";
+                $resOrderMitra = $this->db->exec($sqlOrderMitra);
+                $notifOrderCount = (int)($resOrderMitra[0]['c'] ?? 0);
+            } elseif ($role === 'tim_kerja') {
+                // Tim Kerja: Hitung seluruh order aktif tugas user (baik di tab Masuk maupun Berjalan) di mana user ditugaskan sebagai PIC Proposal atau Ketua Pelaksana
+                $sqlOrderPic = "SELECT COUNT(DISTINCT o.id) as c FROM order_layanan o
+                                LEFT JOIN tb_surat_penawaran sp ON sp.id = (SELECT id FROM tb_surat_penawaran WHERE order_id = o.id ORDER BY (status_respon_klien = 'deal') DESC, id DESC LIMIT 1)
+                                LEFT JOIN opti_bast b ON b.id = (SELECT id FROM opti_bast WHERE order_id = o.id ORDER BY id DESC LIMIT 1)
+                                WHERE (
+                                    (o.ketua_pelaksana_id = ?)
+                                    OR (
+                                        o.pic_proposal_id = ? 
+                                        AND (o.status_proposal_biaya IS NULL OR o.status_proposal_biaya NOT IN ('siap_penawaran', 'disetujui'))
+                                        AND (o.status_penawaran IS NULL OR o.status_penawaran != 'deal')
+                                        AND (sp.status_respon_klien IS NULL OR sp.status_respon_klien != 'deal')
+                                        AND o.status NOT IN ('penawaran_deal', 'disetujui')
+                                    )
+                                )
+                                  AND o.status != 'ditolak' AND (o.status_tinjauan != 'tidak_layak' OR o.status_tinjauan IS NULL)
+                                  AND (o.status != 'selesai' AND (o.status_pelaksanaan IS NULL OR o.status_pelaksanaan != 'laporan_selesai'))
+                                  AND (b.id IS NULL OR b.status_bast NOT IN ('disetujui', 'selesai', 'terbit'))";
+                $resOrderPic = $this->db->exec($sqlOrderPic, [1 => (int)$userId, 2 => (int)$userId]);
+                $notifOrderCount = (int)($resOrderPic[0]['c'] ?? 0);
+            } elseif ($role === 'ketua_tim') {
                 $whereDiv = in_array($layanan, array('selulosa', 'lingkungan')) ? "o.jenis_layanan_opti = '{$layanan}' AND" : "";
-                $sqlNotif = "SELECT COUNT(*) as c FROM order_layanan o
-                             WHERE {$whereDiv} (
-                                 (o.status = 'baru' AND o.id NOT IN (SELECT order_id FROM opti_tinjauan_kelayakan))
-                                 OR (o.status_proposal_biaya = 'menunggu_approval')
-                             )";
+                $sqlNotif = "SELECT COUNT(DISTINCT o.id) as c FROM order_layanan o
+                             LEFT JOIN tb_surat_penawaran sp ON sp.id = (SELECT id FROM tb_surat_penawaran WHERE order_id = o.id ORDER BY (status_respon_klien = 'deal') DESC, id DESC LIMIT 1)
+                             LEFT JOIN opti_proposal_riset pr ON pr.id = (SELECT id FROM opti_proposal_riset WHERE order_id = o.id ORDER BY id DESC LIMIT 1)
+                             WHERE o.status != 'ditolak' AND (o.status_tinjauan != 'tidak_layak' OR o.status_tinjauan IS NULL)
+                               AND {$whereDiv} (
+                                   -- 1. Kaji Kelayakan
+                                   (o.status != 'permintaan_masuk' AND o.jenis_layanan_opti IN ('selulosa', 'lingkungan') AND (o.status_tinjauan IS NULL OR o.status_tinjauan IN ('belum_ditinjau', 'menunggu', 'draft')))
+                                   -- 2. Approval Proposal / Biaya
+                                   OR (o.status_proposal_biaya = 'menunggu_approval' OR pr.status_proposal = 'diajukan')
+                                   -- 3. Tunjuk Pelaksana (setelah deal)
+                                   OR ((o.status IN ('disetujui', 'penawaran_deal') OR o.status_penawaran = 'deal' OR sp.status_respon_klien = 'deal') AND o.ketua_pelaksana_id IS NULL AND o.status != 'selesai')
+                                   -- 4. Tunjuk PIC Proposal (khusus Selulosa)
+                                   OR (o.jenis_layanan_opti = 'selulosa' AND o.status_tinjauan = 'layak' AND o.pic_proposal_id IS NULL AND (o.status_penawaran IS NULL OR o.status_penawaran != 'deal') AND sp.id IS NULL)
+                               )";
                 $resNotif = $this->db->exec($sqlNotif);
-                $notifKatimCount = (int)($resNotif[0]['c'] ?? 0);
+                $notifOrderCount = (int)($resNotif[0]['c'] ?? 0);
             } elseif ($role === 'superadmin') {
-                $sqlNotif = "SELECT COUNT(*) as c FROM order_layanan o
-                             WHERE (
-                                 (o.status = 'baru' AND o.id NOT IN (SELECT order_id FROM opti_tinjauan_kelayakan))
-                                 OR (o.status_proposal_biaya = 'menunggu_approval')
-                             )";
-                $resNotif = $this->db->exec($sqlNotif);
-                $notifKatimCount = (int)($resNotif[0]['c'] ?? 0);
+                // Superadmin mengawasi seluruh order aktif yang sedang berjalan maupun order masuk
+                $sqlOrderSuper = "SELECT COUNT(DISTINCT o.id) as c FROM order_layanan o
+                                  LEFT JOIN po p ON o.id = p.order_id
+                                  LEFT JOIN tb_surat_penawaran sp ON sp.id = (SELECT id FROM tb_surat_penawaran WHERE order_id = o.id ORDER BY (status_respon_klien = 'deal') DESC, id DESC LIMIT 1)
+                                  LEFT JOIN opti_bast b ON b.id = (SELECT id FROM opti_bast WHERE order_id = o.id ORDER BY id DESC LIMIT 1)
+                                  WHERE o.status != 'ditolak' AND (o.status_tinjauan != 'tidak_layak' OR o.status_tinjauan IS NULL)
+                                    AND (sp.status_respon_klien NOT IN ('ditolak', 'batal') OR sp.status_respon_klien IS NULL)
+                                    AND (o.status != 'selesai' AND (o.status_pelaksanaan IS NULL OR o.status_pelaksanaan != 'laporan_selesai'))
+                                    AND (b.id IS NULL OR b.status_bast NOT IN ('disetujui', 'selesai', 'terbit'))";
+                $resOrderSuper = $this->db->exec($sqlOrderSuper);
+                $notifOrderCount = (int)($resOrderSuper[0]['c'] ?? 0);
             }
-        } catch (\Exception $eNotif) {
-            $notifKatimCount = 0;
+        } catch (\Exception $eOrder) {
+            $notifOrderCount = 0;
         }
-        $this->f3->set('jumlah_notif_katim', $notifKatimCount);
+        $this->f3->set('jumlah_notif_order', $notifOrderCount);
+        $this->f3->set('jumlah_notif_katim', $notifOrderCount);
+
+        // Hitung notifikasi Surat Penawaran:
+        // Menampilkan surat penawaran aktif (draft / negosiasi / terkirim menunggu respon) yang ada di daftar surat penawaran
+        // - Untuk Ketua Tim Mitra & Superadmin: Seluruh surat penawaran aktif
+        // - Untuk Petugas Tim Mitra: Surat penawaran aktif yang dibuat oleh user bersangkutan
+        $notifPenawaranCount = 0;
+        if ($isTimMitra || $role === 'superadmin') {
+            try {
+                if ($role === 'ketua_tim_mitra' || $role === 'superadmin') {
+                    $sqlAktifSp = "SELECT COUNT(DISTINCT sp.id) as c FROM tb_surat_penawaran sp
+                                   LEFT JOIN order_layanan o ON o.id = sp.order_id
+                                   WHERE (sp.status_respon_klien IN ('draft', 'terkirim', 'menunggu', 'nego') OR sp.status_respon_klien IS NULL OR sp.status_respon_klien = '')
+                                     AND sp.status NOT IN ('batal', 'nonaktif')
+                                     AND (sp.status_respon_klien NOT IN ('deal', 'batal', 'tolak') OR sp.status_respon_klien IS NULL)
+                                     AND (o.status IS NULL OR o.status NOT IN ('batal', 'ditolak', 'selesai'))";
+                    $resAktifSp = $this->db->exec($sqlAktifSp);
+                    $notifPenawaranCount = (int)($resAktifSp[0]['c'] ?? 0);
+                } else {
+                    $sqlAktifSp = "SELECT COUNT(DISTINCT sp.id) as c FROM tb_surat_penawaran sp
+                                   LEFT JOIN order_layanan o ON o.id = sp.order_id
+                                   WHERE (sp.status_respon_klien IN ('draft', 'terkirim', 'menunggu', 'nego') OR sp.status_respon_klien IS NULL OR sp.status_respon_klien = '')
+                                     AND sp.status NOT IN ('batal', 'nonaktif')
+                                     AND (sp.status_respon_klien NOT IN ('deal', 'batal', 'tolak') OR sp.status_respon_klien IS NULL)
+                                     AND (o.status IS NULL OR o.status NOT IN ('batal', 'ditolak', 'selesai'))
+                                     AND sp.dibuat_oleh = ?";
+                    $resAktifSp = $this->db->exec($sqlAktifSp, [1 => (int)$userId]);
+                    $notifPenawaranCount = (int)($resAktifSp[0]['c'] ?? 0);
+                }
+            } catch (\Exception $ePenawaran) {
+                $notifPenawaranCount = 0;
+            }
+        }
+        $this->f3->set('jumlah_notif_penawaran', $notifPenawaranCount);
 
         // Hitung notifikasi Surat Masuk untuk Tim Mitra, Sekretaris & Superadmin
         $notifSuratCount = 0;
@@ -295,9 +384,9 @@ try {
 $this->f3->set('jumlah_notif_po_lingkungan', $notifPo['lingkungan']);
 $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
 
-        // Hitung notifikasi antrean Pembayaran untuk Tim Keuangan, Ka Tim OPTI & Superadmin
+        // Hitung notifikasi antrean Pembayaran untuk Tim Keuangan, Ka Tim OPTI & Superadmin ("bebas semua oleh tim keuangan")
         $notifKeuanganCount = 0;
-        if ($role === 'keuangan' || $role === 'ketua_tim_keuangan' || $role === 'ketua_tim' || $role === 'superadmin') {
+        if ($isKeuangan || $role === 'ketua_tim' || $role === 'superadmin') {
             try {
                 $whereDivPay = ($role === 'ketua_tim' && in_array($layanan, array('selulosa', 'lingkungan'))) ? "o.jenis_layanan_opti = '{$layanan}' AND" : "";
                 $sqlKeuangan = "SELECT COUNT(DISTINCT o.id) as c FROM order_layanan o
@@ -307,12 +396,13 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
                                     ORDER BY (status_respon_klien = 'deal') DESC, (surat_kesanggupan_bayar IS NOT NULL AND surat_kesanggupan_bayar != '') DESC, id DESC 
                                     LIMIT 1
                                 )
-                                WHERE {$whereDivPay} (o.status_keuangan = 'menunggu_pembayaran' 
+                                WHERE {$whereDivPay} (
+                                       o.status_keuangan IN ('menunggu_pembayaran', 'terbayar_sebagian') 
                                        OR o.status_penawaran = 'deal' 
                                        OR o.status_rancop = 'deal'
                                        OR (sp.id IS NOT NULL AND (sp.status_respon_klien = 'deal' OR (sp.surat_kesanggupan_bayar IS NOT NULL AND sp.surat_kesanggupan_bayar != '')))
-                                       OR o.status IN ('penawaran_deal', 'menunggu_pembayaran'))
-                                  AND o.id NOT IN (SELECT DISTINCT order_id FROM opti_pembayaran)
+                                       OR o.status IN ('penawaran_deal', 'menunggu_pembayaran')
+                                    )
                                   AND (o.status_keuangan IS NULL OR o.status_keuangan != 'lunas')
                                   AND (o.status IS NULL OR o.status NOT IN ('batal', 'ditolak'))
                                   AND (o.status_rancop IS NULL OR o.status_rancop != 'batal')";
@@ -487,16 +577,19 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
         }
         $divisi = '';
         try {
-            $r = $this->dbSekretariat->exec(
-                "SELECT si_opti FROM tb_arsipuser WHERE id_user = ? LIMIT 1",
-                [1 => $uid]
-            );
-            if (!empty($r)) {
-                $siOpti = strtolower(trim((string) $r[0]['si_opti']));
-                if ($siOpti === 'tim_kerja_selulosa') {
-                    $divisi = 'selulosa';
-                } elseif ($siOpti === 'tim_kerja_lingkungan') {
-                    $divisi = 'lingkungan';
+            $targetDb = $this->dbSekretariat ?: $this->db;
+            if ($targetDb) {
+                $r = $targetDb->exec(
+                    "SELECT si_opti FROM tb_arsipuser WHERE id_user = ? LIMIT 1",
+                    [1 => $uid]
+                );
+                if (!empty($r)) {
+                    $siOpti = strtolower(trim((string) $r[0]['si_opti']));
+                    if ($siOpti === 'tim_kerja_selulosa') {
+                        $divisi = 'selulosa';
+                    } elseif ($siOpti === 'tim_kerja_lingkungan') {
+                        $divisi = 'lingkungan';
+                    }
                 }
             }
         } catch (\Exception $e) {

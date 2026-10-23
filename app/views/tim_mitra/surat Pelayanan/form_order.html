@@ -123,24 +123,42 @@
         transform: translateY(-1px);
     }
     .btn-draft-theme {
-        background: #ffffff;
-        border: 1.5px solid #e2e8f0;
-        color: #475569;
+        background-color: #ffffff;
+        border: 1.5px solid #334155;
+        color: #1e293b;
         font-weight: 600;
         font-size: 0.85rem;
-        padding: 0.5rem 1.1rem;
+        padding: 0.45rem 1.05rem;
         border-radius: 8px;
-        transition: all 0.2s ease;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         display: inline-flex;
         align-items: center;
-        gap: 0.35rem;
+        justify-content: center;
+        gap: 0.45rem;
+        box-shadow: 0 2px 4px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
         cursor: pointer;
+        text-decoration: none;
     }
     .btn-draft-theme:hover {
-        background: #f1f5f9;
-        border-color: #334155;
+        background-color: #f8fafc;
+        border-color: #0f172a;
+        color: #0f172a;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.14);
+        transform: translateY(-1px);
+    }
+    .btn-draft-theme:active {
+        transform: translateY(0);
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+        background-color: #f1f5f9;
+    }
+    .btn-draft-theme .bi {
         color: #334155;
-        box-shadow: 0 2px 5px rgba(51, 65, 85, 0.1);
+        font-size: 0.95rem;
+        transition: color 0.15s ease;
+    }
+    .btn-draft-theme:hover .bi {
+        color: #0f172a;
+    }
     }
     .btn-cancel-theme {
         background: #ffffff;
@@ -1682,7 +1700,7 @@
                         <check if="{{ !@is_locked_deal && (!@sp_existing || @sp_existing.status_respon_klien != 'deal') }}">
                             <input type="hidden" name="action_status" id="inputActionStatus" value="nego">
                             <button type="submit" name="action_status" value="draft" class="btn-draft-theme" onclick="document.getElementById('select_status_respon_klien').value='draft'; document.getElementById('inputActionStatus').value='draft';">
-                                <i class="bi bi-bookmark"></i> Simpan Draf
+                                <i class="bi bi-bookmark-fill"></i> <span>Simpan Draf</span>
                             </button>
                             <button type="button" id="btnTerbitkanPenawaran" class="btn-submit-theme" onclick="confirmKirimPenawaran();">
                                 <i class="bi bi-send-fill"></i> Simpan &amp; Terbitkan
