@@ -167,6 +167,7 @@ $f3->route('GET /disposisi-masuk', 'OrderController->disposisiMasuk');
 $f3->route('GET /order', 'OrderController->index');
 $f3->route('GET /order/tambah', 'OrderController->tambah');
 $f3->route('POST /order/simpan', 'OrderController->simpan');
+$f3->route('POST /order/simpan-manual', 'OrderController->simpanPermohonanManual');
 $f3->route('GET /order/@id', 'OrderController->detail');
 $f3->route('GET /order/@id/edit', 'OrderController->edit');
 $f3->route('POST /order/@id/update', 'OrderController->update');

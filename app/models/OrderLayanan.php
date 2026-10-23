@@ -1131,16 +1131,17 @@ class OrderLayanan extends \DB\SQL\Mapper {
     }
 
     /**
-     * Generate nomor permintaan unik format: REQ-YYYYMM-XXX
+     * Generate nomor permintaan unik format: REQ-YYYYMM-XXXX (4-digit counter akumulatif per tahun)
      */
     public function generateNomorPermintaan(string $tanggal = ''): string {
         $time = !empty($tanggal) ? strtotime($tanggal) : time();
         if (!$time) $time = time();
+        $year = date('Y', $time);
         $prefix = 'REQ-' . date('Ym', $time);
         
         $rows = $this->db->exec(
             "SELECT nomor_permintaan FROM order_layanan WHERE nomor_permintaan LIKE ?",
-            array(1 => $prefix . '-%')
+            array(1 => 'REQ-' . $year . '%')
         );
 
         $maxSeq = 0;
@@ -1153,14 +1154,86 @@ class OrderLayanan extends \DB\SQL\Mapper {
         }
 
         $nextSeq = $maxSeq + 1;
-        $nomorReq = $prefix . '-' . sprintf('%03d', $nextSeq);
+        $nomorReq = $prefix . '-' . sprintf('%04d', $nextSeq);
 
         while (($this->db->exec("SELECT COUNT(*) as c FROM order_layanan WHERE nomor_permintaan = ?", array(1 => $nomorReq))[0]['c'] ?? 0) > 0) {
             $nextSeq++;
-            $nomorReq = $prefix . '-' . sprintf('%03d', $nextSeq);
+            $nomorReq = $prefix . '-' . sprintf('%04d', $nextSeq);
         }
 
         return $nomorReq;
+    }
+
+    /**
+     * Simpan permohonan manual dari channel non-surat (WhatsApp, Telepon, Datang Langsung, Website)
+     */
+    public function simpanPermohonanManual(array $data): int {
+        $idCustomer = (int)($data['id_customer'] ?? 0);
+        if ($idCustomer <= 0) {
+            throw new \Exception("Pelanggan resmi dari master data tb_customer harus dipilih.");
+        }
+
+        $custRows = $this->db->exec(
+            "SELECT id_customer, nmcustomer, pt_cv, kodex_perusahaan FROM tb_customer WHERE id_customer = ?",
+            [1 => $idCustomer]
+        );
+        if (empty($custRows)) {
+            throw new \Exception("Data pelanggan tidak ditemukan dalam database.");
+        }
+
+        $tanggalMasuk = !empty($data['tanggal_masuk']) ? date('Y-m-d', strtotime($data['tanggal_masuk'])) : date('Y-m-d');
+        $nomorPermintaan = $this->generateNomorPermintaan($tanggalMasuk);
+
+        $mediaPermohonan = trim($data['media_permohonan'] ?? 'whatsapp');
+        $validMedia = ['whatsapp', 'telepon', 'datang_langsung', 'website'];
+        if (!in_array($mediaPermohonan, $validMedia)) {
+            $mediaPermohonan = 'whatsapp';
+        }
+
+        $jenisLayanan = trim($data['jenis_layanan_opti'] ?? 'belum_ditentukan');
+        if (!in_array($jenisLayanan, ['selulosa', 'lingkungan', 'belum_ditentukan'])) {
+            $jenisLayanan = 'belum_ditentukan';
+        }
+
+        $judulKegiatan = trim($data['judul_kegiatan'] ?? '');
+        if (empty($judulKegiatan)) {
+            $judulKegiatan = 'Permohonan Layanan via ' . ucfirst(str_replace('_', ' ', $mediaPermohonan));
+        }
+
+        $deskripsi = trim($data['deskripsi'] ?? '');
+        $fileBukti = !empty($data['file_bukti_permohonan']) ? trim($data['file_bukti_permohonan']) : null;
+        $userId = !empty($data['diklaim_oleh']) ? (int)$data['diklaim_oleh'] : null;
+        $waktuSekarang = date('Y-m-d H:i:s');
+
+        $this->db->exec(
+            "INSERT INTO order_layanan (
+                id_customer, id_surat_masuk, nomor_permintaan, nomor_order, tanggal_masuk,
+                judul_kegiatan, deskripsi, spm_layanan, jenis_layanan_opti,
+                lokasi_pelaksanaan, jumlah_pekerjaan, estimasi_biaya,
+                status, diklaim_oleh, tanggal_klaim, media_permohonan, file_bukti_permohonan, created_at
+            ) VALUES (
+                ?, NULL, ?, NULL, ?,
+                ?, ?, 'Lainnya', ?,
+                'internal', '1 paket kegiatan', 0.00,
+                'permintaan_masuk', ?, ?, ?, ?, ?
+            )",
+            [
+                1  => $idCustomer,
+                2  => $nomorPermintaan,
+                3  => $tanggalMasuk,
+                4  => $judulKegiatan,
+                5  => $deskripsi,
+                6  => $jenisLayanan,
+                7  => $userId,
+                8  => $waktuSekarang,
+                9  => $mediaPermohonan,
+                10 => $fileBukti,
+                11 => $waktuSekarang
+            ]
+        );
+
+        $orderId = (int)($this->db->exec("SELECT LAST_INSERT_ID() as id")[0]['id'] ?? 0);
+        return $orderId;
     }
 
     /**

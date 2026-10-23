@@ -539,29 +539,30 @@
                                 <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
                                     <check if="{{ @is_proposal_approved || in_array(@order.status_proposal_biaya, ['siap_penawaran', 'disetujui']) || in_array(@proposal.status_proposal, ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan']) }}">
                                         <true>
-                                            <div class="d-flex align-items-center gap-2">
-                                                <button type="submit" name="action_type" value="simpan_katim" class="btn btn-primary btn-sm px-4 py-1.5 fw-semibold">
-                                                    Simpan Perubahan
-                                                </button>
-                                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 small">
-                                                    Telah Disetujui Ka. Tim
+                                            <div class="d-flex justify-content-between align-items-center gap-2 w-100 flex-wrap">
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1.5 small fw-semibold d-inline-flex align-items-center gap-1">
+                                                    <i class="bi bi-check-circle-fill"></i> Telah Disetujui Ka. Tim
                                                 </span>
+                                                <button type="submit" name="action_type" value="simpan_katim" class="btn btn-primary btn-sm px-4 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 ms-auto">
+                                                    <i class="bi bi-check2-circle"></i>
+                                                    <span>Simpan Perubahan</span>
+                                                </button>
                                             </div>
                                         </true>
                                         <false>
-                                            <button type="submit" name="action_type" value="draft" class="btn-draft-theme">
+                                            <button type="submit" name="action_type" value="{{ @is_ketua_selulosa ? 'simpan_katim' : 'draft' }}" class="btn-draft-theme">
                                                 <i class="bi bi-bookmark-fill"></i>
-                                                <span>Simpan Draf</span>
+                                                <span>{{ @is_ketua_selulosa ? 'Simpan Draf Perubahan' : 'Simpan Draf' }}</span>
                                             </button>
 
-                                            <check if="{{ !@is_ketua_selulosa || !@is_revisi }}">
+                                            <check if="{{ !@is_ketua_selulosa }}">
                                                 <button type="button" id="btnKirimProposal" class="btn btn-primary btn-sm px-4 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5" onclick="confirmKirimProposalAction()" {{ empty(@proposal.file_proposal) || ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) ? 'disabled' : '' }}>
                                                     <i class="bi bi-send-fill"></i>
                                                     <span>Kirim ke Ka. Tim</span>
                                                 </button>
                                             </check>
-                                            <check if="{{ @is_ketua_selulosa && @is_revisi }}">
-                                                <button type="button" class="btn btn-primary btn-sm px-4 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5" onclick="confirmSimpanDanApproveStandalone()" {{ empty(@proposal.file_proposal) || ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) ? 'disabled' : '' }}>
+                                            <check if="{{ @is_ketua_selulosa }}">
+                                                <button type="button" id="btnSimpanApproveStandalone" class="btn btn-primary btn-sm px-4 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5" onclick="confirmSimpanDanApproveStandalone()" {{ empty(@proposal.file_proposal) || ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) ? 'disabled' : '' }}>
                                                     <i class="bi bi-check2-circle"></i>
                                                     <span>Simpan &amp; Setujui</span>
                                                 </button>
@@ -1370,8 +1371,9 @@ function formatRupiahInput(el) {
 
 function checkKirimButtonState() {
     const btnKirim = document.getElementById('btnKirimProposal');
+    const btnApprove = document.getElementById('btnSimpanApproveStandalone');
     const hintKirim = document.getElementById('hintKirimProposal');
-    if (!btnKirim) return;
+    if (!btnKirim && !btnApprove) return;
 
     const hasExistingFile = {{ !empty(@proposal.file_proposal) ? 'true' : 'false' }};
     const fileInput = document.getElementById('file_proposal');
@@ -1383,22 +1385,30 @@ function checkKirimButtonState() {
     const hasCost = biayaVal > 0;
 
     if (hasFile && hasCost) {
-        btnKirim.disabled = false;
-        btnKirim.title = 'Kirim proposal ke Ketua Tim OPTI';
+        if (btnKirim) {
+            btnKirim.disabled = false;
+            btnKirim.title = 'Kirim proposal ke Ketua Tim OPTI';
+        }
+        if (btnApprove) {
+            btnApprove.disabled = false;
+            btnApprove.title = 'Simpan perubahan dan langsung setujui proposal';
+        }
         if (hintKirim) {
             hintKirim.classList.add('d-none');
         }
     } else {
-        btnKirim.disabled = true;
+        if (btnKirim) btnKirim.disabled = true;
+        if (btnApprove) btnApprove.disabled = true;
         let hintMsg = '';
         if (!hasFile && !hasCost) {
-            hintMsg = 'Isi estimasi total biaya (> Rp 0) dan unggah berkas proposal untuk mengaktifkan tombol kirim.';
+            hintMsg = 'Isi estimasi total biaya (> Rp 0) dan unggah berkas proposal untuk mengaktifkan tombol.';
         } else if (!hasFile) {
-            hintMsg = 'Unggah berkas dokumen proposal untuk mengaktifkan tombol kirim.';
+            hintMsg = 'Unggah berkas dokumen proposal untuk mengaktifkan tombol.';
         } else {
-            hintMsg = 'Isi estimasi total biaya / RAB (> Rp 0) untuk mengaktifkan tombol kirim.';
+            hintMsg = 'Isi estimasi total biaya / RAB (> Rp 0) untuk mengaktifkan tombol.';
         }
-        btnKirim.title = hintMsg;
+        if (btnKirim) btnKirim.title = hintMsg;
+        if (btnApprove) btnApprove.title = hintMsg;
         const hintTextEl = document.getElementById('hintKirimProposalText');
         if (hintTextEl) {
             hintTextEl.textContent = hintMsg;

@@ -1386,10 +1386,10 @@
         <div class="mt-4 pt-3 border-top">
             <div class="stepper-scroll-wrapper">
                 <div class="stepper-progress-container">
-                    <!-- Step 1: Surat Masuk (Sekretaris) -->
-                    <a href="#cardProfil" class="step-checkpoint" data-bs-toggle="tooltip" title="Tahap 1: Surat masuk resmi dan identitas pelanggan">
+                    <!-- Step 1: Surat Masuk / Permohonan -->
+                    <a href="#cardProfil" class="step-checkpoint" data-bs-toggle="tooltip" title="Tahap 1: Asal permohonan dan profil pelanggan">
                         <div class="step-circle done"><i class="bi bi-check-lg"></i></div>
-                        <span class="step-text done">Surat Masuk</span>
+                        <span class="step-text done">{{ @order.media_permohonan && @order.media_permohonan != 'surat' ? 'Permohonan' : 'Surat Masuk' }}</span>
                         <span class="text-success" style="font-size: 0.65rem;"><i class="bi bi-check-circle-fill"></i> Selesai</span>
                     </a>
 
@@ -1600,7 +1600,7 @@
                 <button class="stage-nav-btn {{ @current_step == 1 ? 'active' : '' }}" id="tab-stage-1" data-bs-toggle="pill" data-bs-target="#pane-stage-1" type="button" role="tab" aria-controls="pane-stage-1" aria-selected="{{ @current_step == 1 ? 'true' : 'false' }}">
                     <div class="stage-nav-title-row">
                         <span class="stage-nav-badge">1</span>
-                        <span class="stage-nav-text">Surat Masuk</span>
+                        <span class="stage-nav-text">{{ @order.media_permohonan && @order.media_permohonan != 'surat' ? 'Permohonan' : 'Surat Masuk' }}</span>
                     </div>
                     <div class="stage-nav-status-row">
                         <span class="badge bg-success-subtle text-success stage-status-badge">Selesai</span>
@@ -1867,7 +1867,7 @@
                     <div class="d-flex justify-content-between align-items-center gap-2">
                         <h6 class="m-0 fw-bold text-dark font-display d-flex align-items-center gap-2" style="font-size: 0.92rem;">
                             <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-0.5 small fw-bold">1</span>
-                            <span>Profil &amp; Asal Surat Permohonan</span>
+                            <span>{{ @order.media_permohonan && @order.media_permohonan != 'surat' ? 'Profil & Asal Permohonan Langsung' : 'Profil & Asal Surat Permohonan' }}</span>
                         </h6>
                         <button type="button" class="btn btn-sm btn-outline-primary py-0.5 px-2 d-inline-flex align-items-center gap-1 shadow-xs fw-semibold rounded-2 flex-shrink-0" data-bs-toggle="modal" data-bs-target="#modalEditProfilPelanggan" onclick="triggerStageRead(1)" title="Koreksi / Edit Data Pelanggan & Asal Surat">
                             <i class="bi bi-pencil-square"></i>
@@ -1953,32 +1953,92 @@
                                 </true>
                                 <false>
                                     <check if="{{ @order.nomor_surat_masuk }}">
-                                        <div class="p-3 bg-light rounded border h-100">
-                                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                                <span class="badge bg-secondary-subtle text-secondary border">
-                                                    <i class="bi bi-envelope-paper me-1"></i> Rujukan Surat Masuk
-                                                </span>
-                                            </div>
-                                            <div class="mb-1.5 small">
-                                                <span class="text-muted d-block" style="font-size:0.75rem;">Nomor Surat:</span>
-                                                <strong class="text-dark font-monospace">{{ @order.nomor_surat_masuk }}</strong>
-                                            </div>
-                                            <check if="{{ @order.pic_surat_masuk }}">
+                                        <true>
+                                            <div class="p-3 bg-light rounded border h-100">
+                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                    <span class="badge bg-secondary-subtle text-secondary border">
+                                                        <i class="bi bi-envelope-paper me-1"></i> Rujukan Surat Masuk
+                                                    </span>
+                                                </div>
                                                 <div class="mb-1.5 small">
-                                                    <span class="text-muted d-block" style="font-size:0.75rem;">PIC Surat:</span>
-                                                    <strong class="text-dark">{{ @order.pic_surat_masuk }}</strong>
-                                                    <check if="{{ @order.hp_pic_surat_masuk }}">
-                                                        <span class="text-secondary ms-1">({{ @order.hp_pic_surat_masuk }})</span>
+                                                    <span class="text-muted d-block" style="font-size:0.75rem;">Nomor Surat:</span>
+                                                    <strong class="text-dark font-monospace">{{ @order.nomor_surat_masuk }}</strong>
+                                                </div>
+                                                <check if="{{ @order.pic_surat_masuk }}">
+                                                    <div class="mb-1.5 small">
+                                                        <span class="text-muted d-block" style="font-size:0.75rem;">PIC Surat:</span>
+                                                        <strong class="text-dark">{{ @order.pic_surat_masuk }}</strong>
+                                                        <check if="{{ @order.hp_pic_surat_masuk }}">
+                                                            <span class="text-secondary ms-1">({{ @order.hp_pic_surat_masuk }})</span>
+                                                        </check>
+                                                    </div>
+                                                </check>
+                                                <check if="{{ @order.perihal_surat_masuk }}">
+                                                    <div class="mb-1 small">
+                                                        <span class="text-muted d-block" style="font-size:0.75rem;">Perihal:</span>
+                                                        <span class="text-secondary">{{ @order.perihal_surat_masuk }}</span>
+                                                    </div>
+                                                </check>
+                                            </div>
+                                        </true>
+                                        <false>
+                                            <!-- Asal Permohonan Langsung / Non-Surat (WhatsApp, Telepon, Datang Langsung, Website) -->
+                                            <div class="p-3 bg-light rounded border h-100">
+                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                    <check if="{{ @order.media_permohonan == 'whatsapp' }}">
+                                                        <span class="badge bg-light text-secondary border">
+                                                            <i class="bi bi-chat-dots me-1 text-primary"></i> Permohonan via WhatsApp
+                                                        </span>
+                                                    </check>
+                                                    <check if="{{ @order.media_permohonan == 'telepon' }}">
+                                                        <span class="badge bg-light text-secondary border">
+                                                            <i class="bi bi-telephone me-1 text-primary"></i> Permohonan via Telepon
+                                                        </span>
+                                                    </check>
+                                                    <check if="{{ @order.media_permohonan == 'datang_langsung' }}">
+                                                        <span class="badge bg-light text-secondary border">
+                                                            <i class="bi bi-building me-1 text-primary"></i> Permohonan Datang Langsung
+                                                        </span>
+                                                    </check>
+                                                    <check if="{{ @order.media_permohonan == 'website' }}">
+                                                        <span class="badge bg-light text-secondary border">
+                                                            <i class="bi bi-laptop me-1 text-primary"></i> Permohonan via Website
+                                                        </span>
+                                                    </check>
+                                                    <check if="{{ empty(@order.media_permohonan) || @order.media_permohonan == 'surat' }}">
+                                                        <span class="badge bg-secondary-subtle text-secondary border">
+                                                            <i class="bi bi-inbox me-1"></i> Permohonan Langsung
+                                                        </span>
+                                                    </check>
+                                                    <small class="text-muted"><i class="bi bi-calendar3 me-1"></i>{{ date('d M Y', strtotime(@order.tanggal_masuk ?: @order.created_at)) }}</small>
+                                                </div>
+                                                <div class="mb-1.5 small">
+                                                    <span class="text-muted d-block" style="font-size:0.75rem;">Nomor Permintaan:</span>
+                                                    <strong class="text-dark font-monospace">{{ @order.nomor_permintaan ?: ('REQ-' . @order.id) }}</strong>
+                                                </div>
+                                                <div class="mb-1.5 small">
+                                                    <span class="text-muted d-block" style="font-size:0.75rem;">Penerima &amp; Pencatat:</span>
+                                                    <span class="text-dark fw-semibold">Tim Mitra BBSPJIS</span>
+                                                    <check if="{{ @order.tanggal_klaim }}">
+                                                        <span class="text-muted ms-1" style="font-size:0.72rem;">({{ date('d M Y, H:i', strtotime(@order.tanggal_klaim)) }})</span>
                                                     </check>
                                                 </div>
-                                            </check>
-                                            <check if="{{ @order.perihal_surat_masuk }}">
-                                                <div class="mb-1 small">
-                                                    <span class="text-muted d-block" style="font-size:0.75rem;">Perihal:</span>
-                                                    <span class="text-secondary">{{ @order.perihal_surat_masuk }}</span>
-                                                </div>
-                                            </check>
-                                        </div>
+                                                <check if="{{ @order.deskripsi }}">
+                                                    <div class="mb-2 small">
+                                                        <span class="text-muted d-block" style="font-size:0.75rem;">Catatan / Ringkasan Permohonan:</span>
+                                                        <div class="text-secondary p-2 bg-white rounded border mt-1" style="font-size:0.8rem; line-height: 1.4;">{{ nl2br(@order.deskripsi) }}</div>
+                                                    </div>
+                                                </check>
+                                                <check if="{{ @order.file_bukti_permohonan }}">
+                                                    <div class="mt-2.5">
+                                                        <a href="{{ @BASE }}/{{ @order.file_bukti_permohonan }}" target="_blank" class="btn btn-sm btn-outline-primary w-100 py-1.5 fw-semibold d-flex align-items-center justify-content-center gap-1.5 shadow-xs" download>
+                                                            <i class="bi bi-paperclip fs-6"></i>
+                                                            <span>Lihat / Unduh Bukti Permohonan</span>
+                                                        </a>
+                                                    </div>
+                                                </check>
+                                            </div>
+                                        </false>
                                     </check>
                                 </false>
                             </check>
@@ -3842,19 +3902,8 @@
                                                 <i class="bi bi-eye"></i> Lihat Rincian Layanan Jasa
                                             </a>
                                         </check>
-                                        <check if="{{ !@penawaran && !empty(@kalkulasi_lingkungan) && count(@kalkulasi_lingkungan) > 0 }}">
-                                            <a href="{{ @BASE }}/order/{{ @order.id }}/penawaran/buat" class="btn btn-outline-primary btn-sm px-3.5 py-2 fw-semibold d-inline-flex align-items-center gap-1.5 text-nowrap shadow-xs" onclick="triggerStageRead(5)">
-                                                <i class="bi bi-file-earmark-plus"></i> Terbitkan Penawaran
-                                            </a>
-                                        </check>
                                     </check>
-                                    <check if="{{ @order.jenis_layanan_opti == 'selulosa' }}">
-                                        <check if="{{ !@penawaran && @order.status_proposal_biaya == 'siap_penawaran' && @is_proposal_approved }}">
-                                            <a href="{{ @BASE }}/order/{{ @order.id }}/penawaran/buat" class="btn btn-success btn-sm px-3.5 py-2 fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5 text-nowrap" onclick="triggerStageRead(5)">
-                                                <i class="bi bi-file-earmark-plus"></i> Terbitkan Penawaran
-                                            </a>
-                                        </check>
-                                    </check>
+
                                 </div>
                             </div>
                         </div>
@@ -4321,29 +4370,30 @@
                                                         <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
                                                             <check if="{{ @is_proposal_approved || in_array(@order.status_proposal_biaya, ['siap_penawaran', 'disetujui']) || in_array(@proposal.status_proposal, ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan']) }}">
                                                                 <true>
-                                                                    <div class="d-flex align-items-center gap-2">
-                                                                        <button type="submit" name="action_type" value="simpan_katim" class="btn btn-primary btn-sm px-4 py-1.5 fw-semibold">
-                                                                            Simpan Perubahan
-                                                                        </button>
-                                                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 small">
-                                                                            Telah Disetujui Ka. Tim
+                                                                    <div class="d-flex justify-content-between align-items-center gap-2 w-100 flex-wrap">
+                                                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1.5 small fw-semibold d-inline-flex align-items-center gap-1">
+                                                                            <i class="bi bi-check-circle-fill"></i> Telah Disetujui Ka. Tim
                                                                         </span>
+                                                                        <button type="submit" name="action_type" value="simpan_katim" class="btn btn-primary btn-sm px-4 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 ms-auto">
+                                                                            <i class="bi bi-check2-circle"></i>
+                                                                            <span>Simpan Perubahan</span>
+                                                                        </button>
                                                                     </div>
                                                                 </true>
                                                                 <false>
-                                                                    <button type="submit" name="action_type" value="draft" class="btn-draft-theme">
+                                                                    <button type="submit" name="action_type" value="{{ @is_ketua_selulosa ? 'simpan_katim' : 'draft' }}" class="btn-draft-theme">
                                                                         <i class="bi bi-bookmark-fill"></i>
-                                                                        <span>Simpan Draf</span>
+                                                                        <span>{{ @is_ketua_selulosa ? 'Simpan Draf Perubahan' : 'Simpan Draf' }}</span>
                                                                     </button>
 
-                                                                    <check if="{{ !@is_ketua_selulosa || !@is_revisi }}">
+                                                                    <check if="{{ !@is_ketua_selulosa }}">
                                                                         <button type="button" id="btnKirimProposalDetail" class="btn btn-primary btn-sm px-4 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5" onclick="confirmKirimProposalActionDetail()" {{ empty(@proposal.file_proposal) || ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) ? 'disabled' : '' }}>
                                                                             <i class="bi bi-send-fill"></i>
                                                                             <span>Kirim ke Ka. Tim</span>
                                                                         </button>
                                                                     </check>
-                                                                    <check if="{{ @is_ketua_selulosa && @is_revisi }}">
-                                                                        <button type="button" class="btn btn-primary btn-sm px-4 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5" onclick="confirmSimpanDanApproveDetail()" {{ empty(@proposal.file_proposal) || ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) ? 'disabled' : '' }}>
+                                                                    <check if="{{ @is_ketua_selulosa }}">
+                                                                        <button type="button" id="btnSimpanApproveProposalDetail" class="btn btn-primary btn-sm px-4 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5" onclick="confirmSimpanDanApproveDetail()" {{ empty(@proposal.file_proposal) || ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) ? 'disabled' : '' }}>
                                                                             <i class="bi bi-check2-circle"></i>
                                                                             <span>Simpan &amp; Setujui</span>
                                                                         </button>
@@ -4411,7 +4461,7 @@
                                                 <span><strong>Proposal Teknis Disetujui Ka. Tim</strong> &bull; Siap diterbitkan Surat Penawaran Resmi</span>
                                             </div>
                                             <check if="{{ !@penawaran }}">
-                                                <a href="{{ @BASE }}/order/{{ @order.id }}/penawaran/buat" class="btn btn-sm btn-primary fw-bold shadow-xs" onclick="triggerStageRead(5)">
+                                                <a href="#cardPenawaran" class="btn btn-sm btn-primary fw-bold shadow-xs" onclick="document.getElementById('tab-stage-5').click(); document.getElementById('cardPenawaran').scrollIntoView({behavior: 'smooth'}); return false;">
                                                     <i class="bi bi-file-earmark-plus me-1"></i> Buat Surat Penawaran
                                                 </a>
                                             </check>
@@ -4634,12 +4684,45 @@
                                         </check>
                                     </div>
                                     <div class="d-flex align-items-center gap-2 flex-wrap">
-                                        <check if="{{ @is_admin_order || @is_superadmin }}">
-                                            <a href="{{ @BASE }}/order/{{ @order.id }}/penawaran/buat?mode=edit&sp_id={{ @penawaran.id }}" class="btn btn-sm btn-primary fw-semibold px-3 d-inline-flex align-items-center gap-1.5 shadow-xs" onclick="triggerStageRead(5)" title="Buka Halaman Surat Penawaran Order">
-                                                <i class="bi bi-box-arrow-up-right"></i> Buka Surat Penawaran
-                                            </a>
+                                        <check if="{{ @is_admin_order || @is_tim_mitra || @is_superadmin || @can_manage_penawaran }}">
+                                            <check if="{{ @is_sp_ditolak || @penawaran.status_respon_klien == 'batal' }}">
+                                                <true>
+                                                    <button type="button" class="btn btn-sm btn-warning text-dark fw-bold px-3 d-inline-flex align-items-center gap-1.5 shadow-xs" data-bs-toggle="collapse" data-bs-target="#collapseFormPenawaranInline" aria-expanded="true" aria-controls="collapseFormPenawaranInline" onclick="triggerStageRead(5)" title="Surat penawaran sebelumnya ditolak. Buka formulir untuk menerbitkan surat penawaran baru (revisi/nego)">
+                                                        <i class="bi bi-arrow-repeat"></i>
+                                                        <span>Buat Penawaran Baru (Nego)</span>
+                                                    </button>
+                                                </true>
+                                                <false>
+                                                    <button type="button" class="btn btn-sm btn-primary fw-semibold px-3 d-inline-flex align-items-center gap-1.5 shadow-xs" data-bs-toggle="collapse" data-bs-target="#collapseFormPenawaranInline" aria-expanded="{{ @penawaran.status_respon_klien == 'draft' ? 'true' : 'false' }}" aria-controls="collapseFormPenawaranInline" onclick="triggerStageRead(5)" title="Buka dan sunting formulir penawaran langsung di halaman ini">
+                                                        <i class="bi bi-pencil-square"></i>
+                                                        <span>{{ @penawaran.status_respon_klien == 'draft' ? 'Lanjutkan Edit Draf' : 'Koreksi / Detail Formulir' }}</span>
+                                                    </button>
+                                                </false>
+                                            </check>
                                         </check>
                                     </div>
+                                </div>
+                            </div>
+
+                            <!-- Panel Formulir Surat Penawaran Inline Langsung di Halaman Detail -->
+                            <div class="collapse {{ (@penawaran.status_respon_klien == 'draft' || @is_sp_ditolak) ? 'show' : '' }} mt-3" id="collapseFormPenawaranInline">
+                                <div class="p-3 border rounded-3 bg-white shadow-xs">
+                                    <div class="d-flex align-items-center justify-content-between pb-3 mb-3 border-bottom flex-wrap gap-2">
+                                        <div>
+                                            <h6 class="fw-bold text-dark mb-0.5 font-display d-flex align-items-center gap-2">
+                                                <i class="bi {{ @is_sp_ditolak || @is_revisi_baru ? 'bi-arrow-repeat text-warning' : 'bi-pencil-square text-primary' }}"></i>
+                                                <span>{{ @is_sp_ditolak || @is_revisi_baru ? 'Formulir Surat Penawaran Baru (Revisi / Negosiasi)' : 'Formulir Surat Penawaran Resmi' }}</span>
+                                            </h6>
+                                            <div class="text-muted small">
+                                                <check if="{{ @is_sp_ditolak || @is_revisi_baru }}">
+                                                    <true>Terbitkan surat penawaran baru untuk proses negosiasi (Nomor Baru: <strong class="font-monospace text-dark">{{ @nomor_surat_otomatis }}</strong> &bull; SP Sebelumnya Ditolak: <span class="font-monospace text-muted">{{ @penawaran.nomor_surat }}</span>).</true>
+                                                    <false>Perbarui rincian surat penawaran harga resmi (Nomor: <strong class="font-monospace text-dark">{{ @penawaran.nomor_surat }}</strong>).</false>
+                                                </check>
+                                            </div>
+                                        </div>
+                                        <button type="button" class="btn-close btn-sm" data-bs-toggle="collapse" data-bs-target="#collapseFormPenawaranInline" aria-label="Tutup"></button>
+                                    </div>
+                                    <include href="tim_mitra/surat Pelayanan/form_order.html" />
                                 </div>
                             </div>
 
@@ -5042,49 +5125,34 @@
                             </check>
                         </check>
 
-                        <!-- JIKA BELUM ADA SURAT PENAWARAN -->
+                        <!-- JIKA BELUM ADA SURAT PENAWARAN: LANGSUNG FORMULIR PEMBUATAN PENAWARAN -->
                         <check if="{{ !@penawaran }}">
-                            <div class="p-3 bg-light rounded-3 border">
-                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-                                    <div>
-                                        <div class="d-flex align-items-center gap-2 mb-1">
-                                            <check if="{{ @order.jenis_layanan_opti == 'lingkungan' }}">
-                                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-0.5 rounded-pill fw-semibold" style="font-size: 0.72rem;">
-                                                    <i class="bi bi-lightning-charge-fill me-1"></i> Penawaran Langsung (OPTI Lingkungan)
-                                                </span>
-                                                <span class="text-muted small">&bull; Penawaran Resmi Siap Diterbitkan</span>
-                                            </check>
-                                            <check if="{{ @order.jenis_layanan_opti != 'lingkungan' }}">
-                                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-0.5 rounded-pill fw-semibold" style="font-size: 0.72rem;">
-                                                    <i class="bi bi-check2 me-1"></i> Proposal Disetujui
-                                                </span>
-                                                <span class="text-muted small">&bull; Penawaran Resmi Siap Diterbitkan</span>
-                                            </check>
+                            <check if="{{ @is_admin_order || @is_tim_mitra || @is_superadmin || @can_manage_penawaran || @order.jenis_layanan_opti == 'lingkungan' }}">
+                                <div class="card border rounded-3 bg-white shadow-xs p-3 p-md-4">
+                                    <div class="d-flex align-items-center justify-content-between pb-3 mb-3 border-bottom flex-wrap gap-2">
+                                        <div>
+                                            <h6 class="fw-bold text-dark mb-1 font-display d-flex align-items-center gap-2">
+                                                <i class="bi bi-file-earmark-plus-fill text-primary"></i> Formulir Pembuatan Surat Penawaran Resmi
+                                            </h6>
+                                            <div class="text-muted small">
+                                                Lengkapi rincian biaya, durasi pelaksanaan, serta data penandatangan untuk menerbitkan Surat Penawaran Resmi kepada pelanggan.
+                                            </div>
                                         </div>
-                                        <div class="small text-secondary">
-                                            <check if="{{ @order.estimasi_biaya > 0 }}">
-                                                Estimasi Biaya: <strong class="text-dark font-display fs-6">Rp {{ number_format(@order.estimasi_biaya, 0, ',', '.') }}</strong>
-                                            </check>
-                                            <check if="{{ !@order.estimasi_biaya || @order.estimasi_biaya == 0 }}">
-                                                <check if="{{ @proposal && @proposal.estimasi_total_biaya > 0 }}">
-                                                    Estimasi Proposal: <strong class="text-dark font-display fs-6">Rp {{ number_format(@proposal.estimasi_total_biaya, 0, ',', '.') }}</strong>
-                                                </check>
-                                                <check if="{{ !@proposal || !@proposal.estimasi_total_biaya }}">
-                                                    <span>Nilai penawaran resmi dan durasi pelaksanaan dapat diisi langsung pada formulir surat penawaran berdasarkan hasil telaah teknis.</span>
-                                                </check>
-                                            </check>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 fw-semibold">
+                                                <i class="bi bi-lightning-charge me-1"></i> Form Tahap 5
+                                            </span>
                                         </div>
                                     </div>
-                                    <check if="{{ @is_admin_order || @is_tim_mitra || @is_superadmin || @can_manage_penawaran || @order.jenis_layanan_opti == 'lingkungan' }}">
-                                        <a href="{{ @BASE }}/order/{{ @order.id }}/penawaran/buat" class="btn btn-primary btn-sm fw-bold px-3 py-2 shadow-xs d-inline-flex align-items-center gap-2" onclick="triggerStageRead(5)">
-                                            <i class="bi bi-file-earmark-plus"></i> Terbitkan Surat Penawaran
-                                        </a>
-                                    </check>
-                                    <check if="{{ !(@is_admin_order || @is_tim_mitra || @is_superadmin || @can_manage_penawaran || @order.jenis_layanan_opti == 'lingkungan') }}">
-                                        <span class="text-muted small"><i class="bi bi-hourglass-split me-1"></i> Menunggu Tim Mitra menerbitkan penawaran.</span>
-                                    </check>
+                                    <include href="tim_mitra/surat Pelayanan/form_order.html" />
                                 </div>
-                            </div>
+                            </check>
+                            <check if="{{ !(@is_admin_order || @is_tim_mitra || @is_superadmin || @can_manage_penawaran || @order.jenis_layanan_opti == 'lingkungan') }}">
+                                <div class="p-4 bg-light rounded-3 border text-center text-muted small">
+                                    <i class="bi bi-hourglass-split fs-3 text-secondary opacity-50 d-block mb-2"></i>
+                                    Menunggu Tim Mitra menerbitkan Surat Penawaran Resmi untuk order ini.
+                                </div>
+                            </check>
                         </check>
                     </check>
                 </div>
@@ -7145,6 +7213,12 @@ function switchStage(stageNum, smoothScroll, targetSelector) {
         tabBtn.classList.add('active');
     }
     triggerStageRead(stageNum);
+    if (stageNum === 5) {
+        setTimeout(function() {
+            if (typeof initSpPreviewDraggable === 'function') initSpPreviewDraggable();
+            if (typeof syncLivePreview === 'function') syncLivePreview();
+        }, 50);
+    }
     if (smoothScroll) {
         var targetEl = targetSelector ? document.querySelector(targetSelector) : null;
         var scrollTarget = targetEl || document.getElementById('orderStageNavigation');
@@ -7170,8 +7244,22 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.addEventListener('click', function() {
             var sNum = idx + 1;
             triggerStageRead(sNum);
+            if (sNum === 5) {
+                setTimeout(function() {
+                    if (typeof initSpPreviewDraggable === 'function') initSpPreviewDraggable();
+                    if (typeof syncLivePreview === 'function') syncLivePreview();
+                }, 50);
+            }
         });
     });
+
+    var collapseFormInline = document.getElementById('collapseFormPenawaranInline');
+    if (collapseFormInline) {
+        collapseFormInline.addEventListener('shown.bs.collapse', function() {
+            if (typeof initSpPreviewDraggable === 'function') initSpPreviewDraggable();
+            if (typeof syncLivePreview === 'function') syncLivePreview();
+        });
+    }
 
     var stepMap = {
         '#cardProfil': 1,
@@ -8498,8 +8586,9 @@ function formatRupiahInputDetail(el) {
 
 function checkKirimButtonStateDetail() {
     var btnKirim = document.getElementById('btnKirimProposalDetail');
+    var btnApprove = document.getElementById('btnSimpanApproveProposalDetail');
     var hintKirim = document.getElementById('hintKirimProposalDetail');
-    if (!btnKirim) return;
+    if (!btnKirim && !btnApprove) return;
 
     var savedCard = document.getElementById('savedProposalCardDetail');
     var hasExistingFile = savedCard !== null;
@@ -8512,22 +8601,30 @@ function checkKirimButtonStateDetail() {
     var hasCost = biayaVal > 0;
 
     if (hasFile && hasCost) {
-        btnKirim.disabled = false;
-        btnKirim.title = 'Kirim proposal ke Ketua Tim OPTI';
+        if (btnKirim) {
+            btnKirim.disabled = false;
+            btnKirim.title = 'Kirim proposal ke Ketua Tim OPTI';
+        }
+        if (btnApprove) {
+            btnApprove.disabled = false;
+            btnApprove.title = 'Simpan perubahan dan langsung setujui proposal';
+        }
         if (hintKirim) {
             hintKirim.classList.add('d-none');
         }
     } else {
-        btnKirim.disabled = true;
+        if (btnKirim) btnKirim.disabled = true;
+        if (btnApprove) btnApprove.disabled = true;
         var hintMsg = '';
         if (!hasFile && !hasCost) {
-            hintMsg = 'Isi estimasi biaya dan unggah berkas Word untuk mengaktifkan tombol kirim.';
+            hintMsg = 'Isi estimasi biaya dan unggah berkas Word untuk mengaktifkan tombol.';
         } else if (!hasFile) {
-            hintMsg = 'Unggah berkas dokumen proposal Word untuk mengaktifkan tombol kirim.';
+            hintMsg = 'Unggah berkas dokumen proposal Word untuk mengaktifkan tombol.';
         } else {
-            hintMsg = 'Isi estimasi total biaya / RAB (> Rp 0) untuk mengaktifkan tombol kirim.';
+            hintMsg = 'Isi estimasi total biaya / RAB (> Rp 0) untuk mengaktifkan tombol.';
         }
-        btnKirim.title = hintMsg;
+        if (btnKirim) btnKirim.title = hintMsg;
+        if (btnApprove) btnApprove.title = hintMsg;
         var hintTextEl = document.getElementById('hintKirimProposalTextDetail');
         if (hintTextEl) {
             hintTextEl.textContent = hintMsg;

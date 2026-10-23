@@ -321,6 +321,14 @@ tr.row-user-task > td:first-child {
             <h4 class="fw-bold text-dark m-0 font-display">Daftar Order Layanan</h4>
             <div class="text-muted small mt-1">Daftar permohonan jasa dan pelacakan alur kegiatan</div>
         </div>
+        <check if="{{ @can_input_permohonan }}">
+            <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn btn-primary d-inline-flex align-items-center gap-2 shadow-xs fw-semibold px-3 py-2 rounded-2" data-bs-toggle="modal" data-bs-target="#modalTambahPermohonanManual">
+                    <i class="bi bi-plus-circle-fill fs-6"></i>
+                    <span>Input Permohonan Baru</span>
+                </button>
+            </div>
+        </check>
     </div>
 
     <!-- FILTER & PENCARIAN ORDER -->
@@ -490,6 +498,38 @@ tr.row-user-task > td:first-child {
                                                 </check>
                                             </td>
                                             <td>
+                                                <div class="d-flex align-items-center flex-wrap gap-1 mb-1">
+                                                    <check if="{{ @ord.media_permohonan == 'whatsapp' }}">
+                                                        <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: WhatsApp">
+                                                            <i class="bi bi-chat-dots me-1 text-primary"></i>WhatsApp
+                                                        </span>
+                                                    </check>
+                                                    <check if="{{ @ord.media_permohonan == 'telepon' }}">
+                                                        <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: Telepon">
+                                                            <i class="bi bi-telephone me-1 text-primary"></i>Telepon
+                                                        </span>
+                                                    </check>
+                                                    <check if="{{ @ord.media_permohonan == 'datang_langsung' }}">
+                                                        <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: Datang Langsung">
+                                                            <i class="bi bi-building me-1 text-primary"></i>Datang Langsung
+                                                        </span>
+                                                    </check>
+                                                    <check if="{{ @ord.media_permohonan == 'website' }}">
+                                                        <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: Website">
+                                                            <i class="bi bi-laptop me-1 text-primary"></i>Website
+                                                        </span>
+                                                    </check>
+                                                    <check if="{{ empty(@ord.media_permohonan) || @ord.media_permohonan == 'surat' }}">
+                                                        <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: Surat Resmi">
+                                                            <i class="bi bi-envelope-paper me-1 text-secondary"></i>Surat
+                                                        </span>
+                                                    </check>
+                                                    <check if="{{ !empty(@ord.file_bukti_permohonan) }}">
+                                                        <a href="{{ @BASE }}/{{ @ord.file_bukti_permohonan }}" target="_blank" class="badge bg-light text-dark border text-decoration-none px-1.5 py-0.5 rounded-pill" style="font-size: 0.68rem;" title="Lihat Berkas Bukti Permohonan">
+                                                            <i class="bi bi-paperclip me-0.5 text-primary"></i>Bukti
+                                                        </a>
+                                                    </check>
+                                                </div>
                                                 <div class="fw-semibold text-dark mb-1" title="{{ @ord.judul_kegiatan }}">
                                                     {{ @ord.judul_kegiatan }}
                                                 </div>
@@ -633,6 +673,38 @@ tr.row-user-task > td:first-child {
                                                 </div>
                                             </td>
                                             <td>
+                                                <div class="d-flex align-items-center flex-wrap gap-1 mb-1">
+                                                    <check if="{{ @ord.media_permohonan == 'whatsapp' }}">
+                                                        <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: WhatsApp">
+                                                            <i class="bi bi-chat-dots me-1 text-primary"></i>WhatsApp
+                                                        </span>
+                                                    </check>
+                                                    <check if="{{ @ord.media_permohonan == 'telepon' }}">
+                                                        <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: Telepon">
+                                                            <i class="bi bi-telephone me-1 text-primary"></i>Telepon
+                                                        </span>
+                                                    </check>
+                                                    <check if="{{ @ord.media_permohonan == 'datang_langsung' }}">
+                                                        <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: Datang Langsung">
+                                                            <i class="bi bi-building me-1 text-primary"></i>Datang Langsung
+                                                        </span>
+                                                    </check>
+                                                    <check if="{{ @ord.media_permohonan == 'website' }}">
+                                                        <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: Website">
+                                                            <i class="bi bi-laptop me-1 text-primary"></i>Website
+                                                        </span>
+                                                    </check>
+                                                    <check if="{{ empty(@ord.media_permohonan) || @ord.media_permohonan == 'surat' }}">
+                                                        <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: Surat Resmi">
+                                                            <i class="bi bi-envelope-paper me-1 text-secondary"></i>Surat
+                                                        </span>
+                                                    </check>
+                                                    <check if="{{ !empty(@ord.file_bukti_permohonan) }}">
+                                                        <a href="{{ @BASE }}/{{ @ord.file_bukti_permohonan }}" target="_blank" class="badge bg-light text-dark border text-decoration-none px-1.5 py-0.5 rounded-pill" style="font-size: 0.68rem;" title="Lihat Berkas Bukti Permohonan">
+                                                            <i class="bi bi-paperclip me-0.5 text-primary"></i>Bukti
+                                                        </a>
+                                                    </check>
+                                                </div>
                                                 <div class="fw-semibold text-dark mb-1" title="{{ @ord.judul_kegiatan }}">
                                                     {{ @ord.judul_kegiatan }}
                                                 </div>
@@ -758,6 +830,169 @@ tr.row-user-task > td:first-child {
                                     </repeat>
                                 </tbody>
                             </table>
+                            <!-- ===== MODAL INPUT PERMOHONAN BARU (NON-SURAT) ===== -->
+                            <div class="modal fade" id="modalTambahPermohonanManual" tabindex="-1" aria-labelledby="modalTambahPermohonanManualLabel" aria-hidden="true" style="z-index: 1055;">
+                                <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+                                    <form action="{{ @BASE }}/order/simpan-manual" method="POST" enctype="multipart/form-data" id="formPermohonanManual" class="modal-content border-0 shadow-lg rounded-4 overflow-hidden" style="max-height: 90vh;">
+                                        <div class="modal-header py-3 px-4 bg-white border-bottom align-items-center flex-shrink-0">
+                                            <div>
+                                                <h6 class="modal-title fw-bold text-dark m-0 d-flex align-items-center gap-2" id="modalTambahPermohonanManualLabel">
+                                                    <i class="bi bi-pencil-square text-primary fs-5"></i>
+                                                    <span>Input Permohonan Layanan Baru</span>
+                                                </h6>
+                                                <div class="text-muted small mt-1" style="font-size: 0.78rem;">
+                                                    Pencatatan permohonan jasa dari saluran WhatsApp, Telepon, Datang Langsung, atau Website
+                                                </div>
+                                            </div>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                                        </div>
+
+                                        <div class="modal-body p-4 bg-light" style="max-height: calc(90vh - 130px); overflow-y: auto;">
+                                            <!-- 1. Pilihan Instansi Pelanggan Resmi (Master Data tb_customer) -->
+                                            <div class="card border rounded-3 shadow-xs bg-white p-3 mb-3">
+                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                    <label class="form-label fw-bold text-dark m-0 small">
+                                                        Instansi Pelanggan Resmi <span class="text-danger">*</span>
+                                                    </label>
+                                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace" style="font-size: 0.7rem;">
+                                                        Satu Pintu (tb_customer)
+                                                    </span>
+                                                </div>
+                                                <select name="id_customer" id="selectCustomerManual" class="form-select form-select-sm fw-semibold select-customer-modal-manual" placeholder="Ketik nama PT/CV, kode perusahaan, nama PIC, atau alamat..." required>
+                                                    <option value="">-- Cari Instansi Pelanggan (Ketik nama/kode/PIC) --</option>
+                                                    <repeat group="{{ @daftar_customer_opti }}" value="{{ @cust }}">
+                                                        <option value="{{ @cust.id_customer }}"
+                                                                data-ptcv="{{ @cust.pt_cv }}"
+                                                                data-nama="{{ @cust.nmcustomer }}"
+                                                                data-nama-bersih="{{ @cust.nama_perusahaan_bersih }}"
+                                                                data-kode="{{ @cust.kodex_perusahaan ?: '-' }}"
+                                                                data-alamat="{{ @cust.alamat_bersih ?: '-' }}"
+                                                                data-pic="{{ @cust.pic_bersih ?: '-' }}"
+                                                                data-hp="{{ @cust.hp_bersih ?: '-' }}"
+                                                                data-telp="{{ @cust.telp_bersih ?: '-' }}"
+                                                                data-email="{{ @cust.email_bersih ?: '-' }}">
+                                                            {{ @cust.nama_perusahaan_bersih }} [Kode: #{{ @cust.kodex_perusahaan ?: '-' }}]
+                                                        </option>
+                                                    </repeat>
+                                                </select>
+                                                <div class="form-text text-muted small mt-1.5" style="font-size: 0.74rem;">
+                                                    <i class="bi bi-info-circle me-1 text-primary"></i>Pilih instansi pelanggan resmi terdaftar. Jika nama instansi mitra belum terdaftar, hubungi Admin Master Data untuk pendaftaran pelanggan satu pintu.
+                                                </div>
+
+                                                <!-- Card Rincian Pelanggan Terpilih -->
+                                                <div id="manualCustPreviewCard" class="p-2.5 rounded-3 border bg-light mt-2.5 d-none" style="font-size: 0.8rem;">
+                                                    <div class="d-flex align-items-center justify-content-between mb-1.5 pb-1 border-bottom">
+                                                        <span class="fw-bold text-dark font-display" id="mcNamaPerusahaan">-</span>
+                                                        <span class="badge bg-secondary-subtle text-secondary border font-monospace" id="mcKode">-</span>
+                                                    </div>
+                                                    <div class="row g-2 text-muted">
+                                                        <div class="col-sm-6">
+                                                            <span class="d-block" style="font-size:0.72rem;">Kontak / PIC:</span>
+                                                            <strong class="text-dark" id="mcPic">-</strong>
+                                                        </div>
+                                                        <div class="col-sm-6">
+                                                            <span class="d-block" style="font-size:0.72rem;">No. Kontak:</span>
+                                                            <span class="text-dark" id="mcTelp">-</span>
+                                                        </div>
+                                                        <div class="col-12">
+                                                            <span class="d-block" style="font-size:0.72rem;">Alamat:</span>
+                                                            <span class="text-secondary" id="mcAlamat">-</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- 2. Saluran Permohonan (Media Permohonan) -->
+                                            <div class="card border rounded-3 shadow-xs bg-white p-3 mb-3">
+                                                <label class="form-label fw-bold text-dark mb-2 small d-flex align-items-center gap-1.5">
+                                                    <span>Saluran Permohonan Masuk</span>
+                                                    <span class="text-danger">*</span>
+                                                </label>
+                                                <div class="row g-2">
+                                                    <!-- WhatsApp -->
+                                                    <div class="col-6 col-md-3">
+                                                        <input type="radio" class="btn-check" name="media_permohonan" id="media_wa" value="whatsapp" checked autocomplete="off">
+                                                        <label class="btn btn-outline-light text-dark border p-2.5 w-100 h-100 d-flex flex-column align-items-center justify-content-center text-center rounded-3 channel-radio-card" for="media_wa">
+                                                            <i class="bi bi-chat-dots fs-5 text-secondary mb-1"></i>
+                                                            <span class="fw-bold small d-block">WhatsApp</span>
+                                                        </label>
+                                                    </div>
+                                                    <!-- Telepon -->
+                                                    <div class="col-6 col-md-3">
+                                                        <input type="radio" class="btn-check" name="media_permohonan" id="media_telp" value="telepon" autocomplete="off">
+                                                        <label class="btn btn-outline-light text-dark border p-2.5 w-100 h-100 d-flex flex-column align-items-center justify-content-center text-center rounded-3 channel-radio-card" for="media_telp">
+                                                            <i class="bi bi-telephone fs-5 text-secondary mb-1"></i>
+                                                            <span class="fw-bold small d-block">Telepon</span>
+                                                        </label>
+                                                    </div>
+                                                    <!-- Datang Langsung -->
+                                                    <div class="col-6 col-md-3">
+                                                        <input type="radio" class="btn-check" name="media_permohonan" id="media_langsung" value="datang_langsung" autocomplete="off">
+                                                        <label class="btn btn-outline-light text-dark border p-2.5 w-100 h-100 d-flex flex-column align-items-center justify-content-center text-center rounded-3 channel-radio-card" for="media_langsung">
+                                                            <i class="bi bi-building fs-5 text-secondary mb-1"></i>
+                                                            <span class="fw-bold small d-block">Datang Langsung</span>
+                                                        </label>
+                                                    </div>
+                                                    <!-- Website -->
+                                                    <div class="col-6 col-md-3">
+                                                        <input type="radio" class="btn-check" name="media_permohonan" id="media_web" value="website" autocomplete="off">
+                                                        <label class="btn btn-outline-light text-dark border p-2.5 w-100 h-100 d-flex flex-column align-items-center justify-content-center text-center rounded-3 channel-radio-card" for="media_web">
+                                                            <i class="bi bi-laptop fs-5 text-secondary mb-1"></i>
+                                                            <span class="fw-bold small d-block">Website</span>
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- 3. Informasi Permohonan & Kebutuhan Pelanggan -->
+                                            <div class="card border rounded-3 shadow-xs bg-white p-3 mb-3">
+                                                <input type="hidden" name="jenis_layanan_opti" value="belum_ditentukan">
+                                                <div class="row g-3 mb-3">
+                                                    <div class="col-md-4">
+                                                        <label class="form-label fw-bold text-dark small mb-1">
+                                                            Tanggal Masuk <span class="text-danger">*</span>
+                                                        </label>
+                                                        <input type="date" name="tanggal_masuk" class="form-control form-control-sm" value="{{ date('Y-m-d') }}" required>
+                                                    </div>
+                                                    <div class="col-md-8">
+                                                        <label class="form-label fw-bold text-dark small mb-1">
+                                                            Judul Permohonan / Kegiatan <span class="text-danger">*</span>
+                                                        </label>
+                                                        <input type="text" name="judul_kegiatan" class="form-control form-control-sm fw-semibold" placeholder="Contoh: Pengujian Kualitas Pulp &amp; Kertas Kemasan Ramah Lingkungan" required>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label class="form-label fw-bold text-dark small mb-1">
+                                                        Ringkasan Kebutuhan / Catatan Permohonan
+                                                    </label>
+                                                    <textarea name="deskripsi" class="form-control form-control-sm" rows="3" placeholder="Tuliskan ringkasan kebutuhan pelanggan, parameter/jenis sampel, perkiraan volume, atau rangkuman komunikasi awal..."></textarea>
+                                                </div>
+                                            </div>
+
+                                            <!-- 5. Unggah Berkas Bukti Permohonan (Opsional) -->
+                                            <div class="card border rounded-3 shadow-xs bg-white p-3">
+                                                <label class="form-label fw-bold text-dark small mb-1 d-flex align-items-center justify-content-between">
+                                                    <span><i class="bi bi-paperclip me-1 text-primary"></i>Unggah Bukti Permohonan (Opsional)</span>
+                                                    <span class="badge bg-light text-muted border font-monospace" style="font-size: 0.68rem;">PDF, DOCX, JPG, PNG (Maks 15 MB)</span>
+                                                </label>
+                                                <input type="file" name="file_bukti_permohonan" class="form-control form-control-sm" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                                                <div class="form-text text-muted small mt-1" style="font-size: 0.73rem;">
+                                                    Dapat berupa tangkapan layar chat, rekaman/nota telepon, foto buku tamu, atau dokumen isian portal.
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="modal-footer py-2.5 px-4 bg-white border-top d-flex justify-content-between align-items-center flex-shrink-0">
+                                            <button type="button" class="btn btn-light btn-sm border px-3" data-bs-dismiss="modal">Batal</button>
+                                            <button type="submit" class="btn btn-primary btn-sm px-4 fw-semibold shadow-xs d-inline-flex align-items-center gap-2">
+                                                <i class="bi bi-check2-circle fs-6"></i>
+                                                <span>Simpan Permohonan Baru</span>
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+
                             <!-- ===== MODAL PREVIEW SURAT PERMINTAAN PELAYANAN JASA ===== -->
 <div class="modal fade" id="modalPreviewSuratOrder" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-xl">
@@ -1556,5 +1791,132 @@ document.addEventListener('DOMContentLoaded', function () {
         var totalSpan = document.getElementById('orderTotalCount');
         if (totalSpan) totalSpan.innerText = visibleCount;
     };
+
+    // Inisialisasi TomSelect pada Modal Tambah Permohonan Manual
+    var modalTambahManual = document.getElementById('modalTambahPermohonanManual');
+    if (modalTambahManual) {
+        modalTambahManual.addEventListener('shown.bs.modal', function () {
+            var select = document.getElementById('selectCustomerManual');
+            if (select && typeof TomSelect !== 'undefined' && !select.tomselect) {
+                var selectOptions = [];
+                Array.from(select.options).forEach(function(opt) {
+                    if (!opt.value) return;
+                    selectOptions.push({
+                        value: opt.value,
+                        text: opt.text,
+                        nama: opt.getAttribute('data-nama-bersih') || opt.text,
+                        kode: opt.getAttribute('data-kode') || '',
+                        pic: opt.getAttribute('data-pic') || '',
+                        telp: opt.getAttribute('data-telp') || '',
+                        email: opt.getAttribute('data-email') || '',
+                        alamat: opt.getAttribute('data-alamat') || ''
+                    });
+                });
+
+                var ts = new TomSelect(select, {
+                    options: selectOptions,
+                    items: [],
+                    valueField: 'value',
+                    labelField: 'text',
+                    searchField: ['nama', 'kode', 'pic', 'alamat', 'text'],
+                    create: false,
+                    maxItems: 1,
+                    placeholder: select.getAttribute('placeholder') || 'Ketik nama PT/CV, kode pelanggan, atau nama PIC...',
+                    maxOptions: 300,
+                    allowEmptyOption: false,
+                    plugins: {
+                        'dropdown_input': {},
+                        'clear_button': { title: 'Hapus pilihan' }
+                    },
+                    render: {
+                        option: function(data, escape) {
+                            var pic = data.pic && data.pic !== '-' ? '<span class="fw-semibold text-dark">PIC: ' + escape(data.pic) + '</span>' : '';
+                            var alamat = data.alamat && data.alamat !== '-' ? escape(data.alamat) : '';
+                            var sub = [pic, alamat].filter(Boolean).join(' • ');
+                            return '<div class="py-2 px-3 border-bottom">' +
+                                '<div class="fw-bold text-dark mb-1" style="white-space:normal; line-height:1.35;">' +
+                                    '<i class="bi bi-building me-2 text-primary"></i>' + escape(data.nama || data.text) +
+                                '</div>' +
+                                (sub ? '<div class="text-muted small" style="font-size:0.76rem; white-space:normal; line-height:1.35;">' + sub + '</div>' : '') +
+                            '</div>';
+                        },
+                        item: function(data, escape) {
+                            return '<div class="fw-bold text-dark" style="white-space:normal; line-height:1.35;">' +
+                                '<i class="bi bi-building text-primary me-2"></i>' +
+                                escape(data.nama || data.text) +
+                            '</div>';
+                        },
+                        no_results: function(data, escape) {
+                            return '<div class="p-3 text-center text-muted small">' +
+                                '<i class="bi bi-exclamation-circle text-warning me-1"></i> Tidak ditemukan perusahaan dengan kata kunci "<strong>' + escape(data.input) + '</strong>".' +
+                                '<div class="mt-1 text-secondary" style="font-size:0.75rem;">Coba periksa ejaan atau hubungi Admin Master Data.</div>' +
+                            '</div>';
+                        }
+                    },
+                    onChange: function(val) {
+                        select.value = val;
+                        updateManualCustPreview(val, ts);
+                    }
+                });
+                ts.clear(true);
+            }
+        });
+    }
+
+    function updateManualCustPreview(val, ts) {
+        var card = document.getElementById('manualCustPreviewCard');
+        if (!card) return;
+        if (!val || !ts || !ts.options[val]) {
+            card.classList.add('d-none');
+            return;
+        }
+        var opt = ts.options[val];
+        document.getElementById('mcNamaPerusahaan').textContent = opt.nama || opt.text;
+        document.getElementById('mcKode').textContent = 'Kode: #' + (opt.kode || '-');
+        document.getElementById('mcPic').textContent = opt.pic || '-';
+        document.getElementById('mcTelp').textContent = opt.telp || '-';
+        document.getElementById('mcAlamat').textContent = opt.alamat || '-';
+        card.classList.remove('d-none');
+    }
 });
 </script>
+
+<style>
+/* Styling Saluran Radio Card */
+.channel-radio-card {
+    cursor: pointer;
+    background-color: #f8fafc;
+    border-color: #e2e8f0 !important;
+    transition: all 0.2s ease;
+}
+.channel-radio-card:hover {
+    background-color: #f1f5f9;
+    border-color: #cbd5e1 !important;
+}
+.btn-check:checked + .channel-radio-card {
+    background-color: #f0f7ff !important;
+    border-color: #2563eb !important;
+    box-shadow: 0 0 0 1px #2563eb !important;
+}
+.btn-check:checked + .channel-radio-card i {
+    color: #2563eb !important;
+}
+/* Modal Scrollable Fix */
+#modalTambahPermohonanManual .modal-body {
+    max-height: calc(85vh - 130px) !important;
+    overflow-y: auto !important;
+}
+/* TomSelect Searchable Dropdown di Modal Tambah Manual */
+#modalTambahPermohonanManual .ts-wrapper {
+    width: 100% !important;
+}
+#modalTambahPermohonanManual .ts-wrapper .ts-control {
+    border-radius: 0.375rem !important;
+    font-size: 0.875rem !important;
+    font-weight: 600 !important;
+    color: #1e293b !important;
+    min-height: 38px !important;
+    padding: 0.4rem 0.75rem !important;
+    border-color: #cbd5e1 !important;
+}
+</style>

@@ -740,15 +740,27 @@ $daftarPegawai = $arsipUser->find(
             $order['nama_perusahaan'] = preg_replace('/^((?:PT|CV|UD|PD|Yayasan)\.?\s*){2,}/i', '$1 ', $order['nama_perusahaan']);
         }
 
-        $mode = $f3->get('GET.mode') ?? '';
-        // Hanya buat revisi baru jika ada permintaan eksplisit mode='baru' atau mode='revisi'
-        $isRevisiBaru = !empty($spExisting) && ($mode === 'baru' || $mode === 'revisi');
+        $mode = strtolower((string)($f3->get('GET.mode') ?? ''));
+        $isSpDitolak = !empty($spExisting) && in_array(strtolower($spExisting['status_respon_klien'] ?? ''), ['batal', 'tolak', 'ditolak']);
+        // Buat revisi baru jika ada permintaan eksplisit mode='baru'/'revisi'/'nego' ATAU surat penawaran sebelumnya ditolak/batal
+        $isRevisiBaru = !empty($spExisting) && ($isSpDitolak || $mode === 'baru' || $mode === 'revisi' || $mode === 'nego');
         if (!empty($spExisting['nomor_surat']) && preg_match('/^\d+\/BBSPJIS\/MS\//i', $spExisting['nomor_surat'])) {
             $spExisting['nomor_surat'] = 'B/' . $spExisting['nomor_surat'];
         }
-        $nomorSuratOtomatis = $isRevisiBaru ? $spModel->generateNomorSurat() : (!empty($spExisting['nomor_surat']) ? $spExisting['nomor_surat'] : $spModel->generateNomorSurat());
-        if (preg_match('/^\d+\/BBSPJIS\/MS\//i', $nomorSuratOtomatis)) {
-            $nomorSuratOtomatis = 'B/' . $nomorSuratOtomatis;
+
+        // Nomor urut baru berikutnya dari sistem
+        $nomorSuratBaru = $spModel->generateNomorSurat();
+        if (preg_match('/^\d+\/BBSPJIS\/MS\//i', $nomorSuratBaru)) {
+            $nomorSuratBaru = 'B/' . $nomorSuratBaru;
+        }
+
+        $nomorSuratLama = !empty($spExisting['nomor_surat']) ? $spExisting['nomor_surat'] : '';
+
+        // Jika SP sebelumnya ditolak atau mode revisi baru, otomatis gunakan nomor urut berikutnya (misal 06 ditolak -> otomatis ke 07)
+        if ($isRevisiBaru) {
+            $nomorSuratOtomatis = $nomorSuratBaru;
+        } else {
+            $nomorSuratOtomatis = !empty($nomorSuratLama) ? $nomorSuratLama : $nomorSuratBaru;
         }
         $revisiKe = count($allSp) + 1;
 
@@ -859,6 +871,9 @@ $daftarPegawai = $arsipUser->find(
         }
         $f3->set('is_locked_deal', $isLockedDeal);
         $f3->set('is_revisi_baru', $isRevisiBaru);
+        $f3->set('is_sp_ditolak', $isSpDitolak ?? false);
+        $f3->set('nomor_surat_baru', $nomorSuratBaru ?? $nomorSuratOtomatis);
+        $f3->set('nomor_surat_lama', $nomorSuratLama ?? '');
 
         // Audit Tahap 5: Surat Penawaran resmi dibuka / dikelola Tim Mitra (First Time Only)
         $userId = (int)$this->getUserId();
@@ -939,7 +954,9 @@ $daftarPegawai = $arsipUser->find(
 
         $spModel = new SuratPenawaran($this->db);
         $spExisting = $spModel->getByOrderId($orderId);
-        $isRevisiBaru = !empty($post['is_revisi_baru']);
+        $isSpDitolak = !empty($spExisting) && in_array(strtolower($spExisting['status_respon_klien'] ?? ''), ['batal', 'tolak', 'ditolak']);
+        $isRevisiBaru = !empty($post['is_revisi_baru']) || $isSpDitolak || (($post['mode'] ?? '') === 'baru');
+        $post['is_revisi_baru'] = $isRevisiBaru ? 1 : 0;
 
         // Proteksi State Guard:
         // Jika dokumen ini sebelumnya sudah berstatus DEAL, atau order sudah lanjut ke pembayaran/pelaksanaan:
@@ -1109,6 +1126,10 @@ $daftarPegawai = $arsipUser->find(
                 $this->setFlashSuccess(
                     "Draf Surat Penawaran Nomor <strong>{$hasil['nomor_surat']}</strong> berhasil disimpan (Status: Draft Internal)."
                 );
+                if (($post['redirect'] ?? '') === 'order') {
+                    $f3->reroute("/order/{$orderId}");
+                    return;
+                }
                 $editUrl = "/order/{$orderId}/penawaran/buat" . (!empty($hasil['id']) ? "?mode=edit&sp_id={$hasil['id']}" : "");
                 $f3->reroute($editUrl);
                 return;
@@ -1116,7 +1137,8 @@ $daftarPegawai = $arsipUser->find(
             $f3->reroute("/order/{$orderId}");
         } catch (\Exception $e) {
             $this->setFlashError('Gagal menerbitkan surat penawaran: ' . $e->getMessage());
-            $f3->reroute("/order/{$orderId}/penawaran/buat");
+            $redirectTarget = (($f3->get('POST.redirect') ?? '') === 'order') ? "/order/{$orderId}" : "/order/{$orderId}/penawaran/buat";
+            $f3->reroute($redirectTarget);
         }
     }
 

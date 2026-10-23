@@ -919,4 +919,89 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
             }
         } catch (\Exception $e) {}
     }
+
+    /**
+     * Ambil data penandatangan & daftar jabatan dari tabel mst_penandatangan_lhu
+     */
+    public function getMasterPenandatanganData()
+    {
+        $penandatanganList = [];
+        $jabatanList = [];
+        try {
+            $dbSekre = $this->dbSekretariat ?: $this->db;
+            $rows = $dbSekre->exec("SELECT id_penandatangan, jabatan, nama, nip, showhide FROM mst_penandatangan_lhu ORDER BY FIELD(showhide, 'show', 'hide'), id_penandatangan DESC");
+            $seenKey = [];
+            $seenJab = [];
+            foreach ($rows as $r) {
+                $rawJab = str_ireplace(['<br>', '<br/>', '<br />', '&nbsp;'], ' ', $r['jabatan'] ?? '');
+                $cleanJab = strip_tags($rawJab);
+                $cleanJab = preg_replace('/\s+/', ' ', $cleanJab);
+                $cleanJab = trim($cleanJab, " \t\n\r\0\x0B,");
+
+                // Hapus "a.n. Kepala" jika diikuti jabatan definitif (misal: a.n Kepala Kepala Bagian... -> Kepala Bagian...)
+                $cleanJab = preg_replace('/^a\.?n\.?\s+Kepala[,\s]+(Kepala|Ketua|Plt|Plh|Sekretaris|Bendahara)/i', '$1', $cleanJab);
+                // Hapus prefix a.n. / an. / a.n / an
+                $cleanJab = preg_replace('/^(a\.?n\.?|an\.)\s*/i', '', $cleanJab);
+                // Hapus prefix Plh. / Plh / p.l.h. / p.l.h / plh
+                $cleanJab = preg_replace('/^(p\.?l\.?h\.?|plh\.)\s*/i', '', $cleanJab);
+                // Hapus prefix Plt. / Plt / p.l.t. / p.l.t / plt / a.n.t / ant
+                $cleanJab = preg_replace('/^(p\.?l\.?t\.?|plt\.|a\.?n\.?t\.?|ant\.)\s*/i', '', $cleanJab);
+                // Rapihkan spasi dan trailing koma
+                $cleanJab = trim(preg_replace('/\s+/', ' ', $cleanJab), " \t\n\r\0\x0B,");
+
+                $cleanNm = trim($r['nama'] ?? '');
+
+                if (!empty($cleanJab) && !isset($seenJab[$cleanJab])) {
+                    $seenJab[$cleanJab] = true;
+                    $jabatanList[] = $cleanJab;
+                }
+
+                $key = strtolower($cleanNm . '|' . $cleanJab);
+                if (!isset($seenKey[$key]) && !empty($cleanNm)) {
+                    $seenKey[$key] = true;
+
+                    // Klasifikasi kategori & ikon badge agar tampilan dropdown rapi dan terstruktur
+                    $kategori = 'Pejabat & Unit Kerja';
+                    $badgeClass = 'bg-secondary-subtle text-secondary border border-secondary-subtle';
+                    $icon = 'bi-person-badge';
+
+                    if (stripos($cleanJab, 'Ketua Tim') !== false) {
+                        $kategori = 'Ketua Tim Kerja';
+                        $badgeClass = 'bg-info-subtle text-info-emphasis border border-info-subtle';
+                        $icon = 'bi-people';
+                    } elseif (stripos($cleanJab, 'Kepala') !== false || stripos($cleanJab, 'Plh.') !== false || stripos($cleanJab, 'a.n') !== false) {
+                        if (stripos($cleanJab, 'Bidang') !== false || stripos($cleanJab, 'Seksi') !== false) {
+                            $kategori = 'Pejabat Bidang & Teknis';
+                            $badgeClass = 'bg-warning-subtle text-warning-emphasis border border-warning-subtle';
+                            $icon = 'bi-briefcase';
+                        } else {
+                            $kategori = 'Pimpinan Balai & Manajemen';
+                            $badgeClass = 'bg-primary-subtle text-primary border border-primary-subtle';
+                            $icon = 'bi-award';
+                        }
+                    }
+
+                    $penandatanganList[] = [
+                        'id'         => $r['id_penandatangan'],
+                        'nama'       => $cleanNm,
+                        'jabatan'    => $cleanJab,
+                        'kategori'   => $kategori,
+                        'badgeClass' => $badgeClass,
+                        'icon'       => $icon,
+                        'nip'        => trim($r['nip'] ?? '')
+                    ];
+                }
+            }
+        } catch (\Exception $e) {
+            $penandatanganList = [
+                ['id' => 21, 'nama' => 'Dodiet Prasetyo', 'jabatan' => 'Kepala', 'kategori' => 'Pimpinan Balai & Manajemen', 'badgeClass' => 'bg-primary-subtle text-primary border border-primary-subtle', 'icon' => 'bi-award', 'nip' => ''],
+                ['id' => 18, 'nama' => 'Joko Pratomo', 'jabatan' => 'Kepala Bagian Tata Usaha', 'kategori' => 'Pimpinan Balai & Manajemen', 'badgeClass' => 'bg-primary-subtle text-primary border border-primary-subtle', 'icon' => 'bi-award', 'nip' => ''],
+                ['id' => 20, 'nama' => 'Andar Hermawan', 'jabatan' => 'Ketua Tim Pelaksanaan Mitra Industri', 'kategori' => 'Ketua Tim Kerja', 'badgeClass' => 'bg-info-subtle text-info-emphasis border border-info-subtle', 'icon' => 'bi-people', 'nip' => ''],
+                ['id' => 8,  'nama' => 'Emma Safarina Ertaviani', 'jabatan' => 'Ketua Tim Layanan Mitra Industri', 'kategori' => 'Ketua Tim Kerja', 'badgeClass' => 'bg-info-subtle text-info-emphasis border border-info-subtle', 'icon' => 'bi-people', 'nip' => ''],
+            ];
+            $jabatanList = ['Kepala', 'Kepala Bagian Tata Usaha', 'Ketua Tim Pelaksanaan Mitra Industri', 'Ketua Tim Layanan Mitra Industri'];
+        }
+
+        return [$penandatanganList, $jabatanList];
+    }
 }
