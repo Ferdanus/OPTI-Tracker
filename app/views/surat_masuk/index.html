@@ -1,10 +1,9 @@
 <div class="container-fluid px-0">
-    <!-- Header & Breadcrumb -->
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom flex-wrap gap-2">
         <div>
-            <h4 class="fw-bold text-dark m-0 d-flex align-items-center gap-2 font-display">
-                <i class="bi bi-inbox-fill text-primary"></i> Kotak Masuk Permohonan Layanan
-            </h4>
+            <h4 class="fw-bold text-dark m-0 font-display">Kotak Masuk Permohonan</h4>
+            <div class="text-muted small mt-1">Daftar surat permohonan masuk dan riwayat penerimaan order</div>
         </div>
     </div>
 
@@ -16,61 +15,51 @@
         </div>
     </check>
 
-
-    <!-- 4 KARTU METRIK KPI RINGKASAN -->
+    <!-- KARTU METRIK KPI RINGKASAN -->
     <div class="row g-3 mb-4">
-        <div class="col-6 col-lg-3">
-            <div class="metric-card">
-                <div>
-                    <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">Surat Masuk</span>
-                    <h3 class="fw-bold text-dark mb-0 mt-1">{{ @total_surat_tersedia }}</h3>
-                    <span class="small text-muted" style="font-size: 0.75rem;">Siap diproses</span>
-                </div>
-                <div class="metric-icon-box" style="background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1;">
-                    <i class="bi bi-inbox-fill"></i>
-                </div>
-            </div>
-        </div>
-        <div class="col-6 col-lg-3">
-            <div class="metric-card">
-                <div>
-                    <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">Surat Diterima</span>
-                    <h3 class="fw-bold text-dark mb-0 mt-1">{{ @total_klaim_aktif }}</h3>
-                    <span class="small text-muted" style="font-size: 0.75rem;">Permintaan masuk saya</span>
-                </div>
-                <div class="metric-icon-box" style="background-color: #fef3c7; color: #d97706;">
-                    <i class="bi bi-envelope-check-fill"></i>
+        <div class="col-12 col-md-4">
+            <div class="card border rounded-3 p-3 bg-white h-100 shadow-xs">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <span class="text-muted text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.04em;">Surat Masuk</span>
+                        <h3 class="fw-bold text-dark mb-0 mt-1">{{ @total_surat_tersedia }}</h3>
+                    </div>
+                    <div class="rounded-2 p-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background-color: #f1f5f9; color: #334155;">
+                        <i class="bi bi-inbox fs-5"></i>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-6 col-lg-3">
-            <div class="metric-card">
-                <div>
-                    <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">Order Berlanjut</span>
-                    <h3 class="fw-bold text-dark mb-0 mt-1">{{ @total_klaim_selesai }}</h3>
-                    <span class="small text-muted" style="font-size: 0.75rem;">Masuk alur PO & Layanan</span>
-                </div>
-                <div class="metric-icon-box" style="background-color: #ccfbf1; color: #0d9488;">
-                    <i class="bi bi-check2-circle"></i>
+        <div class="col-12 col-md-4">
+            <div class="card border rounded-3 p-3 bg-white h-100 shadow-xs">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <span class="text-muted text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.04em;">Surat Ditolak</span>
+                        <h3 class="fw-bold text-danger mb-0 mt-1">{{ @total_ditolak }}</h3>
+                    </div>
+                    <div class="rounded-2 p-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background-color: #fef2f2; color: #dc2626;">
+                        <i class="bi bi-x-octagon fs-5"></i>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-6 col-lg-3">
-            <div class="metric-card">
-                <div>
-                    <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">Tujuan Surat</span>
-                    <h3 class="fw-bold text-dark mb-0 mt-1">OPTI</h3>
-                    <span class="small text-muted" style="font-size: 0.75rem;">Unit Kerja BBSPJIS</span>
-                </div>
-                <div class="metric-icon-box" style="background-color: #f1f5f9; color: #475569;">
-                    <i class="bi bi-shield-check"></i>
+        <div class="col-12 col-md-4">
+            <div class="card border rounded-3 p-3 bg-white h-100 shadow-xs">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <span class="text-muted text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.04em;">Tujuan Surat</span>
+                        <h3 class="fw-bold text-dark mb-0 mt-1">OPTI</h3>
+                    </div>
+                    <div class="rounded-2 p-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background-color: #f8fafc; color: #475569;">
+                        <i class="bi bi-shield-check fs-5"></i>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- FILTER & PENCARIAN DENGAN TOMBOL SEGARKAN TERINTEGRASI -->
-    <div class="card mb-4 border-0 shadow-sm">
+    <!-- FILTER & PENCARIAN -->
+    <div class="card mb-4 border rounded-3 shadow-xs bg-white">
         <div class="card-body p-3">
             <form method="GET" action="{{ @BASE }}/surat-masuk" class="row g-2 align-items-center">
                 <!-- Filter Bulan -->
@@ -222,20 +211,6 @@
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link filter-tab-pill" id="tab-klaim" data-bs-toggle="tab" data-bs-target="#content-klaim" type="button" role="tab" aria-controls="content-klaim" aria-selected="false">
-                        <i class="bi bi-envelope-check-fill text-warning"></i>
-                        <span>Surat Diterima</span>
-                        <span class="count-chip chip-warning">{{ count(@daftar_klaim) }}</span>
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link filter-tab-pill" id="tab-riwayat" data-bs-toggle="tab" data-bs-target="#content-riwayat" type="button" role="tab" aria-controls="content-riwayat" aria-selected="false">
-                        <i class="bi bi-check2-all text-success"></i>
-                        <span>Riwayat Order Lanjutan</span>
-                        <span class="count-chip chip-success">{{ count(@daftar_riwayat) }}</span>
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
                     <button class="nav-link filter-tab-pill tab-ditolak" id="tab-ditolak" data-bs-toggle="tab" data-bs-target="#content-ditolak" type="button" role="tab" aria-controls="content-ditolak" aria-selected="false">
                         <i class="bi bi-x-octagon-fill text-danger"></i>
                         <span>Surat Ditolak</span>
@@ -319,160 +294,15 @@
                         </true>
                         <false>
                             <div class="text-center py-5 text-muted">
-                                <i class="bi bi-inbox text-secondary fs-1 mb-2 d-block opacity-50"></i>
-                                <h6 class="fw-bold text-dark">Tidak Ada Surat Antrean Masuk</h6>
-                                <p class="small text-muted mb-0">Seluruh surat permohonan layanan OPTI telah berhasil diklaim atau diproses.</p>
+                                <i class="bi bi-inbox text-secondary fs-2 mb-2 d-block opacity-50"></i>
+                                <div class="fw-semibold text-dark">Tidak ada surat masuk</div>
+                                <div class="small text-muted">Belum ada surat permohonan baru.</div>
                             </div>
                         </false>
                     </check>
                 </div>
 
-                <!-- TAB 2: SURAT DITERIMA (PERMINTAAN MASUK) -->
-                <div class="tab-pane fade" id="content-klaim" role="tabpanel" aria-labelledby="tab-klaim">
-                    <check if="{{ count(@daftar_klaim) > 0 }}">
-                        <true>
-                            <div class="table-responsive">
-                                <table class="table table-hover align-middle mb-0">
-                                    <thead class="bg-light text-secondary small text-uppercase">
-                                        <tr>
-                                            <th class="text-center py-3" style="width: 45px;">No</th>
-                                            <th style="width: 170px;">No. Permintaan</th>
-                                            <th style="width: 250px;">Instansi Pelanggan</th>
-                                            <th>Judul Kegiatan</th>
-                                            <th style="width: 160px;">Waktu Terima</th>
-                                            <th class="text-center" style="width: 180px; white-space: nowrap;">Aksi Lanjutan</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="small">
-                                        <repeat group="{{ @daftar_klaim }}" key="{{ @idx }}" value="{{ @klaim }}">
-                                            <tr>
-                                                <td class="text-center text-muted fw-bold">{{ @idx + 1 }}</td>
-                                                <td>
-                                                    <div class="fw-bold text-primary font-monospace">{{ @klaim.nomor_permintaan ?: @klaim.nomor_order ?: ('REQ-' . @klaim.id) }}</div>
-                                                    <check if="{{ !empty(@klaim.nomor_order) }}">
-                                                        <div class="text-muted small font-monospace" style="font-size: 0.7rem;">Order: {{ @klaim.nomor_order }}</div>
-                                                    </check>
-                                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle small mt-1" style="font-size: 0.7rem;">
-                                                        <i class="bi bi-hourglass-split me-1"></i>Permintaan Masuk
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    <div class="fw-bold text-dark">
-                                                        {{ @klaim.nama_pengirim_bersih ?: ((@klaim.pt_cv ? @klaim.pt_cv . ' ' : '') . @klaim.nmcustomer) }}
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <div class="text-dark fw-semibold mb-1">{{ @klaim.judul_kegiatan }}</div>
-                                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle" style="font-size: 0.7rem;">
-                                                        <i class="bi bi-hourglass-split me-1"></i> Menunggu Disposisi
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    <div class="text-dark fw-semibold">{{ date('d M Y H:i', strtotime(@klaim.tanggal_klaim)) }}</div>
-                                                    <small class="text-muted">Petugas: {{ @klaim.nama_pengklaim ?: 'Saya' }}</small>
-                                                </td>
-                                                <td class="text-center" style="white-space: nowrap;">
-                                                    <div class="d-inline-flex align-items-center gap-1">
-                                                        <a href="{{ @BASE }}/order/{{ @klaim.id }}/form-pelayanan" class="btn btn-primary btn-sm px-3 py-1 fw-semibold text-nowrap shadow-sm d-inline-flex align-items-center gap-1">
-                                                            <i class="bi bi-file-earmark-text"></i> Isi Form Pelayanan
-                                                        </a>
-                                                        <!-- Tombol Buka Pop-up Konfirmasi Tolak Order -->
-                                                        <button type="button" class="btn btn-outline-danger btn-sm px-2.5 py-1 fw-semibold text-nowrap shadow-sm d-inline-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#modalTolakOrder_{{ @klaim.id }}" title="Tolak Permohonan Order">
-                                                            <i class="bi bi-x-octagon"></i> <span>Tolak</span>
-                                                        </button>
-                                                        <!-- Tombol Buka Pop-up Konfirmasi Batal -->
-                                                        <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-1" data-bs-toggle="modal" data-bs-target="#modalBatal_{{ @klaim.id }}" title="Batalkan Penerimaan Surat (Kembalikan ke Antrean)">
-                                                            <i class="bi bi-arrow-counterclockwise"></i>
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        </repeat>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </true>
-                        <false>
-                            <div class="text-center py-5 text-muted">
-                                <i class="bi bi-check2-circle text-success fs-1 mb-2 d-block opacity-50"></i>
-                                <h6 class="fw-bold text-dark">Tidak Ada Surat Diterima yang Tertunda</h6>
-                                <p class="small text-muted mb-0">Seluruh surat yang Anda terima telah dilanjutkan ke tahap Tinjauan ISO dan Penawaran.</p>
-                            </div>
-                        </false>
-                    </check>
-                </div>
-
-                <!-- TAB 3: RIWAYAT ORDER DARI SURAT -->
-                <div class="tab-pane fade" id="content-riwayat" role="tabpanel" aria-labelledby="tab-riwayat">
-                    <check if="{{ count(@daftar_riwayat) > 0 }}">
-                        <true>
-                            <div class="table-responsive">
-                                <table class="table table-hover align-middle mb-0">
-                                    <thead class="bg-light text-secondary small text-uppercase">
-                                        <tr>
-                                            <th class="text-center py-3" style="width: 45px;">No</th>
-                                            <th style="width: 170px;">Nomor Order</th>
-                                            <th style="width: 260px;">Instansi Pelanggan</th>
-                                            <th>Judul Kegiatan</th>
-                                            <th class="text-center" style="width: 140px;">Status Progres</th>
-                                            <th class="text-center" style="width: 110px; white-space: nowrap;">Aksi</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="small">
-                                        <repeat group="{{ @daftar_riwayat }}" key="{{ @idx }}" value="{{ @riw }}">
-                                            <tr>
-                                                <td class="text-center text-muted fw-bold">{{ @idx + 1 }}</td>
-                                                <td>
-                                                    <a href="{{ @BASE }}/order/{{ @riw.id }}" class="fw-bold text-primary font-monospace text-decoration-none">
-                                                        {{ @riw.nomor_order }}
-                                                    </a>
-                                                    <check if="{{ @riw.nomor_po }}">
-                                                        <div class="text-muted mt-1" style="font-size: 0.75rem;"><i class="bi bi-speedometer2 me-1"></i>{{ @riw.nomor_po }}</div>
-                                                    </check>
-                                                </td>
-                                                <td>
-                                                    <div class="fw-bold text-dark">{{ @riw.nama_pengirim_bersih ?: ((@riw.pt_cv ? @riw.pt_cv . ' ' : '') . @riw.nmcustomer) }}</div>
-                                                    <small class="text-muted d-block"><i class="bi bi-person me-1"></i>PIC: {{ @riw.pic }}</small>
-                                                </td>
-                                                <td>
-                                                    <div class="text-dark fw-semibold mb-1">{{ @riw.judul_kegiatan }}</div>
-                                                    <span class="badge {{ @riw.jenis_layanan_opti == 'selulosa' ? 'bg-danger' : 'bg-success' }} text-uppercase" style="font-size: 0.7rem;">
-                                                        OPTI {{ @riw.jenis_layanan_opti }}
-                                                    </span>
-                                                </td>
-                                                <td class="text-center">
-                                                    <check if="{{ @riw.status == 'selesai' }}">
-                                                        <span class="badge bg-success"><i class="bi bi-patch-check-fill me-1"></i>Selesai & Arsip</span>
-                                                    </check>
-                                                    <check if="{{ @riw.status == 'disetujui' }}">
-                                                        <span class="badge bg-primary"><i class="bi bi-gear-fill me-1"></i>PO Berjalan</span>
-                                                    </check>
-                                                    <check if="{{ @riw.status == 'baru' }}">
-                                                        <span class="badge bg-info text-dark"><i class="bi bi-file-earmark-check me-1"></i>Lolos ISO</span>
-                                                    </check>
-                                                </td>
-                                                <td class="text-center" style="white-space: nowrap;">
-                                                    <a href="{{ @BASE }}/order/{{ @riw.id }}" class="btn btn-outline-primary btn-sm px-3 py-1 fw-semibold text-nowrap">
-                                                        <i class="bi bi-eye me-1"></i> Detail
-                                                    </a>
-                                                </td>
-                                            </tr>
-                                        </repeat>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </true>
-                        <false>
-                            <div class="text-center py-5 text-muted">
-                                <i class="bi bi-archive text-secondary fs-1 mb-2 d-block opacity-50"></i>
-                                <h6 class="fw-bold text-dark">Belum Ada Riwayat Order Lanjutan</h6>
-                                <p class="small text-muted mb-0">Order yang telah lolos verifikasi kelayakan ISO akan tercatat otomatis di sini.</p>
-                            </div>
-                        </false>
-                    </check>
-                </div>
-
-                <!-- TAB 4: SURAT DITOLAK -->
+                <!-- TAB: SURAT DITOLAK -->
                 <div class="tab-pane fade" id="content-ditolak" role="tabpanel" aria-labelledby="tab-ditolak">
                     <check if="{{ count(@daftar_ditolak) > 0 }}">
                         <true>
@@ -532,9 +362,9 @@
                         </true>
                         <false>
                             <div class="text-center py-5 text-muted">
-                                <i class="bi bi-shield-check text-secondary fs-1 mb-2 d-block opacity-50"></i>
-                                <h6 class="fw-bold text-dark">Tidak Ada Permohonan Ditolak</h6>
-                                <p class="small text-muted mb-0">Belum ada surat permohonan yang ditolak oleh Tim Mitra.</p>
+                                <i class="bi bi-shield-check text-secondary fs-2 mb-2 d-block opacity-50"></i>
+                                <div class="fw-semibold text-dark">Tidak ada permohonan ditolak</div>
+                                <div class="small text-muted">Belum ada surat permohonan yang ditolak.</div>
                             </div>
                         </false>
                     </check>
@@ -627,7 +457,7 @@
                         </div>
 
                         <!-- 3. Rincian Dokumen Surat Masuk Asli -->
-                        <div class="border rounded-2 p-3 bg-light mb-3">
+                        <div class="border rounded-2 p-3 bg-light">
                             <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
                                 <span class="small fw-bold text-dark"><i class="bi bi-envelope-paper-fill text-secondary me-1"></i> Rujukan Dokumen Surat Masuk:</span>
                                 <span class="badge bg-secondary-subtle text-secondary font-monospace">No. #{{ @surat.id }}</span>
@@ -646,12 +476,6 @@
                                     <span class="fw-semibold text-dark">{{ @surat.perihal }}</span>
                                 </div>
                             </div>
-                        </div>
-
-                        <!-- Catatan Ringkas Sistem -->
-                        <div class="small text-muted d-flex align-items-center gap-2">
-                            <i class="bi bi-info-circle text-primary"></i>
-                            <span>Surat ini akan dipindahkan ke tab <strong>Surat Diterima</strong> dan otomatis diterbitkan <strong>Order Layanan Baru</strong>.</span>
                         </div>
 
                     </div>
@@ -673,71 +497,7 @@
     </div>
 </repeat>
 
-<!-- ======================================================== -->
-<!-- MODAL BERSIH & BERSTRUKTUR: BATALKAN PENERIMAAN SURAT -->
-<!-- ======================================================== -->
-<repeat group="{{ @daftar_klaim }}" value="{{ @klaim }}">
-    <div class="modal fade" id="modalBatal_{{ @klaim.id }}" tabindex="-1" aria-labelledby="modalBatalLabel_{{ @klaim.id }}" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content bg-white border rounded-3 shadow">
-                
-                <!-- Header Modal -->
-                <div class="modal-header border-bottom py-3 px-4 bg-white">
-                    <h6 class="modal-title fw-bold text-dark fs-5 m-0" id="modalBatalLabel_{{ @klaim.id }}">
-                        Batalkan Penerimaan Surat?
-                    </h6>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
-                </div>
 
-                <form action="{{ @BASE }}/surat-masuk/batal-klaim" method="POST">
-                    <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
-                    <input type="hidden" name="order_id" value="{{ @klaim.id }}">
-
-                    <div class="modal-body p-4">
-                        <p class="text-dark small mb-3">
-                            Apakah Anda yakin ingin membatalkan penerimaan surat untuk order berikut?
-                        </p>
-
-                        <!-- Box Ringkasan Order -->
-                        <div class="border rounded-2 p-3 bg-light mb-3">
-                            <div class="mb-2">
-                                <span class="text-muted small d-block">No. Permintaan:</span>
-                                <span class="fw-bold text-dark font-monospace fs-6">{{ @klaim.nomor_permintaan ?: @klaim.nomor_order ?: ('REQ-' . @klaim.id) }}</span>
-                                <check if="{{ !empty(@klaim.nomor_order) }}">
-                                    <div class="text-muted small font-monospace mt-0.5">Order: {{ @klaim.nomor_order }}</div>
-                                </check>
-                            </div>
-                            <div class="mb-2">
-                                <span class="text-muted small d-block">Instansi Pelanggan:</span>
-                                <span class="fw-semibold text-dark">{{ \Customer::formatNamaPerusahaan(@klaim.pt_cv, @klaim.nmcustomer) }}</span>
-                            </div>
-                            <div>
-                                <span class="text-muted small d-block">Judul Kegiatan:</span>
-                                <span class="text-dark small">{{ @klaim.judul_kegiatan }}</span>
-                            </div>
-                        </div>
-
-                        <div class="small text-muted d-flex align-items-center gap-2">
-                            <i class="bi bi-arrow-counterclockwise text-danger"></i>
-                            <span>Surat ini akan dikembalikan ke tab <strong>Surat Masuk</strong>.</span>
-                        </div>
-                    </div>
-
-                    <!-- Footer Modal -->
-                    <div class="modal-footer border-top py-3 px-4 bg-light d-flex justify-content-end gap-2">
-                        <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-2 fw-semibold" data-bs-dismiss="modal">
-                            Tutup
-                        </button>
-                        <button type="submit" class="btn btn-danger btn-sm px-4 py-2 fw-bold shadow-sm">
-                            <i class="bi bi-x-circle me-1"></i> Ya, Batalkan
-                        </button>
-                    </div>
-
-                </form>
-            </div>
-        </div>
-    </div>
-</repeat>
 
 <!-- ======================================================== -->
 <!-- MODAL PENOLAKAN PERMOHONAN ORDER (TABEL SURAT MASUK)     -->
@@ -794,8 +554,7 @@
                             <label for="alasan_surat_{{ @surat.id }}" class="form-label fw-bold text-dark small mb-1">
                                 Rincian Alasan Penolakan <span class="text-danger">*</span>
                             </label>
-                            <textarea class="form-control" id="alasan_surat_{{ @surat.id }}" name="alasan_tolak" rows="3" required placeholder="Tuliskan penjelasan detail alasan penolakan permohonan order ini..."></textarea>
-                            <div class="form-text text-muted small">Alasan ini akan disimpan secara resmi dalam database dan dapat ditinjau kapan pun pada tab Surat Ditolak.</div>
+                            <textarea class="form-control" id="alasan_surat_{{ @surat.id }}" name="alasan_tolak" rows="3" required placeholder="Tuliskan penjelasan detail alasan penolakan..."></textarea>
                         </div>
                     </div>
 
@@ -814,80 +573,7 @@
     </div>
 </repeat>
 
-<!-- ======================================================== -->
-<!-- MODAL PENOLAKAN PERMOHONAN ORDER (TABEL SURAT DITERIMA)  -->
-<!-- ======================================================== -->
-<repeat group="{{ @daftar_klaim }}" value="{{ @klaim }}">
-    <div class="modal fade" id="modalTolakOrder_{{ @klaim.id }}" tabindex="-1" aria-labelledby="modalTolakOrderLabel_{{ @klaim.id }}" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content bg-white border rounded-3 shadow">
-                
-                <div class="modal-header border-bottom py-3 px-4 bg-white">
-                    <div>
-                        <h6 class="modal-title fw-bold text-danger fs-5 mb-0" id="modalTolakOrderLabel_{{ @klaim.id }}">
-                            <i class="bi bi-x-octagon-fill me-1"></i> Penolakan Permohonan Order
-                        </h6>
-                        <small class="text-muted">Nomor Order: <span class="font-monospace text-primary fw-semibold">{{ @klaim.nomor_order }}</span></small>
-                    </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
-                </div>
 
-                <form action="{{ @BASE }}/surat-masuk/tolak" method="POST">
-                    <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
-                    <input type="hidden" name="order_id" value="{{ @klaim.id }}">
-
-                    <div class="modal-body p-4">
-                        <div class="border rounded-2 p-3 bg-light mb-3">
-                            <div class="row g-2 small">
-                                <div class="col-sm-6">
-                                    <span class="text-muted d-block">Instansi Pelanggan:</span>
-                                    <span class="fw-bold text-dark">{{ \Customer::formatNamaPerusahaan(@klaim.pt_cv, @klaim.nmcustomer) }}</span>
-                                </div>
-                                <div class="col-sm-6">
-                                    <span class="text-muted d-block">Waktu Terima:</span>
-                                    <span class="fw-semibold text-dark">{{ date('d F Y H:i', strtotime(@klaim.tanggal_klaim)) }}</span>
-                                </div>
-                                <div class="col-12 mt-2 pt-2 border-top">
-                                    <span class="text-muted d-block">Judul Kegiatan / Topik Permohonan:</span>
-                                    <span class="fw-semibold text-dark">{{ @klaim.judul_kegiatan }}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label fw-bold text-dark small mb-1">Pilih Rekomendasi Alasan Penolakan:</label>
-                            <select class="form-select form-select-sm mb-2" onchange="applyPresetReason(this, 'alasan_order_{{ @klaim.id }}')">
-                                <option value="">Pilih Standar Alasan atau Tulis Langsung di Bawah</option>
-                                <option value="Ruang lingkup pengujian / jasa teknis yang dimohonkan berada di luar akreditasi dan kapabilitas teknis BBSPJIS.">Ruang lingkup di luar kapabilitas / akreditasi BBSPJIS</option>
-                                <option value="Kapasitas antrean peralatan laboratorium dan personel penguji saat ini sedang penuh.">Kapasitas instrumen / personel lab sedang penuh</option>
-                                <option value="Persyaratan teknis atau spesifikasi sampel yang diajukan tidak memenuhi standar regulasi teknis.">Persyaratan teknis / sampel tidak memenuhi standar</option>
-                                <option value="Lainnya">Lainnya (Tulis alasan khusus pada kolom di bawah)</option>
-                            </select>
-                        </div>
-
-                        <div class="mb-2">
-                            <label for="alasan_order_{{ @klaim.id }}" class="form-label fw-bold text-dark small mb-1">
-                                Rincian Alasan Penolakan <span class="text-danger">*</span>
-                            </label>
-                            <textarea class="form-control" id="alasan_order_{{ @klaim.id }}" name="alasan_tolak" rows="3" required placeholder="Tuliskan penjelasan detail alasan penolakan order ini..."></textarea>
-                            <div class="form-text text-muted small">Alasan ini akan disimpan secara resmi dalam database dan dapat ditinjau kapan pun pada tab Surat Ditolak.</div>
-                        </div>
-                    </div>
-
-                    <div class="modal-footer border-top py-3 px-4 bg-light d-flex justify-content-end gap-2">
-                        <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-2 fw-semibold" data-bs-dismiss="modal">
-                            Batal
-                        </button>
-                        <button type="submit" class="btn btn-danger btn-sm px-4 py-2 fw-bold shadow-sm">
-                            <i class="bi bi-x-circle me-1"></i> Konfirmasi Tolak Order
-                        </button>
-                    </div>
-                </form>
-
-            </div>
-        </div>
-    </div>
-</repeat>
 
 <script>
     // Helper: Terapkan alasan standar ke textarea penolakan

@@ -297,52 +297,45 @@
 <div class="container-fluid px-0">
     
     <!-- PAGE HEADER -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom flex-wrap gap-2">
         <div>
-            <h5 class="fw-bold text-dark m-0 font-display d-flex align-items-center gap-2">
-                <i class="bi bi-calculator-fill text-primary"></i>
-                Tarif &amp; Rincian Layanan Jasa
-                <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-0.5 small fw-normal">
-                    OPTI Lingkungan
-                </span>
-            </h5>
+            <h4 class="fw-bold text-dark m-0 font-display">Tarif &amp; Biaya Layanan</h4>
+            <div class="text-muted small mt-1">Kalkulasi biaya permohonan jasa OPTI Lingkungan</div>
         </div>
         <div>
-            <a href="{{ @BASE }}/order/{{ @order.id }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-1 shadow-xs">
-                <i class="bi bi-arrow-left"></i> Kembali ke Order
+            <a href="{{ @BASE }}/order/{{ @order.id }}" class="btn btn-light btn-sm text-secondary px-3 py-1.5 fw-medium border">
+                <i class="bi bi-arrow-left me-1"></i> Kembali ke Order
             </a>
         </div>
     </div>
 
     <!-- Read-Only Notice -->
     <check if="{{ !@can_edit }}">
-        <div class="alert alert-warning border-0 d-flex align-items-center gap-2 mb-3 py-2 px-3 small rounded-3 shadow-xs text-warning-emphasis">
-            <i class="bi bi-lock-fill text-warning fs-5 flex-shrink-0"></i>
-            <div>
-                <strong>Status Edit Dikunci:</strong> {{ @lock_message ?: 'Tidak bisa merubah data, silakan hubungi superadmin.' }}
-            </div>
+        <div class="alert alert-warning border-0 d-flex align-items-center gap-2 mb-3 py-2 px-3 small rounded-3 text-warning-emphasis">
+            <i class="bi bi-lock-fill text-warning flex-shrink-0"></i>
+            <div>Status edit dikunci. {{ @lock_message ?: 'Hubungi superadmin untuk perubahan data.' }}</div>
         </div>
     </check>
 
     <!-- COMPACT ORDER BAR -->
-    <div class="card border-0 shadow-xs mb-3 bg-light-subtle">
+    <div class="card border rounded-3 shadow-xs mb-4 bg-white">
         <div class="card-body py-2.5 px-3">
             <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
-                <div class="d-flex align-items-center gap-2 flex-wrap small">
-                    <span class="badge bg-light text-dark border font-monospace fw-bold">#{{ @order.nomor_order }}</span>
-                    <strong class="text-dark"><i class="bi bi-building me-1 text-secondary"></i>{{ @order.nama_perusahaan }}</strong>
-                    <span class="text-muted">• PIC: <strong>{{ @order.pic ?: '-' }}</strong></span>
-                    <span class="text-muted">• Penanggung Jawab: <strong>{{ @order.pic_proposal_nama ?: 'Andri Taufick Rizaluddin' }}</strong></span>
+                <div class="d-flex align-items-center gap-3 flex-wrap small">
+                    <span class="badge bg-light text-dark border font-monospace">{{ @order.nomor_order ?: ('REQ-' . @order.id) }}</span>
+                    <strong class="text-dark">{{ @order.nama_perusahaan }}</strong>
+                    <span class="text-muted">PIC: <span class="text-dark">{{ @order.pic ?: '-' }}</span></span>
+                    <span class="text-muted">Penanggung Jawab: <span class="text-dark">{{ @order.pic_proposal_nama ?: 'Andri Taufick Rizaluddin' }}</span></span>
                 </div>
-                <div class="d-flex align-items-center gap-2 flex-wrap">
+                <div>
                     <check if="{{ @order.status_proposal_biaya == 'siap_penawaran' }}">
-                        <span class="badge bg-success-subtle text-success border border-success-subtle">
-                            <i class="bi bi-check-circle-fill me-1"></i> Siap Penawaran
+                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-0.5">
+                            Siap Penawaran
                         </span>
                     </check>
                     <check if="{{ @order.status_proposal_biaya != 'siap_penawaran' }}">
-                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle">
-                            <i class="bi bi-bookmark me-1"></i> Draf
+                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-0.5">
+                            Draf
                         </span>
                     </check>
                 </div>
@@ -355,30 +348,25 @@
         <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
 
         <!-- CARD: TABEL RINCIAN LAYANAN JASA -->
-        <div class="card border-0 shadow-sm mb-4">
+        <div class="card border rounded-3 shadow-xs mb-4 bg-white">
             
             <!-- Card Header: Title & Counter -->
             <div class="card-header bg-white py-2.5 px-3 border-bottom d-flex justify-content-between align-items-center">
-                <div class="d-flex align-items-center gap-2">
-                    <i class="bi bi-list-check text-primary"></i>
-                    <span class="fw-bold text-dark small">Daftar Layanan Jasa &amp; Parameter</span>
-                </div>
-                <div>
-                    <span class="badge bg-light text-dark border px-2.5 py-1 font-monospace fw-semibold" id="badgeParamCount">
-                        0 Layanan / Jasa
-                    </span>
-                </div>
+                <span class="fw-bold text-dark small font-display">Daftar Layanan Jasa &amp; Parameter</span>
+                <span class="badge bg-light text-secondary border font-monospace" id="badgeParamCount">
+                    0 Layanan
+                </span>
             </div>
 
-            <!-- Action Toolbar: Bersih & Terpisah Tanpa Tabrakan Tombol -->
+            <!-- Action Toolbar -->
             <check if="{{ @can_edit }}">
-                <div class="p-3 bg-light-subtle border-bottom">
+                <div class="p-3 bg-light border-bottom">
                     <div class="d-flex flex-column flex-md-row align-items-stretch align-items-md-center justify-content-between gap-2">
                         <!-- Quick Catalog Selector -->
                         <div class="d-flex align-items-center gap-2 flex-grow-1" style="max-width: 680px;">
                             <div class="flex-grow-1">
-                                <select id="quickSelectMetode" class="form-select form-select-sm" onchange="onCatalogSelectChange(this.value)" placeholder="Ketik untuk mencari layanan jasa (Pengujian, Sertifikasi ISO, Konsultansi, Biodegradasi, BOD, COD, dll)...">
-                                    <option value="">Cari atau Pilih dari Katalog Layanan Jasa Resmi</option>
+                                <select id="quickSelectMetode" class="form-select form-select-sm" onchange="onCatalogSelectChange(this.value)" placeholder="Cari layanan jasa dari katalog resmi...">
+                                    <option value="">Pilih dari Katalog Layanan Jasa</option>
                                     <repeat group="{{ @daftar_metode }}" value="{{ @m }}">
                                         <option value="{{ @m.id }}" 
                                             data-tarif="{{ (float)@m.harga }}" 
@@ -394,68 +382,60 @@
                                     </repeat>
                                 </select>
                             </div>
-                            <button type="button" class="btn btn-primary btn-sm px-3 d-inline-flex align-items-center gap-1 flex-shrink-0 fw-semibold shadow-xs" onclick="addFromQuickCatalog()">
+                            <button type="button" class="btn btn-primary btn-sm px-3 d-inline-flex align-items-center gap-1 flex-shrink-0 fw-medium" onclick="addFromQuickCatalog()">
                                 <i class="bi bi-plus-lg"></i> Tambah
                             </button>
                         </div>
                         
                         <!-- Manual Entry Action -->
                         <div>
-                            <button type="button" class="btn btn-outline-secondary btn-sm px-3 d-inline-flex align-items-center gap-1 shadow-xs" onclick="addRowUji()">
-                                <i class="bi bi-pencil-square"></i> + Baris Manual
+                            <button type="button" class="btn btn-outline-secondary btn-sm px-3 d-inline-flex align-items-center gap-1" onclick="addRowUji()">
+                                <i class="bi bi-plus"></i> Baris Manual
                             </button>
                         </div>
                     </div>
                 </div>
             </check>
 
-            <!-- Table Matrix: Kolom Sederhana & Luas (Tanpa dropdown Sub Layanan yang memakan tempat) -->
+            <!-- Table Matrix -->
             <div class="table-responsive">
-                <!-- Autocomplete Datalist Acuan Standar / Regulasi / Baku Mutu -->
                 <datalist id="listStandarAcuan">
-                    <!-- Sertifikasi & Standar Internasional ISO -->
-                    <option value="ISO 14064-1:2018">ISO 14064-1:2018 (Kuantifikasi & Pelaporan Emisi GRK Organisasi)</option>
-                    <option value="ISO 14064-2:2019">ISO 14064-2:2019 (Kuantifikasi & Pelaporan Reduksi Emisi GRK Proyek)</option>
-                    <option value="ISO 14067:2018">ISO 14067:2018 (Jejak Karbon Produk / Carbon Footprint)</option>
+                    <option value="ISO 14064-1:2018">ISO 14064-1:2018 (GRK Organisasi)</option>
+                    <option value="ISO 14064-2:2019">ISO 14064-2:2019 (Reduksi Emisi Proyek)</option>
+                    <option value="ISO 14067:2018">ISO 14067:2018 (Carbon Footprint)</option>
                     <option value="ISO 14001:2015">ISO 14001:2015 (Sistem Manajemen Lingkungan)</option>
-                    <option value="ISO 50001:2018">ISO 50001:2018 (Sistem Manajemen Energi)</option>
-                    
-                    <!-- Regulasi & Peraturan Pemerintah Indonesia -->
-                    <option value="PP No. 22/2021">PP No. 22 Tahun 2021 (Baku Mutu Air, Udara &amp; Pengelolaan Limbah B3)</option>
-                    <option value="Permen LHK No. 68/2016">Permen LHK No. 68/2016 (Baku Mutu Air Limbah Domestik)</option>
-                    <option value="Permen LHK No. 11/2021">Permen LHK No. 11/2021 (Baku Mutu Emisi Genset / Boiler Industri)</option>
+                    <option value="ISO 50001:2018">ISO 50001:2018 (Manajemen Energi)</option>
+                    <option value="PP No. 22/2021">PP No. 22 Tahun 2021 (Baku Mutu Air, Udara & Limbah B3)</option>
+                    <option value="Permen LHK No. 68/2016">Permen LHK No. 68/2016 (Air Limbah Domestik)</option>
+                    <option value="Permen LHK No. 11/2021">Permen LHK No. 11/2021 (Baku Mutu Emisi Industri)</option>
                     <option value="Permenaker No. 5/2018">Permenaker No. 5/2018 (K3 Lingkungan Kerja)</option>
-                    <option value="Permenkes No. 2/2023">Permenkes No. 2/2023 (Kesehatan Lingkungan / Standar Baku Air Minum)</option>
-
-                    <!-- SNI Populer Lingkungan Hidup -->
-                    <option value="SNI 6989.72:2009">SNI 6989.72:2009 (BOD5 - Winkler / Elektrometri)</option>
-                    <option value="SNI 6989.2:2009">SNI 6989.2:2009 (COD - Refluks Tertutup)</option>
-                    <option value="SNI 6989.3:2019">SNI 6989.3:2019 (TSS - Gravimetri)</option>
-                    <option value="SNI 6989.11:2019">SNI 6989.11:2019 (pH Air - Elektrometri)</option>
-                    <option value="SNI 6989.59:2008">SNI 6989.59:2008 (Pengambilan Contoh Air Limbah)</option>
-                    <option value="SNI 7117.17:2009">SNI 7117.17:2009 (Emisi Cerobong - Isokinetik Partikulat)</option>
+                    <option value="Permenkes No. 2/2023">Permenkes No. 2/2023 (Kesehatan Lingkungan)</option>
+                    <option value="SNI 6989.72:2009">SNI 6989.72:2009 (BOD5)</option>
+                    <option value="SNI 6989.2:2009">SNI 6989.2:2009 (COD)</option>
+                    <option value="SNI 6989.3:2019">SNI 6989.3:2019 (TSS)</option>
+                    <option value="SNI 6989.11:2019">SNI 6989.11:2019 (pH Air)</option>
+                    <option value="SNI 6989.59:2008">SNI 6989.59:2008 (Pengambilan Contoh Air)</option>
+                    <option value="SNI 7117.17:2009">SNI 7117.17:2009 (Emisi Cerobong)</option>
                     <option value="SNI 19-7117.10-2005">SNI 19-7117.10-2005 (Emisi Gas CO, CO2, SO2, NOx)</option>
-                    <option value="SNI 19-7119.6-2005">SNI 19-7119.6-2005 (Udara Ambien - Penentuan Lokasi)</option>
-                    <option value="SNI 7231:2009">SNI 7231:2009 (Kebisingan Lingkungan Kerja)</option>
-                    <option value="SNI 16-7062-2004">SNI 16-7062-2004 (Pengukuran Intensitas Penerangan)</option>
-
-                    <!-- Standar Internasional & Metode Uji -->
-                    <option value="ASTM D5988-18">ASTM D5988-18 (Uji Biodegradasi Plastik di Tanah)</option>
-                    <option value="ASTM D6400">ASTM D6400 (Standar Plastik Kompos / Aerobik)</option>
-                    <option value="ISO 14855-2">ISO 14855-2 (Biodegradasi Plastik Kompos - Gravimetri Lab)</option>
-                    <option value="ISO 14855-1">ISO 14855-1 (Biodegradasi Plastik Kompos - Sensor Gas CO2)</option>
-                    <option value="OECD 423">OECD 423 (Uji Toksisitas Akut Oral)</option>
-                    <option value="APHA 23rd Edition">APHA 23rd Edition (Standard Methods Water &amp; Wastewater)</option>
-                    <option value="In-House / Acuan Lapangan">In-House / Acuan Teknis Lapangan / Perjadin</option>
+                    <option value="SNI 19-7119.6-2005">SNI 19-7119.6-2005 (Udara Ambien)</option>
+                    <option value="SNI 7231:2009">SNI 7231:2009 (Kebisingan)</option>
+                    <option value="SNI 16-7062-2004">SNI 16-7062-2004 (Intensitas Penerangan)</option>
+                    <option value="ASTM D5988-18">ASTM D5988-18 (Biodegradasi Plastik di Tanah)</option>
+                    <option value="ASTM D6400">ASTM D6400 (Plastik Kompos / Aerobik)</option>
+                    <option value="ISO 14855-2">ISO 14855-2 (Biodegradasi Plastik Gravimetri Lab)</option>
+                    <option value="ISO 14855-1">ISO 14855-1 (Biodegradasi Plastik Sensor CO2)</option>
+                    <option value="OECD 423">OECD 423 (Toksisitas Akut Oral)</option>
+                    <option value="APHA 23rd Edition">APHA 23rd Edition (Standard Methods Water)</option>
+                    <option value="In-House / Acuan Lapangan">In-House / Acuan Teknis Lapangan</option>
                 </datalist>
 
                 <table class="table table-kalkulasi align-middle mb-0" id="tableUjiLingkungan" style="min-width: 1040px;">
                     <thead>
                         <tr>
                             <th style="width: 45px;" class="text-center">No</th>
-                            <th style="min-width: 280px;">Nama Jasa / Layanan</th>
-                            <th style="width: 230px; min-width: 200px;">Standar / Regulasi Acuan</th>
-                            <th style="width: 140px; min-width: 130px;" class="text-center">Estimasi Kerja</th>
+                            <th style="min-width: 280px;">Layanan / Jasa</th>
+                            <th style="width: 230px; min-width: 200px;">Standar / Acuan</th>
+                            <th style="width: 140px; min-width: 130px;" class="text-center">Waktu Kerja</th>
                             <th style="width: 155px; min-width: 140px;" class="text-end">Tarif Satuan (Rp)</th>
                             <th style="width: 120px; min-width: 110px;" class="text-center">Titik / Sampel</th>
                             <th style="width: 145px; min-width: 135px;" class="text-end">Subtotal (Rp)</th>
@@ -468,19 +448,10 @@
                 </table>
             </div>
 
-            <!-- Empty State Box (Rapi & Bersih Tanpa Ikon) -->
+            <!-- Empty State Box -->
             <div id="emptyStateTable" class="py-5 px-3 text-center" style="display: none;">
-                <div class="fw-bold text-dark small mb-1">Daftar Layanan Jasa Masih Kosong</div>
-                <p class="small text-muted mb-0" style="max-width: 520px; margin: 0 auto; line-height: 1.5;">
-                    Silakan cari dan pilih dari katalog layanan resmi di atas atau klik tombol <strong>"+ Baris Manual"</strong> untuk menambahkan layanan/akomodasi custom.
-                </p>
-            </div>
-
-            <!-- Table Footer: Bersih & Tanpa Tombol Dobel -->
-            <div class="card-footer bg-white py-2 px-3 border-top">
-                <small class="text-muted" style="font-size: 0.75rem;">
-                    <i class="bi bi-info-circle text-primary me-1"></i> Subtotal otomatis dikalikan dengan jumlah titik / sampel / volume layanan.
-                </small>
+                <div class="fw-semibold text-dark small mb-1">Daftar Layanan Masih Kosong</div>
+                <p class="small text-muted mb-0">Pilih dari katalog di atas atau klik "+ Baris Manual" untuk menambahkan item.</p>
             </div>
         </div>
 
@@ -489,64 +460,53 @@
             
             <!-- KOLOM KIRI (5 Kolom): Diskon & Sampel -->
             <div class="col-lg-5">
-                <div class="card border-0 shadow-sm h-100">
+                <div class="card border rounded-3 shadow-xs h-100 bg-white">
                     <div class="card-header bg-white py-2.5 px-3 border-bottom">
-                        <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2 small">
-                            <i class="bi bi-tag-fill text-primary"></i> Potongan Diskon &amp; Durasi SPM
-                        </h6>
+                        <h6 class="m-0 fw-bold text-dark small font-display">Diskon &amp; Waktu Pelayanan (SPM)</h6>
                     </div>
                     <div class="card-body p-3">
                         
-                        <!-- Potongan Diskon Penawaran (Nominal Rupiah Langsung) -->
+                        <!-- Potongan Diskon -->
                         <div class="mb-3">
                             <label class="form-label small fw-bold text-dark mb-1" for="diskon_penawaran_display">
-                                Potongan Diskon Penawaran:
+                                Potongan Diskon (Rp)
                             </label>
                             <div class="input-group input-group-sm">
-                                <span class="input-group-text bg-light text-secondary font-monospace fw-semibold">Rp</span>
-                                <input type="text" id="diskon_penawaran_display" class="form-control form-control-sm text-end fw-bold font-monospace" placeholder="0" oninput="onDiskonDisplayInput(this)" autocomplete="off" {{ !@can_edit ? 'disabled' : '' }}>
+                                <span class="input-group-text bg-light text-secondary font-monospace">Rp</span>
+                                <input type="text" id="diskon_penawaran_display" class="form-control form-control-sm text-end fw-semibold font-monospace" placeholder="0" oninput="onDiskonDisplayInput(this)" autocomplete="off" {{ !@can_edit ? 'disabled' : '' }}>
                                 <input type="hidden" name="diskon_penawaran" id="diskon_penawaran" value="{{ @order.diskon_penawaran ?: 0 }}">
-                            </div>
-                            <div class="form-text text-muted" style="font-size: 0.72rem;">
-                                Masukkan nominal potongan harga langsung (misal: 1.000.000).
                             </div>
                         </div>
 
-                        <!-- Titik Awal Perhitungan SPM (Start Trigger) -->
+                        <!-- Titik Awal Perhitungan SPM -->
                         <div class="mb-3">
                             <label class="form-label small fw-bold text-dark mb-1" for="spm_trigger_tipe">
-                                <i class="bi bi-flag-fill text-primary me-1"></i>Titik Awal Pengerjaan (Start Trigger):
+                                Mulai Dihitung Sejak
                             </label>
                             <select name="spm_trigger_tipe" id="spm_trigger_tipe" class="form-select form-select-sm" {{ !@can_edit ? 'disabled' : '' }}>
                                 <option value="sampel_diterima" {{ (@order.spm_trigger_tipe == 'sampel_diterima' || empty(@order.spm_trigger_tipe)) ? 'selected' : '' }}>
-                                    Pengujian Lab (Sejak Sampel Diterima)
+                                    Sampel Diterima di Lab
                                 </option>
                                 <option value="kick_off" {{ @order.spm_trigger_tipe == 'kick_off' ? 'selected' : '' }}>
-                                    Sertifikasi &amp; Konsultansi (Sejak Rapat Kick-Off)
+                                    Rapat Kick-Off
                                 </option>
                                 <option value="tanda_tangan_pks" {{ @order.spm_trigger_tipe == 'tanda_tangan_pks' ? 'selected' : '' }}>
-                                    Kerjasama &amp; Litbang (Sejak TTD Kontrak/PKS)
+                                    Penandatanganan Kontrak / PKS
                                 </option>
                             </select>
-                            <div class="form-text text-muted" style="font-size: 0.72rem;">
-                                Perhitungan waktu resmi SPM dihitung sejak trigger ini tercapai.
-                            </div>
                         </div>
 
-                        <!-- Estimasi Durasi Layanan (SPM Layanan Fleksibel) -->
+                        <!-- Estimasi Durasi Layanan (SPM) -->
                         <div>
                             <label class="form-label small fw-bold text-dark mb-1">
-                                <i class="bi bi-clock-history text-secondary me-1"></i>Durasi Standar Pelayanan (SPM):
+                                Durasi Pelayanan (SPM)
                             </label>
-                            <div class="row g-1">
+                            <div class="row g-2">
                                 <div class="col-5">
-                                    <div class="input-group input-group-sm">
-                                        <span class="input-group-text bg-light text-secondary"><i class="bi bi-stopwatch"></i></span>
-                                        <input type="number" name="spm_durasi_nilai" id="spm_durasi_nilai" class="form-control form-control-sm text-center fw-bold font-monospace" min="1" value="{{ @order.spm_durasi_nilai ?: (preg_match('/(\d+)/', @order.spm_layanan, $m_num) ? $m_num[1] : 30) }}" oninput="onCustomSpmChange()" {{ !@can_edit ? 'disabled' : '' }}>
-                                    </div>
+                                    <input type="number" name="spm_durasi_nilai" id="spm_durasi_nilai" class="form-control form-control-sm text-center fw-semibold font-monospace" min="1" value="{{ @order.spm_durasi_nilai ?: (preg_match('/(\d+)/', @order.spm_layanan, $m_num) ? $m_num[1] : 30) }}" oninput="onCustomSpmChange()" {{ !@can_edit ? 'disabled' : '' }}>
                                 </div>
                                 <div class="col-7">
-                                    <select name="spm_durasi_satuan" id="spm_durasi_satuan" class="form-select form-select-sm fw-semibold" onchange="onCustomSpmChange()" {{ !@can_edit ? 'disabled' : '' }}>
+                                    <select name="spm_durasi_satuan" id="spm_durasi_satuan" class="form-select form-select-sm" onchange="onCustomSpmChange()" {{ !@can_edit ? 'disabled' : '' }}>
                                         <option value="Hari Kerja" {{ (@order.spm_durasi_satuan == 'Hari Kerja' || (!@order.spm_durasi_satuan && strpos(@order.spm_layanan, 'Kerja') !== false)) ? 'selected' : '' }}>Hari Kerja</option>
                                         <option value="Hari Kalender" {{ (@order.spm_durasi_satuan == 'Hari Kalender' || (!@order.spm_durasi_satuan && strpos(@order.spm_layanan, 'Kalender') !== false)) ? 'selected' : '' }}>Hari Kalender</option>
                                         <option value="Minggu" {{ (@order.spm_durasi_satuan == 'Minggu' || (!@order.spm_durasi_satuan && strpos(@order.spm_layanan, 'Minggu') !== false)) ? 'selected' : '' }}>Minggu</option>
@@ -562,29 +522,25 @@
 
             <!-- KOLOM KANAN (7 Kolom): Rekapitulasi Biaya & Simpan -->
             <div class="col-lg-7">
-                <div class="card border-0 shadow-sm h-100">
+                <div class="card border rounded-3 shadow-xs h-100 bg-white">
                     <div class="card-header bg-white py-2.5 px-3 border-bottom d-flex justify-content-between align-items-center">
-                        <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2 small">
-                            <i class="bi bi-receipt text-primary"></i> Rekapitulasi Biaya Layanan
-                        </h6>
-                        <span class="badge bg-light text-secondary border">
-                            Tarif Resmi PNBP
-                        </span>
+                        <h6 class="m-0 fw-bold text-dark small font-display">Rekapitulasi Biaya</h6>
+                        <span class="badge bg-light text-secondary border">Tarif PNBP</span>
                     </div>
                     <div class="card-body p-3">
                         
-                        <!-- KPI Counters -->
+                        <!-- Counters -->
                         <div class="row g-2 mb-3">
                             <div class="col-6">
                                 <div class="p-2 bg-light rounded border text-center">
-                                    <div class="text-uppercase text-muted fw-bold" style="font-size: 0.68rem;">Total Layanan</div>
-                                    <h5 class="fw-bold text-dark mb-0 font-display" id="lblJmlParameter">0</h5>
+                                    <div class="text-muted small" style="font-size: 0.72rem;">Jumlah Layanan</div>
+                                    <div class="fw-bold text-dark fs-5 font-display" id="lblJmlParameter">0</div>
                                 </div>
                             </div>
                             <div class="col-6">
                                 <div class="p-2 bg-light rounded border text-center">
-                                    <div class="text-uppercase text-muted fw-bold" style="font-size: 0.68rem;">Titik / Volume</div>
-                                    <h5 class="fw-bold text-primary mb-0 font-display" id="lblTotalSampel">0</h5>
+                                    <div class="text-muted small" style="font-size: 0.72rem;">Titik / Volume</div>
+                                    <div class="fw-bold text-primary fs-5 font-display" id="lblTotalSampel">0</div>
                                 </div>
                             </div>
                         </div>
@@ -592,67 +548,64 @@
                         <!-- Ledger Breakdown Table -->
                         <div class="ledger-card mb-3 p-3">
                             <div class="d-flex justify-content-between align-items-center mb-1.5">
-                                <span class="text-secondary small">Total Bruto:</span>
+                                <span class="text-secondary small">Total Bruto</span>
                                 <strong class="text-dark font-monospace" id="lblTotalBruto">Rp 0</strong>
                             </div>
                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                <span class="text-danger small">Potongan Diskon:</span>
+                                <span class="text-danger small">Potongan Diskon</span>
                                 <strong class="text-danger font-monospace" id="lblTotalDiskon">Rp 0</strong>
                             </div>
                             
                             <hr class="my-2 border-secondary-subtle">
                             
-                            <!-- Netto Total Highlight Box -->
-                            <div class="netto-box mt-2 p-2.5">
-                                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
-                                    <div>
-                                        <div class="fw-bold text-dark font-display" style="font-size: 0.9rem;">
-                                            TOTAL NETTO PENAWARAN:
-                                        </div>
-                                    </div>
-                                    <h4 class="fw-bold mb-0 font-monospace text-primary" id="lblTotalNetto">
+                            <!-- Netto Total Box -->
+                            <div class="p-2.5 bg-light rounded border">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="fw-bold text-dark small font-display">Total Netto</span>
+                                    <h5 class="fw-bold mb-0 font-monospace text-primary" id="lblTotalNetto">
                                         Rp 0
-                                    </h4>
+                                    </h5>
                                 </div>
-                                <div class="pt-1.5 mt-1.5 border-top border-secondary-subtle small text-muted fst-italic" style="font-size: 0.74rem;">
-                                    Terbilang: <span class="fw-bold text-dark" id="lblTerbilangNetto">Nol Rupiah</span>
+                                <div class="pt-1 mt-1 border-top border-secondary-subtle small text-muted" style="font-size: 0.74rem;">
+                                    Terbilang: <span class="fw-medium text-dark" id="lblTerbilangNetto">Nol Rupiah</span>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Action Buttons Bar -->
                         <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap pt-2 border-top">
-                            <a href="{{ @BASE }}/order/{{ @order.id }}" class="btn btn-outline-secondary btn-sm px-3 d-inline-flex align-items-center gap-1 shadow-xs">
-                                <i class="bi bi-arrow-left"></i> Kembali ke Order
+                            <a href="{{ @BASE }}/order/{{ @order.id }}" class="btn btn-light btn-sm text-secondary px-3 py-1.5 border">
+                                Kembali
                             </a>
                             <div class="d-flex align-items-center gap-2 flex-wrap">
                                 <check if="{{ @can_edit }}">
                                     <check if="{{ in_array(@order.status_proposal_biaya, ['siap_penawaran', 'disetujui']) || !empty(@penawaran) }}">
                                         <true>
-                                            <button type="submit" name="action_btn" value="update_biaya" class="btn btn-primary btn-sm px-3 d-inline-flex align-items-center gap-1 fw-semibold shadow-xs">
-                                                <i class="bi bi-save2-fill"></i> Simpan Perubahan Biaya
+                                            <button type="submit" name="action_btn" value="update_biaya" class="btn btn-primary btn-sm px-3.5 py-1.5 fw-semibold">
+                                                Simpan Perubahan
                                             </button>
                                         </true>
                                         <false>
-                                            <button type="submit" name="action_btn" value="save_draft" class="btn btn-outline-primary btn-sm px-3 d-inline-flex align-items-center gap-1 shadow-xs">
-                                                <i class="bi bi-bookmark"></i> Simpan Draf
+                                            <button type="submit" name="action_btn" value="save_draft" class="btn-draft-theme">
+                                                <i class="bi bi-bookmark-fill"></i>
+                                                <span>Simpan Draf</span>
                                             </button>
                                         </false>
                                     </check>
                                     <check if="{{ @is_ketua_tim || @is_superadmin }}">
-                                        <button type="button" class="btn btn-primary btn-sm px-4 d-inline-flex align-items-center gap-1 fw-bold shadow-xs" onclick="confirmSubmitLingkungan('siap_penawaran')">
-                                            <i class="bi bi-send-fill"></i> Tetapkan Siap Penawaran
+                                        <button type="button" class="btn btn-primary btn-sm px-4 py-1.5 fw-semibold" onclick="confirmSubmitLingkungan('siap_penawaran')">
+                                            Tetapkan Siap Penawaran
                                         </button>
                                     </check>
                                     <check if="{{ !@is_ketua_tim && !@is_superadmin }}">
-                                        <button type="button" class="btn btn-primary btn-sm px-4 d-inline-flex align-items-center gap-1 fw-bold shadow-xs" onclick="confirmSubmitLingkungan('kirim_katim')">
-                                            <i class="bi bi-send-fill"></i> Ajukan ke Ketua Tim
+                                        <button type="button" class="btn btn-primary btn-sm px-4 py-1.5 fw-semibold" onclick="confirmSubmitLingkungan('kirim_katim')">
+                                            Ajukan ke Ketua Tim
                                         </button>
                                     </check>
                                 </check>
                                 <check if="{{ !@can_edit }}">
-                                    <button type="button" class="btn btn-secondary btn-sm px-4 fw-semibold" disabled title="Status edit dikunci. Hubungi Superadmin jika perlu membuka akses.">
-                                        <i class="bi bi-lock-fill me-1"></i> Status Edit Dikunci
+                                    <button type="button" class="btn btn-secondary btn-sm px-4 py-1.5 fw-medium" disabled>
+                                        <i class="bi bi-lock me-1"></i> Edit Dikunci
                                     </button>
                                 </check>
                             </div>

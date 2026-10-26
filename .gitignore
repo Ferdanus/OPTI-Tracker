@@ -4,3 +4,5 @@
 !/uploads/.gitkeep
 /public/uploads/*
 !/public/uploads/.gitkeep
+/storage/cache/*
+!/storage/cache/.gitkeep

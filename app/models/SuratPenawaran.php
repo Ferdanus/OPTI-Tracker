@@ -282,10 +282,17 @@ class SuratPenawaran extends \DB\SQL\Mapper
             }
         }
 
+        // Deteksi apakah penawaran yang ada sebelumnya berstatus ditolak / batal
+        $isExistingDitolak = $existing && in_array(strtolower($existing['status_respon_klien'] ?? ''), ['batal', 'tolak', 'ditolak']);
+
         // KASUS UPDATE (Bukan revisi baru):
-        // 1. Status respon klien adalah DEAL atau BATAL (mengubah status penawaran yang ada), ATAU
-        // 2. Tidak ada penanda is_revisi_baru dan penawaran sudah ada
-        $isUpdateExisting = $existing && ($statusRespon === 'deal' || $statusRespon === 'batal' || !$isRevisiBaru);
+        // 1. Jika revisi baru atau penawaran lama sudah ditolak, jangan update dokumen lama melainkan terbitkan baru
+        // 2. Jika tidak ada penanda revisi baru dan bukan SP yang ditolak, lakukan update
+        if ($isRevisiBaru || $isExistingDitolak) {
+            $isUpdateExisting = false;
+        } else {
+            $isUpdateExisting = !empty($existing);
+        }
 
         // PROTEKSI PERMANEN: Jika order sudah DEAL dan berlanjut ke pembayaran/pelaksanaan (Tahap 6/7/8)
         $orderHasDeal = (($order['status_penawaran'] ?? '') === 'deal') || (!empty($existing) && ($existing['status_respon_klien'] ?? '') === 'deal');
@@ -313,8 +320,8 @@ class SuratPenawaran extends \DB\SQL\Mapper
                 $statusRespon = 'deal';
             }
 
-            // Jika DEAL atau BATAL, pertahankan nomor surat asli jika tidak diubah secara eksplisit
-            $nomorSuratFinal = ($statusRespon === 'deal' || $statusRespon === 'batal') ? ($existing['nomor_surat'] ?: $nomorSurat) : $nomorSurat;
+            // Prioritaskan nomor surat dari input form (editable manual), atau fallback ke nomor existing
+            $nomorSuratFinal = !empty($nomorSurat) ? $nomorSurat : (!empty($existing['nomor_surat']) ? $existing['nomor_surat'] : $nomorSurat);
             if (preg_match('/^\d+\/BBSPJIS\/MS\//i', $nomorSuratFinal)) {
                 $nomorSuratFinal = 'B/' . $nomorSuratFinal;
             }

@@ -7,23 +7,22 @@ tr.order-belum-baca .fw-semibold.text-dark.mb-1 { font-weight: 800 !important; }
 .filter-tabs-wrapper {
     background: #ffffff;
     border-bottom: 1px solid #e2e8f0;
-    padding: 12px 18px;
+    padding: 10px 16px;
 }
 .filter-tab-pill {
     display: inline-flex;
     align-items: center;
-    gap: 0.45rem;
-    padding: 0.45rem 0.85rem;
-    border-radius: 9999px;
+    gap: 0.4rem;
+    padding: 0.4rem 0.75rem;
+    border-radius: 20px;
     font-size: 0.8rem;
     font-weight: 600;
     color: #475569;
     background-color: #ffffff;
     border: 1px solid #e2e8f0;
     text-decoration: none;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.15s ease;
     white-space: nowrap;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
     cursor: pointer;
     line-height: 1.2;
 }
@@ -31,23 +30,20 @@ tr.order-belum-baca .fw-semibold.text-dark.mb-1 { font-weight: 800 !important; }
     color: #0f172a;
     background-color: #f8fafc;
     border-color: #cbd5e1;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 .filter-tab-pill .count-chip {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 20px;
-    height: 20px;
-    padding: 0 6px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
     border-radius: 9999px;
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     font-weight: 700;
     background-color: #f1f5f9;
     color: #475569;
     border: 1px solid #e2e8f0;
-    transition: all 0.2s;
 }
 .filter-tab-pill .count-chip.chip-danger {
     background-color: #fee2e2;
@@ -59,11 +55,15 @@ tr.order-belum-baca .fw-semibold.text-dark.mb-1 { font-weight: 800 !important; }
     color: #047857;
     border-color: #a7f3d0;
 }
+.filter-tab-pill .count-chip.chip-warning {
+    background-color: #fef3c7;
+    color: #b45309;
+    border-color: #fde68a;
+}
 .filter-tab-pill.active {
     color: #ffffff !important;
-    background-color: var(--color-primary, #334155) !important;
-    border-color: var(--color-primary, #334155) !important;
-    box-shadow: 0 2px 6px rgba(51, 65, 85, 0.25) !important;
+    background-color: #1e293b !important;
+    border-color: #1e293b !important;
 }
 .filter-tab-pill.active .count-chip {
     background-color: rgba(255, 255, 255, 0.25) !important;
@@ -76,7 +76,6 @@ tr.order-belum-baca .fw-semibold.text-dark.mb-1 { font-weight: 800 !important; }
 .filter-tab-pill.tab-selesai.active {
     background-color: #059669 !important;
     border-color: #059669 !important;
-    box-shadow: 0 2px 6px rgba(5, 150, 105, 0.25) !important;
     color: #ffffff !important;
 }
 .filter-tab-pill.tab-selesai.active .count-chip {
@@ -87,7 +86,6 @@ tr.order-belum-baca .fw-semibold.text-dark.mb-1 { font-weight: 800 !important; }
 .filter-tab-pill.tab-ditolak.active {
     background-color: #dc2626 !important;
     border-color: #dc2626 !important;
-    box-shadow: 0 2px 6px rgba(220, 38, 38, 0.25) !important;
     color: #ffffff !important;
 }
 .filter-tab-pill.tab-ditolak.active .count-chip {
@@ -96,7 +94,7 @@ tr.order-belum-baca .fw-semibold.text-dark.mb-1 { font-weight: 800 !important; }
     color: #ffffff !important;
 }
 
-/* 3 Pill Button Divisi with Smooth Sliding Glider Animation */
+/* 3 Pill Button Divisi */
 .divisi-pill-group {
     position: relative;
     display: inline-flex;
@@ -106,7 +104,6 @@ tr.order-belum-baca .fw-semibold.text-dark.mb-1 { font-weight: 800 !important; }
     border-radius: 9999px;
     border: 1px solid #e2e8f0;
     user-select: none;
-    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 .divisi-pill-glider {
     position: absolute;
@@ -115,9 +112,8 @@ tr.order-belum-baca .fw-semibold.text-dark.mb-1 { font-weight: 800 !important; }
     left: 0;
     width: 0;
     border-radius: 9999px;
-    background-color: var(--color-primary, #334155);
-    transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1), width 0.22s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
+    background-color: #1e293b;
+    transition: transform 0.2s ease, width 0.2s ease;
     pointer-events: none;
     z-index: 1;
 }
@@ -127,15 +123,15 @@ tr.order-belum-baca .fw-semibold.text-dark.mb-1 { font-weight: 800 !important; }
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 0.35rem 0.95rem;
+    padding: 0.3rem 0.85rem;
     border-radius: 9999px;
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     font-weight: 600;
     color: #64748b;
     background: transparent !important;
     border: none;
     text-decoration: none;
-    transition: color 0.2s ease;
+    transition: color 0.15s ease;
     white-space: nowrap;
     cursor: pointer;
     line-height: 1.25;
@@ -145,7 +141,7 @@ tr.order-belum-baca .fw-semibold.text-dark.mb-1 { font-weight: 800 !important; }
 }
 .divisi-pill-btn.active {
     color: #ffffff !important;
-    font-weight: 700;
+    font-weight: 600;
 }
 
 /* Modern Status Pill (Clean, Elegant & Compact) */
@@ -229,20 +225,119 @@ tr.order-belum-baca .fw-semibold.text-dark.mb-1 { font-weight: 800 !important; }
     color: #78350f !important;
     transform: translateY(-1px);
 }
+
+/* Highlight khusus untuk order yang butuh aksi oleh user yang login (tema biru navy navbar) */
+tr.row-user-task {
+    background-color: #edf3f8 !important;
+}
+tr.row-user-task > td {
+    background-color: #edf3f8 !important;
+}
+tr.row-user-task:hover > td {
+    background-color: #e2ecf5 !important;
+}
+tr.row-user-task > td:first-child {
+    border-left: 4.5px solid #1e293b !important;
+}
+.task-chip-indicator {
+    background-color: #1e293b;
+    color: #ffffff;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 9999px;
+    margin-left: 4px;
+    box-shadow: 0 1px 2px rgba(30, 41, 59, 0.25);
+}
+.filter-tab-pill.active .task-chip-indicator {
+    background-color: #ffffff;
+    color: #1e293b;
+}
+
+/* Tombol filter tugas saya (Clean, Compact & Simple) */
+.btn-filter-tugas-saya {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.55rem !important;
+    font-size: 0.74rem !important;
+    font-weight: 600 !important;
+    line-height: 1.2 !important;
+    border-radius: 9999px !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #475569 !important;
+    background-color: #ffffff !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+    transition: all 0.15s ease-in-out !important;
+    cursor: pointer;
+    user-select: none;
+    text-decoration: none;
+}
+.btn-filter-tugas-saya i {
+    font-size: 0.72rem;
+    color: #64748b;
+    transition: color 0.15s ease;
+}
+.btn-filter-tugas-saya:hover {
+    color: #0f172a !important;
+    background-color: #f8fafc !important;
+    border-color: #94a3b8 !important;
+}
+.btn-filter-tugas-saya:hover i {
+    color: #0f172a;
+}
+.btn-filter-tugas-saya.is-filtering {
+    background-color: #1e293b !important;
+    border-color: #1e293b !important;
+    color: #ffffff !important;
+    box-shadow: 0 1px 3px rgba(30, 41, 59, 0.2) !important;
+}
+.btn-filter-tugas-saya.is-filtering i {
+    color: #ffffff !important;
+}
+.btn-filter-tugas-saya .task-filter-count-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 17px;
+    height: 17px;
+    padding: 0 4px;
+    border-radius: 9999px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    line-height: 1;
+    background-color: #1e293b;
+    color: #ffffff;
+    transition: all 0.15s ease;
+}
+.btn-filter-tugas-saya:hover .task-filter-count-badge {
+    background-color: #0f172a;
+}
+.btn-filter-tugas-saya.is-filtering .task-filter-count-badge {
+    background-color: #ffffff !important;
+    color: #1e293b !important;
+}
 </style>
 
 <div class="container-fluid px-0">
-    <!-- Header & Breadcrumb -->
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom flex-wrap gap-2">
         <div>
-            <h4 class="fw-bold text-dark m-0 d-flex align-items-center gap-2 font-display">
-                <i class="bi bi-inbox-fill text-primary"></i> Daftar Order Layanan OPTI
-            </h4>
+            <h4 class="fw-bold text-dark m-0 font-display">Daftar Order Layanan</h4>
+            <div class="text-muted small mt-1">Daftar permohonan jasa dan pelacakan alur kegiatan</div>
         </div>
+        <check if="{{ @can_input_permohonan }}">
+            <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn btn-primary d-inline-flex align-items-center gap-2 shadow-xs fw-semibold px-3 py-2 rounded-2" data-bs-toggle="modal" data-bs-target="#modalTambahPermohonanManual">
+                    <i class="bi bi-plus-circle-fill fs-6"></i>
+                    <span>Input Permohonan Baru</span>
+                </button>
+            </div>
+        </check>
     </div>
 
     <!-- FILTER & PENCARIAN ORDER -->
-    <div class="card mb-4 border-0 shadow-sm">
+    <div class="card mb-4 border rounded-3 shadow-xs bg-white">
         <div class="card-body p-3">
             <form id="filterOrderForm" method="GET" action="{{ @BASE }}/order" class="row g-2 align-items-center">
                 <input type="hidden" name="tab" value="{{ @filter_tab }}">
@@ -324,11 +419,17 @@ tr.order-belum-baca .fw-semibold.text-dark.mb-1 { font-weight: 800 !important; }
                     <i class="bi bi-inbox-fill text-primary"></i>
                     <span>Order Masuk</span>
                     <span class="count-chip">{{ @count_masuk }}</span>
+                    <check if="{{ @user_tasks_masuk > 0 }}">
+                        <span class="task-chip-indicator" title="{{ @user_tasks_masuk }} order tugas Anda di tab Order Masuk">{{ @user_tasks_masuk }} tugas</span>
+                    </check>
                 </a>
                 <a class="filter-tab-pill {{ @filter_tab == 'berlangsung' ? 'active' : '' }}" href="{{ @BASE }}/order?tab=berlangsung{{ @filter_bulan ? '&bulan='.@filter_bulan : '' }}{{ @filter_tahun ? '&tahun='.@filter_tahun : '' }}{{ @filter_jenis ? '&jenis_layanan='.@filter_jenis : '' }}{{ @search_q ? '&q='.@search_q : '' }}">
                     <i class="bi bi-gear-wide-connected text-primary"></i>
                     <span>Order Berjalan</span>
                     <span class="count-chip">{{ @count_berlangsung }}</span>
+                    <check if="{{ @user_tasks_berlangsung > 0 }}">
+                        <span class="task-chip-indicator" title="{{ @user_tasks_berlangsung }} order tugas Anda di tab Order Berjalan">{{ @user_tasks_berlangsung }} tugas</span>
+                    </check>
                 </a>
                 <a class="filter-tab-pill tab-selesai {{ @filter_tab == 'selesai' ? 'active' : '' }}" href="{{ @BASE }}/order?tab=selesai{{ @filter_bulan ? '&bulan='.@filter_bulan : '' }}{{ @filter_tahun ? '&tahun='.@filter_tahun : '' }}{{ @filter_jenis ? '&jenis_layanan='.@filter_jenis : '' }}{{ @search_q ? '&q='.@search_q : '' }}">
                     <i class="bi bi-check2-all text-success"></i>
@@ -341,9 +442,18 @@ tr.order-belum-baca .fw-semibold.text-dark.mb-1 { font-weight: 800 !important; }
                     <span class="count-chip chip-danger">{{ @count_ditolak }}</span>
                 </a>
             </div>
-            <span class="text-muted small fw-medium">
-                Total: <strong class="text-dark" id="orderTotalCount">{{ !empty(@daftar_order) ? count(@daftar_order) : 0 }}</strong> order ditampilkan
-            </span>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <check if="{{ @current_tab_user_tasks > 0 }}">
+                    <button type="button" class="btn-filter-tugas-saya" id="btnFilterTugasSaya" onclick="toggleFilterTugasSaya()" title="Klik untuk memfilter dan hanya menampilkan {{ @current_tab_user_tasks }} tugas Anda pada tab ini">
+                        <i class="bi bi-funnel"></i>
+                        <span>Tugas Saya di Tab Ini</span>
+                        <span class="task-filter-count-badge">{{ @current_tab_user_tasks }}</span>
+                    </button>
+                </check>
+                <span class="text-muted small fw-medium">
+                    Total: <strong class="text-dark" id="orderTotalCount">{{ !empty(@daftar_order) ? count(@daftar_order) : 0 }}</strong> order ditampilkan
+                </span>
+            </div>
         </div>
         <div class="card-body p-0">
         <check if="{{ !empty(@daftar_order) && count(@daftar_order) > 0 }}">
@@ -366,8 +476,10 @@ tr.order-belum-baca .fw-semibold.text-dark.mb-1 { font-weight: 800 !important; }
                                 </thead>
                                 <tbody>
                                     <repeat group="{{ @daftar_order }}" value="{{ @ord }}" counter="{{ @ctr }}">
-                                        <tr>
-                                            <td class="text-center text-muted small">{{ @ctr }}</td>
+                                        <tr class="{{ @ord.is_user_task ? 'row-user-task' : '' }}">
+                                            <td class="text-center text-muted small">
+                                                {{ @ctr }}
+                                            </td>
                                             <td>
                                                 <check if="{{ !empty(@ord.nomor_order) }}">
                                                     <true>
@@ -382,21 +494,47 @@ tr.order-belum-baca .fw-semibold.text-dark.mb-1 { font-weight: 800 !important; }
                                                 </div>
                                                 <check if="{{ @ord.is_unlocked_edit }}">
                                                     <div class="mt-1">
-                                                        <span class="badge bg-warning text-dark border border-warning-subtle d-inline-flex align-items-center gap-1" style="font-size: 0.68rem;" title="Izin edit dibuka oleh Super Admin ({{ @ord.unlocked_by_name ?: 'Superadmin' }}). Batas waktu: {{ @ord.unlocked_until_formatted ?: '-' }}. Alasan: {{ @ord.unlocked_reason ?: '-' }}">
-                                                            <i class="bi bi-unlock-fill"></i>
-                                                            <check if="{{ !empty(@ord.unlocked_countdown_label) }}">
-                                                                <true>
-                                                                    <span class="badge bg-dark text-warning px-1 py-0 ms-0.5 rounded-pill font-monospace" style="font-size: 0.65rem;"><i class="bi bi-stopwatch me-0.5"></i>{{ @ord.unlocked_countdown_label }}</span>
-                                                                </true>
-                                                                <false>
-                                                                    <span class="badge bg-dark text-warning px-1 py-0 ms-0.5 rounded-pill font-monospace" style="font-size: 0.65rem;"><i class="bi bi-stopwatch me-0.5"></i>Aktif</span>
-                                                                </false>
-                                                            </check>
+                                                        <span class="badge d-inline-flex align-items-center gap-1.5 py-1 px-2.5 rounded font-monospace shadow-2xs" style="background-color: #f1f5f9; color: #1e293b; border: 1px solid #cbd5e1; font-size: 0.76rem; font-weight: 600;" title="Izin edit dibuka oleh Super Admin ({{ @ord.unlocked_by_name ?: 'Superadmin' }}). Batas waktu: {{ @ord.unlocked_until_formatted ?: '-' }}. Alasan: {{ @ord.unlocked_reason ?: '-' }}">
+                                                            <i class="bi bi-unlock-fill" style="color: #1e293b; font-size: 0.82rem;"></i>
+                                                            <i class="bi bi-stopwatch ms-0.5" style="color: #475569; font-size: 0.78rem;"></i>
+                                                            <span>{{ !empty(@ord.unlocked_countdown_label) ? @ord.unlocked_countdown_label : 'Aktif' }}</span>
                                                         </span>
                                                     </div>
                                                 </check>
                                             </td>
                                             <td>
+                                                <div class="d-flex align-items-center flex-wrap gap-1 mb-1">
+                                                    <check if="{{ @ord.media_permohonan == 'whatsapp' }}">
+                                                        <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: WhatsApp">
+                                                            <i class="bi bi-chat-dots me-1 text-primary"></i>WhatsApp
+                                                        </span>
+                                                    </check>
+                                                    <check if="{{ @ord.media_permohonan == 'telepon' }}">
+                                                        <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: Telepon">
+                                                            <i class="bi bi-telephone me-1 text-primary"></i>Telepon
+                                                        </span>
+                                                    </check>
+                                                    <check if="{{ @ord.media_permohonan == 'datang_langsung' }}">
+                                                        <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: Datang Langsung">
+                                                            <i class="bi bi-building me-1 text-primary"></i>Datang Langsung
+                                                        </span>
+                                                    </check>
+                                                    <check if="{{ @ord.media_permohonan == 'website' }}">
+                                                        <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: Website">
+                                                            <i class="bi bi-laptop me-1 text-primary"></i>Website
+                                                        </span>
+                                                    </check>
+                                                    <check if="{{ empty(@ord.media_permohonan) || @ord.media_permohonan == 'surat' }}">
+                                                        <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: Surat Resmi">
+                                                            <i class="bi bi-envelope-paper me-1 text-secondary"></i>Surat
+                                                        </span>
+                                                    </check>
+                                                    <check if="{{ !empty(@ord.file_bukti_permohonan) }}">
+                                                        <a href="{{ @BASE }}/{{ @ord.file_bukti_permohonan }}" target="_blank" class="badge bg-light text-dark border text-decoration-none px-1.5 py-0.5 rounded-pill" style="font-size: 0.68rem;" title="Lihat Berkas Bukti Permohonan">
+                                                            <i class="bi bi-paperclip me-0.5 text-primary"></i>Bukti
+                                                        </a>
+                                                    </check>
+                                                </div>
                                                 <div class="fw-semibold text-dark mb-1" title="{{ @ord.judul_kegiatan }}">
                                                     {{ @ord.judul_kegiatan }}
                                                 </div>
@@ -455,7 +593,8 @@ tr.order-belum-baca .fw-semibold.text-dark.mb-1 { font-weight: 800 !important; }
                                                     </button>
                                                     <check if="{{ @is_superadmin }}">
                                                         <button type="button"
-                                                            class="btn btn-sm px-2 py-1 d-inline-flex align-items-center justify-content-center btn-toggle-unlock-order {{ @ord.is_unlocked_edit ? 'btn-warning text-dark border-warning' : 'btn-outline-secondary' }}"
+                                                            class="btn btn-sm px-2 py-1 d-inline-flex align-items-center justify-content-center btn-toggle-unlock-order {{ @ord.is_unlocked_edit ? 'text-white shadow-2xs' : 'btn-outline-secondary' }}"
+                                                            style="{{ @ord.is_unlocked_edit ? 'background-color: #1e293b !important; color: #ffffff !important; border-color: #1e293b !important;' : '' }}"
                                                             data-order-id="{{ @ord.id }}"
                                                             data-nomor-order="{{ @ord.nomor_order ?: (@ord.nomor_permintaan ?: ('REQ-' . @ord.id)) }}"
                                                             data-is-unlocked="{{ @ord.is_unlocked_edit ? '1' : '0' }}"
@@ -467,7 +606,7 @@ tr.order-belum-baca .fw-semibold.text-dark.mb-1 { font-weight: 800 !important; }
                                                             data-unlocked-countdown="{{ @ord.unlocked_countdown_label ?: '' }}"
                                                             data-unlocked-days="{{ @ord.unlocked_days ?: 3 }}"
                                                             title="{{ @ord.is_unlocked_edit ? 'Izin Edit TERBUKA (Klik untuk mengunci kembali)' : 'Izin Edit TERKUNCI (Klik untuk membuka izin edit per-order)' }}">
-                                                            <i class="bi {{ @ord.is_unlocked_edit ? 'bi-unlock-fill' : 'bi-lock-fill' }}"></i>
+                                                            <i class="bi {{ @ord.is_unlocked_edit ? 'bi-unlock-fill text-white' : 'bi-lock-fill' }}"></i>
                                                         </button>
                                                     </check>
                                                     <a href="{{ @BASE }}/order/{{ @ord.id }}" class="btn btn-sm btn-outline-secondary px-2.5 py-1 d-inline-flex align-items-center gap-1.5 fw-semibold" title="Lihat Riwayat Order">
@@ -497,8 +636,14 @@ tr.order-belum-baca .fw-semibold.text-dark.mb-1 { font-weight: 800 !important; }
                                 </thead>
                                 <tbody>
                                     <repeat group="{{ @daftar_order }}" value="{{ @ord }}" counter="{{ @ctr }}">
+
                                         <tr class="{{ @ord.giliran_anda && @ord.po_baca_status == 'belum' ? 'order-belum-baca' : '' }}">
                                             <td class="text-center text-muted small">{{ @ctr }}</td>
+
+                                        <tr class="{{ @ord.is_user_task ? 'row-user-task' : '' }}">
+                                            <td class="text-center text-muted small">
+                                                {{ @ctr }}
+                                            </td>
                                             <td>
                                                 <check if="{{ !empty(@ord.nomor_order) }}">
                                                     <true>
@@ -514,16 +659,10 @@ tr.order-belum-baca .fw-semibold.text-dark.mb-1 { font-weight: 800 !important; }
                                                 </div>
                                                 <check if="{{ @ord.is_unlocked_edit }}">
                                                     <div class="mt-1">
-                                                        <span class="badge bg-warning text-dark border border-warning-subtle d-inline-flex align-items-center gap-1" style="font-size: 0.68rem;" title="Izin edit dibuka oleh Super Admin ({{ @ord.unlocked_by_name ?: 'Superadmin' }}). Batas waktu: {{ @ord.unlocked_until_formatted ?: '-' }}. Alasan: {{ @ord.unlocked_reason ?: '-' }}">
-                                                            <i class="bi bi-unlock-fill"></i>
-                                                            <check if="{{ !empty(@ord.unlocked_countdown_label) }}">
-                                                                <true>
-                                                                    <span class="badge bg-dark text-warning px-1 py-0 ms-0.5 rounded-pill font-monospace" style="font-size: 0.65rem;"><i class="bi bi-stopwatch me-0.5"></i>{{ @ord.unlocked_countdown_label }}</span>
-                                                                </true>
-                                                                <false>
-                                                                    <span class="badge bg-dark text-warning px-1 py-0 ms-0.5 rounded-pill font-monospace" style="font-size: 0.65rem;"><i class="bi bi-stopwatch me-0.5"></i>Aktif</span>
-                                                                </false>
-                                                            </check>
+                                                        <span class="badge d-inline-flex align-items-center gap-1.5 py-1 px-2.5 rounded font-monospace shadow-2xs" style="background-color: #f1f5f9; color: #1e293b; border: 1px solid #cbd5e1; font-size: 0.76rem; font-weight: 600;" title="Izin edit dibuka oleh Super Admin ({{ @ord.unlocked_by_name ?: 'Superadmin' }}). Batas waktu: {{ @ord.unlocked_until_formatted ?: '-' }}. Alasan: {{ @ord.unlocked_reason ?: '-' }}">
+                                                            <i class="bi bi-unlock-fill" style="color: #1e293b; font-size: 0.82rem;"></i>
+                                                            <i class="bi bi-stopwatch ms-0.5" style="color: #475569; font-size: 0.78rem;"></i>
+                                                            <span>{{ !empty(@ord.unlocked_countdown_label) ? @ord.unlocked_countdown_label : 'Aktif' }}</span>
                                                         </span>
                                                     </div>
                                                 </check>
@@ -536,13 +675,45 @@ tr.order-belum-baca .fw-semibold.text-dark.mb-1 { font-weight: 800 !important; }
                                                         </true>
                                                         <false>
                                                             <span class="text-muted fst-italic">
-                                                                <i class="bi bi-hourglass me-1"></i>Belum ditentukan
+                                                                Belum ditentukan
                                                             </span>
                                                         </false>
                                                     </check>
                                                 </div>
                                             </td>
                                             <td>
+                                                <div class="d-flex align-items-center flex-wrap gap-1 mb-1">
+                                                    <check if="{{ @ord.media_permohonan == 'whatsapp' }}">
+                                                        <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: WhatsApp">
+                                                            <i class="bi bi-chat-dots me-1 text-primary"></i>WhatsApp
+                                                        </span>
+                                                    </check>
+                                                    <check if="{{ @ord.media_permohonan == 'telepon' }}">
+                                                        <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: Telepon">
+                                                            <i class="bi bi-telephone me-1 text-primary"></i>Telepon
+                                                        </span>
+                                                    </check>
+                                                    <check if="{{ @ord.media_permohonan == 'datang_langsung' }}">
+                                                        <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: Datang Langsung">
+                                                            <i class="bi bi-building me-1 text-primary"></i>Datang Langsung
+                                                        </span>
+                                                    </check>
+                                                    <check if="{{ @ord.media_permohonan == 'website' }}">
+                                                        <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: Website">
+                                                            <i class="bi bi-laptop me-1 text-primary"></i>Website
+                                                        </span>
+                                                    </check>
+                                                    <check if="{{ empty(@ord.media_permohonan) || @ord.media_permohonan == 'surat' }}">
+                                                        <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: Surat Resmi">
+                                                            <i class="bi bi-envelope-paper me-1 text-secondary"></i>Surat
+                                                        </span>
+                                                    </check>
+                                                    <check if="{{ !empty(@ord.file_bukti_permohonan) }}">
+                                                        <a href="{{ @BASE }}/{{ @ord.file_bukti_permohonan }}" target="_blank" class="badge bg-light text-dark border text-decoration-none px-1.5 py-0.5 rounded-pill" style="font-size: 0.68rem;" title="Lihat Berkas Bukti Permohonan">
+                                                            <i class="bi bi-paperclip me-0.5 text-primary"></i>Bukti
+                                                        </a>
+                                                    </check>
+                                                </div>
                                                 <div class="fw-semibold text-dark mb-1" title="{{ @ord.judul_kegiatan }}">
                                                     {{ @ord.judul_kegiatan }}
                                                 </div>
@@ -573,9 +744,8 @@ tr.order-belum-baca .fw-semibold.text-dark.mb-1 { font-weight: 800 !important; }
                                                     <span class="badge rounded-pill bg-success-subtle text-success-emphasis border border-success-subtle px-2.5 py-1 fw-semibold text-nowrap" style="font-size: 0.75rem;">Lingkungan</span>
                                                 </check>
                                                 <check if="{{ !@ord.jenis_layanan_opti || @ord.jenis_layanan_opti == 'belum_ditentukan' }}">
-                                                    <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2.5 py-1 fw-semibold d-inline-flex align-items-center justify-content-center gap-1" style="font-size: 0.70rem; line-height: 1.15;">
-                                                        <i class="bi bi-hourglass-split" style="font-size: 0.78rem;"></i>
-                                                        <span class="text-start" style="display: inline-block;">belum<br>ditentukan</span>
+                                                    <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-0.5 fw-semibold d-inline-flex align-items-center justify-content-center" style="font-size: 0.68rem; line-height: 1.15;">
+                                                        <span class="text-center" style="display: inline-block;">belum<br>ditentukan</span>
                                                     </span>
                                                 </check>
                                             </td>
@@ -651,7 +821,8 @@ tr.order-belum-baca .fw-semibold.text-dark.mb-1 { font-weight: 800 !important; }
 
                                                     <check if="{{ @is_superadmin }}">
                                                         <button type="button"
-                                                            class="btn btn-sm py-1 px-2 d-inline-flex align-items-center justify-content-center btn-toggle-unlock-order {{ @ord.is_unlocked_edit ? 'btn-warning text-dark border-warning' : 'btn-outline-secondary' }}"
+                                                            class="btn btn-sm py-1 px-2 d-inline-flex align-items-center justify-content-center btn-toggle-unlock-order {{ @ord.is_unlocked_edit ? 'text-white shadow-2xs' : 'btn-outline-secondary' }}"
+                                                            style="{{ @ord.is_unlocked_edit ? 'background-color: #1e293b !important; color: #ffffff !important; border-color: #1e293b !important;' : '' }}"
                                                             data-order-id="{{ @ord.id }}"
                                                             data-nomor-order="{{ @ord.nomor_order ?: (@ord.nomor_permintaan ?: ('REQ-' . @ord.id)) }}"
                                                             data-is-unlocked="{{ @ord.is_unlocked_edit ? '1' : '0' }}"
@@ -663,7 +834,7 @@ tr.order-belum-baca .fw-semibold.text-dark.mb-1 { font-weight: 800 !important; }
                                                             data-unlocked-countdown="{{ @ord.unlocked_countdown_label ?: '' }}"
                                                             data-unlocked-days="{{ @ord.unlocked_days ?: 3 }}"
                                                             title="{{ @ord.is_unlocked_edit ? 'Izin Edit TERBUKA (Klik untuk mengunci kembali)' : 'Izin Edit TERKUNCI (Klik untuk membuka izin edit per-order)' }}">
-                                                            <i class="bi {{ @ord.is_unlocked_edit ? 'bi-unlock-fill' : 'bi-lock-fill' }}"></i>
+                                                            <i class="bi {{ @ord.is_unlocked_edit ? 'bi-unlock-fill text-white' : 'bi-lock-fill' }}"></i>
                                                         </button>
                                                     </check>
                                                 </div>
@@ -672,6 +843,169 @@ tr.order-belum-baca .fw-semibold.text-dark.mb-1 { font-weight: 800 !important; }
                                     </repeat>
                                 </tbody>
                             </table>
+                            <!-- ===== MODAL INPUT PERMOHONAN BARU (NON-SURAT) ===== -->
+                            <div class="modal fade" id="modalTambahPermohonanManual" tabindex="-1" aria-labelledby="modalTambahPermohonanManualLabel" aria-hidden="true" style="z-index: 1055;">
+                                <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+                                    <form action="{{ @BASE }}/order/simpan-manual" method="POST" enctype="multipart/form-data" id="formPermohonanManual" class="modal-content border-0 shadow-lg rounded-4 overflow-hidden" style="max-height: 90vh;">
+                                        <div class="modal-header py-3 px-4 bg-white border-bottom align-items-center flex-shrink-0">
+                                            <div>
+                                                <h6 class="modal-title fw-bold text-dark m-0 d-flex align-items-center gap-2" id="modalTambahPermohonanManualLabel">
+                                                    <i class="bi bi-pencil-square text-primary fs-5"></i>
+                                                    <span>Input Permohonan Layanan Baru</span>
+                                                </h6>
+                                                <div class="text-muted small mt-1" style="font-size: 0.78rem;">
+                                                    Pencatatan permohonan jasa dari saluran WhatsApp, Telepon, Datang Langsung, atau Website
+                                                </div>
+                                            </div>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                                        </div>
+
+                                        <div class="modal-body p-4 bg-light" style="max-height: calc(90vh - 130px); overflow-y: auto;">
+                                            <!-- 1. Pilihan Instansi Pelanggan Resmi (Master Data tb_customer) -->
+                                            <div class="card border rounded-3 shadow-xs bg-white p-3 mb-3">
+                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                    <label class="form-label fw-bold text-dark m-0 small">
+                                                        Instansi Pelanggan Resmi <span class="text-danger">*</span>
+                                                    </label>
+                                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace" style="font-size: 0.7rem;">
+                                                        Satu Pintu (tb_customer)
+                                                    </span>
+                                                </div>
+                                                <select name="id_customer" id="selectCustomerManual" class="form-select form-select-sm fw-semibold select-customer-modal-manual" placeholder="Ketik nama PT/CV, kode perusahaan, nama PIC, atau alamat..." required>
+                                                    <option value="">-- Cari Instansi Pelanggan (Ketik nama/kode/PIC) --</option>
+                                                    <repeat group="{{ @daftar_customer_opti }}" value="{{ @cust }}">
+                                                        <option value="{{ @cust.id_customer }}"
+                                                                data-ptcv="{{ @cust.pt_cv }}"
+                                                                data-nama="{{ @cust.nmcustomer }}"
+                                                                data-nama-bersih="{{ @cust.nama_perusahaan_bersih }}"
+                                                                data-kode="{{ @cust.kodex_perusahaan ?: '-' }}"
+                                                                data-alamat="{{ @cust.alamat_bersih ?: '-' }}"
+                                                                data-pic="{{ @cust.pic_bersih ?: '-' }}"
+                                                                data-hp="{{ @cust.hp_bersih ?: '-' }}"
+                                                                data-telp="{{ @cust.telp_bersih ?: '-' }}"
+                                                                data-email="{{ @cust.email_bersih ?: '-' }}">
+                                                            {{ @cust.nama_perusahaan_bersih }} [Kode: #{{ @cust.kodex_perusahaan ?: '-' }}]
+                                                        </option>
+                                                    </repeat>
+                                                </select>
+                                                <div class="form-text text-muted small mt-1.5" style="font-size: 0.74rem;">
+                                                    <i class="bi bi-info-circle me-1 text-primary"></i>Pilih instansi pelanggan resmi terdaftar. Jika nama instansi mitra belum terdaftar, hubungi Admin Master Data untuk pendaftaran pelanggan satu pintu.
+                                                </div>
+
+                                                <!-- Card Rincian Pelanggan Terpilih -->
+                                                <div id="manualCustPreviewCard" class="p-2.5 rounded-3 border bg-light mt-2.5 d-none" style="font-size: 0.8rem;">
+                                                    <div class="d-flex align-items-center justify-content-between mb-1.5 pb-1 border-bottom">
+                                                        <span class="fw-bold text-dark font-display" id="mcNamaPerusahaan">-</span>
+                                                        <span class="badge bg-secondary-subtle text-secondary border font-monospace" id="mcKode">-</span>
+                                                    </div>
+                                                    <div class="row g-2 text-muted">
+                                                        <div class="col-sm-6">
+                                                            <span class="d-block" style="font-size:0.72rem;">Kontak / PIC:</span>
+                                                            <strong class="text-dark" id="mcPic">-</strong>
+                                                        </div>
+                                                        <div class="col-sm-6">
+                                                            <span class="d-block" style="font-size:0.72rem;">No. Kontak:</span>
+                                                            <span class="text-dark" id="mcTelp">-</span>
+                                                        </div>
+                                                        <div class="col-12">
+                                                            <span class="d-block" style="font-size:0.72rem;">Alamat:</span>
+                                                            <span class="text-secondary" id="mcAlamat">-</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- 2. Saluran Permohonan (Media Permohonan) -->
+                                            <div class="card border rounded-3 shadow-xs bg-white p-3 mb-3">
+                                                <label class="form-label fw-bold text-dark mb-2 small d-flex align-items-center gap-1.5">
+                                                    <span>Saluran Permohonan Masuk</span>
+                                                    <span class="text-danger">*</span>
+                                                </label>
+                                                <div class="row g-2">
+                                                    <!-- WhatsApp -->
+                                                    <div class="col-6 col-md-3">
+                                                        <input type="radio" class="btn-check" name="media_permohonan" id="media_wa" value="whatsapp" checked autocomplete="off">
+                                                        <label class="btn btn-outline-light text-dark border p-2.5 w-100 h-100 d-flex flex-column align-items-center justify-content-center text-center rounded-3 channel-radio-card" for="media_wa">
+                                                            <i class="bi bi-chat-dots fs-5 text-secondary mb-1"></i>
+                                                            <span class="fw-bold small d-block">WhatsApp</span>
+                                                        </label>
+                                                    </div>
+                                                    <!-- Telepon -->
+                                                    <div class="col-6 col-md-3">
+                                                        <input type="radio" class="btn-check" name="media_permohonan" id="media_telp" value="telepon" autocomplete="off">
+                                                        <label class="btn btn-outline-light text-dark border p-2.5 w-100 h-100 d-flex flex-column align-items-center justify-content-center text-center rounded-3 channel-radio-card" for="media_telp">
+                                                            <i class="bi bi-telephone fs-5 text-secondary mb-1"></i>
+                                                            <span class="fw-bold small d-block">Telepon</span>
+                                                        </label>
+                                                    </div>
+                                                    <!-- Datang Langsung -->
+                                                    <div class="col-6 col-md-3">
+                                                        <input type="radio" class="btn-check" name="media_permohonan" id="media_langsung" value="datang_langsung" autocomplete="off">
+                                                        <label class="btn btn-outline-light text-dark border p-2.5 w-100 h-100 d-flex flex-column align-items-center justify-content-center text-center rounded-3 channel-radio-card" for="media_langsung">
+                                                            <i class="bi bi-building fs-5 text-secondary mb-1"></i>
+                                                            <span class="fw-bold small d-block">Datang Langsung</span>
+                                                        </label>
+                                                    </div>
+                                                    <!-- Website -->
+                                                    <div class="col-6 col-md-3">
+                                                        <input type="radio" class="btn-check" name="media_permohonan" id="media_web" value="website" autocomplete="off">
+                                                        <label class="btn btn-outline-light text-dark border p-2.5 w-100 h-100 d-flex flex-column align-items-center justify-content-center text-center rounded-3 channel-radio-card" for="media_web">
+                                                            <i class="bi bi-laptop fs-5 text-secondary mb-1"></i>
+                                                            <span class="fw-bold small d-block">Website</span>
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- 3. Informasi Permohonan & Kebutuhan Pelanggan -->
+                                            <div class="card border rounded-3 shadow-xs bg-white p-3 mb-3">
+                                                <input type="hidden" name="jenis_layanan_opti" value="belum_ditentukan">
+                                                <div class="row g-3 mb-3">
+                                                    <div class="col-md-4">
+                                                        <label class="form-label fw-bold text-dark small mb-1">
+                                                            Tanggal Masuk <span class="text-danger">*</span>
+                                                        </label>
+                                                        <input type="date" name="tanggal_masuk" class="form-control form-control-sm" value="{{ date('Y-m-d') }}" required>
+                                                    </div>
+                                                    <div class="col-md-8">
+                                                        <label class="form-label fw-bold text-dark small mb-1">
+                                                            Judul Permohonan / Kegiatan <span class="text-danger">*</span>
+                                                        </label>
+                                                        <input type="text" name="judul_kegiatan" class="form-control form-control-sm fw-semibold" placeholder="Contoh: Pengujian Kualitas Pulp &amp; Kertas Kemasan Ramah Lingkungan" required>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label class="form-label fw-bold text-dark small mb-1">
+                                                        Ringkasan Kebutuhan / Catatan Permohonan
+                                                    </label>
+                                                    <textarea name="deskripsi" class="form-control form-control-sm" rows="3" placeholder="Tuliskan ringkasan kebutuhan pelanggan, parameter/jenis sampel, perkiraan volume, atau rangkuman komunikasi awal..."></textarea>
+                                                </div>
+                                            </div>
+
+                                            <!-- 5. Unggah Berkas Bukti Permohonan (Opsional) -->
+                                            <div class="card border rounded-3 shadow-xs bg-white p-3">
+                                                <label class="form-label fw-bold text-dark small mb-1 d-flex align-items-center justify-content-between">
+                                                    <span><i class="bi bi-paperclip me-1 text-primary"></i>Unggah Bukti Permohonan (Opsional)</span>
+                                                    <span class="badge bg-light text-muted border font-monospace" style="font-size: 0.68rem;">PDF, DOCX, JPG, PNG (Maks 15 MB)</span>
+                                                </label>
+                                                <input type="file" name="file_bukti_permohonan" class="form-control form-control-sm" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                                                <div class="form-text text-muted small mt-1" style="font-size: 0.73rem;">
+                                                    Dapat berupa tangkapan layar chat, rekaman/nota telepon, foto buku tamu, atau dokumen isian portal.
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="modal-footer py-2.5 px-4 bg-white border-top d-flex justify-content-between align-items-center flex-shrink-0">
+                                            <button type="button" class="btn btn-light btn-sm border px-3" data-bs-dismiss="modal">Batal</button>
+                                            <button type="submit" class="btn btn-primary btn-sm px-4 fw-semibold shadow-xs d-inline-flex align-items-center gap-2">
+                                                <i class="bi bi-check2-circle fs-6"></i>
+                                                <span>Simpan Permohonan Baru</span>
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+
                             <!-- ===== MODAL PREVIEW SURAT PERMINTAAN PELAYANAN JASA ===== -->
 <div class="modal fade" id="modalPreviewSuratOrder" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-xl">
@@ -1339,8 +1673,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Konfirmasi BUKA GEMBOK DENGAN PILIHAN DURASI HARI & COUNTDOWN (CLEAN & SIMPLE)
                 Swal.fire({
                     html: '<div class="text-center pt-2 pb-1">' +
-                          '<div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-warning-subtle text-warning-emphasis border border-warning-subtle mb-3 shadow-xs" style="width: 54px; height: 54px;">' +
-                          '<i class="bi bi-unlock-fill fs-3 text-warning"></i>' +
+                          '<div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3 shadow-xs" style="width: 54px; height: 54px; background-color: #f1f5f9; border: 1.5px solid #cbd5e1;">' +
+                          '<i class="bi bi-unlock-fill fs-3" style="color: #1e293b;"></i>' +
                           '</div>' +
                           '<h5 class="fw-bold text-dark mb-1">Buka Izin Edit</h5>' +
                           '<div class="mb-3"><span class="badge bg-light text-dark border font-monospace px-2.5 py-1" style="font-size:0.8rem;"><i class="bi bi-file-earmark-text text-primary me-1"></i>' + nomorOrder + '</span></div>' +
@@ -1448,5 +1782,156 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
     }
+
+    window.toggleFilterTugasSaya = function() {
+        var btn = document.getElementById('btnFilterTugasSaya');
+        if (!btn) return;
+        var isFiltered = btn.classList.toggle('is-filtering');
+        
+        var rows = document.querySelectorAll('tbody tr');
+        var visibleCount = 0;
+        rows.forEach(function(row) {
+            if (isFiltered) {
+                if (row.classList.contains('row-user-task')) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            } else {
+                row.style.display = '';
+                visibleCount++;
+            }
+        });
+        var totalSpan = document.getElementById('orderTotalCount');
+        if (totalSpan) totalSpan.innerText = visibleCount;
+    };
+
+    // Inisialisasi TomSelect pada Modal Tambah Permohonan Manual
+    var modalTambahManual = document.getElementById('modalTambahPermohonanManual');
+    if (modalTambahManual) {
+        modalTambahManual.addEventListener('shown.bs.modal', function () {
+            var select = document.getElementById('selectCustomerManual');
+            if (select && typeof TomSelect !== 'undefined' && !select.tomselect) {
+                var selectOptions = [];
+                Array.from(select.options).forEach(function(opt) {
+                    if (!opt.value) return;
+                    selectOptions.push({
+                        value: opt.value,
+                        text: opt.text,
+                        nama: opt.getAttribute('data-nama-bersih') || opt.text,
+                        kode: opt.getAttribute('data-kode') || '',
+                        pic: opt.getAttribute('data-pic') || '',
+                        telp: opt.getAttribute('data-telp') || '',
+                        email: opt.getAttribute('data-email') || '',
+                        alamat: opt.getAttribute('data-alamat') || ''
+                    });
+                });
+
+                var ts = new TomSelect(select, {
+                    options: selectOptions,
+                    items: [],
+                    valueField: 'value',
+                    labelField: 'text',
+                    searchField: ['nama', 'kode', 'pic', 'alamat', 'text'],
+                    create: false,
+                    maxItems: 1,
+                    placeholder: select.getAttribute('placeholder') || 'Ketik nama PT/CV, kode pelanggan, atau nama PIC...',
+                    maxOptions: 300,
+                    allowEmptyOption: false,
+                    plugins: {
+                        'dropdown_input': {},
+                        'clear_button': { title: 'Hapus pilihan' }
+                    },
+                    render: {
+                        option: function(data, escape) {
+                            var pic = data.pic && data.pic !== '-' ? '<span class="fw-semibold text-dark">PIC: ' + escape(data.pic) + '</span>' : '';
+                            var alamat = data.alamat && data.alamat !== '-' ? escape(data.alamat) : '';
+                            var sub = [pic, alamat].filter(Boolean).join(' • ');
+                            return '<div class="py-2 px-3 border-bottom">' +
+                                '<div class="fw-bold text-dark mb-1" style="white-space:normal; line-height:1.35;">' +
+                                    '<i class="bi bi-building me-2 text-primary"></i>' + escape(data.nama || data.text) +
+                                '</div>' +
+                                (sub ? '<div class="text-muted small" style="font-size:0.76rem; white-space:normal; line-height:1.35;">' + sub + '</div>' : '') +
+                            '</div>';
+                        },
+                        item: function(data, escape) {
+                            return '<div class="fw-bold text-dark" style="white-space:normal; line-height:1.35;">' +
+                                '<i class="bi bi-building text-primary me-2"></i>' +
+                                escape(data.nama || data.text) +
+                            '</div>';
+                        },
+                        no_results: function(data, escape) {
+                            return '<div class="p-3 text-center text-muted small">' +
+                                '<i class="bi bi-exclamation-circle text-warning me-1"></i> Tidak ditemukan perusahaan dengan kata kunci "<strong>' + escape(data.input) + '</strong>".' +
+                                '<div class="mt-1 text-secondary" style="font-size:0.75rem;">Coba periksa ejaan atau hubungi Admin Master Data.</div>' +
+                            '</div>';
+                        }
+                    },
+                    onChange: function(val) {
+                        select.value = val;
+                        updateManualCustPreview(val, ts);
+                    }
+                });
+                ts.clear(true);
+            }
+        });
+    }
+
+    function updateManualCustPreview(val, ts) {
+        var card = document.getElementById('manualCustPreviewCard');
+        if (!card) return;
+        if (!val || !ts || !ts.options[val]) {
+            card.classList.add('d-none');
+            return;
+        }
+        var opt = ts.options[val];
+        document.getElementById('mcNamaPerusahaan').textContent = opt.nama || opt.text;
+        document.getElementById('mcKode').textContent = 'Kode: #' + (opt.kode || '-');
+        document.getElementById('mcPic').textContent = opt.pic || '-';
+        document.getElementById('mcTelp').textContent = opt.telp || '-';
+        document.getElementById('mcAlamat').textContent = opt.alamat || '-';
+        card.classList.remove('d-none');
+    }
 });
 </script>
+
+<style>
+/* Styling Saluran Radio Card */
+.channel-radio-card {
+    cursor: pointer;
+    background-color: #f8fafc;
+    border-color: #e2e8f0 !important;
+    transition: all 0.2s ease;
+}
+.channel-radio-card:hover {
+    background-color: #f1f5f9;
+    border-color: #cbd5e1 !important;
+}
+.btn-check:checked + .channel-radio-card {
+    background-color: #f0f7ff !important;
+    border-color: #2563eb !important;
+    box-shadow: 0 0 0 1px #2563eb !important;
+}
+.btn-check:checked + .channel-radio-card i {
+    color: #2563eb !important;
+}
+/* Modal Scrollable Fix */
+#modalTambahPermohonanManual .modal-body {
+    max-height: calc(85vh - 130px) !important;
+    overflow-y: auto !important;
+}
+/* TomSelect Searchable Dropdown di Modal Tambah Manual */
+#modalTambahPermohonanManual .ts-wrapper {
+    width: 100% !important;
+}
+#modalTambahPermohonanManual .ts-wrapper .ts-control {
+    border-radius: 0.375rem !important;
+    font-size: 0.875rem !important;
+    font-weight: 600 !important;
+    color: #1e293b !important;
+    min-height: 38px !important;
+    padding: 0.4rem 0.75rem !important;
+    border-color: #cbd5e1 !important;
+}
+</style>

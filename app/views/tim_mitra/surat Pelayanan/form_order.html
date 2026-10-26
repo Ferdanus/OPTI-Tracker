@@ -1,3 +1,4 @@
+<check if="{{ empty(@is_embedded_in_detail) }}">
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
     <div>
         <h4 class="fw-bold mb-0 text-dark">Penerbitan Surat Penawaran Resmi</h4>
@@ -8,6 +9,7 @@
         </a>
     </div>
 </div>
+</check>
 
 <check if="{{ !@can_edit }}">
     <div class="alert alert-warning border-0 d-flex align-items-center gap-2 mb-3 py-2 px-3 small rounded-3 shadow-xs text-warning-emphasis">
@@ -20,19 +22,11 @@
 
 <style>
     /* ========================================================= */
-    /* LAYOUT UTAMA: RESPONSIVE SPLIT-SCREEN 2-KOLOM (SIDE-BY-SIDE) */
+    /* LAYOUT UTAMA: FORMULIR FULL-WIDTH (DENGAN PRATINJAU FLOATING) */
     /* ========================================================= */
     .form-preview-grid {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 1.5rem;
-        align-items: start;
-    }
-
-    @media (min-width: 992px) {
-        .form-preview-grid {
-            grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
-        }
+        display: block;
+        width: 100%;
     }
 
     /* CARD SECTION FORMULIR (KOLOM KIRI) */
@@ -123,24 +117,42 @@
         transform: translateY(-1px);
     }
     .btn-draft-theme {
-        background: #ffffff;
-        border: 1.5px solid #e2e8f0;
-        color: #475569;
+        background-color: #ffffff;
+        border: 1.5px solid #334155;
+        color: #1e293b;
         font-weight: 600;
         font-size: 0.85rem;
-        padding: 0.5rem 1.1rem;
+        padding: 0.45rem 1.05rem;
         border-radius: 8px;
-        transition: all 0.2s ease;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         display: inline-flex;
         align-items: center;
-        gap: 0.35rem;
+        justify-content: center;
+        gap: 0.45rem;
+        box-shadow: 0 2px 4px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
         cursor: pointer;
+        text-decoration: none;
     }
     .btn-draft-theme:hover {
-        background: #f1f5f9;
-        border-color: #334155;
+        background-color: #f8fafc;
+        border-color: #0f172a;
+        color: #0f172a;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.14);
+        transform: translateY(-1px);
+    }
+    .btn-draft-theme:active {
+        transform: translateY(0);
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+        background-color: #f1f5f9;
+    }
+    .btn-draft-theme .bi {
         color: #334155;
-        box-shadow: 0 2px 5px rgba(51, 65, 85, 0.1);
+        font-size: 0.95rem;
+        transition: color 0.15s ease;
+    }
+    .btn-draft-theme:hover .bi {
+        color: #0f172a;
+    }
     }
     .btn-cancel-theme {
         background: #ffffff;
@@ -163,34 +175,263 @@
     }
 
     /* ========================================================= */
-    /* KOLOM KANAN: LIVE PREVIEW DOKUMEN NASKAH DINAS (STICKY)  */
+    /* PRATINJAU DOKUMEN NASKAH DINAS (FLOATING, DOCKED, DRAGGABLE) */
     /* ========================================================= */
+    .preview-tool-btn {
+        width: 28px;
+        height: 28px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        background: #ffffff;
+        color: #475569;
+        font-size: 0.8rem;
+        transition: all 0.15s ease;
+        cursor: pointer;
+        padding: 0;
+        flex-shrink: 0;
+    }
+    .preview-tool-btn:hover {
+        background: #f1f5f9;
+        color: #0f172a;
+        border-color: #cbd5e1;
+    }
+    .preview-tool-btn.active {
+        background: #0f172a !important;
+        color: #ffffff !important;
+        border-color: #0f172a !important;
+    }
+
     .preview-sticky-wrapper {
-        position: sticky;
-        top: 1rem;
-        align-self: start;
-        max-height: calc(100vh - 2rem);
+        position: fixed;
+        top: 85px;
+        right: 24px;
+        width: 480px;
+        max-width: calc(100vw - 32px);
+        height: min(78vh, 740px);
+        z-index: 1040;
         display: flex;
         flex-direction: column;
+        border-radius: 16px;
+        box-shadow: 0 12px 36px -6px rgba(15, 23, 42, 0.14), 0 0 0 1px rgba(226, 232, 240, 0.9);
+        background: #ffffff;
+        overflow: hidden;
+        resize: none !important;
+        min-width: 340px;
+        min-height: 160px;
+        transition: box-shadow 0.2s ease, opacity 0.25s ease, border-radius 0.2s ease;
     }
+    .preview-sticky-wrapper:hover {
+        box-shadow: 0 16px 42px -4px rgba(15, 23, 42, 0.18), 0 0 0 1px rgba(203, 213, 225, 0.9);
+    }
+    .preview-sticky-wrapper.is-dragging {
+        box-shadow: 0 20px 48px -4px rgba(15, 23, 42, 0.25), 0 0 0 1.5px #3b82f6 !important;
+        opacity: 0.95;
+        cursor: grabbing !important;
+        transition: none !important;
+    }
+
+    /* Mode Sematkan ke Sisi Kanan (Docked Side Panel) */
+    .preview-sticky-wrapper.is-docked {
+        top: 72px !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        left: auto !important;
+        height: calc(100vh - 72px) !important;
+        width: 470px !important;
+        max-width: 48vw !important;
+        border-radius: 16px 0 0 0 !important;
+        border-right: none !important;
+        resize: horizontal !important;
+        box-shadow: -8px 0 28px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(226, 232, 240, 0.9) !important;
+    }
+    @media (min-width: 1200px) {
+        .form-preview-grid.has-docked-preview {
+            margin-right: 485px !important;
+            transition: margin-right 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+    }
+
+    /* Mode Transparan (Tembus Pandang agar Tidak Menghalangi) */
+    .preview-sticky-wrapper.is-ghost {
+        opacity: 0.24 !important;
+        box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08) !important;
+        pointer-events: auto !important;
+    }
+    .preview-sticky-wrapper.is-ghost:hover {
+        opacity: 0.98 !important;
+        box-shadow: 0 16px 42px -4px rgba(15, 23, 42, 0.18) !important;
+    }
+
+    /* Auto-dimming saat kursor fokus mengisi input formulir */
+    .preview-sticky-wrapper.auto-dimmed {
+        opacity: 0.32 !important;
+        transition: opacity 0.25s ease !important;
+    }
+    .preview-sticky-wrapper.auto-dimmed:hover {
+        opacity: 0.98 !important;
+    }
+
+    /* Mode Minimized (Default saat awal halaman dibuka) */
+    .preview-sticky-wrapper.is-minimized {
+        width: 320px !important;
+        max-width: calc(100vw - 32px) !important;
+        height: auto !important;
+        min-height: auto !important;
+        resize: none !important;
+        border-radius: 14px !important;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.14) !important;
+    }
+    .preview-sticky-wrapper.is-minimized .preview-frame {
+        height: auto !important;
+    }
+    .preview-sticky-wrapper.is-minimized .preview-doc-scroll,
+    .preview-sticky-wrapper.is-minimized .preview-sub-toolbar,
+    .preview-sticky-wrapper.is-minimized #selulosaTabNav,
+    .preview-sticky-wrapper.is-minimized #lingkunganTabNav {
+        display: none !important;
+    }
+    .preview-sticky-wrapper.is-minimized #btnGhostSpPreview,
+    .preview-sticky-wrapper.is-minimized #btnDockSpPreview {
+        display: none !important;
+    }
+    .preview-sticky-wrapper.is-minimized .preview-top-toolbar {
+        border-bottom: none !important;
+        padding: 0.45rem 0.85rem !important;
+    }
+
     .preview-frame {
         background: #ffffff;
-        border: 1px solid #cbd5e1;
-        border-radius: 12px;
-        box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.07);
         display: flex;
         flex-direction: column;
+        flex: 1 1 auto;
+        height: 100%;
         overflow: hidden;
     }
     .preview-top-toolbar {
-        background: #f8fafc;
-        border-bottom: 1px solid #e2e8f0;
-        padding: 0.65rem 1rem;
+        background: rgba(248, 250, 252, 0.92);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-bottom: 1px solid rgba(226, 232, 240, 0.85);
+        padding: 0.5rem 0.85rem;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        flex-wrap: wrap;
         gap: 0.5rem;
+        cursor: grab;
+        user-select: none;
+        touch-action: none;
+        flex-shrink: 0;
+    }
+    .preview-top-toolbar:active {
+        cursor: grabbing;
+    }
+    .drag-handle-icon {
+        cursor: grab;
+    }
+    .preview-sub-toolbar {
+        background: #ffffff;
+        border-bottom: 1px solid #e2e8f0;
+        padding: 0.5rem 0.85rem;
+        flex-shrink: 0;
+    }
+
+    /* 8-Directional Window Resize Handles (Tiap Sisi & Ujung Hover Mouse Bisa Resize) */
+    .sp-resize-handle {
+        position: absolute;
+        z-index: 30;
+        background: transparent;
+        transition: background 0.15s ease;
+    }
+    .sp-resize-handle:hover,
+    .preview-sticky-wrapper.is-resizing .sp-resize-handle {
+        background: rgba(59, 130, 246, 0.18);
+    }
+    .sp-resize-n {
+        top: 0;
+        left: 14px;
+        right: 14px;
+        height: 8px;
+        cursor: ns-resize;
+    }
+    .sp-resize-s {
+        bottom: 0;
+        left: 14px;
+        right: 14px;
+        height: 8px;
+        cursor: ns-resize;
+    }
+    .sp-resize-w {
+        top: 14px;
+        bottom: 14px;
+        left: 0;
+        width: 8px;
+        cursor: ew-resize;
+    }
+    .sp-resize-e {
+        top: 14px;
+        bottom: 14px;
+        right: 0;
+        width: 8px;
+        cursor: ew-resize;
+    }
+    .sp-resize-nw {
+        top: 0;
+        left: 0;
+        width: 16px;
+        height: 16px;
+        cursor: nwse-resize;
+        z-index: 31;
+    }
+    .sp-resize-ne {
+        top: 0;
+        right: 0;
+        width: 16px;
+        height: 16px;
+        cursor: nesw-resize;
+        z-index: 31;
+    }
+    .sp-resize-sw {
+        bottom: 0;
+        left: 0;
+        width: 16px;
+        height: 16px;
+        cursor: nesw-resize;
+        z-index: 31;
+    }
+    .sp-resize-se {
+        bottom: 0;
+        right: 0;
+        width: 16px;
+        height: 16px;
+        cursor: nwse-resize;
+        z-index: 31;
+    }
+    /* Sembunyikan handle saat minimized */
+    .preview-sticky-wrapper.is-minimized .sp-resize-handle {
+        display: none !important;
+    }
+    @media (max-width: 767.98px) {
+        .preview-sticky-wrapper {
+            top: 65px !important;
+            right: 8px !important;
+            left: 8px !important;
+            width: calc(100vw - 16px) !important;
+            max-width: calc(100vw - 16px) !important;
+            height: 75vh !important;
+        }
+    }
+    @media print {
+        .preview-sticky-wrapper {
+            position: static !important;
+            width: 100% !important;
+            height: auto !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+            resize: none !important;
+        }
     }
     .preview-btn-group {
         display: flex;
@@ -952,6 +1193,7 @@
 </style>
 
 <form id="formPenawaranOrder" action="{{ @BASE }}/order/{{ @order.id }}/penawaran/simpan" method="POST" enctype="multipart/form-data">
+    <input type="hidden" name="redirect" value="{{ !empty(@is_embedded_in_detail) ? 'order' : 'penawaran' }}">
     <div class="form-preview-grid">
 
         <!-- ======================================================== -->
@@ -1369,9 +1611,9 @@
                             </label>
                             <div class="input-group input-group-sm">
                                 <span class="input-group-text bg-light text-muted"><i class="bi bi-hash"></i></span>
-                                <input type="text" name="nomor_surat" id="input_nomor_surat" class="form-control form-control-sm font-monospace fw-bold" value="{{ @is_revisi_baru ? @nomor_surat_otomatis : (@sp_existing.nomor_surat ?: @nomor_surat_otomatis) }}" data-nomor-lama="{{ @sp_existing.nomor_surat ?? '' }}" data-nomor-baru="{{ @nomor_surat_otomatis }}" required {{ !@can_edit ? 'disabled' : '' }}>
+                                <input type="text" name="nomor_surat" id="input_nomor_surat" class="form-control form-control-sm font-monospace fw-bold" value="{{ @is_revisi_baru ? @nomor_surat_otomatis : (@sp_existing.nomor_surat ?: @nomor_surat_otomatis) }}" data-nomor-lama="{{ @nomor_surat_lama ?: (@sp_existing.nomor_surat ?? '') }}" data-nomor-baru="{{ @nomor_surat_baru ?: @nomor_surat_otomatis }}" required {{ !@can_edit ? 'disabled' : '' }}>
                             </div>
-                            <small class="text-muted" style="font-size: 0.72rem;">Format otomatis: B/{urut}/BBSPJIS/MS/{bulan_romawi}/{tahun}.</small>
+                            <small class="text-muted" style="font-size: 0.72rem;">Format otomatis: B/{urut}/BBSPJIS/MS/{bulan_romawi}/{tahun}. Nomor dapat disunting secara manual.</small>
                         </div>
                         <div class="col-md-5">
                             <label class="form-label small fw-semibold text-dark mb-1">
@@ -1634,6 +1876,15 @@
                             </div>
                         </div>
                     </check>
+                    <check if="{{ !@is_locked_deal && @is_revisi_baru && @sp_existing }}">
+                        <div class="alert alert-warning border-0 rounded-3 p-2.5 mb-3 d-flex align-items-center gap-2 small">
+                            <i class="bi bi-arrow-repeat fs-5 text-warning-emphasis flex-shrink-0"></i>
+                            <div>
+                                <strong class="text-dark d-block">Penerbitan Surat Penawaran Baru (Revisi / Negosiasi)</strong>
+                                <span class="text-secondary">Surat penawaran sebelumnya (<strong class="font-monospace text-dark">{{ @nomor_surat_lama ?: @sp_existing.nomor_surat }}</strong>) telah ditolak / masuk tahap negosiasi. Nomor surat otomatis dinaikkan ke urutan berikutnya (<strong class="font-monospace text-dark">{{ @nomor_surat_otomatis }}</strong>). Anda tetap dapat mengubah nomor ini secara manual pada kolom nomor surat di atas jika diperlukan.</span>
+                            </div>
+                        </div>
+                    </check>
                     <div class="row g-3">
                         <div class="col-md-5">
                             <label class="form-label small fw-semibold text-dark mb-1">Status Respon Klien</label>
@@ -1646,15 +1897,15 @@
                             <check if="{{ !@is_locked_deal }}">
                                 <select name="status_respon_klien" id="select_status_respon_klien" class="form-select form-select-sm fw-semibold" {{ !@can_edit ? 'disabled' : '' }}>
                                     <option value="draft" class="d-none" style="display:none;">Draft (Internal)</option>
-                                    <option value="nego" {{ (!@sp_existing || in_array(@sp_existing.status_respon_klien, ['nego', 'terkirim', 'draft', ''])) ? 'selected' : '' }}>Negosiasi</option>
-                                    <option value="deal" {{ (@sp_existing && @sp_existing.status_respon_klien == 'deal') ? 'selected' : '' }}>Disetujui (DEAL)</option>
-                                    <option value="batal" {{ (@sp_existing && @sp_existing.status_respon_klien == 'batal') ? 'selected' : '' }}>Ditolak / Batal</option>
+                                    <option value="nego" {{ (@is_revisi_baru || !@sp_existing || in_array(@sp_existing.status_respon_klien, ['nego', 'terkirim', 'draft', '', 'batal'])) ? 'selected' : '' }}>Negosiasi</option>
+                                    <option value="deal" {{ (!@is_revisi_baru && @sp_existing && @sp_existing.status_respon_klien == 'deal') ? 'selected' : '' }}>Disetujui (DEAL)</option>
+                                    <option value="batal" {{ (!@is_revisi_baru && @sp_existing && @sp_existing.status_respon_klien == 'batal') ? 'selected' : '' }}>Ditolak / Batal</option>
                                 </select>
                             </check>
                         </div>
                         <div class="col-md-7">
                             <label class="form-label small fw-semibold text-dark mb-1">Catatan Negosiasi / Penyesuaian Harga</label>
-                            <input type="text" name="catatan_nego" id="input_catatan_nego" class="form-control form-control-sm" placeholder="Catatan hasil diskusi penyesuaian harga..." value="{{ @sp_existing.catatan_nego ?? '' }}" {{ !@can_edit ? 'disabled' : '' }}>
+                            <input type="text" name="catatan_nego" id="input_catatan_nego" class="form-control form-control-sm" placeholder="Catatan hasil diskusi penyesuaian harga..." value="{{ @is_revisi_baru ? '' : (@sp_existing.catatan_nego ?? '') }}" {{ !@can_edit ? 'disabled' : '' }}>
                         </div>
                     </div>
 
@@ -1668,9 +1919,16 @@
 
             <!-- Tombol Aksi Bawah (Form Action Bar) -->
             <div class="form-action-bar">
-                <a href="{{ @BASE }}/order/{{ @order.id }}" class="btn-cancel-theme">
-                    <i class="bi bi-arrow-left"></i> Kembali ke Order
-                </a>
+                <div class="d-flex align-items-center gap-2">
+                    <check if="{{ empty(@is_embedded_in_detail) }}">
+                        <a href="{{ @BASE }}/order/{{ @order.id }}" class="btn-cancel-theme">
+                            <i class="bi bi-arrow-left"></i> Kembali ke Order
+                        </a>
+                    </check>
+                    <button type="button" class="btn btn-sm btn-white border shadow-xs text-primary fw-semibold d-inline-flex align-items-center gap-1.5" onclick="toggleFloatingSpPreview(true)" title="Tampilkan / Panggil Pratinjau Naskah Melayang">
+                        <i class="bi bi-pip"></i> <span>Pratinjau Melayang</span>
+                    </button>
+                </div>
                 <check if="{{ @can_edit }}">
                     <div class="d-flex align-items-center gap-2 flex-wrap">
                         <check if="{{ @is_locked_deal || (@sp_existing && @sp_existing.status_respon_klien == 'deal') }}">
@@ -1682,7 +1940,7 @@
                         <check if="{{ !@is_locked_deal && (!@sp_existing || @sp_existing.status_respon_klien != 'deal') }}">
                             <input type="hidden" name="action_status" id="inputActionStatus" value="nego">
                             <button type="submit" name="action_status" value="draft" class="btn-draft-theme" onclick="document.getElementById('select_status_respon_klien').value='draft'; document.getElementById('inputActionStatus').value='draft';">
-                                <i class="bi bi-bookmark"></i> Simpan Draf
+                                <i class="bi bi-bookmark-fill"></i> <span>Simpan Draf</span>
                             </button>
                             <button type="button" id="btnTerbitkanPenawaran" class="btn-submit-theme" onclick="confirmKirimPenawaran();">
                                 <i class="bi bi-send-fill"></i> Simpan &amp; Terbitkan
@@ -1700,32 +1958,65 @@
         </div>
 
         <!-- ======================================================== -->
-        <!-- KOLOM KANAN: LIVE PREVIEW NASKAH SURAT PENAWARAN         -->
+        <!-- PRATINJAU NASKAH SURAT PENAWARAN (FLOATING & DRAGGABLE)  -->
         <!-- ======================================================== -->
-        <div class="preview-sticky-wrapper">
+        <div class="preview-sticky-wrapper is-minimized" id="previewStickyWrapper">
+            <!-- 8-Directional Window Resize Handles (Tiap Sisi & Ujung Hover Mouse Bisa Resize) -->
+            <div class="sp-resize-handle sp-resize-n" data-direction="n" title="Ubah tinggi (atas)"></div>
+            <div class="sp-resize-handle sp-resize-s" data-direction="s" title="Ubah tinggi (bawah)"></div>
+            <div class="sp-resize-handle sp-resize-e" data-direction="e" title="Ubah lebar (kanan)"></div>
+            <div class="sp-resize-handle sp-resize-w" data-direction="w" title="Ubah lebar (kiri)"></div>
+            <div class="sp-resize-handle sp-resize-nw" data-direction="nw" title="Ubah ukuran (sudut kiri atas)"></div>
+            <div class="sp-resize-handle sp-resize-ne" data-direction="ne" title="Ubah ukuran (sudut kanan atas)"></div>
+            <div class="sp-resize-handle sp-resize-sw" data-direction="sw" title="Ubah ukuran (sudut kiri bawah)"></div>
+            <div class="sp-resize-handle sp-resize-se" data-direction="se" title="Ubah ukuran (sudut kanan bawah)"></div>
+
             <div class="preview-frame">
-                <!-- Toolbar Atas Pratinjau -->
-                <div class="preview-top-toolbar">
-                    <div class="d-flex align-items-center gap-2">
-                        <i class="bi bi-file-earmark-text-fill" style="color: #475569; font-size: 1.15rem;"></i>
-                        <div>
-                            <span class="fw-bold small text-dark d-block" style="line-height: 1.2;">Pratinjau Surat Penawaran Resmi</span>
-                            <span class="text-muted" style="font-size: 0.7rem;">Format {{ @order.jenis_layanan_opti == 'selulosa' ? 'OPTI Selulosa (2 Halaman)' : 'OPTI Lingkungan (1 Halaman)' }}</span>
+                <!-- Toolbar Atas Pratinjau (Header Drag Handle) -->
+                <div class="preview-top-toolbar" id="previewTopToolbar">
+                    <div class="d-flex align-items-center gap-2 flex-grow-1 min-w-0">
+                        <i class="bi bi-grip-vertical text-secondary drag-handle-icon fs-5" style="cursor: grab;" title="Geser / Pindahkan posisi pratinjau"></i>
+                        <i class="bi bi-file-earmark-text-fill text-primary" style="font-size: 1.15rem;"></i>
+                        <div class="min-w-0">
+                            <span class="fw-bold small text-dark d-block text-truncate" style="line-height: 1.2;">Pratinjau Naskah</span>
+                            <span class="text-muted text-truncate d-block" style="font-size: 0.68rem;">Format {{ @order.jenis_layanan_opti == 'selulosa' ? 'OPTI Selulosa' : 'OPTI Lingkungan' }}</span>
                         </div>
-                        <span class="badge px-2 py-0.5 rounded-pill small ms-1" style="background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; font-size: 0.7rem;">
-                            Live Sync
+                        <span class="badge px-2 py-0.5 rounded-pill small ms-1 flex-shrink-0" style="background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; font-size: 0.68rem;">
+                            Live
                         </span>
                     </div>
-                    <div class="preview-btn-group">
+                    <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                        <!-- Mode Transparan (Ghost) -->
+                        <button type="button" class="preview-tool-btn" id="btnGhostSpPreview" onclick="toggleGhostSpPreview()" title="Mode Transparan (Tembus Pandang agar tidak menghalangi pengisian formulir)">
+                            <i class="bi bi-droplet-half"></i>
+                        </button>
+                        <!-- Mode Sematkan ke Sisi Kanan (Dock / Undock) -->
+                        <button type="button" class="preview-tool-btn" id="btnDockSpPreview" onclick="toggleDockSpPreview()" title="Sematkan ke Sisi Kanan (Dock) / Lepaskan Melayang Bebas">
+                            <i class="bi bi-layout-sidebar-reverse"></i>
+                        </button>
+                        <!-- Minimize -->
+                        <button type="button" class="preview-tool-btn" id="btnMinimizeSpPreview" onclick="toggleMinimizeSpPreview()" title="Perbesar Pratinjau">
+                            <i class="bi bi-arrows-angle-expand"></i>
+                        </button>
+                        <!-- Tutup / Sembunyikan ke Tab Tepi -->
+                        <button type="button" class="preview-tool-btn" id="btnCloseSpPreview" onclick="toggleFloatingSpPreview(false)" title="Sembunyikan ke Tab Tepi">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sub Toolbar Dokumen (Aksi Unduh / Cetak / Lampiran) -->
+                <div class="preview-sub-toolbar d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <div class="preview-btn-group w-100 justify-content-between">
                         <button type="button" id="btnPreviewSpPdfMain" class="preview-btn preview-btn-primary btn-preview-pdf" data-preview-pdf="{{ @BASE }}/order/{{ @order.id }}/penawaran/cetak{{ @sp_existing && @sp_existing.id ? ('?id=' . @sp_existing.id) : '' }}" data-title="Surat Penawaran Resmi" data-subtitle="{{ @order.nama_perusahaan }}">
-                            <i class="bi bi-file-earmark-pdf-fill"></i> Pratinjau PDF
+                            <i class="bi bi-file-earmark-pdf-fill"></i> PDF
                         </button>
 
                         <!-- Fitur Upload Lampiran Opsional (Sebelah Kiri Unduh PDF - Menyatu di Halaman 3+) -->
                         <input type="file" name="file_lampiran_user" id="inputFileLampiranUser" class="d-none" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onchange="handleLampiranUserChange(this)">
                         <button type="button" id="btnTriggerUploadLampiranUser" class="preview-btn preview-btn-secondary" onclick="document.getElementById('inputFileLampiranUser').click()" title="{{ !empty(@lampiran_user_existing) ? ('Lampiran menyatu di Hal. 3+: ' . basename(@lampiran_user_existing)) : 'Opsional: Unggah lampiran untuk digabungkan ke Halaman 3+ Surat Penawaran (PDF/Word/JPG/PNG)' }}">
                             <i class="bi bi-paperclip text-primary" id="iconUploadLampiranUser"></i>
-                            <span id="labelUploadLampiranUser">{{ !empty(@lampiran_user_existing) ? 'Ganti Lampiran (Hal. 3+)' : 'Upload Lampiran' }}</span>
+                            <span id="labelUploadLampiranUser">{{ !empty(@lampiran_user_existing) ? 'Lampiran (Hal 3+)' : 'Upload Lampiran' }}</span>
                         </button>
 
                         <div class="dropdown d-inline-block">
@@ -2143,6 +2434,12 @@
             </div>
         </div>
 
+    <!-- Floating Launcher Button ketika Pratinjau Disembunyikan (Pojok Kanan Bawah) -->
+    <button type="button" id="btnFloatingLauncherSpPreview" class="btn btn-dark shadow-lg rounded-pill px-3 py-2 d-none align-items-center gap-2" onclick="toggleFloatingSpPreview(true)" style="position: fixed; bottom: 24px; right: 24px; z-index: 1045; border: 1.5px solid #475569; background: #1e293b; color: #ffffff; font-weight: 600; font-size: 0.85rem; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.35) !important; cursor: pointer;">
+        <i class="bi bi-file-earmark-text-fill text-info"></i>
+        <span>Buka Surat Penawaran</span>
+        <span class="badge bg-primary text-white rounded-pill px-1.5 py-0.5" style="font-size: 0.68rem;">Live</span>
+    </button>
 </form>
 
 <!-- ========================================================= -->
@@ -2183,7 +2480,7 @@
 <!-- ========================================================= -->
 <!-- MODAL PRATINJAU DOKUMEN PROPOSAL (PURE CRISP PDF VIEWER)  -->
 <!-- ========================================================= -->
-<check if="{{ @order.jenis_layanan_opti == 'selulosa' }}">
+<check if="{{ empty(@is_embedded_in_detail) && @order.jenis_layanan_opti == 'selulosa' }}">
     <div class="modal fade" id="modalPreviewDokumenProposal" tabindex="-1" aria-labelledby="modalPreviewDokumenProposalLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" style="max-width: 92vw;">
             <div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden" style="height: 90vh;">
@@ -3043,12 +3340,34 @@ document.addEventListener('DOMContentLoaded', function() {
 
     var selectStatus = document.getElementById('select_status_respon_klien');
     var inputNomorSurat = document.getElementById('input_nomor_surat');
-    if (selectStatus && inputNomorSurat && inputNomorSurat.dataset.nomorLama) {
+    var isNomorManuallyEdited = false;
+    if (inputNomorSurat) {
+        inputNomorSurat.addEventListener('input', function() {
+            isNomorManuallyEdited = true;
+        });
+    }
+    if (selectStatus && inputNomorSurat) {
         selectStatus.addEventListener('change', function() {
-            if (this.value === 'deal' || this.value === 'batal') {
-                inputNomorSurat.value = inputNomorSurat.dataset.nomorLama || inputNomorSurat.dataset.nomorBaru;
-            } else if (this.value === 'nego') {
-                inputNomorSurat.value = inputNomorSurat.dataset.nomorBaru || inputNomorSurat.dataset.nomorLama;
+            var checkRevisi = document.getElementById('check_revisi_baru');
+            var isRevisiInitial = {{ @is_revisi_baru ? 'true' : 'false' }};
+            if (isRevisiInitial) {
+                // Dalam mode revisi baru (misal SP sebelumnya ditolak), nomor otomatis tetap urutan baru
+                if (!isNomorManuallyEdited && inputNomorSurat.dataset.nomorBaru) {
+                    inputNomorSurat.value = inputNomorSurat.dataset.nomorBaru;
+                }
+                if (checkRevisi) checkRevisi.value = '1';
+            } else {
+                if (this.value === 'deal' || this.value === 'batal') {
+                    if (!isNomorManuallyEdited) {
+                        inputNomorSurat.value = inputNomorSurat.dataset.nomorLama || inputNomorSurat.dataset.nomorBaru;
+                    }
+                    if (checkRevisi && inputNomorSurat.dataset.nomorLama) checkRevisi.value = '0';
+                } else if (this.value === 'nego') {
+                    if (!isNomorManuallyEdited) {
+                        inputNomorSurat.value = inputNomorSurat.dataset.nomorBaru || inputNomorSurat.dataset.nomorLama;
+                    }
+                    if (checkRevisi && inputNomorSurat.dataset.nomorLama) checkRevisi.value = '1';
+                }
             }
             syncLivePreview();
         });
@@ -3957,5 +4276,364 @@ function eksekusiCetakSp(withKop) {
 
 function cetakSuratPenawaran() {
     bukaModalCetakKop();
+}
+
+/* ========================================================= */
+/* LOGIKA MENGAMBANG, DOCKED, DRAG & MINIMIZE PRATINJAU NASKAH */
+/* ========================================================= */
+function toggleGhostSpPreview() {
+    var panel = document.getElementById("previewStickyWrapper");
+    var btn = document.getElementById("btnGhostSpPreview");
+    if (!panel) return;
+    var isGhost = panel.classList.toggle("is-ghost");
+    if (btn) {
+        btn.classList.toggle("active", isGhost);
+        btn.title = isGhost ? "Matikan Mode Transparan" : "Mode Transparan (Tembus Pandang agar tidak menghalangi formulir)";
+    }
+}
+
+function toggleDockSpPreview() {
+    var panel = document.getElementById("previewStickyWrapper");
+    var btn = document.getElementById("btnDockSpPreview");
+    var formGrid = document.querySelector(".form-preview-grid");
+    if (!panel) return;
+
+    var isDocked = panel.classList.toggle("is-docked");
+    if (btn) {
+        btn.classList.toggle("active", isDocked);
+        btn.innerHTML = isDocked ? '<i class="bi bi-window"></i>' : '<i class="bi bi-layout-sidebar-reverse"></i>';
+        btn.title = isDocked ? "Ubah ke Mode Melayang Bebas" : "Sematkan ke Sisi Kanan (Dock)";
+    }
+    if (formGrid) {
+        formGrid.classList.toggle("has-docked-preview", isDocked);
+    }
+    if (isDocked) {
+        panel.style.left = "";
+        panel.style.top = "";
+        panel.style.right = "";
+        panel.style.bottom = "";
+        panel.style.width = "";
+        panel.style.height = "";
+        try { localStorage.setItem("sp_preview_docked", "1"); } catch(e) {}
+    } else {
+        try { localStorage.setItem("sp_preview_docked", "0"); } catch(e) {}
+    }
+}
+
+function toggleMinimizeSpPreview() {
+    var panel = document.getElementById("previewStickyWrapper");
+    var btn = document.getElementById("btnMinimizeSpPreview");
+    if (!panel) return;
+    var isMin = panel.classList.toggle("is-minimized");
+    if (btn) {
+        btn.innerHTML = isMin ? '<i class="bi bi-arrows-angle-expand"></i>' : '<i class="bi bi-dash-lg"></i>';
+        btn.title = isMin ? "Perbesar Pratinjau" : "Minimize / Perkecil";
+    }
+}
+
+function toggleFloatingSpPreview(show) {
+    var panel = document.getElementById("previewStickyWrapper");
+    var launcher = document.getElementById("btnFloatingLauncherSpPreview");
+    var formGrid = document.querySelector(".form-preview-grid");
+    if (!panel) return;
+    if (typeof show === "undefined") {
+        show = panel.style.display === "none" || panel.classList.contains("d-none");
+    }
+    if (show) {
+        panel.style.display = "flex";
+        panel.classList.remove("d-none");
+        if (panel.classList.contains("is-minimized")) {
+            panel.classList.remove("is-minimized");
+            var btnMin = document.getElementById("btnMinimizeSpPreview");
+            if (btnMin) btnMin.innerHTML = '<i class="bi bi-dash-lg"></i>';
+        }
+        if (launcher) {
+            launcher.classList.add("d-none");
+            launcher.style.display = "none";
+        }
+        if (panel.classList.contains("is-docked") && formGrid) {
+            formGrid.classList.add("has-docked-preview");
+        }
+        if (typeof syncLivePreview === "function") syncLivePreview();
+    } else {
+        panel.style.display = "none";
+        if (launcher) {
+            launcher.classList.remove("d-none");
+            launcher.style.display = "inline-flex";
+        }
+        if (formGrid) {
+            formGrid.classList.remove("has-docked-preview");
+        }
+    }
+}
+
+/* ========================================================= */
+/* RESIZE FLEKSIBEL DARI SEMUA SISI & UJUNG (8 ARAH)         */
+/* ========================================================= */
+function initSpWindowResize() {
+    var panel = document.getElementById("previewStickyWrapper");
+    if (!panel || panel.dataset.resizeInit === "1") return;
+    panel.dataset.resizeInit = "1";
+
+    var handles = panel.querySelectorAll(".sp-resize-handle");
+    handles.forEach(function(handle) {
+        handle.addEventListener("mousedown", function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            var dir = handle.dataset.direction;
+            var startX = e.clientX;
+            var startY = e.clientY;
+
+            var rect = panel.getBoundingClientRect();
+            var startWidth = rect.width;
+            var startHeight = rect.height;
+            var startLeft = rect.left;
+            var startTop = rect.top;
+
+            // Set koordinat eksplisit agar pergerakan resize presisi
+            panel.style.left = startLeft + "px";
+            panel.style.top = startTop + "px";
+            panel.style.right = "auto";
+            panel.style.bottom = "auto";
+            panel.style.width = startWidth + "px";
+            panel.style.height = startHeight + "px";
+
+            // Jika sedang docked, undock otomatis saat diresize bebas
+            if (panel.classList.contains("is-docked") && dir !== "w") {
+                panel.classList.remove("is-docked");
+                var btnDock = document.getElementById("btnDockSpPreview");
+                if (btnDock) {
+                    btnDock.classList.remove("active");
+                    btnDock.innerHTML = '<i class="bi bi-layout-sidebar-reverse"></i>';
+                }
+                var formGrid = document.querySelector(".form-preview-grid");
+                if (formGrid) formGrid.classList.remove("has-docked-preview");
+                try { localStorage.setItem("sp_preview_docked", "0"); } catch(err) {}
+            }
+
+            panel.classList.add("is-resizing");
+            document.body.style.userSelect = "none";
+
+            var minW = 340;
+            var minH = 180;
+            var maxW = window.innerWidth - 16;
+            var maxH = window.innerHeight - 16;
+
+            function onMouseMove(moveEvent) {
+                var dx = moveEvent.clientX - startX;
+                var dy = moveEvent.clientY - startY;
+
+                var newWidth = startWidth;
+                var newHeight = startHeight;
+                var newLeft = startLeft;
+                var newTop = startTop;
+
+                // Horizontal resize
+                if (dir.indexOf("e") !== -1) {
+                    newWidth = Math.max(minW, Math.min(startWidth + dx, maxW - startLeft));
+                }
+                if (dir.indexOf("w") !== -1) {
+                    var potentialWidth = startWidth - dx;
+                    if (potentialWidth >= minW) {
+                        newWidth = Math.min(potentialWidth, startLeft + startWidth);
+                        newLeft = startLeft + (startWidth - newWidth);
+                    } else {
+                        newWidth = minW;
+                        newLeft = startLeft + startWidth - minW;
+                    }
+                }
+
+                // Vertical resize
+                if (dir.indexOf("s") !== -1) {
+                    newHeight = Math.max(minH, Math.min(startHeight + dy, maxH - startTop));
+                }
+                if (dir.indexOf("n") !== -1) {
+                    var potentialHeight = startHeight - dy;
+                    if (potentialHeight >= minH) {
+                        newHeight = Math.min(potentialHeight, startTop + startHeight);
+                        newTop = startTop + (startHeight - newHeight);
+                    } else {
+                        newHeight = minH;
+                        newTop = startTop + startHeight - minH;
+                    }
+                }
+
+                panel.style.width = newWidth + "px";
+                panel.style.height = newHeight + "px";
+                panel.style.left = newLeft + "px";
+                panel.style.top = newTop + "px";
+            }
+
+            function onMouseUp() {
+                panel.classList.remove("is-resizing");
+                document.body.style.userSelect = "";
+                document.removeEventListener("mousemove", onMouseMove);
+                document.removeEventListener("mouseup", onMouseUp);
+            }
+
+            document.addEventListener("mousemove", onMouseMove);
+            document.addEventListener("mouseup", onMouseUp);
+        });
+    });
+}
+
+function initSpPreviewAutoDim() {
+    var panel = document.getElementById("previewStickyWrapper");
+    if (!panel) return;
+    var formInputs = document.querySelectorAll("#formPenawaran input, #formPenawaran select, #formPenawaran textarea");
+    formInputs.forEach(function(el) {
+        el.addEventListener("focus", function() {
+            if (!panel.classList.contains("is-docked") && !panel.classList.contains("is-ghost") && panel.style.display !== "none" && !panel.classList.contains("d-none")) {
+                panel.classList.add("auto-dimmed");
+            }
+        });
+        el.addEventListener("blur", function() {
+            panel.classList.remove("auto-dimmed");
+        });
+    });
+    panel.addEventListener("mouseenter", function() {
+        panel.classList.remove("auto-dimmed");
+    });
+}
+
+function initSpPreviewDraggable() {
+    var panel = document.getElementById("previewStickyWrapper");
+    var handle = document.getElementById("previewTopToolbar");
+    var formGrid = document.querySelector(".form-preview-grid");
+    if (!panel || !handle || handle.dataset.draggableInit === "1") return;
+    handle.dataset.draggableInit = "1";
+
+    initSpPreviewAutoDim();
+    initSpWindowResize();
+
+    // Default adalah minimized saat awal dibuka; double-click toolbar untuk toggle expand/minimize
+    handle.addEventListener("dblclick", function(e) {
+        if (e.target.closest("button, a, input, select, .dropdown-menu, .tab-btn")) return;
+        toggleMinimizeSpPreview();
+    });
+
+    var isDragging = false;
+    var startX, startY, initialLeft, initialTop;
+
+    handle.addEventListener("mousedown", function(e) {
+        if (e.target.closest("button, a, input, select, .dropdown-menu, .tab-btn")) {
+            return;
+        }
+
+        // Jika sedang docked, undock secara mulus saat digeser
+        if (panel.classList.contains("is-docked")) {
+            panel.classList.remove("is-docked");
+            var btnDock = document.getElementById("btnDockSpPreview");
+            if (btnDock) {
+                btnDock.classList.remove("active");
+                btnDock.innerHTML = '<i class="bi bi-layout-sidebar-reverse"></i>';
+                btnDock.title = "Sematkan ke Sisi Kanan (Dock)";
+            }
+            if (formGrid) formGrid.classList.remove("has-docked-preview");
+            try { localStorage.setItem("sp_preview_docked", "0"); } catch(e) {}
+        }
+
+        isDragging = true;
+        panel.classList.add("is-dragging");
+        document.body.style.userSelect = "none";
+
+        var rect = panel.getBoundingClientRect();
+        startX = e.clientX;
+        startY = e.clientY;
+        initialLeft = rect.left;
+        initialTop = rect.top;
+
+        panel.style.right = "auto";
+        panel.style.bottom = "auto";
+        panel.style.left = initialLeft + "px";
+        panel.style.top = initialTop + "px";
+
+        function onMouseMove(e) {
+            if (!isDragging) return;
+            var dx = e.clientX - startX;
+            var dy = e.clientY - startY;
+
+            var newLeft = initialLeft + dx;
+            var newTop = initialTop + dy;
+
+            var maxLeft = window.innerWidth - 120;
+            var maxTop = window.innerHeight - 60;
+            newLeft = Math.max(10, Math.min(newLeft, maxLeft));
+            newTop = Math.max(10, Math.min(newTop, maxTop));
+
+            panel.style.left = newLeft + "px";
+            panel.style.top = newTop + "px";
+        }
+
+        function onMouseUp() {
+            isDragging = false;
+            panel.classList.remove("is-dragging");
+            document.body.style.userSelect = "";
+            document.removeEventListener("mousemove", onMouseMove);
+            document.removeEventListener("mouseup", onMouseUp);
+        }
+
+        document.addEventListener("mousemove", onMouseMove);
+        document.addEventListener("mouseup", onMouseUp);
+    });
+
+    handle.addEventListener("touchstart", function(e) {
+        if (e.target.closest("button, a, input, select, .dropdown-menu, .tab-btn")) return;
+
+        if (panel.classList.contains("is-docked")) {
+            panel.classList.remove("is-docked");
+            var btnDock = document.getElementById("btnDockSpPreview");
+            if (btnDock) {
+                btnDock.classList.remove("active");
+                btnDock.innerHTML = '<i class="bi bi-layout-sidebar-reverse"></i>';
+            }
+            if (formGrid) formGrid.classList.remove("has-docked-preview");
+            try { localStorage.setItem("sp_preview_docked", "0"); } catch(e) {}
+        }
+
+        var touch = e.touches[0];
+        isDragging = true;
+        panel.classList.add("is-dragging");
+
+        var rect = panel.getBoundingClientRect();
+        startX = touch.clientX;
+        startY = touch.clientY;
+        initialLeft = rect.left;
+        initialTop = rect.top;
+
+        panel.style.right = "auto";
+        panel.style.bottom = "auto";
+        panel.style.left = initialLeft + "px";
+        panel.style.top = initialTop + "px";
+
+        function onTouchMove(e) {
+            if (!isDragging) return;
+            var t = e.touches[0];
+            var dx = t.clientX - startX;
+            var dy = t.clientY - startY;
+            var newLeft = Math.max(10, Math.min(initialLeft + dx, window.innerWidth - 80));
+            var newTop = Math.max(10, Math.min(initialTop + dy, window.innerHeight - 60));
+            panel.style.left = newLeft + "px";
+            panel.style.top = newTop + "px";
+        }
+
+        function onTouchEnd() {
+            isDragging = false;
+            panel.classList.remove("is-dragging");
+            document.removeEventListener("touchmove", onTouchMove);
+            document.removeEventListener("touchend", onTouchEnd);
+        }
+
+        document.addEventListener("touchmove", onTouchMove);
+        document.addEventListener("touchend", onTouchEnd);
+    }, { passive: true });
+}
+
+// Inisialisasi draggable saat load
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initSpPreviewDraggable);
+} else {
+    initSpPreviewDraggable();
 }
 </script>
