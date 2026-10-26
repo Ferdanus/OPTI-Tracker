@@ -67,9 +67,41 @@ class OrderController extends Controller {
         }
 
         $orderModel = new OrderLayanan($this->db);
+        // Humas hanya melihat order yang PO-nya sudah dikirim kepadanya (sudah disetujui Ketua Tim)
+        if ($userRole === 'humas' && !$isSuperadmin) { $orderModel->batasiUntukHumas(true); }
         
         // Data order sesuai tab yang dipilih
         $daftarOrder = $orderModel->allWithRelasi($filterJenis, $filterStatus, $search, $filterTahun, $filterTab, $filterBulan);
+
+        // Tanda "Giliran Anda": order Tahap 8 yang PO-nya sedang menunggu role/akun yang login
+        $uidLogin = (int) $this->getUserId();
+        foreach ($daftarOrder as &$barisOrder) {
+            $pemegang = (string) ($barisOrder['po_pemegang'] ?? '');
+            $giliran = false;
+            if (!$isSuperadmin && $pemegang !== '') {
+                if ($pemegang === 'humas') {
+                    $giliran = ($userRole === 'humas');
+                } elseif ($pemegang === 'mitra') {
+                    $giliran = $this->isTimMitra();
+                } elseif ($pemegang === 'ppk') {
+                    $giliran = ($userRole === 'ppk');
+                } elseif ($pemegang === 'katim') {
+                    $giliran = $isKetuaTim;
+                } elseif ($pemegang === 'pic') {
+                    $giliran = ($uidLogin > 0 && $uidLogin === (int) ($barisOrder['ketua_pelaksana_id'] ?? 0));
+                }
+            }
+            $barisOrder['giliran_anda'] = $giliran;
+        }
+        unset($barisOrder);
+        // Order yang sedang giliran akun ini dan belum dibaca naik ke paling atas (urutan lainnya tidak berubah).
+        // Begitu dibuka/dibaca, status 'belum' hilang dan barisnya otomatis kembali ke posisi aslinya.
+        $naik = array(); $biasa = array();
+        foreach ($daftarOrder as $barisNaik) {
+            if (!empty($barisNaik['giliran_anda']) && ($barisNaik['po_baca_status'] ?? '') === 'belum') { $naik[] = $barisNaik; } else { $biasa[] = $barisNaik; }
+        }
+        if (!empty($naik)) { $daftarOrder = array_merge($naik, $biasa); }
+        unset($barisNaik);
         
         // Counter untuk badge 4 tab navigasi
         $countMasuk       = count($orderModel->allWithRelasi($filterJenis, '', '', $filterTahun, 'masuk', $filterBulan));
@@ -871,8 +903,10 @@ class OrderController extends Controller {
                 $langkahBerikutnya['tombol_teks'] = $alur['aksi']['label'];
                 $langkahBerikutnya['tombol_url'] = $alur['aksi']['url'];
                 $langkahBerikutnya['tombol_modal'] = $alur['aksi']['modal'];
+                $langkahBerikutnya['tombol_panel'] = !empty($alur['aksi']['panel']) ? (int) $alur['aksi']['panel'] : 0;
+                $langkahBerikutnya['tombol_panel_jenis'] = !empty($alur['aksi']['panel_jenis']) ? (string) $alur['aksi']['panel_jenis'] : '';
                 if ($alur['tampil_form']) {
-                    $langkahBerikutnya['tombol_teks'] = 'Susun PO Sekarang';
+                    $langkahBerikutnya['tombol_teks'] = !empty($alur['form_revisi']) ? ($alur['bar_judul'][0] === 'E' ? 'Edit PO' : 'Kerjakan Revisi PO') : 'Susun PO Sekarang';
                     $langkahBerikutnya['tombol_url'] = '#cardPo';
                 }
                 $langkahBerikutnya['tombol_icon'] = 'bi-patch-check-fill';
@@ -2060,6 +2094,9 @@ class OrderController extends Controller {
         $isSuper = $this->isSuperadmin();
         $isKatim = ($this->isKetuaTim() || $isSuper);
         $isKetupel = ($ketupelId > 0 && $uid === $ketupelId);
+        $isHumas = ($this->getUserRole() === 'humas');
+        $isMitra = $this->isTimMitra();
+        $isPpk = ($this->getUserRole() === 'ppk');
         $nomor  = $po ? (string) ($po['nomor_po'] ?? '') : '';
 
         $fmt = function ($v) {
@@ -2129,6 +2166,22 @@ class OrderController extends Controller {
             'perlu_revisi' => 'Perlu revisi', 'ppk_minta' => 'Menunggu keputusan', 'ppk_katim_kerja' => 'Dikerjakan Ketua Tim',
             'ppk_ketupel_kerja' => 'Dikerjakan Ketua Pelaksana', 'ppk_katim_review' => 'Review hasil revisi',
         );
+        // Status dibaca penerima PO di langkah yang sedang berjalan (kolom jejak baca yang sama dengan Daftar Review PO / Daftar PO Humas)
+        $bacaDef = array(
+            'menunggu_review' => array('reviewed_at', 'Ketua Tim', ''), 'perlu_revisi' => array('minta_dibaca_at', 'Ketua Pelaksana', ''),
+            'direvisi' => array('revisi_dibaca_at', 'Ketua Tim', ''), 'verif_humas' => array('humas_dibaca_at', 'Humas', 'disposisi_humas_at'),
+            'ppk_minta' => array('ppk_dibaca_at', 'Ketua Tim', ''), 'ppk_katim_review' => array('ppk_dibaca_at', 'Ketua Tim', ''),
+            'ppk_ketupel_kerja' => array('ppk_dibaca_at', 'Ketua Pelaksana', ''),
+        );
+        $baca = null;   // array(belum => bool, penerima => string, waktu => string)
+        if ($po && isset($bacaDef[$state]) && array_key_exists($bacaDef[$state][0], $po)) {
+            $bulanId = array('', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des');
+            $tb = trim((string) $po[$bacaDef[$state][0]]);
+            if ($tb !== '' && (strpos($tb, '0000') === 0 || !strtotime($tb))) { $tb = ''; }
+            if ($tb !== '' && $bacaDef[$state][2] !== '' && !empty($po[$bacaDef[$state][2]]) && strtotime($tb) < strtotime((string) $po[$bacaDef[$state][2]])) { $tb = ''; }
+            $baca = array('belum' => ($tb === ''), 'penerima' => $bacaDef[$state][1],
+                'waktu' => ($tb === '' ? '' : ((int) date('j', strtotime($tb)) . ' ' . $bulanId[(int) date('n', strtotime($tb))] . ' ' . date('H:i', strtotime($tb)))));
+        }
         $langkah = array();
         foreach ($namaLangkah as $n => $nm) {
             if ($state === 'aktif' || $n < $cur) { $cls = 'done'; }
@@ -2138,7 +2191,13 @@ class OrderController extends Controller {
             if ($cls === 'done') { $tg = $waktu[$n]; }
             elseif ($cls === 'cur') { $tg = 'Sedang di sini'; }
             elseif ($cls === 'rev') { $tg = isset($tagRev[$state]) ? $tagRev[$state] : 'Perlu revisi'; }
-            $langkah[] = array('no' => $n + 1, 'nama' => $nm, 'aktor' => $aktorLangkah[$n], 'cls' => $cls, 'dot' => ($cls === 'done' ? '&#10003;' : ($cls === 'rev' ? '!' : (string) ($n + 1))), 'tag' => $tg);
+            $tg2 = ''; $tg2c = '';
+            if ($baca && $n === $cur && ($cls === 'cur' || $cls === 'rev')) {
+                $tg2 = $baca['belum'] ? 'Belum dibuka ' . $baca['penerima'] : 'Dibuka ' . $baca['waktu'];
+                $tg2c = $baca['belum'] ? 'u' : 'd';
+                if ($cls === 'cur') { $tg = ''; }   // "Sedang di sini" digantikan status dibaca
+            }
+            $langkah[] = array('no' => $n + 1, 'nama' => $nm, 'aktor' => $aktorLangkah[$n], 'cls' => $cls, 'dot' => ($cls === 'done' ? '&#10003;' : ($cls === 'rev' ? '!' : (string) ($n + 1))), 'tag' => $tg, 'tag2' => $tg2, 'tag2_cls' => $tg2c);
         }
 
         $ini = '';
@@ -2169,22 +2228,56 @@ class OrderController extends Controller {
         list($judul, $deskripsi, $pj) = $teks[$state];
 
         // tombol aksi utama untuk pengguna yang sedang membuka halaman
-        $aksi = array('label' => '', 'url' => '', 'modal' => '');
+        $aksi = array('label' => '', 'url' => '', 'modal' => '', 'panel' => 0);   // panel = id PO yang dibuka sebagai panel slide di halaman ini (tanpa pindah halaman)
         if ($state === 'belum_pic' && $isKatim) {
             $aksi = array('label' => 'Tunjuk Ketua Pelaksana PO', 'url' => '', 'modal' => '#modalTunjukKetupel');
         } elseif ($actor === 'katim' && $isKatim) {
             $m = array('menunggu_review' => array('Review PO', $urlDaftar), 'direvisi' => array('Review PO', $urlDaftar),
                 'ppk_minta' => array('Putuskan Revisi PPK BLU', $urlPpk), 'ppk_katim_kerja' => array('Kerjakan Revisi PPK BLU', $urlPpk),
                 'ppk_katim_review' => array('Review Hasil Revisi', $urlPpk));
-            if (isset($m[$state])) { $aksi = array('label' => $m[$state][0], 'url' => $m[$state][1], 'modal' => ''); }
+            if (isset($m[$state])) { $aksi = array('label' => $m[$state][0], 'url' => $m[$state][1], 'modal' => '', 'panel' => ($m[$state][1] === $urlDaftar && $poId > 0) ? $poId : 0); }
+        } elseif ($state === 'verif_humas' && $isHumas && $poId > 0) {
+            // Humas: slide verifikasi yang sama dengan Daftar PO Humas, dibuka langsung di atas detail order
+            $aksi = array('label' => 'Verifikasi PO', 'url' => $base . '/po-humas', 'modal' => '', 'panel' => $poId, 'panel_jenis' => 'humas');
+        } elseif ($state === 'verif_mitra' && $isMitra && !$isSuper && $poId > 0) {
+            // Tim Mitra: slide verifikasi yang sama dengan halaman Verifikasi PO Tim Mitra, dibuka langsung di atas detail order
+            $aksi = array('label' => 'Verifikasi PO', 'url' => $base . '/po-kegiatan/validasi-mitra', 'modal' => '', 'panel' => $poId, 'panel_jenis' => 'mitra');
+        } elseif ($state === 'verif_ppk' && $isPpk && !$isSuper && $poId > 0) {
+            // PPK BLU: slide verifikasi yang sama dengan halaman Daftar Review PO PPK BLU, dibuka langsung di atas detail order
+            $aksi = array('label' => 'Verifikasi PO', 'url' => $base . '/po-ppk', 'modal' => '', 'panel' => $poId, 'panel_jenis' => 'ppk');
+        } elseif ($isPpk && !$isSuper && $poId > 0 && in_array($state, array('ppk_minta', 'ppk_katim_kerja', 'ppk_ketupel_kerja', 'ppk_katim_review'), true)) {
+            // PPK BLU saat revisi yang dia minta sedang dikerjakan: "Lihat PO" = slide yang sama, baca saja (catatan sudah terkirim).
+            // panel_pra = slide dimuat lebih dulu (tersembunyi) supaya terbuka tanpa loading.
+            $aksi = array('label' => 'Lihat PO', 'url' => '', 'modal' => '', 'panel' => 0, 'panel_lihat' => $poId, 'panel_jenis' => 'ppk_lihat', 'panel_pra' => 1);
+        } elseif ($isPpk && !$isSuper && $poId > 0 && $state === 'aktif') {
+            $aksi = array('label' => 'Lihat PO', 'url' => '', 'modal' => '', 'panel' => 0, 'panel_lihat' => $poId, 'panel_jenis' => 'ppk');
+        } elseif ($isMitra && !$isSuper && $poId > 0 && in_array($state, array('verif_ppk', 'aktif'), true)) {
+            $aksi = array('label' => 'Lihat PO', 'url' => '', 'modal' => '', 'panel' => 0, 'panel_lihat' => $poId, 'panel_jenis' => 'mitra');
+        } elseif ($isHumas && $poId > 0 && in_array($state, array('verif_mitra', 'verif_ppk', 'aktif'), true)) {
+            // Humas sesudah memverifikasi: tombol Lihat PO membuka slide yang sama (bukan modal dokumen biasa)
+            $aksi = array('label' => 'Lihat PO', 'url' => '', 'modal' => '', 'panel' => 0, 'panel_lihat' => $poId, 'panel_jenis' => 'humas');
         } elseif ($actor === 'pic' && ($isKetupel || $isSuper)) {
             $m = array('perlu_revisi' => array('Buka Revisi', $urlDaftar), 'ppk_ketupel_kerja' => array('Buka Revisi PPK BLU', $urlPpk));
-            if (isset($m[$state])) { $aksi = array('label' => $m[$state][0], 'url' => $m[$state][1], 'modal' => ''); }
+            if (isset($m[$state])) { $aksi = array('label' => $m[$state][0], 'url' => $m[$state][1], 'modal' => '', 'panel' => ($m[$state][1] === $urlDaftar && $poId > 0) ? $poId : 0); }
         }
+
+        // form PO tampil langsung di Tahap 8 juga saat ada revisi: revisi Ketua Tim (Ketua Pelaksana), revisi PPK BLU (yang mengerjakannya)
+        $revisiPpk = in_array($state, array('ppk_ketupel_kerja', 'ppk_katim_kerja'), true);
+        // Ketua Tim mengedit PO sendiri saat review (tombol "Edit PO" di panel review): halaman dibuka dengan ?edit_po=1
+        $editKatim = ($isKatim && in_array($state, array('menunggu_review', 'direvisi'), true) && (string) $this->f3->get('GET.edit_po') === '1');
+        $formRevisi = (($state === 'perlu_revisi' || $state === 'ppk_ketupel_kerja') && ($isKetupel || $isSuper))
+            || ($state === 'ppk_katim_kerja' && $isKatim) || $editKatim;
+        if ($formRevisi) {
+            $aksi = array('label' => $editKatim ? 'Edit PO' : 'Kerjakan Revisi', 'url' => '#cardPo', 'modal' => '', 'panel' => 0);
+        }
+
+        if (!isset($aksi['panel_jenis'])) { $aksi['panel_jenis'] = ''; }
+        if (!isset($aksi['panel_lihat'])) { $aksi['panel_lihat'] = 0; }
+        if (!isset($aksi['panel_pra'])) { $aksi['panel_pra'] = 0; }
 
         // pesan di bawah garis progres
         $info = array('tipe' => 'info', 'html' => '');
-        $giliran = (bool) ($sisi && $actor !== '');
+        $giliran = (bool) ($sisi && $actor !== '') || ($state === 'verif_humas' && $isHumas) || ($state === 'verif_mitra' && $isMitra && !$isSuper) || ($state === 'verif_ppk' && $isPpk && !$isSuper);
         $bidang = function ($t, $h) { return array('tipe' => $t, 'html' => $h); };
         switch ($state) {
             case 'menunggu_review':
@@ -2212,9 +2305,23 @@ class OrderController extends Controller {
             case 'aktif':
                 $info = $bidang('success', 'Semua verifikasi selesai. PO aktif dan pengerjaan lab dapat dimulai.');
                 break;
-            case 'verif_humas': $info = $bidang('info', 'Saat ini di meja <b>Humas</b>. Tahap 8 hanya menampilkan posisinya.'); break;
-            case 'verif_mitra': $info = $bidang('info', 'Saat ini di meja <b>Tim Mitra</b>. Tahap 8 hanya menampilkan posisinya.'); break;
-            case 'verif_ppk':   $info = $bidang('info', 'Saat ini di meja <b>PPK BLU</b>. Tahap 8 hanya menampilkan posisinya.'); break;
+            case 'verif_humas':
+                $info = $isHumas ? $bidang('warning', '<b>Giliran Anda.</b> Buka Verifikasi PO untuk memeriksa PO, Map Kendali, dan berkas, lalu verifikasi.')
+                    : $bidang('info', 'Saat ini di meja <b>Humas</b>. Tahap 8 hanya menampilkan posisinya.');
+                break;
+            case 'verif_mitra':
+                $info = ($isMitra && !$isSuper) ? $bidang('warning', '<b>Giliran Anda.</b> Buka Verifikasi PO untuk memeriksa PO dan berkas, lalu verifikasi.')
+                    : $bidang('info', 'Saat ini di meja <b>Tim Mitra</b>. Tahap 8 hanya menampilkan posisinya.');
+                break;
+            case 'verif_ppk':
+                $info = ($isPpk && !$isSuper) ? $bidang('warning', '<b>Giliran Anda.</b> Buka Verifikasi PO untuk memeriksa PO: verifikasi, atau minta revisi dengan catatan.')
+                    : $bidang('info', 'Saat ini di meja <b>PPK BLU</b>. Tahap 8 hanya menampilkan posisinya.');
+                break;
+        }
+
+        // pihak yang bukan pemegang (pesan tipe info) ikut melihat apakah penerimanya sudah membuka PO
+        if ($baca && $info['tipe'] === 'info' && $info['html'] !== '') {
+            $info['html'] .= ' ' . ($baca['belum'] ? 'Belum dibuka ' . $baca['penerima'] . '.' : 'Sudah dibuka ' . $baca['penerima'] . ' pada ' . $baca['waktu'] . '.');
         }
 
         // badge kepala kartu + label tab tahap 8: array(kelas bootstrap, teks panjang, teks pendek)
@@ -2247,7 +2354,12 @@ class OrderController extends Controller {
             'boleh_ganti' => ($isKatim && in_array($state, array('belum_pic', 'disusun'), true)),
             'po_id' => $poId, 'nomor_po' => $nomor, 'dikirim_at' => $waktu[0], 'terkirim' => $sent,
             'langkah' => $langkah, 'giliran' => $giliran, 'aksi' => $aksi, 'info' => $info,
-            'tampil_form' => ($state === 'disusun' && ($isKetupel || $isSuper)),
+            'tampil_form' => (($state === 'disusun' && ($isKetupel || $isSuper)) || $formRevisi),
+            'form_revisi' => $formRevisi,
+            'bar_judul' => $editKatim ? 'Edit Petunjuk Operasional (PO)' : 'Revisi Petunjuk Operasional (PO)',
+            'bar_ket' => $editKatim ? 'sebagai Ketua Tim' : ($revisiPpk ? 'catatan PPK BLU' : 'catatan Ketua Tim'),
+            'revisi_ppk' => ($formRevisi && $revisiPpk),
+            'url_ppk' => $urlPpk,
             'embed_url' => $embedUrl,
             'badge_kelas' => $lab[$state][0], 'badge_teks' => $lab[$state][1], 'tab_teks' => $lab[$state][2],
             'aktif' => ($state === 'aktif'),

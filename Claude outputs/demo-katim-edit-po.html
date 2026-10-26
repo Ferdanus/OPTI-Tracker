@@ -1,0 +1,137 @@
+<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Demo Ketua Tim edit PO</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<style>
+body{background:#f1f5f9;padding:20px;max-width:1100px;margin:0 auto}
+.demo-note{font-size:.8rem;color:#475569;background:#fff;border:1px dashed #cbd5e1;border-radius:10px;padding:8px 12px;margin-bottom:14px}
+.system-section-card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden}
+.system-section-header{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid #e2e8f0}
+                                .pa-strip { display:flex; align-items:center; gap:12px; flex-wrap:wrap; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 14px; margin-bottom:14px; }
+                                .pa-po { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px 14px; margin-bottom:14px; }
+                                .pa-tl { display:flex; flex-wrap:wrap; margin:4px 0 16px; }
+                                .pa-st { flex:1; min-width:130px; text-align:center; position:relative; padding:0 4px 4px; }
+                                .pa-st::before { content:""; position:absolute; top:15px; left:-50%; width:100%; height:3px; background:#e2e8f0; z-index:0; }
+                                .pa-st:first-child::before { display:none; }
+                                .pa-st.done::before, .pa-st.cur::before, .pa-st.rev::before { background:#16a34a; }
+                                .pa-dot { width:32px; height:32px; border-radius:50%; margin:0 auto 6px; display:grid; place-items:center; font-size:.8rem; font-weight:700; background:#e2e8f0; color:#64748b; position:relative; z-index:1; border:3px solid #fff; box-shadow:0 0 0 1px #e2e8f0; }
+                                .pa-st.done .pa-dot { background:#16a34a; color:#fff; box-shadow:0 0 0 1px #16a34a; }
+                                .pa-st.cur .pa-dot { background:#2563eb; color:#fff; box-shadow:0 0 0 4px #bfdbfe; }
+                                .pa-st.rev .pa-dot { background:#f59e0b; color:#fff; box-shadow:0 0 0 4px #fde68a; }
+                                .pa-nm { font-size:.78rem; font-weight:700; line-height:1.2; color:#0f172a; }
+                                .pa-ac { font-size:.7rem; color:#64748b; }
+                                .pa-tg { font-size:.68rem; color:#166534; margin-top:2px; }
+                                .pa-st.cur .pa-tg { color:#1d4ed8; font-weight:600; }
+                                .pa-st.rev .pa-tg { color:#b45309; font-weight:600; }
+                                .pa-fh { background:#eaf3ff; border-bottom:1px solid #cfe2ff; padding:8px 14px; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; font-size:.8rem; color:#12335c; }
+        .rv-bar { position: sticky; top: 8px; z-index: 30; background: #fffbeb; border: 1px solid #fcd34d; border-radius: 12px; padding: 10px 14px; margin-bottom: 16px; box-shadow: 0 4px 14px rgba(15,23,42,.08); }
+        .rv-bar-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .rv-bar-top b { font-size: .86rem; color: #92400e; }
+        .rv-bar-hit { font-size: .8rem; color: #78350f; }
+        .rv-bar-tog { margin-left: auto; border: 0; background: transparent; color: #92400e; font-size: .8rem; font-weight: 600; cursor: pointer; padding: 2px 4px; }
+        .rv-prog { height: 5px; background: #fde68a; border-radius: 99px; overflow: hidden; margin-top: 8px; }
+        .rv-prog i { display: block; height: 100%; width: 0; background: #059669; transition: width .25s; }
+        .rv-list { margin: 10px 0 0; padding: 0; list-style: none; display: none; max-height: 40vh; overflow: auto; }
+        .rv-list.open { display: block; }
+        .rv-item { display: flex; gap: 8px; align-items: flex-start; padding: 6px 0; border-top: 1px solid #fde68a; font-size: .84rem; }
+        .rv-item label { margin: 0; cursor: pointer; flex: 1; }
+        .rv-item .rv-bag { display: inline-block; font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: #92400e; background: #fef3c7; border-radius: 6px; padding: 1px 6px; margin-right: 6px; }
+        .rv-item.done label span.t { text-decoration: line-through; color: #64748b; }
+        .rv-item a { font-size: .75rem; white-space: nowrap; }
+        .rv-inline { margin: 0 16px 12px; border-left: 3px solid #f59e0b; background: #fffbeb; border-radius: 8px; padding: 8px 12px; font-size: .84rem; }
+        .rv-inline.done { border-left-color: #059669; background: #ecfdf5; }
+        .rv-inline .rv-row { display: flex; gap: 8px; align-items: flex-start; }
+        .rv-inline .rv-row + .rv-row { margin-top: 6px; }
+        .rv-inline label { margin: 0; cursor: pointer; }
+        .rv-inline .done-t { text-decoration: line-through; color: #64748b; }
+        .rv-err { color: #b91c1c; font-size: .78rem; margin-top: 4px; }
+        .rv-kirim { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; padding-top: 10px; border-top: 1px solid #fde68a; }
+        .rv-kirim[hidden] { display: none; }
+        .rv-kirim .rv-kirim-hint { font-size: .8rem; color: #065f46; flex: 1; min-width: 180px; }
+        .rv-kirim button { border: 0; background: #059669; color: #fff; font-weight: 700; font-size: .85rem; border-radius: 99px; padding: 8px 18px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+        .rv-kirim button:hover { background: #047857; }
+        .rv-kirim button:disabled { opacity: .6; cursor: wait; }
+    
+.pa-frame{margin:0 -1.5rem;border-top:1px solid #bcd3f5;border-bottom:1px solid #bcd3f5}
+.pa-fh{background:#eaf3ff;border-bottom:1px solid #cfe2ff;padding:8px 14px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-size:.8rem;color:#12335c}
+.pa-formmock{padding:14px 16px;background:#fff}
+.sheet-scrim{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:1050;display:none}
+.sheet{position:fixed;top:0;right:0;bottom:0;width:min(900px,92vw);background:#f1f5f9;z-index:1055;display:none;flex-direction:column}
+.sheet.open,.sheet-scrim.open{display:flex}
+.sheet-h{background:#fff;border-bottom:1px solid #e2e8f0;padding:14px 18px}
+.sheet-b{flex:1;overflow:auto;padding:18px}
+.sheet-f{background:#fff;border-top:1px solid #e2e8f0;padding:12px 18px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.dlg{position:fixed;inset:0;z-index:2100;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(15,23,42,.55)}.dlg[hidden]{display:none}
+.dlg-box{background:#fff;border-radius:16px;width:100%;max-width:400px;padding:26px 24px 20px;text-align:center;box-shadow:0 24px 60px rgba(15,23,42,.3)}
+.dlg-ic{width:58px;height:58px;border-radius:50%;display:grid;place-items:center;margin:0 auto 14px;font-size:27px;background:#ecfdf5;color:#059669}
+.dlg-box h5{font-size:1.05rem;font-weight:800;margin:0 0 6px}.dlg-box p{color:#64748b;font-size:.85rem;margin:0 0 18px}
+.dlg-btns{display:flex;gap:10px}.dlg-btns button{flex:1;padding:10px;border-radius:9px;font-weight:700;font-size:.85rem;cursor:pointer;border:1.5px solid #e2e8f0;background:#fff;color:#334155}.dlg-btns button.ya{background:#334155;border-color:#334155;color:#fff}
+.doc{background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:24px;font-family:Georgia,serif;font-size:.9rem;max-width:620px;margin:0 auto}
+</style></head><body>
+<div class="demo-note"><b>Demo (Ketua Tim).</b> Klik <b>Review PO</b> untuk membuka slide. Di slide, klik <b>Edit PO</b>: slide menutup dan form PO muncul di Tahap 8 (mode Ketua Tim). Di bawah form ada <b>Batal</b>, <b>Simpan draft</b>, dan <b>Simpan dan setujui</b> (ada pop up konfirmasi). Data palsu, tidak ada yang tersimpan.</div>
+
+<div class="system-section-card">
+ <div class="system-section-header">
+  <h6 class="m-0 fw-bold d-flex align-items-center gap-2"><span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-0.5 small fw-bold">8</span><i class="bi bi-file-earmark-check text-primary fs-5"></i> Petunjuk Operasional (PO) Kegiatan</h6>
+  <div><span class="badge bg-warning-subtle text-dark border border-warning me-1"><i class="bi bi-hourglass-split me-1"></i> Giliran Anda</span><span class="badge bg-primary"><i class="bi bi-patch-check me-1"></i> Menunggu Review</span></div>
+ </div>
+ <div class="p-4">
+  <!-- TAMPILAN 1: alur + tombol Review PO -->
+  <div id="vAlur">
+   <div class="pa-po"><div><div class="fw-bold text-dark"><i class="bi bi-file-earmark-check text-primary me-1"></i> Nomor PO: <span class="font-monospace text-primary">3/PO/BBSPJIS/X/2026</span></div><div class="small text-muted">Dikirim 22 Okt 2026, 14:10</div></div>
+    <div class="d-flex gap-2"><button class="btn btn-primary btn-sm fw-semibold px-3" id="bReview">Review PO</button><button class="btn btn-outline-secondary btn-sm fw-semibold px-3"><i class="bi bi-eye me-1"></i> Lihat PO</button></div></div>
+   <div class="pa-tl">
+    <div class="pa-st done"><div class="pa-dot">&#10003;</div><div class="pa-nm">Disusun</div><div class="pa-ac">Ketua Pelaksana</div><div class="pa-tg">22 Okt 2026, 14:10</div></div>
+    <div class="pa-st cur"><div class="pa-dot">2</div><div class="pa-nm">Review Ketua Tim</div><div class="pa-ac">Ketua Tim OPTI</div><div class="pa-tg">Sedang di sini</div></div>
+    <div class="pa-st"><div class="pa-dot">3</div><div class="pa-nm">Verifikasi Humas</div><div class="pa-ac">Humas</div><div class="pa-tg"></div></div>
+    <div class="pa-st"><div class="pa-dot">4</div><div class="pa-nm">Verifikasi Tim Mitra</div><div class="pa-ac">Tim Mitra</div><div class="pa-tg"></div></div>
+    <div class="pa-st"><div class="pa-dot">5</div><div class="pa-nm">Verifikasi PPK BLU</div><div class="pa-ac">PPK BLU</div><div class="pa-tg"></div></div>
+    <div class="pa-st"><div class="pa-dot">6</div><div class="pa-nm">PO Aktif</div><div class="pa-ac">Pengerjaan lab dimulai</div><div class="pa-tg"></div></div>
+   </div>
+   <div class="alert alert-warning border-0 small mb-0"><b>Giliran Anda.</b> Buka Review PO: setujui, atau minta revisi dengan catatan.</div>
+  </div>
+
+  <!-- TAMPILAN 2: form edit oleh Ketua Tim -->
+  <div id="vForm" class="d-none">
+   <div class="pa-frame">
+    <div class="pa-fh"><span><b>Edit Petunjuk Operasional (PO)</b> &middot; 3/PO/BBSPJIS/X/2026 &middot; sebagai Ketua Tim</span>
+     <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2"><i class="bi bi-arrows-fullscreen me-1"></i><span>Layar penuh</span></button></div>
+    <div class="pa-formmock">
+     <div class="rv-bar" style="position:static">
+      <div class="rv-bar-top"><i class="bi bi-clipboard2-check text-warning"></i><b>Anda mengedit PO ini sebagai Ketua Tim</b>
+       <span class="rv-bar-hit">Simpan draft: perubahan tersimpan, status review tidak berubah, lalu klik Review PO lagi. Simpan dan setujui: perubahan tersimpan dan PO langsung disetujui. Ketua Pelaksana diberi tahu lewat tab Alur.</span></div>
+     </div>
+     <div class="card mb-3"><div class="card-header"><h6 class="m-0">1. Dasar</h6></div><div class="card-body small text-muted">(isi form PO seperti halaman Buat PO)</div></div>
+     <div class="card mb-3"><div class="card-header"><h6 class="m-0">2. Tujuan</h6></div><div class="card-body small text-muted">(isi form PO)</div></div>
+     <div class="card mb-3"><div class="card-header"><h6 class="m-0">3. Ruang Lingkup</h6></div><div class="card-body small text-muted">(isi form PO)</div></div>
+     <div class="d-flex justify-content-end align-items-center gap-2 p-3 bg-white border rounded-3">
+      <button type="button" class="btn btn-outline-secondary px-4 py-2 rounded-pill fw-semibold" id="bBatal"><i class="bi bi-arrow-left me-1"></i> Batal, kembali ke review</button>
+      <button type="button" class="btn btn-outline-secondary px-4 py-2 rounded-pill fw-semibold" id="bDraft"><i class="bi bi-save me-1"></i> Simpan draft</button>
+      <button type="button" class="btn px-4 py-2 rounded-pill shadow-sm fw-bold d-inline-flex align-items-center gap-2" style="background:#059669;border:0;color:#fff" id="bSetuju"><i class="bi bi-check2-circle"></i> Simpan dan setujui</button>
+     </div>
+    </div>
+   </div>
+  </div>
+ </div>
+</div>
+
+<div class="dlg" id="dlg" hidden><div class="dlg-box"><div class="dlg-ic"><i class="bi bi-check2-circle"></i></div><h5>Simpan dan setujui PO ini?</h5><p>Perubahan di form disimpan, lalu PO disetujui dan diteruskan ke Humas untuk diverifikasi.</p><div class="dlg-btns"><button type="button" id="dNo">Batal</button><button type="button" class="ya" id="dYa">Simpan dan setujui</button></div></div></div>
+<div class="sheet-scrim" id="scrim"></div>
+<aside class="sheet" id="sheet">
+ <div class="sheet-h d-flex align-items-center gap-2"><span class="font-monospace fw-bold">3/PO/BBSPJIS/X/2026</span><span class="badge rounded-pill text-bg-light border">Menunggu review</span><button class="btn btn-outline-secondary btn-sm ms-auto" id="bTutup"><i class="bi bi-x-lg"></i></button></div>
+ <div class="sheet-b"><div class="doc"><div class="text-center fw-bold">PETUNJUK OPERASIONAL (PO)</div><div class="text-center small mb-3">Nomor: 3/PO/BBSPJIS/X/2026</div><p class="fw-bold mb-1">1. DASAR</p><p class="small">Persetujuan biaya kerjasama BBSPJIS dengan PT Polyfin Canggih...</p><p class="fw-bold mb-1">2. TUJUAN</p><p class="small">Mengetahui karakteristik emisi gas buang dari cerobong industri...</p><p class="fw-bold mb-1">3. RUANG LINGKUP</p><p class="small mb-0">Ruang lingkup kegiatan meliputi pengambilan sampel dan pengujian emisi cerobong...</p></div></div>
+ <div class="sheet-f"><span class="small text-muted">Belum ada catatan.</span><div class="d-flex gap-2"><button class="btn btn-outline-secondary btn-sm fw-bold" id="bEdit"><i class="bi bi-pencil me-1"></i> Edit PO</button><button class="btn btn-outline-secondary btn-sm fw-bold" disabled>Minta revisi</button><button class="btn btn-dark btn-sm fw-bold">Setujui</button></div></div>
+</aside>
+<script>
+var $=function(i){return document.getElementById(i)};
+function buka(){$('scrim').classList.add('open');$('sheet').classList.add('open')}
+function tutup(){$('scrim').classList.remove('open');$('sheet').classList.remove('open')}
+function mode(form){$('vAlur').classList.toggle('d-none',form);$('vForm').classList.toggle('d-none',!form);if(form){$('vForm').scrollIntoView({behavior:'smooth',block:'start'})}}
+$('bReview').onclick=buka;$('bTutup').onclick=tutup;$('scrim').onclick=tutup;
+$('bEdit').onclick=function(){tutup();mode(true)};
+$('bBatal').onclick=function(){mode(false)};
+$('bDraft').onclick=function(){alert('Demo: draft tersimpan. Halaman detail dimuat ulang dan Ketua Tim kembali ke tombol Review PO (status review tidak berubah).');mode(false)};
+$('bSetuju').onclick=function(){$('dlg').hidden=false};
+$('dNo').onclick=function(){$('dlg').hidden=true};
+$('dYa').onclick=function(){$('dlg').hidden=true;alert('Demo: perubahan disimpan dan PO disetujui. Halaman detail dimuat ulang, PO berpindah ke Verifikasi Humas.');mode(false)};
+</script></body></html>

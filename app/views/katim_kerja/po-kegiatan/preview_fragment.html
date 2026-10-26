@@ -488,7 +488,14 @@
                                         </check>
                                     </tr>
                                 </check>
-                                <check if="{{ @b.tipe == 'item' }}">
+                                <check if="{{ @b.tipe == 'item' && @b.disediakan_pt }}">
+                                    <tr>
+                                        <td></td>
+                                        <td style="padding-left: {{ (@b.depth * 14) }}px;">{{ @b.nama }}</td>
+                                        <td colspan="4" class="text-muted">Disediakan {{ @b.disediakan_pt }}</td>
+                                    </tr>
+                                </check>
+                                <check if="{{ @b.tipe == 'item' && !@b.disediakan_pt }}">
                                     <tr>
                                         <td></td>
                                         <td style="padding-left: {{ (@b.depth * 14) }}px;">{{ @b.nama }}</td>

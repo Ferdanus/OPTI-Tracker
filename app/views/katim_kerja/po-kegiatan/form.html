@@ -466,6 +466,12 @@
     border-radius: 20px;
 }
 .rab-item-row.rab-item-lembur td { background: #fffdf5; }
+/* RAB Lingkungan: tabel (header) baru tampil setelah ada item; item bisa ditandai "Disediakan PT" per baris */
+.rab-item-wrap.rab-kosong { display: none !important; }
+.rab-item-row.rab-item-pt td { background: #fffdf5; }
+.rab-item-pt-cell { color: #92400e; font-size: .8rem; }
+.rab-item-pt-cell input { max-width: 190px; font-weight: 700; color: #92400e; border-color: #fcd34d; background: #fffbeb; }
+.rab-item-ptcb { width: 16px; height: 16px; accent-color: #d97706; cursor: pointer; }
 .rab-lembur-form { white-space: normal; }
 .rab-lembur-form .rab-lembur-inline { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .rab-lembur-form .form-control { width: 70px; display: inline-block; }
@@ -653,6 +659,8 @@ input[type=number] {
 /* Bar tombol bawah form: satu baris (Kembali kiri, Simpan Draft + Kirim kanan), turun baris hanya kalau benar-benar sempit */
 html.silopti-embed .po-kembali { display: none !important; }
 html.silopti-embed .po-live-card { top: 12px !important; }
+html.silopti-embed.pa-pin .main-container { padding-bottom: 8px !important; }   /* Tahap 8: tidak ada ruang kosong di bawah tombol */
+html.silopti-embed .rv-bar { position: static !important; }   /* di Tahap 8 pita catatan revisi ikut isi form, tidak menempel di atas sehingga tidak menimpa form */
 html.silopti-embed.pa-pin { overflow: hidden !important; scroll-behavior: auto !important; }   /* tanpa animasi gulir (Bootstrap menyalakan smooth) supaya ikut persis dengan halaman induk */   /* di Tahap 8 yang menggulir halaman induk; isi form digeser oleh induk */   /* di iframe tidak ada topbar, jadi preview menempel dekat tepi atas */   /* di Tahap 8 detail order (iframe) tidak ada halaman daftar untuk kembali */
 .po-sticky-bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .6rem 1rem; margin-top: 1.25rem; }
 .po-sticky-bar > div { display: flex; align-items: center; gap: .5rem; flex-wrap: nowrap; }
@@ -825,10 +833,6 @@ html.silopti-embed.pa-pin { overflow: hidden !important; scroll-behavior: auto !
         </div>
         <div class="rv-prog"><i id="rvProg"></i></div>
         <ul class="rv-list" id="rvList"></ul>
-        <div class="rv-kirim" id="rvKirimBox" hidden>
-            <span class="rv-kirim-hint"><i class="bi bi-check2-circle"></i> Semua catatan sudah diperbaiki. Perubahan akan disimpan lalu langsung dikirim.</span>
-            <button type="button" id="rvKirimBtn"><i class="bi bi-send-fill"></i> <span id="rvKirimTx">Kirim</span></button>
-        </div>
         <div class="rv-err" id="rvErr" hidden></div>
     </div>
     </check>
@@ -1076,6 +1080,8 @@ html.silopti-embed.pa-pin { overflow: hidden !important; scroll-behavior: auto !
                         <button type="button" class="btn-editor" data-cmd="insertOrderedList" title="Penomoran Angka (1. 2. 3.)"><i class="bi bi-list-ol"></i></button>
                         <button type="button" class="btn-editor" data-cmd="insertAlphaList" title="Penomoran Huruf (a. b. c.)"><span class="fw-bold" style="font-size:0.75rem;">a.</span></button>
                         <button type="button" class="btn-editor" data-cmd="insertUnorderedList" title="Daftar Bullet (•)"><i class="bi bi-list-ul"></i></button>
+                        <button type="button" class="btn-editor" data-cmd="indent" title="Jorok baris pertama paragraf (Tab)"><i class="bi bi-text-indent-left"></i></button>
+                        <button type="button" class="btn-editor" data-cmd="outdent" title="Hapus jorokan (Shift+Tab)"><i class="bi bi-text-indent-right"></i></button>
                         <span class="editor-divider"></span>
                         <button type="button" class="btn-editor" data-cmd="insertTable" title="Sisipkan Tabel Rapi"><i class="bi bi-table"></i></button>
                         <button type="button" class="btn-editor btn-table-action text-primary" data-cmd="addRow" title="Tambah Baris" style="display:none;"><i class="bi bi-plus"></i> Baris</button>
@@ -1141,6 +1147,8 @@ html.silopti-embed.pa-pin { overflow: hidden !important; scroll-behavior: auto !
                             <button type="button" class="btn-editor" data-cmd="insertOrderedList" title="Penomoran Angka (1. 2. 3.)"><i class="bi bi-list-ol"></i></button>
                             <button type="button" class="btn-editor" data-cmd="insertAlphaList" title="Penomoran Huruf (a. b. c.)"><span class="fw-bold" style="font-size:0.75rem;">a.</span></button>
                             <button type="button" class="btn-editor" data-cmd="insertUnorderedList" title="Daftar Bullet (•)"><i class="bi bi-list-ul"></i></button>
+                            <button type="button" class="btn-editor" data-cmd="indent" title="Jorok baris pertama paragraf (Tab)"><i class="bi bi-text-indent-left"></i></button>
+                            <button type="button" class="btn-editor" data-cmd="outdent" title="Hapus jorokan (Shift+Tab)"><i class="bi bi-text-indent-right"></i></button>
                             <span class="editor-divider"></span>
                             <button type="button" class="btn-editor" data-cmd="insertTable" title="Sisipkan Tabel Rapi"><i class="bi bi-table"></i></button>
                             <button type="button" class="btn-editor btn-table-action text-primary" data-cmd="addRow" title="Tambah Baris" style="display:none;"><i class="bi bi-plus"></i> Baris</button>
@@ -1213,6 +1221,8 @@ html.silopti-embed.pa-pin { overflow: hidden !important; scroll-behavior: auto !
                             <button type="button" class="btn-editor" data-cmd="insertOrderedList" title="Penomoran Angka (1. 2. 3.)"><i class="bi bi-list-ol"></i></button>
                             <button type="button" class="btn-editor" data-cmd="insertAlphaList" title="Penomoran Huruf (a. b. c.)"><span class="fw-bold" style="font-size:0.75rem;">a.</span></button>
                             <button type="button" class="btn-editor" data-cmd="insertUnorderedList" title="Daftar Bullet (•)"><i class="bi bi-list-ul"></i></button>
+                            <button type="button" class="btn-editor" data-cmd="indent" title="Jorok baris pertama paragraf (Tab)"><i class="bi bi-text-indent-left"></i></button>
+                            <button type="button" class="btn-editor" data-cmd="outdent" title="Hapus jorokan (Shift+Tab)"><i class="bi bi-text-indent-right"></i></button>
                             <span class="editor-divider"></span>
                             <button type="button" class="btn-editor" data-cmd="insertTable" title="Sisipkan Tabel Rapi"><i class="bi bi-table"></i></button>
                             <button type="button" class="btn-editor btn-table-action text-primary" data-cmd="addRow" title="Tambah Baris" style="display:none;"><i class="bi bi-plus"></i> Baris</button>
@@ -1263,6 +1273,8 @@ html.silopti-embed.pa-pin { overflow: hidden !important; scroll-behavior: auto !
                             <button type="button" class="btn-editor" data-cmd="insertOrderedList" title="Penomoran Angka (1. 2. 3.)"><i class="bi bi-list-ol"></i></button>
                             <button type="button" class="btn-editor" data-cmd="insertAlphaList" title="Penomoran Huruf (a. b. c.)"><span class="fw-bold" style="font-size:0.75rem;">a.</span></button>
                             <button type="button" class="btn-editor" data-cmd="insertUnorderedList" title="Daftar Bullet (•)"><i class="bi bi-list-ul"></i></button>
+                            <button type="button" class="btn-editor" data-cmd="indent" title="Jorok baris pertama paragraf (Tab)"><i class="bi bi-text-indent-left"></i></button>
+                            <button type="button" class="btn-editor" data-cmd="outdent" title="Hapus jorokan (Shift+Tab)"><i class="bi bi-text-indent-right"></i></button>
                             <span class="editor-divider"></span>
                             <button type="button" class="btn-editor" data-cmd="insertTable" title="Sisipkan Tabel Rapi"><i class="bi bi-table"></i></button>
                             <button type="button" class="btn-editor btn-table-action text-primary" data-cmd="addRow" title="Tambah Baris" style="display:none;"><i class="bi bi-plus"></i> Baris</button>
@@ -1318,6 +1330,8 @@ html.silopti-embed.pa-pin { overflow: hidden !important; scroll-behavior: auto !
                                 <button type="button" class="btn-editor" data-cmd="insertOrderedList" title="Penomoran Angka (1. 2. 3.)"><i class="bi bi-list-ol"></i></button>
                                 <button type="button" class="btn-editor" data-cmd="insertAlphaList" title="Penomoran Huruf (a. b. c.)"><span class="fw-bold" style="font-size:0.75rem;">a.</span></button>
                                 <button type="button" class="btn-editor" data-cmd="insertUnorderedList" title="Daftar Bullet (•)"><i class="bi bi-list-ul"></i></button>
+                                <button type="button" class="btn-editor" data-cmd="indent" title="Jorok baris pertama paragraf (Tab)"><i class="bi bi-text-indent-left"></i></button>
+                                <button type="button" class="btn-editor" data-cmd="outdent" title="Hapus jorokan (Shift+Tab)"><i class="bi bi-text-indent-right"></i></button>
                                 <span class="editor-divider"></span>
                                 <button type="button" class="btn-editor" data-cmd="insertTable" title="Sisipkan Tabel Rapi"><i class="bi bi-table"></i></button>
                                 <button type="button" class="btn-editor btn-table-action text-primary" data-cmd="addRow" title="Tambah Baris" style="display:none;"><i class="bi bi-plus"></i> Baris</button>
@@ -1380,6 +1394,8 @@ html.silopti-embed.pa-pin { overflow: hidden !important; scroll-behavior: auto !
                                 <button type="button" class="btn-editor" data-cmd="insertOrderedList" title="Penomoran Angka (1. 2. 3.)"><i class="bi bi-list-ol"></i></button>
                                 <button type="button" class="btn-editor" data-cmd="insertAlphaList" title="Penomoran Huruf (a. b. c.)"><span class="fw-bold" style="font-size:0.75rem;">a.</span></button>
                                 <button type="button" class="btn-editor" data-cmd="insertUnorderedList" title="Daftar Bullet (•)"><i class="bi bi-list-ul"></i></button>
+                                <button type="button" class="btn-editor" data-cmd="indent" title="Jorok baris pertama paragraf (Tab)"><i class="bi bi-text-indent-left"></i></button>
+                                <button type="button" class="btn-editor" data-cmd="outdent" title="Hapus jorokan (Shift+Tab)"><i class="bi bi-text-indent-right"></i></button>
                                 <span class="editor-divider"></span>
                                 <button type="button" class="btn-editor" data-cmd="insertTable" title="Sisipkan Tabel Rapi"><i class="bi bi-table"></i></button>
                                 <button type="button" class="btn-editor btn-table-action text-primary" data-cmd="addRow" title="Tambah Baris" style="display:none;"><i class="bi bi-plus"></i> Baris</button>
@@ -1648,6 +1664,8 @@ html.silopti-embed.pa-pin { overflow: hidden !important; scroll-behavior: auto !
                             <button type="button" class="btn-editor" data-cmd="insertOrderedList" title="Penomoran Angka (1. 2. 3.)"><i class="bi bi-list-ol"></i></button>
                             <button type="button" class="btn-editor" data-cmd="insertAlphaList" title="Penomoran Huruf (a. b. c.)"><span class="fw-bold" style="font-size:0.75rem;">a.</span></button>
                             <button type="button" class="btn-editor" data-cmd="insertUnorderedList" title="Daftar Bullet (•)"><i class="bi bi-list-ul"></i></button>
+                            <button type="button" class="btn-editor" data-cmd="indent" title="Jorok baris pertama paragraf (Tab)"><i class="bi bi-text-indent-left"></i></button>
+                            <button type="button" class="btn-editor" data-cmd="outdent" title="Hapus jorokan (Shift+Tab)"><i class="bi bi-text-indent-right"></i></button>
                             <span class="editor-divider"></span>
                             <button type="button" class="btn-editor" data-cmd="insertTable" title="Sisipkan Tabel Rapi"><i class="bi bi-table"></i></button>
                             <button type="button" class="btn-editor btn-table-action text-primary" data-cmd="addRow" title="Tambah Baris" style="display:none;"><i class="bi bi-plus"></i> Baris</button>
@@ -1900,6 +1918,7 @@ var divisiOrder = {{ json_encode(@order.jenis_layanan_opti ?: '') }};
 // [BARU] RAB berjenjang (Kegiatan -> Lokasi/Kelompok -> Item) dipakai buat lingkungan DAN
 // selulosa sekarang (mesinnya sama, selulosa cuma biasanya lebih dikit levelnya).
 var pakaiRabBaru = (divisiOrder === 'lingkungan' || divisiOrder === 'selulosa');
+var rabLing = (divisiOrder === 'lingkungan');   // RAB Lingkungan: header tabel muncul setelah item ditambah + "Disediakan PT" per baris item
 // CATATAN: nama PT/mitra buat auto-isi "Disediakan oleh PT" pake namaPerusahaanDasar yang
 // udah didefinisikan di bagian "1. DASAR" (@order.nama_mitra, udah dibungkus decodeHtmlEntities
 // biar aman) -- JANGAN bikin variabel baru lagi di sini, itu penyebab bug "nama PT gak ke-isi"
@@ -2991,6 +3010,31 @@ function applyAlignment(editorEl, alignCmd) {
     }
 }
 
+// Tab / tombol "jorok": baris pertama paragraf menjorok ke dalam (seperti Word), BUKAN seluruh paragraf bergeser.
+// Di dalam daftar (butir bernomor / bullet) tetap membuat butir bertingkat. keluar = true: hapus jorokan (Shift+Tab).
+function indentEditor(editorEl, keluar) {
+    var sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || !editorEl.contains(sel.anchorNode)) { return; }
+    var anchor = sel.anchorNode.nodeType === 1 ? sel.anchorNode : sel.anchorNode.parentNode;
+    var li = anchor && anchor.closest ? anchor.closest('li') : null;
+    if (li && editorEl.contains(li)) { document.execCommand(keluar ? 'outdent' : 'indent', false, null); return; }
+    var BLK = 'p,div,h1,h2,h3,h4,h5,h6,td,th', SUB = 'p,div,ul,ol,li,table,h1,h2,h3,h4,h5,h6,blockquote';
+    function kumpul() {
+        var r = sel.getRangeAt(0), out = [];
+        Array.prototype.forEach.call(editorEl.querySelectorAll(BLK), function (el) {
+            if (el.querySelector(SUB)) { return; }   // hanya blok terdalam
+            if (r.intersectsNode(el)) { out.push(el); }
+        });
+        return out;
+    }
+    var daftar = kumpul();
+    if (!daftar.length) { document.execCommand('formatBlock', false, 'div'); daftar = kumpul(); }   // teks langsung di editor: bungkus jadi satu blok dulu
+    daftar.forEach(function (el) {
+        if (keluar) { el.style.removeProperty('text-indent'); if (!el.getAttribute('style')) { el.removeAttribute('style'); } }
+        else { el.style.textIndent = '1cm'; }
+    });
+}
+
 function updateEditorToolbar(wrap) {
     if (!wrap) return;
     var editorEl = wrap.querySelector('.po-editor-content');
@@ -3137,6 +3181,10 @@ function executeEditorCommand(wrap, editorEl, ta, cmd) {
             var newOl = findActiveOl(editorEl);
             makeOlAlpha(newOl);
         }
+    } else if (cmd === 'indent' || cmd === 'outdent') {
+        // sama dengan tombol Tab / Shift+Tab di editor
+        indentEditor(editorEl, cmd === 'outdent');
+        normalizeLists(editorEl);
     } else if (cmd === 'insertTable') {
         var savedSelRange = null;
         var sel = window.getSelection();
@@ -3551,11 +3599,7 @@ function initAllPoEditors() {
                 e.preventDefault();
                 var sel = window.getSelection();
                 if (sel && sel.rangeCount > 0 && editorEl.contains(sel.anchorNode)) {
-                    if (e.shiftKey) {
-                        document.execCommand('outdent', false, null);
-                    } else {
-                        document.execCommand('indent', false, null);
-                    }
+                    indentEditor(editorEl, e.shiftKey);
                     normalizeLists(editorEl);
                     syncEditorToTextarea(editorEl, ta);
                     updateEditorToolbar(wrap);
@@ -3997,6 +4041,8 @@ function tambahKategori(data) {
         var aktif = chkTanpaRincian.checked;
         hiddenTanpaRincian.value = aktif ? '1' : '';
         elDetailToHide.forEach(function (el) { el.style.display = aktif ? 'none' : ''; });
+        // Pindah dari mode persen ke rincian: pastikan Kegiatan kosong cuma satu (gak dobel)
+        if (!aktif && typeof kegiatanBody !== 'undefined' && kegiatanBody) { ringkasKegiatanKosong(kegiatanBody); }
         hitungRabLive();
     }
     chkTanpaRincian.addEventListener('change', terapkanTanpaRincian);
@@ -4038,6 +4084,7 @@ function tambahKategori(data) {
 
         var kegiatanData = data.kegiatan && data.kegiatan.length ? data.kegiatan : [{}];
         kegiatanData.forEach(function (k) { tambahKegiatanRab(kegiatanBody, k); });
+        ringkasKegiatanKosong(kegiatanBody);
 
         elDetailToHide.push(kegiatanBody, btnTambahKegiatan);
     } else {
@@ -4157,7 +4204,24 @@ function tambahKegiatanRab(kegiatanBody, data) {
     renomorKegiatan(kegiatanBody);
 
     (data.items && data.items.length ? data.items : []).forEach(function (it) { tambahItemUmum(itemLangsungContainer, it); });
-    (data.grup && data.grup.length ? data.grup : [{}]).forEach(function (g) { tambahGrup(grupContainer, g, 0); });
+    (data.grup && data.grup.length ? data.grup : (rabLing ? [] : [{}])).forEach(function (g) { tambahGrup(grupContainer, g, 0); });
+}
+
+/* Kegiatan yang masih kosong melompong (tanpa nama, item, maupun kelompok) dibuang kalau lebih dari satu,
+   jadi kategori baru selalu mulai dari satu Kegiatan dan baru nambah kalau Kaa klik "Tambah Kegiatan". */
+function ringkasKegiatanKosong(kegiatanBody) {
+    var boxes = kegiatanBody.querySelectorAll(':scope > .rab-kegiatan-box');
+    if (boxes.length < 2) return;
+    var kosong = [];
+    boxes.forEach(function (b) {
+        var nama = b.querySelector('.rab-kegiatan-nama');
+        var adaIsi = (nama && nama.value.trim() !== '') || b.querySelector('.rab-item-row') || b.querySelector('.rab-grup-box');
+        if (!adaIsi) kosong.push(b);
+    });
+    if (kosong.length === boxes.length) { kosong.shift(); }   // semua kosong: sisakan satu
+    else if (kosong.length === 0) { return; }
+    kosong.forEach(function (b) { b.remove(); });
+    renomorKegiatan(kegiatanBody);
 }
 
 function renomorKegiatan(kegiatanBody) {
@@ -4299,7 +4363,8 @@ function tambahGrup(container, data, depth) {
     chkDisediakan.addEventListener('change', terapkanDisediakan);
 
     box.appendChild(headerRow);
-    box.appendChild(disediakanWrap);
+    // RAB Lingkungan: "Disediakan PT" sekarang per baris item. Kotak level kelompok hanya tampil untuk data lama yang sudah tercentang.
+    if (!rabLing || data.disediakan_pt) { box.appendChild(disediakanWrap); }
     box.appendChild(inPtNama);
     box.appendChild(itemBox.wrap);
     box.appendChild(btnActions);
@@ -4339,6 +4404,7 @@ function buatTabelItemBiaya() {
     var thead = document.createElement('thead');
     thead.innerHTML =
         '<tr class="small text-muted align-middle">' +
+        (rabLing ? '<th style="width:34px;" class="p-0 text-center" title="Disediakan PT">PT</th>' : '') +
         '<th class="text-start ps-2" style="min-width:140px;">Jenis Biaya</th>' +
         '<th style="width:52px;">Kali</th>' +
         '<th style="width:28px;" class="p-0"></th>' +
@@ -4357,6 +4423,13 @@ function buatTabelItemBiaya() {
     table.appendChild(thead);
     table.appendChild(tbody);
     wrap.appendChild(table);
+
+    // RAB Lingkungan: tabel (termasuk header) tersembunyi selama belum ada baris, muncul begitu item pertama ditambah
+    if (rabLing) {
+        var cekKosong = function () { wrap.classList.toggle('rab-kosong', !tbody.querySelector(':scope > tr')); };
+        new MutationObserver(cekKosong).observe(tbody, { childList: true });
+        cekKosong();
+    }
 
     return { wrap: wrap, tbody: tbody };
 }
@@ -4410,14 +4483,51 @@ function tambahItemBiaya(container, data) {
     btnHapus.innerHTML = '<i class="bi bi-trash"></i>';
     btnHapus.addEventListener('click', function () { row.remove(); hitungRabLive(); });
 
+    var cellsRincian = [td(inKali), tdKata('kali'), td(inDim2), td(inDim2Label), td(inHari), tdKata('hari'), td(satuanGroup)];
+
+    if (rabLing) {
+        // [BARU] "Disediakan PT" per baris item (bukan per kelompok): baris yang dicentang jadi satu sel "Disediakan <PT>", biaya Rp 0
+        var cbPt = document.createElement('input');
+        cbPt.type = 'checkbox'; cbPt.className = 'rab-item-ptcb'; cbPt.title = 'Disediakan PT (hanya baris ini)';
+        cbPt.checked = !!data.disediakan_pt;
+        var cbCell = td(cbPt, 'text-center p-0');
+
+        var ptWrap = document.createElement('div');
+        ptWrap.className = 'd-flex align-items-center gap-2';
+        var ptLabel = document.createElement('span'); ptLabel.textContent = 'Disediakan';
+        var inPt = document.createElement('input');
+        inPt.type = 'text'; inPt.className = 'form-control form-control-sm rab-item-pt-nama';
+        inPt.placeholder = 'Nama PT/mitra, mis. PT IKT';
+        inPt.value = data.disediakan_pt || '';
+        inPt.addEventListener('input', hitungRabLive);
+        ptWrap.appendChild(ptLabel); ptWrap.appendChild(inPt);
+        var ptCell = td(ptWrap, 'rab-item-pt-cell');
+        ptCell.colSpan = cellsRincian.length;
+
+        var terapkanPt = function () {
+            var aktif = cbPt.checked;
+            if (aktif && !inPt.value.trim() && namaPerusahaanDasar) { inPt.value = namaPerusahaanDasar; }
+            row.classList.toggle('rab-item-pt', aktif);
+            ptCell.style.display = aktif ? '' : 'none';
+            cellsRincian.forEach(function (c) { c.style.display = aktif ? 'none' : ''; });
+            hitungRabLive();
+        };
+        cbPt.addEventListener('change', terapkanPt);
+
+        row.appendChild(cbCell);
+        row.appendChild(td(inJenis));
+        row.appendChild(ptCell);
+        cellsRincian.forEach(function (c) { row.appendChild(c); });
+        row.appendChild(td(totalBox));
+        row.appendChild(td(btnHapus, 'text-center'));
+        container.appendChild(row);
+        ptCell.style.display = 'none';
+        if (cbPt.checked) { terapkanPt(); }
+        return;
+    }
+
     row.appendChild(td(inJenis));
-    row.appendChild(td(inKali));
-    row.appendChild(tdKata('kali'));
-    row.appendChild(td(inDim2));
-    row.appendChild(td(inDim2Label));
-    row.appendChild(td(inHari));
-    row.appendChild(tdKata('hari'));
-    row.appendChild(td(satuanGroup));
+    cellsRincian.forEach(function (c) { row.appendChild(c); });
     row.appendChild(td(totalBox));
     row.appendChild(td(btnHapus, 'text-center'));
 
@@ -4613,6 +4723,11 @@ function tambahItemUmum(container, data) {
 function hitungItemBiaya(row) {
     if (row.dataset.tipe === 'lembur') { return hitungItemLembur(row); }
     if (row.dataset.tipe === 'kebutuhan') { return hitungItemKebutuhanRef(row); }
+    if (row.classList.contains('rab-item-pt')) {
+        var totalPt = row.querySelector('.rab-item-total');
+        if (totalPt) totalPt.textContent = rupiah(0);
+        return 0;   // Disediakan PT: tidak masuk biaya
+    }
     var kali = parseFloat(row.querySelector('.rab-item-kali').value) || 0;
     var dim2Raw = row.querySelector('.rab-item-dim2').value;
     var hariRaw = row.querySelector('.rab-item-hari').value;
@@ -4711,8 +4826,11 @@ function serializeItemRow(row) {
     }
     var dim2Raw = row.querySelector('.rab-item-dim2').value;
     var hariRaw = row.querySelector('.rab-item-hari').value;
+    var ptNamaEl = row.querySelector('.rab-item-pt-nama');
+    var ptNama = (row.classList.contains('rab-item-pt') && ptNamaEl) ? (ptNamaEl.value.trim() || namaPerusahaanDasar || 'PT') : '';
     return {
         tipe_item: 'biasa',
+        disediakan_pt: ptNama,
         jenis: row.querySelector('.rab-item-jenis').value.trim(),
         kali: parseFloat(row.querySelector('.rab-item-kali').value) || 0,
         dim2: dim2Raw !== '' ? (parseFloat(dim2Raw) || 0) : null,
@@ -5796,6 +5914,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Dibuka di iframe Tahap 8 detail order (?embed=1): sesudah PO terkirim, jendela induk yang pindah ke detail order
     try { if (window.self !== window.top && /[?&]embed=1(&|$)/.test(window.location.search)) { window.__poEmbedTop = true; } } catch (e) {}
+    // Di Tahap 8 halaman induk yang menggulir isi form: animasi gulir halus bertabrakan dengan sinkronisasi induk dan berhenti di tengah jalan
+    // (mis. tombol "Ke bagian" tidak sampai ke tujuan), jadi di sana semua scrollIntoView dibuat langsung (tanpa animasi).
+    try {
+        if (window.__poEmbedTop && Element.prototype.scrollIntoView) {
+            var svAsli = Element.prototype.scrollIntoView;
+            Element.prototype.scrollIntoView = function (o) {
+                if (o && typeof o === 'object' && document.documentElement.classList.contains('pa-pin')) { o = { block: o.block, inline: o.inline, behavior: 'auto' }; }
+                return (o === undefined) ? svAsli.call(this) : svAsli.call(this, o);
+            };
+        }
+    } catch (e) {}
 
     var btnDraft = document.getElementById('btnDraft');
     if (btnDraft) {
@@ -6381,9 +6510,39 @@ setTimeout(function () {
         // Pada revisi, PO yang sudah dikirim tetap terkirim. Tombol draf disembunyikan, tombol kirim jadi "Simpan perubahan".
         var bd = document.getElementById('btnDraft'), bk = document.getElementById('btnKirim');
         if (bd) { bd.style.display = 'none'; }
-        if (bk) { bk.innerHTML = '<i class="bi bi-save me-1"></i> Simpan perubahan'; }
+        // Tombol simpan di pojok bawah: "Simpan draft" (tidak mengirim apa pun). Ketua Tim yang mengedit sendiri tetap "Simpan perubahan".
+        if (bk) { bk.innerHTML = '<i class="bi bi-save me-1"></i> ' + (KONTEKS === 'katim' ? 'Simpan perubahan' : 'Simpan draft'); }
+        // Tombol hijau "Kirim revisi" di samping Simpan draft: nonaktif sampai semua catatan dicentang, lalu bisa dipencet
+        var bk2 = null;
+        if (bk && KONTEKS !== 'katim') {
+            bk2 = document.createElement('button');
+            bk2.type = 'button'; bk2.id = 'rvKirimBtn2'; bk2.hidden = true; bk2.disabled = true;
+            bk2.className = 'btn px-4 py-2 rounded-pill shadow-sm fw-bold d-inline-flex align-items-center gap-2';
+            bk2.style.cssText = 'background:#059669;border:0;color:#fff;';
+            bk2.innerHTML = '<i class="bi bi-send-fill"></i> <span id="rvKirimTx2">Kirim revisi</span>';
+            bk.insertAdjacentElement('afterend', bk2);
+        }
     
         var bar = document.getElementById('rvBar'), list = document.getElementById('rvList'), data = [];
+        /* ---------- Pop up konfirmasi (sama dengan di panel review) ---------- */
+        (function () {
+            var st = document.createElement('style');
+            st.textContent = '.rvk-dlg{position:fixed;inset:0;z-index:2100;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(15,23,42,.55);opacity:0;transition:opacity .15s}' +
+                '.rvk-dlg[hidden]{display:none}.rvk-dlg.show{opacity:1}' +
+                '.rvk-box{background:#fff;border-radius:16px;width:100%;max-width:400px;padding:26px 24px 20px;text-align:center;box-shadow:0 24px 60px rgba(15,23,42,.3);transform:translateY(8px) scale(.98);transition:transform .15s}' +
+                '.rvk-dlg.show .rvk-box{transform:none}' +
+                '.rvk-ic{width:58px;height:58px;border-radius:50%;display:grid;place-items:center;margin:0 auto 14px;font-size:27px;background:#ecfdf5;color:#059669}' +
+                '.rvk-box h5{font-size:1.05rem;font-weight:800;margin:0 0 6px}.rvk-box p{color:#64748b;font-size:.85rem;margin:0 0 18px}' +
+                '.rvk-btns{display:flex;gap:10px}.rvk-btns button{flex:1;padding:10px;border-radius:9px;font-weight:700;font-size:.85rem;cursor:pointer;border:1.5px solid #e2e8f0;background:#fff;color:#334155}' +
+                '.rvk-btns button.ya{background:#334155;border-color:#334155;color:#fff}.rvk-btns button:hover{opacity:.9}';
+            document.head.appendChild(st);
+            var d = document.createElement('div');
+            d.className = 'rvk-dlg'; d.id = 'rvkDlg'; d.hidden = true;
+            d.innerHTML = '<div class="rvk-box" role="alertdialog" aria-modal="true" aria-labelledby="rvkJudul" aria-describedby="rvkPesan">' +
+                '<div class="rvk-ic"><i class="bi bi-send"></i></div><h5 id="rvkJudul"></h5><p id="rvkPesan"></p>' +
+                '<div class="rvk-btns"><button type="button" id="rvkNo">Batal</button><button type="button" class="ya" id="rvkYa">Kirim revisi</button></div></div>';
+            document.body.appendChild(d);
+        })();
         // Ketua Tim mengedit sendiri saat review: tidak ada catatan untuk ditandai, cukup pita info
         if (KONTEKS === 'katim') {
             document.getElementById('rvJudul').textContent = 'Anda mengedit PO ini sebagai Ketua Tim';
@@ -6391,6 +6550,100 @@ setTimeout(function () {
             document.getElementById('rvTog').style.display = 'none';
             document.querySelector('.rv-prog').style.display = 'none';
             bar.hidden = false;
+            // catatan: window.__poEmbedTop baru terpasang sesudah DOMContentLoaded, sedangkan skrip ini jalan lebih awal, jadi deteksi bingkai dilakukan di sini
+            var dalamTahap8 = false;
+            try { dalamTahap8 = (window.self !== window.top) && /[?&]embed=1(&|$)/.test(window.location.search); } catch (e) {}
+            if (dalamTahap8 && bk) {
+                document.getElementById('rvHit').textContent = 'Simpan draft: perubahan tersimpan dan form tetap terbuka, status review tidak berubah. Simpan dan setujui: perubahan tersimpan dan PO langsung disetujui. Ketua Pelaksana diberi tahu lewat tab Alur.';
+                bk.innerHTML = '<i class="bi bi-save me-1"></i> Simpan draft';
+                bk.classList.remove('btn-primary'); bk.classList.add('btn-outline-secondary');
+                var bs = document.createElement('button');
+                bs.type = 'button'; bs.id = 'rvSetujuBtn';
+                bs.className = 'btn px-4 py-2 rounded-pill shadow-sm fw-bold d-inline-flex align-items-center gap-2';
+                bs.style.cssText = 'background:#059669;border:0;color:#fff;';
+                bs.innerHTML = '<i class="bi bi-check2-circle"></i> <span>Simpan dan setujui</span>';
+                bk.insertAdjacentElement('afterend', bs);
+                function ordKe() { var oi = document.querySelector('#formPo [name="order_id"]'); return BASE + '/order/' + (oi ? oi.value : ''); }
+                function keDetail() { try { window.top.location.href = ordKe(); } catch (e) { window.location.href = ordKe(); } }
+                // pemberitahuan singkat "Draft tersimpan" di dalam form (tanpa memuat ulang halaman)
+                function tampilToast(teks, galat) {
+                    // di Tahap 8 (iframe detail order) notif dipasang di halaman induk, tepat di bawah bar atas (di bawah nama pengguna) di kanan
+                    var dk = document, atas = 12, kanan = 14;
+                    try {
+                        if (window.frameElement && window.frameElement.id === 'paFrame' && window.top.document) {
+                            dk = window.top.document;
+                            var tb = dk.querySelector('.topbar');
+                            atas = (tb ? Math.round(tb.getBoundingClientRect().bottom) : 75) + 12; kanan = 24;
+                        }
+                    } catch (e) { dk = document; atas = 12; kanan = 14; }
+                    var t = dk.getElementById('rvToast');
+                    if (!t) {
+                        t = dk.createElement('div'); t.id = 'rvToast'; t.setAttribute('role', 'status');
+                        t.style.cssText = 'position:fixed;max-width:calc(100% - 28px);z-index:2200;display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:8px;font-size:.85rem;font-weight:700;background:#fff;box-shadow:0 10px 28px rgba(15,23,42,.25);pointer-events:none;opacity:0;transform:translateY(-140%);transition:transform .35s cubic-bezier(.2,.8,.2,1),opacity .3s;font-family:inherit';
+                        dk.body.appendChild(t);
+                    }
+                    t.style.top = atas + 'px'; t.style.right = kanan + 'px';
+                    // gaya kartu putih bergaris kiri (hijau = berhasil, merah = gagal), meluncur masuk dari atas lalu kembali ke atas
+                    var warna = galat ? '#be123c' : '#059669';
+                    t.style.color = galat ? '#9f1239' : '#065f46';
+                    t.style.border = '1px solid ' + (galat ? '#fecdd3' : '#a7f3d0');
+                    t.style.borderLeft = '4px solid ' + warna;
+                    t.innerHTML = '<i class="bi ' + (galat ? 'bi-x-circle-fill' : 'bi-check-circle-fill') + '" style="color:' + warna + '"></i><span></span>';
+                    t.lastChild.textContent = teks;
+                    clearTimeout(t._tm);
+                    t.style.opacity = '0'; t.style.transform = 'translateY(-140%)';
+                    void t.offsetWidth;
+                    t.style.opacity = '1'; t.style.transform = 'none';
+                    t._tm = setTimeout(function () { t.style.opacity = '0'; t.style.transform = 'translateY(-140%)'; }, galat ? 6000 : 2500);
+                }
+                // tombol setujui ikut nonaktif selama kolom wajib belum lengkap (sama dengan Simpan draft)
+                setInterval(function () { bs.disabled = !!bk.disabled; bs.style.opacity = bk.disabled ? '.45' : ''; bs.title = bk.title || ''; }, 500);
+                var sedangSimpan = false;
+                // Simpan (fetch) lalu, kalau setuju = true, setujui PO; sesudahnya jendela utama dimuat ulang ke detail order (tanpa form edit)
+                function simpanKatim(setuju) {
+                    var form = document.getElementById('formPo');
+                    if (!form || sedangSimpan) { return; }
+                    var ev = new Event('submit', { cancelable: true, bubbles: true });
+                    if (!form.dispatchEvent(ev)) { return; }
+                    sedangSimpan = true; bk.disabled = true; bs.disabled = true;
+                    // indikator memuat di tombol yang ditekan
+                    var tombolAktif = setuju ? bs : bk, htmlAsli = tombolAktif.innerHTML;
+                    tombolAktif.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Menyimpan...';
+                    var pulih = function (m) { tombolAktif.innerHTML = htmlAsli; sedangSimpan = false; bk.disabled = false; bs.disabled = false; if (window.finishLoading) { window.finishLoading(); } var e2 = document.getElementById('rvErr'); if (e2) { e2.textContent = m; e2.hidden = !m; } if (bar && bar.scrollIntoView) { bar.scrollIntoView({ behavior: 'smooth', block: 'start' }); } };
+                    var fd = new FormData(form); fd.set('kirim_setelah', '1'); fd.set('aksi', 'kirim');
+                    fetch(form.getAttribute('action'), { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                        .then(bacaJson)
+                        .then(function () {
+                            if (!setuju) { return; }
+                            var b = new URLSearchParams(); b.append('csrf_token', CSRF);
+                            return fetch(BASE + '/po-kegiatan/' + PO_ID + '/setujui', { method: 'POST', body: b, credentials: 'same-origin' }).then(bacaJson).catch(function (e) {
+                                throw new Error('Perubahan sudah tersimpan, tetapi persetujuan gagal: ' + e.message);
+                            });
+                        })
+                        .then(function () {
+                            if (setuju) { keDetail(); return; }   // setuju: kembali ke detail biasa (tombol tetap "Menyimpan..." sampai halaman berpindah)
+                            // draft: form tetap tampil, tidak perlu memuat ulang halaman
+                            tombolAktif.innerHTML = htmlAsli; sedangSimpan = false; bk.disabled = false; bs.disabled = false;
+                            var e3 = document.getElementById('rvErr'); if (e3) { e3.hidden = true; }
+                            tampilToast('Draft tersimpan');
+                        })
+                        .catch(function (e) { pulih(e.message); tampilToast('Gagal menyimpan', true); });
+                }
+                // Simpan draft: menggantikan kirim form biasa; disimpan lewat fetch, form tetap terbuka
+                bk.addEventListener('click', function (e) {
+                    e.preventDefault(); e.stopImmediatePropagation();
+                    if (bk.disabled) { return; }
+                    if (typeof window.poValidasiSebelumKirim === 'function' && !window.poValidasiSebelumKirim()) { return; }
+                    simpanKatim(false);
+                }, true);
+                bs.addEventListener('click', function () {
+                    if (bs.disabled || sedangSimpan) { return; }
+                    if (typeof window.poValidasiSebelumKirim === 'function' && !window.poValidasiSebelumKirim()) { return; }
+                    konfirmasiKirim('Simpan dan setujui PO ini?', 'Perubahan di form disimpan, lalu PO disetujui dan diteruskan ke Humas untuk diverifikasi.', 'Simpan dan setujui', 'bi-check2-circle').then(function (ya) {
+                        if (ya) { simpanKatim(true); }
+                    });
+                });
+            }
             return;
         }
         var URL_AKSI = KONTEKS === 'ppk' ? BASE + '/po-revisi-ppk/' + PO_ID + '/catatan/' : BASE + '/po-kegiatan/' + PO_ID + '/catatan/';
@@ -6425,10 +6678,21 @@ setTimeout(function () {
             document.getElementById('rvJudul').textContent = KONTEKS === 'ppk' ? 'Catatan revisi PPK BLU' : 'Catatan revisi Ketua Tim';
             document.getElementById('rvHit').textContent = selesai + ' dari ' + total + ' catatan sudah diperbaiki';
             document.getElementById('rvProg').style.width = (total ? Math.round(selesai * 100 / total) : 0) + '%';
-            var kb = document.getElementById('rvKirimBox');
-            if (kb) {
-                kb.hidden = !(KIRIM && total > 0 && selesai === total);
-                if (KIRIM) { document.getElementById('rvKirimTx').textContent = KIRIM.label; }
+            {
+                var siapKirim = !!(KIRIM && total > 0 && selesai === total);
+                if (bk2) {
+                    bk2.hidden = !KIRIM;                 // tampil terus (hanya untuk yang berhak mengirim), nonaktif kalau belum lengkap
+                    bk2.disabled = !siapKirim;
+                    bk2.style.opacity = siapKirim ? '' : '.45';
+                    bk2.style.cursor = siapKirim ? '' : 'not-allowed';
+                    bk2.title = siapKirim ? '' : 'Centang semua catatan yang sudah diperbaiki dulu (' + selesai + ' dari ' + total + ')';
+                    if (KIRIM) { document.getElementById('rvKirimTx2').textContent = KIRIM.label; }
+                }
+                // Simpan draft selalu tombol sekunder; Kirim revisi (hijau) tombol utama
+                if (bk && KONTEKS !== 'katim') {
+                    bk.classList.remove('btn-primary');
+                    bk.classList.add('btn-outline-secondary');
+                }
             }
     
             list.innerHTML = data.map(function (c) {
@@ -6484,18 +6748,59 @@ setTimeout(function () {
             return r.text().then(function (t) { var j; try { j = JSON.parse(t); } catch (e) { throw new Error('Server membalas ' + r.status + '.'); } if (!r.ok || !j.ok) { throw new Error(j.pesan || 'Permintaan gagal.'); } return j; });
         }
         function selesaiKirim() {
+            // Dibuka di Tahap 8 detail order (iframe): sesudah kirim, jendela utama dimuat ulang ke detail order
+            if (DARI === 'order' && window.__poEmbedTop) {
+                var oi = document.querySelector('#formPo [name="order_id"]');
+                try { window.top.location.href = BASE + '/order/' + (oi ? oi.value : ''); return; } catch (e) {}
+            }
             var ke = (DARI === 'ppk' || (DARI !== 'daftar' && KONTEKS === 'ppk')) ? '/po-revisi-ppk?buka=' + PO_ID + '&dari=daftar' : '/po-kegiatan/daftar';
             window.location.href = BASE + ke;
         }
+        function konfirmasiKirim(judul, pesan, ya, ikon) {
+            return new Promise(function (resolve) {
+                var d = document.getElementById('rvkDlg');
+                d.querySelector('.rvk-ic i').className = 'bi ' + (ikon || 'bi-send');
+                document.getElementById('rvkJudul').textContent = judul;
+                document.getElementById('rvkPesan').textContent = pesan;
+                document.getElementById('rvkYa').textContent = ya;
+                d.hidden = false;
+                requestAnimationFrame(function () { d.classList.add('show'); });
+                var fokusLama = document.activeElement;
+                function tutupDlg(h) {
+                    document.removeEventListener('keydown', esc2);
+                    d.classList.remove('show'); setTimeout(function () { d.hidden = true; }, 160);
+                    if (fokusLama && fokusLama.focus) { try { fokusLama.focus(); } catch (e) {} }
+                    resolve(h);
+                }
+                function esc2(e) { if (e.key === 'Escape') { e.preventDefault(); tutupDlg(false); } }
+                document.addEventListener('keydown', esc2);
+                document.getElementById('rvkYa').onclick = function () { tutupDlg(true); };
+                document.getElementById('rvkNo').onclick = function () { tutupDlg(false); };
+                d.onclick = function (e) { if (e.target === d) { tutupDlg(false); } };
+                setTimeout(function () { document.getElementById('rvkYa').focus(); }, 60);
+            });
+        }
+        // Isi pop up mengikuti tujuan pengiriman (sama dengan teks di panel review)
+        function teksKonfirmasi() {
+            var n = data.length, u = (KIRIM && KIRIM.url) || '';
+            if (u.indexOf('kirim-ppk') !== -1) { return ['Kirim revisi ke PPK BLU?', 'PPK BLU akan mengecek ulang PO ini. Perubahan di form ikut disimpan.', 'Kirim']; }
+            if (u.indexOf('kirim-katim') !== -1) { return ['Kirim revisi ke Ketua Tim?', 'Ketua Tim akan mereview hasil revisi sebelum dikirim ke PPK BLU. Perubahan di form ikut disimpan.', 'Kirim']; }
+            return ['Kirim revisi ke Ketua Tim?', n + ' catatan sudah ditandai diperbaiki. Ketua Tim akan mengecek ulang. Perubahan di form ikut disimpan.', 'Kirim revisi'];
+        }
+        var sedangKirim = false;
         function kirimSekarang() {
-            var btn = document.getElementById('rvKirimBtn'), form = document.getElementById('formPo');
-            if (!KIRIM || !form || btn.disabled) { return; }
+            var btn = document.getElementById('rvKirimBtn2'), form = document.getElementById('formPo');
+            if (!KIRIM || !form || !btn || btn.disabled || sedangKirim) { return; }
             galat('');
             if (typeof window.poValidasiSebelumKirim === 'function' && !window.poValidasiSebelumKirim()) { return; }
-            var tutup = function () { btn.disabled = false; if (window.finishLoading) { window.finishLoading(); } };
+            var tk = teksKonfirmasi();
+            konfirmasiKirim(tk[0], tk[1], tk[2]).then(function (lanjut) { if (lanjut) { prosesKirim(btn, form); } });
+        }
+        function prosesKirim(btn, form) {
+            var tutup = function () { sedangKirim = false; btn.disabled = false; if (window.finishLoading) { window.finishLoading(); } };
             var ev = new Event('submit', { cancelable: true, bubbles: true });
             if (!form.dispatchEvent(ev)) { return; }      // ditolak pengaman form (mis. tahun surat), pesan sudah tampil
-            btn.disabled = true;
+            sedangKirim = true; btn.disabled = true;
             var fd = new FormData(form); fd.set('kirim_setelah', '1'); fd.set('aksi', 'kirim');
             fetch(form.getAttribute('action'), { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
                 .then(bacaJson)
@@ -6509,7 +6814,7 @@ setTimeout(function () {
                 .catch(function (e) { tutup(); galat(e.message); if (bar && bar.scrollIntoView) { bar.scrollIntoView({ behavior: 'smooth', block: 'start' }); } });
         }
         document.addEventListener('click', function (e) {
-            if (e.target.closest && e.target.closest('#rvKirimBtn')) { e.preventDefault(); kirimSekarang(); }
+            if (e.target.closest && e.target.closest('#rvKirimBtn2')) { e.preventDefault(); kirimSekarang(); }
         });
 
         fetch(BASE + '/po-kegiatan/' + PO_ID + '/catatan-form', { credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (j) {

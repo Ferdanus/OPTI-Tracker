@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Demo status alur PO di Daftar Order</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#f1f5f9;color:#0f172a;padding:20px}
+h1{font-size:1.05rem;margin:0 0 4px}p.s{margin:0 0 14px;color:#64748b;font-size:.82rem}
+.tabs{display:flex;gap:8px;margin-bottom:14px}
+.tabs label{cursor:pointer;padding:7px 16px;border-radius:99px;background:#fff;border:1px solid #cbd5e1;font-size:.82rem;font-weight:600;color:#475569}
+.tabs input{display:none}.tabs input:checked+span{color:#fff}
+.tabs label:has(input:checked){background:#1d4ed8;border-color:#1d4ed8;color:#fff}
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.04);margin-bottom:18px}
+.card h2{margin:0;padding:10px 16px;font-size:.82rem;background:#f8fafc;border-bottom:1px solid #e2e8f0;color:#334155}
+table{width:100%;border-collapse:collapse;font-size:.8rem}
+th{text-align:left;padding:8px 14px;font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;color:#64748b;border-bottom:1px solid #e2e8f0;background:#fff}
+td{padding:10px 14px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+tr:last-child td{border-bottom:0}
+.no b{display:block;font-size:.78rem}.no span{color:#64748b;font-size:.72rem}
+.pill{display:inline-block;padding:4px 12px;border-radius:99px;font-size:.72rem;font-weight:700;white-space:nowrap}
+.blue{background:#dbeafe;color:#1d4ed8}.rose{background:#ffe4e6;color:#be123c}.green{background:#d1fae5;color:#047857}.indigo{background:#e0e7ff;color:#4338ca}
+.k1{color:#1e3a8a;font-weight:700;font-size:.76rem;line-height:1.25}.k2{color:#64748b;font-size:.7rem;margin-top:2px;line-height:1.25}
+.me{background:#fffbeb}.me .k1{color:#92400e}
+.tag{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:99px;background:#f59e0b;color:#fff;font-size:.62rem;font-weight:700;vertical-align:1px}
+.c{text-align:center}.sub{margin-top:5px;font-size:.7rem;font-weight:700;line-height:1.2}.bluet{color:#1d4ed8}.roset{color:#be123c}.roset,.bluet{background:none}
+.note{font-size:.75rem;color:#64748b;margin:-6px 2px 14px}
+[data-v]{display:none}
+body:has(#v1:checked) [data-v="1"],body:has(#v2:checked) [data-v="2"]{display:block}
+body:not(:has(#v2:checked)) tr.hide{display:table-row}
+</style></head><body>
+<h1>Daftar Order &rarr; kolom Status Alur &amp; Keterangan</h1>
+<p class="s">Contoh order yang sudah di Tahap 8 (Penerbitan PO). Pil "Penerbitan PO" tetap (jadi merah kalau PO sedang direvisi), yang berubah adalah keterangan di sebelahnya mengikuti alur PO.</p>
+
+<div class="tabs">
+ <label><input type="radio" name="v" id="v1" checked> Sekarang</label>
+ <label><input type="radio" name="v" id="v2"> Usulan (sesuai alur PO)</label>
+</div>
+
+<div class="card" data-v="1"><h2>Sekarang: semua order Tahap 8 tampil sama</h2>
+<table><thead><tr><th>Order</th><th>Status Alur</th><th>Keterangan</th></tr></thead><tbody id="tb1"></tbody></table></div>
+
+<div class="card" data-v="2"><h2>Usulan awal: keterangan mengikuti posisi PO di rantai review &amp; verifikasi</h2>
+<table><thead><tr><th>Order</th><th>Status Alur</th><th>Keterangan</th></tr></thead><tbody id="tb2"></tbody></table></div>
+
+<script>
+var R=[
+ ['ORD-202610-001','PT Polyfin Canggih','Rina Masriani','disusun','Penyusunan PO','Pelaksana: Rina Masriani · PO belum dikirim'],
+ ['ORD-202610-002','PT Sinar Pulp','Dewi Lestari','menunggu_review','Menunggu Review Ketua Tim','Pelaksana: Dewi Lestari · PO sudah dikirim'],
+ ['ORD-202610-003','CV Hijau Lestari','Budi Santoso','perlu_revisi','Perlu Revisi PO','Pelaksana: Budi Santoso · Ketua Tim memberi catatan revisi'],
+ ['ORD-202610-004','PT Kertas Nusantara','Rina Masriani','direvisi','Revisi Menunggu Review','Pelaksana: Rina Masriani · revisi sudah dikirim ulang'],
+ ['ORD-202610-005','PT Polyfin Canggih','Dewi Lestari','verif_humas','Menunggu Verifikasi Humas','Pelaksana: Dewi Lestari · disetujui Ketua Tim 12 Okt 2026'],
+ ['ORD-202610-006','PT Tirta Bersih','Budi Santoso','verif_mitra','Menunggu Verifikasi Tim Mitra','Pelaksana: Budi Santoso · Humas sudah memverifikasi'],
+ ['ORD-202610-007','PT Sinar Pulp','Rina Masriani','verif_ppk','Menunggu Verifikasi PPK BLU','Pelaksana: Rina Masriani · Tim Mitra sudah memverifikasi'],
+ ['ORD-202610-008','CV Hijau Lestari','Dewi Lestari','ppk_minta','PPK Meminta Revisi','Pelaksana: Dewi Lestari · menunggu keputusan Ketua Tim']
+];
+var t1='',t2='';
+R.forEach(function(r){
+ t1+='<tr><td class="no"><b>'+r[0]+'</b><span>'+r[1]+'</span></td><td class="c"><span class="pill blue">Penerbitan PO</span></td><td><div class="k1">Pelaksana: '+r[2]+'</div><div class="k2">Menunggu penyusunan &amp; penerbitan PO teknis</div></td></tr>';
+ var me=r[3]==='verif_humas';
+ var pc=/revisi|minta/.test(r[3])?'rose':'blue';
+ t2+='<tr'+(me?' class="me"':'')+'><td class="no"><b>'+r[0]+'</b><span>'+r[1]+'</span></td><td class="c"><span class="pill '+pc+'">Penerbitan PO</span></td><td><div class="k1">'+r[4]+(me?'<span class="tag">Giliran Anda</span>':'')+'</div><div class="k2">'+r[5]+'</div></td></tr>';
+});
+document.getElementById('tb1').innerHTML=t1;document.getElementById('tb2').innerHTML=t2;
+</script></body></html>

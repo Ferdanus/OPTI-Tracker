@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demo RAB Lingkungan</title>
+<style>
+:root{--pri:#2563eb;--bd:#e2e8f0;--mut:#64748b;--txt:#0f172a;--bg:#f1f5f9}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:14px;color:var(--txt);background:var(--bg);padding:18px}
+.wrap{max-width:1100px;margin:0 auto}
+h1{font-size:1.05rem;margin:0 0 4px}
+.sub{color:var(--mut);font-size:.82rem;margin:0 0 12px}
+.legend{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.legend span{background:#fff;border:1px solid var(--bd);border-radius:99px;padding:3px 11px;font-size:.74rem;color:#334155}
+.legend b{color:var(--pri)}
+.tools{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.tools button{border:1px solid var(--bd);background:#fff;border-radius:8px;padding:6px 12px;font-size:.78rem;cursor:pointer}
+.card{background:#fff;border:1px solid var(--bd);border-radius:12px;padding:14px}
+.box{border:1px solid var(--bd);border-radius:10px;padding:12px;margin-bottom:10px;background:#fff}
+.box.g{background:#f8fafc;margin:10px 0 0}
+.box.g .box.g{background:#fff}
+.hd{display:flex;align-items:stretch;border:1px solid #cbd5e1;border-radius:6px;overflow:hidden;margin-bottom:8px;background:#fff}
+.hd .no{background:var(--pri);color:#fff;font-weight:700;min-width:34px;display:grid;place-items:center;font-size:.85rem}
+.box.g .hd .no{background:#64748b}
+.hd .lb{background:#f1f5f9;color:var(--mut);font-size:.78rem;padding:0 9px;display:flex;align-items:center;border-right:1px solid #cbd5e1;white-space:nowrap}
+.hd input{flex:1;border:0;padding:7px 10px;font:inherit;font-weight:600;min-width:0;outline:none}
+.hd .del{border:0;border-left:1px solid #fecaca;background:#fff;color:#dc2626;padding:0 11px;cursor:pointer}
+.table{display:none;border:1px solid var(--bd);border-radius:8px;background:#fff;margin-bottom:8px;overflow-x:auto}
+.table.has{display:block}
+.tr{display:grid;grid-template-columns:30px minmax(130px,1.6fr) 54px 34px 58px minmax(90px,1fr) 54px 34px minmax(120px,1.2fr) 104px 30px;gap:6px;align-items:center;padding:6px 8px;min-width:820px}
+.tr.th{font-size:.7rem;font-weight:700;letter-spacing:.03em;color:#475569;text-transform:uppercase;background:#f8fafc;border-bottom:1px solid var(--bd);padding-top:9px;padding-bottom:9px}
+.tr.row+.tr.row{border-top:1px solid #f1f5f9}
+.tr input[type=text],.tr input[type=number]{width:100%;border:1px solid #cbd5e1;border-radius:6px;padding:5px 8px;font:inherit;font-size:.82rem;min-width:0}
+.tr input[type=number]{text-align:center}
+.tr .k{color:var(--mut);font-size:.74rem;text-align:center}
+.tr .rp{display:flex;align-items:stretch}
+.tr .rp span{background:#f1f5f9;border:1px solid #cbd5e1;border-right:0;border-radius:6px 0 0 6px;padding:5px 7px;font-size:.78rem;color:var(--mut)}
+.tr .rp input{border-radius:0 6px 6px 0}
+.tr .bi{text-align:right;font-weight:700;font-size:.82rem;font-family:ui-monospace,Consolas,monospace}
+.tr .x{border:0;background:none;color:#e11d48;cursor:pointer;font-size:.9rem}
+.pt{display:flex;justify-content:center}
+.pt input{width:16px;height:16px;accent-color:#d97706;cursor:pointer}
+.ptmsg{grid-column:3 / 10;display:none;align-items:center;gap:8px;background:#fffbeb;border:1px dashed #fcd34d;border-radius:6px;padding:4px 10px;font-size:.8rem;color:#92400e}
+.ptmsg input{max-width:170px;border:0 !important;border-bottom:1px solid #fcd34d !important;border-radius:0 !important;background:transparent;font-weight:700;color:#92400e;padding:2px 4px !important}
+.tr.ispt .ptmsg{display:flex}
+.tr.ispt .hide{display:none}
+.tr.ispt{background:#fffdf5}
+.acts{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}
+.acts button{border:1px solid #cbd5e1;background:#fff;border-radius:99px;padding:4px 12px;font-size:.76rem;cursor:pointer;display:inline-flex;gap:5px;align-items:center;color:#334155}
+.acts button.p{border-color:#bfdbfe;color:var(--pri);background:#f8fbff}
+.acts button:hover{border-color:var(--pri)}
+.acts .sp{flex:1}
+.acts .st{font-size:.76rem;color:var(--mut)}
+.acts .st b{color:var(--txt);font-family:ui-monospace,Consolas,monospace}
+.kosong{font-size:.76rem;color:#94a3b8;padding:2px 2px 0}
+.total{display:flex;justify-content:space-between;align-items:center;padding:10px 4px 0;font-weight:700}
+.total b{font-family:ui-monospace,Consolas,monospace;font-size:1.05rem;color:var(--pri)}
+.note{margin-top:14px;background:#fff;border:1px solid var(--bd);border-left:3px solid var(--pri);border-radius:8px;padding:10px 13px;font-size:.8rem;color:#334155}
+.note li{margin:3px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Demo RAB PO Lingkungan (tanpa persenan)</h1>
+  <p class="sub">Coba klik tombolnya. Awalnya cuma ada nama kegiatan dan tombol, tabelnya baru muncul kalau item ditambah.</p>
+  <div class="legend">
+    <span><b>1</b> Tabel (header) belum muncul</span>
+    <span><b>2</b> Klik Tambah Item, header dan baris muncul</span>
+    <span><b>3</b> Centang kotak oranye di kiri baris = Disediakan PT, hanya baris itu</span>
+  </div>
+  <div class="tools">
+    <button id="reset">Mulai dari awal</button>
+    <button id="contoh">Isi contoh (seperti di PDF)</button>
+  </div>
+  <div class="card">
+    <div id="root"></div>
+    <div class="acts" style="margin-top:0"><button class="p" id="addKeg"><span>+</span> Tambah Kegiatan</button></div>
+    <div class="total"><span>Total RAB</span><b id="grand">Rp 0</b></div>
+  </div>
+  <div class="note">
+    <b>Yang berubah dibanding sekarang</b>
+    <ul>
+      <li>Header tabel (Jenis Biaya, Kali, Jumlah, dst.) tidak tampil di kegiatan, lokasi/kelompok, dan sub-kelompok yang masih kosong. Muncul setelah item pertama ditambah, dan hilang lagi kalau semua item dihapus.</li>
+      <li>"Disediakan oleh PT" pindah dari level lokasi/kelompok ke tiap baris item, jadi tidak menular ke semua isi kelompok. Baris yang dicentang jadi satu tulisan "Disediakan PT ..." dan biayanya Rp 0, seperti di PDF.</li>
+    </ul>
+  </div>
+</div>
+<script>
+(function(){
+  var NAMA_PT = 'PT IKT';
+  function rp(n){ return 'Rp ' + Math.round(n||0).toLocaleString('id-ID'); }
+  function el(h){ var d=document.createElement('div'); d.innerHTML=h.trim(); return d.firstChild; }
+  var HEAD = '<div class="tr th"><span title="Disediakan PT">PT</span><span>Jenis Biaya</span><span>Kali</span><span></span><span>Jumlah</span><span>Satuan</span><span>Hari</span><span></span><span>Harga Satuan</span><span style="text-align:right">Biaya</span><span></span></div>';
+
+  function hitung(){
+    var grand = 0;
+    document.querySelectorAll('.row').forEach(function(r){
+      var v = 0;
+      if (!r.classList.contains('ispt')) {
+        var q = function(c){ return parseFloat(r.querySelector(c).value) || 0; };
+        v = q('.kali') * (q('.jml') || 0) * (q('.hari') || 1) * q('.harga');
+        if (!q('.jml')) { v = q('.kali') * (q('.hari') || 1) * q('.harga'); }
+      }
+      r.dataset.v = v;
+      r.querySelector('.bi').textContent = rp(v);
+    });
+    document.querySelectorAll('.box').forEach(function(b){
+      var s = 0; b.querySelectorAll('.row').forEach(function(r){ s += parseFloat(r.dataset.v)||0; });
+      var st = b.querySelector(':scope > .acts .st b'); if (st) { st.textContent = rp(s); }
+    });
+    document.querySelectorAll('#root > .box').forEach(function(b){ grand += (function(){var s=0;b.querySelectorAll('.row').forEach(function(r){s+=parseFloat(r.dataset.v)||0});return s})(); });
+    document.getElementById('grand').textContent = rp(grand);
+  }
+  function cekHeader(table){
+    table.classList.toggle('has', !!table.querySelector('.row'));
+  }
+  function barisItem(table, d){
+    d = d || {};
+    var r = el('<div class="tr row' + (d.pt ? ' ispt' : '') + '">' +
+      '<label class="pt" title="Disediakan PT (hanya baris ini)"><input type="checkbox" class="cb"' + (d.pt ? ' checked' : '') + '></label>' +
+      '<input type="text" class="jenis" placeholder="Lumpsum/Transport/Hotel/dll" value="' + (d.jenis||'') + '">' +
+      '<input type="number" class="kali hide" value="' + (d.kali==null?1:d.kali) + '" min="0">' +
+      '<span class="k hide">kali</span>' +
+      '<input type="number" class="jml hide" value="' + (d.jml==null?'':d.jml) + '" placeholder="-" min="0">' +
+      '<input type="text" class="sat hide" placeholder="orang/kamar" value="' + (d.sat||'') + '">' +
+      '<input type="number" class="hari hide" value="' + (d.hari==null?'':d.hari) + '" placeholder="-" min="0">' +
+      '<span class="k hide">hari</span>' +
+      '<div class="rp hide"><span>Rp</span><input type="number" class="harga" value="' + (d.harga==null?'':d.harga) + '" placeholder="0" min="0"></div>' +
+      '<div class="bi hide">Rp 0</div>' +
+      '<button class="x" title="Hapus baris">🗑</button>' +
+      '<div class="ptmsg"><span>Disediakan</span><input type="text" class="ptnama" value="' + NAMA_PT + '"></div>' +
+      '</div>');
+    // pesan PT disisipkan setelah kolom jenis supaya menempati kolom 3..9
+    var jenisEl = r.querySelector('.jenis'); jenisEl.parentNode.insertBefore(r.querySelector('.ptmsg'), r.querySelector('.kali'));
+    r.querySelector('.cb').addEventListener('change', function(){ r.classList.toggle('ispt', this.checked); hitung(); });
+    r.querySelector('.x').addEventListener('click', function(){ r.remove(); cekHeader(table); hitung(); });
+    r.addEventListener('input', hitung);
+    table.appendChild(r); cekHeader(table); hitung();
+    return r;
+  }
+  function huruf(i){ return String.fromCharCode(97 + i); }
+  function renomor(parent, tingkat){
+    var n = 0;
+    Array.prototype.forEach.call(parent.children, function(b){
+      if (!b.classList || !b.classList.contains('box')) { return; }
+      var no = b.querySelector(':scope > .hd .no'); no.textContent = tingkat === 0 ? (n+1) + '.' : huruf(n) + '.'; n++;
+    });
+  }
+  function kotak(opsi){
+    var tipe = opsi.tipe; // 'keg' | 'grup'
+    var b = el('<div class="box ' + (tipe==='grup'?'g':'') + '">' +
+      '<div class="hd"><span class="no">1.</span><span class="lb">' + (tipe==='keg'?'Kegiatan':'Lokasi / Kelompok') + '</span>' +
+      '<input type="text" placeholder="' + (tipe==='keg'?'Nama kegiatan, mis. Perjalanan Dinas':'Nama lokasi / kelompok') + '" value="' + (opsi.nama||'') + '"><button class="del" title="Hapus">🗑</button></div>' +
+      '<div class="table"><div class="tbl-head"></div></div>' +
+      '<div class="acts"></div><div class="anak"></div></div>');
+    var tbl = b.querySelector('.table'); tbl.firstChild.outerHTML = HEAD;
+    var acts = b.querySelector('.acts'), anak = b.querySelector('.anak');
+    var bi = el('<button>+ ' + (tipe==='keg'?'Tambah Item Langsung':'Tambah Item Biaya') + '</button>');
+    var bg = el('<button class="p">+ ' + (tipe==='keg'?'Tambah Lokasi/Kelompok':'Tambah Sub-Kelompok') + '</button>');
+    var st = el('<span class="st">Subtotal <b>Rp 0</b></span>');
+    acts.appendChild(bi); acts.appendChild(bg); acts.appendChild(el('<span class="sp"></span>')); acts.appendChild(st);
+    bi.addEventListener('click', function(){ barisItem(tbl, {}); });
+    bg.addEventListener('click', function(){ var g = kotak({tipe:'grup'}); anak.appendChild(g.box); renomor(anak, tipe==='keg' ? 0 : 1); hitung(); });
+    b.querySelector('.del').addEventListener('click', function(){ var p = b.parentNode; b.remove(); renomor(p, tipe==='keg'?0:(p.closest('.box.g')?1:0)); hitung(); });
+    return { box: b, tbl: tbl, anak: anak, tipe: tipe };
+  }
+  var root = document.getElementById('root');
+  function tambahKeg(nama){ var k = kotak({tipe:'keg', nama: nama}); root.appendChild(k.box); renomor(root, 0); hitung(); return k; }
+  function reset(){ root.innerHTML=''; tambahKeg('Perjalanan Dinas'); }
+  document.getElementById('addKeg').addEventListener('click', function(){ tambahKeg(''); });
+  document.getElementById('reset').addEventListener('click', reset);
+  document.getElementById('contoh').addEventListener('click', function(){
+    root.innerHTML='';
+    var k = tambahKeg('Perjalanan Dinas');
+    var g = kotak({tipe:'grup', nama:'Tangerang (Verifikasi awal)'}); k.anak.appendChild(g.box); renomor(k.anak, 0);
+    var s = kotak({tipe:'grup', nama:'Tim verifikator: Ketua verifikator dalam supervisi, Verifikator-1'}); g.anak.appendChild(s.box); renomor(g.anak, 1);
+    barisItem(s.tbl, {jenis:'UH', kali:1, jml:2, sat:'orang', hari:2, harga:259000});
+    barisItem(s.tbl, {jenis:'UH Layanan', kali:1, jml:2, sat:'orang', hari:1, harga:200000});
+    barisItem(s.tbl, {jenis:'Transport Bandung - Tangerang pp.', pt:true});
+    barisItem(s.tbl, {jenis:'Hotel', pt:true});
+    hitung();
+  });
+  reset();
+})();
+</script>
+</body>
+</html>

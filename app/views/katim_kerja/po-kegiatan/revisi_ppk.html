@@ -944,9 +944,19 @@
 
         /* ---------- Aksi ---------- */
         function gagal(e) { toast(e.message, true); muatUlangDetail(); }
-        function kirim(bagian, data, sukses) {
+        // sesudah = 'edit' (langsung ke halaman Edit PO) atau 'balik' (kembali ke halaman sebelumnya, status sudah berubah); kosong = tetap di panel
+        function kirim(bagian, data, sukses, sesudah) {
             var id = current;
-            post(URL_API(id, bagian), data || {}).then(function (j) { terapkanDetail(j); toast(sukses); }).catch(gagal);
+            post(URL_API(id, bagian), data || {}).then(function (j) {
+                if (sesudah === 'edit') { window.location.href = PO_URL(id) + '/edit?dari=ppk'; return; }
+                if (sesudah === 'balik') { kembaliSebelumnya(); return; }
+                terapkanDetail(j); toast(sukses);
+            }).catch(gagal);
+        }
+        function kembaliSebelumnya() {
+            var tujuan = BASE + '/po-kegiatan/daftar';
+            try { var u = new URL(document.referrer); if (u.origin === window.location.origin && u.pathname.indexOf('/po-revisi-ppk') === -1) { tujuan = u.href; } } catch (e) {}
+            window.location.replace(tujuan);
         }
         function doAct(act) {
             var p = curPo(); if (!p || !detail) { return; }
@@ -959,9 +969,9 @@
             } else if (act === 'validasi') {
                 D({ judul: 'Verifikasi PO ini?', pesan: 'PO dinyatakan sesuai dan terkunci. Tidak ada revisi lagi. Catatan di bawah boleh dikosongkan.', ya: 'Ya, verifikasi', ikon: 'bi-patch-check', warna: 'ok', catatan: true }).then(function (r) { if (r) { kirim('validasi', { catatan: r.alasan }, 'PO diverifikasi PPK BLU.'); } });
             } else if (act === 'kerjakan') {
-                D({ judul: 'Kerjakan revisi sendiri?', pesan: 'Anda mengedit PO sesuai catatan PPK BLU, lalu mengirimnya langsung ke PPK BLU. Anda masih bisa mendisposisikannya ke ' + pm + ' sebelum dikirim.', ya: 'Ya, kerjakan', ikon: 'bi-pencil', warna: 'warn' }).then(function (r) { if (r) { kirim('kerjakan', {}, 'Anda mengerjakan revisi ini.'); } });
+                D({ judul: 'Kerjakan revisi sendiri?', pesan: 'Anda mengedit PO sesuai catatan PPK BLU, lalu mengirimnya langsung ke PPK BLU. Anda masih bisa mendisposisikannya ke ' + pm + ' sebelum dikirim.', ya: 'Ya, kerjakan', ikon: 'bi-pencil', warna: 'warn' }).then(function (r) { if (r) { kirim('kerjakan', {}, 'Anda mengerjakan revisi ini.', 'edit'); } });
             } else if (act === 'disposisi') {
-                D({ judul: 'Disposisikan ke ' + pm + '?', pesan: pm + ' akan mengedit PO sesuai catatan PPK BLU, lalu mengirimnya kembali ke Anda untuk direview.', ya: 'Ya, disposisikan', ikon: 'bi-person-up', warna: 'warn' }).then(function (r) { if (r) { kirim('disposisi', {}, 'Revisi didisposisikan ke ' + pm + '.'); } });
+                D({ judul: 'Disposisikan ke ' + pm + '?', pesan: pm + ' akan mengedit PO sesuai catatan PPK BLU, lalu mengirimnya kembali ke Anda untuk direview.', ya: 'Ya, disposisikan', ikon: 'bi-person-up', warna: 'warn' }).then(function (r) { if (r) { kirim('disposisi', {}, 'Revisi didisposisikan ke ' + pm + '.', 'balik'); } });
             } else if (act === 'kirimPpk') {
                 D({ judul: 'Kirim revisi ke PPK BLU?', pesan: 'PPK BLU akan mengecek ulang PO ini.', ya: 'Kirim', ikon: 'bi-send', warna: 'ok' }).then(function (r) { if (r) { kirim('kirim-ppk', {}, 'Revisi dikirim ke PPK BLU.'); } });
             } else if (act === 'kirimKatim') {

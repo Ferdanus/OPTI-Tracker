@@ -1270,7 +1270,7 @@
                 <!-- Daftar Order (Semua Role Teknis, Pelayanan, Keuangan & Pegawai Umum) -->
                 <!-- Daftar Order (Satu Pintu: Semua Role Teknis, Pelayanan, Keuangan & Pegawai Umum) -->
 
-                <check if="{{ @is_superadmin || @is_admin_order || @is_ketua_tim || @is_tim_kerja || @is_admin_kontrak || @is_keuangan || @is_user_readonly }}">
+                <check if="{{ @is_superadmin || @is_admin_order || @is_ketua_tim || @is_tim_kerja || @is_admin_kontrak || @is_keuangan || @is_user_readonly || @is_humas || @is_ppk }}">
                     <li>
                         <a class="sidebar-link {{ @active_menu == 'order' || @active_menu == 'disposisi_masuk' ? 'active' : '' }}" href="{{ @BASE }}/order" title="Daftar Order Layanan">
                             <i class="bi bi-inbox"></i> <span>Daftar Order</span>

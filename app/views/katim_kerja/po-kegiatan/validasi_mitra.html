@@ -164,6 +164,14 @@
     .hm-loading.err { color: #b91c1c; }
     .hm-paper { background: #fff; border: 1px solid var(--hm-border); border-radius: 6px; max-width: 210mm; width: 100%; margin: 0 auto; overflow-x: auto; }
     .hm-paper .po-doc-sheet { box-shadow: none !important; margin: 0 !important; }
+    /* catatan di bawah dokumen PO: hijau = Catatan Tim Mitra, oranye = Catatan Humas (sama seperti halaman Revisi PPK BLU) */
+    .hm-catbox { display: flex; gap: 10px; align-items: flex-start; max-width: 210mm; margin: 12px auto 0; background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 3px solid #059669; border-radius: 10px; padding: 10px 13px; }
+    .hm-catbox > i { color: #059669; font-size: 1.05rem; margin-top: 1px; }
+    .hm-catbox .k { font-size: .72rem; font-weight: 700; color: #059669; }
+    .hm-catbox .t { font-size: .85rem; color: #14532d; margin-top: 1px; white-space: pre-wrap; word-break: break-word; }
+    .hm-catbox.humas { background: #fffbeb; border-color: #fde68a; border-left-color: #d97706; }
+    .hm-catbox.humas > i, .hm-catbox.humas .k { color: #b45309; }
+    .hm-catbox.humas .t { color: #78350f; }
     /* Dokumen PO selebar kertas A4 (210mm). Di layar sempit dokumen diperkecil otomatis supaya satu halaman penuh kelihatan
        (bukan kepotong), dan ada tombol zoom untuk membesarkan. Di layar lebar tidak ada yang berubah. */
     .hm-fitbar { display: none; position: sticky; top: 0; z-index: 3; align-items: center; justify-content: flex-end; gap: 6px; max-width: 210mm; margin: 0 auto 8px; padding: 6px 0 8px; background: #f1f5f9; font-size: .75rem; color: var(--hm-muted); }
@@ -187,6 +195,63 @@
     .hm-cat-ic { width: 32px; height: 32px; border-radius: 9px; background: var(--hm-primary-light); color: var(--hm-primary); display: grid; place-items: center; font-size: 15px; flex-shrink: 0; }
     .hm-cat-label { font-weight: 700; font-size: .82rem; flex: 1; }
     .hm-cat-kosong { font-size: .74rem; color: #94a3b8; }
+
+    /* ---- Bilah Unduh PO di tab PO ---- */
+    .hm-pobar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; max-width: 210mm; margin: 0 auto 8px; font-size: .76rem; color: var(--hm-muted); }
+    .hm-pobar .sp { flex: 1; }
+    .hm-pobar .dot { width: 8px; height: 8px; border-radius: 50%; background: #d97706; flex-shrink: 0; }
+    .hm-pobar .dot.f { background: #059669; }
+    .hm-pobar .st { display: inline-flex; align-items: center; gap: 6px; }
+
+    /* ---- Kartu berkas gaya detail order: rincian bisa dibuka-tutup lewat tombol Detail ---- */
+    .hm-dtop { text-align: right; margin-top: 10px; font-size: .76rem; color: #94a3b8; }
+    .hm-tl { background: none; border: 0; padding: 0; color: #2563eb; font-weight: 600; font-size: .76rem; cursor: pointer; }
+    .hm-tl:hover { text-decoration: underline; }
+    .hm-dc { background: #fff; border: 1px solid #bfdbfe; border-radius: 12px; box-shadow: 0 1px 3px rgba(15,23,42,.08); padding: 16px; margin-top: 12px; display: flex; gap: 14px; }
+    .hm-dc.kosong { border-color: var(--hm-border); }
+    .hm-dic { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; font-size: 1.25rem; flex-shrink: 0; }
+    .hm-dbody { flex: 1; min-width: 0; }
+    .hm-dh { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+    .hm-dh h6 { margin: 0; font-size: .95rem; font-weight: 700; }
+    .hm-bd { display: inline-flex; align-items: center; gap: 5px; font-size: .72rem; font-weight: 600; padding: 3px 11px; border-radius: 99px; border: 1px solid; }
+    .hm-bd.ok { background: #d1fae5; color: #047857; border-color: #a7f3d0; }
+    .hm-bd.no { background: #f1f5f9; color: #64748b; border-color: #e2e8f0; }
+    .hm-dsub { font-size: .82rem; color: #64748b; margin: 0; }
+    .hm-acts { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; align-items: center; }
+    .hm-acts .sp { flex: 1; }
+    .hm-bdt { background: #fff; border: 1px solid #cbd5e1; color: #475569; border-radius: 8px; padding: 7px 12px; font-size: .78rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+    .hm-bdt:hover { border-color: #2563eb; color: #2563eb; }
+    .hm-bdt .ch { font-size: .7rem; transition: transform .25s; }
+    .hm-dc.open .hm-bdt { background: #eff6ff; border-color: #93c5fd; color: #1d4ed8; }
+    .hm-dc.open .hm-bdt .ch { transform: rotate(180deg); }
+    .hm-dt { display: grid; grid-template-rows: 0fr; visibility: hidden; transition: grid-template-rows .3s ease, visibility 0s linear .3s; }
+    .hm-dc.open .hm-dt { grid-template-rows: 1fr; visibility: visible; transition: grid-template-rows .3s ease, visibility 0s; }
+    .hm-dt > div { overflow: hidden; min-height: 0; }
+    .hm-dt .in { padding-top: 12px; }
+    .hm-dk { font-size: .8rem; padding: 8px 10px; border-radius: 7px; background: #f8fafc; border-left: 3px solid; margin-bottom: 8px; color: #334155; }
+    .hm-dk.mute { color: #64748b; border-left-color: #cbd5e1 !important; }
+    .hm-dmeta { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; padding: 10px 12px; border-radius: 7px; background: #f8fafc; border: 1px solid #eef2f6; font-size: .78rem; }
+    .hm-dmeta .f { grid-column: 1 / -1; }
+    .hm-dmeta .k { color: #64748b; display: block; }
+    .hm-dmeta .mono { font-family: ui-monospace, Consolas, monospace; font-weight: 700; }
+    .hm-dmeta .n { font-weight: 600; word-break: break-word; }
+    .hm-dmeta .fl { font-family: ui-monospace, Consolas, monospace; color: #475569; font-size: .74rem; word-break: break-all; }
+    .hm-dt .hm-cat-bar { padding-left: 0; padding-top: 0; padding-bottom: 8px; }
+    .hm-tm { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 9px 12px; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; margin-top: 8px; }
+    .hm-tm:first-child { margin-top: 0; }
+    .hm-tm.on { border-color: #93c5fd; background: #eff6ff; }
+    .hm-tm-l { font-size: .78rem; min-width: 0; }
+    .hm-tm-l .a { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 2px; }
+    .hm-tm-l .d { color: #64748b; font-size: .74rem; }
+    .hm-tm-r { display: flex; gap: 6px; flex-wrap: wrap; }
+    .hm-tg { background: #2563eb; color: #fff; border-radius: 6px; padding: 1px 8px; font-size: .7rem; font-weight: 700; }
+    .hm-nom { color: #047857; font-weight: 700; font-family: ui-monospace, Consolas, monospace; font-size: .88rem; }
+    .hm-tkosong { font-size: .78rem; color: #64748b; font-style: italic; }
+    @media (max-width: 575.98px) {
+        .hm-dc { padding: 12px; gap: 10px; }
+        .hm-dic { width: 36px; height: 36px; font-size: 1.05rem; }
+        .hm-dmeta { grid-template-columns: 1fr; }
+    }
     .hm-termin-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 7px 0 0 42px; }
     .hm-termin-row + .hm-termin-row { border-top: 1px dashed var(--hm-border); margin-top: 7px; }
     .hm-termin-info { font-size: .76rem; color: var(--hm-muted); }
@@ -245,11 +310,19 @@
     .hm-toast.err { background: #b91c1c; }
 
     /* pratinjau file (surat kesanggupan, bukti pembayaran) */
-    .hm-fv { position: fixed; inset: 0; z-index: 1095; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(15,23,42,.6); }
-    .hm-fv-box { background: #fff; border-radius: 16px; width: 100%; max-width: 860px; height: min(86vh, 820px); display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 24px 60px rgba(15,23,42,.35); }
+    .hm-fv { position: fixed; inset: 0; z-index: 1095; display: flex; align-items: center; justify-content: center; padding: 3vh 3vw; background: rgba(15,23,42,.6); }
+    .hm-fv-box { background: #fff; border-radius: 16px; width: 100%; max-width: 94vw; height: 94vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 24px 60px rgba(15,23,42,.35); }
     .hm-fv-top { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--hm-border); }
     .hm-fv-top b { flex: 1; min-width: 0; font-family: var(--hm-display); font-size: .95rem; font-weight: 800; }
-    .hm-fv-body { flex: 1; background: #e2e8f0; position: relative; }
+    .hm-fv-body { flex: 1; background: #2b2e31; position: relative; }
+    .hm-fv-ic { width: 36px; height: 36px; border-radius: 50%; background: #fee2e2; color: #dc2626; display: grid; place-items: center; font-size: 1.1rem; flex-shrink: 0; }
+    .hm-fv-tt { flex: 1; min-width: 0; }
+    .hm-fv-tt b { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .hm-fv-tt small { display: block; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .75rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .hm-fv-dl { border-color: var(--hm-primary) !important; color: var(--hm-primary) !important; text-decoration: none; }
+    .hm-fv-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 20px; border-top: 1px solid var(--hm-border); background: #fff; }
+    .hm-fv-foot small { color: #64748b; font-size: .75rem; }
+    .hm-fv-foot small i { color: #16a34a; }
     .hm-fv-body iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #fff; }
     .hm-fv-doc { position: absolute; inset: 0; overflow: auto; background: #e2e8f0; }
     .hm-fv-doc .docx-wrapper { background: transparent !important; padding: 16px !important; }
@@ -272,6 +345,14 @@
     }
     @media (prefers-reduced-motion: reduce) { .hm-root * { transition: none !important; } }
 </style>
+
+<!-- Mode panel tunggal: dibuka dari detail order di dalam iframe (?embed=1&buka=ID). Hanya slide verifikasi yang tampil, daftar disembunyikan. -->
+<style>
+    html.hm-solo, html.hm-solo body, html.hm-solo .content-wrapper { background: transparent !important; }
+    html.hm-solo .main-container { padding: 0 !important; }
+    html.hm-solo .hm-root > :not(.hm-scrim):not(.hm-sheet):not(.hm-dlg):not(.hm-fv):not(.hm-toast) { display: none !important; }
+</style>
+<script>(function () { try { var q = window.location.search; if (window.self !== window.top && /[?&]embed=1(&|$)/.test(q) && /[?&]buka=\d+/.test(q)) { document.documentElement.classList.add('hm-solo'); if (/[?&]sc=1(&|$)/.test(q)) { document.body.classList.add('sidebar-collapsed'); } } } catch (e) {} })();</script>
 
 <div class="hm-root" id="hmRoot">
     <!-- Header & breadcrumb -->
@@ -380,7 +461,9 @@
                 <button type="button" class="hm-btn sm" id="hmZoomIn" aria-label="Perbesar"><i class="bi bi-plus-lg"></i></button>
             </div>
             <div id="hmPanePo">
-                <div class="hm-paper"><div id="hmDocHost"><div class="hm-loading">Memuat dokumen PO...</div></div></div></div>
+                <div class="hm-pobar"><span class="sp"></span><button type="button" class="hm-btn pri sm" id="hmUnduhPo" data-unduh-po><i class="bi bi-download"></i>Unduh PO</button></div>
+                <div class="hm-paper"><div id="hmDocHost"><div class="hm-loading">Memuat dokumen PO...</div></div></div>
+                <div id="hmCatBawah"></div></div>
             <div id="hmPaneBerkas" hidden></div>
             <div id="hmPaneAlur" hidden></div>
         </div>
@@ -390,11 +473,13 @@
     <div class="hm-fv" id="hmFv" hidden>
         <div class="hm-fv-box" role="dialog" aria-modal="true" aria-labelledby="hmFvJudul">
             <div class="hm-fv-top">
-                <b id="hmFvJudul">File</b>
+                <span class="hm-fv-ic"><i class="bi bi-file-earmark-pdf-fill"></i></span><div class="hm-fv-tt"><b id="hmFvJudul">File</b><small id="hmFvSub"></small></div>
+                <a class="hm-btn sm hm-fv-dl" id="hmFvUnduh" href="#" download title="Unduh berkas"><i class="bi bi-download"></i>Unduh</a>
                 <a class="hm-btn sm" id="hmFvTab" href="#" target="_blank" rel="noopener" title="Buka di tab baru"><i class="bi bi-box-arrow-up-right"></i></a>
                 <button type="button" class="hm-ibtn" id="hmFvTutup" aria-label="Tutup" style="width:32px;height:32px;"><i class="bi bi-x-lg"></i></button>
             </div>
             <div class="hm-fv-body"><iframe id="hmFvFrame" title="Pratinjau file"></iframe><div class="hm-fv-doc" id="hmFvDoc" style="display:none;"></div></div>
+            <div class="hm-fv-foot"><small><i class="bi bi-shield-check"></i> Pratinjau dokumen resmi OPTI BBSPJIS.</small><button type="button" class="hm-btn" id="hmFvTutup2">Tutup</button></div>
         </div>
     </div>
 
@@ -793,7 +878,7 @@
         var p = cariItem(id); if (!p) { return; }
         flushCatatan();
         var tiket = ++openTicket;
-        current = p.id; shTab = 'po'; detail = null; detailGalat = ''; zoomVal = null; catatanDiubah = false;
+        current = p.id; shTab = 'po'; detail = null; detailGalat = ''; dokBuka = {}; zoomVal = null; catatanDiubah = false;
         $('hmFitBar').classList.remove('on');
         $('hmDocHost').innerHTML = '<div class="hm-loading">Memuat dokumen PO...</div>';
         renderChrome();
@@ -823,10 +908,16 @@
             detailGalat = e.message; renderBody();
         });
     }
+    // Mode panel tunggal (dari detail order): panel dibuka langsung tanpa pindah halaman. Tutup panel = kembali ke detail order.
+    var SOLO = document.documentElement.classList.contains('hm-solo');
+    var SOLO_ID = (function () { var m = /[?&]buka=(\d+)/.exec(window.location.search); return m ? parseInt(m[1], 10) : 0; })();
+    var berubah = false;   // PO sudah diverifikasi dari panel ini
+    function kabariInduk(jenis) { try { window.parent.postMessage({ silopti: 'po-panel', jenis: jenis, berubah: berubah }, window.location.origin); } catch (e) {} }
     function closeSheet() {
         flushCatatan();
         openTicket++; current = null;
         $('hmScrim').classList.remove('open'); $('hmSheet').classList.remove('open'); $('hmSheet').setAttribute('aria-hidden', 'true');
+        if (SOLO) { kabariInduk('tutup'); }
     }
 
     function renderChrome() {
@@ -854,6 +945,8 @@
     }
     function renderShTabs() {
         var t = [['po', 'PO'], ['berkas', 'Berkas'], ['alur', 'Alur']];
+        // Dibuka dari detail order (panel tunggal): tab Alur disembunyikan karena detail order sudah punya riwayat alur sendiri.
+        if (SOLO) { t.pop(); if (shTab === 'alur') { shTab = 'po'; } }
         $('hmShTabs').innerHTML = t.map(function (x) { return '<button type="button" class="hm-shtab' + (shTab === x[0] ? ' on' : '') + '" data-shtab="' + x[0] + '">' + x[1] + '</button>'; }).join('');
     }
     function renderBody() {
@@ -869,8 +962,15 @@
     var PESAN_BELUM_BISA = 'Belum bisa diverifikasi: order ini belum lunas dan belum ada surat kesanggupan bayar.';
     function renderDock(p) {
         var h;
+        // catatan dari Humas saat memverifikasi PO (tampil di atas, supaya terbaca sebelum Tim Mitra memverifikasi)
+        // catatan Humas dan catatan Tim Mitra tampil sebagai kotak di bawah dokumen PO (hijau / oranye), bukan di dock
+        var cb = '';
+        if (p.catatan_humas) { cb += '<div class="hm-catbox humas"><i class="bi bi-chat-left-text"></i><div><div class="k">Catatan Humas</div><div class="t">' + esc(p.catatan_humas) + '</div></div></div>'; }
+        if (p.divalidasi && p.catatan) { cb += '<div class="hm-catbox"><i class="bi bi-chat-left-text"></i><div><div class="k">Catatan Tim Mitra</div><div class="t">' + esc(p.catatan) + '</div></div></div>'; }
+        if ($('hmCatBawah')) { $('hmCatBawah').innerHTML = cb; }
+        var cH = '';
         if (p.divalidasi) {
-            h = '<div class="hintline"><i class="bi bi-check2-circle"></i> Diverifikasi pada <b>' + tglSingkat(p.tgl_validasi) + '</b> dan didisposisikan ke Keuangan.' + (p.catatan ? ' Catatan: ' + esc(p.catatan) : '') + '</div>';
+            h = '<div class="hintline"><i class="bi bi-check2-circle"></i> Diverifikasi pada <b>' + tglSingkat(p.tgl_validasi) + '</b> dan didisposisikan ke Keuangan.</div>';
         } else {
             var bisa = !!p.bisa_validasi;
             h = (bisa ? '' : '<div class="hintline" style="flex-basis:100%;color:#92400e;"><i class="bi bi-exclamation-triangle"></i> ' + PESAN_BELUM_BISA + '</div>') +
@@ -878,11 +978,71 @@
                 '<span class="hm-cs" id="hmCS" role="status" aria-live="polite"></span>' +
                 '<button type="button" class="hm-btn pri" id="hmValidasi"' + (bisa ? '' : ' disabled') + '><i class="bi bi-check2-circle"></i>Verifikasi</button>';
         }
-        $('hmDock').innerHTML = h;
+        $('hmDock').innerHTML = cH + h;
         if ($('hmCS')) { setCS(p.catatan ? 'ok' : 'idle'); }
     }
 
     /* ---------- Tab Berkas ---------- */
+
+    /* ---------- Unduh PO ----------
+       PDF dibuat di server (GET /po-kegiatan/@id/unduh). Selama PO belum disetujui PPK BLU, PDF diberi watermark DRAFT. */
+    function unduhPo() {
+        if (!current) { return; }
+        var a = document.createElement('a');
+        a.href = BASE + '/po-kegiatan/' + current + '/unduh'; a.download = '';
+        document.body.appendChild(a); a.click();
+        setTimeout(function () { if (a.parentNode) { a.parentNode.removeChild(a); } }, 1000);
+    }
+
+    /* ---------- Kartu berkas gaya detail order ----------
+       Isi mengikuti modal berkas di detail order. Rincian (keterangan + data dokumen) tertutup dulu dan terbuka lewat tombol "Detail". */
+    var dokBuka = {};
+    var DOK_WARNA = { amber: ['#fef3c7', '#d97706'], primary: ['#dbeafe', '#2563eb'], indigo: ['#e0e7ff', '#4f46e5'], danger: ['#fee2e2', '#dc2626'], success: ['#dcfce7', '#16a34a'] };
+    function dokMeta(dk) {
+        var tg = dk.tanggal ? tglSingkat(dk.tanggal) : '', m;
+        if (dk.kunci === 'surat_masuk') { m = [['Nomor Dokumen', dk.nomor, 'mono'], ['Instansi Pemohon', dk.pengirim, 'n'], ['Tanggal Dokumen', tg, 'n'], ['Berkas Fisik', dk.file_name, 'fl', 1], ['Perihal', dk.perihal, 'n', 1]]; }
+        else if (dk.kunci === 'proposal') { m = [['Status Proposal', dk.status_proposal, 'n'], ['Berkas Fisik', dk.file_name, 'fl', 1], ['Perihal', dk.perihal, 'n', 1]]; }
+        else if (dk.kunci === 'penawaran') { m = [['Nomor Dokumen', dk.nomor, 'mono'], ['Tanggal Dokumen', tg, 'n'], ['Nilai Tarif (PNBP)', dk.nominal > 0 ? rp(dk.nominal) : '', 'mono'], ['Status Respon Mitra', dk.status_respon, 'n'], ['Berkas Fisik', dk.file_name, 'fl', 1]]; }
+        else { m = [['Berkas Fisik', dk.file_name, 'fl', 1]]; }
+        return m.filter(function (x) { return x[1]; });
+    }
+    function dokKartu(o) {
+        var c = DOK_WARNA[o.warna] || DOK_WARNA.primary;
+        var buka = o.paksaBuka ? true : (o.kunci in dokBuka ? dokBuka[o.kunci] : !!o.bukaAwal);
+        var aksi = o.aksi != null ? o.aksi : (o.ada && o.url
+            ? '<button type="button" class="hm-btn pri" data-fv="' + esc(o.url) + '" data-judul="' + esc(o.label) + '"><i class="bi bi-eye"></i>Lihat Pratinjau</button>' +
+              '<button type="button" class="hm-btn" data-tab-baru="' + esc(o.url) + '"><i class="bi bi-box-arrow-up-right"></i>Buka Tab Baru</button>' : '');
+        var isi = o.isi;
+        if (isi == null) {
+            isi = (o.ket ? '<div class="hm-dk' + (o.ada ? '' : ' mute') + '" style="border-left-color:' + (o.ada ? c[1] : '#cbd5e1') + '"><i class="bi bi-info-circle"></i> ' + esc(o.ket) + '</div>' : '');
+            if (o.meta && o.meta.length) {
+                isi += '<div class="hm-dmeta">' + o.meta.map(function (x) {
+                    return '<div' + (x[3] ? ' class="f"' : '') + '><span class="k">' + esc(x[0]) + ':</span><span class="' + x[2] + '">' + (x[2] === 'fl' ? '<i class="bi bi-file-earmark"></i> ' : '') + esc(x[1]) + '</span></div>';
+                }).join('') + '</div>';
+            }
+        }
+        return '<div class="hm-dc' + (o.ada ? '' : ' kosong') + (buka ? ' open' : '') + '" data-dok="' + esc(o.kunci) + '">' +
+            '<div class="hm-dic" style="background:' + c[0] + ';color:' + c[1] + '"><i class="bi ' + esc(o.ikon) + '"></i></div><div class="hm-dbody">' +
+            '<div class="hm-dh"><h6>' + esc(o.label) + '</h6><span class="hm-bd ' + (o.ada ? 'ok' : 'no') + '"><i class="bi ' + (o.ada ? 'bi-check-lg' : 'bi-dash-lg') + '"></i>' + esc(o.ada ? (o.badge || 'Tersedia') : (o.kosong || 'Belum Ada')) + '</span></div>' +
+            '<p class="hm-dsub">' + esc(o.sub) + '</p>' +
+            '<div class="hm-acts">' + aksi + '<span class="sp"></span><button type="button" class="hm-bdt" data-dok-toggle aria-expanded="' + (buka ? 'true' : 'false') + '">Detail <i class="bi bi-chevron-down ch"></i></button></div>' +
+            '<div class="hm-dt"><div><div class="in">' + isi + '</div></div></div></div></div>';
+    }
+    function dokKartus(j) {
+        var h = '<div class="hm-dtop"><button type="button" class="hm-tl" data-dok-semua="1">Buka semua detail</button> &middot; <button type="button" class="hm-tl" data-dok-semua="0">Tutup semua</button></div>';
+        (j.dokumen || []).forEach(function (dk) {
+            h += dokKartu({ kunci: dk.kunci, ikon: dk.ikon, warna: dk.warna, label: dk.label, sub: dk.sub, ada: dk.ada, badge: dk.badge, kosong: dk.kosong, url: dk.url, ket: dk.ket, meta: dokMeta(dk) });
+        });
+        return h;
+    }
+    // Satu baris termin pada kartu Bukti Pembayaran. pilih = tampilkan kotak centang (mode unduh)
+    function dokTermin(t, i, pilih) {
+        var st = t.status_verifikasi === 'terverifikasi' ? '<span class="hm-pill emerald">Terverifikasi</span>' : (t.status_verifikasi === 'ditolak' ? '<span class="hm-pill rose">Ditolak</span>' : '<span class="hm-pill amber">Menunggu</span>');
+        var info = '<div class="hm-tm-l"><div class="a"><span class="hm-tg">Termin ' + esc(t.termin_ke) + '</span><span class="hm-nom">' + rp(t.jumlah) + '</span>' + st + '</div><div class="d">Tgl: ' + tglSingkat(t.tanggal_bayar) + '</div></div>';
+        var aksi = t.url ? '<div class="hm-tm-r"><button type="button" class="hm-btn pri sm" data-fv="' + esc(t.url) + '" data-judul="Bukti Pembayaran Termin ke-' + esc(t.termin_ke) + '"><i class="bi bi-eye"></i>Lihat Pratinjau</button>' +
+            '<button type="button" class="hm-btn sm" data-tab-baru="' + esc(t.url) + '"><i class="bi bi-box-arrow-up-right"></i>Buka Tab Baru</button></div>' : '<span class="hm-cat-kosong">Tanpa file</span>';
+        return '<div class="hm-tm">' + info + aksi + '</div>';
+    }
     function berkasHtml(p) {
         if (detailGalat) { return '<div class="hm-loading err"><i class="bi bi-exclamation-triangle d-block mb-1" style="font-size:22px;"></i>' + esc(detailGalat) + '</div>'; }
         if (!detail) { return '<div class="hm-loading"><i class="bi bi-hourglass-split d-block mb-1" style="font-size:22px;"></i>Memuat berkas...</div>'; }
@@ -897,23 +1057,20 @@
             '<div class="hm-sum"><div class="l">Nilai kontrak</div><div class="v">' + rp(j.nilai) + '</div></div>' +
             '<div class="hm-sum"><div class="l">Total terbayar</div><div class="v ' + (j.lunas ? 'ok' : 'warn') + '">' + rp(j.total_terbayar) + '</div></div>' +
             '<div class="hm-sum"><div class="l">Sisa pembayaran</div><div class="v">' + rp(sisa) + '</div></div></div>';
-        h += '<div class="hm-cat"><div class="hm-cat-top"><div class="hm-cat-ic"><i class="bi bi-file-earmark-pdf"></i></div><div class="hm-cat-label">File PO</div>' +
-            '<button type="button" class="hm-btn sm" data-shtab="po"><i class="bi bi-eye"></i>Lihat file PO</button></div></div>';
-        h += '<div class="hm-cat"><div class="hm-cat-top"><div class="hm-cat-ic"><i class="bi bi-file-earmark-text"></i></div><div class="hm-cat-label">Surat Kesanggupan Bayar</div>' +
-            (j.kesanggupan && j.kesanggupan.ada ? '<button type="button" class="hm-btn sm" data-fv="' + esc(j.kesanggupan.url) + '" data-judul="Surat Kesanggupan Bayar"><i class="bi bi-eye"></i>Lihat file</button>' : '<span class="hm-cat-kosong">Tidak ada</span>') + '</div></div>';
-        h += '<div class="hm-cat"><div class="hm-cat-top"><div class="hm-cat-ic"><i class="bi bi-receipt"></i></div><div class="hm-cat-label">Bukti Pembayaran</div>' +
-            (j.termin.length ? '' : '<span class="hm-cat-kosong">Belum ada</span>') + '</div>' +
-            j.termin.map(function (t) {
-                var st = t.status_verifikasi === 'terverifikasi' ? '<span class="hm-pill emerald">Terverifikasi</span>' : (t.status_verifikasi === 'ditolak' ? '<span class="hm-pill rose">Ditolak</span>' : '<span class="hm-pill amber">Menunggu</span>');
-                return '<div class="hm-termin-row"><span class="hm-termin-info">Termin ke-' + esc(t.termin_ke) + ' &middot; ' + rp(t.jumlah) + ' &middot; ' + tglSingkat(t.tanggal_bayar) + ' ' + st + '</span>' +
-                    (t.url ? '<button type="button" class="hm-btn sm" data-fv="' + esc(t.url) + '" data-judul="Bukti Pembayaran Termin ke-' + esc(t.termin_ke) + '"><i class="bi bi-eye"></i>Lihat file</button>' : '<span class="hm-cat-kosong">Tanpa file</span>') + '</div>';
-            }).join('') + '</div>';
+        h += dokKartus(j);
+        var tBukti = j.termin.length ? j.termin.map(function (t, i) { return dokTermin(t, i, false); }).join('') : '<div class="hm-tkosong">Belum ada bukti pembayaran yang diunggah untuk order ini.</div>';
+        h += dokKartu({ kunci: 'bukti', ikon: 'bi-receipt', warna: 'success', label: 'Bukti Pembayaran / Transfer', sub: 'Bukti transfer pembayaran PNBP per termin', ada: j.termin.length > 0,
+            badge: j.termin.length + ' Bukti Terlampir', kosong: 'Belum Ada Bukti', bukaAwal: true,
+            aksi: '',
+            isi: tBukti });
         return h;
     }
     var fvSeq = 0;
     function bukaFv(url, judul) {
         $('hmFvJudul').textContent = judul;
         $('hmFvTab').href = url;
+        $('hmFvUnduh').href = url;
+        $('hmFvSub').textContent = (cariItem(current) || {}).nomor || '';
         $('hmFv').hidden = false;
         var n = ++fvSeq;
         var aktif = function () { return n === fvSeq && !$('hmFv').hidden; };
@@ -950,7 +1107,7 @@
         it(p.katim_baca_at, 'PO dibaca', 'Ketua Tim', 'bi-eye');
         if (!adaSetuju) { it(p.disetujui_at || p.humas_baca_at, 'Disetujui Ketua Tim. PO terkunci dan diteruskan ke Humas untuk diverifikasi.', 'Ketua Tim', 'bi-check2-circle'); }
         it(p.humas_baca_at, 'PO dibuka', 'Humas', 'bi-eye');
-        it(p.humas_valid_at, 'Diverifikasi', 'Humas', 'bi-patch-check');
+        it(p.humas_valid_at, 'Diverifikasi', 'Humas', 'bi-patch-check', p.catatan_humas);
         it(p.dibaca_at, 'PO dibuka', 'Tim Mitra', 'bi-eye');
         it(p.mitra_valid_at, 'Diverifikasi', 'Tim Mitra', 'bi-patch-check', p.catatan);
         it(p.ppk_valid_at, 'Diverifikasi', 'PPK BLU', 'bi-patch-check');
@@ -1017,6 +1174,7 @@
             p.bulan = +t.slice(5, 7); p.tahun = +t.slice(0, 4); p.catatan = catatan;
             if (!p.dibaca_at) { p.dibaca_at = t; }
             DATA_DISETUJUI.unshift(p);
+            berubah = true;
             isiOpsiFilter(); render(); renderChrome();
             toast('PO berhasil diverifikasi dan didisposisikan ke Keuangan.');
         }).catch(function (e) {
@@ -1028,6 +1186,13 @@
     /* ---------- Event ---------- */
     document.addEventListener('click', function (e) {
         var t = e.target;
+        if (t.closest('[data-unduh-po]')) { unduhPo(); return; }
+        var tbr = t.closest('[data-tab-baru]');
+        if (tbr) { window.open(tbr.getAttribute('data-tab-baru'), '_blank', 'noopener'); return; }
+        var dtg = t.closest('[data-dok-toggle]');
+        if (dtg) { var kd = dtg.closest('[data-dok]'), bk = kd.classList.toggle('open'); dokBuka[kd.getAttribute('data-dok')] = bk; dtg.setAttribute('aria-expanded', bk ? 'true' : 'false'); return; }
+        var dsm = t.closest('[data-dok-semua]');
+        if (dsm) { var sb = dsm.getAttribute('data-dok-semua') === '1'; Array.prototype.forEach.call(document.querySelectorAll('[data-dok]'), function (kd) { kd.classList.toggle('open', sb); dokBuka[kd.getAttribute('data-dok')] = sb; var b = kd.querySelector('[data-dok-toggle]'); if (b) { b.setAttribute('aria-expanded', sb ? 'true' : 'false'); } }); return; }
         var fv = t.closest('[data-fv]');
         if (fv) { bukaFv(fv.getAttribute('data-fv'), fv.getAttribute('data-judul')); return; }
         var st = t.closest('#hmRoot [data-shtab]');
@@ -1075,6 +1240,7 @@
     terapkanTampilanSheet();
     $('hmScrim').addEventListener('click', closeSheet);
     $('hmFvTutup').addEventListener('click', tutupFv);
+    $('hmFvTutup2').addEventListener('click', tutupFv);
     $('hmFv').addEventListener('click', function (e) { if (e.target === this) { tutupFv(); } });
     $('hmDlgNo').addEventListener('click', function () { tutupDlg(false); });
     $('hmDlgYes').addEventListener('click', function () { tutupDlg(true); });
@@ -1103,5 +1269,9 @@
 
     isiOpsiFilter();
     render();
+    if (SOLO) {
+        if (SOLO_ID && cariItem(SOLO_ID)) { openSheet(SOLO_ID); kabariInduk('siap'); }
+        else { kabariInduk('tutup'); }
+    }
 })();
 </script>

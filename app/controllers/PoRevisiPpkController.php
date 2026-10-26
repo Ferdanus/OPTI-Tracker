@@ -76,7 +76,9 @@ class PoRevisiPpkController extends Controller {
         // Dibuka dari Daftar Review PO (?buka=ID&dari=daftar): daftar penuh tidak terlihat (panel menutup kembali ke Daftar Review PO),
         // jadi cukup muat PO itu saja, dan rincian + dokumen PO-nya ditanam langsung di halaman supaya panel langsung tampil tanpa "Memuat...".
         $buka = (int) $f3->get('GET.buka');
-        $langsung = ($mode !== 'ppk' && $buka > 0 && (string) $f3->get('GET.dari') === 'daftar');
+        // PPK BLU membuka slide baca-saja dari detail order (?lihat=1): rincian, dokumen, dan berkas ditanam juga, supaya slide terbuka tanpa "Memuat..."
+        $langsung = ($mode !== 'ppk' && $buka > 0 && (string) $f3->get('GET.dari') === 'daftar')
+            || ($mode === 'ppk' && $buka > 0 && (string) $f3->get('GET.lihat') === '1');
         try {
             $daftar = $this->daftarItems($mode, (int) $this->getUserId(), $langsung ? $buka : 0);
         } catch (\Exception $e) {
@@ -84,7 +86,7 @@ class PoRevisiPpkController extends Controller {
         }
         $boot = null;
         if ($langsung && $errorMessage === null && !empty($daftar)) {
-            $boot = $this->bahanBuka($buka);
+            $boot = ($mode === 'ppk') ? $this->bahanBukaPpk($buka) : $this->bahanBuka($buka);
         }
         $f3->set('boot_json', json_encode($boot, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_INVALID_UTF8_SUBSTITUTE) ?: 'null');
         $f3->set('daftar_po_json', json_encode($daftar, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP));
@@ -159,6 +161,22 @@ class PoRevisiPpkController extends Controller {
         $this->keluarkanJson($this->paketDetail((int) $po['id'], $sisi));
     }
 
+    /** GET /po-ppk/@id/berkas -- tab Berkas pada slide PPK BLU (isi sama dengan tab Berkas Tim Mitra dan Humas) */
+    public function berkasPpk($f3, $params) {
+        $po = $this->aksesPpk((int) $params['id']);
+        $this->keluarkanJson($this->bangunBerkasPpk($po));
+    }
+
+    /** GET /po-ppk/@id/berkas-bukti/@pid[?unduh=1] -- file bukti pembayaran satu termin (harus milik order PO ini) */
+    public function berkasBuktiPpk($f3, $params) {
+        $po = $this->aksesPpk((int) $params['id']);
+        $r = $this->safeExec(
+            "SELECT bukti_bayar, termin_ke FROM opti_pembayaran
+             WHERE id = ? AND order_id = ? AND (is_kesanggupan_bayar = 0 OR is_kesanggupan_bayar IS NULL) LIMIT 1",
+            [1 => (int) $params['pid'], 2 => (int) $po['order_id']]
+        );
+        $this->kirimBerkas(!empty($r) ? $r[0]['bukti_bayar'] : null, 'Bukti-Pembayaran-Termin-' . (!empty($r) ? (int) $r[0]['termin_ke'] : 0) . '-' . $po['nomor_po']);
+    }
     /** GET /po-ppk/@id/detail */
     public function detailPpk($f3, $params) {
         $po = $this->aksesPpk((int) $params['id']);
@@ -1178,6 +1196,212 @@ class PoRevisiPpkController extends Controller {
             }
         }
         return self::$kolomCache[$nama];
+    }
+
+    /** Bahan panel PPK BLU (mode baca-saja) yang ditanam di halaman: rincian + catatan, dokumen PO, dan berkas order. Null kalau dokumen PO gagal dibuat. */
+    protected function bahanBukaPpk($id) {
+        $po = $this->aksesPpk($id);
+        $detail = $this->paketDetail((int) $po['id'], 'ppk');
+        $html = $this->htmlPratinjau((int) $po['id']);
+        if ($html === null) { return null; }
+        return ['id' => (int) $po['id'], 'detail' => $detail, 'preview' => $html, 'berkas' => $this->bangunBerkasPpk($po)];
+    }
+
+    /** Ringkasan pembayaran + berkas order untuk tab Berkas (bentuknya sama dengan GET /po-kegiatan/@id/berkas milik Ketua Tim). */
+    protected function bangunBerkasPpk(array $po) {
+        $base = (string) $this->f3->get('BASE');
+        $orderId = (int) $po['order_id'];
+        $o = $this->safeExec("SELECT nomor_order, judul_kegiatan, estimasi_biaya FROM order_layanan WHERE id = ? LIMIT 1", [1 => $orderId]);
+        $o = !empty($o) ? $o[0] : [];
+        $sp = $this->safeExec(
+            "SELECT surat_kesanggupan_bayar, nominal_penawaran FROM tb_surat_penawaran
+             WHERE order_id = ? AND status_respon_klien = 'deal' ORDER BY id DESC LIMIT 1",
+            [1 => $orderId]
+        );
+        $sp = !empty($sp) ? $sp[0] : [];
+        $bayarRows = $this->safeExec(
+            "SELECT id, termin_ke, jumlah, tanggal_bayar, status_verifikasi, bukti_bayar
+             FROM opti_pembayaran WHERE order_id = ? AND (is_kesanggupan_bayar = 0 OR is_kesanggupan_bayar IS NULL) ORDER BY termin_ke ASC",
+            [1 => $orderId]
+        );
+        $nilai = !empty($sp['nominal_penawaran']) ? (float) $sp['nominal_penawaran'] : (float) (isset($o['estimasi_biaya']) ? $o['estimasi_biaya'] : 0);
+        $totalTerbayar = 0;
+        $termin = [];
+        foreach ($bayarRows as $b) {
+            if ($b['status_verifikasi'] === 'terverifikasi') { $totalTerbayar += (float) $b['jumlah']; }
+            $termin[] = [
+                'termin_ke'         => (int) $b['termin_ke'],
+                'jumlah'            => (float) $b['jumlah'],
+                'tanggal_bayar'     => $b['tanggal_bayar'],
+                'status_verifikasi' => $b['status_verifikasi'],
+                // lewat endpoint halaman ini (hak akses PPK BLU), BUKAN /pembayaran/bukti yang khusus Keuangan dan Superadmin
+                'url'               => !empty($b['bukti_bayar']) ? ($base . '/po-ppk/' . (int) $po['id'] . '/berkas-bukti/' . (int) $b['id']) : null,
+            ];
+        }
+        $kesanggupanAda = !empty($sp['surat_kesanggupan_bayar']);
+        $skbUrl = $kesanggupanAda ? ($base . '/penawaran/surat-kesanggupan/' . $orderId) : null;
+        return [
+            'ok'    => true,
+            'po'    => ['id' => (int) $po['id'], 'nomor' => (string) $po['nomor_po']],
+            'order' => [
+                'nomor' => (string) (isset($o['nomor_order']) ? $o['nomor_order'] : ''),
+                'judul' => (string) (isset($o['judul_kegiatan']) ? $o['judul_kegiatan'] : ''),
+            ],
+            'nilai'          => $nilai,
+            'total_terbayar' => $totalTerbayar,
+            'lunas'          => $nilai > 0 && $totalTerbayar >= $nilai,
+            'kesanggupan'    => ['ada' => $kesanggupanAda, 'url' => $skbUrl],
+            'termin'         => $termin,
+            'dokumen'        => $this->dokumenOrder($orderId, $skbUrl),
+        ];
+    }
+
+    protected function safeExec($sql, $params = []) {
+        try { return $this->db->exec($sql, $params); } catch (\Exception $e) { return []; }
+    }
+
+    /** Kirim berkas bukti bayar ke browser (sama dengan PoReviewController::kirimBerkas). */
+    protected function kirimBerkas($relPath, $namaUnduh) {
+        $relPath = ltrim((string) $relPath, "/\\");
+        if ($relPath === '') { $this->f3->error(404, 'Berkas tidak tersedia.'); return; }
+        $appRoot = str_replace('\\', '/', dirname(__DIR__, 2));
+        $docRoot = rtrim(str_replace('\\', '/', (string) $this->f3->get('ROOT')), '/\\');
+        $nama = basename($relPath);
+
+        $kandidat = [
+            $appRoot . '/' . $relPath,
+            $appRoot . '/public/' . $relPath,
+            $appRoot . '/storage/' . $relPath,
+            $appRoot . '/storage/pembayaran/' . $nama,
+            $appRoot . '/uploads/' . $nama,
+            $appRoot . '/uploads/bukti_bayar/' . $nama,
+            $docRoot . '/' . $relPath,
+            $docRoot . '/storage/pembayaran/' . $nama,
+            $docRoot . '/uploads/bukti_bayar/' . $nama,
+            $relPath,
+        ];
+        $path = null;
+        foreach ($kandidat as $k) {
+            if ($k !== '' && is_file($k)) { $path = $k; break; }
+        }
+        if (!$path) { $this->f3->error(404, 'Berkas tidak ditemukan di server.'); return; }
+
+        $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+        $mime = ['pdf' => 'application/pdf', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png', 'gif' => 'image/gif', 'webp' => 'image/webp'];
+        if (!isset($mime[$ext])) { $this->f3->error(404, 'Jenis berkas tidak didukung.'); return; }
+
+        $unduh = (string) $this->f3->get('GET.unduh') === '1';
+        $bersih = trim((string) preg_replace('/[^A-Za-z0-9._-]+/', '-', $namaUnduh), '-') . '.' . $ext;
+        while (ob_get_level() > 0) { ob_end_clean(); }
+        header('Content-Type: ' . $mime[$ext]);
+        header('Content-Disposition: ' . ($unduh ? 'attachment' : 'inline') . '; filename="' . $bersih . '"');
+        header('Content-Length: ' . filesize($path));
+        header('Cache-Control: private, max-age=300');
+        header('X-Content-Type-Options: nosniff');
+        readfile($path);
+        exit;
+    }
+
+    /**
+     * Berkas order untuk tab Berkas pada slide (Surat Masuk Permohonan, Proposal Riset / Teknis, Surat Penawaran Harga, Surat Kesanggupan Bayar).
+     * Isi dan keterangannya disamakan dengan modal berkas di detail order (BerkasController). Alamat file memakai route yang hanya butuh
+     * login / izin lihat surat (bukan /pembayaran/bukti yang khusus Keuangan). $skbUrl = alamat file Surat Kesanggupan Bayar milik halaman ini.
+     */
+    protected function dokumenOrder($orderId, $skbUrl = null) {
+        $base = (string) $this->f3->get('BASE');
+        $orderId = (int) $orderId;
+        $baru = function ($kunci, $label, $ikon, $warna, $sub, $kosong = 'Belum Ada') {
+            return ['kunci' => $kunci, 'label' => $label, 'ikon' => $ikon, 'warna' => $warna, 'sub' => $sub, 'ket' => '', 'ada' => false, 'url' => null,
+                    'badge' => '', 'kosong' => $kosong, 'nomor' => '', 'tanggal' => '', 'pengirim' => '', 'nominal' => 0,
+                    'status_respon' => '', 'status_proposal' => '', 'file_name' => '', 'perihal' => ''];
+        };
+        $hasil = [];
+        $o = $this->safeExec("SELECT id_surat_masuk, jenis_layanan_opti FROM order_layanan WHERE id = ? LIMIT 1", [1 => $orderId]);
+        $o = !empty($o) ? $o[0] : [];
+        $divisi = strtolower((string) (isset($o['jenis_layanan_opti']) ? $o['jenis_layanan_opti'] : ''));
+
+        // 1. Surat Masuk Permohonan
+        $sm = $baru('surat_masuk', 'Surat Masuk Permohonan', 'bi-envelope-paper-fill', 'amber', 'Dokumen permohonan kerjasama layanan dari mitra industri', 'Tidak Ada');
+        if (!empty($o['id_surat_masuk']) && $this->dbSekretariat) {
+            try {
+                $s = $this->dbSekretariat->exec(
+                    "SELECT a.id_arsip, a.nomor_surat, a.tanggal_surat, a.perihal, a.nama_berkas, COALESCE(c.nmcustomer, 'Mitra Pemohon') AS pengirim, c.pt_cv
+                     FROM tb_arsipsurat a LEFT JOIN tb_customer c ON a.id_customer = c.id_customer WHERE a.id_arsip = ? LIMIT 1",
+                    [1 => (int) $o['id_surat_masuk']]
+                );
+                if (!empty($s)) {
+                    $sm['ada'] = true;
+                    $sm['url'] = $base . '/surat-masuk/' . (int) $s[0]['id_arsip'] . '/pdf';
+                    $sm['nomor'] = (string) $s[0]['nomor_surat'];
+                    $sm['tanggal'] = (string) $s[0]['tanggal_surat'];
+                    $sm['perihal'] = (string) $s[0]['perihal'];
+                    $sm['file_name'] = !empty($s[0]['nama_berkas']) ? basename((string) $s[0]['nama_berkas']) : '';
+                    $sm['pengirim'] = class_exists('Customer') ? (string) \Customer::formatNamaPerusahaan(isset($s[0]['pt_cv']) ? $s[0]['pt_cv'] : '', $s[0]['pengirim']) : (string) $s[0]['pengirim'];
+                }
+            } catch (\Throwable $e) { /* data surat masuk bersifat pelengkap */ }
+        }
+        $sm['ket'] = $sm['ada'] ? 'Surat permohonan resmi dari mitra pemohon telah terdaftar di loket sekretariat.'
+                                : 'Order diproses secara mandiri atau belum ditautkan dengan registrasi surat masuk loket balai.';
+        $hasil[] = $sm;
+
+        // 2. Proposal Riset / Teknis (hanya bila divisi selulosa atau order memang punya proposal)
+        $pr = $this->safeExec("SELECT id, file_proposal, judul_proposal, status_proposal FROM opti_proposal_riset WHERE order_id = ? ORDER BY id DESC LIMIT 1", [1 => $orderId]);
+        if ($divisi === 'selulosa' || !empty($pr)) {
+            $pr = !empty($pr) ? $pr[0] : [];
+            $p = $baru('proposal', 'Proposal Riset / Teknis', 'bi-journal-text', 'danger', 'Dokumen kajian metodologi, parameter analisis, dan perencanaan teknis');
+            $stp = (string) (isset($pr['status_proposal']) ? $pr['status_proposal'] : '');
+            if (!empty($pr['file_proposal'])) {
+                $p['ada'] = true;
+                $p['url'] = $base . '/proposal/' . (int) $pr['id'] . '/file';
+                $p['file_name'] = basename((string) $pr['file_proposal']);
+            }
+            $p['status_proposal'] = $stp !== '' ? ucwords(str_replace('_', ' ', $stp)) : '';
+            $p['perihal'] = (string) (isset($pr['judul_proposal']) ? $pr['judul_proposal'] : '');
+            $p['ket'] = !empty($pr) ? 'Proposal kajian teknis & metodologi riset telah disusun (' . ($p['status_proposal'] !== '' ? $p['status_proposal'] : 'Draft') . ').'
+                                    : 'Proposal riset/kajian teknis belum disusun oleh PIC Teknis.';
+            if (!empty($pr) && !$p['ada']) { $p['kosong'] = 'Belum Ada File'; }
+            $hasil[] = $p;
+        }
+
+        // 3. Surat Penawaran Harga
+        $sp = $this->safeExec(
+            "SELECT id, nomor_surat, tanggal_surat, nominal_penawaran, status_respon_klien, file_lampiran FROM tb_surat_penawaran
+             WHERE order_id = ? ORDER BY (status_respon_klien = 'deal') DESC, id DESC LIMIT 1",
+            [1 => $orderId]
+        );
+        $sp = !empty($sp) ? $sp[0] : [];
+        $q = $baru('penawaran', 'Surat Penawaran Harga (SPH)', 'bi-file-earmark-text-fill', 'primary', 'Dokumen resmi penawaran tarif PNBP dan ruang lingkup pekerjaan', 'Belum Diterbitkan');
+        $st = strtolower((string) (isset($sp['status_respon_klien']) ? $sp['status_respon_klien'] : ''));
+        if (!empty($sp['file_lampiran'])) {
+            $q['url'] = $base . '/penawaran/' . (int) $sp['id'] . '/lampiran';
+            $q['file_name'] = basename((string) $sp['file_lampiran']);
+        } elseif (!empty($sp['nomor_surat'])) {
+            $q['url'] = $base . '/surat-penawaran/' . $orderId . '/pdf?id=' . (int) $sp['id'];
+        }
+        $q['ada'] = $q['url'] !== null;
+        $q['nomor'] = (string) (isset($sp['nomor_surat']) ? $sp['nomor_surat'] : '');
+        $q['tanggal'] = (string) (isset($sp['tanggal_surat']) ? $sp['tanggal_surat'] : '');
+        $q['nominal'] = (float) (isset($sp['nominal_penawaran']) ? $sp['nominal_penawaran'] : 0);
+        $q['status_respon'] = strtoupper($st);
+        if ($st === 'deal') { $q['badge'] = 'Disepakati (DEAL)'; $q['ket'] = 'Surat penawaran harga telah disepakati oleh mitra (Status: DEAL).'; }
+        elseif ($st === 'terkirim') { $q['badge'] = 'Terkirim / Negosiasi'; $q['ket'] = 'Surat penawaran harga telah dikirimkan ke mitra dan menunggu konfirmasi persetujuan.'; }
+        elseif ($q['ada']) { $q['badge'] = 'Draft Penawaran'; $q['ket'] = 'Surat penawaran telah dirancang dan tersimpan dalam sistem.'; }
+        else { $q['ket'] = 'Surat Penawaran Harga (SPH) belum diterbitkan oleh Tim Pemasaran.'; }
+        $hasil[] = $q;
+
+        // 4. Surat Kesanggupan Bayar
+        $skb = $this->safeExec(
+            "SELECT surat_kesanggupan_bayar FROM tb_surat_penawaran WHERE order_id = ? AND surat_kesanggupan_bayar IS NOT NULL AND surat_kesanggupan_bayar <> '' ORDER BY (status_respon_klien = 'deal') DESC, id DESC LIMIT 1",
+            [1 => $orderId]
+        );
+        $b = $baru('kesanggupan', 'Surat Kesanggupan Bayar (SKB)', 'bi-file-earmark-check-fill', 'indigo', 'Surat komitmen penjaminan pembayaran dari mitra sebelum pekerjaan dimulai', 'Tidak Ada');
+        $b['ada'] = !empty($skb) && $skbUrl !== null;
+        $b['url'] = $b['ada'] ? $skbUrl : null;
+        $b['file_name'] = !empty($skb) ? basename((string) $skb[0]['surat_kesanggupan_bayar']) : '';
+        $b['ket'] = $b['ada'] ? 'Surat pernyataan kesanggupan pembayaran dari mitra industri telah diunggah.'
+                              : 'Mitra memilih skema pelunasan langsung/termin reguler tanpa penjaminan Surat Kesanggupan Bayar.';
+        $hasil[] = $b;
+        return $hasil;
     }
 
     protected function keluarkanJson($data, $status = 200) {

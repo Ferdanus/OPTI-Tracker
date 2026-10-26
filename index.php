@@ -211,6 +211,7 @@ $f3->route('POST /ketua-tim/@id/pilih-pelaksana', 'KetuaTimController->simpanPel
 
 $f3->route('GET /po-kegiatan/validasi-mitra', 'PoValidasiMitraController->index');
 $f3->route('GET /po-kegiatan/@id/validasi-detail', 'PoValidasiMitraController->detailJson');
+$f3->route('GET /po-kegiatan/@id/validasi-bukti/@pid', 'PoValidasiMitraController->berkasBukti');   // bukti pembayaran untuk Tim Mitra (bukan /pembayaran/bukti yang khusus Keuangan)
 // path khusus Mitra: 'POST /po-kegiatan/@id/catatan' sudah dipakai PoReviewController (catatan Ketua Tim), route yang sama akan saling menimpa
 $f3->route('POST /po-kegiatan/@id/catatan-mitra', 'PoValidasiMitraController->simpanCatatan');
 $f3->route('POST /po-kegiatan/@id/baca-mitra', 'PoValidasiMitraController->baca');
@@ -220,6 +221,7 @@ $f3->route('POST /po-kegiatan/@id/validasi', 'PoValidasiMitraController->validas
 $f3->route('GET /po-humas', 'PoHumasController->index');
 $f3->route('POST /po-humas/@id/verifikasi', 'PoHumasController->verifikasi');
 $f3->route('GET /po-humas/@id/berkas', 'PoHumasController->berkas');
+$f3->route('GET /po-humas/@id/berkas/bukti/@pid', 'PoHumasController->berkasBukti');   // bukti pembayaran untuk Humas (bukan /pembayaran/bukti yang khusus Keuangan)
 
 $f3->route('GET /order/@id/berkas', 'BerkasController->index');
 $f3->route('GET /penawaran/@id/lampiran', 'BerkasController->lampiranPenawaran');
@@ -249,6 +251,8 @@ $f3->route('POST /po-revisi-ppk/@id/catatan/@nid',      'PoRevisiPpkController->
 $f3->route('GET /po-ppk',                               'PoRevisiPpkController->indexPpk');
 $f3->route('GET /po-ppk/data',                          'PoRevisiPpkController->dataPpk');
 $f3->route('GET /po-ppk/@id/detail',                    'PoRevisiPpkController->detailPpk');
+$f3->route('GET /po-ppk/@id/berkas',                    'PoRevisiPpkController->berkasPpk');          // tab Berkas di slide PPK BLU
+$f3->route('GET /po-ppk/@id/berkas-bukti/@pid',         'PoRevisiPpkController->berkasBuktiPpk');     // file bukti pembayaran untuk PPK BLU
 $f3->route('POST /po-ppk/@id/catatan',                  'PoRevisiPpkController->catatanTambah');   // tambah catatan (draf)
 $f3->route('POST /po-ppk/@id/catatan/@nid',             'PoRevisiPpkController->catatanHapus');    // hapus draf (aksi=hapus)
 $f3->route('POST /po-ppk/@id/minta-revisi',             'PoRevisiPpkController->mintaRevisi');
@@ -417,6 +421,7 @@ $f3->route('GET /po-kegiatan/@id/preview', 'PoKegiatanController->previewFragmen
 $f3->route('POST /po-kegiatan/preview-live', 'PoKegiatanController->previewLive');
 $f3->route('GET /po-kegiatan/jadwal-kolom', 'PoKegiatanController->jadwalKolom');
 $f3->route('GET /po-kegiatan/@id/cetak', 'PoKegiatanController->cetak');
+$f3->route('GET /po-kegiatan/@id/unduh', 'PoKegiatanController->unduh');   // unduh PDF PO (watermark DRAFT sampai disetujui PPK BLU)
 $f3->route('POST /po-kegiatan/cetak-live', 'PoKegiatanController->cetakLive');
 $f3->route('GET /po-kegiatan/daftar', 'PoReviewController->index');
 $f3->route('GET /po-kegiatan/daftar/data', 'PoReviewController->data');          // penyegaran daftar otomatis

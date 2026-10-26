@@ -1,4 +1,9 @@
 <style>
+/* Baris order yang giliran akun ini dan belum dibaca: latar abu + penanda gelap di kiri (barisnya juga dinaikkan ke paling atas oleh controller) */
+tr.order-belum-baca > td { background-color: #e5e7eb !important; }
+tr.order-belum-baca:hover > td { background-color: #dde1e6 !important; }
+tr.order-belum-baca > td:first-child { box-shadow: inset 4px 0 0 #475569; }
+tr.order-belum-baca .fw-semibold.text-dark.mb-1 { font-weight: 800 !important; }
 .filter-tabs-wrapper {
     background: #ffffff;
     border-bottom: 1px solid #e2e8f0;
@@ -492,7 +497,7 @@
                                 </thead>
                                 <tbody>
                                     <repeat group="{{ @daftar_order }}" value="{{ @ord }}" counter="{{ @ctr }}">
-                                        <tr>
+                                        <tr class="{{ @ord.giliran_anda && @ord.po_baca_status == 'belum' ? 'order-belum-baca' : '' }}">
                                             <td class="text-center text-muted small">{{ @ctr }}</td>
                                             <td>
                                                 <check if="{{ !empty(@ord.nomor_order) }}">
@@ -592,10 +597,14 @@
                                                 </div>
                                             </td>
                                             <td>
+                                                <check if="{{ !empty(@ord.keterangan_pelaksana) }}">
+                                                    <div class="text-secondary fw-semibold" style="font-size: 0.7rem; line-height: 1.25; margin-bottom: 1px;">{{ @ord.keterangan_pelaksana }}</div>
+                                                </check>
                                                 <check if="{{ !empty(@ord.keterangan_sub) }}">
                                                     <true>
                                                         <div class="text-primary-emphasis fw-semibold" style="font-size: 0.74rem; line-height: 1.25;">
-                                                            {{ @ord.keterangan_sub }}
+                                                            <check if="{{ @ord.giliran_anda && @ord.po_baca_status == 'belum' }}"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#2563eb;margin-right:6px;vertical-align:1px;"></span></check>{{ @ord.keterangan_sub }}
+                                                            <check if="{{ @ord.giliran_anda }}"><span class="badge rounded-pill ms-1 align-middle" style="background:#f59e0b;color:#fff;font-size:0.62rem;">Giliran Anda</span></check>
                                                         </div>
                                                     </true>
                                                     <false>
@@ -606,7 +615,7 @@
                                                 </check>
                                                 <check if="{{ !empty(@ord.keterangan_detail) }}">
                                                     <div class="text-muted mt-0.5" style="font-size: 0.69rem; line-height: 1.25;">
-                                                        {{ @ord.keterangan_detail }}
+                                                        {{ @ord.keterangan_detail }}<check if="{{ !empty(@ord.keterangan_baca) }}"> &middot; <span class="{{ @ord.po_baca_status == 'belum' ? 'text-warning-emphasis fw-bold' : 'text-success fw-semibold' }}">{{ @ord.keterangan_baca }}</span></check>
                                                     </div>
                                                 </check>
                                             </td>
@@ -1060,7 +1069,9 @@ document.addEventListener('DOMContentLoaded', function () {
         modalPdfPreviewEl.addEventListener('shown.bs.modal', function () {
             var backdrops = document.querySelectorAll('.modal-backdrop');
             if (backdrops.length > 1) {
-                backdrops[backdrops.length - 1].style.zIndex = '1065';
+                // Lapisan gelap preview harus DI ATAS modal lampiran (1055) tapi DI BAWAH modal preview (1065).
+                // Dulu sama-sama 1065 sehingga lapisan gelap menutupi jendela preview dan semua tombolnya tidak bisa diklik.
+                backdrops[backdrops.length - 1].style.zIndex = '1060';
             }
         });
         modalPdfPreviewEl.addEventListener('hidden.bs.modal', function() {

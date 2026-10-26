@@ -1122,6 +1122,22 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
      * Tujuan sesudah simpan / kirim saat form PO tertanam di Tahap 8 detail order (hidden field dari = order):
      * PO terkirim -> detail order (halaman induk), draft -> tetap di form tertanam, belum tersimpan -> form baru tertanam.
      */
+    /**
+     * Pindah ke tujuan setelah simpan dari Tahap 8 detail order. Form ini berjalan di dalam iframe; kalau tujuannya halaman detail order
+     * (/order/ID), halaman itu harus dimuat di jendela utama -- bukan di dalam iframe -- jadi balasannya skrip kecil yang memindahkan jendela utama.
+     */
+    protected function keTujuanDariOrder($f3, $url) {
+        if (strpos((string) $url, '/order/') === 0) {
+            $u = (string) $f3->get('BASE') . $url;
+            header('Content-Type: text/html; charset=utf-8');
+            echo '<!doctype html><html><head><meta charset="utf-8"><title>Memuat...</title></head><body>'
+                . '<script>try{window.top.location.replace(' . json_encode($u) . ');}catch(e){window.location.replace(' . json_encode($u) . ');}</script>'
+                . '<noscript><a href="' . htmlspecialchars($u, ENT_QUOTES, 'UTF-8') . '">Lanjut</a></noscript></body></html>';
+            exit;
+        }
+        $f3->reroute($url);
+    }
+
     protected function tujuanDariOrder($orderId, $poId, $status) {
         if ($poId > 0 && (string) $status !== '' && (string) $status !== 'draft') { return '/order/' . (int) $orderId; }
         if ($poId > 0) { return '/po-kegiatan/' . (int) $poId . '/edit?embed=1&dari=order'; }
@@ -1183,7 +1199,7 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
         }
 
         if ((string) $f3->get('POST.dari') === 'order') {
-            $f3->reroute($this->tujuanDariOrder((int) $f3->get('POST.order_id'), $idBaru, $statusBaru));
+            $this->keTujuanDariOrder($f3, $this->tujuanDariOrder((int) $f3->get('POST.order_id'), $idBaru, $statusBaru));
             return;
         }
         $tujuan = $this->urlDaftarPoDariOrder((int) $f3->get('POST.order_id'));
@@ -1231,7 +1247,7 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
                 $f3->reroute('/po-kegiatan/daftar');
                 return;
             }
-            if ($ajaxKirim && !in_array($konteksRevisi, ['review', 'ppk'], true)) {
+            if ($ajaxKirim && !in_array($konteksRevisi, ['review', 'ppk', 'katim'], true)) {
                 $this->jsonSimpan(false, 'PO ini tidak sedang dalam revisi, tidak ada yang bisa dikirim.', 422);
             }
             $sudahTerkirim = ($statusSebelum === 'terkirim');
@@ -1282,6 +1298,8 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
                 $this->nomorAjax = (string) $po->nomor_po;
                 if ($ajaxKirim) {
                     // flash tidak dipasang: halaman tujuan sesudah kirim tidak perlu pesan "tandai catatan"
+                    // Ketua Tim "Simpan dan setujui" dari Tahap 8: jejak edit tetap dicatat (persetujuan dipanggil browser sesudah ini)
+                    if ($konteksRevisi === 'katim') { $this->catatEditKatim($po); }
                 } elseif ($konteksRevisi === 'katim') {
                     // [BARU] Ketua Tim mengedit sendiri saat review: status review tetap, pembuat diberi tahu lewat tab Alur + notifikasi
                     $this->catatEditKatim($po);
@@ -1307,7 +1325,7 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
             // (hidden field 'dari' = 'daftar'), reroute balik ke situ -- bukan ke daftar PO
             // per-divisi yang biasa.
             if ((string) $f3->get('POST.dari') === 'order') {
-                $f3->reroute($this->tujuanDariOrder((int) $po->order_id, (int) $po->id, $berhasilSimpan ? (string) $po->status : 'draft'));
+                $this->keTujuanDariOrder($f3, $this->tujuanDariOrder((int) $po->order_id, (int) $po->id, $berhasilSimpan ? (string) $po->status : 'draft'));
                 return;
             }
             if ((string) $f3->get('POST.dari') === 'daftar') {
@@ -1412,36 +1430,116 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
         echo \Template::instance()->render('katim_kerja/po-kegiatan/preview_fragment.html');
     }
 
+    /** GET /po-kegiatan/@id/cetak -- PDF PO ditampilkan di browser (pratinjau). */
     public function cetak($f3, $params) {
+        $this->kirimPdfPo($f3, (int) $params['id'], false);
+    }
+
+    /**
+     * GET /po-kegiatan/@id/unduh -- PDF PO yang sama, tapi langsung diunduh (Content-Disposition: attachment).
+     * Route sengaja bukan ".../cetak": link yang mengandung "/cetak" dicegat layout dan dibuka di modal preview, bukan diunduh.
+     */
+    public function unduh($f3, $params) {
+        $this->kirimPdfPo($f3, (int) $params['id'], true);
+    }
+
+    /**
+     * PO dianggap FINAL bila sudah diverifikasi PPK BLU (validasi_keuangan_at terisi) atau status efektifnya 'disetujui'
+     * (aturan yang sama dengan status efektif di daftar PO). Selain itu PDF diberi watermark DRAFT.
+     */
+    protected function poSudahFinal($poId) {
+        try {
+            $r = $this->db->exec("SELECT * FROM po_kegiatan WHERE id = ? LIMIT 1", [1 => (int) $poId]);
+        } catch (\Throwable $e) {
+            return false;
+        }
+        if (empty($r)) { return false; }
+        $r = $r[0];
+        $v = trim((string) (isset($r['validasi_keuangan_at']) ? $r['validasi_keuangan_at'] : ''));
+        if ($v !== '' && strpos($v, '0000-00-00') !== 0) { return true; }
+        return isset($r['status']) && (string) $r['status'] === 'disetujui';
+    }
+
+    /**
+     * Watermark "DRAFT" besar miring di tengah setiap halaman + keterangan kecil di bawah.
+     * Dipasang SETELAH $dompdf->render() lewat page_script, jadi tidak mengubah tata letak dokumen.
+     */
+    protected function pasangWatermarkDraft($dompdf) {
+        $canvas = $dompdf->getCanvas();
+        $ratio = (float) $dompdf->getOptions()->getFontHeightRatio();
+        if ($ratio <= 0) { $ratio = 1.0; }
+        $canvas->page_script(function ($no, $total, $c, $fm) use ($ratio) {
+            $tebal = $fm->getFont('Helvetica', 'bold');
+            $biasa = $fm->getFont('Helvetica', 'normal');
+            $w = $c->get_width();
+            $h = $c->get_height();
+            $teks = 'DRAFT';
+            $ukuran = 120;
+            $lebar = $c->get_text_width($teks, $tebal, $ukuran);
+            // Canvas::text() menaruh pangkal garis dasar di (x, h - y - tinggiFontMentah) dan memutar searah jarum jam untuk sudut positif,
+            // jadi sudut -45 = naik ke kanan. Titik awal dihitung supaya teks berpusat di tengah halaman.
+            $tinggiMentah = $c->get_font_height($tebal, $ukuran) / $ratio;
+            $rad = deg2rad(45);
+            $tinggiHuruf = $ukuran * 0.72;
+            $sx = $w / 2 - ($lebar / 2) * cos($rad) + ($tinggiHuruf / 2) * sin($rad);
+            $sy = $h / 2 - ($lebar / 2) * sin($rad) - ($tinggiHuruf / 2) * cos($rad);
+            $c->set_opacity(0.16);
+            $c->text($sx, $h - $sy - $tinggiMentah, $teks, $tebal, $ukuran, [0.39, 0.45, 0.55], 0.0, 0.0, -45);
+            $c->set_opacity(1.0);
+            $ket = 'DOKUMEN DRAFT - belum disetujui PPK BLU';
+            $c->text(($w - $c->get_text_width($ket, $biasa, 7.5)) / 2, $h - 30, $ket, $biasa, 7.5, [0.45, 0.5, 0.58]);
+        });
+    }
+
+    protected function kirimPdfPo($f3, $poId, $unduh) {
         $po = new PoKegiatan($this->db);
-        $po->load(['id = ?', (int) $params['id']]);
-    
+        $po->load(['id = ?', (int) $poId]);
+
         if ($po->dry()) {
+            if ($unduh) {
+                http_response_code(404);
+                echo 'PO tidak ditemukan.';
+                exit;
+            }
             $this->setFlashError('PO tidak ditemukan.');
             $f3->reroute('/po-kegiatan');
             return;
         }
-    
+
         $orderData = $this->getOrderDenganMitra((int) $po->order_id);
         $poData = $this->siapkanDataPo($po, $orderData);
-    
+        // Rapikan baris kosong di awal/akhir tiap poin (<br>, <p><br></p>, &nbsp;) supaya jarak di PDF sama seperti preview
+        foreach (['dasar_lines', 'tujuan_lines', 'ruang_lingkup_deskripsi_lines', 'alat_bahan_lines', 'metoda_lines'] as $kunciLines) {
+            if (empty($poData[$kunciLines]) || !is_array($poData[$kunciLines])) { continue; }
+            foreach ($poData[$kunciLines] as $i => $baris) {
+                $t = (string) ($baris['teks'] ?? '');
+                $kosong = '(?:\s|&nbsp;|\x{00A0}|<br\s*\/?>|<p[^>]*>\s*(?:&nbsp;|<br\s*\/?>|\s)*<\/p>)+';
+                $t = preg_replace('/^' . $kosong . '/iu', '', $t);
+                $t = preg_replace('/' . $kosong . '$/iu', '', $t);
+                $poData[$kunciLines][$i]['teks'] = $t;
+            }
+        }
+
         $f3->set('order', $orderData ?: null);
         $f3->set('po', $poData);
         $html = \Template::instance()->render('katim_kerja/po-kegiatan/cetak_pdf.html');
-    
+
         $options = new \Dompdf\Options();
         $options->set('isRemoteEnabled', false);
-$options->set('defaultFont', 'Times-Roman');
+        $options->set('defaultFont', 'Times-Roman');
         $dompdf = new \Dompdf\Dompdf($options);
-    $dompdf->loadHtml($html);
-    $dompdf->setPaper('A4', 'portrait');
-    $dompdf->render();
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
 
-    $namaFile = 'PO-' . preg_replace('/[^A-Za-z0-9_-]/', '_', $poData['nomor_po'] ?? $po->id) . '.pdf';
+        $final = $this->poSudahFinal((int) $po->id);
+        if (!$final) { $this->pasangWatermarkDraft($dompdf); }
 
-    $dompdf->stream($namaFile, ['Attachment' => false]);
-    exit;
-}
+        $namaFile = 'PO-' . preg_replace('/[^A-Za-z0-9_-]/', '_', $poData['nomor_po'] ?? $po->id) . ($final ? '' : '-DRAFT') . '.pdf';
+
+        $dompdf->stream($namaFile, ['Attachment' => (bool) $unduh]);
+        exit;
+    }
 
     /** POST /po-kegiatan/preview-live -- render live preview fragment dari data form saat ini (tanpa save DB) */
     public function previewLive($f3) {
@@ -2054,6 +2152,17 @@ protected function siapkanDataPo($po, $orderData) {
 
             $jenis = trim($item['jenis'] ?? '');
             if ($jenis === '') continue;
+
+            // [BARU] Item "Disediakan PT X" (RAB Lingkungan) -- biaya ditanggung partner: Rp 0, tanpa rincian kali/jumlah/hari/tarif
+            $ptItem = trim((string) ($item['disediakan_pt'] ?? ''));
+            if ($ptItem !== '' && ($item['tipe_item'] ?? 'biasa') === 'biasa') {
+                $baris[] = [
+                    'tipe' => 'item', 'depth' => $depth, 'nomor' => '', 'nama' => $jenis, 'rincian' => '',
+                    'kali_fmt' => '', 'dim2_fmt' => '', 'dim2_label' => '', 'hari_fmt' => '',
+                    'satuan_biaya' => 0, 'biaya' => 0, 'disediakan_pt' => $ptItem,
+                ];
+                continue;
+            }
 
             // [BARU] Item "Lembur" -- rumusnya beda dari item biasa (Kali x Jumlah x Hari x
             // Satuan): Biaya Lembur = Hari x Jam x Tarif per-OJ x %Lembur, ditambah Uang Makan

@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Demo baris belum dibaca naik ke atas</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#f8fafc;color:#0f172a;padding:20px}
+h1{font-size:1.05rem;margin:0 0 4px}
+p.s{margin:0 0 14px;color:#64748b;font-size:.82rem;max-width:860px;line-height:1.55}
+.ctl{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap;font-size:.8rem;color:#475569}
+.b{border:1.5px solid #cbd5e1;background:#fff;color:#334155;border-radius:9px;padding:7px 14px;font-size:.8rem;font-weight:700;cursor:pointer}
+.b:hover{border-color:#334155}
+.b.pri{background:#334155;border-color:#334155;color:#fff}
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;max-width:1100px}
+.hd,.rw{display:grid;grid-template-columns:34px 120px minmax(180px,1fr) 96px 112px 112px 180px 80px;align-items:center;gap:8px;padding:12px 14px}
+.hd{background:#f1f5f9;font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:#64748b;border-bottom:1px solid #e2e8f0}
+.rw{border-bottom:1px solid #e2e8f0;background:#fff;transition:background .35s,box-shadow .35s;position:relative}
+.rw:last-child{border-bottom:0}
+.rw.unread{background:#e5e7eb;box-shadow:inset 4px 0 0 #475569}
+.rw.unread .jd{font-weight:800}
+.no{color:#64748b;font-size:.85rem;text-align:center}
+.od{font-family:ui-monospace,Consolas,monospace;font-size:.7rem;line-height:1.6}
+.od small{color:#64748b;display:block}
+.dur{display:inline-block;margin-top:3px;font:700 .72rem system-ui;color:#047857;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:6px;padding:3px 8px}
+.jd{font-weight:700;font-size:.88rem;line-height:1.35}
+.jd small{display:block;color:#64748b;font-weight:500;font-size:.76rem;margin-top:3px}
+.dv{font-size:.72rem;font-weight:700;border-radius:20px;padding:2px 10px;border:1px solid;justify-self:start}
+.dv.s{background:#fef2f2;color:#be123c;border-color:#fecdd3}.dv.l{background:#ecfdf5;color:#047857;border-color:#a7f3d0}
+.rp{font-size:.8rem;text-align:right;line-height:1.5}.rp b{display:block;font-size:.85rem}
+.tg{font-size:.74rem;font-weight:700;color:#1d4ed8;background:#eff6ff;border:1px solid #bfdbfe;border-radius:20px;padding:3px 10px;justify-self:start}
+.st{font-size:.76rem;line-height:1.45;color:#475569}.st b{color:#0f172a;display:block}
+.gl{display:inline-block;background:#f59e0b;color:#fff;font-size:.66rem;font-weight:800;border-radius:20px;padding:2px 8px;margin-left:4px}
+.nb{display:inline-block;background:#334155;color:#fff;font-size:.62rem;font-weight:800;border-radius:20px;padding:2px 8px;margin-left:4px;letter-spacing:.03em}
+.dt{border:0;background:#334155;color:#fff;border-radius:9px;padding:9px 14px;font-size:.82rem;font-weight:700;cursor:pointer}
+.dt:hover{background:#1e293b}
+.note{max-width:1100px;margin-top:16px;font-size:.78rem;color:#475569;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;line-height:1.65}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:9px 16px;border-radius:10px;font-size:.8rem;display:none;z-index:60}
+@media(max-width:900px){.card{overflow-x:auto}.hd,.rw{min-width:1000px}}
+</style></head><body>
+<h1>Baris order yang belum dibaca naik ke nomor 1 dan berwarna abu</h1>
+<p class="s">Contoh di sisi Tim Mitra. Begitu status order berubah dan menjadi giliran Tim Mitra (misalnya Humas baru selesai memverifikasi), barisnya otomatis naik ke nomor 1 dengan latar abu. Setelah baris dibuka lewat tombol Detail, warnanya kembali putih dan barisnya turun ke posisi aslinya (nomor 6 di contoh ini). Klik <b>Detail</b> pada baris abu untuk mencobanya.</p>
+<div class="ctl">
+  <button class="b pri" id="sim">Simulasikan: Humas baru memverifikasi (status baru masuk)</button>
+  <button class="b" id="rst">Kembalikan ke kondisi sudah dibaca</button>
+</div>
+<div class="card">
+  <div class="hd"><span>No</span><span>Order</span><span>Kegiatan</span><span>Layanan</span><span style="text-align:right">Biaya</span><span>Tahap</span><span>Status</span><span></span></div>
+  <div id="list"></div>
+</div>
+<div class="note"><b>Aturan yang dipakai di demo ini:</b><br>
+Baris yang belum dibaca Tim Mitra: latar abu, judul tebal, ada penanda gelap di tepi kiri, dan diurutkan paling atas (kalau ada beberapa, urutannya tetap seperti urutan aslinya).<br>
+Dianggap sudah dibaca setelah Tim Mitra membuka Detail baris itu. Dibaca sekali saja, tidak perlu ditandai manual.<br>
+Penanda <b>Giliran Anda</b> tetap tampil selama Tim Mitra belum memverifikasi, walaupun barisnya sudah dibaca. Penanda ini hilang hanya setelah verifikasi dilakukan.<br>
+Susunan daftar order tidak berubah permanen: naik ke atas cuma selama belum dibaca, setelah itu kembali ke posisi aslinya.<br>
+Kalau statusnya berubah lagi dan kembali menjadi giliran Tim Mitra, baris itu menjadi abu dan naik lagi.<br>
+Nomor baris mengikuti posisi tampilan, jadi saat naik ia bernomor 1 dan saat kembali ia bernomor 6.</div>
+<div class="toast" id="ts"></div>
+<script>
+var $=function(i){return document.getElementById(i)};
+// urutan asli = urutan nomor saat tidak ada yang belum dibaca
+var DATA=[
+ {id:12,ord:'ORD-202610-012',req:'REQ-202603-007',tgl:'10/03/2026',dur:'24 Hari Kerja',judul:'Pengujian Kualitas Air Proses Pulp',pt:'PT Indah Kiat Serang',dv:'l',biaya:'Rp 12.500.000',byr:'Terbayar: Rp 12.500.000',tahap:'Penerbitan PO',pel:'Pelaksana: dewi lestari',st:'Penyusunan PO',st2:'PO belum dibuat',unread:false},
+ {id:11,ord:'ORD-202610-011',req:'REQ-202603-006',tgl:'09/03/2026',dur:'26 Hari Kerja',judul:'Optimalisasi Pemakaian Bahan Kimia Wet End',pt:'PT Suparma Tbk.',dv:'s',biaya:'Rp 8.000.000',byr:'Terbayar: Rp 8.000.000',tahap:'Penerbitan PO',pel:'Pelaksana: aji bakwan',st:'Penyusunan PO',st2:'PO belum dibuat',unread:false},
+ {id:9,ord:'ORD-202610-009',req:'REQ-202603-008',tgl:'08/03/2026',dur:'25 Hari Kerja',judul:'Evaluasi Kinerja Boiler dan Efisiensi Energi Pabrik Kertas',pt:'PT Pindo Deli Pulp',dv:'l',biaya:'Rp 15.000.000',byr:'Terbayar: Rp 15.000.000',tahap:'Penerbitan PO',pel:'Pelaksana: dewi lestari',st:'Penyusunan PO',st2:'PO belum dibuat',unread:false},
+ {id:10,ord:'ORD-202610-010',req:'REQ-202603-005',tgl:'07/03/2026',dur:'26 Hari Kerja',judul:'Studi Penurunan Beban COD Limbah Cair',pt:'PT Pabrik Kertas Tjiwi Kimia Tbk.',dv:'l',biaya:'Rp 2.000.000',byr:'Terbayar: Rp 2.000.000',tahap:'Penerbitan PO',pel:'Pelaksana: essy mama soleh',st:'PO sudah dikirim',st2:'belum dibaca Ketua Tim',unread:false},
+ {id:5,ord:'ORD-202610-005',req:'REQ-202603-004',tgl:'05/03/2026',dur:'26 Hari Kerja',judul:'Permohonan Pendampingan Optimasi Deinking Plant pada Daur Ulang Kertas Koran',pt:'PT Aspex Kumbong',dv:'s',biaya:'Rp 3.000.000',byr:'Terbayar: Rp 3.000.000',tahap:'Penerbitan PO',pel:'Pelaksana: aji bakwan',st:'Penyusunan PO',st2:'PO belum dibuat',unread:false},
+ {id:8,ord:'ORD-202610-008',req:'REQ-202603-003',tgl:'04/03/2026',dur:'28 Hari Kerja',judul:'Uji Emisi Cerobong & Pengujian Efisiensi Pengolahan Limbah Cair Industri',pt:'PT Polyfin Canggih',dv:'l',biaya:'Rp 47.000.000',byr:'Terbayar: Rp 47.000.000',tahap:'Penerbitan PO',pel:'Pelaksana: essy mama soleh',st:'Menunggu Verifikasi Tim Mitra',st2:'Humas sudah memverifikasi',giliran:true,unread:true},
+ {id:6,ord:'ORD-202610-006',req:'REQ-202603-002',tgl:'03/03/2026',dur:'26 Hari Kerja',judul:'Permohonan Verifikasi Formula Barrier Coating Ramah Lingkungan untuk Kertas Kemasan',pt:'PT Pura Nusapersada',dv:'s',biaya:'Rp 2.000.000',byr:'Terbayar: Rp 2.000.000',tahap:'Penerbitan PO',pel:'Pelaksana: aji bakwan',st:'Penyusunan PO',st2:'PO belum dibuat',unread:false},
+ {id:7,ord:'ORD-202610-007',req:'REQ-202603-001',tgl:'02/03/2026',dur:'26 Hari Kerja',judul:'Optimalisasi Formasi Lembaran & Efisiensi Energi Mesin Kertas Pulp',pt:'PT Kertas Padalarang',dv:'s',biaya:'Rp 2.000.000',byr:'Terbayar: Rp 2.000.000',tahap:'Penerbitan PO',pel:'Pelaksana: aji bakwan',st:'PO Aktif',st2:'Pengerjaan lab dimulai',unread:false}
+];
+var urut=DATA.map(function(d){return d.id}); // urutan tampil saat ini
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')}
+function baris(d,i){
+ var badge=d.unread?'<span class="nb">BARU</span>':'';
+ var gl=d.giliran?'<span class="gl">Giliran Anda</span>':'';
+ return '<div class="rw'+(d.unread?' unread':'')+'" data-id="'+d.id+'">'+
+  '<div class="no">'+(i+1)+'</div>'+
+  '<div class="od">'+d.ord+'<small>'+d.req+'</small><small>'+d.tgl+'</small><span class="dur">'+d.dur+'</span></div>'+
+  '<div class="jd">'+esc(d.judul)+badge+'<small>'+esc(d.pt)+'</small></div>'+
+  '<span class="dv '+d.dv+'">'+(d.dv==='l'?'Lingkungan':'Selulosa')+'</span>'+
+  '<div class="rp"><b>'+d.biaya+'</b>'+d.byr+'</div>'+
+  '<span class="tg">'+d.tahap+'</span>'+
+  '<div class="st">'+d.pel+'<b>'+esc(d.st)+gl+'</b>'+esc(d.st2)+'</div>'+
+  '<button class="dt" data-det="'+d.id+'">Detail</button></div>';
+}
+function hitungUrut(){
+ // belum dibaca dulu (urutan aslinya), sisanya urutan asli
+ var u=DATA.filter(function(d){return d.unread}), r=DATA.filter(function(d){return !d.unread});
+ return u.concat(r).map(function(d){return d.id});
+}
+function render(animasi){
+ var el=$('list'), awal={};
+ if(animasi){[].forEach.call(el.children,function(c){awal[c.dataset.id]=c.getBoundingClientRect().top})}
+ urut=hitungUrut();
+ el.innerHTML=urut.map(function(id,i){return baris(DATA.filter(function(d){return d.id===id})[0],i)}).join('');
+ if(animasi){[].forEach.call(el.children,function(c){
+   var a=awal[c.dataset.id]; if(a===undefined)return;
+   var dy=a-c.getBoundingClientRect().top; if(!dy)return;
+   c.style.transition='none';c.style.transform='translateY('+dy+'px)';c.style.zIndex=2;
+   requestAnimationFrame(function(){requestAnimationFrame(function(){c.style.transition='transform .55s cubic-bezier(.2,.8,.2,1),background .35s,box-shadow .35s';c.style.transform='';})});
+ })}
+}
+function toast(t){$('ts').textContent=t;$('ts').style.display='block';clearTimeout(toast.h);toast.h=setTimeout(function(){$('ts').style.display='none'},2400)}
+document.addEventListener('click',function(e){
+ var b=e.target.closest('[data-det]'); if(!b)return;
+ var d=DATA.filter(function(x){return x.id==b.dataset.det})[0];
+ if(d.unread){
+  d.unread=false;
+  toast('Detail dibuka, baris ditandai sudah dibaca dan kembali ke posisinya');
+  // beri jeda singkat supaya terlihat warnanya berubah dulu
+  var row=b.closest('.rw');row.classList.remove('unread');
+  setTimeout(function(){render(true)},450);
+ } else toast('Detail dibuka (baris ini sudah dibaca, posisi tidak berubah)');
+});
+$('sim').onclick=function(){var d=DATA.filter(function(x){return x.id===8})[0];if(d.unread){toast('Baris ini masih belum dibaca');return}d.unread=true;render(true);toast('Status baru masuk: baris naik ke nomor 1 dan berwarna abu')};
+$('rst').onclick=function(){DATA.forEach(function(d){d.unread=false});render(true)};
+render(false);
+</script></body></html>

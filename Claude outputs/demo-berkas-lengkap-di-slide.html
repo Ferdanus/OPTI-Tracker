@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Demo tab Berkas di slide verifikasi dilengkapi</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#f1f5f9;color:#0f172a;padding:20px}
+h1{font-size:1.05rem;margin:0 0 4px}p.s{margin:0 0 14px;color:#64748b;font-size:.82rem;max-width:760px;line-height:1.5}
+.ctl{display:flex;gap:6px;align-items:center;margin-bottom:14px;font-size:.78rem;color:#64748b;font-weight:600;flex-wrap:wrap}
+.ctl label{cursor:pointer;padding:6px 14px;border-radius:99px;background:#fff;border:1px solid #cbd5e1;color:#475569}
+.ctl input{display:none}.ctl label:has(input:checked){background:#1d4ed8;border-color:#1d4ed8;color:#fff}
+.wrap{max-width:760px}
+.sum{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+.sum div{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:9px 12px}.sum small{display:block;color:#64748b;font-size:.68rem;font-weight:600}.sum b{font-size:.92rem}
+.cat{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;margin-top:10px;position:relative}
+.cat.baru{border-color:#93c5fd;box-shadow:0 0 0 3px #dbeafe}
+.tag{position:absolute;top:-9px;right:12px;background:#2563eb;color:#fff;font-size:.62rem;font-weight:800;border-radius:99px;padding:2px 9px;letter-spacing:.03em}
+.top{display:flex;align-items:center;gap:10px}
+.ic{width:32px;height:32px;border-radius:9px;background:#eef2ff;display:grid;place-items:center;font-size:.95rem;flex-shrink:0}
+.lb{flex:1;min-width:0}.lb b{font-size:.82rem;display:block}.lb .m{font-size:.72rem;color:#64748b;margin-top:2px;line-height:1.4}
+.btn{border:1.5px solid #e2e8f0;background:#fff;color:#334155;border-radius:9px;padding:5px 11px;font-size:.75rem;font-weight:700;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:#2563eb;color:#2563eb}
+.na{font-size:.74rem;color:#94a3b8;white-space:nowrap}
+.pill{display:inline-block;padding:1px 8px;border-radius:99px;font-size:.65rem;font-weight:700;margin-left:4px;vertical-align:1px}
+.em{background:#d1fae5;color:#047857}.am{background:#fef3c7;color:#b45309}
+.trow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 0 0 42px;font-size:.78rem}.trow+.trow{border-top:1px dashed #e2e8f0;margin-top:7px}
+.ov{position:fixed;inset:0;background:rgba(15,23,42,.5);display:none;align-items:center;justify-content:center;padding:20px;z-index:40}.ov.on{display:flex}
+.pv{background:#fff;border-radius:14px;width:100%;max-width:520px;overflow:hidden}
+.pvh{padding:12px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #e2e8f0}.pvh b{flex:1;font-size:.86rem}
+.pvb{padding:26px;text-align:center;color:#94a3b8;font-size:.8rem;background:#f8fafc;min-height:220px;display:flex;align-items:center;justify-content:center}
+.note{max-width:760px;margin-top:16px;font-size:.78rem;color:#475569;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;line-height:1.55}
+.note b{color:#0f172a}
+</style></head><body>
+<h1>Tab Berkas di slide verifikasi dilengkapi dengan berkas dari detail order</h1>
+<p class="s">Sekarang tab Berkas di slide cuma punya File PO, Surat Kesanggupan Bayar, dan Bukti Pembayaran. Di detail order masih ada Surat Masuk Permohonan, Proposal Riset / Teknis, dan Surat Penawaran Harga. Ketiganya disalin ke sini (ditandai biru <b>BARU</b> khusus di demo ini, di aplikasi tandanya tidak ada). Klik "Lihat file" untuk coba pratinjau.</p>
+<div class="ctl">Contoh order:
+  <label><input type="radio" name="o" value="sel" checked> Selulosa (ada proposal)</label>
+  <label><input type="radio" name="o" value="lin"> Lingkungan (tanpa proposal)</label>
+  <label><input type="radio" name="o" value="kos"> Ada berkas yang belum ada</label>
+  <label style="margin-left:10px"><input type="checkbox" id="tg" checked> Tandai yang baru</label>
+</div>
+<div class="wrap" id="app"></div>
+<div class="note"><b>Catatan cara kerjanya:</b><br>
+Urutan mengikuti perjalanan order: Surat Masuk, Proposal, Surat Penawaran, Surat Kesanggupan Bayar, Bukti Pembayaran. File PO tetap paling atas karena itu yang sedang diverifikasi.<br>
+Proposal hanya muncul untuk order yang memang punya proposal (Selulosa atau sudah ada proposalnya), sama seperti di detail order.<br>
+BAST tidak ikut disalin karena baru ada di akhir order, jauh setelah tahap verifikasi PO.<br>
+Berlaku sama di slide Humas dan slide Ketua Tim (dan tetap lewat tombol "Lihat file" yang sudah ada, tanpa tombol unduh baru).</div>
+<div class="ov" id="ov"><div class="pv"><div class="pvh"><b id="pt"></b><button class="btn" id="px">Tutup</button></div><div class="pvb" id="pb"></div></div></div>
+<script>
+var D={
+ sel:{
+  masuk:{ada:1,m:'No. 055/PC-QC/III/2026 · 4 Mar 2026',sub:'Permohonan Uji Emisi Cerobong & Pengujian Efisiensi Pengolahan Limbah Cair Industri'},
+  prop:{ada:1,m:'Proposal Riset Uji Emisi Cerobong · Disetujui'},
+  sph:{ada:1,m:'No. 12/SPH/OPTI/III/2026 · 10 Mar 2026 · Rp 60.000.000',st:['Disepakati (DEAL)','em']},
+  skb:{ada:1},
+  bukti:[[1,'Rp 9.400.000','2 Okt 2026','em','Terverifikasi'],[2,'Rp 9.400.000','9 Okt 2026','am','Menunggu']]
+ },
+ lin:{
+  masuk:{ada:1,m:'No. 071/PC-QC/IV/2026 · 2 Apr 2026',sub:'Permohonan Pengujian Kualitas Air Limbah'},
+  prop:null,
+  sph:{ada:1,m:'No. 18/SPH/OPTI/IV/2026 · 9 Apr 2026 · Rp 24.500.000',st:['Disepakati (DEAL)','em']},
+  skb:{ada:0},
+  bukti:[[1,'Rp 24.500.000','20 Apr 2026','em','Terverifikasi']]
+ },
+ kos:{
+  masuk:{ada:0},
+  prop:{ada:0},
+  sph:{ada:1,m:'No. 21/SPH/OPTI/V/2026 · 12 Mei 2026 · Rp 18.000.000',st:['Terkirim / Negosiasi','am']},
+  skb:{ada:0},
+  bukti:[]
+ }
+};
+var $=function(i){return document.getElementById(i)};
+function cat(ic,lb,meta,aksi,baru){return '<div class="cat'+(baru&&$('tg').checked?' baru':'')+'">'+(baru&&$('tg').checked?'<span class="tag">BARU</span>':'')+'<div class="top"><div class="ic">'+ic+'</div><div class="lb"><b>'+lb+'</b>'+(meta?'<div class="m">'+meta+'</div>':'')+'</div>'+aksi+'</div></div>'}
+function lihat(j){return '<button class="btn" data-j="'+j+'">&#128065; Lihat file</button>'}
+function render(){
+ var k=document.querySelector('input[name=o]:checked').value,d=D[k],h='';
+ h+='<div class="sum"><div><small>Nilai kontrak</small><b>Rp 60.000.000</b></div><div><small>Total terbayar</small><b style="color:#b45309">Rp 9.400.000</b></div><div><small>Sisa pembayaran</small><b>Rp 50.600.000</b></div></div>';
+ h+=cat('&#128196;','File PO','',lihat('File PO'),0);
+ h+=cat('&#9993;&#65039;','Surat Masuk Permohonan',d.masuk.ada?d.masuk.m+'<br>'+d.masuk.sub:'Order ini tidak ditautkan dengan surat masuk',d.masuk.ada?lihat('Surat Masuk Permohonan'):'<span class="na">Tidak ada</span>',1);
+ if(d.prop)h+=cat('&#128211;','Proposal Riset / Teknis',d.prop.ada?d.prop.m:'Belum disusun',d.prop.ada?lihat('Proposal Riset / Teknis'):'<span class="na">Belum ada</span>',1);
+ h+=cat('&#128221;','Surat Penawaran Harga (SPH)',d.sph.ada?d.sph.m+' <span class="pill '+d.sph.st[1]+'">'+d.sph.st[0]+'</span>':'Belum diterbitkan',d.sph.ada?lihat('Surat Penawaran Harga'):'<span class="na">Belum ada</span>',1);
+ h+=cat('&#128220;','Surat Kesanggupan Bayar','',d.skb.ada?lihat('Surat Kesanggupan Bayar'):'<span class="na">Tidak ada</span>',0);
+ h+='<div class="cat"><div class="top"><div class="ic">&#129534;</div><div class="lb"><b>Bukti Pembayaran</b></div>'+(d.bukti.length?'<button class="btn">&#11015; Unduh</button>':'<span class="na">Belum ada</span>')+'</div>'+d.bukti.map(function(t){return '<div class="trow"><span>Termin ke-'+t[0]+' &middot; '+t[1]+' &middot; '+t[2]+' <span class="pill '+t[3]+'">'+t[4]+'</span></span>'+lihat('Bukti Pembayaran Termin ke-'+t[0])+'</div>'}).join('')+'</div>';
+ $('app').innerHTML=h;
+}
+document.addEventListener('change',render);
+document.addEventListener('click',function(e){var b=e.target.closest('[data-j]');if(b){$('pt').textContent=b.getAttribute('data-j');$('pb').textContent='(pratinjau dokumen "'+b.getAttribute('data-j')+'" tampil di sini, memakai penampil yang sama dengan tombol Lihat file sekarang)';$('ov').classList.add('on')}if(e.target.id==='px'||e.target.id==='ov')$('ov').classList.remove('on')});
+render();
+</script></body></html>

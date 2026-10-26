@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Demo B baris ringkas semua berkas</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#f1f5f9;color:#0f172a;padding:20px}
+h1{font-size:1.05rem;margin:0 0 4px}p.s{margin:0 0 14px;color:#64748b;font-size:.82rem;max-width:780px;line-height:1.5}
+.ctl{display:flex;gap:6px;align-items:center;margin-bottom:8px;font-size:.78rem;color:#64748b;font-weight:600;flex-wrap:wrap}
+.ctl label{cursor:pointer;padding:6px 14px;border-radius:99px;background:#fff;border:1px solid #cbd5e1;color:#475569}
+.ctl input{display:none}.ctl label:has(input:checked){background:#1d4ed8;border-color:#1d4ed8;color:#fff}
+.wrap{max-width:820px;margin-top:12px}
+.sum{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+.sum div{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:9px 12px}.sum small{display:block;color:#64748b;font-size:.68rem;font-weight:600}.sum b{font-size:.92rem}
+/* kartu ringkas (gaya lama slide) */
+.cat{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;margin-top:10px}
+.top{display:flex;align-items:center;gap:10px}.ic{width:32px;height:32px;border-radius:9px;background:#eef2ff;display:grid;place-items:center;font-size:.95rem;flex-shrink:0}
+.lb{flex:1;font-weight:700;font-size:.82rem}
+.btn{border:1.5px solid #e2e8f0;background:#fff;color:#334155;border-radius:9px;padding:5px 11px;font-size:.75rem;font-weight:700;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:#2563eb;color:#2563eb}
+.trow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 0 0 42px;font-size:.78rem}.trow+.trow{border-top:1px dashed #e2e8f0;margin-top:7px}
+.pill{display:inline-block;padding:1px 8px;border-radius:99px;font-size:.65rem;font-weight:700;margin-left:4px}.em{background:#d1fae5;color:#047857}.am{background:#fef3c7;color:#b45309}
+/* kartu gaya detail order */
+.dc{background:#fff;border:1px solid #bfdbfe;border-radius:12px;box-shadow:0 1px 3px rgba(15,23,42,.08);padding:16px;margin-top:12px;display:flex;gap:14px}
+.dc.kosong{border-color:#e2e8f0}
+.dic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-size:1.25rem;flex-shrink:0}
+.dbody{flex:1;min-width:0}
+.dh{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:4px}
+.dh h6{margin:0;font-size:.95rem;font-weight:700}
+.bd{display:inline-flex;align-items:center;gap:5px;font-size:.72rem;font-weight:600;padding:3px 11px;border-radius:99px;border:1px solid}
+.bd.ok{background:#d1fae5;color:#047857;border-color:#a7f3d0}.bd.no{background:#f1f5f9;color:#64748b;border-color:#e2e8f0}
+.dsub{font-size:.82rem;color:#64748b;margin:0 0 8px}
+.dk{font-size:.8rem;padding:8px 10px;border-radius:7px;background:#f8fafc;border-left:3px solid;margin-bottom:8px;color:#334155}
+.dk.mute{color:#64748b;border-left-color:#cbd5e1!important}
+.meta{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;padding:10px 12px;border-radius:7px;background:#f8fafc;border:1px solid #eef2f6;font-size:.78rem;margin-bottom:8px}
+.meta .f{grid-column:1/-1}.meta span.k{color:#64748b;display:block}.meta strong{font-family:ui-monospace,Consolas,monospace}.meta .n{font-weight:600}
+.meta .fl{font-family:ui-monospace,Consolas,monospace;color:#475569;font-size:.74rem}
+.acts{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center}
+.acts .sp{flex:1}
+.bdt{background:#fff;border:1px solid #cbd5e1;color:#475569;border-radius:8px;padding:7px 12px;font-size:.78rem;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.bdt:hover{border-color:#2563eb;color:#2563eb}
+.bdt .ch{display:inline-block;transition:transform .25s;font-size:.7rem}
+.dc.open .bdt{background:#eff6ff;border-color:#93c5fd;color:#1d4ed8}.dc.open .bdt .ch{transform:rotate(180deg)}
+.dt{display:grid;grid-template-rows:0fr;transition:grid-template-rows .3s ease}
+.dc.open .dt{grid-template-rows:1fr}
+.dt>div{overflow:hidden;min-height:0}
+.dt .in{padding-top:10px}
+.tl{font-size:.76rem;margin:10px 0 0;color:#2563eb;font-weight:600;cursor:pointer;background:none;border:0;padding:0}
+.b1{background:#334155;border:1px solid #334155;color:#fff;border-radius:8px;padding:7px 14px;font-size:.8rem;font-weight:600;cursor:pointer}
+.b2{background:#fff;border:1px solid #cbd5e1;color:#475569;border-radius:8px;padding:7px 14px;font-size:.8rem;font-weight:600;cursor:pointer}
+.b3{background:#fff;border:1px solid #2563eb;color:#2563eb;border-radius:8px;padding:5px 11px;font-size:.76rem;font-weight:600;cursor:pointer}
+.b4{background:#fff;border:1px solid #e2e8f0;color:#64748b;border-radius:8px;padding:5px 9px;font-size:.76rem;cursor:pointer}
+.tm{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:9px 12px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;margin-top:8px}
+.tm .l{font-size:.78rem}.tm .l .a{display:flex;gap:8px;align-items:center;margin-bottom:2px}
+.tg{background:#2563eb;color:#fff;border-radius:6px;padding:1px 8px;font-size:.7rem;font-weight:700}.nom{color:#047857;font-weight:700;font-family:ui-monospace,Consolas,monospace;font-size:.88rem}
+.tm .d{color:#64748b;font-size:.74rem}
+.ov{position:fixed;inset:0;background:rgba(15,23,42,.55);display:none;align-items:center;justify-content:center;padding:3vh 3vw;z-index:40}.ov.on{display:flex}
+.pv{background:#fff;border-radius:16px;width:100%;max-width:94vw;height:94vh;display:flex;flex-direction:column;overflow:hidden}
+.pvh{padding:10px 18px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #e2e8f0}.pvh .t{flex:1}.pvh b{font-size:.92rem;display:block}.pvh small{color:#64748b;font-family:ui-monospace,Consolas,monospace;font-size:.74rem}
+.pvb{flex:1;background:#2b2e31;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:.82rem;padding:20px;text-align:center}
+.pvf{padding:10px 20px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;font-size:.75rem;color:#64748b}
+.note{max-width:820px;margin-top:16px;font-size:.78rem;color:#475569;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;line-height:1.55}
+
+.rc{background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 1px 3px rgba(15,23,42,.06);padding:12px 14px;margin-top:10px}
+.rc.ada{border-color:#bfdbfe}
+.rc.open .dt{grid-template-rows:1fr}
+.rtop{display:flex;align-items:center;gap:12px}
+.rtop .dic{width:38px;height:38px;font-size:1.05rem;border-radius:10px}
+.rl{flex:1;min-width:0}.rl b{display:block;font-size:.88rem}.rl .rm{display:block;font-size:.74rem;color:#64748b;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chv{background:#fff;border:1px solid #cbd5e1;color:#475569;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:.7rem;transition:transform .25s,background .2s;flex-shrink:0}
+.chv:hover{border-color:#2563eb;color:#2563eb}
+.rc.open .chv{transform:rotate(180deg);background:#eff6ff;border-color:#93c5fd;color:#1d4ed8}
+.rc .dt .in{padding-top:12px}
+.lf{background:#334155;border:1px solid #334155;color:#fff;border-radius:8px;padding:6px 13px;font-size:.78rem;font-weight:600;cursor:pointer;white-space:nowrap}
+.lf.o{background:#fff;color:#2563eb;border-color:#2563eb}
+.tm2{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;font-size:.78rem;border-top:1px dashed #e2e8f0}.tm2:first-child{border-top:0}
+</style></head><body>
+<h1>Pilihan B: semua berkas pakai baris ringkas (satu tombol Lihat file) dengan tombol panah untuk detail</h1>
+<p class="s">Semua berkas memakai baris ringkas yang seragam: ikon, judul, satu baris keterangan singkat, status, tombol <b>Lihat file</b>, dan tombol panah. Rincian (keterangan, nomor, tanggal, nilai, berkas fisik, perihal) muncul saat panah ditekan. File PO sudah dihapus. Bukti Pembayaran langsung terbuka daftar termin-nya (bisa ditutup).</p>
+<div class="ctl">Contoh order:
+  <label><input type="radio" name="o" value="sel" checked> Selulosa (ada proposal)</label>
+  <label><input type="radio" name="o" value="lin"> Lingkungan (tanpa proposal)</label>
+  <label><input type="radio" name="o" value="kos"> Ada berkas yang belum ada</label>
+</div>
+<div class="wrap" id="app"></div>
+<div class="note"><b>Pilihan B:</b> lebih rapi dan pendek, tampilannya sama dengan tombol "Lihat file" yang sudah dikenal di slide, tapi tidak sama persis dengan kartu di detail order.</div>
+<div class="ov" id="ov"><div class="pv"><div class="pvh"><div class="t"><b id="pt"></b><small id="ps">ORD-202610-008</small></div><button class="b3" id="pu">Unduh</button><button class="b2" id="px">&#10005;</button></div><div class="pvb" id="pb"></div><div class="pvf"><span>Pratinjau dokumen resmi OPTI BBSPJIS.</span><button class="b2" id="px2">Tutup</button></div></div></div>
+<script>
+var W={amber:['#fef3c7','#d97706'],primary:['#dbeafe','#2563eb'],indigo:['#e0e7ff','#4f46e5'],danger:['#fee2e2','#dc2626'],success:['#dcfce7','#16a34a']};
+var D={
+ sel:{
+  masuk:{ada:1,nomor:'055/PC-QC/III/2026',peng:'PT Polyfin Canggih',tgl:'2026-03-04',file:'surat_masuk_16_055_PC-QC_III_2026.pdf',perihal:'Permohonan Uji Emisi Cerobong & Pengujian Efisiensi Pengolahan Limbah Cair Industri'},
+  prop:{ada:1,status:'Disetujui',file:'proposal_riset_uji_emisi.pdf',perihal:'Proposal Riset Uji Emisi Cerobong'},
+  sph:{ada:1,nomor:'12/SPH/OPTI/III/2026',tgl:'2026-03-10',nominal:'Rp 60.000.000',resp:'DEAL',st:'Disepakati (DEAL)',file:'penawaran_12_SPH_OPTI.pdf'},
+  skb:{ada:1,file:'skb_polyfin_2026.pdf'},
+  bukti:[[1,'Rp 9.400.000','2026-10-02','Terverifikasi','em'],[2,'Rp 9.400.000','2026-10-09','Menunggu','am']]
+ },
+ lin:{masuk:{ada:1,nomor:'071/PC-QC/IV/2026',peng:'CV Tirta Lestari',tgl:'2026-04-02',file:'surat_masuk_21_071.pdf',perihal:'Permohonan Pengujian Kualitas Air Limbah'},prop:null,
+  sph:{ada:1,nomor:'18/SPH/OPTI/IV/2026',tgl:'2026-04-09',nominal:'Rp 24.500.000',resp:'DEAL',st:'Disepakati (DEAL)',file:'penawaran_18.pdf'},skb:{ada:0},bukti:[[1,'Rp 24.500.000','2026-04-20','Terverifikasi','em']]},
+ kos:{masuk:{ada:0},prop:{ada:0},sph:{ada:1,nomor:'21/SPH/OPTI/V/2026',tgl:'2026-05-12',nominal:'Rp 18.000.000',resp:'TERKIRIM',st:'Terkirim / Negosiasi'},skb:{ada:0},bukti:[]}
+};
+
+var $=function(i){return document.getElementById(i)};
+function tgl(s){var b=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'],m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s||'');return m?(+m[3])+' '+b[+m[2]-1]+' '+m[1]:s}
+function metaGrid(o){var m=o.meta.filter(function(x){return x[1]});return m.length?'<div class="meta" style="margin-bottom:0">'+m.map(function(x){return '<div'+(x[3]?' class="f"':'')+'><span class="k">'+x[0]+':</span>'+(x[2]==='mono'?'<strong>'+x[1]+'</strong>':x[2]==='file'?'<span class="fl">&#128196; '+x[1]+'</span>':'<span class="n">'+x[1]+'</span>')+'</div>'}).join('')+'</div>':''}
+function ketBox(o,c){return '<div class="dk'+(o.ada?'':' mute')+'" style="border-left-color:'+(o.ada?c[1]:'#cbd5e1')+'">&#9432; '+o.ket+'</div>'}
+function daftarItem(d){
+ var s=d.masuk,items=[];
+ items.push({ikon:'&#9993;&#65039;',warna:'amber',label:'Surat Masuk Permohonan',ada:s.ada,sub:'Dokumen permohonan kerjasama layanan dari mitra industri',ring:s.ada?('No. '+s.nomor+' · '+tgl(s.tgl)):'Tidak ada surat masuk',
+  ket:s.ada?'Surat permohonan resmi dari mitra pemohon telah terdaftar di loket sekretariat.':'Order diproses secara mandiri atau belum ditautkan dengan registrasi surat masuk loket balai.',
+  meta:[['Nomor Dokumen',s.nomor,'mono'],['Instansi Pemohon',s.peng,'n'],['Tanggal Dokumen',s.tgl,'n'],['Berkas Fisik',s.file,'file',1],['Perihal',s.perihal,'n',1]]});
+ if(d.prop){var p=d.prop;items.push({ikon:'&#128211;',warna:'danger',label:'Proposal Riset / Teknis',ada:p.ada,sub:'Dokumen kajian metodologi, parameter analisis, dan perencanaan teknis',ring:p.ada?('Status: '+p.status):'Belum disusun',
+  ket:p.ada?'Proposal kajian teknis & metodologi riset telah disusun ('+p.status+').':'Proposal riset/kajian teknis belum disusun oleh PIC Teknis.',
+  meta:[['Status Proposal',p.status,'n'],['Berkas Fisik',p.file,'file',1],['Perihal',p.perihal,'n',1]]});}
+ var q=d.sph;items.push({ikon:'&#128221;',warna:'primary',label:'Surat Penawaran Harga (SPH)',ada:q.ada,badge:q.st,kosong:'Belum Diterbitkan',sub:'Dokumen resmi penawaran tarif PNBP dan ruang lingkup pekerjaan',ring:'No. '+q.nomor+' · '+q.nominal,
+  ket:q.resp==='DEAL'?'Surat penawaran harga telah disepakati oleh mitra (Status: DEAL).':'Surat penawaran harga telah dikirimkan ke mitra dan menunggu konfirmasi persetujuan.',
+  meta:[['Nomor Dokumen',q.nomor,'mono'],['Tanggal Dokumen',q.tgl,'n'],['Nilai Tarif (PNBP)',q.nominal,'mono'],['Status Respon Mitra',q.resp,'n'],['Berkas Fisik',q.file,'file',1]]});
+ var b=d.skb;items.push({ikon:'&#128220;',warna:'indigo',label:'Surat Kesanggupan Bayar (SKB)',ada:b.ada,kosong:'Tidak Ada',sub:'Surat komitmen penjaminan pembayaran dari mitra sebelum pekerjaan dimulai',ring:b.ada?'Diunggah mitra':'Tidak ada',
+  ket:b.ada?'Surat pernyataan kesanggupan pembayaran dari mitra industri telah diunggah.':'Mitra memilih skema pelunasan langsung/termin reguler tanpa penjaminan Surat Kesanggupan Bayar.',meta:[['Berkas Fisik',b.file,'file',1]]});
+ return items;
+}
+document.addEventListener('click',function(e){var dt=e.target.closest('[data-dt]');if(dt){dt.closest('.dc,.rc').classList.toggle('open');return}var bs=e.target.closest('[data-semua]');if(bs){var buka=bs.getAttribute('data-semua')==='1';document.querySelectorAll('.dc,.rc').forEach(function(x){x.classList.toggle('open',buka)});return}var b=e.target.closest('[data-j]');if(b){$('pt').textContent=b.getAttribute('data-j');$('pb').textContent='(isi dokumen "'+b.getAttribute('data-j')+'" tampil di sini)';$('ov').classList.add('on');return}if(['px','px2','ov'].indexOf(e.target.id)>-1)$('ov').classList.remove('on')});
+document.addEventListener('change',render);
+
+function baris(o){
+ var c=W[o.warna];
+ return '<div class="rc'+(o.ada?' ada':'')+(o.buka?' open':'')+'"><div class="rtop"><div class="dic" style="background:'+c[0]+';color:'+c[1]+'">'+o.ikon+'</div><div class="rl"><b>'+o.label+'</b><span class="rm">'+o.ring+'</span></div>'+
+  '<span class="bd '+(o.ada?'ok':'no')+'">'+(o.ada?'&#10003; '+(o.badge||'Tersedia'):'&#8211; '+(o.kosong||'Belum Ada'))+'</span>'+(o.aksi!==undefined?o.aksi:(o.ada?'<button class="lf" data-j="'+o.label+'">&#128065; Lihat file</button>':''))+
+  '<button class="chv" data-dt title="Detail">&#9660;</button></div>'+
+  '<div class="dt"><div><div class="in">'+(o.isi||(ketBox(o,c)+metaGrid(o)))+'</div></div></div></div>';
+}
+function render(){
+ var k=document.querySelector('input[name=o]:checked').value,d=D[k],h='';
+ h+='<div class="sum"><div><small>Nilai kontrak</small><b>Rp 60.000.000</b></div><div><small>Total terbayar</small><b style="color:#b45309">Rp 9.400.000</b></div><div><small>Sisa pembayaran</small><b>Rp 50.600.000</b></div></div>';
+ h+='<div style="text-align:right;margin-top:10px"><button class="tl" data-semua="1">Buka semua detail</button> &nbsp;&middot;&nbsp; <button class="tl" data-semua="0">Tutup semua</button></div>';
+ daftarItem(d).forEach(function(o){h+=baris(o)});
+ var rows=d.bukti.length?d.bukti.map(function(t){return '<div class="tm2"><span><span class="tg">Termin '+t[0]+'</span> &nbsp;<span class="nom">'+t[1]+'</span> &nbsp;<span style="color:#64748b">'+tgl(t[2])+'</span><span class="pill '+t[4]+'">'+t[3]+'</span></span><button class="lf o" data-j="Bukti Termin '+t[0]+'">&#128065; Lihat file</button></div>'}).join(''):'<div style="font-size:.78rem;color:#64748b;font-style:italic">Belum ada bukti pembayaran yang diunggah untuk order ini.</div>';
+ h+=baris({ikon:'&#129534;',warna:'success',label:'Bukti Pembayaran / Transfer',ada:d.bukti.length>0,badge:d.bukti.length+' Bukti',kosong:'Belum Ada Bukti',ring:d.bukti.length?d.bukti.length+' termin':'Belum ada bukti',buka:1,
+  aksi:d.bukti.length?'<button class="lf o" style="font-size:.76rem">&#11015; Unduh</button>':'',isi:rows});
+ $('app').innerHTML=h;
+}
+render();
+</script></body></html>

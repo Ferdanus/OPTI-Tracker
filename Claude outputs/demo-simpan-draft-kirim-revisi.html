@@ -1,0 +1,294 @@
+<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Demo Simpan draft dan Kirim revisi</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<style>body{background:#f1f5f9;padding:24px;max-width:980px;margin:0 auto}.demo-note{font-size:.8rem;color:#475569;background:#fff;border:1px dashed #cbd5e1;border-radius:10px;padding:8px 12px;margin-bottom:14px}</style></head><body>
+<div class="demo-note"><b>Demo.</b> Klik "Lihat semua" lalu centang catatan satu per satu. Tombol hijau <b>Kirim revisi</b> di bawah (satu-satunya tombol kirim) nonaktif sampai semua catatan tercentang, sedangkan <b>Simpan draft</b> selalu aktif. Klik Kirim revisi untuk melihat pop up. Data di sini palsu, tidak ada yang tersimpan.</div>
+
+    <style>
+        .rv-bar { position: sticky; top: 8px; z-index: 30; background: #fffbeb; border: 1px solid #fcd34d; border-radius: 12px; padding: 10px 14px; margin-bottom: 16px; box-shadow: 0 4px 14px rgba(15,23,42,.08); }
+        .rv-bar-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .rv-bar-top b { font-size: .86rem; color: #92400e; }
+        .rv-bar-hit { font-size: .8rem; color: #78350f; }
+        .rv-bar-tog { margin-left: auto; border: 0; background: transparent; color: #92400e; font-size: .8rem; font-weight: 600; cursor: pointer; padding: 2px 4px; }
+        .rv-prog { height: 5px; background: #fde68a; border-radius: 99px; overflow: hidden; margin-top: 8px; }
+        .rv-prog i { display: block; height: 100%; width: 0; background: #059669; transition: width .25s; }
+        .rv-list { margin: 10px 0 0; padding: 0; list-style: none; display: none; max-height: 40vh; overflow: auto; }
+        .rv-list.open { display: block; }
+        .rv-item { display: flex; gap: 8px; align-items: flex-start; padding: 6px 0; border-top: 1px solid #fde68a; font-size: .84rem; }
+        .rv-item label { margin: 0; cursor: pointer; flex: 1; }
+        .rv-item .rv-bag { display: inline-block; font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: #92400e; background: #fef3c7; border-radius: 6px; padding: 1px 6px; margin-right: 6px; }
+        .rv-item.done label span.t { text-decoration: line-through; color: #64748b; }
+        .rv-item a { font-size: .75rem; white-space: nowrap; }
+        .rv-inline { margin: 0 16px 12px; border-left: 3px solid #f59e0b; background: #fffbeb; border-radius: 8px; padding: 8px 12px; font-size: .84rem; }
+        .rv-inline.done { border-left-color: #059669; background: #ecfdf5; }
+        .rv-inline .rv-row { display: flex; gap: 8px; align-items: flex-start; }
+        .rv-inline .rv-row + .rv-row { margin-top: 6px; }
+        .rv-inline label { margin: 0; cursor: pointer; }
+        .rv-inline .done-t { text-decoration: line-through; color: #64748b; }
+        .rv-err { color: #b91c1c; font-size: .78rem; margin-top: 4px; }
+        .rv-kirim { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; padding-top: 10px; border-top: 1px solid #fde68a; }
+        .rv-kirim[hidden] { display: none; }
+        .rv-kirim .rv-kirim-hint { font-size: .8rem; color: #065f46; flex: 1; min-width: 180px; }
+        .rv-kirim button { border: 0; background: #059669; color: #fff; font-weight: 700; font-size: .85rem; border-radius: 99px; padding: 8px 18px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+        .rv-kirim button:hover { background: #047857; }
+        .rv-kirim button:disabled { opacity: .6; cursor: wait; }
+    </style>
+    <div class="rv-bar" id="rvBar" role="region" aria-label="Catatan revisi" hidden>
+        <div class="rv-bar-top">
+            <i class="bi bi-clipboard2-check text-warning"></i>
+            <b id="rvJudul">Catatan revisi</b>
+            <span class="rv-bar-hit" id="rvHit"></span>
+            <button type="button" class="rv-bar-tog" id="rvTog" aria-expanded="false">Lihat semua</button>
+        </div>
+        <div class="rv-prog"><i id="rvProg"></i></div>
+        <ul class="rv-list" id="rvList"></ul>
+        <div class="rv-err" id="rvErr" hidden></div>
+    </div>
+    
+
+
+<form id="formPo" action="/po-kegiatan/22/update" method="POST"><div class="card mb-3"><div class="card-header"><h6 class="m-0">1. Dasar</h6></div><div class="card-body small text-muted">(isi form PO)</div></div>
+<div class="card mb-3"><div class="card-header"><h6 class="m-0">2. Tujuan</h6></div><div class="card-body small text-muted">(isi form PO)</div></div>
+<div class="d-flex justify-content-end align-items-center gap-2 p-3 bg-white border rounded-3">
+ <button type="button" id="btnDraft" class="btn btn-outline-secondary px-4 py-2 rounded-pill fw-semibold">Simpan Draft</button>
+ <button type="button" id="btnKirim" class="btn btn-primary px-4 py-2 rounded-pill shadow-sm fw-bold d-inline-flex align-items-center gap-2"><i class="bi bi-send-fill"></i> <span>Kirim Petunjuk Operasional</span></button>
+</div></form>
+<script>
+var __of=window.fetch;
+window.fetch=function(u,o){
+ u=String(u);
+ if(/catatan-form/.test(u)) return Promise.resolve(new Response(JSON.stringify({ok:true,catatan:[{id:1,bagian:'dasar',teks:'Perbaiki dasar hukum',state:'terbuka'},{id:2,bagian:'tujuan',teks:'Tujuan kurang jelas',state:'terbuka'},{id:3,bagian:'jadwal',teks:'Sesuaikan jadwal',state:'terbuka'}],kirim:{url:'/po-kegiatan/22/kirim-revisi',label:'Kirim revisi ke Ketua Tim'}}),{status:200}));
+ if(/\/catatan\//.test(u)||/update$/.test(u)||/kirim-revisi$/.test(u)) return Promise.resolve(new Response(JSON.stringify({ok:true}),{status:200}));
+ return __of.apply(this,arguments);
+};
+window.finishLoading=function(){};
+
+</script>
+<script>
+    (function () {
+        var BASE = '';
+        var KONTEKS = 'review';          // ppk | review
+        var PO_ID = 22;
+        var CSRF = 'x';
+        if (!PO_ID) { return; }
+    
+        // Pada revisi, PO yang sudah dikirim tetap terkirim. Tombol draf disembunyikan, tombol kirim jadi "Simpan perubahan".
+        var bd = document.getElementById('btnDraft'), bk = document.getElementById('btnKirim');
+        if (bd) { bd.style.display = 'none'; }
+        // Tombol simpan di pojok bawah: "Simpan draft" (tidak mengirim apa pun). Ketua Tim yang mengedit sendiri tetap "Simpan perubahan".
+        if (bk) { bk.innerHTML = '<i class="bi bi-save me-1"></i> ' + (KONTEKS === 'katim' ? 'Simpan perubahan' : 'Simpan draft'); }
+        // Tombol hijau "Kirim revisi" di samping Simpan draft: nonaktif sampai semua catatan dicentang, lalu bisa dipencet
+        var bk2 = null;
+        if (bk && KONTEKS !== 'katim') {
+            bk2 = document.createElement('button');
+            bk2.type = 'button'; bk2.id = 'rvKirimBtn2'; bk2.hidden = true; bk2.disabled = true;
+            bk2.className = 'btn px-4 py-2 rounded-pill shadow-sm fw-bold d-inline-flex align-items-center gap-2';
+            bk2.style.cssText = 'background:#059669;border:0;color:#fff;';
+            bk2.innerHTML = '<i class="bi bi-send-fill"></i> <span id="rvKirimTx2">Kirim revisi</span>';
+            bk.insertAdjacentElement('afterend', bk2);
+        }
+    
+        var bar = document.getElementById('rvBar'), list = document.getElementById('rvList'), data = [];
+        // Ketua Tim mengedit sendiri saat review: tidak ada catatan untuk ditandai, cukup pita info
+        if (KONTEKS === 'katim') {
+            document.getElementById('rvJudul').textContent = 'Anda mengedit PO ini sebagai Ketua Tim';
+            document.getElementById('rvHit').textContent = 'Status review tidak berubah. Setelah disimpan, Anda kembali ke Daftar Review PO untuk menyetujui atau meminta revisi.';
+            document.getElementById('rvTog').style.display = 'none';
+            document.querySelector('.rv-prog').style.display = 'none';
+            bar.hidden = false;
+            return;
+        }
+        var URL_AKSI = KONTEKS === 'ppk' ? BASE + '/po-revisi-ppk/' + PO_ID + '/catatan/' : BASE + '/po-kegiatan/' + PO_ID + '/catatan/';
+        var LABEL = { dasar: 'Dasar', tujuan: 'Tujuan', lingkup: 'Ruang Lingkup', alat: 'Alat dan Bahan', metoda: 'Metoda', alamat: 'Alamat', tim: 'Tim Pelaksana', rab: 'RAB', jadwal: 'Jadwal' };
+        var kartu = {};
+        var KIRIM = null;   // {url, label} dari catatan-form: tujuan pengiriman sesudah semua catatan diperbaiki
+        var DARI = 'daftar';
+    
+        function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+        function kunci(judul) {
+            var t = String(judul).replace(/^\s*\d+\s*[.)]\s*/, '').replace(/\s+/g, ' ').trim().toUpperCase();
+            if (t.indexOf('DASAR') === 0) { return 'dasar'; }
+            if (t.indexOf('TUJUAN') === 0) { return 'tujuan'; }
+            if (t.indexOf('RUANG LINGKUP') === 0) { return 'lingkup'; }
+            if (t.indexOf('ALAT') === 0) { return 'alat'; }
+            if (t.indexOf('METODA') === 0 || t.indexOf('METODE') === 0) { return 'metoda'; }
+            if (t.indexOf('ALAMAT') === 0 || t.indexOf('LOKASI') === 0) { return 'alamat'; }
+            if (t.indexOf('TIM') === 0) { return 'tim'; }
+            if (t.indexOf('RENCANA ANGGARAN') === 0 || t.indexOf('RAB') === 0) { return 'rab'; }
+            if (t.indexOf('JADWAL') === 0) { return 'jadwal'; }
+            return '';
+        }
+        // Petakan bagian -> kartu di form lewat judul <h6> di card-header
+        Array.prototype.forEach.call(document.querySelectorAll('#formPo .card-header h6, #formPo .po-card-header h6'), function (h) {
+            var k = kunci(h.textContent), card = h.closest('.card, .po-card');
+            if (k && card && !kartu[k]) { kartu[k] = card; }
+        });
+    
+        function tampil() {
+            var total = data.length, selesai = data.filter(function (c) { return c.state === 'selesai'; }).length;
+            bar.hidden = total === 0;
+            document.getElementById('rvJudul').textContent = KONTEKS === 'ppk' ? 'Catatan revisi PPK BLU' : 'Catatan revisi Ketua Tim';
+            document.getElementById('rvHit').textContent = selesai + ' dari ' + total + ' catatan sudah diperbaiki';
+            document.getElementById('rvProg').style.width = (total ? Math.round(selesai * 100 / total) : 0) + '%';
+            {
+                var siapKirim = !!(KIRIM && total > 0 && selesai === total);
+                if (bk2) {
+                    bk2.hidden = !KIRIM;                 // tampil terus (hanya untuk yang berhak mengirim), nonaktif kalau belum lengkap
+                    bk2.disabled = !siapKirim;
+                    bk2.style.opacity = siapKirim ? '' : '.45';
+                    bk2.style.cursor = siapKirim ? '' : 'not-allowed';
+                    bk2.title = siapKirim ? '' : 'Centang semua catatan yang sudah diperbaiki dulu (' + selesai + ' dari ' + total + ')';
+                    if (KIRIM) { document.getElementById('rvKirimTx2').textContent = KIRIM.label; }
+                }
+                // Simpan draft selalu tombol sekunder; Kirim revisi (hijau) tombol utama
+                if (bk && KONTEKS !== 'katim') {
+                    bk.classList.remove('btn-primary');
+                    bk.classList.add('btn-outline-secondary');
+                }
+            }
+    
+            list.innerHTML = data.map(function (c) {
+                var done = c.state === 'selesai', ada = !!kartu[c.bagian];
+                return '<li class="rv-item' + (done ? ' done' : '') + '"><input type="checkbox" id="rvc' + c.id + '" data-rv="' + c.id + '"' + (done ? ' checked' : '') + '>' +
+                    '<label for="rvc' + c.id + '"><span class="rv-bag">' + esc(LABEL[c.bagian] || c.bagian) + '</span><span class="t">' + esc(c.teks) + '</span></label>' +
+                    (ada ? '<a href="#" data-rvgo="' + esc(c.bagian) + '">Ke bagian</a>' : '') + '</li>';
+            }).join('');
+    
+            // kotak di bawah judul kartu
+            Array.prototype.forEach.call(document.querySelectorAll('.rv-inline'), function (n) { n.parentNode.removeChild(n); });
+            Object.keys(kartu).forEach(function (k) {
+                var cs = data.filter(function (c) { return c.bagian === k; });
+                if (!cs.length) { return; }
+                var semuaSelesai = cs.every(function (c) { return c.state === 'selesai'; });
+                var box = document.createElement('div'); box.className = 'rv-inline' + (semuaSelesai ? ' done' : '');
+                box.innerHTML = cs.map(function (c) {
+                    var done = c.state === 'selesai';
+                    return '<div class="rv-row"><input type="checkbox" id="rvi' + c.id + '" data-rv="' + c.id + '"' + (done ? ' checked' : '') + '><label for="rvi' + c.id + '"><b>' + (KONTEKS === 'ppk' ? 'PPK BLU' : 'Ketua Tim') + ':</b> <span class="' + (done ? 'done-t' : '') + '">' + esc(c.teks) + '</span></label></div>';
+                }).join('');
+                var head = kartu[k].querySelector('.card-header, .po-card-header');
+                head.parentNode.insertBefore(box, head.nextSibling);
+                box.style.marginTop = '12px';
+            });
+        }
+    
+        function galat(m) { var e = document.getElementById('rvErr'); e.textContent = m; e.hidden = !m; }
+    
+        function ubah(id, cek) {
+            var c = data.filter(function (x) { return x.id === id; })[0]; if (!c) { return; }
+            var lama = c.state; c.state = cek ? 'selesai' : 'terbuka'; tampil(); galat('');
+            var body = new URLSearchParams(); body.append('csrf_token', CSRF); body.append('aksi', cek ? 'selesai' : 'batalselesai');
+            fetch(URL_AKSI + id, { method: 'POST', body: body, credentials: 'same-origin' }).then(function (r) {
+                return r.text().then(function (t) { var j; try { j = JSON.parse(t); } catch (e) { throw new Error('Server membalas ' + r.status + '.'); } if (!r.ok || !j.ok) { throw new Error(j.pesan || 'Gagal menyimpan tanda.'); } });
+            }).catch(function (e) { c.state = lama; tampil(); galat(e.message); });
+        }
+    
+        document.addEventListener('change', function (e) {
+            var el = e.target.closest ? e.target.closest('[data-rv]') : null;
+            if (el) { ubah(parseInt(el.getAttribute('data-rv'), 10), el.checked); }
+        });
+        document.addEventListener('click', function (e) {
+            var go = e.target.closest ? e.target.closest('[data-rvgo]') : null;
+            if (go) { e.preventDefault(); var k = kartu[go.getAttribute('data-rvgo')]; if (k) { k.scrollIntoView({ behavior: 'smooth', block: 'center' }); } return; }
+            if (e.target.closest && e.target.closest('#rvTog')) {
+                var open = !list.classList.contains('open'); list.classList.toggle('open', open);
+                var b = document.getElementById('rvTog'); b.textContent = open ? 'Sembunyikan' : 'Lihat semua'; b.setAttribute('aria-expanded', open ? 'true' : 'false');
+            }
+        });
+    
+        // Tombol kirim: simpan form (fetch) lalu panggil endpoint kirim, kemudian kembali ke daftar/panel revisi
+        function bacaJson(r) {
+            return r.text().then(function (t) { var j; try { j = JSON.parse(t); } catch (e) { throw new Error('Server membalas ' + r.status + '.'); } if (!r.ok || !j.ok) { throw new Error(j.pesan || 'Permintaan gagal.'); } return j; });
+        }
+        function selesaiKirim() {
+            var ke = (DARI === 'ppk' || (DARI !== 'daftar' && KONTEKS === 'ppk')) ? '/po-revisi-ppk?buka=' + PO_ID + '&dari=daftar' : '/po-kegiatan/daftar';
+            alert('Demo: setelah kirim, kembali ke Daftar Review PO.');
+        }
+        /* ---------- Pop up konfirmasi (sama dengan di panel review) ---------- */
+        (function () {
+            var st = document.createElement('style');
+            st.textContent = '.rvk-dlg{position:fixed;inset:0;z-index:2100;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(15,23,42,.55);opacity:0;transition:opacity .15s}' +
+                '.rvk-dlg[hidden]{display:none}.rvk-dlg.show{opacity:1}' +
+                '.rvk-box{background:#fff;border-radius:16px;width:100%;max-width:400px;padding:26px 24px 20px;text-align:center;box-shadow:0 24px 60px rgba(15,23,42,.3);transform:translateY(8px) scale(.98);transition:transform .15s}' +
+                '.rvk-dlg.show .rvk-box{transform:none}' +
+                '.rvk-ic{width:58px;height:58px;border-radius:50%;display:grid;place-items:center;margin:0 auto 14px;font-size:27px;background:#ecfdf5;color:#059669}' +
+                '.rvk-box h5{font-size:1.05rem;font-weight:800;margin:0 0 6px}.rvk-box p{color:#64748b;font-size:.85rem;margin:0 0 18px}' +
+                '.rvk-btns{display:flex;gap:10px}.rvk-btns button{flex:1;padding:10px;border-radius:9px;font-weight:700;font-size:.85rem;cursor:pointer;border:1.5px solid #e2e8f0;background:#fff;color:#334155}' +
+                '.rvk-btns button.ya{background:#334155;border-color:#334155;color:#fff}.rvk-btns button:hover{opacity:.9}';
+            document.head.appendChild(st);
+            var d = document.createElement('div');
+            d.className = 'rvk-dlg'; d.id = 'rvkDlg'; d.hidden = true;
+            d.innerHTML = '<div class="rvk-box" role="alertdialog" aria-modal="true" aria-labelledby="rvkJudul" aria-describedby="rvkPesan">' +
+                '<div class="rvk-ic"><i class="bi bi-send"></i></div><h5 id="rvkJudul"></h5><p id="rvkPesan"></p>' +
+                '<div class="rvk-btns"><button type="button" id="rvkNo">Batal</button><button type="button" class="ya" id="rvkYa">Kirim revisi</button></div></div>';
+            document.body.appendChild(d);
+        })();
+        function konfirmasiKirim(judul, pesan, ya) {
+            return new Promise(function (resolve) {
+                var d = document.getElementById('rvkDlg');
+                document.getElementById('rvkJudul').textContent = judul;
+                document.getElementById('rvkPesan').textContent = pesan;
+                document.getElementById('rvkYa').textContent = ya;
+                d.hidden = false;
+                requestAnimationFrame(function () { d.classList.add('show'); });
+                var fokusLama = document.activeElement;
+                function tutupDlg(h) {
+                    document.removeEventListener('keydown', esc2);
+                    d.classList.remove('show'); setTimeout(function () { d.hidden = true; }, 160);
+                    if (fokusLama && fokusLama.focus) { try { fokusLama.focus(); } catch (e) {} }
+                    resolve(h);
+                }
+                function esc2(e) { if (e.key === 'Escape') { e.preventDefault(); tutupDlg(false); } }
+                document.addEventListener('keydown', esc2);
+                document.getElementById('rvkYa').onclick = function () { tutupDlg(true); };
+                document.getElementById('rvkNo').onclick = function () { tutupDlg(false); };
+                d.onclick = function (e) { if (e.target === d) { tutupDlg(false); } };
+                setTimeout(function () { document.getElementById('rvkYa').focus(); }, 60);
+            });
+        }
+        // Isi pop up mengikuti tujuan pengiriman (sama dengan teks di panel review)
+        function teksKonfirmasi() {
+            var n = data.length, u = (KIRIM && KIRIM.url) || '';
+            if (u.indexOf('kirim-ppk') !== -1) { return ['Kirim revisi ke PPK BLU?', 'PPK BLU akan mengecek ulang PO ini. Perubahan di form ikut disimpan.', 'Kirim']; }
+            if (u.indexOf('kirim-katim') !== -1) { return ['Kirim revisi ke Ketua Tim?', 'Ketua Tim akan mereview hasil revisi sebelum dikirim ke PPK BLU. Perubahan di form ikut disimpan.', 'Kirim']; }
+            return ['Kirim revisi ke Ketua Tim?', n + ' catatan sudah ditandai diperbaiki. Ketua Tim akan mengecek ulang. Perubahan di form ikut disimpan.', 'Kirim revisi'];
+        }
+        var sedangKirim = false;
+        function kirimSekarang() {
+            var btn = document.getElementById('rvKirimBtn2'), form = document.getElementById('formPo');
+            if (!KIRIM || !form || !btn || btn.disabled || sedangKirim) { return; }
+            galat('');
+            if (typeof window.poValidasiSebelumKirim === 'function' && !window.poValidasiSebelumKirim()) { return; }
+            var tk = teksKonfirmasi();
+            konfirmasiKirim(tk[0], tk[1], tk[2]).then(function (lanjut) { if (lanjut) { prosesKirim(btn, form); } });
+        }
+        function prosesKirim(btn, form) {
+            var tutup = function () { sedangKirim = false; btn.disabled = false; if (window.finishLoading) { window.finishLoading(); } };
+            var ev = new Event('submit', { cancelable: true, bubbles: true });
+            if (!form.dispatchEvent(ev)) { return; }      // ditolak pengaman form (mis. tahun surat), pesan sudah tampil
+            sedangKirim = true; btn.disabled = true;
+            var fd = new FormData(form); fd.set('kirim_setelah', '1'); fd.set('aksi', 'kirim');
+            fetch(form.getAttribute('action'), { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(bacaJson)
+                .then(function () {
+                    var b = new URLSearchParams(); b.append('csrf_token', CSRF);
+                    return fetch(BASE + KIRIM.url, { method: 'POST', body: b, credentials: 'same-origin' }).then(bacaJson).catch(function (e) {
+                        throw new Error('Perubahan sudah tersimpan, tetapi pengiriman gagal: ' + e.message);
+                    });
+                })
+                .then(selesaiKirim)
+                .catch(function (e) { tutup(); galat(e.message); if (bar && bar.scrollIntoView) { bar.scrollIntoView({ behavior: 'smooth', block: 'start' }); } });
+        }
+        document.addEventListener('click', function (e) {
+            if (e.target.closest && e.target.closest('#rvKirimBtn2')) { e.preventDefault(); kirimSekarang(); }
+        });
+
+        fetch(BASE + '/po-kegiatan/' + PO_ID + '/catatan-form', { credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (j) {
+            if (!j || !j.ok) { galat((j && j.pesan) || 'Catatan revisi gagal dimuat.'); bar.hidden = false; return; }
+            KIRIM = (j.kirim && j.kirim.url) ? j.kirim : null;
+            data = (j.catatan || []).map(function (c) { return { id: c.id, bagian: c.bagian, teks: c.teks, state: c.state }; });
+            tampil();
+        }).catch(function () { galat('Catatan revisi gagal dimuat. Muat ulang halaman.'); bar.hidden = false; });
+    })();
+    </script>
+</body></html>

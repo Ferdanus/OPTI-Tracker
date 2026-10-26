@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Demo unduh PO dengan watermark DRAFT</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#f1f5f9;color:#0f172a;padding:20px}
+h1{font-size:1.05rem;margin:0 0 4px}p.s{margin:0 0 14px;color:#64748b;font-size:.82rem;max-width:820px;line-height:1.5}
+.ctl{display:flex;gap:6px;align-items:center;margin-bottom:14px;font-size:.78rem;color:#64748b;font-weight:600;flex-wrap:wrap}
+.ctl label{cursor:pointer;padding:6px 14px;border-radius:99px;background:#fff;border:1px solid #cbd5e1;color:#475569}
+.ctl input{display:none}.ctl label:has(input:checked){background:#1d4ed8;border-color:#1d4ed8;color:#fff}
+.sl{background:#fff;border:1px solid #e2e8f0;border-radius:14px;max-width:880px;overflow:hidden}
+.hd{padding:14px 18px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.hd b{font-family:ui-monospace,Consolas,monospace;font-size:1rem}
+.pill{font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:20px;border:1px solid}
+.pill.g{background:#ecfdf5;color:#047857;border-color:#a7f3d0}.pill.a{background:#fffbeb;color:#b45309;border-color:#fde68a}
+.tabs{display:flex;gap:4px;padding:6px 12px 0;border-bottom:1px solid #e2e8f0}
+.tabs span{padding:9px 12px;font-weight:700;font-size:.82rem;color:#64748b;border-bottom:2px solid transparent}.tabs .on{color:#334155;border-bottom-color:#334155}
+.bar{display:flex;align-items:center;gap:10px;padding:10px 18px;background:#f8fafc;border-bottom:1px solid #e2e8f0;flex-wrap:wrap}
+.bar .sp{flex:1}
+.st{font-size:.76rem;color:#64748b;display:flex;align-items:center;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%;background:#d97706}.dot.f{background:#059669}
+.btn{border:1.5px solid #e2e8f0;background:#fff;color:#334155;border-radius:9px;padding:7px 14px;font-size:.8rem;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{border-color:#334155}.btn.pri{background:#334155;border-color:#334155;color:#fff}
+.body{background:#f1f5f9;padding:16px;max-height:560px;overflow:auto}
+.paper{background:#fff;border:1px solid #e2e8f0;border-radius:6px;max-width:640px;margin:0 auto;padding:34px 40px;font-family:"Times New Roman",serif;font-size:.78rem;line-height:1.55;position:relative}
+.paper h2{text-align:center;margin:0;font-size:1.05rem}.paper .no{text-align:center;margin:4px 0 14px}
+.paper h3{font-size:.84rem;margin:12px 0 4px}.paper p{margin:0 0 6px;text-align:justify}
+.ov{position:fixed;inset:0;background:rgba(15,23,42,.55);display:none;align-items:center;justify-content:center;padding:3vh 3vw;z-index:40}.ov.on{display:flex}
+.pv{background:#fff;border-radius:16px;width:100%;max-width:820px;height:94vh;display:flex;flex-direction:column;overflow:hidden}
+.pvh{padding:10px 18px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #e2e8f0}.pvh .t{flex:1}.pvh b{font-size:.92rem;display:block}.pvh small{color:#64748b;font-family:ui-monospace,Consolas,monospace;font-size:.74rem}
+.pvb{flex:1;background:#2b2e31;overflow:auto;padding:18px;display:flex;flex-direction:column;gap:14px;align-items:center}
+.pvf{padding:10px 20px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;font-size:.75rem;color:#64748b}
+.pg{background:#fff;width:100%;max-width:560px;aspect-ratio:210/297;position:relative;overflow:hidden;padding:34px 38px;font-family:"Times New Roman",serif;font-size:.7rem;line-height:1.5;flex-shrink:0;box-shadow:0 4px 18px rgba(0,0,0,.4)}
+.pg h2{text-align:center;margin:0;font-size:.95rem}.pg .no{text-align:center;margin:3px 0 12px}.pg h3{font-size:.76rem;margin:10px 0 3px}.pg p{margin:0 0 5px;text-align:justify}
+.wm{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.wm span{transform:rotate(-38deg);font:800 6.2rem/1 system-ui,Arial,sans-serif;letter-spacing:.12em;color:rgba(100,116,139,.2);border:.5rem solid rgba(100,116,139,.2);border-radius:1rem;padding:.2em .35em}
+.ft{position:absolute;left:0;right:0;bottom:12px;text-align:center;font:600 .58rem system-ui,sans-serif;color:#94a3b8}
+.note{max-width:880px;margin-top:16px;font-size:.78rem;color:#475569;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;line-height:1.6}
+.note b{color:#0f172a}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:9px 16px;border-radius:10px;font-size:.8rem;display:none;z-index:60}
+</style></head><body>
+<h1>Tombol Unduh PO di tab PO (dengan watermark DRAFT di PDF)</h1>
+<p class="s">Di tab PO ada tombol <b>Unduh PO</b>. Selama PO belum disetujui PPK BLU, PDF yang terunduh punya watermark <b>DRAFT</b> besar di tiap halaman. Begitu PPK BLU menyetujui, PDF bersih tanpa watermark. Ganti status di bawah untuk lihat bedanya, lalu klik Unduh PO untuk lihat hasil PDF-nya.</p>
+<div class="ctl">Status PO:
+  <label><input type="radio" name="s" value="d" checked> Belum disetujui PPK BLU</label>
+  <label><input type="radio" name="s" value="f"> Sudah disetujui PPK BLU</label>
+</div>
+<div class="sl">
+  <div class="hd"><b>3/PO/BBSPJIS/X/2026</b><span class="pill a" id="pl">Menunggu verifikasi Humas</span></div>
+  <div class="tabs"><span class="on">PO</span><span>Map Kendali</span><span>Berkas</span></div>
+  <div class="bar"><span class="st"><span class="dot" id="dt"></span><span id="stt"></span></span><span class="sp"></span><button class="btn pri" id="dl">&#11015; Unduh PO</button></div>
+  <div class="body"><div class="paper" id="pp"></div></div>
+</div>
+<div class="note"><b>Catatan cara kerjanya:</b><br>
+Watermark hanya ada di file PDF yang diunduh, tampilan PO di layar tetap bersih seperti sekarang.<br>
+Nama file ikut menandai status: <b>PO-3-PO-BBSPJIS-X-2026-DRAFT.pdf</b> untuk draft dan <b>PO-3-PO-BBSPJIS-X-2026.pdf</b> untuk yang sudah final, jadi tidak tertukar di folder.<br>
+Yang dihitung "sudah disetujui PPK BLU" adalah PO yang sudah lolos tahap Verifikasi PPK BLU (tahap ke-4 di alur). Kalau PO dikembalikan PPK BLU untuk direvisi, watermark DRAFT muncul lagi.<br>
+Tombol yang sama dipasang di slide Humas, slide Ketua Tim, dan slide Tim Mitra.</div>
+<div class="ov" id="ov"><div class="pv"><div class="pvh"><div class="t"><b>Hasil PDF yang terunduh</b><small id="fn"></small></div><button class="btn" id="px">Tutup</button></div><div class="pvb" id="pb"></div><div class="pvf"><span id="fi"></span><span>2 halaman (contoh)</span></div></div></div>
+<div class="toast" id="ts"></div>
+<script>
+var $=function(i){return document.getElementById(i)};
+var ISI='<h2>PETUNJUK OPERASIONAL (PO)</h2><div class="no">Nomor: 3/PO/BBSPJIS/X/2026</div><p><b>Judul: Uji Emisi Cerobong &amp; Pengujian Efisiensi Pengolahan Limbah Cair Industri</b></p>'+
+'<h3>1. DASAR</h3><p>a. Persetujuan biaya kerjasama BBSPJIS dengan PT Polyfin Canggih nomor B/22/BBSPJIS/MS/X/2026 tanggal 21 Oktober 2026 tentang Uji Emisi Cerobong &amp; Pengujian Efisiensi Pengolahan Limbah Cair Industri.</p><p>b. Pembayaran: dibayarkan pada tanggal 22 Oktober 2026.</p>'+
+'<h3>2. TUJUAN</h3><p>Mengetahui karakteristik emisi gas buang dari cerobong industri serta mengevaluasi efektivitas sistem pengolahan air limbah dalam menurunkan kadar pencemar. Pengujian ini bertujuan mendukung pengendalian pencemaran udara dan air.</p>'+
+'<h3>3. RUANG LINGKUP</h3><p>Ruang lingkup kegiatan meliputi pengambilan sampel dan pengujian emisi cerobong, pemeriksaan kualitas air limbah sebelum dan sesudah pengolahan, serta evaluasi kinerja sistem pengendalian pencemaran di industri.</p>'+
+'<h3>4. ALAT &amp; BAHAN</h3><p>Peralatan pengambilan sampel emisi cerobong (stack sampling equipment), peralatan uji kualitas air, dan bahan kimia pendukung analisis.</p>';
+function st(){return document.querySelector('input[name=s]:checked').value}
+function render(){
+ var f=st()==='f';
+ $('pp').innerHTML=ISI;
+ $('dt').className='dot'+(f?' f':'');
+ $('stt').textContent=f?'Sudah disetujui PPK BLU, PDF tanpa watermark':'Belum disetujui PPK BLU, PDF diberi watermark DRAFT';
+ $('pl').className='pill '+(f?'g':'a');$('pl').textContent=f?'Disetujui PPK BLU':'Menunggu verifikasi Humas';
+}
+function halaman(f,n,konten){return '<div class="pg">'+konten+(f?'':'<div class="wm"><span>DRAFT</span></div>')+'<div class="ft">'+(f?'':'Dokumen DRAFT, belum disetujui PPK BLU &middot; ')+'Halaman '+n+' dari 2</div></div>'}
+document.addEventListener('change',render);
+$('dl').onclick=function(){
+ var f=st()==='f',nama='PO-3-PO-BBSPJIS-X-2026'+(f?'':'-DRAFT')+'.pdf';
+ $('fn').textContent=nama;$('fi').textContent=f?'Versi final, tanpa watermark.':'Versi draft, ada watermark DRAFT di setiap halaman.';
+ $('pb').innerHTML=halaman(f,1,ISI)+halaman(f,2,'<h3>5. LANGKAH KERJA</h3><p>Pengambilan sampel dilakukan sesuai metode baku, dilanjutkan analisis laboratorium dan penyusunan laporan hasil uji.</p><h3>6. JADWAL</h3><p>Pelaksanaan kegiatan mengikuti jadwal yang disepakati bersama mitra.</p>');
+ $('ov').classList.add('on');
+ $('ts').textContent=nama+' diunduh';$('ts').style.display='block';setTimeout(function(){$('ts').style.display='none'},2200);
+};
+$('px').onclick=function(){$('ov').classList.remove('on')};
+render();
+</script></body></html>

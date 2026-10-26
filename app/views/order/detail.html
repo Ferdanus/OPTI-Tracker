@@ -1,4 +1,8 @@
 <div class="container-fluid px-0">
+    <script>
+    // Kalau halaman ini terbuka di dalam bingkai form PO Tahap 8 (mis. setelah simpan revisi), pindahkan ke jendela utama
+    (function () { try { if (window.self !== window.top && window.frameElement && window.frameElement.id === 'paFrame') { window.top.location.replace(window.location.href); } } catch (e) {} })();
+    </script>
     <style>
         /* Modern BBSPJIS System Design for Order Detail */
         .order-hero-card {
@@ -1127,7 +1131,12 @@
                             </check>
                         </true>
                         <false>
-                            <check if="{{ !empty(@langkah_berikutnya.tombol_url) }}">
+                            <check if="{{ !empty(@langkah_berikutnya.tombol_panel) }}">
+                                <button type="button" class="btn action-guide-btn {{ @langkah_berikutnya.tombol_class ?: 'btn-primary' }} px-3.5 py-2 fw-bold shadow-xs" onclick="bukaPanelPo({{ @langkah_berikutnya.tombol_panel }}, '{{ @langkah_berikutnya.tombol_panel_jenis }}')">
+                                    <i class="bi {{ @langkah_berikutnya.tombol_icon ?: 'bi-arrow-right' }} me-1.5"></i>{{ @langkah_berikutnya.tombol_teks ?: 'Lanjutkan' }}
+                                </button>
+                            </check>
+                            <check if="{{ empty(@langkah_berikutnya.tombol_panel) && !empty(@langkah_berikutnya.tombol_url) }}">
                                 <a href="{{ @langkah_berikutnya.tombol_url }}" class="btn action-guide-btn {{ @langkah_berikutnya.tombol_class ?: 'btn-primary' }} px-3.5 py-2 fw-bold shadow-xs">
                                     <i class="bi {{ @langkah_berikutnya.tombol_icon ?: 'bi-arrow-right' }} me-1.5"></i>{{ @langkah_berikutnya.tombol_teks ?: (@langkah_berikutnya.tombol_label ?: 'Lanjutkan') }}
                                 </a>
@@ -3672,6 +3681,9 @@
                                 .pa-frame { margin:0 -1.5rem; background:#fff; border-top:1px solid #bcd3f5; border-bottom:1px solid #bcd3f5; }
                                 .system-section-card:has(#paFrameWrap) { overflow:clip; }   /* overflow:hidden bawaan kartu mematikan sticky */
                                 .pa-track { position:relative; }
+                                .pa-track:not(:has(~ :not(script):not(style))) { margin-bottom:-1.5rem; }   /* bingkai form menempel ke tepi bawah kartu (tanpa ruang kosong) */
+                                #cardPo:has(#paFrameWrap) { margin-bottom:0; }
+                                .main-container:has(#pane-stage-8.active #paFrameWrap) { padding-bottom:.75rem; }   /* jarak ke footer dirapatkan saat form PO tampil */
                                 .pa-frame:not(.pa-full) { position:sticky; top:75px; z-index:40; }   /* bingkai (bar biru + form) menempel di layar selama halaman di-scroll */
                                 .pa-fh { background:#eaf3ff; border-bottom:1px solid #cfe2ff; padding:8px 14px; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; font-size:.8rem; color:#12335c; }
                                 .pa-frame iframe { display:block; width:100%; height:calc(100vh - 75px - 46px); min-height:420px; border:0; background:#fff; }
@@ -3704,13 +3716,13 @@
                                 </div>
                             </check>
 
-                            <check if="{{ @po_alur.state == 'disusun' }}">
+                            <check if="{{ @po_alur.state == 'disusun' || @po_alur.form_revisi }}">
                                 <check if="{{ @po_alur.tampil_form }}">
                                     <true>
                                         <div class="pa-track" id="paTrack">
                                         <div class="pa-frame" id="paFrameWrap">
                                             <div class="pa-fh">
-                                                <span><b>Susun Petunjuk Operasional (PO)</b> &middot; </span>
+                                                <span><check if="{{ @po_alur.form_revisi }}"><true><b>{{ @po_alur.bar_judul }}</b> &middot; {{ @po_alur.nomor_po }} &middot; {{ @po_alur.bar_ket }}</true><false><b>Susun Petunjuk Operasional (PO)</b> &middot; </false></check></span>
                                                 <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" id="paFull"><i class="bi bi-arrows-fullscreen me-1"></i><span>Layar penuh</span></button>
                                             </div>
                                             <iframe id="paFrame" src="{{ @po_alur.embed_url }}" title="Form Petunjuk Operasional" loading="lazy"></iframe>
@@ -3726,16 +3738,36 @@
                             </check>
 
                             <check if="{{ @po_alur.terkirim }}">
+                                <check if="{{ @po_alur.form_revisi }}">
+                                    <check if="{{ @po_alur.revisi_ppk }}">
+                                        <div class="mt-3">
+                                            <a href="{{ @po_alur.url_ppk }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-clipboard2-check me-1"></i>Panel revisi PPK BLU</a>
+                                        </div>
+                                    </check>
+                                </check>
+                                <check if="{{ !@po_alur.form_revisi }}">
+                                <div id="paAlurBox">
                                 <div class="pa-po">
                                     <div>
                                         <div class="fw-bold text-dark"><i class="bi bi-file-earmark-check text-primary me-1"></i> Nomor PO: <span class="font-monospace text-primary">{{ @po_alur.nomor_po }}</span></div>
                                         <div class="small text-muted">Dikirim {{ @po_alur.dikirim_at }}</div>
                                     </div>
                                     <div class="d-flex gap-2 flex-wrap">
-                                        <check if="{{ @po_alur.aksi.url }}">
+                                        <check if="{{ @po_alur.aksi.panel }}">
+                                            <button type="button" class="btn btn-primary btn-sm fw-semibold px-3" onclick="bukaPanelPo({{ @po_alur.aksi.panel }}, '{{ @po_alur.aksi.panel_jenis }}')">{{ @po_alur.aksi.label }}</button>
+                                        </check>
+                                        <check if="{{ @po_alur.aksi.url && !@po_alur.aksi.panel }}">
                                             <a href="{{ @po_alur.aksi.url }}" class="btn btn-primary btn-sm fw-semibold px-3">{{ @po_alur.aksi.label }}</a>
                                         </check>
-                                        <button type="button" class="btn btn-outline-secondary btn-sm fw-semibold px-3" onclick="lihatPoOpti({{ @po_alur.po_id }})"><i class="bi bi-eye me-1"></i> Lihat PO</button>
+                                        <check if="{{ @po_alur.aksi.panel_pra }}">
+                                            <script>window.addEventListener('load', function () { setTimeout(function () { poPraMuat({{ @po_alur.aksi.panel_lihat }}, '{{ @po_alur.aksi.panel_jenis }}'); }, 300); });</script>
+                                        </check>
+                                        <check if="{{ @po_alur.aksi.panel_lihat }}">
+                                            <button type="button" class="btn btn-outline-secondary btn-sm fw-semibold px-3" onclick="bukaPanelPo({{ @po_alur.aksi.panel_lihat }}, '{{ @po_alur.aksi.panel_jenis }}')"><i class="bi bi-eye me-1"></i> Lihat PO</button>
+                                        </check>
+                                        <check if="{{ !@po_alur.aksi.panel && !@po_alur.aksi.panel_lihat }}">
+                                            <button type="button" class="btn btn-outline-secondary btn-sm fw-semibold px-3" onclick="lihatPoOpti({{ @po_alur.po_id }})"><i class="bi bi-eye me-1"></i> Lihat PO</button>
+                                        </check>
                                     </div>
                                 </div>
                                 <div class="pa-tl">
@@ -3744,11 +3776,14 @@
                                             <div class="pa-dot">{{ @l.dot | raw }}</div>
                                             <div class="pa-nm">{{ @l.nama }}</div>
                                             <div class="pa-ac">{{ @l.aktor }}</div>
-                                            <div class="pa-tg">{{ @l.tag }}</div>
+                                            <check if="{{ @l.tag }}"><div class="pa-tg">{{ @l.tag }}</div></check>
+                                            <check if="{{ @l.tag2 }}"><div class="pa-tg" style="color: {{ @l.tag2_cls == 'u' ? '#b45309' : '#047857' }}; font-weight: 600;">{{ @l.tag2 }}</div></check>
                                         </div>
                                     </repeat>
                                 </div>
                                 <div class="alert alert-{{ @po_alur.info.tipe }} border-0 shadow-xs small mb-0">{{ @po_alur.info.html | raw }}</div>
+                                </div>
+                                </check>
                                 <check if="{{ @po_alur.aktif }}">
                                     <div class="mt-3 d-flex gap-2 flex-wrap">
                                         <button type="button" class="btn btn-primary btn-sm fw-semibold shadow-sm" onclick="switchStage(9, true)">
@@ -4196,6 +4231,109 @@
     </div>
 </div>
 
+<script>
+/* Panel review PO (slide) dibuka langsung di atas detail order: halaman Daftar Review PO dimuat di iframe layar penuh transparan (?embed=1&buka=ID),
+   yang hanya menampilkan panel slide-nya. Menutup panel melepas iframe; kalau ada tindakan yang mengubah status PO, halaman dimuat ulang. */
+// alamat slide menurut jenis. 'ppk_lihat' = slide PPK BLU mode baca-saja (revisi sedang dikerjakan)
+function srcPanelPo(poId, jenis, sc, tambah) {
+    var u = (jenis === 'humas' ? '{{ @BASE }}/po-humas?embed=1&buka=' : (jenis === 'mitra' ? '{{ @BASE }}/po-kegiatan/validasi-mitra?embed=1&buka=' : (jenis === 'ppk' ? '{{ @BASE }}/po-ppk?embed=1&buka=' : (jenis === 'ppk_lihat' ? '{{ @BASE }}/po-ppk?embed=1&lihat=1&buka=' : '{{ @BASE }}/po-kegiatan/daftar?embed=1&buka='))));
+    return u + encodeURIComponent(poId) + sc + (tambah || '');
+}
+// Slide baca-saja dimuat lebih dulu (tersembunyi) begitu halaman selesai dimuat, jadi saat "Lihat PO" diklik langsung tampil tanpa loading
+function poPraMuat(poId, jenis) {
+    if (document.getElementById('poPanelFr')) { return; }
+    window.__poPraArgs = [poId, jenis];
+    var sc = document.body.classList.contains('sidebar-collapsed') ? '&sc=1' : '';
+    var f = document.createElement('iframe');
+    f.id = 'poPanelFr';
+    f.title = 'Panel PO';
+    f.setAttribute('data-pra', '1');
+    f.setAttribute('allowtransparency', 'true');
+    f.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;border:0;z-index:1080;background:transparent;color-scheme:normal;visibility:hidden;pointer-events:none;';
+    f.src = srcPanelPo(poId, jenis, sc, '&pra=1');
+    document.body.appendChild(f);
+}
+function poPraTampil(f) {
+    f.removeAttribute('data-pra');
+    f.style.visibility = 'visible';
+    f.style.pointerEvents = 'auto';
+    if (f.getAttribute('data-siap') === '1') {
+        try { f.contentWindow.postMessage({ silopti: 'po-panel-tampil' }, window.location.origin); f.contentWindow.focus(); } catch (e) {}
+    } else {
+        // belum selesai dimuat (jarang): tampilkan penanda memuat, slide muncul begitu siap
+        f.setAttribute('data-klik', '1');
+        if (!document.getElementById('poPanelMuat')) {
+            var muat = document.createElement('div');
+            muat.id = 'poPanelMuat';
+            muat.style.cssText = 'position:fixed;inset:0;z-index:1079;background:rgba(15,23,42,.35);display:flex;align-items:center;justify-content:center;';
+            muat.innerHTML = '<div class="spinner-border text-light" role="status" aria-label="Memuat panel"></div>';
+            document.body.appendChild(muat);
+        }
+    }
+}
+function bukaPanelPo(poId, jenis) {
+    var pra = document.getElementById('poPanelFr');
+    if (pra && pra.getAttribute('data-pra') === '1') { poPraTampil(pra); return; }
+    if (pra) { return; }
+    var sc = document.body.classList.contains('sidebar-collapsed') ? '&sc=1' : '';
+    var muat = document.createElement('div');
+    muat.id = 'poPanelMuat';
+    muat.style.cssText = 'position:fixed;inset:0;z-index:1079;background:rgba(15,23,42,.35);display:flex;align-items:center;justify-content:center;';
+    muat.innerHTML = '<div class="spinner-border text-light" role="status" aria-label="Memuat panel"></div>';
+    document.body.appendChild(muat);
+    var f = document.createElement('iframe');
+    f.id = 'poPanelFr';
+    f.title = 'Panel review PO';
+    f.setAttribute('allowtransparency', 'true');
+    f.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;border:0;z-index:1080;background:transparent;color-scheme:normal;';
+    // jenis 'humas' = slide verifikasi Daftar PO Humas; 'mitra' = slide Verifikasi PO Tim Mitra; 'ppk' = slide Daftar Review PO PPK BLU; selain itu = slide Daftar Review PO
+    f.src = srcPanelPo(poId, jenis, sc, '');
+    document.body.appendChild(f);
+    window.__poPanelBuka = poId;
+}
+// dibuka lewat ?edit_po=1 (Ketua Tim mengedit PO): gulir ke form di Tahap 8
+(function () {
+    if (!/[?&]edit_po=1(&|$)/.test(window.location.search)) { return; }
+    window.addEventListener('load', function () {
+        setTimeout(function () {
+            var tr = document.getElementById('paTrack');
+            if (tr) { window.scrollTo({ top: tr.getBoundingClientRect().top + window.pageYOffset - 75, behavior: 'smooth' }); }
+        }, 500);
+    });
+})();
+window.addEventListener('message', function (e) {
+    if (e.origin !== window.location.origin) { return; }
+    var d = e.data;
+    if (!d || d.silopti !== 'po-panel') { return; }
+    var muat = document.getElementById('poPanelMuat');
+    if (d.jenis === 'edit') {
+        // "Edit PO" di panel review: panel ditutup, form PO tampil di Tahap 8 (kalau belum tampil, halaman dimuat dengan ?edit_po=1)
+        var fe = document.getElementById('poPanelFr'); if (muat) { muat.remove(); } if (fe) { fe.remove(); }
+        var tr = document.getElementById('paTrack');
+        if (tr) { window.scrollTo({ top: tr.getBoundingClientRect().top + window.pageYOffset - 75, behavior: 'smooth' }); }
+        else { window.location.href = window.location.pathname + '?edit_po=1#cardPo'; }
+        return;
+    }
+    if (d.jenis === 'siap') {
+        var fs = document.getElementById('poPanelFr');
+        if (fs) {
+            fs.setAttribute('data-siap', '1');
+            // slide yang dimuat lebih dulu dan sudah diklik sebelum siap: tampilkan sekarang
+            if (fs.getAttribute('data-klik') === '1') { try { fs.contentWindow.postMessage({ silopti: 'po-panel-tampil' }, window.location.origin); fs.contentWindow.focus(); } catch (e) {} }
+        }
+        if (muat && !(fs && fs.getAttribute('data-pra') === '1')) { muat.remove(); }
+        return;
+    }
+    if (d.jenis === 'tutup') {
+        var f = document.getElementById('poPanelFr');
+        if (muat) { muat.remove(); }
+        if (f) { f.remove(); }
+        if (d.berubah) { window.location.reload(); }
+        else if (window.__poPraArgs) { setTimeout(function () { poPraMuat(window.__poPraArgs[0], window.__poPraArgs[1]); }, 400); }   // siapkan lagi supaya klik berikutnya juga langsung tampil
+    }
+});
+</script>
+
 <!-- Modal Lihat PO OPTI (dokumen yang sama dengan Daftar PO: /po-kegiatan/@id/preview) -->
 <div class="modal fade" id="modalLihatPoOpti" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
@@ -4292,6 +4430,7 @@ function lihatPoOpti(poId) {
     });
     var tab8 = document.getElementById('tab-stage-8');
     if (tab8) { tab8.addEventListener('shown.bs.tab', function () { setTimeout(ukur, 100); }); }
+
     window.addEventListener('scroll', jadwalkan, { passive: true });
     window.addEventListener('resize', ukur);
     setInterval(ukur, 800);

@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Demo Lihat PO jadi slide saat revisi</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#f1f5f9;color:#0f172a;padding:20px}
+h1{font-size:1.05rem;margin:0 0 4px}
+p.s{margin:0 0 14px;color:#64748b;font-size:.82rem;max-width:860px;line-height:1.55}
+.ctl{display:flex;gap:6px;align-items:center;margin-bottom:14px;font-size:.78rem;color:#64748b;font-weight:600;flex-wrap:wrap}
+.ctl label{cursor:pointer;padding:6px 14px;border-radius:99px;background:#fff;border:1px solid #cbd5e1;color:#475569}
+.ctl input{display:none}.ctl label:has(input:checked){background:#1d4ed8;border-color:#1d4ed8;color:#fff}
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;max-width:900px;overflow:hidden}
+.hd{padding:14px 18px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.hd b{font-family:ui-monospace,Consolas,monospace;font-size:1rem}
+.pill{font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:20px;border:1px solid}
+.pill.a{background:#fffbeb;color:#b45309;border-color:#fde68a}.pill.g{background:#ecfdf5;color:#047857;border-color:#a7f3d0}
+.pa{padding:16px 18px}
+.po{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px}
+.po .t{flex:1;min-width:200px}.po .t small{display:block;color:#64748b;font-size:.76rem}
+.btn{border:1.5px solid #cbd5e1;background:#fff;color:#334155;border-radius:9px;padding:8px 16px;font-size:.82rem;font-weight:700;cursor:pointer}
+.btn:hover{border-color:#334155}.btn.pri{background:#334155;border-color:#334155;color:#fff}
+.mini{margin-top:12px;font-size:.78rem;color:#475569}
+.bar{height:7px;background:#e2e8f0;border-radius:99px;overflow:hidden;margin:6px 0 4px}.bar i{display:block;height:100%;background:#059669;border-radius:99px;transition:width .4s}
+/* slide */
+.scrim{position:fixed;inset:0;background:rgba(15,23,42,.45);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+.scrim.on{opacity:1;pointer-events:auto}
+.sheet{position:fixed;top:0;right:0;bottom:0;width:min(780px,100%);background:#f8fafc;z-index:41;transform:translateX(102%);transition:transform .25s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;box-shadow:-8px 0 30px rgba(0,0,0,.2)}
+.sheet.on{transform:none}
+.sh{background:#fff;padding:12px 18px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:10px}
+.sh .no{font-family:ui-monospace,Consolas,monospace;font-weight:800}
+.sh .x{margin-left:auto}
+.tabs{background:#fff;display:flex;gap:4px;padding:6px 12px 0;border-bottom:1px solid #e2e8f0}
+.tabs span{padding:9px 12px;font-weight:700;font-size:.82rem;color:#334155;border-bottom:2px solid #334155}
+.sb{flex:1;overflow:auto;padding:16px 18px}
+.prog{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:12px 14px;margin-bottom:14px}
+.prog .r{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:.84rem}
+.prog .r b{font-size:.95rem}
+.prog .ch{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.chip{font-size:.7rem;font-weight:800;border-radius:20px;padding:3px 10px;border:1px solid}
+.chip.o{background:#fef3c7;color:#92400e;border-color:#fde68a}.chip.d{background:#dcfce7;color:#166534;border-color:#bbf7d0}
+.paper{background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:26px 34px;font-family:"Times New Roman",serif;font-size:.8rem;line-height:1.55}
+.paper h2{text-align:center;margin:0;font-size:1.05rem}.paper .nm{text-align:center;margin:3px 0 12px}
+.sec{position:relative;margin:0 -12px 10px;padding:4px 12px;border-radius:8px}
+.sec.has{background:#fffdf5;box-shadow:inset 3px 0 0 #f59e0b}.sec.has.ok{background:#f7fdf9;box-shadow:inset 3px 0 0 #059669}
+.sec h3{font-size:.84rem;margin:6px 0 3px}.sec p{margin:0 0 5px;text-align:justify}
+.note{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;margin:6px 0 4px;padding:8px 10px;border:1px solid #fde68a;background:#fffbeb;border-left:3px solid #f59e0b;border-radius:7px;font-size:.74rem;line-height:1.45;display:flex;gap:8px;align-items:flex-start}
+.note.ok{background:#f0fdf4;border-color:#bbf7d0;border-left-color:#059669}
+.note .tx{flex:1}.note .tx small{display:block;color:#64748b;margin-top:2px}
+.tag{font-size:.64rem;font-weight:800;border-radius:20px;padding:2px 8px;white-space:nowrap}
+.note .tag{background:#fef3c7;color:#92400e}.note.ok .tag{background:#dcfce7;color:#166534}
+.dock{background:#fff;border-top:1px solid #e2e8f0;padding:12px 18px;font-size:.8rem;color:#475569;display:flex;gap:10px;align-items:center}
+.dock i{color:#64748b}
+.note-demo{max-width:900px;margin-top:16px;font-size:.78rem;color:#475569;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;line-height:1.65}
+.note-demo b{color:#0f172a}
+</style></head><body>
+<h1>Tombol Lihat PO di detail order jadi slide (baca saja) saat revisi sedang dikerjakan</h1>
+<p class="s">Setelah catatan revisi dikirim, tombol <b>Lihat PO</b> tidak lagi membuka tampilan lama. Ia membuka slide yang sama dengan slide review, langsung muncul tanpa loading, tapi hanya untuk dibaca: tidak bisa menambah catatan lagi. Di dalamnya terlihat berapa catatan yang sudah dibenerin. Ubah progres di bawah, lalu klik Lihat PO.</p>
+<div class="ctl">Progres perbaikan:
+  <label><input type="radio" name="p" value="0"> 0 dari 5</label>
+  <label><input type="radio" name="p" value="3" checked> 3 dari 5</label>
+  <label><input type="radio" name="p" value="5"> 5 dari 5</label>
+</div>
+<div class="card">
+  <div class="hd"><b>3/PO/BBSPJIS/X/2026</b><span class="pill a" id="pl"></span></div>
+  <div class="pa">
+    <div class="po">
+      <div class="t"><b>Nomor PO: 3/PO/BBSPJIS/X/2026</b><small>Permintaan revisi dikirim 26 Okt 2026</small></div>
+      <button class="btn" id="lihat">Lihat PO</button>
+    </div>
+    <div class="mini"><span id="pt"></span><div class="bar"><i id="pb"></i></div></div>
+  </div>
+</div>
+<div class="note-demo"><b>Yang berubah dibanding sekarang:</b><br>
+Lihat PO membuka slide, bukan tampilan dokumen lama. Slide terbuka seketika karena datanya sudah disiapkan bersama halaman detail order, jadi tidak ada tulisan memuat.<br>
+Slide hanya untuk dibaca. Kotak tulis catatan dan tombol tambah catatan tidak ada, dan di bagian bawah tertulis alasannya (catatan sudah dikirim).<br>
+Ringkasan di atas slide menunjukkan <b>berapa catatan sudah diperbaiki dari total</b>, dan tiap catatan di dokumen diberi label Perlu diperbaiki atau Sudah diperbaiki lengkap dengan siapa yang menandainya.<br>
+Ringkasan progres yang sama juga tampil di kartu PO pada halaman detail order, tanpa perlu membuka slide.</div>
+
+<div class="scrim" id="sc"></div>
+<aside class="sheet" id="sh" aria-hidden="true">
+  <div class="sh"><span class="no">3/PO/BBSPJIS/X/2026</span><span class="pill a" id="pl2"></span><button class="btn x" id="tt">Tutup</button></div>
+  <div class="tabs"><span>Dokumen dan catatan</span></div>
+  <div class="sb">
+    <div class="prog"><div class="r"><span><b id="pn"></b> catatan sudah diperbaiki</span><span id="ps" style="color:#64748b"></span></div>
+      <div class="bar"><i id="pb2"></i></div><div class="ch" id="chs"></div></div>
+    <div class="paper" id="doc"></div>
+  </div>
+  <div class="dock"><i>&#128274;</i><span>Catatan sudah dikirim, jadi tidak bisa menambah atau mengubah catatan. Slide ini hanya untuk dibaca.</span></div>
+</aside>
+<script>
+var $=function(i){return document.getElementById(i)};
+// 5 catatan; urutan diperbaiki: 1,2,3,4,5
+var CAT=[
+ {b:'dasar',t:'Nomor dan tanggal surat persetujuan biaya belum sesuai dengan surat penawaran.',o:'Rina Masriani',d:'26 Okt 10:12'},
+ {b:'tujuan',t:'Kalimat tujuan terlalu panjang, mohon dipersingkat.',o:'Rina Masriani',d:'26 Okt 10:14'},
+ {b:'ruang',t:'Tambahkan batasan parameter uji yang termasuk dalam ruang lingkup.',o:'Rina Masriani',d:'26 Okt 10:15'},
+ {b:'alat',t:'Gas analyzer belum disebut merek dan tipenya.',o:'Rina Masriani',d:'26 Okt 10:18'},
+ {b:'jadwal',t:'Jadwal minggu ke-3 bertabrakan dengan hari libur.',o:'Rina Masriani',d:'26 Okt 10:20'}
+];
+var BAG={dasar:['1. DASAR','Persetujuan biaya kerjasama BBSPJIS dengan PT Polyfin Canggih tentang Uji Emisi Cerobong &amp; Pengujian Efisiensi Pengolahan Limbah Cair Industri.'],
+ tujuan:['2. TUJUAN','Mengetahui karakteristik emisi gas buang dari cerobong industri serta mengevaluasi efektivitas sistem pengolahan air limbah.'],
+ ruang:['3. RUANG LINGKUP','Pengambilan sampel dan pengujian emisi cerobong, serta pemeriksaan kualitas air limbah sebelum dan sesudah pengolahan.'],
+ alat:['4. ALAT &amp; BAHAN','Peralatan pengambilan sampel emisi cerobong, gas analyzer, dan peralatan uji kualitas air.'],
+ jadwal:['5. JADWAL','Pelaksanaan kegiatan mengikuti jadwal yang disepakati bersama mitra.']};
+function n(){return +document.querySelector('input[name=p]:checked').value}
+function render(){
+ var k=n(),tot=CAT.length,sel=k===tot;
+ var pill=sel?'<span>Semua catatan sudah diperbaiki</span>':'Menunggu perbaikan Ketua Pelaksana';
+ [$('pl'),$('pl2')].forEach(function(e){e.className='pill '+(sel?'g':'a');e.innerHTML=pill});
+ var teks=k+' dari '+tot+' catatan sudah diperbaiki';
+ $('pt').textContent=teks;$('pb').style.width=(k/tot*100)+'%';$('pb2').style.width=(k/tot*100)+'%';
+ $('pn').textContent=k+' dari '+tot;$('ps').textContent=sel?'Siap dicek ulang':(tot-k)+' masih perlu diperbaiki';
+ $('chs').innerHTML=CAT.map(function(c,i){return '<span class="chip '+(i<k?'d':'o')+'">'+(i+1)+'. '+BAG[c.b][0].replace(/^\d+\. /,'').replace('&amp;','&')+(i<k?' &#10003;':'')+'</span>'}).join('');
+ var h='<h2>PETUNJUK OPERASIONAL (PO)</h2><div class="nm">Nomor: 3/PO/BBSPJIS/X/2026</div>';
+ CAT.forEach(function(c,i){
+  var ok=i<k;
+  h+='<div class="sec has'+(ok?' ok':'')+'"><h3>'+BAG[c.b][0]+'</h3><p>'+BAG[c.b][1]+'</p>'+
+   '<div class="note'+(ok?' ok':'')+'"><div class="tx">'+c.t+'<small>'+c.o+' &middot; '+c.d+(ok?' &middot; ditandai diperbaiki oleh Aji Bakwan':'')+'</small></div><span class="tag">'+(ok?'Sudah diperbaiki':'Perlu diperbaiki')+'</span></div></div>';
+ });
+ $('doc').innerHTML=h;
+}
+document.addEventListener('change',render);
+function buka(){$('sc').classList.add('on');$('sh').classList.add('on');$('sh').setAttribute('aria-hidden','false')}
+function tutup(){$('sc').classList.remove('on');$('sh').classList.remove('on');$('sh').setAttribute('aria-hidden','true')}
+$('lihat').onclick=buka;$('tt').onclick=tutup;$('sc').onclick=tutup;
+document.addEventListener('keydown',function(e){if(e.key==='Escape')tutup()});
+render();
+</script></body></html>
