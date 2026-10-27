@@ -134,8 +134,13 @@ class SuratMasukController extends Controller {
             return;
         }
 
+        $mediaPermohonan = trim($this->f3->get('POST.media_permohonan') ?? 'surat');
+        if (!in_array($mediaPermohonan, ['surat', 'email', 'fax'])) {
+            $mediaPermohonan = 'surat';
+        }
+
         try {
-            $orderId = $this->repo->klaimSurat($suratId, $userId, $idCustomer);
+            $orderId = $this->repo->klaimSurat($suratId, $userId, $idCustomer, null, $mediaPermohonan);
 
             // Catat Jejak Audit / Activity Log
             $this->logActivity($orderId, 'surat_masuk', 'klaim_surat', 'Menerima dan mengklaim surat permohonan masuk ke antrean order');

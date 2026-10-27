@@ -288,7 +288,7 @@ class SuratMasukRepository {
      * Proses klaim surat masuk menjadi order_layanan (dengan Transaction & Row Locking)
      * Tim Mitra memilih instansi pelanggan terdaftar dari tb_customer
      */
-    public function klaimSurat(int $suratId, int $userId, ?int $selectedCustomerId = null, ?string $pilihanLayanan = null): int {
+    public function klaimSurat(int $suratId, int $userId, ?int $selectedCustomerId = null, ?string $pilihanLayanan = null, string $mediaPermohonan = 'surat'): int {
         if (!$this->isConnected()) {
             throw new \Exception("Koneksi database sekretariat tidak tersedia.");
         }
@@ -345,12 +345,12 @@ class SuratMasukRepository {
                 $this->dbMain->exec(
                     "INSERT INTO `order_layanan` (
                         `id_customer`, `id_surat_masuk`, `nomor_permintaan`, `nomor_order`, `tanggal_masuk`, 
-                        `judul_kegiatan`, `deskripsi`, `spm_layanan`, `jenis_layanan_opti`, 
+                        `judul_kegiatan`, `deskripsi`, `spm_layanan`, `jenis_layanan_opti`, `media_permohonan`,
                         `lokasi_pelaksanaan`, `jumlah_pekerjaan`, `estimasi_biaya`, 
                         `status`, `diklaim_oleh`, `tanggal_klaim`, `created_at`
                     ) VALUES (
                         ?, ?, ?, ?, ?,
-                        ?, ?, ?, ?,
+                        ?, ?, ?, ?, ?,
                         'internal', '1 paket kegiatan', 0.00,
                         'permintaan_masuk', ?, ?, ?
                     )",
@@ -364,12 +364,39 @@ class SuratMasukRepository {
                         7  => '',
                         8  => 'Lainnya',
                         9  => $jenisLayanan,
-                        10 => $userId,
-                        11 => $waktuSekarang,
-                        12 => $waktuSekarang
+                        10 => $mediaPermohonan,
+                        11 => $userId,
+                        12 => $waktuSekarang,
+                        13 => $waktuSekarang
                     )
                 );
                 $orderId = (int)($this->dbMain->exec("SELECT LAST_INSERT_ID() as id")[0]['id'] ?? 0);
+    
+                // Inisialisasi record tb_surat_penawaran dengan permintaan_melalui terpilih
+                try {
+                    $custNamaFull = trim(($customer['pt_cv'] ? $customer['pt_cv'] . ' ' : '') . $customer['nmcustomer']);
+                    $custPic = $customer['contactperson_opti'] ?: ($customer['contactperson'] ?: '');
+                    $custAlamat = $customer['alamatcustomer'] ?: '';
+                    $this->dbMain->exec(
+                        "INSERT INTO `tb_surat_penawaran` (
+                            `customer_id`, `order_id`, `nama`, `perusahaan`, `alamat`, 
+                            `permintaan_melalui`, `jenis_layanan`, `status`, `status_respon_klien`, 
+                            `tanggal_surat`, `dibuat_oleh`, `created_at`
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', 'draft', ?, ?, ?)",
+                        [
+                            1 => $idCustomer,
+                            2 => $orderId,
+                            3 => $custPic,
+                            4 => $custNamaFull,
+                            5 => $custAlamat,
+                            6 => $mediaPermohonan,
+                            7 => 'opti_' . $jenisLayanan,
+                            8 => date('Y-m-d'),
+                            9 => $userId,
+                            10 => $waktuSekarang
+                        ]
+                    );
+                } catch (\Exception $eSp) {}
     
                 $this->dbSekretariat->exec(
                     "UPDATE `{$this->tableSekretariat}` 
@@ -543,12 +570,39 @@ class SuratMasukRepository {
                     7  => '',
                     8  => 'Lainnya',
                     9  => $jenisLayanan,
-                    10 => $userId,
-                    11 => $waktuSekarang,
-                    12 => $waktuSekarang
+                    10 => $mediaPermohonan,
+                    11 => $userId,
+                    12 => $waktuSekarang,
+                    13 => $waktuSekarang
                 )
             );
             $orderId = (int)($this->dbMain->exec("SELECT LAST_INSERT_ID() as id")[0]['id'] ?? 0);
+    
+                // Inisialisasi record tb_surat_penawaran dengan permintaan_melalui terpilih
+                try {
+                    $custNamaFull = trim(($customer['pt_cv'] ? $customer['pt_cv'] . ' ' : '') . $customer['nmcustomer']);
+                    $custPic = $customer['contactperson_opti'] ?: ($customer['contactperson'] ?: '');
+                    $custAlamat = $customer['alamatcustomer'] ?: '';
+                    $this->dbMain->exec(
+                        "INSERT INTO `tb_surat_penawaran` (
+                            `customer_id`, `order_id`, `nama`, `perusahaan`, `alamat`, 
+                            `permintaan_melalui`, `jenis_layanan`, `status`, `status_respon_klien`, 
+                            `tanggal_surat`, `dibuat_oleh`, `created_at`
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', 'draft', ?, ?, ?)",
+                        [
+                            1 => $idCustomer,
+                            2 => $orderId,
+                            3 => $custPic,
+                            4 => $custNamaFull,
+                            5 => $custAlamat,
+                            6 => $mediaPermohonan,
+                            7 => 'opti_' . $jenisLayanan,
+                            8 => date('Y-m-d'),
+                            9 => $userId,
+                            10 => $waktuSekarang
+                        ]
+                    );
+                } catch (\Exception $eSp) {}
     
             $this->commitTransaction();
     

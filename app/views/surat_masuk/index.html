@@ -456,6 +456,39 @@
                             </div>
                         </div>
 
+                        <!-- Saluran Penerimaan Surat -->
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-dark mb-1">
+                                Saluran Penerimaan Surat <span class="text-danger">*</span>
+                            </label>
+                            <div class="row g-2">
+                                <div class="col-4">
+                                    <input type="radio" class="btn-check" name="media_permohonan" id="media_surat_{{ @surat.id }}" value="surat" checked autocomplete="off">
+                                    <label class="btn btn-outline-light text-dark border p-2.5 w-100 h-100 d-flex flex-column align-items-center justify-content-center text-center rounded-2 media-option-tile" for="media_surat_{{ @surat.id }}">
+                                        <i class="bi bi-envelope-paper-fill fs-5 text-secondary mb-1"></i>
+                                        <span class="small fw-bold d-block text-truncate w-100">Surat Resmi</span>
+                                        <span class="text-muted" style="font-size: 0.68rem;">Fisik / Pos</span>
+                                    </label>
+                                </div>
+                                <div class="col-4">
+                                    <input type="radio" class="btn-check" name="media_permohonan" id="media_email_{{ @surat.id }}" value="email" autocomplete="off">
+                                    <label class="btn btn-outline-light text-dark border p-2.5 w-100 h-100 d-flex flex-column align-items-center justify-content-center text-center rounded-2 media-option-tile" for="media_email_{{ @surat.id }}">
+                                        <i class="bi bi-envelope-at-fill fs-5 text-primary mb-1"></i>
+                                        <span class="small fw-bold d-block text-truncate w-100">E-mail</span>
+                                        <span class="text-muted" style="font-size: 0.68rem;">Lampiran PDF</span>
+                                    </label>
+                                </div>
+                                <div class="col-4">
+                                    <input type="radio" class="btn-check" name="media_permohonan" id="media_fax_{{ @surat.id }}" value="fax" autocomplete="off">
+                                    <label class="btn btn-outline-light text-dark border p-2.5 w-100 h-100 d-flex flex-column align-items-center justify-content-center text-center rounded-2 media-option-tile" for="media_fax_{{ @surat.id }}">
+                                        <i class="bi bi-printer-fill fs-5 text-info mb-1"></i>
+                                        <span class="small fw-bold d-block text-truncate w-100">Fax</span>
+                                        <span class="text-muted" style="font-size: 0.68rem;">Facsimile</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- 3. Rincian Dokumen Surat Masuk Asli -->
                         <div class="border rounded-2 p-3 bg-light">
                             <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
@@ -863,5 +896,23 @@
 }
 .modal .ts-wrapper .clear-button:hover {
     color: #dc2626 !important;
+}
+
+/* Styling Pilihan Saluran Penerimaan Surat di Modal Klaim */
+.media-option-tile {
+    cursor: pointer;
+    background-color: #f8fafc;
+    border-color: #e2e8f0 !important;
+    transition: all 0.2s ease-in-out;
+}
+.media-option-tile:hover {
+    background-color: #f1f5f9;
+    border-color: #cbd5e1 !important;
+}
+.btn-check:checked + .media-option-tile {
+    background-color: #eff6ff !important;
+    border-color: #3b82f6 !important;
+    color: #1d4ed8 !important;
+    box-shadow: 0 0 0 1px #3b82f6, 0 2px 4px rgba(59, 130, 246, 0.12) !important;
 }
 </style>

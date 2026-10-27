@@ -2535,16 +2535,16 @@
                                             <div class="form-section-body">
                                                 <label class="form-label small fw-semibold text-dark mb-1">Permintaan Masuk Melalui:</label>
                                                 <div class="channel-tile-grid mb-3">
-                                                    <label class="channel-tile {{ @sp.permintaan_melalui == 'fax' ? 'active' : '' }}" for="koreksi_pmFax">
-                                                        <input type="radio" name="permintaan_melalui" id="koreksi_pmFax" value="fax" {{ @sp.permintaan_melalui == 'fax' ? 'checked' : '' }}>
+                                                    <label class="channel-tile {{ (@sp.permintaan_melalui == 'fax' || (!@sp.permintaan_melalui && @order.media_permohonan == 'fax')) ? 'active' : '' }}" for="koreksi_pmFax">
+                                                        <input type="radio" name="permintaan_melalui" id="koreksi_pmFax" value="fax" {{ (@sp.permintaan_melalui == 'fax' || (!@sp.permintaan_melalui && @order.media_permohonan == 'fax')) ? 'checked' : '' }}>
                                                         <span class="channel-tile-label">Fax</span>
                                                     </label>
-                                                    <label class="channel-tile {{ (@sp.permintaan_melalui == 'surat' || (!@sp.permintaan_melalui && @order.id_surat_masuk)) ? 'active' : '' }}" for="koreksi_pmSurat">
-                                                        <input type="radio" name="permintaan_melalui" id="koreksi_pmSurat" value="surat" {{ (@sp.permintaan_melalui == 'surat' || (!@sp.permintaan_melalui && @order.id_surat_masuk)) ? 'checked' : '' }}>
+                                                    <label class="channel-tile {{ (@sp.permintaan_melalui == 'surat' || (!@sp.permintaan_melalui && (@order.media_permohonan == 'surat' || (!@order.media_permohonan && @order.id_surat_masuk)))) ? 'active' : '' }}" for="koreksi_pmSurat">
+                                                        <input type="radio" name="permintaan_melalui" id="koreksi_pmSurat" value="surat" {{ (@sp.permintaan_melalui == 'surat' || (!@sp.permintaan_melalui && (@order.media_permohonan == 'surat' || (!@order.media_permohonan && @order.id_surat_masuk)))) ? 'checked' : '' }}>
                                                         <span class="channel-tile-label">Surat Resmi</span>
                                                     </label>
-                                                    <label class="channel-tile {{ (@sp.permintaan_melalui == 'email' || (!@sp.permintaan_melalui && !@order.id_surat_masuk)) ? 'active' : '' }}" for="koreksi_pmEmail">
-                                                        <input type="radio" name="permintaan_melalui" id="koreksi_pmEmail" value="email" {{ (@sp.permintaan_melalui == 'email' || (!@sp.permintaan_melalui && !@order.id_surat_masuk)) ? 'checked' : '' }}>
+                                                    <label class="channel-tile {{ (@sp.permintaan_melalui == 'email' || (!@sp.permintaan_melalui && (@order.media_permohonan == 'email' || (!@order.media_permohonan && !@order.id_surat_masuk)))) ? 'active' : '' }}" for="koreksi_pmEmail">
+                                                        <input type="radio" name="permintaan_melalui" id="koreksi_pmEmail" value="email" {{ (@sp.permintaan_melalui == 'email' || (!@sp.permintaan_melalui && (@order.media_permohonan == 'email' || (!@order.media_permohonan && !@order.id_surat_masuk)))) ? 'checked' : '' }}>
                                                         <span class="channel-tile-label">E-mail</span>
                                                     </label>
                                                 </div>
@@ -2886,7 +2886,7 @@
                                     <div class="col-sm-6">
                                         <div class="p-3 border rounded-3 bg-white h-100" style="border-color: #e2e8f0 !important;">
                                             <span class="text-muted d-block mb-1" style="font-size: 0.75rem; font-weight: 500;">Saluran Permintaan Masuk:</span>
-                                            <strong class="text-dark text-capitalize d-block" style="font-size: 0.9rem;">{{ @penawaran.permintaan_melalui ? str_replace('_', ' ', @penawaran.permintaan_melalui) : (@surat_masuk ? 'Surat Masuk Resmi' : 'E-mail / Surat') }}</strong>
+                                            <strong class="text-dark text-capitalize d-block" style="font-size: 0.9rem;">{{ @penawaran.permintaan_melalui ? str_replace('_', ' ', @penawaran.permintaan_melalui) : (@order.media_permohonan ? str_replace('_', ' ', @order.media_permohonan) : (@surat_masuk ? 'Surat Masuk Resmi' : 'E-mail / Surat')) }}</strong>
                                         </div>
                                     </div>
                                 </div>
@@ -2947,16 +2947,16 @@
                                     <div class="form-section-body">
                                         <label class="form-label small fw-semibold text-dark mb-1">Permintaan Masuk Melalui:</label>
                                         <div class="channel-tile-grid mb-3">
-                                            <label class="channel-tile {{ @sp.permintaan_melalui == 'fax' ? 'active' : '' }}" for="pmFax">
-                                                <input type="radio" name="permintaan_melalui" id="pmFax" value="fax" {{ @sp.permintaan_melalui == 'fax' ? 'checked' : '' }}>
+                                            <label class="channel-tile {{ (@sp.permintaan_melalui == 'fax' || (!@sp.permintaan_melalui && @order.media_permohonan == 'fax')) ? 'active' : '' }}" for="pmFax">
+                                                <input type="radio" name="permintaan_melalui" id="pmFax" value="fax" {{ (@sp.permintaan_melalui == 'fax' || (!@sp.permintaan_melalui && @order.media_permohonan == 'fax')) ? 'checked' : '' }}>
                                                 <span class="channel-tile-label">Fax</span>
                                             </label>
-                                            <label class="channel-tile {{ (@sp.permintaan_melalui == 'surat' || (!@sp.permintaan_melalui && @order.id_surat_masuk)) ? 'active' : '' }}" for="pmSurat">
-                                                <input type="radio" name="permintaan_melalui" id="pmSurat" value="surat" {{ (@sp.permintaan_melalui == 'surat' || (!@sp.permintaan_melalui && @order.id_surat_masuk)) ? 'checked' : '' }}>
+                                            <label class="channel-tile {{ (@sp.permintaan_melalui == 'surat' || (!@sp.permintaan_melalui && (@order.media_permohonan == 'surat' || (!@order.media_permohonan && @order.id_surat_masuk)))) ? 'active' : '' }}" for="pmSurat">
+                                                <input type="radio" name="permintaan_melalui" id="pmSurat" value="surat" {{ (@sp.permintaan_melalui == 'surat' || (!@sp.permintaan_melalui && (@order.media_permohonan == 'surat' || (!@order.media_permohonan && @order.id_surat_masuk)))) ? 'checked' : '' }}>
                                                 <span class="channel-tile-label">Surat Resmi</span>
                                             </label>
-                                            <label class="channel-tile {{ (@sp.permintaan_melalui == 'email' || (!@sp.permintaan_melalui && !@order.id_surat_masuk)) ? 'active' : '' }}" for="pmEmail">
-                                                <input type="radio" name="permintaan_melalui" id="pmEmail" value="email" {{ (@sp.permintaan_melalui == 'email' || (!@sp.permintaan_melalui && !@order.id_surat_masuk)) ? 'checked' : '' }}>
+                                            <label class="channel-tile {{ (@sp.permintaan_melalui == 'email' || (!@sp.permintaan_melalui && (@order.media_permohonan == 'email' || (!@order.media_permohonan && !@order.id_surat_masuk)))) ? 'active' : '' }}" for="pmEmail">
+                                                <input type="radio" name="permintaan_melalui" id="pmEmail" value="email" {{ (@sp.permintaan_melalui == 'email' || (!@sp.permintaan_melalui && (@order.media_permohonan == 'email' || (!@order.media_permohonan && !@order.id_surat_masuk)))) ? 'checked' : '' }}>
                                                 <span class="channel-tile-label">E-mail</span>
                                             </label>
                                         </div>

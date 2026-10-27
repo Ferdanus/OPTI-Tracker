@@ -233,7 +233,7 @@ class SuratPenawaran extends \DB\SQL\Mapper
         $perusahaan   = !empty($data['perusahaan']) ? trim($data['perusahaan']) : ($order['nama_perusahaan'] ?? '');
         $perusahaan   = preg_replace('/^((?:PT|CV|UD|PD|Yayasan)\.?\s*){2,}/i', '$1 ', $perusahaan);
         $alamat       = !empty($data['alamat']) ? trim($data['alamat']) : ($order['alamatcustomer'] ?? '');
-        $permintaanMelalui = !empty($data['permintaan_melalui']) ? trim($data['permintaan_melalui']) : 'email';
+        $permintaanMelalui = !empty($data['permintaan_melalui']) ? trim($data['permintaan_melalui']) : (!empty($order['media_permohonan']) ? $order['media_permohonan'] : 'email');
         $penjelasan   = !empty($data['penjelasan']) ? trim($data['penjelasan']) : ($order['deskripsi'] ?? '');
         $fileLampiran = !empty($data['file_lampiran']) ? trim($data['file_lampiran']) : '';
         $fileLampiranUser = !empty($data['file_lampiran_user']) ? trim($data['file_lampiran_user']) : '';
@@ -430,15 +430,15 @@ class SuratPenawaran extends \DB\SQL\Mapper
         }
 
         $spmLayanan = trim($data['spm_layanan'] ?? '');
-        $updateOrderSql = "UPDATE order_layanan SET status_penawaran = ?, surat_penawaran_id = ?, estimasi_biaya = ?, status_proposal_biaya = IF(status_proposal_biaya = 'disetujui', 'disetujui', 'siap_penawaran')";
-        $orderParams = [1 => $statusPenawaranOrder, 2 => $penawaranId, 3 => $nominal];
+        $updateOrderSql = "UPDATE order_layanan SET status_penawaran = ?, surat_penawaran_id = ?, estimasi_biaya = ?, status_proposal_biaya = IF(status_proposal_biaya = 'disetujui', 'disetujui', 'siap_penawaran'), media_permohonan = ?";
+        $orderParams = [1 => $statusPenawaranOrder, 2 => $penawaranId, 3 => $nominal, 4 => $permintaanMelalui];
         if (!empty($spmLayanan)) {
             $updateOrderSql .= ", spm_layanan = ?";
-            $orderParams[4] = $spmLayanan;
-            $orderParams[5] = $orderId;
+            $orderParams[5] = $spmLayanan;
+            $orderParams[6] = $orderId;
             $updateOrderSql .= " WHERE id = ?";
         } else {
-            $orderParams[4] = $orderId;
+            $orderParams[5] = $orderId;
             $updateOrderSql .= " WHERE id = ?";
         }
         $this->db->exec($updateOrderSql, $orderParams);
