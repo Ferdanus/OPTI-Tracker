@@ -387,6 +387,7 @@ $f3->route('POST /order/@id/penawaran/disposisi-keuangan', 'SuratPenawaranContro
 $f3->route('POST /surat-penawaran/@id/disposisi-keuangan', 'SuratPenawaranController->disposisiKeuangan');
 $f3->route('POST /surat-penawaran/@id/dokumen-deal/@jenis/upload', 'SuratPenawaranController->uploadDokumenDeal');
 $f3->route('GET /surat-penawaran/@id/dokumen-deal/@jenis/preview', 'SuratPenawaranController->previewDokumenDeal');
+$f3->route('GET /surat-penawaran/@id/dokumen-deal/@jenis/word', 'SuratPenawaranController->unduhDokumenDealWord');
 $f3->route('POST /surat-penawaran/@id/surat-kesanggupan/upload', 'SuratPenawaranController->uploadKesanggupanBayar');
 $f3->route('GET /surat-penawaran/@id/surat-kesanggupan/preview', 'SuratPenawaranController->previewKesanggupanBayar');
 $f3->route('POST /order/@id/penawaran/upload-lampiran', 'SuratPenawaranController->uploadLampiranUser');

@@ -101,13 +101,15 @@
         .status-pill {
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 0.38rem;
-            padding: 0.25rem 0.55rem;
-            border-radius: 50rem;
-            font-size: 0.75rem;
+            padding: 0.3rem 0.65rem;
+            border-radius: 12px;
+            font-size: 0.73rem;
             font-weight: 600;
-            line-height: 1;
-            white-space: nowrap;
+            line-height: 1.25;
+            text-align: center;
+            white-space: normal;
             border: 1px solid transparent;
             transition: all 0.15s ease-in-out;
         }
@@ -1382,14 +1384,33 @@
         /* ========================================================= */
         /* SWEETALERT2 BBSPJIS PREMIUM THEME (GLOBAL OVERRIDE)       */
         /* ========================================================= */
-        div:where(.swal2-container).swal2-backdrop-show,
-        body.swal2-shown .swal2-container {
+        /* Backdrop: HANYA untuk modal pop-up asli, BUKAN untuk toast */
+        div:where(.swal2-container):not(.swal2-no-backdrop).swal2-backdrop-show,
+        body.swal2-shown:not(.swal2-toast-shown) .swal2-container.swal2-backdrop-show {
             background-color: rgba(15, 23, 42, 0.45) !important;
             backdrop-filter: blur(4px) !important;
             -webkit-backdrop-filter: blur(4px) !important;
         }
 
-        body .swal2-popup {
+        body.swal2-toast-shown .swal2-container,
+        .swal2-container.swal2-no-backdrop,
+        .swal2-container.swal2-top-end,
+        .swal2-container.swal2-top,
+        .swal2-container.swal2-top-start,
+        .swal2-container.swal2-bottom-end,
+        .swal2-container.swal2-bottom,
+        .swal2-container.swal2-bottom-start {
+            background-color: transparent !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            pointer-events: none !important;
+        }
+        .swal2-container .swal2-toast {
+            pointer-events: auto !important;
+        }
+
+        /* Modal Popup Normal (bukan toast) */
+        body .swal2-popup:not(.swal2-toast) {
             background: #ffffff !important;
             border-radius: 16px !important;
             padding: 1.85rem 1.65rem 1.65rem !important;
@@ -1400,7 +1421,7 @@
             font-family: var(--font-body, system-ui, -apple-system, sans-serif) !important;
         }
 
-        body .swal2-title {
+        body .swal2-popup:not(.swal2-toast) .swal2-title {
             font-family: var(--font-display, inherit) !important;
             font-size: 1.25rem !important;
             font-weight: 700 !important;
@@ -1410,7 +1431,7 @@
             line-height: 1.35 !important;
         }
 
-        body .swal2-html-container {
+        body .swal2-popup:not(.swal2-toast) .swal2-html-container {
             font-size: 0.885rem !important;
             color: #475569 !important;
             line-height: 1.6 !important;
@@ -1418,8 +1439,8 @@
             font-weight: 400 !important;
         }
 
-        /* Modern Circular Icon Badges */
-        body .swal2-icon {
+        /* Modern Circular Icon Badges (Khusus Modal) */
+        body .swal2-popup:not(.swal2-toast) .swal2-icon {
             width: 58px !important;
             height: 58px !important;
             margin: 0.25rem auto 1.1rem !important;
@@ -1431,14 +1452,99 @@
             justify-content: center !important;
         }
 
-        /* Question Icon */
-        body .swal2-icon.swal2-question {
+        /* Toast styling: rapi, kompak, tidak menggelapkan layar */
+        body .swal2-popup.swal2-toast {
+            background: #ffffff !important;
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 10px !important;
+            box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.15), 0 4px 8px -2px rgba(15, 23, 42, 0.08) !important;
+            padding: 0.75rem 1.15rem !important;
+            width: auto !important;
+            max-width: 380px !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            margin: 14px !important;
+        }
+        body .swal2-popup.swal2-toast .swal2-title {
+            font-size: 0.85rem !important;
+            font-weight: 600 !important;
+            color: #0f172a !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            line-height: 1.4 !important;
+        }
+        body .swal2-popup.swal2-toast .swal2-icon {
+            border: none !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            width: 22px !important;
+            height: 22px !important;
+            min-width: 22px !important;
+            margin: 0 6px 0 0 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        body .swal2-popup.swal2-toast .swal2-icon * {
+            display: none !important;
+        }
+        body .swal2-popup.swal2-toast .swal2-icon.swal2-success::before {
+            content: "" !important;
+            display: inline-block !important;
+            width: 22px !important;
+            height: 22px !important;
+            background-repeat: no-repeat !important;
+            background-position: center !important;
+            background-size: contain !important;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23059669'%3E%3Cpath d='M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z'/%3E%3C/svg%3E") !important;
+        }
+        body .swal2-popup.swal2-toast .swal2-icon.swal2-error::before {
+            content: "" !important;
+            display: inline-block !important;
+            width: 22px !important;
+            height: 22px !important;
+            background-repeat: no-repeat !important;
+            background-position: center !important;
+            background-size: contain !important;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23dc2626'%3E%3Cpath d='M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z'/%3E%3C/svg%3E") !important;
+        }
+        body .swal2-popup.swal2-toast .swal2-icon.swal2-warning::before {
+            content: "" !important;
+            display: inline-block !important;
+            width: 22px !important;
+            height: 22px !important;
+            background-repeat: no-repeat !important;
+            background-position: center !important;
+            background-size: contain !important;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23d97706'%3E%3Cpath d='M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8 4a.905.905 0 0 0-.9.995l.35 3.507a.552.552 0 0 0 1.1 0l.35-3.507A.905.905 0 0 0 8 4zm.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z'/%3E%3C/svg%3E") !important;
+        }
+        body .swal2-popup.swal2-toast .swal2-icon.swal2-info::before {
+            content: "" !important;
+            display: inline-block !important;
+            width: 22px !important;
+            height: 22px !important;
+            background-repeat: no-repeat !important;
+            background-position: center !important;
+            background-size: contain !important;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%230284c7'%3E%3Cpath d='M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z'/%3E%3C/svg%3E") !important;
+        }
+        body .swal2-popup.swal2-toast .swal2-timer-progress-bar {
+            background: #059669 !important;
+            height: 3px !important;
+        }
+        body .swal2-popup.swal2-toast .swal2-actions {
+            display: none !important;
+        }
+
+        /* Question Icon (Modal only) */
+        body .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-question {
             border-color: #93c5fd !important;
             background-color: #eff6ff !important;
             color: #2563eb !important;
             box-shadow: 0 0 0 5px rgba(219, 234, 254, 0.5) !important;
         }
-        body .swal2-icon.swal2-question .swal2-icon-content {
+        body .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-question .swal2-icon-content {
             font-size: 1.85rem !important;
             font-weight: 700 !important;
             color: #2563eb !important;
@@ -1446,14 +1552,14 @@
             line-height: 1 !important;
         }
 
-        /* Warning Icon */
-        body .swal2-icon.swal2-warning {
+        /* Warning Icon (Modal only) */
+        body .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-warning {
             border-color: #fcd34d !important;
             background-color: #fffbeb !important;
             color: #d97706 !important;
             box-shadow: 0 0 0 5px rgba(254, 243, 199, 0.6) !important;
         }
-        body .swal2-icon.swal2-warning .swal2-icon-content {
+        body .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-warning .swal2-icon-content {
             font-size: 1.85rem !important;
             font-weight: 700 !important;
             color: #d97706 !important;
@@ -1461,46 +1567,46 @@
             line-height: 1 !important;
         }
 
-        /* Success Icon */
-        body .swal2-icon.swal2-success {
+        /* Success Icon (Modal only) */
+        body .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success {
             border-color: #a7f3d0 !important;
             background-color: #ecfdf5 !important;
             color: #059669 !important;
             box-shadow: 0 0 0 5px rgba(209, 250, 229, 0.6) !important;
         }
-        body .swal2-icon.swal2-success [class^='swal2-success-line'] {
+        body .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success [class^='swal2-success-line'] {
             background-color: #059669 !important;
             height: 3px !important;
         }
-        body .swal2-icon.swal2-success .swal2-success-ring {
+        body .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success .swal2-success-ring {
             border: 2px solid rgba(16, 185, 129, 0.3) !important;
         }
-        body .swal2-icon.swal2-success .swal2-success-fix,
-        body .swal2-icon.swal2-success .swal2-success-circular-line-left,
-        body .swal2-icon.swal2-success .swal2-success-circular-line-right {
+        body .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success .swal2-success-fix,
+        body .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success .swal2-success-circular-line-left,
+        body .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success .swal2-success-circular-line-right {
             background-color: transparent !important;
         }
 
-        /* Error Icon */
-        body .swal2-icon.swal2-error {
+        /* Error Icon (Modal only) */
+        body .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-error {
             border-color: #fecaca !important;
             background-color: #fef2f2 !important;
             color: #dc2626 !important;
             box-shadow: 0 0 0 5px rgba(254, 226, 226, 0.6) !important;
         }
-        body .swal2-icon.swal2-error [class^='swal2-x-mark-line'] {
+        body .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-error [class^='swal2-x-mark-line'] {
             background-color: #dc2626 !important;
             height: 3px !important;
         }
 
-        /* Info Icon */
-        body .swal2-icon.swal2-info {
+        /* Info Icon (Modal only) */
+        body .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-info {
             border-color: #bae6fd !important;
             background-color: #f0f9ff !important;
             color: #0284c7 !important;
             box-shadow: 0 0 0 5px rgba(224, 242, 254, 0.6) !important;
         }
-        body .swal2-icon.swal2-info .swal2-icon-content {
+        body .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-info .swal2-icon-content {
             font-size: 1.85rem !important;
             font-weight: 700 !important;
             color: #0284c7 !important;
@@ -1509,13 +1615,17 @@
         }
 
         /* Action Buttons */
-        body .swal2-actions {
-            display: flex !important;
+        body .swal2-popup:not(.swal2-toast) .swal2-actions {
+            display: flex;
             align-items: center !important;
             justify-content: center !important;
             gap: 0.65rem !important;
             width: 100% !important;
             margin: 0.85rem 0 0 !important;
+        }
+        body .swal2-actions[style*="display: none"],
+        body .swal2-actions[style*="display:none"] {
+            display: none !important;
         }
 
         /* Disable SweetAlert2 default radial-gradient hover overlay that causes flickering */
@@ -1540,10 +1650,13 @@
             transition: transform 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease !important;
             cursor: pointer !important;
             min-width: 110px !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            gap: 6px !important;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        body button.swal2-styled.swal2-confirm[style*="display: none"],
+        body button.swal2-styled.swal2-confirm[style*="display:none"] {
+            display: none !important;
         }
         body button.swal2-styled.swal2-confirm:hover {
             background-color: #0f172a !important;
@@ -1574,9 +1687,12 @@
             transition: transform 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease !important;
             cursor: pointer !important;
             min-width: 90px !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            justify-content: center !important;
+            align-items: center;
+            justify-content: center;
+        }
+        body button.swal2-styled.swal2-cancel[style*="display: none"],
+        body button.swal2-styled.swal2-cancel[style*="display:none"] {
+            display: none !important;
         }
         body button.swal2-styled.swal2-cancel:hover {
             background-color: #f8fafc !important;
@@ -3067,6 +3183,8 @@
         let currentUniversalTitle = null;
         let currentUniversalSubtitle = null;
         let currentUniversalUseKop = true;
+        let currentUniversalIsWord = false;
+        let currentUniversalWordHtml = null;
 
         function downloadCurrentUniversalWord() {
             if (currentUniversalWordUrl) {
@@ -3074,6 +3192,11 @@
                 return;
             }
             if (currentUniversalDocUrl) {
+                var mDeal = currentUniversalDocUrl.match(/surat-penawaran\/(\d+)\/dokumen-deal\/([a-zA-Z0-9_-]+)/i);
+                if (mDeal) {
+                    window.location.href = '{{ @BASE }}/surat-penawaran/' + mDeal[1] + '/dokumen-deal/' + mDeal[2] + '/word';
+                    return;
+                }
                 var m = currentUniversalDocUrl.match(/order\/(\d+)\/penawaran/i) || currentUniversalDocUrl.match(/surat-penawaran\/(\d+)/i);
                 if (m) {
                     var spIdMatch = currentUniversalDocUrl.match(/[?&]id=(\d+)/i);
@@ -3324,7 +3447,8 @@
             const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
             modal.show();
 
-            const isPenawaran = (url.indexOf('/penawaran/') !== -1 || (title && title.indexOf('Penawaran') !== -1));
+            const isDokumenDeal = (url.indexOf('dokumen-deal') !== -1 || url.indexOf('kesanggupan') !== -1);
+            const isPenawaran = !isDokumenDeal && (url.indexOf('/penawaran/cetak') !== -1 || url.indexOf('/surat-penawaran/') !== -1 || (title && title.indexOf('Penawaran') !== -1));
             if (!isKopSwitch) {
                 currentUniversalDocUrl = url;
                 currentUniversalTitle = title;
@@ -3355,6 +3479,8 @@
             currentUniversalFilename = null;
             currentUniversalMime = null;
             currentUniversalWordUrl = null;
+            currentUniversalIsWord = false;
+            currentUniversalWordHtml = null;
             updateUniversalZoomBadge();
 
             const optWordLi = document.getElementById('universalOptWordLi');
@@ -3422,8 +3548,13 @@
                 }
 
                 if (json.is_pdf && json.base64) {
-                    if (iconEl) iconEl.className = 'bi bi-file-earmark-pdf-fill fs-5 text-danger';
-                    if (spinnerMsg) spinnerMsg.textContent = 'Merender lembar dokumen PDF...';
+                    if (json.is_converted_word) {
+                        if (iconEl) iconEl.className = 'bi bi-file-earmark-word-fill fs-5 text-primary';
+                        currentUniversalIsWord = true;
+                    } else {
+                        if (iconEl) iconEl.className = 'bi bi-file-earmark-pdf-fill fs-5 text-danger';
+                    }
+                    if (spinnerMsg) spinnerMsg.textContent = 'Merender lembar dokumen...';
 
                     let bytes = base64ToUint8ArrayUniversal(json.base64);
 
@@ -3510,6 +3641,8 @@
                     if (imgTag) imgTag.src = '';
                     currentUniversalDoc = null;
                     currentUniversalRawBase64 = null;
+                    currentUniversalIsWord = false;
+                    currentUniversalWordHtml = null;
                 });
             }
 

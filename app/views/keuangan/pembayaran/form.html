@@ -130,7 +130,7 @@
 <div class="d-flex flex-column flex-sm-row justify-content-end gap-2">
     <a href="{{ @BASE }}/pembayaran" class="btn btn-outline-secondary px-4 order-3 order-sm-1">Batal</a>
     <button type="button" id="btnSimpanSaja" class="btn btn-outline-primary px-4 order-2 order-sm-2 d-none">Simpan</button>
-    <button type="button" id="btnSimpanDisposisi" class="btn btn-primary px-4 order-1 order-sm-3 d-none"><i class="bi bi-send-check me-1"></i> Simpan &amp; Disposisi</button>
+    <button type="button" id="btnSimpanDisposisi" class="btn btn-primary px-4 order-1 order-sm-3 d-none"><i class="bi bi-send-check me-1"></i> Kirim &amp; Disposisi</button>
     <button type="button" id="btnSimpanPembayaran" class="btn btn-primary px-4 order-1 order-sm-3"><i class="bi bi-save me-1"></i> Simpan Pembayaran</button>
 </div>
         </form>
@@ -212,7 +212,7 @@ btnSimpanDisposisi.addEventListener('click', function () {
             title: 'Disposisi ke Ketua Tim ' + labelDivisi() + '?',
             html: '<div class="text-start small text-secondary">' + pesan + '</div>',
             showCancelButton: true,
-            confirmButtonText: '<i class="bi bi-send-check me-1"></i> Ya, Simpan & Disposisi',
+            confirmButtonText: '<i class="bi bi-send-check me-1"></i> Ya, Kirim & Disposisi',
             cancelButtonText: 'Batal',
             confirmButtonColor: '#881337',
             reverseButtons: true,

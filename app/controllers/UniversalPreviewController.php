@@ -1,28 +1,35 @@
 <?php
 
+require_once __DIR__ . '/Controller.php';
+
+/**
+ * UniversalPreviewController
+ *
+ * Controller terpusat untuk API Pratinjau Dokumen Bebas Intersepsi Download Manager (IDM).
+ * Endpoint: GET /api/doc-preview?url={encoded_doc_url}
+ *
+ * Mengembalikan JSON:
+ * {
+ *   "success": true,
+ *   "is_pdf": true,
+ *   "base64": "...",
+ *   "filename": "...",
+ *   "mime": "application/pdf"
+ * }
+ */
 class UniversalPreviewController extends Controller
 {
     /**
-     * Endpoint API Universal untuk Pratinjau Dokumen Bebas IDM (Zero Interception)
-     * Route: GET|POST /api/doc-preview
+     * Endpoint utama untuk fetch base64 data PDF/Gambar/Dokumen Word
      */
     public function getPreviewData($f3)
     {
-        $this->requireAuth();
-
-        // Ambil URL target dari GET param atau POST payload
-        $rawUrl = $f3->get('GET.url');
+        $rawUrl = trim($f3->get('GET.url') ?: '');
         if (empty($rawUrl)) {
-            $body = json_decode($f3->get('BODY') ?? '', true);
-            $rawUrl = $body['url'] ?? $f3->get('POST.url') ?? '';
-        }
-
-        if (empty($rawUrl)) {
-            $this->jsonResponse(['success' => false, 'message' => 'Parameter URL dokumen tidak diberikan.']);
+            $this->jsonResponse(['success' => false, 'message' => 'Parameter URL dokumen wajib diisi.']);
             return;
         }
 
-        // Normalisasi URL
         $parsed = parse_url($rawUrl);
         $path = urldecode($parsed['path'] ?? '');
         $query = [];
@@ -70,79 +77,87 @@ class UniversalPreviewController extends Controller
                 return;
             }
 
-            // 3. Pola Surat Penawaran: /order/@id/penawaran/cetak ATAU /surat-penawaran/@id/(?:cetak|preview|pdf) ATAU /penawaran/@id/(?:cetak|preview|pdf)
-            if (preg_match('#order/(\d+)/penawaran/cetak#i', $path, $m) || preg_match('#(?:surat-penawaran|penawaran)/(\d+)/(?:cetak|preview|pdf)#i', $path, $m)) {
-                $targetId = (int)$m[1];
-                $spId = (int)($query['id'] ?? 0);
-                $kopParam = $query['kop'] ?? ($f3->get('GET.kop') ?? $f3->get('POST.kop'));
-                $useKop = !isset($kopParam) || ($kopParam !== '0' && $kopParam !== 'tanpa_kop' && $kopParam !== 0 && $kopParam !== false);
-                $this->handleSuratPenawaran($targetId, $spId, $useKop);
-                return;
-            }
-
-            // 4a. Pola Berkas Proposal File (upload): /proposal/@id/file
-            if (preg_match('#(?:opti-)?proposal/(\d+)/file#i', $path, $m)) {
-                $proposalId = (int)$m[1];
-                $this->handleProposalFile($proposalId);
-                return;
-            }
-
-            // 4b. Pola Proposal Teknis: /order/@id/proposal
-            if (preg_match('#order/(\d+)/proposal(?:/raw-data)?#i', $path, $m)) {
-                $orderId = (int)$m[1];
+            // 3. Pola Proposal Teknis: /order/@id/proposal/preview ATAU /proposal/preview/@id
+            if (preg_match('#(?:order/(\d+)/proposal(?:/preview)?|proposal/preview/(\d+))#i', $path, $m)) {
+                $orderId = (int)(!empty($m[1]) ? $m[1] : $m[2]);
                 $this->handleProposal($orderId);
                 return;
             }
 
-            // 5a. Pola Surat Masuk PDF by Order: /order/@id/surat-masuk-pdf
-            if (preg_match('#order/(\d+)/surat-masuk-pdf#i', $path, $m)) {
+            // 3b. [BARU] Pola Berkas Proposal Teknis Asli (PDF): /order/@id/proposal/file
+            if (preg_match('#order/(\d+)/proposal/file#i', $path, $m)) {
+                $orderId = (int)$m[1];
+                $this->handleProposalFile($orderId);
+                return;
+            }
+
+            // 4. Pola Surat Penawaran: /order/@id/penawaran/cetak ATAU /surat-penawaran/@id/cetak
+            if (preg_match('#(?:order/(\d+)/penawaran/cetak|surat-penawaran/(\d+)/cetak|penawaran/cetak/(\d+))#i', $path, $m)) {
+                $orderOrSpId = (int)(!empty($m[1]) ? $m[1] : (!empty($m[2]) ? $m[2] : $m[3]));
+                $spIdExplicit = (int)($query['id'] ?? 0);
+                $useKop = !isset($query['kop']) || ($query['kop'] !== '0' && $query['kop'] !== 'tanpa_kop');
+                $this->handleSuratPenawaran($orderOrSpId, $spIdExplicit, $useKop, $query);
+                return;
+            }
+
+            // 5. Pola BAST: /order/@id/bast/cetak ATAU /bast/@id/cetak
+            if (preg_match('#(?:order/(\d+)/bast/cetak|bast/(\d+)/cetak)#i', $path, $m)) {
+                $orderOrBastId = (int)(!empty($m[1]) ? $m[1] : $m[2]);
+                $this->handleBast($orderOrBastId);
+                return;
+            }
+
+            // 6. Pola Berkas Surat Masuk: /surat-masuk/@id/pdf ATAU /order/@id/surat-masuk/pdf
+            if (preg_match('#order/(\d+)/surat-masuk/pdf#i', $path, $m)) {
                 $orderId = (int)$m[1];
                 $this->handleSuratMasukByOrder($orderId);
                 return;
             }
-
-            // 5b. Pola Surat Masuk: /surat-masuk/(\d+)(?:/pdf)?
-            if (preg_match('#surat-masuk/(\d+)#i', $path, $m)) {
+            if (preg_match('#surat-masuk/(\d+)/pdf#i', $path, $m)) {
                 $suratId = (int)$m[1];
                 $this->handleSuratMasuk($suratId);
                 return;
             }
 
-            // 6. Pola PO Kegiatan Cetak: /po-kegiatan/(\d+)/cetak ATAU /po/(\d+)/cetak
-            if (preg_match('#(?:po-kegiatan|po)/(\d+)/cetak#i', $path, $m)) {
-                $poId = (int)$m[1];
+            // 7. Pola PO Kegiatan Cetak: /po-kegiatan/cetak/@id ATAU /po-kegiatan/@id/cetak
+            if (preg_match('#po-kegiatan/(?:cetak/(\d+)|(\d+)/cetak)#i', $path, $m)) {
+                $poId = (int)(!empty($m[1]) ? $m[1] : $m[2]);
                 $this->handlePoCetak($poId);
                 return;
             }
 
-            // 7. Pola BAST: /bast/(\d+)/cetak ATAU /order/(\d+)/bast
-            if (preg_match('#(?:order/(\d+)/bast|bast/(\d+))#i', $path, $m)) {
-                $bastOrOrderId = (int)(!empty($m[1]) ? $m[1] : $m[2]);
-                $this->handleBast($bastOrOrderId);
+            // 8. Pola Direct File (misal file proposal, bukti bayar langsung dari URL fisik):
+            // /uploads/... atau /storage/... atau .pdf/.jpg
+            if (preg_match('#\.(pdf|jpg|jpeg|png|webp|bmp|doc|docx)$#i', $path)) {
+                $this->handleDirectFile($path);
                 return;
             }
 
-            // 8. Pola File Fisik Langsung (uploads/, storage/, dll)
-            $this->handleDirectFile($path);
-            return;
+            // Jika pola tidak spesifik, fallback cek apakah URL itu sendiri adalah path file yang tersimpan
+            $resolved = $this->resolveFilePath($path);
+            if ($resolved && is_file($resolved)) {
+                $this->sendFileAsBase64($resolved);
+                return;
+            }
 
-        } catch (\Exception $e) {
-            $this->jsonResponse([
-                'success' => false,
-                'message' => 'Terjadi kesalahan saat memproses dokumen: ' . $e->getMessage()
-            ]);
+            $this->jsonResponse(['success' => false, 'message' => 'Pola dokumen tidak dikenali oleh sistem pratinjau.']);
+        } catch (\Throwable $e) {
+            $this->jsonResponse(['success' => false, 'message' => 'Terjadi kesalahan sistem: ' . $e->getMessage()]);
         }
     }
 
+    /**
+     * Berkas Bukti Pembayaran (PDF atau Gambar)
+     */
     protected function handleBuktiPembayaran($pembayaranId)
     {
-        $rows = $this->db->exec('SELECT id, order_id, bukti_bayar FROM opti_pembayaran WHERE id = ?', [1 => $pembayaranId]);
-        if (empty($rows) || empty($rows[0]['bukti_bayar'])) {
-            $this->jsonResponse(['success' => false, 'message' => 'Data bukti pembayaran tidak ditemukan.']);
+        $rows = $this->db->exec('SELECT file_bukti FROM tb_pembayaran WHERE id = ?', [1 => $pembayaranId]);
+        if (empty($rows) || empty($rows[0]['file_bukti'])) {
+            $this->jsonResponse(['success' => false, 'message' => 'Berkas bukti pembayaran tidak ditemukan di database.']);
             return;
         }
 
-        $rawPath = $rows[0]['bukti_bayar'];
+        $rawPath = $rows[0]['file_bukti'];
         $filePath = $this->resolveFilePath($rawPath, ['uploads/bukti_bayar', 'storage/pembayaran']);
 
         if (!$filePath || !is_file($filePath)) {
@@ -151,6 +166,62 @@ class UniversalPreviewController extends Controller
         }
 
         $this->sendFileAsBase64($filePath, 'Bukti_Pembayaran_' . $pembayaranId);
+    }
+
+    /**
+     * Berkas 3 Dokumen DEAL Penawaran (Surat Penawaran TTD, Bukti Persetujuan Klien, Surat Kesanggupan).
+     */
+    protected function handleDokumenDeal($spId, $jenis)
+    {
+        $colMap = [
+            'penawaran_ttd'     => 'file_penawaran_ttd',
+            'bukti_persetujuan' => 'file_bukti_persetujuan',
+            'surat_kesanggupan' => 'surat_kesanggupan_bayar',
+        ];
+        $labelMap = [
+            'penawaran_ttd'     => 'Surat Penawaran Bertandatangan',
+            'bukti_persetujuan' => 'Bukti Persetujuan Klien',
+            'surat_kesanggupan' => 'Surat Kesanggupan',
+        ];
+
+        if (!isset($colMap[$jenis])) {
+            $this->jsonResponse(['success' => false, 'message' => 'Jenis dokumen deal tidak valid: ' . $jenis]);
+            return;
+        }
+
+        $col = $colMap[$jenis];
+        $label = $labelMap[$jenis];
+
+        $rows = $this->db->exec(
+            "SELECT id, order_id, nomor_surat, {$col} 
+             FROM tb_surat_penawaran 
+             WHERE (id = ? OR order_id = ?) AND {$col} IS NOT NULL AND {$col} <> '' 
+             ORDER BY id DESC LIMIT 1",
+            [1 => $spId, 2 => $spId]
+        );
+
+        if (empty($rows) || empty($rows[0][$col])) {
+            $this->jsonResponse(['success' => false, 'message' => "Berkas {$label} belum diunggah untuk order/penawaran ini."]);
+            return;
+        }
+
+        $rawPath = $rows[0][$col];
+        $filePath = $this->resolveFilePath($rawPath, [
+            'storage/kesanggupan_bayar',
+            'uploads/penawaran',
+            'uploads/kesanggupan_bayar',
+            'public/uploads/kesanggupan_bayar',
+            'public/uploads/penawaran'
+        ]);
+
+        if (!$filePath || !is_file($filePath)) {
+            $this->jsonResponse(['success' => false, 'message' => "Berkas fisik {$label} tidak ditemukan di server: " . basename($rawPath)]);
+            return;
+        }
+
+        $docTitle = str_replace(' ', '_', $label) . '_' . ($rows[0]['order_id'] ?? $spId);
+        $wordUrl = '/surat-penawaran/' . ($rows[0]['id'] ?? $spId) . '/dokumen-deal/' . $jenis . '/word';
+        $this->sendFileAsBase64($filePath, $docTitle, $wordUrl);
     }
 
     protected function handleSuratKesanggupan($spId)
@@ -175,106 +246,80 @@ class UniversalPreviewController extends Controller
             return;
         }
 
-        $this->sendFileAsBase64($filePath, 'Surat_Kesanggupan_Bayar_' . ($rows[0]['order_id'] ?? $spId));
+        $docTitle = 'Surat_Kesanggupan_Bayar_' . ($rows[0]['order_id'] ?? $spId);
+        $wordUrl = '/surat-penawaran/' . ($rows[0]['id'] ?? $spId) . '/dokumen-deal/surat_kesanggupan/word';
+        $this->sendFileAsBase64($filePath, $docTitle, $wordUrl);
     }
 
     /**
      * Berkas Surat Penawaran yang tersimpan di server (PDF resmi).
-     * Jika berkas fisik belum ada tapi data penawaran ada, fallback otomatis render PDF on-the-fly.
+     * Selalu render format PDF terbaru secara konsisten dari satu sumber generator resmi.
      */
     protected function handleLampiranPenawaran($spId)
     {
-        $rows = $this->db->exec(
-            'SELECT id, order_id, nomor_surat, file_lampiran 
-             FROM tb_surat_penawaran 
-             WHERE (id = ? OR order_id = ?) AND file_lampiran IS NOT NULL AND file_lampiran <> \'\' 
-             ORDER BY (status_respon_klien = \'deal\') DESC, id DESC LIMIT 1',
-            [1 => $spId, 2 => $spId]
-        );
-
-        if (empty($rows) || empty($rows[0]['file_lampiran'])) {
-            // Fallback jika belum upload fisik, generate via template sistem
-            $this->handleSuratPenawaran($spId);
-            return;
-        }
-
-        $filePath = $this->resolveFilePath($rows[0]['file_lampiran'], ['uploads/penawaran', 'storage/penawaran', 'public/uploads/penawaran']);
-        if (!$filePath || !is_file($filePath)) {
-            // Fallback generate via template sistem jika berkas hilang
-            $this->handleSuratPenawaran($rows[0]['id']);
-            return;
-        }
-
-        $this->sendFileAsBase64($filePath, 'Surat_Penawaran_' . ($rows[0]['nomor_surat'] ?: $spId));
+        $this->handleSuratPenawaran($spId, $spId, true);
     }
 
     /**
-     * Berkas Proposal Riset Teknis yang diunggah
+     * Berkas Asli Proposal Teknis (PDF)
      */
     protected function handleProposalFile($propId)
     {
         $rows = $this->db->exec(
-            'SELECT id, order_id, judul_proposal, file_proposal 
+            'SELECT id, order_id, file_proposal, judul_proposal 
              FROM opti_proposal_riset 
-             WHERE (id = ? OR order_id = ?) AND file_proposal IS NOT NULL AND file_proposal <> \'\' 
+             WHERE id = ? OR order_id = ? 
              ORDER BY id DESC LIMIT 1',
             [1 => $propId, 2 => $propId]
         );
 
         if (empty($rows) || empty($rows[0]['file_proposal'])) {
-            $this->jsonResponse(['success' => false, 'message' => 'Berkas proposal riset teknis tidak ditemukan.']);
+            $this->jsonResponse(['success' => false, 'message' => 'Berkas PDF Proposal Teknis belum diunggah untuk order ini.']);
             return;
         }
 
-        $filePath = $this->resolveFilePath($rows[0]['file_proposal'], ['public/uploads/proposals', 'uploads/proposals', 'uploads/proposal', 'storage/proposal']);
+        $rawPath = $rows[0]['file_proposal'];
+        $filePath = $this->resolveFilePath($rawPath, ['uploads/proposal', 'uploads/proposal_riset', 'storage/proposal']);
+
         if (!$filePath || !is_file($filePath)) {
-            $this->jsonResponse(['success' => false, 'message' => 'Berkas fisik proposal tidak ditemukan di server: ' . basename($rows[0]['file_proposal'])]);
+            $this->jsonResponse(['success' => false, 'message' => 'Berkas fisik Proposal Teknis tidak ditemukan di server: ' . basename($rawPath)]);
             return;
         }
 
-        $this->sendFileAsBase64($filePath, 'Proposal_Riset_' . ($rows[0]['order_id'] ?? $propId));
+        $docTitle = 'Proposal_Teknis_' . ($rows[0]['order_id'] ?? $propId);
+        $this->sendFileAsBase64($filePath, $docTitle);
     }
 
     /**
-     * Berkas Lampiran Tambahan yang Diunggah User pada Surat Penawaran (file_lampiran_user)
+     * Berkas Lampiran Tambahan User pada Surat Penawaran (Hal 3+)
      */
     protected function handleLampiranUserPenawaran($targetId, $spIdExplicit = 0)
     {
-        $spModel = new SuratPenawaran($this->db);
         $sp = null;
         if ($spIdExplicit > 0) {
-            $sp = $spModel->getById($spIdExplicit);
+            $r = $this->db->exec('SELECT * FROM tb_surat_penawaran WHERE id = ?', [1 => $spIdExplicit]);
+            if (!empty($r)) $sp = $r[0];
         }
         if (!$sp) {
-            $sp = $spModel->getByOrderId($targetId);
-        }
-        if (!$sp) {
-            $sp = $spModel->getById($targetId);
-        }
-
-        $relPath = '';
-        if ($sp && !empty($sp['file_lampiran_user'])) {
-            $relPath = $sp['file_lampiran_user'];
-        } elseif (!empty($_SESSION['pending_lampiran_sp_' . $targetId])) {
-            $relPath = $_SESSION['pending_lampiran_sp_' . $targetId];
+            $r = $this->db->exec(
+                'SELECT * FROM tb_surat_penawaran 
+                 WHERE id = ? OR order_id = ? 
+                 ORDER BY (status_respon_klien = \'deal\') DESC, id DESC LIMIT 1',
+                [1 => $targetId, 2 => $targetId]
+            );
+            if (!empty($r)) $sp = $r[0];
         }
 
-        if (empty($relPath)) {
-            $orderIdActual = (int)($sp['order_id'] ?? $targetId);
-            $propRows = $this->db->exec('SELECT file_proposal FROM opti_proposal_riset WHERE order_id = ? AND file_proposal IS NOT NULL AND file_proposal <> \'\' ORDER BY id DESC LIMIT 1', [1 => $orderIdActual]);
-            if (!empty($propRows[0]['file_proposal'])) {
-                $relPath = trim((string)$propRows[0]['file_proposal']);
-            }
-        }
-
-        if (empty($relPath)) {
-            $this->jsonResponse(['success' => false, 'message' => 'Berkas lampiran surat penawaran belum diunggah.']);
+        if (empty($sp) || empty($sp['lampiran_user'])) {
+            $this->jsonResponse(['success' => false, 'message' => 'Berkas lampiran teknis pengguna belum diunggah untuk surat penawaran ini.']);
             return;
         }
 
-        $filePath = $this->resolveFilePath($relPath, ['uploads/penawaran/lampiran', 'uploads/penawaran', 'storage/penawaran', 'public/uploads/proposals']);
+        $rawPath = $sp['lampiran_user'];
+        $filePath = $this->resolveFilePath($rawPath, ['uploads/penawaran/lampiran', 'uploads/penawaran', 'uploads/lampiran']);
+
         if (!$filePath || !is_file($filePath)) {
-            $this->jsonResponse(['success' => false, 'message' => 'Berkas fisik lampiran tidak ditemukan di server: ' . basename($relPath)]);
+            $this->jsonResponse(['success' => false, 'message' => 'Berkas fisik lampiran penawaran tidak ditemukan di server: ' . basename($rawPath)]);
             return;
         }
 
@@ -282,23 +327,36 @@ class UniversalPreviewController extends Controller
     }
 
     /**
-     * Menampilkan Surat Masuk PDF berdasarkan ID Order
+     * Berkas Surat Masuk berdasarkan order_id
      */
     protected function handleSuratMasukByOrder($orderId)
     {
-        $order = $this->db->exec('SELECT id, id_surat_masuk FROM order_layanan WHERE id = ? LIMIT 1', [1 => $orderId]);
-        if (empty($order) || empty($order[0]['id_surat_masuk'])) {
-            $this->jsonResponse(['success' => false, 'message' => 'Surat masuk permohonan tidak terhubung dengan order ini.']);
+        $rows = $this->db->exec('SELECT id, file_bukti_permohonan FROM order_layanan WHERE id = ?', [1 => $orderId]);
+        if (empty($rows) || empty($rows[0]['file_bukti_permohonan'])) {
+            $this->jsonResponse(['success' => false, 'message' => 'Berkas surat permohonan pelanggan belum tersedia untuk order ini.']);
             return;
         }
-        $this->handleSuratMasuk((int)$order[0]['id_surat_masuk']);
+
+        $rawPath = $rows[0]['file_bukti_permohonan'];
+        $filePath = $this->resolveFilePath($rawPath, ['uploads/surat_masuk', 'uploads/permohonan', 'storage/surat_masuk']);
+
+        if (!$filePath || !is_file($filePath)) {
+            $this->jsonResponse(['success' => false, 'message' => 'Berkas fisik surat permohonan tidak ditemukan di server: ' . basename($rawPath)]);
+            return;
+        }
+
+        $this->sendFileAsBase64($filePath, 'Surat_Permohonan_Order_' . $orderId);
     }
 
-    protected function handleSuratPenawaran($orderOrSpId, $spIdExplicit = 0, $useKop = true)
+    /**
+     * Pratinjau Surat Penawaran Resmi BBSPJIS
+     * Render langsung dari Dompdf / generator sistem agar realtime dan bebas intercept download
+     */
+    protected function handleSuratPenawaran($orderOrSpId, $spIdExplicit = 0, $useKop = true, array $queryParams = [])
     {
         $spController = new SuratPenawaranController();
         $f3 = \Base::instance();
-        
+
         $spModel = new SuratPenawaran($this->db);
         $orderModel = new OrderLayanan($this->db);
 
@@ -324,329 +382,228 @@ class UniversalPreviewController extends Controller
             $sp = [
                 'id'                  => 0,
                 'order_id'            => (int)$order['id'],
-                'nomor_surat'         => $spModel->generateNomorSurat(($order['jenis_layanan_opti'] ?? 'selulosa') === 'selulosa' ? 'SL' : 'LK'),
-                'perusahaan'          => $order['nama_perusahaan'] ?? 'Mitra Balai',
-                'nama'                => $order['pic'] ?? '-',
-                'alamat'              => $order['alamat'] ?? '-',
-                'jenis_layanan'       => $order['jenis_layanan_opti'] ?? 'selulosa',
-                'perihal'             => $order['judul_kegiatan'] ?? 'Penawaran Layanan Jasa OPTI',
-                'nominal_penawaran'   => (float)($order['estimasi_biaya'] ?? 0),
+                'nomor_surat'         => 'DRAFT/SPH/' . date('Y'),
                 'tanggal_surat'       => date('Y-m-d'),
-                'status_respon_klien' => 'draft',
-                'file_lampiran_user'  => $_SESSION['pending_lampiran_sp_' . $orderIdActual] ?? ''
+                'nominal_penawaran'   => (float)($order['estimasi_total_biaya'] ?? 0),
+                'perihal'             => 'Penawaran Layanan ' . ($order['layanan_nama'] ?? 'OPTI'),
+                'jabatan_penandatangan' => 'Kepala Balai Besar Standardisasi dan Pelayanan Jasa Industri Selulosa',
+                'nama_penandatangan'  => 'Pejabat BBSPJIS',
+                'lampiran_user'       => null,
             ];
-        }
-
-        if ($sp && empty($sp['file_lampiran_user']) && !empty($_SESSION['pending_lampiran_sp_' . $orderIdActual])) {
-            $sp['file_lampiran_user'] = $_SESSION['pending_lampiran_sp_' . $orderIdActual];
-        }
-
-        if ($sp && ($order['jenis_layanan_opti'] ?? '') === 'selulosa' && empty($_SESSION['pending_lampiran_sp_' . $orderIdActual])) {
-            $propRows = $this->db->exec('SELECT file_proposal FROM opti_proposal_riset WHERE order_id = ? AND file_proposal IS NOT NULL AND file_proposal <> \'\' ORDER BY id DESC LIMIT 1', [1 => $orderIdActual]);
-            if (!empty($propRows[0]['file_proposal'])) {
-                $sp['file_lampiran_user'] = trim((string)$propRows[0]['file_proposal']);
-            }
         }
 
         if (!$sp) {
-            $this->jsonResponse(['success' => false, 'message' => 'Dokumen surat penawaran tidak ditemukan.']);
+            $this->jsonResponse(['success' => false, 'message' => 'Data Surat Penawaran tidak ditemukan.']);
             return;
         }
 
-        if (!$order) {
-            $order = [
-                'id'                 => (int)($sp['order_id'] ?? 0),
-                'nomor_order'        => 'ORD-OFFLINE',
-                'nama_perusahaan'    => $sp['perusahaan'] ?? 'Mitra Balai',
-                'pt_cv'              => '',
-                'pic'                => $sp['nama'] ?? '-',
-                'telepon'            => '-',
-                'email'              => '-',
-                'alamat'             => $sp['alamat'] ?? '-',
-                'jenis_layanan_opti' => $sp['jenis_layanan'] ?? 'selulosa',
-                'judul_kegiatan'     => $sp['perihal'] ?? 'Penawaran Layanan Jasa OPTI',
-                'estimasi_biaya'     => (float)($sp['nominal_penawaran'] ?? 0),
-                'spm_layanan'        => '30 Hari Kerja'
-            ];
+        // Tentukan apakah gunakan kop surat atau kosongan
+        $f3->set('GET.kop', $useKop ? '1' : '0');
+        if (!empty($sp['id'])) {
+            $f3->set('GET.id', (string)$sp['id']);
+        }
+        foreach ($queryParams as $k => $v) {
+            if ($k !== 'kop' && $k !== 'id') {
+                $f3->set('GET.' . $k, (string)$v);
+            }
         }
 
-        $pdf = $spController->generatePdfObject($order, $sp, $useKop);
-        $pdfContent = $pdf->Output('S');
-        $base64 = base64_encode($pdfContent);
-        $suffix = $useKop ? '' : '_Tanpa_Kop';
-        $filename = 'Surat_Penawaran_' . preg_replace('/[^A-Za-z0-9_\-]/', '_', $sp['nomor_surat'] ?: 'BBSPJIS') . $suffix . '.pdf';
-
-        $respData = [
-            'success'     => true,
-            'is_pdf'      => true,
-            'is_image'    => false,
-            'is_penawaran'=> true,
-            'filename'    => $filename,
-            'mime'        => 'application/pdf',
-            'nomor_surat' => $sp['nomor_surat'] ?? '',
-            'order_id'    => $orderIdActual,
-            'sp_id'       => (int)($sp['id'] ?? 0),
-            'word_url'    => '/order/' . $orderIdActual . '/penawaran/word' . (!empty($sp['id']) ? ('?id=' . $sp['id']) : ''),
-            'base64'      => $base64
-        ];
-
-        // Fallback jika file lampiran PDF menggunakan kompresi PDF 1.5+ yang perlu digabung di browser (pdf-lib)
-        if (!$pdf->lampiranMerged && !empty($pdf->lampiranPath) && is_file($pdf->lampiranPath)) {
-            $respData['attachment_base64'] = base64_encode(file_get_contents($pdf->lampiranPath));
-            $respData['attachment_ext'] = strtolower(pathinfo($pdf->lampiranPath, PATHINFO_EXTENSION));
+        // Cek jika berkas PDF fisik penawaran resmi sudah di-generate sebelumnya dan match kop mode
+        $physicalFile = null;
+        if (!empty($sp['file_lampiran'])) {
+            $physicalFile = $this->resolveFilePath($sp['file_lampiran'], ['uploads/penawaran']);
         }
 
-        $this->jsonResponse($respData);
+        // Selalu render PDF on-the-fly dari generator resmi SuratPenawaranController
+        // agar Pratinjau, Unduh PDF, dan Cetak selalu konsisten satu sumber dengan DOCX
+        try {
+            $pdfContent = $spController->renderPdfString($orderIdActual, $useKop, $queryParams);
+        } catch (\Throwable $eCetak) {
+            $pdfContent = null;
+        }
+
+        // Fallback hanya jika pembuatan PDF dinamis gagal dan berkas fisik ada
+        if (empty($pdfContent) && $physicalFile && is_file($physicalFile)) {
+            $pdfContent = file_get_contents($physicalFile);
+        }
+
+        if (empty($pdfContent)) {
+            $this->jsonResponse(['success' => false, 'message' => 'Gagal mengompilasi pratinjau PDF Surat Penawaran.']);
+            return;
+        }
+
+        $nomorSurat = preg_replace('#[^a-zA-Z0-9_-]+#', '_', $sp['nomor_surat'] ?? 'Draft');
+        $wordUrl = !empty($orderIdActual) ? '/order/' . $orderIdActual . '/penawaran/word' : null;
+
+        $this->jsonResponse([
+            'success'   => true,
+            'is_pdf'    => true,
+            'base64'    => base64_encode($pdfContent),
+            'filename'  => 'Surat_Penawaran_' . $nomorSurat . ($useKop ? '' : '_TanpaKop') . '.pdf',
+            'mime'      => 'application/pdf',
+            'word_url'  => $wordUrl,
+        ]);
     }
 
+    /**
+     * Pratinjau Proposal Teknis (Word/PDF)
+     */
     protected function handleProposal($orderId)
     {
-        $orderModel = new OrderLayanan($this->db);
-        $proposal = $orderModel->getProposalRiset($orderId);
-        if (empty($proposal) || empty($proposal['file_proposal'])) {
-            $this->jsonResponse(['success' => false, 'message' => 'Berkas proposal teknis belum diunggah untuk order ini.']);
+        $proposalModel = new OptiProposalRiset($this->db);
+        $prop = $proposalModel->getByOrderId($orderId);
+
+        if (!$prop) {
+            $this->jsonResponse(['success' => false, 'message' => 'Proposal Teknis untuk order ini belum dibuat.']);
             return;
         }
 
-        $filePath = $this->resolveFilePath($proposal['file_proposal'], ['uploads/proposal', 'storage/proposal']);
-        if (!$filePath || !is_file($filePath)) {
-            $this->jsonResponse(['success' => false, 'message' => 'Berkas fisik proposal tidak ditemukan di server.']);
-            return;
+        // Jika ada file proposal yang diupload (format PDF/Docx)
+        if (!empty($prop['file_proposal'])) {
+            $filePath = $this->resolveFilePath($prop['file_proposal'], ['uploads/proposal', 'uploads/proposal_riset']);
+            if ($filePath && is_file($filePath)) {
+                $this->sendFileAsBase64($filePath, 'Proposal_Teknis_Order_' . $orderId);
+                return;
+            }
         }
 
-        $this->sendFileAsBase64($filePath, 'Proposal_Teknis_Order_' . $orderId);
+        // Jika tidak ada berkas fisik, fallback ke endpoint download Word proposal teknis
+        $this->jsonResponse([
+            'success'   => true,
+            'is_pdf'    => false,
+            'is_word'   => true,
+            'filename'  => 'Proposal_Teknis_' . (!empty($prop['nomor_proposal']) ? preg_replace('#[^a-zA-Z0-9_-]+#', '_', $prop['nomor_proposal']) : 'Order_' . $orderId) . '.docx',
+            'word_url'  => '/order/' . $orderId . '/proposal/word',
+            'ext'       => 'docx',
+        ]);
     }
 
+    /**
+     * Pratinjau BAST
+     */
     protected function handleBast($orderOrBastId)
     {
         $bastModel = new OptiBast($this->db);
-        $bast = $bastModel->getByOrderId($orderOrBastId);
-        if (!$bast) {
+        $orderModel = new OrderLayanan($this->db);
+
+        $order = $orderModel->getDetail($orderOrBastId);
+        $bast = null;
+        if ($order) {
+            $bast = $bastModel->getByOrderId($orderOrBastId);
+        } else {
             $bast = $bastModel->getById($orderOrBastId);
         }
-        if (empty($bast) || empty($bast['file_dokumen_bast'])) {
-            $this->jsonResponse(['success' => false, 'message' => 'Berkas fisik dokumen BAST belum diunggah.']);
+
+        if (!$bast) {
+            $this->jsonResponse(['success' => false, 'message' => 'Data BAST belum diterbitkan untuk order ini.']);
             return;
         }
 
-        $filePath = $this->resolveFilePath($bast['file_dokumen_bast'], ['uploads/bast', 'storage/bast']);
-        if (!$filePath || !is_file($filePath)) {
-            $this->jsonResponse(['success' => false, 'message' => 'Berkas fisik dokumen BAST tidak ditemukan di server.']);
+        $bastController = new OptiBastController();
+        $f3 = \Base::instance();
+
+        ob_start();
+        $previousErrorHandler = set_error_handler(function($errno, $errstr) { return true; });
+        try {
+            $bastController->cetak($f3, ['id' => (int)$bast['id']]);
+            $pdfContent = ob_get_clean();
+        } catch (\Throwable $e) {
+            ob_end_clean();
+            $pdfContent = null;
+        } finally {
+            if ($previousErrorHandler !== null) set_error_handler($previousErrorHandler);
+            else restore_error_handler();
+        }
+
+        if (empty($pdfContent)) {
+            $this->jsonResponse(['success' => false, 'message' => 'Gagal merender dokumen BAST.']);
             return;
         }
 
-        $this->sendFileAsBase64($filePath, 'Dokumen_BAST_' . ($bast['nomor_bast'] ?? $orderOrBastId));
+        $nomorBast = preg_replace('#[^a-zA-Z0-9_-]+#', '_', $bast['nomor_bast'] ?? 'BAST');
+        $this->jsonResponse([
+            'success'   => true,
+            'is_pdf'    => true,
+            'base64'    => base64_encode($pdfContent),
+            'filename'  => 'BAST_' . $nomorBast . '.pdf',
+            'mime'      => 'application/pdf',
+        ]);
     }
 
+    /**
+     * Pratinjau Surat Masuk
+     */
     protected function handleSuratMasuk($suratId)
     {
-        $repo = new \SuratMasukRepository($this->db, $this->dbSekretariat);
-        $surat = $repo->getSuratById($suratId);
-        if (empty($surat)) {
-            $this->jsonResponse(['success' => false, 'message' => 'Data surat permohonan masuk tidak ditemukan.']);
+        $rows = $this->db->exec('SELECT id, file_surat, nomor_surat FROM tb_suratmasuk WHERE id = ?', [1 => $suratId]);
+        if (empty($rows) || empty($rows[0]['file_surat'])) {
+            $this->jsonResponse(['success' => false, 'message' => 'Berkas surat masuk tidak ditemukan.']);
             return;
         }
 
-        $filePath = $this->resolveFilePath($surat['file_path'] ?? '', ['uploads/surat_masuk', 'storage/surat_masuk']);
+        $rawPath = $rows[0]['file_surat'];
+        $filePath = $this->resolveFilePath($rawPath, ['uploads/surat_masuk', 'storage/surat_masuk']);
 
-        if (!empty($filePath) && is_file($filePath) && filesize($filePath) > 1000) {
-            $this->sendFileAsBase64($filePath, 'Surat_Masuk_' . $suratId);
+        if (!$filePath || !is_file($filePath)) {
+            $this->jsonResponse(['success' => false, 'message' => 'Berkas fisik surat masuk tidak ditemukan di server: ' . basename($rawPath)]);
             return;
         }
 
-        // Generate clean structured official letter
-        require_once dirname(__DIR__, 2) . '/app/helpers/fpdf/fpdf.php';
-        $pdf = new \FPDF('P', 'mm', 'A4');
-        $pdf->SetMargins(20, 15, 20);
-        $pdf->AddPage();
-        
-        // 1. KOP SURAT
-        $pdf->SetFont('Arial', 'B', 13);
-        $pdf->SetTextColor(0, 0, 0);
-        $namaPerusahaan = strtoupper(\Customer::formatNamaPerusahaan($surat['pt_cv'] ?? '', $surat['pengirim'] ?? 'PENGIRIM'));
-        $pdf->Cell(0, 6, $namaPerusahaan, 0, 1, 'C');
-        $pdf->SetFont('Arial', 'B', 8.5);
-        $pdf->SetTextColor(50, 50, 50);
-        $pdf->Cell(0, 4.5, 'PRODUSEN & JASA INDUSTRI TEKNOLOGI', 0, 1, 'C');
-        $pdf->SetFont('Arial', '', 8);
-        $pdf->SetTextColor(70, 70, 70);
-        $pdf->Cell(0, 4, ($surat['alamat_pengirim'] ?: 'Kawasan Industri Terpadu, Indonesia') . ' | Telp: ' . ($surat['no_telp_pengirim'] ?: '-'), 0, 1, 'C');
-        $pdf->Ln(2);
-        $pdf->SetDrawColor(0, 0, 0);
-        $pdf->SetLineWidth(0.8);
-        $pdf->Line(20, $pdf->GetY(), 190, $pdf->GetY());
-        $pdf->SetLineWidth(0.2);
-        $pdf->Line(20, $pdf->GetY() + 0.8, 190, $pdf->GetY() + 0.8);
-        $pdf->Ln(5);
-
-        // 2. METADATA
-        $pdf->SetFont('Arial', '', 9.5);
-        $pdf->SetTextColor(0, 0, 0);
-        $pdf->Cell(20, 5, 'Nomor', 0, 0);
-        $pdf->Cell(4, 5, ':', 0, 0);
-        $pdf->SetFont('Arial', 'B', 9.5);
-        $pdf->Cell(80, 5, $surat['nomor_surat'] ?? '-', 0, 0);
-        $pdf->SetFont('Arial', '', 9.5);
-        $tglSurat = !empty($surat['tanggal_surat']) ? date('d F Y', strtotime($surat['tanggal_surat'])) : date('d F Y');
-        $pdf->Cell(0, 5, 'Bandung, ' . $tglSurat, 0, 1, 'R');
-
-        $pdf->Cell(20, 5, 'Lampiran', 0, 0);
-        $pdf->Cell(4, 5, ':', 0, 0);
-        $pdf->Cell(0, 5, '1 (satu) berkas spesifikasi teknis', 0, 1);
-
-        $pdf->Cell(20, 5, 'Hal', 0, 0);
-        $pdf->Cell(4, 5, ':', 0, 0);
-        $pdf->SetFont('Arial', 'B', 9.5);
-        $pdf->MultiCell(0, 5, $surat['perihal'] ?? 'Permohonan Layanan Pengujian dan Kerjasama', 0, 'L');
-        $pdf->Ln(4);
-
-        // 3. TUJUAN
-        $pdf->SetFont('Arial', '', 9.5);
-        $pdf->Cell(0, 4.5, 'Kepada Yth.', 0, 1);
-        $pdf->SetFont('Arial', 'B', 9.5);
-        $pdf->Cell(0, 4.5, 'Kepala Balai Besar Standardisasi dan Pelayanan Jasa Industri Selulosa (BBSPJIS)', 0, 1);
-        $pdf->SetFont('Arial', '', 9.5);
-        $pdf->Cell(0, 4.5, 'Kementerian Perindustrian Republik Indonesia', 0, 1);
-        $pdf->Cell(0, 4.5, 'Jl. Raya Dayeuhkolot No. 132, Bandung, Jawa Barat 40258', 0, 1);
-        $pdf->Ln(4);
-
-        // 4. PEMBUKA
-        $pdf->Cell(0, 5, 'Dengan hormat,', 0, 1);
-        $pdf->MultiCell(0, 5, "Sehubungan dengan rencana pengujian mutu dan optimalisasi proses industri, bersama ini kami mengajukan permohonan kerjasama pelaksanaan Layanan Optimalisasi Teknologi Industri (OPTI) dengan rincian sebagai berikut:", 0, 'J');
-        $pdf->Ln(3);
-
-        // 5. DATA BERSTRUKTUR
-        $pdf->SetFont('Arial', 'B', 9.5);
-        $pdf->Cell(0, 5, '1. Data Pemohon / Instansi:', 0, 1);
-        $pdf->SetFont('Arial', '', 9);
-        $pdf->Cell(8, 4.8, '', 0, 0);
-        $pdf->Cell(38, 4.8, 'a. Nama Perusahaan', 0, 0);
-        $pdf->Cell(4, 4.8, ':', 0, 0);
-        $pdf->SetFont('Arial', 'B', 9);
-        $pdf->Cell(0, 4.8, $namaPerusahaan, 0, 1);
-        $pdf->SetFont('Arial', '', 9);
-        $pdf->Cell(8, 4.8, '', 0, 0);
-        $pdf->Cell(38, 4.8, 'b. Alamat', 0, 0);
-        $pdf->Cell(4, 4.8, ':', 0, 0);
-        $pdf->MultiCell(0, 4.8, $surat['alamat_pengirim'] ?: 'Kawasan Industri Terpadu, Indonesia', 0, 'L');
-        $pdf->Cell(8, 4.8, '', 0, 0);
-        $pdf->Cell(38, 4.8, 'c. Narahubung / PIC', 0, 0);
-        $pdf->Cell(4, 4.8, ':', 0, 0);
-        $pdf->Cell(0, 4.8, $surat['pic_pengirim'] ?: 'Penanggung Jawab Teknis', 0, 1);
-        $pdf->Cell(8, 4.8, '', 0, 0);
-        $pdf->Cell(38, 4.8, 'd. Telepon & Email', 0, 0);
-        $pdf->Cell(4, 4.8, ':', 0, 0);
-        $pdf->Cell(0, 4.8, ($surat['no_telp_pengirim'] ?: '-') . ' / ' . ($surat['email_pengirim'] ?: '-'), 0, 1);
-        $pdf->Ln(2);
-
-        $pdf->SetFont('Arial', 'B', 9.5);
-        $pdf->Cell(0, 5, '2. Rincian Kebutuhan Layanan OPTI:', 0, 1);
-        $pdf->SetFont('Arial', '', 9);
-        $pdf->Cell(8, 4.8, '', 0, 0);
-        $pdf->Cell(38, 4.8, 'a. Perihal Kegiatan', 0, 0);
-        $pdf->Cell(4, 4.8, ':', 0, 0);
-        $pdf->SetFont('Arial', 'B', 9);
-        $pdf->MultiCell(0, 4.8, $surat['perihal'] ?? '-', 0, 'L');
-        $pdf->SetFont('Arial', '', 9);
-        $pdf->Cell(8, 4.8, '', 0, 0);
-        $pdf->Cell(38, 4.8, 'b. Layanan', 0, 0);
-        $pdf->Cell(4, 4.8, ':', 0, 0);
-        $namaLayananLabel = !empty($surat['nama_layanan_label']) ? $surat['nama_layanan_label'] : 'Layanan Optimalisasi Teknologi Industri (OPTI)';
-        $pdf->Cell(0, 4.8, $namaLayananLabel, 0, 1);
-        $pdf->Cell(8, 4.8, '', 0, 0);
-        $pdf->Cell(38, 4.8, 'c. Ruang Lingkup', 0, 0);
-        $pdf->Cell(4, 4.8, ':', 0, 0);
-        $pdf->MultiCell(0, 4.8, 'Kajian Teknis, Karakterisasi Laboratorium & Penerbitan Sertifikat / Laporan Hasil Pengujian Resmi Balai', 0, 'L');
-        $pdf->Ln(3);
-
-        // 6. PENUTUP
-        $pdf->SetFont('Arial', '', 9.5);
-        $pdf->MultiCell(0, 4.8, "Demikian surat permohonan ini kami sampaikan. Kami berharap dapat segera menerima Tinjauan Kelayakan Permintaan serta Surat Penawaran Biaya resmi dari BBSPJIS. Atas perhatian dan kerjasama Bapak/Ibu, kami ucapkan terima kasih.", 0, 'J');
-        $pdf->Ln(5);
-
-        // 7. TTD
-        $pdf->SetX(110);
-        $pdf->Cell(80, 4.5, 'Hormat kami,', 0, 1, 'C');
-        $pdf->SetX(110);
-        $pdf->SetFont('Arial', 'B', 9.5);
-        $pdf->Cell(80, 4.5, $namaPerusahaan, 0, 1, 'C');
-        $pdf->Ln(2);
-        $pdf->SetX(125);
-        $pdf->SetFont('Arial', '', 7.5);
-        $pdf->SetTextColor(90, 90, 90);
-        $pdf->Cell(50, 4, '[ TTD & STEMPEL RESMI ]', 1, 1, 'C');
-        $pdf->SetTextColor(0, 0, 0);
-        $pdf->Ln(8);
-        $pdf->SetX(110);
-        $pdf->SetFont('Arial', 'BU', 9.5);
-        $pdf->Cell(80, 4.5, $surat['pic_pengirim'] ?: 'Pimpinan Perusahaan', 0, 1, 'C');
-        $pdf->SetX(110);
-        $pdf->SetFont('Arial', '', 8.5);
-        $pdf->Cell(80, 4, 'Direktur', 0, 1, 'C');
-
-        $pdfContent = $pdf->Output('S');
-        $base64 = base64_encode($pdfContent);
-
-        $this->jsonResponse([
-            'success'  => true,
-            'is_pdf'   => true,
-            'is_image' => false,
-            'filename' => 'Surat_Masuk_' . preg_replace('/[^A-Za-z0-9_\-]/', '_', $surat['nomor_surat'] ?: $suratId) . '.pdf',
-            'mime'     => 'application/pdf',
-            'base64'   => $base64
-        ]);
+        $nomorSurat = preg_replace('#[^a-zA-Z0-9_-]+#', '_', $rows[0]['nomor_surat'] ?? ('Surat_' . $suratId));
+        $this->sendFileAsBase64($filePath, 'Surat_Masuk_' . $nomorSurat);
     }
 
+    /**
+     * Pratinjau PO Kegiatan
+     */
     protected function handlePoCetak($poId)
     {
-        $poModel = new Po($this->db);
-        $po = $poModel->getById($poId);
-        if (!$po) {
-            $this->jsonResponse(['success' => false, 'message' => 'Data PO Kegiatan tidak ditemukan.']);
+        $f3 = \Base::instance();
+        ob_start();
+        $previousErrorHandler = set_error_handler(function($errno, $errstr) { return true; });
+        try {
+            $controller = new \petunjuk_operasional\PoCetakController();
+            $controller->cetak($f3, ['id' => $poId]);
+            $pdfContent = ob_get_clean();
+        } catch (\Throwable $e) {
+            ob_end_clean();
+            $pdfContent = null;
+        } finally {
+            if ($previousErrorHandler !== null) set_error_handler($previousErrorHandler);
+            else restore_error_handler();
+        }
+
+        if (empty($pdfContent)) {
+            $this->jsonResponse(['success' => false, 'message' => 'Gagal merender lembar PO Kegiatan.']);
             return;
         }
 
-        $f3 = \Base::instance();
-        $orderModel = new OrderLayanan($this->db);
-        $orderData = !empty($po['order_id']) ? $orderModel->getDetail((int)$po['order_id']) : null;
-
-        $f3->set('order', $orderData ?: null);
-        $f3->set('po', $po);
-        $html = \Template::instance()->render('katim_kerja/po-kegiatan/cetak_pdf.html');
-
-        $options = new \Dompdf\Options();
-        $options->set('isRemoteEnabled', false);
-        $options->set('defaultFont', 'Times-Roman');
-        $dompdf = new \Dompdf\Dompdf($options);
-        $dompdf->loadHtml($html);
-        $dompdf->setPaper('A4', 'portrait');
-        $dompdf->render();
-
-        $pdfContent = $dompdf->output();
-        $base64 = base64_encode($pdfContent);
-        $filename = 'PO-' . preg_replace('/[^A-Za-z0-9_-]/', '_', $po['nomor_po'] ?? $poId) . '.pdf';
-
         $this->jsonResponse([
-            'success'  => true,
-            'is_pdf'   => true,
-            'is_image' => false,
-            'filename' => $filename,
-            'mime'     => 'application/pdf',
-            'base64'   => $base64
+            'success'   => true,
+            'is_pdf'    => true,
+            'base64'    => base64_encode($pdfContent),
+            'filename'  => 'PO_Kegiatan_' . $poId . '.pdf',
+            'mime'      => 'application/pdf',
         ]);
     }
 
+    /**
+     * Berkas langsung dari path fisik (misal /uploads/...)
+     */
     protected function handleDirectFile($rawPath)
     {
-        $filePath = $this->resolveFilePath($rawPath, ['uploads', 'storage', 'uploads/bukti_bayar', 'uploads/kesanggupan_bayar', 'uploads/penawaran', 'uploads/bast', 'uploads/proposal']);
+        $filePath = $this->resolveFilePath($rawPath);
         if (!$filePath || !is_file($filePath)) {
-            $this->jsonResponse(['success' => false, 'message' => 'Berkas tidak ditemukan: ' . basename($rawPath)]);
+            $this->jsonResponse(['success' => false, 'message' => 'Berkas dokumen fisik tidak ditemukan di server: ' . basename($rawPath)]);
             return;
         }
 
-        $this->sendFileAsBase64($filePath, pathinfo($filePath, PATHINFO_FILENAME));
+        $this->sendFileAsBase64($filePath);
     }
 
+    /**
+     * Helper resolusi path file relatif / absolut agar aman dan cross-platform
+     */
     protected function resolveFilePath($rawPath, $fallbackDirs = [])
     {
         if (empty($rawPath)) return null;
@@ -679,18 +636,98 @@ class UniversalPreviewController extends Controller
         }
 
         foreach ($candidates as $c) {
-            if (!empty($c) && is_file($c)) {
-                return realpath($c);
+            $norm = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $c);
+            if (is_file($norm)) {
+                return $norm;
             }
         }
 
         return null;
     }
 
-    protected function sendFileAsBase64($filePath, $defaultName = 'Dokumen')
+    /**
+     * Konversi berkas Word (.doc/.docx) menjadi PDF di server secara background menggunakan LibreOffice/soffice.
+     * Hasil PDF disimpan di direktori cache untuk pemanggilan berikutnya yang instan.
+     */
+    protected function convertWordToPdf($filePath)
+    {
+        $appRoot = str_replace('\\', '/', dirname(__DIR__, 2));
+        $cacheDir = $appRoot . '/storage/cache/doc_pdf';
+        if (!is_dir($cacheDir)) {
+            @mkdir($cacheDir, 0777, true);
+        }
+
+        $fileHash = md5($filePath . '|' . @filemtime($filePath) . '|' . @filesize($filePath));
+        $cachedPdf = $cacheDir . '/' . pathinfo($filePath, PATHINFO_FILENAME) . '_' . substr($fileHash, 0, 8) . '.pdf';
+
+        if (is_file($cachedPdf) && filesize($cachedPdf) > 0) {
+            return $cachedPdf;
+        }
+
+        // Cari lokasi binary soffice (LibreOffice)
+        $sofficeCandidates = [
+            'C:\\Program Files\\LibreOffice\\program\\soffice.exe',
+            'C:\\Program Files (x86)\\LibreOffice\\program\\soffice.exe',
+            'soffice',
+            'libreoffice',
+        ];
+
+        $sofficeBin = null;
+        foreach ($sofficeCandidates as $bin) {
+            if (is_file($bin) || @exec("where " . escapeshellarg($bin))) {
+                $sofficeBin = $bin;
+                break;
+            }
+        }
+
+        if (!$sofficeBin) {
+            return null;
+        }
+
+        $cmd = escapeshellarg($sofficeBin) . ' --headless --convert-to pdf --outdir ' . escapeshellarg(str_replace('/', DIRECTORY_SEPARATOR, $cacheDir)) . ' ' . escapeshellarg(str_replace('/', DIRECTORY_SEPARATOR, $filePath));
+
+        @exec($cmd, $output, $returnVar);
+
+        $defaultExpected = $cacheDir . '/' . pathinfo($filePath, PATHINFO_FILENAME) . '.pdf';
+        if (is_file($defaultExpected) && filesize($defaultExpected) > 0) {
+            @rename($defaultExpected, $cachedPdf);
+            return $cachedPdf;
+        }
+
+        return null;
+    }
+
+    /**
+     * Response file dalam bentuk Base64 (PDF atau Gambar)
+     */
+    protected function sendFileAsBase64($filePath, $defaultName = 'Dokumen', $wordUrl = null)
     {
         $filename = basename($filePath);
         $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+
+        // Jika dokumen adalah berkas Word (.docx atau .doc), otomatis konversi di belakang layar menjadi PDF
+        if ($ext === 'docx' || $ext === 'doc') {
+            $convertedPdf = $this->convertWordToPdf($filePath);
+            if ($convertedPdf && is_file($convertedPdf)) {
+                $pdfContent = file_get_contents($convertedPdf);
+                if ($pdfContent !== false) {
+                    $this->jsonResponse([
+                        'success'   => true,
+                        'is_pdf'    => true,
+                        'is_image'  => false,
+                        'filename'  => $filename,
+                        'base64'    => base64_encode($pdfContent),
+                        'mime'      => 'application/pdf',
+                        'ext'       => 'pdf',
+                        'original_ext' => $ext,
+                        'is_converted_word' => true,
+                        'word_url'  => $wordUrl,
+                    ]);
+                    return;
+                }
+            }
+        }
+
         $isPdf = ($ext === 'pdf');
         $isImage = in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'], true);
 
@@ -712,27 +749,26 @@ class UniversalPreviewController extends Controller
         }
 
         $base64 = base64_encode($content);
+        $mime = $mimeMap[$ext] ?? 'application/octet-stream';
 
         $this->jsonResponse([
-            'success'  => true,
-            'is_pdf'   => $isPdf,
-            'is_image' => $isImage,
-            'filename' => $filename ?: ($defaultName . '.' . $ext),
-            'ext'      => $ext,
-            'mime'     => $mimeMap[$ext] ?? 'application/octet-stream',
-            'size'     => filesize($filePath),
-            'base64'   => $base64
+            'success'   => true,
+            'is_pdf'    => $isPdf,
+            'is_image'  => $isImage,
+            'filename'  => $filename ?: ($defaultName . '.' . $ext),
+            'base64'    => $base64,
+            'mime'      => $mime,
+            'ext'       => $ext,
+            'word_url'  => $wordUrl,
         ]);
     }
 
+    /**
+     * Kirim response JSON terstandarisasi
+     */
     protected function jsonResponse($data)
     {
-        if (!headers_sent()) {
-            header('Content-Type: application/json; charset=utf-8');
-            header('Cache-Control: no-cache, no-store, must-revalidate');
-            header('Pragma: no-cache');
-            header('Expires: 0');
-        }
+        header('Content-Type: application/json; charset=UTF-8');
         echo json_encode($data);
         exit;
     }

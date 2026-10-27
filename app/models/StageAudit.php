@@ -82,7 +82,7 @@ class StageAudit {
 
         try {
             $existing = $db->exec(
-                "SELECT id, waktu_kirim FROM opti_stage_audit WHERE order_id = ? AND tahap = ?",
+                "SELECT id, waktu_kirim, waktu_dibaca FROM opti_stage_audit WHERE order_id = ? AND tahap = ?",
                 [1 => $orderId, 2 => $tahap]
             );
 
@@ -90,26 +90,50 @@ class StageAudit {
                 // FIRST TIME ONLY: Jangan overwrite jika sudah ada waktu kirim valid
                 // (Kecuali jika sebelumnya hanya berisi tanggal dummy 00:00:00 dan sekarang tersedia timestamp jam lengkap)
                 $curWaktu = $existing[0]['waktu_kirim'] ?? '';
+                $curDibaca = $existing[0]['waktu_dibaca'] ?? '';
                 $isMidnight = (strpos($curWaktu, '00:00:00') !== false);
                 $newHasTime = (strpos($now, '00:00:00') === false);
 
                 if (empty($curWaktu) || ($isMidnight && $newHasTime)) {
-                    $db->exec(
-                        "UPDATE opti_stage_audit SET waktu_kirim = ?, pengirim_id = ?, pengirim_nama = ?, pengirim_role = ?, keterangan = ? WHERE id = ?",
-                        [
-                            1 => $now,
-                            2 => $userId ?: null,
-                            3 => $userNama,
-                            4 => $userRole,
-                            5 => $keterangan,
-                            6 => (int)$existing[0]['id']
-                        ]
-                    );
+                    // Logika Konsistensi Waktu: Jika user memproses sebelum ada status dibaca,
+                    // atau waktu dibaca lebih baru dari waktu kirim, sinkronkan waktu dibaca = waktu kirim
+                    $shouldSyncDibaca = empty($curDibaca) || (!empty($curDibaca) && strtotime($curDibaca) > strtotime($now));
+                    
+                    if ($shouldSyncDibaca) {
+                        $db->exec(
+                            "UPDATE opti_stage_audit SET waktu_kirim = ?, pengirim_id = ?, pengirim_nama = ?, pengirim_role = ?, keterangan = ?, waktu_dibaca = ?, dibaca_id = ?, dibaca_nama = ?, dibaca_role = ? WHERE id = ?",
+                            [
+                                1 => $now,
+                                2 => $userId ?: null,
+                                3 => $userNama,
+                                4 => $userRole,
+                                5 => $keterangan,
+                                6 => $now,
+                                7 => $userId ?: null,
+                                8 => $userNama,
+                                9 => $userRole,
+                                10 => (int)$existing[0]['id']
+                            ]
+                        );
+                    } else {
+                        $db->exec(
+                            "UPDATE opti_stage_audit SET waktu_kirim = ?, pengirim_id = ?, pengirim_nama = ?, pengirim_role = ?, keterangan = ? WHERE id = ?",
+                            [
+                                1 => $now,
+                                2 => $userId ?: null,
+                                3 => $userNama,
+                                4 => $userRole,
+                                5 => $keterangan,
+                                6 => (int)$existing[0]['id']
+                            ]
+                        );
+                    }
                 }
             } else {
+                // Saat insert kirim baru: Otomatis user yang memproses sudah membaca tahapan ini
                 $db->exec(
-                    "INSERT INTO opti_stage_audit (order_id, tahap, nama_tahap, waktu_kirim, pengirim_id, pengirim_nama, pengirim_role, keterangan, created_at)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    "INSERT INTO opti_stage_audit (order_id, tahap, nama_tahap, waktu_kirim, pengirim_id, pengirim_nama, pengirim_role, keterangan, waktu_dibaca, dibaca_id, dibaca_nama, dibaca_role, created_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     [
                         1 => $orderId,
                         2 => $tahap,
@@ -119,7 +143,11 @@ class StageAudit {
                         6 => $userNama,
                         7 => $userRole,
                         8 => $keterangan,
-                        9 => $now
+                        9 => $now,
+                        10 => $userId ?: null,
+                        11 => $userNama,
+                        12 => $userRole,
+                        13 => $now
                     ]
                 );
             }
@@ -320,14 +348,50 @@ class StageAudit {
 
                 if ($tinjauanLayak && $hasDataTahap4) {
                     $tglKirim4 = !empty($extra['proposal']['diajukan_at']) ? $extra['proposal']['diajukan_at'] : (!empty($extra['proposal']['created_at']) ? $extra['proposal']['created_at'] : (!empty($order['updated_at']) ? $order['updated_at'] : $order['created_at']));
-                    $pengirim4 = !empty($extra['proposal']['pic_nama']) ? $extra['proposal']['pic_nama'] : ($order['pic_proposal_nama'] ?: 'PIC Teknis');
+                    
+                    // Prioritas pengirim: PIC proposal -> user pengisi dari log aktivitas -> pengklaim order -> fallback dinamis
+                    $pengirim4 = !empty($extra['proposal']['pic_nama']) ? $extra['proposal']['pic_nama'] : ($order['pic_proposal_nama'] ?? '');
+                    $pengirimRole4 = 'PIC Teknis';
+                    $pengirimId4   = (int)($extra['proposal']['pic_penyusun_id'] ?? ($order['pic_proposal_id'] ?? 0));
+
+                    if (empty($pengirim4)) {
+                        $logUser = $db->exec(
+                            "SELECT user_id, user_nama, user_role FROM opti_activity_log 
+                             WHERE order_id = ? AND modul IN ('kalkulasi_lingkungan', 'proposal') AND aksi IN ('simpan_kalkulasi', 'ajukan_kalkulasi', 'simpan_proposal', 'ajukan_ke_ketua', 'melihat_tahap_4')
+                             ORDER BY id DESC LIMIT 1",
+                            [1 => $orderId]
+                        );
+                        if (!empty($logUser) && !empty($logUser[0]['user_nama'])) {
+                            $pengirim4 = $logUser[0]['user_nama'];
+                            $pengirimId4 = (int)$logUser[0]['user_id'];
+                            $pengirimRole4 = !empty($logUser[0]['user_role']) ? ucfirst($logUser[0]['user_role']) : 'Petugas';
+                        } elseif (!empty($order['nama_pengklaim'])) {
+                            $pengirim4 = $order['nama_pengklaim'];
+                            $pengirimId4 = (int)($order['diklaim_oleh'] ?? 0);
+                            $pengirimRole4 = 'Tim Mitra';
+                        } else {
+                            $pengirim4 = 'Petugas Layanan';
+                            $pengirimRole4 = 'Petugas';
+                        }
+                    }
+
                     $tglAcc4   = !empty($extra['proposal']['disetujui_ketua_at']) ? $extra['proposal']['disetujui_ketua_at'] : null;
 
-                    if (empty($result[4]['waktu_kirim'])) {
-                        self::recordKirim($db, $orderId, 4, self::getStageNames()[4], (int)($extra['proposal']['pic_penyusun_id'] ?? ($order['pic_proposal_id'] ?? 0)), $pengirim4, 'PIC Teknis', $tglKirim4, 'Proposal / Tarif Disusun');
+                    if (empty($result[4]['waktu_kirim']) || $result[4]['pengirim_nama'] === 'PIC Teknis') {
+                        $existingAudit4 = $db->exec("SELECT id FROM opti_stage_audit WHERE order_id = ? AND tahap = 4", [1 => $orderId]);
+                        if (!empty($existingAudit4)) {
+                            $db->exec("UPDATE opti_stage_audit SET pengirim_id = ?, pengirim_nama = ?, pengirim_role = ? WHERE id = ?", [
+                                1 => $pengirimId4 ?: null,
+                                2 => $pengirim4,
+                                3 => $pengirimRole4,
+                                4 => (int)$existingAudit4[0]['id']
+                            ]);
+                        } else {
+                            self::recordKirim($db, $orderId, 4, self::getStageNames()[4], $pengirimId4, $pengirim4, $pengirimRole4, $tglKirim4, 'Proposal / Tarif Disusun');
+                        }
                         $result[4]['waktu_kirim']   = $tglKirim4;
                         $result[4]['pengirim_nama'] = $pengirim4;
-                        $result[4]['pengirim_role'] = 'PIC Teknis';
+                        $result[4]['pengirim_role'] = $pengirimRole4;
                     }
 
                     if ($tglAcc4 && empty($result[4]['waktu_disetujui'])) {

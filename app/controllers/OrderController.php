@@ -812,11 +812,51 @@ class OrderController extends Controller {
 
         $proposalHasFileAndCost = !empty($proposal) && !empty($proposal['file_proposal']) && (float)($proposal['estimasi_total_biaya'] ?? 0) > 0;
 
+        // Siapkan Master Data & Hak Akses Form Kalkulasi Lingkungan (Tahap 4)
+        $daftarMetode = [];
+        $daftarLabEksternal = [];
+        $canEditLingkungan = false;
+        $lingkunganLockMessage = '';
+        if ($order['jenis_layanan_opti'] === 'lingkungan') {
+            $daftarMetode = $this->db->exec("
+                SELECT m.*, k.nama_kategori,
+                       CASE 
+                           WHEN m.kategori_id IN (5, 6, 7) THEN 1
+                           WHEN m.kategori_id IN (3, 4) THEN 2
+                           ELSE 3
+                       END AS prioritas_layanan
+                FROM metode_uji m 
+                LEFT JOIN kategori_pengujian k ON k.id = m.kategori_id 
+                WHERE m.status = 'aktif' 
+                ORDER BY prioritas_layanan ASC, m.kategori_id ASC, m.id ASC
+            ");
+            $daftarLabEksternal = $this->db->exec("SELECT * FROM pengujian_eksternal WHERE status = 'aktif' ORDER BY nama_lembaga ASC");
+
+            $isPicLingkungan = ((int)$this->getUserId() === (int)($order['pic_proposal_id'] ?? 0));
+            $isSubmittedLingkungan = !empty($kalkulasiLingkungan) && (in_array($order['status_proposal_biaya'] ?? '', ['menunggu_approval', 'disetujui']) || (!empty($order['penawaran_id']) && in_array($order['status'] ?? '', ['penawaran', 'negosiasi', 'po_terbit', 'selesai'])));
+            $canEditRoleLingkungan = ($this->hasPermission('order:kalkulasi_biaya') || $this->isSuperadmin() || $this->isKetuaTim() || $isPicLingkungan || ($this->isTimKerja() && empty($order['pic_proposal_id'])));
+            $canEditLingkungan = $canEditRoleLingkungan && $this->canEditSubmittedData($isSubmittedLingkungan);
+
+            if ($this->isTimMitra() && !$this->isSuperadmin()) {
+                $canEditLingkungan = false;
+                $lingkunganLockMessage = "Mode Pratinjau (Read-Only): Tim Mitra hanya dapat memantau rincian tarif dan parameter pengujian yang disusun oleh PIC / Ketua Tim.";
+            } elseif ($isSubmittedLingkungan && !$this->canEditSubmittedData(true)) {
+                $lingkunganLockMessage = "Rincian tarif dan parameter telah diajukan atau disetujui. Pengeditan dikunci, silakan hubungi superadmin.";
+            } elseif (!$canEditRoleLingkungan) {
+                $lingkunganLockMessage = "Anda tidak memiliki hak akses untuk mengubah kalkulasi tarif pengujian ini.";
+            }
+        }
+
         $f3->set('order', $order);
         $f3->set('surat_masuk', $suratMasuk);
         $f3->set('tinjauan', $tinjauan);
         $f3->set('proposal', $proposal);
         $f3->set('kalkulasi_lingkungan', $kalkulasiLingkungan);
+        $f3->set('kalkulasi_items', $kalkulasiLingkungan);
+        $f3->set('daftar_metode', $daftarMetode);
+        $f3->set('daftar_lab_eksternal', $daftarLabEksternal);
+        $f3->set('can_edit_lingkungan', $canEditLingkungan);
+        $f3->set('lingkungan_lock_message', $lingkunganLockMessage);
         $f3->set('penawaran', $penawaran);
         $f3->set('sp', $penawaran);
         $f3->set('can_edit_pelayanan', ($this->hasPermission('order:form_pelayanan') || $this->isSuperadmin() || $this->isTimMitra()));
@@ -860,6 +900,18 @@ class OrderController extends Controller {
         $f3->set('invoices', $invoices);
         $f3->set('riwayat_bayar', $riwayatBayar);
         $f3->set('rekap_keuangan', $rekapKeuangan);
+
+        // Hitung rincian keuangan untuk Tahap 6 Pembayaran
+        $biayaAcuan = !empty($penawaran['nominal_penawaran']) ? (float)$penawaran['nominal_penawaran'] : (float)($order['estimasi_biaya'] ?? 0);
+        $totalTerbayar = (float)($rekapKeuangan['total_terbayar'] ?? 0);
+        $order['biaya_acuan'] = $biayaAcuan;
+        $order['terbayar'] = $totalTerbayar;
+        $order['sisa_tagihan'] = max(0, $biayaAcuan - $totalTerbayar);
+        $order['termin_berikutnya'] = count($riwayatBayar) + 1;
+        $order['surat_kesanggupan_bayar'] = !empty($penawaran['surat_kesanggupan_bayar']) ? $penawaran['surat_kesanggupan_bayar'] : ($order['surat_kesanggupan_bayar'] ?? null);
+        $order['sp_id'] = $penawaran['id'] ?? null;
+        $order['sudah_ada_pembayaran'] = !empty($riwayatBayar);
+        $f3->set('order', $order);
         $f3->set('po_detail', $poDetail);
         $f3->set('kontrak_pks', $kontrakPks);
         $f3->set('jadwal_kerja', $jadwalKerja);
@@ -977,6 +1029,27 @@ class OrderController extends Controller {
         }
 
         $pembuatNama = $_SESSION['user']['nama'] ?? ($_SESSION['nama_lengkap'] ?? ($spExisting['pembuat_nama'] ?? 'Tim Mitra BBSPJIS'));
+
+        // Media permintaan masuk tersinkronisasi dari Formulir Pelayanan Tahap 2
+        $mediaRaw = !empty($spExisting['permintaan_melalui']) 
+            ? $spExisting['permintaan_melalui'] 
+            : (!empty($order['permintaan_melalui']) 
+                ? $order['permintaan_melalui'] 
+                : (!empty($order['id_surat_masuk']) ? 'surat' : 'email'));
+
+        $mediaLabels = [
+            'fax'             => 'Fax',
+            'surat'           => 'Surat Resmi',
+            'email'           => 'E-mail Resmi',
+            'telepon'         => 'Telepon',
+            'whatsapp'        => 'WhatsApp',
+            'website'         => 'Website',
+            'datang_langsung' => 'Datang Langsung',
+        ];
+        $mediaPermintaanVal = strtolower(trim((string)$mediaRaw));
+        $mediaPermintaanLabel = $mediaLabels[$mediaPermintaanVal] ?? (ucfirst(str_replace('_', ' ', $mediaPermintaanVal)));
+        $f3->set('media_permintaan_val', $mediaPermintaanVal);
+        $f3->set('media_permintaan_label', $mediaPermintaanLabel);
 
         $f3->set('all_sp', $riwayatPenawaran);
         $f3->set('sp_existing', $spExisting);
@@ -1191,7 +1264,7 @@ class OrderController extends Controller {
                     $langkahBerikutnya['role_icon'] = 'bi-calculator-fill';
                     $langkahBerikutnya['tipe_badge'] = 'primary';
                     $langkahBerikutnya['tombol_teks'] = 'Kelola Parameter & Tarif';
-                    $langkahBerikutnya['tombol_url'] = $f3->get('BASE') . "/order/{$id}/biaya-lingkungan";
+                    $langkahBerikutnya['tombol_url'] = '#cardParameterBiaya';
                     $langkahBerikutnya['tombol_icon'] = 'bi-calculator-fill';
                     $langkahBerikutnya['tombol_class'] = 'btn-primary';
                     $langkahBerikutnya['target_card'] = '#cardParameterBiaya';
@@ -2132,7 +2205,7 @@ class OrderController extends Controller {
         $hasRoleAccess = ($this->hasPermission('order:kalkulasi_biaya') || $this->isSuperadmin() || $this->isKetuaTim() || $isPic || ($this->isTimKerja() && empty($order['pic_proposal_id'])));
         if (!$hasRoleAccess) {
             $this->setFlashError("Akses Ditolak: Perhitungan rincian pengujian merupakan wewenang Ketua Tim / Tim Pelaksana.");
-            $f3->reroute("/order/{$id}/biaya-lingkungan");
+            $f3->reroute("/order/{$id}");
             return;
         }
 
@@ -2140,7 +2213,7 @@ class OrderController extends Controller {
         $isSubmitted = !empty($existingKalkulasi) && (in_array($order['status_proposal_biaya'] ?? '', ['menunggu_approval', 'disetujui']) || (!empty($order['penawaran_id']) && in_array($order['status'] ?? '', ['penawaran', 'negosiasi', 'po_terbit', 'selesai'])));
         if ($isSubmitted && !$this->canEditSubmittedData(true)) {
             $this->setFlashError("Gagal: Fitur edit data dikunci. Perubahan pada data yang sudah diajukan/disetujui tidak diperbolehkan.");
-            $f3->reroute("/order/{$id}/biaya-lingkungan");
+            $f3->reroute("/order/{$id}");
             return;
         }
 
@@ -2187,15 +2260,27 @@ class OrderController extends Controller {
 
         try {
             $orderModel = new OrderLayanan($this->db);
-            $hasil = $orderModel->simpanKalkulasiLingkungan($id, $items, $diskon, $tglSampel, $userId, $spmLayanan, $spmDurasiNilai, $spmDurasiSatuan, $spmTriggerTipe);
-            $order = $orderModel->getDetail($id);
+            $orderBefore = $orderModel->getDetail($id);
 
-            $actionBtn = $post['action_btn'] ?? 'siap_penawaran';
-            $isAlreadyApproved = in_array($order['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui']);
+            $actionBtn = $post['action_btn'] ?? 'save_draft';
+            $isAlreadyApproved = in_array($orderBefore['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui']);
             $isDraft = in_array($actionBtn, ['save_draft', 'draft']) && !$isAlreadyApproved;
 
+            $statusToSave = 'siap_penawaran';
             if ($isDraft) {
-                $this->db->exec("UPDATE order_layanan SET status_proposal_biaya = 'draft_disimpan' WHERE id = ?", array(1 => $id));
+                $statusToSave = 'draft_disimpan';
+            } elseif ($actionBtn === 'kirim_katim') {
+                $statusToSave = 'menunggu_approval';
+            }
+
+            $hasil = $orderModel->simpanKalkulasiLingkungan(
+                $id, $items, $diskon, $tglSampel, $userId,
+                $spmLayanan, $spmDurasiNilai, $spmDurasiSatuan, $spmTriggerTipe,
+                $statusToSave
+            );
+            $order = $orderModel->getDetail($id);
+
+            if ($isDraft) {
                 $this->logActivity($id, 'kalkulasi_lingkungan', 'simpan_draft_kalkulasi', 'Menyimpan draf parameter dan tarif pengujian laboratorium lingkungan (Total: Rp ' . number_format($hasil['total_netto'], 0, ',', '.') . ')');
                 $this->setFlashSuccess(
                     "Draf kalkulasi parameter dan tarif pengujian berhasil disimpan (Status: <strong>Draft Disimpan</strong>, Total: Rp " . number_format($hasil['total_netto'], 0, ',', '.') . "). Anda dapat melanjutkannya kembali nanti."
@@ -2284,7 +2369,7 @@ class OrderController extends Controller {
             $f3->reroute("/order/{$id}");
         } catch (\Exception $e) {
             $this->setFlashError('Gagal menyimpan kalkulasi pengujian: ' . $e->getMessage());
-            $f3->reroute("/order/{$id}/biaya-lingkungan");
+            $f3->reroute("/order/{$id}");
         }
     }
 
@@ -2870,16 +2955,22 @@ class OrderController extends Controller {
             try {
                 $spModel = new \DB\SQL\Mapper($this->db, 'tb_surat_penawaran');
                 $spModel->load(['order_id = ?', $id]);
-                if (!$spModel->dry()) {
-                    if (!empty($nama)) $spModel->nama = $nama;
-                    if (!empty($perusahaan)) $spModel->perusahaan = $perusahaan;
-                    if (!empty($alamat)) $spModel->alamat = $alamat;
-                    $spModel->penjelasan = !empty($penjelasan) ? trim($penjelasan) : null;
-                    $spModel->permintaan_melalui = $permintaanMelalui;
-                    $spModel->pegawai_id = $pegawaiId;
-                    $spModel->jenis_layanan = $jenisLayanan;
-                    $spModel->save();
+                if ($spModel->dry()) {
+                    $spModel->order_id = $id;
+                    $spModel->customer_id = (int)($order->id_customer ?? 0);
+                    $spModel->status = 'draft';
+                    $spModel->status_respon_klien = 'draft';
+                    $spModel->tanggal_surat = date('Y-m-d');
+                    $spModel->created_at = date('Y-m-d H:i:s');
                 }
+                if (!empty($nama)) $spModel->nama = $nama;
+                if (!empty($perusahaan)) $spModel->perusahaan = $perusahaan;
+                if (!empty($alamat)) $spModel->alamat = $alamat;
+                $spModel->penjelasan = !empty($penjelasan) ? trim($penjelasan) : null;
+                $spModel->permintaan_melalui = $permintaanMelalui;
+                $spModel->pegawai_id = $pegawaiId;
+                $spModel->jenis_layanan = $jenisLayanan;
+                $spModel->save();
             } catch (\Exception $eSp) {}
 
             if ($actionBtn === 'kirim_katim') {
@@ -4434,9 +4525,50 @@ class OrderController extends Controller {
 
         $tanggalBayar = !empty($post['tanggal_bayar']) ? $post['tanggal_bayar'] : date('Y-m-d');
         $keterangan   = trim($post['keterangan'] ?? 'Pembayaran lunas via tagihan balai');
-        $jumlah       = (float)($post['jumlah'] ?? ($order['estimasi_biaya'] ?: 0));
+        $rawJumlah    = str_replace(['.', ',', ' '], '', (string)($post['jumlah'] ?? ''));
+        $jumlah       = is_numeric($rawJumlah) ? (float)$rawJumlah : (float)($order['estimasi_biaya'] ?: 0);
+        $terminKe     = !empty($post['termin_ke']) ? (int)$post['termin_ke'] : 1;
+        $isKesanggupanBayar = !empty($post['is_kesanggupan_bayar']) && $post['is_kesanggupan_bayar'] == '1';
 
-        // Upload bukti bayar
+        // 1. Jalur Surat Kesanggupan Bayar (Skip pembayaran sekarang)
+        if ($isKesanggupanBayar) {
+            try {
+                $pembayaran = new OptiPembayaran($this->db);
+                $pembayaran->order_id = $id;
+                $pembayaran->termin_ke = 0;
+                $pembayaran->tanggal_bayar = date('Y-m-d');
+                $pembayaran->jumlah = 0;
+                $pembayaran->metode_pembayaran = null;
+                $pembayaran->nomor_transaksi_ntpn = null;
+                $pembayaran->keterangan = $keterangan ?: 'Dicatat via Surat Kesanggupan Bayar.';
+                $pembayaran->bukti_bayar = null;
+                $pembayaran->status_verifikasi = 'terverifikasi';
+                $pembayaran->is_kesanggupan_bayar = 1;
+                $pembayaran->verifikator_id = $userId;
+                $pembayaran->created_at = date('Y-m-d H:i:s');
+                $pembayaran->save();
+
+                $orderModel->terbitkanNomorOrder($id);
+
+                if (!empty($post['disposisi_langsung'])) {
+                    $this->db->exec(
+                        "UPDATE order_layanan SET disposisi_katim_at = NOW(), disposisi_katim_oleh = ? WHERE id = ?",
+                        [1 => $userId, 2 => $id]
+                    );
+                    $this->setFlashSuccess('Order dicatat via Surat Kesanggupan Bayar &amp; sudah didisposisikan ke Ketua Tim.');
+                } else {
+                    $this->setFlashSuccess('Order dicatat via Surat Kesanggupan Bayar. Order masuk ke tahap berjalan.');
+                }
+
+                $this->logActivity($id, 'pembayaran', 'verifikasi_pembayaran', "Pencatatan Surat Kesanggupan Bayar (Berjalan)");
+            } catch (\Exception $e) {
+                $this->setFlashError('Gagal mencatat kesanggupan bayar: ' . $e->getMessage());
+            }
+            $f3->reroute("/order/{$id}");
+            return;
+        }
+
+        // 2. Jalur Pembayaran Normal (Upload Bukti Bayar)
         $buktiBayarPath = null;
         if (!empty($_FILES['bukti_bayar']['name']) && $_FILES['bukti_bayar']['error'] === UPLOAD_ERR_OK) {
             $uploadDir = 'uploads/bukti_bayar/';
@@ -4467,7 +4599,7 @@ class OrderController extends Controller {
             $payModel = new OptiPembayaran($this->db);
             $existing = $payModel->getByOrderId($id);
 
-            if (!empty($existing) && !empty($buktiBayarPath)) {
+            if (!empty($existing) && !empty($buktiBayarPath) && !empty($post['is_edit'])) {
                 // Update pembayaran yang sudah ada jika upload ulang
                 $payId = (int)$existing[0]['id'];
                 $this->db->exec(
@@ -4479,7 +4611,7 @@ class OrderController extends Controller {
                 $payModel->tambahPembayaran([
                     'order_id'             => $id,
                     'po_id'                => !empty($order['po_id']) ? (int)$order['po_id'] : null,
-                    'termin_ke'            => 1,
+                    'termin_ke'            => $terminKe,
                     'tanggal_bayar'        => $tanggalBayar,
                     'jumlah'               => $jumlah > 0 ? $jumlah : 1,
                     'metode_pembayaran'    => 'transfer_bank',
@@ -4491,19 +4623,29 @@ class OrderController extends Controller {
                 ]);
             }
 
+            $orderModel->terbitkanNomorOrder($id);
+            $statusBaru = $payModel->recalcStatusKeuangan($id);
+
             // Pastikan status_keuangan di order_layanan menjadi 'lunas' dan inisialisasi deadline SPM jika belum ada
             if (empty($order['tanggal_deadline_spm'])) {
                 $durNilai = !empty($order['durasi_total_nilai']) ? (int)$order['durasi_total_nilai'] : (!empty($order['spm_durasi_nilai']) ? (int)$order['spm_durasi_nilai'] : (!empty($order['durasi_hari_kerja']) ? (int)$order['durasi_hari_kerja'] : 30));
                 $durSatuan = !empty($order['durasi_satuan_efektif']) ? $order['durasi_satuan_efektif'] : (!empty($order['spm_durasi_satuan']) ? $order['spm_durasi_satuan'] : 'Hari Kerja');
                 $calcBayar = $orderModel->hitungDeadlineFleksibel($tanggalBayar, $durNilai, $durSatuan);
                 $this->db->exec(
-                    "UPDATE order_layanan SET status_keuangan = 'lunas', tanggal_deadline_spm = ? WHERE id = ?",
-                    array(1 => $calcBayar['tanggal_deadline_spm'], 2 => $id)
+                    "UPDATE order_layanan SET status_keuangan = ?, tanggal_deadline_spm = ? WHERE id = ?",
+                    array(1 => $statusBaru, 2 => $calcBayar['tanggal_deadline_spm'], 3 => $id)
                 );
             } else {
                 $this->db->exec(
-                    "UPDATE order_layanan SET status_keuangan = 'lunas' WHERE id = ?",
-                    array(1 => $id)
+                    "UPDATE order_layanan SET status_keuangan = ? WHERE id = ?",
+                    array(1 => $statusBaru, 2 => $id)
+                );
+            }
+
+            if (!empty($post['disposisi_langsung'])) {
+                $this->db->exec(
+                    "UPDATE order_layanan SET disposisi_katim_at = NOW(), disposisi_katim_oleh = ? WHERE id = ?",
+                    [1 => $userId, 2 => $id]
                 );
             }
 

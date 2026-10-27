@@ -564,7 +564,7 @@
                                             <check if="{{ @is_ketua_selulosa }}">
                                                 <button type="button" id="btnSimpanApproveStandalone" class="btn btn-primary btn-sm px-4 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5" onclick="confirmSimpanDanApproveStandalone()" {{ empty(@proposal.file_proposal) || ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) ? 'disabled' : '' }}>
                                                     <i class="bi bi-check2-circle"></i>
-                                                    <span>Simpan &amp; Setujui</span>
+                                                    <span>Setujui &amp; Kirim</span>
                                                 </button>
                                             </check>
                                         </false>
@@ -1626,11 +1626,11 @@ function confirmSimpanDanApproveStandalone() {
 
     if (typeof Swal !== 'undefined') {
         Swal.fire({
-            title: 'Simpan & Setujui Proposal?',
+            title: 'Setujui & Kirim Proposal?',
             text: 'Perubahan dokumen proposal teknis dan biaya akan disimpan serta langsung disetujui untuk membuka tahap penawaran.',
             icon: 'question',
             showCancelButton: true,
-            confirmButtonText: '<i class="bi bi-check2-circle me-1.5"></i> Ya, Simpan & Setujui',
+            confirmButtonText: '<i class="bi bi-check2-circle me-1.5"></i> Ya, Setujui & Kirim',
             cancelButtonText: 'Batal',
             reverseButtons: true
         }).then(function(result) {
