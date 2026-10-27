@@ -463,27 +463,27 @@
                             </label>
                             <div class="row g-2">
                                 <div class="col-4">
-                                    <input type="radio" class="btn-check" name="media_permohonan" id="media_surat_{{ @surat.id }}" value="surat" checked autocomplete="off">
-                                    <label class="btn btn-outline-light text-dark border p-2.5 w-100 h-100 d-flex flex-column align-items-center justify-content-center text-center rounded-2 media-option-tile" for="media_surat_{{ @surat.id }}">
-                                        <i class="bi bi-envelope-paper-fill fs-5 text-secondary mb-1"></i>
-                                        <span class="small fw-bold d-block text-truncate w-100">Surat Resmi</span>
-                                        <span class="text-muted" style="font-size: 0.68rem;">Fisik / Pos</span>
+                                    <input type="radio" class="btn-check channel-radio-input" name="media_permohonan" id="media_surat_{{ @surat.id }}" value="surat" checked autocomplete="off">
+                                    <label class="channel-select-card" for="media_surat_{{ @surat.id }}">
+                                        <span class="custom-radio-dot"></span>
+                                        <i class="bi bi-envelope-paper"></i>
+                                        <span class="channel-name">Surat Resmi</span>
                                     </label>
                                 </div>
                                 <div class="col-4">
-                                    <input type="radio" class="btn-check" name="media_permohonan" id="media_email_{{ @surat.id }}" value="email" autocomplete="off">
-                                    <label class="btn btn-outline-light text-dark border p-2.5 w-100 h-100 d-flex flex-column align-items-center justify-content-center text-center rounded-2 media-option-tile" for="media_email_{{ @surat.id }}">
-                                        <i class="bi bi-envelope-at-fill fs-5 text-primary mb-1"></i>
-                                        <span class="small fw-bold d-block text-truncate w-100">E-mail</span>
-                                        <span class="text-muted" style="font-size: 0.68rem;">Lampiran PDF</span>
+                                    <input type="radio" class="btn-check channel-radio-input" name="media_permohonan" id="media_email_{{ @surat.id }}" value="email" autocomplete="off">
+                                    <label class="channel-select-card" for="media_email_{{ @surat.id }}">
+                                        <span class="custom-radio-dot"></span>
+                                        <i class="bi bi-envelope"></i>
+                                        <span class="channel-name">E-mail</span>
                                     </label>
                                 </div>
                                 <div class="col-4">
-                                    <input type="radio" class="btn-check" name="media_permohonan" id="media_fax_{{ @surat.id }}" value="fax" autocomplete="off">
-                                    <label class="btn btn-outline-light text-dark border p-2.5 w-100 h-100 d-flex flex-column align-items-center justify-content-center text-center rounded-2 media-option-tile" for="media_fax_{{ @surat.id }}">
-                                        <i class="bi bi-printer-fill fs-5 text-info mb-1"></i>
-                                        <span class="small fw-bold d-block text-truncate w-100">Fax</span>
-                                        <span class="text-muted" style="font-size: 0.68rem;">Facsimile</span>
+                                    <input type="radio" class="btn-check channel-radio-input" name="media_permohonan" id="media_fax_{{ @surat.id }}" value="fax" autocomplete="off">
+                                    <label class="channel-select-card" for="media_fax_{{ @surat.id }}">
+                                        <span class="custom-radio-dot"></span>
+                                        <i class="bi bi-printer"></i>
+                                        <span class="channel-name">Fax</span>
                                     </label>
                                 </div>
                             </div>
@@ -898,21 +898,78 @@
     color: #dc2626 !important;
 }
 
-/* Styling Pilihan Saluran Penerimaan Surat di Modal Klaim */
-.media-option-tile {
+/* Styling Pilihan Saluran Penerimaan Surat di Modal Klaim (Clean & In-Theme) */
+.channel-select-card {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.55rem 0.75rem;
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.375rem;
     cursor: pointer;
+    transition: all 0.15s ease-in-out;
+    margin-bottom: 0;
+    user-select: none;
+    width: 100%;
+}
+.channel-select-card:hover {
     background-color: #f8fafc;
-    border-color: #e2e8f0 !important;
-    transition: all 0.2s ease-in-out;
+    border-color: #cbd5e1;
 }
-.media-option-tile:hover {
-    background-color: #f1f5f9;
-    border-color: #cbd5e1 !important;
+.custom-radio-dot {
+    width: 15px;
+    height: 15px;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background-color: #ffffff;
+    transition: all 0.15s ease-in-out;
 }
-.btn-check:checked + .media-option-tile {
-    background-color: #eff6ff !important;
-    border-color: #3b82f6 !important;
-    color: #1d4ed8 !important;
-    box-shadow: 0 0 0 1px #3b82f6, 0 2px 4px rgba(59, 130, 246, 0.12) !important;
+.custom-radio-dot::after {
+    content: "";
+    width: 7px;
+    height: 7px;
+    background-color: transparent;
+    border-radius: 50%;
+    transition: background-color 0.15s ease-in-out;
+}
+.channel-select-card i {
+    font-size: 0.95rem;
+    color: #64748b;
+    transition: color 0.15s ease;
+    flex-shrink: 0;
+}
+.channel-select-card .channel-name {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: #334155;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+/* State Checked */
+.channel-radio-input:checked + .channel-select-card {
+    background-color: #f0f7ff;
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 1px #0d6efd;
+}
+.channel-radio-input:checked + .channel-select-card .custom-radio-dot {
+    border-color: #0d6efd;
+    background-color: #ffffff;
+}
+.channel-radio-input:checked + .channel-select-card .custom-radio-dot::after {
+    background-color: #0d6efd;
+}
+.channel-radio-input:checked + .channel-select-card i {
+    color: #0d6efd;
+}
+.channel-radio-input:checked + .channel-select-card .channel-name {
+    color: #0d6efd;
+    font-weight: 600;
 }
 </style>
