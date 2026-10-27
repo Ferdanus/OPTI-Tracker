@@ -502,12 +502,22 @@ tr.row-user-task > td:first-child {
                                                 <div class="d-flex align-items-center flex-wrap gap-1 mb-1">
                                                     <check if="{{ @ord.media_permohonan == 'whatsapp' }}">
                                                         <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: WhatsApp">
-                                                            <i class="bi bi-chat-dots me-1 text-primary"></i>WhatsApp
+                                                            <i class="bi bi-chat-dots me-1 text-success"></i>WhatsApp
                                                         </span>
                                                     </check>
                                                     <check if="{{ @ord.media_permohonan == 'telepon' }}">
                                                         <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: Telepon">
                                                             <i class="bi bi-telephone me-1 text-primary"></i>Telepon
+                                                        </span>
+                                                    </check>
+                                                    <check if="{{ @ord.media_permohonan == 'email' }}">
+                                                        <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: E-mail Resmi">
+                                                            <i class="bi bi-envelope-at me-1 text-primary"></i>E-mail
+                                                        </span>
+                                                    </check>
+                                                    <check if="{{ @ord.media_permohonan == 'fax' }}">
+                                                        <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: Fax">
+                                                            <i class="bi bi-printer me-1 text-info"></i>Fax
                                                         </span>
                                                     </check>
                                                     <check if="{{ @ord.media_permohonan == 'datang_langsung' }}">
@@ -520,7 +530,7 @@ tr.row-user-task > td:first-child {
                                                             <i class="bi bi-laptop me-1 text-primary"></i>Website
                                                         </span>
                                                     </check>
-                                                    <check if="{{ empty(@ord.media_permohonan) || @ord.media_permohonan == 'surat' }}">
+                                                    <check if="{{ empty(@ord.media_permohonan) || @ord.media_permohonan == 'surat' || @ord.media_permohonan == 'surat_resmi' }}">
                                                         <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: Surat Resmi">
                                                             <i class="bi bi-envelope-paper me-1 text-secondary"></i>Surat
                                                         </span>
@@ -677,12 +687,22 @@ tr.row-user-task > td:first-child {
                                                 <div class="d-flex align-items-center flex-wrap gap-1 mb-1">
                                                     <check if="{{ @ord.media_permohonan == 'whatsapp' }}">
                                                         <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: WhatsApp">
-                                                            <i class="bi bi-chat-dots me-1 text-primary"></i>WhatsApp
+                                                            <i class="bi bi-chat-dots me-1 text-success"></i>WhatsApp
                                                         </span>
                                                     </check>
                                                     <check if="{{ @ord.media_permohonan == 'telepon' }}">
                                                         <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: Telepon">
                                                             <i class="bi bi-telephone me-1 text-primary"></i>Telepon
+                                                        </span>
+                                                    </check>
+                                                    <check if="{{ @ord.media_permohonan == 'email' }}">
+                                                        <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: E-mail Resmi">
+                                                            <i class="bi bi-envelope-at me-1 text-primary"></i>E-mail
+                                                        </span>
+                                                    </check>
+                                                    <check if="{{ @ord.media_permohonan == 'fax' }}">
+                                                        <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: Fax">
+                                                            <i class="bi bi-printer me-1 text-info"></i>Fax
                                                         </span>
                                                     </check>
                                                     <check if="{{ @ord.media_permohonan == 'datang_langsung' }}">
@@ -695,7 +715,7 @@ tr.row-user-task > td:first-child {
                                                             <i class="bi bi-laptop me-1 text-primary"></i>Website
                                                         </span>
                                                     </check>
-                                                    <check if="{{ empty(@ord.media_permohonan) || @ord.media_permohonan == 'surat' }}">
+                                                    <check if="{{ empty(@ord.media_permohonan) || @ord.media_permohonan == 'surat' || @ord.media_permohonan == 'surat_resmi' }}">
                                                         <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: Surat Resmi">
                                                             <i class="bi bi-envelope-paper me-1 text-secondary"></i>Surat
                                                         </span>

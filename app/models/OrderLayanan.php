@@ -601,6 +601,15 @@ class OrderLayanan extends \DB\SQL\Mapper {
                 }
             }
 
+            // Saluran permohonan konsisten: utamakan pilihan Tim Mitra di Tahap 2 (sp.permintaan_melalui), fallback ke input awal (media_permohonan)
+            if (!empty($r['permintaan_melalui'])) {
+                $r['media_permohonan'] = strtolower(trim((string)$r['permintaan_melalui']));
+            } elseif (empty($r['media_permohonan'])) {
+                $r['media_permohonan'] = !empty($r['id_surat_masuk']) ? 'surat' : 'surat';
+            } else {
+                $r['media_permohonan'] = strtolower(trim((string)$r['media_permohonan']));
+            }
+
             $r['nmcustomer_murni'] = Customer::cleanNamaPerusahaan($r['nmcustomer'] ?? ($r['nama_perusahaan'] ?? ''), $r['pt_cv'] ?? '');
             $r['nama_perusahaan'] = Customer::formatNamaPerusahaan($r['pt_cv'] ?? '', $r['nama_perusahaan'] ?? '');
             $st = self::resolveStageStatus($r);
@@ -1175,7 +1184,18 @@ class OrderLayanan extends \DB\SQL\Mapper {
             [$id]
         );
 
-        return $result[0] ?? null;
+        if (!empty($result) && !empty($result[0])) {
+            if (!empty($result[0]['permintaan_melalui'])) {
+                $result[0]['media_permohonan'] = strtolower(trim((string)$result[0]['permintaan_melalui']));
+            } elseif (empty($result[0]['media_permohonan'])) {
+                $result[0]['media_permohonan'] = !empty($result[0]['id_surat_masuk']) ? 'surat' : 'surat';
+            } else {
+                $result[0]['media_permohonan'] = strtolower(trim((string)$result[0]['media_permohonan']));
+            }
+            return $result[0];
+        }
+
+        return null;
     }
 
     /**

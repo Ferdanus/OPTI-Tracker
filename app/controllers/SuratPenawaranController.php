@@ -499,6 +499,7 @@ $daftarPegawai = $arsipUser->find(
                 if (!empty($sp->alamat)) $order->alamat = $sp->alamat;
                 if (!empty($sp->perusahaan)) $order->nama_perusahaan = $sp->perusahaan;
                 if (!empty($sp->penjelasan)) $order->deskripsi = $sp->penjelasan;
+                if (!empty($sp->permintaan_melalui)) $order->media_permohonan = $sp->permintaan_melalui;
                 if ($action === 'kirim') {
                     $order->status = 'baru';
                     $order->status_tinjauan = 'belum_ditinjau';

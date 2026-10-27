@@ -2243,7 +2243,15 @@
                                     <div class="p-3 bg-light rounded border h-100">
                                         <div class="d-flex justify-content-between align-items-center mb-2">
                                             <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
-                                                <i class="bi bi-envelope-paper-fill me-1"></i> Asal Surat Permohonan
+                                                <check if="{{ @order.media_permohonan == 'fax' || @sp.permintaan_melalui == 'fax' }}">
+                                                    <i class="bi bi-printer me-1"></i> Asal Permohonan: Fax
+                                                </check>
+                                                <check if="{{ @order.media_permohonan == 'email' || @sp.permintaan_melalui == 'email' }}">
+                                                    <i class="bi bi-envelope-at me-1"></i> Asal Permohonan: E-mail
+                                                </check>
+                                                <check if="{{ @order.media_permohonan != 'fax' && @sp.permintaan_melalui != 'fax' && @order.media_permohonan != 'email' && @sp.permintaan_melalui != 'email' }}">
+                                                    <i class="bi bi-envelope-paper-fill me-1"></i> Asal Surat Permohonan
+                                                </check>
                                             </span>
                                             <small class="text-muted"><i class="bi bi-calendar3 me-1"></i>{{ date('d M Y', strtotime(@surat_masuk.tanggal_surat)) }}</small>
                                         </div>
@@ -2307,12 +2315,22 @@
                                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                                     <check if="{{ @order.media_permohonan == 'whatsapp' }}">
                                                         <span class="badge bg-light text-secondary border">
-                                                            <i class="bi bi-chat-dots me-1 text-primary"></i> Permohonan via WhatsApp
+                                                            <i class="bi bi-chat-dots me-1 text-success"></i> Permohonan via WhatsApp
                                                         </span>
                                                     </check>
                                                     <check if="{{ @order.media_permohonan == 'telepon' }}">
                                                         <span class="badge bg-light text-secondary border">
                                                             <i class="bi bi-telephone me-1 text-primary"></i> Permohonan via Telepon
+                                                        </span>
+                                                    </check>
+                                                    <check if="{{ @order.media_permohonan == 'email' }}">
+                                                        <span class="badge bg-light text-secondary border">
+                                                            <i class="bi bi-envelope-at me-1 text-primary"></i> Permohonan via E-mail
+                                                        </span>
+                                                    </check>
+                                                    <check if="{{ @order.media_permohonan == 'fax' }}">
+                                                        <span class="badge bg-light text-secondary border">
+                                                            <i class="bi bi-printer me-1 text-info"></i> Permohonan via Fax
                                                         </span>
                                                     </check>
                                                     <check if="{{ @order.media_permohonan == 'datang_langsung' }}">
@@ -2325,9 +2343,9 @@
                                                             <i class="bi bi-laptop me-1 text-primary"></i> Permohonan via Website
                                                         </span>
                                                     </check>
-                                                    <check if="{{ empty(@order.media_permohonan) || @order.media_permohonan == 'surat' }}">
+                                                    <check if="{{ empty(@order.media_permohonan) || @order.media_permohonan == 'surat' || @order.media_permohonan == 'surat_resmi' }}">
                                                         <span class="badge bg-secondary-subtle text-secondary border">
-                                                            <i class="bi bi-inbox me-1"></i> Permohonan Langsung
+                                                            <i class="bi bi-envelope-paper me-1"></i> Surat Resmi
                                                         </span>
                                                     </check>
                                                     <small class="text-muted"><i class="bi bi-calendar3 me-1"></i>{{ date('d M Y', strtotime(@order.tanggal_masuk ?: @order.created_at)) }}</small>

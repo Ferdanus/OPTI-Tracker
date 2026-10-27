@@ -2790,7 +2790,7 @@ class OrderController extends Controller {
             $sp->perihal             = 'Permintaan Pelayanan Jasa OPTI - ' . $order['judul_kegiatan'];
             $sp->nominal_penawaran   = (float)($order['estimasi_biaya'] ?: 0);
             $sp->jenis_layanan       = ($order['jenis_layanan_opti'] === 'lingkungan') ? 'lingkungan' : 'selulosa';
-            $sp->permintaan_melalui  = 'surat';
+            $sp->permintaan_melalui  = !empty($order['media_permohonan']) ? $order['media_permohonan'] : 'surat';
             $sp->status_respon_klien = 'draft';
             $sp->status              = 'draft';
             $sp->penjelasan          = $order['deskripsi'] ?: '';
@@ -2927,6 +2927,11 @@ class OrderController extends Controller {
 
             $order->jenis_layanan_opti = $jenisLayanan;
             $order->deskripsi = !empty($penjelasan) ? trim($penjelasan) : null;
+            $order->media_permohonan = $permintaanMelalui;
+            $this->db->exec(
+                "UPDATE order_layanan SET jenis_layanan_opti = ?, deskripsi = ?, media_permohonan = ? WHERE id = ?",
+                [$jenisLayanan, !empty($penjelasan) ? trim($penjelasan) : null, $permintaanMelalui, $id]
+            );
 
             // Update tb_customer jika ada perubahan data pelanggan
             if (!empty($order->id_customer)) {
@@ -2995,6 +3000,7 @@ class OrderController extends Controller {
                     $order->load(['id = ?', $id]);
                     $order->jenis_layanan_opti = $jenisLayanan;
                     $order->deskripsi = !empty($penjelasan) ? trim($penjelasan) : null;
+                    $order->media_permohonan = $permintaanMelalui;
 
                     if ($keputusan === 'dapat_dilaksanakan') {
                         $order->status = 'baru';
@@ -3043,6 +3049,7 @@ class OrderController extends Controller {
                     $order->status_proposal_biaya = 'draft';
                     $order->pic_proposal_id = null; // Biarkan Ketua Tim yang menunjuk PIC
                     $order->deskripsi = !empty($penjelasan) ? trim($penjelasan) : null;
+                    $order->media_permohonan = $permintaanMelalui;
                     $order->save();
 
                     $this->logActivity($id, 'form_pelayanan', 'disposisi_layanan', 'Disposisi layanan ke Ka. Tim OPTI ' . ucfirst($jenisLayanan));
@@ -3064,6 +3071,7 @@ class OrderController extends Controller {
                 }
             } else {
                 $order->status = 'draft_disimpan';
+                $order->media_permohonan = $permintaanMelalui;
                 $order->save();
                 if ($sertakanKaji) {
                     $tinjauanData = [
