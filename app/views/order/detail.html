@@ -4422,7 +4422,7 @@
                                                         <i class="bi bi-person-badge text-primary me-1"></i> Penunjukan PIC Pengujian / Laboratorium
                                                     </label>
                                                     <select name="pic_proposal_id" id="selectPicLingkungan" class="form-select form-select-sm" {{ !@can_edit_lingkungan ? 'disabled' : '' }}>
-                                                        <option value="">-- Pilih PIC Pengujian / Personel Lab --</option>
+                                                        <option value="">Pilih PIC Pengujian / Personel Lab</option>
                                                         <repeat group="{{ @daftar_pic ?: [] }}" value="{{ @p }}">
                                                             <option value="{{ @p.id_user }}" {{ (@order.pic_proposal_id == @p.id_user) ? 'selected' : '' }}>
                                                                 {{ @p.nama_user }} ({{ @p.role_label ?: @p.role_opti }} - Divisi {{ ucfirst(@p.spesialisasi ?: @p.role_opti) }})
