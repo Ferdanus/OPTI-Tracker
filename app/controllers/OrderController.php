@@ -4624,7 +4624,10 @@ class OrderController extends Controller {
             }
 
             $orderModel->terbitkanNomorOrder($id);
-            $statusBaru = $payModel->recalcStatusKeuangan($id);
+            $statusBaru = method_exists($payModel, 'recalcStatusKeuangan') ? $payModel->recalcStatusKeuangan($id) : 'lunas';
+            if (empty($statusBaru)) {
+                $statusBaru = 'lunas';
+            }
 
             // Pastikan status_keuangan di order_layanan menjadi 'lunas' dan inisialisasi deadline SPM jika belum ada
             if (empty($order['tanggal_deadline_spm'])) {
