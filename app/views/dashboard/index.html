@@ -575,7 +575,7 @@
                                     <td>
                                         <span class="{{ @ord.stage_class }}">
                                             <i class="bi {{ @ord.stage_icon }}"></i>
-                                            <span>{{ @ord.stage_label }}</span>
+                                            <span>{{ @ord.stage_label_html ?: @ord.stage_label | raw }}</span>
                                         </span>
                                     </td>
                                     <td class="text-center">

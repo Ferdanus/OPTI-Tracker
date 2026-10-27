@@ -802,7 +802,7 @@ $daftarPegawai = $arsipUser->find(
         if ($order['jenis_layanan_opti'] === 'lingkungan') {
             $f3->set('default_pejabat_nama', 'Joko Pratomo');
             $f3->set('default_jabatan_pejabat', 'Kepala Bagian Tata Usaha');
-            $f3->set('default_hal', '');
+            $f3->set('default_hal', 'Biaya Pengujian Lingkungan');
             $f3->set('default_lampiran_teks', '1 (satu) lembar');
         } else {
             $f3->set('default_pejabat_nama', 'Dodiet Prasetyo');
@@ -811,12 +811,38 @@ $daftarPegawai = $arsipUser->find(
             $f3->set('default_lampiran_teks', '1 (satu) lembar');
         }
 
+        // Pastikan nilai Hal tidak tercemar oleh judul kegiatan dari data lama
+        if (!empty($spExisting['hal']) && !empty($order['judul_kegiatan']) && (trim($spExisting['hal']) === trim($order['judul_kegiatan']) || stripos($spExisting['hal'], 'Penawaran Layanan Jasa OPTI') !== false)) {
+            $spExisting['hal'] = ($order['jenis_layanan_opti'] === 'lingkungan') ? 'Biaya Pengujian Lingkungan' : 'Biaya OPTI';
+        }
+
         list($penandatanganList, $jabatanList) = $this->getMasterPenandatanganData();
         $f3->set('daftar_penandatangan', $penandatanganList);
         $f3->set('daftar_jabatan', $jabatanList);
 
         $f3->set('order', $order);
         $f3->set('sp_existing', $spExisting);
+
+        // Media permintaan masuk tersinkronisasi dari Formulir Pelayanan Tahap 2
+        $mediaRaw = !empty($spExisting['permintaan_melalui']) 
+            ? $spExisting['permintaan_melalui'] 
+            : (!empty($order['permintaan_melalui']) 
+                ? $order['permintaan_melalui'] 
+                : (!empty($order['id_surat_masuk']) ? 'surat' : 'email'));
+
+        $mediaLabels = [
+            'fax'             => 'Fax',
+            'surat'           => 'Surat Resmi',
+            'email'           => 'E-mail Resmi',
+            'telepon'         => 'Telepon',
+            'whatsapp'        => 'WhatsApp',
+            'website'         => 'Website',
+            'datang_langsung' => 'Datang Langsung',
+        ];
+        $mediaPermintaanVal = strtolower(trim((string)$mediaRaw));
+        $mediaPermintaanLabel = $mediaLabels[$mediaPermintaanVal] ?? (ucfirst(str_replace('_', ' ', $mediaPermintaanVal)));
+        $f3->set('media_permintaan_val', $mediaPermintaanVal);
+        $f3->set('media_permintaan_label', $mediaPermintaanLabel);
         $lampiranUserExisting = !empty($spExisting['file_lampiran_user'])
             ? str_replace('\\', '/', (string)$spExisting['file_lampiran_user'])
             : str_replace('\\', '/', (string)($_SESSION['pending_lampiran_sp_' . $orderId] ?? ''));
@@ -957,6 +983,10 @@ $daftarPegawai = $arsipUser->find(
         $isSpDitolak = !empty($spExisting) && in_array(strtolower($spExisting['status_respon_klien'] ?? ''), ['batal', 'tolak', 'ditolak']);
         $isRevisiBaru = !empty($post['is_revisi_baru']) || $isSpDitolak || (($post['mode'] ?? '') === 'baru');
         $post['is_revisi_baru'] = $isRevisiBaru ? 1 : 0;
+        if ($isRevisiBaru) {
+            $post['mode'] = 'baru';
+            $post['penawaran_id'] = 0;
+        }
 
         // Proteksi State Guard:
         // Jika dokumen ini sebelumnya sudah berstatus DEAL, atau order sudah lanjut ke pembayaran/pelaksanaan:
@@ -1186,6 +1216,11 @@ $daftarPegawai = $arsipUser->find(
                         [1 => $orderId]
                     );
 
+                    $nomorOrderBaru = $orderModel->terbitkanNomorOrder($orderId);
+                    if (!empty($nomorOrderBaru)) {
+                        $order['nomor_order'] = $nomorOrderBaru;
+                    }
+
                     // Notif ke Ketua Tim Keuangan
                     \NotificationService::send($this->db, [
                         'order_id'        => $orderId,
@@ -1287,6 +1322,11 @@ $daftarPegawai = $arsipUser->find(
                             [1 => $orderId]
                         );
 
+                        $nomorOrderBaru = $orderModel->terbitkanNomorOrder($orderId);
+                        if (!empty($nomorOrderBaru)) {
+                            $order['nomor_order'] = $nomorOrderBaru;
+                        }
+
                         try {
                             \NotificationService::send($this->db, [
                                 'order_id'        => $orderId,
@@ -1384,6 +1424,12 @@ $daftarPegawai = $arsipUser->find(
                 "UPDATE order_layanan SET status_keuangan = 'menunggu_pembayaran', status = 'penawaran' WHERE id = ?",
                 [1 => $orderId]
             );
+
+            // Otomatis terbitkan nomor order (ORD) saat order DEAL & didisposisikan ke Tim Keuangan
+            $nomorOrderBaru = $orderModel->terbitkanNomorOrder($orderId);
+            if (!empty($nomorOrderBaru)) {
+                $order['nomor_order'] = $nomorOrderBaru;
+            }
 
             // 1. Kirim Notifikasi ke Ketua Tim Keuangan
             \NotificationService::send($this->db, [
@@ -1547,10 +1593,12 @@ $daftarPegawai = $arsipUser->find(
      * Cetak PDF Surat Penawaran Resmi BBSPJIS
      * Route: GET /order/@id/penawaran/cetak
      */
-    public function cetakPdf($f3, $params)
+    /**
+     * Mempersiapkan data Order dan Surat Penawaran untuk generator PDF/Word secara terpadu
+     */
+    public function getPreparedDataForPdf(int $targetId, array $queryParams = []): array
     {
-        $this->requireAuth();
-        $targetId = (int)($params['id'] ?? 0);
+        $f3 = \Base::instance();
         $spModel  = new SuratPenawaran($this->db);
         $orderModel = new OrderLayanan($this->db);
 
@@ -1558,7 +1606,7 @@ $daftarPegawai = $arsipUser->find(
         $sp    = null;
 
         if ($order) {
-            $spId = (int)($f3->get('GET.id') ?? 0);
+            $spId = (int)($queryParams['id'] ?? ($f3->get('GET.id') ?? 0));
             if ($spId > 0) {
                 $sp = $spModel->getById($spId);
                 if ($sp && (int)$sp['order_id'] !== $targetId) {
@@ -1577,21 +1625,51 @@ $daftarPegawai = $arsipUser->find(
         }
 
         $orderIdActual = (int)($order['id'] ?? ($sp['order_id'] ?? $targetId));
+        $isLing = (($order['jenis_layanan_opti'] ?? '') === 'lingkungan');
         if (!$sp && $order) {
             $sp = [
                 'id'                  => 0,
                 'order_id'            => (int)$order['id'],
-                'nomor_surat'         => $spModel->generateNomorSurat(($order['jenis_layanan_opti'] ?? 'selulosa') === 'selulosa' ? 'SL' : 'LK'),
+                'nomor_surat'         => $spModel->generateNomorSurat($isLing ? 'LK' : 'SL'),
                 'perusahaan'          => $order['nama_perusahaan'] ?? 'Mitra Balai',
                 'nama'                => $order['pic'] ?? '-',
                 'alamat'              => $order['alamat'] ?? '-',
                 'jenis_layanan'       => $order['jenis_layanan_opti'] ?? 'selulosa',
-                'perihal'             => $order['judul_kegiatan'] ?? 'Penawaran Layanan Jasa OPTI',
+                'hal'                 => $isLing ? 'Biaya Pengujian Lingkungan' : 'Biaya OPTI',
+                'perihal'             => 'Penawaran Layanan Jasa OPTI - ' . ($order['judul_kegiatan'] ?? ''),
                 'nominal_penawaran'   => (float)($order['estimasi_biaya'] ?? 0),
                 'tanggal_surat'       => date('Y-m-d'),
                 'status_respon_klien' => 'draft',
                 'file_lampiran_user'  => $_SESSION['pending_lampiran_sp_' . $orderIdActual] ?? ''
             ];
+        }
+
+        if ($sp && (empty($sp['hal']) || (!empty($order['judul_kegiatan']) && trim($sp['hal']) === trim($order['judul_kegiatan'])))) {
+            $sp['hal'] = $isLing ? 'Biaya Pengujian Lingkungan' : 'Biaya OPTI';
+        }
+
+        // Terapkan override dari parameter jika dikirim dari form saat live download/preview
+        $overrideFields = [
+            'hal', 'alamat', 'perusahaan', 'nama', 'nomor_surat', 'tanggal_surat',
+            'lampiran_teks', 'ruang_lingkup', 'jadwal_pelaksanaan', 'catatan_sampel',
+            'jabatan_pejabat', 'pejabat_nama', 'permintaan_melalui'
+        ];
+        foreach ($overrideFields as $fld) {
+            $val = $queryParams[$fld] ?? ($f3->get("POST.{$fld}") ?? $f3->get("GET.{$fld}"));
+            if ($val !== null && trim((string)$val) !== '') {
+                $sp[$fld] = trim((string)$val);
+            }
+        }
+        $nomParam = $queryParams['nominal_penawaran'] ?? ($f3->get('POST.nominal_penawaran') ?? $f3->get('GET.nominal_penawaran'));
+        if ($nomParam !== null && $nomParam !== '') {
+            $sp['nominal_penawaran'] = (float)str_replace(['.', ','], '', (string)$nomParam);
+        }
+        $durParam = $queryParams['durasi_hari'] ?? ($f3->get('POST.durasi_hari') ?? $f3->get('GET.durasi_hari'));
+        if ($durParam !== null && $durParam !== '') {
+            $sp['durasi_hari'] = (int)$durParam;
+            if ($order) {
+                $order['spm_layanan'] = "{$sp['durasi_hari']} Hari Kerja";
+            }
         }
 
         if ($sp && empty($sp['file_lampiran_user']) && !empty($_SESSION['pending_lampiran_sp_' . $orderIdActual])) {
@@ -1605,13 +1683,7 @@ $daftarPegawai = $arsipUser->find(
             }
         }
 
-        if (!$sp) {
-            $this->setFlashError('Surat penawaran tidak ditemukan.');
-            $f3->reroute('/surat-penawaran');
-            return;
-        }
-
-        if (!$order) {
+        if (!$order && $sp) {
             // Fallback order info dari data surat penawaran
             $order = [
                 'id'                 => (int)($sp['order_id'] ?? 0),
@@ -1629,11 +1701,75 @@ $daftarPegawai = $arsipUser->find(
             ];
         }
 
+        return [$order, $sp];
+    }
+
+    /**
+     * Menghasilkan biner string PDF Surat Penawaran langsung dari satu sumber generator resmi
+     */
+    public function renderPdfString(int $targetId, bool $useKop = true, array $queryParams = []): ?string
+    {
+        [$order, $sp] = $this->getPreparedDataForPdf($targetId, $queryParams);
+        if (!$order || !$sp) {
+            return null;
+        }
+
+        $pdf = $this->generatePdfObject($order, $sp, $useKop);
+
+        // Sinkronkan berkas fisik jika tersimpan di server
+        if (!empty($sp['file_lampiran']) && $useKop) {
+            $filePath = $sp['file_lampiran'];
+            if (!is_file($filePath)) {
+                $resolved = __DIR__ . '/../../' . ltrim(str_replace('\\', '/', $filePath), '/');
+                if (is_file($resolved)) {
+                    $filePath = $resolved;
+                }
+            }
+            if (is_file($filePath)) {
+                @$pdf->Output('F', $filePath);
+            }
+        }
+
+        return $pdf->Output('S');
+    }
+
+    public function cetakSuratPenawaran($f3, $params)
+    {
+        return $this->cetakPdf($f3, $params);
+    }
+
+    public function cetakPdf($f3, $params)
+    {
+        $this->requireAuth();
+        $targetId = (int)($params['id'] ?? 0);
+        $queryParams = $f3->get('GET') ?: [];
+        [$order, $sp] = $this->getPreparedDataForPdf($targetId, $queryParams);
+
+        if (!$sp) {
+            $this->setFlashError('Surat penawaran tidak ditemukan.');
+            $f3->reroute('/surat-penawaran');
+            return;
+        }
+
         $kopParam = $f3->get('GET.kop');
         $useKop = !isset($kopParam) || ($kopParam !== '0' && $kopParam !== 'tanpa_kop' && $kopParam !== 0 && $kopParam !== false);
         $isDownload = ($f3->get('GET.download') === '1' || $f3->get('GET.dl') === '1');
 
         $pdf = $this->generatePdfObject($order, $sp, $useKop);
+
+        // Perbarui berkas fisik tersimpan agar selalu mutakhir
+        if (!empty($sp['file_lampiran']) && $useKop) {
+            $filePath = $sp['file_lampiran'];
+            if (!is_file($filePath)) {
+                $resolved = __DIR__ . '/../../' . ltrim(str_replace('\\', '/', $filePath), '/');
+                if (is_file($resolved)) {
+                    $filePath = $resolved;
+                }
+            }
+            if (is_file($filePath)) {
+                @$pdf->Output('F', $filePath);
+            }
+        }
 
         $safeNum = preg_replace('/[^A-Za-z0-9_\-]/', '_', $sp['nomor_surat'] ?: ($order['nomor_order'] ?? 'BBSPJIS'));
         $suffix = $useKop ? '' : '_Tanpa_Kop';
@@ -1737,7 +1873,12 @@ $daftarPegawai = $arsipUser->find(
         }
         $picSurat      = trim((string)($f3->get('POST.nama') ?? $f3->get('GET.nama') ?? ($sp['nama'] ?? ($order['pic'] ?? ''))));
         $alamat        = trim((string)($f3->get('POST.alamat') ?? $f3->get('GET.alamat') ?? ($sp['alamat'] ?? ($order['alamatcustomer'] ?? ($order['alamat'] ?? '')))));
-        $halSurat      = trim((string)($f3->get('POST.hal') ?? $f3->get('GET.hal') ?? ($sp['hal'] ?? ($sp['perihal'] ?? 'Penawaran Layanan Jasa OPTI'))));
+        $isLingkunganWord = (($order['jenis_layanan_opti'] ?? '') === 'lingkungan');
+        $defaultHalWord = $isLingkunganWord ? 'Biaya Pengujian Lingkungan' : 'Biaya OPTI';
+        $halSurat      = trim((string)($f3->get('POST.hal') ?? $f3->get('GET.hal') ?? ($sp['hal'] ?? $defaultHalWord)));
+        if (empty($halSurat) || (!empty($order['judul_kegiatan']) && $halSurat === $order['judul_kegiatan']) || stripos($halSurat, 'Penawaran Layanan Jasa OPTI') !== false) {
+            $halSurat = $defaultHalWord;
+        }
         $lampiranTeks  = trim((string)($f3->get('POST.lampiran_teks') ?? $f3->get('GET.lampiran_teks') ?? ($sp['lampiran_teks'] ?? '1 (satu) lembar')));
         if (empty($lampiranTeks)) $lampiranTeks = '1 (satu) lembar';
 
@@ -2316,10 +2457,13 @@ $daftarPegawai = $arsipUser->find(
             $emailBbs = 'bbs@kemenperin.go.id';
             $pdf->Cell(116.7, 3.2, 'Telp. (022) 5202980 (Hunting) & 5202871 Fax. (022) 5202871 E-mail : ' . $emailBbs, 0, 1, 'C');
 
-            // Garis Bawah Kop: 2,25 pt (≈ 0.8 mm) hitam selebar 16 cm (X: 30 mm ke 190 mm), jarak teks ±6 pt (≈ 2.1 mm)
+            // Garis Ganda Bawah Kop Resmi Tata Naskah Dinas:
+            // Garis atas tebal (0.8 mm ≈ 2.25 pt), celah 0.6 mm, garis bawah tipis (0.25 mm ≈ 0.75 pt)
             $yLine = $pdf->GetY() + 2.1;
             $pdf->SetLineWidth(0.8);
             $pdf->Line(30.0, $yLine, 190.0, $yLine);
+            $pdf->SetLineWidth(0.25);
+            $pdf->Line(30.0, $yLine + 0.85, 190.0, $yLine + 0.85);
             $pdf->SetLineWidth(0.2); // reset default
 
             // Jarak satu paragraf kosong: jarak atas 10 pt, total sekitar 0,8 cm (8 mm)
@@ -2334,7 +2478,7 @@ $daftarPegawai = $arsipUser->find(
             $noSurat = 'B/' . $noSurat;
         }
         $lampiranTeks = !empty($sp['lampiran_teks']) ? $sp['lampiran_teks'] : '1 (satu) lembar';
-        $halSurat = !empty($sp['hal']) ? $sp['hal'] : (!empty($sp['perihal']) ? $sp['perihal'] : 'Biaya OPTI');
+        $halSurat = !empty($sp['hal']) ? trim($sp['hal']) : 'Biaya OPTI';
 
         // 2. BLOK NOMOR / LAMPIRAN / HAL (Tabel 4 Kolom: 2.0 cm | 0.75 cm | 7.5 cm | 5.74 cm)
         $pdf->SetFont('Arial', '', 11);
@@ -2349,14 +2493,17 @@ $daftarPegawai = $arsipUser->find(
         $pdf->SetX(30.0);
         $pdf->Cell(20.0, $lineH, 'Lampiran', 0, 0, 'L');
         $pdf->Cell(7.5, $lineH, ':', 0, 0, 'C');
-        $pdf->Cell(132.5, $lineH, $lampiranTeks, 0, 1, 'L');
+        $pdf->MultiCell(132.5, $lineH, $lampiranTeks, 0, 'L');
 
         $pdf->SetX(30.0);
         $pdf->Cell(20.0, $lineH, 'Hal', 0, 0, 'L');
         $pdf->Cell(7.5, $lineH, ':', 0, 0, 'C');
-        $pdf->Cell(132.5, $lineH, $halSurat, 0, 1, 'L');
+        $pdf->MultiCell(132.5, $lineH, $halSurat, 0, 'L');
 
-        // 3. ALAMAT TUJUAN (Menempel Langsung Tanpa Jarak di Bawah Baris Hal)
+        // Spacing setelah Hal: 3 enter (3 baris kosong) sebelum baris Yth.
+        $pdf->Ln($lineH * 3);
+
+        // 3. ALAMAT TUJUAN (Berjarak 3 enter di bawah Hal)
         $perusahaan = !empty($sp['perusahaan']) ? trim($sp['perusahaan']) : (!empty($order['nama_perusahaan']) ? trim($order['nama_perusahaan']) : 'Pimpinan Perusahaan/Instansi');
         if (!empty($order['pt_cv']) && stripos($perusahaan, $order['pt_cv']) === false && stripos($perusahaan, 'IPB') === false && stripos($perusahaan, 'Pusat') === false) {
             $perusahaan = $order['pt_cv'] . ' ' . $perusahaan;
@@ -2369,28 +2516,28 @@ $daftarPegawai = $arsipUser->find(
         $picSurat = !empty($sp['nama']) ? trim($sp['nama']) : (!empty($order['pic']) ? trim($order['pic']) : '');
 
         $pdf->SetX(30.0);
-        $pdf->Cell(160.0, $lineH, 'Yth. ' . $ythTitle, 0, 1, 'L');
+        $pdf->MultiCell(160.0, $lineH, 'Yth. ' . $ythTitle, 0, 'L');
         if (!empty($alamat)) {
             $alamatLines = array_filter(array_map('trim', explode("\n", str_replace(["\r\n", "\r"], "\n", $alamat))));
             foreach ($alamatLines as $alLine) {
                 $pdf->SetX(30.0);
-                $pdf->Cell(160.0, $lineH, $alLine, 0, 1, 'L');
+                $pdf->MultiCell(160.0, $lineH, $alLine, 0, 'L');
             }
         } else {
             $pdf->SetX(30.0);
-            $pdf->Cell(160.0, $lineH, 'di Tempat', 0, 1, 'L');
+            $pdf->MultiCell(160.0, $lineH, 'di Tempat', 0, 'L');
         }
         if (!empty($picSurat) && $picSurat !== '-' && stripos($ythTitle, $picSurat) === false) {
             $pdf->SetX(30.0);
-            $pdf->Cell(160.0, $lineH, 'u.p. ' . $picSurat, 0, 1, 'L');
+            $pdf->MultiCell(160.0, $lineH, 'u.p. ' . $picSurat, 0, 'L');
         }
 
-        // 4. PARAGRAF PEMBUKA (Jarak atas 12 pt ≈ 4.23 mm, Indent 1.27 cm, Align Left)
+        // 4. PARAGRAF PEMBUKA (Spacing setelah alamat: 2 enter sebelum pembuka, Indent 1.27 cm, Align Left)
         $judulKegiatan = !empty($order['judul_kegiatan']) ? $order['judul_kegiatan'] : (!empty($sp['perihal']) ? $sp['perihal'] : 'Layanan Jasa Optimalisasi Teknologi Industri (OPTI)');
         $mediaRaw = !empty($sp['permintaan_melalui']) ? $sp['permintaan_melalui'] : (!empty($order['permintaan_melalui']) ? $order['permintaan_melalui'] : 'email');
         $mediaPhrase = self::formatMediaPermintaan($mediaRaw);
 
-        $pdf->SetY($pdf->GetY() + 4.23);
+        $pdf->SetY($pdf->GetY() + ($lineH * 2));
         $teksPembuka = 'Menanggapi permintaan Saudara ' . $mediaPhrase . ' perihal "' . $judulKegiatan . '", dengan ini kami informasikan rincian kegiatan dan penawaran biaya layanan sebagai berikut:';
         $pdf->ParagraphWithIndent($teksPembuka, 12.7, $lineH, 160.0, 30.0);
 
@@ -2467,7 +2614,7 @@ $daftarPegawai = $arsipUser->find(
         $pdf->SetY($pdf->GetY() + 2.12);
         $pdf->ParagraphWithIndent('Kami menunggu konfirmasi lebih lanjut. Atas perhatian dan kerja sama yang baik, kami sampaikan terima kasih.', 12.7, $lineH, 160.0, 30.0);
 
-        // 8. BLOK TANDA TANGAN HALAMAN 1 (Kolom Kanan 6.4 cm di X: 126 mm, Rata Tengah, 4 Enter Kosong)
+        // 8. BLOK TANDA TANGAN HALAMAN 1 (Kolom Kanan 6.4 cm di X: 126 mm, Rata Tengah, 5 Enter Kosong)
         $signerRole = !empty($sp['jabatan_pejabat']) ? trim($sp['jabatan_pejabat']) : 'Kepala';
         $signerName = !empty($sp['pejabat_nama']) ? trim($sp['pejabat_nama']) : (!empty($sp['pembuat_nama']) && $sp['pembuat_nama'] !== 'Tim Mitra BBSPJIS' ? trim($sp['pembuat_nama']) : 'Dodiet Prasetyo');
 
@@ -2475,7 +2622,7 @@ $daftarPegawai = $arsipUser->find(
         $signerStartX = 126.0 + (64.0 - $pdf->GetStringWidth($signerName)) / 2;
         $pdf->SetX($signerStartX);
         $pdf->Cell(64.0, $lineH, rtrim($signerRole, ',') . ',', 0, 1, 'L');
-        $pdf->SetY($pdf->GetY() + 2.12 + 17.8); // Jarak bawah 6 pt + 4 baris kosong (≈ 50 pt / 4 enter)
+        $pdf->SetY($pdf->GetY() + 2.12 + 22.3); // Jarak bawah 6 pt + 5 baris kosong (≈ 5 enter)
         $pdf->SetX(126.0);
         $pdf->Cell(64.0, $lineH, $signerName, 0, 1, 'C');
 
@@ -2584,13 +2731,13 @@ $daftarPegawai = $arsipUser->find(
         $pdf->SetX(30.0);
         $pdf->MultiCell(160.0, 3.8, 'Catatan: Mohon mengembalikan lembar persetujuan ini kepada BBSPJIS melalui email atau media komunikasi yang telah ditentukan sebagai dasar proses penerbitan invoice dan pelaksanaan layanan.', 0, 'L');
 
-        // 9. Blok Tanda Tangan Kepala Halaman 2 (Sama Persis dengan Halaman 1)
+        // 9. Blok Tanda Tangan Kepala Halaman 2 (5 Enter Kosong)
         $pdf->SetFont('Arial', '', 11);
         $pdf->SetY($pdf->GetY() + 4.23); // Jarak atas 12 pt
         $signerStartX = 126.0 + (64.0 - $pdf->GetStringWidth($signerName)) / 2;
         $pdf->SetX($signerStartX);
         $pdf->Cell(64.0, $lineH, rtrim($signerRole, ',') . ',', 0, 1, 'L');
-        $pdf->SetY($pdf->GetY() + 2.12 + 17.8); // Jarak bawah 6 pt + 4 baris kosong (≈ 50 pt / 4 enter)
+        $pdf->SetY($pdf->GetY() + 2.12 + 22.3); // Jarak bawah 6 pt + 5 baris kosong (≈ 5 enter)
         $pdf->SetX(126.0);
         $pdf->Cell(64.0, $lineH, $signerName, 0, 1, 'C');
 
@@ -2642,9 +2789,13 @@ $daftarPegawai = $arsipUser->find(
             $emailBbs = 'bbs@kemenperin.go.id';
             $pdf->Cell(116.7, 3.2, 'Telp. (022) 5202980 (Hunting) & 5202871 Fax. (022) 5202871 E-mail : ' . $emailBbs, 0, 1, 'C');
 
+            // Garis Ganda Bawah Kop Resmi Tata Naskah Dinas:
+            // Garis atas tebal (0.8 mm ≈ 2.25 pt), celah 0.6 mm, garis bawah tipis (0.25 mm ≈ 0.75 pt)
             $yLine = $pdf->GetY() + 2.1;
             $pdf->SetLineWidth(0.8);
             $pdf->Line(30.0, $yLine, 190.0, $yLine);
+            $pdf->SetLineWidth(0.25);
+            $pdf->Line(30.0, $yLine + 0.85, 190.0, $yLine + 0.85);
             $pdf->SetLineWidth(0.2);
 
             $pdf->SetY($yLine + 8.0);
@@ -2668,7 +2819,7 @@ $daftarPegawai = $arsipUser->find(
         $alamat = !empty($sp['alamat']) ? trim($sp['alamat']) : (!empty($order['alamat_lengkap']) ? trim($order['alamat_lengkap']) : (!empty($order['alamatcustomer']) ? trim($order['alamatcustomer']) : (!empty($order['alamat']) && $order['alamat'] !== '-' ? trim($order['alamat']) : 'di Tempat')));
         $picSurat = !empty($sp['nama']) ? trim($sp['nama']) : (!empty($order['pic']) ? trim($order['pic']) : '');
         $lampTeks = !empty($sp['lampiran_teks']) && $sp['lampiran_teks'] !== '-' ? $sp['lampiran_teks'] : '1 (satu) lembar';
-        $halLing = !empty($sp['perihal']) ? $sp['perihal'] : (!empty($sp['hal']) ? $sp['hal'] : 'Biaya Pengujian Lingkungan');
+        $halLing = !empty($sp['hal']) ? trim($sp['hal']) : (!empty($sp['perihal']) && stripos($sp['perihal'], $order['judul_kegiatan'] ?? '~~~') === false && stripos($sp['perihal'], 'Penawaran Layanan') === false ? trim($sp['perihal']) : 'Biaya Pengujian Lingkungan');
 
         $signerRoleLing = !empty($sp['jabatan_pejabat']) ? trim($sp['jabatan_pejabat']) : 'Kepala Bagian Tata Usaha';
         $signerNameLing = !empty($sp['pejabat_nama']) ? trim($sp['pejabat_nama']) : (!empty($sp['pembuat_nama']) && $sp['pembuat_nama'] !== 'Tim Mitra BBSPJIS' && $sp['pembuat_nama'] !== 'Tim Mitra Kerjasama BBSPJIS' ? trim($sp['pembuat_nama']) : 'Joko Pratomo');
@@ -2686,32 +2837,40 @@ $daftarPegawai = $arsipUser->find(
         $pdf->SetX(30.0);
         $pdf->Cell(20.0, $lineH, 'Lampiran', 0, 0, 'L');
         $pdf->Cell(7.5, $lineH, ':', 0, 0, 'C');
-        $pdf->Cell(132.5, $lineH, $lampTeks, 0, 1, 'L');
+        $pdf->MultiCell(132.5, $lineH, $lampTeks, 0, 'L');
 
         $pdf->SetX(30.0);
         $pdf->Cell(20.0, $lineH, 'Hal', 0, 0, 'L');
         $pdf->Cell(7.5, $lineH, ':', 0, 0, 'C');
-        $pdf->Cell(132.5, $lineH, $halLing, 0, 1, 'L');
+        $pdf->MultiCell(132.5, $lineH, $halLing, 0, 'L');
 
-        // 3. Alamat Tujuan
+        // Spacing setelah Hal: 3 enter (3 baris kosong) sebelum baris Yth.
+        $pdf->Ln($lineH * 3);
+
+        // 3. Alamat Tujuan (Berjarak 3 enter di bawah Hal)
         $pdf->SetX(30.0);
-        $pdf->Cell(160.0, $lineH, 'Yth. ' . $ythTitle, 0, 1, 'L');
+        $pdf->MultiCell(160.0, $lineH, 'Yth. ' . $ythTitle, 0, 'L');
         $alamatLines = array_filter(array_map('trim', explode("\n", str_replace(["\r\n", "\r"], "\n", $alamat))));
-        foreach ($alamatLines as $alLine) {
+        if (!empty($alamatLines)) {
+            foreach ($alamatLines as $alLine) {
+                $pdf->SetX(30.0);
+                $pdf->MultiCell(160.0, $lineH, $alLine, 0, 'L');
+            }
+        } else {
             $pdf->SetX(30.0);
-            $pdf->Cell(160.0, $lineH, $alLine, 0, 1, 'L');
+            $pdf->MultiCell(160.0, $lineH, 'di Tempat', 0, 'L');
         }
         if (!empty($picSurat) && $picSurat !== '-' && stripos($ythTitle, $picSurat) === false) {
             $pdf->SetX(30.0);
-            $pdf->Cell(160.0, $lineH, 'u.p. ' . $picSurat, 0, 1, 'L');
+            $pdf->MultiCell(160.0, $lineH, 'u.p. ' . $picSurat, 0, 'L');
         }
 
-        // 4. Paragraf Pembuka
+        // 4. Paragraf Pembuka (Spacing setelah alamat: 2 enter sebelum pembuka)
         $judulKegiatan = !empty($order['judul_kegiatan']) ? $order['judul_kegiatan'] : 'Pengujian Sampel Lingkungan BBSPJIS';
         $mediaRaw = !empty($sp['permintaan_melalui']) ? $sp['permintaan_melalui'] : (!empty($order['permintaan_melalui']) ? $order['permintaan_melalui'] : 'email');
         $mediaPhrase = self::formatMediaPermintaan($mediaRaw);
 
-        $pdf->SetY($pdf->GetY() + 4.23);
+        $pdf->SetY($pdf->GetY() + ($lineH * 2));
         $teksPembuka = 'Menanggapi permintaan Saudara ' . $mediaPhrase . ' perihal "' . $judulKegiatan . '", dengan ini kami informasikan sebagai berikut:';
         $pdf->ParagraphWithIndent($teksPembuka, 12.7, $lineH, 160.0, 30.0);
 
@@ -2789,12 +2948,12 @@ $daftarPegawai = $arsipUser->find(
         $pdf->SetY($pdf->GetY() + 2.12);
         $pdf->ParagraphWithIndent('Kami menunggu konfirmasi lebih lanjut. Atas perhatian dan kerja sama yang baik, kami sampaikan terima kasih.', 12.7, $lineH, 160.0, 30.0);
 
-        // 7. Tanda Tangan Cover
+        // 7. Tanda Tangan Cover (5 Enter Kosong)
         $pdf->SetY($pdf->GetY() + 4.23);
         $signerStartXLing = 126.0 + (64.0 - $pdf->GetStringWidth($signerNameLing)) / 2;
         $pdf->SetX($signerStartXLing);
         $pdf->Cell(64.0, $lineH, rtrim($signerRoleLing, ',') . ',', 0, 1, 'L');
-        $pdf->SetY($pdf->GetY() + 2.12 + 17.8); // 4 enter kosong
+        $pdf->SetY($pdf->GetY() + 2.12 + 22.3); // 5 enter kosong
         $pdf->SetX(126.0);
         $pdf->Cell(64.0, $lineH, $signerNameLing, 0, 1, 'C');
 
@@ -2903,13 +3062,13 @@ $daftarPegawai = $arsipUser->find(
         $pdf->SetX(30.0);
         $pdf->MultiCell(160.0, 3.8, 'Catatan: Mohon mengembalikan lembar persetujuan ini kepada BBSPJIS melalui email atau media komunikasi yang telah ditentukan sebagai dasar proses penerbitan invoice dan pelaksanaan layanan.', 0, 'L');
 
-        // 9. Tanda Tangan Pejabat Lingkungan Halaman 2
+        // 9. Tanda Tangan Pejabat Lingkungan Halaman 2 (5 Enter Kosong)
         $pdf->SetFont('Arial', '', 11);
         $pdf->SetY($pdf->GetY() + 4.23);
         $signerStartXLing = 126.0 + (64.0 - $pdf->GetStringWidth($signerNameLing)) / 2;
         $pdf->SetX($signerStartXLing);
         $pdf->Cell(64.0, $lineH, rtrim($signerRoleLing, ',') . ',', 0, 1, 'L');
-        $pdf->SetY($pdf->GetY() + 2.12 + 17.8); // 4 enter kosong
+        $pdf->SetY($pdf->GetY() + 2.12 + 22.3); // 5 enter kosong
         $pdf->SetX(126.0);
         $pdf->Cell(64.0, $lineH, $signerNameLing, 0, 1, 'C');
 
@@ -3203,6 +3362,196 @@ $daftarPegawai = $arsipUser->find(
         header('Content-Length: ' . filesize($path));
         readfile($path);
         exit;
+    }
+
+    /**
+     * Unduh berkas dokumen penawaran DEAL dalam format Microsoft Word (.docx).
+     * Jika berkas yang diunggah aslinya adalah PDF, sistem otomatis mengonversi ke Word via LibreOffice.
+     * Route: GET /surat-penawaran/@id/dokumen-deal/@jenis/word
+     */
+    public function unduhDokumenDealWord($f3, $params)
+    {
+        $id = (int)($params['id'] ?? 0);
+        $jenis = trim((string)($params['jenis'] ?? ''));
+
+        $colMap = [
+            'penawaran_ttd'     => 'file_penawaran_ttd',
+            'bukti_persetujuan' => 'file_bukti_persetujuan',
+            'surat_kesanggupan' => 'surat_kesanggupan_bayar',
+        ];
+        $labelMap = [
+            'penawaran_ttd'     => 'Surat_Penawaran_Bertandatangan',
+            'bukti_persetujuan' => 'Bukti_Persetujuan_Penawaran',
+            'surat_kesanggupan' => 'Surat_Kesanggupan_Bayar',
+        ];
+
+        if (!isset($colMap[$jenis])) {
+            $f3->error(404, 'Jenis dokumen tidak valid.');
+            return;
+        }
+
+        $col = $colMap[$jenis];
+        $label = $labelMap[$jenis];
+
+        $row = $this->db->exec("SELECT {$col}, order_id, nomor_surat FROM tb_surat_penawaran WHERE id = ? OR order_id = ? ORDER BY id DESC LIMIT 1", [1 => $id, 2 => $id]);
+        if (empty($row) || empty($row[0][$col])) {
+            $f3->error(404, "Berkas {$label} belum diunggah.");
+            return;
+        }
+
+        $namaFile = basename($row[0][$col]);
+        $path = dirname(__DIR__, 2) . '/storage/kesanggupan_bayar/' . $namaFile;
+        if (!is_file($path)) {
+            $pathAlt = dirname(__DIR__, 2) . '/uploads/penawaran/' . $namaFile;
+            if (is_file($pathAlt)) {
+                $path = $pathAlt;
+            }
+        }
+
+        if (!is_file($path)) {
+            $f3->error(404, 'Berkas fisik tidak ditemukan di server.');
+            return;
+        }
+
+        $ext = strtolower(pathinfo($namaFile, PATHINFO_EXTENSION));
+        $downloadFilename = $label . '_' . ($row[0]['order_id'] ?? $id) . '.docx';
+
+        // Jika berkas asli sudah DOCX atau DOC, kirim langsung
+        if ($ext === 'docx' || $ext === 'doc') {
+            header('Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+            header('Content-Disposition: attachment; filename="' . $downloadFilename . '"');
+            header('Content-Length: ' . filesize($path));
+            header('Cache-Control: private, max-age=0, must-revalidate');
+            header('Pragma: public');
+            readfile($path);
+            exit;
+        }
+
+        // Jika berkas adalah PDF, konversi ke Word (.docx) via LibreOffice
+        if ($ext === 'pdf') {
+            $convertedDocx = $this->convertPdfToDocx($path);
+            if ($convertedDocx && is_file($convertedDocx)) {
+                header('Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+                header('Content-Disposition: attachment; filename="' . $downloadFilename . '"');
+                header('Content-Length: ' . filesize($convertedDocx));
+                header('Cache-Control: private, max-age=0, must-revalidate');
+                header('Pragma: public');
+                readfile($convertedDocx);
+                exit;
+            }
+        }
+
+        $f3->error(500, 'Gagal mengonversi dokumen ke format Word (.docx). Pastikan server memiliki LibreOffice.');
+    }
+
+    /**
+     * Helper konversi PDF ke DOCX via LibreOffice writer_pdf_import
+     */
+    protected function convertPdfToDocx($pdfPath)
+    {
+        $appRoot = str_replace('\\', '/', dirname(__DIR__, 2));
+        $cacheDir = $appRoot . '/storage/cache/doc_word';
+        if (!is_dir($cacheDir)) {
+            @mkdir($cacheDir, 0777, true);
+        }
+
+        $fileHash = md5($pdfPath . '|' . @filemtime($pdfPath) . '|' . @filesize($pdfPath));
+        $cachedDocx = $cacheDir . '/' . pathinfo($pdfPath, PATHINFO_FILENAME) . '_' . substr($fileHash, 0, 8) . '.docx';
+
+        if (is_file($cachedDocx) && filesize($cachedDocx) > 0) {
+            return $cachedDocx;
+        }
+
+        $sofficeCandidates = [
+            'C:\\Program Files\\LibreOffice\\program\\soffice.exe',
+            'C:\\Program Files (x86)\\LibreOffice\\program\\soffice.exe',
+            'soffice',
+            'libreoffice',
+        ];
+
+        $sofficeBin = null;
+        foreach ($sofficeCandidates as $bin) {
+            if (is_file($bin) || @exec("where " . escapeshellarg($bin))) {
+                $sofficeBin = $bin;
+                break;
+            }
+        }
+
+        if (!$sofficeBin) {
+            return null;
+        }
+
+        $cmd = escapeshellarg($sofficeBin) . ' --headless --infilter="writer_pdf_import" --convert-to docx --outdir ' . escapeshellarg(str_replace('/', DIRECTORY_SEPARATOR, $cacheDir)) . ' ' . escapeshellarg(str_replace('/', DIRECTORY_SEPARATOR, $pdfPath));
+        @exec($cmd, $output, $returnVar);
+
+        $defaultExpected = $cacheDir . '/' . pathinfo($pdfPath, PATHINFO_FILENAME) . '.docx';
+        if (is_file($defaultExpected) && filesize($defaultExpected) > 0) {
+            @rename($defaultExpected, $cachedDocx);
+            $this->normalizeConvertedDocxMargins($cachedDocx);
+            return $cachedDocx;
+        }
+
+        return null;
+    }
+
+    /**
+     * Normalisasi margin horizontal dokumen hasil konversi LibreOffice.
+     * LibreOffice writer_pdf_import sering menyematkan offset horizontal ekstra
+     * ke elemen shape/textbox drawingml sehingga teks tergeser terlalu ke kanan.
+     * Method ini menyesuaikan posisi horizontal elemen agar presisi di margin kiri halaman.
+     */
+    protected function normalizeConvertedDocxMargins($docxPath)
+    {
+        if (!class_exists('ZipArchive') || !is_file($docxPath)) {
+            return;
+        }
+
+        $zip = new \ZipArchive();
+        if ($zip->open($docxPath) !== true) {
+            return;
+        }
+
+        $docXml = $zip->getFromName('word/document.xml');
+        if (!$docXml) {
+            $zip->close();
+            return;
+        }
+
+        // Cari offset horizontal terkecil dari elemen dokumen (<wp:positionH relativeFrom="column">)
+        $minOffsetEmu = null;
+        if (preg_match_all('/<wp:positionH[^>]*>.*?<wp:posOffset>(\d+)<\/wp:posOffset>/s', $docXml, $matchesH)) {
+            $offsets = array_map('intval', $matchesH[1]);
+            if (!empty($offsets)) {
+                $minOffsetEmu = min($offsets);
+            }
+        }
+
+        // Jika terdapat pergeseran horizontal (misalnya ~1.080.000 EMU atau ~85 pt ke kanan)
+        if ($minOffsetEmu !== null && $minOffsetEmu > 300000) {
+            // Berikan margin kiri standar surat resmi (~60 pt / ~762.000 EMU atau ~2 cm)
+            // agar dokumen berada persis di posisi tengah yang proporsional sesuai format template surat resmi.
+            $desiredLeftMarginEmu = 762000; // ~60 pt (2.1 cm)
+            $shiftEmu = max(0, $minOffsetEmu - $desiredLeftMarginEmu);
+            $shiftPt  = $shiftEmu / 12700;
+
+            // 1. Geser posOffset pada drawingml wp:positionH
+            $docXml = preg_replace_callback('/(<wp:positionH[^>]*>.*?<wp:posOffset>)(\d+)(<\/wp:posOffset>)/s', function($m) use ($shiftEmu) {
+                $val = intval($m[2]);
+                $newVal = max(0, $val - $shiftEmu);
+                return $m[1] . $newVal . $m[3];
+            }, $docXml);
+
+            // 2. Geser fallback VML margin-left jika ada
+            $docXml = preg_replace_callback('/margin-left:([0-9.]+)pt/', function($m) use ($shiftPt) {
+                $val = floatval($m[1]);
+                $newVal = max(0, $val - $shiftPt);
+                return 'margin-left:' . round($newVal, 2) . 'pt';
+            }, $docXml);
+
+            $zip->addFromString('word/document.xml', $docXml);
+        }
+
+        $zip->close();
     }
 
     /** POST /surat-penawaran/@id/surat-kesanggupan/upload (Backward Compatibility) */

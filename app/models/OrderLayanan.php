@@ -478,6 +478,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
                        p.target_mulai AS po_target_mulai, p.target_selesai AS po_target_selesai,
                        sp.id AS surat_penawaran_id, sp.status_respon_klien, sp.nomor_surat AS nomor_penawaran,
                        sp.tanggal_surat AS penawaran_tanggal_surat, sp.updated_at AS penawaran_updated_at,
+                       sp.file_penawaran_ttd, sp.file_bukti_persetujuan, sp.surat_kesanggupan_bayar,
                        pr.durasi_kegiatan AS proposal_durasi, pr.status_proposal,
                        pr.file_proposal, pr.estimasi_total_biaya, pr.disetujui_ketua_at AS proposal_disetujui_at,
                        b.id AS bast_id, b.status_bast,
@@ -506,27 +507,32 @@ class OrderLayanan extends \DB\SQL\Mapper {
         $params = array();
         $idx = 1;
 
-        // Filter tab: masuk (tahap sebelum deal), berlangsung (sudah terjadi deal & proses pengerjaan), selesai (tuntas BAST / laporan selesai), ditolak, atau aktif
+        // Filter tab: masuk (tahap REQ / permohonan baru s.d. sebelum deal & pembayaran), berlangsung (sudah deal / di tahap pembayaran / ORD & pengerjaan berjalan), selesai (tuntas BAST / laporan selesai), ditolak, atau aktif
         if ($filterTab === 'masuk') {
             $sql .= " AND o.status != 'ditolak' AND (o.status_tinjauan != 'tidak_layak' OR o.status_tinjauan IS NULL)
                       AND (sp.status_respon_klien NOT IN ('ditolak', 'batal') OR sp.status_respon_klien IS NULL)
-                      AND (sp.status_respon_klien IS NULL OR sp.status_respon_klien != 'deal')
+                      AND (o.nomor_order IS NULL OR o.nomor_order = '')
                       AND (o.status_penawaran IS NULL OR o.status_penawaran != 'deal')
+                      AND (sp.status_respon_klien IS NULL OR sp.status_respon_klien != 'deal')
+                      AND (o.status_keuangan IS NULL OR o.status_keuangan NOT IN ('menunggu_pembayaran', 'terbayar_sebagian', 'lunas'))
                       AND p.id IS NULL
-                      AND b.id IS NULL
-                      AND o.status NOT IN ('penawaran_deal', 'disetujui', 'po_dibuat', 'proses', 'selesai', 'lapor_selesai')
-                      AND (o.status_pelaksanaan IS NULL OR o.status_pelaksanaan != 'laporan_selesai')";
+                      AND o.status NOT IN ('penawaran_deal', 'disetujui', 'po_dibuat', 'proses', 'lapor_selesai')
+                      AND o.status != 'selesai'
+                      AND (o.status_pelaksanaan IS NULL OR o.status_pelaksanaan != 'laporan_selesai')
+                      AND (b.id IS NULL OR b.status_bast NOT IN ('disetujui', 'selesai', 'terbit'))";
         } elseif ($filterTab === 'berlangsung') {
             $sql .= " AND o.status != 'ditolak' AND (o.status_tinjauan != 'tidak_layak' OR o.status_tinjauan IS NULL)
                       AND (sp.status_respon_klien NOT IN ('ditolak', 'batal') OR sp.status_respon_klien IS NULL)
                       AND (
-                          (sp.status_respon_klien = 'deal') 
-                          OR (o.status_penawaran = 'deal') 
-                          OR (p.id IS NOT NULL) 
-                          OR (o.status IN ('penawaran_deal', 'disetujui', 'po_dibuat', 'proses', 'lapor_selesai'))
-                          OR (b.id IS NOT NULL AND b.status_bast NOT IN ('disetujui', 'selesai', 'terbit'))
+                          (o.nomor_order IS NOT NULL AND o.nomor_order != '')
+                          OR o.status_penawaran = 'deal'
+                          OR sp.status_respon_klien = 'deal'
+                          OR o.status_keuangan IN ('menunggu_pembayaran', 'terbayar_sebagian', 'lunas')
+                          OR p.id IS NOT NULL
+                          OR o.status IN ('penawaran_deal', 'disetujui', 'po_dibuat', 'proses', 'lapor_selesai')
                       )
-                      AND (o.status != 'selesai' AND (o.status_pelaksanaan IS NULL OR o.status_pelaksanaan != 'laporan_selesai'))
+                      AND o.status != 'selesai'
+                      AND (o.status_pelaksanaan IS NULL OR o.status_pelaksanaan != 'laporan_selesai')
                       AND (b.id IS NULL OR b.status_bast NOT IN ('disetujui', 'selesai', 'terbit'))";
         } elseif ($filterTab === 'selesai') {
             $sql .= " AND o.status != 'ditolak' AND (o.status_tinjauan != 'tidak_layak' OR o.status_tinjauan IS NULL)
@@ -585,10 +591,22 @@ class OrderLayanan extends \DB\SQL\Mapper {
 
         $rows = $this->db->exec($sql, $params);
         foreach ($rows as &$r) {
+            // Auto terbitkan nomor order (ORD) jika order sudah DEAL / didisposisikan ke keuangan namun nomor_order belum terisi
+            $isDeal = ($r['status_respon_klien'] ?? '') === 'deal' || ($r['status_penawaran'] ?? '') === 'deal';
+            $isDisposisiKeu = in_array($r['status_keuangan'] ?? '', ['menunggu_pembayaran', 'terbayar_sebagian', 'lunas']);
+            if (($isDeal || $isDisposisiKeu) && empty($r['nomor_order']) && !empty($r['id'])) {
+                $ordBaru = $this->terbitkanNomorOrder((int)$r['id']);
+                if (!empty($ordBaru)) {
+                    $r['nomor_order'] = $ordBaru;
+                }
+            }
+
             $r['nmcustomer_murni'] = Customer::cleanNamaPerusahaan($r['nmcustomer'] ?? ($r['nama_perusahaan'] ?? ''), $r['pt_cv'] ?? '');
             $r['nama_perusahaan'] = Customer::formatNamaPerusahaan($r['pt_cv'] ?? '', $r['nama_perusahaan'] ?? '');
             $st = self::resolveStageStatus($r);
             $r['stage_label']        = $st['label'];
+            $labelWords              = preg_split('/\s+/', trim($st['label']));
+            $r['stage_label_html']   = implode('<br>', array_map('htmlspecialchars', $labelWords));
             $r['stage_class']        = $st['class'];
             $r['stage_icon']         = $st['icon'];
             $r['stage_user']         = $st['user'] ?? '';
@@ -782,6 +800,22 @@ class OrderLayanan extends \DB\SQL\Mapper {
 
         // 4. Step 6: Menunggu Pembayaran (Sudah DEAL namun belum lunas)
         if ($isDeal) {
+            // Cek apakah berkas deal wajib sudah diunggah (Surat Penawaran TTD & Persetujuan Klien)
+            $berkasDealSiap = !empty($o['file_penawaran_ttd']) && !empty($o['file_bukti_persetujuan']);
+            if (!$berkasDealSiap) {
+                return [
+                    'label' => 'Menunggu Berkas Siap',
+                    'class' => 'status-pill status-pill-amber',
+                    'icon'  => 'bi-file-earmark-arrow-up-fill',
+                    'user'  => 'Tim Mitra & Pelanggan',
+                    'keterangan_aksi'   => 'Lengkapi Berkas Deal',
+                    'keterangan_sub'    => 'Klien: ' . (!empty($o['nama_perusahaan']) ? $o['nama_perusahaan'] : 'Mitra'),
+                    'keterangan_detail' => 'Surat penawaran TTD atau persetujuan klien belum diunggah',
+                    'keterangan_icon'   => 'bi-file-earmark-arrow-up text-warning',
+                    'aksi_badge' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
+                ];
+            }
+
             return [
                 'label' => 'Menunggu Bayar',
                 'class' => 'status-pill status-pill-amber',
@@ -1001,6 +1035,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
                     p.target_mulai AS po_target_mulai, p.target_selesai AS target_po, p.target_selesai AS po_target_selesai,
                     sp.id AS surat_penawaran_id, sp.status_respon_klien, sp.nomor_surat AS nomor_penawaran,
                     sp.tanggal_surat AS penawaran_tanggal_surat, sp.updated_at AS penawaran_updated_at,
+                    sp.file_penawaran_ttd, sp.file_bukti_persetujuan, sp.surat_kesanggupan_bayar,
                     pr.durasi_kegiatan AS proposal_durasi, pr.status_proposal,
                     pr.file_proposal, pr.estimasi_total_biaya, pr.disetujui_ketua_at AS proposal_disetujui_at,
                     b.id AS bast_id, b.status_bast,
@@ -1035,6 +1070,17 @@ class OrderLayanan extends \DB\SQL\Mapper {
             return null;
         }
         $detail = $res[0];
+
+        // Auto terbitkan nomor order (ORD) jika order sudah DEAL / didisposisikan ke keuangan namun nomor_order belum terisi
+        $isDeal = ($detail['status_respon_klien'] ?? '') === 'deal' || ($detail['status_penawaran'] ?? '') === 'deal';
+        $isDisposisiKeu = in_array($detail['status_keuangan'] ?? '', ['menunggu_pembayaran', 'terbayar_sebagian', 'lunas']);
+        if (($isDeal || $isDisposisiKeu) && empty($detail['nomor_order']) && !empty($detail['id'])) {
+            $ordBaru = $this->terbitkanNomorOrder((int)$detail['id']);
+            if (!empty($ordBaru)) {
+                $detail['nomor_order'] = $ordBaru;
+            }
+        }
+
         $detail['nmcustomer_murni'] = Customer::cleanNamaPerusahaan($detail['nmcustomer'] ?? ($detail['nama_perusahaan'] ?? ''), $detail['pt_cv'] ?? '');
         $detail['nama_perusahaan'] = Customer::formatNamaPerusahaan($detail['pt_cv'] ?? '', $detail['nama_perusahaan'] ?? '');
         // Evaluasi status unlock per-order dan countdown auto-lock
@@ -1067,8 +1113,10 @@ class OrderLayanan extends \DB\SQL\Mapper {
         }
 
         $st = self::resolveStageStatus($detail);
-        $detail['stage_label'] = $st['label'];
-        $detail['stage_class'] = $st['class'];
+        $detail['stage_label']      = $st['label'];
+        $labelWords                 = preg_split('/\s+/', trim($st['label']));
+        $detail['stage_label_html'] = implode('<br>', array_map('htmlspecialchars', $labelWords));
+        $detail['stage_class']      = $st['class'];
         $detail['stage_icon']  = $st['icon'];
         $detail['stage_user']  = $st['user'] ?? '';
 
@@ -1237,10 +1285,19 @@ class OrderLayanan extends \DB\SQL\Mapper {
     }
 
     /**
-     * Generate nomor order unik aman: ORD-YYYYMM-XXX
-     * HANYA diterbitkan ketika customer telah melakukan pembayaran / konfirmasi kesanggupan bayar
+     * Generate nomor order unik aman: ORD-YYYYMM-XXX / ORD-YYYYMM-XXXX
+     * Otomatis terbit saat order DEAL & disposisi keuangan / pembayaran (mengubah awalan REQ menjadi ORD)
      */
-    public function generateNomorOrder(string $tanggal = ''): string {
+    public function generateNomorOrder(string $tanggal = '', string $nomorPermintaan = ''): string {
+        // Jika memiliki nomor permintaan (misal: REQ-YYYYMM-XXXX), otomatis ubah awalan REQ menjadi ORD jika belum terdaftar
+        if (!empty($nomorPermintaan) && strpos($nomorPermintaan, 'REQ-') === 0) {
+            $candidate = 'ORD-' . substr($nomorPermintaan, 4);
+            $cek = $this->db->exec("SELECT COUNT(*) as c FROM order_layanan WHERE nomor_order = ?", array(1 => $candidate))[0]['c'] ?? 0;
+            if ($cek == 0) {
+                return $candidate;
+            }
+        }
+
         $time = !empty($tanggal) ? strtotime($tanggal) : time();
         if (!$time) $time = time();
         $prefix = 'ORD-' . date('Ym', $time);
@@ -1270,13 +1327,13 @@ class OrderLayanan extends \DB\SQL\Mapper {
     }
 
     /**
-     * Terbitkan nomor order resmi jika order sudah melakukan pembayaran
+     * Terbitkan nomor order resmi jika order sudah deal & disposisi keuangan / pembayaran
      */
     public function terbitkanNomorOrder(int $orderId): ?string {
         $this->load(['id = ?', $orderId]);
         if ($this->dry()) return null;
         if (empty($this->nomor_order)) {
-            $this->nomor_order = $this->generateNomorOrder();
+            $this->nomor_order = $this->generateNomorOrder($this->tanggal_masuk ?? '', $this->nomor_permintaan ?? '');
             $this->save();
         }
         return $this->nomor_order;
@@ -1622,7 +1679,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
         }
 
         if ($this->status_rancop === 'deal' || $statusProp === 'disetujui_pimpinan' || $statusProp === 'disetujui_ketua') {
-            $this->status_proposal_biaya = 'siap_penawaran';
+            $this->status_proposal_biaya = $statusProposalBiaya;
             $this->status = 'baru'; // Maju dari permintaan_masuk ke baru / siap penawaran
         } elseif ($statusProp === 'diajukan') {
             $this->status_proposal_biaya = 'menunggu_approval';
@@ -1660,7 +1717,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
     /**
      * Simpan Kalkulasi Pengujian Multi-Metode (Divisi Lingkungan)
      */
-    public function simpanKalkulasiLingkungan(int $orderId, array $items, float $diskon, ?string $tglSampel, int $userId, ?string $spmLayanan = null, ?int $spmDurasiNilai = null, ?string $spmDurasiSatuan = null, ?string $spmTriggerTipe = null): array {
+    public function simpanKalkulasiLingkungan(int $orderId, array $items, float $diskon, ?string $tglSampel, int $userId, ?string $spmLayanan = null, ?int $spmDurasiNilai = null, ?string $spmDurasiSatuan = null, ?string $spmTriggerTipe = null, string $statusProposalBiaya = 'siap_penawaran'): array {
         $this->load(array('id = ?', $orderId));
         if ($this->dry()) {
             throw new \Exception("Order Layanan #{$orderId} tidak ditemukan.");
@@ -1739,7 +1796,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
         if (!empty($spmTriggerTipe)) {
             $this->spm_trigger_tipe = $spmTriggerTipe;
         }
-        $this->status_proposal_biaya = 'siap_penawaran';
+        $this->status_proposal_biaya = $statusProposalBiaya;
         $this->save();
 
         return array(

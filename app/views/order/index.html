@@ -145,12 +145,13 @@
     align-items: center;
     justify-content: center;
     gap: 0.38rem;
-    padding: 0.25rem 0.55rem;
-    border-radius: 50rem;
-    font-size: 0.75rem;
+    padding: 0.3rem 0.65rem;
+    border-radius: 12px;
+    font-size: 0.73rem;
     font-weight: 600;
-    line-height: 1;
-    white-space: nowrap;
+    line-height: 1.25;
+    text-align: center;
+    white-space: normal;
     border: 1px solid transparent;
     transition: all 0.15s ease-in-out;
 }
@@ -753,7 +754,7 @@ tr.row-user-task > td:first-child {
                                             <td class="text-center">
                                                 <div class="d-flex flex-column align-items-center justify-content-center">
                                                     <span class="{{ @ord.stage_class }}">
-                                                        {{ @ord.stage_label }}
+                                                        {{ @ord.stage_label_html ?: @ord.stage_label | raw }}
                                                     </span>
                                                 </div>
                                             </td>
@@ -1049,14 +1050,14 @@ tr.row-user-task > td:first-child {
                                         <div class="text-center py-5">
                                             <i class="bi bi-gear-wide-connected text-muted display-4 d-block mb-3 opacity-50"></i>
                                             <h5 class="fw-bold text-dark">Belum Ada Order Berlangsung</h5>
-                                            <p class="text-muted small mb-0">Belum ada order yang telah deal atau sedang dalam tahap pengerjaan/pengujian.</p>
+                                            <p class="text-muted small mb-0">Belum ada order resmi (ORD) yang sedang dalam tahap pelaksanaan atau pengerjaan.</p>
                                         </div>
                                     </true>
                                     <false>
                                         <div class="text-center py-5">
                                             <i class="bi bi-inbox text-muted display-4 d-block mb-3 opacity-50"></i>
                                             <h5 class="fw-bold text-dark">Belum Ada Order Masuk</h5>
-                                            <p class="text-muted small mb-0">Tidak ditemukan permohonan order baru (tahap sebelum deal) yang sesuai dengan kriteria filter.</p>
+                                            <p class="text-muted small mb-0">Tidak ditemukan permohonan order masuk (tahap REQ / pra-order resmi) yang sesuai dengan kriteria filter.</p>
                                         </div>
                                     </false>
                                 </check>
