@@ -68,9 +68,10 @@ class PoHumasController extends Controller {
         if ($skemaOk) {
             try {
                 $rows = $this->db->exec(
-                    "SELECT p.id, p.nomor_po, p.status, p.created_at, p.updated_at,
+                    "SELECT p.id, p.order_id, p.nomor_po, p.status, p.created_at, p.updated_at,
                             p.tervalidasi_mitra_at, p.validasi_keuangan_at, 
                             " . $this->kolomPpk() . ",
+                            " . $this->kolomBacaHilir() . "
                             p.verifikasi_humas_at, p.catatan_humas, " . $this->kolomCatatanMitra() . " AS catatan_tim_mitra,
                             p.humas_dibaca_at, p.disposisi_humas_at,
                             p.created_at AS dibuat_at, p.dikirim_at AS kirim_at, p.reviewed_at AS katim_baca_at, p.disetujui_at,
@@ -435,6 +436,7 @@ class PoHumasController extends Controller {
         $ts = $tglVerif !== '' ? strtotime($tglVerif) : false;
         return [
             'id'             => (int) $r['id'],
+            'order_id'       => (int) ($r['order_id'] ?? 0),
             'nomor'          => (string) $r['nomor_po'],
             'order'          => (string) $r['nomor_order'],
             'mitra'          => $this->formatMitra($r['nmcustomer'], $r['pt_cv']),
@@ -463,6 +465,9 @@ class PoHumasController extends Controller {
             // revisi PPK BLU: hanya untuk teks "Status PO saat ini" (Humas tidak terlibat di tahap ini)
             'ppk_status'     => (string) ($r['ppk_status'] ?? ''),
             'ronde_ppk'      => (int) ($r['ronde_ppk'] ?? 0),
+            // sudah dibuka pemegang berikutnya? Tim Mitra: hanya dihitung bila dibuka SETELAH Humas memverifikasi. PPK BLU: penanda di-reset tiap perpindahan tahap.
+            'mitra_baca_at'  => (trim((string) ($r['mitra_dibaca_at'] ?? '')) !== '' && $verif !== '' && strcmp((string) $r['mitra_dibaca_at'], $verif) >= 0) ? self::tanggalJam((string) $r['mitra_dibaca_at']) : '',
+            'ppk_baca_at'    => trim((string) ($r['tervalidasi_mitra_at'] ?? '')) !== '' ? self::tanggalJam((string) ($r['ppk_dibaca_at'] ?? '')) : '',
             // catatan Tim Mitra baru tampil setelah Tim Mitra benar-benar memvalidasi PO
             'catatan_mitra'  => trim((string) ($r['tervalidasi_mitra_at'] ?? '')) !== '' ? trim((string) ($r['catatan_tim_mitra'] ?? '')) : '',
             // ---- Map Kendali (hanya tanggal, jam tidak dipakai) ----
@@ -594,6 +599,16 @@ class PoHumasController extends Controller {
             $ada = $this->safeExec("SHOW COLUMNS FROM po_kegiatan LIKE 'ppk_status'");
             return !empty($ada) ? 'p.ppk_status, p.ronde_ppk' : "'' AS ppk_status, 0 AS ronde_ppk";
         }
+
+    /** Penanda "sudah dibuka" Tim Mitra dan PPK BLU (untuk kolom Posisi PO di tab Sedang Berjalan). Kolom yang belum ada diganti NULL. */
+    protected function kolomBacaHilir() {
+        $s = '';
+        foreach (['mitra_dibaca_at', 'ppk_dibaca_at'] as $k) {
+            $ada = $this->safeExec("SHOW COLUMNS FROM po_kegiatan LIKE '" . $k . "'");
+            $s .= (!empty($ada) ? 'p.' . $k : 'NULL') . ' AS ' . $k . ', ';
+        }
+        return $s;
+    }
 
     protected function safeExec($sql, $params = []) {
         try { return $this->db->exec($sql, $params); } catch (\Exception $e) { return []; }

@@ -71,6 +71,26 @@ class PoIndexController extends PoSertifikasiController {
             $f3->reroute('/dashboard');
             return;
         }
+        // Satu halaman Daftar PO untuk semua layanan: dialihkan ke /po-kegiatan (filter Divisi = layanan), jadi tampilannya sama dengan PO OPTI.
+        // Tautan notifikasi "buat PO" (?buat=1) langsung membuka pemilihan order di halaman Tambah PO.
+        $layananAlih = strtolower(trim((string) $f3->get('GET.layanan')));
+        $terkunciAlih = $this->layananTerkunci();
+        if ($terkunciAlih !== null) { $layananAlih = $terkunciAlih; }
+        if (!isset($this->daftarLayanan()[$layananAlih])) { $layananAlih = ''; }
+        if ((string) $f3->get('GET.buat') === '1') {
+            $f3->reroute('/po-kegiatan/pilih?jenis=' . ($layananAlih !== '' ? $layananAlih : 'sertifikasi'));
+            return;
+        }
+        $tabAlih = strtolower(trim((string) $f3->get('GET.tab')));
+        $paramAlih = [];
+        if ($layananAlih !== '') { $paramAlih[] = 'divisi=' . rawurlencode($layananAlih); }
+        if ($tabAlih === 'draft') { $paramAlih[] = 'tab=draft'; } elseif ($tabAlih === 'terkirim') { $paramAlih[] = 'tab=berjalan'; }
+        foreach (['q', 'bulan', 'tahun', 'semua'] as $kAlih) {
+            $vAlih = (string) $f3->get('GET.' . $kAlih);
+            if ($vAlih !== '') { $paramAlih[] = $kAlih . '=' . rawurlencode($vAlih); }
+        }
+        $f3->reroute('/po-kegiatan' . ($paramAlih ? '?' . implode('&', $paramAlih) : ''));
+        return;
         $this->kendalaSkema();
         // kolom id_arsip_surat (order PO Pengujian) dipakai query daftar di bawah -- pastikan sudah ada
         try { \PoPengujian::pastikan($this->db); } catch (\Throwable $e) { error_log('[PO Index] ' . $e->getMessage()); }
@@ -288,6 +308,9 @@ class PoIndexController extends PoSertifikasiController {
                 'jenis'         => trim((string) ($r['jenis'] ?? '')),
                 'layanan_label' => $semuaLayanan[$slug] ?? ucfirst(str_replace('_', ' ', $slug)),
                 'nomor_order'   => $order,
+                // nilai kontrak & total terbayar (hanya order Sertifikasi yang punya angkanya; lainnya null)
+                'nilai_kontrak' => (isset($r['total_nilai_kontrak']) && $r['total_nilai_kontrak'] !== null && $r['total_nilai_kontrak'] !== '') ? (float) $r['total_nilai_kontrak'] : null,
+                'terbayar'      => (isset($r['total_bayar_kontrak']) && $r['total_bayar_kontrak'] !== null && $r['total_bayar_kontrak'] !== '') ? (float) $r['total_bayar_kontrak'] : null,
                 // mitra dari order (tb_customer); PO tanpa order (Pengujian lama): nama perusahaan yang diisi di form PO
                 'mitra'         => ($banyakOrder > 1 && trim((string) ($r['nama_perusahaan'] ?? '')) !== '') ? trim((string) $r['nama_perusahaan'])
                                     : (($r['nmcustomer'] ?? '') !== '' || ($r['pt_cv'] ?? '') !== ''
@@ -377,7 +400,7 @@ class PoIndexController extends PoSertifikasiController {
                  LEFT JOIN tb_arsipsurat s ON p.layanan = '" . \PoPengujian::LAYANAN . "' AND s.id_arsip = p.id_arsip_surat
                  LEFT JOIN tb_customer c ON c.id_customer = COALESCE(a.id_customer, s.id_customer)";
         $fromTanpaOrder = "FROM po_kegiatan p
-                 LEFT JOIN (SELECT NULL AS id_customer, NULL AS nomor_order, NULL AS no_id_order) a ON 1 = 0
+                 LEFT JOIN (SELECT NULL AS id_customer, NULL AS nomor_order, NULL AS no_id_order, NULL AS total_nilai_kontrak, NULL AS total_bayar_kontrak) a ON 1 = 0
                  LEFT JOIN tb_arsipsurat s ON p.layanan = '" . \PoPengujian::LAYANAN . "' AND s.id_arsip = p.id_arsip_surat
                  LEFT JOIN tb_customer c ON c.id_customer = COALESCE(a.id_customer, s.id_customer)";
 
@@ -390,7 +413,7 @@ class PoIndexController extends PoSertifikasiController {
                     $total = (int) (isset($res[0]['c']) ? $res[0]['c'] : 0);
                     $rows = $this->db->exec(
                         "SELECT p.id, p.layanan, p.nomor_po, p.tanggal_po, " . ($adaTglKirim ? 'p.tanggal_dikirim, ' : '') . "p.judul_kegiatan, p.status, p.order_id, p.created_at, p.updated_at, p.nama_perusahaan, p.jenis," . ($adaDaftarOrder ? ' p.daftar_order,' : '') . "
-                                a.nomor_order, a.no_id_order, s.nomor_surat, c.nmcustomer, c.pt_cv,
+                                a.nomor_order, a.no_id_order, a.total_nilai_kontrak, a.total_bayar_kontrak, s.nomor_surat, c.nmcustomer, c.pt_cv,
                                 {$stEf} AS status_efektif,
                                 COALESCE(p.updated_at, p.created_at) AS sort_ts
                          {$fromSql}

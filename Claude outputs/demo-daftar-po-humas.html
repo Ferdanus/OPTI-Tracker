@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demo: Daftar PO Humas</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css">
+<style>
+:root{--ink:#0f172a;--mut:#64748b;--line:#e2e8f0;--bg:#f1f5f9;--dark:#334155;--blue:#2563eb}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.note{background:#fffbeb;border-bottom:1px solid #fde68a;color:#78350f;padding:9px 22px;font-size:.82rem}
+.app{display:flex;min-height:calc(100vh - 40px)}
+.side{width:230px;background:#16233a;color:#cbd5e1;flex:none;padding:16px 12px}
+.side .logo{color:#fff;font-weight:800;margin:0 6px 18px}
+.side h6{margin:16px 8px 6px;font-size:.66rem;letter-spacing:.08em;color:#64748b}
+.side a{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;color:#cbd5e1;font-weight:600;font-size:.84rem;margin-bottom:2px}
+.side a.on{background:rgba(255,255,255,.12);color:#fff}
+.side .bdg{margin-left:auto;background:#e11d48;color:#fff;border-radius:99px;font-size:.68rem;padding:1px 8px;font-weight:700}
+.main{flex:1;min-width:0;padding:22px 26px}
+h2{font-size:1.3rem;margin:0 0 18px;display:flex;gap:8px;align-items:center}
+h2 i{color:var(--blue)}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+.mc{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+.mc small{display:block;font-size:.7rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--mut)}
+.mc h3{margin:4px 0 2px;font-size:1.7rem}
+.mc span{font-size:.75rem;color:var(--mut)}
+.mc .ic{width:42px;height:42px;border-radius:10px;display:grid;place-items:center;font-size:1.15rem}
+.box{background:#fff;border:1px solid var(--line);border-radius:14px;margin-bottom:14px}
+.filt{padding:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.srch{flex:1;min-width:220px;display:flex;align-items:center;gap:8px;border:1px solid #cbd5e1;border-radius:10px;padding:0 10px;background:#fff}
+.srch input{border:0;outline:0;padding:9px 2px;flex:1;font-size:.85rem;background:transparent}
+.sel{display:inline-flex;align-items:center;gap:8px;border:1px solid #cbd5e1;border-radius:10px;padding:0 10px;background:#fff;color:var(--mut)}
+.sel select{border:0;outline:0;padding:9px 4px;font-weight:700;font-size:.85rem;background:transparent;color:var(--ink)}
+.tg{display:inline-flex;align-items:center;gap:8px;font-size:.84rem;font-weight:600;cursor:pointer}
+.tg input{accent-color:var(--dark)}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;padding:14px}
+.tab{border:1px solid var(--line);background:#fff;border-radius:99px;padding:7px 15px;font-weight:700;font-size:.82rem;color:var(--mut);cursor:pointer;display:inline-flex;gap:7px;align-items:center}
+.tab.on{background:var(--dark);border-color:var(--dark);color:#fff}
+.tab .c{background:#e2e8f0;color:#334155;border-radius:99px;padding:0 8px;font-size:.72rem}
+.tab.on .c{background:rgba(255,255,255,.22);color:#fff}
+.tab .c.hot{background:#fee2e2;color:#b91c1c}
+.tab.on .c.hot{background:rgba(255,255,255,.25);color:#fff}
+.tblwrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{background:#f8fafc;text-align:left;font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;color:var(--mut);padding:11px 12px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:12px;border-bottom:1px solid #f1f5f9;vertical-align:middle;font-size:.84rem}
+tr.unread td{background:#f8fafc}
+tr.unread .po{font-weight:800}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--blue);margin-right:6px;vertical-align:middle}
+.po{font-weight:700}
+.sub{color:var(--mut);font-size:.74rem;font-weight:500}
+.dv{display:inline-flex;border-radius:99px;padding:2px 10px;font-size:.72rem;font-weight:800;background:#f1f5f9;color:#475569}
+.pill{display:inline-flex;gap:5px;align-items:center;border-radius:99px;padding:3px 11px;font-size:.75rem;font-weight:700}
+.p-amber{background:#fffbeb;color:#b45309}.p-blue{background:#eff6ff;color:#1d4ed8}.p-green{background:#ecfdf5;color:#047857}
+.pos{font-weight:800;font-size:.8rem}
+.pos.blue{color:#1d4ed8}.pos.rose{color:#be123c}.pos.amber{color:#b45309}
+.baca{font-size:.73rem;font-weight:600;margin-top:2px}
+.baca.belum{color:#b45309}.baca.sudah{color:#047857}
+.btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:4px 10px;font-size:.78rem;font-weight:700;cursor:pointer;color:var(--ink);display:inline-flex;gap:5px;align-items:center}
+.btn.pri{background:var(--dark);border-color:var(--dark);color:#fff}
+.foot{display:flex;justify-content:space-between;align-items:center;padding:14px;color:var(--mut);font-size:.82rem;flex-wrap:wrap;gap:8px}
+.pg{display:inline-flex;gap:4px;align-items:center}
+.pg b{background:var(--dark);color:#fff;border-radius:8px;min-width:32px;height:32px;display:grid;place-items:center}
+.empty{padding:44px;text-align:center;color:var(--mut)}
+.toast{position:fixed;right:20px;bottom:20px;background:var(--dark);color:#fff;padding:10px 16px;border-radius:10px;font-weight:600;display:none;z-index:50}
+@media(max-width:900px){.side{display:none}.cards{grid-template-columns:repeat(2,1fr)}}
+</style></head>
+<body>
+<div class="note"><b>Daftar PO Humas</b> dibuat sama seperti halaman PO lainnya. Tab: <b>Perlu Tindakan</b> (menunggu verifikasi Humas), <b>Sedang Berjalan</b> (sudah diverifikasi Humas, alurnya lanjut ke Tim Mitra dan PPK BLU), <b>PO Aktif</b> (sudah diverifikasi PPK BLU).</div>
+<div class="app">
+<aside class="side"><div class="logo">SILOPTI</div><h6>ALUR PELAYANAN</h6>
+<a><i class="bi bi-inbox"></i> Daftar Order</a>
+<a class="on"><i class="bi bi-journal-check"></i> Daftar PO Humas <span class="bdg" id="sbBdg"></span></a>
+<h6>AKUN</h6><a><i class="bi bi-person"></i> Profil Pengguna</a></aside>
+<main class="main">
+<h2><i class="bi bi-clipboard2-data"></i> Petunjuk Operasional (PO)</h2>
+<div class="cards" id="cards"></div>
+<div class="box"><div class="filt">
+ <div class="srch"><i class="bi bi-search" style="color:var(--mut)"></i><input id="q" placeholder="Cari no. order, no. PO, mitra, atau judul kegiatan"></div>
+ <span class="sel"><i class="bi bi-grid"></i><select id="fDiv"><option value="">Semua Divisi</option><option>Selulosa</option><option>Lingkungan</option></select></span>
+ <span class="sel"><i class="bi bi-calendar3"></i><select id="fBln"></select></span>
+ <span class="sel"><i class="bi bi-clock"></i><select id="fThn"><option>2026</option><option>2025</option></select></span>
+ <label class="tg"><input type="checkbox" id="fSemua"> Tampilkan semua data</label>
+</div></div>
+<div class="box"><div class="tabs" id="tabs"></div><div class="tblwrap" id="tbl"></div><div class="foot" id="foot"></div></div>
+</main></div>
+<div class="toast" id="toast"></div>
+<script>
+// tab: tindakan (menunggu Humas) | berjalan (sudah diverifikasi Humas, belum diverifikasi PPK BLU) | aktif (diverifikasi PPK BLU)
+var BLN=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+var D=[
+ {n:'5/PO/BBSPJIS/X/2026',o:'ORD-202610-002',m:'PT Contoh Kertas Sejahtera',dv:'Selulosa',j:'Uji Karakterisasi Kekakuan dan Uji Cekik Chipboard',acc:'27 Okt 2026 11:49',t:'tindakan',baca:null,bl:10,th:2026},
+ {n:'7/PO/BBSPJIS/X/2026',o:'ORD-202610-005',m:'PT Maju Pulp Nusantara',dv:'Selulosa',j:'Penentuan Kadar Kappa Pulp Kraft',acc:'26 Okt 2026 15:20',t:'tindakan',baca:'27 Okt 2026 08:05',bl:10,th:2026},
+ {n:'11/PO/BBSPJIL/X/2026',o:'ORD-202610-009',m:'PT Fajar Lingkungan Mandiri',dv:'Lingkungan',j:'Pengujian Baku Mutu Air Limbah',acc:'25 Okt 2026 10:02',t:'tindakan',baca:null,bl:10,th:2026},
+ {n:'4/PO/BBSPJIS/X/2026',o:'ORD-202610-001',m:'PT Sinar Tirta Kertas',dv:'Selulosa',j:'Optimalisasi Retensi Fiber',acc:'20 Okt 2026 09:10',t:'berjalan',pos:'Menunggu verifikasi Tim Mitra',ph:'Tim Mitra',cls:'blue',baca:null,bacaOleh:'Tim Mitra',bl:10,th:2026},
+ {n:'3/PO/BBSPJIS/X/2026',o:'ORD-202610-003',m:'PT Riau Serat Utama',dv:'Selulosa',j:'Kajian Penghematan Steam',acc:'18 Okt 2026 13:44',t:'berjalan',pos:'Menunggu verifikasi PPK BLU',ph:'PPK BLU',cls:'blue',baca:'27 Okt 2026 09:12',bacaOleh:'PPK BLU',bl:10,th:2026},
+ {n:'10/PO/BBSPJIL/X/2026',o:'ORD-202610-007',m:'PT Hijau Lestari',dv:'Lingkungan',j:'Uji Kualitas Efluen IPAL',acc:'15 Okt 2026 16:30',t:'berjalan',pos:'Revisi PPK BLU: dikerjakan Ketua Tim',ph:'Ketua Tim',cls:'rose',baca:'24 Okt 2026 10:41',bacaOleh:'Ketua Tim',bl:10,th:2026},
+ {n:'2/PO/BBSPJIS/IX/2026',o:'ORD-202609-004',m:'PT Karya Fiber Abadi',dv:'Selulosa',j:'Uji Profil Distribusi Serat',acc:'12 Sep 2026 14:15',t:'berjalan',pos:'Menunggu verifikasi PPK BLU',ph:'PPK BLU',cls:'blue',baca:'15 Sep 2026 11:00',bacaOleh:'PPK BLU',bl:9,th:2026},
+ {n:'1/PO/BBSPJIS/X/2026',o:'ORD-202610-007',m:'PT Contoh Kertas Sejahtera',dv:'Selulosa',j:'Optimalisasi Formasi Lembaran dan Efisiensi Energi',acc:'20 Okt 2026 05:55',t:'aktif',bl:10,th:2026},
+ {n:'9/PO/BBSPJIL/X/2026',o:'ORD-202610-006',m:'PT Tirta Bersih Sentosa',dv:'Lingkungan',j:'Audit Pengelolaan Limbah Cair',acc:'10 Okt 2026 09:30',t:'aktif',bl:10,th:2026},
+ {n:'8/PO/BBSPJIS/IX/2026',o:'ORD-202609-002',m:'PT Serat Mulia',dv:'Selulosa',j:'Uji Kekuatan Tarik Kertas Kemasan',acc:'02 Sep 2026 10:00',t:'aktif',bl:9,th:2026}
+];
+var TL={tindakan:'Perlu Tindakan',berjalan:'Sedang Berjalan',aktif:'PO Aktif'};
+var tab='tindakan';
+function $(i){return document.getElementById(i)}
+function toast(t){var e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(function(){e.style.display='none'},2200)}
+$('fBln').innerHTML=BLN.map(function(b,i){return '<option value="'+(i+1)+'"'+(i===9?' selected':'')+'>'+b+'</option>'}).join('');
+// perilaku sama seperti halaman PO lain: tab Perlu Tindakan menampilkan semua, tab lain mengikuti bulan/tahun kecuali "Tampilkan semua data" dicentang
+var semuaEks=null;
+function semuaAktif(t){return semuaEks===null?(t==='tindakan'):semuaEks}
+function saring(t,abaikanWaktu){
+ var q=$('q').value.trim().toLowerCase(),dv=$('fDiv').value,bl=+$('fBln').value,th=+$('fThn').value;
+ return D.filter(function(p){
+  if(p.t!==t)return false;
+  if(dv&&p.dv!==dv)return false;
+  if(q&&(p.n+p.o+p.m+p.j).toLowerCase().indexOf(q)<0)return false;
+  if(!abaikanWaktu&&!semuaAktif(t)&&(p.bl!==bl||p.th!==th))return false;
+  return true;
+ });
+}
+function render(){
+ var tot=D.length,jt=D.filter(function(p){return p.t==='tindakan'}).length,jb=D.filter(function(p){return p.t==='berjalan'}).length,ja=D.filter(function(p){return p.t==='aktif'}).length;
+ var C=[['Total Dokumen',tot,'Semua PO yang masuk ke Humas','bi-clipboard2-data','#f1f5f9','#475569','tindakan'],['Perlu Tindakan',jt,'Menunggu verifikasi Anda','bi-exclamation-circle','#fff7ed','#c2410c','tindakan'],['Sedang Berjalan',jb,'Sudah Anda verifikasi, lanjut ke Tim Mitra dan PPK BLU','bi-hourglass-split','#eff6ff','#1d4ed8','berjalan'],['PO Aktif',ja,'Diverifikasi PPK BLU','bi-check-circle','#ecfdf5','#047857','aktif']];
+ $('cards').innerHTML=C.map(function(c){return '<div class="mc" data-t="'+c[6]+'"><div><small>'+c[0]+'</small><h3>'+c[1]+'</h3><span>'+c[2]+'</span></div><div class="ic" style="background:'+c[4]+';color:'+c[5]+'"><i class="bi '+c[3]+'"></i></div></div>'}).join('');
+ Array.prototype.forEach.call(document.querySelectorAll('.mc'),function(m){m.onclick=function(){tab=m.dataset.t;render()}});
+ $('sbBdg').textContent=jt||'';$('sbBdg').style.display=jt?'':'none';
+ $('tabs').innerHTML=Object.keys(TL).map(function(t){var n=saring(t).length;return '<button class="tab'+(t===tab?' on':'')+'" data-t="'+t+'">'+TL[t]+' <span class="c'+(t==='tindakan'&&n?' hot':'')+'">'+n+'</span></button>'}).join('');
+ Array.prototype.forEach.call(document.querySelectorAll('.tab'),function(b){b.onclick=function(){tab=b.dataset.t;render()}});
+ var rows=saring(tab),pos=tab==='berjalan';
+ if(!rows.length){$('tbl').innerHTML='<div class="empty"><i class="bi bi-inbox" style="font-size:1.8rem"></i><div>Tidak ada PO di tab ini.</div></div>';$('foot').innerHTML='';return}
+ var h='<table><thead><tr><th>No</th><th>Dokumen PO</th><th>No. Order</th><th>Mitra</th><th>Divisi</th><th>Judul Kegiatan</th><th>Status PO</th>'+(pos?'<th>Posisi PO</th>':'')+'<th style="text-align:center">Aksi</th></tr></thead><tbody>';
+ rows.forEach(function(p,i){
+  var unread=tab==='tindakan'&&!p.baca;
+  var st=tab==='tindakan'?'<span class="pill p-amber"><i class="bi bi-hourglass-split"></i>Menunggu Verifikasi Humas</span>':tab==='berjalan'?'<span class="pill p-blue"><i class="bi bi-hourglass-split"></i>Sedang Berjalan</span>':'<span class="pill p-green"><i class="bi bi-check-circle-fill"></i>PO Aktif</span>';
+  var bacaTxt='';
+  if(tab==='tindakan')bacaTxt='<div class="baca '+(p.baca?'sudah':'belum')+'"><i class="bi bi-envelope'+(p.baca?'-open':'')+'"></i> '+(p.baca?'Dibaca '+p.baca:'Belum dibaca')+'</div>';
+  var posCell=pos?'<td><div class="pos '+p.cls+'">'+p.pos+'</div><div class="baca '+(p.baca?'sudah':'belum')+'"><i class="bi bi-envelope'+(p.baca?'-open':'')+'"></i> '+(p.baca?'Dibuka '+p.baca:'Belum dibuka '+p.bacaOleh)+'</div></td>':'';
+  var aksi=tab==='tindakan'?'<button class="btn pri" onclick="toast(\'Slide Review Humas: verifikasi PO, tulis catatan\')"><i class="bi bi-eye"></i>Review</button>':'<button class="btn" onclick="toast(\'Slide lihat saja: tanpa tombol tindakan\')"><i class="bi bi-eye"></i>Lihat</button>';
+  h+='<tr class="'+(unread?'unread':'')+'"><td>'+(i+1)+'</td><td>'+(unread?'<span class="dot"></span>':'')+'<span class="po">'+p.n+'</span><div class="sub">Disetujui Ketua Tim '+p.acc+'</div>'+bacaTxt+'</td><td><b>'+p.o+'</b></td><td>'+p.m+'</td><td><span class="dv">'+p.dv+'</span></td><td>'+p.j+'</td><td>'+st+'</td>'+posCell+'<td style="text-align:center">'+aksi+'</td></tr>';
+ });
+ $('tbl').innerHTML=h+'</tbody></table>';
+ $('foot').innerHTML='<span>Menampilkan 1 - '+rows.length+' dari '+rows.length+' dokumen</span><span class="pg"><b>1</b></span>';
+}
+$('q').oninput=render;$('fDiv').onchange=render;$('fBln').onchange=function(){semuaEks=null;$('fSemua').checked=false;render()};$('fThn').onchange=$('fBln').onchange;
+$('fSemua').onchange=function(){semuaEks=this.checked;render()};
+render();
+</script>
+</body></html>

@@ -34,6 +34,8 @@ class PoReviewController extends Controller {
     const LIMIT_DAFTAR   = 500;
 
     protected static $kolomCache = [];
+    /** true = mode lihat saja lintas divisi: daftarItems tidak dibatasi divisi / pelaksana (HANYA dipasang oleh jalur baca di bawah). */
+    protected $lihatSaja = false;
 
     /* ============================================================
      * HALAMAN DAN DATA DAFTAR
@@ -53,6 +55,16 @@ class PoReviewController extends Controller {
         $daftar = [];
         try {
             $daftar = $this->daftarItems($mode, (int) $this->getUserId(), 0);
+            // Panel "hanya lihat" untuk PO divisi / layanan lain (?embed=1&buka=ID&lihat=N&ro=1): PO yang diminta ikut dimuat tanpa batas divisi, hanya untuk dibaca
+            $bukaRo = (int) $f3->get('GET.buka');
+            if ($bukaRo > 0 && (string) $f3->get('GET.ro') === '1') {
+                $ada = false;
+                foreach ($daftar as $dRo) { if ((int) $dRo['id'] === $bukaRo) { $ada = true; break; } }
+                if (!$ada) {
+                    $this->lihatSaja = true;
+                    try { $daftar = array_merge($daftar, $this->daftarItems($mode, (int) $this->getUserId(), $bukaRo)); } finally { $this->lihatSaja = false; }
+                }
+            }
         } catch (\Exception $e) {
             $errorMessage = 'Gagal memuat daftar PO: ' . $e->getMessage() . ' (sudah menjalankan ketiga file migration?)';
         }
@@ -81,6 +93,14 @@ class PoReviewController extends Controller {
 
     /** GET /po-kegiatan/@id/review -- rincian satu PO + catatan revisi yang boleh dilihat pengguna */
     public function detail($f3, $params) {
+        // ?lihat=1: baca saja lintas divisi (tanpa draf catatan, tanpa menandai dibaca). Hanya untuk Superadmin, Ketua Tim, dan Tim Kerja.
+        if ((string) $f3->get('GET.lihat') === '1') {
+            $this->requireAuth();
+            if ($this->modeHalaman() === null) { $this->keluarkanJson(['ok' => false, 'pesan' => 'Anda tidak punya akses ke PO ini.'], 403); }
+            $this->lihatSaja = true;
+            $this->keluarkanJson($this->paketDetail((int) $params['id'], 'pembuat'));
+            return;
+        }
         list($po, $sisi) = $this->akses((int) $params['id']);
         $this->keluarkanJson($this->paketDetail((int) $po['id'], $sisi));
     }
@@ -1000,6 +1020,7 @@ class PoReviewController extends Controller {
 
     /** Tambah filter cakupan data ke SQL (alias tabel: o = order_layanan). */
     protected function tambahScope($mode, $uid, &$sql, &$params, &$idx) {
+        if ($this->lihatSaja) { return; }
         if ($mode === 'katim') {
             $div = $this->divisiKatim();
             if ($div !== '') {
@@ -1104,6 +1125,7 @@ class PoReviewController extends Controller {
                        " . $this->kolomPosisiSql() . "
                        COALESCE(NULLIF(p.judul_kegiatan, ''), o.judul_kegiatan) AS judul,
                        o.nomor_order, o.jenis_layanan_opti, o.ketua_pelaksana_id,
+                       " . $this->kolomProposal() . " AS tgl_proposal,
                        c.nmcustomer AS nama_perusahaan, c.pt_cv,
                        (SELECT COUNT(*) FROM po_chat pc
                          WHERE pc.po_id = p.id AND pc.sisi = ? AND pc.sistem = 0 AND pc.dibaca_at IS NULL) AS chat_unread,
@@ -1167,6 +1189,8 @@ class PoReviewController extends Controller {
                 'catatan_humas'    => (!empty($r['humas_ver_at']) && isset($r['catatan_humas'])) ? trim((string) $r['catatan_humas']) : '',
                 // catatan Tim Mitra baru ditampilkan setelah Tim Mitra memvalidasi PO
                 'catatan_mitra'    => (!empty($r['mitra_valid_at']) && isset($r['catatan_tim_mitra'])) ? trim((string) $r['catatan_tim_mitra']) : '',
+                // catatan PPK BLU (non-revisi) ikut tampil setelah PPK BLU memverifikasi PO
+                'catatan_ppk'      => (!empty($r['ppk_valid_at']) && isset($r['catatan_ppk'])) ? trim((string) $r['catatan_ppk']) : '',
                 // [BARU] revisi PPK BLU (hanya dipakai untuk teks "Status PO saat ini")
                 'ppk_status'       => !empty($r['ppk_status']) ? (string) $r['ppk_status'] : '',
                 'ronde_ppk'        => isset($r['ronde_ppk']) ? (int) $r['ronde_ppk'] : 0,
@@ -1176,9 +1200,33 @@ class PoReviewController extends Controller {
                 'rn_total'         => (int) $r['rn_total'],
                 'rn_selesai'       => (int) $r['rn_selesai'],
                 'unread'           => (int) $r['chat_unread'],
+                // ---- Map Kendali F.PJT-12-03/1 (kartu di tab Dokumen untuk Ketua Pelaksana; hanya tanggal) ----
+                'disiapkan'        => $div !== '' ? 'Tim Kerja OPTI ' . ucfirst(strtolower($div)) : 'Tim Kerja OPTI',
+                'map'              => [
+                    'proposal' => self::tanggalMap((string) ($r['tgl_proposal'] ?? '')),
+                    'humas'    => self::tanggalMap((string) ($r['humas_ver_at'] ?? '')),
+                    'mitra'    => self::tanggalMap((string) ($r['mitra_valid_at'] ?? '')),
+                    'keuangan' => self::tanggalMap((string) ($r['ppk_valid_at'] ?? '')),
+                ],
             ];
         }
         return $daftar;
+    }
+
+    protected static function tanggalMap($v) {
+        $v = trim((string) $v);
+        return ($v !== '' && strpos($v, '0000') !== 0 && strtotime($v)) ? date('Y-m-d', strtotime($v)) : '';
+    }
+
+    /** Subquery tanggal proposal disetujui Ketua (proposal terbaru per order); NULL bila kolomnya belum ada. */
+    protected function kolomProposal() {
+        try {
+            $r = $this->db->exec("SHOW COLUMNS FROM opti_proposal_riset LIKE 'disetujui_ketua_at'");
+            if (!empty($r)) {
+                return "(SELECT pr.disetujui_ketua_at FROM opti_proposal_riset pr WHERE pr.order_id = o.id ORDER BY pr.id DESC LIMIT 1)";
+            }
+        } catch (\Exception $e) {}
+        return 'NULL';
     }
 
     /**
@@ -1197,6 +1245,7 @@ class PoReviewController extends Controller {
              . $ex('validasi_keuangan_at') . ' AS ppk_valid_at, '
              . $ex('catatan_tim_mitra') . ' AS catatan_tim_mitra, '
              . $ex('catatan_humas') . ' AS catatan_humas, '
+             . $ex('catatan_ppk') . ' AS catatan_ppk, '
              . $ex('ppk_status') . ' AS ppk_status, '
              . $ex('ronde_ppk') . ' AS ronde_ppk, '
              . $ex('ppk_status_at') . ' AS ppk_status_at, '
@@ -1241,7 +1290,30 @@ class PoReviewController extends Controller {
                 'ronde'  => (int) $r['ronde'],
                 'oleh'   => isset($peta[$idu]) ? $peta[$idu] : 'Ketua Tim',
                 'waktu'  => (string) $r['created_at'],
+                'tahap'  => 'review',
             ];
+        }
+        // Catatan revisi PPK BLU (tahap 'ppk', tanpa draf): hanya dipakai panel mode "lihat" untuk PO yang sedang direvisi PPK BLU
+        if (!empty($items[0]['ppk_status'])) {
+            try {
+                $rowsPpk = $this->db->exec("SELECT id, bagian, teks, state, ronde, dibuat_oleh, created_at FROM po_revisi_catatan WHERE po_id = ? AND tahap = 'ppk' AND state <> 'draf' ORDER BY id ASC", [1 => (int) $poId]);
+                $idsPpk = [];
+                foreach ($rowsPpk as $r) { $idsPpk[] = $r['dibuat_oleh']; }
+                $petaPpk = $this->petaNamaUser($idsPpk);
+                foreach ($rowsPpk as $r) {
+                    $idu = (int) $r['dibuat_oleh'];
+                    $catatan[] = [
+                        'id'     => (int) $r['id'],
+                        'bagian' => (string) $r['bagian'],
+                        'teks'   => (string) $r['teks'],
+                        'state'  => (string) $r['state'],
+                        'ronde'  => (int) $r['ronde'],
+                        'oleh'   => isset($petaPpk[$idu]) ? $petaPpk[$idu] : 'PPK BLU',
+                        'waktu'  => (string) $r['created_at'],
+                        'tahap'  => 'ppk',
+                    ];
+                }
+            } catch (\Exception $e) { /* catatan PPK BLU tidak wajib; panel tetap jalan */ }
         }
         return ['ok' => true, 'sisi' => $sisi, 'po' => $items[0], 'catatan' => $catatan];
     }

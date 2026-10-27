@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demo: Daftar PO satu halaman</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css">
+<style>
+:root{--ink:#0f172a;--mut:#64748b;--line:#e2e8f0;--bg:#f1f5f9;--dark:#334155;--blue:#2563eb;--amber:#b45309;--green:#047857;--red:#be123c}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.bar{background:#fff;border-bottom:1px solid var(--line);padding:9px 18px;display:flex;gap:16px;flex-wrap:wrap;align-items:center;position:sticky;top:0;z-index:30}
+.bar b{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--mut)}
+.seg{display:inline-flex;background:#f1f5f9;border-radius:99px;padding:3px;gap:2px}
+.seg button{border:0;background:transparent;padding:5px 13px;border-radius:99px;font-weight:700;font-size:.78rem;color:var(--mut);cursor:pointer}
+.seg button.on{background:var(--dark);color:#fff}
+.note{background:#fffbeb;border-bottom:1px solid #fde68a;color:#78350f;padding:9px 22px;font-size:.82rem}
+.app{display:flex;min-height:calc(100vh - 100px)}
+.side{width:230px;background:#16233a;color:#cbd5e1;flex:none;padding:16px 12px}
+.side .logo{color:#fff;font-weight:800;margin:0 6px 18px}
+.side h6{margin:16px 8px 6px;font-size:.66rem;letter-spacing:.08em;color:#64748b}
+.side a{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;color:#cbd5e1;font-weight:600;font-size:.84rem;margin-bottom:2px}
+.side a.on{background:rgba(255,255,255,.12);color:#fff}
+.side .bdg{margin-left:auto;background:#e11d48;color:#fff;border-radius:99px;font-size:.68rem;padding:1px 8px;font-weight:700}
+.side a.gone{opacity:.45;text-decoration:line-through}
+.main{flex:1;min-width:0;padding:22px 26px}
+h2{font-size:1.25rem;margin:0 0 20px;display:flex;gap:8px;align-items:center}
+h2 i{color:var(--blue)}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.mc{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+.mc small{display:block;font-size:.7rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--mut)}
+.mc h3{margin:4px 0 2px;font-size:1.6rem}
+.mc span{font-size:.75rem;color:var(--mut)}
+.mc .ic{width:42px;height:42px;border-radius:10px;display:grid;place-items:center;font-size:1.15rem}
+.box{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;padding:12px 14px;border-bottom:1px solid var(--line)}
+.tab{border:1px solid var(--line);background:#fff;border-radius:99px;padding:6px 14px;font-weight:700;font-size:.82rem;color:var(--mut);cursor:pointer;display:inline-flex;gap:7px;align-items:center}
+.tab.on{background:var(--dark);border-color:var(--dark);color:#fff}
+.tab .c{background:#e2e8f0;color:#334155;border-radius:99px;padding:0 8px;font-size:.72rem}
+.tab.on .c{background:rgba(255,255,255,.22);color:#fff}
+.tab .c.hot{background:#e11d48;color:#fff}
+table{width:100%;border-collapse:collapse}
+th{background:#f8fafc;text-align:left;font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--mut);padding:10px 12px;border-bottom:1px solid var(--line)}
+td{padding:11px 12px;border-bottom:1px solid #f1f5f9;vertical-align:middle;font-size:.84rem}
+tr.unread td{font-weight:700}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--blue);margin-right:6px}
+.po{color:var(--blue);font-weight:800}
+.sub{color:var(--mut);font-size:.74rem;font-weight:500}
+.pill{display:inline-flex;gap:5px;align-items:center;border-radius:99px;padding:3px 10px;font-size:.75rem;font-weight:700}
+.p-slate{background:#f1f5f9;color:#475569}.p-blue{background:#eff6ff;color:#1d4ed8}.p-amber{background:#fffbeb;color:#b45309}.p-rose{background:#fff1f2;color:#be123c}.p-green{background:#ecfdf5;color:#047857}
+.pos{font-weight:800;font-size:.8rem}
+.pos.blue{color:#1d4ed8}.pos.amber{color:#b45309}.pos.rose{color:#be123c}.pos.green{color:#047857}
+.btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:4px 9px;font-size:.78rem;font-weight:700;cursor:pointer;color:var(--ink)}
+.btn.dark{background:var(--dark);border-color:var(--dark);color:#fff}
+.empty{padding:44px;text-align:center;color:var(--mut)}
+.chips{padding:10px 14px;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center;font-size:.78rem;color:var(--mut)}
+.chip{border:1px solid var(--line);border-radius:8px;padding:3px 10px;font-weight:700;cursor:pointer;background:#fff;color:var(--mut)}
+.chip.on{background:#e2e8f0;color:var(--ink)}
+.toast{position:fixed;right:20px;bottom:20px;background:var(--dark);color:#fff;padding:10px 16px;border-radius:10px;font-weight:600;display:none}
+@media(max-width:900px){.side{display:none}.cards{grid-template-columns:repeat(2,1fr)}}
+</style></head>
+<body>
+<div class="bar"><b>Lihat sebagai</b><span class="seg" id="segRole"><button data-r="ketupel" class="on">Ketua Pelaksana</button><button data-r="katim">Ketua Tim</button></span><span style="color:var(--mut);font-size:.8rem">Klik tab, kotak, atau baris untuk mencoba</span></div>
+<div class="note"><b>Satu halaman saja.</b> Menu "Daftar Review PO" dihapus dari sidebar, isinya (bersama Terkirim) digabung jadi tab <b>Sedang Berjalan</b> di halaman Petunjuk Operasional (PO). Kotak tetap 4. Tab: PO Masuk, Draft, Revisi, Sedang Berjalan, PO Aktif.</div>
+<div class="app">
+<aside class="side"><div class="logo">SILOPTI</div><h6>PETUNJUK OPERASIONAL</h6>
+<a class="on"><i class="bi bi-clipboard2-data"></i> Petunjuk Operasional (PO) <span class="bdg" id="sbBdg"></span></a>
+<a class="gone"><i class="bi bi-clipboard2-pulse"></i> Daftar Review PO</a><h6>LAINNYA</h6><a><i class="bi bi-grid"></i> Order</a></aside>
+<main class="main">
+<h2><i class="bi bi-clipboard2-data"></i> Petunjuk Operasional (PO)</h2>
+<div class="cards" id="cards"></div>
+<div class="box"><div class="tabs" id="tabs"></div><div class="chips" id="chips" style="display:none"></div><div id="tbl"></div></div>
+</main></div>
+<div class="toast" id="toast"></div>
+<script>
+var ST={
+ masuk:{tab:'masuk',lbl:'Menunggu PO',cls:'amber',pos:'',pem:''},
+ draft:{tab:'draft',lbl:'Draft PO',cls:'slate',pos:'',pem:''},
+ revisi:{tab:'revisi',lbl:'Revisi',cls:'rose',pos:'Perlu revisi PO',pem:'Ketua Pelaksana',pc:'rose',tindak:'ketupel'},
+ revppk:{tab:'revisi',lbl:'Revisi',cls:'rose',pos:'Revisi PPK BLU dikerjakan',pem:'Ketua Pelaksana',pc:'rose',tindak:'ketupel'},
+ review:{tab:'berjalan',lbl:'Sedang Berjalan',cls:'blue',pos:'Review Ketua Tim',pem:'Ketua Tim',pc:'amber',tindak:'katim'},
+ direvisi:{tab:'berjalan',lbl:'Sedang Berjalan',cls:'blue',pos:'Revisi menunggu review',pem:'Ketua Tim',pc:'amber',tindak:'katim'},
+ humas:{tab:'berjalan',lbl:'Sedang Berjalan',cls:'blue',pos:'Verifikasi Humas',pem:'Humas',pc:'blue'},
+ mitra:{tab:'berjalan',lbl:'Sedang Berjalan',cls:'blue',pos:'Verifikasi Tim Mitra',pem:'Tim Mitra',pc:'blue'},
+ ppk:{tab:'berjalan',lbl:'Sedang Berjalan',cls:'blue',pos:'Verifikasi PPK BLU',pem:'PPK BLU',pc:'blue'},
+ aktif:{tab:'aktif',lbl:'PO Aktif',cls:'green',pos:'PO Aktif',pem:'Pengerjaan lab dimulai',pc:'green'}
+};
+var D=[
+ {o:'ORD-202610-006',m:'PT Pura Nusapersada',pic:'aji bakwan',j:'Verifikasi Formula Barrier Coating Ramah Lingkungan untuk Kertas Kemasan',po:'',s:'masuk'},
+ {o:'ORD-202610-005',m:'PT Indah Kiat',pic:'aji bakwan',j:'Uji Karakteristik Pulp Kraft untuk Chipboard',po:'',s:'draft'},
+ {o:'ORD-202610-004',m:'PT Sinar Indah Kertas',pic:'aji bakwan',j:'Evaluasi Komposisi Serat Campuran dan Optimasi Refining Pulp Daur Ulang',po:'4/PO/BBSPJIS/X/2026',s:'revisi',u:1},
+ {o:'ORD-202609-011',m:'PT Pabrik Kertas Tjiwi',pic:'aji bakwan',j:'Karakterisasi Kekuatan Tarik Kertas Kraft',po:'3/PO/BBSPJIS/X/2026',s:'revppk',u:1},
+ {o:'ORD-202610-003',m:'PT Kertas Padalarang',pic:'aji bakwan',j:'Tujuan Verifikasi Permeabilitas Kertas Saring',po:'6/PO/BBSPJIS/X/2026',s:'review',u:1},
+ {o:'ORD-202610-002',m:'PT Fajar Surya',pic:'aji bakwan',j:'Pengujian Daya Serap Air Tissue',po:'5/PO/BBSPJIS/X/2026',s:'direvisi'},
+ {o:'ORD-202610-007',m:'PT Bumi Raya Utama',pic:'dewi lestari',j:'Pemantauan Kualitas Air Limbah Industri Kertas',po:'7/PO/BBSPJIS/X/2026',s:'review',u:1},
+ {o:'ORD-202609-009',m:'PT Riau Andalan',pic:'aji bakwan',j:'Analisis Kadar Abu dan Lignin Pulp',po:'2/PO/BBSPJIS/IX/2026',s:'humas'},
+ {o:'ORD-202609-008',m:'PT Kertas Leces',pic:'aji bakwan',j:'Uji Ketahanan Lipat Kertas Dokumen',po:'1/PO/BBSPJIS/IX/2026',s:'mitra'},
+ {o:'ORD-202609-007',m:'PT Suparma',pic:'aji bakwan',j:'Evaluasi Retensi Filler pada Kertas Cetak',po:'12/PO/BBSPJIS/VIII/2026',s:'ppk'},
+ {o:'ORD-202608-010',m:'PT Pindo Deli',pic:'aji bakwan',j:'Uji Kualitas Pulp Dissolving',po:'10/PO/BBSPJIS/VIII/2026',s:'aktif'}
+];
+var role='ketupel', tab='masuk', sub='semua';
+var TABS=[['masuk','PO Masuk','bi-inbox'],['draft','Draft','bi-pencil-square'],['revisi','Revisi','bi-arrow-repeat'],['berjalan','Sedang Berjalan','bi-hourglass-split'],['aktif','PO Aktif','bi-check2-circle']];
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function vis(){return D.filter(function(p){return role==='katim' ? ST[p.s].tab!=='masuk'&&ST[p.s].tab!=='draft' : p.pic==='aji bakwan';});}
+function inTab(k){return vis().filter(function(p){return ST[p.s].tab===k;});}
+function hot(p){return ST[p.s].tindak===role;}
+function toast(t){var e=document.getElementById('toast');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(function(){e.style.display='none';},2200);}
+function cards(){
+ var v=vis(), n=function(k){return inTab(k).length;};
+ var tindak = role==='ketupel' ? n('masuk')+n('draft')+n('revisi') : inTab('berjalan').filter(hot).length;
+ var C=[['Total Dokumen',v.length,'Semua PO dan order aktif','bi-clipboard2-data','#f1f5f9','#334155','#cbd5e1',''],
+ ['Perlu Tindakan',tindak,role==='ketupel'?'Masuk, draft, dan revisi':'Menunggu review Anda','bi-exclamation-circle-fill','#fef3c7','#d97706','#fde68a',role==='ketupel'?'masuk':'berjalan'],
+ ['Sedang Berjalan',n('berjalan'),'Review dan verifikasi','bi-hourglass-split','#eff6ff','#2563eb','#bfdbfe','berjalan'],
+ ['PO Aktif',n('aktif'),'Diverifikasi dan siap jalan','bi-check-circle-fill','#ecfdf5','#059669','#a7f3d0','aktif']];
+ document.getElementById('cards').innerHTML=C.map(function(c){return '<div class="mc" data-go="'+c[7]+'"><div><small>'+c[0]+'</small><h3 style="color:'+c[5]+'">'+c[1]+'</h3><span>'+c[2]+'</span></div><div class="ic" style="background:'+c[4]+';color:'+c[5]+';border:1px solid '+c[6]+'"><i class="bi '+c[3]+'"></i></div></div>';}).join('');
+ var sb=role==='ketupel'?n('revisi')+n('masuk'):inTab('berjalan').filter(hot).length;document.getElementById('sbBdg').textContent=sb||'';
+}
+function tabs(){
+ document.getElementById('tabs').innerHTML=TABS.filter(function(t){return !(role==='katim'&&(t[0]==='masuk'||t[0]==='draft'));}).map(function(t){
+  var l=inTab(t[0]), h=l.filter(hot).length, red=(t[0]==='revisi'&&role==='ketupel')||(t[0]==='masuk'&&role==='ketupel');
+  return '<span class="tab'+(tab===t[0]?' on':'')+'" data-t="'+t[0]+'"><i class="bi '+t[2]+'"></i>'+t[1]+' <span class="c'+((red&&l.length)||(t[0]==='berjalan'&&role==='katim'&&h)?' hot':'')+'">'+l.length+'</span></span>';}).join('');
+}
+function list(){
+ var l=inTab(tab), ch=document.getElementById('chips');
+ if(tab==='berjalan'||tab==='revisi'){
+  ch.style.display='flex';
+  var opts=tab==='berjalan'?[['semua','Semua'],['tindak',role==='katim'?'Perlu Anda tinjau':'Menunggu Ketua Tim'],['verif','Dalam verifikasi']]:[['semua','Semua'],['rev','Revisi Ketua Tim'],['ppk','Revisi PPK BLU']];
+  ch.innerHTML='Filter:&nbsp;'+opts.map(function(o){return '<span class="chip'+(sub===o[0]?' on':'')+'" data-s="'+o[0]+'">'+o[1]+'</span>';}).join('');
+  if(sub==='tindak') l=l.filter(function(p){return p.s==='review'||p.s==='direvisi';});
+  if(sub==='verif') l=l.filter(function(p){return p.s==='humas'||p.s==='mitra'||p.s==='ppk';});
+  if(sub==='rev') l=l.filter(function(p){return p.s==='revisi';});
+  if(sub==='ppk') l=l.filter(function(p){return p.s==='revppk';});
+ } else ch.style.display='none';
+ var pos=(tab==='revisi'||tab==='berjalan');
+ if(!l.length){document.getElementById('tbl').innerHTML='<div class="empty"><i class="bi bi-inbox" style="font-size:2rem"></i><div style="font-weight:700;margin-top:6px">Tidak ada data PO</div></div>';return;}
+ var h='<table><thead><tr><th>No</th><th>Dokumen PO</th><th>No. Order</th><th>Mitra dan Pelaksana</th><th>Judul Kegiatan</th><th style="text-align:center">Status PO</th>'+(pos?'<th>Posisi PO</th>':'')+'<th style="text-align:center">Aksi</th></tr></thead><tbody>';
+ l.forEach(function(p,i){var s=ST[p.s], unread=hot(p)&&p.u;
+  h+='<tr class="'+(unread?'unread':'')+'" data-o="'+p.o+'"><td>'+(i+1)+'</td><td>'+(unread?'<span class="dot"></span>':'')+(p.po?'<span class="po">'+p.po+'</span>':'<i class="sub">Belum dibuat PO</i>')+'</td><td>'+p.o+'</td><td>'+esc(p.m)+'<div class="sub"><i class="bi bi-person"></i> PIC: '+p.pic+'</div></td><td style="max-width:280px">'+esc(p.j)+'</td><td style="text-align:center"><span class="pill p-'+s.cls+'">'+s.lbl+'</span></td>'+
+  (pos?'<td><div class="pos '+s.pc+'">'+s.pos+'</div><div class="sub"><i class="bi bi-person-fill"></i> '+s.pem+'</div></td>':'')+
+  '<td style="text-align:center">'+(p.s==='masuk'?'<span class="btn dark" data-a="Buat PO">+ Buat PO</span>':(tab==='berjalan'&&role==='katim'&&hot(p)?'<span class="btn dark" data-a="Membuka panel review">Tinjau</span> ':'<span class="btn" data-a="Pratinjau PO"><i class="bi bi-eye"></i></span> ')+(p.po?'<span class="btn" data-a="Cetak PDF"><i class="bi bi-file-earmark-pdf"></i></span>':''))+'</td></tr>';});
+ document.getElementById('tbl').innerHTML=h+'</tbody></table>';
+}
+function all(){cards();tabs();list();}
+document.addEventListener('click',function(e){var t;
+ if(t=e.target.closest('[data-t]')){tab=t.dataset.t;sub='semua';all();return;}
+ if(t=e.target.closest('[data-go]')){if(t.dataset.go){tab=t.dataset.go;sub='semua';all();}return;}
+ if(t=e.target.closest('[data-s]')){sub=t.dataset.s;list();var cs=document.querySelectorAll('.chip');return;}
+ if(t=e.target.closest('[data-a]')){toast(t.dataset.a+' (contoh)');return;}
+ if(t=e.target.closest('#segRole button')){role=t.dataset.r;document.querySelectorAll('#segRole button').forEach(function(b){b.classList.toggle('on',b===t);});tab=role==='ketupel'?'masuk':'berjalan';sub='semua';all();}
+});
+all();
+</script></body></html>

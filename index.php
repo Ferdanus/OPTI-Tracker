@@ -234,6 +234,8 @@ $f3->route('GET /penawaran/surat-kesanggupan/@id', 'BerkasController->suratKesan
 $f3->route('GET /po-revisi-ppk',                        'PoRevisiPpkController->indexRevisi');
 $f3->route('GET /po-revisi-ppk/data',                   'PoRevisiPpkController->dataRevisi');      // penyegaran daftar otomatis
 $f3->route('GET /po-revisi-ppk/@id/detail',             'PoRevisiPpkController->detailRevisi');
+$f3->route('GET /po-revisi-ppk/@id/berkas',             'PoRevisiPpkController->berkasRevisi');       // tab Berkas di slide Revisi PPK BLU
+$f3->route('GET /po-revisi-ppk/@id/berkas-bukti/@pid',  'PoRevisiPpkController->berkasBuktiRevisi');  // file bukti pembayaran untuk Ketua Tim / Ketua Pelaksana
 
 // Ketua Tim
 $f3->route('POST /po-revisi-ppk/@id/kerjakan',          'PoRevisiPpkController->kerjakan');        // kerjakan sendiri
@@ -246,6 +248,7 @@ $f3->route('POST /po-revisi-ppk/@id/minta-lagi',        'PoRevisiPpkController->
 $f3->route('POST /po-revisi-ppk/@id/kirim-katim',       'PoRevisiPpkController->kirimKatim');
 
 // Katim atau Ketua Pelaksana yang sedang mengerjakan: centang catatan selesai / batal
+$f3->route('POST /po-revisi-ppk/@id/catatan',          'PoRevisiPpkController->catatanTambahKatim'); // Ketua Tim menambah catatan perbaikan (draf)
 $f3->route('POST /po-revisi-ppk/@id/catatan/@nid',      'PoRevisiPpkController->catatanAksi');
 
 // ---- PPK BLU: halaman "Validasi PPK BLU" ----
@@ -258,6 +261,7 @@ $f3->route('POST /po-ppk/@id/catatan',                  'PoRevisiPpkController->
 $f3->route('POST /po-ppk/@id/catatan/@nid',             'PoRevisiPpkController->catatanHapus');    // hapus draf (aksi=hapus)
 $f3->route('POST /po-ppk/@id/minta-revisi',             'PoRevisiPpkController->mintaRevisi');
 $f3->route('POST /po-ppk/@id/validasi',                 'PoRevisiPpkController->validasi');
+$f3->route('POST /po-ppk/@id/catatan-ppk',              'PoRevisiPpkController->simpanCatatanPpk');   // catatan PPK BLU (simpan otomatis, seperti catatan Tim Mitra)
 
 // ---- Panel catatan di form Edit PO (Ketua Tim, Ketua Pelaksana, Superadmin; izin dicek di dalam) ----
 $f3->route('GET /po-kegiatan/@id/catatan-form',         'PoRevisiPpkController->catatanForm');

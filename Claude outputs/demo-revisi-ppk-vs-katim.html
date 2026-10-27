@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demo: Pembeda Revisi PPK BLU vs Perbaikan Ketua Tim</title>
+<style>
+  :root { --navy:#0f2a4a; --txt:#0f172a; --mut:#64748b; --line:#e2e8f0; --soft:#f1f5f9;
+          --ppk:#2563eb; --ppk-s:#eff6ff; --ppk-l:#bfdbfe; --kt:#c2410c; --kt-s:#fff7ed; --kt-l:#fed7aa; --ok:#16a34a; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#f4f6fa; color:var(--txt); font:14px/1.5 "Segoe UI",system-ui,sans-serif; }
+  .wrap { max-width:1020px; margin:0 auto; padding:16px 16px 80px; }
+  h1 { font-size:1.1rem; margin:4px 0 4px; } .sub { color:var(--mut); font-size:.82rem; margin-bottom:12px; }
+  .tabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; }
+  .tabs button { font:inherit; font-size:.82rem; font-weight:600; border:1px solid var(--line); background:#fff; border-radius:9px; padding:7px 13px; cursor:pointer; color:var(--mut); }
+  .tabs button.on { background:var(--navy); color:#fff; border-color:var(--navy); }
+  .pane { display:none; } .pane.on { display:block; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:14px; box-shadow:0 1px 3px rgba(15,23,42,.05); margin-bottom:12px; overflow:hidden; }
+  .card .hd { padding:12px 16px; border-bottom:1px solid var(--line); font-weight:700; display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap; align-items:center; }
+  .card .bd { padding:14px 16px; }
+  .why { background:#fffbeb; border:1px solid #fde68a; border-radius:12px; padding:12px 14px; font-size:.84rem; color:#78350f; margin-bottom:14px; }
+  .why b { color:#92400e; }
+  /* label asal */
+  .src { display:inline-flex; align-items:center; gap:5px; font-size:.68rem; font-weight:800; border-radius:99px; padding:2px 9px; letter-spacing:.01em; }
+  .src.ppk { background:var(--ppk-s); color:var(--ppk); border:1px solid var(--ppk-l); }
+  .src.kt { background:var(--kt-s); color:var(--kt); border:1px solid var(--kt-l); }
+  .note { border:1px solid var(--line); border-left-width:4px; border-radius:9px; padding:9px 11px; margin-top:8px; background:#fff; font-size:.82rem; }
+  .note.ppk { border-left-color:var(--ppk); background:#fafcff; } .note.kt { border-left-color:var(--kt); background:#fffaf5; }
+  .note .top { display:flex; gap:7px; align-items:center; flex-wrap:wrap; margin-bottom:3px; font-size:.74rem; color:var(--mut); }
+  .note .top b { color:var(--txt); }
+  .note .st { margin-left:auto; font-size:.66rem; font-weight:700; border-radius:99px; padding:1px 8px; background:#fef3c7; color:#92400e; }
+  .note .st.ok { background:#dcfce7; color:#166534; }
+  .note label { display:flex; gap:7px; align-items:center; margin-top:6px; font-size:.78rem; color:var(--mut); cursor:pointer; }
+  .sec { font-family:Georgia,serif; margin:14px 0 4px; font-weight:700; display:flex; justify-content:space-between; align-items:center; }
+  .sec button { font:inherit; font-family:system-ui,sans-serif; font-size:.72rem; border:0; background:none; color:var(--kt); font-weight:700; cursor:pointer; }
+  .btn { font:inherit; font-size:.82rem; font-weight:700; border-radius:8px; padding:8px 15px; border:1.5px solid var(--line); background:#fff; cursor:pointer; }
+  .btn.dark { background:#212529; color:#fff; border-color:#212529; } .btn.kt { background:var(--kt); color:#fff; border-color:var(--kt); }
+  .btn.ok { background:var(--ok); color:#fff; border-color:var(--ok); } .btn[disabled] { opacity:.5; cursor:not-allowed; }
+  textarea { width:100%; border:1px solid var(--line); border-radius:8px; padding:8px 10px; font:inherit; font-size:.82rem; margin-top:6px; }
+  .dock { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; padding:12px 16px; border-top:1px solid var(--line); background:#fff; }
+  .dock .h { color:var(--mut); font-size:.8rem; }
+  /* kartu Tahap 8 */
+  .guide { display:flex; gap:12px; justify-content:space-between; align-items:center; flex-wrap:wrap; padding:14px 16px; }
+  .guide h4 { margin:4px 0 2px; font-size:1rem; } .guide p { margin:0; font-size:.82rem; color:var(--mut); }
+  .prog { height:7px; background:#e2e8f0; border-radius:99px; overflow:hidden; margin:8px 0 3px; } .prog i { display:block; height:100%; background:var(--kt); width:20%; transition:width .3s; }
+  .grp { margin-top:12px; } .grp h6 { margin:0 0 2px; font-size:.78rem; display:flex; gap:7px; align-items:center; }
+  .tl { list-style:none; margin:0; padding:0 0 0 6px; border-left:2px solid var(--line); }
+  .tl li { position:relative; padding:0 0 12px 16px; font-size:.82rem; }
+  .tl li::before { content:""; position:absolute; left:-7px; top:5px; width:10px; height:10px; border-radius:50%; background:#cbd5e1; }
+  .tl li.ppk::before { background:var(--ppk); } .tl li.kt::before { background:var(--kt); } .tl li.now::before { box-shadow:0 0 0 4px rgba(194,65,12,.18); }
+  .tl small { color:var(--mut); display:block; }
+  .twocol { display:grid; grid-template-columns:1fr 1fr; gap:12px; } @media (max-width:760px){ .twocol { grid-template-columns:1fr; } }
+  ul.p { margin:6px 0 0 18px; padding:0; font-size:.82rem; } ul.p li { margin-bottom:3px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Pembeda revisi: dari PPK BLU atau dari Ketua Tim</h1>
+  <div class="sub">Usulan tampilan. Biru = permintaan PPK BLU, oranye = perbaikan ulang dari Ketua Tim. Klik tab di bawah untuk melihat tiap bagian.</div>
+
+  <div class="why">
+    <b>Masalah sekarang:</b> kalau Ketua Tim klik "Minta perbaikan lagi", cuma ada satu kotak alasan. Alasan itu hanya terlihat di dalam slide, tidak per bagian PO, tidak ada penanda asalnya, dan di detail order Ketua Pelaksana tidak muncul sama sekali karena yang tampil cuma form. Jadi Pelaksana tidak tahu apa yang kurang dan siapa yang meminta.<br>
+    <b>Usulan:</b> pakai satu cara yang sama untuk semua permintaan perbaikan, yaitu catatan per bagian. Tiap catatan membawa label asal dan putarannya.
+  </div>
+
+  <div class="tabs">
+    <button class="on" data-t="p1">1. Ketua Tim minta perbaikan lagi</button>
+    <button data-t="p2">2. Yang dilihat Ketua Pelaksana di detail order</button>
+    <button data-t="p3">3. Riwayat putaran</button>
+  </div>
+
+  <!-- ========== 1 ========== -->
+  <div class="pane on" id="p1">
+    <div class="card">
+      <div class="hd"><span>3/PO/BBSPJIS/X/2026 <span class="src kt">Review hasil revisi PPK BLU</span></span><span style="font-weight:400;color:var(--mut);font-size:.8rem">Slide Ketua Tim</span></div>
+      <div class="bd" style="background:#f8fafc">
+        <div class="sec">1. DASAR <button onclick="tambahKt('ktNotes1')">+ Catatan</button></div>
+        <div class="note ppk"><div class="top"><span class="src ppk">PPK BLU · ronde 3</span><b>kaa</b> 26 Okt 21:32<span class="st ok">Sudah diperbaiki essy</span></div>asdasd</div>
+        <div id="ktNotes1"></div>
+
+        <div class="sec">2. TUJUAN <button onclick="tambahKt('ktNotes2')">+ Catatan</button></div>
+        <div id="ktNotes2"></div>
+
+        <div class="sec">3. RUANG LINGKUP <button onclick="tambahKt('ktNotes3')">+ Catatan</button></div>
+        <div class="note ppk"><div class="top"><span class="src ppk">PPK BLU · ronde 3</span><b>kaa</b> 26 Okt 21:32<span class="st ok">Sudah diperbaiki essy</span></div>Tambahkan lokasi pengambilan sampel.</div>
+        <div id="ktNotes3"></div>
+        <div class="sec" style="margin-top:18px">Catatan umum <span style="font-weight:400;font-size:.72rem;color:var(--mut)">(ringkasan untuk Pelaksana, opsional)</span></div>
+        <textarea rows="2" placeholder="Mis. Mohon cek lagi nomor surat di bagian Dasar."></textarea>
+      </div>
+      <div class="dock">
+        <span class="h" id="ktHint">Belum ada catatan perbaikan. Kalau sudah sesuai, setujui dan kirim ke PPK BLU.</span>
+        <span><button class="btn kt" id="ktKembali" disabled>Kembalikan ke essy</button> <button class="btn ok" id="ktSetuju">Setujui dan kirim ke PPK BLU</button></span>
+      </div>
+    </div>
+    <div class="card"><div class="bd">
+      <b>Bedanya dengan sekarang</b>
+      <ul class="p">
+        <li>Tombol "Minta perbaikan lagi" diganti pola yang sama dengan PPK: tambah catatan di bagian yang bermasalah, lalu klik <i>Kembalikan</i>. Tombol aktif kalau ada minimal satu catatan.</li>
+        <li>Catatan Ketua Tim berlabel <span class="src kt">Ketua Tim</span> dan oranye, catatan PPK BLU berlabel <span class="src ppk">PPK BLU</span> dan biru.</li>
+        <li>Alasan umum tetap ada tapi opsional, berfungsi sebagai ringkasan.</li>
+      </ul>
+    </div></div>
+  </div>
+
+  <!-- ========== 2 ========== -->
+  <div class="pane" id="p2">
+    <div class="card">
+      <div class="guide">
+        <div>
+          <span class="src kt">Perbaikan ulang dari Ketua Tim · putaran 3</span>
+          <h4>Perbaiki PO sesuai catatan Ketua Tim</h4>
+          <p>Ketua Tim menemukan 2 hal yang perlu ditambah setelah revisi PPK BLU Anda kerjakan.</p>
+        </div>
+        <button class="btn dark" onclick="document.getElementById('slideP2').style.display='block'">👁 Lihat catatan &amp; PO</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="hd"><span>Nomor PO: 3/PO/BBSPJIS/X/2026</span><span class="src kt">Dikerjakan Pelaksana</span></div>
+      <div class="bd">
+        <div style="display:flex;justify-content:space-between;font-size:.8rem;color:var(--mut)"><span>Catatan yang harus diperbaiki</span><span><b id="pTxt">1 dari 5</b> diperbaiki</span></div>
+        <div class="prog"><i id="pBar"></i></div>
+        <div class="grp"><h6><span class="src kt">Dari Ketua Tim</span> <small style="color:var(--mut);font-weight:400">2 catatan, baru</small></h6>
+          <div class="note kt"><div class="top"><b>Andri Taufick</b> 26 Okt 22:10 · bagian Tujuan<span class="st" data-cek>Perlu diperbaiki</span></div>Tambahkan baku mutu emisi yang dirujuk.<label><input type="checkbox" onchange="cek(this)"> Sudah saya perbaiki</label></div>
+          <div class="note kt"><div class="top"><b>Andri Taufick</b> 26 Okt 22:10 · bagian Ruang Lingkup<span class="st" data-cek>Perlu diperbaiki</span></div>Sebutkan juga lokasi pengambilan sampel air limbah.<label><input type="checkbox" onchange="cek(this)"> Sudah saya perbaiki</label></div>
+        </div>
+        <div class="grp"><h6><span class="src ppk">Dari PPK BLU</span> <small style="color:var(--mut);font-weight:400">3 catatan, sudah beres di putaran ini</small></h6>
+          <div class="note ppk"><div class="top"><b>kaa</b> 26 Okt 21:32 · bagian Dasar<span class="st ok">Sudah diperbaiki</span></div>asdasd</div>
+        </div>
+        <div class="note" style="background:#f8fafc;margin-top:12px;font-size:.78rem;color:var(--mut)">Form PO (iframe seperti sekarang) tampil di bawah ini. Catatan Ketua Tim ikut ditandai di bagian yang dimaksud.</div>
+      </div>
+    </div>
+    <div class="card" id="slideP2" style="display:none"><div class="hd"><span>Slide: Lihat catatan &amp; PO</span><button class="btn" onclick="this.closest('.card').style.display='none'">Tutup</button></div>
+      <div class="bd">Isinya sama seperti slide Ketua Tim: dokumen PO, catatan per bagian dengan label asal, dan tab Berkas. <b>Ini yang sekarang hilang untuk Ketua Pelaksana</b> saat form sedang tampil di detail order.</div></div>
+    <div class="card"><div class="bd"><b>Yang berubah untuk Ketua Pelaksana</b>
+      <ul class="p">
+        <li>Kartu petunjuk menyebut <u>asal</u> dan <u>putaran</u>: "Revisi PPK BLU" (biru) atau "Perbaikan ulang dari Ketua Tim" (oranye).</li>
+        <li>Tombol <i>Lihat catatan &amp; PO</i> selalu ada, walau form revisi sedang tampil.</li>
+        <li>Catatan dikelompokkan per asal, dengan progres "x dari y diperbaiki". Tombol <i>Kirim ke Ketua Tim</i> baru aktif kalau semua catatan sudah dicentang.</li>
+      </ul></div></div>
+  </div>
+
+  <!-- ========== 3 ========== -->
+  <div class="pane" id="p3">
+    <div class="twocol">
+      <div class="card"><div class="hd">Riwayat putaran (tab Alur)</div><div class="bd">
+        <ul class="tl">
+          <li class="ppk"><b>PPK BLU meminta revisi</b> <span class="src ppk">PPK BLU · ronde 3</span><small>3 catatan · 26 Okt 21:32</small></li>
+          <li><b>Ketua Tim mendisposisikan ke essy</b><small>26 Okt 21:40</small></li>
+          <li><b>essy mengirim hasil revisi</b><small>26 Okt 21:58</small></li>
+          <li class="kt"><b>Ketua Tim meminta perbaikan lagi</b> <span class="src kt">Ketua Tim · perbaikan 1</span><small>2 catatan · 26 Okt 22:10</small></li>
+          <li class="kt now"><b>Menunggu essy memperbaiki</b><small>Sekarang di sini</small></li>
+          <li><b>Ketua Tim menyetujui, kirim ke PPK BLU</b><small>belum</small></li>
+        </ul></div></div>
+      <div class="card"><div class="hd">Penanda di tempat lain</div><div class="bd">
+        <div style="font-size:.82rem;margin-bottom:8px"><b>Badge tab Tahap 8</b></div>
+        <span class="src ppk">Revisi PPK</span> &nbsp; <span class="src kt">Perbaikan Katim</span>
+        <div style="font-size:.82rem;margin:14px 0 8px"><b>Daftar order (keterangan)</b></div>
+        <div class="note ppk" style="margin:0 0 6px">Revisi PPK Dikerjakan Pelaksana<div style="color:var(--mut)">Didisposisikan ke Ketua Pelaksana</div></div>
+        <div class="note kt" style="margin:0">Perbaikan Ulang Dikerjakan Pelaksana<div style="color:var(--mut)">Catatan dari Ketua Tim · perbaikan ke-1</div></div>
+        <div style="font-size:.82rem;margin:14px 0 6px"><b>Aturan putaran</b></div>
+        <ul class="p"><li>Ronde PPK BLU bertambah tiap PPK meminta revisi.</li><li>Di dalam satu ronde, Ketua Tim boleh meminta perbaikan ulang berkali-kali. Dihitung "perbaikan 1, 2, ...".</li><li>PPK BLU hanya melihat catatannya sendiri. Catatan Ketua Tim urusan internal.</li></ul>
+      </div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+var jmlKt = 0;
+function $(i){ return document.getElementById(i); }
+document.querySelectorAll('.tabs button').forEach(function(b){ b.onclick=function(){
+  document.querySelectorAll('.tabs button').forEach(function(x){x.classList.remove('on');}); b.classList.add('on');
+  document.querySelectorAll('.pane').forEach(function(p){p.classList.remove('on');}); $(b.dataset.t).classList.add('on'); }; });
+function tambahKt(id){
+  var host = $(id);
+  var box = document.createElement('div'); box.className='note kt';
+  box.innerHTML = '<div class="top"><span class="src kt">Ketua Tim · draf</span><b>Andri Taufick</b></div><textarea rows="2" placeholder="Tulis catatan perbaikan untuk bagian ini"></textarea><div style="margin-top:6px"><button class="btn" onclick="this.closest(\'.note\').remove();hitung()">Batal</button> <button class="btn kt" onclick="simpanKt(this)">Simpan sebagai draf</button></div>';
+  host.appendChild(box); box.querySelector('textarea').focus();
+}
+function simpanKt(btn){
+  var n = btn.closest('.note'), t = n.querySelector('textarea').value.trim(); if(!t){ n.querySelector('textarea').style.borderColor='#dc2626'; return; }
+  n.className='note kt kt-sah'; n.innerHTML = '<div class="top"><span class="src kt">Ketua Tim</span><b>Andri Taufick</b><span class="st">Draf, belum dikirim</span></div>'+t.replace(/</g,'&lt;'); hitung();
+}
+function hitung(){
+  jmlKt = document.querySelectorAll('.kt-sah').length;
+  $('ktKembali').disabled = !jmlKt; $('ktKembali').textContent = 'Kembalikan ke essy' + (jmlKt ? ' ('+jmlKt+')' : '');
+  $('ktSetuju').disabled = jmlKt>0;
+  $('ktHint').textContent = jmlKt ? jmlKt+' catatan perbaikan siap dikirim ke essy.' : 'Belum ada catatan perbaikan. Kalau sudah sesuai, setujui dan kirim ke PPK BLU.';
+}
+function cek(el){
+  var tot = 5, sel = 3 + document.querySelectorAll('#p2 input:checked').length;
+  el.closest('.note').querySelector('[data-cek]').textContent = el.checked ? 'Sudah diperbaiki' : 'Perlu diperbaiki';
+  el.closest('.note').querySelector('[data-cek]').classList.toggle('ok', el.checked);
+  $('pTxt').textContent = sel+' dari '+tot; $('pBar').style.width = (sel/tot*100)+'%';
+}
+$('pBar').style.width='60%'; $('pTxt').textContent='3 dari 5';
+</script>
+</body>
+</html>

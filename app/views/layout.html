@@ -1562,7 +1562,7 @@
                         <a class="sidebar-link {{ @active_menu == 'order' || @active_menu == 'disposisi_masuk' ? 'active' : '' }}" href="{{ @BASE }}/order" title="Daftar Order Layanan">
                             <i class="bi bi-inbox"></i> <span>Daftar Order</span>
                             <check if="{{ @jumlah_notif_order > 0 }}">
-                                <span class="badge ms-auto sidebar-notif-badge">{{ @jumlah_notif_order }}</span>
+                                <span class="badge rounded-pill ms-auto sidebar-notif-badge" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff;">{{ @jumlah_notif_order }}</span>
                             </check>
                         </a>
                     </li>
@@ -1574,7 +1574,7 @@
                         <a class="sidebar-link {{ @active_menu == 'surat-penawaran' ? 'active' : '' }}" href="{{ @BASE }}/surat-penawaran" title="Surat Penawaran">
                             <i class="bi bi-file-earmark-text"></i> <span>Surat Penawaran</span>
                             <check if="{{ @jumlah_notif_penawaran > 0 }}">
-                                <span class="badge ms-auto sidebar-notif-badge">{{ @jumlah_notif_penawaran }}</span>
+                                <span class="badge rounded-pill ms-auto sidebar-notif-badge" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff;">{{ @jumlah_notif_penawaran }}</span>
                             </check>
                         </a>
                     </li>
@@ -1582,8 +1582,8 @@
 
                 <check if="{{ @is_superadmin || @is_tim_mitra }}">
                     <li>
-                        <a class="sidebar-link {{ @active_menu == 'validasi-mitra' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan/validasi-mitra" title="Surat Penawaran">
-                            <i class="bi bi-file-earmark-text"></i> <span>Validasi PO</span>
+                        <a class="sidebar-link {{ @active_menu == 'po_validasi_mitra' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan/validasi-mitra" title="Daftar PO Tim Mitra">
+                            <i class="bi bi-file-earmark-text"></i> <span>Daftar PO</span>
                             <check if="{{ @jumlah_notif_validasi_po > 0 }}">
                                 <span class="badge rounded-pill bg-danger ms-auto">{{ @jumlah_notif_validasi_po }}</span>
                             </check>
@@ -1595,7 +1595,7 @@
                 <check if="{{ @is_superadmin || @is_humas }}">
                     <li>
                         <a class="sidebar-link {{ @active_menu == 'po_humas' ? 'active' : '' }}" href="{{ @BASE }}/po-humas" title="Daftar PO Humas">
-                            <i class="bi bi-journal-check"></i> <span>Daftar PO Humas</span>
+                            <i class="bi bi-journal-check"></i> <span>Daftar PO</span>
                         </a>
                     </li>
                 </check>
@@ -1632,7 +1632,7 @@
                     </check>
                     <!-- Petunjuk Operasional (PO) Kegiatan -->
                     <!-- Superadmin: satu menu "Daftar PO" (semua divisi dan layanan, dipilih lewat filter Divisi di halamannya) -->
-                    <check if="{{ @is_superadmin || (@is_tim_kerja && @divisi_tim_kerja == 'pengujian')}}">
+                    <check if="{{ @is_superadmin || (@is_tim_kerja && @divisi_tim_kerja == 'pengujian') || (@is_ketua_tim && @user_layanan != 'lingkungan' && @user_layanan != 'selulosa') }}">
                         <li>
                             <a class="sidebar-link {{ @active_menu == 'po_kegiatan' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan" title="Daftar Petunjuk Operasional">
                                 <i class="bi bi-clipboard-check"></i> <span>Daftar PO</span>
@@ -1671,18 +1671,18 @@
                     </check>
                     <check if="{{ (@is_ketua_tim && @user_layanan == 'lingkungan') || (@is_tim_kerja && @divisi_tim_kerja == 'lingkungan') }}">
                         <li>
-                            <a class="sidebar-link {{ @active_menu == 'po_lingkungan' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?divisi=lingkungan" title="Petunjuk Operasional Lingkungan">
-                                <i class="bi bi-clipboard-check"></i> <span>Daftar PO Lingkungan</span>
+                            <a class="sidebar-link {{ @active_menu == 'po_lingkungan' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan" title="Daftar Petunjuk Operasional">
+                                <i class="bi bi-clipboard-check"></i> <span>Daftar PO</span>
                                 <check if="{{ @jumlah_notif_po_lingkungan > 0 }}">
                                     <span class="badge rounded-pill ms-auto sidebar-notif-badge" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff;">{{ @jumlah_notif_po_lingkungan }}</span>
                                 </check>
                             </a>
                         </li>
                     </check>
-                        <check if="{{ (@is_tim_kerja && @divisi_tim_kerja == 'selulosa') }}">
+                        <check if="{{ (@is_tim_kerja && @divisi_tim_kerja == 'selulosa') || (@is_ketua_tim && @user_layanan == 'selulosa') }}">
                         <li>
-                            <a class="sidebar-link {{ @active_menu == 'po_selulosa' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?divisi=selulosa" title="Petunjuk Operasional Selulosa">
-                                <i class="bi bi-clipboard-check"></i> <span>Daftar PO Selulosa</span>
+                            <a class="sidebar-link {{ @active_menu == 'po_selulosa' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan" title="Daftar Petunjuk Operasional">
+                                <i class="bi bi-clipboard-check"></i> <span>Daftar PO</span>
                                 <check if="{{ @jumlah_notif_po_selulosa > 0 }}">
                                     <span class="badge rounded-pill bg-danger ms-auto" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff;">{{ @jumlah_notif_po_selulosa }}</span>
                                 </check>
@@ -1690,11 +1690,38 @@
                         </li>
                     </check>
                     <check if="{{ @is_superadmin || @is_ketua_tim || @is_tim_kerja }}">
-                    <li>
+                    <!-- Menu "Daftar Review PO" disembunyikan: review kini ada di tab "Sedang Berjalan" halaman Petunjuk Operasional (PO). Halaman /po-kegiatan/daftar tetap ada (dipakai panel review & tautan notifikasi). -->
+                    <li id="menuDaftarReviewPo" style="display:none">
                         <a class="sidebar-link {{ @active_menu == 'daftar_po' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan/daftar" title="Daftar Review PO">
                             <i class="bi bi-clipboard-check"></i> <span>Daftar Review PO</span>
                             <span id="notifDaftarPo" class="badge rounded-pill ms-auto sidebar-notif-badge" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff; {{ @jumlah_notif_daftar_po > 0 ? '' : 'display:none' }}">{{ @jumlah_notif_daftar_po }}</span>
                         </a>
+                    <script>
+                    // Titik merah review (belum dibaca) dipindah ke menu Petunjuk Operasional (PO), karena review kini ada di halamannya
+                    (function () {
+                        try {
+                            var n = parseInt('{{ @jumlah_notif_daftar_po ?: 0 }}', 10) || 0;
+                            if (n <= 0) { return; }
+                            var tujuan = null;
+                            Array.prototype.forEach.call(document.querySelectorAll('.sidebar-link'), function (a) {
+                                var p = (a.getAttribute('href') || '').split('#')[0];
+                                if (!tujuan && /\/po-kegiatan(\?divisi=[a-z]+)?$/.test(p)) { tujuan = a; }
+                            });
+                            if (!tujuan) { return; }
+                            var b = tujuan.querySelector('.badge');
+                            if (!b) {
+                                b = document.createElement('span');
+                                b.className = 'badge rounded-pill ms-auto sidebar-notif-badge';
+                                b.style.cssText = 'font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff;';
+                                tujuan.appendChild(b);
+                                b.textContent = String(n);
+                            } else {
+                                b.style.display = '';
+                                b.textContent = String((parseInt((b.textContent || '').trim(), 10) || 0) + n);
+                            }
+                        } catch (e) { /* hanya tampilan menu */ }
+                    })();
+                    </script>
                     </li>
                 </check>
                     <!-- Master Tim Pelaksana PO + Jabatan Pelaksana PO untuk Ketua Tim Layanan (Superadmin sudah punya di bagian Master Data) -->
@@ -1717,8 +1744,8 @@
                 <check if="{{ @is_ppk || @is_superadmin }}">
                     <li class="sidebar-section-label">Verifikasi PO</li>
                     <li>
-                        <a class="sidebar-link {{ @active_menu == 'po_ppk' ? 'active' : '' }}" href="{{ @BASE }}/po-ppk" title="Daftar Review PO">
-                            <i class="bi bi-patch-check"></i> <span>Daftar Review PO</span>
+                        <a class="sidebar-link {{ @active_menu == 'po_ppk' ? 'active' : '' }}" href="{{ @BASE }}/po-ppk" title="Daftar PO PPK BLU">
+                            <i class="bi bi-patch-check"></i> <span>Daftar PO</span>
                             <span id="notifRevisiPpk" class="badge rounded-pill ms-auto sidebar-notif-badge" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff; {{ @jumlah_notif_revisi_ppk > 0 ? '' : 'display:none' }}">{{ @jumlah_notif_revisi_ppk }}</span>
                         </a>
                     </li>

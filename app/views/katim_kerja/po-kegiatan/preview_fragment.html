@@ -434,7 +434,7 @@
                     </tr>
                     <repeat group="{{ @po.rab_hitung.kategori }}" value="{{ @kat }}" key="{{ @ki }}">
                         <tr>
-                            <td>{{ @ki + 1 }}. {{ @kat.nama }}</td>
+                            <td>{{ @kat.nama }}</td>
                             <td class="text-center">{{ @kat.persen_tampil }}</td>
                             <td class="text-end rab-uang">Rp&nbsp;{{ number_format(@kat.subtotal, 0, ',', '.') }}</td>
                         </tr>
@@ -463,7 +463,7 @@
                              diratakan jadi @kat.baris di controller. -->
                         <check if="{{ @kat.baris }}">
                             <tr style="background:#f8fafc;">
-                                <td colspan="6"><strong>{{ @ki + 1 }}. {{ @kat.nama }}</strong></td>
+                                <td colspan="6"><strong>{{ @kat.nama }}</strong></td>
                             </tr>
                             <repeat group="{{ @kat.baris }}" value="{{ @b }}">
                                 <check if="{{ @b.tipe == 'kegiatan' }}">
@@ -481,7 +481,7 @@
                                         <td></td>
                                         <td style="padding-left: {{ (@b.depth * 14) }}px;">{{ @b.nomor }} {{ @b.nama }}</td>
                                         <check if="{{ @b.disediakan_pt }}">
-                                            <td colspan="4" class="text-muted">Disediakan {{ @b.disediakan_pt }}</td>
+                                            <td colspan="4" class="text-center text-muted" style="text-align:center; vertical-align:middle;">Disediakan {{ @b.disediakan_pt }}</td>
                                         </check>
                                         <check if="{{ !@b.disediakan_pt }}">
                                             <td></td><td></td><td></td><td></td>
@@ -492,7 +492,7 @@
                                     <tr>
                                         <td></td>
                                         <td style="padding-left: {{ (@b.depth * 14) }}px;">{{ @b.nama }}</td>
-                                        <td colspan="4" class="text-muted">Disediakan {{ @b.disediakan_pt }}</td>
+                                        <td colspan="4" class="text-center text-muted" style="text-align:center; vertical-align:middle;">Disediakan {{ @b.disediakan_pt }}</td>
                                     </tr>
                                 </check>
                                 <check if="{{ @b.tipe == 'item' && !@b.disediakan_pt }}">
@@ -507,7 +507,10 @@
                                 </check>
                             </repeat>
                             <tr>
-                                <td colspan="5" class="text-end"><strong>Total</strong></td>
+                                <td></td>
+                                <td><strong>Total</strong></td>
+                                <td colspan="2"></td>
+                                <td class="text-end rab-uang"><strong>Rp&nbsp;{{ number_format(@kat.subtotal, 0, ',', '.') }}</strong></td>
                                 <td class="text-end rab-uang"><strong>Rp&nbsp;{{ number_format(@kat.subtotal, 0, ',', '.') }}</strong></td>
                             </tr>
                         </check>
@@ -516,7 +519,7 @@
                              kegiatan baru), tetep ditampilin biar datanya gak hilang. -->
                         <check if="{{ !@kat.baris && @kat.items && count(@kat.items) > 0 }}">
                             <tr style="background:#f8fafc;">
-                                <td colspan="6"><strong>{{ @ki + 1 }}. {{ @kat.nama }}</strong></td>
+                                <td colspan="6"><strong>{{ @kat.nama }}</strong></td>
                             </tr>
                             <repeat group="{{ @kat.items }}" value="{{ @it }}">
                                 <tr>
@@ -529,7 +532,10 @@
                                 </tr>
                             </repeat>
                             <tr>
-                                <td colspan="5" class="text-end"><strong>Total Biaya {{ @kat.nama }}</strong></td>
+                                <td></td>
+                                <td><strong>Total</strong></td>
+                                <td colspan="2"></td>
+                                <td class="text-end rab-uang"><strong>Rp&nbsp;{{ number_format(@kat.subtotal, 0, ',', '.') }}</strong></td>
                                 <td class="text-end rab-uang"><strong>Rp&nbsp;{{ number_format(@kat.subtotal, 0, ',', '.') }}</strong></td>
                             </tr>
                         </check>

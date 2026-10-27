@@ -1,0 +1,140 @@
+<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Demo: Map Kendali di tab Berkas</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#e2e8f0;font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#0f172a}
+.note{background:#fffbeb;border-bottom:1px solid #fde68a;color:#78350f;padding:9px 22px;font-size:.82rem}
+.stage{display:flex;justify-content:flex-end;padding:20px}
+.sheet{width:min(720px,100%);background:#f8fafc;border-radius:14px;box-shadow:0 10px 40px rgba(15,23,42,.25);overflow:hidden;display:flex;flex-direction:column}
+.shh{background:#fff;padding:16px 18px;border-bottom:1px solid #e2e8f0}
+.shh h2{margin:0;font-size:1.05rem} .shh .sub{color:#64748b;font-size:.8rem;margin-top:2px}
+.body{padding:16px 18px}
+.pane[hidden]{display:none}
+.po{background:#fff;border:1px solid #cbd5e1;border-radius:4px;padding:30px;font-family:Cambria,'Times New Roman',serif;color:#111;text-align:center}
+.mkwrap{overflow-x:auto;margin-top:4px} .mkwrap .mk-paper{max-width:none;width:125%;zoom:.8;padding:22px 24px 26px}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#334155;color:#fff;padding:10px 16px;border-radius:10px;display:none;font-weight:600;z-index:60}
+.fv{position:fixed;inset:0;background:rgba(15,23,42,.55);display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
+.fv.on{display:flex} .fvbox{background:#fff;border-radius:14px;width:min(820px,100%);max-height:92vh;display:flex;flex-direction:column}
+.fvtop{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid #e2e8f0} .fvtop b{flex:1}
+.fvbody{padding:16px;overflow:auto;background:#f1f5f9}
+.hm-root{--hm-primary:#334155;--hm-primary-hover:#1e293b;--hm-primary-light:#f1f5f9;--hm-border:#e2e8f0;--hm-muted:#64748b;--hm-text:#0f172a;--hm-display:inherit;--hm-accent:#d97706}
+.hm-root button{font-family:inherit;cursor:pointer}
+    .hm-root {
+    .hm-root *, .hm-root *::before, .hm-root *::after { box-sizing: border-box; }
+    .hm-pill { font-size: .72rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; border: 1px solid transparent; }
+    .hm-pill.emerald { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
+    .hm-pill.amber { background: #fffbeb; color: #b45309; border-color: #fde68a; }
+    .hm-pill.slate { background: #f1f5f9; color: #475569; border-color: #e2e8f0; }
+    .hm-pill.rose { background: #fff1f2; color: #be123c; border-color: #fecdd3; }
+    .hm-pbadge { font-size: .72rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid transparent; line-height: 1.3; white-space: nowrap; }
+    .hm-pbadge .d { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
+    .hm-pbadge.humas { background: #f0fdfa; color: #0f766e; border-color: #99f6e4; }
+    .hm-pbadge.mitra { background: #f5f3ff; color: #6d28d9; border-color: #ddd6fe; }
+    .hm-pbadge.ppk { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+    .hm-pbadge.ok { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
+    .hm-btn { border: 1.5px solid var(--hm-border); background: #fff; color: #334155; border-radius: 9px; padding: 8px 15px; font-size: .82rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; text-decoration: none; }
+    .hm-btn:hover:not(:disabled) { border-color: var(--hm-primary); color: var(--hm-primary); }
+    .hm-btn.pri { background: var(--hm-primary); border-color: var(--hm-primary); color: #fff; }
+    .hm-btn.pri:hover:not(:disabled) { background: var(--hm-primary-hover); color: #fff; }
+    .hm-btn.sm { padding: 5px 11px; font-size: .75rem; }
+    .hm-btn:disabled { opacity: .45; cursor: not-allowed; }
+    .hm-shtabs { display: flex; gap: 4px; background: #fff; padding: 6px 12px 0; border-bottom: 1px solid var(--hm-border); overflow-x: auto; }
+    .hm-shtab { border: 0; background: transparent; padding: 9px 12px; font-weight: 700; font-size: .82rem; color: var(--hm-muted); border-bottom: 2px solid transparent; display: flex; align-items: center; gap: 7px; font-family: var(--hm-display); white-space: nowrap; }
+    .hm-shtab.on { color: var(--hm-primary); border-bottom-color: var(--hm-primary); }
+    .hm-sumgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 2px; }
+    .hm-sum { background: #fff; border: 1px solid var(--hm-border); border-radius: 10px; padding: 10px 13px; }
+    .hm-sum .l { font-size: .68rem; font-weight: 600; color: var(--hm-muted); margin-bottom: 2px; }
+    .hm-sum .v { font-weight: 800; font-size: .95rem; }
+    .hm-sum .v.ok { color: #047857; } .hm-sum .v.warn { color: #b45309; }
+    .hm-dtop { text-align: right; margin-top: 10px; font-size: .76rem; color: #94a3b8; }
+    .hm-tl { background: none; border: 0; padding: 0; color: #2563eb; font-weight: 600; font-size: .76rem; cursor: pointer; }
+    .hm-tl:hover { text-decoration: underline; }
+    .hm-dc { background: #fff; border: 1px solid #bfdbfe; border-radius: 12px; box-shadow: 0 1px 3px rgba(15,23,42,.08); padding: 16px; margin-top: 12px; display: flex; gap: 14px; }
+    .hm-dc.kosong { border-color: var(--hm-border); }
+    .hm-dic { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; font-size: 1.25rem; flex-shrink: 0; }
+    .hm-dbody { flex: 1; min-width: 0; }
+    .hm-dh { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+    .hm-dh h6 { margin: 0; font-size: .95rem; font-weight: 700; }
+    .hm-bd { display: inline-flex; align-items: center; gap: 5px; font-size: .72rem; font-weight: 600; padding: 3px 11px; border-radius: 99px; border: 1px solid; }
+    .hm-bd.ok { background: #d1fae5; color: #047857; border-color: #a7f3d0; }
+    .hm-bd.no { background: #f1f5f9; color: #64748b; border-color: #e2e8f0; }
+    .hm-dsub { font-size: .82rem; color: #64748b; margin: 0; }
+    .hm-acts { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; align-items: center; }
+    .hm-acts .sp { flex: 1; }
+    .hm-bdt { background: #fff; border: 1px solid #cbd5e1; color: #475569; border-radius: 8px; padding: 7px 12px; font-size: .78rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+    .hm-bdt:hover { border-color: #2563eb; color: #2563eb; }
+    .hm-bdt .ch { font-size: .7rem; transition: transform .25s; }
+    .hm-dc.open .hm-bdt { background: #eff6ff; border-color: #93c5fd; color: #1d4ed8; }
+    .hm-dc.open .hm-bdt .ch { transform: rotate(180deg); }
+    .hm-dt { display: grid; grid-template-rows: 0fr; visibility: hidden; transition: grid-template-rows .3s ease, visibility 0s linear .3s; }
+    .hm-dc.open .hm-dt { grid-template-rows: 1fr; visibility: visible; transition: grid-template-rows .3s ease, visibility 0s; }
+    .hm-dt > div { overflow: hidden; min-height: 0; }
+    .hm-dt .in { padding-top: 12px; }
+    .hm-dk { font-size: .8rem; padding: 8px 10px; border-radius: 7px; background: #f8fafc; border-left: 3px solid; margin-bottom: 8px; color: #334155; }
+    .hm-dk.mute { color: #64748b; border-left-color: #cbd5e1 !important; }
+    .hm-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; padding: 10px 12px; border-radius: 7px; background: #f8fafc; border: 1px solid #eef2f6; font-size: .78rem; }
+    .hm-meta .f { grid-column: 1 / -1; }
+    .hm-meta .k { color: #64748b; display: block; }
+    .hm-meta .mono { font-family: ui-monospace, Consolas, monospace; font-weight: 700; }
+    .hm-meta .n { font-weight: 600; word-break: break-word; }
+    .hm-meta .fl { font-family: ui-monospace, Consolas, monospace; color: #475569; font-size: .74rem; word-break: break-all; }
+    .hm-dt .hm-cat-bar { padding-left: 0; padding-top: 0; padding-bottom: 8px; }
+        .hm-dc { padding: 12px; gap: 10px; }
+        .hm-dic { width: 36px; height: 36px; font-size: 1.05rem; }
+        .hm-meta { grid-template-columns: 1fr; }
+    .hm-tl { list-style: none; margin: 0; padding: 0; }
+    .hm-tl li { display: flex; gap: 12px; padding: 0 0 16px; position: relative; }
+    .hm-tl li:not(:last-child)::before { content: ''; position: absolute; left: 13px; top: 28px; bottom: 0; width: 2px; background: var(--hm-border); }
+    .hm-tl .ic { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; flex: none; font-size: .8rem; background: #f1f5f9; color: #64748b; border: 1px solid var(--hm-border); }
+    .hm-tl li.done .ic { background: #ecfdf5; color: #059669; border-color: #a7f3d0; }
+    .hm-tl li.now .ic { background: #eff6ff; color: #2563eb; border-color: #93c5fd; box-shadow: 0 0 0 4px #dbeafe; }
+    .hm-tl li.todo { opacity: .6; }
+    .hm-tl li.fin .ic { background: #059669; color: #fff; border-color: #059669; }
+    .hm-tl .a { font-size: .85rem; font-weight: 600; }
+    .hm-tl .b { font-size: .75rem; color: var(--hm-muted); margin-top: 1px; }
+    .hm-tl .cat { margin-top: 6px; padding: 7px 10px; background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 3px solid #059669; border-radius: 6px; font-size: .78rem; line-height: 1.45; color: #14532d; white-space: pre-wrap; word-break: break-word; }
+    .hm-tl .cat b { display: block; font-size: .68rem; text-transform: uppercase; letter-spacing: .03em; color: #059669; margin-bottom: 1px; }
+    .mk-paper { background: #fff; border: 1px solid #cbd5e1; border-radius: 4px; padding: 30px 32px 38px; color: #111; font-family: Cambria, 'Times New Roman', Times, serif; max-width: 760px; margin: 0 auto; }
+    .mk-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .mk-logo { width: 185px; flex-shrink: 0; }
+    .mk-logo img { width: 100%; display: block; }
+    .mk-title { flex: 1; text-align: center; font-size: 1.7rem; font-weight: 500; padding-top: 6px; }
+    .mk-kode { width: 130px; text-align: right; font-size: .85rem; white-space: nowrap; flex-shrink: 0; }
+    .mk-meta { margin: 20px 0 16px 6px; font-size: .98rem; }
+    .mk-meta div { display: flex; gap: 4px; line-height: 1.7; }
+    .mk-meta .k { width: 140px; flex-shrink: 0; }
+    table.mk-table { width: 100%; border-collapse: collapse; font-size: .95rem; border: 1.5px solid #111; table-layout: fixed; }
+    .mk-table th { border: 1px solid #111; padding: 3px 4px; text-align: center; font-weight: 700; line-height: 1.2; }
+    .mk-table td { border-left: 1px solid #111; border-right: 1px solid #111; padding: 3px 7px 0; vertical-align: top; line-height: 1.3; }
+    .mk-table td.no { text-align: center; }
+    .mk-table td.tgl { text-align: center; font-family: Arial, Helvetica, sans-serif; font-size: .8rem; padding-top: 5px; }
+    .mk-table .head td:nth-child(2) { font-weight: 700; text-decoration: underline; }
+    .mk-table .sub td:nth-child(2) { padding-left: 7px; }
+    .mk-lock { color: #94a3b8; font-size: .85rem; }
+    .mk-note { font-family: system-ui, sans-serif; font-size: .72rem; color: #64748b; margin: 10px 4px 0; }
+    .mk-bar { display: flex; justify-content: flex-end; margin: 0 auto 10px; max-width: 760px; }
+
+</style></head><body>
+<div class="note"><b>Usul:</b> Map Kendali dipindah dari tab sendiri ke dalam tab <b>Berkas</b> sebagai kartu paling atas. Tab slide jadi dua saja: <b>PO</b> dan <b>Berkas</b>. Klik "Lihat Pratinjau" untuk membuka lembarnya, "Cetak" untuk mencetak langsung, atau "Detail" untuk membuka lembarnya di dalam kartu.</div>
+<div class="stage"><div class="sheet hm-root">
+ <div class="shh"><h2>5/PO/BBSPJIS/X/2026</h2><div class="sub">PT Contoh Kertas Sejahtera - Uji Karakterisasi Kekakuan dan Uji Cekik Chipboard</div></div>
+ <div class="hm-shtabs"><button class="hm-shtab" data-t="po">PO</button><button class="hm-shtab on" data-t="berkas">Berkas</button></div>
+ <div class="body">
+  <div class="pane" id="po" hidden><div class="po">(dokumen PO tampil di sini)</div></div>
+  <div class="pane" id="berkas"><div class="hm-dtop"><button type="button" class="hm-tl" data-all="1">Buka semua detail</button> &middot; <button type="button" class="hm-tl" data-all="0">Tutup semua</button></div><div class="hm-dc open" data-dok="mk"><div class="hm-dic" style="background:#e0e7ff;color:#4f46e5"><i class="bi bi-diagram-3-fill"></i></div><div class="hm-dbody"><div class="hm-dh"><h6>Map Kendali</h6><span class="hm-bd ok"><i class="bi bi-check-lg"></i>Terisi Otomatis</span></div><p class="hm-dsub">Form F.PJT-12-03/1: lembar kendali tahap proses (verifikasi dan validasi) untuk PO ini</p><div class="hm-acts"><button type="button" class="hm-btn pri" data-mk-lihat><i class="bi bi-eye"></i>Lihat Pratinjau</button><button type="button" class="hm-btn" data-mk-cetak><i class="bi bi-printer"></i>Cetak</button><span class="sp"></span><button type="button" class="hm-bdt" data-dok-toggle aria-expanded="true">Detail <i class="bi bi-chevron-down ch"></i></button></div><div class="hm-dt"><div><div class="in"><div class="hm-dk" style="border-left-color:#4f46e5"><i class="bi bi-info-circle"></i> Tanggal terisi otomatis dari sistem (jam tidak ditampilkan). Ikon gembok = tahap belum dilalui.</div><div class="mkwrap"><div class="mk-paper"><div class="mk-top"><div class="mk-logo" style="height:42px;background:#e2e8f0;border-radius:4px;display:grid;place-items:center;font:700 12px sans-serif;color:#64748b">BBSPJIS</div><div class="mk-title">MAP Kendali</div><div class="mk-kode">F.PJT-12-03/1</div></div><div class="mk-meta"><div><span class="k">Nomor</span><span>: 5/PO/BBSPJIS/X/2026</span></div><div><span class="k">Judul Kegiatan</span><span>: Uji Karakterisasi Kekakuan dan Uji Cekik Chipboard</span></div><div><span class="k">Disiapkan Oleh</span><span>: Tim Kerja OPTI Selulosa</span></div></div><table class="mk-table"><colgroup><col style="width:7.4%"><col style="width:31%"><col style="width:11.9%"><col style="width:12.7%"><col style="width:12.8%"><col style="width:12.7%"><col style="width:11.5%"></colgroup><thead><tr><th rowspan="2">No.</th><th rowspan="2">Tahap Proses</th><th colspan="2">Verifikasi</th><th colspan="2">Validasi</th><th rowspan="2">Ket</th></tr><tr><th>Tanggal</th><th>Tanda Tangan</th><th>Tanggal</th><th>Tanda Tangan</th></tr></thead><tbody><tr style="height:44px" class="head"><td class="no">1</td><td>PROPOSAL</td><td class="tgl">20/10/2026</td><td></td><td class="tgl"></td><td></td><td></td></tr><tr style="height:44px" class="head"><td class="no">2</td><td>KONTRAK</td><td class="tgl"></td><td></td><td class="tgl"></td><td></td><td></td></tr><tr class="head"><td class="no">3</td><td>PETUNJUK OPERASIONAL</td><td class="tgl"></td><td></td><td class="tgl"></td><td></td><td></td></tr><tr class="sub"><td class="no"></td><td>Adm KS &amp; Humas</td><td class="tgl">27/10/2026</td><td></td><td class="tgl"></td><td></td><td></td></tr><tr class="sub"><td class="no"></td><td>Tim Mitra Industri</td><td class="tgl"><i class="bi bi-lock-fill mk-lock"></i></td><td></td><td class="tgl"></td><td></td><td></td></tr><tr class="sub"><td class="no"></td><td>PPK BLU</td><td class="tgl"><i class="bi bi-lock-fill mk-lock"></i></td><td></td><td class="tgl"></td><td></td><td></td></tr><tr class="sub"><td class="no"></td><td>Ka. BBSPJIS</td><td class="tgl"></td><td></td><td class="tgl"></td><td></td><td></td></tr></tbody></table></div></div></div></div></div></div></div><div class="hm-dc" data-dok="sm"><div class="hm-dic" style="background:#fef3c7;color:#d97706"><i class="bi bi-envelope-paper-fill"></i></div><div class="hm-dbody"><div class="hm-dh"><h6>Surat Masuk Permohonan</h6><span class="hm-bd ok"><i class="bi bi-check-lg"></i>Tersedia</span></div><p class="hm-dsub">Dokumen permohonan kerjasama layanan dari mitra industri</p><div class="hm-acts"><button type="button" class="hm-btn pri"><i class="bi bi-eye"></i>Lihat Pratinjau</button><button type="button" class="hm-btn"><i class="bi bi-box-arrow-up-right"></i>Buka Tab Baru</button><span class="sp"></span><button type="button" class="hm-bdt" data-dok-toggle aria-expanded="false">Detail <i class="bi bi-chevron-down ch"></i></button></div><div class="hm-dt"><div><div class="in"><div class="hm-meta"><div><span class="k">Nomor:</span><span>012/SM/X/2026</span></div></div></div></div></div></div></div><div class="hm-dc" data-dok="pr"><div class="hm-dic" style="background:#fee2e2;color:#dc2626"><i class="bi bi-journal-text"></i></div><div class="hm-dbody"><div class="hm-dh"><h6>Proposal Riset / Teknis</h6><span class="hm-bd ok"><i class="bi bi-check-lg"></i>Tersedia</span></div><p class="hm-dsub">Dokumen kajian metodologi, parameter analisis, dan perencanaan teknis</p><div class="hm-acts"><button type="button" class="hm-btn pri"><i class="bi bi-eye"></i>Lihat Pratinjau</button><button type="button" class="hm-btn"><i class="bi bi-box-arrow-up-right"></i>Buka Tab Baru</button><span class="sp"></span><button type="button" class="hm-bdt" data-dok-toggle aria-expanded="false">Detail <i class="bi bi-chevron-down ch"></i></button></div><div class="hm-dt"><div><div class="in"><div class="hm-meta"><div><span class="k">Tanggal:</span><span>20 Okt 2026</span></div></div></div></div></div></div></div><div class="hm-dc" data-dok="sph"><div class="hm-dic" style="background:#dbeafe;color:#2563eb"><i class="bi bi-file-earmark-text-fill"></i></div><div class="hm-dbody"><div class="hm-dh"><h6>Surat Penawaran Harga (SPH)</h6><span class="hm-bd ok"><i class="bi bi-check-lg"></i>Tersedia</span></div><p class="hm-dsub">Dokumen resmi penawaran tarif PNBP dan ruang lingkup pekerjaan</p><div class="hm-acts"><button type="button" class="hm-btn pri"><i class="bi bi-eye"></i>Lihat Pratinjau</button><button type="button" class="hm-btn"><i class="bi bi-box-arrow-up-right"></i>Buka Tab Baru</button><span class="sp"></span><button type="button" class="hm-bdt" data-dok-toggle aria-expanded="false">Detail <i class="bi bi-chevron-down ch"></i></button></div><div class="hm-dt"><div><div class="in"><div class="hm-meta"><div><span class="k">Nomor:</span><span>SPH/045/X/2026</span></div></div></div></div></div></div></div><div class="hm-dc kosong" data-dok="skb"><div class="hm-dic" style="background:#e0e7ff;color:#4f46e5"><i class="bi bi-file-earmark-check-fill"></i></div><div class="hm-dbody"><div class="hm-dh"><h6>Surat Kesanggupan Bayar (SKB)</h6><span class="hm-bd no"><i class="bi bi-dash-lg"></i>Tidak Ada</span></div><p class="hm-dsub">Surat komitmen penjaminan pembayaran dari mitra sebelum pekerjaan dimulai</p><div class="hm-acts"><span class="sp"></span><button type="button" class="hm-bdt" data-dok-toggle aria-expanded="false">Detail <i class="bi bi-chevron-down ch"></i></button></div><div class="hm-dt"><div><div class="in"></div></div></div></div></div></div>
+ </div>
+</div></div>
+<div class="fv" id="fv"><div class="fvbox hm-root"><div class="fvtop"><i class="bi bi-diagram-3-fill" style="color:#4f46e5"></i><b>Map Kendali</b><button class="hm-btn sm" data-mk-cetak><i class="bi bi-printer"></i>Cetak</button><button class="hm-btn sm" id="fvx"><i class="bi bi-x-lg"></i></button></div><div class="fvbody"><div class="mk-paper"><div class="mk-top"><div class="mk-logo" style="height:42px;background:#e2e8f0;border-radius:4px;display:grid;place-items:center;font:700 12px sans-serif;color:#64748b">BBSPJIS</div><div class="mk-title">MAP Kendali</div><div class="mk-kode">F.PJT-12-03/1</div></div><div class="mk-meta"><div><span class="k">Nomor</span><span>: 5/PO/BBSPJIS/X/2026</span></div><div><span class="k">Judul Kegiatan</span><span>: Uji Karakterisasi Kekakuan dan Uji Cekik Chipboard</span></div><div><span class="k">Disiapkan Oleh</span><span>: Tim Kerja OPTI Selulosa</span></div></div><table class="mk-table"><colgroup><col style="width:7.4%"><col style="width:31%"><col style="width:11.9%"><col style="width:12.7%"><col style="width:12.8%"><col style="width:12.7%"><col style="width:11.5%"></colgroup><thead><tr><th rowspan="2">No.</th><th rowspan="2">Tahap Proses</th><th colspan="2">Verifikasi</th><th colspan="2">Validasi</th><th rowspan="2">Ket</th></tr><tr><th>Tanggal</th><th>Tanda Tangan</th><th>Tanggal</th><th>Tanda Tangan</th></tr></thead><tbody><tr style="height:44px" class="head"><td class="no">1</td><td>PROPOSAL</td><td class="tgl">20/10/2026</td><td></td><td class="tgl"></td><td></td><td></td></tr><tr style="height:44px" class="head"><td class="no">2</td><td>KONTRAK</td><td class="tgl"></td><td></td><td class="tgl"></td><td></td><td></td></tr><tr class="head"><td class="no">3</td><td>PETUNJUK OPERASIONAL</td><td class="tgl"></td><td></td><td class="tgl"></td><td></td><td></td></tr><tr class="sub"><td class="no"></td><td>Adm KS &amp; Humas</td><td class="tgl">27/10/2026</td><td></td><td class="tgl"></td><td></td><td></td></tr><tr class="sub"><td class="no"></td><td>Tim Mitra Industri</td><td class="tgl"><i class="bi bi-lock-fill mk-lock"></i></td><td></td><td class="tgl"></td><td></td><td></td></tr><tr class="sub"><td class="no"></td><td>PPK BLU</td><td class="tgl"><i class="bi bi-lock-fill mk-lock"></i></td><td></td><td class="tgl"></td><td></td><td></td></tr><tr class="sub"><td class="no"></td><td>Ka. BBSPJIS</td><td class="tgl"></td><td></td><td class="tgl"></td><td></td><td></td></tr></tbody></table></div></div></div></div>
+<div class="toast" id="toast"></div>
+<script>
+function toast(t){var e=document.getElementById('toast');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(function(){e.style.display='none'},2200)}
+document.addEventListener('click',function(e){var t=e.target;
+ var tb=t.closest('[data-t]');if(tb){document.querySelectorAll('.hm-shtab').forEach(function(b){b.classList.toggle('on',b===tb)});document.querySelectorAll('.pane').forEach(function(p){p.hidden=p.id!==tb.dataset.t});return}
+ var d=t.closest('[data-dok-toggle]');if(d){var c=d.closest('.hm-dc'),o=c.classList.toggle('open');d.setAttribute('aria-expanded',o);return}
+ var a=t.closest('[data-all]');if(a){document.querySelectorAll('.hm-dc').forEach(function(c){c.classList.toggle('open',a.dataset.all==='1')});return}
+ if(t.closest('[data-mk-lihat]')){document.getElementById('fv').classList.add('on');return}
+ if(t.closest('#fvx')||t.id==='fv'){document.getElementById('fv').classList.remove('on');return}
+ if(t.closest('[data-mk-cetak]')){toast('Cetak Map Kendali: ukuran kertas mengikuti pilihan di dialog cetak')}
+ else if(t.closest('.hm-btn.pri,.hm-btn')){toast('Pratinjau berkas (sama seperti sekarang)')}
+});
+</script></body></html>

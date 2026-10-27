@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demo Katim: Kerjakan Sendiri / Disposisi</title>
+<style>
+  :root { --navy:#0f2a4a; --pri:#2563eb; --txt:#0f172a; --mut:#64748b; --line:#e2e8f0; --warn:#f59e0b; --ok:#16a34a; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#f4f6fa; color:var(--txt); font:14px/1.5 "Segoe UI",system-ui,sans-serif; }
+  .wrap { max-width:1000px; margin:0 auto; padding:16px 16px 80px; }
+  .demo { background:#fff; border:1px dashed #94a3b8; border-radius:12px; padding:10px 14px; margin-bottom:14px; font-size:.82rem; display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+  .demo button { font:inherit; font-size:.8rem; border:1px solid var(--line); background:#fff; border-radius:8px; padding:5px 12px; cursor:pointer; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:14px; margin-bottom:12px; box-shadow:0 1px 3px rgba(15,23,42,.05); }
+  .guide { padding:14px 18px; display:flex; gap:14px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
+  .guide h4 { margin:0; font-size:1.02rem; } .guide p { margin:2px 0 0; font-size:.82rem; color:var(--mut); }
+  .pill { font-size:.66rem; font-weight:700; border-radius:99px; padding:2px 9px; background:var(--navy); color:#fff; }
+  .btn { font:inherit; font-size:.82rem; font-weight:700; border-radius:8px; padding:8px 15px; border:1.5px solid var(--line); background:#fff; cursor:pointer; }
+  .btn.pri { background:var(--navy); color:#fff; border-color:var(--navy); }
+  .btn.dark { background:#212529; color:#fff; border-color:#212529; }
+  .btn.warn { background:#d97706; color:#fff; border-color:#d97706; }
+  .po { padding:14px 18px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
+  .tl { display:flex; padding:6px 18px 16px; gap:4px; }
+  .st { flex:1; text-align:center; font-size:.72rem; color:var(--mut); }
+  .dot { width:26px; height:26px; margin:0 auto 4px; border-radius:50%; display:grid; place-items:center; background:#e2e8f0; font-weight:700; font-size:.75rem; }
+  .st.done .dot { background:var(--ok); color:#fff; } .st.rev .dot { background:var(--warn); color:#fff; }
+  .st b { display:block; color:var(--txt); }
+  .info { margin:0 18px 16px; background:#fff3cd; color:#664d03; border-radius:8px; padding:12px 14px; font-size:.84rem; }
+  .info.biru { background:#cff4fc; color:#055160; }
+  .form { margin:0 18px 18px; border:2px solid var(--pri); border-radius:12px; padding:14px 16px; background:#f8fbff; animation:muncul .5s ease; }
+  .form h5 { margin:0 0 8px; color:var(--pri); }
+  .form .f { background:#fff; border:1px solid var(--line); border-radius:8px; padding:8px 10px; margin-bottom:8px; color:var(--mut); font-size:.82rem; }
+  @keyframes muncul { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:none; } }
+  .hide { display:none !important; }
+
+  /* slide */
+  .scrim { position:fixed; inset:0; background:rgba(15,23,42,.45); opacity:0; pointer-events:none; transition:opacity .2s; z-index:50; }
+  .scrim.open { opacity:1; pointer-events:auto; }
+  .sheet { position:fixed; top:0; right:0; bottom:0; width:min(900px,100vw); background:#f1f5f9; z-index:55; display:flex; flex-direction:column; transform:translateX(100%); transition:transform .24s ease; box-shadow:-12px 0 40px rgba(15,23,42,.18); }
+  .sheet.open { transform:none; }
+  .sheet header { background:#fff; padding:14px 20px; border-bottom:1px solid var(--line); font-weight:700; }
+  .sheet header span { font-weight:400; color:var(--mut); font-size:.8rem; display:block; }
+  .sheet .doc { flex:1; overflow:auto; padding:18px; }
+  .paper { background:#fff; border:1px solid var(--line); max-width:640px; margin:0 auto; padding:22px; font-family:Georgia,serif; font-size:.85rem; }
+  .cat { background:#fffdf5; border:1px solid var(--line); border-left:4px solid var(--warn); border-radius:9px; padding:8px 11px; margin:8px 0; font-family:system-ui,sans-serif; font-size:.8rem; }
+  .dock { background:#fff; border-top:1px solid var(--line); padding:12px 18px; display:flex; justify-content:space-between; align-items:center; gap:10px; }
+  .dock .h { color:var(--mut); font-size:.8rem; }
+  .dlg { position:fixed; inset:0; background:rgba(15,23,42,.55); display:none; align-items:center; justify-content:center; z-index:70; }
+  .dlg.open { display:flex; }
+  .dlg .box { background:#fff; border-radius:16px; max-width:400px; padding:24px; text-align:center; }
+  .dlg .box .row { display:flex; gap:8px; justify-content:center; margin-top:14px; }
+  .note { font-size:.78rem; color:var(--mut); margin-top:6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="demo">
+    <b>Demo Ketua Tim</b>
+    <span>Klik <b>Lihat PO</b> → pilih <b>Kerjakan sendiri</b> atau <b>Disposisi ke essy</b>.</span>
+    <button onclick="resetDemo()">Ulangi dari awal</button>
+  </div>
+
+  <div class="card guide">
+    <div>
+      <span class="pill">Tahap 8</span>
+      <h4 id="gJudul">Putuskan Penanganan Revisi PPK BLU</h4>
+      <p id="gDesk">PPK BLU meminta revisi. Kerjakan sendiri, atau disposisikan ke essy mama soleh.</p>
+    </div>
+    <button class="btn pri" id="gBtn" onclick="bukaSlide()">Putuskan Revisi PPK BLU</button>
+  </div>
+
+  <div class="card" id="cardPo">
+    <div class="po">
+      <div><b>Nomor PO: 3/PO/BBSPJIS/X/2026</b><div class="note">Dikirim 22 Okt 2026, 15:28</div></div>
+      <div><button class="btn dark" id="btnLihat" onclick="bukaSlide()">👁 Lihat PO</button></div>
+    </div>
+    <div class="tl">
+      <div class="st done"><div class="dot">✓</div><b>Disusun</b>Ketua Pelaksana</div>
+      <div class="st done"><div class="dot">✓</div><b>Review Ketua Tim</b>Ketua Tim OPTI</div>
+      <div class="st done"><div class="dot">✓</div><b>Verifikasi Humas</b>Humas</div>
+      <div class="st done"><div class="dot">✓</div><b>Verifikasi Tim Mitra</b>Tim Mitra</div>
+      <div class="st rev" id="stPpk"><div class="dot">!</div><b>Verifikasi PPK BLU</b><span id="stPpkTag">Menunggu keputusan</span></div>
+      <div class="st"><div class="dot">6</div><b>PO Aktif</b>Pengerjaan lab dimulai</div>
+    </div>
+    <div class="info" id="info"><b>Giliran Anda.</b> PPK BLU meminta revisi. Putuskan: kerjakan sendiri atau disposisikan ke essy mama soleh.</div>
+    <div class="form hide" id="formRevisi">
+      <h5>Kerjakan Revisi PO</h5>
+      <div class="f">Judul kegiatan: Uji Emisi Cerobong &amp; Pengujian Efisiensi Pengolahan Limbah Cair Industri</div>
+      <div class="f">Dasar, Tujuan, Ruang Lingkup, RAB … (form PO yang sama seperti saat menyusun PO)</div>
+      <button class="btn pri">Kirim ke PPK BLU</button>
+      <div class="note">Catatan PPK BLU: <i>asdasd</i> (bagian Dasar) ditandai di tiap bagian.</div>
+    </div>
+  </div>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="sheet" id="sheet">
+  <header>3/PO/BBSPJIS/X/2026 · Revisi PPK BLU: menunggu keputusan Ketua Tim<span>PT Polyfin Canggih - Uji Emisi Cerobong</span></header>
+  <div class="doc"><div class="paper"><b>1. DASAR</b><p>a. Persetujuan biaya kerjasama BBSPJIS dengan PT Polyfin Canggih …</p>
+    <div class="cat"><b>kaa</b> · Perlu diperbaiki<br>Catatan PPK BLU: asdasd</div><b>2. TUJUAN</b><p>Mengetahui karakteristik emisi gas buang …</p></div></div>
+  <div class="dock"><span class="h">Pilih siapa yang mengerjakan revisi PPK BLU.</span>
+    <span><button class="btn" onclick="konfirm('disposisi')">Disposisi ke essy</button> <button class="btn pri" onclick="konfirm('kerjakan')">Kerjakan sendiri</button></span></div>
+</aside>
+
+<div class="dlg" id="dlg"><div class="box"><h4 id="dJudul"></h4><p id="dPesan" class="note"></p>
+  <div class="row"><button class="btn" onclick="tutupDlg()">Batal</button><button class="btn warn" id="dYa">Ya</button></div></div></div>
+
+<script>
+var pilihan = '';
+function $(i){return document.getElementById(i);}
+function bukaSlide(){ $('scrim').classList.add('open'); $('sheet').classList.add('open'); }
+function konfirm(jenis){
+  pilihan = jenis;
+  $('dJudul').textContent = jenis==='kerjakan' ? 'Kerjakan revisi sendiri?' : 'Disposisikan ke essy?';
+  $('dPesan').textContent = jenis==='kerjakan' ? 'Anda mengedit PO sesuai catatan PPK BLU, lalu mengirimnya langsung ke PPK BLU.' : 'essy akan mengedit PO sesuai catatan PPK BLU, lalu mengirimnya kembali ke Anda untuk direview.';
+  $('dYa').textContent = jenis==='kerjakan' ? 'Ya, kerjakan' : 'Ya, disposisikan';
+  $('dlg').classList.add('open');
+}
+function tutupDlg(){ $('dlg').classList.remove('open'); }
+$('dYa').onclick = function(){
+  tutupDlg();
+  // 1) slide digeser keluar (animasi sama seperti tombol tutup)
+  $('scrim').classList.remove('open'); $('sheet').classList.remove('open');
+  // 2) setelah slide tertutup, Tahap 8 diperbarui (di aplikasi: halaman dimuat ulang)
+  setTimeout(terapkan, 330);
+};
+function terapkan(){
+  if (pilihan==='kerjakan'){
+    $('gJudul').textContent='Kerjakan Revisi PPK BLU';
+    $('gDesk').textContent='Perbaiki PO sesuai catatan PPK BLU, centang catatan yang selesai, lalu kirim ke PPK BLU.';
+    $('gBtn').textContent='Kerjakan Revisi PPK BLU'; $('gBtn').onclick=function(){ $('formRevisi').scrollIntoView({behavior:'smooth',block:'center'}); };
+    $('stPpkTag').textContent='Dikerjakan Ketua Tim';
+    $('info').className='info'; $('info').innerHTML='<b>Giliran Anda.</b> Kerjakan revisi PPK BLU langsung di form di bawah.';
+    $('formRevisi').classList.remove('hide');
+    setTimeout(function(){ $('formRevisi').scrollIntoView({behavior:'smooth',block:'center'}); },200);
+  } else {
+    $('gJudul').textContent='Revisi PPK BLU Dikerjakan Ketua Pelaksana';
+    $('gDesk').textContent='Didisposisikan ke essy mama soleh. Menunggu revisi dikirim kembali ke Anda.';
+    $('gBtn').classList.add('hide');
+    $('stPpkTag').textContent='Dikerjakan Ketua Pelaksana';
+    $('info').className='info biru'; $('info').innerHTML='Revisi PPK BLU didisposisikan ke <b>essy mama soleh</b>. Form revisi tidak muncul di akun Anda.';
+    $('formRevisi').classList.add('hide');
+  }
+}
+function resetDemo(){
+  $('gJudul').textContent='Putuskan Penanganan Revisi PPK BLU';
+  $('gDesk').textContent='PPK BLU meminta revisi. Kerjakan sendiri, atau disposisikan ke essy mama soleh.';
+  $('gBtn').classList.remove('hide'); $('gBtn').textContent='Putuskan Revisi PPK BLU'; $('gBtn').onclick=bukaSlide;
+  $('stPpkTag').textContent='Menunggu keputusan';
+  $('info').className='info'; $('info').innerHTML='<b>Giliran Anda.</b> PPK BLU meminta revisi. Putuskan: kerjakan sendiri atau disposisikan ke essy mama soleh.';
+  $('formRevisi').classList.add('hide'); window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
+</body>
+</html>

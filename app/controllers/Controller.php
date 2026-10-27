@@ -242,7 +242,20 @@ class Controller {
                                   AND o.status != 'ditolak' AND (o.status_tinjauan != 'tidak_layak' OR o.status_tinjauan IS NULL)
                                   AND (o.status != 'selesai' AND (o.status_pelaksanaan IS NULL OR o.status_pelaksanaan != 'laporan_selesai'))
                                   AND (b.id IS NULL OR b.status_bast NOT IN ('disetujui', 'selesai', 'terbit'))";
-                $resOrderPic = $this->db->exec($sqlOrderPic, [1 => (int)$userId, 2 => (int)$userId]);
+                // Order yang PO-nya sedang di meja orang lain (review Ketua Tim, verifikasi Humas / Tim Mitra / PPK BLU) bukan tugas Ketua Pelaksana saat ini
+                // (sama dengan penanda "Giliran Anda" di Daftar Order). Kalau kolom PO belum lengkap, kembali ke hitungan lama.
+                try {
+                    $joinPk = "LEFT JOIN po_kegiatan pk ON pk.id = (SELECT id FROM po_kegiatan WHERE order_id = o.id" . (class_exists('PoSchema') ? \PoSchema::bukanSertifikasi('') : '') . " ORDER BY id ASC LIMIT 1) ";
+                    $sqlPic2 = preg_replace(
+                        '/WHERE\s*\(\s*\(o\.ketua_pelaksana_id = \?\)/',
+                        $joinPk . "WHERE ( (o.ketua_pelaksana_id = ? AND (pk.id IS NULL OR pk.status NOT IN ('terkirim', 'disetujui_mitra', 'disetujui') OR pk.status_review = 'perlu_revisi' OR (pk.status_review = 'disetujui' AND pk.validasi_keuangan_at IS NULL AND pk.ppk_status = 'ketupel_kerja')))",
+                        $sqlOrderPic, 1
+                    );
+                    if ($sqlPic2 === $sqlOrderPic) { throw new \Exception('pola SQL tidak cocok'); }
+                    $resOrderPic = $this->db->exec($sqlPic2, [1 => (int)$userId, 2 => (int)$userId]);
+                } catch (\Exception $ePk) {
+                    $resOrderPic = $this->db->exec($sqlOrderPic, [1 => (int)$userId, 2 => (int)$userId]);
+                }
                 $notifOrderCount = (int)($resOrderPic[0]['c'] ?? 0);
             } elseif ($role === 'ketua_tim') {
                 $whereDiv = in_array($layanan, array('selulosa', 'lingkungan')) ? "o.jenis_layanan_opti = '{$layanan}' AND" : "";

@@ -636,11 +636,7 @@ tr.row-user-task > td:first-child {
                                 </thead>
                                 <tbody>
                                     <repeat group="{{ @daftar_order }}" value="{{ @ord }}" counter="{{ @ctr }}">
-
-                                        <tr class="{{ @ord.giliran_anda && @ord.po_baca_status == 'belum' ? 'order-belum-baca' : '' }}">
-                                            <td class="text-center text-muted small">{{ @ctr }}</td>
-
-                                        <tr class="{{ @ord.is_user_task ? 'row-user-task' : '' }}">
+                                        <tr class="{{ @ord.giliran_anda && @ord.po_baca_status != 'sudah' ? 'order-belum-baca' : '' }} {{ @ord.is_user_task ? 'row-user-task' : '' }}">
                                             <td class="text-center text-muted small">
                                                 {{ @ctr }}
                                             </td>
@@ -773,7 +769,7 @@ tr.row-user-task > td:first-child {
                                                 <check if="{{ !empty(@ord.keterangan_sub) }}">
                                                     <true>
                                                         <div class="text-primary-emphasis fw-semibold" style="font-size: 0.74rem; line-height: 1.25;">
-                                                            <check if="{{ @ord.giliran_anda && @ord.po_baca_status == 'belum' }}"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#2563eb;margin-right:6px;vertical-align:1px;"></span></check>{{ @ord.keterangan_sub }}
+                                                            <check if="{{ @ord.giliran_anda && @ord.po_baca_status != 'sudah' }}"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#2563eb;margin-right:6px;vertical-align:1px;"></span></check>{{ @ord.keterangan_sub }}
                                                             <check if="{{ @ord.giliran_anda }}"><span class="badge rounded-pill ms-1 align-middle" style="background:#f59e0b;color:#fff;font-size:0.62rem;">Giliran Anda</span></check>
                                                         </div>
                                                     </true>

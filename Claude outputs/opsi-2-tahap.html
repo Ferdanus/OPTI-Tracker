@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Opsi 2: Dipisah menurut tahap: Siapkan PO (sebelum kirim) dan Pantau PO (sesudah kirim)</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css">
+<style>:root{--ink:#0f172a;--mut:#64748b;--line:#e2e8f0;--bg:#f1f5f9;--card:#fff;--dark:#334155;--dark2:#1e293b;--blue:#2563eb;--amber:#b45309;--green:#047857;--red:#e11d48}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.demo-bar{background:#fff;border-bottom:1px solid var(--line);padding:9px 18px;display:flex;gap:16px;flex-wrap:wrap;align-items:center;position:sticky;top:0;z-index:30}
+.demo-bar b{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--mut)}
+.demo-bar .opsi{background:var(--dark);color:#fff;border-radius:99px;padding:3px 12px;font-weight:800;font-size:.8rem}
+.seg{display:inline-flex;background:#f1f5f9;border-radius:99px;padding:3px;gap:2px}
+.seg button{border:0;background:transparent;padding:5px 13px;border-radius:99px;font-weight:700;font-size:.78rem;color:var(--mut);cursor:pointer}
+.seg button.on{background:var(--dark);color:#fff}
+.app{display:flex;min-height:calc(100vh - 48px)}
+.side{width:236px;background:#16233a;color:#cbd5e1;flex:none;padding:16px 12px;position:sticky;top:48px;align-self:flex-start;height:calc(100vh - 48px);overflow:auto}
+.side .logo{display:flex;gap:10px;align-items:center;color:#fff;font-weight:800;margin:0 6px 18px}
+.side .logo i{width:34px;height:34px;border-radius:9px;background:#fff;color:#16233a;display:grid;place-items:center;font-style:normal}
+.side h6{margin:16px 8px 6px;font-size:.66rem;letter-spacing:.08em;color:#64748b}
+.side a{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;color:#cbd5e1;text-decoration:none;font-weight:600;font-size:.84rem;cursor:pointer;margin-bottom:2px}
+.side a:hover{background:rgba(255,255,255,.06)}
+.side a.on{background:rgba(255,255,255,.12);color:#fff}
+.side a.sub{margin-left:18px;font-size:.8rem}
+.side .bdg{margin-left:auto;background:#e11d48;color:#fff;border-radius:99px;font-size:.68rem;padding:1px 8px;font-weight:700}
+.main{flex:1;min-width:0}
+.topbar{background:#fff;border-bottom:1px solid var(--line);padding:14px 26px;display:flex;justify-content:space-between;align-items:center}
+.topbar b{font-size:1.02rem}
+.user{display:flex;gap:9px;align-items:center;font-weight:700;font-size:.84rem}
+.user i{width:32px;height:32px;border-radius:50%;background:var(--dark);color:#fff;display:grid;place-items:center;font-style:normal;font-size:.72rem}
+.user small{display:block;font-weight:500;color:var(--mut);font-size:.72rem}
+.content{padding:22px 26px;max-width:1280px}
+.head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.head h1{margin:0;font-size:1.5rem;display:flex;align-items:center;gap:10px}
+.head p{margin:4px 0 0;color:var(--mut);font-size:.85rem;max-width:700px}
+.btn{border:1.5px solid var(--line);background:#fff;color:var(--dark);border-radius:9px;padding:8px 14px;font-weight:700;font-size:.82rem;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;text-decoration:none}
+.btn:hover{border-color:var(--dark)}
+.btn.pri{background:var(--dark);border-color:var(--dark);color:#fff}.btn.pri:hover{background:var(--dark2)}
+.btn.sm{padding:6px 11px;font-size:.78rem}.btn.ico{padding:6px 9px}.btn.lg{padding:10px 18px;font-size:.88rem}
+.btn.baru{position:relative}
+.btn.baru::after{content:'';position:absolute;top:-5px;right:-5px;width:12px;height:12px;border-radius:50%;background:var(--red);border:2px solid #fff;animation:dn 1.6s infinite}
+@keyframes dn{0%{box-shadow:0 0 0 0 rgba(225,29,72,.55)}70%{box-shadow:0 0 0 7px rgba(225,29,72,0)}100%{box-shadow:0 0 0 0 rgba(225,29,72,0)}}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+.stat:hover{box-shadow:0 6px 18px rgba(15,23,42,.08)}
+.stat small{display:block;font-size:.68rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#475569}
+.stat .n{font-size:1.7rem;font-weight:800;line-height:1.15}
+.stat .d{font-size:.76rem;color:var(--mut)}
+.stat .i{width:42px;height:42px;border-radius:11px;display:grid;place-items:center;font-size:1.2rem}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:16px;overflow:hidden}
+.filters{display:flex;gap:10px;flex-wrap:wrap;padding:12px 16px;align-items:center}
+.filters input,.filters select{border:1px solid var(--line);border-radius:9px;padding:8px 12px;font-size:.84rem;background:#fff;color:var(--ink)}
+.filters input.q{flex:1;min-width:200px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;padding:14px 16px 0}
+.tab{border:1px solid var(--line);background:#fff;border-radius:99px;padding:7px 13px;font-weight:700;font-size:.8rem;color:var(--dark);cursor:pointer;display:inline-flex;gap:8px;align-items:center}
+.tab .c{background:#f1f5f9;border-radius:99px;padding:1px 8px;font-size:.72rem}
+.tab.on{background:var(--dark);border-color:var(--dark);color:#fff}.tab.on .c{background:rgba(255,255,255,.2);color:#fff}
+.tab.urgent .c{background:var(--red);color:#fff}
+.chips{display:flex;gap:6px;flex-wrap:wrap;padding:12px 16px 0;align-items:center}
+.chips small{color:var(--mut);font-weight:700;margin-right:4px}
+.chip{border:1px solid var(--line);background:#fff;border-radius:99px;padding:3px 11px;font-size:.75rem;font-weight:600;color:#475569;cursor:pointer}
+.chip.on{background:#e2e8f0;border-color:#94a3b8;color:var(--ink)}
+table{width:100%;border-collapse:collapse;margin-top:12px}
+th{font-size:.68rem;text-transform:uppercase;letter-spacing:.05em;color:#475569;text-align:left;padding:9px 14px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:#fff}
+td{padding:11px 14px;border-bottom:1px solid #eef2f7;vertical-align:middle}
+tr.unread td{background:#f5f9ff}tr.unread td:first-child{box-shadow:inset 3px 0 0 var(--blue)}
+tr.unread .jd{font-weight:800}
+tr.klik{cursor:pointer}tr.klik:hover td{background:#f8fafc}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--blue);margin-right:6px}
+.no{font-weight:700;font-size:.8rem}.jd{font-weight:600}.sub{font-size:.76rem;color:var(--mut)}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace}
+.div{display:inline-block;border:1px solid var(--line);border-radius:99px;padding:2px 10px;font-size:.72rem;font-weight:700;background:#fff}
+.stp{display:flex;align-items:center;margin-bottom:5px}
+.stp i{width:11px;height:11px;border-radius:50%;background:#e2e8f0;border:2px solid #fff;box-shadow:0 0 0 1px #cbd5e1;flex:none}
+.stp s{width:16px;height:2px;background:#e2e8f0;flex:none}
+.stp i.d{background:#16a34a;box-shadow:0 0 0 1px #16a34a}.stp s.d{background:#16a34a}
+.stp i.c{background:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.25)}
+.stp i.r{background:#d97706;box-shadow:0 0 0 3px rgba(217,119,6,.25)}
+.pos{font-size:.78rem;font-weight:700}
+.tg{font-size:.72rem;font-weight:600}.tg.u{color:var(--amber)}.tg.d{color:var(--green)}.tg.m{color:var(--mut)}
+.me{display:inline-flex;align-items:center;gap:5px;background:#fff1f2;color:#be123c;border:1px solid #fecdd3;border-radius:99px;padding:1px 9px;font-size:.7rem;font-weight:800;margin-top:3px}
+.empty{padding:46px 20px;text-align:center;color:var(--mut)}.empty i{font-size:2rem;display:block;margin-bottom:6px}
+.foot{padding:12px 16px;color:var(--mut);font-size:.8rem}
+.banner{background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:10px;padding:9px 14px;font-size:.82rem;margin-bottom:14px;display:flex;gap:8px;align-items:center}
+.banner.info{background:#eff6ff;border-color:#bfdbfe;color:#1e40af}
+.scrim{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;z-index:40}.scrim.on{display:block}
+.sheet{position:fixed;top:0;right:0;bottom:0;width:min(540px,100%);background:#fff;z-index:41;transform:translateX(105%);transition:transform .25s;box-shadow:-12px 0 40px rgba(15,23,42,.25);display:flex;flex-direction:column}
+.sheet.on{transform:none}
+.sheet header{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.sheet .bd{padding:18px 20px;overflow:auto;flex:1;font-size:.86rem}
+.sheet .k{color:var(--mut);font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;font-weight:700;margin-top:14px}
+.sheet footer{padding:12px 20px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end}
+@media(max-width:1000px){.side{display:none}.stats{grid-template-columns:1fr 1fr}}
+td.no{white-space:nowrap}
+
+.konsep{background:#fff;border-bottom:1px solid var(--line);padding:12px 22px;font-size:.84rem;color:#334155}
+.konsep b.t{display:block;font-size:.95rem;margin-bottom:3px;color:var(--ink)}
+
+.board{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.col{background:#f8fafc;border:1px solid var(--line);border-radius:14px;padding:12px;min-height:200px}
+.col h5{margin:0 0 10px;font-size:.74rem;text-transform:uppercase;letter-spacing:.05em;color:#475569;display:flex;justify-content:space-between}
+.col h5 span{background:#e2e8f0;border-radius:99px;padding:0 9px}
+.kt{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
+.kt.mine{border-color:#fecdd3;box-shadow:inset 3px 0 0 var(--red)}
+.kt b{display:block;margin-bottom:3px}
+.kt .ft{display:flex;justify-content:space-between;align-items:center;margin-top:10px;gap:8px}
+.mx td,.mx th{text-align:center}.mx td:nth-child(2),.mx th:nth-child(2){text-align:left}
+.mx .c-d{color:#16a34a;font-size:1.15rem}.mx .c-c{display:inline-block;background:#2563eb;color:#fff;border-radius:99px;padding:2px 10px;font-size:.7rem;font-weight:700}
+.mx .c-r{display:inline-block;background:#d97706;color:#fff;border-radius:99px;padding:2px 10px;font-size:.7rem;font-weight:700}
+.mx .c-o{color:#cbd5e1}
+@media(max-width:900px){.board{grid-template-columns:1fr}}
+</style></head>
+<body>
+<div class="demo-bar"><span class="opsi">Opsi 2 dari 6</span><div><b>Lihat sebagai</b>&nbsp;<span class="seg" id="segRole"><button data-v="ketupel" class="on">Ketua Pelaksana</button><button data-v="katim">Ketua Tim</button></span></div><span style="color:var(--mut);font-size:.78rem">Demo, data contoh. Klik menu di sidebar untuk pindah halaman.</span></div>
+<div class="konsep"><b class="t">Dipisah menurut tahap: "Siapkan PO" (sebelum kirim) dan "Pantau PO" (sesudah kirim)</b>Batasnya adalah <b>tombol Kirim</b>. "Siapkan PO" isinya semua yang masih jadi pekerjaan penyusun (PO masuk, draft, revisi) dalam bentuk papan kerja dengan tombol besar. "Pantau PO" isinya semua PO yang sudah terkirim, ditampilkan sebagai <b>matriks langkah</b> sehingga kelihatan siapa yang sudah selesai dan siapa yang sedang memegang.</div>
+<div class="app"><aside class="side" id="side"></aside><main class="main"><div class="topbar"><b id="ttl"></b><span class="user"><span style="text-align:right">aji bakwan<small id="roleLbl"></small></span><i>AB</i></span></div><div class="content" id="content"></div></main></div>
+<div class="scrim" id="scrim"></div>
+<aside class="sheet" id="sheet"><header><div><div class="sub" id="shNo"></div><div style="font-weight:800;font-size:1.02rem" id="shJd"></div><div class="sub" id="shMt"></div></div><button class="btn sm ico" id="shX"><i class="bi bi-x-lg"></i></button></header><div class="bd" id="shBd"></div><footer id="shFt"></footer></aside>
+<script>
+var LANGKAH=['Disusun','Review Ketua Tim','Verifikasi Humas','Verifikasi Tim Mitra','Verifikasi PPK BLU','PO Aktif'];
+var POS={masuk:-1,draft:0,review:1,revisi:1,direvisi:1,humas:2,mitra:3,ppk:4,revppk:4,aktif:5};
+var STAT_LABEL={masuk:'Menunggu PO',draft:'Draft',review:'Menunggu review',revisi:'Perlu revisi',direvisi:'Review ulang',humas:'Verifikasi Humas',mitra:'Verifikasi Tim Mitra',ppk:'Verifikasi PPK BLU',revppk:'Revisi PPK BLU',aktif:'PO Aktif'};
+var PEMEGANG={masuk:'ketupel',draft:'ketupel',review:'katim',revisi:'ketupel',direvisi:'katim',humas:'humas',mitra:'mitra',ppk:'ppk',revppk:'ketupel',aktif:''};
+var PENERIMA={review:'Ketua Tim',revisi:'Ketua Pelaksana',direvisi:'Ketua Tim',humas:'Humas',mitra:'Tim Mitra',ppk:'PPK BLU',revppk:'Ketua Pelaksana'};
+var Z1=['masuk','draft','revisi','revppk'], Z2=['review','direvisi','humas','mitra','ppk'];
+var DATA=[
+ {id:1,ord:'ORD-202610-006',mitra:'PT Pura Nusapersada',pic:'aji bakwan',div:'Selulosa',jd:'Verifikasi Formula Barrier Coating Ramah Lingkungan untuk Kertas Kemasan',po:'',st:'masuk',baca:false,tgl:'27 Okt',kirim:'',cat:0,pesan:0},
+ {id:2,ord:'ORD-202610-005',mitra:'PT Indah Kiat',pic:'aji bakwan',div:'Selulosa',jd:'Uji Karakteristik Pulp Kraft untuk Chipboard',po:'',st:'draft',baca:false,tgl:'26 Okt',kirim:'',cat:0,pesan:0},
+ {id:3,ord:'ORD-202610-004',mitra:'PT Sinar Indah Kertas',pic:'aji bakwan',div:'Selulosa',jd:'Evaluasi Komposisi Serat Campuran & Optimasi Refining Pulp Daur Ulang',po:'4/PO/BBSPJIS/X/2026',st:'revisi',baca:false,tgl:'25 Okt',kirim:'25 Okt 14:20',cat:3,pesan:2},
+ {id:4,ord:'ORD-202610-003',mitra:'PT Kertas Padalarang',pic:'aji bakwan',div:'Selulosa',jd:'Tujuan Verifikasi Permeabilitas Kertas Saring',po:'6/PO/BBSPJIS/X/2026',st:'review',baca:false,tgl:'27 Okt',kirim:'27 Okt 08:33',cat:0,pesan:0},
+ {id:5,ord:'ORD-202610-002',mitra:'PT Fajar Surya',pic:'aji bakwan',div:'Selulosa',jd:'Pengujian Daya Serap Air Tissue',po:'5/PO/BBSPJIS/X/2026',st:'direvisi',baca:true,tgl:'24 Okt',dibuka:'27 Okt 08:28',kirim:'26 Okt 16:05',cat:2,pesan:1},
+ {id:6,ord:'ORD-202609-011',mitra:'PT Pabrik Kertas Tjiwi',pic:'aji bakwan',div:'Selulosa',jd:'Karakterisasi Kekuatan Tarik Kertas Kraft',po:'3/PO/BBSPJIS/X/2026',st:'humas',baca:false,tgl:'20 Okt',kirim:'20 Okt 09:10',cat:0,pesan:0},
+ {id:7,ord:'ORD-202609-009',mitra:'PT Riau Andalan',pic:'aji bakwan',div:'Selulosa',jd:'Analisis Kadar Abu dan Lignin Pulp',po:'2/PO/BBSPJIS/IX/2026',st:'mitra',baca:true,tgl:'18 Okt',dibuka:'20 Okt 10:12',kirim:'18 Okt 11:00',cat:0,pesan:0},
+ {id:8,ord:'ORD-202609-007',mitra:'PT Kertas Leces',pic:'aji bakwan',div:'Selulosa',jd:'Uji Ketahanan Lipat Kertas Dokumen',po:'1/PO/BBSPJIS/IX/2026',st:'ppk',baca:false,tgl:'12 Okt',kirim:'12 Okt 13:45',cat:0,pesan:0},
+ {id:9,ord:'ORD-202608-014',mitra:'PT Suparma',pic:'aji bakwan',div:'Selulosa',jd:'Evaluasi Retensi Filler pada Kertas Cetak',po:'12/PO/BBSPJIS/VIII/2026',st:'revppk',baca:false,tgl:'08 Okt',kirim:'08 Okt 10:00',cat:4,pesan:0},
+ {id:10,ord:'ORD-202608-010',mitra:'PT Pindo Deli',pic:'aji bakwan',div:'Selulosa',jd:'Uji Kualitas Pulp Dissolving',po:'10/PO/BBSPJIS/VIII/2026',st:'aktif',baca:true,tgl:'30 Sep',kirim:'30 Sep 09:00',cat:0,pesan:0},
+ {id:11,ord:'ORD-202610-007',mitra:'PT Bumi Raya Utama',pic:'dewi lestari',div:'Lingkungan',jd:'Pemantauan Kualitas Air Limbah Industri Kertas',po:'7/PO/BBSPJIS/X/2026',st:'review',baca:true,tgl:'26 Okt',dibuka:'27 Okt 09:01',kirim:'26 Okt 15:30',cat:0,pesan:0}
+];
+var S={role:'ketupel',page:1,tab:'',sub:'',q:'',stage:'',sel:null};
+var ACT={};
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function pd(id){return DATA.filter(function(x){return x.id===id;})[0];}
+function visible(p){return S.role==='ketupel' ? p.pic==='aji bakwan' : true;}
+function adaTindakan(p){var pm=PEMEGANG[p.st]; if(S.role==='ketupel') return pm==='ketupel'&&p.pic==='aji bakwan'; return pm==='katim';}
+function belumDibuka(p){return !!PENERIMA[p.st] && !p.baca;}
+function baru(p){return adaTindakan(p)&&belumDibuka(p);}
+function aksiLabel(p){
+  var r=S.role;
+  if(p.st==='masuk'&&r==='ketupel') return 'Buat PO';
+  if(p.st==='draft'&&r==='ketupel') return 'Lanjutkan draft';
+  if(p.st==='revisi'&&r==='ketupel') return 'Buka revisi';
+  if(p.st==='revppk'&&r==='ketupel') return 'Buka revisi PPK';
+  if((p.st==='review'||p.st==='direvisi')&&r==='katim') return 'Review PO';
+  return '';
+}
+function stepper(p){var cur=POS[p.st],h='';for(var i=0;i<6;i++){var d=p.st==='aktif'||i<cur;var cls=d?'d':(i===cur?((p.st==='revisi'||p.st==='revppk')?'r':'c'):'');h+='<i class="'+cls+'"></i>'+(i<5?'<s class="'+(d?'d':'')+'"></s>':'');}return h;}
+function posNama(p){return p.st==='aktif'?'PO Aktif':(p.st==='revppk'?'Revisi PPK BLU':LANGKAH[POS[p.st]]);}
+function tagBaca(p){if(!PENERIMA[p.st]) return '';return p.baca?'<div class="tg d">Dibuka '+esc(p.dibuka||'')+'</div>':'<div class="tg u">Belum dibuka '+PENERIMA[p.st]+'</div>';}
+function posisi(p){
+  if(p.st==='masuk') return '<div class="pos">Belum ada PO</div><div class="tg m">Siap dibuat Ketua Pelaksana</div>';
+  if(p.st==='draft') return '<div class="stp">'+stepper(p)+'</div><div class="pos">Disusun</div><div class="tg m">Belum dikirim</div>';
+  return '<div class="stp">'+stepper(p)+'</div><div class="pos">'+posNama(p)+'</div>'+tagBaca(p);
+}
+function badge(p){
+  var warn=['masuk','draft','revisi','revppk'].indexOf(p.st)>=0, ok=p.st==='aktif';
+  var st=ok?'background:#dcfce7;color:#166534;border-color:#bbf7d0':(warn?'background:#fffbeb;color:#b45309;border-color:#fde68a':'background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe');
+  return '<span style="display:inline-block;border:1px solid;border-radius:99px;padding:3px 11px;font-size:.73rem;font-weight:700;white-space:nowrap;'+st+'">'+STAT_LABEL[p.st]+'</span>';
+}
+function btnAksi(p,lg){
+  var a=aksiLabel(p),h='';
+  if(a) h+='<button class="btn pri '+(lg?'lg ':'sm ')+(baru(p)?'baru':'')+'" data-act="buka" data-v="'+p.id+'">'+a+'</button> ';
+  if(p.st!=='masuk') h+='<button class="btn sm ico'+(!a&&baru(p)?' baru':'')+'" title="Lihat PO" data-act="buka" data-v="'+p.id+'"><i class="bi bi-eye"></i></button>';
+  return h;
+}
+function cell(p,k){
+  switch(k){
+    case 'po': return '<td><div class="no mono">'+(p.po?esc(p.po):'<i style="color:var(--mut);font-weight:500">Belum ada nomor</i>')+'</div><div class="jd">'+(baru(p)?'<span class="dot"></span>':'')+esc(p.jd)+'</div><div class="sub">'+esc(p.mitra)+' &middot; PIC: '+esc(p.pic)+'</div>'+(adaTindakan(p)?'<span class="me"><i class="bi bi-lightning-charge-fill"></i> Giliran Anda</span>':'')+'</td>';
+    case 'ord': return '<td class="no">'+esc(p.ord)+'</td>';
+    case 'div': return '<td><span class="div">'+p.div+'</span></td>';
+    case 'pos': return '<td>'+posisi(p)+'</td>';
+    case 'st': return '<td>'+badge(p)+'</td>';
+    case 'kirim': return '<td class="sub">'+(p.kirim||'-')+'</td>';
+    case 'sejak': return '<td class="sub">'+esc(p.tgl)+'</td>';
+    case 'pengirim': return '<td>'+esc(p.pic)+'</td>';
+    case 'cat': return '<td>'+(p.cat?'<span class="tg u">'+p.cat+' catatan</span>':'<span class="sub">-</span>')+'</td>';
+    case 'aksi': return '<td style="text-align:right;white-space:nowrap">'+btnAksi(p)+'</td>';
+  }
+  return '<td></td>';
+}
+var HEAD={po:'PO &amp; kegiatan',ord:'No. Order',div:'Divisi',pos:'Posisi PO',st:'Status',kirim:'Dikirim',sejak:'Masuk sejak',pengirim:'Pengirim',cat:'Catatan',aksi:'Aksi'};
+function tabel(rows,cols,opt){
+  opt=opt||{};
+  if(!rows.length) return '<div class="empty"><i class="bi bi-inbox"></i>'+(opt.kosong||'Tidak ada PO di sini.')+'</div>';
+  var h='<table><thead><tr><th style="width:34px">No</th>'+cols.map(function(c){return '<th'+(c==='aksi'?' style="text-align:right"':'')+'>'+HEAD[c]+'</th>';}).join('')+'</tr></thead><tbody>';
+  rows.forEach(function(p,i){h+='<tr class="'+(baru(p)?'unread':'')+'"><td>'+(i+1)+'</td>'+cols.map(function(c){return cell(p,c);}).join('')+'</tr>';});
+  return h+'</tbody></table>';
+}
+function urut(a){return a.slice().sort(function(x,y){var kx=(adaTindakan(x)?2:0)+(belumDibuka(x)?1:0),ky=(adaTindakan(y)?2:0)+(belumDibuka(y)?1:0);return ky-kx||y.id-x.id;});}
+function cari(rows){return rows.filter(function(p){if(!S.q) return true;return (p.ord+' '+p.po+' '+p.mitra+' '+p.jd).toLowerCase().indexOf(S.q.toLowerCase())>=0;});}
+function tabsHtml(list){return '<div class="tabs">'+list.map(function(t){return '<span class="tab'+(S.tab===t.k?' on':'')+(t.urgent&&t.n>0?' urgent':'')+'" data-act="tab" data-v="'+t.k+'">'+t.t+' <span class="c">'+t.n+'</span></span>';}).join('')+'</div>';}
+function chipsHtml(label,list){return '<div class="chips"><small>'+label+'</small>'+list.map(function(t){return '<span class="chip'+(S.sub===t.k?' on':'')+'" data-act="sub" data-v="'+t.k+'">'+t.t+' ('+t.n+')</span>';}).join('')+'</div>';}
+function statsHtml(list){return '<div class="stats">'+list.map(function(k){return '<div class="stat"'+(k.act?' data-act="'+k.act+'" data-v="'+k.v+'"':'')+'><div><small>'+k.l+'</small><div class="n">'+k.n+'</div><div class="d">'+k.d+'</div></div><div class="i" style="background:'+k.bg+';color:'+k.c+'"><i class="bi '+k.ic+'"></i></div></div>';}).join('')+'</div>';}
+function filterBar(){return '<div class="panel"><div class="filters"><input class="q" id="q" placeholder="Cari no. order, no. PO, mitra, atau judul kegiatan" value="'+esc(S.q)+'"><select><option>Semua divisi</option><option>Selulosa</option><option>Lingkungan</option></select><select><option>Oktober</option><option>Semua bulan</option></select><select><option>2026</option></select></div></div>';}
+function count(p,list){return list.filter(function(x){return visible(x)&&adaTindakan(x);}).length;}
+function cnt1(){return DATA.filter(function(x){return visible(x)&&adaTindakan(x)&&Z1.indexOf(x.st)>=0;}).length;}
+function cnt2(){return DATA.filter(function(x){return visible(x)&&adaTindakan(x)&&Z2.indexOf(x.st)>=0;}).length;}
+
+/* ---- slide ---- */
+function bukaSheet(p){
+  document.getElementById('shNo').textContent=(p.po||'Belum ada nomor PO')+' · '+p.ord;
+  document.getElementById('shJd').textContent=p.jd;
+  document.getElementById('shMt').textContent=p.mitra+' · '+p.div;
+  var cur=POS[p.st],h='<div class="k">Posisi PO</div><div style="display:flex;flex-direction:column;gap:6px;margin-top:6px">';
+  LANGKAH.forEach(function(l,i){var d=p.st==='aktif'||i<cur,c=i===cur;h+='<div style="display:flex;gap:9px;align-items:center;'+(d||c?'':'opacity:.45')+'"><span style="width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:.7rem;font-weight:800;color:#fff;background:'+(d?'#16a34a':(c?'#2563eb':'#cbd5e1'))+'">'+(d?'&#10003;':(i+1))+'</span><b style="font-weight:'+(c?800:600)+'">'+l+'</b></div>';});
+  h+='</div><div class="k">Status</div><div style="margin-top:4px">'+badge(p)+'</div><div class="k">Catatan &amp; diskusi</div><div class="sub" style="margin-top:4px">Isi slide yang sudah ada sekarang (dokumen PO, catatan berlabel Ketua Tim / PPK BLU, ruang diskusi) tampil di sini.</div>';
+  document.getElementById('shBd').innerHTML=h;
+  var a=aksiLabel(p);
+  document.getElementById('shFt').innerHTML='<button class="btn" id="shTutup">Tutup</button>'+(a?'<button class="btn pri">'+a+'</button>':'');
+  document.getElementById('shTutup').onclick=tutup;
+  document.getElementById('scrim').classList.add('on');document.getElementById('sheet').classList.add('on');
+}
+function tandaiBaca(p){if(belumDibuka(p)&&adaTindakan(p)){p.baca=true;p.dibuka='27 Okt '+('0'+new Date().getHours()).slice(-2)+':'+('0'+new Date().getMinutes()).slice(-2);}}
+function tutup(){document.getElementById('scrim').classList.remove('on');document.getElementById('sheet').classList.remove('on');}
+ACT.buka=function(v){var p=pd(parseInt(v,10));tandaiBaca(p);bukaSheet(p);render();};
+ACT.tab=function(v){S.tab=v;S.sub='';render();};
+ACT.sub=function(v){S.sub=v;render();};
+ACT.go=function(v){S.page=parseInt(v,10);S.tab='';S.sub='';S.stage='';S.sel=null;render();};
+ACT.stage=function(v){S.stage=(S.stage===v?'':v);render();};
+ACT.sel=function(v){S.sel=parseInt(v,10);var p=pd(S.sel);tandaiBaca(p);render();};
+
+/* ---- shell ---- */
+function menuItem(pg,label,ic,n){return '<a class="'+(S.page===pg?'on':'')+'" data-act="go" data-v="'+pg+'"><i class="bi '+ic+'"></i>'+label+(n>0?'<span class="bdg">'+n+'</span>':'')+'</a>';}
+function menuHtml(){
+  var m1=CFG.m1,m2=CFG.m2;
+  var h='<div class="logo"><i>S</i><div>SILOPTI<div style="font-size:.62rem;font-weight:500;color:#94a3b8">BBSPJIS &bull; KEMENPERIN RI</div></div></div>';
+  h+='<h6>DASHBOARD</h6><a><i class="bi bi-speedometer2"></i>Dashboard</a><h6>ALUR PELAYANAN</h6><a><i class="bi bi-inbox"></i>Daftar Order <span class="bdg">2</span></a><h6>PELAKSANAAN TEKNIS</h6><a><i class="bi bi-file-earmark-text"></i>Tugas Proposal <span class="bdg">7</span></a>';
+  if(CFG.menu){ h+=CFG.menu(); }
+  else{
+    var tampil2 = CFG.sembunyiM2Ketupel ? S.role!=='ketupel' : true;
+    h+=menuItem(1,m1,'bi-clipboard2-check',cnt1());
+    if(tampil2) h+=menuItem(2,m2,'bi-clipboard2-pulse',cnt2());
+  }
+  h+='<h6>AKUN</h6><a><i class="bi bi-person"></i>Profil Pengguna</a>';
+  return h;
+}
+function render(){
+  if(CFG.sembunyiM2Ketupel && S.role==='ketupel' && S.page===2) S.page=1;
+  document.getElementById('side').innerHTML=menuHtml();
+  document.getElementById('ttl').textContent=(S.page===1?CFG.t1:CFG.t2);
+  document.getElementById('roleLbl').textContent=S.role==='ketupel'?'Ketua Pelaksana':'Ketua Tim OPTI';
+  document.getElementById('content').innerHTML=PAGES[S.page]();
+  Array.prototype.forEach.call(document.querySelectorAll('[data-act]'),function(e){e.onclick=function(ev){ev.stopPropagation();ACT[e.getAttribute('data-act')](e.getAttribute('data-v'));};});
+  var q=document.getElementById('q');
+  if(q){q.oninput=function(){S.q=this.value;var pos=this.selectionStart;render();var q2=document.getElementById('q');q2.focus();q2.setSelectionRange(pos,pos);};}
+  if(window.POST_RENDER) window.POST_RENDER();
+}
+Array.prototype.forEach.call(document.querySelectorAll('#segRole button'),function(b){
+  b.onclick=function(){S.role=b.getAttribute('data-v');S.tab='';S.sub='';S.stage='';S.sel=null;Array.prototype.forEach.call(document.querySelectorAll('#segRole button'),function(x){x.classList.toggle('on',x===b);});render();};
+});
+document.getElementById('scrim').onclick=tutup;document.getElementById('shX').onclick=tutup;
+
+
+function hdr(h1,p,extra){return '<div class="head"><div><h1>'+h1+'</h1><p>'+p+'</p></div>'+(extra||'')+'</div>';}
+var RRD='<button class="btn"><i class="bi bi-chat-square-text"></i> Ruang Review &amp; Diskusi</button>';
+function pilihTab(T,pref){T.forEach(function(t){t.n=DATA.filter(visible).filter(t.f).length;});if(!S.tab||!T.some(function(t){return t.k===S.tab;})){S.tab=(T.filter(function(t){return t.n>0&&(!pref||pref.indexOf(t.k)>=0);})[0]||T[0]).k;}return T.filter(function(t){return t.k===S.tab;})[0];}
+
+
+var CFG={m1:'Siapkan PO',m2:'Pantau PO',t1:'Siapkan PO',t2:'Pantau PO'};
+var PAGES={};
+PAGES[1]=function(){
+  var rows=urut(cari(DATA.filter(visible)));
+  var K=[{t:'PO Masuk',f:function(p){return p.st==='masuk';},hint:'Belum ada PO'},{t:'Draft',f:function(p){return p.st==='draft';},hint:'Belum dikirim'},{t:'Perlu revisi',f:function(p){return p.st==='revisi'||p.st==='revppk';},hint:'Dikembalikan pemeriksa'}];
+  var h=hdr('<i class="bi bi-pencil-square"></i> Siapkan PO','Semua PO yang masih jadi pekerjaan penyusun. Begitu dikirim, PO pindah ke halaman Pantau PO.',RRD);
+  if(S.role==='katim') h+='<div class="banner info"><i class="bi bi-info-circle"></i> Anda melihat sebagai Ketua Tim: papan ini hanya untuk memantau. Yang Anda periksa ada di <b>Pantau PO</b>.</div>';
+  h+=filterBar()+'<div class="board">'+K.map(function(k){
+    var c=rows.filter(k.f);
+    return '<div class="col"><h5>'+k.t+' <span>'+c.length+'</span></h5>'+(c.map(function(p){
+      return '<div class="kt'+(adaTindakan(p)?' mine':'')+'"><b>'+(baru(p)?'<span class="dot"></span>':'')+esc(p.jd)+'</b><div class="sub">'+esc(p.mitra)+' &middot; '+esc(p.ord)+'</div>'+(p.cat?'<div class="tg u" style="margin-top:4px">'+p.cat+' catatan perbaikan</div>':'')+'<div class="ft"><span class="sub">'+(p.po||k.hint)+'</span><span>'+btnAksi(p)+'</span></div></div>';
+    }).join('')||'<div class="sub" style="padding:8px">Kosong</div>')+'</div>';
+  }).join('')+'</div>';
+  return h;
+};
+function sel(p,i){
+  var cur=POS[p.st];
+  if(p.st==='aktif'||i<cur) return '<span class="c-d"><i class="bi bi-check-circle-fill"></i></span>'+(i===0&&p.kirim?'<div class="sub">'+p.kirim.slice(0,6)+'</div>':'');
+  if(i===cur) return '<span class="'+((p.st==='revisi'||p.st==='revppk')?'c-r':'c-c')+'">'+((p.st==='revisi'||p.st==='revppk')?'Revisi':'Di sini')+'</span>'+(PENERIMA[p.st]?'<div class="tg '+(p.baca?'d':'u')+'">'+(p.baca?'dibuka':'belum dibuka')+'</div>':'');
+  return '<span class="c-o"><i class="bi bi-circle"></i></span>';
+}
+PAGES[2]=function(){
+  var T=[{k:'semua',t:'Semua',f:function(){return true;}},{k:'perhatian',t:'Perlu perhatian',urgent:true,f:function(p){return adaTindakan(p)||p.st==='revisi'||p.st==='revppk';}},{k:'belum',t:'Belum dibuka',f:function(p){return belumDibuka(p);}},{k:'aktif',t:'PO Aktif',f:function(p){return p.st==='aktif';}}];
+  var kirim=function(p){return Z2.indexOf(p.st)>=0||p.st==='aktif'||p.st==='revisi'||p.st==='revppk';};
+  T.forEach(function(t){t.n=DATA.filter(visible).filter(kirim).filter(t.f).length;});
+  if(!S.tab||!T.some(function(t){return t.k===S.tab;})) S.tab='semua';
+  var cur=T.filter(function(t){return t.k===S.tab;})[0];
+  var rows=urut(cari(DATA.filter(visible).filter(kirim).filter(cur.f)));
+  var h=hdr('<i class="bi bi-diagram-3"></i> Pantau PO','Posisi semua PO yang sudah terkirim, langkah demi langkah. Hijau = selesai, biru = sedang di sini, oranye = dikembalikan untuk revisi.',RRD);
+  h+=filterBar()+'<div class="panel">'+tabsHtml(T);
+  if(!rows.length) h+='<div class="empty"><i class="bi bi-inbox"></i>Tidak ada PO.</div>';
+  else{
+    h+='<table class="mx"><thead><tr><th style="width:34px">No</th><th>PO &amp; kegiatan</th>'+LANGKAH.map(function(l){return '<th>'+l.replace('Verifikasi ','Verif. ')+'</th>';}).join('')+'<th style="text-align:right">Aksi</th></tr></thead><tbody>';
+    rows.forEach(function(p,i){h+='<tr class="'+(baru(p)?'unread':'')+'"><td>'+(i+1)+'</td><td style="text-align:left"><div class="no mono">'+esc(p.po)+'</div><div class="jd">'+(baru(p)?'<span class="dot"></span>':'')+esc(p.jd)+'</div><div class="sub">'+esc(p.mitra)+'</div></td>'+LANGKAH.map(function(l,k){return '<td>'+sel(p,k)+'</td>';}).join('')+'<td style="text-align:right;white-space:nowrap">'+btnAksi(p)+'</td></tr>';});
+    h+='</tbody></table>';
+  }
+  return h+'</div>';
+};
+render();
+
+</script></body></html>

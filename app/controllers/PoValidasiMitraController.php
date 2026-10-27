@@ -94,6 +94,9 @@ class PoValidasiMitraController extends Controller {
                         " . $this->kolom('p', 'humas_dibaca_at') . " AS humas_dibaca_at,
                         " . $this->kolom('p', 'catatan_humas') . " AS catatan_humas,
                         " . $this->kolom('p', 'mitra_dibaca_at') . " AS mitra_dibaca_at,
+                        " . $this->kolomProposal() . " AS tgl_proposal,
+                        " . $this->kolom('p', 'ppk_status') . " AS ppk_status,
+                        " . $this->kolom('p', 'ppk_dibaca_at') . " AS ppk_dibaca_at,
                         " . $this->kolom('p', 'validasi_keuangan_at') . " AS validasi_keuangan_at,
                         " . $this->kolom('p', 'dikirim_at') . " AS kirim_at,
                         " . $this->kolom('p', 'reviewed_at') . " AS katim_baca_at,
@@ -143,6 +146,7 @@ class PoValidasiMitraController extends Controller {
         $divalidasi = ((string) $r['status']) !== 'terkirim' && $tglValidasi !== '';
         return [
             'id'                 => (int) $r['id'],
+            'order_id'           => (int) ($r['order_id'] ?? 0),
             'nomor'              => (string) $r['nomor_po'],
             'order'              => (string) $r['nomor_order'],
             'mitra'              => $this->formatMitra($r['nmcustomer'], $r['pt_cv']),
@@ -176,6 +180,17 @@ class PoValidasiMitraController extends Controller {
             'catatan_humas'      => (string) ($r['catatan_humas'] ?? ''),
             'mitra_valid_at'     => $tglValidasi,
             'ppk_valid_at'       => self::tanggalJam((string) ($r['validasi_keuangan_at'] ?? '')),
+            // untuk kolom Status PO: revisi PPK BLU dan sudah dibuka PPK BLU atau belum (penanda di-reset tiap perpindahan tahap)
+            'ppk_status'         => (string) ($r['ppk_status'] ?? ''),
+            // ---- Map Kendali F.PJT-12-03/1 (kartu di tab Berkas; hanya tanggal, jam tidak dipakai) ----
+            'disiapkan'          => ((string) ($r['jenis_layanan_opti'] ?? '')) !== '' ? 'Tim Kerja OPTI ' . ucfirst(strtolower((string) $r['jenis_layanan_opti'])) : 'Tim Kerja OPTI',
+            'map' => [
+                'proposal' => self::tanggal((string) ($r['tgl_proposal'] ?? '')),
+                'humas'    => self::tanggal((string) ($r['verifikasi_humas_at'] ?? '')),
+                'mitra'    => self::tanggal((string) ($r['tervalidasi_mitra_at'] ?? '')),
+                'keuangan' => self::tanggal((string) ($r['validasi_keuangan_at'] ?? '')),
+            ],
+            'ppk_baca_at'        => $tglValidasi !== '' ? self::tanggalJam((string) ($r['ppk_dibaca_at'] ?? '')) : '',
         ];
     }
 
@@ -667,6 +682,22 @@ class PoValidasiMitraController extends Controller {
     }
 
     /** Nilai DATETIME -> 'Y-m-d H:i:s', atau '' bila kosong/tidak valid. */
+    protected static function tanggal($v) {
+        $v = trim((string) $v);
+        return ($v !== '' && strpos($v, '0000') !== 0 && strtotime($v)) ? date('Y-m-d', strtotime($v)) : '';
+    }
+
+    /** Subquery tanggal proposal disetujui Ketua (proposal terbaru per order); NULL bila kolomnya belum ada. */
+    protected function kolomProposal() {
+        try {
+            $r = $this->db->exec("SHOW COLUMNS FROM opti_proposal_riset LIKE 'disetujui_ketua_at'");
+            if (!empty($r)) {
+                return "(SELECT pr.disetujui_ketua_at FROM opti_proposal_riset pr WHERE pr.order_id = o.id ORDER BY pr.id DESC LIMIT 1)";
+            }
+        } catch (\Exception $e) {}
+        return 'NULL';
+    }
+
     protected static function tanggalJam($v) {
         $v = trim((string) $v);
         return ($v !== '' && strpos($v, '0000') !== 0 && strtotime($v)) ? date('Y-m-d H:i:s', strtotime($v)) : '';

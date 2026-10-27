@@ -483,8 +483,22 @@ class OrderLayanan extends \DB\SQL\Mapper {
         }
         $pkKolom = '';
         foreach (array('status', 'status_review', 'ppk_status', 'disetujui_at', 'verifikasi_humas_at', 'tervalidasi_mitra_at', 'validasi_keuangan_at',
-                       'reviewed_at', 'minta_dibaca_at', 'revisi_dibaca_at', 'humas_dibaca_at', 'disposisi_humas_at', 'ppk_dibaca_at', 'mitra_dibaca_at') as $kcol) {
+                       'reviewed_at', 'minta_dibaca_at', 'revisi_dibaca_at', 'humas_dibaca_at', 'disposisi_humas_at', 'ppk_dibaca_at', 'mitra_dibaca_at',
+                       'ronde_ppk', 'ppk_status_at') as $kcol) {
             if (isset($pkAda[$kcol])) { $pkKolom .= ' pk.' . $kcol . ' AS pk_' . $kcol . ','; }
+        }
+        // Nomor putaran perbaikan dari Ketua Tim (catatan asal 'katim') pada ronde PPK BLU yang berjalan; kolomnya baru ada setelah fitur dipakai
+        static $rcAda = null;
+        if ($rcAda === null) {
+            $rcAda = false;
+            try {
+                $rcKol = array();
+                foreach ($this->db->exec('SHOW COLUMNS FROM po_revisi_catatan') as $kc) { $rcKol[$kc['Field']] = true; }
+                $rcAda = isset($rcKol['asal']) && isset($rcKol['putaran']);
+            } catch (\Exception $e) { $rcAda = false; }
+        }
+        if ($rcAda && isset($pkAda['ronde_ppk'])) {
+            $pkKolom .= " (SELECT COALESCE(MAX(rc.putaran), 0) FROM po_revisi_catatan rc WHERE rc.po_id = pk.id AND rc.tahap = 'ppk' AND rc.asal = 'katim' AND rc.ronde = pk.ronde_ppk AND rc.state <> 'draf') AS pk_putaran_katim,";
         }
         $sql = "SELECT o.*, 
                        c.nmcustomer AS nama_perusahaan, c.pt_cv, 
@@ -748,16 +762,29 @@ class OrderLayanan extends \DB\SQL\Mapper {
         }
         $sr = (string) ($o['pk_status_review'] ?? '');
         if ($sr === 'disetujui') {
+            $putKatim = (int) ($o['pk_putaran_katim'] ?? 0);
             switch ((string) ($o['pk_ppk_status'] ?? '')) {
                 case 'minta':          return $r('PPK Meminta Revisi', 'Menunggu keputusan Ketua Tim', 'katim', true, $baca('ppk_dibaca_at', 'Ketua Tim'));
                 case 'katim_kerja':    return $r('Revisi PPK Dikerjakan Ketua Tim', 'Ketua Tim sedang memperbaiki PO', 'katim', true);
-                case 'ketupel_kerja':  return $r('Revisi PPK Dikerjakan Pelaksana', 'Didisposisikan ke Ketua Pelaksana', 'pic', true, $baca('ppk_dibaca_at', 'Ketua Pelaksana'));
-                case 'katim_review':   return $r('Review Hasil Revisi PPK', 'Menunggu review Ketua Tim', 'katim', true, $baca('ppk_dibaca_at', 'Ketua Tim'));
+                case 'ketupel_kerja':
+                    if ($putKatim > 0) { return $r('Perbaikan Ulang Dikerjakan Pelaksana', 'Catatan dari Ketua Tim · perbaikan ke-' . $putKatim, 'pic', true, $baca('ppk_dibaca_at', 'Ketua Pelaksana')); }
+                    return $r('Revisi PPK Dikerjakan Pelaksana', 'Didisposisikan ke Ketua Pelaksana', 'pic', true, $baca('ppk_dibaca_at', 'Ketua Pelaksana'));
+                case 'katim_review':
+                    if ($putKatim > 0) { return $r('Review Hasil Perbaikan Ketua Tim', 'Perbaikan ke-' . $putKatim . ' · menunggu review Ketua Tim', 'katim', true, $baca('ppk_dibaca_at', 'Ketua Tim')); }
+                    return $r('Review Hasil Revisi PPK', 'Menunggu review Ketua Tim', 'katim', true, $baca('ppk_dibaca_at', 'Ketua Tim'));
             }
             if (!empty($o['pk_validasi_keuangan_at'])) {
                 return $r('PO Aktif', 'Pengerjaan lab dimulai', '');
             }
             if (!empty($o['pk_tervalidasi_mitra_at'])) {
+                // Meja PPK BLU bisa dikunjungi berulang (PPK minta revisi -> Ketua Tim/Pelaksana memperbaiki -> kembali ke PPK BLU).
+                // Tiap kali PO kembali, penanda baca di-NULL-kan dan waktu masuknya (ppk_status_at) jadi acuan "belum/sudah dibaca" ronde itu.
+                $ronde = (int) ($o['pk_ronde_ppk'] ?? 0);
+                if ($ronde > 0) {
+                    $masuk = $jam($o['pk_ppk_status_at'] ?? '');
+                    $catatan = 'Ketua Tim mengirim hasil revisi (ronde ' . $ronde . ')' . (!empty($o['pk_ppk_status_at']) ? ' ' . $masuk : '');
+                    return $r('Revisi Kembali ke PPK BLU', $catatan, 'ppk', false, $baca('ppk_dibaca_at', 'PPK BLU', 'ppk_status_at'));
+                }
                 return $r('Menunggu Verifikasi PPK BLU', 'Tim Mitra sudah memverifikasi', 'ppk', false, $baca('ppk_dibaca_at', 'PPK BLU', 'tervalidasi_mitra_at'));
             }
             if (!empty($o['pk_verifikasi_humas_at'])) {

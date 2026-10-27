@@ -816,12 +816,17 @@ html.silopti-embed.pa-pin { overflow: hidden !important; scroll-behavior: auto !
         .rv-inline .rv-row + .rv-row { margin-top: 6px; }
         .rv-inline label { margin: 0; cursor: pointer; }
         .rv-inline .done-t { text-decoration: line-through; color: #64748b; }
+        .rv-asal { display: inline-block; font-size: .66rem; font-weight: 700; padding: 1px 8px; border-radius: 20px; background: #ffedd5; color: #c2410c; margin-right: 6px; }
+        .rv-asal.kt { background: #ede9fe; color: #5b21b6; }
+        .rv-inline .rv-row.lama, .rv-item.lama { opacity: .6; }
+        .rv-inline.kt { border-left-color: #8b5cf6; background: #faf8ff; }
+        .rv-inline.kt.done { border-left-color: #059669; background: #ecfdf5; }
         .rv-err { color: #b91c1c; font-size: .78rem; margin-top: 4px; }
         .rv-kirim { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; padding-top: 10px; border-top: 1px solid #fde68a; }
         .rv-kirim[hidden] { display: none; }
         .rv-kirim .rv-kirim-hint { font-size: .8rem; color: #065f46; flex: 1; min-width: 180px; }
-        .rv-kirim button { border: 0; background: #059669; color: #fff; font-weight: 700; font-size: .85rem; border-radius: 99px; padding: 8px 18px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
-        .rv-kirim button:hover { background: #047857; }
+        .rv-kirim button { border: 0; background: #334155; color: #fff; font-weight: 700; font-size: .85rem; border-radius: 99px; padding: 8px 18px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+        .rv-kirim button:hover { background: #1e293b; }
         .rv-kirim button:disabled { opacity: .6; cursor: wait; }
     </style>
     <div class="rv-bar" id="rvBar" role="region" aria-label="Catatan revisi" hidden>
@@ -3634,11 +3639,19 @@ function tambahBarisBahanKimia(data) {
         var el = document.createElement('input');
         el.type = type; el.name = name; el.className = 'form-control form-control-sm';
         el.value = val || ''; if (ph) el.placeholder = ph;
+        el.autocomplete = 'off';
         return el;
     }
     var tdN = document.createElement('td'); tdN.appendChild(mk('text', 'bahan_kimia_nama[]', data.nama));
-    var tdJ = document.createElement('td'); tdJ.appendChild(mk('text', 'bahan_kimia_jumlah[]', data.jumlah, '40'));
-    var tdS = document.createElement('td'); tdS.appendChild(mk('text', 'bahan_kimia_satuan[]', data.satuan, 'kg'));
+    var inJml = mk('text', 'bahan_kimia_jumlah[]', data.jumlah, 'isi jumlah');
+    // Hanya angka (boleh desimal pakai koma/titik). Sengaja type=text supaya scroll mouse tidak mengubah angka.
+    inJml.inputMode = 'decimal';
+    inJml.addEventListener('input', function () {
+        var v = this.value.replace(/[^0-9.,]/g, '');
+        if (v !== this.value) this.value = v;
+    });
+    var tdJ = document.createElement('td'); tdJ.appendChild(inJml);
+    var tdS = document.createElement('td'); tdS.appendChild(mk('text', 'bahan_kimia_satuan[]', data.satuan, 'isi satuan'));
     var tdH = document.createElement('td');
     var btn = document.createElement('button');
     btn.type = 'button'; btn.className = 'btn btn-sm btn-outline-danger'; btn.innerHTML = '<i class="bi bi-trash"></i>';
@@ -6014,7 +6027,15 @@ var btnKirim = document.getElementById('btnKirim');
                 PoNomorDialog.mulai({
                     durasi: 4000,
                     kirim: kirimAjaxPo,
-                    tujuan: function (j) { return j.redirect; }
+                    tujuan: function (j) { return j.redirect; },
+                    // PO sudah terkirim di server tetapi tampilan masih lama: muat ulang halaman induk supaya Tahap 8 menampilkan status terbaru
+                    gagal: function (j) {
+                        if (j && j.basi) {
+                            var w = window;
+                            try { if (window.__poEmbedTop && window.top && window.top !== window) { w = window.top; } } catch (e) {}
+                            w.location.reload();
+                        }
+                    }
                 });
                 return;
             }
@@ -6512,13 +6533,12 @@ setTimeout(function () {
         if (bd) { bd.style.display = 'none'; }
         // Tombol simpan di pojok bawah: "Simpan draft" (tidak mengirim apa pun). Ketua Tim yang mengedit sendiri tetap "Simpan perubahan".
         if (bk) { bk.innerHTML = '<i class="bi bi-save me-1"></i> ' + (KONTEKS === 'katim' ? 'Simpan perubahan' : 'Simpan draft'); }
-        // Tombol hijau "Kirim revisi" di samping Simpan draft: nonaktif sampai semua catatan dicentang, lalu bisa dipencet
+        // Tombol "Kirim revisi" di samping Simpan draft: nonaktif sampai semua catatan dicentang, lalu bisa dipencet
         var bk2 = null;
         if (bk && KONTEKS !== 'katim') {
             bk2 = document.createElement('button');
             bk2.type = 'button'; bk2.id = 'rvKirimBtn2'; bk2.hidden = true; bk2.disabled = true;
-            bk2.className = 'btn px-4 py-2 rounded-pill shadow-sm fw-bold d-inline-flex align-items-center gap-2';
-            bk2.style.cssText = 'background:#059669;border:0;color:#fff;';
+            bk2.className = 'btn btn-primary px-4 py-2 rounded-pill shadow-sm fw-bold d-inline-flex align-items-center gap-2';
             bk2.innerHTML = '<i class="bi bi-send-fill"></i> <span id="rvKirimTx2">Kirim revisi</span>';
             bk.insertAdjacentElement('afterend', bk2);
         }
@@ -6559,8 +6579,7 @@ setTimeout(function () {
                 bk.classList.remove('btn-primary'); bk.classList.add('btn-outline-secondary');
                 var bs = document.createElement('button');
                 bs.type = 'button'; bs.id = 'rvSetujuBtn';
-                bs.className = 'btn px-4 py-2 rounded-pill shadow-sm fw-bold d-inline-flex align-items-center gap-2';
-                bs.style.cssText = 'background:#059669;border:0;color:#fff;';
+                bs.className = 'btn btn-primary px-4 py-2 rounded-pill shadow-sm fw-bold d-inline-flex align-items-center gap-2';
                 bs.innerHTML = '<i class="bi bi-check2-circle"></i> <span>Simpan dan setujui</span>';
                 bk.insertAdjacentElement('afterend', bs);
                 function ordKe() { var oi = document.querySelector('#formPo [name="order_id"]'); return BASE + '/order/' + (oi ? oi.value : ''); }
@@ -6672,10 +6691,15 @@ setTimeout(function () {
             if (k && card && !kartu[k]) { kartu[k] = card; }
         });
     
+        // Perbaikan ulang dari Ketua Tim: catatan asal 'katim' dengan nomor putaran. Yang sedang dikerjakan = putaran terbaru; catatan lama tampil redup.
+        function putaranKatim() { var m = 0; data.forEach(function (c) { if (c.asal === 'katim' && c.putaran > m) { m = c.putaran; } }); return m; }
+        function berjalan(c, m) { return m > 0 ? (c.asal === 'katim' && c.putaran === m) : true; }
+        function chipAsal(c) { return c.asal === 'katim' ? '<span class="rv-asal kt">Ketua Tim &middot; perbaikan ' + c.putaran + '</span>' : (KONTEKS === 'ppk' ? '<span class="rv-asal">PPK BLU</span>' : ''); }
         function tampil() {
-            var total = data.length, selesai = data.filter(function (c) { return c.state === 'selesai'; }).length;
-            bar.hidden = total === 0;
-            document.getElementById('rvJudul').textContent = KONTEKS === 'ppk' ? 'Catatan revisi PPK BLU' : 'Catatan revisi Ketua Tim';
+            var pm = putaranKatim(), kerja = data.filter(function (c) { return berjalan(c, pm); });
+            var total = kerja.length, selesai = kerja.filter(function (c) { return c.state === 'selesai'; }).length;
+            bar.hidden = data.length === 0;
+            document.getElementById('rvJudul').textContent = KONTEKS === 'ppk' ? (pm > 0 ? 'Catatan perbaikan Ketua Tim ke-' + pm + ' (dan revisi PPK BLU)' : 'Catatan revisi PPK BLU') : 'Catatan revisi Ketua Tim';
             document.getElementById('rvHit').textContent = selesai + ' dari ' + total + ' catatan sudah diperbaiki';
             document.getElementById('rvProg').style.width = (total ? Math.round(selesai * 100 / total) : 0) + '%';
             {
@@ -6688,7 +6712,7 @@ setTimeout(function () {
                     bk2.title = siapKirim ? '' : 'Centang semua catatan yang sudah diperbaiki dulu (' + selesai + ' dari ' + total + ')';
                     if (KIRIM) { document.getElementById('rvKirimTx2').textContent = KIRIM.label; }
                 }
-                // Simpan draft selalu tombol sekunder; Kirim revisi (hijau) tombol utama
+                // Simpan draft selalu tombol sekunder; Kirim revisi tombol utama
                 if (bk && KONTEKS !== 'katim') {
                     bk.classList.remove('btn-primary');
                     bk.classList.add('btn-outline-secondary');
@@ -6696,9 +6720,9 @@ setTimeout(function () {
             }
     
             list.innerHTML = data.map(function (c) {
-                var done = c.state === 'selesai', ada = !!kartu[c.bagian];
-                return '<li class="rv-item' + (done ? ' done' : '') + '"><input type="checkbox" id="rvc' + c.id + '" data-rv="' + c.id + '"' + (done ? ' checked' : '') + '>' +
-                    '<label for="rvc' + c.id + '"><span class="rv-bag">' + esc(LABEL[c.bagian] || c.bagian) + '</span><span class="t">' + esc(c.teks) + '</span></label>' +
+                var done = c.state === 'selesai', ada = !!kartu[c.bagian], lama = !berjalan(c, pm);
+                return '<li class="rv-item' + (done ? ' done' : '') + (lama ? ' lama' : '') + '"><input type="checkbox" id="rvc' + c.id + '" data-rv="' + c.id + '"' + (done ? ' checked' : '') + (lama ? ' disabled' : '') + '>' +
+                    '<label for="rvc' + c.id + '">' + chipAsal(c) + '<span class="rv-bag">' + esc(LABEL[c.bagian] || c.bagian) + '</span><span class="t">' + esc(c.teks) + '</span></label>' +
                     (ada ? '<a href="#" data-rvgo="' + esc(c.bagian) + '">Ke bagian</a>' : '') + '</li>';
             }).join('');
     
@@ -6708,10 +6732,12 @@ setTimeout(function () {
                 var cs = data.filter(function (c) { return c.bagian === k; });
                 if (!cs.length) { return; }
                 var semuaSelesai = cs.every(function (c) { return c.state === 'selesai'; });
-                var box = document.createElement('div'); box.className = 'rv-inline' + (semuaSelesai ? ' done' : '');
+                var adaKt = cs.some(function (c) { return c.asal === 'katim' && berjalan(c, pm); });
+                var box = document.createElement('div'); box.className = 'rv-inline' + (adaKt ? ' kt' : '') + (semuaSelesai ? ' done' : '');
                 box.innerHTML = cs.map(function (c) {
-                    var done = c.state === 'selesai';
-                    return '<div class="rv-row"><input type="checkbox" id="rvi' + c.id + '" data-rv="' + c.id + '"' + (done ? ' checked' : '') + '><label for="rvi' + c.id + '"><b>' + (KONTEKS === 'ppk' ? 'PPK BLU' : 'Ketua Tim') + ':</b> <span class="' + (done ? 'done-t' : '') + '">' + esc(c.teks) + '</span></label></div>';
+                    var done = c.state === 'selesai', lama = !berjalan(c, pm);
+                    return '<div class="rv-row' + (lama ? ' lama' : '') + '"><input type="checkbox" id="rvi' + c.id + '" data-rv="' + c.id + '"' + (done ? ' checked' : '') + (lama ? ' disabled' : '') + '><label for="rvi' + c.id + '">' +
+                        (KONTEKS === 'ppk' ? chipAsal(c) + ' ' : '<b>Ketua Tim:</b> ') + '<span class="' + (done ? 'done-t' : '') + '">' + esc(c.teks) + '</span></label></div>';
                 }).join('');
                 var head = kartu[k].querySelector('.card-header, .po-card-header');
                 head.parentNode.insertBefore(box, head.nextSibling);
@@ -6820,7 +6846,7 @@ setTimeout(function () {
         fetch(BASE + '/po-kegiatan/' + PO_ID + '/catatan-form', { credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (j) {
             if (!j || !j.ok) { galat((j && j.pesan) || 'Catatan revisi gagal dimuat.'); bar.hidden = false; return; }
             KIRIM = (j.kirim && j.kirim.url) ? j.kirim : null;
-            data = (j.catatan || []).map(function (c) { return { id: c.id, bagian: c.bagian, teks: c.teks, state: c.state }; });
+            data = (j.catatan || []).map(function (c) { return { id: c.id, bagian: c.bagian, teks: c.teks, state: c.state, asal: c.asal || 'ppk', putaran: c.putaran || 0 }; });
             tampil();
         }).catch(function () { galat('Catatan revisi gagal dimuat. Muat ulang halaman.'); bar.hidden = false; });
     })();
