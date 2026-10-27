@@ -6357,54 +6357,55 @@
                         <!-- FORM INPUT TITIK AWAL SPM (TERBUKA JIKA BELUM ADA, COLLAPSE JIKA SUDAH ADA) -->
                         <div class="collapse {{ empty(@order.tanggal_spm_mulai) && empty(@order.tanggal_terima_sampel) ? 'show' : '' }}" id="collapseEditSampel">
                             <form action="{{ @BASE }}/order/{{ @order.id }}/terima-sampel" method="POST" class="p-3 border rounded bg-white mb-2 shadow-xs" id="formAktivasiSpmDetail" onsubmit="return handleAktivasiSpmSubmit(event, this);">
-                                <div class="fw-bold text-dark small mb-2 d-flex align-items-center gap-2">
-                                    <i class="bi bi-flag-fill text-primary"></i> Form Aktivasi Titik Awal Pengerjaan (SPM Milestones)
-                                </div>
-                                <div class="row g-2">
-                                    <div class="col-md-4">
-                                        <label class="form-label small fw-bold text-dark mb-1">Opsi Titik Awal (Start Trigger):</label>
+                                <div class="row g-2.5">
+                                    <div class="col-md-5">
+                                        <label class="form-label small fw-bold text-dark mb-1">Titik Awal (Trigger):</label>
                                         <select name="spm_trigger_tipe" id="detail_spm_trigger_tipe" class="form-select form-select-sm" onchange="updateTriggerLabel(this.value)">
                                             <option value="sampel_diterima" {{ (@order.spm_trigger_tipe == 'sampel_diterima' || empty(@order.spm_trigger_tipe)) ? 'selected' : '' }}>
-                                                Penerimaan Sampel Fisik (Pengujian Lab)
+                                                Penerimaan Fisik Sampel
                                             </option>
                                             <option value="kick_off" {{ @order.spm_trigger_tipe == 'kick_off' ? 'selected' : '' }}>
-                                                Rapat Kick-Off (Sertifikasi / Konsultansi)
+                                                Rapat Kick-Off
                                             </option>
                                             <option value="tanda_tangan_pks" {{ @order.spm_trigger_tipe == 'tanda_tangan_pks' ? 'selected' : '' }}>
-                                                Tanda Tangan Kontrak / PKS (Kerjasama Litbang)
+                                                Penandatanganan Kontrak / PKS
                                             </option>
                                         </select>
                                     </div>
                                     <div class="col-md-3">
-                                        <label class="form-label small fw-bold text-dark mb-1" id="lblTanggalMulai">Tanggal Titik Awal:</label>
+                                        <label class="form-label small fw-bold text-dark mb-1" id="lblTanggalMulai">
+                                            <check if="{{ @order.spm_trigger_tipe == 'kick_off' }}">Tanggal Kick-Off:</check>
+                                            <check if="{{ @order.spm_trigger_tipe == 'tanda_tangan_pks' }}">Tanggal Tanda Tangan PKS:</check>
+                                            <check if="{{ empty(@order.spm_trigger_tipe) || @order.spm_trigger_tipe == 'sampel_diterima' }}">Tanggal Titik Awal:</check>
+                                        </label>
                                         <input type="date" name="tanggal_spm_mulai" class="form-control form-control-sm" value="{{ @order.tanggal_spm_mulai ?: (@order.tanggal_terima_sampel ?: date('Y-m-d')) }}" required>
                                     </div>
-                                    <div class="col-md-2">
-                                        <label class="form-label small fw-bold text-dark mb-1">Durasi:</label>
-                                        <input type="number" name="spm_durasi_nilai" class="form-control form-control-sm text-center fw-bold font-monospace" value="{{ @order.spm_durasi_nilai ?: (@order.durasi_hari_kerja ?: (preg_match('/(\d+)/', @order.spm_layanan, $m_num) ? $m_num[1] : 30)) }}" min="1" required>
+                                    <div class="col-md-4">
+                                        <label class="form-label small fw-bold text-dark mb-1">Durasi Pelayanan (SPM):</label>
+                                        <div class="row g-1">
+                                            <div class="col-5">
+                                                <input type="text" name="spm_durasi_nilai" class="form-control form-control-sm text-center fw-bold font-monospace bg-light text-dark" value="{{ @order.spm_durasi_nilai ?: (@order.durasi_hari_kerja ?: (preg_match('/(\d+)/', @order.spm_layanan, $m_num) ? $m_num[1] : 30)) }}" readonly tabindex="-1" title="Durasi SPM ditetapkan pada tarif & parameter / penawaran">
+                                            </div>
+                                            <div class="col-7">
+                                                <input type="text" name="spm_durasi_satuan" class="form-control form-control-sm text-center fw-semibold bg-light text-secondary" value="{{ @order.spm_durasi_satuan ?: 'Hari Kerja' }}" readonly tabindex="-1" title="Satuan durasi pelayanan (SPM)">
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div class="col-md-3">
-                                        <label class="form-label small fw-bold text-dark mb-1">Satuan Waktu:</label>
-                                        <select name="spm_durasi_satuan" class="form-select form-select-sm fw-semibold">
-                                            <option value="Hari Kerja" {{ (@order.spm_durasi_satuan == 'Hari Kerja' || (!@order.spm_durasi_satuan && strpos(@order.spm_layanan, 'Kerja') !== false)) ? 'selected' : '' }}>Hari Kerja</option>
-                                            <option value="Hari Kalender" {{ (@order.spm_durasi_satuan == 'Hari Kalender' || (!@order.spm_durasi_satuan && strpos(@order.spm_layanan, 'Kalender') !== false)) ? 'selected' : '' }}>Hari Kalender</option>
-                                            <option value="Minggu" {{ (@order.spm_durasi_satuan == 'Minggu' || (!@order.spm_durasi_satuan && strpos(@order.spm_layanan, 'Minggu') !== false)) ? 'selected' : '' }}>Minggu</option>
-                                            <option value="Bulan" {{ (@order.spm_durasi_satuan == 'Bulan' || (!@order.spm_durasi_satuan && strpos(@order.spm_layanan, 'Bulan') !== false)) ? 'selected' : '' }}>Bulan</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-9">
+                                    <div class="col-md-8">
                                         <label class="form-label small text-secondary mb-1">Catatan / Bukti Titik Awal (Opsional):</label>
-                                        <input type="text" name="catatan_trigger_spm" class="form-control form-control-sm" placeholder="Contoh: Sampel 2 botol diterima lengkap / Kick-Off via Zoom / PKS No. 01/PKS/2026" value="{{ @order.catatan_trigger_spm }}">
+                                        <input type="text" name="catatan_trigger_spm" class="form-control form-control-sm" placeholder="Contoh: Sampel diterima lengkap / No. Bukti / PKS" value="{{ @order.catatan_trigger_spm }}">
                                     </div>
-                                    <div class="col-md-3 d-flex align-items-end">
+                                    <div class="col-md-4 d-flex align-items-end">
                                         <button type="submit" class="btn btn-primary btn-sm w-100 fw-semibold">
                                             <i class="bi bi-check-circle-fill me-1"></i> Simpan &amp; Aktifkan SPM
                                         </button>
                                     </div>
                                 </div>
-                                <small class="text-muted d-block mt-2">
-                                    <i class="bi bi-info-circle me-1"></i> Untuk satuan <strong>Hari Kerja</strong>, sistem otomatis mengecualikan akhir pekan (Sabtu-Minggu) dan seluruh hari libur nasional resmi.
-                                </small>
+                                <check if="{{ strpos(strtolower(@order.spm_durasi_satuan ?: 'kerja'), 'kerja') !== false }}">
+                                    <div class="text-muted small mt-2" style="font-size: 0.72rem;">
+                                        <i class="bi bi-info-circle me-1"></i> Perhitungan hari kerja otomatis mengecualikan akhir pekan dan libur nasional resmi.
+                                    </div>
+                                </check>
                             </form>
                         </div>
                     </check>
@@ -7848,11 +7849,11 @@ function updateTriggerLabel(val) {
     var lbl = document.getElementById('lblTanggalMulai');
     if (!lbl) return;
     if (val === 'kick_off') {
-        lbl.textContent = 'Tanggal Rapat Kick-Off:';
+        lbl.textContent = 'Tanggal Kick-Off:';
     } else if (val === 'tanda_tangan_pks') {
-        lbl.textContent = 'Tanggal Penandatanganan PKS:';
+        lbl.textContent = 'Tanggal Tanda Tangan PKS:';
     } else {
-        lbl.textContent = 'Tanggal Terima Fisik Sampel:';
+        lbl.textContent = 'Tanggal Titik Awal:';
     }
 }
 

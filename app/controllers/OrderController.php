@@ -4447,17 +4447,6 @@ class OrderController extends Controller {
         }
 
         $tanggalMulai = !empty($post['tanggal_spm_mulai']) ? $post['tanggal_spm_mulai'] : (!empty($post['tanggal_terima_sampel']) ? $post['tanggal_terima_sampel'] : date('Y-m-d'));
-        
-        $durasiNilai = (int)($post['spm_durasi_nilai'] ?? ($post['durasi_hari_kerja'] ?? 30));
-        if ($durasiNilai <= 0) {
-            $durasiNilai = 30;
-        }
-
-        $durasiSatuan = trim($post['spm_durasi_satuan'] ?? 'Hari Kerja');
-        if (!in_array($durasiSatuan, ['Hari Kerja', 'Hari Kalender', 'Minggu', 'Bulan'])) {
-            $durasiSatuan = 'Hari Kerja';
-        }
-
         $catatanTrigger = trim($post['catatan_trigger_spm'] ?? '');
 
         try {
@@ -4465,6 +4454,23 @@ class OrderController extends Controller {
             $order = $orderModel->getDetail($id);
             if (!$order) {
                 throw new \Exception("Order Layanan #{$id} tidak ditemukan.");
+            }
+
+            // Durasi dan satuan waktu mengikuti data tarif & parameter / proposal
+            $durasiNilai = (int)($post['spm_durasi_nilai'] ?? 0);
+            if ($durasiNilai <= 0) {
+                $durasiNilai = (int)($order['spm_durasi_nilai'] ?? ($order['durasi_hari_kerja'] ?? 30));
+            }
+            if ($durasiNilai <= 0) {
+                $durasiNilai = 30;
+            }
+
+            $durasiSatuan = trim($post['spm_durasi_satuan'] ?? '');
+            if (!in_array($durasiSatuan, ['Hari Kerja', 'Hari Kalender', 'Minggu', 'Bulan'])) {
+                $durasiSatuan = !empty($order['spm_durasi_satuan']) ? $order['spm_durasi_satuan'] : 'Hari Kerja';
+            }
+            if (!in_array($durasiSatuan, ['Hari Kerja', 'Hari Kalender', 'Minggu', 'Bulan'])) {
+                $durasiSatuan = 'Hari Kerja';
             }
 
             $kalkulasi = $orderModel->simpanAktivasiSpm($id, $tanggalMulai, $durasiNilai, $durasiSatuan, $triggerTipe, $catatanTrigger);
