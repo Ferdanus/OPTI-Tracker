@@ -552,8 +552,8 @@ public function index($f3) {
     $bolehDrafDivisi = ($divisiTerkunci !== '') ? $divisiTerkunci : ($layananTerkunci !== '' ? 'tidak-ada' : '');
     if ($layananFilter !== '') {
         $namaDivisiTampilan = $labelLayananLain[$layananFilter];
-        // "PO Masuk" hanya untuk order OPTI. Superadmin dan Tim Kerja layanan membuka Draft dulu; Ketua Tim layanan membuka Sedang Berjalan.
-        if (trim((string) $f3->get('GET.tab')) === '') { $tab = ($isSuperadmin || ($layananTerkunci !== '' && !$this->isKetuaSertifikasi())) ? 'draft' : 'berjalan'; }
+        // "PO Masuk" hanya untuk order OPTI (Lingkungan & Selulosa). Superadmin dan Tim Kerja layanan membuka Draft dulu; Ketua Tim layanan membuka Sedang Berjalan.
+        if (trim((string) $f3->get('GET.tab')) === '' || $tab === 'masuk') { $tab = ($isSuperadmin || ($layananTerkunci !== '' && !$this->isKetuaSertifikasi())) ? 'draft' : 'berjalan'; }
     }
 
     // --- Filter bulan/tahun & toggle "Tampilkan Semua Data" ---
@@ -921,7 +921,8 @@ $daftarPo = $this->safeQuery($sql, $params);
         elseif ($bisaLihatPanel) { $pos['aksi_mode'] = 'lihat'; }
         else { $pos['aksi_mode'] = 'modal'; }
         // Divisi lain (non-superadmin) = hanya lihat: tanpa tombol review / buat PO / edit / PDF / berkas, hanya ikon mata
-        if (!$isSuperadmin && $divisiTerkunci !== '' && (string) ($pPos['jenis_layanan_opti'] ?? '') !== $divisiTerkunci) {
+        // Role layanan (Sertifikasi / Pengujian) tidak punya hak apa pun atas PO OPTI: semua baris OPTI hanya lihat
+        if (!$isSuperadmin && (($divisiTerkunci !== '' && (string) ($pPos['jenis_layanan_opti'] ?? '') !== $divisiTerkunci) || $layananTerkunci !== '')) {
             $pos['hanya_lihat'] = true; $pos['panel_jenis'] = ''; $pos['belum_dibaca'] = false;
             // slide hanya lihat (sama seperti tombol Lihat milik sendiri) bila PO sudah terkirim dan peran punya akses halaman review; selain itu pratinjau biasa
             $pos['aksi_mode'] = (!empty($pPos['po_id']) && in_array($role, ['superadmin', 'ketua_tim', 'tim_kerja'], true)
@@ -1060,10 +1061,10 @@ $daftarPo = $this->safeQuery($sql, $params);
     // Kotak "Perlu Tindakan": Ketua Pelaksana / Superadmin = PO Masuk + Draft + Revisi; Ketua Tim = PO yang menunggu review / keputusan Anda
     $f3->set('total_perlu_tindakan', $untukKatim ? $tabGlobal['tindakan'] : $tabGlobal['masuk'] + $tabGlobal['draft'] + $tabGlobal['revisi']);
     $f3->set('ket_perlu_tindakan',   $untukKatim ? 'Menunggu review Anda' : 'PO masuk, draft &amp; revisi');
-    $f3->set('tab_kartu_tindakan',   $untukKatim ? 'tindakan' : 'masuk');
+    $f3->set('tab_kartu_tindakan',   $untukKatim ? 'tindakan' : ($layananFilter !== '' ? 'draft' : 'masuk'));
     $f3->set('tampil_tab_revisi',    !$untukKatim);   // Ketua Tim OPTI tidak punya tab Revisi
     $f3->set('tampil_tab_pembuat',   !$untukKatim);   // Ketua Tim OPTI tidak menyusun PO: tab PO Masuk & Draft disembunyikan
-    $f3->set('tampil_tab_masuk',     !$untukKatim);   // tab sama dengan PO OPTI
+    $f3->set('tampil_tab_masuk',     !$untukKatim && $layananFilter === '');   // "PO Masuk" hanya untuk OPTI (Lingkungan & Selulosa)
     $f3->set('tampil_modal_layanan', $isSuperadmin || $layananTerkunci !== '');   // modal pratinjau PO Pengujian / Sertifikasi
     $f3->set('total_berjalan',       $tabGlobal['berjalan']);
     $f3->set('tampil_tab_tindakan',  $untukKatim || $isSuperadmin);   // tab Perlu Tindakan hanya untuk Ketua Tim / Superadmin
@@ -1076,7 +1077,12 @@ $daftarPo = $this->safeQuery($sql, $params);
     $f3->set('filter_param', ($posisiFilter !== '' ? '&posisi=' . $posisiFilter : '') . ($jenisFilter !== '' ? '&jenis=' . $jenisFilter : '') . ($tindakFilter !== '' ? '&tindak=' . $tindakFilter : ''));
     $f3->set('total_disetujui',      $tabGlobal['disetujui']);
     $f3->set('bisa_tambah_po', $role !== 'ketua_tim');
-    $f3->set('tombol_tambah_atas', !in_array($divisi, ['selulosa', 'lingkungan'], true) && ($isSuperadmin || $divisiTerkunci === ''));
+    // Tambah PO di atas: tidak untuk OPTI (Lingkungan & Selulosa). Role layanan hanya di layanannya sendiri; di layanan lain / Semua Divisi hanya melihat.
+    $tombolTambahAtas = !in_array($divisi, ['selulosa', 'lingkungan'], true);
+    if (!$isSuperadmin) {
+        $tombolTambahAtas = $tombolTambahAtas && ($layananTerkunci !== '' ? $layananFilter === $layananTerkunci : $divisiTerkunci === '');
+    }
+    $f3->set('tombol_tambah_atas', $tombolTambahAtas);
 
     $this->render('katim_kerja/po-kegiatan/index.html', 'Petunjuk Operasional (PO)', ($divisiTerkunci && !$isSuperadmin) ? 'po_' . $divisiTerkunci : (($layananTerkunci !== '' && !$isSuperadmin) ? 'po_layanan' : 'po_kegiatan'));
 }
