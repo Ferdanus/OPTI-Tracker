@@ -245,7 +245,11 @@ class SuratPenawaran extends \DB\SQL\Mapper
         $catatanSampel     = isset($data['catatan_sampel']) ? trim($data['catatan_sampel']) : null;
         $jabatanPejabat    = !empty($data['jabatan_pejabat']) ? trim($data['jabatan_pejabat']) : ($isLingkungan ? 'Kepala Bagian Tata Usaha' : 'Kepala');
         $pejabatNama       = !empty($data['pejabat_nama']) ? trim($data['pejabat_nama']) : (!empty($data['pembuat_nama']) && $data['pembuat_nama'] !== 'Tim Mitra BBSPJIS' ? trim($data['pembuat_nama']) : ($isLingkungan ? 'Joko Pratomo' : 'Dodiet Prasetyo'));
-        $hal               = isset($data['hal']) ? trim($data['hal']) : ($isLingkungan ? $perihal : 'Biaya OPTI');
+        $defaultHalMdl     = $isLingkungan ? 'Biaya Pengujian Lingkungan' : 'Biaya OPTI';
+        $hal               = (!empty($data['hal']) && trim($data['hal']) !== '') ? trim($data['hal']) : $defaultHalMdl;
+        if (!empty($order['judul_kegiatan']) && ($hal === trim($order['judul_kegiatan']) || stripos($hal, 'Penawaran Layanan Jasa OPTI') !== false)) {
+            $hal           = $defaultHalMdl;
+        }
         $lampiranTeks      = isset($data['lampiran_teks']) ? trim($data['lampiran_teks']) : ($isLingkungan ? '' : '1 (satu) lembar');
 
         // Jika ada proposal selulosa dan ruang_lingkup kosong, coba ambil dari proposal
@@ -407,13 +411,15 @@ class SuratPenawaran extends \DB\SQL\Mapper
             );
             $penawaranId = (int)$this->db->exec("SELECT LAST_INSERT_ID() AS id")[0]['id'];
 
-            // Otomatis ubah status penawaran lama menjadi 'batal' (Kecuali yang sudah DEAL)
-            $this->db->exec(
-                "UPDATE tb_surat_penawaran 
-                 SET status_respon_klien = 'batal', updated_at = NOW() 
-                 WHERE order_id = ? AND id != ? AND status_respon_klien != 'deal'",
-                array(1 => $orderId, 2 => $penawaranId)
-            );
+            // Otomatis ubah status penawaran lama menjadi 'batal' (Kecuali yang sudah DEAL, atau jika dokumen baru masih berupa draf)
+            if ($statusRespon !== 'draft') {
+                $this->db->exec(
+                    "UPDATE tb_surat_penawaran 
+                     SET status_respon_klien = 'batal', updated_at = NOW() 
+                     WHERE order_id = ? AND id != ? AND status_respon_klien != 'deal'",
+                    array(1 => $orderId, 2 => $penawaranId)
+                );
+            }
         }
 
         // Sinkronisasi status, ID surat penawaran, nominal biaya, durasi (SPM), dan status proposal ke order_layanan

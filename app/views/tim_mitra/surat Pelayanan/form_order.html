@@ -4,6 +4,9 @@
         <h4 class="fw-bold mb-0 text-dark">Penerbitan Surat Penawaran Resmi</h4>
     </div>
     <div class="d-flex align-items-center gap-2">
+        <button type="button" class="btn btn-outline-primary btn-sm px-3 shadow-xs d-inline-flex align-items-center gap-1.5" onclick="toggleFloatingSpPreview(true)" title="Buka Pratinjau Naskah Surat Penawaran">
+            <i class="bi bi-file-earmark-text"></i> Pratinjau Surat
+        </button>
         <a href="{{ @BASE }}/order/{{ @order.id }}" class="btn btn-outline-secondary btn-sm px-3 shadow-xs">
             <i class="bi bi-arrow-left me-1"></i> Kembali ke Order
         </a>
@@ -206,11 +209,12 @@
 
     .preview-sticky-wrapper {
         position: fixed;
-        top: 85px;
+        top: 80px;
         right: 24px;
-        width: 480px;
-        max-width: calc(100vw - 32px);
-        height: min(78vh, 740px);
+        width: 680px;
+        max-width: calc(100vw - 24px);
+        max-height: calc(100vh - 76px);
+        height: min(84vh, 840px);
         z-index: 1040;
         display: flex;
         flex-direction: column;
@@ -219,8 +223,8 @@
         background: #ffffff;
         overflow: hidden;
         resize: none !important;
-        min-width: 340px;
-        min-height: 160px;
+        min-width: 420px;
+        min-height: 220px;
         transition: box-shadow 0.2s ease, opacity 0.25s ease, border-radius 0.2s ease;
     }
     .preview-sticky-wrapper:hover {
@@ -240,29 +244,36 @@
         bottom: 0 !important;
         left: auto !important;
         height: calc(100vh - 72px) !important;
-        width: 470px !important;
-        max-width: 48vw !important;
+        width: 680px !important;
+        max-width: 58vw !important;
         border-radius: 16px 0 0 0 !important;
         border-right: none !important;
         resize: horizontal !important;
         box-shadow: -8px 0 28px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(226, 232, 240, 0.9) !important;
     }
-    @media (min-width: 1200px) {
+    @media (min-width: 992px) {
         .form-preview-grid.has-docked-preview {
-            margin-right: 485px !important;
+            margin-right: 690px !important;
             transition: margin-right 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
     }
 
     /* Mode Transparan (Tembus Pandang agar Tidak Menghalangi) */
     .preview-sticky-wrapper.is-ghost {
-        opacity: 0.24 !important;
+        opacity: 0.35 !important;
         box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08) !important;
-        pointer-events: auto !important;
+        pointer-events: none !important; /* Klik tembus ke form di baliknya */
     }
     .preview-sticky-wrapper.is-ghost:hover {
-        opacity: 0.98 !important;
-        box-shadow: 0 16px 42px -4px rgba(15, 23, 42, 0.18) !important;
+        opacity: 0.75 !important; /* Beri sedikit ketegasan saat diarahkan mouse untuk interaksi */
+    }
+    .preview-sticky-wrapper.is-ghost .preview-top-toolbar {
+        pointer-events: auto !important; /* Toolbar tetap bisa diklik untuk drag atau mematikan transparan */
+    }
+    .preview-sticky-wrapper.is-ghost .preview-tool-btn#btnGhostSpPreview {
+        background: #0f172a !important;
+        color: #ffffff !important;
+        border-color: #0f172a !important;
     }
 
     /* Auto-dimming saat kursor fokus mengisi input formulir */
@@ -673,13 +684,18 @@
         }
     }
     .preview-doc-scroll {
-        background: #f1f5f9;
-        padding: 14px 14px;
+        background: #e2e8f0;
+        padding: 20px 16px;
         overflow-y: auto;
+        overflow-x: auto;
         max-height: calc(100vh - 8.5rem);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
     }
     .preview-doc-scroll::-webkit-scrollbar {
-        width: 5px;
+        width: 6px;
+        height: 6px;
     }
     .preview-doc-scroll::-webkit-scrollbar-thumb {
         background: #cbd5e1;
@@ -689,21 +705,38 @@
         background: #94a3b8;
     }
 
-    /* KERTAS A4 DOKUMEN RESMI (FULL HITAM & TATA NASKAH DINAS) */
+    /* KERTAS A4 DOKUMEN RESMI (PREVIEW SKALA PRESISI 1:1 SESUAI LAYOUT PDF CETAK & WORD) */
     .doc-sheet {
         background: #ffffff;
-        border-radius: 4px;
-        padding: 24px 28px;
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+        border-radius: 2px;
+        /* Dimensi A4 Cetak BBSPJIS: Margin Kiri 30mm, Atas 9mm, Kanan 20mm, Bawah 15mm */
+        width: 100%;
+        max-width: 640px;
+        min-width: 320px;
+        padding: 24px 34px 32px 42px;
+        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.05);
         border: 1px solid #cbd5e1;
-        font-family: "Times New Roman", Times, serif;
+        font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
         font-size: 11px;
+        font-weight: normal;
         color: #000000;
         line-height: 1.35;
         margin: 0 auto;
-        width: 100%;
-        max-width: 650px;
         box-sizing: border-box;
+        overflow-wrap: break-word;
+        word-break: break-word;
+    }
+    .doc-sheet p, .doc-sheet div, .doc-sheet td, .doc-sheet span {
+        font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+    }
+    .doc-sheet strong, .doc-sheet b, .doc-sheet .fw-bold {
+        font-weight: normal !important; /* Menyamakan dengan Word & PDF Cetak BBSPJIS yang tanpa bold di isi naskah */
+    }
+    .doc-sheet .sp-kop-header strong,
+    .doc-sheet .sp-kop-header b,
+    .doc-sheet .sp-kop-header [style*="font-weight: bold"],
+    .doc-sheet .sp-kop-header [style*="font-weight:bold"] {
+        font-weight: bold !important; /* Hanya Kop Surat baris 2 & 3 yang tebal sesuai standar */
     }
     /* Table Jadwal Gantt Lingkungan (18 Kolom Presisi agar Pas di Lembar A4) */
     .table-jadwal-lingkungan {
@@ -1273,7 +1306,7 @@
                                 <div class="calc-price-panel">
                                     <div class="calc-price-row">
                                         <span class="label-text">Estimasi</span>
-                                        <span class="value-text">Rp {{ number_format(@order.estimasi_biaya, 0, ',', '.') }}</span>
+                                        <span class="value-text">Rp {{ number_format(@default_nominal ?: @order.estimasi_biaya, 0, ',', '.') }}</span>
                                     </div>
                                     <div class="box-nego-ditawarkan calc-price-row" style="{{ (!@sp_existing || !@sp_existing.nominal_penawaran) ? 'display: none !important;' : '' }}">
                                         <span class="nego-badge-tag">
@@ -1675,7 +1708,7 @@
                         <check if="{{ @order.jenis_layanan_opti == 'selulosa' }}">
                             <div class="col-12">
                                 <label class="form-label small fw-semibold text-dark mb-1">
-                                    Hal / Perihal Surat <span class="text-danger">*</span>
+                                    Hal Surat <span class="text-danger">*</span>
                                 </label>
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text bg-light text-muted"><i class="bi bi-card-heading"></i></span>
@@ -1693,17 +1726,13 @@
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label small fw-semibold text-dark mb-1">Media Permintaan Masuk</label>
+                                <label class="form-label small fw-semibold text-dark mb-1">
+                                    Media Permintaan Masuk
+                                </label>
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text bg-light text-muted"><i class="bi bi-inbox"></i></span>
-                                    <select name="permintaan_melalui" id="select_permintaan_melalui" class="form-select form-select-sm" {{ !@can_edit ? 'disabled' : '' }}>
-                                        <option value="email" {{ (@sp_existing && @sp_existing.permintaan_melalui == 'email') || !@sp_existing ? 'selected' : '' }}>E-mail Resmi</option>
-                                        <option value="surat" {{ @sp_existing && @sp_existing.permintaan_melalui == 'surat' ? 'selected' : '' }}>Surat Fisik / Ekspedisi</option>
-                                        <option value="telepon" {{ @sp_existing && @sp_existing.permintaan_melalui == 'telepon' ? 'selected' : '' }}>Telepon</option>
-                                        <option value="whatsapp" {{ @sp_existing && @sp_existing.permintaan_melalui == 'whatsapp' ? 'selected' : '' }}>WhatsApp</option>
-                                        <option value="website" {{ @sp_existing && @sp_existing.permintaan_melalui == 'website' ? 'selected' : '' }}>Website</option>
-                                        <option value="datang_langsung" {{ @sp_existing && @sp_existing.permintaan_melalui == 'datang_langsung' ? 'selected' : '' }}>Datang Langsung</option>
-                                    </select>
+                                    <input type="text" class="form-control form-control-sm bg-light text-dark fw-medium border-secondary-subtle" value="{{ @media_permintaan_label ?: ((@sp_existing.permintaan_melalui == 'fax' || @order.permintaan_melalui == 'fax') ? 'Fax' : ((@sp_existing.permintaan_melalui == 'surat' || @order.permintaan_melalui == 'surat' || (!@sp_existing.permintaan_melalui && !@order.permintaan_melalui && @order.id_surat_masuk)) ? 'Surat Resmi' : 'E-mail Resmi')) }}" readonly style="cursor: not-allowed;" title="Media permintaan masuk otomatis tersinkronisasi dari Formulir Pelayanan Tahap 2">
+                                    <input type="hidden" name="permintaan_melalui" id="select_permintaan_melalui" value="{{ @media_permintaan_val ?: (@sp_existing.permintaan_melalui ?: (@order.permintaan_melalui ?: (@order.id_surat_masuk ? 'surat' : 'email'))) }}">
                                 </div>
                             </div>
                         </check>
@@ -1711,11 +1740,12 @@
                         <check if="{{ @order.jenis_layanan_opti != 'selulosa' }}">
                             <div class="col-md-6">
                                 <label class="form-label small fw-semibold text-dark mb-1">
-                                    Hal / Perihal Surat <span class="text-danger">*</span>
+                                    Hal Surat <span class="text-danger">*</span>
                                 </label>
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text bg-light text-muted"><i class="bi bi-card-heading"></i></span>
-                                    <input type="text" name="perihal" id="input_perihal" class="form-control form-control-sm fw-semibold" value="{{ @sp_existing.perihal ?: (@sp_existing.hal ?: @default_hal) }}" placeholder="Contoh: Biaya Penentuan Daya Biodegradasi" required {{ !@can_edit ? 'disabled' : '' }}>
+                                    <input type="text" name="hal" id="input_hal" class="form-control form-control-sm fw-semibold" value="{{ @sp_existing.hal ?: (@sp_existing.perihal && @sp_existing.perihal != @order.judul_kegiatan ? @sp_existing.perihal : (@default_hal ?: 'Biaya Pengujian Lingkungan')) }}" placeholder="Contoh: Biaya Penentuan Daya Biodegradasi" required {{ !@can_edit ? 'disabled' : '' }}>
+                                    <input type="hidden" name="perihal" id="input_perihal" value="{{ @sp_existing.perihal ?: ('Penawaran Pengujian Lingkungan - ' . @order.judul_kegiatan) }}">
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -1728,17 +1758,13 @@
                                 </div>
                             </div>
                             <div class="col-12">
-                                <label class="form-label small fw-semibold text-dark mb-1">Media Permintaan Masuk</label>
+                                <label class="form-label small fw-semibold text-dark mb-1">
+                                    Media Permintaan Masuk
+                                </label>
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text bg-light text-muted"><i class="bi bi-inbox"></i></span>
-                                    <select name="permintaan_melalui" id="select_permintaan_melalui" class="form-select form-select-sm" {{ !@can_edit ? 'disabled' : '' }}>
-                                        <option value="email" {{ (@sp_existing && @sp_existing.permintaan_melalui == 'email') || !@sp_existing ? 'selected' : '' }}>E-mail Resmi</option>
-                                        <option value="surat" {{ @sp_existing && @sp_existing.permintaan_melalui == 'surat' ? 'selected' : '' }}>Surat Fisik / Ekspedisi</option>
-                                        <option value="telepon" {{ @sp_existing && @sp_existing.permintaan_melalui == 'telepon' ? 'selected' : '' }}>Telepon</option>
-                                        <option value="whatsapp" {{ @sp_existing && @sp_existing.permintaan_melalui == 'whatsapp' ? 'selected' : '' }}>WhatsApp</option>
-                                        <option value="website" {{ @sp_existing && @sp_existing.permintaan_melalui == 'website' ? 'selected' : '' }}>Website</option>
-                                        <option value="datang_langsung" {{ @sp_existing && @sp_existing.permintaan_melalui == 'datang_langsung' ? 'selected' : '' }}>Datang Langsung</option>
-                                    </select>
+                                    <input type="text" class="form-control form-control-sm bg-light text-dark fw-medium border-secondary-subtle" value="{{ @media_permintaan_label ?: ((@sp_existing.permintaan_melalui == 'fax' || @order.permintaan_melalui == 'fax') ? 'Fax' : ((@sp_existing.permintaan_melalui == 'surat' || @order.permintaan_melalui == 'surat' || (!@sp_existing.permintaan_melalui && !@order.permintaan_melalui && @order.id_surat_masuk)) ? 'Surat Resmi' : 'E-mail Resmi')) }}" readonly style="cursor: not-allowed;" title="Media permintaan masuk otomatis tersinkronisasi dari Formulir Pelayanan Tahap 2">
+                                    <input type="hidden" name="permintaan_melalui" id="select_permintaan_melalui" value="{{ @media_permintaan_val ?: (@sp_existing.permintaan_melalui ?: (@order.permintaan_melalui ?: (@order.id_surat_masuk ? 'surat' : 'email'))) }}">
                                 </div>
                             </div>
                         </check>
@@ -1750,7 +1776,7 @@
                             <div class="input-group">
                                 <span class="input-group-text bg-light text-dark fw-bold px-3">Rp</span>
                                 <input type="text" id="inputNominalDisplay" class="form-control fw-bold fs-6 text-dark font-monospace" placeholder="0" oninput="formatNominalPenawaran(this)" autocomplete="off" required {{ !@can_edit ? 'disabled' : '' }}>
-                                <input type="hidden" name="nominal_penawaran" id="inputNominalReal" value="{{ (int)(@default_nominal ?: (@sp_existing.nominal_penawaran ?: @order.estimasi_biaya)) }}">
+                                <input type="hidden" name="nominal_penawaran" id="inputNominalReal" value="{{ (int)((@sp_existing && @sp_existing.nominal_penawaran > 0) ? @sp_existing.nominal_penawaran : (@default_nominal ?: @order.estimasi_biaya)) }}">
                             </div>
                             <div class="mt-1">
                                 <div class="text-muted fw-medium font-monospace" id="textTerbilang" style="font-size: 0.74rem;">
@@ -1910,9 +1936,14 @@
                     </div>
 
                     <!-- Terbitkan sebagai Revisi Baru jika @is_revisi_baru bernilai true -->
+                    <input type="hidden" name="mode" id="input_sp_mode" value="{{ @is_revisi_baru ? 'baru' : 'edit' }}">
                     <check if="{{ @sp_existing }}">
                         <input type="hidden" name="is_revisi_baru" id="check_revisi_baru" value="{{ @is_revisi_baru ? '1' : '0' }}">
-                        <input type="hidden" name="penawaran_id" value="{{ @sp_existing.id }}">
+                        <input type="hidden" name="penawaran_id" id="input_sp_penawaran_id" value="{{ @sp_existing.id }}" data-original-id="{{ @sp_existing.id }}">
+                    </check>
+                    <check if="{{ !@sp_existing }}">
+                        <input type="hidden" name="is_revisi_baru" id="check_revisi_baru" value="1">
+                        <input type="hidden" name="penawaran_id" id="input_sp_penawaran_id" value="0">
                     </check>
                 </div>
             </div>
@@ -1925,9 +1956,6 @@
                             <i class="bi bi-arrow-left"></i> Kembali ke Order
                         </a>
                     </check>
-                    <button type="button" class="btn btn-sm btn-white border shadow-xs text-primary fw-semibold d-inline-flex align-items-center gap-1.5" onclick="toggleFloatingSpPreview(true)" title="Tampilkan / Panggil Pratinjau Naskah Melayang">
-                        <i class="bi bi-pip"></i> <span>Pratinjau Melayang</span>
-                    </button>
                 </div>
                 <check if="{{ @can_edit }}">
                     <div class="d-flex align-items-center gap-2 flex-wrap">
@@ -1943,7 +1971,7 @@
                                 <i class="bi bi-bookmark-fill"></i> <span>Simpan Draf</span>
                             </button>
                             <button type="button" id="btnTerbitkanPenawaran" class="btn-submit-theme" onclick="confirmKirimPenawaran();">
-                                <i class="bi bi-send-fill"></i> Simpan &amp; Terbitkan
+                                <i class="bi bi-send-fill"></i> Kirim &amp; Terbitkan
                             </button>
                         </check>
                     </div>
@@ -1960,7 +1988,7 @@
         <!-- ======================================================== -->
         <!-- PRATINJAU NASKAH SURAT PENAWARAN (FLOATING & DRAGGABLE)  -->
         <!-- ======================================================== -->
-        <div class="preview-sticky-wrapper is-minimized" id="previewStickyWrapper">
+        <div class="preview-sticky-wrapper d-none" id="previewStickyWrapper" style="display: none;">
             <!-- 8-Directional Window Resize Handles (Tiap Sisi & Ujung Hover Mouse Bisa Resize) -->
             <div class="sp-resize-handle sp-resize-n" data-direction="n" title="Ubah tinggi (atas)"></div>
             <div class="sp-resize-handle sp-resize-s" data-direction="s" title="Ubah tinggi (bawah)"></div>
@@ -1995,8 +2023,8 @@
                             <i class="bi bi-layout-sidebar-reverse"></i>
                         </button>
                         <!-- Minimize -->
-                        <button type="button" class="preview-tool-btn" id="btnMinimizeSpPreview" onclick="toggleMinimizeSpPreview()" title="Perbesar Pratinjau">
-                            <i class="bi bi-arrows-angle-expand"></i>
+                        <button type="button" class="preview-tool-btn" id="btnMinimizeSpPreview" onclick="toggleMinimizeSpPreview()" title="Minimize / Perkecil">
+                            <i class="bi bi-dash-lg"></i>
                         </button>
                         <!-- Tutup / Sembunyikan ke Tab Tepi -->
                         <button type="button" class="preview-tool-btn" id="btnCloseSpPreview" onclick="toggleFloatingSpPreview(false)" title="Sembunyikan ke Tab Tepi">
@@ -2094,27 +2122,30 @@
                             <div class="sp-kop-spacer" id="selKopSpacer" style="display: none; height: 38mm;"></div>
 
                             <!-- Metadata Kiri & Tanggal Kanan -->
-                            <div style="display: flex; justify-content: space-between; font-size: 9.5px; margin-bottom: 12px;">
-                                <table style="font-size: 9.5px; line-height: 1.4;">
+                            <div style="display: flex; justify-content: space-between; font-size: 10.5px; margin-bottom: 18px; gap: 16px; align-items: flex-start;">
+                                <table style="font-size: 10.5px; line-height: 1.4; border-collapse: collapse; table-layout: fixed; width: calc(100% - 145px); max-width: calc(100% - 145px);">
                                     <tr>
-                                        <td style="width: 60px;">Nomor</td><td style="width: 10px;">:</td>
-                                        <td><strong id="d_sel_nomor">{{ @is_revisi_baru ? @nomor_surat_otomatis : (@sp_existing.nomor_surat ?: @nomor_surat_otomatis) }}</strong></td>
+                                        <td style="width: 70px; vertical-align: top; white-space: nowrap;">Nomor</td>
+                                        <td style="width: 12px; vertical-align: top; text-align: center;">:</td>
+                                        <td style="vertical-align: top; word-break: break-word; overflow-wrap: anywhere;"><span id="d_sel_nomor">{{ @is_revisi_baru ? @nomor_surat_otomatis : (@sp_existing.nomor_surat ?: @nomor_surat_otomatis) }}</span></td>
                                     </tr>
                                     <tr>
-                                        <td>Lampiran</td><td>:</td>
-                                        <td><span id="d_sel_lampiran">{{ @sp_existing.lampiran_teks ?: (@default_lampiran_teks ?: '1 (satu) lembar') }}</span></td>
+                                        <td style="vertical-align: top; white-space: nowrap;">Lampiran</td>
+                                        <td style="vertical-align: top; text-align: center;">:</td>
+                                        <td style="vertical-align: top; word-break: break-word; overflow-wrap: anywhere;"><span id="d_sel_lampiran">{{ @sp_existing.lampiran_teks ?: (@default_lampiran_teks ?: '1 (satu) lembar') }}</span></td>
                                     </tr>
                                     <tr>
-                                        <td>Hal</td><td>:</td>
-                                        <td><span id="d_sel_hal">{{ @sp_existing.hal ?: (@default_hal ?: 'Biaya OPTI') }}</span></td>
+                                        <td style="vertical-align: top; white-space: nowrap;">Hal</td>
+                                        <td style="vertical-align: top; text-align: center;">:</td>
+                                        <td style="vertical-align: top; word-break: break-word; overflow-wrap: anywhere;"><span id="d_sel_hal" style="display: block; word-break: break-word; overflow-wrap: anywhere;">{{ @sp_existing.hal ?: (@default_hal ?: 'Biaya OPTI') }}</span></td>
                                     </tr>
                                 </table>
-                                <div style="font-size: 9.5px; text-align: right;" id="d_sel_tanggal">Bandung, -</div>
+                                <div style="font-size: 10.5px; text-align: right; width: 135px; flex-shrink: 0; white-space: nowrap;" id="d_sel_tanggal">Bandung, -</div>
                             </div>
 
                             <!-- Penerima (Yth. Pimpinan) -->
-                            <div style="font-size: 9.5px; line-height: 1.4; margin-bottom: 12px;">
-                                <div>Yth. Pimpinan <strong id="d_sel_perusahaan">{{ @sp_existing.perusahaan ?: @order.nama_perusahaan }}</strong></div>
+                            <div style="font-size: 10.5px; line-height: 1.4; margin-bottom: 12px; word-break: break-word; overflow-wrap: anywhere;">
+                                <div>Yth. <span id="d_sel_perusahaan">{{ @sp_existing.perusahaan ?: @order.nama_perusahaan }}</span></div>
                                 <div id="d_sel_kota">di Tempat</div>
                                 <div id="d_sel_pic_wrap" style="{{ (!@sp_existing.nama && !@order.pic) ? 'display: none;' : '' }}">
                                     u.p. <span id="d_sel_pic">{{ @sp_existing.nama ?: @order.pic }}</span>
@@ -2122,20 +2153,20 @@
                             </div>
 
                             <!-- Paragraf Pembuka -->
-                            <div style="font-size: 9.5px; line-height: 1.45; text-align: left; text-indent: 28px; margin-bottom: 8px;">
-                                Menanggapi permintaan Saudara <span id="d_sel_media_pembuka">melalui e-mail</span> perihal "<span id="d_sel_judul_pembuka" class="fw-bold">{{ @order.judul_kegiatan }}</span>", dengan ini kami informasikan rincian kegiatan dan penawaran biaya layanan sebagai berikut:
+                            <div style="font-size: 10.5px; line-height: 1.45; text-align: left; text-indent: 28px; margin-bottom: 8px;">
+                                Menanggapi permintaan Saudara <span id="d_sel_media_pembuka">melalui e-mail</span> perihal "<em><span id="d_sel_judul_pembuka">{{ @order.judul_kegiatan }}</span></em>", dengan ini kami informasikan rincian kegiatan dan penawaran biaya layanan sebagai berikut:
                             </div>
 
                             <!-- Poin 1, 2, 3, 4 Naskah Surat BBSPJIS (Rendered Dinamis dari 1 Input) -->
-                            <div id="d_sel_poin_utama_container" style="font-size: 9.5px; line-height: 1.45; margin-bottom: 10px; padding-left: 2px;">
+                            <div id="d_sel_poin_utama_container" style="font-size: 10.5px; line-height: 1.45; margin-bottom: 10px; padding-left: 2px;">
                                 <!-- Rendered dynamically by JS syncLivePreview() -->
                             </div>
 
                             <!-- Ketentuan Standar 1-5 -->
-                            <div style="font-size: 9.5px; line-height: 1.45; text-indent: 28px; margin-bottom: 4px;">
+                            <div style="font-size: 10.5px; line-height: 1.45; text-indent: 28px; margin-bottom: 4px;">
                                 Disamping itu perlu kami sampaikan pula ketentuan sebagai berikut :
                             </div>
-                            <div style="font-size: 9.5px; line-height: 1.45; margin-bottom: 10px;">
+                            <div style="font-size: 10.5px; line-height: 1.45; margin-bottom: 10px;">
                                 <div style="text-align: left; margin-bottom: 2px;">1. Persetujuan terhadap biaya pengujian mohon disampaikan secara tertulis melalui email.</div>
                                 <div style="text-align: left; margin-bottom: 2px;">2. Pengujian dilaksanakan setelah pembayaran biaya dilakukan dan sampel kami terima.</div>
                                 <div style="text-align: left; margin-bottom: 2px;">3. Pembayaran biaya pengujian dilakukan dengan transfer melalui <em>virtual account bank</em>.</div>
@@ -2144,17 +2175,17 @@
                             </div>
 
                             <!-- Paragraf Penutup -->
-                            <div style="font-size: 9.5px; line-height: 1.45; text-align: left; text-indent: 28px; margin-bottom: 14px;">
+                            <div style="font-size: 10.5px; line-height: 1.45; text-align: left; text-indent: 28px; margin-bottom: 14px;">
                                 Kami menunggu konfirmasi lebih lanjut. Atas perhatian dan kerja sama yang baik, kami sampaikan terima kasih.
                             </div>
 
                             <!-- Pejabat Penandatangan BBSPJIS Kanan Bawah -->
-                            <div style="display: flex; justify-content: flex-end; font-size: 9.5px; margin-top: 14px; margin-bottom: 18px;">
+                            <div style="display: flex; justify-content: flex-end; font-size: 10.5px; margin-top: 14px; margin-bottom: 18px;">
                                 <div style="text-align: center; width: 40%;">
                                     <div style="display: inline-block; text-align: left;">
                                         <div style="margin-top: 12px; margin-bottom: 6px;" id="d_sel_jabatan_pejabat">{{ @sp_existing.jabatan_pejabat ?: (@default_jabatan_pejabat ?: 'Kepala') }},</div>
                                         <div style="height: 68px;"></div>
-                                        <div style="margin-top: 6px; margin-bottom: 12px;" class="fw-bold" id="d_sel_pejabat">{{ @sp_existing.pejabat_nama ?: (@sp_existing.pembuat_nama ?: (@default_pejabat_nama ?: 'Dodiet Prasetyo')) }}</div>
+                                        <div style="margin-top: 6px; margin-bottom: 12px;" id="d_sel_pejabat">{{ @sp_existing.pejabat_nama ?: (@sp_existing.pembuat_nama ?: (@default_pejabat_nama ?: 'Dodiet Prasetyo')) }}</div>
                                     </div>
                                 </div>
                             </div>
@@ -2274,64 +2305,76 @@
                             </div>
                             <div class="sp-kop-spacer" id="lingKopSpacer" style="display: none; height: 38mm;"></div>
 
-                            <div style="display: flex; justify-content: space-between; font-size: 9.5px; margin-bottom: 12px;">
-                                <table style="font-size: 9.5px; line-height: 1.4;">
-                                    <tr><td style="width: 60px;">Nomor</td><td style="width: 10px;">:</td><td><strong id="d_nomor_l">{{ @is_revisi_baru ? @nomor_surat_otomatis : (@sp_existing.nomor_surat ?: @nomor_surat_otomatis) }}</strong></td></tr>
-                                    <tr><td>Lampiran</td><td>:</td><td><span id="d_lampiran_l">{{ @sp_existing.lampiran_teks ?: (@default_lampiran_teks ?: '-') }}</span></td></tr>
-                                    <tr><td>Hal</td><td>:</td><td><span id="d_perihal_l">{{ @sp_existing.perihal ?: (@sp_existing.hal ?: (@default_hal ?: '-')) }}</span></td></tr>
+                            <div style="display: flex; justify-content: space-between; font-size: 10.5px; margin-bottom: 18px; gap: 16px; align-items: flex-start;">
+                                <table style="font-size: 10.5px; line-height: 1.4; border-collapse: collapse; table-layout: fixed; width: calc(100% - 145px); max-width: calc(100% - 145px);">
+                                    <tr>
+                                        <td style="width: 70px; vertical-align: top; white-space: nowrap;">Nomor</td>
+                                        <td style="width: 12px; vertical-align: top; text-align: center;">:</td>
+                                        <td style="vertical-align: top; word-break: break-word; overflow-wrap: anywhere;"><span id="d_nomor_l">{{ @is_revisi_baru ? @nomor_surat_otomatis : (@sp_existing.nomor_surat ?: @nomor_surat_otomatis) }}</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td style="vertical-align: top; white-space: nowrap;">Lampiran</td>
+                                        <td style="vertical-align: top; text-align: center;">:</td>
+                                        <td style="vertical-align: top; word-break: break-word; overflow-wrap: anywhere;"><span id="d_lampiran_l">{{ @sp_existing.lampiran_teks ?: (@default_lampiran_teks ?: '-') }}</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td style="vertical-align: top; white-space: nowrap;">Hal</td>
+                                        <td style="vertical-align: top; text-align: center;">:</td>
+                                        <td style="vertical-align: top; word-break: break-word; overflow-wrap: anywhere;"><span id="d_perihal_l" style="display: block; word-break: break-word; overflow-wrap: anywhere;">{{ @sp_existing.hal ?: (@sp_existing.perihal ?: (@default_hal ?: 'Biaya Pengujian Lingkungan')) }}</span></td>
+                                    </tr>
                                 </table>
-                                <div style="font-size: 9.5px; text-align: right;" id="d_tanggal_l">Bandung, -</div>
+                                <div style="font-size: 10.5px; text-align: right; width: 135px; flex-shrink: 0; white-space: nowrap;" id="d_tanggal_l">Bandung, -</div>
                             </div>
 
-                            <div style="font-size: 9.5px; line-height: 1.4; margin-bottom: 12px;">
-                                <div>Yth. Pimpinan <strong id="d_perusahaan_l">{{ @sp_existing.perusahaan ?: @order.nama_perusahaan }}</strong></div>
-                                <div id="d_alamat_l" style="white-space: pre-line;">{{ @sp_existing.alamat ?: (@order.alamat ?: 'di Tempat') }}</div>
+                            <div style="font-size: 10.5px; line-height: 1.4; margin-bottom: 12px; word-break: break-word; overflow-wrap: anywhere;">
+                                <div>Yth. <span id="d_perusahaan_l">{{ @sp_existing.perusahaan ?: @order.nama_perusahaan }}</span></div>
+                                <div id="d_alamat_l" style="white-space: pre-line; word-break: break-word; overflow-wrap: anywhere;">{{ @sp_existing.alamat ?: (@order.alamat ?: 'di Tempat') }}</div>
                             </div>
 
-                            <div style="font-size: 9.5px; line-height: 1.45; text-align: left; text-indent: 28px; margin-bottom: 8px;">
-                                Menanggapi permintaan Saudara <span id="d_media_pembuka_l">melalui e-mail</span> perihal "<span id="d_judul_pembuka_l" class="fw-bold">{{ @order.judul_kegiatan }}</span>", dengan ini kami informasikan sebagai berikut:
+                            <div style="font-size: 10.5px; line-height: 1.45; text-align: left; text-indent: 28px; margin-bottom: 8px;">
+                                Menanggapi permintaan Saudara <span id="d_media_pembuka_l">melalui e-mail</span> perihal "<em><span id="d_judul_pembuka_l">{{ @order.judul_kegiatan }}</span></em>", dengan ini kami informasikan sebagai berikut:
                             </div>
 
                             <!-- Poin 1, 2, 3 Naskah Surat Lingkungan (Rendered Dinamis dari Editor) -->
-                            <div id="d_ling_poin_utama_container" style="font-size: 9.5px; line-height: 1.45; margin-bottom: 2px; padding-left: 2px;">
+                            <div id="d_ling_poin_utama_container" style="font-size: 10.5px; line-height: 1.45; margin-bottom: 2px; padding-left: 2px;">
                                 <!-- Rendered dynamically by JS syncLivePreview() -->
                             </div>
 
                             <!-- Poin Ketentuan Standar Lingkungan (Auto Fill di Template) -->
-                            <div id="d_ling_ketentuan_tetap" style="font-size: 9.5px; line-height: 1.45; margin-bottom: 10px; padding-left: 2px;">
+                            <div id="d_ling_ketentuan_tetap" style="font-size: 10.5px; line-height: 1.45; margin-bottom: 10px; padding-left: 2px;">
                                 <div class="d-flex gap-2 mb-1 mt-1">
-                                    <span id="d_ling_ketentuan_num" style="width: 18px; flex-shrink: 0; font-weight: bold;">1.</span>
+                                    <span id="d_ling_ketentuan_num" style="width: 18px; flex-shrink: 0;">1.</span>
                                     <div style="text-align: left;">Biaya dan rincian pekerjaan terlampir, dengan ketentuan sebagai berikut:</div>
                                 </div>
                                 <div class="d-flex gap-2 mb-0.5 ms-4">
-                                    <span style="width: 20px; flex-shrink: 0; font-weight: 500;">a.</span>
-                                    <div style="text-align: left;">Biaya pekerjaan ditagihkan dan dibayar melalui Virtual Account Mandiri.</div>
+                                    <span style="width: 20px; flex-shrink: 0;">a.</span>
+                                    <div style="text-align: left;">Biaya pekerjaan ditagihkan dan dibayar melalui <em>Virtual Account</em> Mandiri.</div>
                                 </div>
                                 <div class="d-flex gap-2 mb-0.5 ms-4">
-                                    <span style="width: 20px; flex-shrink: 0; font-weight: 500;">b.</span>
-                                    <div style="text-align: left;">Persetujuan terhadap biaya pekerjaan tersebut mohon disampaikan secara tertulis melalui fax atau e-mail.</div>
+                                    <span style="width: 20px; flex-shrink: 0;">b.</span>
+                                    <div style="text-align: left;">Persetujuan terhadap biaya pekerjaan tersebut mohon disampaikan secara tertulis melalui <em>fax</em> atau <em>e-mail</em>.</div>
                                 </div>
                                 <div class="d-flex gap-2 mb-0.5 ms-4">
-                                    <span style="width: 20px; flex-shrink: 0; font-weight: 500;">c.</span>
+                                    <span style="width: 20px; flex-shrink: 0;">c.</span>
                                     <div style="text-align: left;">Jadwal pelaksanaan pekerjaan akan disampaikan setelah pembayaran biaya pekerjaan dilakukan.</div>
                                 </div>
                                 <div class="d-flex gap-2 mb-0.5 ms-4">
-                                    <span style="width: 20px; flex-shrink: 0; font-weight: 500;">d.</span>
+                                    <span style="width: 20px; flex-shrink: 0;">d.</span>
                                     <div style="text-align: left;">Dilarang memberi gratifikasi dalam bentuk apapun atas layanan jasa yang kami berikan, jika terdapat pemberian dan penerimaan gratifikasi mohon dapat dilaporkan ke : <span class="text-primary">http://bbs.kemenperin.go.id/kontak-kami/pengaduan-gratifikasi</span>.</div>
                                 </div>
                             </div>
 
-                            <div style="font-size: 9.5px; line-height: 1.45; text-align: left; text-indent: 28px; margin-bottom: 16px;">
+                            <div style="font-size: 10.5px; line-height: 1.45; text-align: left; text-indent: 28px; margin-bottom: 16px;">
                                 Kami menunggu konfirmasi lebih lanjut. Atas perhatian dan kerja sama yang baik, kami sampaikan terima kasih.
                             </div>
 
                             <!-- Tanda Tangan Pejabat BBSPJIS Cover Lingkungan -->
-                            <div style="display: flex; justify-content: flex-end; font-size: 9.5px; margin-top: 14px; margin-bottom: 18px;">
+                            <div style="display: flex; justify-content: flex-end; font-size: 10.5px; margin-top: 14px; margin-bottom: 18px;">
                                 <div style="text-align: center; width: 40%;">
                                     <div style="display: inline-block; text-align: left;">
                                         <div style="margin-top: 12px; margin-bottom: 6px;" id="d_jabatan_pejabat_l">{{ @sp_existing.jabatan_pejabat ?: (@default_jabatan_pejabat ?: 'Kepala Bagian Tata Usaha') }},</div>
                                         <div style="height: 68px;"></div>
-                                        <div style="margin-top: 6px; margin-bottom: 12px;" class="fw-bold" id="d_pembuat_l">{{ @sp_existing.pejabat_nama ?: (@sp_existing.pembuat_nama ?: (@default_pejabat_nama ?: 'Joko Pratomo')) }}</div>
+                                        <div style="margin-top: 6px; margin-bottom: 12px;" id="d_pembuat_l">{{ @sp_existing.pejabat_nama ?: (@sp_existing.pembuat_nama ?: (@default_pejabat_nama ?: 'Joko Pratomo')) }}</div>
                                     </div>
                                 </div>
                             </div>
@@ -2433,11 +2476,12 @@
                 </div>
             </div>
         </div>
+    </div>
 
     <!-- Floating Launcher Button ketika Pratinjau Disembunyikan (Pojok Kanan Bawah) -->
-    <button type="button" id="btnFloatingLauncherSpPreview" class="btn btn-dark shadow-lg rounded-pill px-3 py-2 d-none align-items-center gap-2" onclick="toggleFloatingSpPreview(true)" style="position: fixed; bottom: 24px; right: 24px; z-index: 1045; border: 1.5px solid #475569; background: #1e293b; color: #ffffff; font-weight: 600; font-size: 0.85rem; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.35) !important; cursor: pointer;">
+    <button type="button" id="btnFloatingLauncherSpPreview" class="btn btn-dark shadow-lg rounded-pill px-3 py-2 d-inline-flex align-items-center gap-2" onclick="toggleFloatingSpPreview(true)" style="position: fixed; bottom: 24px; right: 24px; z-index: 1045; border: 1.5px solid #475569; background: #1e293b; color: #ffffff; font-weight: 600; font-size: 0.85rem; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.35) !important; cursor: pointer;">
         <i class="bi bi-file-earmark-text-fill text-info"></i>
-        <span>Buka Surat Penawaran</span>
+        <span>Buka Pratinjau Surat</span>
         <span class="badge bg-primary text-white rounded-pill px-1.5 py-0.5" style="font-size: 0.68rem;">Live</span>
     </button>
 </form>
@@ -3010,6 +3054,21 @@ function applyStandardDraft() {
     syncLivePreview();
 }
 
+function showToastSuccess(pesan) {
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: pesan || 'Berhasil',
+            showConfirmButton: false,
+            showCancelButton: false,
+            timer: 2000,
+            timerProgressBar: true
+        });
+    }
+}
+
 function prefillDefaultRuangLingkup() {
     var ta = document.getElementById('input_ruang_lingkup');
     if (!ta) return;
@@ -3018,7 +3077,7 @@ function prefillDefaultRuangLingkup() {
         if (typeof Swal !== 'undefined') {
             Swal.fire({
                 title: 'Sisipkan Draf Standar?',
-                text: 'Isi naskah saat ini akan diganti dengan draf standar sesuai data order.',
+                text: 'Isi naskah rincian saat ini akan diganti dengan format draf standar resmi.',
                 icon: 'question',
                 iconColor: '#0d6efd',
                 background: '#ffffff',
@@ -3037,15 +3096,7 @@ function prefillDefaultRuangLingkup() {
             }).then(function(result) {
                 if (result.isConfirmed) {
                     applyStandardDraft();
-                    Swal.fire({
-                        toast: true,
-                        position: 'top-end',
-                        icon: 'success',
-                        title: 'Draf standar berhasil disisipkan',
-                        showConfirmButton: false,
-                        timer: 2000,
-                        timerProgressBar: true
-                    });
+                    showToastSuccess('Draf standar berhasil disisipkan');
                 }
             });
         } else {
@@ -3055,17 +3106,7 @@ function prefillDefaultRuangLingkup() {
         }
     } else {
         applyStandardDraft();
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                toast: true,
-                position: 'top-end',
-                icon: 'success',
-                title: 'Draf standar berhasil disisipkan',
-                showConfirmButton: false,
-                timer: 2200,
-                timerProgressBar: true
-            });
-        }
+        showToastSuccess('Draf standar berhasil disisipkan');
     }
 }
 
@@ -3107,7 +3148,7 @@ function syncLivePreview() {
 
     // 3. Hal & Lampiran
     var isLingkungan = '{{ @order.jenis_layanan_opti }}' === 'lingkungan';
-    var defaultHal = isLingkungan ? '-' : 'Biaya OPTI';
+    var defaultHal = isLingkungan ? 'Biaya Pengujian Lingkungan' : 'Biaya OPTI';
     var valHal = (elHal && elHal.value.trim()) ? elHal.value.trim() : ((elPerihal && elPerihal.value.trim()) ? elPerihal.value.trim() : defaultHal);
     ['d_sel_hal', 'd_perihal_l'].forEach(function(id) {
         var el = document.getElementById(id);
@@ -3133,6 +3174,8 @@ function syncLivePreview() {
     var textMedia = 'melalui e-mail';
     if (valMedia === 'surat') {
         textMedia = 'melalui surat';
+    } else if (valMedia === 'fax') {
+        textMedia = 'melalui faksimile';
     } else if (valMedia === 'telepon') {
         textMedia = 'melalui telepon/WhatsApp';
     } else if (valMedia === 'datang_langsung') {
@@ -3234,13 +3277,13 @@ function syncLivePreview() {
 
             if (mPoint) {
                 html += '<div class="d-flex gap-2 mb-1 mt-1.5">' +
-                    '<span style="width: 18px; flex-shrink: 0; font-weight: bold;">' + mPoint[1] + '.</span>' +
+                    '<span style="width: 18px; flex-shrink: 0;">' + mPoint[1] + '.</span>' +
                     '<div style="text-align: left;">' + escapeHtml(mPoint[2]) + '</div>' +
                 '</div>';
             } else if (mSub) {
                 var bullet = mSub[1];
                 html += '<div class="d-flex gap-2 mb-0.5 ms-4">' +
-                    '<span style="width: 20px; flex-shrink: 0; font-weight: 500;">' + bullet + '</span>' +
+                    '<span style="width: 20px; flex-shrink: 0;">' + bullet + '</span>' +
                     '<div style="text-align: left;">' + escapeHtml(mSub[2]) + '</div>' +
                 '</div>';
             } else {
@@ -3277,13 +3320,13 @@ function syncLivePreview() {
                         nextPointNum = pNum + 1;
                     }
                     htmlLing += '<div class="d-flex gap-2 mb-1 mt-1.5">' +
-                        '<span style="width: 18px; flex-shrink: 0; font-weight: bold;">' + mPoint[1] + '.</span>' +
+                        '<span style="width: 18px; flex-shrink: 0;">' + mPoint[1] + '.</span>' +
                         '<div style="text-align: left;">' + escapeHtml(mPoint[2]) + '</div>' +
                     '</div>';
                 } else if (mSub) {
                     var bullet = mSub[1];
                     htmlLing += '<div class="d-flex gap-2 mb-0.5 ms-4">' +
-                        '<span style="width: 20px; flex-shrink: 0; font-weight: 500;">' + bullet + '</span>' +
+                        '<span style="width: 20px; flex-shrink: 0;">' + bullet + '</span>' +
                         '<div style="text-align: left;">' + escapeHtml(mSub[2]) + '</div>' +
                     '</div>';
                 } else {
@@ -3349,9 +3392,10 @@ document.addEventListener('DOMContentLoaded', function() {
     if (selectStatus && inputNomorSurat) {
         selectStatus.addEventListener('change', function() {
             var checkRevisi = document.getElementById('check_revisi_baru');
-            var isRevisiInitial = {{ @is_revisi_baru ? 'true' : 'false' }};
-            if (isRevisiInitial) {
-                // Dalam mode revisi baru (misal SP sebelumnya ditolak), nomor otomatis tetap urutan baru
+            var inputMode = document.getElementById('input_sp_mode');
+            var isCurrentModeBaru = (inputMode && inputMode.value === 'baru') || {{ @is_revisi_baru ? 'true' : 'false' }};
+            if (isCurrentModeBaru) {
+                // Dalam mode surat/revisi baru, nomor otomatis tetap urutan baru
                 if (!isNomorManuallyEdited && inputNomorSurat.dataset.nomorBaru) {
                     inputNomorSurat.value = inputNomorSurat.dataset.nomorBaru;
                 }
@@ -4080,9 +4124,28 @@ function hapusLampiranUser() {
 }
 
 async function unduhSpPdf(withKop) {
-    var spIdParam = '{{ @sp_existing && @sp_existing.id ? ("?id=" . @sp_existing.id) : "" }}';
-    var sep = spIdParam ? '&' : '?';
-    var pdfUrl = '{{ @BASE }}/order/{{ @order.id }}/penawaran/cetak' + spIdParam + sep + 'kop=' + (withKop ? '1' : '0') + '&t=' + Date.now();
+    var params = new URLSearchParams();
+    var spId = '{{ @sp_existing && @sp_existing.id ? @sp_existing.id : 0 }}';
+    if (spId && spId !== '0') {
+        params.append('id', spId);
+    }
+    params.append('kop', withKop ? '1' : '0');
+    params.append('t', Date.now());
+
+    var fieldNames = [
+        'nomor_surat', 'tanggal_surat', 'perusahaan', 'nama', 'alamat',
+        'hal', 'lampiran_teks', 'nominal_penawaran', 'durasi_hari',
+        'ruang_lingkup', 'jadwal_pelaksanaan', 'catatan_sampel',
+        'jabatan_pejabat', 'pejabat_nama', 'spm_layanan', 'permintaan_melalui'
+    ];
+    fieldNames.forEach(function(fieldName) {
+        var el = document.querySelector('[name="' + fieldName + '"]');
+        if (el && el.value !== undefined && el.value.trim() !== '') {
+            params.append(fieldName, el.value.trim());
+        }
+    });
+
+    var pdfUrl = '{{ @BASE }}/order/{{ @order.id }}/penawaran/cetak?' + params.toString();
 
     if (typeof Swal !== 'undefined') {
         Swal.fire({
@@ -4168,7 +4231,8 @@ function unduhSpWord() {
     var fieldNames = [
         'nomor_surat', 'tanggal_surat', 'perusahaan', 'nama', 'alamat',
         'hal', 'lampiran_teks', 'nominal_penawaran', 'durasi_hari',
-        'ruang_lingkup', 'jabatan_pejabat', 'pejabat_nama', 'spm_layanan'
+        'ruang_lingkup', 'jadwal_pelaksanaan', 'catatan_sampel',
+        'jabatan_pejabat', 'pejabat_nama', 'spm_layanan', 'permintaan_melalui'
     ];
     fieldNames.forEach(function(fieldName) {
         var input = document.querySelector('[name="' + fieldName + '"]');
@@ -4244,34 +4308,117 @@ function bukaModalCetakKop() {
     }
 }
 
-function eksekusiCetakSp(withKop) {
+async function eksekusiCetakSp(withKop) {
     var modalEl = document.getElementById('modalPilihanCetakKop');
     if (modalEl) {
         var modal = bootstrap.Modal.getInstance(modalEl);
         if (modal) modal.hide();
     }
 
-    if (withKop) {
-        document.body.classList.remove('sp-print-tanpa-kop');
-    } else {
-        document.body.classList.add('sp-print-tanpa-kop');
+    var params = new URLSearchParams();
+    var spId = '{{ @sp_existing && @sp_existing.id ? @sp_existing.id : 0 }}';
+    if (spId && spId !== '0') {
+        params.append('id', spId);
+    }
+    params.append('kop', withKop ? '1' : '0');
+    params.append('t', Date.now());
+
+    var fieldNames = [
+        'nomor_surat', 'tanggal_surat', 'perusahaan', 'nama', 'alamat',
+        'hal', 'lampiran_teks', 'nominal_penawaran', 'durasi_hari',
+        'ruang_lingkup', 'jadwal_pelaksanaan', 'catatan_sampel',
+        'jabatan_pejabat', 'pejabat_nama', 'spm_layanan', 'permintaan_melalui'
+    ];
+    fieldNames.forEach(function(fieldName) {
+        var el = document.querySelector('[name="' + fieldName + '"]');
+        if (el && el.value !== undefined && el.value.trim() !== '') {
+            params.append(fieldName, el.value.trim());
+        }
+    });
+
+    var pdfUrl = '{{ @BASE }}/order/{{ @order.id }}/penawaran/cetak?' + params.toString();
+
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: 'Menyiapkan Dokumen Cetak...',
+            text: 'Memproses PDF resolusi tinggi...',
+            allowOutsideClick: false,
+            didOpen: function() { Swal.showLoading(); }
+        });
     }
 
-    var sheetSel3 = document.getElementById('selPage3Content');
-    var sheetLing3 = document.getElementById('lingPage3Content');
-    var hasLampiranContent = (sheetSel3 && sheetSel3.innerHTML.trim() !== '') || (sheetLing3 && sheetLing3.innerHTML.trim() !== '') || ('{{ !empty(@lampiran_user_existing) ? "1" : "0" }}' === '1');
-    if (hasLampiranContent) {
-        document.body.classList.add('has-sp-lampiran');
-    }
+    try {
+        var apiUrl = '{{ @BASE }}/api/doc-preview?url=' + encodeURIComponent(pdfUrl) + '&t=' + Date.now();
+        var res = await fetch(apiUrl, { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        var json = await res.json();
+        if (!json.success || !json.base64) throw new Error(json.message || 'Gagal memproses dokumen');
 
-    // Beri jeda kecil agar DOM selesai merender style sebelum dialog print browser dibuka
-    setTimeout(function() {
-        window.print();
-        // Kembalikan ke mode normal setelah dialog print selesai
-        setTimeout(function() {
-            document.body.classList.remove('sp-print-tanpa-kop');
-        }, 1200);
-    }, 300);
+        var bytes = base64ToUint8ArrayUniversal(json.base64);
+
+        if (json.attachment_base64 && json.attachment_ext === 'pdf') {
+            try {
+                var PDFLib = await ensurePdfLibLoaded();
+                var mainPdfDoc = await PDFLib.PDFDocument.load(bytes);
+                var attachBytes = base64ToUint8ArrayUniversal(json.attachment_base64);
+                var attachPdfDoc = await PDFLib.PDFDocument.load(attachBytes, { ignoreEncryption: true });
+                var copiedPages = await mainPdfDoc.copyPages(attachPdfDoc, attachPdfDoc.getPageIndices());
+                copiedPages.forEach(function(p) { mainPdfDoc.addPage(p); });
+                var mergedBytes = await mainPdfDoc.save();
+                bytes = new Uint8Array(mergedBytes);
+            } catch (mergeErr) {
+                console.warn('Merge PDF lampiran error:', mergeErr);
+            }
+        }
+
+        var blob = new Blob([bytes], { type: 'application/pdf' });
+        var blobUrl = URL.createObjectURL(blob);
+
+        if (typeof Swal !== 'undefined') {
+            Swal.close();
+        }
+
+        var printFrame = document.createElement('iframe');
+        printFrame.style.position = 'fixed';
+        printFrame.style.right = '0';
+        printFrame.style.bottom = '0';
+        printFrame.style.width = '0';
+        printFrame.style.height = '0';
+        printFrame.style.border = '0';
+        printFrame.src = blobUrl;
+        document.body.appendChild(printFrame);
+
+        printFrame.onload = function() {
+            setTimeout(function() {
+                try {
+                    printFrame.contentWindow.focus();
+                    printFrame.contentWindow.print();
+                } catch (e) {
+                    console.warn('Iframe print fallback to window:', e);
+                    var win = window.open(blobUrl, '_blank');
+                    if (win) {
+                        win.focus();
+                        win.print();
+                    }
+                }
+                setTimeout(function() {
+                    if (document.body.contains(printFrame)) {
+                        document.body.removeChild(printFrame);
+                    }
+                    URL.revokeObjectURL(blobUrl);
+                }, 60000);
+            }, 350);
+        };
+    } catch (e) {
+        console.error('Print PDF error:', e);
+        if (typeof Swal !== 'undefined') {
+            Swal.close();
+        }
+        var winFallback = window.open(pdfUrl, '_blank');
+        if (winFallback) {
+            winFallback.focus();
+        }
+    }
 }
 
 function cetakSuratPenawaran() {
@@ -4281,13 +4428,56 @@ function cetakSuratPenawaran() {
 /* ========================================================= */
 /* LOGIKA MENGAMBANG, DOCKED, DRAG & MINIMIZE PRATINJAU NASKAH */
 /* ========================================================= */
+function clampPanelInViewport(panel) {
+    if (!panel || panel.classList.contains("is-docked") || panel.style.display === "none" || panel.classList.contains("d-none")) return;
+
+    var pad = 12;
+    var topPad = 64; // Batas atas di bawah navbar header
+
+    var rect = panel.getBoundingClientRect();
+    var panelWidth = rect.width;
+    var panelHeight = rect.height;
+
+    // Pastikan ukuran panel sendiri tidak melebihi ukuran layar (locked in frame)
+    if (panelWidth > window.innerWidth - pad * 2) {
+        panelWidth = Math.max(320, window.innerWidth - pad * 2);
+        panel.style.width = panelWidth + "px";
+    }
+    if (panelHeight > window.innerHeight - topPad - pad) {
+        panelHeight = Math.max(180, window.innerHeight - topPad - pad);
+        panel.style.height = panelHeight + "px";
+    }
+
+    var minLeft = pad;
+    var maxLeft = Math.max(minLeft, window.innerWidth - panelWidth - pad);
+    var minTop = topPad;
+    var maxTop = Math.max(minTop, window.innerHeight - panelHeight - pad);
+
+    var curLeft = rect.left;
+    var curTop = rect.top;
+
+    var clampedLeft = Math.max(minLeft, Math.min(curLeft, maxLeft));
+    var clampedTop = Math.max(minTop, Math.min(curTop, maxTop));
+
+    panel.style.left = clampedLeft + "px";
+    panel.style.top = clampedTop + "px";
+    panel.style.right = "auto";
+    panel.style.bottom = "auto";
+}
+
 function toggleGhostSpPreview() {
     var panel = document.getElementById("previewStickyWrapper");
     var btn = document.getElementById("btnGhostSpPreview");
     if (!panel) return;
     var isGhost = panel.classList.toggle("is-ghost");
+    if (isGhost) {
+        panel.style.setProperty("opacity", "0.35", "important");
+    } else {
+        panel.style.removeProperty("opacity");
+    }
     if (btn) {
         btn.classList.toggle("active", isGhost);
+        btn.innerHTML = isGhost ? '<i class="bi bi-droplet-fill text-info"></i>' : '<i class="bi bi-droplet-half"></i>';
         btn.title = isGhost ? "Matikan Mode Transparan" : "Mode Transparan (Tembus Pandang agar tidak menghalangi formulir)";
     }
 }
@@ -4316,6 +4506,7 @@ function toggleDockSpPreview() {
         panel.style.height = "";
         try { localStorage.setItem("sp_preview_docked", "1"); } catch(e) {}
     } else {
+        clampPanelInViewport(panel);
         try { localStorage.setItem("sp_preview_docked", "0"); } catch(e) {}
     }
 }
@@ -4328,6 +4519,9 @@ function toggleMinimizeSpPreview() {
     if (btn) {
         btn.innerHTML = isMin ? '<i class="bi bi-arrows-angle-expand"></i>' : '<i class="bi bi-dash-lg"></i>';
         btn.title = isMin ? "Perbesar Pratinjau" : "Minimize / Perkecil";
+    }
+    if (!isMin) {
+        clampPanelInViewport(panel);
     }
 }
 
@@ -4353,10 +4547,13 @@ function toggleFloatingSpPreview(show) {
         }
         if (panel.classList.contains("is-docked") && formGrid) {
             formGrid.classList.add("has-docked-preview");
+        } else {
+            clampPanelInViewport(panel);
         }
         if (typeof syncLivePreview === "function") syncLivePreview();
     } else {
         panel.style.display = "none";
+        panel.classList.add("d-none");
         if (launcher) {
             launcher.classList.remove("d-none");
             launcher.style.display = "inline-flex";
@@ -4415,10 +4612,10 @@ function initSpWindowResize() {
             panel.classList.add("is-resizing");
             document.body.style.userSelect = "none";
 
-            var minW = 340;
+            var pad = 12;
+            var topPad = 64;
+            var minW = 320;
             var minH = 180;
-            var maxW = window.innerWidth - 16;
-            var maxH = window.innerHeight - 16;
 
             function onMouseMove(moveEvent) {
                 var dx = moveEvent.clientX - startX;
@@ -4429,33 +4626,43 @@ function initSpWindowResize() {
                 var newLeft = startLeft;
                 var newTop = startTop;
 
-                // Horizontal resize
+                // Horizontal resize (Locked inside screen frame)
                 if (dir.indexOf("e") !== -1) {
-                    newWidth = Math.max(minW, Math.min(startWidth + dx, maxW - startLeft));
+                    var maxWRight = Math.max(minW, window.innerWidth - startLeft - pad);
+                    newWidth = Math.max(minW, Math.min(startWidth + dx, maxWRight));
                 }
                 if (dir.indexOf("w") !== -1) {
-                    var potentialWidth = startWidth - dx;
-                    if (potentialWidth >= minW) {
-                        newWidth = Math.min(potentialWidth, startLeft + startWidth);
+                    var maxWLeft = Math.max(minW, startLeft + startWidth - pad);
+                    var potW = startWidth - dx;
+                    if (potW >= minW && potW <= maxWLeft) {
+                        newWidth = potW;
                         newLeft = startLeft + (startWidth - newWidth);
-                    } else {
+                    } else if (potW < minW) {
                         newWidth = minW;
                         newLeft = startLeft + startWidth - minW;
+                    } else {
+                        newWidth = maxWLeft;
+                        newLeft = pad;
                     }
                 }
 
-                // Vertical resize
+                // Vertical resize (Locked inside screen frame)
                 if (dir.indexOf("s") !== -1) {
-                    newHeight = Math.max(minH, Math.min(startHeight + dy, maxH - startTop));
+                    var maxHBottom = Math.max(minH, window.innerHeight - startTop - pad);
+                    newHeight = Math.max(minH, Math.min(startHeight + dy, maxHBottom));
                 }
                 if (dir.indexOf("n") !== -1) {
-                    var potentialHeight = startHeight - dy;
-                    if (potentialHeight >= minH) {
-                        newHeight = Math.min(potentialHeight, startTop + startHeight);
+                    var maxHTop = Math.max(minH, startTop + startHeight - topPad);
+                    var potH = startHeight - dy;
+                    if (potH >= minH && potH <= maxHTop) {
+                        newHeight = potH;
                         newTop = startTop + (startHeight - newHeight);
-                    } else {
+                    } else if (potH < minH) {
                         newHeight = minH;
                         newTop = startTop + startHeight - minH;
+                    } else {
+                        newHeight = maxHTop;
+                        newTop = topPad;
                     }
                 }
 
@@ -4507,7 +4714,7 @@ function initSpPreviewDraggable() {
     initSpPreviewAutoDim();
     initSpWindowResize();
 
-    // Default adalah minimized saat awal dibuka; double-click toolbar untuk toggle expand/minimize
+    // Double-click toolbar untuk toggle expand/minimize
     handle.addEventListener("dblclick", function(e) {
         if (e.target.closest("button, a, input, select, .dropdown-menu, .tab-btn")) return;
         toggleMinimizeSpPreview();
@@ -4557,10 +4764,16 @@ function initSpPreviewDraggable() {
             var newLeft = initialLeft + dx;
             var newTop = initialTop + dy;
 
-            var maxLeft = window.innerWidth - 120;
-            var maxTop = window.innerHeight - 60;
-            newLeft = Math.max(10, Math.min(newLeft, maxLeft));
-            newTop = Math.max(10, Math.min(newTop, maxTop));
+            var rect = panel.getBoundingClientRect();
+            var pad = 12;
+            var topPad = 64;
+            var minLeft = pad;
+            var maxLeft = Math.max(minLeft, window.innerWidth - rect.width - pad);
+            var minTop = topPad;
+            var maxTop = Math.max(minTop, window.innerHeight - rect.height - pad);
+
+            newLeft = Math.max(minLeft, Math.min(newLeft, maxLeft));
+            newTop = Math.max(minTop, Math.min(newTop, maxTop));
 
             panel.style.left = newLeft + "px";
             panel.style.top = newTop + "px";
@@ -4612,8 +4825,18 @@ function initSpPreviewDraggable() {
             var t = e.touches[0];
             var dx = t.clientX - startX;
             var dy = t.clientY - startY;
-            var newLeft = Math.max(10, Math.min(initialLeft + dx, window.innerWidth - 80));
-            var newTop = Math.max(10, Math.min(initialTop + dy, window.innerHeight - 60));
+
+            var rect = panel.getBoundingClientRect();
+            var pad = 12;
+            var topPad = 64;
+            var minLeft = pad;
+            var maxLeft = Math.max(minLeft, window.innerWidth - rect.width - pad);
+            var minTop = topPad;
+            var maxTop = Math.max(minTop, window.innerHeight - rect.height - pad);
+
+            var newLeft = Math.max(minLeft, Math.min(initialLeft + dx, maxLeft));
+            var newTop = Math.max(minTop, Math.min(initialTop + dy, maxTop));
+
             panel.style.left = newLeft + "px";
             panel.style.top = newTop + "px";
         }
@@ -4636,4 +4859,10 @@ if (document.readyState === "loading") {
 } else {
     initSpPreviewDraggable();
 }
+
+// Window resize listener untuk memastikan panel selalu locked in frame
+window.addEventListener("resize", function() {
+    var panel = document.getElementById("previewStickyWrapper");
+    if (panel) clampPanelInViewport(panel);
+});
 </script>

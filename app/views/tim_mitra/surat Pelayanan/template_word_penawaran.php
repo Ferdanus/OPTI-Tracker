@@ -147,11 +147,11 @@ p {
     <table class="MsoNormalTable" border="0" cellspacing="0" cellpadding="0" width="100%" style="width: 100.0%; border-collapse: collapse; mso-table-layout-alt: fixed; table-layout: fixed; margin: 0; padding: 0;">
         <tr>
             <?php if (!empty($logoBase64)): ?>
-            <td width="27%" style="width: 4.33cm; width: 27.0%; text-align: left; vertical-align: middle; padding: 0 0.2cm 6pt 0; border: none; border-bottom: 2.25pt solid #000000; mso-border-bottom-alt: solid black 2.25pt;">
+            <td width="27%" style="width: 4.33cm; width: 27.0%; text-align: left; vertical-align: middle; padding: 0 0.2cm 6pt 0; border: none; border-bottom: 3.0pt double #000000; mso-border-bottom-alt: double black 3.0pt;">
                 <img src="data:image/png;base64,<?= $logoBase64 ?>" width="155" height="49" style="width: 4.11cm; height: 1.29cm; display: block;" alt="Logo Kemenperin">
             </td>
             <?php endif; ?>
-            <td width="<?= !empty($logoBase64) ? '73%' : '100%' ?>" style="width: <?= !empty($logoBase64) ? '11.67cm' : '16.0cm' ?>; width: <?= !empty($logoBase64) ? '73.0%' : '100.0%' ?>; text-align: center; vertical-align: middle; padding: 0 0 6pt 0; border: none; border-bottom: 2.25pt solid #000000; mso-border-bottom-alt: solid black 2.25pt; font-family: Tahoma, sans-serif;">
+            <td width="<?= !empty($logoBase64) ? '73%' : '100%' ?>" style="width: <?= !empty($logoBase64) ? '11.67cm' : '16.0cm' ?>; width: <?= !empty($logoBase64) ? '73.0%' : '100.0%' ?>; text-align: center; vertical-align: middle; padding: 0 0 6pt 0; border: none; border-bottom: 3.0pt double #000000; mso-border-bottom-alt: double black 3.0pt; font-family: Tahoma, sans-serif;">
                 <p class="MsoNormal" style="font-family: Tahoma, sans-serif; font-size: 12pt; font-weight: normal; margin: 0; line-height: 1.15; text-align: center;">BADAN STANDARDISASI DAN KEBIJAKAN JASA INDUSTRI</p>
                 <p class="MsoNormal" style="font-family: Tahoma, sans-serif; font-size: 14pt; font-weight: bold; margin: 0; line-height: 1.15; text-align: center;">BALAI BESAR STANDARISASI DAN<br>PELAYANAN JASA INDUSTRI SELULOSA</p>
                 <p class="MsoNormal" style="font-family: Tahoma, sans-serif; font-size: 7pt; font-weight: normal; margin: 2pt 0 0 0; line-height: 1.15; text-align: center;">Jl. Raya Dayeuhkolot No. 132 Bandung 40258</p>
@@ -165,31 +165,38 @@ p {
 
     <!-- ======================================================== -->
     <!-- 3.a. BLOK IDENTITAS SURAT                                 -->
-    <!-- Tabel 4 Kolom Tanpa Border, Lebar Total 16.0 cm (100%)    -->
-    <!-- Kolom: 2.00cm | 0.75cm | 7.50cm | 5.74cm                  -->
+    <!-- Tab-stop layout untuk presisi penuh tanpa tabel berantakan:-->
+    <!-- Tab 1: 2.10cm (titik dua), Tab 2: 2.40cm (nilai teks)      -->
+    <!-- Hanging indent pada Hal: margin-left 2.4cm, text-indent -2.4cm -->
+    <!-- Baris 1: Nomor di kiri (50%), Tanggal di kanan (50% sebaris)-->
+    <!-- Baris 2: Lampiran & Hal melebar penuh (colspan="2")        -->
     <!-- ======================================================== -->
-    <table class="MsoNormalTable" border="0" cellspacing="0" cellpadding="0" width="100%" style="width: 100.0%; border-collapse: collapse; mso-table-layout-alt: fixed; table-layout: fixed; margin: 0; padding: 0;">
+    <table class="MsoNormalTable" border="0" cellspacing="0" cellpadding="0" width="100%" style="width: 100.0%; border-collapse: collapse; margin: 0; padding: 0;">
         <tr>
-            <td width="12.5%" style="width: 2.00cm; width: 12.5%; vertical-align: top; padding: 0; border: none; text-align: left;"><p class="MsoNormal">Nomor</p></td>
-            <td width="4.7%" style="width: 0.75cm; width: 4.7%; vertical-align: top; padding: 0; border: none; text-align: center;"><p class="MsoNormal">:</p></td>
-            <td width="46.9%" style="width: 7.50cm; width: 46.9%; vertical-align: top; padding: 0; border: none; text-align: left;"><p class="MsoNormal"><?= htmlspecialchars($noSurat) ?></p></td>
-            <td width="35.9%" style="width: 5.74cm; width: 35.9%; vertical-align: top; padding: 0; border: none; text-align: right;"><p class="MsoNormal" style="text-align: right;">Bandung, <?= htmlspecialchars($tglFormatted) ?></p></td>
+            <td style="vertical-align: top; width: 50%; padding: 0; border: none; text-align: left;">
+                <p class="MsoNormal" style="margin: 0; text-align: left; tab-stops: 2.1cm 2.4cm;">
+                    Nomor&#9;:&#9;<?= htmlspecialchars($noSurat) ?>
+                </p>
+            </td>
+            <td style="vertical-align: top; width: 50%; padding: 0; border: none; text-align: right; white-space: nowrap;">
+                <p class="MsoNormal" style="margin: 0; text-align: right; white-space: nowrap;">Bandung, <?= htmlspecialchars($tglFormatted) ?></p>
+            </td>
         </tr>
         <tr>
-            <td style="width: 2.00cm; width: 12.5%; vertical-align: top; padding: 0; border: none; text-align: left;"><p class="MsoNormal">Lampiran</p></td>
-            <td style="width: 0.75cm; width: 4.7%; vertical-align: top; padding: 0; border: none; text-align: center;"><p class="MsoNormal">:</p></td>
-            <td colspan="2" style="width: 13.24cm; width: 82.8%; vertical-align: top; padding: 0; border: none; text-align: left;"><p class="MsoNormal"><?= htmlspecialchars($lampiranTeks) ?></p></td>
-        </tr>
-        <tr>
-            <td style="width: 2.00cm; width: 12.5%; vertical-align: top; padding: 0; border: none; text-align: left;"><p class="MsoNormal">Hal</p></td>
-            <td style="width: 0.75cm; width: 4.7%; vertical-align: top; padding: 0; border: none; text-align: center;"><p class="MsoNormal">:</p></td>
-            <td colspan="2" style="width: 13.24cm; width: 82.8%; vertical-align: top; padding: 0; border: none; text-align: left;"><p class="MsoNormal"><?= htmlspecialchars($halSurat) ?></p></td>
+            <td colspan="2" style="vertical-align: top; width: 100%; padding: 0; border: none; text-align: left;">
+                <p class="MsoNormal" style="margin: 0; text-align: left; tab-stops: 2.1cm 2.4cm;">
+                    Lampiran&#9;:&#9;<?= htmlspecialchars($lampiranTeks) ?>
+                </p>
+                <p class="MsoNormal" style="margin: 0; text-align: left; tab-stops: 2.1cm 2.4cm; margin-left: 2.4cm; text-indent: -2.4cm;">
+                    Hal&#9;:&#9;<?= htmlspecialchars($halSurat) ?>
+                </p>
+            </td>
         </tr>
     </table>
 
     <!-- ======================================================== -->
     <!-- 3.b. BLOK TUJUAN                                          -->
-    <!-- Tiga Paragraf Rata Kiri Tanpa Jarak Menempel di Bawah Hal -->
+    <!-- Berjarak 3 enter (margin-top: 33pt) di bawah Hal          -->
     <!-- ======================================================== -->
     <?php
     $tujuanLines = [];
@@ -206,7 +213,7 @@ p {
         $tujuanLines[] = 'u.p. ' . $picSurat;
     }
     ?>
-    <div style="margin-top: 0; font-family: Arial, sans-serif; font-size: 11pt; line-height: normal; text-align: left;">
+    <div style="margin-top: 33pt; font-family: Arial, sans-serif; font-size: 11pt; line-height: normal; text-align: left;">
         <?php foreach ($tujuanLines as $tl): ?>
             <p class="MsoNormal" style="text-align: left;"><?= htmlspecialchars($tl) ?></p>
         <?php endforeach; ?>
@@ -214,10 +221,10 @@ p {
 
     <!-- ======================================================== -->
     <!-- 3.c. PARAGRAF PEMBUKA                                     -->
-    <!-- Align Left, Indentasi 1.27 cm, Berjarak 12 pt dari Blok B  -->
+    <!-- Align Left, Indentasi 1.27 cm, Berjarak 2 enter (22 pt) dari Alamat -->
     <!-- Judul Kegiatan & Kata Asing Dicetak Miring, Tanpa Tebal   -->
     <!-- ======================================================== -->
-    <p class="MsoNormal" style="margin-top: 12pt; margin-bottom: 0; text-align: left; text-indent: 1.27cm;">
+    <p class="MsoNormal" style="margin-top: 22pt; margin-bottom: 0; text-align: left; text-indent: 1.27cm;">
         Menanggapi permintaan Saudara <?= wordItalicizeForeignWords(htmlspecialchars(strip_tags($mediaPhrase))) ?> perihal "<em><?= htmlspecialchars(strip_tags($judulKegiatan)) ?></em>", dengan ini kami informasikan rincian kegiatan dan penawaran biaya layanan sebagai berikut:
     </p>
 
@@ -330,6 +337,7 @@ p {
                             <p class="MsoNormal" style="text-align: left; margin: 0; line-height: 1.15;">&nbsp;</p>
                             <p class="MsoNormal" style="text-align: left; margin: 0; line-height: 1.15;">&nbsp;</p>
                             <p class="MsoNormal" style="text-align: left; margin: 0; line-height: 1.15;">&nbsp;</p>
+                            <p class="MsoNormal" style="text-align: left; margin: 0; line-height: 1.15;">&nbsp;</p>
                             <p class="MsoNormal" style="text-align: left; margin-top: 6.0pt; margin-bottom: 12.0pt; mso-para-margin-top: 6.0pt; mso-para-margin-bottom: 12.0pt; line-height: 1.15;"><?= htmlspecialchars($pejabatNama) ?></p>
                         </td>
                     </tr>
@@ -348,27 +356,24 @@ p {
 
     <!-- ======================================================== -->
     <!-- 4.a. BLOK REFERENSI (Halaman Lampiran)                    -->
-    <!-- Tabel 4 Kolom: 55% / 12% / 4% / 29% Menempel ke Kanan     -->
-    <!-- Pola: Label, Titik Dua, Nilai                             -->
+    <!-- Tabel 3 Kolom: 55% / 15% / 30% Menempel ke Kanan           -->
+    <!-- Kolom 2: Label, Kolom 3: : Nilai                          -->
     <!-- ======================================================== -->
-    <table class="MsoNormalTable" border="0" cellspacing="0" cellpadding="0" width="100%" style="width: 100.0%; border-collapse: collapse; mso-table-layout-alt: fixed; table-layout: fixed; margin-bottom: 0;">
+    <table class="MsoNormalTable" border="0" cellspacing="0" cellpadding="0" width="100%" style="width: 100.0%; border-collapse: collapse; margin-bottom: 0;">
         <tr>
             <td width="55%" style="width: 55%; border: none; padding: 0;">&nbsp;</td>
-            <td width="12%" style="width: 12%; border: none; padding: 0; vertical-align: top; text-align: left;"><p class="MsoNormal">Lampiran</p></td>
-            <td width="4%" style="width: 4%; border: none; padding: 0; vertical-align: top; text-align: center;"><p class="MsoNormal">:</p></td>
-            <td width="29%" style="width: 29%; border: none; padding: 0; vertical-align: top; text-align: left;"><p class="MsoNormal">I Surat</p></td>
+            <td width="15%" nowrap style="width: 15%; border: none; padding: 0; vertical-align: top; text-align: left; white-space: nowrap;"><p class="MsoNormal" style="white-space: nowrap;">Lampiran</p></td>
+            <td width="30%" style="width: 30%; border: none; padding: 0; vertical-align: top; text-align: left;"><p class="MsoNormal">: I Surat</p></td>
         </tr>
         <tr>
             <td style="border: none; padding: 0;">&nbsp;</td>
-            <td style="border: none; padding: 0; vertical-align: top; text-align: left;"><p class="MsoNormal">Nomor</p></td>
-            <td style="border: none; padding: 0; vertical-align: top; text-align: center;"><p class="MsoNormal">:</p></td>
-            <td style="border: none; padding: 0; vertical-align: top; text-align: left;"><p class="MsoNormal"><?= htmlspecialchars($noSurat) ?></p></td>
+            <td nowrap style="border: none; padding: 0; vertical-align: top; text-align: left; white-space: nowrap;"><p class="MsoNormal" style="white-space: nowrap;">Nomor</p></td>
+            <td style="border: none; padding: 0; vertical-align: top; text-align: left;"><p class="MsoNormal">: <?= htmlspecialchars($noSurat) ?></p></td>
         </tr>
         <tr>
             <td style="border: none; padding: 0;">&nbsp;</td>
-            <td style="border: none; padding: 0; vertical-align: top; text-align: left;"><p class="MsoNormal">Tanggal</p></td>
-            <td style="border: none; padding: 0; vertical-align: top; text-align: center;"><p class="MsoNormal">:</p></td>
-            <td style="border: none; padding: 0; vertical-align: top; text-align: left;"><p class="MsoNormal"><?= htmlspecialchars($tglFormatted) ?></p></td>
+            <td nowrap style="border: none; padding: 0; vertical-align: top; text-align: left; white-space: nowrap;"><p class="MsoNormal" style="white-space: nowrap;">Tanggal</p></td>
+            <td style="border: none; padding: 0; vertical-align: top; text-align: left;"><p class="MsoNormal">: <?= htmlspecialchars($tglFormatted) ?></p></td>
         </tr>
     </table>
 
@@ -481,6 +486,7 @@ p {
                     <tr>
                         <td style="border: none; padding: 0; text-align: left;">
                             <p class="MsoNormal" style="text-align: left; margin-top: 12.0pt; margin-bottom: 6.0pt; mso-para-margin-top: 12.0pt; mso-para-margin-bottom: 6.0pt; line-height: 1.15;"><?= htmlspecialchars($jabatanPejabat) ?>,</p>
+                            <p class="MsoNormal" style="text-align: left; margin: 0; line-height: 1.15;">&nbsp;</p>
                             <p class="MsoNormal" style="text-align: left; margin: 0; line-height: 1.15;">&nbsp;</p>
                             <p class="MsoNormal" style="text-align: left; margin: 0; line-height: 1.15;">&nbsp;</p>
                             <p class="MsoNormal" style="text-align: left; margin: 0; line-height: 1.15;">&nbsp;</p>

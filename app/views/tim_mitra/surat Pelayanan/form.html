@@ -885,10 +885,6 @@
                 <div class="form-section-body">
                     <label class="form-label small fw-semibold text-dark mb-1">Permintaan Masuk Melalui:</label>
                     <div class="channel-tile-grid mb-3">
-                        <label class="channel-tile {{ @sp.permintaan_melalui == 'telepon' ? 'active' : '' }}" for="pmTelepon">
-                            <input type="radio" name="permintaan_melalui" id="pmTelepon" value="telepon" {{ @sp.permintaan_melalui == 'telepon' ? 'checked' : '' }} {{ !@can_edit ? 'disabled' : '' }}>
-                            <span class="channel-tile-label">Telepon</span>
-                        </label>
                         <label class="channel-tile {{ @sp.permintaan_melalui == 'fax' ? 'active' : '' }}" for="pmFax">
                             <input type="radio" name="permintaan_melalui" id="pmFax" value="fax" {{ @sp.permintaan_melalui == 'fax' ? 'checked' : '' }} {{ !@can_edit ? 'disabled' : '' }}>
                             <span class="channel-tile-label">Fax</span>
@@ -900,18 +896,6 @@
                         <label class="channel-tile {{ (@sp.permintaan_melalui == 'email' || (!@sp.permintaan_melalui && !@order.id)) ? 'active' : '' }}" for="pmEmail">
                             <input type="radio" name="permintaan_melalui" id="pmEmail" value="email" {{ (@sp.permintaan_melalui == 'email' || (!@sp.permintaan_melalui && !@order.id)) ? 'checked' : '' }} {{ !@can_edit ? 'disabled' : '' }}>
                             <span class="channel-tile-label">E-mail</span>
-                        </label>
-                        <label class="channel-tile {{ @sp.permintaan_melalui == 'whatsapp' ? 'active' : '' }}" for="pmWhatsapp">
-                            <input type="radio" name="permintaan_melalui" id="pmWhatsapp" value="whatsapp" {{ @sp.permintaan_melalui == 'whatsapp' ? 'checked' : '' }} {{ !@can_edit ? 'disabled' : '' }}>
-                            <span class="channel-tile-label">WhatsApp</span>
-                        </label>
-                        <label class="channel-tile {{ @sp.permintaan_melalui == 'website' ? 'active' : '' }}" for="pmWebsite">
-                            <input type="radio" name="permintaan_melalui" id="pmWebsite" value="website" {{ @sp.permintaan_melalui == 'website' ? 'checked' : '' }} {{ !@can_edit ? 'disabled' : '' }}>
-                            <span class="channel-tile-label">Website</span>
-                        </label>
-                        <label class="channel-tile {{ @sp.permintaan_melalui == 'datang_langsung' ? 'active' : '' }}" for="pmDatang">
-                            <input type="radio" name="permintaan_melalui" id="pmDatang" value="datang_langsung" {{ @sp.permintaan_melalui == 'datang_langsung' ? 'checked' : '' }} {{ !@can_edit ? 'disabled' : '' }}>
-                            <span class="channel-tile-label">Datang Langsung</span>
                         </label>
                     </div>
 
@@ -1227,7 +1211,7 @@
                             <i class="bi bi-bookmark-fill"></i> <span>Simpan Draf</span>
                         </button>
                         <button type="button" class="btn-submit-theme" id="btnKirim">
-                            <i class="bi bi-send-fill me-1"></i> <span id="textBtnKirim">{{ @tinjauan ? 'Simpan &amp; Tetapkan Kaji Kelayakan' : 'Kirim' }}</span>
+                            <i class="bi bi-send-fill me-1"></i> <span id="textBtnKirim">{{ @tinjauan ? 'Tetapkan &amp; Kirim Kaji Kelayakan' : 'Kirim' }}</span>
                         </button>
                     </div>
                 </check>
@@ -1374,10 +1358,9 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     var permintaanLabels = {
-        telepon: 'Telepon', fax: 'Fax', surat: 'Surat', email: 'E-mail',
-        whatsapp: 'WhatsApp', website: 'Website', datang_langsung: 'Datang Langsung'
+        fax: 'Fax', surat: 'Surat', email: 'E-mail'
     };
-    var permintaanOrder = ['telepon', 'fax', 'surat', 'email', 'whatsapp', 'website', 'datang_langsung'];
+    var permintaanOrder = ['fax', 'surat', 'email'];
 
     var bidangLabels = {
         riset: 'Riset',
@@ -1784,7 +1767,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (btnLewati) btnLewati.classList.remove('active');
             if (collapsedNote) collapsedNote.style.display = 'none';
             if (bodyFields) bodyFields.style.display = 'block';
-            if (textBtnKirim) textBtnKirim.textContent = 'Simpan & Tetapkan Kaji Kelayakan';
+            if (textBtnKirim) textBtnKirim.textContent = 'Tetapkan & Kirim Kaji Kelayakan';
             cekStatusPilar();
             toggleAlasanPenolakan();
         } else {

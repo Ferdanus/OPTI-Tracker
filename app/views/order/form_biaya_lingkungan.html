@@ -506,12 +506,7 @@
                                     <input type="number" name="spm_durasi_nilai" id="spm_durasi_nilai" class="form-control form-control-sm text-center fw-semibold font-monospace" min="1" value="{{ @order.spm_durasi_nilai ?: (preg_match('/(\d+)/', @order.spm_layanan, $m_num) ? $m_num[1] : 30) }}" oninput="onCustomSpmChange()" {{ !@can_edit ? 'disabled' : '' }}>
                                 </div>
                                 <div class="col-7">
-                                    <select name="spm_durasi_satuan" id="spm_durasi_satuan" class="form-select form-select-sm" onchange="onCustomSpmChange()" {{ !@can_edit ? 'disabled' : '' }}>
-                                        <option value="Hari Kerja" {{ (@order.spm_durasi_satuan == 'Hari Kerja' || (!@order.spm_durasi_satuan && strpos(@order.spm_layanan, 'Kerja') !== false)) ? 'selected' : '' }}>Hari Kerja</option>
-                                        <option value="Hari Kalender" {{ (@order.spm_durasi_satuan == 'Hari Kalender' || (!@order.spm_durasi_satuan && strpos(@order.spm_layanan, 'Kalender') !== false)) ? 'selected' : '' }}>Hari Kalender</option>
-                                        <option value="Minggu" {{ (@order.spm_durasi_satuan == 'Minggu' || (!@order.spm_durasi_satuan && strpos(@order.spm_layanan, 'Minggu') !== false)) ? 'selected' : '' }}>Minggu</option>
-                                        <option value="Bulan" {{ (@order.spm_durasi_satuan == 'Bulan' || (!@order.spm_durasi_satuan && strpos(@order.spm_layanan, 'Bulan') !== false)) ? 'selected' : '' }}>Bulan</option>
-                                    </select>
+                                    <input type="text" name="spm_durasi_satuan" id="spm_durasi_satuan" class="form-control form-control-sm bg-light text-secondary fw-semibold text-center" value="{{ @order.spm_durasi_satuan ?: 'Hari Kerja' }}" readonly tabindex="-1" title="Satuan durasi pelayanan (SPM) otomatis mengikuti Waktu Kerja">
                                 </div>
                             </div>
                             <input type="hidden" name="spm_layanan" id="spm_layanan" value="{{ @order.spm_layanan ?: '30 Hari Kerja' }}">
@@ -708,8 +703,7 @@ function addRowUji(data) {
             <div class="durasi-control mx-auto">
                 <input type="number" name="items[${idx}][durasi_nilai]" id="durasi_nilai_${idx}" class="row-durasi-nilai font-monospace" placeholder="-" min="1" value="${durasiVal}" oninput="updateSpmFromMaster()" ${disabledAttr} title="Estimasi hari / waktu pengerjaan">
                 <select name="items[${idx}][durasi_satuan]" id="durasi_satuan_${idx}" class="row-durasi-satuan" onchange="updateSpmFromMaster()" ${disabledAttr} title="Satuan waktu kerja">
-                    <option value="Hari" ${durasiSat === 'Hari' ? 'selected' : ''}>Hari</option>
-                    <option value="Hari Kerja" ${durasiSat === 'Hari Kerja' ? 'selected' : ''}>Hari Kerja</option>
+                    <option value="Hari Kerja" ${durasiSat === 'Hari Kerja' || durasiSat === 'Hari' || !durasiSat ? 'selected' : ''}>Hari Kerja</option>
                     <option value="Minggu" ${durasiSat === 'Minggu' ? 'selected' : ''}>Minggu</option>
                     <option value="Bulan" ${durasiSat === 'Bulan' ? 'selected' : ''}>Bulan</option>
                 </select>
@@ -862,6 +856,8 @@ function removeRowUji(idx) {
 function updateSpmFromMaster() {
     var rows = document.querySelectorAll('#tbodyUji tr');
     var maxEquivalentDays = 0;
+    var maxVal = 0;
+    var maxRowUnit = 'Hari Kerja';
     var hasValid = false;
 
     rows.forEach(function(tr) {
@@ -874,16 +870,16 @@ function updateSpmFromMaster() {
         var metodeIdEl = tr.querySelector('input[name*="[metode_uji_id]"]');
 
         var durasiNilai = 0;
-        var durasiSatuan = 'Hari';
+        var durasiSatuan = 'Hari Kerja';
 
         if (durasiNilaiInput && durasiNilaiInput.value !== '') {
-            durasiNilai = parseInt(durasiNilaiInput.value) || 0;
-            durasiSatuan = durasiSatuanInput ? durasiSatuanInput.value : 'Hari';
+            durasiNilai = parseInt(durasiNilaiInput.value, 10) || 0;
+            durasiSatuan = durasiSatuanInput ? durasiSatuanInput.value : 'Hari Kerja';
         } else if (metodeIdEl && metodeIdEl.value) {
-            var m = MASTER_METODE.find(function(item) { return item.id == metodeIdEl.value; });
+            var m = typeof MASTER_METODE !== 'undefined' ? MASTER_METODE.find(function(item) { return item.id == metodeIdEl.value; }) : null;
             if (m) {
-                durasiNilai = parseInt(m.durasi_nilai) || 1;
-                durasiSatuan = m.durasi_satuan || 'Hari';
+                durasiNilai = parseInt(m.durasi_nilai, 10) || 1;
+                durasiSatuan = m.durasi_satuan || 'Hari Kerja';
             }
         }
 
@@ -900,6 +896,8 @@ function updateSpmFromMaster() {
 
             if (eqDays > maxEquivalentDays) {
                 maxEquivalentDays = eqDays;
+                maxVal = durasiNilai;
+                maxRowUnit = (durasiSatuan === 'Hari' || durasiSatuan === 'Hari Kerja') ? 'Hari Kerja' : durasiSatuan;
             }
         }
 
@@ -921,17 +919,17 @@ function updateSpmFromMaster() {
     var unitEl = document.getElementById('spm_durasi_satuan');
 
     if (hasValid && maxEquivalentDays > 0) {
-        if (valEl && (!valEl.value || forceRecalc)) {
-            valEl.value = recommendedVal;
+        if (valEl) {
+            valEl.value = maxVal > 0 ? maxVal : maxEquivalentDays;
         }
-        if (unitEl && forceRecalc) {
-            unitEl.value = recommendedUnit;
+        if (unitEl) {
+            unitEl.value = maxRowUnit;
         }
         onCustomSpmChange();
     } else {
         if (!spmInput || !spmInput.value) {
-            if (valEl) valEl.value = '30';
-            if (unitEl) unitEl.value = 'Hari Kerja';
+            if (valEl && !valEl.value) valEl.value = '30';
+            if (unitEl && !unitEl.value) unitEl.value = 'Hari Kerja';
             onCustomSpmChange();
         }
     }
@@ -967,7 +965,7 @@ function onCatalogSelectChange(val) {
             var valEl = document.getElementById('spm_durasi_nilai');
             var unitEl = document.getElementById('spm_durasi_satuan');
             if (valEl) valEl.value = m.durasi_nilai || 1;
-            if (unitEl) unitEl.value = m.durasi_satuan || 'Hari Kerja';
+            if (unitEl) unitEl.value = (m.durasi_satuan === 'Hari' || m.durasi_satuan === 'Hari Kerja') ? 'Hari Kerja' : (m.durasi_satuan || 'Hari Kerja');
             onCustomSpmChange();
         }
     }
