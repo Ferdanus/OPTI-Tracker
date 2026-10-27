@@ -2161,6 +2161,8 @@ class OrderController extends Controller {
             $lockMessage = "Anda tidak memiliki hak akses untuk mengubah kalkulasi tarif pengujian ini.";
         }
 
+        $daftarPic = OrderLayanan::getPICSpesialisasiList($this->db, 'lingkungan');
+        $f3->set('daftar_pic', $daftarPic);
         $f3->set('order', $order);
         $f3->set('kalkulasi_items', $kalkulasiItems);
         $f3->set('daftar_metode', $daftarMetode);
@@ -2235,6 +2237,7 @@ class OrderController extends Controller {
         $spmDurasiNilai = isset($post['spm_durasi_nilai']) && $post['spm_durasi_nilai'] !== '' ? (int)$post['spm_durasi_nilai'] : null;
         $spmDurasiSatuan = !empty($post['spm_durasi_satuan']) ? trim($post['spm_durasi_satuan']) : null;
         $spmTriggerTipe = !empty($post['spm_trigger_tipe']) ? trim($post['spm_trigger_tipe']) : null;
+        $picProposalId = isset($post['pic_proposal_id']) && $post['pic_proposal_id'] !== '' ? (int)$post['pic_proposal_id'] : null;
 
         // Parse list item dari form
         $items = [];
@@ -2278,6 +2281,35 @@ class OrderController extends Controller {
                 $spmLayanan, $spmDurasiNilai, $spmDurasiSatuan, $spmTriggerTipe,
                 $statusToSave
             );
+
+            // Simpan / Perbarui Penunjukan PIC Pengujian Lingkungan (Tahap 4)
+            if (isset($post['pic_proposal_id'])) {
+                $newPicId = !empty($post['pic_proposal_id']) ? (int)$post['pic_proposal_id'] : null;
+                $oldPicId = !empty($orderBefore['pic_proposal_id']) ? (int)$orderBefore['pic_proposal_id'] : null;
+                if ($newPicId !== $oldPicId) {
+                    $this->db->exec("UPDATE order_layanan SET pic_proposal_id = ? WHERE id = ?", [$newPicId, $id]);
+                    if (!empty($newPicId)) {
+                        try {
+                            $uPic = $this->db->exec("SELECT nama_user FROM tb_arsipuser WHERE id_user = ?", [1 => $newPicId]);
+                            $picNama = !empty($uPic) ? $uPic[0]['nama_user'] : 'PIC';
+                            $this->logActivity($id, 'kalkulasi_lingkungan', 'tunjuk_pic_lingkungan', "Menetapkan PIC Pengujian & Lab Lingkungan: {$picNama}");
+                            \NotificationService::send($this->db, [
+                                'order_id'       => $id,
+                                'target_role'    => 'tim_kerja',
+                                'target_user_id' => $newPicId,
+                                'target_layanan' => 'lingkungan',
+                                'judul'          => 'Penugasan PIC Pengujian Lingkungan',
+                                'pesan'          => "Anda telah ditugaskan sebagai PIC Pengujian & Lab Lingkungan untuk Order #{$orderBefore['nomor_order']} ({$orderBefore['nama_perusahaan']}).",
+                                'tipe'           => 'primary',
+                                'icon'           => 'bi-person-check-fill',
+                                'link_url'       => "/order/{$id}",
+                                'created_by'     => $userId,
+                                'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Ketua Tim OPTI'
+                            ]);
+                        } catch (\Exception $eNotifPic) {}
+                    }
+                }
+            }
             $order = $orderModel->getDetail($id);
 
             if ($isDraft) {

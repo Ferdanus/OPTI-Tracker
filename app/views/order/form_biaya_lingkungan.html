@@ -462,10 +462,28 @@
             <div class="col-lg-5">
                 <div class="card border rounded-3 shadow-xs h-100 bg-white">
                     <div class="card-header bg-white py-2.5 px-3 border-bottom">
-                        <h6 class="m-0 fw-bold text-dark small font-display">Diskon &amp; Waktu Pelayanan (SPM)</h6>
+                        <h6 class="m-0 fw-bold text-dark small font-display">PIC, Diskon &amp; Durasi Layanan (SPM)</h6>
                     </div>
                     <div class="card-body p-3">
                         
+                        <!-- Penunjukan PIC Pengujian / Laboratorium Lingkungan -->
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-dark mb-1" for="selectPicLingkungan">
+                                <i class="bi bi-person-badge text-primary me-1"></i> Penunjukan PIC Pengujian / Laboratorium
+                            </label>
+                            <select name="pic_proposal_id" id="selectPicLingkungan" class="form-select form-select-sm" {{ !@can_edit ? 'disabled' : '' }}>
+                                <option value="">-- Pilih PIC Pengujian / Personel Lab --</option>
+                                <repeat group="{{ @daftar_pic ?: [] }}" value="{{ @p }}">
+                                    <option value="{{ @p.id_user }}" {{ (@order.pic_proposal_id == @p.id_user) ? 'selected' : '' }}>
+                                        {{ @p.nama_user }} ({{ @p.role_label ?: @p.role_opti }} - Divisi {{ ucfirst(@p.spesialisasi ?: @p.role_opti) }})
+                                    </option>
+                                </repeat>
+                            </select>
+                            <div class="form-text text-muted small mt-1" style="font-size: 0.72rem;">
+                                Personil teknis / analis yang bertanggung jawab mengawal pengujian parameter dan pelaporan hasil lab lingkungan.
+                            </div>
+                        </div>
+
                         <!-- Potongan Diskon -->
                         <div class="mb-3">
                             <label class="form-label small fw-bold text-dark mb-1" for="diskon_penawaran_display">
