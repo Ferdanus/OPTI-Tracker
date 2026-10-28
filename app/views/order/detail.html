@@ -2190,7 +2190,7 @@
                                             <true><span class="badge bg-info-subtle text-info-emphasis stage-status-badge">PO Aktif</span></true>
                                             <false>
                                                 <check if="{{ !empty(@order.tanggal_spm_mulai) || !empty(@order.tanggal_terima_sampel) }}">
-                                                    <true><span class="badge bg-warning-subtle text-warning-emphasis stage-status-badge">Siap Terbit</span></true>
+                                                    <true><span class="badge bg-primary-subtle text-primary border border-primary-subtle stage-status-badge">Siap Terbit</span></true>
                                                     <false>
                                                         <span class="badge text-white stage-status-badge" style="background-color: #1e293b !important;">Aktif</span>
                                                     </false>
@@ -2467,12 +2467,12 @@
                         </div>
                     </div>
                     <check if="{{ @order.status == 'draft_disimpan' }}">
-                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle fw-semibold">
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle fw-semibold">
                             <i class="bi bi-bookmark-check-fill me-1"></i> Draft Disimpan (Belum Dikirim)
                         </span>
                     </check>
                     <check if="{{ @order.status == 'permintaan_masuk' }}">
-                        <span class="badge bg-warning text-dark fw-bold">
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle fw-semibold">
                             <i class="bi bi-hourglass-split me-1"></i> Perlu Dilengkapi
                         </span>
                     </check>
@@ -2892,7 +2892,7 @@
                                 <!-- Tombol Aksi (Form Action Bar) -->
                                 <div class="form-action-bar mb-3">
                                     <div class="d-flex align-items-center gap-2">
-                                        <span id="inlinePelayananDraftBadge" class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle {{ @order.status == 'draft_disimpan' ? '' : 'd-none' }}">
+                                        <span id="inlinePelayananDraftBadge" class="badge bg-primary-subtle text-primary border border-primary-subtle {{ @order.status == 'draft_disimpan' ? '' : 'd-none' }}">
                                             <i class="bi bi-bookmark-check-fill me-1"></i> Draf Tersimpan
                                         </span>
                                         <small id="inlinePelayananDraftStatusText" class="text-muted" style="font-size: 0.74rem;"></small>
@@ -3161,7 +3161,7 @@
                                             <i class="bi bi-bookmark-fill text-warning fs-5"></i>
                                             <span><strong>Draf Kaji Kelayakan Tersimpan.</strong> Lengkapi evaluasi 4 pilar di bawah dan klik <strong>Tetapkan Keputusan</strong>.</span>
                                         </div>
-                                        <span class="badge bg-warning text-dark font-monospace">Draft</span>
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace">Draft</span>
                                     </div>
                                 </check>
 
@@ -3236,10 +3236,10 @@
                             <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 fw-semibold"><i class="bi bi-check-circle-fill me-1"></i> {{ @order.jenis_layanan_opti == 'lingkungan' ? 'Tarif & Parameter Disetujui' : 'Proposal Disetujui' }}</span>
                         </check>
                         <check if="{{ @order.status_proposal_biaya == 'menunggu_approval' }}">
-                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2.5 py-1 fw-semibold"><i class="bi bi-hourglass-split me-1"></i> Menunggu Persetujuan Ketua Tim</span>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 fw-semibold"><i class="bi bi-hourglass-split me-1"></i> Menunggu Persetujuan Ketua Tim</span>
                         </check>
                         <check if="{{ @order.status_proposal_biaya == 'draft_disimpan' }}">
-                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2.5 py-1 fw-semibold"><i class="bi bi-bookmark-check-fill me-1"></i> Draft Disimpan</span>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 fw-semibold"><i class="bi bi-bookmark-check-fill me-1"></i> Draft Disimpan</span>
                         </check>
                         <check if="{{ @order.status_proposal_biaya == 'draft' || !@order.status_proposal_biaya || (@order.jenis_layanan_opti == 'selulosa' && !@is_proposal_approved && @order.status_proposal_biaya == 'siap_penawaran') }}">
                             <check if="{{ @penawaran }}">
@@ -4319,7 +4319,7 @@
                                                 </span>
                                             </check>
                                             <check if="{{ @order.status_keuangan != 'lunas' && empty(@riwayat_bayar) }}">
-                                                <span class="badge bg-warning text-dark px-2 py-1 small fw-semibold">
+                                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 small fw-semibold">
                                                     <i class="bi bi-hourglass-split me-1"></i> Menunggu Bukti Bayar
                                                 </span>
                                             </check>
@@ -5397,7 +5397,7 @@
                         </true>
                         <false>
                             <check if="{{ (@order.status_keuangan == 'lunas' || !empty(@riwayat_bayar)) && @penawaran && @penawaran.status_respon_klien == 'deal' }}">
-                                <span class="badge bg-warning text-dark"><i class="bi bi-clock-history me-1"></i> Menunggu Titik Awal SPM</span>
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle"><i class="bi bi-clock-history me-1"></i> Menunggu Titik Awal SPM</span>
                             </check>
                             <check if="{{ !((@order.status_keuangan == 'lunas' || !empty(@riwayat_bayar)) && @penawaran && @penawaran.status_respon_klien == 'deal') }}">
                                 <span class="badge bg-light text-secondary border"><i class="bi bi-lock-fill me-1"></i> Terkunci</span>
@@ -5620,7 +5620,7 @@
                     </check>
                     <check if="{{ !@order.po_id }}">
                         <check if="{{ !empty(@order.tanggal_spm_mulai) || !empty(@order.tanggal_terima_sampel) }}">
-                            <span class="badge bg-warning text-dark"><i class="bi bi-patch-check me-1"></i> Siap Terbit PO</span>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle"><i class="bi bi-patch-check me-1"></i> Siap Terbit PO</span>
                         </check>
                         <check if="{{ empty(@order.tanggal_spm_mulai) && empty(@order.tanggal_terima_sampel) }}">
                             <span class="badge bg-light text-secondary border">
