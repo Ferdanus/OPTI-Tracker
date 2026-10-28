@@ -1988,32 +1988,7 @@
                 </button>
 
                 <div class="flex-grow-1">
-                    <check if="{{ !empty(@topbar_custom_title) }}">
-                        <p class="topbar-title text-truncate fw-bold text-dark font-display" style="font-size: 1.12rem; letter-spacing: -0.015em;">{{ @topbar_custom_title }}</p>
-                    </check>
-                    <check if="{{ empty(@topbar_custom_title) }}">
-                        <check if="{{ !empty(@breadcrumb) }}">
-                            <nav aria-label="breadcrumb" class="topbar-breadcrumb">
-                                <repeat group="{{ @breadcrumb }}" key="{{ @idx }}" value="{{ @item }}">
-                                    <check if="{{ @idx > 0 }}">
-                                        <i class="bi bi-chevron-right separator"></i>
-                                    </check>
-                                    <check if="{{ !empty(@item.url) }}">
-                                        <true><a href="{{ @item.url }}">{{ @item.label }}</a></true>
-                                        <false><span class="current">{{ @item.label }}</span></false>
-                                    </check>
-                                </repeat>
-                            </nav>
-                        </check>
-                        <check if="{{ empty(@breadcrumb) }}">
-                            <check if="{{ empty(@hide_topbar_title) }}">
-                                <p class="topbar-title">{{ @page_title ?: 'Dashboard' }}</p>
-                                <check if="{{ @page_subtitle }}">
-                                    <p class="topbar-subtitle">{{ @page_subtitle }}</p>
-                                </check>
-                            </check>
-                        </check>
-                    </check>
+                    <p class="topbar-title text-truncate fw-bold text-dark font-display" style="font-size: 1.12rem; letter-spacing: -0.015em;">Sistem Optimalisasi Pemanfaatan Teknologi Industri BBSPJIS</p>
                 </div>
 
                 <!-- Topbar Right Actions (Bell Notifikasi & Profile) -->
