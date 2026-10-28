@@ -967,7 +967,7 @@
                         <!-- 1. Evaluasi 4 Pilar Kesiapan Laboratorium -->
                         <div class="d-flex align-items-center justify-content-between mb-1.5 flex-wrap gap-2">
                             <div class="d-flex align-items-center" style="gap: 10px;">
-                                <i class="bi bi-shield-check text-primary fs-5" style="line-height: 1;"></i>
+                                <i class="bi bi-shield-check text-primary fs-5 me-2.5" style="line-height: 1;"></i>
                                 <h6 class="fw-bold text-dark m-0 font-display" style="font-size: 0.95rem; letter-spacing: -0.01em;">
                                     Kesiapan Sumber Daya Laboratorium (4 Pilar)
                                 </h6>
@@ -984,7 +984,7 @@
                                 <div class="pilar-card p-3 border rounded-3 bg-white h-100" id="box_sdm" style="border-color: #e2e8f0;">
                                     <div class="d-flex align-items-center justify-content-between">
                                         <div class="d-flex align-items-center" style="gap: 12px;">
-                                            <input class="form-check-input mt-0 pilar-check" type="checkbox" name="sdm_tersedia" id="check_sdm" value="1" {{ !@tinjauan || @tinjauan.sdm_tersedia ? 'checked' : '' }} {{ !@can_edit ? 'disabled' : '' }} onchange="cekStatusPilar()" style="cursor: pointer;">
+                                            <input class="form-check-input mt-0 me-2.5 pilar-check" type="checkbox" name="sdm_tersedia" id="check_sdm" value="1" {{ !@tinjauan || @tinjauan.sdm_tersedia ? 'checked' : '' }} {{ !@can_edit ? 'disabled' : '' }} onchange="cekStatusPilar()" style="cursor: pointer;">
                                             <label class="form-check-label small fw-semibold text-dark mb-0" for="check_sdm" style="cursor: pointer; user-select: none; font-size: 0.85rem; line-height: 1.3;">
                                                 Personil &amp; SDM Analis
                                             </label>
@@ -1003,7 +1003,7 @@
                                                 Catatan SDM / Analis:
                                             </label>
                                             <button type="button" class="btn btn-link btn-sm text-secondary p-0 text-decoration-none" onclick="toggleNotePilar('sdm')" style="font-size: 0.7rem;">
-                                                <i class="bi bi-x-circle"></i> Tutup
+                                                <i class="bi bi-x-circle me-1"></i> Tutup
                                             </button>
                                         </div>
                                         <input type="text" name="sdm_catatan" id="input_sdm_catatan" class="form-control form-control-sm" style="font-size: 0.78rem;" placeholder="Misal: 2 analis siap, estimasi 5 hari kerja..." value="{{ @tinjauan.sdm_catatan ?? '' }}" oninput="cekStatusPilar()" {{ !@can_edit ? 'disabled' : '' }}>
@@ -1016,7 +1016,7 @@
                                 <div class="pilar-card p-3 border rounded-3 bg-white h-100" id="box_alat" style="border-color: #e2e8f0;">
                                     <div class="d-flex align-items-center justify-content-between">
                                         <div class="d-flex align-items-center" style="gap: 12px;">
-                                            <input class="form-check-input mt-0 pilar-check" type="checkbox" name="peralatan_tersedia" id="check_alat" value="1" {{ !@tinjauan || @tinjauan.peralatan_tersedia ? 'checked' : '' }} {{ !@can_edit ? 'disabled' : '' }} onchange="cekStatusPilar()" style="cursor: pointer;">
+                                            <input class="form-check-input mt-0 me-2.5 pilar-check" type="checkbox" name="peralatan_tersedia" id="check_alat" value="1" {{ !@tinjauan || @tinjauan.peralatan_tersedia ? 'checked' : '' }} {{ !@can_edit ? 'disabled' : '' }} onchange="cekStatusPilar()" style="cursor: pointer;">
                                             <label class="form-check-label small fw-semibold text-dark mb-0" for="check_alat" style="cursor: pointer; user-select: none; font-size: 0.85rem; line-height: 1.3;">
                                                 Peralatan &amp; Instrumen
                                             </label>
@@ -1035,7 +1035,7 @@
                                                 Catatan Alat / Instrumen:
                                             </label>
                                             <button type="button" class="btn btn-link btn-sm text-secondary p-0 text-decoration-none" onclick="toggleNotePilar('alat')" style="font-size: 0.7rem;">
-                                                <i class="bi bi-x-circle"></i> Tutup
+                                                <i class="bi bi-x-circle me-1"></i> Tutup
                                             </button>
                                         </div>
                                         <input type="text" name="peralatan_catatan" id="input_peralatan_catatan" class="form-control form-control-sm" style="font-size: 0.78rem;" placeholder="Misal: Spektrofotometer UV-Vis terkalibrasi..." value="{{ @tinjauan.peralatan_catatan ?? '' }}" oninput="cekStatusPilar()" {{ !@can_edit ? 'disabled' : '' }}>
@@ -1048,7 +1048,7 @@
                                 <div class="pilar-card p-3 border rounded-3 bg-white h-100" id="box_bahan" style="border-color: #e2e8f0;">
                                     <div class="d-flex align-items-center justify-content-between">
                                         <div class="d-flex align-items-center" style="gap: 12px;">
-                                            <input class="form-check-input mt-0 pilar-check" type="checkbox" name="bahan_tersedia" id="check_bahan" value="1" {{ !@tinjauan || @tinjauan.bahan_tersedia ? 'checked' : '' }} {{ !@can_edit ? 'disabled' : '' }} onchange="cekStatusPilar()" style="cursor: pointer;">
+                                            <input class="form-check-input mt-0 me-2.5 pilar-check" type="checkbox" name="bahan_tersedia" id="check_bahan" value="1" {{ !@tinjauan || @tinjauan.bahan_tersedia ? 'checked' : '' }} {{ !@can_edit ? 'disabled' : '' }} onchange="cekStatusPilar()" style="cursor: pointer;">
                                             <label class="form-check-label small fw-semibold text-dark mb-0" for="check_bahan" style="cursor: pointer; user-select: none; font-size: 0.85rem; line-height: 1.3;">
                                                 Bahan Kimia &amp; Reagen
                                             </label>
@@ -1067,7 +1067,7 @@
                                                 Catatan Bahan &amp; Reagen:
                                             </label>
                                             <button type="button" class="btn btn-link btn-sm text-secondary p-0 text-decoration-none" onclick="toggleNotePilar('bahan')" style="font-size: 0.7rem;">
-                                                <i class="bi bi-x-circle"></i> Tutup
+                                                <i class="bi bi-x-circle me-1"></i> Tutup
                                             </button>
                                         </div>
                                         <input type="text" name="bahan_catatan" id="input_bahan_catatan" class="form-control form-control-sm" style="font-size: 0.78rem;" placeholder="Misal: Stok reagen standar cukup..." value="{{ @tinjauan.bahan_catatan ?? '' }}" oninput="cekStatusPilar()" {{ !@can_edit ? 'disabled' : '' }}>
@@ -1080,7 +1080,7 @@
                                 <div class="pilar-card p-3 border rounded-3 bg-white h-100" id="box_metode" style="border-color: #e2e8f0;">
                                     <div class="d-flex align-items-center justify-content-between">
                                         <div class="d-flex align-items-center" style="gap: 12px;">
-                                            <input class="form-check-input mt-0 pilar-check" type="checkbox" name="metode_tersedia" id="check_metode" value="1" {{ !@tinjauan || @tinjauan.metode_tersedia ? 'checked' : '' }} {{ !@can_edit ? 'disabled' : '' }} onchange="cekStatusPilar()" style="cursor: pointer;">
+                                            <input class="form-check-input mt-0 me-2.5 pilar-check" type="checkbox" name="metode_tersedia" id="check_metode" value="1" {{ !@tinjauan || @tinjauan.metode_tersedia ? 'checked' : '' }} {{ !@can_edit ? 'disabled' : '' }} onchange="cekStatusPilar()" style="cursor: pointer;">
                                             <label class="form-check-label small fw-semibold text-dark mb-0" for="check_metode" style="cursor: pointer; user-select: none; font-size: 0.85rem; line-height: 1.3;">
                                                 Kesiapan Metode Uji
                                             </label>
@@ -1099,7 +1099,7 @@
                                                 Catatan Metode Pengujian:
                                             </label>
                                             <button type="button" class="btn btn-link btn-sm text-secondary p-0 text-decoration-none" onclick="toggleNotePilar('metode')" style="font-size: 0.7rem;">
-                                                <i class="bi bi-x-circle"></i> Tutup
+                                                <i class="bi bi-x-circle me-1"></i> Tutup
                                             </button>
                                         </div>
                                         <input type="text" name="metode_catatan" id="input_metode_catatan" class="form-control form-control-sm" style="font-size: 0.78rem;" placeholder="Misal: Mengacu SNI 19-7119.2-2005..." value="{{ @tinjauan.metode_catatan ?? '' }}" oninput="cekStatusPilar()" {{ !@can_edit ? 'disabled' : '' }}>
@@ -1121,8 +1121,8 @@
 
                         <!-- 2. Keputusan Kelayakan Layanan -->
                         <div class="mb-4" id="boxKeputusanKelayakan">
-                            <div class="d-flex align-items-center mb-1.5" style="gap: 10px;">
-                                <i class="bi bi-clipboard2-check text-primary fs-5" style="line-height: 1;"></i>
+                            <div class="d-flex align-items-center mb-2.5 gap-2">
+                                <i class="bi bi-clipboard2-check text-primary fs-5 me-2.5" style="line-height: 1;"></i>
                                 <h6 class="fw-bold text-dark m-0 font-display" style="font-size: 0.95rem; letter-spacing: -0.01em;">
                                     Keputusan Kelayakan Layanan
                                 </h6>
@@ -1131,7 +1131,7 @@
                                 <div class="col-sm-6">
                                     <input type="radio" class="btn-check" name="keputusan_kelayakan" id="kep_layak" value="dapat_dilaksanakan" {{ @tinjauan && @tinjauan.keputusan == 'dapat_dilaksanakan' ? 'checked' : (!@tinjauan ? 'checked' : '') }} {{ !@can_edit ? 'disabled' : '' }} onchange="toggleAlasanPenolakan()">
                                     <label class="choice-radio-card card-layak w-100 rounded-3 text-start p-3 d-flex flex-row align-items-center" id="label_card_layak" for="kep_layak" data-can-edit="{{ @can_edit ? '1' : '0' }}" onclick="handleKlikLayak(event)" style="cursor: {{ @can_edit ? 'pointer' : 'default' }}; min-height: 72px;">
-                                        <div class="card-icon-wrap flex-shrink-0 d-flex align-items-center justify-content-center">
+                                        <div class="card-icon-wrap flex-shrink-0 d-flex align-items-center justify-content-center me-3">
                                             <i class="bi bi-check-circle icon-outline fs-4"></i>
                                             <i class="bi bi-check-circle-fill icon-fill fs-4"></i>
                                         </div>
@@ -1144,7 +1144,7 @@
                                 <div class="col-sm-6">
                                     <input type="radio" class="btn-check" name="keputusan_kelayakan" id="kep_tidak_layak" value="tidak_dapat_dilaksanakan" {{ @tinjauan && @tinjauan.keputusan == 'tidak_dapat_dilaksanakan' ? 'checked' : '' }} {{ !@can_edit ? 'disabled' : '' }} onchange="toggleAlasanPenolakan()">
                                     <label class="choice-radio-card card-tidak-layak w-100 rounded-3 text-start p-3 d-flex flex-row align-items-center" id="label_card_tidak_layak" for="kep_tidak_layak" style="cursor: {{ @can_edit ? 'pointer' : 'default' }}; min-height: 72px;">
-                                        <div class="card-icon-wrap flex-shrink-0 d-flex align-items-center justify-content-center">
+                                        <div class="card-icon-wrap flex-shrink-0 d-flex align-items-center justify-content-center me-3">
                                             <i class="bi bi-x-circle icon-outline fs-4"></i>
                                             <i class="bi bi-x-circle-fill icon-fill fs-4"></i>
                                         </div>
