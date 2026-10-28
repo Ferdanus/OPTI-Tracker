@@ -223,7 +223,7 @@
             Penunjukan PIC Proposal / Peneliti Pelaksana <span class="text-danger">*</span>
         </label>
         <select name="pic_proposal_id" class="form-select form-select-sm border-primary" id="{{ @prefix }}selectPicProposal" onchange="updateTetapkanButtonState('{{ @prefix }}')" {{ (isset(@can_edit) && !@can_edit) ? 'disabled' : '' }} required>
-            <option value="">-- Pilih PIC Proposal / Peneliti Pelaksana (Wajib) --</option>
+            <option value="">Pilih PIC Proposal / Peneliti Pelaksana (Wajib)</option>
             <repeat group="{{ @daftar_pic ?: [] }}" value="{{ @p }}">
                 <option value="{{ @p.id_user }}" {{ (@order.pic_proposal_id == @p.id_user) ? 'selected' : '' }}>
                     {{ @p.nama_user }} ({{ @p.role_label ?: @p.role_opti }} - Divisi {{ ucfirst(@p.spesialisasi ?: @p.role_opti) }})
