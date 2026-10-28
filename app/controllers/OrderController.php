@@ -1565,8 +1565,7 @@ class OrderController extends Controller {
         $f3->set('activity_logs', $activityLogs);
         $f3->set('total_activity', count($activityLogs));
 
-        $nomorJudul = !empty($order['nomor_order']) ? $order['nomor_order'] : (!empty($order['nomor_permintaan']) ? $order['nomor_permintaan'] : '');
-        $pageTitle = $nomorJudul ? "Detail Order {$nomorJudul}" : "Detail Order";
+        $pageTitle = "Detail Order";
         $this->render('order/detail.html', $pageTitle, 'order');
     }
 
