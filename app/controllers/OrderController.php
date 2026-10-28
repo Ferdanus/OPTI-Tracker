@@ -151,7 +151,10 @@ class OrderController extends Controller {
             }
         } catch (\Exception $eCust) {}
         $f3->set('daftar_customer_opti', $daftarCustomerOpti);
-        $f3->set('hide_topbar_title', true);
+        $f3->set('breadcrumb', [
+            ['label' => 'Layanan Pelanggan', 'url' => null],
+            ['label' => 'Order', 'url' => null]
+        ]);
 
         $this->render('order/index.html', 'Daftar Order Layanan', 'order');
     }
