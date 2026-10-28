@@ -2676,9 +2676,9 @@
                                                 <!-- Body Form Tinjauan (Collapse/Expand) -->
                                                 <div id="koreksi_kajiBodyFields" class="transition-all" style="display: {{ @tinjauan ? 'block' : 'none' }};">
                                                     <!-- Evaluasi 4 Pilar Kesiapan Laboratorium -->
-                                                    <div class="d-flex align-items-center justify-content-between mb-3.5 flex-wrap gap-2">
+                                                    <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2" style="margin-bottom: 20px !important;">
                                                         <div class="d-flex align-items-center" style="gap: 10px;">
-                                                            <i class="bi bi-shield-check text-primary fs-5 me-2.5" style="line-height: 1;"></i>
+                                                            <i class="bi bi-shield-check text-primary fs-5 me-3" style="line-height: 1; margin-right: 14px !important;"></i>
                                                             <h6 class="fw-bold text-dark m-0 font-display" style="font-size: 0.95rem; letter-spacing: -0.01em;">
                                                                 Kesiapan Sumber Daya Laboratorium (4 Pilar)
                                                             </h6>
@@ -2695,7 +2695,7 @@
                                                             <div class="pilar-card p-3 border rounded-3 bg-white h-100" id="koreksi_box_sdm" style="border-color: #e2e8f0;">
                                                                 <div class="d-flex align-items-center justify-content-between">
                                                                     <div class="d-flex align-items-center" style="gap: 12px;">
-                                                                        <input class="form-check-input mt-0 me-2.5 pilar-check" type="checkbox" name="sdm_tersedia" id="koreksi_check_sdm" value="1" {{ !@tinjauan || @tinjauan.sdm_tersedia ? 'checked' : '' }} onchange="cekStatusPilar('koreksi_')" style="cursor: pointer;">
+                                                                        <input class="form-check-input mt-0 me-3 pilar-check" style="margin-right: 12px !important;" type="checkbox" name="sdm_tersedia" id="koreksi_check_sdm" value="1" {{ !@tinjauan || @tinjauan.sdm_tersedia ? 'checked' : '' }} onchange="cekStatusPilar('koreksi_')" style="cursor: pointer;">
                                                                         <label class="form-check-label small fw-semibold text-dark mb-0" for="koreksi_check_sdm" style="cursor: pointer; user-select: none; font-size: 0.85rem; line-height: 1.3;">
                                                                             Personil &amp; SDM Analis
                                                                         </label>
@@ -2727,7 +2727,7 @@
                                                             <div class="pilar-card p-3 border rounded-3 bg-white h-100" id="koreksi_box_alat" style="border-color: #e2e8f0;">
                                                                 <div class="d-flex align-items-center justify-content-between">
                                                                     <div class="d-flex align-items-center" style="gap: 12px;">
-                                                                        <input class="form-check-input mt-0 me-2.5 pilar-check" type="checkbox" name="peralatan_tersedia" id="koreksi_check_alat" value="1" {{ !@tinjauan || @tinjauan.peralatan_tersedia ? 'checked' : '' }} onchange="cekStatusPilar('koreksi_')" style="cursor: pointer;">
+                                                                        <input class="form-check-input mt-0 me-3 pilar-check" style="margin-right: 12px !important;" type="checkbox" name="peralatan_tersedia" id="koreksi_check_alat" value="1" {{ !@tinjauan || @tinjauan.peralatan_tersedia ? 'checked' : '' }} onchange="cekStatusPilar('koreksi_')" style="cursor: pointer;">
                                                                         <label class="form-check-label small fw-semibold text-dark mb-0" for="koreksi_check_alat" style="cursor: pointer; user-select: none; font-size: 0.85rem; line-height: 1.3;">
                                                                             Peralatan &amp; Instrumen
                                                                         </label>
@@ -2759,7 +2759,7 @@
                                                             <div class="pilar-card p-3 border rounded-3 bg-white h-100" id="koreksi_box_bahan" style="border-color: #e2e8f0;">
                                                                 <div class="d-flex align-items-center justify-content-between">
                                                                     <div class="d-flex align-items-center" style="gap: 12px;">
-                                                                        <input class="form-check-input mt-0 me-2.5 pilar-check" type="checkbox" name="bahan_tersedia" id="koreksi_check_bahan" value="1" {{ !@tinjauan || @tinjauan.bahan_tersedia ? 'checked' : '' }} onchange="cekStatusPilar('koreksi_')" style="cursor: pointer;">
+                                                                        <input class="form-check-input mt-0 me-3 pilar-check" style="margin-right: 12px !important;" type="checkbox" name="bahan_tersedia" id="koreksi_check_bahan" value="1" {{ !@tinjauan || @tinjauan.bahan_tersedia ? 'checked' : '' }} onchange="cekStatusPilar('koreksi_')" style="cursor: pointer;">
                                                                         <label class="form-check-label small fw-semibold text-dark mb-0" for="koreksi_check_bahan" style="cursor: pointer; user-select: none; font-size: 0.85rem; line-height: 1.3;">
                                                                             Bahan Kimia &amp; Reagen
                                                                         </label>
@@ -2791,7 +2791,7 @@
                                                             <div class="pilar-card p-3 border rounded-3 bg-white h-100" id="koreksi_box_metode" style="border-color: #e2e8f0;">
                                                                 <div class="d-flex align-items-center justify-content-between">
                                                                     <div class="d-flex align-items-center" style="gap: 12px;">
-                                                                        <input class="form-check-input mt-0 me-2.5 pilar-check" type="checkbox" name="metode_tersedia" id="koreksi_check_metode" value="1" {{ !@tinjauan || @tinjauan.metode_tersedia ? 'checked' : '' }} onchange="cekStatusPilar('koreksi_')" style="cursor: pointer;">
+                                                                        <input class="form-check-input mt-0 me-3 pilar-check" style="margin-right: 12px !important;" type="checkbox" name="metode_tersedia" id="koreksi_check_metode" value="1" {{ !@tinjauan || @tinjauan.metode_tersedia ? 'checked' : '' }} onchange="cekStatusPilar('koreksi_')" style="cursor: pointer;">
                                                                         <label class="form-check-label small fw-semibold text-dark mb-0" for="koreksi_check_metode" style="cursor: pointer; user-select: none; font-size: 0.85rem; line-height: 1.3;">
                                                                             Kesiapan Metode Uji
                                                                         </label>
@@ -2832,8 +2832,8 @@
 
                                                     <!-- Keputusan Kelayakan Layanan -->
                                                     <div class="mb-4" id="koreksi_boxKeputusanKelayakan">
-                                                        <div class="d-flex align-items-center mb-3.5 gap-2">
-                                                            <i class="bi bi-clipboard2-check text-primary fs-5 me-2.5" style="line-height: 1;"></i>
+                                                        <div class="d-flex align-items-center mb-4 gap-2" style="margin-bottom: 20px !important;">
+                                                            <i class="bi bi-clipboard2-check text-primary fs-5 me-3" style="line-height: 1; margin-right: 14px !important;"></i>
                                                             <h6 class="fw-bold text-dark m-0 font-display" style="font-size: 0.95rem; letter-spacing: -0.01em;">
                                                                 Keputusan Kelayakan Layanan
                                                             </h6>
@@ -3073,9 +3073,9 @@
                                         <!-- Body Form Tinjauan (Collapse/Expand) -->
                                         <div id="kajiBodyFields" class="transition-all" style="display: {{ @tinjauan ? 'block' : 'none' }};">
                                             <!-- 1. Evaluasi 4 Pilar Kesiapan Laboratorium -->
-                                            <div class="d-flex align-items-center justify-content-between mb-3.5 flex-wrap gap-2">
+                                            <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2" style="margin-bottom: 20px !important;">
                                                 <div class="d-flex align-items-center" style="gap: 10px;">
-                                                    <i class="bi bi-shield-check text-primary fs-5 me-2.5" style="line-height: 1;"></i>
+                                                    <i class="bi bi-shield-check text-primary fs-5 me-3" style="line-height: 1; margin-right: 14px !important;"></i>
                                                     <h6 class="fw-bold text-dark m-0 font-display" style="font-size: 0.95rem; letter-spacing: -0.01em;">
                                                         Kesiapan Sumber Daya Laboratorium (4 Pilar)
                                                     </h6>
@@ -3092,7 +3092,7 @@
                                                     <div class="pilar-card p-3 border rounded-3 bg-white h-100" id="box_sdm" style="border-color: #e2e8f0;">
                                                         <div class="d-flex align-items-center justify-content-between">
                                                             <div class="d-flex align-items-center" style="gap: 12px;">
-                                                                <input class="form-check-input mt-0 me-2.5 pilar-check" type="checkbox" name="sdm_tersedia" id="check_sdm" value="1" {{ !@tinjauan || @tinjauan.sdm_tersedia ? 'checked' : '' }} onchange="cekStatusPilar()" style="cursor: pointer;">
+                                                                <input class="form-check-input mt-0 me-3 pilar-check" style="margin-right: 12px !important;" type="checkbox" name="sdm_tersedia" id="check_sdm" value="1" {{ !@tinjauan || @tinjauan.sdm_tersedia ? 'checked' : '' }} onchange="cekStatusPilar()" style="cursor: pointer;">
                                                                 <label class="form-check-label small fw-semibold text-dark mb-0" for="check_sdm" style="cursor: pointer; user-select: none; font-size: 0.85rem; line-height: 1.3;">
                                                                     Personil &amp; SDM Analis
                                                                 </label>
@@ -3124,7 +3124,7 @@
                                                     <div class="pilar-card p-3 border rounded-3 bg-white h-100" id="box_alat" style="border-color: #e2e8f0;">
                                                         <div class="d-flex align-items-center justify-content-between">
                                                             <div class="d-flex align-items-center" style="gap: 12px;">
-                                                                <input class="form-check-input mt-0 me-2.5 pilar-check" type="checkbox" name="peralatan_tersedia" id="check_alat" value="1" {{ !@tinjauan || @tinjauan.peralatan_tersedia ? 'checked' : '' }} onchange="cekStatusPilar()" style="cursor: pointer;">
+                                                                <input class="form-check-input mt-0 me-3 pilar-check" style="margin-right: 12px !important;" type="checkbox" name="peralatan_tersedia" id="check_alat" value="1" {{ !@tinjauan || @tinjauan.peralatan_tersedia ? 'checked' : '' }} onchange="cekStatusPilar()" style="cursor: pointer;">
                                                                 <label class="form-check-label small fw-semibold text-dark mb-0" for="check_alat" style="cursor: pointer; user-select: none; font-size: 0.85rem; line-height: 1.3;">
                                                                     Peralatan &amp; Instrumen
                                                                 </label>
@@ -3156,7 +3156,7 @@
                                                     <div class="pilar-card p-3 border rounded-3 bg-white h-100" id="box_bahan" style="border-color: #e2e8f0;">
                                                         <div class="d-flex align-items-center justify-content-between">
                                                             <div class="d-flex align-items-center" style="gap: 12px;">
-                                                                <input class="form-check-input mt-0 me-2.5 pilar-check" type="checkbox" name="bahan_tersedia" id="check_bahan" value="1" {{ !@tinjauan || @tinjauan.bahan_tersedia ? 'checked' : '' }} onchange="cekStatusPilar()" style="cursor: pointer;">
+                                                                <input class="form-check-input mt-0 me-3 pilar-check" style="margin-right: 12px !important;" type="checkbox" name="bahan_tersedia" id="check_bahan" value="1" {{ !@tinjauan || @tinjauan.bahan_tersedia ? 'checked' : '' }} onchange="cekStatusPilar()" style="cursor: pointer;">
                                                                 <label class="form-check-label small fw-semibold text-dark mb-0" for="check_bahan" style="cursor: pointer; user-select: none; font-size: 0.85rem; line-height: 1.3;">
                                                                     Bahan Kimia &amp; Reagen
                                                                 </label>
@@ -3188,7 +3188,7 @@
                                                     <div class="pilar-card p-3 border rounded-3 bg-white h-100" id="box_metode" style="border-color: #e2e8f0;">
                                                         <div class="d-flex align-items-center justify-content-between">
                                                             <div class="d-flex align-items-center" style="gap: 12px;">
-                                                                <input class="form-check-input mt-0 me-2.5 pilar-check" type="checkbox" name="metode_tersedia" id="check_metode" value="1" {{ !@tinjauan || @tinjauan.metode_tersedia ? 'checked' : '' }} onchange="cekStatusPilar()" style="cursor: pointer;">
+                                                                <input class="form-check-input mt-0 me-3 pilar-check" style="margin-right: 12px !important;" type="checkbox" name="metode_tersedia" id="check_metode" value="1" {{ !@tinjauan || @tinjauan.metode_tersedia ? 'checked' : '' }} onchange="cekStatusPilar()" style="cursor: pointer;">
                                                                 <label class="form-check-label small fw-semibold text-dark mb-0" for="check_metode" style="cursor: pointer; user-select: none; font-size: 0.85rem; line-height: 1.3;">
                                                                     Kesiapan Metode Uji
                                                                 </label>
@@ -3229,8 +3229,8 @@
 
                                             <!-- 2. Keputusan Kelayakan Layanan -->
                                             <div class="mb-4" id="boxKeputusanKelayakan">
-                                                <div class="d-flex align-items-center mb-3.5 gap-2">
-                                                    <i class="bi bi-clipboard2-check text-primary fs-5 me-2.5" style="line-height: 1;"></i>
+                                                <div class="d-flex align-items-center mb-4 gap-2" style="margin-bottom: 20px !important;">
+                                                    <i class="bi bi-clipboard2-check text-primary fs-5 me-3" style="line-height: 1; margin-right: 14px !important;"></i>
                                                     <h6 class="fw-bold text-dark m-0 font-display" style="font-size: 0.95rem; letter-spacing: -0.01em;">
                                                         Keputusan Kelayakan Layanan
                                                     </h6>
@@ -3511,9 +3511,9 @@
                                             <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
 
                                             <!-- 1. Evaluasi 4 Pilar Kesiapan Laboratorium -->
-                                            <div class="d-flex align-items-center justify-content-between mb-3.5 flex-wrap gap-2">
+                                            <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2" style="margin-bottom: 20px !important;">
                                                 <div class="d-flex align-items-center" style="gap: 10px;">
-                                                    <i class="bi bi-shield-check text-primary fs-5 me-2.5" style="line-height: 1;"></i>
+                                                    <i class="bi bi-shield-check text-primary fs-5 me-3" style="line-height: 1; margin-right: 14px !important;"></i>
                                                     <h6 class="fw-bold text-dark m-0 font-display" style="font-size: 0.95rem; letter-spacing: -0.01em;">
                                                         Kesiapan Sumber Daya Laboratorium (4 Pilar)
                                                     </h6>
@@ -3530,7 +3530,7 @@
                                                     <div class="pilar-card p-3 border rounded-3 bg-white h-100" id="edit_box_sdm" style="border-color: #e2e8f0;">
                                                         <div class="d-flex align-items-center justify-content-between">
                                                             <div class="d-flex align-items-center" style="gap: 12px;">
-                                                                <input class="form-check-input mt-0 me-2.5 pilar-check" type="checkbox" name="sdm_tersedia" id="edit_check_sdm" value="1" {{ !empty(@tinjauan.sdm_tersedia) ? 'checked' : '' }} onchange="cekStatusPilar('edit_')" style="cursor: pointer;">
+                                                                <input class="form-check-input mt-0 me-3 pilar-check" style="margin-right: 12px !important;" type="checkbox" name="sdm_tersedia" id="edit_check_sdm" value="1" {{ !empty(@tinjauan.sdm_tersedia) ? 'checked' : '' }} onchange="cekStatusPilar('edit_')" style="cursor: pointer;">
                                                                 <label class="form-check-label small fw-semibold text-dark mb-0" for="edit_check_sdm" style="cursor: pointer; user-select: none; font-size: 0.85rem; line-height: 1.3;">
                                                                     Personil &amp; SDM Analis
                                                                 </label>
@@ -3567,7 +3567,7 @@
                                                     <div class="pilar-card p-3 border rounded-3 bg-white h-100" id="edit_box_alat" style="border-color: #e2e8f0;">
                                                         <div class="d-flex align-items-center justify-content-between">
                                                             <div class="d-flex align-items-center" style="gap: 12px;">
-                                                                <input class="form-check-input mt-0 me-2.5 pilar-check" type="checkbox" name="peralatan_tersedia" id="edit_check_alat" value="1" {{ !empty(@tinjauan.peralatan_tersedia) ? 'checked' : '' }} onchange="cekStatusPilar('edit_')" style="cursor: pointer;">
+                                                                <input class="form-check-input mt-0 me-3 pilar-check" style="margin-right: 12px !important;" type="checkbox" name="peralatan_tersedia" id="edit_check_alat" value="1" {{ !empty(@tinjauan.peralatan_tersedia) ? 'checked' : '' }} onchange="cekStatusPilar('edit_')" style="cursor: pointer;">
                                                                 <label class="form-check-label small fw-semibold text-dark mb-0" for="edit_check_alat" style="cursor: pointer; user-select: none; font-size: 0.85rem; line-height: 1.3;">
                                                                     Peralatan &amp; Instrumen
                                                                 </label>
@@ -3604,7 +3604,7 @@
                                                     <div class="pilar-card p-3 border rounded-3 bg-white h-100" id="edit_box_bahan" style="border-color: #e2e8f0;">
                                                         <div class="d-flex align-items-center justify-content-between">
                                                             <div class="d-flex align-items-center" style="gap: 12px;">
-                                                                <input class="form-check-input mt-0 me-2.5 pilar-check" type="checkbox" name="bahan_tersedia" id="edit_check_bahan" value="1" {{ !empty(@tinjauan.bahan_tersedia) ? 'checked' : '' }} onchange="cekStatusPilar('edit_')" style="cursor: pointer;">
+                                                                <input class="form-check-input mt-0 me-3 pilar-check" style="margin-right: 12px !important;" type="checkbox" name="bahan_tersedia" id="edit_check_bahan" value="1" {{ !empty(@tinjauan.bahan_tersedia) ? 'checked' : '' }} onchange="cekStatusPilar('edit_')" style="cursor: pointer;">
                                                                 <label class="form-check-label small fw-semibold text-dark mb-0" for="edit_check_bahan" style="cursor: pointer; user-select: none; font-size: 0.85rem; line-height: 1.3;">
                                                                     Bahan Kimia &amp; Reagen
                                                                 </label>
@@ -3641,7 +3641,7 @@
                                                     <div class="pilar-card p-3 border rounded-3 bg-white h-100" id="edit_box_metode" style="border-color: #e2e8f0;">
                                                         <div class="d-flex align-items-center justify-content-between">
                                                             <div class="d-flex align-items-center" style="gap: 12px;">
-                                                                <input class="form-check-input mt-0 me-2.5 pilar-check" type="checkbox" name="metode_tersedia" id="edit_check_metode" value="1" {{ !empty(@tinjauan.metode_tersedia) ? 'checked' : '' }} onchange="cekStatusPilar('edit_')" style="cursor: pointer;">
+                                                                <input class="form-check-input mt-0 me-3 pilar-check" style="margin-right: 12px !important;" type="checkbox" name="metode_tersedia" id="edit_check_metode" value="1" {{ !empty(@tinjauan.metode_tersedia) ? 'checked' : '' }} onchange="cekStatusPilar('edit_')" style="cursor: pointer;">
                                                                 <label class="form-check-label small fw-semibold text-dark mb-0" for="edit_check_metode" style="cursor: pointer; user-select: none; font-size: 0.85rem; line-height: 1.3;">
                                                                     Kesiapan Metode Uji
                                                                 </label>
@@ -3687,8 +3687,8 @@
 
                                             <!-- 2. Keputusan Kelayakan -->
                                             <div class="mb-4" id="edit_boxKeputusanKelayakan">
-                                                <div class="d-flex align-items-center mb-3.5 gap-2">
-                                                    <i class="bi bi-clipboard2-check text-primary fs-5 me-2.5" style="line-height: 1;"></i>
+                                                <div class="d-flex align-items-center mb-4 gap-2" style="margin-bottom: 20px !important;">
+                                                    <i class="bi bi-clipboard2-check text-primary fs-5 me-3" style="line-height: 1; margin-right: 14px !important;"></i>
                                                     <h6 class="fw-bold text-dark m-0 font-display" style="font-size: 0.95rem; letter-spacing: -0.01em;">
                                                         Keputusan Kelayakan Layanan
                                                     </h6>
@@ -3811,9 +3811,9 @@
                                     <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
 
                                     <!-- 1. Evaluasi 4 Pilar Kesiapan Laboratorium -->
-                                    <div class="d-flex align-items-center justify-content-between mb-3.5 flex-wrap gap-2">
+                                    <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2" style="margin-bottom: 20px !important;">
                                         <div class="d-flex align-items-center" style="gap: 10px;">
-                                            <i class="bi bi-shield-check text-primary fs-5 me-2.5" style="line-height: 1;"></i>
+                                            <i class="bi bi-shield-check text-primary fs-5 me-3" style="line-height: 1; margin-right: 14px !important;"></i>
                                             <h6 class="fw-bold text-dark m-0 font-display" style="font-size: 0.95rem; letter-spacing: -0.01em;">
                                                 Kesiapan Sumber Daya Laboratorium (4 Pilar)
                                             </h6>
@@ -3830,7 +3830,7 @@
                                             <div class="pilar-card p-3 border rounded-3 bg-white h-100" id="box_sdm" style="border-color: #e2e8f0;">
                                                 <div class="d-flex align-items-center justify-content-between">
                                                     <div class="d-flex align-items-center" style="gap: 12px;">
-                                                        <input class="form-check-input mt-0 me-2.5 pilar-check" type="checkbox" name="sdm_tersedia" id="check_sdm" value="1" {{ !@tinjauan || @tinjauan.sdm_tersedia ? 'checked' : '' }} onchange="cekStatusPilar()" style="cursor: pointer;">
+                                                        <input class="form-check-input mt-0 me-3 pilar-check" style="margin-right: 12px !important;" type="checkbox" name="sdm_tersedia" id="check_sdm" value="1" {{ !@tinjauan || @tinjauan.sdm_tersedia ? 'checked' : '' }} onchange="cekStatusPilar()" style="cursor: pointer;">
                                                         <label class="form-check-label small fw-semibold text-dark mb-0" for="check_sdm" style="cursor: pointer; user-select: none; font-size: 0.85rem; line-height: 1.3;">
                                                             Personil &amp; SDM Analis
                                                         </label>
@@ -3867,7 +3867,7 @@
                                             <div class="pilar-card p-3 border rounded-3 bg-white h-100" id="box_alat" style="border-color: #e2e8f0;">
                                                 <div class="d-flex align-items-center justify-content-between">
                                                     <div class="d-flex align-items-center" style="gap: 12px;">
-                                                        <input class="form-check-input mt-0 me-2.5 pilar-check" type="checkbox" name="peralatan_tersedia" id="check_alat" value="1" {{ !@tinjauan || @tinjauan.peralatan_tersedia ? 'checked' : '' }} onchange="cekStatusPilar()" style="cursor: pointer;">
+                                                        <input class="form-check-input mt-0 me-3 pilar-check" style="margin-right: 12px !important;" type="checkbox" name="peralatan_tersedia" id="check_alat" value="1" {{ !@tinjauan || @tinjauan.peralatan_tersedia ? 'checked' : '' }} onchange="cekStatusPilar()" style="cursor: pointer;">
                                                         <label class="form-check-label small fw-semibold text-dark mb-0" for="check_alat" style="cursor: pointer; user-select: none; font-size: 0.85rem; line-height: 1.3;">
                                                             Peralatan &amp; Instrumen
                                                         </label>
@@ -3904,7 +3904,7 @@
                                             <div class="pilar-card p-3 border rounded-3 bg-white h-100" id="box_bahan" style="border-color: #e2e8f0;">
                                                 <div class="d-flex align-items-center justify-content-between">
                                                     <div class="d-flex align-items-center" style="gap: 12px;">
-                                                        <input class="form-check-input mt-0 me-2.5 pilar-check" type="checkbox" name="bahan_tersedia" id="check_bahan" value="1" {{ !@tinjauan || @tinjauan.bahan_tersedia ? 'checked' : '' }} onchange="cekStatusPilar()" style="cursor: pointer;">
+                                                        <input class="form-check-input mt-0 me-3 pilar-check" style="margin-right: 12px !important;" type="checkbox" name="bahan_tersedia" id="check_bahan" value="1" {{ !@tinjauan || @tinjauan.bahan_tersedia ? 'checked' : '' }} onchange="cekStatusPilar()" style="cursor: pointer;">
                                                         <label class="form-check-label small fw-semibold text-dark mb-0" for="check_bahan" style="cursor: pointer; user-select: none; font-size: 0.85rem; line-height: 1.3;">
                                                             Bahan Kimia &amp; Reagen
                                                         </label>
@@ -3941,7 +3941,7 @@
                                             <div class="pilar-card p-3 border rounded-3 bg-white h-100" id="box_metode" style="border-color: #e2e8f0;">
                                                 <div class="d-flex align-items-center justify-content-between">
                                                     <div class="d-flex align-items-center" style="gap: 12px;">
-                                                        <input class="form-check-input mt-0 me-2.5 pilar-check" type="checkbox" name="metode_tersedia" id="check_metode" value="1" {{ !@tinjauan || @tinjauan.metode_tersedia ? 'checked' : '' }} onchange="cekStatusPilar()" style="cursor: pointer;">
+                                                        <input class="form-check-input mt-0 me-3 pilar-check" style="margin-right: 12px !important;" type="checkbox" name="metode_tersedia" id="check_metode" value="1" {{ !@tinjauan || @tinjauan.metode_tersedia ? 'checked' : '' }} onchange="cekStatusPilar()" style="cursor: pointer;">
                                                         <label class="form-check-label small fw-semibold text-dark mb-0" for="check_metode" style="cursor: pointer; user-select: none; font-size: 0.85rem; line-height: 1.3;">
                                                             Kesiapan Metode Uji
                                                         </label>
@@ -3987,8 +3987,8 @@
 
                                     <!-- 2. Keputusan Kelayakan -->
                                     <div class="mb-4" id="boxKeputusanKelayakan">
-                                        <div class="d-flex align-items-center mb-3.5 gap-2">
-                                            <i class="bi bi-clipboard2-check text-primary fs-5 me-2.5" style="line-height: 1;"></i>
+                                        <div class="d-flex align-items-center mb-4 gap-2" style="margin-bottom: 20px !important;">
+                                            <i class="bi bi-clipboard2-check text-primary fs-5 me-3" style="line-height: 1; margin-right: 14px !important;"></i>
                                             <h6 class="fw-bold text-dark m-0 font-display" style="font-size: 0.95rem; letter-spacing: -0.01em;">
                                                 Keputusan Kelayakan Layanan
                                             </h6>
