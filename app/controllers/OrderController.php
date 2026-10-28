@@ -1551,6 +1551,8 @@ class OrderController extends Controller {
                 // Format & persingkat deskripsi agar ringkas dan rapi
                 $desc = $act['deskripsi'];
                 $desc = str_replace(' (Mode Pratinjau / Read-Only)', '', $desc);
+                $desc = str_replace(' (PIC: PIC Terpilih)', '', $desc);
+                $desc = str_replace('(PIC: PIC Terpilih)', '', $desc);
                 $desc = str_replace('Menetapkan Kaji Ulang Kelayakan Teknis ISO 17025: ', 'Kaji kelayakan: ', $desc);
                 $desc = str_replace('Mengisi Formulir Permintaan Pelayanan Jasa dan mendisposisikan ke ', 'Disposisi layanan ke ', $desc);
                 $desc = str_replace('Mengisi Formulir Permintaan Pelayanan Jasa & Kaji Kelayakan ', 'Formulir layanan & kaji kelayakan ', $desc);
@@ -2032,9 +2034,20 @@ class OrderController extends Controller {
             $namaKetua = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'Ketua Tim OPTI');
             StageAudit::recordKirim($this->db, $id, 3, 'Kaji Kelayakan Teknis Layanan (ISO 17025)', $userId, $namaKetua, 'Ketua Tim OPTI', null, 'Kaji Kelayakan Ditetapkan');
 
-            $picNama = !empty($post['pic_nama']) ? $post['pic_nama'] : 'PIC Terpilih';
+            $picNama = '';
+            if (!empty($post['pic_proposal_id'])) {
+                $picRow = $this->db->exec("SELECT nama_user FROM tb_arsipuser WHERE id_user = ?", [1 => (int)$post['pic_proposal_id']]);
+                if (!empty($picRow[0]['nama_user'])) {
+                    $picNama = $picRow[0]['nama_user'];
+                }
+            }
+            if (empty($picNama) && !empty($post['pic_nama']) && $post['pic_nama'] !== 'PIC Terpilih') {
+                $picNama = trim($post['pic_nama']);
+            }
+            $picSuffix = !empty($picNama) ? " (PIC: {$picNama})" : '';
+
             if ($hasil['keputusan'] === 'dapat_dilaksanakan') {
-                $this->logActivity($id, 'kaji_kelayakan', 'simpan_tinjauan', "Menetapkan Kaji Ulang Kelayakan Teknis ISO 17025: Dapat Dilaksanakan (PIC: {$picNama})");
+                $this->logActivity($id, 'kaji_kelayakan', 'simpan_tinjauan', "Menetapkan Kaji Ulang Kelayakan Teknis ISO 17025: Dapat Dilaksanakan{$picSuffix}");
             } else {
                 $alasan = !empty($post['alasan_penolakan']) ? ' (Alasan: ' . $post['alasan_penolakan'] . ')' : '';
                 $this->logActivity($id, 'kaji_kelayakan', 'tolak_tinjauan', "Menetapkan Kaji Ulang Kelayakan Teknis ISO 17025: Tidak Dapat Dilaksanakan{$alasan}");
