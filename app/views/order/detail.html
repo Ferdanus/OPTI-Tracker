@@ -1013,8 +1013,8 @@
 
         .stage-nav-grid {
             display: grid;
-            grid-template-columns: repeat(8, minmax(0, 1fr));
-            gap: 6px;
+            grid-template-columns: repeat(9, minmax(0, 1fr));
+            gap: 5px;
             margin: 0;
             padding: 0;
             list-style: none;
@@ -1032,8 +1032,8 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 4px;
-            padding: 0.45rem 0.2rem;
+            gap: 3px;
+            padding: 0.45rem 0.15rem;
             min-height: 52px;
             border-radius: 8px;
             border: 1px solid #e2e8f0;
@@ -1091,7 +1091,7 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-            font-size: 0.74rem;
+            font-size: 0.72rem;
             font-weight: 700;
         }
 
@@ -1173,8 +1173,15 @@
 
         @media (max-width: 991.98px) {
             .stage-nav-grid {
-                grid-template-columns: repeat(4, 1fr);
-                gap: 6px;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 5px;
+            }
+        }
+
+        @media (max-width: 575.98px) {
+            .stage-nav-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 4px;
             }
         }
         /* ======================================================== */
