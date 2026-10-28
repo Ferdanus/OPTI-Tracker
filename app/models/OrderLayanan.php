@@ -810,20 +810,47 @@ class OrderLayanan extends \DB\SQL\Mapper {
         $isDeal = (($o['status'] ?? '') === 'penawaran_deal' || ($o['status_respon_klien'] ?? '') === 'deal' || ($o['status_penawaran'] ?? '') === 'deal');
         $isLunas = (($o['status_keuangan'] ?? '') === 'lunas' || (float)($o['total_terbayar'] ?? 0) > 0);
 
-        // Jika sudah DEAL & LUNAS, namun PO belum dibuat -> Alur masuk ke Tahap 7 (Sampel & PO)
+        // Jika sudah DEAL & LUNAS, namun PO belum dibuat -> Alur masuk ke Tahap 7 (Sampel / Titik Awal SPM & PO)
         if ($isDeal && $isLunas) {
             if (empty($o['tanggal_terima_sampel']) && empty($o['tanggal_spm_mulai'])) {
-                return [
-                    'label' => 'Menunggu Sampel',
-                    'class' => 'status-pill status-pill-amber',
-                    'icon'  => 'bi-box-seam-fill',
-                    'user'  => 'Tim Mitra & Pelanggan',
-                    'keterangan_aksi'   => 'Menunggu Kiriman Sampel',
-                    'keterangan_sub'    => 'Dari: ' . (!empty($o['nama_perusahaan']) ? $o['nama_perusahaan'] : 'Pelanggan'),
-                    'keterangan_detail' => 'Sampel uji belum sampai di laboratorium',
-                    'keterangan_icon'   => 'bi-box-seam text-warning',
-                    'aksi_badge' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
-                ];
+                $triggerTipe = $o['spm_trigger_tipe'] ?? 'sampel';
+                if ($triggerTipe === 'kick_off') {
+                    return [
+                        'label' => 'Menunggu Kick-Off',
+                        'class' => 'status-pill status-pill-amber',
+                        'icon'  => 'bi-calendar-event-fill',
+                        'user'  => 'Tim Mitra & Pelanggan',
+                        'keterangan_aksi'   => 'Menunggu Kick-Off',
+                        'keterangan_sub'    => 'Klien: ' . (!empty($o['nama_perusahaan']) ? $o['nama_perusahaan'] : 'Pelanggan'),
+                        'keterangan_detail' => 'Menunggu pelaksanaan pertemuan kick-off',
+                        'keterangan_icon'   => 'bi-calendar-event text-warning',
+                        'aksi_badge' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
+                    ];
+                } elseif ($triggerTipe === 'tanda_tangan_pks') {
+                    return [
+                        'label' => 'Menunggu PKS',
+                        'class' => 'status-pill status-pill-amber',
+                        'icon'  => 'bi-pen-fill',
+                        'user'  => 'Tim Mitra & Pelanggan',
+                        'keterangan_aksi'   => 'Menunggu TTD PKS',
+                        'keterangan_sub'    => 'Klien: ' . (!empty($o['nama_perusahaan']) ? $o['nama_perusahaan'] : 'Pelanggan'),
+                        'keterangan_detail' => 'Menunggu penandatanganan perjanjian kerjasama (PKS)',
+                        'keterangan_icon'   => 'bi-pen text-warning',
+                        'aksi_badge' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
+                    ];
+                } else {
+                    return [
+                        'label' => 'Menunggu Sampel',
+                        'class' => 'status-pill status-pill-amber',
+                        'icon'  => 'bi-box-seam-fill',
+                        'user'  => 'Tim Mitra & Pelanggan',
+                        'keterangan_aksi'   => 'Menunggu Kiriman Sampel',
+                        'keterangan_sub'    => 'Dari: ' . (!empty($o['nama_perusahaan']) ? $o['nama_perusahaan'] : 'Pelanggan'),
+                        'keterangan_detail' => 'Sampel uji belum sampai di laboratorium',
+                        'keterangan_icon'   => 'bi-box-seam text-warning',
+                        'aksi_badge' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
+                    ];
+                }
             } elseif (empty($o['ketua_pelaksana_id'])) {
                 return [
                     'label' => 'Penunjukan Pelaksana',
