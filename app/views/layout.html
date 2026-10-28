@@ -118,47 +118,26 @@
             line-height: 1;
             flex-shrink: 0;
         }
-        .status-pill-blue {
-            background-color: #eff6ff !important;
-            color: #1d4ed8 !important;
-            border-color: #bfdbfe !important;
+        .status-pill-blue,
+        .status-pill-sky,
+        .status-pill-amber,
+        .status-pill-indigo,
+        .status-pill-emerald,
+        .status-pill-rose,
+        .status-pill-slate {
+            background-color: #f8fafc !important;
+            color: #334155 !important;
+            border-color: #cbd5e1 !important;
         }
-        .status-pill-blue i { color: #2563eb !important; }
-
-        .status-pill-sky {
-            background-color: #f0f9ff !important;
-            color: #0284c7 !important;
-            border-color: #bae6fd !important;
+        .status-pill-blue i,
+        .status-pill-sky i,
+        .status-pill-amber i,
+        .status-pill-indigo i,
+        .status-pill-emerald i,
+        .status-pill-rose i,
+        .status-pill-slate i {
+            color: #64748b !important;
         }
-        .status-pill-sky i { color: #0284c7 !important; }
-
-        .status-pill-amber {
-            background-color: #fffbeb !important;
-            color: #b45309 !important;
-            border-color: #fde68a !important;
-        }
-        .status-pill-amber i { color: #d97706 !important; }
-
-        .status-pill-indigo {
-            background-color: #eef2ff !important;
-            color: #4338ca !important;
-            border-color: #c7d2fe !important;
-        }
-        .status-pill-indigo i { color: #4f46e5 !important; }
-
-        .status-pill-emerald {
-            background-color: #ecfdf5 !important;
-            color: #047857 !important;
-            border-color: #a7f3d0 !important;
-        }
-        .status-pill-emerald i { color: #059669 !important; }
-
-        .status-pill-rose {
-            background-color: #fef2f2 !important;
-            color: #b91c1c !important;
-            border-color: #fecaca !important;
-        }
-        .status-pill-rose i { color: #dc2626 !important; }
 
         .status-pill-slate {
             background-color: #f8fafc !important;
@@ -214,15 +193,12 @@
             border: 1px solid #e2e8f0;
             transition: all 0.2s;
         }
-        .filter-tab-pill .count-chip.chip-danger {
-            background-color: #fee2e2;
-            color: #b91c1c;
-            border-color: #fecaca;
-        }
-        .filter-tab-pill .count-chip.chip-success {
-            background-color: #ecfdf5;
-            color: #047857;
-            border-color: #a7f3d0;
+        .filter-tab-pill .count-chip.chip-danger,
+        .filter-tab-pill .count-chip.chip-success,
+        .filter-tab-pill .count-chip.chip-warning {
+            background-color: #f1f5f9;
+            color: #475569;
+            border-color: #e2e8f0;
         }
         .filter-tab-pill.active {
             color: #ffffff !important;
@@ -239,8 +215,8 @@
             color: #ffffff !important;
         }
         .filter-tab-pill.tab-selesai.active {
-            background-color: #059669 !important;
-            border-color: #059669 !important;
+            background-color: #1e293b !important;
+            border-color: #1e293b !important;
             box-shadow: 0 2px 6px rgba(5, 150, 105, 0.25) !important;
             color: #ffffff !important;
         }
@@ -250,8 +226,8 @@
             color: #ffffff !important;
         }
         .filter-tab-pill.tab-ditolak.active {
-            background-color: #dc2626 !important;
-            border-color: #dc2626 !important;
+            background-color: #1e293b !important;
+            border-color: #1e293b !important;
             box-shadow: 0 2px 6px rgba(220, 38, 38, 0.25) !important;
             color: #ffffff !important;
         }
@@ -1530,7 +1506,7 @@
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%230284c7'%3E%3Cpath d='M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z'/%3E%3C/svg%3E") !important;
         }
         body .swal2-popup.swal2-toast .swal2-timer-progress-bar {
-            background: #059669 !important;
+            background: #1e293b !important;
             height: 3px !important;
         }
         body .swal2-popup.swal2-toast .swal2-actions {
@@ -1571,11 +1547,11 @@
         body .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success {
             border-color: #a7f3d0 !important;
             background-color: #ecfdf5 !important;
-            color: #059669 !important;
+            color: #1e293b !important;
             box-shadow: 0 0 0 5px rgba(209, 250, 229, 0.6) !important;
         }
         body .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success [class^='swal2-success-line'] {
-            background-color: #059669 !important;
+            background-color: #1e293b !important;
             height: 3px !important;
         }
         body .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success .swal2-success-ring {
@@ -1591,11 +1567,11 @@
         body .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-error {
             border-color: #fecaca !important;
             background-color: #fef2f2 !important;
-            color: #dc2626 !important;
+            color: #1e293b !important;
             box-shadow: 0 0 0 5px rgba(254, 226, 226, 0.6) !important;
         }
         body .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-error [class^='swal2-x-mark-line'] {
-            background-color: #dc2626 !important;
+            background-color: #1e293b !important;
             height: 3px !important;
         }
 
@@ -1717,7 +1693,7 @@
         body button.swal2-styled.swal2-confirm[style*="#881337"],
         body button.swal2-styled.swal2-confirm[style*="#be123c"],
         body button.swal2-styled.swal2-confirm.btn-danger {
-            background-color: #dc2626 !important;
+            background-color: #1e293b !important;
             background-image: none !important;
             border: 1px solid #b91c1c !important;
             color: #ffffff !important;
