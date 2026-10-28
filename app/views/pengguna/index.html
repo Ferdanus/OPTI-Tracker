@@ -615,6 +615,62 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // Live Search Pegawai di Modal Tambah Pengguna
+    const inputSearchPegawai = document.getElementById('searchPegawaiTambah');
+    const selectPegawai = document.getElementById('selectPegawaiTambah');
+    const btnClearSearch = document.getElementById('btnClearSearchPegawai');
+    const countLabel = document.getElementById('countPegawaiFiltered');
+
+    if (inputSearchPegawai && selectPegawai) {
+        const originalOptions = Array.from(selectPegawai.options);
+
+        inputSearchPegawai.addEventListener('input', function() {
+            const query = this.value.toLowerCase().trim();
+            if (btnClearSearch) {
+                btnClearSearch.style.display = query.length > 0 ? 'block' : 'none';
+            }
+
+            let matchCount = 0;
+            originalOptions.forEach(opt => {
+                const nama = (opt.getAttribute('data-nama') || '').toLowerCase();
+                const id = (opt.getAttribute('data-id') || '').toLowerCase();
+                const text = opt.textContent.toLowerCase();
+
+                if (!query || nama.includes(query) || id.includes(query) || text.includes(query)) {
+                    opt.hidden = false;
+                    opt.style.display = '';
+                    matchCount++;
+                } else {
+                    opt.hidden = true;
+                    opt.style.display = 'none';
+                }
+            });
+
+            if (countLabel) {
+                countLabel.textContent = query ? 'Ditemukan ' + matchCount + ' pegawai' : 'Tersedia ' + originalOptions.length + ' pegawai';
+            }
+        });
+
+        if (btnClearSearch) {
+            btnClearSearch.addEventListener('click', function() {
+                inputSearchPegawai.value = '';
+                inputSearchPegawai.dispatchEvent(new Event('input'));
+                inputSearchPegawai.focus();
+            });
+        }
+
+        // Reset pencarian saat modal ditutup / dibuka
+        const modalTambahEl = document.getElementById('modalTambahPengguna');
+        if (modalTambahEl) {
+            modalTambahEl.addEventListener('show.bs.modal', function() {
+                if (inputSearchPegawai) {
+                    inputSearchPegawai.value = '';
+                    inputSearchPegawai.dispatchEvent(new Event('input'));
+                }
+            });
+        }
+    }
+
     // Listener Modal Tambah Pengguna
     const selectTambahRole = document.getElementById('tambah_role_sistem');
     const warningTambah = document.getElementById('tambah_ketua_warning');
