@@ -159,6 +159,17 @@ class OrderController extends Controller {
      * Tandai order yang butuh aksi / merupakan tugas dari user yang sedang login
      */
     protected function markUserTasks(array &$rows, string $userRole, ?int $userId, string $userLayanan): int {
+        // Super Admin tidak memiliki tugas pengerjaan alur operasional order (khusus maintenance & akses seluruh order)
+        if ($userRole === 'superadmin') {
+            foreach ($rows as &$r) {
+                $r['is_user_task'] = false;
+                $r['user_task_reason'] = '';
+                $r['user_task_badge'] = '';
+            }
+            unset($r);
+            return 0;
+        }
+
         $count = 0;
         foreach ($rows as &$r) {
             $isTask = false;
@@ -262,12 +273,6 @@ class OrderController extends Controller {
                     $isTask = true;
                     $reason = 'Menunggu pencatatan / verifikasi pelunasan pembayaran';
                     $badge = 'Perlu Pembayaran';
-                }
-            } elseif ($userRole === 'superadmin') {
-                if (($r['status'] ?? '') === 'permintaan_masuk' || ($r['status_proposal_biaya'] ?? '') === 'menunggu_approval' || !empty($r['is_unlocked_edit'])) {
-                    $isTask = true;
-                    $reason = !empty($r['is_unlocked_edit']) ? 'Izin edit sedang terbuka' : 'Perlu atensi manajemen';
-                    $badge = 'Perhatian';
                 }
             }
 
