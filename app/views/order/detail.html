@@ -134,7 +134,7 @@
             transition: all 0.15s ease;
         }
         .step-circle.done {
-            background: #059669;
+            background: #1e293b;
             color: #ffffff;
         }
         .step-circle.current {
@@ -153,7 +153,7 @@
             white-space: nowrap;
         }
         .step-text.current { color: #0f172a; font-weight: 700; }
-        .step-text.done { color: #059669; }
+        .step-text.done { color: #1e293b; font-weight: 600; }
 
         /* Action Guide / Panduan Langkah Berikutnya */
         .action-guide-card {
@@ -166,17 +166,12 @@
             background: #f8fafc;
             border-color: #cbd5e1;
         }
-        .action-guide-card.type-warning {
-            background: #fffbeb;
-            border-color: #fde68a;
-        }
-        .action-guide-card.type-success {
-            background: #f0fdf4;
-            border-color: #bbf7d0;
-        }
-        .action-guide-card.type-danger {
-            background: #fef2f2;
-            border-color: #fecaca;
+        .action-guide-card.type-warning,
+        .action-guide-card.type-success,
+        .action-guide-card.type-danger,
+        .action-guide-card.type-primary {
+            background: #f8fafc !important;
+            border-color: #cbd5e1 !important;
         }
 
         .action-guide-body {
@@ -207,8 +202,8 @@
             color: #475569;
         }
         .action-guide-card.type-warning .action-guide-icon {
-            color: #d97706;
-            border-color: #fde68a;
+            color: #475569;
+            border-color: #cbd5e1;
         }
         .action-guide-card.type-success .action-guide-icon {
             color: #059669;
@@ -271,6 +266,9 @@
             align-items: center;
             gap: 0.4rem;
             border-radius: 6px;
+            background-color: #1e293b !important;
+            border-color: #1e293b !important;
+            color: #ffffff !important;
         }
 
         @media (max-width: 767.98px) {
@@ -1113,7 +1111,7 @@
         }
 
         /* Active styling overrides for badges */
-        .stage-nav-btn.active .stage-status-badge.bg-success-subtle {
+        .stage-nav-btn.active .stage-status-badge.bg-light border {
             background-color: #059669 !important;
             color: #ffffff !important;
             border-color: transparent !important;
@@ -1674,27 +1672,27 @@
                 <div class="d-flex align-items-center gap-2 flex-wrap mb-2">
                     <h4 class="fw-bold text-dark m-0 font-display me-2 fs-4">{{ @order.judul_kegiatan }}</h4>
                     <check if="{{ @order.jenis_layanan_opti == 'selulosa' }}">
-                        <span class="badge bg-danger text-white text-uppercase fw-bold px-3 py-1.5 rounded-pill shadow-xs" style="font-size: 0.88rem; letter-spacing: 0.4px;">
+                        <span class="badge bg-light text-dark border text-uppercase fw-bold px-3 py-1.5 rounded-pill" style="font-size: 0.82rem; letter-spacing: 0.4px;">
                             OPTI SELULOSA
                         </span>
                     </check>
                     <check if="{{ @order.jenis_layanan_opti == 'lingkungan' }}">
-                        <span class="badge bg-success text-white text-uppercase fw-bold px-3 py-1.5 rounded-pill shadow-xs" style="font-size: 0.88rem; letter-spacing: 0.4px;">
+                        <span class="badge bg-light text-dark border text-uppercase fw-bold px-3 py-1.5 rounded-pill" style="font-size: 0.82rem; letter-spacing: 0.4px;">
                             OPTI LINGKUNGAN
                         </span>
                     </check>
                     <check if="{{ !@order.jenis_layanan_opti || @order.jenis_layanan_opti == 'belum_ditentukan' }}">
-                        <span class="badge bg-secondary text-white text-uppercase fw-bold px-3 py-1.5 rounded-pill shadow-xs" style="font-size: 0.88rem;">
+                        <span class="badge bg-light text-muted border text-uppercase fw-bold px-3 py-1.5 rounded-pill" style="font-size: 0.82rem;">
                             BELUM DITENTUKAN
                         </span>
                     </check>
                     <check if="{{ @order.status == 'permintaan_masuk' }}">
-                        <span class="badge bg-warning text-dark fw-bold px-3 py-1.5 rounded-pill shadow-xs" style="font-size: 0.88rem;">
+                        <span class="badge text-white fw-bold px-3 py-1.5 rounded-pill" style="background-color: #1e293b; font-size: 0.82rem;">
                             Menunggu Disposisi
                         </span>
                     </check>
                     <check if="{{ @order.status == 'baru' }}">
-                        <span class="badge fw-bold px-3 py-1.5 rounded-pill shadow-xs" style="font-size: 0.88rem; background-color: #0284c7 !important; color: #ffffff !important;">
+                        <span class="badge text-white fw-bold px-3 py-1.5 rounded-pill" style="background-color: #1e293b; font-size: 0.82rem;">
                             Order Aktif
                         </span>
                     </check>
@@ -1785,7 +1783,7 @@
                     <a href="#cardProfil" class="step-checkpoint {{ 1 > @current_step ? 'disabled' : '' }}" data-bs-toggle="tooltip" title="Tahap 1: Asal permohonan dan profil pelanggan">
                         <div class="step-circle done"><i class="bi bi-check-lg"></i></div>
                         <span class="step-text done">{{ @order.media_permohonan && @order.media_permohonan != 'surat' ? 'Permohonan' : 'Surat Masuk' }}</span>
-                        <span class="text-success" style="font-size: 0.65rem;"><i class="bi bi-check-circle-fill"></i> Selesai</span>
+                        <span class="text-muted" style="font-size: 0.65rem;"><i class="bi bi-check-circle-fill text-secondary"></i> Selesai</span>
                     </a>
 
                     <!-- Step 2: Form Pelayanan (Tim Mitra) -->
@@ -1796,8 +1794,8 @@
                             <check if="{{ @stepper[2].state == 'waiting' }}"><i class="bi bi-file-earmark-medical"></i></check>
                         </div>
                         <span class="step-text {{ @stepper[2].state }}">Form Pelayanan</span>
-                        <check if="{{ @stepper[2].state == 'done' }}"><span class="text-success" style="font-size: 0.65rem;"><i class="bi bi-check-circle-fill"></i> Selesai</span></check>
-                        <check if="{{ @stepper[2].state == 'current' }}"><span class="badge bg-primary text-white rounded-pill px-1.5 py-0.5 fw-bold" style="font-size: 0.62rem;">Aktif</span></check>
+                        <check if="{{ @stepper[2].state == 'done' }}"><span class="text-muted" style="font-size: 0.65rem;"><i class="bi bi-check-circle-fill text-secondary"></i> Selesai</span></check>
+                        <check if="{{ @stepper[2].state == 'current' }}"><span class="badge bg-dark text-white rounded-pill px-1.5 py-0.5 fw-bold" style="background-color: #1e293b !important; font-size: 0.62rem;">Aktif</span></check>
                         <check if="{{ @stepper[2].state == 'waiting' }}"><span class="text-muted" style="font-size: 0.65rem;">Menunggu</span></check>
                     </a>
 
@@ -1809,8 +1807,8 @@
                             <check if="{{ @stepper[3].state == 'waiting' }}"><i class="bi bi-clipboard"></i></check>
                         </div>
                         <span class="step-text {{ @stepper[3].state }}">Kaji Kelayakan</span>
-                        <check if="{{ @stepper[3].state == 'done' }}"><span class="text-success" style="font-size: 0.65rem;"><i class="bi bi-check-circle-fill"></i> Selesai</span></check>
-                        <check if="{{ @stepper[3].state == 'current' }}"><span class="badge bg-primary text-white rounded-pill px-1.5 py-0.5 fw-bold" style="font-size: 0.62rem;">Aktif</span></check>
+                        <check if="{{ @stepper[3].state == 'done' }}"><span class="text-muted" style="font-size: 0.65rem;"><i class="bi bi-check-circle-fill text-secondary"></i> Selesai</span></check>
+                        <check if="{{ @stepper[3].state == 'current' }}"><span class="badge bg-dark text-white rounded-pill px-1.5 py-0.5 fw-bold" style="background-color: #1e293b !important; font-size: 0.62rem;">Aktif</span></check>
                         <check if="{{ @stepper[3].state == 'waiting' }}"><span class="text-muted" style="font-size: 0.65rem;">Menunggu</span></check>
                     </a>
 
@@ -1822,8 +1820,8 @@
                             <check if="{{ @stepper[4].state == 'waiting' }}"><i class="bi bi-calculator"></i></check>
                         </div>
                         <span class="step-text {{ @stepper[4].state }}">{{ @order.jenis_layanan_opti == 'lingkungan' ? 'Tarif &amp; Parameter' : 'Proposal Teknis' }}</span>
-                        <check if="{{ @stepper[4].state == 'done' }}"><span class="text-success" style="font-size: 0.65rem;"><i class="bi bi-check-circle-fill"></i> Selesai</span></check>
-                        <check if="{{ @stepper[4].state == 'current' }}"><span class="badge bg-primary text-white rounded-pill px-1.5 py-0.5 fw-bold" style="font-size: 0.62rem;">Aktif</span></check>
+                        <check if="{{ @stepper[4].state == 'done' }}"><span class="text-muted" style="font-size: 0.65rem;"><i class="bi bi-check-circle-fill text-secondary"></i> Selesai</span></check>
+                        <check if="{{ @stepper[4].state == 'current' }}"><span class="badge bg-dark text-white rounded-pill px-1.5 py-0.5 fw-bold" style="background-color: #1e293b !important; font-size: 0.62rem;">Aktif</span></check>
                         <check if="{{ @stepper[4].state == 'waiting' }}"><span class="text-muted" style="font-size: 0.65rem;">Menunggu</span></check>
                     </a>
 
@@ -1835,8 +1833,8 @@
                             <check if="{{ @stepper[5].state == 'waiting' }}"><i class="bi bi-file-earmark-text"></i></check>
                         </div>
                         <span class="step-text {{ @stepper[5].state }}">Penawaran</span>
-                        <check if="{{ @stepper[5].state == 'done' }}"><span class="text-success" style="font-size: 0.65rem;"><i class="bi bi-check-circle-fill"></i> Selesai</span></check>
-                        <check if="{{ @stepper[5].state == 'current' }}"><span class="badge bg-primary text-white rounded-pill px-1.5 py-0.5 fw-bold" style="font-size: 0.62rem;">Aktif</span></check>
+                        <check if="{{ @stepper[5].state == 'done' }}"><span class="text-muted" style="font-size: 0.65rem;"><i class="bi bi-check-circle-fill text-secondary"></i> Selesai</span></check>
+                        <check if="{{ @stepper[5].state == 'current' }}"><span class="badge bg-dark text-white rounded-pill px-1.5 py-0.5 fw-bold" style="background-color: #1e293b !important; font-size: 0.62rem;">Aktif</span></check>
                         <check if="{{ @stepper[5].state == 'waiting' }}"><span class="text-muted" style="font-size: 0.65rem;">Menunggu</span></check>
                     </a>
 
@@ -1848,8 +1846,8 @@
                             <check if="{{ @stepper[6].state == 'waiting' }}"><i class="bi bi-receipt-cutoff"></i></check>
                         </div>
                         <span class="step-text {{ @stepper[6].state }}">Pembayaran</span>
-                        <check if="{{ @stepper[6].state == 'done' }}"><span class="text-success" style="font-size: 0.65rem;"><i class="bi bi-check-circle-fill"></i> Selesai</span></check>
-                        <check if="{{ @stepper[6].state == 'current' }}"><span class="badge bg-primary text-white rounded-pill px-1.5 py-0.5 fw-bold" style="font-size: 0.62rem;">Aktif</span></check>
+                        <check if="{{ @stepper[6].state == 'done' }}"><span class="text-muted" style="font-size: 0.65rem;"><i class="bi bi-check-circle-fill text-secondary"></i> Selesai</span></check>
+                        <check if="{{ @stepper[6].state == 'current' }}"><span class="badge bg-dark text-white rounded-pill px-1.5 py-0.5 fw-bold" style="background-color: #1e293b !important; font-size: 0.62rem;">Aktif</span></check>
                         <check if="{{ @stepper[6].state == 'waiting' }}"><span class="text-muted" style="font-size: 0.65rem;">Menunggu</span></check>
                     </a>
 
@@ -1861,8 +1859,8 @@
                             <check if="{{ @stepper[7].state == 'waiting' }}"><i class="bi bi-stopwatch"></i></check>
                         </div>
                         <span class="step-text {{ @stepper[7].state }}">Aktivasi SPM</span>
-                        <check if="{{ @stepper[7].state == 'done' }}"><span class="text-success" style="font-size: 0.65rem;"><i class="bi bi-check-circle-fill"></i> Selesai</span></check>
-                        <check if="{{ @stepper[7].state == 'current' }}"><span class="badge bg-primary text-white rounded-pill px-1.5 py-0.5 fw-bold" style="font-size: 0.62rem;">Aktif</span></check>
+                        <check if="{{ @stepper[7].state == 'done' }}"><span class="text-muted" style="font-size: 0.65rem;"><i class="bi bi-check-circle-fill text-secondary"></i> Selesai</span></check>
+                        <check if="{{ @stepper[7].state == 'current' }}"><span class="badge bg-dark text-white rounded-pill px-1.5 py-0.5 fw-bold" style="background-color: #1e293b !important; font-size: 0.62rem;">Aktif</span></check>
                         <check if="{{ @stepper[7].state == 'waiting' }}"><span class="text-muted" style="font-size: 0.65rem;">Menunggu</span></check>
                     </a>
 
@@ -1874,8 +1872,8 @@
                             <check if="{{ @stepper[8].state == 'waiting' }}"><i class="bi bi-file-earmark-check"></i></check>
                         </div>
                         <span class="step-text {{ @stepper[8].state }}">PO Kegiatan</span>
-                        <check if="{{ @stepper[8].state == 'done' }}"><span class="text-success" style="font-size: 0.65rem;"><i class="bi bi-check-circle-fill"></i> Selesai</span></check>
-                        <check if="{{ @stepper[8].state == 'current' }}"><span class="badge bg-primary text-white rounded-pill px-1.5 py-0.5 fw-bold" style="font-size: 0.62rem;">Aktif</span></check>
+                        <check if="{{ @stepper[8].state == 'done' }}"><span class="text-muted" style="font-size: 0.65rem;"><i class="bi bi-check-circle-fill text-secondary"></i> Selesai</span></check>
+                        <check if="{{ @stepper[8].state == 'current' }}"><span class="badge bg-dark text-white rounded-pill px-1.5 py-0.5 fw-bold" style="background-color: #1e293b !important; font-size: 0.62rem;">Aktif</span></check>
                         <check if="{{ @stepper[8].state == 'waiting' }}"><span class="text-muted" style="font-size: 0.65rem;">Menunggu</span></check>
                     </a>
 
@@ -1887,8 +1885,8 @@
                             <check if="{{ @stepper[9].state == 'waiting' }}"><i class="bi bi-patch-check"></i></check>
                         </div>
                         <span class="step-text {{ @stepper[9].state }}">BAST</span>
-                        <check if="{{ @stepper[9].state == 'done' }}"><span class="text-success" style="font-size: 0.65rem;"><i class="bi bi-check-circle-fill"></i> Selesai</span></check>
-                        <check if="{{ @stepper[9].state == 'current' }}"><span class="badge bg-primary text-white rounded-pill px-1.5 py-0.5 fw-bold" style="font-size: 0.62rem;">Aktif</span></check>
+                        <check if="{{ @stepper[9].state == 'done' }}"><span class="text-muted" style="font-size: 0.65rem;"><i class="bi bi-check-circle-fill text-secondary"></i> Selesai</span></check>
+                        <check if="{{ @stepper[9].state == 'current' }}"><span class="badge bg-dark text-white rounded-pill px-1.5 py-0.5 fw-bold" style="background-color: #1e293b !important; font-size: 0.62rem;">Aktif</span></check>
                         <check if="{{ @stepper[9].state == 'waiting' }}"><span class="text-muted" style="font-size: 0.65rem;">Menunggu</span></check>
                     </a>
                 </div>
@@ -1998,7 +1996,7 @@
                         <span class="stage-nav-text">{{ @order.media_permohonan && @order.media_permohonan != 'surat' ? 'Permohonan' : 'Surat Masuk' }}</span>
                     </div>
                     <div class="stage-nav-status-row">
-                        <span class="badge bg-success-subtle text-success stage-status-badge">Selesai</span>
+                        <span class="badge bg-light border text-dark stage-status-badge">Selesai</span>
                     </div>
                 </button>
             </li>
@@ -2011,13 +2009,13 @@
                     </div>
                     <div class="stage-nav-status-row">
                         <check if="{{ in_array(@order.status, ['draft_disimpan', 'draft']) }}">
-                            <true><span class="badge bg-warning text-dark stage-status-badge">Draft</span></true>
+                            <true><span class="badge bg-light text-dark border stage-status-badge">Draft</span></true>
                             <false>
                                 <check if="{{ @stepper[2].state == 'done' }}">
-                                    <true><span class="badge bg-success-subtle text-success stage-status-badge">Selesai</span></true>
+                                    <true><span class="badge bg-light border text-dark stage-status-badge">Selesai</span></true>
                                     <false>
                                         <check if="{{ @stepper[2].state == 'current' }}">
-                                            <true><span class="badge bg-primary text-white stage-status-badge">Aktif</span></true>
+                                            <true><span class="badge text-white stage-status-badge" style="background-color: #1e293b !important;">Aktif</span></true>
                                             <false><span class="badge bg-light text-muted stage-status-badge">Menunggu</span></false>
                                         </check>
                                     </false>
@@ -2036,13 +2034,13 @@
                     </div>
                     <div class="stage-nav-status-row">
                         <check if="{{ !empty(@tinjauan) && !empty(@tinjauan.is_draft) }}">
-                            <true><span class="badge bg-warning text-dark stage-status-badge">Draft</span></true>
+                            <true><span class="badge bg-light text-dark border stage-status-badge">Draft</span></true>
                             <false>
                                 <check if="{{ @stepper[3].state == 'done' }}">
-                                    <true><span class="badge bg-success-subtle text-success stage-status-badge">Selesai</span></true>
+                                    <true><span class="badge bg-light border text-dark stage-status-badge">Selesai</span></true>
                                     <false>
                                         <check if="{{ @stepper[3].state == 'current' }}">
-                                            <true><span class="badge bg-primary text-white stage-status-badge">Aktif</span></true>
+                                            <true><span class="badge text-white stage-status-badge" style="background-color: #1e293b !important;">Aktif</span></true>
                                             <false><span class="badge bg-light text-muted stage-status-badge">Menunggu</span></false>
                                         </check>
                                     </false>
@@ -2064,7 +2062,7 @@
                             <true><span class="badge bg-light text-muted stage-status-badge">Menunggu</span></true>
                             <false>
                                 <check if="{{ in_array(@proposal.status_proposal, ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan']) || in_array(@order.status_proposal_biaya, ['siap_penawaran', 'disetujui']) || @stepper[4].state == 'done' }}">
-                                    <true><span class="badge bg-success-subtle text-success stage-status-badge">Selesai</span></true>
+                                    <true><span class="badge bg-light border text-dark stage-status-badge">Selesai</span></true>
                                     <false>
                                         <check if="{{ in_array(@proposal.status_proposal, ['ditolak', 'revisi']) || @order.status_proposal_biaya == 'perlu_revisi' }}">
                                             <true><span class="badge bg-danger-subtle text-danger stage-status-badge">Revisi</span></true>
@@ -2073,9 +2071,9 @@
                                                     <true><span class="badge bg-info-subtle text-info-emphasis stage-status-badge">Diajukan</span></true>
                                                     <false>
                                                         <check if="{{ @order.status_proposal_biaya == 'draft_disimpan' || (!empty(@proposal) && @proposal.status_proposal == 'draft_disimpan') || (!empty(@proposal) && @proposal.status_proposal == 'draft' && (!empty(@proposal.file_proposal) || !empty(@proposal.judul_proposal))) }}">
-                                                            <true><span class="badge bg-warning text-dark stage-status-badge">Draft</span></true>
+                                                            <true><span class="badge bg-light text-dark border stage-status-badge">Draft</span></true>
                                                             <false>
-                                                                <span class="badge bg-primary text-white stage-status-badge">Aktif</span>
+                                                                <span class="badge text-white stage-status-badge" style="background-color: #1e293b !important;">Aktif</span>
                                                             </false>
                                                         </check>
                                                     </false>
@@ -2101,18 +2099,18 @@
                             <true><span class="badge bg-light text-muted stage-status-badge">Menunggu</span></true>
                             <false>
                                 <check if="{{ !empty(@penawaran) && @penawaran.status_respon_klien == 'deal' }}">
-                                    <true><span class="badge bg-success-subtle text-success stage-status-badge">Selesai</span></true>
+                                    <true><span class="badge bg-light border text-dark stage-status-badge">Selesai</span></true>
                                     <false>
                                         <check if="{{ !empty(@penawaran) && @penawaran.status_respon_klien == 'revisi' }}">
-                                            <true><span class="badge bg-warning text-dark stage-status-badge">Revisi</span></true>
+                                            <true><span class="badge bg-light text-dark border stage-status-badge">Revisi</span></true>
                                             <false>
                                                 <check if="{{ !empty(@penawaran) && @penawaran.status_respon_klien == 'draft' }}">
-                                                    <true><span class="badge bg-warning text-dark stage-status-badge">Draft</span></true>
+                                                    <true><span class="badge bg-light text-dark border stage-status-badge">Draft</span></true>
                                                     <false>
                                                         <check if="{{ @stepper[5].state == 'done' }}">
-                                                            <true><span class="badge bg-success-subtle text-success stage-status-badge">Selesai</span></true>
+                                                            <true><span class="badge bg-light border text-dark stage-status-badge">Selesai</span></true>
                                                             <false>
-                                                                <span class="badge bg-primary text-white stage-status-badge">Aktif</span>
+                                                                <span class="badge text-white stage-status-badge" style="background-color: #1e293b !important;">Aktif</span>
                                                             </false>
                                                         </check>
                                                     </false>
@@ -2138,15 +2136,15 @@
                             <true><span class="badge bg-light text-muted stage-status-badge">Menunggu</span></true>
                             <false>
                                 <check if="{{ (@order.status_keuangan == 'lunas') || !empty(@riwayat_bayar) }}">
-                                    <true><span class="badge bg-success-subtle text-success stage-status-badge">Selesai</span></true>
+                                    <true><span class="badge bg-light border text-dark stage-status-badge">Selesai</span></true>
                                     <false>
                                         <check if="{{ @order.status_keuangan == 'terbayar_sebagian' }}">
                                             <true><span class="badge bg-info text-white stage-status-badge">Sebagian</span></true>
                                             <false>
                                                 <check if="{{ @stepper[6].state == 'done' }}">
-                                                    <true><span class="badge bg-success-subtle text-success stage-status-badge">Selesai</span></true>
+                                                    <true><span class="badge bg-light border text-dark stage-status-badge">Selesai</span></true>
                                                     <false>
-                                                        <span class="badge bg-primary text-white stage-status-badge">Aktif</span>
+                                                        <span class="badge text-white stage-status-badge" style="background-color: #1e293b !important;">Aktif</span>
                                                     </false>
                                                 </check>
                                             </false>
@@ -2170,12 +2168,12 @@
                             <true><span class="badge bg-light text-muted stage-status-badge">Menunggu</span></true>
                             <false>
                                 <check if="{{ !empty(@order.tanggal_spm_mulai) || !empty(@order.tanggal_terima_sampel) }}">
-                                    <true><span class="badge bg-success-subtle text-success stage-status-badge">SPM Aktif</span></true>
+                                    <true><span class="badge bg-light border text-success stage-status-badge">SPM Aktif</span></true>
                                     <false>
                                         <check if="{{ @stepper[7].state == 'done' }}">
-                                            <true><span class="badge bg-success-subtle text-success stage-status-badge">Selesai</span></true>
+                                            <true><span class="badge bg-light border text-dark stage-status-badge">Selesai</span></true>
                                             <false>
-                                                <span class="badge bg-primary text-white stage-status-badge">Aktif</span>
+                                                <span class="badge text-white stage-status-badge" style="background-color: #1e293b !important;">Aktif</span>
                                             </false>
                                         </check>
                                     </false>
@@ -2197,7 +2195,7 @@
                             <true><span class="badge bg-light text-muted stage-status-badge">Menunggu</span></true>
                             <false>
                                 <check if="{{ @stepper[8].state == 'done' }}">
-                                    <true><span class="badge bg-success-subtle text-success stage-status-badge">Selesai</span></true>
+                                    <true><span class="badge bg-light border text-dark stage-status-badge">Selesai</span></true>
                                     <false>
                                         <check if="{{ !empty(@order.nomor_po) }}">
                                             <true><span class="badge bg-info-subtle text-info-emphasis stage-status-badge">PO Aktif</span></true>
@@ -2205,7 +2203,7 @@
                                                 <check if="{{ !empty(@order.tanggal_spm_mulai) || !empty(@order.tanggal_terima_sampel) }}">
                                                     <true><span class="badge bg-warning-subtle text-warning-emphasis stage-status-badge">Siap Terbit</span></true>
                                                     <false>
-                                                        <span class="badge bg-primary text-white stage-status-badge">Aktif</span>
+                                                        <span class="badge text-white stage-status-badge" style="background-color: #1e293b !important;">Aktif</span>
                                                     </false>
                                                 </check>
                                             </false>
@@ -2232,9 +2230,9 @@
                                     <true><span class="badge bg-success text-white stage-status-badge">Selesai</span></true>
                                     <false>
                                         <check if="{{ @stepper[9].state == 'done' }}">
-                                            <true><span class="badge bg-success-subtle text-success stage-status-badge">Selesai</span></true>
+                                            <true><span class="badge bg-light border text-dark stage-status-badge">Selesai</span></true>
                                             <false>
-                                                <span class="badge bg-primary text-white stage-status-badge">Aktif</span>
+                                                <span class="badge text-white stage-status-badge" style="background-color: #1e293b !important;">Aktif</span>
                                             </false>
                                         </check>
                                     </false>
@@ -2499,7 +2497,7 @@
                 <div class="p-3 p-md-4">
                     <!-- KONDISI 1: SUDAH DIDISPOSISIKAN / SELESAI TAHAP 2 (TAMPILAN RINGKASAN READ-ONLY) -->
                     <check if="{{ @is_form_pelayanan_done }}">
-                        <div class="p-3 rounded-3 border {{ @order.jenis_layanan_opti == 'selulosa' ? 'bg-danger-subtle border-danger-subtle' : 'bg-success-subtle border-success-subtle' }} mb-3">
+                        <div class="p-3 rounded-3 border {{ @order.jenis_layanan_opti == 'selulosa' ? 'bg-danger-subtle border-danger-subtle' : 'bg-light border border-success-subtle' }} mb-3">
                             <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
                                 <div class="d-flex align-items-center gap-3">
                                     <div class="icon-tile bg-white shadow-sm {{ @order.jenis_layanan_opti == 'selulosa' ? 'text-danger' : 'text-success' }}">
@@ -2705,7 +2703,7 @@
                                                             </h6>
                                                         </div>
                                                         <div>
-                                                            <span id="koreksi_badgeStandar" class="badge bg-success-subtle text-success border border-success-subtle py-1.5 px-2.5 fw-semibold" style="font-size: 0.74rem;">
+                                                            <span id="koreksi_badgeStandar" class="badge bg-light border text-success border border-success-subtle py-1.5 px-2.5 fw-semibold" style="font-size: 0.74rem;">
                                                                 <i class="bi bi-check2-all me-1"></i> Standar Terpenuhi
                                                             </span>
                                                         </div>
@@ -3117,7 +3115,7 @@
                                                     </h6>
                                                 </div>
                                                 <div>
-                                                    <span id="badgeStandar" class="badge bg-success-subtle text-success border border-success-subtle py-1.5 px-2.5 fw-semibold" style="font-size: 0.74rem;">
+                                                    <span id="badgeStandar" class="badge bg-light border text-success border border-success-subtle py-1.5 px-2.5 fw-semibold" style="font-size: 0.74rem;">
                                                         <i class="bi bi-check2-all me-1"></i> Standar Terpenuhi
                                                     </span>
                                                 </div>
@@ -3563,7 +3561,7 @@
                                                     </h6>
                                                 </div>
                                                 <div>
-                                                    <span id="edit_badgeStandar" class="badge bg-success-subtle text-success border border-success-subtle py-1.5 px-2.5 fw-semibold" style="font-size: 0.74rem;">
+                                                    <span id="edit_badgeStandar" class="badge bg-light border text-success border border-success-subtle py-1.5 px-2.5 fw-semibold" style="font-size: 0.74rem;">
                                                         <i class="bi bi-check2-all me-1"></i> Standar Terpenuhi
                                                     </span>
                                                 </div>
@@ -3870,7 +3868,7 @@
                                             </h6>
                                         </div>
                                         <div>
-                                            <span id="badgeStandar" class="badge bg-success-subtle text-success border border-success-subtle py-1.5 px-2.5 fw-semibold" style="font-size: 0.74rem;">
+                                            <span id="badgeStandar" class="badge bg-light border text-success border border-success-subtle py-1.5 px-2.5 fw-semibold" style="font-size: 0.74rem;">
                                                 <i class="bi bi-check2-all me-1"></i> Standar Terpenuhi
                                             </span>
                                         </div>
@@ -4736,7 +4734,7 @@
                                             </div>
                                             <div class="card-body p-3">
                                                 <div class="mb-2">
-                                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-0.5 fw-semibold mb-2">
+                                                    <span class="badge bg-light border text-success border border-success-subtle px-2 py-0.5 fw-semibold mb-2">
                                                         <i class="bi bi-check2-circle me-1"></i> Dapat Dilaksanakan
                                                     </span>
                                                 </div>
@@ -4805,7 +4803,7 @@
                                                 
                                                 <!-- Status Proposal Badge -->
                                                 <check if="{{ @proposal && in_array(@proposal.status_proposal, ['disetujui_ketua', 'disetujui_pimpinan', 'disetujui']) }}">
-                                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-0.5" style="font-size: 0.72rem;">
+                                                    <span class="badge bg-light border text-success border border-success-subtle px-2 py-0.5" style="font-size: 0.72rem;">
                                                         <i class="bi bi-check-circle me-1"></i> Disetujui Ka. Tim
                                                     </span>
                                                 </check>
@@ -4944,7 +4942,7 @@
                                                                             {{ basename(@proposal.file_proposal) }}
                                                                         </div>
                                                                         <div class="d-flex align-items-center gap-2" style="margin-top: 4px;">
-                                                                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-0.5 rounded-pill" style="font-size: 0.68rem;">
+                                                                            <span class="badge bg-light border text-success border border-success-subtle px-2 py-0.5 rounded-pill" style="font-size: 0.68rem;">
                                                                                 Tersimpan
                                                                             </span>
                                                                             <check if="{{ @proposal.durasi_kegiatan }}">
@@ -5038,7 +5036,7 @@
                                                             <check if="{{ @is_proposal_approved || in_array(@order.status_proposal_biaya, ['siap_penawaran', 'disetujui']) || in_array(@proposal.status_proposal, ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan']) }}">
                                                                 <true>
                                                                     <div class="d-flex justify-content-between align-items-center gap-2 w-100 flex-wrap">
-                                                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1.5 small fw-semibold d-inline-flex align-items-center gap-1">
+                                                                        <span class="badge bg-light border text-success border border-success-subtle px-2.5 py-1.5 small fw-semibold d-inline-flex align-items-center gap-1">
                                                                             <i class="bi bi-check-circle-fill"></i> Telah Disetujui Ka. Tim
                                                                         </span>
                                                                         <button type="submit" name="action_type" value="simpan_katim" class="btn btn-primary btn-sm px-4 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 ms-auto">
@@ -5223,7 +5221,7 @@
                                     <div class="d-flex align-items-center justify-content-between pb-3 mb-3 border-bottom flex-wrap gap-2">
                                         <div class="d-flex align-items-center gap-2 flex-wrap">
                                             <check if="{{ @penawaran.status_respon_klien == 'deal' }}">
-                                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 fw-bold">
+                                                <span class="badge bg-light border text-success border border-success-subtle px-2.5 py-1 fw-bold">
                                                     <i class="bi bi-check-circle-fill me-1"></i> DISETUJUI (DEAL)
                                                 </span>
                                             </check>
@@ -5343,7 +5341,7 @@
                                 <div class="card border rounded-3 mt-3 shadow-xs overflow-hidden {{ !empty(@penawaran.file_penawaran_ttd) ? 'border-success-subtle' : 'border-warning-subtle' }}" id="cardDokumenDeal1">
                                     <div class="p-3 bg-white d-flex align-items-center justify-content-between flex-wrap gap-2">
                                         <div class="d-flex align-items-center gap-3">
-                                            <div class="d-flex align-items-center justify-content-center flex-shrink-0 {{ !empty(@penawaran.file_penawaran_ttd) ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning-emphasis' }}" style="width: 32px; height: 32px; min-width: 32px; min-height: 32px; max-width: 32px; max-height: 32px; border-radius: 50% !important; aspect-ratio: 1 / 1; line-height: 1; padding: 0;">
+                                            <div class="d-flex align-items-center justify-content-center flex-shrink-0 {{ !empty(@penawaran.file_penawaran_ttd) ? 'bg-light border text-success' : 'bg-warning-subtle text-warning-emphasis' }}" style="width: 32px; height: 32px; min-width: 32px; min-height: 32px; max-width: 32px; max-height: 32px; border-radius: 50% !important; aspect-ratio: 1 / 1; line-height: 1; padding: 0;">
                                                 <i class="bi {{ !empty(@penawaran.file_penawaran_ttd) ? 'bi-file-earmark-check-fill' : 'bi-file-earmark-arrow-up-fill' }} fs-6" style="line-height: 1;"></i>
                                             </div>
                                             <div>
@@ -5424,7 +5422,7 @@
                                 <div class="card border rounded-3 mt-3 shadow-xs overflow-hidden {{ !empty(@penawaran.file_bukti_persetujuan) ? 'border-success-subtle' : 'border-warning-subtle' }}" id="cardDokumenDeal2">
                                     <div class="p-3 bg-white d-flex align-items-center justify-content-between flex-wrap gap-2">
                                         <div class="d-flex align-items-center gap-3">
-                                            <div class="d-flex align-items-center justify-content-center flex-shrink-0 {{ !empty(@penawaran.file_bukti_persetujuan) ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning-emphasis' }}" style="width: 32px; height: 32px; min-width: 32px; min-height: 32px; max-width: 32px; max-height: 32px; border-radius: 50% !important; aspect-ratio: 1 / 1; line-height: 1; padding: 0;">
+                                            <div class="d-flex align-items-center justify-content-center flex-shrink-0 {{ !empty(@penawaran.file_bukti_persetujuan) ? 'bg-light border text-success' : 'bg-warning-subtle text-warning-emphasis' }}" style="width: 32px; height: 32px; min-width: 32px; min-height: 32px; max-width: 32px; max-height: 32px; border-radius: 50% !important; aspect-ratio: 1 / 1; line-height: 1; padding: 0;">
                                                 <i class="bi {{ !empty(@penawaran.file_bukti_persetujuan) ? 'bi-file-earmark-check-fill' : 'bi-file-earmark-arrow-up-fill' }} fs-6" style="line-height: 1;"></i>
                                             </div>
                                             <div>
@@ -5505,7 +5503,7 @@
                                 <div class="card border rounded-3 mt-3 shadow-xs overflow-hidden {{ !empty(@penawaran.surat_kesanggupan_bayar) ? 'border-success-subtle' : 'border-secondary-subtle' }}" id="cardDokumenDeal3">
                                     <div class="p-3 bg-white d-flex align-items-center justify-content-between flex-wrap gap-2">
                                         <div class="d-flex align-items-center gap-3">
-                                            <div class="d-flex align-items-center justify-content-center flex-shrink-0 {{ !empty(@penawaran.surat_kesanggupan_bayar) ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary' }}" style="width: 32px; height: 32px; min-width: 32px; min-height: 32px; max-width: 32px; max-height: 32px; border-radius: 50% !important; aspect-ratio: 1 / 1; line-height: 1; padding: 0;">
+                                            <div class="d-flex align-items-center justify-content-center flex-shrink-0 {{ !empty(@penawaran.surat_kesanggupan_bayar) ? 'bg-light border text-success' : 'bg-secondary-subtle text-secondary' }}" style="width: 32px; height: 32px; min-width: 32px; min-height: 32px; max-width: 32px; max-height: 32px; border-radius: 50% !important; aspect-ratio: 1 / 1; line-height: 1; padding: 0;">
                                                 <i class="bi {{ !empty(@penawaran.surat_kesanggupan_bayar) ? 'bi-file-earmark-check-fill' : 'bi-file-earmark-arrow-up-fill' }} fs-6" style="line-height: 1;"></i>
                                             </div>
                                             <div>
@@ -5614,7 +5612,7 @@
                                                     <i class="bi bi-send-check-fill fs-6" style="line-height: 1;"></i>
                                                 </div>
                                                 <div>
-                                                    <span class="fw-bold text-dark d-block">4. Disposisi ke Tim Keuangan <span class="badge bg-success-subtle text-success border border-success-subtle ms-1"><i class="bi bi-unlock-fill me-0.5"></i> Siap Dilanjutkan</span></span>
+                                                    <span class="fw-bold text-dark d-block">4. Disposisi ke Tim Keuangan <span class="badge bg-light border text-success border border-success-subtle ms-1"><i class="bi bi-unlock-fill me-0.5"></i> Siap Dilanjutkan</span></span>
                                                     <span class="text-secondary">Dokumen wajib telah lengkap. Teruskan order ke Tim Keuangan untuk membuka tahap pembayaran.</span>
                                                 </div>
                                             </div>
@@ -5631,7 +5629,7 @@
 
                                 <!-- Jika SUDAH DIDISPOSISIKAN KE KEUANGAN -->
                                 <check if="{{ @is_disposisi_keuangan }}">
-                                    <div class="mt-3 p-3 bg-success-subtle rounded-3 border border-success-subtle d-flex justify-content-between align-items-center flex-wrap gap-2" id="cardDisposisiKeuangan">
+                                    <div class="mt-3 p-3 bg-light border rounded-3 border border-success-subtle d-flex justify-content-between align-items-center flex-wrap gap-2" id="cardDisposisiKeuangan">
                                         <div class="d-flex align-items-center gap-3 text-success small">
                                             <div class="d-flex align-items-center justify-content-center flex-shrink-0 bg-success text-white shadow-xs" style="width: 32px; height: 32px; min-width: 32px; min-height: 32px; max-width: 32px; max-height: 32px; border-radius: 50% !important; aspect-ratio: 1 / 1; line-height: 1; padding: 0;">
                                                 <i class="bi bi-check-lg fs-6 text-white" style="line-height: 1;"></i>
@@ -5827,7 +5825,7 @@
                     </div>
                     <div class="d-flex align-items-center gap-2">
                         <check if="{{ @order.status_keuangan == 'lunas' || !empty(@riwayat_bayar) }}">
-                            <span class="badge bg-success-subtle text-success border border-success-subtle fw-semibold px-2.5 py-1">
+                            <span class="badge bg-light border text-success border border-success-subtle fw-semibold px-2.5 py-1">
                                 <i class="bi bi-check2-all me-1"></i> Pembayaran Terkonfirmasi (Lunas)
                             </span>
                         </check>
@@ -6113,7 +6111,7 @@
                             </check>
                             <check if="{{ (@order.status_keuangan == 'lunas' || !empty(@riwayat_bayar)) || (@penawaran && @penawaran.status_respon_klien == 'deal') }}">
                                 <check if="{{ @proposal && @proposal.disetujui_ketua_at }}">
-                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 fw-bold">
+                                    <span class="badge bg-light border text-success border border-success-subtle px-2.5 py-1 fw-bold">
                                         <i class="bi bi-check-circle-fill me-1"></i> Proposal Disetujui Ka. Tim
                                     </span>
                                 </check>
@@ -6183,7 +6181,7 @@
                                             <check if="{{ @proposal && @proposal.file_proposal }}">
                                                 <span class="text-muted small font-monospace d-block">{{ basename(@proposal.file_proposal) }}</span>
                                                 <check if="{{ @proposal.disetujui_ketua_at }}">
-                                                    <span class="badge bg-success-subtle text-success border border-success-subtle small mt-1">
+                                                    <span class="badge bg-light border text-success border border-success-subtle small mt-1">
                                                         <i class="bi bi-check-circle me-1"></i>Disetujui Ka. Tim: {{ date('d/m/Y H:i', strtotime(@proposal.disetujui_ketua_at)) }}
                                                     </span>
                                                 </check>
@@ -6321,17 +6319,17 @@
                     <check if="{{ !empty(@order.tanggal_spm_mulai) || !empty(@order.tanggal_terima_sampel) }}">
                         <true>
                             <check if="{{ @order.spm_trigger_tipe == 'kick_off' }}">
-                                <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                <span class="badge bg-light border text-success border border-success-subtle">
                                     <i class="bi bi-people-fill me-1"></i> Rapat Kick-Off (SPM Aktif)
                                 </span>
                             </check>
                             <check if="{{ @order.spm_trigger_tipe == 'tanda_tangan_pks' }}">
-                                <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                <span class="badge bg-light border text-success border border-success-subtle">
                                     <i class="bi bi-pen-fill me-1"></i> Kontrak/PKS Ditandatangani (SPM Aktif)
                                 </span>
                             </check>
                             <check if="{{ empty(@order.spm_trigger_tipe) || @order.spm_trigger_tipe == 'sampel_diterima' }}">
-                                <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                <span class="badge bg-light border text-success border border-success-subtle">
                                     <i class="bi bi-box-seam me-1"></i> Sampel Diterima (SPM Aktif)
                                 </span>
                             </check>
@@ -6874,7 +6872,7 @@
                                         </check>
                                         <check if="{{ !@is_view_log }}">
                                             <check if="{{ @is_deal_act }}">
-                                                <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-2 py-0.5" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.3px;">
+                                                <span class="badge rounded-pill bg-light border text-success border border-success-subtle px-2 py-0.5" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.3px;">
                                                     <i class="bi bi-check-circle-fill me-1"></i>DEAL
                                                 </span>
                                             </check>
@@ -6894,7 +6892,7 @@
                                                 </span>
                                             </check>
                                             <check if="{{ !@is_deal_act && !@is_nego_act && !@is_draft_act && !@is_warn_act && @is_success_act }}">
-                                                <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-2 py-0.5" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.3px;">
+                                                <span class="badge rounded-pill bg-light border text-success border border-success-subtle px-2 py-0.5" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.3px;">
                                                     <i class="bi bi-check2-circle me-1"></i>SELESAI / ACC
                                                 </span>
                                             </check>
@@ -8580,7 +8578,7 @@ function cekStatusPilar(prefix) {
     var badgeStandar = document.getElementById(prefix + 'badgeStandar');
     if (badgeStandar) {
         if (allChecked) {
-            badgeStandar.className = 'badge bg-success-subtle text-success border border-success-subtle py-1 px-2.5 fw-semibold';
+            badgeStandar.className = 'badge bg-light border text-success border border-success-subtle py-1 px-2.5 fw-semibold';
             badgeStandar.innerHTML = '<i class="bi bi-check2-all me-1"></i> Standar Terpenuhi';
         } else if (countReady > 0) {
             badgeStandar.className = 'badge bg-warning-subtle text-warning-emphasis border border-warning-subtle py-1 px-2.5 fw-semibold';
