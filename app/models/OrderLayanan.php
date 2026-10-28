@@ -728,7 +728,52 @@ class OrderLayanan extends \DB\SQL\Mapper {
             ];
         }
 
-        // 2. Step 8: Selesai (BAST)
+        // 2. Tahap 1 / Awal: Permohonan Baru Masuk (Belum Didisposisi ke Divisi)
+        if (($o['status'] ?? '') === 'permintaan_masuk' || empty($o['jenis_layanan_opti']) || ($o['jenis_layanan_opti'] ?? '') === 'belum_ditentukan') {
+            return [
+                'label' => 'Disposisi Masuk',
+                'class' => 'status-pill status-pill-slate',
+                'icon'  => 'bi-inbox-fill',
+                'user'  => 'Tim Mitra Industri',
+                'keterangan_aksi'   => 'Permohonan Baru Masuk',
+                'keterangan_sub'    => 'Perlu Disposisi Layanan',
+                'keterangan_detail' => 'Perlu ditentukan divisi & Ketua Tim',
+                'keterangan_icon'   => 'bi-inbox text-secondary',
+                'aksi_badge' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
+            ];
+        }
+
+        // 3. Tahap 2: Draft Formulir Pelayanan Jasa
+        if (($o['status'] ?? '') === 'draft_disimpan' || ($o['status'] ?? '') === 'draft') {
+            return [
+                'label' => 'Draft Disimpan',
+                'class' => 'status-pill status-pill-amber',
+                'icon'  => 'bi-bookmark-check-fill',
+                'user'  => 'Tim Mitra Industri',
+                'keterangan_aksi'   => 'Draf Formulir Pelayanan',
+                'keterangan_sub'    => 'Pelaksana: Tim Mitra Industri',
+                'keterangan_detail' => 'Masih diisi oleh staf mitra, belum diajukan',
+                'keterangan_icon'   => 'bi-file-earmark-text text-warning',
+                'aksi_badge' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
+            ];
+        }
+
+        // 4. Tahap 3: Menunggu Kaji Kelayakan (Setelah Didisposisi, namun belum dinilai layak)
+        if (empty($o['status_tinjauan']) || in_array($o['status_tinjauan'] ?? '', ['belum_ditinjau', 'menunggu', 'draft'])) {
+            return [
+                'label' => 'Kaji Kelayakan',
+                'class' => 'status-pill status-pill-amber',
+                'icon'  => 'bi-clipboard-check-fill',
+                'user'  => $katimLabel,
+                'keterangan_aksi'   => 'Menunggu Kaji Kelayakan',
+                'keterangan_sub'    => 'Pelaksana: ' . $katimLabel,
+                'keterangan_detail' => 'Perlu dicek kelayakan personel & peralatan lab',
+                'keterangan_icon'   => 'bi-clipboard-check text-warning',
+                'aksi_badge' => 'bg-danger-subtle text-danger border border-danger-subtle'
+            ];
+        }
+
+        // 5. Tahap 9: Selesai (BAST)
         $isBastDone = (!empty($o['bast_id']) && in_array($o['status_bast'] ?? '', ['disetujui', 'selesai', 'terbit']))
             || ($o['status'] ?? '') === 'selesai'
             || ($o['status_pelaksanaan'] ?? '') === 'laporan_selesai';
@@ -746,7 +791,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
             ];
         }
 
-        // 3. Step 7: Pengujian Lab (PO Aktif)
+        // 6. Tahap 8: Pengujian Lab (PO Aktif)
         if (!empty($o['po_id']) || ($o['status'] ?? '') === 'disetujui' || in_array($o['status_pelaksanaan'] ?? '', ['sedang_berjalan', 'evaluasi_laporan', 'revisi_laporan'])) {
             return [
                 'label' => 'Pengujian Lab',
@@ -765,7 +810,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
         $isDeal = (($o['status'] ?? '') === 'penawaran_deal' || ($o['status_respon_klien'] ?? '') === 'deal' || ($o['status_penawaran'] ?? '') === 'deal');
         $isLunas = (($o['status_keuangan'] ?? '') === 'lunas' || (float)($o['total_terbayar'] ?? 0) > 0);
 
-        // Jika sudah DEAL & LUNAS, namun PO belum dibuat -> Alur masuk ke Step 7 (Sampel & PO)
+        // Jika sudah DEAL & LUNAS, namun PO belum dibuat -> Alur masuk ke Tahap 7 (Sampel & PO)
         if ($isDeal && $isLunas) {
             if (empty($o['tanggal_terima_sampel']) && empty($o['tanggal_spm_mulai'])) {
                 return [
@@ -807,9 +852,8 @@ class OrderLayanan extends \DB\SQL\Mapper {
             }
         }
 
-        // 4. Step 6: Menunggu Pembayaran (Sudah DEAL namun belum lunas)
+        // 7. Tahap 6: Menunggu Pembayaran (Sudah DEAL namun belum lunas)
         if ($isDeal) {
-            // Cek apakah berkas deal wajib sudah diunggah (Surat Penawaran TTD & Persetujuan Klien)
             $berkasDealSiap = !empty($o['file_penawaran_ttd']) && !empty($o['file_bukti_persetujuan']);
             if (!$berkasDealSiap) {
                 return [
@@ -838,8 +882,10 @@ class OrderLayanan extends \DB\SQL\Mapper {
             ];
         }
 
-        // 5. Step 5: Penawaran Terbit (Surat Penawaran resmi sudah dibuat namun belum DEAL)
-        $hasOfferLetter = (!empty($o['surat_penawaran_id']) || !empty($o['nomor_penawaran']) || in_array($o['status_penawaran'] ?? '', ['terkirim', 'nego', 'draft']));
+        // 8. Tahap 5: Penawaran Terbit (Surat Penawaran resmi sudah memiliki nomor surat dan diterbitkan ke pelanggan)
+        $hasOfferLetter = !empty($o['nomor_penawaran'])
+            || in_array($o['status_penawaran'] ?? '', ['terkirim', 'nego', 'terbit'])
+            || in_array($o['status_respon_klien'] ?? '', ['terkirim', 'nego', 'revisi']);
         if ($hasOfferLetter) {
             return [
                 'label' => 'Penawaran Terbit',
@@ -854,178 +900,115 @@ class OrderLayanan extends \DB\SQL\Mapper {
             ];
         }
 
-        // Step 4 & 3: Cek jenis layanan dan kaji kelayakan
-        $isLayak = (($o['status_tinjauan'] ?? '') === 'layak');
-
-        // Jika Kaji Kelayakan Layak -> Masuk Step 4
-        if ($isLayak) {
-            if ($isLingkungan) {
-                $hasBiaya = ((float)($o['estimasi_biaya'] ?? 0) > 0) || in_array($o['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui']);
-                if ($hasBiaya) {
-                    return [
-                        'label' => 'Siap Penawaran',
-                        'class' => 'status-pill status-pill-sky',
-                        'icon'  => 'bi-check-circle-fill',
-                        'user'  => 'Tim Mitra Industri',
-                        'keterangan_aksi'   => 'Siap Dibuat Surat Penawaran',
-                        'keterangan_sub'    => 'Pelaksana: Tim Mitra Industri',
-                        'keterangan_detail' => 'Rincian biaya selesai, siap diterbitkan surat',
-                        'keterangan_icon'   => 'bi-file-earmark-check text-primary',
-                        'aksi_badge' => 'bg-primary-subtle text-primary border border-primary-subtle'
-                    ];
-                }
-                if (($o['status_proposal_biaya'] ?? '') === 'draft_disimpan') {
-                    return [
-                        'label' => 'Draft Disimpan',
-                        'class' => 'status-pill status-pill-amber',
-                        'icon'  => 'bi-bookmark-check-fill',
-                        'user'  => 'Tim Kerja Lingkungan',
-                        'keterangan_aksi'   => 'Penyusunan Biaya Uji',
-                        'keterangan_sub'    => 'Pelaksana: Tim Kerja Lingkungan',
-                        'keterangan_detail' => 'Draf tarif disimpan, belum diajukan penawaran',
-                        'keterangan_icon'   => 'bi-pencil-square text-warning',
-                        'aksi_badge' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
-                    ];
-                }
+        // 9. Tahap 4: Penyusunan Teknis / Tarif & Parameter setelah dinyatakan Layak
+        if ($isLingkungan) {
+            $hasBiaya = ((float)($o['estimasi_biaya'] ?? 0) > 0) || in_array($o['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui']);
+            if ($hasBiaya) {
                 return [
-                    'label' => 'Tarif & Parameter',
-                    'class' => 'status-pill status-pill-blue',
-                    'icon'  => 'bi-calculator-fill',
+                    'label' => 'Siap Penawaran',
+                    'class' => 'status-pill status-pill-sky',
+                    'icon'  => 'bi-check-circle-fill',
+                    'user'  => 'Tim Mitra Industri',
+                    'keterangan_aksi'   => 'Siap Dibuat Surat Penawaran',
+                    'keterangan_sub'    => 'Pelaksana: Tim Mitra Industri',
+                    'keterangan_detail' => 'Rincian biaya selesai, siap diterbitkan surat',
+                    'keterangan_icon'   => 'bi-file-earmark-check text-primary',
+                    'aksi_badge' => 'bg-primary-subtle text-primary border border-primary-subtle'
+                ];
+            }
+            if (($o['status_proposal_biaya'] ?? '') === 'draft_disimpan') {
+                return [
+                    'label' => 'Draft Disimpan',
+                    'class' => 'status-pill status-pill-amber',
+                    'icon'  => 'bi-bookmark-check-fill',
                     'user'  => 'Tim Kerja Lingkungan',
-                    'keterangan_aksi'   => 'Perhitungan Tarif Uji',
+                    'keterangan_aksi'   => 'Penyusunan Biaya Uji',
                     'keterangan_sub'    => 'Pelaksana: Tim Kerja Lingkungan',
-                    'keterangan_detail' => 'Sedang menentukan parameter & tarif lab',
-                    'keterangan_icon'   => 'bi-calculator text-primary',
-                    'aksi_badge' => 'bg-primary-subtle text-primary border border-primary-subtle'
-                ];
-            } elseif ($isSelulosa) {
-                $proposalComplete = !empty($o['file_proposal']) && (float)($o['estimasi_total_biaya'] ?? 0) > 0;
-                $proposalApproved = in_array($o['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui']) || in_array($o['status_proposal'] ?? '', ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan']);
-                if ($proposalApproved) {
-                    return [
-                        'label' => 'Proposal Disetujui',
-                        'class' => 'status-pill status-pill-emerald',
-                        'icon'  => 'bi-check-circle-fill',
-                        'user'  => 'Tim Mitra Industri',
-                        'keterangan_aksi'   => 'Siap Dibuat Surat Penawaran',
-                        'keterangan_sub'    => 'Proposal Disetujui Ketua Tim',
-                        'keterangan_detail' => 'Menunggu Tim Mitra menerbitkan surat penawaran',
-                        'keterangan_icon'   => 'bi-check-circle-fill text-success',
-                        'aksi_badge' => 'bg-primary-subtle text-primary border border-primary-subtle'
-                    ];
-                }
-                $rawPicNama = !empty($o['pic_proposal_nama']) ? trim($o['pic_proposal_nama']) : '';
-                $rawPicNama = preg_replace('/^pic\s*:\s*/i', '', $rawPicNama);
-                $picPelaksana = !empty($rawPicNama) ? $rawPicNama : 'Tim Kerja Selulosa';
-                if (($o['status_proposal'] ?? '') === 'draft_disimpan' || ($o['status_proposal_biaya'] ?? '') === 'draft_disimpan') {
-                    return [
-                        'label' => 'Draft Disimpan',
-                        'class' => 'status-pill status-pill-amber',
-                        'icon'  => 'bi-bookmark-check-fill',
-                        'user'  => 'Tim Kerja Selulosa',
-                        'keterangan_aksi'   => 'Draf Proposal Belum Diajukan',
-                        'keterangan_sub'    => 'Pelaksana: ' . $picPelaksana,
-                        'keterangan_detail' => 'Masih tersimpan sebagai draf di sistem',
-                        'keterangan_icon'   => 'bi-pencil-square text-warning',
-                        'aksi_badge' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
-                    ];
-                }
-                if (($o['status_proposal_biaya'] ?? '') === 'menunggu_approval' || ($o['status_proposal'] ?? '') === 'diajukan' || $proposalComplete) {
-                    return [
-                        'label' => 'Review Proposal',
-                        'class' => 'status-pill status-pill-sky',
-                        'icon'  => 'bi-hourglass-split',
-                        'user'  => 'Ketua Tim Selulosa',
-                        'keterangan_aksi'   => 'Pemeriksaan Proposal',
-                        'keterangan_sub'    => 'Pelaksana: Ketua Tim Selulosa',
-                        'keterangan_detail' => 'Proposal sudah diajukan, menunggu persetujuan Katim',
-                        'keterangan_icon'   => 'bi-hourglass-split text-info',
-                        'aksi_badge' => 'bg-info-subtle text-info-emphasis border border-info-subtle'
-                    ];
-                }
-                return [
-                    'label' => 'Proposal Teknis',
-                    'class' => 'status-pill status-pill-blue',
-                    'icon'  => 'bi-file-earmark-arrow-up-fill',
-                    'user'  => 'Tim Kerja Selulosa',
-                    'keterangan_aksi'   => 'Penyusunan Proposal Teknis',
-                    'keterangan_sub'    => 'Pelaksana: ' . $picPelaksana,
-                    'keterangan_detail' => 'Sedang menyusun proposal & estimasi biaya',
-                    'keterangan_icon'   => 'bi-pencil-square text-primary',
-                    'aksi_badge' => 'bg-primary-subtle text-primary border border-primary-subtle'
-                ];
-            } else {
-                return [
-                    'label' => 'Disposisi Masuk',
-                    'class' => 'status-pill status-pill-slate',
-                    'icon'  => 'bi-inbox-fill',
-                    'user'  => $katimLabel,
-                    'keterangan_aksi'   => 'Permohonan Baru Masuk',
-                    'keterangan_sub'    => 'Perlu Disposisi Layanan',
-                    'keterangan_detail' => 'Perlu ditentukan jenis divisi & Ketua Tim',
-                    'keterangan_icon'   => 'bi-inbox text-secondary',
+                    'keterangan_detail' => 'Draf tarif disimpan, belum diajukan penawaran',
+                    'keterangan_icon'   => 'bi-pencil-square text-warning',
                     'aksi_badge' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
                 ];
             }
-        }
-
-        // Step 3: Menunggu Kaji Kelayakan (Setelah Form Pelayanan Jasa terisi)
-        if (($o['status'] ?? '') !== 'permintaan_masuk' && !empty($o['jenis_layanan_opti']) && $o['jenis_layanan_opti'] !== 'belum_ditentukan') {
-            if (empty($o['status_tinjauan']) || in_array($o['status_tinjauan'] ?? '', ['belum_ditinjau', 'menunggu', 'draft'])) {
+            return [
+                'label' => 'Tarif & Parameter',
+                'class' => 'status-pill status-pill-blue',
+                'icon'  => 'bi-calculator-fill',
+                'user'  => 'Tim Kerja Lingkungan',
+                'keterangan_aksi'   => 'Perhitungan Tarif Uji',
+                'keterangan_sub'    => 'Pelaksana: Tim Kerja Lingkungan',
+                'keterangan_detail' => 'Sedang menentukan parameter & tarif lab',
+                'keterangan_icon'   => 'bi-calculator text-primary',
+                'aksi_badge' => 'bg-primary-subtle text-primary border border-primary-subtle'
+            ];
+        } elseif ($isSelulosa) {
+            $proposalComplete = !empty($o['file_proposal']) && (float)($o['estimasi_total_biaya'] ?? 0) > 0;
+            $proposalApproved = in_array($o['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui']) || in_array($o['status_proposal'] ?? '', ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan']);
+            if ($proposalApproved) {
                 return [
-                    'label' => 'Kaji Kelayakan',
-                    'class' => 'status-pill status-pill-amber',
-                    'icon'  => 'bi-clipboard-check-fill',
-                    'user'  => $katimLabel,
-                    'keterangan_aksi'   => 'Menunggu Kaji Kelayakan',
-                    'keterangan_sub'    => 'Pelaksana: ' . $katimLabel,
-                    'keterangan_detail' => 'Perlu dicek kelayakan personel & peralatan lab',
-                    'keterangan_icon'   => 'bi-clipboard-check text-warning',
-                    'aksi_badge' => 'bg-danger-subtle text-danger border border-danger-subtle'
+                    'label' => 'Proposal Disetujui',
+                    'class' => 'status-pill status-pill-emerald',
+                    'icon'  => 'bi-check-circle-fill',
+                    'user'  => 'Tim Mitra Industri',
+                    'keterangan_aksi'   => 'Siap Dibuat Surat Penawaran',
+                    'keterangan_sub'    => 'Proposal Disetujui Ketua Tim',
+                    'keterangan_detail' => 'Menunggu Tim Mitra menerbitkan surat penawaran',
+                    'keterangan_icon'   => 'bi-check-circle-fill text-success',
+                    'aksi_badge' => 'bg-primary-subtle text-primary border border-primary-subtle'
                 ];
             }
-        }
-
-        // Step 2: Form Pelayanan Jasa / Disposisi
-        if (($o['status'] ?? '') === 'draft_disimpan' || ($o['status'] ?? '') === 'draft') {
+            $rawPicNama = !empty($o['pic_proposal_nama']) ? trim($o['pic_proposal_nama']) : '';
+            $rawPicNama = preg_replace('/^pic\s*:\s*/i', '', $rawPicNama);
+            $picPelaksana = !empty($rawPicNama) ? $rawPicNama : 'Tim Kerja Selulosa';
+            if (($o['status_proposal'] ?? '') === 'draft_disimpan' || ($o['status_proposal_biaya'] ?? '') === 'draft_disimpan') {
+                return [
+                    'label' => 'Draft Disimpan',
+                    'class' => 'status-pill status-pill-amber',
+                    'icon'  => 'bi-bookmark-check-fill',
+                    'user'  => 'Tim Kerja Selulosa',
+                    'keterangan_aksi'   => 'Draf Proposal Belum Diajukan',
+                    'keterangan_sub'    => 'Pelaksana: ' . $picPelaksana,
+                    'keterangan_detail' => 'Masih tersimpan sebagai draf di sistem',
+                    'keterangan_icon'   => 'bi-pencil-square text-warning',
+                    'aksi_badge' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
+                ];
+            }
+            if (($o['status_proposal_biaya'] ?? '') === 'menunggu_approval' || ($o['status_proposal'] ?? '') === 'diajukan' || $proposalComplete) {
+                return [
+                    'label' => 'Review Proposal',
+                    'class' => 'status-pill status-pill-sky',
+                    'icon'  => 'bi-hourglass-split',
+                    'user'  => 'Ketua Tim Selulosa',
+                    'keterangan_aksi'   => 'Pemeriksaan Proposal',
+                    'keterangan_sub'    => 'Pelaksana: Ketua Tim Selulosa',
+                    'keterangan_detail' => 'Proposal sudah diajukan, menunggu persetujuan Katim',
+                    'keterangan_icon'   => 'bi-hourglass-split text-info',
+                    'aksi_badge' => 'bg-info-subtle text-info-emphasis border border-info-subtle'
+                ];
+            }
             return [
-                'label' => 'Draft Disimpan',
-                'class' => 'status-pill status-pill-amber',
-                'icon'  => 'bi-bookmark-check-fill',
-                'user'  => 'Tim Mitra Industri',
-                'keterangan_aksi'   => 'Draf Formulir Pelayanan',
-                'keterangan_sub'    => 'Pelaksana: Tim Mitra Industri',
-                'keterangan_detail' => 'Masih diisi oleh staf mitra, belum diajukan',
-                'keterangan_icon'   => 'bi-file-earmark-text text-warning',
-                'aksi_badge' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
+                'label' => 'Proposal Teknis',
+                'class' => 'status-pill status-pill-blue',
+                'icon'  => 'bi-file-earmark-arrow-up-fill',
+                'user'  => 'Tim Kerja Selulosa',
+                'keterangan_aksi'   => 'Penyusunan Proposal Teknis',
+                'keterangan_sub'    => 'Pelaksana: ' . $picPelaksana,
+                'keterangan_detail' => 'Sedang menyusun proposal & estimasi biaya',
+                'keterangan_icon'   => 'bi-pencil-square text-primary',
+                'aksi_badge' => 'bg-primary-subtle text-primary border border-primary-subtle'
             ];
         }
 
-        if (($o['status'] ?? '') === 'permintaan_masuk' || empty($o['jenis_layanan_opti']) || ($o['jenis_layanan_opti'] ?? '') === 'belum_ditentukan') {
-            return [
-                'label' => 'Disposisi Masuk',
-                'class' => 'status-pill status-pill-slate',
-                'icon'  => 'bi-inbox-fill',
-                'user'  => 'Tim Mitra Industri',
-                'keterangan_aksi'   => 'Permohonan Baru Masuk',
-                'keterangan_sub'    => 'Perlu Disposisi Layanan',
-                'keterangan_detail' => 'Perlu ditentukan divisi & Ketua Tim',
-                'keterangan_icon'   => 'bi-inbox text-secondary',
-                'aksi_badge' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
-            ];
-        }
-
-        // Fallback
+        // Fallback default
         return [
-            'label' => 'Order Baru',
-            'class' => 'status-pill status-pill-sky',
-            'icon'  => 'bi-file-earmark',
+            'label' => 'Disposisi Masuk',
+            'class' => 'status-pill status-pill-slate',
+            'icon'  => 'bi-inbox-fill',
             'user'  => 'Tim Mitra Industri',
-            'keterangan_aksi'   => 'Permohonan Baru Diterima',
-            'keterangan_sub'    => 'Registrasi Berkas Masuk',
-            'keterangan_detail' => 'Menunggu verifikasi permohonan jasa',
-            'keterangan_icon'   => 'bi-info-circle text-info',
-            'aksi_badge' => 'bg-info-subtle text-info-emphasis border border-info-subtle'
+            'keterangan_aksi'   => 'Permohonan Baru Masuk',
+            'keterangan_sub'    => 'Perlu Disposisi Layanan',
+            'keterangan_detail' => 'Perlu ditentukan divisi & Ketua Tim',
+            'keterangan_icon'   => 'bi-inbox text-secondary',
+            'aksi_badge' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
         ];
     }
 
