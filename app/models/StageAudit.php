@@ -471,4 +471,34 @@ class StageAudit {
 
         return $result;
     }
+
+    /**
+     * Hitung durasi selisih antara waktu dibaca dan waktu diproses/dikirim
+     * Menghasilkan format: "2 jam 15 menit 30 detik", "45 menit 12 detik", "1 hari 3 jam", dsb.
+     */
+    public static function formatDurasiPengerjaan(?string $waktuMulai, ?string $waktuSelesai): ?string {
+        if (empty($waktuMulai) || empty($waktuSelesai)) return null;
+        
+        $tsStart = strtotime($waktuMulai);
+        $tsEnd   = strtotime($waktuSelesai);
+        
+        if ($tsStart === false || $tsEnd === false || $tsEnd < $tsStart) return null;
+        
+        $diff = $tsEnd - $tsStart;
+        if ($diff < 1) return '< 1 detik';
+        
+        $days    = floor($diff / 86400);
+        $hours   = floor(($diff % 86400) / 3600);
+        $minutes = floor(($diff % 3600) / 60);
+        $seconds = $diff % 60;
+        
+        $parts = [];
+        if ($days > 0) $parts[] = $days . ' hari';
+        if ($hours > 0) $parts[] = $hours . ' jam';
+        if ($minutes > 0) $parts[] = $minutes . ' menit';
+        if ($seconds > 0 && $days == 0) $parts[] = $seconds . ' detik'; // tampilkan detik jika kurang dari 1 hari
+        
+        return !empty($parts) ? implode(' ', $parts) : '< 1 detik';
+    }
+
 }

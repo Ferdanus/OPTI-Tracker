@@ -1525,6 +1525,28 @@ class OrderController extends Controller {
             }
             foreach ($activityLogs as &$act) {
                 $act['time_ago'] = \NotificationService::timeAgo($act['created_at']);
+
+                // Hubungkan dengan audit waktu pengerjaan (selisih dari waktu dibaca hingga aksi diproses)
+                $act['durasi_pengerjaan'] = null;
+                $actTahap = 0;
+                if ($act['modul'] === 'surat_masuk') $actTahap = 1;
+                elseif ($act['modul'] === 'form_pelayanan') $actTahap = 2;
+                elseif ($act['modul'] === 'tinjauan' || $act['modul'] === 'kaji_kelayakan') $actTahap = 3;
+                elseif ($act['modul'] === 'proposal' || $act['modul'] === 'kalkulasi') $actTahap = 4;
+                elseif ($act['modul'] === 'penawaran') $actTahap = 5;
+                elseif ($act['modul'] === 'keuangan' || $act['modul'] === 'pembayaran') $actTahap = 6;
+                elseif ($act['modul'] === 'spm' || $act['modul'] === 'sampel') $actTahap = 7;
+                elseif ($act['modul'] === 'po') $actTahap = 8;
+                elseif ($act['modul'] === 'bast') $actTahap = 9;
+
+                if ($actTahap > 0 && !empty($auditStages[$actTahap]['waktu_dibaca'])) {
+                    // Hanya hitung durasi untuk aksi operasional / proses (bukan log 'melihat_...')
+                    if (strpos($act['aksi'], 'melihat') === false && $act['aksi'] !== 'baca_tahap') {
+                        $waktuDibaca = $auditStages[$actTahap]['waktu_dibaca'];
+                        $waktuProses = $act['created_at'];
+                        $act['durasi_pengerjaan'] = \StageAudit::formatDurasiPengerjaan($waktuDibaca, $waktuProses);
+                    }
+                }
                 
                 // Format & persingkat deskripsi agar ringkas dan rapi
                 $desc = $act['deskripsi'];
