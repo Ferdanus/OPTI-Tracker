@@ -425,34 +425,48 @@
 <div class="modal fade" id="modalTambahPengguna" tabindex="-1" aria-labelledby="modalTambahPenggunaLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow">
-            <div class="modal-header border-bottom py-3 px-4" style="background: linear-gradient(135deg, #334155 0%, #0f172a 100%); color: white;">
-                <div class="d-flex align-items-center gap-2">
-                    <div class="rounded-circle p-1.5 bg-white bg-opacity-20 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
-                        <i class="bi bi-person-plus-fill text-white"></i>
+            <div class="modal-header bg-white border-bottom py-3 px-4">
+                <div class="d-flex align-items-center gap-2.5">
+                    <div class="rounded-2 bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
+                        <i class="bi bi-person-plus-fill fs-5"></i>
                     </div>
                     <div>
-                        <h6 class="modal-title fw-bold font-display mb-0" id="modalTambahPenggunaLabel">Tambah Pengguna SILOPTI</h6>
-                        <small class="text-white-50" style="font-size: 0.72rem;">Pilih pegawai dan tentukan peran operasional</small>
+                        <h6 class="modal-title fw-bold text-dark font-display mb-0" id="modalTambahPenggunaLabel">Tambah Pengguna SILOPTI</h6>
+                        <small class="text-muted" style="font-size: 0.75rem;">Pilih pegawai dan tentukan peran operasional</small>
                     </div>
                 </div>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form method="POST" action="{{ @BASE }}/pengguna/simpan">
                 <div class="modal-body p-4">
                     <div class="mb-3">
-                        <label class="form-label small fw-bold text-dark">
+                        <label class="form-label small fw-bold text-dark mb-1">
                             Pilih Pegawai <span class="text-danger">*</span>
                         </label>
                         <check if="{{ count(@unassigned_users) > 0 }}">
                             <true>
-                                <select name="id_user" class="form-select" required>
-                                    <option value="" disabled selected>Pilih pegawai</option>
+                                <div class="position-relative mb-2">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text bg-white border-end-0 text-muted">
+                                            <i class="bi bi-search"></i>
+                                        </span>
+                                        <input type="text" id="searchPegawaiTambah" class="form-control border-start-0 ps-1 py-1.5" placeholder="Ketik untuk mencari nama pegawai..." autocomplete="off">
+                                        <button type="button" class="btn btn-outline-secondary border-start-0" id="btnClearSearchPegawai" title="Hapus pencarian" style="display: none;">
+                                            <i class="bi bi-x-lg" style="font-size: 0.75rem;"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <select name="id_user" id="selectPegawaiTambah" class="form-select" size="6" style="height: 165px; font-size: 0.85rem;" required>
                                     <repeat group="{{ @unassigned_users }}" value="{{ @u }}">
-                                        <option value="{{ @u.id_user }}">
-                                            {{ @u.nama_user }} (#{{ @u.id_user }})
+                                        <option value="{{ @u.id_user }}" data-nama="{{ strtolower(@u.nama_user) }}" data-id="{{ @u.id_user }}">
+                                            {{ @u.nama_user }} (ID: {{ @u.id_user }}{{ !empty(@u.bidang) ? ' - ' . strtoupper(@u.bidang) : '' }})
                                         </option>
                                     </repeat>
                                 </select>
+                                <div class="d-flex justify-content-between align-items-center mt-1">
+                                    <span class="text-muted small" style="font-size: 0.72rem;" id="countPegawaiFiltered">Tersedia {{ count(@unassigned_users) }} pegawai</span>
+                                    <span class="text-primary small fw-medium" style="font-size: 0.72rem;">Klik salah satu nama untuk memilih</span>
+                                </div>
                             </true>
                             <false>
                                 <div class="alert alert-warning small mb-0 py-2">
