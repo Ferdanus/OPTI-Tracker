@@ -6318,8 +6318,9 @@
                                         </div>
 
                                         <check if="{{ !empty(@order.catatan_trigger_spm) }}">
-                                            <div class="mb-2 small text-dark bg-white p-2 rounded border-start border-primary border-3 shadow-2xs">
-                                                <strong>Catatan Titik Awal:</strong> {{ @order.catatan_trigger_spm }}
+                                            <div class="mb-2 small text-dark bg-white p-2 rounded border-start border-primary border-3 shadow-2xs" style="white-space: pre-line;">
+                                                <strong>Catatan Titik Awal:</strong>
+{{ @order.catatan_trigger_spm }}
                                             </div>
                                         </check>
 
@@ -6392,11 +6393,19 @@
                                         </div>
                                     </div>
                                     <div class="col-md-8">
-                                        <label class="form-label small text-secondary mb-1">Catatan / Bukti Titik Awal (Opsional):</label>
-                                        <input type="text" name="catatan_trigger_spm" class="form-control form-control-sm" placeholder="Contoh: Sampel diterima lengkap / No. Bukti / PKS" value="{{ @order.catatan_trigger_spm }}">
+                                        <div class="d-flex align-items-center justify-content-between mb-1">
+                                            <label class="form-label small text-secondary mb-0" for="catatan_trigger_spm">Catatan / Bukti Titik Awal (Opsional):</label>
+                                            <div class="d-flex align-items-center gap-1">
+                                                <span class="text-muted small" style="font-size: 0.7rem;"><i class="bi bi-list-ol text-primary me-0.5"></i> Penomoran:</span>
+                                                <button type="button" class="btn btn-xs btn-outline-secondary py-0.5 px-2 fw-semibold shadow-2xs" onclick="insertCatatanNumbering('main')" title="Sisipkan / Format Penomoran 1., 2., 3.">1.</button>
+                                                <button type="button" class="btn btn-xs btn-outline-secondary py-0.5 px-2 fw-semibold shadow-2xs" onclick="insertCatatanNumbering('sub')" title="Sisipkan / Format Penomoran 1)., 2)., 3).">1).</button>
+                                                <button type="button" class="btn btn-xs btn-outline-secondary py-0.5 px-2 fw-semibold shadow-2xs" onclick="insertCatatanNumbering('alpha')" title="Sisipkan / Format Penomoran a., b., c.">a.</button>
+                                            </div>
+                                        </div>
+                                        <textarea name="catatan_trigger_spm" id="catatan_trigger_spm" class="form-control form-control-sm" rows="2" placeholder="Contoh: Sampel diterima lengkap / No. Bukti / PKS" onkeydown="handleCatatanKeydown(event)">{{ @order.catatan_trigger_spm }}</textarea>
                                     </div>
                                     <div class="col-md-4 d-flex align-items-end">
-                                        <button type="submit" class="btn btn-primary btn-sm w-100 fw-semibold">
+                                        <button type="submit" class="btn btn-primary btn-sm w-100 fw-semibold py-2 shadow-xs">
                                             <i class="bi bi-check-circle-fill me-1"></i> Simpan &amp; Aktifkan SPM
                                         </button>
                                     </div>
@@ -9940,6 +9949,170 @@ function handleKonfirmasiPembayaranSubmit(e, form) {
         }
     }
     return false;
+}
+
+function insertCatatanNumbering(type) {
+    var ta = document.getElementById('catatan_trigger_spm');
+    if (!ta) return;
+
+    var start = ta.selectionStart;
+    var end = ta.selectionEnd;
+    var val = ta.value;
+
+    if (start !== end) {
+        // Selection formatting
+        var selectedText = val.substring(start, end);
+        var lines = selectedText.split(/\r?\n/);
+        var formattedLines = [];
+        var num = 1;
+        var charCode = 97; // 'a'
+
+        lines.forEach(function(line) {
+            if (line.trim().length === 0) {
+                formattedLines.push(line);
+                return;
+            }
+            var cleanLine = line.replace(/^\s*(\d+[\.\)]|\d+\)\.|\d+\)|[a-zA-Z][\.\)]|\-|\*|\•)\s*/, '');
+            if (type === 'main') {
+                formattedLines.push(num + '. ' + cleanLine);
+                num++;
+            } else if (type === 'sub') {
+                formattedLines.push(num + '). ' + cleanLine);
+                num++;
+            } else if (type === 'alpha') {
+                formattedLines.push(String.fromCharCode(charCode) + '. ' + cleanLine);
+                charCode++;
+            }
+        });
+
+        var replacement = formattedLines.join('\n');
+        ta.value = val.substring(0, start) + replacement + val.substring(end);
+        ta.selectionStart = start;
+        ta.selectionEnd = start + replacement.length;
+    } else {
+        // Cursor insertion
+        var textBefore = val.substring(0, start);
+        var textAfter = val.substring(end);
+        var currentLineStart = textBefore.lastIndexOf('\n') + 1;
+        var currentLine = textBefore.substring(currentLineStart);
+
+        var insertPrefix = '';
+        if (type === 'main') {
+            var mainMatches = val.match(/^(\d+)\.\s/gm);
+            var nextNum = 1;
+            if (mainMatches && mainMatches.length > 0) {
+                mainMatches.forEach(function(m) {
+                    var n = parseInt(m, 10);
+                    if (n >= nextNum) nextNum = n + 1;
+                });
+            }
+            insertPrefix = (currentLine.trim() === '' ? '' : '\n') + nextNum + '. ';
+        } else if (type === 'sub') {
+            var subMatches = textBefore.match(/^(\d+)\)\.?\s/gm);
+            var nextSub = 1;
+            if (subMatches && subMatches.length > 0) {
+                subMatches.forEach(function(sm) {
+                    var n = parseInt(sm.replace(/[^\d]/g, ''), 10);
+                    if (n >= nextSub) nextSub = n + 1;
+                });
+            }
+            insertPrefix = (currentLine.trim() === '' ? '' : '\n') + nextSub + '). ';
+        } else if (type === 'alpha') {
+            var alphaMatches = textBefore.match(/^([a-z])\.\s/gmi);
+            var nextAlpha = 'a';
+            if (alphaMatches && alphaMatches.length > 0) {
+                var lastM = alphaMatches[alphaMatches.length - 1];
+                var cleanAlpha = lastM.replace(/[^a-zA-Z]/g, '').toLowerCase();
+                if (cleanAlpha.length > 0) {
+                    nextAlpha = String.fromCharCode(cleanAlpha.charCodeAt(0) + 1);
+                }
+            }
+            insertPrefix = (currentLine.trim() === '' ? '' : '\n') + nextAlpha + '. ';
+        }
+
+        ta.value = textBefore + insertPrefix + textAfter;
+        var newPos = start + insertPrefix.length;
+        ta.selectionStart = newPos;
+        ta.selectionEnd = newPos;
+    }
+
+    ta.focus();
+}
+
+function handleCatatanKeydown(e) {
+    var ta = e.target;
+    if (e.key === 'Enter') {
+        var start = ta.selectionStart;
+        var val = ta.value;
+        var textBefore = val.substring(0, start);
+        var currentLineStart = textBefore.lastIndexOf('\n') + 1;
+        var currentLine = textBefore.substring(currentLineStart);
+
+        var mMain = currentLine.match(/^(\d+)\.\s*(.*)$/);
+        var mSub = currentLine.match(/^(\d+)\)\.?\s*(.*)$/);
+        var mAlpha = currentLine.match(/^([a-z])\.\s*(.*)$/i);
+
+        if (mMain) {
+            var mainNum = parseInt(mMain[1], 10);
+            var content = mMain[2];
+            if (content.trim() === '') {
+                e.preventDefault();
+                ta.value = val.substring(0, currentLineStart) + val.substring(start);
+                ta.selectionStart = currentLineStart;
+                ta.selectionEnd = currentLineStart;
+                return;
+            } else {
+                e.preventDefault();
+                var nextMain = '\n' + (mainNum + 1) + '. ';
+                ta.value = val.substring(0, start) + nextMain + val.substring(start);
+                var newPos = start + nextMain.length;
+                ta.selectionStart = newPos;
+                ta.selectionEnd = newPos;
+                return;
+            }
+        }
+
+        if (mSub) {
+            var subNum = parseInt(mSub[1], 10);
+            var contentSub = mSub[2];
+            if (contentSub.trim() === '') {
+                e.preventDefault();
+                ta.value = val.substring(0, currentLineStart) + val.substring(start);
+                ta.selectionStart = currentLineStart;
+                ta.selectionEnd = currentLineStart;
+                return;
+            } else {
+                e.preventDefault();
+                var nextSub = '\n' + (subNum + 1) + '). ';
+                ta.value = val.substring(0, start) + nextSub + val.substring(start);
+                var newPosSub = start + nextSub.length;
+                ta.selectionStart = newPosSub;
+                ta.selectionEnd = newPosSub;
+                return;
+            }
+        }
+
+        if (mAlpha) {
+            var alphaChar = mAlpha[1].toLowerCase();
+            var contentAlpha = mAlpha[2];
+            if (contentAlpha.trim() === '') {
+                e.preventDefault();
+                ta.value = val.substring(0, currentLineStart) + val.substring(start);
+                ta.selectionStart = currentLineStart;
+                ta.selectionEnd = currentLineStart;
+                return;
+            } else {
+                e.preventDefault();
+                var nextAlphaChar = String.fromCharCode(alphaChar.charCodeAt(0) + 1);
+                var nextAlpha = '\n' + nextAlphaChar + '. ';
+                ta.value = val.substring(0, start) + nextAlpha + val.substring(start);
+                var newPosAlpha = start + nextAlpha.length;
+                ta.selectionStart = newPosAlpha;
+                ta.selectionEnd = newPosAlpha;
+                return;
+            }
+        }
+    }
 }
 
 function handleAktivasiSpmSubmit(e, form) {
