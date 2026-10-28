@@ -277,10 +277,20 @@
 .ts-wrapper.form-select-sm .ts-control, .ts-control {
     font-size: 0.825rem;
     min-height: 33px;
-    padding: 0.35rem 0.65rem;
+    padding: 0.35rem 2rem 0.35rem 0.65rem;
     border-color: #cbd5e1;
     border-radius: 6px;
     background-color: #ffffff;
+}
+.ts-wrapper .ts-control input {
+    font-size: 0.825rem !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+.ts-wrapper .ts-control input::placeholder {
+    color: #94a3b8 !important;
+    opacity: 1 !important;
+    font-size: 0.8rem !important;
 }
 .ts-wrapper.focus .ts-control {
     border-color: var(--color-primary, #334155) !important;
@@ -362,7 +372,7 @@
                 <div class="p-3 bg-light border-bottom">
                     <div class="d-flex flex-column flex-md-row align-items-stretch align-items-md-center justify-content-between gap-2">
                         <!-- Quick Catalog Selector -->
-                        <div class="d-flex align-items-center gap-2 flex-grow-1" style="max-width: 680px;">
+                        <div class="d-flex align-items-center gap-2 flex-grow-1" style="max-width: 760px;">
                             <div class="flex-grow-1">
                                 <select id="quickSelectMetode" class="form-select form-select-sm" onchange="onCatalogSelectChange(this.value)" placeholder="Cari layanan jasa dari katalog resmi...">
                                     <option value="">Pilih dari Katalog Layanan Jasa</option>
@@ -1123,7 +1133,7 @@ document.addEventListener('DOMContentLoaded', function() {
             tomSelectInstance = new TomSelect(quickEl, {
                 create: false,
                 maxItems: 1,
-                placeholder: 'Ketik untuk mencari layanan jasa (Pengujian, Sertifikasi ISO, Konsultansi, BOD, COD, dll)...',
+                placeholder: 'Cari layanan jasa (Pengujian, Konsultansi, BOD, COD, dll)...',
                 sortField: { field: 'text', direction: 'asc' },
                 onChange: function(val) {
                     onCatalogSelectChange(val);

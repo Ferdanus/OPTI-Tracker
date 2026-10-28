@@ -3440,7 +3440,7 @@
                                         <div class="p-3 bg-light border-bottom">
                                             <div class="d-flex flex-column flex-md-row align-items-stretch align-items-md-center justify-content-between gap-2">
                                                 <!-- Quick Catalog Selector -->
-                                                <div class="d-flex align-items-center gap-2 flex-grow-1" style="max-width: 680px;">
+                                                <div class="d-flex align-items-center gap-2 flex-grow-1" style="max-width: 760px;">
                                                     <div class="flex-grow-1">
                                                         <select id="quickSelectMetode" class="form-select form-select-sm" onchange="onCatalogSelectChange(this.value)" placeholder="Cari layanan jasa dari katalog resmi...">
                                                             <option value="">Pilih dari Katalog Layanan Jasa</option>
@@ -10067,7 +10067,7 @@ function initLingkunganCalculator() {
             tomSelectLingkungan = new TomSelect(quickEl, {
                 create: false,
                 maxItems: 1,
-                placeholder: 'Ketik untuk mencari layanan jasa (Pengujian, Sertifikasi ISO, Konsultansi, BOD, COD, dll)...',
+                placeholder: 'Cari layanan jasa (Pengujian, Konsultansi, BOD, COD, dll)...',
                 sortField: { field: 'text', direction: 'asc' },
                 onChange: function(val) {
                     onCatalogSelectChange(val);
