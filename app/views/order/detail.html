@@ -6489,13 +6489,20 @@
                                             <textarea name="catatan_trigger_spm" id="catatan_trigger_spm" class="form-control font-monospace editor-textarea-attached" rows="4" style="font-size: 0.82rem; line-height: 1.55; background: #ffffff;" placeholder="Tuliskan catatan atau rincian bukti titik awal pengerjaan (contoh: penerimaan sampel, kick-off meeting, dsb)..." onkeydown="handleCatatanKeydown(event)">{{ @order.catatan_trigger_spm }}</textarea>
                                         </div>
                                     </div>
-                                    <div class="col-12 d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2 pt-1">
+                                    <div class="col-12 d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3 pt-3 mt-1">
                                         <small class="text-muted" style="font-size: 0.72rem;">
                                             <i class="bi bi-info-circle me-1 text-primary"></i> Klik tombol <strong>1.</strong>, <strong>1)</strong>, atau <strong>a)</strong> untuk menyisipkan nomor, atau tekan <strong>Enter</strong> di dalam kotak untuk melanjutkan nomor otomatis.
                                         </small>
-                                        <button type="submit" class="btn btn-primary btn-sm px-4 py-1.5 fw-semibold shadow-xs flex-shrink-0">
-                                            <i class="bi bi-check-circle-fill me-1"></i> Simpan &amp; Aktifkan SPM
-                                        </button>
+                                        <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                                            <input type="hidden" name="action_btn" id="action_btn_spm" value="activate">
+                                            <button type="submit" class="btn-draft-theme" id="btnDraftSpmDetail" onclick="setAktivasiSpmDraft(true)">
+                                                <i class="bi bi-bookmark-fill"></i>
+                                                <span>Simpan Draf</span>
+                                            </button>
+                                            <button type="submit" class="btn btn-primary btn-sm px-4 py-1.5 fw-semibold shadow-xs" id="btnAktifkanSpmDetail" onclick="setAktivasiSpmDraft(false)">
+                                                <i class="bi bi-check-circle-fill me-1"></i> Simpan &amp; Aktifkan SPM
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                                 <check if="{{ strpos(strtolower(@order.spm_durasi_satuan ?: 'kerja'), 'kerja') !== false }}">
@@ -10196,7 +10203,23 @@ function handleCatatanKeydown(e) {
     }
 }
 
+var isAktivasiDraft = false;
+function setAktivasiSpmDraft(val) {
+    isAktivasiDraft = !!val;
+    var el = document.getElementById('action_btn_spm');
+    if (el) el.value = val ? 'save_draft' : 'activate';
+}
+
 function handleAktivasiSpmSubmit(e, form) {
+    if (isAktivasiDraft) {
+        var btnDraft = document.getElementById('btnDraftSpmDetail');
+        if (btnDraft) {
+            btnDraft.disabled = true;
+            btnDraft.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan...';
+        }
+        return true;
+    }
+
     if (form.dataset.confirmed === 'true') {
         return true;
     }
@@ -10215,7 +10238,7 @@ function handleAktivasiSpmSubmit(e, form) {
             if (result.isConfirmed) {
                 form.dataset.confirmed = 'true';
                 triggerStageRead(7);
-                var btn = form.querySelector('button[type="submit"]');
+                var btn = document.getElementById('btnAktifkanSpmDetail') || form.querySelector('button[type="submit"]');
                 if (btn) {
                     btn.disabled = true;
                     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Mengaktifkan...';

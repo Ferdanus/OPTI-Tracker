@@ -4448,12 +4448,32 @@ class OrderController extends Controller {
 
         $tanggalMulai = !empty($post['tanggal_spm_mulai']) ? $post['tanggal_spm_mulai'] : (!empty($post['tanggal_terima_sampel']) ? $post['tanggal_terima_sampel'] : date('Y-m-d'));
         $catatanTrigger = trim($post['catatan_trigger_spm'] ?? '');
+        $actionBtn = trim($post['action_btn'] ?? '');
+        $isDraft = ($actionBtn === 'save_draft') || !empty($post['is_draft']);
 
         try {
             $orderModel = new OrderLayanan($this->db);
             $order = $orderModel->getDetail($id);
             if (!$order) {
                 throw new \Exception("Order Layanan #{$id} tidak ditemukan.");
+            }
+
+            $labelTrigger = [
+                'sampel_diterima' => 'Penerimaan Fisik Sampel',
+                'kick_off' => 'Rapat Kick-Off',
+                'tanda_tangan_pks' => 'Penandatanganan Kontrak / PKS'
+            ][$triggerTipe] ?? 'Aktivasi Titik Awal SPM';
+
+            if ($isDraft) {
+                // Simpan draf catatan & trigger tanpa memicu aktivasi resmi SPM
+                $this->db->exec(
+                    "UPDATE order_layanan SET spm_trigger_tipe = ?, catatan_trigger_spm = ? WHERE id = ?",
+                    [1 => $triggerTipe, 2 => (!empty($catatanTrigger) ? $catatanTrigger : null), 3 => $id]
+                );
+                $this->logActivity($id, 'sampel', 'draft_spm', "Menyimpan draf titik awal SPM ({$labelTrigger})");
+                $this->setFlashSuccess("Draf catatan &amp; opsi titik awal SPM berhasil disimpan!");
+                $f3->reroute("/order/{$id}#pane-stage-7");
+                return;
             }
 
             // Durasi dan satuan waktu mengikuti data tarif & parameter / proposal
