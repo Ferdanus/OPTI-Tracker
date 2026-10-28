@@ -1553,7 +1553,9 @@ class OrderController extends Controller {
                 $desc = str_replace(' (Mode Pratinjau / Read-Only)', '', $desc);
                 $desc = str_replace(' (PIC: PIC Terpilih)', '', $desc);
                 $desc = str_replace('(PIC: PIC Terpilih)', '', $desc);
-                $desc = str_replace('Menetapkan Kaji Ulang Kelayakan Teknis ISO 17025: ', '', $desc);
+                $desc = str_replace('Menetapkan Kaji Ulang Kelayakan Teknis ISO 17025: Dapat Dilaksanakan', 'Kaji Kelayakan: Disetujui (Dapat Dilaksanakan)', $desc);
+                $desc = str_replace('Menetapkan Kaji Ulang Kelayakan Teknis ISO 17025: Tidak Dapat Dilaksanakan', 'Kaji Kelayakan: Ditolak (Tidak Dapat Dilaksanakan)', $desc);
+                $desc = str_replace('Menetapkan Kaji Ulang Kelayakan Teknis ISO 17025: ', 'Kaji Kelayakan: ', $desc);
                 $desc = str_replace('Mengisi Formulir Permintaan Pelayanan Jasa dan mendisposisikan ke ', 'Disposisi layanan ke ', $desc);
                 $desc = str_replace('Mengisi Formulir Permintaan Pelayanan Jasa & Kaji Kelayakan ', 'Formulir layanan & kaji kelayakan ', $desc);
                 $desc = str_replace('Menyimpan Rancangan Percobaan & Estimasi Biaya Riset Selulosa sebesar ', 'RAB Selulosa ', $desc);
