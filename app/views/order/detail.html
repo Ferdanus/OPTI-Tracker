@@ -9,6 +9,74 @@
             margin-bottom: 1.25rem;
         }
 
+        /* EDITOR TOOLBAR STYLES FOR SPM & NOTES */
+        .editor-wrapper-box {
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+        .editor-toolbar-box {
+            background: #ffffff;
+            border: 1px solid #ced4da;
+            border-bottom: 1px solid #e9ecef;
+            border-radius: 6px 6px 0 0;
+            padding: 5px 8px;
+            display: flex;
+            align-items: center;
+            flex-wrap: nowrap;
+            gap: 5px;
+            width: 100%;
+        }
+        .editor-tool-btn {
+            background: #ffffff !important;
+            color: #2b3035 !important;
+            border: 1px solid #ced4da !important;
+            border-radius: 4px;
+            padding: 2px 7px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+            transition: all 0.15s ease-in-out;
+            cursor: pointer;
+            line-height: 1.35;
+            white-space: nowrap;
+        }
+        .editor-tool-btn:hover {
+            background: #f8f9fa !important;
+            border-color: #0d6efd !important;
+            color: #0d6efd !important;
+            box-shadow: 0 2px 4px rgba(13,110,253,0.12);
+        }
+        .editor-tool-btn:active {
+            background: #e9ecef !important;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .editor-tool-badge {
+            display: inline-block;
+            padding: 0px 4px;
+            font-weight: 700;
+            font-size: 0.70rem;
+            border-radius: 3px;
+            background: #f1f3f5;
+            border: 1px solid #dee2e6;
+            color: #212529;
+        }
+        .editor-tool-btn:hover .editor-tool-badge {
+            background: #e7f1ff;
+            border-color: #bad5ff;
+            color: #0d6efd;
+        }
+        .editor-textarea-attached {
+            border-top: none !important;
+            border-top-left-radius: 0 !important;
+            border-top-right-radius: 0 !important;
+        }
+        .editor-textarea-attached:focus {
+            border-color: #86b7fe;
+        }
+
         .stepper-scroll-wrapper {
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
@@ -6392,20 +6460,40 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-md-8">
-                                        <div class="d-flex align-items-center justify-content-between mb-1">
-                                            <label class="form-label small text-secondary mb-0" for="catatan_trigger_spm">Catatan / Bukti Titik Awal (Opsional):</label>
-                                            <div class="d-flex align-items-center gap-1">
-                                                <span class="text-muted small" style="font-size: 0.7rem;"><i class="bi bi-list-ol text-primary me-0.5"></i> Penomoran:</span>
-                                                <button type="button" class="btn btn-xs btn-outline-secondary py-0.5 px-2 fw-semibold shadow-2xs" onclick="insertCatatanNumbering('main')" title="Sisipkan / Format Penomoran 1., 2., 3.">1.</button>
-                                                <button type="button" class="btn btn-xs btn-outline-secondary py-0.5 px-2 fw-semibold shadow-2xs" onclick="insertCatatanNumbering('sub')" title="Sisipkan / Format Penomoran 1)., 2)., 3).">1).</button>
-                                                <button type="button" class="btn btn-xs btn-outline-secondary py-0.5 px-2 fw-semibold shadow-2xs" onclick="insertCatatanNumbering('alpha')" title="Sisipkan / Format Penomoran a., b., c.">a.</button>
+                                    <div class="col-12">
+                                        <label class="form-label small fw-semibold text-dark mb-1">
+                                            Catatan / Bukti Titik Awal (Opsional):
+                                        </label>
+                                        <div class="editor-wrapper-box">
+                                            <!-- Toolbar Editor Putih Terpadu & Jelas (1 Baris Sejajar Penuh) -->
+                                            <div class="editor-toolbar-box">
+                                                <span class="text-secondary fw-semibold text-nowrap" style="font-size: 0.74rem;">
+                                                    <i class="bi bi-pencil-square text-primary me-1"></i>Format:
+                                                </span>
+                                                <button type="button" class="editor-tool-btn text-nowrap" onclick="insertCatatanNumbering('main')" title="Sisipkan / Format Poin Utama (1., 2., 3.)">
+                                                    <i class="bi bi-list-ol text-primary"></i>
+                                                    <span class="editor-tool-badge">1.</span>
+                                                    <span>Poin Utama</span>
+                                                </button>
+                                                <button type="button" class="editor-tool-btn text-nowrap" onclick="insertCatatanNumbering('sub')" title="Sisipkan / Format Sub-Poin Berinden (1), 2), 3))">
+                                                    <i class="bi bi-list-nested text-success"></i>
+                                                    <span class="editor-tool-badge">1)</span>
+                                                    <span>Sub-Poin</span>
+                                                </button>
+                                                <button type="button" class="editor-tool-btn text-nowrap" onclick="insertCatatanNumbering('sub_alpha')" title="Sisipkan / Format Sub-Poin Huruf (a), b), c))">
+                                                    <i class="bi bi-fonts text-info"></i>
+                                                    <span class="editor-tool-badge">a)</span>
+                                                    <span>Huruf</span>
+                                                </button>
                                             </div>
+                                            <textarea name="catatan_trigger_spm" id="catatan_trigger_spm" class="form-control font-monospace editor-textarea-attached" rows="4" style="font-size: 0.82rem; line-height: 1.55; background: #ffffff;" placeholder="Tuliskan catatan atau rincian bukti titik awal pengerjaan (contoh: penerimaan sampel, kick-off meeting, dsb)..." onkeydown="handleCatatanKeydown(event)">{{ @order.catatan_trigger_spm }}</textarea>
                                         </div>
-                                        <textarea name="catatan_trigger_spm" id="catatan_trigger_spm" class="form-control form-control-sm" rows="2" placeholder="Contoh: Sampel diterima lengkap / No. Bukti / PKS" onkeydown="handleCatatanKeydown(event)">{{ @order.catatan_trigger_spm }}</textarea>
                                     </div>
-                                    <div class="col-md-4 d-flex align-items-end">
-                                        <button type="submit" class="btn btn-primary btn-sm w-100 fw-semibold py-2 shadow-xs">
+                                    <div class="col-12 d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2 pt-1">
+                                        <small class="text-muted" style="font-size: 0.72rem;">
+                                            <i class="bi bi-info-circle me-1 text-primary"></i> Klik tombol <strong>1.</strong>, <strong>1)</strong>, atau <strong>a)</strong> untuk menyisipkan nomor, atau tekan <strong>Enter</strong> di dalam kotak untuk melanjutkan nomor otomatis.
+                                        </small>
+                                        <button type="submit" class="btn btn-primary btn-sm px-4 py-1.5 fw-semibold shadow-xs flex-shrink-0">
                                             <i class="bi bi-check-circle-fill me-1"></i> Simpan &amp; Aktifkan SPM
                                         </button>
                                     </div>
@@ -9960,7 +10048,7 @@ function insertCatatanNumbering(type) {
     var val = ta.value;
 
     if (start !== end) {
-        // Selection formatting
+        // Selection formatting: format each line selected
         var selectedText = val.substring(start, end);
         var lines = selectedText.split(/\r?\n/);
         var formattedLines = [];
@@ -9972,15 +10060,15 @@ function insertCatatanNumbering(type) {
                 formattedLines.push(line);
                 return;
             }
-            var cleanLine = line.replace(/^\s*(\d+[\.\)]|\d+\)\.|\d+\)|[a-zA-Z][\.\)]|\-|\*|\•)\s*/, '');
+            var cleanLine = line.replace(/^\s*(\d+[\.\)]|[a-zA-Z][\.\)]|\-|\*|\•)\s*/, '');
             if (type === 'main') {
                 formattedLines.push(num + '. ' + cleanLine);
                 num++;
             } else if (type === 'sub') {
-                formattedLines.push(num + '). ' + cleanLine);
+                formattedLines.push('   ' + num + ') ' + cleanLine);
                 num++;
-            } else if (type === 'alpha') {
-                formattedLines.push(String.fromCharCode(charCode) + '. ' + cleanLine);
+            } else if (type === 'sub_alpha' || type === 'alpha') {
+                formattedLines.push('   ' + String.fromCharCode(charCode) + ') ' + cleanLine);
                 charCode++;
             }
         });
@@ -10008,7 +10096,7 @@ function insertCatatanNumbering(type) {
             }
             insertPrefix = (currentLine.trim() === '' ? '' : '\n') + nextNum + '. ';
         } else if (type === 'sub') {
-            var subMatches = textBefore.match(/^(\d+)\)\.?\s/gm);
+            var subMatches = textBefore.match(/^\s*(\d+)\)\s/gm);
             var nextSub = 1;
             if (subMatches && subMatches.length > 0) {
                 subMatches.forEach(function(sm) {
@@ -10016,18 +10104,9 @@ function insertCatatanNumbering(type) {
                     if (n >= nextSub) nextSub = n + 1;
                 });
             }
-            insertPrefix = (currentLine.trim() === '' ? '' : '\n') + nextSub + '). ';
-        } else if (type === 'alpha') {
-            var alphaMatches = textBefore.match(/^([a-z])\.\s/gmi);
-            var nextAlpha = 'a';
-            if (alphaMatches && alphaMatches.length > 0) {
-                var lastM = alphaMatches[alphaMatches.length - 1];
-                var cleanAlpha = lastM.replace(/[^a-zA-Z]/g, '').toLowerCase();
-                if (cleanAlpha.length > 0) {
-                    nextAlpha = String.fromCharCode(cleanAlpha.charCodeAt(0) + 1);
-                }
-            }
-            insertPrefix = (currentLine.trim() === '' ? '' : '\n') + nextAlpha + '. ';
+            insertPrefix = (currentLine.trim() === '' ? '' : '\n') + '   ' + nextSub + ') ';
+        } else if (type === 'sub_alpha' || type === 'alpha') {
+            insertPrefix = (currentLine.trim() === '' ? '' : '\n') + '   a) ';
         }
 
         ta.value = textBefore + insertPrefix + textAfter;
@@ -10049,8 +10128,8 @@ function handleCatatanKeydown(e) {
         var currentLine = textBefore.substring(currentLineStart);
 
         var mMain = currentLine.match(/^(\d+)\.\s*(.*)$/);
-        var mSub = currentLine.match(/^(\d+)\)\.?\s*(.*)$/);
-        var mAlpha = currentLine.match(/^([a-z])\.\s*(.*)$/i);
+        var mSub = currentLine.match(/^(\s*)(\d+)\)\s*(.*)$/);
+        var mAlpha = currentLine.match(/^(\s*)([a-zA-Z])\)\s*(.*)$/);
 
         if (mMain) {
             var mainNum = parseInt(mMain[1], 10);
@@ -10073,8 +10152,9 @@ function handleCatatanKeydown(e) {
         }
 
         if (mSub) {
-            var subNum = parseInt(mSub[1], 10);
-            var contentSub = mSub[2];
+            var indent = mSub[1] || '   ';
+            var subNum = parseInt(mSub[2], 10);
+            var contentSub = mSub[3];
             if (contentSub.trim() === '') {
                 e.preventDefault();
                 ta.value = val.substring(0, currentLineStart) + val.substring(start);
@@ -10083,7 +10163,7 @@ function handleCatatanKeydown(e) {
                 return;
             } else {
                 e.preventDefault();
-                var nextSub = '\n' + (subNum + 1) + '). ';
+                var nextSub = '\n' + indent + (subNum + 1) + ') ';
                 ta.value = val.substring(0, start) + nextSub + val.substring(start);
                 var newPosSub = start + nextSub.length;
                 ta.selectionStart = newPosSub;
@@ -10093,8 +10173,9 @@ function handleCatatanKeydown(e) {
         }
 
         if (mAlpha) {
-            var alphaChar = mAlpha[1].toLowerCase();
-            var contentAlpha = mAlpha[2];
+            var indentA = mAlpha[1] || '   ';
+            var alphaChar = mAlpha[2].toLowerCase();
+            var contentAlpha = mAlpha[3];
             if (contentAlpha.trim() === '') {
                 e.preventDefault();
                 ta.value = val.substring(0, currentLineStart) + val.substring(start);
@@ -10104,7 +10185,7 @@ function handleCatatanKeydown(e) {
             } else {
                 e.preventDefault();
                 var nextAlphaChar = String.fromCharCode(alphaChar.charCodeAt(0) + 1);
-                var nextAlpha = '\n' + nextAlphaChar + '. ';
+                var nextAlpha = '\n' + indentA + nextAlphaChar + ') ';
                 ta.value = val.substring(0, start) + nextAlpha + val.substring(start);
                 var newPosAlpha = start + nextAlpha.length;
                 ta.selectionStart = newPosAlpha;
