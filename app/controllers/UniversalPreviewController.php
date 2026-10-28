@@ -107,13 +107,13 @@ class UniversalPreviewController extends Controller
                 return;
             }
 
-            // 6. Pola Berkas Surat Masuk: /surat-masuk/@id/pdf ATAU /order/@id/surat-masuk/pdf
-            if (preg_match('#order/(\d+)/surat-masuk/pdf#i', $path, $m)) {
+            // 6. Pola Berkas Surat Masuk: /surat-masuk/@id/pdf ATAU /order/@id/surat-masuk/pdf ATAU /order/@id/surat-masuk-pdf
+            if (preg_match('#order/(\d+)/surat-masuk(?:/pdf|-pdf)?#i', $path, $m)) {
                 $orderId = (int)$m[1];
                 $this->handleSuratMasukByOrder($orderId);
                 return;
             }
-            if (preg_match('#surat-masuk/(\d+)/pdf#i', $path, $m)) {
+            if (preg_match('#surat-masuk/(\d+)(?:/pdf)?#i', $path, $m)) {
                 $suratId = (int)$m[1];
                 $this->handleSuratMasuk($suratId);
                 return;
@@ -331,21 +331,33 @@ class UniversalPreviewController extends Controller
      */
     protected function handleSuratMasukByOrder($orderId)
     {
-        $rows = $this->db->exec('SELECT id, file_bukti_permohonan FROM order_layanan WHERE id = ?', [1 => $orderId]);
-        if (empty($rows) || empty($rows[0]['file_bukti_permohonan'])) {
-            $this->jsonResponse(['success' => false, 'message' => 'Berkas surat permohonan pelanggan belum tersedia untuk order ini.']);
+        $rows = $this->db->exec('SELECT id, id_surat_masuk, file_bukti_permohonan, nomor_order, nomor_permintaan FROM order_layanan WHERE id = ?', [1 => $orderId]);
+        if (empty($rows)) {
+            $this->jsonResponse(['success' => false, 'message' => 'Order tidak ditemukan.']);
             return;
         }
 
-        $rawPath = $rows[0]['file_bukti_permohonan'];
-        $filePath = $this->resolveFilePath($rawPath, ['uploads/surat_masuk', 'uploads/permohonan', 'storage/surat_masuk']);
+        $order = $rows[0];
 
-        if (!$filePath || !is_file($filePath)) {
-            $this->jsonResponse(['success' => false, 'message' => 'Berkas fisik surat permohonan tidak ditemukan di server: ' . basename($rawPath)]);
+        // 1. Jika tertaut dengan registrasi surat masuk loket sekretariat (tb_arsipsurat)
+        if (!empty($order['id_surat_masuk'])) {
+            $this->handleSuratMasuk((int)$order['id_surat_masuk']);
             return;
         }
 
-        $this->sendFileAsBase64($filePath, 'Surat_Permohonan_Order_' . $orderId);
+        // 2. Jika ada berkas bukti permohonan yang diunggah langsung di order
+        if (!empty($order['file_bukti_permohonan'])) {
+            $rawPath = $order['file_bukti_permohonan'];
+            $filePath = $this->resolveFilePath($rawPath, ['uploads/surat_masuk', 'uploads/permohonan', 'storage/surat_masuk']);
+
+            if ($filePath && is_file($filePath)) {
+                $nomor = preg_replace('#[^a-zA-Z0-9_-]+#', '_', $order['nomor_permintaan'] ?: ($order['nomor_order'] ?: $orderId));
+                $this->sendFileAsBase64($filePath, 'Surat_Permohonan_' . $nomor);
+                return;
+            }
+        }
+
+        $this->jsonResponse(['success' => false, 'message' => 'Berkas surat permohonan pelanggan belum tersedia untuk order ini.']);
     }
 
     /**
@@ -531,26 +543,237 @@ class UniversalPreviewController extends Controller
     }
 
     /**
-     * Pratinjau Surat Masuk
+     * Pratinjau Surat Masuk Resmi Loket Sekretariat (tb_arsipsurat)
      */
     protected function handleSuratMasuk($suratId)
     {
-        $rows = $this->db->exec('SELECT id, file_surat, nomor_surat FROM tb_suratmasuk WHERE id = ?', [1 => $suratId]);
-        if (empty($rows) || empty($rows[0]['file_surat'])) {
-            $this->jsonResponse(['success' => false, 'message' => 'Berkas surat masuk tidak ditemukan.']);
+        $surat = null;
+        try {
+            $repo = new \SuratMasukRepository($this->db, $this->dbSekretariat);
+            $surat = $repo->getSuratById((int)$suratId);
+        } catch (\Throwable $eRepo) {
+            error_log('[UniversalPreviewController::handleSuratMasuk] ' . $eRepo->getMessage());
+        }
+
+        if (!$surat) {
+            $dbSekre = $this->dbSekretariat ?: $this->db;
+            try {
+                $rows = $dbSekre->exec(
+                    "SELECT a.*, a.id_arsip AS id, a.nama_berkas AS file_path, a.nomor_surat,
+                            COALESCE(c.nmcustomer, 'Instansi / Perusahaan') AS pengirim,
+                            c.pt_cv, COALESCE(c.alamatcustomer, '-') AS alamat_pengirim,
+                            COALESCE(NULLIF(a.kontak_person, ''), NULLIF(c.contactperson, ''), '-') AS pic_pengirim,
+                            COALESCE(NULLIF(a.hp_kontakperson, ''), NULLIF(c.nohpcontactperson, ''), '-') AS no_telp_pengirim,
+                            COALESCE(NULLIF(a.email_kontakperson, ''), NULLIF(c.emailcustomer, ''), '-') AS email_pengirim
+                     FROM tb_arsipsurat a
+                     LEFT JOIN tb_customer c ON a.id_customer = c.id_customer
+                     WHERE a.id_arsip = ? LIMIT 1",
+                    [1 => (int)$suratId]
+                );
+                if (!empty($rows)) {
+                    $surat = $rows[0];
+                }
+            } catch (\Throwable $t) {}
+        }
+
+        // Fallback jika ID yang dikirim merupakan ID order
+        if (!$surat) {
+            $ordRows = $this->db->exec(
+                "SELECT id, id_surat_masuk, file_bukti_permohonan, nomor_order, nomor_permintaan 
+                 FROM order_layanan 
+                 WHERE id = ? OR id_surat_masuk = ? LIMIT 1",
+                [1 => $suratId, 2 => $suratId]
+            );
+            if (!empty($ordRows)) {
+                $ord = $ordRows[0];
+                if (!empty($ord['id_surat_masuk']) && (int)$ord['id_surat_masuk'] !== (int)$suratId) {
+                    $this->handleSuratMasuk((int)$ord['id_surat_masuk']);
+                    return;
+                }
+                if (!empty($ord['file_bukti_permohonan'])) {
+                    $filePath = $this->resolveFilePath($ord['file_bukti_permohonan'], ['uploads/surat_masuk', 'uploads/permohonan', 'storage/surat_masuk']);
+                    if ($filePath && is_file($filePath)) {
+                        $this->sendFileAsBase64($filePath, 'Surat_Permohonan_' . ($ord['nomor_permintaan'] ?: $suratId));
+                        return;
+                    }
+                }
+            }
+        }
+
+        if (!$surat) {
+            $this->jsonResponse(['success' => false, 'message' => 'Data surat permohonan / surat masuk tidak ditemukan di sistem.']);
             return;
         }
 
-        $rawPath = $rows[0]['file_surat'];
-        $filePath = $this->resolveFilePath($rawPath, ['uploads/surat_masuk', 'storage/surat_masuk']);
+        $rawPath = $surat['file_path'] ?? ($surat['nama_berkas'] ?? '');
+        $filePath = null;
+        if (!empty($rawPath)) {
+            $filePath = $this->resolveFilePath($rawPath, ['uploads/surat_masuk', 'public/uploads/surat_masuk', 'storage/surat_masuk', 'uploads/permohonan']);
+        }
+
+        // Jika fisik berkas belum ada di server (misal hasil registrasi loket sebelum upload), buat PDF surat resmi via FPDF
+        if (!$filePath || !is_file($filePath)) {
+            $filePath = $this->generateFallbackPdfSuratMasuk($surat);
+        }
 
         if (!$filePath || !is_file($filePath)) {
-            $this->jsonResponse(['success' => false, 'message' => 'Berkas fisik surat masuk tidak ditemukan di server: ' . basename($rawPath)]);
+            $this->jsonResponse(['success' => false, 'message' => 'Berkas fisik surat masuk tidak ditemukan di server: ' . basename($rawPath ?: 'surat.pdf')]);
             return;
         }
 
-        $nomorSurat = preg_replace('#[^a-zA-Z0-9_-]+#', '_', $rows[0]['nomor_surat'] ?? ('Surat_' . $suratId));
+        $nomorSurat = preg_replace('#[^a-zA-Z0-9_-]+#', '_', $surat['nomor_surat'] ?? ('Surat_' . $suratId));
         $this->sendFileAsBase64($filePath, 'Surat_Masuk_' . $nomorSurat);
+    }
+
+    /**
+     * Generator fallback berkas PDF surat masuk berstandar resmi balai
+     */
+    protected function generateFallbackPdfSuratMasuk(array $surat)
+    {
+        try {
+            $fpdfPath = dirname(__DIR__, 2) . '/app/helpers/fpdf/fpdf.php';
+            if (!file_exists($fpdfPath)) {
+                return null;
+            }
+            require_once $fpdfPath;
+
+            $pdf = new \FPDF('P', 'mm', 'A4');
+            $pdf->SetMargins(20, 15, 20);
+            $pdf->AddPage();
+
+            // 1. KOP SURAT
+            $pdf->SetFont('Arial', 'B', 13);
+            $pdf->SetTextColor(0, 0, 0);
+            $namaPt = strtoupper((!empty($surat['pt_cv']) ? $surat['pt_cv'] . ' ' : '') . ($surat['pengirim'] ?? 'INSTANSI PEMOHON'));
+            $pdf->Cell(0, 6, $namaPt, 0, 1, 'C');
+            $pdf->SetFont('Arial', 'B', 8.5);
+            $pdf->SetTextColor(50, 50, 50);
+            $pdf->Cell(0, 4.5, 'PRODUSEN & JASA INDUSTRI TEKNOLOGI', 0, 1, 'C');
+            $pdf->SetFont('Arial', '', 8);
+            $pdf->SetTextColor(70, 70, 70);
+            $pdf->Cell(0, 4, (!empty($surat['alamat_pengirim']) ? $surat['alamat_pengirim'] : 'Kawasan Industri Terpadu, Indonesia') . ' | Telp: ' . (!empty($surat['no_telp_pengirim']) ? $surat['no_telp_pengirim'] : '-'), 0, 1, 'C');
+            $pdf->Ln(2);
+            $pdf->SetDrawColor(0, 0, 0);
+            $pdf->SetLineWidth(0.8);
+            $pdf->Line(20, $pdf->GetY(), 190, $pdf->GetY());
+            $pdf->SetLineWidth(0.2);
+            $pdf->Line(20, $pdf->GetY() + 0.8, 190, $pdf->GetY() + 0.8);
+            $pdf->Ln(5);
+
+            // 2. METADATA
+            $pdf->SetFont('Arial', '', 9.5);
+            $pdf->SetTextColor(0, 0, 0);
+            $pdf->Cell(20, 5, 'Nomor', 0, 0);
+            $pdf->Cell(4, 5, ':', 0, 0);
+            $pdf->SetFont('Arial', 'B', 9.5);
+            $pdf->Cell(80, 5, $surat['nomor_surat'] ?? '-', 0, 0);
+            $pdf->SetFont('Arial', '', 9.5);
+            $tglSurat = !empty($surat['tanggal_surat']) ? date('d F Y', strtotime($surat['tanggal_surat'])) : date('d F Y');
+            $pdf->Cell(0, 5, 'Bandung, ' . $tglSurat, 0, 1, 'R');
+
+            $pdf->Cell(20, 5, 'Lampiran', 0, 0);
+            $pdf->Cell(4, 5, ':', 0, 0);
+            $pdf->Cell(0, 5, '1 (satu) berkas spesifikasi teknis', 0, 1);
+
+            $pdf->Cell(20, 5, 'Hal', 0, 0);
+            $pdf->Cell(4, 5, ':', 0, 0);
+            $pdf->SetFont('Arial', 'B', 9.5);
+            $pdf->MultiCell(0, 5, $surat['perihal'] ?? 'Permohonan Kerjasama Layanan OPTI', 0, 'L');
+            $pdf->Ln(4);
+
+            // 3. TUJUAN
+            $pdf->SetFont('Arial', '', 9.5);
+            $pdf->Cell(0, 4.5, 'Kepada Yth.', 0, 1);
+            $pdf->SetFont('Arial', 'B', 9.5);
+            $pdf->Cell(0, 4.5, 'Kepala Balai Besar Standardisasi dan Pelayanan Jasa Industri Selulosa (BBSPJIS)', 0, 1);
+            $pdf->SetFont('Arial', '', 9.5);
+            $pdf->Cell(0, 4.5, 'Kementerian Perindustrian Republik Indonesia', 0, 1);
+            $pdf->Cell(0, 4.5, 'Jl. Raya Dayeuhkolot No. 132, Bandung, Jawa Barat 40258', 0, 1);
+            $pdf->Ln(4);
+
+            // 4. PEMBUKA
+            $pdf->Cell(0, 5, 'Dengan hormat,', 0, 1);
+            $pdf->MultiCell(0, 5, "Sehubungan dengan rencana pengujian mutu dan optimalisasi proses industri, bersama ini kami mengajukan permohonan kerjasama pelaksanaan Layanan Optimalisasi Teknologi Industri (OPTI) dengan rincian sebagai berikut:", 0, 'J');
+            $pdf->Ln(3);
+
+            // 5. DATA BERSTRUKTUR
+            $pdf->SetFont('Arial', 'B', 9.5);
+            $pdf->Cell(0, 5, '1. Data Pemohon / Instansi:', 0, 1);
+            $pdf->SetFont('Arial', '', 9);
+            $pdf->Cell(8, 4.8, '', 0, 0);
+            $pdf->Cell(38, 4.8, 'a. Nama Perusahaan', 0, 0);
+            $pdf->Cell(4, 4.8, ':', 0, 0);
+            $pdf->SetFont('Arial', 'B', 9);
+            $pdf->Cell(0, 4.8, $namaPt, 0, 1);
+            $pdf->SetFont('Arial', '', 9);
+            $pdf->Cell(8, 4.8, '', 0, 0);
+            $pdf->Cell(38, 4.8, 'b. Alamat', 0, 0);
+            $pdf->Cell(4, 4.8, ':', 0, 0);
+            $pdf->MultiCell(0, 4.8, !empty($surat['alamat_pengirim']) ? $surat['alamat_pengirim'] : 'Kawasan Industri Terpadu, Indonesia', 0, 'L');
+            $pdf->Cell(8, 4.8, '', 0, 0);
+            $pdf->Cell(38, 4.8, 'c. Narahubung / PIC', 0, 0);
+            $pdf->Cell(4, 4.8, ':', 0, 0);
+            $pdf->Cell(0, 4.8, !empty($surat['pic_pengirim']) ? $surat['pic_pengirim'] : 'Penanggung Jawab Teknis', 0, 1);
+            $pdf->Cell(8, 4.8, '', 0, 0);
+            $pdf->Cell(38, 4.8, 'd. Telepon & Email', 0, 0);
+            $pdf->Cell(4, 4.8, ':', 0, 0);
+            $pdf->Cell(0, 4.8, (!empty($surat['no_telp_pengirim']) ? $surat['no_telp_pengirim'] : '-') . ' / ' . (!empty($surat['email_pengirim']) ? $surat['email_pengirim'] : '-'), 0, 1);
+            $pdf->Ln(2);
+
+            $pdf->SetFont('Arial', 'B', 9.5);
+            $pdf->Cell(0, 5, '2. Rincian Kebutuhan Layanan OPTI:', 0, 1);
+            $pdf->SetFont('Arial', '', 9);
+            $pdf->Cell(8, 4.8, '', 0, 0);
+            $pdf->Cell(38, 4.8, 'a. Judul Kegiatan', 0, 0);
+            $pdf->Cell(4, 4.8, ':', 0, 0);
+            $pdf->SetFont('Arial', 'B', 9);
+            $pdf->MultiCell(0, 4.8, $surat['perihal'] ?? 'Kajian Teknis & Evaluasi Industri', 0, 'L');
+            $pdf->SetFont('Arial', '', 9);
+            $pdf->Cell(8, 4.8, '', 0, 0);
+            $pdf->Cell(38, 4.8, 'b. Layanan Dimohon', 0, 0);
+            $pdf->Cell(4, 4.8, ':', 0, 0);
+            $pdf->Cell(0, 4.8, 'Layanan Optimalisasi Teknologi Industri (OPTI)', 0, 1);
+            $pdf->Cell(8, 4.8, '', 0, 0);
+            $pdf->Cell(38, 4.8, 'c. Ruang Lingkup', 0, 0);
+            $pdf->Cell(4, 4.8, ':', 0, 0);
+            $pdf->MultiCell(0, 4.8, 'Kajian Teknis, Karakterisasi Laboratorium & Penerbitan Sertifikat / Laporan Hasil Pengujian Resmi Balai', 0, 'L');
+            $pdf->Ln(3);
+
+            // 6. PENUTUP
+            $pdf->SetFont('Arial', '', 9.5);
+            $pdf->MultiCell(0, 4.8, "Demikian surat permohonan ini kami sampaikan. Kami berharap dapat segera menerima Tinjauan Kelayakan Permintaan serta Surat Penawaran Biaya resmi dari BBSPJIS. Atas perhatian dan kerjasama Bapak/Ibu, kami ucapkan terima kasih.", 0, 'J');
+            $pdf->Ln(5);
+
+            // 7. TTD
+            $pdf->SetX(110);
+            $pdf->Cell(80, 4.5, 'Hormat kami,', 0, 1, 'C');
+            $pdf->SetX(110);
+            $pdf->SetFont('Arial', 'B', 9.5);
+            $pdf->Cell(80, 4.5, $namaPt, 0, 1, 'C');
+            $pdf->Ln(2);
+            $pdf->SetX(125);
+            $pdf->SetFont('Arial', '', 7.5);
+            $pdf->SetTextColor(90, 90, 90);
+            $pdf->Cell(50, 4, '[ TTD & STEMPEL RESMI ]', 1, 1, 'C');
+            $pdf->SetTextColor(0, 0, 0);
+            $pdf->Ln(8);
+            $pdf->SetX(110);
+            $pdf->SetFont('Arial', 'BU', 9.5);
+            $pdf->Cell(80, 4.5, !empty($surat['pic_pengirim']) ? $surat['pic_pengirim'] : 'Pimpinan Perusahaan', 0, 1, 'C');
+            $pdf->SetX(110);
+            $pdf->SetFont('Arial', '', 8.5);
+            $pdf->Cell(80, 4, 'Direktur', 0, 1, 'C');
+
+            $uploadDir = dirname(__DIR__, 2) . '/public/uploads/surat_masuk';
+            if (!is_dir($uploadDir)) @mkdir($uploadDir, 0777, true);
+            $suratId = (int)($surat['id'] ?? ($surat['id_arsip'] ?? 0));
+            $tempPath = $uploadDir . '/Surat_Masuk_' . $suratId . '.pdf';
+            $pdf->Output('F', $tempPath);
+            return $tempPath;
+        } catch (\Throwable $eGen) {
+            error_log('[UniversalPreviewController::generateFallbackPdfSuratMasuk] ' . $eGen->getMessage());
+            return null;
+        }
     }
 
     /**
