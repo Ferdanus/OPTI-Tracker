@@ -1137,7 +1137,8 @@
                                         </div>
                                         <div class="card-text-wrap flex-grow-1">
                                             <div class="card-title">Dapat Dilaksanakan</div>
-                                            </div>
+                                            <div class="card-subtitle small" id="sub_card_layak">Sanggup dikerjakan &bull; Syarat 4 pilar terpenuhi</div>
+                                        </div>
                                     </label>
                                 </div>
                                 <div class="col-sm-6">
@@ -1149,7 +1150,8 @@
                                         </div>
                                         <div class="card-text-wrap flex-grow-1">
                                             <div class="card-title">Tidak Dapat Dilaksanakan</div>
-                                            </div>
+                                            <div class="card-subtitle small">Ditolak / kapasitas tidak tersedia</div>
+                                        </div>
                                     </label>
                                 </div>
                             </div>
@@ -1576,6 +1578,7 @@ document.addEventListener('DOMContentLoaded', function () {
         var radioLayak = document.getElementById('kep_layak');
         var radioTidak = document.getElementById('kep_tidak_layak');
         var labelLayak = document.getElementById('label_card_layak');
+        var subLayak = document.getElementById('sub_card_layak');
         if (!allChecked) {
             // Jika ada pilar yang tidak tercentang, "Dapat Dilaksanakan" terkunci
             if (radioLayak) {
@@ -1591,6 +1594,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 labelLayak.style.cursor = 'not-allowed';
                 labelLayak.title = 'Centang ke-4 pilar di atas untuk membuka opsi ini';
             }
+            if (subLayak) {
+                subLayak.innerHTML = '<span class="text-danger fw-semibold"><i class="bi bi-lock-fill me-1"></i>Terkunci (Syarat 4 pilar belum terpenuhi)</span>';
+            }
             } else {
             // Jika semua 4 pilar tercentang, "Dapat Dilaksanakan" terbuka
             var canEdit = labelLayak && labelLayak.getAttribute('data-can-edit') !== '0';
@@ -1601,6 +1607,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 labelLayak.style.opacity = '1';
                 labelLayak.style.cursor = 'pointer';
                 labelLayak.title = 'Sanggup dikerjakan';
+            }
+            if (subLayak) {
+                subLayak.innerHTML = 'Sanggup dikerjakan &bull; Syarat 4 pilar terpenuhi';
             }
             }
         updatePreview();

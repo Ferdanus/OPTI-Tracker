@@ -591,11 +591,25 @@
             font-size: 0.9rem;
             line-height: 1.25;
         }
-        .choice-radio-card .card-subtitle {
+                .choice-radio-card .card-subtitle {
             color: #64748b;
-            font-size: 0.74rem;
-            line-height: 1.3;
-            margin-top: 2px;
+            font-size: 0.76rem;
+            line-height: 1.35;
+            margin-top: 3px;
+        }
+        .btn-check:checked + .card-layak .card-subtitle,
+        input[type="radio"]:checked + .card-layak .card-subtitle,
+        #kep_layak:checked + .card-layak .card-subtitle,
+        #koreksi_kep_layak:checked + .card-layak .card-subtitle,
+        #edit_kep_layak:checked + .card-layak .card-subtitle {
+            color: #166534 !important;
+        }
+        .btn-check:checked + .card-tidak-layak .card-subtitle,
+        input[type="radio"]:checked + .card-tidak-layak .card-subtitle,
+        #kep_tidak_layak:checked + .card-tidak-layak .card-subtitle,
+        #koreksi_kep_tidak_layak:checked + .card-tidak-layak .card-subtitle,
+        #edit_kep_tidak_layak:checked + .card-tidak-layak .card-subtitle {
+            color: #991b1b !important;
         }
 
         /* Active State: Dapat Dilaksanakan (Semua ID & Radio Name) */
@@ -2834,7 +2848,8 @@
                                                                     </div>
                                                                     <div class="card-text-wrap flex-grow-1">
                                                                         <div class="card-title">Dapat Dilaksanakan</div>
-                                                                        </div>
+                                                                        <div class="card-subtitle small" id="koreksi_sub_card_layak">Sanggup dikerjakan &bull; Syarat 4 pilar terpenuhi</div>
+                                                                    </div>
                                                                 </label>
                                                             </div>
                                                             <div class="col-sm-6">
@@ -2846,7 +2861,8 @@
                                                                     </div>
                                                                     <div class="card-text-wrap flex-grow-1">
                                                                         <div class="card-title">Tidak Dapat Dilaksanakan</div>
-                                                                        </div>
+                                                                        <div class="card-subtitle small">Ditolak / kapasitas tidak tersedia</div>
+                                                                    </div>
                                                                 </label>
                                                             </div>
                                                         </div>
@@ -3229,7 +3245,8 @@
                                                             </div>
                                                             <div class="card-text-wrap flex-grow-1">
                                                                 <div class="card-title">Dapat Dilaksanakan</div>
-                                                                </div>
+                                                                <div class="card-subtitle small" id="sub_card_layak">Sanggup dikerjakan &bull; Syarat 4 pilar terpenuhi</div>
+                                                            </div>
                                                         </label>
                                                     </div>
                                                     <div class="col-sm-6">
@@ -3241,7 +3258,8 @@
                                                             </div>
                                                             <div class="card-text-wrap flex-grow-1">
                                                                 <div class="card-title">Tidak Dapat Dilaksanakan</div>
-                                                                </div>
+                                                                <div class="card-subtitle small">Ditolak / kapasitas tidak tersedia</div>
+                                                            </div>
                                                         </label>
                                                     </div>
                                                 </div>
@@ -3685,7 +3703,8 @@
                                                             </div>
                                                             <div class="card-text-wrap flex-grow-1">
                                                                 <div class="card-title">Dapat Dilaksanakan</div>
-                                                                </div>
+                                                                <div class="card-subtitle small" id="edit_sub_card_layak">Sanggup dikerjakan &bull; Syarat 4 pilar terpenuhi</div>
+                                                            </div>
                                                         </label>
                                                     </div>
                                                     <div class="col-sm-6">
@@ -3697,7 +3716,8 @@
                                                             </div>
                                                             <div class="card-text-wrap flex-grow-1">
                                                                 <div class="card-title">Tidak Dapat Dilaksanakan</div>
-                                                                </div>
+                                                                <div class="card-subtitle small">Ditolak / kapasitas tidak tersedia</div>
+                                                            </div>
                                                         </label>
                                                     </div>
                                                 </div>
@@ -3983,7 +4003,8 @@
                                                     </div>
                                                     <div class="card-text-wrap flex-grow-1">
                                                         <div class="card-title">Dapat Dilaksanakan</div>
-                                                        </div>
+                                                        <div class="card-subtitle small" id="sub_card_layak">Sanggup dikerjakan &bull; Syarat 4 pilar terpenuhi</div>
+                                                    </div>
                                                 </label>
                                             </div>
                                             <div class="col-sm-6">
@@ -3995,7 +4016,8 @@
                                                     </div>
                                                     <div class="card-text-wrap flex-grow-1">
                                                         <div class="card-title">Tidak Dapat Dilaksanakan</div>
-                                                        </div>
+                                                        <div class="card-subtitle small">Ditolak / kapasitas tidak tersedia</div>
+                                                    </div>
                                                 </label>
                                             </div>
                                         </div>
@@ -8510,6 +8532,7 @@ function cekStatusPilar(prefix) {
     var radioLayak = document.getElementById(prefix + 'kep_layak');
     var radioTidak = document.getElementById(prefix + 'kep_tidak_layak');
     var labelLayak = document.getElementById(prefix + 'label_card_layak');
+    var subLayak = document.getElementById(prefix + 'sub_card_layak');
     if (!allChecked) {
         if (radioLayak) {
             radioLayak.disabled = true;
@@ -8524,6 +8547,9 @@ function cekStatusPilar(prefix) {
             labelLayak.style.cursor = 'not-allowed';
             labelLayak.title = 'Centang ke-4 pilar di atas untuk membuka opsi ini';
         }
+        if (subLayak) {
+            subLayak.innerHTML = '<span class="text-danger fw-semibold"><i class="bi bi-lock-fill me-1"></i>Terkunci (Syarat 4 pilar belum terpenuhi)</span>';
+        }
         } else {
         if (radioLayak) {
             radioLayak.disabled = false;
@@ -8532,6 +8558,9 @@ function cekStatusPilar(prefix) {
             labelLayak.style.opacity = '1';
             labelLayak.style.cursor = 'pointer';
             labelLayak.title = 'Sanggup dikerjakan';
+        }
+        if (subLayak) {
+            subLayak.innerHTML = 'Sanggup dikerjakan &bull; Syarat 4 pilar terpenuhi';
         }
         }
     updateTetapkanButtonState(prefix);
