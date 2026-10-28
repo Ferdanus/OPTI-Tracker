@@ -1315,14 +1315,14 @@
             color: #64748b;
         }
         .activity-node.node-active {
-            background: #f0f7ff;
-            border-color: #3b82f6;
-            color: #1d4ed8;
+            background: #0f172a;
+            border-color: #0f172a;
+            color: #ffffff;
         }
         .activity-node.node-action {
             background: #f8fafc;
-            border-color: #94a3b8;
-            color: #334155;
+            border-color: #cbd5e1;
+            color: #0f172a;
         }
         .activity-card {
             flex: 1 1 auto;
@@ -5852,7 +5852,7 @@
 
                             <div class="activity-item activity-cat-{{ @log_cat }}" data-cat="{{ @log_cat }}">
                                 <!-- Icon Node -->
-                                <div class="activity-node {{ @is_view_log ? 'node-view' : (@is_deal_act || @is_claim_act ? 'node-active' : 'node-action') }}">
+                                <div class="activity-node {{ @is_view_log ? 'node-view' : 'node-active' }} shadow-2xs">
                                     <check if="{{ @is_view_log }}">
                                         <i class="bi bi-eye-fill"></i>
                                     </check>
@@ -5935,7 +5935,7 @@
                                         </check>
                                         <check if="{{ !@is_view_log }}">
                                             <check if="{{ @is_deal_act || @is_success_act }}">
-                                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-0.5" style="font-size: 0.68rem; font-weight: 600;">
+                                                <span class="badge bg-dark text-white border border-dark px-2 py-0.5" style="font-size: 0.68rem; font-weight: 600;">
                                                     <i class="bi bi-check2 me-1"></i>Selesai
                                                 </span>
                                             </check>
