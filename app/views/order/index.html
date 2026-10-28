@@ -323,21 +323,15 @@ tr.row-user-task > td:first-child {
 </style>
 
 <div class="container-fluid px-0">
-    <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom flex-wrap gap-2">
-        <div>
-            <h4 class="fw-bold text-dark m-0 font-display">Daftar Order Layanan</h4>
-            
+    <!-- Header Aksi -->
+    <check if="{{ @can_input_permohonan }}">
+        <div class="d-flex justify-content-end align-items-center mb-3">
+            <button type="button" class="btn btn-primary d-inline-flex align-items-center gap-2 shadow-xs fw-semibold px-3 py-2 rounded-2" data-bs-toggle="modal" data-bs-target="#modalTambahPermohonanManual">
+                <i class="bi bi-plus-circle-fill fs-6"></i>
+                <span>Input Permohonan Baru</span>
+            </button>
         </div>
-        <check if="{{ @can_input_permohonan }}">
-            <div class="d-flex align-items-center gap-2">
-                <button type="button" class="btn btn-primary d-inline-flex align-items-center gap-2 shadow-xs fw-semibold px-3 py-2 rounded-2" data-bs-toggle="modal" data-bs-target="#modalTambahPermohonanManual">
-                    <i class="bi bi-plus-circle-fill fs-6"></i>
-                    <span>Input Permohonan Baru</span>
-                </button>
-            </div>
-        </check>
-    </div>
+    </check>
 
     <!-- FILTER & PENCARIAN ORDER -->
     <div class="card mb-4 border rounded-3 shadow-xs bg-white">
