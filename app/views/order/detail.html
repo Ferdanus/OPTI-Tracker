@@ -179,7 +179,7 @@
             align-items: center;
             justify-content: space-between;
             gap: 1.25rem;
-            padding: 1rem 1.25rem;
+            padding: 0.65rem 1rem;
         }
         .action-guide-main {
             display: flex;
@@ -989,7 +989,7 @@
         }
         .system-section-header {
             background: #fafafa;
-            padding: 1rem 1.25rem;
+            padding: 0.65rem 1rem;
             border-bottom: 1px solid #f1f5f9;
             display: flex;
             align-items: center;
@@ -1309,7 +1309,7 @@
             background: #ffffff;
             border: 1px solid #e2e8f0;
             border-radius: 12px;
-            padding: 1rem 1.25rem;
+            padding: 0.65rem 1rem;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
             transition: all 0.2s ease;
         }
@@ -1783,7 +1783,6 @@
                     <a href="#cardProfil" class="step-checkpoint {{ 1 > @current_step ? 'disabled' : '' }}" data-bs-toggle="tooltip" title="Tahap 1: Asal permohonan dan profil pelanggan">
                         <div class="step-circle done"><i class="bi bi-check-lg"></i></div>
                         <span class="step-text done">{{ @order.media_permohonan && @order.media_permohonan != 'surat' ? 'Permohonan' : 'Surat Masuk' }}</span>
-                        <span class="text-muted" style="font-size: 0.65rem;"><i class="bi bi-check-circle-fill text-secondary"></i> Selesai</span>
                     </a>
 
                     <!-- Step 2: Form Pelayanan (Tim Mitra) -->
@@ -1794,9 +1793,6 @@
                             <check if="{{ @stepper[2].state == 'waiting' }}"><i class="bi bi-file-earmark-medical"></i></check>
                         </div>
                         <span class="step-text {{ @stepper[2].state }}">Form Pelayanan</span>
-                        <check if="{{ @stepper[2].state == 'done' }}"><span class="text-muted" style="font-size: 0.65rem;"><i class="bi bi-check-circle-fill text-secondary"></i> Selesai</span></check>
-                        <check if="{{ @stepper[2].state == 'current' }}"><span class="badge bg-dark text-white rounded-pill px-1.5 py-0.5 fw-bold" style="background-color: #1e293b !important; font-size: 0.62rem;">Aktif</span></check>
-                        <check if="{{ @stepper[2].state == 'waiting' }}"><span class="text-muted" style="font-size: 0.65rem;">Menunggu</span></check>
                     </a>
 
                     <!-- Step 3: Kaji Kelayakan (Ketua Tim) -->
@@ -1807,9 +1803,6 @@
                             <check if="{{ @stepper[3].state == 'waiting' }}"><i class="bi bi-clipboard"></i></check>
                         </div>
                         <span class="step-text {{ @stepper[3].state }}">Kaji Kelayakan</span>
-                        <check if="{{ @stepper[3].state == 'done' }}"><span class="text-muted" style="font-size: 0.65rem;"><i class="bi bi-check-circle-fill text-secondary"></i> Selesai</span></check>
-                        <check if="{{ @stepper[3].state == 'current' }}"><span class="badge bg-dark text-white rounded-pill px-1.5 py-0.5 fw-bold" style="background-color: #1e293b !important; font-size: 0.62rem;">Aktif</span></check>
-                        <check if="{{ @stepper[3].state == 'waiting' }}"><span class="text-muted" style="font-size: 0.65rem;">Menunggu</span></check>
                     </a>
 
                     <!-- Step 4: Parameter & Biaya / Proposal Teknis -->
@@ -1820,9 +1813,6 @@
                             <check if="{{ @stepper[4].state == 'waiting' }}"><i class="bi bi-calculator"></i></check>
                         </div>
                         <span class="step-text {{ @stepper[4].state }}">{{ @order.jenis_layanan_opti == 'lingkungan' ? 'Tarif &amp; Parameter' : 'Proposal Teknis' }}</span>
-                        <check if="{{ @stepper[4].state == 'done' }}"><span class="text-muted" style="font-size: 0.65rem;"><i class="bi bi-check-circle-fill text-secondary"></i> Selesai</span></check>
-                        <check if="{{ @stepper[4].state == 'current' }}"><span class="badge bg-dark text-white rounded-pill px-1.5 py-0.5 fw-bold" style="background-color: #1e293b !important; font-size: 0.62rem;">Aktif</span></check>
-                        <check if="{{ @stepper[4].state == 'waiting' }}"><span class="text-muted" style="font-size: 0.65rem;">Menunggu</span></check>
                     </a>
 
                     <!-- Step 5: Penawaran & Deal (Tim Mitra & Klien) -->
@@ -1833,9 +1823,6 @@
                             <check if="{{ @stepper[5].state == 'waiting' }}"><i class="bi bi-file-earmark-text"></i></check>
                         </div>
                         <span class="step-text {{ @stepper[5].state }}">Penawaran</span>
-                        <check if="{{ @stepper[5].state == 'done' }}"><span class="text-muted" style="font-size: 0.65rem;"><i class="bi bi-check-circle-fill text-secondary"></i> Selesai</span></check>
-                        <check if="{{ @stepper[5].state == 'current' }}"><span class="badge bg-dark text-white rounded-pill px-1.5 py-0.5 fw-bold" style="background-color: #1e293b !important; font-size: 0.62rem;">Aktif</span></check>
-                        <check if="{{ @stepper[5].state == 'waiting' }}"><span class="text-muted" style="font-size: 0.65rem;">Menunggu</span></check>
                     </a>
 
                     <!-- Step 6: Pembayaran (Tim Keuangan) -->
@@ -1846,9 +1833,6 @@
                             <check if="{{ @stepper[6].state == 'waiting' }}"><i class="bi bi-receipt-cutoff"></i></check>
                         </div>
                         <span class="step-text {{ @stepper[6].state }}">Pembayaran</span>
-                        <check if="{{ @stepper[6].state == 'done' }}"><span class="text-muted" style="font-size: 0.65rem;"><i class="bi bi-check-circle-fill text-secondary"></i> Selesai</span></check>
-                        <check if="{{ @stepper[6].state == 'current' }}"><span class="badge bg-dark text-white rounded-pill px-1.5 py-0.5 fw-bold" style="background-color: #1e293b !important; font-size: 0.62rem;">Aktif</span></check>
-                        <check if="{{ @stepper[6].state == 'waiting' }}"><span class="text-muted" style="font-size: 0.65rem;">Menunggu</span></check>
                     </a>
 
                     <!-- Step 7: Aktivasi SPM -->
@@ -1859,9 +1843,6 @@
                             <check if="{{ @stepper[7].state == 'waiting' }}"><i class="bi bi-stopwatch"></i></check>
                         </div>
                         <span class="step-text {{ @stepper[7].state }}">Aktivasi SPM</span>
-                        <check if="{{ @stepper[7].state == 'done' }}"><span class="text-muted" style="font-size: 0.65rem;"><i class="bi bi-check-circle-fill text-secondary"></i> Selesai</span></check>
-                        <check if="{{ @stepper[7].state == 'current' }}"><span class="badge bg-dark text-white rounded-pill px-1.5 py-0.5 fw-bold" style="background-color: #1e293b !important; font-size: 0.62rem;">Aktif</span></check>
-                        <check if="{{ @stepper[7].state == 'waiting' }}"><span class="text-muted" style="font-size: 0.65rem;">Menunggu</span></check>
                     </a>
 
                     <!-- Step 8: Petunjuk Operasional (PO) -->
@@ -1872,9 +1853,6 @@
                             <check if="{{ @stepper[8].state == 'waiting' }}"><i class="bi bi-file-earmark-check"></i></check>
                         </div>
                         <span class="step-text {{ @stepper[8].state }}">PO Kegiatan</span>
-                        <check if="{{ @stepper[8].state == 'done' }}"><span class="text-muted" style="font-size: 0.65rem;"><i class="bi bi-check-circle-fill text-secondary"></i> Selesai</span></check>
-                        <check if="{{ @stepper[8].state == 'current' }}"><span class="badge bg-dark text-white rounded-pill px-1.5 py-0.5 fw-bold" style="background-color: #1e293b !important; font-size: 0.62rem;">Aktif</span></check>
-                        <check if="{{ @stepper[8].state == 'waiting' }}"><span class="text-muted" style="font-size: 0.65rem;">Menunggu</span></check>
                     </a>
 
                     <!-- Step 9: BAST -->
@@ -1885,9 +1863,6 @@
                             <check if="{{ @stepper[9].state == 'waiting' }}"><i class="bi bi-patch-check"></i></check>
                         </div>
                         <span class="step-text {{ @stepper[9].state }}">BAST</span>
-                        <check if="{{ @stepper[9].state == 'done' }}"><span class="text-muted" style="font-size: 0.65rem;"><i class="bi bi-check-circle-fill text-secondary"></i> Selesai</span></check>
-                        <check if="{{ @stepper[9].state == 'current' }}"><span class="badge bg-dark text-white rounded-pill px-1.5 py-0.5 fw-bold" style="background-color: #1e293b !important; font-size: 0.62rem;">Aktif</span></check>
-                        <check if="{{ @stepper[9].state == 'waiting' }}"><span class="text-muted" style="font-size: 0.65rem;">Menunggu</span></check>
                     </a>
                 </div>
             </div>
@@ -1940,7 +1915,7 @@
                             </span>
                         </div>
                         <div class="action-guide-title">{{ @langkah_berikutnya.judul }}</div>
-                        <p class="action-guide-desc">{{ @langkah_berikutnya.deskripsi }}</p>
+                        
                     </div>
                 </div>
                 <check if="{{ (!empty(@langkah_berikutnya.tombol_url) && !empty(@langkah_berikutnya.tombol_teks)) || !empty(@langkah_berikutnya.tombol_modal) }}">
