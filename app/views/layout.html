@@ -1988,24 +1988,29 @@
                 </button>
 
                 <div class="flex-grow-1">
-                    <check if="{{ !empty(@breadcrumb) }}">
-                        <nav aria-label="breadcrumb" class="topbar-breadcrumb">
-                            <repeat group="{{ @breadcrumb }}" key="{{ @idx }}" value="{{ @item }}">
-                                <check if="{{ @idx > 0 }}">
-                                    <i class="bi bi-chevron-right separator"></i>
-                                </check>
-                                <check if="{{ !empty(@item.url) }}">
-                                    <true><a href="{{ @item.url }}">{{ @item.label }}</a></true>
-                                    <false><span class="current">{{ @item.label }}</span></false>
-                                </check>
-                            </repeat>
-                        </nav>
+                    <check if="{{ !empty(@topbar_custom_title) }}">
+                        <p class="topbar-title text-truncate" style="font-size: 0.95rem; letter-spacing: -0.01em;">{{ @topbar_custom_title }}</p>
                     </check>
-                    <check if="{{ empty(@breadcrumb) }}">
-                        <check if="{{ empty(@hide_topbar_title) }}">
-                            <p class="topbar-title">{{ @page_title ?: 'Dashboard' }}</p>
-                            <check if="{{ @page_subtitle }}">
-                                <p class="topbar-subtitle">{{ @page_subtitle }}</p>
+                    <check if="{{ empty(@topbar_custom_title) }}">
+                        <check if="{{ !empty(@breadcrumb) }}">
+                            <nav aria-label="breadcrumb" class="topbar-breadcrumb">
+                                <repeat group="{{ @breadcrumb }}" key="{{ @idx }}" value="{{ @item }}">
+                                    <check if="{{ @idx > 0 }}">
+                                        <i class="bi bi-chevron-right separator"></i>
+                                    </check>
+                                    <check if="{{ !empty(@item.url) }}">
+                                        <true><a href="{{ @item.url }}">{{ @item.label }}</a></true>
+                                        <false><span class="current">{{ @item.label }}</span></false>
+                                    </check>
+                                </repeat>
+                            </nav>
+                        </check>
+                        <check if="{{ empty(@breadcrumb) }}">
+                            <check if="{{ empty(@hide_topbar_title) }}">
+                                <p class="topbar-title">{{ @page_title ?: 'Dashboard' }}</p>
+                                <check if="{{ @page_subtitle }}">
+                                    <p class="topbar-subtitle">{{ @page_subtitle }}</p>
+                                </check>
                             </check>
                         </check>
                     </check>
