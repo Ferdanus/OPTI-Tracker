@@ -1834,7 +1834,7 @@
                             <check if="{{ @stepper[5].state == 'current' }}"><i class="bi bi-file-earmark-text"></i></check>
                             <check if="{{ @stepper[5].state == 'waiting' }}"><i class="bi bi-file-earmark-text"></i></check>
                         </div>
-                        <span class="step-text {{ @stepper[5].state }}">Penawaran DEAL</span>
+                        <span class="step-text {{ @stepper[5].state }}">Penawaran</span>
                         <check if="{{ @stepper[5].state == 'done' }}"><span class="text-success" style="font-size: 0.65rem;"><i class="bi bi-check-circle-fill"></i> Selesai</span></check>
                         <check if="{{ @stepper[5].state == 'current' }}"><span class="badge bg-primary text-white rounded-pill px-1.5 py-0.5 fw-bold" style="font-size: 0.62rem;">Aktif</span></check>
                         <check if="{{ @stepper[5].state == 'waiting' }}"><span class="text-muted" style="font-size: 0.65rem;">Menunggu</span></check>
@@ -2101,7 +2101,7 @@
                             <true><span class="badge bg-light text-muted stage-status-badge">Menunggu</span></true>
                             <false>
                                 <check if="{{ !empty(@penawaran) && @penawaran.status_respon_klien == 'deal' }}">
-                                    <true><span class="badge bg-success text-white stage-status-badge">DEAL</span></true>
+                                    <true><span class="badge bg-success-subtle text-success stage-status-badge">Selesai</span></true>
                                     <false>
                                         <check if="{{ !empty(@penawaran) && @penawaran.status_respon_klien == 'revisi' }}">
                                             <true><span class="badge bg-warning text-dark stage-status-badge">Revisi</span></true>
@@ -2138,7 +2138,7 @@
                             <true><span class="badge bg-light text-muted stage-status-badge">Menunggu</span></true>
                             <false>
                                 <check if="{{ (@order.status_keuangan == 'lunas') || !empty(@riwayat_bayar) }}">
-                                    <true><span class="badge bg-success text-white stage-status-badge">Lunas</span></true>
+                                    <true><span class="badge bg-success-subtle text-success stage-status-badge">Selesai</span></true>
                                     <false>
                                         <check if="{{ @order.status_keuangan == 'terbayar_sebagian' }}">
                                             <true><span class="badge bg-info text-white stage-status-badge">Sebagian</span></true>
