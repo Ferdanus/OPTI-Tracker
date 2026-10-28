@@ -1293,38 +1293,44 @@
         .activity-item:hover .activity-node {
             transform: scale(1.12);
         }
+        .activity-node {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            background: #ffffff;
+            border: 1.5px solid #cbd5e1;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+            font-size: 0.85rem;
+            color: #64748b;
+            transition: all 0.2s ease;
+            margin-top: 3px;
+        }
         .activity-node.node-view {
             background: #f8fafc;
             border-color: #cbd5e1;
             color: #64748b;
         }
-        .activity-node.node-claim {
-            background: #eff6ff;
-            border-color: #93c5fd;
-            color: #2563eb;
+        .activity-node.node-active {
+            background: #f0f7ff;
+            border-color: #3b82f6;
+            color: #1d4ed8;
         }
-        .activity-node.node-success {
-            background: #f0fdf4;
-            border-color: #86efac;
-            color: #16a34a;
-        }
-        .activity-node.node-warn {
-            background: #fffbeb;
-            border-color: #fde68a;
-            color: #d97706;
-        }
-        .activity-node.node-primary {
-            background: #faf5ff;
-            border-color: #d8b4fe;
-            color: #9333ea;
+        .activity-node.node-action {
+            background: #f8fafc;
+            border-color: #94a3b8;
+            color: #334155;
         }
         .activity-card {
             flex: 1 1 auto;
             background: #ffffff;
             border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 0.65rem 1rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
             transition: all 0.2s ease;
         }
         .activity-card:hover {
@@ -5846,7 +5852,7 @@
 
                             <div class="activity-item activity-cat-{{ @log_cat }}" data-cat="{{ @log_cat }}">
                                 <!-- Icon Node -->
-                                <div class="activity-node {{ @is_view_log ? 'node-view' : (@is_deal_act ? 'node-success' : (@is_nego_act ? 'node-warn' : (@is_warn_act ? 'node-warn' : (@is_claim_act ? 'node-claim' : (@is_success_act ? 'node-success' : 'node-primary'))))) }}">
+                                <div class="activity-node {{ @is_view_log ? 'node-view' : (@is_deal_act || @is_claim_act ? 'node-active' : 'node-action') }}">
                                     <check if="{{ @is_view_log }}">
                                         <i class="bi bi-eye-fill"></i>
                                     </check>
@@ -5916,47 +5922,37 @@
                                 <div class="activity-card">
                                     <!-- Top Row: Badges + Description -->
                                     <div class="d-flex align-items-center gap-2 flex-wrap mb-2">
+                                        <!-- Modul Badge (Slate Neutral) -->
+                                        <span class="badge bg-light text-secondary border px-2 py-0.5 text-uppercase" style="font-size: 0.68rem; font-weight: 600; letter-spacing: 0.3px;">
+                                            {{ str_replace('_', ' ', @act.modul) }}
+                                        </span>
+
+                                        <!-- Status Action Badge (Harmonized theme) -->
                                         <check if="{{ @is_view_log }}">
-                                            <span class="badge rounded-pill bg-light text-secondary border px-2 py-0.5" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.3px;">
-                                                <i class="bi bi-eye me-1"></i>DIBACA
+                                            <span class="text-muted small fw-medium" style="font-size: 0.72rem;">
+                                                <i class="bi bi-eye me-1"></i>Dibaca
                                             </span>
                                         </check>
                                         <check if="{{ !@is_view_log }}">
-                                            <check if="{{ @is_deal_act }}">
-                                                <span class="badge rounded-pill bg-light border text-success border border-success-subtle px-2 py-0.5" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.3px;">
-                                                    <i class="bi bi-check-circle-fill me-1"></i>DEAL
+                                            <check if="{{ @is_deal_act || @is_success_act }}">
+                                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-0.5" style="font-size: 0.68rem; font-weight: 600;">
+                                                    <i class="bi bi-check2 me-1"></i>Selesai
                                                 </span>
                                             </check>
-                                            <check if="{{ !@is_deal_act && @is_nego_act }}">
-                                                <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-0.5" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.3px;">
-                                                    <i class="bi bi-arrow-repeat me-1"></i>NEGOSIASI
+                                            <check if="{{ !@is_deal_act && !@is_success_act && @is_warn_act }}">
+                                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-0.5" style="font-size: 0.68rem; font-weight: 600;">
+                                                    <i class="bi bi-exclamation-circle me-1"></i>Revisi
                                                 </span>
                                             </check>
-                                            <check if="{{ !@is_deal_act && !@is_nego_act && @is_draft_act }}">
-                                                <span class="badge rounded-pill bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-0.5" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.3px;">
-                                                    <i class="bi bi-bookmark-fill me-1"></i>DRAFT
-                                                </span>
-                                            </check>
-                                            <check if="{{ !@is_deal_act && !@is_nego_act && !@is_draft_act && @is_warn_act }}">
-                                                <span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle px-2 py-0.5" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.3px;">
-                                                    <i class="bi bi-exclamation-triangle-fill me-1"></i>BATAL / DITOLAK
-                                                </span>
-                                            </check>
-                                            <check if="{{ !@is_deal_act && !@is_nego_act && !@is_draft_act && !@is_warn_act && @is_success_act }}">
-                                                <span class="badge rounded-pill bg-light border text-success border border-success-subtle px-2 py-0.5" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.3px;">
-                                                    <i class="bi bi-check2-circle me-1"></i>SELESAI / ACC
-                                                </span>
-                                            </check>
-                                            <check if="{{ !@is_deal_act && !@is_nego_act && !@is_draft_act && !@is_warn_act && !@is_success_act }}">
-                                                <span class="badge rounded-pill bg-primary-subtle text-primary border border-primary-subtle px-2 py-0.5" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.3px;">
-                                                    <i class="bi bi-arrow-right-circle me-1"></i>DIPROSES
+                                            <check if="{{ !@is_deal_act && !@is_success_act && !@is_warn_act }}">
+                                                <span class="badge bg-light text-dark border px-2 py-0.5" style="font-size: 0.68rem; font-weight: 600;">
+                                                    <i class="bi bi-arrow-right-short me-0.5"></i>Diproses
                                                 </span>
                                             </check>
                                         </check>
-                                        <span class="badge border rounded-pill px-2.5 py-0.5 text-uppercase" style="font-size: 0.66rem; font-weight: 700; letter-spacing: 0.4px; background-color: {{ @is_view_log ? '#f1f5f9' : (@is_deal_act ? '#f0fdf4' : (@is_nego_act ? '#fffbeb' : '#e0f2fe')) }}; color: {{ @is_view_log ? '#475569' : (@is_deal_act ? '#16a34a' : (@is_nego_act ? '#b45309' : '#0369a1')) }}; border-color: {{ @is_view_log ? '#cbd5e1' : (@is_deal_act ? '#bbf7d0' : (@is_nego_act ? '#fde68a' : '#bae6fd')) }} !important;">
-                                            {{ str_replace('_', ' ', @act.modul) }}
-                                        </span>
-                                        <span class="fw-bold text-dark font-display" style="font-size: 0.9rem; line-height: 1.4;">
+
+                                        <!-- Description Text -->
+                                        <span class="fw-semibold text-dark font-display ms-1" style="font-size: 0.88rem; line-height: 1.35;">
                                             {{ @act.deskripsi }}
                                         </span>
                                     </div>
