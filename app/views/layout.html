@@ -1988,9 +1988,11 @@
                 </button>
 
                 <div class="flex-grow-1">
-                    <p class="topbar-title">{{ @page_title ?: 'Dashboard' }}</p>
-                    <check if="{{ @page_subtitle }}">
-                        <p class="topbar-subtitle">{{ @page_subtitle }}</p>
+                    <check if="{{ empty(@hide_topbar_title) }}">
+                        <p class="topbar-title">{{ @page_title ?: 'Dashboard' }}</p>
+                        <check if="{{ @page_subtitle }}">
+                            <p class="topbar-subtitle">{{ @page_subtitle }}</p>
+                        </check>
                     </check>
                 </div>
 
