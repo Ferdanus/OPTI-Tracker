@@ -10103,17 +10103,44 @@ function insertCatatanNumbering(type) {
             }
             insertPrefix = (currentLine.trim() === '' ? '' : '\n') + nextNum + '. ';
         } else if (type === 'sub') {
-            var subMatches = textBefore.match(/^\s*(\d+)\)\s/gm);
+            var linesBeforeSub = textBefore.split(/\r?\n/);
             var nextSub = 1;
-            if (subMatches && subMatches.length > 0) {
-                subMatches.forEach(function(sm) {
-                    var n = parseInt(sm.replace(/[^\d]/g, ''), 10);
-                    if (n >= nextSub) nextSub = n + 1;
-                });
+            for (var si = linesBeforeSub.length - 1; si >= 0; si--) {
+                var sl = linesBeforeSub[si].trim();
+                if (sl === '') continue;
+                var mSubLine = sl.match(/^(\d+)\)/);
+                if (mSubLine) {
+                    nextSub = parseInt(mSubLine[1], 10) + 1;
+                    break;
+                }
+                if (sl.match(/^\d+\.\s/)) {
+                    nextSub = 1;
+                    break;
+                }
             }
             insertPrefix = (currentLine.trim() === '' ? '' : '\n') + '   ' + nextSub + ') ';
         } else if (type === 'sub_alpha' || type === 'alpha') {
-            insertPrefix = (currentLine.trim() === '' ? '' : '\n') + '   a) ';
+            var linesBeforeAlpha = textBefore.split(/\r?\n/);
+            var nextChar = 'a';
+            for (var ai = linesBeforeAlpha.length - 1; ai >= 0; ai--) {
+                var al = linesBeforeAlpha[ai].trim();
+                if (al === '') continue;
+                var mAlphaLine = al.match(/^([a-zA-Z])\)/);
+                if (mAlphaLine) {
+                    var code = mAlphaLine[1].toLowerCase().charCodeAt(0);
+                    if (code >= 97 && code < 122) {
+                        nextChar = String.fromCharCode(code + 1);
+                    } else {
+                        nextChar = 'a';
+                    }
+                    break;
+                }
+                if (al.match(/^\d+[\.\)]/)) {
+                    nextChar = 'a';
+                    break;
+                }
+            }
+            insertPrefix = (currentLine.trim() === '' ? '' : '\n') + '   ' + nextChar + ') ';
         }
 
         ta.value = textBefore + insertPrefix + textAfter;
