@@ -2492,20 +2492,20 @@
                 <div class="p-3 p-md-4">
                     <!-- KONDISI 1: SUDAH DIDISPOSISIKAN / SELESAI TAHAP 2 (TAMPILAN RINGKASAN READ-ONLY) -->
                     <check if="{{ @is_form_pelayanan_done }}">
-                        <div class="p-3 rounded-3 border {{ @order.jenis_layanan_opti == 'selulosa' ? 'bg-danger-subtle border-danger-subtle' : 'bg-light border border-success-subtle' }} mb-3">
+                        <div class="p-3 rounded-3 border bg-white shadow-xs mb-3" style="border-left: 4px solid #0f172a !important;">
                             <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
                                 <div class="d-flex align-items-center gap-3">
-                                    <div class="icon-tile bg-white shadow-sm {{ @order.jenis_layanan_opti == 'selulosa' ? 'text-danger' : 'text-success' }}">
-                                        <i class="bi {{ @order.jenis_layanan_opti == 'selulosa' ? 'bi-tree-fill' : 'bi-water' }}"></i>
+                                    <div class="icon-tile text-white shadow-sm" style="background-color: #0f172a;">
+                                        <i class="bi bi-file-earmark-medical-fill"></i>
                                     </div>
                                     <div>
-                                        <span class="badge {{ @order.jenis_layanan_opti == 'selulosa' ? 'bg-danger' : 'bg-success' }} text-uppercase mb-1">
-                                            OPTI {{ @order.jenis_layanan_opti }}
+                                        <span class="badge bg-dark text-white text-uppercase mb-1 font-monospace" style="font-size: 0.7rem; letter-spacing: 0.5px;">
+                                            OPTI {{ strtoupper(@order.jenis_layanan_opti) }}
                                         </span>
                                         <h6 class="fw-bold text-dark m-0 font-display">
                                             Divisi Pelaksana: {{ @order.jenis_layanan_opti == 'selulosa' ? 'OPTI Selulosa (Ka. Tim Selulosa)' : 'OPTI Lingkungan (Ka. Tim Lingkungan)' }}
                                         </h6>
-                                        </div>
+                                    </div>
                                 </div>
                                 <check if="{{ @is_admin_order || @is_superadmin }}">
                                     <button type="button" class="btn btn-white btn-sm border fw-semibold shadow-sm text-secondary d-inline-flex align-items-center gap-1.5" data-bs-toggle="collapse" data-bs-target="#collapseEditInlinePelayanan" aria-expanded="false" aria-controls="collapseEditInlinePelayanan">
@@ -5844,7 +5844,7 @@
                             <set is_deal_act="{{ in_array(@act.aksi, ['deal_penawaran', 'disetujui_klien', 'penawaran_deal']) || strpos(@act.deskripsi, 'DEAL') !== false || strpos(@act.deskripsi, 'deal') !== false }}" />
                             <set is_nego_act="{{ in_array(@act.aksi, ['nego_penawaran', 'negosiasi_penawaran']) || strpos(@act.deskripsi, 'Negosiasi') !== false || strpos(@act.deskripsi, 'NEGOSIASI') !== false || strpos(@act.deskripsi, 'nego') !== false }}" />
                             <set is_draft_act="{{ in_array(@act.aksi, ['simpan_draft_penawaran', 'simpan_draft']) || strpos(@act.deskripsi, 'Draf') !== false || strpos(@act.deskripsi, 'draft') !== false }}" />
-                            <set is_dokumen_log="{{ strpos(@act.aksi, 'proposal') !== false || strpos(@act.aksi, 'penawaran') !== false || strpos(@act.aksi, 'bast') !== false || strpos(@act.aksi, 'po') !== false || strpos(@act.aksi, 'upload') !== false || strpos(@act.aksi, 'laporan') !== false }}" />
+                            <set is_dokumen_log="{{ strpos(@act.modul, 'form_pelayanan') === false && strpos(@act.aksi, 'pelayanan') === false && (strpos(@act.aksi, 'proposal') !== false || strpos(@act.aksi, 'penawaran') !== false || strpos(@act.aksi, 'bast') !== false || strpos(@act.aksi, 'po') !== false || strpos(@act.aksi, 'upload') !== false || strpos(@act.aksi, 'laporan') !== false) }}" />
                             <set log_cat="{{ @is_view_log ? 'akses' : (@is_dokumen_log ? 'dokumen' : 'alur') }}" />
                             <set is_warn_act="{{ in_array(@act.aksi, ['batal_klaim', 'tolak_surat', 'revisi_proposal', 'minta_revisi', 'tolak_order', 'tolak_form_pelayanan', 'tolak_tinjauan', 'hapus_order', 'hapus_pembayaran', 'batal_penawaran']) || strpos(@act.deskripsi, 'BATAL') !== false || strpos(@act.deskripsi, 'batal') !== false }}" />
                             <set is_success_act="{{ @is_deal_act || in_array(@act.aksi, ['approve_proposal', 'setujui_proposal', 'simpan_tinjauan', 'verifikasi_pembayaran', 'terbitkan_bast', 'tutup_order', 'terbitkan_po', 'simpan_form_pelayanan']) }}" />
