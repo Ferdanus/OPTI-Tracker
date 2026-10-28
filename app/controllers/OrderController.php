@@ -152,6 +152,7 @@ class OrderController extends Controller {
         } catch (\Exception $eCust) {}
         $f3->set('daftar_customer_opti', $daftarCustomerOpti);
         $f3->set('topbar_custom_title', 'Sistem Optimalisasi Pemanfaatan Teknologi Industri');
+        $f3->set('topbar_badge', 'BBSPJIS');
 
         $this->render('order/index.html', 'Daftar Order Layanan', 'order');
     }

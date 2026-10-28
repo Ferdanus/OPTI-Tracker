@@ -1989,7 +1989,12 @@
 
                 <div class="flex-grow-1">
                     <check if="{{ !empty(@topbar_custom_title) }}">
-                        <p class="topbar-title text-truncate" style="font-size: 0.95rem; letter-spacing: -0.01em;">{{ @topbar_custom_title }}</p>
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <span class="fw-semibold text-slate-800" style="font-size: 0.88rem; letter-spacing: -0.01em;">{{ @topbar_custom_title }}</span>
+                            <check if="{{ !empty(@topbar_badge) }}">
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-0.5 rounded-pill fw-bold" style="font-size: 0.72rem; letter-spacing: 0.03em;">{{ @topbar_badge }}</span>
+                            </check>
+                        </div>
                     </check>
                     <check if="{{ empty(@topbar_custom_title) }}">
                         <check if="{{ !empty(@breadcrumb) }}">
