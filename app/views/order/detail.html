@@ -3768,7 +3768,7 @@
                                                     <div class="col-4 text-muted">PIC Peneliti</div>
                                                     <div class="col-8">
                                                         <span class="fw-semibold text-dark">{{ @order.pic_proposal_nama ?: (@proposal.pic_nama ?: 'PIC Peneliti') }}</span>
-                                                        <span class="text-muted small d-block" style="font-size: 0.72rem;">Spesialisasi Selulosa</span>
+                                                        <span class="text-muted small d-block" style="font-size: 0.72rem;">Spesialisasi {{ @order.pic_proposal_spesialisasi ?: ucfirst(@order.jenis_layanan_opti) }}</span>
                                                     </div>
                                                 </div>
                                                 <div class="row g-2">

@@ -488,6 +488,11 @@ class OrderLayanan extends \DB\SQL\Mapper {
                        COALESCE((SELECT SUM(jumlah) FROM opti_pembayaran WHERE order_id = o.id), 0) AS total_terbayar,
                        (SELECT MAX(tanggal_bayar) FROM opti_pembayaran WHERE order_id = o.id) AS tanggal_bayar_terakhir,
                        u_pic.nama_user AS pic_proposal_nama,
+                       CASE 
+                           WHEN u_pic.si_opti LIKE '%lingkungan%' THEN 'Lingkungan'
+                           WHEN u_pic.si_opti LIKE '%selulosa%' THEN 'Selulosa'
+                           ELSE 'Umum'
+                       END AS pic_proposal_spesialisasi,
                        u_pelaksana.nama_user AS ketua_pelaksana_nama,
                        u_unlock.nama_user AS unlocked_by_name
                 FROM order_layanan o
@@ -1061,6 +1066,11 @@ class OrderLayanan extends \DB\SQL\Mapper {
                     COALESCE((SELECT SUM(jumlah) FROM opti_pembayaran WHERE order_id = o.id), 0) AS total_terbayar,
                     (SELECT MAX(tanggal_bayar) FROM opti_pembayaran WHERE order_id = o.id) AS tanggal_bayar_terakhir,
                     u_pic.nama_user AS pic_proposal_nama,
+                    CASE 
+                        WHEN u_pic.si_opti LIKE '%lingkungan%' THEN 'Lingkungan'
+                        WHEN u_pic.si_opti LIKE '%selulosa%' THEN 'Selulosa'
+                        ELSE 'Umum'
+                    END AS pic_proposal_spesialisasi,
                     u_pelaksana.nama_user AS ketua_pelaksana_nama,
                     u_klaim.nama_user AS nama_pengklaim,
                     u_unlock.nama_user AS unlocked_by_name,
@@ -1869,9 +1879,13 @@ class OrderLayanan extends \DB\SQL\Mapper {
         
         $params = array();
         if (!empty($divisi) && in_array($divisi, array('selulosa', 'lingkungan'))) {
-            $sql .= " AND (u.si_opti LIKE ? OR m.jenis_layanan_opti = ? OR m.jenis_layanan_opti = 'semua' OR u.si_opti IN ('ketua_tim_selulosa', 'ketua_tim_lingkungan')) ";
+            $katimRole = 'ketua_tim_' . $divisi;
+            $katimAlias = 'katim_' . $divisi;
+            $sql .= " AND (u.si_opti LIKE ? OR u.si_opti = ? OR u.si_opti = ? OR m.jenis_layanan_opti = ? OR (m.jenis_layanan_opti = 'semua' AND u.si_opti NOT LIKE '%lingkungan%' AND u.si_opti NOT LIKE '%selulosa%')) ";
             $params[1] = "%{$divisi}%";
-            $params[2] = $divisi;
+            $params[2] = $katimRole;
+            $params[3] = $katimAlias;
+            $params[4] = $divisi;
         }
 
         if ($priorityUser > 0) {
