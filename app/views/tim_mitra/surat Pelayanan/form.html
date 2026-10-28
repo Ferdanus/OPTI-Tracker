@@ -995,7 +995,7 @@
                             <i class="bi bi-bookmark-fill"></i> <span>Simpan Draf</span>
                         </button>
                         <button type="button" class="btn-submit-theme" id="btnKirim">
-                            <i class="bi bi-send-fill me-1"></i> <span id="textBtnKirim">{{ @tinjauan ? 'Tetapkan &amp; Kirim Kaji Kelayakan' : 'Kirim' }}</span>
+                            <i class="bi bi-send-fill me-1"></i> <span id="textBtnKirim">{{ @tinjauan ? 'Kirim' : 'Kirim' }}</span>
                         </button>
                     </div>
                 </check>
@@ -1550,7 +1550,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (btnLewati) btnLewati.classList.remove('active');
             if (collapsedNote) collapsedNote.style.display = 'none';
             if (bodyFields) bodyFields.style.display = 'block';
-            if (textBtnKirim) textBtnKirim.textContent = 'Tetapkan & Kirim Kaji Kelayakan';
+            if (textBtnKirim) textBtnKirim.textContent = 'Kirim';
             cekStatusPilar();
             toggleAlasanPenolakan();
         } else {

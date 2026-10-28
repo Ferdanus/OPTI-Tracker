@@ -2902,7 +2902,7 @@
                                             <i class="bi bi-bookmark-fill"></i> <span id="btnInlineSimpanDraftText">Simpan Draf</span>
                                         </button>
                                         <button type="button" class="btn-submit-theme" id="btnInlineKirimKatimPelayanan" onclick="kirimKatimPelayananInline()">
-                                            <i class="bi bi-send-fill me-1"></i> <span id="btnInlineKirimKatimText">{{ @tinjauan ? 'Tetapkan &amp; Kirim Kaji Kelayakan' : 'Kirim ke Ketua Tim' }}</span>
+                                            <i class="bi bi-send-fill me-1"></i> <span id="btnInlineKirimKatimText">{{ @tinjauan ? 'Kirim' : 'Kirim ke Ketua Tim' }}</span>
                                         </button>
                                     </div>
                                 </div>
@@ -4122,7 +4122,7 @@
                                                                     <check if="{{ @is_ketua_selulosa }}">
                                                                         <button type="button" id="btnSimpanApproveProposalDetail" class="btn btn-primary btn-sm px-4 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5" onclick="confirmSimpanDanApproveDetail()" {{ empty(@proposal.file_proposal) || ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) ? 'disabled' : '' }}>
                                                                             <i class="bi bi-check2-circle"></i>
-                                                                            <span>Setujui &amp; Kirim</span>
+                                                                            <span>Setujui</span>
                                                                         </button>
                                                                     </check>
                                                                 </false>
@@ -5133,7 +5133,7 @@
                                         </div>
                                         <div class="d-flex align-items-center gap-2">
                                             <button type="button" id="btnSimpanSajaDetail" class="btn btn-outline-primary px-3 py-2 fw-semibold d-none">Simpan Saja</button>
-                                            <button type="button" id="btnSimpanDisposisiDetail" class="btn btn-primary px-4 py-2 fw-bold d-none"><i class="bi bi-send-check me-1"></i> Kirim &amp; Disposisi</button>
+                                            <button type="button" id="btnSimpanDisposisiDetail" class="btn btn-primary px-4 py-2 fw-bold d-none"><i class="bi bi-send-check me-1"></i> Disposisi</button>
                                             <button type="button" id="btnSimpanPembayaranDetail" class="btn btn-success px-4 py-2 fw-bold"><i class="bi bi-save me-1"></i> Simpan Pembayaran</button>
                                         </div>
                                     </div>
@@ -5566,7 +5566,7 @@
                                                 <span>Simpan Draf</span>
                                             </button>
                                             <button type="submit" class="btn btn-primary btn-sm px-4 py-1.5 fw-semibold shadow-xs" id="btnAktifkanSpmDetail" onclick="setAktivasiSpmDraft(false)">
-                                                <i class="bi bi-check-circle-fill me-1"></i> Simpan &amp; Aktifkan SPM
+                                                <i class="bi bi-check-circle-fill me-1"></i> Aktifkan
                                             </button>
                                         </div>
                                     </div>
@@ -6060,7 +6060,7 @@
                 <div class="modal-footer bg-light border-0 py-2.5 px-4">
                     <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Batal</button>
                     <button type="submit" class="btn btn-warning btn-sm fw-bold px-3.5 shadow-xs">
-                        <i class="bi bi-check-circle-fill me-1"></i> Simpan &amp; Tetapkan PIC
+                        <i class="bi bi-check-circle-fill me-1"></i> Tetapkan
                     </button>
                 </div>
             </form>
@@ -7425,7 +7425,7 @@ function setKajiMode(mode, prefix) {
         if (btnLewati) btnLewati.classList.remove('active');
         if (collapsedNote) collapsedNote.style.display = 'none';
         if (bodyFields) bodyFields.style.display = 'block';
-        if (textBtnKirim) textBtnKirim.textContent = 'Tetapkan & Kirim Kaji Kelayakan';
+        if (textBtnKirim) textBtnKirim.textContent = 'Kirim';
         cekStatusPilar(prefix);
         toggleAlasanPenolakan(prefix);
     } else {
@@ -8088,7 +8088,7 @@ function kirimKatimPelayananInline() {
     }
 
     var divNama = (jenisRadio.value === 'selulosa') ? 'OPTI Selulosa (Ka. Tim Selulosa)' : 'OPTI Lingkungan (Ka. Tim Lingkungan)';
-    var konfirmasiJudul = isKajiActive ? 'Tetapkan & Kirim Kaji Kelayakan?' : 'Kirim ke Ketua Tim?';
+    var konfirmasiJudul = isKajiActive ? 'Kirim ke Ketua Tim?' : 'Kirim ke Ketua Tim?';
     var konfirmasiHtml = isKajiActive 
         ? 'Formulir pelayanan beserta <strong>Kaji Kelayakan Teknis</strong> akan langsung disimpan dan order ditetapkan.'
         : 'Formulir pelayanan akan didisposisikan ke <strong>' + divNama + '</strong> untuk kaji kelayakan teknis.';
@@ -8721,11 +8721,11 @@ function confirmSimpanDanApproveDetail() {
 
     if (typeof Swal !== 'undefined') {
         Swal.fire({
-            title: 'Setujui & Kirim Proposal?',
+            title: 'Setujui Proposal?',
             text: 'Perubahan dokumen proposal teknis dan biaya akan disimpan serta langsung disetujui untuk membuka tahap penawaran.',
             icon: 'question',
             showCancelButton: true,
-            confirmButtonText: '<i class="bi bi-check2-circle me-1.5"></i> Ya, Setujui & Kirim',
+            confirmButtonText: '<i class="bi bi-check2-circle me-1.5"></i> Ya, Setujui',
             cancelButtonText: 'Batal',
             reverseButtons: true
         }).then(function(result) {
@@ -9046,7 +9046,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     title: 'Disposisi ke Ketua Tim ' + labelDivisi() + '?',
                     html: '<div class="text-start small text-secondary">' + pesan + '</div>',
                     showCancelButton: true,
-                    confirmButtonText: '<i class="bi bi-send-check me-1"></i> Ya, Kirim & Disposisi',
+                    confirmButtonText: '<i class="bi bi-send-check me-1"></i> Ya, Disposisi',
                     cancelButtonText: 'Batal',
                     confirmButtonColor: '#198754',
                     reverseButtons: true
@@ -9315,7 +9315,7 @@ function handleAktivasiSpmSubmit(e, form) {
             text: 'Tanggal titik awal pengerjaan dan durasi target penyelesaian SPM akan diaktifkan untuk order ini.',
             icon: 'question',
             showCancelButton: true,
-            confirmButtonText: '<i class="bi bi-flag-fill me-1.5"></i> Ya, Simpan & Aktifkan',
+            confirmButtonText: '<i class="bi bi-flag-fill me-1.5"></i> Ya, Aktifkan',
             cancelButtonText: 'Batal',
             reverseButtons: true
         }).then(function(result) {
