@@ -186,6 +186,30 @@
 .role-badge-default i {
     color: #64748b;
 }
+
+    .item-pegawai-card {
+        cursor: pointer;
+        transition: all 0.15s ease-in-out;
+        border: 1px solid transparent;
+    }
+    .item-pegawai-card:hover {
+        background-color: #f8fafc;
+        border-color: #e2e8f0;
+    }
+    .item-pegawai-card.selected {
+        background-color: #eff6ff !important;
+        border-color: #bfdbfe !important;
+    }
+    .item-pegawai-card.selected .item-pegawai-avatar {
+        background-color: #2563eb !important;
+        color: #ffffff !important;
+    }
+    .item-pegawai-card.selected .item-pegawai-nama {
+        color: #1d4ed8 !important;
+    }
+    .item-pegawai-card.selected .item-check-icon {
+        opacity: 1 !important;
+    }
 </style>
 
 <div class="container-fluid px-0">
@@ -439,90 +463,93 @@
             </div>
             <form method="POST" action="{{ @BASE }}/pengguna/simpan" id="formTambahPengguna">
                 <div class="modal-body p-4">
-                    <!-- Field 1: Pilih Pegawai (Searchable Dropdown Clean) -->
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold text-dark mb-1">
-                            Pilih Pegawai <span class="text-danger">*</span>
-                        </label>
+                    <!-- Field 1: Pilih Pegawai (Searchable Card Picker) -->
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-1.5">
+                            <label class="form-label small fw-bold text-dark mb-0">
+                                Pilih Pegawai <span class="text-danger">*</span>
+                            </label>
+                            <span class="text-muted" style="font-size: 0.72rem;" id="pegawaiCounterBadge">
+                                {{ count(@unassigned_users) }} pegawai tersedia
+                            </span>
+                        </div>
+
                         <check if="{{ count(@unassigned_users) > 0 }}">
                             <true>
-                                <!-- Hidden input for form submit -->
                                 <input type="hidden" name="id_user" id="selected_id_user" required>
 
-                                <!-- Custom Clean Dropdown Trigger -->
-                                <div class="dropdown" id="dropdownPegawaiWrapper">
-                                    <button class="form-select text-start d-flex justify-content-between align-items-center py-2 px-3 bg-white border" 
-                                            type="button" 
-                                            id="btnDropdownPegawai" 
-                                            data-bs-toggle="dropdown" 
-                                            data-bs-auto-close="outside" 
-                                            aria-expanded="false" 
-                                            style="height: 42px;">
-                                        <span id="labelPegawaiSelected" class="text-secondary small text-truncate">
-                                            <i class="bi bi-person me-1.5 text-muted"></i> Pilih pegawai...
-                                        </span>
-                                    </button>
-
-                                    <!-- Dropdown Menu / Popper -->
-                                    <div class="dropdown-menu shadow-sm border p-2 w-100" 
-                                         aria-labelledby="btnDropdownPegawai" 
-                                         style="max-width: 100%; border-radius: 8px;">
-                                        
-                                        <!-- Search input inside dropdown -->
-                                        <div class="input-group input-group-sm mb-2">
+                                <!-- Panel Pencarian & Daftar Pegawai -->
+                                <div class="card border rounded-3 overflow-hidden shadow-none bg-white">
+                                    <!-- Search Input Bar -->
+                                    <div class="p-2 border-bottom bg-light bg-opacity-50">
+                                        <div class="input-group input-group-sm">
                                             <span class="input-group-text bg-white border-end-0 text-muted ps-2.5">
                                                 <i class="bi bi-search" style="font-size: 0.8rem;"></i>
                                             </span>
                                             <input type="text" 
                                                    id="searchPegawaiFilter" 
-                                                   class="form-control border-start-0 ps-1 py-1.5" 
-                                                   placeholder="Cari nama atau NIP/ID..." 
+                                                   class="form-control border-start-0 ps-1 py-1.5 bg-white" 
+                                                   placeholder="Cari nama pegawai atau ID..." 
                                                    autocomplete="off">
                                             <button type="button" 
-                                                    class="btn btn-outline-secondary border-start-0 py-0 px-2" 
+                                                    class="btn btn-white bg-white border border-start-0 text-muted py-0 px-2" 
                                                     id="btnClearSearchPegawai" 
                                                     title="Hapus pencarian" 
                                                     style="display: none;">
-                                                <i class="bi bi-x-lg" style="font-size: 0.7rem;"></i>
+                                                <i class="bi bi-x-circle-fill" style="font-size: 0.8rem;"></i>
                                             </button>
                                         </div>
+                                    </div>
 
-                                        <!-- Results counter -->
-                                        <div class="d-flex justify-content-between align-items-center px-2 py-1 mb-1 text-muted" style="font-size: 0.72rem;">
-                                            <span id="counterPegawaiFound">Menampilkan {{ count(@unassigned_users) }} pegawai</span>
-                                            <span class="text-primary fw-medium">Klik untuk memilih</span>
+                                    <!-- Selected Pegawai Preview Bar (muncul saat sudah dipilih) -->
+                                    <div id="selectedPegawaiBanner" class="p-2.5 bg-primary bg-opacity-10 border-bottom d-none">
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <div class="d-flex align-items-center gap-2 overflow-hidden">
+                                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center flex-shrink-0 fw-bold" style="width: 28px; height: 28px; font-size: 0.75rem;">
+                                                    <i class="bi bi-check-lg"></i>
+                                                </div>
+                                                <div class="text-truncate">
+                                                    <div class="small fw-bold text-primary text-truncate" id="selectedBannerNama">-</div>
+                                                    <div class="text-muted" style="font-size: 0.7rem;" id="selectedBannerSub">-</div>
+                                                </div>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-link text-muted text-decoration-none p-0 flex-shrink-0 ms-2" id="btnCancelSelectedPegawai" title="Ganti pilihan">
+                                                <i class="bi bi-x-lg" style="font-size: 0.8rem;"></i>
+                                            </button>
                                         </div>
+                                    </div>
 
-                                        <!-- Scrollable List items -->
-                                        <div id="listPegawaiContainer" style="max-height: 220px; overflow-y: auto; overscroll-behavior: contain;">
-                                            <repeat group="{{ @unassigned_users }}" value="{{ @u }}">
-                                                <div class="dropdown-item py-2 px-2.5 rounded-2 d-flex align-items-center justify-content-between text-wrap item-pegawai" 
-                                                     role="button"
-                                                     tabindex="0"
-                                                     data-id="{{ @u.id_user }}" 
-                                                     data-nama="{{ @u.nama_user }}"
-                                                     data-bidang="{{ !empty(@u.bidang) && @u.bidang != 'NULL' ? @u.bidang : '' }}"
-                                                     style="cursor: pointer; font-size: 0.85rem; line-height: 1.25;">
-                                                    <div class="d-flex align-items-center gap-2 overflow-hidden">
-                                                        <div class="rounded-circle bg-light text-primary d-flex align-items-center justify-content-center flex-shrink-0" style="width: 28px; height: 28px; font-size: 0.75rem; font-weight: 600;">
-                                                            {{ strtoupper(substr(@u.nama_user, 0, 1)) }}
-                                                        </div>
-                                                        <div class="text-truncate">
-                                                            <div class="fw-semibold text-dark text-truncate">{{ @u.nama_user }}</div>
-                                                            <small class="text-muted" style="font-size: 0.72rem;">ID: #{{ @u.id_user }}</small>
-                                                        </div>
+                                    <!-- Scrollable Pegawai List -->
+                                    <div id="listPegawaiContainer" class="p-1.5" style="max-height: 200px; overflow-y: auto;">
+                                        <repeat group="{{ @unassigned_users }}" value="{{ @u }}">
+                                            <div class="item-pegawai-card d-flex align-items-center justify-content-between p-2 rounded-2 mb-1" 
+                                                 role="button"
+                                                 tabindex="0"
+                                                 data-id="{{ @u.id_user }}" 
+                                                 data-nama="{{ @u.nama_user }}"
+                                                 data-bidang="{{ @u.bidang_clean }}">
+                                                <div class="d-flex align-items-center gap-2.5 overflow-hidden">
+                                                    <div class="item-pegawai-avatar rounded-circle bg-light text-secondary d-flex align-items-center justify-content-center flex-shrink-0 fw-semibold" style="width: 32px; height: 32px; font-size: 0.8rem;">
+                                                        {{ strtoupper(substr(@u.nama_user, 0, 1)) }}
                                                     </div>
-                                                    <check if="{{ !empty(@u.bidang) && @u.bidang != 'NULL' }}">
-                                                        <span class="badge bg-light text-secondary border fw-normal flex-shrink-0 ms-2" style="font-size: 0.68rem;">
-                                                            {{ strtoupper(@u.bidang) }}
+                                                    <div class="text-truncate">
+                                                        <div class="text-dark fw-semibold text-truncate item-pegawai-nama" style="font-size: 0.85rem;">{{ @u.nama_user }}</div>
+                                                        <div class="text-muted" style="font-size: 0.72rem;">User ID: #{{ @u.id_user }}</div>
+                                                    </div>
+                                                </div>
+                                                <div class="d-flex align-items-center gap-2 flex-shrink-0 ms-2">
+                                                    <check if="{{ !empty(@u.bidang_clean) }}">
+                                                        <span class="badge bg-secondary-subtle text-secondary border-0 fw-medium px-2 py-1" style="font-size: 0.68rem; letter-spacing: 0.3px;">
+                                                            {{ @u.bidang_clean }}
                                                         </span>
                                                     </check>
+                                                    <i class="bi bi-check2 text-primary fs-5 opacity-0 item-check-icon"></i>
                                                 </div>
-                                            </repeat>
-                                            <div id="emptyPegawaiMsg" class="p-3 text-center text-muted small d-none">
-                                                <i class="bi bi-person-x fs-4 d-block mb-1 text-secondary opacity-50"></i>
-                                                Pegawai tidak ditemukan
                                             </div>
+                                        </repeat>
+                                        <div id="emptyPegawaiMsg" class="py-4 text-center text-muted small d-none">
+                                            <i class="bi bi-search fs-3 text-muted opacity-50 d-block mb-1"></i>
+                                            Tidak ditemukan pegawai yang cocok
                                         </div>
                                     </div>
                                 </div>
@@ -536,12 +563,12 @@
                     </div>
 
                     <!-- Field 2: Role Sistem -->
-                    <div class="mb-3">
+                    <div class="mb-2">
                         <label class="form-label small fw-bold text-dark mb-1">
                             Role Sistem <span class="text-danger">*</span>
                         </label>
-                        <select name="role_sistem" id="tambah_role_sistem" class="form-select py-2 px-3 bg-white" style="height: 42px;" required>
-                            <option value="" disabled selected>Pilih peran / role</option>
+                        <select name="role_sistem" id="tambah_role_sistem" class="form-select py-2 px-3 bg-white" style="font-size: 0.875rem;" required>
+                            <option value="" disabled selected>Pilih peran / role untuk pegawai</option>
                             <repeat group="{{ @role_options }}" key="{{ @rKey }}" value="{{ @rMeta }}">
                                 <option value="{{ @rKey }}">
                                     {{ @rMeta.label }}
@@ -556,7 +583,7 @@
                 <div class="modal-footer bg-light py-2.5 px-4 border-top">
                     <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Batal</button>
                     <check if="{{ count(@unassigned_users) > 0 }}">
-                        <button type="submit" id="btnSubmitTambah" class="btn btn-primary btn-sm fw-semibold px-3">
+                        <button type="submit" id="btnSubmitTambah" class="btn btn-primary btn-sm fw-semibold px-3" disabled>
                             <i class="bi bi-check-circle me-1"></i> Simpan Pengguna
                         </button>
                     </check>
@@ -665,7 +692,11 @@ document.addEventListener('DOMContentLoaded', function() {
     function checkKetuaOccupied(role, currentUserId, warningEl, warningTextEl, submitBtn) {
         if (!role || !occupiedKetua[role]) {
             if (warningEl) warningEl.classList.add('d-none');
-            if (submitBtn) submitBtn.disabled = false;
+            if (submitBtn) {
+                submitBtn.removeAttribute('data-role-blocked');
+                if (submitBtn.id === 'btnSubmitUbah') submitBtn.disabled = false;
+            }
+            if (typeof checkFormReady === 'function') checkFormReady();
             return;
         }
         const curr = occupiedKetua[role];
@@ -682,128 +713,139 @@ document.addEventListener('DOMContentLoaded', function() {
                 warningTextEl.innerHTML = 'Peran <strong>' + label + '</strong> saat ini sudah dijabat oleh <strong>' + curr.nama_user + '</strong> (#' + curr.id_user + '). Sesuai aturan sistem, posisi ' + label + ' hanya dapat diisi oleh maksimal 1 orang. Silakan ubah/cabut peran dari <strong>' + curr.nama_user + '</strong> terlebih dahulu.';
             }
             if (warningEl) warningEl.classList.remove('d-none');
-            if (submitBtn) submitBtn.disabled = true;
+            if (submitBtn) {
+                submitBtn.setAttribute('data-role-blocked', '1');
+                submitBtn.disabled = true;
+            }
         } else {
             if (warningEl) warningEl.classList.add('d-none');
-            if (submitBtn) submitBtn.disabled = false;
+            if (submitBtn) {
+                submitBtn.removeAttribute('data-role-blocked');
+                if (submitBtn.id === 'btnSubmitUbah') submitBtn.disabled = false;
+            }
+            if (typeof checkFormReady === 'function') checkFormReady();
         }
     }
 
     // =========================================================================
-    // Clean & Modern Searchable Dropdown di Modal Tambah Pengguna
-    // =========================================================================
-    const dropdownWrapper = document.getElementById('dropdownPegawaiWrapper');
-    const btnDropdown = document.getElementById('btnDropdownPegawai');
+    // Clean & Modern Integrated Pegawai Picker di Modal Tambah Pengguna
     const inputHiddenUser = document.getElementById('selected_id_user');
-    const labelSelected = document.getElementById('labelPegawaiSelected');
     const inputFilter = document.getElementById('searchPegawaiFilter');
     const btnClearFilter = document.getElementById('btnClearSearchPegawai');
-    const counterFound = document.getElementById('counterPegawaiFound');
+    const counterBadge = document.getElementById('pegawaiCounterBadge');
     const emptyMsg = document.getElementById('emptyPegawaiMsg');
-    const itemPegawaiList = document.querySelectorAll('.item-pegawai');
-    const totalPegawaiCount = itemPegawaiList.length;
+    const listCards = document.querySelectorAll('.item-pegawai-card');
+    const bannerSelected = document.getElementById('selectedPegawaiBanner');
+    const bannerNama = document.getElementById('selectedBannerNama');
+    const bannerSub = document.getElementById('selectedBannerSub');
+    const btnCancelSelected = document.getElementById('btnCancelSelectedPegawai');
+    const btnSubmitTambah = document.getElementById('btnSubmitTambah');
+    const selectTambahRole = document.getElementById('tambah_role_sistem');
+    const totalPegawaiCount = listCards.length;
 
-    if (btnDropdown && dropdownWrapper) {
-        // Handle selection of a person
-        itemPegawaiList.forEach(item => {
-            item.addEventListener('click', function(e) {
-                e.preventDefault();
-                const id = this.getAttribute('data-id');
-                const nama = this.getAttribute('data-nama');
-                const bidang = this.getAttribute('data-bidang');
+    function checkFormReady() {
+        const hasPegawai = inputHiddenUser && inputHiddenUser.value.trim() !== '';
+        const hasRole = selectTambahRole && selectTambahRole.value.trim() !== '';
+        const isRoleBlocked = btnSubmitTambah && btnSubmitTambah.getAttribute('data-role-blocked') === '1';
 
-                // Set hidden input
-                if (inputHiddenUser) inputHiddenUser.value = id;
+        if (btnSubmitTambah) {
+            btnSubmitTambah.disabled = !(hasPegawai && hasRole && !isRoleBlocked);
+        }
+    }
 
-                // Update trigger button label
-                if (labelSelected) {
-                    let badgeHtml = bidang ? ' <span class="badge bg-light text-secondary border fw-normal ms-1" style="font-size: 0.68rem;">' + bidang.toUpperCase() + '</span>' : '';
-                    labelSelected.innerHTML = '<span class="fw-semibold text-dark"><i class="bi bi-person-check-fill text-primary me-1"></i>' + nama + '</span> <span class="text-muted">(ID: #' + id + ')</span>' + badgeHtml;
-                    labelSelected.classList.remove('text-secondary');
-                }
+    // Handle klik pada kartu pegawai
+    listCards.forEach(card => {
+        card.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            const nama = this.getAttribute('data-nama');
+            const bidang = this.getAttribute('data-bidang');
 
-                // Active state styling on item
-                itemPegawaiList.forEach(el => el.classList.remove('active', 'bg-primary-subtle', 'text-primary'));
-                this.classList.add('active', 'bg-primary-subtle', 'text-primary');
+            // Set hidden value
+            if (inputHiddenUser) inputHiddenUser.value = id;
 
-                // Close bootstrap dropdown
-                const bsDropdown = bootstrap.Dropdown.getInstance(btnDropdown) || new bootstrap.Dropdown(btnDropdown);
-                bsDropdown.hide();
-            });
+            // Highlight selected card
+            listCards.forEach(c => c.classList.remove('selected'));
+            this.classList.add('selected');
+
+            // Tampilkan banner terpilih di atas
+            if (bannerSelected && bannerNama && bannerSub) {
+                bannerNama.textContent = nama;
+                bannerSub.textContent = 'User ID: #' + id + (bidang ? ' • ' + bidang : '');
+                bannerSelected.classList.remove('d-none');
+            }
+
+            checkFormReady();
         });
+    });
 
-        // Filter search input
-        if (inputFilter) {
-            inputFilter.addEventListener('input', function() {
-                const query = this.value.toLowerCase().trim();
-                let matchCount = 0;
+    // Batalkan pilihan pegawai
+    if (btnCancelSelected) {
+        btnCancelSelected.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (inputHiddenUser) inputHiddenUser.value = '';
+            listCards.forEach(c => c.classList.remove('selected'));
+            if (bannerSelected) bannerSelected.classList.add('d-none');
+            checkFormReady();
+        });
+    }
 
-                if (btnClearFilter) {
-                    btnClearFilter.style.display = query.length > 0 ? 'inline-block' : 'none';
-                }
-
-                itemPegawaiList.forEach(item => {
-                    const nama = (item.getAttribute('data-nama') || '').toLowerCase();
-                    const id = (item.getAttribute('data-id') || '').toLowerCase();
-                    const bidang = (item.getAttribute('data-bidang') || '').toLowerCase();
-
-                    if (!query || nama.includes(query) || id.includes(query) || bidang.includes(query)) {
-                        item.classList.remove('d-none');
-                        matchCount++;
-                    } else {
-                        item.classList.add('d-none');
-                    }
-                });
-
-                if (emptyMsg) {
-                    if (matchCount === 0) {
-                        emptyMsg.classList.remove('d-none');
-                    } else {
-                        emptyMsg.classList.add('d-none');
-                    }
-                }
-
-                if (counterFound) {
-                    counterFound.textContent = query.length > 0 
-                        ? 'Ditemukan ' + matchCount + ' dari ' + totalPegawaiCount + ' pegawai'
-                        : 'Menampilkan ' + totalPegawaiCount + ' pegawai';
-                }
-            });
+    // Live search filter input
+    if (inputFilter) {
+        inputFilter.addEventListener('input', function() {
+            const q = this.value.toLowerCase().trim();
+            let matches = 0;
 
             if (btnClearFilter) {
-                btnClearFilter.addEventListener('click', function() {
-                    inputFilter.value = '';
-                    inputFilter.dispatchEvent(new Event('input'));
-                    inputFilter.focus();
-                });
+                btnClearFilter.style.display = q.length > 0 ? 'inline-block' : 'none';
             }
-        }
 
-        // Auto focus search input when dropdown opens
-        if (btnDropdown) {
-            btnDropdown.addEventListener('shown.bs.dropdown', function() {
-                if (inputFilter) {
-                    setTimeout(() => inputFilter.focus(), 100);
+            listCards.forEach(card => {
+                const nama = (card.getAttribute('data-nama') || '').toLowerCase();
+                const id = (card.getAttribute('data-id') || '').toLowerCase();
+                const bidang = (card.getAttribute('data-bidang') || '').toLowerCase();
+
+                if (!q || nama.includes(q) || id.includes(q) || ('#' + id).includes(q) || bidang.includes(q)) {
+                    card.classList.remove('d-none');
+                    matches++;
+                } else {
+                    card.classList.add('d-none');
                 }
             });
-        }
 
-        // Reset state when modal opens
-        const modalTambahEl = document.getElementById('modalTambahPengguna');
-        if (modalTambahEl) {
-            modalTambahEl.addEventListener('show.bs.modal', function() {
-                if (inputHiddenUser) inputHiddenUser.value = '';
-                if (labelSelected) {
-                    labelSelected.innerHTML = '<i class="bi bi-person me-1.5 text-muted"></i> Pilih pegawai...';
-                    labelSelected.classList.add('text-secondary');
-                }
-                if (inputFilter) {
-                    inputFilter.value = '';
-                    inputFilter.dispatchEvent(new Event('input'));
-                }
-                itemPegawaiList.forEach(el => el.classList.remove('active', 'bg-primary-subtle', 'text-primary'));
+            if (emptyMsg) {
+                emptyMsg.classList.toggle('d-none', matches > 0);
+            }
+
+            if (counterBadge) {
+                counterBadge.textContent = q.length > 0 
+                    ? matches + ' dari ' + totalPegawaiCount + ' cocok' 
+                    : totalPegawaiCount + ' pegawai tersedia';
+            }
+        });
+
+        if (btnClearFilter) {
+            btnClearFilter.addEventListener('click', function() {
+                inputFilter.value = '';
+                inputFilter.dispatchEvent(new Event('input'));
+                inputFilter.focus();
             });
         }
+    }
+
+    // Reset saat modal dibuka
+    const modalTambahEl = document.getElementById('modalTambahPengguna');
+    if (modalTambahEl) {
+        modalTambahEl.addEventListener('show.bs.modal', function() {
+            if (inputHiddenUser) inputHiddenUser.value = '';
+            if (selectTambahRole) selectTambahRole.value = '';
+            if (bannerSelected) bannerSelected.classList.add('d-none');
+            if (inputFilter) {
+                inputFilter.value = '';
+                inputFilter.dispatchEvent(new Event('input'));
+            }
+            listCards.forEach(c => c.classList.remove('selected'));
+            if (btnSubmitTambah) btnSubmitTambah.disabled = true;
+        });
     }
 
     // Listener Modal Tambah Pengguna

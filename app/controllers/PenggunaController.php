@@ -270,12 +270,23 @@ class PenggunaController extends Controller {
         }
 
         // Ambil daftar pegawai dari tb_arsipuser yang BELUM memiliki role SILOPTI (tersedia untuk ditambahkan)
-        $unassignedUsers = $this->db->exec("
+        $unassignedUsersRaw = $this->db->exec("
             SELECT id_user, nama_user, login, bidang 
             FROM tb_arsipuser 
             WHERE (si_opti IS NULL OR si_opti = '' OR si_opti = 'user')
             ORDER BY nama_user ASC
         ");
+
+        $unassignedUsers = array();
+        foreach ($unassignedUsersRaw as $u) {
+            $rawBidang = trim((string)($u['bidang'] ?? ''));
+            if (empty($rawBidang) || strtoupper($rawBidang) === 'NULL' || $rawBidang === '-' || strtoupper($rawBidang) === 'NONE') {
+                $u['bidang_clean'] = '';
+            } else {
+                $u['bidang_clean'] = strtoupper($rawBidang);
+            }
+            $unassignedUsers[] = $u;
+        }
 
         $totalDbPegawai = $this->db->exec("SELECT COUNT(*) AS cnt FROM tb_arsipuser");
         $countDbTotal = (int)($totalDbPegawai[0]['cnt'] ?? 0);
