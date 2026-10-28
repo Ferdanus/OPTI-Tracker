@@ -5920,40 +5920,35 @@
 
                                 <!-- Card Body -->
                                 <div class="activity-card">
-                                    <!-- Top Row: Badges + Description -->
+                                    <!-- Top Row: Single Badge + Direct Action Description -->
                                     <div class="d-flex align-items-center gap-2 flex-wrap mb-2">
-                                        <!-- Modul Badge (Slate Neutral) -->
-                                        <span class="badge bg-light text-secondary border px-2 py-0.5 text-uppercase" style="font-size: 0.68rem; font-weight: 600; letter-spacing: 0.3px;">
-                                            {{ str_replace('_', ' ', @act.modul) }}
-                                        </span>
-
-                                        <!-- Status Action Badge (Harmonized theme) -->
+                                        <!-- Single Clean Badge -->
                                         <check if="{{ @is_view_log }}">
-                                            <span class="text-muted small fw-medium" style="font-size: 0.72rem;">
+                                            <span class="badge bg-light text-muted border px-2 py-0.5" style="font-size: 0.68rem; font-weight: 500;">
                                                 <i class="bi bi-eye me-1"></i>Dibaca
                                             </span>
                                         </check>
                                         <check if="{{ !@is_view_log }}">
                                             <check if="{{ @is_deal_act || @is_success_act }}">
-                                                <span class="badge bg-dark text-white border border-dark px-2 py-0.5" style="font-size: 0.68rem; font-weight: 600;">
-                                                    <i class="bi bi-check2 me-1"></i>Selesai
+                                                <span class="badge bg-dark text-white px-2 py-0.5" style="font-size: 0.68rem; font-weight: 600;">
+                                                    <i class="bi bi-check2 me-0.5"></i> Selesai
                                                 </span>
                                             </check>
                                             <check if="{{ !@is_deal_act && !@is_success_act && @is_warn_act }}">
-                                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-0.5" style="font-size: 0.68rem; font-weight: 600;">
-                                                    <i class="bi bi-exclamation-circle me-1"></i>Revisi
+                                                <span class="badge bg-danger text-white px-2 py-0.5" style="font-size: 0.68rem; font-weight: 600;">
+                                                    <i class="bi bi-x me-0.5"></i> Ditolak
                                                 </span>
                                             </check>
                                             <check if="{{ !@is_deal_act && !@is_success_act && !@is_warn_act }}">
-                                                <span class="badge bg-light text-dark border px-2 py-0.5" style="font-size: 0.68rem; font-weight: 600;">
-                                                    <i class="bi bi-arrow-right-short me-0.5"></i>Diproses
+                                                <span class="badge bg-light text-secondary border px-2 py-0.5 text-uppercase" style="font-size: 0.68rem; font-weight: 600; letter-spacing: 0.3px;">
+                                                    {{ str_replace('_', ' ', @act.modul) }}
                                                 </span>
                                             </check>
                                         </check>
 
-                                        <!-- Description Text -->
+                                        <!-- Description Text (No redundant words) -->
                                         <span class="fw-semibold text-dark font-display ms-1" style="font-size: 0.88rem; line-height: 1.35;">
-                                            {{ @act.deskripsi }}
+                                            {{ ltrim(str_replace('Kaji kelayakan: ', '', @act.deskripsi)) }}
                                         </span>
                                     </div>
 
