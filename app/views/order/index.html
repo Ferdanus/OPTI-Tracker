@@ -40,7 +40,14 @@
     color: #475569;
     border: 1px solid #e2e8f0;
 }
-.filter-tab-pill .count-chip.chip-danger {
+.filter-tab-pill .count-chip.chip-danger,
+.filter-tab-pill .count-chip.chip-success,
+.filter-tab-pill .count-chip.chip-warning {
+    background-color: #f1f5f9;
+    color: #475569;
+    border-color: #e2e8f0;
+}
+.filter-tab-pill .count-chip.chip-danger_old {
     background-color: #fee2e2;
     color: #b91c1c;
     border-color: #fecaca;
@@ -69,8 +76,8 @@
     color: #ffffff !important;
 }
 .filter-tab-pill.tab-selesai.active {
-    background-color: #059669 !important;
-    border-color: #059669 !important;
+    background-color: #1e293b !important;
+    border-color: #1e293b !important;
     color: #ffffff !important;
 }
 .filter-tab-pill.tab-selesai.active .count-chip {
@@ -79,8 +86,8 @@
     color: #ffffff !important;
 }
 .filter-tab-pill.tab-ditolak.active {
-    background-color: #dc2626 !important;
-    border-color: #dc2626 !important;
+    background-color: #1e293b !important;
+    border-color: #1e293b !important;
     color: #ffffff !important;
 }
 .filter-tab-pill.tab-ditolak.active .count-chip {
@@ -161,46 +168,46 @@
     flex-shrink: 0;
 }
 .status-pill-blue {
-    background-color: #eff6ff !important;
-    color: #1d4ed8 !important;
-    border-color: #bfdbfe !important;
+    background-color: #f8fafc !important;
+    color: #334155 !important;
+    border-color: #cbd5e1 !important;
 }
-.status-pill-blue i { color: #2563eb !important; }
+.status-pill-blue i { color: #64748b !important; }
 
 .status-pill-sky {
-    background-color: #f0f9ff !important;
-    color: #0284c7 !important;
-    border-color: #bae6fd !important;
+    background-color: #f8fafc !important;
+    color: #334155 !important;
+    border-color: #cbd5e1 !important;
 }
-.status-pill-sky i { color: #0284c7 !important; }
+.status-pill-sky i { color: #64748b !important; }
 
 .status-pill-amber {
-    background-color: #fffbeb !important;
-    color: #b45309 !important;
-    border-color: #fde68a !important;
+    background-color: #f8fafc !important;
+    color: #334155 !important;
+    border-color: #cbd5e1 !important;
 }
-.status-pill-amber i { color: #d97706 !important; }
+.status-pill-amber i { color: #64748b !important; }
 
 .status-pill-indigo {
-    background-color: #eef2ff !important;
-    color: #4338ca !important;
-    border-color: #c7d2fe !important;
+    background-color: #f8fafc !important;
+    color: #334155 !important;
+    border-color: #cbd5e1 !important;
 }
-.status-pill-indigo i { color: #4f46e5 !important; }
+.status-pill-indigo i { color: #64748b !important; }
 
 .status-pill-emerald {
-    background-color: #ecfdf5 !important;
-    color: #047857 !important;
-    border-color: #a7f3d0 !important;
+    background-color: #f8fafc !important;
+    color: #334155 !important;
+    border-color: #cbd5e1 !important;
 }
-.status-pill-emerald i { color: #059669 !important; }
+.status-pill-emerald i { color: #64748b !important; }
 
 .status-pill-rose {
-    background-color: #fef2f2 !important;
-    color: #b91c1c !important;
-    border-color: #fecaca !important;
+    background-color: #f8fafc !important;
+    color: #334155 !important;
+    border-color: #cbd5e1 !important;
 }
-.status-pill-rose i { color: #dc2626 !important; }
+.status-pill-rose i { color: #64748b !important; }
 
 .status-pill-slate {
     background-color: #f8fafc !important;
@@ -210,15 +217,15 @@
 .status-pill-slate i { color: #64748b !important; }
 
 .btn-lampiran-clip {
-    background-color: #fef3c7 !important;
-    border: 1px solid #fde68a !important;
-    color: #b45309 !important;
+    background-color: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #475569 !important;
     transition: all 0.15s ease-in-out;
 }
 .btn-lampiran-clip:hover {
-    background-color: #fde68a !important;
-    border-color: #fcd34d !important;
-    color: #78350f !important;
+    background-color: #f1f5f9 !important;
+    border-color: #94a3b8 !important;
+    color: #0f172a !important;
     transform: translateY(-1px);
 }
 
@@ -412,7 +419,7 @@ tr.row-user-task > td:first-child {
         <div class="filter-tabs-wrapper d-flex justify-content-between align-items-center flex-wrap gap-3">
             <div class="d-flex align-items-center gap-2 flex-wrap">
                 <a class="filter-tab-pill {{ @filter_tab == 'masuk' ? 'active' : '' }}" href="{{ @BASE }}/order?tab=masuk{{ @filter_bulan ? '&bulan='.@filter_bulan : '' }}{{ @filter_tahun ? '&tahun='.@filter_tahun : '' }}{{ @filter_jenis ? '&jenis_layanan='.@filter_jenis : '' }}{{ @search_q ? '&q='.@search_q : '' }}">
-                    <i class="bi bi-inbox-fill text-primary"></i>
+                    <i class="bi bi-inbox-fill"></i>
                     <span>Order Masuk</span>
                     <span class="count-chip">{{ @count_masuk }}</span>
                     <check if="{{ @user_tasks_masuk > 0 }}">
@@ -420,7 +427,7 @@ tr.row-user-task > td:first-child {
                     </check>
                 </a>
                 <a class="filter-tab-pill {{ @filter_tab == 'berlangsung' ? 'active' : '' }}" href="{{ @BASE }}/order?tab=berlangsung{{ @filter_bulan ? '&bulan='.@filter_bulan : '' }}{{ @filter_tahun ? '&tahun='.@filter_tahun : '' }}{{ @filter_jenis ? '&jenis_layanan='.@filter_jenis : '' }}{{ @search_q ? '&q='.@search_q : '' }}">
-                    <i class="bi bi-gear-wide-connected text-primary"></i>
+                    <i class="bi bi-gear-wide-connected"></i>
                     <span>Order Berjalan</span>
                     <span class="count-chip">{{ @count_berlangsung }}</span>
                     <check if="{{ @user_tasks_berlangsung > 0 }}">
@@ -428,12 +435,12 @@ tr.row-user-task > td:first-child {
                     </check>
                 </a>
                 <a class="filter-tab-pill tab-selesai {{ @filter_tab == 'selesai' ? 'active' : '' }}" href="{{ @BASE }}/order?tab=selesai{{ @filter_bulan ? '&bulan='.@filter_bulan : '' }}{{ @filter_tahun ? '&tahun='.@filter_tahun : '' }}{{ @filter_jenis ? '&jenis_layanan='.@filter_jenis : '' }}{{ @search_q ? '&q='.@search_q : '' }}">
-                    <i class="bi bi-check2-all text-success"></i>
+                    <i class="bi bi-check2-all"></i>
                     <span>Order Selesai</span>
                     <span class="count-chip chip-success">{{ @count_selesai }}</span>
                 </a>
                 <a class="filter-tab-pill tab-ditolak {{ @filter_tab == 'ditolak' ? 'active' : '' }}" href="{{ @BASE }}/order?tab=ditolak{{ @filter_bulan ? '&bulan='.@filter_bulan : '' }}{{ @filter_tahun ? '&tahun='.@filter_tahun : '' }}{{ @filter_jenis ? '&jenis_layanan='.@filter_jenis : '' }}{{ @search_q ? '&q='.@search_q : '' }}">
-                    <i class="bi bi-x-octagon-fill text-danger"></i>
+                    <i class="bi bi-x-octagon-fill"></i>
                     <span>Order Ditolak</span>
                     <span class="count-chip chip-danger">{{ @count_ditolak }}</span>
                 </a>
@@ -502,32 +509,32 @@ tr.row-user-task > td:first-child {
                                                 <div class="d-flex align-items-center flex-wrap gap-1 mb-1">
                                                     <check if="{{ @ord.media_permohonan == 'whatsapp' }}">
                                                         <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: WhatsApp">
-                                                            <i class="bi bi-chat-dots me-1 text-success"></i>WhatsApp
+                                                            <i class="bi bi-chat-dots me-1 text-secondary"></i>WhatsApp
                                                         </span>
                                                     </check>
                                                     <check if="{{ @ord.media_permohonan == 'telepon' }}">
                                                         <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: Telepon">
-                                                            <i class="bi bi-telephone me-1 text-primary"></i>Telepon
+                                                            <i class="bi bi-telephone me-1 text-secondary"></i>Telepon
                                                         </span>
                                                     </check>
                                                     <check if="{{ @ord.media_permohonan == 'email' }}">
                                                         <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: E-mail Resmi">
-                                                            <i class="bi bi-envelope-at me-1 text-primary"></i>E-mail
+                                                            <i class="bi bi-envelope-at me-1 text-secondary"></i>E-mail
                                                         </span>
                                                     </check>
                                                     <check if="{{ @ord.media_permohonan == 'fax' }}">
                                                         <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: Fax">
-                                                            <i class="bi bi-printer me-1 text-info"></i>Fax
+                                                            <i class="bi bi-printer me-1 text-secondary"></i>Fax
                                                         </span>
                                                     </check>
                                                     <check if="{{ @ord.media_permohonan == 'datang_langsung' }}">
                                                         <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: Datang Langsung">
-                                                            <i class="bi bi-building me-1 text-primary"></i>Datang Langsung
+                                                            <i class="bi bi-building me-1 text-secondary"></i>Datang Langsung
                                                         </span>
                                                     </check>
                                                     <check if="{{ @ord.media_permohonan == 'website' }}">
                                                         <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: Website">
-                                                            <i class="bi bi-laptop me-1 text-primary"></i>Website
+                                                            <i class="bi bi-laptop me-1 text-secondary"></i>Website
                                                         </span>
                                                     </check>
                                                     <check if="{{ empty(@ord.media_permohonan) || @ord.media_permohonan == 'surat' || @ord.media_permohonan == 'surat_resmi' }}">
@@ -551,10 +558,10 @@ tr.row-user-task > td:first-child {
                                             </td>
                                             <td class="text-center">
                                                 <check if="{{ @ord.jenis_layanan_opti == 'selulosa' }}">
-                                                    <span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle px-2.5 py-1 fw-semibold text-nowrap" style="font-size: 0.75rem;">Selulosa</span>
+                                                    <span class="badge rounded-pill bg-light text-dark border px-2.5 py-1 fw-semibold text-nowrap" style="font-size: 0.75rem;">Selulosa</span>
                                                 </check>
                                                 <check if="{{ @ord.jenis_layanan_opti == 'lingkungan' }}">
-                                                    <span class="badge rounded-pill bg-success-subtle text-success-emphasis border border-success-subtle px-2.5 py-1 fw-semibold text-nowrap" style="font-size: 0.75rem;">Lingkungan</span>
+                                                    <span class="badge rounded-pill bg-light text-dark border px-2.5 py-1 fw-semibold text-nowrap" style="font-size: 0.75rem;">Lingkungan</span>
                                                 </check>
                                                 <check if="{{ !@ord.jenis_layanan_opti || @ord.jenis_layanan_opti == 'belum_ditentukan' }}">
                                                     <span class="badge bg-secondary-subtle text-secondary border px-2 py-1">-</span>
@@ -687,32 +694,32 @@ tr.row-user-task > td:first-child {
                                                 <div class="d-flex align-items-center flex-wrap gap-1 mb-1">
                                                     <check if="{{ @ord.media_permohonan == 'whatsapp' }}">
                                                         <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: WhatsApp">
-                                                            <i class="bi bi-chat-dots me-1 text-success"></i>WhatsApp
+                                                            <i class="bi bi-chat-dots me-1 text-secondary"></i>WhatsApp
                                                         </span>
                                                     </check>
                                                     <check if="{{ @ord.media_permohonan == 'telepon' }}">
                                                         <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: Telepon">
-                                                            <i class="bi bi-telephone me-1 text-primary"></i>Telepon
+                                                            <i class="bi bi-telephone me-1 text-secondary"></i>Telepon
                                                         </span>
                                                     </check>
                                                     <check if="{{ @ord.media_permohonan == 'email' }}">
                                                         <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: E-mail Resmi">
-                                                            <i class="bi bi-envelope-at me-1 text-primary"></i>E-mail
+                                                            <i class="bi bi-envelope-at me-1 text-secondary"></i>E-mail
                                                         </span>
                                                     </check>
                                                     <check if="{{ @ord.media_permohonan == 'fax' }}">
                                                         <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: Fax">
-                                                            <i class="bi bi-printer me-1 text-info"></i>Fax
+                                                            <i class="bi bi-printer me-1 text-secondary"></i>Fax
                                                         </span>
                                                     </check>
                                                     <check if="{{ @ord.media_permohonan == 'datang_langsung' }}">
                                                         <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: Datang Langsung">
-                                                            <i class="bi bi-building me-1 text-primary"></i>Datang Langsung
+                                                            <i class="bi bi-building me-1 text-secondary"></i>Datang Langsung
                                                         </span>
                                                     </check>
                                                     <check if="{{ @ord.media_permohonan == 'website' }}">
                                                         <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: Website">
-                                                            <i class="bi bi-laptop me-1 text-primary"></i>Website
+                                                            <i class="bi bi-laptop me-1 text-secondary"></i>Website
                                                         </span>
                                                     </check>
                                                     <check if="{{ empty(@ord.media_permohonan) || @ord.media_permohonan == 'surat' || @ord.media_permohonan == 'surat_resmi' }}">
@@ -750,13 +757,13 @@ tr.row-user-task > td:first-child {
                                             </td>
                                             <td class="text-center">
                                                 <check if="{{ @ord.jenis_layanan_opti == 'selulosa' }}">
-                                                    <span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle px-2.5 py-1 fw-semibold text-nowrap" style="font-size: 0.75rem;">Selulosa</span>
+                                                    <span class="badge rounded-pill bg-light text-dark border px-2.5 py-1 fw-semibold text-nowrap" style="font-size: 0.75rem;">Selulosa</span>
                                                 </check>
                                                 <check if="{{ @ord.jenis_layanan_opti == 'lingkungan' }}">
-                                                    <span class="badge rounded-pill bg-success-subtle text-success-emphasis border border-success-subtle px-2.5 py-1 fw-semibold text-nowrap" style="font-size: 0.75rem;">Lingkungan</span>
+                                                    <span class="badge rounded-pill bg-light text-dark border px-2.5 py-1 fw-semibold text-nowrap" style="font-size: 0.75rem;">Lingkungan</span>
                                                 </check>
                                                 <check if="{{ !@ord.jenis_layanan_opti || @ord.jenis_layanan_opti == 'belum_ditentukan' }}">
-                                                    <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-0.5 fw-semibold d-inline-flex align-items-center justify-content-center" style="font-size: 0.68rem; line-height: 1.15;">
+                                                    <span class="badge rounded-pill bg-light text-muted border px-2 py-0.5 fw-medium d-inline-flex align-items-center justify-content-center" style="font-size: 0.68rem; line-height: 1.15;">
                                                         <span class="text-center" style="display: inline-block;">belum<br>ditentukan</span>
                                                     </span>
                                                 </check>
@@ -781,12 +788,12 @@ tr.row-user-task > td:first-child {
                                             <td>
                                                 <check if="{{ !empty(@ord.keterangan_sub) }}">
                                                     <true>
-                                                        <div class="text-primary-emphasis fw-semibold" style="font-size: 0.74rem; line-height: 1.25;">
+                                                        <div class="text-dark fw-semibold" style="font-size: 0.74rem; line-height: 1.25;">
                                                             {{ @ord.keterangan_sub }}
                                                         </div>
                                                     </true>
                                                     <false>
-                                                        <div class="text-primary-emphasis fw-semibold" style="font-size: 0.74rem; line-height: 1.25;">
+                                                        <div class="text-dark fw-semibold" style="font-size: 0.74rem; line-height: 1.25;">
                                                             {{ @ord.keterangan_aksi }}
                                                         </div>
                                                     </false>
@@ -801,7 +808,7 @@ tr.row-user-task > td:first-child {
                                                 <div class="d-inline-flex align-items-center gap-1">
                                                      <check if="{{ @ord.status == 'permintaan_masuk' }}">
                                                          <true>
-                                                             <a href="{{ @BASE }}/order/{{ @ord.id }}" class="btn btn-sm btn-warning text-dark py-1 px-2 d-inline-flex align-items-center gap-1 shadow-sm fw-semibold" title="Tentukan OPTI &amp; Disposisikan ke Ketua Tim">
+                                                             <a href="{{ @BASE }}/order/{{ @ord.id }}" style="background-color: #1e293b; border-color: #1e293b; font-size: 0.78rem;" class="btn btn-sm btn-dark py-1 px-2.5 d-inline-flex align-items-center gap-1 shadow-sm fw-medium" title="Tentukan OPTI &amp; Disposisikan ke Ketua Tim">
                                                                  <i class="bi bi-send-check"></i> <span>Disposisi</span>
                                                              </a>
                                                          </true>
