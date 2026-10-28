@@ -2542,8 +2542,7 @@
                                             <div class="form-section-header d-flex justify-content-between align-items-center">
                                                 <div>
                                                     <div class="section-header-text">Identitas Klien / Pelanggan</div>
-                                                    <div class="section-header-sub">Data pemohon resmi dari perusahaan mitra</div>
-                                                </div>
+                                                    </div>
                                                 <span class="badge bg-light text-muted border px-2 py-1" style="font-size: 0.72rem; font-weight: 600;">
                                                     <i class="bi bi-lock-fill me-1"></i>Read Only
                                                 </span>
@@ -2577,8 +2576,7 @@
                                             <div class="form-section-header">
                                                 <div>
                                                     <div class="section-header-text">Saluran Masuk &amp; Divisi OPTI</div>
-                                                    <div class="section-header-sub">Media penerimaan permohonan dan unit pelaksana</div>
-                                                </div>
+                                                    </div>
                                             </div>
                                             <div class="form-section-body">
                                                 <label class="form-label small fw-semibold text-dark mb-1">Permintaan Masuk Melalui:</label>
@@ -2605,15 +2603,13 @@
                                                         <input type="radio" name="jenis_layanan" id="koreksi_jlSelulosa" value="selulosa" {{ (@order.jenis_layanan_opti == 'selulosa' || empty(@order.jenis_layanan_opti) || @order.jenis_layanan_opti == 'belum_ditentukan') ? 'checked' : '' }}>
                                                         <div class="division-info">
                                                             <div class="div-name">OPTI Selulosa</div>
-                                                            <div class="div-desc">Pengujian pulp, kertas, &amp; serat selulosa</div>
-                                                        </div>
+                                                            </div>
                                                     </label>
                                                     <label class="division-card division-lingkungan {{ @order.jenis_layanan_opti == 'lingkungan' ? 'active' : '' }}" for="koreksi_jlLingkungan">
                                                         <input type="radio" name="jenis_layanan" id="koreksi_jlLingkungan" value="lingkungan" {{ @order.jenis_layanan_opti == 'lingkungan' ? 'checked' : '' }}>
                                                         <div class="division-info">
                                                             <div class="div-name">OPTI Lingkungan</div>
-                                                            <div class="div-desc">Pengujian air limbah, emisi, &amp; lingkungan</div>
-                                                        </div>
+                                                            </div>
                                                     </label>
                                                 </div>
                                             </div>
@@ -2888,8 +2884,7 @@
                                             <div class="form-section-header">
                                                 <div>
                                                     <div class="section-header-text">Penjelasan &amp; Ruang Lingkup Permohonan</div>
-                                                    <div class="section-header-sub">Rincian lingkup jasa atau instruksi khusus dari klien</div>
-                                                </div>
+                                                    </div>
                                             </div>
                                             <div class="form-section-body">
                                                 <textarea id="koreksi_inputPenjelasan" name="penjelasan" class="form-control form-control-sm" rows="3" placeholder="Tuliskan ruang lingkup, jenis sampel pengujian, atau instruksi khusus...">{{ @ruang_lingkup_mitra }}</textarea>
@@ -2954,8 +2949,7 @@
                                     <div class="form-section-header d-flex justify-content-between align-items-center">
                                         <div>
                                             <div class="section-header-text">Identitas Klien / Pelanggan</div>
-                                            <div class="section-header-sub">Data pemohon resmi dari perusahaan mitra</div>
-                                        </div>
+                                            </div>
                                         <span class="badge bg-light text-muted border px-2 py-1" style="font-size: 0.72rem; font-weight: 600;">
                                             <i class="bi bi-lock-fill me-1"></i>Read Only
                                         </span>
@@ -2989,8 +2983,7 @@
                                     <div class="form-section-header">
                                         <div>
                                             <div class="section-header-text">Saluran Masuk &amp; Divisi OPTI</div>
-                                            <div class="section-header-sub">Media penerimaan permohonan dan unit pelaksana</div>
-                                        </div>
+                                            </div>
                                     </div>
                                     <div class="form-section-body">
                                         <label class="form-label small fw-semibold text-dark mb-1">Permintaan Masuk Melalui:</label>
@@ -3017,15 +3010,13 @@
                                                 <input type="radio" name="jenis_layanan" id="jlSelulosa" value="selulosa" {{ (@order.jenis_layanan_opti == 'selulosa' || empty(@order.jenis_layanan_opti) || @order.jenis_layanan_opti == 'belum_ditentukan') ? 'checked' : '' }}>
                                                 <div class="division-info">
                                                     <div class="div-name">OPTI Selulosa</div>
-                                                    <div class="div-desc">Pengujian pulp, kertas, &amp; serat selulosa</div>
-                                                </div>
+                                                    </div>
                                             </label>
                                             <label class="division-card division-lingkungan {{ @order.jenis_layanan_opti == 'lingkungan' ? 'active' : '' }}" for="jlLingkungan">
                                                 <input type="radio" name="jenis_layanan" id="jlLingkungan" value="lingkungan" {{ @order.jenis_layanan_opti == 'lingkungan' ? 'checked' : '' }}>
                                                 <div class="division-info">
                                                     <div class="div-name">OPTI Lingkungan</div>
-                                                    <div class="div-desc">Pengujian air limbah, emisi, &amp; lingkungan</div>
-                                                </div>
+                                                    </div>
                                             </label>
                                         </div>
                                     </div>
@@ -3300,8 +3291,7 @@
                                     <div class="form-section-header">
                                         <div>
                                             <div class="section-header-text">Penjelasan &amp; Ruang Lingkup Permohonan</div>
-                                            <div class="section-header-sub">Rincian lingkup jasa atau instruksi khusus dari klien</div>
-                                        </div>
+                                            </div>
                                     </div>
                                     <div class="form-section-body">
                                         <textarea id="inputPenjelasan" name="penjelasan" class="form-control form-control-sm" rows="3" placeholder="Tuliskan ruang lingkup, jenis sampel pengujian, atau instruksi khusus...">{{ @ruang_lingkup_mitra }}</textarea>
