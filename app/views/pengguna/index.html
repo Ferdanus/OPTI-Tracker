@@ -437,35 +437,94 @@
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form method="POST" action="{{ @BASE }}/pengguna/simpan">
+            <form method="POST" action="{{ @BASE }}/pengguna/simpan" id="formTambahPengguna">
                 <div class="modal-body p-4">
+                    <!-- Field 1: Pilih Pegawai (Searchable Dropdown Clean) -->
                     <div class="mb-3">
                         <label class="form-label small fw-bold text-dark mb-1">
                             Pilih Pegawai <span class="text-danger">*</span>
                         </label>
                         <check if="{{ count(@unassigned_users) > 0 }}">
                             <true>
-                                <div class="position-relative mb-2">
-                                    <div class="input-group input-group-sm">
-                                        <span class="input-group-text bg-white border-end-0 text-muted">
-                                            <i class="bi bi-search"></i>
+                                <!-- Hidden input for form submit -->
+                                <input type="hidden" name="id_user" id="selected_id_user" required>
+
+                                <!-- Custom Clean Dropdown Trigger -->
+                                <div class="dropdown" id="dropdownPegawaiWrapper">
+                                    <button class="form-select text-start d-flex justify-content-between align-items-center py-2 px-3 bg-white border" 
+                                            type="button" 
+                                            id="btnDropdownPegawai" 
+                                            data-bs-toggle="dropdown" 
+                                            data-bs-auto-close="outside" 
+                                            aria-expanded="false" 
+                                            style="height: 42px;">
+                                        <span id="labelPegawaiSelected" class="text-secondary small text-truncate">
+                                            <i class="bi bi-person me-1.5 text-muted"></i> Pilih pegawai...
                                         </span>
-                                        <input type="text" id="searchPegawaiTambah" class="form-control border-start-0 ps-1 py-1.5" placeholder="Ketik untuk mencari nama pegawai..." autocomplete="off">
-                                        <button type="button" class="btn btn-outline-secondary border-start-0" id="btnClearSearchPegawai" title="Hapus pencarian" style="display: none;">
-                                            <i class="bi bi-x-lg" style="font-size: 0.75rem;"></i>
-                                        </button>
+                                    </button>
+
+                                    <!-- Dropdown Menu / Popper -->
+                                    <div class="dropdown-menu shadow-sm border p-2 w-100" 
+                                         aria-labelledby="btnDropdownPegawai" 
+                                         style="max-width: 100%; border-radius: 8px;">
+                                        
+                                        <!-- Search input inside dropdown -->
+                                        <div class="input-group input-group-sm mb-2">
+                                            <span class="input-group-text bg-white border-end-0 text-muted ps-2.5">
+                                                <i class="bi bi-search" style="font-size: 0.8rem;"></i>
+                                            </span>
+                                            <input type="text" 
+                                                   id="searchPegawaiFilter" 
+                                                   class="form-control border-start-0 ps-1 py-1.5" 
+                                                   placeholder="Cari nama atau NIP/ID..." 
+                                                   autocomplete="off">
+                                            <button type="button" 
+                                                    class="btn btn-outline-secondary border-start-0 py-0 px-2" 
+                                                    id="btnClearSearchPegawai" 
+                                                    title="Hapus pencarian" 
+                                                    style="display: none;">
+                                                <i class="bi bi-x-lg" style="font-size: 0.7rem;"></i>
+                                            </button>
+                                        </div>
+
+                                        <!-- Results counter -->
+                                        <div class="d-flex justify-content-between align-items-center px-2 py-1 mb-1 text-muted" style="font-size: 0.72rem;">
+                                            <span id="counterPegawaiFound">Menampilkan {{ count(@unassigned_users) }} pegawai</span>
+                                            <span class="text-primary fw-medium">Klik untuk memilih</span>
+                                        </div>
+
+                                        <!-- Scrollable List items -->
+                                        <div id="listPegawaiContainer" style="max-height: 220px; overflow-y: auto; overscroll-behavior: contain;">
+                                            <repeat group="{{ @unassigned_users }}" value="{{ @u }}">
+                                                <div class="dropdown-item py-2 px-2.5 rounded-2 d-flex align-items-center justify-content-between text-wrap item-pegawai" 
+                                                     role="button"
+                                                     tabindex="0"
+                                                     data-id="{{ @u.id_user }}" 
+                                                     data-nama="{{ @u.nama_user }}"
+                                                     data-bidang="{{ !empty(@u.bidang) && @u.bidang != 'NULL' ? @u.bidang : '' }}"
+                                                     style="cursor: pointer; font-size: 0.85rem; line-height: 1.25;">
+                                                    <div class="d-flex align-items-center gap-2 overflow-hidden">
+                                                        <div class="rounded-circle bg-light text-primary d-flex align-items-center justify-content-center flex-shrink-0" style="width: 28px; height: 28px; font-size: 0.75rem; font-weight: 600;">
+                                                            {{ strtoupper(substr(@u.nama_user, 0, 1)) }}
+                                                        </div>
+                                                        <div class="text-truncate">
+                                                            <div class="fw-semibold text-dark text-truncate">{{ @u.nama_user }}</div>
+                                                            <small class="text-muted" style="font-size: 0.72rem;">ID: #{{ @u.id_user }}</small>
+                                                        </div>
+                                                    </div>
+                                                    <check if="{{ !empty(@u.bidang) && @u.bidang != 'NULL' }}">
+                                                        <span class="badge bg-light text-secondary border fw-normal flex-shrink-0 ms-2" style="font-size: 0.68rem;">
+                                                            {{ strtoupper(@u.bidang) }}
+                                                        </span>
+                                                    </check>
+                                                </div>
+                                            </repeat>
+                                            <div id="emptyPegawaiMsg" class="p-3 text-center text-muted small d-none">
+                                                <i class="bi bi-person-x fs-4 d-block mb-1 text-secondary opacity-50"></i>
+                                                Pegawai tidak ditemukan
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                                <select name="id_user" id="selectPegawaiTambah" class="form-select" size="6" style="height: 165px; font-size: 0.85rem;" required>
-                                    <repeat group="{{ @unassigned_users }}" value="{{ @u }}">
-                                        <option value="{{ @u.id_user }}" data-nama="{{ strtolower(@u.nama_user) }}" data-id="{{ @u.id_user }}">
-                                            {{ @u.nama_user }} (ID: {{ @u.id_user }}{{ !empty(@u.bidang) ? ' - ' . strtoupper(@u.bidang) : '' }})
-                                        </option>
-                                    </repeat>
-                                </select>
-                                <div class="d-flex justify-content-between align-items-center mt-1">
-                                    <span class="text-muted small" style="font-size: 0.72rem;" id="countPegawaiFiltered">Tersedia {{ count(@unassigned_users) }} pegawai</span>
-                                    <span class="text-primary small fw-medium" style="font-size: 0.72rem;">Klik salah satu nama untuk memilih</span>
                                 </div>
                             </true>
                             <false>
@@ -476,11 +535,12 @@
                         </check>
                     </div>
 
+                    <!-- Field 2: Role Sistem -->
                     <div class="mb-3">
-                        <label class="form-label small fw-bold text-dark">
+                        <label class="form-label small fw-bold text-dark mb-1">
                             Role Sistem <span class="text-danger">*</span>
                         </label>
-                        <select name="role_sistem" id="tambah_role_sistem" class="form-select" required>
+                        <select name="role_sistem" id="tambah_role_sistem" class="form-select py-2 px-3 bg-white" style="height: 42px;" required>
                             <option value="" disabled selected>Pilih peran / role</option>
                             <repeat group="{{ @role_options }}" key="{{ @rKey }}" value="{{ @rMeta }}">
                                 <option value="{{ @rKey }}">
@@ -493,7 +553,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer bg-light py-2 px-4 border-top">
+                <div class="modal-footer bg-light py-2.5 px-4 border-top">
                     <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Batal</button>
                     <check if="{{ count(@unassigned_users) > 0 }}">
                         <button type="submit" id="btnSubmitTambah" class="btn btn-primary btn-sm fw-semibold px-3">
@@ -629,58 +689,119 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Live Search Pegawai di Modal Tambah Pengguna
-    const inputSearchPegawai = document.getElementById('searchPegawaiTambah');
-    const selectPegawai = document.getElementById('selectPegawaiTambah');
-    const btnClearSearch = document.getElementById('btnClearSearchPegawai');
-    const countLabel = document.getElementById('countPegawaiFiltered');
+    // =========================================================================
+    // Clean & Modern Searchable Dropdown di Modal Tambah Pengguna
+    // =========================================================================
+    const dropdownWrapper = document.getElementById('dropdownPegawaiWrapper');
+    const btnDropdown = document.getElementById('btnDropdownPegawai');
+    const inputHiddenUser = document.getElementById('selected_id_user');
+    const labelSelected = document.getElementById('labelPegawaiSelected');
+    const inputFilter = document.getElementById('searchPegawaiFilter');
+    const btnClearFilter = document.getElementById('btnClearSearchPegawai');
+    const counterFound = document.getElementById('counterPegawaiFound');
+    const emptyMsg = document.getElementById('emptyPegawaiMsg');
+    const itemPegawaiList = document.querySelectorAll('.item-pegawai');
+    const totalPegawaiCount = itemPegawaiList.length;
 
-    if (inputSearchPegawai && selectPegawai) {
-        const originalOptions = Array.from(selectPegawai.options);
+    if (btnDropdown && dropdownWrapper) {
+        // Handle selection of a person
+        itemPegawaiList.forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                const id = this.getAttribute('data-id');
+                const nama = this.getAttribute('data-nama');
+                const bidang = this.getAttribute('data-bidang');
 
-        inputSearchPegawai.addEventListener('input', function() {
-            const query = this.value.toLowerCase().trim();
-            if (btnClearSearch) {
-                btnClearSearch.style.display = query.length > 0 ? 'block' : 'none';
-            }
+                // Set hidden input
+                if (inputHiddenUser) inputHiddenUser.value = id;
 
-            let matchCount = 0;
-            originalOptions.forEach(opt => {
-                const nama = (opt.getAttribute('data-nama') || '').toLowerCase();
-                const id = (opt.getAttribute('data-id') || '').toLowerCase();
-                const text = opt.textContent.toLowerCase();
+                // Update trigger button label
+                if (labelSelected) {
+                    let badgeHtml = bidang ? ' <span class="badge bg-light text-secondary border fw-normal ms-1" style="font-size: 0.68rem;">' + bidang.toUpperCase() + '</span>' : '';
+                    labelSelected.innerHTML = '<span class="fw-semibold text-dark"><i class="bi bi-person-check-fill text-primary me-1"></i>' + nama + '</span> <span class="text-muted">(ID: #' + id + ')</span>' + badgeHtml;
+                    labelSelected.classList.remove('text-secondary');
+                }
 
-                if (!query || nama.includes(query) || id.includes(query) || text.includes(query)) {
-                    opt.hidden = false;
-                    opt.style.display = '';
-                    matchCount++;
-                } else {
-                    opt.hidden = true;
-                    opt.style.display = 'none';
+                // Active state styling on item
+                itemPegawaiList.forEach(el => el.classList.remove('active', 'bg-primary-subtle', 'text-primary'));
+                this.classList.add('active', 'bg-primary-subtle', 'text-primary');
+
+                // Close bootstrap dropdown
+                const bsDropdown = bootstrap.Dropdown.getInstance(btnDropdown) || new bootstrap.Dropdown(btnDropdown);
+                bsDropdown.hide();
+            });
+        });
+
+        // Filter search input
+        if (inputFilter) {
+            inputFilter.addEventListener('input', function() {
+                const query = this.value.toLowerCase().trim();
+                let matchCount = 0;
+
+                if (btnClearFilter) {
+                    btnClearFilter.style.display = query.length > 0 ? 'inline-block' : 'none';
+                }
+
+                itemPegawaiList.forEach(item => {
+                    const nama = (item.getAttribute('data-nama') || '').toLowerCase();
+                    const id = (item.getAttribute('data-id') || '').toLowerCase();
+                    const bidang = (item.getAttribute('data-bidang') || '').toLowerCase();
+
+                    if (!query || nama.includes(query) || id.includes(query) || bidang.includes(query)) {
+                        item.classList.remove('d-none');
+                        matchCount++;
+                    } else {
+                        item.classList.add('d-none');
+                    }
+                });
+
+                if (emptyMsg) {
+                    if (matchCount === 0) {
+                        emptyMsg.classList.remove('d-none');
+                    } else {
+                        emptyMsg.classList.add('d-none');
+                    }
+                }
+
+                if (counterFound) {
+                    counterFound.textContent = query.length > 0 
+                        ? 'Ditemukan ' + matchCount + ' dari ' + totalPegawaiCount + ' pegawai'
+                        : 'Menampilkan ' + totalPegawaiCount + ' pegawai';
                 }
             });
 
-            if (countLabel) {
-                countLabel.textContent = query ? 'Ditemukan ' + matchCount + ' pegawai' : 'Tersedia ' + originalOptions.length + ' pegawai';
+            if (btnClearFilter) {
+                btnClearFilter.addEventListener('click', function() {
+                    inputFilter.value = '';
+                    inputFilter.dispatchEvent(new Event('input'));
+                    inputFilter.focus();
+                });
             }
-        });
+        }
 
-        if (btnClearSearch) {
-            btnClearSearch.addEventListener('click', function() {
-                inputSearchPegawai.value = '';
-                inputSearchPegawai.dispatchEvent(new Event('input'));
-                inputSearchPegawai.focus();
+        // Auto focus search input when dropdown opens
+        if (btnDropdown) {
+            btnDropdown.addEventListener('shown.bs.dropdown', function() {
+                if (inputFilter) {
+                    setTimeout(() => inputFilter.focus(), 100);
+                }
             });
         }
 
-        // Reset pencarian saat modal ditutup / dibuka
+        // Reset state when modal opens
         const modalTambahEl = document.getElementById('modalTambahPengguna');
         if (modalTambahEl) {
             modalTambahEl.addEventListener('show.bs.modal', function() {
-                if (inputSearchPegawai) {
-                    inputSearchPegawai.value = '';
-                    inputSearchPegawai.dispatchEvent(new Event('input'));
+                if (inputHiddenUser) inputHiddenUser.value = '';
+                if (labelSelected) {
+                    labelSelected.innerHTML = '<i class="bi bi-person me-1.5 text-muted"></i> Pilih pegawai...';
+                    labelSelected.classList.add('text-secondary');
                 }
+                if (inputFilter) {
+                    inputFilter.value = '';
+                    inputFilter.dispatchEvent(new Event('input'));
+                }
+                itemPegawaiList.forEach(el => el.classList.remove('active', 'bg-primary-subtle', 'text-primary'));
             });
         }
     }
