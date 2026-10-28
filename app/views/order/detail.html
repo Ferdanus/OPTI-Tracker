@@ -2485,8 +2485,7 @@
                                         <h6 class="fw-bold text-dark m-0 font-display">
                                             Divisi Pelaksana: {{ @order.jenis_layanan_opti == 'selulosa' ? 'OPTI Selulosa (Ka. Tim Selulosa)' : 'OPTI Lingkungan (Ka. Tim Lingkungan)' }}
                                         </h6>
-                                        <small class="text-secondary">Standar Dokumen: <strong>F.PJT-08-01/02</strong></small>
-                                    </div>
+                                        </div>
                                 </div>
                                 <check if="{{ @is_admin_order || @is_superadmin }}">
                                     <button type="button" class="btn btn-white btn-sm border fw-semibold shadow-sm text-secondary d-inline-flex align-items-center gap-1.5" data-bs-toggle="collapse" data-bs-target="#collapseEditInlinePelayanan" aria-expanded="false" aria-controls="collapseEditInlinePelayanan">
@@ -2676,10 +2675,6 @@
                                                             </span>
                                                         </div>
                                                     </div>
-                                                    <div class="text-muted small mb-3" style="font-size: 0.78rem; line-height: 1.45; color: #64748b;">
-                                                        Periksa ketersediaan sumber daya. Seluruh 4 pilar wajib tercentang (siap) agar keputusan <em>"Dapat Dilaksanakan"</em> dapat dipilih.
-                                                    </div>
-
                                                     <div class="row g-3 mb-3">
                                                         <!-- Pilar 1: SDM / Personil -->
                                                         <div class="col-12 col-md-6">
@@ -2829,9 +2824,6 @@
                                                                 Keputusan Kelayakan Layanan
                                                             </h6>
                                                         </div>
-                                                        <div class="text-muted small mb-3" style="font-size: 0.78rem; line-height: 1.45; color: #64748b;">
-                                                            Tentukan kesiapan balai dalam melayani permohonan jasa ini berdasarkan evaluasi 4 pilar di atas.
-                                                        </div>
                                                         <div class="row g-3">
                                                             <div class="col-sm-6">
                                                                 <input type="radio" class="btn-check" name="keputusan_kelayakan" id="koreksi_kep_layak" value="dapat_dilaksanakan" {{ @tinjauan && @tinjauan.keputusan == 'dapat_dilaksanakan' ? 'checked' : (!@tinjauan ? 'checked' : '') }} onchange="toggleAlasanPenolakan('koreksi_')">
@@ -2842,8 +2834,7 @@
                                                                     </div>
                                                                     <div class="card-text-wrap flex-grow-1">
                                                                         <div class="card-title">Dapat Dilaksanakan</div>
-                                                                        <div class="card-subtitle small" id="koreksi_sub_card_layak">Sanggup dikerjakan &bull; Syarat 4 pilar terpenuhi</div>
-                                                                    </div>
+                                                                        </div>
                                                                 </label>
                                                             </div>
                                                             <div class="col-sm-6">
@@ -2855,8 +2846,7 @@
                                                                     </div>
                                                                     <div class="card-text-wrap flex-grow-1">
                                                                         <div class="card-title">Tidak Dapat Dilaksanakan</div>
-                                                                        <div class="card-subtitle small">Ditolak / kapasitas tidak tersedia</div>
-                                                                    </div>
+                                                                        </div>
                                                                 </label>
                                                             </div>
                                                         </div>
@@ -3080,10 +3070,6 @@
                                                     </span>
                                                 </div>
                                             </div>
-                                            <div class="text-muted small mb-3" style="font-size: 0.78rem; line-height: 1.45; color: #64748b;">
-                                                Periksa ketersediaan sumber daya. Seluruh 4 pilar wajib tercentang (siap) agar keputusan <em>"Dapat Dilaksanakan"</em> dapat dipilih.
-                                            </div>
-
                                             <div class="row g-3 mb-3">
                                                 <!-- Pilar 1: SDM / Personil -->
                                                 <div class="col-12 col-md-6">
@@ -3233,9 +3219,6 @@
                                                         Keputusan Kelayakan Layanan
                                                     </h6>
                                                 </div>
-                                                <div class="text-muted small mb-3" style="font-size: 0.78rem; line-height: 1.45; color: #64748b;">
-                                                    Tentukan kesiapan balai dalam melayani permohonan jasa ini berdasarkan evaluasi 4 pilar di atas.
-                                                </div>
                                                 <div class="row g-3">
                                                     <div class="col-sm-6">
                                                         <input type="radio" class="btn-check" name="keputusan_kelayakan" id="kep_layak" value="dapat_dilaksanakan" {{ @tinjauan && @tinjauan.keputusan == 'dapat_dilaksanakan' ? 'checked' : (!@tinjauan ? 'checked' : '') }} onchange="toggleAlasanPenolakan()">
@@ -3246,8 +3229,7 @@
                                                             </div>
                                                             <div class="card-text-wrap flex-grow-1">
                                                                 <div class="card-title">Dapat Dilaksanakan</div>
-                                                                <div class="card-subtitle small" id="sub_card_layak">Sanggup dikerjakan &bull; Syarat 4 pilar terpenuhi</div>
-                                                            </div>
+                                                                </div>
                                                         </label>
                                                     </div>
                                                     <div class="col-sm-6">
@@ -3259,8 +3241,7 @@
                                                             </div>
                                                             <div class="card-text-wrap flex-grow-1">
                                                                 <div class="card-title">Tidak Dapat Dilaksanakan</div>
-                                                                <div class="card-subtitle small">Ditolak / kapasitas tidak tersedia</div>
-                                                            </div>
+                                                                </div>
                                                         </label>
                                                     </div>
                                                 </div>
@@ -3525,10 +3506,6 @@
                                                     </span>
                                                 </div>
                                             </div>
-                                            <div class="text-muted small mb-3" style="font-size: 0.78rem; line-height: 1.45; color: #64748b;">
-                                                Periksa ketersediaan sumber daya. Seluruh 4 pilar wajib tercentang (siap) agar keputusan <em>"Dapat Dilaksanakan"</em> dapat dipilih.
-                                            </div>
-
                                             <div class="row g-3 mb-3">
                                                 <!-- Pilar 1: SDM / Personil -->
                                                 <div class="col-12 col-md-6">
@@ -3698,9 +3675,6 @@
                                                         Keputusan Kelayakan Layanan
                                                     </h6>
                                                 </div>
-                                                <div class="text-muted small mb-3" style="font-size: 0.78rem; line-height: 1.45; color: #64748b;">
-                                                    Tentukan kesiapan balai dalam melayani permohonan jasa ini berdasarkan evaluasi 4 pilar di atas.
-                                                </div>
                                                 <div class="row g-3">
                                                     <div class="col-sm-6">
                                                         <input type="radio" class="btn-check" name="keputusan" id="edit_kep_layak" value="dapat_dilaksanakan" {{ @tinjauan.keputusan == 'dapat_dilaksanakan' ? 'checked' : '' }} onchange="toggleAlasanPenolakan('edit_')">
@@ -3711,8 +3685,7 @@
                                                             </div>
                                                             <div class="card-text-wrap flex-grow-1">
                                                                 <div class="card-title">Dapat Dilaksanakan</div>
-                                                                <div class="card-subtitle small" id="edit_sub_card_layak">Sanggup dikerjakan &bull; Syarat 4 pilar terpenuhi</div>
-                                                            </div>
+                                                                </div>
                                                         </label>
                                                     </div>
                                                     <div class="col-sm-6">
@@ -3724,8 +3697,7 @@
                                                             </div>
                                                             <div class="card-text-wrap flex-grow-1">
                                                                 <div class="card-title">Tidak Dapat Dilaksanakan</div>
-                                                                <div class="card-subtitle small">Ditolak / kapasitas tidak tersedia</div>
-                                                            </div>
+                                                                </div>
                                                         </label>
                                                     </div>
                                                 </div>
@@ -3832,10 +3804,6 @@
                                             </span>
                                         </div>
                                     </div>
-                                    <div class="text-muted small mb-3" style="font-size: 0.78rem; line-height: 1.45; color: #64748b;">
-                                        Periksa ketersediaan sumber daya. Seluruh 4 pilar wajib tercentang (siap) agar keputusan <em>"Dapat Dilaksanakan"</em> dapat dipilih.
-                                    </div>
-
                                     <div class="row g-3 mb-3">
                                         <!-- Pilar 1: SDM / Personil -->
                                         <div class="col-12 col-md-6">
@@ -4005,9 +3973,6 @@
                                                 Keputusan Kelayakan Layanan
                                             </h6>
                                         </div>
-                                        <div class="text-muted small mb-3" style="font-size: 0.78rem; line-height: 1.45; color: #64748b;">
-                                            Tentukan kesiapan balai dalam melayani permohonan jasa ini berdasarkan evaluasi 4 pilar di atas.
-                                        </div>
                                         <div class="row g-3">
                                             <div class="col-sm-6">
                                                 <input type="radio" class="btn-check" name="keputusan" id="kep_layak" value="dapat_dilaksanakan" {{ @tinjauan && @tinjauan.keputusan == 'dapat_dilaksanakan' ? 'checked' : (!@tinjauan ? 'checked' : '') }} onchange="toggleAlasanPenolakan()">
@@ -4018,8 +3983,7 @@
                                                     </div>
                                                     <div class="card-text-wrap flex-grow-1">
                                                         <div class="card-title">Dapat Dilaksanakan</div>
-                                                        <div class="card-subtitle small" id="sub_card_layak">Sanggup dikerjakan &bull; Syarat 4 pilar terpenuhi</div>
-                                                    </div>
+                                                        </div>
                                                 </label>
                                             </div>
                                             <div class="col-sm-6">
@@ -4031,8 +3995,7 @@
                                                     </div>
                                                     <div class="card-text-wrap flex-grow-1">
                                                         <div class="card-title">Tidak Dapat Dilaksanakan</div>
-                                                        <div class="card-subtitle small">Ditolak / kapasitas tidak tersedia</div>
-                                                    </div>
+                                                        </div>
                                                 </label>
                                             </div>
                                         </div>
@@ -6062,8 +6025,7 @@
                                 <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-0.5 small fw-bold">6B</span>
                                 <i class="bi bi-file-earmark-medical text-primary fs-5"></i> Proposal Teknis Pelaksanaan Lab
                             </h6>
-                            <small class="text-muted">Khusus OPTI Lingkungan &bull; Disusun pasca pembayaran terkonfirmasi sebelum pelaksanaan uji lab</small>
-                        </div>
+                            </div>
                         <div>
                             <check if="{{ !((@order.status_keuangan == 'lunas' || !empty(@riwayat_bayar)) || (@penawaran && @penawaran.status_respon_klien == 'deal')) }}">
                                 <span class="badge bg-light text-secondary border"><i class="bi bi-lock-fill me-1"></i> Menunggu Deal &amp; Pembayaran</span>
@@ -6953,10 +6915,7 @@
                                 </option>
                             </repeat>
                         </select>
-                        <small class="text-muted d-block mt-1" style="font-size: 0.76rem;">
-                            Setelah ditetapkan, peneliti terkait akan menerima pemberitahuan dan memiliki akses pengerjaan Tahap 4 (Ruang Proposal).
-                        </small>
-                    </div>
+                        </div>
                 </div>
                 <div class="modal-footer bg-light border-0 py-2.5 px-4">
                     <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Batal</button>
@@ -6999,10 +6958,7 @@
                                 </option>
                             </repeat>
                         </select>
-                        <small class="text-muted d-block mt-1" style="font-size: 0.76rem;">
-                            Penanggung jawab teknis pelaksanaan pengujian sampel dan pelaporan hasil uji.
-                        </small>
-                    </div>
+                        </div>
 
                     <!-- 2. Checklist Kesiapan SOP Laboratorium (Audit Standar Mutu) -->
                     <div class="mb-3 p-3 bg-light rounded border">
@@ -7086,8 +7042,7 @@
                         <h6 class="modal-title fw-bold text-dark m-0 fs-6" id="modalEditProfilPelangganLabel">
                             Edit Profil Pelanggan
                         </h6>
-                        <small class="text-muted" style="font-size: 0.78rem;">Koreksi data profil pelanggan atau pilih instansi terdaftar dari master database</small>
-                    </div>
+                        </div>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
             </div>
@@ -7422,7 +7377,6 @@
                             <i class="bi bi-file-earmark-arrow-down fs-2"></i>
                         </div>
                         <h6 class="fw-bold text-dark font-display mb-1" id="nonPdfDocTitle">Berkas Dokumen Terunggah</h6>
-                        <p class="small text-muted mb-3" id="nonPdfDocSubtitle">Berkas proposal telah tersimpan dengan aman di server.</p>
                         <div class="d-flex justify-content-center gap-2">
                             <a href="{{ @proposal && @proposal.file_proposal ? @BASE . '/' . @proposal.file_proposal : '#' }}" target="_blank" class="btn btn-primary btn-sm px-3" download>
                                 <i class="bi bi-download me-1"></i> Unduh File
@@ -8556,8 +8510,6 @@ function cekStatusPilar(prefix) {
     var radioLayak = document.getElementById(prefix + 'kep_layak');
     var radioTidak = document.getElementById(prefix + 'kep_tidak_layak');
     var labelLayak = document.getElementById(prefix + 'label_card_layak');
-    var subLayak = document.getElementById(prefix + 'sub_card_layak');
-
     if (!allChecked) {
         if (radioLayak) {
             radioLayak.disabled = true;
@@ -8572,10 +8524,7 @@ function cekStatusPilar(prefix) {
             labelLayak.style.cursor = 'not-allowed';
             labelLayak.title = 'Centang ke-4 pilar di atas untuk membuka opsi ini';
         }
-        if (subLayak) {
-            subLayak.innerHTML = '<span class="text-danger fw-semibold"><i class="bi bi-lock-fill me-1"></i>Terkunci (Syarat 4 pilar belum terpenuhi)</span>';
-        }
-    } else {
+        } else {
         if (radioLayak) {
             radioLayak.disabled = false;
         }
@@ -8584,10 +8533,7 @@ function cekStatusPilar(prefix) {
             labelLayak.style.cursor = 'pointer';
             labelLayak.title = 'Sanggup dikerjakan';
         }
-        if (subLayak) {
-            subLayak.innerHTML = 'Sanggup dikerjakan &bull; Syarat 4 pilar terpenuhi';
         }
-    }
     updateTetapkanButtonState(prefix);
 }
 

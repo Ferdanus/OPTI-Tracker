@@ -978,10 +978,6 @@
                                 </span>
                             </div>
                         </div>
-                        <div class="text-muted small mb-3" style="font-size: 0.78rem; line-height: 1.45; color: #64748b;">
-                            Periksa ketersediaan sumber daya. Seluruh 4 pilar wajib tercentang (siap) agar keputusan <em>"Dapat Dilaksanakan"</em> dapat dipilih.
-                        </div>
-
                         <div class="row g-3 mb-3">
                             <!-- Pilar 1: SDM / Personil -->
                             <div class="col-12 col-md-6">
@@ -1131,9 +1127,6 @@
                                     Keputusan Kelayakan Layanan
                                 </h6>
                             </div>
-                            <div class="text-muted small mb-3" style="font-size: 0.78rem; line-height: 1.45; color: #64748b;">
-                                Tentukan kesiapan balai dalam melayani permohonan jasa ini berdasarkan evaluasi 4 pilar di atas.
-                            </div>
                             <div class="row g-3">
                                 <div class="col-sm-6">
                                     <input type="radio" class="btn-check" name="keputusan_kelayakan" id="kep_layak" value="dapat_dilaksanakan" {{ @tinjauan && @tinjauan.keputusan == 'dapat_dilaksanakan' ? 'checked' : (!@tinjauan ? 'checked' : '') }} {{ !@can_edit ? 'disabled' : '' }} onchange="toggleAlasanPenolakan()">
@@ -1144,8 +1137,7 @@
                                         </div>
                                         <div class="card-text-wrap flex-grow-1">
                                             <div class="card-title">Dapat Dilaksanakan</div>
-                                            <div class="card-subtitle small" id="sub_card_layak">Sanggup dikerjakan &bull; Syarat 4 pilar terpenuhi</div>
-                                        </div>
+                                            </div>
                                     </label>
                                 </div>
                                 <div class="col-sm-6">
@@ -1157,8 +1149,7 @@
                                         </div>
                                         <div class="card-text-wrap flex-grow-1">
                                             <div class="card-title">Tidak Dapat Dilaksanakan</div>
-                                            <div class="card-subtitle small">Ditolak / kapasitas tidak tersedia</div>
-                                        </div>
+                                            </div>
                                     </label>
                                 </div>
                             </div>
@@ -1585,8 +1576,6 @@ document.addEventListener('DOMContentLoaded', function () {
         var radioLayak = document.getElementById('kep_layak');
         var radioTidak = document.getElementById('kep_tidak_layak');
         var labelLayak = document.getElementById('label_card_layak');
-        var subLayak = document.getElementById('sub_card_layak');
-
         if (!allChecked) {
             // Jika ada pilar yang tidak tercentang, "Dapat Dilaksanakan" terkunci
             if (radioLayak) {
@@ -1602,10 +1591,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 labelLayak.style.cursor = 'not-allowed';
                 labelLayak.title = 'Centang ke-4 pilar di atas untuk membuka opsi ini';
             }
-            if (subLayak) {
-                subLayak.innerHTML = '<span class="text-danger fw-semibold"><i class="bi bi-lock-fill me-1"></i>Terkunci (Syarat 4 pilar belum terpenuhi)</span>';
-            }
-        } else {
+            } else {
             // Jika semua 4 pilar tercentang, "Dapat Dilaksanakan" terbuka
             var canEdit = labelLayak && labelLayak.getAttribute('data-can-edit') !== '0';
             if (radioLayak && canEdit) {
@@ -1616,10 +1602,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 labelLayak.style.cursor = 'pointer';
                 labelLayak.title = 'Sanggup dikerjakan';
             }
-            if (subLayak) {
-                subLayak.innerHTML = 'Sanggup dikerjakan &bull; Syarat 4 pilar terpenuhi';
             }
-        }
         updatePreview();
     }
 
