@@ -137,7 +137,7 @@ table.mtp-tbl{width:100%;border-collapse:collapse}
           <td class="mtp-name">{{ @t.pegawai }}</td>
           <td><span class="mtp-lay">{{ @t.layanan }}</span></td>
           <td class="keep"><label class="mtp-sw"><input type="checkbox" data-akt="{{ @t.id }}"{{ @t.aktif ? ' checked' : '' }}><i></i></label></td>
-          <td class="r keep mtp-w"><button type="button" class="mtp-ibtn dng" data-hapus="{{ @t.id }}" title="Hapus"><i class="bi bi-trash"></i></button></td>
+          <td class="r keep mtp-w"><button type="button" class="mtp-ibtn dng" data-hapus="{{ @t.id }}" title="{{ @t.aktif ? 'Nonaktifkan dulu untuk menghapus' : 'Hapus' }}"{{ @t.aktif ? ' disabled' : '' }}><i class="bi bi-trash"></i></button></td>
         </tr>
         </repeat>
         <check if="{{ @mtp_n_semua == 0 }}"><tr><td colspan="5"><div class="mtp-empty">Belum ada anggota tim pelaksana.</div></td></tr></check>
@@ -277,6 +277,7 @@ $('tbTim').addEventListener('change',function(e){
     post('/'+a.dataset.akt+'/aktif',{aktif:mau?1:0}).then(function(j){
       tr.dataset.aktif=mau?'1':'0';tr.classList.toggle('nonaktif',!mau);
       var t=timBy(a.dataset.akt);if(t)t.aktif=mau?1:0;
+      var hb=tr.querySelector('[data-hapus]');if(hb){hb.disabled=mau;hb.title=mau?'Nonaktifkan dulu untuk menghapus':'Hapus'}
       saring();if(j.pesan)toast(j.pesan);
     }).catch(function(err){a.checked=!mau;toast(err.message,1)});
     return;
@@ -284,9 +285,9 @@ $('tbTim').addEventListener('change',function(e){
 });
 function hapusIds(ids,teks){konfirmasi('Hapus anggota?',teks,'Ya, hapus').then(function(ok){if(ok)post('/hapus',{ids:JSON.stringify(ids)}).then(function(j){muatUlang(j.pesan)}).catch(function(e){toast(e.message,1)})})}
 $('tbTim').addEventListener('click',function(e){
-  var h=e.target.closest('[data-hapus]');if(!h)return;
+  var h=e.target.closest('[data-hapus]');if(!h||h.disabled)return;
   var t=timBy(h.dataset.hapus);
-  hapusIds([t.id],pegBy(t.peg).n+' akan dihapus dari tim pelaksana '+layNama(t.lay)+'.')});
+  hapusIds([t.id],pegBy(t.peg).n+' akan dihapus dari tim pelaksana '+layNama(t.lay)+'. PO yang sudah dibuat tidak berubah.')});
 
 function tampilView(v){['viewList','viewCreate'].forEach(function(x){$(x).hidden=x!==v});window.scrollTo(0,0)}
 

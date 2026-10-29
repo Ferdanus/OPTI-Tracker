@@ -1,4 +1,5 @@
-<!-- Modal pilih order Pengujian (data dari tb_arsipsurat di sil2020 = arsip surat permintaan).
+<!-- Modal pilih order Pengujian. Dua langkah: (1) pilih jenis pengujian (air, kertas/karton/pulp, udara, limbah padat, AMDK, BKB),
+     (2) pilih order jenis itu. Data: tb_arsipsurat (sil2020) yang tercatat di tb_penerimaan_contoh; jenis dari layanan_Kd_contoh.
      Satu PO boleh memuat BANYAK order: order dicentang, lalu tombol bawah membuat / memperbarui PO.
      Dipakai di: /petunjuk-operasional (daftar PO layanan) dan di form PO Pengujian (tombol "Tambah / ubah order").
      Hanya order yang BELUM dibuatkan PO Pengujian yang tampil (order milik PO yang sedang diedit tetap tampil).
@@ -11,11 +12,17 @@
             <div class="modal-header">
                 <div>
                     <h5 class="modal-title fw-bold mb-0" id="modalOrderPengLabel">Pilih Order Pengujian</h5>
-                    <div class="small text-muted">Centang satu atau beberapa order untuk dimasukkan ke satu PO.</div>
+                    <div class="small text-muted" id="subOrderPeng">Pilih jenis pengujian dulu.</div>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
             </div>
             <div class="modal-body">
+                <div id="langkahJenisPeng">
+                    <div id="stateJenisPeng" class="text-center text-muted small py-4"></div>
+                    <div class="row g-2" id="listJenisPeng"></div>
+                </div>
+                <div id="langkahOrderPeng" class="d-none">
+                <button type="button" class="btn btn-link btn-sm text-decoration-none text-muted p-0 mb-2" id="btnGantiJenisPeng"><i class="bi bi-arrow-left me-1"></i>Ganti jenis</button>
                 <div class="d-flex flex-wrap gap-2 mb-3">
                     <input type="search" id="cariOrderPeng" class="form-control flex-grow-1" style="flex-basis: 260px;" placeholder="Cari nomor surat / perihal / nama mitra..." autocomplete="off">
                     <button type="button" class="btn btn-outline-secondary btn-sm" id="btnSemuaOrderPeng">Pilih semua hasil</button>
@@ -23,8 +30,9 @@
                 </div>
                 <div id="stateOrderPeng" class="text-center text-muted small py-4"></div>
                 <div class="list-group" id="listOrderPeng"></div>
+                </div>
             </div>
-            <div class="modal-footer justify-content-between">
+            <div class="modal-footer justify-content-between d-none" id="footerOrderPeng">
                 <div class="fw-bold" id="jmlOrderPeng">0 order dipilih</div>
                 <div class="d-flex gap-2">
                     <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Batal</button>
@@ -43,6 +51,12 @@
     .order-peng-item .perihal { font-size: .8rem; color: #64748b; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     .order-peng-item .meta { text-align: right; font-size: .8rem; color: #64748b; white-space: nowrap; }
     .order-peng-item.dipilih { background: #eff6ff; }
+    .order-peng-item .tags { margin-top: 4px; display: flex; flex-wrap: wrap; gap: 4px; }
+    .order-peng-item .tags span { font-size: .7rem; padding: 1px 8px; border-radius: 999px; background: #f1f5f9; border: 1px solid #e2e8f0; color: #475569; }
+    .jenis-peng-card { width: 100%; text-align: left; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px; background: #fff; cursor: pointer; }
+    .jenis-peng-card:hover { border-color: #94a3b8; background: #f8fafc; }
+    .jenis-peng-card .nm { font-weight: 700; font-size: .92rem; }
+    .jenis-peng-card .kt { font-size: .78rem; color: #64748b; margin-top: 2px; }
 </style>
 
 <script>
@@ -61,6 +75,14 @@ document.addEventListener('DOMContentLoaded', function () {
     var pilih = [];          // order terpilih (objek lengkap), urutan = urutan dipilih
     var tampil = [];         // order yang sedang tampil di daftar (hasil pencarian terakhir)
     var opsi = { poId: 0, onPilih: null, awal: 0 };
+    var jenisAktif = '', namaJenisAktif = '';
+    var langkahJenisEl = document.getElementById('langkahJenisPeng');
+    var langkahOrderEl = document.getElementById('langkahOrderPeng');
+    var footerEl = document.getElementById('footerOrderPeng');
+    var listJenisEl = document.getElementById('listJenisPeng');
+    var stateJenisEl = document.getElementById('stateJenisPeng');
+    var subEl = document.getElementById('subOrderPeng');
+    var judulEl = document.getElementById('modalOrderPengLabel');
 
     function elPeng(tag, cls, txt) { var e = document.createElement(tag); if (cls) { e.className = cls; } if (txt != null) { e.textContent = txt; } return e; }
     function idxPilih(id) { for (var i = 0; i < pilih.length; i++) { if (pilih[i].id === id) { return i; } } return -1; }
@@ -87,14 +109,18 @@ document.addEventListener('DOMContentLoaded', function () {
             kiri.appendChild(elPeng('div', 'no', r.mitra || '(mitra tidak ditemukan)'));
             var sub = [r.nomor_surat, r.perihal].filter(Boolean).join(' · ');
             if (sub) { kiri.appendChild(elPeng('div', 'perihal', sub)); }
-            var kanan = elPeng('div', 'meta', r.tanggal_surat ? 'Surat ' + r.tanggal_surat : '-');
+            var tags = elPeng('div', 'tags');
+            if (r.no_order) { tags.appendChild(elPeng('span', '', 'No. order ' + r.no_order)); }
+            if (r.ket_contoh) { tags.appendChild(elPeng('span', '', r.ket_contoh)); }
+            if (tags.childNodes.length) { kiri.appendChild(tags); }
+            var kanan = elPeng('div', 'meta', r.tanggal_surat ? 'Surat ' + r.tanggal_surat : (r.tanggal_order ? 'Order ' + r.tanggal_order : '-'));
             a.appendChild(kiri); a.appendChild(kanan);
             listEl.appendChild(a);
         });
         stateEl.className = 'text-center text-muted small py-4';
         var q = (cariEl.value || '').trim();
         if (rows.length === 0) {
-            stateEl.textContent = q ? 'Tidak ada order yang cocok dengan pencarian.' : 'Tidak ada order Pengujian yang perlu dibuatkan PO (semua order sudah punya PO).';
+            stateEl.textContent = q ? 'Tidak ada order yang cocok dengan pencarian.' : 'Tidak ada order ' + namaJenisAktif + ' yang perlu dibuatkan PO (semua order sudah punya PO).';
         } else if (terpotong) {
             stateEl.textContent = 'Menampilkan ' + rows.length + ' order terbaru. Ketik di kolom cari untuk menemukan order lain.';
         } else {
@@ -108,10 +134,10 @@ document.addEventListener('DOMContentLoaded', function () {
         stateEl.className = 'text-center text-muted small py-4';
         stateEl.textContent = 'Memuat daftar order...';
         var q = (cariEl.value || '').trim();
-        var qs = [];
+        var qs = ['jenis=' + encodeURIComponent(jenisAktif)];
         if (q) { qs.push('q=' + encodeURIComponent(q)); }
         if (opsi.poId) { qs.push('po=' + encodeURIComponent(opsi.poId)); }
-        fetch(URL_ORDER_PENG + (qs.length ? '?' + qs.join('&') : ''), { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+        fetch(URL_ORDER_PENG + '?' + qs.join('&'), { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
             .then(function (res) { return res.json().then(function (j) { return { status: res.status, body: j }; }); })
             .then(function (r) {
                 if (mine !== reqId) { return; } // ada pencarian yang lebih baru
@@ -126,16 +152,79 @@ document.addEventListener('DOMContentLoaded', function () {
             });
     }
 
+    function tampilkanLangkah(jenis) {
+        langkahJenisEl.classList.toggle('d-none', jenis);
+        langkahOrderEl.classList.toggle('d-none', !jenis);
+        footerEl.classList.toggle('d-none', !jenis);
+        subEl.textContent = jenis ? 'Centang satu atau beberapa order untuk dimasukkan ke satu PO.' : 'Pilih jenis pengujian dulu.';
+        judulEl.textContent = jenis ? 'Pilih Order ' + namaJenisAktif : 'Pilih Order Pengujian';
+    }
+
+    function bukaJenis(key, nama, pertahankan) {
+        if (key !== jenisAktif && !pertahankan) { pilih = []; }          // satu PO = satu jenis pengujian
+        jenisAktif = key; namaJenisAktif = nama;
+        cariEl.value = '';
+        listEl.innerHTML = '';
+        hitung();
+        tampilkanLangkah(true);
+        muatOrderPeng();
+    }
+
+    function muatJenis() {
+        tampilkanLangkah(false);
+        listJenisEl.innerHTML = '';
+        stateJenisEl.className = 'text-center text-muted small py-4';
+        stateJenisEl.textContent = 'Memuat jenis pengujian...';
+        var url = URL_ORDER_PENG + '?ringkas=1' + (opsi.poId ? '&po=' + encodeURIComponent(opsi.poId) : '');
+        fetch(url, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+            .then(function (res) { return res.json(); })
+            .then(function (j) {
+                if (!j || !j.ok) { throw new Error((j && j.message) || 'Gagal memuat jenis pengujian.'); }
+                stateJenisEl.textContent = '';
+                (j.jenis || []).forEach(function (x) {
+                    var col = elPeng('div', 'col-12 col-sm-6');
+                    var b = elPeng('button', 'jenis-peng-card');
+                    b.type = 'button';
+                    b.appendChild(elPeng('div', 'nm', x.nama));
+                    b.appendChild(elPeng('div', 'kt', (x.ket ? x.ket + ' · ' : '') + x.jumlah + ' order'));
+                    b.addEventListener('click', function () { bukaJenis(x.jenis, x.nama); });
+                    col.appendChild(b);
+                    listJenisEl.appendChild(col);
+                });
+            })
+            .catch(function (err) {
+                stateJenisEl.className = 'text-center text-danger small py-4';
+                stateJenisEl.textContent = (err && err.message) ? err.message : 'Gagal memuat jenis pengujian.';
+            });
+    }
+
     window.bukaModalPengujian = function (o) {
         o = o || {};
         opsi = { poId: o.poId || 0, onPilih: (typeof o.onPilih === 'function') ? o.onPilih : null, awal: (o.terpilih || []).length };
         pilih = (o.terpilih || []).map(function (x) { return x; });
+        jenisAktif = ''; namaJenisAktif = '';
         cariEl.value = '';
         listEl.innerHTML = '';
         hitung();
         bootstrap.Modal.getOrCreateInstance(modalEl).show();
-        muatOrderPeng();
+        // dibuka dari form PO yang sudah punya order: langsung ke daftar order jenis itu
+        var awalJenis = pilih.length && pilih[0].jenis ? pilih[0].jenis : '';
+        if (awalJenis) {
+            var nm = awalJenis;
+            bukaJenis(awalJenis, nm, true);
+            // nama jenis yang rapi diambil dari ringkasan
+            fetch(URL_ORDER_PENG + '?ringkas=1' + (opsi.poId ? '&po=' + encodeURIComponent(opsi.poId) : ''), { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+                .then(function (res) { return res.json(); })
+                .then(function (j) {
+                    ((j && j.jenis) || []).forEach(function (x) { if (x.jenis === awalJenis) { namaJenisAktif = x.nama; if (jenisAktif === awalJenis) { judulEl.textContent = 'Pilih Order ' + x.nama; } } });
+                })
+                .catch(function () {});
+        } else {
+            muatJenis();
+        }
     };
+
+    document.getElementById('btnGantiJenisPeng').addEventListener('click', function () { muatJenis(); });
 
     cariEl.addEventListener('input', function () {
         clearTimeout(timer);

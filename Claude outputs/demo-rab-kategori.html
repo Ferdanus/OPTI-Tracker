@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Demo RAB - tambah kategori biaya satu per satu</title>
+<style>
+:root{--pri:#2b3a4f;--bd:#dbe3ee;--mut:#64748b;--ink:#0f172a;--bg:#f1f5f9;--blue:#2563eb;--red:#dc2626}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:24px}
+.wrap{max-width:1040px;margin:0 auto}
+h1{font-size:1.25rem;margin:0 0 4px}.lead{color:var(--mut);margin:0 0 16px}
+.card{background:#fff;border:1px solid var(--bd);border-radius:14px;padding:18px}
+.rowtop{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px}
+.btn{border:1px solid var(--bd);background:#fff;border-radius:999px;padding:6px 16px;font:inherit;font-weight:600;font-size:.85rem;cursor:pointer;color:var(--ink);display:inline-flex;gap:6px;align-items:center}
+.btn:hover{background:#f8fafc}.btn.pri{border-color:var(--blue);color:var(--blue)}.btn.dark{background:var(--pri);border-color:var(--pri);color:#fff}.btn.dark:hover{background:#1e293b}
+.btn.sm{padding:3px 12px;font-size:.8rem}.btn.ghost{border-color:transparent;color:var(--mut)}
+.kat{border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:14px;background:#fff}
+.ig{display:flex;align-items:stretch;border:1px solid var(--bd);border-radius:8px;overflow:hidden;margin-bottom:10px}
+.ig>*{display:flex;align-items:center;padding:7px 10px;border:0;border-right:1px solid var(--bd);background:#fff;font:inherit}
+.ig>*:last-child{border-right:0}.ig .addon{background:#f1f5f9;color:var(--mut);white-space:nowrap}
+.ig .lt{color:var(--blue);font-weight:700;background:#f1f5f9}.ig input.nm{flex:1;font-weight:600;outline:0;min-width:0}
+.ig input.nm::placeholder,.in::placeholder{color:#94a3b8;font-weight:400}
+.in{width:100%;border:1px solid var(--bd);border-radius:7px;padding:6px 9px;font:inherit;background:#fff}.in:focus,.ig input:focus{outline:2px solid #bfdbfe}
+.ig input.num{width:150px;text-align:right;font:inherit}
+.del{border:1px solid var(--red);color:var(--red);background:#fff;border-radius:7px;width:30px;height:30px;cursor:pointer;font-size:.95rem;line-height:1}
+.del:hover{background:#fef2f2}
+.lbl{font-size:.72rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--mut);margin:2px 0 6px}
+.seg{display:inline-flex;background:#f1f5f9;border:1px solid var(--bd);border-radius:999px;padding:3px;gap:2px}
+.seg button{border:0;background:none;border-radius:999px;padding:6px 18px;font:inherit;font-weight:600;cursor:pointer;color:#334155}
+.seg button.on{background:var(--pri);color:#fff}.seg button:not(.on):hover{background:#e2e8f0}
+.hint{font-size:.78rem;color:var(--mut);margin:6px 0 10px}
+.sw{display:flex;align-items:center;gap:10px;margin:6px 0 10px;cursor:pointer;user-select:none;color:#334155}
+.sw i{width:34px;height:20px;border-radius:999px;background:#cbd5e1;position:relative;flex:none;transition:.15s}
+.sw i:after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.15s}
+.sw.on i{background:var(--blue)}.sw.on i:after{left:16px}
+.jud{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap}.jud span{font-size:.82rem}.jud input{flex:1 1 260px;width:auto}
+table.rc{width:100%;border-collapse:collapse;margin-bottom:10px}
+table.rc th{font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;color:var(--mut);text-align:left;padding:8px 6px;border-bottom:2px solid #0f172a;font-weight:600}
+table.rc td{padding:6px;border-bottom:1px solid var(--bd);vertical-align:middle}
+table.rc td.tot{text-align:right;font-weight:700;background:#f8fafc;padding-right:12px}
+.r{text-align:right}.c{text-align:center}
+.bar{display:flex;justify-content:space-between;align-items:center;background:#f1f5f9;border-radius:8px;padding:8px 12px;margin:6px 0 10px;font-size:.85rem}
+.bar .ok{background:#dcfce7;color:#15803d;border-radius:999px;padding:2px 10px;font-size:.75rem;font-weight:600}
+.foot{display:flex;justify-content:space-between;border-top:1px solid var(--bd);margin-top:12px;padding-top:10px;color:var(--mut)}.foot b{color:var(--ink)}
+details{font-size:.8rem;color:var(--mut);margin:0 0 10px}summary{cursor:pointer}
+.kosong{color:var(--mut);padding:18px 4px}
+.tot-all{display:flex;justify-content:space-between;font-weight:700;padding:6px 4px}
+.fade{animation:fd .28s ease both}
+@keyframes fd{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.note{font-size:.8rem;color:var(--mut);margin-top:14px}
+</style></head><body>
+<div class="wrap">
+<h1>Demo RAB: kategori biaya muncul satu per satu</h1>
+<p class="lead">Klik <b>Tambah Kategori Biaya</b> lalu ikuti alurnya. Tiap langkah baru muncul setelah langkah sebelumnya dikerjakan.</p>
+<div class="card">
+  <div class="rowtop"><b>B. Pengeluaran</b><button class="btn pri" data-a="addkat">+ Tambah Kategori Biaya</button></div>
+  <div id="kats"></div>
+  <div class="tot-all"><span>Total pengeluaran</span><span id="grand">Rp 0</span></div>
+</div>
+<p class="note">Penerimaan contoh di demo ini: Rp 10.000.000 (dipakai untuk hitung Persentase dan Sisa Penerimaan).</p>
+</div>
+<script>
+var PEN=10000000,S=[],LT='ABCDEFGHIJ';
+var TN={harga:'Nominal (Rp)',persen:'Persentase (%)',sisa:'Sisa Penerimaan'};
+var TK={harga:'Nilai diketik sendiri. Kalau memakai rincian, nilai kategori otomatis sama dengan total rincian.',persen:'Persen dari penerimaan setelah dikurangi kategori bertipe Nominal.',sisa:'Otomatis: penerimaan dikurangi semua kategori lain.'};
+function rp(n){return 'Rp '+Math.round(n||0).toLocaleString('id-ID')}
+function money(v){var d=String(v).replace(/\D/g,'');return d?(+d).toLocaleString('id-ID'):''}
+function num(v){return +String(v).replace(/\D/g,'')||0}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function newRow(){return{nama:'',qty:'',satuan:'',hari:'',tarif:'',jumlah:''}}
+function newKat(){return{tipe:'',nama:'',nilai:'',persen:'',rinci:false,grup:[{judul:'',rows:[newRow()]}],seen:{}}}
+function rowJml(r){var q=+r.qty||0,h=+r.hari||0,t=num(r.tarif);return t?(q||1)*(h||1)*t:num(r.jumlah)}
+function totRinci(k){var t=0;k.grup.forEach(function(g){g.rows.forEach(function(r){t+=rowJml(r)})});return t}
+function nilaiKat(k,i){
+  if(k.tipe==='harga')return k.rinci?totRinci(k):num(k.nilai);
+  if(k.tipe==='persen'){var nom=0;S.forEach(function(x){if(x.tipe==='harga')nom+=x.rinci?totRinci(x):num(x.nilai)});return Math.max(0,PEN-nom)*(+k.persen||0)/100}
+  if(k.tipe==='sisa'){var o=0;S.forEach(function(x,j){if(j!==i&&x.tipe)o+=x.tipe==='harga'?(x.rinci?totRinci(x):num(x.nilai)):x.tipe==='persen'?0:0});
+    var nom=0;S.forEach(function(x,j){if(j!==i&&x.tipe==='harga')nom+=x.rinci?totRinci(x):num(x.nilai)});
+    var per=0;S.forEach(function(x,j){if(j!==i&&x.tipe==='persen')per+=Math.max(0,PEN-nom)*(+x.persen||0)/100});
+    return Math.max(0,PEN-nom-per)}
+  return 0}
+function anim(k,key){if(k.seen[key])return'';k.seen[key]=1;return' fade'}
+function rowHtml(i,gi,ri,r){
+  var p=' data-i="'+i+'" data-g="'+gi+'" data-r="'+ri+'"';
+  return '<tr><td style="min-width:150px"><input class="in" data-f="nama"'+p+' value="'+esc(r.nama)+'" placeholder="mis. Lumpsum Tim :"></td>'+
+  '<td style="width:7%"><input class="in c" type="number" min="0" data-f="qty"'+p+' value="'+esc(r.qty)+'"></td>'+
+  '<td style="width:11%"><input class="in" data-f="satuan"'+p+' value="'+esc(r.satuan)+'" placeholder="org"></td>'+
+  '<td style="width:7%"><input class="in c" type="number" min="0" data-f="hari"'+p+' value="'+esc(r.hari)+'"></td>'+
+  '<td style="width:15%"><input class="in r" data-m="1" data-f="tarif"'+p+' value="'+esc(r.tarif)+'"></td>'+
+  '<td style="width:15%"><input class="in r" data-m="1" data-f="jumlah"'+p+' value="'+esc(r.jumlah)+'"></td>'+
+  '<td class="tot" style="width:13%" id="rj'+i+'_'+gi+'_'+ri+'">'+rowJml(r).toLocaleString('id-ID')+'</td>'+
+  '<td style="width:44px"><button class="del" data-a="delrow" data-i="'+i+'" data-g="'+gi+'" data-r="'+ri+'" title="Hapus">&#128465;</button></td></tr>'}
+function katHtml(k,i){
+  var h='<div class="kat" data-k="'+i+'">',val='';
+  if(k.tipe==='harga'&&!k.rinci)val='<span class="addon">Rp</span><input class="num" data-m="1" data-f="nilai" data-i="'+i+'" value="'+esc(k.nilai)+'" placeholder="Nominal">';
+  else if(k.tipe==='harga')val='<span class="addon">otomatis: total rincian</span>';
+  else if(k.tipe==='persen')val='<input class="num" style="width:80px;text-align:center" type="number" min="0" max="100" data-f="persen" data-i="'+i+'" value="'+esc(k.persen)+'" placeholder="mis. 40"><span class="addon">%</span>';
+  else if(k.tipe==='sisa')val='<span class="addon">otomatis: sisa penerimaan</span>';
+  h+='<div class="ig"><span class="lt">&#128193; '+LT[i]+'</span><input class="nm" data-f="knama" data-i="'+i+'" value="'+esc(k.nama)+'" placeholder="Nama kategori, mis. Biaya Layanan kepada klien">'+val+'<span class="addon" style="padding:4px"><button class="del" data-a="delkat" data-i="'+i+'" title="Hapus kategori">&#128465;</button></span></div>';
+  h+='<div class="lbl">Cara menentukan nilai</div><div class="seg">'+['harga','persen','sisa'].map(function(t){return '<button class="'+(k.tipe===t?'on':'')+'" data-a="tipe" data-i="'+i+'" data-v="'+t+'">'+TN[t]+'</button>'}).join('')+'</div>';
+  if(k.tipe){
+    h+='<div class="hint'+anim(k,'hint')+'">'+TK[k.tipe]+'</div>';
+    h+='<div class="sw'+(k.rinci?' on':'')+anim(k,'sw')+'" data-a="rinci" data-i="'+i+'"><i></i><span>Tambahkan rincian <span style="color:var(--mut)">(opsional)</span></span></div>';
+  }
+  if(k.tipe&&k.rinci){
+    h+='<div class="'+anim(k,'tabel').trim()+'">';
+    k.grup.forEach(function(g,gi){
+      h+='<div class="jud"><span>'+(gi?'Judul rincian lain':'Judul rincian <span style="color:var(--mut)">(opsional, tampil di bawah kategori)</span>')+':</span><input class="in" data-f="judul" data-i="'+i+'" data-g="'+gi+'" value="'+esc(g.judul)+'" placeholder="'+(gi?'Judul rincian lain, mis. Perjalanan Survailen ke Kota B':'Judul rincian, mis. Perjalanan Survailen ke Kota A')+'">'+(gi?'<button class="btn sm" style="color:var(--red);border-color:var(--red)" data-a="delgrup" data-i="'+i+'" data-g="'+gi+'">Hapus kelompok</button>':'')+'</div>';
+      h+='<table class="rc"><thead><tr><th>Uraian</th><th class="c">Jml</th><th>Satuan</th><th class="c">Hari</th><th class="r">Tarif satuan (Rp)</th><th class="r">Jumlah manual (Rp)</th><th class="r">Jumlah (Rp)</th><th></th></tr></thead><tbody>'+g.rows.map(function(r,ri){return rowHtml(i,gi,ri,r)}).join('')+'</tbody></table>';
+      h+='<div style="margin-bottom:10px"><button class="btn sm pri" data-a="addrow" data-i="'+i+'" data-g="'+gi+'">+ Tambah Rincian</button></div>';
+    });
+    var ada=k.grup.some(function(g){return g.rows.some(function(r){return r.nama.trim()||rowJml(r)})});
+    if(ada){
+      h+='<div class="'+anim(k,'lanjut').trim()+'"><details><summary>Cara teks di dokumen disusun</summary><div style="margin-top:6px">Uraian + Jml + Satuan, Hari hr @Tarif. Bila Tarif diisi, jumlah = Jml &times; Hari &times; Tarif; bila kosong, dipakai Jumlah manual.</div></details>'+
+      '<div class="bar"><span>Total rincian <b id="br'+i+'">'+rp(totRinci(k))+'</b></span><span class="ok">Otomatis = total rincian</span></div>'+
+      '<button class="btn dark sm" data-a="addgrup" data-i="'+i+'">+ Tambah Rincian dengan Judul Lain</button></div>';
+    }
+    h+='</div>';
+  }
+  if(k.tipe)h+='<div class="foot'+anim(k,'foot')+'"><span>Subtotal Kategori</span><span><b id="sub'+i+'">'+rp(nilaiKat(k,i))+'</b></span></div>';
+  return h+'</div>'}
+function render(){
+  var sy=window.scrollY,ae=document.activeElement,keep=null;
+  if(ae&&ae.dataset&&ae.dataset.f){keep={f:ae.dataset.f,i:ae.dataset.i,g:ae.dataset.g,r:ae.dataset.r,p:ae.selectionStart}}
+  document.getElementById('kats').innerHTML=S.length?S.map(katHtml).join(''):'<div class="kosong">Belum ada kategori. Klik <b>Tambah Kategori Biaya</b> untuk mulai (A, B, C, ...).</div>';
+  if(keep){var q='[data-f="'+keep.f+'"][data-i="'+keep.i+'"]'+(keep.g!=null?'[data-g="'+keep.g+'"]':'')+(keep.r!=null?'[data-r="'+keep.r+'"]':'');var el=document.querySelector(q);if(el){el.focus();try{el.setSelectionRange(keep.p,keep.p)}catch(e){}}}
+  window.scrollTo(0,sy);hitung()}
+function hitung(){
+  var g=0;
+  S.forEach(function(k,i){
+    var n=nilaiKat(k,i);g+=n;var el=document.getElementById('sub'+i);if(el)el.textContent=rp(n);
+    var b=document.getElementById('br'+i);if(b)b.textContent=rp(totRinci(k));
+    k.grup.forEach(function(gr,gi){gr.rows.forEach(function(r,ri){var e=document.getElementById('rj'+i+'_'+gi+'_'+ri);if(e)e.textContent=rowJml(r).toLocaleString('id-ID')})});
+  });
+  document.getElementById('grand').textContent=rp(g)}
+document.addEventListener('click',function(e){
+  var a=e.target.closest('[data-a]');if(!a)return;var i=+a.dataset.i,g=+a.dataset.g,r=+a.dataset.r,k=S[i],x=a.dataset.a;
+  if(x==='addkat'){S.push(newKat())}
+  else if(x==='delkat'){S.splice(i,1)}
+  else if(x==='tipe'){k.tipe=a.dataset.v}
+  else if(x==='rinci'){k.rinci=!k.rinci}
+  else if(x==='addrow'){k.grup[g].rows.push(newRow())}
+  else if(x==='delrow'){var rs=k.grup[g].rows;rs.splice(r,1);if(!rs.length)rs.push(newRow())}
+  else if(x==='addgrup'){k.grup.push({judul:'',rows:[newRow()]})}
+  else if(x==='delgrup'){k.grup.splice(g,1)}
+  render();
+  if(x==='addkat'){var el=document.querySelector('.kat:last-child [data-f="knama"]');if(el){el.focus();el.scrollIntoView({block:'center',behavior:'smooth'})}}
+});
+document.addEventListener('input',function(e){
+  var t=e.target,f=t.dataset.f;if(!f)return;var i=+t.dataset.i,k=S[i];
+  if(t.dataset.m){var pos=t.selectionStart,dg=t.value.slice(0,pos).replace(/\D/g,'').length;t.value=money(t.value);var p=0,h=0;while(p<t.value.length&&h<dg){if(/\d/.test(t.value[p]))h++;p++}try{t.setSelectionRange(p,p)}catch(x){}}
+  if(f==='knama')k.nama=t.value;else if(f==='nilai')k.nilai=t.value;else if(f==='persen')k.persen=t.value;
+  else if(f==='judul')k.grup[+t.dataset.g].judul=t.value;
+  else{var row=k.grup[+t.dataset.g].rows[+t.dataset.r];row[f]=t.value;
+    if(f==='nama'&&!k.seen.lanjut&&t.value.trim()){render();return}}
+  hitung()});
+render();
+</script></body></html>

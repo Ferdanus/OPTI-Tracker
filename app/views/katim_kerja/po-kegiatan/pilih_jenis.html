@@ -92,9 +92,10 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Dari Daftar PO dengan filter Pengujian / Sertifikasi (?jenis=pengujian|sertifikasi): langsung buka pilihan order layanan itu.
+    // Dari Daftar PO dengan filter Sertifikasi (?jenis=sertifikasi): langsung buka pilihan order layanan itu.
+    // Pengujian sengaja TIDAK dibuka otomatis: kartu Pengujian ditekan dulu, baru muncul pilihan jenis (air, kertas, udara, dst).
     var jenisAwal = new URLSearchParams(window.location.search).get('jenis');
-    if (jenisAwal === 'pengujian' || jenisAwal === 'sertifikasi') {
+    if (jenisAwal === 'sertifikasi') {
         var kartuAwal = document.querySelector('.jenis-po-card[data-slug="' + jenisAwal + '"]');
         if (kartuAwal) { kartuAwal.click(); }
     }

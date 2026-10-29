@@ -188,17 +188,18 @@ class PoPengujianController extends \Controller {
         return array_values(array_unique($out));
     }
 
-    /** Saran jabatan di Tim Pelaksana: Data Master Jabatan Pelaksana PO (yang aktif). */
+    /** Saran jabatan di Tim Pelaksana: Data Master Jabatan Pelaksana PO layanan Pengujian (yang aktif). */
     protected function jabatanPelaksanaAktif() {
-        return class_exists('MasterTimPelaksanaController') ? \MasterTimPelaksanaController::ambilJabatanAktif($this->db) : [];
+        return class_exists('MasterTimPelaksanaController') ? \MasterTimPelaksanaController::ambilJabatanAktif($this->db, 'pengujian') : [];
     }
 
     /** Batas baris daftar order di modal (sisanya dicari lewat kolom cari). */
     const BATAS_ORDER = 100;
 
     /**
-     * GET /petunjuk-operasional/pengujian/order[?q=kata]
-     * JSON daftar order (arsip surat permintaan di sil2020) yang belum dibuatkan PO Pengujian -- untuk modal pilih order.
+     * GET /petunjuk-operasional/pengujian/order[?jenis=air|kertas|udara|limbah_padat|amdk|bkb][&q=kata]
+     * JSON daftar order (arsip surat di sil2020 yang tercatat di tb_penerimaan_contoh) yang belum dibuatkan PO Pengujian
+     * -- untuk modal pilih order. ?ringkas=1 -> daftar jenis + jumlah order (langkah pilih jenis).
      */
     public function daftarOrder($f3) {
         $this->requireAuth();
@@ -213,12 +214,16 @@ class PoPengujianController extends \Controller {
         $q = function_exists('mb_substr') ? mb_substr($q, 0, 100) : substr($q, 0, 100);
         try {
             $poIni = (int) ($f3->get('GET.po') ?? 0); // PO yang sedang diedit: order miliknya ikut tampil
-            $rows = \PoPengujian::queryOrder($this->db, 0, $q, true, self::BATAS_ORDER, true, null, $poIni);
+            if ((string) $f3->get('GET.ringkas') !== '') {
+                return $this->json(['ok' => true, 'jenis' => \PoPengujian::ringkasJenis($this->db, $poIni)]);
+            }
+            $jenis = trim((string) $f3->get('GET.jenis'));
+            $rows = \PoPengujian::queryOrder($this->db, 0, $q, true, self::BATAS_ORDER, true, null, $poIni, $jenis);
             $data = array_map(['PoPengujian', 'petakanOrder'], $rows);
             return $this->json(['ok' => true, 'data' => $data, 'batas' => self::BATAS_ORDER, 'terpotong' => count($rows) >= self::BATAS_ORDER]);
         } catch (\Throwable $e) {
             error_log('[PO Pengujian] gagal baca daftar order: ' . $e->getMessage());
-            return $this->json(['ok' => false, 'message' => 'Gagal membaca data order dari tb_arsipsurat (database sil2020). Pastikan tabelnya ada dan user MySQL punya akses baca.'], 500);
+            return $this->json(['ok' => false, 'message' => 'Gagal membaca data order dari tb_arsipsurat dan tb_penerimaan_contoh (database sil2020). Pastikan tabelnya ada dan user MySQL punya akses baca.'], 500);
         }
     }
 
@@ -268,6 +273,14 @@ class PoPengujianController extends \Controller {
         $rows = \PoPengujian::queryOrder($this->db, 0, '', false, max(1, count($ids)), true, $ids);
         $by = [];
         foreach ($rows as $r) { $o = \PoPengujian::petakanOrder($r); $by[$o['id']] = $o; }
+        // PO yang sedang diedit: order miliknya tetap sah walau (misalnya PO lama) tidak memenuhi syarat daftar order yang baru
+        if ($poIni > 0) {
+            $hilang = [];
+            foreach ($ids as $id) { if (!isset($by[$id]) && \PoPengujian::poDariOrder($this->db, $id) === (int) $poIni) { $hilang[] = $id; } }
+            if ($hilang) {
+                foreach (\PoPengujian::queryOrder($this->db, 0, '', false, count($hilang), false, $hilang) as $r) { $o = \PoPengujian::petakanOrder($r); $by[$o['id']] = $o; }
+            }
+        }
         $out = [];
         foreach ($ids as $id) {
             if (!isset($by[$id])) { return [[], 'Ada order yang tidak ditemukan atau bukan order Pengujian.', 0]; }

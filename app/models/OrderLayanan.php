@@ -56,7 +56,10 @@ class OrderLayanan extends \DB\SQL\Mapper {
                 'unlocked_at' => 'DATETIME NULL',
                 'unlocked_until' => 'DATETIME NULL',
                 'unlocked_days' => 'INT(11) NULL DEFAULT 3',
-                'unlocked_reason' => 'VARCHAR(255) NULL'
+                'unlocked_reason' => 'VARCHAR(255) NULL',
+                // durasi SPM (dipakai simpan proposal, penawaran, dan perhitungan jadwal); dibuat otomatis kalau belum ada di database
+                'spm_durasi_nilai' => 'INT(11) NULL',
+                'spm_durasi_satuan' => "VARCHAR(50) NULL DEFAULT 'Hari Kerja'"
             ];
             foreach ($cols as $col => $def) {
                 try {

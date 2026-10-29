@@ -1,0 +1,100 @@
+<!--
+    app/views/petunjuk_operasional/_tema_po_warna.html
+    Warna halaman "Buat PO" (semua layanan, termasuk yang tampil di dalam detail order lewat iframe).
+    Aturan warna: bawaan = warna sidebar (#1e293b), perlu perhatian / belum diperbaiki = merah (#dc2626).
+    HANYA tampilan (CSS), tidak mengubah isi form maupun logikanya.
+    Aktif hanya di halaman yang menyertakan berkas ini (penanda #poTemaWarna di bawah).
+-->
+<i id="poTemaWarna" hidden></i>
+<style>
+    /* ---- variabel Bootstrap + variabel form: biru / hijau / cyan / kuning -> warna sidebar ---- */
+    .main-container:has(#poTemaWarna), .main-container:has(#poTemaWarna) .pp-root {
+        --bs-primary: #1e293b; --bs-primary-rgb: 30,41,59; --bs-primary-text-emphasis: #1e293b; --bs-primary-bg-subtle: #f1f5f9; --bs-primary-border-subtle: #cbd5e1;
+        --bs-success: #1e293b; --bs-success-rgb: 30,41,59; --bs-success-text-emphasis: #1e293b; --bs-success-bg-subtle: #f1f5f9; --bs-success-border-subtle: #cbd5e1;
+        --bs-info: #1e293b;    --bs-info-rgb: 30,41,59;    --bs-info-text-emphasis: #1e293b;    --bs-info-bg-subtle: #f1f5f9;    --bs-info-border-subtle: #cbd5e1;
+        --bs-warning: #1e293b; --bs-warning-rgb: 30,41,59; --bs-warning-text-emphasis: #1e293b; --bs-warning-bg-subtle: #f1f5f9; --bs-warning-border-subtle: #cbd5e1;
+        --po-primary: #1e293b; --po-primary-hover: #0f172a; --po-primary-subtle: #f1f5f9; --po-border-focus: #64748b;
+        --po-focus: #64748b; --po-blue: #1e293b;
+    }
+
+    /* ---- tombol ---- */
+    .main-container:has(#poTemaWarna) .btn-primary, .main-container:has(#poTemaWarna) .btn-success, .main-container:has(#poTemaWarna) .btn-info {
+        --bs-btn-color: #fff; --bs-btn-bg: #1e293b; --bs-btn-border-color: #1e293b;
+        --bs-btn-hover-color: #fff; --bs-btn-hover-bg: #0f172a; --bs-btn-hover-border-color: #0f172a;
+        --bs-btn-active-color: #fff; --bs-btn-active-bg: #0f172a; --bs-btn-active-border-color: #0f172a;
+        --bs-btn-focus-shadow-rgb: 30,41,59;
+        --bs-btn-disabled-color: #fff; --bs-btn-disabled-bg: #1e293b; --bs-btn-disabled-border-color: #1e293b;
+    }
+    .main-container:has(#poTemaWarna) .btn-outline-primary, .main-container:has(#poTemaWarna) .btn-outline-success, .main-container:has(#poTemaWarna) .btn-outline-info {
+        --bs-btn-color: #1e293b; --bs-btn-border-color: #1e293b;
+        --bs-btn-hover-color: #fff; --bs-btn-hover-bg: #1e293b; --bs-btn-hover-border-color: #1e293b;
+        --bs-btn-active-color: #fff; --bs-btn-active-bg: #1e293b; --bs-btn-active-border-color: #1e293b;
+        --bs-btn-focus-shadow-rgb: 30,41,59;
+        --bs-btn-disabled-color: #1e293b; --bs-btn-disabled-border-color: #1e293b;
+    }
+
+    /* cadangan eksplisit (kalau CSS Bootstrap yang dimuat tidak memakai variabel --bs-btn-*) */
+    .main-container:has(#poTemaWarna) .btn-primary, .main-container:has(#poTemaWarna) .btn-success, .main-container:has(#poTemaWarna) .btn-info { background-color: #1e293b; background-image: none; border-color: #1e293b; color: #fff; }
+    .main-container:has(#poTemaWarna) .btn-primary:hover, .main-container:has(#poTemaWarna) .btn-success:hover, .main-container:has(#poTemaWarna) .btn-info:hover,
+    .main-container:has(#poTemaWarna) .btn-primary:active, .main-container:has(#poTemaWarna) .btn-success:active, .main-container:has(#poTemaWarna) .btn-info:active { background-color: #0f172a; background-image: none; border-color: #0f172a; color: #fff; }
+    .main-container:has(#poTemaWarna) .btn-outline-primary, .main-container:has(#poTemaWarna) .btn-outline-success, .main-container:has(#poTemaWarna) .btn-outline-info { background-color: transparent; border-color: #1e293b; color: #1e293b; }
+    .main-container:has(#poTemaWarna) .btn-outline-primary:hover, .main-container:has(#poTemaWarna) .btn-outline-success:hover, .main-container:has(#poTemaWarna) .btn-outline-info:hover,
+    .main-container:has(#poTemaWarna) .btn-outline-primary:active, .main-container:has(#poTemaWarna) .btn-outline-success:active, .main-container:has(#poTemaWarna) .btn-outline-info:active { background-color: #1e293b; background-image: none; border-color: #1e293b; color: #fff; }
+
+    /* ---- kolom isian: cincin fokus ---- */
+    .main-container:has(#poTemaWarna) .po-control:focus, .main-container:has(#poTemaWarna) .form-control:focus, .main-container:has(#poTemaWarna) .form-select:focus,
+    .main-container:has(#poTemaWarna) .form-control-sm:focus, .main-container:has(#poTemaWarna) .form-select-sm:focus,
+    .main-container:has(#poTemaWarna) .po-compound-group:focus-within, .main-container:has(#poTemaWarna) .po-editor-wrap:focus-within, .main-container:has(#poTemaWarna) .pp-rte:focus-within {
+        border-color: #64748b; box-shadow: 0 0 0 3.5px rgba(30,41,59,.12);
+    }
+    .main-container:has(#poTemaWarna) #tabelTim .ts-wrapper.focus .ts-control { border-color: #64748b !important; box-shadow: 0 0 0 3.5px rgba(30,41,59,.12) !important; }
+    .main-container:has(#poTemaWarna) .po-editor-content table td:focus, .main-container:has(#poTemaWarna) .po-editor-content table th:focus { outline-color: #1e293b; background-color: #f1f5f9; }
+    .main-container:has(#poTemaWarna) .rinci-sheet td .form-control:focus { background: #f1f5f9; box-shadow: inset 0 -2px 0 #1e293b; }
+    .main-container:has(#poTemaWarna) .btn-editor.is-active { background: #e2e8f0; color: #1e293b; border-color: #cbd5e1; }
+
+    /* ---- nomor seksi, huruf, penanda otomatis, chip ---- */
+    .main-container:has(#poTemaWarna) .po-step-badge, .main-container:has(#poTemaWarna) .pp-num {
+        background: #f1f5f9; color: #1e293b; border: 1px solid #cbd5e1; box-shadow: none;
+    }
+    .main-container:has(#poTemaWarna) .pp-auto, .main-container:has(#poTemaWarna) .pp-letter, .main-container:has(#poTemaWarna) .smp-chip {
+        background: #f1f5f9; color: #1e293b; border: 1px solid #cbd5e1;
+    }
+    .main-container:has(#poTemaWarna) .pp-head .pp-tag { background: #f1f5f9; color: #1e293b; border: 1px solid #cbd5e1; }
+    .main-container:has(#poTemaWarna) .pp-root .po-label.text-primary { color: #1e293b !important; }
+    .main-container:has(#poTemaWarna) .smp-link { color: #1e293b; }
+    .main-container:has(#poTemaWarna) .trip-letter { background: #1e293b; }
+    .main-container:has(#poTemaWarna) .est-tpl-opt.on, .main-container:has(#poTemaWarna) .pp-pk-opt.on { border-color: #1e293b; background: #f1f5f9; }
+    .main-container:has(#poTemaWarna) .pp-chip.ok { background: #f1f5f9; color: #1e293b; }
+    .main-container:has(#poTemaWarna) .pp-chip.na { background: #f1f5f9; color: #475569; }
+    .main-container:has(#poTemaWarna) .pp-root .po-kpi-card.kpi-ok { background: #f8fafc; border-color: #cbd5e1; }
+    .main-container:has(#poTemaWarna) .pp-root .po-kpi-card.kpi-warn { background: #fef2f2; border-color: #fecaca; }
+    .main-container:has(#poTemaWarna) .pp-warn { color: #dc2626; background: #fef2f2; border: 1px solid #fecaca; }
+
+    /* ---- kartu kegiatan RAB ---- */
+    .main-container:has(#poTemaWarna) .rab-kat-nested .rab-kegiatan-box, .main-container:has(#poTemaWarna) .pp-root .pp-induk { border-left-color: #1e293b; }
+    .main-container:has(#poTemaWarna) .rab-item-pt-cell input { color: #1e293b; border-color: #cbd5e1; background: #f1f5f9; }
+    .main-container:has(#poTemaWarna) .rab-item-ptcb { accent-color: #1e293b; }
+
+    /* ---- bar status pembayaran otomatis (gaya sebaris di halaman ditimpa) ---- */
+    .main-container:has(#poTemaWarna) #boxPembayaran { background: #f8fafc !important; border-color: #cbd5e1 !important; }
+
+    /* ---- titik "Live Sync": sidebar saat tersinkron, abu saat memuat ---- */
+    .main-container:has(#poTemaWarna) .live-pulse-dot, .main-container:has(#poTemaWarna) .pp-live-dot { background-color: #1e293b; animation-name: poTemaPulse; }
+    .main-container:has(#poTemaWarna) .live-pulse-dot.syncing, .main-container:has(#poTemaWarna) .po-live-badge .pp-live-dot.syncing { background-color: #94a3b8; animation-name: poTemaPulseSync; }
+    @keyframes poTemaPulse { 0% { box-shadow: 0 0 0 0 rgba(30,41,59,.5); } 70% { box-shadow: 0 0 0 6px rgba(30,41,59,0); } 100% { box-shadow: 0 0 0 0 rgba(30,41,59,0); } }
+    @keyframes poTemaPulseSync { 0% { box-shadow: 0 0 0 0 rgba(148,163,184,.7); } 70% { box-shadow: 0 0 0 6px rgba(148,163,184,0); } 100% { box-shadow: 0 0 0 0 rgba(148,163,184,0); } }
+
+    /* ---- catatan revisi di dalam form (bar atas + penanda per bagian): belum diperbaiki = merah, sudah = sidebar ---- */
+    .main-container:has(#poTemaWarna) .rv-bar { background: #fff; border: 1px solid #fecaca; border-left: 5px solid #dc2626; }
+    .main-container:has(#poTemaWarna) .rv-bar-top b, .main-container:has(#poTemaWarna) .rv-bar-tog { color: #dc2626; }
+    .main-container:has(#poTemaWarna) .rv-bar-hit { color: #0f172a; }
+    .main-container:has(#poTemaWarna) .rv-prog { background: #e2e8f0; }
+    .main-container:has(#poTemaWarna) .rv-prog i { background: #1e293b; }
+    .main-container:has(#poTemaWarna) .rv-item { border-top-color: #e2e8f0; }
+    .main-container:has(#poTemaWarna) .rv-item .rv-bag { color: #dc2626; background: #fef2f2; }
+    .main-container:has(#poTemaWarna) .rv-inline, .main-container:has(#poTemaWarna) .rv-inline.kt { background: #fff; border: 1px solid #fecaca; border-left: 5px solid #dc2626; }
+    .main-container:has(#poTemaWarna) .rv-inline.done, .main-container:has(#poTemaWarna) .rv-inline.kt.done { background: #fff; border-color: #e2e8f0; border-left-color: #1e293b; }
+    .main-container:has(#poTemaWarna) .rv-asal, .main-container:has(#poTemaWarna) .rv-asal.kt { background: #f1f5f9; color: #1e293b; }
+    .main-container:has(#poTemaWarna) .rv-kirim { border-top-color: #e2e8f0; }
+    .main-container:has(#poTemaWarna) .rv-kirim .rv-kirim-hint { color: #1e293b; }
+</style>

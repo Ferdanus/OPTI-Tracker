@@ -1464,6 +1464,7 @@ input[type=number] {
     </div>
 
     <include href="petunjuk_operasional/_penandatangan.html" />
+    <include href="petunjuk_operasional/_tema_po_warna.html" />
     <include href="petunjuk_operasional/_modal_order_pengujian.html" />
     <include href="petunjuk_operasional/_dialog_nomor_po.html" />
 
@@ -3274,16 +3275,16 @@ function adjustTableBorderStyleModal(editorEl, ta, table, wrap) {
         var isAct = s.id === currentStyle;
         html += `
             <div class="card p-2.5 rounded-3 swal-border-card" data-style="${s.id}" 
-                 style="cursor:pointer; transition:all 0.15s ease-in-out; border: 1.5px solid ${isAct ? '#3b82f6' : '#e2e8f0'} !important; background-color: ${isAct ? '#eff6ff' : '#ffffff'} !important; box-shadow: ${isAct ? '0 1px 3px rgba(59, 130, 246, 0.12)' : 'none'} !important;">
+                 style="cursor:pointer; transition:all 0.15s ease-in-out; border: 1.5px solid ${isAct ? '#1e293b' : '#e2e8f0'} !important; background-color: ${isAct ? '#f1f5f9' : '#ffffff'} !important; box-shadow: ${isAct ? '0 1px 3px rgba(30, 41, 59, 0.12)' : 'none'} !important;">
                 <div class="d-flex align-items-center justify-content-between">
                     <div class="d-flex align-items-center gap-3">
                         <div class="swal-icon-box d-flex align-items-center justify-content-center flex-shrink-0" 
-                             style="width:38px; height:38px; border-radius:50%; transition:all 0.15s ease; background-color: ${isAct ? '#3b82f6' : '#f1f5f9'} !important; color: ${isAct ? '#ffffff' : '#64748b'} !important;">
+                             style="width:38px; height:38px; border-radius:50%; transition:all 0.15s ease; background-color: ${isAct ? '#1e293b' : '#f1f5f9'} !important; color: ${isAct ? '#ffffff' : '#64748b'} !important;">
                             <i class="bi ${s.icon}" style="font-size:1.15rem;"></i>
                         </div>
                         <div>
-                            <div class="swal-title-text" style="font-size:0.875rem; font-weight: ${isAct ? '700' : '600'}; color: ${isAct ? '#1d4ed8' : '#1e293b'} !important;">${s.name}</div>
-                            <div class="swal-desc-text small" style="font-size:0.75rem; color: ${isAct ? '#2563eb' : '#64748b'} !important;">${s.desc}</div>
+                            <div class="swal-title-text" style="font-size:0.875rem; font-weight: ${isAct ? '700' : '600'}; color: ${isAct ? '#1e293b' : '#1e293b'} !important;">${s.name}</div>
+                            <div class="swal-desc-text small" style="font-size:0.75rem; color: ${isAct ? '#475569' : '#64748b'} !important;">${s.desc}</div>
                         </div>
                     </div>
                     <div class="form-check m-0 ps-2">
@@ -3371,19 +3372,19 @@ function adjustTableBorderStyleModal(editorEl, ta, table, wrap) {
                         
                         var iconWrap = card.querySelector('.swal-icon-box');
                         if (iconWrap) {
-                            iconWrap.style.setProperty('background-color', '#3b82f6', 'important');
+                            iconWrap.style.setProperty('background-color', '#1e293b', 'important');
                             iconWrap.style.setProperty('color', '#ffffff', 'important');
                         }
                         
                         var titleEl = card.querySelector('.swal-title-text');
                         if (titleEl) {
-                            titleEl.style.setProperty('color', '#1d4ed8', 'important');
+                            titleEl.style.setProperty('color', '#1e293b', 'important');
                             titleEl.style.setProperty('font-weight', '700', 'important');
                         }
                         
                         var descEl = card.querySelector('.swal-desc-text');
                         if (descEl) {
-                            descEl.style.setProperty('color', '#2563eb', 'important');
+                            descEl.style.setProperty('color', '#475569', 'important');
                         }
                         
                         var radio = card.querySelector('.swal-border-radio');

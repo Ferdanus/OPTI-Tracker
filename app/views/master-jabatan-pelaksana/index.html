@@ -88,12 +88,20 @@ table.mtp-tbl{width:100%;border-collapse:collapse}
   <div class="mtp-head">
     <div>
       <h2 class="mtp-title"><i class="bi bi-award"></i> Master Jabatan Pelaksana PO</h2>
-      <p class="mtp-sub">Daftar jabatan yang bisa dipilih di bagian Tim Pelaksana pada form PO. Hanya jabatan aktif yang muncul di pilihan.</p>
+      <p class="mtp-sub">{{ @mtp_subjudul }}</p>
     </div>
     <button type="button" class="mtp-btn pri" id="btnTambah"><i class="bi bi-plus-lg"></i> Tambah Jabatan</button>
   </div>
 
   <div class="mtp-filter">
+    <check if="{{ !@mtp_lock }}">
+    <div class="mtp-field sel" id="fLayWrap"><span class="ico"><i class="bi bi-diagram-3"></i></span>
+      <select id="fLay">
+        <option value="">Semua layanan</option>
+        <repeat group="{{ @mtp_lay_opts }}" value="{{ @o }}"><option value="{{ @o.k }}">{{ @o.v }}</option></repeat>
+      </select>
+    </div>
+    </check>
     <div class="mtp-field grow"><span class="ico"><i class="bi bi-search"></i></span><input id="fCari" placeholder="Cari nama jabatan" autocomplete="off"></div>
   </div>
 
@@ -104,18 +112,19 @@ table.mtp-tbl{width:100%;border-collapse:collapse}
       <button type="button" class="mtp-tab" data-st="nonaktif"><span class="dt" style="background:#dc2626"></span>Nonaktif<span class="c" id="cNon">{{ @mtp_n_non }}</span></button>
     </div>
     <div class="mtp-scroll"><table class="mtp-tbl">
-      <thead><tr><th style="width:60px">No.</th><th>Nama Jabatan</th><th>Status</th><th class="r">Aksi</th></tr></thead>
+      <thead><tr><th style="width:60px">No.</th><th>Nama Jabatan</th><th>Layanan</th><th>Status</th><th class="r">Aksi</th></tr></thead>
       <tbody id="tbJab">
         <repeat group="{{ @mtp_jab_rows }}" value="{{ @j }}">
-        <tr class="{{ @j.aktif ? '' : 'nonaktif' }}" data-id="{{ @j.id }}" data-cari="{{ @j.cari }}" data-aktif="{{ @j.aktif }}">
+        <tr class="{{ @j.aktif ? '' : 'nonaktif' }}" data-id="{{ @j.id }}" data-cari="{{ @j.cari }}" data-lay="{{ @j.lay }}" data-aktif="{{ @j.aktif }}">
           <td class="mtp-no">{{ @j.no }}</td>
           <td><span class="mtp-jab{{ @j.aktif ? '' : ' off' }}"><i class="bi bi-award"></i>{{ @j.nama }}</span></td>
+          <td><span class="mtp-lay">{{ @j.layanan }}</span></td>
           <td class="keep"><label class="mtp-sw"><input type="checkbox" data-jakt="{{ @j.id }}"{{ @j.aktif ? ' checked' : '' }}><i></i></label></td>
-          <td class="r keep"><button type="button" class="mtp-ibtn" data-jedit="{{ @j.id }}" title="Ubah nama"><i class="bi bi-pencil-square"></i></button><button type="button" class="mtp-ibtn dng" data-jhapus="{{ @j.id }}" title="Hapus"><i class="bi bi-trash"></i></button></td>
+          <td class="r keep"><button type="button" class="mtp-ibtn" data-jedit="{{ @j.id }}" title="Ubah nama"><i class="bi bi-pencil-square"></i></button><button type="button" class="mtp-ibtn dng" data-jhapus="{{ @j.id }}" title="{{ @j.aktif ? 'Nonaktifkan dulu untuk menghapus' : 'Hapus' }}"{{ @j.aktif ? ' disabled' : '' }}><i class="bi bi-trash"></i></button></td>
         </tr>
         </repeat>
-        <check if="{{ @mtp_n_semua == 0 }}"><tr><td colspan="4"><div class="mtp-empty">Belum ada jabatan. Klik Tambah Jabatan untuk membuat yang pertama.</div></td></tr></check>
-        <tr id="trKosong" hidden><td colspan="4"><div class="mtp-empty">Belum ada jabatan yang cocok.</div></td></tr>
+        <check if="{{ @mtp_n_semua == 0 }}"><tr><td colspan="5"><div class="mtp-empty">Belum ada jabatan. Klik Tambah Jabatan untuk membuat yang pertama.</div></td></tr></check>
+        <tr id="trKosong" hidden><td colspan="5"><div class="mtp-empty">Belum ada jabatan yang cocok.</div></td></tr>
       </tbody></table></div>
     <div class="mtp-pg" id="pgJab"></div>
   </div>
@@ -125,7 +134,13 @@ table.mtp-tbl{width:100%;border-collapse:collapse}
 <div id="viewCreate" hidden>
   <div class="mtp-back">
     <button type="button" class="mtp-btn" id="cBack"><i class="bi bi-arrow-left"></i> Kembali</button>
-    <div><h2 class="mtp-title" style="font-size:1.4rem">Tambah Jabatan Pelaksana</h2><p class="mtp-sub">Bisa menambah lebih dari satu jabatan sekaligus. Jabatan baru otomatis aktif.</p></div>
+    <div><h2 class="mtp-title" style="font-size:1.4rem">Tambah Jabatan Pelaksana</h2><p class="mtp-sub">Bisa menambah lebih dari satu jabatan sekaligus untuk satu layanan. Jabatan baru otomatis aktif.</p></div>
+  </div>
+  <div class="mtp-card mtp-pad" style="margin-bottom:16px">
+    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">
+      <div style="flex:0 1 320px;width:100%"><label class="mtp-label">Layanan</label><select id="cLay" class="mtp-sel"></select></div>
+      <div id="cLock"></div>
+    </div>
   </div>
   <div class="mtp-card mtp-pad">
     <div class="mtp-scroll"><table class="mtp-tbl">
@@ -147,7 +162,7 @@ table.mtp-tbl{width:100%;border-collapse:collapse}
   </div>
   <div class="mtp-card mtp-pad">
     <div class="mtp-scroll"><table class="mtp-tbl">
-      <thead><tr><th style="width:60px">No.</th><th>Nama Jabatan</th><th style="width:60px"></th></tr></thead>
+      <thead><tr><th style="width:60px">No.</th><th>Nama Jabatan</th><th>Layanan</th><th style="width:60px"></th></tr></thead>
       <tbody id="eRows"></tbody></table></div>
     <div class="mtp-actions">
       <button type="button" class="mtp-btn" id="eBatal">Batal</button>
@@ -166,6 +181,9 @@ table.mtp-tbl{width:100%;border-collapse:collapse}
 <script>
 /* Daftar di atas dirender server (tabel biasa + repeat). Data JSON ini cuma bahan untuk form Tambah/Ubah. */
 var JAB={{ @mtp_jab_json | raw }};
+var LAYANAN={{ @mtp_layanan_json | raw }};
+var CFG={{ @mtp_cfg_json | raw }};
+var LOCK=CFG.lock;
 var CSRF='{{ @csrf_token }}',BASE='{{ @BASE }}',PREFIX='/master-jabatan-pelaksana';
 var ST='semua';
 var $=function(i){return document.getElementById(i)};
@@ -185,6 +203,9 @@ $('dlg').addEventListener('click',function(e){if(e.target===$('dlg'))tutupDlg(fa
 document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!$('dlg').hidden)tutupDlg(false)});
 
 var jabBy=function(id){return JAB.filter(function(j){return j.id==id})[0]};
+var layNama=function(k){var l=LAYANAN.filter(function(x){return x[0]==k})[0];return l?l[1]:k};
+function layOpts(pilih,semua){return (semua?'<option value="">Semua layanan</option>':'<option value="" disabled'+(pilih?'':' selected')+'>Pilih layanan...</option>')+LAYANAN.map(function(l){return '<option value="'+l[0]+'"'+(l[0]==pilih?' selected':'')+'>'+esc(l[1])+'</option>'}).join('')}
+function layTujuan(){return LOCK||$('cLay').value}
 var barisSemua=function(){return Array.prototype.slice.call(document.querySelectorAll('#tbJab tr[data-id]'))};
 
 /* paginasi ala DataTables (10 / 25 / 50 per halaman) atas baris yang sudah dirender server */
@@ -205,10 +226,13 @@ function setPager(el){
 /* ===== saring (search + tab) langsung di baris yang sudah dirender ===== */
 function saring(ulang){
   if(ulang===true){PG.page=1}
-  var q=$('fCari').value.trim().toLowerCase(),rows=barisSemua();
-  var cocok=[];
+  var q=$('fCari').value.trim().toLowerCase(),fl=$('fLay')?$('fLay').value:'',rows=barisSemua();
+  var cocok=[],nSemua=0,nAktif=0;
   rows.forEach(function(tr){
-    var ok=(!q||tr.dataset.cari.indexOf(q)>-1)&&(ST==='semua'||(ST==='aktif'?tr.dataset.aktif==='1':tr.dataset.aktif==='0'));
+    /* angka di tab (Semua/Aktif/Nonaktif) mengikuti filter layanan + pencarian, tapi tidak mengikuti tab yang dipilih */
+    var cocokFilter=(!q||tr.dataset.cari.indexOf(q)>-1)&&(!fl||tr.dataset.lay===fl);
+    if(cocokFilter){nSemua++;if(tr.dataset.aktif==='1')nAktif++}
+    var ok=cocokFilter&&(ST==='semua'||(ST==='aktif'?tr.dataset.aktif==='1':tr.dataset.aktif==='0'));
     tr.hidden=true;
     if(ok){cocok.push(tr)}
   });
@@ -219,15 +243,14 @@ function saring(ulang){
     if(i>=awal&&i<awal+PG.size){tr.hidden=false;tr.querySelector('.mtp-no').textContent=i+1}
   });
   $('trKosong').hidden=total>0||rows.length===0;
+  $('cSemua').textContent=nSemua;$('cAktif').textContent=nAktif;$('cNon').textContent=nSemua-nAktif;
   pager(total,$('pgJab'));
   Array.prototype.forEach.call(document.querySelectorAll('#tabs [data-st]'),function(b){b.classList.toggle('on',b.dataset.st===ST)});
 }
-function hitungTab(){
-  var rows=barisSemua(),a=rows.filter(function(tr){return tr.dataset.aktif==='1'}).length;
-  $('cSemua').textContent=rows.length;$('cAktif').textContent=a;$('cNon').textContent=rows.length-a;
-}
+function hitungTab(){saring()}
 
 $('fCari').addEventListener('input',function(){saring(true)});
+if($('fLay'))$('fLay').addEventListener('change',function(){saring(true)});
 $('tabs').addEventListener('click',function(e){var b=e.target.closest('[data-st]');if(!b)return;ST=b.dataset.st;saring(true)});
 
 /* ===== aktif/nonaktif, ubah, hapus ===== */
@@ -238,6 +261,7 @@ $('tbJab').addEventListener('change',function(e){
     post('/'+a.dataset.jakt+'/aktif',{aktif:mau?1:0}).then(function(r){
       tr.dataset.aktif=mau?'1':'0';tr.classList.toggle('nonaktif',!mau);
       var chip=tr.querySelector('.mtp-jab');if(chip)chip.classList.toggle('off',!mau);
+      var hb=tr.querySelector('[data-jhapus]');if(hb){hb.disabled=mau;hb.title=mau?'Nonaktifkan dulu untuk menghapus':'Hapus'}
       var j=jabBy(a.dataset.jakt);if(j)j.aktif=mau?1:0;
       hitungTab();saring();if(r.pesan)toast(r.pesan);
     }).catch(function(err){a.checked=!mau;toast(err.message,1)});
@@ -245,7 +269,7 @@ $('tbJab').addEventListener('change',function(e){
   }
 });
 function hapusIds(ids){
-  konfirmasi('Hapus jabatan?',ids.length===1?'Jabatan "'+jabBy(ids[0]).nama+'" akan dihapus dari daftar pilihan. Isi PO yang sudah ada tidak berubah.':ids.length+' jabatan akan dihapus dari daftar pilihan. Isi PO yang sudah ada tidak berubah.','Ya, hapus').then(function(ok){if(ok)post('/hapus',{ids:JSON.stringify(ids)}).then(function(r){muatUlang(r.pesan)}).catch(function(e){toast(e.message,1)})})}
+  konfirmasi('Hapus jabatan?',ids.length===1?'Jabatan "'+jabBy(ids[0]).nama+'" ('+layNama(jabBy(ids[0]).lay)+') akan dihapus dari daftar pilihan. Isi PO yang sudah ada tidak berubah.':ids.length+' jabatan akan dihapus dari daftar pilihan. Isi PO yang sudah ada tidak berubah.','Ya, hapus').then(function(ok){if(ok)post('/hapus',{ids:JSON.stringify(ids)}).then(function(r){muatUlang(r.pesan)}).catch(function(e){toast(e.message,1)})})}
 $('tbJab').addEventListener('click',function(e){
   var ed=e.target.closest('[data-jedit]');if(ed){bukaEdit([+ed.dataset.jedit]);return}
   var h=e.target.closest('[data-jhapus]');if(h)hapusIds([+h.dataset.jhapus])});
@@ -256,12 +280,12 @@ function tampilView(v){['viewList','viewCreate','viewEdit'].forEach(function(x){
 var EF=[];
 function renderEdit(){
   $('eRows').innerHTML=EF.map(function(r,i){
-    return '<tr><td class="mtp-no">'+(i+1)+'</td><td><input class="mtp-in" maxlength="80" data-en="'+i+'" value="'+esc(r.nama)+'"></td>'+
+    return '<tr><td class="mtp-no">'+(i+1)+'</td><td><input class="mtp-in" maxlength="80" data-en="'+i+'" value="'+esc(r.nama)+'"></td><td><span class="mtp-lay">'+esc(layNama(r.lay))+'</span></td>'+
     '<td class="r"><button type="button" class="mtp-ibtn dng" data-erm="'+i+'"'+(EF.length==1?' disabled':'')+' title="Keluarkan dari daftar ubah"><i class="bi bi-x-lg"></i></button></td></tr>'}).join('');
   $('eJudul').textContent='Ubah '+EF.length+' jabatan';
   $('eSimpanTxt').textContent=EF.length>1?'Simpan '+EF.length+' perubahan':'Simpan perubahan';
 }
-function bukaEdit(ids){if(!ids.length)return;EF=ids.map(function(id){var j=jabBy(id);return {id:j.id,nama:j.nama}});renderEdit();tampilView('viewEdit')}
+function bukaEdit(ids){if(!ids.length)return;EF=ids.map(function(id){var j=jabBy(id);return {id:j.id,nama:j.nama,lay:j.lay}});renderEdit();tampilView('viewEdit')}
 $('eBack').addEventListener('click',function(){tampilView('viewList')});$('eBatal').addEventListener('click',function(){tampilView('viewList')});
 $('eRows').addEventListener('input',function(e){var n=e.target.closest('[data-en]');if(n)EF[+n.dataset.en].nama=n.value});
 $('eRows').addEventListener('click',function(e){var x=e.target.closest('[data-erm]');if(!x||x.disabled)return;EF.splice(+x.dataset.erm,1);renderEdit()});
@@ -278,7 +302,12 @@ function renderForm(){
   var n=FORM.filter(function(r){return r.nama.trim()}).length;
   $('cSimpanTxt').textContent=n>1?'Simpan '+n+' jabatan':'Simpan';
 }
-function bukaCreate(){FORM=[{nama:''}];renderForm();tampilView('viewCreate');var f=document.querySelector('#cRows input');if(f)f.focus()}
+function bukaCreate(){
+  FORM=[{nama:''}];
+  var awal=LOCK||(($('fLay')&&$('fLay').value)||'');
+  $('cLay').innerHTML=layOpts(awal,false);$('cLay').disabled=!!LOCK;
+  $('cLock').innerHTML=LOCK?'<span class="mtp-lock"><i class="bi bi-lock-fill"></i> Terkunci ke layanan '+esc(layNama(LOCK))+'</span>':'<span class="mtp-muted">Pilih layanan tujuan. Semua baris di bawah masuk ke layanan ini.</span>';
+  renderForm();tampilView('viewCreate');var f=document.querySelector('#cRows input');if(f)f.focus()}
 $('btnTambah').addEventListener('click',bukaCreate);
 $('cBack').addEventListener('click',function(){tampilView('viewList')});$('cBatal').addEventListener('click',function(){tampilView('viewList')});
 $('cAddRow').addEventListener('click',function(){FORM.push({nama:''});renderForm();var f=document.querySelectorAll('#cRows input');if(f.length)f[f.length-1].focus()});
@@ -288,10 +317,11 @@ $('cRows').addEventListener('click',function(e){var x=e.target.closest('[data-cr
 $('cSimpan').addEventListener('click',function(){
   var isi=FORM.filter(function(r){return r.nama.trim()});
   if(!isi.length){toast('Isi minimal satu jabatan.',1);return}
-  var ada=JAB.map(function(x){return x.nama.toLowerCase()}),dobel=null,pakaiN={};
+  var lay=layTujuan();if(!lay){toast('Pilih layanan dulu.',1);return}
+  var ada=JAB.filter(function(x){return x.lay==lay}).map(function(x){return x.nama.toLowerCase()}),dobel=null,pakaiN={};
   isi.forEach(function(r){var k=r.nama.trim().toLowerCase();if(ada.indexOf(k)>-1||pakaiN[k])dobel=r.nama.trim();pakaiN[k]=1});
   if(dobel){toast('Nama jabatan sudah ada / dobel: "'+dobel+'".',1);return}
-  post('/tambah',{items:JSON.stringify(isi.map(function(r){return {nama:r.nama.trim()}}))}).then(function(r){muatUlang(r.pesan)}).catch(function(e){toast(e.message,1)})});
+  post('/tambah',{layanan:lay,items:JSON.stringify(isi.map(function(r){return {nama:r.nama.trim()}}))}).then(function(r){muatUlang(r.pesan)}).catch(function(e){toast(e.message,1)})});
 
 /* pesan dari aksi sebelum halaman dimuat ulang */
 try{var pesanTunda=sessionStorage.getItem('mtp_toast');if(pesanTunda){sessionStorage.removeItem('mtp_toast');toast(pesanTunda)}}catch(e){}

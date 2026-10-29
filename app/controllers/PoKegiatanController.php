@@ -55,6 +55,18 @@ protected function divisiPenggunaSaatIni() {
     }
     return '';
 }
+/**
+ * [BARU] Kunci menu sidebar yang harus aktif untuk halaman-halaman PO (buat / pilih jenis / edit).
+ * Sama persis dengan aturan di index(): sidebar punya kunci berbeda per peran
+ * (po_selulosa / po_lingkungan / po_layanan / po_kegiatan), jadi tidak boleh di-hardcode.
+ */
+protected function kunciMenuSidebarPo() {
+    if ($this->getUserRole() === 'superadmin') { return 'po_kegiatan'; }
+    $role = $this->getUserRole();
+    if ($role === 'tim_kerja_pengujian' || $this->isRoleSertifikasi()) { return 'po_layanan'; }
+    $div = $this->divisiPenggunaSaatIni();
+    return in_array($div, ['selulosa', 'lingkungan'], true) ? 'po_' . $div : 'po_kegiatan';
+}
 protected function getInfoPembayaranOtomatis($orderId, $statusKeuangan) {
     if ($statusKeuangan !== 'lunas') {
         return '-';
@@ -119,9 +131,13 @@ protected function ambilMasterPelaksanaUntukPo($divisi) {
     return \MasterTimPelaksanaController::ambilAktif($this->db, $d);
 }
 
-/** Nama jabatan aktif dari Master Jabatan Pelaksana (pilihan kolom jabatan di Tim Pelaksana form PO). */
-protected function ambilJabatanPelaksanaUntukPo() {
-    return class_exists('MasterTimPelaksanaController') ? \MasterTimPelaksanaController::ambilJabatanAktif($this->db) : [];
+/** Nama jabatan aktif dari Master Jabatan Pelaksana milik divisi PO ini (pilihan kolom jabatan di Tim Pelaksana form PO). */
+protected function ambilJabatanPelaksanaUntukPo($divisi = '') {
+    $d = strtolower(trim((string) $divisi));
+    if (!in_array($d, ['lingkungan', 'selulosa'], true) || !class_exists('MasterTimPelaksanaController')) {
+        return [];
+    }
+    return \MasterTimPelaksanaController::ambilJabatanAktif($this->db, $d);
 }
 
 protected function getHariLiburSet() {
@@ -1155,7 +1171,7 @@ if ((string) $f3->get('GET.asal') === 'petunjuk') {
 }
 $f3->set('kembali_url', $kembaliUrl);
 
-$this->render('katim_kerja/po-kegiatan/pilih_jenis.html', 'Buat Petunjuk Operasional', $divisi ? 'po_' . $divisi : 'po_kegiatan');
+$this->render('katim_kerja/po-kegiatan/pilih_jenis.html', 'Buat Petunjuk Operasional', $this->kunciMenuSidebarPo());
     }
 
     /**
@@ -1232,7 +1248,7 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
             JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP
         ));
         $f3->set('daftar_jabatan_pelaksana_json', json_encode(
-            $this->ambilJabatanPelaksanaUntukPo(),
+            $this->ambilJabatanPelaksanaUntukPo($orderData['jenis_layanan_opti'] ?? ''),
             JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP
         ));
 
@@ -1251,7 +1267,7 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
             \StageAudit::recordDibaca($this->db, $orderId, 7, $userId, $userNama, 'Laboratorium / Tim Pelaksana');
         }
 
-        $this->render('katim_kerja/po-kegiatan/form.html', 'Buat Petunjuk Operasional', 'po_kegiatan');
+        $this->render('katim_kerja/po-kegiatan/form.html', 'Buat Petunjuk Operasional', $this->kunciMenuSidebarPo());
     }
 
     /** GET /po-kegiatan/@id/edit */
@@ -1280,6 +1296,8 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
             }
         }
         $f3->set('revisi_konteks', $konteksRevisi);
+        // Ketua Tim mengedit saat mereview hasil revisi PPK BLU (bukan review PO biasa): tombol "Simpan dan setujui" tidak berlaku
+        $f3->set('revisi_ppk_katim', $konteksRevisi === 'katim' && $po->exists('ppk_status') && (string) $po->ppk_status === 'katim_review');
 
         $orderData = $this->getOrderDenganMitra((int) $po->order_id);
         $poData = $po->cast();
@@ -1328,7 +1346,7 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
             JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP
         ));
         $f3->set('daftar_jabatan_pelaksana_json', json_encode(
-            $this->ambilJabatanPelaksanaUntukPo(),
+            $this->ambilJabatanPelaksanaUntukPo($orderData['jenis_layanan_opti'] ?? ''),
             JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP
         ));
 
@@ -1351,11 +1369,11 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
         // [FIX] Dibawa dari query string (?dari=daftar) pas link edit-nya datang dari
         // halaman "Daftar Review PO"/"Diskusi PO" -- disimpan di hidden field form biar
         // kebawa lagi pas submit, jadi update() tau harus reroute balik ke mana.
-        $dariValid = ['daftar', 'ppk', 'order'];
+        $dariValid = ['daftar', 'ppk', 'order', 'index'];
         $dari = (string) $f3->get('GET.dari');
         $f3->set('dari', in_array($dari, $dariValid, true) ? $dari : '');
 
-        $this->render('katim_kerja/po-kegiatan/form.html', 'Edit Petunjuk Operasional', 'po_kegiatan');
+        $this->render('katim_kerja/po-kegiatan/form.html', 'Edit Petunjuk Operasional', $this->kunciMenuSidebarPo());
     }
 
     /**
@@ -1505,10 +1523,12 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
                 $this->jsonSimpan(false, 'PO ini tidak sedang dalam revisi, tidak ada yang bisa dikirim.', 422);
             }
             $sudahTerkirim = ($statusSebelum === 'terkirim');
+            // jejak perubahan revisi PPK BLU: juga dicatat saat Ketua Tim memperbaiki langsung ketika mereview hasil revisi
+            $catatPerubahanPpk = ($konteksRevisi === 'ppk') || ($konteksRevisi === 'katim' && $po->exists('ppk_status') && (string) $po->ppk_status === 'katim_review');
 
             // [BARU] Potret isi PO sebelum diubah (jejak perubahan, hanya revisi PPK BLU)
             $potretSebelum = [];
-            if ($konteksRevisi === 'ppk') {
+            if ($catatPerubahanPpk) {
                 try { $potretSebelum = $this->siapkanDataPo($po, $this->getOrderDenganMitra((int) $po->order_id)); } catch (\Throwable $eSnap) { $potretSebelum = []; }
             }
     
@@ -1525,7 +1545,7 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
                 }
 
                 // [BARU] Catat bagian PO yang berubah selama revisi PPK BLU
-                if ($konteksRevisi === 'ppk' && !empty($potretSebelum)) {
+                if ($catatPerubahanPpk && !empty($potretSebelum)) {
                     try {
                         $potretSesudah = $this->siapkanDataPo($po, $this->getOrderDenganMitra((int) $po->order_id));
                         \PoRevisiPpkController::catatPerubahan($this->db, (int) $po->id, (int) $this->getUserId(), $potretSebelum, $potretSesudah);
@@ -1584,6 +1604,11 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
             }
             if ((string) $f3->get('POST.dari') === 'daftar') {
                 $f3->reroute('/po-kegiatan/daftar');
+                return;
+            }
+            // [BARU] Edit dibuka dari halaman /po-kegiatan (panel review) -> balik ke halaman itu, bukan ke detail order
+            if ((string) $f3->get('POST.dari') === 'index') {
+                $f3->reroute('/po-kegiatan');
                 return;
             }
             // [BARU] Edit dari revisi PPK BLU -> balik ke panel revisinya; menutup panel kembali ke Daftar Review PO
@@ -2154,12 +2179,21 @@ protected function siapkanDataPo($po, $orderData) {
             $endYear    = (int) $selesai->format('Y');
             $endMonth   = (int) $selesai->format('n');
 
+            // Minggu dalam bulan: 1 = tgl 1-7, 2 = 8-14, 3 = 15-21, 4 = 22-akhir bulan.
+            // Bulan pertama mulai dari minggu tempat tanggal mulai jatuh, bulan terakhir berhenti di minggu tempat tanggal selesai jatuh
+            // (bulan di antaranya penuh 4 minggu), jadi tabel mengikuti rentang tanggal yang diisi.
+            $mingguDariTgl = function ($hari) { return min(4, (int) ceil(((int) $hari) / 7)); };
+            $mingguAwal  = $mingguDariTgl($mulai->format('j'));
+            $mingguAkhir = $mingguDariTgl($selesai->format('j'));
+
             $currYear  = $startYear;
             $currMonth = $startMonth;
 
             while ($currYear < $endYear || ($currYear === $endYear && $currMonth <= $endMonth)) {
                 $bLabel = $bulanNama[$currMonth] . ' ' . $currYear;
-                for ($w = 1; $w <= 4; $w++) {
+                $dariMinggu   = ($currYear === $startYear && $currMonth === $startMonth) ? $mingguAwal : 1;
+                $sampaiMinggu = ($currYear === $endYear && $currMonth === $endMonth) ? $mingguAkhir : 4;
+                for ($w = $dariMinggu; $w <= $sampaiMinggu; $w++) {
                     $key = $currYear . '-' . str_pad($currMonth, 2, '0', STR_PAD_LEFT) . '-w' . $w;
                     $kolom[] = [
                         'key'         => $key,

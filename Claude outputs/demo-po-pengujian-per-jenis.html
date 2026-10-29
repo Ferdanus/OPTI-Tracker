@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Demo Tambah PO Pengujian per Jenis</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f1f5f9;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#1e293b;padding:24px 12px}
+.wrap{max-width:760px;margin:0 auto}
+.stp{display:flex;gap:8px;margin:0 0 14px;flex-wrap:wrap}
+.stp span{font-size:12px;padding:5px 12px;border-radius:999px;background:#fff;color:#64748b;border:1px solid #e2e8f0}
+.stp span.on{background:#e0e7ff;color:#3730a3;border-color:#c7d2fe;font-weight:600}
+.box{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:18px 20px}
+.ttl{font-size:17px;font-weight:700;margin:0 0 2px}
+.sub{font-size:13px;color:#64748b;margin:0 0 14px}
+.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.c{border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;cursor:pointer;background:#fff;text-align:left;font:inherit;color:inherit}
+.c:hover{border-color:#94a3b8;background:#f8fafc}
+.c .n{font-size:14px;font-weight:600}
+.c .k{font-size:12px;color:#64748b;margin-top:2px}
+.c.off{opacity:.5;cursor:not-allowed}
+.row{display:flex;gap:10px;align-items:flex-start;padding:11px 4px;border-top:1px solid #f1f5f9;cursor:pointer}
+.row:first-child{border-top:0}
+.row input{margin-top:3px;width:16px;height:16px;flex:none}
+.row.d{background:#eff6ff}
+.m{font-size:14px;font-weight:600}
+.p{font-size:12px;color:#64748b}
+.r{margin-left:auto;text-align:right;font-size:12px;color:#64748b;white-space:nowrap}
+.tag{display:inline-block;font-size:11px;padding:1px 8px;border-radius:999px;background:#f1f5f9;border:1px solid #e2e8f0;color:#475569;margin:4px 4px 0 0}
+.ft{display:flex;justify-content:space-between;align-items:center;margin-top:14px;gap:8px;flex-wrap:wrap;border-top:1px solid #e2e8f0;padding-top:12px}
+.bar{margin-bottom:10px}
+.bar input{width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;font:inherit;font-size:14px}
+.bk{font-size:13px;color:#64748b;cursor:pointer;background:none;border:none;padding:0 0 10px;font:inherit;font-size:13px}
+.bk:hover{color:#0f172a}
+.ok{background:#0f172a;color:#fff;border:0;border-radius:999px;padding:8px 20px;font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+#hasil{margin-top:10px;font-size:13px;color:#475569}
+</style></head><body><div class="wrap">
+<div class="stp" id="stp"></div><div class="box" id="stage"></div><div id="hasil"></div></div>
+<script>
+(function(){
+var JENIS=[
+ {id:1,n:'Air',k:''},
+ {id:0,n:'Limbah cair',k:'Dipisah dari Air'},
+ {id:2,n:'Kertas, karton, pulp',k:''},
+ {id:4,n:'Udara',k:'Emisi dan ambien'},
+ {id:6,n:'Limbah padat',k:''},
+ {id:7,n:'AMDK',k:'Air minum dalam kemasan'},
+ {id:13,n:'BKB',k:''}
+];
+var ORD=[
+ {id:101,jk:1,mitra:'CV Tirta Makmur',no:'118/TM/X/2026',per:'Uji air bersih untuk keperluan produksi',tg:'03/10/2026',po:'1801/PP/BBSPJIS/X/2026',ket:'Air bersih'},
+ {id:102,jk:1,mitra:'PT Sumber Jernih Lestari',no:'041/SJL/IX/2026',per:'Uji kualitas air sumur produksi',tg:'22/09/2026',po:'1790/PP/BBSPJIS/X/2026',ket:'Air'},
+ {id:110,jk:0,mitra:'PT Kertas Nusantara Utama',no:'076/KNU-ENV/X/2026',per:'Pengujian efluen limbah cair pabrik kertas',tg:'08/10/2026',po:'1812/PP/BBSPJIS/X/2026',ket:'Limbah cair'},
+ {id:111,jk:0,mitra:'PT Sumber Jernih Lestari',no:'044/SJL/X/2026',per:'Uji outlet IPAL',tg:'11/10/2026',po:'1818/PP/BBSPJIS/X/2026',ket:'Limbah cair'},
+ {id:201,jk:2,mitra:'PT Mekar Kemasan Prima',no:'203/MKP/IX/2026',per:'Uji kekuatan tarik dan gramatur kertas kemasan',tg:'25/09/2026',po:'1795/PP/BBSPJIS/X/2026',ket:'Kertas'},
+ {id:202,jk:2,mitra:'PT Pulp Sejahtera',no:'090/PS-QA/X/2026',per:'Analisis kadar selulosa pulp kraft',tg:'05/10/2026',po:'1806/PP/BBSPJIS/X/2026',ket:'Pulp'},
+ {id:203,jk:2,mitra:'CV Boks Karton Mandiri',no:'015/BKM/X/2026',per:'Uji ketahanan tekan karton gelombang',tg:'12/10/2026',po:'1820/PP/BBSPJIS/X/2026',ket:'Karton'},
+ {id:401,jk:4,mitra:'PT Energi Boiler Andalan',no:'067/EBA/X/2026',per:'Pengujian emisi cerobong recovery boiler',tg:'01/10/2026',po:'1799/PP/BBSPJIS/X/2026',ket:'Emisi udara'},
+ {id:601,jk:6,mitra:'PT Daur Serat Hijau',no:'112/DSH/IX/2026',per:'Uji karakteristik limbah padat sludge IPAL',tg:'29/09/2026',po:'1793/PP/BBSPJIS/X/2026',ket:'Limbah padat'},
+ {id:701,jk:7,mitra:'PT Air Pegunungan Sejati',no:'033/APS/X/2026',per:'Pengujian mutu AMDK kemasan 600 mL',tg:'09/10/2026',po:'1815/PP/BBSPJIS/X/2026',ket:'AMDK'}
+];
+var st={step:1,jenis:-1,pilih:[],q:''};
+var stage=document.getElementById('stage'),stp=document.getElementById('stp'),hasil=document.getElementById('hasil');
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')}
+function cnt(id){return ORD.filter(function(o){return o.jk===id}).length}
+function nama(){return JENIS.filter(function(j){return j.id===st.jenis})[0].n}
+function render(){
+ stp.innerHTML=['1. Layanan','2. Jenis pengujian','3. Pilih order'].map(function(t,i){return '<span class="'+(st.step===i+1?'on':'')+'">'+t+'</span>'}).join('');
+ hasil.textContent='';
+ if(st.step===1){
+  stage.innerHTML='<p class="ttl">Tambah PO</p><p class="sub">Pilih layanan untuk PO yang mau dibuat.</p><div class="g"><button class="c" id="lp"><div class="n">Pengujian</div><div class="k">Order dari penerimaan contoh</div></button><div class="c off"><div class="n">Sertifikasi</div><div class="k">Alur sendiri</div></div><div class="c off"><div class="n">Kalibrasi</div><div class="k">Alur sendiri</div></div></div>';
+  document.getElementById('lp').onclick=function(){st.step=2;render()};
+ } else if(st.step===2){
+  stage.innerHTML='<button class="bk" id="b">&larr; Kembali</button><p class="ttl">Pengujian: pilih jenis</p><p class="sub">Dikelompokkan dari layanan_Kd_contoh di arsip surat. Angka = order yang belum punya PO.</p><div class="g" id="gj"></div>';
+  document.getElementById('b').onclick=function(){st.step=1;render()};
+  JENIS.forEach(function(j){var b=document.createElement('button');b.className='c';b.innerHTML='<div class="n">'+esc(j.n)+'</div><div class="k">'+(j.k?esc(j.k)+' &middot; ':'')+cnt(j.id)+' order</div>';b.onclick=function(){st.jenis=j.id;st.pilih=[];st.q='';st.step=3;render()};document.getElementById('gj').appendChild(b)});
+ } else {
+  stage.innerHTML='<button class="bk" id="b">&larr; Ganti jenis</button><p class="ttl">Pilih order '+esc(nama())+'</p><p class="sub">Centang satu atau beberapa order untuk dimasukkan ke satu PO.</p><div class="bar"><input type="search" id="q" placeholder="Cari nomor surat, perihal, atau nama mitra"></div><div id="ls"></div><div class="ft"><span id="jm" style="font-size:14px;font-weight:600">0 order dipilih</span><button class="ok" id="ok">Buat PO</button></div>';
+  document.getElementById('b').onclick=function(){st.step=2;render()};
+  var q=document.getElementById('q');q.value=st.q;q.oninput=function(){st.q=q.value;lis()};
+  document.getElementById('ok').onclick=function(){
+   if(!st.pilih.length){hasil.style.color='#b91c1c';hasil.textContent='Pilih minimal satu order dulu.';return}
+   hasil.style.color='#475569';hasil.textContent='Lanjut ke form PO Pengujian ('+nama()+') dengan '+st.pilih.length+' order.';};
+  lis();
+ }
+}
+function lis(){
+ var q=st.q.toLowerCase(),ls=document.getElementById('ls');ls.innerHTML='';
+ var rows=ORD.filter(function(o){return o.jk===st.jenis&&(!q||(o.mitra+o.no+o.per).toLowerCase().indexOf(q)>-1)});
+ if(!rows.length)ls.innerHTML='<p class="sub" style="padding:12px 0">Tidak ada order yang cocok.</p>';
+ rows.forEach(function(o){
+  var on=st.pilih.indexOf(o.id)>-1,l=document.createElement('label');l.className='row'+(on?' d':'');
+  l.innerHTML='<input type="checkbox" '+(on?'checked':'')+'><div><div class="m">'+esc(o.mitra)+'</div><div class="p">'+esc(o.no)+' &middot; '+esc(o.per)+'</div><span class="tag">No. order '+esc(o.po)+'</span><span class="tag">'+esc(o.ket)+'</span></div><div class="r">Surat '+o.tg+'</div>';
+  l.querySelector('input').onchange=function(e){var i=st.pilih.indexOf(o.id);if(e.target.checked&&i<0)st.pilih.push(o.id);if(!e.target.checked&&i>-1)st.pilih.splice(i,1);l.className='row'+(e.target.checked?' d':'');document.getElementById('jm').textContent=st.pilih.length+' order dipilih';hasil.textContent=''};
+  ls.appendChild(l);
+ });
+ document.getElementById('jm').textContent=st.pilih.length+' order dipilih';
+}
+window.__st=st;window.__go=function(s,j){st.step=s;if(j!==undefined)st.jenis=j;render()};
+render();
+})();
+</script></body></html>

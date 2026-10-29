@@ -361,30 +361,74 @@ class PoPengujian
     /* ------------------------------------------------------------------ */
 
     /**
-     * Syarat surat yang dianggap ORDER PENGUJIAN (sementara dikunci begini, bisa diperlebar nanti):
-     *   - id_layanan = 1 -> layanan Pengujian (nilai lain: 2 kalibrasi, 3 sertifikasi, 7 pelatihan; terisi untuk data 2026)
-     *   - nama_layanan_opti & nama_layanan kosong -> bukan order OPTI (selulosa / lingkungan). Keduanya dicek karena di
-     *     data OPTI kedua kolom ini kadang tidak konsisten (satu terisi, satu kosong).
-     *   - perlu_balasan_surat = 'Y' -> surat yang memang perlu ditindaklanjuti / dibalas
-     * Ketiga syarat harus terpenuhi (AND).
+     * Jenis pengujian untuk pilihan di modal "Pilih order". Pengelompokan mengikuti tb_arsipsurat.layanan_Kd_contoh.
+     * 'kode' = nilai layanan_Kd_contoh yang masuk jenis itu (boleh lebih dari satu). Mau menambah / memisah jenis
+     * (mis. limbah cair dipisah dari Air): tambah satu baris di sini, tidak ada yang lain yang perlu diubah.
+     * Order yang layanan_Kd_contoh-nya 0 / tidak ada di daftar ini tidak ditampilkan.
      */
-    const SYARAT_ORDER = " AND a.id_layanan = 1 AND COALESCE(a.nama_layanan_opti, '') = '' AND COALESCE(a.nama_layanan, '') = '' AND a.perlu_balasan_surat = 'Y'";
+    public static $JENIS = array(
+        'air'          => array('nama' => 'Air',                  'ket' => 'Termasuk limbah cair',   'kode' => array(1)),
+        'kertas'       => array('nama' => 'Kertas, karton, pulp', 'ket' => '',                       'kode' => array(2)),
+        'udara'        => array('nama' => 'Udara',                'ket' => 'Emisi dan ambien',       'kode' => array(4)),
+        'limbah_padat' => array('nama' => 'Limbah padat',         'ket' => '',                       'kode' => array(6)),
+        'amdk'         => array('nama' => 'AMDK',                 'ket' => 'Air minum dalam kemasan', 'kode' => array(7)),
+        'bkb'          => array('nama' => 'BKB',                  'ket' => '',                       'kode' => array(13)),
+    );
+
+    /** Semua kode layanan_Kd_contoh yang dikenal (gabungan semua jenis). */
+    public static function semuaKodeJenis()
+    {
+        $out = array();
+        foreach (self::$JENIS as $j) { foreach ($j['kode'] as $k) { $out[] = (int) $k; } }
+        return $out;
+    }
+
+    /** layanan_Kd_contoh -> kunci jenis ('air', 'kertas', ...); '' kalau tidak dikenal. */
+    public static function jenisDariKode($kode)
+    {
+        foreach (self::$JENIS as $key => $j) {
+            if (in_array((int) $kode, $j['kode'], true)) { return $key; }
+        }
+        return '';
+    }
+
+    /**
+     * Syarat surat yang dianggap ORDER PENGUJIAN:
+     *   - surat tercatat di tb_penerimaan_contoh (kolom id_arsip) -- tidak lagi memakai id_layanan, dan
+     *   - layanan_Kd_contoh termasuk salah satu jenis di $JENIS (yang tidak dikenal / 0 dilewati dulu).
+     * IN (subquery) dipilih supaya MySQL membangun daftar id_arsip sekali, bukan memindai penerimaan contoh untuk tiap surat.
+     */
+    protected static function syaratOrder()
+    {
+        $kode = self::semuaKodeJenis();
+        return " AND a.id_arsip IN (SELECT pc.id_arsip FROM tb_penerimaan_contoh pc)"
+             . " AND a.layanan_Kd_contoh IN (" . implode(',', array_map('intval', $kode)) . ")";
+    }
 
     /**
      * Daftar order untuk modal pilih order. Sumber: tb_arsipsurat (+ tb_customer) di sil2020 -- OptiDatabase otomatis
      * mengarahkannya ke sil2020. $id > 0 -> satu order saja. $kecualiSudahPo=true -> sembunyikan order yang sudah
-     * punya PO Pengujian. $q = kata kunci (nomor surat / perihal / nama mitra). Maksimal $batas baris, terbaru dulu.
-     * $hanyaPengujian=false -> tanpa SYARAT_ORDER (dipakai membaca order asal PO yang sudah tersimpan, untuk banner).
+     * punya PO Pengujian. $q = kata kunci (nomor surat / perihal / nama mitra). Maksimal $batas baris, terbaru dulu (urut id_arsip: surat penerimaan contoh sering tanpa tanggal surat, jadi tanggal tidak dipakai mengurutkan).
+     * $hanyaPengujian=false -> tanpa syaratOrder() (dipakai membaca order asal PO yang sudah tersimpan, untuk banner).
      */
-    public static function queryOrder($db, $id = 0, $q = '', $kecualiSudahPo = true, $batas = 100, $hanyaPengujian = true, $ids = null, $kecualiPo = 0)
+    public static function queryOrder($db, $id = 0, $q = '', $kecualiSudahPo = true, $batas = 100, $hanyaPengujian = true, $ids = null, $kecualiPo = 0, $jenis = '')
     {
-        $sql = "SELECT a.id_arsip, a.nomor_surat, a.perihal, a.tanggal_surat, a.tanggal_terima, a.id_customer,
-                       c.nmcustomer, c.pt_cv, c.alamatcustomer
+        // $jenis = kunci jenis ('air', 'kertas', ...): hanya order jenis itu. Kunci tidak dikenal -> kosong.
+        $jenis = trim((string) $jenis);
+        if ($jenis !== '' && !isset(self::$JENIS[$jenis])) { return array(); }
+        $sql = "SELECT a.id_arsip, a.nomor_surat, a.perihal, a.tanggal_surat, a.tanggal_terima, a.id_customer, a.layanan_Kd_contoh,
+                       c.nmcustomer, c.pt_cv, c.alamatcustomer,
+                       (SELECT pc.No_order FROM tb_penerimaan_contoh pc WHERE pc.id_arsip = a.id_arsip ORDER BY pc.id_pc DESC LIMIT 1) AS no_order_pc,
+                       (SELECT pc.Ket_contoh FROM tb_penerimaan_contoh pc WHERE pc.id_arsip = a.id_arsip ORDER BY pc.id_pc DESC LIMIT 1) AS ket_contoh_pc,
+                       (SELECT pc.Tanggal_order FROM tb_penerimaan_contoh pc WHERE pc.id_arsip = a.id_arsip ORDER BY pc.id_pc DESC LIMIT 1) AS tgl_order_pc
                 FROM tb_arsipsurat a
                 LEFT JOIN tb_customer c ON c.id_customer = a.id_customer
                 WHERE 1 = 1";
         if ($hanyaPengujian) {
-            $sql .= self::SYARAT_ORDER;
+            $sql .= self::syaratOrder();
+        }
+        if ($jenis !== '') {
+            $sql .= " AND a.layanan_Kd_contoh IN (" . implode(',', array_map('intval', self::$JENIS[$jenis]['kode'])) . ")";
         }
         $args = array();
         $i = 1;
@@ -414,7 +458,7 @@ class PoPengujian
             $args[$i++] = $like;
             $args[$i++] = $like;
         }
-        $sql .= " ORDER BY a.tanggal_surat DESC, a.id_arsip DESC LIMIT " . max(1, (int) $batas);
+        $sql .= " ORDER BY a.id_arsip DESC LIMIT " . max(1, (int) $batas);
         return $db->exec($sql, $args);
     }
 
@@ -430,7 +474,35 @@ class PoPengujian
             'mitra'         => \Customer::formatNamaPerusahaan(isset($r['pt_cv']) ? $r['pt_cv'] : '', isset($r['nmcustomer']) ? $r['nmcustomer'] : ''),
             'alamat'        => trim((string) (isset($r['alamatcustomer']) ? $r['alamatcustomer'] : '')),
             'tanggal_surat' => $tglFmt,
+            'tanggal_order' => (isset($r['tgl_order_pc']) && $r['tgl_order_pc'] !== '' && strpos((string) $r['tgl_order_pc'], '0000') !== 0 && strtotime($r['tgl_order_pc'])) ? date('d/m/Y', strtotime($r['tgl_order_pc'])) : '',
+            'jenis'         => self::jenisDariKode(isset($r['layanan_Kd_contoh']) ? $r['layanan_Kd_contoh'] : 0),
+            'no_order'      => trim((string) (isset($r['no_order_pc']) ? $r['no_order_pc'] : '')),
+            'ket_contoh'    => trim((string) (isset($r['ket_contoh_pc']) ? $r['ket_contoh_pc'] : '')),
         );
+    }
+
+    /**
+     * Ringkasan untuk langkah "pilih jenis" di modal: tiap jenis + jumlah order yang BELUM punya PO Pengujian
+     * ($kecualiPo = PO yang sedang diedit: order miliknya tetap dihitung). Urutan mengikuti $JENIS.
+     */
+    public static function ringkasJenis($db, $kecualiPo = 0)
+    {
+        $sql = "SELECT a.layanan_Kd_contoh AS kode, COUNT(*) AS jml
+                FROM tb_arsipsurat a
+                WHERE 1 = 1" . self::syaratOrder()
+             . " AND NOT EXISTS (SELECT 1 FROM po_kegiatan pk WHERE pk.id_arsip_surat = a.id_arsip AND pk.layanan = ? AND pk.id <> ?)"
+             . " AND NOT EXISTS (SELECT 1 FROM po_pengujian_order x WHERE x.id_arsip = a.id_arsip AND x.id_po <> ?)"
+             . " GROUP BY a.layanan_Kd_contoh";
+        $rows = $db->exec($sql, array(1 => self::LAYANAN, 2 => (int) $kecualiPo, 3 => (int) $kecualiPo));
+        $jml = array();
+        foreach ($rows as $r) { $jml[(int) $r['kode']] = (int) $r['jml']; }
+        $out = array();
+        foreach (self::$JENIS as $key => $j) {
+            $n = 0;
+            foreach ($j['kode'] as $k) { if (isset($jml[(int) $k])) { $n += $jml[(int) $k]; } }
+            $out[] = array('jenis' => $key, 'nama' => $j['nama'], 'ket' => $j['ket'], 'jumlah' => $n);
+        }
+        return $out;
     }
 
     /** Id PO Pengujian yang sudah memakai order (id_arsip) ini (0 = belum ada). */

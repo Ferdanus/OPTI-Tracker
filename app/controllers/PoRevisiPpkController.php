@@ -719,6 +719,16 @@ class PoRevisiPpkController extends Controller {
             return [true, '', 'review'];   // sama seperti PoReviewController::bolehEdit(): aturan lama tidak diubah
         }
         if ($sr === 'disetujui') {
+            // [BARU] Ketua Tim sedang mereview hasil revisi PPK BLU dari Ketua Pelaksana: boleh langsung memperbaiki isi PO (status revisi tidak berubah)
+            if ($ps === 'katim_review') {
+                if ($superadmin) { return [true, '', 'katim']; }
+                if ($role === 'ketua_tim') {
+                    $div = isset($_SESSION['jenis_layanan_opti']) ? (string) $_SESSION['jenis_layanan_opti'] : '';
+                    if (!in_array($div, ['selulosa', 'lingkungan'], true) || $div === (string) $r['jenis_layanan_opti']) { return [true, '', 'katim']; }
+                    return [false, 'PO ini bukan dari divisi Anda.', ''];
+                }
+                return [false, 'Hasil revisi PPK BLU sedang direview Ketua Tim.', ''];
+            }
             if ($ps === 'katim_kerja') {
                 if ($superadmin || $role === 'ketua_tim') { return [true, '', 'ppk']; }
                 return [false, 'Revisi PPK BLU sedang dikerjakan Ketua Tim.', ''];

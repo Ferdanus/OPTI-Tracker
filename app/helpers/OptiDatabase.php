@@ -4,7 +4,7 @@
  * OptiDatabase
  * Extends Fat-Free DB\SQL to support pure dual-database architecture:
  * - Operational OPTI tables are located in `silopti2026`.
- * - Shared master tables (`tb_customer`, `tb_arsipuser`, `tb_arsipsurat`, `tb_hari_libur`, `tb_surat_keluar`)
+ * - Shared master tables (`tb_customer`, `tb_arsipuser`, `tb_arsipsurat`, `tb_hari_libur`, `tb_surat_keluar`, `tb_penerimaan_contoh`)
  *   remain physically in `sil2020` without requiring SQL Views in `silopti2026`.
  */
 class OptiDatabase extends \DB\SQL {
@@ -14,7 +14,8 @@ class OptiDatabase extends \DB\SQL {
         'tb_arsipsurat',
         'tb_hari_libur',
         'tb_tanggal_libur',
-        'tb_surat_keluar'
+        'tb_surat_keluar',
+        'tb_penerimaan_contoh'   // sumber order PO Pengujian (penerimaan contoh)
     ];
 
     public function exec($cmds, $args = null, $ttl = 0, $log = true, $stamp = false) {

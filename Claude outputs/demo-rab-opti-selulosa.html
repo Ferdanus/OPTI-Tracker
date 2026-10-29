@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Demo RAB PO OPTI Selulosa - muncul per langkah</title>
+<style>
+:root{--pri:#1e293b;--pri2:#0f172a;--bd:#e2e8f0;--bd2:#cbd5e1;--mut:#64748b;--ink:#0f172a;--bg:#f1f5f9;--red:#dc2626}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:24px}
+.wrap{max-width:980px;margin:0 auto}
+h1{font-size:1.25rem;margin:0 0 4px}.lead{color:var(--mut);margin:0 0 14px}
+.card{background:#fff;border:1px solid var(--bd);border-radius:14px;padding:18px}
+.rowtop{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px}
+.rowtop b{font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;color:#334155}
+.btn{border:1px solid var(--bd2);background:#fff;border-radius:999px;padding:6px 16px;font:inherit;font-weight:600;font-size:.85rem;cursor:pointer;color:var(--ink);display:inline-flex;gap:6px;align-items:center}
+.btn:hover{background:#f8fafc;border-color:var(--pri)}
+.btn.pri{border-color:var(--pri);color:var(--pri)}.btn.pri:hover{background:var(--pri);color:#fff}
+.btn.sm{padding:3px 12px;font-size:.78rem;font-weight:500;color:#334155}
+.btn.dark{background:var(--pri);border-color:var(--pri);color:#fff}
+.kat{border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:14px;background:#fff}
+.ig{display:flex;align-items:stretch;border:1px solid var(--bd2);border-radius:8px;overflow:hidden;margin-bottom:8px;background:#fff}
+.ig>*{display:flex;align-items:center;padding:6px 10px;border:0;border-right:1px solid var(--bd);background:#fff;font:inherit;font-size:.85rem}
+.ig>*:last-child{border-right:0}
+.ig .addon{background:#f1f5f9;color:var(--mut);white-space:nowrap}
+.ig .addon.k{color:var(--pri);font-weight:700}
+.ig .bd{background:var(--pri);color:#fff;font-weight:700;min-width:34px;justify-content:center}
+.ig .bd.g{background:#64748b}
+.ig input{flex:1;min-width:0;outline:0;font-weight:600}
+.ig input.pr{flex:none;width:90px;text-align:center;font-weight:500}
+.ig:focus-within{border-color:#64748b;box-shadow:0 0 0 3px rgba(30,41,59,.12)}
+.ig input::placeholder,.in::placeholder{color:#94a3b8;font-weight:400}
+.del{border:0;border-left:1px solid var(--red)!important;color:var(--red);background:#fff;cursor:pointer;padding:0 12px;font-size:.9rem}
+.ig .del:hover{background:#fef2f2}
+.ig.delwrap{border-color:var(--bd2)}
+.in{width:100%;border:1px solid var(--bd2);border-radius:6px;padding:5px 8px;font:inherit;font-size:.84rem;background:#fff;min-width:0}
+.in:focus{outline:0;border-color:#64748b;box-shadow:0 0 0 3px rgba(30,41,59,.12)}
+.in.r{text-align:right}.in.c{text-align:center}
+.hint{font-size:.78rem;color:var(--mut);margin:2px 0 10px;display:flex;gap:6px;align-items:center}
+.hint:before{content:"";width:6px;height:6px;border-radius:50%;background:#94a3b8;flex:none}
+.pilih{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:4px 0 10px}
+.opt{border:1px solid var(--bd2);border-radius:10px;padding:10px 12px;background:#fff;cursor:pointer;text-align:left;font:inherit;transition:.15s}
+.opt:hover{border-color:var(--pri);background:#f8fafc;box-shadow:0 2px 8px rgba(15,23,42,.06)}
+.opt b{display:block;font-size:.86rem}.opt span{font-size:.76rem;color:var(--mut)}
+.ptitle{font-size:.72rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--mut);margin:6px 0 2px}
+.modebar{display:flex;align-items:center;gap:8px;font-size:.8rem;color:#334155;background:#f8fafc;border:1px solid var(--bd);border-radius:8px;padding:6px 10px;margin:2px 0 10px}
+.modebar b{color:var(--ink)}.modebar a{margin-left:auto;color:var(--mut);cursor:pointer;text-decoration:underline}
+.info{border:1px dashed var(--bd2);border-radius:8px;padding:10px 12px;background:#f8fafc;font-size:.84rem;margin-bottom:8px}
+.keg{border:1px solid var(--bd2);border-left:4px solid var(--pri);border-radius:10px;padding:12px;margin-bottom:12px;background:#fff}
+.grup{background:#f8fafc;border:1px solid var(--bd2);border-radius:10px;padding:12px;margin:10px 0 8px}
+.grup .grup{background:#fff}
+.tbl{overflow-x:auto;border:1px solid var(--bd);border-radius:8px;margin:6px 0 8px;background:#fff}
+table{border-collapse:collapse;width:100%;min-width:640px}
+th{font-size:.66rem;text-transform:uppercase;letter-spacing:.04em;color:var(--mut);text-align:left;padding:7px 6px;border-bottom:1px solid var(--bd);background:#fff;white-space:nowrap}
+td{padding:5px 4px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+td.tot{text-align:right;font-weight:700;padding-right:10px;white-space:nowrap}
+td.x{width:18px;text-align:center;color:var(--mut);padding:0}
+.lem{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:.8rem;color:var(--mut)}
+.lem .in{width:62px}.lem .in.w{width:100px}
+.tools{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.sub{display:flex;justify-content:flex-end;gap:8px;color:var(--mut);border-top:1px solid var(--bd);margin-top:8px;padding-top:8px;font-size:.84rem}
+.sub b{color:var(--ink)}
+.sw{display:flex;align-items:center;gap:8px;font-size:.82rem;color:#475569;margin:2px 0 8px;cursor:pointer}
+.sw input{accent-color:var(--pri)}
+.grand{display:flex;justify-content:space-between;font-weight:700;padding:8px 4px 0}
+.fade{animation:fd .3s ease both}
+@keyframes fd{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.note{font-size:.8rem;color:var(--mut);margin-top:12px}
+.reset{background:none;border:0;color:var(--mut);cursor:pointer;text-decoration:underline;font:inherit;font-size:.8rem}
+.step{display:inline-block;font-size:.68rem;font-weight:700;color:#fff;background:var(--pri);border-radius:999px;padding:1px 8px;margin-right:6px}
+</style></head><body>
+<div class="wrap">
+<h1>Demo RAB PO OPTI Selulosa: muncul per langkah</h1>
+<p class="lead">Klik <b>Tambah Kategori Biaya</b>, lalu ikuti. Yang muncul cuma langkah berikutnya, dan baru muncul setelah langkah sebelumnya diisi. <button class="reset" data-a="reset">Ulang dari awal</button></p>
+<div class="card">
+  <div class="rowtop"><b>B. Rencana POS Pengeluaran</b><button class="btn pri" data-a="addkat">+ Tambah Kategori Biaya</button></div>
+  <div id="app"></div>
+  <div class="grand"><span>Total pengeluaran</span><span data-tot="GRAND">Rp 0</span></div>
+</div>
+<p class="note">Di demo ini Nilai Kontrak contoh = Rp 25.000.000 (dipakai buat hitung kategori "Tanpa rincian" dari Target %). Data cuma contoh, tidak tersimpan.</p>
+</div>
+<script>
+var NK=25000000, MAXD=3;
+var KEB={'':0,'Bahan Kimia':1250000,'Alat Sampling':800000,'Konsumabel Lab':450000};
+var D=[], uid=0, focusId=null, seen={};
+function rp(n){return 'Rp '+Math.round(n||0).toLocaleString('id-ID')}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function money(v){var d=String(v).replace(/\D/g,'');return d?(+d).toLocaleString('id-ID'):''}
+function nz(v){return +String(v).replace(/\D/g,'')||0}
+function nd(){return {nama:'',items:[],grups:[],pt:false}}
+function ni(t){
+  if(t==='lembur')return {t:'lembur',jenis:'',hari:'',jam:'',oj:'',tarif:''};
+  if(t==='keb')return {t:'keb',sel:''};
+  return {t:'biaya',jenis:'',kali:'1',jml:'1',sat:'',hari:'1',harga:''};
+}
+function getNode(p){
+  var a=p.split('/'),c=D[+a[0].slice(1)];if(a.length===1)return c;
+  var n=c.kegs[+a[1].slice(1)];
+  for(var i=2;i<a.length;i++){n=n.grups[+a[i].slice(1)];}
+  return n;
+}
+function itemTot(it){
+  if(it.t==='lembur')return nz(it.hari)*nz(it.jam)*nz(it.oj)*nz(it.tarif);
+  if(it.t==='keb')return KEB[it.sel]||0;
+  return nz(it.kali)*nz(it.jml)*nz(it.hari)*nz(it.harga);
+}
+function nodeTot(n){
+  if(n.pt)return 0;
+  var s=0;n.items.forEach(function(it){s+=itemTot(it)});n.grups.forEach(function(g){s+=nodeTot(g)});return s;
+}
+function catTot(c){
+  if(c.mode==='tanpa')return (parseFloat(String(c.persen).replace(',','.'))||0)/100*NK;
+  var s=0;(c.kegs||[]).forEach(function(k){s+=nodeTot(k)});return s;
+}
+function ada(n){return n.items.length>0||n.grups.length>0}
+
+/* ---------- render ---------- */
+function itemHtml(it,p,i){
+  var id=p+'|'+i;
+  if(it.t==='lembur'){
+    return '<tr><td style="width:190px"><input class="in" data-p="'+p+'" data-i="'+i+'" data-f="jenis" data-id="'+id+'|jenis" placeholder="Lembur 1 orang Gol III" value="'+esc(it.jenis)+'"></td>'+
+    '<td colspan="6"><div class="lem"><input class="in c" inputmode="numeric" data-p="'+p+'" data-i="'+i+'" data-f="hari" data-id="'+id+'|hari" placeholder="0" value="'+esc(it.hari)+'">hari x'+
+    '<input class="in c" inputmode="numeric" data-p="'+p+'" data-i="'+i+'" data-f="jam" data-id="'+id+'|jam" placeholder="0" value="'+esc(it.jam)+'">jam x'+
+    '<input class="in c" inputmode="numeric" data-p="'+p+'" data-i="'+i+'" data-f="oj" data-id="'+id+'|oj" placeholder="0" value="'+esc(it.oj)+'">orang x tarif/jam'+
+    '<input class="in w r" inputmode="numeric" data-m="1" data-p="'+p+'" data-i="'+i+'" data-f="tarif" data-id="'+id+'|tarif" placeholder="0" value="'+esc(it.tarif)+'"></div></td>'+
+    '<td class="tot" data-tot="'+p+'#'+i+'">'+rp(itemTot(it))+'</td><td><button class="del" style="border:0;height:28px" data-a="deli" data-p="'+p+'" data-i="'+i+'" title="Hapus">&#128465;</button></td></tr>';
+  }
+  if(it.t==='keb'){
+    var o='';for(var k in KEB){o+='<option value="'+esc(k)+'"'+(it.sel===k?' selected':'')+'>'+esc(k===''?'Pilih kategori kebutuhan...':k)+'</option>'}
+    return '<tr><td colspan="7"><select class="in" style="max-width:260px" data-p="'+p+'" data-i="'+i+'" data-f="sel" data-id="'+id+'|sel">'+o+'</select> <span style="font-size:.76rem;color:var(--mut)">(nama dan biaya ngikut kategori itu di "Rincian Kebutuhan Lain")</span></td>'+
+    '<td class="tot" data-tot="'+p+'#'+i+'">'+rp(itemTot(it))+'</td><td><button class="del" style="border:0;height:28px" data-a="deli" data-p="'+p+'" data-i="'+i+'" title="Hapus">&#128465;</button></td></tr>';
+  }
+  function f(fl,cls,ph,m){return '<input class="in '+cls+'" inputmode="'+(m?'numeric':'text')+'"'+(m?' data-m="1"':'')+' data-p="'+p+'" data-i="'+i+'" data-f="'+fl+'" data-id="'+id+'|'+fl+'" placeholder="'+ph+'" value="'+esc(it[fl])+'">'}
+  return '<tr><td style="min-width:140px">'+f('jenis','','Transport, Hotel, ATK...')+'</td><td style="width:56px">'+f('kali','c','1',1)+'</td><td class="x">x</td>'+
+  '<td style="width:60px">'+f('jml','c','1',1)+'</td><td style="min-width:84px">'+f('sat','','orang')+'</td><td style="width:56px">'+f('hari','c','1',1)+'</td>'+
+  '<td style="min-width:120px">'+f('harga','r','0',1)+'</td><td class="tot" data-tot="'+p+'#'+i+'">'+rp(itemTot(it))+'</td>'+
+  '<td style="width:34px"><button class="del" style="border:0;height:28px" data-a="deli" data-p="'+p+'" data-i="'+i+'" title="Hapus">&#128465;</button></td></tr>';
+}
+function toolsHtml(n,p,depth,big,isKeg){
+  var sub=depth<MAXD;
+  var gl=depth===0?'Lokasi/Kelompok':'Sub-Kelompok';
+  if(big){
+    return '<div class="ptitle fade" data-k="'+p+'-pil"><span class="step">Langkah berikutnya</span>Mau isi apa dulu?</div><div class="pilih fade" data-k="'+p+'-pil2">'+
+    '<button class="opt" data-a="add" data-t="biaya" data-p="'+p+'"><b>Item Langsung</b><span>Biaya biasa: kali x jumlah x hari x harga</span></button>'+
+    '<button class="opt" data-a="add" data-t="lembur" data-p="'+p+'"><b>Item Lembur</b><span>Hari x jam x orang x tarif</span></button>'+
+    '<button class="opt" data-a="add" data-t="keb" data-p="'+p+'"><b>Rincian Kebutuhan</b><span>Ngikut kategori rincian kebutuhan</span></button>'+
+    (sub?'<button class="opt" data-a="addg" data-p="'+p+'"><b>'+gl+'</b><span>Kelompokkan biaya per lokasi / instansi</span></button>':'')+'</div>';
+  }
+  return '<div class="tools">'+
+   '<button class="btn sm" data-a="add" data-t="biaya" data-p="'+p+'">+ Tambah Item '+(isKeg?'Langsung':'Biaya')+'</button>'+
+   '<button class="btn sm" data-a="add" data-t="lembur" data-p="'+p+'">+ Tambah Item Lembur</button>'+
+   '<button class="btn sm" data-a="add" data-t="keb" data-p="'+p+'">+ Tambah Rincian Kebutuhan</button>'+
+   (sub?'<button class="btn sm" data-a="addg" data-p="'+p+'" style="border-color:var(--pri);color:var(--pri)">+ Tambah '+gl+'</button>':'')+'</div>';
+}
+function nodeHtml(n,p,depth,idx,isKeg){
+  var h='<div class="'+(isKeg?'keg':'grup')+' fade" data-k="'+p+'">';
+  h+='<div class="ig"><span class="bd'+(isKeg?'':' g')+'">'+(idx+1)+'.</span><span class="addon">'+(isKeg?'Kegiatan':(depth>1?'Sub-Kelompok':'Lokasi / Kelompok'))+'</span>'+
+     '<input data-p="'+p+'" data-f="nama" data-id="'+p+'|nama" placeholder="'+(isKeg?'Nama kegiatan, mis. Perjalanan Dinas':'Nama lokasi / instansi / kelompok')+'" value="'+esc(n.nama)+'">'+
+     '<button class="del" data-a="deln" data-p="'+p+'" title="Hapus">&#128465;</button></div>';
+  if(!n.nama.trim()){
+    return h+'<div class="hint">Isi nama dulu. Bagian berikutnya muncul setelah ini terisi.</div></div>';
+  }
+  if(!isKeg){
+    h+='<label class="sw fade" data-k="'+p+'-pt"><input type="checkbox" data-a="pt" data-p="'+p+'"'+(n.pt?' checked':'')+'> Disediakan oleh PT (biaya ditanggung partner, gak usah diisi rincian)</label>';
+    if(n.pt){return h+'<div class="hint">Kelompok ini tidak perlu rincian biaya.</div></div>';}
+  }
+  if(n.items.length){
+    h+='<div class="tbl fade" data-k="'+p+'-tbl"><table><thead><tr><th>Jenis Biaya</th><th>Kali</th><th></th><th>Jumlah</th><th>Satuan</th><th>Hari</th><th>Harga Satuan</th><th style="text-align:right;padding-right:10px">Biaya</th><th></th></tr></thead><tbody>'+
+       n.items.map(function(it,i){return itemHtml(it,p,i)}).join('')+'</tbody></table></div>';
+  }
+  h+='<div class="fade" data-k="'+p+'-tl">'+toolsHtml(n,p,depth,false,isKeg)+'</div>';
+  n.grups.forEach(function(g,gi){h+=nodeHtml(g,p+'/g'+gi,depth+1,gi,false)});
+  if(ada(n)){h+='<div class="sub">Subtotal '+(isKeg?'Kegiatan':(depth>1?'Sub-Kelompok':'Kelompok'))+': <b data-tot="'+p+'">'+rp(nodeTot(n))+'</b></div>';}
+  return h+'</div>';
+}
+function catHtml(c,ci){
+  var p='c'+ci,h='<div class="kat fade" data-k="'+p+'">';
+  h+='<div class="ig"><span class="addon k">&#128193; Kategori</span><input data-p="'+p+'" data-f="nama" data-id="'+p+'|nama" placeholder="Nama kategori, mis. Biaya Layanan Kepada Klien" value="'+esc(c.nama)+'">'+
+     '<span class="addon">Target %</span><input class="pr" data-p="'+p+'" data-f="persen" data-id="'+p+'|persen" inputmode="decimal" placeholder="% (opsi)" value="'+esc(c.persen)+'">'+
+     '<button class="del" data-a="delc" data-p="'+p+'" title="Hapus Kategori">&#128465;</button></div>';
+  if(!c.nama.trim()){return h+'<div class="hint">Isi nama kategori dulu. Pilihan berikutnya muncul setelah ini terisi.</div></div>';}
+  if(!c.mode){
+    return h+'<div class="ptitle fade" data-k="'+p+'-m1"><span class="step">Langkah berikutnya</span>Bagaimana nilai kategori ini ditentukan?</div><div class="pilih fade" data-k="'+p+'-m2">'+
+      '<button class="opt" data-a="mode" data-m="tanpa" data-p="'+p+'"><b>Tanpa rincian item</b><span>Nilainya langsung dari Target % x Nilai Kontrak</span></button>'+
+      '<button class="opt" data-a="mode" data-m="rinci" data-p="'+p+'"><b>Pakai rincian kegiatan</b><span>Isi Kegiatan, Lokasi/Kelompok, lalu item biaya</span></button></div></div>';
+  }
+  h+='<div class="modebar fade" data-k="'+p+'-mb">Cara isi: <b>'+(c.mode==='tanpa'?'Tanpa rincian item':'Pakai rincian kegiatan')+'</b><a data-a="ubahmode" data-p="'+p+'">ubah</a></div>';
+  if(c.mode==='tanpa'){
+    var pr=parseFloat(String(c.persen).replace(',','.'))||0;
+    h+='<div class="info fade" data-k="'+p+'-tp">'+(pr>0?'Nilai kategori = '+pr+'% x '+rp(NK)+' = <b data-tot="'+p+'">'+rp(catTot(c))+'</b>':'Isi <b>Target %</b> di atas, nilainya dihitung otomatis dari Nilai Kontrak.')+'</div>';
+    return h+'</div>';
+  }
+  c.kegs.forEach(function(k,ki){h+=nodeHtml(k,p+'/k'+ki,0,ki,true)});
+  var last=c.kegs[c.kegs.length-1];
+  if(last&&ada(last)){h+='<button class="btn sm fade" data-k="'+p+'-tk" data-a="addk" data-p="'+p+'" style="border-color:var(--pri);color:var(--pri)">+ Tambah Kegiatan</button>';}
+  if(c.kegs.some(function(k){return itemTot&&nodeTot(k)>0})){h+='<div class="sub">Subtotal Kategori: <b data-tot="'+p+'">'+rp(catTot(c))+'</b></div>';}
+  return h+'</div>';
+}
+function render(){
+  var ae=document.activeElement,fid=ae&&ae.dataset?ae.dataset.id:null,ss=null;
+  try{ss=ae.selectionStart}catch(e){}
+  var app=document.getElementById('app');
+  app.innerHTML=D.length?D.map(catHtml).join(''):'<div style="color:var(--mut);padding:14px 2px">Belum ada kategori. Klik <b>Tambah Kategori Biaya</b> untuk mulai.</div>';
+  var now={};app.querySelectorAll('[data-k]').forEach(function(el){var k=el.getAttribute('data-k');now[k]=1;if(seen[k]){el.classList.remove('fade')}});
+  seen=now;
+  var t=focusId||fid;focusId=null;
+  if(t){var el=app.querySelector('[data-id="'+t+'"]');if(el){el.focus();try{if(ss!=null&&el.setSelectionRange&&el.type!=='checkbox')el.setSelectionRange(ss,ss)}catch(e){}}}
+  totals();
+}
+function totals(){
+  var g=0;D.forEach(function(c){g+=catTot(c)});
+  document.querySelectorAll('[data-tot]').forEach(function(el){
+    var k=el.getAttribute('data-tot'),v=0;
+    if(k==='GRAND'){v=g}
+    else if(k.indexOf('#')>-1){var a=k.split('#');v=itemTot(getNode(a[0]).items[+a[1]])}
+    else if(k.indexOf('/')>-1){v=nodeTot(getNode(k))}
+    else{v=catTot(getNode(k))}
+    el.textContent=rp(v);
+  });
+}
+
+/* ---------- aksi ---------- */
+document.addEventListener('click',function(e){
+  var b=e.target.closest('[data-a]');if(!b)return;
+  var a=b.dataset.a,p=b.dataset.p;
+  if(a==='reset'){D=[];seen={};render();return}
+  if(a==='addkat'){D.push({nama:'',persen:'',mode:null,kegs:[]});focusId='c'+(D.length-1)+'|nama';render();return}
+  if(a==='delc'){D.splice(+p.slice(1),1);render();return}
+  if(a==='mode'){var c=getNode(p);c.mode=b.dataset.m;if(c.mode==='rinci'&&!c.kegs.length){c.kegs.push(nd());focusId=p+'/k0|nama'}else if(c.mode==='tanpa'){focusId=p+'|persen'}render();return}
+  if(a==='ubahmode'){getNode(p).mode=null;render();return}
+  if(a==='addk'){var c=getNode(p);c.kegs.push(nd());focusId=p+'/k'+(c.kegs.length-1)+'|nama';render();return}
+  if(a==='deln'){
+    var s=p.split('/'),last=s.pop(),par=s.join('/'),i=+last.slice(1);
+    if(last[0]==='k'){getNode(par).kegs.splice(i,1)}else{getNode(par).grups.splice(i,1)}
+    render();return}
+  if(a==='add'){var n=getNode(p);n.items.push(ni(b.dataset.t));focusId=p+'|'+(n.items.length-1)+'|'+(b.dataset.t==='keb'?'sel':'jenis');render();return}
+  if(a==='addg'){var n=getNode(p);n.grups.push(nd());focusId=p+'/g'+(n.grups.length-1)+'|nama';render();return}
+  if(a==='deli'){getNode(p).items.splice(+b.dataset.i,1);render();return}
+});
+document.addEventListener('change',function(e){
+  var el=e.target;
+  if(el.dataset.a==='pt'){getNode(el.dataset.p).pt=el.checked;render();return}
+  if(el.dataset.f==='sel'){getNode(el.dataset.p).items[+el.dataset.i].sel=el.value;totals()}
+});
+document.addEventListener('input',function(e){
+  var el=e.target,f=el.dataset.f;if(!f||el.tagName==='SELECT')return;
+  var p=el.dataset.p,n=getNode(p),v=el.value;
+  if(el.dataset.m){v=money(v);el.value=v}
+  if(el.dataset.i!==undefined){n.items[+el.dataset.i][f]=v;totals();return}
+  if(f==='nama'){var before=n.nama.trim()!=='';n.nama=v;if(before!==(v.trim()!==''))render();return}
+  if(f==='persen'){n.persen=v;if(n.mode==='tanpa'){var ob=document.activeElement;render()}else totals();return}
+});
+render();
+</script>
+</body></html>

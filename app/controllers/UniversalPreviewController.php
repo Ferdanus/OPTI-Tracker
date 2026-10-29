@@ -670,8 +670,16 @@ class UniversalPreviewController extends Controller
             $rawPath,
         ];
 
+        // Berkas lama: sebagian modul (mis. upload proposal) masih menulis ke folder XAMPP lama. Dicari juga di sana supaya pratinjau tidak gagal.
+        $legacyRoot = 'c:/xampp/htdocs/Mini OPTI Tracker';
+        $candidates[] = $legacyRoot . '/' . $clean;
+        $candidates[] = $legacyRoot . '/public/' . $clean;
+        $candidates[] = $legacyRoot . '/' . ltrim($rawPath, '/');
+
         foreach ($fallbackDirs as $dir) {
             $cleanDir = trim($dir, '/');
+            $candidates[] = $legacyRoot . '/public/' . $cleanDir . '/' . $basename;
+            $candidates[] = $legacyRoot . '/' . $cleanDir . '/' . $basename;
             $candidates[] = $appRoot . '/' . $cleanDir . '/' . $basename;
             $candidates[] = $appRoot . '/public/' . $cleanDir . '/' . $basename;
             $candidates[] = $root . '/' . $cleanDir . '/' . $basename;

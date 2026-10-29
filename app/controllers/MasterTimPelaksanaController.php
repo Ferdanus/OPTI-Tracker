@@ -2,9 +2,10 @@
 /**
  * MasterTimPelaksanaController -- Data Master "Tim Pelaksana PO" + "Jabatan Pelaksana PO".
  *
- * - Jabatan Pelaksana PO dikelola di MasterJabatanPelaksanaController (file terpisah, khusus Superadmin).
+ * - Jabatan Pelaksana PO dikelola di MasterJabatanPelaksanaController (file terpisah). Jabatan dicatat PER LAYANAN
+ *   (po_jabatan_pelaksana.layanan), sama seperti anggota tim, jadi tidak tercampur antar layanan.
  * - Tim Pelaksana PO (po_tim_pelaksana): pegawai + layanan + status aktif (TANPA jabatan; jabatan dipilih
- *   langsung di form PO dari Master Jabatan Pelaksana PO). Aksi di tabel hanya hapus (tidak ada ubah).
+ *   langsung di form PO dari Master Jabatan Pelaksana PO layanan yang sama). Aksi di tabel hanya hapus (tidak ada ubah).
  *     Superadmin   : semua layanan.
  *     Ketua Tim    : otomatis terkunci ke layanannya sendiri, boleh tambah/ubah/hapus.
  *     Tim Kerja    : terkunci ke layanannya, HANYA LIHAT (ubah konstanta TIM_KERJA_KELOLA kalau mau boleh kelola).
@@ -89,9 +90,10 @@ class MasterTimPelaksanaController extends Controller {
     protected function pastikanSkema() {
         try {
             $this->db->exec("CREATE TABLE IF NOT EXISTS po_jabatan_pelaksana (
-                id INT UNSIGNED NOT NULL AUTO_INCREMENT, nama VARCHAR(80) NOT NULL, aktif TINYINT(1) NOT NULL DEFAULT 1,
-                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (id), UNIQUE KEY uq_jabatan_nama (nama)
+                id INT UNSIGNED NOT NULL AUTO_INCREMENT, layanan VARCHAR(30) NOT NULL DEFAULT '', nama VARCHAR(80) NOT NULL, aktif TINYINT(1) NOT NULL DEFAULT 1,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (id), UNIQUE KEY uq_jabatan_layanan_nama (layanan, nama)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+            $this->migrasiJabatanPerLayanan();
             $this->db->exec("CREATE TABLE IF NOT EXISTS po_tim_pelaksana (
                 id INT UNSIGNED NOT NULL AUTO_INCREMENT, id_user INT NOT NULL, layanan VARCHAR(30) NOT NULL,
                 id_jabatan INT UNSIGNED NOT NULL DEFAULT 0, aktif TINYINT(1) NOT NULL DEFAULT 1, created_by INT NULL,
@@ -105,11 +107,43 @@ class MasterTimPelaksanaController extends Controller {
             }
             $n = $this->db->exec("SELECT COUNT(*) AS n FROM po_jabatan_pelaksana");
             if ((int) ($n[0]['n'] ?? 0) === 0) {
-                $this->db->exec("INSERT IGNORE INTO po_jabatan_pelaksana (nama) VALUES ('Penanggung Jawab'), ('Ketua Pelaksana'), ('Anggota')");
+                foreach (array_keys(self::$LAYANAN) as $k) {
+                    $this->db->exec("INSERT IGNORE INTO po_jabatan_pelaksana (layanan, nama) VALUES (?, 'Penanggung Jawab'), (?, 'Ketua Pelaksana'), (?, 'Anggota')", [1 => $k, 2 => $k, 3 => $k]);
+                }
             }
             return true;
         } catch (\Exception $e) {
             return false;
+        }
+    }
+
+    /**
+     * Tabel jabatan lama = satu daftar bersama. Sekarang per layanan: kolom layanan ditambah, kunci unik nama diganti
+     * (layanan, nama), dan tiap jabatan lama disalin ke SEMUA layanan (supaya pilihan di form PO tidak berkurang),
+     * lalu baris lama (layanan kosong) dihapus. Aman dijalankan berulang.
+     */
+    protected function migrasiJabatanPerLayanan() {
+        $kol = $this->db->exec("SHOW COLUMNS FROM po_jabatan_pelaksana LIKE 'layanan'");
+        if (empty($kol)) {
+            $this->db->exec("ALTER TABLE po_jabatan_pelaksana ADD COLUMN layanan VARCHAR(30) NOT NULL DEFAULT '' AFTER id");
+        }
+        $baru = $this->db->exec("SHOW INDEX FROM po_jabatan_pelaksana WHERE Key_name = 'uq_jabatan_layanan_nama'");
+        if (empty($baru)) {
+            $lama = $this->db->exec("SHOW INDEX FROM po_jabatan_pelaksana WHERE Key_name = 'uq_jabatan_nama'");
+            if (!empty($lama)) {
+                $this->db->exec("ALTER TABLE po_jabatan_pelaksana DROP INDEX uq_jabatan_nama, ADD UNIQUE KEY uq_jabatan_layanan_nama (layanan, nama)");
+            } else {
+                $this->db->exec("ALTER TABLE po_jabatan_pelaksana ADD UNIQUE KEY uq_jabatan_layanan_nama (layanan, nama)");
+            }
+        }
+        $umum = $this->db->exec("SELECT nama, aktif FROM po_jabatan_pelaksana WHERE layanan = '' ORDER BY id ASC");
+        if (!empty($umum)) {
+            foreach (array_keys(self::$LAYANAN) as $k) {
+                foreach ($umum as $r) {
+                    $this->db->exec("INSERT IGNORE INTO po_jabatan_pelaksana (layanan, nama, aktif) VALUES (?, ?, ?)", [1 => $k, 2 => $r['nama'], 3 => (int) $r['aktif']]);
+                }
+            }
+            $this->db->exec("DELETE FROM po_jabatan_pelaksana WHERE layanan = ''");
         }
     }
 
@@ -131,10 +165,16 @@ class MasterTimPelaksanaController extends Controller {
         return $out;
     }
 
+    /** Jabatan per layanan. Ketua Tim / Tim Kerja hanya melihat layanannya sendiri; Superadmin semuanya. */
     protected function dataJabatan() {
+        $lock = $this->layananTerkunci();
+        $sql = "SELECT id, layanan, nama, aktif FROM po_jabatan_pelaksana";
+        $par = [];
+        if ($lock) { $sql .= " WHERE layanan = ?"; $par[1] = $lock; }
+        $sql .= " ORDER BY id ASC";
         $out = [];
-        foreach ($this->db->exec("SELECT id, nama, aktif FROM po_jabatan_pelaksana ORDER BY id ASC") as $r) {
-            $out[] = ['id' => (int) $r['id'], 'nama' => $r['nama'], 'aktif' => (int) $r['aktif']];
+        foreach ($this->db->exec($sql, $par) as $r) {
+            $out[] = ['id' => (int) $r['id'], 'lay' => (string) $r['layanan'], 'nama' => $r['nama'], 'aktif' => (int) $r['aktif']];
         }
         return $out;
     }
@@ -216,10 +256,15 @@ class MasterTimPelaksanaController extends Controller {
         return $out;
     }
 
-    /** Dipakai form PO: nama jabatan AKTIF (urut sesuai Master Jabatan) buat pilihan kolom jabatan/tugas. */
-    public static function ambilJabatanAktif($db) {
+    /**
+     * Dipakai form PO: nama jabatan AKTIF milik satu layanan (urut sesuai Master Jabatan) buat pilihan kolom jabatan/tugas.
+     * Jabatan tiap layanan terpisah; layanan kosong / tidak dikenal -> [].
+     */
+    public static function ambilJabatanAktif($db, $divisi = '') {
+        $d = strtolower(trim((string) $divisi));
+        if (!isset(self::$LAYANAN[$d])) { return []; }
         try {
-            $rows = $db->exec("SELECT nama FROM po_jabatan_pelaksana WHERE aktif = 1 ORDER BY id ASC");
+            $rows = $db->exec("SELECT nama FROM po_jabatan_pelaksana WHERE aktif = 1 AND layanan = ? ORDER BY id ASC", [1 => $d]);
         } catch (\Exception $e) {
             return [];
         }
@@ -329,15 +374,22 @@ class MasterTimPelaksanaController extends Controller {
         $ids = json_decode((string) $f3->get('POST.ids'), true);
         if (!is_array($ids) || !count($ids)) { $this->keluarkanJson(['ok' => false, 'pesan' => 'Tidak ada data yang dipilih.'], 422); }
         $milik = [];
-        foreach ($this->dataTim() as $t) { $milik[$t['id']] = 1; }
+        foreach ($this->dataTim() as $t) { $milik[$t['id']] = $t; }
+        // anggota yang masih aktif tidak boleh dihapus: nonaktifkan dulu
+        foreach ($ids as $id) {
+            $id = (int) $id;
+            if (isset($milik[$id]) && (int) $milik[$id]['aktif'] === 1) {
+                $this->keluarkanJson(['ok' => false, 'pesan' => 'Anggota masih aktif. Nonaktifkan dulu sebelum dihapus.'], 422);
+            }
+        }
         $n = 0;
         foreach ($ids as $id) {
             $id = (int) $id;
             if (!isset($milik[$id])) { continue; }
-            $this->db->exec("DELETE FROM po_tim_pelaksana WHERE id = ?", [1 => $id]);
+            $this->db->exec("DELETE FROM po_tim_pelaksana WHERE id = ? AND aktif = 0", [1 => $id]);
             $n++;
         }
-        $this->keluarkanState($n . ' anggota dihapus.');
+        $this->keluarkanState($n . ' anggota dihapus. PO yang sudah dibuat tidak berubah.');
     }
 
     /** POST /master-tim-pelaksana/@id/aktif */

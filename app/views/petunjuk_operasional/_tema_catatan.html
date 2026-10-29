@@ -1,0 +1,60 @@
+<!-- Tema warna catatan PO (dipakai semua halaman detail PO: Daftar PO Ketua Tim, Revisi PPK BLU, Verifikasi PPK BLU, Verifikasi Tim Mitra, Daftar PO Humas).
+     Gaya: kartu putih dengan garis kiri tebal. Catatan biasa / sudah diperbaiki = warna sidebar (#1e293b); BELUM diperbaiki = merah (#dc2626).
+     Diletakkan setelah blok CSS halaman supaya menimpa warna lama (hijau / biru / kuning / ungu). -->
+<style>
+    /* ---- kartu catatan Humas / Tim Mitra / PPK BLU dan catatan di riwayat alur ---- */
+    .rvw-catmitra, .rvw-catmitra.ppk, .rvw-catmitra.humas, .hm-catmitra, .rvw-tl .cat, .hm-tl .cat, .hintline.cat-dark {
+        background: #fff; border: 1px solid #e2e8f0; border-left: 5px solid #1e293b; color: #0f172a;
+    }
+    .rvw-catmitra > i, .rvw-catmitra.ppk > i, .rvw-catmitra.humas > i, .hm-catmitra > i, .hintline.cat-dark > i { color: #1e293b; }
+    .rvw-catmitra .k, .rvw-catmitra.ppk .k, .rvw-catmitra.humas .k, .hm-catmitra .k, .rvw-tl .cat b, .hm-tl .cat b { color: #1e293b; }
+    .rvw-catmitra .t, .rvw-catmitra.ppk .t, .rvw-catmitra.humas .t, .hm-catmitra .t { color: #0f172a; }
+
+    /* ---- catatan revisi per bagian ---- */
+    .rvw-note, .rvw-note.plain, .rvw-note.st-draf, .rvw-note.st-selesai, .rvw-note.from-kt.st-draf, .rvw-note.from-kt.st-selesai {
+        background: #fff; border-color: #e2e8f0; border-left-color: #1e293b; border-left-width: 5px;
+    }
+    .rvw-note.st-draf, .rvw-note.from-kt.st-draf { border-style: dashed; border-left-style: solid; }
+    .rvw-note.st-terbuka, .rvw-note.from-kt.st-terbuka { background: #fff; border-color: #fecaca; border-left-color: #dc2626; border-left-width: 5px; }
+    .rvw-note .rvw-note-top b { color: #1e293b; }
+    .rvw-note.st-terbuka .rvw-note-top b { color: #dc2626; }
+    .rvw-note .rvw-note-text { color: #0f172a; }
+    .rvw-note .rvw-av, .rvw-note .rvw-av.dark { background: #1e293b; color: #fff; }
+    .rvw-note.st-terbuka .rvw-av, .rvw-note.st-terbuka .rvw-av.dark { background: #dc2626; }
+    .rvw-note .rvw-tag, .rvw-note .rvw-tag.draf, .rvw-note .rvw-tag.selesai { background: #f1f5f9; color: #1e293b; border: 1px solid #cbd5e1; }
+    .rvw-note .rvw-tag.terbuka { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+
+    /* ---- penghitung "N catatan": merah selama masih ada yang belum diperbaiki, sidebar kalau semua beres ---- */
+    .rvw-nchip { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+    .rvw-nchip.ok, .rvw-nchip.plain { background: #f1f5f9; color: #1e293b; border-color: #cbd5e1; }
+
+    /* ---- catatan diletakkan di bawah dokumen PO ---- */
+    .rvw-catmitra.bawah { max-width: 210mm; margin: 12px auto 0; }
+
+    /* ---- kotak "Disetujui ... PO terkunci" dihapus ---- */
+    .rvw-bn.ok { display: none; }
+
+    /* ---- catatan Humas / Tim Mitra di bawah dokumen (halaman Verifikasi Tim Mitra) ---- */
+    .hm-catbox, .hm-catbox.humas { background: #fff; border: 1px solid #e2e8f0; border-left: 5px solid #1e293b; color: #0f172a; }
+    .hm-catbox > i, .hm-catbox.humas > i, .hm-catbox .k, .hm-catbox.humas .k { color: #1e293b; }
+    .hm-catbox .t, .hm-catbox.humas .t { color: #0f172a; }
+    .hm-bn.ok { background: #f1f5f9; color: #1e293b; border: 1px solid #cbd5e1; }
+
+    /* ---- badge status di kepala panel (hijau "Disetujui" / "Diverifikasi") -> warna sidebar ---- */
+    #rvwShPill.emerald, #rvwShPill .rvw-pbadge.ok, #hmShPill .hm-pbadge.ok { background: #1e293b; color: #fff; border-color: #1e293b; }
+
+    /* ---- stepper tahap di panel: langkah selesai = warna sidebar ---- */
+    .rvw-step.done .n, .hm-step.done .n { background: #1e293b; color: #fff; }
+    .rvw-sline.done, .hm-sline.done { background: #1e293b; }
+    .rvw-step.cur .n, .hm-step.cur .n { background: #1e293b; box-shadow: 0 0 0 4px rgba(30,41,59,.15); }
+
+    /* ---- label asal catatan ("PPK BLU . putaran 1", "Catatan PPK BLU", dst.): samakan dengan badge status di sebelahnya ---- */
+    .rvw-note .rvw-asal, .rvw-note .rvw-asal.kt, .rvw-note .rvw-asal.lama { background: #f1f5f9; color: #1e293b; border: 1px solid #cbd5e1; }
+    .rvw-note.st-terbuka .rvw-asal, .rvw-note.st-terbuka .rvw-asal.kt { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+
+    /* ---- chip status di judul panel + pita/kotak info tahap revisi: warna sidebar (default) ---- */
+    .rvw-pbadge.rev, .rvw-pbadge.kt, .rvw-pbadge.dua, .rvw-pbadge.mitra, .rvw-pbadge.humas, .rvw-pbadge.ppk, .rvw-pbadge.ok { background: #f1f5f9; color: #1e293b; border-color: #cbd5e1; }
+    .rvw-tabs .rvw-tab.rev.on { background: #f1f5f9; color: #1e293b; }
+    .rvw-rib, .rvw-rib.kt { background: #f1f5f9; color: #1e293b; border-color: #cbd5e1; }
+    .rvw-bn.ppk, .rvw-bn.kt { background: #f1f5f9; color: #1e293b; border: 1px solid #cbd5e1; }
+</style>

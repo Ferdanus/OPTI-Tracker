@@ -372,6 +372,38 @@ class PoSertifikasiController extends \Controller {
     }
 
     /**
+     * Tambahkan nama kegiatan sertifikasi (mst_kegiatan_sertifikasi lewat tb_arsip_sertifikasi.id_kegiatan) ke tiap order
+     * di daftar modal. Satu query untuk semua id order; nama master dicari sekali per id kegiatan. Gagal -> kegiatan kosong.
+     */
+    protected function tambahKegiatanOrder(array $data) {
+        foreach ($data as $i => $d) { $data[$i]['kegiatan'] = ''; }
+        if (!$data) { return $data; }
+        try {
+            $dbName = $this->namaDbSertifikasi();
+            $kol = $this->kolomTabel($dbName, 'tb_arsip_sertifikasi');
+            if (!isset($kol['id_kegiatan'])) { return $data; }
+            $ids = [];
+            foreach ($data as $d) { $ids[] = (int) $d['id']; }
+            $rows = $this->db->exec("SELECT id_arsip_sertifikasi AS id, id_kegiatan AS k FROM `{$dbName}`.`tb_arsip_sertifikasi` WHERE id_arsip_sertifikasi IN (" . implode(',', $ids) . ")");
+            $label = [];
+            $peta = [];
+            foreach ((array) $rows as $r) {
+                $k = $r['k'];
+                if ($k === null || $k === '' || (string) $k === '0') { continue; }
+                if (!isset($label[$k])) {
+                    $nama = $this->labelMaster($dbName, 'mst_kegiatan_sertifikasi', 'id_kegiatan', $k);
+                    $label[$k] = $nama !== '' ? $nama : ('#' . $k);
+                }
+                $peta[(int) $r['id']] = $label[$k];
+            }
+            foreach ($data as $i => $d) { $data[$i]['kegiatan'] = isset($peta[$d['id']]) ? $peta[$d['id']] : ''; }
+        } catch (\Throwable $e) {
+            error_log('[PO Sertifikasi] gagal baca kegiatan order: ' . $e->getMessage());
+        }
+        return $data;
+    }
+
+    /**
      * GET /petunjuk-operasional/sertifikasi/order
      * JSON daftar order sertifikasi yang layak dibuatkan PO (untuk modal di /po-kegiatan/pilih).
      */
@@ -384,7 +416,7 @@ class PoSertifikasiController extends \Controller {
         try {
             $this->kendalaSkema(); // pastikan kolom layanan ada supaya filter 'sudah punya PO' aktif
             $rows = $this->queryOrderLayak(0, true, true);
-            $data = array_map([$this, 'petakanOrder'], $rows);
+            $data = $this->tambahKegiatanOrder(array_map([$this, 'petakanOrder'], $rows));
             echo json_encode(['ok' => true, 'data' => $data], JSON_UNESCAPED_UNICODE);
         } catch (\Throwable $e) {
             error_log('[PO Sertifikasi] gagal baca daftar order: ' . $e->getMessage());
@@ -424,6 +456,29 @@ class PoSertifikasiController extends \Controller {
         }
         $hasil = \PoPengujianDokumen::kolomJadwal((string) ($f3->get('GET.mulai') ?? ''), (string) ($f3->get('GET.selesai') ?? ''), $this->daftarLibur());
         return $this->json($hasil);
+    }
+
+    /**
+     * Pilihan Nama & Jabatan di Tim Pelaksana form PO: Data Master Tim Pelaksana PO dan Master Jabatan Pelaksana PO
+     * layanan Sertifikasi (yang aktif). Master anggota masih kosong -> cadangan: semua pegawai, supaya form tetap bisa diisi.
+     */
+    protected function setVarMaster($f3) {
+        $nama = [];
+        $jabatan = [];
+        if (class_exists('MasterTimPelaksanaController')) {
+            foreach (\MasterTimPelaksanaController::ambilAktif($this->db, 'sertifikasi') as $r) { $nama[] = (string) $r['nama']; }
+            $jabatan = \MasterTimPelaksanaController::ambilJabatanAktif($this->db, 'sertifikasi');
+        }
+        if (!$nama) {
+            try {
+                foreach ($this->db->exec('SELECT nama_user FROM tb_arsipuser ORDER BY nama_user ASC') as $r) {
+                    $n = trim((string) $r['nama_user']);
+                    if ($n !== '') { $nama[] = $n; }
+                }
+            } catch (\Throwable $e) { error_log('[PO Sertifikasi] gagal baca pegawai: ' . $e->getMessage()); }
+        }
+        $f3->set('master_pelaksana_json', $this->jsonHive(array_values(array_unique($nama))));
+        $f3->set('jabatan_pelaksana_json', $this->jsonHive(array_values($jabatan)));
     }
 
     /** Role layanan lain (tim_kerja_pengujian) tidak boleh memakai PO Sertifikasi. */
@@ -518,6 +573,7 @@ class PoSertifikasiController extends \Controller {
 
         $f3->set('order_json', $this->jsonHive($order));
         $f3->set('po_json', 'null');
+        $this->setVarMaster($f3);
         $f3->set('mode_lihat', 'false');
         $f3->set('tanggal_default', date('Y-m-d'));
         $f3->set('csrf_po', (string) ($f3->get('csrf_token') ?? ''));
@@ -604,6 +660,7 @@ class PoSertifikasiController extends \Controller {
 
         $f3->set('order_json', $this->jsonHive($order));
         $f3->set('po_json', $this->jsonHive($poInfo));
+        $this->setVarMaster($f3);
         $f3->set('mode_lihat', $lihat ? 'true' : 'false');
         $f3->set('tanggal_default', date('Y-m-d'));
         $f3->set('csrf_po', (string) ($f3->get('csrf_token') ?? ''));

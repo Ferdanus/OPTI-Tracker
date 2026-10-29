@@ -261,6 +261,9 @@ class OrderController extends Controller {
                         && ($r['status_penawaran'] ?? '') !== 'deal'
                         && ($r['status'] ?? '') !== 'ditolak';
 
+                    // 5. PO Kegiatan sedang di meja Ketua Tim (review PO, atau mengerjakan / mereview revisi PPK BLU)
+                    $perluPoKatim = ((string) ($r['po_pemegang'] ?? '') === 'katim');
+
                     if ($perluKajiKelayakan) {
                         $isTask = true;
                         $reason = 'Perlu Tinjauan Kelayakan 4 Pilar oleh Ketua Tim';
@@ -277,6 +280,10 @@ class OrderController extends Controller {
                         $isTask = true;
                         $reason = 'Perlu penunjukan PIC Proposal Riset';
                         $badge = 'Tunjuk PIC';
+                    } elseif ($perluPoKatim) {
+                        $isTask = true;
+                        $reason = 'PO Kegiatan menunggu tindakan Anda (review atau revisi)';
+                        $badge = 'Review PO';
                     }
                 }
             } elseif (in_array($userRole, ['tim_mitra_industri', 'admin_order', 'tim_mitra', 'ketua_tim_mitra'])) {
@@ -302,12 +309,29 @@ class OrderController extends Controller {
                     $isTask = true;
                     $reason = 'Proposal biaya disetujui, siap diterbitkan surat penawaran';
                     $badge = 'Siap Penawaran';
+                } elseif ((string) ($r['po_pemegang'] ?? '') === 'mitra') {
+                    // 3. PO Kegiatan menunggu verifikasi Tim Mitra
+                    $isTask = true;
+                    $reason = 'PO Kegiatan menunggu verifikasi Tim Mitra';
+                    $badge = 'Verifikasi PO';
                 }
             } elseif (in_array($userRole, ['keuangan', 'ketua_tim_keuangan'])) {
                 if (in_array($r['status_keuangan'] ?? '', ['menunggu_pembayaran', 'terbayar_sebagian']) || (($r['status_penawaran'] ?? '') === 'deal' && ($r['status_keuangan'] ?? '') !== 'lunas')) {
                     $isTask = true;
                     $reason = 'Menunggu pencatatan / verifikasi pelunasan pembayaran';
                     $badge = 'Perlu Pembayaran';
+                }
+            } elseif ($userRole === 'humas') {
+                if ((string) ($r['po_pemegang'] ?? '') === 'humas') {
+                    $isTask = true;
+                    $reason = 'PO Kegiatan menunggu verifikasi Humas';
+                    $badge = 'Verifikasi PO';
+                }
+            } elseif (in_array($userRole, ['ppk', 'ppk_blu', 'pejabat'], true)) {
+                if ((string) ($r['po_pemegang'] ?? '') === 'ppk') {
+                    $isTask = true;
+                    $reason = 'PO Kegiatan menunggu verifikasi PPK BLU';
+                    $badge = 'Verifikasi PO';
                 }
             } elseif ($userRole === 'superadmin') {
                 if (($r['status'] ?? '') === 'permintaan_masuk' || ($r['status_proposal_biaya'] ?? '') === 'menunggu_approval' || !empty($r['is_unlocked_edit'])) {
@@ -1481,9 +1505,22 @@ class OrderController extends Controller {
                 $langkahBerikutnya['tombol_panel'] = !empty($alur['aksi']['panel']) ? (int) $alur['aksi']['panel'] : 0;
                 $langkahBerikutnya['tombol_panel_jenis'] = !empty($alur['aksi']['panel_jenis']) ? (string) $alur['aksi']['panel_jenis'] : '';
                 if ($alur['tampil_form']) {
-                    $langkahBerikutnya['tombol_teks'] = !empty($alur['form_revisi']) ? ($alur['bar_judul'][0] === 'E' ? 'Edit PO' : 'Kerjakan Revisi PO') : 'Susun PO Sekarang';
-                    $langkahBerikutnya['tombol_url'] = '#cardPo';
+                    // form PO sudah tampil langsung di bawah: tombol gulir tidak perlu, dan deskripsi digantikan info "Dibaca"
+                    $langkahBerikutnya['tombol_teks'] = '';
+                    $langkahBerikutnya['tombol_url'] = '';
+                    $langkahBerikutnya['tombol_modal'] = '';
+                    $langkahBerikutnya['tombol_panel'] = 0;
+                    $langkahBerikutnya['deskripsi'] = '';
                 }
+                // kartu atas memegang info dibaca + badge status; kepala kartu Tahap 8 tidak ditampilkan lagi
+                $f3->set('po_kartu_atas', true);
+                // PO sudah dikirim: nomor PO dan pesan giliran sudah tampil di panel Tahap 8, jadi deskripsi di kartu atas tidak diulang
+                if (!empty($alur['terkirim'])) { $langkahBerikutnya['deskripsi'] = ''; }
+                // tombol aksi sudah ada di dalam panel Tahap 8 (baris Nomor PO / tombol Tunjuk), jadi tidak diulang di kartu atas
+                $langkahBerikutnya['tombol_teks'] = '';
+                $langkahBerikutnya['tombol_url'] = '';
+                $langkahBerikutnya['tombol_modal'] = '';
+                $langkahBerikutnya['tombol_panel'] = 0;
                 $langkahBerikutnya['tombol_icon'] = 'bi-patch-check-fill';
                 $langkahBerikutnya['tombol_class'] = 'btn-primary';
                 $langkahBerikutnya['target_card'] = '#cardPo';
@@ -2901,7 +2938,7 @@ class OrderController extends Controller {
         // form PO tampil langsung di Tahap 8 juga saat ada revisi: revisi Ketua Tim (Ketua Pelaksana), revisi PPK BLU (yang mengerjakannya)
         $revisiPpk = in_array($state, array('ppk_ketupel_kerja', 'ppk_katim_kerja'), true);
         // Ketua Tim mengedit PO sendiri saat review (tombol "Edit PO" di panel review): halaman dibuka dengan ?edit_po=1
-        $editKatim = ($isKatim && in_array($state, array('menunggu_review', 'direvisi'), true) && (string) $this->f3->get('GET.edit_po') === '1');
+        $editKatim = ($isKatim && in_array($state, array('menunggu_review', 'direvisi', 'ppk_katim_review'), true) && (string) $this->f3->get('GET.edit_po') === '1');
         $formRevisi = (($state === 'perlu_revisi' || $state === 'ppk_ketupel_kerja') && ($isKetupel || $isSuper))
             || ($state === 'ppk_katim_kerja' && $isKatim) || $editKatim;
         if ($formRevisi) {
@@ -2975,23 +3012,23 @@ class OrderController extends Controller {
 
         // badge kepala kartu + label tab tahap 8: array(kelas bootstrap, teks panjang, teks pendek)
         $lab = array(
-            'belum_pic' => array('bg-warning text-dark', 'Siap Terbit PO', 'Siap Terbit'),
-            'disusun' => array('bg-warning text-dark', 'PO Sedang Disusun', 'Disusun'),
-            'menunggu_review' => array('bg-primary', 'Menunggu Review', 'Review'),
-            'perlu_revisi' => array('bg-warning text-dark', 'Perlu Revisi', 'Revisi'),
-            'direvisi' => array('bg-primary', 'Menunggu Review Ulang', 'Review'),
-            'verif_humas' => array('bg-primary', 'Verifikasi Humas', 'Humas'),
-            'verif_mitra' => array('bg-primary', 'Verifikasi Tim Mitra', 'Tim Mitra'),
-            'verif_ppk' => array('bg-primary', 'Verifikasi PPK BLU', 'PPK BLU'),
-            'ppk_minta' => array('bg-warning text-dark', 'Revisi PPK BLU', 'Revisi PPK'),
-            'ppk_katim_kerja' => array('bg-warning text-dark', 'Revisi PPK BLU', 'Revisi PPK'),
-            'ppk_ketupel_kerja' => array('bg-warning text-dark', 'Revisi PPK BLU', 'Revisi PPK'),
-            'ppk_katim_review' => array('bg-primary', 'Review Hasil Revisi', 'Review'),
-            'aktif' => array('bg-success', 'PO Aktif', 'PO Aktif'),
+            'belum_pic' => array('po-bdg', 'Siap Terbit PO', 'Siap Terbit'),
+            'disusun' => array('po-bdg', 'PO Sedang Disusun', 'Disusun'),
+            'menunggu_review' => array('po-bdg', 'Menunggu Review', 'Review'),
+            'perlu_revisi' => array('po-bdg po-bdg-red', 'Perlu Revisi', 'Revisi'),
+            'direvisi' => array('po-bdg', 'Menunggu Review Ulang', 'Review'),
+            'verif_humas' => array('po-bdg', 'Verifikasi Humas', 'Humas'),
+            'verif_mitra' => array('po-bdg', 'Verifikasi Tim Mitra', 'Tim Mitra'),
+            'verif_ppk' => array('po-bdg', 'Verifikasi PPK BLU', 'PPK BLU'),
+            'ppk_minta' => array('po-bdg po-bdg-red', 'Revisi PPK BLU', 'Revisi PPK'),
+            'ppk_katim_kerja' => array('po-bdg po-bdg-red', 'Revisi PPK BLU', 'Revisi PPK'),
+            'ppk_ketupel_kerja' => array('po-bdg po-bdg-red', 'Revisi PPK BLU', 'Revisi PPK'),
+            'ppk_katim_review' => array('po-bdg', 'Review Hasil Revisi', 'Review'),
+            'aktif' => array('po-bdg', 'PO Aktif', 'PO Aktif'),
         );
         if ($putKatim > 0) {
-            $lab['ppk_ketupel_kerja'] = array('bg-warning text-dark', 'Perbaikan Ketua Tim', 'Perbaikan');
-            $lab['ppk_katim_review'] = array('bg-primary', 'Review Hasil Perbaikan', 'Review');
+            $lab['ppk_ketupel_kerja'] = array('po-bdg po-bdg-red', 'Perbaikan Ketua Tim', 'Perbaikan');
+            $lab['ppk_katim_review'] = array('po-bdg', 'Review Hasil Perbaikan', 'Review');
         }
 
         // Penanda di tombol "Lihat PO": PO sedang di meja pengguna ini dan belum pernah dia buka (hilang begitu dibuka)

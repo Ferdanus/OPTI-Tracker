@@ -1078,8 +1078,8 @@ window.addEventListener('message', function (e) {
             window.location.href = '{{ @BASE }}/po-kegiatan/' + encodeURIComponent(window.__poPanelId) + '/edit?dari=ppk';
             return;
         }
-        // Panel review biasa: form PO ada di Tahap 8 detail order
-        if (window.__poPanelOrder) { window.location.href = '{{ @BASE }}/order/' + window.__poPanelOrder + '?edit_po=1#cardPo'; }
+        // Panel review biasa: buka halaman edit PO tersendiri (bukan form Tahap 8 di detail order)
+        if (window.__poPanelId) { window.location.href = '{{ @BASE }}/po-kegiatan/' + encodeURIComponent(window.__poPanelId) + '/edit?dari=index'; }
         return;
     }
     if (d.jenis === 'tutup') {

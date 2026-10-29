@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Demo pemilihan Tim Pelaksana PO</title>
+<style>
+:root{--pri:#2b3a4f;--pri2:#1e293b;--bd:#e2e8f0;--mut:#64748b;--ink:#0f172a;--bg:#f1f5f9;--ok:#16a34a;--sel:#eff6ff;--selbd:#93c5fd}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:24px}
+h1{font-size:1.4rem;margin:0 0 4px}.lead{color:var(--mut);margin:0 0 22px}
+.demo{background:#fff;border:1px solid var(--bd);border-radius:16px;margin:0 auto 26px;max-width:980px;box-shadow:0 1px 2px rgba(15,23,42,.05)}
+.dh{border-radius:16px 16px 0 0;padding:14px 20px;border-bottom:1px solid var(--bd);display:flex;gap:12px;align-items:flex-start;background:#f8fafc}
+.no{background:var(--pri);color:#fff;border-radius:8px;min-width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-weight:800}
+.dh b{display:block;font-size:1rem}.dh span{color:var(--mut);font-size:.84rem}
+.stage{padding:20px;position:relative;min-height:200px}
+.tag{display:inline-block;font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:999px;background:#e0f2fe;color:#075985;margin-left:8px;vertical-align:middle}
+/* elemen umum */
+.btn{border:1.5px solid var(--bd);background:#fff;color:#334155;border-radius:10px;padding:8px 14px;font:inherit;font-weight:700;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+.btn.pri{background:var(--pri);border-color:var(--pri);color:#fff}.btn.sm{padding:5px 10px;font-size:.8rem;border-radius:8px}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--mut)}
+.in,select.in,textarea.in{width:100%;border:1.5px solid var(--bd);border-radius:10px;padding:9px 12px;font:inherit;background:#fff;color:var(--ink);outline:0}
+.in:focus{border-color:var(--pri)}textarea.in{resize:vertical;min-height:40px}
+.av{width:30px;height:30px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;color:#fff;flex:none}
+.c1{background:#2b3a4f}.c2{background:#0e7490}.c3{background:#7c3aed}.c4{background:#b45309}.c5{background:#be123c}.c6{background:#15803d}.c7{background:#4338ca}.c8{background:#0f766e}
+.pill{display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--bd);border-radius:999px;padding:5px 12px;font-size:.82rem;font-weight:700;background:#fff;cursor:pointer;color:#334155}
+.pill.on{background:var(--pri);border-color:var(--pri);color:#fff}
+.badge{display:inline-block;border-radius:999px;padding:2px 10px;font-size:.74rem;font-weight:800}
+.b-pj{background:#fee2e2;color:#b91c1c}.b-kp{background:#dbeafe;color:#1d4ed8}.b-au{background:#ede9fe;color:#6d28d9}.b-an{background:#dcfce7;color:#15803d}
+.muted{color:var(--mut)}.small{font-size:.8rem}
+table.t{width:100%;border-collapse:collapse}table.t th{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:#475569;text-align:left;padding:8px;background:#f8fafc;border-bottom:1px solid var(--bd)}
+table.t td{padding:8px;border-bottom:1px solid #f1f5f9;vertical-align:top}
+.menu{position:absolute;z-index:5;background:#fff;border:1.5px solid var(--pri);border-radius:12px;box-shadow:0 14px 34px rgba(15,23,42,.2);padding:8px;width:100%}
+.opt{display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:8px;cursor:pointer}.opt:hover,.opt.hv{background:#f1f5f9}.opt.off{opacity:.45;cursor:not-allowed}
+.opt small{margin-left:auto;color:var(--mut)}
+.rel{position:relative}
+.chk{width:18px;height:18px;border:1.5px solid #94a3b8;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;flex:none;font-size:.7rem;color:#fff}
+.chk.on{background:var(--pri);border-color:var(--pri)}
+.grid{display:grid;gap:10px}.g4{grid-template-columns:repeat(4,1fr)}.g2{grid-template-columns:1fr 1fr}
+.pcard{border:1.5px solid var(--bd);border-radius:12px;padding:12px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;cursor:pointer;position:relative;background:#fff}
+.pcard.on{border-color:var(--selbd);background:var(--sel)}.pcard .tick{position:absolute;right:8px;top:8px}
+.panel{border:1.5px solid var(--bd);border-radius:12px;overflow:hidden;background:#fff}.panel .ph{background:#f8fafc;padding:8px 12px;font-weight:800;font-size:.82rem;border-bottom:1px solid var(--bd)}
+.panel .pb{padding:8px;display:flex;flex-direction:column;gap:6px}
+.mock{border:1px solid var(--bd);border-radius:12px;background:#fff;position:relative;overflow:hidden}
+.dim{position:absolute;inset:0;background:rgba(15,23,42,.45);z-index:3}
+.modal{position:absolute;z-index:4;background:#fff;border-radius:16px;box-shadow:0 20px 50px rgba(15,23,42,.35);left:50%;transform:translateX(-50%);width:min(560px,92%);top:18px}
+.drawer{position:absolute;z-index:4;background:#fff;right:0;top:0;bottom:0;width:340px;box-shadow:-12px 0 34px rgba(15,23,42,.25);display:flex;flex-direction:column}
+kbd{background:#f1f5f9;border:1px solid var(--bd);border-bottom-width:2px;border-radius:5px;padding:1px 6px;font-size:.72rem}
+.step{display:flex;align-items:center;gap:8px;font-weight:800;font-size:.8rem;color:var(--mut)}.step i{font-style:normal;width:22px;height:22px;border-radius:50%;background:var(--bd);display:inline-flex;align-items:center;justify-content:center;color:#475569}
+.step.on{color:var(--ink)}.step.on i{background:var(--pri);color:#fff}.step.done i{background:var(--ok);color:#fff}
+.col{border:1.5px dashed #cbd5e1;border-radius:12px;padding:10px;min-height:120px;background:#f8fafc}.col h4{margin:0 0 8px;font-size:.82rem}
+.chip{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1.5px solid var(--bd);border-radius:999px;padding:3px 10px 3px 4px;font-weight:700;font-size:.8rem;margin:0 6px 6px 0;cursor:grab}
+.chip .av{width:22px;height:22px;font-size:.6rem}
+.stage{min-height:320px}.stage.ov{overflow:hidden;border-radius:0 0 16px 16px}
+.combo:hover{border-color:#94a3b8}.pcard.dis{opacity:.4;cursor:not-allowed}
+.pill.dis{opacity:.4}.hint{color:var(--mut);font-size:.8rem;margin-top:10px}.col.hl{border-color:var(--pri);background:#eef2ff}
+.chip.sel{border-color:var(--pri);box-shadow:0 0 0 2px rgba(43,58,79,.2)}
+</style></head><body>
+<h1>Demo pemilihan Tim Pelaksana PO <span class="tag">12 pilihan desain, bisa dicoba</span></h1>
+<p class="lead">Semua demo bisa diklik dan diketik betulan, pakai data contoh. Tiap desain memilih <b>Nama</b> dan <b>Jabatan</b> dari master, sedangkan <b>Keterangan</b> diisi sendiri. Tidak ada yang tersimpan, muat ulang halaman untuk mengulang.</p>
+<section class="demo"><div class="dh"><div class="no">1</div><div><b>Dropdown bisa dicari</b><span>Paling dekat dengan bentuk sekarang tapi lebih rapi: klik kolom nama, ketik untuk mencari. Nama yang sudah dipakai di baris lain tidak bisa dipilih lagi. Aman untuk perubahan kecil.</span></div></div><div class="stage" id="s1"></div></section>
+<section class="demo"><div class="dh"><div class="no">2</div><div><b>Kartu lega, lalu tombol jabatan</b><span>Ketik atau pilih nama dari menu kartu. Setelah nama dipilih, pilihan jabatan muncul sebagai tombol tepat di bawahnya, lalu tekan Tambahkan ke tim.</span></div></div><div class="stage" id="s2"></div></section>
+<section class="demo"><div class="dh"><div class="no">3</div><div><b>Nama dropdown, jabatan tombol pilihan</b><span>Jabatan cuma beberapa macam, jadi lebih cepat diklik daripada dibuka dropdown, dan terlihat jelas sekilas.</span></div></div><div class="stage" id="s3"></div></section>
+<section class="demo"><div class="dh"><div class="no">4</div><div><b>Jendela Pilih dari daftar (banyak orang sekaligus)</b><span>Cocok kalau tim biasanya 4-6 orang: centang semua yang ikut lalu atur jabatan di tabel. Sama polanya dengan halaman Master Tim Pelaksana.</span></div></div><div class="stage ov" id="s4"></div></section>
+<section class="demo"><div class="dh"><div class="no">5</div><div><b>Kartu pegawai (klik untuk memilih)</b><span>Paling visual, cocok kalau pegawai di layanan itu tidak banyak. Klik kartu untuk masuk tim, lalu pilih jabatannya di dalam kartu.</span></div></div><div class="stage" id="s5"></div></section>
+<section class="demo"><div class="dh"><div class="no">6</div><div><b>Dua daftar: Tersedia dan Tim</b><span>Kiri semua pegawai, kanan tim yang sudah dipilih lengkap dengan jabatannya. Jelas mana yang sudah dan belum masuk.</span></div></div><div class="stage" id="s6"></div></section>
+<section class="demo"><div class="dh"><div class="no">7</div><div><b>Kolom cepat tambah anggota</b><span>Ketik nama di satu kolom, geser dengan tombol panah, tekan Enter, langsung jadi baris. Cepat untuk yang suka mengetik.</span></div></div><div class="stage" id="s7"></div></section>
+<section class="demo"><div class="dh"><div class="no">8</div><div><b>Panel samping (geser dari kanan)</b><span>Formulir PO tetap terlihat di belakang. Tekan Tambah anggota, pilih pegawai di panel, panel tetap terbuka supaya bisa menambah beberapa orang.</span></div></div><div class="stage ov" id="s8"></div></section>
+<section class="demo"><div class="dh"><div class="no">9</div><div><b>Palet cepat (ketik dan Enter)</b><span>Tekan tombol Tambah anggota (atau Ctrl+K), ketik nama, Enter, lalu tekan angka 1-4 untuk jabatan. Tanpa mouse pun bisa.</span></div></div><div class="stage ov" id="s9"></div></section>
+<section class="demo"><div class="dh"><div class="no">10</div><div><b>Langkah demi langkah per anggota</b><span>Tiap anggota diisi berurutan: nama, jabatan, keterangan. Paling jelas untuk pemakai baru dan tidak ada yang terlewat.</span></div></div><div class="stage" id="s10"></div></section>
+<section class="demo"><div class="dh"><div class="no">11</div><div><b>Kartu anggota dengan lencana jabatan berwarna</b><span>Tim tampil sebagai kartu rapi, jabatan berwarna mudah dibedakan. Tambah anggota lewat formulir kecil di bawah, jabatan bisa diubah lewat tombol Ubah.</span></div></div><div class="stage" id="s11"></div></section>
+<section class="demo"><div class="dh"><div class="no">12</div><div><b>Papan per jabatan (tarik dan lepas)</b><span>Tarik pegawai ke kolom jabatannya (atau klik pegawai lalu klik kolom). Klik nama di kolom untuk mengembalikannya.</span></div></div><div class="stage" id="s12"></div></section>
+
+<script>
+
+/* ====== data contoh ====== */
+var P=[{id:1,n:'Budi Santoso',c:1},{id:2,n:'Sari Wulandari',c:2},{id:3,n:'Dewi Anggraini',c:3},{id:4,n:'Rina Kusuma',c:4},{id:5,n:'Fajar Nugroho',c:5},{id:6,n:'Maya Lestari',c:6},{id:7,n:'Hendra Gunawan',c:7},{id:8,n:'Dedi Kurniawan',c:8}];
+var J=['Penanggung Jawab','Ketua Pelaksana','Auditor','Anggota'];
+var JB=['b-pj','b-kp','b-au','b-an'];
+function pg(id){return P.filter(function(x){return x.id===id})[0]}
+function ini(n){return n.split(' ').map(function(x){return x[0]}).slice(0,2).join('')}
+function av(p,big){return '<span class="av c'+p.c+'"'+(big?' style="width:44px;height:44px;font-size:.9rem"':'')+'>'+ini(p.n)+'</span>'}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function badge(j){var i=J.indexOf(j);return i<0?'':'<span class="badge '+JB[i]+'">'+j+'</span>'}
+function jsel(attr,cur,w){return '<select class="in" '+attr+(w?' style="width:'+w+'px;padding:6px 8px"':'')+'><option value=""'+(cur?'':' selected')+' disabled hidden>Pilih jabatan...</option>'+J.map(function(j){return '<option'+(j===cur?' selected':'')+'>'+j+'</option>'}).join('')+'</select>'}
+function pills(attr,cur,dis){return J.map(function(j){return '<span class="pill'+(j===cur?' on':'')+'" '+attr+' data-j="'+j+'">'+j+'</span>'}).join(' ')}
+function taken(rows,key){return rows.map(function(r){return r[key||'p']}).filter(Boolean)}
+
+/* ====== kerangka kecil: state + render + event ====== */
+var D={},A={};
+function mount(n,init,view,after){D[n]={s:init,view:view,after:after};A[n]={};render(n)}
+function render(n){
+  var d=D[n],st=document.getElementById('s'+n),ae=document.activeElement,keep=null;
+  if(ae&&st.contains(ae)&&ae.hasAttribute('data-search')){keep={k:ae.getAttribute('data-search'),pos:ae.selectionStart}}
+  var sy=window.scrollY;
+  st.innerHTML=d.view(d.s);
+  if(d.after){d.after(d.s,st)}
+  if(keep){var el=st.querySelector('[data-search="'+keep.k+'"]');if(el){el.focus();try{el.setSelectionRange(keep.pos,keep.pos)}catch(e){}}}
+  window.scrollTo(0,sy);
+}
+function demoOf(el){var s=el.closest('.stage');return s?+s.id.slice(1):0}
+document.addEventListener('click',function(e){
+  var t=e.target;
+  Object.keys(D).forEach(function(k){var s=D[k].s;if(s.open!==undefined&&s.open!==-1&&s.open!==false&&D[k].autoClose&&!t.closest('#s'+k+' .rel')){s.open=D[k].closed;render(+k)}});
+  var a=t.closest('[data-act]');if(!a)return;
+  var n=demoOf(a);if(!n||!A[n]||!A[n][a.dataset.act])return;
+  A[n][a.dataset.act](D[n].s,a,e);render(n);
+});
+document.addEventListener('input',function(e){
+  var t=e.target,n=demoOf(t);if(!n||!D[n])return;
+  var s=D[n].s;
+  if(t.hasAttribute('data-search')){s.q=t.value;if(A[n].search){A[n].search(s,t)}render(n);return}
+  if(t.dataset.k&&t.dataset.r!==undefined){var r=s.rows?s.rows[+t.dataset.r]:null;if(r){r[t.dataset.k]=t.value}}
+  if(t.dataset.k&&t.dataset.m!==undefined){var m=s.team?s.team[+t.dataset.m]:null;if(m){m[t.dataset.k]=t.value}}
+});
+document.addEventListener('change',function(e){
+  var t=e.target,n=demoOf(t);if(!n||!D[n])return;
+  var s=D[n].s;
+  if(t.dataset.selj!==undefined){var arr=s.rows||s.team;var r=arr&&arr[+t.dataset.selj];if(r){r.j=t.value;render(n)}}
+  if(t.dataset.cjk!==undefined&&s.sel){s.sel[t.dataset.cjk]=t.value;render(n)}
+});
+document.addEventListener('keydown',function(e){
+  var t=e.target,n=demoOf(t);if(!n||!A[n]||!A[n].key)return;
+  if(A[n].key(D[n].s,t,e)){render(n)}
+});
+
+/* komponen: combobox nama */
+function combo(s,i,cur,rows,w){
+  var p=pg(cur),tk=taken(rows),h='<div class="rel"><div class="in combo" data-act="open" data-r="'+i+'" style="display:flex;align-items:center;gap:8px;cursor:pointer">'+(p?av(p)+p.n:'<span class="muted">Pilih nama pegawai...</span>')+'<span style="margin-left:auto" class="muted">&#9662;</span></div>';
+  if(s.open===i){
+    var q=(s.q||'').toLowerCase(),L=P.filter(function(x){return x.n.toLowerCase().indexOf(q)>-1});
+    h+='<div class="menu" style="top:46px;left:0"><input class="in" data-search="c'+i+'" placeholder="Ketik untuk mencari..." value="'+esc(s.q)+'" style="margin-bottom:6px">'+
+      (L.map(function(x){var off=tk.indexOf(x.id)>-1&&x.id!==cur;return '<div class="opt'+(off?' off':'')+'" '+(off?'':'data-act="pick" ')+'data-r="'+i+'" data-id="'+x.id+'">'+av(x)+x.n+(off?'<small>sudah di tim</small>':'')+'</div>'}).join('')||'<div class="muted small" style="padding:8px">Tidak ada yang cocok</div>')+'</div>';
+  }
+  return h+'</div>';
+}
+function openCombo(s,a){var i=+a.dataset.r;s.open=(s.open===i)?-1:i;s.q=''}
+function pickCombo(s,a){s.rows[+a.dataset.r].p=+a.dataset.id;s.open=-1;s.q=''}
+function setAuto(n,closed){D[n].autoClose=true;D[n].closed=closed===undefined?-1:closed}
+
+/* ===== 1: dropdown bisa dicari ===== */
+mount(1,{rows:[{p:2,j:'Ketua Pelaksana',k:'Memimpin pelaksanaan audit'},{p:0,j:'',k:''}],open:-1,q:''},function(s){
+  return '<table class="t"><thead><tr><th style="width:290px">Nama pegawai</th><th style="width:200px">Jabatan</th><th>Keterangan</th><th style="width:40px"></th></tr></thead><tbody>'+
+  s.rows.map(function(r,i){return '<tr><td>'+combo(s,i,r.p,s.rows)+'</td><td>'+jsel('data-selj="'+i+'"',r.j)+'</td><td><textarea class="in" rows="1" data-r="'+i+'" data-k="k" placeholder="Isi keterangan">'+esc(r.k)+'</textarea></td><td><button class="btn sm ghost" data-act="del" data-r="'+i+'">&#10005;</button></td></tr>'}).join('')+'</tbody></table>'+
+  '<div style="margin-top:10px"><button class="btn sm" data-act="add">+ Tambah baris</button></div><div style="height:340px"></div>';
+});
+setAuto(1);A[1].open=openCombo;A[1].pick=pickCombo;A[1].add=function(s){s.rows.push({p:0,j:'',k:''})};A[1].del=function(s,a){s.rows.splice(+a.dataset.r,1);if(!s.rows.length)s.rows.push({p:0,j:'',k:''});s.open=-1};
+
+/* ===== 2: kartu lega, lalu tombol jabatan ===== */
+mount(2,{open:false,q:'',p:0,j:'',team:[]},function(s){
+  var h='<div style="max-width:560px" class="rel">',p=pg(s.p);
+  h+='<label class="small muted">Nama pegawai</label>';
+  if(p){h+='<div class="in" style="display:flex;align-items:center;gap:10px">'+av(p)+'<b>'+p.n+'</b><button class="btn sm ghost" style="margin-left:auto" data-act="ganti">ganti</button></div>'}
+  else{
+    h+='<input class="in" data-search="n" placeholder="Ketik nama..." value="'+esc(s.q)+'" data-act="buka" autocomplete="off">';
+    if(s.open){var q=s.q.toLowerCase(),L=P.filter(function(x){return x.n.toLowerCase().indexOf(q)>-1&&taken(s.team).indexOf(x.id)<0});
+      h+='<div class="menu" style="top:68px">'+(L.map(function(x){return '<div class="opt" data-act="pick" data-id="'+x.id+'">'+av(x)+'<div><b>'+x.n+'</b><div class="small muted">Tim Sertifikasi</div></div></div>'}).join('')||'<div class="muted small" style="padding:8px">Tidak ada yang cocok</div>')+'</div>'}
+  }
+  if(p){h+='<div style="margin-top:14px"><label class="small muted">Jabatan</label><div style="margin-top:4px">'+pills('data-act="jab"',s.j)+'</div><div style="margin-top:14px"><button class="btn pri" data-act="tambah"'+(s.j?'':' disabled style="opacity:.5"')+'>Tambahkan ke tim</button></div></div>'}
+  h+='</div>';
+  if(s.team.length){h+='<div style="margin-top:22px"><b>Tim pelaksana</b><div class="grid" style="margin-top:8px">'+s.team.map(function(m,i){var q=pg(m.p);return '<div style="display:flex;align-items:center;gap:10px;border:1.5px solid var(--bd);border-radius:12px;padding:8px 12px">'+av(q)+'<b>'+q.n+'</b>'+badge(m.j)+'<button class="btn sm ghost" style="margin-left:auto" data-act="hapus" data-m="'+i+'">&#10005;</button></div>'}).join('')+'</div></div>'}
+  return h+(s.open&&!p?'<div style="height:150px"></div>':'');
+});
+setAuto(2,false);
+A[2].buka=function(s){s.open=true};A[2].pick=function(s,a){s.p=+a.dataset.id;s.open=false;s.q=''};A[2].ganti=function(s){s.p=0;s.j='';s.open=true};
+A[2].jab=function(s,a){s.j=a.dataset.j};A[2].tambah=function(s){if(!s.p||!s.j)return;s.team.push({p:s.p,j:s.j});s.p=0;s.j='';s.q='';s.open=false};A[2].hapus=function(s,a){s.team.splice(+a.dataset.m,1)};
+
+/* ===== 3: nama dropdown, jabatan tombol ===== */
+mount(3,{rows:[{p:1,j:'Penanggung Jawab',k:''},{p:4,j:'Auditor',k:'Audit witness'},{p:0,j:'',k:''}],open:-1,q:''},function(s){
+  return '<table class="t"><thead><tr><th style="width:260px">Nama pegawai</th><th style="width:400px">Jabatan</th><th>Keterangan</th><th style="width:40px"></th></tr></thead><tbody>'+
+  s.rows.map(function(r,i){return '<tr><td>'+combo(s,i,r.p,s.rows)+'</td><td style="padding-top:12px">'+pills('data-act="jab" data-r="'+i+'"',r.j)+'</td><td><textarea class="in" rows="1" data-r="'+i+'" data-k="k" placeholder="Isi keterangan">'+esc(r.k)+'</textarea></td><td><button class="btn sm ghost" data-act="del" data-r="'+i+'">&#10005;</button></td></tr>'}).join('')+'</tbody></table><div style="margin-top:10px"><button class="btn sm" data-act="add">+ Tambah baris</button></div><div style="height:340px"></div>';
+});
+setAuto(3);A[3].open=openCombo;A[3].pick=pickCombo;A[3].jab=function(s,a){var r=s.rows[+a.dataset.r];r.j=r.j===a.dataset.j?'':a.dataset.j};A[3].add=function(s){s.rows.push({p:0,j:'',k:''})};A[3].del=function(s,a){s.rows.splice(+a.dataset.r,1);if(!s.rows.length)s.rows.push({p:0,j:'',k:''});s.open=-1};
+
+/* ===== 4: jendela pilih banyak ===== */
+mount(4,{rows:[{p:2,j:'Ketua Pelaksana',k:''}],modal:false,q:'',sel:[]},function(s){
+  var h='<div style="min-height:470px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><b>Tim Pelaksana</b><button class="btn sm pri" data-act="buka">Pilih dari daftar pegawai</button></div>';
+  h+='<table class="t"><thead><tr><th style="width:250px">Nama pegawai</th><th style="width:200px">Jabatan</th><th>Keterangan</th><th style="width:40px"></th></tr></thead><tbody>'+
+   (s.rows.map(function(r,i){var p=pg(r.p);return '<tr><td><div style="display:flex;align-items:center;gap:8px">'+av(p)+'<b>'+p.n+'</b></div></td><td>'+jsel('data-selj="'+i+'"',r.j)+'</td><td><textarea class="in" rows="1" data-r="'+i+'" data-k="k" placeholder="Isi keterangan">'+esc(r.k)+'</textarea></td><td><button class="btn sm ghost" data-act="del" data-r="'+i+'">&#10005;</button></td></tr>'}).join('')||'<tr><td colspan="4" class="muted" style="padding:20px;text-align:center">Belum ada anggota</td></tr>')+'</tbody></table></div>';
+  if(s.modal){
+    var q=s.q.toLowerCase(),L=P.filter(function(x){return x.n.toLowerCase().indexOf(q)>-1}),tk=taken(s.rows);
+    h+='<div class="dim" data-act="tutup"></div><div class="modal" style="top:20px"><div style="padding:14px 18px;border-bottom:1px solid var(--bd)"><b>Pilih anggota tim</b><div class="small muted">Centang satu atau lebih pegawai</div></div><div style="padding:12px 18px"><input class="in" data-search="m" placeholder="Cari nama pegawai" value="'+esc(s.q)+'"><div style="margin-top:8px;max-height:260px;overflow:auto">'+
+    L.map(function(x){var off=tk.indexOf(x.id)>-1,on=s.sel.indexOf(x.id)>-1;return '<div class="opt'+(off?' off':'')+'" '+(off?'':'data-act="cek" ')+'data-id="'+x.id+'"><span class="chk'+(on?' on':'')+'">'+(on?'&#10003;':'&nbsp;')+'</span>'+av(x)+x.n+(off?'<small>sudah di tim</small>':'')+'</div>'}).join('')+'</div></div><div style="padding:12px 18px;border-top:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center"><b>'+s.sel.length+' orang dipilih</b><span><button class="btn sm" data-act="tutup">Batal</button> <button class="btn sm pri" data-act="ok"'+(s.sel.length?'':' disabled style="opacity:.5"')+'>Tambahkan '+s.sel.length+' orang</button></span></div></div>';
+  }
+  return h;
+});
+A[4].buka=function(s){s.modal=true;s.sel=[];s.q=''};A[4].tutup=function(s){s.modal=false};A[4].cek=function(s,a){var id=+a.dataset.id,i=s.sel.indexOf(id);if(i<0)s.sel.push(id);else s.sel.splice(i,1)};
+A[4].ok=function(s){s.sel.forEach(function(id){s.rows.push({p:id,j:'',k:''})});s.modal=false};A[4].del=function(s,a){s.rows.splice(+a.dataset.r,1)};
+
+/* ===== 5: kartu pegawai ===== */
+mount(5,{sel:{2:'Ketua Pelaksana',1:'Penanggung Jawab'}},function(s){
+  var n=Object.keys(s.sel).length,tanpa=Object.keys(s.sel).filter(function(k){return !s.sel[k]}).length;
+  return '<div class="grid g4">'+P.map(function(p){var on=s.sel[p.id]!==undefined;return '<div class="pcard'+(on?' on':'')+'" data-act="tog" data-id="'+p.id+'">'+(on?'<span class="tick chk on">&#10003;</span>':'')+av(p,1)+'<b>'+p.n+'</b>'+(on?'<select class="in" data-cjk="'+p.id+'" style="padding:5px 8px;font-size:.8rem"><option value=""'+(s.sel[p.id]?'':' selected')+' disabled hidden>Pilih jabatan...</option>'+J.map(function(j){return '<option'+(j===s.sel[p.id]?' selected':'')+'>'+j+'</option>'}).join('')+'</select>':'<span class="muted small">Klik untuk memilih</span>')+'</div>'}).join('')+'</div><div class="hint"><b>'+n+'</b> orang dipilih'+(tanpa?', <span style="color:#b45309">'+tanpa+' belum punya jabatan</span>':'')+'. Klik kartu lagi untuk melepas.</div>';
+});
+A[5].tog=function(s,a,e){if(e.target.closest('select'))return;var id=a.dataset.id;if(s.sel[id]!==undefined)delete s.sel[id];else s.sel[id]=''};
+
+/* ===== 6: dua daftar ===== */
+mount(6,{team:[{p:1,j:'Penanggung Jawab'},{p:2,j:'Ketua Pelaksana'}],q:''},function(s){
+  var tk=taken(s.team),q=s.q.toLowerCase(),L=P.filter(function(x){return tk.indexOf(x.id)<0&&x.n.toLowerCase().indexOf(q)>-1});
+  return '<div class="grid g2"><div class="panel"><div class="ph">Pegawai tersedia ('+L.length+')</div><div class="pb"><input class="in" data-search="l" placeholder="Cari..." value="'+esc(s.q)+'">'+(L.map(function(x){return '<div class="opt">'+av(x)+x.n+'<button class="btn sm" style="margin-left:auto" data-act="add" data-id="'+x.id+'">+ Tambah</button></div>'}).join('')||'<div class="muted small" style="padding:8px">Semua pegawai sudah masuk tim</div>')+'</div></div>'+
+  '<div class="panel"><div class="ph">Tim pelaksana ('+s.team.length+')</div><div class="pb">'+(s.team.map(function(m,i){var p=pg(m.p);return '<div class="opt">'+av(p)+'<b>'+p.n+'</b><span style="margin-left:auto">'+jsel('data-selj="'+i+'"',m.j,160)+'</span><button class="btn sm ghost" data-act="rm" data-m="'+i+'">&#10005;</button></div>'}).join('')||'<div class="muted small" style="padding:8px">Belum ada anggota. Klik Tambah di kiri.</div>')+'</div></div></div>';
+});
+A[6].add=function(s,a){s.team.push({p:+a.dataset.id,j:''})};A[6].rm=function(s,a){s.team.splice(+a.dataset.m,1)};
+
+/* ===== 7: kolom cepat tambah ===== */
+mount(7,{q:'',hi:0,rows:[{p:1,j:'Penanggung Jawab',k:''}],open:false},function(s){
+  var q=s.q.toLowerCase(),tk=taken(s.rows),L=q?P.filter(function(x){return tk.indexOf(x.id)<0&&x.n.toLowerCase().indexOf(q)>-1}):[];
+  if(s.hi>=L.length)s.hi=Math.max(0,L.length-1);
+  var h='<div class="rel"><div class="in" style="display:flex;gap:8px;align-items:center;border-color:var(--pri)">&#10133; <input data-search="q" value="'+esc(s.q)+'" placeholder="Ketik nama untuk menambah anggota..." style="border:0;outline:0;flex:1;font:inherit;background:transparent" autocomplete="off"><span class="muted small"><kbd>&uarr;</kbd><kbd>&darr;</kbd> geser, <kbd>Enter</kbd> menambah</span></div>';
+  if(q){h+='<div class="menu" style="top:46px">'+(L.map(function(x,i){return '<div class="opt'+(i===s.hi?' hv':'')+'" data-act="add" data-id="'+x.id+'">'+av(x)+x.n+'</div>'}).join('')||'<div class="muted small" style="padding:8px">Tidak ada yang cocok</div>')+'</div>'}
+  h+='</div><div style="height:'+(q?Math.max(60,L.length*42+70):10)+'px"></div>';
+  h+='<table class="t"><tbody>'+(s.rows.map(function(r,i){var p=pg(r.p);return '<tr><td style="width:44px">'+av(p)+'</td><td style="width:170px"><b>'+p.n+'</b></td><td style="width:360px">'+pills('data-act="jab" data-r="'+i+'"',r.j)+'</td><td><textarea class="in" rows="1" data-r="'+i+'" data-k="k" placeholder="Keterangan">'+esc(r.k)+'</textarea></td><td style="width:36px"><button class="btn sm ghost" data-act="del" data-r="'+i+'">&#10005;</button></td></tr>'}).join('')||'<tr><td class="muted" style="padding:16px">Belum ada anggota</td></tr>')+'</tbody></table>';
+  return h+'<div style="height:'+(q?0:120)+'px"></div>';
+});
+A[7].add=function(s,a){s.rows.push({p:+a.dataset.id,j:'',k:''});s.q='';s.hi=0};A[7].jab=function(s,a){var r=s.rows[+a.dataset.r];r.j=r.j===a.dataset.j?'':a.dataset.j};A[7].del=function(s,a){s.rows.splice(+a.dataset.r,1)};
+A[7].key=function(s,t,e){if(!t.hasAttribute('data-search'))return false;var q=s.q.toLowerCase(),tk=taken(s.rows),L=q?P.filter(function(x){return tk.indexOf(x.id)<0&&x.n.toLowerCase().indexOf(q)>-1}):[];
+  if(e.key==='ArrowDown'){s.hi=Math.min(L.length-1,s.hi+1);e.preventDefault();return true}
+  if(e.key==='ArrowUp'){s.hi=Math.max(0,s.hi-1);e.preventDefault();return true}
+  if(e.key==='Enter'&&L[s.hi]){s.rows.push({p:L[s.hi].id,j:'',k:''});s.q='';s.hi=0;e.preventDefault();return true}
+  return false};
+D[7].after=function(s,st){var i=st.querySelector('[data-search]');if(i&&s.q===''&&D[7].fresh){i.focus()}};
+
+/* ===== 8: panel samping ===== */
+mount(8,{rows:[{p:1,j:'Penanggung Jawab',k:''}],drawer:false,q:''},function(s){
+  var tk=taken(s.rows),q=s.q.toLowerCase(),L=P.filter(function(x){return tk.indexOf(x.id)<0&&x.n.toLowerCase().indexOf(q)>-1});
+  var h='<div style="min-height:440px;padding:20px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div><b>Tim Pelaksana</b><div class="small muted">'+s.rows.length+' anggota</div></div><button class="btn sm pri" data-act="buka">+ Tambah anggota</button></div><div class="grid" style="gap:8px">'+
+  (s.rows.map(function(r,i){var p=pg(r.p);return '<div style="display:flex;gap:10px;align-items:center;border:1.5px solid var(--bd);border-radius:12px;padding:8px 12px">'+av(p)+'<b style="min-width:130px">'+p.n+'</b>'+jsel('data-selj="'+i+'"',r.j,190)+'<input class="in" data-r="'+i+'" data-k="k" value="'+esc(r.k)+'" placeholder="Keterangan" style="flex:1"><button class="btn sm ghost" data-act="del" data-r="'+i+'">&#10005;</button></div>'}).join('')||'<div class="muted">Belum ada anggota.</div>')+'</div></div>';
+  if(s.drawer){h+='<div class="dim" data-act="tutup"></div><div class="drawer"><div style="padding:14px 16px;border-bottom:1px solid var(--bd)"><b>Tambah anggota</b><button class="btn sm ghost" style="float:right" data-act="tutup">&#10005;</button></div><div style="padding:12px 16px"><input class="in" data-search="d" placeholder="Cari nama" value="'+esc(s.q)+'"></div><div style="padding:0 10px;overflow:auto;flex:1;display:flex;flex-direction:column;gap:2px">'+(L.map(function(x){return '<div class="opt">'+av(x)+x.n+'<button class="btn sm pri" style="margin-left:auto" data-act="add" data-id="'+x.id+'">Tambah</button></div>'}).join('')||'<div class="muted small" style="padding:10px">Semua pegawai sudah masuk tim</div>')+'</div></div>'}
+  return h;
+});
+A[8].buka=function(s){s.drawer=true;s.q=''};A[8].tutup=function(s){s.drawer=false};A[8].add=function(s,a){s.rows.push({p:+a.dataset.id,j:'',k:''})};A[8].del=function(s,a){s.rows.splice(+a.dataset.r,1)};
+
+/* ===== 9: palet cepat ===== */
+mount(9,{pal:false,q:'',p:0,team:[{p:1,j:'Penanggung Jawab'}]},function(s){
+  var h='<div style="min-height:430px;padding:20px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><b>Tim Pelaksana</b><button class="btn sm pri" data-act="buka">+ Tambah anggota <kbd style="color:#334155">Ctrl+K</kbd></button></div><div class="grid" style="gap:8px">'+
+  (s.team.map(function(m,i){var p=pg(m.p);return '<div style="display:flex;gap:10px;align-items:center;border:1.5px solid var(--bd);border-radius:12px;padding:8px 12px">'+av(p)+'<b>'+p.n+'</b>'+badge(m.j)+'<button class="btn sm ghost" style="margin-left:auto" data-act="hapus" data-m="'+i+'">&#10005;</button></div>'}).join('')||'<div class="muted">Belum ada anggota.</div>')+'</div></div>';
+  if(s.pal){
+    var tk=taken(s.team);
+    h+='<div class="dim" data-act="tutup"></div><div class="modal" style="width:min(540px,92%);top:40px"><div style="padding:14px 16px;border-bottom:1px solid var(--bd);display:flex;gap:10px;align-items:center">&#128269; '+(s.p?'<b>'+pg(s.p).n+'</b>':'<input data-search="p" value="'+esc(s.q)+'" placeholder="Ketik nama pegawai..." style="border:0;outline:0;flex:1;font:inherit" autocomplete="off">')+'<span class="muted" style="margin-left:auto"><kbd>Esc</kbd></span></div><div style="padding:8px">';
+    if(!s.p){var q=s.q.toLowerCase(),L=P.filter(function(x){return tk.indexOf(x.id)<0&&x.n.toLowerCase().indexOf(q)>-1}).slice(0,5);
+      h+='<div class="small muted" style="padding:4px 8px">Pegawai</div>'+(L.map(function(x,i){return '<div class="opt'+(i===0?' hv':'')+'" data-act="pilih" data-id="'+x.id+'">'+av(x)+x.n+(i===0?'<small><kbd>Enter</kbd></small>':'')+'</div>'}).join('')||'<div class="muted small" style="padding:8px">Tidak ada yang cocok</div>')}
+    else{h+='<div class="small muted" style="padding:4px 8px">Pilih jabatan untuk '+pg(s.p).n+' (tekan angka 1-4)</div>'+J.map(function(j,i){return '<div class="opt'+(i===0?' hv':'')+'" data-act="jab" data-j="'+j+'"><span class="badge '+JB[i]+'">'+(i+1)+'</span>'+j+'</div>'}).join('')}
+    h+='</div></div>';
+  }
+  return h;
+});
+A[9].buka=function(s){s.pal=true;s.q='';s.p=0;D[9].fresh=1};A[9].tutup=function(s){s.pal=false;s.p=0};A[9].pilih=function(s,a){s.p=+a.dataset.id};A[9].jab=function(s,a){s.team.push({p:s.p,j:a.dataset.j});s.pal=false;s.p=0};A[9].hapus=function(s,a){s.team.splice(+a.dataset.m,1)};
+D[9].after=function(s,st){var i=st.querySelector('[data-search="p"]');if(i&&D[9].fresh){i.focus();D[9].fresh=0}};
+document.addEventListener('keydown',function(e){
+  var s=D[9].s;
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'&&document.getElementById('s9')){var r=document.getElementById('s9').getBoundingClientRect();if(r.top<innerHeight&&r.bottom>0){e.preventDefault();A[9].buka(s);render(9)}return}
+  if(!s.pal)return;
+  if(e.key==='Escape'){A[9].tutup(s);render(9);return}
+  if(!s.p&&e.key==='Enter'){var tk=taken(s.team),q=s.q.toLowerCase(),L=P.filter(function(x){return tk.indexOf(x.id)<0&&x.n.toLowerCase().indexOf(q)>-1});if(L[0]){s.p=L[0].id;e.preventDefault();render(9)}return}
+  if(s.p&&/^[1-4]$/.test(e.key)){A[9].jab(s,{dataset:{j:J[+e.key-1]}});e.preventDefault();render(9)}
+});
+
+/* ===== 10: langkah demi langkah ===== */
+mount(10,{team:[],step:1,p:0,j:'',k:''},function(s){
+  function st(n,t){return '<div class="step'+(s.step===n?' on':(s.step>n?' done':''))+'"><i>'+(s.step>n?'&#10003;':n)+'</i>'+t+'</div>'}
+  var tk=taken(s.team),h='<div style="border:1.5px solid var(--bd);border-radius:14px;padding:16px"><div style="display:flex;gap:24px;margin-bottom:14px">'+st(1,'Nama')+st(2,'Jabatan')+st(3,'Keterangan')+'</div>';
+  if(s.step===1){h+='<div class="grid g4">'+P.map(function(p){var off=tk.indexOf(p.id)>-1;return '<div class="pcard'+(off?' dis':'')+'"'+(off?'':' data-act="nama" data-id="'+p.id+'"')+'>'+av(p)+'<b>'+p.n+'</b>'+(off?'<span class="small muted">sudah di tim</span>':'')+'</div>'}).join('')+'</div>'}
+  if(s.step===2){var p=pg(s.p);h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">'+av(p)+'<b>'+p.n+'</b></div><div class="grid g4">'+J.map(function(j){return '<div class="pcard'+(s.j===j?' on':'')+'" data-act="jab" data-j="'+j+'"><b>'+j+'</b></div>'}).join('')+'</div>'}
+  if(s.step===3){var q=pg(s.p);h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">'+av(q)+'<b>'+q.n+'</b>'+badge(s.j)+'</div><textarea class="in" rows="2" data-k2="k" data-search="k" placeholder="Isi keterangan tugasnya...">'+esc(s.k)+'</textarea>'}
+  h+='<div style="margin-top:14px;text-align:right">'+(s.step>1?'<button class="btn sm" data-act="back">Kembali</button> ':'')+(s.step===2?'<button class="btn sm pri" data-act="next"'+(s.j?'':' disabled style="opacity:.5"')+'>Lanjut</button>':'')+(s.step===3?'<button class="btn sm pri" data-act="simpan">Simpan anggota</button>':'')+'</div></div>';
+  if(s.team.length){h+='<div style="margin-top:18px"><b>Tim pelaksana</b><div class="grid" style="margin-top:8px;gap:8px">'+s.team.map(function(m,i){var p=pg(m.p);return '<div style="display:flex;gap:10px;align-items:center;border:1.5px solid var(--bd);border-radius:12px;padding:8px 12px">'+av(p)+'<b>'+p.n+'</b>'+badge(m.j)+'<span class="muted small" style="flex:1">'+esc(m.k)+'</span><button class="btn sm ghost" data-act="hapus" data-m="'+i+'">&#10005;</button></div>'}).join('')+'</div></div>'}
+  return h;
+});
+A[10].nama=function(s,a){s.p=+a.dataset.id;s.step=2};A[10].jab=function(s,a){s.j=a.dataset.j};A[10].next=function(s){if(s.j)s.step=3};A[10].back=function(s){s.step=Math.max(1,s.step-1)};
+A[10].simpan=function(s){s.team.push({p:s.p,j:s.j,k:s.k});s.step=1;s.p=0;s.j='';s.k=''};A[10].hapus=function(s,a){s.team.splice(+a.dataset.m,1)};A[10].search=function(s,t){s.k=t.value};
+
+/* ===== 11: kartu anggota ===== */
+mount(11,{team:[{p:1,j:'Penanggung Jawab',k:'Bertanggung jawab atas seluruh kegiatan'},{p:4,j:'Auditor',k:'Audit witness dan evaluasi'}],f:{p:0,j:'',k:''},edit:-1},function(s){
+  var tk=taken(s.team);
+  return '<div class="grid" style="gap:10px">'+s.team.map(function(m,i){var p=pg(m.p);return '<div style="display:flex;gap:12px;align-items:center;border:1.5px solid var(--bd);border-radius:12px;padding:10px 14px">'+av(p,1)+'<div style="flex:1"><b>'+p.n+'</b> '+(s.edit===i?jsel('data-selj="'+i+'"',m.j,190):badge(m.j))+'<div><input class="in" data-m="'+i+'" data-k="k" value="'+esc(m.k)+'" placeholder="Keterangan" style="border:0;padding:3px 0;color:#64748b;font-size:.85rem"></div></div><button class="btn sm" data-act="edit" data-m="'+i+'">'+(s.edit===i?'Selesai':'Ubah')+'</button><button class="btn sm ghost" data-act="hapus" data-m="'+i+'">&#10005;</button></div>'}).join('')+
+  '<div style="border:1.5px dashed #94a3b8;border-radius:12px;padding:12px;background:#f8fafc"><div style="display:grid;grid-template-columns:1.2fr 1fr 1.6fr auto;gap:8px;align-items:center"><select class="in" data-fp="p"><option value=""'+(s.f.p?'':' selected')+' disabled hidden>Pilih nama...</option>'+P.filter(function(x){return tk.indexOf(x.id)<0}).map(function(x){return '<option value="'+x.id+'"'+(s.f.p===x.id?' selected':'')+'>'+x.n+'</option>'}).join('')+'</select><select class="in" data-fp="j"><option value=""'+(s.f.j?'':' selected')+' disabled hidden>Pilih jabatan...</option>'+J.map(function(j){return '<option'+(s.f.j===j?' selected':'')+'>'+j+'</option>'}).join('')+'</select><input class="in" data-fp="k" value="'+esc(s.f.k)+'" placeholder="Keterangan"><button class="btn pri" data-act="tambah"'+(s.f.p&&s.f.j?'':' disabled style="opacity:.5"')+'>Tambah</button></div></div></div>';
+});
+document.addEventListener('change',function(e){var t=e.target;if(t.dataset.fp&&t.closest('#s11')){var f=D[11].s.f;f[t.dataset.fp]=t.dataset.fp==='p'?+t.value:t.value;render(11)}});
+document.addEventListener('input',function(e){var t=e.target;if(t.dataset.fp==='k'&&t.closest('#s11')){D[11].s.f.k=t.value}});
+A[11].edit=function(s,a){var i=+a.dataset.m;s.edit=s.edit===i?-1:i};A[11].hapus=function(s,a){s.team.splice(+a.dataset.m,1);s.edit=-1};
+A[11].tambah=function(s){if(!s.f.p||!s.f.j)return;s.team.push({p:s.f.p,j:s.f.j,k:s.f.k});s.f={p:0,j:'',k:''}};
+
+/* ===== 12: papan per jabatan ===== */
+mount(12,{cols:{'Penanggung Jawab':[1],'Ketua Pelaksana':[2],'Auditor':[4],'Anggota':[]},sel:0,hl:''},function(s){
+  var pakai=[];J.forEach(function(j){pakai=pakai.concat(s.cols[j])});
+  function chip(p,dr){return '<span class="chip'+(s.sel===p.id?' sel':'')+'" draggable="true" data-act="'+dr+'" data-id="'+p.id+'">'+av(p)+p.n+'</span>'}
+  return '<div class="grid g4">'+J.map(function(j,i){return '<div class="col'+(s.hl===j?' hl':'')+'" data-act="drop" data-j="'+j+'"><h4><span class="badge '+JB[i]+'">'+j+'</span></h4>'+s.cols[j].map(function(id){return chip(pg(id),'balik')}).join('')+(s.cols[j].length?'':'<div class="small muted">'+(s.sel?'Klik di sini untuk menaruh':'Tarik pegawai ke sini')+'</div>')+'</div>'}).join('')+'</div>'+
+  '<div style="margin-top:16px"><div class="small muted" style="margin-bottom:6px">Pegawai tersedia (tarik ke kolom, atau klik nama lalu klik kolom)</div>'+(P.filter(function(p){return pakai.indexOf(p.id)<0}).map(function(p){return chip(p,'pilih')}).join('')||'<span class="muted small">Semua pegawai sudah ditempatkan</span>')+'</div>';
+});
+function taruh(s,id,j){J.forEach(function(x){s.cols[x]=s.cols[x].filter(function(i){return i!==id})});s.cols[j].push(id);s.sel=0}
+A[12].pilih=function(s,a){var id=+a.dataset.id;s.sel=s.sel===id?0:id};
+A[12].balik=function(s,a,e){if(s.sel){var col=a.closest('[data-j]');taruh(s,s.sel,col.dataset.j);return}var id=+a.dataset.id;J.forEach(function(x){s.cols[x]=s.cols[x].filter(function(i){return i!==id})})};
+A[12].drop=function(s,a,e){if(e.target.closest('.chip')&&!s.sel)return;if(s.sel){taruh(s,s.sel,a.dataset.j)}};
+(function(){var st=document.getElementById('s12'),drag=0;
+  st.addEventListener('dragstart',function(e){var c=e.target.closest('.chip');if(c){drag=+c.dataset.id;e.dataTransfer.setData('text/plain',String(drag))}});
+  st.addEventListener('dragover',function(e){var c=e.target.closest('.col');if(c){e.preventDefault();Array.prototype.forEach.call(st.querySelectorAll('.col.hl'),function(x){if(x!==c)x.classList.remove('hl')});c.classList.add('hl')}});
+  st.addEventListener('drop',function(e){var c=e.target.closest('.col');if(c&&drag){e.preventDefault();taruh(D[12].s,drag,c.dataset.j);D[12].s.hl='';drag=0;render(12)}});
+  st.addEventListener('dragend',function(){D[12].s.hl='';render(12)});
+})();
+
+</script>
+</body></html>

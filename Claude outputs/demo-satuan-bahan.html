@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demo Satuan Bahan</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css">
+<style>
+    body { background: #f1f5f9; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color: #1e293b; padding: 24px 12px; }
+    .wrap { max-width: 1100px; margin: 0 auto; }
+    .sec-title { font-size: .8rem; font-weight: 700; letter-spacing: .03em; color: #475569; text-transform: uppercase; }
+    .card-box { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
+    .head-row, .bhn-row { display: grid; grid-template-columns: 1fr 130px 190px 44px; gap: 10px; align-items: center; padding: 10px 14px; }
+    .head-row { background: #f8fafc; border-bottom: 1px solid #e2e8f0; font-size: .72rem; font-weight: 700; letter-spacing: .04em; color: #64748b; text-transform: uppercase; }
+    .bhn-row { border-bottom: 1px solid #f1f5f9; }
+    .bhn-row:last-child { border-bottom: 0; }
+    .sat-wrap { display: flex; gap: 6px; align-items: center; }
+    .sat-wrap select { min-width: 0; flex: 1 1 100%; }
+    .sat-wrap input.sat-lain { flex: 1 1 100%; min-width: 0; display: none; }
+    .sat-wrap.lain select { flex: 0 0 96px; padding-left: 8px; padding-right: 22px; }
+    .sat-wrap.lain input.sat-lain { display: block; }
+    .form-control, .form-select { font-size: .88rem; border-color: #cbd5e1; }
+    .form-control:focus, .form-select:focus { box-shadow: 0 0 0 .2rem rgba(51,65,85,.12); border-color: #64748b; }
+    .btn-hapus { border: 1px solid #dc2626; color: #dc2626; background: #fff; border-radius: 8px; height: 38px; width: 44px; }
+    .btn-hapus:hover { background: #fef2f2; }
+    .hasil { background: #0f172a; color: #e2e8f0; border-radius: 10px; padding: 14px 16px; font-size: .8rem; white-space: pre-wrap; font-family: ui-monospace, Menlo, Consolas, monospace; }
+    .tip { font-size: .82rem; color: #475569; background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 10px; padding: 10px 14px; }
+    @media (max-width: 720px) { .head-row { display: none; } .bhn-row { grid-template-columns: 1fr 1fr; } .bhn-row > :first-child { grid-column: 1 / -1; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+    <div class="tip mb-3">
+        <b>Demo:</b> pilih satuan dari daftar. Kalau tidak ada, pilih <b>Lainnya (ketik sendiri)</b> paling bawah, lalu ketik satuannya. Baris kedua contoh data lama ("galon") yang tidak ada di daftar, jadi otomatis terbuka sebagai Lainnya.
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="sec-title">4.2 Bahan Penolong dan Bahan Kimia</div>
+        <button type="button" class="btn btn-outline-secondary rounded-pill px-3" id="btnTambah"><i class="bi bi-plus-lg me-1"></i>Tambah Bahan</button>
+    </div>
+
+    <div class="card-box mb-3">
+        <div class="head-row"><div>Nama bahan kimia / penolong</div><div>Jumlah</div><div>Satuan</div><div></div></div>
+        <div id="daftarBahan"></div>
+    </div>
+
+    <div class="sec-title mb-2">Yang tersimpan ke database</div>
+    <div class="hasil" id="hasil"></div>
+</div>
+
+<script>
+(function () {
+    // Daftar satuan (dikelompokkan). "Lainnya" selalu paling bawah.
+    var GRUP = [
+        ['Massa', ['mg', 'gram', 'kg', 'ton']],
+        ['Volume', ['µL', 'mL', 'liter', 'm³']],
+        ['Kemasan', ['botol', 'jerigen', 'drum', 'kaleng', 'karung/sak', 'pak', 'paket', 'ampul', 'vial', 'tube', 'tablet']],
+        ['Jumlah / bentuk', ['pcs', 'buah', 'unit', 'set', 'lembar', 'roll']]
+    ];
+    var SEMUA = [];
+    GRUP.forEach(function (g) { SEMUA = SEMUA.concat(g[1]); });
+    var LAIN = '__lain__';
+
+    var host = document.getElementById('daftarBahan');
+    var hasil = document.getElementById('hasil');
+
+    function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+
+    function opsiHtml(terpilih) {
+        var h = '<option value="">Pilih satuan</option>';
+        GRUP.forEach(function (g) {
+            h += '<optgroup label="' + g[0] + '">' + g[1].map(function (u) { return '<option value="' + esc(u) + '"' + (u === terpilih ? ' selected' : '') + '>' + esc(u) + '</option>'; }).join('') + '</optgroup>';
+        });
+        h += '<option value="' + LAIN + '"' + (terpilih === LAIN ? ' selected' : '') + '>Lainnya (ketik sendiri)</option>';
+        return h;
+    }
+
+    function tambah(nama, jumlah, satuan) {
+        var adaDiDaftar = !satuan || SEMUA.indexOf(satuan) !== -1;
+        var row = document.createElement('div');
+        row.className = 'bhn-row';
+        row.innerHTML =
+            '<input type="text" class="form-control nm" placeholder="Nama bahan" value="' + esc(nama) + '">' +
+            '<input type="text" inputmode="decimal" class="form-control jm" placeholder="Jumlah" value="' + esc(jumlah) + '">' +
+            '<div class="sat-wrap' + (adaDiDaftar ? '' : ' lain') + '">' +
+                '<select class="form-select sat">' + opsiHtml(adaDiDaftar ? satuan : LAIN) + '</select>' +
+                '<input type="text" class="form-control sat-lain" maxlength="30" placeholder="Ketik satuan" value="' + (adaDiDaftar ? '' : esc(satuan)) + '">' +
+            '</div>' +
+            '<button type="button" class="btn-hapus" title="Hapus baris"><i class="bi bi-trash"></i></button>';
+        host.appendChild(row);
+        ringkas();
+    }
+
+    function nilaiSatuan(row) {
+        var sel = row.querySelector('.sat').value;
+        if (sel === LAIN) { return row.querySelector('.sat-lain').value.trim(); }
+        return sel;
+    }
+
+    function ringkas() {
+        var data = [];
+        host.querySelectorAll('.bhn-row').forEach(function (row) {
+            data.push({ nama: row.querySelector('.nm').value, jumlah: row.querySelector('.jm').value, satuan: nilaiSatuan(row) });
+        });
+        hasil.textContent = JSON.stringify(data, null, 2);
+    }
+
+    host.addEventListener('change', function (e) {
+        if (e.target.classList.contains('sat')) {
+            var wrap = e.target.closest('.sat-wrap');
+            var lain = e.target.value === LAIN;
+            wrap.classList.toggle('lain', lain);
+            if (lain) { wrap.querySelector('.sat-lain').focus(); }
+        }
+        ringkas();
+    });
+    host.addEventListener('input', ringkas);
+    host.addEventListener('click', function (e) {
+        var b = e.target.closest('.btn-hapus');
+        if (b) { b.closest('.bhn-row').remove(); ringkas(); }
+    });
+    document.getElementById('btnTambah').addEventListener('click', function () { tambah('', '', ''); });
+
+    tambah('NaOH (natrium hidroksida)', '2', 'kg');
+    tambah('Asam sulfat pekat', '5', 'galon');   // data lama: tidak ada di daftar -> otomatis "Lainnya"
+    tambah('', '', '');
+})();
+</script>
+</body>
+</html>

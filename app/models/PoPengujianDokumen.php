@@ -295,7 +295,7 @@ class PoPengujianDokumen
 
     /**
      * Kolom tanggal jadwal. Sama dengan PoKegiatanController::generateJadwalKolom (PO OPTI): <= 31 hari = harian
-     * (Sabtu/Minggu dan $libur otomatis libur), selebihnya mingguan (4 minggu per bulan).
+     * (Sabtu/Minggu dan $libur otomatis libur), selebihnya mingguan (minggu 1-4 tiap bulan, bulan pertama & terakhir dipotong mengikuti tanggal mulai/selesai).
      * @param string[] $libur daftar 'Y-m-d' hari libur nasional
      * @return array{mode:?string,kolom:array,bulan_header:array}
      */
@@ -324,8 +324,16 @@ class PoPengujianDokumen
             $mode = 'mingguan';
             $y = $y1; $m = (int) $d1->format('n');
             $ye = $y2; $me = (int) $d2->format('n');
+            // Minggu dalam bulan: 1 = tgl 1-7, 2 = 8-14, 3 = 15-21, 4 = tgl 22-akhir bulan. Bulan pertama mulai dari minggu tempat
+            // tanggal mulai jatuh, bulan terakhir berhenti di minggu tempat tanggal selesai jatuh (bulan di antaranya penuh 4 minggu),
+            // jadi tabel mengikuti rentang tanggal yang diisi -- sama dengan PO OPTI.
+            $mingguDariTgl = function ($hari) { return min(4, (int) ceil(((int) $hari) / 7)); };
+            $mingguAwal = $mingguDariTgl($d1->format('j'));
+            $mingguAkhir = $mingguDariTgl($d2->format('j'));
             while ($y < $ye || ($y === $ye && $m <= $me)) {
-                for ($w = 1; $w <= 4; $w++) {
+                $dari = ($y === $y1 && $m === (int) $d1->format('n')) ? $mingguAwal : 1;
+                $sampai = ($y === $y2 && $m === $me) ? $mingguAkhir : 4;
+                for ($w = $dari; $w <= $sampai; $w++) {
                     $kolom[] = array('key' => $y . '-' . str_pad((string) $m, 2, '0', STR_PAD_LEFT) . '-w' . $w, 'label' => (string) $w,
                         'bulan_label' => self::$bulan[$m] . ' ' . $y, 'libur' => false);
                 }
@@ -961,10 +969,13 @@ class PoPengujianDokumen
             $n = count($cc['kolom']);
             $w = (int) floor(52 / max($n, 1));
             $head = '<tr><th rowspan="2" style="width:38px">No</th><th rowspan="2">Kegiatan</th>';
+            // nama bulan disingkat (Okt, Nov, ...) bila kolomnya banyak atau ada bulan yang cuma 1-2 kolom (kalau tidak, hurufnya turun satu-satu)
+            $singkat = $n > 12;
+            foreach ($cc['bulan'] as $m) { if ($m['span'] < 3) { $singkat = true; } }
             foreach ($cc['bulan'] as $m) {
                 $lb = $m['label'];
-                if ($n > 12) { $lb = preg_replace('/^(\S{3})\S+/', '$1', $lb); }
-                $head .= '<th colspan="' . $m['span'] . '">' . self::h($lb) . '</th>';
+                if ($singkat) { $lb = $m['span'] < 2 ? preg_replace('/^(\S{3})\S*\s+\d\d(\d\d)$/', "$1 '$2", $lb) : preg_replace('/^(\S{3})\S+/', '$1', $lb); }
+                $head .= '<th colspan="' . $m['span'] . '"' . ($singkat && $m['span'] < 2 ? ' style="font-size:.7em;padding:2px 0"' : '') . '>' . self::h($lb) . '</th>';
             }
             $head .= '</tr><tr>';
             foreach ($cc['kolom'] as $k) {

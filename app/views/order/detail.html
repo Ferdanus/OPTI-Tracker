@@ -198,6 +198,16 @@
         .action-guide-action {
             flex-shrink: 0;
         }
+        .action-guide-audit {
+            display: flex; align-items: center; flex-wrap: wrap; gap: 4px 16px;
+            margin-top: 0.15rem; font-size: 0.74rem; line-height: 1.4; color: #64748b;
+        }
+        .ag-po-bdg {
+            flex-shrink: 0; display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 0.4rem;
+        }
+        @media (max-width: 767.98px) {
+            .ag-po-bdg { justify-content: flex-start; }
+        }
         .action-guide-btn {
             white-space: nowrap;
             padding: 0.45rem 1rem;
@@ -1031,6 +1041,9 @@
             font-weight: 700;
         }
 
+        /* Warna bawaan (warna sidebar): badge status Tahap 8 di tab, dan pita petunjuk Giliran Anda / menunggu di Tahap 8 */
+        .stage-nav-btn .badge.po-tab-slate { background: #e2e8f0 !important; color: #1e293b !important; }
+        .alert.po-alert-warning, .alert.po-alert-info { --bs-alert-bg: #f1f5f9; --bs-alert-color: #1e293b; --bs-alert-border-color: #cbd5e1; background: #f1f5f9; color: #1e293b; }
         .stage-nav-status-row {
             display: flex;
             align-items: center;
@@ -1551,9 +1564,34 @@
                             </span>
                         </div>
                         <div class="action-guide-title">{{ @langkah_berikutnya.judul }}</div>
-                        <p class="action-guide-desc">{{ @langkah_berikutnya.deskripsi }}</p>
+                        <check if="{{ !empty(@langkah_berikutnya.deskripsi) }}">
+                            <p class="action-guide-desc">{{ @langkah_berikutnya.deskripsi }}</p>
+                        </check>
+                        <check if="{{ @po_kartu_atas }}">
+                            <div class="action-guide-audit">
+                                <check if="{{ @audit_stages[8].waktu_kirim }}">
+                                    <span>Terbit: <span class="text-dark fw-medium">{{ date('d M Y, H:i', strtotime(@audit_stages[8].waktu_kirim)) }}</span> <span class="text-secondary text-nowrap">({{ @audit_stages[8].pengirim_nama ?: @audit_stages[8].pengirim_role }})</span></span>
+                                </check>
+                                <span id="audit-dibaca-stage-8" class="audit-dibaca-stage-8 {{ !@audit_stages[8].waktu_dibaca ? 'd-none' : '' }}">Dibaca: <span class="text-dark fw-medium audit-dibaca-time">{{ @audit_stages[8].waktu_dibaca ? date('d M Y, H:i', strtotime(@audit_stages[8].waktu_dibaca)) : '' }}</span> <span class="text-secondary text-nowrap audit-dibaca-name">({{ @audit_stages[8].dibaca_nama ?: @audit_stages[8].dibaca_role }})</span></span>
+                            </div>
+                        </check>
                     </div>
                 </div>
+                <check if="{{ @po_kartu_atas }}">
+                    <div class="ag-po-bdg">
+                        <check if="{{ @po_terbuka }}">
+                            <true>
+                                <check if="{{ @po_alur.giliran }}">
+                                    <span class="badge po-bdg po-bdg-line"><i class="bi bi-hourglass-split me-1"></i> Giliran Anda</span>
+                                </check>
+                                <span class="badge {{ @po_alur.badge_kelas }}"><i class="bi bi-patch-check me-1"></i> {{ @po_alur.badge_teks }}</span>
+                            </true>
+                            <false>
+                                <span class="badge bg-light text-secondary border"><i class="bi bi-lock-fill me-1"></i> {{ @po_kunci_badge ?: 'Terkunci' }}</span>
+                            </false>
+                        </check>
+                    </div>
+                </check>
                 <check if="{{ (!empty(@langkah_berikutnya.tombol_url) && !empty(@langkah_berikutnya.tombol_teks)) || !empty(@langkah_berikutnya.tombol_modal) || !empty(@langkah_berikutnya.tombol_panel) }}">
                     <div class="action-guide-action">
                         <check if="{{ !empty(@langkah_berikutnya.tombol_modal) }}">
@@ -1817,7 +1855,7 @@
                                             <true><span class="badge bg-info-subtle text-info-emphasis stage-status-badge">PO Aktif</span></true>
                                             <false>
                                                 <check if="{{ @po_terbuka }}">
-                                                    <true><span class="badge bg-warning-subtle text-warning-emphasis stage-status-badge">{{ @po_alur.tab_teks }}</span></true>
+                                                    <true><span class="badge po-tab-slate stage-status-badge">{{ @po_alur.tab_teks }}</span></true>
                                                     <false>
                                                         <span class="badge bg-primary text-white stage-status-badge">Aktif</span>
                                                     </false>
@@ -5779,6 +5817,7 @@
         <!-- ======================================================== -->
         <div class="tab-pane fade {{ @current_step == 8 ? 'show active' : '' }}" id="pane-stage-8" role="tabpanel" aria-labelledby="tab-stage-8">
             <div class="system-section-card" id="cardPo">
+                <check if="{{ !@po_kartu_atas }}">
                 <div class="system-section-header">
                     <div>
                         <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2 font-display">
@@ -5798,7 +5837,7 @@
                     <check if="{{ !@order.po_id }}">
                         <check if="{{ @po_terbuka }}">
                             <check if="{{ @po_alur.giliran }}">
-                                <span class="badge bg-warning-subtle text-dark border border-warning me-1"><i class="bi bi-hourglass-split me-1"></i> Giliran Anda</span>
+                                <span class="badge po-bdg po-bdg-line me-1"><i class="bi bi-hourglass-split me-1"></i> Giliran Anda</span>
                             </check>
                             <span class="badge {{ @po_alur.badge_kelas }}"><i class="bi bi-patch-check me-1"></i> {{ @po_alur.badge_teks }}</span>
                         </check>
@@ -5809,6 +5848,7 @@
                         </check>
                     </check>
                 </div>
+                </check>
 
                 <div class="p-4">
                     <!-- KONDISI 1: PO SUDAH TERBIT -->
@@ -5846,6 +5886,9 @@
                             <style>
                                 .pa-strip { display:flex; align-items:center; gap:12px; flex-wrap:wrap; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 14px; margin-bottom:14px; }
                                 .pa-ava { width:36px; height:36px; border-radius:50%; background:#0f2a4a; color:#fff; display:grid; place-items:center; font-weight:700; font-size:.8rem; flex:none; }
+                                .po-bdg { background:#1e293b !important; color:#fff !important; border:1px solid #1e293b !important; }   /* badge status tahap 8: warna sidebar */
+                                .po-bdg-line { background:#fff !important; color:#1e293b !important; }
+                                .po-bdg-red { background:#dc2626 !important; color:#fff !important; border-color:#dc2626 !important; }   /* perlu revisi = merah */
                                 .pa-giliran { display:inline-flex; align-items:center; gap:5px; background:#fef3c7; color:#92400e; border:1px solid #fcd34d; border-radius:99px; font-size:.72rem; font-weight:700; padding:2px 10px; }
                                 .po-btn-baru { position:relative; }
                                 .po-btn-baru::after { content:''; position:absolute; top:-5px; right:-5px; width:12px; height:12px; border-radius:50%; background:#e11d48; border:2px solid #fff; box-shadow:0 0 0 0 rgba(225,29,72,.55); animation:poBaruDenyut 1.6s infinite; }
@@ -5855,24 +5898,25 @@
                                 .pa-st { flex:1; min-width:130px; text-align:center; position:relative; padding:0 4px 4px; }
                                 .pa-st::before { content:""; position:absolute; top:15px; left:-50%; width:100%; height:3px; background:#e2e8f0; z-index:0; }
                                 .pa-st:first-child::before { display:none; }
-                                .pa-st.done::before, .pa-st.cur::before, .pa-st.rev::before { background:#16a34a; }
+                                .pa-st.done::before, .pa-st.cur::before, .pa-st.rev::before { background:#1e293b; }
                                 .pa-dot { width:32px; height:32px; border-radius:50%; margin:0 auto 6px; display:grid; place-items:center; font-size:.8rem; font-weight:700; background:#e2e8f0; color:#64748b; position:relative; z-index:1; border:3px solid #fff; box-shadow:0 0 0 1px #e2e8f0; }
-                                .pa-st.done .pa-dot { background:#16a34a; color:#fff; box-shadow:0 0 0 1px #16a34a; }
-                                .pa-st.cur .pa-dot { background:#2563eb; color:#fff; box-shadow:0 0 0 4px #bfdbfe; }
-                                .pa-st.rev .pa-dot { background:#f59e0b; color:#fff; box-shadow:0 0 0 4px #fde68a; }
+                                .pa-st.done .pa-dot { background:#1e293b; color:#fff; box-shadow:0 0 0 1px #1e293b; }
+                                .pa-st.cur .pa-dot { background:#1e293b; color:#fff; box-shadow:0 0 0 4px #cbd5e1; }
+                                .pa-st.rev .pa-dot { background:#dc2626; color:#fff; box-shadow:0 0 0 4px #fecaca; }
                                 .pa-nm { font-size:.78rem; font-weight:700; line-height:1.2; color:#0f172a; }
                                 .pa-ac { font-size:.7rem; color:#64748b; }
-                                .pa-tg { font-size:.68rem; color:#166534; margin-top:2px; }
-                                .pa-st.cur .pa-tg { color:#1d4ed8; font-weight:600; }
-                                .pa-st.rev .pa-tg { color:#b45309; font-weight:600; }
-                                .pa-frame { margin:0 -1.5rem; background:#fff; border-top:1px solid #bcd3f5; border-bottom:1px solid #bcd3f5; }
+                                .pa-tg { font-size:.68rem; color:#475569; margin-top:2px; }
+                                .pa-st.cur .pa-tg { color:#1e293b; font-weight:600; }
+                                .pa-st.rev .pa-tg { color:#dc2626; font-weight:600; }
+                                #paAlurBox .alert-success, #paAlurBox .alert-info { background:#f1f5f9; color:#0f172a; border-left:5px solid #1e293b !important; }   /* pesan di bawah alur: warna sidebar */
+                                .pa-frame { margin:0 -1.5rem; background:#fff; border-top:1px solid #cbd5e1; border-bottom:1px solid #cbd5e1; }
                                 .system-section-card:has(#paFrameWrap) { overflow:clip; }   /* overflow:hidden bawaan kartu mematikan sticky */
                                 .pa-track { position:relative; }
                                 .pa-track:not(:has(~ :not(script):not(style))) { margin-bottom:-1.5rem; }   /* bingkai form menempel ke tepi bawah kartu (tanpa ruang kosong) */
                                 #cardPo:has(#paFrameWrap) { margin-bottom:0; }
                                 .main-container:has(#pane-stage-8.active #paFrameWrap) { padding-bottom:.75rem; }   /* jarak ke footer dirapatkan saat form PO tampil */
                                 .pa-frame:not(.pa-full) { position:sticky; top:75px; z-index:40; }   /* bingkai (bar biru + form) menempel di layar selama halaman di-scroll */
-                                .pa-fh { background:#eaf3ff; border-bottom:1px solid #cfe2ff; padding:8px 14px; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; font-size:.8rem; color:#12335c; }
+                                .pa-fh { background:#f1f5f9; border-bottom:1px solid #cbd5e1; padding:8px 14px; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; font-size:.8rem; color:#1e293b; }
                                 .pa-frame iframe { display:block; width:100%; height:calc(100vh - 75px - 46px); min-height:420px; border:0; background:#fff; }
                                 .pa-frame.pa-full { position:fixed; inset:0; margin:0; z-index:1060; border-radius:0; display:flex; flex-direction:column; }
                                 .pa-frame.pa-full iframe { flex:1; height:auto; min-height:0; }
@@ -5928,17 +5972,6 @@
                                 <check if="{{ @po_alur.form_revisi }}">
                                     <check if="{{ @po_alur.revisi_ppk }}">
                                         <div class="mt-3 d-flex gap-2 flex-wrap align-items-center">
-                                            <check if="{{ @po_alur.aksi.panel_lihat }}">
-                                                <true>
-                                                    <button type="button" class="btn btn-dark btn-sm fw-semibold px-3{{ @po_alur.tombol_baru ? ' po-btn-baru' : '' }}" title="{{ @po_alur.tombol_baru ? 'Belum Anda buka' : '' }}" onclick="bukaPanelPo({{ @po_alur.aksi.panel_lihat }}, '{{ @po_alur.aksi.panel_jenis }}')"><i class="bi bi-clipboard2-check me-1"></i> Lihat catatan &amp; PO</button>
-                                                    <check if="{{ @po_alur.aksi.panel_pra }}">
-                                                        <script>window.addEventListener('load', function () { setTimeout(function () { poPraMuat({{ @po_alur.aksi.panel_lihat }}, '{{ @po_alur.aksi.panel_jenis }}'); }, 300); });</script>
-                                                    </check>
-                                                </true>
-                                                <false>
-                                                    <a href="{{ @po_alur.url_ppk }}" class="btn btn-dark btn-sm fw-semibold px-3{{ @po_alur.tombol_baru ? ' po-btn-baru' : '' }}" title="{{ @po_alur.tombol_baru ? 'Belum Anda buka' : '' }}"><i class="bi bi-clipboard2-check me-1"></i> Lihat catatan &amp; PO</a>
-                                                </false>
-                                            </check>
                                             <check if="{{ @po_alur.put_katim > 0 }}"><span class="small text-muted">Catatan bertanda <b>Ketua Tim</b> = perbaikan ke-{{ @po_alur.put_katim }} dari Ketua Tim; catatan bertanda <b>PPK BLU</b> = revisi dari PPK BLU.</span></check>
                                         </div>
                                     </check>
@@ -5977,11 +6010,11 @@
                                             <div class="pa-nm">{{ @l.nama }}</div>
                                             <div class="pa-ac">{{ @l.aktor }}</div>
                                             <check if="{{ @l.tag }}"><div class="pa-tg">{{ @l.tag }}</div></check>
-                                            <check if="{{ @l.tag2 }}"><div class="pa-tg" style="color: {{ @l.tag2_cls == 'u' ? '#b45309' : '#047857' }}; font-weight: 600;">{{ @l.tag2 }}</div></check>
+                                            <check if="{{ @l.tag2 }}"><div class="pa-tg" style="color: {{ @l.tag2_cls == 'u' ? '#dc2626' : '#475569' }}; font-weight: 600;">{{ @l.tag2 }}</div></check>
                                         </div>
                                     </repeat>
                                 </div>
-                                <div class="alert alert-{{ @po_alur.info.tipe }} border-0 shadow-xs small mb-0">{{ @po_alur.info.html | raw }}</div>
+                                <div class="alert alert-{{ @po_alur.info.tipe }} po-alert-{{ @po_alur.info.tipe }} border-0 shadow-xs small mb-0">{{ @po_alur.info.html | raw }}</div>
                                 </div>
                                 </check>
                                 <check if="{{ @po_alur.aktif }}">
@@ -6542,14 +6575,56 @@ window.addEventListener('message', function (e) {
     var d = e.data;
     if (!d || d.silopti !== 'po-panel') { return; }
     var muat = document.getElementById('poPanelMuat');
+    // Slide diminta bergeser keluar (animasi sendiri), setelah Tahap 8 selesai diperbarui di belakangnya
+    function poMintaSlideKeluar(gulir) {
+        var fk = document.getElementById('poPanelFr');
+        window.__poGulirSetelahKeluar = !!gulir;
+        if (!fk) { poSelesaiKeluar(); return; }
+        try { fk.contentWindow.postMessage({ silopti: 'po-panel-keluar' }, window.location.origin); } catch (e) { poSelesaiKeluar(); }
+    }
+    // Perbarui Tahap 8 di belakang slide. Slide tidak menunggu lebih dari ~0,3 dtk: kalau pembaruan belum selesai, slide tetap bergeser keluar
+    // dan Tahap 8 berganti begitu datanya tiba (terasa lebih sigap daripada menunggu seluruh halaman diambil).
+    function poGulirKeForm() {
+        var tg = document.getElementById('paTrack');
+        if (tg) { window.scrollTo({ top: tg.getBoundingClientRect().top + window.pageYOffset - 75, behavior: 'smooth' }); }
+    }
+    function poPerbaruiLaluKeluar(opsi, gulir) {
+        var sudahKeluar = false, sudahSegar = false;
+        function keluar() { if (sudahKeluar) { return; } sudahKeluar = true; poMintaSlideKeluar(!!gulir && sudahSegar); }
+        var jeda = setTimeout(keluar, 300);
+        return poSegarkanTahap8(opsi).then(function () {
+            sudahSegar = true; clearTimeout(jeda);
+            if (sudahKeluar && gulir) { setTimeout(poGulirKeForm, 120); }   // slide sudah terlanjur keluar: gulir begitu form tampil
+            keluar();
+        }, function (e) { clearTimeout(jeda); throw e; });
+    }
+    function poSelesaiKeluar() {
+        var fk = document.getElementById('poPanelFr'); if (muat) { muat.remove(); } if (fk) { fk.remove(); }
+        if (window.__poGulirSetelahKeluar) {
+            var tg = document.getElementById('paTrack');
+            if (tg) { window.scrollTo({ top: tg.getBoundingClientRect().top + window.pageYOffset - 75, behavior: 'smooth' }); }
+        }
+        window.__poGulirSetelahKeluar = false;
+        if (window.__poPraArgs) { setTimeout(function () { poPraMuat(window.__poPraArgs[0], window.__poPraArgs[1]); }, 400); }
+    }
     if (d.jenis === 'edit') {
-        // "Edit PO" di panel review: panel ditutup, form PO tampil di Tahap 8 (kalau belum tampil, halaman dimuat dengan ?edit_po=1)
-        var fe = document.getElementById('poPanelFr'); if (muat) { muat.remove(); } if (fe) { fe.remove(); }
+        // "Edit PO" di panel review: Tahap 8 diperbarui dulu di belakang slide (form PO tampil), baru slide bergeser keluar -- tanpa memuat ulang halaman.
+        // Kalau form sudah tampil langsung geser keluar. Gagal memperbarui -> muat ulang dengan ?edit_po=1.
         var tr = document.getElementById('paTrack');
-        if (tr) { window.scrollTo({ top: tr.getBoundingClientRect().top + window.pageYOffset - 75, behavior: 'smooth' }); }
-        else { poSegarkanTahap8({ editPo: true, gulir: true }).catch(function () { window.location.href = window.location.pathname + '?edit_po=1#cardPo'; }); }
+        if (tr) { poMintaSlideKeluar(true); return; }
+        poPerbaruiLaluKeluar({ editPo: true, gulir: false }, true)
+            .catch(function () { window.location.href = window.location.pathname + '?edit_po=1#cardPo'; });
         return;
     }
+    if (d.jenis === 'aksi') {
+        // Minta revisi / setujui / dll. di slide: detail order diperbarui di belakang slide, lalu slide bergeser keluar (tanpa memuat ulang halaman)
+        var bf = (d.buka === 'form');
+        poPerbaruiLaluKeluar({ editPo: bf }, bf).catch(function () {
+            if (bf) { window.location.href = window.location.pathname + '?edit_po=1#cardPo'; } else { window.location.reload(); }
+        });
+        return;
+    }
+    if (d.jenis === 'keluar-selesai') { poSelesaiKeluar(); return; }
     if (d.jenis === 'siap') {
         var fs = document.getElementById('poPanelFr');
         if (fs) {

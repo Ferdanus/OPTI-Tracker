@@ -316,6 +316,43 @@
     overflow: hidden;
     background: #ffffff;
 }
+/* Satuan bahan (4.2): combobox cari/ketik, daftar tampil di atas halaman (fixed) supaya tidak terpotong tabel */
+.sat-cb { position: relative; }
+.sat-cb .form-control { padding-right: 30px; }
+.sat-cb.ada-tag .form-control { padding-right: 46px; }
+.sat-chv { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: .7rem; color: #64748b; cursor: pointer; }
+.sat-tag { position: absolute; right: 31px; top: 50%; transform: translateY(-50%); width: 8px; height: 8px; border-radius: 50%; background: #1e293b; pointer-events: none; }   /* penanda satuan di luar daftar: bulatan kecil */
+.sat-pop { position: fixed; z-index: 2100; background: #fff; border: 1px solid #cbd5e1; border-radius: 12px; box-shadow: 0 16px 36px rgba(15,23,42,.18); overflow-y: auto; padding: 4px 0; font-size: .875rem; }
+.sat-gh { font-size: .66rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #64748b; padding: 10px 12px 5px; display: flex; align-items: center; gap: 6px; }
+.sat-ic { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.sat-opt { padding: 7px 12px; margin: 1px 6px; border-radius: 8px; cursor: pointer; color: #0f172a; }
+.sat-opt:hover, .sat-opt.act { background: #f1f5f9; }
+.sat-opt.on { background: #1e293b; color: #fff; }
+.sat-new { font-weight: 600; color: #1e293b; border: 1px dashed #cbd5e1; margin-top: 6px; }
+.sat-plus { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 5px; background: #1e293b; color: #fff; font-size: .8rem; margin-right: 6px; }
+.sat-empty { padding: 12px; color: #64748b; }
+/* Tim Pelaksana (4): sama seperti form PO Sertifikasi */
+.tim-av { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; color: #fff; font-size: .68rem; font-weight: 700; flex: none; }
+.tim-nm { display: flex; align-items: center; gap: 9px; min-height: 31px; }
+.tim-ctl { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.tim-mv { border: 0; background: transparent; width: 26px; height: 28px; border-radius: 6px; color: #94a3b8; padding: 0; line-height: 1; }
+.tim-mv:hover { background: #f1f5f9; color: #334155; }
+.tim-del { width: 30px; height: 30px; border-radius: 6px; padding: 0; line-height: 1; border: 1px solid #dc2626; color: #dc2626; background: #fff; font-size: .85rem; }
+.tim-del:hover { background: #dc2626; color: #fff; }
+.tim-pk { display: none; position: fixed; inset: 0; z-index: 2060; background: rgba(15,23,42,.55); padding: 18px; align-items: center; justify-content: center; }
+.tim-pk.open { display: flex; }
+.tim-pk-box { background: #fff; border-radius: 16px; width: 100%; max-width: 520px; max-height: 86vh; display: flex; flex-direction: column; box-shadow: 0 24px 60px rgba(15,23,42,.35); }
+.tim-pk-hd { padding: 14px 18px; border-bottom: 1px solid #e2e8f0; }
+.tim-pk-bd { padding: 14px 18px 6px; overflow-y: auto; flex: 1 1 auto; }
+.tim-pk-ft { padding: 12px 18px; border-top: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.tim-pk-opt { display: flex; align-items: center; gap: 12px; padding: 7px 8px; border-radius: 10px; cursor: pointer; }
+.tim-pk-opt:hover { background: #f1f5f9; }
+.tim-pk-opt.on { background: #f1f5f9; }
+.tim-pk-opt.off { opacity: .45; cursor: not-allowed; }
+.tim-pk-opt.off:hover { background: none; }
+.tim-pk-opt small { margin-left: auto; color: #64748b; font-size: .72rem; }
+.tim-pk-chk { width: 20px; height: 20px; border: 1.5px solid #94a3b8; border-radius: 5px; display: inline-flex; align-items: center; justify-content: center; font-size: .8rem; color: #fff; flex: none; }
+.tim-pk-opt.on .tim-pk-chk { background: #1e293b; border-color: #1e293b; }
 .po-table thead th {
     background: #f8fafc;
     font-size: 0.76rem;
@@ -658,6 +695,7 @@ input[type=number] {
 
 /* Bar tombol bawah form: satu baris (Kembali kiri, Simpan Draft + Kirim kanan), turun baris hanya kalau benar-benar sempit */
 html.silopti-embed .po-kembali { display: none !important; }
+html.silopti-embed .po-judul-blok { display: none !important; }   /* di detail order nomor order sudah ada di bagian atas */
 html.silopti-embed .po-live-card { top: 12px !important; }
 html.silopti-embed.pa-pin .main-container { padding-bottom: 8px !important; }   /* Tahap 8: tidak ada ruang kosong di bawah tombol */
 html.silopti-embed .rv-bar { position: static !important; }   /* di Tahap 8 pita catatan revisi ikut isi form, tidak menempel di atas sehingga tidak menimpa form */
@@ -758,12 +796,33 @@ html.silopti-embed.pa-pin { overflow: hidden !important; scroll-behavior: auto !
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35) !important;
     margin: 0;
 }
+
+/* RAB Selulosa: peringatan saat isian ditolak karena melebihi penerimaan */
+#rabBatasToast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 2100; max-width: min(560px, calc(100vw - 32px)); background: #fff; border: 1px solid #fecaca; border-left: 5px solid #dc2626; border-radius: 10px; box-shadow: 0 10px 30px rgba(15,23,42,.18); padding: 10px 14px; font-size: .84rem; color: #0f172a; display: none; }
+#rabBatasToast b { color: #dc2626; }
+#rabBatasToast.tampil { display: block; animation: rabGetar .4s ease; }
+@keyframes rabGetar { 0%,100% { transform: translateX(-50%); } 20% { transform: translateX(calc(-50% - 7px)); } 40% { transform: translateX(calc(-50% + 7px)); } 60% { transform: translateX(calc(-50% - 4px)); } 80% { transform: translateX(calc(-50% + 4px)); } }
+/* RAB Selulosa bertahap: bagian berikutnya muncul setelah bagian sebelumnya diisi */
+.rab-hide { display: none !important; }
+.rab-muncul { animation: rabMuncul .3s ease both; }
+@keyframes rabMuncul { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+.rab-step-hint { font-size: .78rem; color: #64748b; margin: 2px 0 8px; display: flex; align-items: center; gap: 6px; }
+.rab-step-hint::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #94a3b8; flex: none; }
+.rab-pilih-judul { font-size: .72rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: #64748b; margin: 6px 0 6px; }
+.rab-pilih-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin-bottom: 10px; }
+.rab-pilih-opt { border: 1px solid #cbd5e1; border-radius: 10px; padding: 10px 12px; background: #fff; cursor: pointer; text-align: left; font: inherit; transition: .15s; }
+.rab-pilih-opt:hover { border-color: #1e293b; background: #f8fafc; box-shadow: 0 2px 8px rgba(15,23,42,.06); }
+.rab-pilih-opt b { display: block; font-size: .86rem; color: #0f172a; }
+.rab-pilih-opt span { font-size: .76rem; color: #64748b; }
+.rab-modebar { display: flex; align-items: center; gap: 8px; font-size: .8rem; color: #334155; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 10px; margin: 2px 0 10px; }
+.rab-modebar b { color: #0f172a; }
+.rab-modebar a { margin-left: auto; color: #64748b; cursor: pointer; text-decoration: underline; }
 </style>
 
 <!-- Top Header Navigation -->
 <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
     <div class="d-flex align-items-center gap-3">
-        <a href="{{ @revisi_konteks ? (@BASE . '/po-kegiatan/daftar') : (@BASE . '/po-kegiatan?divisi=' . @order.jenis_layanan_opti) }}" class="po-kembali btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1.5 px-3 py-1.5 rounded-pill shadow-xs">
+        <a href="{{ @dari == 'index' ? (@BASE . '/po-kegiatan') : (@revisi_konteks ? (@BASE . '/po-kegiatan/daftar') : (@BASE . '/po-kegiatan?divisi=' . @order.jenis_layanan_opti)) }}" class="po-kembali btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1.5 px-3 py-1.5 rounded-pill shadow-xs">
             <i class="bi bi-arrow-left"></i> <span>Kembali</span>
         </a>
         <div>
@@ -773,7 +832,7 @@ html.silopti-embed.pa-pin { overflow: hidden !important; scroll-behavior: auto !
                     {{ @order.jenis_layanan_opti == 'selulosa' ? 'Divisi Selulosa' : 'Divisi Lingkungan' }}
                 </span>
             </div>
-            <p class="text-muted small mb-0 mt-0.5">
+            <p class="text-muted small mb-0 mt-0.5 po-judul-blok">
                 Nomor Order: <strong class="text-dark font-monospace">{{ @order.nomor_order }}</strong> &bull; {{ @order.nama_mitra }}
             </p>
         </div>
@@ -817,9 +876,9 @@ html.silopti-embed.pa-pin { overflow: hidden !important; scroll-behavior: auto !
         .rv-inline label { margin: 0; cursor: pointer; }
         .rv-inline .done-t { text-decoration: line-through; color: #64748b; }
         .rv-asal { display: inline-block; font-size: .66rem; font-weight: 700; padding: 1px 8px; border-radius: 20px; background: #ffedd5; color: #c2410c; margin-right: 6px; }
-        .rv-asal.kt { background: #ede9fe; color: #5b21b6; }
+        .rv-asal.kt { background: #f1f5f9; color: #1e293b; }
         .rv-inline .rv-row.lama, .rv-item.lama { opacity: .6; }
-        .rv-inline.kt { border-left-color: #8b5cf6; background: #faf8ff; }
+        .rv-inline.kt { border-left-color: #1e293b; background: #f1f5f9; }
         .rv-inline.kt.done { border-left-color: #059669; background: #ecfdf5; }
         .rv-err { color: #b91c1c; font-size: .78rem; margin-top: 4px; }
         .rv-kirim { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; padding-top: 10px; border-top: 1px solid #fde68a; }
@@ -942,7 +1001,7 @@ html.silopti-embed.pa-pin { overflow: hidden !important; scroll-behavior: auto !
                 <span class="po-step-badge">1</span>
                 <div>
                     <h6 class="m-0 fw-bold text-dark">Dasar Pelaksanaan</h6>
-                    <span class="text-muted small">Surat persetujuan biaya dan rujukan pembayaran</span>
+                    <span class="text-muted small">Surat penawaran dan rujukan pembayaran</span>
                 </div>
             </div>
         </div>
@@ -960,7 +1019,7 @@ html.silopti-embed.pa-pin { overflow: hidden !important; scroll-behavior: auto !
             <check if="{{ @surat_dasar }}">
                 <true>
                     <div class="mb-3">
-                        <label class="po-label">Nomor Surat Persetujuan Biaya</label>
+                        <label class="po-label">Nomor Surat Penawaran</label>
                         <div class="form-control po-control bg-light fw-semibold" style="cursor:not-allowed;">{{ @surat_dasar.nomor }}</div>
                         <div class="form-text">Otomatis dari Surat Penawaran order ini.</div>
                         <input type="hidden" id="dasarNomorLengkap" value="{{ @surat_dasar.nomor }}">
@@ -974,7 +1033,7 @@ html.silopti-embed.pa-pin { overflow: hidden !important; scroll-behavior: auto !
                         Order ini belum punya Surat Penawaran, jadi nomor dan tanggal surat diisi manual dulu.
                     </div>
             <div class="mb-3">
-                <label class="po-label">Nomor Surat Persetujuan Biaya <span class="text-danger">*</span></label>
+                <label class="po-label">Nomor Surat Penawaran <span class="text-danger">*</span></label>
                 <div class="po-compound-group">
                     <span class="po-compound-addon">B /</span>
                     <input type="text" id="dasarNomorUrut" name="dasar_nomor_urut" class="form-control form-control-sm text-center fw-bold" style="width: 85px; border-radius: 6px;" placeholder="No. Surat" data-wajib="1">
@@ -1373,7 +1432,7 @@ html.silopti-embed.pa-pin { overflow: hidden !important; scroll-behavior: auto !
                                 <tr>
                                     <th>Nama Bahan Kimia / Penolong</th>
                                     <th style="width: 120px;">Jumlah</th>
-                                    <th style="width: 120px;">Satuan</th>
+                                    <th style="width: 210px;">Satuan</th>
                                     <th style="width: 44px;"></th>
                                 </tr>
                             </thead>
@@ -1473,7 +1532,7 @@ html.silopti-embed.pa-pin { overflow: hidden !important; scroll-behavior: auto !
                 </div>
             </div>
             <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-xs d-inline-flex align-items-center gap-1.5" id="btnTambahTim">
-                <i class="bi bi-person-plus-fill"></i> <span>Tambah Personil</span>
+                <i class="bi bi-people-fill"></i> <span>Pilih dari daftar pegawai</span>
             </button>
         </div>
         <div class="po-card-body">
@@ -1481,10 +1540,10 @@ html.silopti-embed.pa-pin { overflow: hidden !important; scroll-behavior: auto !
                 <table class="table po-table align-middle mb-0" id="tabelTim">
                     <thead>
                         <tr>
-                            <th style="width: 260px;">Nama Pegawai</th>
-                            <th style="width: 200px;">Peran / Tanggung Jawab</th>
+                            <th style="width: 240px;">Nama Pegawai</th>
+                            <th style="width: 220px;">Jabatan</th>
                             <th>Uraian Tugas Spesifik</th>
-                            <th style="width: 44px;"></th>
+                            <th style="width: 96px;"></th>
                         </tr>
                     </thead>
                     <tbody id="bodyTim"></tbody>
@@ -1611,7 +1670,7 @@ html.silopti-embed.pa-pin { overflow: hidden !important; scroll-behavior: auto !
                     <label class="po-label">Durasi <span class="text-muted fw-normal">(Bulan)</span></label>
                     <div class="input-group">
                         <span class="input-group-text bg-light text-muted"><i class="bi bi-hourglass-split"></i></span>
-                        <input type="text" id="jadwalDurasiBulan" class="form-control po-control text-center fw-bold{{ @jadwal_auto ? ' bg-light' : '' }}" inputmode="numeric" style="font-size: 0.95rem;{{ @jadwal_auto ? ' cursor:not-allowed; pointer-events:none;' : '' }}"{{ @jadwal_auto ? ' readonly tabindex="-1"' : '' }}>
+                        <input type="text" id="jadwalDurasiBulan" class="form-control po-control text-center fw-bold{{ @jadwal_auto ? ' bg-light' : '' }}" inputmode="decimal" style="font-size: 0.95rem;{{ @jadwal_auto ? ' cursor:not-allowed; pointer-events:none;' : '' }}"{{ @jadwal_auto ? ' readonly tabindex="-1"' : '' }}>
                         <span class="input-group-text bg-light text-muted small fw-semibold px-3">Bulan</span>
                     </div>
                 </div>
@@ -1700,6 +1759,7 @@ html.silopti-embed.pa-pin { overflow: hidden !important; scroll-behavior: auto !
     <!-- 7. PENANDATANGANAN -->
     <!-- ======================================================== -->
     <include href="petunjuk_operasional/_penandatangan.html" />
+    <include href="petunjuk_operasional/_tema_po_warna.html" />
     <include href="petunjuk_operasional/_dialog_nomor_po.html" />
     <div class="po-card" id="poCardTtd">
         <div class="po-card-header">
@@ -1719,7 +1779,7 @@ html.silopti-embed.pa-pin { overflow: hidden !important; scroll-behavior: auto !
     <!-- Sticky Bottom Action Bar -->
     <div class="po-sticky-bar">
         <div class="d-flex align-items-center gap-2">
-            <a href="{{ @revisi_konteks ? (@BASE . '/po-kegiatan/daftar') : (@BASE . '/po-kegiatan?divisi=' . @order.jenis_layanan_opti) }}" class="po-kembali btn btn-outline-secondary px-3.5 py-2 rounded-pill shadow-xs fw-semibold">
+            <a href="{{ @dari == 'index' ? (@BASE . '/po-kegiatan') : (@revisi_konteks ? (@BASE . '/po-kegiatan/daftar') : (@BASE . '/po-kegiatan?divisi=' . @order.jenis_layanan_opti)) }}" class="po-kembali btn btn-outline-secondary px-3.5 py-2 rounded-pill shadow-xs fw-semibold">
                 <i class="bi bi-arrow-left me-1"></i> Batal / Kembali
             </a>
             <button type="button" class="btn btn-outline-primary btn-sm px-3 py-1.5 rounded-pill shadow-xs fw-semibold d-inline-flex align-items-center gap-1.5 d-xl-none" onclick="switchPoViewMode('preview')">
@@ -1923,6 +1983,7 @@ var divisiOrder = {{ json_encode(@order.jenis_layanan_opti ?: '') }};
 // [BARU] RAB berjenjang (Kegiatan -> Lokasi/Kelompok -> Item) dipakai buat lingkungan DAN
 // selulosa sekarang (mesinnya sama, selulosa cuma biasanya lebih dikit levelnya).
 var pakaiRabBaru = (divisiOrder === 'lingkungan' || divisiOrder === 'selulosa');
+var rabBertahap = (divisiOrder === 'selulosa');   // RAB Selulosa: bagian RAB muncul satu per satu (nama dulu, baru pilihan berikutnya)
 var rabLing = (divisiOrder === 'lingkungan');   // RAB Lingkungan: header tabel muncul setelah item ditambah + "Disediakan PT" per baris item
 // CATATAN: nama PT/mitra buat auto-isi "Disediakan oleh PT" pake namaPerusahaanDasar yang
 // udah didefinisikan di bagian "1. DASAR" (@order.nama_mitra, udah dibungkus decodeHtmlEntities
@@ -2398,16 +2459,16 @@ function adjustTableBorderStyleModal(editorEl, ta, table, wrap) {
         var isAct = s.id === currentStyle;
         html += `
             <div class="card p-2.5 rounded-3 swal-border-card" data-style="${s.id}" 
-                 style="cursor:pointer; transition:all 0.15s ease-in-out; border: 1.5px solid ${isAct ? '#3b82f6' : '#e2e8f0'} !important; background-color: ${isAct ? '#eff6ff' : '#ffffff'} !important; box-shadow: ${isAct ? '0 1px 3px rgba(59, 130, 246, 0.12)' : 'none'} !important;">
+                 style="cursor:pointer; transition:all 0.15s ease-in-out; border: 1.5px solid ${isAct ? '#1e293b' : '#e2e8f0'} !important; background-color: ${isAct ? '#f1f5f9' : '#ffffff'} !important; box-shadow: ${isAct ? '0 1px 3px rgba(30, 41, 59, 0.12)' : 'none'} !important;">
                 <div class="d-flex align-items-center justify-content-between">
                     <div class="d-flex align-items-center gap-3">
                         <div class="swal-icon-box d-flex align-items-center justify-content-center flex-shrink-0" 
-                             style="width:38px; height:38px; border-radius:50%; transition:all 0.15s ease; background-color: ${isAct ? '#3b82f6' : '#f1f5f9'} !important; color: ${isAct ? '#ffffff' : '#64748b'} !important;">
+                             style="width:38px; height:38px; border-radius:50%; transition:all 0.15s ease; background-color: ${isAct ? '#1e293b' : '#f1f5f9'} !important; color: ${isAct ? '#ffffff' : '#64748b'} !important;">
                             <i class="bi ${s.icon}" style="font-size:1.15rem;"></i>
                         </div>
                         <div>
-                            <div class="swal-title-text" style="font-size:0.875rem; font-weight: ${isAct ? '700' : '600'}; color: ${isAct ? '#1d4ed8' : '#1e293b'} !important;">${s.name}</div>
-                            <div class="swal-desc-text small" style="font-size:0.75rem; color: ${isAct ? '#2563eb' : '#64748b'} !important;">${s.desc}</div>
+                            <div class="swal-title-text" style="font-size:0.875rem; font-weight: ${isAct ? '700' : '600'}; color: ${isAct ? '#1e293b' : '#1e293b'} !important;">${s.name}</div>
+                            <div class="swal-desc-text small" style="font-size:0.75rem; color: ${isAct ? '#475569' : '#64748b'} !important;">${s.desc}</div>
                         </div>
                     </div>
                     <div class="form-check m-0 ps-2">
@@ -2495,19 +2556,19 @@ function adjustTableBorderStyleModal(editorEl, ta, table, wrap) {
                         
                         var iconWrap = card.querySelector('.swal-icon-box');
                         if (iconWrap) {
-                            iconWrap.style.setProperty('background-color', '#3b82f6', 'important');
+                            iconWrap.style.setProperty('background-color', '#1e293b', 'important');
                             iconWrap.style.setProperty('color', '#ffffff', 'important');
                         }
                         
                         var titleEl = card.querySelector('.swal-title-text');
                         if (titleEl) {
-                            titleEl.style.setProperty('color', '#1d4ed8', 'important');
+                            titleEl.style.setProperty('color', '#1e293b', 'important');
                             titleEl.style.setProperty('font-weight', '700', 'important');
                         }
                         
                         var descEl = card.querySelector('.swal-desc-text');
                         if (descEl) {
-                            descEl.style.setProperty('color', '#2563eb', 'important');
+                            descEl.style.setProperty('color', '#475569', 'important');
                         }
                         
                         var radio = card.querySelector('.swal-border-radio');
@@ -3632,6 +3693,192 @@ function initAllPoEditors() {
 function rupiah(n) { return 'Rp ' + (Math.round(n) || 0).toLocaleString('id-ID'); }
 
 /* ===== 4.2 Bahan dan Bahan Kimia (Selulosa) ===== */
+// Satuan bahan: combobox. Ketik untuk mencari di daftar; kalau tidak ada, pakai ketikan sendiri. Yang ikut terkirim hanya input tersembunyi bahan_kimia_satuan[] (teks satuan akhir),
+// jadi penyimpanan, pratinjau, dan cetak PO tetap sama seperti sebelumnya.
+var SATUAN_BAHAN_GRUP = [
+    ['Massa', ['mg', 'gram', 'kg', 'ton']],
+    ['Volume', ['\u00b5L', 'mL', 'liter', 'm\u00b3']],
+    ['Kemasan', ['botol', 'jerigen', 'drum', 'kaleng', 'karung/sak', 'pak', 'paket', 'ampul', 'vial', 'tube', 'tablet']],
+    ['Jumlah / bentuk', ['pcs', 'buah', 'unit', 'set', 'lembar', 'roll']]
+];
+var SATUAN_BAHAN_LAIN = '__lain__';
+// penulisan lama yang umum -> satuan baku di daftar
+var SATUAN_BAHAN_ALIAS = { 'l': 'liter', 'lt': 'liter', 'ltr': 'liter', 'liter': 'liter', 'g': 'gram', 'gr': 'gram', 'gram': 'gram', 'ml': 'mL', 'ul': '\u00b5L', 'm3': 'm\u00b3', 'karung': 'karung/sak', 'sak': 'karung/sak' };
+function cocokkanSatuanBahan(nilai) {
+    var v = String(nilai == null ? '' : nilai).trim();
+    if (v === '') return '';
+    var kunci = v.toLowerCase();
+    if (SATUAN_BAHAN_ALIAS.hasOwnProperty(kunci)) return SATUAN_BAHAN_ALIAS[kunci];
+    for (var i = 0; i < SATUAN_BAHAN_GRUP.length; i++) {
+        for (var j = 0; j < SATUAN_BAHAN_GRUP[i][1].length; j++) {
+            if (SATUAN_BAHAN_GRUP[i][1][j].toLowerCase() === kunci) return SATUAN_BAHAN_GRUP[i][1][j];
+        }
+    }
+    return null;   // tidak ada di daftar -> dianggap "Lainnya"
+}
+var SATUAN_BAHAN_IKON = [
+    '<svg class="sat-ic" viewBox="0 0 24 24"><path d="M6 9h12l2 11H4L6 9z"/><circle cx="12" cy="5.5" r="2.3"/></svg>',
+    '<svg class="sat-ic" viewBox="0 0 24 24"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/></svg>',
+    '<svg class="sat-ic" viewBox="0 0 24 24"><path d="M3 7l9-4 9 4v10l-9 4-9-4V7zM3 7l9 4 9-4M12 11v10"/></svg>',
+    '<svg class="sat-ic" viewBox="0 0 24 24"><path d="M5 9h14M5 15h14M10 4L8 20M16 4l-2 16"/></svg>'
+];
+function buatPilihanSatuanBahan(nilai) {
+    var awal = String(nilai == null ? '' : nilai).trim();
+    var baku = cocokkanSatuanBahan(awal);   // satuan baku, '' (kosong), atau null (tidak ada di daftar = satuan sendiri)
+
+    var wrap = document.createElement('div');
+    wrap.className = 'sat-cb';
+
+    var hidden = document.createElement('input');
+    hidden.type = 'hidden'; hidden.name = 'bahan_kimia_satuan[]';
+
+    var inp = document.createElement('input');
+    inp.type = 'text'; inp.className = 'form-control form-control-sm';
+    inp.maxLength = 30; inp.autocomplete = 'off';
+    inp.placeholder = 'Cari atau ketik satuan';
+    inp.setAttribute('aria-label', 'Satuan');
+    inp.setAttribute('role', 'combobox');
+    inp.setAttribute('aria-autocomplete', 'list');
+    inp.setAttribute('aria-expanded', 'false');
+    inp.value = (baku === null) ? awal : (baku || '');
+
+    var tag = document.createElement('span');
+    tag.className = 'sat-tag'; tag.setAttribute('aria-hidden', 'true'); tag.style.display = 'none';
+    var chev = document.createElement('i');
+    chev.className = 'bi bi-chevron-down sat-chv';
+
+    var pop = null, items = [], act = -1, saring = false;
+
+    function sinkron() {
+        var v = inp.value.trim();
+        var k = cocokkanSatuanBahan(v);
+        var lain = (v !== '' && k === null);
+        hidden.value = (k === null) ? v : k;
+        tag.style.display = lain ? '' : 'none';
+        wrap.classList.toggle('ada-tag', lain);
+    }
+    function kabari() { hidden.dispatchEvent(new Event('change', { bubbles: true })); }   // segarkan pratinjau PO
+
+    function taruh() {
+        if (!pop) return;
+        var r = inp.getBoundingClientRect();
+        var lebar = Math.max(r.width, 240);
+        pop.style.width = lebar + 'px';
+        pop.style.left = Math.max(8, Math.min(r.left, window.innerWidth - lebar - 8)) + 'px';
+        var bawah = window.innerHeight - r.bottom;
+        if (bawah < 230 && r.top > bawah) {
+            pop.style.top = 'auto'; pop.style.bottom = (window.innerHeight - r.top + 6) + 'px';
+            pop.style.maxHeight = Math.max(120, Math.min(310, r.top - 16)) + 'px';
+        } else {
+            pop.style.bottom = 'auto'; pop.style.top = (r.bottom + 6) + 'px';
+            pop.style.maxHeight = Math.max(120, Math.min(310, bawah - 16)) + 'px';
+        }
+    }
+    function tutup() {
+        if (pop) { pop.remove(); pop = null; }
+        items = []; act = -1;
+        inp.setAttribute('aria-expanded', 'false');
+        window.removeEventListener('scroll', taruh, true);
+        window.removeEventListener('resize', taruh);
+    }
+    function pilih(v) {
+        var sebelum = hidden.value;
+        inp.value = v; saring = false; sinkron(); tutup();
+        if (hidden.value !== sebelum) kabari();
+    }
+    function gambar() {
+        if (!pop) {
+            pop = document.createElement('div');
+            pop.className = 'sat-pop'; pop.setAttribute('role', 'listbox');
+            pop.addEventListener('mousedown', function (e) { e.preventDefault(); });   // jaga fokus tetap di kolom
+            document.body.appendChild(pop);
+            window.addEventListener('scroll', taruh, true);
+            window.addEventListener('resize', taruh);
+            inp.setAttribute('aria-expanded', 'true');
+        }
+        var teks = inp.value.trim();
+        var q = saring ? teks.toLowerCase() : '';
+        var kini = cocokkanSatuanBahan(teks);
+        pop.innerHTML = ''; items = []; act = -1;
+        SATUAN_BAHAN_GRUP.forEach(function (g, gi) {
+            var cocok = g[1].filter(function (u) { return !q || u.toLowerCase().indexOf(q) !== -1; });
+            if (!cocok.length) return;
+            var gh = document.createElement('div'); gh.className = 'sat-gh';
+            gh.innerHTML = SATUAN_BAHAN_IKON[gi] || '';
+            var gn = document.createElement('span'); gn.textContent = g[0]; gh.appendChild(gn);
+            pop.appendChild(gh);
+            cocok.forEach(function (u) {
+                var it = document.createElement('div');
+                it.className = 'sat-opt' + (u === kini ? ' on' : '');
+                it.setAttribute('role', 'option'); it.textContent = u; it.setAttribute('data-v', u);
+                it.addEventListener('mousedown', function (e) { e.preventDefault(); pilih(u); });
+                pop.appendChild(it); items.push(it);
+            });
+        });
+        if (q && kini === null) {
+            var nw = document.createElement('div'); nw.className = 'sat-opt sat-new'; nw.setAttribute('data-baru', '1');
+            var pl = document.createElement('b'); pl.className = 'sat-plus'; pl.textContent = '+';
+            var tx = document.createElement('span'); tx.textContent = 'Pakai “' + teks + '” sebagai satuan sendiri';
+            nw.appendChild(pl); nw.appendChild(tx);
+            nw.addEventListener('mousedown', function (e) { e.preventDefault(); pilih(teks); });
+            pop.appendChild(nw); items.push(nw);
+        }
+        if (!items.length) {
+            var em = document.createElement('div'); em.className = 'sat-empty'; em.textContent = 'Tidak ada yang cocok';
+            pop.appendChild(em);
+        }
+        taruh();
+    }
+    function tandai() {
+        items.forEach(function (x, i) {
+            x.classList.toggle('act', i === act);
+            if (i === act && x.scrollIntoView) x.scrollIntoView({ block: 'nearest' });
+        });
+    }
+
+    inp.addEventListener('focus', function () { saring = false; gambar(); try { inp.select(); } catch (e) {} });
+    inp.addEventListener('click', function () { if (!pop) { saring = false; gambar(); } });
+    inp.addEventListener('input', function () { saring = true; sinkron(); gambar(); });
+    inp.addEventListener('blur', function () {
+        var sebelum = hidden.value;
+        var k = cocokkanSatuanBahan(inp.value.trim());
+        if (k) inp.value = k;   // rapikan penulisan (mis. "l" -> "liter", "ml" -> "mL")
+        sinkron(); tutup();
+        if (hidden.value !== sebelum) kabari();
+    });
+    inp.addEventListener('keydown', function (e) {
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (!pop) { saring = false; gambar(); }
+            act = (e.key === 'ArrowDown') ? Math.min(items.length - 1, act + 1) : Math.max(0, act - 1);
+            tandai();
+        } else if (e.key === 'Enter') {
+            if (!pop) return;
+            e.preventDefault();
+            var t = items[act];
+            if (!t && saring) {
+                var q = inp.value.trim().toLowerCase();
+                for (var a = 0; a < items.length && !t; a++) { if ((items[a].getAttribute('data-v') || '').toLowerCase() === q) t = items[a]; }
+                for (var b = 0; b < items.length && !t; b++) { if (q && (items[b].getAttribute('data-v') || '').toLowerCase().indexOf(q) === 0) t = items[b]; }
+                for (var c = 0; c < items.length && !t; c++) { if (items[c].getAttribute('data-baru')) t = items[c]; }
+                if (!t) t = items[0];
+            }
+            if (t) { t.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true })); } else { tutup(); }
+        } else if (e.key === 'Escape') {
+            if (pop) { e.preventDefault(); e.stopPropagation(); tutup(); }
+        }
+    });
+    chev.addEventListener('mousedown', function (e) {
+        e.preventDefault();
+        if (pop) { tutup(); return; }
+        saring = false;
+        if (document.activeElement === inp) { gambar(); } else { inp.focus(); }
+    });
+
+    sinkron();
+    wrap.appendChild(hidden); wrap.appendChild(inp); wrap.appendChild(tag); wrap.appendChild(chev);
+    return wrap;
+}
 function tambahBarisBahanKimia(data) {
     data = data || {};
     var tr = document.createElement('tr');
@@ -3651,7 +3898,7 @@ function tambahBarisBahanKimia(data) {
         if (v !== this.value) this.value = v;
     });
     var tdJ = document.createElement('td'); tdJ.appendChild(inJml);
-    var tdS = document.createElement('td'); tdS.appendChild(mk('text', 'bahan_kimia_satuan[]', data.satuan, 'isi satuan'));
+    var tdS = document.createElement('td'); tdS.appendChild(buatPilihanSatuanBahan(data.satuan));
     var tdH = document.createElement('td');
     var btn = document.createElement('button');
     btn.type = 'button'; btn.className = 'btn btn-sm btn-outline-danger'; btn.innerHTML = '<i class="bi bi-trash"></i>';
@@ -3774,60 +4021,10 @@ function hitungKebutuhanLive() {
 
 
 /* ============================================================ */
-/* 4. TIM PELAKSANA (dropdown nama dari Data Master Tim Pelaksana  */
-/*    per divisi; jabatan = select dari Master Jabatan Pelaksana;  */
-/*    keduanya searchable via Tom Select, sama seperti Pengujian)  */
+/* 4. TIM PELAKSANA (sama seperti form PO Sertifikasi: nama dipilih */
+/*    lewat jendela centang dari Master Tim Pelaksana divisi PO ini; */
+/*    jabatan = select dari Master Jabatan Pelaksana)                */
 /* ============================================================ */
-/* [BARU] Sumber nama buat dropdown: utamakan Data Master Tim Pelaksana
-   divisi ini; kalau master-nya masih kosong (belum ada yang didaftarin di divisi ini),
-   jatuh ke daftar pegawai lama biar tetep bisa milih nama. */
-function sumberNamaTimPelaksana() {
-    return (daftarMasterPelaksana && daftarMasterPelaksana.length)
-        ? daftarMasterPelaksana.map(function (p) { return p.nama; })
-        : daftarPegawai.map(function (p) { return p.nama_user; });
-}
-
-/* Nama = select dari Data Master Tim Pelaksana (nama yang sudah dipilih di baris lain tidak muncul lagi);
-   Peran / Jabatan = select dari Data Master Jabatan Pelaksana PO. Sama seperti form PO Pengujian. */
-var sedangSegarkanNama = false;
-function segarkanPilihanNama() {
-    if (sedangSegarkanNama) { return; }
-    sedangSegarkanNama = true;
-    try {
-        var sumber = sumberNamaTimPelaksana();
-        var semua = Array.prototype.slice.call(document.querySelectorAll('#bodyTim [name="tp_nama[]"]'));
-        semua.forEach(function (sel) {
-            var cur = sel.value || '';
-            var dipakaiLain = {};
-            semua.forEach(function (o) { if (o !== sel && o.value) { dipakaiLain[o.value] = 1; } });
-            var daftar = sumber.filter(function (n) { return !dipakaiLain[n] || n === cur; });
-            if (cur && daftar.indexOf(cur) === -1) { daftar.unshift(cur); }   // nama lama di luar master tetap tampil
-            var sig = JSON.stringify(daftar);
-            if (sel._sigNama === sig) { return; }
-            sel._sigNama = sig;
-            if (sel.tomselect) { sel.tomselect.destroy(); }
-            sel.innerHTML = '';
-            var kosong = document.createElement('option');
-            kosong.value = ''; kosong.textContent = '-- Pilih Nama --';
-            sel.appendChild(kosong);
-            daftar.forEach(function (n) {
-                var o = document.createElement('option');
-                o.value = n; o.textContent = n;
-                sel.appendChild(o);
-            });
-            sel.value = cur;
-            pasangTomSelect(sel, 'Ketik untuk mencari nama...');
-        });
-    } finally {
-        sedangSegarkanNama = false;
-    }
-}
-
-function perbaruiDaftarNama() {
-    // ditunda sedikit: pilihan baris lain dibangun ulang setelah dropdown yang baru dipakai selesai menutup
-    setTimeout(segarkanPilihanNama, 0);
-}
-
 // Select dengan pilihan dari master. Nilai pada PO lama yang tidak ada di master tetap ditampilkan (data tidak hilang).
 function buatSelectPilihan(nama, sumber, terpilih, teksKosong) {
     var select = document.createElement('select');
@@ -3852,16 +4049,67 @@ function pasangTomSelect(select, placeholder) {
     new TomSelect(select, { create: false, sortField: { field: '$order' }, placeholder: placeholder, dropdownParent: 'body' });
 }
 
+var WARNA_AV_TIM = ['#2b3a4f', '#0e7490', '#7c3aed', '#b45309', '#be123c', '#15803d', '#4338ca', '#0f766e'];
+function avatarTim(n) {
+    n = String(n || '');
+    var p = n.trim().split(/\s+/), h = 0, k;
+    for (var k = 0; k < n.length; k++) { h = (h * 31 + n.charCodeAt(k)) % 997; }
+    var s = document.createElement('span');
+    s.className = 'tim-av'; s.style.background = WARNA_AV_TIM[h % WARNA_AV_TIM.length];
+    s.textContent = ((p[0] || '').charAt(0) + (p[1] || '').charAt(0)).toUpperCase();
+    return s;
+}
+// Pegawai yang boleh dipilih = anggota aktif Master Tim Pelaksana PO untuk divisi PO ini (selulosa / lingkungan)
+function sumberNamaTimPelaksana() {
+    var out = [], ada = {};
+    (daftarMasterPelaksana || []).forEach(function (p) { if (p && p.nama && !ada[p.nama]) { ada[p.nama] = 1; out.push(p.nama); } });
+    return out;
+}
+function namaTimTerpakai() {
+    return Array.prototype.map.call(document.querySelectorAll('#bodyTim [name="tp_nama[]"]'), function (e) { return e.value; }).filter(Boolean);
+}
+function segarkanPratinjauTim() { if (typeof window.triggerLivePreviewRefresh === 'function') window.triggerLivePreviewRefresh(); }
+function segarkanKosongTim() {
+    var tb = document.getElementById('bodyTim'); if (!tb) return;
+    var ada = tb.querySelectorAll('tr:not(.tim-kosong)').length, k = tb.querySelector('.tim-kosong');
+    if (ada && k) { k.remove(); }
+    if (!ada && !k) {
+        var tr = document.createElement('tr'); tr.className = 'tim-kosong';
+        var td = document.createElement('td'); td.colSpan = 4; td.className = 'text-center text-muted small py-3';
+        td.innerHTML = '<i class="bi bi-info-circle me-1"></i>Belum ada anggota. Klik <b>Pilih dari daftar pegawai</b>.';
+        tr.appendChild(td); tb.appendChild(tr);
+    }
+}
+
 function tambahBarisTim(data) {
     data = data || {};
     var tr = document.createElement('tr');
 
+    // Nama: terkunci setelah dipilih (avatar + nama); baris kosong menampilkan tombol "Pilih pegawai..."
     var tdNama = document.createElement('td');
-    var inNama = buatSelectPilihan('tp_nama[]', sumberNamaTimPelaksana(), data.nama || '', '-- Pilih Nama --');
-    tdNama.appendChild(inNama);
+    var inNama = document.createElement('input');
+    inNama.type = 'hidden'; inNama.name = 'tp_nama[]'; inNama.value = data.nama || '';
+    function gambarNama() {
+        tdNama.innerHTML = '';
+        tdNama.appendChild(inNama);
+        if (inNama.value) {
+            var d = document.createElement('div'); d.className = 'tim-nm';
+            var b = document.createElement('b'); b.textContent = inNama.value;
+            d.appendChild(avatarTim(inNama.value)); d.appendChild(b);
+            tdNama.appendChild(d);
+        } else {
+            var bt = document.createElement('button');
+            bt.type = 'button'; bt.className = 'btn btn-sm btn-outline-secondary w-100 text-start';
+            bt.innerHTML = '<i class="bi bi-person-plus me-1"></i>Pilih pegawai...';
+            bt.addEventListener('click', bukaPilihTim);
+            tdNama.appendChild(bt);
+        }
+    }
+    tr._isiNama = function (n) { inNama.value = n; gambarNama(); };
+    gambarNama();
 
     var tdTugas = document.createElement('td');
-    var inTugas = buatSelectPilihan('tp_tugas[]', daftarJabatanPelaksana, data.tugas || '', '-- Pilih Peran --');
+    var inTugas = buatSelectPilihan('tp_tugas[]', daftarJabatanPelaksana, data.tugas || '', 'Pilih jabatan...');
     tdTugas.appendChild(inTugas);
 
     var tdUraian = document.createElement('td');
@@ -3870,25 +4118,99 @@ function tambahBarisTim(data) {
     inUraian.placeholder = 'Jelaskan tugas/tanggung jawab yang akan dilakukan'; inUraian.value = data.uraian_tugas || '';
     tdUraian.appendChild(inUraian);
 
-    inNama.addEventListener('change', perbaruiDaftarNama);
-
-    var tdHapus = document.createElement('td');
-    var btnHapus = document.createElement('button');
-    btnHapus.type = 'button'; btnHapus.className = 'btn btn-sm btn-outline-danger';
-    btnHapus.innerHTML = '<i class="bi bi-trash"></i>';
-    btnHapus.addEventListener('click', function () {
-        if (inNama.tomselect) { inNama.tomselect.destroy(); }
-        if (inTugas.tomselect) { inTugas.tomselect.destroy(); }
-        tr.remove(); perbaruiDaftarNama();
-        if (typeof window.triggerLivePreviewRefresh === 'function') window.triggerLivePreviewRefresh();
+    var tdCtl = document.createElement('td'); tdCtl.className = 'text-end';
+    var ctl = document.createElement('span'); ctl.className = 'tim-ctl';
+    function tb(cls, ikon, judul, fn) {
+        var b = document.createElement('button'); b.type = 'button'; b.className = cls; b.title = judul;
+        b.innerHTML = '<i class="bi ' + ikon + '"></i>'; b.addEventListener('click', fn); ctl.appendChild(b);
+    }
+    tb('tim-mv', 'bi-chevron-up', 'Naik', function () {
+        var p = tr.previousElementSibling;
+        if (p && !p.classList.contains('tim-kosong')) { tr.parentNode.insertBefore(tr, p); segarkanPratinjauTim(); }
     });
-    tdHapus.appendChild(btnHapus);
+    tb('tim-mv', 'bi-chevron-down', 'Turun', function () {
+        var n = tr.nextElementSibling;
+        if (n) { tr.parentNode.insertBefore(n, tr); segarkanPratinjauTim(); }
+    });
+    tb('tim-del', 'bi-trash', 'Hapus', function () {
+        tr.remove(); segarkanKosongTim(); segarkanPratinjauTim();
+    });
+    tdCtl.appendChild(ctl);
 
-    tr.appendChild(tdNama); tr.appendChild(tdTugas); tr.appendChild(tdUraian); tr.appendChild(tdHapus);
+    tr.appendChild(tdNama); tr.appendChild(tdTugas); tr.appendChild(tdUraian); tr.appendChild(tdCtl);
     document.getElementById('bodyTim').appendChild(tr);
-    pasangTomSelect(inNama, 'Ketik untuk mencari nama...');
-    pasangTomSelect(inTugas, 'Pilih peran...');
-    perbaruiDaftarNama();
+    segarkanKosongTim();
+    return tr;
+}
+
+/* Jendela pilih pegawai (centang banyak), isi dari Master Tim Pelaksana divisi ini */
+var timPkSel = [], timPkEl = null;
+function timPkBuat() {
+    if (timPkEl) return timPkEl;
+    var d = document.createElement('div');
+    d.className = 'tim-pk'; d.setAttribute('aria-hidden', 'true');
+    d.innerHTML = '<div class="tim-pk-box" role="dialog" aria-modal="true" aria-labelledby="timPkTtl">' +
+        '<div class="tim-pk-hd"><b id="timPkTtl">Pilih anggota tim</b><div class="small text-muted">Centang satu atau lebih pegawai</div></div>' +
+        '<div class="tim-pk-bd"><input type="search" class="form-control mb-2" id="timPkCari" placeholder="Cari nama pegawai..." autocomplete="off"><div id="timPkList"></div></div>' +
+        '<div class="tim-pk-ft"><b id="timPkN">0 orang dipilih</b><span><button type="button" class="btn btn-sm btn-outline-secondary me-1" id="timPkBatal">Batal</button><button type="button" class="btn btn-sm btn-dark" id="timPkOk" disabled>Tambahkan</button></span></div></div>';
+    document.body.appendChild(d);
+    timPkEl = d;
+    var $ = function (id) { return document.getElementById(id); };
+    $('timPkCari').addEventListener('input', timPkGambar);
+    $('timPkList').addEventListener('click', function (e) {
+        var o = e.target.closest ? e.target.closest('.tim-pk-opt[data-n]') : null; if (!o) return;
+        var n = o.getAttribute('data-n'), k = timPkSel.indexOf(n);
+        if (k < 0) { timPkSel.push(n); } else { timPkSel.splice(k, 1); }
+        timPkGambar();
+    });
+    $('timPkBatal').addEventListener('click', tutupPilihTim);
+    $('timPkOk').addEventListener('click', tambahkanPilihanTim);
+    d.addEventListener('mousedown', function (e) { if (e.target === d) tutupPilihTim(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && d.classList.contains('open')) tutupPilihTim(); });
+    return d;
+}
+function timPkGambar() {
+    var $ = function (id) { return document.getElementById(id); };
+    var q = ($('timPkCari').value || '').toLowerCase().trim(), terpakai = namaTimTerpakai(), daftar = sumberNamaTimPelaksana();
+    var L = daftar.filter(function (n) { return n.toLowerCase().indexOf(q) > -1; });
+    var host = $('timPkList'); host.innerHTML = '';
+    L.forEach(function (n) {
+        var off = terpakai.indexOf(n) > -1, on = timPkSel.indexOf(n) > -1;
+        var o = document.createElement('div');
+        o.className = 'tim-pk-opt' + (off ? ' off' : '') + (on ? ' on' : '');
+        if (!off) o.setAttribute('data-n', n);
+        var c = document.createElement('span'); c.className = 'tim-pk-chk'; c.innerHTML = on ? '&#10003;' : '';
+        var s = document.createElement('span'); s.textContent = n;
+        o.appendChild(c); o.appendChild(avatarTim(n)); o.appendChild(s);
+        if (off) { var sm = document.createElement('small'); sm.textContent = 'sudah di tim'; o.appendChild(sm); }
+        host.appendChild(o);
+    });
+    if (!L.length) {
+        var e = document.createElement('div'); e.className = 'text-center text-muted small py-4';
+        e.textContent = daftar.length ? 'Tidak ada pegawai yang cocok.' : 'Belum ada pegawai di Master Tim Pelaksana layanan ini.';
+        host.appendChild(e);
+    }
+    $('timPkN').textContent = timPkSel.length + ' orang dipilih';
+    var ok = $('timPkOk'); ok.disabled = !timPkSel.length; ok.textContent = timPkSel.length ? 'Tambahkan ' + timPkSel.length + ' orang' : 'Tambahkan';
+}
+function bukaPilihTim() {
+    var d = timPkBuat();
+    timPkSel = []; document.getElementById('timPkCari').value = ''; timPkGambar();
+    d.classList.add('open'); d.setAttribute('aria-hidden', 'false');
+    setTimeout(function () { var c = document.getElementById('timPkCari'); if (c) c.focus(); }, 30);
+}
+function tutupPilihTim() { if (!timPkEl) return; timPkEl.classList.remove('open'); timPkEl.setAttribute('aria-hidden', 'true'); }
+function tambahkanPilihanTim() {
+    timPkSel.forEach(function (n) {
+        var kosong = null;
+        Array.prototype.some.call(document.querySelectorAll('#bodyTim tr:not(.tim-kosong)'), function (r) {
+            var h = r.querySelector('[name="tp_nama[]"]');
+            if (h && !h.value) { kosong = r; return true; }
+            return false;
+        });
+        if (kosong && kosong._isiNama) { kosong._isiNama(n); } else { tambahBarisTim({ nama: n }); }
+    });
+    tutupPilihTim(); segarkanKosongTim(); segarkanPratinjauTim();
 }
 
 /* ============================================================ */
@@ -3964,6 +4286,149 @@ function tambahItemPenerimaan(data) {
 }
 
 var katCounter = 0;
+
+/* ============================================================ */
+/* RAB SELULOSA BERTAHAP -- bagian muncul satu per satu           */
+/* Cuma mengatur tampil/sembunyi (kelas .rab-hide). Data & hitungan tidak berubah. */
+/* ============================================================ */
+function rabSetHide(el, sembunyi) {
+    if (!el) return;
+    if (sembunyi) { el.classList.add('rab-hide'); return; }
+    if (el.classList.contains('rab-hide')) {
+        el.classList.remove('rab-hide'); el.classList.add('rab-muncul');
+        setTimeout(function () { el.classList.remove('rab-muncul'); }, 400);
+    }
+}
+function rabKid(box, rs) { return box.querySelector(':scope > [data-rs="' + rs + '"]'); }
+function rabAdaItem(box) { var w = rabKid(box, 'wrap'); return !!(w && w.querySelector('.rab-item-row')); }
+function rabAdaIsi(box) {
+    var ch = rabKid(box, 'child');
+    return rabAdaItem(box) || !!(ch && ch.querySelector(':scope > .rab-grup-box'));
+}
+function rabLangkah() {
+    if (!rabBertahap) return;
+    var root = document.getElementById('bodyKategori'); if (!root) return;
+    // Kegiatan dan Lokasi/Kelompok (semua tingkat)
+    root.querySelectorAll('.rab-grup-box, .rab-kegiatan-box').forEach(function (box) {
+        var isGrup = box.classList.contains('rab-grup-box');
+        var namaEl = box.querySelector(':scope > .input-group input[type="text"]');
+        var nama = namaEl ? namaEl.value.trim() : '';
+        var adaIsi = rabAdaIsi(box);
+        var buka = nama !== '' || adaIsi;     // data lama yang sudah berisi tetap tampil utuh
+        rabSetHide(rabKid(box, 'hint'), buka);
+        rabSetHide(rabKid(box, 'tools'), !buka);
+        rabSetHide(rabKid(box, 'child'), !buka);
+        rabSetHide(rabKid(box, 'wrap'), !(buka && rabAdaItem(box)));
+        rabSetHide(rabKid(box, 'sub'), !(buka && adaIsi));
+        if (isGrup) { rabSetHide(rabKid(box, 'pt'), !buka); rabSetHide(rabKid(box, 'ptnama'), !buka); }
+    });
+    // Kategori
+    root.querySelectorAll(':scope > .rab-kat-nested').forEach(function (box) {
+        if (!box.dataset.rsKat) return;
+        var namaEl = box.querySelector('input[name^="kat_nama["]');
+        var nama = namaEl ? namaEl.value.trim() : '';
+        var mode = box.dataset.mode || '';
+        var buka = nama !== '' || mode !== '';
+        var mulai = buka && mode !== '';
+        var kegBody = box.querySelector(':scope > .rab-kegiatan-body');
+        rabSetHide(rabKid(box, 'kat-hint'), buka);
+        rabSetHide(rabKid(box, 'kat-pilih'), !(buka && mode === ''));
+        rabSetHide(rabKid(box, 'kat-bar'), !mulai);
+        var bar = rabKid(box, 'kat-bar');
+        if (bar) { var b = bar.querySelector('b'); if (b) b.textContent = (mode === 'tanpa') ? 'Tanpa rincian item' : 'Rincian kegiatan'; }
+        rabSetHide(box.querySelector(':scope > .kat-target-info'), !mulai);
+        rabSetHide(kegBody, !(mulai && mode === 'rinci'));
+        rabSetHide(rabKid(box, 'kat-footer'), !mulai);
+        var kegs = kegBody ? kegBody.querySelectorAll(':scope > .rab-kegiatan-box') : [];
+        var last = kegs.length ? kegs[kegs.length - 1] : null;
+        var btnKeg = box.querySelector('[data-rs="tambah-keg"]');
+        rabSetHide(btnKeg, !(mode === 'rinci' && last && rabAdaIsi(last)));   // Tambah Kegiatan baru muncul kalau kegiatan terakhir sudah ada isinya
+    });
+}
+// jalankan ulang setiap ada ketikan / klik / perubahan di halaman (murah: cuma ganti kelas)
+['input', 'change', 'click'].forEach(function (ev) {
+    document.addEventListener(ev, function () { if (rabBertahap) { setTimeout(rabLangkah, 0); } });
+});
+// ---- Penjaga batas RAB selulosa: total pengeluaran tidak boleh melebihi total penerimaan ----
+// Ketikan / pilihan yang membuat total pengeluaran NAIK sampai melebihi penerimaan ditolak (nilai dikembalikan), lalu muncul peringatan.
+// Mengurangi nilai tetap boleh, dan data lama yang sudah melebihi tidak dipaksa berubah.
+var rabToastTimer = null;
+function rabPeringatan(pen, tot) {
+    var t = document.getElementById('rabBatasToast');
+    if (!t) { t = document.createElement('div'); t.id = 'rabBatasToast'; t.setAttribute('role', 'alert'); document.body.appendChild(t); }
+    t.innerHTML = '<b>&#9888; Total pengeluaran tidak boleh melebihi penerimaan (' + rupiah(pen) + ').</b> Yang masih bisa dialokasikan: ' + rupiah(Math.max(0, pen - tot)) + '.';
+    t.classList.remove('tampil'); void t.offsetWidth; t.classList.add('tampil');
+    clearTimeout(rabToastTimer); rabToastTimer = setTimeout(function () { t.classList.remove('tampil'); }, 4500);
+}
+function rabJagaBatas(e) {
+    // dipanggil SETELAH handler isian itu sendiri selesai (fase bubble), jadi total sudah dihitung dengan nilai baru
+    if (!rabBertahap || !e.isTrusted) return;
+    var el = e.target;
+    if (!el || !el.closest || !el.closest('#bodyKategori')) return;
+    var prev = (window.rabSnapSebelum !== undefined) ? window.rabSnapSebelum : (window.rabPengeluaranTerakhir || 0);
+    hitungRabLive();
+    var pen = window.rabPenerimaanTerakhir || 0, tot = window.rabPengeluaranTerakhir || 0;
+    if (pen > 0 && tot > pen + 0.5 && tot > prev + 0.5) {
+        if (el.type === 'checkbox') { el.checked = !el.checked; el.dispatchEvent(new Event('change', { bubbles: true })); }
+        else if (el.dataset.rabLast !== undefined) { el.value = el.dataset.rabLast; el.dispatchEvent(new Event(el.tagName === 'SELECT' ? 'change' : 'input', { bubbles: true })); }
+        hitungRabLive();
+        rabPeringatan(pen, window.rabPengeluaranTerakhir || 0);
+    } else if (el.type !== 'checkbox') {
+        el.dataset.rabLast = el.value;
+    }
+}
+document.addEventListener('focusin', function (e) {
+    var el = e.target;
+    if (rabBertahap && el && el.closest && el.closest('#bodyKategori') && el.type !== 'checkbox') { el.dataset.rabLast = el.value; }
+}, true);
+// fase capture: catat total SEBELUM handler isian jalan
+['input', 'change'].forEach(function (ev) {
+    document.addEventListener(ev, function () { window.rabSnapSebelum = window.rabPengeluaranTerakhir || 0; }, true);
+    document.addEventListener(ev, rabJagaBatas, false);
+});
+
+function rabPasangKategori(box, data, tanpaWrap, chk, inPersen) {
+    var punya = !!(data && (data.nama || data.tanpa_rincian || (data.kegiatan && data.kegiatan.length) || (data.items && data.items.length)));
+    box.dataset.rsKat = '1';
+    box.dataset.mode = punya ? (data.tanpa_rincian ? 'tanpa' : 'rinci') : '';
+    tanpaWrap.classList.add('rab-hide');          // checkbox lama diganti dua pilihan di bawah
+    var hint = document.createElement('div');
+    hint.className = 'rab-step-hint'; hint.dataset.rs = 'kat-hint';
+    hint.textContent = 'Isi nama kategori dulu. Pilihan berikutnya muncul setelah ini terisi.';
+    var pilih = document.createElement('div');
+    pilih.dataset.rs = 'kat-pilih';
+    pilih.innerHTML = '<div class="rab-pilih-judul">Bagaimana nilai kategori ini ditentukan?</div>' +
+        '<div class="rab-pilih-grid">' +
+        '<button type="button" class="rab-pilih-opt" data-m="rinci"><b>Rincian kegiatan</b><span>Isi Kegiatan, Lokasi/Kelompok, lalu item biaya</span></button>' +
+        '<button type="button" class="rab-pilih-opt" data-m="tanpa"><b>Tanpa rincian item</b><span>Nilainya langsung dari Target % x Nilai Kontrak</span></button></div>';
+    var bar = document.createElement('div');
+    bar.className = 'rab-modebar'; bar.dataset.rs = 'kat-bar';
+    bar.innerHTML = '<span>Cara isi: <b></b></span><a role="button" tabindex="0">ubah</a>';
+    box.insertBefore(hint, tanpaWrap);
+    box.insertBefore(pilih, tanpaWrap);
+    box.insertBefore(bar, tanpaWrap);
+    function setMode(m) {
+        box.dataset.mode = m;
+        chk.checked = (m === 'tanpa');
+        chk.dispatchEvent(new Event('change', { bubbles: true }));
+        rabLangkah();
+        var f = (m === 'tanpa') ? inPersen : box.querySelector('.rab-kegiatan-nama');
+        if (f) { setTimeout(function () { f.focus(); }, 0); }
+    }
+    pilih.querySelectorAll('[data-m]').forEach(function (b) { b.addEventListener('click', function () { setMode(b.dataset.m); }); });
+    bar.querySelector('a').addEventListener('click', function () { box.dataset.mode = ''; rabLangkah(); });
+    var footer = box.querySelector(':scope > .d-flex.border-top'); if (footer) { footer.dataset.rs = 'kat-footer'; }
+    var tk = footer ? footer.querySelector('button') : null; if (tk) { tk.dataset.rs = 'tambah-keg'; }
+    rabLangkah();
+}
+function rabTandai(box, jenis, parts) {
+    // beri penanda (data-rs) pada bagian-bagian kotak Kegiatan / Lokasi-Kelompok supaya bisa disembunyikan satu per satu
+    Object.keys(parts).forEach(function (k) { if (parts[k]) { parts[k].dataset.rs = k; } });
+    var hint = document.createElement('div');
+    hint.className = 'rab-step-hint'; hint.dataset.rs = 'hint';
+    hint.textContent = (jenis === 'keg') ? 'Isi nama kegiatan dulu. Pilihan tambah muncul setelah ini terisi.' : 'Isi nama lokasi / kelompok dulu. Pilihan berikutnya muncul setelah ini terisi.';
+    box.insertBefore(hint, parts.wrap || box.children[1] || null);
+}
 
 function tambahKategori(data) {
     data = data || {};
@@ -4123,6 +4588,7 @@ function tambahKategori(data) {
     }
 
     terapkanTanpaRincian();
+    if (rabBertahap && pakaiKegiatanUI) { rabPasangKategori(box, data, tanpaRincianWrap, chkTanpaRincian, inPersen); }
 }
 
 /* ============================================================ */
@@ -4212,12 +4678,14 @@ function tambahKegiatanRab(kegiatanBody, data) {
     box.appendChild(actionToolbar);
     box.appendChild(grupContainer);
     box.appendChild(subtotalLine);
+    if (rabBertahap) { rabTandai(box, 'keg', { wrap: itemLangsungBox.wrap, tools: actionToolbar, child: grupContainer, sub: subtotalLine }); }
 
     kegiatanBody.appendChild(box);
     renomorKegiatan(kegiatanBody);
 
     (data.items && data.items.length ? data.items : []).forEach(function (it) { tambahItemUmum(itemLangsungContainer, it); });
-    (data.grup && data.grup.length ? data.grup : (rabLing ? [] : [{}])).forEach(function (g) { tambahGrup(grupContainer, g, 0); });
+    (data.grup && data.grup.length ? data.grup : ((rabLing || rabBertahap) ? [] : [{}])).forEach(function (g) { tambahGrup(grupContainer, g, 0); });
+    if (rabBertahap) { rabLangkah(); }
 }
 
 /* Kegiatan yang masih kosong melompong (tanpa nama, item, maupun kelompok) dibuang kalau lebih dari satu,
@@ -4383,6 +4851,7 @@ function tambahGrup(container, data, depth) {
     box.appendChild(btnActions);
     box.appendChild(childContainer);
     box.appendChild(subtotalLine);
+    if (rabBertahap) { rabTandai(box, 'grup', { pt: (!rabLing || data.disediakan_pt) ? disediakanWrap : null, ptnama: inPtNama, wrap: itemBox.wrap, tools: btnActions, child: childContainer, sub: subtotalLine }); }
 
     container.appendChild(box);
     renomorGrup(container);
@@ -4391,6 +4860,7 @@ function tambahGrup(container, data, depth) {
     (data.children || []).forEach(function (g) { tambahGrup(childContainer, g, depth + 1); });
 
     terapkanDisediakan();
+    if (rabBertahap) { rabLangkah(); }
 }
 
 function renomorGrup(container) {
@@ -5035,6 +5505,8 @@ function hitungRabLive() {
     if (dispPeng) dispPeng.textContent = rupiah(totalPengeluaran);
 
     var selisih = totalPenerimaan - totalPengeluaran;
+    window.rabSelisihTerakhir = selisih;   // dipakai tombol Kirim: PO hanya bisa dikirim kalau RAB seimbang
+    window.rabPenerimaanTerakhir = totalPenerimaan; window.rabPengeluaranTerakhir = totalPengeluaran;   // dipakai penjaga batas RAB selulosa
     var selisihEl = document.getElementById('disp_selisih');
     var boxEl = document.getElementById('boxTotalPengeluaran');
     var kpiSelisih = document.getElementById('boxKpiSelisih');
@@ -5081,14 +5553,29 @@ function parseYmd(val) {
     return dt;
 }
 
-function hitungDurasiBulan(d1, d2) {
-    if (!d1 || !d2 || d2 < d1) return 1;
-    var startY = d1.getFullYear();
-    var startM = d1.getMonth();
-    var endY = d2.getFullYear();
-    var endM = d2.getMonth();
-    var totalMonths = (endY - startY) * 12 + (endM - startM) + 1;
-    return Math.max(1, totalMonths);
+// Tambah N bulan ke satu tanggal; kalau tanggalnya tidak ada di bulan tujuan (mis. 31 Jan + 1 bulan) dipakai hari terakhir bulan itu.
+function tambahBulan(d, n) {
+    var y = d.getFullYear(), m = d.getMonth() + n, hari = d.getDate();
+    var terakhir = new Date(y, m + 1, 0).getDate();
+    return new Date(y, m, Math.min(hari, terakhir));
+}
+
+// Durasi nyata dari tanggal mulai sampai tanggal selesai (tanggal selesai ikut dihitung): {bulan: bulan penuh, hari: sisa hari, total: jumlah hari}.
+// Contoh: 20/10/2026 - 01/12/2026 = 1 bulan 12 hari (43 hari).
+function hitungDurasi(d1, d2) {
+    if (!d1 || !d2 || d2 < d1) return { bulan: 0, hari: 0, total: 0 };
+    var akhir = new Date(d2.getFullYear(), d2.getMonth(), d2.getDate() + 1);   // batas akhir (eksklusif)
+    var bulan = (akhir.getFullYear() - d1.getFullYear()) * 12 + (akhir.getMonth() - d1.getMonth());
+    while (bulan > 0 && tambahBulan(d1, bulan) > akhir) bulan--;
+    var sisa = Math.round((akhir.getTime() - tambahBulan(d1, bulan).getTime()) / 86400000);
+    var total = Math.round((akhir.getTime() - d1.getTime()) / 86400000);
+    return { bulan: bulan, hari: sisa, total: total };
+}
+
+// Tanggal selesai untuk "mulai + N bulan" (mis. 20/10 + 3 bulan = 19/01 tahun berikutnya).
+function tanggalSelesaiDariDurasi(d1, bln) {
+    var e = tambahBulan(d1, bln);
+    return new Date(e.getFullYear(), e.getMonth(), e.getDate() - 1);
 }
 
 function terapkanDurasiBulanManual() {
@@ -5097,8 +5584,12 @@ function terapkanDurasiBulanManual() {
     var inDurasi = document.getElementById('jadwalDurasiBulan');
     if (!inMulai || !inSelesai || !inDurasi) return;
 
-    var bln = parseInt(inDurasi.value, 10);
-    if (!bln || bln < 1) return;
+    // Boleh desimal (1,4 = 1 bulan + 0,4 x 30 hari)
+    var angka = parseFloat(String(inDurasi.value).replace(',', '.'));
+    if (!angka || angka <= 0) return;
+    var bln = Math.floor(angka);
+    var tambahHari = Math.round((angka - bln) * 30);
+    if (bln < 1 && tambahHari < 1) return;
 
     var startDate = parseYmd(inMulai.value);
     if (!startDate) {
@@ -5107,12 +5598,22 @@ function terapkanDurasiBulanManual() {
         inMulai.value = formatYmd(startDate);
     }
 
-    // Set tanggal selesai tepat di hari terakhir bulan ke-N (bebas overflow)
-    var endDate = new Date(startDate.getFullYear(), startDate.getMonth() + bln, 0);
+    // Tanggal selesai = tanggal mulai + N bulan - 1 hari (mulai 20/10, 3 bulan -> selesai 19/01)
+    var endDate = tanggalSelesaiDariDurasi(startDate, bln);
+    if (tambahHari) endDate = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate() + tambahHari);
 
     inSelesai.value = formatYmd(endDate);
     updateDurasiBadge();
     muatKolomJadwal();
+}
+
+// "1 Tahun 2 Bulan 5 Hari" (bagian yang nol dilewati)
+function teksDurasi(bulan, hari) {
+    var th = Math.floor(bulan / 12), bl = bulan % 12, out = [];
+    if (th) out.push(th + ' Tahun');
+    if (bl) out.push(bl + ' Bulan');
+    if (hari) out.push(hari + ' Hari');
+    return out.join(' ') || '0 Hari';
 }
 
 function updateDurasiBadge() {
@@ -5137,10 +5638,13 @@ function updateDurasiBadge() {
 
     var diffTime = d2.getTime() - d1.getTime();
     var diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1;
-    var months = hitungDurasiBulan(d1, d2);
+    var dur = hitungDurasi(d1, d2);
+    var months = dur.bulan;
 
     if (inDurasi && document.activeElement !== inDurasi) {
-        inDurasi.value = months;
+        // bulan penuh + sisa hari sebagai pecahan (1 bulan 12 hari = 1,4)
+        var pecahan = dur.bulan + dur.hari / 30;
+        inDurasi.value = dur.hari ? (Math.round(pecahan * 10) / 10).toString().replace('.', ',') : String(dur.bulan);
     }
 
     if (badgeEl) {
@@ -5148,10 +5652,9 @@ function updateDurasiBadge() {
         if (diffDays <= 31) {
             durasiBadge = '<span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 rounded-pill fw-bold" style="font-size:0.75rem;"><i class="bi bi-calendar-date me-1"></i>' + diffDays + ' Hari (Mode Harian &bull; L = Libur)</span>';
         } else if (months < 12) {
-            durasiBadge = '<span class="badge bg-info-subtle text-info-emphasis border border-info-subtle px-2.5 py-1 rounded-pill fw-bold" style="font-size:0.75rem;"><i class="bi bi-calendar-range me-1"></i>' + months + ' Bulan (' + diffDays + ' Hari &bull; Mode Mingguan)</span>';
+            durasiBadge = '<span class="badge bg-info-subtle text-info-emphasis border border-info-subtle px-2.5 py-1 rounded-pill fw-bold" style="font-size:0.75rem;"><i class="bi bi-calendar-range me-1"></i>' + teksDurasi(dur.bulan, dur.hari) + ' (' + diffDays + ' Hari &bull; Mode Mingguan)</span>';
         } else {
-            var years = (months / 12).toFixed(1).replace('.0', '');
-            durasiBadge = '<span class="badge bg-success-subtle text-success-emphasis border border-success-subtle px-2.5 py-1 rounded-pill fw-bold" style="font-size:0.75rem;"><i class="bi bi-calendar-check me-1"></i>' + years + ' Tahun (' + months + ' Bulan &bull; ' + diffDays + ' Hari)</span>';
+            durasiBadge = '<span class="badge bg-success-subtle text-success-emphasis border border-success-subtle px-2.5 py-1 rounded-pill fw-bold" style="font-size:0.75rem;"><i class="bi bi-calendar-check me-1"></i>' + teksDurasi(dur.bulan, dur.hari) + ' (' + diffDays + ' Hari &bull; Mode Mingguan)</span>';
         }
         badgeEl.innerHTML = durasiBadge;
     }
@@ -5265,7 +5768,7 @@ function muatKolomJadwal(callback) {
             var chunks = getJadwalChunks(jadwalKolomCache, 16);
             var modeText = data.mode === 'harian'
                 ? '<i class="bi bi-calendar-date text-primary me-1"></i> Durasi &le; 1 bulan &rarr; Mode Harian per Tanggal (L = Hari Libur &bull; Otomatis Terkunci)'
-                : '<i class="bi bi-calendar-range text-primary me-1"></i> Rentang ' + (jadwalBulanHeader.length || '') + ' Bulan &rarr; Mode Mingguan (4 Minggu per Bulan &bull; ' + jadwalKolomCache.length + ' Kolom, ' + chunks.length + ' Bagian Tabel)';
+                : ''; // mode mingguan: tanpa teks info
             
             var modeInfo = document.getElementById('jadwalModeInfo');
             if (modeInfo) {
@@ -5663,7 +6166,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (btnTambahKebutuhan) btnTambahKebutuhan.addEventListener('click', function () { tambahKategoriKebutuhan(); });
 
     var btnTim = document.getElementById('btnTambahTim');
-    if (btnTim) btnTim.addEventListener('click', function () { tambahBarisTim(); });
+    if (btnTim) btnTim.addEventListener('click', bukaPilihTim);
 
     var btnPen = document.getElementById('btnTambahPenerimaan');
     if (btnPen) {
@@ -5708,11 +6211,11 @@ document.addEventListener('DOMContentLoaded', function () {
     var inDurasiBulan = document.getElementById('jadwalDurasiBulan');
     if (inDurasiBulan) {
         inDurasiBulan.addEventListener('input', function () {
-            this.value = this.value.replace(/[^0-9]/g, '');
+            this.value = this.value.replace(/[^0-9,.]/g, '');
             terapkanDurasiBulanManual();
         });
         inDurasiBulan.addEventListener('change', function () {
-            this.value = this.value.replace(/[^0-9]/g, '');
+            this.value = this.value.replace(/[^0-9,.]/g, '');
             terapkanDurasiBulanManual();
         });
     }
@@ -5729,7 +6232,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     updateDurasiBadge();
                 } else if (inDurasiBulan && inDurasiBulan.value) {
                     var bln = parseInt(inDurasiBulan.value, 10) || 1;
-                    var endDate = new Date(d1.getFullYear(), d1.getMonth() + bln, 0);
+                    var endDate = tanggalSelesaiDariDurasi(d1, bln);
                     if (inJadwalSelesai) inJadwalSelesai.value = formatYmd(endDate);
                     updateDurasiBadge();
                 }
@@ -5741,7 +6244,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (d1) {
                 if (!d2 || d2 < d1) {
                     var bln = (inDurasiBulan && parseInt(inDurasiBulan.value, 10)) ? parseInt(inDurasiBulan.value, 10) : 1;
-                    var endDate = new Date(d1.getFullYear(), d1.getMonth() + bln, 0);
+                    var endDate = tanggalSelesaiDariDurasi(d1, bln);
                     if (inJadwalSelesai) inJadwalSelesai.value = formatYmd(endDate);
                 }
                 updateDurasiBadge();
@@ -5813,7 +6316,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // 4. Tim Pelaksana
         var tp = safeJsonParse(poData.tim_pelaksana, []);
-        (tp.length ? tp : [{}]).forEach(function (t) { tambahBarisTim(t); });
+        tp.forEach(function (t) { tambahBarisTim(t); });
+        segarkanKosongTim();
 
         // 5. RAB
         var rab = safeJsonParse(poData.rab, {});
@@ -5852,7 +6356,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (wrapRLBaru && wrapRLBaru.setEditorValue) { wrapRLBaru.setEditorValue(window.isiRuangLingkupDariProposal()); }
         }
         renderRuangLingkupPreview();
-        tambahBarisTim();
+        segarkanKosongTim();
         tambahItemPenerimaan({ nama: 'Nilai Kontrak', nominal: estimasiBiayaAwal });
         tambahKategori();
         
@@ -5960,7 +6464,7 @@ document.addEventListener('DOMContentLoaded', function () {
         hint.style.whiteSpace = 'nowrap';
         hint.innerHTML = '<span id="poKirimHintTx"></span> <a href="#" id="poKirimHintLink" class="text-danger">Tunjukkan</a>';
         btn.insertAdjacentElement('beforebegin', hint);
-        var tx = hint.querySelector('#poKirimHintTx'), lastN = -1, tm = null;
+        var tx = hint.querySelector('#poKirimHintTx'), lastN = -1, lastRab = null, tm = null;
         function hitung() {
             window.POSENYAP = (window.POSENYAP || 0) + 1;       // senyap: tidak mengubah tampilan form sama sekali
             try { return validasiFieldWajib().concat(validasiTtd()).length; } catch (e) { return -1; } finally { window.POSENYAP--; }
@@ -5968,12 +6472,15 @@ document.addEventListener('DOMContentLoaded', function () {
         function perbarui() {
             var n = hitung();
             if (n < 0) { return; }   // state form belum siap, coba lagi nanti
-            btn.disabled = n > 0;
-            btn.title = n > 0 ? 'Lengkapi dulu ' + n + ' kolom wajib sebelum mengirim' : '';
-            if (n !== lastN) {
-                lastN = n;
-                hint.classList.toggle('d-none', n === 0);
-                tx.textContent = n + ' kolom wajib belum terisi';
+            // Di mode revisi tombol ini hanya "Simpan draft/perubahan", jadi aturan RAB seimbang tidak dipakai di sini
+            var rab = btn.getAttribute('data-simpan') ? { ok: true, selisih: 0 } : rabStatus();
+            var teks = n > 0 ? n + ' kolom wajib belum terisi' : (rab.ok ? '' : teksRabBelumSesuai());
+            btn.disabled = n > 0 || !rab.ok;
+            btn.title = n > 0 ? 'Lengkapi dulu ' + n + ' kolom wajib sebelum mengirim' : (rab.ok ? '' : 'RAB belum seimbang: total penerimaan harus sama dengan total pengeluaran');
+            if (n !== lastN || teks !== lastRab) {
+                lastN = n; lastRab = teks;
+                hint.classList.toggle('d-none', teks === '');
+                tx.textContent = teks;
             }
         }
         function jadwal() { clearTimeout(tm); tm = setTimeout(perbarui, 250); }
@@ -5989,6 +6496,10 @@ document.addEventListener('DOMContentLoaded', function () {
             if (bad.length) {
                 bad[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
                 if (bad[0].focus) { try { bad[0].focus({ preventScroll: true }); } catch (x) {} }
+            } else {
+                // kolom wajib sudah lengkap tapi RAB belum seimbang: arahkan ke kartu Selisih / Sisa
+                var kartu = document.getElementById('boxKpiSelisih');
+                if (kartu) { kartu.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
             }
         });
         perbarui();
@@ -6018,6 +6529,18 @@ var btnKirim = document.getElementById('btnKirim');
                     alert('Ada ' + invalidFields.length + ' kolom wajib yang belum diisi. Mohon lengkapi dulu.');
                 }
                 return; // stop di sini -- form.submit() sama sekali gak kepanggil, overlay gak nyala
+            }
+
+            // RAB harus seimbang sebelum PO dikirim (pengaman kalau tombol terlewat)
+            if (!this.getAttribute('data-simpan') && !rabStatus().ok) {
+                var kartuRab = document.getElementById('boxKpiSelisih');
+                if (kartuRab) { kartuRab.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({ icon: 'warning', title: 'RAB Belum Sesuai', text: 'Total penerimaan harus sama dengan total pengeluaran sebelum PO dikirim. ' + teksRabBelumSesuai() + '.', confirmButtonText: 'Oke, Saya Perbaiki', confirmButtonColor: '#881337' });
+                } else {
+                    alert(teksRabBelumSesuai() + '. Samakan total penerimaan dan pengeluaran dulu.');
+                }
+                return;
             }
 
             // PO belum bernomor: dialog "Generate Nomor PO" (nomor diterbitkan server saat Kirim; lamanya loading hanya tampilan)
@@ -6057,6 +6580,16 @@ var btnKirim = document.getElementById('btnKirim');
                 Swal.fire({ icon: 'warning', title: 'Ada Kolom Wajib yang Belum Diisi', text: 'Mohon lengkapi ' + invalidFields.length + ' kolom bertanda merah sebelum mengirim PO.', confirmButtonText: 'Oke, Saya Lengkapi', confirmButtonColor: '#881337' });
             } else {
                 alert('Ada ' + invalidFields.length + ' kolom wajib yang belum diisi. Mohon lengkapi dulu.');
+            }
+            return false;
+        }
+        if (!rabStatus().ok) {
+            var kartuRab2 = document.getElementById('boxKpiSelisih');
+            if (kartuRab2) { kartuRab2.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({ icon: 'warning', title: 'RAB Belum Sesuai', text: 'Total penerimaan harus sama dengan total pengeluaran sebelum dikirim. ' + teksRabBelumSesuai() + '.', confirmButtonText: 'Oke, Saya Perbaiki', confirmButtonColor: '#881337' });
+            } else {
+                alert(teksRabBelumSesuai() + '. Samakan total penerimaan dan pengeluaran dulu.');
             }
             return false;
         }
@@ -6137,6 +6670,16 @@ function kirimAjaxPo() {
             return r.json().then(function (j) { return j; }, function () { return { ok: false, message: 'Respons server tidak valid (HTTP ' + r.status + ').' }; });
         })
         .catch(function () { return { ok: false, message: 'Tidak bisa terhubung ke server. Periksa koneksi lalu coba lagi.' }; });
+}
+// RAB seimbang = total penerimaan sama dengan total pengeluaran (selisih < Rp 1). Dipakai tombol Kirim.
+function rabStatus() {
+    if (typeof window.rabSelisihTerakhir === 'undefined') { try { hitungRabLive(); } catch (e) { return { ok: true, selisih: 0 }; } }
+    var sel = window.rabSelisihTerakhir || 0;
+    return { ok: Math.abs(sel) < 1, selisih: sel };
+}
+function teksRabBelumSesuai() {
+    var st = rabStatus();
+    return 'RAB belum sesuai (' + rupiah(Math.abs(st.selisih)) + (st.selisih > 0 ? ' sisa' : ' lebih') + ')';
 }
 function validasiFieldWajib() {
     var invalidFields = [];
@@ -6524,6 +7067,7 @@ setTimeout(function () {
     (function () {
         var BASE = '{{ @BASE }}';
         var KONTEKS = '{{ @revisi_konteks }}';          // ppk | review
+        var PPK_KATIM = {{ @revisi_ppk_katim ? 'true' : 'false' }};   // Ketua Tim memperbaiki langsung saat mereview hasil revisi PPK BLU
         var PO_ID = {{ @po ? @po.id : 0 }};
         var CSRF = '{{ @csrf_token }}';
         if (!PO_ID) { return; }
@@ -6531,6 +7075,7 @@ setTimeout(function () {
         // Pada revisi, PO yang sudah dikirim tetap terkirim. Tombol draf disembunyikan, tombol kirim jadi "Simpan perubahan".
         var bd = document.getElementById('btnDraft'), bk = document.getElementById('btnKirim');
         if (bd) { bd.style.display = 'none'; }
+        if (bk) { bk.setAttribute('data-simpan', '1'); }
         // Tombol simpan di pojok bawah: "Simpan draft" (tidak mengirim apa pun). Ketua Tim yang mengedit sendiri tetap "Simpan perubahan".
         if (bk) { bk.innerHTML = '<i class="bi bi-save me-1"></i> ' + (KONTEKS === 'katim' ? 'Simpan perubahan' : 'Simpan draft'); }
         // Tombol "Kirim revisi" di samping Simpan draft: nonaktif sampai semua catatan dicentang, lalu bisa dipencet
@@ -6551,7 +7096,7 @@ setTimeout(function () {
                 '.rvk-dlg[hidden]{display:none}.rvk-dlg.show{opacity:1}' +
                 '.rvk-box{background:#fff;border-radius:16px;width:100%;max-width:400px;padding:26px 24px 20px;text-align:center;box-shadow:0 24px 60px rgba(15,23,42,.3);transform:translateY(8px) scale(.98);transition:transform .15s}' +
                 '.rvk-dlg.show .rvk-box{transform:none}' +
-                '.rvk-ic{width:58px;height:58px;border-radius:50%;display:grid;place-items:center;margin:0 auto 14px;font-size:27px;background:#ecfdf5;color:#059669}' +
+                '.rvk-ic{width:58px;height:58px;border-radius:50%;display:grid;place-items:center;margin:0 auto 14px;font-size:27px;background:#f1f5f9;color:#1e293b}' +
                 '.rvk-box h5{font-size:1.05rem;font-weight:800;margin:0 0 6px}.rvk-box p{color:#64748b;font-size:.85rem;margin:0 0 18px}' +
                 '.rvk-btns{display:flex;gap:10px}.rvk-btns button{flex:1;padding:10px;border-radius:9px;font-weight:700;font-size:.85rem;cursor:pointer;border:1.5px solid #e2e8f0;background:#fff;color:#334155}' +
                 '.rvk-btns button.ya{background:#334155;border-color:#334155;color:#fff}.rvk-btns button:hover{opacity:.9}';
@@ -6566,7 +7111,7 @@ setTimeout(function () {
         // Ketua Tim mengedit sendiri saat review: tidak ada catatan untuk ditandai, cukup pita info
         if (KONTEKS === 'katim') {
             document.getElementById('rvJudul').textContent = 'Anda mengedit PO ini sebagai Ketua Tim';
-            document.getElementById('rvHit').textContent = 'Status review tidak berubah. Setelah disimpan, Anda kembali ke Daftar Review PO untuk menyetujui atau meminta revisi.';
+            document.getElementById('rvHit').textContent = PPK_KATIM ? 'Status revisi PPK BLU tidak berubah. Setelah disimpan, buka kembali panel review untuk menyetujui dan mengirim ke PPK BLU, atau mengembalikan ke Ketua Pelaksana.' : 'Status review tidak berubah. Setelah disimpan, Anda kembali ke Daftar Review PO untuk menyetujui atau meminta revisi.';
             document.getElementById('rvTog').style.display = 'none';
             document.querySelector('.rv-prog').style.display = 'none';
             bar.hidden = false;
@@ -6575,6 +7120,7 @@ setTimeout(function () {
             try { dalamTahap8 = (window.self !== window.top) && /[?&]embed=1(&|$)/.test(window.location.search); } catch (e) {}
             if (dalamTahap8 && bk) {
                 document.getElementById('rvHit').textContent = 'Simpan draft: perubahan tersimpan dan form tetap terbuka, status review tidak berubah. Simpan dan setujui: perubahan tersimpan dan PO langsung disetujui. Ketua Pelaksana diberi tahu lewat tab Alur.';
+                if (PPK_KATIM) { document.getElementById('rvHit').textContent = 'Simpan draft: perubahan tersimpan dan form tetap terbuka, status revisi PPK BLU tidak berubah. Setujui dan kirim ke PPK BLU: perubahan tersimpan lalu hasil revisi disetujui dan dikirim ke PPK BLU. Batal: kembali ke detail order tanpa menyimpan.'; }
                 bk.innerHTML = '<i class="bi bi-save me-1"></i> Simpan draft';
                 bk.classList.remove('btn-primary'); bk.classList.add('btn-outline-secondary');
                 var bs = document.createElement('button');
@@ -6582,6 +7128,15 @@ setTimeout(function () {
                 bs.className = 'btn btn-primary px-4 py-2 rounded-pill shadow-sm fw-bold d-inline-flex align-items-center gap-2';
                 bs.innerHTML = '<i class="bi bi-check2-circle"></i> <span>Simpan dan setujui</span>';
                 bk.insertAdjacentElement('afterend', bs);
+                var bb = null;
+                if (PPK_KATIM) {   // review hasil revisi PPK BLU: tombol setujui mengirim ke PPK BLU (bukan ke Humas), dan ada tombol Batal
+                    bs.querySelector('span').textContent = 'Setujui dan kirim ke PPK BLU';
+                    bb = document.createElement('button');
+                    bb.type = 'button'; bb.id = 'rvBatalBtn';
+                    bb.className = 'btn btn-outline-secondary px-4 py-2 rounded-pill fw-bold d-inline-flex align-items-center gap-2';
+                    bb.innerHTML = '<i class="bi bi-x-lg"></i> <span>Batal</span>';
+                    bk.insertAdjacentElement('beforebegin', bb);
+                }
                 function ordKe() { var oi = document.querySelector('#formPo [name="order_id"]'); return BASE + '/order/' + (oi ? oi.value : ''); }
                 function keDetail() { try { window.top.location.href = ordKe(); } catch (e) { window.location.href = ordKe(); } }
                 // pemberitahuan singkat "Draft tersimpan" di dalam form (tanpa memuat ulang halaman)
@@ -6635,7 +7190,7 @@ setTimeout(function () {
                         .then(function () {
                             if (!setuju) { return; }
                             var b = new URLSearchParams(); b.append('csrf_token', CSRF);
-                            return fetch(BASE + '/po-kegiatan/' + PO_ID + '/setujui', { method: 'POST', body: b, credentials: 'same-origin' }).then(bacaJson).catch(function (e) {
+                            return fetch(BASE + (PPK_KATIM ? '/po-revisi-ppk/' + PO_ID + '/setujui-kirim' : '/po-kegiatan/' + PO_ID + '/setujui'), { method: 'POST', body: b, credentials: 'same-origin', headers: PPK_KATIM ? { 'X-Requested-With': 'XMLHttpRequest' } : {} }).then(bacaJson).catch(function (e) {
                                 throw new Error('Perubahan sudah tersimpan, tetapi persetujuan gagal: ' + e.message);
                             });
                         })
@@ -6655,10 +7210,11 @@ setTimeout(function () {
                     if (typeof window.poValidasiSebelumKirim === 'function' && !window.poValidasiSebelumKirim()) { return; }
                     simpanKatim(false);
                 }, true);
+                if (bb) { bb.addEventListener('click', function () { if (!sedangSimpan) { keDetail(); } }); }
                 bs.addEventListener('click', function () {
                     if (bs.disabled || sedangSimpan) { return; }
                     if (typeof window.poValidasiSebelumKirim === 'function' && !window.poValidasiSebelumKirim()) { return; }
-                    konfirmasiKirim('Simpan dan setujui PO ini?', 'Perubahan di form disimpan, lalu PO disetujui dan diteruskan ke Humas untuk diverifikasi.', 'Simpan dan setujui', 'bi-check2-circle').then(function (ya) {
+                    (PPK_KATIM ? konfirmasiKirim('Setujui dan kirim ke PPK BLU?', 'Perubahan di form disimpan, lalu hasil revisi disetujui dan dikirim ke PPK BLU.', 'Ya, kirim', 'bi-send-check') : konfirmasiKirim('Simpan dan setujui PO ini?', 'Perubahan di form disimpan, lalu PO disetujui dan diteruskan ke Humas untuk diverifikasi.', 'Simpan dan setujui', 'bi-check2-circle')).then(function (ya) {
                         if (ya) { simpanKatim(true); }
                     });
                 });
@@ -6779,6 +7335,7 @@ setTimeout(function () {
                 var oi = document.querySelector('#formPo [name="order_id"]');
                 try { window.top.location.href = BASE + '/order/' + (oi ? oi.value : ''); return; } catch (e) {}
             }
+            if (DARI === 'index') { window.location.href = BASE + '/po-kegiatan'; return; }
             var ke = (DARI === 'ppk' || (DARI !== 'daftar' && KONTEKS === 'ppk')) ? '/po-revisi-ppk?buka=' + PO_ID + '&dari=daftar' : '/po-kegiatan/daftar';
             window.location.href = BASE + ke;
         }

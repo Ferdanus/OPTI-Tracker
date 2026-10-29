@@ -13,6 +13,10 @@
     html.rvw-solo, html.rvw-solo body, html.rvw-solo .content-wrapper { background: transparent !important; }
     html.rvw-solo .main-container { padding: 0 !important; }
     html.rvw-solo .rvw-root > :not(.rvw-scrim):not(.rvw-sheet):not(.rvw-dlg):not(.rvw-fv):not(.rvw-toast) { display: none !important; }
+    /* menunggu detail order di belakang diperbarui: tombol tindakan dikunci sebentar, lalu slide digeser keluar */
+    .rvw-sheet.rvw-menunggu .rvw-btn, .rvw-sheet.rvw-menunggu [data-act] { pointer-events: none; opacity: .55; }
+    .rvw-sheet.rvw-menunggu [data-act] .rvw-spin { width: 13px; height: 13px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; display: inline-block; animation: rvwSpin .7s linear infinite; }
+    @keyframes rvwSpin { to { transform: rotate(360deg); } }
 </style>
 <script>(function () { try { var q = window.location.search; if (window.self !== window.top && /[?&]embed=1(&|$)/.test(q) && /[?&]buka=\d+/.test(q)) { document.documentElement.classList.add('rvw-solo'); if (/[?&]sc=1(&|$)/.test(q)) { document.body.classList.add('sidebar-collapsed'); } } } catch (e) {} })();</script>
 <style>
@@ -107,8 +111,8 @@
     .rvw-pill { font-size: .72rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; border: 1px solid transparent; }
     .rvw-pill.blue { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
     .rvw-pill.amber { background: #fffbeb; color: #b45309; border-color: #fde68a; }
-    .rvw-pill.indigo { background: #eef2ff; color: #4338ca; border-color: #c7d2fe; }
-    .rvw-pill.emerald { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
+    .rvw-pill.indigo { background: #f1f5f9; color: #1e293b; border-color: #cbd5e1; }
+    .rvw-pill.emerald { background: #f1f5f9; color: #1e293b; border-color: #cbd5e1; }
     
     .rvw-btn { border: 1.5px solid var(--rvw-border); background: #fff; color: #334155; border-radius: 9px; padding: 8px 15px; font-size: .82rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; }
     .rvw-btn:hover:not(:disabled) { border-color: var(--rvw-primary); color: var(--rvw-primary); }
@@ -212,7 +216,7 @@
     .rvw-sum { background: #fff; border: 1px solid var(--rvw-border); border-radius: 10px; padding: 10px 13px; }
     .rvw-sum .l { font-size: .68rem; font-weight: 600; color: var(--rvw-muted); margin-bottom: 2px; }
     .rvw-sum .v { font-weight: 800; font-size: .95rem; }
-    .rvw-sum .v.ok { color: #047857; } .rvw-sum .v.warn { color: #b45309; }
+    .rvw-sum .v.ok { color: #1e293b; } .rvw-sum .v.warn { color: #b45309; }
     .rvw-cat { background: #fff; border: 1px solid var(--rvw-border); border-radius: 10px; padding: 12px 14px; margin-top: 12px; }
     .rvw-cat-top { display: flex; align-items: center; gap: 10px; }
     .rvw-cat-ic { width: 32px; height: 32px; border-radius: 9px; background: var(--rvw-primary-light); color: var(--rvw-primary); display: grid; place-items: center; font-size: 15px; flex-shrink: 0; }
@@ -229,16 +233,16 @@
 
     /* ---- Kartu berkas gaya detail order: rincian bisa dibuka-tutup lewat tombol Detail ---- */
     .rvw-dtop { text-align: right; margin-top: 10px; font-size: .76rem; color: #94a3b8; }
-    .rvw-tl { background: none; border: 0; padding: 0; color: #2563eb; font-weight: 600; font-size: .76rem; cursor: pointer; }
+    .rvw-tl { background: none; border: 0; padding: 0; color: #1e293b; font-weight: 600; font-size: .76rem; cursor: pointer; }
     .rvw-tl:hover { text-decoration: underline; }
-    .rvw-dc { background: #fff; border: 1px solid #bfdbfe; border-radius: 12px; box-shadow: 0 1px 3px rgba(15,23,42,.08); padding: 16px; margin-top: 12px; display: flex; gap: 14px; }
+    .rvw-dc { background: #fff; border: 1px solid #cbd5e1; border-radius: 12px; box-shadow: 0 1px 3px rgba(15,23,42,.08); padding: 16px; margin-top: 12px; display: flex; gap: 14px; }
     .rvw-dc.kosong { border-color: var(--rvw-border); }
     .rvw-dic { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; font-size: 1.25rem; flex-shrink: 0; }
     .rvw-dbody { flex: 1; min-width: 0; }
     .rvw-dh { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
     .rvw-dh h6 { margin: 0; font-size: .95rem; font-weight: 700; }
     .rvw-bd { display: inline-flex; align-items: center; gap: 5px; font-size: .72rem; font-weight: 600; padding: 3px 11px; border-radius: 99px; border: 1px solid; }
-    .rvw-bd.ok { background: #d1fae5; color: #047857; border-color: #a7f3d0; }
+    .rvw-bd.ok { background: #f1f5f9; color: #1e293b; border-color: #cbd5e1; }
     .rvw-bd.no { background: #f1f5f9; color: #64748b; border-color: #e2e8f0; }
     /* ---------- Map Kendali (F.PJT-12-03/1) ---------- */
     .mk-paper { background: #fff; border: 1px solid #cbd5e1; border-radius: 4px; padding: 30px 32px 38px; color: #111; font-family: Cambria, 'Times New Roman', Times, serif; max-width: 760px; margin: 0 auto; }
@@ -303,9 +307,9 @@
     .rvw-acts { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; align-items: center; }
     .rvw-acts .sp { flex: 1; }
     .rvw-bdt { background: #fff; border: 1px solid #cbd5e1; color: #475569; border-radius: 8px; padding: 7px 12px; font-size: .78rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
-    .rvw-bdt:hover { border-color: #2563eb; color: #2563eb; }
+    .rvw-bdt:hover { border-color: #1e293b; color: #1e293b; }
     .rvw-bdt .ch { font-size: .7rem; transition: transform .25s; }
-    .rvw-dc.open .rvw-bdt { background: #eff6ff; border-color: #93c5fd; color: #1d4ed8; }
+    .rvw-dc.open .rvw-bdt { background: #f1f5f9; border-color: #94a3b8; color: #1e293b; }
     .rvw-dc.open .rvw-bdt .ch { transform: rotate(180deg); }
     .rvw-dt { display: grid; grid-template-rows: 0fr; visibility: hidden; transition: grid-template-rows .3s ease, visibility 0s linear .3s; }
     .rvw-dc.open .rvw-dt { grid-template-rows: 1fr; visibility: visible; transition: grid-template-rows .3s ease, visibility 0s; }
@@ -322,13 +326,13 @@
     .rvw-dt .rvw-cat-bar { padding-left: 0; padding-top: 0; padding-bottom: 8px; }
     .rvw-tm { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 9px 12px; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; margin-top: 8px; }
     .rvw-tm:first-child { margin-top: 0; }
-    .rvw-tm.on { border-color: #93c5fd; background: #eff6ff; }
+    .rvw-tm.on { border-color: #94a3b8; background: #f1f5f9; }
     .rvw-tm-l { font-size: .78rem; min-width: 0; }
     .rvw-tm-l .a { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 2px; }
     .rvw-tm-l .d { color: #64748b; font-size: .74rem; }
     .rvw-tm-r { display: flex; gap: 6px; flex-wrap: wrap; }
-    .rvw-tg { background: #2563eb; color: #fff; border-radius: 6px; padding: 1px 8px; font-size: .7rem; font-weight: 700; }
-    .rvw-nom { color: #047857; font-weight: 700; font-family: ui-monospace, Consolas, monospace; font-size: .88rem; }
+    .rvw-tg { background: #1e293b; color: #fff; border-radius: 6px; padding: 1px 8px; font-size: .7rem; font-weight: 700; }
+    .rvw-nom { color: #1e293b; font-weight: 700; font-family: ui-monospace, Consolas, monospace; font-size: .88rem; }
     .rvw-tkosong { font-size: .78rem; color: #64748b; font-style: italic; }
     @media (max-width: 575.98px) {
         .rvw-dc { padding: 12px; gap: 10px; }
@@ -377,8 +381,8 @@
     .rvw-dlg.show { opacity: 1; }
     .rvw-dlg-box { background: #fff; border-radius: 16px; width: 100%; max-width: 400px; padding: 26px 24px 20px; text-align: center; box-shadow: 0 24px 60px rgba(15,23,42,.3); transform: translateY(8px) scale(.98); transition: transform .15s; }
     .rvw-dlg.show .rvw-dlg-box { transform: none; }
-    .rvw-dlg-icon { width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center; margin: 0 auto 14px; font-size: 27px; background: #fffbeb; color: #d97706; }
-    .rvw-dlg-icon.ok { background: #ecfdf5; color: #059669; }
+    .rvw-dlg-icon { width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center; margin: 0 auto 14px; font-size: 27px; background: #fef2f2; color: #dc2626; }
+    .rvw-dlg-icon.ok { background: #f1f5f9; color: #1e293b; }
     .rvw-dlg-box h5 { font-family: var(--rvw-display); font-size: 1.05rem; font-weight: 800; margin: 0 0 6px; }
     .rvw-dlg-box p { color: var(--rvw-muted); font-size: .85rem; margin: 0 0 18px; }
     .rvw-dlg-btns { display: flex; gap: 10px; }
@@ -397,17 +401,17 @@
     .rvw-flow i.cur { background: #f59e0b; }
     .rvw-flowlb { font-size: .7rem; color: var(--rvw-muted); margin-top: 3px; }
     .rvw-pbadge.pre { background: #f1f5f9; color: #475569; border-color: #e2e8f0; }
-    .rvw-pbadge.mitra { background: #f5f3ff; color: #6d28d9; border-color: #ddd6fe; }
-    .rvw-pbadge.humas { background: #f0fdfa; color: #0f766e; border-color: #99f6e4; }
-    .rvw-pbadge.ppk { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
-    .rvw-pbadge.dua { background: #fff7ed; color: #c2410c; border-color: #fed7aa; }
-    .rvw-pbadge.ok { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
+    .rvw-pbadge.mitra { background: #f1f5f9; color: #1e293b; border-color: #cbd5e1; }
+    .rvw-pbadge.humas { background: #f1f5f9; color: #1e293b; border-color: #cbd5e1; }
+    .rvw-pbadge.ppk { background: #f1f5f9; color: #1e293b; border-color: #cbd5e1; }
+    .rvw-pbadge.dua { background: #f1f5f9; color: #1e293b; border-color: #cbd5e1; }
+    .rvw-pbadge.ok { background: #f1f5f9; color: #1e293b; border-color: #cbd5e1; }
     /* Badge satu pill: jenis (tebal) | tahap. Warna ikut jenis; abu-abu kalau sedang dikerjakan Ketua Pelaksana */
     .rvw-jb { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; max-width: 100%; border-radius: 20px; padding: 4px 11px; font-size: .74rem; font-weight: 600; line-height: 1.3; background: var(--js); color: var(--jt); border: 1px solid var(--jb); }
     .rvw-jb b { font-weight: 800; }
     .rvw-jb em { font-style: normal; opacity: .45; }
     .rvw-jb.baru { --js: #eff6ff; --jt: #1d4ed8; --jb: #bfdbfe; }
-    .rvw-jb.rev { --js: #eef2ff; --jt: #4338ca; --jb: #c7d2fe; }
+    .rvw-jb.rev { --js: #f1f5f9; --jt: #1e293b; --jb: #cbd5e1; }
     .rvw-jb.ppk { --js: #fff7ed; --jt: #9a3412; --jb: #fed7aa; }
     .rvw-jb.wait { --js: #f8fafc; --jt: #64748b; --jb: #e2e8f0; }
     .rvw-posm { display: none; margin: 8px 0 2px; font-size: .75rem; color: var(--rvw-muted); }
@@ -457,6 +461,7 @@
     }
     @media (prefers-reduced-motion: reduce) { .rvw-root * { transition: none !important; } }
     </style>
+<include href="petunjuk_operasional/_tema_catatan.html" />
     
     <div class="rvw-root" id="rvwRoot">
         <!-- Header: sama dengan halaman Petunjuk Operasional (PO) -->
@@ -561,8 +566,8 @@
                     <div id="rvwBanner"></div>
                     <div class="rvw-pobar"><span class="sp"></span><button type="button" class="rvw-btn pri sm" id="rvwUnduhPo" data-unduh-po><i class="bi bi-download"></i>Unduh PO</button></div>
                     <div class="rvw-paper"><div id="rvwDocHost"><div class="rvw-loading">Memuat dokumen PO...</div></div></div>
-                    <section class="rvw-umum" id="rvwUmum" data-sec="umum"></section>
                     <div id="rvwCatBawah"></div>
+                    <section class="rvw-umum" id="rvwUmum" data-sec="umum"></section>
                 </div>
                 <div id="rvwBerkasPane" hidden></div>
                 <div id="rvwAlurPane" hidden></div>
@@ -616,8 +621,25 @@
             setTimeout(function () { kabariInduk('tutup', buka); }, 280);
         }
         // sesudah aksi yang memindahkan PO ke pihak lain: di detail order slide menutup sendiri, di halaman daftar tetap tampil seperti biasa
+        // Detail order diperbarui lebih dulu DI BELAKANG slide (tanpa memuat ulang halaman); begitu siap, induk meminta slide digeser keluar.
+        function minta_induk(jenis, tombol) {
+            var sh = $('rvwSheet'); if (sh) { sh.classList.add('rvw-menunggu'); }
+            if (tombol) { tombol.innerHTML = '<span class="rvw-spin"></span> Memuat...'; }
+            kabariInduk(jenis);
+            // pengaman: induk tidak menjawab -> tutup seperti biasa
+            setTimeout(function () { if (sh && sh.classList.contains('rvw-menunggu')) { geserKeluarLalu(''); } }, 15000);
+        }
+        if (SOLO) {
+            window.addEventListener('message', function (e) {
+                if (e.origin !== window.location.origin) { return; }
+                var d = e.data; if (!d || d.silopti !== 'po-panel-keluar') { return; }
+                var sh = $('rvwSheet'); if (sh) { sh.classList.remove('rvw-menunggu'); }
+                $('rvwScrim').classList.remove('open'); $('rvwSheet').classList.remove('open'); $('rvwSheet').setAttribute('aria-hidden', 'true');
+                setTimeout(function () { kabariInduk('keluar-selesai'); }, 280);
+            });
+        }
         function selesaiAksi(j, pesan) {
-            if (SOLO) { openTicket++; current = null; geserKeluarLalu(''); return; }
+            if (SOLO) { openTicket++; current = null; minta_induk('aksi'); return; }
             terapkanDetail(j); toast(pesan);
         }
         var BULAN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
@@ -1086,12 +1108,12 @@
             else if (p.status === 'disetujui' && p.ppk_status) { h = ['info', 'bi-clipboard2-check', 'PO ini sedang direvisi atas permintaan PPK BLU. Posisinya terlihat di kolom Status PO saat ini.']; }
             else if (p.status === 'disetujui') { h = ['ok', 'bi-check-circle', 'Disetujui ' + esc(p.katim) + ' pada ' + fmt(p.disetujui_at) + '. PO terkunci dan tidak bisa diedit.']; }
             else { h = ['info', 'bi-hourglass-split', 'Menunggu review <b>' + esc(p.katim) + '</b>' + (p.status === 'direvisi' ? ' atas revisi yang sudah Anda kirim' : '') + '.']; }
-            var catHtml = (p.catatan_humas ? '<div class="rvw-catmitra"><i class="bi bi-chat-left-text"></i><div><div class="k">Catatan Humas</div><div class="t">' + esc(p.catatan_humas) + '</div></div></div>' : '') +
-                (p.catatan_mitra ? '<div class="rvw-catmitra"><i class="bi bi-chat-left-text"></i><div><div class="k">Catatan Tim Mitra</div><div class="t">' + esc(p.catatan_mitra) + '</div></div></div>' : '') +
-                (p.catatan_ppk ? '<div class="rvw-catmitra"><i class="bi bi-chat-left-text"></i><div><div class="k">Catatan PPK BLU</div><div class="t">' + esc(p.catatan_ppk) + '</div></div></div>' : '');
-            // mode lihat: tanpa kotak status, catatan Humas / Tim Mitra / PPK BLU di bawah dokumen PO
-            $('rvwBanner').innerHTML = LIHAT ? '' : '<div class="rvw-bn ' + h[0] + '"><i class="bi ' + h[1] + '"></i><div>' + h[2] + '</div></div>' + catHtml;
-            $('rvwCatBawah').innerHTML = (LIHAT && catHtml) ? '<div style="margin-top:14px;">' + catHtml + '</div>' : '';
+            var catHtml = (p.catatan_humas ? '<div class="rvw-catmitra bawah"><i class="bi bi-chat-left-text"></i><div><div class="k">Catatan Humas</div><div class="t">' + esc(p.catatan_humas) + '</div></div></div>' : '') +
+                (p.catatan_mitra ? '<div class="rvw-catmitra bawah"><i class="bi bi-chat-left-text"></i><div><div class="k">Catatan Tim Mitra</div><div class="t">' + esc(p.catatan_mitra) + '</div></div></div>' : '') +
+                (p.catatan_ppk ? '<div class="rvw-catmitra bawah"><i class="bi bi-chat-left-text"></i><div><div class="k">Catatan PPK BLU</div><div class="t">' + esc(p.catatan_ppk) + '</div></div></div>' : '');
+            // kotak status "Disetujui ... PO terkunci" tidak ditampilkan lagi; catatan Humas / Tim Mitra / PPK BLU selalu di bawah dokumen PO
+            $('rvwBanner').innerHTML = (LIHAT || h[0] === 'ok') ? '' : '<div class="rvw-bn ' + h[0] + '"><i class="bi ' + h[1] + '"></i><div>' + h[2] + '</div></div>';
+            $('rvwCatBawah').innerHTML = catHtml;
         }
         function renderDock(p) {
             var op = cnt('terbuka'), dr = cnt('draf'), tot = op + dr, hint = '', btns = '';
@@ -1272,7 +1294,7 @@
             var p = curPo(); if (!p || !detail) { return; }
             var pm = first(p.pembuat), km = first(p.katim), id = p.id;
             if (act === 'edit') {
-                if (SOLO) { kabariInduk('edit'); return; }   // dibuka dari detail order: form edit tampil di Tahap 8
+                if (SOLO) { minta_induk('edit', document.querySelector('[data-act="edit"]')); return; }   // dibuka dari detail order: form edit tampil di Tahap 8
                 window.location.href = URL_PO(id) + '/edit?dari=daftar'; return;
             }
             if (act === 'minta') {
@@ -1326,7 +1348,7 @@
         /* ---------- Kartu berkas gaya detail order ----------
            Isi mengikuti modal berkas di detail order. Rincian (keterangan + data dokumen) tertutup dulu dan terbuka lewat tombol "Detail". */
         var dokBuka = {};
-        var DOK_WARNA = { amber: ['#fef3c7', '#d97706'], primary: ['#dbeafe', '#2563eb'], indigo: ['#e0e7ff', '#4f46e5'], danger: ['#fee2e2', '#dc2626'], success: ['#dcfce7', '#16a34a'] };
+        var DOK_WARNA = { amber: ['#f1f5f9', '#1e293b'], primary: ['#f1f5f9', '#1e293b'], indigo: ['#f1f5f9', '#1e293b'], danger: ['#f1f5f9', '#1e293b'], success: ['#f1f5f9', '#1e293b'] };
         function dokMeta(dk) {
             var tg = dk.tanggal ? tglSingkat(dk.tanggal) : '', m;
             if (dk.kunci === 'surat_masuk') { m = [['Nomor Dokumen', dk.nomor, 'mono'], ['Instansi Pemohon', dk.pengirim, 'n'], ['Tanggal Dokumen', tg, 'n'], ['Berkas Fisik', dk.file_name, 'fl', 1], ['Perihal', dk.perihal, 'n', 1]]; }
@@ -1583,7 +1605,7 @@
             return dokKartu({ kunci: 'mapkendali', ikon: 'bi-diagram-3-fill', warna: 'indigo', label: 'Map Kendali', sub: 'Form F.PJT-12-03/1: lembar kendali tahap proses (verifikasi dan validasi) untuk PO ini',
                 ada: true, badge: 'Terisi Otomatis',
                 aksi: '<button type="button" class="rvw-btn pri" data-mk-lihat><i class="bi bi-eye"></i>Lihat Pratinjau</button><button type="button" class="rvw-btn" data-mk-cetak><i class="bi bi-printer"></i>Cetak</button>',
-                isi: '<div class="rvw-dk" style="border-left-color:#4f46e5"><i class="bi bi-info-circle"></i> Tanggal terisi otomatis dari sistem (jam tidak ditampilkan). Ikon gembok = tahap belum dilalui.</div><div class="mk-inline">' + htmlMap(p) + '</div>' });
+                isi: '<div class="rvw-dk" style="border-left-color:#1e293b"><i class="bi bi-info-circle"></i> Tanggal terisi otomatis dari sistem (jam tidak ditampilkan). Ikon gembok = tahap belum dilalui.</div><div class="mk-inline">' + htmlMap(p) + '</div>' });
         }
         function bukaMapFv() {
             var p = curPo(); if (!p) { return; }

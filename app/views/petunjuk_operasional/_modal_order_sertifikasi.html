@@ -1,4 +1,6 @@
-<!-- Modal pilih order Sertifikasi (data dari sisertifikasi2026.tb_arsip_sertifikasi).
+<!-- Modal pilih order Sertifikasi (data dari sisertifikasi2026.tb_arsip_sertifikasi). Tampilan disamakan dengan modal Pengujian,
+     tetapi SATU PO Sertifikasi = SATU order (pilih satu saja, bukan centang banyak).
+     Tiap baris: nomor order, mitra, kegiatan sertifikasi (mst_kegiatan_sertifikasi), nilai kontrak, tanggal order.
      Dipakai di: /po-kegiatan/pilih dan /petunjuk-operasional (daftar PO layanan).
      Hanya order yang BELUM dibuatkan PO yang tampil. Membuka modal: window.bukaModalSertifikasi() -->
 <div class="modal fade" id="modalOrderSert" tabindex="-1" aria-labelledby="modalOrderSertLabel" aria-hidden="true">
@@ -7,15 +9,27 @@
             <div class="modal-header">
                 <div>
                     <h5 class="modal-title fw-bold mb-0" id="modalOrderSertLabel">Pilih Order Sertifikasi</h5>
-                    <div class="small text-muted">Order sertifikasi (bukan pendaftaran) yang kontraknya sudah terbayar penuh dan belum dibuatkan PO.</div>
+                    <div class="small text-muted">Pilih satu order. Satu PO Sertifikasi hanya untuk satu order yang kontraknya sudah terbayar penuh.</div>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
             </div>
             <div class="modal-body">
-                <input type="search" id="cariOrderSert" class="form-control mb-2" placeholder="Cari nomor order / nama mitra..." autocomplete="off">
+                <div class="d-flex flex-wrap gap-2 mb-2">
+                    <input type="search" id="cariOrderSert" class="form-control flex-grow-1" style="flex-basis: 260px;" placeholder="Cari nomor order / nama mitra / kegiatan..." autocomplete="off">
+                    <select id="filterKegiatanSert" class="form-select" style="flex: 0 1 240px;" aria-label="Filter kegiatan sertifikasi">
+                        <option value="">Semua kegiatan</option>
+                    </select>
+                </div>
                 <div class="small text-muted mb-2" id="catatanOrderSert">Data yang ditampilkan merupakan data order terbaru. Apabila order yang dicari tidak terdapat pada daftar, silakan gunakan kolom pencarian di atas.</div>
                 <div id="stateOrderSert" class="text-center text-muted small py-4"></div>
                 <div class="list-group" id="listOrderSert"></div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <div class="fw-bold" id="jmlOrderSert">Belum ada order dipilih</div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-primary" id="btnOkOrderSert" disabled><i class="bi bi-check-lg me-1"></i>Buat PO</button>
+                </div>
             </div>
         </div>
     </div>
@@ -23,11 +37,17 @@
 
 <style>
     #stateOrderSert:empty { display: none; }
-    .order-sert-item { display: flex; justify-content: space-between; align-items: center; gap: 12px; text-align: left; }
+    .order-sert-item { display: flex; align-items: flex-start; gap: 12px; text-align: left; cursor: pointer; margin: 0; }
+    .order-sert-item input[type=radio] { width: 18px; height: 18px; margin-top: 3px; flex: none; }
+    .order-sert-item .isi { flex: 1; min-width: 0; }
     .order-sert-item .no { font-weight: 700; }
     .order-sert-item .mitra { font-size: .85rem; color: #475569; }
     .order-sert-item .meta { text-align: right; font-size: .8rem; color: #64748b; white-space: nowrap; }
     .order-sert-item .nilai { font-weight: 600; color: #0f172a; }
+    .order-sert-item.dipilih { background: #eff6ff; }
+    .order-sert-item .tags { margin-top: 4px; display: flex; flex-wrap: wrap; gap: 4px; }
+    .order-sert-item .tags span { font-size: .7rem; padding: 1px 8px; border-radius: 999px; background: #f1f5f9; border: 1px solid #e2e8f0; color: #475569; }
+    .order-sert-item .tags span.kegiatan { background: #ecfdf5; border-color: #a7f3d0; color: #047857; font-weight: 600; }
 </style>
 
 <script>
@@ -37,34 +57,71 @@ document.addEventListener('DOMContentLoaded', function () {
     var listEl = document.getElementById('listOrderSert');
     var stateEl = document.getElementById('stateOrderSert');
     var cariEl = document.getElementById('cariOrderSert');
+    var filterEl = document.getElementById('filterKegiatanSert');
+    var jmlEl = document.getElementById('jmlOrderSert');
+    var okEl = document.getElementById('btnOkOrderSert');
     var URL_ORDER_SERT = '{{ @BASE }}/petunjuk-operasional/sertifikasi/order';
     var URL_BUAT_SERT = '{{ @BASE }}/petunjuk-operasional/sertifikasi/create?order=';
+    var dipilih = null;      // order terpilih (objek lengkap), hanya satu
 
     function rupiahSert(n) { return 'Rp ' + Math.round(n || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
     function elSert(tag, cls, txt) { var e = document.createElement(tag); if (cls) { e.className = cls; } if (txt != null) { e.textContent = txt; } return e; }
 
+    function hitungSert() {
+        if (dipilih) {
+            jmlEl.textContent = '1 order dipilih: ' + (dipilih.nomor_order || ('Order #' + dipilih.id));
+            jmlEl.classList.remove('text-muted');
+        } else {
+            jmlEl.textContent = 'Belum ada order dipilih';
+            jmlEl.classList.add('text-muted');
+        }
+        okEl.disabled = !dipilih;
+    }
+
+    function isiFilterKegiatan(rows) {
+        var nama = [];
+        rows.forEach(function (r) { if (r.kegiatan && nama.indexOf(r.kegiatan) < 0) { nama.push(r.kegiatan); } });
+        nama.sort(function (a, b) { return a.localeCompare(b); });
+        filterEl.innerHTML = '';
+        var o0 = elSert('option', '', 'Semua kegiatan'); o0.value = '';
+        filterEl.appendChild(o0);
+        nama.forEach(function (n) { var o = elSert('option', '', n); o.value = n; filterEl.appendChild(o); });
+        filterEl.classList.toggle('d-none', nama.length === 0);
+    }
+
     function tampilOrderSert(rows) {
         listEl.innerHTML = '';
+        isiFilterKegiatan(rows);
         rows.forEach(function (r) {
-            var a = elSert('button', 'list-group-item list-group-item-action order-sert-item');
-            a.type = 'button';
+            var a = elSert('label', 'list-group-item list-group-item-action order-sert-item');
             a.dataset.id = r.id;
-            a.dataset.cari = ((r.nomor_order || '') + ' ' + (r.mitra || '') + ' ' + (r.no_pks || '')).toLowerCase();
-            var kiri = elSert('div');
+            a.dataset.kegiatan = r.kegiatan || '';
+            a.dataset.cari = ((r.nomor_order || '') + ' ' + (r.no_id_order || '') + ' ' + (r.mitra || '') + ' ' + (r.no_pks || '') + ' ' + (r.kegiatan || '')).toLowerCase();
+            var rb = document.createElement('input');
+            rb.type = 'radio'; rb.name = 'pilihOrderSert'; rb.value = r.id;
+            a.appendChild(rb);
+            var kiri = elSert('div', 'isi');
             kiri.appendChild(elSert('div', 'no', r.nomor_order || ('Order #' + r.id)));
             kiri.appendChild(elSert('div', 'mitra', r.mitra || '(mitra tidak ditemukan)'));
+            var tags = elSert('div', 'tags');
+            if (r.kegiatan) { tags.appendChild(elSert('span', 'kegiatan', r.kegiatan)); }
+            if (r.no_id_order && r.no_id_order !== r.nomor_order) { tags.appendChild(elSert('span', '', 'ID order ' + r.no_id_order)); }
+            if (r.no_pks) { tags.appendChild(elSert('span', '', 'PKS ' + r.no_pks)); }
+            if (tags.childNodes.length) { kiri.appendChild(tags); }
             var kanan = elSert('div', 'meta');
             kanan.appendChild(elSert('div', 'nilai', rupiahSert(r.nilai_kontrak)));
             kanan.appendChild(elSert('div', '', r.tanggal_order ? 'Order ' + r.tanggal_order : '-'));
             a.appendChild(kiri); a.appendChild(kanan);
+            a._order = r;
             listEl.appendChild(a);
         });
         saringOrderSert();
     }
+
     function saringOrderSert() {
-        var q = (cariEl.value || '').toLowerCase().trim(), n = 0, total = listEl.children.length;
+        var q = (cariEl.value || '').toLowerCase().trim(), kg = filterEl.value || '', n = 0, total = listEl.children.length;
         Array.prototype.forEach.call(listEl.children, function (a) {
-            var ok = !q || a.dataset.cari.indexOf(q) !== -1;
+            var ok = (!q || a.dataset.cari.indexOf(q) !== -1) && (!kg || a.dataset.kegiatan === kg);
             a.classList.toggle('d-none', !ok);
             if (ok) { n++; }
         });
@@ -75,6 +132,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     window.bukaModalSertifikasi = function () {
         cariEl.value = '';
+        filterEl.value = '';
+        dipilih = null;
+        hitungSert();
         listEl.innerHTML = '';
         stateEl.className = 'text-center text-muted small py-4';
         stateEl.textContent = 'Memuat daftar order...';
@@ -92,11 +152,23 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     cariEl.addEventListener('input', saringOrderSert);
-    listEl.addEventListener('click', function (e) {
-        var a = e.target.closest('.order-sert-item');
-        if (!a) { return; }
-        window.location.href = URL_BUAT_SERT + encodeURIComponent(a.dataset.id);
+    filterEl.addEventListener('change', saringOrderSert);
+    listEl.addEventListener('change', function (e) {
+        var rb = e.target.closest('input[type=radio]');
+        if (!rb) { return; }
+        var a = rb.closest('.order-sert-item');
+        Array.prototype.forEach.call(listEl.children, function (x) { x.classList.toggle('dipilih', x === a); });
+        dipilih = a._order || null;
+        hitungSert();
     });
-    modalEl.addEventListener('hidden.bs.modal', function () { cariEl.value = ''; });
+    okEl.addEventListener('click', function () {
+        if (!dipilih) { return; }
+        var id = dipilih.id;
+        var inst = bootstrap.Modal.getInstance(modalEl);
+        if (inst) { inst.hide(); }
+        if (typeof window.startLoading === 'function') { window.startLoading('Membuka form PO...'); }
+        window.location.href = URL_BUAT_SERT + encodeURIComponent(id);
+    });
+    modalEl.addEventListener('hidden.bs.modal', function () { cariEl.value = ''; filterEl.value = ''; });
 });
 </script>

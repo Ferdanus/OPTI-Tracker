@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Referensi warna catatan PO</title>
+<style>
+:root{--ink:#0f172a;--mut:#64748b;--bd:#e2e8f0;--bg:#f1f5f9}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:24px}
+.wrap{max-width:1180px;margin:0 auto}
+h1{font-size:1.3rem;margin:0 0 4px}.lead{color:var(--mut);margin:0 0 14px}
+.legend{display:flex;gap:14px;align-items:center;flex-wrap:wrap;background:#fff;border:1px solid var(--bd);border-radius:12px;padding:10px 14px;margin-bottom:18px;font-size:.85rem}
+.sw{width:22px;height:22px;border-radius:6px;display:inline-block;vertical-align:middle;margin-right:6px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:16px}
+.opt{background:#fff;border:1px solid var(--bd);border-radius:14px;padding:14px}
+.opt h2{font-size:.95rem;margin:0}.opt h2 span{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:#1e293b;color:#fff;font-size:.75rem;margin-right:8px}
+.opt p{margin:2px 0 12px;color:var(--mut);font-size:.8rem}
+.stack{display:flex;flex-direction:column;gap:9px}
+.dark{--c:#1e293b;--tint:#f1f5f9;--bd2:#cbd5e1;--tx:#0f172a}
+.red{--c:#dc2626;--tint:#fef2f2;--bd2:#fecaca;--tx:#7f1d1d}
+.n{font-size:.84rem;position:relative}
+.top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:.76rem}
+.top b{font-weight:700}.top .tm{color:#94a3b8}
+.av{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:.6rem;font-weight:700;color:#fff;background:var(--c);flex:none}
+.tag{margin-left:auto;font-size:.66rem;font-weight:700;padding:2px 9px;border-radius:99px}
+.tx{margin-top:4px;white-space:pre-wrap}
+.btn{margin-top:7px;border:1.5px solid #cbd5e1;background:#fff;color:#334155;border-radius:8px;padding:4px 11px;font:inherit;font-size:.75rem;font-weight:700;cursor:pointer}
+.btn:hover{border-color:#1e293b;color:#1e293b}
+/* 1 garis kiri */
+.v1 .n{background:#fff;border:1px solid var(--bd);border-left:5px solid var(--c);border-radius:10px;padding:9px 12px}
+.v1 .tag{background:var(--tint);color:var(--c);border:1px solid var(--bd2)}
+.v1 .top b{color:var(--c)}
+/* 2 tinted */
+.v2 .n{background:var(--tint);border:1px solid var(--bd2);border-radius:10px;padding:9px 12px;color:var(--tx)}
+.v2 .tag{background:var(--c);color:#fff}
+.v2 .top b{color:var(--c)}
+/* 3 kepala berwarna */
+.v3 .n{border:1px solid var(--bd2);border-radius:10px;overflow:hidden;background:#fff}
+.v3 .top{background:var(--c);color:#fff;padding:6px 12px}.v3 .top .tm{color:rgba(255,255,255,.7)}.v3 .av{background:rgba(255,255,255,.22)}
+.v3 .tag{background:rgba(255,255,255,.22);color:#fff}
+.v3 .bd{padding:8px 12px 10px}
+/* 4 pill status saja */
+.v4 .n{background:#fff;border:1px solid var(--bd);border-radius:10px;padding:9px 12px}
+.v4 .tag{background:var(--c);color:#fff}
+/* 5 garis tepi */
+.v5 .n{background:#fff;border:1.8px solid var(--c);border-radius:12px;padding:9px 12px}
+.v5 .tag{background:#fff;color:var(--c);border:1.5px solid var(--c)}
+.v5 .av{box-shadow:0 0 0 3px var(--tint)}
+/* 6 solid sekarang */
+.v6 .n{border-radius:10px;padding:9px 12px;color:#fff;background:linear-gradient(180deg,#1e293b,#0f172a);border:1px solid #334155}
+.v6 .n.red{background:linear-gradient(180deg,#dc2626,#b91c1c);border-color:#991b1b}
+.v6 .av{background:rgba(255,255,255,.18)}.v6 .tag{background:rgba(255,255,255,.2);color:#fff}.v6 .top .tm{color:rgba(255,255,255,.65)}
+.v6 .btn{background:#fff;border-color:#fff;color:#0f172a}
+/* 7 gelembung */
+.v7 .n{display:flex;gap:9px;align-items:flex-start}
+.v7 .av{width:30px;height:30px;font-size:.68rem;margin-top:2px}
+.v7 .bub{flex:1;background:var(--tint);border:1px solid var(--bd2);border-radius:4px 14px 14px 14px;padding:8px 12px;color:var(--tx)}
+.v7 .tag{background:var(--c);color:#fff}
+/* 8 garis waktu */
+.v8 .n{padding:2px 0 2px 22px;border-left:2.5px solid var(--c);margin-left:8px}
+.v8 .n:before{content:"";position:absolute;left:-7px;top:4px;width:12px;height:12px;border-radius:50%;background:var(--c);box-shadow:0 0 0 4px var(--tint)}
+.v8 .tag{background:none;color:var(--c);padding:0;font-size:.72rem}
+.v8 .top b{color:var(--ink)}
+/* 9 kartu ikon */
+.v9 .n{display:flex;gap:11px;background:#fff;border:1px solid var(--bd);border-radius:12px;padding:10px 12px;box-shadow:0 1px 2px rgba(15,23,42,.05)}
+.v9 .ic{width:34px;height:34px;border-radius:10px;background:var(--c);color:#fff;display:grid;place-items:center;font-size:1rem;flex:none}
+.v9 .body{flex:1}
+.v9 .tag{background:var(--tint);color:var(--c)}
+.hint{font-size:.78rem;color:var(--mut);margin-top:12px}
+</style></head><body>
+<div class="wrap">
+<h1>Referensi warna catatan PO</h1>
+<p class="lead">Sembilan gaya, semuanya cuma memakai dua warna: <b>biru sidebar</b> (biasa dan sudah diperbaiki) dan <b>merah</b> (belum diperbaiki). Klik tombol di kartu untuk melihat merah berubah jadi biru sidebar, dan sebaliknya. Semua gaya ikut berubah bersamaan.</p>
+<div class="legend"><span><i class="sw" style="background:linear-gradient(180deg,#1e293b,#0f172a)"></i>Warna sidebar</span><span><i class="sw" style="background:#dc2626"></i>Belum diperbaiki</span><span style="color:var(--mut)">Catatan biasa (Humas / Tim Mitra / PPK BLU) selalu warna sidebar.</span></div>
+<div class="grid" id="g"></div>
+<p class="hint">Bilang aja nomor yang cocok. Boleh juga campuran, misalnya bentuk nomor 2 tapi tag-nya seperti nomor 4.</p>
+</div>
+<script>
+var ST={a:'terbuka',b:'selesai'};
+var NOTES=[
+ {k:'m',jenis:'info',label:'Catatan Tim Mitra',oleh:'Tim Mitra',ini:'TM',teks:'po ini udah lunas'},
+ {k:'a',jenis:'rev',label:'Rina Masriani',ini:'RM',waktu:'27 Okt 2026 08:44',teks:'Jadwal belum sesuai dengan tanggal kontrak.'},
+ {k:'b',jenis:'rev',label:'Rina Masriani',ini:'RM',waktu:'27 Okt 2026 08:45',teks:'Tim pelaksana perlu ditambah satu auditor.'}
+];
+var OPTS=[
+ ['v1','Garis kiri tebal','Kartu putih, garis kiri dan label berwarna.'],
+ ['v2','Latar lembut','Latar tipis berwarna, tag berwarna penuh.'],
+ ['v3','Kepala berwarna','Strip atas berwarna, isi catatan tetap putih.'],
+ ['v4','Putih, tag saja','Kartu putih bersih, hanya tag status yang berwarna.'],
+ ['v5','Garis tepi','Bingkai berwarna, tag berbingkai.'],
+ ['v6','Solid penuh (yang sekarang)','Pembanding: kartu penuh warna.'],
+ ['v7','Gelembung chat','Avatar dan gelembung percakapan.'],
+ ['v8','Garis waktu minimalis','Tanpa kartu, titik dan garis berwarna.'],
+ ['v9','Kartu dengan ikon','Ikon kotak berwarna di kiri.']
+];
+function tagTxt(n,s){return n.jenis==='info'?'Catatan':(s==='terbuka'?'Perlu diperbaiki':'Sudah diperbaiki')}
+function card(v,n){
+  var s=n.jenis==='info'?'selesai':ST[n.k],cls=s==='terbuka'?'red':'dark',tag='<span class="tag">'+tagTxt(n,s)+'</span>';
+  var btn=n.jenis==='rev'?'<div><button class="btn" data-k="'+n.k+'">'+(s==='terbuka'?'Tandai sudah diperbaiki':'Buka kembali')+'</button></div>':'';
+  var top='<div class="top"><span class="av">'+n.ini+'</span><b>'+n.label+'</b>'+(n.waktu?'<span class="tm">'+n.waktu+'</span>':'')+tag+'</div>';
+  var tx='<div class="tx">'+n.teks+'</div>';
+  if(v==='v3')return '<div class="n '+cls+'">'+top+'<div class="bd">'+tx+btn+'</div></div>';
+  if(v==='v7')return '<div class="n '+cls+'"><span class="av">'+n.ini+'</span><div class="bub"><div class="top"><b>'+n.label+'</b>'+(n.waktu?'<span class="tm">'+n.waktu+'</span>':'')+tag+'</div>'+tx+btn+'</div></div>';
+  if(v==='v9')return '<div class="n '+cls+'"><span class="ic">'+(s==='terbuka'?'!':'&#10003;')+'</span><div class="body"><div class="top"><b>'+n.label+'</b>'+(n.waktu?'<span class="tm">'+n.waktu+'</span>':'')+tag+'</div>'+tx+btn+'</div></div>';
+  return '<div class="n '+cls+'">'+top+tx+btn+'</div>';
+}
+function draw(){
+  document.getElementById('g').innerHTML=OPTS.map(function(o,i){
+    return '<div class="opt '+o[0]+'"><h2><span>'+(i+1)+'</span>'+o[1]+'</h2><p>'+o[2]+'</p><div class="stack">'+NOTES.map(function(n){return card(o[0],n)}).join('')+'</div></div>';
+  }).join('');
+}
+document.addEventListener('click',function(e){var b=e.target.closest('.btn');if(!b)return;var k=b.dataset.k;ST[k]=ST[k]==='terbuka'?'selesai':'terbuka';draw()});
+draw();
+</script></body></html>
