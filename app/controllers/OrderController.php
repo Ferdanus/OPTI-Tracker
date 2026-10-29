@@ -795,10 +795,10 @@ class OrderController extends Controller {
             $proposalLockMessage = '';
         }
 
-        // Parse durasi kegiatan ke angka Hari Kerja
-        $durasiStr = $proposal['durasi_kegiatan'] ?? '30 Hari Kerja';
-        $durasiHari = 30;
-        if (preg_match('/^(\d+)/', trim($durasiStr), $matches)) {
+        // Parse durasi kegiatan ke angka Hari Kerja (kosongkan default jika belum diisi)
+        $durasiStr = $proposal['durasi_kegiatan'] ?? '';
+        $durasiHari = '';
+        if (!empty($durasiStr) && preg_match('/^(\d+)/', trim($durasiStr), $matches)) {
             $durasiHari = (int)$matches[1];
         }
 
@@ -1276,7 +1276,7 @@ class OrderController extends Controller {
                 } else {
                     $langkahBerikutnya['judul'] = 'Terbitkan Surat Penawaran Harga Resmi';
                     $langkahBerikutnya['deskripsi'] = 'Kalkulasi tarif pengujian sebesar Rp ' . number_format($order['estimasi_biaya'] ?? 0, 0, ',', '.') . ' telah siap. Terbitkan surat penawaran resmi untuk dikirimkan ke pelanggan.';
-                    $langkahBerikutnya['penanggung_jawab'] = 'Tim Kemitraan & Pemasaran';
+                    $langkahBerikutnya['penanggung_jawab'] = 'Tim Mitra Industri';
                     $langkahBerikutnya['role_icon'] = 'bi-send-check-fill';
                     $langkahBerikutnya['tipe_badge'] = 'primary';
                     $langkahBerikutnya['tombol_teks'] = 'Terbitkan Surat Penawaran';
@@ -1344,7 +1344,7 @@ class OrderController extends Controller {
             if (empty($penawaran)) {
                 $langkahBerikutnya['judul'] = 'Terbitkan Surat Penawaran Harga Resmi';
                 $langkahBerikutnya['deskripsi'] = 'Parameter pengujian dan rincian biaya telah disetujui. Terbitkan surat penawaran harga resmi untuk disampaikan kepada pihak pelanggan.';
-                $langkahBerikutnya['penanggung_jawab'] = 'Tim Kemitraan & Pemasaran';
+                $langkahBerikutnya['penanggung_jawab'] = 'Tim Mitra Industri';
                 $langkahBerikutnya['role_icon'] = 'bi-file-earmark-plus-fill';
                 $langkahBerikutnya['tipe_badge'] = 'primary';
                 $langkahBerikutnya['tombol_teks'] = 'Buat Surat Penawaran';
@@ -1355,7 +1355,7 @@ class OrderController extends Controller {
             } elseif (($penawaran['status_respon_klien'] ?? '') !== 'deal') {
                 $langkahBerikutnya['judul'] = 'Menunggu Konfirmasi Persetujuan Pelanggan (DEAL)';
                 $langkahBerikutnya['deskripsi'] = 'Surat Penawaran resmi (' . ($penawaran['nomor_surat'] ?? 'Draft') . ') telah diterbitkan. Lakukan komunikasi dengan pelanggan dan catat respon persetujuan (DEAL).';
-                $langkahBerikutnya['penanggung_jawab'] = 'Pelanggan & Tim Kemitraan';
+                $langkahBerikutnya['penanggung_jawab'] = 'Pelanggan & Tim Mitra Industri';
                 $langkahBerikutnya['role_icon'] = 'bi-telephone-forward-fill';
                 $langkahBerikutnya['tipe_badge'] = 'warning';
                 $langkahBerikutnya['tombol_teks'] = 'Catat Respon Pelanggan';
@@ -1366,7 +1366,7 @@ class OrderController extends Controller {
             } elseif (empty($penawaran['file_penawaran_ttd']) || empty($penawaran['file_bukti_persetujuan'])) {
                 $langkahBerikutnya['judul'] = 'Unggah Dokumen Penawaran DEAL';
                 $langkahBerikutnya['deskripsi'] = 'Penawaran telah disepakati (DEAL). Lengkapi Surat Penawaran bertandatangan dan Bukti Persetujuan terlebih dahulu sebelum order dapat didisposisikan ke Tim Keuangan.';
-                $langkahBerikutnya['penanggung_jawab'] = 'Tim Kemitraan & Pemasaran';
+                $langkahBerikutnya['penanggung_jawab'] = 'Tim Mitra Industri';
                 $langkahBerikutnya['role_icon'] = 'bi-file-earmark-arrow-up-fill';
                 $langkahBerikutnya['tipe_badge'] = 'warning';
                 $langkahBerikutnya['tombol_teks'] = 'Upload Dokumen Penawaran';
@@ -1377,7 +1377,7 @@ class OrderController extends Controller {
             } else {
                 $langkahBerikutnya['judul'] = 'Disposisikan Order ke Tim Keuangan';
                 $langkahBerikutnya['deskripsi'] = 'Surat Penawaran bertandatangan dan Bukti Persetujuan telah lengkap. Teruskan order ke Tim Keuangan untuk membuka tahap pembayaran dan penerbitan kuitansi/invoice.';
-                $langkahBerikutnya['penanggung_jawab'] = 'Tim Kemitraan & Pemasaran';
+                $langkahBerikutnya['penanggung_jawab'] = 'Tim Mitra Industri';
                 $langkahBerikutnya['role_icon'] = 'bi-send-check-fill';
                 $langkahBerikutnya['tipe_badge'] = 'primary';
                 $langkahBerikutnya['tombol_teks'] = 'Disposisi ke Keuangan';
@@ -3519,10 +3519,10 @@ class OrderController extends Controller {
             } catch (\Exception $e) {}
         }
 
-        // Parse durasi kegiatan ke angka Hari Kerja
-        $durasiStr = $proposal['durasi_kegiatan'] ?? '30 Hari Kerja';
-        $durasiHari = 30;
-        if (preg_match('/^(\d+)/', trim($durasiStr), $matches)) {
+        // Parse durasi kegiatan ke angka Hari Kerja (kosongkan default jika belum diisi)
+        $durasiStr = $proposal['durasi_kegiatan'] ?? '';
+        $durasiHari = '';
+        if (!empty($durasiStr) && preg_match('/^(\d+)/', trim($durasiStr), $matches)) {
             $durasiHari = (int)$matches[1];
         }
 

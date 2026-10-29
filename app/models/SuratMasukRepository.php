@@ -372,31 +372,7 @@ class SuratMasukRepository {
                 );
                 $orderId = (int)($this->dbMain->exec("SELECT LAST_INSERT_ID() as id")[0]['id'] ?? 0);
     
-                // Inisialisasi record tb_surat_penawaran dengan permintaan_melalui terpilih
-                try {
-                    $custNamaFull = trim(($customer['pt_cv'] ? $customer['pt_cv'] . ' ' : '') . $customer['nmcustomer']);
-                    $custPic = $customer['contactperson_opti'] ?: ($customer['contactperson'] ?: '');
-                    $custAlamat = $customer['alamatcustomer'] ?: '';
-                    $this->dbMain->exec(
-                        "INSERT INTO `tb_surat_penawaran` (
-                            `customer_id`, `order_id`, `nama`, `perusahaan`, `alamat`, 
-                            `permintaan_melalui`, `jenis_layanan`, `status`, `status_respon_klien`, 
-                            `tanggal_surat`, `dibuat_oleh`, `created_at`
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', 'draft', ?, ?, ?)",
-                        [
-                            1 => $idCustomer,
-                            2 => $orderId,
-                            3 => $custPic,
-                            4 => $custNamaFull,
-                            5 => $custAlamat,
-                            6 => $mediaPermohonan,
-                            7 => 'opti_' . $jenisLayanan,
-                            8 => date('Y-m-d'),
-                            9 => $userId,
-                            10 => $waktuSekarang
-                        ]
-                    );
-                } catch (\Exception $eSp) {}
+                // Surat penawaran diterbitkan pada Tahap 5 oleh Tim Mitra
     
                 $this->dbSekretariat->exec(
                     "UPDATE `{$this->tableSekretariat}` 
@@ -578,31 +554,7 @@ class SuratMasukRepository {
             );
             $orderId = (int)($this->dbMain->exec("SELECT LAST_INSERT_ID() as id")[0]['id'] ?? 0);
     
-                // Inisialisasi record tb_surat_penawaran dengan permintaan_melalui terpilih
-                try {
-                    $custNamaFull = trim(($customer['pt_cv'] ? $customer['pt_cv'] . ' ' : '') . $customer['nmcustomer']);
-                    $custPic = $customer['contactperson_opti'] ?: ($customer['contactperson'] ?: '');
-                    $custAlamat = $customer['alamatcustomer'] ?: '';
-                    $this->dbMain->exec(
-                        "INSERT INTO `tb_surat_penawaran` (
-                            `customer_id`, `order_id`, `nama`, `perusahaan`, `alamat`, 
-                            `permintaan_melalui`, `jenis_layanan`, `status`, `status_respon_klien`, 
-                            `tanggal_surat`, `dibuat_oleh`, `created_at`
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', 'draft', ?, ?, ?)",
-                        [
-                            1 => $idCustomer,
-                            2 => $orderId,
-                            3 => $custPic,
-                            4 => $custNamaFull,
-                            5 => $custAlamat,
-                            6 => $mediaPermohonan,
-                            7 => 'opti_' . $jenisLayanan,
-                            8 => date('Y-m-d'),
-                            9 => $userId,
-                            10 => $waktuSekarang
-                        ]
-                    );
-                } catch (\Exception $eSp) {}
+                // Surat penawaran diterbitkan pada Tahap 5 oleh Tim Mitra
     
             $this->commitTransaction();
     

@@ -154,6 +154,7 @@ class SuratPenawaran extends \DB\SQL\Mapper
              LEFT JOIN tb_customer c ON sp.customer_id = c.id_customer
              LEFT JOIN tb_arsipuser u ON sp.dibuat_oleh = u.id_user
              WHERE sp.order_id = ?
+               AND ((sp.nomor_surat IS NOT NULL AND sp.nomor_surat != '') OR sp.nominal_penawaran > 0 OR sp.status_respon_klien != 'draft')
              ORDER BY (sp.status_respon_klien = 'deal') DESC, sp.id DESC LIMIT 1",
             array(1 => $orderId)
         );
@@ -204,6 +205,7 @@ class SuratPenawaran extends \DB\SQL\Mapper
              LEFT JOIN tb_customer c ON sp.customer_id = c.id_customer
              LEFT JOIN tb_arsipuser u ON sp.dibuat_oleh = u.id_user
              WHERE sp.order_id = ?
+               AND ((sp.nomor_surat IS NOT NULL AND sp.nomor_surat != '') OR sp.nominal_penawaran > 0 OR sp.status_respon_klien != 'draft')
              ORDER BY sp.id ASC",
             array(1 => $orderId)
         );

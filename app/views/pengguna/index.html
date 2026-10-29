@@ -879,10 +879,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Listener Modal Tambah Pengguna
-    const selectTambahRole = document.getElementById('tambah_role_sistem');
     const warningTambah = document.getElementById('tambah_ketua_warning');
     const warningTambahText = document.getElementById('tambah_ketua_warning_text');
-    const btnSubmitTambah = document.getElementById('btnSubmitTambah');
 
     if (selectTambahRole) {
         selectTambahRole.addEventListener('change', function() {
@@ -892,9 +890,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Modal Instance & Elements
     const modalUbahEl = document.getElementById('modalUbahRole');
-    const modalUbah = modalUbahEl ? new bootstrap.Modal(modalUbahEl) : null;
     const modalHapusEl = document.getElementById('modalHapusRole');
-    const modalHapus = modalHapusEl ? new bootstrap.Modal(modalHapusEl) : null;
 
     const selectEditRole = document.getElementById('edit_role_sistem');
     const warningEdit = document.getElementById('edit_ketua_warning');
@@ -911,7 +907,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Event Delegation: Handler Klik Tombol Ubah & Cabut Role (Tahan terhadap filter/render ulang)
     document.addEventListener('click', function(e) {
         const btnUbah = e.target.closest('.btn-ubah-role');
-        if (btnUbah && modalUbah) {
+        if (btnUbah && modalUbahEl) {
             e.preventDefault();
             const id = btnUbah.getAttribute('data-id');
             const nama = btnUbah.getAttribute('data-nama');
@@ -929,12 +925,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
             checkKetuaOccupied(role, parseInt(id), warningEdit, warningEditText, btnSubmitUbah);
 
-            modalUbah.show();
+            if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                const bsModal = (typeof bootstrap.Modal.getOrCreateInstance === 'function')
+                    ? bootstrap.Modal.getOrCreateInstance(modalUbahEl)
+                    : (bootstrap.Modal.getInstance(modalUbahEl) || new bootstrap.Modal(modalUbahEl));
+                bsModal.show();
+            }
             return;
         }
 
         const btnHapus = e.target.closest('.btn-hapus-role');
-        if (btnHapus && modalHapus) {
+        if (btnHapus && modalHapusEl) {
             e.preventDefault();
             const id = btnHapus.getAttribute('data-id');
             const nama = btnHapus.getAttribute('data-nama');
@@ -947,7 +948,12 @@ document.addEventListener('DOMContentLoaded', function() {
             if (displayIdHapus) displayIdHapus.innerText = id;
             if (displayNamaHapus) displayNamaHapus.innerText = nama;
 
-            modalHapus.show();
+            if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                const bsModal = (typeof bootstrap.Modal.getOrCreateInstance === 'function')
+                    ? bootstrap.Modal.getOrCreateInstance(modalHapusEl)
+                    : (bootstrap.Modal.getInstance(modalHapusEl) || new bootstrap.Modal(modalHapusEl));
+                bsModal.show();
+            }
             return;
         }
     });

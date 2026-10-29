@@ -766,7 +766,7 @@ tr.row-user-task > td:first-child {
                                                     <span class="badge rounded-pill bg-light text-dark border px-2.5 py-1 fw-semibold text-nowrap" style="font-size: 0.75rem;">Lingkungan</span>
                                                 </check>
                                                 <check if="{{ !@ord.jenis_layanan_opti || @ord.jenis_layanan_opti == 'belum_ditentukan' }}">
-                                                    <span class="badge rounded-pill bg-light text-muted border px-2 py-0.5 fw-medium d-inline-flex align-items-center justify-content-center" style="font-size: 0.68rem; line-height: 1.15;">
+                                                    <span class="badge rounded-pill bg-light text-dark border px-2 py-0.5 fw-semibold d-inline-flex align-items-center justify-content-center" style="font-size: 0.68rem; line-height: 1.15;">
                                                         <span class="text-center" style="display: inline-block;">belum<br>ditentukan</span>
                                                     </span>
                                                 </check>
@@ -885,9 +885,7 @@ tr.row-user-task > td:first-child {
                                                     <label class="form-label fw-bold text-dark m-0 small">
                                                         Instansi Pelanggan Resmi <span class="text-danger">*</span>
                                                     </label>
-                                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace" style="font-size: 0.7rem;">
-                                                        Satu Pintu (tb_customer)
-                                                    </span>
+                                                    
                                                 </div>
                                                 <select name="id_customer" id="selectCustomerManual" class="form-select form-select-sm fw-semibold select-customer-modal-manual" placeholder="Ketik nama PT/CV, kode perusahaan, nama PIC, atau alamat..." required>
                                                     <option value="">-- Cari Instansi Pelanggan (Ketik nama/kode/PIC) --</option>
@@ -906,9 +904,7 @@ tr.row-user-task > td:first-child {
                                                         </option>
                                                     </repeat>
                                                 </select>
-                                                <div class="form-text text-muted small mt-1.5" style="font-size: 0.74rem;">
-                                                    <i class="bi bi-info-circle me-1 text-primary"></i>Pilih instansi pelanggan resmi terdaftar. Jika nama instansi mitra belum terdaftar, hubungi Admin Master Data untuk pendaftaran pelanggan satu pintu.
-                                                </div>
+                                                
 
                                                 <!-- Card Rincian Pelanggan Terpilih -->
                                                 <div id="manualCustPreviewCard" class="p-2.5 rounded-3 border bg-light mt-2.5 d-none" style="font-size: 0.8rem;">
@@ -1913,7 +1909,7 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 
 <style>
-/* Styling Saluran Radio Card */
+/* Styling Saluran Radio Card - Tema Biru Navy BBSPJIS (#0f172a / #1e293b) */
 .channel-radio-card {
     cursor: pointer;
     background-color: #f8fafc;
@@ -1925,12 +1921,15 @@ document.addEventListener('DOMContentLoaded', function () {
     border-color: #cbd5e1 !important;
 }
 .btn-check:checked + .channel-radio-card {
-    background-color: #f0f7ff !important;
-    border-color: #2563eb !important;
-    box-shadow: 0 0 0 1px #2563eb !important;
+    background-color: #f1f5f9 !important;
+    border-color: #0f172a !important;
+    box-shadow: 0 0 0 1px #0f172a !important;
 }
 .btn-check:checked + .channel-radio-card i {
-    color: #2563eb !important;
+    color: #0f172a !important;
+}
+.btn-check:checked + .channel-radio-card span {
+    color: #0f172a !important;
 }
 /* Modal Scrollable Fix */
 #modalTambahPermohonanManual .modal-body {

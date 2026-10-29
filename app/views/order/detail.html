@@ -1702,7 +1702,7 @@
                         </span>
                     </check>
                     <check if="{{ !@order.jenis_layanan_opti || @order.jenis_layanan_opti == 'belum_ditentukan' }}">
-                        <span class="badge bg-light text-muted border text-uppercase fw-bold px-3 py-1.5 rounded-pill" style="font-size: 0.82rem;">
+                        <span class="badge bg-light text-dark border text-uppercase fw-bold px-3 py-1.5 rounded-pill" style="font-size: 0.82rem;">
                             BELUM DITENTUKAN
                         </span>
                     </check>
@@ -1795,7 +1795,7 @@
             </div>
         </div>
 
-        <!-- 8-Tahap Progress Stepper Terintegrasi BBSPJIS (ISO 17025) -->
+        <!-- 8-Tahap Progress Stepper Terintegrasi BBSPJIS  -->
         <div class="mt-4 pt-3 border-top">
             <div class="stepper-scroll-wrapper">
                 <div class="stepper-progress-container">
@@ -1816,7 +1816,7 @@
                     </a>
 
                     <!-- Step 3: Kaji Kelayakan (Ketua Tim) -->
-                    <a href="#cardKajiKelayakan" class="step-checkpoint {{ 3 > @current_step ? 'disabled' : '' }}" data-bs-toggle="tooltip" title="Tahap 3: Kaji ulang kelayakan personil, alat, bahan, dan metode uji (ISO 17025)">
+                    <a href="#cardKajiKelayakan" class="step-checkpoint {{ 3 > @current_step ? 'disabled' : '' }}" data-bs-toggle="tooltip" title="Tahap 3: Kaji ulang kelayakan personil, alat, bahan, dan metode uji">
                         <div class="step-circle {{ @stepper[3].state }}">
                             <check if="{{ @stepper[3].state == 'done' }}"><i class="bi bi-check-lg"></i></check>
                             <check if="{{ @stepper[3].state == 'current' }}"><i class="bi bi-clipboard-check"></i></check>
@@ -2920,7 +2920,7 @@
         </div>
 
         <!-- ======================================================== -->
-        <!-- PANE TAHAP 3: KAJI ULANG KELAYAKAN TEKNIS (ISO 17025)    -->
+        <!-- PANE TAHAP 3: KAJI ULANG KELAYAKAN TEKNIS     -->
         <!-- ======================================================== -->
         <div class="tab-pane fade {{ @current_step == 3 ? 'show active' : '' }}" id="pane-stage-3" role="tabpanel" aria-labelledby="tab-stage-3">
             <div class="system-section-card" id="cardKajiKelayakan">
@@ -2928,7 +2928,7 @@
                     <div>
                         <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2 font-display">
                             <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-0.5 small fw-bold">3</span>
-                            <i class="bi bi-clipboard-check-fill text-primary fs-5"></i> Kaji Kelayakan Teknis Layanan <span class="badge bg-light text-secondary border font-monospace" style="font-size: 0.75rem;" data-bs-toggle="tooltip" title="Standar Internasional ISO/IEC 17025: Persyaratan umum kompetensi laboratorium pengujian &amp; kalibrasi">ISO 17025</span>
+                            <i class="bi bi-clipboard-check-fill text-primary fs-5"></i> Kaji Kelayakan Teknis Layanan
                         </h6>
                         <div class="d-none align-items-center flex-wrap gap-2 text-muted small mt-1" style="font-size: 0.72rem; line-height: 1.4; column-gap: 16px; row-gap: 4px;">
                             <span id="audit-dibaca-stage-3" class="audit-dibaca-stage-3 me-3 {{ !@audit_stages[3].waktu_dibaca ? 'd-none' : '' }}">Dibaca: <span class="text-dark fw-medium audit-dibaca-time">{{ @audit_stages[3].waktu_dibaca ? date('d M Y, H:i', strtotime(@audit_stages[3].waktu_dibaca)) : '' }}</span> <span class="text-secondary text-nowrap audit-dibaca-name">({{ @audit_stages[3].dibaca_nama ?: @audit_stages[3].dibaca_role }})</span></span>
@@ -3020,7 +3020,7 @@
                                 </div>
                             </check>
 
-                            <!-- 4 Pilar Status Kesiapan Lab (ISO 17025) -->
+                            <!-- 4 Pilar Status Kesiapan Lab  -->
                             <div class="d-flex align-items-center justify-content-between mb-2">
                                 <small class="text-muted fw-semibold">Evaluasi Kesiapan Laboratorium:</small>
                                 <check if="{{ @tinjauan.sdm_tersedia && @tinjauan.peralatan_tersedia && @tinjauan.bahan_tersedia && @tinjauan.metode_tersedia }}">
@@ -3136,11 +3136,11 @@
                             <check if="{{ !@is_ketua_tim && !@is_superadmin }}">
                                 <div class="p-3 bg-light rounded-3 border">
                                     <div class="d-flex align-items-center gap-2 mb-2">
-                                        <span class="badge bg-primary-subtle text-primary fw-semibold"><i class="bi bi-clock-history me-1"></i>Menunggu Kaji Ulang Kelayakan Teknis (ISO 17025)</span>
+                                        <span class="badge bg-primary-subtle text-primary fw-semibold"><i class="bi bi-clock-history me-1"></i>Menunggu Kaji Ulang Kelayakan Teknis </span>
                                         <small class="text-muted">Wewenang Ketua Tim OPTI {{ @order.jenis_layanan_opti == 'selulosa' ? 'Selulosa' : (@order.jenis_layanan_opti == 'lingkungan' ? 'Lingkungan' : '') }}</small>
                                     </div>
                                     <p class="small text-secondary mb-3">
-                                        Kaji kelayakan teknis mengevaluasi 4 pilar kesiapan laboratorium (Personil/SDM, Peralatan Uji, Bahan/Reagen, dan Metode Standar) berdasarkan ISO 17025 serta penetapan personil PIC sebelum penawaran resmi diterbitkan.
+                                        Kaji kelayakan teknis mengevaluasi 4 pilar kesiapan laboratorium (Personil/SDM, Peralatan Uji, Bahan/Reagen, dan Metode Standar) serta penetapan personil PIC sebelum penawaran resmi diterbitkan.
                                     </p>
                                     <div class="row g-2 small">
                                         <div class="col-sm-6">
@@ -3792,7 +3792,7 @@
                                         </div>
                                     </div>
 
-                                    <!-- Card 2: Hasil Kaji Ulang Kelayakan Teknis (ISO 17025) -->
+                                    <!-- Card 2: Hasil Kaji Ulang Kelayakan Teknis  -->
                                     <check if="{{ @tinjauan }}">
                                         <div class="card border rounded-3 bg-white shadow-xs mb-3">
                                             <div class="card-header bg-white py-2.5 px-3 border-bottom">
@@ -3874,7 +3874,7 @@
                                                     </span>
                                                 </check>
                                                 <check if="{{ @proposal && @proposal.status_proposal == 'diajukan' }}">
-                                                    <span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-0.5" style="font-size: 0.72rem;">
+                                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-0.5" style="font-size: 0.72rem;">
                                                         <i class="bi bi-clock me-1"></i> Menunggu Ka. Tim
                                                     </span>
                                                 </check>
@@ -3969,7 +3969,7 @@
                                                         </label>
                                                         <div class="input-group input-group-sm">
                                                             <input type="number" min="1" max="365" name="durasi_hari" class="form-control fw-semibold font-monospace" 
-                                                                   value="{{ @durasi_hari ?: '30' }}" placeholder="30" required {{ !@can_edit_proposal ? 'disabled' : '' }}>
+                                                                   value="{{ @durasi_hari }}" placeholder="Isi jumlah hari" required {{ !@can_edit_proposal ? 'disabled' : '' }}>
                                                             <span class="input-group-text bg-light text-secondary">Hari Kerja</span>
                                                         </div>
                                                     </div>
@@ -4252,11 +4252,6 @@
                                     <span class="badge bg-primary">TERKIRIM</span>
                                 </check>
                             </check>
-                            <check if="{{ !@penawaran }}">
-                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
-                                    <i class="bi bi-file-earmark-plus me-1"></i> Siap Terbit
-                                </span>
-                            </check>
                         </check>
                     </div>
                 </div>
@@ -4389,9 +4384,9 @@
                                                         </button>
                                                     </check>
 
-                                                    <button type="button" class="btn btn-sm btn-primary fw-semibold px-3 d-inline-flex align-items-center gap-1.5 shadow-xs" onclick="bukaFormPenawaranInline('edit')" title="Buka dan sunting formulir penawaran langsung di halaman ini">
+                                                    <button type="button" class="btn btn-white btn-sm border fw-semibold shadow-sm text-secondary d-inline-flex align-items-center gap-1.5" onclick="bukaFormPenawaranInline('edit')" title="Buka dan sunting formulir penawaran langsung di halaman ini">
                                                         <i class="bi bi-pencil-square"></i>
-                                                        <span>{{ @penawaran.status_respon_klien == 'draft' ? 'Lanjutkan Edit Draf' : 'Koreksi / Detail Formulir' }}</span>
+                                                        <span>{{ @penawaran.status_respon_klien == 'draft' ? 'Lanjutkan Edit Draf' : 'Koreksi Formulir' }}</span>
                                                     </button>
                                                 </false>
                                             </check>
@@ -4844,11 +4839,6 @@
                                                 Lengkapi rincian biaya, durasi pelaksanaan, serta data penandatangan untuk menerbitkan Surat Penawaran Resmi kepada pelanggan.
                                             </div>
                                         </div>
-                                        <div class="d-flex align-items-center gap-2">
-                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 fw-semibold">
-                                                <i class="bi bi-lightning-charge me-1"></i> Form Tahap 5
-                                            </span>
-                                        </div>
                                     </div>
                                     <include href="tim_mitra/surat Pelayanan/form_order.html" />
                                 </div>
@@ -4973,8 +4963,9 @@
                                         <i class="bi bi-check-circle-fill me-1"></i> Bukti bayar terverifikasi. Tim OPTI berwenang memproses penerimaan sampel dan memulai pengerjaan.
                                     </small>
                                     <check if="{{ @is_keuangan || @is_admin_order || @is_superadmin || @can_manage_pembayaran }}">
-                                        <button type="button" class="btn btn-light btn-sm text-secondary border py-0.5 px-2" data-bs-toggle="collapse" data-bs-target="#collapseGantiBukti" title="Unggah Ulang Bukti Pembayaran">
-                                            <i class="bi bi-pencil me-1"></i> Perbarui Bukti
+                                        <button type="button" class="btn btn-white btn-sm border fw-semibold shadow-sm text-secondary d-inline-flex align-items-center gap-1.5" data-bs-toggle="collapse" data-bs-target="#collapseGantiBukti" title="Unggah Ulang Bukti Pembayaran">
+                                            <i class="bi bi-pencil-square"></i>
+                                            <span>Koreksi Bukti Bayar</span>
                                         </button>
                                     </check>
                                 </div>
@@ -10089,103 +10080,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-var currentModePenawaranInline = null;
-
-function bukaFormPenawaranInline(mode) {
-    triggerStageRead(5);
-    var collapseEl = document.getElementById('collapseFormPenawaranInline');
-    if (!collapseEl) return;
-
-    var isOpen = collapseEl.classList.contains('show');
-
-    // Jika form sedang terbuka dan tombol mode yang sama ditekan kembali (atau double click), tutup form (toggle dinamis)
-    if (isOpen && currentModePenawaranInline === mode) {
-        if (typeof bootstrap !== 'undefined' && bootstrap.Collapse) {
-            var bsCollapseClose = bootstrap.Collapse.getInstance(collapseEl);
-            if (!bsCollapseClose) {
-                bsCollapseClose = new bootstrap.Collapse(collapseEl, { toggle: false });
-            }
-            bsCollapseClose.hide();
-        } else {
-            collapseEl.classList.remove('show');
-        }
-        currentModePenawaranInline = null;
-        return;
-    }
-
-    currentModePenawaranInline = mode;
-
-    var inputNomorSurat = document.getElementById('input_nomor_surat');
-    var checkRevisi = document.getElementById('check_revisi_baru');
-    var inputMode = document.getElementById('input_sp_mode');
-    var inputPenawaranId = document.getElementById('input_sp_penawaran_id');
-    var selectStatus = document.getElementById('select_status_respon_klien');
-    var inputCatatan = document.getElementById('input_catatan_nego');
-    var headerJudul = document.getElementById('headerJudulSpInline');
-    var headerIcon = document.getElementById('headerIconSpInline');
-    var headerTeks = document.getElementById('headerTeksSpInline');
-    var headerSub = document.getElementById('headerSubSpInline');
-
-    var nomorLama = inputNomorSurat ? (inputNomorSurat.dataset.nomorLama || inputNomorSurat.value) : '';
-    var nomorBaru = inputNomorSurat ? (inputNomorSurat.dataset.nomorBaru || '') : '';
-
-    if (mode === 'baru') {
-        if (inputMode) inputMode.value = 'baru';
-        if (checkRevisi) checkRevisi.value = '1';
-        if (inputPenawaranId) inputPenawaranId.value = '0';
-        if (inputNomorSurat && nomorBaru) {
-            inputNomorSurat.value = nomorBaru;
-        }
-        if (selectStatus) {
-            selectStatus.value = 'nego';
-        }
-        if (inputCatatan) {
-            inputCatatan.value = '';
-        }
-        if (headerTeks) headerTeks.textContent = 'Formulir Surat Penawaran Baru';
-        if (headerIcon) {
-            headerIcon.className = 'bi bi-arrow-repeat text-warning';
-        }
-        if (headerSub) {
-            headerSub.innerHTML = 'Terbitkan surat penawaran baru untuk proses negosiasi (Nomor Baru: <strong class="font-monospace text-dark">' + (nomorBaru || 'Auto') + '</strong> &bull; SP Sebelumnya: <span class="font-monospace text-muted">' + (nomorLama || '-') + '</span>).';
-        }
-    } else {
-        if (inputMode) inputMode.value = 'edit';
-        if (checkRevisi) checkRevisi.value = '0';
-        if (inputPenawaranId) {
-            inputPenawaranId.value = inputPenawaranId.dataset.originalId || '{{ @sp_existing.id ?? (@penawaran.id ?? 0) }}';
-        }
-        if (inputNomorSurat && nomorLama) {
-            inputNomorSurat.value = nomorLama;
-        }
-        if (headerTeks) headerTeks.textContent = 'Formulir Surat Penawaran Resmi';
-        if (headerIcon) {
-            headerIcon.className = 'bi bi-pencil-square text-primary';
-        }
-        if (headerSub) {
-            headerSub.innerHTML = 'Perbarui rincian surat penawaran harga resmi (Nomor: <strong class="font-monospace text-dark">' + (nomorLama || (inputNomorSurat ? inputNomorSurat.value : '')) + '</strong>).';
-        }
-    }
-
-    if (typeof syncLivePreview === 'function') {
-        syncLivePreview();
-    }
-
-    if (!isOpen) {
-        if (typeof bootstrap !== 'undefined' && bootstrap.Collapse) {
-            var bsCollapse = bootstrap.Collapse.getInstance(collapseEl);
-            if (!bsCollapse) {
-                bsCollapse = new bootstrap.Collapse(collapseEl, { toggle: false });
-            }
-            bsCollapse.show();
-        } else {
-            collapseEl.classList.add('show');
-        }
-    }
-
-    collapseEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-}
-
 function confirmSubmitLingkungan(actionVal) {
     var form = document.getElementById('formKalkulasiLingkungan');
     if (form && !form.checkValidity()) {
@@ -10243,4 +10137,124 @@ function confirmSubmitLingkungan(actionVal) {
     }
 }
 </check>
+
+// ========================================================
+// JAVASCRIPT SURAT PENAWARAN INLINE (TAHAP 5 - GLOBAL)
+// ========================================================
+window.currentModePenawaranInline = null;
+
+window.bukaFormPenawaranInline = function(mode) {
+    if (typeof triggerStageRead === 'function') {
+        triggerStageRead(5);
+    }
+    var collapseEl = document.getElementById('collapseFormPenawaranInline');
+    if (!collapseEl) {
+        console.warn('Elemen collapseFormPenawaranInline tidak ditemukan di halaman.');
+        return;
+    }
+
+    var isOpen = collapseEl.classList.contains('show');
+
+    // Jika form sedang terbuka dan tombol mode yang sama ditekan kembali, tutup form (toggle dinamis)
+    if (isOpen && window.currentModePenawaranInline === mode) {
+        if (typeof bootstrap !== 'undefined' && bootstrap.Collapse) {
+            var bsCollapseClose = (typeof bootstrap.Collapse.getOrCreateInstance === 'function')
+                ? bootstrap.Collapse.getOrCreateInstance(collapseEl, { toggle: false })
+                : (bootstrap.Collapse.getInstance(collapseEl) || new bootstrap.Collapse(collapseEl, { toggle: false }));
+            bsCollapseClose.hide();
+        } else {
+            collapseEl.classList.remove('show');
+        }
+        window.currentModePenawaranInline = null;
+        return;
+    }
+
+    window.currentModePenawaranInline = mode;
+
+    var inputNomorSurat = document.getElementById('input_nomor_surat');
+    var checkRevisi = document.getElementById('check_revisi_baru');
+    var inputMode = document.getElementById('input_sp_mode');
+    var inputPenawaranId = document.getElementById('input_sp_penawaran_id');
+    var selectStatus = document.getElementById('select_status_respon_klien');
+    var inputCatatan = document.getElementById('input_catatan_nego');
+    var headerJudul = document.getElementById('headerJudulSpInline');
+    var headerIcon = document.getElementById('headerIconSpInline');
+    var headerTeks = document.getElementById('headerTeksSpInline');
+    var headerSub = document.getElementById('headerSubSpInline');
+
+    var nomorLama = inputNomorSurat ? (inputNomorSurat.dataset.nomorLama || inputNomorSurat.value) : '';
+    var nomorBaru = inputNomorSurat ? (inputNomorSurat.dataset.nomorBaru || '') : '';
+
+    if (mode === 'baru') {
+        if (inputMode) inputMode.value = 'baru';
+        if (checkRevisi) checkRevisi.value = '1';
+        if (inputPenawaranId) inputPenawaranId.value = '0';
+        if (inputNomorSurat && nomorBaru) {
+            inputNomorSurat.value = nomorBaru;
+        }
+        if (selectStatus) {
+            selectStatus.value = 'nego';
+        }
+        if (inputCatatan) {
+            inputCatatan.value = '';
+        }
+        if (headerTeks) headerTeks.textContent = 'Formulir Surat Penawaran Baru';
+        if (headerIcon) {
+            headerIcon.className = 'bi bi-arrow-repeat text-warning';
+        }
+        if (headerSub) {
+            headerSub.innerHTML = 'Terbitkan surat penawaran baru untuk proses negosiasi (Nomor Baru: <strong class="font-monospace text-dark">' + (nomorBaru || 'Auto') + '</strong> &bull; SP Sebelumnya: <span class="font-monospace text-muted">' + (nomorLama || '-') + '</span>).';
+        }
+    } else {
+        if (inputMode) inputMode.value = 'edit';
+        if (checkRevisi) checkRevisi.value = '0';
+        if (inputPenawaranId) {
+            inputPenawaranId.value = inputPenawaranId.dataset.originalId || '{{ @sp_existing.id ?? (@penawaran.id ?? 0) }}';
+        }
+        if (inputNomorSurat && nomorLama) {
+            inputNomorSurat.value = nomorLama;
+        }
+        if (headerTeks) headerTeks.textContent = 'Formulir Surat Penawaran Resmi';
+        if (headerIcon) {
+            headerIcon.className = 'bi bi-pencil-square text-primary';
+        }
+        if (headerSub) {
+            headerSub.innerHTML = 'Perbarui rincian surat penawaran harga resmi (Nomor: <strong class="font-monospace text-dark">' + (nomorLama || (inputNomorSurat ? inputNomorSurat.value : '')) + '</strong>).';
+        }
+    }
+
+    // Buka panel form jika belum terbuka (lakukan sebelum sync agar form tampil pasti)
+    if (!isOpen) {
+        if (typeof bootstrap !== 'undefined' && bootstrap.Collapse) {
+            var bsCollapse = (typeof bootstrap.Collapse.getOrCreateInstance === 'function')
+                ? bootstrap.Collapse.getOrCreateInstance(collapseEl, { toggle: false })
+                : (bootstrap.Collapse.getInstance(collapseEl) || new bootstrap.Collapse(collapseEl, { toggle: false }));
+            bsCollapse.show();
+        } else {
+            collapseEl.classList.add('show');
+        }
+    }
+
+    try {
+        if (typeof syncLivePreview === 'function') {
+            syncLivePreview();
+        }
+    } catch (eSync) {
+        console.warn('Sync live preview error caught in bukaFormPenawaranInline:', eSync);
+    }
+
+    setTimeout(function() {
+        collapseEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 50);
+};
+
+// Reset mode saat collapse ditutup agar tombol bisa dibuka kembali dengan mulus
+document.addEventListener('DOMContentLoaded', function() {
+    var cFormInline = document.getElementById('collapseFormPenawaranInline');
+    if (cFormInline) {
+        cFormInline.addEventListener('hidden.bs.collapse', function() {
+            window.currentModePenawaranInline = null;
+        });
+    }
+});
 </script>

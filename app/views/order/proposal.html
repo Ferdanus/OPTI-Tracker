@@ -159,7 +159,7 @@
                     </span>
                 </check>
                 <check if="{{ @proposal && @proposal.status_proposal == 'diajukan' }}">
-                    <span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-0.5">
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-0.5">
                         <i class="bi bi-clock me-1"></i> Menunggu Ka. Tim
                     </span>
                 </check>
@@ -404,7 +404,7 @@
                                 </label>
                                 <div class="input-group input-group-sm">
                                     <input type="number" min="1" max="365" name="durasi_hari" class="form-control fw-semibold font-monospace" 
-                                           value="{{ @durasi_hari ?: '30' }}" placeholder="30" required {{ !@can_edit ? 'disabled' : '' }}>
+                                           value="{{ @durasi_hari }}" placeholder="Isi jumlah hari" required {{ !@can_edit ? 'disabled' : '' }}>
                                     <span class="input-group-text bg-light text-secondary">Hari Kerja</span>
                                 </div>
                             </div>
