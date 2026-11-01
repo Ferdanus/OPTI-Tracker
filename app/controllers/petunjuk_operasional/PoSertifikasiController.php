@@ -622,7 +622,7 @@ class PoSertifikasiController extends \Controller {
             $f3->reroute('/petunjuk-operasional?layanan=sertifikasi');
             return;
         }
-        if (!$lihat && !in_array((string) ($po['status'] ?? ''), ['', 'draft'], true)) {
+        if (!$lihat && !in_array((string) ($po['status'] ?? ''), ['', 'draft'], true) && !$this->sedangRevisi($po)) {
             // PO yang sudah dikirim hanya bisa dilihat (edit lagi hanya lewat permintaan revisi)
             $this->setFlashWarning('PO yang sudah terkirim tidak bisa diedit lagi.');
             $f3->reroute('/petunjuk-operasional/sertifikasi/' . (int) $po['id'] . '/lihat');
@@ -1071,6 +1071,7 @@ class PoSertifikasiController extends \Controller {
         }
 
         $kirim = ($status === 'terkirim');
+        if ($kirim) { $this->masukReview((int) $poId, false, (string) $nomor['detail_nomor']); }   // [BARU] PO terkirim masuk antrean review Ketua Tim Sertifikasi
         $pesan = $kirim ? 'PO berhasil dibuat dan dikirim.' : 'PO berhasil disimpan sebagai draft.';
         // popup berhasil + pindah ke daftar PO ditangani di halaman form (tab sesuai status)
         return $this->json([
@@ -1112,13 +1113,15 @@ class PoSertifikasiController extends \Controller {
             return $this->json(['ok' => false, 'message' => 'PO Sertifikasi tidak ditemukan.'], 404);
         }
         $statusLama = (string) ($po['status'] ?? 'draft');
-        if (!in_array($statusLama, ['', 'draft'], true)) {
+        $revisi = $this->sedangRevisi($po);   // [BARU] PO terkirim yang diminta revisi Ketua Tim: isi boleh diubah, status tetap terkirim
+        if (!in_array($statusLama, ['', 'draft'], true) && !$revisi) {
             // PO yang sudah dikirim terkunci; perubahan hanya lewat permintaan revisi (Review)
             return $this->json(['ok' => false, 'message' => $statusLama === 'terkirim'
                 ? 'PO ini sudah terkirim dan tidak bisa diedit lagi. Perubahan hanya bisa lewat permintaan revisi.'
                 : 'PO ini sudah berstatus "' . $statusLama . '" dan tidak bisa diubah lagi.'], 409);
         }
-        $status = $this->statusDariAksi($f3);
+        $status = $revisi ? 'terkirim' : $this->statusDariAksi($f3);
+        $kirimRevisi = $revisi && ((string) $f3->get('POST.aksi') === 'kirim');
 
         $orderRaw = null;
         try {
@@ -1173,7 +1176,14 @@ class PoSertifikasiController extends \Controller {
         $nomorAkhir = $nomorBaru ? $nomorBaru['detail_nomor'] : (string) ($po['nomor_po'] ?? '');
 
         $kirim = ($status === 'terkirim');
-        $pesan = $kirim ? 'PO berhasil diperbarui dan dikirim.' : 'PO berhasil diperbarui sebagai draft.';
+        if ($revisi) {
+            if ($kirimRevisi) { $this->masukReview((int) $po['id'], true, $nomorAkhir); }   // revisi dikirim ulang -> kembali ke antrean review
+        } elseif ($kirim) {
+            $this->masukReview((int) $po['id'], false, $nomorAkhir);   // draft dikirim untuk pertama kali
+        }
+        $pesan = $revisi
+            ? ($kirimRevisi ? 'Revisi PO berhasil disimpan dan dikirim ulang ke Ketua Tim.' : 'Perubahan revisi tersimpan (belum dikirim ke Ketua Tim).')
+            : ($kirim ? 'PO berhasil diperbarui dan dikirim.' : 'PO berhasil diperbarui sebagai draft.');
         return $this->json([
             'ok'             => true,
             'message'        => $pesan,
@@ -1187,10 +1197,207 @@ class PoSertifikasiController extends \Controller {
         ]);
     }
 
+    /* ================================================================
+     * [BARU] ALUR REVIEW PO SERTIFIKASI: Tim Kerja kirim -> Ketua Tim Sertifikasi review -> Humas
+     * Pakai kolom status_review yang sama dengan PO OPTI: menunggu_review -> (perlu_revisi -> direvisi ->) disetujui.
+     * PO yang disetujui otomatis masuk ke Daftar PO Humas (PoHumasController), digabung dengan PO OPTI.
+     * ================================================================ */
+
+    /** Hanya Ketua Tim Sertifikasi dan Superadmin yang boleh menyetujui / meminta revisi. */
+    protected function bolehReview() {
+        return $this->isSuperadmin() || $this->isKetuaSertifikasi();
+    }
+
+    /** PO terkirim yang sedang diminta revisi oleh Ketua Tim (isinya boleh diedit lagi oleh pembuat). */
+    protected function sedangRevisi($po) {
+        return (string) ($po['status'] ?? '') === 'terkirim' && (string) ($po['status_review'] ?? '') === 'perlu_revisi';
+    }
+
+    /** Nama pengguna dari tb_arsipuser (database Sekretariat). Peta: id_user => nama_user. */
+    protected function namaUserSert(array $ids) {
+        $bersih = [];
+        foreach ($ids as $id) {
+            $n = (int) $id;
+            if ($n > 0) { $bersih[$n] = true; }
+        }
+        if (empty($bersih) || !$this->dbSekretariat) { return []; }
+        $peta = [];
+        try {
+            $rows = $this->dbSekretariat->exec("SELECT id_user, nama_user FROM tb_arsipuser WHERE id_user IN (" . implode(',', array_keys($bersih)) . ")");
+            foreach ($rows as $r) { $peta[(int) $r['id_user']] = (string) $r['nama_user']; }
+        } catch (\Throwable $e) {
+            // nama dikosongkan kalau database Sekretariat tidak terjangkau
+        }
+        return $peta;
+    }
+
+    /** Catatan pada thread PO (po_chat). sisi: 'katim' | 'pembuat'. sistem = true untuk pesan otomatis. Tidak pernah menggagalkan proses utama. */
+    protected function pesanChat($poId, $sisi, $teks, $sistem) {
+        try {
+            $this->db->exec(
+                "INSERT INTO po_chat (po_id, pengirim_id, sisi, pesan, sistem, created_at) VALUES (?, ?, ?, ?, ?, NOW())",
+                [1 => (int) $poId, 2 => (int) $this->getUserId(), 3 => $sisi, 4 => $teks, 5 => $sistem ? 1 : 0]
+            );
+        } catch (\Throwable $e) {
+            error_log('[PO Sertifikasi] gagal mencatat pesan PO: ' . $e->getMessage());
+        }
+    }
+
+    /** Web Push (kalau terpasang) ke beberapa pengguna; tautannya ke halaman Review PO Sertifikasi. */
+    protected function kabariSert(array $userIds, $judul, $pesan) {
+        if (!class_exists('PushNotifikasi')) { return; }
+        $base = (string) \Base::instance()->get('BASE');
+        $sudah = [];
+        foreach ($userIds as $id) {
+            $id = (int) $id;
+            if ($id <= 0 || isset($sudah[$id])) { continue; }
+            $sudah[$id] = true;
+            try {
+                \PushNotifikasi::kirim($this->db, $id, $judul, $pesan, $base . '/petunjuk-operasional/sertifikasi/review', 'po-review');
+            } catch (\Throwable $e) {
+                // notifikasi bersifat pelengkap
+            }
+        }
+    }
+
+    /** PO baru dikirim ($ulang = false) atau revisi dikirim ulang ($ulang = true): masuk antrean review Ketua Tim Sertifikasi. */
+    protected function masukReview($poId, $ulang, $nomor) {
+        try {
+            if ($ulang) {
+                $this->db->exec(
+                    "UPDATE po_kegiatan SET status_review = 'direvisi', revisi_at = NOW(), revisi_dibaca_at = NULL WHERE id = ? AND status_review = 'perlu_revisi'",
+                    [1 => (int) $poId]
+                );
+            } else {
+                $this->db->exec(
+                    "UPDATE po_kegiatan SET dikirim_at = NOW(), status_review = 'menunggu_review', reviewed_at = NULL, reviewed_by = NULL WHERE id = ?",
+                    [1 => (int) $poId]
+                );
+            }
+        } catch (\Throwable $e) {
+            error_log('[PO Sertifikasi] gagal memasukkan PO ke antrean review: ' . $e->getMessage());
+        }
+        $this->pesanChat($poId, 'pembuat', $ulang ? 'Revisi PO dikirim ulang untuk direview.' : 'PO dikirim untuk direview.', true);
+        $this->kabariSert(
+            \PoReviewController::idKatim($this->db, 'sertifikasi'),
+            $ulang ? 'Revisi PO Sertifikasi masuk' : 'PO Sertifikasi menunggu review',
+            'PO ' . $nomor . ($ulang ? ' sudah direvisi dan menunggu review ulang.' : ' baru dikirim dan menunggu review.')
+        );
+    }
+
+    /**
+     * Daftar PO Sertifikasi yang sudah dikirim, lengkap dengan keadaan review-nya.
+     * keadaan: menunggu (baru masuk) | direvisi (revisi dikirim ulang) | perlu_revisi | disetujui
+     */
+    protected function dataReview($hanyaId = 0) {
+        $this->ensureDatabaseSertifikasi();
+        $dbName = $this->namaDbSertifikasi();
+        $akhir = " WHERE p.layanan = ? AND p.status IN ('terkirim', 'disetujui_mitra', 'disetujui')" . ((int) $hanyaId > 0 ? ' AND p.id = ' . (int) $hanyaId : '') . " ORDER BY p.updated_at DESC, p.id DESC";
+        $varian = [
+            "SELECT p.*, a.nomor_order, a.no_id_order, a.total_nilai_kontrak, a.total_bayar_kontrak, c.nmcustomer, c.pt_cv FROM po_kegiatan p
+               LEFT JOIN `{$dbName}`.`tb_arsip_sertifikasi` a ON a.id_arsip_sertifikasi = p.order_id
+               LEFT JOIN tb_customer c ON c.id_customer = a.id_customer" . $akhir,
+            // cadangan bila database SISERTIFIKASI tidak terbaca: daftar tetap tampil tanpa No. Order & Mitra dari order
+            "SELECT p.*, NULL AS nomor_order, NULL AS no_id_order, NULL AS total_nilai_kontrak, NULL AS total_bayar_kontrak, NULL AS nmcustomer, NULL AS pt_cv FROM po_kegiatan p" . $akhir,
+        ];
+        $rows = [];
+        foreach ($varian as $sql) {
+            try {
+                $rows = $this->db->exec($sql, [1 => \PoSchema::SERTIFIKASI]);
+                break;
+            } catch (\Throwable $e) {
+                error_log('[PO Sertifikasi] gagal membaca daftar review: ' . $e->getMessage());
+                $rows = [];
+            }
+        }
+        $ids = [];
+        $pembuat = [];
+        foreach ($rows as $r) { $ids[] = (int) $r['id']; $pembuat[] = (int) ($r['created_by'] ?? 0); $pembuat[] = (int) ($r['disetujui_by'] ?? 0); $pembuat[] = (int) ($r['reviewed_by'] ?? 0); }
+        $nama = $this->namaUserSert($pembuat);
+
+        // riwayat alur (pesan sistem po_chat) -- hanya dimuat untuk satu PO (slide Review), bukan untuk daftar
+        $riwayat = [];
+        if ($ids && (int) $hanyaId > 0) {
+            try {
+                $rs = $this->db->exec("SELECT po_id, pesan, created_at FROM po_chat WHERE po_id IN (" . implode(',', $ids) . ") AND sistem = 1 ORDER BY id ASC");
+                foreach ($rs as $m) { $riwayat[(int) $m['po_id']][] = ['pesan' => (string) $m['pesan'], 'waktu' => (string) $m['created_at']]; }
+            } catch (\Throwable $e) {
+                // tanpa riwayat
+            }
+        }
+
+        // catatan revisi terakhir dari Ketua Tim (po_chat, bukan pesan sistem) untuk PO yang sedang diminta revisi
+        $catatan = [];
+        if ($ids) {
+            try {
+                $cs = $this->db->exec("SELECT po_id, pesan FROM po_chat WHERE po_id IN (" . implode(',', $ids) . ") AND sisi = 'katim' AND sistem = 0 ORDER BY id ASC");
+                foreach ($cs as $c) { $catatan[(int) $c['po_id']] = (string) $c['pesan']; }
+            } catch (\Throwable $e) {
+                // tanpa catatan
+            }
+        }
+
+        $base = (string) \Base::instance()->get('BASE');
+        $sah = function ($v) { $v = trim((string) $v); return ($v !== '' && strpos($v, '0000') !== 0 && strtotime($v)) ? date('Y-m-d H:i:s', strtotime($v)) : ''; };
+        $hasil = [];
+        foreach ($rows as $r) {
+            $sr = (string) ($r['status_review'] ?? '');
+            $keadaan = ($sr === 'disetujui') ? 'disetujui' : (($sr === 'perlu_revisi') ? 'perlu_revisi' : (($sr === 'direvisi') ? 'direvisi' : 'menunggu'));
+            $order = trim((string) ($r['nomor_order'] ?? ''));
+            if ($order === '') { $order = trim((string) ($r['no_id_order'] ?? '')); }
+            $mitra = (($r['nmcustomer'] ?? '') !== '' || ($r['pt_cv'] ?? '') !== '')
+                ? \Customer::formatNamaPerusahaan($r['pt_cv'] ?? '', $r['nmcustomer'] ?? '')
+                : trim((string) ($r['nama_perusahaan'] ?? ''));
+            $id = (int) $r['id'];
+            $namaKatim = isset($nama[(int) ($r['disetujui_by'] ?? 0)]) ? $nama[(int) $r['disetujui_by']] : (isset($nama[(int) ($r['reviewed_by'] ?? 0)]) ? $nama[(int) $r['reviewed_by']] : '');
+            $tglVer = $sah($r['verifikasi_humas_at'] ?? '');
+            $tglMitra = $sah($r['tervalidasi_mitra_at'] ?? '');
+            $tglPpk = $sah($r['validasi_keuangan_at'] ?? '');
+            $hasil[] = [
+                'id'          => $id,
+                'nilai'       => (float) ($r['total_nilai_kontrak'] ?? 0),
+                'terbayar'    => (float) ($r['total_bayar_kontrak'] ?? 0),
+                'layanan'     => 'sertifikasi',
+                'divisi'      => 'sertifikasi',
+                'disiapkan'   => 'Tim Kerja Sertifikasi',
+                'katim'       => $namaKatim,
+                'status_po'   => (string) ($r['status'] ?? ''),
+                'ronde'       => (int) ($r['ronde_revisi'] ?? 0),
+                'dibuat_at'   => $sah($r['created_at'] ?? ''),
+                'katim_baca_at' => $sah($r['reviewed_at'] ?? ''),
+                'minta_dibaca_at' => $sah($r['minta_dibaca_at'] ?? ''),
+                'revisi_dibaca_at' => $sah($r['revisi_dibaca_at'] ?? ''),
+                'humas_baca_at' => $sah($r['humas_dibaca_at'] ?? ''),
+                'humas_ver_at'  => $tglVer,
+                'mitra_valid_at' => $tglMitra,
+                'ppk_valid_at'  => $tglPpk,
+                'catatan_mitra' => $tglMitra !== '' ? trim((string) ($r['catatan_tim_mitra'] ?? '')) : '',
+                'catatan_humas' => trim((string) ($r['catatan_humas'] ?? '')),
+                'map'         => ['proposal' => '', 'humas' => substr($tglVer, 0, 10), 'mitra' => substr($tglMitra, 0, 10), 'keuangan' => substr($tglPpk, 0, 10)],
+                'riwayat'     => isset($riwayat[$id]) ? $riwayat[$id] : [],
+                'nomor'       => (string) ($r['nomor_po'] ?? ''),
+                'judul'       => (string) ($r['judul_kegiatan'] ?? ''),
+                'jenis'       => trim((string) ($r['jenis'] ?? '')),
+                'order'       => $order,
+                'mitra'       => $mitra,
+                'pembuat'     => isset($nama[(int) ($r['created_by'] ?? 0)]) ? $nama[(int) $r['created_by']] : '',
+                'keadaan'     => $keadaan,
+                'dikirim'     => $sah(isset($r['dikirim_at']) && $r['dikirim_at'] ? $r['dikirim_at'] : ($r['tanggal_dikirim'] ?? '')),
+                'minta_at'    => $sah($r['minta_at'] ?? ''),
+                'revisi_at'   => $sah($r['revisi_at'] ?? ''),
+                'disetujui_at' => $sah($r['disetujui_at'] ?? ''),
+                'catatan'     => isset($catatan[$id]) ? $catatan[$id] : '',
+                'url_lihat'   => $base . '/petunjuk-operasional/sertifikasi/' . $id . '/lihat?embed=1',
+                'url_edit'    => $base . '/petunjuk-operasional/sertifikasi/' . $id . '/edit',
+            ];
+        }
+        return $hasil;
+    }
+
     /**
      * GET /petunjuk-operasional/sertifikasi/review
-     * Review PO Sertifikasi. Sementara halaman penanda (alur review menyusul), sama seperti Review PO Pengujian.
-     * Akses: Superadmin, Tim Kerja Sertifikasi, dan Ketua Tim Sertifikasi.
+     * Review PO Sertifikasi. Ketua Tim Sertifikasi (dan Superadmin): setujui / minta revisi. Tim Kerja Sertifikasi: memantau status
+     * dan memperbaiki PO yang diminta revisi.
      */
     public function review($f3) {
         $this->requireAuth();
@@ -1198,11 +1405,144 @@ class PoSertifikasiController extends \Controller {
             $f3->error(403, 'Halaman ini hanya untuk Tim Kerja dan Ketua Tim Sertifikasi.');
             return;
         }
+        // Review PO Sertifikasi kini bagian dari Daftar PO (tab Perlu Tindakan / Revisi, slide Review). Halaman ini hanya dipakai sebagai panel slide (?embed=1&buka=ID).
+        if ((string) $f3->get('GET.embed') !== '1') {
+            $f3->reroute('/po-kegiatan?divisi=sertifikasi' . ($this->isKetuaSertifikasi() ? '&tab=tindakan' : ''));
+            return;
+        }
+        $this->kendalaSkema();
+        $buka = (int) $f3->get('GET.buka');
+        $f3->set('review_json', $this->jsonHive($this->dataReview($buka)));
+        $f3->set('boleh_review', $this->bolehReview() ? 'true' : 'false');
+        $f3->set('boleh_edit', ($this->isSuperadmin() || $this->isTimSertifikasi()) ? 'true' : 'false');
+        $f3->set('csrf_po', (string) ($f3->get('csrf_token') ?? ''));
 
         $this->render(
             'petunjuk_operasional/po_sertifikasi/review.html',
             'Review PO Sertifikasi',
             'review_po_sertifikasi'
         );
+    }
+
+    /** GET /petunjuk-operasional/sertifikasi/review/data -- daftar terbaru (JSON), dipakai halaman review setelah tiap tindakan. */
+    public function reviewData($f3) {
+        $this->requireAuth();
+        if (!($this->isSuperadmin() || $this->isRoleSertifikasi())) {
+            return $this->json(['ok' => false, 'pesan' => 'Tidak punya akses.'], 403);
+        }
+        return $this->json(['ok' => true, 'daftar' => $this->dataReview((int) $f3->get('GET.id'))]);
+    }
+
+    /**
+     * POST /petunjuk-operasional/sertifikasi/@id/baca -- penerima langkah yang sedang berjalan membuka PO: catat waktu baca (sekali saja).
+     * Dipakai kolom "Posisi PO" di Daftar PO (penanda "Belum dibuka" / "Dibuka ..." dan baris tebal). Superadmin hanya melihat, tidak mencatat.
+     * Ketua Tim: PO baru -> reviewed_at, revisi dikirim ulang -> revisi_dibaca_at. Tim Kerja: PO diminta revisi -> minta_dibaca_at.
+     */
+    public function baca($f3, $params) {
+        $this->requireAuth();
+        if (!($this->isKetuaSertifikasi() || $this->isTimSertifikasi())) { return $this->json(['ok' => true, 'dicatat' => false]); }
+        $po = $this->poUntukReview((int) $params['id']);
+        if (!$po) { return $this->json(['ok' => true, 'dicatat' => false]); }
+        $sr = (string) ($po['status_review'] ?? '');
+        $kolom = '';
+        if ($this->isKetuaSertifikasi()) {
+            if ($sr === 'direvisi') { $kolom = 'revisi_dibaca_at'; }
+            elseif (in_array($sr, ['', 'menunggu_review'], true)) { $kolom = 'reviewed_at'; }
+        } elseif ($sr === 'perlu_revisi') {
+            $kolom = 'minta_dibaca_at';
+        }
+        if ($kolom !== '') {
+            try {
+                $this->db->exec("UPDATE po_kegiatan SET {$kolom} = NOW() WHERE id = ? AND layanan = ? AND {$kolom} IS NULL", [1 => (int) $po['id'], 2 => \PoSchema::SERTIFIKASI]);
+            } catch (\Throwable $e) {
+                error_log('[PO Sertifikasi] gagal mencatat waktu baca: ' . $e->getMessage());
+            }
+        }
+        return $this->json(['ok' => true, 'dicatat' => $kolom !== '']);
+    }
+
+    /** PO Sertifikasi yang sudah terkirim untuk tindakan review, atau null. */
+    protected function poUntukReview($id) {
+        try {
+            $po = \PoSchema::ambilPoSertifikasi($this->db, (int) $id);
+        } catch (\Throwable $e) {
+            return null;
+        }
+        return ($po && (string) ($po['status'] ?? '') === 'terkirim') ? $po : null;
+    }
+
+    /** POST /petunjuk-operasional/sertifikasi/@id/setujui -- Ketua Tim menyetujui PO; PO diteruskan ke Daftar PO Humas. */
+    public function setujui($f3, $params) {
+        $this->requireAuth();
+        if (!$this->bolehReview()) {
+            return $this->json(['ok' => false, 'pesan' => 'Hanya Ketua Tim Sertifikasi yang dapat menyetujui PO.'], 403);
+        }
+        $po = $this->poUntukReview((int) $params['id']);
+        if (!$po) {
+            return $this->json(['ok' => false, 'pesan' => 'PO tidak ditemukan atau belum dikirim.'], 404);
+        }
+        $uid = (int) $this->getUserId();
+        try {
+            $diubah = $this->db->exec(
+                "UPDATE po_kegiatan
+                    SET status_review = 'disetujui', disetujui_at = NOW(), disetujui_by = ?, disposisi_humas_at = NOW(),
+                        reviewed_at = COALESCE(reviewed_at, NOW()), reviewed_by = COALESCE(reviewed_by, ?)
+                  WHERE id = ? AND layanan = ? AND status = 'terkirim'
+                    AND (status_review IS NULL OR status_review IN ('', 'menunggu_review', 'direvisi'))",
+                [1 => $uid, 2 => $uid, 3 => (int) $po['id'], 4 => \PoSchema::SERTIFIKASI]
+            );
+        } catch (\Throwable $e) {
+            error_log('[PO Sertifikasi] gagal menyetujui PO: ' . $e->getMessage());
+            return $this->json(['ok' => false, 'pesan' => 'Gagal menyimpan persetujuan.'], 500);
+        }
+        if ((int) $diubah === 0) {
+            return $this->json(['ok' => false, 'pesan' => 'Status PO sudah berubah. Muat ulang halaman.'], 409);
+        }
+        $nama = $this->namaUserSert([$uid]);
+        $namaKatim = isset($nama[$uid]) ? $nama[$uid] : 'Ketua Tim';
+        $this->pesanChat($po['id'], 'katim', $namaKatim . ' menyetujui PO. PO terkunci dan diteruskan ke Humas untuk diverifikasi.', true);
+        $this->kabariSert([(int) ($po['created_by'] ?? 0)], 'PO disetujui', 'PO ' . (string) ($po['nomor_po'] ?? '') . ' disetujui Ketua Tim dan diteruskan ke Humas.');
+        return $this->json(['ok' => true, 'pesan' => 'PO disetujui dan diteruskan ke Humas.']);
+    }
+
+    /** POST /petunjuk-operasional/sertifikasi/@id/minta-revisi -- Ketua Tim mengembalikan PO ke Tim Kerja dengan catatan (wajib). */
+    public function mintaRevisi($f3, $params) {
+        $this->requireAuth();
+        if (!$this->bolehReview()) {
+            return $this->json(['ok' => false, 'pesan' => 'Hanya Ketua Tim Sertifikasi yang dapat meminta revisi.'], 403);
+        }
+        $po = $this->poUntukReview((int) $params['id']);
+        if (!$po) {
+            return $this->json(['ok' => false, 'pesan' => 'PO tidak ditemukan atau belum dikirim.'], 404);
+        }
+        $catatan = trim((string) $f3->get('POST.catatan'));
+        if ($catatan === '') {
+            return $this->json(['ok' => false, 'pesan' => 'Catatan revisi wajib diisi.'], 422);
+        }
+        $catatan = function_exists('mb_substr') ? mb_substr($catatan, 0, 500, 'UTF-8') : substr($catatan, 0, 500);
+        $uid = (int) $this->getUserId();
+        $ronde = (int) ($po['ronde_revisi'] ?? 0) + 1;
+        try {
+            $diubah = $this->db->exec(
+                "UPDATE po_kegiatan
+                    SET status_review = 'perlu_revisi', ronde_revisi = ?, minta_at = NOW(), minta_dibaca_at = NULL,
+                        reviewed_at = COALESCE(reviewed_at, NOW()), reviewed_by = COALESCE(reviewed_by, ?)
+                  WHERE id = ? AND layanan = ? AND status = 'terkirim'
+                    AND (status_review IS NULL OR status_review IN ('', 'menunggu_review', 'direvisi'))",
+                [1 => $ronde, 2 => $uid, 3 => (int) $po['id'], 4 => \PoSchema::SERTIFIKASI]
+            );
+        } catch (\Throwable $e) {
+            error_log('[PO Sertifikasi] gagal meminta revisi: ' . $e->getMessage());
+            return $this->json(['ok' => false, 'pesan' => 'Gagal mengirim permintaan revisi.'], 500);
+        }
+        if ((int) $diubah === 0) {
+            return $this->json(['ok' => false, 'pesan' => 'Status PO sudah berubah. Muat ulang halaman.'], 409);
+        }
+        $nama = $this->namaUserSert([$uid]);
+        $namaKatim = isset($nama[$uid]) ? $nama[$uid] : 'Ketua Tim';
+        $this->pesanChat($po['id'], 'katim', $catatan, false);
+        $this->pesanChat($po['id'], 'katim', $namaKatim . ' meminta revisi.', true);
+        $this->kabariSert([(int) ($po['created_by'] ?? 0)], 'Permintaan revisi PO', 'PO ' . (string) ($po['nomor_po'] ?? '') . ': ada catatan revisi dari Ketua Tim.');
+        return $this->json(['ok' => true, 'pesan' => 'Permintaan revisi dikirim ke Tim Kerja.']);
     }
 }

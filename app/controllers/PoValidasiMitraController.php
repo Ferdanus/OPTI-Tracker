@@ -510,23 +510,16 @@ class PoValidasiMitraController extends Controller {
             } catch (\Exception $e) {}
         }
 
-        // [BARU] Notifikasi lonceng ke Keuangan + Superadmin -- PO ini sekarang nongol
-        // di halaman "Daftar Review PO" mereka, menunggu persetujuan final.
+        // [BARU] Notifikasi lonceng ke PPK BLU -- giliran PPK BLU memverifikasi PO (halaman /po-ppk)
         try {
-            \NotificationService::send($this->db, [
-                'order_id'        => $order['id'],
-                'po_id'           => $po['id'],
-                'target_role'     => 'keuangan',
-                'target_layanan'  => 'semua',
-                'judul'           => 'PO Siap Direview Keuangan',
-                'pesan'           => "PO #{$po['nomor_po']} untuk Order #{$order['nomor_order']} ({$order['judul_kegiatan']}) sudah diverifikasi Tim Mitra, siap direview Keuangan.",
-                'tipe'            => 'info',
-                'icon'            => 'bi-clipboard-check',
-                'link_url'        => '/po-kegiatan/daftar',
-                'created_by'      => $uid,
-                'created_by_name' => $_SESSION['nama_lengkap'] ?? 'Tim Mitra',
-            ]);
-        } catch (\Exception $eNotif) {}
+            \PoReviewController::lonceng(
+                $this->db,
+                \PoRevisiPpkController::idPpk($this->db),
+                'PO Menunggu Verifikasi PPK BLU',
+                "PO #{$po['nomor_po']} untuk Order #{$order['nomor_order']} ({$order['judul_kegiatan']}) sudah diverifikasi Tim Mitra, menunggu verifikasi PPK BLU.",
+                '/po-ppk', 'primary', 'bi-clipboard-check', (int) $order['id'], (int) $po['id']
+            );
+        } catch (\Throwable $eNotif2) {}
 
         $this->keluarkanJson(['ok' => true]);
     }

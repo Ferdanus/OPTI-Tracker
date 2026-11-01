@@ -525,6 +525,10 @@ public function index($f3) {
     // secara bawaan, sama seperti Ketua Pelaksana / Ketua Tim OPTI yang dibuka di divisinya.
     $layananTerkunci = $role === 'tim_kerja_pengujian' ? 'pengujian' : ($this->isRoleSertifikasi() ? 'sertifikasi' : '');
     $untukKatim = ($role === 'ketua_tim') && $layananTerkunci === '';
+    // Ketua Tim / Tim Kerja Sertifikasi: PO Sertifikasi memakai alur yang sama dengan PO OPTI (Ketua Tim review -> Humas -> Tim Mitra -> PPK BLU)
+    $katimSert = $this->isKetuaSertifikasi();
+    $timSert = $this->isTimSertifikasi();
+    $katimUi = $untukKatim || $katimSert;   // tampilan tab & kartu ala Ketua Tim (Perlu Tindakan di awal, tanpa Draft / Revisi)
 
     // --- Tab aktif ---
     // Tab: PO Masuk, Draft, Perlu Tindakan (khusus Ketua Tim / Superadmin: PO yang menunggu review / keputusan Ketua Tim),
@@ -569,8 +573,10 @@ public function index($f3) {
     if ($layananFilter !== '') {
         $namaDivisiTampilan = $labelLayananLain[$layananFilter];
         // "PO Masuk" hanya untuk order OPTI (Lingkungan & Selulosa). Superadmin dan Tim Kerja layanan membuka Draft dulu; Ketua Tim layanan membuka Sedang Berjalan.
-        if (trim((string) $f3->get('GET.tab')) === '' || $tab === 'masuk') { $tab = ($isSuperadmin || ($layananTerkunci !== '' && !$this->isKetuaSertifikasi())) ? 'draft' : 'berjalan'; }
+        if (trim((string) $f3->get('GET.tab')) === '' || $tab === 'masuk') { $tab = $katimSert ? 'tindakan' : (($isSuperadmin || $layananTerkunci !== '') ? 'draft' : 'berjalan'); }
     }
+    // Ketua Tim Sertifikasi tidak menyusun PO: tab PO Masuk / Draft / Revisi tidak ada, tautan lama dialihkan ke Perlu Tindakan
+    if ($katimSert && in_array($tab, ['masuk', 'draft', 'revisi'], true)) { $tab = 'tindakan'; }
 
     // --- Filter bulan/tahun & toggle "Tampilkan Semua Data" ---
     // Default kalau togglenya belum pernah disentuh user (parameter
@@ -741,11 +747,17 @@ public function index($f3) {
     // [BARU] Gabungan: ambil juga PO layanan lain. Dari tiap sumber diambil N baris teratas (N = halaman x 10), lalu digabung & diurutkan.
     $perHalaman = 5;   // jumlah baris per halaman (dikunci 5; sisanya lewat pagination)
     $lain = null;
+    $sert = null;
     if ($gabung) {
         $halamanDiminta = max(1, (int) $f3->get('GET.page'));
         $semuaPerTab = [];
         foreach (['draft', 'terkirim', 'disetujui_mitra', 'disetujui'] as $kT0) { $semuaPerTab[$kT0] = $semuaUntukTab($kT0); }
         $ctrlLain = new \petunjuk_operasional\PoIndexController();
+        $ctrlLain->lewatiSertifikasi = true;   // PO Sertifikasi diambil terpisah (ambilSertifikasiUi) dengan aturan tab yang sama seperti PO OPTI
+        if ($layananFilter === 'sertifikasi') {
+            $nolL = ['draft' => 0, 'terkirim' => 0, 'disetujui_mitra' => 0, 'disetujui' => 0];
+            $lain = ['total' => 0, 'rows' => [], 'counts' => $nolL, 'counts_semua' => $nolL, 'peringatan' => ''];
+        } else {
         $lain = $ctrlLain->ambilGabungan($tab === 'berjalan' ? 'terkirim' : $tab, $layananFilter, $q, $tampilkanSemua, $bulan, $tahun, min(500, $halamanDiminta * $perHalaman), $semuaPerTab);
         if ($tab === 'berjalan') {
             // Tab Sedang Berjalan juga memuat PO layanan lain yang berstatus 'disetujui_mitra' (tab itu sudah dilebur ke sini)
@@ -753,10 +765,26 @@ public function index($f3) {
             $lain['total'] = (int) $lain['total'] + (int) $lain2['total'];
             $lain['rows'] = array_merge($lain['rows'], $lain2['rows']);
         }
+        }
         if ($posisiFilter !== '' || $jenisFilter !== '' || $tindakFilter !== '') { $lain['total'] = 0; $lain['rows'] = []; }   // PO layanan lain tidak punya posisi / jenis revisi
         if ($sembunyikanDrafLain) {
             if ($tab === 'draft') { $lain['total'] = 0; $lain['rows'] = []; }
             $lain['counts']['draft'] = 0; $lain['counts_semua']['draft'] = 0;
+        }
+        // [BARU] PO Sertifikasi: tab Perlu Tindakan / Revisi / Sedang Berjalan / PO Aktif + kolom Posisi PO, sama seperti PO OPTI
+        if ($layananFilter === '' || $layananFilter === 'sertifikasi') {
+            $semuaTabSert = [];
+            foreach (['draft', 'tindakan', 'revisi', 'berjalan', 'disetujui'] as $kT1) { $semuaTabSert[$kT1] = $semuaUntukTab($kT1); }
+            $sert = $ctrlLain->ambilSertifikasiUi([
+                'tab' => $tab, 'q' => $q, 'bulan' => $bulan, 'tahun' => $tahun, 'limit' => min(500, $halamanDiminta * $perHalaman),
+                'semuaPerTab' => $semuaTabSert,
+                'peran' => $isSuperadmin ? 'superadmin' : ($katimSert ? 'katim' : ($timSert ? 'tim' : 'lain')),
+                'sembunyiDraft' => $sembunyikanDrafLain,
+                'posisi' => $posisiFilter, 'jenis' => $jenisFilter, 'tindak' => $tindakFilter,
+            ]);
+            $lain['total'] = (int) $lain['total'] + (int) $sert['total'];
+            $lain['rows'] = array_merge($lain['rows'], $sert['rows']);
+            if ($lain['peringatan'] === '' && $sert['peringatan'] !== '') { $lain['peringatan'] = $sert['peringatan']; }
         }
         $totalBaris += (int) $lain['total'];
     }
@@ -958,7 +986,7 @@ $daftarPo = $this->safeQuery($sql, $params);
                         'judul_kegiatan' => '', 'status_review' => '', 'nilai_fmt' => '', 'terbayar_fmt' => '', 'kontrak_lunas' => false, 'kesanggupan_url' => '', 'daftar_pembayaran' => [], 'po_dikirim_at' => '', 'aksi_mode' => 'modal', 'lihat_n' => '1', 'hanya_lihat' => false,
                         'po_revisi' => false, 'posisi_teks' => '', 'posisi_pemegang' => '', 'posisi_kelas' => '', 'panel_jenis' => '', 'panel_label' => '', 'belum_dibaca' => false, 'baca_teks' => '', 'baca_status' => ''];
         foreach ($lain['rows'] as $iL => $rL) {
-            $lain['rows'][$iL] = array_merge($kunciKosong, $rL, ['hanya_lihat' => !($isSuperadmin || ($layananTerkunci !== '' && (string) $rL['layanan'] === $layananTerkunci && !$this->isKetuaSertifikasi())), 'sumber' => 'layanan', 'po_status' => (string) $rL['status'], 'judul_kegiatan' => (string) $rL['judul'], 'nama_mitra' => (string) $rL['mitra'],
+            $lain['rows'][$iL] = array_merge($kunciKosong, $rL, ['hanya_lihat' => ((string) $rL['layanan'] === 'sertifikasi' ? !empty($rL['hanya_lihat']) : !($isSuperadmin || ($layananTerkunci !== '' && (string) $rL['layanan'] === $layananTerkunci))), 'sumber' => 'layanan', 'po_status' => (string) $rL['status'], 'judul_kegiatan' => (string) $rL['judul'], 'nama_mitra' => (string) $rL['mitra'],
                 'nilai_fmt' => $rL['nilai_kontrak'] !== null ? 'Rp ' . number_format((float) $rL['nilai_kontrak'], 0, ',', '.') : '-',
                 'terbayar_fmt' => $rL['terbayar'] !== null ? 'Rp ' . number_format((float) $rL['terbayar'], 0, ',', '.') : '-']);
         }
@@ -1032,6 +1060,13 @@ $daftarPo = $this->safeQuery($sql, $params);
         }
         $totalPoSemua += array_sum($lain['counts_semua']);
     }
+    if ($sert !== null) {
+        foreach (['draft', 'tindakan', 'revisi', 'berjalan', 'disetujui'] as $kS) {
+            $tabCounts[$kS] += (int) $sert['counts'][$kS];
+            $tabGlobal[$kS] += (int) $sert['counts_semua'][$kS];
+        }
+        $totalPoSemua += (int) $sert['total_semua'];
+    }
 
     $tahunSekarang = (int) date('Y');
 
@@ -1075,16 +1110,16 @@ $daftarPo = $this->safeQuery($sql, $params);
     $f3->set('total_po', $totalPoSemua);
     // Angka 4 kartu ringkasan di atas daftar (ikut filter divisi, gak kena filter bulan)
     // Kotak "Perlu Tindakan": Ketua Pelaksana / Superadmin = PO Masuk + Draft + Revisi; Ketua Tim = PO yang menunggu review / keputusan Anda
-    $f3->set('total_perlu_tindakan', $untukKatim ? $tabGlobal['tindakan'] : $tabGlobal['masuk'] + $tabGlobal['draft'] + $tabGlobal['revisi']);
-    $f3->set('ket_perlu_tindakan',   $untukKatim ? 'Menunggu review Anda' : 'PO masuk, draft &amp; revisi');
-    $f3->set('tab_kartu_tindakan',   $untukKatim ? 'tindakan' : ($layananFilter !== '' ? 'draft' : 'masuk'));
-    $f3->set('tampil_tab_revisi',    !$untukKatim);   // Ketua Tim OPTI tidak punya tab Revisi
-    $f3->set('tampil_tab_pembuat',   !$untukKatim);   // Ketua Tim OPTI tidak menyusun PO: tab PO Masuk & Draft disembunyikan
-    $f3->set('tampil_tab_masuk',     !$untukKatim && $layananFilter === '');   // "PO Masuk" hanya untuk OPTI (Lingkungan & Selulosa)
+    $f3->set('total_perlu_tindakan', $katimUi ? $tabGlobal['tindakan'] : $tabGlobal['masuk'] + $tabGlobal['draft'] + $tabGlobal['revisi']);
+    $f3->set('ket_perlu_tindakan',   $katimUi ? 'Menunggu review Anda' : 'PO masuk, draft &amp; revisi');
+    $f3->set('tab_kartu_tindakan',   $katimUi ? 'tindakan' : ($layananFilter !== '' ? 'draft' : 'masuk'));
+    $f3->set('tampil_tab_revisi',    !$katimUi);   // Ketua Tim (OPTI & Sertifikasi) tidak punya tab Revisi
+    $f3->set('tampil_tab_pembuat',   !$katimUi);   // Ketua Tim tidak menyusun PO: tab PO Masuk & Draft disembunyikan
+    $f3->set('tampil_tab_masuk',     !$katimUi && $layananFilter === '');   // "PO Masuk" hanya untuk OPTI (Lingkungan & Selulosa)
     $f3->set('tampil_modal_layanan', $isSuperadmin || $layananTerkunci !== '');   // modal pratinjau PO Pengujian / Sertifikasi
     $f3->set('total_berjalan',       $tabGlobal['berjalan']);
-    $f3->set('tampil_tab_tindakan',  $untukKatim || $isSuperadmin);   // tab Perlu Tindakan hanya untuk Ketua Tim / Superadmin
-    $f3->set('tindakan_di_awal',     $untukKatim);                    // Ketua Tim: tab pertama; Superadmin: sesudah Revisi
+    $f3->set('tampil_tab_tindakan',  $katimUi || $isSuperadmin);   // tab Perlu Tindakan hanya untuk Ketua Tim / Superadmin
+    $f3->set('tindakan_di_awal',     $katimUi);                    // Ketua Tim: tab pertama; Superadmin: sesudah Revisi
     $f3->set('tampil_posisi', in_array($tab, ['tindakan', 'revisi', 'berjalan'], true));
     $f3->set('aksi_ringkas', in_array($tab, ['tindakan', 'revisi', 'berjalan', 'disetujui'], true));
     $f3->set('filter_posisi', $posisiFilter);
@@ -1877,6 +1912,9 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
             $dompdf->setPaper('A4', 'portrait');
             $dompdf->render();
 
+            // PDF dari form: watermark DRAFT selama PO belum disetujui PPK BLU (PO baru / belum tersimpan selalu DRAFT)
+            if (!($poId > 0 && $this->poSudahFinal($poId))) { $this->pasangWatermarkDraft($dompdf); }
+
             $namaFile = 'Preview-PO-' . preg_replace('/[^A-Za-z0-9_-]/', '_', $poData['nomor_po'] ?: 'Draft') . '.pdf';
             $dompdf->stream($namaFile, ['Attachment' => false]);
             exit;
@@ -1888,6 +1926,9 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
 
 protected function siapkanDataPo($po, $orderData) {
     $poData = $po->cast();
+
+    // [BARU] Penanda DRAFT di pratinjau: tampil selama PO belum disetujui PPK BLU, hilang setelah disetujui (aturan sama dengan watermark PDF)
+    $poData['sudah_final'] = !empty($poData['id']) && $this->poSudahFinal((int) $poData['id']);
 
     // [BARU] PO yang belum dikirim belum punya nomor: dokumen pratinjau/PDF memakai nomor sementara
     // dan tanggal hari ini (WIB). Nomor & tanggal resmi baru ada saat PO dikirim.
@@ -1950,6 +1991,10 @@ protected function siapkanDataPo($po, $orderData) {
 
     $jadwalDecoded = json_decode($poData['jadwal'] ?? '{}', true) ?: [];
     $poData['jadwal_groups']           = $jadwalDecoded['groups'] ?? [];
+    // Periode (bagian tabel) yang tidak punya centang di Tahap itu tidak ditampilkan; Tahap yang belum dicentang sama sekali tetap menampilkan periode pertama
+    foreach ($poData['jadwal_groups'] as $gi => $grp) {
+        $poData['jadwal_groups'][$gi]['chunks_tampil'] = $this->chunkJadwalTampil(is_array($grp) ? $grp : [], $poData['jadwal_chunks']);
+    }
     $poData['jadwal_keterangan_lines'] = $this->parsePerPointLines($jadwalDecoded['keterangan'] ?? '');
     $divisi = $orderData['jenis_layanan_opti'] ?? '';
     $nomor = 3;
@@ -1996,6 +2041,26 @@ protected function siapkanDataPo($po, $orderData) {
 
         header('Content-Type: application/json');
         echo json_encode($hasil);
+    }
+
+    /**
+     * Pilih periode (chunk) yang ditampilkan untuk satu Tahap: hanya yang punya centang.
+     * Kalau tidak ada satupun yang tercentang, tampilkan periode pertama saja supaya tabel tidak hilang.
+     * Periode tampil ke-2 dan seterusnya diberi penanda 'lanjutan'.
+     */
+    protected function chunkJadwalTampil(array $group, array $chunks) {
+        $tampil = [];
+        foreach ($chunks as $ch) {
+            $keys = array_column($ch['kolom'], 'key');
+            $ada = false;
+            foreach (($group['kegiatan'] ?? []) as $keg) {
+                if (is_array($keg) && array_intersect($keys, (array) ($keg['tanda'] ?? []))) { $ada = true; break; }
+            }
+            if ($ada) { $tampil[] = $ch; }
+        }
+        if (empty($tampil) && !empty($chunks)) { $tampil = [$chunks[0]]; }
+        foreach ($tampil as $i => $ch) { $tampil[$i]['lanjutan'] = ($i > 0); }
+        return $tampil;
     }
 
     /**

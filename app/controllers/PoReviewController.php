@@ -373,6 +373,26 @@ class PoReviewController extends Controller {
         $nama = $this->namaPengguna($uid, 'Ketua Tim');
         self::catatPesanSistem($this->db, $po['id'], $uid, 'katim', $nama . ' menyetujui PO. PO terkunci dan diteruskan ke Humas untuk diverifikasi.');
         self::kabari($this->db, [(int) $po['ketua_pelaksana_id']], 'PO disetujui', 'PO ' . $po['nomor_po'] . ' disetujui Ketua Tim.');
+        // [BARU] giliran Humas: PO yang disetujui Ketua Tim masuk ke Daftar PO Humas untuk diverifikasi
+        try {
+            if (class_exists('NotificationService')) {
+                \NotificationService::send($this->db, [
+                    'order_id'        => (int) $po['order_id'],
+                    'po_id'           => (int) $po['id'],
+                    'target_role'     => 'humas',
+                    'target_layanan'  => 'semua',
+                    'judul'           => 'PO Menunggu Verifikasi Humas',
+                    'pesan'           => 'PO ' . $po['nomor_po'] . ' sudah disetujui Ketua Tim, menunggu verifikasi Humas.',
+                    'tipe'            => 'primary',
+                    'icon'            => 'bi-clipboard-check',
+                    'link_url'        => '/po-humas',
+                    'created_by'      => $uid,
+                    'created_by_name' => $nama,
+                ]);
+            }
+        } catch (\Throwable $eNotif) {
+            // notifikasi bersifat pelengkap
+        }
         $this->keluarkanJson($this->paketDetail((int) $po['id'], $sisi));
     }
 
@@ -481,7 +501,7 @@ class PoReviewController extends Controller {
 
         $nama = $this->namaPengguna($uid, ($sisi === 'katim') ? 'Ketua Tim' : 'Ketua Pelaksana');
         $tujuan = ($sisi === 'katim') ? [(int) $po['ketua_pelaksana_id']] : self::idKatim($this->db, $po['jenis_layanan_opti']);
-        self::kabari($this->db, $tujuan, 'Pesan baru di PO ' . $po['nomor_po'], $nama . ': ' . mb_substr($teks, 0, 90, 'UTF-8'));
+        self::kabari($this->db, $tujuan, 'Pesan baru di PO ' . $po['nomor_po'], $nama . ': ' . mb_substr($teks, 0, 90, 'UTF-8'), '/po-kegiatan/daftar', false);   // pesan chat: push saja, tanpa lonceng (terlalu ramai)
 
         $peta = $this->petaNamaUser([$uid]);
         $this->keluarkanJson(['ok' => true, 'pesan' => $this->bentukPesan($baris[0], $peta, $uid)]);
@@ -981,8 +1001,43 @@ class PoReviewController extends Controller {
         return $hasil;
     }
 
-    /** Kirim Web Push ke beberapa pengguna. Dilewati diam-diam kalau PushNotifikasi belum terpasang. */
-    public static function kabari($db, array $userIds, $judul, $pesan) {
+    /**
+     * Notifikasi lonceng (opti_notifikasi) ke pengguna tertentu -- muncul di ikon lonceng + toast "Pemberitahuan".
+     * Pengguna yang sedang login (pelaku aksi) tidak dikirimi. Dilewati diam-diam kalau NotificationService belum ada.
+     */
+    public static function lonceng($db, array $userIds, $judul, $pesan, $link = '/po-kegiatan/daftar', $tipe = 'info', $icon = 'bi-clipboard-check', $orderId = 0, $poId = 0) {
+        if (!class_exists('NotificationService')) { return; }
+        $aku = isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : 0;
+        $nama = isset($_SESSION['nama_lengkap']) ? $_SESSION['nama_lengkap'] : 'Sistem OPTI';
+        $sudah = [];
+        foreach ($userIds as $id) {
+            $id = (int) $id;
+            if ($id <= 0 || $id === $aku || isset($sudah[$id])) { continue; }
+            $sudah[$id] = true;
+            try {
+                \NotificationService::send($db, [
+                    'order_id'        => (int) $orderId,
+                    'po_id'           => (int) $poId,
+                    'target_user_id'  => $id,
+                    'judul'           => $judul,
+                    'pesan'           => $pesan,
+                    'tipe'            => $tipe,
+                    'icon'            => $icon,
+                    'link_url'        => $link,
+                    'created_by_name' => $nama,
+                ]);
+            } catch (\Throwable $e) {
+                // notifikasi bersifat pelengkap
+            }
+        }
+    }
+
+    /**
+     * Beri tahu pengguna: lonceng di aplikasi (selalu, kecuali $lonceng = false) + Web Push kalau PushNotifikasi terpasang.
+     * $link = halaman tujuan saat notifikasi diklik.
+     */
+    public static function kabari($db, array $userIds, $judul, $pesan, $link = '/po-kegiatan/daftar', $lonceng = true) {
+        if ($lonceng) { self::lonceng($db, $userIds, $judul, $pesan, $link); }
         if (!class_exists('PushNotifikasi')) { return; }
         $base = (string) \Base::instance()->get('BASE');
         $sudah = [];
@@ -991,7 +1046,7 @@ class PoReviewController extends Controller {
             if ($id <= 0 || isset($sudah[$id])) { continue; }
             $sudah[$id] = true;
             try {
-                \PushNotifikasi::kirim($db, $id, $judul, $pesan, $base . '/po-kegiatan/daftar', 'po-review');
+                \PushNotifikasi::kirim($db, $id, $judul, $pesan, $base . $link, 'po-review');
             } catch (\Throwable $e) {
                 // notifikasi bersifat pelengkap
             }

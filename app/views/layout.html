@@ -1656,16 +1656,11 @@
                             </a>
                         </li>
                     </check>
-                    <!-- Tim Kerja & Ketua Tim Sertifikasi (role layanan): Daftar PO terkunci ke layanan Sertifikasi + Review PO Sertifikasi -->
+                    <!-- Tim Kerja & Ketua Tim Sertifikasi (role layanan): satu Daftar PO terkunci ke layanan Sertifikasi (tab Perlu Tindakan / Revisi / Sedang Berjalan / PO Aktif, review lewat slide, sama seperti OPTI) -->
                     <check if="{{ @is_role_sertifikasi }}">
                         <li>
                             <a class="sidebar-link {{ @active_menu == 'po_layanan' ? 'active' : '' }}" href="{{ @BASE }}/petunjuk-operasional" title="Daftar PO Sertifikasi">
                                 <i class="bi bi-clipboard-check"></i> <span>Daftar PO</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a class="sidebar-link {{ @active_menu == 'review_po_sertifikasi' ? 'active' : '' }}" href="{{ @BASE }}/petunjuk-operasional/sertifikasi/review" title="Review PO Sertifikasi">
-                                <i class="bi bi-clipboard2-check"></i> <span>Review PO</span>
                             </a>
                         </li>
                     </check>

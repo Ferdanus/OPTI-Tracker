@@ -633,7 +633,7 @@
         <div class="hm-dlg-box" role="alertdialog" aria-modal="true" aria-labelledby="hmDlgTitle" aria-describedby="hmDlgMsg">
             <div class="hm-dlg-icon"><i class="bi bi-check2-circle"></i></div>
             <h5 id="hmDlgTitle">Verifikasi PO ini?</h5>
-            <p id="hmDlgMsg">PO akan ditandai disetujui dan didisposisikan ke Keuangan. PO akan terkunci setelah diverifikasi.</p>
+            <p id="hmDlgMsg">PO akan ditandai disetujui dan didisposisikan ke PPK BLU. PO akan terkunci setelah diverifikasi.</p>
             <div class="hm-dlg-btns"><button type="button" class="hm-btn" id="hmDlgNo">Batal</button><button type="button" class="hm-btn pri" id="hmDlgYes">Ya, verifikasi dan disposisikan</button></div>
         </div>
     </div>
@@ -1141,7 +1141,7 @@
             h += '<div class="hm-step ' + cls + '"><span class="n">' + (n < c ? '<i class="bi bi-check-lg"></i>' : n) + '</span><span class="lb">' + s + '</span></div>';
             if (i < steps.length - 1) { h += '<div class="hm-sline' + (n < c ? ' done' : '') + '"></div>'; }
         });
-        var cat = !p.divalidasi ? 'Setelah Anda verifikasi, PO diteruskan ke PPK BLU (Keuangan).' : (c === 5 ? 'Semua verifikasi selesai.' : 'Sudah Anda verifikasi. PO sekarang di ' + posisi(p).di + '.');
+        var cat = !p.divalidasi ? 'Setelah Anda verifikasi, PO diteruskan ke PPK BLU.' : (c === 5 ? 'Semua verifikasi selesai.' : 'Sudah Anda verifikasi. PO sekarang di ' + posisi(p).di + '.');
         $('hmStepper').innerHTML = h + '</div><div class="hm-nextnote">' + cat + '</div>';
     }
     function renderShTabs() {
@@ -1168,7 +1168,7 @@
         if ($('hmCatBawah')) { $('hmCatBawah').innerHTML = cb; }
         var cH = '';
         if (p.divalidasi) {
-            h = '<div class="hintline"><i class="bi bi-check2-circle"></i> Diverifikasi pada <b>' + tglSingkat(p.tgl_validasi) + '</b> dan didisposisikan ke Keuangan.</div>';
+            h = '<div class="hintline"><i class="bi bi-check2-circle"></i> Diverifikasi pada <b>' + tglSingkat(p.tgl_validasi) + '</b> dan didisposisikan ke PPK BLU.</div>';
         } else {
             var bisa = !!p.bisa_validasi;
             h = (bisa ? '' : '<div class="hintline" style="flex-basis:100%;color:#92400e;"><i class="bi bi-exclamation-triangle"></i> ' + PESAN_BELUM_BISA + '</div>') +
@@ -1404,7 +1404,7 @@
             DATA_DISETUJUI.unshift(p);
             berubah = true;
             isiOpsiFilter(); render(); renderChrome();
-            toast('PO berhasil diverifikasi dan didisposisikan ke Keuangan.');
+            toast('PO berhasil diverifikasi dan didisposisikan ke PPK BLU.');
             if (SOLO) { mintaIndukPerbarui(); }
         }).catch(function (e) {
             toast(e.message, true);

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demo – Daftar Preview PO Rata Kiri</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #f1f5f9; color: #0f172a; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { padding: 18px 24px 8px; }
+  header h1 { margin: 0 0 4px; font-size: 18px; }
+  header p { margin: 0; font-size: 13px; color: #64748b; max-width: 760px; line-height: 1.5; }
+  .bar { display: flex; gap: 10px; align-items: center; padding: 8px 24px 16px; font-size: 13px; flex-wrap: wrap; }
+  .bar label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; color: #1e293b; }
+  .bar input { accent-color: #1e293b; }
+  .grid { display: flex; gap: 24px; padding: 0 24px 32px; flex-wrap: wrap; align-items: flex-start; }
+  .col { flex: 1 1 440px; min-width: 380px; max-width: 680px; }
+  .tag { display: inline-block; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; margin-bottom: 8px; background: #1e293b; color: #fff; }
+  .tag.now { background: #cbd5e1; color: #1e293b; }
+  .cap { font-size: 12px; color: #64748b; margin: 0 0 8px; line-height: 1.45; min-height: 34px; }
+
+  .sheet { position: relative; background: #fff; padding: 34px 38px; box-shadow: 0 4px 18px rgba(15,23,42,.18);
+           font-family: 'Times New Roman', Times, serif; color: #000; font-size: 13px; }
+  .sheet .judul { font-weight: bold; font-size: 14px; margin-bottom: 14px; }
+  .sheet .sec { font-weight: bold; font-size: 14px; margin: 18px 0 8px; text-transform: uppercase; }
+  .sheet .row { display: flex; gap: 6px; margin-bottom: 3px; }
+  .sheet .row .m { flex: 0 0 24px; }
+  .sheet .row .t, .sheet p, .sheet li { text-align: justify; }
+  .sheet p { margin: 0 0 3px; }
+  .g1, .g2 { display: none; position: absolute; top: 0; bottom: 0; width: 0; pointer-events: none; }
+  .g1 { left: 36px; border-left: 2px solid #dc2626; }
+  .g2 { left: 66px; border-left: 2px dashed #dc2626; }
+  body.show-guide .g1, body.show-guide .g2 { display: block; }
+  .now .g2 { display: none !important; }
+
+  /* SEKARANG */
+  .now .sec .no { margin-right: .3em; }
+  .now ol, .now ul { margin: 0 0 3px; padding-left: 40px; }
+
+  /* USULAN (kaya contoh Kaa): nomor bagian di tepi kiri, judul + isi sejajar di kolom judul */
+  .C .sec { display: flex; }
+  .C .sec .no { flex: 0 0 30px; }
+  .C .bd { padding-left: 30px; }
+  .C .row { gap: 0; }
+  .C .row .m { flex: 0 0 22px; }
+  .C ol, .C ul { list-style: none; margin: 0 0 3px; padding: 0; counter-reset: n; }
+  .C li { position: relative; padding-left: 22px; margin-bottom: 3px; }
+  .C ol > li { counter-increment: n; }
+  .C ol > li::before { content: counter(n) "."; position: absolute; left: 0; }
+  .C ol.list-alpha > li::before { content: counter(n, lower-alpha) "."; }
+  .C ul > li::before { content: "•"; position: absolute; left: 6px; }
+  .C li > ol, .C li > ul { margin-top: 3px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Demo: tata letak Preview PO kaya contoh Kaa</h1>
+  <p>Data contoh fiktif. Nomor bagian (1., 2., ...) di tepi kiri, lalu judul dan semua isi (poin a./b./c., daftar 1./2., paragraf) mulai sejajar di kolom judul. Garis merah penuh = tepi kiri, garis putus-putus = kolom judul.</p>
+</header>
+<div class="bar">
+  <label><input type="checkbox" id="g"> Garis bantu</label>
+</div>
+<div class="grid">
+  <div class="col">
+    <span class="tag now">Sekarang</span>
+    <p class="cap">Isi menjorok nggak beraturan, nomor bagian nempel sama judul.</p>
+    <div class="sheet now" id="p0"></div>
+  </div>
+  <div class="col">
+    <span class="tag">Usulan (kaya contohmu)</span>
+    <p class="cap">Judul dan isi sejajar rapi di kolom yang sama.</p>
+    <div class="sheet C" id="p1"></div>
+  </div>
+</div>
+<script>
+function sec(no, t, bd) { return '<div class="sec"><span class="no">' + no + '</span><span class="ttl">' + t + '</span></div><div class="bd">' + bd + '</div>'; }
+var isi =
+  '<div class="judul">Judul: Evaluasi Kualitas Air Limbah Pabrik Contoh &amp; Kajian Efisiensi Pengolahan</div>' +
+  sec('1.', 'Dasar',
+    '<div class="row"><span class="m">a.</span><span class="t">Persetujuan biaya kerjasama BBSPJIS dengan PT Contoh Nusantara nomor B/00/BBSPJIS/MS/X/2026 tanggal 1 Januari 2026 tentang Evaluasi Kualitas Air Limbah Pabrik Contoh &amp; Kajian Efisiensi Pengolahan.</span></div>' +
+    '<div class="row"><span class="m">b.</span><span class="t">Surat penawaran nomor 00/BBSPJIS/2026 tentang kegiatan evaluasi dimaksud.</span></div>' +
+    '<div class="row"><span class="m">c.</span><span class="t">Pembayaran: dibayarkan pada tanggal 1 Januari 2026.</span></div>') +
+  sec('2.', 'Tujuan',
+    '<ol><li>Memberikan gambaran kualitas air limbah yang dihasilkan dari proses operasional pabrik contoh.</li><li>Melakukan evaluasi efisiensi pengolahan terhadap baku mutu yang berlaku.</li></ol>') +
+  sec('3.', 'Ruang Lingkup',
+    '<p>Kegiatan mencakup identifikasi sumber air limbah, pengambilan contoh, serta pengujian parameter pada titik yang disepakati bersama.</p>' +
+    '<ol><li>Identifikasi kondisi operasional unit pengolahan dan titik sumber air limbah yang dihasilkan oleh proses produksi.</li><li>Pemeriksaan kondisi sistem pengendalian pencemaran air yang terpasang.</li></ol>') +
+  sec('4.', 'Alat &amp; Bahan',
+    '<ol><li>Alat ukur kualitas air portabel untuk pengukuran parameter lapangan.</li>' +
+    '<li>Peralatan pengambilan contoh, meliputi:<ol type="a" class="list-alpha"><li>Botol contoh dan pengawet</li><li>Cool box untuk penyimpanan contoh</li></ol></li>' +
+    '<li>Perlengkapan keselamatan kerja.</li></ol>') +
+  sec('5.', 'Metoda',
+    '<ol><li>Identifikasi sumber air limbah dan penentuan titik pengambilan contoh sesuai kondisi operasional pabrik di lokasi kegiatan.</li><li>Pengambilan dan pengujian contoh mengacu pada metode standar yang berlaku.</li></ol>') +
+  '<div class="g1"></div><div class="g2"></div>';
+['p0','p1'].forEach(function (id) { document.getElementById(id).innerHTML = isi; });
+document.getElementById('g').addEventListener('change', function (e) { document.body.classList.toggle('show-guide', e.target.checked); });
+</script>
+</body>
+</html>

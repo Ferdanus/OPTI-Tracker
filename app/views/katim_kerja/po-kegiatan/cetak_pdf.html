@@ -5,19 +5,26 @@
 <style>
     @page { margin: 20mm 20mm 20mm 30mm; }
     body { font-family: 'Times New Roman', Times, serif; color: #000; font-size: 11pt; }
-    .doc-title { text-align: center; font-weight: bold; font-size: 14pt; margin-bottom: 4px; }
-    .doc-nomor { text-align: center; font-size: 12pt; margin-bottom: 18px; }
-    .doc-judul { font-weight: bold; margin-bottom: 14px; font-size: 12pt; }
-    .section-title { font-weight: bold; font-size: 12pt; margin: 18px 0 8px; text-transform: uppercase; }
-    .sub-title { font-weight: bold; font-size: 11pt; margin: 8px 0 4px; }
+    .doc-title { text-align: center; font-weight: bold; font-size: 14pt; text-decoration: underline; }
+    .doc-nomor { text-align: center; font-weight: bold; font-size: 14pt; margin-bottom: 20px; }
+    /* [BARU] Judul & Jenis: label tebal, titik dua, isi (tidak tebal) sejajar satu kolom */
+    table.doc-meta { width: 100%; border-collapse: collapse; margin-bottom: 14px; font-size: 12pt; }
+    table.doc-meta td { border: none; padding: 0 0 4px 0; vertical-align: top; text-align: justify; }
+    table.doc-meta td.ml { width: 52px; font-weight: bold; text-align: left; }
+    table.doc-meta td.mc { width: 12px; text-align: left; }
+    /* [BARU] tata letak ala surat dinas: nomor bagian di tepi kiri, judul + isi teks sejajar di kolom judul (30px) */
+    .section-title { font-weight: bold; font-size: 12pt; margin: 18px 0 8px; text-transform: uppercase; padding-left: 30px; text-indent: -30px; }
+    .section-title .no { display: inline-block; width: 30px; text-indent: 0; vertical-align: top; }
+    .sub-title { font-weight: bold; font-size: 11pt; margin: 8px 0 4px 30px; }
+    .indent { margin-left: 30px; }
 
     table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
     table.isi th, table.isi td { border: 1px solid #000; padding: 5px 8px; vertical-align: middle; font-size: 11pt; }
-    table.isi th { background: #f1f5f9; font-weight: bold; text-align: center; }
+    table.isi th { background: transparent; font-weight: bold; text-align: center; }
 
     table.po-inline-table, .point-row table { width: 100%; border-collapse: collapse; margin: 6px 0 10px 0; font-size: 10pt; white-space: normal !important; table-layout: fixed; word-break: break-word; }
     table.po-inline-table th, table.po-inline-table td, .point-row table th, .point-row table td { border: 1px solid #000; padding: 4px 6px; vertical-align: middle; }
-    table.po-inline-table th, .point-row table th { background: #f1f5f9; font-weight: bold; text-align: center; }
+    table.po-inline-table th, .point-row table th { background: transparent; font-weight: bold; text-align: center; }
 
     /* [BARU] tabel RAB berjenjang (lingkungan) -- banyak kolom sempit (Kali/Jumlah/Hari),
        padding & font dikecilin dikit biar gak kepenuhan / kepotong di kertas A4. */
@@ -26,17 +33,17 @@
        antar baris (gak ada "Rp" turun baris misahin dari angkanya), tanpa ngubah lebar
        kolom/tabelnya -- fontnya dikecilin dikit biar tetep muat satu baris. */
     table.rab-table .rab-uang { white-space: nowrap; font-size: 8.5pt; }
-    .point-row { margin-bottom: 3px; padding-left: 22px; text-indent: -22px; text-align: justify; }
-    .point-row.plain { padding-left: 0; text-indent: 0; }
+    .point-row { margin-bottom: 3px; padding-left: 52px; text-indent: -22px; text-align: justify; }
+    .point-row.plain { padding-left: 30px; text-indent: 0; }
     /* konten rich-text (p/ul/ol) di dalam poin: margin bawaan dompdf (1em) bikin jarak terlalu lebar, dirapatkan */
     .point-row p { margin: 0 0 4px 0; }
-    .point-row ul, .point-row ol { margin: 0 0 3px 0; padding-left: 20px; }
+    .point-row ul, .point-row ol { margin: 0 0 3px -5px; padding-left: 27px; }
     .point-row li { margin: 0; }
     .point-marker { display: inline-block; width: 22px; text-indent: 0; vertical-align: top; }
 
     .jadwal-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 7pt; margin-bottom: 6px; }
     .jadwal-table th, .jadwal-table td { border: 1px solid #000; padding: 2.5px 1.5px; text-align: center; vertical-align: middle; }
-    .jadwal-table th { background: #f1f5f9; font-weight: bold; }
+    .jadwal-table th { background: transparent; font-weight: bold; }
     .jadwal-table th.kegiatan-col, .jadwal-table td.kegiatan-col { width: 32%; text-align: left; font-size: 7.5pt; padding-left: 6px; padding-right: 4px; word-break: break-word; }
     .jadwal-tahap-title { font-weight: bold; font-size: 9.5pt; margin: 8px 0 4px; }
     .jadwal-keterangan { font-size: 8.5pt; color: #555; font-style: italic; margin-top: 6px; }
@@ -48,29 +55,32 @@
 </head>
 <body>
 
-<div class="doc-title">PETUNJUK OPERASIONAL (PO)</div>
-<div class="doc-nomor">Nomor: {{ @po.nomor_po }}</div>
-<div class="doc-judul">Judul: {{ @po.judul_kegiatan }}</div>
+<div class="doc-title">PETUNJUK OPERASIONAL</div>
+<div class="doc-nomor">No : {{ @po.nomor_po }}</div>
+<table class="doc-meta">
+    <tr><td class="ml">Judul</td><td class="mc">:</td><td>{{ @po.judul_kegiatan }}</td></tr>
+    <tr><td class="ml">Jenis</td><td class="mc">:</td><td>Optimalisasi dan Pemanfaatan Teknologi Industri</td></tr>
+</table>
 
-<div class="section-title">1. Dasar</div>
+<div class="section-title"><span class="no">1.</span>Dasar</div>
 <check if="{{ @po.dasar_lines && count(@po.dasar_lines) > 0 }}">
     <repeat group="{{ @po.dasar_lines }}" value="{{ @dl }}">
         <check if="{{ @dl.marker }}"><div class="point-row"><span class="point-marker">{{ @dl.marker }}</span>{{ @dl.teks | raw }}</div></check>
         <check if="{{ !@dl.marker }}"><div class="point-row plain">{{ @dl.teks | raw }}</div></check>
     </repeat>
 </check>
-<check if="{{ !@po.dasar_lines || count(@po.dasar_lines) == 0 }}"><div>-</div></check>
+<check if="{{ !@po.dasar_lines || count(@po.dasar_lines) == 0 }}"><div class="indent">-</div></check>
 
-<div class="section-title">2. Tujuan</div>
+<div class="section-title"><span class="no">2.</span>Tujuan</div>
 <check if="{{ @po.tujuan_lines && count(@po.tujuan_lines) > 0 }}">
     <repeat group="{{ @po.tujuan_lines }}" value="{{ @dl }}">
         <check if="{{ @dl.marker }}"><div class="point-row"><span class="point-marker">{{ @dl.marker }}</span>{{ @dl.teks | raw }}</div></check>
         <check if="{{ !@dl.marker }}"><div class="point-row plain">{{ @dl.teks | raw }}</div></check>
     </repeat>
 </check>
-<check if="{{ !@po.tujuan_lines || count(@po.tujuan_lines) == 0 }}"><div>-</div></check>
+<check if="{{ !@po.tujuan_lines || count(@po.tujuan_lines) == 0 }}"><div class="indent">-</div></check>
 
-<div class="section-title">3. Ruang Lingkup</div>
+<div class="section-title"><span class="no">3.</span>Ruang Lingkup</div>
 <check if="{{ @po.ruang_lingkup_deskripsi_lines && count(@po.ruang_lingkup_deskripsi_lines) > 0 }}">
     <repeat group="{{ @po.ruang_lingkup_deskripsi_lines }}" value="{{ @dl }}">
         <check if="{{ @dl.marker }}">
@@ -99,7 +109,7 @@
 </check>
 
 <check if="{{ @po.nomor_alat_bahan }}">
-    <div class="section-title">{{ @po.nomor_alat_bahan }}. {{ @po.sub_nomor_alat ? 'ALAT DAN BAHAN' : 'ALAT & BAHAN' }}</div>
+    <div class="section-title"><span class="no">{{ @po.nomor_alat_bahan }}.</span>{{ @po.sub_nomor_alat ? 'ALAT DAN BAHAN' : 'ALAT & BAHAN' }}</div>
 
     <check if="{{ @po.sub_nomor_alat }}"><div class="sub-title">{{ @po.nomor_alat_bahan }}.{{ @po.sub_nomor_alat }} Alat</div></check>
     <check if="{{ @po.alat_bahan_lines && count(@po.alat_bahan_lines) > 0 }}">
@@ -157,7 +167,7 @@
 </check>
 
 <check if="{{ !@po.sub_nomor_alat && @po.nomor_metoda }}">
-    <div class="section-title">{{ @po.nomor_metoda }}. METODA</div>
+    <div class="section-title"><span class="no">{{ @po.nomor_metoda }}.</span>METODA</div>
     <repeat group="{{ @po.metoda_lines }}" value="{{ @dl }}">
         <check if="{{ @dl.marker }}"><div class="point-row"><span class="point-marker">{{ @dl.marker }}</span>{{ @dl.teks | raw }}</div></check>
         <check if="{{ !@dl.marker }}"><div class="point-row plain">{{ @dl.teks | raw }}</div></check>
@@ -165,11 +175,11 @@
 </check>
 
 <check if="{{ @po.alamat }}">
-    <div class="section-title">{{ @po.nomor_alamat }}. ALAMAT</div>
-    <div>{{ @po.alamat }}</div>
+    <div class="section-title"><span class="no">{{ @po.nomor_alamat }}.</span>ALAMAT</div>
+    <div class="indent">{{ @po.alamat }}</div>
 </check>
 
-<div class="section-title">{{ @po.nomor_tim }}. TIM PELAKSANA</div>
+<div class="section-title"><span class="no">{{ @po.nomor_tim }}.</span>TIM PELAKSANA</div>
 <table class="isi">
     <thead><tr><th style="width:30px;">No</th><th>Nama</th><th>Tugas/Tanggung Jawab</th><th>Uraian Tugas</th></tr></thead>
     <tbody>
@@ -189,7 +199,7 @@
     </tbody>
 </table>
 
-<div class="section-title">{{ @po.nomor_rab }}. RENCANA ANGGARAN BIAYA (RAB)</div>
+<div class="section-title"><span class="no">{{ @po.nomor_rab }}.</span>RENCANA ANGGARAN BIAYA (RAB)</div>
 
 <!-- [BARU] Format RAB baru (lingkungan): persentase per kategori ditampilin di ATAS (nempel
      sama Nilai Kontrak, gantiin A.Penerimaan lama), baru tabel rincian item per kegiatan di
@@ -201,7 +211,7 @@
             <col style="width:52%;"><col style="width:16%;"><col style="width:32%;">
         </colgroup>
         <tbody>
-            <tr style="background:#f8fafc;">
+            <tr>
                 <td colspan="2"><strong>Nilai Kontrak</strong></td>
                 <td style="text-align:right;"><strong>Rp&nbsp;{{ number_format(@po.rab_hitung.total_penerimaan, 0, ',', '.') }}</strong></td>
             </tr>
@@ -221,7 +231,7 @@
             <col style="width:16%;"><col style="width:14%;"><col style="width:14%;">
         </colgroup>
         <thead>
-            <tr style="background:#f1f5f9;">
+            <tr>
                 <th style="text-align:center;">No</th>
                 <th>Kegiatan</th>
                 <th>Rincian</th>
@@ -233,7 +243,7 @@
         <tbody>
             <repeat group="{{ @po.rab_hitung.kategori }}" value="{{ @kat }}" key="{{ @ki }}">
                 <check if="{{ @kat.baris }}">
-                    <tr style="background:#f8fafc;">
+                    <tr>
                         <td colspan="6"><strong>{{ @kat.nama }}</strong></td>
                     </tr>
                     <repeat group="{{ @kat.baris }}" value="{{ @b }}">
@@ -288,7 +298,7 @@
 
                 <!-- Fallback: kategori item datar (belum sempat diisi ulang pakai struktur kegiatan baru) -->
                 <check if="{{ !@kat.baris && @kat.items && count(@kat.items) > 0 }}">
-                    <tr style="background:#f8fafc;">
+                    <tr>
                         <td colspan="6"><strong>{{ @kat.nama }}</strong></td>
                     </tr>
                     <repeat group="{{ @kat.items }}" value="{{ @it }}">
@@ -323,13 +333,13 @@
             <col style="width:6%;"><col style="width:14%;"><col style="width:22%;">
         </colgroup>
         <tbody>
-            <tr><td colspan="9" style="background:#f8fafc;"><strong>A. Penerimaan</strong></td></tr>
+            <tr><td colspan="9"><strong>A. Penerimaan</strong></td></tr>
             <repeat group="{{ @po.rab_hitung.penerimaan_items }}" value="{{ @p }}">
                 <tr><td colspan="8">{{ @p.nama }}</td><td style="text-align:right;">Rp {{ number_format(@p.nominal, 0, ',', '.') }}</td></tr>
             </repeat>
             <tr><td colspan="8"><strong>Total Penerimaan</strong></td><td style="text-align:right;"><strong>Rp {{ number_format(@po.rab_hitung.total_penerimaan, 0, ',', '.') }}</strong></td></tr>
 
-            <tr><td colspan="9" style="background:#f8fafc;"><strong>B. Rencana Pengeluaran</strong></td></tr>
+            <tr><td colspan="9"><strong>B. Rencana Pengeluaran</strong></td></tr>
             <repeat group="{{ @po.rab_hitung.kategori }}" value="{{ @kat }}" key="{{ @ki }}">
                 <tr><td colspan="8">{{ @ki + 1 }}. {{ @kat.nama }} ({{ @kat.persen_tampil }})</td><td style="text-align:right;">Rp {{ number_format(@kat.subtotal, 0, ',', '.') }}</td></tr>
 
@@ -349,15 +359,15 @@
     </table>
 </check>
 
-<div class="section-title">{{ @po.nomor_jadwal }}. JADWAL</div>
+<div class="section-title"><span class="no">{{ @po.nomor_jadwal }}.</span>JADWAL</div>
 <check if="{{ @po.jadwal_kolom && count(@po.jadwal_kolom) > 0 }}">
     <repeat group="{{ @po.jadwal_groups }}" value="{{ @group }}">
         <check if="{{ @group.nama_tahap }}"><div class="jadwal-tahap-title">{{ @group.nama_tahap }}</div></check>
         <check if="{{ @group.kegiatan && count(@group.kegiatan) > 0 }}">
-            <repeat group="{{ @po.jadwal_chunks ?: [[ 'label' => '', 'kolom' => @po.jadwal_kolom, 'bulan_header' => @po.jadwal_bulan_header ]] }}" value="{{ @chunk }}" key="{{ @cIdx }}">
+            <repeat group="{{ @group.chunks_tampil ?: [[ 'label' => '', 'kolom' => @po.jadwal_kolom, 'bulan_header' => @po.jadwal_bulan_header ]] }}" value="{{ @chunk }}" key="{{ @cIdx }}">
                 <check if="{{ @po.jadwal_chunks && count(@po.jadwal_chunks) > 1 }}">
-                    <div style="font-weight:bold; font-size:8pt; color:#334155; margin:6px 0 2px; text-transform:uppercase;">
-                        Bagian {{ @cIdx + 1 }}: {{ @chunk.label }}
+                    <div style="font-weight:bold; font-size:8pt; color:#000; margin:6px 0 2px;">
+                        {{ @chunk.label }}<check if="{{ @chunk.lanjutan }}"> <i style="font-weight:normal;">(lanjutan)</i></check>
                     </div>
                 </check>
                 <table class="jadwal-table" style="margin-bottom:8px;">

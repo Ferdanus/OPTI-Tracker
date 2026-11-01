@@ -10,10 +10,28 @@
         box-sizing: border-box;
         box-shadow: 0 4px 20px rgba(0,0,0,.25);
     }
-    .po-doc-title { text-align: center; font-weight: bold; font-size: 14pt; margin-bottom: 4px; letter-spacing: .3px; }
-    .po-doc-nomor { text-align: center; font-size: 12pt; margin-bottom: 18px; }
-    .po-doc-judul { font-weight: bold; margin-bottom: 14px; font-size: 12pt; }
-    .po-section-title { font-weight: bold; font-size: 12pt; margin: 18px 0 8px; text-transform: uppercase; }
+    .po-doc-title { text-align: center; font-weight: bold; font-size: 14pt; text-decoration: underline; }
+    .po-doc-nomor { text-align: center; font-weight: bold; font-size: 14pt; margin-bottom: 20px; }
+    /* [BARU] Judul & Jenis: label tebal, titik dua, isi (tidak tebal) sejajar satu kolom, baris panjang menggantung */
+    .po-doc-meta { display: flex; font-size: 12pt; margin-bottom: 4px; }
+    .po-doc-meta .po-ml { flex: 0 0 52px; font-weight: bold; }
+    .po-doc-meta .po-mc { flex: 0 0 12px; }
+    .po-doc-meta .po-mv { flex: 1; min-width: 0; text-align: justify; }
+    .po-section-title { font-weight: bold; font-size: 12pt; margin: 18px 0 8px; text-transform: uppercase; display: flex; }
+    .po-section-title .po-no { flex: 0 0 30px; }
+
+    /* [BARU] tata letak ala surat dinas: nomor bagian di tepi kiri, judul + seluruh isi teks sejajar di kolom judul.
+       Poin a./b./c. & daftar 1./2. nomornya mulai dari kolom judul, teksnya menggantung. (Tabel tetap selebar kertas.) */
+    .po-doc-sheet .po-body { padding-left: 30px; }
+    .po-doc-sheet .po-body div[style*="display:flex"] { gap: 0 !important; }
+    .po-doc-sheet .po-body div[style*="display:flex"] > span:first-child { flex: 0 0 22px !important; }
+    .po-doc-sheet .po-body p { margin: 0 0 3px; }
+    .po-doc-sheet .po-body ol, .po-doc-sheet .po-body ul { list-style: none !important; margin: 0 0 3px; padding: 0; }
+    .po-doc-sheet .po-body li { list-style: none !important; position: relative; padding-left: 22px; margin-bottom: 3px; text-align: justify; }
+    .po-doc-sheet .po-body ol > li::before { content: counter(list-item) "."; position: absolute; left: 0; }
+    .po-doc-sheet .po-body ol[type="a"] > li::before, .po-doc-sheet .po-body ol.list-alpha > li::before { content: counter(list-item, lower-alpha) "."; }
+    .po-doc-sheet .po-body ul > li::before { content: "\2022"; position: absolute; left: 6px; }
+    .po-doc-sheet .po-body li > ol, .po-doc-sheet .po-body li > ul { margin-top: 3px; margin-bottom: 0; }
 
     .po-doc-sheet table {
         width: 100%;
@@ -25,7 +43,7 @@
     .po-doc-sheet table th, .po-doc-sheet table td {
         border: 1px solid #000; padding: 5px 8px; vertical-align: middle;
     }
-    .po-doc-sheet table th { background: #f1f5f9; font-weight: bold; text-align: center; }
+    .po-doc-sheet table th { background: transparent; font-weight: bold; text-align: center; }
     .po-doc-sheet table.po-inline-table, .po-doc-sheet .point-row table {
         table-layout: fixed;
         width: 100%;
@@ -64,7 +82,7 @@
     /* Khusus tabel Jadwal -- proporsional, border tegas, rapih untuk 1 s/d 12 bulan */
     .po-jadwal-table { font-size: 7.5pt !important; border-collapse: collapse !important; width: 100% !important; border: 1.5px solid #1e293b !important; margin-bottom: 6px !important; }
     .po-jadwal-table th, .po-jadwal-table td { border: 1px solid #334155 !important; padding: 3px 2px !important; text-align: center !important; vertical-align: middle !important; }
-    .po-jadwal-table th { background: #f1f5f9 !important; font-weight: 700 !important; color: #0f172a !important; line-height: 1.2; }
+    .po-jadwal-table th { background: transparent !important; font-weight: 700 !important; color: #0f172a !important; line-height: 1.2; }
     .po-jadwal-table th:first-child, .po-jadwal-table td:first-child {
         width: 32% !important; min-width: 140px !important; text-align: left !important; font-size: 8pt !important; padding-left: 6px !important; padding-right: 4px !important; word-break: break-word !important;
     }
@@ -88,40 +106,40 @@
 
 <div class="po-doc-scope">
     <div class="po-doc-sheet" id="poDocSheet">
-        <check if="{{ @po.status == 'draft' }}"><span class="po-badge-status po-status-draft">DRAFT</span></check>
-        <check if="{{ @po.status == 'terkirim' }}"><span class="po-badge-status po-status-terkirim">TERKIRIM</span></check>
+        <check if="{{ !@po.sudah_final }}"><span class="po-badge-status po-status-draft">DRAFT</span></check>
 
-        <div class="po-doc-title">PETUNJUK OPERASIONAL (PO)</div>
-        <div class="po-doc-nomor">Nomor: {{ @po.nomor_po }}</div>
-        <div class="po-doc-judul">Judul: {{ @po.judul_kegiatan }}</div>
+        <div class="po-doc-title">PETUNJUK OPERASIONAL</div>
+        <div class="po-doc-nomor">No : {{ @po.nomor_po }}</div>
+        <div class="po-doc-meta"><span class="po-ml">Judul</span><span class="po-mc">:</span><span class="po-mv">{{ @po.judul_kegiatan }}</span></div>
+        <div class="po-doc-meta" style="margin-bottom:14px;"><span class="po-ml">Jenis</span><span class="po-mc">:</span><span class="po-mv">Optimalisasi dan Pemanfaatan Teknologi Industri</span></div>
 
-        <div class="po-section-title">1. DASAR</div>
+        <div class="po-section-title"><span class="po-no">1.</span> <span>DASAR</span></div>
         <check if="{{ @po.dasar_lines && count(@po.dasar_lines) > 0 }}">
-            <div style="font-size:13px; margin-bottom:8px;">
+            <div class="po-body" style="font-size:13px; margin-bottom:8px;">
                 <repeat group="{{ @po.dasar_lines }}" value="{{ @dl }}">
                     <check if="{{ @dl.marker }}"><div style="display:flex; gap:6px; margin-bottom:3px;"><span style="flex:0 0 24px;">{{ @dl.marker }}</span><span style="flex:1; text-align:justify; white-space:pre-line;">{{ @dl.teks }}</span></div></check>
                     <check if="{{ !@dl.marker }}"><div style="margin-bottom:3px; text-align:justify; white-space:pre-line;">{{ @dl.teks }}</div></check>
                 </repeat>
             </div>
         </check>
-        <check if="{{ !@po.dasar_lines || count(@po.dasar_lines) == 0 }}"><div style="font-size:13px;">-</div></check>
+        <check if="{{ !@po.dasar_lines || count(@po.dasar_lines) == 0 }}"><div class="po-body" style="font-size:13px;">-</div></check>
 
-        <div class="po-section-title">2. TUJUAN</div>
+        <div class="po-section-title"><span class="po-no">2.</span> <span>TUJUAN</span></div>
         <check if="{{ @po.tujuan_lines && count(@po.tujuan_lines) > 0 }}">
-            <div style="font-size:13px; margin-bottom:8px;">
+            <div class="po-body" style="font-size:13px; margin-bottom:8px;">
                 <repeat group="{{ @po.tujuan_lines }}" value="{{ @dl }}">
                     <check if="{{ @dl.marker }}"><div style="display:flex; gap:6px; margin-bottom:3px;"><span style="flex:0 0 24px;">{{ @dl.marker }}</span><span style="flex:1; text-align:justify; white-space:pre-line;">{{ @dl.teks }}</span></div></check>
                     <check if="{{ !@dl.marker }}"><div style="margin-bottom:3px; text-align:justify;">{{ @dl.teks | raw }}</div></check>
                 </repeat>
             </div>
         </check>
-        <check if="{{ !@po.tujuan_lines || count(@po.tujuan_lines) == 0 }}"><div style="font-size:13px;">-</div></check>
+        <check if="{{ !@po.tujuan_lines || count(@po.tujuan_lines) == 0 }}"><div class="po-body" style="font-size:13px;">-</div></check>
 
 
-        <div class="po-section-title">3. RUANG LINGKUP</div>
+        <div class="po-section-title"><span class="po-no">3.</span> <span>RUANG LINGKUP</span></div>
 
         <check if="{{ @po.ruang_lingkup_deskripsi_lines && count(@po.ruang_lingkup_deskripsi_lines) > 0 }}">
-            <div style="font-size:13px; margin-bottom:8px;">
+            <div class="po-body" style="font-size:13px; margin-bottom:8px;">
                 <repeat group="{{ @po.ruang_lingkup_deskripsi_lines }}" value="{{ @dl }}">
                     <check if="{{ @dl.marker }}">
                         <div style="display:flex; gap:6px; margin-bottom:3px;">
@@ -153,13 +171,13 @@
     </table>
 </check>
 <check if="{{ @po.nomor_alat_bahan }}">
-    <div class="po-section-title">{{ @po.nomor_alat_bahan }}. ALAT {{ @po.sub_nomor_alat ? 'DAN BAHAN' : '& BAHAN' }}</div>
+    <div class="po-section-title"><span class="po-no">{{ @po.nomor_alat_bahan }}.</span> <span>ALAT {{ @po.sub_nomor_alat ? 'DAN BAHAN' : '& BAHAN' }}</span></div>
 
     <check if="{{ @po.sub_nomor_alat }}">
-        <div style="font-weight:700; font-size:12.5px; margin:4px 0;">{{ @po.nomor_alat_bahan }}.{{ @po.sub_nomor_alat }} Alat</div>
+        <div class="po-body" style="font-weight:700; font-size:12.5px; margin:4px 0;">{{ @po.nomor_alat_bahan }}.{{ @po.sub_nomor_alat }} Alat</div>
     </check>
     <check if="{{ @po.alat_bahan_lines && count(@po.alat_bahan_lines) > 0 }}">
-        <div style="font-size:13px; margin-bottom:8px;">
+        <div class="po-body" style="font-size:13px; margin-bottom:8px;">
             <repeat group="{{ @po.alat_bahan_lines }}" value="{{ @dl }}">
                 <check if="{{ @dl.marker }}">
                     <div style="display:flex; gap:6px; margin-bottom:3px;">
@@ -175,7 +193,7 @@
     </check>
 
     <check if="{{ @po.sub_nomor_bahan_kimia }}">
-        <div style="font-weight:700; font-size:12.5px; margin:8px 0 4px;">{{ @po.nomor_alat_bahan }}.{{ @po.sub_nomor_bahan_kimia }} Bahan dan Bahan Kimia</div>
+        <div class="po-body" style="font-weight:700; font-size:12.5px; margin:8px 0 4px;">{{ @po.nomor_alat_bahan }}.{{ @po.sub_nomor_bahan_kimia }} Bahan dan Bahan Kimia</div>
         <table>
             <thead><tr><th style="width:35px;">No</th><th>Bahan Kimia / Penolong</th><th>Jumlah</th><th>Satuan</th></tr></thead>
             <tbody>
@@ -187,8 +205,8 @@
     </check>
 
     <check if="{{ @po.sub_nomor_metode }}">
-        <div style="font-weight:700; font-size:12.5px; margin:8px 0 4px;">{{ @po.nomor_alat_bahan }}.{{ @po.sub_nomor_metode }} Metode</div>
-        <div style="font-size:13px;">
+        <div class="po-body" style="font-weight:700; font-size:12.5px; margin:8px 0 4px;">{{ @po.nomor_alat_bahan }}.{{ @po.sub_nomor_metode }} Metode</div>
+        <div class="po-body" style="font-size:13px;">
             <repeat group="{{ @po.metoda_lines }}" value="{{ @dl }}">
                 <check if="{{ @dl.marker }}">
                     <div style="display:flex; gap:6px; margin-bottom:3px; {{ @dl.is_sub ? 'margin-left:24px;' : '' }}"><span style="flex:0 0 24px; font-weight:600;">{{ @dl.marker }}</span><span style="flex:1; text-align:justify;">{{ @dl.teks | raw }}</span></div>
@@ -200,7 +218,7 @@
 
     <check if="{{ @po.kebutuhan_tambahan_hitung && count(@po.kebutuhan_tambahan_hitung) > 0 }}">
         <repeat group="{{ @po.kebutuhan_tambahan_hitung }}" value="{{ @kat }}">
-            <div style="font-weight:700; font-size:12.5px; margin:8px 0 4px;">{{ @po.nomor_alat_bahan }}.{{ @kat.sub_nomor }} Rincian Kebutuhan {{ @kat.nama }}</div>
+            <div class="po-body" style="font-weight:700; font-size:12.5px; margin:8px 0 4px;">{{ @po.nomor_alat_bahan }}.{{ @kat.sub_nomor }} Rincian Kebutuhan {{ @kat.nama }}</div>
             <table>
                 <thead><tr><th style="width:35px;">No</th><th>Nama Barang</th><th>Jumlah</th><th>Satuan</th><th>Harga</th><th>Total Harga</th></tr></thead>
                 <tbody>
@@ -222,9 +240,9 @@
 </check>
 
 <check if="{{ @po.nomor_metoda }}">
-    <div class="po-section-title">{{ @po.nomor_metoda }}. METODA</div>
+    <div class="po-section-title"><span class="po-no">{{ @po.nomor_metoda }}.</span> <span>METODA</span></div>
     <check if="{{ @po.metoda_lines && count(@po.metoda_lines) > 0 }}">
-        <div style="font-size:13px; margin-bottom:8px;">
+        <div class="po-body" style="font-size:13px; margin-bottom:8px;">
             <repeat group="{{ @po.metoda_lines }}" value="{{ @dl }}">
                 <check if="{{ @dl.marker }}">
                     <div style="display:flex; gap:6px; margin-bottom:3px; {{ @dl.is_sub ? 'margin-left:24px;' : '' }}">
@@ -243,11 +261,11 @@
 
 
 <check if="{{ @po.alamat }}">
-    <div class="po-section-title">{{ @po.nomor_alamat }}. ALAMAT</div>
-    <div style="font-size:13px;">{{ @po.alamat }}</div>
+    <div class="po-section-title"><span class="po-no">{{ @po.nomor_alamat }}.</span> <span>ALAMAT</span></div>
+    <div class="po-body" style="font-size:13px;">{{ @po.alamat }}</div>
 </check>
 
-        <div class="po-section-title">{{ @po.nomor_tim }}. TIM PELAKSANA</div>
+        <div class="po-section-title"><span class="po-no">{{ @po.nomor_tim }}.</span> <span>TIM PELAKSANA</span></div>
         <table>
             <thead><tr><th style="width:30px;">No</th><th>Nama</th><th>Tugas/Tanggung Jawab</th><th>Uraian Tugas</th></tr></thead>
             <tbody>
@@ -267,7 +285,7 @@
             </tbody>
         </table>
 
-        <div class="po-section-title">{{ @po.nomor_rab ?: 5 }}. RENCANA ANGGARAN BIAYA (RAB)</div>
+        <div class="po-section-title"><span class="po-no">{{ @po.nomor_rab ?: 5 }}.</span> <span>RENCANA ANGGARAN BIAYA (RAB)</span></div>
 
         <!-- [BARU] Format RAB berjenjang khusus SELULOSA -- ngikutin format RAB fisik (contoh
              "RAB KS Chitose"/"RAB KS Pusat Studi Sawit IPB"): a. Penerimaan / Nilai kontrak,
@@ -284,7 +302,7 @@
                     <col style="width:16%;"><col style="width:16%;">
                 </colgroup>
                 <tbody>
-                    <tr style="background:#f1f5f9;">
+                    <tr>
                         <td colspan="5"><strong>a. Penerimaan</strong></td>
                     </tr>
                     <tr>
@@ -302,7 +320,7 @@
                     <col style="width:16%;"><col style="width:16%;">
                 </colgroup>
                 <thead>
-                    <tr style="background:#f1f5f9;">
+                    <tr>
                         <th colspan="2" class="text-start">b. Rencana Pengeluaran</th>
                         <th>Rincian</th>
                         <th class="text-end">Rp</th>
@@ -311,7 +329,7 @@
                 </thead>
                 <tbody>
                     <repeat group="{{ @po.rab_hitung.kategori }}" value="{{ @kat }}">
-                        <tr style="background:#f8fafc;">
+                        <tr>
                             <td class="text-center"><strong>{{ @kat.label_huruf }}.</strong></td>
                             <td colspan="2"><strong>{{ @kat.nama }}</strong></td>
                             <td class="text-end rab-uang"><strong>Rp&nbsp;{{ number_format(@kat.subtotal, 0, ',', '.') }}</strong></td>
@@ -341,7 +359,7 @@
                                                 <td colspan="4" style="padding-left:28px;">
                                                     <table class="rab-table" style="margin:2px 0;">
                                                         <thead>
-                                                            <tr style="background:#f1f5f9;">
+                                                            <tr>
                                                                 <th>Uraian</th>
                                                                 <th class="text-center">Hari</th>
                                                                 <th class="text-center">Jam</th>
@@ -428,7 +446,7 @@
                     <col style="width:52%;"><col style="width:16%;"><col style="width:32%;">
                 </colgroup>
                 <tbody>
-                    <tr style="background:#f8fafc;">
+                    <tr>
                         <td colspan="2"><strong>Nilai Kontrak</strong></td>
                         <td class="text-end"><strong>Rp&nbsp;{{ number_format(@po.rab_hitung.total_penerimaan, 0, ',', '.') }}</strong></td>
                     </tr>
@@ -448,7 +466,7 @@
                     <col style="width:16%;"><col style="width:14%;"><col style="width:14%;">
                 </colgroup>
                 <thead>
-                    <tr style="background:#f1f5f9;">
+                    <tr>
                         <th class="text-center">No</th>
                         <th>Kegiatan</th>
                         <th>Rincian</th>
@@ -462,7 +480,7 @@
                         <!-- Kategori RAB berjenjang (Kegiatan -> Lokasi/Kelompok -> Item), sudah
                              diratakan jadi @kat.baris di controller. -->
                         <check if="{{ @kat.baris }}">
-                            <tr style="background:#f8fafc;">
+                            <tr>
                                 <td colspan="6"><strong>{{ @kat.nama }}</strong></td>
                             </tr>
                             <repeat group="{{ @kat.baris }}" value="{{ @b }}">
@@ -518,7 +536,7 @@
                         <!-- Fallback: kategori item datar (belum sempat diisi ulang pakai struktur
                              kegiatan baru), tetep ditampilin biar datanya gak hilang. -->
                         <check if="{{ !@kat.baris && @kat.items && count(@kat.items) > 0 }}">
-                            <tr style="background:#f8fafc;">
+                            <tr>
                                 <td colspan="6"><strong>{{ @kat.nama }}</strong></td>
                             </tr>
                             <repeat group="{{ @kat.items }}" value="{{ @it }}">
@@ -553,13 +571,13 @@
                     <col style="width:6%;"><col style="width:14%;"><col style="width:22%;">
                 </colgroup>
                 <tbody>
-                    <tr><td colspan="9" style="background:#f8fafc;"><strong>A. Penerimaan</strong></td></tr>
+                    <tr><td colspan="9"><strong>A. Penerimaan</strong></td></tr>
                     <repeat group="{{ @po.rab_hitung.penerimaan_items }}" value="{{ @p }}">
                         <tr><td colspan="8">{{ @p.nama }}</td><td class="text-end">Rp {{ number_format(@p.nominal, 0, ',', '.') }}</td></tr>
                     </repeat>
                     <tr><td colspan="8"><strong>Total Penerimaan</strong></td><td class="text-end"><strong>Rp {{ number_format(@po.rab_hitung.total_penerimaan, 0, ',', '.') }}</strong></td></tr>
 
-                    <tr><td colspan="9" style="background:#f8fafc;"><strong>B. Rencana Pengeluaran</strong></td></tr>
+                    <tr><td colspan="9"><strong>B. Rencana Pengeluaran</strong></td></tr>
                     <repeat group="{{ @po.rab_hitung.kategori }}" value="{{ @kat }}" key="{{ @ki }}">
                         <tr><td colspan="8">{{ @ki + 1 }}. {{ @kat.nama }} ({{ @kat.persen_tampil }})</td><td class="text-end">Rp {{ number_format(@kat.subtotal, 0, ',', '.') }}</td></tr>
 
@@ -578,17 +596,17 @@
                 </tbody>
             </table>
         </check>
-        <div class="po-section-title">{{ @po.nomor_jadwal }}. JADWAL</div>
+        <div class="po-section-title"><span class="po-no">{{ @po.nomor_jadwal }}.</span> <span>JADWAL</span></div>
         <check if="{{ @po.jadwal_kolom && count(@po.jadwal_kolom) > 0 }}">
             <repeat group="{{ @po.jadwal_groups }}" value="{{ @group }}">
                 <check if="{{ @group.nama_tahap }}">
                     <div style="font-weight:700; font-size:12px; margin:8px 0 4px;">{{ @group.nama_tahap }}</div>
                 </check>
                 <check if="{{ @group.kegiatan && count(@group.kegiatan) > 0 }}">
-                    <repeat group="{{ @po.jadwal_chunks ?: [[ 'label' => '', 'kolom' => @po.jadwal_kolom, 'bulan_header' => @po.jadwal_bulan_header ]] }}" value="{{ @chunk }}" key="{{ @cIdx }}">
+                    <repeat group="{{ @group.chunks_tampil ?: [[ 'label' => '', 'kolom' => @po.jadwal_kolom, 'bulan_header' => @po.jadwal_bulan_header ]] }}" value="{{ @chunk }}" key="{{ @cIdx }}">
                         <check if="{{ @po.jadwal_chunks && count(@po.jadwal_chunks) > 1 }}">
-                            <div style="font-weight:600; font-size:10px; color:#475569; margin:6px 0 2px; text-transform:uppercase; letter-spacing:0.3px;">
-                                Bagian {{ @cIdx + 1 }}: {{ @chunk.label }}
+                            <div style="font-weight:700; font-size:10px; color:#1e293b; margin:8px 0 3px;">
+                                {{ @chunk.label }}<check if="{{ @chunk.lanjutan }}"> <i style="font-weight:400;">(lanjutan)</i></check>
                             </div>
                         </check>
                         <table class="po-jadwal-table" style="margin-bottom:8px;">

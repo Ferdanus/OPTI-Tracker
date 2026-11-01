@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demo – Kop Atas Preview PO</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #f1f5f9; color: #0f172a; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { padding: 18px 24px 8px; }
+  header h1 { margin: 0 0 4px; font-size: 18px; }
+  header p { margin: 0; font-size: 13px; color: #64748b; max-width: 760px; line-height: 1.5; }
+  .bar { padding: 8px 24px 16px; font-size: 13px; }
+  .bar label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; color: #1e293b; }
+  .bar input { accent-color: #1e293b; }
+  .grid { display: flex; gap: 24px; padding: 0 24px 32px; flex-wrap: wrap; align-items: flex-start; }
+  .col { flex: 1 1 440px; min-width: 380px; max-width: 680px; }
+  .tag { display: inline-block; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; margin-bottom: 8px; background: #1e293b; color: #fff; }
+  .tag.now { background: #cbd5e1; color: #1e293b; }
+  .cap { font-size: 12px; color: #64748b; margin: 0 0 8px; line-height: 1.45; min-height: 34px; }
+
+  .sheet { position: relative; background: #fff; padding: 34px 38px 28px; box-shadow: 0 4px 18px rgba(15,23,42,.18);
+           font-family: 'Times New Roman', Times, serif; color: #000; font-size: 13px; }
+  .sheet .sec { font-weight: bold; font-size: 14px; margin: 18px 0 8px; text-transform: uppercase; display: flex; }
+  .sheet .sec .no { flex: 0 0 30px; }
+  .sheet .bd { padding-left: 30px; text-align: justify; }
+
+  /* SEKARANG */
+  .now .t1 { text-align: center; font-weight: bold; font-size: 14px; margin-bottom: 4px; letter-spacing: .3px; }
+  .now .t2 { text-align: center; font-size: 13px; margin-bottom: 18px; }
+  .now .judul { font-weight: bold; margin-bottom: 14px; font-size: 13px; }
+
+  /* USULAN */
+  .new .t1 { text-align: center; font-weight: bold; font-size: 14px; text-decoration: underline; }
+  .new .t2 { text-align: center; font-weight: bold; font-size: 14px; margin-bottom: 20px; }
+  .new .meta { display: flex; margin-bottom: 4px; }
+  .new .meta .l { flex: 0 0 46px; font-weight: bold; }
+  .new .meta .c { flex: 0 0 10px; }
+  .new .meta .v { flex: 1; text-align: justify; }
+  .new .meta.judul .v { font-weight: bold; }
+  .new .meta:last-of-type { margin-bottom: 0; }
+  .new .meta-wrap { margin-bottom: 4px; }
+
+  .g { display: none; position: absolute; top: 0; bottom: 0; width: 0; pointer-events: none; }
+  .g1 { left: 38px; border-left: 2px solid #dc2626; }
+  .g2 { left: 94px; border-left: 2px dashed #dc2626; }
+  body.show-guide .g { display: block; }
+  .now .g2 { display: none !important; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Demo: kop atas Preview PO</h1>
+  <p>Data contoh fiktif. Judul dokumen digarisbawahi dan tebal, "No :" ikut tebal dan di tengah. Judul kegiatan dan Jenis jadi dua baris rapi: label tebal, titik dua, lalu isinya sejajar di satu kolom (baris panjang menggantung). Untuk PO OPTI, Jenis selalu "Optimalisasi dan Pemanfaatan Teknologi Industri".</p>
+</header>
+<div class="bar"><label><input type="checkbox" id="g"> Garis bantu</label></div>
+
+<div class="grid">
+  <div class="col">
+    <span class="tag now">Sekarang</span>
+    <p class="cap">Judul dokumen nggak digarisbawahi, nomor tipis, nggak ada baris Jenis.</p>
+    <div class="sheet now">
+      <div class="t1">PETUNJUK OPERASIONAL (PO)</div>
+      <div class="t2">Nomor: 001/PO/BBSPJIS/X/2026</div>
+      <div class="judul">Judul: Pengembangan Formula Contoh dari Bahan Baku Lokal serta Aplikasinya untuk Produk Kemasan Uji pada Mesin Skala Pilot (KS Contoh Mitra - Universitas Fiktif)</div>
+      <div class="sec"><span class="no">1.</span> <span>Dasar</span></div>
+      <div class="bd">a.&nbsp;&nbsp;Persetujuan biaya kerjasama BBSPJIS dengan PT Contoh Nusantara tentang kegiatan dimaksud.</div>
+      <div class="g g1"></div>
+    </div>
+  </div>
+
+  <div class="col">
+    <span class="tag">Usulan</span>
+    <p class="cap">Judul dokumen digarisbawahi + tebal, ada baris Jenis, isi Judul/Jenis sejajar.</p>
+    <div class="sheet new">
+      <div class="t1">PETUNJUK OPERASIONAL</div>
+      <div class="t2">No : 001/PO/BBSPJIS/X/2026</div>
+      <div class="meta judul"><span class="l">Judul</span><span class="c">:</span><span class="v">Pengembangan Formula Contoh dari Bahan Baku Lokal serta Aplikasinya untuk Produk Kemasan Uji pada Mesin Skala Pilot (KS Contoh Mitra - Universitas Fiktif)</span></div>
+      <div class="meta"><span class="l">Jenis</span><span class="c">:</span><span class="v">Optimalisasi dan Pemanfaatan Teknologi Industri</span></div>
+      <div class="sec"><span class="no">1.</span> <span>Dasar</span></div>
+      <div class="bd">a.&nbsp;&nbsp;Persetujuan biaya kerjasama BBSPJIS dengan PT Contoh Nusantara tentang kegiatan dimaksud.</div>
+      <div class="g g1"></div><div class="g g2"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.getElementById('g').addEventListener('change', function (e) { document.body.classList.toggle('show-guide', e.target.checked); });
+</script>
+</body>
+</html>

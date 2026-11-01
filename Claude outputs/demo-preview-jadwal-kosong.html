@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demo – Preview Jadwal Tanpa Periode Kosong</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #f1f5f9; color: #0f172a; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { padding: 18px 24px 8px; }
+  header h1 { margin: 0 0 4px; font-size: 18px; }
+  header p { margin: 0; font-size: 13px; color: #64748b; max-width: 820px; line-height: 1.5; }
+  .grid { display: flex; gap: 24px; padding: 12px 24px 36px; flex-wrap: wrap; align-items: flex-start; }
+  .col { flex: 1 1 560px; min-width: 520px; max-width: 700px; }
+  .tag { display: inline-block; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; margin-bottom: 8px; background: #1e293b; color: #fff; }
+  .tag.now { background: #cbd5e1; color: #1e293b; }
+  .cap { font-size: 12px; color: #64748b; margin: 0 0 8px; line-height: 1.45; min-height: 34px; }
+
+  .sheet { background: #fff; padding: 30px 34px 26px; box-shadow: 0 4px 18px rgba(15,23,42,.18); font-family: 'Times New Roman', Times, serif; color: #000; font-size: 13px; }
+  .sec { font-weight: bold; font-size: 14px; margin: 0 0 8px; display: flex; text-transform: uppercase; }
+  .sec .no { flex: 0 0 30px; }
+  .th { font-weight: 700; font-size: 12px; margin: 10px 0 4px; }
+  .bh { font-size: 9px; font-weight: 700; letter-spacing: .2px; margin: 8px 0 3px; color: #1e293b; text-transform: uppercase; }
+  .bh.r { text-transform: none; font-size: 10px; letter-spacing: 0; }
+  table.j { border-collapse: collapse; width: 100%; font-size: 7.5pt; border: 1.5px solid #1e293b; margin-bottom: 6px; table-layout: fixed; }
+  table.j th, table.j td { border: 1px solid #334155; padding: 3px 2px; text-align: center; vertical-align: middle; height: 17px; line-height: 1.15; overflow: hidden; }
+  table.j th { font-weight: 700; color: #0f172a; }
+  table.j th:first-child, table.j td:first-child { text-align: left; padding-left: 6px; width: 28%; }
+  table.j td.on { background: #1e293b; }
+  table.j.dense { font-size: 6.5pt; }
+  table.j.dense th:first-child, table.j.dense td:first-child { width: 25%; }
+  table.j.dense th, table.j.dense td { padding: 2px 0; }
+  table.j th.edge, table.j td.edge { border-right: 1.6px solid #0f172a; }
+  .foot { text-align: right; margin-top: 14px; font-size: 13px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Demo: Preview jadwal, periode kosong disembunyikan</h1>
+  <p>Data contoh fiktif. Kiri: Opsi 1 apa adanya (semua periode tampil). Kanan: Opsi 1 dengan periode yang kosong di Tahap itu disembunyikan. Ada 4 kasus Tahap supaya kelihatan: kosong di akhir, kosong di awal, kosong di tengah, dan Tahap yang sama sekali belum dicentang.</p>
+</header>
+<div class="grid">
+  <div class="col"><span class="tag now">Opsi 1 (semua periode)</span><p class="cap">Periode yang kosong tetap dicetak sebagai tabel kosong.</p><div class="sheet" id="p0"></div></div>
+  <div class="col"><span class="tag">Opsi 1 + sembunyikan periode kosong</span><p class="cap">Periode yang tidak punya centang di Tahap itu tidak ditampilkan.</p><div class="sheet" id="p1"></div></div>
+</div>
+<script>
+var BULAN = [['Oktober 2026','Okt',[4]],['November 2026','Nov',[1,2,3,4]],['Desember 2026','Des',[1,2,3,4]],['Januari 2027','Jan',[1,2,3,4]],['Februari 2027','Feb',[1,2,3,4]],['Maret 2027','Mar',[1,2,3,4]],['April 2027','Apr',[1,2,3,4]],['Mei 2027','Mei',[1,2,3,4]],['Juni 2027','Jun',[1,2,3,4]],['Juli 2027','Jul',[1,2,3,4]]];
+var COLS = []; BULAN.forEach(function (b, mi) { b[2].forEach(function (w) { COLS.push({ mi: mi, w: w }); }); });
+var CH = [[0, 12], [13, 28], [29, 36]];
+function rng(a, z) { var o = {}; for (var i = a; i <= z; i++) { o[i] = 1; } return o; }
+var TAHAP = [
+  { nama: 'Tahap 1', cat: 'Periode 3 kosong (di akhir)', keg: [ ['Pengambilan sampel', rng(0, 6)], ['Pengujian sampel awal', rng(7, 18)], ['Penyusunan laporan antara', rng(22, 28)] ] },
+  { nama: 'Tahap 2', cat: 'Periode 1 dan 2 kosong (di awal)', keg: [ ['Evaluasi hasil tahap 1', rng(30, 33)], ['Pengujian lanjutan', rng(31, 36)] ] },
+  { nama: 'Tahap 3', cat: 'Periode 2 kosong (di tengah)', keg: [ ['Persiapan alat uji', rng(0, 9)], ['Pengujian ulang', rng(31, 35)] ] },
+  { nama: 'Tahap 4', cat: 'Belum ada centang sama sekali', keg: [ ['Penyusunan laporan akhir', {}] ] }
+];
+function ada(t, c) { return t.keg.some(function (k) { for (var i = c[0]; i <= c[1]; i++) { if (k[1][i]) { return true; } } return false; }); }
+function tabel(t, a, z, dense, short) {
+  var h = '<table class="j' + (dense ? ' dense' : '') + '"><thead><tr><th rowspan="2">Kegiatan</th>', i, seen = [];
+  for (i = a; i <= z; i++) {
+    var m = COLS[i].mi; if (seen.indexOf(m) >= 0) { continue; } seen.push(m);
+    var sp = 0; for (var j = a; j <= z; j++) { if (COLS[j].mi === m) { sp++; } }
+    h += '<th colspan="' + sp + '" class="edge">' + (short || sp < 3 ? BULAN[m][1] : BULAN[m][0]) + '</th>';
+  }
+  h += '</tr><tr>';
+  for (i = a; i <= z; i++) { h += '<th' + (i < z && COLS[i + 1].mi !== COLS[i].mi ? ' class="edge"' : '') + '>' + COLS[i].w + '</th>'; }
+  h += '</tr></thead><tbody>';
+  t.keg.forEach(function (k) {
+    h += '<tr><td>' + k[0] + '</td>';
+    for (i = a; i <= z; i++) { h += '<td class="' + (k[1][i] ? 'on' : '') + (i < z && COLS[i + 1].mi !== COLS[i].mi ? ' edge' : '') + '"></td>'; }
+    h += '</tr>';
+  });
+  return h + '</tbody></table>';
+}
+function lbl(c) { return BULAN[COLS[c[0]].mi][0] + ' – ' + BULAN[COLS[c[1]].mi][0]; }
+function dok(sembunyi) {
+  var h = '<div class="sec"><span class="no">8.</span><span>Jadwal</span></div>';
+  TAHAP.forEach(function (t) {
+    h += '<div class="th">' + t.nama + (sembunyi ? '' : '') + '</div>';
+    var tampil = CH.map(function (c, ci) { return ci; });
+    if (sembunyi) {
+      tampil = tampil.filter(function (ci) { return ada(t, CH[ci]); });
+      if (!tampil.length) { tampil = [0]; }   // Tahap belum dicentang: tampilkan periode pertama saja
+    }
+    tampil.forEach(function (ci, n) {
+      var c = CH[ci];
+      h += '<div class="bh r">' + lbl(c) + (n > 0 ? ' <i style="font-weight:400">(lanjutan)</i>' : '') + '</div>';
+      h += tabel(t, c[0], c[1], false, false);
+    });
+  });
+  return h + '<div class="foot">Bandung, Oktober 2026</div>';
+}
+[0, 1].forEach(function (m) { document.getElementById('p' + m).innerHTML = dok(m === 1); });
+</script>
+</body>
+</html>

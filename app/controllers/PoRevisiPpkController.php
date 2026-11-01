@@ -1071,6 +1071,8 @@ class PoRevisiPpkController extends Controller {
     }
 
     protected function kabariKe(array $userIds, $judul, $pesan, $urlRelatif) {
+        // [BARU] lonceng di aplikasi (selalu) + Web Push di bawah kalau PushNotifikasi terpasang
+        \PoReviewController::lonceng($this->db, $userIds, $judul, $pesan, $urlRelatif);
         if (!class_exists('PushNotifikasi')) { return; }
         $base = (string) \Base::instance()->get('BASE');
         $sudah = [];

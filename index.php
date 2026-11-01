@@ -471,9 +471,13 @@ $f3->route('GET /petunjuk-operasional/sertifikasi/create', 'petunjuk_operasional
 $f3->route('GET /petunjuk-operasional/sertifikasi/order', 'petunjuk_operasional\PoSertifikasiController->daftarOrder');
 $f3->route('GET /petunjuk-operasional/sertifikasi/jadwal-kolom', 'petunjuk_operasional\PoSertifikasiController->jadwalKolom');
 $f3->route('GET /petunjuk-operasional/sertifikasi/review', 'petunjuk_operasional\PoSertifikasiController->review');
+$f3->route('GET /petunjuk-operasional/sertifikasi/review/data', 'petunjuk_operasional\PoSertifikasiController->reviewData');   // daftar review terbaru (JSON)
+$f3->route('POST /petunjuk-operasional/sertifikasi/@id/setujui', 'petunjuk_operasional\PoSertifikasiController->setujui');   // Ketua Tim Sertifikasi menyetujui -> Humas
+$f3->route('POST /petunjuk-operasional/sertifikasi/@id/minta-revisi', 'petunjuk_operasional\PoSertifikasiController->mintaRevisi');   // Ketua Tim Sertifikasi minta revisi
 $f3->route('POST /petunjuk-operasional/sertifikasi/simpan', 'petunjuk_operasional\PoSertifikasiController->simpan');
 $f3->route('GET /petunjuk-operasional/sertifikasi/@id/edit', 'petunjuk_operasional\PoSertifikasiController->edit');
 $f3->route('GET /petunjuk-operasional/sertifikasi/@id/lihat', 'petunjuk_operasional\PoSertifikasiController->lihat');
+$f3->route('POST /petunjuk-operasional/sertifikasi/@id/baca', 'petunjuk_operasional\PoSertifikasiController->baca');
 $f3->route('POST /petunjuk-operasional/sertifikasi/@id/update', 'petunjuk_operasional\PoSertifikasiController->update');
 $f3->route('GET /petunjuk-operasional/pendampingan/create', 'petunjuk_operasional\PoPendampinganController->create');
 $f3->route('GET /petunjuk-operasional/konsultasi/create', 'petunjuk_operasional\PoKonsultasiController->create');

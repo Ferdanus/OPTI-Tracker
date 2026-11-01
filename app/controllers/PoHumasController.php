@@ -22,7 +22,9 @@
  *   - KONTRAK & DISTRIBUSI     : kosong
  *
  * Kolom baru di po_kegiatan (dibuat otomatis kalau belum ada, self-healing): verifikasi_humas_at,
- * verifikasi_humas_by, catatan_humas, humas_dibaca_at (penanda "sudah dibaca Humas": baris tebal + titik biru). Hanya PO OPTI (PO Sertifikasi dst. tidak ikut).
+ * verifikasi_humas_by, catatan_humas, humas_dibaca_at (penanda "sudah dibaca Humas": baris tebal + titik biru).
+ * PO Sertifikasi yang sudah disetujui Ketua Tim Sertifikasi ikut tampil di daftar yang sama (layanan = 'sertifikasi'); dokumennya dibuka lewat
+ * preview PO Sertifikasi, bukan preview PO OPTI.
  *
  *   GET  /po-humas                      daftar (2 tab)
  *   POST /po-humas/@id/baca             catat waktu PO pertama kali dibuka Humas
@@ -44,7 +46,11 @@ class PoHumasController extends Controller {
 
     protected function izinkan($json = false) {
         $this->requireAuth();
-        if ($this->izinAkses()) { return; }
+        if ($this->izinAkses()) {
+            // kolom po_kegiatan.layanan dipakai membedakan PO OPTI dan PO Sertifikasi (aman dipanggil berulang)
+            try { \PoSchema::pastikan($this->db); } catch (\Throwable $e) {}
+            return;
+        }
         if ($json) { $this->keluarkanJson(['ok' => false, 'pesan' => 'Anda tidak punya akses ke halaman ini.'], 403); }
         $this->setFlashError('Halaman Daftar PO Humas hanya bisa diakses Sub Tim Humas dan Superadmin.');
         $this->f3->reroute('/dashboard');
@@ -103,6 +109,11 @@ class PoHumasController extends Controller {
                 $item = $this->petakan($r);
                 if ($item['diverifikasi']) { $selesai[] = $item; } else { $baru[] = $item; }
             }
+            // PO Sertifikasi yang sudah disetujui Ketua Tim Sertifikasi: digabung ke daftar yang sama
+            foreach ($this->barisSertifikasi() as $r) {
+                $item = $this->petakan($r);
+                if ($item['diverifikasi']) { $selesai[] = $item; } else { $baru[] = $item; }
+            }
             // yang sudah diverifikasi: terbaru di atas berdasarkan waktu verifikasi
             usort($selesai, function ($a, $b) { return strcmp((string) $b['tgl_verifikasi'], (string) $a['tgl_verifikasi']); });
         }
@@ -124,7 +135,7 @@ class PoHumasController extends Controller {
         $id = (int) $params['id'];
         $rows = $this->safeExec(
             "SELECT p.id, p.status, p.verifikasi_humas_at, p.nomor_po, p.order_id FROM po_kegiatan p
-             WHERE p.id = ? AND p.status IN " . self::STATUS_TERKIRIM . \PoSchema::bukanSertifikasi('p') . " LIMIT 1",
+             WHERE p.id = ? AND p.status IN " . self::STATUS_TERKIRIM . ($this->sertifikasi($id) ? " AND p.status_review = 'disetujui'" : \PoSchema::bukanSertifikasi('p')) . " LIMIT 1",
             [1 => $id]
         );
         if (empty($rows)) {
@@ -146,8 +157,18 @@ class PoHumasController extends Controller {
         } catch (\Exception $e) {
             $this->keluarkanJson(['ok' => false, 'pesan' => 'Gagal menyimpan verifikasi: ' . $e->getMessage()], 500);
         }
-        \PoReviewController::catatRiwayatOrder($this->db, $id, $uid, 'Humas memverifikasi PO. Diteruskan ke Tim Mitra.', 'verif_humas');   // Riwayat Aktivitas detail order
-        $this->kabariTimMitra($rows[0]);
+        if ($this->sertifikasi($id)) {
+            // order PO Sertifikasi ada di database SISERTIFIKASI -- jangan ditulis ke riwayat / notifikasi order OPTI (nomor id bisa bentrok)
+            try {
+                $this->db->exec(
+                    "INSERT INTO po_chat (po_id, pengirim_id, sisi, pesan, sistem, created_at) VALUES (?, ?, 'katim', ?, 1, NOW())",
+                    [1 => $id, 2 => $uid, 3 => 'Humas memverifikasi PO.']
+                );
+            } catch (\Throwable $e) {}
+        } else {
+            \PoReviewController::catatRiwayatOrder($this->db, $id, $uid, 'Humas memverifikasi PO. Diteruskan ke Tim Mitra.', 'verif_humas');   // Riwayat Aktivitas detail order
+            $this->kabariTimMitra($rows[0]);
+        }
         $this->keluarkanJson(['ok' => true, 'waktu' => date('Y-m-d H:i:s'), 'tanggal' => date('Y-m-d')]);
     }
 
@@ -285,9 +306,10 @@ class PoHumasController extends Controller {
     public function berkas($f3, $params) {
         $this->izinkan(true);
         $id = (int) $params['id'];
+        $sert = $this->sertifikasi($id);
         $po = $this->safeExec(
-            "SELECT p.id, p.nomor_po, p.order_id FROM po_kegiatan p
-             WHERE p.id = ? AND p.status IN " . self::STATUS_TERKIRIM . \PoSchema::bukanSertifikasi('p') . " LIMIT 1",
+            "SELECT p.id, p.nomor_po, p.order_id, p.judul_kegiatan FROM po_kegiatan p
+             WHERE p.id = ? AND p.status IN " . self::STATUS_TERKIRIM . ($sert ? '' : \PoSchema::bukanSertifikasi('p')) . " LIMIT 1",
             [1 => $id]
         );
         if (empty($po)) {
@@ -295,6 +317,7 @@ class PoHumasController extends Controller {
         }
         $po = $po[0];
         $orderId = (int) $po['order_id'];
+        if ($sert) { $this->berkasSertifikasi($po); return; }
 
         $o = $this->safeExec("SELECT nomor_order, judul_kegiatan, estimasi_biaya FROM order_layanan WHERE id = ? LIMIT 1", [1 => $orderId]);
         $o = !empty($o) ? $o[0] : [];
@@ -428,6 +451,105 @@ class PoHumasController extends Controller {
         return rtrim(strtr(base64_encode($iv . $enc), '+/', '-_'), '=');
     }
 
+    /** Apakah PO ini PO Sertifikasi (po_kegiatan.layanan = 'sertifikasi')? */
+    protected function sertifikasi($poId) {
+        $r = $this->safeExec("SELECT layanan FROM po_kegiatan WHERE id = ? LIMIT 1", [1 => (int) $poId]);
+        return !empty($r) && (string) $r[0]['layanan'] === \PoSchema::SERTIFIKASI;
+    }
+
+    /** Nama database SISERTIFIKASI (sama dengan PoSertifikasiController). */
+    protected function namaDbSertifikasi() {
+        $n = (string) $this->f3->get('db_sertifikasi_name');
+        return preg_match('/^[A-Za-z0-9_]+$/', $n) ? $n : 'sisertifikasi2026';
+    }
+
+    /**
+     * PO Sertifikasi yang sudah disetujui Ketua Tim Sertifikasi, dalam bentuk baris yang siap dipetakan petakan().
+     * Kolom order/mitra dibaca dari database SISERTIFIKASI; bila tidak terbaca, daftar tetap tampil tanpa No. Order.
+     */
+    protected function barisSertifikasi() {
+        $kolom = $this->safeExec("SHOW COLUMNS FROM po_kegiatan LIKE 'layanan'");
+        if (empty($kolom)) { return []; }
+        $db = $this->namaDbSertifikasi();
+        $akhir = " WHERE p.layanan = ? AND p.status IN " . self::STATUS_TERKIRIM . " AND p.status_review = 'disetujui' ORDER BY p.updated_at DESC, p.id DESC";
+        $varian = [
+            "SELECT p.*, a.nomor_order AS a_nomor_order, a.no_id_order AS a_no_id_order, c.nmcustomer AS c_nama, c.pt_cv AS c_ptcv
+               FROM po_kegiatan p
+               LEFT JOIN `{$db}`.`tb_arsip_sertifikasi` a ON a.id_arsip_sertifikasi = p.order_id
+               LEFT JOIN tb_customer c ON c.id_customer = a.id_customer" . $akhir,
+            "SELECT p.*, NULL AS a_nomor_order, NULL AS a_no_id_order, NULL AS c_nama, NULL AS c_ptcv FROM po_kegiatan p" . $akhir,
+        ];
+        $rows = [];
+        foreach ($varian as $sql) {
+            try { $rows = $this->db->exec($sql, [1 => \PoSchema::SERTIFIKASI]); break; }
+            catch (\Throwable $e) { error_log('[PO Humas] gagal membaca PO Sertifikasi: ' . $e->getMessage()); $rows = []; }
+        }
+        if (empty($rows)) { return []; }
+
+        $ids = [];
+        foreach ($rows as $r) { $ids[] = (int) ($r['created_by'] ?? 0); $ids[] = (int) ($r['disetujui_by'] ?? 0); }
+        $peta = $this->petaNamaUser($ids);
+
+        $hasil = [];
+        foreach ($rows as $r) {
+            $order = trim((string) ($r['a_nomor_order'] ?? ''));
+            if ($order === '') { $order = trim((string) ($r['a_no_id_order'] ?? '')); }
+            $nama = (string) ($r['c_nama'] ?? '');
+            $ptcv = (string) ($r['c_ptcv'] ?? '');
+            if ($nama === '' && $ptcv === '') { $nama = trim((string) ($r['nama_perusahaan'] ?? '')); }
+            $r['nomor_order']        = $order;
+            $r['nmcustomer']         = $nama;
+            $r['pt_cv']              = $ptcv;
+            $r['judul_po']           = (string) ($r['judul_kegiatan'] ?? '');
+            $r['jenis_layanan_opti'] = 'sertifikasi';
+            $r['tgl_proposal']       = null;   // PO Sertifikasi tidak lewat proposal riset
+            $r['nama_pembuat']       = isset($peta[(int) ($r['created_by'] ?? 0)]) ? $peta[(int) $r['created_by']] : '';
+            $r['nama_katim']         = isset($peta[(int) ($r['disetujui_by'] ?? 0)]) ? $peta[(int) $r['disetujui_by']] : '';
+            $r['dibuat_at']          = $r['created_at'] ?? '';
+            $r['kirim_at']           = !empty($r['dikirim_at']) ? $r['dikirim_at'] : ($r['tanggal_dikirim'] ?? '');
+            $r['katim_baca_at']      = $r['reviewed_at'] ?? '';
+            $r['catatan_tim_mitra']  = $r['catatan_tim_mitra'] ?? '';
+            $hasil[] = $r;
+        }
+        return $hasil;
+    }
+
+    /** Isi panel Berkas untuk PO Sertifikasi: ringkasan nilai kontrak + riwayat. Dokumen order OPTI (surat masuk, SPH, SKB, bukti bayar) tidak berlaku. */
+    protected function berkasSertifikasi(array $po) {
+        $nilai = 0.0;
+        $terbayar = 0.0;
+        $order = '';
+        $kolom = $this->safeExec("SHOW COLUMNS FROM po_kegiatan LIKE 'layanan'");
+        if (!empty($kolom)) {
+            $a = $this->safeExec(
+                "SELECT nomor_order, no_id_order, total_nilai_kontrak, total_bayar_kontrak FROM `" . $this->namaDbSertifikasi() . "`.`tb_arsip_sertifikasi` WHERE id_arsip_sertifikasi = ? LIMIT 1",
+                [1 => (int) $po['order_id']]
+            );
+            if (!empty($a)) {
+                $nilai = (float) $a[0]['total_nilai_kontrak'];
+                $terbayar = (float) $a[0]['total_bayar_kontrak'];
+                $order = trim((string) $a[0]['nomor_order']) !== '' ? (string) $a[0]['nomor_order'] : (string) $a[0]['no_id_order'];
+            }
+        }
+        $riwayat = [];
+        foreach ($this->safeExec("SELECT pesan, created_at FROM po_chat WHERE po_id = ? AND sistem = 1 ORDER BY id ASC", [1 => (int) $po['id']]) as $m) {
+            $riwayat[] = ['pesan' => (string) $m['pesan'], 'waktu' => (string) $m['created_at']];
+        }
+        $this->keluarkanJson([
+            'ok'    => true,
+            'layanan' => 'sertifikasi',
+            'po'    => ['id' => (int) $po['id'], 'nomor' => (string) $po['nomor_po']],
+            'order' => ['nomor' => $order, 'judul' => (string) ($po['judul_kegiatan'] ?? '')],
+            'nilai'          => $nilai,
+            'total_terbayar' => $terbayar,
+            'lunas'          => $nilai > 0 && $terbayar >= $nilai,
+            'kesanggupan'    => ['ada' => false, 'url' => null],
+            'termin'         => [],
+            'dokumen'        => [],
+            'riwayat'        => $riwayat,
+        ]);
+    }
+
     /** Baris DB -> item JSON (termasuk seluruh tanggal Map Kendali). */
     protected function petakan(array $r) {
         $divisi = strtolower((string) ($r['jenis_layanan_opti'] ?? ''));
@@ -442,7 +564,9 @@ class PoHumasController extends Controller {
             'mitra'          => $this->formatMitra($r['nmcustomer'], $r['pt_cv']),
             'judul'          => (string) $r['judul_po'],
             'divisi'         => $divisi,
-            'disiapkan'      => $divisi !== '' ? 'Tim Kerja OPTI ' . ucfirst($divisi) : 'Tim Kerja OPTI',
+            'layanan'        => $divisi === 'sertifikasi' ? 'sertifikasi' : 'opti',
+            'url_lihat'      => $divisi === 'sertifikasi' ? ((string) $this->f3->get('BASE') . '/petunjuk-operasional/sertifikasi/' . (int) $r['id'] . '/lihat?embed=1') : '',
+            'disiapkan'      => $divisi === 'sertifikasi' ? 'Tim Kerja Sertifikasi' : ($divisi !== '' ? 'Tim Kerja OPTI ' . ucfirst($divisi) : 'Tim Kerja OPTI'),
             // waktu PO masuk ke Humas = saat disetujui Ketua Tim (disposisi_humas_at); cadangan: waktu terakhir PO diubah
             'dikirim'        => self::tanggalJam((string) (($r['disposisi_humas_at'] ?? '') ?: ($r['updated_at'] ?: $r['created_at']))),
             // dibaca hanya dihitung kalau terjadi SETELAH PO masuk (disetujui) ke Humas. Kalau PO dibuka kembali lalu

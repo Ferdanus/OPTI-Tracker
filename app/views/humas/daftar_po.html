@@ -836,7 +836,7 @@
                 var tombol = t === 'baru'
                     ? '<button type="button" class="btn btn-sm btn-primary py-1 px-2" data-open="' + p.id + '" title="Review PO (buka panel)"><i class="bi bi-eye me-1"></i>Review</button>'
                     : '<button type="button" class="btn btn-sm btn-outline-primary py-1 px-2" data-open="' + p.id + '" title="Lihat PO (hanya lihat)"><i class="bi bi-eye me-1"></i>Lihat</button>';
-                var detail = p.order_id ? '<a href="' + BASE + '/order/' + p.order_id + '" class="btn btn-sm btn-outline-secondary py-1 px-2" title="Buka detail order"><i class="bi bi-box-arrow-up-right me-1"></i>Detail</a>' : '';
+                var detail = (p.order_id && p.layanan !== 'sertifikasi') ? '<a href="' + BASE + '/order/' + p.order_id + '" class="btn btn-sm btn-outline-secondary py-1 px-2" title="Buka detail order"><i class="bi bi-box-arrow-up-right me-1"></i>Detail</a>' : '';
                 return '<tr class="' + (t === 'baru' && isUnread(p) ? 'po-unread' : '') + '" data-open="' + p.id + '">' +
                     '<td class="text-center text-muted small fw-semibold">' + (awal + i + 1) + '</td>' +
                     '<td>' + dokCell(p, t) + '</td>' +
@@ -1004,28 +1004,57 @@
             if (j && j.waktu) { p.dibaca_at = j.waktu; render(); if (current === p.id) { renderChrome(); } }
         }).catch(function () { /* gagal mencatat tidak mengganggu pekerjaan Humas */ });
     }
+    // Dokumen PO Sertifikasi dirender di halamannya sendiri (preview saja, ?embed=1) -> ditampilkan dalam iframe setinggi isinya.
+    function pasangDokumenSertifikasi(p, tiket) {
+        var host = $('hmDocHost');
+        var fr = document.createElement('iframe');
+        fr.title = 'Dokumen PO Sertifikasi ' + p.nomor;
+        fr.src = p.url_lihat;
+        fr.style.cssText = 'width:100%;height:78vh;border:0;display:block;background:#fff;';
+        function sesuaikan() {
+            try {
+                var d = fr.contentDocument;
+                var h = Math.max(d.documentElement.scrollHeight, d.body ? d.body.scrollHeight : 0);
+                if (h > 200) { fr.style.height = (h + 8) + 'px'; }
+            } catch (e) { /* beda origin: pakai tinggi bawaan */ }
+        }
+        fr.addEventListener('load', function () {
+            if (tiket !== openTicket) { return; }
+            var lbl = host.querySelector('.hm-loading'); if (lbl) { lbl.parentNode.removeChild(lbl); }
+            sesuaikan(); setTimeout(sesuaikan, 400); setTimeout(sesuaikan, 1500); setTimeout(sesuaikan, 4000);
+        });
+        host.innerHTML = '<div class="hm-loading">Memuat dokumen PO...</div>';
+        host.appendChild(fr);
+    }
     function openSheet(id) {
         var p = cariItem(id); if (!p) { return; }
         var tiket = ++openTicket;
         current = p.id; shTab = 'po'; berkas = null; berkasGalat = ''; buktiMode = false; buktiSel = {}; dokBuka = {}; zoomVal = { po: null, map: null };
         $('hmFitBar').classList.remove('on');
         $('hmDocHost').innerHTML = '<div class="hm-loading">Memuat dokumen PO...</div>';
+        var sert = p.layanan === 'sertifikasi';
+        var pobar = document.querySelector('#hmPanePo .hm-pobar');
+        if (pobar) { pobar.style.display = sert ? 'none' : ''; }   // Unduh PO (PDF) baru tersedia untuk PO OPTI
         renderChrome();
         $('hmScrim').classList.add('open'); $('hmSheet').classList.add('open'); $('hmSheet').setAttribute('aria-hidden', 'false');
         setTimeout(function () { $('hmShClose').focus(); }, 60);
         tandaiDibaca(p);
 
-        fetch(BASE + '/po-kegiatan/' + p.id + '/preview', { credentials: 'same-origin' }).then(function (r) {
-            if (!r.ok) { throw new Error('Dokumen PO gagal dimuat.'); }
-            return r.text();
-        }).then(function (html) {
-            if (tiket !== openTicket) { return; }
-            $('hmDocHost').innerHTML = html;
-            fitDoc();
-        }).catch(function (e) {
-            if (tiket !== openTicket) { return; }
-            $('hmDocHost').innerHTML = '<div class="hm-loading err">' + esc(e.message) + '</div>';
-        });
+        if (sert) {
+            pasangDokumenSertifikasi(p, tiket);
+        } else {
+            fetch(BASE + '/po-kegiatan/' + p.id + '/preview', { credentials: 'same-origin' }).then(function (r) {
+                if (!r.ok) { throw new Error('Dokumen PO gagal dimuat.'); }
+                return r.text();
+            }).then(function (html) {
+                if (tiket !== openTicket) { return; }
+                $('hmDocHost').innerHTML = html;
+                fitDoc();
+            }).catch(function (e) {
+                if (tiket !== openTicket) { return; }
+                $('hmDocHost').innerHTML = '<div class="hm-loading err">' + esc(e.message) + '</div>';
+            });
+        }
         api(BASE + '/po-humas/' + p.id + '/berkas').then(function (j) {
             if (tiket !== openTicket) { return; }
             berkas = j; renderBody();
@@ -1201,6 +1230,9 @@
             '<div class="hm-sum"><div class="l">Nilai kontrak</div><div class="v">' + rp(j.nilai) + '</div></div>' +
             '<div class="hm-sum"><div class="l">Total terbayar</div><div class="v ' + (j.lunas ? 'ok' : 'warn') + '">' + rp(j.total_terbayar) + '</div></div>' +
             '<div class="hm-sum"><div class="l">Sisa pembayaran</div><div class="v">' + rp(sisa) + '</div></div></div>';
+        if (p && p.layanan === 'sertifikasi') {
+            return h + mapKartu(p) + '<div class="hm-tkosong" style="margin-top:10px;">Berkas order (surat masuk, penawaran, bukti pembayaran) untuk PO Sertifikasi dilihat di modul Sertifikasi.</div>';
+        }
         h += dokKartus(j, mapKartu(p));
         var ada = buktiAda(), nFile = ada.length, nPilih = buktiDipilih().length;
         var tBukti = j.termin.length ? j.termin.map(function (t, i) { return dokTermin(t, i, buktiMode); }).join('') : '<div class="hm-tkosong">Belum ada bukti pembayaran yang diunggah untuk order ini.</div>';

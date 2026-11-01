@@ -509,6 +509,26 @@
 .rab-item-pt-cell { color: #92400e; font-size: .8rem; }
 .rab-item-pt-cell input { max-width: 190px; font-weight: 700; color: #92400e; border-color: #fcd34d; background: #fffbeb; }
 .rab-item-ptcb { width: 16px; height: 16px; accent-color: #d97706; cursor: pointer; }
+/* RAB Lingkungan: tabel rincian gaya spreadsheet (header tebal, input tanpa border, garis tipis antar baris) */
+.rab-item-wrap.rab-sheet-wrap { border: 0; border-radius: 0; background: transparent; }
+.rab-item-table.rab-sheet { border-collapse: collapse; font-size: 13px; min-width: 860px; }
+.rab-item-table.rab-sheet thead th { background: transparent; padding: 8px; border-bottom: 2px solid #1e293b; color: #64748b; font-size: .72rem; letter-spacing: .05em; }
+.rab-item-table.rab-sheet td { padding: 0; border-top: 0; border-bottom: 1px solid #e2e8f0; background: transparent; }
+.rab-item-table.rab-sheet td .form-control { width: 100%; height: auto; border: 0; border-radius: 0; background: transparent; padding: 11px 8px; font-size: .85rem; box-shadow: none; }
+.rab-item-table.rab-sheet td .form-control:hover { background: #f8fafc; }
+.rab-item-table.rab-sheet td .form-control:focus { background: #f1f5f9; box-shadow: inset 0 -2px 0 #1e293b; outline: 0; }
+.rab-item-table.rab-sheet td .input-group { flex-wrap: nowrap; align-items: center; }
+.rab-item-table.rab-sheet td .input-group-text { background: transparent; border: 0; color: #94a3b8; padding: 0 0 0 8px; font-size: .8rem; }
+.rab-item-table.rab-sheet td .input-group .form-control { text-align: right; font-variant-numeric: tabular-nums; padding-left: 4px; }
+.rab-item-table.rab-sheet td .rab-item-satuankata { color: #94a3b8; font-weight: 400; padding: 0 2px; }
+.rab-item-table.rab-sheet td:has(> .rab-item-total) { padding: 0 8px; background: #f8fafc; }
+.rab-item-table.rab-sheet .rab-item-total { font-family: inherit; font-variant-numeric: tabular-nums; font-weight: 700; font-size: .85rem; min-height: 42px; padding: 0; }
+.rab-item-table.rab-sheet .rab-item-row.rab-item-pt td { background: #f1f5f9; }
+.rab-item-table.rab-sheet .rab-item-pt-cell { color: #334155; }
+.rab-item-table.rab-sheet .rab-item-pt-cell input { max-width: 260px; font-weight: 700; color: #1e293b; border: 0; background: transparent; }
+.rab-item-table.rab-sheet .rab-item-ptcb { accent-color: #1e293b; }
+.rab-item-table.rab-sheet td .btn-outline-danger { color: #94a3b8; }
+.rab-item-table.rab-sheet td .btn-outline-danger:hover { color: #dc2626; background: transparent; }
 .rab-lembur-form { white-space: normal; }
 .rab-lembur-form .rab-lembur-inline { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .rab-lembur-form .form-control { width: 70px; display: inline-block; }
@@ -575,6 +595,38 @@
     margin-bottom: 1.25rem;
     box-shadow: 0 1px 3px rgba(0,0,0,0.02);
 }
+/* Jadwal bertahap: tab Tahap + pilihan periode + ringkasan */
+.jadwal-tahap-tabs { display: flex; gap: 4px; flex-wrap: wrap; align-items: flex-end; border-bottom: 1.5px solid #cbd5e1; margin-bottom: 0; padding: 0 4px; }
+.jadwal-tahap-tab {
+    border: 1px solid transparent; border-bottom: 0; background: transparent; color: #64748b;
+    font-weight: 700; font-size: 0.82rem; padding: 8px 16px; border-radius: 10px 10px 0 0; cursor: pointer;
+    max-width: 230px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; position: relative; top: 1.5px;
+}
+.jadwal-tahap-tab:hover { color: #1e293b; background: #f1f5f9; }
+.jadwal-tahap-tab.on { background: #ffffff; border-color: #cbd5e1; color: #1e293b; }
+.jadwal-tahap-tab.add { color: #1e293b; border: 1px dashed #94a3b8; border-bottom: 0; margin-left: 6px; }
+.jadwal-tahap-tabs + .tahap-block { border-top-left-radius: 0; border-top-right-radius: 0; border-top: 0; }
+.jadwal-periode-chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 2px 0 12px; }
+.jadwal-periode-chip {
+    border: 1px solid #cbd5e1; background: #ffffff; color: #1e293b; border-radius: 10px;
+    padding: 7px 12px; cursor: pointer; font-size: 0.76rem; text-align: left; line-height: 1.35;
+}
+.jadwal-periode-chip:hover { background: #f1f5f9; }
+.jadwal-periode-chip b { display: block; font-size: 0.82rem; }
+.jadwal-periode-chip span { color: #64748b; }
+.jadwal-periode-chip .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #94a3b8; margin-right: 6px; }
+.jadwal-periode-chip.has .dot { background: #1e293b; }
+.jadwal-periode-chip.on { background: #1e293b; border-color: #1e293b; color: #ffffff; }
+.jadwal-periode-chip.on span { color: #cbd5e1; }
+.jadwal-periode-chip.on .dot { background: #ffffff; }
+.jadwal-ringkasan { margin-top: 14px; border-top: 1px dashed #cbd5e1; padding-top: 12px; }
+.jadwal-ringkasan-title { font-size: 0.76rem; font-weight: 700; color: #475569; margin-bottom: 8px; }
+.jadwal-ringkasan-row { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
+.jadwal-ringkasan-nama { flex: 0 0 200px; font-size: 0.76rem; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.jadwal-strip { display: flex; gap: 1px; height: 12px; flex: 1; }
+.jadwal-strip i { flex: 1; background: #e2e8f0; border-radius: 1px; }
+.jadwal-strip i.on { background: #1e293b; }
+.jadwal-strip i.gap { margin-left: 6px; }
 .jadwal-chunk-header {
     background: #f8fafc;
     border: 1px solid #e2e8f0;
@@ -1983,7 +2035,9 @@ var divisiOrder = {{ json_encode(@order.jenis_layanan_opti ?: '') }};
 // [BARU] RAB berjenjang (Kegiatan -> Lokasi/Kelompok -> Item) dipakai buat lingkungan DAN
 // selulosa sekarang (mesinnya sama, selulosa cuma biasanya lebih dikit levelnya).
 var pakaiRabBaru = (divisiOrder === 'lingkungan' || divisiOrder === 'selulosa');
-var rabBertahap = (divisiOrder === 'selulosa');   // RAB Selulosa: bagian RAB muncul satu per satu (nama dulu, baru pilihan berikutnya)
+var rabBertahap = (divisiOrder === 'selulosa' || divisiOrder === 'lingkungan');   // RAB Selulosa dan Lingkungan: bagian RAB muncul satu per satu (nama dulu, baru pilihan berikutnya)
+var rabBatas = (divisiOrder === 'selulosa' || divisiOrder === 'lingkungan');   // penjaga batas: pengeluaran tidak boleh melebihi penerimaan (Selulosa & Lingkungan)
+var rabKatBatas = (divisiOrder === 'lingkungan');   // Lingkungan: subtotal kategori juga tidak boleh melebihi Target % kategori itu
 var rabLing = (divisiOrder === 'lingkungan');   // RAB Lingkungan: header tabel muncul setelah item ditambah + "Disediakan PT" per baris item
 // CATATAN: nama PT/mitra buat auto-isi "Disediakan oleh PT" pake namaPerusahaanDasar yang
 // udah didefinisikan di bagian "1. DASAR" (@order.nama_mitra, udah dibungkus decodeHtmlEntities
@@ -4353,37 +4407,56 @@ function rabLangkah() {
 // Ketikan / pilihan yang membuat total pengeluaran NAIK sampai melebihi penerimaan ditolak (nilai dikembalikan), lalu muncul peringatan.
 // Mengurangi nilai tetap boleh, dan data lama yang sudah melebihi tidak dipaksa berubah.
 var rabToastTimer = null;
-function rabPeringatan(pen, tot) {
+function rabBoxKategori(el) { return (el && el.closest) ? el.closest('#bodyKategori > div') : null; }
+function escHtmlRab(x) { return String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+function rabPeringatan(pen, tot, htmlKustom) {
     var t = document.getElementById('rabBatasToast');
     if (!t) { t = document.createElement('div'); t.id = 'rabBatasToast'; t.setAttribute('role', 'alert'); document.body.appendChild(t); }
-    t.innerHTML = '<b>&#9888; Total pengeluaran tidak boleh melebihi penerimaan (' + rupiah(pen) + ').</b> Yang masih bisa dialokasikan: ' + rupiah(Math.max(0, pen - tot)) + '.';
+    t.innerHTML = htmlKustom || ('<b>&#9888; Total pengeluaran tidak boleh melebihi penerimaan (' + rupiah(pen) + ').</b> Yang masih bisa dialokasikan: ' + rupiah(Math.max(0, pen - tot)) + '.');
     t.classList.remove('tampil'); void t.offsetWidth; t.classList.add('tampil');
     clearTimeout(rabToastTimer); rabToastTimer = setTimeout(function () { t.classList.remove('tampil'); }, 4500);
 }
 function rabJagaBatas(e) {
     // dipanggil SETELAH handler isian itu sendiri selesai (fase bubble), jadi total sudah dihitung dengan nilai baru
-    if (!rabBertahap || !e.isTrusted) return;
+    if (!rabBatas || !e.isTrusted) return;
     var el = e.target;
     if (!el || !el.closest || !el.closest('#bodyKategori')) return;
     var prev = (window.rabSnapSebelum !== undefined) ? window.rabSnapSebelum : (window.rabPengeluaranTerakhir || 0);
     hitungRabLive();
     var pen = window.rabPenerimaanTerakhir || 0, tot = window.rabPengeluaranTerakhir || 0;
-    if (pen > 0 && tot > pen + 0.5 && tot > prev + 0.5) {
+    var lewatTotal = (pen > 0 && tot > pen + 0.5 && tot > prev + 0.5);
+    // Lingkungan: subtotal kategori yang punya Target % tidak boleh naik melewati target (nominal = Target % x penerimaan)
+    var boxKat = (rabKatBatas && pen > 0) ? rabBoxKategori(el) : null, lewatKat = false;
+    if (boxKat && boxKat.dataset.rabTarget !== undefined && boxKat.dataset.rabTarget !== '') {
+        var katSub = parseFloat(boxKat.dataset.rabSub) || 0, katTarget = parseFloat(boxKat.dataset.rabTarget) || 0;
+        lewatKat = (katSub > katTarget + 0.5 && katSub > (window.rabSnapKatSub || 0) + 0.5);
+    }
+    if (lewatTotal || lewatKat) {
         if (el.type === 'checkbox') { el.checked = !el.checked; el.dispatchEvent(new Event('change', { bubbles: true })); }
         else if (el.dataset.rabLast !== undefined) { el.value = el.dataset.rabLast; el.dispatchEvent(new Event(el.tagName === 'SELECT' ? 'change' : 'input', { bubbles: true })); }
         hitungRabLive();
-        rabPeringatan(pen, window.rabPengeluaranTerakhir || 0);
+        if (lewatKat) {
+            var namaKat = boxKat.querySelector('input[name^="kat_nama["]'), tg = parseFloat(boxKat.dataset.rabTarget) || 0, sb = parseFloat(boxKat.dataset.rabSub) || 0;
+            var persenKat = boxKat.querySelector('input[name^="kat_persen_manual"]');
+            rabPeringatan(pen, 0, '<b>&#9888; Pengeluaran kategori ' + (namaKat && namaKat.value.trim() ? '"' + escHtmlRab(namaKat.value.trim()) + '" ' : '') + 'tidak boleh melebihi targetnya (' + (persenKat ? escHtmlRab(persenKat.value.trim()) : '') + (persenKat && /%/.test(persenKat.value) ? '' : '%') + ' = ' + rupiah(tg) + ').</b> Yang masih bisa dialokasikan: ' + rupiah(Math.max(0, tg - sb)) + '.');
+        } else {
+            rabPeringatan(pen, window.rabPengeluaranTerakhir || 0);
+        }
     } else if (el.type !== 'checkbox') {
         el.dataset.rabLast = el.value;
     }
 }
 document.addEventListener('focusin', function (e) {
     var el = e.target;
-    if (rabBertahap && el && el.closest && el.closest('#bodyKategori') && el.type !== 'checkbox') { el.dataset.rabLast = el.value; }
+    if (rabBatas && el && el.closest && el.closest('#bodyKategori') && el.type !== 'checkbox') { el.dataset.rabLast = el.value; }
 }, true);
 // fase capture: catat total SEBELUM handler isian jalan
 ['input', 'change'].forEach(function (ev) {
-    document.addEventListener(ev, function () { window.rabSnapSebelum = window.rabPengeluaranTerakhir || 0; }, true);
+    document.addEventListener(ev, function (e) {
+        window.rabSnapSebelum = window.rabPengeluaranTerakhir || 0;
+        var b = rabBoxKategori(e.target);   // subtotal kategori SEBELUM ketikan (dipakai penjaga Target % Lingkungan)
+        window.rabSnapKatSub = (b && b.dataset.rabSub !== undefined) ? (parseFloat(b.dataset.rabSub) || 0) : 0;
+    }, true);
     document.addEventListener(ev, rabJagaBatas, false);
 });
 
@@ -4879,21 +4952,21 @@ function renomorGrup(container) {
    Dipakai bareng buat "Item Langsung" (level Kegiatan) & "Item Biaya" (level Lokasi/Kelompok). */
 function buatTabelItemBiaya() {
     var wrap = document.createElement('div');
-    wrap.className = 'table-responsive rab-item-wrap mb-2';
+    wrap.className = 'table-responsive rab-item-wrap mb-2' + (rabLing ? ' rab-sheet-wrap' : '');
 
     var table = document.createElement('table');
-    table.className = 'table table-sm align-middle mb-0 rab-item-table';
+    table.className = 'table table-sm align-middle mb-0 rab-item-table' + (rabLing ? ' rab-sheet' : '');
 
     var thead = document.createElement('thead');
     thead.innerHTML =
         '<tr class="small text-muted align-middle">' +
         (rabLing ? '<th style="width:34px;" class="p-0 text-center" title="Disediakan PT">PT</th>' : '') +
         '<th class="text-start ps-2" style="min-width:140px;">Jenis Biaya</th>' +
-        '<th style="width:52px;">Kali</th>' +
+        '<th style="width:' + (rabLing ? '72' : '52') + 'px;">Kali</th>' +
         '<th style="width:28px;" class="p-0"></th>' +
         '<th style="width:56px;">Jumlah</th>' +
         '<th style="min-width:85px;">Satuan</th>' +
-        '<th style="width:52px;">Hari</th>' +
+        '<th style="width:' + (rabLing ? '72' : '52') + 'px;">Hari</th>' +
         '<th style="width:28px;" class="p-0"></th>' +
         '<th style="min-width:125px;">Harga Satuan</th>' +
         '<th style="min-width:110px;" class="text-end pe-2">Biaya</th>' +
@@ -4945,10 +5018,11 @@ function tambahItemBiaya(container, data) {
     }
 
     var inJenis = makeInput('text', data.jenis, 'Lumpsum/Transport/Hotel/dll', 'rab-item-jenis');
-    var inKali = makeInput('number', data.kali != null ? data.kali : 1, '1', 'rab-item-kali text-center');
+    // Lingkungan: kolom Kali kosong dulu (placeholder "berapa") biar kebaca "berapa kali"; Selulosa tetap default 1
+    var inKali = makeInput('number', data.kali != null ? data.kali : (rabLing ? '' : 1), rabLing ? 'berapa' : '1', 'rab-item-kali text-center');
     var inDim2 = makeInput('number', data.dim2, '-', 'rab-item-dim2 text-center');
     var inDim2Label = makeInput('text', data.dim2_label, 'orang/kamar', 'rab-item-dim2label');
-    var inHari = makeInput('number', data.hari, '-', 'rab-item-hari text-center');
+    var inHari = makeInput('number', data.hari, rabLing ? 'berapa' : '-', 'rab-item-hari text-center');
 
     var pasanganSatuan = buatPasanganNominal('', '0', data.satuan);
     pasanganSatuan.hidden.classList.add('rab-item-satuan');
@@ -5281,7 +5355,7 @@ function hitungNestedRab(katBox) {
         if (grupContainer) {
             grupContainer.querySelectorAll(':scope > .rab-grup-box').forEach(function (g) { subtotalKeg += hitungGrupBiaya(g); });
         }
-        var subEl = kegBox.querySelector(':scope > .rab-kegiatan-subtotal');
+        var subEl = kegBox.querySelector(':scope > .rab-kegiatan-subtotal') || (rabLing ? kegBox.querySelector(':scope > .d-flex .rab-kegiatan-subtotal') : null);   // Lingkungan: span subtotal ada di dalam baris pembungkus, bukan anak langsung
         if (subEl) subEl.textContent = rupiah(subtotalKeg);
         subtotalKat += subtotalKeg;
     });
@@ -5471,6 +5545,10 @@ function hitungRabLive() {
         var persenManualInput = box.querySelector('input[name^="kat_persen_manual"]');
         var persenManualStr = persenManualInput ? persenManualInput.value.trim().replace(/%/g, '') : '';
 
+        // simpan subtotal & target (Target % x penerimaan) per kategori buat penjaga batas Lingkungan
+        box.dataset.rabSub = String(subtotal);
+        box.dataset.rabTarget = (persenManualStr === '') ? '' : String(((parseFloat(persenManualStr.replace(',', '.')) || 0) / 100) * totalPenerimaan);
+
         if (persenEl) {
             if (persenManualStr !== '') {
                 persenEl.textContent = ' (' + persenManualStr + '%)';
@@ -5532,6 +5610,8 @@ function hitungRabLive() {
 var jadwalKolomCache = [];
 var jadwalBulanHeader = [];
 var groups = [{ nama_tahap: '', kegiatan: [] }];
+var jadwalTahapAktif = 0;     // tab Tahap yang sedang dibuka (hanya dipakai mode bertahap)
+var jadwalPeriodeAktif = 0;   // periode (Bagian) yang sedang dibuka
 
 function formatYmd(d) {
     var yyyy = d.getFullYear();
@@ -5800,10 +5880,12 @@ function isFlatMode() { return groups.length === 1 && groups[0].nama_tahap === '
 function tambahTahap() {
     if (isFlatMode()) {
         groups[0].nama_tahap = 'Tahap 1';
+        jadwalTahapAktif = 0;
         renderJadwal();
         return;
     }
     groups.push({ nama_tahap: 'Tahap ' + (groups.length + 1), kegiatan: [] });
+    jadwalTahapAktif = groups.length - 1;
     renderJadwal();
 }
 
@@ -5811,6 +5893,9 @@ function hapusTahap(gIdx) {
     groups.splice(gIdx, 1);
     if (groups.length === 0) groups.push({ nama_tahap: '', kegiatan: [] });
     if (groups.length === 1) groups[0].nama_tahap = '';
+    if (gIdx < jadwalTahapAktif) jadwalTahapAktif--;
+    if (jadwalTahapAktif >= groups.length) jadwalTahapAktif = groups.length - 1;
+    if (jadwalTahapAktif < 0) jadwalTahapAktif = 0;
     renderJadwal();
 }
 
@@ -5833,6 +5918,27 @@ function buatTheadChunkHtml(chunk) {
     return row1 + row2;
 }
 
+function buatTabTahapJadwal() {
+    var bar = document.createElement('div');
+    bar.className = 'jadwal-tahap-tabs';
+    groups.forEach(function (g, i) {
+        var t = document.createElement('button');
+        t.type = 'button';
+        t.className = 'jadwal-tahap-tab' + (i === jadwalTahapAktif ? ' on' : '');
+        t.textContent = g.nama_tahap || ('Tahap ' + (i + 1));
+        t.title = 'Tahap ' + (i + 1) + (g.nama_tahap ? ': ' + g.nama_tahap : '');
+        t.addEventListener('click', function () { jadwalTahapAktif = i; jadwalPeriodeAktif = 0; renderJadwal(); });
+        bar.appendChild(t);
+    });
+    var add = document.createElement('button');
+    add.type = 'button';
+    add.className = 'jadwal-tahap-tab add';
+    add.textContent = '+ Tahap';
+    add.addEventListener('click', function () { tambahTahap(); });
+    bar.appendChild(add);
+    return bar;
+}
+
 function renderJadwal() {
     var container = document.getElementById('jadwalContainer');
     if (!container) return;
@@ -5840,7 +5946,15 @@ function renderJadwal() {
 
     var chunks = getJadwalChunks(jadwalKolomCache, 16);
 
+    // Mode bertahap: Tahap jadi tab dan hanya satu periode tampil sekali waktu. Mode kegiatan langsung (tanpa tahap) tidak berubah.
+    var tabMode = !isFlatMode();
+    if (jadwalTahapAktif >= groups.length) jadwalTahapAktif = groups.length - 1;
+    if (jadwalTahapAktif < 0) jadwalTahapAktif = 0;
+    if (jadwalPeriodeAktif >= chunks.length) jadwalPeriodeAktif = Math.max(0, chunks.length - 1);
+    if (tabMode) container.appendChild(buatTabTahapJadwal());
+
     groups.forEach(function (group, gIdx) {
+        if (tabMode && gIdx !== jadwalTahapAktif) return;
         var block = document.createElement('div');
         block.className = isFlatMode() ? '' : 'tahap-block mb-3';
 
@@ -5885,8 +5999,25 @@ function renderJadwal() {
             emptyNotice.innerHTML = '<i class="bi bi-calendar-event me-1"></i> Silakan tentukan Tanggal Mulai dan Selesai jadwal di atas untuk menampilkan tabel.';
             block.appendChild(emptyNotice);
         } else {
+            if (tabMode && chunks.length > 1) {
+                var chips = document.createElement('div');
+                chips.className = 'jadwal-periode-chips';
+                chunks.forEach(function (ch, ci) {
+                    var ada = group.kegiatan.some(function (kg) {
+                        return (kg.tanda || []).some(function (key) { return ch.kolom.some(function (c) { return c.key === key; }); });
+                    });
+                    var chip = document.createElement('button');
+                    chip.type = 'button';
+                    chip.className = 'jadwal-periode-chip' + (ci === jadwalPeriodeAktif ? ' on' : '') + (ada ? ' has' : '');
+                    chip.innerHTML = '<b><span class="dot"></span>' + escHtmlRab(ch.label) + '</b><span>' + ch.kolom.length + ' kolom &middot; ' + (ada ? 'ada jadwal' : 'kosong') + '</span>';
+                    chip.addEventListener('click', function () { jadwalPeriodeAktif = ci; renderJadwal(); });
+                    chips.appendChild(chip);
+                });
+                block.appendChild(chips);
+            }
             chunks.forEach(function (chunk, cIdx) {
-                if (chunks.length > 1) {
+                if (tabMode && cIdx !== jadwalPeriodeAktif) return;
+                if (chunks.length > 1 && !tabMode) {
                     var chunkHead = document.createElement('div');
                     chunkHead.className = 'jadwal-chunk-header';
                     chunkHead.innerHTML = '<div class="fw-bold small text-dark"><i class="bi bi-calendar-range text-primary me-1.5"></i> Bagian ' + (cIdx + 1) + ': ' + chunk.label + '</div>' +
@@ -6019,6 +6150,25 @@ function renderJadwal() {
                 tableWrap.appendChild(table);
                 block.appendChild(tableWrap);
             });
+
+            // Ringkasan seluruh periode (hanya mode bertahap dan jadwal terbagi beberapa periode)
+            if (tabMode && chunks.length > 1 && group.kegiatan.length > 0) {
+                var awalPeriode = {}, urut = 0;
+                chunks.forEach(function (ch) { awalPeriode[urut] = true; urut += ch.kolom.length; });
+                var mini = document.createElement('div');
+                mini.className = 'jadwal-ringkasan';
+                var miniHtml = '<div class="jadwal-ringkasan-title">Ringkasan seluruh jadwal tahap ini</div>';
+                group.kegiatan.forEach(function (kg) {
+                    miniHtml += '<div class="jadwal-ringkasan-row"><div class="jadwal-ringkasan-nama">' + escHtmlRab(kg.nama || '(belum diberi nama)') + '</div><div class="jadwal-strip">';
+                    jadwalKolomCache.forEach(function (c, ci) {
+                        var on = (kg.tanda || []).indexOf(c.key) !== -1;
+                        miniHtml += '<i class="' + (on ? 'on' : '') + (ci > 0 && awalPeriode[ci] ? ' gap' : '') + '"></i>';
+                    });
+                    miniHtml += '</div></div>';
+                });
+                mini.innerHTML = miniHtml;
+                block.appendChild(mini);
+            }
         }
 
         container.appendChild(block);
@@ -6050,8 +6200,11 @@ var dragTahapIdx = null;
 var dragKegiatanIdx = null;
 var dragTargetValue = null;
 document.addEventListener('mouseup', function () {
+    var tadiDrag = isDraggingJadwal;
     isDraggingJadwal = false;
     document.body.classList.remove('jadwal-dragging');
+    // selesai mencentang: segarkan penanda periode dan ringkasan (mode bertahap)
+    if (tadiDrag && !isFlatMode()) renderJadwal();
 });
 /* ============================================================ */
 /* INIT (dijalankan setelah seluruh HTML siap)                   */

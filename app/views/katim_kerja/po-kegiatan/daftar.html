@@ -704,7 +704,12 @@
         function tglSingkat(s) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s || ''); return m ? (+m[3]) + ' ' + BULAN[+m[2] - 1] + ' ' + m[1] : '-'; }
         function rp(n) { return 'Rp ' + Math.round(parseFloat(n) || 0).toLocaleString('id-ID'); }
         function initials(n) { return String(n).split(' ').map(function (x) { return x.charAt(0); }).slice(0, 2).join('').toUpperCase(); }
-        function first(n) { return String(n).split(' ')[0]; }
+        function namaRingkas(n) {
+            /* 2 kata pertama + inisial sisa nama: "essy mama soleh" -> "essy mama S." */
+            var k = String(n || '').trim().split(/\s+/).filter(Boolean);
+            if (k.length <= 2) return k.join(' ');
+            return k.slice(0, 2).join(' ') + ' ' + k.slice(2).map(function (x) { return x.charAt(0).toUpperCase() + '.'; }).join('');
+        }
         function lawanLabel() { return ROLE === 'katim' ? 'Ketua Pelaksana' : 'Ketua Tim'; }
     
         /* ---------- Jejak kirim dan baca ---------- */
@@ -1095,7 +1100,7 @@
                 ((SOLO || ROLE === 'pembuat') ? '' : '<button type="button" class="rvw-shtab' + (shTab === 'alur' ? ' on' : '') + '" data-shtab="alur">Alur</button>');   // di detail order (SOLO) riwayat alur sudah ada di halaman detail
         }
         function renderBanner(p) {
-            var op = cnt('terbuka'), pm = first(p.pembuat), km = first(p.katim), h;
+            var op = cnt('terbuka'), pm = namaRingkas(p.pembuat), km = namaRingkas(p.katim), h;
             if (LIHAT) { h = ['info', 'bi-eye', 'Tampilan lihat saja. Status PO: <b>' + esc(posisi(p).teks) + '</b>.']; }
             else if (ROLE === 'katim') {
                 if (p.status === 'menunggu_review') { h = ['info', 'bi-info-circle', 'Beri catatan pada bagian yang perlu diperbaiki. Catatan berstatus <b>draf</b> sampai Anda menekan <b>Minta revisi</b>. Anda dapat mengubah PO, dengan menekan <b>Edit PO</b>. Jika sudah sesuai, tekan tombol <b>Setujui</b>.']; }
@@ -1124,7 +1129,7 @@
                     btns = '<button type="button" class="rvw-btn" data-act="edit"><i class="bi bi-pencil"></i>Edit PO</button>' +
                            '<button type="button" class="rvw-btn" data-act="minta"' + (tot ? '' : ' disabled') + '><i class="bi bi-send"></i>Minta revisi' + (tot ? ' (' + tot + ')' : '') + '</button>' +
                            '<button type="button" class="rvw-btn pri" data-act="setujui"' + (tot ? ' disabled' : '') + '><i class="bi bi-check2-circle"></i>Setujui</button>';
-                } else if (p.status === 'perlu_revisi') { hint = 'Menunggu ' + first(p.pembuat) + ' memperbaiki ' + op + ' catatan.'; }
+                } else if (p.status === 'perlu_revisi') { hint = 'Menunggu ' + namaRingkas(p.pembuat) + ' memperbaiki ' + op + ' catatan.'; }
                 else if (p.ppk_status) { hint = 'Sedang direvisi atas permintaan PPK BLU.'; btns = '<a class="rvw-btn pri" href="' + BASE + '/po-revisi-ppk"><i class="bi bi-clipboard2-check"></i>Buka Revisi PPK BLU</a>'; }
                 else if (p.mitra_valid_at || p.ppk_valid_at) { hint = 'Disetujui pada ' + fmt(p.disetujui_at) + '. PO sudah diverifikasi Tim Mitra, jadi tidak bisa dibuka kembali.'; }
                 else { hint = 'Disetujui pada ' + fmt(p.disetujui_at) + '.'; btns = '<button type="button" class="rvw-btn" data-act="bukakembali"><i class="bi bi-unlock"></i>Buka kembali</button>'; }
@@ -1134,7 +1139,7 @@
                        '<button type="button" class="rvw-btn pri" data-act="kirimrevisi"' + (op ? ' disabled' : '') + '><i class="bi bi-send"></i>Kirim revisi</button>';
             } else if (p.status === 'disetujui' && p.ppk_status === 'ketupel_kerja') { hint = 'Revisi PPK BLU didisposisikan kepada Anda.'; btns = '<a class="rvw-btn pri" href="' + BASE + '/po-revisi-ppk"><i class="bi bi-clipboard2-check"></i>Buka Revisi PPK BLU</a>'; }
             else if (p.status === 'disetujui') { hint = p.ppk_status ? 'PO sedang direvisi atas permintaan PPK BLU.' : 'PO terkunci. Tidak ada tindakan yang diperlukan.'; }
-            else { hint = 'Menunggu review ' + first(p.katim) + '.'; }
+            else { hint = 'Menunggu review ' + namaRingkas(p.katim) + '.'; }
             $('rvwDock').innerHTML = '<div class="hintline">' + esc(hint) + '</div><div class="acts">' + btns + '</div>';
         }
     
@@ -1292,7 +1297,7 @@
         function gagal(e) { toast(e.message, true); muatUlangDetail(); }
         function doAct(act) {
             var p = curPo(); if (!p || !detail) { return; }
-            var pm = first(p.pembuat), km = first(p.katim), id = p.id;
+            var pm = namaRingkas(p.pembuat), km = namaRingkas(p.katim), id = p.id;
             if (act === 'edit') {
                 if (SOLO) { minta_induk('edit', document.querySelector('[data-act="edit"]')); return; }   // dibuka dari detail order: form edit tampil di Tahap 8
                 window.location.href = URL_PO(id) + '/edit?dari=daftar'; return;

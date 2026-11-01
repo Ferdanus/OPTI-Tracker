@@ -352,6 +352,8 @@ class PoIndexController extends PoSertifikasiController {
         $dasar = "p.layanan IS NOT NULL AND p.layanan NOT LIKE 'opti-%'";
         $dasarParams = [];
         if ($layanan !== '') { $dasar .= " AND p.layanan = ?"; $dasarParams[] = $layanan; }
+        // PO Sertifikasi ditangani ambilSertifikasiUi() (tab, posisi, dan aksi seperti PO OPTI)
+        if ($this->lewatiSertifikasi) { $dasar .= " AND p.layanan <> '" . \PoSchema::SERTIFIKASI . "'"; }
 
         $stEf = "(CASE WHEN p.validasi_keuangan_at IS NOT NULL OR p.status = 'disetujui' THEN 'disetujui' ELSE p.status END)";
         $daftarStatus = ['draft', 'terkirim', 'disetujui_mitra', 'disetujui'];
@@ -436,6 +438,248 @@ class PoIndexController extends PoSertifikasiController {
                 error_log('[PO Gabungan] gagal membaca daftar PO layanan: ' . $e->getMessage());
                 $hasil['total'] = 0; $hasil['rows'] = [];
             }
+        }
+        return $hasil;
+    }
+
+    /**
+     * [BARU] true = ambilGabungan() melewati PO Sertifikasi. PO Sertifikasi ditangani ambilSertifikasiUi(), yang memakai
+     * aturan tab, kolom Posisi PO, dan tombol Review yang sama dengan PO OPTI (alur: Tim Kerja -> Ketua Tim -> Humas -> Tim Mitra -> PPK BLU).
+     */
+    public $lewatiSertifikasi = false;
+
+    /**
+     * [BARU] Data PO Sertifikasi untuk Daftar PO (/po-kegiatan), dengan tab yang sama seperti PO OPTI:
+     *   draft | tindakan (menunggu review Ketua Tim) | revisi (diminta revisi, dikerjakan Tim Kerja) | berjalan | disetujui (PO Aktif).
+     * Opsi $o: tab, q, bulan, tahun, limit, semuaPerTab [tab => bool: filter bulan dimatikan], peran ('superadmin' | 'katim' | 'tim' | 'lain'),
+     *          sembunyiDraft (bool), posisi / jenis / tindak (filter tambahan seperti PO OPTI).
+     * Return: ['total' => int, 'rows' => [], 'counts' => [tab => int] (ikut pencarian & bulan), 'counts_semua' => [tab => int], 'peringatan' => ''].
+     */
+    public function ambilSertifikasiUi(array $o) {
+        $tabs = ['draft', 'tindakan', 'revisi', 'berjalan', 'disetujui'];
+        $nol = array_fill_keys($tabs, 0);
+        $hasil = ['total' => 0, 'rows' => [], 'counts' => $nol, 'counts_semua' => $nol, 'peringatan' => '', 'total_semua' => 0];
+        $tab = isset($o['tab']) ? (string) $o['tab'] : 'berjalan';
+        $q = isset($o['q']) ? (string) $o['q'] : '';
+        $bulan = isset($o['bulan']) ? (int) $o['bulan'] : (int) date('n');
+        $tahun = isset($o['tahun']) ? (int) $o['tahun'] : (int) date('Y');
+        $limit = isset($o['limit']) ? max(1, (int) $o['limit']) : 5;
+        $semuaPerTab = (isset($o['semuaPerTab']) && is_array($o['semuaPerTab'])) ? $o['semuaPerTab'] : [];
+        $peran = isset($o['peran']) ? (string) $o['peran'] : 'lain';
+        $sembunyiDraft = !empty($o['sembunyiDraft']);
+        $f3 = \Base::instance();
+
+        try { $this->kendalaSkema(); } catch (\Throwable $e) { error_log('[PO Sertifikasi UI] ' . $e->getMessage()); }
+        $kolom = [];
+        try {
+            foreach ($this->db->exec('SHOW COLUMNS FROM po_kegiatan') as $c) { $kolom[strtolower((string) $c['Field'])] = true; }
+        } catch (\Throwable $e) { return $hasil; }
+        if (empty($kolom['layanan'])) { return $hasil; }
+
+        $sr = isset($kolom['status_review']) ? "COALESCE(p.status_review, '')" : "''";
+        $stEf = isset($kolom['validasi_keuangan_at'])
+            ? "(CASE WHEN p.validasi_keuangan_at IS NOT NULL OR p.status = 'disetujui' THEN 'disetujui' ELSE p.status END)"
+            : "p.status";
+        $kRevisi = "({$sr} = 'perlu_revisi')";
+        $kTindakan = "({$stEf} = 'terkirim' AND {$sr} NOT IN ('disetujui', 'perlu_revisi'))";
+        $kBerjalan = "{$stEf} IN ('terkirim', 'disetujui_mitra')";
+        $cond = [
+            'draft'     => "{$stEf} = 'draft'",
+            'tindakan'  => $kTindakan,
+            'revisi'    => "{$stEf} = 'terkirim' AND {$kRevisi}",
+            'berjalan'  => $kBerjalan,
+            'disetujui' => "{$stEf} = 'disetujui'",
+        ];
+        if ($peran === 'katim') {
+            $cond['draft'] = '1 = 0'; $cond['revisi'] = '1 = 0';
+            $cond['berjalan'] = "({$kBerjalan}) AND NOT {$kTindakan}";     // yang menunggu Ketua Tim hanya tampil di Perlu Tindakan
+        } elseif ($peran === 'tim') {
+            $cond['tindakan'] = '1 = 0';
+            $cond['berjalan'] = "({$kBerjalan}) AND NOT {$kRevisi}";       // yang harus direvisi Tim Kerja hanya tampil di Revisi
+        } elseif ($peran === 'lain') {
+            $cond['tindakan'] = '1 = 0'; $cond['revisi'] = '1 = 0';
+        }
+        if ($sembunyiDraft) { $cond['draft'] = '1 = 0'; }
+
+        $tglDraft = "COALESCE(p.updated_at, p.created_at)";
+        $kolomTanggal = [
+            'draft' => $tglDraft, 'tindakan' => $tglDraft, 'revisi' => $tglDraft, 'berjalan' => $tglDraft,
+            'disetujui' => isset($kolom['validasi_keuangan_at']) ? "COALESCE(p.validasi_keuangan_at, p.updated_at, p.created_at)" : $tglDraft,
+        ];
+        $tabValid = isset($cond[$tab]);   // tab "PO Masuk" hanya untuk order OPTI: tanpa baris
+        if (!$tabValid) { $tab = 'berjalan'; }
+        $semuaUntuk = function ($t) use ($semuaPerTab) { return array_key_exists($t, $semuaPerTab) ? (bool) $semuaPerTab[$t] : false; };
+
+        // filter tambahan per tab (sama seperti PO OPTI): posisi, jenis revisi, jenis tindakan
+        $adaHumas = isset($kolom['verifikasi_humas_at']);
+        $kPosisi = [
+            'review' => "{$sr} NOT IN ('disetujui', 'perlu_revisi')",
+            'revisi' => $kRevisi,
+            'humas'  => "{$sr} = 'disetujui' AND p.tervalidasi_mitra_at IS NULL" . ($adaHumas ? " AND p.verifikasi_humas_at IS NULL" : "") . " AND NOT {$kRevisi}",
+            'mitra'  => $adaHumas ? "{$sr} = 'disetujui' AND p.tervalidasi_mitra_at IS NULL AND p.verifikasi_humas_at IS NOT NULL AND NOT {$kRevisi}" : '1 = 0',
+            'ppk'    => "{$sr} = 'disetujui' AND p.tervalidasi_mitra_at IS NOT NULL AND NOT {$kRevisi}",
+        ];
+        $kJenis = ['katim' => $kRevisi, 'ppk' => '1 = 0'];
+        $kTindak = [
+            'baru'   => "{$sr} NOT IN ('disetujui', 'perlu_revisi', 'direvisi')",
+            'revisi' => "{$sr} = 'direvisi'",
+            'ppk'    => '1 = 0',
+        ];
+        $tambahan = '';
+        $fp = isset($o['posisi']) ? (string) $o['posisi'] : ''; if ($fp !== '' && isset($kPosisi[$fp])) { $tambahan .= " AND ({$kPosisi[$fp]})"; }
+        $fj = isset($o['jenis']) ? (string) $o['jenis'] : '';   if ($fj !== '' && isset($kJenis[$fj])) { $tambahan .= " AND ({$kJenis[$fj]})"; }
+        $ft = isset($o['tindak']) ? (string) $o['tindak'] : ''; if ($ft !== '' && isset($kTindak[$ft])) { $tambahan .= " AND ({$kTindak[$ft]})"; }
+
+        $dasar = "p.layanan = ?";
+        $dasarParams = [\PoSchema::SERTIFIKASI];
+        $whereQ = $dasar; $paramsQ = $dasarParams;
+        if ($q !== '') {
+            $like = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $q) . '%';
+            $whereQ .= " AND (p.nomor_po LIKE ? OR p.judul_kegiatan LIKE ? OR a.nomor_order LIKE ? OR a.no_id_order LIKE ? OR c.nmcustomer LIKE ? OR p.nama_perusahaan LIKE ?)";
+            for ($k = 0; $k < 6; $k++) { $paramsQ[] = $like; }
+        }
+
+        // angka tiap tab tanpa pencarian & bulan (kartu ringkasan)
+        try {
+            $sel = [];
+            foreach ($tabs as $t) { $sel[] = "SUM(CASE WHEN {$cond[$t]} THEN 1 ELSE 0 END) AS {$t}"; }
+            $rc = $this->db->exec("SELECT " . implode(', ', $sel) . ", COUNT(*) AS total_semua FROM po_kegiatan p WHERE {$dasar}", $this->indeks($dasarParams));
+            foreach ($tabs as $t) { $hasil['counts_semua'][$t] = (int) (isset($rc[0][$t]) ? $rc[0][$t] : 0); }
+            $hasil['total_semua'] = (int) (isset($rc[0]['total_semua']) ? $rc[0]['total_semua'] : 0);
+        } catch (\Throwable $e) {
+            error_log('[PO Sertifikasi UI] gagal menghitung status: ' . $e->getMessage());
+        }
+        $hasil['counts'] = $hasil['counts_semua'];
+
+        $dbName = $this->namaDbSertifikasi();
+        $this->ensureDatabaseSertifikasi();
+        $from = "FROM po_kegiatan p
+                 LEFT JOIN `{$dbName}`.`tb_arsip_sertifikasi` a ON a.id_arsip_sertifikasi = p.order_id
+                 LEFT JOIN tb_customer c ON c.id_customer = a.id_customer";
+        $fromTanpaOrder = "FROM po_kegiatan p
+                 LEFT JOIN (SELECT NULL AS id_customer, NULL AS nomor_order, NULL AS no_id_order, NULL AS total_nilai_kontrak, NULL AS total_bayar_kontrak) a ON 1 = 0
+                 LEFT JOIN tb_customer c ON c.id_customer = a.id_customer";
+
+        $selF = [];
+        foreach ($tabs as $t) {
+            $c = $cond[$t];
+            if (!$semuaUntuk($t)) { $c .= " AND {$kolomTanggal[$t]} IS NOT NULL AND MONTH({$kolomTanggal[$t]}) = " . (int) $bulan . " AND YEAR({$kolomTanggal[$t]}) = " . (int) $tahun; }
+            $selF[] = "SUM(CASE WHEN {$c} THEN 1 ELSE 0 END) AS {$t}";
+        }
+        $where = $whereQ . " AND ({$cond[$tab]}){$tambahan}";
+        $params = $paramsQ;
+        if (!$semuaUntuk($tab)) {
+            $where .= " AND {$kolomTanggal[$tab]} IS NOT NULL AND MONTH({$kolomTanggal[$tab]}) = ? AND YEAR({$kolomTanggal[$tab]}) = ?";
+            $params[] = $bulan; $params[] = $tahun;
+        }
+
+        $rows = [];
+        foreach ([$from, $fromTanpaOrder] as $idx => $fromSql) {
+            try {
+                $rf = $this->db->exec("SELECT " . implode(', ', $selF) . " {$fromSql} WHERE {$whereQ}", $this->indeks($paramsQ));
+                foreach ($tabs as $t) { $hasil['counts'][$t] = (int) (isset($rf[0][$t]) ? $rf[0][$t] : 0); }
+                if (!$tabValid) { break; }
+                $res = $this->db->exec("SELECT COUNT(*) AS c {$fromSql} WHERE {$where}", $this->indeks($params));
+                $hasil['total'] = (int) (isset($res[0]['c']) ? $res[0]['c'] : 0);
+                $rows = $this->db->exec(
+                    "SELECT p.*, a.nomor_order AS a_nomor_order, a.no_id_order AS a_no_id_order, a.total_nilai_kontrak AS a_nilai, a.total_bayar_kontrak AS a_bayar,
+                            c.nmcustomer AS c_nama, c.pt_cv AS c_ptcv, {$stEf} AS status_efektif, {$kolomTanggal[$tab]} AS sort_ts
+                     {$fromSql}
+                     WHERE {$where}
+                     ORDER BY {$kolomTanggal[$tab]} DESC, p.id DESC
+                     LIMIT " . $limit,
+                    $this->indeks($params)
+                );
+                if ($idx === 1) { $hasil['peringatan'] = 'Database ' . $dbName . ' tidak terbaca, kolom No. Order & Mitra PO Sertifikasi dikosongkan.'; }
+                break;
+            } catch (\Throwable $e) {
+                error_log('[PO Sertifikasi UI] gagal membaca daftar: ' . $e->getMessage());
+                $hasil['total'] = 0; $rows = [];
+            }
+        }
+        if (empty($rows)) { return $hasil; }
+
+        // nama pembuat PO (Tim Kerja)
+        $idUser = [];
+        foreach ($rows as $r) { $idUser[] = (int) ($r['created_by'] ?? 0); }
+        $namaUser = $this->namaUserSert($idUser);
+
+        $semuaLayanan = $this->daftarLayanan();
+        $siap = [];
+        foreach ($rows as $r) {
+            $r['layanan'] = \PoSchema::SERTIFIKASI;
+            $r['nomor_order'] = $r['a_nomor_order'];
+            $r['no_id_order'] = $r['a_no_id_order'];
+            $r['total_nilai_kontrak'] = $r['a_nilai'];
+            $r['total_bayar_kontrak'] = $r['a_bayar'];
+            $r['nmcustomer'] = $r['c_nama'];
+            $r['pt_cv'] = $r['c_ptcv'];
+            $r['status'] = $r['status_efektif'];
+            $siap[] = $r;
+        }
+        $peta = $this->petakanBarisDaftar($siap, 0, $semuaLayanan, $f3);
+
+        $adaWaktu = function ($v) { $v = trim((string) $v); return $v !== '' && strpos($v, '0000') !== 0 && strtotime($v); };
+        $blnId = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+        $punyaAksi = in_array($peran, ['superadmin', 'katim', 'tim'], true);
+        foreach ($peta as $i => $b) {
+            $r = $siap[$i];
+            $st = (string) $r['status_efektif'];
+            $srv = (string) ($r['status_review'] ?? '');
+            if (in_array($st, ['disetujui_mitra', 'disetujui'], true) && $srv !== 'disetujui') { $srv = 'disetujui'; }   // PO lama (sebelum ada alur review) dianggap sudah lewat review
+
+            $b['sort_ts'] = (string) $r['sort_ts'];
+            $b['status'] = $st;
+            $b['status_review'] = $srv;
+            $b['nama_pembuat'] = isset($namaUser[(int) ($r['created_by'] ?? 0)]) ? $namaUser[(int) $r['created_by']] : '';
+            $b['dibuat_beda'] = '';
+            $b['tanggal_po'] = ($st === 'draft') ? $b['tanggal_po'] : 'Dibuat ' . ($adaWaktu($r['tanggal_po'] ?? '') ? date('d/m/Y', strtotime((string) $r['tanggal_po'])) : date('d/m/Y', strtotime((string) $r['created_at'])));
+            $kirim = !empty($r['dikirim_at']) ? $r['dikirim_at'] : ($r['tanggal_dikirim'] ?? '');
+            $b['po_dikirim_at'] = ($st !== 'draft' && $adaWaktu($kirim)) ? (string) $kirim : '';
+            $b['hanya_lihat'] = ($peran === 'lain');
+
+            // ---- posisi PO di rantai Tim Kerja -> Ketua Tim -> Humas -> Tim Mitra -> PPK BLU -> PO Aktif ----
+            $pos = ['po_revisi' => false, 'posisi_teks' => '', 'posisi_pemegang' => '', 'posisi_kelas' => '', 'panel_jenis' => '', 'panel_label' => '',
+                    'belum_dibaca' => false, 'baca_teks' => '', 'baca_status' => '', 'aksi_mode' => 'modal'];
+            if (in_array($st, ['terkirim', 'disetujui_mitra', 'disetujui'], true)) {
+                $b2 = null;   // [kolom jejak baca, penerima, kolom waktu masuk]
+                $pemegang = '';
+                if ($srv === 'disetujui') {
+                    if ($adaWaktu($r['validasi_keuangan_at'] ?? '')) { $pos['posisi_teks'] = 'PO Aktif'; $pos['posisi_pemegang'] = 'Pengerjaan lab dimulai'; $pos['posisi_kelas'] = 'emerald'; }
+                    elseif ($adaWaktu($r['tervalidasi_mitra_at'] ?? '')) { $pos['posisi_teks'] = 'Verifikasi PPK BLU'; $pos['posisi_pemegang'] = 'PPK BLU'; $pos['posisi_kelas'] = 'blue'; $b2 = ['ppk_dibaca_at', 'PPK BLU', 'tervalidasi_mitra_at']; }
+                    elseif ($adaWaktu($r['verifikasi_humas_at'] ?? '')) { $pos['posisi_teks'] = 'Verifikasi Tim Mitra'; $pos['posisi_pemegang'] = 'Tim Mitra'; $pos['posisi_kelas'] = 'blue'; $b2 = ['mitra_dibaca_at', 'Tim Mitra', 'verifikasi_humas_at']; }
+                    else { $pos['posisi_teks'] = 'Verifikasi Humas'; $pos['posisi_pemegang'] = 'Humas'; $pos['posisi_kelas'] = 'blue'; $b2 = ['humas_dibaca_at', 'Humas', 'disposisi_humas_at']; }
+                } elseif ($srv === 'perlu_revisi') {
+                    $pos = array_merge($pos, ['po_revisi' => true, 'posisi_teks' => 'Perlu revisi PO', 'posisi_pemegang' => 'Tim Kerja', 'posisi_kelas' => 'rose', 'panel_label' => 'Buka']);
+                    $pemegang = 'tim'; $b2 = ['minta_dibaca_at', 'Tim Kerja', ''];
+                } elseif ($srv === 'direvisi') {
+                    $pos = array_merge($pos, ['posisi_teks' => 'Revisi menunggu review', 'posisi_pemegang' => 'Ketua Tim', 'posisi_kelas' => 'amber', 'panel_label' => 'Review']);
+                    $pemegang = 'katim'; $b2 = ['revisi_dibaca_at', 'Ketua Tim', ''];
+                } else {
+                    $pos = array_merge($pos, ['posisi_teks' => 'Review Ketua Tim', 'posisi_pemegang' => 'Ketua Tim', 'posisi_kelas' => 'amber', 'panel_label' => 'Review']);
+                    $pemegang = 'katim'; $b2 = ['reviewed_at', 'Ketua Tim', ''];
+                }
+                // tombol Review / Buka hanya untuk pemegang PO (Superadmin boleh keduanya)
+                $bisa = $pemegang !== '' && ($peran === 'superadmin' || $peran === $pemegang);
+                if ($bisa) { $pos['panel_jenis'] = 'sert'; }
+                // keterangan "dibuka / belum dibuka" penerima di langkah yang sedang berjalan
+                if ($b2 !== null && $pos['posisi_teks'] !== 'PO Aktif') {
+                    $tb = trim((string) ($r[$b2[0]] ?? ''));
+                    if ($tb !== '' && (!$adaWaktu($tb))) { $tb = ''; }
+                    if ($tb !== '' && $b2[2] !== '' && $adaWaktu($r[$b2[2]] ?? '') && strtotime($tb) < strtotime((string) $r[$b2[2]])) { $tb = ''; }
+                    $pos['baca_status'] = ($tb === '') ? 'belum' : 'sudah';
+                    $pos['baca_teks'] = ($tb === '') ? 'Belum dibuka ' . $b2[1] : 'Dibuka ' . (int) date('j', strtotime($tb)) . ' ' . $blnId[(int) date('n', strtotime($tb))] . ' ' . date('Y H:i', strtotime($tb));
+                    // baris ditebalkan bagi penerimanya sendiri selama belum dibuka (Superadmin hanya melihat, tidak mencatat baca)
+                    $pos['belum_dibaca'] = $bisa && $peran !== 'superadmin' && $tb === '';
+                }
+            }
+            $bisaLihat = $punyaAksi && in_array($st, ['terkirim', 'disetujui_mitra', 'disetujui'], true) && ($st === 'terkirim' || $srv === 'disetujui');
+            if ($pos['panel_jenis'] !== '' && !in_array($tab, ['berjalan', 'disetujui'], true)) { $pos['aksi_mode'] = 'review'; }
+            elseif ($bisaLihat) { $pos['aksi_mode'] = 'lihat'; }
+            else { $pos['aksi_mode'] = 'modal'; }
+            if ($peran === 'lain') { $pos['panel_jenis'] = ''; $pos['belum_dibaca'] = false; $pos['aksi_mode'] = 'modal'; }
+
+            $hasil['rows'][] = array_merge($b, $pos);
         }
         return $hasil;
     }

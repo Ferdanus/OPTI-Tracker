@@ -799,7 +799,12 @@
         function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
         function fmt(t) { var m = /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}))?/.exec(t || ''); if (!m) { return '-'; } return (+m[3]) + ' ' + BULAN[+m[2] - 1] + ' ' + m[1] + (m[4] ? ' ' + m[4] + ':' + m[5] : ''); }
         function initials(n) { return String(n).split(' ').map(function (x) { return x.charAt(0); }).slice(0, 2).join('').toUpperCase(); }
-        function first(n) { return String(n).split(' ')[0]; }
+        function namaRingkas(n) {
+            /* 2 kata pertama + inisial sisa nama: "essy mama soleh" -> "essy mama S." */
+            var k = String(n || '').trim().split(/\s+/).filter(Boolean);
+            if (k.length <= 2) return k.join(' ');
+            return k.slice(0, 2).join(' ') + ' ' + k.slice(2).map(function (x) { return x.charAt(0).toUpperCase() + '.'; }).join('');
+        }
         function PO_URL(id) { return BASE + '/po-kegiatan/' + id; }
         /* PDF dibuat di server (GET /po-kegiatan/@id/unduh). Selama PO belum disetujui PPK BLU, PDF diberi watermark DRAFT. */
         function unduhPo() {
@@ -941,10 +946,10 @@
         function posisiRinci(p) {
             switch (p.state) {
                 case 'ppk_cek': return { key: 'ppk', teks: p.ronde > 0 ? 'Verifikasi ulang PPK BLU' : 'Verifikasi PPK BLU', oleh: 'PPK BLU', cls: 'blue', baca: p.dibaca_at, nama: 'PPK BLU', extra: p.ronde > 0 ? 'Putaran PPK BLU ke-' + p.ronde : '' };
-                case 'ppk_minta': return { key: 'katim', teks: 'PPK BLU meminta revisi', oleh: 'Ketua Tim &middot; ' + esc(first(p.katim)), cls: 'rose' };
-                case 'katim_kerja': return { key: 'katim', teks: 'Revisi PPK BLU dikerjakan', oleh: 'Ketua Tim &middot; ' + esc(first(p.katim)), cls: 'rose' };
-                case 'ketupel_kerja': return { key: 'ketupel', teks: 'Revisi PPK BLU dikerjakan', oleh: 'Ketua Pelaksana &middot; ' + esc(first(p.pembuat)), cls: 'rose' };
-                case 'katim_review': return { key: 'katim', teks: 'Review hasil revisi PPK BLU', oleh: 'Ketua Tim &middot; ' + esc(first(p.katim)), cls: 'rose' };
+                case 'ppk_minta': return { key: 'katim', teks: 'PPK BLU meminta revisi', oleh: 'Ketua Tim &middot; ' + esc(namaRingkas(p.katim)), cls: 'rose' };
+                case 'katim_kerja': return { key: 'katim', teks: 'Revisi PPK BLU dikerjakan', oleh: 'Ketua Tim &middot; ' + esc(namaRingkas(p.katim)), cls: 'rose' };
+                case 'ketupel_kerja': return { key: 'ketupel', teks: 'Revisi PPK BLU dikerjakan', oleh: 'Ketua Pelaksana &middot; ' + esc(namaRingkas(p.pembuat)), cls: 'rose' };
+                case 'katim_review': return { key: 'katim', teks: 'Review hasil revisi PPK BLU', oleh: 'Ketua Tim &middot; ' + esc(namaRingkas(p.katim)), cls: 'rose' };
             }
             return { key: 'aktif', teks: 'PO Aktif', oleh: 'Pengerjaan lab dimulai', cls: 'emerald' };
         }
@@ -1175,7 +1180,7 @@
                 '<button type="button" class="rvw-shtab' + (shTab === 'berkas' ? ' on' : '') + '" data-shtab="berkas">Berkas</button>';   // riwayat alur ada di halaman detail order
         }
         function renderBanner(p) {
-            var R = ROLE, pm = first(p.pembuat), km = first(p.katim), h;
+            var R = ROLE, pm = namaRingkas(p.pembuat), km = namaRingkas(p.katim), h;
             var m = {
                 ppk_cek: ['info', 'bi-info-circle', R === 'ppk' ? 'Beri catatan pada bagian yang perlu diperbaiki lalu <b>Minta revisi</b>.' : 'PO sedang dicek PPK BLU.'],
                 ppk_minta: ['ppk', 'bi-clipboard2-check', R === 'katim' ? '<b>PPK BLU meminta revisi.</b> Pilih: kerjakan sendiri atau disposisikan ke ' + esc(pm) + '.' : (R === 'ppk' ? 'Revisi diminta. Menunggu keputusan Ketua Tim.' : 'PPK BLU meminta revisi. Menunggu keputusan Ketua Tim.')],
@@ -1207,18 +1212,18 @@
             if (ROLE === 'ppk') {
                 if (p.state === 'ppk_cek') {
                     hint = dr ? dr + ' catatan draf siap dikirim.' : 'Belum ada catatan. Kalau sudah sesuai, verifikasi PO.';
-                    btns = B('warnb', 'mintaRevisi', 'bi-pencil-square', 'Minta revisi' + (dr ? ' (' + dr + ')' : ''), !dr) + B('green', 'validasi', 'bi-patch-check', 'Verifikasi', dr > 0);
+                    btns = B('warnb', 'mintaRevisi', 'bi-pencil-square', 'Minta revisi' + (dr ? ' (' + dr + ')' : ''), !dr) + B('green', 'validasi', 'bi-patch-check', 'Setujui', dr > 0);
                 } else {
                     // revisi sudah dikirim / PO sudah diverifikasi: slide hanya untuk dibaca
                     hint = '<span class="rvw-lock"><i class="bi bi-lock-fill"></i><span>' + (p.state === 'selesai' ? 'PO sudah diverifikasi. Slide ini hanya untuk dibaca.' : 'Catatan sudah dikirim, jadi tidak bisa menambah atau mengubah catatan. Slide ini hanya untuk dibaca.') + '</span></span>';
                 }
             } else if (ROLE === 'katim') {
-                if (p.state === 'ppk_minta') { hint = 'Pilih siapa yang mengerjakan revisi PPK BLU.'; btns = B('', 'disposisi', 'bi-person-up', 'Disposisi ke ' + esc(first(p.pembuat))) + B('pri', 'kerjakan', 'bi-pencil', 'Kerjakan sendiri'); }
-                else if (p.state === 'katim_kerja') { hint = sisa; btns = B('', 'disposisi', 'bi-person-up', 'Disposisikan ke ' + esc(first(p.pembuat))) + B('', 'edit', 'bi-pencil-square', 'Edit PO') + B('green', 'kirimPpk', 'bi-send', 'Kirim ke PPK BLU', op > 0); }
-                else if (p.state === 'katim_review') { hint = 'Cek revisi dari ' + esc(first(p.pembuat)) + '.'; btns = B('', 'edit', 'bi-pencil-square', 'Edit PO') + B('', 'mintaLagi', 'bi-arrow-counterclockwise', 'Minta perbaikan lagi') + B('green', 'setujuKirim', 'bi-send-check', 'Setujui dan kirim ke PPK BLU'); }
+                if (p.state === 'ppk_minta') { hint = 'Pilih siapa yang mengerjakan revisi PPK BLU.'; btns = B('', 'disposisi', 'bi-person-up', 'Disposisi ke ' + esc(namaRingkas(p.pembuat))) + B('pri', 'kerjakan', 'bi-pencil', 'Kerjakan sendiri'); }
+                else if (p.state === 'katim_kerja') { hint = sisa; btns = B('', 'disposisi', 'bi-person-up', 'Disposisikan ke ' + esc(namaRingkas(p.pembuat))) + B('', 'edit', 'bi-pencil-square', 'Edit PO') + B('green', 'kirimPpk', 'bi-send', 'Kirim ke PPK BLU', op > 0); }
+                else if (p.state === 'katim_review') { hint = 'Cek revisi dari ' + esc(namaRingkas(p.pembuat)) + '.'; btns = B('', 'edit', 'bi-pencil-square', 'Edit PO') + B('', 'mintaLagi', 'bi-arrow-counterclockwise', 'Minta perbaikan lagi') + B('green', 'setujuKirim', 'bi-send-check', 'Setujui dan kirim ke PPK BLU'); }
                 else { hint = posisi(p).teks + '.'; }
             } else {
-                if (p.state === 'ketupel_kerja') { hint = sisa; btns = B('', 'edit', 'bi-pencil-square', 'Edit PO') + B('green', 'kirimKatim', 'bi-send', 'Kirim revisi ke ' + esc(first(p.katim)), op > 0); }
+                if (p.state === 'ketupel_kerja') { hint = sisa; btns = B('', 'edit', 'bi-pencil-square', 'Edit PO') + B('green', 'kirimKatim', 'bi-send', 'Kirim revisi ke ' + esc(namaRingkas(p.katim)), op > 0); }
                 else { hint = posisi(p).teks + '.'; }
             }
             var cat = '';
@@ -1607,7 +1612,7 @@
         }
         function doAct(act) {
             var p = curPo(); if (!p || !detail) { return; }
-            var pm = first(p.pembuat), km = first(p.katim), id = p.id;
+            var pm = namaRingkas(p.pembuat), km = namaRingkas(p.katim), id = p.id;
             if (act === 'edit') { (SOLO ? window.top : window).location.href = PO_URL(id) + '/edit?dari=ppk'; return; }
             if (act === 'mintaRevisi' || act === 'validasi') { flushCatatan(); }   // simpan ketikan catatan lebih dulu, sebelum status PO berubah
             var D = function (o) { return dialog(o).then(function (r) { return r.h === 'ya' ? r : null; }); };
@@ -1615,11 +1620,11 @@
                 var n = cnt('draf');
                 D({ judul: 'Kirim permintaan revisi?', pesan: n + ' catatan akan dikirim ke Ketua Tim untuk diputuskan siapa yang mengerjakan.', ya: 'Kirim', ikon: 'bi-send', warna: 'warn' }).then(function (r) { if (r) { kirim('minta-revisi', {}, 'Permintaan revisi dikirim ke Ketua Tim.'); } });
             } else if (act === 'validasi') {
-                D({ judul: 'Verifikasi PO ini?', pesan: 'PO dinyatakan sesuai dan terkunci. Tidak ada revisi lagi. Catatan PPK BLU di kolom bawah ikut tersimpan.', ya: 'Ya, verifikasi', ikon: 'bi-patch-check', warna: 'ok' }).then(function (r) {
+                D({ judul: 'Setujui PO sebagai PPK BLU?', pesan: 'PO ini selesai di tahap PPK BLU dan langsung terkunci, jadi tidak ada putaran revisi lagi.', ya: 'Setujui PO', ikon: 'bi-patch-check', warna: 'ok' }).then(function (r) {
                     if (!r) { return; }
                     var inp = $('rvwCatPpk'), cat = inp ? inp.value : (p.catatan_ppk || '');
                     clearTimeout(csTimer); csTimer = null; delete catDraft[id];   // catatan ikut terkirim bersama verifikasi
-                    kirim('validasi', { catatan: cat }, 'PO diverifikasi PPK BLU.');
+                    kirim('validasi', { catatan: cat }, 'PO disetujui PPK BLU.');
                 });
             } else if (act === 'kerjakan') {
                 D({ judul: 'Kerjakan revisi sendiri?', pesan: 'Anda mengedit PO sesuai catatan PPK BLU, lalu mengirimnya langsung ke PPK BLU. Anda masih bisa mendisposisikannya ke ' + pm + ' sebelum dikirim.', ya: 'Ya, kerjakan', ikon: 'bi-pencil', warna: 'warn' }).then(function (r) { if (r) { kirim('kerjakan', {}, 'Anda mengerjakan revisi ini.'); } });
