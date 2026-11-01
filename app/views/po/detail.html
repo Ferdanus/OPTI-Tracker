@@ -510,9 +510,6 @@
                                 {{ $fase1_done ? 'Selesai' : 'Sedang Berjalan' }}
                             </span>
                         </div>
-                        <div class="small text-muted mb-2">
-                            Penetapan personil analis/peneliti, koordinasi ruang lingkup pengujian/riset, dan kesiapan administrasi.
-                        </div>
                         <check if="{{ !$fase1_done }}">
                             <form action="{{ @BASE }}/po/{{ @po.id }}/sop/5/verifikasi" method="POST" class="d-inline">
                                 <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
@@ -685,8 +682,7 @@
             <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
                 <div>
                     <h6 class="m-0 fw-bold text-dark"><i class="bi bi-calendar3 text-primary me-2"></i>Jadwal Kerja Tim Pelaksana</h6>
-                    <span class="text-muted" style="font-size: 0.75rem;">Timeline dan milestone kegiatan tim balai</span>
-                </div>
+                    </div>
                 <span class="badge px-2 py-1 fw-semibold" style="font-size: 0.75rem; background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1;">
                     {{ count(@daftar_jadwal) }} Milestone
                 </span>
@@ -763,8 +759,7 @@
             <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
                 <div>
                     <h6 class="m-0 fw-bold text-dark"><i class="bi bi-credit-card text-primary me-2"></i>Status Pembayaran Layanan</h6>
-                    <span class="text-muted" style="font-size: 0.75rem;">Multi-termin pembayaran jasa</span>
-                </div>
+                    </div>
                 <div>
                     <check if="{{ @total_terbayar >= @po.biaya && @po.biaya > 0 }}">
                         <true><span class="badge px-2 py-1 fw-semibold" style="font-size: 0.72rem; background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0;">Lunas</span></true>

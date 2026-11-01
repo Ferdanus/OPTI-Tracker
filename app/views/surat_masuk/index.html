@@ -3,7 +3,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom flex-wrap gap-2">
         <div>
             <h4 class="fw-bold text-dark m-0 font-display">Kotak Masuk Permohonan</h4>
-            <div class="text-muted small mt-1">Daftar surat permohonan masuk dan riwayat penerimaan order</div>
+            
         </div>
     </div>
 
@@ -389,8 +389,7 @@
                         <h6 class="modal-title fw-bold text-dark fs-5 mb-0" id="modalKlaimLabel_{{ @surat.id }}">
                             Konfirmasi Penerimaan Surat Masuk
                         </h6>
-                        <small class="text-muted">Layanan Optimalisasi Teknologi Industri (OPTI)</small>
-                    </div>
+                        </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
                 </div>
 
@@ -452,6 +451,39 @@
                                 <div class="col-12">
                                     <span class="text-muted d-block" style="font-size:0.72rem;">Alamat Perusahaan:</span>
                                     <span class="text-secondary" id="lblCustAlamat_{{ @surat.id }}">-</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Saluran Penerimaan Surat -->
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-dark mb-1">
+                                Saluran Penerimaan Surat <span class="text-danger">*</span>
+                            </label>
+                            <div class="row g-2">
+                                <div class="col-4">
+                                    <input type="radio" class="btn-check channel-radio-input" name="media_permohonan" id="media_surat_{{ @surat.id }}" value="surat" checked autocomplete="off">
+                                    <label class="channel-select-card" for="media_surat_{{ @surat.id }}">
+                                        <span class="custom-radio-dot"></span>
+                                        <i class="bi bi-envelope-paper"></i>
+                                        <span class="channel-name">Surat Resmi</span>
+                                    </label>
+                                </div>
+                                <div class="col-4">
+                                    <input type="radio" class="btn-check channel-radio-input" name="media_permohonan" id="media_email_{{ @surat.id }}" value="email" autocomplete="off">
+                                    <label class="channel-select-card" for="media_email_{{ @surat.id }}">
+                                        <span class="custom-radio-dot"></span>
+                                        <i class="bi bi-envelope"></i>
+                                        <span class="channel-name">E-mail</span>
+                                    </label>
+                                </div>
+                                <div class="col-4">
+                                    <input type="radio" class="btn-check channel-radio-input" name="media_permohonan" id="media_fax_{{ @surat.id }}" value="fax" autocomplete="off">
+                                    <label class="channel-select-card" for="media_fax_{{ @surat.id }}">
+                                        <span class="custom-radio-dot"></span>
+                                        <i class="bi bi-printer"></i>
+                                        <span class="channel-name">Fax</span>
+                                    </label>
                                 </div>
                             </div>
                         </div>
@@ -863,5 +895,80 @@
 }
 .modal .ts-wrapper .clear-button:hover {
     color: #dc2626 !important;
+}
+
+/* Styling Pilihan Saluran Penerimaan Surat di Modal Klaim (Clean & In-Theme) */
+.channel-select-card {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.55rem 0.75rem;
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: all 0.15s ease-in-out;
+    margin-bottom: 0;
+    user-select: none;
+    width: 100%;
+}
+.channel-select-card:hover {
+    background-color: #f8fafc;
+    border-color: #cbd5e1;
+}
+.custom-radio-dot {
+    width: 15px;
+    height: 15px;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background-color: #ffffff;
+    transition: all 0.15s ease-in-out;
+}
+.custom-radio-dot::after {
+    content: "";
+    width: 7px;
+    height: 7px;
+    background-color: transparent;
+    border-radius: 50%;
+    transition: background-color 0.15s ease-in-out;
+}
+.channel-select-card i {
+    font-size: 0.95rem;
+    color: #64748b;
+    transition: color 0.15s ease;
+    flex-shrink: 0;
+}
+.channel-select-card .channel-name {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: #334155;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+/* State Checked - Biru Navy Tema BBSPJIS (#1e293b / #0f172a) */
+.channel-radio-input:checked + .channel-select-card {
+    background-color: #f1f5f9;
+    border-color: #1e293b;
+    box-shadow: 0 0 0 1px #1e293b;
+}
+.channel-radio-input:checked + .channel-select-card .custom-radio-dot {
+    border-color: #1e293b;
+    background-color: #ffffff;
+}
+.channel-radio-input:checked + .channel-select-card .custom-radio-dot::after {
+    background-color: #1e293b;
+}
+.channel-radio-input:checked + .channel-select-card i {
+    color: #1e293b;
+}
+.channel-radio-input:checked + .channel-select-card .channel-name {
+    color: #0f172a;
+    font-weight: 600;
 }
 </style>

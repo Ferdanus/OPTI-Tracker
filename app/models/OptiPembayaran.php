@@ -154,6 +154,56 @@ class OptiPembayaran extends \DB\SQL\Mapper {
     }
 
     /**
+     * Hitung ulang status keuangan sebuah order berdasarkan akumulasi pembayaran terverifikasi
+     * vs biaya acuan (nominal penawaran deal, fallback estimasi biaya).
+     */
+    public function recalcStatusKeuangan(int $orderId): string {
+        $totalRows = $this->db->exec(
+            "SELECT COALESCE(SUM(jumlah), 0) AS total FROM opti_pembayaran WHERE order_id = ? AND status_verifikasi = 'terverifikasi'",
+            array(1 => $orderId)
+        );
+        $totalBayar = (float)($totalRows[0]['total'] ?? 0);
+
+        $acuanRows = $this->db->exec(
+            "SELECT o.estimasi_biaya, sp.nominal_penawaran
+             FROM order_layanan o
+             LEFT JOIN tb_surat_penawaran sp ON sp.id = (
+                 SELECT id FROM tb_surat_penawaran 
+                 WHERE order_id = o.id 
+                 ORDER BY (status_respon_klien = 'deal') DESC, id DESC 
+                 LIMIT 1
+             )
+             WHERE o.id = ? LIMIT 1",
+            array(1 => $orderId)
+        );
+
+        $biayaAcuan = 0;
+        if (!empty($acuanRows)) {
+            $biayaAcuan = !empty($acuanRows[0]['nominal_penawaran'])
+                ? (float)$acuanRows[0]['nominal_penawaran']
+                : (float)$acuanRows[0]['estimasi_biaya'];
+        }
+
+        if ($biayaAcuan > 0) {
+            $statusBaru = ($totalBayar >= $biayaAcuan) ? 'lunas' : ($totalBayar > 0 ? 'terbayar_sebagian' : 'menunggu_pembayaran');
+        } else {
+            $statusBaru = ($totalBayar > 0) ? 'lunas' : 'menunggu_pembayaran';
+        }
+
+        $order = new OrderLayanan($this->db);
+        $order->load(['id = ?', $orderId]);
+        if (!$order->dry()) {
+            $order->status_keuangan = $statusBaru;
+            if (empty($order->nomor_order)) {
+                $order->nomor_order = $order->generateNomorOrder();
+            }
+            $order->save();
+        }
+
+        return $statusBaru;
+    }
+
+    /**
      * Hapus transaksi pembayaran
      */
     public function hapus(int $id): bool {

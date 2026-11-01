@@ -514,6 +514,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
                        pk.id AS pk_id," . $pkKolom . "
                        sp.id AS surat_penawaran_id, sp.status_respon_klien, sp.nomor_surat AS nomor_penawaran,
                        sp.tanggal_surat AS penawaran_tanggal_surat, sp.updated_at AS penawaran_updated_at,
+                       sp.file_penawaran_ttd, sp.file_bukti_persetujuan, sp.surat_kesanggupan_bayar,
                        pr.durasi_kegiatan AS proposal_durasi, pr.status_proposal,
                        pr.file_proposal, pr.estimasi_total_biaya, pr.disetujui_ketua_at AS proposal_disetujui_at,
                        b.id AS bast_id, b.status_bast,
@@ -523,6 +524,11 @@ class OrderLayanan extends \DB\SQL\Mapper {
                        COALESCE((SELECT SUM(jumlah) FROM opti_pembayaran WHERE order_id = o.id), 0) AS total_terbayar,
                        (SELECT MAX(tanggal_bayar) FROM opti_pembayaran WHERE order_id = o.id) AS tanggal_bayar_terakhir,
                        u_pic.nama_user AS pic_proposal_nama,
+                       CASE 
+                           WHEN u_pic.si_opti LIKE '%lingkungan%' THEN 'Lingkungan'
+                           WHEN u_pic.si_opti LIKE '%selulosa%' THEN 'Selulosa'
+                           ELSE 'Umum'
+                       END AS pic_proposal_spesialisasi,
                        u_pelaksana.nama_user AS ketua_pelaksana_nama,
                        u_unlock.nama_user AS unlocked_by_name
                 FROM order_layanan o
@@ -548,27 +554,32 @@ class OrderLayanan extends \DB\SQL\Mapper {
                   . (class_exists('PoSchema') ? \PoSchema::bukanSertifikasi('ph') : '') . ")";
         }
 
-        // Filter tab: masuk (tahap sebelum deal), berlangsung (sudah terjadi deal & proses pengerjaan), selesai (tuntas BAST / laporan selesai), ditolak, atau aktif
+        // Filter tab: masuk (tahap REQ / permohonan baru s.d. sebelum deal & pembayaran), berlangsung (sudah deal / di tahap pembayaran / ORD & pengerjaan berjalan), selesai (tuntas BAST / laporan selesai), ditolak, atau aktif
         if ($filterTab === 'masuk') {
             $sql .= " AND o.status != 'ditolak' AND (o.status_tinjauan != 'tidak_layak' OR o.status_tinjauan IS NULL)
                       AND (sp.status_respon_klien NOT IN ('ditolak', 'batal') OR sp.status_respon_klien IS NULL)
-                      AND (sp.status_respon_klien IS NULL OR sp.status_respon_klien != 'deal')
+                      AND (o.nomor_order IS NULL OR o.nomor_order = '')
                       AND (o.status_penawaran IS NULL OR o.status_penawaran != 'deal')
+                      AND (sp.status_respon_klien IS NULL OR sp.status_respon_klien != 'deal')
+                      AND (o.status_keuangan IS NULL OR o.status_keuangan NOT IN ('menunggu_pembayaran', 'terbayar_sebagian', 'lunas'))
                       AND p.id IS NULL
-                      AND b.id IS NULL
-                      AND o.status NOT IN ('penawaran_deal', 'disetujui', 'po_dibuat', 'proses', 'selesai', 'lapor_selesai')
-                      AND (o.status_pelaksanaan IS NULL OR o.status_pelaksanaan != 'laporan_selesai')";
+                      AND o.status NOT IN ('penawaran_deal', 'disetujui', 'po_dibuat', 'proses', 'lapor_selesai')
+                      AND o.status != 'selesai'
+                      AND (o.status_pelaksanaan IS NULL OR o.status_pelaksanaan != 'laporan_selesai')
+                      AND (b.id IS NULL OR b.status_bast NOT IN ('disetujui', 'selesai', 'terbit'))";
         } elseif ($filterTab === 'berlangsung') {
             $sql .= " AND o.status != 'ditolak' AND (o.status_tinjauan != 'tidak_layak' OR o.status_tinjauan IS NULL)
                       AND (sp.status_respon_klien NOT IN ('ditolak', 'batal') OR sp.status_respon_klien IS NULL)
                       AND (
-                          (sp.status_respon_klien = 'deal') 
-                          OR (o.status_penawaran = 'deal') 
-                          OR (p.id IS NOT NULL) 
-                          OR (o.status IN ('penawaran_deal', 'disetujui', 'po_dibuat', 'proses', 'lapor_selesai'))
-                          OR (b.id IS NOT NULL AND b.status_bast NOT IN ('disetujui', 'selesai', 'terbit'))
+                          (o.nomor_order IS NOT NULL AND o.nomor_order != '')
+                          OR o.status_penawaran = 'deal'
+                          OR sp.status_respon_klien = 'deal'
+                          OR o.status_keuangan IN ('menunggu_pembayaran', 'terbayar_sebagian', 'lunas')
+                          OR p.id IS NOT NULL
+                          OR o.status IN ('penawaran_deal', 'disetujui', 'po_dibuat', 'proses', 'lapor_selesai')
                       )
-                      AND (o.status != 'selesai' AND (o.status_pelaksanaan IS NULL OR o.status_pelaksanaan != 'laporan_selesai'))
+                      AND o.status != 'selesai'
+                      AND (o.status_pelaksanaan IS NULL OR o.status_pelaksanaan != 'laporan_selesai')
                       AND (b.id IS NULL OR b.status_bast NOT IN ('disetujui', 'selesai', 'terbit'))";
         } elseif ($filterTab === 'selesai') {
             $sql .= " AND o.status != 'ditolak' AND (o.status_tinjauan != 'tidak_layak' OR o.status_tinjauan IS NULL)
@@ -627,10 +638,31 @@ class OrderLayanan extends \DB\SQL\Mapper {
 
         $rows = $this->db->exec($sql, $params);
         foreach ($rows as &$r) {
+            // Auto terbitkan nomor order (ORD) jika order sudah DEAL / didisposisikan ke keuangan namun nomor_order belum terisi
+            $isDeal = ($r['status_respon_klien'] ?? '') === 'deal' || ($r['status_penawaran'] ?? '') === 'deal';
+            $isDisposisiKeu = in_array($r['status_keuangan'] ?? '', ['menunggu_pembayaran', 'terbayar_sebagian', 'lunas']);
+            if (($isDeal || $isDisposisiKeu) && empty($r['nomor_order']) && !empty($r['id'])) {
+                $ordBaru = $this->terbitkanNomorOrder((int)$r['id']);
+                if (!empty($ordBaru)) {
+                    $r['nomor_order'] = $ordBaru;
+                }
+            }
+
+            // Saluran permohonan konsisten: utamakan pilihan Tim Mitra di Tahap 2 (sp.permintaan_melalui), fallback ke input awal (media_permohonan)
+            if (!empty($r['permintaan_melalui'])) {
+                $r['media_permohonan'] = strtolower(trim((string)$r['permintaan_melalui']));
+            } elseif (empty($r['media_permohonan'])) {
+                $r['media_permohonan'] = !empty($r['id_surat_masuk']) ? 'surat' : 'surat';
+            } else {
+                $r['media_permohonan'] = strtolower(trim((string)$r['media_permohonan']));
+            }
+
             $r['nmcustomer_murni'] = Customer::cleanNamaPerusahaan($r['nmcustomer'] ?? ($r['nama_perusahaan'] ?? ''), $r['pt_cv'] ?? '');
             $r['nama_perusahaan'] = Customer::formatNamaPerusahaan($r['pt_cv'] ?? '', $r['nama_perusahaan'] ?? '');
             $st = self::resolveStageStatus($r);
             $r['stage_label']        = $st['label'];
+            $labelWords              = preg_split('/\s+/', trim($st['label']));
+            $r['stage_label_html']   = implode('<br>', array_map('htmlspecialchars', $labelWords));
             $r['stage_class']        = $st['class'];
             $r['stage_icon']         = $st['icon'];
             $r['stage_user']         = $st['user'] ?? '';
@@ -829,7 +861,52 @@ class OrderLayanan extends \DB\SQL\Mapper {
             ];
         }
 
-        // 2. Step 8: Selesai (BAST)
+        // 2. Tahap 1 / Awal: Permohonan Baru Masuk (Belum Didisposisi ke Divisi)
+        if (($o['status'] ?? '') === 'permintaan_masuk' || empty($o['jenis_layanan_opti']) || ($o['jenis_layanan_opti'] ?? '') === 'belum_ditentukan') {
+            return [
+                'label' => 'Disposisi Masuk',
+                'class' => 'status-pill status-pill-slate',
+                'icon'  => 'bi-inbox-fill',
+                'user'  => 'Tim Mitra Industri',
+                'keterangan_aksi'   => 'Permohonan Baru Masuk',
+                'keterangan_sub'    => 'Perlu Disposisi Layanan',
+                'keterangan_detail' => 'Perlu ditentukan divisi & Ketua Tim',
+                'keterangan_icon'   => 'bi-inbox text-secondary',
+                'aksi_badge' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
+            ];
+        }
+
+        // 3. Tahap 2: Draft Formulir Pelayanan Jasa
+        if (($o['status'] ?? '') === 'draft_disimpan' || ($o['status'] ?? '') === 'draft') {
+            return [
+                'label' => 'Draft Disimpan',
+                'class' => 'status-pill status-pill-amber',
+                'icon'  => 'bi-bookmark-check-fill',
+                'user'  => 'Tim Mitra Industri',
+                'keterangan_aksi'   => 'Draf Formulir Pelayanan',
+                'keterangan_sub'    => 'Pelaksana: Tim Mitra Industri',
+                'keterangan_detail' => 'Masih diisi oleh staf mitra, belum diajukan',
+                'keterangan_icon'   => 'bi-file-earmark-text text-warning',
+                'aksi_badge' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
+            ];
+        }
+
+        // 4. Tahap 3: Menunggu Kaji Kelayakan (Setelah Didisposisi, namun belum dinilai layak)
+        if (empty($o['status_tinjauan']) || in_array($o['status_tinjauan'] ?? '', ['belum_ditinjau', 'menunggu', 'draft'])) {
+            return [
+                'label' => 'Kaji Kelayakan',
+                'class' => 'status-pill status-pill-amber',
+                'icon'  => 'bi-clipboard-check-fill',
+                'user'  => $katimLabel,
+                'keterangan_aksi'   => 'Menunggu Kaji Kelayakan',
+                'keterangan_sub'    => 'Pelaksana: ' . $katimLabel,
+                'keterangan_detail' => 'Perlu dicek kelayakan personel & peralatan lab',
+                'keterangan_icon'   => 'bi-clipboard-check text-warning',
+                'aksi_badge' => 'bg-danger-subtle text-danger border border-danger-subtle'
+            ];
+        }
+
+        // 5. Tahap 9: Selesai (BAST)
         $isBastDone = (!empty($o['bast_id']) && in_array($o['status_bast'] ?? '', ['disetujui', 'selesai', 'terbit']))
             || ($o['status'] ?? '') === 'selesai'
             || ($o['status_pelaksanaan'] ?? '') === 'laporan_selesai';
@@ -847,7 +924,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
             ];
         }
 
-        // 3. Step 7: Pengujian Lab (PO Aktif)
+        // 6. Tahap 8: Pengujian Lab (PO Aktif)
         if (!empty($o['po_id']) || ($o['status'] ?? '') === 'disetujui' || in_array($o['status_pelaksanaan'] ?? '', ['sedang_berjalan', 'evaluasi_laporan', 'revisi_laporan'])) {
             return [
                 'label' => 'Pengujian Lab',
@@ -866,20 +943,47 @@ class OrderLayanan extends \DB\SQL\Mapper {
         $isDeal = (($o['status'] ?? '') === 'penawaran_deal' || ($o['status_respon_klien'] ?? '') === 'deal' || ($o['status_penawaran'] ?? '') === 'deal');
         $isLunas = (($o['status_keuangan'] ?? '') === 'lunas');   // bayar sebagian (terbayar_sebagian) belum dianggap lunas
 
-        // Jika sudah DEAL & LUNAS, namun PO belum dibuat -> Alur masuk ke Step 7 (Sampel & PO)
+        // Jika sudah DEAL & LUNAS, namun PO belum dibuat -> Alur masuk ke Tahap 7 (Sampel / Titik Awal SPM & PO)
         if ($isDeal && $isLunas) {
             if (empty($o['tanggal_terima_sampel']) && empty($o['tanggal_spm_mulai'])) {
-                return [
-                    'label' => 'Menunggu Sampel',
-                    'class' => 'status-pill status-pill-amber',
-                    'icon'  => 'bi-box-seam-fill',
-                    'user'  => 'Tim Mitra & Pelanggan',
-                    'keterangan_aksi'   => 'Menunggu Kiriman Sampel',
-                    'keterangan_sub'    => 'Dari: ' . (!empty($o['nama_perusahaan']) ? $o['nama_perusahaan'] : 'Pelanggan'),
-                    'keterangan_detail' => 'Sampel uji belum sampai di laboratorium',
-                    'keterangan_icon'   => 'bi-box-seam text-warning',
-                    'aksi_badge' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
-                ];
+                $triggerTipe = $o['spm_trigger_tipe'] ?? 'sampel';
+                if ($triggerTipe === 'kick_off') {
+                    return [
+                        'label' => 'Menunggu Kick-Off',
+                        'class' => 'status-pill status-pill-amber',
+                        'icon'  => 'bi-calendar-event-fill',
+                        'user'  => 'Tim Mitra & Pelanggan',
+                        'keterangan_aksi'   => 'Menunggu Kick-Off',
+                        'keterangan_sub'    => 'Klien: ' . (!empty($o['nama_perusahaan']) ? $o['nama_perusahaan'] : 'Pelanggan'),
+                        'keterangan_detail' => 'Menunggu pelaksanaan pertemuan kick-off',
+                        'keterangan_icon'   => 'bi-calendar-event text-warning',
+                        'aksi_badge' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
+                    ];
+                } elseif ($triggerTipe === 'tanda_tangan_pks') {
+                    return [
+                        'label' => 'Menunggu PKS',
+                        'class' => 'status-pill status-pill-amber',
+                        'icon'  => 'bi-pen-fill',
+                        'user'  => 'Tim Mitra & Pelanggan',
+                        'keterangan_aksi'   => 'Menunggu TTD PKS',
+                        'keterangan_sub'    => 'Klien: ' . (!empty($o['nama_perusahaan']) ? $o['nama_perusahaan'] : 'Pelanggan'),
+                        'keterangan_detail' => 'Menunggu penandatanganan perjanjian kerjasama (PKS)',
+                        'keterangan_icon'   => 'bi-pen text-warning',
+                        'aksi_badge' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
+                    ];
+                } else {
+                    return [
+                        'label' => 'Menunggu Sampel',
+                        'class' => 'status-pill status-pill-amber',
+                        'icon'  => 'bi-box-seam-fill',
+                        'user'  => 'Tim Mitra & Pelanggan',
+                        'keterangan_aksi'   => 'Menunggu Kiriman Sampel',
+                        'keterangan_sub'    => 'Dari: ' . (!empty($o['nama_perusahaan']) ? $o['nama_perusahaan'] : 'Pelanggan'),
+                        'keterangan_detail' => 'Sampel uji belum sampai di laboratorium',
+                        'keterangan_icon'   => 'bi-box-seam text-warning',
+                        'aksi_badge' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
+                    ];
+                }
             } elseif (empty($o['ketua_pelaksana_id'])) {
                 return [
                     'label' => 'Penunjukan Pelaksana',
@@ -956,8 +1060,23 @@ class OrderLayanan extends \DB\SQL\Mapper {
             ];
         }
 
-        // 4. Step 6: Menunggu Pembayaran (Sudah DEAL namun belum lunas)
+        // 7. Tahap 6: Menunggu Pembayaran (Sudah DEAL namun belum lunas)
         if ($isDeal) {
+            $berkasDealSiap = !empty($o['file_penawaran_ttd']) && !empty($o['file_bukti_persetujuan']);
+            if (!$berkasDealSiap) {
+                return [
+                    'label' => 'Menunggu Berkas Siap',
+                    'class' => 'status-pill status-pill-amber',
+                    'icon'  => 'bi-file-earmark-arrow-up-fill',
+                    'user'  => 'Tim Mitra & Pelanggan',
+                    'keterangan_aksi'   => 'Lengkapi Berkas Deal',
+                    'keterangan_sub'    => 'Klien: ' . (!empty($o['nama_perusahaan']) ? $o['nama_perusahaan'] : 'Mitra'),
+                    'keterangan_detail' => 'Surat penawaran TTD atau persetujuan klien belum diunggah',
+                    'keterangan_icon'   => 'bi-file-earmark-arrow-up text-warning',
+                    'aksi_badge' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
+                ];
+            }
+
             return [
                 'label' => 'Menunggu Bayar',
                 'class' => 'status-pill status-pill-amber',
@@ -971,8 +1090,10 @@ class OrderLayanan extends \DB\SQL\Mapper {
             ];
         }
 
-        // 5. Step 5: Penawaran Terbit (Surat Penawaran resmi sudah dibuat namun belum DEAL)
-        $hasOfferLetter = (!empty($o['surat_penawaran_id']) || !empty($o['nomor_penawaran']) || in_array($o['status_penawaran'] ?? '', ['terkirim', 'nego', 'draft']));
+        // 8. Tahap 5: Penawaran Terbit (Surat Penawaran resmi sudah memiliki nomor surat dan diterbitkan ke pelanggan)
+        $hasOfferLetter = !empty($o['nomor_penawaran'])
+            || in_array($o['status_penawaran'] ?? '', ['terkirim', 'nego', 'terbit'])
+            || in_array($o['status_respon_klien'] ?? '', ['terkirim', 'nego', 'revisi']);
         if ($hasOfferLetter) {
             return [
                 'label' => 'Penawaran Terbit',
@@ -987,178 +1108,115 @@ class OrderLayanan extends \DB\SQL\Mapper {
             ];
         }
 
-        // Step 4 & 3: Cek jenis layanan dan kaji kelayakan
-        $isLayak = (($o['status_tinjauan'] ?? '') === 'layak');
-
-        // Jika Kaji Kelayakan Layak -> Masuk Step 4
-        if ($isLayak) {
-            if ($isLingkungan) {
-                $hasBiaya = ((float)($o['estimasi_biaya'] ?? 0) > 0) || in_array($o['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui']);
-                if ($hasBiaya) {
-                    return [
-                        'label' => 'Siap Penawaran',
-                        'class' => 'status-pill status-pill-sky',
-                        'icon'  => 'bi-check-circle-fill',
-                        'user'  => 'Tim Mitra Industri',
-                        'keterangan_aksi'   => 'Siap Dibuat Surat Penawaran',
-                        'keterangan_sub'    => 'Pelaksana: Tim Mitra Industri',
-                        'keterangan_detail' => 'Rincian biaya selesai, siap diterbitkan surat',
-                        'keterangan_icon'   => 'bi-file-earmark-check text-primary',
-                        'aksi_badge' => 'bg-primary-subtle text-primary border border-primary-subtle'
-                    ];
-                }
-                if (($o['status_proposal_biaya'] ?? '') === 'draft_disimpan') {
-                    return [
-                        'label' => 'Draft Disimpan',
-                        'class' => 'status-pill status-pill-amber',
-                        'icon'  => 'bi-bookmark-check-fill',
-                        'user'  => 'Tim Kerja Lingkungan',
-                        'keterangan_aksi'   => 'Penyusunan Biaya Uji',
-                        'keterangan_sub'    => 'Pelaksana: Tim Kerja Lingkungan',
-                        'keterangan_detail' => 'Draf tarif disimpan, belum diajukan penawaran',
-                        'keterangan_icon'   => 'bi-pencil-square text-warning',
-                        'aksi_badge' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
-                    ];
-                }
+        // 9. Tahap 4: Penyusunan Teknis / Tarif & Parameter setelah dinyatakan Layak
+        if ($isLingkungan) {
+            $hasBiaya = ((float)($o['estimasi_biaya'] ?? 0) > 0) || in_array($o['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui']);
+            if ($hasBiaya) {
                 return [
-                    'label' => 'Tarif & Parameter',
-                    'class' => 'status-pill status-pill-blue',
-                    'icon'  => 'bi-calculator-fill',
+                    'label' => 'Siap Penawaran',
+                    'class' => 'status-pill status-pill-sky',
+                    'icon'  => 'bi-check-circle-fill',
+                    'user'  => 'Tim Mitra Industri',
+                    'keterangan_aksi'   => 'Siap Dibuat Surat Penawaran',
+                    'keterangan_sub'    => 'Pelaksana: Tim Mitra Industri',
+                    'keterangan_detail' => 'Rincian biaya selesai, siap diterbitkan surat',
+                    'keterangan_icon'   => 'bi-file-earmark-check text-primary',
+                    'aksi_badge' => 'bg-primary-subtle text-primary border border-primary-subtle'
+                ];
+            }
+            if (($o['status_proposal_biaya'] ?? '') === 'draft_disimpan') {
+                return [
+                    'label' => 'Draft Disimpan',
+                    'class' => 'status-pill status-pill-amber',
+                    'icon'  => 'bi-bookmark-check-fill',
                     'user'  => 'Tim Kerja Lingkungan',
-                    'keterangan_aksi'   => 'Perhitungan Tarif Uji',
+                    'keterangan_aksi'   => 'Penyusunan Biaya Uji',
                     'keterangan_sub'    => 'Pelaksana: Tim Kerja Lingkungan',
-                    'keterangan_detail' => 'Sedang menentukan parameter & tarif lab',
-                    'keterangan_icon'   => 'bi-calculator text-primary',
-                    'aksi_badge' => 'bg-primary-subtle text-primary border border-primary-subtle'
-                ];
-            } elseif ($isSelulosa) {
-                $proposalComplete = !empty($o['file_proposal']) && (float)($o['estimasi_total_biaya'] ?? 0) > 0;
-                $proposalApproved = in_array($o['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui']) || in_array($o['status_proposal'] ?? '', ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan']);
-                if ($proposalApproved) {
-                    return [
-                        'label' => 'Proposal Disetujui',
-                        'class' => 'status-pill status-pill-emerald',
-                        'icon'  => 'bi-check-circle-fill',
-                        'user'  => 'Tim Mitra Industri',
-                        'keterangan_aksi'   => 'Siap Dibuat Surat Penawaran',
-                        'keterangan_sub'    => 'Proposal Disetujui Ketua Tim',
-                        'keterangan_detail' => 'Menunggu Tim Mitra menerbitkan surat penawaran',
-                        'keterangan_icon'   => 'bi-check-circle-fill text-success',
-                        'aksi_badge' => 'bg-primary-subtle text-primary border border-primary-subtle'
-                    ];
-                }
-                $rawPicNama = !empty($o['pic_proposal_nama']) ? trim($o['pic_proposal_nama']) : '';
-                $rawPicNama = preg_replace('/^pic\s*:\s*/i', '', $rawPicNama);
-                $picPelaksana = !empty($rawPicNama) ? $rawPicNama : 'Tim Kerja Selulosa';
-                if (($o['status_proposal'] ?? '') === 'draft_disimpan' || ($o['status_proposal_biaya'] ?? '') === 'draft_disimpan') {
-                    return [
-                        'label' => 'Draft Disimpan',
-                        'class' => 'status-pill status-pill-amber',
-                        'icon'  => 'bi-bookmark-check-fill',
-                        'user'  => 'Tim Kerja Selulosa',
-                        'keterangan_aksi'   => 'Draf Proposal Belum Diajukan',
-                        'keterangan_sub'    => 'Pelaksana: ' . $picPelaksana,
-                        'keterangan_detail' => 'Masih tersimpan sebagai draf di sistem',
-                        'keterangan_icon'   => 'bi-pencil-square text-warning',
-                        'aksi_badge' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
-                    ];
-                }
-                if (($o['status_proposal_biaya'] ?? '') === 'menunggu_approval' || ($o['status_proposal'] ?? '') === 'diajukan' || $proposalComplete) {
-                    return [
-                        'label' => 'Review Proposal',
-                        'class' => 'status-pill status-pill-sky',
-                        'icon'  => 'bi-hourglass-split',
-                        'user'  => 'Ketua Tim Selulosa',
-                        'keterangan_aksi'   => 'Pemeriksaan Proposal',
-                        'keterangan_sub'    => 'Pelaksana: Ketua Tim Selulosa',
-                        'keterangan_detail' => 'Proposal sudah diajukan, menunggu persetujuan Katim',
-                        'keterangan_icon'   => 'bi-hourglass-split text-info',
-                        'aksi_badge' => 'bg-info-subtle text-info-emphasis border border-info-subtle'
-                    ];
-                }
-                return [
-                    'label' => 'Proposal Teknis',
-                    'class' => 'status-pill status-pill-blue',
-                    'icon'  => 'bi-file-earmark-arrow-up-fill',
-                    'user'  => 'Tim Kerja Selulosa',
-                    'keterangan_aksi'   => 'Penyusunan Proposal Teknis',
-                    'keterangan_sub'    => 'Pelaksana: ' . $picPelaksana,
-                    'keterangan_detail' => 'Sedang menyusun proposal & estimasi biaya',
-                    'keterangan_icon'   => 'bi-pencil-square text-primary',
-                    'aksi_badge' => 'bg-primary-subtle text-primary border border-primary-subtle'
-                ];
-            } else {
-                return [
-                    'label' => 'Disposisi Masuk',
-                    'class' => 'status-pill status-pill-slate',
-                    'icon'  => 'bi-inbox-fill',
-                    'user'  => $katimLabel,
-                    'keterangan_aksi'   => 'Permohonan Baru Masuk',
-                    'keterangan_sub'    => 'Perlu Disposisi Layanan',
-                    'keterangan_detail' => 'Perlu ditentukan jenis divisi & Ketua Tim',
-                    'keterangan_icon'   => 'bi-inbox text-secondary',
+                    'keterangan_detail' => 'Draf tarif disimpan, belum diajukan penawaran',
+                    'keterangan_icon'   => 'bi-pencil-square text-warning',
                     'aksi_badge' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
                 ];
             }
-        }
-
-        // Step 3: Menunggu Kaji Kelayakan (Setelah Form Pelayanan Jasa terisi)
-        if (($o['status'] ?? '') !== 'permintaan_masuk' && !empty($o['jenis_layanan_opti']) && $o['jenis_layanan_opti'] !== 'belum_ditentukan') {
-            if (empty($o['status_tinjauan']) || in_array($o['status_tinjauan'] ?? '', ['belum_ditinjau', 'menunggu', 'draft'])) {
+            return [
+                'label' => 'Tarif & Parameter',
+                'class' => 'status-pill status-pill-blue',
+                'icon'  => 'bi-calculator-fill',
+                'user'  => 'Tim Kerja Lingkungan',
+                'keterangan_aksi'   => 'Perhitungan Tarif Uji',
+                'keterangan_sub'    => 'Pelaksana: Tim Kerja Lingkungan',
+                'keterangan_detail' => 'Sedang menentukan parameter & tarif lab',
+                'keterangan_icon'   => 'bi-calculator text-primary',
+                'aksi_badge' => 'bg-primary-subtle text-primary border border-primary-subtle'
+            ];
+        } elseif ($isSelulosa) {
+            $proposalComplete = !empty($o['file_proposal']) && (float)($o['estimasi_total_biaya'] ?? 0) > 0;
+            $proposalApproved = in_array($o['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui']) || in_array($o['status_proposal'] ?? '', ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan']);
+            if ($proposalApproved) {
                 return [
-                    'label' => 'Kaji Kelayakan',
-                    'class' => 'status-pill status-pill-amber',
-                    'icon'  => 'bi-clipboard-check-fill',
-                    'user'  => $katimLabel,
-                    'keterangan_aksi'   => 'Menunggu Kaji Kelayakan',
-                    'keterangan_sub'    => 'Pelaksana: ' . $katimLabel,
-                    'keterangan_detail' => 'Perlu dicek kelayakan personel & peralatan lab',
-                    'keterangan_icon'   => 'bi-clipboard-check text-warning',
-                    'aksi_badge' => 'bg-danger-subtle text-danger border border-danger-subtle'
+                    'label' => 'Proposal Disetujui',
+                    'class' => 'status-pill status-pill-emerald',
+                    'icon'  => 'bi-check-circle-fill',
+                    'user'  => 'Tim Mitra Industri',
+                    'keterangan_aksi'   => 'Siap Dibuat Surat Penawaran',
+                    'keterangan_sub'    => 'Proposal Disetujui Ketua Tim',
+                    'keterangan_detail' => 'Menunggu Tim Mitra menerbitkan surat penawaran',
+                    'keterangan_icon'   => 'bi-check-circle-fill text-success',
+                    'aksi_badge' => 'bg-primary-subtle text-primary border border-primary-subtle'
                 ];
             }
-        }
-
-        // Step 2: Form Pelayanan Jasa / Disposisi
-        if (($o['status'] ?? '') === 'draft_disimpan' || ($o['status'] ?? '') === 'draft') {
+            $rawPicNama = !empty($o['pic_proposal_nama']) ? trim($o['pic_proposal_nama']) : '';
+            $rawPicNama = preg_replace('/^pic\s*:\s*/i', '', $rawPicNama);
+            $picPelaksana = !empty($rawPicNama) ? $rawPicNama : 'Tim Kerja Selulosa';
+            if (($o['status_proposal'] ?? '') === 'draft_disimpan' || ($o['status_proposal_biaya'] ?? '') === 'draft_disimpan') {
+                return [
+                    'label' => 'Draft Disimpan',
+                    'class' => 'status-pill status-pill-amber',
+                    'icon'  => 'bi-bookmark-check-fill',
+                    'user'  => 'Tim Kerja Selulosa',
+                    'keterangan_aksi'   => 'Draf Proposal Belum Diajukan',
+                    'keterangan_sub'    => 'Pelaksana: ' . $picPelaksana,
+                    'keterangan_detail' => 'Masih tersimpan sebagai draf di sistem',
+                    'keterangan_icon'   => 'bi-pencil-square text-warning',
+                    'aksi_badge' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
+                ];
+            }
+            if (($o['status_proposal_biaya'] ?? '') === 'menunggu_approval' || ($o['status_proposal'] ?? '') === 'diajukan' || $proposalComplete) {
+                return [
+                    'label' => 'Review Proposal',
+                    'class' => 'status-pill status-pill-sky',
+                    'icon'  => 'bi-hourglass-split',
+                    'user'  => 'Ketua Tim Selulosa',
+                    'keterangan_aksi'   => 'Pemeriksaan Proposal',
+                    'keterangan_sub'    => 'Pelaksana: Ketua Tim Selulosa',
+                    'keterangan_detail' => 'Proposal sudah diajukan, menunggu persetujuan Katim',
+                    'keterangan_icon'   => 'bi-hourglass-split text-info',
+                    'aksi_badge' => 'bg-info-subtle text-info-emphasis border border-info-subtle'
+                ];
+            }
             return [
-                'label' => 'Draft Disimpan',
-                'class' => 'status-pill status-pill-amber',
-                'icon'  => 'bi-bookmark-check-fill',
-                'user'  => 'Tim Mitra Industri',
-                'keterangan_aksi'   => 'Draf Formulir Pelayanan',
-                'keterangan_sub'    => 'Pelaksana: Tim Mitra Industri',
-                'keterangan_detail' => 'Masih diisi oleh staf mitra, belum diajukan',
-                'keterangan_icon'   => 'bi-file-earmark-text text-warning',
-                'aksi_badge' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
+                'label' => 'Proposal Teknis',
+                'class' => 'status-pill status-pill-blue',
+                'icon'  => 'bi-file-earmark-arrow-up-fill',
+                'user'  => 'Tim Kerja Selulosa',
+                'keterangan_aksi'   => 'Penyusunan Proposal Teknis',
+                'keterangan_sub'    => 'Pelaksana: ' . $picPelaksana,
+                'keterangan_detail' => 'Sedang menyusun proposal & estimasi biaya',
+                'keterangan_icon'   => 'bi-pencil-square text-primary',
+                'aksi_badge' => 'bg-primary-subtle text-primary border border-primary-subtle'
             ];
         }
 
-        if (($o['status'] ?? '') === 'permintaan_masuk' || empty($o['jenis_layanan_opti']) || ($o['jenis_layanan_opti'] ?? '') === 'belum_ditentukan') {
-            return [
-                'label' => 'Disposisi Masuk',
-                'class' => 'status-pill status-pill-slate',
-                'icon'  => 'bi-inbox-fill',
-                'user'  => 'Tim Mitra Industri',
-                'keterangan_aksi'   => 'Permohonan Baru Masuk',
-                'keterangan_sub'    => 'Perlu Disposisi Layanan',
-                'keterangan_detail' => 'Perlu ditentukan divisi & Ketua Tim',
-                'keterangan_icon'   => 'bi-inbox text-secondary',
-                'aksi_badge' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
-            ];
-        }
-
-        // Fallback
+        // Fallback default
         return [
-            'label' => 'Order Baru',
-            'class' => 'status-pill status-pill-sky',
-            'icon'  => 'bi-file-earmark',
+            'label' => 'Disposisi Masuk',
+            'class' => 'status-pill status-pill-slate',
+            'icon'  => 'bi-inbox-fill',
             'user'  => 'Tim Mitra Industri',
-            'keterangan_aksi'   => 'Permohonan Baru Diterima',
-            'keterangan_sub'    => 'Registrasi Berkas Masuk',
-            'keterangan_detail' => 'Menunggu verifikasi permohonan jasa',
-            'keterangan_icon'   => 'bi-info-circle text-info',
-            'aksi_badge' => 'bg-info-subtle text-info-emphasis border border-info-subtle'
+            'keterangan_aksi'   => 'Permohonan Baru Masuk',
+            'keterangan_sub'    => 'Perlu Disposisi Layanan',
+            'keterangan_detail' => 'Perlu ditentukan divisi & Ketua Tim',
+            'keterangan_icon'   => 'bi-inbox text-secondary',
+            'aksi_badge' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
         ];
     }
 
@@ -1177,12 +1235,18 @@ class OrderLayanan extends \DB\SQL\Mapper {
                     p.target_mulai AS po_target_mulai, p.target_selesai AS target_po, p.target_selesai AS po_target_selesai,
                     sp.id AS surat_penawaran_id, sp.status_respon_klien, sp.nomor_surat AS nomor_penawaran,
                     sp.tanggal_surat AS penawaran_tanggal_surat, sp.updated_at AS penawaran_updated_at,
+                    sp.file_penawaran_ttd, sp.file_bukti_persetujuan, sp.surat_kesanggupan_bayar,
                     pr.durasi_kegiatan AS proposal_durasi, pr.status_proposal,
                     pr.file_proposal, pr.estimasi_total_biaya, pr.disetujui_ketua_at AS proposal_disetujui_at,
                     b.id AS bast_id, b.status_bast,
                     COALESCE((SELECT SUM(jumlah) FROM opti_pembayaran WHERE order_id = o.id), 0) AS total_terbayar,
                     (SELECT MAX(tanggal_bayar) FROM opti_pembayaran WHERE order_id = o.id) AS tanggal_bayar_terakhir,
                     u_pic.nama_user AS pic_proposal_nama,
+                    CASE 
+                        WHEN u_pic.si_opti LIKE '%lingkungan%' THEN 'Lingkungan'
+                        WHEN u_pic.si_opti LIKE '%selulosa%' THEN 'Selulosa'
+                        ELSE 'Umum'
+                    END AS pic_proposal_spesialisasi,
                     u_pelaksana.nama_user AS ketua_pelaksana_nama,
                     u_klaim.nama_user AS nama_pengklaim,
                     u_unlock.nama_user AS unlocked_by_name,
@@ -1211,6 +1275,17 @@ class OrderLayanan extends \DB\SQL\Mapper {
             return null;
         }
         $detail = $res[0];
+
+        // Auto terbitkan nomor order (ORD) jika order sudah DEAL / didisposisikan ke keuangan namun nomor_order belum terisi
+        $isDeal = ($detail['status_respon_klien'] ?? '') === 'deal' || ($detail['status_penawaran'] ?? '') === 'deal';
+        $isDisposisiKeu = in_array($detail['status_keuangan'] ?? '', ['menunggu_pembayaran', 'terbayar_sebagian', 'lunas']);
+        if (($isDeal || $isDisposisiKeu) && empty($detail['nomor_order']) && !empty($detail['id'])) {
+            $ordBaru = $this->terbitkanNomorOrder((int)$detail['id']);
+            if (!empty($ordBaru)) {
+                $detail['nomor_order'] = $ordBaru;
+            }
+        }
+
         $detail['nmcustomer_murni'] = Customer::cleanNamaPerusahaan($detail['nmcustomer'] ?? ($detail['nama_perusahaan'] ?? ''), $detail['pt_cv'] ?? '');
         $detail['nama_perusahaan'] = Customer::formatNamaPerusahaan($detail['pt_cv'] ?? '', $detail['nama_perusahaan'] ?? '');
         // Evaluasi status unlock per-order dan countdown auto-lock
@@ -1243,8 +1318,10 @@ class OrderLayanan extends \DB\SQL\Mapper {
         }
 
         $st = self::resolveStageStatus($detail);
-        $detail['stage_label'] = $st['label'];
-        $detail['stage_class'] = $st['class'];
+        $detail['stage_label']      = $st['label'];
+        $labelWords                 = preg_split('/\s+/', trim($st['label']));
+        $detail['stage_label_html'] = implode('<br>', array_map('htmlspecialchars', $labelWords));
+        $detail['stage_class']      = $st['class'];
         $detail['stage_icon']  = $st['icon'];
         $detail['stage_user']  = $st['user'] ?? '';
 
@@ -1303,7 +1380,18 @@ class OrderLayanan extends \DB\SQL\Mapper {
             [$id]
         );
 
-        return $result[0] ?? null;
+        if (!empty($result) && !empty($result[0])) {
+            if (!empty($result[0]['permintaan_melalui'])) {
+                $result[0]['media_permohonan'] = strtolower(trim((string)$result[0]['permintaan_melalui']));
+            } elseif (empty($result[0]['media_permohonan'])) {
+                $result[0]['media_permohonan'] = !empty($result[0]['id_surat_masuk']) ? 'surat' : 'surat';
+            } else {
+                $result[0]['media_permohonan'] = strtolower(trim((string)$result[0]['media_permohonan']));
+            }
+            return $result[0];
+        }
+
+        return null;
     }
 
     /**
@@ -1413,10 +1501,19 @@ class OrderLayanan extends \DB\SQL\Mapper {
     }
 
     /**
-     * Generate nomor order unik aman: ORD-YYYYMM-XXX
-     * HANYA diterbitkan ketika customer telah melakukan pembayaran / konfirmasi kesanggupan bayar
+     * Generate nomor order unik aman: ORD-YYYYMM-XXX / ORD-YYYYMM-XXXX
+     * Otomatis terbit saat order DEAL & disposisi keuangan / pembayaran (mengubah awalan REQ menjadi ORD)
      */
-    public function generateNomorOrder(string $tanggal = ''): string {
+    public function generateNomorOrder(string $tanggal = '', string $nomorPermintaan = ''): string {
+        // Jika memiliki nomor permintaan (misal: REQ-YYYYMM-XXXX), otomatis ubah awalan REQ menjadi ORD jika belum terdaftar
+        if (!empty($nomorPermintaan) && strpos($nomorPermintaan, 'REQ-') === 0) {
+            $candidate = 'ORD-' . substr($nomorPermintaan, 4);
+            $cek = $this->db->exec("SELECT COUNT(*) as c FROM order_layanan WHERE nomor_order = ?", array(1 => $candidate))[0]['c'] ?? 0;
+            if ($cek == 0) {
+                return $candidate;
+            }
+        }
+
         $time = !empty($tanggal) ? strtotime($tanggal) : time();
         if (!$time) $time = time();
         $prefix = 'ORD-' . date('Ym', $time);
@@ -1446,13 +1543,13 @@ class OrderLayanan extends \DB\SQL\Mapper {
     }
 
     /**
-     * Terbitkan nomor order resmi jika order sudah melakukan pembayaran
+     * Terbitkan nomor order resmi jika order sudah deal & disposisi keuangan / pembayaran
      */
     public function terbitkanNomorOrder(int $orderId): ?string {
         $this->load(['id = ?', $orderId]);
         if ($this->dry()) return null;
         if (empty($this->nomor_order)) {
-            $this->nomor_order = $this->generateNomorOrder();
+            $this->nomor_order = $this->generateNomorOrder($this->tanggal_masuk ?? '', $this->nomor_permintaan ?? '');
             $this->save();
         }
         return $this->nomor_order;
@@ -1798,7 +1895,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
         }
 
         if ($this->status_rancop === 'deal' || $statusProp === 'disetujui_pimpinan' || $statusProp === 'disetujui_ketua') {
-            $this->status_proposal_biaya = 'siap_penawaran';
+            $this->status_proposal_biaya = $statusProposalBiaya;
             $this->status = 'baru'; // Maju dari permintaan_masuk ke baru / siap penawaran
         } elseif ($statusProp === 'diajukan') {
             $this->status_proposal_biaya = 'menunggu_approval';
@@ -1836,7 +1933,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
     /**
      * Simpan Kalkulasi Pengujian Multi-Metode (Divisi Lingkungan)
      */
-    public function simpanKalkulasiLingkungan(int $orderId, array $items, float $diskon, ?string $tglSampel, int $userId, ?string $spmLayanan = null, ?int $spmDurasiNilai = null, ?string $spmDurasiSatuan = null, ?string $spmTriggerTipe = null): array {
+    public function simpanKalkulasiLingkungan(int $orderId, array $items, float $diskon, ?string $tglSampel, int $userId, ?string $spmLayanan = null, ?int $spmDurasiNilai = null, ?string $spmDurasiSatuan = null, ?string $spmTriggerTipe = null, string $statusProposalBiaya = 'siap_penawaran'): array {
         $this->load(array('id = ?', $orderId));
         if ($this->dry()) {
             throw new \Exception("Order Layanan #{$orderId} tidak ditemukan.");
@@ -1915,7 +2012,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
         if (!empty($spmTriggerTipe)) {
             $this->spm_trigger_tipe = $spmTriggerTipe;
         }
-        $this->status_proposal_biaya = 'siap_penawaran';
+        $this->status_proposal_biaya = $statusProposalBiaya;
         $this->save();
 
         return array(
@@ -1958,9 +2055,13 @@ class OrderLayanan extends \DB\SQL\Mapper {
         
         $params = array();
         if (!empty($divisi) && in_array($divisi, array('selulosa', 'lingkungan'))) {
-            $sql .= " AND (u.si_opti LIKE ? OR m.jenis_layanan_opti = ? OR m.jenis_layanan_opti = 'semua' OR u.si_opti IN ('ketua_tim_selulosa', 'ketua_tim_lingkungan')) ";
+            $katimRole = 'ketua_tim_' . $divisi;
+            $katimAlias = 'katim_' . $divisi;
+            $sql .= " AND (u.si_opti LIKE ? OR u.si_opti = ? OR u.si_opti = ? OR m.jenis_layanan_opti = ? OR (m.jenis_layanan_opti = 'semua' AND u.si_opti NOT LIKE '%lingkungan%' AND u.si_opti NOT LIKE '%selulosa%')) ";
             $params[1] = "%{$divisi}%";
-            $params[2] = $divisi;
+            $params[2] = $katimRole;
+            $params[3] = $katimAlias;
+            $params[4] = $divisi;
         }
 
         if ($priorityUser > 0) {

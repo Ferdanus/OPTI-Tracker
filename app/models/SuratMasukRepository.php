@@ -288,7 +288,7 @@ class SuratMasukRepository {
      * Proses klaim surat masuk menjadi order_layanan (dengan Transaction & Row Locking)
      * Tim Mitra memilih instansi pelanggan terdaftar dari tb_customer
      */
-    public function klaimSurat(int $suratId, int $userId, ?int $selectedCustomerId = null, ?string $pilihanLayanan = null): int {
+    public function klaimSurat(int $suratId, int $userId, ?int $selectedCustomerId = null, ?string $pilihanLayanan = null, string $mediaPermohonan = 'surat'): int {
         if (!$this->isConnected()) {
             throw new \Exception("Koneksi database sekretariat tidak tersedia.");
         }
@@ -345,12 +345,12 @@ class SuratMasukRepository {
                 $this->dbMain->exec(
                     "INSERT INTO `order_layanan` (
                         `id_customer`, `id_surat_masuk`, `nomor_permintaan`, `nomor_order`, `tanggal_masuk`, 
-                        `judul_kegiatan`, `deskripsi`, `spm_layanan`, `jenis_layanan_opti`, 
+                        `judul_kegiatan`, `deskripsi`, `spm_layanan`, `jenis_layanan_opti`, `media_permohonan`,
                         `lokasi_pelaksanaan`, `jumlah_pekerjaan`, `estimasi_biaya`, 
                         `status`, `diklaim_oleh`, `tanggal_klaim`, `created_at`
                     ) VALUES (
                         ?, ?, ?, ?, ?,
-                        ?, ?, ?, ?,
+                        ?, ?, ?, ?, ?,
                         'internal', '1 paket kegiatan', 0.00,
                         'permintaan_masuk', ?, ?, ?
                     )",
@@ -364,12 +364,15 @@ class SuratMasukRepository {
                         7  => '',
                         8  => 'Lainnya',
                         9  => $jenisLayanan,
-                        10 => $userId,
-                        11 => $waktuSekarang,
-                        12 => $waktuSekarang
+                        10 => $mediaPermohonan,
+                        11 => $userId,
+                        12 => $waktuSekarang,
+                        13 => $waktuSekarang
                     )
                 );
                 $orderId = (int)($this->dbMain->exec("SELECT LAST_INSERT_ID() as id")[0]['id'] ?? 0);
+    
+                // Surat penawaran diterbitkan pada Tahap 5 oleh Tim Mitra
     
                 $this->dbSekretariat->exec(
                     "UPDATE `{$this->tableSekretariat}` 
@@ -543,12 +546,15 @@ class SuratMasukRepository {
                     7  => '',
                     8  => 'Lainnya',
                     9  => $jenisLayanan,
-                    10 => $userId,
-                    11 => $waktuSekarang,
-                    12 => $waktuSekarang
+                    10 => $mediaPermohonan,
+                    11 => $userId,
+                    12 => $waktuSekarang,
+                    13 => $waktuSekarang
                 )
             );
             $orderId = (int)($this->dbMain->exec("SELECT LAST_INSERT_ID() as id")[0]['id'] ?? 0);
+    
+                // Surat penawaran diterbitkan pada Tahap 5 oleh Tim Mitra
     
             $this->commitTransaction();
     

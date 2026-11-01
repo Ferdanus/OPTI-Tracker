@@ -37,6 +37,7 @@
             <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
             <input type="hidden" name="order_id" value="{{ @order.id }}">
             <input type="hidden" name="dari" value="{{ @dari }}">
+            <input type="hidden" name="disposisi_langsung" id="inputDisposisiLangsung" value="0">
             <input type="hidden" name="is_kesanggupan_bayar" id="inputIsKesanggupan" value="0">
         
             <check if="{{ !empty(@order.surat_kesanggupan_bayar) }}">
@@ -128,7 +129,9 @@
 
 
 <div class="d-flex flex-column flex-sm-row justify-content-end gap-2">
-    <a href="{{ @dari == 'order' ? (@BASE . '/order/' . @dari_id) : (@BASE . '/pembayaran') }}" class="btn btn-outline-secondary px-4 order-3 order-sm-1">Batal</a>
+    <a href="{{ @BASE }}/pembayaran" class="btn btn-outline-secondary px-4 order-3 order-sm-1">Batal</a>
+    <button type="button" id="btnSimpanSaja" class="btn btn-outline-primary px-4 order-2 order-sm-2 d-none">Simpan</button>
+    <button type="button" id="btnSimpanDisposisi" class="btn btn-primary px-4 order-1 order-sm-3 d-none"><i class="bi bi-send-check me-1"></i> Disposisi</button>
     <button type="button" id="btnSimpanPembayaran" class="btn btn-primary px-4 order-1 order-sm-3"><i class="bi bi-save me-1"></i> Simpan Pembayaran</button>
 </div>
         </form>
@@ -192,7 +195,48 @@ function labelDivisi() {
         var detailText   = document.getElementById('overpayDetailText');
         var form         = document.getElementById('formPembayaran');
         var btnSimpan = document.getElementById('btnSimpanPembayaran');
+var btnSimpanSaja = document.getElementById('btnSimpanSaja');
+var btnSimpanDisposisi = document.getElementById('btnSimpanDisposisi');
+var inputDisposisi = document.getElementById('inputDisposisiLangsung');
 
+btnSimpanSaja.addEventListener('click', function () {
+    inputDisposisi.value = '0';
+    btnSimpan.click(); // pinjem logic validasi & submit yang udah ada di listener btnSimpan
+});
+
+btnSimpanDisposisi.addEventListener('click', function () {
+    var pesan = 'Pembayaran akan disimpan, dan order ini akan didisposisikan ke <strong>Ketua Tim ' + labelDivisi() + '</strong>.';
+
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            icon: 'question',
+            title: 'Disposisi ke Ketua Tim ' + labelDivisi() + '?',
+            html: '<div class="text-start small text-secondary">' + pesan + '</div>',
+            showCancelButton: true,
+            confirmButtonText: '<i class="bi bi-send-check me-1"></i> Ya, Disposisi',
+            cancelButtonText: 'Batal',
+            confirmButtonColor: '#881337',
+            reverseButtons: true,
+            customClass: {
+                popup: 'rounded-4 shadow-lg p-2',
+                confirmButton: 'btn btn-primary px-3 py-2 fw-semibold rounded-3 mx-1',
+                cancelButton: 'btn btn-outline-secondary px-3 py-2 fw-semibold rounded-3 mx-1'
+            },
+            buttonsStyling: false
+        }).then(function (result) {
+            if (result.isConfirmed) {
+                inputDisposisi.value = '1';
+                btnSimpan.click();
+            }
+        });
+    } else {
+        if (confirm('Pembayaran akan disimpan dan didisposisikan ke Ketua Tim ' + labelDivisi() + '. Lanjutkan?')) {
+            inputDisposisi.value = '1';
+            btnSimpan.click();
+        }
+    }
+});
+    
         function rupiah(n) {
             return 'Rp ' + (Math.round(n) || 0).toLocaleString('id-ID');
         }
