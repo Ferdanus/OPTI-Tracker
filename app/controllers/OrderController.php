@@ -1688,6 +1688,10 @@ class OrderController extends Controller {
             }
             foreach ($activityLogs as &$act) {
                 $act['time_ago'] = \NotificationService::timeAgo($act['created_at']);
+                // Teks alur PO dipadatkan & tanpa nama pelaku (nama sudah tampil di bawah kartu); berlaku juga untuk catatan lama
+                if (isset($act['modul']) && $act['modul'] === 'po_kegiatan' && isset($act['deskripsi'])) {
+                    $act['deskripsi'] = \PoReviewController::ringkasDeskripsiRiwayat($act['deskripsi']);
+                }
 
                 // Hubungkan dengan audit waktu pengerjaan (selisih dari waktu dibaca hingga aksi diproses)
                 $act['durasi_pengerjaan'] = null;

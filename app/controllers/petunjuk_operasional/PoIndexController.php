@@ -329,9 +329,10 @@ class PoIndexController extends PoSertifikasiController {
      * Return ['total' => int, 'rows' => [], 'counts' => [draft, terkirim, disetujui_mitra, disetujui] (ikut filter pencarian & bulan),
      *         'counts_semua' => (sama, tanpa pencarian & bulan), 'peringatan' => string].
      * $semuaPerTab = [tab => bool]: apakah filter bulan dimatikan untuk tab itu (dipakai menghitung angka tiap tab); kosong = ikut $tampilkanSemua.
+     * $tab = 'semua': gabungan semua status (tanpa draf bila $tanpaDraft); angkanya ada di counts['semua'].
      * Status efektif: PO yang sudah diverifikasi PPK BLU (validasi_keuangan_at terisi) dihitung 'disetujui'.
      */
-    public function ambilGabungan($tab, $layanan, $q, $tampilkanSemua, $bulan, $tahun, $limit, $semuaPerTab = null) {
+    public function ambilGabungan($tab, $layanan, $q, $tampilkanSemua, $bulan, $tahun, $limit, $semuaPerTab = null, $tanpaDraft = false) {
         $nol = ['draft' => 0, 'terkirim' => 0, 'disetujui_mitra' => 0, 'disetujui' => 0];
         $hasil = ['total' => 0, 'rows' => [], 'counts' => $nol, 'counts_semua' => $nol, 'peringatan' => ''];
         $semuaPerTab = is_array($semuaPerTab) ? $semuaPerTab : [];
@@ -357,6 +358,8 @@ class PoIndexController extends PoSertifikasiController {
 
         $stEf = "(CASE WHEN p.validasi_keuangan_at IS NOT NULL OR p.status = 'disetujui' THEN 'disetujui' ELSE p.status END)";
         $daftarStatus = ['draft', 'terkirim', 'disetujui_mitra', 'disetujui'];
+        $statusSemua = $tanpaDraft ? ['terkirim', 'disetujui_mitra', 'disetujui'] : $daftarStatus;
+        $inSemua = "'" . implode("','", $statusSemua) . "'";
 
         // jumlah per status untuk kartu ringkasan (tidak ikut filter bulan/pencarian, tetap ikut filter layanan)
         try {
@@ -385,15 +388,30 @@ class PoIndexController extends PoSertifikasiController {
             if (!$semuaK) { $cond .= " AND {$kolomTanggal} IS NOT NULL AND MONTH({$kolomTanggal}) = " . (int) $bulan . " AND YEAR({$kolomTanggal}) = " . (int) $tahun; }
             $selF[] = "SUM(CASE WHEN {$cond} THEN 1 ELSE 0 END) AS {$k}";
         }
-
-        $where = $whereQ . " AND {$stEf} = ?";
-        $params = array_merge($paramsQ, [$tab]);
-        if (!$tampilkanSemua) {
-            $where .= " AND {$kolomTanggal} IS NOT NULL AND MONTH({$kolomTanggal}) = ? AND YEAR({$kolomTanggal}) = ?";
-            $params[] = (int) $bulan;
-            $params[] = (int) $tahun;
+        // tab "Semua": gabungan status dengan aturan bulan tiap status (sama dengan tab penyusunnya)
+        $bagianSemua = [];
+        foreach ($statusSemua as $k) {
+            $cS = "{$stEf} = '{$k}'";
+            $semuaK2 = array_key_exists($k, $semuaPerTab) ? (bool) $semuaPerTab[$k] : (bool) $tampilkanSemua;
+            if (!$semuaK2) { $cS .= " AND {$kolomTanggal} IS NOT NULL AND MONTH({$kolomTanggal}) = " . (int) $bulan . " AND YEAR({$kolomTanggal}) = " . (int) $tahun; }
+            $bagianSemua[] = "({$cS})";
         }
-        $tabValid = in_array($tab, $daftarStatus, true);   // tab "PO Masuk" hanya untuk order OPTI
+        $condSemua = '(' . implode(' OR ', $bagianSemua) . ')';
+        $selF[] = "SUM(CASE WHEN {$condSemua} THEN 1 ELSE 0 END) AS semua";
+
+        if ($tab === 'semua') {
+            $where = $whereQ . " AND {$condSemua}";
+            $params = $paramsQ;
+        } else {
+            $where = $whereQ . " AND {$stEf} = ?";
+            $params = array_merge($paramsQ, [$tab]);
+            if (!$tampilkanSemua) {
+                $where .= " AND {$kolomTanggal} IS NOT NULL AND MONTH({$kolomTanggal}) = ? AND YEAR({$kolomTanggal}) = ?";
+                $params[] = (int) $bulan;
+                $params[] = (int) $tahun;
+            }
+        }
+        $tabValid = ($tab === 'semua') || in_array($tab, $daftarStatus, true);   // tab "PO Masuk" hanya untuk order OPTI
 
         $this->ensureDatabaseSertifikasi();
         $dbName = $this->namaDbSertifikasi();
@@ -410,6 +428,7 @@ class PoIndexController extends PoSertifikasiController {
             try {
                 $rf = $this->db->exec("SELECT " . implode(', ', $selF) . " {$fromSql} WHERE {$whereQ}", $this->indeks($paramsQ));
                 foreach ($daftarStatus as $k) { $hasil['counts'][$k] = (int) (isset($rf[0][$k]) ? $rf[0][$k] : 0); }
+                $hasil['counts']['semua'] = (int) (isset($rf[0]['semua']) ? $rf[0]['semua'] : 0);
                 if ($tabValid) {
                     $res = $this->db->exec("SELECT COUNT(*) AS c {$fromSql} WHERE {$where}", $this->indeks($params));
                     $total = (int) (isset($res[0]['c']) ? $res[0]['c'] : 0);
@@ -456,7 +475,7 @@ class PoIndexController extends PoSertifikasiController {
      * Return: ['total' => int, 'rows' => [], 'counts' => [tab => int] (ikut pencarian & bulan), 'counts_semua' => [tab => int], 'peringatan' => ''].
      */
     public function ambilSertifikasiUi(array $o) {
-        $tabs = ['draft', 'tindakan', 'revisi', 'berjalan', 'disetujui'];
+        $tabs = ['draft', 'tindakan', 'revisi', 'berjalan', 'disetujui', 'semua'];   // 'semua' = gabungan tab yang tampil untuk peran ini
         $nol = array_fill_keys($tabs, 0);
         $hasil = ['total' => 0, 'rows' => [], 'counts' => $nol, 'counts_semua' => $nol, 'peringatan' => '', 'total_semua' => 0];
         $tab = isset($o['tab']) ? (string) $o['tab'] : 'berjalan';
@@ -505,10 +524,21 @@ class PoIndexController extends PoSertifikasiController {
         $kolomTanggal = [
             'draft' => $tglDraft, 'tindakan' => $tglDraft, 'revisi' => $tglDraft, 'berjalan' => $tglDraft,
             'disetujui' => isset($kolom['validasi_keuangan_at']) ? "COALESCE(p.validasi_keuangan_at, p.updated_at, p.created_at)" : $tglDraft,
+            'semua' => $tglDraft,
         ];
+        $semuaUntuk = function ($t) use ($semuaPerTab) { return array_key_exists($t, $semuaPerTab) ? (bool) $semuaPerTab[$t] : false; };
+        // tab "Semua": gabungan tab yang tampil untuk peran ini, dengan aturan bulan tiap tab (angka & isi = jumlah tab penyusunnya).
+        // Aturan bulan sudah ada di dalam kondisinya, jadi $semuaPerTab['semua'] harus true dari pemanggil.
+        $bagianSemua = [];
+        foreach (['draft', 'tindakan', 'revisi', 'berjalan', 'disetujui'] as $tS) {
+            if ($cond[$tS] === '1 = 0') { continue; }
+            $cS = '(' . $cond[$tS] . ')';
+            if (!$semuaUntuk($tS)) { $cS .= " AND {$kolomTanggal[$tS]} IS NOT NULL AND MONTH({$kolomTanggal[$tS]}) = " . (int) $bulan . " AND YEAR({$kolomTanggal[$tS]}) = " . (int) $tahun; }
+            $bagianSemua[] = '(' . $cS . ')';
+        }
+        $cond['semua'] = $bagianSemua ? '(' . implode(' OR ', $bagianSemua) . ')' : '1 = 0';
         $tabValid = isset($cond[$tab]);   // tab "PO Masuk" hanya untuk order OPTI: tanpa baris
         if (!$tabValid) { $tab = 'berjalan'; }
-        $semuaUntuk = function ($t) use ($semuaPerTab) { return array_key_exists($t, $semuaPerTab) ? (bool) $semuaPerTab[$t] : false; };
 
         // filter tambahan per tab (sama seperti PO OPTI): posisi, jenis revisi, jenis tindakan
         $adaHumas = isset($kolom['verifikasi_humas_at']);

@@ -1182,6 +1182,8 @@
                 } else if (el.classList.contains('po-signature-row') || el.classList.contains('ptd-blok')) { cur = null; }
                 else if (cur) { cur.body.appendChild(el); }
             });
+            // Halaman terpisah seperti PDF (kolom catatan tidak dihitung, jadi nomor halaman sama dengan PDF)
+            if (window.PoPaginasi) { window.PoPaginasi.pasang(sheet, { sembunyikan: '.rvw-notes' }); }
         }
         function noteHtml(n) {
             var p = curPo();

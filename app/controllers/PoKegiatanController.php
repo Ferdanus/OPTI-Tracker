@@ -535,7 +535,7 @@ public function index($f3) {
     // Revisi, Sedang Berjalan (SEMUA PO yang sedang berjalan, termasuk yang direvisi; dengan kolom Posisi PO), PO Aktif.
     // Tab lama "Terkirim" / "Disetujui Mitra" dilebur ke Sedang Berjalan; tautan lama tetap jalan lewat alias di bawah.
     // Kunci tab 'disetujui' dipertahankan untuk tab PO Aktif supaya tautan lama tidak putus.
-    $tabsValid = ['masuk', 'draft', 'tindakan', 'revisi', 'berjalan', 'disetujui'];
+    $tabsValid = ['semua', 'masuk', 'draft', 'tindakan', 'revisi', 'berjalan', 'disetujui'];   // 'semua' = gabungan semua tab yang tampil untuk peran ini
     $tab = strtolower(trim((string) $f3->get('GET.tab')));
     $aliasTab = ['terkirim' => 'berjalan', 'disetujui_mitra' => 'berjalan', 'review' => 'berjalan', 'aktif' => 'disetujui'];
     if (isset($aliasTab[$tab])) { $tab = $aliasTab[$tab]; }
@@ -588,8 +588,12 @@ public function index($f3) {
     // pindah tab/halaman (lewat link yang nyertain parameter semua=).
     $semuaGet = $f3->get('GET.semua');
     $semuaEksplisit = !($semuaGet === null || $semuaGet === '');
+    // Tab Semua: dibuka tanpa pilihan = tampilkan semua data. Dianggap pilihan eksplisit supaya angka SEMUA tab ikut tanpa filter bulan
+    // dan tautan tab lain membawa semua=1 (angka di tab = isi tab kalau diklik).
+    if (!$semuaEksplisit && $tab === 'semua') { $semuaGet = '1'; $semuaEksplisit = true; }
     // Perlu/tidaknya filter bulan per tab (dipakai juga untuk angka di tiap tab, supaya angka tab = isi tab kalau diklik)
     $semuaUntukTab = function ($t) use ($semuaEksplisit, $semuaGet) {
+        if ($t === 'semua') { return true; }   // tab Semua memakai aturan bulan tiap tab penyusunnya (lihat $tabGabungan), bukan satu aturan sendiri
         return $semuaEksplisit ? ($semuaGet === '1') : in_array($t, ['masuk', 'draft', 'tindakan', 'revisi'], true);
     };
     $tampilkanSemua = $semuaUntukTab($tab);
@@ -604,6 +608,7 @@ public function index($f3) {
     // Kolom tanggal acuan filter bulan, beda-beda per tab sesuai histori
     // status yang beneran tercatat di po_kegiatan/order_layanan.
     $kolomTanggalPerTab = [
+        'semua'           => 'COALESCE(p.updated_at, p.created_at, o.ketua_pelaksana_at)',
         'masuk'           => 'o.ketua_pelaksana_at',
         'draft'           => 'COALESCE(p.updated_at, p.created_at)',
         'tindakan'        => 'p.updated_at',
@@ -671,6 +676,29 @@ public function index($f3) {
         $kondisiTabPerTab['draft']    = "{$stEf} = 'draft' AND NOT (COALESCE(" . $kondisiRevisiSaya . ", 0))";
         $kondisiTabPerTab['berjalan'] = "(" . $kondisiTabPerTab['berjalan'] . ") AND NOT (COALESCE(" . $kondisiRevisiSaya . ", 0))";
     }
+
+    // Tab "Semua": gabungan isi semua tab yang tampil untuk peran ini (aturan per tab di atas dipakai apa adanya, jadi tidak ada PO yang hilang / dobel).
+    // Ketua Tim: Perlu Tindakan + Sedang Berjalan + PO Aktif. Pembuat: PO Masuk (OPTI) + Draft + Revisi + Sedang Berjalan + PO Aktif. Superadmin: semuanya.
+    $tabGabungan = [];
+    if (!$katimUi) {
+        if ($layananFilter === '') { $tabGabungan[] = 'masuk'; }
+        $tabGabungan[] = 'draft'; $tabGabungan[] = 'revisi';
+    }
+    if ($katimUi || $isSuperadmin) { $tabGabungan[] = 'tindakan'; }
+    $tabGabungan[] = 'berjalan'; $tabGabungan[] = 'disetujui';
+    $bagianSemua = [];
+    foreach ($tabGabungan as $kG) {
+        $cG0 = $kondisiTabPerTab[$kG];
+        // draf divisi / layanan lain tidak ditampilkan (sama seperti tab Draft)
+        if ($kG === 'draft' && $sembunyikanDrafLain && $bolehDrafDivisi !== '') { $cG0 = "({$cG0}) AND o.jenis_layanan_opti = '" . $bolehDrafDivisi . "'"; }
+        // aturan bulan sama persis dengan tab itu sendiri, supaya isi & angka Semua = jumlah tab-tab penyusunnya
+        if (!$semuaUntukTab($kG)) {
+            $kolG = $kolomTanggalPerTab[$kG];
+            $cG0 = "({$cG0}) AND {$kolG} IS NOT NULL AND MONTH({$kolG}) = " . (int) $bulan . " AND YEAR({$kolG}) = " . (int) $tahun;
+        }
+        $bagianSemua[] = "({$cG0})";
+    }
+    $kondisiTabPerTab['semua'] = '(' . implode(' OR ', $bagianSemua) . ')';
 
     // Filter tambahan per tab (hanya memperkecil isi tab; angka di tab & kotak tidak ikut berubah):
     //  - Sedang Berjalan: posisi PO (review Ketua Tim / Humas / Tim Mitra / PPK BLU)
@@ -752,13 +780,14 @@ public function index($f3) {
         $halamanDiminta = max(1, (int) $f3->get('GET.page'));
         $semuaPerTab = [];
         foreach (['draft', 'terkirim', 'disetujui_mitra', 'disetujui'] as $kT0) { $semuaPerTab[$kT0] = $semuaUntukTab($kT0); }
+        $semuaPerTab['semua'] = $semuaUntukTab('semua');
         $ctrlLain = new \petunjuk_operasional\PoIndexController();
         $ctrlLain->lewatiSertifikasi = true;   // PO Sertifikasi diambil terpisah (ambilSertifikasiUi) dengan aturan tab yang sama seperti PO OPTI
         if ($layananFilter === 'sertifikasi') {
             $nolL = ['draft' => 0, 'terkirim' => 0, 'disetujui_mitra' => 0, 'disetujui' => 0];
-            $lain = ['total' => 0, 'rows' => [], 'counts' => $nolL, 'counts_semua' => $nolL, 'peringatan' => ''];
+            $lain = ['total' => 0, 'rows' => [], 'counts' => $nolL + ['semua' => 0], 'counts_semua' => $nolL, 'peringatan' => ''];
         } else {
-        $lain = $ctrlLain->ambilGabungan($tab === 'berjalan' ? 'terkirim' : $tab, $layananFilter, $q, $tampilkanSemua, $bulan, $tahun, min(500, $halamanDiminta * $perHalaman), $semuaPerTab);
+        $lain = $ctrlLain->ambilGabungan($tab === 'berjalan' ? 'terkirim' : $tab, $layananFilter, $q, $tampilkanSemua, $bulan, $tahun, min(500, $halamanDiminta * $perHalaman), $semuaPerTab, $sembunyikanDrafLain);
         if ($tab === 'berjalan') {
             // Tab Sedang Berjalan juga memuat PO layanan lain yang berstatus 'disetujui_mitra' (tab itu sudah dilebur ke sini)
             $lain2 = $ctrlLain->ambilGabungan('disetujui_mitra', $layananFilter, $q, $tampilkanSemua, $bulan, $tahun, min(500, $halamanDiminta * $perHalaman), $semuaPerTab);
@@ -769,12 +798,12 @@ public function index($f3) {
         if ($posisiFilter !== '' || $jenisFilter !== '' || $tindakFilter !== '') { $lain['total'] = 0; $lain['rows'] = []; }   // PO layanan lain tidak punya posisi / jenis revisi
         if ($sembunyikanDrafLain) {
             if ($tab === 'draft') { $lain['total'] = 0; $lain['rows'] = []; }
-            $lain['counts']['draft'] = 0; $lain['counts_semua']['draft'] = 0;
+            $lain['counts']['draft'] = 0; $lain['counts_semua']['draft'] = 0;   // angka 'semua' sudah tanpa draf (parameter $tanpaDraft)
         }
         // [BARU] PO Sertifikasi: tab Perlu Tindakan / Revisi / Sedang Berjalan / PO Aktif + kolom Posisi PO, sama seperti PO OPTI
         if ($layananFilter === '' || $layananFilter === 'sertifikasi') {
             $semuaTabSert = [];
-            foreach (['draft', 'tindakan', 'revisi', 'berjalan', 'disetujui'] as $kT1) { $semuaTabSert[$kT1] = $semuaUntukTab($kT1); }
+            foreach (['semua', 'draft', 'tindakan', 'revisi', 'berjalan', 'disetujui'] as $kT1) { $semuaTabSert[$kT1] = $semuaUntukTab($kT1); }
             $sert = $ctrlLain->ambilSertifikasiUi([
                 'tab' => $tab, 'q' => $q, 'bulan' => $bulan, 'tahun' => $tahun, 'limit' => min(500, $halamanDiminta * $perHalaman),
                 'semuaPerTab' => $semuaTabSert,
@@ -958,6 +987,8 @@ $daftarPo = $this->safeQuery($sql, $params);
         // Tombol mata di kolom Aksi: 'review' = panel slide untuk pemegang PO (Review / Kerjakan / Putuskan), 'lihat' = panel slide yang sama tanpa tombol tindakan
         // (lihat_n 2 = dengan catatan revisi, 1 = tanpa catatan revisi), 'modal' = pratinjau dokumen biasa (pengguna tanpa akses panel)
         $pos['lihat_n'] = in_array($tab, ['tindakan', 'revisi'], true) ? '2' : '1';
+        // Tab Semua: slide dengan catatan revisi dipakai untuk PO yang sedang direvisi / menunggu review (isi tab Perlu Tindakan & Revisi)
+        if ($tab === 'semua' && (!empty($pos['po_revisi']) || ($stPo === 'terkirim' && !in_array((string) ($pPos['status_review'] ?? ''), ['disetujui', 'perlu_revisi'], true)))) { $pos['lihat_n'] = '2'; }
         $bisaLihatPanel = !empty($pPos['po_id']) && in_array($stPo, ['terkirim', 'disetujui_mitra', 'disetujui'], true)
             && ($stPo === 'terkirim' || (string) ($pPos['status_review'] ?? '') === 'disetujui')
             && ($isSuperadmin || $role === 'ketua_tim' || ($role === 'tim_kerja' && (int) ($pPos['ketua_pelaksana_id'] ?? 0) === (int) $this->getUserId()));
@@ -973,6 +1004,8 @@ $daftarPo = $this->safeQuery($sql, $params);
                 && ($stPo === 'terkirim' || (in_array($stPo, ['disetujui_mitra', 'disetujui'], true) && (string) ($pPos['status_review'] ?? '') === 'disetujui'))) ? 'ro' : 'modal';
         }
         $pos['po_dikirim_at'] = ($adaWaktu($pPos['po_dikirim_at'] ?? '') && strtotime((string) $pPos['po_dikirim_at'])) ? (string) $pPos['po_dikirim_at'] : '';
+        // Aksi ringkas (tombol berlabel Lihat / Review / Detail): tab Perlu Tindakan, Revisi, Sedang Berjalan, PO Aktif. Di tab Semua ditentukan per baris: semua PO yang sudah dikirim.
+        $pos['ringkas'] = ($tab === 'semua') ? ($stPo !== '' && $stPo !== 'draft') : in_array($tab, ['tindakan', 'revisi', 'berjalan', 'disetujui'], true);
         $pPos = array_merge($pPos, $pos);
     }
     unset($pPos);
@@ -984,7 +1017,7 @@ $daftarPo = $this->safeQuery($sql, $params);
         // baris PO layanan dilengkapi kunci yang dipakai tabel OPTI (template menghentikan halaman bila ada kunci yang hilang)
         $kunciKosong = ['po_id' => 0, 'po_status' => '', 'po_created_at' => '', 'order_id' => 0, 'nama_mitra' => '', 'pt_cv' => '', 'nama_pembuat' => '', 'jenis_layanan_opti' => '',
                         'judul_kegiatan' => '', 'status_review' => '', 'nilai_fmt' => '', 'terbayar_fmt' => '', 'kontrak_lunas' => false, 'kesanggupan_url' => '', 'daftar_pembayaran' => [], 'po_dikirim_at' => '', 'aksi_mode' => 'modal', 'lihat_n' => '1', 'hanya_lihat' => false,
-                        'po_revisi' => false, 'posisi_teks' => '', 'posisi_pemegang' => '', 'posisi_kelas' => '', 'panel_jenis' => '', 'panel_label' => '', 'belum_dibaca' => false, 'baca_teks' => '', 'baca_status' => ''];
+                        'po_revisi' => false, 'posisi_teks' => '', 'posisi_pemegang' => '', 'posisi_kelas' => '', 'panel_jenis' => '', 'panel_label' => '', 'belum_dibaca' => false, 'baca_teks' => '', 'baca_status' => '', 'ringkas' => false];
         foreach ($lain['rows'] as $iL => $rL) {
             $lain['rows'][$iL] = array_merge($kunciKosong, $rL, ['hanya_lihat' => ((string) $rL['layanan'] === 'sertifikasi' ? !empty($rL['hanya_lihat']) : !($isSuperadmin || ($layananTerkunci !== '' && (string) $rL['layanan'] === $layananTerkunci))), 'sumber' => 'layanan', 'po_status' => (string) $rL['status'], 'judul_kegiatan' => (string) $rL['judul'], 'nama_mitra' => (string) $rL['mitra'],
                 'nilai_fmt' => $rL['nilai_kontrak'] !== null ? 'Rp ' . number_format((float) $rL['nilai_kontrak'], 0, ',', '.') : '-',
@@ -1052,6 +1085,7 @@ $daftarPo = $this->safeQuery($sql, $params);
     $totalPoSemua = (int) ($gStat['total'] ?? 0);
     if ($lain !== null) {
         // PO layanan lain belum punya alur revisi: tab Revisi tidak ditambah; 'disetujui_mitra' masuk ke Terkirim
+        $tabCounts['semua'] += (int) ($lain['counts']['semua'] ?? 0);
         foreach (['draft' => ['draft'], 'berjalan' => ['terkirim', 'disetujui_mitra'], 'disetujui' => ['disetujui']] as $kTab => $statusLain) {
             foreach ($statusLain as $kSt) {
                 $tabCounts[$kTab] += (int) $lain['counts'][$kSt];
@@ -1061,7 +1095,7 @@ $daftarPo = $this->safeQuery($sql, $params);
         $totalPoSemua += array_sum($lain['counts_semua']);
     }
     if ($sert !== null) {
-        foreach (['draft', 'tindakan', 'revisi', 'berjalan', 'disetujui'] as $kS) {
+        foreach (['semua', 'draft', 'tindakan', 'revisi', 'berjalan', 'disetujui'] as $kS) {
             $tabCounts[$kS] += (int) $sert['counts'][$kS];
             $tabGlobal[$kS] += (int) $sert['counts_semua'][$kS];
         }
@@ -1085,7 +1119,7 @@ $daftarPo = $this->safeQuery($sql, $params);
     $f3->set('bulan_filter', $bulan);
     $f3->set('tahun_filter', $tahun);
     $f3->set('daftar_tahun', range($tahunSekarang + 1, $tahunSekarang - 4));
-    $f3->set('tampilkan_semua', $tampilkanSemua);
+    $f3->set('tampilkan_semua', $tab === 'semua' ? ($semuaEksplisit && $semuaGet === '1') : $tampilkanSemua);   // tab Semua: tombol hanya menyala bila dipilih sendiri
     $f3->set('semua_param', $semuaEksplisit ? '&semua=' . ($semuaGet === '1' ? 1 : 0) : '');
     $f3->set('bulan_default', (int) date('n'));
     $f3->set('tahun_default', (int) date('Y'));
@@ -1120,8 +1154,8 @@ $daftarPo = $this->safeQuery($sql, $params);
     $f3->set('total_berjalan',       $tabGlobal['berjalan']);
     $f3->set('tampil_tab_tindakan',  $katimUi || $isSuperadmin);   // tab Perlu Tindakan hanya untuk Ketua Tim / Superadmin
     $f3->set('tindakan_di_awal',     $katimUi);                    // Ketua Tim: tab pertama; Superadmin: sesudah Revisi
-    $f3->set('tampil_posisi', in_array($tab, ['tindakan', 'revisi', 'berjalan'], true));
-    $f3->set('aksi_ringkas', in_array($tab, ['tindakan', 'revisi', 'berjalan', 'disetujui'], true));
+    $f3->set('tampil_posisi', in_array($tab, ['semua', 'tindakan', 'revisi', 'berjalan'], true));
+    $f3->set('aksi_ringkas', in_array($tab, ['semua', 'tindakan', 'revisi', 'berjalan', 'disetujui'], true));
     $f3->set('filter_posisi', $posisiFilter);
     $f3->set('filter_jenis', $jenisFilter);
     $f3->set('filter_tindak', $tindakFilter);

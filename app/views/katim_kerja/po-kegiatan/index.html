@@ -175,6 +175,7 @@
     <div class="card border-0 shadow-sm overflow-hidden mb-4">
         <div class="filter-tabs-wrapper">
             <div class="d-flex align-items-center gap-2 flex-wrap" id="poTabs">
+                <a data-no-loader="true" class="po-tab filter-tab-pill {{ @tab_aktif == 'semua' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=semua&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}"><i class="bi bi-list-ul"></i>Semua <span class="count-chip">{{ @tab_counts.semua ?: 0 }}</span></a>
                 <check if="{{ @tampil_tab_tindakan && @tindakan_di_awal }}">
                 <a data-no-loader="true" class="po-tab filter-tab-pill {{ @tab_aktif == 'tindakan' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=tindakan&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}"><i class="bi bi-exclamation-circle"></i>Perlu Tindakan <span class="count-chip chip-danger">{{ @tab_counts.tindakan ?: 0 }}</span></a>
                 </check>
@@ -365,7 +366,7 @@
                                             <check if="{{ @bisa_tambah_po && !@p.po_id }}">
                                                 <a href="{{ @BASE }}/po-kegiatan/buat?order_id={{ @p.order_id }}" class="btn btn-sm btn-primary py-1 px-2 shadow-sm" title="Buat Petunjuk Operasional"><i class="bi bi-plus-lg me-1"></i>Buat PO</a>
                                             </check>
-                                            <check if="{{ @aksi_ringkas && @p.po_id }}">
+                                            <check if="{{ @p.ringkas && @p.po_id }}">
                                                 <!-- Tab Perlu Tindakan / Revisi / Sedang Berjalan / PO Aktif: aksi dibuat ringkas dan berlabel. Panel slide sudah memuat dokumen, PDF, dan berkas. -->
                                                 <check if="{{ @p.aksi_mode == 'review' }}">
                                                     <button type="button" class="btn btn-sm btn-primary py-1 px-2" onclick="bukaPanelReviewPo({{ @p.po_id }}, '{{ @p.panel_jenis }}', {{ @p.order_id }}, this)" title="{{ @p.panel_label }} (buka panel)"><i class="bi bi-eye me-1"></i>{{ @p.panel_label }}</button>
@@ -378,7 +379,7 @@
                                                 </check>
                                                 <a href="{{ @BASE }}/order/{{ @p.order_id }}" class="btn btn-sm btn-outline-secondary py-1 px-2" title="Buka detail order"><i class="bi bi-box-arrow-up-right me-1"></i>Detail</a>
                                             </check>
-                                            <check if="{{ !@aksi_ringkas }}">
+                                            <check if="{{ !@p.ringkas }}">
                                                 <check if="{{ @p.po_id }}">
                                                     <button type="button" class="btn btn-sm btn-outline-primary py-1 px-2" onclick="bukaPreviewPo({{ @p.po_id }}, '{{ @p.po_status }}')" title="Lihat Pratinjau PO"><i class="bi bi-eye"></i></button>
                                                 </check>
@@ -859,7 +860,7 @@ function pilihKartuTab(tab) {
         var dv = form.elements.divisi;
         if (dv && dv.tagName === 'SELECT' && dv.value !== String(form.getAttribute('data-divisi-default') || '')) return true;
         var tab = form.elements.tab ? form.elements.tab.value : '';
-        var semuaBawaan = (tab === 'masuk' || tab === 'draft' || tab === 'tindakan' || tab === 'revisi');
+        var semuaBawaan = (tab === 'semua' || tab === 'masuk' || tab === 'draft' || tab === 'tindakan' || tab === 'revisi');
         var sf = ['posisi', 'jenis', 'tindak'];
         for (var i = 0; i < sf.length; i++) { var el = form.elements[sf[i]]; if (el && !el.disabled && el.value !== '') return true; }
         var chk = document.getElementById('chkSemuaPo');

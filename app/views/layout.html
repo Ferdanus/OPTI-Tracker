@@ -27,6 +27,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <!-- Mammoth.js untuk render & preview dokumen Word (.docx) di Browser -->
     <script src="{{ @BASE }}/public/js/mammoth.browser.min.js"></script>
+    <script src="{{ @BASE }}/public/js/po-paginasi.js?v=1"></script>
     <script>
         if (typeof mammoth === 'undefined') {
             document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js"><\/script>');
@@ -1818,7 +1819,8 @@
                     </li>
                 </check>
 
-                <check if="{{ @is_superadmin || @is_tim_mitra }}">
+                <!-- Superadmin cukup satu menu "Daftar PO" (Pelaksanaan Teknis, mencakup semua tahap dan layanan); menu per tahap ini untuk role masing-masing -->
+                <check if="{{ @is_tim_mitra }}">
                     <li>
                         <a class="sidebar-link {{ @active_menu == 'po_validasi_mitra' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan/validasi-mitra" title="Daftar PO Tim Mitra">
                             <i class="bi bi-file-earmark-text"></i> <span>Daftar PO</span>
@@ -1829,8 +1831,8 @@
                     </li>
                 </check>
 
-                <!-- Daftar PO Humas (verifikasi PO + Map Kendali) -- Superadmin dan Sub Tim Humas -->
-                <check if="{{ @is_superadmin || @is_humas }}">
+                <!-- Daftar PO Humas (verifikasi PO + Map Kendali) -- Sub Tim Humas (superadmin lewat menu Daftar PO di Pelaksanaan Teknis) -->
+                <check if="{{ @is_humas }}">
                     <li>
                         <a class="sidebar-link {{ @active_menu == 'po_humas' ? 'active' : '' }}" href="{{ @BASE }}/po-humas" title="Daftar PO Humas">
                             <i class="bi bi-journal-check"></i> <span>Daftar PO</span>
@@ -1973,8 +1975,8 @@
 
                 </check>
 
-                <!-- PPK BLU: Daftar Review PO (verifikasi PO setelah Humas dan Tim Mitra) -->
-                <check if="{{ @is_ppk || @is_superadmin }}">
+                <!-- PPK BLU: Daftar Review PO (verifikasi PO setelah Humas dan Tim Mitra) -- superadmin lewat menu Daftar PO di Pelaksanaan Teknis -->
+                <check if="{{ @is_ppk }}">
                     <li class="sidebar-section-label">Verifikasi PO</li>
                     <li>
                         <a class="sidebar-link {{ @active_menu == 'po_ppk' ? 'active' : '' }}" href="{{ @BASE }}/po-ppk" title="Daftar PO PPK BLU">

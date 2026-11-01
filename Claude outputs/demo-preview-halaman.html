@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demo – Penanda Halaman di Preview PO</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #f1f5f9; color: #0f172a; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { padding: 16px 20px 6px; max-width: 900px; margin: 0 auto; }
+  header h1 { margin: 0 0 4px; font-size: 18px; }
+  header p { margin: 0; font-size: 13px; color: #64748b; line-height: 1.5; }
+  .bar { position: sticky; top: 0; z-index: 20; background: #f1f5f9; border-bottom: 1px solid #cbd5e1; padding: 10px 20px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; }
+  .seg button { font: inherit; font-size: 13px; font-weight: 700; padding: 7px 14px; border: 1px solid #cbd5e1; background: #fff; color: #1e293b; cursor: pointer; }
+  .seg button:first-child { border-radius: 10px 0 0 10px; } .seg button:last-child { border-radius: 0 10px 10px 0; } .seg button + button { border-left: 0; }
+  .seg button.on { background: #1e293b; border-color: #1e293b; color: #fff; }
+  .info { font-size: 12px; color: #64748b; margin-left: 8px; }
+  .pill { font-size: 12px; font-weight: 700; background: #1e293b; color: #fff; padding: 4px 12px; border-radius: 999px; min-width: 120px; text-align: center; }
+  .cap { text-align: center; font-size: 12.5px; color: #475569; max-width: 640px; margin: 12px auto 4px; padding: 0 16px; line-height: 1.5; }
+  #stage { display: flex; justify-content: center; padding: 14px 0 60px; overflow-x: hidden; }
+  #wrap { width: 794px; transform-origin: top center; }
+
+  /* ===== kertas A4 (96 dpi: 794 x 1123 px, margin 20mm ≈ 76px) ===== */
+  .sheet { position: relative; width: 794px; background: #fff; padding: 76px; box-shadow: 0 4px 18px rgba(15,23,42,.22); font-family: 'Times New Roman', Times, serif; color: #000; font-size: 13px; line-height: 1.45; }
+  .page { position: relative; width: 794px; height: 1123px; background: #fff; padding: 76px 76px 0; margin: 0 auto 22px; box-shadow: 0 4px 18px rgba(15,23,42,.22); font-family: 'Times New Roman', Times, serif; color: #000; font-size: 13px; line-height: 1.45; overflow: hidden; }
+  .page .pgno { position: absolute; left: 0; right: 0; bottom: 30px; text-align: center; font-size: 10px; color: #475569; }
+  .page .pgcorner { position: absolute; right: 30px; top: 22px; font-size: 9px; color: #94a3b8; font-family: system-ui, sans-serif; }
+  .blk { padding-bottom: 8px; }
+  .ttl { text-align: center; font-weight: bold; font-size: 14pt; text-decoration: underline; }
+  .nom { text-align: center; font-weight: bold; font-size: 14pt; margin-bottom: 16px; }
+  .meta { display: flex; font-size: 12pt; margin-bottom: 2px; } .meta .l { flex: 0 0 52px; font-weight: bold; } .meta .c { flex: 0 0 12px; } .meta .v { flex: 1; text-align: justify; }
+  .sec { font-weight: bold; font-size: 12pt; margin: 10px 0 2px; text-transform: uppercase; display: flex; } .sec .no { flex: 0 0 30px; }
+  .sub { font-weight: bold; font-size: 12.5px; padding-left: 30px; margin-top: 4px; }
+  .bd { padding-left: 30px; text-align: justify; }
+  .bd.li { display: flex; } .bd.li span:first-child { flex: 0 0 22px; }
+  table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 11pt; }
+  th, td { border: 1px solid #000; padding: 5px 8px; vertical-align: middle; font-family: 'Times New Roman', Times, serif; } th { text-align: center; } td.c { text-align: center; } td.r { text-align: right; }
+  .tw { margin-left: 30px; }
+
+  /* ===== opsi 1: garis penanda pada lembar panjang ===== */
+  .brk { position: absolute; left: 0; right: 0; height: 0; border-top: 2px dashed #94a3b8; z-index: 5; pointer-events: none; }
+  .brk b { position: absolute; right: 8px; top: -22px; font: 700 10px system-ui, sans-serif; color: #475569; background: #e2e8f0; padding: 2px 8px; border-radius: 999px; }
+  .brk i { position: absolute; right: 8px; top: 4px; font: 700 10px system-ui, sans-serif; font-style: normal; color: #475569; background: #e2e8f0; padding: 2px 8px; border-radius: 999px; }
+  .brk.last { border-top-style: solid; border-top-color: #cbd5e1; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Demo: penanda halaman di Preview PO</h1>
+  <p>Data contoh fiktif. Ukuran kertas sama dengan PDF (A4, margin 20 mm), jadi di sini kelihatan PO ini jatuhnya berapa halaman dan di mana potongan halamannya. Geser halaman ke bawah, lalu bandingkan tiga tampilan di bawah.</p>
+</header>
+<div class="bar">
+  <div class="seg" id="seg">
+    <button data-m="0" class="on">Sekarang</button><button data-m="1">Opsi 1: garis batas</button><button data-m="2">Opsi 2: halaman terpisah</button>
+  </div>
+  <span class="pill" id="pill">Halaman 1 dari 1</span>
+</div>
+<p class="cap" id="cap"></p>
+<div id="stage"><div id="wrap"></div></div>
+<div id="measure" style="position:absolute;left:-9999px;top:0;width:642px;visibility:hidden;font-family:'Times New Roman',Times,serif;font-size:13px;line-height:1.45;"></div>
+
+<script>
+var LOREM = [
+  'Pengujian dilakukan terhadap sampel kertas pembungkus makanan dari tiga produsen untuk mengetahui kesesuaian sifat fisik dengan persyaratan yang berlaku.',
+  'Hasil pengujian dicatat per sampel, kemudian dirangkum dalam laporan yang diserahkan kepada pemohon paling lambat dua minggu setelah pengujian terakhir selesai.',
+  'Seluruh kegiatan mengikuti metode uji yang berlaku dan memakai peralatan yang sudah terkalibrasi, sehingga hasilnya dapat dipertanggungjawabkan.'
+];
+function p(t) { return '<div class="bd">' + t + '</div>'; }
+function li(m, t) { return '<div class="bd li"><span>' + m + '</span><span>' + t + '</span></div>'; }
+function sec(no, t) { return '<div class="sec"><span class="no">' + no + '.</span><span>' + t + '</span></div>'; }
+function rows(arr, cls) { return arr.map(function (r) { return '<tr>' + r.map(function (c, i) { return '<td class="' + (cls && cls[i] || '') + '">' + c + '</td>'; }).join('') + '</tr>'; }).join(''); }
+var B = [];
+B.push('<div class="ttl">PETUNJUK OPERASIONAL</div>');
+B.push('<div class="nom">Nomor: 12/PO/CONTOH/X/2026</div>');
+B.push('<div class="meta"><span class="l">Judul</span><span class="c">:</span><span class="v">Uji Daya Serap Air dan Kekuatan Tarik Kertas Pembungkus Contoh</span></div>');
+B.push('<div class="meta"><span class="l">Jenis</span><span class="c">:</span><span class="v">Pengujian Selulosa</span></div>');
+B.push(sec(1, 'Dasar'));
+B.push(li('a.', 'Surat permintaan pengujian dari PT Contoh Kemasan Nusantara nomor 045/PK/IX/2026 tanggal 12 September 2026.'));
+B.push(li('b.', 'Penawaran biaya pengujian nomor 118/PNW/X/2026 yang telah disetujui pemohon.'));
+B.push(li('c.', 'Kesepakatan jadwal dan ruang lingkup pengujian antara tim pelaksana dan pemohon.'));
+B.push(sec(2, 'Tujuan'));
+B.push(p(LOREM[0] + ' ' + LOREM[1]));
+B.push(p(LOREM[2]));
+B.push(sec(3, 'Ruang Lingkup'));
+B.push(p('Ruang lingkup meliputi pengujian sifat fisik kertas pembungkus sebagaimana tabel berikut.'));
+B.push('<table><thead><tr><th style="width:36%">Nama Alat/Kegiatan</th><th>Jumlah</th><th>Waktu (menit)</th><th>Total (jam)</th><th>Keterangan</th></tr></thead><tbody>' +
+  rows([['Uji daya serap air (Cobb)','6','30','3','Tiap sampel'],['Uji kekuatan tarik','6','45','4,5','Arah mesin dan silang'],['Uji ketebalan','6','10','1','Rata-rata 5 titik'],['Penyusunan laporan','1','240','4','Termasuk koreksi']],['','c','c','c','']) + '</tbody></table>');
+B.push(sec(4, 'Alat dan Bahan'));
+B.push('<div class="sub">4.1 Alat</div>');
+B.push(li('•', 'Alat uji daya serap air metode Cobb.'));
+B.push(li('•', 'Alat uji kekuatan tarik (tensile tester).'));
+B.push(li('•', 'Alat pemotong sampel dan penggaris.'));
+B.push('<div class="sub">4.2 Bahan dan Bahan Kimia</div>');
+B.push('<div class="tw"><table><thead><tr><th style="width:35px">No</th><th>Bahan Kimia / Penolong</th><th>Jumlah</th><th>Satuan</th></tr></thead><tbody>' + rows([['1','Air suling','2','liter'],['2','Sampel kertas pembungkus','18','lembar'],['3','Kertas penyerap','10','lembar']],['c','','c','c']) + '</tbody></table></div>');
+B.push('<div class="sub">4.3 Metode</div>');
+B.push(p('Persiapan sampel: mengidentifikasi dan menyiapkan sampel kertas sesuai ukuran serta ketentuan metode pengujian. Sampel dikondisikan pada suhu dan kelembapan standar sebelum diuji.'));
+B.push(p(LOREM[1]));
+B.push('<div class="sub">4.4 Rincian Kebutuhan Barang Habis Pakai</div>');
+B.push('<div class="tw"><table><thead><tr><th style="width:35px">No</th><th>Nama Barang</th><th>Jumlah</th><th>Satuan</th><th>Harga</th><th>Total</th></tr></thead><tbody>' + rows([['1','Sarung tangan lateks','2','kotak','Rp 85.000','Rp 170.000'],['2','Kertas label','1','pak','Rp 30.000','Rp 30.000'],['3','Tisu laboratorium','3','pak','Rp 22.000','Rp 66.000']],['c','','c','c','r','r']) + '</tbody></table></div>');
+B.push(sec(5, 'Tim Pelaksana'));
+B.push('<table><thead><tr><th style="width:35px">No</th><th>Nama</th><th>Tugas</th><th>Uraian Tugas</th></tr></thead><tbody>' + rows([['1','Dewi Anggraini','Ketua Pelaksana','Mengoordinasikan seluruh kegiatan'],['2','Bima Prakoso','Penguji','Melaksanakan pengujian sampel'],['3','Sari Wulandari','Penguji','Mencatat dan memeriksa data hasil uji'],['4','Rudi Hartono','Analis','Menyusun laporan hasil pengujian']],['c','','','']) + '</tbody></table>');
+B.push(sec(6, 'Rencana Anggaran Biaya (RAB)'));
+B.push(p('a. Penerimaan: Nilai kontrak Rp 6.500.000.'));
+B.push('<table><thead><tr><th style="width:35px">No</th><th>Uraian</th><th>Volume</th><th>Satuan</th><th>Biaya</th></tr></thead><tbody>' + rows([['1','Uji daya serap air','6','sampel','Rp 900.000'],['2','Uji kekuatan tarik','6','sampel','Rp 1.500.000'],['3','Uji ketebalan','6','sampel','Rp 600.000'],['4','Barang habis pakai','1','paket','Rp 266.000'],['5','Penyusunan laporan','1','laporan','Rp 750.000'],['','<b>Total</b>','','','<b>Rp 4.016.000</b>']],['c','','c','c','r']) + '</tbody></table>');
+B.push(sec(7, 'Jadwal'));
+B.push('<div class="sub" style="padding-left:0">Tahap 1: Pengujian</div>');
+B.push('<table style="font-size:8pt"><thead><tr><th style="width:30%">Kegiatan</th><th colspan="4">Oktober 2026</th><th colspan="4">November 2026</th></tr><tr><th></th><th>1</th><th>2</th><th>3</th><th>4</th><th>1</th><th>2</th><th>3</th><th>4</th></tr></thead><tbody>' +
+  ['Persiapan sampel|1100 0000','Uji daya serap air|0110 0000','Uji kekuatan tarik|0011 1000','Penyusunan laporan|0000 0111'].map(function (r) { var a = r.split('|'); return '<tr><td>' + a[0] + '</td>' + a[1].replace(/ /g, '').split('').map(function (x) { return '<td style="' + (x === '1' ? 'background:#1e293b' : '') + '">&nbsp;</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>');
+B.push('<div class="bd" style="text-align:right;padding-top:14px">Bandung, 3 Oktober 2026</div>');
+B.push('<div class="bd" style="text-align:right;padding-top:50px"><b>Dewi Anggraini</b><br>Ketua Pelaksana</div>');
+
+// judul bagian/sub-bagian selalu ikut blok setelahnya (tidak ditinggal sendirian di dasar halaman)
+function gabungJudul(a) { var o = []; for (var i = 0; i < a.length; i++) { var h = '<div class="blk">' + a[i] + '</div>', last = a[i]; while (/^<div class="(sec|sub)"/.test(last) && i + 1 < a.length) { last = a[++i]; h += '<div class="blk">' + last + '</div>'; } o.push(h); } return o; }
+var PAGE_H = 1123, PAD = 76, CONTENT_H = PAGE_H - PAD - 76; // area isi 971 px
+var mode = 0, wrap = document.getElementById('wrap'), pill = document.getElementById('pill');
+var CAPS = [
+  'Tampilan sekarang: satu lembar panjang. Tidak ada petunjuk halaman, jadi sulit memperkirakan jumlah halaman PDF-nya.',
+  'Lembar tetap menyambung, tapi ada garis putus-putus di setiap batas halaman A4. Paling ringan dibuat, tapi teks atau tabel bisa terpotong tepat di garis (sama seperti kalau dicetak mentah).',
+  'Seperti PDF: setiap halaman berdiri sendiri dengan nomor halaman di bawah. Blok yang tidak muat pindah utuh ke halaman berikutnya, jadi tabel dan paragraf tidak terpotong. Inilah yang paling dekat dengan hasil PDF.'
+];
+
+function heights() {
+  var m = document.getElementById('measure'); m.innerHTML = B.map(function (h) { return '<div class="blk">' + h + '</div>'; }).join('');
+  return Array.prototype.map.call(m.children, function (e) { return e.offsetHeight; });
+}
+function render() {
+  document.getElementById('cap').textContent = CAPS[mode];
+  var H = heights(), html = '', total = H.reduce(function (a, b) { return a + b; }, 0);
+  if (mode === 0 || mode === 1) {
+    var inner = B.map(function (h) { return '<div class="blk">' + h + '</div>'; }).join('');
+    var pages = Math.max(1, Math.ceil((total + 2 * PAD) / PAGE_H));
+    var brk = '';
+    if (mode === 1) { for (var k = 1; k <= pages; k++) { brk += '<div class="brk' + (k === pages ? ' last' : '') + '" style="top:' + (k * PAGE_H) + 'px">' + (k < pages ? '<b>Halaman ' + k + ' berakhir</b><i>Halaman ' + (k + 1) + ' dimulai</i>' : '<b>Halaman ' + k + ' berakhir</b>') + '</div>'; } }
+    wrap.innerHTML = '<div class="sheet" style="min-height:' + (pages * PAGE_H) + 'px">' + inner + brk + '</div>';
+    wrap.dataset.pages = pages;
+  } else {
+    var pg = [[]], used = 0, GB = gabungJudul(B);
+    var m = document.getElementById('measure'); m.innerHTML = GB.map(function (h) { return '<div>' + h + '</div>'; }).join('');
+    H = Array.prototype.map.call(m.children, function (e) { return e.offsetHeight; });
+    GB.forEach(function (h, i) { if (used + H[i] > CONTENT_H && pg[pg.length - 1].length) { pg.push([]); used = 0; } pg[pg.length - 1].push(h); used += H[i]; });
+    wrap.innerHTML = pg.map(function (c, i) { return '<div class="page">' + c.join('') + '<div class="pgno">Halaman ' + (i + 1) + ' dari ' + pg.length + '</div></div>'; }).join('');
+    wrap.dataset.pages = pg.length;
+  }
+  fit(); upd();
+}
+function fit() { var s = Math.min(1, (window.innerWidth - 24) / 794); wrap.style.transform = 'scale(' + s + ')'; wrap.style.marginBottom = (wrap.offsetHeight * (s - 1)) + 'px'; wrap.style.width = '794px'; }
+function upd() {
+  var n = +wrap.dataset.pages, s = Math.min(1, (window.innerWidth - 24) / 794);
+  if (mode === 0) { pill.textContent = 'Sekitar ' + n + ' halaman A4'; return; }
+  var top = wrap.getBoundingClientRect().top, mid = 70 + window.innerHeight * 0.3;
+  var cur = Math.min(n, Math.max(1, Math.floor((mid - top) / ((mode === 2 ? PAGE_H + 22 : PAGE_H) * s)) + 1));
+  pill.textContent = 'Halaman ' + cur + ' dari ' + n;
+}
+document.getElementById('seg').addEventListener('click', function (e) {
+  var b = e.target.closest('button'); if (!b) return; mode = +b.dataset.m;
+  Array.prototype.forEach.call(this.children, function (x) { x.classList.toggle('on', x === b); }); render(); window.scrollTo(0, 0);
+});
+window.addEventListener('scroll', upd); window.addEventListener('resize', function () { fit(); upd(); });
+render();
+</script>
+</body>
+</html>

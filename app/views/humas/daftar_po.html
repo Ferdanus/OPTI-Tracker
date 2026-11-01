@@ -1050,6 +1050,9 @@
                 if (tiket !== openTicket) { return; }
                 $('hmDocHost').innerHTML = html;
                 fitDoc();
+                if (window.PoPaginasi) {   // halaman terpisah seperti PDF, lalu ukur ulang zoom
+                    window.PoPaginasi.pasang($('hmDocHost').querySelector('#poDocSheet') || $('hmDocHost').querySelector('.po-doc-sheet'), {}, function () { fitDoc(); });
+                }
             }).catch(function (e) {
                 if (tiket !== openTicket) { return; }
                 $('hmDocHost').innerHTML = '<div class="hm-loading err">' + esc(e.message) + '</div>';

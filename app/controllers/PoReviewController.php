@@ -948,7 +948,7 @@ class PoReviewController extends Controller {
             $orderId = (int) $r[0]['order_id'];
             if ($aksi === '') { $aksi = self::aksiRiwayatDariTeks($teks); }
             $nomor = trim((string) $r[0]['nomor_po']);
-            $desk = $teks . ($nomor !== '' ? ' (PO ' . $nomor . ')' : '');
+            $desk = self::ringkasRiwayat($teks) . ($nomor !== '' ? ' (PO ' . $nomor . ')' : '');
             if (function_exists('mb_substr')) { $desk = mb_substr($desk, 0, 480, 'UTF-8'); }
             $uid = (int) $userId;
             // jangan ganda kalau kejadian yang sama tercatat dua kali dalam beberapa detik
@@ -967,6 +967,52 @@ class PoReviewController extends Controller {
         } catch (\Throwable $e) {
             // riwayat bersifat pelengkap
         }
+    }
+
+    /**
+     * Ringkas bunyi pesan alur PO untuk Riwayat Aktivitas: nama pelaku dibuang (sudah tampil di bawah kartu) dan kalimat dipadatkan.
+     * Chat alur PO tetap memakai kalimat lengkap; ini hanya untuk Riwayat. Bunyi yang tidak dikenal hanya dibuang nama pelakunya.
+     */
+    public static function ringkasRiwayat($teks) {
+        $t = trim((string) $teks);
+        if (preg_match('/^Humas memverifikasi PO\./u', $t)) { return 'PO diverifikasi, diteruskan ke Tim Mitra'; }
+        // buang nama pelaku di depan: "<nama> (<peran>) ..." atau "<nama> <kata kerja> ..."
+        $awal = $t;
+        $t = preg_replace('/^[^.()]+?\s\((?:Ketua Tim|Ketua Pelaksana|PPK BLU|Humas|Tim Mitra)\)\s+/u', '', $t);
+        if ($t === $awal) {
+            $t = preg_replace('/^(?:(?!\b(?:meminta|mengirim|menyetujui|membuka|mengedit|mengerjakan|mendisposisikan|memverifikasi)\b)[^.()])+?\s(?=(?:meminta|mengirim|menyetujui|membuka|mengedit|mengerjakan|mendisposisikan|memverifikasi)\s)/u', '', $t);
+        }
+        $peta = array(
+            '/^meminta revisi \((\d+) catatan\)\. Menunggu keputusan Ketua Tim\.?$/u' => 'Minta revisi ($1 catatan), menunggu keputusan Ketua Tim',
+            '/^meminta revisi \((\d+) catatan\)\.?$/u'                                => 'Minta revisi ($1 catatan)',
+            '/^meminta perbaikan [^(]*\((\d+) catatan[^)]*\):\s*(.+?)\.?$/u'          => 'Minta perbaikan ($1 catatan): $2',
+            '/^meminta perbaikan [^(]*\((\d+) catatan[^)]*\)\.?$/u'                   => 'Minta perbaikan ($1 catatan)',
+            '/^mengirim revisi\. Menunggu review ulang\.?$/u'                         => 'Revisi dikirim, menunggu review ulang',
+            '/^menyetujui PO\. PO terkunci dan diteruskan ke Humas.*$/u'              => 'PO disetujui, diteruskan ke Humas',
+            '/^membuka kembali PO untuk direview\..*$/u'                              => 'PO dibuka kembali untuk review',
+            '/^PO dikirim untuk direview\.?$/u'                                       => 'PO dikirim untuk review',
+            '/^PO diverifikasi Tim Mitra.*$/u'                                        => 'PO diverifikasi Tim Mitra',
+            '/^mengedit isi PO ini saat review\.?$/u'                                 => 'Isi PO diedit saat review',
+            '/^mengerjakan revisi PPK BLU sendiri\.?$/u'                              => 'Revisi PPK BLU dikerjakan sendiri',
+            '/^mendisposisikan revisi PPK BLU ke Ketua Pelaksana\.?$/u'               => 'Revisi PPK BLU didisposisikan ke Ketua Pelaksana',
+            '/^mengirim revisi ke PPK BLU\.?$/u'                                      => 'Revisi dikirim ke PPK BLU',
+            '/^menyetujui revisi dan mengirim ke PPK BLU\.?$/u'                       => 'Revisi disetujui, dikirim ke PPK BLU',
+            '/^mengirim revisi PPK BLU ke Ketua Tim\.?$/u'                            => 'Revisi PPK BLU dikirim ke Ketua Tim',
+            '/^memverifikasi PO\.?$/u'                                                => 'PO disetujui PPK BLU',
+            '/^Perubahan PO disimpan \([^)]*\):\s*(.+?)\.?$/u'                        => 'Perubahan PO disimpan: $1',
+        );
+        foreach ($peta as $pola => $ganti) {
+            if (preg_match($pola, $t)) { return preg_replace($pola, $ganti, $t); }
+        }
+        return $t !== '' ? mb_strtoupper(mb_substr($t, 0, 1, 'UTF-8'), 'UTF-8') . mb_substr($t, 1, null, 'UTF-8') : trim((string) $teks);
+    }
+
+    /** Ringkas deskripsi Riwayat yang sudah tersimpan (termasuk catatan lama): ringkas bunyinya, sufiks " (PO <nomor>)" dijaga. */
+    public static function ringkasDeskripsiRiwayat($desk) {
+        $desk = (string) $desk;
+        $sufiks = '';
+        if (preg_match('/^(.*?)(\s\(PO [^()]*\))$/su', $desk, $m)) { $desk = $m[1]; $sufiks = $m[2]; }
+        return self::ringkasRiwayat($desk) . $sufiks;
     }
 
     /** Nama aksi Riwayat dari bunyi pesan sistem (dipakai ikon & warna di Riwayat Aktivitas detail order). */

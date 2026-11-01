@@ -7044,6 +7044,30 @@ window.serializeFormForLivePreview = function() {
     });
 };
 
+/* Pemisah halaman A4 pada pratinjau (halaman terpisah seperti PDF): logikanya ada di public/js/po-paginasi.js */
+window.paginasiPreview = function () {
+    var sheet = document.getElementById('poDocSheet');
+    if (!sheet || !window.PoPaginasi) { return false; }
+    var latar = '';
+    try { latar = getComputedStyle(document.getElementById('poLiveViewport')).backgroundColor; } catch (e) {}
+    var n = window.PoPaginasi.jalankan(sheet, { pulih: true, latar: latar || '' });
+    window.__paginasiTertunda = !n;   // pratinjau disembunyikan: dijalankan ulang saat tampil
+    window.__paginasiJumlah = n;
+    return !!n;
+};
+// Pratinjau yang tadinya disembunyikan baru dipaginasi ketika sudah tampil
+(function () {
+    var vp = document.getElementById('poLiveViewport');
+    if (!vp || !window.ResizeObserver) { return; }
+    new ResizeObserver(function () {
+        if (window.__paginasiTertunda && window.paginasiPreview()) {
+            setTimeout(function () {
+                if (window.currentZoomMode === 'fit') { window.autoFitZoom(); } else { window.applyLiveZoom(window.currentZoomScale, false); }
+            }, 30);
+        }
+    }).observe(vp);
+})();
+
 window.performLivePreviewFetch = function() {
     var formEl = document.getElementById('formPo');
     var container = document.getElementById('poLiveSheetContainer');
@@ -7083,6 +7107,8 @@ window.performLivePreviewFetch = function() {
     })
     .then(function (html) {
         container.innerHTML = html;
+        container.__asliHtml = html;   // isi asli (tanpa pemisah halaman), dipakai untuk cetak
+        try { window.paginasiPreview(); } catch (ePg) { console.error('Paginasi pratinjau gagal:', ePg); }
         if (pulseDot) pulseDot.classList.remove('syncing');
         if (syncText) syncText.textContent = 'Tersinkronisasi';
         if (refreshIcon) refreshIcon.classList.remove('spin');
@@ -7165,8 +7191,9 @@ window.cetakLivePreviewFrame = function() {
     doc.write('table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 10pt; }');
     doc.write('table th, table td { border: 1px solid #000; padding: 4px 6px; }');
     doc.write('.no-print, .po-badge-status { display: none !important; }');
+    doc.write('.po-pgbreak, .po-pgnum { display: none !important; } .po-doc-sheet { min-height: 0 !important; }');
     doc.write('</style></head><body>');
-    doc.write(container.innerHTML);
+    doc.write(container.__asliHtml || container.innerHTML);
     doc.write('</body></html>');
     doc.close();
 

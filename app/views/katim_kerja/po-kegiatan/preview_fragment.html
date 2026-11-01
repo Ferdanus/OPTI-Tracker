@@ -194,14 +194,16 @@
 
     <check if="{{ @po.sub_nomor_bahan_kimia }}">
         <div class="po-body" style="font-weight:700; font-size:12.5px; margin:8px 0 4px;">{{ @po.nomor_alat_bahan }}.{{ @po.sub_nomor_bahan_kimia }} Bahan dan Bahan Kimia</div>
-        <table>
-            <thead><tr><th style="width:35px;">No</th><th>Bahan Kimia / Penolong</th><th>Jumlah</th><th>Satuan</th></tr></thead>
-            <tbody>
-                <repeat group="{{ @po.bahan_kimia_items }}" value="{{ @bk }}" key="{{ @bki }}">
-                    <tr><td class="text-center">{{ @bki + 1 }}</td><td>{{ @bk.nama }}</td><td class="text-center">{{ @bk.jumlah }}</td><td class="text-center">{{ @bk.satuan }}</td></tr>
-                </repeat>
-            </tbody>
-        </table>
+        <div style="margin-left:30px;">
+            <table>
+                <thead><tr><th style="width:35px;">No</th><th>Bahan Kimia / Penolong</th><th>Jumlah</th><th>Satuan</th></tr></thead>
+                <tbody>
+                    <repeat group="{{ @po.bahan_kimia_items }}" value="{{ @bk }}" key="{{ @bki }}">
+                        <tr><td class="text-center">{{ @bki + 1 }}</td><td>{{ @bk.nama }}</td><td class="text-center">{{ @bk.jumlah }}</td><td class="text-center">{{ @bk.satuan }}</td></tr>
+                    </repeat>
+                </tbody>
+            </table>
+        </div>
     </check>
 
     <check if="{{ @po.sub_nomor_metode }}">
@@ -219,22 +221,24 @@
     <check if="{{ @po.kebutuhan_tambahan_hitung && count(@po.kebutuhan_tambahan_hitung) > 0 }}">
         <repeat group="{{ @po.kebutuhan_tambahan_hitung }}" value="{{ @kat }}">
             <div class="po-body" style="font-weight:700; font-size:12.5px; margin:8px 0 4px;">{{ @po.nomor_alat_bahan }}.{{ @kat.sub_nomor }} Rincian Kebutuhan {{ @kat.nama }}</div>
-            <table>
-                <thead><tr><th style="width:35px;">No</th><th>Nama Barang</th><th>Jumlah</th><th>Satuan</th><th>Harga</th><th>Total Harga</th></tr></thead>
-                <tbody>
-                    <repeat group="{{ @kat.items }}" value="{{ @it }}" key="{{ @iti }}">
-                        <tr>
-                            <td class="text-center">{{ @iti + 1 }}</td>
-                            <td>{{ @it.nama }}</td>
-                            <td class="text-center">{{ @it.jumlah }}</td>
-                            <td class="text-center">{{ @it.satuan }}</td>
-                            <td class="text-end">Rp {{ number_format(@it.harga, 0, ',', '.') }}</td>
-                            <td class="text-end">Rp {{ number_format(@it.total, 0, ',', '.') }}</td>
-                        </tr>
-                    </repeat>
-                    <tr><td colspan="5" class="text-end"><strong>Total</strong></td><td class="text-end"><strong>Rp {{ number_format(@kat.subtotal, 0, ',', '.') }}</strong></td></tr>
-                </tbody>
-            </table>
+            <div style="margin-left:30px;">
+                <table>
+                    <thead><tr><th style="width:35px;">No</th><th>Nama Barang</th><th>Jumlah</th><th>Satuan</th><th>Harga</th><th>Total Harga</th></tr></thead>
+                    <tbody>
+                        <repeat group="{{ @kat.items }}" value="{{ @it }}" key="{{ @iti }}">
+                            <tr>
+                                <td class="text-center">{{ @iti + 1 }}</td>
+                                <td>{{ @it.nama }}</td>
+                                <td class="text-center">{{ @it.jumlah }}</td>
+                                <td class="text-center">{{ @it.satuan }}</td>
+                                <td class="text-end">Rp {{ number_format(@it.harga, 0, ',', '.') }}</td>
+                                <td class="text-end">Rp {{ number_format(@it.total, 0, ',', '.') }}</td>
+                            </tr>
+                        </repeat>
+                        <tr><td colspan="5" class="text-end"><strong>Total</strong></td><td class="text-end"><strong>Rp {{ number_format(@kat.subtotal, 0, ',', '.') }}</strong></td></tr>
+                    </tbody>
+                </table>
+            </div>
         </repeat>
     </check>
 </check>
