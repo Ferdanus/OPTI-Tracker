@@ -537,6 +537,7 @@
     <div class="card border-0 shadow-sm overflow-hidden mb-4">
         <div class="filter-tabs-wrapper">
             <div class="d-flex align-items-center gap-2 flex-wrap" id="hmTabs">
+                <button type="button" class="po-tab filter-tab-pill" data-tab="semua"><i class="bi bi-list-ul"></i>Semua <span class="count-chip" id="countSemua">0</span></button>
                 <button type="button" class="po-tab filter-tab-pill active" data-tab="baru"><span class="hm-dot sm" id="dotBaru" hidden></span><i class="bi bi-exclamation-circle"></i>Perlu Tindakan <span class="count-chip chip-danger" id="countBaru">0</span></button>
                 <button type="button" class="po-tab filter-tab-pill" data-tab="selesai"><i class="bi bi-hourglass-split"></i>Sedang Berjalan <span class="count-chip" id="countSelesai">0</span></button>
                 <button type="button" class="po-tab filter-tab-pill" data-tab="po_selesai"><i class="bi bi-check2-circle"></i>PO Aktif <span class="count-chip" id="countPoSelesai">0</span></button>
@@ -648,15 +649,27 @@
     function posBadge(p) { var o = posisi(p); return '<span class="hm-pbadge ' + o.cls + '"><span class="d"></span>' + esc(o.teks) + '</span>'; }
 
     /* ---------- Filter ---------- */
+    // Tab Semua: gabungan seluruh PO di halaman ini (tanpa dobel). tabAsal() = tab asal tiap baris, dipakai untuk tombol, penanda baca, dan periode.
+    function gabungSemua() {
+        var ada = {}, out = [];
+        DATA_BARU.concat(DATA_SELESAI).forEach(function (p) { if (!ada[p.id]) { ada[p.id] = 1; out.push(p); } });
+        return out;
+    }
+    function tabAsal(p, t) {
+        if (t !== 'semua') { return t; }
+        if (p.ppk_valid_at) { return 'po_selesai'; }
+        return DATA_BARU.indexOf(p) !== -1 ? 'baru' : 'selesai';
+    }
     function dataTab(t) {
+        if (t === 'semua') { return gabungSemua(); }
         if (t === 'baru') { return DATA_BARU; }
         if (t === 'selesai') { return DATA_SELESAI.filter(function (p) { return !p.ppk_valid_at; }); }
         return DATA_BARU.concat(DATA_SELESAI).filter(function (p) { return !!p.ppk_valid_at; });   // PO Selesai = sudah diverifikasi PPK BLU
     }
     // Tanggal acuan bulan/tahun per tab: masuk Humas (baru), diverifikasi Humas (sudah diverifikasi), diverifikasi PPK BLU (PO selesai)
-    function tglAcuan(p, t) { return (t === 'baru' ? p.dikirim : (t === 'selesai' ? p.tgl_verifikasi : p.ppk_valid_at)) || ''; }
+    function tglAcuan(p, t) { t = tabAsal(p, t); return (t === 'baru' ? p.dikirim : (t === 'selesai' ? p.tgl_verifikasi : p.ppk_valid_at)) || ''; }
     function bulanTahun(s) { var m = /^(\d{4})-(\d{2})/.exec(s || ''); return m ? { b: String(+m[2]), t: m[1] } : null; }
-    function semuaAktif(t) { return semuaEks === null ? t === 'baru' : semuaEks; }
+    function semuaAktif(t) { return semuaEks === null ? (t === 'baru' || tab === 'semua') : semuaEks; }   // di tab Semua, semua tab dihitung tanpa filter bulan supaya angkanya cocok
     function isiOpsiFilter() {
         var selBulan = $('hmBulan');
         selBulan.innerHTML = BULAN_PANJANG.map(function (nama, i) { return '<option value="' + (i + 1) + '">' + nama + '</option>'; }).join('');
@@ -683,6 +696,7 @@
     // Kalau Humas sengaja memilih bulan/tahun atau saklar sendiri, pilihan itu tetap dipakai.
     function cariLintasBulan(t) { return !!q && !periodeDiubah && semuaEks === null && t !== 'baru'; }
     function cocokPeriode(p, t) {
+        if (t === 'semua' && !semuaAktif('semua')) { return cocokPeriode(p, tabAsal(p, t)); }   // tab Semua mengikuti aturan periode tab asal tiap baris
         if (semuaAktif(t) || cariLintasBulan(t)) { return true; }
         var bt = bulanTahun(tglAcuan(p, t));
         return !!bt && bt.b === bulan && bt.t === tahun;
@@ -695,9 +709,10 @@
         isiOpsiFilter();
     }
     function pilihTab(t) {
+        var bawa = (tab === 'semua' && t !== 'semua') && semuaAktif('semua');   // dari Semua ke tab lain: tetap tanpa filter bulan, supaya isi tab = angkanya
         tab = t;
         Array.prototype.forEach.call(document.querySelectorAll('#hmTabs .po-tab'), function (b) { b.classList.toggle('active', b.getAttribute('data-tab') === t); });
-        baca = ''; statusF = ''; periodeDiubah = false; semuaEks = null; bulan = String(BULAN_INI); tahun = String(TAHUN_INI); hal = 1;   // tiap tab mulai dari filter bawaannya
+        baca = ''; statusF = ''; periodeDiubah = false; semuaEks = bawa ? true : null; bulan = String(BULAN_INI); tahun = String(TAHUN_INI); hal = 1;   // tiap tab mulai dari filter bawaannya
         isiOpsiFilter(); render();
     }
 
@@ -781,13 +796,14 @@
     function render() {
         var n = unreadCount();
         var dasar = {}, hitungKartu = {};
-        ['baru', 'selesai', 'po_selesai'].forEach(function (t) { dasar[t] = dasarTab(t); hitungKartu[t] = dataTab(t).filter(cocokDivisi).length; });
+        ['semua', 'baru', 'selesai', 'po_selesai'].forEach(function (t) { dasar[t] = dasarTab(t); hitungKartu[t] = dataTab(t).filter(cocokDivisi).length; });
         // kartu ringkasan ikut filter layanan (bukan periode)
         $('mTotal').textContent = hitungKartu.baru + hitungKartu.selesai + hitungKartu.po_selesai;
         $('mTindakan').textContent = hitungKartu.baru;
         $('mBerjalan').textContent = hitungKartu.selesai;
         $('mAktif').textContent = hitungKartu.po_selesai;
         // chip di tab ikut semua filter (pencarian, layanan, periode)
+        $('countSemua').textContent = dasar.semua.length;
         $('countBaru').textContent = dasar.baru.length;
         $('countBaru').classList.toggle('chip-danger', dasar.baru.length > 0);
         $('countSelesai').textContent = dasar.selesai.length;
@@ -823,7 +839,7 @@
     function renderList(rows, t, awal) {
         if (!rows.length) {
             var pesan = filterAktif() ? 'Tidak ada PO yang cocok dengan pencarian/filter.'
-                : (t === 'selesai' ? 'Belum ada PO sedang berjalan pada periode ini.' : (t === 'po_selesai' ? 'Belum ada PO aktif pada periode ini.' : 'Belum ada PO baru yang perlu diverifikasi.'));
+                : (t === 'semua' ? 'Belum ada PO pada periode ini.' : t === 'selesai' ? 'Belum ada PO sedang berjalan pada periode ini.' : (t === 'po_selesai' ? 'Belum ada PO aktif pada periode ini.' : 'Belum ada PO baru yang perlu diverifikasi.'));
             $('hmList').innerHTML = '<div class="text-center py-5"><div class="d-inline-flex align-items-center justify-content-center bg-light rounded-circle p-3 mb-2" style="width: 64px; height: 64px;"><i class="bi bi-inbox fs-2 text-muted"></i></div>' +
                 '<h6 class="fw-bold text-dark mt-2 mb-1">Tidak Ada Data PO</h6><p class="text-muted small mb-0">' + pesan + '</p></div>';
             return;
@@ -833,13 +849,14 @@
             '<th style="width: 120px;">Divisi</th><th style="min-width: 240px;">Judul Kegiatan</th><th style="width: 210px;">Status PO</th>' +
             '<th class="text-center" style="width: 190px;">Aksi</th></tr></thead><tbody>' +
             rows.map(function (p, i) {
-                var tombol = t === 'baru'
+                var ta = tabAsal(p, t);
+                var tombol = ta === 'baru'
                     ? '<button type="button" class="btn btn-sm btn-primary py-1 px-2" data-open="' + p.id + '" title="Review PO (buka panel)"><i class="bi bi-eye me-1"></i>Review</button>'
                     : '<button type="button" class="btn btn-sm btn-outline-primary py-1 px-2" data-open="' + p.id + '" title="Lihat PO (hanya lihat)"><i class="bi bi-eye me-1"></i>Lihat</button>';
                 var detail = (p.order_id && p.layanan !== 'sertifikasi') ? '<a href="' + BASE + '/order/' + p.order_id + '" class="btn btn-sm btn-outline-secondary py-1 px-2" title="Buka detail order"><i class="bi bi-box-arrow-up-right me-1"></i>Detail</a>' : '';
-                return '<tr class="' + (t === 'baru' && isUnread(p) ? 'po-unread' : '') + '" data-open="' + p.id + '">' +
+                return '<tr class="' + (ta === 'baru' && isUnread(p) ? 'po-unread' : '') + '" data-open="' + p.id + '">' +
                     '<td class="text-center text-muted small fw-semibold">' + (awal + i + 1) + '</td>' +
-                    '<td>' + dokCell(p, t) + '</td>' +
+                    '<td>' + dokCell(p, ta) + '</td>' +
                     '<td><span class="fw-semibold text-dark">' + esc(p.order || '-') + '</span></td>' +
                     '<td><div class="fw-semibold text-dark mb-0.5" style="font-size: 0.84rem;">' + esc(p.mitra || '-') + '</div>' +
                         subLine('bi-person text-secondary', 'PIC: ' + esc(p.pembuat || 'Ketua Pelaksana')).replace('0.73rem', '0.75rem') + '</td>' +

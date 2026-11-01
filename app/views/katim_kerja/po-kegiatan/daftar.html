@@ -779,7 +779,12 @@
         }
 
         /* ---------- Tab ---------- */
+        // Tab Semua: gabungan semua tab di bawah (PO yang sama tidak dihitung dua kali); selalu pertama
         function tabDef() {
+            var asal = tabDefAsal();
+            return [{ k: 'semua', l: 'Semua', ic: 'bi-list-ul', f: function (p) { return asal.some(function (t) { return t.f(p); }); } }].concat(asal);
+        }
+        function tabDefAsal() {
             if (ROLE === 'katim') {
                 return [
                     // Baru masuk = PO baru dari Ketua Pelaksana + revisi PPK BLU yang baru masuk (perlu diputuskan)
@@ -883,6 +888,7 @@
         }
         function emptyMsg() {
             if (filterAktif()) { return 'Tidak ada PO yang cocok dengan pencarian atau filter.'; }
+            if (tab === 'semua') { return 'Belum ada PO.'; }
             if (tab === 'baru') { return ROLE === 'katim' ? 'Belum ada PO baru atau revisi PPK BLU yang masuk.' : 'Belum ada PO baru yang dikirim.'; }
             if (tab === 'aksi') { return 'Tidak ada PO yang perlu Anda revisi saat ini.'; }
             if (tab === 'revisi') { return (fRevisi === 'perlu_revisi' || fRevisi === 'kerja') ? 'Tidak ada revisi yang sedang dikerjakan Ketua Pelaksana.' : 'Belum ada revisi yang menunggu tindakan Anda. Revisi yang masih dikerjakan bisa dilihat lewat filter status.'; }
@@ -898,7 +904,8 @@
             $('rvwTabs').innerHTML = tabDef().map(function (t) {
                 var isi = DATA.filter(t.f);
                 // tab Disetujui hanya menghitung yang tampil secara bawaan (bulan ini + alur belum selesai)
-                if (t.k === 'selesai' || t.k === 'po_selesai') { var db = defTab(t.k); isi = isi.filter(function (p) { return cocokPeriode(p, t.k, db.bulan, db.tahun); }); }
+                if (t.k === 'selesai' || t.k === 'po_selesai') { var db = (tab === 'semua') ? { bulan: fBulan, tahun: fTahun } : defTab(t.k); isi = isi.filter(function (p) { return cocokPeriode(p, t.k, db.bulan, db.tahun); }); }
+                if (t.k === 'semua' && tab === 'semua') { isi = isi.filter(function (p) { return cocokPeriode(p, 'semua', fBulan, fTahun); }); }
                 if (t.revDef) { isi = isi.filter(function (p) { return revKey(p) === t.revDef; }); }   // Review revisi: hitung yang sudah direvisi saja (bawaan)
                 var n = isi.length, u = isi.filter(isUnread).length;
                 return '<button type="button" class="rvw-tab' + (tab === t.k ? ' on' : '') + '" data-tab="' + t.k + '">' + (u ? '<span class="rvw-dot sm" title="' + u + ' belum dibaca"></span>' : '') + '<i class="bi ' + t.ic + '"></i><span>' + t.l + '</span> <span class="rvw-cnt' + ((t.hot ? isi.filter(t.hot).length : (t.aksi ? n : 0)) > 0 ? ' hot' : '') + '">' + n + '</span></button>';
@@ -916,10 +923,10 @@
                     revisi: 'Revisi yang perlu Anda tinjau', selesai: 'Dalam verifikasi Humas, Mitra, PPK BLU', po_selesai: 'Diverifikasi PPK BLU, siap jalan'
                 };
                 var urutWarna = { baru: 0, aksi: 0, revisi: 1, tunggu: 1, selesai: 2, po_selesai: 3 };
-                var jmlTab = $('rvwTabs').querySelectorAll('.rvw-tab').length;
+                var jmlTab = $('rvwTabs').querySelectorAll('.rvw-tab:not([data-tab="semua"])').length;
                 var kolom = jmlTab === 2 ? 'col-6' : (jmlTab === 3 ? 'col-6 col-lg-4' : 'col-6 col-lg-3');   // 2-3 kotak mengisi satu baris penuh
                 var h = '';
-                Array.prototype.forEach.call($('rvwTabs').querySelectorAll('.rvw-tab'), function (b, i) {
+                Array.prototype.forEach.call($('rvwTabs').querySelectorAll('.rvw-tab:not([data-tab="semua"])'), function (b, i) {
                     var k = b.getAttribute('data-tab'), c = warna[(k in urutWarna) ? urutWarna[k] : (i % warna.length)];
                     var lb = b.querySelector('span:not(.rvw-dot):not(.rvw-cnt)'), ct = b.querySelector('.rvw-cnt'), ic = b.querySelector('i');
                     h += '<div class="' + kolom + '"><div class="metric-card" style="cursor: pointer;" data-tab="' + esc(k) + '" role="button" title="Lihat tab ' + esc(lb ? lb.textContent : '') + '"><div>' +
@@ -970,7 +977,7 @@
             renderCount(rows.length, def);
             if (!rows.length) { $('rvwList').innerHTML = '<div class="rvw-empty"><i class="bi bi-inbox"></i>' + emptyMsg() + '</div>'; return; }
             var orang = function (p) { var n = ROLE === 'katim' ? p.pembuat : p.katim; return '<div class="rvw-who"><span class="rvw-av">' + esc(initials(n)) + '</span>' + esc(n) + '</div>'; };
-            var tanpaPos = (tab !== 'selesai');   // kolom Status PO saat ini hanya di tab Disetujui
+            var tanpaPos = (tab !== 'selesai' && tab !== 'semua');   // kolom Status PO saat ini hanya di tab Disetujui
             var tbl = '<table class="rvw-desk"><thead><tr><th class="dotc"></th><th style="width:40px;">No</th><th style="width:235px;">Nomor PO</th><th style="min-width:240px;">Mitra &amp; Kegiatan</th><th style="width:170px;">' + lawanLabel() + '</th><th style="width:320px;">Status</th>' + (tanpaPos ? '' : '<th style="width:230px;">Status PO saat ini</th>') + '<th class="r" style="width:95px;">Aksi</th></tr></thead><tbody>' +
                 rows.map(function (p, i) {
                     return '<tr class="' + rowClass(p) + '" data-open="' + p.id + '"><td class="dotc">' + dotHtml(p) + '</td><td class="rvw-num">' + (i + 1) + '</td><td>' + noCell(p) + '</td>' +
@@ -1745,7 +1752,13 @@
         document.addEventListener('click', function (e) {
             var root = $('rvwRoot'); if (!root || !root.contains(e.target)) { return; }
             var t = e.target, el;
-            if ((el = t.closest('[data-tab]'))) { tab = el.getAttribute('data-tab'); resetFilterTab(); renderTabs(); renderList(); return; }
+            if ((el = t.closest('[data-tab]'))) {
+                // dari Semua (tanpa filter bulan) ke tab lain: periode tetap kosong supaya isi tab = angka di tab
+                var dariSemua = (tab === 'semua' && !fBulan && !fTahun);
+                tab = el.getAttribute('data-tab'); resetFilterTab();
+                if (dariSemua && tab !== 'semua') { fBulan = ''; fTahun = ''; }
+                renderTabs(); renderList(); return;
+            }
             if ((el = t.closest('[data-open]'))) { openSheet(parseInt(el.getAttribute('data-open'), 10)); return; }
             if (t.closest('[data-bukti-mulai]')) { buktiMode = true; buktiSel = {}; buktiAda().forEach(function (x) { buktiSel[x.i] = true; }); buktiRender(); return; }
             if (t.closest('[data-bukti-batal]')) { if (!buktiSibuk) { buktiMode = false; buktiSel = {}; buktiRender(); } return; }
@@ -1823,7 +1836,7 @@
         document.addEventListener('visibilitychange', function () { if (!document.hidden) { segarkan(); } });
         setInterval(segarkan, 60000);
     
-        tab = tabDef()[0].k;
+        tab = tabDefAsal()[0].k;   // tab pertama yang terbuka tetap tab kerja (bukan Semua)
         resetFilterTab();
         renderAll();
         if (SOLO) {

@@ -137,6 +137,7 @@
     <div class="card border-0 shadow-sm overflow-hidden mb-4">
         <div class="filter-tabs-wrapper">
             <div class="d-flex align-items-center gap-2 flex-wrap" id="poTabs">
+                <a class="po-tab filter-tab-pill {{ @tab_aktif == 'semua' ? 'active' : '' }}" href="{{ @BASE }}/petunjuk-operasional?tab=semua&amp;layanan={{ @layanan }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}"><i class="bi bi-list-ul"></i>Semua <span class="count-chip">{{ @tab_counts.semua ?: 0 }}</span></a>
                 <a class="po-tab filter-tab-pill {{ @tab_aktif == 'draft' ? 'active' : '' }}" href="{{ @BASE }}/petunjuk-operasional?tab=draft&amp;layanan={{ @layanan }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}"><i class="bi bi-pencil-square"></i>Draft <span class="count-chip">{{ @tab_counts.draft ?: 0 }}</span></a>
                 <a class="po-tab filter-tab-pill {{ @tab_aktif == 'terkirim' ? 'active' : '' }}" href="{{ @BASE }}/petunjuk-operasional?tab=terkirim&amp;layanan={{ @layanan }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}"><i class="bi bi-send-check"></i>Terkirim <span class="count-chip">{{ @tab_counts.terkirim ?: 0 }}</span></a>
             </div>

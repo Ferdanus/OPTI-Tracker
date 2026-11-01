@@ -691,6 +691,7 @@
         <div class="card border-0 shadow-sm overflow-hidden mb-4">
             <div class="filter-tabs-wrapper">
                 <div class="d-flex align-items-center gap-2 flex-wrap" id="rvwTabs">
+                    <button type="button" class="po-tab filter-tab-pill" data-tab="semua"><i class="bi bi-list-ul"></i>Semua <span class="count-chip" id="countSemua">0</span></button>
                     <button type="button" class="po-tab filter-tab-pill active" data-tab="perlu"><span class="rvw-dot sm" id="dotPerlu" hidden></span><i class="bi bi-exclamation-circle"></i>Perlu Tindakan <span class="count-chip chip-danger" id="countPerlu">0</span></button>
                     <button type="button" class="po-tab filter-tab-pill" data-tab="berjalan"><i class="bi bi-hourglass-split"></i>Sedang Berjalan <span class="count-chip" id="countBerjalan">0</span></button>
                     <button type="button" class="po-tab filter-tab-pill" data-tab="aktif"><i class="bi bi-check2-circle"></i>PO Aktif <span class="count-chip" id="countAktif">0</span></button>
@@ -887,18 +888,25 @@
         }
         function sedangRevisi(p) { return ['ppk_minta', 'katim_kerja', 'ketupel_kerja', 'katim_review'].indexOf(p.state) !== -1; }
         // Perlu Tindakan = menunggu verifikasi PPK BLU (baru atau hasil revisi); Sedang Berjalan = sedang direvisi; PO Aktif = sudah diverifikasi PPK BLU
+        // Tab Semua: gabungan tiga tab di bawah. tabAsal() = tab asal tiap baris (untuk tombol, penanda baca, dan periode).
+        function tabAsal(p, t) {
+            if (t !== 'semua') { return t; }
+            return p.state === 'ppk_cek' ? 'perlu' : (sedangRevisi(p) ? 'berjalan' : 'aktif');
+        }
         function dataTab(t) {
+            if (t === 'semua') { return DATA.filter(function (p) { return p.state === 'ppk_cek' || sedangRevisi(p) || p.state === 'selesai'; }); }
             if (t === 'perlu') { return DATA.filter(function (p) { return p.state === 'ppk_cek'; }); }
             if (t === 'berjalan') { return DATA.filter(sedangRevisi); }
             return DATA.filter(function (p) { return p.state === 'selesai'; });
         }
         function tglAcuan(p, t) {
+            t = tabAsal(p, t);
             if (t === 'perlu') { return p.status_at || p.mitra_valid_at || p.dikirim_at || ''; }
             if (t === 'berjalan') { return p.status_at || p.minta_at || p.dikirim_at || ''; }
             return p.ppk_valid_at || '';
         }
         function bulanTahun(x) { var m = /^(\d{4})-(\d{2})/.exec(x || ''); return m ? { b: String(+m[2]), t: m[1] } : null; }
-        function semuaAktif(t) { return semuaEks === null ? t === 'perlu' : semuaEks; }
+        function semuaAktif(t) { return semuaEks === null ? (t === 'perlu' || tab === 'semua') : semuaEks; }   // di tab Semua, semua tab dihitung tanpa filter bulan supaya angkanya cocok
         function isiOpsiFilter() {
             var selBulan = $('rvwBulan');
             selBulan.innerHTML = BULAN_PANJANG.map(function (nama, i) { return '<option value="' + (i + 1) + '">' + nama + '</option>'; }).join('');
@@ -924,6 +932,7 @@
         // Mencari (kolom cari terisi) menembus batas bulan bawaan: PO bulan-bulan lalu tetap ketemu.
         function cariLintasBulan(t) { return !!q && !periodeDiubah && semuaEks === null && t !== 'perlu'; }
         function cocokPeriode(p, t) {
+            if (t === 'semua' && !semuaAktif('semua')) { return cocokPeriode(p, tabAsal(p, t)); }   // tab Semua mengikuti aturan periode tab asal tiap baris
             if (semuaAktif(t) || cariLintasBulan(t)) { return true; }
             var bt = bulanTahun(tglAcuan(p, t));
             return !!bt && bt.b === bulan && bt.t === tahun;
@@ -936,9 +945,10 @@
             isiOpsiFilter();
         }
         function pilihTab(t) {
+            var bawa = (tab === 'semua' && t !== 'semua') && semuaAktif('semua');   // dari Semua ke tab lain: tetap tanpa filter bulan, supaya isi tab = angkanya
             tab = t;
             Array.prototype.forEach.call(document.querySelectorAll('#rvwTabs .po-tab'), function (b) { b.classList.toggle('active', b.getAttribute('data-tab') === t); });
-            baca = ''; statusF = ''; periodeDiubah = false; semuaEks = null; bulan = String(BULAN_INI); tahun = String(TAHUN_INI); hal = 1;   // tiap tab mulai dari filter bawaannya
+            baca = ''; statusF = ''; periodeDiubah = false; semuaEks = bawa ? true : null; bulan = String(BULAN_INI); tahun = String(TAHUN_INI); hal = 1;   // tiap tab mulai dari filter bawaannya
             isiOpsiFilter(); render();
         }
         function unreadCount() { return dataTab('perlu').filter(isUnread).length; }
@@ -1000,13 +1010,14 @@
             if (!tab) { tab = 'perlu'; }
             var n = unreadCount();
             var dasar = {}, hitungKartu = {};
-            ['perlu', 'berjalan', 'aktif'].forEach(function (t) { dasar[t] = dasarTab(t); hitungKartu[t] = dataTab(t).filter(cocokDivisi).length; });
+            ['semua', 'perlu', 'berjalan', 'aktif'].forEach(function (t) { dasar[t] = dasarTab(t); hitungKartu[t] = dataTab(t).filter(cocokDivisi).length; });
             // kartu ringkasan ikut filter layanan (bukan periode)
             $('mTotal').textContent = hitungKartu.perlu + hitungKartu.berjalan + hitungKartu.aktif;
             $('mTindakan').textContent = hitungKartu.perlu;
             $('mBerjalan').textContent = hitungKartu.berjalan;
             $('mAktif').textContent = hitungKartu.aktif;
             // chip di tab ikut semua filter (pencarian, layanan, periode)
+            $('countSemua').textContent = dasar.semua.length;
             $('countPerlu').textContent = dasar.perlu.length;
             $('countPerlu').classList.toggle('chip-danger', dasar.perlu.length > 0);
             $('countBerjalan').textContent = dasar.berjalan.length;
@@ -1042,7 +1053,7 @@
         function renderList(rows, t, awal) {
             if (!rows.length) {
                 var pesan = filterAktif() ? 'Tidak ada PO yang cocok dengan pencarian/filter.'
-                    : (t === 'berjalan' ? 'Belum ada PO sedang berjalan pada periode ini.' : (t === 'aktif' ? 'Belum ada PO aktif pada periode ini.' : 'Belum ada PO yang perlu diverifikasi.'));
+                    : (t === 'semua' ? 'Belum ada PO pada periode ini.' : t === 'berjalan' ? 'Belum ada PO sedang berjalan pada periode ini.' : (t === 'aktif' ? 'Belum ada PO aktif pada periode ini.' : 'Belum ada PO yang perlu diverifikasi.'));
                 $('rvwList').innerHTML = '<div class="text-center py-5"><div class="d-inline-flex align-items-center justify-content-center bg-light rounded-circle p-3 mb-2" style="width: 64px; height: 64px;"><i class="bi bi-inbox fs-2 text-muted"></i></div>' +
                     '<h6 class="fw-bold text-dark mt-2 mb-1">Tidak Ada Data PO</h6><p class="text-muted small mb-0">' + pesan + '</p></div>';
                 return;
@@ -1052,13 +1063,14 @@
                 '<th style="width: 120px;">Divisi</th><th style="min-width: 240px;">Judul Kegiatan</th><th style="width: 210px;">Status PO</th>' +
                 '<th class="text-center" style="width: 190px;">Aksi</th></tr></thead><tbody>' +
                 rows.map(function (p, i) {
-                    var tombol = t === 'perlu'
+                    var ta = tabAsal(p, t);
+                    var tombol = ta === 'perlu'
                         ? '<button type="button" class="btn btn-sm btn-primary py-1 px-2" data-open="' + p.id + '" title="Review PO (buka panel)"><i class="bi bi-eye me-1"></i>Review</button>'
                         : '<button type="button" class="btn btn-sm btn-outline-primary py-1 px-2" data-open="' + p.id + '" title="Lihat PO (hanya lihat)"><i class="bi bi-eye me-1"></i>Lihat</button>';
                     var det = p.order_id ? '<a href="' + BASE + '/order/' + p.order_id + '" class="btn btn-sm btn-outline-secondary py-1 px-2" title="Buka detail order"><i class="bi bi-box-arrow-up-right me-1"></i>Detail</a>' : '';
-                    return '<tr class="' + (t === 'perlu' && isUnread(p) ? 'po-unread' : '') + '" data-open="' + p.id + '">' +
+                    return '<tr class="' + (ta === 'perlu' && isUnread(p) ? 'po-unread' : '') + '" data-open="' + p.id + '">' +
                         '<td class="text-center text-muted small fw-semibold">' + (awal + i + 1) + '</td>' +
-                        '<td>' + dokCell(p, t) + '</td>' +
+                        '<td>' + dokCell(p, ta) + '</td>' +
                         '<td><span class="fw-semibold text-dark">' + esc(p.order || '-') + '</span></td>' +
                         '<td><div class="fw-semibold text-dark mb-0.5" style="font-size: 0.84rem;">' + esc(p.mitra || '-') + '</div>' +
                             subLine('bi-person text-secondary', 'PIC: ' + esc(p.pembuat || 'Ketua Pelaksana')).replace('0.73rem', '0.75rem') + '</td>' +

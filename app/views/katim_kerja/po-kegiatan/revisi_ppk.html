@@ -667,7 +667,13 @@
         /* ---------- Tab per peran ---------- */
         function s() { var a = Array.prototype.slice.call(arguments); return function (p) { return a.indexOf(p.state) !== -1; }; }
         function baruDiterima(p) { return !(p.jml_ubah_baru > 0) && !(p.rn_selesai > 0); }
+        // Tab Semua: gabungan semua tab di bawah (PO yang sama tidak dihitung dua kali); selalu pertama
         function tabDef() {
+            var asal = tabDefAsal();
+            var gabung = function (p) { return asal.some(function (t) { return t.f(p); }); };
+            return [{ k: 'semua', l: 'Semua', f: gabung, cnt: gabung }].concat(asal);
+        }
+        function tabDefAsal() {
             if (ROLE === 'ppk') {
                 return [
 
@@ -804,8 +810,10 @@
             $('rvwDivisi').value = divisi;
         }
         function ubahTab(k) {
+            var dariSemua = (tab === 'semua' && !bulan && !tahun);   // dari Semua (tanpa filter bulan) ke tab lain: periode tetap kosong
             tab = k;
             var d = defPeriode(tab); baca = ''; statusF = defStatus(tab); periodeDiubah = false; bulan = d.bulan; tahun = d.tahun;   // tiap tab mulai dari filter bawaannya
+            if (dariSemua && tab !== 'semua') { bulan = ''; tahun = ''; }
             isiOpsiFilter();
         }
         function resetFilter() {
@@ -1587,8 +1595,8 @@
         document.addEventListener('visibilitychange', function () { if (!document.hidden) { segarkan(); } });
         setInterval(segarkan, 60000);
 
-        tab = tabDef()[0].k;
-        tabDef().some(function (t) { if (DATA.some(t.cnt || t.f)) { tab = t.k; return true; } return false; });
+        tab = tabDefAsal()[0].k;   // tab pertama yang terbuka tetap tab kerja (bukan Semua)
+        tabDefAsal().some(function (t) { if (DATA.some(t.cnt || t.f)) { tab = t.k; return true; } return false; });
         (function () { var d = defPeriode(tab); bulan = d.bulan; tahun = d.tahun; statusF = defStatus(tab); })();
         isiOpsiFilter();
         renderAll();

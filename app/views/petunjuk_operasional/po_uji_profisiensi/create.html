@@ -696,9 +696,13 @@
             var st = getComputedStyle(el), mt = parseFloat(st.marginTop) || 0, mb = parseFloat(st.marginBottom) || 0;
             if (el.tagName === 'TABLE' && el.hasAttribute('data-split')) {
                 var trs = el.querySelectorAll('tr');
+                // Aturan tabel yang terpecah antarhalaman (sama seperti preview PO OPTI): tiap potongan minimal 2 baris isi, jadi baris pertama menempel
+                // ke baris kedua dan dua baris terakhir menempel satu sama lain. Tabel kecil (kurang dari 4 baris) tidak pernah dipecah.
+                var nHead = el.querySelectorAll('thead tr').length, nBody = trs.length - nHead;
+                var glue = function (k) { var b = k - nHead; return nBody >= 2 && b >= 0 && (b === 0 || b === nBody - 2); };
                 Array.prototype.forEach.call(trs, function (tr, k) {
                     var isHead = tr.parentNode.tagName === 'THEAD';
-                    units.push({ el: tr, table: el, head: isHead, keep: isHead || tr.classList.contains('keep'), h: tr.getBoundingClientRect().height + (k === 0 ? mt : 0) + (k === trs.length - 1 ? mb : 0) });
+                    units.push({ el: tr, table: el, head: isHead, keep: isHead || tr.classList.contains('keep') || glue(k), h: tr.getBoundingClientRect().height + (k === 0 ? mt : 0) + (k === trs.length - 1 ? mb : 0) });
                 });
             } else {
                 units.push({ el: el, keep: el.classList.contains('keep'), h: el.getBoundingClientRect().height + mt + mb });

@@ -113,13 +113,13 @@ class PoIndexController extends PoSertifikasiController {
         }
 
         $tab = strtolower(trim((string) $f3->get('GET.tab')));
-        if (!in_array($tab, ['draft', 'terkirim'], true)) {
+        if (!in_array($tab, ['semua', 'draft', 'terkirim'], true)) {   // 'semua' = Draft + Terkirim
             $tab = 'draft';
         }
 
         // Sama dengan PO OPTI: tab Draft -> default tampilkan semua; tab Terkirim -> default bulan berjalan
         $semuaGet = $f3->get('GET.semua');
-        $tampilkanSemua = ($semuaGet === null || $semuaGet === '') ? ($tab === 'draft') : ($semuaGet === '1');
+        $tampilkanSemua = ($semuaGet === null || $semuaGet === '') ? in_array($tab, ['semua', 'draft'], true) : ($semuaGet === '1');
         $bulan = $this->intBetween($f3->get('GET.bulan'), 1, 12, (int) date('n'));
         $tahun = $this->intBetween($f3->get('GET.tahun'), 2000, 2100, (int) date('Y'));
 
@@ -138,8 +138,13 @@ class PoIndexController extends PoSertifikasiController {
             $dasarParams[] = $layanan;
         }
 
-        $where = $dasar . " AND p.status = ?";
-        $params = array_merge($dasarParams, [$tab]);
+        if ($tab === 'semua') {
+            $where = $dasar . " AND p.status IN ('draft', 'terkirim')";
+            $params = $dasarParams;
+        } else {
+            $where = $dasar . " AND p.status = ?";
+            $params = array_merge($dasarParams, [$tab]);
+        }
         if ($q !== '') {
             $like = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $q) . '%';
             $where .= " AND (p.nomor_po LIKE ? OR p.judul_kegiatan LIKE ? OR a.nomor_order LIKE ? OR a.no_id_order LIKE ? OR c.nmcustomer LIKE ? OR p.nama_perusahaan LIKE ? OR s.nomor_surat LIKE ?" . ($adaDaftarOrder ? " OR p.daftar_order LIKE ?" : '') . ")";
@@ -198,7 +203,7 @@ class PoIndexController extends PoSertifikasiController {
         $daftar = $this->petakanBarisDaftar($rows, ($halaman - 1) * $perHalaman, $semuaLayanan, $f3);
 
         // ---- jumlah per tab (tidak ikut filter bulan/pencarian, tetap ikut filter layanan) ----
-        $tabCounts = ['draft' => 0, 'terkirim' => 0];
+        $tabCounts = ['semua' => 0, 'draft' => 0, 'terkirim' => 0];
         $totalPo = 0; $totalDisetujui = 0; // untuk 4 kartu ringkasan di atas daftar
         try {
             $rc = $this->db->exec(
@@ -211,6 +216,7 @@ class PoIndexController extends PoSertifikasiController {
             );
             $tabCounts['draft'] = (int) ($rc[0]['draft'] ?? 0);
             $tabCounts['terkirim'] = (int) ($rc[0]['terkirim'] ?? 0);
+            $tabCounts['semua'] = $tabCounts['draft'] + $tabCounts['terkirim'];
             $totalPo = (int) ($rc[0]['total'] ?? 0);
             $totalDisetujui = (int) ($rc[0]['disetujui'] ?? 0);
         } catch (\Throwable $e) {
