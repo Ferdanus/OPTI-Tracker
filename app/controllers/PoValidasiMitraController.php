@@ -717,17 +717,11 @@ class PoValidasiMitraController extends Controller {
 
     /** Ketua Tim aktif per divisi (opti_user_map). */
     protected function katimPerDivisi() {
-        $peta = ['selulosa' => 0, 'lingkungan' => 0];
         try {
-            $rows = $this->db->exec("SELECT id_user, jenis_layanan_opti FROM opti_user_map WHERE role_opti = 'ketua_tim' AND is_active = 1 ORDER BY id ASC");
-            foreach ($rows as $r) {
-                $d = (string) $r['jenis_layanan_opti'];
-                if (isset($peta[$d]) && $peta[$d] === 0) { $peta[$d] = (int) $r['id_user']; }
-            }
+            return \ArsipUser::getKatimMap($this->db, ['selulosa', 'lingkungan']);
         } catch (\Throwable $e) {
-            // nama Ketua Tim kosong
+            return ['selulosa' => 0, 'lingkungan' => 0];
         }
-        return $peta;
     }
 
     protected function safeExec($sql, $params = []) {

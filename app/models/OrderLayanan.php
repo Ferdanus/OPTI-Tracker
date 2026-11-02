@@ -2045,19 +2045,19 @@ class OrderLayanan extends \DB\SQL\Mapper {
                        CASE 
                            WHEN u.si_opti LIKE '%lingkungan%' THEN 'lingkungan'
                            WHEN u.si_opti LIKE '%selulosa%' THEN 'selulosa'
-                           WHEN m.jenis_layanan_opti IS NOT NULL THEN m.jenis_layanan_opti
+                           WHEN m.jenis_layanan IS NOT NULL THEN m.jenis_layanan
                            ELSE 'semua'
                        END AS spesialisasi 
                 FROM tb_arsipuser u 
                 LEFT JOIN opti_user_map m ON u.id_user = m.id_user 
-                WHERE (u.si_opti IN ('ketua_tim_selulosa', 'ketua_tim_lingkungan', 'katim_selulosa', 'katim_lingkungan') OR u.si_opti LIKE 'tim_kerja%' OR (m.role_opti IN ('ketua_tim', 'tim_kerja') AND m.jenis_layanan_opti IN ('selulosa', 'lingkungan', 'semua')))
+                WHERE (u.si_opti IN ('ketua_tim_selulosa', 'ketua_tim_lingkungan', 'katim_selulosa', 'katim_lingkungan') OR u.si_opti LIKE 'tim_kerja%' OR (m.role IN ('ketua_tim', 'tim_kerja') AND m.jenis_layanan IN ('selulosa', 'lingkungan', 'semua')))
                   AND (u.status = 1 OR u.status = '1' OR u.status = 'aktif')";
         
         $params = array();
         if (!empty($divisi) && in_array($divisi, array('selulosa', 'lingkungan'))) {
             $katimRole = 'ketua_tim_' . $divisi;
             $katimAlias = 'katim_' . $divisi;
-            $sql .= " AND (u.si_opti LIKE ? OR u.si_opti = ? OR u.si_opti = ? OR m.jenis_layanan_opti = ? OR (m.jenis_layanan_opti = 'semua' AND u.si_opti NOT LIKE '%lingkungan%' AND u.si_opti NOT LIKE '%selulosa%')) ";
+            $sql .= " AND (u.si_opti LIKE ? OR u.si_opti = ? OR u.si_opti = ? OR m.jenis_layanan = ? OR (m.jenis_layanan = 'semua' AND u.si_opti NOT LIKE '%lingkungan%' AND u.si_opti NOT LIKE '%selulosa%')) ";
             $params[1] = "%{$divisi}%";
             $params[2] = $katimRole;
             $params[3] = $katimAlias;

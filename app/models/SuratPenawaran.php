@@ -667,4 +667,255 @@ class SuratPenawaran extends \DB\SQL\Mapper
             } catch (\Exception $e) {}
         }
     }
+
+    /**
+     * Pastikan struktur kolom klaim surat keluar dan penawaran lengkap
+     */
+    public function pastikanKolomKlaimSuratKeluar(): void
+    {
+        try {
+            // Kolom di sil2020.tb_surat_keluar
+            $colsSk = $this->db->exec("SHOW COLUMNS FROM sil2020.tb_surat_keluar");
+            $namesSk = array_column($colsSk, 'Field');
+            $neededSk = [
+                'dipilih_opti'   => "ENUM('Y','N') NOT NULL DEFAULT 'N'",
+                'tgl_klaim'      => "DATETIME NULL",
+                'id_user_klaim'  => "INT(11) NULL",
+                'id_order_klaim' => "INT(11) NULL"
+            ];
+            foreach ($neededSk as $col => $def) {
+                if (!in_array($col, $namesSk)) {
+                    $this->db->exec("ALTER TABLE sil2020.tb_surat_keluar ADD COLUMN {$col} {$def}");
+                }
+            }
+
+            // Kolom di silopti2026.tb_surat_penawaran
+            $colsSp = $this->db->exec("SHOW COLUMNS FROM silopti2026.tb_surat_penawaran");
+            $namesSp = array_column($colsSp, 'Field');
+            if (!in_array('id_surat_keluar', $namesSp)) {
+                $this->db->exec("ALTER TABLE silopti2026.tb_surat_penawaran ADD COLUMN id_surat_keluar INT(11) NULL AFTER file_penawaran_ttd");
+            }
+        } catch (\Exception $e) {
+            error_log("pastikanKolomKlaimSuratKeluar error: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Ambil daftar surat penawaran dari arsip surat keluar yang belum diklaim
+     * WHERE surat_penawaran = 'Y' AND dipilih_opti = 'N'
+     */
+    public function getDaftarSuratKeluarTersedia(?int $customerId = null, ?string $q = null): array
+    {
+        $this->pastikanKolomKlaimSuratKeluar();
+
+        $sql = "SELECT sk.*,
+                       c.nmcustomer,
+                       c.pt_cv
+                FROM sil2020.tb_surat_keluar sk
+                LEFT JOIN sil2020.tb_customer c ON sk.id_customer = c.id_customer
+                WHERE sk.surat_penawaran = 'Y'
+                  AND (sk.dipilih_opti = 'N' OR sk.dipilih_sis_opti = 'N' OR sk.dipilih_opti IS NULL)";
+
+        $params = [];
+        $pIdx = 1;
+        if (!empty($q)) {
+            $sql .= " AND (sk.no_surat LIKE ? OR sk.perihal_surat LIKE ? OR c.nmcustomer LIKE ? OR sk.keterangan LIKE ?)";
+            $pattern = '%' . trim($q) . '%';
+            $params[$pIdx++] = $pattern;
+            $params[$pIdx++] = $pattern;
+            $params[$pIdx++] = $pattern;
+            $params[$pIdx++] = $pattern;
+        }
+
+        if ($customerId > 0) {
+            $sql .= " ORDER BY (sk.id_customer = " . (int)$customerId . ") DESC, sk.tanggal_surat DESC, sk.id_surat_keluar DESC";
+        } else {
+            $sql .= " ORDER BY sk.tanggal_surat DESC, sk.id_surat_keluar DESC";
+        }
+
+        $rows = $this->db->exec($sql, $params);
+        $f3 = \Base::instance();
+        $base = $f3->get('BASE') ?: '';
+
+        foreach ($rows as &$r) {
+            $r['nama_customer_lengkap'] = trim(($r['pt_cv'] ? $r['pt_cv'] . ' ' : '') . ($r['nmcustomer'] ?: ''));
+            if (empty($r['nama_customer_lengkap'])) {
+                $r['nama_customer_lengkap'] = !empty($r['jabatan_surat']) ? $r['jabatan_surat'] : ('Customer #' . $r['id_customer']);
+            }
+            $r['tanggal_surat_formatted'] = !empty($r['tanggal_surat']) ? date('d M Y', strtotime($r['tanggal_surat'])) : '-';
+            $r['is_match_customer'] = ($customerId > 0 && (int)$r['id_customer'] === $customerId);
+            $r['preview_url'] = $base . '/arsip-surat-keluar/' . $r['id_surat_keluar'] . '/preview';
+        }
+        unset($r);
+
+        return $rows;
+    }
+
+    /**
+     * Klaim Surat Penawaran Bertanda Tangan dari tb_surat_keluar
+     */
+    public function klaimSuratKeluar(int $spId, int $idSuratKeluar, int $userId): array
+    {
+        $this->pastikanKolomKlaimSuratKeluar();
+
+        $sp = $this->getById($spId);
+        if (!$sp) {
+            return ['success' => false, 'message' => 'Data surat penawaran tidak ditemukan.'];
+        }
+
+        $skRows = $this->db->exec(
+            "SELECT * FROM sil2020.tb_surat_keluar WHERE id_surat_keluar = ? LIMIT 1",
+            [1 => $idSuratKeluar]
+        );
+        if (empty($skRows)) {
+            return ['success' => false, 'message' => 'Surat keluar tidak ditemukan di arsip sekretariat.'];
+        }
+
+        $sk = $skRows[0];
+        if (($sk['surat_penawaran'] ?? 'N') !== 'Y') {
+            return ['success' => false, 'message' => 'Surat keluar yang dipilih bukan kategori Surat Penawaran.'];
+        }
+
+        // Cek apakah sudah diklaim order lain
+        $isClaimedOther = (($sk['dipilih_opti'] === 'Y' && $sk['dipilih_sis_opti'] === 'Y') && 
+                          (int)($sk['id_order_klaim'] ?? 0) > 0 && 
+                          (int)($sk['id_order_klaim'] ?? 0) !== (int)$sp['order_id']);
+        if ($isClaimedOther) {
+            return ['success' => false, 'message' => 'Surat keluar ini sudah diklaim oleh order lain.'];
+        }
+
+        // Jika sebelumnya order ini sudah mengklaim surat keluar lain, kembalikan statusnya
+        $oldSkId = (int)($sp['id_surat_keluar'] ?? 0);
+        if ($oldSkId > 0 && $oldSkId !== $idSuratKeluar) {
+            $this->db->exec(
+                "UPDATE sil2020.tb_surat_keluar SET 
+                    dipilih_opti = 'N', 
+                    dipilih_sis_opti = 'N', 
+                    tgl_klaim = NULL, 
+                    id_user_klaim = NULL, 
+                    id_order_klaim = NULL,
+                    id_surat_keluar_dipilih = NULL
+                 WHERE id_surat_keluar = ?",
+                [1 => $oldSkId]
+            );
+        }
+
+        // Siapkan berkas fisik ke storage/kesanggupan_bayar agar dapat diunduh/dipratinjau
+        $dirStorage = dirname(__DIR__, 2) . '/storage/kesanggupan_bayar';
+        if (!is_dir($dirStorage)) {
+            @mkdir($dirStorage, 0755, true);
+        }
+
+        $berkasAsli = trim($sk['nama_berkas_surat_keluar'] ?? '');
+        $namaFileDisimpan = $berkasAsli;
+        
+        $root = dirname(__DIR__, 2);
+        $kandidatPath = [
+            $root . '/' . ltrim($berkasAsli, '/\\'),
+            $root . '/public/' . ltrim($berkasAsli, '/\\'),
+            $dirStorage . '/' . basename($berkasAsli),
+            $root . '/uploads/penawaran/' . basename($berkasAsli),
+        ];
+        $pathDitemukan = null;
+        if (!empty($berkasAsli)) {
+            foreach ($kandidatPath as $kp) {
+                if (is_file($kp)) {
+                    $pathDitemukan = $kp;
+                    break;
+                }
+            }
+        }
+
+        if ($pathDitemukan && is_file($pathDitemukan)) {
+            $ext = strtolower(pathinfo($pathDitemukan, PATHINFO_EXTENSION)) ?: 'pdf';
+            $namaFileSalinan = 'sp_ttd_' . $spId . '_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+            $dest = $dirStorage . '/' . $namaFileSalinan;
+            if (@copy($pathDitemukan, $dest)) {
+                $namaFileDisimpan = $namaFileSalinan;
+            }
+        } elseif (empty($berkasAsli)) {
+            $namaFileDisimpan = 'sk_penawaran_ttd_' . $idSuratKeluar . '.pdf';
+        }
+
+        // 1. Update status klaim di sil2020.tb_surat_keluar
+        $this->db->exec(
+            "UPDATE sil2020.tb_surat_keluar SET 
+                dipilih_opti = 'Y',
+                dipilih_sis_opti = 'Y',
+                tgl_klaim = NOW(),
+                id_user_klaim = ?,
+                id_order_klaim = ?,
+                id_surat_keluar_dipilih = ?
+             WHERE id_surat_keluar = ?",
+            [
+                1 => $userId,
+                2 => (int)$sp['order_id'],
+                3 => (int)$sp['order_id'],
+                4 => $idSuratKeluar
+            ]
+        );
+
+        // 2. Update di silopti2026.tb_surat_penawaran
+        $this->db->exec(
+            "UPDATE silopti2026.tb_surat_penawaran SET 
+                file_penawaran_ttd = ?,
+                id_surat_keluar = ?,
+                nomor_surat = COALESCE(NULLIF(nomor_surat, ''), ?)
+             WHERE id = ?",
+            [
+                1 => $namaFileDisimpan,
+                2 => $idSuratKeluar,
+                3 => trim($sk['no_surat'] ?? ''),
+                4 => $spId
+            ]
+        );
+
+        return [
+            'success'         => true,
+            'message'         => 'Surat Penawaran bertanda tangan berhasil diklaim dari arsip surat keluar.',
+            'no_surat'        => $sk['no_surat'],
+            'id_surat_keluar' => $idSuratKeluar,
+            'file_name'       => $namaFileDisimpan,
+            'preview_url'     => \Base::instance()->get('BASE') . '/surat-penawaran/' . $spId . '/dokumen-deal/penawaran_ttd/preview'
+        ];
+    }
+
+    /**
+     * Batalkan klaim Surat Penawaran dari tb_surat_keluar
+     */
+    public function batalKlaimSuratKeluar(int $spId, int $userId): array
+    {
+        $sp = $this->getById($spId);
+        if (!$sp) {
+            return ['success' => false, 'message' => 'Data surat penawaran tidak ditemukan.'];
+        }
+
+        $idSuratKeluar = (int)($sp['id_surat_keluar'] ?? 0);
+        if ($idSuratKeluar > 0) {
+            $this->db->exec(
+                "UPDATE sil2020.tb_surat_keluar SET 
+                    dipilih_opti = 'N', 
+                    dipilih_sis_opti = 'N', 
+                    tgl_klaim = NULL, 
+                    id_user_klaim = NULL, 
+                    id_order_klaim = NULL,
+                    id_surat_keluar_dipilih = NULL
+                 WHERE id_surat_keluar = ?",
+                [1 => $idSuratKeluar]
+            );
+        }
+
+        $this->db->exec(
+            "UPDATE silopti2026.tb_surat_penawaran SET 
+                file_penawaran_ttd = NULL,
+                id_surat_keluar = NULL
+             WHERE id = ?",
+            [1 => $spId]
+        );
+
+        return [
+            'success' => true,
+            'message' => 'Klaim surat penawaran berhasil dibatalkan.'
+        ];
+    }
 }

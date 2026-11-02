@@ -520,24 +520,27 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
             $switchUsersRaw = $this->db->exec(
                 "SELECT u.id_user AS id, 
                         u.nama_user AS nama_lengkap, 
-                        COALESCE(NULLIF(u.si_opti, ''), m.role_opti) AS role_sistem, 
+                        COALESCE(NULLIF(u.si_opti, ''), m.role) AS role_sistem, 
                         u.login, 
                         u.bidang, 
-                        u.nama_avatar
+                        u.nama_avatar,
+                        u.id_struktural_tim
                  FROM tb_arsipuser u
-                 LEFT JOIN opti_user_map m ON u.id_user = m.id_user
+                 LEFT JOIN opti_user_map m ON u.id_user = m.id_user AND m.status_tampil = 'show' AND (m.is_active = 1 OR m.is_active = '1')
                  WHERE (
                      (u.si_opti IS NOT NULL AND u.si_opti != '' AND u.si_opti != 'user')
-                     OR (m.role_opti IS NOT NULL AND m.role_opti != '' AND m.role_opti != 'user' AND (m.is_active = 1 OR m.is_active = '1'))
+                     OR (m.role IS NOT NULL AND m.role != '' AND m.role != 'user')
+                     OR u.id_struktural_tim IN (170, 180, 190, 140, 150, 100, 210, 160, 240, 30, 31)
                  )
                  AND (u.status = 1 OR u.status = '1' OR u.status = 'aktif')
+                 GROUP BY u.id_user
                  ORDER BY 
                     CASE 
-                        WHEN COALESCE(NULLIF(u.si_opti, ''), m.role_opti) = 'superadmin' THEN 1
-                        WHEN COALESCE(NULLIF(u.si_opti, ''), m.role_opti) LIKE 'ketua_tim%' OR COALESCE(NULLIF(u.si_opti, ''), m.role_opti) LIKE 'katim%' THEN 2
-                        WHEN COALESCE(NULLIF(u.si_opti, ''), m.role_opti) = 'tim_mitra_industri' OR COALESCE(NULLIF(u.si_opti, ''), m.role_opti) = 'admin_order' OR COALESCE(NULLIF(u.si_opti, ''), m.role_opti) = 'tim_mitra' THEN 3
-                        WHEN COALESCE(NULLIF(u.si_opti, ''), m.role_opti) = 'keuangan' THEN 4
-                        WHEN COALESCE(NULLIF(u.si_opti, ''), m.role_opti) LIKE 'tim_kerja%' OR COALESCE(NULLIF(u.si_opti, ''), m.role_opti) LIKE 'tk_%' THEN 5
+                        WHEN COALESCE(NULLIF(u.si_opti, ''), m.role) = 'superadmin' THEN 1
+                        WHEN COALESCE(NULLIF(u.si_opti, ''), m.role) LIKE 'ketua_tim%' OR COALESCE(NULLIF(u.si_opti, ''), m.role) LIKE 'katim%' OR u.id_struktural_tim IN (170, 190, 140, 150, 100, 210, 160, 240, 30) THEN 2
+                        WHEN COALESCE(NULLIF(u.si_opti, ''), m.role) = 'tim_mitra_industri' OR COALESCE(NULLIF(u.si_opti, ''), m.role) = 'admin_order' OR COALESCE(NULLIF(u.si_opti, ''), m.role) = 'tim_mitra' THEN 3
+                        WHEN COALESCE(NULLIF(u.si_opti, ''), m.role) = 'keuangan' THEN 4
+                        WHEN COALESCE(NULLIF(u.si_opti, ''), m.role) LIKE 'tim_kerja%' OR COALESCE(NULLIF(u.si_opti, ''), m.role) LIKE 'tk_%' OR COALESCE(NULLIF(u.si_opti, ''), m.role) LIKE 'pic_%' THEN 5
                         ELSE 6
                     END ASC,
                     u.nama_user ASC"
@@ -600,14 +603,19 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
             $targetDb = $this->dbSekretariat ?: $this->db;
             if ($targetDb) {
                 $r = $targetDb->exec(
-                    "SELECT si_opti FROM tb_arsipuser WHERE id_user = ? LIMIT 1",
+                    "SELECT u.si_opti, m.jenis_layanan
+                     FROM tb_arsipuser u
+                     LEFT JOIN opti_user_map m ON u.id_user = m.id_user AND m.status_tampil = 'show' AND m.is_active = 1
+                     WHERE u.id_user = ?
+                     ORDER BY m.id DESC LIMIT 1",
                     [1 => $uid]
                 );
                 if (!empty($r)) {
                     $siOpti = strtolower(trim((string) $r[0]['si_opti']));
-                    if ($siOpti === 'tim_kerja_selulosa') {
+                    $mapLayanan = strtolower(trim((string) ($r[0]['jenis_layanan'] ?? '')));
+                    if ($siOpti === 'tim_kerja_selulosa' || strpos($siOpti, '_selulosa') !== false || $mapLayanan === 'selulosa') {
                         $divisi = 'selulosa';
-                    } elseif ($siOpti === 'tim_kerja_lingkungan') {
+                    } elseif ($siOpti === 'tim_kerja_lingkungan' || strpos($siOpti, '_lingkungan') !== false || $mapLayanan === 'lingkungan') {
                         $divisi = 'lingkungan';
                     }
                 }

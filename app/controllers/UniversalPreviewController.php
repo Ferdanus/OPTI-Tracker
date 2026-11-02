@@ -126,6 +126,13 @@ class UniversalPreviewController extends Controller
                 return;
             }
 
+            // 7b. Pola Arsip Surat Keluar: /arsip-surat-keluar/@id/preview
+            if (preg_match('#arsip-surat-keluar/(\d+)(?:/preview)?#i', $path, $m)) {
+                $skId = (int)$m[1];
+                $this->handleSuratKeluar($skId);
+                return;
+            }
+
             // 8. Pola Direct File (misal file proposal, bukti bayar langsung dari URL fisik):
             // /uploads/... atau /storage/... atau .pdf/.jpg
             if (preg_match('#\.(pdf|jpg|jpeg|png|webp|bmp|doc|docx)$#i', $path)) {
@@ -623,6 +630,125 @@ class UniversalPreviewController extends Controller
 
         $nomorSurat = preg_replace('#[^a-zA-Z0-9_-]+#', '_', $surat['nomor_surat'] ?? ('Surat_' . $suratId));
         $this->sendFileAsBase64($filePath, 'Surat_Masuk_' . $nomorSurat);
+    }
+
+    /**
+     * Pratinjau Arsip Surat Keluar (dari tb_surat_keluar)
+     */
+    protected function handleSuratKeluar($skId)
+    {
+        $rows = $this->db->exec(
+            "SELECT sk.*, c.nmcustomer, c.pt_cv 
+             FROM sil2020.tb_surat_keluar sk
+             LEFT JOIN sil2020.tb_customer c ON sk.id_customer = c.id_customer
+             WHERE sk.id_surat_keluar = ? LIMIT 1",
+            [1 => $skId]
+        );
+
+        if (empty($rows)) {
+            $this->jsonResponse(['success' => false, 'message' => 'Data Surat Keluar tidak ditemukan di arsip sekretariat.']);
+            return;
+        }
+
+        $sk = $rows[0];
+        $berkas = trim($sk['nama_berkas_surat_keluar'] ?? '');
+        $root = dirname(__DIR__, 2);
+
+        $filePath = null;
+        if (!empty($berkas)) {
+            $kandidatPath = [
+                $root . '/' . ltrim($berkas, '/\\'),
+                $root . '/public/' . ltrim($berkas, '/\\'),
+                $root . '/storage/kesanggupan_bayar/' . basename($berkas),
+                $root . '/uploads/penawaran/' . basename($berkas),
+                $root . '/storage/' . ltrim($berkas, '/\\'),
+            ];
+            foreach ($kandidatPath as $kp) {
+                if (is_file($kp)) {
+                    $filePath = $kp;
+                    break;
+                }
+            }
+        }
+
+        // Jika fisik berkas belum diunggah atau tidak ditemukan, generate berkas pratinjau surat keluar via FPDF
+        if (!$filePath || !is_file($filePath)) {
+            $filePath = $this->generateFallbackPdfSuratKeluar($sk);
+        }
+
+        if (!$filePath || !is_file($filePath)) {
+            $this->jsonResponse(['success' => false, 'message' => 'Berkas fisik surat penawaran keluar tidak ditemukan di server.']);
+            return;
+        }
+
+        $nomorClean = preg_replace('#[^a-zA-Z0-9_-]+#', '_', $sk['no_surat'] ?? ('Surat_Keluar_' . $skId));
+        $this->sendFileAsBase64($filePath, 'Surat_Penawaran_' . $nomorClean);
+    }
+
+    /**
+     * Fallback generator PDF Surat Keluar jika berkas scan/upload belum diunggah
+     */
+    protected function generateFallbackPdfSuratKeluar(array $sk)
+    {
+        try {
+            $fpdfPath = dirname(__DIR__, 2) . '/app/helpers/fpdf/fpdf.php';
+            if (!file_exists($fpdfPath)) {
+                return null;
+            }
+            require_once $fpdfPath;
+
+            $pdf = new \FPDF('P', 'mm', 'A4');
+            $pdf->SetMargins(20, 15, 20);
+            $pdf->AddPage();
+
+            // Kop Surat Resmi Balai
+            $pdf->SetFont('Arial', 'B', 12);
+            $pdf->Cell(0, 6, 'KEMENTERIAN PERINDUSTRIAN REPUBLIK INDONESIA', 0, 1, 'C');
+            $pdf->SetFont('Arial', 'B', 10);
+            $pdf->Cell(0, 5, 'BALAI BESAR STANDARDISASI DAN PELAYANAN JASA INDUSTRI SELULOSA', 0, 1, 'C');
+            $pdf->SetFont('Arial', '', 8);
+            $pdf->Cell(0, 4, 'Jl. Raya Dayeuhkolot No. 132 Bandung 40258 | Telp. (022) 5202871', 0, 1, 'C');
+            $pdf->Ln(2);
+            $pdf->SetLineWidth(0.8);
+            $pdf->Line(20, $pdf->GetY(), 190, $pdf->GetY());
+            $pdf->SetLineWidth(0.2);
+            $pdf->Line(20, $pdf->GetY() + 0.8, 190, $pdf->GetY() + 0.8);
+            $pdf->Ln(6);
+
+            // Metadata Surat
+            $pdf->SetFont('Arial', '', 9.5);
+            $tgl = !empty($sk['tanggal_surat']) ? date('d F Y', strtotime($sk['tanggal_surat'])) : date('d F Y');
+            $pdf->Cell(120, 5, 'Nomor   : ' . ($sk['no_surat'] ?: '-'), 0, 0);
+            $pdf->Cell(50, 5, 'Bandung, ' . $tgl, 0, 1, 'R');
+            $pdf->Cell(120, 5, 'Lampiran: 1 (satu) Berkas', 0, 1);
+            $pdf->Cell(120, 5, 'Perihal : ' . ($sk['perihal_surat'] ?: 'Penawaran Layanan Jasa OPTI'), 0, 1);
+            $pdf->Ln(5);
+
+            $customerNama = trim(($sk['pt_cv'] ? $sk['pt_cv'] . ' ' : '') . ($sk['nmcustomer'] ?: ''));
+            if (empty($customerNama)) {
+                $customerNama = $sk['jabatan_surat'] ?: 'Pimpinan Perusahaan / Instansi';
+            }
+
+            $pdf->Cell(0, 5, 'Kepada Yth.', 0, 1);
+            $pdf->SetFont('Arial', 'B', 9.5);
+            $pdf->Cell(0, 5, $customerNama, 0, 1);
+            $pdf->SetFont('Arial', '', 9.5);
+            $pdf->Cell(0, 5, 'Di Tempat', 0, 1);
+            $pdf->Ln(5);
+
+            $pdf->MultiCell(0, 5.5, "Dengan hormat,\n\nSehubungan dengan surat permohonan kerjasama yang telah diajukan, bersama ini kami sampaikan Surat Penawaran Pelayanan Jasa Optimalisasi Pemanfaatan Teknologi Industri (OPTI) dari Balai Besar Standardisasi dan Pelayanan Jasa Industri Selulosa (BBSPJIS).\n\nDemikian surat penawaran ini kami sampaikan, atas perhatian dan kerjasama yang baik kami ucapkan terima kasih.");
+            $pdf->Ln(15);
+
+            $pdf->Cell(110, 5, '', 0, 0);
+            $pdf->MultiCell(60, 5, "Kepala Balai Besar,\n\n\n\n\n( Pejabat Berwenang BBSPJIS )\nNIP. ....................................", 0, 'C');
+
+            $tmpFile = tempnam(sys_get_temp_dir(), 'sk_pdf_') . '.pdf';
+            $pdf->Output('F', $tmpFile);
+            return $tmpFile;
+        } catch (\Throwable $e) {
+            error_log('[generateFallbackPdfSuratKeluar] ' . $e->getMessage());
+            return null;
+        }
     }
 
     /**

@@ -62,26 +62,26 @@
     transition: all 0.2s;
 }
 .filter-tab-pill .count-chip.chip-warning {
-    background-color: #fef3c7;
-    color: #b45309;
-    border-color: #fde68a;
+    background-color: #f1f5f9;
+    color: #475569;
+    border-color: #e2e8f0;
 }
 .filter-tab-pill .count-chip.chip-success {
-    background-color: #dcfce7;
-    color: #15803d;
-    border-color: #bbf7d0;
+    background-color: #f1f5f9;
+    color: #475569;
+    border-color: #e2e8f0;
 }
 .filter-tab-pill .count-chip.chip-danger {
-    background-color: #fee2e2;
-    color: #b91c1c;
-    border-color: #fecaca;
+    background-color: #f1f5f9;
+    color: #475569;
+    border-color: #e2e8f0;
 }
 .filter-tab-pill.nav-link.active,
 .filter-tab-pill.active {
     color: #ffffff !important;
-    background-color: var(--color-primary, #881337) !important;
-    border-color: var(--color-primary, #881337) !important;
-    box-shadow: 0 2px 6px rgba(136, 19, 55, 0.25) !important;
+    background-color: var(--color-primary, #334155) !important;
+    border-color: var(--color-primary, #334155) !important;
+    box-shadow: 0 2px 6px rgba(51, 65, 85, 0.25) !important;
 }
 .filter-tab-pill.nav-link.active .count-chip,
 .filter-tab-pill.active .count-chip {
@@ -94,14 +94,17 @@
     color: #ffffff !important;
 }
 .filter-tab-pill.tab-batal.active {
-    background-color: #dc2626 !important;
-    border-color: #dc2626 !important;
-    box-shadow: 0 2px 6px rgba(220, 38, 38, 0.25) !important;
     color: #ffffff !important;
+    background-color: var(--color-primary, #334155) !important;
+    border-color: var(--color-primary, #334155) !important;
+    box-shadow: 0 2px 6px rgba(51, 65, 85, 0.25) !important;
 }
 .filter-tab-pill.tab-batal.active .count-chip {
     background-color: rgba(255, 255, 255, 0.25) !important;
     border-color: transparent !important;
+    color: #ffffff !important;
+}
+.filter-tab-pill.tab-batal.active i {
     color: #ffffff !important;
 }
 </style>
@@ -124,7 +127,7 @@
                 <h3 class="fw-bold text-dark mb-0 mt-1">{{ @total_surat ?: 0 }}</h3>
                 <span class="small text-muted" style="font-size: 0.75rem;">Semua riwayat</span>
             </div>
-            <div class="metric-icon-box" style="background: rgba(136,19,55,.08); color: var(--color-primary);">
+            <div class="metric-icon-box" style="background-color: #f1f5f9; color: var(--color-primary); border: 1px solid #cbd5e1;">
                 <i class="bi bi-file-earmark-text"></i>
             </div>
         </div>
@@ -136,7 +139,7 @@
                 <h3 class="fw-bold text-dark mb-0 mt-1">{{ @total_aktif ?: 0 }}</h3>
                 <span class="small text-muted" style="font-size: 0.75rem;">Penawaran masuk</span>
             </div>
-            <div class="metric-icon-box" style="background: #eff6ff; color: #1d4ed8;">
+            <div class="metric-icon-box" style="background-color: #f1f5f9; color: var(--color-primary); border: 1px solid #cbd5e1;">
                 <i class="bi bi-file-earmark-check-fill"></i>
             </div>
         </div>
@@ -145,10 +148,10 @@
         <div class="metric-card">
             <div>
                 <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">Negosiasi</span>
-                <h3 class="fw-bold text-warning mb-0 mt-1">{{ @total_nego ?: 0 }}</h3>
+                <h3 class="fw-bold text-dark mb-0 mt-1">{{ @total_nego ?: 0 }}</h3>
                 <span class="small text-muted" style="font-size: 0.75rem;">Proses kesepakatan</span>
             </div>
-            <div class="metric-icon-box" style="background: #fffbeb; color: #b45309;">
+            <div class="metric-icon-box" style="background-color: #f1f5f9; color: var(--color-primary); border: 1px solid #cbd5e1;">
                 <i class="bi bi-chat-dots-fill"></i>
             </div>
         </div>
@@ -157,10 +160,10 @@
         <div class="metric-card">
             <div>
                 <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">Disepakati (DEAL)</span>
-                <h3 class="fw-bold text-success mb-0 mt-1">{{ @total_deal ?: 0 }}</h3>
+                <h3 class="fw-bold text-dark mb-0 mt-1">{{ @total_deal ?: 0 }}</h3>
                 <span class="small text-muted" style="font-size: 0.75rem;">Siap pembayaran</span>
             </div>
-            <div class="metric-icon-box" style="background: #ecfdf5; color: #065f46;">
+            <div class="metric-icon-box" style="background-color: #f1f5f9; color: var(--color-primary); border: 1px solid #cbd5e1;">
                 <i class="bi bi-check-circle-fill"></i>
             </div>
         </div>
@@ -169,10 +172,10 @@
         <div class="metric-card">
             <div>
                 <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">Arsip Batal</span>
-                <h3 class="fw-bold text-danger mb-0 mt-1">{{ @total_batal ?: 0 }}</h3>
+                <h3 class="fw-bold text-dark mb-0 mt-1">{{ @total_batal ?: 0 }}</h3>
                 <span class="small text-muted" style="font-size: 0.75rem;">Gagal / Direvisi</span>
             </div>
-            <div class="metric-icon-box" style="background: #fef2f2; color: #dc2626;">
+            <div class="metric-icon-box" style="background-color: #f1f5f9; color: var(--color-primary); border: 1px solid #cbd5e1;">
                 <i class="bi bi-x-octagon-fill"></i>
             </div>
         </div>
@@ -243,30 +246,30 @@
         <ul class="nav d-flex align-items-center gap-2 flex-wrap mb-0 p-0 border-0" id="penawaranTabs" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link filter-tab-pill {{ @active_tab == 'aktif' ? 'active' : '' }}" id="tab-aktif" data-bs-toggle="tab" data-bs-target="#content-aktif" type="button" role="tab" aria-controls="content-aktif" aria-selected="{{ @active_tab == 'aktif' ? 'true' : 'false' }}">
-                    <i class="bi bi-file-earmark-check-fill text-primary"></i>
+                    <i class="bi bi-file-earmark-check-fill"></i>
                     <span>Penawaran Aktif</span>
                     <span class="count-chip">{{ count(@daftar_aktif) }}</span>
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link filter-tab-pill {{ @active_tab == 'nego' ? 'active' : '' }}" id="tab-nego" data-bs-toggle="tab" data-bs-target="#content-nego" type="button" role="tab" aria-controls="content-nego" aria-selected="{{ @active_tab == 'nego' ? 'true' : 'false' }}">
-                    <i class="bi bi-chat-dots-fill text-warning"></i>
+                    <i class="bi bi-chat-dots-fill"></i>
                     <span>Dalam Negosiasi</span>
-                    <span class="count-chip chip-warning">{{ count(@daftar_nego) }}</span>
+                    <span class="count-chip">{{ count(@daftar_nego) }}</span>
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link filter-tab-pill {{ @active_tab == 'deal' ? 'active' : '' }}" id="tab-deal" data-bs-toggle="tab" data-bs-target="#content-deal" type="button" role="tab" aria-controls="content-deal" aria-selected="{{ @active_tab == 'deal' ? 'true' : 'false' }}">
-                    <i class="bi bi-check-circle-fill text-success"></i>
+                    <i class="bi bi-check-circle-fill"></i>
                     <span>Disepakati (DEAL)</span>
-                    <span class="count-chip chip-success">{{ count(@daftar_deal) }}</span>
+                    <span class="count-chip">{{ count(@daftar_deal) }}</span>
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link filter-tab-pill tab-batal {{ @active_tab == 'batal' ? 'active' : '' }}" id="tab-batal" data-bs-toggle="tab" data-bs-target="#content-batal" type="button" role="tab" aria-controls="content-batal" aria-selected="{{ @active_tab == 'batal' ? 'true' : 'false' }}">
-                    <i class="bi bi-x-octagon-fill text-danger"></i>
+                    <i class="bi bi-x-octagon-fill"></i>
                     <span>Arsip Batal & Ditolak</span>
-                    <span class="count-chip chip-danger">{{ count(@daftar_batal) }}</span>
+                    <span class="count-chip">{{ count(@daftar_batal) }}</span>
                 </button>
             </li>
             <li class="nav-item" role="presentation">
@@ -344,7 +347,7 @@
                                             </td>
                                             <td class="text-nowrap text-center">
                                                 <check if="{{ @sp.jenis_layanan && !in_array(@sp.jenis_layanan, ['belum_ditentukan', 'opti_belum_ditentukan']) }}">
-                                                    <span class="badge {{ strpos(@sp.jenis_layanan, 'selulosa') !== false ? 'bg-danger-subtle text-danger border border-danger-subtle' : 'bg-success-subtle text-success border border-success-subtle' }} text-uppercase" style="font-size: 0.65rem;">
+                                                    <span class="badge bg-light text-secondary border text-uppercase fw-semibold" style="font-size: 0.68rem;">
                                                         {{ str_replace('_', ' ', @sp.jenis_layanan) }}
                                                     </span>
                                                 </check>
@@ -377,12 +380,12 @@
                                             <td class="text-center text-nowrap">
                                                 <div class="d-inline-flex align-items-center gap-1">
                                                     <check if="{{ @sp.order_id }}">
-                                                        <button type="button" class="btn btn-outline-danger btn-sm py-1 px-2 btn-preview-pdf" data-preview-pdf="{{ @BASE }}/order/{{ @sp.order_id }}/penawaran/cetak?id={{ @sp.id }}&t={{ time() }}" data-title="Surat Penawaran" data-subtitle="{{ @sp.nomor_surat }}" title="Pratinjau Surat Penawaran PDF">
+                                                        <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-2 btn-preview-pdf" data-preview-pdf="{{ @BASE }}/order/{{ @sp.order_id }}/penawaran/cetak?id={{ @sp.id }}&t={{ time() }}" data-title="Surat Penawaran" data-subtitle="{{ @sp.nomor_surat }}" title="Pratinjau Surat Penawaran PDF">
                                                             <i class="bi bi-file-earmark-pdf"></i>
                                                         </button>
                                                     </check>
                                                     <check if="{{ !@sp.order_id }}">
-                                                        <button type="button" class="btn btn-outline-danger btn-sm py-1 px-2 btn-preview-pdf" data-preview-pdf="{{ @BASE }}/surat-penawaran/{{ @sp.id }}/cetak?t={{ time() }}" data-title="Surat Penawaran" data-subtitle="{{ @sp.nomor_surat }}" title="Pratinjau Surat Penawaran PDF">
+                                                        <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-2 btn-preview-pdf" data-preview-pdf="{{ @BASE }}/surat-penawaran/{{ @sp.id }}/cetak?t={{ time() }}" data-title="Surat Penawaran" data-subtitle="{{ @sp.nomor_surat }}" title="Pratinjau Surat Penawaran PDF">
                                                             <i class="bi bi-file-earmark-pdf"></i>
                                                         </button>
                                                     </check>
@@ -507,12 +510,12 @@
                                             <td class="text-center text-nowrap">
                                                 <div class="d-inline-flex align-items-center gap-1">
                                                     <check if="{{ @sp.order_id }}">
-                                                        <button type="button" class="btn btn-outline-danger btn-sm py-1 px-2 btn-preview-pdf" data-preview-pdf="{{ @BASE }}/order/{{ @sp.order_id }}/penawaran/cetak?id={{ @sp.id }}&t={{ time() }}" data-title="Surat Penawaran" data-subtitle="{{ @sp.nomor_surat }}" title="Pratinjau Surat Penawaran PDF">
+                                                        <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-2 btn-preview-pdf" data-preview-pdf="{{ @BASE }}/order/{{ @sp.order_id }}/penawaran/cetak?id={{ @sp.id }}&t={{ time() }}" data-title="Surat Penawaran" data-subtitle="{{ @sp.nomor_surat }}" title="Pratinjau Surat Penawaran PDF">
                                                             <i class="bi bi-file-earmark-pdf"></i>
                                                         </button>
                                                     </check>
                                                     <check if="{{ !@sp.order_id }}">
-                                                        <button type="button" class="btn btn-outline-danger btn-sm py-1 px-2 btn-preview-pdf" data-preview-pdf="{{ @BASE }}/surat-penawaran/{{ @sp.id }}/cetak?t={{ time() }}" data-title="Surat Penawaran" data-subtitle="{{ @sp.nomor_surat }}" title="Pratinjau Surat Penawaran PDF">
+                                                        <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-2 btn-preview-pdf" data-preview-pdf="{{ @BASE }}/surat-penawaran/{{ @sp.id }}/cetak?t={{ time() }}" data-title="Surat Penawaran" data-subtitle="{{ @sp.nomor_surat }}" title="Pratinjau Surat Penawaran PDF">
                                                             <i class="bi bi-file-earmark-pdf"></i>
                                                         </button>
                                                     </check>
@@ -645,12 +648,12 @@
                                             <td class="text-center text-nowrap">
                                                 <div class="d-inline-flex align-items-center gap-1">
                                                     <check if="{{ @sp.order_id }}">
-                                                        <button type="button" class="btn btn-outline-danger btn-sm py-1 px-2 btn-preview-pdf" data-preview-pdf="{{ @BASE }}/order/{{ @sp.order_id }}/penawaran/cetak?id={{ @sp.id }}&t={{ time() }}" data-title="Surat Penawaran" data-subtitle="{{ @sp.nomor_surat }}" title="Pratinjau Surat Penawaran PDF">
+                                                        <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-2 btn-preview-pdf" data-preview-pdf="{{ @BASE }}/order/{{ @sp.order_id }}/penawaran/cetak?id={{ @sp.id }}&t={{ time() }}" data-title="Surat Penawaran" data-subtitle="{{ @sp.nomor_surat }}" title="Pratinjau Surat Penawaran PDF">
                                                             <i class="bi bi-file-earmark-pdf"></i>
                                                         </button>
                                                     </check>
                                                     <check if="{{ !@sp.order_id }}">
-                                                        <button type="button" class="btn btn-outline-danger btn-sm py-1 px-2 btn-preview-pdf" data-preview-pdf="{{ @BASE }}/surat-penawaran/{{ @sp.id }}/cetak?t={{ time() }}" data-title="Surat Penawaran" data-subtitle="{{ @sp.nomor_surat }}" title="Pratinjau Surat Penawaran PDF">
+                                                        <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-2 btn-preview-pdf" data-preview-pdf="{{ @BASE }}/surat-penawaran/{{ @sp.id }}/cetak?t={{ time() }}" data-title="Surat Penawaran" data-subtitle="{{ @sp.nomor_surat }}" title="Pratinjau Surat Penawaran PDF">
                                                             <i class="bi bi-file-earmark-pdf"></i>
                                                         </button>
                                                     </check>
@@ -788,7 +791,7 @@
                                                         <i class="bi bi-chat-left-text"></i> <span class="small">Catatan</span>
                                                     </button>
                                                     <!-- Pratinjau PDF Asli Surat Batal -->
-                                                    <button type="button" class="btn btn-outline-danger btn-sm py-1 px-2.5 btn-preview-pdf shadow-xs"
+                                                    <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-2.5 btn-preview-pdf shadow-xs"
                                                             data-preview-pdf="{{ @BASE }}/order/{{ @sp.order_id ?: @sp.id }}/penawaran/cetak?id={{ @sp.id }}&t={{ time() }}"
                                                             data-title="Arsip Surat Penawaran (Batal)"
                                                             data-subtitle="{{ @sp.nomor_surat }}"
@@ -871,7 +874,7 @@
                                             </td>
                                             <td class="text-nowrap text-center">
                                                 <check if="{{ @sp.jenis_layanan && !in_array(@sp.jenis_layanan, ['belum_ditentukan', 'opti_belum_ditentukan']) }}">
-                                                    <span class="badge {{ strpos(@sp.jenis_layanan, 'selulosa') !== false ? 'bg-danger-subtle text-danger border border-danger-subtle' : 'bg-success-subtle text-success border border-success-subtle' }} text-uppercase" style="font-size: 0.65rem;">
+                                                    <span class="badge bg-light text-secondary border text-uppercase fw-semibold" style="font-size: 0.68rem;">
                                                         {{ str_replace('_', ' ', @sp.jenis_layanan) }}
                                                     </span>
                                                 </check>
@@ -900,12 +903,12 @@
                                             <td class="text-center text-nowrap">
                                                 <div class="d-inline-flex align-items-center gap-1">
                                                     <check if="{{ @sp.order_id }}">
-                                                        <button type="button" class="btn btn-outline-danger btn-sm py-1 px-2 btn-preview-pdf" data-preview-pdf="{{ @BASE }}/order/{{ @sp.order_id }}/penawaran/cetak?id={{ @sp.id }}&t={{ time() }}" data-title="Surat Penawaran" data-subtitle="{{ @sp.nomor_surat }}" title="Pratinjau Surat Penawaran PDF">
+                                                        <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-2 btn-preview-pdf" data-preview-pdf="{{ @BASE }}/order/{{ @sp.order_id }}/penawaran/cetak?id={{ @sp.id }}&t={{ time() }}" data-title="Surat Penawaran" data-subtitle="{{ @sp.nomor_surat }}" title="Pratinjau Surat Penawaran PDF">
                                                             <i class="bi bi-file-earmark-pdf"></i>
                                                         </button>
                                                     </check>
                                                     <check if="{{ !@sp.order_id }}">
-                                                        <button type="button" class="btn btn-outline-danger btn-sm py-1 px-2 btn-preview-pdf" data-preview-pdf="{{ @BASE }}/surat-penawaran/{{ @sp.id }}/cetak?t={{ time() }}" data-title="Surat Penawaran" data-subtitle="{{ @sp.nomor_surat }}" title="Pratinjau Surat Penawaran PDF">
+                                                        <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-2 btn-preview-pdf" data-preview-pdf="{{ @BASE }}/surat-penawaran/{{ @sp.id }}/cetak?t={{ time() }}" data-title="Surat Penawaran" data-subtitle="{{ @sp.nomor_surat }}" title="Pratinjau Surat Penawaran PDF">
                                                             <i class="bi bi-file-earmark-pdf"></i>
                                                         </button>
                                                     </check>

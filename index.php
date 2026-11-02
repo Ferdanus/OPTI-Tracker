@@ -412,6 +412,15 @@ $f3->route('POST /surat-penawaran/@id/hapus-lampiran', 'SuratPenawaranController
 $f3->route('GET /order/@id/penawaran/lampiran-user', 'SuratPenawaranController->previewLampiranUser');
 $f3->route('GET /surat-penawaran/@id/lampiran-user', 'SuratPenawaranController->previewLampiranUser');
 
+// Integrasi Surat Penawaran dari Arsip Surat Keluar (Tanpa Upload)
+$f3->route('GET /surat-penawaran/@id/arsip-keluar/tersedia', 'SuratPenawaranController->daftarSuratKeluarTersedia');
+$f3->route('GET /order/@id/arsip-keluar/tersedia', 'SuratPenawaranController->daftarSuratKeluarTersedia');
+$f3->route('POST /surat-penawaran/@id/klaim-surat-keluar', 'SuratPenawaranController->klaimSuratKeluar');
+$f3->route('POST /order/@id/klaim-surat-keluar', 'SuratPenawaranController->klaimSuratKeluar');
+$f3->route('POST /surat-penawaran/@id/batal-klaim-surat-keluar', 'SuratPenawaranController->batalKlaimSuratKeluar');
+$f3->route('POST /order/@id/batal-klaim-surat-keluar', 'SuratPenawaranController->batalKlaimSuratKeluar');
+$f3->route('GET /arsip-surat-keluar/@id/preview', 'SuratPenawaranController->previewSuratKeluar');
+
 $f3->route('GET /surat/@id', 'OrderController->showSurat');
 $f3->route('GET /surat/@id/fragment', 'OrderController->showSuratFragment');
 // ==========================================
