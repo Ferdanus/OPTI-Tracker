@@ -508,7 +508,7 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
             $switchUsersRaw = $this->db->exec(
                 "SELECT u.id_user AS id, 
                         u.nama_user AS nama_lengkap, 
-                        COALESCE(NULLIF(u.si_opti, ''), m.role) AS role_sistem, 
+                        COALESCE(NULLIF(u.si_opti, ''), MIN(m.role)) AS role_sistem, 
                         u.login, 
                         u.bidang, 
                         u.nama_avatar,
@@ -524,11 +524,11 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
                  GROUP BY u.id_user
                  ORDER BY 
                     CASE 
-                        WHEN COALESCE(NULLIF(u.si_opti, ''), m.role) = 'superadmin' THEN 1
-                        WHEN COALESCE(NULLIF(u.si_opti, ''), m.role) LIKE 'ketua_tim%' OR COALESCE(NULLIF(u.si_opti, ''), m.role) LIKE 'katim%' OR u.id_struktural_tim IN (170, 190, 140, 150, 100, 210, 160, 240, 30) THEN 2
-                        WHEN COALESCE(NULLIF(u.si_opti, ''), m.role) = 'tim_mitra_industri' OR COALESCE(NULLIF(u.si_opti, ''), m.role) = 'admin_order' OR COALESCE(NULLIF(u.si_opti, ''), m.role) = 'tim_mitra' THEN 3
-                        WHEN COALESCE(NULLIF(u.si_opti, ''), m.role) = 'keuangan' THEN 4
-                        WHEN COALESCE(NULLIF(u.si_opti, ''), m.role) LIKE 'tim_kerja%' OR COALESCE(NULLIF(u.si_opti, ''), m.role) LIKE 'tk_%' OR COALESCE(NULLIF(u.si_opti, ''), m.role) LIKE 'pic_%' THEN 5
+                        WHEN COALESCE(NULLIF(u.si_opti, ''), MIN(m.role)) = 'superadmin' THEN 1
+                        WHEN COALESCE(NULLIF(u.si_opti, ''), MIN(m.role)) LIKE 'ketua_tim%' OR COALESCE(NULLIF(u.si_opti, ''), MIN(m.role)) LIKE 'katim%' OR u.id_struktural_tim IN (170, 190, 140, 150, 100, 210, 160, 240, 30) THEN 2
+                        WHEN COALESCE(NULLIF(u.si_opti, ''), MIN(m.role)) = 'tim_mitra_industri' OR COALESCE(NULLIF(u.si_opti, ''), MIN(m.role)) = 'admin_order' OR COALESCE(NULLIF(u.si_opti, ''), MIN(m.role)) = 'tim_mitra' THEN 3
+                        WHEN COALESCE(NULLIF(u.si_opti, ''), MIN(m.role)) = 'keuangan' THEN 4
+                        WHEN COALESCE(NULLIF(u.si_opti, ''), MIN(m.role)) LIKE 'tim_kerja%' OR COALESCE(NULLIF(u.si_opti, ''), MIN(m.role)) LIKE 'tk_%' OR COALESCE(NULLIF(u.si_opti, ''), MIN(m.role)) LIKE 'pic_%' THEN 5
                         ELSE 6
                     END ASC,
                     u.nama_user ASC"
@@ -583,13 +583,16 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
             return '';
         }
         $uid = (int) $this->getUserId();
-        if (isset($_SESSION['divisi_tim_kerja']) && (int) ($_SESSION['divisi_tim_kerja_uid'] ?? 0) === $uid) {
+        if (!empty($_SESSION['divisi_tim_kerja']) && (int) ($_SESSION['divisi_tim_kerja_uid'] ?? 0) === $uid) {
             return $_SESSION['divisi_tim_kerja'];
         }
         $divisi = '';
-        try {
-            $targetDb = $this->dbSekretariat ?: $this->db;
-            if ($targetDb) {
+        // Coba database sekretariat dulu, lalu database aplikasi (tabel opti_user_map bisa ada di salah satunya / skemanya beda).
+        $kandidatDb = array();
+        if ($this->dbSekretariat) { $kandidatDb[] = $this->dbSekretariat; }
+        if ($this->db && $this->db !== $this->dbSekretariat) { $kandidatDb[] = $this->db; }
+        foreach ($kandidatDb as $targetDb) {
+            try {
                 $r = $targetDb->exec(
                     "SELECT u.si_opti, m.jenis_layanan
                      FROM tb_arsipuser u
@@ -607,12 +610,16 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
                         $divisi = 'lingkungan';
                     }
                 }
+            } catch (\Exception $e) {
+                continue;
             }
-        } catch (\Exception $e) {
-            $divisi = '';
+            if ($divisi !== '') { break; }
         }
-        $_SESSION['divisi_tim_kerja'] = $divisi;
-        $_SESSION['divisi_tim_kerja_uid'] = $uid; // <-- kunci cache-nya ke id user, biar gak nyangkut pas ganti user
+        // Hasil kosong (mis. query gagal sesaat) tidak disimpan di session, supaya menu Daftar PO tidak ikut hilang sampai logout.
+        if ($divisi !== '') {
+            $_SESSION['divisi_tim_kerja'] = $divisi;
+            $_SESSION['divisi_tim_kerja_uid'] = $uid; // <-- kunci cache-nya ke id user, biar gak nyangkut pas ganti user
+        }
         return $divisi;
     }
 

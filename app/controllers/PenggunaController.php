@@ -354,12 +354,12 @@ class PenggunaController extends Controller {
                        u.login,
                        u.bidang,
                        u.id_struktural_tim,
-                       m.role AS map_role,
-                       m.jenis_layanan AS map_layanan,
-                       m.role AS map_role_opti,
-                       m.jenis_layanan AS map_layanan_opti,
-                       COALESCE(m.akses_opti, 1) AS akses_opti,
-                       COALESCE(m.akses_po, 1) AS akses_po
+                       MIN(m.role) AS map_role,
+                       MIN(m.jenis_layanan) AS map_layanan,
+                       MIN(m.role) AS map_role_opti,
+                       MIN(m.jenis_layanan) AS map_layanan_opti,
+                       MIN(COALESCE(m.akses_opti, 1)) AS akses_opti,
+                       MIN(COALESCE(m.akses_po, 1)) AS akses_po
                 FROM tb_arsipuser u
                 LEFT JOIN opti_user_map m ON u.id_user = m.id_user AND m.status_tampil = 'show' AND m.is_active = 1
                 WHERE (

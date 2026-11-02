@@ -1037,7 +1037,7 @@ class PoReviewController extends Controller {
         try {
             $rows = $db->exec(
                 "SELECT id_user FROM opti_user_map
-                  WHERE role_opti = 'ketua_tim' AND is_active = 1 AND jenis_layanan_opti IN (?, 'semua')",
+                  WHERE role = 'ketua_tim' AND is_active = 1 AND status_tampil = 'show' AND jenis_layanan IN (?, 'semua')",
                 [1 => (string) $divisi]
             );
             foreach ($rows as $r) { $hasil[] = (int) $r['id_user']; }
@@ -1423,7 +1423,7 @@ class PoReviewController extends Controller {
     protected function katimPerDivisi() {
         $peta = ['selulosa' => 0, 'lingkungan' => 0];
         try {
-            $rows = $this->db->exec("SELECT id_user, jenis_layanan_opti FROM opti_user_map WHERE role_opti = 'ketua_tim' AND is_active = 1 ORDER BY id ASC");
+            $rows = $this->db->exec("SELECT id_user, jenis_layanan AS jenis_layanan_opti FROM opti_user_map WHERE role = 'ketua_tim' AND is_active = 1 AND status_tampil = 'show' ORDER BY id ASC");
             foreach ($rows as $r) {
                 $d = (string) $r['jenis_layanan_opti'];
                 if (isset($peta[$d]) && $peta[$d] === 0) { $peta[$d] = (int) $r['id_user']; }

@@ -1,4 +1,8 @@
 <div class="container-fluid px-0">
+    <script>
+    // Kalau halaman ini terbuka di dalam bingkai form PO Tahap 8 (mis. setelah simpan revisi), pindahkan ke jendela utama
+    (function () { try { if (window.self !== window.top && window.frameElement && window.frameElement.id === 'paFrame') { window.top.location.replace(window.location.href); } } catch (e) {} })();
+    </script>
     <style>
         /* Clean & Simple BBSPJIS Design for Order Detail */
         .order-hero-card {
@@ -256,6 +260,16 @@
         }
         .action-guide-action {
             flex-shrink: 0;
+        }
+        .action-guide-audit {
+            display: flex; align-items: center; flex-wrap: wrap; gap: 4px 16px;
+            margin-top: 0.15rem; font-size: 0.74rem; line-height: 1.4; color: #64748b;
+        }
+        .ag-po-bdg {
+            flex-shrink: 0; display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 0.4rem;
+        }
+        @media (max-width: 767.98px) {
+            .ag-po-bdg { justify-content: flex-start; }
         }
         .action-guide-btn {
             white-space: nowrap;
@@ -1107,6 +1121,9 @@
             font-weight: 700;
         }
 
+        /* Warna bawaan (warna sidebar): badge status Tahap 8 di tab, dan pita petunjuk Giliran Anda / menunggu di Tahap 8 */
+        .stage-nav-btn .badge.po-tab-slate { background: #e2e8f0 !important; color: #1e293b !important; }
+        .alert.po-alert-warning, .alert.po-alert-info { --bs-alert-bg: #f1f5f9; --bs-alert-color: #1e293b; --bs-alert-border-color: #cbd5e1; background: #f1f5f9; color: #1e293b; }
         .stage-nav-status-row {
             display: flex;
             align-items: center;
@@ -1935,10 +1952,32 @@
                             </span>
                         </div>
                         <div class="action-guide-title">{{ @langkah_berikutnya.judul }}</div>
-                        
+                        <check if="{{ @po_kartu_atas }}">
+                            <div class="action-guide-audit">
+                                <check if="{{ @audit_stages[8].waktu_kirim }}">
+                                    <span>Terbit: <span class="text-dark fw-medium">{{ date('d M Y, H:i', strtotime(@audit_stages[8].waktu_kirim)) }}</span> <span class="text-secondary text-nowrap">({{ @audit_stages[8].pengirim_nama ?: @audit_stages[8].pengirim_role }})</span></span>
+                                </check>
+                                <span id="audit-dibaca-stage-8" class="audit-dibaca-stage-8 {{ !@audit_stages[8].waktu_dibaca ? 'd-none' : '' }}">Dibaca: <span class="text-dark fw-medium audit-dibaca-time">{{ @audit_stages[8].waktu_dibaca ? date('d M Y, H:i', strtotime(@audit_stages[8].waktu_dibaca)) : '' }}</span> <span class="text-secondary text-nowrap audit-dibaca-name">({{ @audit_stages[8].dibaca_nama ?: @audit_stages[8].dibaca_role }})</span></span>
+                            </div>
+                        </check>
                     </div>
                 </div>
-                <check if="{{ (!empty(@langkah_berikutnya.tombol_url) && !empty(@langkah_berikutnya.tombol_teks)) || !empty(@langkah_berikutnya.tombol_modal) }}">
+                <check if="{{ @po_kartu_atas }}">
+                    <div class="ag-po-bdg">
+                        <check if="{{ @po_terbuka }}">
+                            <true>
+                                <check if="{{ @po_alur.giliran }}">
+                                    <span class="badge po-bdg po-bdg-line"><i class="bi bi-hourglass-split me-1"></i> Giliran Anda</span>
+                                </check>
+                                <span class="badge {{ @po_alur.badge_kelas }}"><i class="bi bi-patch-check me-1"></i> {{ @po_alur.badge_teks }}</span>
+                            </true>
+                            <false>
+                                <span class="badge bg-light text-secondary border"><i class="bi bi-lock-fill me-1"></i> {{ @po_kunci_badge ?: 'Terkunci' }}</span>
+                            </false>
+                        </check>
+                    </div>
+                </check>
+                <check if="{{ (!empty(@langkah_berikutnya.tombol_url) && !empty(@langkah_berikutnya.tombol_teks)) || !empty(@langkah_berikutnya.tombol_modal) || !empty(@langkah_berikutnya.tombol_panel) }}">
                     <div class="action-guide-action">
                         <check if="{{ !empty(@langkah_berikutnya.tombol_modal) }}">
                             <true>
@@ -1965,7 +2004,12 @@
                                 </check>
                             </true>
                             <false>
-                                <check if="{{ !empty(@langkah_berikutnya.tombol_url) }}">
+                                <check if="{{ !empty(@langkah_berikutnya.tombol_panel) }}">
+                                    <button type="button" class="btn action-guide-btn {{ @langkah_berikutnya.tombol_class ?: 'btn-primary' }}" onclick="bukaPanelPo({{ @langkah_berikutnya.tombol_panel }}, '{{ @langkah_berikutnya.tombol_panel_jenis }}')">
+                                        <i class="bi {{ @langkah_berikutnya.tombol_icon ?: 'bi-arrow-right' }}"></i>{{ @langkah_berikutnya.tombol_teks ?: 'Lanjutkan' }}
+                                    </button>
+                                </check>
+                                <check if="{{ empty(@langkah_berikutnya.tombol_panel) && !empty(@langkah_berikutnya.tombol_url) }}">
                                     <a href="{{ @langkah_berikutnya.tombol_url }}" class="btn action-guide-btn {{ @langkah_berikutnya.tombol_class ?: 'btn-primary' }}">
                                         <i class="bi {{ @langkah_berikutnya.tombol_icon ?: 'bi-arrow-right' }}"></i>{{ @langkah_berikutnya.tombol_teks ?: (@langkah_berikutnya.tombol_label ?: 'Lanjutkan') }}
                                     </a>
@@ -2130,11 +2174,11 @@
                         <check if="{{ @stepper[6].state == 'waiting' }}">
                             <true><span class="badge bg-light text-muted stage-status-badge">Menunggu</span></true>
                             <false>
-                                <check if="{{ (@order.status_keuangan == 'lunas') || !empty(@riwayat_bayar) }}">
-                                    <true><span class="badge bg-light border text-dark stage-status-badge">Selesai</span></true>
+                                <check if="{{ @bayar_tuntas }}">
+                                    <true><span class="badge bg-light border text-dark stage-status-badge">{{ @bayar_status == 'lunas' ? 'Selesai' : 'Kesanggupan' }}</span></true>
                                     <false>
-                                        <check if="{{ @order.status_keuangan == 'terbayar_sebagian' }}">
-                                            <true><span class="badge bg-info text-white stage-status-badge">Sebagian</span></true>
+                                        <check if="{{ @bayar_status == 'sebagian' }}">
+                                            <true><span class="badge bg-warning text-dark stage-status-badge">Menunggu Pelunasan</span></true>
                                             <false>
                                                 <check if="{{ @stepper[6].state == 'done' }}">
                                                     <true><span class="badge bg-light border text-dark stage-status-badge">Selesai</span></true>
@@ -2195,8 +2239,8 @@
                                         <check if="{{ !empty(@order.nomor_po) }}">
                                             <true><span class="badge bg-info-subtle text-info-emphasis stage-status-badge">PO Aktif</span></true>
                                             <false>
-                                                <check if="{{ !empty(@order.tanggal_spm_mulai) || !empty(@order.tanggal_terima_sampel) }}">
-                                                    <true><span class="badge bg-primary-subtle text-primary border border-primary-subtle stage-status-badge">Siap Terbit</span></true>
+                                                <check if="{{ @po_terbuka }}">
+                                                    <true><span class="badge po-tab-slate stage-status-badge">{{ @po_alur.tab_teks }}</span></true>
                                                     <false>
                                                         <span class="badge text-white stage-status-badge" style="background-color: #1e293b !important;">Aktif</span>
                                                     </false>
@@ -4314,14 +4358,14 @@
                                             </div>
                                         </div>
                                         <check if="{{ @penawaran.status_respon_klien == 'deal' }}">
-                                            <check if="{{ @order.status_keuangan == 'lunas' || !empty(@riwayat_bayar) }}">
+                                            <check if="{{ @bayar_tuntas }}">
                                                 <span class="badge bg-success text-white px-2 py-1 small fw-semibold">
-                                                    <i class="bi bi-check2-all me-1"></i> Pembayaran Lunas
+                                                    <i class="bi bi-check2-all me-1"></i> {{ @bayar_status == 'lunas' ? 'Pembayaran Lunas' : 'Kesanggupan Bayar' }}
                                                 </span>
                                             </check>
-                                            <check if="{{ @order.status_keuangan != 'lunas' && empty(@riwayat_bayar) }}">
+                                            <check if="{{ !@bayar_tuntas }}">
                                                 <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 small fw-semibold">
-                                                    <i class="bi bi-hourglass-split me-1"></i> Menunggu Bukti Bayar
+                                                    <i class="bi bi-hourglass-split me-1"></i> {{ @bayar_status == 'sebagian' ? 'Menunggu Pelunasan' : 'Menunggu Bukti Bayar' }}
                                                 </span>
                                             </check>
                                         </check>
@@ -4510,8 +4554,6 @@
                                                     <span><i class="bi bi-cloud-arrow-up-fill me-1"></i> Simpan &amp; Unggah Berkas</span>
                                                 </button>
                                             </div>
-                                        </div>
-                                    </div>
                                         </div>
                                     </div>
                                 </div>
@@ -4913,15 +4955,15 @@
                         </div>
                     </div>
                     <div class="d-flex align-items-center gap-2">
-                        <check if="{{ @order.status_keuangan == 'lunas' || !empty(@riwayat_bayar) }}">
+                        <check if="{{ @bayar_tuntas }}">
                             <span class="badge bg-light border text-success border border-success-subtle fw-semibold px-2.5 py-1">
-                                <i class="bi bi-check2-all me-1"></i> Pembayaran Terkonfirmasi (Lunas)
+                                <i class="bi bi-check2-all me-1"></i> {{ @bayar_status == 'lunas' ? 'Pembayaran Terkonfirmasi (Lunas)' : 'Dicatat via Surat Kesanggupan Bayar' }}
                             </span>
                         </check>
-                        <check if="{{ @order.status_keuangan != 'lunas' && empty(@riwayat_bayar) }}">
+                        <check if="{{ !@bayar_tuntas }}">
                             <check if="{{ @is_disposisi_keuangan }}">
                                 <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle fw-semibold px-2.5 py-1">
-                                    <i class="bi bi-hourglass-split me-1"></i> Menunggu Bukti Pembayaran
+                                    <i class="bi bi-hourglass-split me-1"></i> {{ @bayar_status == 'sebagian' ? 'Menunggu Pelunasan' : 'Menunggu Bukti Pembayaran' }}
                                 </span>
                             </check>
                             <check if="{{ !@is_disposisi_keuangan }}">
@@ -4935,7 +4977,7 @@
 
                 <div class="p-4">
                     <!-- Kasus 1: Belum Disposisi ke Tim Keuangan (Terkunci) -->
-                    <check if="{{ !@is_disposisi_keuangan && @order.status_keuangan != 'lunas' && empty(@riwayat_bayar) }}">
+                    <check if="{{ !@is_disposisi_keuangan && !@bayar_tuntas }}">
                         <div class="p-3 text-center text-muted bg-light rounded-3 small">
                             <i class="bi bi-lock-fill text-secondary opacity-50 me-1"></i>
                             <check if="{{ !@has_penawaran_deal }}">
@@ -4948,7 +4990,7 @@
                     </check>
 
                     <!-- Kasus 2: Sudah Disposisi ke Keuangan / Lunas (Terbuka) -->
-                    <check if="{{ @is_disposisi_keuangan || @order.status_keuangan == 'lunas' || !empty(@riwayat_bayar) }}">
+                    <check if="{{ @is_disposisi_keuangan || @bayar_tuntas }}">
 
                         <!-- Sub-kasus 2A: Bukti Pembayaran Sudah Diunggah -->
                         <check if="{{ !empty(@riwayat_bayar) }}">
@@ -4956,11 +4998,11 @@
                                 <div class="p-3 bg-white">
                                     <div class="d-flex align-items-center justify-content-between pb-3 mb-3 border-bottom flex-wrap gap-2">
                                         <div class="d-flex align-items-center gap-2">
-                                            <span class="badge bg-success text-white px-2.5 py-1 fw-bold">
-                                                <i class="bi bi-check-circle-fill me-1"></i> LUNAS
+                                            <span class="badge {{ @bayar_status == 'sebagian' ? 'bg-warning text-dark' : 'bg-success text-white' }} px-2.5 py-1 fw-bold">
+                                                <i class="bi {{ @bayar_status == 'sebagian' ? 'bi-hourglass-split' : 'bi-check-circle-fill' }} me-1"></i> {{ @bayar_status == 'lunas' ? 'LUNAS' : (@bayar_status == 'sebagian' ? 'MENUNGGU PELUNASAN' : 'KESANGGUPAN BAYAR') }}
                                             </span>
                                             <span class="text-dark fw-bold">
-                                                Pembayaran Telah Dikonfirmasi Tim Keuangan
+                                                {{ @bayar_status == 'sebagian' ? ('Pembayaran Termin ' . @bayar_termin . ' Dikonfirmasi Tim Keuangan') : 'Pembayaran Telah Dikonfirmasi Tim Keuangan' }}
                                             </span>
                                         </div>
                                         <span class="text-muted small">
@@ -4970,10 +5012,13 @@
 
                                     <div class="row g-3 align-items-center">
                                         <div class="col-sm-4">
-                                            <span class="text-muted small d-block" style="font-size: 0.75rem;">Total Nilai Pembayaran</span>
+                                            <span class="text-muted small d-block" style="font-size: 0.75rem;">{{ @bayar_status == 'sebagian' ? 'Total Sudah Dibayar' : 'Total Nilai Pembayaran' }}</span>
                                             <span class="fs-5 fw-bold text-primary font-display">
-                                                Rp {{ number_format(@riwayat_bayar[0].jumlah ?: (@penawaran.nominal_penawaran ?: @order.estimasi_biaya), 0, ',', '.') }}
+                                                Rp {{ number_format(@bayar_total > 0 ? @bayar_total : (@riwayat_bayar[0].jumlah ?: (@penawaran.nominal_penawaran ?: @order.estimasi_biaya)), 0, ',', '.') }}
                                             </span>
+                                            <check if="{{ @bayar_status == 'sebagian' }}">
+                                                <span class="small text-danger fw-semibold d-block">Sisa tagihan: Rp {{ number_format(@bayar_sisa, 0, ',', '.') }} dari Rp {{ number_format(@bayar_acuan, 0, ',', '.') }}</span>
+                                            </check>
                                         </div>
                                         <div class="col-sm-4">
                                             <span class="text-muted small d-block" style="font-size: 0.75rem;">Keterangan / Verifikator</span>
@@ -4990,7 +5035,7 @@
                                                     <i class="bi bi-file-earmark-check-fill text-primary"></i> Lihat Bukti
                                                 </button>
                                             </check>
-                                            <a href="{{ @BASE }}/pembayaran/tambah?order_id={{ @order.id }}" class="btn btn-white border btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5 text-dark" title="Buka detail transaksi pembayaran">
+                                            <a href="{{ @BASE }}/pembayaran/tambah?order_id={{ @order.id }}&dari=order" class="btn btn-white border btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5 text-dark" title="Buka detail transaksi pembayaran">
                                                 <i class="bi bi-box-arrow-up-right text-muted"></i> Detail Pembayaran
                                             </a>
                                         </div>
@@ -4998,51 +5043,37 @@
                                 </div>
 
                                 <div class="px-3 py-2 bg-light border-top d-flex justify-content-between align-items-center flex-wrap gap-2">
-                                    <small class="text-success fw-medium">
-                                        <i class="bi bi-check-circle-fill me-1"></i> Bukti bayar terverifikasi. Tim OPTI berwenang memproses penerimaan sampel dan memulai pengerjaan.
-                                    </small>
-                                    <check if="{{ @is_keuangan || @is_superadmin }}">
-                                        <button type="button" class="btn btn-white btn-sm border fw-semibold shadow-sm text-secondary d-inline-flex align-items-center gap-1.5" data-bs-toggle="collapse" data-bs-target="#collapseGantiBukti" title="Unggah Ulang Bukti Pembayaran">
-                                            <i class="bi bi-pencil-square"></i>
-                                            <span>Koreksi Bukti Bayar</span>
+                                    <check if="{{ @bayar_status == 'sebagian' }}">
+                                        <true>
+                                            <small class="text-warning-emphasis fw-medium">
+                                                <i class="bi bi-hourglass-split me-1"></i> Baru dibayar sampai Termin {{ @bayar_termin }}. Penerbitan PO terbuka setelah pembayaran lunas (termin berikutnya dicatat oleh Tim Keuangan).
+                                            </small>
+                                        </true>
+                                        <false>
+                                            <small class="text-success fw-medium">
+                                                <i class="bi bi-check-circle-fill me-1"></i> Bukti bayar terverifikasi. Tim OPTI berwenang memproses penerimaan sampel dan memulai pengerjaan.
+                                            </small>
+                                        </false>
+                                    </check>
+                                    <check if="{{ @bayar_status == 'sebagian' && (@is_keuangan || @is_superadmin) }}">
+                                        <button type="button" id="btnBukaTambahBayarDetail" class="btn btn-primary btn-sm fw-semibold py-1 px-3 d-inline-flex align-items-center gap-1.5" title="Catat pembayaran termin berikutnya" onclick="toggleTambahBayarDetail(true)">
+                                            <i class="bi bi-plus-circle"></i> Tambah Pembayaran
                                         </button>
                                     </check>
                                 </div>
                             </div>
-
-                            <!-- Collapse Form Unggah Ulang Bukti Pembayaran -->
-                            <check if="{{ @is_keuangan || @is_superadmin }}">
-                                <div class="collapse mt-3" id="collapseGantiBukti">
-                                    <form action="{{ @BASE }}/order/{{ @order.id }}/konfirmasi-pembayaran" method="POST" enctype="multipart/form-data" class="p-3 bg-light border rounded-3" onsubmit="triggerStageRead(6)">
-                                        <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
-                                        <input type="hidden" name="is_edit" value="1">
-                                        <input type="hidden" name="jumlah" value="{{ @penawaran.nominal_penawaran ?: @order.estimasi_biaya }}">
-                                        <h6 class="small fw-bold text-dark mb-2">
-                                            <i class="bi bi-arrow-repeat me-1"></i> Perbarui / Unggah Ulang Berkas Bukti Pembayaran:
-                                        </h6>
-                                        <div class="row g-2 align-items-end">
-                                            <div class="col-md-5">
-                                                <label class="form-label small fw-semibold text-dark mb-1">Berkas Baru (PDF / JPG / PNG):</label>
-                                                <input type="file" name="bukti_bayar" class="form-control form-control-sm" accept=".pdf,.jpg,.jpeg,.png" required>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <label class="form-label small fw-semibold text-dark mb-1">Tanggal Bayar:</label>
-                                                <input type="date" name="tanggal_bayar" class="form-control form-control-sm" value="{{ @riwayat_bayar[0].tanggal_bayar ?: date('Y-m-d') }}" required>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <button type="submit" class="btn btn-primary btn-sm w-100 fw-semibold">
-                                                    <i class="bi bi-save me-1"></i> Simpan Pembaruan
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </form>
-                                </div>
-                            </check>
                         </check>
 
                         <!-- Sub-kasus 2B: Bukti Pembayaran Belum Diunggah -->
-                        <check if="{{ empty(@riwayat_bayar) }}">
+                        <check if="{{ empty(@riwayat_bayar) || (@bayar_status == 'sebagian' && (@is_keuangan || @is_superadmin)) }}">
                             <check if="{{ @is_keuangan || @is_superadmin }}">
+                                <!-- Pembungkus: untuk termin lanjutan (sudah ada pembayaran) tersembunyi dulu, dibuka lewat tombol Tambah Pembayaran -->
+                                <div id="wrapTambahBayarDetail" class="{{ !empty(@riwayat_bayar) ? 'd-none' : '' }}">
+                                <check if="{{ !empty(@riwayat_bayar) }}">
+                                    <div class="d-flex align-items-center justify-content-between mt-3 mb-2">
+                                        <div class="fw-bold text-dark"><i class="bi bi-plus-circle text-primary me-1"></i> Catat Pembayaran Termin Berikutnya</div>
+                                    </div>
+                                </check>
                                 <!-- ===== INFO ORDER (TERKUNCI) ===== -->
                                 <div class="order-locked-card mb-4" style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; background: #f8fafc;">
                                     <div class="d-flex justify-content-between align-items-start mb-2">
@@ -5168,15 +5199,22 @@
                                     <div class="pt-3 border-top d-flex justify-content-between align-items-center flex-wrap gap-2">
                                         <div class="text-muted small">
                                             <i class="bi bi-shield-check text-success fs-5 me-1.5"></i>
-                                            <span>Konfirmasi pembayaran akan menandai order <strong>Lunas</strong> dan membuka <strong>Tahap 7 (Penerimaan Sampel &amp; SPM)</strong>.</span>
+                                            <check if="{{ !empty(@riwayat_bayar) }}">
+                                                <true><span>Pembayaran ini ditambahkan ke riwayat. Order menjadi <strong>Lunas</strong> saat total pembayaran sama dengan tagihan.</span></true>
+                                                <false><span>Konfirmasi pembayaran akan menandai order <strong>Lunas</strong> dan membuka <strong>Tahap 7 (Penerimaan Sampel &amp; SPM)</strong>.</span></false>
+                                            </check>
                                         </div>
                                         <div class="d-flex align-items-center gap-2">
+                                            <check if="{{ !empty(@riwayat_bayar) }}">
+                                                <button type="button" class="btn btn-outline-secondary px-3 py-2 fw-semibold" onclick="toggleTambahBayarDetail(false)">Batal</button>
+                                            </check>
                                             <button type="button" id="btnSimpanSajaDetail" class="btn btn-outline-primary px-3 py-2 fw-semibold d-none">Simpan Saja</button>
                                             <button type="button" id="btnSimpanDisposisiDetail" class="btn btn-primary px-4 py-2 fw-bold d-none"><i class="bi bi-send-check me-1"></i> Disposisi</button>
                                             <button type="button" id="btnSimpanPembayaranDetail" class="btn btn-success px-4 py-2 fw-bold"><i class="bi bi-save me-1"></i> Simpan Pembayaran</button>
                                         </div>
                                     </div>
                                 </form>
+                                </div>
                             </check>
                             <check if="{{ !(@is_keuangan || @is_superadmin) }}">
                                 <!-- RINGKASAN ELEGAN & BERSIH (UNTUK NON-USER KEUANGAN) -->
@@ -5193,8 +5231,17 @@
                                         <span class="fw-bold text-dark font-monospace small">Rp {{ number_format(@penawaran.nominal_penawaran ?: @order.estimasi_biaya, 0, ',', '.') }}</span>
                                     </div>
                                 </div>
+
+                                <div class="pt-2 border-top border-light-subtle">
+                                    <p class="small text-secondary mb-2">
+                                        Unggah bukti transfer pembayaran di bawah ini atau kelola langsung melalui halaman pembayaran order.
+                                    </p>
+                                    <a href="{{ @BASE }}/pembayaran/tambah?order_id={{ @order.id }}&dari=order" class="btn btn-sm btn-outline-primary fw-semibold px-3 py-1 shadow-xs d-inline-flex align-items-center gap-1.5 rounded-2">
+                                        <i class="bi bi-box-arrow-up-right"></i> Buka Halaman Pembayaran
+                                    </a>
+                                </div>
                             </check>
-                        </check>
+                            </check>
 
                     </check>
                 </div>
@@ -5213,10 +5260,10 @@
                             </h6>
                             </div>
                         <div>
-                            <check if="{{ !((@order.status_keuangan == 'lunas' || !empty(@riwayat_bayar)) || (@penawaran && @penawaran.status_respon_klien == 'deal')) }}">
+                            <check if="{{ !((@bayar_tuntas) || (@penawaran && @penawaran.status_respon_klien == 'deal')) }}">
                                 <span class="badge bg-light text-secondary border"><i class="bi bi-lock-fill me-1"></i> Menunggu Deal &amp; Pembayaran</span>
                             </check>
-                            <check if="{{ (@order.status_keuangan == 'lunas' || !empty(@riwayat_bayar)) || (@penawaran && @penawaran.status_respon_klien == 'deal') }}">
+                            <check if="{{ (@bayar_tuntas) || (@penawaran && @penawaran.status_respon_klien == 'deal') }}">
                                 <check if="{{ @proposal && @proposal.disetujui_ketua_at }}">
                                     <span class="badge bg-light border text-success border border-success-subtle px-2.5 py-1 fw-bold">
                                         <i class="bi bi-check-circle-fill me-1"></i> Proposal Disetujui Ka. Tim
@@ -5236,7 +5283,7 @@
                         </div>
                     </div>
                     <div class="p-4">
-                        <check if="{{ !((@order.status_keuangan == 'lunas' || !empty(@riwayat_bayar)) || (@penawaran && @penawaran.status_respon_klien == 'deal')) }}">
+                        <check if="{{ !((@bayar_tuntas) || (@penawaran && @penawaran.status_respon_klien == 'deal')) }}">
                             <div class="p-4 text-center rounded-3 border" style="background-color: #f8fafc; border-color: #e2e8f0 !important;">
                                 <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width: 48px; height: 48px; background-color: #e2e8f0;">
                                     <i class="bi bi-lock-fill text-secondary fs-4"></i>
@@ -5247,7 +5294,7 @@
                                 </p>
                             </div>
                         </check>
-                        <check if="{{ (@order.status_keuangan == 'lunas' || !empty(@riwayat_bayar)) || (@penawaran && @penawaran.status_respon_klien == 'deal') }}">
+                        <check if="{{ (@bayar_tuntas) || (@penawaran && @penawaran.status_respon_klien == 'deal') }}">
                             <!-- Informasi Alur Pasca Bayar -->
                             <div class="p-3 bg-light rounded-3 border mb-3">
                                 <div class="d-flex align-items-start gap-3">
@@ -5442,7 +5489,7 @@
                             </check>
                         </true>
                         <false>
-                            <check if="{{ (@order.status_keuangan == 'lunas' || !empty(@riwayat_bayar)) && @penawaran && @penawaran.status_respon_klien == 'deal' }}">
+                            <check if="{{ (@bayar_mulai) && @penawaran && @penawaran.status_respon_klien == 'deal' }}">
                                 <check if="{{ empty(@order.ketua_pelaksana_id) }}">
                                     <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle"><i class="bi bi-person-exclamation me-1"></i> Menunggu Penunjukan PIC PO</span>
                                 </check>
@@ -5450,7 +5497,7 @@
                                     <span class="badge bg-primary-subtle text-primary border border-primary-subtle"><i class="bi bi-clock-history me-1"></i> Menunggu Titik Awal SPM</span>
                                 </check>
                             </check>
-                            <check if="{{ !((@order.status_keuangan == 'lunas' || !empty(@riwayat_bayar)) && @penawaran && @penawaran.status_respon_klien == 'deal') }}">
+                            <check if="{{ !((@bayar_mulai) && @penawaran && @penawaran.status_respon_klien == 'deal') }}">
                                 <span class="badge bg-light text-secondary border"><i class="bi bi-lock-fill me-1"></i> Terkunci</span>
                             </check>
                         </false>
@@ -5459,7 +5506,7 @@
 
                 <div class="p-4">
                     <!-- Terbuka jika penawaran DEAL dan bukti pembayaran sudah ada -->
-                    <check if="{{ (@order.status_keuangan == 'lunas' || !empty(@riwayat_bayar)) && @penawaran && @penawaran.status_respon_klien == 'deal' }}">
+                    <check if="{{ (@bayar_mulai) && @penawaran && @penawaran.status_respon_klien == 'deal' }}">
 
                         <!-- ======================================================== -->
                         <!-- KONDISI A: KETUA TIM BELUM MENUNJUK PIC PO / KETUA PELAKSANA -->
@@ -5726,10 +5773,10 @@
                             Titik awal pengerjaan dan batas waktu pengerjaan (SPM) akan aktif setelah Surat Penawaran berstatus <strong>DEAL</strong> dan pembayaran dikonfirmasi.
                         </div>
                     </check>
-                    <check if="{{ @penawaran && @penawaran.status_respon_klien == 'deal' && @order.status_keuangan != 'lunas' && empty(@riwayat_bayar) }}">
+                    <check if="{{ @penawaran && @penawaran.status_respon_klien == 'deal' && !@bayar_mulai }}">
                         <div class="p-3 text-center text-muted bg-light rounded-3 small">
                             <i class="bi bi-lock-fill text-secondary opacity-50 me-1"></i>
-                            Titik awal pengerjaan dan pengerjaan kegiatan akan aktif setelah <strong>Tim Keuangan mengonfirmasi bukti pembayaran</strong> pelanggan di atas.
+                            Titik awal pengerjaan dan pengerjaan kegiatan akan aktif setelah <strong>Tim Keuangan mencatat pembayaran</strong> pelanggan di atas (termin pertama pun sudah cukup).
                         </div>
                     </check>
                 </div>
@@ -5741,6 +5788,7 @@
         <!-- ======================================================== -->
         <div class="tab-pane fade {{ @current_step == 8 ? 'show active' : '' }}" id="pane-stage-8" role="tabpanel" aria-labelledby="tab-stage-8">
             <div class="system-section-card" id="cardPo">
+                <check if="{{ !@po_kartu_atas }}">
                 <div class="system-section-header">
                     <div>
                         <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2 font-display">
@@ -5758,16 +5806,20 @@
                         <span class="badge bg-primary-subtle text-primary border border-primary-subtle">PO Aktif: {{ @order.nomor_po }}</span>
                     </check>
                     <check if="{{ !@order.po_id }}">
-                        <check if="{{ !empty(@order.tanggal_spm_mulai) || !empty(@order.tanggal_terima_sampel) }}">
-                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle"><i class="bi bi-patch-check me-1"></i> Siap Terbit PO</span>
+                        <check if="{{ @po_terbuka }}">
+                            <check if="{{ @po_alur.giliran }}">
+                                <span class="badge po-bdg po-bdg-line me-1"><i class="bi bi-hourglass-split me-1"></i> Giliran Anda</span>
+                            </check>
+                            <span class="badge {{ @po_alur.badge_kelas }}"><i class="bi bi-patch-check me-1"></i> {{ @po_alur.badge_teks }}</span>
                         </check>
-                        <check if="{{ empty(@order.tanggal_spm_mulai) && empty(@order.tanggal_terima_sampel) }}">
+                        <check if="{{ !@po_terbuka }}">
                             <span class="badge bg-light text-secondary border">
-                                <i class="bi bi-lock-fill me-1"></i> Terkunci (Menunggu SPM)
+                                <i class="bi bi-lock-fill me-1"></i> {{ @po_kunci_badge ?: 'Terkunci' }}
                             </span>
                         </check>
                     </check>
                 </div>
+                </check>
 
                 <div class="p-4">
                     <!-- KONDISI 1: PO SUDAH TERBIT -->
@@ -5801,13 +5853,135 @@
 
                     <!-- KONDISI 2: PO BELUM TERBIT -->
                     <check if="{{ !@order.po_id }}">
-                        <check if="{{ !empty(@order.tanggal_spm_mulai) || !empty(@order.tanggal_terima_sampel) }}">
-                            <div class="alert alert-warning p-3 border-0 shadow-sm mb-0">
-                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                        <check if="{{ @po_terbuka }}">
+                            <style>
+                                .pa-strip { display:flex; align-items:center; gap:12px; flex-wrap:wrap; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 14px; margin-bottom:14px; }
+                                .pa-ava { width:36px; height:36px; border-radius:50%; background:#0f2a4a; color:#fff; display:grid; place-items:center; font-weight:700; font-size:.8rem; flex:none; }
+                                .po-bdg { background:#1e293b !important; color:#fff !important; border:1px solid #1e293b !important; }   /* badge status tahap 8: warna sidebar */
+                                .po-bdg-line { background:#fff !important; color:#1e293b !important; }
+                                .po-bdg-red { background:#dc2626 !important; color:#fff !important; border-color:#dc2626 !important; }   /* perlu revisi = merah */
+                                .pa-giliran { display:inline-flex; align-items:center; gap:5px; background:#fef3c7; color:#92400e; border:1px solid #fcd34d; border-radius:99px; font-size:.72rem; font-weight:700; padding:2px 10px; }
+                                .po-btn-baru { position:relative; }
+                                .po-btn-baru::after { content:''; position:absolute; top:-5px; right:-5px; width:12px; height:12px; border-radius:50%; background:#e11d48; border:2px solid #fff; box-shadow:0 0 0 0 rgba(225,29,72,.55); animation:poBaruDenyut 1.6s infinite; }
+                                @keyframes poBaruDenyut { 0% { box-shadow:0 0 0 0 rgba(225,29,72,.55); } 70% { box-shadow:0 0 0 7px rgba(225,29,72,0); } 100% { box-shadow:0 0 0 0 rgba(225,29,72,0); } }
+                                .pa-po { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px 14px; margin-bottom:14px; }
+                                .pa-tl { display:flex; flex-wrap:wrap; margin:4px 0 16px; }
+                                .pa-st { flex:1; min-width:130px; text-align:center; position:relative; padding:0 4px 4px; }
+                                .pa-st::before { content:""; position:absolute; top:15px; left:-50%; width:100%; height:3px; background:#e2e8f0; z-index:0; }
+                                .pa-st:first-child::before { display:none; }
+                                .pa-st.done::before, .pa-st.cur::before, .pa-st.rev::before { background:#1e293b; }
+                                .pa-dot { width:32px; height:32px; border-radius:50%; margin:0 auto 6px; display:grid; place-items:center; font-size:.8rem; font-weight:700; background:#e2e8f0; color:#64748b; position:relative; z-index:1; border:3px solid #fff; box-shadow:0 0 0 1px #e2e8f0; }
+                                .pa-st.done .pa-dot { background:#1e293b; color:#fff; box-shadow:0 0 0 1px #1e293b; }
+                                .pa-st.cur .pa-dot { background:#1e293b; color:#fff; box-shadow:0 0 0 4px #cbd5e1; }
+                                .pa-st.rev .pa-dot { background:#dc2626; color:#fff; box-shadow:0 0 0 4px #fecaca; }
+                                .pa-nm { font-size:.78rem; font-weight:700; line-height:1.2; color:#0f172a; }
+                                .pa-ac { font-size:.7rem; color:#64748b; }
+                                .pa-tg { font-size:.68rem; color:#475569; margin-top:2px; }
+                                .pa-st.cur .pa-tg { color:#1e293b; font-weight:600; }
+                                .pa-st.rev .pa-tg { color:#dc2626; font-weight:600; }
+                                #paAlurBox .alert-success, #paAlurBox .alert-info { background:#f1f5f9; color:#0f172a; border-left:5px solid #1e293b !important; }   /* pesan di bawah alur: warna sidebar */
+                                .pa-frame { margin:0 -1.5rem; background:#fff; border-top:1px solid #cbd5e1; border-bottom:1px solid #cbd5e1; }
+                                .system-section-card:has(#paFrameWrap) { overflow:clip; }   /* overflow:hidden bawaan kartu mematikan sticky */
+                                .pa-track { position:relative; }
+                                .pa-track:not(:has(~ :not(script):not(style))) { margin-bottom:-1.5rem; }   /* bingkai form menempel ke tepi bawah kartu (tanpa ruang kosong) */
+                                #cardPo:has(#paFrameWrap) { margin-bottom:0; }
+                                .main-container:has(#pane-stage-8.active #paFrameWrap) { padding-bottom:.75rem; }   /* jarak ke footer dirapatkan saat form PO tampil */
+                                .pa-frame:not(.pa-full) { position:sticky; top:75px; z-index:40; }   /* bingkai (bar biru + form) menempel di layar selama halaman di-scroll */
+                                .pa-fh { background:#f1f5f9; border-bottom:1px solid #cbd5e1; padding:8px 14px; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; font-size:.8rem; color:#1e293b; }
+                                .pa-frame iframe { display:block; width:100%; height:calc(100vh - 75px - 46px); min-height:420px; border:0; background:#fff; }
+                                .pa-frame.pa-full { position:fixed; inset:0; margin:0; z-index:1060; border-radius:0; display:flex; flex-direction:column; }
+                                .pa-frame.pa-full iframe { flex:1; height:auto; min-height:0; }
+                            </style>
+
+                            <check if="{{ @po_alur.state == 'belum_pic' }}">
+                                <div class="alert alert-warning p-3 border-0 shadow-sm mb-0">
+                                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                        <div>
+                                            <div class="fw-bold text-dark"><i class="bi bi-check-circle-fill text-success me-1"></i> Titik Awal Pengerjaan Telah Aktif</div>
+                                            <div class="small text-secondary">
+                                                Batas waktu pengerjaan resmi (SPM): <strong>{{ date('d M Y', strtotime(@order.tanggal_deadline_spm ?: (@order.tanggal_spm_mulai ?: @order.tanggal_terima_sampel))) }}</strong>
+                                            </div>
+                                        </div>
+                                        <check if="{{ @po_alur.is_katim }}">
+                                            <true>
+                                                <button type="button" class="btn btn-warning btn-sm fw-bold text-dark shadow-sm" data-bs-toggle="modal" data-bs-target="#modalTunjukKetupel">
+                                                    <i class="bi bi-person-check-fill me-1"></i> Tunjuk Ketua Pelaksana PO
+                                                </button>
+                                            </true>
+                                            <false>
+                                                <span class="badge bg-warning-subtle text-dark border border-warning px-2.5 py-1.5 fw-semibold">
+                                                    <i class="bi bi-hourglass-split me-1"></i> Menunggu penunjukan Ketua Pelaksana oleh Ketua Tim OPTI
+                                                </span>
+                                            </false>
+                                        </check>
+                                    </div>
+                                </div>
+                            </check>
+
+                            <check if="{{ @po_alur.state == 'disusun' || @po_alur.form_revisi }}">
+                                <check if="{{ @po_alur.tampil_form }}">
+                                    <true>
+                                        <div class="pa-track" id="paTrack">
+                                        <div class="pa-frame" id="paFrameWrap">
+                                            <div class="pa-fh">
+                                                <span><check if="{{ @po_alur.form_revisi }}"><true><b>{{ @po_alur.bar_judul }}</b> &middot; {{ @po_alur.nomor_po }} &middot; {{ @po_alur.bar_ket }}</true><false><b>Susun Petunjuk Operasional (PO)</b> &middot; </false></check></span>
+                                                <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" id="paFull"><i class="bi bi-arrows-fullscreen me-1"></i><span>Layar penuh</span></button>
+                                            </div>
+                                            <iframe id="paFrame" src="{{ @po_alur.embed_url }}" title="Form Petunjuk Operasional" loading="lazy"></iframe>
+                                        </div>
+                                        </div>
+                                    </true>
+                                    <false>
+                                        <div class="alert alert-info border-0 shadow-xs small mb-0">
+                                            <i class="bi bi-hourglass-split me-1"></i> <strong>{{ @po_alur.ketupel_nama }}</strong> sedang menyusun PO untuk order ini. Form PO hanya tampil untuk Ketua Pelaksana.
+                                        </div>
+                                    </false>
+                                </check>
+                            </check>
+
+                            <check if="{{ @po_alur.terkirim }}">
+                                <check if="{{ @po_alur.form_revisi }}">
+                                    <check if="{{ @po_alur.revisi_ppk }}">
+                                        <div class="mt-3 d-flex gap-2 flex-wrap align-items-center">
+                                            <check if="{{ @po_alur.put_katim > 0 }}"><span class="small text-muted">Catatan bertanda <b>Ketua Tim</b> = perbaikan ke-{{ @po_alur.put_katim }} dari Ketua Tim; catatan bertanda <b>PPK BLU</b> = revisi dari PPK BLU.</span></check>
+                                        </div>
+                                    </check>
+                                </check>
+                                <check if="{{ !@po_alur.form_revisi }}">
+                                <div id="paAlurBox">
+                                <div class="pa-po">
                                     <div>
-                                        <div class="fw-bold text-dark"><i class="bi bi-check-circle-fill text-success me-1"></i> Titik Awal Pengerjaan Telah Aktif</div>
-                                        <div class="small text-secondary">
-                                            Batas waktu pengerjaan resmi (SPM): <strong>{{ date('d M Y', strtotime(@order.tanggal_deadline_spm ?: (@order.tanggal_spm_mulai ?: @order.tanggal_terima_sampel))) }}</strong>
+                                        <div class="fw-bold text-dark"><i class="bi bi-file-earmark-check text-primary me-1"></i> Nomor PO: <span class="font-monospace text-primary">{{ @po_alur.nomor_po }}</span></div>
+                                        <div class="small text-muted">Dikirim {{ @po_alur.dikirim_at }}</div>
+                                    </div>
+                                    <div class="d-flex gap-2 flex-wrap">
+                                        <check if="{{ !@po_alur.aksi.panel_lihat }}">
+                                        <check if="{{ @po_alur.aksi.panel }}">
+                                            <button type="button" class="btn btn-primary btn-sm fw-semibold px-3{{ @po_alur.tombol_baru ? ' po-btn-baru' : '' }}" title="{{ @po_alur.tombol_baru ? 'Belum Anda buka' : '' }}" onclick="bukaPanelPo({{ @po_alur.aksi.panel }}, '{{ @po_alur.aksi.panel_jenis }}')">{{ @po_alur.aksi.label }}</button>
+                                        </check>
+                                        <check if="{{ @po_alur.aksi.url && !@po_alur.aksi.panel }}">
+                                            <a href="{{ @po_alur.aksi.url }}" class="btn btn-primary btn-sm fw-semibold px-3{{ @po_alur.tombol_baru ? ' po-btn-baru' : '' }}" title="{{ @po_alur.tombol_baru ? 'Belum Anda buka' : '' }}">{{ @po_alur.aksi.label }}</a>
+                                        </check>
+                                        </check>
+                                        <check if="{{ @po_alur.aksi.panel_pra }}">
+                                            <script>window.addEventListener('load', function () { setTimeout(function () { poPraMuat({{ @po_alur.aksi.panel_lihat }}, '{{ @po_alur.aksi.panel_jenis }}'); }, 300); });</script>
+                                        </check>
+                                        <check if="{{ @po_alur.aksi.panel_lihat }}">
+                                            <button type="button" class="btn btn-dark btn-sm fw-semibold px-3{{ @po_alur.tombol_baru ? ' po-btn-baru' : '' }}" title="{{ @po_alur.tombol_baru ? 'Belum Anda buka' : '' }}" onclick="bukaPanelPo({{ @po_alur.aksi.panel_lihat }}, '{{ @po_alur.aksi.panel_jenis }}')"><i class="bi bi-eye me-1"></i> Lihat PO</button>
+                                        </check>
+                                        <check if="{{ !@po_alur.aksi.panel && !@po_alur.aksi.panel_lihat }}">
+                                            <button type="button" class="btn btn-dark btn-sm fw-semibold px-3{{ @po_alur.tombol_baru ? ' po-btn-baru' : '' }}" title="{{ @po_alur.tombol_baru ? 'Belum Anda buka' : '' }}" onclick="lihatPoOpti({{ @po_alur.po_id }})"><i class="bi bi-eye me-1"></i> Lihat PO</button>
+                                        </check>
+                                    </div>
+                                </div>
+                                <div class="pa-tl">
+                                    <repeat group="{{ @po_alur.langkah }}" value="{{ @l }}">
+                                        <div class="pa-st {{ @l.cls }}">
+                                            <div class="pa-dot">{{ @l.dot | raw }}</div>
+                                            <div class="pa-nm">{{ @l.nama }}</div>
+                                            <div class="pa-ac">{{ @l.aktor }}</div>
+                                            <check if="{{ @l.tag }}"><div class="pa-tg">{{ @l.tag }}</div></check>
+                                            <check if="{{ @l.tag2 }}"><div class="pa-tg" style="color: {{ @l.tag2_cls == 'u' ? '#dc2626' : '#475569' }}; font-weight: 600;">{{ @l.tag2 }}</div></check>
                                         </div>
                                     </repeat>
                                 </div>
@@ -5954,12 +6128,11 @@
                                     </script>
                                 </check>
                             </check>
-
                         </check>
-                        <check if="{{ empty(@order.tanggal_spm_mulai) && empty(@order.tanggal_terima_sampel) }}">
+                        <check if="{{ !@po_terbuka }}">
                             <div class="p-3 text-center text-muted bg-light rounded-3 small">
                                 <i class="bi bi-lock-fill text-secondary opacity-50 me-1"></i>
-                                Petunjuk Operasional (PO) laboratorium akan diterbitkan setelah titik awal pengerjaan / SPM diaktifkan pada <strong>Tahap 7</strong> di atas.
+                                {{ @po_kunci_pesan | raw }}
                             </div>
                         </check>
                     </check>
@@ -5990,10 +6163,10 @@
                         <span class="badge bg-success text-white"><i class="bi bi-check2-circle me-1"></i> BAST Diterbitkan</span>
                     </check>
                     <check if="{{ empty(@bast) }}">
-                        <check if="{{ @order.po_id }}">
+                        <check if="{{ @po_bast_terbuka }}">
                             <span class="badge bg-info-subtle text-info border border-info-subtle">Siap Penerbitan BAST</span>
                         </check>
-                        <check if="{{ !@order.po_id }}">
+                        <check if="{{ !@po_bast_terbuka }}">
                             <span class="badge bg-light text-secondary border"><i class="bi bi-lock-fill me-1"></i> Terkunci (Menunggu PO)</span>
                         </check>
                     </check>
@@ -6002,7 +6175,7 @@
                 <div class="p-4">
                     <!-- Opsi Penerbitan BAST jika belum diterbitkan -->
                     <check if="{{ empty(@bast) }}">
-                        <check if="{{ @order.po_id }}">
+                        <check if="{{ @po_bast_terbuka }}">
                             <div class="p-3 bg-white rounded-3 border shadow-xs d-flex justify-content-between align-items-center flex-wrap gap-2">
                                 <div>
                                     <div class="fw-bold text-dark small mb-0.5">
@@ -6017,7 +6190,7 @@
                                 </a>
                             </div>
                         </check>
-                        <check if="{{ !@order.po_id }}">
+                        <check if="{{ !@po_bast_terbuka }}">
                             <div class="p-3 text-center text-muted bg-light rounded-3 small">
                                 <i class="bi bi-lock-fill text-secondary opacity-50 me-1"></i>
                                 Berita Acara Serah Terima (BAST) dapat diterbitkan setelah Petunjuk Operasional (PO) diterbitkan dan pekerjaan pengujian laboratorium diselesaikan pada <strong>Tahap 8</strong>.
@@ -6121,8 +6294,9 @@
                             <set is_dokumen_log="{{ strpos(@act.modul, 'form_pelayanan') === false && strpos(@act.aksi, 'pelayanan') === false && (strpos(@act.aksi, 'proposal') !== false || strpos(@act.aksi, 'penawaran') !== false || strpos(@act.aksi, 'bast') !== false || strpos(@act.aksi, 'po') !== false || strpos(@act.aksi, 'upload') !== false || strpos(@act.aksi, 'laporan') !== false) }}" />
                             <set log_cat="{{ @is_view_log ? 'akses' : (@is_dokumen_log ? 'dokumen' : 'alur') }}" />
                             <set is_warn_act="{{ in_array(@act.aksi, ['batal_klaim', 'tolak_surat', 'revisi_proposal', 'minta_revisi', 'tolak_order', 'tolak_form_pelayanan', 'tolak_tinjauan', 'hapus_order', 'hapus_pembayaran', 'batal_penawaran']) || strpos(@act.deskripsi, 'BATAL') !== false || strpos(@act.deskripsi, 'batal') !== false }}" />
-                            <set is_success_act="{{ @is_deal_act || in_array(@act.aksi, ['approve_proposal', 'setujui_proposal', 'simpan_tinjauan', 'verifikasi_pembayaran', 'terbitkan_bast', 'tutup_order', 'terbitkan_po', 'simpan_form_pelayanan']) }}" />
-                            <set is_claim_act="{{ in_array(@act.aksi, ['klaim_surat', 'penugasan_pic', 'disposisi_layanan', 'disposisi_katim']) }}" />
+                            <set is_success_act="{{ @is_deal_act || in_array(@act.aksi, ['approve_proposal', 'setujui_proposal', 'simpan_tinjauan', 'verifikasi_pembayaran', 'terbitkan_bast', 'tutup_order', 'terbitkan_po', 'simpan_form_pelayanan', 'review_setuju', 'verif_humas', 'verif_mitra', 'verif_ppk']) }}" />
+                            <set is_claim_act="{{ in_array(@act.aksi, ['klaim_surat', 'penugasan_pic', 'disposisi_layanan', 'disposisi_katim', 'tunjuk_ketupel']) }}" />
+                            <set is_alur_po="{{ in_array(@act.aksi, ['kirim_petunjuk', 'kirim_revisi', 'review_setuju', 'verif_humas', 'verif_mitra', 'verif_ppk', 'buka_kembali', 'kerjakan_revisi', 'alihkan_revisi', 'alur_lain', 'tunjuk_ketupel']) }}" />
 
                             <div class="activity-item activity-cat-{{ @log_cat }}" data-cat="{{ @log_cat }}">
                                 <!-- Icon Node -->
@@ -6144,6 +6318,12 @@
                                     </check>
                                     <check if="{{ @act.aksi == 'klaim_surat' }}">
                                         <i class="bi bi-inbox-fill"></i>
+                                    </check>
+                                    <check if="{{ @is_alur_po && !@is_warn_act && @act.aksi != 'tunjuk_ketupel' }}">
+                                        <i class="bi bi-journal-check"></i>
+                                    </check>
+                                    <check if="{{ @act.aksi == 'tunjuk_ketupel' }}">
+                                        <i class="bi bi-person-badge-fill"></i>
                                     </check>
                                     <check if="{{ @act.aksi == 'penugasan_pic' }}">
                                         <i class="bi bi-person-badge-fill"></i>
@@ -6187,7 +6367,7 @@
                                     <check if="{{ @act.aksi == 'update_customer' || @act.aksi == 'update_order' || @act.aksi == 'tambah_order' }}">
                                         <i class="bi bi-pencil-square"></i>
                                     </check>
-                                    <check if="{{ !@is_view_log && !@is_deal_act && !@is_nego_act && !in_array(@act.aksi, ['klaim_surat', 'penugasan_pic', 'disposisi_layanan', 'disposisi_katim', 'batal_klaim', 'tolak_surat', 'revisi_proposal', 'minta_revisi', 'tolak_order', 'tolak_form_pelayanan', 'tolak_tinjauan', 'hapus_order', 'hapus_pembayaran', 'simpan_tinjauan', 'tinjauan_kelayakan', 'simpan_form_pelayanan', 'simpan_draft', 'simpan_proposal', 'ajukan_approval', 'ajukan_ke_ketua', 'ajukan_kalkulasi', 'approve_proposal', 'setujui_proposal', 'buat_penawaran', 'kirim_penawaran', 'simpan_draft_penawaran', 'respon_penawaran', 'verifikasi_pembayaran', 'terima_sampel', 'terbitkan_po', 'verifikasi_sop', 'terbitkan_bast', 'tutup_order', 'upload_file', 'upload_kesanggupan_bayar', 'upload_laporan', 'update_customer', 'update_order', 'tambah_order']) }}">
+                                    <check if="{{ !@is_view_log && !@is_deal_act && !@is_nego_act && !@is_alur_po && !in_array(@act.aksi, ['klaim_surat', 'penugasan_pic', 'disposisi_layanan', 'disposisi_katim', 'batal_klaim', 'tolak_surat', 'revisi_proposal', 'minta_revisi', 'tolak_order', 'tolak_form_pelayanan', 'tolak_tinjauan', 'hapus_order', 'hapus_pembayaran', 'simpan_tinjauan', 'tinjauan_kelayakan', 'simpan_form_pelayanan', 'simpan_draft', 'simpan_proposal', 'ajukan_approval', 'ajukan_ke_ketua', 'ajukan_kalkulasi', 'approve_proposal', 'setujui_proposal', 'buat_penawaran', 'kirim_penawaran', 'simpan_draft_penawaran', 'respon_penawaran', 'verifikasi_pembayaran', 'terima_sampel', 'terbitkan_po', 'verifikasi_sop', 'terbitkan_bast', 'tutup_order', 'upload_file', 'upload_kesanggupan_bayar', 'upload_laporan', 'update_customer', 'update_order', 'tambah_order']) }}">
                                         <i class="bi bi-activity"></i>
                                     </check>
                                 </div>
@@ -6404,104 +6584,351 @@
     </div>
 </div>
 
-<!-- Modal Approve Order / Terbitkan PO -->
-<div class="modal fade" id="modalApprove" tabindex="-1" aria-labelledby="modalApproveLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
+<!-- Modal Tunjuk / Ganti Ketua Pelaksana PO (Tahap 8, OPTI) -->
+<div class="modal fade" id="modalTunjukKetupel" tabindex="-1" aria-labelledby="modalTunjukKetupelLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow">
-            <form action="{{ @BASE }}/order/{{ @order.id }}/approve" method="POST" onsubmit="triggerStageRead(8)">
+            <form action="{{ @BASE }}/order/{{ @order.id }}/tunjuk-ketupel" method="POST">
                 <div class="modal-header bg-warning-subtle border-0 py-3">
-                    <h6 class="modal-title fw-bold text-dark d-flex align-items-center gap-2" id="modalApproveLabel">
-                        <i class="bi bi-patch-check-fill text-warning fs-5"></i> Setujui &amp; Terbitkan Petunjuk Operasional (PO)
+                    <h6 class="modal-title fw-bold text-dark d-flex align-items-center gap-2" id="modalTunjukKetupelLabel">
+                        <i class="bi bi-person-check-fill text-warning fs-5"></i> Penetapan Ketua Pelaksana PO (OPTI {{ ucfirst(@order.jenis_layanan_opti) }})
                     </h6>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body py-3 px-4">
-                    <div class="alert alert-info border-0 shadow-xs small mb-3">
+                    <div class="alert alert-warning border border-warning-subtle rounded-3 small mb-3">
                         <i class="bi bi-info-circle-fill me-1"></i>
-                        Penerbitan PO menandai dimulainya pengerjaan teknis di laboratorium pengujian. Tetapkan penanggung jawab teknis (PIC) dan konfirmasikan kesiapan personil, instrumen, reagen, dan metode uji.
+                        Titik awal pengerjaan sudah aktif. Silakan pilih <strong>Ketua Pelaksana</strong> yang bertugas menyusun dan mengirim Petunjuk Operasional (PO) kegiatan ini.
                     </div>
-
-                    <!-- 1. Penugasan PIC Pelaksana Teknis -->
                     <div class="mb-3">
                         <label class="form-label small fw-bold text-dark">
-                            Ketua Tim Pelaksana / PIC Laboratorium <span class="text-danger">*</span>:
+                            Pilih Ketua Pelaksana PO <span class="text-danger">*</span>:
                         </label>
-                        <select name="pic_proposal_id" class="form-select form-select-sm" required>
-                            <option value="">Pilih Ketua Tim Pelaksana / PIC</option>
+                        <select name="ketua_pelaksana_id" class="form-select form-select-sm" required>
+                            <option value="">-- Pilih Personil Pelaksana --</option>
                             <repeat group="{{ @daftar_pic ?: [] }}" value="{{ @p }}">
-                                <option value="{{ @p.id_user }}" {{ (@order.pic_proposal_id == @p.id_user) ? 'selected' : '' }}>
-                                    {{ @p.nama_user }} ({{ @p.role_label }} - Divisi {{ ucfirst(@p.spesialisasi) }})
+                                <option value="{{ @p.id_user }}" {{ (@order.ketua_pelaksana_id == @p.id_user) ? 'selected' : '' }}>
+                                    {{ @p.nama_user }} ({{ @p.role_label ?: @p.role_opti }} - Divisi {{ ucfirst(@p.spesialisasi ?: @p.role_opti) }})
                                 </option>
                             </repeat>
                         </select>
-                        </div>
-
-                    <!-- 2. Checklist Kesiapan SOP Laboratorium (Audit Standar Mutu) -->
-                    <div class="mb-3 p-3 bg-light rounded border">
-                        <label class="form-label small fw-bold text-dark d-block mb-2">
-                            <i class="bi bi-shield-check text-primary me-1"></i> Verifikasi Kesiapan SOP Laboratorium:
-                        </label>
-                        <div class="row g-2">
-                            <div class="col-sm-6">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="sdm_tersedia" id="poSdmTersedia" value="1" {{ !@tinjauan || @tinjauan.sdm_tersedia ? 'checked' : '' }}>
-                                    <label class="form-check-label small fw-semibold text-dark" for="poSdmTersedia">
-                                        Personil / Analis Siap
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="col-sm-6">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="peralatan_tersedia" id="poAlatTersedia" value="1" {{ !@tinjauan || @tinjauan.peralatan_tersedia ? 'checked' : '' }}>
-                                    <label class="form-check-label small fw-semibold text-dark" for="poAlatTersedia">
-                                        Peralatan &amp; Instrumen Siap
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="col-sm-6">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="bahan_tersedia" id="poBahanTersedia" value="1" {{ !@tinjauan || @tinjauan.bahan_tersedia ? 'checked' : '' }}>
-                                    <label class="form-check-label small fw-semibold text-dark" for="poBahanTersedia">
-                                        Bahan Kimia &amp; Reagen Cukup
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="col-sm-6">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="metode_tersedia" id="poMetodeTersedia" value="1" {{ !@tinjauan || @tinjauan.metode_tersedia ? 'checked' : '' }}>
-                                    <label class="form-check-label small fw-semibold text-dark" for="poMetodeTersedia">
-                                        Kesiapan Metode Uji (SNI/ISO)
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mt-2">
-                            <input type="text" name="sdm_catatan" class="form-control form-control-sm" placeholder="Catatan teknis laboratorium / instruksi khusus pengujian (opsional)" value="{{ @tinjauan.sdm_catatan ?? '' }}">
-                        </div>
-                    </div>
-
-                    <!-- 3. Nomor PO & Biaya -->
-                    <div class="row g-3">
-                        <div class="col-sm-6">
-                            <label class="form-label small fw-bold text-dark">Nomor PO (Opsional / Otomatis):</label>
-                            <input type="text" name="nomor_po" class="form-control form-control-sm" placeholder="Biarkan kosong untuk nomor otomatis">
-                        </div>
-                        <div class="col-sm-6">
-                            <label class="form-label small fw-bold text-dark">Biaya Operasional (Rp):</label>
-                            <input type="number" name="biaya" class="form-control form-control-sm fw-bold" value="{{ @order.estimasi_biaya ?: 0 }}">
-                        </div>
+                        <small class="text-muted d-block mt-1" style="font-size: 0.76rem;">
+                            Setelah ditetapkan, yang bersangkutan menerima pemberitahuan dan form PO langsung tersedia di Tahap 8.
+                        </small>
                     </div>
                 </div>
-                <div class="modal-footer border-0 pt-0 px-4 pb-3">
+                <div class="modal-footer bg-light border-0 py-2.5 px-4">
                     <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-warning btn-sm px-4 fw-bold text-dark shadow-sm">
-                        <i class="bi bi-check-circle-fill me-1"></i> Konfirmasi &amp; Terbitkan PO
+                    <button type="submit" class="btn btn-warning btn-sm fw-bold px-3.5 shadow-xs">
+                        <i class="bi bi-check-circle-fill me-1"></i> Simpan &amp; Tetapkan Ketua Pelaksana
                     </button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+<script>
+/* Panel review PO (slide) dibuka langsung di atas detail order: halaman Daftar Review PO dimuat di iframe layar penuh transparan (?embed=1&buka=ID),
+   yang hanya menampilkan panel slide-nya. Menutup panel melepas iframe; kalau ada tindakan yang mengubah status PO, halaman dimuat ulang. */
+// alamat slide menurut jenis. 'ppk_lihat' = slide PPK BLU mode baca-saja (revisi sedang dikerjakan)
+function srcPanelPo(poId, jenis, sc, tambah) {
+    var u = (jenis === 'humas' ? '{{ @BASE }}/po-humas?embed=1&buka=' : (jenis === 'mitra' ? '{{ @BASE }}/po-kegiatan/validasi-mitra?embed=1&buka=' : (jenis === 'ppk' ? '{{ @BASE }}/po-ppk?embed=1&buka=' : (jenis === 'ppk_lihat' ? '{{ @BASE }}/po-ppk?embed=1&lihat=1&buka=' : (jenis === 'revisi' ? '{{ @BASE }}/po-revisi-ppk?embed=1&buka=' : '{{ @BASE }}/po-kegiatan/daftar?embed=1&buka=')))));
+    return u + encodeURIComponent(poId) + sc + (tambah || '');
+}
+// Slide baca-saja dimuat lebih dulu (tersembunyi) begitu halaman selesai dimuat, jadi saat "Lihat PO" diklik langsung tampil tanpa loading
+function poPraMuat(poId, jenis) {
+    if (document.getElementById('poPanelFr')) { return; }
+    window.__poPraArgs = [poId, jenis];
+    var sc = document.body.classList.contains('sidebar-collapsed') ? '&sc=1' : '';
+    var f = document.createElement('iframe');
+    f.id = 'poPanelFr';
+    f.title = 'Panel PO';
+    f.setAttribute('data-pra', '1');
+    f.setAttribute('allowtransparency', 'true');
+    f.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;border:0;z-index:1080;background:transparent;color-scheme:normal;visibility:hidden;pointer-events:none;';
+    f.src = srcPanelPo(poId, jenis, sc, '&pra=1');
+    document.body.appendChild(f);
+}
+function poHapusPenandaBaru() {
+    document.querySelectorAll('.po-btn-baru').forEach(function (b) { b.classList.remove('po-btn-baru'); b.removeAttribute('title'); });
+}
+function poPraTampil(f) {
+    poHapusPenandaBaru();
+    f.removeAttribute('data-pra');
+    f.style.visibility = 'visible';
+    f.style.pointerEvents = 'auto';
+    if (f.getAttribute('data-siap') === '1') {
+        try { f.contentWindow.postMessage({ silopti: 'po-panel-tampil' }, window.location.origin); f.contentWindow.focus(); } catch (e) {}
+    } else {
+        // belum selesai dimuat (jarang): tampilkan penanda memuat, slide muncul begitu siap
+        f.setAttribute('data-klik', '1');
+        if (!document.getElementById('poPanelMuat')) {
+            var muat = document.createElement('div');
+            muat.id = 'poPanelMuat';
+            muat.style.cssText = 'position:fixed;inset:0;z-index:1079;background:rgba(15,23,42,.35);display:flex;align-items:center;justify-content:center;';
+            muat.innerHTML = '<div class="spinner-border text-light" role="status" aria-label="Memuat panel"></div>';
+            document.body.appendChild(muat);
+        }
+    }
+}
+function bukaPanelPo(poId, jenis) {
+    poHapusPenandaBaru();
+    var pra = document.getElementById('poPanelFr');
+    if (pra && pra.getAttribute('data-pra') === '1') { poPraTampil(pra); return; }
+    if (pra) { return; }
+    var sc = document.body.classList.contains('sidebar-collapsed') ? '&sc=1' : '';
+    var muat = document.createElement('div');
+    muat.id = 'poPanelMuat';
+    muat.style.cssText = 'position:fixed;inset:0;z-index:1079;background:rgba(15,23,42,.35);display:flex;align-items:center;justify-content:center;';
+    muat.innerHTML = '<div class="spinner-border text-light" role="status" aria-label="Memuat panel"></div>';
+    document.body.appendChild(muat);
+    var f = document.createElement('iframe');
+    f.id = 'poPanelFr';
+    f.title = 'Panel review PO';
+    f.setAttribute('allowtransparency', 'true');
+    f.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;border:0;z-index:1080;background:transparent;color-scheme:normal;';
+    // jenis 'humas' = slide verifikasi Daftar PO Humas; 'mitra' = slide Verifikasi PO Tim Mitra; 'ppk' = slide Daftar Review PO PPK BLU; selain itu = slide Daftar Review PO
+    f.src = srcPanelPo(poId, jenis, sc, '');
+    document.body.appendChild(f);
+    window.__poPanelBuka = poId;
+}
+// dibuka lewat ?edit_po=1 (Ketua Tim mengedit PO): gulir ke form di Tahap 8
+(function () {
+    if (!/[?&]edit_po=1(&|$)/.test(window.location.search)) { return; }
+    window.addEventListener('load', function () {
+        setTimeout(function () {
+            var tr = document.getElementById('paTrack');
+            if (tr) { window.scrollTo({ top: tr.getBoundingClientRect().top + window.pageYOffset - 75, behavior: 'smooth' }); }
+        }, 500);
+    });
+})();
+// Perbarui Tahap 8 (kartu petunjuk, badge tab, dan kartu PO) tanpa memuat ulang halaman. Gagal -> muat ulang biasa.
+function poSegarkanTahap8(opsi) {
+    opsi = opsi || {};
+    var q = window.location.search.replace(/([?&])edit_po=1(&|$)/, '$1').replace(/[?&]$/, '');
+    if (opsi.editPo) { q += (q ? '&' : '?') + 'edit_po=1'; }
+    return fetch(window.location.pathname + q, { credentials: 'same-origin', cache: 'no-store', headers: { 'X-Requested-With': 'fetch' } })
+        .then(function (r) { if (!r.ok) { throw new Error('gagal'); } return r.text(); })
+        .then(function (html) {
+            var doc = new DOMParser().parseFromString(html, 'text/html');
+            var cBaru = doc.getElementById('cardPo'), cLama = document.getElementById('cardPo');
+            if (!cBaru || !cLama) { throw new Error('tidak ada kartu PO'); }
+            var gBaru = doc.querySelector('.action-guide-card'), gLama = document.querySelector('.action-guide-card');
+            if (gBaru && gLama) { gLama.replaceWith(document.importNode(gBaru, true)); }
+            var tBaru = doc.querySelector('#tab-stage-8 .stage-nav-status-row'), tLama = document.querySelector('#tab-stage-8 .stage-nav-status-row');
+            if (tBaru && tLama) { tLama.innerHTML = tBaru.innerHTML; }
+            var teksKartu = cBaru.innerHTML;
+            cLama.innerHTML = teksKartu; cLama.className = cBaru.className;
+            if (window.poPasangForm) { window.poPasangForm(); }
+            // slide baca-saja berikutnya dimuat lebih dulu (skrip inline tidak jalan saat disisipkan, jadi dipanggil di sini)
+            var m = /poPraMuat\((\d+),\s*'([a-z_]+)'\)/.exec(teksKartu);
+            window.__poPraArgs = m ? [parseInt(m[1], 10), m[2]] : null;
+            if (m) { setTimeout(function () { poPraMuat(parseInt(m[1], 10), m[2]); }, 300); }
+            if (opsi.editPo) { try { history.replaceState(null, '', window.location.pathname + q + '#cardPo'); } catch (e) {} }
+            if (opsi.gulir) {
+                setTimeout(function () {
+                    var tr = document.getElementById('paTrack');
+                    if (tr) { window.scrollTo({ top: tr.getBoundingClientRect().top + window.pageYOffset - 75, behavior: 'smooth' }); }
+                }, 250);
+            }
+        });
+}
+window.addEventListener('message', function (e) {
+    if (e.origin !== window.location.origin) { return; }
+    var d = e.data;
+    if (!d || d.silopti !== 'po-panel') { return; }
+    var muat = document.getElementById('poPanelMuat');
+    // Slide diminta bergeser keluar (animasi sendiri), setelah Tahap 8 selesai diperbarui di belakangnya
+    function poMintaSlideKeluar(gulir) {
+        var fk = document.getElementById('poPanelFr');
+        window.__poGulirSetelahKeluar = !!gulir;
+        if (!fk) { poSelesaiKeluar(); return; }
+        try { fk.contentWindow.postMessage({ silopti: 'po-panel-keluar' }, window.location.origin); } catch (e) { poSelesaiKeluar(); }
+    }
+    // Perbarui Tahap 8 di belakang slide. Slide tidak menunggu lebih dari ~0,3 dtk: kalau pembaruan belum selesai, slide tetap bergeser keluar
+    // dan Tahap 8 berganti begitu datanya tiba (terasa lebih sigap daripada menunggu seluruh halaman diambil).
+    function poGulirKeForm() {
+        var tg = document.getElementById('paTrack');
+        if (tg) { window.scrollTo({ top: tg.getBoundingClientRect().top + window.pageYOffset - 75, behavior: 'smooth' }); }
+    }
+    function poPerbaruiLaluKeluar(opsi, gulir) {
+        var sudahKeluar = false, sudahSegar = false;
+        function keluar() { if (sudahKeluar) { return; } sudahKeluar = true; poMintaSlideKeluar(!!gulir && sudahSegar); }
+        var jeda = setTimeout(keluar, 300);
+        return poSegarkanTahap8(opsi).then(function () {
+            sudahSegar = true; clearTimeout(jeda);
+            if (sudahKeluar && gulir) { setTimeout(poGulirKeForm, 120); }   // slide sudah terlanjur keluar: gulir begitu form tampil
+            keluar();
+        }, function (e) { clearTimeout(jeda); throw e; });
+    }
+    function poSelesaiKeluar() {
+        var fk = document.getElementById('poPanelFr'); if (muat) { muat.remove(); } if (fk) { fk.remove(); }
+        if (window.__poGulirSetelahKeluar) {
+            var tg = document.getElementById('paTrack');
+            if (tg) { window.scrollTo({ top: tg.getBoundingClientRect().top + window.pageYOffset - 75, behavior: 'smooth' }); }
+        }
+        window.__poGulirSetelahKeluar = false;
+        if (window.__poPraArgs) { setTimeout(function () { poPraMuat(window.__poPraArgs[0], window.__poPraArgs[1]); }, 400); }
+    }
+    if (d.jenis === 'edit') {
+        // "Edit PO" di panel review: Tahap 8 diperbarui dulu di belakang slide (form PO tampil), baru slide bergeser keluar -- tanpa memuat ulang halaman.
+        // Kalau form sudah tampil langsung geser keluar. Gagal memperbarui -> muat ulang dengan ?edit_po=1.
+        var tr = document.getElementById('paTrack');
+        if (tr) { poMintaSlideKeluar(true); return; }
+        poPerbaruiLaluKeluar({ editPo: true, gulir: false }, true)
+            .catch(function () { window.location.href = window.location.pathname + '?edit_po=1#cardPo'; });
+        return;
+    }
+    if (d.jenis === 'aksi') {
+        // Minta revisi / setujui / dll. di slide: detail order diperbarui di belakang slide, lalu slide bergeser keluar (tanpa memuat ulang halaman)
+        var bf = (d.buka === 'form');
+        poPerbaruiLaluKeluar({ editPo: bf }, bf).catch(function () {
+            if (bf) { window.location.href = window.location.pathname + '?edit_po=1#cardPo'; } else { window.location.reload(); }
+        });
+        return;
+    }
+    if (d.jenis === 'keluar-selesai') { poSelesaiKeluar(); return; }
+    if (d.jenis === 'siap') {
+        var fs = document.getElementById('poPanelFr');
+        if (fs) {
+            fs.setAttribute('data-siap', '1');
+            // slide yang dimuat lebih dulu dan sudah diklik sebelum siap: tampilkan sekarang
+            if (fs.getAttribute('data-klik') === '1') { try { fs.contentWindow.postMessage({ silopti: 'po-panel-tampil' }, window.location.origin); fs.contentWindow.focus(); } catch (e) {} }
+        }
+        if (muat && !(fs && fs.getAttribute('data-pra') === '1')) { muat.remove(); }
+        return;
+    }
+    if (d.jenis === 'tutup') {
+        var f = document.getElementById('poPanelFr');
+        if (muat) { muat.remove(); }
+        if (f) { f.remove(); }
+        if (d.berubah) {
+            // Tahap 8 diperbarui di tempat (tanpa memuat ulang halaman). "Kerjakan sendiri" di slide revisi PPK BLU: form revisi langsung tampil dan digulir ke sana.
+            poSegarkanTahap8({ editPo: d.buka === 'form', gulir: d.buka === 'form' }).catch(function () {
+                if (d.buka === 'form') { window.location.href = window.location.pathname + '?edit_po=1#cardPo'; } else { window.location.reload(); }
+            });
+        }
+        else if (window.__poPraArgs) { setTimeout(function () { poPraMuat(window.__poPraArgs[0], window.__poPraArgs[1]); }, 400); }   // siapkan lagi supaya klik berikutnya juga langsung tampil
+    }
+});
+</script>
+
+<!-- Modal Lihat PO OPTI (dokumen yang sama dengan Daftar PO: /po-kegiatan/@id/preview) -->
+<div class="modal fade" id="modalLihatPoOpti" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header">
+                <h6 class="modal-title fw-bold"><i class="bi bi-clipboard2-data text-primary me-2"></i>Preview Petunjuk Operasional</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0" style="background:#e9ecef;">
+                <div id="modalLihatPoOptiBody" class="p-3"></div>
+            </div>
+            <div class="modal-footer justify-content-center gap-2">
+                <a href="#" id="modalLihatPoOptiPdf" target="_blank" rel="noopener" class="btn btn-primary"><i class="bi bi-download me-1"></i> Download PDF</a>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+function lihatPoOpti(poId) {
+    var body = document.getElementById('modalLihatPoOptiBody');
+    body.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="small text-muted mt-2 mb-0">Memuat PO...</p></div>';
+    document.getElementById('modalLihatPoOptiPdf').href = '{{ @BASE }}/po-kegiatan/' + poId + '/cetak';
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('modalLihatPoOpti')).show();
+    fetch('{{ @BASE }}/po-kegiatan/' + poId + '/preview', { credentials: 'same-origin' })
+        .then(function (r) { if (!r.ok) { throw new Error('x'); } return r.text(); })
+        .then(function (html) { body.innerHTML = html; })
+        .catch(function () { body.innerHTML = '<div class="text-center text-danger py-5">Gagal memuat data PO.</div>'; });
+}
+(function () {
+    // Form PO di Tahap 8 -- sama seperti halaman Buat PO: seluruh halaman yang di-scroll, bingkai (bar biru + form) tetap menempel
+    // di layar, isi form ikut bergerak, dan panel preview ketahan (sticky) tanpa terpotong.
+    // elemen form dicari ulang lewat window.poPasangForm() setiap kali Tahap 8 diperbarui tanpa memuat ulang halaman
+    var track = null, wrap = null, fr = null, btn = null;
+    var C = 0, V = 0, terakhir = -1, antri = false, topbar = 75;
+    function ada() { return !!(track && wrap && fr && document.body.contains(fr)); }
+    function dok() { try { return fr.contentDocument; } catch (e) { return null; } }
+    function penuh() { return !!wrap && wrap.classList.contains('pa-full'); }
+    function tinggiTopbar() { var t = document.querySelector('.topbar'); return t ? Math.round(t.getBoundingClientRect().height) : 75; }
+    // posisi isi form mengikuti seberapa jauh halaman sudah melewati awal bagian ini
+    function sinkron() {
+        if (!ada()) { return; }
+        var d = dok();
+        if (!d || !d.body || penuh() || track.offsetParent === null) { return; }
+        var p = Math.max(0, Math.min(Math.max(0, C - V), topbar - track.getBoundingClientRect().top));
+        var w = d.defaultView;
+        if (Math.abs(w.scrollY - p) > 0.5) { terakhir = p; w.scrollTo({ top: p, left: 0, behavior: 'instant' }); }
+    }
+    function ukur() {
+        if (!ada()) { return; }
+        var d = dok();
+        if (!d || !d.body || track.offsetParent === null) { return; }
+        if (penuh()) { return; }
+        d.documentElement.classList.add('pa-pin');
+        topbar = tinggiTopbar();
+        var bar = wrap.querySelector('.pa-fh');
+        var barH = bar ? bar.offsetHeight : 40;
+        V = Math.max(420, window.innerHeight - topbar - barH - 2);
+        wrap.style.top = topbar + 'px';
+        if (Math.abs(fr.offsetHeight - V) > 1) { fr.style.height = V + 'px'; }
+        C = Math.max(V, d.documentElement.scrollHeight);
+        var T = C + barH + 2;
+        if (Math.abs(track.offsetHeight - T) > 1) { track.style.height = T + 'px'; }
+        sinkron();
+    }
+    function jadwalkan() {
+        if (antri) { return; }
+        antri = true;
+        window.requestAnimationFrame(function () { antri = false; sinkron(); });
+    }
+    function atur(on) {
+        if (!ada()) { return; }
+        var d = dok();
+        wrap.classList.toggle('pa-full', on);
+        document.body.style.overflow = on ? 'hidden' : '';
+        if (btn) { btn.querySelector('span').textContent = on ? 'Tutup layar penuh' : 'Layar penuh'; }
+        if (on) {                         // layar penuh: scroll bawaan form
+            fr.style.height = '';
+            wrap.style.top = '';
+            if (d && d.documentElement) { d.documentElement.classList.remove('pa-pin'); }
+        } else { ukur(); }
+    }
+    function pasang() {
+        track = document.getElementById('paTrack'); wrap = document.getElementById('paFrameWrap'); fr = document.getElementById('paFrame'); btn = document.getElementById('paFull');
+        C = 0; V = 0; terakhir = -1;
+        if (!track || !wrap || !fr) { return; }
+        var frIni = fr;
+        if (btn) { btn.addEventListener('click', function () { atur(!penuh()); }); }
+        frIni.addEventListener('load', function () {
+            if (frIni !== fr) { return; }
+            ukur();
+            var d = dok();
+            if (!d || !d.body) { return; }
+            if (window.ResizeObserver) { new ResizeObserver(ukur).observe(d.body); }
+            // kalau form sendiri menggulir (mis. fokus ke kolom yang belum diisi), halaman ikut menyesuaikan
+            d.defaultView.addEventListener('scroll', function () {
+                if (frIni !== fr || penuh()) { return; }
+                var y = d.defaultView.scrollY;
+                if (Math.abs(y - terakhir) < 1.5) { return; }
+                terakhir = y;
+                var trAbs = track.getBoundingClientRect().top + window.pageYOffset;
+                window.scrollTo({ top: trAbs - topbar + y, left: 0, behavior: 'instant' });
+            });
+        });
+    }
+    window.poPasangForm = pasang;
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && penuh()) { atur(false); } });
+    var tab8 = document.getElementById('tab-stage-8');
+    if (tab8) { tab8.addEventListener('shown.bs.tab', function () { setTimeout(ukur, 100); }); }
+
+    window.addEventListener('scroll', jadwalkan, { passive: true });
+    window.addEventListener('resize', ukur);
+    setInterval(ukur, 800);
+    pasang();
+})();
+</script>
 
 <!-- Modal Edit Profil Pelanggan -->
 <div class="modal fade" id="modalEditProfilPelanggan" tabindex="-1" aria-labelledby="modalEditProfilPelangganLabel" aria-hidden="true">
@@ -9572,6 +9999,19 @@ function angkaKeTerbilang(n) {
     return (hasil.charAt(0).toUpperCase() + hasil.slice(1) + ' Rupiah').trim();
 }
 
+// Buka / tutup formulir tambah pembayaran termin berikutnya langsung di Tahap 6 (tanpa pindah halaman)
+function toggleTambahBayarDetail(buka) {
+    var wrap = document.getElementById('wrapTambahBayarDetail');
+    var tombol = document.getElementById('btnBukaTambahBayarDetail');
+    if (!wrap) return;
+    wrap.classList.toggle('d-none', !buka);
+    if (tombol) tombol.classList.toggle('d-none', !!buka);
+    if (buka) {
+        wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        var f = document.getElementById('display_nominal_bayar');
+        if (f) { setTimeout(function () { f.focus(); }, 350); }
+    }
+}
 document.addEventListener('DOMContentLoaded', function () {
     var formDetail = document.getElementById('formKonfirmasiPembayaranDetail');
     if (!formDetail) return;

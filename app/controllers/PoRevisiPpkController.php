@@ -884,7 +884,7 @@ class PoRevisiPpkController extends Controller {
     public static function idPpk($db) {
         $hasil = [];
         try {
-            $rows = $db->exec("SELECT id_user FROM opti_user_map WHERE role_opti IN ('ppk_blu', 'ppk', 'pejabat') AND is_active = 1");
+            $rows = $db->exec("SELECT id_user FROM opti_user_map WHERE role IN ('ppk_blu', 'ppk', 'pejabat') AND is_active = 1 AND status_tampil = 'show'");
             foreach ($rows as $r) { $hasil[] = (int) $r['id_user']; }
         } catch (\Exception $e) {
             // tanpa daftar PPK BLU, notifikasi dilewati
@@ -1331,7 +1331,7 @@ class PoRevisiPpkController extends Controller {
     protected function katimPerDivisi() {
         $peta = ['selulosa' => 0, 'lingkungan' => 0];
         try {
-            $rows = $this->db->exec("SELECT id_user, jenis_layanan_opti FROM opti_user_map WHERE role_opti = 'ketua_tim' AND is_active = 1 ORDER BY id ASC");
+            $rows = $this->db->exec("SELECT id_user, jenis_layanan AS jenis_layanan_opti FROM opti_user_map WHERE role = 'ketua_tim' AND is_active = 1 AND status_tampil = 'show' ORDER BY id ASC");
             foreach ($rows as $r) {
                 $d = (string) $r['jenis_layanan_opti'];
                 if (isset($peta[$d]) && $peta[$d] === 0) { $peta[$d] = (int) $r['id_user']; }

@@ -1297,6 +1297,11 @@ class OrderController extends Controller {
             ))
         );
 
+        // Tahap 9 (BAST) terbuka kalau PO sudah aktif (PO lama via po_id, atau PO Kegiatan yang sudah divalidasi PPK BLU)
+        // DAN (PO bertanda tangan sudah diunggah, atau order ini tidak kena kunci PO bertanda tangan).
+        $bastTerbuka = (!empty($order['po_id']) || $poKegiatanAktif) && ($poTtdAda || !$poTtdWajib);
+        $f3->set('po_bast_terbuka', $bastTerbuka);
+
         // Step 9: BAST
         $isBastDone = $isPoDone && !empty($bast) && (
             in_array($bast['status_bast'] ?? '', ['disetujui', 'selesai', 'terbit']) ||
